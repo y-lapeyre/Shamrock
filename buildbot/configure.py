@@ -22,6 +22,7 @@ parser.add_argument("--cuda", action='store_true', help="use CUDA instead of OPE
 
 parser.add_argument("--test", action='store_true', help="add test target to build configuration")
 parser.add_argument("--sph", action='store_true', help="add sph target to build configuration")
+parser.add_argument("--amr", action='store_true', help="add amr target to build configuration")
 parser.add_argument("--visu", action='store_true', help="add visualisation target to build configuration")
 
 
@@ -75,6 +76,10 @@ if args.test:
 
 if args.sph:
     cmake_cmd += " -DBUILD_SPH=true"
+
+if args.amr:
+    cmake_cmd += " -DBUILD_AMR=true"
+
 
 if args.visu:
     cmake_cmd += " -DBUILD_VISU=true"

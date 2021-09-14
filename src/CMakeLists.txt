@@ -3,7 +3,7 @@
 ######################################
 
 cmake_minimum_required(VERSION 3.9)
-project(Shamrock CXX)
+project(Shamrock CXX C)
 
 
 # Necessary to link a subfolder library into another subfolder
@@ -75,41 +75,48 @@ find_package(MPI REQUIRED COMPONENTS C)
 ######################
 # Add subdirectories
 ######################
-#add_subdirectory(sys)
+add_subdirectory(sys)
 
 
 
 
-# if("${BUILD_SPH}")
+if("${BUILD_SPH}")
 
-#     message(">>> adding sph target <<<")
+    message(">>> adding sph target <<<")
+    add_executable(shamrock_sph main_sph.cpp)
+    target_link_libraries(shamrock_sph PUBLIC sys)
+    target_link_libraries(shamrock_sph PUBLIC MPI::MPI_C)
 
-#     add_executable(sphive_sph main_sph.cpp)
-#     target_link_libraries(sphive_sph PUBLIC sys)
-#     target_link_libraries(sphive_sph PUBLIC MPI::MPI_C)
+endif()
 
-# endif()
+if("${BUILD_AMR}")
 
+    message(">>> adding amr target <<<")
+    add_executable(shamrock_amr main_amr.cpp)
+    target_link_libraries(shamrock_amr PUBLIC sys)
+    target_link_libraries(shamrock_amr PUBLIC MPI::MPI_C)
 
-# if("${BUILD_TEST}")
-
-#     message(">>> adding test target <<<")
-
-#     add_executable(sphive_test main_test.cpp)
-#     target_link_libraries(sphive_test PUBLIC sys)
-#     target_link_libraries(sphive_test PUBLIC MPI::MPI_C)
-#     target_link_libraries(sphive_test PUBLIC cunit)
-
-# endif()
+endif()
 
 
+if("${BUILD_TEST}")
+
+    message(">>> adding test target <<<")
+
+    add_executable(shamrock_test main_test.cpp)
+    target_link_libraries(shamrock_test PUBLIC sys)
+    target_link_libraries(shamrock_test PUBLIC MPI::MPI_C)
+
+endif()
 
 
 
-# if("${BUILD_VISU}")
 
-#     message(">>> adding visualisation target <<<")
 
-#     add_executable(sphive_visu main_visu.cpp)
+if("${BUILD_VISU}")
 
-# endif()
+    message(">>> adding visualisation target <<<")
+
+    add_executable(shamrock_visu main_visu.cpp)
+
+endif()

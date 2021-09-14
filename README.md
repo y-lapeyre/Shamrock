@@ -1,6 +1,9 @@
 # Shamrock
 
-
+```bash
+python buildbot/configure.py --ninja --cuda --sph --visu  ../llvm/build
+python buildbot/compile.py
+```
 
 ## Getting started
 
