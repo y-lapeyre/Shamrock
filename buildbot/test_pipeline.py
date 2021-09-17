@@ -66,7 +66,7 @@ cmake_comp_cmd += " --build"
 cmake_comp_cmd += " "+abs_build_dir
 
 
-test_exe_filename = "sphive_test"
+test_exe_filename = "shamrock_test"
 
 
 def generate_gcov():

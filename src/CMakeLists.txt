@@ -33,7 +33,8 @@ if("${SyCL_Compiler}" STREQUAL "DPC++")
     ######################
     if("${SyCL_Compiler_BE}" STREQUAL "CUDA")
         set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsycl-targets=nvptx64-nvidia-cuda-sycldevice ")
+        #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsycl-targets=nvptx64-nvidia-cuda-sycldevice ")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsycl-targets=nvptx64-nvidia-cuda ")
     endif()
 
     if("${SyCL_Compiler_BE}" STREQUAL "CPU")
@@ -59,6 +60,31 @@ if (CMAKE_BUILD_TYPE STREQUAL "COVERAGE_MAP")
 
 endif()
 
+
+
+
+
+######################
+# Add compilation utilisation flags
+######################
+
+#morton precision
+if("${Morton_precision}" STREQUAL "double")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DPRECISION_MORTON_DOUBLE")
+endif()
+
+#physics precision
+if("${Physics_precision}" STREQUAL "single")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DPRECISION_FULL_SINGLE")
+endif()
+
+if("${Physics_precision}" STREQUAL "mixed")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DPRECISION_MIXED")
+endif()
+
+if("${Physics_precision}" STREQUAL "double")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DPRECISION_FULL_DOUBLE")
+endif()
 
 
 
