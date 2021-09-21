@@ -1,7 +1,7 @@
 /**
  * @file flags.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @brief The ONLY headers with typedefs in the code
+ * @brief The ONLY headers with conditional typedefs in the code
  * @date 2021-09-17
  * @copyright Copyright Timothée David--Cléris (c) 2021
  * 
@@ -21,12 +21,6 @@
     typedef u16_3 u_ixyz;
     typedef i16_3 i_ixyz;
 #endif
-
-
-//#define PRECISION_FULL_SINGLE
-//#define PRECISION_MIXED
-//#define PRECISION_FULL_DOUBLE
-
 
 #if defined (PRECISION_FULL_SINGLE)
     typedef f32   f_s;
