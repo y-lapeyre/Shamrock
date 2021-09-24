@@ -44,11 +44,11 @@ namespace morton{
         return src;
     }
 
-#if defined(PRECISION_MORTON_DOUBLE)
 
+#if defined(PRECISION_MORTON_DOUBLE)
     inline u64 xyz_to_morton(f_d x, f_d y, f_d z) {
 
-        #if defined(PRECISION_MIXED)
+        #if defined(PRECISION_MIXED) || defined(PRECISION_FULL_DOUBLE)
             x = sycl::fmin(sycl::fmax(x * 2097152. , 0.), 2097152.-1.);
             y = sycl::fmin(sycl::fmax(y * 2097152. , 0.), 2097152.-1.);
             z = sycl::fmin(sycl::fmax(z * 2097152. , 0.), 2097152.-1.);
@@ -67,9 +67,9 @@ namespace morton{
     inline u32_3 morton_to_ixyz(u64 morton){
         
         u32_3 pos;
-        pos.x = contract_bits_64((morton & 0x4924924924924924) >> 2);
-        pos.y = contract_bits_64((morton & 0x2492492492492492) >> 1);
-        pos.z = contract_bits_64((morton & 0x1249249249249249) >> 0);
+        pos.x() = contract_bits_64((morton & 0x4924924924924924) >> 2);
+        pos.y() = contract_bits_64((morton & 0x2492492492492492) >> 1);
+        pos.z() = contract_bits_64((morton & 0x1249249249249249) >> 0);
         
         return pos;
     }
@@ -86,7 +86,7 @@ namespace morton{
 
     inline u32 xyz_to_morton(f_d x, f_d y, f_d z) {
         
-        #if defined(PRECISION_MIXED)
+        #if defined(PRECISION_MIXED) || defined(PRECISION_FULL_DOUBLE)
             x = sycl::fmin(sycl::fmax(x * 1024. , 0.), 1024.-1.);
             y = sycl::fmin(sycl::fmax(y * 1024. , 0.), 1024.-1.);
             z = sycl::fmin(sycl::fmax(z * 1024. , 0.), 1024.-1.);
@@ -120,6 +120,8 @@ namespace morton{
         mx.s2() = 1024 >> ((clz_ - 2)/3);
         return mx;
     }
+
+
 
 #endif
     

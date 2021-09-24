@@ -25,6 +25,9 @@
 
 #include "utils/string_utils.hpp"
 
+#include "tree/morton.hpp"
+#include "tree/radix_tree.hpp"
+#include "tree/karras_alg.hpp"
 
 
 
@@ -56,6 +59,12 @@ int main(void){
     add_test("string_utils.hpp/format()",false, []{
 
         UTest_NOMPI_assert(R"=(format("%s %d\n","ttt : ",10))=", ! format("%s %d\n","ttt : ",10).compare("ttt :  10\n"));
+
+    });
+
+    add_test("tree/morton.hpp",false, []{
+
+        UTest_NOMPI_assert(R"=(morton::xyz_to_morton(0, 0, 0) == 0x0)=", morton::xyz_to_morton(0, 0, 0) == 0x0);
 
     });
 

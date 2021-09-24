@@ -102,7 +102,7 @@ find_package(MPI REQUIRED COMPONENTS C)
 # Add subdirectories
 ######################
 add_subdirectory(sys)
-
+add_subdirectory(tree)
 
 
 
@@ -131,6 +131,7 @@ if("${BUILD_TEST}")
 
     add_executable(shamrock_test main_test.cpp)
     target_link_libraries(shamrock_test PUBLIC sys)
+    target_link_libraries(shamrock_test PUBLIC tree)
     target_link_libraries(shamrock_test PUBLIC MPI::MPI_C)
 
 endif()
