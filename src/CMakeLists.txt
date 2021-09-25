@@ -33,7 +33,8 @@ if("${SyCL_Compiler}" STREQUAL "DPC++")
     ######################
     if("${SyCL_Compiler_BE}" STREQUAL "CUDA")
         set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsycl-targets=nvptx64-nvidia-cuda-sycldevice ")
+        #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsycl-targets=nvptx64-nvidia-cuda-sycldevice ")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsycl-targets=nvptx64-nvidia-cuda ")
     endif()
 
     if("${SyCL_Compiler_BE}" STREQUAL "CPU")
@@ -62,6 +63,31 @@ endif()
 
 
 
+
+######################
+# Add compilation utilisation flags
+######################
+
+#morton precision
+if("${Morton_precision}" STREQUAL "double")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DPRECISION_MORTON_DOUBLE")
+endif()
+
+#physics precision
+if("${Physics_precision}" STREQUAL "single")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DPRECISION_FULL_SINGLE")
+endif()
+
+if("${Physics_precision}" STREQUAL "mixed")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DPRECISION_MIXED")
+endif()
+
+if("${Physics_precision}" STREQUAL "double")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DPRECISION_FULL_DOUBLE")
+endif()
+
+
+
 ######################
 # Add external libraries
 ######################
@@ -76,7 +102,7 @@ find_package(MPI REQUIRED COMPONENTS C)
 # Add subdirectories
 ######################
 add_subdirectory(sys)
-
+add_subdirectory(tree)
 
 
 
@@ -105,6 +131,7 @@ if("${BUILD_TEST}")
 
     add_executable(shamrock_test main_test.cpp)
     target_link_libraries(shamrock_test PUBLIC sys)
+    target_link_libraries(shamrock_test PUBLIC tree)
     target_link_libraries(shamrock_test PUBLIC MPI::MPI_C)
 
 endif()

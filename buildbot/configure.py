@@ -25,6 +25,9 @@ parser.add_argument("--sph", action='store_true', help="add sph target to build 
 parser.add_argument("--amr", action='store_true', help="add amr target to build configuration")
 parser.add_argument("--visu", action='store_true', help="add visualisation target to build configuration")
 
+parser.add_argument('--morton',   action='store', type=str, default="single", help='precision for morton codes')
+parser.add_argument('--phyprec',     action='store', type=str, default="single", help='precision mode for physical variables')
+
 
 parser.add_argument("llvm_root",help="llvm location", type=str)
 
@@ -83,6 +86,27 @@ if args.amr:
 
 if args.visu:
     cmake_cmd += " -DBUILD_VISU=true"
+
+print()
+if args.morton == ("single"):
+    print(Fore.BLUE + Style.BRIGHT + "Morton mode       : "+ Style.RESET_ALL + "single")
+    cmake_cmd += " -DMorton_precision=single"
+elif args.morton == ("double"):
+    print(Fore.BLUE + Style.BRIGHT + "Morton mode       : "+ Style.RESET_ALL + "double")
+    cmake_cmd += " -DMorton_precision=double"
+
+
+if args.phyprec == ("single"):
+    print(Fore.BLUE + Style.BRIGHT + "Precision mode    : "+ Style.RESET_ALL + "single")
+    cmake_cmd += " -DPhysics_precision=single"
+elif args.phyprec == ("mixed"):
+    print(Fore.BLUE + Style.BRIGHT + "Precision mode    : "+ Style.RESET_ALL + "mixed")
+    cmake_cmd += " -DPhysics_precision=mixed"
+elif args.phyprec == ("double"):
+    print(Fore.BLUE + Style.BRIGHT + "Precision mode    : "+ Style.RESET_ALL + "double")
+    cmake_cmd += " -DPhysics_precision=double"
+
+
 
 print("\n"+ Fore.BLUE + Style.BRIGHT + "Running : "+ Style.RESET_ALL + cmake_cmd + "\n")
 
