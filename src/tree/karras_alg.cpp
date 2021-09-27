@@ -11,19 +11,19 @@ void karras_alg(
     sycl::queue* queue,
     u32 internal_cell_count,
     sycl::buffer<u_morton>* in_morton,
-    sycl::buffer<u32>* out_buf_rchild_id   ,
     sycl::buffer<u32>* out_buf_lchild_id   ,
-    sycl::buffer<u8 >* out_buf_rchild_flag ,
-    sycl::buffer<u8 >* out_buf_lchild_flag,
+    sycl::buffer<u32>* out_buf_rchild_id   ,
+    sycl::buffer<u8 >* out_buf_lchild_flag ,
+    sycl::buffer<u8 >* out_buf_rchild_flag,
     sycl::buffer<u32>* out_buf_endrange    ){
 
     cl::sycl::range<1> range_radix_tree{internal_cell_count};
 
     if(in_morton != NULL)           throw_with_pos("in_morton was already allocated");
-    if(out_buf_rchild_id != NULL)   throw_with_pos("out_buf_rchild_id was already allocated");
     if(out_buf_lchild_id != NULL)   throw_with_pos("out_buf_lchild_id was already allocated");
-    if(out_buf_rchild_flag != NULL) throw_with_pos("out_buf_rchild_flag was already allocated");
+    if(out_buf_rchild_id != NULL)   throw_with_pos("out_buf_rchild_id was already allocated");
     if(out_buf_lchild_flag != NULL) throw_with_pos("out_buf_lchild_flag was already allocated");
+    if(out_buf_rchild_flag != NULL) throw_with_pos("out_buf_rchild_flag was already allocated");
     if(out_buf_endrange != NULL)    throw_with_pos("out_buf_endrange was already allocated");
 
     queue->submit(
@@ -34,10 +34,10 @@ void karras_alg(
 
             auto m = in_morton->get_access<sycl::access::mode::read>(cgh);
             
-            auto rchild_id      = out_buf_rchild_id  ->get_access<sycl::access::mode::discard_write>(cgh);
             auto lchild_id      = out_buf_lchild_id  ->get_access<sycl::access::mode::discard_write>(cgh);
-            auto rchild_flag    = out_buf_rchild_flag->get_access<sycl::access::mode::discard_write>(cgh);
+            auto rchild_id      = out_buf_rchild_id  ->get_access<sycl::access::mode::discard_write>(cgh);
             auto lchild_flag    = out_buf_lchild_flag->get_access<sycl::access::mode::discard_write>(cgh);
+            auto rchild_flag    = out_buf_rchild_flag->get_access<sycl::access::mode::discard_write>(cgh);
             auto end_range_cell = out_buf_endrange   ->get_access<sycl::access::mode::discard_write>(cgh);
             
 
