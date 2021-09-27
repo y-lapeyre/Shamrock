@@ -5,6 +5,8 @@
 
 namespace morton{
 
+
+#if defined(PRECISION_MORTON_DOUBLE)
     //21bit number and 2 interleaving bits (for 64bits)
     inline u64 expand_bits_64(u64 x){
         x &= 0x1fffff;
@@ -25,7 +27,7 @@ namespace morton{
         src = (src | (src >> 32)) & 0x00000000ffffffff;
         return src;
     }
-
+#else
     //10bit number and 2 interleaving bits (for 32 bits)
     inline u32 expand_bits_32(u32 x){
         x &= 0x3ff;
@@ -43,6 +45,7 @@ namespace morton{
         src = (src | src >> 16) & 0xFFFF;
         return src;
     }
+#endif
 
 
 #if defined(PRECISION_MORTON_DOUBLE)

@@ -10,9 +10,10 @@
  */
 
 //#include "tests/tests_handler.hpp"
-#include "tests/unit_test_handler.hpp"
+#include "sys/sycl_handler.hpp"
+#include "unittests/unit_test_handler.hpp"
 
-// #include "tests/test_global.hpp"
+#include "unittests/test_global.hpp"
 // #include "tests/test_sph.hpp"
 // #include "tests/test_amr.hpp"
 
@@ -29,7 +30,8 @@
 #include "tree/radix_tree.hpp"
 #include "tree/karras_alg.hpp"
 
-
+#include "unittests/test_global.hpp"
+#include "unittests/unit_test_handlerv2.hpp"
 
 int main(void){
 
@@ -38,7 +40,7 @@ int main(void){
 
     mpi_init();
 
-
+    init_sycl();
 
     
 
@@ -53,20 +55,29 @@ int main(void){
     }
 
 
+
+
+
+    if(unit_test::test_start("test_1", false)){
+
+        unit_test::test_log("test\n");
+
+        unit_test::test_assert("test assert", true);
+
+    }unit_test::test_end();
+
+    
+
+    /*
+
+
     
 
 
-    add_test("string_utils.hpp/format()",false, []{
+    add_tests_global();
 
-        UTest_NOMPI_assert(R"=(format("%s %d\n","ttt : ",10))=", ! format("%s %d\n","ttt : ",10).compare("ttt :  10\n"));
+    
 
-    });
-
-    add_test("tree/morton.hpp",false, []{
-
-        UTest_NOMPI_assert(R"=(morton::xyz_to_morton(0, 0, 0) == 0x0)=", morton::xyz_to_morton(0, 0, 0) == 0x0);
-
-    });
 
 
     add_test("test all fail",false, []{
@@ -101,6 +112,8 @@ int main(void){
     run_tests();
 
     print_test_suite_report();
+
+    */
 
     mpi_close();
 

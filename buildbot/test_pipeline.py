@@ -161,4 +161,111 @@ for cid in range(len(config_names)):
     print("\n"+ Fore.BLUE + Style.BRIGHT + "Running : "+ Style.RESET_ALL + llvmcovshow + "\n")
     os.system(llvmcovshow)
 
+
+
+
+#generate_report
+
+folder_report = "coverage_report"
+
+from lxml import etree
+
+
+
+print("making " + folder_report)
+
+try:
+    os.mkdir(folder_report)
+except :
+    os.system("rm -r " + folder_report)
+    os.mkdir(folder_report)
+
+os.system("cp " + "coverage_src_"+config_names[0] +"/style.css " + folder_report)
+
+
+
+
+
+report_html_main = ""
+head = ""
+header_info_clang = ""
+version_clang_info = ""
+html_tables = []
+
+for cid in range(len(config_names)):
+
+    f_in_html = open("coverage_src_"+config_names[cid] + "/index.html" ,'r')
+
+
+    str_in_html = f_in_html.read()
+
+    html_in = etree.HTML(str_in_html)
+
+    head = (etree.tostring(html_in[0], pretty_print=True, method="html")).decode('ASCII')
+    #print(head)
+
+    body_result = html_in[1]
+
+    header_info_clang =  (etree.tostring(body_result[0], pretty_print=True, method="html")).decode('ASCII')
+    header_info_clang += (etree.tostring(body_result[1], pretty_print=True, method="html")).decode('ASCII')
+    header_info_clang += (etree.tostring(body_result[2], pretty_print=True, method="html")).decode('ASCII')
+
+    html_tables.append( 
+        ("<h4>"+ flags_list[cid] +"</h4>\n" + (etree.tostring(body_result[3], pretty_print=True, method="html")).decode('ASCII'))
+            .replace(str(abs_src_dir), "_"+config_names[cid])
+    )
+
+    version_clang_info = (etree.tostring(body_result[4], pretty_print=True, method="html")).decode('ASCII')
+    
+    result = etree.tostring(html_in, pretty_print=True, method="html")
+    #print(result)
+
+    f_in_html.close()
+
+f_out_html = open(folder_report + "/index.html" ,'w')
+
+
+final_str_html = ""
+
+final_str_html += ("<!doctype html><html>\n" + head + "<body>" + header_info_clang)
+
+for sttr in html_tables:
+    final_str_html += (sttr)
+
+final_str_html += (version_clang_info +"</body>" +"\n</html>")
+
+#print(str(abs_src_dir))
+
+final_str_html = final_str_html.replace(str(abs_src_dir), "")
+
+for cid in range(len(config_names)):
+    os.system("mv "+"coverage_src_"+config_names[cid]+"/coverage"+abs_src_dir +" " + folder_report + "/coverage_"+config_names[cid])
+
+
+f_out_html.write(final_str_html)
+
+
+
+
+
+#fix paths from coverage subfolders
+import glob
+import re
+
+for root, dirs, files in os.walk(folder_report):
+    for file in files:
+        if file.endswith('.html'):
+            if not "index.html" in file:
+
+                str_file = open(root + "/" + str(file) ,'r').read()
+
+                relat_path_stylecss = str(os.path.relpath(folder_report,root + "/" + str(file)))
+
+                str_out = re.sub("href='?(.*?)/style.css'", "href='"+relat_path_stylecss+"/"+folder_report+"/style.css'", str_file,  flags=re.DOTALL)
+                str_out = str_out.replace(abs_src_dir,"src")
+
+                str_file = open(root + "/" + str(file) ,'w').write(str_out)
+    
+
 exit()
+#python test_pipeline.py --ninja --cuda ../../llvm
