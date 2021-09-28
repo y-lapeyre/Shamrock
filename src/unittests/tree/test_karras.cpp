@@ -1,11 +1,14 @@
+
+#include "test_tree.hpp"
+
 #include "../unit_test_handler.hpp"
 #include "../../tree/karras_alg.hpp"
-#include "CL/sycl/buffer.hpp"
+#include "../../sys/sycl_handler.hpp"
 #include <vector>
 
-inline void add_tests_karras_alg(){
+void run_tests_karras_alg(){
 
-    add_test("tree/morton.hpp",false, []{
+    if(unit_test::test_start("tree/karras_alg.hpp", false)){
 
 
 #if defined(PRECISION_MORTON_DOUBLE)
@@ -50,6 +53,7 @@ inline void add_tests_karras_alg(){
             sycl::buffer<u32> out_buf_endrange(out_endrange);
 
             karras_alg(
+                queue,
                 morton_list.size()-1, 
                 &buf_morton, 
                 &out_buf_lchild_id,
@@ -61,22 +65,22 @@ inline void add_tests_karras_alg(){
 
         }
 
-        UTest_NOMPI_assert("out_lchild_id[0] == 7", out_lchild_id[0] == 7);
-        UTest_NOMPI_assert("out_lchild_id[1] == 0", out_lchild_id[1] == 0);
-        UTest_NOMPI_assert("out_lchild_id[2] == 2", out_lchild_id[2] == 2);
-        UTest_NOMPI_assert("out_lchild_id[3] == 1", out_lchild_id[3] == 1);
-        UTest_NOMPI_assert("out_lchild_id[4] == 5", out_lchild_id[4] == 5);
-        UTest_NOMPI_assert("out_lchild_id[5] == 4", out_lchild_id[5] == 4);
-        UTest_NOMPI_assert("out_lchild_id[6] == 6", out_lchild_id[6] == 6);
-        UTest_NOMPI_assert("out_lchild_id[7] == 3", out_lchild_id[7] == 3);
-        UTest_NOMPI_assert("out_lchild_id[8] == 8", out_lchild_id[8] == 8);
-        UTest_NOMPI_assert("out_lchild_id[9] == 10", out_lchild_id[9] == 10);
-        UTest_NOMPI_assert("out_lchild_id[10] == 9", out_lchild_id[10] == 9);
-        UTest_NOMPI_assert("out_lchild_id[11] == 11", out_lchild_id[11] == 11);
+        unit_test::test_assert("out_lchild_id[0] == 7", out_lchild_id[0] == 7);
+        unit_test::test_assert("out_lchild_id[1] == 0", out_lchild_id[1] == 0);
+        unit_test::test_assert("out_lchild_id[2] == 2", out_lchild_id[2] == 2);
+        unit_test::test_assert("out_lchild_id[3] == 1", out_lchild_id[3] == 1);
+        unit_test::test_assert("out_lchild_id[4] == 5", out_lchild_id[4] == 5);
+        unit_test::test_assert("out_lchild_id[5] == 4", out_lchild_id[5] == 4);
+        unit_test::test_assert("out_lchild_id[6] == 6", out_lchild_id[6] == 6);
+        unit_test::test_assert("out_lchild_id[7] == 3", out_lchild_id[7] == 3);
+        unit_test::test_assert("out_lchild_id[8] == 8", out_lchild_id[8] == 8);
+        unit_test::test_assert("out_lchild_id[9] == 10", out_lchild_id[9] == 10);
+        unit_test::test_assert("out_lchild_id[10] == 9", out_lchild_id[10] == 9);
+        unit_test::test_assert("out_lchild_id[11] == 11", out_lchild_id[11] == 11);
 
 #endif
 
 
-    });
+    }unit_test::test_end();
 
 }

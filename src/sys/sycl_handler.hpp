@@ -32,7 +32,7 @@ inline void init_sycl(){
     global_logger->log(">>> init SYCL instances <<<\n");
 
     queue = new sycl::queue(sycl::default_selector(),exception_handler);
-
+    printf("Running on : %s\n", queue->get_device().get_info<sycl::info::device::name>().c_str());
     global_logger->log("Running on : %s\n", queue->get_device().get_info<sycl::info::device::name>().c_str());
 
 }

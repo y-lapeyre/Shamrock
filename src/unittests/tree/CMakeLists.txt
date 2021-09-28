@@ -1,0 +1,2 @@
+add_library(unittests_tree test_morton.cpp test_karras.cpp)
+target_include_directories(unittests_tree PUBLIC src)

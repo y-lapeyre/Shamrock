@@ -15,7 +15,9 @@
  * @param buf_rchild_flag output
  * @param buf_endrange output
  */
+
 void karras_alg(
+    sycl::queue* queue,
     u32 internal_cell_count,
     sycl::buffer<u_morton>* in_morton,
     sycl::buffer<u32>* out_buf_lchild_id   ,
