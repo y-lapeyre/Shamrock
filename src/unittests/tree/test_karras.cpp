@@ -78,6 +78,8 @@ void run_tests_karras_alg(){
         unit_test::test_assert("out_lchild_id[10] == 9", out_lchild_id[10] == 9);
         unit_test::test_assert("out_lchild_id[11] == 11", out_lchild_id[11] == 11);
 
+        unit_test::test_assert("test false", false);
+
 #endif
 
 

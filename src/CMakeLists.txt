@@ -136,6 +136,9 @@ if("${BUILD_TEST}")
 
     target_link_libraries(shamrock_test PUBLIC MPI::MPI_C)
 
+    find_package(nlohmann_json 3.2.0 REQUIRED)
+    target_link_libraries(shamrock_test PUBLIC nlohmann_json::nlohmann_json)
+
 endif()
 
 add_subdirectory(sys)
