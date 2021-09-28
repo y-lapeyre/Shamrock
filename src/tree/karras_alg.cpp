@@ -5,7 +5,7 @@
 #define SGN(x) (x==0) ? 0 : ( (x>0) ? 1 : -1 )
 #define DELTA( x,  y) ((y>morton_lenght-1 || y < 0) ? -1 : int(sycl::clz(m[x] ^ m[y])))
 
-class Karras_alg;
+
 
 void karras_alg(
     sycl::queue* queue,
@@ -19,12 +19,12 @@ void karras_alg(
 
     cl::sycl::range<1> range_radix_tree{internal_cell_count};
 
-    if(in_morton != NULL)           throw_with_pos("in_morton was already allocated");
-    if(out_buf_lchild_id != NULL)   throw_with_pos("out_buf_lchild_id was already allocated");
-    if(out_buf_rchild_id != NULL)   throw_with_pos("out_buf_rchild_id was already allocated");
-    if(out_buf_lchild_flag != NULL) throw_with_pos("out_buf_lchild_flag was already allocated");
-    if(out_buf_rchild_flag != NULL) throw_with_pos("out_buf_rchild_flag was already allocated");
-    if(out_buf_endrange != NULL)    throw_with_pos("out_buf_endrange was already allocated");
+    if(in_morton == NULL)           throw_with_pos("in_morton isn't allocated");
+    if(out_buf_lchild_id == NULL)   throw_with_pos("out_buf_lchild_id isn't allocated");
+    if(out_buf_rchild_id == NULL)   throw_with_pos("out_buf_rchild_id isn't allocated");
+    if(out_buf_lchild_flag == NULL) throw_with_pos("out_buf_lchild_flag isn't allocated");
+    if(out_buf_rchild_flag == NULL) throw_with_pos("out_buf_rchild_flag isn't allocated");
+    if(out_buf_endrange == NULL)    throw_with_pos("out_buf_endrange isn't allocated");
 
     queue->submit(
         [&](cl::sycl::handler &cgh) {
@@ -41,7 +41,7 @@ void karras_alg(
             auto end_range_cell = out_buf_endrange   ->get_access<sycl::access::mode::discard_write>(cgh);
             
 
-            cgh.parallel_for<Karras_alg>(range_radix_tree, [=](cl::sycl::item<1> item) {
+            cgh.parallel_for<class Karras_alg>(range_radix_tree, [=](cl::sycl::item<1> item) {
 
                 int i = (int) item.get_id(0);
                 

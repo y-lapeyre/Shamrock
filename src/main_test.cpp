@@ -9,20 +9,19 @@
  * 
  */
 
-//#include "tests/tests_handler.hpp"
+#include "sys/mpi_handler.hpp"
 #include "sys/sycl_handler.hpp"
+
 #include "unittests/unit_test_handler.hpp"
 
-#include "unittests/test_global.hpp"
-// #include "tests/test_sph.hpp"
-// #include "tests/test_amr.hpp"
+#include "unittests/unittests.hpp"
 
 #include <cstdio>
 #include <unistd.h>
 #include <iostream>
 #include <cstdlib>
 
-#include "sys/mpi_handler.hpp"
+
 
 #include "utils/string_utils.hpp"
 
@@ -30,8 +29,7 @@
 #include "tree/radix_tree.hpp"
 #include "tree/karras_alg.hpp"
 
-#include "unittests/test_global.hpp"
-#include "unittests/unit_test_handlerv2.hpp"
+// #include "unittests/test_global.hpp"
 
 int main(void){
 
@@ -58,7 +56,12 @@ int main(void){
 
 
 
-    if(unit_test::test_start("test_1", false)){
+    run_tests();
+
+
+
+
+    if(unit_test::test_start("test_1", true)){
 
         unit_test::test_log("test\n");
 
@@ -66,6 +69,13 @@ int main(void){
 
     }unit_test::test_end();
 
+
+
+
+
+    
+    if(world_rank == 0)
+        unit_test::print_test_results();
     
 
     /*
