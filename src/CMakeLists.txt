@@ -8,7 +8,7 @@ project(Shamrock CXX C)
 
 # Necessary to link a subfolder library into another subfolder
 cmake_policy(SET CMP0079 NEW)
-
+cmake_policy(SET CMP0076 NEW)
 
 # Necessary for clangd to work properly
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -101,9 +101,6 @@ find_package(MPI REQUIRED COMPONENTS C)
 ######################
 # Add subdirectories
 ######################
-add_subdirectory(sys)
-add_subdirectory(tree)
-add_subdirectory(unittests)
 
 
 
@@ -111,7 +108,6 @@ if("${BUILD_SPH}")
 
     message(">>> adding sph target <<<")
     add_executable(shamrock_sph main_sph.cpp)
-    target_link_libraries(shamrock_sph PUBLIC sys)
     target_link_libraries(shamrock_sph PUBLIC MPI::MPI_C)
 
 endif()
@@ -120,29 +116,9 @@ if("${BUILD_AMR}")
 
     message(">>> adding amr target <<<")
     add_executable(shamrock_amr main_amr.cpp)
-    target_link_libraries(shamrock_amr PUBLIC sys)
     target_link_libraries(shamrock_amr PUBLIC MPI::MPI_C)
 
 endif()
-
-
-if("${BUILD_TEST}")
-
-    message(">>> adding test target <<<")
-
-    add_executable(shamrock_test main_test.cpp)
-    target_link_libraries(shamrock_test PUBLIC sys)
-    target_link_libraries(shamrock_test PUBLIC tree)
-
-    
-
-    target_link_libraries(shamrock_test PUBLIC MPI::MPI_C)
-
-endif()
-
-
-
-
 
 if("${BUILD_VISU}")
 
@@ -151,3 +127,17 @@ if("${BUILD_VISU}")
     add_executable(shamrock_visu main_visu.cpp)
 
 endif()
+
+if("${BUILD_TEST}")
+
+    message(">>> adding test target <<<")
+
+    add_executable(shamrock_test main_test.cpp)
+
+    target_link_libraries(shamrock_test PUBLIC MPI::MPI_C)
+
+endif()
+
+add_subdirectory(sys)
+add_subdirectory(tree)
+add_subdirectory(unittests)
