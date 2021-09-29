@@ -47,7 +47,7 @@ namespace unit_test{
 
     void print_test_results();
 
-
+    void write_test_results(std::string filename);
     
 
 

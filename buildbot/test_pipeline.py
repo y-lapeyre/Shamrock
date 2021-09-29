@@ -113,6 +113,9 @@ for cid in range(len(config_names)):
     os.system(cmake_comp_cmd)
 
 
+print("\n"+ Fore.BLUE + Style.BRIGHT + "Running : "+ Style.RESET_ALL + 'find '+abs_build_dir_src+' -iname "*.gcda" -exec rm {} \;' + "\n")
+os.system('find '+abs_build_dir_src+' -iname "*.gcda" -exec rm {} \;')
+
 #running step
 for cid in range(len(config_names)):
 
@@ -126,6 +129,10 @@ for cid in range(len(config_names)):
         if i < process_cnt[cid]-1:
             runcmd += " : "
     
+    print("\n"+ Fore.BLUE + Style.BRIGHT + "Running : "+ Style.RESET_ALL + runcmd + "\n")
+    os.system(runcmd)
+
+    runcmd = "mv unit_test_report.json coverage_src_"+config_names[cid]
     print("\n"+ Fore.BLUE + Style.BRIGHT + "Running : "+ Style.RESET_ALL + runcmd + "\n")
     os.system(runcmd)
 
@@ -156,7 +163,7 @@ for cid in range(len(config_names)):
 
     llvmcovshow += " " + abs_build_dir+"/"+test_exe_filename + " "
 
-    llvmcovshow += " -instr-profile=" + abs_build_dir+"/program.profdata -use-color --format html -output-dir=coverage_src_"+config_names[cid] 
+    llvmcovshow += " -instr-profile=" + abs_build_dir+"/program.profdata -use-color --format html --ignore-filename-regex=/tmp/* -output-dir=coverage_src_"+config_names[cid] 
 
     print("\n"+ Fore.BLUE + Style.BRIGHT + "Running : "+ Style.RESET_ALL + llvmcovshow + "\n")
     os.system(llvmcovshow)
@@ -227,7 +234,147 @@ f_out_html = open(folder_report + "/index.html" ,'w')
 
 final_str_html = ""
 
-final_str_html += ("<!doctype html><html>\n" + head + "<body>" + header_info_clang)
+final_str_html += ("<!doctype html><html>\n" + head + "<body>" )
+
+
+
+
+#add test_result info
+
+import json 
+
+final_str_html += "<h2>Test Report</h2>"
+
+
+for cid in config_names:
+    fold_n = folder_report + "/test_" + cid 
+    try:
+        os.mkdir(fold_n)
+    except :
+        os.system("rm -r " + fold_n)
+        os.mkdir(fold_n)
+
+    os.system("cp "+folder_report+"/style.css "+fold_n)
+
+for cid in range(len(config_names)):
+    final_str_html += "<h4>"+ flags_list[cid] +"</h4>\n"
+
+
+
+    final_str_html += '''
+    <div class="centered"><table>
+    <tbody><tr>
+    <td class="column-entry-bold">Test name</td>
+    <td class="column-entry-bold">MPI</td>
+    <td class="column-entry-bold">Assert count</td>
+    <td class="column-entry-bold">Assert succes</td>
+    <td class="column-entry-bold">Succes ratio</td>
+    </tr>
+    '''
+
+    jsn_file = open("coverage_src_"+config_names[cid]+"/unit_test_report.json",'r')
+
+    jsn = json.load(jsn_file)
+
+    for k in (jsn.keys()):
+
+        final_str_html += '<tr class="light-row">'
+
+        pref = ""
+
+        #print(k , jsn[k])
+
+        try:
+            if jsn[k]["succes_rate"] == 1.0:
+                pref = '<td class="column-entry-green">'
+            elif jsn[k]["succes_rate"] > 0.5:
+                pref = '<td class="column-entry-yellow">'
+            else:
+                pref = '<td class="column-entry-red">'
+        except:
+            pref = '<td class="column-entry-red">'
+
+        sub_file_assert_log = folder_report + "/test_" + config_names[cid] + "/"+k.replace("/","_") + ".html"
+
+        final_str_html += pref + "<pre>" + '<a href="test_'+ config_names[cid] + "/"+k.replace("/","_") + ".html"+'">'+ k +"</a></pre></td>"
+        final_str_html += pref + "<pre>" + str(jsn[k]["mpi"]) +"</pre></td>"
+        final_str_html += pref + "<pre>" + str(jsn[k]["total_assert_cnt"]) +"</pre></td>"
+        final_str_html += pref + "<pre>" + str(jsn[k]["succes_assert_cnt"]) +"</pre></td>"
+
+        try:
+            final_str_html += pref + "<pre>" + str(int(jsn[k]["succes_rate"]*100)) +"%</pre></td>"
+        except:
+            final_str_html += pref + "<pre>None</pre></td>"
+
+        final_str_html += '</tr>'
+
+
+
+
+
+
+
+
+        try:
+            asserts_ = jsn[k]["asserts"]
+
+
+            f_subfile_assert_log = open(sub_file_assert_log,'w')
+
+            subfile_assert_html = "<!doctype html><html>\n" + head + "<body>"
+
+
+            subfile_assert_html += '''
+                <div class="centered"><table>
+                <tbody><tr>
+                <td class="column-entry-bold">Assert desc</td>
+                <td class="column-entry-bold">node id</td>
+                <td class="column-entry-bold">succes</td>
+                </tr>
+                '''
+
+            for ass in asserts_:
+                
+
+
+                for jj in range(len(jsn[k]["asserts"][ass])):
+
+                    subfile_assert_html += '<tr class="light-row">'
+
+                    pref = ""
+
+                    if jsn[k]["asserts"][ass][jj]:
+                        pref = '<td class="column-entry-green">'
+                    else:
+                        pref = '<td class="column-entry-red">'
+
+                    subfile_assert_html += pref + "<pre>" + str(ass) +"</pre></td>"
+                    subfile_assert_html += pref + "<pre>" + str(jj) +"</pre></td>"
+                    subfile_assert_html += pref + "<pre>" + str(jsn[k]["asserts"][ass][jj]) +"</pre></td>"
+                
+
+                    subfile_assert_html += '</tr>'
+
+            subfile_assert_html += "</tbody></table></div></body>" +"\n</html>"
+            f_subfile_assert_log.write(subfile_assert_html)
+        except:
+            print("no asserts for",k)
+
+
+
+    # <tr class="light-row">
+    # <td><pre><a href="coverage_ss/io/logger.hpp.html">io/logger.hpp</a></pre></td>
+    # <td class="column-entry-green"><pre> 100.00% (3/3)</pre></td>
+    # <td class="column-entry-green"><pre> 100.00% (13/13)</pre></td>
+    # <td class="column-entry-green"><pre> 100.00% (3/3)</pre></td>
+    # <td class="column-entry-green"><pre>- (0/0)</pre></td>
+    # </tr>
+
+    final_str_html += "</tbody></table></div>"
+
+
+
+final_str_html += header_info_clang
 
 for sttr in html_tables:
     final_str_html += (sttr)
