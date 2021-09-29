@@ -46,7 +46,7 @@ void run_tests_karras_alg(){
             sycl::buffer<u8 > out_buf_rchild_flag(out_rchild_flag);
             sycl::buffer<u32> out_buf_endrange(out_endrange);
 
-            karras_alg(
+            sycl_karras_alg(
                 queue,
                 morton_list.size()-1, 
                 &buf_morton, 

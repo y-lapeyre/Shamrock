@@ -7,7 +7,7 @@
 
 
 
-void karras_alg(
+void sycl_karras_alg(
     sycl::queue* queue,
     u32 internal_cell_count,
     sycl::buffer<u_morton>* in_morton,
@@ -41,7 +41,7 @@ void karras_alg(
             auto end_range_cell = out_buf_endrange   ->get_access<sycl::access::mode::discard_write>(cgh);
             
 
-            cgh.parallel_for<class Karras_alg>(range_radix_tree, [=](cl::sycl::item<1> item) {
+            cgh.parallel_for<class Kernel_Karras_alg>(range_radix_tree, [=](cl::sycl::item<1> item) {
 
                 int i = (int) item.get_id(0);
                 
