@@ -282,7 +282,7 @@ for cid in range(len(config_names)):
 
         pref = ""
 
-        print(k , jsn[k])
+        #print(k , jsn[k])
 
         try:
             if jsn[k]["succes_rate"] == 1.0:
