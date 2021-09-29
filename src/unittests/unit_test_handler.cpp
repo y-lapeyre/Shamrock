@@ -1,5 +1,9 @@
 #include "unit_test_handler.hpp"
 
+#include <iostream>
+#include <fstream>
+#include <nlohmann/json.hpp>
+
 #include "../sys/mpi_handler.hpp"
 #include "unit_test_handler.hpp"
 #include <cstring>
@@ -192,6 +196,28 @@ namespace unit_test{
             }
         }
 
+    }
+
+    void write_test_results(std::string filename){
+        using json = nlohmann::json;
+
+        json root;
+
+        for(Test_report report : tests_results){
+            root[report.name]["succes_rate"] = report.succes_rate;
+            root[report.name]["total_assert_cnt"] = report.assert_count;
+            root[report.name]["succes_assert_cnt"] = report.succes_count;
+            root[report.name]["mpi"] = report.is_mpi;
+            root[report.name]["logs"] = report.logs;
+
+            for(Assert_report a_report : report.assert_report_list){
+                root[report.name]["asserts"][a_report.description][a_report.rank_emited] = a_report.condition;
+            }
+
+        }
+
+        std::ofstream ofstr(filename);
+        ofstr << root.dump(4) << std::endl;
     }
 
 
