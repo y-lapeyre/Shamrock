@@ -25,12 +25,6 @@
 
 #include "utils/string_utils.hpp"
 
-#include "tree/morton.hpp"
-#include "tree/radix_tree.hpp"
-#include "tree/karras_alg.hpp"
-
-// #include "unittests/test_global.hpp"
-
 int main(void){
 
 

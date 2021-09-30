@@ -1,6 +1,6 @@
 
-#include "../aliases.hpp"
-#include "../flags.hpp"
+#include "../../aliases.hpp"
+#include "../../flags.hpp"
 
 #define MAXORDER_SORT_KERNEL 16
 
