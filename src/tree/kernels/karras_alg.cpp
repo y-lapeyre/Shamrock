@@ -5,7 +5,7 @@
 #define SGN(x) (x==0) ? 0 : ( (x>0) ? 1 : -1 )
 #define DELTA( x,  y) ((y>morton_lenght-1 || y < 0) ? -1 : int(sycl::clz(m[x] ^ m[y])))
 
-
+class Kernel_Karras_alg;
 
 void sycl_karras_alg(
     sycl::queue* queue,
@@ -41,7 +41,7 @@ void sycl_karras_alg(
             auto end_range_cell = out_buf_endrange   ->get_access<sycl::access::mode::discard_write>(cgh);
             
 
-            cgh.parallel_for<class Kernel_Karras_alg>(range_radix_tree, [=](cl::sycl::item<1> item) {
+            cgh.parallel_for<Kernel_Karras_alg>(range_radix_tree, [=](cl::sycl::item<1> item) {
 
                 int i = (int) item.get_id(0);
                 

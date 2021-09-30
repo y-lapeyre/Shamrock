@@ -40,8 +40,6 @@ class Bitonic_sort_B8;
 class Bitonic_sort_B4;
 class Bitonic_sort_B2;
 
-
-
 void sort_morton_key_pair(
     sycl::queue* queue,
     u32 morton_count_rounded_pow,

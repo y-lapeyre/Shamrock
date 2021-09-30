@@ -4,6 +4,8 @@
 using namespace morton;
 
 
+class Kernel_xyz_to_morton;
+
 void sycl_xyz_to_morton(
     sycl::queue* queue,
     u32 pos_count,
@@ -24,7 +26,7 @@ void sycl_xyz_to_morton(
             auto xyz = in_positions->get_access<sycl::access::mode::read>(cgh);
             auto m   = out_morton  ->get_access<sycl::access::mode::discard_write>(cgh);
             
-            cgh.parallel_for<class Kernel_xyz_to_morton>(range_cnt, [=](cl::sycl::item<1> item) {
+            cgh.parallel_for<Kernel_xyz_to_morton>(range_cnt, [=](cl::sycl::item<1> item) {
 
                 int i = (int) item.get_id(0);
                 
@@ -45,6 +47,10 @@ void sycl_xyz_to_morton(
 }
 
 
+
+
+class Kernel_fill_trailling_buffer;
+
 void sycl_fill_trailling_buffer(
     sycl::queue* queue,
     u32 morton_count,
@@ -59,7 +65,7 @@ void sycl_fill_trailling_buffer(
         auto m = buf_morton->get_access<sycl::access::mode::write>(cgh);
 
         // Executing kernel
-        cgh.parallel_for<class Kernel_fill_trailling_buffer>(
+        cgh.parallel_for<Kernel_fill_trailling_buffer>(
             range_npart, [=](cl::sycl::item<1> i) {
                 #if defined(PRECISION_MORTON_DOUBLE)
                     m[morton_count + i.get_id()] = 18446744073709551615ul;
