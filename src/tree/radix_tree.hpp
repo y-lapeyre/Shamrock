@@ -5,6 +5,8 @@
 #include "CL/sycl/buffer.hpp"
 #include <vector>
 
+//TODO write class destructor
+
 class Radix_Tree{
 
 
@@ -74,6 +76,8 @@ class Radix_Tree{
 
     bool is_reduction_active = true;
     u16 reduction_level = 0;
+
+    float reduction_factor = 0;
 
     std::vector<u32> reduc_index_map;
     sycl::buffer<   u32  >* buf_reduc_index_map = nullptr;

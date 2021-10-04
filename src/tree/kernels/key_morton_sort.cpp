@@ -1,4 +1,4 @@
-
+#include "key_morton_sort.hpp"
 #include "../../aliases.hpp"
 #include "../../flags.hpp"
 
@@ -40,7 +40,7 @@ class Bitonic_sort_B8;
 class Bitonic_sort_B4;
 class Bitonic_sort_B2;
 
-void sort_morton_key_pair(
+void sycl_sort_morton_key_pair(
     sycl::queue* queue,
     u32 morton_count_rounded_pow,
     sycl::buffer<u32>*      buf_index,

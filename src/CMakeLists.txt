@@ -61,8 +61,13 @@ if (CMAKE_BUILD_TYPE STREQUAL "COVERAGE_MAP")
 endif()
 
 
-
-
+######################
+# Add compilation flags for xray if enabled
+######################
+if("${XRAY_INSTRUMENTATION}")
+    message("-- add llvm-xray instrumentation")
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fxray-instrument")
+endif()
 
 ######################
 # Add compilation utilisation flags

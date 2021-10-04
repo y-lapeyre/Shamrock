@@ -17,6 +17,8 @@ void Radix_Tree::build_tree(
 
     sort_index_map = new sycl::buffer<u32>(morton_code_count_rounded_pow);
 
+    //TODO add buf_morton to class object
+
     sycl_sort_morton_key_pair(queue, morton_code_count_rounded_pow, sort_index_map, buf_morton);
 
     if(!use_reduction){
@@ -39,18 +41,21 @@ void Radix_Tree::build_tree(
             reduc_index_map,
             leaf_cell_count);
 
-        buf_reduc_index_map = new sycl::buffer<u32     >( reduc_index_map );
+        buf_reduc_index_map = new sycl::buffer<u32     >(reduc_index_map);
         buf_leaf_morton     = new sycl::buffer<u_morton>(leaf_cell_count);
 
         sycl_morton_remap_reduction(queue, leaf_cell_count, buf_reduc_index_map, buf_morton, buf_leaf_morton);
 
-        //TODO store reduction factor
+        reduction_factor = float(morton_code_count) / float(leaf_cell_count);
 
     }
 
     internal_cell_count = leaf_cell_count -1;
 
-    //TODO add check leaf cell count ==1
+    if(internal_cell_count == 0){
+        this->mono_cell_mode = true;
+        return;
+    }
 
     buf_rchild_id   = new sycl::buffer<u32>(internal_cell_count);
     buf_lchild_id   = new sycl::buffer<u32>(internal_cell_count);
@@ -67,6 +72,7 @@ void Radix_Tree::build_tree(
         buf_lchild_flag,
         buf_endrange);
 
-    throw_with_pos("need to implement bos dimension buffer computation")
+    //TODO add position buffer computation
+    throw_with_pos("need to implement pos dimension buffer computation")
 
 }

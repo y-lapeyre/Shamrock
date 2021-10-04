@@ -24,6 +24,7 @@ parser.add_argument("--test", action='store_true', help="add test target to buil
 parser.add_argument("--sph", action='store_true', help="add sph target to build configuration")
 parser.add_argument("--amr", action='store_true', help="add amr target to build configuration")
 parser.add_argument("--visu", action='store_true', help="add visualisation target to build configuration")
+parser.add_argument("--xray", action='store_true', help="add xray instrumentation to all targets")
 
 parser.add_argument('--morton',   action='store', type=str, default="single", help='precision for morton codes')
 parser.add_argument('--phyprec',     action='store', type=str, default="single", help='precision mode for physical variables')
@@ -106,6 +107,12 @@ elif args.phyprec == ("double"):
     print(Fore.BLUE + Style.BRIGHT + "Precision mode    : "+ Style.RESET_ALL + "double")
     cmake_cmd += " -DPhysics_precision=double"
 
+
+
+
+
+if args.xray:
+    cmake_cmd += " -DXRAY_INSTRUMENTATION=true"
 
 
 print("\n"+ Fore.BLUE + Style.BRIGHT + "Running : "+ Style.RESET_ALL + cmake_cmd + "\n")

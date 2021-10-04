@@ -5,6 +5,7 @@ if("${BUILD_TEST}")
     PRIVATE
         test_morton.cpp
         test_karras.cpp
+        test_key_pair_sort.cpp
     PUBLIC
         test_tree.hpp 
     )
