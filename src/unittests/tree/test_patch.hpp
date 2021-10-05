@@ -41,4 +41,13 @@ inline void run_tests_patch(){
 
     }unit_test::test_end();
 
+
+
+
+    if(unit_test::test_start("tree/patch.hpp (Sparse collective communication)", true)){
+
+        printf("test patch\n");
+
+    }unit_test::test_end();
+
 }
