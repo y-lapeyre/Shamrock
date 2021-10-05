@@ -2,7 +2,7 @@
 #include "test_tree.hpp"
 
 #include "../unit_test_handler.hpp"
-#include "../../tree/kernels/karras_alg.hpp"
+#include "../../tree/local/kernels/karras_alg.hpp"
 #include "../../sys/sycl_handler.hpp"
 #include <vector>
 

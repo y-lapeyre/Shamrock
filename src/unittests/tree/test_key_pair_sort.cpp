@@ -1,6 +1,6 @@
 #include "test_tree.hpp"
 #include "../unit_test_handler.hpp"
-#include "../../tree/kernels/key_morton_sort.hpp"
+#include "../../tree/local/kernels/key_morton_sort.hpp"
 #include "../../sys/sycl_handler.hpp"
 #include "../../utils/string_utils.hpp"
 #include <algorithm>

@@ -3,7 +3,7 @@
 
 #include "../unit_test_handler.hpp"
 
-#include "../../tree/morton.hpp"
+#include "../../tree/local/morton.hpp"
 
 void run_tests_morton(){
 
