@@ -69,7 +69,7 @@ int main(void){
 
     
     if(world_rank == 0){
-        unit_test::print_test_results();
+        //unit_test::print_test_results();
         unit_test::write_test_results("unit_test_report.json");
     }
         
