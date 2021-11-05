@@ -2,14 +2,14 @@
 #include "../unit_test_handler.hpp"
 #include "../../tree/patch.hpp"
 #include "../../sys/mpi_handler.hpp"
+
+#include "../../com/sparse_mpi.hpp"
+
 #include <cstdio>
 #include <mpi.h>
 #include <vector>
 
-struct PatchData_Packet{
-    u32 rank;
-    std::vector<u8> patchdata;
-};
+
 
 inline void run_tests_patch(){
 
@@ -56,8 +56,7 @@ inline void run_tests_patch(){
 
 
         std::vector<u32> send_loc_cnt;
-
-        std::vector<PatchData_Packet> payload_send_queue;
+        std::vector<MPI_Packet> payload_send_queue;
 
 
         switch (world_rank) {
@@ -96,17 +95,7 @@ inline void run_tests_patch(){
 
 
 
-        u32 recv_loc_cnt = -1;
-
-        printf("n°%d {%d,%d,%d,%d}\n",world_rank,send_loc_cnt[0],send_loc_cnt[1],send_loc_cnt[2],send_loc_cnt[3]);
-
-        mpi_barrier();
-
-        int recv_cnt[] = {1,1,1,1};
-
-        MPI_Reduce_scatter(send_loc_cnt.data(), &recv_loc_cnt, recv_cnt, MPI_UINT32_T, MPI_SUM, MPI_COMM_WORLD);
-
-        printf("n°%d : %d\n",world_rank,recv_loc_cnt);
+        
 
         std::vector<MPI_Request> requests(payload_send_queue.size());
 
@@ -127,7 +116,21 @@ inline void run_tests_patch(){
 
 
 
-        std::vector<PatchData_Packet> payload_recv_table(recv_loc_cnt); 
+
+        u32 recv_loc_cnt = -1;
+
+        printf("n°%d {%d,%d,%d,%d}\n",world_rank,send_loc_cnt[0],send_loc_cnt[1],send_loc_cnt[2],send_loc_cnt[3]);
+
+        mpi_barrier();
+
+        int recv_cnt[] = {1,1,1,1};
+
+        MPI_Reduce_scatter(send_loc_cnt.data(), &recv_loc_cnt, recv_cnt, MPI_UINT32_T, MPI_SUM, MPI_COMM_WORLD);
+
+        printf("n°%d : %d\n",world_rank,recv_loc_cnt);
+
+
+        std::vector<MPI_Packet> payload_recv_table(recv_loc_cnt); 
 
         for(u32 i = 0; i < recv_loc_cnt;i++){
             //printf("MPI probe rank = %d n°%d\n",world_rank,i);

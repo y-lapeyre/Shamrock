@@ -105,6 +105,33 @@ class Patch{
     u64_3 patch_pos_min;
     u64_3 patch_pos_max;
 
-    PatchData* data;
+    u32 patch_level;
+
+    PatchData* data = nullptr;
+
+    u64 patch_id = ERR_ID_64;
+    std::vector<u64>* neight_patch_id = nullptr;
+
+    
+};
+
+
+
+struct Patch_tree_cell{
+    u32 patch_tree_level = 0;
+    u64_3 patch_pos_min;
+    u64_3 patch_pos_max;
+    u64 patch_id = ERR_ID_64;
+    u64 child_id[8] = {ERR_ID_64,ERR_ID_64,ERR_ID_64,ERR_ID_64,ERR_ID_64,ERR_ID_64,ERR_ID_64,ERR_ID_64};
+};
+
+class Patch_Tree{
+    f3_d box_min;
+    f3_d box_max;
+
+    //63 level max in patch tree
+    u64_3 box_size_int = {9223372036854775808u,9223372036854775808u,9223372036854775808u};
+
+    std::vector<Patch_tree_cell> patch_tree_cell_list;
 
 };
