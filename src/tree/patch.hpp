@@ -99,7 +99,7 @@ class PatchData{
 
 
 
-
+/*
 class Patch{
 
     u64_3 patch_pos_min;
@@ -135,3 +135,4 @@ class Patch_Tree{
     std::vector<Patch_tree_cell> patch_tree_cell_list;
 
 };
+*/
