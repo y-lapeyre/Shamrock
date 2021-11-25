@@ -9,9 +9,81 @@
 #include <mpi.h>
 #include <vector>
 
+#include "../../scheduler/scheduler.hpp"
 
+inline Patch create_test_patch_data(u32 i){
+    Patch loc_patch;
+    loc_patch.id_patch = i*1000 + i*i;
+    loc_patch.id_parent = 1;
+    loc_patch.id_child_r = 222;
+    loc_patch.id_child_l = 111;
+    loc_patch.x_min = 0.f;
+    loc_patch.y_min = 0.f;
+    loc_patch.z_min = 0.f;
+    loc_patch.x_max = 0.f;
+    loc_patch.y_max = 0.f;
+    loc_patch.z_max = 0.f;
+    loc_patch.data_count = 7+i*77;
+    loc_patch.should_merge_child = (3*i)%1 == 0;
+    loc_patch.should_split = (1+2*i)%1 == 0;
+
+    return loc_patch;
+}
 
 inline void run_tests_patch(){
+
+
+    if(unit_test::test_start("tree/mpi_scheduler.hpp::get_patch_count_from_local()", true)){
+
+        patch_table_local.resize(world_rank % 3 + 1);
+        
+        unit_test::test_assert("corect return", get_patch_count_from_local() == 
+            3*u64((world_size)/3) + 2*u64((world_size+1)/3) + u64((world_size+2)/3));
+
+    }unit_test::test_end();
+
+    //TODO write better test
+    if(unit_test::test_start("tree/mpi_scheduler.hpp::rebuild_global_patch_table_from_local()", true)){
+
+        Patch loc_patch = create_test_patch_data(world_rank);
+        
+        patch_table_local.resize(1);
+        patch_table_local[0] = loc_patch;
+
+        // if(world_rank == 0){
+        //     patch_table_local.push_back(create_test_patch_data(100));
+        // }
+
+        // if(world_rank == 1){
+        //     patch_table_local.push_back(create_test_patch_data(10000));
+        // }
+
+        //patch_table.resize(world_size+2);
+        patch_table.resize(world_size);
+
+        printf("creating patch type\n");
+        create_MPI_patch_type();
+
+        printf("exchange patchs\n");
+        rebuild_global_patch_table_from_local();
+
+        printf("free patch type\n");
+        free_MPI_patch_type();
+
+        for(u32 i = 0 ; i < patch_table.size(); i++){
+            bool is_patch_corect = patch_table[i] == create_test_patch_data(i);
+            unit_test::test_assert("ALL GATHER corect behavior", is_patch_corect);
+
+            //printf("is patch corect: %d\n",is_patch_corect);
+
+            printf("patch[%d].id = %zu\n" ,i, patch_table[i].id_patch);
+        }
+
+        patch_table.clear();
+        patch_table_local.clear();
+
+    }unit_test::test_end();
+
 
     if(unit_test::test_start("tree/patch.hpp (Patch data (se/dese)rialization)", false)){
 

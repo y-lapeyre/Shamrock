@@ -30,6 +30,8 @@ void mpi_init(){
     MPI_Init(NULL, NULL);
     MPI_Comm_size(MPI_COMM_WORLD, &world_size);
     MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
+
+    mpi_working = true;
     
     
     // unsigned int thread_cnt = 0;
@@ -62,6 +64,8 @@ void mpi_close(){
     
     global_logger->log("------------ MPI_Finalize ------------\n");
     MPI_Finalize();   
+
+    mpi_working = false;
 
     global_logger->log("deleting logger\n");
     

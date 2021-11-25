@@ -15,6 +15,7 @@
 #include "../io/logger.hpp"
 #include "../utils/string_utils.hpp"
 
+inline bool mpi_working = false;
 inline int world_rank, world_size;
 inline Logger* global_logger;
 

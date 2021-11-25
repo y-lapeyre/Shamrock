@@ -23,6 +23,8 @@ namespace unit_test{
         current_test_name = test_name;
         is_current_test_mpi = is_mpi;
 
+        printf("--- running test : %s\n",test_name.c_str());
+
         if(! is_mpi){
             return world_rank == 0;
         }else{
