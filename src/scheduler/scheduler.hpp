@@ -4,33 +4,16 @@
 
 #include "../sys/mpi_handler.hpp"
 
-namespace scheduler {
-    /**
-     * @brief is set to true if the scheduler should work with multiple nodes
-     */
-    inline bool mpi_mode = false;
 
-    /**
-     * @brief is set to true only if the scheduler is running
-     */
-    inline bool initialized = false;
 
-    inline void init(){
 
-        mpi_mode = false;
 
-        if(mpi_working && world_size > 1){
-            mpi_mode = true;
-        }
 
-        initialized = true;
-    }
 
-    inline void finalize(){
-        mpi_mode = false;
-        initialized = false;
-    }
-}
+
+
+
+
 
 
 
@@ -120,3 +103,105 @@ inline void rebuild_global_patch_table_from_local(){
 
     
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+namespace scheduler {
+    /**
+     * @brief is set to true if the scheduler should work with multiple nodes
+     */
+    inline bool mpi_mode = false;
+
+    /**
+     * @brief is set to true only if the scheduler is running
+     */
+    inline bool initialized = false;
+
+    /**
+     * @brief init the mpi scheduler 
+     * 
+     */
+    inline void init(){
+
+        mpi_mode = false;
+
+        if(mpi_working && world_size > 1){
+            mpi_mode = true;
+        }
+
+        initialized = true;
+    }
+
+    inline void finalize(){
+        mpi_mode = false;
+        initialized = false;
+    }
+
+    bool should_query_total_patch_count = true;
+    inline void sync_patch_tree(){
+        if(mpi_mode){
+            printf("-- syncing patch tree : mpi = true\n");
+
+            if(should_query_total_patch_count){
+                patch_table.resize(get_patch_count_from_local());
+            }
+
+            rebuild_global_patch_table_from_local();
+
+        }else{
+            printf("-- syncing patch tree : mpi = false\n");
+
+            printf("     |-> no sync");
+            
+        }
+    }
+
+}
+
+
+
+
+
+
+
+
