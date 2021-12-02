@@ -91,6 +91,7 @@ if("${Physics_precision}" STREQUAL "double")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DPRECISION_FULL_DOUBLE")
 endif()
 
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -lmpi_cxx")
 
 
 ######################
@@ -149,3 +150,4 @@ endif()
 add_subdirectory(sys)
 add_subdirectory(tree)
 add_subdirectory(unittests)
+add_subdirectory(scheduler)
