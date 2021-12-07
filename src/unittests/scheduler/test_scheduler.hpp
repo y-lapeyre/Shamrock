@@ -6,9 +6,12 @@
 
 #include <cstdio>
 #include <mpi.h>
+#include <valarray>
 #include <vector>
 
 #include "../../scheduler/scheduler.hpp"
+
+#include <random>
 
 inline Patch create_test_patch_data(u32 i){
     Patch loc_patch;
@@ -34,7 +37,7 @@ inline Patch create_test_patch_data(u32 i){
     return loc_patch;
 }
 
-inline void run_tests_patch(){
+inline void run_tests_scheduler(){
 
 
     if(unit_test::test_start("tree/mpi_scheduler.hpp::get_patch_count_from_local()", true)){
@@ -88,7 +91,6 @@ inline void run_tests_patch(){
 
     }unit_test::test_end();
 
-
     if(unit_test::test_start("tree/patch.hpp (Patch data (se/dese)rialization)", false)){
 
         PatchData data_clean;
@@ -124,9 +126,6 @@ inline void run_tests_patch(){
         
 
     }unit_test::test_end();
-
-
-
 
     if(unit_test::test_start("tree/patch.hpp (Sparse collective communication)", true)){
 
@@ -249,4 +248,99 @@ inline void run_tests_patch(){
 
     }unit_test::test_end();
 
+
+
+    if(unit_test::test_start("tree/mpi_scheduler.hpp::balance_patch_load()", false)){
+
+        u32 world_size_test = 5;
+
+        std::vector<Patch> ptch_tbl;
+
+        std::mt19937 rng(10000);
+        std::uniform_int_distribution<int> uni(0,world_size_test-1);
+        std::uniform_int_distribution<int> uni_dt_cnt(0,1e7);
+
+        for(u32 i = 0 ; i < 10; i ++){
+            Patch p = create_test_patch_data(uni(rng));
+            p.data_count = uni_dt_cnt(rng);
+            ptch_tbl.push_back(p);
+        }
+
+        for(Patch c : ptch_tbl){
+            printf(" -> (%d, %u)\n",c.node_owner_id,c.data_count);
+        }
+
+        std::vector<Patch>* patch_distrib = new std::vector<Patch>[world_size_test];
+        u64* node_load = new u64[world_size_test];
+
+        for(u32 node_id = 0 ; node_id < world_size_test; node_id ++){
+            node_load[node_id] = 0;
+        }
+
+        for(Patch c : ptch_tbl){
+            node_load[c.node_owner_id] += c.data_count;
+            patch_distrib[c.node_owner_id].push_back(c);
+        }
+
+        for(u32 it = 0 ; it < 10; it ++){
+
+            u64 least_loadded_node_dtcnt = -1;
+            u32 least_loadded_node_id = -1;
+
+            u64 most_loadded_node_dtcnt = 0 ;
+            u32 most_loadded_node_id = -1;
+
+            for(u32 node_id = 0 ; node_id < world_size_test; node_id ++){
+                if(node_load[node_id] < least_loadded_node_dtcnt){
+                    least_loadded_node_id = node_id;
+                    least_loadded_node_dtcnt = node_load[node_id];
+                }
+
+                if(node_load[node_id] > most_loadded_node_dtcnt){
+                    most_loadded_node_id = node_id;
+                    most_loadded_node_dtcnt = node_load[node_id];
+                }
+            }
+            
+            printf("least loaded : %d ,dtcnt = %zu\n",least_loadded_node_id,least_loadded_node_dtcnt);
+            printf("most  loaded : %d ,dtcnt = %zu\n",most_loadded_node_id,most_loadded_node_dtcnt);
+
+            u64 delta_dtcnt = most_loadded_node_dtcnt - least_loadded_node_dtcnt;
+
+            printf("delta dtcnt = %zu\n",delta_dtcnt);
+
+            printf("cnt = %zu\n",patch_distrib[most_loadded_node_id].size());
+
+            u64 id_patch_to_move = -1;
+            u64 dt_cnt_delta_min = -1;
+            for(u32 patch_in_node_id = 0 ; patch_in_node_id < patch_distrib[most_loadded_node_id].size(); patch_in_node_id ++){
+                i64 delta_choice_ = std::labs(i64(patch_distrib[most_loadded_node_id][patch_in_node_id].data_count) - i64(delta_dtcnt));
+                if(delta_choice_ < dt_cnt_delta_min){
+                    id_patch_to_move = patch_in_node_id;
+                    dt_cnt_delta_min = delta_choice_;
+                }
+
+                printf(" -> (%d, %ld)\n",patch_in_node_id,delta_choice_);
+            }
+
+            printf("brest move loaded : %d ,dtcnt = %zu\n",id_patch_to_move,dt_cnt_delta_min);
+
+            //do move
+
+            Patch to_move = patch_distrib[most_loadded_node_id][id_patch_to_move];
+            patch_distrib[most_loadded_node_id].erase(patch_distrib[most_loadded_node_id].begin()+id_patch_to_move);
+
+            node_load[most_loadded_node_id] -= to_move.data_count;
+
+            patch_distrib[least_loadded_node_id].push_back(to_move);
+            node_load[least_loadded_node_id] += to_move.data_count;
+
+        }
+        
+
+
+
+        // scheduler::balance_patch_load(std::vector<Patch> &patch_table, u32 world_size)
+
+    }unit_test::test_end();
 }

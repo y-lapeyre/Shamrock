@@ -3,42 +3,6 @@
 
 
 
-void scheduler::sync_patch_tree(){
-    if(mpi_mode){
-        printf("-- syncing patch tree : mpi = true\n");
-
-        if(should_query_total_patch_count){
-            patch_table.resize(get_patch_count_from_local());
-        }
-
-        rebuild_global_patch_table_from_local();
-
-    }else{
-        printf("-- syncing patch tree : mpi = false\n");
-
-        printf("     |-> no sync");
-        
-    }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 u32 scheduler::get_patch_count_from_local(){
 
@@ -110,10 +74,7 @@ void scheduler::rebuild_global_patch_table_from_local(){
     
 }
 
-/**
- * @brief 
- * 
- */
+
 void scheduler::rebuild_local_patch_table_from_global(){
     patch_table_local.clear();
     for(Patch p : patch_table){
@@ -123,6 +84,15 @@ void scheduler::rebuild_local_patch_table_from_global(){
     }
 }
 
+
+
+
+
+
+
+
+
+
 void scheduler::select_owned_patches(){
     if(mpi_mode){
         printf("-- selecting owned patch : mpi = true\n");
@@ -131,6 +101,25 @@ void scheduler::select_owned_patches(){
 
     }else{
         printf("-- selecting owned patch : mpi = false\n");
+
+        printf("     |-> no sync");
+        
+    }
+}
+
+
+void scheduler::sync_patch_tree(){
+    if(mpi_mode){
+        printf("-- syncing patch tree : mpi = true\n");
+
+        if(should_query_total_patch_count){
+            patch_table.resize(get_patch_count_from_local());
+        }
+
+        rebuild_global_patch_table_from_local();
+
+    }else{
+        printf("-- syncing patch tree : mpi = false\n");
 
         printf("     |-> no sync");
         

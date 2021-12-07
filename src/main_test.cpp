@@ -75,52 +75,6 @@ int main(void){
         
     
 
-    /*
-
-
-    
-
-
-    add_tests_global();
-
-    
-
-
-
-    add_test("test all fail",false, []{
-
-        UTest_NOMPI_assert("test1", false);
-        UTest_NOMPI_assert("test2", false);
-
-    });
-
-    add_test("test partial succes",false, []{
-
-        UTest_NOMPI_assert("test1", true);
-        UTest_NOMPI_assert("test2", false);
-
-    });
-
-    add_test("test full succes",false, []{
-
-        UTest_NOMPI_assert("test1", true);
-        UTest_NOMPI_assert("test2", true);
-
-    });
-
-    add_test("test1",true, []{
-
-        UTest_MPI_assert("test true", true);
-        UTest_MPI_assert("test2 true", false);
-
-    });
-
-
-    run_tests();
-
-    print_test_suite_report();
-
-    */
 
     mpi_close();
 

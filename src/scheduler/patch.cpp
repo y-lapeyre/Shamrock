@@ -1,4 +1,5 @@
 #include "patch.hpp"
+#include <mpi.h>
 
 
 
@@ -15,7 +16,6 @@ void create_MPI_patch_type(){
     patch_MPI_offset[0] = offsetof(Patch, id_patch); 
     patch_MPI_offset[1] = offsetof(Patch, data_count);
     patch_MPI_offset[2] = offsetof(Patch, flags);
-    
 
     MPI_Type_create_struct( 3, patch_MPI_block_lens, patch_MPI_offset, patch_MPI_types_list, &patch_MPI_type );
     MPI_Type_commit( &patch_MPI_type );

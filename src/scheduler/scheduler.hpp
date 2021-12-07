@@ -54,7 +54,7 @@ namespace scheduler {
     inline std::map<u64, PatchData> owned_patch_data;
 
 
-
+    
 
 
 
@@ -104,6 +104,13 @@ namespace scheduler {
     void rebuild_global_patch_table_from_local();
 
     void rebuild_local_patch_table_from_global();
+
+
+
+
+    inline void balance_patch_load(std::vector<Patch>& patch_table, u32 world_size){
+        
+    }
 
 }
 
