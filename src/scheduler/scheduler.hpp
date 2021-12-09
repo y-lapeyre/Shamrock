@@ -4,6 +4,7 @@
 
 #include "../sys/mpi_handler.hpp"
 #include <map>
+#include <vector>
 
 #include "patchdata.hpp"
 
@@ -106,10 +107,49 @@ namespace scheduler {
     void rebuild_local_patch_table_from_global();
 
 
+    inline void sort_patch_list(std::vector<Patch>& patch_table,std::vector<u64>& keys){
 
+        u32 lenght_table = patch_table.size();
+
+        u32 i = 1;
+        while(i < lenght_table){
+            u32 j = i;
+            while(j > 0 and keys[j-1] > keys[j]){
+                std::swap(keys[j]       ,keys[j-1]);
+                std::swap(patch_table[j],patch_table[j-1]);
+                j = j - 1;
+            }
+            i ++;
+        }
+
+    }
 
     inline void balance_patch_load(std::vector<Patch>& patch_table, u32 world_size){
         
+        u64 dt_count_sum = 0;
+
+        for(Patch p : patch_table){
+            dt_count_sum += p.data_count;
+        }
+
+        //TODO [potential issue] here must check that the conversion to double doesn't mess up the target dt_cnt or find another way
+        double target_datacnt = double(dt_count_sum)/world_size;
+
+        u64 current_dtcnt = 0;
+        u64 current_node  = 0;
+
+        for(u32 i = 0; i < patch_table.size(); i++){
+            
+            //TODO [to add] register list of operation done somehow maybe list of old node_owner_id
+            patch_table[i].node_owner_id = current_node;
+
+            current_dtcnt += patch_table[i].data_count;
+
+            if(current_dtcnt > (current_node+1)*target_datacnt){
+                current_node += 1;
+            }
+
+        }
     }
 
 }
