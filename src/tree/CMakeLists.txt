@@ -1,13 +1,13 @@
 
-if("${BUILD_TEST}")
+# if("${BUILD_TEST}")
 
-    target_sources(shamrock_test
-        PRIVATE
-        PUBLIC
-            patch.hpp
-    )
+#     target_sources(shamrock_test
+#         PRIVATE
+#         PUBLIC
+#             patch.hpp
+#     )
 
 
-endif()
+# endif()
 
 add_subdirectory(local)

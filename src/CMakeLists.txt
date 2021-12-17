@@ -151,3 +151,15 @@ add_subdirectory(sys)
 add_subdirectory(tree)
 add_subdirectory(unittests)
 add_subdirectory(scheduler)
+
+
+
+
+if("${BUILD_TEST}")
+
+    message(">>> adding test target <<<")
+
+    add_executable(shamrock_test2 main_test2.cpp)
+
+    target_link_libraries(shamrock_test PUBLIC MPI::MPI_C)
+endif()
