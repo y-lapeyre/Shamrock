@@ -52,3 +52,6 @@ TYPEDEFS_TYPES(8)
 TYPEDEFS_TYPES(16)
 
 #define ERR_ID_64 18446744073709551615u
+
+
+extern std::string git_info_str;

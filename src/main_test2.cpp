@@ -1,3 +1,4 @@
+#include "aliases.hpp"
 #include <cstdio>
 #include <map>
 #include <ostream>
@@ -71,13 +72,11 @@ std::string ptr_to_str(void* ptr){
 
 std::map<std::string,std::string> ptr_allocated;
 
-void* log_new(void* ptr, std::string log){
+void log_new(void* ptr, std::string log){
     std::string ptr_loc = ptr_to_str(ptr);
     std::cout << "new : " << ptr_loc << " (" << log << ")\n";
 
     ptr_allocated[ptr_loc] = log;
-
-    return ptr;
 }
 
 void log_delete(void* ptr){
@@ -216,8 +215,8 @@ Test_start(multiple_asserts,0){
 
 Test_start(test_overload_new,0){
 
-    int* a = (int*)log_new(new int(0), log_alloc_ln);
-    
+    int* a = new int(0);
+    //log_new(a, log_alloc_ln);
 
 
     *a = 1;
@@ -227,10 +226,13 @@ Test_start(test_overload_new,0){
 
 
     delete a;
-    log_delete(a);
+    //log_delete(a);
 
 }
 
 int main(void){
+
+    printf("%s\n",git_info_str.c_str());
+
     return run_all_tests();
 }
