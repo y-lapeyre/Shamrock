@@ -1,5 +1,8 @@
 import subprocess
 import os 
+import re
+from pathlib import Path
+
 from enum import Enum
 
 
@@ -256,3 +259,78 @@ def configure_dpcpp(src_dir, build_dir,llvm_root,build_sys,sycl_BE,target_lst,mo
     #    cmake_cmd += " -DXRAY_INSTRUMENTATION=true"
 
     run_cmd(cmake_cmd)
+
+
+
+
+
+
+
+
+# regex to fin all new 
+# /\s+([^ ]+)\s*(=\s*new [^;]+;)/g
+# replace by 
+#  $1 $2 \n      log_new($1,log_alloc_ln);\n
+
+#regex to find all delete []
+# /delete\s*\[\]\s*([^ ]+)\s*;/g
+# replace by 
+# delete [] $1; log_delete($1);
+
+#regex to find all delete
+# /delete\s*([^ ]+)\s*;/g
+# replace by 
+# delete $1; log_delete($1);
+
+
+
+def patch_file(file,header_loc):
+    
+    incl_loc_head = str(os.path.relpath(header_loc,Path(file).parent))
+    str_incl = "#include \""+incl_loc_head+"\"\n\n"
+    
+    lines_in = ""
+    with open(file, "r") as f_in:
+            lines_in = f_in.read()
+
+            
+
+    #lines_in = re.sub(r"//[^\n]+",r"", lines_in)
+    #lines_in = re.sub(r"\A(?s).*?\*\/(?-s)",r"", lines_in) 
+
+    lines_in = re.sub(r"delete\s*([^ ]+)\s*;", "{log_delete(\g<1>,log_alloc_ln);delete \g<1>;}", lines_in)
+
+    lines_in = re.sub(r"delete\s*\[\]\s*([^ ]+)\s*;", "{log_delete(\g<1>,log_alloc_ln);delete[] \g<1>;}", lines_in)
+    
+    lines_in = re.sub(r"=\s*new\s+([^\[(]+)(.*?);", r"= (\g<1> *) log_new(new \g<1>\g<2>,log_alloc_ln);", lines_in)
+
+
+    if "#pragma once" in lines_in:
+        dtt = lines_in.split("#pragma once")
+        lines_in = dtt[0] + "\n" + "#pragma once\n" + str_incl + dtt[1]
+    else:
+        lines_in = str_incl + lines_in
+
+
+
+    with open(file, "w") as f_out:
+            f_out.write(lines_in)
+            
+
+def gen_mem_patched_dir(abs_src_dir,abs_patchedsrc_dir):
+    run_cmd("rm -r " + abs_patchedsrc_dir)
+    run_cmd("mkdir " + abs_patchedsrc_dir)
+    run_cmd("cp -r "+abs_src_dir+"/* "+abs_patchedsrc_dir)
+
+    for path in Path(abs_patchedsrc_dir).rglob('*.cpp'):
+        abs_path_in = str(path.absolute())
+        print("patching : " + os.path.relpath( abs_path_in))
+        patch_file(abs_path_in,abs_patchedsrc_dir+"/mem_track.hpp")
+
+    for path in Path(abs_patchedsrc_dir).rglob('*.hpp'):
+
+        if not (str(path.name) == "mem_track.hpp"):
+
+            abs_path_in = str(path.absolute())
+            print("patching : " + os.path.relpath( abs_path_in))
+            patch_file(abs_path_in,abs_patchedsrc_dir+"/mem_track.hpp")

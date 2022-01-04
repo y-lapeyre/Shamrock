@@ -8,22 +8,15 @@ parser = argparse.ArgumentParser(description='Configure utility for the code')
 
 parser.add_argument("--ninja", action='store_true', help="use NINJA build system instead of Make")
 parser.add_argument("--cuda", action='store_true', help="use CUDA instead of OPENCL")
-
 parser.add_argument("--test", action='store_true', help="add test target to build configuration")
 parser.add_argument("--sph", action='store_true', help="add sph target to build configuration")
 parser.add_argument("--amr", action='store_true', help="add amr target to build configuration")
 parser.add_argument("--visu", action='store_true', help="add visualisation target to build configuration")
 #parser.add_argument("--xray", action='store_true', help="add xray instrumentation to all targets")
-
 parser.add_argument('--morton',   action='store', type=str, default="single", help='precision for morton codes')
 parser.add_argument('--phyprec',     action='store', type=str, default="single", help='precision mode for physical variables')
-
-
-parser.add_argument("llvm_root",help="llvm location", type=str)
-
-
 parser.add_argument('--interactive',     action='store_true', help='enables interactive configuration')
-
+parser.add_argument("llvm_root",help="llvm location", type=str)
 
 args = parser.parse_args()
 
@@ -54,7 +47,6 @@ if args.interactive:
 
         args.morton  = input("    which precision do you want for morton codes (single/double)") 
         args.phyprec  = input("    which precision do you want for physics computations (single/mixed/double)") 
-
 
         print("\033[1;34mOptions summary \033[0;0m: ")
 

@@ -1,3 +1,5 @@
+#include "mem_track.hpp"
+
 #include "aliases.hpp"
 #include <cstdio>
 #include <map>
@@ -61,38 +63,6 @@ void test_func_##name (TestResults& __test_result_ref)
 
 
 
-
-
-
-std::string ptr_to_str(void* ptr){
-    std::stringstream strm;
-    strm << ptr;
-    return strm.str(); 
-}
-
-std::map<std::string,std::string> ptr_allocated;
-
-void log_new(void* ptr, std::string log){
-    std::string ptr_loc = ptr_to_str(ptr);
-    std::cout << "new : " << ptr_loc << " (" << log << ")\n";
-
-    ptr_allocated[ptr_loc] = log;
-}
-
-void log_delete(void* ptr){
-    std::string ptr_loc = ptr_to_str(ptr);
-    std::string log = ptr_allocated[ptr_loc];
-    std::cout << "delete : " << ptr_loc << " (" << log << ")\n";
-
-    ptr_allocated.erase(ptr_loc);
-
-}
-
-void print_state_alloc(){
-    std::cout << "---- allocated ----\n";
-    for(auto obj: ptr_allocated) std::cout << "->" << obj.first << "("<< obj.second << ")\n";
-    std::cout << "---- --------- ----\n";
-}
 
 int run_all_tests(){
 
@@ -210,13 +180,10 @@ Test_start(multiple_asserts,0){
 }
 
 
-#define __FILENAME__ std::string(strstr(__FILE__, "/src/") ? strstr(__FILE__, "/src/")+1  : __FILE__)
-#define log_alloc_ln " ("+ __FILENAME__ +":" + std::to_string(__LINE__) +")"
 
 Test_start(test_overload_new,0){
 
-    int* a = new int(0);
-    //log_new(a, log_alloc_ln);
+    int* a =  (int*) log_new(new int(0), log_alloc_ln);
 
 
     *a = 1;
