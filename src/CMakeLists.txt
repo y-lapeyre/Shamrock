@@ -148,12 +148,12 @@ if("${BUILD_TEST}")
 
     message(">>> adding test target <<<")
 
-    add_executable(shamrock_test main_test.cpp version.cpp)
-
+    #add_executable(shamrock_test main_test.cpp version.cpp)
+    add_executable(shamrock_test main_test2.cpp  version.cpp)
     target_link_libraries(shamrock_test PUBLIC MPI::MPI_C)
 
-    find_package(nlohmann_json 3.2.0 REQUIRED)
-    target_link_libraries(shamrock_test PUBLIC nlohmann_json::nlohmann_json)
+    #find_package(nlohmann_json 3.2.0 REQUIRED)
+    #target_link_libraries(shamrock_test PUBLIC nlohmann_json::nlohmann_json)
 
 endif()
 
@@ -161,15 +161,3 @@ add_subdirectory(sys)
 add_subdirectory(tree)
 add_subdirectory(unittests)
 add_subdirectory(scheduler)
-
-
-
-
-if("${BUILD_TEST}")
-
-    message(">>> adding test target <<<")
-
-    add_executable(shamrock_test2 main_test2.cpp  version.cpp)
-
-    target_link_libraries(shamrock_test PUBLIC MPI::MPI_C)
-endif()

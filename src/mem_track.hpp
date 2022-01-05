@@ -9,9 +9,11 @@
 
 #include <cstring>
 
+#define MEM_TRACK_ENABLED
 
-#define __FILENAME2__ std::string(strstr(__FILE__, "/src/") ? strstr(__FILE__, "/src/")+1  : __FILE__)
-#define log_alloc_ln " ("+ __FILENAME2__ +":" + std::to_string(__LINE__) +")"
+
+//#define __FILENAME2__ std::string(strstr(__FILE__, "/shamrock/") ? strstr(__FILE__, "/shamrock/")+1  : __FILE__)
+//#define log_alloc_ln " ("+ __FILENAME2__ +":" + std::to_string(__LINE__) +")"
 
 
 inline std::string ptr_to_str(void* ptr){

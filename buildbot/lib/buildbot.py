@@ -305,6 +305,26 @@ def patch_file(file,header_loc):
     lines_in = re.sub(r"=\s*new\s+([^\[(]+)(.*?);", r"= (\g<1> *) log_new(new \g<1>\g<2>,log_alloc_ln);", lines_in)
 
 
+    splt_lnin = lines_in.split("\n")
+
+
+
+    rel_file_loc = os.path.relpath(file,Path(header_loc).parent)
+
+
+    splt_lnin2 = []
+
+    line_cnt = 1
+    for a in splt_lnin:
+        splt_lnin2.append( a.replace("log_alloc_ln",'"'+rel_file_loc+":"+str(line_cnt)+'"') )
+        line_cnt+=1
+
+    lines_in = ""
+    for a in splt_lnin2:
+        lines_in += a + "\n"
+
+
+
     if "#pragma once" in lines_in:
         dtt = lines_in.split("#pragma once")
         lines_in = dtt[0] + "\n" + "#pragma once\n" + str_incl + dtt[1]
@@ -322,15 +342,15 @@ def gen_mem_patched_dir(abs_src_dir,abs_patchedsrc_dir):
     run_cmd("mkdir " + abs_patchedsrc_dir)
     run_cmd("cp -r "+abs_src_dir+"/* "+abs_patchedsrc_dir)
 
-    for path in Path(abs_patchedsrc_dir).rglob('*.cpp'):
-        abs_path_in = str(path.absolute())
-        print("patching : " + os.path.relpath( abs_path_in))
-        patch_file(abs_path_in,abs_patchedsrc_dir+"/mem_track.hpp")
+    lst = [path for path in Path(abs_patchedsrc_dir).rglob('*.cpp')] + [path for path in Path(abs_patchedsrc_dir).rglob('*.hpp')] 
 
-    for path in Path(abs_patchedsrc_dir).rglob('*.hpp'):
+    for path in lst:
 
         if not (str(path.name) == "mem_track.hpp"):
 
             abs_path_in = str(path.absolute())
-            print("patching : " + os.path.relpath( abs_path_in))
+
+            obj = os.stat(abs_path_in)
+
+            print("patching : " + os.path.relpath( abs_path_in) )#+ "modified time: {}".format(obj.st_mtime))
             patch_file(abs_path_in,abs_patchedsrc_dir+"/mem_track.hpp")
