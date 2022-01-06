@@ -1,11 +1,11 @@
 
-#include "test_tree.hpp"
+//#include "test_tree.hpp"
 
-#include "../unit_test_handler.hpp"
+
 #include "../../tree/local/kernels/karras_alg.hpp"
 #include "../../sys/sycl_handler.hpp"
 #include <vector>
-
+/*
 void run_tests_karras_alg(){
 
     //for(u32 i = 0 ; i < )
@@ -130,3 +130,4 @@ void run_tests_karras_alg(){
     }unit_test::test_end();
 
 }
+*/

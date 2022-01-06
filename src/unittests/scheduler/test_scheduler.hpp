@@ -13,6 +13,7 @@
 
 #include <random>
 
+
 inline Patch create_test_patch_data(u32 i){
     Patch loc_patch;
     loc_patch.id_patch = i*1000 + i*i;
@@ -36,6 +37,10 @@ inline Patch create_test_patch_data(u32 i){
 
     return loc_patch;
 }
+
+
+
+
 
 inline void run_tests_scheduler(){
 

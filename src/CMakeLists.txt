@@ -149,7 +149,7 @@ if("${BUILD_TEST}")
     message(">>> adding test target <<<")
 
     #add_executable(shamrock_test main_test.cpp version.cpp)
-    add_executable(shamrock_test main_test2.cpp  version.cpp)
+    add_executable(shamrock_test main_test.cpp  version.cpp)
     target_link_libraries(shamrock_test PUBLIC MPI::MPI_C)
 
     #find_package(nlohmann_json 3.2.0 REQUIRED)

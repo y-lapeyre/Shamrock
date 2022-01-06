@@ -4,11 +4,10 @@ if("${BUILD_TEST}")
 
     target_sources(shamrock_test
     PRIVATE
-        unittests.cpp 
-        unit_test_handler.cpp
+        shamrocktest.cpp
+        test_random.cpp
     PUBLIC
-        unittests.hpp 
-        unit_test_handler.hpp
+        shamrocktest.hpp 
     )
 
 

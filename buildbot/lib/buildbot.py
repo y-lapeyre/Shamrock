@@ -354,3 +354,56 @@ def gen_mem_patched_dir(abs_src_dir,abs_patchedsrc_dir):
 
             print("patching : " + os.path.relpath( abs_path_in) )#+ "modified time: {}".format(obj.st_mtime))
             patch_file(abs_path_in,abs_patchedsrc_dir+"/mem_track.hpp")
+
+
+
+
+
+def run_test(node_cnt, run_only = ""):
+
+    args = " --run-only " + run_only
+
+    if run_only == "":
+        args = ""
+
+    args += " -o " + "test_res_" + str(node_cnt)
+
+    compile_prog("../build")
+
+    if node_cnt == 1:
+        run_cmd("../build/shamrock_test" + args)
+    else:
+
+        str_node = ""
+        for i in range(node_cnt-1):
+            str_node += str(i) + ","
+        str_node += str(node_cnt-1)
+
+        run_cmd("mpirun -n "+str(node_cnt)+" -xterm "+str_node+"! ../build/shamrock_test" + args)
+
+def run_test_mempatch(node_cnt, run_only = ""):
+
+    args = " --run-only " + run_only
+
+    if run_only == "":
+        args = ""
+
+    args += " -o " + "test_res_" + str(node_cnt)
+
+
+    gen_mem_patched_dir("../src","../src_patched")
+
+    configure_dpcpp("../src_patched", "../build_patched","../../llvm",BuildSystem.Ninja,SyCLBE.CUDA,[Targets.Test],PrecisionMode.Single,PrecisionMode.Single)
+
+    compile_prog("../build_patched")
+
+    if node_cnt == 1:
+        run_cmd("../build_patched/shamrock_test" + args)
+    else:
+
+        str_node = ""
+        for i in range(node_cnt-1):
+            str_node += str(i) + ","
+        str_node += str(node_cnt-1)
+
+        run_cmd("mpirun -n "+str(node_cnt)+" -xterm "+str_node+"! ../build_patched/shamrock_test" + args)
