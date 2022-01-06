@@ -1,5 +1,5 @@
 from lib.buildbot import * 
-
+import json
 
 import argparse
 
@@ -31,6 +31,8 @@ configure_dpcpp(abs_test_pipeline_dir_src, abs_test_pipeline_dir + "/build_ds",a
 configure_dpcpp(abs_test_pipeline_dir_src, abs_test_pipeline_dir + "/build_dm",abs_llvm_dir,BuildSystem.Ninja,SyCLBE.CUDA,[Targets.Test],PrecisionMode.Double,PrecisionMode.Mixed)
 configure_dpcpp(abs_test_pipeline_dir_src, abs_test_pipeline_dir + "/build_dd",abs_llvm_dir,BuildSystem.Ninja,SyCLBE.CUDA,[Targets.Test],PrecisionMode.Double,PrecisionMode.Double)
 
+node_cnt = [1,2,3,4,8,16,32]
+
 conf_dir_lst = [
     abs_test_pipeline_dir + "/build_ss",
     abs_test_pipeline_dir + "/build_sm",
@@ -38,6 +40,15 @@ conf_dir_lst = [
     abs_test_pipeline_dir + "/build_ds",
     abs_test_pipeline_dir + "/build_dm",
     abs_test_pipeline_dir + "/build_dd",
+]
+
+conf_dir_desc = [
+    "Morton = single Physical precision = single",
+    "Morton = single Physical precision = mixed",
+    "Morton = single Physical precision = double",
+    "Morton = double Physical precision = single",
+    "Morton = double Physical precision = mixed",
+    "Morton = double Physical precision = double"
 ]
 
 for dir_ in conf_dir_lst:
@@ -49,8 +60,28 @@ for dir_ in conf_dir_lst:
 
     os.chdir(dir_)
 
-    run_cmd("./shamrock_test -o test_res_1")
-    run_cmd("mpirun -n 2 ./shamrock_test -o test_res_2")
-    run_cmd("mpirun -n 3 ./shamrock_test -o test_res_3")
-    run_cmd("mpirun -n 4 ./shamrock_test -o test_res_4")
+    for cnt in node_cnt:
+        run_cmd("mpirun --oversubscribe -n "+str(cnt)+" ./shamrock_test -o test_res_"+str(cnt)+".sutest")
 
+
+
+dic_test_res_load = {}
+
+for (dir_,desc) in zip(conf_dir_lst,conf_dir_desc):
+
+    conf_dic = {}
+
+    for cnt in node_cnt:
+        file_name = dir_+"/test_res_"+str(cnt)+".sutest"
+
+        conf_dic["description"] = desc
+        conf_dic["world_size="+str(cnt)] = file_name
+
+
+    dic_test_res_load[dir_] = conf_dic
+    
+print(dic_test_res_load)
+
+out_file = open(abs_test_pipeline_dir+"/test_result_list.json", "w")
+json.dump(dic_test_res_load, out_file, indent = 6)
+out_file.close()
