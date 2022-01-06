@@ -256,7 +256,7 @@ Options :
         std::string loc_string = rank_test_res_out.str();
 
 
-        printf("sending : \n%s\n",loc_string.c_str());
+        //printf("sending : \n%s\n",loc_string.c_str());
 
         int *counts = new int[world_size];
         int nelements = (int) loc_string.size();
@@ -295,7 +295,7 @@ Options :
 
         std::string s_out = out_res_string;
 
-        printf("%s\n",s_out.c_str());
+        //printf("%s\n",s_out.c_str());
 
         if(out_to_file){
             write_string_to_file(std::string(get_option(args, "-o")), s_out);
