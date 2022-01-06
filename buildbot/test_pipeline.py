@@ -96,6 +96,13 @@ flags_list = [
 
 process_cnt = [4 for i in range(len(config_names))]
 
+
+
+#prepare tmp folders 
+for cid in range(len(config_names)):
+    os.system("mkdir coverage_src_"+config_names[cid])
+
+
 #configure step
 for cid in range(len(config_names)):
     cmake_cmd_cov =  generate_cmake_conf(abs_build_dir_src + "/conf_" + config_names[cid])

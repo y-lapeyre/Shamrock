@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <fstream>
 
 inline std::string format(const char *fmt...) {
     std::string s{};
@@ -14,4 +15,11 @@ inline std::string format(const char *fmt...) {
     va_end(args);
     s.pop_back();
     return s;
+}
+
+inline void write_string_to_file(std::string filename,std::string s){
+    std::ofstream myfile;
+    myfile.open (filename);
+    myfile << s;
+    myfile.close();
 }

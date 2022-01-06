@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../sys/mpi_handler.hpp"
+#include "../aliases.hpp"
 #include "unit_test_handler.hpp"
 #include <cstring>
 #include <string>
@@ -42,6 +43,10 @@ namespace unit_test{
     void test_log(std::string str);
 
     bool test_assert(const char name[DECRIPTION_ASSERT_MAX_LEN], bool cdt);
+
+    inline bool test_assert(const char name[DECRIPTION_ASSERT_MAX_LEN], u32 int1, u32 int2){
+        return test_assert(name, int1 == int2);
+    };
 
     void test_end();
 

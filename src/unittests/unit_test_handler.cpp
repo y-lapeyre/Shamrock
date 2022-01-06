@@ -23,6 +23,8 @@ namespace unit_test{
         current_test_name = test_name;
         is_current_test_mpi = is_mpi;
 
+        printf("--- running test : %s\n",test_name.c_str());
+
         if(! is_mpi){
             return world_rank == 0;
         }else{
@@ -178,7 +180,9 @@ namespace unit_test{
 
         for(Test_report report : tests_results){
             printf("%s\n",report.name.c_str());
-            for(Assert_report a_report : report.assert_report_list){
+            //for(Assert_report a_report : report.assert_report_list){
+            for(u32 i = 0 ; i < report.assert_report_list.size() && i < 32; i++){
+                Assert_report a_report = report.assert_report_list[i];
                 printf("| Assert : %s %d %d\n",a_report.description,a_report.condition,a_report.rank_emited);
             }
 

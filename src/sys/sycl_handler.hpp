@@ -1,11 +1,5 @@
 #pragma once
 
-#include "CL/sycl/backend.hpp"
-#include "CL/sycl/buffer.hpp"
-#include "CL/sycl/handler.hpp"
-#include "CL/sycl/properties/buffer_properties.hpp"
-#include "CL/sycl/property_list.hpp"
-#include "CL/sycl/queue.hpp"
 #include "mpi_handler.hpp"
 
 #include <CL/sycl.hpp>

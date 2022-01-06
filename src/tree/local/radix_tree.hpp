@@ -1,8 +1,11 @@
 #pragma once
 
-#include "../aliases.hpp"
-#include "../flags.hpp"
+#include "../../aliases.hpp"
+#include "../../flags.hpp"
+#include "CL/sycl/buffer.hpp"
 #include <vector>
+
+//TODO write class destructor
 
 class Radix_Tree{
 
@@ -17,8 +20,11 @@ class Radix_Tree{
      */
     bool mono_cell_mode = false;
 
-    u32 leaf_cell_count;
-    u32 internal_cell_count;
+    sycl::buffer<u32>* sort_index_map = nullptr;
+
+
+    u32 leaf_cell_count = 0;
+    u32 internal_cell_count = 0;
 
     /**
      * @brief list of morton codes of the tree leafs (so reduced morton set if reduction applied)
@@ -38,7 +44,23 @@ class Radix_Tree{
     sycl::buffer<f3_d>* buf_pos_max    = nullptr;
 
 
-    void build_tree();
+    /**
+     * @brief build tree (warning buf_morton will be sorted)
+     * 
+     * @param queue sycl queue
+     * @param buf_morton morton code in buffer (warning : it will be sorted) 
+     * @param morton_code_count number of valid morton codes
+     * @param morton_code_count_rounded_pow lenght of buf_morton
+     * @param use_reduction use reduction algorithm
+     * @param reduction_level level of reduction
+     */
+    void build_tree(
+        sycl::queue* queue,
+        sycl::buffer<u_morton>* buf_morton, 
+        u32 morton_code_count, 
+        u32 morton_code_count_rounded_pow,
+        bool use_reduction, 
+        u32 reduction_level);
 
 
 
@@ -55,6 +77,9 @@ class Radix_Tree{
     bool is_reduction_active = true;
     u16 reduction_level = 0;
 
+    float reduction_factor = 0;
+
+    std::vector<u32> reduc_index_map;
     sycl::buffer<   u32  >* buf_reduc_index_map = nullptr;
 
 

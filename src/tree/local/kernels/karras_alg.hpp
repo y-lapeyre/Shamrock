@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../aliases.hpp"
-#include "../flags.hpp"
+#include "../../../aliases.hpp"
+#include "../../../flags.hpp"
 #include "CL/sycl/buffer.hpp"
 
 /**
@@ -16,7 +16,7 @@
  * @param buf_endrange output
  */
 
-void karras_alg(
+void sycl_karras_alg(
     sycl::queue* queue,
     u32 internal_cell_count,
     sycl::buffer<u_morton>* in_morton,
