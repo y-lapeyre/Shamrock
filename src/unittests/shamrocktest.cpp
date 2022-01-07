@@ -55,7 +55,7 @@ std::string make_test_output(TestResults t_res){
 }
 
 
-
+//TODO add memory clean as an assertion
 int run_all_tests(int argc, char *argv[]){
 
     using namespace mpi;
@@ -160,9 +160,9 @@ Options :
     for (u32 i : selected_tests) {
 
         if(run_only){
-            printf("running test : ",i+1);
+            printf("running test : ");
         }else{
-            printf("running test [%d/%d] : ",test_loc_cnt+1,selected_tests.size());
+            printf("running test [%d/%zu] : ",test_loc_cnt+1,selected_tests.size());
         }
 
         bool any_node_cnt = test_node_count[i] == -1;
@@ -204,7 +204,7 @@ Options :
         //printf("    assertion list :\n");
         if(full_output){
             for(unsigned int j = 0; j < t.lst_assert.size(); j++){
-                printf("        [%d/%d] : ",j+1,t.lst_assert.size());
+                printf("        [%d/%zu] : ",j+1,t.lst_assert.size());
                 printf("%-20s",t.lst_assert[j].assert_name.c_str());
                 
                 if(t.lst_assert[j].success){
