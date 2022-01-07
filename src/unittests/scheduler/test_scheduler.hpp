@@ -47,31 +47,31 @@ inline void run_tests_scheduler(){
 
     if(unit_test::test_start("tree/mpi_scheduler.hpp::get_patch_count_from_local()", true)){
 
-        scheduler::patch_table_local.resize(world_rank % 3 + 1);
+        scheduler::patch_table_local.resize(mpi::world_rank % 3 + 1);
         
         unit_test::test_assert("corect return", scheduler::get_patch_count_from_local() == 
-            3*u64((world_size)/3) + 2*u64((world_size+1)/3) + u64((world_size+2)/3));
+            3*u64((mpi::world_size)/3) + 2*u64((mpi::world_size+1)/3) + u64((mpi::world_size+2)/3));
 
     }unit_test::test_end();
 
     //TODO write better test
     if(unit_test::test_start("tree/mpi_scheduler.hpp::rebuild_global_patch_table_from_local()", true)){
 
-        Patch loc_patch = create_test_patch_data(world_rank);
+        Patch loc_patch = create_test_patch_data(mpi::world_rank);
         
         scheduler::patch_table_local.resize(1);
         scheduler::patch_table_local[0] = loc_patch;
 
-        // if(world_rank == 0){
+        // if(mpi::world_rank == 0){
         //     patch_table_local.push_back(create_test_patch_data(100));
         // }
 
-        // if(world_rank == 1){
+        // if(mpi::world_rank == 1){
         //     patch_table_local.push_back(create_test_patch_data(10000));
         // }
 
-        //patch_table.resize(world_size+2);
-        scheduler::patch_table.resize(world_size);
+        //patch_table.resize(mpi::world_size+2);
+        scheduler::patch_table.resize(mpi::world_size);
 
         printf("creating patch type\n");
         create_MPI_patch_type();
@@ -139,7 +139,7 @@ inline void run_tests_scheduler(){
         std::vector<MPI_Packet> payload_send_queue;
 
 
-        switch (world_rank) {
+        switch (mpi::world_rank) {
         case 0: 
             send_loc_cnt = {1,1,0,0}; 
             payload_send_queue.push_back({ 0, {0,4,1,2,3}});
@@ -180,8 +180,8 @@ inline void run_tests_scheduler(){
         std::vector<MPI_Request> requests(payload_send_queue.size());
 
         for(u32 i = 0; i < payload_send_queue.size();i++){
-            //printf("async send rank = %d n°%d\n",world_rank,i);
-            MPI_Isend(
+            //printf("async send rank = %d n°%d\n",mpi::world_rank,i);
+            mpi::isend(
                 payload_send_queue[i].patchdata.data(), 
                 payload_send_queue[i].patchdata.size(), 
                 MPI_CHAR, 
@@ -199,35 +199,35 @@ inline void run_tests_scheduler(){
 
         u32 recv_loc_cnt = -1;
 
-        printf("n°%d {%d,%d,%d,%d}\n",world_rank,send_loc_cnt[0],send_loc_cnt[1],send_loc_cnt[2],send_loc_cnt[3]);
+        printf("n°%d {%d,%d,%d,%d}\n",mpi::world_rank,send_loc_cnt[0],send_loc_cnt[1],send_loc_cnt[2],send_loc_cnt[3]);
 
-        mpi_barrier();
+        mpi::barrier();
 
         int recv_cnt[] = {1,1,1,1};
 
-        MPI_Reduce_scatter(send_loc_cnt.data(), &recv_loc_cnt, recv_cnt, MPI_UINT32_T, MPI_SUM, MPI_COMM_WORLD);
+        mpi::reduce_scatter(send_loc_cnt.data(), &recv_loc_cnt, recv_cnt, MPI_UINT32_T, MPI_SUM, MPI_COMM_WORLD);
 
-        printf("n°%d : %d\n",world_rank,recv_loc_cnt);
+        printf("n°%d : %d\n",mpi::world_rank,recv_loc_cnt);
 
 
         std::vector<MPI_Packet> payload_recv_table(recv_loc_cnt); 
 
         for(u32 i = 0; i < recv_loc_cnt;i++){
-            //printf("MPI probe rank = %d n°%d\n",world_rank,i);
+            //printf("MPI probe rank = %d n°%d\n",mpi::world_rank,i);
             MPI_Status st;
 
             //no race condition beacause this call is blocking
-            MPI_Probe(MPI_ANY_SOURCE, MPI_ANY_TAG,MPI_COMM_WORLD, & st);
-            //printf("MPI probe rank = %d n°%d : result incomming from %d\n",world_rank,i,st.MPI_SOURCE);
+            mpi::probe(MPI_ANY_SOURCE, MPI_ANY_TAG,MPI_COMM_WORLD, & st);
+            //printf("MPI probe rank = %d n°%d : result incomming from %d\n",mpi::world_rank,i,st.MPI_SOURCE);
 
             int sz_recv;
-            MPI_Get_count(&st, MPI_CHAR, &sz_recv);
+            mpi::get_count(&st, MPI_CHAR, &sz_recv);
             payload_recv_table[i].rank = st.MPI_SOURCE;
-            //printf("MPI_Get_count rank = %d n°%d : result incomming from %d : sz : %d\n",world_rank,i,st.MPI_SOURCE,sz_recv);
+            //printf("MPI_Get_count rank = %d n°%d : result incomming from %d : sz : %d\n",mpi::world_rank,i,st.MPI_SOURCE,sz_recv);
 
             MPI_Status st_recv;
             payload_recv_table[i].patchdata = std::vector<u8>(sz_recv);
-            MPI_Recv(payload_recv_table[i].patchdata.data(), sz_recv, MPI_CHAR, st.MPI_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &st_recv);
+            mpi::recv(payload_recv_table[i].patchdata.data(), sz_recv, MPI_CHAR, st.MPI_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &st_recv);
 
 
 
@@ -236,15 +236,15 @@ inline void run_tests_scheduler(){
         }
 
         for(u32 i = 0; i < payload_send_queue.size();i++){
-            //printf("MPI wait rank = %d n°%d\n",world_rank,i);
+            //printf("MPI wait rank = %d n°%d\n",mpi::world_rank,i);
             MPI_Status st;
-            MPI_Wait(&requests[i], &st);
+            mpi::wait(&requests[i], &st);
 
-            //printf("MPI wait rank = %d n°%d (done)\n",world_rank,i);
+            //printf("MPI wait rank = %d n°%d (done)\n",mpi::world_rank,i);
         }
 
         for(u32 i = 0; i < recv_loc_cnt;i++){
-            printf("[%d] packet recv : {rank : %d, data : {",world_rank, payload_recv_table[i].rank);
+            printf("[%d] packet recv : {rank : %d, data : {",mpi::world_rank, payload_recv_table[i].rank);
             for(u32 j = 0 ; j < payload_recv_table[i].patchdata.size(); j++){
                 printf("%d ",payload_recv_table[i].patchdata[j]);
             }
@@ -345,7 +345,7 @@ inline void run_tests_scheduler(){
 
 
 
-        // scheduler::balance_patch_load(std::vector<Patch> &patch_table, u32 world_size)
+        // scheduler::balance_patch_load(std::vector<Patch> &patch_table, u32 mpi::world_size)
 
     }unit_test::test_end();
 }

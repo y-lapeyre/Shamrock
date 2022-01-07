@@ -195,16 +195,6 @@ void mpi::barrier(MPI_Comm comm){
 
 
 
-
-
-
-
-
-
-
-
-
-
 void mpi::gather(const void *sendbuf, int sendcount, MPI_Datatype sendtype, void *recvbuf, int recvcount, MPI_Datatype recvtype, int root, MPI_Comm comm){
 
     #ifdef MPI_LOGGER_ENABLED
@@ -257,6 +247,45 @@ void mpi::gatherv(const void *sendbuf, int sendcount, MPI_Datatype sendtype, voi
 }
 
 
+void mpi::get_count(const MPI_Status *status, MPI_Datatype datatype, int *count){
+    int err_code = MPI_Get_count(status, datatype, count);
+
+    if(err_code != MPI_SUCCESS){
+        handle_errorcode(err_code);
+    }
+}
+
+void mpi::isend(const void *buf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm, MPI_Request *request){
+    int err_code = MPI_Isend(buf, count, datatype, dest, tag, comm, request);
+
+    if(err_code != MPI_SUCCESS){
+        handle_errorcode(err_code);
+    }
+}
+
+void mpi::probe(int source, int tag, MPI_Comm comm, MPI_Status *status){
+    int err_code = MPI_Probe(source, tag, comm, status);
+
+    if(err_code != MPI_SUCCESS){
+        handle_errorcode(err_code);
+    }
+}
+
+void mpi::recv(void *buf, int count, MPI_Datatype datatype, int source, int tag, MPI_Comm comm, MPI_Status *status){
+    int err_code = MPI_Recv(buf, count, datatype, source, tag, comm, status);
+
+    if(err_code != MPI_SUCCESS){
+        handle_errorcode(err_code);
+    }
+}
+
+void mpi::reduce_scatter(const void *sendbuf, void *recvbuf, const int *recvcounts, MPI_Datatype datatype, MPI_Op op, MPI_Comm comm){
+    int err_code = MPI_Reduce_scatter(sendbuf, recvbuf, recvcounts, datatype, op, comm);
+
+    if(err_code != MPI_SUCCESS){
+        handle_errorcode(err_code);
+    }
+}
 
 
 void mpi::type_commit(MPI_Datatype *type){

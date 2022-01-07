@@ -203,7 +203,7 @@ namespace mpi{
     void gatherv(const void *sendbuf, int sendcount, MPI_Datatype sendtype,  void *recvbuf, const int recvcounts[], const int displs[],  MPI_Datatype recvtype, int root, MPI_Comm comm);
     // int MPI_Igatherv(const void *sendbuf, int sendcount, MPI_Datatype sendtype,  void *recvbuf, const int recvcounts[], const int displs[],  MPI_Datatype recvtype, int root, MPI_Comm comm, MPI_Request *request);
     // int MPI_Get_address(const void *location, MPI_Aint *address);
-    // int MPI_Get_count(const MPI_Status *status, MPI_Datatype datatype, int *count);
+    void get_count(const MPI_Status *status, MPI_Datatype datatype, int *count);
     // int MPI_Get_elements(const MPI_Status *status, MPI_Datatype datatype, int *count);
     // int MPI_Get_elements_x(const MPI_Status *status, MPI_Datatype datatype, MPI_Count *count);
     // int MPI_Get(void *origin_addr, int origin_count, MPI_Datatype origin_datatype, int target_rank, MPI_Aint target_disp, int target_count, MPI_Datatype target_datatype, MPI_Win win);
@@ -255,7 +255,7 @@ namespace mpi{
     // int MPI_Iprobe(int source, int tag, MPI_Comm comm, int *flag, MPI_Status *status);
     // int MPI_Irecv(void *buf, int count, MPI_Datatype datatype, int source,int tag, MPI_Comm comm, MPI_Request *request);
     // int MPI_Irsend(const void *buf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm, MPI_Request *request);
-    // int MPI_Isend(const void *buf, int count, MPI_Datatype datatype, int dest,int tag, MPI_Comm comm, MPI_Request *request);
+    void isend(const void *buf, int count, MPI_Datatype datatype, int dest,int tag, MPI_Comm comm, MPI_Request *request);
     // int MPI_Issend(const void *buf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm, MPI_Request *request);
     // int MPI_Is_thread_main(int *flag);
     // int MPI_Lookup_name(const char *service_name, MPI_Info info, char *port_name);
@@ -284,17 +284,17 @@ namespace mpi{
     // int MPI_Pack(const void *inbuf, int incount, MPI_Datatype datatype, void *outbuf, int outsize, int *position, MPI_Comm comm);
     // int MPI_Pack_size(int incount, MPI_Datatype datatype, MPI_Comm comm,int *size);
     // int MPI_Pcontrol(const int level, ...);
-    // int MPI_Probe(int source, int tag, MPI_Comm comm, MPI_Status *status);
+    void probe(int source, int tag, MPI_Comm comm, MPI_Status *status);
     // int MPI_Publish_name(const char *service_name, MPI_Info info,   const char *port_name);
     // int MPI_Put(const void *origin_addr, int origin_count, MPI_Datatype origin_datatype, int target_rank, MPI_Aint target_disp, int target_count, MPI_Datatype target_datatype, MPI_Win win);
     // int MPI_Query_thread(int *provided);
     // int MPI_Raccumulate(const void *origin_addr, int origin_count, MPI_Datatype origin_datatype,  int target_rank, MPI_Aint target_disp, int target_count,  MPI_Datatype target_datatype, MPI_Op op, MPI_Win win, MPI_Request *request);
     // int MPI_Recv_init(void *buf, int count, MPI_Datatype datatype, int source,int tag, MPI_Comm comm, MPI_Request *request);
-    // int MPI_Recv(void *buf, int count, MPI_Datatype datatype, int source, int tag, MPI_Comm comm, MPI_Status *status);
+    void recv(void *buf, int count, MPI_Datatype datatype, int source, int tag, MPI_Comm comm, MPI_Status *status);
     // int MPI_Reduce(const void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype, MPI_Op op, int root, MPI_Comm comm);
     // int MPI_Ireduce(const void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype, MPI_Op op, int root, MPI_Comm comm, MPI_Request *request);
     // int MPI_Reduce_local(const void *inbuf, void *inoutbuf, int count,   MPI_Datatype datatype, MPI_Op op);
-    // int MPI_Reduce_scatter(const void *sendbuf, void *recvbuf, const int recvcounts[],     MPI_Datatype datatype, MPI_Op op, MPI_Comm comm);
+    void reduce_scatter(const void *sendbuf, void *recvbuf, const int recvcounts[],     MPI_Datatype datatype, MPI_Op op, MPI_Comm comm);
     // int MPI_Ireduce_scatter(const void *sendbuf, void *recvbuf, const int recvcounts[],     MPI_Datatype datatype, MPI_Op op, MPI_Comm comm, MPI_Request *request);
     // int MPI_Reduce_scatter_block(const void *sendbuf, void *recvbuf, int recvcount,     MPI_Datatype datatype, MPI_Op op, MPI_Comm comm);
     // int MPI_Ireduce_scatter_block(const void *sendbuf, void *recvbuf, int recvcount,     MPI_Datatype datatype, MPI_Op op, MPI_Comm comm, MPI_Request *request);
@@ -373,7 +373,7 @@ namespace mpi{
     // int MPI_Unpack_external (const char datarep[], const void *inbuf, MPI_Aint insize,       MPI_Aint *position, void *outbuf, int outcount,       MPI_Datatype datatype);
     // int MPI_Waitall(int count, MPI_Request array_of_requests[],  MPI_Status *array_of_statuses);
     // int MPI_Waitany(int count, MPI_Request array_of_requests[],  int *index, MPI_Status *status);
-    // int MPI_Wait(MPI_Request *request, MPI_Status *status);
+    void wait(MPI_Request *request, MPI_Status *status);
     // int MPI_Waitsome(int incount, MPI_Request array_of_requests[],   int *outcount, int array_of_indices[],   MPI_Status array_of_statuses[]);
     // int MPI_Win_allocate(MPI_Aint size, int disp_unit, MPI_Info info,   MPI_Comm comm, void *baseptr, MPI_Win *win);
     // int MPI_Win_allocate_shared(MPI_Aint size, int disp_unit, MPI_Info info,          MPI_Comm comm, void *baseptr, MPI_Win *win);
