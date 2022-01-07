@@ -312,3 +312,10 @@ void mpi::type_free(MPI_Datatype *type){
     }
 }
 
+void mpi::wait(MPI_Request *request, MPI_Status *status){
+    int err_code = MPI_Wait(request, status);
+
+    if(err_code != MPI_SUCCESS){
+        handle_errorcode(err_code);
+    }
+}
