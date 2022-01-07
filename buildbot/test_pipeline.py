@@ -63,7 +63,7 @@ for dir_ in conf_dir_lst:
     for cnt in node_cnt:
         run_cmd("mpirun --oversubscribe -n "+str(cnt)+" ./shamrock_test -o test_res_"+str(cnt)+".sutest")
 
-
+os.chdir(current_wdir)
 
 dic_test_res_load = {}
 
@@ -85,3 +85,9 @@ print(dic_test_res_load)
 out_file = open(abs_test_pipeline_dir+"/test_result_list.json", "w")
 json.dump(dic_test_res_load, out_file, indent = 6)
 out_file.close()
+
+from lib.make_report import *
+
+make_report(ReportFormat.Tex, abs_test_pipeline_dir+"/test_result_list.json")
+
+#TODO compile and show pdf report

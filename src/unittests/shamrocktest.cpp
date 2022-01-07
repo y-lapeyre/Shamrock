@@ -55,7 +55,7 @@ std::string make_test_output(TestResults t_res){
 }
 
 
-
+//TODO add memory clean as an assertion
 int run_all_tests(int argc, char *argv[]){
 
 
