@@ -7,7 +7,65 @@ Tex_template = r"""
 
 \documentclass{article}
 
+\usepackage[a4paper,total={170mm,260mm},left=20mm,top=20mm,]{geometry}
+
+
+
+\usepackage{fancyhdr} % entêtes et pieds de pages personnalisés
+
+\pagestyle{fancy}
+\fancyhead[L]{\scriptsize \textsc{Test suite report}} % À changer
+\fancyhead[R]{\scriptsize \textsc{\textsc{SHAMROCK}}} % À changer
+\fancyfoot[C]{ \thepage}
+
+
+\usepackage{titling}
+
+\setlength{\droptitle}{-4\baselineskip} % Move the title up
+
+\pretitle{\begin{center}\Huge\bfseries} % Article title formatting
+\posttitle{\end{center}} % Article title closing formatting
+\title{\textsc{SHAMROCK} test suite report} % Article title
+\author{%
+\textsc{Timothée David--Cléris}\thanks{timothee.david--cleris@ens-lyon.fr} \\[1ex] % Your name
+\normalsize CRAL ENS de Lyon \\ % Your institution
+}
+\date{\today}
+
+\usepackage{xcolor}
+\definecolor{linkcolor}{rgb}{0,0,0.6}
+
+
+\usepackage[ pdftex,colorlinks=true,
+pdfstartview=ajustementV,
+linkcolor= linkcolor,
+citecolor= linkcolor,
+urlcolor= linkcolor,
+hyperindex=true,
+hyperfigures=false]
+{hyperref}
+
+
+
+\usepackage{color}
+
+
+\definecolor{GREEN}{rgb}{0,.7,0}
+\definecolor{RED}{rgb}{.8,0,0}
+
+
+\def\OK{\textcolor{GREEN}{OK}}
+\def\FAIL{\textcolor{RED}{FAIL}}
+
 \begin{document}
+\maketitle
+
+%%tabl_world_sz_res%%
+
+
+\tableofcontents
+
+
 %%content%%
 \end{document}
 """
@@ -147,8 +205,8 @@ def get_succes_count_data(dt):
 def make_tex_repport(dat):
 
 
-
-    str_file = ""
+    
+    
 
 
     dic_int = {}
@@ -175,11 +233,21 @@ def make_tex_repport(dat):
                 dic_res = load_test_report(dat[config_k][k])
                 dic_suc_cnt = get_succes_count_data(dic_res)
 
+                cnt_test = 0
+                cnt_succes = 0
 
+                for ktest in dic_suc_cnt.keys():
+                    #cnt_assert += dic_suc_cnt[ktest]["assert_cnt"]
+                    #cnt_succes += dic_suc_cnt[ktest]["suc_cnt"]
+
+                    cnt_test += 1
+                    cnt_succes += dic_suc_cnt[ktest]["suc_cnt"] == dic_suc_cnt[ktest]["assert_cnt"]
 
                 dic_int["world size = " + str(wsz)][ dat[config_k]["description"]] = {
                     "results" : dic_res,
-                    "succes_cnt" : dic_suc_cnt
+                    "succes_cnt" : dic_suc_cnt,
+                    "global_suc_cnt" : cnt_succes,
+                    "global_test_cnt" : cnt_test
                 }
 
     
@@ -189,14 +257,140 @@ def make_tex_repport(dat):
     out_file.close()
 
 
-    #     str_file += r"""
-    # \section{""" + dat[config_k]["description"] + r"""}
-    #     """
+
+    dic_suc_cnt_global = {}
+
+    for kworldsz in dic_int.keys():
+
+        cnt_config = 0
+        cnt_succes = 0
+
+        for kconfig in dic_int[kworldsz].keys():
+
+            cnt_config += 1
+            cnt_succes +=dic_int[kworldsz][kconfig]["global_suc_cnt"] == dic_int[kworldsz][kconfig]["global_test_cnt"]
+
+        dic_suc_cnt_global[kworldsz] = {
+            "global_suc_cnt" : cnt_succes,
+            "global_config_cnt" : cnt_config
+        }
+
+
+
+    tabl_world_sz_res = ""
+
+    tabl_world_sz_res += r""" \begin{center}
+        \begin{tabular}{|c|c|c|}
+        \hline
+        World size & Status & Succesfull config / total number of config \\  \hline \hline
+    """
+    for kworldsz in dic_int.keys():
+
+        config_suc_cnt = dic_suc_cnt_global[kworldsz]["global_suc_cnt"]
+        config_cnt = dic_suc_cnt_global[kworldsz]["global_config_cnt"]
+
+        succes = config_suc_cnt == config_cnt
+
+        tabl_world_sz_res += kworldsz + " & "
+
+        if succes:
+            tabl_world_sz_res += "\OK & "
+        else:
+            tabl_world_sz_res += "\FAIL & "
+
+        tabl_world_sz_res += "$" + str(config_suc_cnt) + "/" + str(config_cnt) +r"$\\ \hline"+"\n"
+
+    tabl_world_sz_res += r"""
+        \end{tabular}\end{center}
+    """
 
 
 
 
-    print(Tex_template.replace(r"%%content%%",str_file))
+
+
+
+
+    str_file = ""
+
+
+    for kworldsz in dic_int.keys():
+        str_file += r"""
+            \newpage
+             \begin{center}
+            \section{""" +kworldsz + r"""}
+        """
+
+        str_file += r"""
+            \begin{tabular}{|c|c|c|}
+            \hline
+            Config & Status & Succesfull tests / total number of tests \\  \hline \hline
+        """
+        for kconfig in dic_int[kworldsz].keys():
+
+            test_suc_cnt = dic_int[kworldsz][kconfig]["global_suc_cnt"]
+            test_cnt = dic_int[kworldsz][kconfig]["global_test_cnt"]
+
+            succes = test_suc_cnt == test_cnt
+
+            str_file += kconfig + " & "
+
+            if succes:
+                str_file += "\OK & "
+            else:
+                str_file += "\FAIL & "
+
+            str_file += "$" + str(test_suc_cnt) + "/" + str(test_cnt) +r"$\\ \hline"+"\n"
+
+        str_file += r"""
+            \end{tabular}\end{center}
+        """
+
+
+        for kconfig in dic_int[kworldsz].keys():
+
+            str_file += r"""
+                \subsection{""" +kconfig + r"""}
+            """
+
+
+            str_file += r"""
+            \begin{center}
+                \begin{tabular}{|c|c|c|}
+                \hline
+                Test name & Status & Succesfull asserts / total number of asserts \\  \hline \hline
+            """
+            for ktest in dic_int[kworldsz][kconfig]["succes_cnt"].keys():
+
+                assert_suc_cnt = dic_int[kworldsz][kconfig]["succes_cnt"][ktest]["suc_cnt"]
+                assert_cnt = dic_int[kworldsz][kconfig]["succes_cnt"][ktest]["assert_cnt"]
+
+                succes = assert_suc_cnt == assert_cnt
+
+                str_file += r"\verb|"+ktest + "| & "
+
+                if succes:
+                    str_file += "\OK & "
+                else:
+                    str_file += "\FAIL & "
+
+                str_file += "$" + str(assert_suc_cnt) + "/" + str(assert_cnt) +r"$\\ \hline"+"\n"
+
+            str_file += r"""
+                \end{tabular}\end{center}
+            """
+
+            
+
+
+
+    out_tex = Tex_template.replace(r"%%tabl_world_sz_res%%",tabl_world_sz_res).replace(r"%%content%%",str_file)
+    
+    print(out_tex)
+
+    out_file = open("test_repport.tex", "w")
+    out_file.write(out_tex)
+    out_file.close()
 
 
 
