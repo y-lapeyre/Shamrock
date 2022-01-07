@@ -68,7 +68,7 @@ namespace scheduler {
 
         mpi_mode = false;
 
-        if(mpi_working && world_size > 1){
+        if(mpi::working && mpi::world_size > 1){
             mpi_mode = true;
         }
 
