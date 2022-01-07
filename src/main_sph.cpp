@@ -20,11 +20,11 @@
 */
 int main(void){
 	
-    mpi_init();
+    mpi::init();
 
 
     init_sycl();
 
-    mpi_close();
+    mpi::close();
 
 }

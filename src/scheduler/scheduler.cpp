@@ -8,7 +8,7 @@ u32 scheduler::get_patch_count_from_local(){
 
     u32 local_len = patch_table_local.size();
     u32 global_len;
-    MPI_Allreduce(&local_len, &global_len, 1, MPI_LONG , MPI_SUM, MPI_COMM_WORLD);
+    mpi::allreduce(&local_len, &global_len, 1, MPI_LONG , MPI_SUM, MPI_COMM_WORLD);
     return global_len;
 }
 
@@ -16,13 +16,14 @@ u32 scheduler::get_patch_count_from_local(){
 
 void scheduler::rebuild_global_patch_table_from_local(){
 
+    
 
     u32 local_count = patch_table_local.size();
 
-    int* table_patch_count = new int[world_size];
+    int* table_patch_count = new int[mpi::world_size];
 
     //crash
-    MPI_Allgather(
+    mpi::allgather(
         &local_count, 
         1, 
         MPI_INT, 
@@ -35,11 +36,11 @@ void scheduler::rebuild_global_patch_table_from_local(){
 
 
 
-    int* node_displacments_patch_table = new int[world_size];
+    int* node_displacments_patch_table = new int[mpi::world_size];
 
     node_displacments_patch_table[0] = 0;
 
-    for(u32 i = 1 ; i < world_size; i++){
+    for(u32 i = 1 ; i < mpi::world_size; i++){
         node_displacments_patch_table[i] = node_displacments_patch_table[i-1] + table_patch_count[i-1];
     }
     
@@ -50,7 +51,7 @@ void scheduler::rebuild_global_patch_table_from_local(){
 
 
     
-    MPI_Allgatherv(
+    mpi::allgatherv(
         &patch_table_local[0], 
         patch_table_local.size(),
         patch_MPI_type, 
@@ -78,7 +79,7 @@ void scheduler::rebuild_global_patch_table_from_local(){
 void scheduler::rebuild_local_patch_table_from_global(){
     patch_table_local.clear();
     for(Patch p : patch_table){
-        if(p.node_owner_id == world_rank){
+        if(p.node_owner_id == mpi::world_rank){
             patch_table_local.push_back(p);
         }
     }
