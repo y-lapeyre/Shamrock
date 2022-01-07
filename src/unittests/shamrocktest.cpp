@@ -35,8 +35,8 @@ std::string make_test_output(TestResults t_res){
 
     output << "%test_name = \"" << t_res.test_name << "\"" << std::endl;
 
-    output << "%world_size = " << world_size << std::endl;
-    output << "%world_rank = " << world_rank << std::endl;
+    output << "%world_size = " << mpi::world_size << std::endl;
+    output << "%world_rank = " << mpi::world_rank << std::endl;
 
     for(unsigned int j = 0; j < t_res.lst_assert.size(); j++){
         output << "%start_assert \"" << t_res.lst_assert[j].assert_name << "\""<<std::endl;
@@ -55,9 +55,10 @@ std::string make_test_output(TestResults t_res){
 }
 
 
-
+//TODO add memory clean as an assertion
 int run_all_tests(int argc, char *argv[]){
 
+    using namespace mpi;
 
     std::vector<std::string_view> args(argv + 1, argv + argc);
 
@@ -108,7 +109,7 @@ Options :
 
 
 
-    mpi_init();printf("\n");
+    mpi::init();printf("\n");
 
     init_sycl();
 
@@ -159,9 +160,9 @@ Options :
     for (u32 i : selected_tests) {
 
         if(run_only){
-            printf("running test : ",i+1);
+            printf("running test : ");
         }else{
-            printf("running test [%d/%d] : ",test_loc_cnt+1,selected_tests.size());
+            printf("running test [%d/%zu] : ",test_loc_cnt+1,selected_tests.size());
         }
 
         bool any_node_cnt = test_node_count[i] == -1;
@@ -181,12 +182,12 @@ Options :
         #ifdef MEM_TRACK_ENABLED
         u64 alloc_cnt_before_test = ptr_allocated.size();
         #endif
-        mpi_barrier();
+        mpi::barrier();
         Timer timer;
         timer.start();
         test_fct_lst[i](t);
         timer.end();
-        mpi_barrier();
+        mpi::barrier();
 
         
         #ifdef MEM_TRACK_ENABLED
@@ -203,7 +204,7 @@ Options :
         //printf("    assertion list :\n");
         if(full_output){
             for(unsigned int j = 0; j < t.lst_assert.size(); j++){
-                printf("        [%d/%d] : ",j+1,t.lst_assert.size());
+                printf("        [%d/%zu] : ",j+1,t.lst_assert.size());
                 printf("%-20s",t.lst_assert[j].assert_name.c_str());
                 
                 if(t.lst_assert[j].success){
@@ -256,12 +257,12 @@ Options :
         std::string loc_string = rank_test_res_out.str();
 
 
-        printf("sending : \n%s\n",loc_string.c_str());
+        //printf("sending : \n%s\n",loc_string.c_str());
 
         int *counts = new int[world_size];
         int nelements = (int) loc_string.size();
         // Each process tells the root how many elements it holds
-        MPI_Gather(&nelements, 1, MPI_INT, counts, 1, MPI_INT, 0, MPI_COMM_WORLD);
+        mpi::gather(&nelements, 1, MPI_INT, counts, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
 
         // Displacements in the receive buffer for MPI_GATHERV
@@ -279,7 +280,7 @@ Options :
 
 
         // Collect everything into the root
-        MPI_Gatherv(loc_string.c_str(), nelements, MPI_CHAR,
+        mpi::gatherv(loc_string.c_str(), nelements, MPI_CHAR,
                     gather_data, counts, disps, MPI_CHAR, 0, MPI_COMM_WORLD);
 
         
@@ -295,7 +296,7 @@ Options :
 
         std::string s_out = out_res_string;
 
-        printf("%s\n",s_out.c_str());
+        //printf("%s\n",s_out.c_str());
 
         if(out_to_file){
             write_string_to_file(std::string(get_option(args, "-o")), s_out);
@@ -304,7 +305,7 @@ Options :
     }
 
 
-    mpi_close();
+    mpi::close();
 
 
     return 0;

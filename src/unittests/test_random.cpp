@@ -35,7 +35,7 @@ Test_start("",test_overload_new,2){
 
     std::cout << *a << std::endl;
 
-
+    Test_assert_log("int multiplication log", *a==6,"wesh");
 
     delete a;
 

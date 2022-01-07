@@ -20,13 +20,13 @@ inline sycl::queue* queue;
 
 inline void init_sycl(){
 
-    if(world_rank == 0)
+    //if(world_rank == 0)
         printf("\x1B[36m >>> init SYCL instances <<< \033[0m\n");
 
-    global_logger->log(">>> init SYCL instances <<<\n");
+    //global_logger->log(">>> init SYCL instances <<<\n");
 
     queue = new sycl::queue(sycl::default_selector(),exception_handler);
     printf("Running on : %s\n", queue->get_device().get_info<sycl::info::device::name>().c_str());
-    global_logger->log("Running on : %s\n", queue->get_device().get_info<sycl::info::device::name>().c_str());
+    //global_logger->log("Running on : %s\n", queue->get_device().get_info<sycl::info::device::name>().c_str());
 
 }
