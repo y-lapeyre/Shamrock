@@ -305,7 +305,7 @@ inline void run_tests_scheduler(){
                     most_loadded_node_id = node_id;
                     most_loadded_node_dtcnt = node_load[node_id];
                 }
-            }
+            } 
             
             printf("least loaded : %d ,dtcnt = %zu\n",least_loadded_node_id,least_loadded_node_dtcnt);
             printf("most  loaded : %d ,dtcnt = %zu\n",most_loadded_node_id,most_loadded_node_dtcnt);
