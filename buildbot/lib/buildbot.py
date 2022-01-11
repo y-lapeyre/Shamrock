@@ -25,6 +25,11 @@ class Targets(Enum):
     Test = 3
     Visu = 4
 
+class BuildMode(Enum):
+    Normal = 0
+    Release = 1
+    Debug = 2
+
 
 
 
@@ -178,7 +183,7 @@ def clean_build_dir(abs_build_dir):
 
 
 #configure_dpcpp("../src", "../build2","../../llvm",BuildSystem.Ninja,SyCLBE.CUDA,[Targets.Test],PrecisionMode.Single,PrecisionMode.Single)
-def configure_dpcpp(src_dir, build_dir,llvm_root,build_sys,sycl_BE,target_lst,morton_prec,phy_prec):
+def configure_dpcpp(src_dir, build_dir,llvm_root, target_build_mode ,build_sys,sycl_BE,target_lst,morton_prec,phy_prec):
 
     print("\033[1;34mConfiguring SHAMROCK with DPC++\033[0;0m")
 
@@ -201,6 +206,14 @@ def configure_dpcpp(src_dir, build_dir,llvm_root,build_sys,sycl_BE,target_lst,mo
     cmake_cmd = "cmake"
     cmake_cmd += " -S " + src_dir
     cmake_cmd += " -B " + build_dir
+
+
+    if target_build_mode == BuildMode.Normal:
+        cmake_cmd += ""
+    elif target_build_mode == BuildMode.Release:
+        cmake_cmd += " -DCMAKE_BUILD_TYPE=Release"
+    elif target_build_mode == BuildMode.Debug:
+        cmake_cmd += " -DCMAKE_BUILD_TYPE=Debug"
 
 
     if build_sys == BuildSystem.Ninja:
