@@ -311,9 +311,9 @@ def patch_file(file,header_loc):
     #lines_in = re.sub(r"//[^\n]+",r"", lines_in)
     #lines_in = re.sub(r"\A(?s).*?\*\/(?-s)",r"", lines_in) 
 
-    lines_in = re.sub(r"delete\s*([^ ]+)\s*;", "{log_delete(\g<1>,log_alloc_ln);delete \g<1>;}", lines_in)
+    lines_in = re.sub(r"(?<!_)delete\s*([^ ]+)\s*;", "{log_delete(\g<1>,log_alloc_ln);delete \g<1>;}", lines_in)
 
-    lines_in = re.sub(r"delete\s*\[\]\s*([^ ]+)\s*;", "{log_delete(\g<1>,log_alloc_ln);delete[] \g<1>;}", lines_in)
+    lines_in = re.sub(r"(?<!_)delete\s*\[\]\s*([^ ]+)\s*;", "{log_delete(\g<1>,log_alloc_ln);delete[] \g<1>;}", lines_in)
     
     lines_in = re.sub(r"=\s*new\s+([^\[(]+)(.*?);", r"= (\g<1> *) log_new(new \g<1>\g<2>,log_alloc_ln);", lines_in)
 
@@ -372,7 +372,7 @@ def gen_mem_patched_dir(abs_src_dir,abs_patchedsrc_dir):
 
 
 
-def run_test(node_cnt, run_only = ""):
+def run_test(node_cnt, run_only = "", oversubscribe = False):
 
     args = " --run-only " + run_only
 
@@ -380,6 +380,7 @@ def run_test(node_cnt, run_only = ""):
         args = ""
 
     args += " -o " + "test_res_" + str(node_cnt)
+
 
     compile_prog("../build")
 
@@ -392,9 +393,12 @@ def run_test(node_cnt, run_only = ""):
             str_node += str(i) + ","
         str_node += str(node_cnt-1)
 
-        run_cmd("mpirun -n "+str(node_cnt)+" -xterm "+str_node+"! ../build/shamrock_test" + args)
+        if oversubscribe:
+            run_cmd("mpirun --oversubscribe -n "+str(node_cnt)+" -xterm "+str_node+"! ../build/shamrock_test" + args)
+        else:
+            run_cmd("mpirun -n "+str(node_cnt)+" -xterm "+str_node+"! ../build/shamrock_test" + args)
 
-def run_test_mempatch(node_cnt, run_only = ""):
+def run_test_mempatch(node_cnt, run_only = "", oversubscribe = False):
 
     args = " --run-only " + run_only
 
@@ -402,6 +406,7 @@ def run_test_mempatch(node_cnt, run_only = ""):
         args = ""
 
     args += " -o " + "test_res_" + str(node_cnt)
+
 
 
     gen_mem_patched_dir("../src","../src_patched")
@@ -419,4 +424,7 @@ def run_test_mempatch(node_cnt, run_only = ""):
             str_node += str(i) + ","
         str_node += str(node_cnt-1)
 
-        run_cmd("mpirun -n "+str(node_cnt)+" -xterm "+str_node+"! ../build_patched/shamrock_test" + args)
+        if oversubscribe:
+            run_cmd("mpirun --oversubscribe -n "+str(node_cnt)+" -xterm "+str_node+"! ../build_patched/shamrock_test" + args)
+        else:
+            run_cmd("mpirun -n "+str(node_cnt)+" -xterm "+str_node+"! ../build_patched/shamrock_test" + args)

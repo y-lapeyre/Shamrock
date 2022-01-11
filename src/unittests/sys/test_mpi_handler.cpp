@@ -42,3 +42,9 @@ Test_start("mpi::",vector_allgather_ks,-1){
     }
 
 }
+
+
+
+Test_start("mpi::",sparse_alltoall,-1){
+
+}
