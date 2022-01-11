@@ -8,15 +8,12 @@
  */
 
 
-
 #include "mpi_handler.hpp"
 #include <iostream>
 #include <mpi.h>
 #include <sstream>
 #include <string>
 
-
-#define MPI_LOGGER_ENABLED
 
 
 
@@ -32,25 +29,29 @@ std::string rename_com(MPI_Comm m){
 
 
 
-void mpi::init(){
-    MPI_Init(NULL, NULL);
-    MPI_Comm_size(MPI_COMM_WORLD, &world_size);
-    MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
+void mpi_handler::init(){
+
+    #ifdef MPI_LOGGER_ENABLED
+    std::cout << "%MPI_DEFINE:MPI_COMM_WORLD="<<MPI_COMM_WORLD<<"\n";
+    #endif
+
+    mpi::init(NULL, NULL);
+    mpi::comm_size(MPI_COMM_WORLD, &world_size);
+    mpi::comm_rank(MPI_COMM_WORLD, &world_rank);
+
+    #ifdef MPI_LOGGER_ENABLED
+    std::cout << "%MPI_VALUE:world_size="<<world_size<<"\n";
+    std::cout << "%MPI_VALUE:world_rank="<<world_rank<<"\n";
+    #endif
 
     working = true;
     
     //MPI errors will return error code
 
     int error ;
-    error = MPI_Comm_set_errhandler (
+    error = mpi::comm_set_errhandler (
         MPI_COMM_WORLD ,
         MPI_ERRORS_RETURN ) ;
-    
-    // unsigned int thread_cnt = 0;
-    // #pragma omp parallel
-    // {
-    //     thread_cnt = omp_get_num_threads();
-    // }
     
     
     //log_string_rank = format("[%03d]: ",world_rank);
@@ -61,7 +62,7 @@ void mpi::init(){
 
     //global_logger->log("[%03d]: MPI_Init : node n°%03d | world size : %d | name = %s\n",world_rank,world_rank,world_size,get_proc_name().c_str());
 
-    barrier();
+    mpi::barrier(MPI_COMM_WORLD);
     //if(world_rank == 0){
     printf("------------ MPI init ok ------------ \n");
     //}
@@ -71,11 +72,11 @@ void mpi::init(){
 }
 
 
-void mpi::close(){    
+void mpi_handler::close(){    
     
     //global_logger->log("------------ MPI_Finalize ------------\n");
     printf("------------ MPI_Finalize ------------\n");
-    MPI_Finalize();   
+    mpi::finalize();   
 
     working = false;
 
@@ -90,25 +91,22 @@ void handle_errorcode(int errorcode){
     int length;
     char message[MPI_MAX_ERROR_STRING] ;
 
-    MPI_Error_string ( errorcode , message , & length ) ;
+    mpi::error_string ( errorcode , message , & length ) ;
     printf ("%.*s\n", length , message);
 
     mpi::abort(MPI_COMM_WORLD, 1);
 }
 
-void mpi::barrier(){
-    mpi::barrier(MPI_COMM_WORLD);
-}
 
 
 
-std::string mpi::get_proc_name(){
+std::string mpi_handler::get_proc_name(){
 
     // Get the name of the processor
     char processor_name[MPI_MAX_PROCESSOR_NAME];
     int name_len;
 
-    int err_code = MPI_Get_processor_name(processor_name, &name_len);
+    int err_code = mpi::get_processor_name(processor_name, &name_len);
 
     if(err_code != MPI_SUCCESS){
         handle_errorcode(err_code);

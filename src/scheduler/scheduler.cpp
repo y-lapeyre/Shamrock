@@ -20,7 +20,7 @@ void scheduler::rebuild_global_patch_table_from_local(){
 
     u32 local_count = patch_table_local.size();
 
-    int* table_patch_count = new int[mpi::world_size];
+    int* table_patch_count = new int[mpi_handler::world_size];
 
     //crash
     mpi::allgather(
@@ -36,11 +36,11 @@ void scheduler::rebuild_global_patch_table_from_local(){
 
 
 
-    int* node_displacments_patch_table = new int[mpi::world_size];
+    int* node_displacments_patch_table = new int[mpi_handler::world_size];
 
     node_displacments_patch_table[0] = 0;
 
-    for(u32 i = 1 ; i < mpi::world_size; i++){
+    for(u32 i = 1 ; i < mpi_handler::world_size; i++){
         node_displacments_patch_table[i] = node_displacments_patch_table[i-1] + table_patch_count[i-1];
     }
     
@@ -79,7 +79,7 @@ void scheduler::rebuild_global_patch_table_from_local(){
 void scheduler::rebuild_local_patch_table_from_global(){
     patch_table_local.clear();
     for(Patch p : patch_table){
-        if(p.node_owner_id == mpi::world_rank){
+        if(p.node_owner_id == mpi_handler::world_rank){
             patch_table_local.push_back(p);
         }
     }

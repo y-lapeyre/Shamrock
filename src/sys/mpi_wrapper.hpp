@@ -2,11 +2,10 @@
 #include <mpi.h>
 
 
-
-
 //#define MPI_LOGGER_ENABLED
 
 #ifdef MPI_LOGGER_ENABLED
+//https://stackoverflow.com/questions/6245735/pretty-print-stdtuple
 #include <iostream>
 #include <string>
 #include <vector>
@@ -14,7 +13,7 @@
 #include <utility>
 
 template<class TupType, size_t... I>
-void print_tuple(const TupType& _tup, std::index_sequence<I...>)
+void __print_tuple(const TupType& _tup, std::index_sequence<I...>)
 {
     std::cout << "(";
     (..., (std::cout << (I == 0? "" : ", ") << std::get<I>(_tup)));
@@ -22,11 +21,11 @@ void print_tuple(const TupType& _tup, std::index_sequence<I...>)
 }
 
 template<class... T>
-void print_tuple (const std::tuple<T...>& _tup)
+void __print_tuple (const std::tuple<T...>& _tup)
 {
-    print_tuple(_tup, std::make_index_sequence<sizeof...(T)>());
+    __print_tuple(_tup, std::make_index_sequence<sizeof...(T)>());
 }
-#define CALL_LOG_RETURN(a,b) std::cout << "%MPI_TRACE:" << #a ; print_tuple(std::make_tuple b );return a b
+#define CALL_LOG_RETURN(a,b) std::cout << "%MPI_TRACE:" << #a ; __print_tuple(std::make_tuple b );return a b
 
 #else
 #define CALL_LOG_RETURN(a,b) return a b
@@ -35,7 +34,6 @@ void print_tuple (const std::tuple<T...>& _tup)
 
 namespace mpi {
         
-
     inline int abort(MPI_Comm comm, int errorcode){
         CALL_LOG_RETURN(MPI_Abort,(comm,errorcode));
     }
