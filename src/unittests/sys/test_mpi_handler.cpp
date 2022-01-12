@@ -1,5 +1,6 @@
 #include "../shamrocktest.hpp"
 
+#include <mpi.h>
 #include <random>
 #include <vector>
 
@@ -45,6 +46,84 @@ Test_start("mpi::",vector_allgather_ks,-1){
 
 
 
-Test_start("mpi::",sparse_alltoall,-1){
 
+
+template<class T>
+void print_vector(std::vector<T> v){
+    for (const auto & a : v) {
+        std::cout << a << " ";
+    }
+}
+
+
+
+Test_start("mpi::",sparse_alltoall,-1){
+    
+    std::vector<std::vector<       u32       >> arr_send_arr_node_id(mpi_handler::world_size);
+    std::vector<std::vector<       u32       >> arr_send_arr_tag(mpi_handler::world_size);
+    std::vector<std::vector<  std::vector<float> >> arr_send_arr_data(mpi_handler::world_size);
+    MPI_Datatype exchange_datatype = MPI_FLOAT;
+
+    {
+        //fill the check vector with a pseudo random int generator (seed:0x1111)
+        std::mt19937 eng(0x1111);                                     
+        std::uniform_real_distribution<float> dist_flt(-1,1);
+        std::uniform_int_distribution<u32> dist_send_cnt(0,10);
+        std::uniform_int_distribution<u32> dist_node_id(0,mpi_handler::world_size-1);
+
+        for (u32 node_id = 0; node_id < mpi_handler::world_size; node_id++) {
+            u32 send_cnt = dist_send_cnt(eng);
+
+            arr_send_arr_node_id[node_id].resize(send_cnt);
+            arr_send_arr_tag[node_id].resize(send_cnt);
+            arr_send_arr_data[node_id].resize(send_cnt);
+            
+            for(u32 i = 0; i < send_cnt; i ++){
+                arr_send_arr_node_id[node_id][i] = dist_node_id(eng);
+                arr_send_arr_tag    [node_id][i] = i;
+
+                u32 send_data_cnt = dist_send_cnt(eng);
+                arr_send_arr_data   [node_id][i].resize(send_data_cnt);
+
+                for(u32 j = 0; j < send_data_cnt; j ++){
+                    arr_send_arr_data[node_id][i][j] = dist_flt(eng);
+                }
+
+            }
+        }
+    }
+
+
+    std::vector<       u32       > recv_arr_node_id;
+    std::vector<       u32       > recv_arr_tag;
+    std::vector<  std::vector<float> > recv_arr_data;
+
+
+    for(u32 i = 0; i < arr_send_arr_node_id[mpi_handler::world_rank].size(); i ++){
+        printf("sending to node %d : tag = %d data = ",arr_send_arr_node_id[mpi_handler::world_rank][i],arr_send_arr_tag    [mpi_handler::world_rank][i]);
+        print_vector(arr_send_arr_data   [mpi_handler::world_rank][i]);
+        printf("\n");
+    }
+
+    mpi_handler::sparse_alltoall(
+        arr_send_arr_node_id[mpi_handler::world_rank], 
+        arr_send_arr_tag[mpi_handler::world_rank], 
+        arr_send_arr_data[mpi_handler::world_rank], 
+
+        exchange_datatype, 
+        
+        recv_arr_node_id, 
+        recv_arr_tag, 
+        recv_arr_data, 
+        
+        mpi_handler::world_size, 
+        MPI_COMM_WORLD);
+
+    for(u32 i = 0; i < recv_arr_node_id.size(); i ++){
+        printf("received from to node %d : tag = %d data = ",recv_arr_node_id[i],recv_arr_tag[i]);
+        print_vector(recv_arr_data[i]);
+        printf("\n");
+    }
+
+    
 }

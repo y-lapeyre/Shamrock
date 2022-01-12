@@ -159,6 +159,12 @@ namespace mpi_handler{
 
             send_loc_cnt[send_arr_node_id[i]] ++;
         }
+
+        //wait for the end of ISend calls 
+        for(u32 i = 0; i < requests_send.size();i++){
+            MPI_Status st;
+            mpi::wait(&requests_send[i], &st);
+        }
         
 
         u32 recv_loc_cnt = -1;
@@ -167,7 +173,7 @@ namespace mpi_handler{
             mpi::reduce_scatter(send_loc_cnt.data(), &recv_loc_cnt, recv_cnt.data(), MPI_UINT32_T, MPI_SUM, MPI_COMM_WORLD);
         }
 
-
+        printf("will receive : %d\n",recv_loc_cnt);
 
 
         recv_arr_node_id.resize(recv_loc_cnt);
@@ -178,15 +184,9 @@ namespace mpi_handler{
 
 
 
-        //wait for the end of ISend calls 
-        for(u32 i = 0; i < requests_send.size();i++){
-            MPI_Status st;
-            mpi::wait(&requests_send[i], &st);
-        }
 
 
-
-        std::vector<MPI_Request> requests_recv(send_arr_node_id.size());
+        std::vector<MPI_Request> requests_recv(recv_loc_cnt);
 
 
         /*asynchronous probe seems unapropriate
@@ -202,21 +202,24 @@ namespace mpi_handler{
             recv_arr_tag[i]     = st.MPI_TAG;
 
             int sz_recv;
-            mpi::get_count(&st, MPI_CHAR, &sz_recv);
+            mpi::get_count(&st, exchange_datatype, &sz_recv);
 
             recv_arr_data[i].resize(sz_recv);
             
             //MPI_Status st_recv;
             //mpi::recv(recv_arr_data[i].data(), sz_recv, exchange_datatype, st.MPI_SOURCE, st.MPI_TAG, comm, &st_recv);
-            mpi::irecv(recv_arr_data[i].data(), sz_recv, exchange_datatype, st.MPI_SOURCE, st.MPI_TAG, comm, requests_recv[i]);
+            mpi::irecv(recv_arr_data[i].data(), sz_recv, exchange_datatype, st.MPI_SOURCE, st.MPI_TAG, comm, &requests_recv[i]);
         }
 
 
         //wait for the end of IRecv calls 
-        for(u32 i = 0; i < requests_send.size();i++){
+        //*
+        for(u32 i = 0; i < requests_recv.size();i++){
             MPI_Status st;
             mpi::wait(&requests_recv[i], &st);
         }
+        
+        //*/
 
         
 
