@@ -62,7 +62,7 @@ namespace mpi_handler{
      * @param recv_type 
      */
     template<class T>
-    inline void vector_allgatherv_ks(const std::vector<u32> & send_vec ,const MPI_Datatype send_type,std::vector<T> & recv_vec,const MPI_Datatype recv_type,const MPI_Comm comm){
+    inline void vector_allgatherv_ks(const std::vector<T> & send_vec ,const MPI_Datatype send_type,std::vector<T> & recv_vec,const MPI_Datatype recv_type,const MPI_Comm comm){
 
         u32 local_count = send_vec.size();
 
