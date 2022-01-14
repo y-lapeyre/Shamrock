@@ -1,8 +1,25 @@
+#ignore utility directories
 .cache
 .vscode
+__pycache__
+
+#*.sycl
+
+#compile/build/test folders
 build
 build_pipe
-*.sycl
 tools
+test_pipeline
+
+#ignore version.cpp generated file
 version.cpp
-__pycache__
+
+#Tex
+*.aux
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.pdf
+*.tex
+*.toc
