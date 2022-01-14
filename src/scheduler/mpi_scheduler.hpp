@@ -15,4 +15,12 @@ class MpiScheduler{public:
         mpi_handler::vector_allgatherv_ks(local_patch_list, patch_MPI_type, global_patch_list, patch_MPI_type, MPI_COMM_WORLD);
     }
 
+    inline MpiScheduler(){
+
+    }
+
+    inline virtual ~MpiScheduler(){
+
+    }
+
 };
