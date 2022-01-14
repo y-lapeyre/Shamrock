@@ -3,13 +3,13 @@ if("${BUILD_SPH}")
 
 target_sources(shamrock_sph
     PRIVATE
-        scheduler.cpp
+        #scheduler.cpp
         patch.cpp
     PUBLIC
         patch.hpp
         
-        patchdata.hpp
-        scheduler.hpp
+        #patchdata.hpp
+        #scheduler.hpp
     )
 
 endif()
@@ -18,12 +18,12 @@ if("${BUILD_AMR}")
 
 target_sources(shamrock_amr
     PRIVATE
-        scheduler.cpp
+        #scheduler.cpp
         patch.cpp
     PUBLIC
         patch.hpp
-        patchdata.hpp
-        scheduler.hpp
+        #patchdata.hpp
+        #scheduler.hpp
     )
 
 endif()
@@ -36,8 +36,8 @@ target_sources(shamrock_visu
         #patch.cpp
     PUBLIC
         patch.hpp
-        patchdata.hpp
-        scheduler.hpp
+        #patchdata.hpp
+        #scheduler.hpp
     )
 
 endif()
@@ -46,12 +46,12 @@ if("${BUILD_TEST}")
 
     target_sources(shamrock_test
     PRIVATE
-        scheduler.cpp
+        #scheduler.cpp
         patch.cpp
     PUBLIC
         patch.hpp
-        patchdata.hpp
-        scheduler.hpp
+        #patchdata.hpp
+        #scheduler.hpp
     )
 
 

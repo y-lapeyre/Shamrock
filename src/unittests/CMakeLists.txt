@@ -14,3 +14,4 @@ if("${BUILD_TEST}")
 endif()
 
 add_subdirectory(tree)
+add_subdirectory(sys)

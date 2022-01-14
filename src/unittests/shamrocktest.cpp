@@ -1,4 +1,5 @@
 #include "shamrocktest.hpp"
+#include <mpi.h>
 #include <sstream>
 
 #include "../utils/string_utils.hpp"
@@ -35,8 +36,8 @@ std::string make_test_output(TestResults t_res){
 
     output << "%test_name = \"" << t_res.test_name << "\"" << std::endl;
 
-    output << "%world_size = " << mpi::world_size << std::endl;
-    output << "%world_rank = " << mpi::world_rank << std::endl;
+    output << "%world_size = " << mpi_handler::world_size << std::endl;
+    output << "%world_rank = " << mpi_handler::world_rank << std::endl;
 
     for(unsigned int j = 0; j < t_res.lst_assert.size(); j++){
         output << "%start_assert \"" << t_res.lst_assert[j].assert_name << "\""<<std::endl;
@@ -58,7 +59,7 @@ std::string make_test_output(TestResults t_res){
 //TODO add memory clean as an assertion
 int run_all_tests(int argc, char *argv[]){
 
-    using namespace mpi;
+    using namespace mpi_handler;
 
     std::vector<std::string_view> args(argv + 1, argv + argc);
 
@@ -109,7 +110,7 @@ Options :
 
 
 
-    mpi::init();printf("\n");
+    mpi_handler::init();printf("\n");
 
     init_sycl();
 
@@ -182,12 +183,12 @@ Options :
         #ifdef MEM_TRACK_ENABLED
         u64 alloc_cnt_before_test = ptr_allocated.size();
         #endif
-        mpi::barrier();
+        mpi::barrier(MPI_COMM_WORLD);
         Timer timer;
         timer.start();
         test_fct_lst[i](t);
         timer.end();
-        mpi::barrier();
+        mpi::barrier(MPI_COMM_WORLD);
 
         
         #ifdef MEM_TRACK_ENABLED
@@ -305,7 +306,7 @@ Options :
     }
 
 
-    mpi::close();
+    mpi_handler::close();
 
 
     return 0;

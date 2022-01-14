@@ -60,6 +60,8 @@ if (CMAKE_BUILD_TYPE STREQUAL "COVERAGE_MAP")
 
 endif()
 
+#set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -flto")
+
 
 ######################
 # Add compilation flags for xray if enabled
