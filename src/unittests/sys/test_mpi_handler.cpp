@@ -125,5 +125,27 @@ Test_start("mpi::",sparse_alltoall,-1){
         printf("\n");
     }
 
+    for(u32 recv_id = 0; recv_id < recv_arr_node_id.size(); recv_id++){
+
+        bool acc = false;
+
+        u32 recv_node_id = recv_arr_node_id[recv_id];
+        u32 recv_node_tag = recv_arr_tag[recv_id];
+        std::vector<float> recv_node_data = recv_arr_data[recv_id];
+
+        for(u32 sender_rank = 0; sender_rank < mpi_handler::world_size; sender_rank ++){
+            for(u32 send_obj_id = 0; send_obj_id < arr_send_arr_node_id[sender_rank].size(); send_obj_id ++){
+
+                u32 send_node_id = sender_rank;
+                u32 send_node_tag = arr_send_arr_tag[sender_rank][send_obj_id];
+                std::vector<float> send_node_data = arr_send_arr_data[sender_rank][send_obj_id];
+
+                bool is_same = (recv_node_id == send_node_id) && (recv_node_tag == send_node_tag) && (recv_node_data == send_node_data);
+                acc = acc || is_same;
+            }
+        }
+        
+        Test_assert(format("object %d match",recv_id), acc);
+    }
     
 }
