@@ -10,7 +10,7 @@
  */
 struct Patch{
 
-    //patch information
+    //patch information (unique key)
     u64 id_patch;
 
     //patch tree info
