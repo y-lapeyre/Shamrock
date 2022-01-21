@@ -24,7 +24,7 @@ namespace mpi_handler{
 
     inline bool working = false;
 
-    inline int world_rank, world_size;
+    inline i32 world_rank, world_size;
     //inline Logger* global_logger;
 
     /**
@@ -86,7 +86,7 @@ namespace mpi_handler{
 
         node_displacments_data_table[0] = 0;
 
-        for(u32 i = 1 ; i < world_size; i++){
+        for(i32 i = 1 ; i < world_size; i++){
             node_displacments_data_table[i] = node_displacments_data_table[i-1] + table_data_count[i-1];
         }
         
@@ -152,7 +152,7 @@ namespace mpi_handler{
 
         node_displacments_data_table[0] = 0;
 
-        for(u32 i = 1 ; i < world_size; i++){
+        for(i32 i = 1 ; i < world_size; i++){
             node_displacments_data_table[i] = node_displacments_data_table[i-1] + table_data_count[i-1];
         }
         

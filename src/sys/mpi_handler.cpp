@@ -35,9 +35,20 @@ void mpi_handler::init(){
     std::cout << "%MPI_DEFINE:MPI_COMM_WORLD="<<MPI_COMM_WORLD<<"\n";
     #endif
 
+
     mpi::init(NULL, NULL);
     mpi::comm_size(MPI_COMM_WORLD, &world_size);
     mpi::comm_rank(MPI_COMM_WORLD, &world_rank);
+
+
+    if(world_size < 1){
+        throw "placeholder";
+    }
+
+    if(world_rank < 0){
+        throw "placeholder";
+    }
+
 
     #ifdef MPI_LOGGER_ENABLED
     std::cout << "%MPI_VALUE:world_size="<<world_size<<"\n";
@@ -54,6 +65,10 @@ void mpi_handler::init(){
         MPI_ERRORS_RETURN ) ;
     
     
+    if(error != MPI_SUCCESS){
+        throw "";
+    }
+
     //log_string_rank = format("[%03d]: ",world_rank);
     
     printf("[%03d]: \x1B[32mMPI_Init : node n°%03d | world size : %d | name = %s\033[0m\n",world_rank,world_rank,world_size,get_proc_name().c_str());
