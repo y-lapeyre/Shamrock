@@ -42,11 +42,11 @@ void mpi_handler::init(){
 
 
     if(world_size < 1){
-        throw "placeholder";
+        throw "";
     }
 
     if(world_rank < 0){
-        throw "placeholder";
+        throw "";
     }
 
 
@@ -60,9 +60,7 @@ void mpi_handler::init(){
     //MPI errors will return error code
 
     int error ;
-    error = mpi::comm_set_errhandler (
-        MPI_COMM_WORLD ,
-        MPI_ERRORS_RETURN ) ;
+    error = mpi::comm_set_errhandler(MPI_COMM_WORLD, MPI_ERRORS_RETURN);
     
     
     if(error != MPI_SUCCESS){
