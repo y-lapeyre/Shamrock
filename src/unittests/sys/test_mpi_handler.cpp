@@ -11,7 +11,7 @@ Test_start("mpi::",vector_allgather_ks,-1){
     {
         //fill the check vector with a pseudo random int generator (seed:0x1111)
         std::mt19937 eng(0x1111);                                     
-        std::uniform_int_distribution<u32> dist(0,4294967295);
+        std::uniform_int_distribution<u32> dist(u32_min,u32_max);
 
         for (u32 & element : check_vec) {
             element = dist(eng);
@@ -53,7 +53,7 @@ Test_start("mpi::",vector_allgather,-1){
     {
         //fill the check vector with a pseudo random int generator (seed:0x1111)
         std::mt19937 eng(0x1111);                                     
-        std::uniform_int_distribution<u32> dist(0,4294967295);
+        std::uniform_int_distribution<u32> dist(u32_min,u32_max);
 
         for (u32 & element : check_vec) {
             element = dist(eng);

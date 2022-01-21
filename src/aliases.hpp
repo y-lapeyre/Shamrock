@@ -32,6 +32,29 @@ typedef cl::sycl::cl_half   f16;
 typedef cl::sycl::cl_float  f32;
 typedef cl::sycl::cl_double f64;
 
+constexpr i64 i64_max = 0x7FFFFFFFFFFFFFFF;
+constexpr i32 i32_max = 0x7FFFFFFF;
+constexpr i16 i16_max = 0x7FFF;
+constexpr i8  i8_max  = 0x7F;
+
+constexpr i64 i64_min = 0x8000000000000000;
+constexpr i32 i32_min = 0x80000000;
+constexpr i16 i16_min = 0x8000;
+constexpr i8  i8_min  = 0x80;
+
+constexpr u64 u64_max = 0xFFFFFFFFFFFFFFFF;
+constexpr u32 u32_max = 0xFFFFFFFF;
+constexpr u16 u16_max = 0xFFFF;
+constexpr u8  u8_max  = 0xFF;
+
+constexpr u64 u64_min = 0x0000000000000000;
+constexpr u32 u32_min = 0x00000000;
+constexpr u16 u16_min = 0x0000;
+constexpr u8  u8_min  = 0x00;
+
+
+
+
 #define TYPEDEFS_TYPES(...) \
 typedef cl::sycl::cl_long##__VA_ARGS__   i64_##__VA_ARGS__;\
 typedef cl::sycl::cl_int##__VA_ARGS__    i32_##__VA_ARGS__;\
