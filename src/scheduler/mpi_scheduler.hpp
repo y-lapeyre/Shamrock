@@ -4,6 +4,7 @@
 #include "../sys/mpi_handler.hpp"
 #include <map>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 struct PatchData{
@@ -21,10 +22,14 @@ class MpiScheduler{public:
 
 
 
-
-    
+    std::unordered_set<u64> owned_patch_id;
     inline void build_local_patch_list(){
-        
+        local_patch_list.clear();
+        for(const Patch &p : global_patch_list){
+            if(owned_patch_id.find(p.id_patch) != owned_patch_id.end()){
+                local_patch_list.push_back(p);
+            }
+        }
     }
 
     inline MpiScheduler(){
