@@ -1,6 +1,5 @@
 #include "../shamrocktest.hpp"
 
-#include <mpi.h>
 #include <random>
 #include <vector>
 
