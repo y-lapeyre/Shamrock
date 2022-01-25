@@ -74,11 +74,6 @@ Test_start("mpi_scheduler::",build_select_corectness,-1){
 
     MpiScheduler sche = MpiScheduler();
 
-
-
-    
-
-
     for(const Patch &p : check_vec){
         sche.patch_list.global.push_back(p);
     }
@@ -121,5 +116,94 @@ Test_start("mpi_scheduler::",build_select_corectness,-1){
         }
     }
 
+
+}
+
+
+Test_start("mpi_scheduler::", xchg_patchs, -1){
+    //in the end this vector should be recovered in recv_vec
+    std::vector<Patch> check_vec;
+    //divide the check_vec in local_vector on each node
+    std::vector<Patch> local_check_vec;
+
+    make_global_local_check_vec(check_vec, local_check_vec);
+
+
+
+
+    MpiScheduler sche = MpiScheduler();
+
+    for(const Patch &p : check_vec){
+        sche.patch_list.global.push_back(p);
+    }
+
+    sche.owned_patch_id = sche.patch_list.build_local();
+
+
+    std::cout << "owned : ";
+    for(const u64 a : sche.owned_patch_id){
+        std::cout << a << " ";
+    }std::cout << std::endl;
+
+
+
+
+    //check corectness of local patch list
+    bool corect_size = sche.patch_list.local.size() == local_check_vec.size();
+    Test_assert("corect size for local patch", corect_size);
+    for(u32 i = 0 ; i < sche.patch_list.local.size(); i++){
+        if(corect_size){
+            Test_assert("corect patch", sche.patch_list.local[i] == local_check_vec[i]);
+        }
+    }
+
+
+
+    sche.patch_list.local.clear();
+
+
+
+    std::mt19937 eng(0x1111);        
+    std::uniform_int_distribution<u32> distrank(0,mpi_handler::world_size-1);
+    for(Patch &p : sche.patch_list.global){
+        u32 new_r = distrank(eng);
+        std::cout << "patch "<<p.id_patch<<" : " << p.node_owner_id << " -> " << new_r << std::endl;
+        p.node_owner_id = new_r;
+        
+    }
+
+    std::vector<u64> to_send_idx; 
+    std::vector<u64> to_recv_idx;
+
+    sche.patch_list.build_local_differantial(sche.owned_patch_id, to_send_idx, to_recv_idx);
+
+    std::cout << "to send : ";
+    for(const u64 a : to_send_idx){
+        std::cout <<"(" << a << ":" << sche.patch_list.global[a].id_patch<< " -> " << sche.patch_list.global[a].node_owner_id << ") ";
+    }std::cout << std::endl;
+
+
+    std::cout << "to recv : ";
+    for(const u64 a : to_recv_idx){
+        std::cout <<"(" << a << ":" << sche.patch_list.global[a].id_patch<< " -> " << sche.patch_list.global[a].node_owner_id << ") ";
+    }std::cout << std::endl;
+
+    std::cout << "owned : ";
+    for(const u64 a : sche.owned_patch_id){
+        std::cout << a << " ";
+    }std::cout << std::endl;
+
+
+
+    f64_4 a;
+    a.convert<f64>();
+
+    std::cout << a.x() << " " << a.y() << " " << a.z() << " " << a.w() << " " << std::endl;
+
+    f64* aptr = & a.x();
+
+    *aptr = 8;
+
+    std::cout << a.x() << " " << a.y() << " " << a.z() << " " << a.w() << " " << std::endl;
 
 }
