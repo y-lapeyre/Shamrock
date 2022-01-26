@@ -70,7 +70,7 @@ Options :
   --help              Display this information
   --test-list         Display the list of tests available
   --run-only <name>   Run only the test with the specified name
-  --full-ouput        Print the list of all assertions in each test
+  --full-output        Print the list of all assertions in each test
   -o <filename>       Output test result to file
     )%";
 
@@ -98,7 +98,7 @@ Options :
     }
 
 
-    bool full_output = has_option(args, "--full-ouput");
+    bool full_output = has_option(args, "--full-output");
 
     bool out_to_file = has_option(args, "-o");
 
