@@ -274,12 +274,6 @@ def configure_dpcpp(src_dir, build_dir,llvm_root, target_build_mode ,build_sys,s
     run_cmd(cmake_cmd)
 
 
-
-
-
-
-
-
 # regex to fin all new 
 # /\s+([^ ]+)\s*(=\s*new [^;]+;)/g
 # replace by 
@@ -411,7 +405,7 @@ def run_test_mempatch(node_cnt, run_only = "", oversubscribe = False):
 
     gen_mem_patched_dir("../src","../src_patched")
 
-    configure_dpcpp("../src_patched", "../build_patched","../../llvm",BuildSystem.Ninja,SyCLBE.CUDA,[Targets.Test],PrecisionMode.Single,PrecisionMode.Single)
+    configure_dpcpp("../src_patched", "../build_patched","../../llvm",BuildMode.Normal, BuildSystem.Ninja,SyCLBE.CUDA,[Targets.Test],PrecisionMode.Single,PrecisionMode.Single)
 
     compile_prog("../build_patched")
 
