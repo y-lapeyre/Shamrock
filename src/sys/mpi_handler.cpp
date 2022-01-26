@@ -60,7 +60,8 @@ void mpi_handler::init(){
     //MPI errors will return error code
 
     int error ;
-    error = mpi::comm_set_errhandler(MPI_COMM_WORLD, MPI_ERRORS_RETURN);
+    //error = mpi::comm_set_errhandler(MPI_COMM_WORLD, MPI_ERRORS_RETURN);
+    error = mpi::comm_set_errhandler(MPI_COMM_WORLD, MPI_ERRORS_ARE_FATAL);
     
     
     if(error != MPI_SUCCESS){
