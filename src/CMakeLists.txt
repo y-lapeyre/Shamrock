@@ -116,11 +116,11 @@ find_package(MPI REQUIRED COMPONENTS C)
 
 #hack to rerun the version generator if ninja/make all
 #cf https://stackoverflow.com/questions/13920072/how-to-always-run-command-when-building-regardless-of-any-dependency
-add_custom_command(
-    OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/version.cpp 
-           ${CMAKE_CURRENT_SOURCE_DIR}/version__.cpp 
-    COMMAND python3 ${CMAKE_CURRENT_SOURCE_DIR}/make_version_file.py > ${CMAKE_CURRENT_SOURCE_DIR}/version.cpp
-  )
+# add_custom_command(
+#     OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/version.cpp 
+#            ${CMAKE_CURRENT_SOURCE_DIR}/version__.cpp 
+#     COMMAND python3 ${CMAKE_CURRENT_SOURCE_DIR}/make_version_file.py > ${CMAKE_CURRENT_SOURCE_DIR}/version.cpp
+#   )
 
 if("${BUILD_SPH}")
 
