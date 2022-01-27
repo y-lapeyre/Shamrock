@@ -7,13 +7,7 @@
 #include <mpi.h>
 #include <random>
 
-/*
-    f32_4 a {0,1,2,3};
-    std::cout << ((size_t) ( (char *)&(a.x()) - (char *)&(a) )) << std::endl;
-    std::cout << ((size_t) ( (char *)&(a.y()) - (char *)&(a) )) << std::endl;
-    std::cout << ((size_t) ( (char *)&(a.z()) - (char *)&(a) )) << std::endl;
-    std::cout << ((size_t) ( (char *)&(a.w()) - (char *)&(a) )) << std::endl;
-*/
+
 
 int get_mpi_size(MPI_Datatype md){
     MPI_Aint lbs;
@@ -22,10 +16,93 @@ int get_mpi_size(MPI_Datatype md){
     return exts;
 }
 
-Test_start("sycl_handler::",test_sycl_mpi_types_sizes,2){
+template<class T>
+bool test_eq2(T a , T b){
+    bool eqx = a.x() == b.x();
+    bool eqy = a.y() == b.y();
+    return eqx && eqy;
+}
 
-    std::mt19937 eng(0x1111);        
-    std::uniform_real_distribution<f64> distval(-1e9,1e9);
+template<class T>
+bool test_eq3(T a , T b){
+    bool eqx = a.x() == b.x();
+    bool eqy = a.y() == b.y();
+    bool eqz = a.z() == b.z();
+    return eqx && eqy && eqz;
+}
+
+template<class T>
+bool test_eq4(T a , T b){
+    bool eqx = a.x() == b.x();
+    bool eqy = a.y() == b.y();
+    bool eqz = a.z() == b.z();
+    bool eqw = a.w() == b.w();
+    return eqx && eqy && eqz  && eqw;
+}
+
+template<class T>
+bool test_eq8(T a , T b){
+    bool eqs0 = a.s0() == b.s0();
+    bool eqs1 = a.s1() == b.s1();
+    bool eqs2 = a.s2() == b.s2();
+    bool eqs3 = a.s3() == b.s3();
+    bool eqs4 = a.s4() == b.s4();
+    bool eqs5 = a.s5() == b.s5();
+    bool eqs6 = a.s6() == b.s6();
+    bool eqs7 = a.s7() == b.s7();
+    return 
+        eqs0
+       && eqs1
+       && eqs2
+       && eqs3
+       && eqs4
+       && eqs5
+       && eqs6
+       && eqs7
+    ;
+}
+
+template<class T>
+bool test_eq16(T a , T b){
+    bool eqs0 = a.s0() == b.s0();
+    bool eqs1 = a.s1() == b.s1();
+    bool eqs2 = a.s2() == b.s2();
+    bool eqs3 = a.s3() == b.s3();
+    bool eqs4 = a.s4() == b.s4();
+    bool eqs5 = a.s5() == b.s5();
+    bool eqs6 = a.s6() == b.s6();
+    bool eqs7 = a.s7() == b.s7();
+
+    bool eqs8 = a.s8() == b.s8();
+    bool eqs9 = a.s9() == b.s9();
+    bool eqsA = a.sA() == b.sA();
+    bool eqsB = a.sB() == b.sB();
+    bool eqsC = a.sC() == b.sC();
+    bool eqsD = a.sD() == b.sD();
+    bool eqsE = a.sE() == b.sE();
+    bool eqsF = a.sF() == b.sF();
+
+    return 
+        eqs0
+       && eqs1
+       && eqs2
+       && eqs3
+       && eqs4
+       && eqs5
+       && eqs6
+       && eqs7
+       && eqs8
+       && eqs9
+       && eqsA
+       && eqsB
+       && eqsC
+       && eqsD
+       && eqsE
+       && eqsF
+    ;
+}
+
+Test_start("sycl_handler::",test_sycl_mpi_types_sizes,-1){
 
     create_sycl_mpi_types();
 
@@ -100,3 +177,237 @@ Test_start("sycl_handler::",test_sycl_mpi_types_sizes,2){
 
 }
 
+
+template<class T>
+void test_type1(TestResults &__test_result_ref,std::mt19937 &  eng, std::uniform_real_distribution<f64> & distval,MPI_Datatype mpi_t,const char* name){
+
+    T a_check [2];
+    a_check[0] = T(distval(eng));
+    a_check[1] = T(distval(eng));
+
+    if(mpi_handler::world_rank == 0){
+        mpi::send(&a_check   , 2, mpi_t   , 1, 0, MPI_COMM_WORLD);
+    }
+
+    if(mpi_handler::world_rank == 1){
+
+        T a_recv [2];
+        MPI_Status st;
+        mpi::recv(&a_recv   , 2, mpi_t   , 0, 0, MPI_COMM_WORLD, &st);
+
+        Test_assert(format("test send/recv %s[0]  ",name), a_recv[0]   == a_check[0]   );
+        Test_assert(format("test send/recv %s[1]  ",name), a_recv[1]   == a_check[1]   );
+
+    }
+
+}
+
+
+template<class T>
+void test_type2(TestResults &__test_result_ref,std::mt19937 &  eng, std::uniform_real_distribution<f64> & distval,MPI_Datatype mpi_t,const char* name){
+
+    T a_check [2];
+    a_check[0] = T{distval(eng),distval(eng)};
+    a_check[1] = T{distval(eng),distval(eng)};
+
+    if(mpi_handler::world_rank == 0){
+        mpi::send(&a_check   , 2, mpi_t   , 1, 0, MPI_COMM_WORLD);
+    }
+
+    if(mpi_handler::world_rank == 1){
+
+        T a_recv [2];
+        MPI_Status st;
+        mpi::recv(&a_recv   , 2, mpi_t   , 0, 0, MPI_COMM_WORLD, &st);
+
+        Test_assert(format("test send/recv %s[0]  ",name), test_eq2(a_recv[0] , a_check[0])   );
+        Test_assert(format("test send/recv %s[1]  ",name), test_eq2(a_recv[1] , a_check[1])   );
+
+    }
+
+}
+
+
+template<class T>
+void test_type3(TestResults &__test_result_ref,std::mt19937 &  eng, std::uniform_real_distribution<f64> & distval,MPI_Datatype mpi_t,const char* name){
+
+    T a_check [2];
+    a_check[0] = T{distval(eng),distval(eng),distval(eng)};
+    a_check[1] = T{distval(eng),distval(eng),distval(eng)};
+
+    if(mpi_handler::world_rank == 0){
+        mpi::send(&a_check   , 2, mpi_t   , 1, 0, MPI_COMM_WORLD);
+    }
+
+    if(mpi_handler::world_rank == 1){
+
+        T a_recv [2];
+        MPI_Status st;
+        mpi::recv(&a_recv   , 2, mpi_t   , 0, 0, MPI_COMM_WORLD, &st);
+
+        Test_assert(format("test send/recv %s[0]  ",name), test_eq3(a_recv[0] , a_check[0])   );
+        Test_assert(format("test send/recv %s[1]  ",name), test_eq3(a_recv[1] , a_check[1])   );
+
+    }
+
+}
+
+
+template<class T>
+void test_type4(TestResults &__test_result_ref,std::mt19937 &  eng, std::uniform_real_distribution<f64> & distval,MPI_Datatype mpi_t,const char* name){
+
+    T a_check [2];
+    a_check[0] = T{distval(eng),distval(eng),distval(eng),distval(eng)};
+    a_check[1] = T{distval(eng),distval(eng),distval(eng),distval(eng)};
+
+    if(mpi_handler::world_rank == 0){
+        mpi::send(&a_check   , 2, mpi_t   , 1, 0, MPI_COMM_WORLD);
+    }
+
+    if(mpi_handler::world_rank == 1){
+
+        T a_recv [2];
+        MPI_Status st;
+        mpi::recv(&a_recv   , 2, mpi_t   , 0, 0, MPI_COMM_WORLD, &st);
+
+        Test_assert(format("test send/recv %s[0]  ",name), test_eq4(a_recv[0] , a_check[0])   );
+        Test_assert(format("test send/recv %s[1]  ",name), test_eq4(a_recv[1] , a_check[1])   );
+
+    }
+
+}
+
+
+template<class T>
+void test_type8(TestResults &__test_result_ref,std::mt19937 &  eng, std::uniform_real_distribution<f64> & distval,MPI_Datatype mpi_t,const char* name){
+
+    T a_check [2];
+    a_check[0] = T{distval(eng),distval(eng),distval(eng),distval(eng),distval(eng),distval(eng),distval(eng),distval(eng)};
+    a_check[1] = T{distval(eng),distval(eng),distval(eng),distval(eng),distval(eng),distval(eng),distval(eng),distval(eng)};
+
+    if(mpi_handler::world_rank == 0){
+        mpi::send(&a_check   , 2, mpi_t   , 1, 0, MPI_COMM_WORLD);
+    }
+
+    if(mpi_handler::world_rank == 1){
+
+        T a_recv [2];
+        MPI_Status st;
+        mpi::recv(&a_recv   , 2, mpi_t   , 0, 0, MPI_COMM_WORLD, &st);
+
+        Test_assert(format("test send/recv %s[0]  ",name), test_eq8(a_recv[0] , a_check[0])   );
+        Test_assert(format("test send/recv %s[1]  ",name), test_eq8(a_recv[1] , a_check[1])   );
+
+    }
+
+}
+
+
+template<class T>
+void test_type16(TestResults &__test_result_ref,std::mt19937 &  eng, std::uniform_real_distribution<f64> & distval,MPI_Datatype mpi_t,const char* name){
+
+    T a_check [2];
+    a_check[0] = T{distval(eng),distval(eng),distval(eng),distval(eng),distval(eng),distval(eng),distval(eng),distval(eng),distval(eng),distval(eng),distval(eng),distval(eng),distval(eng),distval(eng),distval(eng),distval(eng)};
+    a_check[1] = T{distval(eng),distval(eng),distval(eng),distval(eng),distval(eng),distval(eng),distval(eng),distval(eng),distval(eng),distval(eng),distval(eng),distval(eng),distval(eng),distval(eng),distval(eng),distval(eng)};
+
+    if(mpi_handler::world_rank == 0){
+        mpi::send(&a_check   , 2, mpi_t   , 1, 0, MPI_COMM_WORLD);
+    }
+
+    if(mpi_handler::world_rank == 1){
+
+        T a_recv [2];
+        MPI_Status st;
+        mpi::recv(&a_recv   , 2, mpi_t   , 0, 0, MPI_COMM_WORLD, &st);
+
+        Test_assert(format("test send/recv %s[0]  ",name), test_eq16(a_recv[0] , a_check[0])   );
+        Test_assert(format("test send/recv %s[1]  ",name), test_eq16(a_recv[1] , a_check[1])   );
+
+    }
+
+}
+
+
+Test_start("sycl_handler::",test_sycl_mpi_types_comm,2){
+
+    std::mt19937 eng(0x1171);        
+    std::uniform_real_distribution<f64> distval(-1e9,1e9);
+
+    create_sycl_mpi_types();
+
+    test_type1<i64>(__test_result_ref, eng, distval,mpi_type_i64,"i64");
+    test_type1<i32>(__test_result_ref, eng, distval,mpi_type_i32,"i32");
+    test_type1<i16>(__test_result_ref, eng, distval,mpi_type_i16,"i16");
+    test_type1<i8 >(__test_result_ref, eng, distval,mpi_type_i8 ,"i8 ");
+    test_type1<u64>(__test_result_ref, eng, distval,mpi_type_u64,"u64");
+    test_type1<u32>(__test_result_ref, eng, distval,mpi_type_u32,"u32");
+    test_type1<u16>(__test_result_ref, eng, distval,mpi_type_u16,"u16");
+    test_type1<u8 >(__test_result_ref, eng, distval,mpi_type_u8 ,"u8 ");
+    test_type1<f16>(__test_result_ref, eng, distval,mpi_type_f16,"f16");
+    test_type1<f32>(__test_result_ref, eng, distval,mpi_type_f32,"f32");
+    test_type1<f64>(__test_result_ref, eng, distval,mpi_type_f64,"f64");
+
+    test_type2<i64_2>(__test_result_ref, eng, distval,mpi_type_i64_2,"i64_2");
+    test_type2<i32_2>(__test_result_ref, eng, distval,mpi_type_i32_2,"i32_2");
+    test_type2<i16_2>(__test_result_ref, eng, distval,mpi_type_i16_2,"i16_2");
+    test_type2<i8_2 >(__test_result_ref, eng, distval,mpi_type_i8_2 ,"i8_2 ");
+    test_type2<u64_2>(__test_result_ref, eng, distval,mpi_type_u64_2,"u64_2");
+    test_type2<u32_2>(__test_result_ref, eng, distval,mpi_type_u32_2,"u32_2");
+    test_type2<u16_2>(__test_result_ref, eng, distval,mpi_type_u16_2,"u16_2");
+    test_type2<u8_2 >(__test_result_ref, eng, distval,mpi_type_u8_2 ,"u8_2 ");
+    test_type2<f16_2>(__test_result_ref, eng, distval,mpi_type_f16_2,"f16_2");
+    test_type2<f32_2>(__test_result_ref, eng, distval,mpi_type_f32_2,"f32_2");
+    test_type2<f64_2>(__test_result_ref, eng, distval,mpi_type_f64_2,"f64_2");
+
+    test_type3<i64_3>(__test_result_ref, eng, distval,mpi_type_i64_3,"i64_3");
+    test_type3<i32_3>(__test_result_ref, eng, distval,mpi_type_i32_3,"i32_3");
+    test_type3<i16_3>(__test_result_ref, eng, distval,mpi_type_i16_3,"i16_3");
+    test_type3<i8_3 >(__test_result_ref, eng, distval,mpi_type_i8_3 ,"i8_3 ");
+    test_type3<u64_3>(__test_result_ref, eng, distval,mpi_type_u64_3,"u64_3");
+    test_type3<u32_3>(__test_result_ref, eng, distval,mpi_type_u32_3,"u32_3");
+    test_type3<u16_3>(__test_result_ref, eng, distval,mpi_type_u16_3,"u16_3");
+    test_type3<u8_3 >(__test_result_ref, eng, distval,mpi_type_u8_3 ,"u8_3 ");
+    test_type3<f16_3>(__test_result_ref, eng, distval,mpi_type_f16_3,"f16_3");
+    test_type3<f32_3>(__test_result_ref, eng, distval,mpi_type_f32_3,"f32_3");
+    test_type3<f64_3>(__test_result_ref, eng, distval,mpi_type_f64_3,"f64_3");
+
+    test_type4<i64_4>(__test_result_ref, eng, distval,mpi_type_i64_4,"i64_4");
+    test_type4<i32_4>(__test_result_ref, eng, distval,mpi_type_i32_4,"i32_4");
+    test_type4<i16_4>(__test_result_ref, eng, distval,mpi_type_i16_4,"i16_4");
+    test_type4<i8_4 >(__test_result_ref, eng, distval,mpi_type_i8_4 ,"i8_4 ");
+    test_type4<u64_4>(__test_result_ref, eng, distval,mpi_type_u64_4,"u64_4");
+    test_type4<u32_4>(__test_result_ref, eng, distval,mpi_type_u32_4,"u32_4");
+    test_type4<u16_4>(__test_result_ref, eng, distval,mpi_type_u16_4,"u16_4");
+    test_type4<u8_4 >(__test_result_ref, eng, distval,mpi_type_u8_4 ,"u8_4 ");
+    test_type4<f16_4>(__test_result_ref, eng, distval,mpi_type_f16_4,"f16_4");
+    test_type4<f32_4>(__test_result_ref, eng, distval,mpi_type_f32_4,"f32_4");
+    test_type4<f64_4>(__test_result_ref, eng, distval,mpi_type_f64_4,"f64_4");
+
+    test_type8<i64_8>(__test_result_ref, eng, distval,mpi_type_i64_8,"i64_8");
+    test_type8<i32_8>(__test_result_ref, eng, distval,mpi_type_i32_8,"i32_8");
+    test_type8<i16_8>(__test_result_ref, eng, distval,mpi_type_i16_8,"i16_8");
+    test_type8<i8_8 >(__test_result_ref, eng, distval,mpi_type_i8_8 ,"i8_8 ");
+    test_type8<u64_8>(__test_result_ref, eng, distval,mpi_type_u64_8,"u64_8");
+    test_type8<u32_8>(__test_result_ref, eng, distval,mpi_type_u32_8,"u32_8");
+    test_type8<u16_8>(__test_result_ref, eng, distval,mpi_type_u16_8,"u16_8");
+    test_type8<u8_8 >(__test_result_ref, eng, distval,mpi_type_u8_8 ,"u8_8 ");
+    test_type8<f16_8>(__test_result_ref, eng, distval,mpi_type_f16_8,"f16_8");
+    test_type8<f32_8>(__test_result_ref, eng, distval,mpi_type_f32_8,"f32_8");
+    test_type8<f64_8>(__test_result_ref, eng, distval,mpi_type_f64_8,"f64_8");
+
+    test_type16<i64_16>(__test_result_ref, eng, distval,mpi_type_i64_16,"i64_16");
+    test_type16<i32_16>(__test_result_ref, eng, distval,mpi_type_i32_16,"i32_16");
+    test_type16<i16_16>(__test_result_ref, eng, distval,mpi_type_i16_16,"i16_16");
+    test_type16<i8_16 >(__test_result_ref, eng, distval,mpi_type_i8_16 ,"i8_16 ");
+    test_type16<u64_16>(__test_result_ref, eng, distval,mpi_type_u64_16,"u64_16");
+    test_type16<u32_16>(__test_result_ref, eng, distval,mpi_type_u32_16,"u32_16");
+    test_type16<u16_16>(__test_result_ref, eng, distval,mpi_type_u16_16,"u16_16");
+    test_type16<u8_16 >(__test_result_ref, eng, distval,mpi_type_u8_16 ,"u8_16 ");
+    test_type16<f16_16>(__test_result_ref, eng, distval,mpi_type_f16_16,"f16_16");
+    test_type16<f32_16>(__test_result_ref, eng, distval,mpi_type_f32_16,"f32_16");
+    test_type16<f64_16>(__test_result_ref, eng, distval,mpi_type_f64_16,"f64_16");
+
+
+    free_sycl_mpi_types();
+
+}

@@ -5,14 +5,14 @@
 
 
 
-inline MPI_Datatype mpi_type_i64 = MPI_LONG;
-inline MPI_Datatype mpi_type_i32 = MPI_INT;
-inline MPI_Datatype mpi_type_i16 = MPI_SHORT;
-inline MPI_Datatype mpi_type_i8  = MPI_BYTE;
-inline MPI_Datatype mpi_type_u64 = MPI_LONG;
-inline MPI_Datatype mpi_type_u32 = MPI_INT;
-inline MPI_Datatype mpi_type_u16 = MPI_SHORT;
-inline MPI_Datatype mpi_type_u8  = MPI_BYTE;
+inline MPI_Datatype mpi_type_i64 = MPI_INT64_T;
+inline MPI_Datatype mpi_type_i32 = MPI_INT32_T;
+inline MPI_Datatype mpi_type_i16 = MPI_INT16_T;
+inline MPI_Datatype mpi_type_i8  = MPI_INT8_T ;
+inline MPI_Datatype mpi_type_u64 = MPI_UINT64_T;
+inline MPI_Datatype mpi_type_u32 = MPI_UINT32_T;
+inline MPI_Datatype mpi_type_u16 = MPI_UINT16_T;
+inline MPI_Datatype mpi_type_u8  = MPI_UINT8_T ;
 inline MPI_Datatype mpi_type_f16 = MPI_SHORT; // no f16 in mpi std
 inline MPI_Datatype mpi_type_f32 = MPI_FLOAT;
 inline MPI_Datatype mpi_type_f64 = MPI_DOUBLE;
@@ -120,13 +120,7 @@ inline MPI_Datatype mpi_type_f64_16;
     base_name a;\
     MPI_Aint offset_##base_name = ((size_t) ( (char *)&(a.x()) - (char *)&(a) ));\
     mpi::type_create_struct( 1, & __len_vec3, &offset_##base_name, & mpi_type_##src_type, &__tmp_mpi_type_##base_name );\
-    MPI_Aint lbs;\
-    MPI_Aint exts;\
-    mpi::type_get_extent(__tmp_mpi_type_##base_name, &lbs, &exts);\
-    int sz_prim;\
-    MPI_Type_size(mpi_type_##src_type, &sz_prim);\
-    exts += sz_prim;\
-    MPI_Type_create_resized(__tmp_mpi_type_##base_name, lbs, exts, &mpi_type_##base_name);\
+    mpi::type_create_resized(__tmp_mpi_type_##base_name, 0, sizeof(base_name), &mpi_type_##base_name);\
     mpi::type_commit( &mpi_type_##base_name );\
 }
 
@@ -177,6 +171,24 @@ inline void create_sycl_mpi_types(){
     __SYCL_TYPE_COMMIT_len3(i64_3,i64)
     __SYCL_TYPE_COMMIT_len3(i32_3,i32)
     __SYCL_TYPE_COMMIT_len3(i16_3,i16)
+
+    // {
+    //     i16_3 a;
+
+    //     MPI_Datatype types_list[3] = {mpi_type_i16,mpi_type_i16,mpi_type_i16};
+    //     int          block_lens[3] = {1,1,1};
+    //     MPI_Aint     MPI_offset[3];
+    //        MPI_offset[0] = ((size_t) ( (char *)&(a.x()) - (char *)&(a) ));
+    //        MPI_offset[1] = ((size_t) ( (char *)&(a.y()) - (char *)&(a) ));
+    //        MPI_offset[2] = ((size_t) ( (char *)&(a.z()) - (char *)&(a) ));
+        
+
+    //     mpi::type_create_struct( 3,  block_lens, MPI_offset, types_list, &mpi_type_i16_3 );
+    //     /*mpi::type_create_resized(__tmp_mpi_type_i16_3, 0, sizeof(base_name), &mpi_type_i16_3);*/\
+    //     mpi::type_commit( &mpi_type_i16_3 );
+    // }
+
+
     __SYCL_TYPE_COMMIT_len3(i8_3 ,i8 )
     __SYCL_TYPE_COMMIT_len3(u64_3,u64)
     __SYCL_TYPE_COMMIT_len3(u32_3,u32)
