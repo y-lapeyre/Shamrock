@@ -10,6 +10,9 @@ build
 build_pipe
 tools
 test_pipeline
+test_res_*
+tmp.json
+scripts
 
 #ignore version.cpp generated file
 version.cpp
@@ -23,3 +26,5 @@ version.cpp
 *.pdf
 *.tex
 *.toc
+
+
