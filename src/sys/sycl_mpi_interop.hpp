@@ -1,3 +1,6 @@
+#pragma once
+
+
 #include "mpi_handler.hpp"
 #include <mpi.h>
 
@@ -103,6 +106,37 @@ inline MPI_Datatype mpi_type_u8_16;
 inline MPI_Datatype mpi_type_f16_16;
 inline MPI_Datatype mpi_type_f32_16;
 inline MPI_Datatype mpi_type_f64_16;
+
+
+
+
+
+
+
+
+
+
+
+
+inline MPI_Datatype mpi_type_u_morton ; 
+inline MPI_Datatype mpi_type_u_ixyz   ; 
+inline MPI_Datatype mpi_type_i_ixyz   ; 
+
+inline MPI_Datatype mpi_type_f_s      ; 
+inline MPI_Datatype mpi_type_f2_s     ; 
+inline MPI_Datatype mpi_type_f3_s     ; 
+inline MPI_Datatype mpi_type_f4_s     ; 
+
+inline MPI_Datatype mpi_type_f_d      ; 
+inline MPI_Datatype mpi_type_f2_d     ; 
+inline MPI_Datatype mpi_type_f3_d     ; 
+inline MPI_Datatype mpi_type_f4_d     ; 
+
+
+
+
+
+
 
 
 
@@ -233,6 +267,70 @@ inline void create_sycl_mpi_types(){
     __SYCL_TYPE_COMMIT_len16(f16_16,f16)
     __SYCL_TYPE_COMMIT_len16(f32_16,f32)
     __SYCL_TYPE_COMMIT_len16(f64_16,f64)
+
+
+
+
+
+
+
+
+
+
+
+
+
+    #if defined(PRECISION_MORTON_DOUBLE)
+        mpi_type_u_morton = mpi_type_u64  ;
+        mpi_type_u_ixyz   = mpi_type_u32_3;
+        mpi_type_i_ixyz   = mpi_type_i32_3;
+    #else
+        mpi_type_u_morton = mpi_type_u32  ;
+        mpi_type_u_ixyz   = mpi_type_u16_3;
+        mpi_type_i_ixyz   = mpi_type_i16_3;
+    #endif
+
+    #if defined (PRECISION_FULL_SINGLE)
+        mpi_type_f_s      = mpi_type_f32  ;
+        mpi_type_f2_s     = mpi_type_f32_2;
+        mpi_type_f3_s     = mpi_type_f32_3;
+        mpi_type_f4_s     = mpi_type_f32_4;
+
+        mpi_type_f_d      = mpi_type_f32  ;
+        mpi_type_f2_d     = mpi_type_f32_2;
+        mpi_type_f3_d     = mpi_type_f32_3;
+        mpi_type_f4_d     = mpi_type_f32_4;
+    #endif
+
+    #if defined (PRECISION_MIXED)
+        mpi_type_f_s      = mpi_type_f32  ;
+        mpi_type_f2_s     = mpi_type_f32_2;
+        mpi_type_f3_s     = mpi_type_f32_3;
+        mpi_type_f4_s     = mpi_type_f32_4;
+
+        mpi_type_f_d      = mpi_type_f64  ;
+        mpi_type_f2_d     = mpi_type_f64_2;
+        mpi_type_f3_d     = mpi_type_f64_3;
+        mpi_type_f4_d     = mpi_type_f64_4;
+    #endif
+
+    #if defined (PRECISION_FULL_DOUBLE)
+        mpi_type_f_s      = mpi_type_f64  ;
+        mpi_type_f2_s     = mpi_type_f64_2;
+        mpi_type_f3_s     = mpi_type_f64_3;
+        mpi_type_f4_s     = mpi_type_f64_4;
+
+        mpi_type_f_d      = mpi_type_f64  ;
+        mpi_type_f2_d     = mpi_type_f64_2;
+        mpi_type_f3_d     = mpi_type_f64_3;
+        mpi_type_f4_d     = mpi_type_f64_4;
+    #endif
+
+
+
+
+
+
 
 
 }
