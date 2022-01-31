@@ -7,10 +7,7 @@
 #include <unordered_set>
 #include <vector>
 
-struct PatchData{
-    u64 a;
-};
-
+#include "patchdata.hpp"
 
 class SchedulerPatchList{public:
 
@@ -93,9 +90,7 @@ class SchedulerPatchList{public:
 
 };
 
-class SchedulerPatchData {public: 
 
-};
 
 class MpiScheduler{public:
 
