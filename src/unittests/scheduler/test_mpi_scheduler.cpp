@@ -1,9 +1,15 @@
 #include "../shamrocktest.hpp"
 
+#include <algorithm>
+#include <iterator>
 #include <mpi.h>
 #include <random>
+#include <unordered_set>
 #include <utility>
 #include <vector>
+
+#include "test_patchdata_utils.hpp"
+
 
 #include "../../scheduler/mpi_scheduler.hpp"
 
@@ -70,45 +76,8 @@ void make_global_local_check_vec(std::vector<Patch> & global, std::vector<Patch>
 
 
 
-PatchData gen_dummy_data(std::mt19937& eng){
-
-    std::uniform_int_distribution<u64> distu64(1,10000);
-
-    std::uniform_real_distribution<f64> distfd(-1e5,1e5);
-
-    u32 num_part = distu64(eng);
-
-    PatchData d;
 
 
-    for (u32 i = 0 ; i < num_part; i++) {
-        for (u32 ii = 0; ii < patchdata_layout::nVarpos_s; ii ++) {
-            d.pos_s.push_back( f3_s{distfd(eng),distfd(eng),distfd(eng)} );
-        }
-        
-        for (u32 ii = 0; ii < patchdata_layout::nVarpos_d; ii ++) {
-            d.pos_d.push_back( f3_d{distfd(eng),distfd(eng),distfd(eng)} );
-        }
-
-        for (u32 ii = 0; ii < patchdata_layout::nVarU1_s; ii ++) {
-            d.U1_s.push_back( f_s(distfd(eng)) );
-        }
-
-        for (u32 ii = 0; ii < patchdata_layout::nVarU1_d; ii ++) {
-            d.U1_d.push_back( f_d(distfd(eng)) );
-        }
-
-        for (u32 ii = 0; ii < patchdata_layout::nVarU3_s; ii ++) {
-            d.U3_s.push_back( f3_s{distfd(eng),distfd(eng),distfd(eng)} );
-        }
-
-        for (u32 ii = 0; ii < patchdata_layout::nVarU3_d; ii ++) {
-            d.U3_d.push_back( f3_d{distfd(eng),distfd(eng),distfd(eng)} );
-        }
-    }
-
-    return d;
-}
 
 
 
@@ -176,6 +145,7 @@ Test_start("mpi_scheduler::", xchg_patchs, -1){
 
     //in the end this vector should be recovered in recv_vec
     std::vector<Patch> check_vec;
+    std::map<u64, PatchData> check_patchdata;
     //divide the check_vec in local_vector on each node
     std::vector<Patch> local_check_vec;
 
@@ -190,21 +160,27 @@ Test_start("mpi_scheduler::", xchg_patchs, -1){
     patchdata_layout::set(1, 2, 1, 5, 4, 3);
     patchdata_layout::sync(MPI_COMM_WORLD);
 
+
+    std::mt19937 dummy_patch_eng(0x1234);
     for(const Patch &p : check_vec){
         sche.patch_list.global.push_back(p);
+        check_patchdata[p.id_patch] = gen_dummy_data(dummy_patch_eng);
     }
 
     sche.owned_patch_id = sche.patch_list.build_local();
 
-    std::mt19937 dummy_patch_eng(0x1234 + mpi_handler::world_rank);
+
     std::cout << "owned : ";
     for(const u64 a : sche.owned_patch_id){
         std::cout << a << " ";
-        sche.owned_patchdata[a] = gen_dummy_data(dummy_patch_eng);
+        sche.owned_patchdata[a] = check_patchdata[a];
     }std::cout << std::endl;
 
 
-
+    std::cout << "owned patchdata : ";
+    for(auto & [key,obj] : sche.owned_patchdata){
+        std::cout << key << " ";
+    }std::cout << std::endl;
 
 
 
@@ -262,13 +238,13 @@ Test_start("mpi_scheduler::", xchg_patchs, -1){
     std::vector<MPI_Request> rq_lst;
 
     for(u32 i = 0 ; i < change_list.size(); i++){
-        auto & [idx,old_owner,new_owner,tag_comm] = change_list[i];
-        auto & patchdata = sche.owned_patchdata[sche.patch_list.global[idx].id_patch];
-
         
+        auto & [idx,old_owner,new_owner,tag_comm] = change_list[i];
 
         //if i'm sender
         if(old_owner == mpi_handler::world_rank){
+            
+            auto & patchdata = sche.owned_patchdata[sche.patch_list.global[idx].id_patch];
 
             std::cout << "send : " << idx << " " << old_owner << " -> " << new_owner  <<  " tag : "<< tag_comm << std::endl;
 
@@ -297,59 +273,19 @@ Test_start("mpi_scheduler::", xchg_patchs, -1){
     mpi::waitall(rq_lst.size(), rq_lst.data(), st_lst.data());
 
 
-
-
-    /*
-    std::vector<i32> tags_it_node(mpi_handler::world_size);
-
-    std::vector<MPI_Request> rq_lst;
-
     for(u32 i = 0 ; i < change_list.size(); i++){
+        auto & [idx,old_owner,new_owner,tag_comm] = change_list[i];
+        auto & id_patch = sche.patch_list.global[idx].id_patch;
+        
+        sche.patch_list.global[idx].node_owner_id = new_owner;
 
-        auto & t = change_list[i];
-
-        std::cout << std::get<0>(t) << " " << std::get<1>(t) << " -> " << std::get<2>(t)  <<  " tag : "<< tags_it_node[std::get<1>(t)] << std::endl;
-
-        //if sender
-        if(std::get<1>(t) == mpi_handler::world_rank){
-            
-            u32 rank_send = std::get<2>(t);
-            i32 recv_tag = tags_it_node[std::get<1>(t)];
-            u64 id_patch = sche.patch_list.global[std::get<0>(t)].id_patch;
-            
-            std::cout << "send to : " <<std::get<2>(t)<< " tag = "<<tags_it_node[std::get<1>(t)] <<std::endl;
-
-            rq_lst.resize(rq_lst.size()+1);
-            mpi::isend(
-                sche.owned_patchdata[id_patch].pos_s.data(), 
-                sche.owned_patchdata[id_patch].pos_s.size(), 
-                mpi_type_f3_s , 
-                rank_send, 
-                recv_tag, 
-                MPI_COMM_WORLD, 
-                & rq_lst[rq_lst.size()-1]);
+        //if i'm sender
+        if(old_owner == mpi_handler::world_rank){
+            std::cout << "deleting : " << idx << std::endl;
+            sche.owned_patchdata.erase(id_patch);
         }
 
-        //if receiver
-        if(std::get<2>(t) == mpi_handler::world_rank){
-            
-            u32 rank_recv = std::get<1>(t);
-            i32 recv_tag = tags_it_node[std::get<1>(t)];
-            u64 idx_patch = std::get<0>(t);
-
-            std::cout << "receive from : " <<std::get<1>(t)<< " tag = "<<tags_it_node[std::get<1>(t)] <<std::endl;
-
-            rq_lst.resize(rq_lst.size()+1);
-            mpi::irecv(void *buf, int count, MPI_Datatype datatype, int source, int tag, MPI_Comm comm, & rq_lst[rq_lst.size()-1]);
-        }
-
-        tags_it_node[std::get<1>(t)] ++;
     }
-    */
-
-
-
-    
 
 
 
@@ -357,31 +293,34 @@ Test_start("mpi_scheduler::", xchg_patchs, -1){
 
 
 
-    /*
-    sche.patch_list.build_local_differantial(sche.owned_patch_id, to_send_idx, to_recv_idx);
+    sche.owned_patch_id = sche.patch_list.build_local();
 
-
-    
-
-
-    
-
-    std::cout << "to send : ";
-    for(const u64 a : to_send_idx){
-        std::cout <<"(" << a << ":" << sche.patch_list.global[a].id_patch<< " -> " << sche.patch_list.global[a].node_owner_id << ") ";
-    }std::cout << std::endl;
-
-
-    std::cout << "to recv : ";
-    for(const u64 a : to_recv_idx){
-        std::cout <<"(" << a << ":" << sche.patch_list.global[a].id_patch<< " -> " << sche.patch_list.global[a].node_owner_id << ") ";
-    }std::cout << std::endl;
 
     std::cout << "owned : ";
     for(const u64 a : sche.owned_patch_id){
         std::cout << a << " ";
     }std::cout << std::endl;
-    */
+
+    std::cout << "owned patchdata : ";
+    std::unordered_set<u64> id_patch_from_owned_patchadata;
+    for(auto & [key,obj] : sche.owned_patchdata){
+        id_patch_from_owned_patchadata.insert(key);
+        std::cout << key << " ";
+    }std::cout << std::endl;
+
+    std::vector<u64> diffs;
+
+    std::set_difference(id_patch_from_owned_patchadata.begin(),id_patch_from_owned_patchadata.end(),sche.owned_patch_id.begin(),sche.owned_patch_id.end(),std::back_inserter(diffs));
+
+    std::cout << "owned diffs cnt : " << diffs.size()<< std::endl;
+
+
+    Test_assert("same id owned (patch/Data)", diffs.size() == 0);
+
+    for(const u64 a : sche.owned_patch_id){
+        check_patch_data_equal(__test_result_ref, sche.owned_patchdata[a], check_patchdata[a]);
+    }
+
 
 
     free_sycl_mpi_types();
