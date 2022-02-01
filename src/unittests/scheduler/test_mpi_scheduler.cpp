@@ -82,26 +82,20 @@ void make_global_local_check_vec(std::vector<Patch> & global, std::vector<Patch>
 
 
 Test_start("mpi_scheduler::",build_select_corectness,-1){
+    create_MPI_patch_type();
 
     //in the end this vector should be recovered in recv_vec
     std::vector<Patch> check_vec;
     //divide the check_vec in local_vector on each node
     std::vector<Patch> local_check_vec;
-
     make_global_local_check_vec(check_vec, local_check_vec);
 
 
-
     MpiScheduler sche = MpiScheduler();
-
     for(const Patch &p : check_vec){
         sche.patch_list.global.push_back(p);
     }
-
-
     sche.patch_list.build_local();
-
-    printf("%zu %zu\n",sche.patch_list.local.size() , local_check_vec.size());
 
 
     //check corectness of local patch list
@@ -114,22 +108,12 @@ Test_start("mpi_scheduler::",build_select_corectness,-1){
     }
 
 
-
-
-
     sche.patch_list.global.clear();
-
-    create_MPI_patch_type();
-
     sche.patch_list.sync_global();
-
-    free_MPI_patch_type();
 
 
     corect_size = sche.patch_list.global.size() == check_vec.size();
     Test_assert("corect size for global patch", corect_size);
-
-
     for(u32 i = 0 ; i < sche.patch_list.global.size(); i++){
         if(corect_size){
             Test_assert("corect patch", sche.patch_list.global[i] == check_vec[i]);
@@ -137,31 +121,42 @@ Test_start("mpi_scheduler::",build_select_corectness,-1){
     }
 
 
+
+    free_MPI_patch_type();
 }
 
 
-Test_start("mpi_scheduler::", xchg_patchs, -1){
 
+
+
+
+
+Test_start("mpi_scheduler::", xchg_patchs, -1){
+    create_sycl_mpi_types();
+
+
+    std::mt19937 dummy_patch_eng(0x1234);
+    std::mt19937 eng(0x1111);  
+    
 
     //in the end this vector should be recovered in recv_vec
     std::vector<Patch> check_vec;
     std::map<u64, PatchData> check_patchdata;
     //divide the check_vec in local_vector on each node
     std::vector<Patch> local_check_vec;
-
     make_global_local_check_vec(check_vec, local_check_vec);
 
 
 
 
     MpiScheduler sche = MpiScheduler();
-
-    create_sycl_mpi_types();
     patchdata_layout::set(1, 2, 1, 5, 4, 3);
     patchdata_layout::sync(MPI_COMM_WORLD);
 
 
-    std::mt19937 dummy_patch_eng(0x1234);
+    Timer t;
+    t.start();
+    //initial setup
     for(const Patch &p : check_vec){
         sche.patch_list.global.push_back(p);
         check_patchdata[p.id_patch] = gen_dummy_data(dummy_patch_eng);
@@ -169,20 +164,10 @@ Test_start("mpi_scheduler::", xchg_patchs, -1){
 
     sche.owned_patch_id = sche.patch_list.build_local();
 
-
-    std::cout << "owned : ";
     for(const u64 a : sche.owned_patch_id){
-        std::cout << a << " ";
         sche.owned_patchdata[a] = check_patchdata[a];
-    }std::cout << std::endl;
-
-
-    std::cout << "owned patchdata : ";
-    for(auto & [key,obj] : sche.owned_patchdata){
-        std::cout << key << " ";
-    }std::cout << std::endl;
-
-
+    }
+    t.end();
 
 
 
@@ -197,25 +182,14 @@ Test_start("mpi_scheduler::", xchg_patchs, -1){
 
 
 
-    sche.patch_list.local.clear();
 
 
 
-    std::mt19937 eng(0x1111);  
-
-
-    
-
-          
-    std::uniform_int_distribution<u32> distrank(0,mpi_handler::world_size-1);
-
-
-
-
-
+    //dummy load balancing
     std::vector<std::tuple<u32, i32, i32,i32>> change_list;
 
-    {
+    {   
+        std::uniform_int_distribution<u32> distrank(0,mpi_handler::world_size-1);
         std::vector<i32> tags_it_node(mpi_handler::world_size);
         for(u32 i = 0 ; i < sche.patch_list.global.size(); i++){
 
@@ -233,94 +207,69 @@ Test_start("mpi_scheduler::", xchg_patchs, -1){
 
 
 
-    std::vector<u64> patchdata_id_to_delete;
-
     std::vector<MPI_Request> rq_lst;
 
+    //send
     for(u32 i = 0 ; i < change_list.size(); i++){
-        
         auto & [idx,old_owner,new_owner,tag_comm] = change_list[i];
 
         //if i'm sender
         if(old_owner == mpi_handler::world_rank){
-            
             auto & patchdata = sche.owned_patchdata[sche.patch_list.global[idx].id_patch];
-
-            std::cout << "send : " << idx << " " << old_owner << " -> " << new_owner  <<  " tag : "<< tag_comm << std::endl;
-
             patchdata_isend(patchdata, rq_lst, new_owner, tag_comm, MPI_COMM_WORLD);
-            patchdata_id_to_delete.push_back(sche.patch_list.global[old_owner].id_patch);
         }
     }
 
-
-
+    //receive
     for(u32 i = 0 ; i < change_list.size(); i++){
         auto & [idx,old_owner,new_owner,tag_comm] = change_list[i];
         auto & id_patch = sche.patch_list.global[idx].id_patch;
         
-
-        //if i'm sender
+        //if i'm receiver
         if(new_owner == mpi_handler::world_rank){
-
-            std::cout << "recv : " << idx << " " << old_owner << " -> " << new_owner  <<  " tag : "<< tag_comm << std::endl;
-
             sche.owned_patchdata[id_patch] = patchdata_irecv( rq_lst, old_owner, tag_comm, MPI_COMM_WORLD);
         }
     }
 
+
+    //wait
     std::vector<MPI_Status> st_lst(rq_lst.size());
     mpi::waitall(rq_lst.size(), rq_lst.data(), st_lst.data());
 
 
+    //erase old patchdata
     for(u32 i = 0 ; i < change_list.size(); i++){
         auto & [idx,old_owner,new_owner,tag_comm] = change_list[i];
         auto & id_patch = sche.patch_list.global[idx].id_patch;
         
         sche.patch_list.global[idx].node_owner_id = new_owner;
 
-        //if i'm sender
+        //if i'm sender delete old data
         if(old_owner == mpi_handler::world_rank){
-            std::cout << "deleting : " << idx << std::endl;
             sche.owned_patchdata.erase(id_patch);
         }
 
     }
 
 
-
-
-
-
-
+    //rebuild local table
     sche.owned_patch_id = sche.patch_list.build_local();
 
 
-    std::cout << "owned : ";
-    for(const u64 a : sche.owned_patch_id){
-        std::cout << a << " ";
-    }std::cout << std::endl;
+    //check for mismatch
+    std::vector<u64> diffs;
 
-    std::cout << "owned patchdata : ";
     std::unordered_set<u64> id_patch_from_owned_patchadata;
     for(auto & [key,obj] : sche.owned_patchdata){
         id_patch_from_owned_patchadata.insert(key);
-        std::cout << key << " ";
-    }std::cout << std::endl;
-
-    std::vector<u64> diffs;
-
+    }
     std::set_difference(id_patch_from_owned_patchadata.begin(),id_patch_from_owned_patchadata.end(),sche.owned_patch_id.begin(),sche.owned_patch_id.end(),std::back_inserter(diffs));
-
-    std::cout << "owned diffs cnt : " << diffs.size()<< std::endl;
-
-
     Test_assert("same id owned (patch/Data)", diffs.size() == 0);
 
+    //check corectness of patchdata contents
     for(const u64 a : sche.owned_patch_id){
         check_patch_data_equal(__test_result_ref, sche.owned_patchdata[a], check_patchdata[a]);
     }
-
 
 
     free_sycl_mpi_types();

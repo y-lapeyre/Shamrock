@@ -6,6 +6,10 @@
 
 
 
+inline bool __mpi_sycl_type_active = false;
+inline bool is_mpi_sycl_interop_active(){
+    return __mpi_sycl_type_active;
+}
 
 
 inline MPI_Datatype mpi_type_i64 = MPI_INT64_T;
@@ -329,7 +333,7 @@ inline void create_sycl_mpi_types(){
 
 
 
-
+    __mpi_sycl_type_active = true;
 
 
 
@@ -396,4 +400,6 @@ inline void free_sycl_mpi_types(){
     mpi::type_free(&mpi_type_f16_16);
     mpi::type_free(&mpi_type_f32_16);
     mpi::type_free(&mpi_type_f64_16);
+
+    __mpi_sycl_type_active = false;
 }

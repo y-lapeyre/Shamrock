@@ -16,13 +16,20 @@ namespace patchdata_layout {
     inline u32 nVarU3_s;
     inline u32 nVarU3_d;
 
+    /**
+     * @brief should be check if true before communication with patchdata_s
+     */
+    inline bool layout_synced = false;
+
     inline void sync(MPI_Comm comm) {
         mpi::bcast(&patchdata_layout::nVarpos_s, 1, mpi_type_u32, 0, comm);
         mpi::bcast(&patchdata_layout::nVarpos_d, 1, mpi_type_u32, 0, comm);
-        mpi::bcast(&patchdata_layout::nVarU1_s, 1, mpi_type_u32, 0, comm);
-        mpi::bcast(&patchdata_layout::nVarU1_d, 1, mpi_type_u32, 0, comm);
-        mpi::bcast(&patchdata_layout::nVarU3_s, 1, mpi_type_u32, 0, comm);
-        mpi::bcast(&patchdata_layout::nVarU3_d, 1, mpi_type_u32, 0, comm);
+        mpi::bcast(&patchdata_layout::nVarU1_s , 1, mpi_type_u32, 0, comm);
+        mpi::bcast(&patchdata_layout::nVarU1_d , 1, mpi_type_u32, 0, comm);
+        mpi::bcast(&patchdata_layout::nVarU3_s , 1, mpi_type_u32, 0, comm);
+        mpi::bcast(&patchdata_layout::nVarU3_d , 1, mpi_type_u32, 0, comm);
+
+        layout_synced = true;
     }
 
     inline void set(u32 arg_nVarpos_s, u32 arg_nVarpos_d, u32 arg_nVarU1_s, u32 arg_nVarU1_d, u32 arg_nVarU3_s,
@@ -36,7 +43,13 @@ namespace patchdata_layout {
         patchdata_layout::nVarU3_d  = arg_nVarU3_d;
     }
 
+    inline bool is_synced(){
+        return layout_synced;
+    }
+
 } // namespace patchdata_layout
+
+
 
 class PatchData {
   public:
@@ -47,6 +60,8 @@ class PatchData {
     std::vector<f3_s> U3_s;
     std::vector<f3_d> U3_d;
 };
+
+
 
 inline void patchdata_isend(PatchData &p, std::vector<MPI_Request> &rq_lst, i32 rank_dest, i32 tag, MPI_Comm comm) {
     rq_lst.resize(rq_lst.size() + 1);

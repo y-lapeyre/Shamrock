@@ -88,6 +88,12 @@ inline MPI_Datatype patch_MPI_types_list[3];
 inline int          patch_MPI_block_lens[3];
 inline MPI_Aint     patch_MPI_offset[3];
 
+inline bool __mpi_patch_type_active = false;
+inline bool is_mpi_patch_type_active(){
+    return __mpi_patch_type_active;
+}
+
+
 void create_MPI_patch_type();
 
 void free_MPI_patch_type();
