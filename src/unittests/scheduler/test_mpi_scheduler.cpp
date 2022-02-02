@@ -132,7 +132,6 @@ Test_start("mpi_scheduler::",build_select_corectness,-1){
 
 
 Test_start("mpi_scheduler::", xchg_patchs, -1){
-    create_sycl_mpi_types();
 
 
     std::mt19937 dummy_patch_eng(0x1234);
@@ -150,6 +149,8 @@ Test_start("mpi_scheduler::", xchg_patchs, -1){
 
 
     MpiScheduler sche = MpiScheduler();
+    sche.init_mpi_required_types();
+
     patchdata_layout::set(1, 2, 1, 5, 4, 3);
     patchdata_layout::sync(MPI_COMM_WORLD);
 
@@ -165,7 +166,7 @@ Test_start("mpi_scheduler::", xchg_patchs, -1){
     sche.owned_patch_id = sche.patch_list.build_local();
 
     for(const u64 a : sche.owned_patch_id){
-        sche.owned_patchdata[a] = check_patchdata[a];
+        sche.patch_data.owned_data[a] = check_patchdata[a];
     }
     t.end();
 
@@ -206,50 +207,8 @@ Test_start("mpi_scheduler::", xchg_patchs, -1){
     }
 
 
-
-    std::vector<MPI_Request> rq_lst;
-
-    //send
-    for(u32 i = 0 ; i < change_list.size(); i++){
-        auto & [idx,old_owner,new_owner,tag_comm] = change_list[i];
-
-        //if i'm sender
-        if(old_owner == mpi_handler::world_rank){
-            auto & patchdata = sche.owned_patchdata[sche.patch_list.global[idx].id_patch];
-            patchdata_isend(patchdata, rq_lst, new_owner, tag_comm, MPI_COMM_WORLD);
-        }
-    }
-
-    //receive
-    for(u32 i = 0 ; i < change_list.size(); i++){
-        auto & [idx,old_owner,new_owner,tag_comm] = change_list[i];
-        auto & id_patch = sche.patch_list.global[idx].id_patch;
-        
-        //if i'm receiver
-        if(new_owner == mpi_handler::world_rank){
-            sche.owned_patchdata[id_patch] = patchdata_irecv( rq_lst, old_owner, tag_comm, MPI_COMM_WORLD);
-        }
-    }
-
-
-    //wait
-    std::vector<MPI_Status> st_lst(rq_lst.size());
-    mpi::waitall(rq_lst.size(), rq_lst.data(), st_lst.data());
-
-
-    //erase old patchdata
-    for(u32 i = 0 ; i < change_list.size(); i++){
-        auto & [idx,old_owner,new_owner,tag_comm] = change_list[i];
-        auto & id_patch = sche.patch_list.global[idx].id_patch;
-        
-        sche.patch_list.global[idx].node_owner_id = new_owner;
-
-        //if i'm sender delete old data
-        if(old_owner == mpi_handler::world_rank){
-            sche.owned_patchdata.erase(id_patch);
-        }
-
-    }
+    //exchange data
+    sche.patch_data.apply_change_list(change_list, sche.patch_list);
 
 
     //rebuild local table
@@ -260,7 +219,7 @@ Test_start("mpi_scheduler::", xchg_patchs, -1){
     std::vector<u64> diffs;
 
     std::unordered_set<u64> id_patch_from_owned_patchadata;
-    for(auto & [key,obj] : sche.owned_patchdata){
+    for(auto & [key,obj] : sche.patch_data.owned_data){
         id_patch_from_owned_patchadata.insert(key);
     }
     std::set_difference(id_patch_from_owned_patchadata.begin(),id_patch_from_owned_patchadata.end(),sche.owned_patch_id.begin(),sche.owned_patch_id.end(),std::back_inserter(diffs));
@@ -268,10 +227,10 @@ Test_start("mpi_scheduler::", xchg_patchs, -1){
 
     //check corectness of patchdata contents
     for(const u64 a : sche.owned_patch_id){
-        check_patch_data_equal(__test_result_ref, sche.owned_patchdata[a], check_patchdata[a]);
+        check_patch_data_equal(__test_result_ref, sche.patch_data.owned_data[a], check_patchdata[a]);
     }
 
 
-    free_sycl_mpi_types();
+    sche.free_mpi_required_types();
 
 }
