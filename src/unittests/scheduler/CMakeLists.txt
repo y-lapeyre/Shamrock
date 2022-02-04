@@ -5,6 +5,7 @@ if("${BUILD_TEST}")
     PRIVATE
         test_mpi_scheduler.cpp
         test_patchdata.cpp
+        test_hilbert_sfc.cpp
     PUBLIC
          
     )

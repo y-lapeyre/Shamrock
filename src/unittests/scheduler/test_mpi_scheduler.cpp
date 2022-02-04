@@ -155,8 +155,7 @@ Test_start("mpi_scheduler::", xchg_patchs, -1){
     patchdata_layout::sync(MPI_COMM_WORLD);
 
 
-    Timer t;
-    t.start();
+
     //initial setup
     for(const Patch &p : check_vec){
         sche.patch_list.global.push_back(p);
@@ -168,7 +167,7 @@ Test_start("mpi_scheduler::", xchg_patchs, -1){
     for(const u64 a : sche.owned_patch_id){
         sche.patch_data.owned_data[a] = check_patchdata[a];
     }
-    t.end();
+    
 
 
 
