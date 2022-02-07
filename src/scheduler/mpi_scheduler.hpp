@@ -92,7 +92,7 @@ class SchedulerPatchList{public:
 class SchedulerPatchData{public:
     std::map<u64, PatchData> owned_data;
 
-    inline void apply_change_list(std::vector<std::tuple<u32, i32, i32,i32>> change_list,SchedulerPatchList& patch_list){
+    inline void apply_change_list(std::vector<std::tuple<u64, i32, i32,i32>> change_list,SchedulerPatchList& patch_list){
 
         std::vector<MPI_Request> rq_lst;
 

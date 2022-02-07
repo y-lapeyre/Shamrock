@@ -17,7 +17,10 @@ inline u64 expand_bits_64b(u64 x){
     return x;
 }
 
-inline u64 compute_hilbert_index(u64 x, u64 y, u64 z, int b){
+
+
+template<int b>
+inline u64 compute_hilbert_index(u64 x, u64 y, u64 z){
 
     const int n = 3;
     u64 X[3] = {x,y,z};

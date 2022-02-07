@@ -18,6 +18,8 @@
 #include "../../flags.hpp"
 
 
+#include "../../scheduler/loadbalancing.hpp"
+
 
 void make_global_local_check_vec(std::vector<Patch> & global, std::vector<Patch> & local){
     
@@ -27,6 +29,8 @@ void make_global_local_check_vec(std::vector<Patch> & global, std::vector<Patch>
         std::mt19937 eng(0x1111);        
         std::uniform_int_distribution<u32> distu32(u32_min,u32_max);                  
         std::uniform_int_distribution<u64> distu64(u64_min,u64_max);
+
+        std::uniform_int_distribution<u32> distdtcnt(0,10000); 
 
         u64 id_patch = 0;
         for (Patch & element : global) {
@@ -40,7 +44,7 @@ void make_global_local_check_vec(std::vector<Patch> & global, std::vector<Patch>
             element.x_max         = distu64(eng);
             element.y_max         = distu64(eng);
             element.z_max         = distu64(eng);
-            element.data_count    = distu32(eng);
+            element.data_count    = distdtcnt(eng);
             element.node_owner_id = distu32(eng);
             element.flags         = distu32(eng) % u32(u8_max);
 
@@ -186,12 +190,12 @@ Test_start("mpi_scheduler::", xchg_patchs, -1){
 
 
     //dummy load balancing
-    std::vector<std::tuple<u32, i32, i32,i32>> change_list;
+    std::vector<std::tuple<u64, i32, i32,i32>> change_list;
 
     {   
         std::uniform_int_distribution<u32> distrank(0,mpi_handler::world_size-1);
         std::vector<i32> tags_it_node(mpi_handler::world_size);
-        for(u32 i = 0 ; i < sche.patch_list.global.size(); i++){
+        for(u64 i = 0 ; i < sche.patch_list.global.size(); i++){
 
             i32 old_owner = sche.patch_list.global[i].node_owner_id;
             i32 new_owner = distrank(eng);
@@ -204,6 +208,93 @@ Test_start("mpi_scheduler::", xchg_patchs, -1){
         }
         
     }
+
+
+    //exchange data
+    sche.patch_data.apply_change_list(change_list, sche.patch_list);
+
+
+    //rebuild local table
+    sche.owned_patch_id = sche.patch_list.build_local();
+
+
+    //check for mismatch
+    std::vector<u64> diffs;
+
+    std::unordered_set<u64> id_patch_from_owned_patchadata;
+    for(auto & [key,obj] : sche.patch_data.owned_data){
+        id_patch_from_owned_patchadata.insert(key);
+    }
+    std::set_difference(id_patch_from_owned_patchadata.begin(),id_patch_from_owned_patchadata.end(),sche.owned_patch_id.begin(),sche.owned_patch_id.end(),std::back_inserter(diffs));
+    Test_assert("same id owned (patch/Data)", diffs.size() == 0);
+
+    //check corectness of patchdata contents
+    for(const u64 a : sche.owned_patch_id){
+        check_patch_data_equal(__test_result_ref, sche.patch_data.owned_data[a], check_patchdata[a]);
+    }
+
+
+    sche.free_mpi_required_types();
+
+}
+
+
+
+Test_start("mpi_scheduler::", testLB, -1){
+
+    std::mt19937 dummy_patch_eng(0x1234);
+    std::mt19937 eng(0x1111);  
+    
+
+    //in the end this vector should be recovered in recv_vec
+    std::vector<Patch> check_vec;
+    std::map<u64, PatchData> check_patchdata;
+    //divide the check_vec in local_vector on each node
+    std::vector<Patch> local_check_vec;
+    make_global_local_check_vec(check_vec, local_check_vec);
+
+
+
+
+    MpiScheduler sche = MpiScheduler();
+    sche.init_mpi_required_types();
+
+    patchdata_layout::set(1, 2, 1, 5, 4, 3);
+    patchdata_layout::sync(MPI_COMM_WORLD);
+
+
+
+    //initial setup
+    for(const Patch &p : check_vec){
+        sche.patch_list.global.push_back(p);
+        check_patchdata[p.id_patch] = gen_dummy_data(dummy_patch_eng);
+    }
+
+    sche.owned_patch_id = sche.patch_list.build_local();
+
+    for(const u64 a : sche.owned_patch_id){
+        sche.patch_data.owned_data[a] = check_patchdata[a];
+    }
+    
+
+
+
+    //check corectness of local patch list
+    bool corect_size = sche.patch_list.local.size() == local_check_vec.size();
+    Test_assert("corect size for local patch", corect_size);
+    for(u32 i = 0 ; i < sche.patch_list.local.size(); i++){
+        if(corect_size){
+            Test_assert("corect patch", sche.patch_list.local[i] == local_check_vec[i]);
+        }
+    }
+
+
+
+
+
+
+    //real load balancing
+    std::vector<std::tuple<u64, i32, i32,i32>> change_list = make_change_list(sche.patch_list.global);
 
 
     //exchange data
