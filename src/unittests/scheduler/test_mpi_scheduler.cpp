@@ -11,7 +11,7 @@
 #include "test_patchdata_utils.hpp"
 
 
-#include "../../scheduler/mpi_scheduler.hpp"
+#include "../../scheduler/scheduler_mpi.hpp"
 
 #include "../../sys/sycl_mpi_interop.hpp"
 
@@ -95,7 +95,7 @@ Test_start("mpi_scheduler::",build_select_corectness,-1){
     make_global_local_check_vec(check_vec, local_check_vec);
 
 
-    MpiScheduler sche = MpiScheduler();
+    SchedulerMPI sche = SchedulerMPI();
     for(const Patch &p : check_vec){
         sche.patch_list.global.push_back(p);
     }
@@ -152,7 +152,7 @@ Test_start("mpi_scheduler::", xchg_patchs, -1){
 
 
 
-    MpiScheduler sche = MpiScheduler();
+    SchedulerMPI sche = SchedulerMPI();
     sche.init_mpi_required_types();
 
     patchdata_layout::set(1, 2, 1, 5, 4, 3);
@@ -256,7 +256,7 @@ Test_start("mpi_scheduler::", testLB, -1){
 
 
 
-    MpiScheduler sche = MpiScheduler();
+    SchedulerMPI sche = SchedulerMPI();
     sche.init_mpi_required_types();
 
     patchdata_layout::set(1, 2, 1, 5, 4, 3);

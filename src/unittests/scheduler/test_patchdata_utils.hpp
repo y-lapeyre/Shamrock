@@ -4,7 +4,7 @@
 
 #include <random>
 
-#include "../../scheduler/mpi_scheduler.hpp"
+#include "../../scheduler/scheduler_mpi.hpp"
 
 #include "../sys/test_sycl_interop_utils.hpp"
 

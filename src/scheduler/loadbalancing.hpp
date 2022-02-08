@@ -22,7 +22,7 @@ inline std::vector<std::tuple<u64, i32, i32, i32>> make_change_list(std::vector<
     std::vector<std::tuple<u64, i32, i32, i32>> change_list;
 
 
-    //generate hilbert code, data count, and index before sort
+    //generate hilbert code, load value, and index before sort
 
     // std::tuple<hilbert code ,load value ,index in global_patch_list>
     std::vector<std::tuple<u64, u64, u64>> patch_dt(global_patch_list.size());

@@ -5,6 +5,8 @@ target_sources(shamrock_sph
     PRIVATE
         #scheduler.cpp
         patch.cpp
+        scheduler_patch_list.cpp
+        scheduler_patch_data.cpp
     PUBLIC
         patch.hpp
         
@@ -20,6 +22,8 @@ target_sources(shamrock_amr
     PRIVATE
         #scheduler.cpp
         patch.cpp
+        scheduler_patch_list.cpp
+        scheduler_patch_data.cpp
     PUBLIC
         patch.hpp
         #patchdata.hpp
@@ -48,6 +52,8 @@ if("${BUILD_TEST}")
     PRIVATE
         #scheduler.cpp
         patch.cpp
+        scheduler_patch_list.cpp
+        scheduler_patch_data.cpp
     PUBLIC
         patch.hpp
         #patchdata.hpp

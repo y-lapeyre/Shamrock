@@ -6,7 +6,7 @@
 
 
 #include "../../scheduler/patchdata.hpp"
-#include "../../scheduler/mpi_scheduler.hpp"
+#include "../../scheduler/scheduler_mpi.hpp"
 
 
 #include "test_patchdata_utils.hpp"
