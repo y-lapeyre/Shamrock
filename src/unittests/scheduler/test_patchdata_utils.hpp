@@ -47,7 +47,7 @@ inline void check_patch_data_equal(TestResults &__test_result_ref, PatchData& p1
 
 inline PatchData gen_dummy_data(std::mt19937& eng){
 
-    std::uniform_int_distribution<u64> distu64(1,10000);
+    std::uniform_int_distribution<u64> distu64(1,1000);
 
     std::uniform_real_distribution<f64> distfd(-1e5,1e5);
 
