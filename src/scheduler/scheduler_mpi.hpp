@@ -26,6 +26,11 @@ class SchedulerMPI{public:
     
 
 
+    void sync_build_LB(bool global_sync, bool balance_load);
+
+    
+
+
 
     inline void init_mpi_required_types(){
         if(!is_mpi_sycl_interop_active()){
