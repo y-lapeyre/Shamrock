@@ -9,10 +9,6 @@
 #include "../../scheduler/scheduler_mpi.hpp"
 
 
-#include "test_patchdata_utils.hpp"
-
-
-
 Test_start("patchdata::", sync_patchdata_layout, -1) {
 
     if (mpi_handler::world_rank == 0) {
@@ -46,8 +42,8 @@ Test_start("patchdata::", send_recv_patchdata, 2){
 
 
 
-    PatchData d1_check = gen_dummy_data (eng);
-    PatchData d2_check = gen_dummy_data (eng);
+    PatchData d1_check = patchdata_gen_dummy_data (eng);
+    PatchData d2_check = patchdata_gen_dummy_data (eng);
 
 
 
@@ -69,11 +65,11 @@ Test_start("patchdata::", send_recv_patchdata, 2){
 
 
     if(mpi_handler::world_rank == 0){
-        check_patch_data_equal(__test_result_ref,recv_d, d2_check);
+        Test_assert("recv_d == d2_check", check_patch_data_match(recv_d, d2_check));
     }
 
     if(mpi_handler::world_rank == 1){
-        check_patch_data_equal(__test_result_ref,recv_d, d1_check);
+        Test_assert("recv_d == d1_check", check_patch_data_match(recv_d, d1_check));
     }
 
 

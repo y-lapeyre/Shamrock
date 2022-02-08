@@ -1,11 +1,5 @@
 #pragma once
 
-#include "../../sys/mpi_handler.hpp"
-#include "../../sys/sycl_handler.hpp"
-#include "../../sys/sycl_mpi_interop.hpp"
-
-
-
 
 template<class T>
 inline bool test_eq2(T a , T b){

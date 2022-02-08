@@ -7,7 +7,7 @@
 #include <mpi.h>
 #include <random>
 
-#include "test_sycl_interop_utils.hpp"
+#include "../../utils/sycl_vector_utils.hpp"
 
 int get_mpi_size(MPI_Datatype md){
     MPI_Aint lbs;
