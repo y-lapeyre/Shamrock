@@ -17,9 +17,6 @@
 #include "../../flags.hpp"
 
 
-#include "../../scheduler/loadbalancing.hpp"
-
-
 
 #include "test_patch_utils.hpp"
 
@@ -184,18 +181,10 @@ Test_start("mpi_scheduler::", testLB, -1){
 
 
 
+    sche.sync_build_LB(false, true,false);
 
 
-    //real load balancing
-    std::vector<std::tuple<u64, i32, i32,i32>> change_list = make_change_list(sche.patch_list.global);
-
-
-    //exchange data
-    sche.patch_data.apply_change_list(change_list, sche.patch_list);
-
-
-    //rebuild local table
-    sche.owned_patch_id = sche.patch_list.build_local();
+    
 
 
     //check for mismatch

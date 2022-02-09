@@ -26,7 +26,7 @@ class SchedulerMPI{public:
     
 
 
-    void sync_build_LB(bool global_sync, bool balance_load);
+    void sync_build_LB(bool global_patch_sync, bool balance_load, bool pack_tomerge_patch);
 
     
 

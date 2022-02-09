@@ -48,10 +48,10 @@ struct Patch{
 
     /**
      * @brief flags to store behavior
-     * should_merge_child = flags && 0x1
+     * should_merge_child = flags & 0x1
      *       | if true during next patch tree update child (and the PatchData associated) of this patch will be merged
      *
-     * should_split = flags && 0x2
+     * should_split = flags & 0x2
      *       | if true during next patch tree update this patch data will be split into two childs
      */
     u8 flags;
@@ -97,3 +97,29 @@ inline bool is_mpi_patch_type_active(){
 void create_MPI_patch_type();
 
 void free_MPI_patch_type();
+
+
+
+
+/*
+ *  patch flag handling 
+ */
+
+#define PATCH_FLAG_SPLIT 0x01
+#define PATCH_FLAG_MERGE 0x02
+
+inline bool should_patch_split(Patch& p){
+    return p.flags & PATCH_FLAG_SPLIT;
+}
+
+inline bool should_patch_merge(Patch& p){
+    return p.flags & PATCH_FLAG_MERGE;
+}
+
+inline void set_patch_flag(Patch& p, const u8 flag){
+    p.flags |= flag;
+}
+
+inline void clear_patch_flag(Patch& p){
+    p.flags = 0x00;
+}
