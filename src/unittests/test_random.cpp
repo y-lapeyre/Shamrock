@@ -57,12 +57,14 @@ class ForcePressure2{public:
 };
 
 
+
+
+
 namespace integrator {
 
-    template<class ForceFunc>
-    class Leapfrog{public:
+    template<class ForceFunc> class Leapfrog{public:
 
-        void step(std::vector<i32> & fres_arr){
+        virtual void step(std::vector<i32> & fres_arr){
             
             cl::sycl::buffer<i32> fres(fres_arr);
 
@@ -82,12 +84,29 @@ namespace integrator {
     };
 }
 
-typedef void (*stepper_main_func_t)(std::vector<int> &) ;
-static integrator::Leapfrog<ForcePressure> integLeapPres;
-class Stepper{public:
-    integrator::Leapfrog<ForcePressure> stepper_func;
 
-    
+
+template<class Timestepper> class Simulation{public:
+
+    void simu_main(){
+
+        Timestepper t;
+
+        std::vector<i32> fres_arr = {0,8,4,1,8,7,2,3,77,1};
+        t.step(fres_arr);
+        std::cout << fres_arr[0] << std::endl;
+        std::cout << fres_arr[1] << std::endl;
+        std::cout << fres_arr[2] << std::endl;
+        std::cout << fres_arr[3] << std::endl;
+        std::cout << fres_arr[4] << std::endl;
+        std::cout << fres_arr[5] << std::endl;
+        std::cout << fres_arr[6] << std::endl;
+        std::cout << fres_arr[7] << std::endl;
+        std::cout << fres_arr[8] << std::endl;
+        std::cout << fres_arr[9] << std::endl;
+        
+    }
+
 };
 
 
@@ -95,29 +114,9 @@ Test_start("",sycl_static_func,1){
 
     init_sycl();
 
-    std::vector<i32> fres_arr = {0,8,4,1,8,7,2,3,77,1};
-    
+    Simulation<integrator::Leapfrog<ForcePressure>> sim;
 
-    std::vector<void (*)(std::vector<int> &)> timesteppers;
-    
-    timesteppers.push_back(integrator::Leapfrog<ForcePressure>::step);
-    timesteppers.push_back(integrator::Leapfrog<ForcePressure2>::step);
-
-
-    timesteppers[0](fres_arr);
-
-    timesteppers[1](fres_arr);
-
-    std::cout << fres_arr[0] << std::endl;
-    std::cout << fres_arr[1] << std::endl;
-    std::cout << fres_arr[2] << std::endl;
-    std::cout << fres_arr[3] << std::endl;
-    std::cout << fres_arr[4] << std::endl;
-    std::cout << fres_arr[5] << std::endl;
-    std::cout << fres_arr[6] << std::endl;
-    std::cout << fres_arr[7] << std::endl;
-    std::cout << fres_arr[8] << std::endl;
-    std::cout << fres_arr[9] << std::endl;
+    sim.simu_main();
 
 
 }
