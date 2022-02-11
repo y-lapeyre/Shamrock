@@ -20,18 +20,19 @@ inline void make_global_local_check_vec(std::vector<Patch> & global, std::vector
         u64 id_patch = 0;
         for (Patch & element : global) {
             element.id_patch      = id_patch;
-            element.id_parent     = distu64(eng);
-            element.id_child_r    = distu64(eng);
-            element.id_child_l    = distu64(eng);
+            element.pack_node_index     = u64_max;
+            element.load_value    = distdtcnt(eng);
             element.x_min         = distu64(eng);
             element.y_min         = distu64(eng);
             element.z_min         = distu64(eng);
             element.x_max         = distu64(eng);
             element.y_max         = distu64(eng);
             element.z_max         = distu64(eng);
-            element.data_count    = distdtcnt(eng);
+            element.data_count    = element.load_value;
             element.node_owner_id = distu32(eng);
-            element.flags         = distu32(eng) % u32(u8_max);
+
+
+            if(id_patch > 7) element.pack_node_index = 10;
 
             id_patch++;
         }

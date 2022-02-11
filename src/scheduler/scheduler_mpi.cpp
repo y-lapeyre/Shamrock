@@ -40,7 +40,7 @@ std::vector<std::tuple<u64, i32, i32, i32>> make_change_list(std::vector<Patch> 
 
                 Patch p = ptch[i];
 
-                pdt[i] = {compute_hilbert_index<21>(p.x_min, p.y_min, p.z_min), p.data_count, i};
+                pdt[i] = {compute_hilbert_index<21>(p.x_min, p.y_min, p.z_min), p.load_value, i};
             });
         });
 
@@ -79,6 +79,7 @@ std::vector<std::tuple<u64, i32, i32, i32>> make_change_list(std::vector<Patch> 
 
         cl::sycl::buffer<std::tuple<u64, u64, u64>> dt_buf(patch_dt);
         cl::sycl::buffer<i32> new_owner(new_owner_table);
+        cl::sycl::buffer<Patch>                     patch_buf(global_patch_list);
 
         cl::sycl::range<1> range{global_patch_list.size()};
 
@@ -100,6 +101,25 @@ std::vector<std::tuple<u64, i32, i32, i32>> make_change_list(std::vector<Patch> 
                 chosen_node[id_ptable] = sycl::clamp(
                     i32(std::get<1>(pdt[i])/target_datacnt)
                     ,0,wsize-1);
+
+            });
+        });
+
+
+
+        host_queue->submit([&](cl::sycl::handler &cgh) {
+            auto ptch = patch_buf.get_access<sycl::access::mode::read>(cgh);
+            auto pdt  = dt_buf.get_access<sycl::access::mode::read>(cgh);
+            auto chosen_node = new_owner.get_access<sycl::access::mode::write>(cgh);
+
+            cgh.parallel_for<class Edit_chosen_node>(range, [=](cl::sycl::item<1> item) {
+                u64 i = (u64)item.get_id(0);
+
+
+                if(ptch[i].pack_node_index != u64_max){
+                    chosen_node[i] = chosen_node[ptch[i].pack_node_index];
+                }
+
             });
         });
 
@@ -125,7 +145,7 @@ std::vector<std::tuple<u64, i32, i32, i32>> make_change_list(std::vector<Patch> 
                 tags_it_node[old_owner] ++;
             }
 
-            load_per_node[new_owner_table[i]] += global_patch_list[i].data_count;
+            load_per_node[new_owner_table[i]] += global_patch_list[i].load_value;
             
         }
 
