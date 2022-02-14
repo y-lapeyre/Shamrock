@@ -184,7 +184,7 @@ Test_start("mpi_scheduler::", testLB, -1){
 
 
 
-    sche.sync_build_LB(false, true,false);
+    sche.sync_build_LB(false, true);
 
 
     

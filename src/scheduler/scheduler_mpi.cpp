@@ -15,7 +15,7 @@
 
 
 // TODO better parralelisation
-std::vector<std::tuple<u64, i32, i32, i32>> make_change_list(std::vector<Patch> &global_patch_list, bool pack_tomerge_patch) {
+std::vector<std::tuple<u64, i32, i32, i32>> make_change_list(std::vector<Patch> &global_patch_list) {
 
     std::vector<std::tuple<u64, i32, i32, i32>> change_list;
 
@@ -106,7 +106,7 @@ std::vector<std::tuple<u64, i32, i32, i32>> make_change_list(std::vector<Patch> 
         });
 
 
-
+        //pack nodes
         host_queue->submit([&](cl::sycl::handler &cgh) {
             auto ptch = patch_buf.get_access<sycl::access::mode::read>(cgh);
             auto pdt  = dt_buf.get_access<sycl::access::mode::read>(cgh);
@@ -162,13 +162,13 @@ std::vector<std::tuple<u64, i32, i32, i32>> make_change_list(std::vector<Patch> 
 
 
 
-void SchedulerMPI::sync_build_LB(bool global_patch_sync, bool balance_load, bool pack_tomerge_patch){
+void SchedulerMPI::sync_build_LB(bool global_patch_sync, bool balance_load){
 
     if(global_patch_sync) patch_list.sync_global();
 
     if(balance_load){
         //real load balancing
-        std::vector<std::tuple<u64, i32, i32,i32>> change_list = make_change_list(patch_list.global,pack_tomerge_patch);
+        std::vector<std::tuple<u64, i32, i32,i32>> change_list = make_change_list(patch_list.global);
 
         //exchange data
         patch_data.apply_change_list(change_list, patch_list);

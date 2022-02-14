@@ -36,6 +36,37 @@ class SchedulerPatchList{public:
         std::vector<u64> & to_recv_idx
         );
 
+
+
+
+    std::unordered_map<u64,u64> id_patch_to_global_idx;
+    inline void build_global_idx_map(){
+        id_patch_to_global_idx.clear();
+
+        u64 idx = 0;
+        for(Patch p : global){
+            id_patch_to_global_idx[p.id_patch]  = idx;
+            idx ++;
+        }
+
+    }
+
+
+    std::unordered_map<u64,u64> id_patch_to_local_idx;
+    inline void build_local_idx_map(){
+        id_patch_to_local_idx.clear();
+
+        u64 idx = 0;
+        for(Patch p : local){
+            id_patch_to_local_idx[p.id_patch]  = idx;
+            idx ++;
+        }
+
+    }
     
 
 };
+
+
+
+std::vector<Patch> make_fake_patch_list(u32 total_dtcnt,u64 div_limit);

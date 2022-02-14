@@ -17,7 +17,7 @@ inline u64 expand_bits_64b(u64 x){
     return x;
 }
 
-
+constexpr u64 hilbert_box21_sz = 2097152-1;
 
 template<int b>
 inline u64 compute_hilbert_index(u64 x, u64 y, u64 z){

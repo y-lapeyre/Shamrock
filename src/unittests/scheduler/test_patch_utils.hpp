@@ -32,7 +32,7 @@ inline void make_global_local_check_vec(std::vector<Patch> & global, std::vector
             element.node_owner_id = distu32(eng);
 
 
-            if(id_patch > 7) element.pack_node_index = 10;
+            //if(id_patch > 7) element.pack_node_index = 10;
 
             id_patch++;
         }

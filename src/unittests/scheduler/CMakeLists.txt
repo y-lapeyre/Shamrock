@@ -6,6 +6,7 @@ if("${BUILD_TEST}")
         test_mpi_scheduler.cpp
         test_patchdata.cpp
         test_hilbert_sfc.cpp
+        test_patchtree.cpp
     PUBLIC
          
     )

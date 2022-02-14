@@ -1,6 +1,8 @@
 #include "scheduler_patch_list.hpp"
 #include <vector>
-
+#include <random>
+#include "hilbertsfc.hpp"
+#include "patch.hpp"
 
 void SchedulerPatchList::sync_global(){
     mpi_handler::vector_allgatherv(local, patch_MPI_type, global, patch_MPI_type, MPI_COMM_WORLD);   
@@ -49,4 +51,243 @@ void SchedulerPatchList::build_local_differantial(std::unordered_set<u64> &patch
         }
     }
     
+}
+
+
+
+
+std::vector<Patch> make_fake_patch_list(u32 total_dtcnt,u64 div_limit){
+    std::vector<Patch> plist;
+
+    std::mt19937 eng(0x1111);        
+    std::uniform_real_distribution<f32> split_val(0,1);     
+
+
+
+    plist.push_back(Patch{
+        0,
+        u64_max,
+        total_dtcnt,
+        0,
+        0,
+        0,
+        hilbert_box21_sz,
+        hilbert_box21_sz,
+        hilbert_box21_sz,
+        total_dtcnt,
+        0,
+    });
+
+    bool listchanged = true;
+
+
+    while (listchanged){
+        listchanged = false;
+
+
+        std::vector<Patch> to_add;
+
+        for(Patch & p : plist){
+            if(p.data_count > div_limit){
+
+                /*
+                std::cout << "splitting : ( " <<
+                    "[" << p.x_min << "," << p.x_max << "] " << 
+                    "[" << p.y_min << "," << p.y_max << "] " << 
+                    "[" << p.z_min << "," << p.z_max << "] " << 
+                    " ) " << p.data_count <<  std::endl;
+                    */
+                
+                u64 min_x = p.x_min;
+                u64 min_y = p.y_min;
+                u64 min_z = p.z_min;
+
+                u64 split_x = (((p.x_max - p.x_min) + 1)/2) - 1 ;
+                u64 split_y = (((p.y_max - p.y_min) + 1)/2) - 1 ;
+                u64 split_z = (((p.z_max - p.z_min) + 1)/2) - 1 ;
+
+                u64 max_x = p.x_max;
+                u64 max_y = p.y_max;
+                u64 max_z = p.z_max;
+
+
+
+                u32 qte_m = split_val(eng)*p.data_count;
+                u32 qte_p = p.data_count - qte_m;
+
+                u32 qte_mm = split_val(eng)*qte_m;
+                u32 qte_mp = qte_m - qte_mm;
+
+                u32 qte_pm = split_val(eng)*qte_p;
+                u32 qte_pp = qte_p - qte_pm;
+
+
+                u32 qte_mmm = split_val(eng)*qte_mm;
+                u32 qte_mmp = qte_mm - qte_mmm;
+
+                u32 qte_mpm = split_val(eng)*qte_mp;
+                u32 qte_mpp = qte_mp - qte_mpm;
+
+                u32 qte_pmm = split_val(eng)*qte_pm;
+                u32 qte_pmp = qte_pm - qte_pmm;
+
+                u32 qte_ppm = split_val(eng)*qte_pp;
+                u32 qte_ppp = qte_pp - qte_ppm;
+
+
+
+                Patch child_mmm = Patch{
+                    p.id_patch,
+                    u64_max,
+                    qte_mmm,
+                    min_x,
+                    min_y,
+                    min_z,
+                    split_x,
+                    split_y,
+                    split_z,
+                    qte_mmm,
+                    0,
+                };
+
+                Patch child_mmp = Patch{
+                    p.id_patch,
+                    u64_max,
+                    qte_mmp,
+                    min_x,
+                    min_y,
+                    split_z + 1,
+                    split_x,
+                    split_y,
+                    max_z,
+                    qte_mmp,
+                    0,
+                };
+
+                Patch child_mpm = Patch{
+                    p.id_patch,
+                    u64_max,
+                    qte_mpm,
+                    min_x,
+                    split_y+1,
+                    min_z,
+                    split_x,
+                    max_y,
+                    split_z,
+                    qte_mpm,
+                    0,
+                };
+
+                Patch child_mpp = Patch{
+                    p.id_patch,
+                    u64_max,
+                    qte_mpp,
+                    min_x,
+                    split_y+1,
+                    split_z+1,
+                    split_x,
+                    max_y,
+                    max_z,
+                    qte_mpp,
+                    0,
+                };
+
+                Patch child_pmm = Patch{
+                    p.id_patch,
+                    u64_max,
+                    qte_pmm,
+                    split_x+1,
+                    min_y,
+                    min_z,
+                    max_x,
+                    split_y,
+                    split_z,
+                    qte_pmm,
+                    0,
+                };
+
+                Patch child_pmp = Patch{
+                    p.id_patch,
+                    u64_max,
+                    qte_pmp,
+                    split_x+1,
+                    min_y,
+                    split_z+1,
+                    max_x,
+                    split_y,
+                    max_z,
+                    qte_pmp,
+                    0,
+                };
+
+                Patch child_ppm = Patch{
+                    p.id_patch,
+                    u64_max,
+                    qte_ppm,
+                    split_x+1,
+                    split_y+1,
+                    min_z,
+                    max_x,
+                    max_y,
+                    split_z,
+                    qte_ppm,
+                    0,
+                };
+
+                Patch child_ppp = Patch{
+                    p.id_patch,
+                    u64_max,
+                    qte_ppp,
+                    split_x+1,
+                    split_y+1,
+                    split_z+1,
+                    max_x,
+                    max_y,
+                    max_z,
+                    qte_ppp,
+                    0,
+                };
+
+
+
+                
+                p = child_mmm;
+                to_add.push_back(child_mmp);
+                to_add.push_back(child_mpm);
+                to_add.push_back(child_mpp);
+                to_add.push_back(child_pmm);
+                to_add.push_back(child_pmp);
+                to_add.push_back(child_ppm);
+                to_add.push_back(child_ppp);
+                
+
+                
+            }
+        }
+
+        if(! to_add.empty()){
+            listchanged = true;
+
+            plist.insert(plist.end(),to_add.begin(),to_add.end());
+        }
+
+        /*
+        for(Patch & p : plist){
+            std::cout << "( " <<
+                "[" << p.x_min << "," << p.x_max << "] " << 
+                "[" << p.y_min << "," << p.y_max << "] " << 
+                "[" << p.z_min << "," << p.z_max << "] " << 
+                " ) " << p.data_count << std::endl;
+        }
+
+        std::cout << "----- end cycle -----" << std::endl;
+        */
+
+    }
+
+    
+
+
+
+    return plist;
 }
