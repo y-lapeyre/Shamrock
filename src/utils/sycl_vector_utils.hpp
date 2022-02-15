@@ -1,32 +1,27 @@
 #pragma once
 
-
-template<class T>
-inline bool test_eq2(T a , T b){
+template <class T> inline bool test_eq2(T a, T b) {
     bool eqx = a.x() == b.x();
     bool eqy = a.y() == b.y();
     return eqx && eqy;
 }
 
-template<class T>
-inline bool test_eq3(T a , T b){
+template <class T> inline bool test_eq3(T a, T b) {
     bool eqx = a.x() == b.x();
     bool eqy = a.y() == b.y();
     bool eqz = a.z() == b.z();
     return eqx && eqy && eqz;
 }
 
-template<class T>
-inline bool test_eq4(T a , T b){
+template <class T> inline bool test_eq4(T a, T b) {
     bool eqx = a.x() == b.x();
     bool eqy = a.y() == b.y();
     bool eqz = a.z() == b.z();
     bool eqw = a.w() == b.w();
-    return eqx && eqy && eqz  && eqw;
+    return eqx && eqy && eqz && eqw;
 }
 
-template<class T>
-inline bool test_eq8(T a , T b){
+template <class T> inline bool test_eq8(T a, T b) {
     bool eqs0 = a.s0() == b.s0();
     bool eqs1 = a.s1() == b.s1();
     bool eqs2 = a.s2() == b.s2();
@@ -35,20 +30,10 @@ inline bool test_eq8(T a , T b){
     bool eqs5 = a.s5() == b.s5();
     bool eqs6 = a.s6() == b.s6();
     bool eqs7 = a.s7() == b.s7();
-    return 
-        eqs0
-       && eqs1
-       && eqs2
-       && eqs3
-       && eqs4
-       && eqs5
-       && eqs6
-       && eqs7
-    ;
+    return eqs0 && eqs1 && eqs2 && eqs3 && eqs4 && eqs5 && eqs6 && eqs7;
 }
 
-template<class T>
-inline bool test_eq16(T a , T b){
+template <class T> inline bool test_eq16(T a, T b) {
     bool eqs0 = a.s0() == b.s0();
     bool eqs1 = a.s1() == b.s1();
     bool eqs2 = a.s2() == b.s2();
@@ -67,22 +52,6 @@ inline bool test_eq16(T a , T b){
     bool eqsE = a.sE() == b.sE();
     bool eqsF = a.sF() == b.sF();
 
-    return 
-        eqs0
-       && eqs1
-       && eqs2
-       && eqs3
-       && eqs4
-       && eqs5
-       && eqs6
-       && eqs7
-       && eqs8
-       && eqs9
-       && eqsA
-       && eqsB
-       && eqsC
-       && eqsD
-       && eqsE
-       && eqsF
-    ;
+    return eqs0 && eqs1 && eqs2 && eqs3 && eqs4 && eqs5 && eqs6 && eqs7 && eqs8 && eqs9 && eqsA && eqsB && eqsC && eqsD &&
+           eqsE && eqsF;
 }

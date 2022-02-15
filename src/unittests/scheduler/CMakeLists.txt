@@ -7,6 +7,7 @@ if("${BUILD_TEST}")
         test_patchdata.cpp
         test_hilbert_sfc.cpp
         test_patchtree.cpp
+        test_scheduler_patch_list.cpp
     PUBLIC
          
     )

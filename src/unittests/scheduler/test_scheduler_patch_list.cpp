@@ -4,6 +4,24 @@
 #include "test_patch_utils.hpp"
 
 
+Test_start("SchedulerPatchList::",fake_patch_list_gen_test_volume,-1){
+
+    std::vector<Patch> test_vec = make_fake_patch_list(200, 10);
+
+    for(Patch & p : test_vec){
+
+        u64 dx = p.x_max - p.x_min;
+        u64 dy = p.y_max - p.y_min;
+        u64 dz = p.z_max - p.z_min;
+
+        Test_assert("is patch cube", dx == dy && dy == dz);
+    }
+
+
+}
+
+
+
 Test_start("SchedulerPatchList::",build_select_corectness,-1){
     create_MPI_patch_type();
 

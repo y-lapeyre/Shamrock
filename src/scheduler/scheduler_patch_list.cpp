@@ -80,7 +80,7 @@ std::vector<Patch> make_fake_patch_list(u32 total_dtcnt,u64 div_limit){
 
     bool listchanged = true;
 
-
+    u64 id_cnt = 0;
     while (listchanged){
         listchanged = false;
 
@@ -102,9 +102,9 @@ std::vector<Patch> make_fake_patch_list(u32 total_dtcnt,u64 div_limit){
                 u64 min_y = p.y_min;
                 u64 min_z = p.z_min;
 
-                u64 split_x = (((p.x_max - p.x_min) + 1)/2) - 1 ;
-                u64 split_y = (((p.y_max - p.y_min) + 1)/2) - 1 ;
-                u64 split_z = (((p.z_max - p.z_min) + 1)/2) - 1 ;
+                u64 split_x = (((p.x_max - p.x_min) + 1)/2) - 1 +min_x;
+                u64 split_y = (((p.y_max - p.y_min) + 1)/2) - 1 +min_y;
+                u64 split_z = (((p.z_max - p.z_min) + 1)/2) - 1 +min_z;
 
                 u64 max_x = p.x_max;
                 u64 max_y = p.y_max;
@@ -137,7 +137,7 @@ std::vector<Patch> make_fake_patch_list(u32 total_dtcnt,u64 div_limit){
 
 
                 Patch child_mmm = Patch{
-                    p.id_patch,
+                    id_cnt,
                     u64_max,
                     qte_mmm,
                     min_x,
@@ -148,10 +148,10 @@ std::vector<Patch> make_fake_patch_list(u32 total_dtcnt,u64 div_limit){
                     split_z,
                     qte_mmm,
                     0,
-                };
+                };id_cnt++;
 
                 Patch child_mmp = Patch{
-                    p.id_patch,
+                    id_cnt,
                     u64_max,
                     qte_mmp,
                     min_x,
@@ -162,10 +162,10 @@ std::vector<Patch> make_fake_patch_list(u32 total_dtcnt,u64 div_limit){
                     max_z,
                     qte_mmp,
                     0,
-                };
+                };id_cnt++;
 
                 Patch child_mpm = Patch{
-                    p.id_patch,
+                    id_cnt,
                     u64_max,
                     qte_mpm,
                     min_x,
@@ -176,10 +176,10 @@ std::vector<Patch> make_fake_patch_list(u32 total_dtcnt,u64 div_limit){
                     split_z,
                     qte_mpm,
                     0,
-                };
+                };id_cnt++;
 
                 Patch child_mpp = Patch{
-                    p.id_patch,
+                    id_cnt,
                     u64_max,
                     qte_mpp,
                     min_x,
@@ -190,10 +190,10 @@ std::vector<Patch> make_fake_patch_list(u32 total_dtcnt,u64 div_limit){
                     max_z,
                     qte_mpp,
                     0,
-                };
+                };id_cnt++;
 
                 Patch child_pmm = Patch{
-                    p.id_patch,
+                    id_cnt,
                     u64_max,
                     qte_pmm,
                     split_x+1,
@@ -204,10 +204,10 @@ std::vector<Patch> make_fake_patch_list(u32 total_dtcnt,u64 div_limit){
                     split_z,
                     qte_pmm,
                     0,
-                };
+                };id_cnt++;
 
                 Patch child_pmp = Patch{
-                    p.id_patch,
+                    id_cnt,
                     u64_max,
                     qte_pmp,
                     split_x+1,
@@ -218,10 +218,10 @@ std::vector<Patch> make_fake_patch_list(u32 total_dtcnt,u64 div_limit){
                     max_z,
                     qte_pmp,
                     0,
-                };
+                };id_cnt++;
 
                 Patch child_ppm = Patch{
-                    p.id_patch,
+                    id_cnt,
                     u64_max,
                     qte_ppm,
                     split_x+1,
@@ -232,10 +232,10 @@ std::vector<Patch> make_fake_patch_list(u32 total_dtcnt,u64 div_limit){
                     split_z,
                     qte_ppm,
                     0,
-                };
+                };id_cnt++;
 
                 Patch child_ppp = Patch{
-                    p.id_patch,
+                    id_cnt,
                     u64_max,
                     qte_ppp,
                     split_x+1,
@@ -246,7 +246,7 @@ std::vector<Patch> make_fake_patch_list(u32 total_dtcnt,u64 div_limit){
                     max_z,
                     qte_ppp,
                     0,
-                };
+                };id_cnt++;
 
 
 
