@@ -6,18 +6,9 @@
 #include <unordered_map>
 #include <vector>
 
+#include "../utils/geometry_utils.hpp"
 
 
-
-inline bool iscellb_inside_a(u32_3 pos_min_cella,u32_3 pos_max_cella,u32_3 pos_min_cellb,u32_3 pos_max_cellb){
-
-    return (
-            (pos_min_cella.x() <= pos_min_cellb.x()) && (pos_min_cellb.x() < pos_max_cellb.x()) && (pos_max_cellb.x() <= pos_max_cella.x()) &&
-            (pos_min_cella.y() <= pos_min_cellb.y()) && (pos_min_cellb.y() < pos_max_cellb.y()) && (pos_max_cellb.y() <= pos_max_cella.y()) &&
-            (pos_min_cella.z() <= pos_min_cellb.z()) && (pos_min_cellb.z() < pos_max_cellb.z()) && (pos_max_cellb.z() <= pos_max_cella.z()) 
-        );
-        
-}
 
 
 
@@ -207,7 +198,7 @@ class PatchTree{public:
                     for(u64 idxptch : idvec){
                         Patch &p = plist[idxptch];
 
-                        bool is_inside = iscellb_inside_a({curr.x_min,curr.y_min,curr.z_min},{curr.x_max,curr.y_max,curr.z_max},
+                        bool is_inside = BBAA::iscellb_inside_a<u32_3>({curr.x_min,curr.y_min,curr.z_min},{curr.x_max,curr.y_max,curr.z_max},
                             {p.x_min,p.y_min,p.z_min},{p.x_max,p.y_max,p.z_max});
 
                         if(is_inside){buf.push_back(idxptch); }

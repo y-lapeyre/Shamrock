@@ -2,11 +2,15 @@
 
 #include "../../scheduler/scheduler_patch_list.hpp"
 #include "test_patch_utils.hpp"
+#include "../../utils/geometry_utils.hpp"
 
-
-Test_start("SchedulerPatchList::",fake_patch_list_gen_test_volume,-1){
+//TODO add other test to check "make_fake_patch_list"
+Test_start("SchedulerPatchList::fake_patch_list_gen()::",patch_are_cubes,-1){
 
     std::vector<Patch> test_vec = make_fake_patch_list(200, 10);
+
+
+    bool all_pcube = true;
 
     for(Patch & p : test_vec){
 
@@ -14,14 +18,39 @@ Test_start("SchedulerPatchList::",fake_patch_list_gen_test_volume,-1){
         u64 dy = p.y_max - p.y_min;
         u64 dz = p.z_max - p.z_min;
 
-        Test_assert("is patch cube", dx == dy && dy == dz);
+        all_pcube = all_pcube && ( dx == dy && dy == dz);
     }
 
+    Test_assert("all patch are cubes", all_pcube);
 
 }
 
 
+Test_start("SchedulerPatchList::fake_patch_list_gen()::",no_patch_intersection,-1){
 
+    std::vector<Patch> test_vec = make_fake_patch_list(200, 10);
+
+    bool no_p_intersect = true;
+
+    for(Patch & p1 : test_vec){
+        for(Patch & p2 : test_vec){
+
+            if(p1 == p2) continue;
+            
+            no_p_intersect = no_p_intersect && ( !BBAA::intersect_not_null_cella_b<u32_3>(
+                {p1.x_min,p1.y_min,p1.z_min},{p1.x_max,p1.y_max,p1.z_max},
+                {p2.x_min,p2.y_min,p2.z_min},{p2.x_max,p2.y_max,p2.z_max}
+                ));
+
+        }
+    }
+
+    Test_assert("no intersect", no_p_intersect);
+
+}
+
+
+//TODO use "make_fake_patch_list" instead of the old utility
 Test_start("SchedulerPatchList::",build_select_corectness,-1){
     create_MPI_patch_type();
 
