@@ -15,8 +15,10 @@
 
 2. Patch Merging & LB  
     &ensp;&thinsp; update packing index  
-    &ensp;&thinsp; Load balancing  
-    &ensp;&thinsp; apply merge requests  
+    &ensp;&thinsp; update patch list    
+    &ensp;&thinsp; generate LB change list  
+    &ensp;&thinsp; apply LB change list  
+    &ensp;&thinsp; apply merge requests    
     &ensp;&thinsp; update patchtree  
     &ensp;&thinsp; if(Merge) update patch list  
 ```
