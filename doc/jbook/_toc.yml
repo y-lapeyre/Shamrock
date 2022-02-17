@@ -8,8 +8,10 @@ parts:
    chapters:
     - file: markdown
     - file: notebooks
- - caption: SHAMROCK
+
+ - caption: SHAMROCK documentation
    chapters:
+    - file: control_script/control_script
     - file: mpi_scheduler/mpi_scheduler
       sections:
         - file: mpi_scheduler/patchlist

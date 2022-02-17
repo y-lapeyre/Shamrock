@@ -1,4 +1,4 @@
-# MPI Scheduler in SHAMROCK
+# SchedulerMPI
 
 
 
