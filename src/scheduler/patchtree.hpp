@@ -4,6 +4,7 @@
 #include "patch.hpp"
 #include <cstdio>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 #include <queue>
 #include "../utils/geometry_utils.hpp"
@@ -23,7 +24,8 @@ struct PTNode{
 
     u64 linked_patchid = u64_max;
 
-    
+    bool is_leaf = true;
+    bool child_are_all_leafs = false;
 
     //patch fields
     u64 data_count = u64_max;
@@ -37,16 +39,40 @@ class PatchTree{public:
     
     std::unordered_map<u64, PTNode> tree;
 
-    
+    std::unordered_set<u64> leaf_key;
+    std::unordered_set<u64> parent_of_only_leaf_key;
 
+    /**
+     * @brief split a leaf node
+     * 
+     * @param id 
+     */
     void split_node(u64 id);
-    void merge_node(u64 idparent);
 
+    /**
+     * @brief merge childs of idparent (id parent should have only leafs as childs)
+     * 
+     * @param idparent 
+     */
+    void merge_node_dm1(u64 idparent);
 
+    /**
+     * @brief make tree from a patch table
+     * 
+     * @param plist 
+     * @param max_val_1axis 
+     */
     void build_from_patchtable(std::vector<Patch> & plist, u64 max_val_1axis);
 
+    /**
+     * @brief update value in nodes (tree reduction) 
+     * 
+     * @param plist 
+     * @param id_patch_to_global_idx 
+     */
     void update_values_node(std::vector<Patch> & plist,std::unordered_map<u64,u64> id_patch_to_global_idx);
     
+    //TODO add function to run reduction on leafs and only_leafs_child node
 
 
     private:

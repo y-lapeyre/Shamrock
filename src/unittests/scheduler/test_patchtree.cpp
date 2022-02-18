@@ -16,7 +16,7 @@ void recursprint(PatchTree &pt,std::vector<Patch>& plist,std::unordered_map<u64,
 
     for(u32 i = 0 ; i < indent; i++) std::cout << "   ";
 
-    std::cout << "nodeid : " << idx << " level : " << ptnode.level << " parent id : " << ptnode.parent_id << 
+    std::cout << "nodeid : " << idx << " level : " << ptnode.level << " parent id : " << ptnode.parent_id << ","<< ptnode.is_leaf <<","<< ptnode.child_are_all_leafs <<
                 " -> " << ptnode.data_count << ","<< ptnode.load_value <<
                 " ( " <<
                 "[" << ptnode.x_min << "," << ptnode.x_max << "] " << 
@@ -25,18 +25,20 @@ void recursprint(PatchTree &pt,std::vector<Patch>& plist,std::unordered_map<u64,
                 " ) ";
 
 
-    if(ptnode.linked_patchid == u64_max){
+    if(!ptnode.is_leaf){
         std::cout << std::endl;
         for(u8 child_id = 0; child_id < 8; child_id ++){
             recursprint(pt,plist,idx_map, ptnode.childs_id[child_id], indent +1);
         }
-    }else{
+    }else if(ptnode.linked_patchid != u64_max){
         Patch & p = plist[idx_map[ptnode.linked_patchid]];
         std::cout << " node : " <<ptnode.linked_patchid<<" ( " <<
                 "[" << p.x_min << "," << p.x_max << "] " << 
                 "[" << p.y_min << "," << p.y_max << "] " << 
                 "[" << p.z_min << "," << p.z_max << "] " << 
                 " ) " << std::endl;
+    }else{
+        std::cout << std::endl;
     }
     
 
@@ -45,7 +47,7 @@ void recursprint(PatchTree &pt,std::vector<Patch>& plist,std::unordered_map<u64,
 
 Test_start("", testpatchtree, 1){
 
-    std::vector<Patch> global = make_fake_patch_list(30,10);
+    std::vector<Patch> global = make_fake_patch_list(200,10);
 
 
     for(Patch & p : global){
@@ -74,6 +76,65 @@ Test_start("", testpatchtree, 1){
 
     pt.update_values_node(plist.global, plist.id_patch_to_global_idx);
 
+    
+
     recursprint(pt,global,plist.id_patch_to_global_idx, 0, 0);
+
+    std::cout << "leaf list : ";
+    for(u64 idp : pt.leaf_key){
+        std::cout << idp <<" , ";
+    }std::cout << std::endl;
+
+    std::cout << "parent of only leaf list : ";
+    for(u64 idp : pt.parent_of_only_leaf_key){
+        std::cout << idp <<" , ";
+    }std::cout << std::endl;
+
+
+    std::cout << "merge : ----------------------" << std::endl;
+
+
+    pt.merge_node_dm1(9);
+    pt.merge_node_dm1(10);
+    pt.merge_node_dm1(13);
+    pt.merge_node_dm1(15);
+
+    recursprint(pt,global,plist.id_patch_to_global_idx, 0, 0);
+
+    std::cout << "leaf list : ";
+    for(u64 idp : pt.leaf_key){
+        std::cout << idp <<" , ";
+    }std::cout << std::endl;
+
+    std::cout << "parent of only leaf list : ";
+    for(u64 idp : pt.parent_of_only_leaf_key){
+        std::cout << idp <<" , ";
+    }std::cout << std::endl;
+
+
+    for(auto & [key,ptnode] : pt.tree){
+        
+        if(ptnode.is_leaf){
+            if(pt.leaf_key.count(key)){
+                Test_assert("leaf in leaf_key set", true);
+                pt.leaf_key.erase(key);
+            }else{
+                Test_assert("leaf in leaf_key set", false);
+            }
+        }
+
+        if(ptnode.child_are_all_leafs){
+            if(pt.parent_of_only_leaf_key.count(key)){
+                Test_assert("parent of only leaf in parent_of_only_leaf_key set", true);
+                pt.parent_of_only_leaf_key.erase(key);
+            }else{
+                Test_assert("parent of only leaf in parent_of_only_leaf_key set", false);
+            }
+        }
+
+    }
+
+    Test_assert("leaf key empty ", pt.leaf_key.size() == 0);
+    Test_assert("parent_of_only_leaf_key empty ", pt.parent_of_only_leaf_key.size() == 0);
 
 }

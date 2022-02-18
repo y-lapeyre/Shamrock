@@ -8,6 +8,8 @@ The MPI Scheduler is the class that handle the distribution of Patches / Data on
 ```{prf:algorithm} mpi scheduler step
 1. Initialisation  
     &ensp;&thinsp; update patch list  
+    &ensp;&thinsp; rebuild patch index map  
+    &ensp;&thinsp; apply 2 reduction step patchtree  
     &ensp;&thinsp; Generate merge and split request  
 
 2. Patch Splitting  
@@ -35,6 +37,14 @@ void scheduler_step(){
 
     // update patch list  
     patch_list.sync_global();
+
+    // rebuild patch index map
+    patch_list.build_global_idx_map();
+
+    // apply 2 reduction step patchtree
+    patch_tree.update_node_val_2step(
+        patch_list.global, 
+        patch_list.id_patch_to_global_idx);
 
     // Generate merge and split request  
     

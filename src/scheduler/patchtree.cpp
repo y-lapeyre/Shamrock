@@ -12,7 +12,17 @@ void PatchTree::remove_node(u64 id){
 }
 
 void PatchTree::split_node(u64 id){
+
+    leaf_key.erase(id);
+
+    if(tree[id].parent_id != u64_max){
+        parent_of_only_leaf_key.erase(tree[id].parent_id);
+        tree[tree[id].parent_id].child_are_all_leafs = false;
+    }
+
     PTNode& curr = tree[id];
+    curr.is_leaf = false;
+    curr.child_are_all_leafs = true;
 
     u64 min_x = curr.x_min;
     u64 min_y = curr.y_min;
@@ -114,9 +124,32 @@ void PatchTree::split_node(u64 id){
         id
     });
 
+    parent_of_only_leaf_key.insert(id);
+    leaf_key.insert(curr.childs_id[0]);
+    leaf_key.insert(curr.childs_id[1]);
+    leaf_key.insert(curr.childs_id[2]);
+    leaf_key.insert(curr.childs_id[3]);
+    leaf_key.insert(curr.childs_id[4]);
+    leaf_key.insert(curr.childs_id[5]);
+    leaf_key.insert(curr.childs_id[6]);
+    leaf_key.insert(curr.childs_id[7]);
+
 }
 
-void PatchTree::merge_node(u64 idparent){
+void PatchTree::merge_node_dm1(u64 idparent){
+
+    if(!tree[idparent].child_are_all_leafs ){
+        throw "node should be parent of only leafs";
+    }
+    
+    leaf_key.erase(tree[idparent].childs_id[0]);
+    leaf_key.erase(tree[idparent].childs_id[1]);
+    leaf_key.erase(tree[idparent].childs_id[2]);
+    leaf_key.erase(tree[idparent].childs_id[3]);
+    leaf_key.erase(tree[idparent].childs_id[4]);
+    leaf_key.erase(tree[idparent].childs_id[5]);
+    leaf_key.erase(tree[idparent].childs_id[6]);
+    leaf_key.erase(tree[idparent].childs_id[7]);
 
     remove_node(tree[idparent].childs_id[0]);
     remove_node(tree[idparent].childs_id[1]);
@@ -135,6 +168,29 @@ void PatchTree::merge_node(u64 idparent){
     tree[idparent].childs_id[5] = u64_max;
     tree[idparent].childs_id[6] = u64_max;
     tree[idparent].childs_id[7] = u64_max;
+
+    leaf_key.insert(idparent);
+    tree[idparent].is_leaf = true;
+
+    parent_of_only_leaf_key.erase(idparent);
+    tree[idparent].child_are_all_leafs = false;
+    
+    //check if parent of tree[idparent] is parent of only leafs
+    if(tree[idparent].parent_id != u64_max){
+        bool only_leafs = true;
+
+        PTNode & parent_node = tree[tree[idparent].parent_id];
+
+        for(u8 idc = 0; idc < 8 ; idc ++){
+            only_leafs = only_leafs && tree[parent_node.childs_id[idc]].is_leaf;
+        }
+
+        if(only_leafs){
+            parent_node.child_are_all_leafs = true;
+            parent_of_only_leaf_key.insert(tree[idparent].parent_id);
+        }
+    }
+    
 }
 
 
@@ -156,6 +212,7 @@ void PatchTree::build_from_patchtable(std::vector<Patch> & plist, u64 max_val_1a
     root.parent_id = u64_max;
 
     u64 root_id = insert_node(root);
+    leaf_key.insert(0);
 
 
 
@@ -257,7 +314,7 @@ void PatchTree::update_ptnode(PTNode & n,std::vector<Patch> & plist,std::unorder
 
 }
 
-
+// TODO add test value on root = sum all leaf
 void PatchTree::update_values_node(std::vector<Patch> & plist,std::unordered_map<u64,u64> id_patch_to_global_idx){
 
 
