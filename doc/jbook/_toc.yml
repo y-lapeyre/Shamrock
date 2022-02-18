@@ -1,0 +1,19 @@
+# Table of contents
+# Learn more at https://jupyterbook.org/customize/toc.html
+
+format: jb-book
+root: intro
+parts:
+ - caption: Templates
+   chapters:
+    - file: markdown
+    - file: notebooks
+
+ - caption: SHAMROCK documentation
+   chapters:
+    - file: control_script/control_script
+    - file: mpi_scheduler/mpi_scheduler
+      sections:
+        - file: mpi_scheduler/patchlist
+        - file: mpi_scheduler/patchdata
+        - file: mpi_scheduler/patchtree

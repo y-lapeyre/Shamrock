@@ -274,12 +274,6 @@ def configure_dpcpp(src_dir, build_dir,llvm_root, target_build_mode ,build_sys,s
     run_cmd(cmake_cmd)
 
 
-
-
-
-
-
-
 # regex to fin all new 
 # /\s+([^ ]+)\s*(=\s*new [^;]+;)/g
 # replace by 
@@ -372,14 +366,14 @@ def gen_mem_patched_dir(abs_src_dir,abs_patchedsrc_dir):
 
 
 
-def run_test(node_cnt, run_only = "", oversubscribe = False):
+def run_test(node_cnt, run_only = "", oversubscribe = False,supargs=""):
 
-    args = " --run-only " + run_only
+    args = " --run-only " + run_only 
 
     if run_only == "":
         args = ""
 
-    args += " -o " + "test_res_" + str(node_cnt)
+    args += " -o " + "test_res_" + str(node_cnt)+ " " + supargs
 
 
     compile_prog("../build")
@@ -398,20 +392,20 @@ def run_test(node_cnt, run_only = "", oversubscribe = False):
         else:
             run_cmd("mpirun -n "+str(node_cnt)+" -xterm "+str_node+"! ../build/shamrock_test" + args)
 
-def run_test_mempatch(node_cnt, run_only = "", oversubscribe = False):
+def run_test_mempatch(node_cnt, run_only = "", oversubscribe = False,supargs=""):
 
     args = " --run-only " + run_only
 
     if run_only == "":
         args = ""
 
-    args += " -o " + "test_res_" + str(node_cnt)
+    args += " -o " + "test_res_" + str(node_cnt)+ " " + supargs
 
 
 
     gen_mem_patched_dir("../src","../src_patched")
 
-    configure_dpcpp("../src_patched", "../build_patched","../../llvm",BuildSystem.Ninja,SyCLBE.CUDA,[Targets.Test],PrecisionMode.Single,PrecisionMode.Single)
+    configure_dpcpp("../src_patched", "../build_patched","../../llvm",BuildMode.Normal, BuildSystem.Ninja,SyCLBE.CUDA,[Targets.Test],PrecisionMode.Single,PrecisionMode.Single)
 
     compile_prog("../build_patched")
 

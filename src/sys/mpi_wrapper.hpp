@@ -13,7 +13,7 @@
 #include <utility>
 
 template<class TupType, size_t... I>
-void __print_tuple(const TupType& _tup, std::index_sequence<I...>)
+inline void __print_tuple(const TupType& _tup, std::index_sequence<I...>)
 {
     std::cout << "(";
     (..., (std::cout << (I == 0? "" : ", ") << std::get<I>(_tup)));
@@ -21,7 +21,7 @@ void __print_tuple(const TupType& _tup, std::index_sequence<I...>)
 }
 
 template<class... T>
-void __print_tuple (const std::tuple<T...>& _tup)
+inline void __print_tuple (const std::tuple<T...>& _tup)
 {
     __print_tuple(_tup, std::make_index_sequence<sizeof...(T)>());
 }
