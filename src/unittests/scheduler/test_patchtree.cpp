@@ -16,7 +16,9 @@ void recursprint(PatchTree &pt,std::vector<Patch>& plist,std::unordered_map<u64,
 
     for(u32 i = 0 ; i < indent; i++) std::cout << "   ";
 
-    std::cout << "nodeid : " << idx << " ( " <<
+    std::cout << "nodeid : " << idx << " level : " << ptnode.level << " parent id : " << ptnode.parent_id << 
+                " -> " << ptnode.data_count << ","<< ptnode.load_value <<
+                " ( " <<
                 "[" << ptnode.x_min << "," << ptnode.x_max << "] " << 
                 "[" << ptnode.y_min << "," << ptnode.y_max << "] " << 
                 "[" << ptnode.z_min << "," << ptnode.z_max << "] " << 
@@ -47,11 +49,16 @@ Test_start("", testpatchtree, 1){
 
 
     for(Patch & p : global){
-        std::cout << p.id_patch << " ( " <<
+        std::cout << p.id_patch << 
+        
+            " -> " << p.data_count << ","<< p.load_value <<
+            " ( " <<
             "[" << p.x_min << "," << p.x_max << "] " << 
             "[" << p.y_min << "," << p.y_max << "] " << 
             "[" << p.z_min << "," << p.z_max << "] " << 
-            " ) " << "("<<p.x_max - p.x_min<<","<<p.y_max - p.y_min<<","<<p.z_max - p.z_min<<")" << std::endl;
+            " ) " << "("<<p.x_max - p.x_min<<","<<p.y_max - p.y_min<<","<<p.z_max - p.z_min<<")" 
+            
+            << std::endl;
     }
 
     std::cout << "number of ptch : " << global.size() << std::endl;
@@ -64,6 +71,8 @@ Test_start("", testpatchtree, 1){
     plist.global = global;
 
     plist.build_global_idx_map();
+
+    pt.update_values_node(plist.global, plist.id_patch_to_global_idx);
 
     recursprint(pt,global,plist.id_patch_to_global_idx, 0, 0);
 

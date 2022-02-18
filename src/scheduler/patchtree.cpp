@@ -33,6 +33,8 @@ void PatchTree::split_node(u64 id){
         split_x,
         split_y,
         split_z,
+        (curr.level +1),
+        id
     });
 
     curr.childs_id[1] = insert_node(PTNode{
@@ -42,6 +44,8 @@ void PatchTree::split_node(u64 id){
         split_x,
         split_y,
         max_z,
+        (curr.level +1),
+        id
     });
 
     curr.childs_id[2] = insert_node(PTNode{
@@ -51,6 +55,8 @@ void PatchTree::split_node(u64 id){
         split_x,
         max_y,
         split_z,
+        (curr.level +1),
+        id
     });
 
     curr.childs_id[3] = insert_node(PTNode{
@@ -60,6 +66,8 @@ void PatchTree::split_node(u64 id){
         split_x,
         max_y,
         max_z,
+        (curr.level +1),
+        id
     });
 
     curr.childs_id[4] = insert_node(PTNode{
@@ -69,6 +77,8 @@ void PatchTree::split_node(u64 id){
         max_x,
         split_y,
         split_z,
+        (curr.level +1),
+        id
     });
 
     curr.childs_id[5] = insert_node(PTNode{
@@ -78,6 +88,8 @@ void PatchTree::split_node(u64 id){
         max_x,
         split_y,
         max_z,
+        (curr.level +1),
+        id
     });
 
     curr.childs_id[6] = insert_node(PTNode{
@@ -87,6 +99,8 @@ void PatchTree::split_node(u64 id){
         max_x,
         max_y,
         split_z,
+        (curr.level +1),
+        id
     });
 
     curr.childs_id[7] = insert_node(PTNode{
@@ -96,6 +110,8 @@ void PatchTree::split_node(u64 id){
         max_x,
         max_y,
         max_z,
+        (curr.level +1),
+        id
     });
 
 }
@@ -136,6 +152,8 @@ void PatchTree::build_from_patchtable(std::vector<Patch> & plist, u64 max_val_1a
     root.x_min = 0;
     root.y_min = 0;
     root.z_min = 0;
+    root.level = 0;
+    root.parent_id = u64_max;
 
     u64 root_id = insert_node(root);
 
@@ -206,5 +224,49 @@ void PatchTree::build_from_patchtable(std::vector<Patch> & plist, u64 max_val_1a
         tree_vec = next_tree_vec;
     }
 
+
+}
+
+void PatchTree::update_ptnode(PTNode & n,std::vector<Patch> & plist,std::unordered_map<u64,u64> id_patch_to_global_idx){
+
+    if(n.linked_patchid != u64_max){
+        n.data_count = 0;
+        n.load_value = 0;
+        n.data_count += plist[id_patch_to_global_idx[n.linked_patchid]].data_count;
+        n.load_value += plist[id_patch_to_global_idx[n.linked_patchid]].load_value;
+    }else if (n.childs_id[0] != u64_max) {
+
+        bool has_err_val = false;
+
+        n.data_count = 0;
+        n.load_value = 0;
+        for(u8 idc = 0; idc < 8 ; idc ++){
+
+            if(tree[n.childs_id[idc]].data_count == u64_max)has_err_val = true;
+
+            n.data_count += tree[n.childs_id[idc]].data_count;
+            n.load_value += tree[n.childs_id[idc]].load_value;
+        }
+        
+        if(has_err_val){
+            n.data_count = u64_max;
+            n.load_value = u64_max;
+        }
+        
+    }
+
+}
+
+
+void PatchTree::update_values_node(std::vector<Patch> & plist,std::unordered_map<u64,u64> id_patch_to_global_idx){
+
+
+    tree[0].data_count = u64_max;
+
+    while(tree[0].data_count == u64_max){
+        for(auto & [key,ptnode] : tree){
+            update_ptnode(ptnode,plist,id_patch_to_global_idx);
+        }
+    }
 
 }
