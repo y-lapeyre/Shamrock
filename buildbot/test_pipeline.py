@@ -24,12 +24,12 @@ gen_mem_patched_dir(abs_src_dir,abs_test_pipeline_dir_src)
 
 
 
-configure_dpcpp(abs_test_pipeline_dir_src, abs_test_pipeline_dir + "/build_ss",abs_llvm_dir,BuildSystem.Ninja,SyCLBE.CUDA,[Targets.Test],PrecisionMode.Single,PrecisionMode.Single)
-configure_dpcpp(abs_test_pipeline_dir_src, abs_test_pipeline_dir + "/build_sm",abs_llvm_dir,BuildSystem.Ninja,SyCLBE.CUDA,[Targets.Test],PrecisionMode.Single,PrecisionMode.Mixed)
-configure_dpcpp(abs_test_pipeline_dir_src, abs_test_pipeline_dir + "/build_sd",abs_llvm_dir,BuildSystem.Ninja,SyCLBE.CUDA,[Targets.Test],PrecisionMode.Single,PrecisionMode.Double)
-configure_dpcpp(abs_test_pipeline_dir_src, abs_test_pipeline_dir + "/build_ds",abs_llvm_dir,BuildSystem.Ninja,SyCLBE.CUDA,[Targets.Test],PrecisionMode.Double,PrecisionMode.Single)
-configure_dpcpp(abs_test_pipeline_dir_src, abs_test_pipeline_dir + "/build_dm",abs_llvm_dir,BuildSystem.Ninja,SyCLBE.CUDA,[Targets.Test],PrecisionMode.Double,PrecisionMode.Mixed)
-configure_dpcpp(abs_test_pipeline_dir_src, abs_test_pipeline_dir + "/build_dd",abs_llvm_dir,BuildSystem.Ninja,SyCLBE.CUDA,[Targets.Test],PrecisionMode.Double,PrecisionMode.Double)
+configure_dpcpp(abs_test_pipeline_dir_src, abs_test_pipeline_dir + "/build_ss",abs_llvm_dir,BuildMode.Release,BuildSystem.Ninja,SyCLBE.CUDA,[Targets.Test],PrecisionMode.Single,PrecisionMode.Single)
+configure_dpcpp(abs_test_pipeline_dir_src, abs_test_pipeline_dir + "/build_sm",abs_llvm_dir,BuildMode.Release,BuildSystem.Ninja,SyCLBE.CUDA,[Targets.Test],PrecisionMode.Single,PrecisionMode.Mixed)
+configure_dpcpp(abs_test_pipeline_dir_src, abs_test_pipeline_dir + "/build_sd",abs_llvm_dir,BuildMode.Release,BuildSystem.Ninja,SyCLBE.CUDA,[Targets.Test],PrecisionMode.Single,PrecisionMode.Double)
+configure_dpcpp(abs_test_pipeline_dir_src, abs_test_pipeline_dir + "/build_ds",abs_llvm_dir,BuildMode.Release,BuildSystem.Ninja,SyCLBE.CUDA,[Targets.Test],PrecisionMode.Double,PrecisionMode.Single)
+configure_dpcpp(abs_test_pipeline_dir_src, abs_test_pipeline_dir + "/build_dm",abs_llvm_dir,BuildMode.Release,BuildSystem.Ninja,SyCLBE.CUDA,[Targets.Test],PrecisionMode.Double,PrecisionMode.Mixed)
+configure_dpcpp(abs_test_pipeline_dir_src, abs_test_pipeline_dir + "/build_dd",abs_llvm_dir,BuildMode.Release,BuildSystem.Ninja,SyCLBE.CUDA,[Targets.Test],PrecisionMode.Double,PrecisionMode.Double)
 
 node_cnt = [1,2,3,4,8,16,32]
 
@@ -91,3 +91,4 @@ from lib.make_report import *
 make_report(ReportFormat.Tex, abs_test_pipeline_dir+"/test_result_list.json")
 
 #TODO compile and show pdf report
+

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "CL/sycl/device_selector.hpp"
+#include "CL/sycl/queue.hpp"
 #include "mpi_handler.hpp"
 
 #include <CL/sycl.hpp>
@@ -16,6 +18,7 @@ inline auto exception_handler = [] (sycl::exception_list exceptions) {
 };
 
 inline sycl::queue* queue;
+inline sycl::queue* host_queue;
 
 
 inline void init_sycl(){
@@ -26,6 +29,9 @@ inline void init_sycl(){
     //global_logger->log(">>> init SYCL instances <<<\n");
 
     queue = new sycl::queue(sycl::default_selector(),exception_handler);
+
+    host_queue = new sycl::queue(sycl::host_selector(),exception_handler);
+
     printf("Running on : %s\n", queue->get_device().get_info<sycl::info::device::name>().c_str());
     //global_logger->log("Running on : %s\n", queue->get_device().get_info<sycl::info::device::name>().c_str());
 

@@ -2,6 +2,9 @@
 #include "../../../aliases.hpp"
 #include "../../../flags.hpp"
 
+
+//modified from http://www.bealto.com/gpu-sorting.html
+
 #define MAXORDER_SORT_KERNEL 16
 
 

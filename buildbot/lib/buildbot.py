@@ -25,6 +25,11 @@ class Targets(Enum):
     Test = 3
     Visu = 4
 
+class BuildMode(Enum):
+    Normal = 0
+    Release = 1
+    Debug = 2
+
 
 
 
@@ -178,7 +183,7 @@ def clean_build_dir(abs_build_dir):
 
 
 #configure_dpcpp("../src", "../build2","../../llvm",BuildSystem.Ninja,SyCLBE.CUDA,[Targets.Test],PrecisionMode.Single,PrecisionMode.Single)
-def configure_dpcpp(src_dir, build_dir,llvm_root,build_sys,sycl_BE,target_lst,morton_prec,phy_prec):
+def configure_dpcpp(src_dir, build_dir,llvm_root, target_build_mode ,build_sys,sycl_BE,target_lst,morton_prec,phy_prec):
 
     print("\033[1;34mConfiguring SHAMROCK with DPC++\033[0;0m")
 
@@ -201,6 +206,14 @@ def configure_dpcpp(src_dir, build_dir,llvm_root,build_sys,sycl_BE,target_lst,mo
     cmake_cmd = "cmake"
     cmake_cmd += " -S " + src_dir
     cmake_cmd += " -B " + build_dir
+
+
+    if target_build_mode == BuildMode.Normal:
+        cmake_cmd += ""
+    elif target_build_mode == BuildMode.Release:
+        cmake_cmd += " -DCMAKE_BUILD_TYPE=Release"
+    elif target_build_mode == BuildMode.Debug:
+        cmake_cmd += " -DCMAKE_BUILD_TYPE=Debug"
 
 
     if build_sys == BuildSystem.Ninja:
@@ -261,12 +274,6 @@ def configure_dpcpp(src_dir, build_dir,llvm_root,build_sys,sycl_BE,target_lst,mo
     run_cmd(cmake_cmd)
 
 
-
-
-
-
-
-
 # regex to fin all new 
 # /\s+([^ ]+)\s*(=\s*new [^;]+;)/g
 # replace by 
@@ -298,9 +305,9 @@ def patch_file(file,header_loc):
     #lines_in = re.sub(r"//[^\n]+",r"", lines_in)
     #lines_in = re.sub(r"\A(?s).*?\*\/(?-s)",r"", lines_in) 
 
-    lines_in = re.sub(r"delete\s*([^ ]+)\s*;", "{log_delete(\g<1>,log_alloc_ln);delete \g<1>;}", lines_in)
+    lines_in = re.sub(r"(?<!_)delete\s*([^ ]+)\s*;", "{log_delete(\g<1>,log_alloc_ln);delete \g<1>;}", lines_in)
 
-    lines_in = re.sub(r"delete\s*\[\]\s*([^ ]+)\s*;", "{log_delete(\g<1>,log_alloc_ln);delete[] \g<1>;}", lines_in)
+    lines_in = re.sub(r"(?<!_)delete\s*\[\]\s*([^ ]+)\s*;", "{log_delete(\g<1>,log_alloc_ln);delete[] \g<1>;}", lines_in)
     
     lines_in = re.sub(r"=\s*new\s+([^\[(]+)(.*?);", r"= (\g<1> *) log_new(new \g<1>\g<2>,log_alloc_ln);", lines_in)
 
@@ -359,14 +366,15 @@ def gen_mem_patched_dir(abs_src_dir,abs_patchedsrc_dir):
 
 
 
-def run_test(node_cnt, run_only = ""):
+def run_test(node_cnt, run_only = "", oversubscribe = False,supargs=""):
 
-    args = " --run-only " + run_only
+    args = " --run-only " + run_only 
 
     if run_only == "":
         args = ""
 
-    args += " -o " + "test_res_" + str(node_cnt)
+    args += " -o " + "test_res_" + str(node_cnt)+ " " + supargs
+
 
     compile_prog("../build")
 
@@ -379,21 +387,25 @@ def run_test(node_cnt, run_only = ""):
             str_node += str(i) + ","
         str_node += str(node_cnt-1)
 
-        run_cmd("mpirun -n "+str(node_cnt)+" -xterm "+str_node+"! ../build/shamrock_test" + args)
+        if oversubscribe:
+            run_cmd("mpirun --oversubscribe -n "+str(node_cnt)+" -xterm "+str_node+"! ../build/shamrock_test" + args)
+        else:
+            run_cmd("mpirun -n "+str(node_cnt)+" -xterm "+str_node+"! ../build/shamrock_test" + args)
 
-def run_test_mempatch(node_cnt, run_only = ""):
+def run_test_mempatch(node_cnt, run_only = "", oversubscribe = False,supargs=""):
 
     args = " --run-only " + run_only
 
     if run_only == "":
         args = ""
 
-    args += " -o " + "test_res_" + str(node_cnt)
+    args += " -o " + "test_res_" + str(node_cnt)+ " " + supargs
+
 
 
     gen_mem_patched_dir("../src","../src_patched")
 
-    configure_dpcpp("../src_patched", "../build_patched","../../llvm",BuildSystem.Ninja,SyCLBE.CUDA,[Targets.Test],PrecisionMode.Single,PrecisionMode.Single)
+    configure_dpcpp("../src_patched", "../build_patched","../../llvm",BuildMode.Normal, BuildSystem.Ninja,SyCLBE.CUDA,[Targets.Test],PrecisionMode.Single,PrecisionMode.Single)
 
     compile_prog("../build_patched")
 
@@ -406,4 +418,7 @@ def run_test_mempatch(node_cnt, run_only = ""):
             str_node += str(i) + ","
         str_node += str(node_cnt-1)
 
-        run_cmd("mpirun -n "+str(node_cnt)+" -xterm "+str_node+"! ../build_patched/shamrock_test" + args)
+        if oversubscribe:
+            run_cmd("mpirun --oversubscribe -n "+str(node_cnt)+" -xterm "+str_node+"! ../build_patched/shamrock_test" + args)
+        else:
+            run_cmd("mpirun -n "+str(node_cnt)+" -xterm "+str_node+"! ../build_patched/shamrock_test" + args)

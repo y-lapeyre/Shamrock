@@ -2,96 +2,130 @@
 
 #include "../aliases.hpp"
 #include "../flags.hpp"
-#include <cstddef>
+#include "../sys/mpi_handler.hpp"
+#include "../sys/sycl_mpi_interop.hpp"
+#include <mpi.h>
 #include <vector>
+#include <random>
 
-#define add_field_bool(name) inline bool use_field_##name = false
-#define add_field_data(name,type) std::vector<type> name
+#include "../utils/sycl_vector_utils.hpp"
 
+namespace patchdata_layout {
 
-#define add_field_serializer(name,primitive_type,dimension)\
-        if(use_field_##name){\
-            for(u32 i = 0; i < obj_cnt; i ++){\
-                u8* ptr = (u8*) &name[i];\
-                buffer.insert(buffer.end(),ptr,ptr + sizeof(primitive_type)*dimension);\
-            }\
-        }
+    inline u32 nVarpos_s;
+    inline u32 nVarpos_d;
+    inline u32 nVarU1_s;
+    inline u32 nVarU1_d;
+    inline u32 nVarU3_s;
+    inline u32 nVarU3_d;
 
+    /**
+     * @brief should be check if true before communication with patchdata_s
+     */
+    inline bool layout_synced = false;
 
-#define add_field_deserializer_1(name,primitive_type)\
-        if(use_field_##name){\
-            primitive_type* ptr_f = (primitive_type*) (buffer + offset);\
-            for(u32 i = 0; i < obj_cnt; i ++){\
-                name.push_back(ptr_f[i]);\
-            }\
-            offset += sizeof(primitive_type)*obj_cnt;\
-        }
+    void sync(MPI_Comm comm);
 
-#define add_field_deserializer_3(name,primitive_type)\
-        if(use_field_##name){\
-            primitive_type* ptr_f = (primitive_type*) (buffer + offset);\
-            for(u32 i = 0; i < obj_cnt; i ++){\
-                name.push_back({ptr_f[i*3],ptr_f[i*3+1],ptr_f[i*3+2]});\
-            }\
-            offset += 3*sizeof(primitive_type)*obj_cnt;\
-        }
+    void set(u32 arg_nVarpos_s, u32 arg_nVarpos_d, u32 arg_nVarU1_s, u32 arg_nVarU1_d, u32 arg_nVarU3_s,
+                    u32 arg_nVarU3_d);
+
+    bool is_synced();
+
+} // namespace patchdata_layout
 
 
 
-
-//this one is mandatory
-const bool use_field_r = true;
-
-add_field_bool(rho);
-add_field_bool(v);
-
-
-
-
-
-class PatchData{
-    public:
-
-
-
-    u32 obj_cnt = 0;
-
-    add_field_data(r,f3_d);
-
-    add_field_data(rho,f_d);
-    add_field_data(v  ,f3_d);
-
-
-
-
-    std::vector<u8> serialize(){
-        std::vector<u8> buffer;
-
-        u8* ptr = reinterpret_cast<u8*>(&obj_cnt);
-
-        buffer.insert(buffer.end(),ptr,ptr + sizeof(u32));
-
-        add_field_serializer(r  ,f_d,3)
-
-        add_field_serializer(rho,f_d,1)
-        add_field_serializer(v  ,f_d,3)
-
-        return buffer;
-    }
-
-    PatchData(std::vector<u8> serialized_data){
-        u8* buffer = serialized_data.data();
-
-        obj_cnt = * ((u32*)buffer);
-
-        auto offset = sizeof(u32);
-
-        add_field_deserializer_3(r  ,f_d)
-
-        add_field_deserializer_1(rho,f_d)
-        add_field_deserializer_3(v  ,f_d)
-    }
-
-    PatchData(){};
-
+class PatchData {
+  public:
+    std::vector<f3_s> pos_s;
+    std::vector<f3_d> pos_d;
+    std::vector<f_s>  U1_s;
+    std::vector<f_d>  U1_d;
+    std::vector<f3_s> U3_s;
+    std::vector<f3_d> U3_d;
 };
+
+
+
+void patchdata_isend(PatchData &p, std::vector<MPI_Request> &rq_lst, i32 rank_dest, i32 tag, MPI_Comm comm);
+
+PatchData patchdata_irecv( std::vector<MPI_Request> &rq_lst, i32 rank_source, i32 tag, MPI_Comm comm);
+
+
+
+inline PatchData patchdata_gen_dummy_data(std::mt19937& eng){
+
+    std::uniform_int_distribution<u64> distu64(1,1000);
+
+    std::uniform_real_distribution<f64> distfd(-1e5,1e5);
+
+    u32 num_part = distu64(eng);
+
+    PatchData d;
+
+
+    for (u32 i = 0 ; i < num_part; i++) {
+        for (u32 ii = 0; ii < patchdata_layout::nVarpos_s; ii ++) {
+            d.pos_s.push_back( f3_s{distfd(eng),distfd(eng),distfd(eng)} );
+        }
+        
+        for (u32 ii = 0; ii < patchdata_layout::nVarpos_d; ii ++) {
+            d.pos_d.push_back( f3_d{distfd(eng),distfd(eng),distfd(eng)} );
+        }
+
+        for (u32 ii = 0; ii < patchdata_layout::nVarU1_s; ii ++) {
+            d.U1_s.push_back( f_s(distfd(eng)) );
+        }
+
+        for (u32 ii = 0; ii < patchdata_layout::nVarU1_d; ii ++) {
+            d.U1_d.push_back( f_d(distfd(eng)) );
+        }
+
+        for (u32 ii = 0; ii < patchdata_layout::nVarU3_s; ii ++) {
+            d.U3_s.push_back( f3_s{distfd(eng),distfd(eng),distfd(eng)} );
+        }
+
+        for (u32 ii = 0; ii < patchdata_layout::nVarU3_d; ii ++) {
+            d.U3_d.push_back( f3_d{distfd(eng),distfd(eng),distfd(eng)} );
+        }
+    }
+
+    return d;
+}
+
+inline bool check_patch_data_match(PatchData& p1, PatchData& p2){
+    bool check = true;
+    check = check && ( p1.pos_s.size() == p2.pos_s.size());
+    check = check && ( p1.pos_d.size() == p2.pos_d.size());
+    check = check && ( p1.U1_s.size()  == p2.U1_s.size() );
+    check = check && ( p1.U1_d.size()  == p2.U1_d.size() );
+    check = check && ( p1.U3_s.size()  == p2.U3_s.size() );
+    check = check && ( p1.U3_d.size()  == p2.U3_d.size() );
+
+
+    for (u32 i = 0; i < p1.pos_s.size(); i ++) {
+        check = check && (test_eq3(p1.pos_s[i] , p2.pos_s[i] ));
+    }
+    
+    for (u32 i = 0; i < p1.pos_d.size(); i ++) {
+        check = check && (test_eq3(p1.pos_d[i] , p2.pos_d[i] ));
+    }
+
+    for (u32 i = 0; i < p1.U1_s.size(); i ++) {
+        check = check && (p1.U1_s[i] == p2.U1_s[i] );
+    }
+    
+    for (u32 i = 0; i < p1.U1_d.size(); i ++) {
+        check = check && (p1.U1_d[i] == p2.U1_d[i] );
+    }
+
+    for (u32 i = 0; i < p1.U3_s.size(); i ++) {
+        check = check && (test_eq3(p1.U3_s[i] , p2.U3_s[i] ));
+    }
+    
+    for (u32 i = 0; i < p1.U3_d.size(); i ++) {
+        check = check && (test_eq3(p1.U3_d[i] , p2.U3_d[i] ));
+    }
+
+    return check;
+}

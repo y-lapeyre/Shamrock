@@ -77,6 +77,10 @@ class ReportFormat(Enum):
     Txt = 1
 
 def load_test_report(file):
+
+
+    print(file)
+
     out_file = open(file, "r")
     lst_ln = out_file.readlines()
     out_file.close()
