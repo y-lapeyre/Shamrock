@@ -47,15 +47,28 @@ void scheduler_step(){
         patch_list.id_patch_to_global_idx);
 
     // Generate merge and split request  
+    std::vector<u64> split_rq = patch_tree.get_split_request(crit_patch_split);
+    std::vector<u64> merge_rq = patch_tree.get_merge_request(crit_patch_merge);
     
 
     // apply split requests
-
+    // update patch_list.global same on every node 
+    // and split patchdata accordingly if owned
+    split_patches(split_rq);
 
     // update PatchTree
+    patch_tree.apply_splits(split_rq);
 
     // update packing index
+    // same operation on evey nodes
+    set_patch_pack_values(merge_rq);
+
     // update patch list
+    // necessary to update load values in splitted patches
+    // alternative : disable this step and set fake load values (load parent / 8)
+    //alternative impossible if gravity because we have to compute the multipole
+    owned_patch_id = patch_list.build_local();
+    patch_list.sync_global();
 
     // generate LB change list 
     std::vector<std::tuple<u64, i32, i32,i32>> change_list = 
@@ -66,8 +79,18 @@ void scheduler_step(){
 
 
     // apply merge requests  
+    split_patches(merge_rq);
+
+
     // update PatchTree
+    patch_tree.apply_merge(merge_rq);
+
+
     // if(Merge) update patch list  
+    if(! merge_rq.empty()){
+        owned_patch_id = patch_list.build_local();
+        patch_list.sync_global();
+    }
 
     //rebuild local table
     owned_patch_id = patch_list.build_local();
