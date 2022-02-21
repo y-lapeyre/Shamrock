@@ -1,7 +1,20 @@
+/**
+ * @file patchtree.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief Patch tree for the mpi side of the code
+ * @version 0.1
+ * @date 2022-02-21
+ * 
+ * @copyright Copyright (c) 2022
+ * 
+ */
+
+
 #pragma once
 
 #include "../aliases.hpp"
 #include "patch.hpp"
+#include <array>
 #include <cstdio>
 #include <unordered_map>
 #include <unordered_set>
@@ -36,10 +49,22 @@ struct PTNode{
 
 class PatchTree{public:
     
-    
+    /**
+     * @brief store the tree using a map
+     * 
+     */
     std::unordered_map<u64, PTNode> tree;
 
+    /**
+     * @brief key of leaf nodes in tree
+     * 
+     */
     std::unordered_set<u64> leaf_key;
+
+    /**
+     * @brief key of nodes that have only leafs as child
+     * 
+     */
     std::unordered_set<u64> parent_of_only_leaf_key;
 
     /**
@@ -79,6 +104,49 @@ class PatchTree{public:
      * @param id_patch_to_global_idx 
      */
     void partial_values_reduction(std::vector<Patch> & plist,std::unordered_map<u64,u64> id_patch_to_global_idx);
+
+
+    
+
+    /**
+     * @brief Get list of nodes id to split
+     * 
+     * @param crit_load_split 
+     * @return std::unordered_set<u64> 
+     */
+    inline std::unordered_set<u64> get_split_request(u64 crit_load_split){
+
+        std::unordered_set<u64> rq;
+
+        for(u64 a : leaf_key){
+            if (tree[a].load_value > crit_load_split) {
+                rq.insert(a);
+            }
+        }
+
+        return rq;
+
+    }
+
+    /**
+     * @brief Get list of nodes id to merge 
+     * 
+     * @param crit_load_merge 
+     * @return std::unordered_set<u64> 
+     */
+    inline std::unordered_set<u64> get_merge_request(u64 crit_load_merge){
+        std::unordered_set<u64> rq;
+
+        for(u64 a : parent_of_only_leaf_key){
+            if (tree[a].load_value < crit_load_merge) {
+                rq.insert(a);
+            }
+        }
+
+        return rq;
+    }
+
+
 
     private:
 

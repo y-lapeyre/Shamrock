@@ -42,7 +42,7 @@ Test_start("SchedulerPatchData::", apply_change_list, -1){
 
 
 
-    SchedulerMPI sche = SchedulerMPI();
+    SchedulerMPI sche = SchedulerMPI(-1,-1);
     sche.init_mpi_required_types();
 
     patchdata_layout::set(1, 2, 1, 5, 4, 3);
@@ -149,7 +149,7 @@ Test_start("mpi_scheduler::", testLB, -1){
     
 
 
-    SchedulerMPI sche = SchedulerMPI();
+    SchedulerMPI sche = SchedulerMPI(-1,-1);
     sche.init_mpi_required_types();
 
     patchdata_layout::set(1, 2, 1, 5, 4, 3);

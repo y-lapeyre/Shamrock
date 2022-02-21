@@ -9,6 +9,7 @@
 
 #include "patchdata.hpp"
 
+#include "patchtree.hpp"
 #include "scheduler_patch_list.hpp"
 #include "scheduler_patch_data.hpp"
 
@@ -16,9 +17,13 @@
 
 class SchedulerMPI{public:
 
+    u64 crit_patch_split;
+    u64 crit_patch_merge;
+
 
     SchedulerPatchList patch_list;
     SchedulerPatchData patch_data;
+    PatchTree patch_tree;
 
     //using unordered set is not an issue since we use the find command after 
     std::unordered_set<u64>  owned_patch_id;
@@ -29,7 +34,7 @@ class SchedulerMPI{public:
     void sync_build_LB(bool global_patch_sync, bool balance_load);
 
     
-
+    
 
 
     inline void init_mpi_required_types(){
@@ -52,12 +57,19 @@ class SchedulerMPI{public:
         }
     }
 
-    inline SchedulerMPI(){
+    inline SchedulerMPI(u64 crit_split,u64 crit_merge){
+
+        crit_patch_split = crit_split;
+        crit_patch_merge = crit_merge;
+        
 
     }
 
     inline virtual ~SchedulerMPI(){
 
     }
+
+    private:
+
 
 };
