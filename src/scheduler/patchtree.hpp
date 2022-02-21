@@ -72,8 +72,13 @@ class PatchTree{public:
      */
     void update_values_node(std::vector<Patch> & plist,std::unordered_map<u64,u64> id_patch_to_global_idx);
     
-    //TODO add function to run reduction on leafs and only_leafs_child node
-
+    /**
+     * @brief update values in leafs and parent_of_only_leaf_key only
+     * 
+     * @param plist 
+     * @param id_patch_to_global_idx 
+     */
+    void partial_values_reduction(std::vector<Patch> & plist,std::unordered_map<u64,u64> id_patch_to_global_idx);
 
     private:
 

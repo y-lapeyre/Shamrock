@@ -1,4 +1,5 @@
 #include "patchtree.hpp"
+#include "patch.hpp"
 
 
 u64 PatchTree::insert_node(PTNode n){
@@ -324,6 +325,18 @@ void PatchTree::update_values_node(std::vector<Patch> & plist,std::unordered_map
         for(auto & [key,ptnode] : tree){
             update_ptnode(ptnode,plist,id_patch_to_global_idx);
         }
+    }
+
+}
+
+void PatchTree::partial_values_reduction(std::vector<Patch> &plist, std::unordered_map<u64, u64> id_patch_to_global_idx){
+
+    for( u64 id_leaf : leaf_key){
+        update_ptnode(tree[id_leaf],plist,id_patch_to_global_idx);
+    }
+
+    for( u64 id_leaf : parent_of_only_leaf_key){
+        update_ptnode(tree[id_leaf],plist,id_patch_to_global_idx);
     }
 
 }
