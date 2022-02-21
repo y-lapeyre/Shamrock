@@ -41,8 +41,8 @@ void scheduler_step(){
     // rebuild patch index map
     patch_list.build_global_idx_map();
 
-    // apply 2 reduction step patchtree
-    patch_tree.update_node_val_2step(
+    // apply reduction on leafs and corresponding parents
+    patch_tree.partial_values_reduction(
         patch_list.global, 
         patch_list.id_patch_to_global_idx);
 
