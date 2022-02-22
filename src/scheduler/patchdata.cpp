@@ -1,4 +1,6 @@
 #include "patchdata.hpp"
+#include <exception>
+#include <stdexcept>
 
 
 
@@ -21,12 +23,17 @@ void patchdata_layout::sync(MPI_Comm comm) {
 void patchdata_layout::set(u32 arg_nVarpos_s, u32 arg_nVarpos_d, u32 arg_nVarU1_s, u32 arg_nVarU1_d, u32 arg_nVarU3_s,
                 u32 arg_nVarU3_d) {
 
+    if(arg_nVarpos_s + arg_nVarpos_d != 1) 
+        throw std::runtime_error("nVarpos_s + nVarpos_d should be equal to 1");
+
     patchdata_layout::nVarpos_s = arg_nVarpos_s;
     patchdata_layout::nVarpos_d = arg_nVarpos_d;
     patchdata_layout::nVarU1_s  = arg_nVarU1_s;
     patchdata_layout::nVarU1_d  = arg_nVarU1_d;
     patchdata_layout::nVarU3_s  = arg_nVarU3_s;
     patchdata_layout::nVarU3_d  = arg_nVarU3_d;
+
+
 }
 
 bool patchdata_layout::is_synced(){

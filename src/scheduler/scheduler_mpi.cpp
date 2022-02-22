@@ -6,6 +6,7 @@
 
 #include "hilbertsfc.hpp"
 #include "patch.hpp"
+#include <unordered_set>
 
 
 
@@ -177,3 +178,70 @@ void SchedulerMPI::sync_build_LB(bool global_patch_sync, bool balance_load){
     //rebuild local table
     owned_patch_id = patch_list.build_local();
 }
+
+/*
+void SchedulerMPI::scheduler_step(bool do_split_merge,bool do_load_balancing){
+
+    // update patch list  
+    patch_list.sync_global();
+
+
+    if(do_split_merge){
+        // rebuild patch index map
+        patch_list.build_global_idx_map();
+
+        // apply reduction on leafs and corresponding parents
+        patch_tree.partial_values_reduction(
+            patch_list.global, 
+            patch_list.id_patch_to_global_idx);
+
+        // Generate merge and split request  
+        std::unordered_set<u64> split_rq = patch_tree.get_split_request(crit_patch_split);
+        std::unordered_set<u64> merge_rq = patch_tree.get_merge_request(crit_patch_merge);
+        
+
+        // apply split requests
+        // update patch_list.global same on every node 
+        // and split patchdata accordingly if owned
+        // & update tree
+        split_patches(split_rq);
+
+        // update packing index 
+        // same operation on evey cluster nodes
+        set_patch_pack_values(merge_rq);
+
+        // update patch list
+        // necessary to update load values in splitted patches
+        // alternative : disable this step and set fake load values (load parent / 8)
+        //alternative impossible if gravity because we have to compute the multipole
+        owned_patch_id = patch_list.build_local();
+        patch_list.sync_global();
+    }
+
+    if(do_load_balancing){
+        // generate LB change list 
+        std::vector<std::tuple<u64, i32, i32,i32>> change_list = 
+            make_change_list(patch_list.global);
+
+        // apply LB change list
+        patch_data.apply_change_list(change_list, patch_list);
+    }
+
+    if(do_split_merge){
+        // apply merge requests  
+        // & update tree
+        merge_patches(merge_rq);
+
+
+
+        // if(Merge) update patch list  
+        if(! merge_rq.empty()){
+            owned_patch_id = patch_list.build_local();
+            patch_list.sync_global();
+        }
+    }
+
+    //rebuild local table
+    owned_patch_id = patch_list.build_local();
+}
+//*/

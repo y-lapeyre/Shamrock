@@ -33,67 +33,116 @@ Implementation :
 
 ```c++
 
-void scheduler_step(){
+void scheduler_step(bool do_split_merge,bool do_load_balancing){
 
     // update patch list  
     patch_list.sync_global();
 
-    // rebuild patch index map
-    patch_list.build_global_idx_map();
 
-    // apply reduction on leafs and corresponding parents
-    patch_tree.partial_values_reduction(
-        patch_list.global, 
-        patch_list.id_patch_to_global_idx);
+    if(do_split_merge){
+        // rebuild patch index map
+        patch_list.build_global_idx_map();
 
-    // Generate merge and split request  
-    std::vector<u64> split_rq = patch_tree.get_split_request(crit_patch_split);
-    std::vector<u64> merge_rq = patch_tree.get_merge_request(crit_patch_merge);
-    
+        // apply reduction on leafs and corresponding parents
+        patch_tree.partial_values_reduction(
+            patch_list.global, 
+            patch_list.id_patch_to_global_idx);
 
-    // apply split requests
-    // update patch_list.global same on every node 
-    // and split patchdata accordingly if owned
-    split_patches(split_rq);
+        // Generate merge and split request  
+        std::unordered_set<u64> split_rq = patch_tree.get_split_request(crit_patch_split);
+        std::unordered_set<u64> merge_rq = patch_tree.get_merge_request(crit_patch_merge);
+        
 
-    // update PatchTree
-    patch_tree.apply_splits(split_rq);
+        // apply split requests
+        // update patch_list.global same on every node 
+        // and split patchdata accordingly if owned
+        // & update tree
+        split_patches(split_rq);
 
-    // update packing index
-    // same operation on evey nodes
-    set_patch_pack_values(merge_rq);
+        // update packing index
+        // same operation on evey nodes
+        set_patch_pack_values(merge_rq);
 
-    // update patch list
-    // necessary to update load values in splitted patches
-    // alternative : disable this step and set fake load values (load parent / 8)
-    //alternative impossible if gravity because we have to compute the multipole
-    owned_patch_id = patch_list.build_local();
-    patch_list.sync_global();
-
-    // generate LB change list 
-    std::vector<std::tuple<u64, i32, i32,i32>> change_list = 
-        make_change_list(patch_list.global);
-
-    // apply LB change list
-    patch_data.apply_change_list(change_list, patch_list);
-
-
-    // apply merge requests  
-    split_patches(merge_rq);
-
-
-    // update PatchTree
-    patch_tree.apply_merge(merge_rq);
-
-
-    // if(Merge) update patch list  
-    if(! merge_rq.empty()){
+        // update patch list
+        // necessary to update load values in splitted patches
+        // alternative : disable this step and set fake load values (load parent / 8)
+        //alternative impossible if gravity because we have to compute the multipole
         owned_patch_id = patch_list.build_local();
         patch_list.sync_global();
+    }
+
+    if(do_load_balancing){
+        // generate LB change list 
+        std::vector<std::tuple<u64, i32, i32,i32>> change_list = 
+            make_change_list(patch_list.global);
+
+        // apply LB change list
+        patch_data.apply_change_list(change_list, patch_list);
+    }
+
+    if(do_split_merge){
+        // apply merge requests  
+        // & update tree 
+        merge_patches(merge_rq);
+
+
+        // if(Merge) update patch list  
+        if(! merge_rq.empty()){
+            owned_patch_id = patch_list.build_local();
+            patch_list.sync_global();
+        }
     }
 
     //rebuild local table
     owned_patch_id = patch_list.build_local();
 }
 
+```
+
+
+## split_patches
+
+
+```{prf:algorithm} scheduler patch splitter
+for all patch to split :   
+    &ensp;&thinsp; Split patch in PatchTree  
+    &ensp;&thinsp; Split patch in PatchList  
+    &ensp;&thinsp; Split patch in patchData
+```
+
+```c++
+void split_patches(std::unordered_set<u64> split_rq){
+    for(u64 tree_id : split_rq){
+
+        patch_tree.split_node(tree_id);
+        PTNode & splitted_node = patch_tree.tree[tree_id];
+
+        auto [idx_p0,idx_p1,idx_p2,idx_p3,idx_p4,idx_p5,idx_p6,idx_p7] 
+            =  patch_list.split_patch(splitted_node.linked_patchid);
+
+        u64 old_patch_id = splitted_node.linked_patchid;
+
+        splitted_node.linked_patchid = u64_max;
+        patch_tree.tree[splitted_node.childs_id[0]].linked_patchid = patch_list.global[idx_p0].id_patch;
+        patch_tree.tree[splitted_node.childs_id[1]].linked_patchid = patch_list.global[idx_p1].id_patch;
+        patch_tree.tree[splitted_node.childs_id[2]].linked_patchid = patch_list.global[idx_p2].id_patch;
+        patch_tree.tree[splitted_node.childs_id[3]].linked_patchid = patch_list.global[idx_p3].id_patch;
+        patch_tree.tree[splitted_node.childs_id[4]].linked_patchid = patch_list.global[idx_p4].id_patch;
+        patch_tree.tree[splitted_node.childs_id[5]].linked_patchid = patch_list.global[idx_p5].id_patch;
+        patch_tree.tree[splitted_node.childs_id[6]].linked_patchid = patch_list.global[idx_p6].id_patch;
+        patch_tree.tree[splitted_node.childs_id[7]].linked_patchid = patch_list.global[idx_p7].id_patch;
+
+        patch_data.split_patchdata(
+            old_patch_id, 
+            patch_list.global[idx_p0], 
+            patch_list.global[idx_p1],
+            patch_list.global[idx_p2],
+            patch_list.global[idx_p3],
+            patch_list.global[idx_p4],
+            patch_list.global[idx_p5],
+            patch_list.global[idx_p6],
+            patch_list.global[idx_p7]);
+
+    }
+}
 ```

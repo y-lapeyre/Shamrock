@@ -1,4 +1,6 @@
 #include "scheduler_patch_data.hpp"
+#include "patchdata.hpp"
+#include <vector>
 
 void SchedulerPatchData::apply_change_list(std::vector<std::tuple<u64, i32, i32,i32>> change_list,SchedulerPatchList& patch_list){
 
@@ -45,4 +47,38 @@ void SchedulerPatchData::apply_change_list(std::vector<std::tuple<u64, i32, i32,
         }
 
     }
+}
+
+
+
+
+bool inside_crit();
+
+
+
+void SchedulerPatchData::split_patchdata_pos_s(u64 key_orginal,Patch & p0,Patch & p1,Patch & p2,Patch & p3,Patch & p4,Patch & p5,Patch & p6,Patch & p7){
+
+    PatchData & original_pd = owned_data[key_orginal];
+
+    if(patchdata_layout::nVarpos_s == 0){
+
+    }
+
+    std::vector<u64> attrib_map = std::vector<u64>();
+
+}
+
+void SchedulerPatchData::split_patchdata_pos_d(u64 key_orginal,Patch & p0,Patch & p1,Patch & p2,Patch & p3,Patch & p4,Patch & p5,Patch & p6,Patch & p7){
+
+    
+
+}
+
+
+void SchedulerPatchData::split_patchdata(u64 key_orginal,Patch & p0,Patch & p1,Patch & p2,Patch & p3,Patch & p4,Patch & p5,Patch & p6,Patch & p7){
+
+    if(patchdata_layout::nVarpos_s == 1)split_patchdata_pos_s(key_orginal, p0, p1, p2, p3, p4, p5, p6, p7);
+
+    if(patchdata_layout::nVarpos_d == 1)split_patchdata_pos_d(key_orginal, p0, p1, p2, p3, p4, p5, p6, p7);
+
 }

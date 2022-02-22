@@ -115,6 +115,8 @@ Test_start("",sycl_static_func,1){
     init_sycl();
 
     Simulation<integrator::Leapfrog<ForcePressure>> sim;
+    Simulation<integrator::Leapfrog<ForcePressure2>> sim2;
+
 
     sim.simu_main();
 
