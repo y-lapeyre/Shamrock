@@ -20,6 +20,8 @@
 
 #include "test_patch_utils.hpp"
 
+#include "../../scheduler/hilbertsfc.hpp"
+
 
 
 
@@ -207,5 +209,57 @@ Test_start("mpi_scheduler::", testLB, -1){
 
 
     sche.free_mpi_required_types();
+
+}
+
+
+
+Test_start("mpi_scheduler::", test_split, -1){
+
+    SchedulerMPI sched = SchedulerMPI(10,1000);
+
+    {
+        Patch p;
+
+        p.data_count = 200;
+        p.load_value = 200;
+        p.node_owner_id = 0;
+        
+        p.x_min = 0;
+        p.y_min = 0;
+        p.z_min = 0;
+
+        p.x_max = hilbert_box21_sz;
+        p.y_max = hilbert_box21_sz;
+        p.z_max = hilbert_box21_sz;
+
+
+        
+        PatchData pdat;
+
+        std::mt19937 eng(0x1111); 
+        std::uniform_real_distribution<f32> distpos(-1,1);  
+
+        for(u32 part_id = 0 ; part_id < p.data_count ; part_id ++)
+            pdat.pos_s.push_back({distpos(eng),distpos(eng),distpos(eng)});
+
+        patchdata_layout::set(1, 0, 0, 0, 0, 0);
+        patchdata_layout::sync(MPI_COMM_WORLD);
+
+        sched.add_patch(p, pdat);
+
+        sched.patch_tree.build_from_patchtable(sched.patch_list.global, hilbert_box21_sz);
+
+        sched.patch_data.sim_box.min_box_sim_s = {-1};
+        sched.patch_data.sim_box.max_box_sim_s = {1};
+    }
+
+
+    
+    std::cout << sched.dump_status() << std::endl;
+
+    sched.scheduler_step(true, true);
+
+    std::cout << sched.dump_status() << std::endl;
 
 }

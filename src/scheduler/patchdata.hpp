@@ -37,12 +37,12 @@ namespace patchdata_layout {
 
 class PatchData {
   public:
-    std::vector<f3_s> pos_s;
-    std::vector<f3_d> pos_d;
-    std::vector<f_s>  U1_s;
-    std::vector<f_d>  U1_d;
-    std::vector<f3_s> U3_s;
-    std::vector<f3_d> U3_d;
+    std::vector<f32_3> pos_s;
+    std::vector<f64_3> pos_d;
+    std::vector<f32>  U1_s;
+    std::vector<f64>  U1_d;
+    std::vector<f32_3> U3_s;
+    std::vector<f64_3> U3_d;
 };
 
 
@@ -66,27 +66,27 @@ inline PatchData patchdata_gen_dummy_data(std::mt19937& eng){
 
     for (u32 i = 0 ; i < num_part; i++) {
         for (u32 ii = 0; ii < patchdata_layout::nVarpos_s; ii ++) {
-            d.pos_s.push_back( f3_s{distfd(eng),distfd(eng),distfd(eng)} );
+            d.pos_s.push_back( f32_3{distfd(eng),distfd(eng),distfd(eng)} );
         }
         
         for (u32 ii = 0; ii < patchdata_layout::nVarpos_d; ii ++) {
-            d.pos_d.push_back( f3_d{distfd(eng),distfd(eng),distfd(eng)} );
+            d.pos_d.push_back( f64_3{distfd(eng),distfd(eng),distfd(eng)} );
         }
 
         for (u32 ii = 0; ii < patchdata_layout::nVarU1_s; ii ++) {
-            d.U1_s.push_back( f_s(distfd(eng)) );
+            d.U1_s.push_back( f32(distfd(eng)) );
         }
 
         for (u32 ii = 0; ii < patchdata_layout::nVarU1_d; ii ++) {
-            d.U1_d.push_back( f_d(distfd(eng)) );
+            d.U1_d.push_back( f64(distfd(eng)) );
         }
 
         for (u32 ii = 0; ii < patchdata_layout::nVarU3_s; ii ++) {
-            d.U3_s.push_back( f3_s{distfd(eng),distfd(eng),distfd(eng)} );
+            d.U3_s.push_back( f32_3{distfd(eng),distfd(eng),distfd(eng)} );
         }
 
         for (u32 ii = 0; ii < patchdata_layout::nVarU3_d; ii ++) {
-            d.U3_d.push_back( f3_d{distfd(eng),distfd(eng),distfd(eng)} );
+            d.U3_d.push_back( f64_3{distfd(eng),distfd(eng),distfd(eng)} );
         }
     }
 

@@ -3,6 +3,7 @@
 #include "patch.hpp"
 #include "../sys/mpi_handler.hpp"
 #include <map>
+#include <sstream>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
@@ -28,6 +29,7 @@ class SchedulerMPI{public:
     //using unordered set is not an issue since we use the find command after 
     std::unordered_set<u64>  owned_patch_id;
 
+
     
 
 
@@ -35,7 +37,16 @@ class SchedulerMPI{public:
 
     void scheduler_step(bool do_split_merge,bool do_load_balancing);
     
+    inline void add_patch(Patch & p, PatchData & pdat){
+        p.id_patch = patch_list._next_patch_id;
+        patch_list._next_patch_id ++;
 
+        patch_list.global.push_back(p);
+
+        patch_data.owned_data[p.id_patch] = pdat;
+
+        
+    }
 
     inline void init_mpi_required_types(){
         if(!is_mpi_sycl_interop_active()){
@@ -69,6 +80,13 @@ class SchedulerMPI{public:
 
     }
 
+
+
+    std::string dump_status();
+
+
+
+
     private:
 
 
@@ -95,7 +113,7 @@ class SchedulerMPI{public:
             patch_tree.tree[splitted_node.childs_id[7]].linked_patchid = patch_list.global[idx_p7].id_patch;
 
             patch_data.split_patchdata(
-                old_patch_id, 
+                old_patch_id,
                 patch_list.global[idx_p0], 
                 patch_list.global[idx_p1],
                 patch_list.global[idx_p2],
