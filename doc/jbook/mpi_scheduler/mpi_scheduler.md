@@ -67,8 +67,9 @@ void scheduler_step(bool do_split_merge,bool do_load_balancing){
         // necessary to update load values in splitted patches
         // alternative : disable this step and set fake load values (load parent / 8)
         //alternative impossible if gravity because we have to compute the multipole
-        owned_patch_id = patch_list.build_local();
-        patch_list.sync_global();
+        //owned_patch_id = patch_list.build_local();
+        //patch_list.sync_global();
+        // not necessary we use fake values and compute the real ones latter
     }
 
     if(do_load_balancing){

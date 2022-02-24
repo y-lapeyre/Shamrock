@@ -22,7 +22,7 @@ class SchedulerPatchList{public:
 
 
 
-
+    [[nodiscard]]
     std::unordered_set<u64> build_local();
 
     
@@ -64,6 +64,12 @@ class SchedulerPatchList{public:
             idx ++;
         }
 
+    }
+
+    inline void reset_local_pack_index(){
+        for(Patch & p : local){
+            p.pack_node_index = u64_max;
+        }
     }
 
 

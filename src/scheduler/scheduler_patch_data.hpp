@@ -50,5 +50,4 @@ class SchedulerPatchData{public:
 
     void split_patchdata(u64 key_orginal,Patch & p0,Patch & p1,Patch & p2,Patch & p3,Patch & p4,Patch & p5,Patch & p6,Patch & p7);
 
-
 };

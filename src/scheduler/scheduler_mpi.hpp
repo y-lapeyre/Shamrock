@@ -85,7 +85,17 @@ class SchedulerMPI{public:
     std::string dump_status();
 
 
+    inline void update_local_dtcnt_value(){
+        for(u64 id : owned_patch_id){
+            patch_list.local[patch_list.id_patch_to_local_idx[id]].data_count = patch_data.owned_data[id].pos_s.size() + patch_data.owned_data[id].pos_d.size() ;
+        }
+    }
 
+    inline void update_local_load_value(){
+        for(u64 id : owned_patch_id){
+            patch_list.local[patch_list.id_patch_to_local_idx[id]].load_value = patch_data.owned_data[id].pos_s.size() + patch_data.owned_data[id].pos_d.size() ;
+        }
+    }
 
     private:
 
@@ -125,6 +135,29 @@ class SchedulerMPI{public:
 
         }
     }
+
+
+    inline void set_patch_pack_values(std::unordered_set<u64> merge_rq){
+
+        for(u64 tree_id : merge_rq){
+
+            PTNode & to_merge_node = patch_tree.tree[tree_id];
+
+            u64 idx_pack = patch_list.id_patch_to_global_idx[to_merge_node.childs_id[0]];
+
+            for (u8 i = 1; i < 8; i++) {
+                patch_list.global[
+                    patch_list.id_patch_to_global_idx[
+                            to_merge_node.childs_id[i]
+                        ]
+                    ].pack_node_index = idx_pack;
+            }
+
+        }
+
+    }
+
+   
 
 
 };

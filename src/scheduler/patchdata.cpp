@@ -8,7 +8,7 @@
 
 
 
-
+//TODO check if deadlock because one node was forgotten
 void patchdata_layout::sync(MPI_Comm comm) {
     mpi::bcast(&patchdata_layout::nVarpos_s, 1, mpi_type_u32, 0, comm);
     mpi::bcast(&patchdata_layout::nVarpos_d, 1, mpi_type_u32, 0, comm);

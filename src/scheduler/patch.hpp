@@ -101,6 +101,9 @@ inline void split_patch_obj(
     u64 max_y = p0.y_max;
     u64 max_z = p0.z_max;
 
+    p0.data_count /= 8;
+    p0.load_value /= 8;
+
     p1 = p0;
     p2 = p0;
     p3 = p0;
@@ -108,6 +111,7 @@ inline void split_patch_obj(
     p5 = p0;
     p6 = p0;
     p7 = p0;
+
 
     p0.x_min = min_x;
     p0.y_min = min_y;

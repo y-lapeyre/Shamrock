@@ -1,4 +1,5 @@
 #include "scheduler_patch_data.hpp"
+#include "hilbertsfc.hpp"
 #include "patchdata.hpp"
 #include <stdexcept>
 #include <vector>
@@ -77,6 +78,8 @@ void split_patchdata(
 
 
 //TODO recode with better parralelism
+//TODO hilbert_box21_sz shouldn't be here
+//TODO refactor the SchedulerMPI with templated space filling curve to avoid using hilbert_box21_sz
 
 template<>
 void split_patchdata<f32_3>(PatchData & original_pd,
@@ -85,7 +88,7 @@ void split_patchdata<f32_3>(PatchData & original_pd,
     PatchData & pd0,PatchData & pd1,PatchData & pd2,PatchData & pd3,PatchData & pd4,PatchData & pd5,PatchData & pd6,PatchData & pd7){
 
     f32_3 translate_factor = min_box_sim;
-    f32_3 scale_factor = max_box_sim - min_box_sim;
+    f32_3 scale_factor = (max_box_sim - min_box_sim)/hilbert_box21_sz;
 
     f32_3 bmin_p0 = f32_3{p0.x_min,p0.y_min,p0.z_min}*scale_factor + translate_factor;
     f32_3 bmin_p1 = f32_3{p1.x_min,p1.y_min,p1.z_min}*scale_factor + translate_factor;
@@ -115,7 +118,6 @@ void split_patchdata<f32_3>(PatchData & original_pd,
         bool bp5 = BBAA::is_particle_in_patch<f32_3>( original_pd.pos_s[i], bmin_p5,bmax_p5);
         bool bp6 = BBAA::is_particle_in_patch<f32_3>( original_pd.pos_s[i], bmin_p6,bmax_p6);
         bool bp7 = BBAA::is_particle_in_patch<f32_3>( original_pd.pos_s[i], bmin_p7,bmax_p7);
-
 
         if(bp0){
             pd0.pos_s.push_back(original_pd.pos_s[i]);
@@ -297,7 +299,6 @@ void split_patchdata<f64_3>(PatchData & original_pd,
         bool bp6 = BBAA::is_particle_in_patch<f64_3>( original_pd.pos_d[i], bmin_p6,bmax_p6);
         bool bp7 = BBAA::is_particle_in_patch<f64_3>( original_pd.pos_d[i], bmin_p7,bmax_p7);
 
-
         if(bp0){
             pd0.pos_s.push_back(original_pd.pos_s[i]);
             for(u32 j = 0 ; j < patchdata_layout::nVarU1_s ; j++){
@@ -462,37 +463,41 @@ void SchedulerPatchData::split_patchdata(u64 key_orginal, Patch &p0, Patch &p1, 
     if(patchdata_layout::nVarpos_s + patchdata_layout::nVarpos_d != 1) 
         throw std::runtime_error("nVarpos_s + nVarpos_d should be equal to 1");
     
+    auto search = owned_data.find(key_orginal);
 
-    PatchData & original_pd = owned_data[key_orginal];
+    if (search != owned_data.end()) {
 
-    PatchData pd0,pd1,pd2,pd3,pd4,pd5,pd6,pd7;
+        PatchData & original_pd = search->second;
 
-    if(patchdata_layout::nVarpos_s == 1) {
-        ::split_patchdata<f32_3>(
-                original_pd,
-                sim_box.min_box_sim_s,sim_box.max_box_sim_s,
-                p0,p1,p2,p3,p4,p5,p6,p7,
-                pd0,pd1,pd2,pd3,pd4,pd5,pd6,pd7);
+        PatchData pd0,pd1,pd2,pd3,pd4,pd5,pd6,pd7;
+
+        if(patchdata_layout::nVarpos_s == 1) {
+            ::split_patchdata<f32_3>(
+                    original_pd,
+                    sim_box.min_box_sim_s,sim_box.max_box_sim_s,
+                    p0,p1,p2,p3,p4,p5,p6,p7,
+                    pd0,pd1,pd2,pd3,pd4,pd5,pd6,pd7);
+        }
+
+        if(patchdata_layout::nVarpos_d == 1) {
+            ::split_patchdata<f64_3>(
+                    original_pd,
+                    sim_box.min_box_sim_d,sim_box.max_box_sim_d,
+                    p0,p1,p2,p3,p4,p5,p6,p7,
+                    pd0,pd1,pd2,pd3,pd4,pd5,pd6,pd7);
+        }
+
+        owned_data.erase(key_orginal);
+
+        owned_data[p0.id_patch] = pd0;
+        owned_data[p1.id_patch] = pd1;
+        owned_data[p2.id_patch] = pd2;
+        owned_data[p3.id_patch] = pd3;
+        owned_data[p4.id_patch] = pd4;
+        owned_data[p5.id_patch] = pd5;
+        owned_data[p6.id_patch] = pd6;
+        owned_data[p7.id_patch] = pd7;
     }
-
-    if(patchdata_layout::nVarpos_d == 1) {
-        ::split_patchdata<f64_3>(
-                original_pd,
-                sim_box.min_box_sim_d,sim_box.max_box_sim_d,
-                p0,p1,p2,p3,p4,p5,p6,p7,
-                pd0,pd1,pd2,pd3,pd4,pd5,pd6,pd7);
-    }
-
-    owned_data.erase(key_orginal);
-
-    owned_data[p0.id_patch] = pd0;
-    owned_data[p1.id_patch] = pd1;
-    owned_data[p2.id_patch] = pd2;
-    owned_data[p3.id_patch] = pd3;
-    owned_data[p4.id_patch] = pd4;
-    owned_data[p5.id_patch] = pd5;
-    owned_data[p6.id_patch] = pd6;
-    owned_data[p7.id_patch] = pd7;
 
 }
 

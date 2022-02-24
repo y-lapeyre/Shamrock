@@ -179,6 +179,71 @@ void SchedulerMPI::sync_build_LB(bool global_patch_sync, bool balance_load){
     owned_patch_id = patch_list.build_local();
 }
 
+void SchedulerMPI::scheduler_step(bool do_split_merge, bool do_load_balancing){
+
+    //std::cout << "sync global" <<std::endl;
+    patch_list.sync_global();
+
+    std::cout << dump_status() << std::endl;
+
+    //std::cout << "build_global_idx_map" <<std::endl;
+    patch_list.build_global_idx_map();
+
+    //std::cout << dump_status() << std::endl;
+
+
+    //std::cout << "tree partial_values_reduction" <<std::endl;
+    patch_tree.partial_values_reduction(
+            patch_list.global, 
+            patch_list.id_patch_to_global_idx);
+
+
+    //std::cout << dump_status() << std::endl;
+
+    // Generate merge and split request  
+    std::unordered_set<u64> split_rq = patch_tree.get_split_request(crit_patch_split);
+    std::unordered_set<u64> merge_rq = patch_tree.get_merge_request(crit_patch_merge);
+        
+    //*
+    std::cout << "split rq : ";
+    for(u64 i : split_rq){
+        std::cout << i << " ";
+    }std::cout << std::endl;
+    //*/
+
+    //*
+    std::cout << "merge rq : ";
+    for(u64 i : merge_rq){
+        std::cout << i << " ";
+    }std::cout << std::endl;
+    //*/
+
+    //std::cout << "split_patches" <<std::endl;
+    split_patches(split_rq);
+
+    //std::cout << dump_status() << std::endl;
+
+    set_patch_pack_values(merge_rq);
+
+
+    // generate LB change list 
+    std::vector<std::tuple<u64, i32, i32,i32>> change_list = 
+        make_change_list(patch_list.global);
+
+    // apply LB change list
+    patch_data.apply_change_list(change_list, patch_list);
+
+
+
+
+    owned_patch_id = patch_list.build_local();
+    patch_list.reset_local_pack_index();
+    patch_list.build_local_idx_map();
+    update_local_dtcnt_value();
+    update_local_load_value();
+
+}
+
 /*
 void SchedulerMPI::scheduler_step(bool do_split_merge,bool do_load_balancing){
 
@@ -271,8 +336,8 @@ std::string SchedulerMPI::dump_status(){
             << p.node_owner_id << " "
             << p.pack_node_index << " "
             << "( ["<< p.x_min << "," << p.x_max << "] "
-            << " ["<< p.x_min << "," << p.x_max << "] "
-            << " ["<< p.x_min << "," << p.x_max << "] )\n";
+            << " ["<< p.y_min << "," << p.y_max << "] "
+            << " ["<< p.z_min << "," << p.z_max << "] )\n";
 
     }
     ss << "    local content : \n";
@@ -285,8 +350,8 @@ std::string SchedulerMPI::dump_status(){
             << p.node_owner_id << " "
             << p.pack_node_index << " "
             << "( ["<< p.x_min << "," << p.x_max << "] "
-            << " ["<< p.x_min << "," << p.x_max << "] "
-            << " ["<< p.x_min << "," << p.x_max << "] )\n";
+            << " ["<< p.y_min << "," << p.y_max << "] "
+            << " ["<< p.z_min << "," << p.z_max << "] )\n";
             
     }
 

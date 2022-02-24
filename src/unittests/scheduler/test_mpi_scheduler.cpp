@@ -216,14 +216,20 @@ Test_start("mpi_scheduler::", testLB, -1){
 
 Test_start("mpi_scheduler::", test_split, -1){
 
-    SchedulerMPI sched = SchedulerMPI(10,1000);
+    std::cout << " uizfeauizefzfehuizfe" << std::endl;
 
-    {
+    SchedulerMPI sched = SchedulerMPI(10,1);
+    sched.init_mpi_required_types();
+
+    patchdata_layout::set(1, 0, 0, 0, 0, 0);
+    patchdata_layout::sync(MPI_COMM_WORLD);
+
+    if(mpi_handler::world_rank == 0){
         Patch p;
 
         p.data_count = 200;
         p.load_value = 200;
-        p.node_owner_id = 0;
+        p.node_owner_id = mpi_handler::world_rank;
         
         p.x_min = 0;
         p.y_min = 0;
@@ -232,6 +238,8 @@ Test_start("mpi_scheduler::", test_split, -1){
         p.x_max = hilbert_box21_sz;
         p.y_max = hilbert_box21_sz;
         p.z_max = hilbert_box21_sz;
+
+        p.pack_node_index = u64_max;
 
 
         
@@ -243,23 +251,56 @@ Test_start("mpi_scheduler::", test_split, -1){
         for(u32 part_id = 0 ; part_id < p.data_count ; part_id ++)
             pdat.pos_s.push_back({distpos(eng),distpos(eng),distpos(eng)});
 
-        patchdata_layout::set(1, 0, 0, 0, 0, 0);
-        patchdata_layout::sync(MPI_COMM_WORLD);
+        
 
         sched.add_patch(p, pdat);
 
-        sched.patch_tree.build_from_patchtable(sched.patch_list.global, hilbert_box21_sz);
+        
+        
+    }sched.owned_patch_id = sched.patch_list.build_local();
 
-        sched.patch_data.sim_box.min_box_sim_s = {-1};
-        sched.patch_data.sim_box.max_box_sim_s = {1};
-    }
+    std::cout << sched.dump_status() << std::endl;
+    sched.patch_list.sync_global();
+    std::cout << sched.dump_status() << std::endl;
 
+
+    //*
+    sched.patch_tree.build_from_patchtable(sched.patch_list.global, hilbert_box21_sz);
+    sched.patch_data.sim_box.min_box_sim_s = {-1};
+    sched.patch_data.sim_box.max_box_sim_s = {1};
 
     
     std::cout << sched.dump_status() << std::endl;
 
-    sched.scheduler_step(true, true);
+    std::cout << "build local" <<std::endl;
+    sched.owned_patch_id = sched.patch_list.build_local();
+    sched.patch_list.build_local_idx_map();
+    sched.update_local_dtcnt_value();
+    sched.update_local_load_value();
+
+
 
     std::cout << sched.dump_status() << std::endl;
+
+    sched.scheduler_step(true, true);
+    sched.owned_patch_id = sched.patch_list.build_local();
+    sched.patch_list.build_local_idx_map();
+    sched.update_local_dtcnt_value();
+    sched.update_local_load_value();
+
+    std::cout << sched.dump_status() << std::endl;
+
+    sched.scheduler_step(true, true);
+    sched.owned_patch_id = sched.patch_list.build_local();
+    sched.patch_list.build_local_idx_map();
+    sched.update_local_dtcnt_value();
+    sched.update_local_load_value();
+
+    std::cout << sched.dump_status() << std::endl;
+    //*/
+
+
+
+    sched.free_mpi_required_types();
 
 }

@@ -1,6 +1,7 @@
 #include "shamrocktest.hpp"
 
 #include "../sys/sycl_handler.hpp"
+#include <mpi.h>
 #include <vector>
 
 Test_start("",intmult,1){
@@ -120,5 +121,46 @@ Test_start("",sycl_static_func,1){
 
     sim.simu_main();
 
+
+}
+
+
+Test_start("issue_mpi::", allgatherv, 4){
+
+    
+    
+
+    int recv_int[1];
+    int recv_count[4]{1,0,0,0};
+    int displs[4]{0,1,1,1};
+
+
+    if(mpi_handler::world_rank == 0){
+        int send_int = mpi_handler::world_rank + 10;
+        mpi::allgatherv(
+        &send_int, 
+        1, 
+        MPI_INT, 
+        recv_int, 
+        recv_count, 
+        displs, 
+        MPI_INT, 
+        MPI_COMM_WORLD);
+    }else{
+        int send_int = mpi_handler::world_rank + 10;
+        mpi::allgatherv(
+        &send_int, 
+        0, 
+        MPI_INT, 
+        recv_int, 
+        recv_count, 
+        displs, 
+        MPI_INT, 
+        MPI_COMM_WORLD);
+    }
+
+
+    std::cout << recv_int[0]  << "\n";
+    
 
 }
