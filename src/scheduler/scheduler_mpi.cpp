@@ -139,7 +139,8 @@ std::vector<std::tuple<u64, i32, i32, i32>> make_change_list(std::vector<Patch> 
             i32 old_owner = global_patch_list[i].node_owner_id;
             i32 new_owner = new_owner_table[i];
 
-            std::cout << i << " : " << old_owner << " -> " << new_owner << std::endl;
+            // TODO add bool for optional print verbosity
+            //std::cout << i << " : " << old_owner << " -> " << new_owner << std::endl;
 
             if(new_owner != old_owner){
                 change_list.push_back({i,old_owner,new_owner,tags_it_node[old_owner]});
@@ -150,6 +151,7 @@ std::vector<std::tuple<u64, i32, i32, i32>> make_change_list(std::vector<Patch> 
             
         }
 
+        std::cout << "load after balancing" << std::endl;
         for(i32 nid = 0 ; nid < mpi_handler::world_size; nid ++){
             std::cout << nid << " " << load_per_node[nid] << std::endl;
         }
@@ -181,10 +183,12 @@ void SchedulerMPI::sync_build_LB(bool global_patch_sync, bool balance_load){
 
 void SchedulerMPI::scheduler_step(bool do_split_merge, bool do_load_balancing){
 
+    std::cout << " -> running scheduler step\n";
+
     //std::cout << "sync global" <<std::endl;
     patch_list.sync_global();
 
-    std::cout << dump_status() << std::endl;
+    //std::cout << dump_status() << std::endl;
 
     //std::cout << "build_global_idx_map" <<std::endl;
     patch_list.build_global_idx_map();
@@ -204,15 +208,17 @@ void SchedulerMPI::scheduler_step(bool do_split_merge, bool do_load_balancing){
     std::unordered_set<u64> split_rq = patch_tree.get_split_request(crit_patch_split);
     std::unordered_set<u64> merge_rq = patch_tree.get_merge_request(crit_patch_merge);
         
+    std::cout << "   | patch operation requests : \n";
+
     //*
-    std::cout << "split rq : ";
+    std::cout << "     |-> split rq : ";
     for(u64 i : split_rq){
         std::cout << i << " ";
     }std::cout << std::endl;
     //*/
 
     //*
-    std::cout << "merge rq : ";
+    std::cout << "     |-> merge rq : ";
     for(u64 i : merge_rq){
         std::cout << i << " ";
     }std::cout << std::endl;
@@ -223,6 +229,9 @@ void SchedulerMPI::scheduler_step(bool do_split_merge, bool do_load_balancing){
 
     //std::cout << dump_status() << std::endl;
 
+    //check not necessary if no splits
+    patch_list.build_global_idx_map();
+
     set_patch_pack_values(merge_rq);
 
 
@@ -232,6 +241,9 @@ void SchedulerMPI::scheduler_step(bool do_split_merge, bool do_load_balancing){
 
     // apply LB change list
     patch_data.apply_change_list(change_list, patch_list);
+
+    patch_list.build_local_idx_map();
+    merge_patches(merge_rq);
 
 
 
@@ -365,6 +377,23 @@ std::string SchedulerMPI::dump_status(){
             pdat.U1_s.size() << " " <<pdat.U1_d.size() << " " <<
             pdat.U3_s.size() << " " <<pdat.U3_d.size() << " " 
         << ")\n";
+    }
+
+
+    ss << " -> SchedulerPatchTree\n";
+
+    for(auto & [k,pnode] : patch_tree.tree){
+        ss << format("      -> id : %d  -> (%d %d %d %d %d %d %d %d) <=> %d\n",
+        k,
+        pnode.childs_id[0],
+        pnode.childs_id[1],
+        pnode.childs_id[2],
+        pnode.childs_id[3],
+        pnode.childs_id[4],
+        pnode.childs_id[5],
+        pnode.childs_id[6],
+        pnode.childs_id[7],
+         pnode.linked_patchid);
     }
 
 

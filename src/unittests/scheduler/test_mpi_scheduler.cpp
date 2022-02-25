@@ -216,7 +216,6 @@ Test_start("mpi_scheduler::", testLB, -1){
 
 Test_start("mpi_scheduler::", test_split, -1){
 
-    std::cout << " uizfeauizefzfehuizfe" << std::endl;
 
     SchedulerMPI sched = SchedulerMPI(10,1);
     sched.init_mpi_required_types();
@@ -257,7 +256,11 @@ Test_start("mpi_scheduler::", test_split, -1){
 
         
         
-    }sched.owned_patch_id = sched.patch_list.build_local();
+    }else{
+        sched.patch_list._next_patch_id ++;
+    }
+    
+    sched.owned_patch_id = sched.patch_list.build_local();
 
     std::cout << sched.dump_status() << std::endl;
     sched.patch_list.sync_global();
@@ -279,22 +282,20 @@ Test_start("mpi_scheduler::", test_split, -1){
     sched.update_local_load_value();
 
 
+    for(u32 stepi = 0 ; stepi < 5; stepi ++){
+        std::cout << "step : " << std::endl;
+        std::cout << sched.dump_status() << std::endl;
+        sched.scheduler_step(true, true);
+        
+    }
 
     std::cout << sched.dump_status() << std::endl;
-
+    
+    std::cout << "changing crit\n";
+    sched.crit_patch_merge = 30;
+    sched.crit_patch_split = 100;
     sched.scheduler_step(true, true);
-    sched.owned_patch_id = sched.patch_list.build_local();
-    sched.patch_list.build_local_idx_map();
-    sched.update_local_dtcnt_value();
-    sched.update_local_load_value();
 
-    std::cout << sched.dump_status() << std::endl;
-
-    sched.scheduler_step(true, true);
-    sched.owned_patch_id = sched.patch_list.build_local();
-    sched.patch_list.build_local_idx_map();
-    sched.update_local_dtcnt_value();
-    sched.update_local_load_value();
 
     std::cout << sched.dump_status() << std::endl;
     //*/

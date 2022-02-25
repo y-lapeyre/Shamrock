@@ -128,6 +128,40 @@ class SchedulerPatchList{public:
             };
 
     }
+
+
+    inline void merge_patch(
+     u64 idx0,
+     u64 idx1,
+     u64 idx2,
+     u64 idx3,
+     u64 idx4,
+     u64 idx5,
+     u64 idx6,
+     u64 idx7){
+
+        merge_patch_obj(
+            global[idx0],
+            global[idx1],
+            global[idx2],
+            global[idx3],
+            global[idx4],
+            global[idx5],
+            global[idx6],
+            global[idx7]
+        );
+
+        // TODO notify in the documentation that this mean the patch is dead because it will be flushed out when performing the sync
+        global[idx1].node_owner_id = u32_max;
+        global[idx2].node_owner_id = u32_max;
+        global[idx3].node_owner_id = u32_max;
+        global[idx4].node_owner_id = u32_max;
+        global[idx5].node_owner_id = u32_max;
+        global[idx6].node_owner_id = u32_max;
+        global[idx7].node_owner_id = u32_max;
+
+    }
+
     
 
 };

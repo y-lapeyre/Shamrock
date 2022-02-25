@@ -503,4 +503,114 @@ void SchedulerPatchData::split_patchdata(u64 key_orginal, Patch &p0, Patch &p1, 
 
 
 
+void SchedulerPatchData::merge_patchdata(u64 new_key, u64 old_key0, u64 old_key1, u64 old_key2, u64 old_key3, u64 old_key4, u64 old_key5, u64 old_key6, u64 old_key7){
+    //TODO maybe unecessary
+    if(patchdata_layout::nVarpos_s + patchdata_layout::nVarpos_d != 1) 
+        throw std::runtime_error("nVarpos_s + nVarpos_d should be equal to 1");
 
+    auto search0 = owned_data.find(old_key0);
+    auto search1 = owned_data.find(old_key1);
+    auto search2 = owned_data.find(old_key2);
+    auto search3 = owned_data.find(old_key3);
+    auto search4 = owned_data.find(old_key4);
+    auto search5 = owned_data.find(old_key5);
+    auto search6 = owned_data.find(old_key6);
+    auto search7 = owned_data.find(old_key7);
+
+    if(search0 == owned_data.end()){
+        throw std::runtime_error(format("patchdata for key=%d was not owned by the node",old_key0));
+    }
+    if(search1 == owned_data.end()){
+        throw std::runtime_error(format("patchdata for key=%d was not owned by the node",old_key1));
+    }
+    if(search2 == owned_data.end()){
+        throw std::runtime_error(format("patchdata for key=%d was not owned by the node",old_key2));
+    }
+    if(search3 == owned_data.end()){
+        throw std::runtime_error(format("patchdata for key=%d was not owned by the node",old_key3));
+    }
+    if(search4 == owned_data.end()){
+        throw std::runtime_error(format("patchdata for key=%d was not owned by the node",old_key4));
+    }
+    if(search5 == owned_data.end()){
+        throw std::runtime_error(format("patchdata for key=%d was not owned by the node",old_key5));
+    }
+    if(search6 == owned_data.end()){
+        throw std::runtime_error(format("patchdata for key=%d was not owned by the node",old_key6));
+    }
+    if(search7 == owned_data.end()){
+        throw std::runtime_error(format("patchdata for key=%d was not owned by the node",old_key7));
+    }
+
+
+    PatchData new_pdat;
+
+    new_pdat.pos_s.insert(new_pdat.pos_s.end(),search0->second.pos_s.begin(),search0->second.pos_s.end());
+    new_pdat.pos_d.insert(new_pdat.pos_d.end(),search0->second.pos_d.begin(),search0->second.pos_d.end());
+    new_pdat.U1_s.insert(new_pdat.U1_s.end()  ,search0->second.U1_s.begin() ,search0->second.U1_s.end());
+    new_pdat.U1_d.insert(new_pdat.U1_d.end()  ,search0->second.U1_d.begin() ,search0->second.U1_d.end());
+    new_pdat.U3_s.insert(new_pdat.U3_s.end()  ,search0->second.U3_s.begin() ,search0->second.U3_s.end());
+    new_pdat.U3_d.insert(new_pdat.U3_d.end()  ,search0->second.U3_d.begin() ,search0->second.U3_d.end());
+
+    new_pdat.pos_s.insert(new_pdat.pos_s.end(),search1->second.pos_s.begin(),search1->second.pos_s.end());
+    new_pdat.pos_d.insert(new_pdat.pos_d.end(),search1->second.pos_d.begin(),search1->second.pos_d.end());
+    new_pdat.U1_s.insert(new_pdat.U1_s.end()  ,search1->second.U1_s.begin() ,search1->second.U1_s.end());
+    new_pdat.U1_d.insert(new_pdat.U1_d.end()  ,search1->second.U1_d.begin() ,search1->second.U1_d.end());
+    new_pdat.U3_s.insert(new_pdat.U3_s.end()  ,search1->second.U3_s.begin() ,search1->second.U3_s.end());
+    new_pdat.U3_d.insert(new_pdat.U3_d.end()  ,search1->second.U3_d.begin() ,search1->second.U3_d.end());
+
+    new_pdat.pos_s.insert(new_pdat.pos_s.end(),search2->second.pos_s.begin(),search2->second.pos_s.end());
+    new_pdat.pos_d.insert(new_pdat.pos_d.end(),search2->second.pos_d.begin(),search2->second.pos_d.end());
+    new_pdat.U1_s.insert(new_pdat.U1_s.end()  ,search2->second.U1_s.begin() ,search2->second.U1_s.end());
+    new_pdat.U1_d.insert(new_pdat.U1_d.end()  ,search2->second.U1_d.begin() ,search2->second.U1_d.end());
+    new_pdat.U3_s.insert(new_pdat.U3_s.end()  ,search2->second.U3_s.begin() ,search2->second.U3_s.end());
+    new_pdat.U3_d.insert(new_pdat.U3_d.end()  ,search2->second.U3_d.begin() ,search2->second.U3_d.end());
+
+    new_pdat.pos_s.insert(new_pdat.pos_s.end(),search3->second.pos_s.begin(),search3->second.pos_s.end());
+    new_pdat.pos_d.insert(new_pdat.pos_d.end(),search3->second.pos_d.begin(),search3->second.pos_d.end());
+    new_pdat.U1_s.insert(new_pdat.U1_s.end()  ,search3->second.U1_s.begin() ,search3->second.U1_s.end());
+    new_pdat.U1_d.insert(new_pdat.U1_d.end()  ,search3->second.U1_d.begin() ,search3->second.U1_d.end());
+    new_pdat.U3_s.insert(new_pdat.U3_s.end()  ,search3->second.U3_s.begin() ,search3->second.U3_s.end());
+    new_pdat.U3_d.insert(new_pdat.U3_d.end()  ,search3->second.U3_d.begin() ,search3->second.U3_d.end());
+
+    new_pdat.pos_s.insert(new_pdat.pos_s.end(),search4->second.pos_s.begin(),search4->second.pos_s.end());
+    new_pdat.pos_d.insert(new_pdat.pos_d.end(),search4->second.pos_d.begin(),search4->second.pos_d.end());
+    new_pdat.U1_s.insert(new_pdat.U1_s.end()  ,search4->second.U1_s.begin() ,search4->second.U1_s.end());
+    new_pdat.U1_d.insert(new_pdat.U1_d.end()  ,search4->second.U1_d.begin() ,search4->second.U1_d.end());
+    new_pdat.U3_s.insert(new_pdat.U3_s.end()  ,search4->second.U3_s.begin() ,search4->second.U3_s.end());
+    new_pdat.U3_d.insert(new_pdat.U3_d.end()  ,search4->second.U3_d.begin() ,search4->second.U3_d.end());
+
+    new_pdat.pos_s.insert(new_pdat.pos_s.end(),search5->second.pos_s.begin(),search5->second.pos_s.end());
+    new_pdat.pos_d.insert(new_pdat.pos_d.end(),search5->second.pos_d.begin(),search5->second.pos_d.end());
+    new_pdat.U1_s.insert(new_pdat.U1_s.end()  ,search5->second.U1_s.begin() ,search5->second.U1_s.end());
+    new_pdat.U1_d.insert(new_pdat.U1_d.end()  ,search5->second.U1_d.begin() ,search5->second.U1_d.end());
+    new_pdat.U3_s.insert(new_pdat.U3_s.end()  ,search5->second.U3_s.begin() ,search5->second.U3_s.end());
+    new_pdat.U3_d.insert(new_pdat.U3_d.end()  ,search5->second.U3_d.begin() ,search5->second.U3_d.end());
+
+    new_pdat.pos_s.insert(new_pdat.pos_s.end(),search6->second.pos_s.begin(),search6->second.pos_s.end());
+    new_pdat.pos_d.insert(new_pdat.pos_d.end(),search6->second.pos_d.begin(),search6->second.pos_d.end());
+    new_pdat.U1_s.insert(new_pdat.U1_s.end()  ,search6->second.U1_s.begin() ,search6->second.U1_s.end());
+    new_pdat.U1_d.insert(new_pdat.U1_d.end()  ,search6->second.U1_d.begin() ,search6->second.U1_d.end());
+    new_pdat.U3_s.insert(new_pdat.U3_s.end()  ,search6->second.U3_s.begin() ,search6->second.U3_s.end());
+    new_pdat.U3_d.insert(new_pdat.U3_d.end()  ,search6->second.U3_d.begin() ,search6->second.U3_d.end());
+
+    new_pdat.pos_s.insert(new_pdat.pos_s.end(),search0->second.pos_s.begin(),search0->second.pos_s.end());
+    new_pdat.pos_d.insert(new_pdat.pos_d.end(),search0->second.pos_d.begin(),search0->second.pos_d.end());
+    new_pdat.U1_s.insert(new_pdat.U1_s.end()  ,search0->second.U1_s.begin() ,search0->second.U1_s.end());
+    new_pdat.U1_d.insert(new_pdat.U1_d.end()  ,search0->second.U1_d.begin() ,search0->second.U1_d.end());
+    new_pdat.U3_s.insert(new_pdat.U3_s.end()  ,search0->second.U3_s.begin() ,search0->second.U3_s.end());
+    new_pdat.U3_d.insert(new_pdat.U3_d.end()  ,search0->second.U3_d.begin() ,search0->second.U3_d.end());
+
+    owned_data.erase(old_key0);
+    owned_data.erase(old_key1);
+    owned_data.erase(old_key2);
+    owned_data.erase(old_key3);
+    owned_data.erase(old_key4);
+    owned_data.erase(old_key5);
+    owned_data.erase(old_key6);
+    owned_data.erase(old_key7);
+
+
+    owned_data[new_key] = new_pdat;
+
+}

@@ -49,5 +49,5 @@ class SchedulerPatchData{public:
 
 
     void split_patchdata(u64 key_orginal,Patch & p0,Patch & p1,Patch & p2,Patch & p3,Patch & p4,Patch & p5,Patch & p6,Patch & p7);
-
+    void merge_patchdata(u64 new_key,u64 old_key0,u64 old_key1,u64 old_key2,u64 old_key3,u64 old_key4,u64 old_key5,u64 old_key6,u64 old_key7);
 };
