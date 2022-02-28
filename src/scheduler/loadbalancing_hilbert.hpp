@@ -2,7 +2,7 @@
  * @file loadbalancing_hilbert.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @brief function to run load balancing with the hilbert curve
- * @version 0.1
+ * @version 1.0
  * @date 2022-02-28
  * 
  * @copyright Copyright (c) 2022
