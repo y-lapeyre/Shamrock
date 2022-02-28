@@ -262,9 +262,9 @@ Test_start("mpi_scheduler::", test_split, -1){
     
     sched.owned_patch_id = sched.patch_list.build_local();
 
-    std::cout << sched.dump_status() << std::endl;
+    //std::cout << sched.dump_status() << std::endl;
     sched.patch_list.sync_global();
-    std::cout << sched.dump_status() << std::endl;
+    //std::cout << sched.dump_status() << std::endl;
 
 
     //*
@@ -273,7 +273,7 @@ Test_start("mpi_scheduler::", test_split, -1){
     sched.patch_data.sim_box.max_box_sim_s = {1};
 
     
-    std::cout << sched.dump_status() << std::endl;
+    //std::cout << sched.dump_status() << std::endl;
 
     std::cout << "build local" <<std::endl;
     sched.owned_patch_id = sched.patch_list.build_local();
@@ -283,13 +283,13 @@ Test_start("mpi_scheduler::", test_split, -1){
 
 
     for(u32 stepi = 0 ; stepi < 5; stepi ++){
-        std::cout << "step : " << std::endl;
-        std::cout << sched.dump_status() << std::endl;
+        std::cout << "step : " <<stepi<< std::endl;
+        //std::cout << sched.dump_status() << std::endl;
         sched.scheduler_step(true, true);
         
     }
 
-    std::cout << sched.dump_status() << std::endl;
+    //std::cout << sched.dump_status() << std::endl;
     
     std::cout << "changing crit\n";
     sched.crit_patch_merge = 30;
@@ -297,7 +297,7 @@ Test_start("mpi_scheduler::", test_split, -1){
     sched.scheduler_step(true, true);
 
 
-    std::cout << sched.dump_status() << std::endl;
+    //std::cout << sched.dump_status() << std::endl;
     //*/
 
 

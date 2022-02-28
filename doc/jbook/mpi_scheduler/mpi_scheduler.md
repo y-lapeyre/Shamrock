@@ -147,3 +147,60 @@ void split_patches(std::unordered_set<u64> split_rq){
     }
 }
 ```
+
+
+
+
+## merge_patches
+
+
+```{prf:algorithm} scheduler patch splitter
+for all patch to split :   
+    &ensp;&thinsp; Get ids of patches to merge  
+    &ensp;&thinsp; merge patchdata(s)  
+    &ensp;&thinsp; merge patch object in SchedulerPatchList
+    &ensp;&thinsp; merge corresponding node in patchtree
+```
+
+```c++
+void merge_patches(std::unordered_set<u64> merge_rq){
+    for(u64 tree_id : merge_rq){
+
+        PTNode & to_merge_node = patch_tree.tree[tree_id];
+
+        std::cout << "merging patch tree id : " << tree_id << "\n";
+        
+
+        u64 patch_id0 = patch_tree.tree[to_merge_node.childs_id[0]].linked_patchid;
+        u64 patch_id1 = patch_tree.tree[to_merge_node.childs_id[1]].linked_patchid;
+        u64 patch_id2 = patch_tree.tree[to_merge_node.childs_id[2]].linked_patchid;
+        u64 patch_id3 = patch_tree.tree[to_merge_node.childs_id[3]].linked_patchid;
+        u64 patch_id4 = patch_tree.tree[to_merge_node.childs_id[4]].linked_patchid;
+        u64 patch_id5 = patch_tree.tree[to_merge_node.childs_id[5]].linked_patchid;
+        u64 patch_id6 = patch_tree.tree[to_merge_node.childs_id[6]].linked_patchid;
+        u64 patch_id7 = patch_tree.tree[to_merge_node.childs_id[7]].linked_patchid;
+        
+        
+        std::cout << format("  -> (%d %d %d %d %d %d %d %d)\n", patch_id0, patch_id1, patch_id2, patch_id3, patch_id4, patch_id5, patch_id6, patch_id7);
+        
+        if(patch_list.global[patch_list.id_patch_to_global_idx[ patch_id0 ]].node_owner_id == mpi_handler::world_rank){
+            patch_data.merge_patchdata(patch_id0, patch_id0, patch_id1, patch_id2, patch_id3, patch_id4, patch_id5, patch_id6, patch_id7);
+        }
+
+        patch_list.merge_patch(
+            patch_list.id_patch_to_global_idx[ patch_id0 ],
+            patch_list.id_patch_to_global_idx[ patch_id1 ],
+            patch_list.id_patch_to_global_idx[ patch_id2 ],
+            patch_list.id_patch_to_global_idx[ patch_id3 ],
+            patch_list.id_patch_to_global_idx[ patch_id4 ],
+            patch_list.id_patch_to_global_idx[ patch_id5 ],
+            patch_list.id_patch_to_global_idx[ patch_id6 ],
+            patch_list.id_patch_to_global_idx[ patch_id7 ]);
+
+        patch_tree.merge_node_dm1(tree_id);
+
+        to_merge_node.linked_patchid = patch_id0;
+
+    }
+}
+```

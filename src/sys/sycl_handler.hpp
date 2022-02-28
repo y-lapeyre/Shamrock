@@ -35,4 +35,22 @@ inline void init_sycl(){
     printf("Running on : %s\n", queue->get_device().get_info<sycl::info::device::name>().c_str());
     //global_logger->log("Running on : %s\n", queue->get_device().get_info<sycl::info::device::name>().c_str());
 
+    const auto &Platforms = sycl::platform::get_platforms();
+
+    for (const auto &Platform : Platforms) {
+        sycl::backend Backend = Platform.get_backend();
+        auto PlatformName = Platform.get_info<sycl::info::platform::name>();
+
+        std::cout << " -> platform name : " << PlatformName <<std::endl;
+        const auto &Devices = Platform.get_devices();
+        for (const auto &Device : Devices) {
+            // std::cout << "[" << Backend << ":" << getDeviceTypeName(Device) << ":"
+            //             << DeviceNums[Backend] << "] ";
+            // ++DeviceNums[Backend];
+            // // Verbose parameter is set to false to print regular devices output first
+            // printDeviceInfo(Device, false, PlatformName);
+        }
+    }
+
+
 }

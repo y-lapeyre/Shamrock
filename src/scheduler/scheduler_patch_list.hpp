@@ -1,3 +1,14 @@
+/**
+ * @file scheduler_patch_list.hpp
+ * @author your name (you@domain.com)
+ * @brief Class to handle the patch list of the mpi scheduler
+ * @version 0.1
+ * @date 2022-02-08
+ * 
+ * @copyright Copyright (c) 2022
+ * 
+ */
+
 #pragma once
 
 #include <array>
@@ -8,20 +19,40 @@
 
 #include "patch.hpp"
 
+/**
+ * @brief Handle the patch list of the mpi scheduler
+ * 
+ */
 class SchedulerPatchList{public:
 
+    //TODO move variable to private
     u64 _next_patch_id = 0;
 
+    /**
+     * @brief contain the list of all patches in the simulation
+     */
     std::vector<Patch> global;
+
+    /**
+     * @brief contain the list of patch owned by the current node
+     */
     std::vector<Patch> local;
 
 
 
-
+    /**
+     * @brief rebuild global from the local list of each tables
+     *  
+     * similar to \p global = allgather(\p local)
+     */
     void sync_global();
 
 
-
+    /**
+     * @brief select owned patches owned by the node to rebuild local
+     * 
+     * @return std::unordered_set<u64> 
+     */
     [[nodiscard]]
     std::unordered_set<u64> build_local();
 
@@ -42,125 +73,17 @@ class SchedulerPatchList{public:
 
 
     std::unordered_map<u64,u64> id_patch_to_global_idx;
-    inline void build_global_idx_map(){
-        id_patch_to_global_idx.clear();
-
-        u64 idx = 0;
-        for(Patch p : global){
-            id_patch_to_global_idx[p.id_patch]  = idx;
-            idx ++;
-        }
-
-    }
+    void build_global_idx_map();
 
 
     std::unordered_map<u64,u64> id_patch_to_local_idx;
-    inline void build_local_idx_map(){
-        id_patch_to_local_idx.clear();
+    void build_local_idx_map();
 
-        u64 idx = 0;
-        for(Patch p : local){
-            id_patch_to_local_idx[p.id_patch]  = idx;
-            idx ++;
-        }
-
-    }
-
-    inline void reset_local_pack_index(){
-        for(Patch & p : local){
-            p.pack_node_index = u64_max;
-        }
-    }
+    void reset_local_pack_index();
 
 
-    inline std::tuple<u64,u64,u64,u64,u64,u64,u64,u64> split_patch(u64 id_patch){
-
-        Patch & p0 = global[id_patch_to_global_idx[id_patch]];
-
-        Patch p1,p2,p3,p4,p5,p6,p7;
-
-        split_patch_obj(p0, p1, p2, p3, p4, p5, p6, p7);
-        
-        p1.id_patch = _next_patch_id;
-        _next_patch_id ++;
-
-        p2.id_patch = _next_patch_id;
-        _next_patch_id ++;
-
-        p3.id_patch = _next_patch_id;
-        _next_patch_id ++;
-
-        p4.id_patch = _next_patch_id;
-        _next_patch_id ++;
-
-        p5.id_patch = _next_patch_id;
-        _next_patch_id ++;
-
-        p6.id_patch = _next_patch_id;
-        _next_patch_id ++;
-
-        p7.id_patch = _next_patch_id;
-        _next_patch_id ++;
-
-        u64 idx_p1 = global.size();
-        global.push_back(p1);
-
-        u64 idx_p2 = idx_p1 +1 ;
-        global.push_back(p2);
-
-        u64 idx_p3 = idx_p2 +1 ;
-        global.push_back(p3);
-
-        u64 idx_p4 = idx_p3 +1 ;
-        global.push_back(p4);
-
-        u64 idx_p5 = idx_p4 +1 ;
-        global.push_back(p5);
-
-        u64 idx_p6 = idx_p5 +1 ;
-        global.push_back(p6);
-
-        u64 idx_p7 = idx_p6 +1 ;
-        global.push_back(p7);
-
-        return {id_patch_to_global_idx[id_patch],
-                idx_p1,idx_p2,idx_p3,idx_p4,idx_p5,idx_p6,idx_p7
-            };
-
-    }
-
-
-    inline void merge_patch(
-     u64 idx0,
-     u64 idx1,
-     u64 idx2,
-     u64 idx3,
-     u64 idx4,
-     u64 idx5,
-     u64 idx6,
-     u64 idx7){
-
-        merge_patch_obj(
-            global[idx0],
-            global[idx1],
-            global[idx2],
-            global[idx3],
-            global[idx4],
-            global[idx5],
-            global[idx6],
-            global[idx7]
-        );
-
-        // TODO notify in the documentation that this mean the patch is dead because it will be flushed out when performing the sync
-        global[idx1].node_owner_id = u32_max;
-        global[idx2].node_owner_id = u32_max;
-        global[idx3].node_owner_id = u32_max;
-        global[idx4].node_owner_id = u32_max;
-        global[idx5].node_owner_id = u32_max;
-        global[idx6].node_owner_id = u32_max;
-        global[idx7].node_owner_id = u32_max;
-
-    }
+    std::tuple<u64,u64,u64,u64,u64,u64,u64,u64> split_patch(u64 id_patch);
+    void merge_patch( u64 idx0, u64 idx1, u64 idx2, u64 idx3, u64 idx4, u64 idx5, u64 idx6, u64 idx7);
 
     
 

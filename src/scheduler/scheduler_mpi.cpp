@@ -10,7 +10,7 @@
 
 
 
-
+#include "../utils/time_utils.hpp"
 
 
 
@@ -181,73 +181,125 @@ void SchedulerMPI::sync_build_LB(bool global_patch_sync, bool balance_load){
     owned_patch_id = patch_list.build_local();
 }
 
+//TODO clean the output of this function
 void SchedulerMPI::scheduler_step(bool do_split_merge, bool do_load_balancing){
+    Timer timer;
 
     std::cout << " -> running scheduler step\n";
 
     //std::cout << "sync global" <<std::endl;
+
+    
+    timer.start();
     patch_list.sync_global();
-
-    //std::cout << dump_status() << std::endl;
-
-    //std::cout << "build_global_idx_map" <<std::endl;
-    patch_list.build_global_idx_map();
-
-    //std::cout << dump_status() << std::endl;
-
-
-    //std::cout << "tree partial_values_reduction" <<std::endl;
-    patch_tree.partial_values_reduction(
-            patch_list.global, 
-            patch_list.id_patch_to_global_idx);
-
-
-    //std::cout << dump_status() << std::endl;
-
-    // Generate merge and split request  
-    std::unordered_set<u64> split_rq = patch_tree.get_split_request(crit_patch_split);
-    std::unordered_set<u64> merge_rq = patch_tree.get_merge_request(crit_patch_merge);
-        
-    std::cout << "   | patch operation requests : \n";
-
-    //*
-    std::cout << "     |-> split rq : ";
-    for(u64 i : split_rq){
-        std::cout << i << " ";
-    }std::cout << std::endl;
-    //*/
-
-    //*
-    std::cout << "     |-> merge rq : ";
-    for(u64 i : merge_rq){
-        std::cout << i << " ";
-    }std::cout << std::endl;
-    //*/
-
-    //std::cout << "split_patches" <<std::endl;
-    split_patches(split_rq);
-
-    //std::cout << dump_status() << std::endl;
-
-    //check not necessary if no splits
-    patch_list.build_global_idx_map();
-
-    set_patch_pack_values(merge_rq);
-
-
-    // generate LB change list 
-    std::vector<std::tuple<u64, i32, i32,i32>> change_list = 
-        make_change_list(patch_list.global);
-
-    // apply LB change list
-    patch_data.apply_change_list(change_list, patch_list);
-
-    patch_list.build_local_idx_map();
-    merge_patches(merge_rq);
+    timer.end();
+    std::cout << " | sync global : " << timer.get_time_str() << std::endl;
 
 
 
+    std::unordered_set<u64> split_rq;
+    std::unordered_set<u64> merge_rq;
 
+    if(do_split_merge){
+        //std::cout << dump_status() << std::endl;
+
+        //std::cout << "build_global_idx_map" <<std::endl;
+        timer.start();
+        patch_list.build_global_idx_map();
+        timer.end();
+        std::cout << " | build_global_idx_map : " << timer.get_time_str() << std::endl;
+
+        //std::cout << dump_status() << std::endl;
+
+
+
+        //std::cout << "tree partial_values_reduction" <<std::endl;
+        timer.start();
+        patch_tree.partial_values_reduction(
+                patch_list.global, 
+                patch_list.id_patch_to_global_idx);
+        timer.end();
+        std::cout << " | partial_values_reduction : " << timer.get_time_str() << std::endl;
+
+
+        //std::cout << dump_status() << std::endl;
+
+        // Generate merge and split request  
+        timer.start();
+        split_rq = patch_tree.get_split_request(crit_patch_split);
+        merge_rq = patch_tree.get_merge_request(crit_patch_merge);
+        timer.end();
+        std::cout << " | gen split/merge op : " << timer.get_time_str() << std::endl;
+
+
+
+        std::cout <<        "   | ---- patch operation requests ---- \n";
+        std::cout << format("      split : %-6d   | merge : %-6d",split_rq.size(), merge_rq.size()) << std::endl;
+
+        /*
+        std::cout << "     |-> split rq : ";
+        for(u64 i : split_rq){
+            std::cout << i << " ";
+        }std::cout << std::endl;
+        //*/
+
+        /*
+        std::cout << "     |-> merge rq : ";
+        for(u64 i : merge_rq){
+            std::cout << i << " ";
+        }std::cout << std::endl;
+        //*/
+
+        //std::cout << "split_patches" <<std::endl;
+        timer.start();
+        split_patches(split_rq);
+        timer.end();
+        std::cout << " | apply splits : " << timer.get_time_str() << std::endl;
+
+        //std::cout << dump_status() << std::endl;
+
+        //check not necessary if no splits
+        timer.start();
+        patch_list.build_global_idx_map();
+        timer.end();
+        std::cout << " | build_global_idx_map : " << timer.get_time_str() << std::endl;
+
+
+
+        timer.start();
+        set_patch_pack_values(merge_rq);
+        timer.end();
+        std::cout << " | set_patch_pack_values : " << timer.get_time_str() << std::endl;
+    }
+
+
+    if(do_load_balancing){
+        timer.start();
+        // generate LB change list 
+        std::vector<std::tuple<u64, i32, i32,i32>> change_list = 
+            make_change_list(patch_list.global);
+        timer.end();
+        std::cout << " | load balancing gen op : " << timer.get_time_str() << std::endl;
+
+        std::cout <<        "   | ---- load balancing ---- \n";
+        std::cout << format("      move op : %-6d",change_list.size()) << std::endl;
+
+        timer.start();
+        // apply LB change list
+        patch_data.apply_change_list(change_list, patch_list);
+        timer.end();
+        std::cout << " | apply balancing : " << timer.get_time_str() << std::endl;
+    }
+
+
+    if(do_split_merge){
+        patch_list.build_local_idx_map();
+        merge_patches(merge_rq);
+    }
+
+
+
+    //TODO should be moved out of the scheduler step
     owned_patch_id = patch_list.build_local();
     patch_list.reset_local_pack_index();
     patch_list.build_local_idx_map();
