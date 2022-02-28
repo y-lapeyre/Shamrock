@@ -1,3 +1,13 @@
+/**
+ * @file patch.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief Header file for the patch struct and related function 
+ * @version 1.0
+ * @date 2022-02-28
+ * 
+ * @copyright Copyright (c) 2022
+ * 
+ */
 #pragma once
 
 #include "../aliases.hpp"
@@ -5,36 +15,46 @@
 
 
 
-
+/**
+ * @brief Patch object that contain generic patch information
+ * 
+ */
 struct Patch{
 
-    //patch information (unique key)
-    u64 id_patch;
+
+
+    u64 id_patch; //unique key that identify the patch
+
 
     //load balancing fields
-    u64 pack_node_index; //be carefull this value mean "to pack with index xxx in the global patch table" and not "to pack with id_pach == xxx"
-    u64 load_value;
+
+    u64 pack_node_index; ///< this value mean "to pack with index xxx in the global patch table" and not "to pack with id_pach == xxx"
+    u64 load_value; ///< if synchronized contain the load value of the patch
 
     //Data
-    u64 x_min,y_min,z_min;
-    u64 x_max,y_max,z_max;
+    u64 x_min; ///< box coordinate of the corresponding patch
+    u64 y_min; ///< box coordinate of the corresponding patch
+    u64 z_min; ///< box coordinate of the corresponding patch
+    u64 x_max; ///< box coordinate of the corresponding patch
+    u64 y_max; ///< box coordinate of the corresponding patch
+    u64 z_max; ///< box coordinate of the corresponding patch
 
 
-
-    ///////////////////////////////////////////////
-    // FMM fields
-    ///////////////////////////////////////////////
-
-
-    u32 data_count;
+    u32 data_count; ///< number of element in the corresponding patchdata
     
-    u32 node_owner_id;
+    u32 node_owner_id;  ///< node rank owner of this patch
 
     
 
 
 
-
+    /**
+     * @brief check if patch equals
+     * 
+     * @param rhs 
+     * @return true 
+     * @return false 
+     */
     inline bool operator==(const Patch& rhs){ 
 
         bool ret_val = true;
@@ -60,199 +80,63 @@ struct Patch{
 };
 
 
+/**
+ * @brief patch related functions
+ */
+namespace patch {
 
-inline MPI_Datatype patch_MPI_type;
-inline MPI_Datatype patch_MPI_types_list[2];
-inline int          patch_MPI_block_lens[2];
-inline MPI_Aint     patch_MPI_offset[2];
+    /**
+     * @brief split patch \p p0 in p0 -> p7
+     * 
+     * @param p0 
+     * @param p1 
+     * @param p2 
+     * @param p3 
+     * @param p4 
+     * @param p5 
+     * @param p6 
+     * @param p7 
+     */
+    void split_patch_obj(Patch & p0, Patch & p1,Patch & p2,Patch & p3,Patch & p4,Patch & p5,Patch & p6,Patch & p7);
 
-inline bool __mpi_patch_type_active = false;
-inline bool is_mpi_patch_type_active(){
-    return __mpi_patch_type_active;
-}
-
-
-void create_MPI_patch_type();
-
-void free_MPI_patch_type();
-
-
-
-inline void split_patch_obj(
-        Patch & p0, 
-        Patch & p1,
-        Patch & p2,
-        Patch & p3,
-        Patch & p4,
-        Patch & p5,
-        Patch & p6,
-        Patch & p7
-    ){
-
-    u64 min_x = p0.x_min;
-    u64 min_y = p0.y_min;
-    u64 min_z = p0.z_min;
-
-    u64 split_x = (((p0.x_max - p0.x_min) + 1)/2) - 1 + min_x;
-    u64 split_y = (((p0.y_max - p0.y_min) + 1)/2) - 1 + min_y;
-    u64 split_z = (((p0.z_max - p0.z_min) + 1)/2) - 1 + min_z;
-
-    u64 max_x = p0.x_max;
-    u64 max_y = p0.y_max;
-    u64 max_z = p0.z_max;
-
-    p0.data_count /= 8;
-    p0.load_value /= 8;
-
-    p1 = p0;
-    p2 = p0;
-    p3 = p0;
-    p4 = p0;
-    p5 = p0;
-    p6 = p0;
-    p7 = p0;
+    /**
+     * @brief merge patch \p p0 -> p7 into p0
+     * 
+     * @param p0 
+     * @param p1 
+     * @param p2 
+     * @param p3 
+     * @param p4 
+     * @param p5 
+     * @param p6 
+     * @param p7 
+     */
+    void merge_patch_obj(Patch & p0, Patch & p1,Patch & p2,Patch & p3,Patch & p4,Patch & p5,Patch & p6,Patch & p7);
 
 
-    p0.x_min = min_x;
-    p0.y_min = min_y;
-    p0.z_min = min_z;
-    p0.x_max = split_x;
-    p0.y_max = split_y;
-    p0.z_max = split_z;
+    /**
+     * @brief the mpi patch type (ok if is_mpi_patch_type_active() return true)
+     */
+    inline MPI_Datatype patch_MPI_type;
 
-    p1.x_min = min_x;
-    p1.y_min = min_y;
-    p1.z_min = split_z + 1;
-    p1.x_max = split_x;
-    p1.y_max = split_y;
-    p1.z_max = max_z;
-
-    p2.x_min = min_x;
-    p2.y_min = split_y+1;
-    p2.z_min = min_z;
-    p2.x_max = split_x;
-    p2.y_max = max_y;
-    p2.z_max = split_z;  
-
-    p3.x_min = min_x;
-    p3.y_min = split_y+1;
-    p3.z_min = split_z+1;
-    p3.x_max = split_x;
-    p3.y_max = max_y;
-    p3.z_max = max_z;
-
-    p4.x_min = split_x+1;
-    p4.y_min = min_y;
-    p4.z_min = min_z;
-    p4.x_max = max_x;
-    p4.y_max = split_y;
-    p4.z_max = split_z;
-
-    p5.x_min = split_x+1;
-    p5.y_min = min_y;
-    p5.z_min = split_z+1;
-    p5.x_max = max_x;
-    p5.y_max = split_y;
-    p5.z_max = max_z;
-
-    p6.x_min = split_x+1;
-    p6.y_min = split_y+1;
-    p6.z_min = min_z;
-    p6.x_max = max_x;
-    p6.y_max = max_y;
-    p6.z_max = split_z;
-
-    p7.x_min = split_x+1;
-    p7.y_min = split_y+1;
-    p7.z_min = split_z+1;
-    p7.x_max = max_x;
-    p7.y_max = max_y;
-    p7.z_max = max_z;
-        
-
-}
+    /**
+     * @brief is mpi type active
+     * 
+     * @return true patch_MPI_type can be used   
+     * @return false patch_MPI_type shouldnt be used
+     */
+    bool is_mpi_patch_type_active();
 
 
+    /**
+     * @brief Create the mpi type for the Patch struct
+     */
+    void create_MPI_patch_type();
 
 
-
-inline void merge_patch_obj(
-        Patch & p0, 
-        Patch & p1,
-        Patch & p2,
-        Patch & p3,
-        Patch & p4,
-        Patch & p5,
-        Patch & p6,
-        Patch & p7
-    ){
-
-
-    u64 min_x = p0.x_min;
-    u64 min_y = p0.y_min;
-    u64 min_z = p0.z_min;
-
-    u64 max_x = p0.x_max;
-    u64 max_y = p0.y_max;
-    u64 max_z = p0.z_max;
-
-    min_x = sycl::min(min_x,p1.x_min);
-    min_y = sycl::min(min_y,p1.y_min);
-    min_z = sycl::min(min_z,p1.z_min);
-    max_x = sycl::max(max_x,p1.x_max);
-    max_y = sycl::max(max_y,p1.y_max);
-    max_z = sycl::max(max_z,p1.z_max);
-
-    min_x = sycl::min(min_x,p2.x_min);
-    min_y = sycl::min(min_y,p2.y_min);
-    min_z = sycl::min(min_z,p2.z_min);
-    max_x = sycl::max(max_x,p2.x_max);
-    max_y = sycl::max(max_y,p2.y_max);
-    max_z = sycl::max(max_z,p2.z_max);
-
-    min_x = sycl::min(min_x,p3.x_min);
-    min_y = sycl::min(min_y,p3.y_min);
-    min_z = sycl::min(min_z,p3.z_min);
-    max_x = sycl::max(max_x,p3.x_max);
-    max_y = sycl::max(max_y,p3.y_max);
-    max_z = sycl::max(max_z,p3.z_max);
-
-    min_x = sycl::min(min_x,p4.x_min);
-    min_y = sycl::min(min_y,p4.y_min);
-    min_z = sycl::min(min_z,p4.z_min);
-    max_x = sycl::max(max_x,p4.x_max);
-    max_y = sycl::max(max_y,p4.y_max);
-    max_z = sycl::max(max_z,p4.z_max);
-
-    min_x = sycl::min(min_x,p5.x_min);
-    min_y = sycl::min(min_y,p5.y_min);
-    min_z = sycl::min(min_z,p5.z_min);
-    max_x = sycl::max(max_x,p5.x_max);
-    max_y = sycl::max(max_y,p5.y_max);
-    max_z = sycl::max(max_z,p5.z_max);
-
-    min_x = sycl::min(min_x,p6.x_min);
-    min_y = sycl::min(min_y,p6.y_min);
-    min_z = sycl::min(min_z,p6.z_min);
-    max_x = sycl::max(max_x,p6.x_max);
-    max_y = sycl::max(max_y,p6.y_max);
-    max_z = sycl::max(max_z,p6.z_max);
-
-    min_x = sycl::min(min_x,p7.x_min);
-    min_y = sycl::min(min_y,p7.y_min);
-    min_z = sycl::min(min_z,p7.z_min);
-    max_x = sycl::max(max_x,p7.x_max);
-    max_y = sycl::max(max_y,p7.y_max);
-    max_z = sycl::max(max_z,p7.z_max);
-
-    p0.x_min = min_x;
-    p0.y_min = min_y;
-    p0.z_min = min_z;
-    p0.x_max = max_x;
-    p0.y_max = max_y;
-    p0.z_max = max_z;
-
-    p0.pack_node_index = u64_max;
-    
+    /**
+     * @brief Destroy the mpi type for the Patch struct
+     */
+    void free_MPI_patch_type();
 
 }

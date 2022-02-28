@@ -52,7 +52,7 @@ Test_start("SchedulerPatchList::fake_patch_list_gen()::",no_patch_intersection,-
 
 //TODO use "make_fake_patch_list" instead of the old utility
 Test_start("SchedulerPatchList::",build_select_corectness,-1){
-    create_MPI_patch_type();
+    patch::create_MPI_patch_type();
 
     //in the end this vector should be recovered in recv_vec
     std::vector<Patch> check_vec;
@@ -92,6 +92,6 @@ Test_start("SchedulerPatchList::",build_select_corectness,-1){
 
 
 
-    free_MPI_patch_type();
+    patch::free_MPI_patch_type();
 }
 

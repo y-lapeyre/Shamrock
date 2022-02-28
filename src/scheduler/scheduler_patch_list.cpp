@@ -7,7 +7,7 @@
 
 
 void SchedulerPatchList::sync_global(){
-    mpi_handler::vector_allgatherv(local, patch_MPI_type, global, patch_MPI_type, MPI_COMM_WORLD);   
+    mpi_handler::vector_allgatherv(local, patch::patch_MPI_type, global, patch::patch_MPI_type, MPI_COMM_WORLD);   
 }
 
 
@@ -102,7 +102,7 @@ std::tuple<u64,u64,u64,u64,u64,u64,u64,u64> SchedulerPatchList::split_patch(u64 
 
     Patch p1,p2,p3,p4,p5,p6,p7;
 
-    split_patch_obj(p0, p1, p2, p3, p4, p5, p6, p7);
+    patch::split_patch_obj(p0, p1, p2, p3, p4, p5, p6, p7);
     
     p1.id_patch = _next_patch_id;
     _next_patch_id ++;
@@ -163,7 +163,7 @@ void SchedulerPatchList::merge_patch(
         u64 idx6,
         u64 idx7){
 
-    merge_patch_obj(
+    patch::merge_patch_obj(
         global[idx0],
         global[idx1],
         global[idx2],

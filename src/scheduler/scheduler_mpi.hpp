@@ -53,8 +53,8 @@ class SchedulerMPI{public:
             create_sycl_mpi_types();
         }
 
-        if(!is_mpi_patch_type_active()){
-            create_MPI_patch_type();
+        if(!patch::is_mpi_patch_type_active()){
+            patch::create_MPI_patch_type();
         }
     }
 
@@ -63,8 +63,8 @@ class SchedulerMPI{public:
             free_sycl_mpi_types();
         }
 
-        if(is_mpi_patch_type_active()){
-            free_MPI_patch_type();
+        if(patch::is_mpi_patch_type_active()){
+            patch::free_MPI_patch_type();
         }
     }
 
