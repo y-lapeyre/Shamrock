@@ -123,7 +123,7 @@ Test_start("SchedulerPatchData::", apply_change_list, -1){
 
     //check corectness of patchdata contents
     for(const u64 a : sche.owned_patch_id){
-        Test_assert("match data", check_patch_data_match( sche.patch_data.owned_data[a], check_patchdata[a])) ;
+        Test_assert("match data", patch_data_check_match( sche.patch_data.owned_data[a], check_patchdata[a])) ;
     }
 
 
@@ -205,7 +205,7 @@ Test_start("mpi_scheduler::", testLB, -1){
 
     //check corectness of patchdata contents
     for(const u64 a : sche.owned_patch_id){
-         Test_assert("match data", check_patch_data_match( sche.patch_data.owned_data[a], check_patchdata[a])) ;
+         Test_assert("match data", patch_data_check_match( sche.patch_data.owned_data[a], check_patchdata[a])) ;
     }
 
 

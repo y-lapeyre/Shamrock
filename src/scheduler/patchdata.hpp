@@ -1,3 +1,14 @@
+/**
+ * @file patchdata.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief header for PatchData related function and declaration
+ * @version 0.1
+ * @date 2022-02-28
+ * 
+ * @copyright Copyright (c) 2022
+ * 
+ */
+
 #pragma once
 
 #include "../aliases.hpp"
@@ -10,122 +21,109 @@
 
 #include "../utils/sycl_vector_utils.hpp"
 
+/**
+ * @brief manage the information on the layout of patchdata
+ */
 namespace patchdata_layout {
 
-    inline u32 nVarpos_s;
-    inline u32 nVarpos_d;
-    inline u32 nVarU1_s;
-    inline u32 nVarU1_d;
-    inline u32 nVarU3_s;
-    inline u32 nVarU3_d;
+    inline u32 nVarpos_s; ///< number of f32 per object for position         
+    inline u32 nVarpos_d; ///< number of f64 per object for position         
+    inline u32 nVarU1_s;  ///< number of f32 per object for internal fields  
+    inline u32 nVarU1_d;  ///< number of f64 per object for internal fields  
+    inline u32 nVarU3_s;  ///< number of f32_3 per object for internal fields 
+    inline u32 nVarU3_d;  ///< number of f64_3 per object for internal fields 
 
     /**
      * @brief should be check if true before communication with patchdata_s
      */
     inline bool layout_synced = false;
 
+    /**
+     * @brief sync the patchdata layout accors the MPI communicator \p comm
+     * 
+     * @param comm the MPI communicator
+     */
     void sync(MPI_Comm comm);
 
+    /**
+     * @brief set the patchdata layout on this node
+     * 
+     * @param arg_nVarpos_s ///< number of f32 per object for position         
+     * @param arg_nVarpos_d ///< number of f64 per object for position         
+     * @param arg_nVarU1_s  ///< number of f32 per object for internal fields  
+     * @param arg_nVarU1_d  ///< number of f64 per object for internal fields  
+     * @param arg_nVarU3_s  ///< number of f32_3 per object for internal fields
+     * @param arg_nVarU3_d  ///< number of f64_3 per object for internal fields
+     */
     void set(u32 arg_nVarpos_s, u32 arg_nVarpos_d, u32 arg_nVarU1_s, u32 arg_nVarU1_d, u32 arg_nVarU3_s,
                     u32 arg_nVarU3_d);
 
+    /**
+     * @brief should be check before using the layout  
+     *
+     * //TODO add runtime exception check to function using it
+     * 
+     * @return true patchdata_layout is synced
+     * @return false  patchdata_layout isnt synced
+     */
     bool is_synced();
 
 } // namespace patchdata_layout
 
 
-
+/**
+ * @brief PatchData container class, the layout is described in patchdata_layout
+ */
 class PatchData {
   public:
-    std::vector<f32_3> pos_s;
-    std::vector<f64_3> pos_d;
-    std::vector<f32>  U1_s;
-    std::vector<f64>  U1_d;
-    std::vector<f32_3> U3_s;
-    std::vector<f64_3> U3_d;
+    std::vector<f32_3> pos_s; ///< f32 's for position         
+    std::vector<f64_3> pos_d; ///< f64 's for position         
+    std::vector<f32>  U1_s  ; ///< f32 's for internal fields  
+    std::vector<f64>  U1_d  ; ///< f64 's for internal fields  
+    std::vector<f32_3> U3_s ; ///< f32_3 's for internal fields
+    std::vector<f64_3> U3_d ; ///< f64_3 's for internal fields
 };
 
 
-
+/**
+ * @brief perform a MPI isend with a PatchData object
+ * 
+ * @param p the patchdata to send
+ * @param rq_lst reference to the vector of MPI_Request corresponding to the send
+ * @param rank_dest rabk to send data to
+ * @param tag MPI communication tag
+ * @param comm MPI communicator
+ */
 void patchdata_isend(PatchData &p, std::vector<MPI_Request> &rq_lst, i32 rank_dest, i32 tag, MPI_Comm comm);
 
+/**
+ * @brief perform a MPI irecv with a PatchData object
+ * 
+ * //TODO find better way to do it : due to the async aspect returning a value is sketchy
+ * 
+ * @param rq_lst reference to the vector of MPI_Request corresponding to the recv
+ * @param rank_source rank to receive from
+ * @param tag MPI communication tag
+ * @param comm  MPI communicator
+ * @return the received patchdata (it works but weird because asynchronous)
+ */
 PatchData patchdata_irecv( std::vector<MPI_Request> &rq_lst, i32 rank_source, i32 tag, MPI_Comm comm);
 
 
+/**
+ * @brief generate dummy patchdata from a mersen twister
+ * 
+ * @param eng the mersen twister
+ * @return PatchData the generated PatchData
+ */
+PatchData patchdata_gen_dummy_data(std::mt19937& eng);
 
-inline PatchData patchdata_gen_dummy_data(std::mt19937& eng){
-
-    std::uniform_int_distribution<u64> distu64(1,1000);
-
-    std::uniform_real_distribution<f64> distfd(-1e5,1e5);
-
-    u32 num_part = distu64(eng);
-
-    PatchData d;
-
-
-    for (u32 i = 0 ; i < num_part; i++) {
-        for (u32 ii = 0; ii < patchdata_layout::nVarpos_s; ii ++) {
-            d.pos_s.push_back( f32_3{distfd(eng),distfd(eng),distfd(eng)} );
-        }
-        
-        for (u32 ii = 0; ii < patchdata_layout::nVarpos_d; ii ++) {
-            d.pos_d.push_back( f64_3{distfd(eng),distfd(eng),distfd(eng)} );
-        }
-
-        for (u32 ii = 0; ii < patchdata_layout::nVarU1_s; ii ++) {
-            d.U1_s.push_back( f32(distfd(eng)) );
-        }
-
-        for (u32 ii = 0; ii < patchdata_layout::nVarU1_d; ii ++) {
-            d.U1_d.push_back( f64(distfd(eng)) );
-        }
-
-        for (u32 ii = 0; ii < patchdata_layout::nVarU3_s; ii ++) {
-            d.U3_s.push_back( f32_3{distfd(eng),distfd(eng),distfd(eng)} );
-        }
-
-        for (u32 ii = 0; ii < patchdata_layout::nVarU3_d; ii ++) {
-            d.U3_d.push_back( f64_3{distfd(eng),distfd(eng),distfd(eng)} );
-        }
-    }
-
-    return d;
-}
-
-inline bool check_patch_data_match(PatchData& p1, PatchData& p2){
-    bool check = true;
-    check = check && ( p1.pos_s.size() == p2.pos_s.size());
-    check = check && ( p1.pos_d.size() == p2.pos_d.size());
-    check = check && ( p1.U1_s.size()  == p2.U1_s.size() );
-    check = check && ( p1.U1_d.size()  == p2.U1_d.size() );
-    check = check && ( p1.U3_s.size()  == p2.U3_s.size() );
-    check = check && ( p1.U3_d.size()  == p2.U3_d.size() );
-
-
-    for (u32 i = 0; i < p1.pos_s.size(); i ++) {
-        check = check && (test_eq3(p1.pos_s[i] , p2.pos_s[i] ));
-    }
-    
-    for (u32 i = 0; i < p1.pos_d.size(); i ++) {
-        check = check && (test_eq3(p1.pos_d[i] , p2.pos_d[i] ));
-    }
-
-    for (u32 i = 0; i < p1.U1_s.size(); i ++) {
-        check = check && (p1.U1_s[i] == p2.U1_s[i] );
-    }
-    
-    for (u32 i = 0; i < p1.U1_d.size(); i ++) {
-        check = check && (p1.U1_d[i] == p2.U1_d[i] );
-    }
-
-    for (u32 i = 0; i < p1.U3_s.size(); i ++) {
-        check = check && (test_eq3(p1.U3_s[i] , p2.U3_s[i] ));
-    }
-    
-    for (u32 i = 0; i < p1.U3_d.size(); i ++) {
-        check = check && (test_eq3(p1.U3_d[i] , p2.U3_d[i] ));
-    }
-
-    return check;
-}
+/**
+ * @brief check if two PatchData content match
+ * 
+ * @param p1 
+ * @param p2 
+ * @return true 
+ * @return false 
+ */
+bool patch_data_check_match(PatchData& p1, PatchData& p2);
