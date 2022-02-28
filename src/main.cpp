@@ -1,5 +1,6 @@
 #include "CL/sycl/handler.hpp"
 #include "aliases.hpp"
+#include "scheduler/loadbalancing_hilbert.hpp"
 #include "sys/mpi_handler.hpp"
 #include "sys/sycl_handler.hpp"
 #include "scheduler/scheduler_mpi.hpp"
@@ -36,9 +37,9 @@ int main(int argc, char *argv[]){
         p.y_min = 0;
         p.z_min = 0;
 
-        p.x_max = hilbert_box21_sz;
-        p.y_max = hilbert_box21_sz;
-        p.z_max = hilbert_box21_sz;
+        p.x_max = HilbertLB::max_box_sz;
+        p.y_max = HilbertLB::max_box_sz;
+        p.z_max = HilbertLB::max_box_sz;
 
         p.pack_node_index = u64_max;
 
@@ -70,7 +71,7 @@ int main(int argc, char *argv[]){
 
 
     //*
-    sched.patch_tree.build_from_patchtable(sched.patch_list.global, hilbert_box21_sz);
+    sched.patch_tree.build_from_patchtable(sched.patch_list.global, HilbertLB::max_box_sz);
     sched.patch_data.sim_box.min_box_sim_s = {-1};
     sched.patch_data.sim_box.max_box_sim_s = {1};
 

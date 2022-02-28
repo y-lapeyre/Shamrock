@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "../utils/geometry_utils.hpp"
+#include "scheduler/loadbalancing_hilbert.hpp"
 
 void SchedulerPatchData::apply_change_list(std::vector<std::tuple<u64, i32, i32,i32>> change_list,SchedulerPatchList& patch_list){
 
@@ -78,8 +79,7 @@ void split_patchdata(
 
 
 //TODO recode with better parralelism
-//TODO hilbert_box21_sz shouldn't be here
-//TODO refactor the SchedulerMPI with templated space filling curve to avoid using hilbert_box21_sz
+//TODO refactor the SchedulerMPI with templated space filling curve
 
 template<>
 void split_patchdata<f32_3>(PatchData & original_pd,
@@ -88,7 +88,7 @@ void split_patchdata<f32_3>(PatchData & original_pd,
     PatchData & pd0,PatchData & pd1,PatchData & pd2,PatchData & pd3,PatchData & pd4,PatchData & pd5,PatchData & pd6,PatchData & pd7){
 
     f32_3 translate_factor = min_box_sim;
-    f32_3 scale_factor = (max_box_sim - min_box_sim)/hilbert_box21_sz;
+    f32_3 scale_factor = (max_box_sim - min_box_sim)/HilbertLB::max_box_sz;
 
     f32_3 bmin_p0 = f32_3{p0.x_min,p0.y_min,p0.z_min}*scale_factor + translate_factor;
     f32_3 bmin_p1 = f32_3{p1.x_min,p1.y_min,p1.z_min}*scale_factor + translate_factor;

@@ -6,6 +6,8 @@
 #include <vector>
 #include "../../scheduler/scheduler_patch_list.hpp"
 #include "../../scheduler/hilbertsfc.hpp"
+#include "scheduler/loadbalancing_hilbert.hpp"
+
 
 
 void recursprint(PatchTree &pt,std::vector<Patch>& plist,std::unordered_map<u64,u64> &idx_map, u64 idx, u32 indent){
@@ -67,7 +69,7 @@ Test_start("", testpatchtree, 1){
 
     PatchTree pt;
 
-    pt.build_from_patchtable(global,hilbert_box21_sz);
+    pt.build_from_patchtable(global,HilbertLB::max_box_sz);
 
     SchedulerPatchList plist;
     plist.global = global;

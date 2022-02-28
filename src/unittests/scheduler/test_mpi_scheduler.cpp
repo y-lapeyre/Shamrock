@@ -21,6 +21,7 @@
 #include "test_patch_utils.hpp"
 
 #include "../../scheduler/hilbertsfc.hpp"
+#include "scheduler/loadbalancing_hilbert.hpp"
 
 
 
@@ -234,9 +235,9 @@ Test_start("mpi_scheduler::", test_split, -1){
         p.y_min = 0;
         p.z_min = 0;
 
-        p.x_max = hilbert_box21_sz;
-        p.y_max = hilbert_box21_sz;
-        p.z_max = hilbert_box21_sz;
+        p.x_max = HilbertLB::max_box_sz;
+        p.y_max = HilbertLB::max_box_sz;
+        p.z_max = HilbertLB::max_box_sz;
 
         p.pack_node_index = u64_max;
 
@@ -268,7 +269,7 @@ Test_start("mpi_scheduler::", test_split, -1){
 
 
     //*
-    sched.patch_tree.build_from_patchtable(sched.patch_list.global, hilbert_box21_sz);
+    sched.patch_tree.build_from_patchtable(sched.patch_list.global, HilbertLB::max_box_sz);
     sched.patch_data.sim_box.min_box_sim_s = {-1};
     sched.patch_data.sim_box.max_box_sim_s = {1};
 

@@ -3,6 +3,8 @@
 #include <random>
 #include "hilbertsfc.hpp"
 #include "patch.hpp"
+#include "scheduler/loadbalancing_hilbert.hpp"
+
 
 void SchedulerPatchList::sync_global(){
     mpi_handler::vector_allgatherv(local, patch_MPI_type, global, patch_MPI_type, MPI_COMM_WORLD);   
@@ -207,9 +209,9 @@ std::vector<Patch> make_fake_patch_list(u32 total_dtcnt,u64 div_limit){
         0,
         0,
         0,
-        hilbert_box21_sz,
-        hilbert_box21_sz,
-        hilbert_box21_sz,
+        HilbertLB::max_box_sz,
+        HilbertLB::max_box_sz,
+        HilbertLB::max_box_sz,
         total_dtcnt,
         0,
     });
