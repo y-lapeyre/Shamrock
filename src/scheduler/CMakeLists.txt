@@ -10,6 +10,7 @@ target_sources(shamrock
         scheduler_patch_list.cpp
         scheduler_patch_data.cpp
         patchtree.cpp
+        loadbalancing_hilbert.cpp
     PUBLIC
         patch.hpp
         
@@ -46,6 +47,7 @@ if("${BUILD_TEST}")
         scheduler_patch_list.cpp
         scheduler_patch_data.cpp
         patchtree.cpp
+        loadbalancing_hilbert.cpp
     PUBLIC
         patch.hpp
         #patchdata.hpp

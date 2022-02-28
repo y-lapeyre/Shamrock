@@ -1,6 +1,6 @@
 /**
  * @file sycl_handler.hpp
- * @author your name (you@domain.com)
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @brief header file to manage sycl
  * @date 2022-02-28
  * 

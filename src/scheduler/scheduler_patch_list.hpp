@@ -1,6 +1,6 @@
 /**
  * @file scheduler_patch_list.hpp
- * @author your name (you@domain.com)
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @brief Class to handle the patch list of the mpi scheduler
  * @version 0.1
  * @date 2022-02-08

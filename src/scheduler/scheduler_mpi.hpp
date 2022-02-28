@@ -73,7 +73,6 @@ class SchedulerMPI{public:
         crit_patch_split = crit_split;
         crit_patch_merge = crit_merge;
         
-
     }
 
     inline virtual ~SchedulerMPI(){

@@ -1,6 +1,6 @@
 /**
  * @file mpi_handler.hpp
- * @author your name (you@domain.com)
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @brief handle mpi routines
  * 
  * @copyright Copyright (c) 2021
