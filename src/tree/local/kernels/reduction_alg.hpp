@@ -9,7 +9,7 @@
 
 void reduction_alg(
     //in
-    sycl::queue* queue,
+    sycl::queue & queue,
     u32 morton_count,
     sycl::buffer<u_morton>* buf_morton,
     u32 reduction_level,
@@ -19,7 +19,7 @@ void reduction_alg(
     
 void sycl_morton_remap_reduction(
     //in
-    sycl::queue* queue,
+    sycl::queue & queue,
     u32 morton_leaf_count,
     sycl::buffer<u32>* buf_reduc_index_map,
     sycl::buffer<u_morton>* buf_morton,

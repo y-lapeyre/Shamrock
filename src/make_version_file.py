@@ -1,10 +1,14 @@
 import os
 import sys
 
+strfile = ""
 
-fvers = open(sys.argv[1],'r')
-strfile = fvers.read()
-fvers.close()
+try:
+    fvers = open(sys.argv[1],'r')
+    strfile = fvers.read()
+    fvers.close()
+except :
+    None
 
 
 

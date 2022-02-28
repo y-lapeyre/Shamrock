@@ -71,7 +71,7 @@ namespace integrator {
 
             cl::sycl::range<1> range{10};
 
-            queue->submit([&](cl::sycl::handler &cgh) {
+            SyCLHandler::get_instance().get_default().submit([&](cl::sycl::handler &cgh) {
                 auto ff = fres.get_access<sycl::access::mode::read_write>(cgh);
 
                 cgh.parallel_for<class Write_chosen_node>(range, [=](cl::sycl::item<1> item) {
@@ -113,7 +113,7 @@ template<class Timestepper> class Simulation{public:
 
 Test_start("",sycl_static_func,1){
 
-    init_sycl();
+    SyCLHandler::get_instance().init_sycl();
 
     Simulation<integrator::Leapfrog<ForcePressure>> sim;
     Simulation<integrator::Leapfrog<ForcePressure2>> sim2;

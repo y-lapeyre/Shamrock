@@ -103,7 +103,7 @@ Test_start("morton::",key_pair_sort,1){
             sycl::buffer<u32> buf_index(morton_list.size());
 
             sycl_sort_morton_key_pair(
-                queue,
+                SyCLHandler::get_instance().get_default(),
                 size_test,
                 & buf_index,
                 & buf_morton

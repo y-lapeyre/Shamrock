@@ -1,7 +1,7 @@
 
-if("${BUILD_SPH}")
+if("${BUILD_SIM}")
 
-target_sources(shamrock_sph
+target_sources(shamrock
     PRIVATE
         #scheduler.cpp
         patch.cpp
@@ -19,24 +19,6 @@ target_sources(shamrock_sph
 
 endif()
 
-if("${BUILD_AMR}")
-
-target_sources(shamrock_amr
-    PRIVATE
-        #scheduler.cpp
-        patch.cpp
-        patchdata.cpp
-        scheduler_mpi.cpp
-        scheduler_patch_list.cpp
-        scheduler_patch_data.cpp
-        patchtree.cpp
-    PUBLIC
-        patch.hpp
-        #patchdata.hpp
-        #scheduler.hpp
-    )
-
-endif()
 
 if("${BUILD_VISU}")
 

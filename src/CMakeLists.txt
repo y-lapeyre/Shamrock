@@ -103,9 +103,7 @@ set(MPI_CXX_SKIP_MPICXX true)
 find_package(MPI REQUIRED COMPONENTS C)
 
 
-
-
-
+include_directories(AFTER "${CMAKE_SOURCE_DIR}")
 
 
 
@@ -122,19 +120,11 @@ add_custom_command(
     COMMAND python3 ${CMAKE_CURRENT_SOURCE_DIR}/make_version_file.py ${CMAKE_CURRENT_SOURCE_DIR}/version.cpp
   )
 
-if("${BUILD_SPH}")
+if("${BUILD_SIM}")
 
     message(">>> adding sph target <<<")
-    add_executable(shamrock_sph main_sph.cpp version.cpp)
-    target_link_libraries(shamrock_sph PUBLIC MPI::MPI_C)
-
-endif()
-
-if("${BUILD_AMR}")
-
-    message(">>> adding amr target <<<")
-    add_executable(shamrock_amr main_amr.cpp version.cpp)
-    target_link_libraries(shamrock_amr PUBLIC MPI::MPI_C)
+    add_executable(shamrock main.cpp version.cpp)
+    target_link_libraries(shamrock PUBLIC MPI::MPI_C)
 
 endif()
 

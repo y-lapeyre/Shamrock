@@ -7,7 +7,7 @@ using namespace morton;
 class Kernel_xyz_to_morton;
 
 void sycl_xyz_to_morton(
-    sycl::queue* queue,
+    sycl::queue & queue,
     u32 pos_count,
     sycl::buffer<f3_d>* in_positions,
     f3_d bounding_box_min,
@@ -17,7 +17,7 @@ void sycl_xyz_to_morton(
     cl::sycl::range<1> range_cnt{pos_count};
 
 
-    queue->submit(
+    queue.submit(
         [&](cl::sycl::handler &cgh) {
 
             f3_d b_box_min = bounding_box_min;
@@ -52,7 +52,7 @@ void sycl_xyz_to_morton(
 class Kernel_fill_trailling_buffer;
 
 void sycl_fill_trailling_buffer(
-    sycl::queue* queue,
+    sycl::queue & queue,
     u32 morton_count,
     u32 fill_count,
     sycl::buffer<u_morton>* buf_morton
@@ -77,7 +77,7 @@ void sycl_fill_trailling_buffer(
 
     };
 
-    queue->submit(ker_fill_trailling_buf);
+    queue.submit(ker_fill_trailling_buf);
 
 
 }

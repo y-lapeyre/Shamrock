@@ -11,8 +11,7 @@ parser.add_argument('--buildmode',action='store', type=str, default="None", help
 
 parser.add_argument("--cuda", action='store_true', help="use CUDA instead of OPENCL")
 parser.add_argument("--test", action='store_true', help="add test target to build configuration")
-parser.add_argument("--sph", action='store_true', help="add sph target to build configuration")
-parser.add_argument("--amr", action='store_true', help="add amr target to build configuration")
+parser.add_argument("--shamrock", action='store_true', help="add shamrock target to build configuration")
 parser.add_argument("--visu", action='store_true', help="add visualisation target to build configuration")
 #parser.add_argument("--xray", action='store_true', help="add xray instrumentation to all targets")
 parser.add_argument('--morton',   action='store', type=str, default="single", help='precision for morton codes')
@@ -55,8 +54,7 @@ if args.interactive:
         elif tmp_release == 2:
             args.buildmode = "Debug"
 
-        args.sph = input("    do you want to compile the sph mode (y/n)") == "y"
-        args.amr = input("    do you want to compile the amr mode (y/n)") == "y"
+        args.shamrock = input("    do you want to compile the shamrock mode (y/n)") == "y"
         args.test = input("    do you want to compile the test mode (y/n)") == "y"
         args.visu = input("    do you want to compile the visualisation mode (y/n)") == "y"
 
@@ -70,8 +68,7 @@ if args.interactive:
         print("    ninja      =",args.ninja)
         print("    build mode =",args.buildmode)
         print("    cuda       =",args.cuda)
-        print("    sph        =",args.sph)
-        print("    amr        =",args.amr)
+        print("    shamrock   =",args.shamrock)
         print("    test       =",args.test)
         print("    visu       =",args.visu)
         print("    morton     =",args.morton)
@@ -99,10 +96,8 @@ elif args.buildmode == "Debug":
 
 
 target_lst = []
-if args.sph:
-    target_lst.append(Targets.SPH)
-if args.amr:
-    target_lst.append(Targets.AMR)
+if args.shamrock:
+    target_lst.append(Targets.SHAMROCK)
 if args.test:
     target_lst.append(Targets.Test)
 if args.visu:
