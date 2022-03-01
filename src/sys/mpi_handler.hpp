@@ -16,9 +16,9 @@
 
 #include <cstdio>
 #include "mpi_wrapper.hpp"
-#include "../utils/string_utils.hpp"
+#include "utils/string_utils.hpp"
 
-#include "../aliases.hpp"
+#include "aliases.hpp"
 
 namespace mpi_handler{
 

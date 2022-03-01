@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../aliases.hpp"
+#include "aliases.hpp"
 
 
 struct MPI_Packet{

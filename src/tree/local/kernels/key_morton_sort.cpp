@@ -1,6 +1,6 @@
 #include "key_morton_sort.hpp"
-#include "../../../aliases.hpp"
-#include "../../../flags.hpp"
+#include "aliases.hpp"
+#include "flags.hpp"
 
 
 //modified from http://www.bealto.com/gpu-sorting.html

@@ -2,7 +2,7 @@
 
 #include <fstream>
 #include <string>
-#include "../aliases.hpp"
+#include "aliases.hpp"
 
 inline std::string format(const char *fmt...) {
     std::string s{};

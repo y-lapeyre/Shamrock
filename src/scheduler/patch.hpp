@@ -10,8 +10,8 @@
  */
 #pragma once
 
-#include "../aliases.hpp"
-#include "../sys/mpi_handler.hpp"
+#include "aliases.hpp"
+#include "sys/mpi_handler.hpp"
 
 
 

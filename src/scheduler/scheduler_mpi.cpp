@@ -2,7 +2,7 @@
 
 
 
-#include "../sys/sycl_handler.hpp"
+#include "sys/sycl_handler.hpp"
 
 #include "hilbertsfc.hpp"
 #include "patch.hpp"
@@ -10,7 +10,7 @@
 
 
 
-#include "../utils/time_utils.hpp"
+#include "utils/time_utils.hpp"
 
 
 

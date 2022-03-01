@@ -1,4 +1,4 @@
-#include "../shamrocktest.hpp"
+#include "unittests/shamrocktest.hpp"
 
 #include <algorithm>
 #include <iterator>
@@ -10,17 +10,17 @@
 
 
 
-#include "../../scheduler/scheduler_mpi.hpp"
+#include "scheduler/scheduler_mpi.hpp"
 
-#include "../../sys/sycl_mpi_interop.hpp"
+#include "sys/sycl_mpi_interop.hpp"
 
-#include "../../flags.hpp"
+#include "flags.hpp"
 
 
 
 #include "test_patch_utils.hpp"
 
-#include "../../scheduler/hilbertsfc.hpp"
+#include "scheduler/hilbertsfc.hpp"
 #include "scheduler/loadbalancing_hilbert.hpp"
 
 

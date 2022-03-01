@@ -11,15 +11,15 @@
 
 #pragma once
 
-#include "../aliases.hpp"
-#include "../flags.hpp"
-#include "../sys/mpi_handler.hpp"
-#include "../sys/sycl_mpi_interop.hpp"
+#include "aliases.hpp"
+#include "flags.hpp"
+#include "sys/mpi_handler.hpp"
+#include "sys/sycl_mpi_interop.hpp"
 #include <mpi.h>
 #include <vector>
 #include <random>
 
-#include "../utils/sycl_vector_utils.hpp"
+#include "utils/sycl_vector_utils.hpp"
 
 /**
  * @brief manage the information on the layout of patchdata

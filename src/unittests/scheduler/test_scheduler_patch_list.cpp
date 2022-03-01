@@ -1,8 +1,8 @@
-#include "../shamrocktest.hpp"
+#include "unittests/shamrocktest.hpp"
 
-#include "../../scheduler/scheduler_patch_list.hpp"
+#include "scheduler/scheduler_patch_list.hpp"
 #include "test_patch_utils.hpp"
-#include "../../utils/geometry_utils.hpp"
+#include "utils/geometry_utils.hpp"
 
 //TODO add other test to check "make_fake_patch_list"
 Test_start("SchedulerPatchList::fake_patch_list_gen()::",patch_are_cubes,-1){

@@ -1,8 +1,8 @@
-#include "shamrocktest.hpp"
+#include "unittests/shamrocktest.hpp"
 #include <mpi.h>
 #include <sstream>
 
-#include "../utils/string_utils.hpp"
+#include "utils/string_utils.hpp"
 #include "sys/sycl_handler.hpp"
 
 

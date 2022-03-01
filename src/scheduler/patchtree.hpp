@@ -12,7 +12,7 @@
 
 #pragma once
 
-#include "../aliases.hpp"
+#include "aliases.hpp"
 #include "patch.hpp"
 #include <array>
 #include <cstdio>
@@ -20,7 +20,7 @@
 #include <unordered_set>
 #include <vector>
 #include <queue>
-#include "../utils/geometry_utils.hpp"
+#include "utils/geometry_utils.hpp"
 
 
 

@@ -1,7 +1,7 @@
 #pragma once 
 
-#include "../../../aliases.hpp"
-#include "../../../flags.hpp"
+#include "aliases.hpp"
+#include "flags.hpp"
 
 /**
  * @brief sort morton code and generate remap table 

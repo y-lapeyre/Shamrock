@@ -1,5 +1,5 @@
 #include "karras_alg.hpp"
-#include "../../../aliases.hpp"
+#include "aliases.hpp"
 
 
 #define SGN(x) (x==0) ? 0 : ( (x>0) ? 1 : -1 )

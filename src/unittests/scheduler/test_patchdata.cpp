@@ -1,12 +1,12 @@
-#include "../shamrocktest.hpp"
+#include "unittests/shamrocktest.hpp"
 
 #include <mpi.h>
 #include <random>
 #include <vector>
 
 
-#include "../../scheduler/patchdata.hpp"
-#include "../../scheduler/scheduler_mpi.hpp"
+#include "scheduler/patchdata.hpp"
+#include "scheduler/scheduler_mpi.hpp"
 
 
 Test_start("patchdata::", sync_patchdata_layout, -1) {

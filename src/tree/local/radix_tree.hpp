@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../../aliases.hpp"
-#include "../../flags.hpp"
+#include "aliases.hpp"
+#include "flags.hpp"
 #include "CL/sycl/buffer.hpp"
 #include <vector>
 

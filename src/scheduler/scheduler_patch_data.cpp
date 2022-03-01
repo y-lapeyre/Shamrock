@@ -4,7 +4,7 @@
 #include <stdexcept>
 #include <vector>
 
-#include "../utils/geometry_utils.hpp"
+#include "utils/geometry_utils.hpp"
 #include "scheduler/loadbalancing_hilbert.hpp"
 
 void SchedulerPatchData::apply_change_list(std::vector<std::tuple<u64, i32, i32,i32>> change_list,SchedulerPatchList& patch_list){

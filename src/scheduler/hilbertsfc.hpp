@@ -16,7 +16,7 @@
 
 #pragma once
 
-#include "../aliases.hpp"
+#include "aliases.hpp"
 
 // modified from :
 // Programming the Hilbert curve

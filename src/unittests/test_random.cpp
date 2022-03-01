@@ -1,6 +1,6 @@
-#include "shamrocktest.hpp"
+#include "unittests/shamrocktest.hpp"
 
-#include "../sys/sycl_handler.hpp"
+#include "sys/sycl_handler.hpp"
 #include <mpi.h>
 #include <vector>
 

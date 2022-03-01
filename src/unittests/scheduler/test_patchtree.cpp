@@ -1,11 +1,11 @@
-#include "../../scheduler/patchtree.hpp"
+#include "scheduler/patchtree.hpp"
 
-#include "../shamrocktest.hpp"
+#include "unittests/shamrocktest.hpp"
 #include <map>
 #include <random>
 #include <vector>
-#include "../../scheduler/scheduler_patch_list.hpp"
-#include "../../scheduler/hilbertsfc.hpp"
+#include "scheduler/scheduler_patch_list.hpp"
+#include "scheduler/hilbertsfc.hpp"
 #include "scheduler/loadbalancing_hilbert.hpp"
 
 

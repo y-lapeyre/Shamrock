@@ -1,7 +1,7 @@
 #pragma once
 
 #include "patch.hpp"
-#include "../sys/mpi_handler.hpp"
+#include "sys/mpi_handler.hpp"
 #include <map>
 #include <sstream>
 #include <unordered_map>
