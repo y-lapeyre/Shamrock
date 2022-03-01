@@ -1,8 +1,8 @@
-#include "../shamrocktest.hpp"
+#include "unittests/shamrocktest.hpp"
 
-#include "../../aliases.hpp"
+#include "aliases.hpp"
 
-#include "../../scheduler/hilbertsfc.hpp"
+#include "scheduler/hilbertsfc.hpp"
 
 Test_start("sfc::", hilbert, 1) {
     

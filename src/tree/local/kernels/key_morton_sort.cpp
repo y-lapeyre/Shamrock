@@ -1,6 +1,6 @@
 #include "key_morton_sort.hpp"
-#include "../../../aliases.hpp"
-#include "../../../flags.hpp"
+#include "aliases.hpp"
+#include "flags.hpp"
 
 
 //modified from http://www.bealto.com/gpu-sorting.html
@@ -44,7 +44,7 @@ class Bitonic_sort_B4;
 class Bitonic_sort_B2;
 
 void sycl_sort_morton_key_pair(
-    sycl::queue* queue,
+    sycl::queue & queue,
     u32 morton_count_rounded_pow,
     sycl::buffer<u32>*      buf_index,
     sycl::buffer<u_morton>* buf_morton
@@ -148,7 +148,7 @@ void sycl_sort_morton_key_pair(
 
                         }
                     );
-                };queue->submit(ker_sort_morton_b16);
+                };queue.submit(ker_sort_morton_b16);
 
                 //sort_kernel_B8(arg_eq,* buf_morton->buf,* particles::buf_ids->buf,inc,length<<1);//.wait();
             }
@@ -198,7 +198,7 @@ void sycl_sort_morton_key_pair(
 
                         }
                     );
-                };queue->submit(ker_sort_morton_b8);
+                };queue.submit(ker_sort_morton_b8);
 
                 //sort_kernel_B8(arg_eq,* buf_morton->buf,* particles::buf_ids->buf,inc,length<<1);//.wait();
             }
@@ -259,7 +259,7 @@ void sycl_sort_morton_key_pair(
 
                         }
                     );
-                };queue->submit(ker_sort_morton_b4);
+                };queue.submit(ker_sort_morton_b4);
             }
 #endif
             
@@ -305,7 +305,7 @@ void sycl_sort_morton_key_pair(
 
                         }
                     );
-                };queue->submit(ker_sort_morton_b2);
+                };queue.submit(ker_sort_morton_b2);
             }
             
             

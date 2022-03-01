@@ -1,4 +1,15 @@
 import os
+import sys
+
+strfile = ""
+
+try:
+    fvers = open(sys.argv[1],'r')
+    strfile = fvers.read()
+    fvers.close()
+except :
+    None
+
 
 
 str_git = os.popen("git log -n 1 --decorate=full").read()
@@ -21,4 +32,12 @@ str_ += os.popen("git diff-index --name-only HEAD -- | sed \"s/^/        /g\"").
 str_ += r')%%";'
 
 
-print(str_)
+
+
+if not (strfile == str_):
+    f = open(sys.argv[1],'w')
+    f.write(str_)
+    f.close()
+
+# else:
+#     print("no change in version.cpp")

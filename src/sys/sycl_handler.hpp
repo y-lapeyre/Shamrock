@@ -1,38 +1,58 @@
+/**
+ * @file sycl_handler.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief header file to manage sycl
+ * @date 2022-02-28
+ * 
+ * @copyright Copyright (c) 2022
+ */
+
 #pragma once
 
-#include "CL/sycl/device_selector.hpp"
-#include "CL/sycl/queue.hpp"
-#include "mpi_handler.hpp"
-
 #include <CL/sycl.hpp>
+#include "aliases.hpp"
 
 
-inline auto exception_handler = [] (sycl::exception_list exceptions) {
-    for (std::exception_ptr const& e : exceptions) {
-        try {
-            std::rethrow_exception(e);
-        } catch(sycl::exception const& e) {
-            printf("Caught synchronous SYCL exception: %s\n",e.what());
-        }
-    }
+/**
+ * @brief new implementation of the SYCL handler
+ * 
+ */
+class SyCLHandler{public:
+    private:
+        SyCLHandler(){};
+        SyCLHandler(const SyCLHandler&);
+        SyCLHandler& operator=(const SyCLHandler&);
+
+    public:
+        
+        /**
+         * @brief contain all sycl queues that will be used for compute (assume separated memory architecture)
+         * 
+         */
+        std::unordered_map<u32, sycl::queue> compute_queues;
+
+        /**
+         * @brief contain all sycl queues that for host parralelisation 
+         */
+        std::unordered_map<u32, sycl::queue> alt_queues;
+
+        /**
+         * @brief init sycl handler
+         * 
+         */
+        void init_sycl();
+
+        /**
+         * @brief Get the default sycl queue
+         * 
+         * @return sycl::queue& reference to the default sycl queue
+         */
+        sycl::queue & get_default();
+
+        /**
+         * @brief Get the unique instance of the sycl handler
+         * 
+         * @return SyCLHandler& sycl handler instance
+         */
+        static SyCLHandler& get_instance();
 };
-
-inline sycl::queue* queue;
-inline sycl::queue* host_queue;
-
-
-inline void init_sycl(){
-
-    //if(world_rank == 0)
-        printf("\x1B[36m >>> init SYCL instances <<< \033[0m\n");
-
-    //global_logger->log(">>> init SYCL instances <<<\n");
-
-    queue = new sycl::queue(sycl::default_selector(),exception_handler);
-
-    host_queue = new sycl::queue(sycl::host_selector(),exception_handler);
-
-    printf("Running on : %s\n", queue->get_device().get_info<sycl::info::device::name>().c_str());
-    //global_logger->log("Running on : %s\n", queue->get_device().get_info<sycl::info::device::name>().c_str());
-
-}

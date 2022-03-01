@@ -1,5 +1,5 @@
 #include "karras_alg.hpp"
-#include "../../../aliases.hpp"
+#include "aliases.hpp"
 
 
 #define SGN(x) (x==0) ? 0 : ( (x>0) ? 1 : -1 )
@@ -8,7 +8,7 @@
 class Kernel_Karras_alg;
 
 void sycl_karras_alg(
-    sycl::queue* queue,
+    sycl::queue & queue,
     u32 internal_cell_count,
     sycl::buffer<u_morton>* in_morton,
     sycl::buffer<u32>* out_buf_lchild_id   ,
@@ -26,7 +26,7 @@ void sycl_karras_alg(
     if(out_buf_rchild_flag == NULL) throw_with_pos("out_buf_rchild_flag isn't allocated");
     if(out_buf_endrange == NULL)    throw_with_pos("out_buf_endrange isn't allocated");
 
-    queue->submit(
+    queue.submit(
         [&](cl::sycl::handler &cgh) {
 
             //@TODO add check if split count above 2G

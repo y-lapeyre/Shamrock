@@ -6,7 +6,7 @@
 #include "kernels/reduction_alg.hpp"
 
 void Radix_Tree::build_tree(
-        sycl::queue* queue,
+        sycl::queue & queue,
         sycl::buffer<u_morton>* buf_morton, 
         u32 morton_code_count, 
         u32 morton_code_count_rounded_pow,

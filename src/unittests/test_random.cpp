@@ -1,6 +1,7 @@
-#include "shamrocktest.hpp"
+#include "unittests/shamrocktest.hpp"
 
-#include "../sys/sycl_handler.hpp"
+#include "sys/sycl_handler.hpp"
+#include <mpi.h>
 #include <vector>
 
 Test_start("",intmult,1){
@@ -70,7 +71,7 @@ namespace integrator {
 
             cl::sycl::range<1> range{10};
 
-            queue->submit([&](cl::sycl::handler &cgh) {
+            SyCLHandler::get_instance().get_default().submit([&](cl::sycl::handler &cgh) {
                 auto ff = fres.get_access<sycl::access::mode::read_write>(cgh);
 
                 cgh.parallel_for<class Write_chosen_node>(range, [=](cl::sycl::item<1> item) {
@@ -112,11 +113,54 @@ template<class Timestepper> class Simulation{public:
 
 Test_start("",sycl_static_func,1){
 
-    init_sycl();
+    SyCLHandler::get_instance().init_sycl();
 
     Simulation<integrator::Leapfrog<ForcePressure>> sim;
+    Simulation<integrator::Leapfrog<ForcePressure2>> sim2;
+
 
     sim.simu_main();
 
+
+}
+
+
+Test_start("issue_mpi::", allgatherv, 4){
+
+    
+    
+
+    int recv_int[1];
+    int recv_count[4]{1,0,0,0};
+    int displs[4]{0,1,1,1};
+
+
+    if(mpi_handler::world_rank == 0){
+        int send_int = mpi_handler::world_rank + 10;
+        mpi::allgatherv(
+        &send_int, 
+        1, 
+        MPI_INT, 
+        recv_int, 
+        recv_count, 
+        displs, 
+        MPI_INT, 
+        MPI_COMM_WORLD);
+    }else{
+        int send_int = mpi_handler::world_rank + 10;
+        mpi::allgatherv(
+        &send_int, 
+        0, 
+        MPI_INT, 
+        recv_int, 
+        recv_count, 
+        displs, 
+        MPI_INT, 
+        MPI_COMM_WORLD);
+    }
+
+
+    std::cout << recv_int[0]  << "\n";
+    
 
 }

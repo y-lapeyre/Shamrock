@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../../aliases.hpp"
-#include "../../flags.hpp"
+#include "aliases.hpp"
+#include "flags.hpp"
 #include "CL/sycl/buffer.hpp"
 #include <vector>
 
@@ -55,7 +55,7 @@ class Radix_Tree{
      * @param reduction_level level of reduction
      */
     void build_tree(
-        sycl::queue* queue,
+        sycl::queue & queue,
         sycl::buffer<u_morton>* buf_morton, 
         u32 morton_code_count, 
         u32 morton_code_count_rounded_pow,

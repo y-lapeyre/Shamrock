@@ -1,8 +1,8 @@
-#include "../shamrocktest.hpp"
+#include "unittests/shamrocktest.hpp"
 
-#include "../../scheduler/scheduler_patch_list.hpp"
+#include "scheduler/scheduler_patch_list.hpp"
 #include "test_patch_utils.hpp"
-#include "../../utils/geometry_utils.hpp"
+#include "utils/geometry_utils.hpp"
 
 //TODO add other test to check "make_fake_patch_list"
 Test_start("SchedulerPatchList::fake_patch_list_gen()::",patch_are_cubes,-1){
@@ -52,7 +52,7 @@ Test_start("SchedulerPatchList::fake_patch_list_gen()::",no_patch_intersection,-
 
 //TODO use "make_fake_patch_list" instead of the old utility
 Test_start("SchedulerPatchList::",build_select_corectness,-1){
-    create_MPI_patch_type();
+    patch::create_MPI_patch_type();
 
     //in the end this vector should be recovered in recv_vec
     std::vector<Patch> check_vec;
@@ -79,7 +79,7 @@ Test_start("SchedulerPatchList::",build_select_corectness,-1){
 
 
     patch_list.global.clear();
-    patch_list.sync_global();
+    patch_list.build_global();
 
 
     corect_size = patch_list.global.size() == check_vec.size();
@@ -92,6 +92,6 @@ Test_start("SchedulerPatchList::",build_select_corectness,-1){
 
 
 
-    free_MPI_patch_type();
+    patch::free_MPI_patch_type();
 }
 

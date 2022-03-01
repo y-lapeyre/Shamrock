@@ -1,9 +1,10 @@
 
-if("${BUILD_SPH}")
+if("${BUILD_SIM}")
 
-target_sources(shamrock_sph
+target_sources(shamrock
     PRIVATE
         mpi_handler.cpp
+        sycl_handler.cpp
     PUBLIC
         mpi_handler.hpp
         sycl_handler.hpp
@@ -11,17 +12,6 @@ target_sources(shamrock_sph
 
 endif()
 
-if("${BUILD_AMR}")
-
-target_sources(shamrock_amr
-    PRIVATE
-        mpi_handler.cpp
-    PUBLIC
-        mpi_handler.hpp
-        sycl_handler.hpp
-    )
-
-endif()
 
 if("${BUILD_VISU}")
 
@@ -40,6 +30,7 @@ if("${BUILD_TEST}")
     target_sources(shamrock_test
     PRIVATE
         mpi_handler.cpp
+        sycl_handler.cpp
     PUBLIC
         mpi_handler.hpp
         sycl_handler.hpp

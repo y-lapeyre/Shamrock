@@ -1,6 +1,6 @@
-#include "../shamrocktest.hpp"
+#include "unittests/shamrocktest.hpp"
 
-#include "../../tree/local/morton.hpp"
+#include "tree/local/morton.hpp"
 
 Test_start("morton::",min_max_value,1){
 

@@ -1,5 +1,5 @@
-#include "../../../aliases.hpp"
-#include "../../../flags.hpp"
+#include "aliases.hpp"
+#include "flags.hpp"
 
 
 /**
@@ -13,7 +13,7 @@
  * @param out_morton 
  */
 void sycl_xyz_to_morton(
-    sycl::queue* queue,
+    sycl::queue & queue,
     u32 pos_count,
     sycl::buffer<f3_d>* in_positions,
     f3_d bounding_box_min,
@@ -31,7 +31,7 @@ void sycl_xyz_to_morton(
  * @param buf_morton morton buffer that will be updated
  */
 void sycl_fill_trailling_buffer(
-    sycl::queue* queue,
+    sycl::queue & queue,
     u32 morton_count,
     u32 fill_count,
     sycl::buffer<u_morton>* buf_morton
