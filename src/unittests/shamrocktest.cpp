@@ -1,8 +1,9 @@
-#include "shamrocktest.hpp"
+#include "unittests/shamrocktest.hpp"
 #include <mpi.h>
 #include <sstream>
 
-#include "../utils/string_utils.hpp"
+#include "utils/string_utils.hpp"
+#include "sys/sycl_handler.hpp"
 
 
 bool has_option(
@@ -112,7 +113,7 @@ Options :
 
     mpi_handler::init();printf("\n");
 
-    init_sycl();
+    SyCLHandler::get_instance().init_sycl();
 
     if(!run_only){
         printf("\n------------ Tests list --------------\n");

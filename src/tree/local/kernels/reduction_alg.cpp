@@ -1,12 +1,12 @@
-#include "../../../aliases.hpp"
-#include "../../../flags.hpp"
+#include "aliases.hpp"
+#include "flags.hpp"
 
 #include <vector>
 
 class Kernel_generate_split_table;
 
 void sycl_generate_split_table(
-    sycl::queue* queue,
+    sycl::queue & queue,
     u32 morton_count,
     sycl::buffer<u_morton>* buf_morton,
     sycl::buffer<u8>* buf_split_table
@@ -14,7 +14,7 @@ void sycl_generate_split_table(
 
     cl::sycl::range<1> range_morton_count{morton_count};
 
-    queue->submit([&](cl::sycl::handler &cgh) {
+    queue.submit([&](cl::sycl::handler &cgh) {
 
         auto m = buf_morton->get_access<sycl::access::mode::read>(cgh);
         auto split_out = buf_split_table->get_access<sycl::access::mode::write>(cgh);
@@ -47,7 +47,7 @@ void sycl_generate_split_table(
 class Kernel_iterate_reduction;
 
 void sycl_reduction_iteration(
-    sycl::queue* queue,
+    sycl::queue & queue,
     u32 morton_count,
     sycl::buffer<u_morton>* buf_morton,
     sycl::buffer<u8>* buf_split_table_in,
@@ -56,7 +56,7 @@ void sycl_reduction_iteration(
 
     cl::sycl::range<1> range_morton_count{morton_count};
 
-    queue->submit([&](cl::sycl::handler &cgh) {
+    queue.submit([&](cl::sycl::handler &cgh) {
 
         u32 _morton_cnt = morton_count;
 
@@ -105,7 +105,7 @@ void sycl_reduction_iteration(
 
 void reduction_alg(
     //in
-    sycl::queue* queue,
+    sycl::queue & queue,
     u32 morton_count,
     sycl::buffer<u_morton>* buf_morton,
     u32 reduction_level,
@@ -167,7 +167,7 @@ class Kernel_remap_morton_code;
 
 void sycl_morton_remap_reduction(
     //in
-    sycl::queue* queue,
+    sycl::queue & queue,
     u32 morton_leaf_count,
     sycl::buffer<u32>* buf_reduc_index_map,
     sycl::buffer<u_morton>* buf_morton,
@@ -176,7 +176,7 @@ void sycl_morton_remap_reduction(
     cl::sycl::range<1> range_remap_morton{morton_leaf_count};
 
 
-    queue->submit([&](cl::sycl::handler &cgh) {
+    queue.submit([&](cl::sycl::handler &cgh) {
 
         auto id_remaped = buf_reduc_index_map->get_access<sycl::access::mode::read>(cgh);
         auto m = buf_morton->get_access<sycl::access::mode::read>(cgh);

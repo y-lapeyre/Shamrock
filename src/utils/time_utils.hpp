@@ -3,6 +3,47 @@
 #include "string_utils.hpp"
 #include <chrono>
 #include <string>
+#include <vector>
+
+
+inline std::string nanosec_to_time_str(double nanosec) {
+    double sec_int = nanosec;
+
+    std::string unit = "ns";
+
+    if (sec_int > 2000) {
+        unit = "us";
+        sec_int /= 1000;
+    }
+
+    if (sec_int > 2000) {
+        unit = "ms";
+        sec_int /= 1000;
+    }
+
+    if (sec_int > 2000) {
+        unit = "s";
+        sec_int /= 1000;
+    }
+
+    if (sec_int > 2000) {
+        unit = "ks";
+        sec_int /= 1000;
+    }
+
+    if (sec_int > 2000) {
+        unit = "Ms";
+        sec_int /= 1000;
+    }
+
+    if (sec_int > 2000) {
+        unit = "Gs";
+        sec_int /= 1000;
+    }
+
+    return format("%4.2f", sec_int) + " " + unit;
+} 
+
 
 class Timer {
   public:
@@ -19,40 +60,8 @@ class Timer {
     }
 
     inline std::string get_time_str() {
-        double sec_int = sec;
-
-        std::string unit = "ns";
-
-        if (sec_int > 2000) {
-            unit = "us";
-            sec_int /= 1000;
-        }
-
-        if (sec_int > 2000) {
-            unit = "ms";
-            sec_int /= 1000;
-        }
-
-        if (sec_int > 2000) {
-            unit = "s";
-            sec_int /= 1000;
-        }
-
-        if (sec_int > 2000) {
-            unit = "ks";
-            sec_int /= 1000;
-        }
-
-        if (sec_int > 2000) {
-            unit = "Ms";
-            sec_int /= 1000;
-        }
-
-        if (sec_int > 2000) {
-            unit = "Gs";
-            sec_int /= 1000;
-        }
-
-        return format("%4.2f", sec_int) + " " + unit;
+        return nanosec_to_time_str(sec);
     }
+
+    
 };

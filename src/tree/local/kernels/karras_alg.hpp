@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../../../aliases.hpp"
-#include "../../../flags.hpp"
+#include "aliases.hpp"
+#include "flags.hpp"
 #include "CL/sycl/buffer.hpp"
 
 /**
@@ -17,7 +17,7 @@
  */
 
 void sycl_karras_alg(
-    sycl::queue* queue,
+    sycl::queue & queue,
     u32 internal_cell_count,
     sycl::buffer<u_morton>* in_morton,
     sycl::buffer<u32>* out_buf_lchild_id   ,

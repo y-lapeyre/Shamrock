@@ -1,13 +1,13 @@
-#include "../shamrocktest.hpp"
+#include "unittests/shamrocktest.hpp"
 
-#include "../../sys/mpi_handler.hpp"
-#include "../../sys/sycl_handler.hpp"
-#include "../../sys/sycl_mpi_interop.hpp"
+#include "sys/mpi_handler.hpp"
+#include "sys/sycl_handler.hpp"
+#include "sys/sycl_mpi_interop.hpp"
 
 #include <mpi.h>
 #include <random>
 
-#include "../../utils/sycl_vector_utils.hpp"
+#include "utils/sycl_vector_utils.hpp"
 
 int get_mpi_size(MPI_Datatype md){
     MPI_Aint lbs;

@@ -20,8 +20,7 @@ class PrecisionMode(Enum):
     Double = 3
 
 class Targets(Enum):
-    SPH = 1
-    AMR = 2
+    SHAMROCK = 1
     Test = 3
     Visu = 4
 
@@ -191,11 +190,8 @@ def configure_dpcpp(src_dir, build_dir,llvm_root, target_build_mode ,build_sys,s
     if Targets.Test in target_lst:
         enabled_targets_str += "test "
 
-    if Targets.SPH in target_lst:
-        enabled_targets_str += "sph "
-
-    if Targets.AMR in target_lst:
-        enabled_targets_str += "amr "
+    if Targets.SHAMROCK in target_lst:
+        enabled_targets_str += "shamrock "
 
     if Targets.Visu in target_lst:
         enabled_targets_str += "visu"
@@ -233,11 +229,8 @@ def configure_dpcpp(src_dir, build_dir,llvm_root, target_build_mode ,build_sys,s
     if Targets.Test in target_lst:
         cmake_cmd += " -DBUILD_TEST=true"
 
-    if Targets.SPH in target_lst:
-        cmake_cmd += " -DBUILD_SPH=true"
-
-    if Targets.AMR in target_lst:
-        cmake_cmd += " -DBUILD_AMR=true"
+    if Targets.SHAMROCK in target_lst:
+        cmake_cmd += " -DBUILD_SIM=true"
 
     if Targets.Visu in target_lst:
         cmake_cmd += " -DBUILD_VISU=true"

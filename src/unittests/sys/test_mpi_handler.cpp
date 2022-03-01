@@ -1,4 +1,4 @@
-#include "../shamrocktest.hpp"
+#include "unittests/shamrocktest.hpp"
 
 #include <random>
 #include <vector>

@@ -1,12 +1,12 @@
-#include "../shamrocktest.hpp"
+#include "unittests/shamrocktest.hpp"
 
 #include <mpi.h>
 #include <random>
 #include <vector>
 
 
-#include "../../scheduler/patchdata.hpp"
-#include "../../scheduler/scheduler_mpi.hpp"
+#include "scheduler/patchdata.hpp"
+#include "scheduler/scheduler_mpi.hpp"
 
 
 Test_start("patchdata::", sync_patchdata_layout, -1) {
@@ -65,11 +65,11 @@ Test_start("patchdata::", send_recv_patchdata, 2){
 
 
     if(mpi_handler::world_rank == 0){
-        Test_assert("recv_d == d2_check", check_patch_data_match(recv_d, d2_check));
+        Test_assert("recv_d == d2_check", patch_data_check_match(recv_d, d2_check));
     }
 
     if(mpi_handler::world_rank == 1){
-        Test_assert("recv_d == d1_check", check_patch_data_match(recv_d, d1_check));
+        Test_assert("recv_d == d1_check", patch_data_check_match(recv_d, d1_check));
     }
 
 

@@ -2,6 +2,7 @@
 
 #include <fstream>
 #include <string>
+#include "aliases.hpp"
 
 inline std::string format(const char *fmt...) {
     std::string s{};
@@ -22,4 +23,35 @@ inline void write_string_to_file(std::string filename, std::string s) {
     myfile.open(filename);
     myfile << s;
     myfile.close();
+}
+
+inline std::string trunc_str(std::string s , u32 max_len){
+
+    if(max_len < 5) throw std::invalid_argument("max len should be above 4");
+
+    if (s.size() > max_len) {
+        return s.substr(0,max_len-5) + " ...";
+    }else{
+        return s;
+    }
+
+}
+
+/**
+ * @brief convert byte count to string
+ * 
+ * @param size 
+ * @return std::string 
+ */
+inline std::string readable_sizeof(double size) {
+    int i = 0;
+    char buf[10];
+    const char* units[] = {"B", "kB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"};
+    while (size > 1024) {
+        size /= 1024;
+        i++;
+    }
+    sprintf(buf, "%.*f %s", i, size, units[i]);
+    
+    return std::string(buf);
 }

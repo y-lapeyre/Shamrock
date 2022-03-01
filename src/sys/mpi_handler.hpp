@@ -1,6 +1,6 @@
 /**
  * @file mpi_handler.hpp
- * @author your name (you@domain.com)
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @brief handle mpi routines
  * 
  * @copyright Copyright (c) 2021
@@ -16,9 +16,9 @@
 
 #include <cstdio>
 #include "mpi_wrapper.hpp"
-#include "../utils/string_utils.hpp"
+#include "utils/string_utils.hpp"
 
-#include "../aliases.hpp"
+#include "aliases.hpp"
 
 namespace mpi_handler{
 
@@ -121,7 +121,7 @@ namespace mpi_handler{
      * @param recv_type 
      */
     template<class T>
-    inline void vector_allgatherv(const std::vector<T> & send_vec ,const MPI_Datatype send_type,std::vector<T> & recv_vec,const MPI_Datatype recv_type,const MPI_Comm comm){
+    inline void vector_allgatherv(const std::vector<T> & send_vec ,const MPI_Datatype & send_type,std::vector<T> & recv_vec,const MPI_Datatype & recv_type,const MPI_Comm comm){
 
         u32 local_count = send_vec.size();
 

@@ -1,6 +1,6 @@
 /**
  * @file mpi_handler.cpp
- * @author your name (you@domain.com)
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @brief implementation of mpi_handler.hpp
  * 
  * @copyright Copyright (c) 2021

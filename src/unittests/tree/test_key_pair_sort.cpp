@@ -1,12 +1,12 @@
 //#include "test_tree.hpp"
 
-#include "../../tree/local/kernels/key_morton_sort.hpp"
-#include "../../sys/sycl_handler.hpp"
-#include "../../utils/string_utils.hpp"
+#include "tree/local/kernels/key_morton_sort.hpp"
+#include "sys/sycl_handler.hpp"
+#include "utils/string_utils.hpp"
 #include <algorithm>
 #include <random>
 
-#include "../shamrocktest.hpp"
+#include "unittests/shamrocktest.hpp"
 
 #if defined(PRECISION_MORTON_DOUBLE)
     #define FILL(i) morton_list[i] = 18446744073709551615ul
@@ -103,7 +103,7 @@ Test_start("morton::",key_pair_sort,1){
             sycl::buffer<u32> buf_index(morton_list.size());
 
             sycl_sort_morton_key_pair(
-                queue,
+                SyCLHandler::get_instance().get_default(),
                 size_test,
                 & buf_index,
                 & buf_morton

@@ -3,10 +3,10 @@
 #include <string>
 #include <vector>
 #include <iostream>
-#include "../sys/mpi_handler.hpp"
-#include "../sys/sycl_handler.hpp"
-#include "../aliases.hpp"
-#include "../utils/time_utils.hpp"
+#include "sys/mpi_handler.hpp"
+#include "sys/sycl_handler.hpp"
+#include "aliases.hpp"
+#include "utils/time_utils.hpp"
 
 inline std::vector<int> test_node_count;
 inline std::vector<std::string> test_name_lst;
