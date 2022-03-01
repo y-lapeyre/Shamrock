@@ -10,7 +10,6 @@
  */
 
 #include "patch.hpp"
-#include <mpi.h>
 
 namespace patch {
 

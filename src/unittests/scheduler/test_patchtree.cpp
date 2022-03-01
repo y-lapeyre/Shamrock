@@ -13,7 +13,7 @@
 void recursprint(PatchTree &pt,std::vector<Patch>& plist,std::unordered_map<u64,u64> &idx_map, u64 idx, u32 indent){
 
 
-    PTNode & ptnode = pt.tree[idx];
+    PatchTree::PTNode & ptnode = pt.tree[idx];
 
 
     for(u32 i = 0 ; i < indent; i++) std::cout << "   ";

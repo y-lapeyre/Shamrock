@@ -1,83 +1,62 @@
+/**
+ * @file scheduler_mpi.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief MPI scheduler
+ * @version 0.1
+ * @date 2022-03-01
+ * 
+ * @copyright Copyright (c) 2022
+ * 
+ */
+
 #pragma once
 
-#include "patch.hpp"
-#include "sys/mpi_handler.hpp"
-#include <map>
-#include <sstream>
-#include <unordered_map>
 #include <unordered_set>
-#include <vector>
 
+#include "patch.hpp"
 #include "patchdata.hpp"
-
 #include "patchtree.hpp"
 #include "scheduler_patch_list.hpp"
 #include "scheduler_patch_data.hpp"
 
-
-
+/**
+ * @brief The MPI scheduler
+ * 
+ */
 class SchedulerMPI{public:
 
-    u64 crit_patch_split;
-    u64 crit_patch_merge;
+    u64 crit_patch_split; ///< splitting limit (if load value > crit_patch_split => patch split)
+    u64 crit_patch_merge; ///< merging limit (if load value < crit_patch_merge => patch merge)
 
 
-    SchedulerPatchList patch_list;
-    SchedulerPatchData patch_data;
-    PatchTree patch_tree;
+    SchedulerPatchList patch_list; ///< handle the list of the patches of the scheduler
+    SchedulerPatchData patch_data; ///< handle the data of the patches of the scheduler
+    PatchTree patch_tree; ///< handle the tree structure of the patches
 
     //using unordered set is not an issue since we use the find command after 
-    std::unordered_set<u64>  owned_patch_id;
+    std::unordered_set<u64>  owned_patch_id; ///< list of owned patch ids updated with (owned_patch_id = patch_list.build_local())
 
 
     
 
 
-    void sync_build_LB(bool global_patch_sync, bool balance_load);
-
+    /**
+     * @brief scheduler step
+     * 
+     * @param do_split_merge 
+     * @param do_load_balancing 
+     */
     void scheduler_step(bool do_split_merge,bool do_load_balancing);
     
-    inline void add_patch(Patch & p, PatchData & pdat){
-        p.id_patch = patch_list._next_patch_id;
-        patch_list._next_patch_id ++;
+    
 
-        patch_list.global.push_back(p);
+    void init_mpi_required_types();
+    
+    void free_mpi_required_types();
 
-        patch_data.owned_data[p.id_patch] = pdat;
+    SchedulerMPI(u64 crit_split,u64 crit_merge);
 
-        
-    }
-
-    inline void init_mpi_required_types(){
-        if(!is_mpi_sycl_interop_active()){
-            create_sycl_mpi_types();
-        }
-
-        if(!patch::is_mpi_patch_type_active()){
-            patch::create_MPI_patch_type();
-        }
-    }
-
-    inline void free_mpi_required_types(){
-        if(is_mpi_sycl_interop_active()){
-            free_sycl_mpi_types();
-        }
-
-        if(patch::is_mpi_patch_type_active()){
-            patch::free_MPI_patch_type();
-        }
-    }
-
-    inline SchedulerMPI(u64 crit_split,u64 crit_merge){
-
-        crit_patch_split = crit_split;
-        crit_patch_merge = crit_merge;
-        
-    }
-
-    inline virtual ~SchedulerMPI(){
-
-    }
+    ~SchedulerMPI();
 
 
 
@@ -96,6 +75,32 @@ class SchedulerMPI{public:
         }
     }
 
+
+
+    /**
+     * @brief add patch to the scheduler
+     *
+     * //TODO find a better way to do this it is too error prone
+     * 
+     * @param p 
+     * @param pdat 
+     */
+    [[deprecated]]
+    inline void add_patch(Patch & p, PatchData & pdat){
+        p.id_patch = patch_list._next_patch_id;
+        patch_list._next_patch_id ++;
+
+        patch_list.global.push_back(p);
+
+        patch_data.owned_data[p.id_patch] = pdat;
+
+        
+    }
+
+    [[deprecated]]
+    void sync_build_LB(bool global_patch_sync, bool balance_load);
+
+
     private:
 
 
@@ -104,8 +109,5 @@ class SchedulerMPI{public:
     void merge_patches(std::unordered_set<u64> merge_rq);
 
     void set_patch_pack_values(std::unordered_set<u64> merge_rq);
-
-   
-
 
 };

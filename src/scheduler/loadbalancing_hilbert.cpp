@@ -10,6 +10,7 @@
  */
 
 #include "loadbalancing_hilbert.hpp"
+
 #include "sys/sycl_handler.hpp"
 
 

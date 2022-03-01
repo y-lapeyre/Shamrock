@@ -1,11 +1,25 @@
+/**
+ * @file scheduler_patch_data.cpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief Implementation of PatchData handling related function
+ * @version 0.1
+ * @date 2022-03-01
+ * 
+ * @copyright Copyright (c) 2022
+ * 
+ */
+
 #include "scheduler_patch_data.hpp"
-#include "hilbertsfc.hpp"
-#include "patchdata.hpp"
+
 #include <stdexcept>
 #include <vector>
 
+#include "hilbertsfc.hpp"
+#include "patchdata.hpp"
+#include "loadbalancing_hilbert.hpp"
+
 #include "utils/geometry_utils.hpp"
-#include "scheduler/loadbalancing_hilbert.hpp"
+
 
 void SchedulerPatchData::apply_change_list(std::vector<std::tuple<u64, i32, i32,i32>> change_list,SchedulerPatchList& patch_list){
 

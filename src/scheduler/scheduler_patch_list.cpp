@@ -1,12 +1,13 @@
 #include "scheduler_patch_list.hpp"
+
 #include <vector>
 #include <random>
-#include "hilbertsfc.hpp"
+
 #include "patch.hpp"
-#include "scheduler/loadbalancing_hilbert.hpp"
+#include "loadbalancing_hilbert.hpp"
 
 
-void SchedulerPatchList::sync_global(){
+void SchedulerPatchList::build_global(){
     mpi_handler::vector_allgatherv(local, patch::patch_MPI_type, global, patch::patch_MPI_type, MPI_COMM_WORLD);   
 }
 

@@ -12,42 +12,45 @@
 
 #pragma once
 
-#include "aliases.hpp"
-#include "patch.hpp"
 #include <array>
-#include <cstdio>
-#include <unordered_map>
-#include <unordered_set>
 #include <vector>
 #include <queue>
+#include <unordered_map>
+#include <unordered_set>
+#include <cstdio>
+
+#include "aliases.hpp"
+#include "patch.hpp"
+
 #include "utils/geometry_utils.hpp"
 
 
-
-
-
-
-struct PTNode{
-    u64 x_min,y_min,z_min;
-    u64 x_max,y_max,z_max;
-    u64 level;
-
-    u64 parent_id;
-    u64 childs_id[8] {u64_max};
-
-    u64 linked_patchid = u64_max;
-
-    bool is_leaf = true;
-    bool child_are_all_leafs = false;
-
-    //patch fields
-    u64 data_count = u64_max;
-    u64 load_value = u64_max;
-};
-
-
-
+/**
+ * @brief Patch Tree : Tree structure organisation for an abstract list of patches
+ * 
+ */
 class PatchTree{public:
+
+    /**
+    * @brief PatchTree node container
+    */
+    struct PTNode{
+        u64 x_min,y_min,z_min;
+        u64 x_max,y_max,z_max;
+        u64 level;
+
+        u64 parent_id;
+        u64 childs_id[8] {u64_max};
+
+        u64 linked_patchid = u64_max;
+
+        bool is_leaf = true;
+        bool child_are_all_leafs = false;
+
+        //patch fields
+        u64 data_count = u64_max;
+        u64 load_value = u64_max;
+    };
     
     /**
      * @brief store the tree using a map
@@ -114,19 +117,7 @@ class PatchTree{public:
      * @param crit_load_split 
      * @return std::unordered_set<u64> 
      */
-    inline std::unordered_set<u64> get_split_request(u64 crit_load_split){
-
-        std::unordered_set<u64> rq;
-
-        for(u64 a : leaf_key){
-            if (tree[a].load_value > crit_load_split) {
-                rq.insert(a);
-            }
-        }
-
-        return rq;
-
-    }
+    std::unordered_set<u64> get_split_request(u64 crit_load_split);
 
     /**
      * @brief Get list of nodes id to merge 
@@ -134,17 +125,7 @@ class PatchTree{public:
      * @param crit_load_merge 
      * @return std::unordered_set<u64> 
      */
-    inline std::unordered_set<u64> get_merge_request(u64 crit_load_merge){
-        std::unordered_set<u64> rq;
-
-        for(u64 a : parent_of_only_leaf_key){
-            if (tree[a].load_value < crit_load_merge) {
-                rq.insert(a);
-            }
-        }
-
-        return rq;
-    }
+    std::unordered_set<u64> get_merge_request(u64 crit_load_merge);
 
 
 

@@ -66,7 +66,7 @@ int main(int argc, char *argv[]){
     sched.owned_patch_id = sched.patch_list.build_local();
 
     //std::cout << sched.dump_status() << std::endl;
-    sched.patch_list.sync_global();
+    sched.patch_list.build_global();
     //std::cout << sched.dump_status() << std::endl;
 
 

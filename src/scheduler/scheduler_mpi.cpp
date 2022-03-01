@@ -1,25 +1,58 @@
 #include "scheduler_mpi.hpp"
 
+#include <sstream>
+#include <stdexcept>
 
+#include "loadbalancing_hilbert.hpp"
 
 #include "sys/sycl_handler.hpp"
-
-#include "hilbertsfc.hpp"
-#include "patch.hpp"
-#include <unordered_set>
-
-
-
 #include "utils/time_utils.hpp"
 
 
 
-#include "loadbalancing_hilbert.hpp"
+
+
+
+void SchedulerMPI::init_mpi_required_types(){
+    if(!is_mpi_sycl_interop_active()){
+        create_sycl_mpi_types();
+    }
+
+    if(!patch::is_mpi_patch_type_active()){
+        patch::create_MPI_patch_type();
+    }
+}
+
+void SchedulerMPI::free_mpi_required_types(){
+    if(is_mpi_sycl_interop_active()){
+        free_sycl_mpi_types();
+    }
+
+    if(patch::is_mpi_patch_type_active()){
+        patch::free_MPI_patch_type();
+    }
+}
+
+SchedulerMPI::SchedulerMPI(u64 crit_split,u64 crit_merge){
+
+    crit_patch_split = crit_split;
+    crit_patch_merge = crit_merge;
+    
+}
+
+SchedulerMPI::~SchedulerMPI(){
+
+}
+
+
+
+
+
 
 //TODO move Loadbalancing function to template state
 void SchedulerMPI::sync_build_LB(bool global_patch_sync, bool balance_load){
 
-    if(global_patch_sync) patch_list.sync_global();
+    if(global_patch_sync) patch_list.build_global();
 
     if(balance_load){
         //real load balancing
@@ -35,6 +68,10 @@ void SchedulerMPI::sync_build_LB(bool global_patch_sync, bool balance_load){
 
 //TODO clean the output of this function
 void SchedulerMPI::scheduler_step(bool do_split_merge, bool do_load_balancing){
+
+    if(!is_mpi_sycl_interop_active()) throw std::runtime_error("sycl mpi interop not initialized");
+    if(!patch::is_mpi_patch_type_active()) throw std::runtime_error("mpi patch type not initialized");
+
     Timer timer;
 
     std::cout << " -> running scheduler step\n";
@@ -43,7 +80,7 @@ void SchedulerMPI::scheduler_step(bool do_split_merge, bool do_load_balancing){
 
     
     timer.start();
-    patch_list.sync_global();
+    patch_list.build_global();
     timer.end();
     std::cout << " | sync global : " << timer.get_time_str() << std::endl;
 
@@ -312,7 +349,7 @@ inline void SchedulerMPI::split_patches(std::unordered_set<u64> split_rq){
     for(u64 tree_id : split_rq){
 
         patch_tree.split_node(tree_id);
-        PTNode & splitted_node = patch_tree.tree[tree_id];
+        PatchTree::PTNode & splitted_node = patch_tree.tree[tree_id];
 
         auto [idx_p0,idx_p1,idx_p2,idx_p3,idx_p4,idx_p5,idx_p6,idx_p7] 
             =  patch_list.split_patch(splitted_node.linked_patchid);
@@ -346,7 +383,7 @@ inline void SchedulerMPI::split_patches(std::unordered_set<u64> split_rq){
 inline void SchedulerMPI::merge_patches(std::unordered_set<u64> merge_rq){
     for(u64 tree_id : merge_rq){
 
-        PTNode & to_merge_node = patch_tree.tree[tree_id];
+        PatchTree::PTNode & to_merge_node = patch_tree.tree[tree_id];
 
         std::cout << "merging patch tree id : " << tree_id << "\n";
         
@@ -389,7 +426,7 @@ inline void SchedulerMPI::set_patch_pack_values(std::unordered_set<u64> merge_rq
 
     for(u64 tree_id : merge_rq){
 
-        PTNode & to_merge_node = patch_tree.tree[tree_id];
+        PatchTree::PTNode & to_merge_node = patch_tree.tree[tree_id];
 
         u64 idx_pack = patch_list.id_patch_to_global_idx[
             patch_tree.tree[to_merge_node.childs_id[0]].linked_patchid

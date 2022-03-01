@@ -1,6 +1,18 @@
+/**
+ * @file patchtree.cpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief PatchTree implementation
+ * @version 0.1
+ * @date 2022-03-01
+ * 
+ * @copyright Copyright (c) 2022
+ * 
+ */
+
 #include "patchtree.hpp"
-#include "patch.hpp"
+
 #include <stdexcept>
+#include "patch.hpp"
 
 
 u64 PatchTree::insert_node(PTNode n){
@@ -359,4 +371,33 @@ void PatchTree::partial_values_reduction(std::vector<Patch> &plist, std::unorder
         update_ptnode(tree[id_leaf],plist,id_patch_to_global_idx);
     }
 
+}
+
+
+
+std::unordered_set<u64> PatchTree::get_split_request(u64 crit_load_split){
+
+    std::unordered_set<u64> rq;
+
+    for(u64 a : leaf_key){
+        if (tree[a].load_value > crit_load_split) {
+            rq.insert(a);
+        }
+    }
+
+    return rq;
+
+}
+
+
+std::unordered_set<u64> PatchTree::get_merge_request(u64 crit_load_merge){
+    std::unordered_set<u64> rq;
+
+    for(u64 a : parent_of_only_leaf_key){
+        if (tree[a].load_value < crit_load_merge) {
+            rq.insert(a);
+        }
+    }
+
+    return rq;
 }

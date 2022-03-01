@@ -10,6 +10,7 @@
  */
 
 #include "patchdata.hpp"
+
 #include <exception>
 #include <stdexcept>
 

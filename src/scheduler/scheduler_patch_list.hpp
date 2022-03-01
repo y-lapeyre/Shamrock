@@ -45,7 +45,7 @@ class SchedulerPatchList{public:
      *  
      * similar to \p global = allgather(\p local)
      */
-    void sync_global();
+    void build_global();
 
 
     /**
@@ -71,18 +71,47 @@ class SchedulerPatchList{public:
         std::vector<u64> & to_recv_idx
         );
 
-
+    /**
+     * @brief id_patch_to_global_idx[patch_id] = index in global patch list
+     */
     std::unordered_map<u64,u64> id_patch_to_global_idx;
+
+    /**
+     * @brief id_patch_to_local_idx[patch_id] = index in local patch list
+     */
+    std::unordered_map<u64,u64> id_patch_to_local_idx;
+
+    /**
+     * @brief recompute id_patch_to_global_idx
+     * 
+     */
     void build_global_idx_map();
 
-
-    std::unordered_map<u64,u64> id_patch_to_local_idx;
+    /**
+     * @brief recompute id_patch_to_local_idx
+     */
     void build_local_idx_map();
 
+    /**
+     * @brief reset Patch's pack index value
+     */
     void reset_local_pack_index();
 
-
+    /** 
+     * @brief split the Patch having id_patch as id and return the index of the 8 subpatches in the global vector
+     * 
+     * @param id_patch the id of the patch to split
+     * @return std::tuple<u64,u64,u64,u64,u64,u64,u64,u64> the index of the 8 splitted in the global vector
+     */
     std::tuple<u64,u64,u64,u64,u64,u64,u64,u64> split_patch(u64 id_patch);
+
+    /**
+     * @brief merge the 8 given patches index in the global vector    
+     * 
+     * Note : the first one will contain the merge patch the 7 others will be set with node_owner_id = u32_max, and then be flushed out when doing build local / sync global
+     * 
+     * @param idx... the 8 patches index
+     */
     void merge_patch( u64 idx0, u64 idx1, u64 idx2, u64 idx3, u64 idx4, u64 idx5, u64 idx6, u64 idx7);
 
     
@@ -90,5 +119,11 @@ class SchedulerPatchList{public:
 };
 
 
-
+/**
+ * @brief generate a fake patch list corresponding to a tree structure
+ * 
+ * @param total_dtcnt total data count  
+ * @param div_limit data count limit to split
+ * @return std::vector<Patch> the fake patch list
+ */
 std::vector<Patch> make_fake_patch_list(u32 total_dtcnt,u64 div_limit);

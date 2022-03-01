@@ -79,7 +79,7 @@ Test_start("SchedulerPatchList::",build_select_corectness,-1){
 
 
     patch_list.global.clear();
-    patch_list.sync_global();
+    patch_list.build_global();
 
 
     corect_size = patch_list.global.size() == check_vec.size();
