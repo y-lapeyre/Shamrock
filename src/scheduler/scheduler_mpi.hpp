@@ -13,9 +13,9 @@
 
 #include <unordered_set>
 
-#include "patch.hpp"
-#include "patchdata.hpp"
-#include "patchtree.hpp"
+#include "patch/patch.hpp"
+#include "patch/patchdata.hpp"
+#include "patch/patchtree.hpp"
 #include "scheduler_patch_list.hpp"
 #include "scheduler_patch_data.hpp"
 

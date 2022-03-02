@@ -15,8 +15,8 @@
 #include <tuple>
 
 #include "aliases.hpp"
-#include "patch.hpp"
-#include "hilbertsfc.hpp"
+#include "patch/patch.hpp"
+#include "sfc/hilbert.hpp"
 
 /**
  * @brief hilbert load balancing

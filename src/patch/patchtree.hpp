@@ -128,6 +128,15 @@ class PatchTree{public:
     std::unordered_set<u64> get_merge_request(u64 crit_load_merge);
 
 
+    /**
+     * @brief Get the the tree Data in vector form
+     * 
+     * @param root_key root key to start from
+     * @param result_tree vector where node would be sotred
+     * @param counter starting id
+     */
+    void get_serial_tree(u64 root_key, std::vector<PTNode> & result_tree, u64 & counter);
+
 
     private:
 
@@ -137,4 +146,5 @@ class PatchTree{public:
     void remove_node(u64 id);
 
     void update_ptnode(PTNode & n,std::vector<Patch> & plist,std::unordered_map<u64,u64> id_patch_to_global_idx);
+
 };

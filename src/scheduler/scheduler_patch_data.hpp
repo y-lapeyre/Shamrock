@@ -14,8 +14,8 @@
 #include <cmath>
 #include <map>
 
-#include "patch.hpp"
-#include "patchdata.hpp"
+#include "patch/patch.hpp"
+#include "patch/patchdata.hpp"
 
 #include "scheduler_patch_list.hpp"
 

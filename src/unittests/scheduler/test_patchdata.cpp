@@ -5,7 +5,7 @@
 #include <vector>
 
 
-#include "scheduler/patchdata.hpp"
+#include "patch/patchdata.hpp"
 #include "scheduler/scheduler_mpi.hpp"
 
 

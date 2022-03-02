@@ -12,6 +12,7 @@
 #include "patchtree.hpp"
 
 #include <stdexcept>
+#include <vector>
 #include "patch.hpp"
 
 
@@ -400,4 +401,56 @@ std::unordered_set<u64> PatchTree::get_merge_request(u64 crit_load_merge){
     }
 
     return rq;
+}
+
+
+
+
+
+
+
+void PatchTree::get_serial_tree(u64 root_key, std::vector<PTNode> & result_tree, u64 & counter){
+
+    PTNode ptn = tree[root_key];
+    
+    result_tree.push_back(ptn);
+    counter ++;
+
+    if(!ptn.is_leaf){
+
+        u64 old_id0 = ptn.childs_id[0];
+        u64 old_id1 = ptn.childs_id[1];
+        u64 old_id2 = ptn.childs_id[2];
+        u64 old_id3 = ptn.childs_id[3];
+        u64 old_id4 = ptn.childs_id[4];
+        u64 old_id5 = ptn.childs_id[5];
+        u64 old_id6 = ptn.childs_id[6];
+        u64 old_id7 = ptn.childs_id[7];
+
+        ptn.childs_id[0] = counter;
+        get_serial_tree(old_id0, result_tree, counter);
+        
+        ptn.childs_id[1] = counter;
+        get_serial_tree(old_id1, result_tree, counter);
+        
+        ptn.childs_id[2] = counter;
+        get_serial_tree(old_id2, result_tree, counter);
+        
+        ptn.childs_id[3] = counter;
+        get_serial_tree(old_id3, result_tree, counter);
+        
+        ptn.childs_id[4] = counter;
+        get_serial_tree(old_id4, result_tree, counter);
+        
+        ptn.childs_id[5] = counter;
+        get_serial_tree(old_id5, result_tree, counter);
+        
+        ptn.childs_id[6] = counter;
+        get_serial_tree(old_id6, result_tree, counter);
+        
+        ptn.childs_id[7] = counter;
+        get_serial_tree(old_id7, result_tree, counter);
+    }
+    
+
 }

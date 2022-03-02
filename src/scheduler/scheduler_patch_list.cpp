@@ -3,7 +3,7 @@
 #include <vector>
 #include <random>
 
-#include "patch.hpp"
+#include "patch/patch.hpp"
 #include "loadbalancing_hilbert.hpp"
 
 

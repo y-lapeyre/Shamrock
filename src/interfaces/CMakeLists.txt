@@ -4,10 +4,8 @@ if("${BUILD_SIM}")
 target_sources(shamrock
     PRIVATE
         #scheduler.cpp
-        scheduler_mpi.cpp
-        scheduler_patch_list.cpp
-        scheduler_patch_data.cpp
-        loadbalancing_hilbert.cpp
+        interface_generator.cpp
+        interface_handler.cpp
     PUBLIC
         
         #patchdata.hpp
@@ -36,10 +34,8 @@ if("${BUILD_TEST}")
     target_sources(shamrock_test
     PRIVATE
         #scheduler.cpp
-        scheduler_mpi.cpp
-        scheduler_patch_list.cpp
-        scheduler_patch_data.cpp
-        loadbalancing_hilbert.cpp
+        interface_generator.cpp
+        interface_handler.cpp
     PUBLIC
         #patchdata.hpp
         #scheduler.hpp

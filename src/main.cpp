@@ -85,6 +85,18 @@ int main(int argc, char *argv[]){
     sched.update_local_load_value();
 
 
+    sched.patch_list.build_global();
+
+
+
+
+
+    
+
+
+
+
+
     for(u32 stepi = 0 ; stepi < 5; stepi ++){
         std::cout << " ------ step time = " <<stepi<< " ------" << std::endl;
         //std::cout << sched.dump_status() << std::endl;

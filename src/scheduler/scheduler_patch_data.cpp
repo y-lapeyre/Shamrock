@@ -14,8 +14,7 @@
 #include <stdexcept>
 #include <vector>
 
-#include "hilbertsfc.hpp"
-#include "patchdata.hpp"
+#include "patch/patchdata.hpp"
 #include "loadbalancing_hilbert.hpp"
 
 #include "utils/geometry_utils.hpp"
