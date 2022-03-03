@@ -4,9 +4,9 @@
 #include <map>
 #include <random>
 #include <vector>
-#include "scheduler/scheduler_patch_list.hpp"
-#include "sfc/hilbertsfc.hpp"
-#include "scheduler/loadbalancing_hilbert.hpp"
+#include "patchscheduler/scheduler_patch_list.hpp"
+#include "sfc/hilbert.hpp"
+#include "patchscheduler/loadbalancing_hilbert.hpp"
 
 
 

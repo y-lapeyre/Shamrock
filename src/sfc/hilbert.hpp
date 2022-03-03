@@ -25,12 +25,13 @@
 
 constexpr u64 hilbert_box21_sz = 2097152 - 1;
 
-template <int b> inline u64 compute_hilbert_index(u64 x, u64 y, u64 z) {
+template <int bits> 
+inline u64 compute_hilbert_index_3d(u64 x, u64 y, u64 z) {
 
     const int n = 3;
     u64 X[3]    = {x, y, z};
 
-    u64 M = 1 << (b - 1), P, Q, t;
+    u64 M = 1 << (bits - 1), P, Q, t;
     int i;
     // Inverse undo
     for (Q = M; Q > 1; Q >>= 1) {
@@ -56,9 +57,9 @@ template <int b> inline u64 compute_hilbert_index(u64 x, u64 y, u64 z) {
         X[i] ^= t;
 
 
-    X[0] = bmi::expand_bits_64(X[0]) << 2;
-    X[1] = bmi::expand_bits_64(X[1]) << 1;
-    X[2] = bmi::expand_bits_64(X[2]);
+    X[0] = bmi::expand_bits<u64,2>(X[0]) << 2;
+    X[1] = bmi::expand_bits<u64,2>(X[1]) << 1;
+    X[2] = bmi::expand_bits<u64,2>(X[2]);
 
     return X[0] + X[1] + X[2];
 }

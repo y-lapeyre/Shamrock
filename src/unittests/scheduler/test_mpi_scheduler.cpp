@@ -10,7 +10,7 @@
 
 
 
-#include "scheduler/scheduler_mpi.hpp"
+#include "patchscheduler/scheduler_mpi.hpp"
 
 #include "sys/sycl_mpi_interop.hpp"
 
@@ -20,8 +20,8 @@
 
 #include "test_patch_utils.hpp"
 
-#include "scheduler/hilbertsfc.hpp"
-#include "scheduler/loadbalancing_hilbert.hpp"
+#include "sfc/hilbert.hpp"
+#include "patchscheduler/loadbalancing_hilbert.hpp"
 
 
 

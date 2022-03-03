@@ -6,7 +6,7 @@
 
 
 #include "patch/patchdata.hpp"
-#include "scheduler/scheduler_mpi.hpp"
+#include "patchscheduler/scheduler_mpi.hpp"
 
 
 Test_start("patchdata::", sync_patchdata_layout, -1) {

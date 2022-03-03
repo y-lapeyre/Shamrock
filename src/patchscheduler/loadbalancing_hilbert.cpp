@@ -39,7 +39,7 @@ std::vector<std::tuple<u64, i32, i32, i32>> HilbertLB::make_change_list(std::vec
 
                 Patch p = ptch[i];
 
-                pdt[i] = {compute_hilbert_index<21>(p.x_min, p.y_min, p.z_min), p.load_value, i};
+                pdt[i] = {compute_hilbert_index_3d<21>(p.x_min, p.y_min, p.z_min), p.load_value, i};
             });
         });
 

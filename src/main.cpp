@@ -1,10 +1,10 @@
 #include "CL/sycl/handler.hpp"
 #include "aliases.hpp"
-#include "scheduler/loadbalancing_hilbert.hpp"
+#include "patchscheduler/loadbalancing_hilbert.hpp"
 #include "sys/mpi_handler.hpp"
 #include "sys/sycl_handler.hpp"
-#include "scheduler/scheduler_mpi.hpp"
-#include "scheduler/hilbertsfc.hpp"
+#include "patchscheduler/scheduler_mpi.hpp"
+#include "sfc/hilbert.hpp"
 
 
 
