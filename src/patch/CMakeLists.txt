@@ -7,6 +7,7 @@ target_sources(shamrock
         patch.cpp
         patchdata.cpp
         patchtree.cpp
+        serialpatchtree.cpp
     PUBLIC
         patch.hpp
         
@@ -40,6 +41,7 @@ if("${BUILD_TEST}")
         patch.cpp
         patchdata.cpp
         patchtree.cpp
+        serialpatchtree.cpp
     PUBLIC
         patch.hpp
         #patchdata.hpp
