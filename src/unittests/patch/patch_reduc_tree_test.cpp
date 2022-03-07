@@ -1,3 +1,4 @@
+#include "aliases.hpp"
 #include "patch/patch_field.hpp"
 #include "patch/patch_reduc_tree.hpp"
 #include "patch/serialpatchtree.hpp"
@@ -99,9 +100,7 @@ Test_start("patch::patch_reduc_tree::", generation, -1){
         std::cout << "len 1 : " << dtcnt_field.local_nodes_value.size() << std::endl;
         std::cout << "len 2 : " << dtcnt_field.global_values.size() << std::endl;
 
-        f32_3 translate_factor = sched.patch_data.sim_box.min_box_sim_s;
-        f32_3 scale_factor = (sched.patch_data.sim_box.max_box_sim_s - sched.patch_data.sim_box.min_box_sim_s)/HilbertLB::max_box_sz;
-        SerialPatchTree<f32_3> sptree(sched.patch_tree, translate_factor, scale_factor);
+        SerialPatchTree<f32_3> sptree(sched.patch_tree, sched.get_box_tranform<f32_3>());
 
         std::cout << "len 3 : " << sptree.get_element_count() << std::endl;
 
@@ -141,15 +140,13 @@ Test_start("patch::patch_reduc_tree::", generation, -1){
                 dtcnt_field.local_nodes_value[idx] = sched.patch_list.local[idx].data_count;
             }
 
-            // std::cout << "dtcnt_field.build_global(mpi_type_u64);" << std::endl;
+            std::cout << "dtcnt_field.build_global(mpi_type_u64);" << std::endl;
             dtcnt_field.build_global(mpi_type_u64);
 
             // std::cout << "len 1 : " << dtcnt_field.local_nodes_value.size() << std::endl;
             // std::cout << "len 2 : " << dtcnt_field.global_values.size() << std::endl;
 
-            f32_3 translate_factor = sched.patch_data.sim_box.min_box_sim_s;
-            f32_3 scale_factor = (sched.patch_data.sim_box.max_box_sim_s - sched.patch_data.sim_box.min_box_sim_s)/HilbertLB::max_box_sz;
-            SerialPatchTree<f32_3> sptree(sched.patch_tree, translate_factor, scale_factor);
+            SerialPatchTree<f32_3> sptree(sched.patch_tree, sched.get_box_tranform<f32_3>());
             //sptree.dump_dat();
 
             // std::cout << "len 3 : " << sptree.get_element_count() << std::endl;

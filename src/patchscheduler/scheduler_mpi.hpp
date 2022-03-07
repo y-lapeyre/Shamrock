@@ -11,6 +11,8 @@
 
 #pragma once
 
+#include <stdexcept>
+#include <tuple>
 #include <unordered_set>
 
 #include "patch/patch.hpp"
@@ -74,6 +76,12 @@ class SchedulerMPI{public:
             patch_list.local[patch_list.id_patch_to_local_idx[id]].load_value = patch_data.owned_data[id].pos_s.size() + patch_data.owned_data[id].pos_d.size() ;
         }
     }
+
+
+    template<class vectype>
+    std::tuple<vectype,vectype> get_box_tranform();
+
+
 
 
 

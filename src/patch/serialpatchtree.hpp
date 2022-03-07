@@ -8,6 +8,7 @@
 #include "sys/sycl_handler.hpp"
 #include "aliases.hpp"
 #include "patch/patch_reduc_tree.hpp"
+#include <tuple>
 
 template<class fp_prec_vec>
 struct PtNode{
@@ -70,8 +71,8 @@ class SerialPatchTree{public:
 
     public: 
 
-    inline SerialPatchTree(PatchTree &ptree, fp_prec_vec translate_factor, fp_prec_vec scale_factor){
-        build_from_patch_tree(ptree, translate_factor, scale_factor);
+    inline SerialPatchTree(PatchTree &ptree, std::tuple<fp_prec_vec,fp_prec_vec> box_tranform){
+        build_from_patch_tree(ptree, std::get<0>(box_tranform), std::get<1>(box_tranform));
     }
 
     /**
