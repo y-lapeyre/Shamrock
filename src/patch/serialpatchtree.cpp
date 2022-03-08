@@ -148,7 +148,7 @@ template <>
 void SerialPatchTree<f32_3>::build_from_patch_tree(PatchTree &ptree, f32_3 translate_factor, f32_3 scale_factor) {
 
     u64 cnt     = 0;
-    level_count = 0;
+    level_count = 0;//TODO add root_id set
     for (u64 root_id : ptree.roots_id) {
         std::cout << "get serial tree fp32 root id : " << root_id << std::endl;
         get_serial_tree_fp32(root_id, ptree, serial_tree, linked_patch_ids, cnt, level_count, translate_factor,

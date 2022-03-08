@@ -11,10 +11,12 @@
 
 #pragma once
 
+#include <fstream>
 #include <stdexcept>
 #include <tuple>
 #include <unordered_set>
 
+#include "aliases.hpp"
 #include "patch/patch.hpp"
 #include "patch/patchdata.hpp"
 #include "patch/patchtree.hpp"
@@ -81,8 +83,8 @@ class SchedulerMPI{public:
     template<class vectype>
     std::tuple<vectype,vectype> get_box_tranform();
 
-
-
+    [[deprecated]]
+    void dump_local_patches(std::string filename);
 
 
     /**

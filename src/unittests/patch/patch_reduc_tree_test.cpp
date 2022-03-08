@@ -3,9 +3,14 @@
 #include "patch/patch_reduc_tree.hpp"
 #include "patch/serialpatchtree.hpp"
 #include "patchscheduler/scheduler_mpi.hpp"
+#include "sys/mpi_handler.hpp"
 #include "sys/sycl_mpi_interop.hpp"
 #include "unittests/shamrocktest.hpp"
 #include "patchscheduler/loadbalancing_hilbert.hpp"
+#include "interfaces/interface_generator.hpp"
+#include "utils/string_utils.hpp"
+#include <string>
+#include "interfaces/interface_selector.hpp"
 
 class Reduce_DataCount{public:
     static u64 reduce(u64 v0,u64 v1,u64 v2,u64 v3,u64 v4,u64 v5,u64 v6,u64 v7){
@@ -117,6 +122,22 @@ Test_start("patch::patch_reduc_tree::", generation, -1){
         std::cout << "pfield_reduced.detach_buf()" << std::endl;
         pfield_reduced.detach_buf();
         std::cout << " ------ > " << pfield_reduced.tree_field[0] << "\n\n\n";
+    
+    
+        PatchField<f32> h_field;
+        h_field.local_nodes_value.resize(sched.patch_list.local.size());
+        for(u64 idx = 0 ; idx < sched.patch_list.local.size(); idx ++){
+            h_field.local_nodes_value[idx] = 0.1f;
+        }
+        h_field.build_global(mpi_type_f32);
+
+        Interface_Generator<f32_3,f32,InterfaceSelector_SPH<f32_3,f32>>::gen_interfaces_test(sched, sptree, h_field,format("interfaces_%d_node%d",0,mpi_handler::world_rank));
+
+        
+
+        sched.dump_local_patches(format("patches_%d_node%d",0,mpi_handler::world_rank));
+
+
     }
     
 
@@ -124,7 +145,7 @@ Test_start("patch::patch_reduc_tree::", generation, -1){
 
 
 
-    for(u32 stepi = 0 ; stepi < 5; stepi ++){
+    for(u32 stepi = 1 ; stepi < 6; stepi ++){
         std::cout << " ------ step time = " <<stepi<< " ------" << std::endl;
         //std::cout << sched.dump_status() << std::endl;
         sched.scheduler_step(true, true);
@@ -163,9 +184,21 @@ Test_start("patch::patch_reduc_tree::", generation, -1){
             // std::cout << "pfield_reduced.detach_buf()" << std::endl;
             pfield_reduced.detach_buf();
             std::cout << " ------ > " << pfield_reduced.tree_field[0] << "\n\n\n";
+
+
+            PatchField<f32> h_field;
+            h_field.local_nodes_value.resize(sched.patch_list.local.size());
+            for(u64 idx = 0 ; idx < sched.patch_list.local.size(); idx ++){
+                h_field.local_nodes_value[idx] = 0.1f;
+            }
+            h_field.build_global(mpi_type_f32);
+
+            Interface_Generator<f32_3,f32,InterfaceSelector_SPH<f32_3,f32>>::gen_interfaces_test(sched, sptree, h_field,format("interfaces_%d_node%d",stepi,mpi_handler::world_rank));
+
+            sched.dump_local_patches(format("patches_%d_node%d",stepi,mpi_handler::world_rank));
         }
     
-        
+        //TODO test if a interface of size 0.5x0.5x0.5 exist == error
     }
 
     //std::cout << sched.dump_status() << std::endl;
