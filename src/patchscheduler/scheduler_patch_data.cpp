@@ -42,7 +42,8 @@ void SchedulerPatchData::apply_change_list(std::vector<std::tuple<u64, i32, i32,
         
         //if i'm receiver
         if(new_owner == mpi_handler::world_rank){
-            owned_data[id_patch] = patchdata_irecv( rq_lst, old_owner, tag_comm, MPI_COMM_WORLD);
+            owned_data[id_patch] = PatchData();
+            patchdata_irecv(owned_data[id_patch], rq_lst, old_owner, tag_comm, MPI_COMM_WORLD);
         }
     }
 

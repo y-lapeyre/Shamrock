@@ -1,7 +1,6 @@
 #include "unittests/shamrocktest.hpp"
 
 #include "sys/sycl_handler.hpp"
-#include <mpi.h>
 #include <vector>
 
 Test_start("",intmult,1){

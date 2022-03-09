@@ -2,7 +2,6 @@
 
 #include <algorithm>
 #include <iterator>
-#include <mpi.h>
 #include <random>
 #include <unordered_set>
 #include <utility>

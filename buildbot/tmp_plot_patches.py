@@ -4,9 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from itertools import product, combinations
 
-
-
-def draw_cube(xm,ym,zm,xp,yp,zp,color):
+def get_cube(xm,ym,zm,xp,yp,zp):
     Z = [[xm,ym,zm],
          [xm,ym,zp],
          [xm,yp,zm],
@@ -23,11 +21,10 @@ def draw_cube(xm,ym,zm,xp,yp,zp,color):
         [Z[1],Z[3],Z[7],Z[5]],
         [Z[4],Z[6],Z[2],Z[0]]
         ]
-    
-    alpha_ = 0.3
-    
-    
-    ax.add_collection3d(Poly3DCollection(verts, facecolors=color, linewidths=1, edgecolors=color, alpha=alpha_))
+    return verts
+
+def draw_cube(xm,ym,zm,xp,yp,zp,color,alpha):
+    ax.add_collection3d(Poly3DCollection(get_cube(xm,ym,zm,xp,yp,zp), facecolors=color, linewidths=1, edgecolors="black", alpha=alpha))
 
 
 
@@ -99,14 +96,14 @@ for a in interf_filelist:
         psend_id = int(ll[2])
         precv_id = int(ll[3])
 
-        xmin = float(ll[-6])
-        xmax = float(ll[-5])
+        xmin = float(ll[-6])-1e-5
+        xmax = float(ll[-5])+1e-5
 
-        ymin = float(ll[-4])
-        ymax = float(ll[-3])
+        ymin = float(ll[-4])-1e-5
+        ymax = float(ll[-3])+1e-5
 
-        zmin = float(ll[-2])
-        zmax = float(ll[-1])
+        zmin = float(ll[-2])-1e-5
+        zmax = float(ll[-1])+1e-5
 
         interfaces_dic[psend_id].append((psend_id,precv_id,xmin, ymin, zmin, xmax, ymax, zmax))
 
@@ -122,7 +119,7 @@ for a in interf_filelist:
 def draw_patch(id):
     (xmin, ymin, zmin, xmax, ymax, zmax,it) = patch_dic[id]
 
-    draw_cube(xmin, ymin, zmin, xmax, ymax, zmax, colors[it % len(colors)])
+    draw_cube(xmin, ymin, zmin, xmax, ymax, zmax, colors[it % len(colors)],0.1)
 
 def draw_interface_send(id):
     it = 0
@@ -134,21 +131,48 @@ def draw_interface_send(id):
         if((xmax - xmin)* (ymax - ymin)* (zmax - zmin) > 0.4**3):
             print("error :!!!!!")
 
-        draw_cube(xmin, ymin, zmin, xmax, ymax, zmax, "grey")
+        draw_cube(xmin, ymin, zmin, xmax, ymax, zmax, "grey",0.1)
 
         it = it +1
+
+
+def draw_interface_send_list(idlist):
+
+    vert_lst = []
+
+    for id in idlist:
+
+        it = 0
+        for interf in interfaces_dic[id]:
+            (psend_id,precv_id,xmin, ymin, zmin, xmax, ymax, zmax) = interf
+
+            print((psend_id,precv_id,xmax - xmin, ymax - ymin, zmax - zmin),(xmax - xmin)* (ymax - ymin)* (zmax - zmin))
+
+            if((xmax - xmin)* (ymax - ymin)* (zmax - zmin) > 0.4**3):
+                print("error :!!!!!")
+
+            vert_lst += get_cube(xmin, ymin, zmin, xmax, ymax, zmax)
+
+            it = it +1
+
+    ax.add_collection3d(Poly3DCollection(vert_lst, facecolors="grey", linewidths=1, edgecolors="black", alpha=0.1))
+
+
 
 fig = plt.figure(figsize = (10, 7))
 ax = plt.axes(projection ="3d")
 ax.scatter3D([-1,1],[-1,1],[-1,1])
 
-# for k in patch_dic.keys():
-#     draw_patch(k)
+for k in patch_dic.keys():
+    draw_patch(k)
 
-draw_patch(15)
-draw_patch(17)
-draw_interface_send(15)
-draw_interface_send(17)
+for k in patch_dic.keys():
+    draw_interface_send(k)
+
+# draw_patch(15)
+# draw_patch(17)
+# draw_interface_send(15)
+# draw_interface_send(17)
 
 
 

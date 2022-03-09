@@ -2,7 +2,6 @@
 
 
 #include "mpi_handler.hpp"
-#include <mpi.h>
 
 
 

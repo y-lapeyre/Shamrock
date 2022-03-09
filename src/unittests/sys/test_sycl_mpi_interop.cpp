@@ -4,7 +4,6 @@
 #include "sys/sycl_handler.hpp"
 #include "sys/sycl_mpi_interop.hpp"
 
-#include <mpi.h>
 #include <random>
 
 #include "utils/sycl_vector_utils.hpp"

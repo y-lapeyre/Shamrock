@@ -59,56 +59,44 @@ bool patchdata_layout::is_synced(){
 
 void patchdata_isend(PatchData &p, std::vector<MPI_Request> &rq_lst, i32 rank_dest, i32 tag, MPI_Comm comm) {
     rq_lst.resize(rq_lst.size() + 1);
-    mpi::isend(p.pos_s.data(), p.pos_s.size(), mpi_type_f3_s, rank_dest, tag, comm, &rq_lst[rq_lst.size() - 1]);
+    mpi::isend(p.pos_s.data(), p.pos_s.size(), mpi_type_f32_3, rank_dest, tag, comm, &rq_lst[rq_lst.size() - 1]);
 
     rq_lst.resize(rq_lst.size() + 1);
-    mpi::isend(p.pos_d.data(), p.pos_d.size(), mpi_type_f3_d, rank_dest, tag, comm, &rq_lst[rq_lst.size() - 1]);
+    mpi::isend(p.pos_d.data(), p.pos_d.size(), mpi_type_f64_3, rank_dest, tag, comm, &rq_lst[rq_lst.size() - 1]);
 
     rq_lst.resize(rq_lst.size() + 1);
-    mpi::isend(p.U1_s.data(), p.U1_s.size(), mpi_type_f_s, rank_dest, tag, comm, &rq_lst[rq_lst.size() - 1]);
+    mpi::isend(p.U1_s.data(), p.U1_s.size(), mpi_type_f32, rank_dest, tag, comm, &rq_lst[rq_lst.size() - 1]);
 
     rq_lst.resize(rq_lst.size() + 1);
-    mpi::isend(p.U1_d.data(), p.U1_d.size(), mpi_type_f_d, rank_dest, tag, comm, &rq_lst[rq_lst.size() - 1]);
+    mpi::isend(p.U1_d.data(), p.U1_d.size(), mpi_type_f64, rank_dest, tag, comm, &rq_lst[rq_lst.size() - 1]);
 
     rq_lst.resize(rq_lst.size() + 1);
-    mpi::isend(p.U3_s.data(), p.U3_s.size(), mpi_type_f3_s, rank_dest, tag, comm, &rq_lst[rq_lst.size() - 1]);
+    mpi::isend(p.U3_s.data(), p.U3_s.size(), mpi_type_f32_3, rank_dest, tag, comm, &rq_lst[rq_lst.size() - 1]);
 
     rq_lst.resize(rq_lst.size() + 1);
-    mpi::isend(p.U3_d.data(), p.U3_d.size(), mpi_type_f3_d, rank_dest, tag, comm, &rq_lst[rq_lst.size() - 1]);
+    mpi::isend(p.U3_d.data(), p.U3_d.size(), mpi_type_f64_3, rank_dest, tag, comm, &rq_lst[rq_lst.size() - 1]);
 }
 
-PatchData patchdata_irecv( std::vector<MPI_Request> &rq_lst, i32 rank_source, i32 tag, MPI_Comm comm) {
-    PatchData p;
+void patchdata_irecv(PatchData & pdat, std::vector<MPI_Request> &rq_lst, i32 rank_source, i32 tag, MPI_Comm comm){
 
     {
         MPI_Status st;
         i32 cnt;
-        mpi::probe(rank_source, tag,comm, & st);
-        mpi::get_count(&st, mpi_type_f3_s, &cnt);
+        int i = mpi::probe(rank_source, tag,comm, & st);
+        mpi::get_count(&st, mpi_type_f32_3, &cnt);
         rq_lst.resize(rq_lst.size() + 1);
-        p.pos_s.resize(cnt);
-        mpi::irecv(p.pos_s.data(), cnt, mpi_type_f3_s, rank_source, tag, comm, &rq_lst[rq_lst.size() - 1]);
+        pdat.pos_s.resize(cnt);
+        mpi::irecv(pdat.pos_s.data(), cnt, mpi_type_f32_3, rank_source, tag, comm, &rq_lst[rq_lst.size() - 1]);
     }
 
     {
         MPI_Status st;
         i32 cnt;
         mpi::probe(rank_source, tag,comm, & st);
-        mpi::get_count(&st, mpi_type_f3_d, &cnt);
+        mpi::get_count(&st, mpi_type_f64_3, &cnt);
         rq_lst.resize(rq_lst.size() + 1);
-        p.pos_d.resize(cnt);
-        mpi::irecv(p.pos_d.data(), cnt, mpi_type_f3_d, rank_source, tag, comm, &rq_lst[rq_lst.size() - 1]);
-    }
-
-
-    {
-        MPI_Status st;
-        i32 cnt;
-        mpi::probe(rank_source, tag,comm, & st);
-        mpi::get_count(&st, mpi_type_f_s, &cnt);
-        rq_lst.resize(rq_lst.size() + 1);
-        p.U1_s.resize(cnt);
-        mpi::irecv(p.U1_s.data(), cnt, mpi_type_f_s, rank_source, tag, comm, &rq_lst[rq_lst.size() - 1]);
+        pdat.pos_d.resize(cnt);
+        mpi::irecv(pdat.pos_d.data(), cnt, mpi_type_f64_3, rank_source, tag, comm, &rq_lst[rq_lst.size() - 1]);
     }
 
 
@@ -116,10 +104,21 @@ PatchData patchdata_irecv( std::vector<MPI_Request> &rq_lst, i32 rank_source, i3
         MPI_Status st;
         i32 cnt;
         mpi::probe(rank_source, tag,comm, & st);
-        mpi::get_count(&st, mpi_type_f_d, &cnt);
+        mpi::get_count(&st, mpi_type_f32, &cnt);
         rq_lst.resize(rq_lst.size() + 1);
-        p.U1_d.resize(cnt);
-        mpi::irecv(p.U1_d.data(), cnt, mpi_type_f_d, rank_source, tag, comm, &rq_lst[rq_lst.size() - 1]);
+        pdat.U1_s.resize(cnt);
+        mpi::irecv(pdat.U1_s.data(), cnt, mpi_type_f32, rank_source, tag, comm, &rq_lst[rq_lst.size() - 1]);
+    }
+
+
+    {
+        MPI_Status st;
+        i32 cnt;
+        mpi::probe(rank_source, tag,comm, & st);
+        mpi::get_count(&st, mpi_type_f64, &cnt);
+        rq_lst.resize(rq_lst.size() + 1);
+        pdat.U1_d.resize(cnt);
+        mpi::irecv(pdat.U1_d.data(), cnt, mpi_type_f64, rank_source, tag, comm, &rq_lst[rq_lst.size() - 1]);
     }
 
 
@@ -129,10 +128,10 @@ PatchData patchdata_irecv( std::vector<MPI_Request> &rq_lst, i32 rank_source, i3
         MPI_Status st;
         i32 cnt;
         mpi::probe(rank_source, tag,comm, & st);
-        mpi::get_count(&st, mpi_type_f3_s, &cnt);
+        mpi::get_count(&st, mpi_type_f32_3, &cnt);
         rq_lst.resize(rq_lst.size() + 1);
-        p.U3_s.resize(cnt);
-        mpi::irecv(p.U3_s.data(), cnt, mpi_type_f3_s, rank_source, tag, comm, &rq_lst[rq_lst.size() - 1]);
+        pdat.U3_s.resize(cnt);
+        mpi::irecv(pdat.U3_s.data(), cnt, mpi_type_f32_3, rank_source, tag, comm, &rq_lst[rq_lst.size() - 1]);
     }
 
 
@@ -140,14 +139,13 @@ PatchData patchdata_irecv( std::vector<MPI_Request> &rq_lst, i32 rank_source, i3
         MPI_Status st;
         i32 cnt;
         mpi::probe(rank_source, tag,comm, & st);
-        mpi::get_count(&st, mpi_type_f3_d, &cnt);
+        mpi::get_count(&st, mpi_type_f64_3, &cnt);
         rq_lst.resize(rq_lst.size() + 1);
-        p.U3_d.resize(cnt);
-        mpi::irecv(p.U3_d.data(), cnt, mpi_type_f3_d, rank_source, tag, comm, &rq_lst[rq_lst.size() - 1]);
+        pdat.U3_d.resize(cnt);
+        mpi::irecv(pdat.U3_d.data(), cnt, mpi_type_f64_3, rank_source, tag, comm, &rq_lst[rq_lst.size() - 1]);
     }
 
 
-    return p;
 }
 
 
