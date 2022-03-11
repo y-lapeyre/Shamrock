@@ -2,7 +2,7 @@
 #include <mpi.h>
 
 
-#define MPI_LOGGER_ENABLED
+//#define MPI_LOGGER_ENABLED
 
 #ifdef MPI_LOGGER_ENABLED
 //https://stackoverflow.com/questions/6245735/pretty-print-stdtuple

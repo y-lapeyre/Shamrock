@@ -375,8 +375,18 @@ template <class vectype, class field_type, class InterfaceSelector> class Interf
             for(u64 i = 0 ; i < comm_vec.size(); i++){
                 const Patch & psend = sched.patch_list.global[comm_vec[i].x()];
                 const Patch & precv = sched.patch_list.global[comm_vec[i].y()];
-                std::cout << format("send : (%3d,%3d) : %d -> %d / %d\n",psend.id_patch,precv.id_patch,psend.node_owner_id,precv.node_owner_id,local_comm_tag[i]);
-                patchdata_isend(* comm_pdat[i], rq_lst, precv.node_owner_id, local_comm_tag[i], MPI_COMM_WORLD);
+
+                if(psend.node_owner_id == precv.node_owner_id){
+                    //std::cout << "same node !!!\n";
+                    Interface_map[precv.id_patch].push_back({psend.id_patch, comm_pdat[i]});
+                    comm_pdat[i] = nullptr;
+                }else{
+                    std::cout << format("send : (%3d,%3d) : %d -> %d / %d\n",psend.id_patch,precv.id_patch,psend.node_owner_id,precv.node_owner_id,local_comm_tag[i]);
+                    patchdata_isend(* comm_pdat[i], rq_lst, precv.node_owner_id, local_comm_tag[i], MPI_COMM_WORLD);
+                }
+
+                // std::cout << format("send : (%3d,%3d) : %d -> %d / %d\n",psend.id_patch,precv.id_patch,psend.node_owner_id,precv.node_owner_id,local_comm_tag[i]);
+                // patchdata_isend(* comm_pdat[i], rq_lst, precv.node_owner_id, local_comm_tag[i], MPI_COMM_WORLD);
             }
            
         }
@@ -396,9 +406,16 @@ template <class vectype, class field_type, class InterfaceSelector> class Interf
                 //std::cout << format("(%3d,%3d) : %d -> %d / %d\n",global_comm_vec[i].x(),global_comm_vec[i].y(),psend.node_owner_id,precv.node_owner_id,iterator);
 
                 if(precv.node_owner_id == mpi_handler::world_rank){
-                    std::cout << format("recv (%3d,%3d) : %d -> %d / %d\n",global_comm_vec[i].x(),global_comm_vec[i].y(),psend.node_owner_id,precv.node_owner_id,global_comm_tag[i]);
-                    Interface_map[precv.id_patch].push_back({psend.id_patch, new PatchData()});//patchdata_irecv(recv_rq, psend.node_owner_id, global_comm_tag[i], MPI_COMM_WORLD)}
-                    patchdata_irecv(*std::get<1>(Interface_map[precv.id_patch][Interface_map[precv.id_patch].size()-1]),rq_lst, psend.node_owner_id, global_comm_tag[i], MPI_COMM_WORLD);
+
+                    if(psend.node_owner_id != precv.node_owner_id){
+                        std::cout << format("recv (%3d,%3d) : %d -> %d / %d\n",global_comm_vec[i].x(),global_comm_vec[i].y(),psend.node_owner_id,precv.node_owner_id,global_comm_tag[i]);
+                        Interface_map[precv.id_patch].push_back({psend.id_patch, new PatchData()});//patchdata_irecv(recv_rq, psend.node_owner_id, global_comm_tag[i], MPI_COMM_WORLD)}
+                        patchdata_irecv(*std::get<1>(Interface_map[precv.id_patch][Interface_map[precv.id_patch].size()-1]),rq_lst, psend.node_owner_id, global_comm_tag[i], MPI_COMM_WORLD);
+                    }
+
+                    // std::cout << format("recv (%3d,%3d) : %d -> %d / %d\n",global_comm_vec[i].x(),global_comm_vec[i].y(),psend.node_owner_id,precv.node_owner_id,global_comm_tag[i]);
+                    // Interface_map[precv.id_patch].push_back({psend.id_patch, new PatchData()});//patchdata_irecv(recv_rq, psend.node_owner_id, global_comm_tag[i], MPI_COMM_WORLD)}
+                    // patchdata_irecv(*std::get<1>(Interface_map[precv.id_patch][Interface_map[precv.id_patch].size()-1]),rq_lst, psend.node_owner_id, global_comm_tag[i], MPI_COMM_WORLD);
                 }
 
             }
@@ -412,7 +429,7 @@ template <class vectype, class field_type, class InterfaceSelector> class Interf
         mpi::waitall(rq_lst.size(), rq_lst.data(), st_lst.data());
 
         for(PatchData * p : comm_pdat){
-            delete p;
+            if(p != nullptr) delete p;
         }
         
     }

@@ -125,7 +125,7 @@ Test_start("patch::patch_reduc_tree::", generation, -1) {
         sched.dump_local_patches(format("patches_%d_node%d", 0, mpi_handler::world_rank));
     }
 
-    for (u32 stepi = 1; stepi < 3; stepi++) {
+    for (u32 stepi = 1; stepi < 6; stepi++) {
         std::cout << " ------ step time = " << stepi << " ------" << std::endl;
         // std::cout << sched.dump_status() << std::endl;
         sched.scheduler_step(true, true);

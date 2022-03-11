@@ -98,8 +98,6 @@ void patchdata_isend(PatchData &p, std::vector<MPI_Request> &rq_lst, i32 rank_de
 /**
  * @brief perform a MPI irecv with a PatchData object
  * 
- * //TODO find better way to do it : due to the async aspect returning a value is sketchy but it works
- * 
  * @param rq_lst reference to the vector of MPI_Request corresponding to the recv
  * @param rank_source rank to receive from
  * @param tag MPI communication tag

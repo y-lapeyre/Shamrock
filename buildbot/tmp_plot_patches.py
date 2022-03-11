@@ -41,8 +41,9 @@ patch_dic = {}
 
 
 iteration = int(sys.argv[1])
+node = int(sys.argv[2])
 
-patch_filelist = ["patches_" + str(iteration) + "_node"+str(n) for n in range(4)]
+patch_filelist = ["patches_" + str(iteration) + "_node"+str(n) for n in range(node)]
 
 it = 0
 for a in patch_filelist:
@@ -119,7 +120,7 @@ for a in interf_filelist:
 def draw_patch(id):
     (xmin, ymin, zmin, xmax, ymax, zmax,it) = patch_dic[id]
 
-    draw_cube(xmin, ymin, zmin, xmax, ymax, zmax, colors[it % len(colors)],0.1)
+    draw_cube(xmin, ymin, zmin, xmax, ymax, zmax, colors[it % len(colors)],1)
 
 def draw_interface_send(id):
     it = 0
@@ -166,8 +167,8 @@ ax.scatter3D([-1,1],[-1,1],[-1,1])
 for k in patch_dic.keys():
     draw_patch(k)
 
-for k in patch_dic.keys():
-    draw_interface_send(k)
+# for k in patch_dic.keys():
+#     draw_interface_send(k)
 
 # draw_patch(15)
 # draw_patch(17)
