@@ -1,10 +1,12 @@
 #include "interface_generator.hpp"
 
+#include <memory>
 #include <stdexcept>
 #include <vector>
 
 #include "CL/sycl/buffer.hpp"
 #include "aliases.hpp"
+#include "patch/patch.hpp"
 #include "patch/patchdata.hpp"
 #include "patch/patchdata_buffer.hpp"
 #include "patchscheduler/scheduler_patch_data.hpp"
@@ -12,7 +14,7 @@
 
 
 template <>
-std::vector<PatchData*> InterfaceVolumeGenerator::append_interface<f32_3>(sycl::queue &queue, PatchData & pdat,
+std::vector<std::unique_ptr<PatchData>> InterfaceVolumeGenerator::append_interface<f32_3>(sycl::queue &queue, PatchData & pdat,
                                                                         std::vector<f32_3> boxs_min,
                                                                         std::vector<f32_3> boxs_max) {
 
@@ -64,9 +66,9 @@ std::vector<PatchData*> InterfaceVolumeGenerator::append_interface<f32_3>(sycl::
     
     }
 
-    std::vector<PatchData*> pdat_vec(boxs_min.size());
+    std::vector<std::unique_ptr<PatchData>> pdat_vec(boxs_min.size());
     for (auto & p : pdat_vec) {
-        p = new PatchData();
+        p = std::make_unique<PatchData>();
     }
 
     if (pdat.pos_s.size() > 0) {
@@ -97,7 +99,7 @@ std::vector<PatchData*> InterfaceVolumeGenerator::append_interface<f32_3>(sycl::
 }
 
 template <>
-std::vector<PatchData*> InterfaceVolumeGenerator::append_interface<f64_3>(sycl::queue &queue, PatchData & pdat,
+std::vector<std::unique_ptr<PatchData>> InterfaceVolumeGenerator::append_interface<f64_3>(sycl::queue &queue, PatchData & pdat,
                                                                         std::vector<f64_3> boxs_min,
                                                                         std::vector<f64_3> boxs_max) {
 
@@ -144,9 +146,9 @@ std::vector<PatchData*> InterfaceVolumeGenerator::append_interface<f64_3>(sycl::
         });
     }
     
-    std::vector<PatchData*> pdat_vec(boxs_min.size());
+    std::vector<std::unique_ptr<PatchData>> pdat_vec(boxs_min.size());
     for (auto & p : pdat_vec) {
-        p = new PatchData();
+        p = std::make_unique<PatchData>();
     }
 
     if (pdat.pos_d.size() > 0) {

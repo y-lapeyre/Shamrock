@@ -24,7 +24,7 @@
 class InterfaceVolumeGenerator {
   public:
     template <class vectype>
-    static std::vector<PatchData*> append_interface(sycl::queue &queue, PatchData & pdat_buf,
+    static std::vector<std::unique_ptr<PatchData>> append_interface(sycl::queue &queue, PatchData & pdat_buf,
                                                   std::vector<vectype> boxs_min, std::vector<vectype> boxs_max);
 };
 
@@ -304,14 +304,14 @@ template <class vectype, class field_type, class InterfaceSelector> class Interf
         SyCLHandler &hndl = SyCLHandler::get_instance();
 
 
-        std::unordered_map<u64,std::vector<std::tuple<u64,PatchData*>>> Interface_map;
+        std::unordered_map<u64,std::vector<std::tuple<u64,std::unique_ptr<PatchData>>>> Interface_map;
 
         for (const Patch & p : sched.patch_list.global) {
-            Interface_map[p.id_patch] = std::vector<std::tuple<u64,PatchData*>>();
+            Interface_map[p.id_patch] = std::vector<std::tuple<u64,std::unique_ptr<PatchData>>>();
         }
 
         
-        std::vector<PatchData*> comm_pdat;
+        std::vector<std::unique_ptr<PatchData>> comm_pdat;
         std::vector<u64_2> comm_vec;
         if(interface_comm_list.size() > 0){
             
@@ -320,16 +320,16 @@ template <class vectype, class field_type, class InterfaceSelector> class Interf
             for (u64 i = 0 ; i < interface_comm_list.size(); i++) {
                 
                 if(sched.patch_list.global[interface_comm_list[i].global_patch_idx_send].data_count > 0){
-                    std::vector<PatchData*> pret = InterfaceVolumeGenerator::append_interface<vectype>( 
+                    std::vector<std::unique_ptr<PatchData>> pret = InterfaceVolumeGenerator::append_interface<vectype>( 
                         hndl.alt_queues[0], 
                         sched.patch_data.owned_data[interface_comm_list[i].sender_patch_id], 
                         {interface_comm_list[i].interf_box_min}, 
                         {interface_comm_list[i].interf_box_max});
-                    for (PatchData * pdat : pret) {
-                        comm_pdat.push_back(pdat);
+                    for (auto & pdat : pret) {
+                        comm_pdat.push_back(std::move(pdat));
                     }
                 }else{
-                    comm_pdat.push_back(new PatchData());
+                    comm_pdat.push_back(std::make_unique<PatchData>());
                 }
                 comm_vec.push_back(u64_2{
                     interface_comm_list[i].global_patch_idx_send,interface_comm_list[i].global_patch_idx_recv
@@ -378,7 +378,7 @@ template <class vectype, class field_type, class InterfaceSelector> class Interf
 
                 if(psend.node_owner_id == precv.node_owner_id){
                     //std::cout << "same node !!!\n";
-                    Interface_map[precv.id_patch].push_back({psend.id_patch, comm_pdat[i]});
+                    Interface_map[precv.id_patch].push_back({psend.id_patch, std::move(comm_pdat[i])});
                     comm_pdat[i] = nullptr;
                 }else{
                     std::cout << format("send : (%3d,%3d) : %d -> %d / %d\n",psend.id_patch,precv.id_patch,psend.node_owner_id,precv.node_owner_id,local_comm_tag[i]);
@@ -409,7 +409,7 @@ template <class vectype, class field_type, class InterfaceSelector> class Interf
 
                     if(psend.node_owner_id != precv.node_owner_id){
                         std::cout << format("recv (%3d,%3d) : %d -> %d / %d\n",global_comm_vec[i].x(),global_comm_vec[i].y(),psend.node_owner_id,precv.node_owner_id,global_comm_tag[i]);
-                        Interface_map[precv.id_patch].push_back({psend.id_patch, new PatchData()});//patchdata_irecv(recv_rq, psend.node_owner_id, global_comm_tag[i], MPI_COMM_WORLD)}
+                        Interface_map[precv.id_patch].push_back({psend.id_patch, std::make_unique<PatchData>()});//patchdata_irecv(recv_rq, psend.node_owner_id, global_comm_tag[i], MPI_COMM_WORLD)}
                         patchdata_irecv(*std::get<1>(Interface_map[precv.id_patch][Interface_map[precv.id_patch].size()-1]),rq_lst, psend.node_owner_id, global_comm_tag[i], MPI_COMM_WORLD);
                     }
 
@@ -428,9 +428,6 @@ template <class vectype, class field_type, class InterfaceSelector> class Interf
         std::vector<MPI_Status> st_lst(rq_lst.size());
         mpi::waitall(rq_lst.size(), rq_lst.data(), st_lst.data());
 
-        for(PatchData * p : comm_pdat){
-            if(p != nullptr) delete p;
-        }
         
     }
 };

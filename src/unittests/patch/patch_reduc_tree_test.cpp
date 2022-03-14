@@ -1,5 +1,6 @@
 #include "aliases.hpp"
 #include "interfaces/interface_generator.hpp"
+#include "interfaces/interface_handler.hpp"
 #include "interfaces/interface_selector.hpp"
 #include "patch/patch_field.hpp"
 #include "patch/patch_reduc_tree.hpp"
@@ -116,11 +117,10 @@ Test_start("patch::patch_reduc_tree::", generation, -1) {
         }
         h_field.build_global(mpi_type_f32);
 
-        std::vector<InterfaceComm<f32_3>> interface_comm_list =
-                Interface_Generator<f32_3, f32, InterfaceSelector_SPH<f32_3, f32>>::get_interfaces_comm_list(
-                    sched, sptree, h_field, format("interfaces_%d_node%d", 0, mpi_handler::world_rank));
-
-        Interface_Generator<f32_3, f32, InterfaceSelector_SPH<f32_3, f32>>::comm_interface(sched,interface_comm_list);
+        InterfaceHandler<f32_3, f32> interface_hndl;
+        interface_hndl.compute_interface_list<InterfaceSelector_SPH<f32_3, f32>>(sched, sptree, h_field);
+        interface_hndl.comm_interfaces(sched);
+        interface_hndl.print_current_interf_map();
 
         sched.dump_local_patches(format("patches_%d_node%d", 0, mpi_handler::world_rank));
     }
@@ -170,11 +170,10 @@ Test_start("patch::patch_reduc_tree::", generation, -1) {
             }
             h_field.build_global(mpi_type_f32);
 
-            std::vector<InterfaceComm<f32_3>> interface_comm_list =
-                Interface_Generator<f32_3, f32, InterfaceSelector_SPH<f32_3, f32>>::get_interfaces_comm_list(
-                    sched, sptree, h_field, format("interfaces_%d_node%d", stepi, mpi_handler::world_rank));
-
-            Interface_Generator<f32_3, f32, InterfaceSelector_SPH<f32_3, f32>>::comm_interface(sched,interface_comm_list);
+            InterfaceHandler<f32_3, f32> interface_hndl;
+            interface_hndl.compute_interface_list<InterfaceSelector_SPH<f32_3, f32>>(sched, sptree, h_field);
+            interface_hndl.comm_interfaces(sched);
+            interface_hndl.print_current_interf_map();
 
             sched.dump_local_patches(format("patches_%d_node%d", stepi, mpi_handler::world_rank));
         }
