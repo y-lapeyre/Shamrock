@@ -1,6 +1,15 @@
+/**
+ * @file interface_generator.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * @version 0.1
+ * @date 2022-03-14
+ * 
+ * @copyright Copyright (c) 2022
+ * 
+ */
+
 #pragma once
-#include "CL/sycl/access/access.hpp"
-#include "CL/sycl/buffer.hpp"
 #include "aliases.hpp"
 #include "patch/patch.hpp"
 #include "patch/patchdata.hpp"

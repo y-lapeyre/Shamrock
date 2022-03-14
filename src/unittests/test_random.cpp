@@ -1,6 +1,16 @@
+#include "CL/sycl/access/access.hpp"
+#include "CL/sycl/accessor.hpp"
+#include "CL/sycl/buffer.hpp"
+#include "CL/sycl/queue.hpp"
+#include "CL/sycl/range.hpp"
 #include "unittests/shamrocktest.hpp"
 
 #include "sys/sycl_handler.hpp"
+#include <chrono>
+#include <memory>
+#include <mutex>
+#include <queue>
+#include <thread>
 #include <vector>
 
 Test_start("",intmult,1){
@@ -112,7 +122,7 @@ template<class Timestepper> class Simulation{public:
 
 Test_start("",sycl_static_func,1){
 
-    SyCLHandler::get_instance().init_sycl();
+    //SyCLHandler::get_instance().init_sycl();
 
     Simulation<integrator::Leapfrog<ForcePressure>> sim;
     Simulation<integrator::Leapfrog<ForcePressure2>> sim2;
@@ -161,5 +171,137 @@ Test_start("issue_mpi::", allgatherv, 4){
 
     std::cout << recv_int[0]  << "\n";
     
+
+}
+
+
+Test_start("sycl::", parallel_sumbit, 1){
+
+    std::vector<std::vector<u32>> vec_to_up;
+    std::queue<u32> id_to_tread;
+
+    u32 s_p = 100000;
+
+    for (int i = 0; i < 100; i++) {
+        id_to_tread.emplace(i);
+        vec_to_up.push_back(
+            std::vector<u32>(s_p)
+        );
+
+        for(u32 j = 0 ; j < s_p ; j++){
+            vec_to_up[i][j] = j+1;
+        }
+        
+    }
+
+    std::mutex m;
+
+    std::vector<std::thread> workers;
+    u32 id_t = 0;
+    for (std::pair<const u32, sycl::queue> & a : SyCLHandler::get_instance().alt_queues) {
+
+        sycl::queue* queue = & std::get<1>(a);
+
+        workers.push_back(std::thread([&,id_t,s_p,queue]()  {
+            
+            while(true){
+
+                u32 working_id = -1;
+                {
+                    std::lock_guard<std::mutex> lock(m);
+                    
+                    if(id_to_tread.empty()) break;
+                    working_id = id_to_tread.front();
+                    id_to_tread.pop();
+
+                }
+
+                sycl::buffer<u32> buf(vec_to_up[working_id]);
+
+
+                queue->submit([&](cl::sycl::handler &cgh) {
+                    auto ff = buf.get_access<sycl::access::mode::read_write>(cgh);
+
+                    auto wmult = working_id;
+
+                    cgh.parallel_for(sycl::range<1>(s_p), [=](cl::sycl::item<1> item) {
+                        u64 i = (u64)item.get_id(0);
+                        ff[i] *= wmult;
+                    });
+                });
+
+                std::cout << "thread " << id_t << " working on " << working_id << std::endl;
+
+            }
+
+            
+
+        }));
+        id_t++;
+    }
+
+    for (std::pair<const u32, sycl::queue> & a : SyCLHandler::get_instance().compute_queues) {
+
+        sycl::queue* queue = & std::get<1>(a);
+
+        workers.push_back(std::thread([&,id_t,s_p,queue]()  {
+            
+            while(true){
+
+                u32 working_id = -1;
+                {
+                    std::lock_guard<std::mutex> lock(m);
+                    
+                    if(id_to_tread.empty()) break;
+                    working_id = id_to_tread.front();
+                    id_to_tread.pop();
+
+                }
+
+                sycl::buffer<u32> buf(vec_to_up[working_id]);
+
+
+                queue->submit([&](cl::sycl::handler &cgh) {
+                    auto ff = buf.get_access<sycl::access::mode::read_write>(cgh);
+
+                    auto wmult = working_id;
+
+                    cgh.parallel_for(sycl::range<1>(s_p), [=](cl::sycl::item<1> item) {
+                        u64 i = (u64)item.get_id(0);
+                        ff[i] *= wmult;
+                    });
+                });
+
+                std::cout << "thread " << id_t << " working on " << working_id << std::endl;
+                
+            }
+
+            
+
+        }));
+        id_t++;
+    }
+    std::cout << "main thread\n";
+
+    std::for_each(workers.begin(), workers.end(), [](std::thread &t) 
+    {
+        t.join();
+    });
+
+    std::cout << "main thread synced\n";
+
+
+
+
+    std::cout << "checking results\n";
+    bool check = true;
+    for (int i = 0; i < 100; i++) {
+        for(u32 j = 0 ; j < s_p ; j++){
+            check = check && (vec_to_up[i][j] == i*(j+1));
+            //std::cout << i*(j+1) << " : " << vec_to_up[i][j] <<"\n";
+        }
+    }
+
+    std::cout << "check : " << check << std::endl;
 
 }

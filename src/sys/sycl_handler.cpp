@@ -1,5 +1,6 @@
 #include "sycl_handler.hpp"
 
+#include <stdexcept>
 #include <unordered_map>
 
 #include "utils/string_utils.hpp"
@@ -49,6 +50,11 @@ SyCLHandler& SyCLHandler::get_instance(){
 
 
 void SyCLHandler::init_sycl(){
+
+    if(compute_queues.size() + alt_queues.size() > 0){
+        throw std::runtime_error("ERROR : sycl already initialized");
+    }
+
     printf("\x1B[36m >>> init SYCL instances <<< \033[0m\n");
 
     u32 key_comp_qu = 0;

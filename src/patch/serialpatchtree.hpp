@@ -1,7 +1,17 @@
+/**
+ * @file serialpatchtree.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * @version 0.1
+ * @date 2022-03-14
+ * 
+ * @copyright Copyright (c) 2022
+ * 
+ */
+
 #pragma once
 
-#include "CL/sycl/access/access.hpp"
-#include "CL/sycl/buffer.hpp"
+
 #include "patch/patch_field.hpp"
 #include "patch/patchtree.hpp"
 #include "patchscheduler/scheduler_mpi.hpp"
