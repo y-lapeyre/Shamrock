@@ -3,10 +3,10 @@
 #include "sys/sycl_handler.hpp"
 #include <tuple>
 
+template <class vectype, class field_type> class InterfaceSelector_SPH {
+  public:
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wunused-parameter"
-
-template <class vectype, class field_type> class InterfaceSelector_SPH {public:
 
     static std::tuple<vectype, vectype> get_compute_box_sz(vectype compute_box_min, vectype compute_box_max,
                                                            field_type compute_box_field_val,
@@ -20,6 +20,6 @@ template <class vectype, class field_type> class InterfaceSelector_SPH {public:
                                                               field_type neighbourg_box_field_val) {
         return {neighbourg_box_min, neighbourg_box_max};
     }
-};
 
 #pragma clang diagnostic pop
+};

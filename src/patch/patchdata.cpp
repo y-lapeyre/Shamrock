@@ -58,28 +58,40 @@ bool patchdata_layout::is_synced(){
 
 
 void patchdata_isend(PatchData &p, std::vector<MPI_Request> &rq_lst, i32 rank_dest, i32 tag, MPI_Comm comm) {
-    rq_lst.resize(rq_lst.size() + 1);
-    mpi::isend(p.pos_s.data(), p.pos_s.size(), mpi_type_f32_3, rank_dest, tag, comm, &rq_lst[rq_lst.size() - 1]);
+    if(patchdata_layout::nVarpos_s > 0){
+        rq_lst.resize(rq_lst.size() + 1);
+        mpi::isend(p.pos_s.data(), p.pos_s.size(), mpi_type_f32_3, rank_dest, tag, comm, &rq_lst[rq_lst.size() - 1]);
+    }
 
-    rq_lst.resize(rq_lst.size() + 1);
-    mpi::isend(p.pos_d.data(), p.pos_d.size(), mpi_type_f64_3, rank_dest, tag, comm, &rq_lst[rq_lst.size() - 1]);
+    if(patchdata_layout::nVarpos_d > 0){
+        rq_lst.resize(rq_lst.size() + 1);
+        mpi::isend(p.pos_d.data(), p.pos_d.size(), mpi_type_f64_3, rank_dest, tag, comm, &rq_lst[rq_lst.size() - 1]);
+    }
 
-    rq_lst.resize(rq_lst.size() + 1);
-    mpi::isend(p.U1_s.data(), p.U1_s.size(), mpi_type_f32, rank_dest, tag, comm, &rq_lst[rq_lst.size() - 1]);
+    if(patchdata_layout::nVarU1_s > 0){
+        rq_lst.resize(rq_lst.size() + 1);
+        mpi::isend(p.U1_s.data(), p.U1_s.size(), mpi_type_f32, rank_dest, tag, comm, &rq_lst[rq_lst.size() - 1]);
+    }
 
-    rq_lst.resize(rq_lst.size() + 1);
-    mpi::isend(p.U1_d.data(), p.U1_d.size(), mpi_type_f64, rank_dest, tag, comm, &rq_lst[rq_lst.size() - 1]);
+    if(patchdata_layout::nVarU1_d > 0){
+        rq_lst.resize(rq_lst.size() + 1);
+        mpi::isend(p.U1_d.data(), p.U1_d.size(), mpi_type_f64, rank_dest, tag, comm, &rq_lst[rq_lst.size() - 1]);
+    }
 
-    rq_lst.resize(rq_lst.size() + 1);
-    mpi::isend(p.U3_s.data(), p.U3_s.size(), mpi_type_f32_3, rank_dest, tag, comm, &rq_lst[rq_lst.size() - 1]);
+    if(patchdata_layout::nVarU3_s > 0){
+        rq_lst.resize(rq_lst.size() + 1);
+        mpi::isend(p.U3_s.data(), p.U3_s.size(), mpi_type_f32_3, rank_dest, tag, comm, &rq_lst[rq_lst.size() - 1]);
+    }
 
-    rq_lst.resize(rq_lst.size() + 1);
-    mpi::isend(p.U3_d.data(), p.U3_d.size(), mpi_type_f64_3, rank_dest, tag, comm, &rq_lst[rq_lst.size() - 1]);
+    if(patchdata_layout::nVarU3_d > 0){
+        rq_lst.resize(rq_lst.size() + 1);
+        mpi::isend(p.U3_d.data(), p.U3_d.size(), mpi_type_f64_3, rank_dest, tag, comm, &rq_lst[rq_lst.size() - 1]);
+    }
 }
 
 void patchdata_irecv(PatchData & pdat, std::vector<MPI_Request> &rq_lst, i32 rank_source, i32 tag, MPI_Comm comm){
 
-    {
+    if(patchdata_layout::nVarpos_s > 0){
         MPI_Status st;
         i32 cnt;
         int i = mpi::probe(rank_source, tag,comm, & st);
@@ -89,7 +101,7 @@ void patchdata_irecv(PatchData & pdat, std::vector<MPI_Request> &rq_lst, i32 ran
         mpi::irecv(pdat.pos_s.data(), cnt, mpi_type_f32_3, rank_source, tag, comm, &rq_lst[rq_lst.size() - 1]);
     }
 
-    {
+    if(patchdata_layout::nVarpos_d > 0){
         MPI_Status st;
         i32 cnt;
         mpi::probe(rank_source, tag,comm, & st);
@@ -100,7 +112,7 @@ void patchdata_irecv(PatchData & pdat, std::vector<MPI_Request> &rq_lst, i32 ran
     }
 
 
-    {
+    if(patchdata_layout::nVarU1_s > 0){
         MPI_Status st;
         i32 cnt;
         mpi::probe(rank_source, tag,comm, & st);
@@ -111,7 +123,7 @@ void patchdata_irecv(PatchData & pdat, std::vector<MPI_Request> &rq_lst, i32 ran
     }
 
 
-    {
+    if(patchdata_layout::nVarU1_d > 0){
         MPI_Status st;
         i32 cnt;
         mpi::probe(rank_source, tag,comm, & st);
@@ -124,7 +136,7 @@ void patchdata_irecv(PatchData & pdat, std::vector<MPI_Request> &rq_lst, i32 ran
 
 
 
-    {
+    if(patchdata_layout::nVarU3_s > 0){
         MPI_Status st;
         i32 cnt;
         mpi::probe(rank_source, tag,comm, & st);
@@ -135,7 +147,7 @@ void patchdata_irecv(PatchData & pdat, std::vector<MPI_Request> &rq_lst, i32 ran
     }
 
 
-    {
+    if(patchdata_layout::nVarU3_d > 0){
         MPI_Status st;
         i32 cnt;
         mpi::probe(rank_source, tag,comm, & st);
