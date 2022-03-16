@@ -10,7 +10,6 @@
 
 #include "mpi_handler.hpp"
 #include <iostream>
-#include <mpi.h>
 #include <sstream>
 #include <string>
 

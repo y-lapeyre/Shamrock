@@ -15,8 +15,8 @@
 #include <tuple>
 
 #include "aliases.hpp"
-#include "patch.hpp"
-#include "hilbertsfc.hpp"
+#include "patch/patch.hpp"
+#include "sfc/hilbert.hpp"
 
 /**
  * @brief hilbert load balancing
@@ -28,7 +28,7 @@ class HilbertLB{public :
      * @brief maximal value along an axis for the patch coordinate
      * 
      */
-    static const u64 max_box_sz = hilbert_box21_sz;
+    static constexpr u64 max_box_sz = hilbert_box21_sz;
 
     /**
      * @brief generate the change list from the list of patch to run the load balancing

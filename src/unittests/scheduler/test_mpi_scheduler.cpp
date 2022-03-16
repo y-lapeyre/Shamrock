@@ -2,7 +2,6 @@
 
 #include <algorithm>
 #include <iterator>
-#include <mpi.h>
 #include <random>
 #include <unordered_set>
 #include <utility>
@@ -10,7 +9,7 @@
 
 
 
-#include "scheduler/scheduler_mpi.hpp"
+#include "patchscheduler/scheduler_mpi.hpp"
 
 #include "sys/sycl_mpi_interop.hpp"
 
@@ -20,8 +19,8 @@
 
 #include "test_patch_utils.hpp"
 
-#include "scheduler/hilbertsfc.hpp"
-#include "scheduler/loadbalancing_hilbert.hpp"
+#include "sfc/hilbert.hpp"
+#include "patchscheduler/loadbalancing_hilbert.hpp"
 
 
 
@@ -48,7 +47,7 @@ Test_start("SchedulerPatchData::", apply_change_list, -1){
     SchedulerMPI sche = SchedulerMPI(-1,-1);
     sche.init_mpi_required_types();
 
-    patchdata_layout::set(1, 2, 1, 5, 4, 3);
+    patchdata_layout::set(1, 0, 1, 5, 4, 3);
     patchdata_layout::sync(MPI_COMM_WORLD);
 
 
@@ -155,7 +154,7 @@ Test_start("mpi_scheduler::", testLB, -1){
     SchedulerMPI sche = SchedulerMPI(-1,-1);
     sche.init_mpi_required_types();
 
-    patchdata_layout::set(1, 2, 1, 5, 4, 3);
+    patchdata_layout::set(1, 0, 1, 5, 4, 3);
     patchdata_layout::sync(MPI_COMM_WORLD);
 
 
