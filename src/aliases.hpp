@@ -11,7 +11,7 @@
 #pragma once
 
 #include <string.h>
-#include <CL/sycl.hpp>
+#include <sycl/sycl.hpp>
 
 
 #define __FILENAME__ std::string(strstr(__FILE__, "/src/") ? strstr(__FILE__, "/src/")+1  : __FILE__)
@@ -20,17 +20,34 @@
 //#define PTR_FREE(...)      {if(__VA_ARGS__ != NULL){ delete   __VA_ARGS__; __VA_ARGS__ = NULL; }else{ throw_with_pos("trying to free \"" #__VA_ARGS__ "\" but it was already free'd");}}
 //#define PTR_FREE_ARR(...)  {if(__VA_ARGS__ != NULL){ delete[] __VA_ARGS__; __VA_ARGS__ = NULL; }else{ throw_with_pos("trying to free array \"" #__VA_ARGS__ "\" but it was already free'd");}}
 
-typedef cl::sycl::cl_long   i64;
-typedef cl::sycl::cl_int    i32;
-typedef cl::sycl::cl_short  i16;
-typedef cl::sycl::cl_char   i8;
-typedef cl::sycl::cl_ulong  u64;
-typedef cl::sycl::cl_uint   u32;
-typedef cl::sycl::cl_ushort u16;
-typedef cl::sycl::cl_uchar  u8;
-typedef cl::sycl::cl_half   f16;
-typedef cl::sycl::cl_float  f32;
-typedef cl::sycl::cl_double f64;
+#ifdef SYCL_COMP_HIPSYCL
+typedef sycl::detail::s_long   i64;
+typedef sycl::detail::s_int    i32;
+typedef sycl::detail::s_short  i16;
+typedef sycl::detail::s_char   i8 ;
+typedef sycl::detail::u_long   u64;
+typedef sycl::detail::u_int    u32;
+typedef sycl::detail::u_short  u16;
+typedef sycl::detail::u_char   u8 ;
+typedef sycl::detail::hp_float f16;
+typedef sycl::detail::sp_float f32;
+typedef sycl::detail::dp_float f64;
+#endif
+
+#ifdef SYCL_COMP_DPCPP
+using i64 = std::int64_t  ;
+using i32 = std::int32_t  ;
+using i16 = std::int16_t  ;
+using i8  = std::int8_t   ;
+using u64 = std::uint64_t ;
+using u32 = std::uint32_t ;
+using u16 = std::uint16_t ;
+using u8  = std::uint8_t  ;
+using f16 = sycl::half    ;
+using f32 = float         ;
+using f64 = double        ;
+#endif
+
 
 constexpr i64 i64_max = 0x7FFFFFFFFFFFFFFF;
 constexpr i32 i32_max = 0x7FFFFFFF;
@@ -53,26 +70,27 @@ constexpr u16 u16_min = 0x0000;
 constexpr u8  u8_min  = 0x00;
 
 
-
-
 #define TYPEDEFS_TYPES(...) \
-typedef cl::sycl::cl_long##__VA_ARGS__   i64_##__VA_ARGS__;\
-typedef cl::sycl::cl_int##__VA_ARGS__    i32_##__VA_ARGS__;\
-typedef cl::sycl::cl_short##__VA_ARGS__  i16_##__VA_ARGS__;\
-typedef cl::sycl::cl_char##__VA_ARGS__   i8_##__VA_ARGS__;\
-typedef cl::sycl::cl_ulong##__VA_ARGS__  u64_##__VA_ARGS__;\
-typedef cl::sycl::cl_uint##__VA_ARGS__   u32_##__VA_ARGS__;\
-typedef cl::sycl::cl_ushort##__VA_ARGS__ u16_##__VA_ARGS__;\
-typedef cl::sycl::cl_uchar##__VA_ARGS__  u8_##__VA_ARGS__;\
-typedef cl::sycl::cl_half##__VA_ARGS__   f16_##__VA_ARGS__;\
-typedef cl::sycl::cl_float##__VA_ARGS__  f32_##__VA_ARGS__;\
-typedef cl::sycl::cl_double##__VA_ARGS__ f64_##__VA_ARGS__;\
+using i64_##__VA_ARGS__ = sycl::vec<i64, __VA_ARGS__>;\
+using i32_##__VA_ARGS__ = sycl::vec<i32,__VA_ARGS__>;\
+using i16_##__VA_ARGS__ = sycl::vec<i16,__VA_ARGS__>;\
+using i8_##__VA_ARGS__  = sycl::vec<i8 ,__VA_ARGS__>;\
+using u64_##__VA_ARGS__ = sycl::vec<u64,__VA_ARGS__>;\
+using u32_##__VA_ARGS__ = sycl::vec<u32,__VA_ARGS__>;\
+using u16_##__VA_ARGS__ = sycl::vec<u16,__VA_ARGS__>;\
+using u8_##__VA_ARGS__  = sycl::vec<u8 ,__VA_ARGS__>;\
+using f16_##__VA_ARGS__ = sycl::vec<f16,__VA_ARGS__>;\
+using f32_##__VA_ARGS__ = sycl::vec<f32,__VA_ARGS__>;\
+using f64_##__VA_ARGS__ = sycl::vec<f64,__VA_ARGS__>;\
 
 TYPEDEFS_TYPES(2)
 TYPEDEFS_TYPES(3)
 TYPEDEFS_TYPES(4)
 TYPEDEFS_TYPES(8)
 TYPEDEFS_TYPES(16)
+
+
+
 
 #define ERR_ID_64 18446744073709551615u
 

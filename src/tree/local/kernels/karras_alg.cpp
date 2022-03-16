@@ -17,7 +17,7 @@ void sycl_karras_alg(
     sycl::buffer<u8 >* out_buf_rchild_flag,
     sycl::buffer<u32>* out_buf_endrange    ){
 
-    cl::sycl::range<1> range_radix_tree{internal_cell_count};
+    sycl::range<1> range_radix_tree{internal_cell_count};
 
     if(in_morton == NULL)           throw_with_pos("in_morton isn't allocated");
     if(out_buf_lchild_id == NULL)   throw_with_pos("out_buf_lchild_id isn't allocated");
@@ -27,7 +27,7 @@ void sycl_karras_alg(
     if(out_buf_endrange == NULL)    throw_with_pos("out_buf_endrange isn't allocated");
 
     queue.submit(
-        [&](cl::sycl::handler &cgh) {
+        [&](sycl::handler &cgh) {
 
             //@TODO add check if split count above 2G
             i32 morton_lenght = (i32) internal_cell_count+1;
@@ -41,7 +41,7 @@ void sycl_karras_alg(
             auto end_range_cell = out_buf_endrange   ->get_access<sycl::access::mode::discard_write>(cgh);
             
 
-            cgh.parallel_for<Kernel_Karras_alg>(range_radix_tree, [=](cl::sycl::item<1> item) {
+            cgh.parallel_for<Kernel_Karras_alg>(range_radix_tree, [=](sycl::item<1> item) {
 
                 int i = (int) item.get_id(0);
                 

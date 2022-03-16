@@ -1,7 +1,5 @@
 CompileFlags:
-  Remove: [-fsycl,-fsycl-targets=nvptx64-nvidia-cuda, -fsycl-targets=nvptx64-nvidia-cuda-sycldevice,-fsycl-targets=spir64_x86_64-unknown-unknown-sycldevice]
+  Remove: [ -fsycl, -fsycl-targets=*, --hipsycl-targets=*, --hipsycl-platform=*, --hipsycl-config-file=*,--hipsycl-cpu-cxx=*]
   Add: [
-    -I/home/tim/Documents/these/codes/sycl_workspace/llvm/build/include,
-    -I/home/tim/Documents/these/codes/sycl_workspace/llvm/build/include/sycl,
     -Wconversion
     ]

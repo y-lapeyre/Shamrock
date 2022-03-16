@@ -2,7 +2,6 @@
 
 #include "aliases.hpp"
 #include "flags.hpp"
-#include "CL/sycl/buffer.hpp"
 
 /**
  * @brief Karras 2012 algorithm with addition endrange buffer

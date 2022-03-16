@@ -13,35 +13,54 @@ cmake_policy(SET CMP0076 NEW)
 # Necessary for clangd to work properly
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-
+set(Default_comp "${CMAKE_CXX_COMPILER}")
 
 message(STATUS "chosen compiler : ${SyCL_Compiler}")
+message(STATUS "chosen backend  : ${SyCL_Compiler_BE}")
+message(STATUS "compiler folder : ${COMP_ROOT_DIR}")
 
-if("${SyCL_Compiler}" STREQUAL "DPC++")
+LIST(APPEND CMAKE_SYSTEM_PROGRAM_PATH  "${COMP_ROOT_DIR}/bin")
+LIST(APPEND CMAKE_SYSTEM_LIBRARY_PATH  "${COMP_ROOT_DIR}/bin/lib")
 
-    message(STATUS "chosen backend  : ${SyCL_Compiler_BE}")
-    message(STATUS "compiler folder : ${DPCPP_PACKAGE_ROOT_DIR}")
+if("${SyCL_Compiler}" STREQUAL "DPCPP")
 
-    LIST(APPEND CMAKE_SYSTEM_PROGRAM_PATH  "${DPCPP_INSTALL_LOC}/bin")
-    LIST(APPEND CMAKE_SYSTEM_LIBRARY_PATH  "${DPCPP_INSTALL_LOC}/bin/lib")
-
-    set(CMAKE_CXX_COMPILER "${DPCPP_INSTALL_LOC}/bin/clang++")
-    set(CMAKE_CXX_FLAGS "-fsycl -std=c++17 -pedantic-errors -fcolor-diagnostics")
+    set(CMAKE_CXX_COMPILER "${COMP_ROOT_DIR}/bin/clang++")
+    set(CMAKE_CXX_FLAGS "-fsycl -std=c++17 -pedantic-errors -fcolor-diagnostics -DSYCL_COMP_DPCPP")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -I${COMP_ROOT_DIR}/include -I${COMP_ROOT_DIR}/include/sycl")
 
     ######################
     # Chose sycl backend
     ######################
     if("${SyCL_Compiler_BE}" STREQUAL "CUDA")
-        set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-        #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsycl-targets=nvptx64-nvidia-cuda-sycldevice ")
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsycl-targets=nvptx64-nvidia-cuda ")
-    endif()
-
-    if("${SyCL_Compiler_BE}" STREQUAL "CPU")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsycl-targets=spir64_x86_64-unknown-unknown-sycldevice")
+    else()
+        message(FATAL_ERROR "unsuported backend : ${SyCL_Compiler_BE}")
     endif()
 
 endif()
+
+
+if("${SyCL_Compiler}" STREQUAL "HIPSYCL")
+
+    set(CMAKE_CXX_COMPILER "${COMP_ROOT_DIR}/bin/syclcc")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -pedantic-errors -fcolor-diagnostics  -DSYCL_COMP_HIPSYCL -I${COMP_ROOT_DIR}/include -I${COMP_ROOT_DIR}/include/sycl")
+    
+    ######################
+    # Chose sycl backend
+    ######################
+    if("${SyCL_Compiler_BE}" STREQUAL "OMP")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --hipsycl-cpu-cxx=g++ --hipsycl-config-file=${COMP_ROOT_DIR}/etc/hipSYCL/syclcc.json --hipsycl-targets='omp' --hipsycl-platform=cpu")
+    else()
+        message(FATAL_ERROR "unsuported backend : ${SyCL_Compiler_BE}")
+    endif()
+
+endif()
+
+
+
+
+
+
 
 
 ######################

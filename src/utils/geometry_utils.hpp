@@ -12,7 +12,6 @@
 #pragma once
 
 #include "aliases.hpp"
-#include "CL/sycl/builtins.hpp"
 #include <tuple>
 
 namespace BBAA {
