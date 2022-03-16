@@ -1,5 +1,4 @@
 #include "unittests/shamrocktest.hpp"
-#include <mpi.h>
 #include <sstream>
 
 #include "utils/string_utils.hpp"

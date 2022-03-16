@@ -13,6 +13,8 @@
 
 namespace patch {
 
+    //TODO move mpi patch in a separate file
+
     MPI_Datatype patch_MPI_types_list[2];
     int          patch_MPI_block_lens[2];
     MPI_Aint     patch_MPI_offset[2];

@@ -150,6 +150,9 @@ if("${BUILD_TEST}")
 endif()
 
 add_subdirectory(sys)
+add_subdirectory(patch)
+add_subdirectory(interfaces)
+
 add_subdirectory(tree)
 add_subdirectory(unittests)
-add_subdirectory(scheduler)
+add_subdirectory(patchscheduler)

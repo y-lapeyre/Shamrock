@@ -11,7 +11,6 @@
 
 #pragma once
 
-#include <mpi.h>
 #include <vector>
 #include <random>
 
@@ -99,15 +98,13 @@ void patchdata_isend(PatchData &p, std::vector<MPI_Request> &rq_lst, i32 rank_de
 /**
  * @brief perform a MPI irecv with a PatchData object
  * 
- * //TODO find better way to do it : due to the async aspect returning a value is sketchy but it works
- * 
  * @param rq_lst reference to the vector of MPI_Request corresponding to the recv
  * @param rank_source rank to receive from
  * @param tag MPI communication tag
  * @param comm  MPI communicator
  * @return the received patchdata (it works but weird because asynchronous)
  */
-PatchData patchdata_irecv( std::vector<MPI_Request> &rq_lst, i32 rank_source, i32 tag, MPI_Comm comm);
+void patchdata_irecv(PatchData & pdat, std::vector<MPI_Request> &rq_lst, i32 rank_source, i32 tag, MPI_Comm comm);
 
 
 /**

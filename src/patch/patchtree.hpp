@@ -27,7 +27,7 @@
 
 /**
  * @brief Patch Tree : Tree structure organisation for an abstract list of patches
- * 
+ * Nb : this tree is compatible with multiple roots cf value in roots_id
  */
 class PatchTree{public:
 
@@ -51,6 +51,11 @@ class PatchTree{public:
         u64 data_count = u64_max;
         u64 load_value = u64_max;
     };
+
+    /**
+     * @brief set of root nodes ids
+     */
+    std::unordered_set<u64> roots_id;
     
     /**
      * @brief store the tree using a map
@@ -137,4 +142,5 @@ class PatchTree{public:
     void remove_node(u64 id);
 
     void update_ptnode(PTNode & n,std::vector<Patch> & plist,std::unordered_map<u64,u64> id_patch_to_global_idx);
+
 };

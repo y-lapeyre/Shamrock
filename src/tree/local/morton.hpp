@@ -8,6 +8,7 @@ namespace morton{
 
 #if defined(PRECISION_MORTON_DOUBLE)
     //21bit number and 2 interleaving bits (for 64bits)
+    [[deprecated]]
     inline u64 expand_bits_64(u64 x){
         x &= 0x1fffff;
         x = (x | x << 32) & 0x1f00000000ffff;
@@ -18,6 +19,7 @@ namespace morton{
         return x;
     }
 
+    [[deprecated]]
     inline u64 contract_bits_64(u64 src) {
         //src = src & 0x9249249249249249;
         src = (src | (src >> 2))  & 0x30c30c30c30c30c3;
@@ -29,6 +31,7 @@ namespace morton{
     }
 #else
     //10bit number and 2 interleaving bits (for 32 bits)
+    [[deprecated]]
     inline u32 expand_bits_32(u32 x){
         x &= 0x3ff;
         x = (x | x << 16) & 0x30000ff;  
@@ -38,6 +41,7 @@ namespace morton{
         return x;
     }
 
+    [[deprecated]]
     inline u32 contract_bits_32(u32 src){
         src = (src | src >> 2) & 0x30C30C3;
         src = (src | src >> 4) & 0xF00F00F;
@@ -49,6 +53,7 @@ namespace morton{
 
 
 #if defined(PRECISION_MORTON_DOUBLE)
+[[deprecated]]
     inline u64 xyz_to_morton(f_d x, f_d y, f_d z) {
 
         #if defined(PRECISION_MIXED) || defined(PRECISION_FULL_DOUBLE)
@@ -66,7 +71,7 @@ namespace morton{
         u64 zz = expand_bits_64((u64)z);
         return xx * 4 + yy * 2 + zz;
     }
-
+[[deprecated]]
     inline u32_3 morton_to_ixyz(u64 morton){
         
         u32_3 pos;
@@ -76,7 +81,7 @@ namespace morton{
         
         return pos;
     }
-
+[[deprecated]]
     inline u32_3 get_offset(uint clz_){   
         u32_3 mx;
         mx.s0() = 2097152 >> ((clz_ + 1)/3);
@@ -86,7 +91,7 @@ namespace morton{
     }
 
 #else
-
+[[deprecated]]
     inline u32 xyz_to_morton(f_d x, f_d y, f_d z) {
         
         #if defined(PRECISION_MIXED) || defined(PRECISION_FULL_DOUBLE)
@@ -105,7 +110,7 @@ namespace morton{
 
         return xx * 4 + yy * 2 + zz;
     }
-
+[[deprecated]]
     inline u16_3 morton_to_ixyz(u32 morton){
         
         u16_3 pos;
@@ -115,7 +120,7 @@ namespace morton{
         
         return pos;
     }
-
+[[deprecated]]
     inline u16_3 get_offset(uint clz_){   
         u16_3 mx;
         mx.s0() = 1024 >> ((clz_ - 0)/3);

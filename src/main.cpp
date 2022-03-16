@@ -1,10 +1,10 @@
 #include "CL/sycl/handler.hpp"
 #include "aliases.hpp"
-#include "scheduler/loadbalancing_hilbert.hpp"
+#include "patchscheduler/loadbalancing_hilbert.hpp"
 #include "sys/mpi_handler.hpp"
 #include "sys/sycl_handler.hpp"
-#include "scheduler/scheduler_mpi.hpp"
-#include "scheduler/hilbertsfc.hpp"
+#include "patchscheduler/scheduler_mpi.hpp"
+#include "sfc/hilbert.hpp"
 
 
 
@@ -83,6 +83,18 @@ int main(int argc, char *argv[]){
     sched.patch_list.build_local_idx_map();
     sched.update_local_dtcnt_value();
     sched.update_local_load_value();
+
+
+    sched.patch_list.build_global();
+
+
+
+
+
+    
+
+
+
 
 
     for(u32 stepi = 0 ; stepi < 5; stepi ++){

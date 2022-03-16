@@ -12,6 +12,7 @@
 #include "patchtree.hpp"
 
 #include <stdexcept>
+#include <vector>
 #include "patch.hpp"
 
 
@@ -226,7 +227,8 @@ void PatchTree::build_from_patchtable(std::vector<Patch> & plist, u64 max_val_1a
         root.parent_id = u64_max;
 
         u64 root_id = insert_node(root);
-        leaf_key.insert(0);
+        leaf_key.insert(root_id);
+        roots_id.insert(root_id);
 
 
 
@@ -310,7 +312,8 @@ void PatchTree::build_from_patchtable(std::vector<Patch> & plist, u64 max_val_1a
         root.linked_patchid = plist[0].id_patch;
 
         u64 root_id = insert_node(root);
-        leaf_key.insert(0);
+        leaf_key.insert(root_id);
+        roots_id.insert(root_id);
 
     }
 
@@ -401,3 +404,6 @@ std::unordered_set<u64> PatchTree::get_merge_request(u64 crit_load_merge){
 
     return rq;
 }
+
+
+

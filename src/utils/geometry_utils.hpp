@@ -1,7 +1,19 @@
+/**
+ * @file geometry_utils.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * @version 0.1
+ * @date 2022-03-14
+ * 
+ * @copyright Copyright (c) 2022
+ * 
+ */
+
 #pragma once
 
 #include "aliases.hpp"
 #include "CL/sycl/builtins.hpp"
+#include <tuple>
 
 namespace BBAA {
 
@@ -79,6 +91,14 @@ namespace BBAA {
             );
     }
 
+    template<> inline bool intersect_not_null_cella_b<f32_3>(f32_3 pos_min_cella,f32_3 pos_max_cella,f32_3 pos_min_cellb,f32_3 pos_max_cellb){
+        return (
+                (sycl::fmax( pos_min_cella.x(), pos_min_cellb.x()) < sycl::fmin(pos_max_cella.x(),pos_max_cellb.x())) &&
+                (sycl::fmax( pos_min_cella.y(), pos_min_cellb.y()) < sycl::fmin(pos_max_cella.y(),pos_max_cellb.y())) &&
+                (sycl::fmax( pos_min_cella.z(), pos_min_cellb.z()) < sycl::fmin(pos_max_cella.z(),pos_max_cellb.z())) 
+            );
+    }
+
     template<> inline bool intersect_not_null_cella_b<u64_3>(u64_3 pos_min_cella,u64_3 pos_max_cella,u64_3 pos_min_cellb,u64_3 pos_max_cellb){
         return (
                 (sycl::max( pos_min_cella.x(), pos_min_cellb.x()) < sycl::min(pos_max_cella.x(),pos_max_cellb.x())) &&
@@ -93,6 +113,17 @@ namespace BBAA {
                 (sycl::max( pos_min_cella.y(), pos_min_cellb.y()) < sycl::min(pos_max_cella.y(),pos_max_cellb.y())) &&
                 (sycl::max( pos_min_cella.z(), pos_min_cellb.z()) < sycl::min(pos_max_cella.z(),pos_max_cellb.z())) 
             );
+    }
+
+
+    template<class VecType> std::tuple<VecType,VecType> get_intersect_cella_b(VecType pos_min_cella,VecType pos_max_cella,VecType pos_min_cellb,VecType pos_max_cellb);
+
+    template<> inline std::tuple<f64_3,f64_3> get_intersect_cella_b<f64_3>(f64_3 pos_min_cella,f64_3 pos_max_cella,f64_3 pos_min_cellb,f64_3 pos_max_cellb){
+        return {sycl::fmax(pos_min_cella,pos_min_cellb), sycl::fmin(pos_max_cella,pos_max_cellb)};
+    }
+
+    template<> inline std::tuple<f32_3,f32_3> get_intersect_cella_b<f32_3>(f32_3 pos_min_cella,f32_3 pos_max_cella,f32_3 pos_min_cellb,f32_3 pos_max_cellb){
+        return {sycl::fmax(pos_min_cella,pos_min_cellb), sycl::fmin(pos_max_cella,pos_max_cellb)};
     }
 
 }

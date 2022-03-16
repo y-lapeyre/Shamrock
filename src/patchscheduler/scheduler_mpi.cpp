@@ -66,6 +66,28 @@ void SchedulerMPI::sync_build_LB(bool global_patch_sync, bool balance_load){
     owned_patch_id = patch_list.build_local();
 }
 
+template<>
+std::tuple<f32_3,f32_3> SchedulerMPI::get_box_tranform(){
+    if(patchdata_layout::nVarpos_s == 0) throw std::runtime_error("cannot query single precision box, position is currently double precision");
+
+    f32_3 translate_factor = patch_data.sim_box.min_box_sim_s;
+    f32_3 scale_factor = (patch_data.sim_box.max_box_sim_s - patch_data.sim_box.min_box_sim_s)/HilbertLB::max_box_sz;
+
+    return {translate_factor,scale_factor};
+}
+
+template<>
+std::tuple<f64_3,f64_3> SchedulerMPI::get_box_tranform(){
+    if(patchdata_layout::nVarpos_s == 0) throw std::runtime_error("cannot query single precision box, position is currently double precision");
+
+    f64_3 translate_factor = patch_data.sim_box.min_box_sim_d;
+    f64_3 scale_factor = (patch_data.sim_box.max_box_sim_d - patch_data.sim_box.min_box_sim_d)/HilbertLB::max_box_sz;
+
+    return {translate_factor,scale_factor};
+}
+
+
+
 //TODO clean the output of this function
 void SchedulerMPI::scheduler_step(bool do_split_merge, bool do_load_balancing){
 
@@ -445,4 +467,88 @@ inline void SchedulerMPI::set_patch_pack_values(std::unordered_set<u64> merge_rq
 
     }
 
+}
+
+
+
+
+
+
+
+
+
+
+
+void SchedulerMPI::dump_local_patches(std::string filename){
+    std::ofstream fout(filename);
+
+    if(patchdata_layout::nVarpos_s == 1){
+
+        std::tuple<f32_3,f32_3> box_transform = get_box_tranform<f32_3>();
+
+        for(const Patch & p : patch_list.local){
+            
+            f32_3 box_min = f32_3{p.x_min, p.y_min,
+                                    p.z_min} *
+                                std::get<1>(box_transform) +
+                            std::get<0>(box_transform);
+            f32_3 box_max = (f32_3{p.x_max, p.y_max,
+                                    p.z_max} +
+                            1) *
+                                std::get<1>(box_transform) +
+                            std::get<0>(box_transform);
+
+
+            fout << 
+            p.id_patch << "|" << 
+            p.data_count << "|" << 
+            p.load_value << "|" << 
+            p.node_owner_id << "|" << 
+            p.pack_node_index << "|" << 
+            box_min.x() << "|" << 
+            box_max.x() << "|" << 
+            box_min.y() << "|" << 
+            box_max.y() << "|" << 
+            box_min.z() << "|" << 
+            box_max.z() << "|" << "\n";
+        }
+
+        fout.close();
+
+    }else if (patchdata_layout::nVarpos_d == 1){
+        
+        std::tuple<f64_3,f64_3> box_transform = get_box_tranform<f64_3>();
+
+        for(const Patch & p : patch_list.local){
+            
+            f64_3 box_min = f64_3{p.x_min, p.y_min,
+                                    p.z_min} *
+                                std::get<1>(box_transform) +
+                            std::get<0>(box_transform);
+            f64_3 box_max = (f64_3{p.x_max, p.y_max,
+                                    p.z_max} +
+                            1) *
+                                std::get<1>(box_transform) +
+                            std::get<0>(box_transform);
+
+
+            fout << 
+            p.id_patch << "|" << 
+            p.data_count << "|" << 
+            p.load_value << "|" << 
+            p.node_owner_id << "|" << 
+            p.pack_node_index << "|" << 
+            box_min.x() << "|" << 
+            box_max.x() << "|" << 
+            box_min.y() << "|" << 
+            box_max.y() << "|" << 
+            box_min.z() << "|" << 
+            box_max.z() << "|" << "\n";
+        }
+
+        fout.close();
+
+    }else{
+        throw std::runtime_error("position precision was not set");
+    }
 }

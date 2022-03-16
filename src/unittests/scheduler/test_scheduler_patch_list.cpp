@@ -1,6 +1,6 @@
 #include "unittests/shamrocktest.hpp"
 
-#include "scheduler/scheduler_patch_list.hpp"
+#include "patchscheduler/scheduler_patch_list.hpp"
 #include "test_patch_utils.hpp"
 #include "utils/geometry_utils.hpp"
 
