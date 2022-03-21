@@ -9,13 +9,14 @@ parser = argparse.ArgumentParser(description='Configure utility for the code')
 parser.add_argument("--ninja", action='store_true', help="use NINJA build system instead of Make")
 parser.add_argument('--buildmode',action='store', type=str, default="None", help='target build mode')
 
-parser.add_argument("--cuda", action='store_true', help="use CUDA instead of OPENCL")
+parser.add_argument("--compiler", action='store_true', help="sycl compiler name")
+parser.add_argument("--syclbe", action='store_true', help="Sycl backend to use")
+
+
 parser.add_argument("--test", action='store_true', help="add test target to build configuration")
 parser.add_argument("--shamrock", action='store_true', help="add shamrock target to build configuration")
 parser.add_argument("--visu", action='store_true', help="add visualisation target to build configuration")
-#parser.add_argument("--xray", action='store_true', help="add xray instrumentation to all targets")
-parser.add_argument('--morton',   action='store', type=str, default="single", help='precision for morton codes')
-parser.add_argument('--phyprec',     action='store', type=str, default="single", help='precision mode for physical variables')
+
 parser.add_argument('--interactive',     action='store_true', help='enables interactive configuration')
 
 parser.add_argument("compiler_root",help="compiler location", type=str)
