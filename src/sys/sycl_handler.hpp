@@ -9,7 +9,10 @@
 
 #pragma once
 
+#include <memory>
 #include <sycl/sycl.hpp>
+#include <unordered_map>
+#include <vector>
 #include "aliases.hpp"
 
 
@@ -23,18 +26,36 @@ class SyCLHandler{public:
         SyCLHandler(const SyCLHandler&);
         SyCLHandler& operator=(const SyCLHandler&);
 
-    public:
-        
+        std::unordered_map<u32,sycl::queue> queues;
+
         /**
          * @brief contain all sycl queues that will be used for compute (assume separated memory architecture)
          * 
          */
-        std::unordered_map<u32, sycl::queue> compute_queues;
+        std::unordered_map<u32, sycl::queue*> compute_queues;
 
         /**
          * @brief contain all sycl queues that for host parralelisation 
          */
-        std::unordered_map<u32, sycl::queue> alt_queues;
+        std::unordered_map<u32, sycl::queue*> alt_queues;
+
+    public:
+        
+        inline sycl::queue & get_queue_alt(u32 id){
+            return *alt_queues[id];
+        }
+
+        inline sycl::queue & get_queue_compute(u32 id){
+            return *compute_queues[id];
+        }
+
+        inline std::unordered_map<u32, sycl::queue*> & get_alt_queues(){
+            return alt_queues;
+        }
+
+        inline std::unordered_map<u32, sycl::queue*> & get_compute_queues(){
+            return compute_queues;
+        }
 
         /**
          * @brief init sycl handler

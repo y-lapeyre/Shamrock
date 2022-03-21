@@ -44,6 +44,8 @@ void sycl_generate_split_table(
 
 #define DELTA( x,  y) (y>_morton_cnt-1) ? -1 : sycl::clz(m[x] ^ m[y]);
 
+#define DELTA_host( x,  y) (y>_morton_cnt-1) ? -1 : __builtin_clz(m[x] ^ m[y]);
+
 class Kernel_iterate_reduction;
 
 void sycl_reduction_iteration(
@@ -80,11 +82,21 @@ void sycl_reduction_iteration(
             //find index of next i+1 non duplicate morton code
             uint next1 = i+1;
             while(next1 <= _morton_cnt-1 && !split_in[next1]) next1 ++;
-            
+
+            #ifdef SYCL_COMP_DPCPP
             int delt_0 =  DELTA(i,next1);
             int delt_m =  DELTA(i,before1);
             int delt_mm = DELTA(before1,before2);
-            
+            #endif
+
+            #ifdef SYCL_COMP_HIPSYCL
+            __hipsycl_if_target_host(
+                int delt_0 =  DELTA_host(i,next1);
+                int delt_m =  DELTA_host(i,before1);
+                int delt_mm = DELTA_host(before1,before2);
+            )
+            #endif
+
             if(!(delt_0 < delt_m && delt_mm < delt_m) && split_in[i]){
                 split_out[i] = true;
             }else{

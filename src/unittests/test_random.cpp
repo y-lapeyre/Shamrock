@@ -194,9 +194,9 @@ Test_start("sycl::", parallel_sumbit, 1){
 
     std::vector<std::thread> workers;
     u32 id_t = 0;
-    for (std::pair<const u32, sycl::queue> & a : SyCLHandler::get_instance().alt_queues) {
+    for (std::pair<const u32, sycl::queue*> & a : SyCLHandler::get_instance().get_alt_queues()) {
 
-        sycl::queue* queue = & std::get<1>(a);
+        sycl::queue* queue = std::get<1>(a);
 
         workers.push_back(std::thread([&,id_t,s_p,queue]()  {
             
@@ -236,9 +236,9 @@ Test_start("sycl::", parallel_sumbit, 1){
         id_t++;
     }
 
-    for (std::pair<const u32, sycl::queue> & a : SyCLHandler::get_instance().compute_queues) {
+    for (std::pair<const u32, sycl::queue*> & a : SyCLHandler::get_instance().get_compute_queues()) {
 
-        sycl::queue* queue = & std::get<1>(a);
+        sycl::queue* queue = std::get<1>(a);
 
         workers.push_back(std::thread([&,id_t,s_p,queue]()  {
             

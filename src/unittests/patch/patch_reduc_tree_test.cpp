@@ -104,7 +104,7 @@ Test_start("patch::patch_reduc_tree::", generation, -1) {
 
         std::cout << "sptree.reduce_field" << std::endl;
         PatchFieldReduction<u64> pfield_reduced =
-            sptree.reduce_field<u64, Reduce_DataCount>(hndl.alt_queues[0], sched, dtcnt_field);
+            sptree.reduce_field<u64, Reduce_DataCount>(hndl.get_queue_alt(0), sched, dtcnt_field);
 
         std::cout << "pfield_reduced.detach_buf()" << std::endl;
         pfield_reduced.detach_buf();
@@ -157,7 +157,7 @@ Test_start("patch::patch_reduc_tree::", generation, -1) {
 
             // std::cout << "sptree.reduce_field" << std::endl;
             PatchFieldReduction<u64> pfield_reduced =
-                sptree.reduce_field<u64, Reduce_DataCount>(hndl.alt_queues[0], sched, dtcnt_field);
+                sptree.reduce_field<u64, Reduce_DataCount>(hndl.get_queue_alt(0), sched, dtcnt_field);
 
             // std::cout << "pfield_reduced.detach_buf()" << std::endl;
             pfield_reduced.detach_buf();

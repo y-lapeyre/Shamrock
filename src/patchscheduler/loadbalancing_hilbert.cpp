@@ -30,7 +30,7 @@ std::vector<std::tuple<u64, i32, i32, i32>> HilbertLB::make_change_list(std::vec
 
         sycl::range<1> range{global_patch_list.size()};
 
-        SyCLHandler::get_instance().alt_queues[0].submit([&](sycl::handler &cgh) {
+        SyCLHandler::get_instance().get_queue_alt(0).submit([&](sycl::handler &cgh) {
             auto ptch = patch_buf.get_access<sycl::access::mode::read>(cgh);
             auto pdt  = dt_buf.get_access<sycl::access::mode::discard_write>(cgh);
 
@@ -82,7 +82,7 @@ std::vector<std::tuple<u64, i32, i32, i32>> HilbertLB::make_change_list(std::vec
 
         sycl::range<1> range{global_patch_list.size()};
 
-        SyCLHandler::get_instance().alt_queues[0].submit([&](sycl::handler &cgh) {
+        SyCLHandler::get_instance().get_queue_alt(0).submit([&](sycl::handler &cgh) {
             auto pdt  = dt_buf.get_access<sycl::access::mode::read>(cgh);
             auto chosen_node = new_owner.get_access<sycl::access::mode::discard_write>(cgh);
 
@@ -106,7 +106,7 @@ std::vector<std::tuple<u64, i32, i32, i32>> HilbertLB::make_change_list(std::vec
 
 
         //pack nodes
-        SyCLHandler::get_instance().alt_queues[0].submit([&](sycl::handler &cgh) {
+        SyCLHandler::get_instance().get_queue_alt(0).submit([&](sycl::handler &cgh) {
             auto ptch = patch_buf.get_access<sycl::access::mode::read>(cgh);
             auto pdt  = dt_buf.get_access<sycl::access::mode::read>(cgh);
             auto chosen_node = new_owner.get_access<sycl::access::mode::write>(cgh);
