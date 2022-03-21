@@ -47,8 +47,8 @@ class SerialPatchTree{public:
         if(serial_tree_buf != nullptr) throw std::runtime_error("serial_tree_buf is already allocated");
         if(linked_patch_ids_buf != nullptr) throw std::runtime_error("linked_patch_ids_buf is already allocated");
 
-        serial_tree_buf = new sycl::buffer<PtNode<fp_prec_vec>>(serial_tree);
-        linked_patch_ids_buf = new sycl::buffer<u64>(linked_patch_ids);
+        serial_tree_buf = new sycl::buffer<PtNode<fp_prec_vec>>(serial_tree.data(),serial_tree.size());
+        linked_patch_ids_buf = new sycl::buffer<u64>(linked_patch_ids.data(),linked_patch_ids.size());
     }
 
     inline void detach_buf(){
@@ -139,7 +139,7 @@ class SerialPatchTree{public:
 
         predfield.attach_buf();
 
-        cl::sycl::range<1> range{get_element_count()};
+        sycl::range<1> range{get_element_count()};
 
         u32 end_loop = get_level_count();
 
@@ -155,14 +155,14 @@ class SerialPatchTree{public:
             // }
 
             std::cout << "queue submit : " << level << " " <<end_loop << " " << (level < end_loop )<<std::endl;
-            queue.submit([&](cl::sycl::handler &cgh) {
+            queue.submit([&](sycl::handler &cgh) {
 
                 
                 auto tree = this->serial_tree_buf->template get_access<sycl::access::mode::read>(cgh);
                 
                 auto f = predfield.tree_field_buf->template get_access<sycl::access::mode::read_write>(cgh);
 
-                cgh.parallel_for<class OctreeReduction>(range, [=](cl::sycl::item<1> item) {
+                cgh.parallel_for<class OctreeReduction>(range, [=](sycl::item<1> item) {
                     u64 i = (u64)item.get_id(0);
 
                     u64 idx_c0 = tree[i].childs_id0;

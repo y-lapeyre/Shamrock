@@ -33,7 +33,7 @@ Test_start("patchdata::", send_recv_patchdata, 2){
 
 
     if (mpi_handler::world_rank == 0) {
-        patchdata_layout::set(1, 8, 4, 6, 2, 1);
+        patchdata_layout::set(1, 0, 4, 6, 2, 1);
     }
 
     patchdata_layout::sync(MPI_COMM_WORLD);

@@ -1,6 +1,7 @@
 #include "unittests/shamrocktest.hpp"
 #include <sstream>
 
+#include "sys/cmdopt.hpp"
 #include "utils/string_utils.hpp"
 #include "sys/sycl_handler.hpp"
 
@@ -59,13 +60,7 @@ std::string make_test_output(TestResults t_res){
 //TODO add memory clean as an assertion
 int run_all_tests(int argc, char *argv[]){
 
-    using namespace mpi_handler;
-
-    std::vector<std::string_view> args(argv + 1, argv + argc);
-
-
-
-    const char* usage_str = R"%(Usage : ./shamrock_test2 [options]
+    std::string usage_str = R"%(Usage : ./shamrock_test2 [options]
 Options :
   --help              Display this information
   --test-list         Display the list of tests available
@@ -75,11 +70,18 @@ Options :
     )%";
 
 
-    if(has_option(args, "--help")){
-        printf("%s",usage_str);return 0;
+    Cmdopt & opt = Cmdopt::get_instance();
+    opt.init(argc, argv,usage_str);
+
+    using namespace mpi_handler;
+    
+
+
+    if(opt.is_help_mode()){
+        return 0;
     }
 
-    if(has_option(args, "--test-list")){
+    if(opt.has_option("--test-list")){
         for (unsigned int i = 0; i < test_name_lst.size(); i++) {
             if(test_node_count[i] == -1){
                 printf("- [any] %-15s\n",test_name_lst[i].c_str());
@@ -92,19 +94,19 @@ Options :
 
     bool run_only = false;
     std::string run_only_name = "";
-    if(has_option(args, "--run-only")){
-        run_only_name = get_option(args, "--run-only");
+    if(opt.has_option("--run-only")){
+        run_only_name = opt.get_option("--run-only");
         run_only = true;
     }
 
 
-    bool full_output = has_option(args, "--full-output");
+    bool full_output = opt.has_option("--full-output");
 
-    bool out_to_file = has_option(args, "-o");
+    bool out_to_file = opt.has_option("-o");
 
     if(out_to_file){
-        if(get_option(args, "-o").size() == 0){
-            printf("%s\n",usage_str);
+        if(opt.get_option("-o").size() == 0){
+            opt.print_help();
         }
     }
 
@@ -300,7 +302,7 @@ Options :
         //printf("%s\n",s_out.c_str());
 
         if(out_to_file){
-            write_string_to_file(std::string(get_option(args, "-o")), s_out);
+            write_string_to_file(std::string(opt.get_option("-o")), s_out);
         }
         
     }

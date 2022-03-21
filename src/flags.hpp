@@ -12,7 +12,7 @@
 #include "aliases.hpp"
 
 
- #if defined(PRECISION_MORTON_DOUBLE)
+#if defined(PRECISION_MORTON_DOUBLE)
     typedef u64 u_morton;
     typedef u32_3 u_ixyz;
     typedef i32_3 i_ixyz;

@@ -63,15 +63,15 @@ void sycl_sort_morton_key_pair(
             if (inc >= 16 && ninc == 0){
                 ninc = 5;
                 unsigned int nThreads = morton_count_rounded_pow >> ninc;
-                cl::sycl::range<1> range{nThreads};
+                sycl::range<1> range{nThreads};
 
-                auto ker_sort_morton_b32 = [&](cl::sycl::handler &cgh) {
+                auto ker_sort_morton_b32 = [&](sycl::handler &cgh) {
 
                     auto m =  buf_morton->get_access<sycl::access::mode::read_write>(cgh);
                     auto id = buf_index->get_access<sycl::access::mode::read_write>(cgh);
 
                     cgh.parallel_for<Bitonic_sort_B32>(
-                        range, [=](cl::sycl::item<1> item) {
+                        range, [=](sycl::item<1> item) {
                             //(__global data_t * data,__global uint * ids,int inc,int dir)
 
                             u32 _inc = inc;
@@ -111,15 +111,15 @@ void sycl_sort_morton_key_pair(
             if (inc >= 8 && ninc == 0){
                 ninc = 4;
                 unsigned int nThreads = morton_count_rounded_pow >> ninc;
-                cl::sycl::range<1> range{nThreads};
+                sycl::range<1> range{nThreads};
 
-                auto ker_sort_morton_b16 = [&](cl::sycl::handler &cgh) {
+                auto ker_sort_morton_b16 = [&](sycl::handler &cgh) {
 
                     auto m =  buf_morton->get_access<sycl::access::mode::read_write>(cgh);
                     auto id = buf_index->get_access<sycl::access::mode::read_write>(cgh);
 
                     cgh.parallel_for<Bitonic_sort_B16>(
-                        range, [=](cl::sycl::item<1> item) {
+                        range, [=](sycl::item<1> item) {
                             //(__global data_t * data,__global uint * ids,int inc,int dir)
 
                             u32 _inc = inc;
@@ -161,15 +161,15 @@ void sycl_sort_morton_key_pair(
             if (inc >= 4 && ninc == 0){
                 ninc = 3;
                 unsigned int nThreads = morton_count_rounded_pow >> ninc;
-                cl::sycl::range<1> range{nThreads};
+                sycl::range<1> range{nThreads};
 
-                auto ker_sort_morton_b8 = [&](cl::sycl::handler &cgh) {
+                auto ker_sort_morton_b8 = [&](sycl::handler &cgh) {
 
                     auto m =  buf_morton->get_access<sycl::access::mode::read_write>(cgh);
                     auto id = buf_index->get_access<sycl::access::mode::read_write>(cgh);
 
                     cgh.parallel_for<Bitonic_sort_B8>(
-                        range, [=](cl::sycl::item<1> item) {
+                        range, [=](sycl::item<1> item) {
                             //(__global data_t * data,__global uint * ids,int inc,int dir)
 
                             u32 _inc = inc;
@@ -209,14 +209,14 @@ void sycl_sort_morton_key_pair(
             if (inc >= 2 && ninc == 0){
                 ninc = 2;
                 unsigned int nThreads = morton_count_rounded_pow >> ninc;
-                cl::sycl::range<1> range{nThreads};
+                sycl::range<1> range{nThreads};
                 //sort_kernel_B4(arg_eq,* buf_morton->buf,* particles::buf_ids->buf,inc,length<<1);
-                auto ker_sort_morton_b4 = [&](cl::sycl::handler &cgh) {
+                auto ker_sort_morton_b4 = [&](sycl::handler &cgh) {
 
                     auto m =  buf_morton->get_access<sycl::access::mode::read_write>(cgh);
                     auto id = buf_index->get_access<sycl::access::mode::read_write>(cgh);
                     cgh.parallel_for<Bitonic_sort_B4>(
-                        range, [=](cl::sycl::item<1> item) {
+                        range, [=](sycl::item<1> item) {
                             //(__global data_t * data,__global uint * ids,int inc,int dir)
 
                             u32 _inc = inc;
@@ -268,15 +268,15 @@ void sycl_sort_morton_key_pair(
             if (ninc == 0){
                 ninc = 1;
                 unsigned int nThreads = morton_count_rounded_pow >> ninc;
-                cl::sycl::range<1> range{nThreads};
+                sycl::range<1> range{nThreads};
                 //sort_kernel_B2(arg_eq,* buf_morton->buf,* particles::buf_ids->buf,inc,length<<1);
-                auto ker_sort_morton_b2 = [&](cl::sycl::handler &cgh) {
+                auto ker_sort_morton_b2 = [&](sycl::handler &cgh) {
 
                     auto m =  buf_morton->get_access<sycl::access::mode::read_write>(cgh);
                     auto id = buf_index->get_access<sycl::access::mode::read_write>(cgh);
 
                     cgh.parallel_for<Bitonic_sort_B2>(
-                        range, [=](cl::sycl::item<1> item) {
+                        range, [=](sycl::item<1> item) {
                             //(__global data_t * data,__global uint * ids,int inc,int dir)
 
                             u32 _inc = inc;

@@ -6,33 +6,6 @@ from pathlib import Path
 from enum import Enum
 
 
-
-class BuildSystem(Enum):
-    Makefiles = 1
-    Ninja = 2
-
-class SyCLBE(Enum):
-    CUDA = 1
-
-class PrecisionMode(Enum):
-    Single = 1
-    Mixed = 2
-    Double = 3
-
-class Targets(Enum):
-    SHAMROCK = 1
-    Test = 3
-    Visu = 4
-
-class BuildMode(Enum):
-    Normal = 0
-    Release = 1
-    Debug = 2
-
-
-
-
-
 title_wide = """
   █████████  █████   █████   █████████   ██████   ██████ ███████████      ███████      █████████  █████   ████
  ███░░░░░███░░███   ░░███   ███░░░░░███ ░░██████ ██████ ░░███░░░░░███   ███░░░░░███   ███░░░░░███░░███   ███░ 
@@ -61,14 +34,9 @@ title_small = """
 
 
 
+
 abs_proj_dir = os.path.abspath(os.path.join(__file__, "../../.."))
 abs_src_dir = os.path.join(abs_proj_dir,"src")
-
-
-
-
-
-
 
 
 
@@ -134,7 +102,53 @@ def chdir(path):
 
 
 
-def is_ninja_available():
+
+
+
+
+
+class BuildSystem(Enum):
+    Makefiles = 1
+    Ninja = 2
+
+
+class SyCLBE(Enum):
+    Host = 1
+    OpenMP = 2
+    OpenCL = 3
+    CUDA = 4
+    HIP = 5
+
+class SyclCompiler():
+    DPCPP = 1
+    DPCPP_SUPPORT = [SyCLBE.Host, SyCLBE.CUDA]
+
+    HipSYCL = 2
+    HipSYCL_SUPPORT = [SyCLBE.OpenMP]
+
+class Targets(Enum):
+    SHAMROCK = 1
+    Test = 2
+    Visu = 3
+
+class BuildMode(Enum):
+    Normal = 0
+    Release = 1
+    Debug = 2
+
+
+
+
+
+
+class PrecisionMode(Enum):
+    Single = 1
+    Mixed = 2
+    Double = 3
+
+
+
+def is_ninja_available() -> bool:
 
     try:
         # pipe output to /dev/null for silence
@@ -144,6 +158,12 @@ def is_ninja_available():
         return True
     except OSError:
         return False
+
+def get_default_build_system() -> BuildSystem:
+    if(is_ninja_available()):
+        return BuildSystem.Ninja
+    else:
+        return BuildSystem.Makefiles
 
 
 
@@ -155,7 +175,7 @@ def compile_prog(abs_build_dir):
     run_cmd(cmake_cmd)
 
 
-def get_current_buildsystem(abs_build_dir):
+def get_current_buildsystem(abs_build_dir) -> BuildSystem:
 
     if os.path.isfile(abs_build_dir + "/build.ninja"):
         return BuildSystem.Ninja 
@@ -178,6 +198,90 @@ def clean_build_dir(abs_build_dir):
         run_cmd("make clean")
 
     chdir(current_dir)
+
+
+
+
+#cmake -S src -B build -DSyCL_Compiler=HIPSYCL -DSyCL_Compiler_BE=OMP -DCOMP_ROOT_DIR=/home/tim/Documents/these/codes/shamrock_workspace/sycl_cpl/hipSYCL -G Ninja -DBUILD_SIM=true -DBUILD_VISU=true -DBUILD_TEST=true -DMorton_precision=single -DPhysics_precision=single
+#cmake -S src -B build -DSyCL_Compiler=DPCPP -DSyCL_Compiler_BE=CUDA -DCOMP_ROOT_DIR=/home/tim/Documents/these/codes/shamrock_workspace/sycl_cpl/dpcpp -G Ninja -DBUILD_SIM=true -DBUILD_VISU=true -DBUILD_TEST=true -DMorton_precision=single -DPhysics_precision=single
+
+
+
+def configure(src_dir :str, build_dir:str ,compiler : SyclCompiler, backend : SyCLBE ,compiler_dir : str,target_build_mode ,build_sys,target_lst):
+    print("\033[1;34mConfiguring SHAMROCK\033[0;0m")
+
+    enabled_targets_str = ""
+    if Targets.Test in target_lst:
+        enabled_targets_str += "test "
+
+    if Targets.SHAMROCK in target_lst:
+        enabled_targets_str += "shamrock "
+
+    if Targets.Visu in target_lst:
+        enabled_targets_str += "visu"
+
+    print("  -> \033[1;34mEnabled targets   : \033[0;0m" +enabled_targets_str )
+
+
+
+
+    cmake_cmd = "cmake"
+    cmake_cmd += " -S " + src_dir
+    cmake_cmd += " -B " + build_dir
+
+    if target_build_mode == BuildMode.Normal:
+        cmake_cmd += ""
+    elif target_build_mode == BuildMode.Release:
+        cmake_cmd += " -DCMAKE_BUILD_TYPE=Release"
+    elif target_build_mode == BuildMode.Debug:
+        cmake_cmd += " -DCMAKE_BUILD_TYPE=Debug"
+
+
+    if build_sys == BuildSystem.Ninja:
+        cmake_cmd += " -G Ninja"
+
+    if build_sys == BuildSystem.Makefiles:
+        cmake_cmd += ' -G "Unix Makefiles"'
+
+
+
+    if(compiler == SyclCompiler.DPCPP):
+        cmake_cmd += " -DSyCL_Compiler=DPCPP"
+        if(not backend in SyclCompiler.DPCPP_SUPPORT):
+            raise "error backend not supported by dpcpp"
+
+        if(backend == SyCLBE.CUDA):
+            cmake_cmd += " -DSyCL_Compiler_BE=CUDA"
+
+    
+    elif(compiler == SyclCompiler.HipSYCL):
+        cmake_cmd += " -DSyCL_Compiler=HIPSYCL"
+        if(not backend in SyclCompiler.HipSYCL_SUPPORT):
+            raise "error backend not supported by hipsycl"
+
+        if(backend == SyCLBE.OpenMP):
+            cmake_cmd += " -DSyCL_Compiler_BE=OMP"
+    
+
+    cmake_cmd += " -DCOMP_ROOT_DIR="+str(os.path.abspath(compiler_dir))
+
+    if Targets.Test in target_lst:
+        cmake_cmd += " -DBUILD_TEST=true"
+
+    if Targets.SHAMROCK in target_lst:
+        cmake_cmd += " -DBUILD_SIM=true"
+
+    if Targets.Visu in target_lst:
+        cmake_cmd += " -DBUILD_VISU=true"
+
+
+    cmake_cmd += " -DMorton_precision=single"
+    cmake_cmd += " -DPhysics_precision=single"
+    run_cmd(cmake_cmd)
+
+
+
+
 
 
 

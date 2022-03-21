@@ -38,11 +38,11 @@ class PatchDataBuffer{ public:
 inline PatchDataBuffer attach_to_patchData(PatchData & pdat){
     return PatchDataBuffer{
         u32(pdat.pos_s.size() + pdat.pos_d.size()),
-        sycl::buffer<f32_3> (pdat.pos_s),
-        sycl::buffer<f64_3> (pdat.pos_d),
-        sycl::buffer<f32>   (pdat.U1_s ),
-        sycl::buffer<f64>   (pdat.U1_d ),
-        sycl::buffer<f32_3> (pdat.U3_s ),
-        sycl::buffer<f64_3> (pdat.U3_d )    
+        sycl::buffer<f32_3> (pdat.pos_s.data(),pdat.pos_s.size()),
+        sycl::buffer<f64_3> (pdat.pos_d.data(),pdat.pos_d.size()),
+        sycl::buffer<f32>   (pdat.U1_s .data(),pdat.U1_s .size()),
+        sycl::buffer<f64>   (pdat.U1_d .data(),pdat.U1_d .size()),
+        sycl::buffer<f32_3> (pdat.U3_s .data(),pdat.U3_s .size()),
+        sycl::buffer<f64_3> (pdat.U3_d .data(),pdat.U3_d .size())    
     };
 }
