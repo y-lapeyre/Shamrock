@@ -28,3 +28,4 @@ version.cpp
 *.toc
 
 
+.DS_Store
