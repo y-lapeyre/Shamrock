@@ -1,8 +1,4 @@
-#include "CL/sycl/access/access.hpp"
-#include "CL/sycl/accessor.hpp"
-#include "CL/sycl/buffer.hpp"
-#include "CL/sycl/queue.hpp"
-#include "CL/sycl/range.hpp"
+
 #include "unittests/shamrocktest.hpp"
 
 #include "sys/sycl_handler.hpp"
@@ -76,14 +72,14 @@ namespace integrator {
 
         virtual void step(std::vector<i32> & fres_arr){
             
-            cl::sycl::buffer<i32> fres(fres_arr);
+            sycl::buffer<i32> fres(fres_arr.data(),fres_arr.size());
 
-            cl::sycl::range<1> range{10};
+            sycl::range<1> range{10};
 
-            SyCLHandler::get_instance().get_default().submit([&](cl::sycl::handler &cgh) {
+            SyCLHandler::get_instance().get_default().submit([&](sycl::handler &cgh) {
                 auto ff = fres.get_access<sycl::access::mode::read_write>(cgh);
 
-                cgh.parallel_for<class Write_chosen_node>(range, [=](cl::sycl::item<1> item) {
+                cgh.parallel_for<class Write_chosen_node>(range, [=](sycl::item<1> item) {
                     u64 i = (u64)item.get_id(0);
                     ff[i] = ForceFunc::f(ff[i]);
                 });
@@ -198,9 +194,9 @@ Test_start("sycl::", parallel_sumbit, 1){
 
     std::vector<std::thread> workers;
     u32 id_t = 0;
-    for (std::pair<const u32, sycl::queue> & a : SyCLHandler::get_instance().alt_queues) {
+    for (std::pair<const u32, sycl::queue*> & a : SyCLHandler::get_instance().get_alt_queues()) {
 
-        sycl::queue* queue = & std::get<1>(a);
+        sycl::queue* queue = std::get<1>(a);
 
         workers.push_back(std::thread([&,id_t,s_p,queue]()  {
             
@@ -216,15 +212,15 @@ Test_start("sycl::", parallel_sumbit, 1){
 
                 }
 
-                sycl::buffer<u32> buf(vec_to_up[working_id]);
+                sycl::buffer<u32> buf(vec_to_up[working_id].data(),vec_to_up[working_id].size());
 
 
-                queue->submit([&](cl::sycl::handler &cgh) {
+                queue->submit([&](sycl::handler &cgh) {
                     auto ff = buf.get_access<sycl::access::mode::read_write>(cgh);
 
                     auto wmult = working_id;
 
-                    cgh.parallel_for(sycl::range<1>(s_p), [=](cl::sycl::item<1> item) {
+                    cgh.parallel_for(sycl::range<1>(s_p), [=](sycl::item<1> item) {
                         u64 i = (u64)item.get_id(0);
                         ff[i] *= wmult;
                     });
@@ -240,9 +236,9 @@ Test_start("sycl::", parallel_sumbit, 1){
         id_t++;
     }
 
-    for (std::pair<const u32, sycl::queue> & a : SyCLHandler::get_instance().compute_queues) {
+    for (std::pair<const u32, sycl::queue*> & a : SyCLHandler::get_instance().get_compute_queues()) {
 
-        sycl::queue* queue = & std::get<1>(a);
+        sycl::queue* queue = std::get<1>(a);
 
         workers.push_back(std::thread([&,id_t,s_p,queue]()  {
             
@@ -258,15 +254,15 @@ Test_start("sycl::", parallel_sumbit, 1){
 
                 }
 
-                sycl::buffer<u32> buf(vec_to_up[working_id]);
+                sycl::buffer<u32> buf(vec_to_up[working_id].data(),vec_to_up[working_id].size());
 
 
-                queue->submit([&](cl::sycl::handler &cgh) {
+                queue->submit([&](sycl::handler &cgh) {
                     auto ff = buf.get_access<sycl::access::mode::read_write>(cgh);
 
                     auto wmult = working_id;
 
-                    cgh.parallel_for(sycl::range<1>(s_p), [=](cl::sycl::item<1> item) {
+                    cgh.parallel_for(sycl::range<1>(s_p), [=](sycl::item<1> item) {
                         u64 i = (u64)item.get_id(0);
                         ff[i] *= wmult;
                     });

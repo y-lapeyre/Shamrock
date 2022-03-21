@@ -127,10 +127,10 @@ template <class vectype, class field_type, class InterfaceSelector> class Interf
         //PatchFieldReduction<field_type> pfield_reduced = sptree.template reduce_field<field_type,
         // OctreeMaxReducer>(hndl.alt_queues[0], sched, pfield);
 
-        sycl::buffer<field_type> buf_local_field_val(pfield.local_nodes_value);
-        sycl::buffer<field_type> buf_global_field_val(pfield.global_values);
+        sycl::buffer<field_type> buf_local_field_val(pfield.local_nodes_value.data(),pfield.local_nodes_value.size());
+        sycl::buffer<field_type> buf_global_field_val(pfield.global_values.data(),pfield.global_values.size());
 
-        hndl.alt_queues[0].submit([&](cl::sycl::handler &cgh) {
+        hndl.get_queue_alt(0).submit([&](sycl::handler &cgh) {
             auto pid  = patch_ids_buf.get_access<sycl::access::mode::read>(cgh);
             auto gpid = global_ids_buf.get_access<sycl::access::mode::read>(cgh);
 
@@ -147,7 +147,7 @@ template <class vectype, class field_type, class InterfaceSelector> class Interf
 
             u64 cnt_patch = global_pcount;
 
-            cgh.parallel_for(sycl::range<1>(local_pcount), [=](cl::sycl::item<1> item) {
+            cgh.parallel_for(sycl::range<1>(local_pcount), [=](sycl::item<1> item) {
                 u64 cur_patch_idx    = (u64)item.get_id(0);
                 u64 cur_patch_id     = pid[cur_patch_idx];
                 vectype cur_lbox_min = lbox_min[cur_patch_idx];
@@ -330,7 +330,7 @@ template <class vectype, class field_type, class InterfaceSelector> class Interf
                 
                 if(sched.patch_list.global[interface_comm_list[i].global_patch_idx_send].data_count > 0){
                     std::vector<std::unique_ptr<PatchData>> pret = InterfaceVolumeGenerator::append_interface<vectype>( 
-                        hndl.alt_queues[0], 
+                        hndl.get_queue_alt(0), 
                         sched.patch_data.owned_data[interface_comm_list[i].sender_patch_id], 
                         {interface_comm_list[i].interf_box_min}, 
                         {interface_comm_list[i].interf_box_max});
@@ -510,7 +510,7 @@ static T reduce(T v0, T v1, T v2, T v3, T v4, T v5, T v6, T v7) {
 
 
 
-        hndl.alt_queues[0].submit([&](cl::sycl::handler &cgh) {
+        hndl.alt_queues[0].submit([&](sycl::handler &cgh) {
 
             auto pid      = patch_ids_buf.get_access<sycl::access::mode::read>();
             auto lbox_min = local_box_min_buf.template get_access<sycl::access::mode::read>();
@@ -523,7 +523,7 @@ static T reduce(T v0, T v1, T v2, T v3, T v4, T v5, T v6, T v7) {
             auto stack_start_idx = stack_start_idx_buf.get_access<sycl::access::mode::read>();
 
 
-            cgh.parallel_for(sycl::range<1>(local_pcount), [=](cl::sycl::item<1> item) {
+            cgh.parallel_for(sycl::range<1>(local_pcount), [=](sycl::item<1> item) {
 
                 u64 cur_patch_idx = (u64)item.get_id(0);
                 u64 cur_patch_id = pid[cur_patch_idx];

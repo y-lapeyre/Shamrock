@@ -2,7 +2,6 @@
 
 #include "aliases.hpp"
 #include "flags.hpp"
-#include "CL/sycl/buffer.hpp"
 #include <vector>
 
 //TODO write class destructor

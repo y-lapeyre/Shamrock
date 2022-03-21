@@ -1,6 +1,4 @@
 #include "radix_tree.hpp"
-
-#include "CL/sycl/buffer.hpp"
 #include "kernels/karras_alg.hpp"
 #include "kernels/key_morton_sort.hpp"
 #include "kernels/reduction_alg.hpp"
@@ -41,7 +39,7 @@ void Radix_Tree::build_tree(
             reduc_index_map,
             leaf_cell_count);
 
-        buf_reduc_index_map = new sycl::buffer<u32     >(reduc_index_map);
+        buf_reduc_index_map = new sycl::buffer<u32     >(reduc_index_map.data(),reduc_index_map.size());
         buf_leaf_morton     = new sycl::buffer<u_morton>(leaf_cell_count);
 
         sycl_morton_remap_reduction(queue, leaf_cell_count, buf_reduc_index_map, buf_morton, buf_leaf_morton);

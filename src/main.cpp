@@ -1,4 +1,4 @@
-#include "CL/sycl/handler.hpp"
+
 #include "aliases.hpp"
 #include "patchscheduler/loadbalancing_hilbert.hpp"
 #include "sys/mpi_handler.hpp"

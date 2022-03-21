@@ -9,16 +9,17 @@ parser = argparse.ArgumentParser(description='Configure utility for the code')
 parser.add_argument("--ninja", action='store_true', help="use NINJA build system instead of Make")
 parser.add_argument('--buildmode',action='store', type=str, default="None", help='target build mode')
 
-parser.add_argument("--cuda", action='store_true', help="use CUDA instead of OPENCL")
+parser.add_argument("--compiler", action='store_true', help="sycl compiler name")
+parser.add_argument("--syclbe", action='store_true', help="Sycl backend to use")
+
+
 parser.add_argument("--test", action='store_true', help="add test target to build configuration")
 parser.add_argument("--shamrock", action='store_true', help="add shamrock target to build configuration")
 parser.add_argument("--visu", action='store_true', help="add visualisation target to build configuration")
-#parser.add_argument("--xray", action='store_true', help="add xray instrumentation to all targets")
-parser.add_argument('--morton',   action='store', type=str, default="single", help='precision for morton codes')
-parser.add_argument('--phyprec',     action='store', type=str, default="single", help='precision mode for physical variables')
+
 parser.add_argument('--interactive',     action='store_true', help='enables interactive configuration')
 
-parser.add_argument("llvm_root",help="llvm location", type=str)
+parser.add_argument("compiler_root",help="compiler location", type=str)
 
 args = parser.parse_args()
 
@@ -26,10 +27,10 @@ args = parser.parse_args()
 print_buildbot_info("configure tool")
 
 abs_build_dir = os.path.join(abs_proj_dir,"build")
-abs_llvm_dir = os.path.abspath(os.path.join(os.getcwd(),args.llvm_root))
+abs_compiler_root_dir = os.path.abspath(os.path.join(os.getcwd(),args.compiler_root))
 
-print("\033[1;34mLLVM  directory \033[0;0m: "+ abs_llvm_dir)
-print("\033[1;34mBuild directory \033[0;0m: "+ abs_build_dir)
+print("\033[1;34mCompiler directory \033[0;0m: "+ abs_compiler_root_dir)
+print("\033[1;34mBuild directory    \033[0;0m: "+ abs_build_dir)
 print()
 
 
@@ -58,21 +59,23 @@ if args.interactive:
         args.test = input("    do you want to compile the test mode (y/n)") == "y"
         args.visu = input("    do you want to compile the visualisation mode (y/n)") == "y"
 
-        args.cuda = input("    do you want to use cuda as sycl backend (y/n)") == "y"
+        args.compiler = input("    which compiler are you using (hipsycl/dpcpp)")
 
-        args.morton  = input("    which precision do you want for morton codes (single/double)") 
-        args.phyprec  = input("    which precision do you want for physics computations (single/mixed/double)") 
+        args.backend = input("    which backend are you using (omp,cuda)")
 
         print("\033[1;34mOptions summary \033[0;0m: ")
 
         print("    ninja      =",args.ninja)
         print("    build mode =",args.buildmode)
-        print("    cuda       =",args.cuda)
+        print("    compiler   =",args.compiler)
+        print("    backend    =",args.backend)
+
         print("    shamrock   =",args.shamrock)
         print("    test       =",args.test)
         print("    visu       =",args.visu)
-        print("    morton     =",args.morton)
-        print("    phyprec    =",args.phyprec)
+
+        
+
         print()
         if input("confirm choices (y/N)") == "y":
             break
@@ -104,38 +107,31 @@ if args.visu:
     target_lst.append(Targets.Visu)
 
 
+
+sycl_cmp = -1
+if args.compiler == "dpcpp":
+    sycl_cmp = SyclCompiler.DPCPP
+elif args.compiler == "hipsycl":
+    sycl_cmp = SyclCompiler.HipSYCL
+
 sycl_be = -1
-if args.cuda:
+if args.backend == "omp":
+    sycl_be = SyCLBE.OpenMP
+elif args.backend == "cuda":
     sycl_be = SyCLBE.CUDA
 
-prec_mort = -1
-prec_phys = -1
-
-if args.morton == ("single"):
-    prec_mort = PrecisionMode.Single
-elif args.morton == ("double"):
-    prec_mort = PrecisionMode.Double
-
-
-if args.phyprec == ("single"):
-    prec_phys = PrecisionMode.Single
-elif args.phyprec == ("mixed"):
-    prec_phys = PrecisionMode.Mixed
-elif args.phyprec == ("double"):
-    prec_phys = PrecisionMode.Double
 
 
 
 
 
 
-configure_dpcpp(
+configure(
     abs_src_dir, 
     abs_build_dir,
-    abs_llvm_dir,
+    sycl_cmp,
+    sycl_be,
+    abs_compiler_root_dir,
     target_buildmode,
     build_sys,
-    sycl_be,
-    target_lst,
-    prec_mort,
-    prec_phys)
+    target_lst)

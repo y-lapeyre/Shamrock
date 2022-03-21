@@ -11,6 +11,7 @@ parts:
 
  - caption: SHAMROCK documentation
    chapters:
+    - file: user-manual/compilation
     - file: control_script/control_script
     - file: mpi_scheduler/mpi_scheduler
       sections:

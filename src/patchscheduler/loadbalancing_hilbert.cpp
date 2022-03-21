@@ -25,16 +25,16 @@ std::vector<std::tuple<u64, i32, i32, i32>> HilbertLB::make_change_list(std::vec
     std::vector<std::tuple<u64, u64, u64>> patch_dt(global_patch_list.size());
     {
 
-        cl::sycl::buffer<std::tuple<u64, u64, u64>> dt_buf(patch_dt);
-        cl::sycl::buffer<Patch>                     patch_buf(global_patch_list);
+        sycl::buffer<std::tuple<u64, u64, u64>> dt_buf(patch_dt.data(),patch_dt.size());
+        sycl::buffer<Patch>                     patch_buf(global_patch_list.data(),global_patch_list.size());
 
-        cl::sycl::range<1> range{global_patch_list.size()};
+        sycl::range<1> range{global_patch_list.size()};
 
-        SyCLHandler::get_instance().alt_queues[0].submit([&](cl::sycl::handler &cgh) {
+        SyCLHandler::get_instance().get_queue_alt(0).submit([&](sycl::handler &cgh) {
             auto ptch = patch_buf.get_access<sycl::access::mode::read>(cgh);
             auto pdt  = dt_buf.get_access<sycl::access::mode::discard_write>(cgh);
 
-            cgh.parallel_for<class Compute_HilbLoad>(range, [=](cl::sycl::item<1> item) {
+            cgh.parallel_for<class Compute_HilbLoad>(range, [=](sycl::item<1> item) {
                 u64 i = (u64)item.get_id(0);
 
                 Patch p = ptch[i];
@@ -76,13 +76,13 @@ std::vector<std::tuple<u64, i32, i32, i32>> HilbertLB::make_change_list(std::vec
     std::vector<i32> new_owner_table(global_patch_list.size());
     {
 
-        cl::sycl::buffer<std::tuple<u64, u64, u64>> dt_buf(patch_dt);
-        cl::sycl::buffer<i32> new_owner(new_owner_table);
-        cl::sycl::buffer<Patch>                     patch_buf(global_patch_list);
+        sycl::buffer<std::tuple<u64, u64, u64>> dt_buf(patch_dt.data(),patch_dt.size());
+        sycl::buffer<i32> new_owner(new_owner_table.data(),new_owner_table.size());
+        sycl::buffer<Patch>                     patch_buf(global_patch_list.data(),global_patch_list.size());
 
-        cl::sycl::range<1> range{global_patch_list.size()};
+        sycl::range<1> range{global_patch_list.size()};
 
-        SyCLHandler::get_instance().alt_queues[0].submit([&](cl::sycl::handler &cgh) {
+        SyCLHandler::get_instance().get_queue_alt(0).submit([&](sycl::handler &cgh) {
             auto pdt  = dt_buf.get_access<sycl::access::mode::read>(cgh);
             auto chosen_node = new_owner.get_access<sycl::access::mode::discard_write>(cgh);
 
@@ -92,7 +92,7 @@ std::vector<std::tuple<u64, i32, i32, i32>> HilbertLB::make_change_list(std::vec
             i32 wsize = mpi_handler::world_size;
 
 
-            cgh.parallel_for<class Write_chosen_node>(range, [=](cl::sycl::item<1> item) {
+            cgh.parallel_for<class Write_chosen_node>(range, [=](sycl::item<1> item) {
                 u64 i = (u64)item.get_id(0);
 
                 u64 id_ptable = std::get<2>(pdt[i]);
@@ -106,12 +106,12 @@ std::vector<std::tuple<u64, i32, i32, i32>> HilbertLB::make_change_list(std::vec
 
 
         //pack nodes
-        SyCLHandler::get_instance().alt_queues[0].submit([&](cl::sycl::handler &cgh) {
+        SyCLHandler::get_instance().get_queue_alt(0).submit([&](sycl::handler &cgh) {
             auto ptch = patch_buf.get_access<sycl::access::mode::read>(cgh);
             auto pdt  = dt_buf.get_access<sycl::access::mode::read>(cgh);
             auto chosen_node = new_owner.get_access<sycl::access::mode::write>(cgh);
 
-            cgh.parallel_for<class Edit_chosen_node>(range, [=](cl::sycl::item<1> item) {
+            cgh.parallel_for<class Edit_chosen_node>(range, [=](sycl::item<1> item) {
                 u64 i = (u64)item.get_id(0);
 
 

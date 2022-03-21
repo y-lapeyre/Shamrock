@@ -99,7 +99,7 @@ Test_start("morton::",key_pair_sort,1){
         std::copy(morton_list.begin(), morton_list.end(),unsorted.begin());
 
         {
-            sycl::buffer<u_morton> buf_morton(morton_list);
+            sycl::buffer<u_morton> buf_morton(morton_list.data(),morton_list.size());
             sycl::buffer<u32> buf_index(morton_list.size());
 
             sycl_sort_morton_key_pair(

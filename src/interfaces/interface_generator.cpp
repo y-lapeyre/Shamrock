@@ -4,7 +4,6 @@
 #include <stdexcept>
 #include <vector>
 
-#include "CL/sycl/buffer.hpp"
 #include "aliases.hpp"
 #include "patch/patch.hpp"
 #include "patch/patchdata.hpp"
@@ -31,16 +30,16 @@ std::vector<std::unique_ptr<PatchData>> InterfaceVolumeGenerator::append_interfa
 
     if (pdat.pos_s.size() > 0) {
     
-        sycl::buffer<u8> flag_buf(flag_choice);
+        sycl::buffer<u8> flag_buf(flag_choice.data(),flag_choice.size());
 
-        sycl::buffer<f32_3> bmin_buf(boxs_min);
-        sycl::buffer<f32_3> bmax_buf(boxs_max);
+        sycl::buffer<f32_3> bmin_buf(boxs_min.data(),boxs_min.size());
+        sycl::buffer<f32_3> bmax_buf(boxs_max.data(),boxs_max.size());
 
-        cl::sycl::range<1> range{pdat.pos_s.size()};
+        sycl::range<1> range{pdat.pos_s.size()};
 
-        sycl::buffer<f32_3> pos_s_buf = sycl::buffer<f32_3>(pdat.pos_s);
+        sycl::buffer<f32_3> pos_s_buf = sycl::buffer<f32_3>(pdat.pos_s.data(),pdat.pos_s.size());
 
-        queue.submit([&](cl::sycl::handler &cgh) {
+        queue.submit([&](sycl::handler &cgh) {
             auto pos_s = pos_s_buf.get_access<sycl::access::mode::read>(cgh);
 
             auto bmin = bmin_buf.get_access<sycl::access::mode::read>(cgh);
@@ -50,7 +49,7 @@ std::vector<std::unique_ptr<PatchData>> InterfaceVolumeGenerator::append_interfa
 
             u8 num_boxes = boxs_min.size();
 
-            cgh.parallel_for<class BuildInterfacef32>(range, [=](cl::sycl::item<1> item) {
+            cgh.parallel_for<class BuildInterfacef32>(range, [=](sycl::item<1> item) {
                 u64 i = (u64)item.get_id(0);
 
                 f32_3 pos_i  = pos_s[i];
@@ -110,16 +109,16 @@ std::vector<std::unique_ptr<PatchData>> InterfaceVolumeGenerator::append_interfa
     std::vector<u8> flag_choice(pdat.pos_d.size());
 
     if (pdat.pos_d.size() > 0) {
-        sycl::buffer<u8> flag_buf(flag_choice);
+        sycl::buffer<u8> flag_buf(flag_choice.data(),flag_choice.size());
 
-        sycl::buffer<f64_3> bmin_buf(boxs_min);
-        sycl::buffer<f64_3> bmax_buf(boxs_max);
+        sycl::buffer<f64_3> bmin_buf(boxs_min.data(),boxs_min.size());
+        sycl::buffer<f64_3> bmax_buf(boxs_max.data(),boxs_max.size());
 
-        cl::sycl::range<1> range{pdat.pos_d.size()};
+        sycl::range<1> range{pdat.pos_d.size()};
 
-        sycl::buffer<f64_3> pos_d_buf = sycl::buffer<f64_3>(pdat.pos_d);
+        sycl::buffer<f64_3> pos_d_buf = sycl::buffer<f64_3>(pdat.pos_d.data(),pdat.pos_d.size());
 
-        queue.submit([&](cl::sycl::handler &cgh) {
+        queue.submit([&](sycl::handler &cgh) {
             auto pos_d = pos_d_buf.get_access<sycl::access::mode::read>(cgh);
 
             auto bmin = bmin_buf.get_access<sycl::access::mode::read>(cgh);
@@ -131,7 +130,7 @@ std::vector<std::unique_ptr<PatchData>> InterfaceVolumeGenerator::append_interfa
 
             
 
-            cgh.parallel_for<class BuildInterfacef64>(range, [=](cl::sycl::item<1> item) {
+            cgh.parallel_for<class BuildInterfacef64>(range, [=](sycl::item<1> item) {
                 u64 i = (u64)item.get_id(0);
 
                 f64_3 pos_i  = pos_d[i];

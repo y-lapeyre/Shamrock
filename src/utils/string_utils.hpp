@@ -58,11 +58,22 @@ inline std::string readable_sizeof(double size) {
     int i = 0;
     char buf[10];
     const char* units[] = {"B", "kB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"};
-    while (size > 1024) {
-        size /= 1024;
-        i++;
+
+    if(size >= 0){
+        while (size > 1024) {
+            size /= 1024;
+            i++;
+        }
+    }else{
+        i = 9;
     }
-    sprintf(buf, "%.*f %s", i, size, units[i]);
     
+
+    if(i > 8){
+        sprintf(buf, "%s", "err val");
+    }else{
+        sprintf(buf, "%.2f %s", size, units[i]);
+    }
+
     return std::string(buf);
 }

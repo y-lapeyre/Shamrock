@@ -40,13 +40,13 @@ class SimulationBoxInfo {
     inline void reset_box_size() {
 
         if (patchdata_layout::nVarpos_s == 1) {
-            min_box_sim_s = {HUGE_VAL_F32};
-            max_box_sim_s = {-HUGE_VAL_F32};
+            min_box_sim_s = {HUGE_VALF};
+            max_box_sim_s = {-HUGE_VALF};
         }
 
         if (patchdata_layout::nVarpos_d == 1) {
-            min_box_sim_s = {HUGE_VAL_F64};
-            max_box_sim_s = {-HUGE_VAL_F64};
+            min_box_sim_s = {HUGE_VAL};
+            max_box_sim_s = {-HUGE_VAL};
         }
     }
 };

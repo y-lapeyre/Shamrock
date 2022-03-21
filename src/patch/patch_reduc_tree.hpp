@@ -32,7 +32,7 @@ class PatchFieldReduction{public:
 
     inline void attach_buf(){
         if(tree_field_buf != nullptr) throw std::runtime_error("tree_field_buf is already allocated");
-        tree_field_buf = new sycl::buffer<type>(tree_field);
+        tree_field_buf = new sycl::buffer<type>(tree_field.data(),tree_field.size());
     }
 
     inline void detach_buf(){
@@ -49,14 +49,14 @@ class PatchFieldReduction{public:
         
     //     std::unordered_map<u64,u64> & idp_to_gid = sched.patch_list.id_patch_to_global_idx;
 
-    //     cl::sycl::range<1> range{sptree.get_element_count()};
+    //     sycl::range<1> range{sptree.get_element_count()};
 
     //     for (u32 level = 0; level < sptree.get_level_count(); level ++) {
-    //         queue.submit([&](cl::sycl::handler &cgh) {
+    //         queue.submit([&](sycl::handler &cgh) {
                 
                 
 
-    //             cgh.parallel_for<class OctreeReduction>(range, [=](cl::sycl::item<1> item) {
+    //             cgh.parallel_for<class OctreeReduction>(range, [=](sycl::item<1> item) {
     //                 u64 i = (u64)item.get_id(0);
 
 

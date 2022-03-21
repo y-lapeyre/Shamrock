@@ -12,14 +12,14 @@ void sycl_generate_split_table(
     sycl::buffer<u8>* buf_split_table
     ){
 
-    cl::sycl::range<1> range_morton_count{morton_count};
+    sycl::range<1> range_morton_count{morton_count};
 
-    queue.submit([&](cl::sycl::handler &cgh) {
+    queue.submit([&](sycl::handler &cgh) {
 
         auto m = buf_morton->get_access<sycl::access::mode::read>(cgh);
         auto split_out = buf_split_table->get_access<sycl::access::mode::write>(cgh);
 
-        cgh.parallel_for<Kernel_generate_split_table>(range_morton_count, [=](cl::sycl::item<1> item) {
+        cgh.parallel_for<Kernel_generate_split_table>(range_morton_count, [=](sycl::item<1> item) {
 
                 u32 i = (u32) item.get_id(0);
     
@@ -44,6 +44,8 @@ void sycl_generate_split_table(
 
 #define DELTA( x,  y) (y>_morton_cnt-1) ? -1 : sycl::clz(m[x] ^ m[y]);
 
+#define DELTA_host( x,  y) (y>_morton_cnt-1) ? -1 : __builtin_clz(m[x] ^ m[y]);
+
 class Kernel_iterate_reduction;
 
 void sycl_reduction_iteration(
@@ -54,9 +56,9 @@ void sycl_reduction_iteration(
     sycl::buffer<u8>* buf_split_table_out
     ){
 
-    cl::sycl::range<1> range_morton_count{morton_count};
+    sycl::range<1> range_morton_count{morton_count};
 
-    queue.submit([&](cl::sycl::handler &cgh) {
+    queue.submit([&](sycl::handler &cgh) {
 
         u32 _morton_cnt = morton_count;
 
@@ -64,7 +66,7 @@ void sycl_reduction_iteration(
         auto split_in = buf_split_table_in->get_access<sycl::access::mode::read>(cgh);
         auto split_out = buf_split_table_out->get_access<sycl::access::mode::write>(cgh);
 
-        cgh.parallel_for<Kernel_iterate_reduction>(range_morton_count, [=](cl::sycl::item<1> item) {
+        cgh.parallel_for<Kernel_iterate_reduction>(range_morton_count, [=](sycl::item<1> item) {
 
             int i = item.get_id(0);
 
@@ -80,16 +82,28 @@ void sycl_reduction_iteration(
             //find index of next i+1 non duplicate morton code
             uint next1 = i+1;
             while(next1 <= _morton_cnt-1 && !split_in[next1]) next1 ++;
-            
+
+            #ifdef SYCL_COMP_DPCPP
             int delt_0 =  DELTA(i,next1);
             int delt_m =  DELTA(i,before1);
             int delt_mm = DELTA(before1,before2);
-            
+            #endif
+
+            #ifdef SYCL_COMP_HIPSYCL
+            __hipsycl_if_target_host(
+                int delt_0 =  DELTA_host(i,next1);
+                int delt_m =  DELTA_host(i,before1);
+                int delt_mm = DELTA_host(before1,before2);
+            )
+            #endif
+
             if(!(delt_0 < delt_m && delt_mm < delt_m) && split_in[i]){
                 split_out[i] = true;
             }else{
                 split_out[i] = false;
             }
+
+            
             
         });
 
@@ -173,16 +187,16 @@ void sycl_morton_remap_reduction(
     sycl::buffer<u_morton>* buf_morton,
     //out
     sycl::buffer<u_morton>* buf_leaf_morton){
-    cl::sycl::range<1> range_remap_morton{morton_leaf_count};
+    sycl::range<1> range_remap_morton{morton_leaf_count};
 
 
-    queue.submit([&](cl::sycl::handler &cgh) {
+    queue.submit([&](sycl::handler &cgh) {
 
         auto id_remaped = buf_reduc_index_map->get_access<sycl::access::mode::read>(cgh);
         auto m = buf_morton->get_access<sycl::access::mode::read>(cgh);
         auto m_remaped = buf_leaf_morton->get_access<sycl::access::mode::discard_write>(cgh);
 
-        cgh.parallel_for<Kernel_remap_morton_code>(range_remap_morton, [=](cl::sycl::item<1> item) {
+        cgh.parallel_for<Kernel_remap_morton_code>(range_remap_morton, [=](sycl::item<1> item) {
 
             int i = item.get_id(0);
 
@@ -261,15 +275,15 @@ void sycl_reduction_alg2(
     buf_reduc_index_map = new sycl::buffer<u32     >( reduc_index_map );
     buf_leaf_morton     = new sycl::buffer<u_morton>(morton_leaf_count);
 
-    cl::sycl::range<1> range_remap_morton{morton_leaf_count};
+    sycl::range<1> range_remap_morton{morton_leaf_count};
 
-    auto ker_remap_morton = [&](cl::sycl::handler &cgh) {
+    auto ker_remap_morton = [&](sycl::handler &cgh) {
 
         auto id_remaped = buf_reduction_index_map->get_access<sycl::access::mode::read>(cgh);
         auto m = buf_morton->get_access<sycl::access::mode::read>(cgh);
         auto m_remaped = buf_reduced_morton->get_access<sycl::access::mode::discard_write>(cgh);
 
-        cgh.parallel_for<Remap_morton>(range_remap_morton, [=](cl::sycl::item<1> item) {
+        cgh.parallel_for<Remap_morton>(range_remap_morton, [=](sycl::item<1> item) {
 
             int i = item.get_id(0);
 
