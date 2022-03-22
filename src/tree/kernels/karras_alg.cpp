@@ -1,247 +1,146 @@
 #include "karras_alg.hpp"
 #include "aliases.hpp"
+#include <stdexcept>
 
-
-#define SGN(x) (x==0) ? 0 : ( (x>0) ? 1 : -1 )
-#define DELTA( x,  y) ((y>morton_lenght-1 || y < 0) ? -1 : int(sycl::clz(m[x] ^ m[y])))
-
-#define DELTA_host( x,  y) ((y>morton_lenght-1 || y < 0) ? -1 : int(__builtin_clz(m[x] ^ m[y])))
-
-
-class Kernel_Karras_alg;
-
+#define SGN(x) (x == 0) ? 0 : ((x > 0) ? 1 : -1)
 
 #ifdef SYCL_COMP_DPCPP
-
-void sycl_karras_alg(
-    sycl::queue & queue,
-    u32 internal_cell_count,
-    sycl::buffer<u_morton>* in_morton,
-    sycl::buffer<u32>* out_buf_lchild_id   ,
-    sycl::buffer<u32>* out_buf_rchild_id   ,
-    sycl::buffer<u8 >* out_buf_lchild_flag ,
-    sycl::buffer<u8 >* out_buf_rchild_flag,
-    sycl::buffer<u32>* out_buf_endrange    ){
-
-    sycl::range<1> range_radix_tree{internal_cell_count};
-
-    if(in_morton == NULL)           throw_with_pos("in_morton isn't allocated");
-    if(out_buf_lchild_id == NULL)   throw_with_pos("out_buf_lchild_id isn't allocated");
-    if(out_buf_rchild_id == NULL)   throw_with_pos("out_buf_rchild_id isn't allocated");
-    if(out_buf_lchild_flag == NULL) throw_with_pos("out_buf_lchild_flag isn't allocated");
-    if(out_buf_rchild_flag == NULL) throw_with_pos("out_buf_rchild_flag isn't allocated");
-    if(out_buf_endrange == NULL)    throw_with_pos("out_buf_endrange isn't allocated");
-
-    queue.submit(
-        [&](sycl::handler &cgh) {
-
-            //@TODO add check if split count above 2G
-            i32 morton_lenght = (i32) internal_cell_count+1;
-
-            auto m = in_morton->get_access<sycl::access::mode::read>(cgh);
-            
-            auto lchild_id      = out_buf_lchild_id  ->get_access<sycl::access::mode::discard_write>(cgh);
-            auto rchild_id      = out_buf_rchild_id  ->get_access<sycl::access::mode::discard_write>(cgh);
-            auto lchild_flag    = out_buf_lchild_flag->get_access<sycl::access::mode::discard_write>(cgh);
-            auto rchild_flag    = out_buf_rchild_flag->get_access<sycl::access::mode::discard_write>(cgh);
-            auto end_range_cell = out_buf_endrange   ->get_access<sycl::access::mode::discard_write>(cgh);
-            
-
-            cgh.parallel_for<Kernel_Karras_alg>(range_radix_tree, [=](sycl::item<1> item) {
-
-                int i = (int) item.get_id(0);
-                
-                int ddelta = DELTA(i,i+1) - DELTA(i,i-1);
-                
-                int d = SGN(ddelta);
-                
-                //Compute upper bound for the lenght of the range
-                int delta_min = DELTA(i,i-d);
-                int lmax = 2;
-                while(DELTA(i,i + lmax*d) > delta_min){
-                    lmax *= 2;
-                }
-                
-                //Find the other end using 
-                int l = 0;
-                int t = lmax/2;
-                while(t > 0){
-                    if(DELTA(i, i + (l + t)*d) > delta_min){
-                        l = l + t;
-                    }
-                    t = t / 2;
-                }
-                int j = i + l*d;
-                
-                
-                end_range_cell[i] = j;
-                
-                
-                //Find the split position using binary search
-                int delta_node = DELTA(i,j);
-                int s= 0;
-
-                //@todo why float
-                float div = 2;
-                t = sycl::ceil(l/div);
-                while(true){
-                    int tmp_ = i + (s + t)*d;
-                    if(DELTA(i, tmp_) > delta_node){
-                        s = s + t;
-                    }
-                    if(t <= 1) break;
-                    div *= 2;
-                    t = sycl::ceil(l/div);
-                    
-                }
-                int gamma = i + s*d + sycl::min(d,0);
-                
-                if(sycl::min(i,j) == gamma){
-                    lchild_id[i] = gamma;
-                    lchild_flag[i] = 1; // leaf
-                }else{
-                    lchild_id[i] = gamma;
-                    lchild_flag[i] = 0; // leaf
-                }
-                
-                if(sycl::max(i,j) == gamma + 1){
-                    rchild_id[i] = gamma + 1;
-                    rchild_flag[i] = 1; // leaf
-                }else{
-                    rchild_id[i] = gamma + 1;
-                    rchild_flag[i] = 0; // leaf
-                }
-
-                
-            });
-
-
-        }
-
-    );
-}
+#define DELTA(x, y) ((y > morton_lenght - 1 || y < 0) ? -1 : int(sycl::clz(m[x] ^ m[y])))
 #endif
-
-
-
 
 #ifdef SYCL_COMP_HIPSYCL
-void sycl_karras_alg(
-    sycl::queue & queue,
-    u32 internal_cell_count,
-    sycl::buffer<u_morton>* in_morton,
-    sycl::buffer<u32>* out_buf_lchild_id   ,
-    sycl::buffer<u32>* out_buf_rchild_id   ,
-    sycl::buffer<u8 >* out_buf_lchild_flag ,
-    sycl::buffer<u8 >* out_buf_rchild_flag,
-    sycl::buffer<u32>* out_buf_endrange    ){
+#define DELTA_host(x, y) __hipsycl_if_target_host(((y > morton_lenght - 1 || y < 0) ? -1 : int(__builtin_clz(m[x] ^ m[y]))))
+#define DELTA_cuda(x, y) __hipsycl_if_target_cuda(((y > morton_lenght - 1 || y < 0) ? -1 : int(__clz(m[x] ^ m[y]))))
+#define DELTA_hip(x, y) __hipsycl_if_target_hip(((y > morton_lenght - 1 || y < 0) ? -1 : int(__clz(m[x] ^ m[y]))))
+#define DELTA_spirv(x, y) __hipsycl_if_target_spirv(((y > morton_lenght - 1 || y < 0) ? -1 : int(__clz(m[x] ^ m[y]))))
+#define DELTA(x, y) DELTA_host(x, y) DELTA_cuda(x, y)
+#endif
+
+template <class u_morton, class kername>
+void __sycl_karras_alg(sycl::queue &queue, u32 internal_cell_count, std::unique_ptr<sycl::buffer<u_morton>> &in_morton,
+                       std::unique_ptr<sycl::buffer<u32>> &out_buf_lchild_id,
+                       std::unique_ptr<sycl::buffer<u32>> &out_buf_rchild_id,
+                       std::unique_ptr<sycl::buffer<u8>> &out_buf_lchild_flag,
+                       std::unique_ptr<sycl::buffer<u8>> &out_buf_rchild_flag,
+                       std::unique_ptr<sycl::buffer<u32>> &out_buf_endrange) {
 
     sycl::range<1> range_radix_tree{internal_cell_count};
 
-    if(in_morton == NULL)           throw_with_pos("in_morton isn't allocated");
-    if(out_buf_lchild_id == NULL)   throw_with_pos("out_buf_lchild_id isn't allocated");
-    if(out_buf_rchild_id == NULL)   throw_with_pos("out_buf_rchild_id isn't allocated");
-    if(out_buf_lchild_flag == NULL) throw_with_pos("out_buf_lchild_flag isn't allocated");
-    if(out_buf_rchild_flag == NULL) throw_with_pos("out_buf_rchild_flag isn't allocated");
-    if(out_buf_endrange == NULL)    throw_with_pos("out_buf_endrange isn't allocated");
+    if (in_morton == NULL)
+        throw std::runtime_error("in_morton isn't allocated");
+    if (out_buf_lchild_id == NULL)
+        throw std::runtime_error("out_buf_lchild_id isn't allocated");
+    if (out_buf_rchild_id == NULL)
+        throw std::runtime_error("out_buf_rchild_id isn't allocated");
+    if (out_buf_lchild_flag == NULL)
+        throw std::runtime_error("out_buf_lchild_flag isn't allocated");
+    if (out_buf_rchild_flag == NULL)
+        throw std::runtime_error("out_buf_rchild_flag isn't allocated");
+    if (out_buf_endrange == NULL)
+        throw std::runtime_error("out_buf_endrange isn't allocated");
 
-    queue.submit(
-        [&](sycl::handler &cgh) {
+    queue.submit([&](sycl::handler &cgh) {
+        //@TODO add check if split count above 2G
+        i32 morton_lenght = (i32)internal_cell_count + 1;
 
-            //@TODO add check if split count above 2G
-            i32 morton_lenght = (i32) internal_cell_count+1;
+        auto m = in_morton->template get_access<sycl::access::mode::read>(cgh);
 
-            auto m = in_morton->get_access<sycl::access::mode::read>(cgh);
-            
-            auto lchild_id      = out_buf_lchild_id  ->get_access<sycl::access::mode::discard_write>(cgh);
-            auto rchild_id      = out_buf_rchild_id  ->get_access<sycl::access::mode::discard_write>(cgh);
-            auto lchild_flag    = out_buf_lchild_flag->get_access<sycl::access::mode::discard_write>(cgh);
-            auto rchild_flag    = out_buf_rchild_flag->get_access<sycl::access::mode::discard_write>(cgh);
-            auto end_range_cell = out_buf_endrange   ->get_access<sycl::access::mode::discard_write>(cgh);
-            
+        auto lchild_id      = out_buf_lchild_id->get_access<sycl::access::mode::discard_write>(cgh);
+        auto rchild_id      = out_buf_rchild_id->get_access<sycl::access::mode::discard_write>(cgh);
+        auto lchild_flag    = out_buf_lchild_flag->get_access<sycl::access::mode::discard_write>(cgh);
+        auto rchild_flag    = out_buf_rchild_flag->get_access<sycl::access::mode::discard_write>(cgh);
+        auto end_range_cell = out_buf_endrange->get_access<sycl::access::mode::discard_write>(cgh);
 
-            cgh.parallel_for<Kernel_Karras_alg>(range_radix_tree, [=](sycl::item<1> item) {
+        cgh.parallel_for<kername>(range_radix_tree, [=](sycl::item<1> item) {
+            int i = (int)item.get_id(0);
 
-                int i = (int) item.get_id(0);
+            int ddelta = DELTA(i, i + 1) - DELTA(i, i - 1);
 
+            int d = SGN(ddelta);
 
-                __hipsycl_if_target_host(
-                    int ddelta = DELTA_host(i,i+1) - DELTA_host(i,i-1);
-                )
+            // Compute upper bound for the lenght of the range
+            int delta_min = DELTA(i, i - d);
+            int lmax      = 2;
+            while (DELTA(i, i + lmax * d) > delta_min) {
+                lmax *= 2;
+            }
 
-                int d = SGN(ddelta);
-                
-                //Compute upper bound for the lenght of the range
-                __hipsycl_if_target_host(
-                    int delta_min = DELTA_host(i,i-d);
-                    int lmax = 2;
-                    while(DELTA_host(i,i + lmax*d) > delta_min){
-                        lmax *= 2;
-                    }
-                )
-                
-                //Find the other end using 
-                int l = 0;
-                int t = lmax/2;
-                while(t > 0){
-                    __hipsycl_if_target_host(
-                    if(DELTA_host(i, i + (l + t)*d) > delta_min){
-                        l = l + t;
-                    }
-                    )
-                    t = t / 2;
+            // Find the other end using
+            int l = 0;
+            int t = lmax / 2;
+            while (t > 0) {
+                if (DELTA(i, i + (l + t) * d) > delta_min) {
+                    l = l + t;
                 }
-                int j = i + l*d;
-                
-                
-                end_range_cell[i] = j;
-                
-                
-                //Find the split position using binary search
-                __hipsycl_if_target_host(
-                int delta_node = DELTA_host(i,j);
-                )
-                int s= 0;
+                t = t / 2;
+            }
+            int j = i + l * d;
 
-                //@todo why float
-                float div = 2;
-                t = sycl::ceil(l/div);
-                while(true){
-                    int tmp_ = i + (s + t)*d;
-                    __hipsycl_if_target_host(
-                    if(DELTA_host(i, tmp_) > delta_node){
-                        s = s + t;
-                    }
-                    )
-                    if(t <= 1) break;
-                    div *= 2;
-                    t = sycl::ceil(l/div);
-                    
+            end_range_cell[i] = j;
+
+            // Find the split position using binary search
+            int delta_node = DELTA(i, j);
+            int s          = 0;
+
+            //@todo why float
+            float div = 2;
+            t         = sycl::ceil(l / div);
+            while (true) {
+                int tmp_ = i + (s + t) * d;
+                if (DELTA(i, tmp_) > delta_node) {
+                    s = s + t;
                 }
-                int gamma = i + s*d + sycl::min(d,0);
-                
-                if(sycl::min(i,j) == gamma){
-                    lchild_id[i] = gamma;
-                    lchild_flag[i] = 1; // leaf
-                }else{
-                    lchild_id[i] = gamma;
-                    lchild_flag[i] = 0; // leaf
-                }
-                
-                if(sycl::max(i,j) == gamma + 1){
-                    rchild_id[i] = gamma + 1;
-                    rchild_flag[i] = 1; // leaf
-                }else{
-                    rchild_id[i] = gamma + 1;
-                    rchild_flag[i] = 0; // leaf
-                }
+                if (t <= 1)
+                    break;
+                div *= 2;
+                t = sycl::ceil(l / div);
+            }
+            int gamma = i + s * d + sycl::min(d, 0);
 
-                
-            });
+            if (sycl::min(i, j) == gamma) {
+                lchild_id[i]   = gamma;
+                lchild_flag[i] = 1; // leaf
+            } else {
+                lchild_id[i]   = gamma;
+                lchild_flag[i] = 0; // leaf
+            }
 
-
-        }
+            if (sycl::max(i, j) == gamma + 1) {
+                rchild_id[i]   = gamma + 1;
+                rchild_flag[i] = 1; // leaf
+            } else {
+                rchild_id[i]   = gamma + 1;
+                rchild_flag[i] = 0; // leaf
+            }
+        });
+    }
 
     );
 }
-#endif
+
+class Kernel_Karras_alg_morton32;
+class Kernel_Karras_alg_morton64;
+
+template <>
+void sycl_karras_alg<u32>(sycl::queue &queue, u32 internal_cell_count, std::unique_ptr<sycl::buffer<u32>> &in_morton,
+                          std::unique_ptr<sycl::buffer<u32>> &out_buf_lchild_id,
+                          std::unique_ptr<sycl::buffer<u32>> &out_buf_rchild_id,
+                          std::unique_ptr<sycl::buffer<u8>> &out_buf_lchild_flag,
+                          std::unique_ptr<sycl::buffer<u8>> &out_buf_rchild_flag,
+                          std::unique_ptr<sycl::buffer<u32>> &out_buf_endrange) {
+    __sycl_karras_alg<u32, Kernel_Karras_alg_morton32>(queue, internal_cell_count, in_morton, out_buf_lchild_id,
+                                                       out_buf_rchild_id, out_buf_lchild_flag, out_buf_rchild_flag,
+                                                       out_buf_endrange);
+}
+
+template <>
+void sycl_karras_alg<u64>(sycl::queue &queue, u32 internal_cell_count, std::unique_ptr<sycl::buffer<u64>> &in_morton,
+                          std::unique_ptr<sycl::buffer<u32>> &out_buf_lchild_id,
+                          std::unique_ptr<sycl::buffer<u32>> &out_buf_rchild_id,
+                          std::unique_ptr<sycl::buffer<u8>> &out_buf_lchild_flag,
+                          std::unique_ptr<sycl::buffer<u8>> &out_buf_rchild_flag,
+                          std::unique_ptr<sycl::buffer<u32>> &out_buf_endrange) {
+    __sycl_karras_alg<u64, Kernel_Karras_alg_morton64>(queue, internal_cell_count, in_morton, out_buf_lchild_id,
+                                                       out_buf_rchild_id, out_buf_lchild_flag, out_buf_rchild_flag,
+                                                       out_buf_endrange);
+}
