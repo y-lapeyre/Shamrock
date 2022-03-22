@@ -67,7 +67,7 @@ endif()
 # Add compilation flags depending upon the build type
 ######################
 set(CMAKE_CXX_FLAGS_DEBUG "-g -Wunknown-cuda-version -Wall -Wextra -Wno-linker-warnings")
-set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG -Wall -Wextra -Wunknown-cuda-version -Wno-linker-warnings")
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 ")#-DNDEBUG ")#-Wall -Wextra -Wunknown-cuda-version -Wno-linker-warnings")
 
 if (CMAKE_BUILD_TYPE STREQUAL "GCOV")
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g --coverage")
