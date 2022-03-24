@@ -53,7 +53,6 @@ class SchedulerMPI{public:
     void scheduler_step(bool do_split_merge,bool do_load_balancing);
     
     
-
     void init_mpi_required_types();
     
     void free_mpi_required_types();

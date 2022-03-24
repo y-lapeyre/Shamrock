@@ -15,7 +15,6 @@
  * @param buf_rchild_flag output
  * @param buf_endrange output
  */
-
 template<class u_morton>
 void sycl_karras_alg(
     sycl::queue & queue,

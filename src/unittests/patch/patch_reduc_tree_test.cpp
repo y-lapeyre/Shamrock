@@ -2,10 +2,13 @@
 #include "interfaces/interface_generator.hpp"
 #include "interfaces/interface_handler.hpp"
 #include "interfaces/interface_selector.hpp"
+#include "io/dump.hpp"
 #include "patch/patch_field.hpp"
 #include "patch/patch_reduc_tree.hpp"
+#include "patch/patchdata.hpp"
 #include "patch/serialpatchtree.hpp"
 #include "patchscheduler/loadbalancing_hilbert.hpp"
+#include "patchscheduler/patch_content_exchanger.hpp"
 #include "patchscheduler/scheduler_mpi.hpp"
 #include "sys/mpi_handler.hpp"
 #include "sys/sycl_mpi_interop.hpp"
@@ -122,6 +125,8 @@ Test_start("patch::patch_reduc_tree::", generation, -1) {
         interface_hndl.comm_interfaces(sched);
         interface_hndl.print_current_interf_map();
 
+        
+
         sched.dump_local_patches(format("patches_%d_node%d", 0, mpi_handler::world_rank));
     }
 
@@ -176,6 +181,28 @@ Test_start("patch::patch_reduc_tree::", generation, -1) {
             interface_hndl.print_current_interf_map();
 
             sched.dump_local_patches(format("patches_%d_node%d", stepi, mpi_handler::world_rank));
+
+
+            for(auto & [id,pdat] : sched.patch_data.owned_data){
+                if(pdat.pos_s.size() > 0){
+                    sycl::buffer<f32_3> pos(pdat.pos_s.data(),pdat.pos_s.size());
+
+                    sycl::buffer<u64> newid = __compute_object_patch_owner<f32_3, class ComputeObejctPatchOwners>(
+                        hndl.get_queue_compute(0), 
+                        pos, 
+                        sptree);
+
+                    {
+                        auto nid = newid.get_access<sycl::access::mode::read>();
+
+                        for(u32 i = 0 ; i < pdat.pos_s.size() ; i++){
+                            std::cout <<id  << " " << i << " " <<nid[i] << "\n";
+                        }std::cout << std::endl;
+                    }
+                }
+            }
+
+            dump_state("step"+std::to_string(stepi)+"/",sched);
         }
 
         // TODO test if a interface of size 0.5x0.5x0.5 exist == error

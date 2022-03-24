@@ -39,7 +39,7 @@ template<class fp_prec_vec>
 class SerialPatchTree{public:
 
     
-
+    //TODO use unique pointer instead
     sycl::buffer<PtNode<fp_prec_vec>>* serial_tree_buf = nullptr;
     sycl::buffer<u64>*    linked_patch_ids_buf = nullptr;
 
