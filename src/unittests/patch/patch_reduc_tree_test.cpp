@@ -27,7 +27,7 @@ Test_start("patch::patch_reduc_tree::", generation, -1) {
 
     SyCLHandler &hndl = SyCLHandler::get_instance();
 
-    SchedulerMPI sched = SchedulerMPI(10, 1);
+    SchedulerMPI sched = SchedulerMPI(2500, 1);
     sched.init_mpi_required_types();
 
     patchdata_layout::set(1, 0, 0, 0, 0, 0);
@@ -36,8 +36,8 @@ Test_start("patch::patch_reduc_tree::", generation, -1) {
     if (mpi_handler::world_rank == 0) {
         Patch p;
 
-        p.data_count    = 200;
-        p.load_value    = 200;
+        p.data_count    = 1e4;
+        p.load_value    = 1e4;
         p.node_owner_id = mpi_handler::world_rank;
 
         p.x_min = 0;

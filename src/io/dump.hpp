@@ -54,7 +54,7 @@ inline void dump_state(std::string prefix, SchedulerMPI & sched){
             sz_pref[4] = pdat.U3_s.size() ;
             sz_pref[5] = pdat.U3_d.size() ;
 
-            std::cout << "writing "<<patch_files[pfile_map[pid]].name<<" from rank = " << mpi_handler::world_rank << " {" << 
+            std::cout << "writing "<< patch_files[pfile_map[pid]].name <<" from rank = " << mpi_handler::world_rank << " {" << 
             sz_pref[0]<<","<<
             sz_pref[1]<<","<<
             sz_pref[2]<<","<<
@@ -68,8 +68,8 @@ inline void dump_state(std::string prefix, SchedulerMPI & sched){
 
             mpi::file_write(mfilepatch, pdat.pos_s.data(), sz_pref[0] , mpi_type_f32_3, &st);
             mpi::file_write(mfilepatch, pdat.pos_d.data(), sz_pref[1] , mpi_type_f64_3, &st);
-            mpi::file_write(mfilepatch, pdat.U1_s.data() , sz_pref[2] , mpi_type_f32, &st);
-            mpi::file_write(mfilepatch, pdat.U1_d.data() , sz_pref[3] , mpi_type_f64, &st);
+            mpi::file_write(mfilepatch, pdat.U1_s.data() , sz_pref[2] , mpi_type_f32  , &st);
+            mpi::file_write(mfilepatch, pdat.U1_d.data() , sz_pref[3] , mpi_type_f64  , &st);
             mpi::file_write(mfilepatch, pdat.U3_s.data() , sz_pref[4] , mpi_type_f32_3, &st);
             mpi::file_write(mfilepatch, pdat.U3_d.data() , sz_pref[5] , mpi_type_f64_3, &st);
 
