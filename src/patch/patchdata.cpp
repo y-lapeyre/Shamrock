@@ -11,8 +11,10 @@
 
 #include "patchdata.hpp"
 
+#include <algorithm>
 #include <exception>
 #include <stdexcept>
+#include <vector>
 
 
 
@@ -236,4 +238,63 @@ bool patch_data_check_match(PatchData& p1, PatchData& p2){
     }
 
     return check;
+}
+
+template<class obj> obj fast_extract(u32 idx, std::vector<obj>& cnt){
+
+    std::swap(cnt[idx],*(cnt.end()-1));
+    const obj ret = *cnt.end()-1;
+    cnt.pop_back();
+
+    return ret;
+}
+
+void PatchData::extract_particle(u32 pidx, 
+    std::vector<f32_3> &out_pos_s, 
+    std::vector<f64_3> &out_pos_d, 
+    std::vector<f32> &out_U1_s, 
+    std::vector<f64> &out_U1_d, 
+    std::vector<f32_3> &out_U3_s, 
+    std::vector<f64_3> &out_U3_d){
+
+    const u64 idx_pos_s = pidx * patchdata_layout::nVarpos_s;
+    const u64 idx_pos_d = pidx * patchdata_layout::nVarpos_d;
+    const u64 idx_U1_s  = pidx * patchdata_layout::nVarU1_s ;
+    const u64 idx_U1_d  = pidx * patchdata_layout::nVarU1_d ;
+    const u64 idx_U3_s  = pidx * patchdata_layout::nVarU3_s ;
+    const u64 idx_U3_d  = pidx * patchdata_layout::nVarU3_d ;
+ 
+    for(u32 i = patchdata_layout::nVarpos_s-1 ; i < patchdata_layout::nVarpos_s ; i--){
+        out_pos_s.push_back(fast_extract(idx_pos_s + i, pos_s));
+    }
+
+    for(u32 i = patchdata_layout::nVarpos_d-1 ; i < patchdata_layout::nVarpos_d ; i--){
+        out_pos_d.push_back(fast_extract(idx_pos_d + i, pos_d));
+    }
+
+    for(u32 i = patchdata_layout::nVarU1_s-1 ; i < patchdata_layout::nVarU1_s ; i--){
+        out_U1_s.push_back(fast_extract(idx_U1_s + i, U1_s));
+    }
+
+    for(u32 i = patchdata_layout::nVarU1_d-1 ; i < patchdata_layout::nVarU1_d ; i--){
+        out_U1_d.push_back(fast_extract(idx_U1_d + i, U1_d));
+    }
+
+    for(u32 i = patchdata_layout::nVarU3_s-1 ; i < patchdata_layout::nVarU3_s ; i--){
+        out_U3_s.push_back(fast_extract(idx_U3_s + i, U3_s));
+    }
+
+    for(u32 i = patchdata_layout::nVarU3_d-1 ; i < patchdata_layout::nVarU3_d ; i--){
+        out_U3_d.push_back(fast_extract(idx_U3_d + i, U3_d));
+    }
+
+}
+
+void PatchData::insert_particles(std::vector<f32_3> &in_pos_s, std::vector<f64_3> &in_pos_d, std::vector<f32> &in_U1_s, std::vector<f64> &in_U1_d, std::vector<f32_3> &in_U3_s, std::vector<f64_3> &in_U3_d){
+    pos_s.insert(pos_s.end(),in_pos_s.begin(), in_pos_s.end());
+    pos_d.insert(pos_d.end(),in_pos_d.begin(), in_pos_d.end());
+    U1_s .insert(U1_s .end(),in_U1_s .begin(), in_U1_s .end());
+    U1_d .insert(U1_d .end(),in_U1_d .begin(), in_U1_d .end());
+    U3_s .insert(U3_s .end(),in_U3_s .begin(), in_U3_s .end());
+    U3_d .insert(U3_d .end(),in_U3_d .begin(), in_U3_d .end());
 }

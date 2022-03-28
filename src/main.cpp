@@ -15,7 +15,10 @@
 #include "sys/sycl_mpi_interop.hpp"
 #include "unittests/shamrocktest.hpp"
 #include "utils/string_utils.hpp"
+#include <memory>
 #include <string>
+#include <unordered_map>
+#include <vector>
 
 
 int main(int argc, char *argv[]){
@@ -165,51 +168,80 @@ int main(int argc, char *argv[]){
 
             //sched.dump_local_patches(format("patches_%d_node%d", stepi, mpi_handler::world_rank));
 
-
             for(auto & [id,pdat] : sched.patch_data.owned_data){
                 if(pdat.pos_s.size() > 0){
-                    sycl::buffer<f32_3> pos(pdat.pos_s.data(),pdat.pos_s.size());
+                    std::unique_ptr<sycl::buffer<f32_3>> pos = std::make_unique<sycl::buffer<f32_3>>(pdat.pos_s.data(),pdat.pos_s.size());
 
 
-                    if(true){
+                    if(true && stepi > 2){
                         hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
-                            auto posacc= pos.get_access<sycl::access::mode::read_write>(cgh);
+                            auto posacc= pos->get_access<sycl::access::mode::read_write>(cgh);
                             
-                            cgh.parallel_for<class Modify_pos>(sycl::range(pos.size()), [=](sycl::item<1> item) {
+                            cgh.parallel_for<class Modify_pos>(sycl::range(pos->size()), [=](sycl::item<1> item) {
                                 u32 i = (u32)item.get_id(0);
 
                                 posacc[i] /= 1.1; 
                             });
                         });
                     }
+                }
+            }
 
 
+            
+            std::vector<std::unique_ptr<PatchData>> comm_pdat;
+            std::vector<u64_2> comm_vec;
 
+            for(auto & [id,pdat] : sched.patch_data.owned_data){
+                if(pdat.pos_s.size() > 0){
 
-
-
-
-
-
-
-
-
-
+                    std::unique_ptr<sycl::buffer<f32_3>> pos = std::make_unique<sycl::buffer<f32_3>>(pdat.pos_s.data(),pdat.pos_s.size());
 
                     sycl::buffer<u64> newid = __compute_object_patch_owner<f32_3, class ComputeObejctPatchOwners>(
                         hndl.get_queue_compute(0), 
-                        pos, 
+                        *pos, 
                         sptree);
 
-                    if(false){
-                        auto nid = newid.get_access<sycl::access::mode::read>();
+                    pos.reset();
 
-                        for(u32 i = 0 ; i < pdat.pos_s.size() ; i++){
-                            std::cout <<id  << " " << i << " " <<nid[i] << "\n";
+
+
+                    if(true){
+
+                        auto nid = newid.get_access<sycl::access::mode::read>();
+                        
+                        std::unordered_map<u64 , std::unique_ptr<PatchData>> send_map;
+                        for(u32 i = pdat.pos_s.size()-1 ; i < pdat.pos_s.size() ; i--){
+                            if(id != nid[i]){
+                                std::cout << id  << " " << i << " " << nid[i] << "\n";
+                                std::unique_ptr<PatchData> & pdat_int = send_map[nid[i]];
+
+                                if(! pdat_int){
+                                    pdat_int = std::make_unique<PatchData>();
+                                }
+
+                                pdat.extract_particle(i, pdat_int->pos_s, pdat_int->pos_d, pdat_int->U1_s, pdat_int->U1_d, pdat_int->U3_s, pdat_int->U3_d);
+                            }
+                                
                         }std::cout << std::endl;
+
+                        for(auto & [receiver_pid, pdat_ptr] : send_map){
+                            std::cout << "send " << id << " -> " << receiver_pid << std::endl;
+                        }
                     }
                 }
             }
+
+            
+            
+            // for(auto & [id,pdat] : send_map){
+            //     std::cout << "sending to patch " << id << " | owned by : " << sched.patch_list.global[sched.patch_list.id_patch_to_global_idx[id]].node_owner_id <<std::endl;
+
+
+            // }
+            
+            
+            std::unordered_map<u64 , PatchData> recv_map;
 
             dump_state("step"+std::to_string(stepi)+"/",sched);
         }
