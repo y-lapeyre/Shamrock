@@ -1,3 +1,4 @@
+#include "CL/sycl/range.hpp"
 #include "aliases.hpp"
 #include "interfaces/interface_generator.hpp"
 #include "interfaces/interface_handler.hpp"
@@ -7,6 +8,7 @@
 #include "patch/patch_reduc_tree.hpp"
 #include "patch/patchdata.hpp"
 #include "patch/serialpatchtree.hpp"
+#include "patch/patchdata_exchanger.hpp"
 #include "patchscheduler/loadbalancing_hilbert.hpp"
 #include "patchscheduler/patch_content_exchanger.hpp"
 #include "patchscheduler/scheduler_mpi.hpp"
@@ -164,7 +166,7 @@ int main(int argc, char *argv[]){
             InterfaceHandler<f32_3, f32> interface_hndl;
             interface_hndl.compute_interface_list<InterfaceSelector_SPH<f32_3, f32>>(sched, sptree, h_field);
             interface_hndl.comm_interfaces(sched);
-            interface_hndl.print_current_interf_map();
+            //interface_hndl.print_current_interf_map();
 
             //sched.dump_local_patches(format("patches_%d_node%d", stepi, mpi_handler::world_rank));
 
@@ -213,7 +215,7 @@ int main(int argc, char *argv[]){
                         std::unordered_map<u64 , std::unique_ptr<PatchData>> send_map;
                         for(u32 i = pdat.pos_s.size()-1 ; i < pdat.pos_s.size() ; i--){
                             if(id != nid[i]){
-                                std::cout << id  << " " << i << " " << nid[i] << "\n";
+                                //std::cout << id  << " " << i << " " << nid[i] << "\n";
                                 std::unique_ptr<PatchData> & pdat_int = send_map[nid[i]];
 
                                 if(! pdat_int){
@@ -226,22 +228,47 @@ int main(int argc, char *argv[]){
                         }std::cout << std::endl;
 
                         for(auto & [receiver_pid, pdat_ptr] : send_map){
-                            std::cout << "send " << id << " -> " << receiver_pid << std::endl;
+                            std::cout << "send " << id << " -> " << receiver_pid <<  " len : " << pdat_ptr->pos_s.size()<<std::endl;
+
+
+                            comm_vec.push_back(u64_2{sched.patch_list.id_patch_to_global_idx[id],sched.patch_list.id_patch_to_global_idx[receiver_pid]});
+                            comm_pdat.push_back(std::move(pdat_ptr));
+
                         }
                     }
                 }
             }
 
             
-            
-            // for(auto & [id,pdat] : send_map){
-            //     std::cout << "sending to patch " << id << " | owned by : " << sched.patch_list.global[sched.patch_list.id_patch_to_global_idx[id]].node_owner_id <<std::endl;
+            std::unordered_map<u64, std::vector<std::tuple<u64, std::unique_ptr<PatchData>>>> part_xchg_map;
+            for(u32 i = 0; i < comm_pdat.size(); i++){
+                
+                std::cout << comm_vec[i].x() << " " << comm_vec[i].y() << " " << comm_pdat[i].get() << std::endl; 
+            }
 
+            patch_data_exchange_object(
+                sched.patch_list.global, 
+                comm_pdat, comm_vec, 
+                part_xchg_map);
 
-            // }
-            
-            
-            std::unordered_map<u64 , PatchData> recv_map;
+            for(auto & [recv_id, vec_r] : part_xchg_map){
+                std::cout << "patch " << recv_id << "\n";
+                for(auto & [send_id, pdat] : vec_r){
+                    std::cout << "    " << send_id << " len : " << pdat->pos_s.size() << "\n"; 
+
+                    PatchData & pdat_recv = sched.patch_data.owned_data[recv_id];
+
+                    //*
+                    pdat_recv.insert_particles(
+                        pdat->pos_s,
+                        pdat->pos_d,
+                        pdat->U1_s,
+                        pdat->U1_d,
+                        pdat->U3_s,
+                        pdat->U3_d);
+                        //*/
+                }
+            }
 
             dump_state("step"+std::to_string(stepi)+"/",sched);
         }

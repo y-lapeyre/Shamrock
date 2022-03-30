@@ -66,7 +66,7 @@ void patch_data_exchange_object(
             if (precv.node_owner_id == mpi_handler::world_rank) {
 
                 if (psend.node_owner_id != precv.node_owner_id) {
-                    std::cout << format("recv (%3d,%3d) : %d -> %d / %d\n", global_comm_vec[i].x(), global_comm_vec[i].y(),
+                    std::cout << format("recv (%3d,%3d) : %d -> %d / %d\n", psend.id_patch, precv.id_patch,
                                         psend.node_owner_id, precv.node_owner_id, global_comm_tag[i]);
                     recv_obj[precv.id_patch].push_back(
                         {psend.id_patch, std::make_unique<PatchData>()}); // patchdata_irecv(recv_rq, psend.node_owner_id,

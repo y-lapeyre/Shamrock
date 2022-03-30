@@ -242,11 +242,13 @@ bool patch_data_check_match(PatchData& p1, PatchData& p2){
 
 template<class obj> obj fast_extract(u32 idx, std::vector<obj>& cnt){
 
-    std::swap(cnt[idx],*(cnt.end()-1));
-    const obj ret = *cnt.end()-1;
+    obj end_ = *(cnt.end()-1);
+    obj extr = cnt[idx];
+
+    cnt[idx] = end_;
     cnt.pop_back();
 
-    return ret;
+    return extr;
 }
 
 void PatchData::extract_particle(u32 pidx, 
@@ -265,7 +267,9 @@ void PatchData::extract_particle(u32 pidx,
     const u64 idx_U3_d  = pidx * patchdata_layout::nVarU3_d ;
  
     for(u32 i = patchdata_layout::nVarpos_s-1 ; i < patchdata_layout::nVarpos_s ; i--){
-        out_pos_s.push_back(fast_extract(idx_pos_s + i, pos_s));
+        f32_3 r = fast_extract(idx_pos_s + i, pos_s);
+        std::cout << "   {"<<r.x()<<","<<r.y()<<","<<r.z()<<"}\n" ;
+        out_pos_s.push_back(r);
     }
 
     for(u32 i = patchdata_layout::nVarpos_d-1 ; i < patchdata_layout::nVarpos_d ; i--){
