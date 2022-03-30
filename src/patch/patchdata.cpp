@@ -267,9 +267,7 @@ void PatchData::extract_particle(u32 pidx,
     const u64 idx_U3_d  = pidx * patchdata_layout::nVarU3_d ;
  
     for(u32 i = patchdata_layout::nVarpos_s-1 ; i < patchdata_layout::nVarpos_s ; i--){
-        f32_3 r = fast_extract(idx_pos_s + i, pos_s);
-        std::cout << "   {"<<r.x()<<","<<r.y()<<","<<r.z()<<"}\n" ;
-        out_pos_s.push_back(r);
+        out_pos_s.push_back(fast_extract(idx_pos_s + i, pos_s));
     }
 
     for(u32 i = patchdata_layout::nVarpos_d-1 ; i < patchdata_layout::nVarpos_d ; i--){
