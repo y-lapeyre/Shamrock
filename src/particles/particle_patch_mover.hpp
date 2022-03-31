@@ -23,7 +23,7 @@ inline void reatribute_particles<f32_3>(SchedulerMPI & sched, SerialPatchTree<f3
 
         newid_buf_map.insert({
             id,
-            __compute_object_patch_owner<f32_3, class ComputeObejctPatchOwners>(
+            __compute_object_patch_owner<f32_3, class ComputeObejctPatchOwners_f32>(
                 hndl.get_queue_compute(0), 
                 *pos, 
                 sptree)});
@@ -111,7 +111,7 @@ inline void reatribute_particles<f32_3>(SchedulerMPI & sched, SerialPatchTree<f3
                 std::unordered_map<u64 , std::unique_ptr<PatchData>> send_map;
                 for(u32 i = pdat.pos_s.size()-1 ; i < pdat.pos_s.size() ; i--){
                     if(id != nid[i]){
-                        std::cout << id  << " " << i << " " << nid[i] << "\n";
+                        //std::cout << id  << " " << i << " " << nid[i] << "\n";
                         std::unique_ptr<PatchData> & pdat_int = send_map[nid[i]];
 
                         if(! pdat_int){
@@ -121,7 +121,7 @@ inline void reatribute_particles<f32_3>(SchedulerMPI & sched, SerialPatchTree<f3
                         pdat.extract_particle(i, pdat_int->pos_s, pdat_int->pos_d, pdat_int->U1_s, pdat_int->U1_d, pdat_int->U3_s, pdat_int->U3_d);
                     }
                         
-                }std::cout << std::endl;
+                }//std::cout << std::endl;
 
                 for(auto & [receiver_pid, pdat_ptr] : send_map){
                     //std::cout << "send " << id << " -> " << receiver_pid <<  " len : " << pdat_ptr->pos_s.size()<<std::endl;
@@ -182,7 +182,7 @@ inline void reatribute_particles<f64_3>(SchedulerMPI & sched, SerialPatchTree<f6
 
         newid_buf_map.insert({
             id,
-            __compute_object_patch_owner<f64_3, class ComputeObejctPatchOwners>(
+            __compute_object_patch_owner<f64_3, class ComputeObejctPatchOwners_f64>(
                 hndl.get_queue_compute(0), 
                 *pos, 
                 sptree)});
@@ -242,7 +242,7 @@ inline void reatribute_particles<f64_3>(SchedulerMPI & sched, SerialPatchTree<f6
             std::unique_ptr<sycl::buffer<f64_3>> pos = std::make_unique<sycl::buffer<f64_3>>(pdat.pos_d.data(),pdat.pos_d.size());
 
             newid_buf_map.at(id)=
-                __compute_object_patch_owner<f64_3, class ComputeObejctPatchOwners2>(
+                __compute_object_patch_owner<f64_3, class ComputeObejctPatchOwners2_f64>(
                     hndl.get_queue_compute(0), 
                     *pos, 
                     sptree);
@@ -272,7 +272,7 @@ inline void reatribute_particles<f64_3>(SchedulerMPI & sched, SerialPatchTree<f6
                 std::unordered_map<u64 , std::unique_ptr<PatchData>> send_map;
                 for(u32 i = pdat.pos_s.size()-1 ; i < pdat.pos_s.size() ; i--){
                     if(id != nid[i]){
-                        std::cout << id  << " " << i << " " << nid[i] << "\n";
+                        //std::cout << id  << " " << i << " " << nid[i] << "\n";
                         std::unique_ptr<PatchData> & pdat_int = send_map[nid[i]];
 
                         if(! pdat_int){
@@ -282,7 +282,7 @@ inline void reatribute_particles<f64_3>(SchedulerMPI & sched, SerialPatchTree<f6
                         pdat.extract_particle(i, pdat_int->pos_s, pdat_int->pos_d, pdat_int->U1_s, pdat_int->U1_d, pdat_int->U3_s, pdat_int->U3_d);
                     }
                         
-                }std::cout << std::endl;
+                }//std::cout << std::endl;
 
                 for(auto & [receiver_pid, pdat_ptr] : send_map){
                     //std::cout << "send " << id << " -> " << receiver_pid <<  " len : " << pdat_ptr->pos_s.size()<<std::endl;

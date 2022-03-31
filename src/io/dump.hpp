@@ -29,7 +29,7 @@ inline void dump_state(std::string prefix, SchedulerMPI & sched){
 
     for(PatchFile & pf : patch_files){
 
-        std::cout << "opening : " << pf.name << std::endl;
+        //std::cout << "opening : " << pf.name << std::endl;
         int rc = mpi::file_open(MPI_COMM_WORLD, pf.name.c_str(), MPI_MODE_CREATE | MPI_MODE_WRONLY , MPI_INFO_NULL, &pf.mfile);
 
         if (rc) {
@@ -54,14 +54,14 @@ inline void dump_state(std::string prefix, SchedulerMPI & sched){
             sz_pref[4] = pdat.U3_s.size() ;
             sz_pref[5] = pdat.U3_d.size() ;
 
-            std::cout << "writing "<< patch_files[pfile_map[pid]].name <<" from rank = " << mpi_handler::world_rank << " {" << 
-            sz_pref[0]<<","<<
-            sz_pref[1]<<","<<
-            sz_pref[2]<<","<<
-            sz_pref[3]<<","<<
-            sz_pref[4]<<","<<
-            sz_pref[5]<<"}"<<
-            std::endl;
+            // std::cout << "writing "<< patch_files[pfile_map[pid]].name <<" from rank = " << mpi_handler::world_rank << " {" << 
+            // sz_pref[0]<<","<<
+            // sz_pref[1]<<","<<
+            // sz_pref[2]<<","<<
+            // sz_pref[3]<<","<<
+            // sz_pref[4]<<","<<
+            // sz_pref[5]<<"}"<<
+            // std::endl;
 
             MPI_Status st;
             mpi::file_write(mfilepatch,sz_pref, 6, mpi_type_u64, &st);

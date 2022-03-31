@@ -33,7 +33,7 @@ void _comm_interfaces(SchedulerMPI &sched, std::vector<InterfaceComm<vectype>> &
                 u64_2{interface_comm_list[i].global_patch_idx_send, interface_comm_list[i].global_patch_idx_recv});
         }
 
-        std::cout << "\n split \n";
+        //std::cout << "\n split \n";
     }
 
     patch_data_exchange_object(sched.patch_list.global, comm_pdat,comm_vec,interface_map);

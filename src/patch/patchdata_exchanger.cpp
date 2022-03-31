@@ -9,8 +9,9 @@ void patch_data_exchange_object(
     std::unordered_map<u64, std::vector<std::tuple<u64, std::unique_ptr<PatchData>>>> & recv_obj
     ){
 
-    std::cout << "len comm_pdat : " << send_comm_pdat.size() << std::endl;
-    std::cout << "len comm_vec : " << send_comm_vec.size() << std::endl;
+    //TODO enable if ultra verbose
+    // std::cout << "len comm_pdat : " << send_comm_pdat.size() << std::endl;
+    // std::cout << "len comm_vec : " << send_comm_vec.size() << std::endl;
 
     std::vector<i32> local_comm_tag(send_comm_vec.size());
     {
@@ -42,8 +43,9 @@ void patch_data_exchange_object(
                 recv_obj[precv.id_patch].push_back({psend.id_patch, std::move(send_comm_pdat[i])});
                 send_comm_pdat[i] = nullptr;
             } else {
-                std::cout << format("send : (%3d,%3d) : %d -> %d / %d\n", psend.id_patch, precv.id_patch,
-                                    psend.node_owner_id, precv.node_owner_id, local_comm_tag[i]);
+                //TODO enable if ultra verbose
+                //std::cout << format("send : (%3d,%3d) : %d -> %d / %d\n", psend.id_patch, precv.id_patch,
+                //                    psend.node_owner_id, precv.node_owner_id, local_comm_tag[i]);
                 patchdata_isend(*send_comm_pdat[i], rq_lst, precv.node_owner_id, local_comm_tag[i], MPI_COMM_WORLD);
             }
 
@@ -66,8 +68,9 @@ void patch_data_exchange_object(
             if (precv.node_owner_id == mpi_handler::world_rank) {
 
                 if (psend.node_owner_id != precv.node_owner_id) {
-                    std::cout << format("recv (%3d,%3d) : %d -> %d / %d\n", psend.id_patch, precv.id_patch,
-                                        psend.node_owner_id, precv.node_owner_id, global_comm_tag[i]);
+                    //TODO enable if ultra verbose
+                    // std::cout << format("recv (%3d,%3d) : %d -> %d / %d\n", psend.id_patch, precv.id_patch,
+                    //                     psend.node_owner_id, precv.node_owner_id, global_comm_tag[i]);
                     recv_obj[precv.id_patch].push_back(
                         {psend.id_patch, std::make_unique<PatchData>()}); // patchdata_irecv(recv_rq, psend.node_owner_id,
                                                                           // global_comm_tag[i], MPI_COMM_WORLD)}

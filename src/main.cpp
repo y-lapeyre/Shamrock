@@ -25,104 +25,99 @@
 #include <unordered_map>
 #include <vector>
 
+class TestSimInfo{public:
 
-int main(int argc, char *argv[]){
+    u32 time;
+
+};
 
 
-    std::cout << shamrock_title_bar_big << std::endl;
 
-    mpi_handler::init();
+class TestTimestepper{public:
 
-    Cmdopt & opt = Cmdopt::get_instance();
-    opt.init(argc, argv,"./shamrock");
+    static void init(SchedulerMPI & sched,TestSimInfo & siminfo){
 
-    SyCLHandler & hndl = SyCLHandler::get_instance();
-    hndl.init_sycl();
+        patchdata_layout::set(1, 0, 0, 0, 0, 0);
+        patchdata_layout::sync(MPI_COMM_WORLD);
 
-    
+        if (mpi_handler::world_rank == 0) {
+            Patch p;
 
-    SchedulerMPI sched = SchedulerMPI(2000,1);
-    sched.init_mpi_required_types();
+            p.data_count    = 1e5;
+            p.load_value    = 1e5;
+            p.node_owner_id = mpi_handler::world_rank;
 
-    patchdata_layout::set(1, 0, 0, 0, 0, 0);
-    patchdata_layout::sync(MPI_COMM_WORLD);
+            p.x_min = 0;
+            p.y_min = 0;
+            p.z_min = 0;
 
-    if (mpi_handler::world_rank == 0) {
-        Patch p;
+            p.x_max = HilbertLB::max_box_sz;
+            p.y_max = HilbertLB::max_box_sz;
+            p.z_max = HilbertLB::max_box_sz;
 
-        p.data_count    = 1e5;
-        p.load_value    = 1e5;
-        p.node_owner_id = mpi_handler::world_rank;
+            p.pack_node_index = u64_max;
 
-        p.x_min = 0;
-        p.y_min = 0;
-        p.z_min = 0;
+            PatchData pdat;
 
-        p.x_max = HilbertLB::max_box_sz;
-        p.y_max = HilbertLB::max_box_sz;
-        p.z_max = HilbertLB::max_box_sz;
+            std::mt19937 eng(0x1111);
+            std::uniform_real_distribution<f32> distpos(-1, 1);
 
-        p.pack_node_index = u64_max;
+            for (u32 part_id = 0; part_id < p.data_count; part_id++)
+                pdat.pos_s.push_back({distpos(eng), distpos(eng), distpos(eng)});
 
-        PatchData pdat;
+            sched.add_patch(p, pdat);
 
-        std::mt19937 eng(0x1111);
-        std::uniform_real_distribution<f32> distpos(-1, 1);
-
-        for (u32 part_id = 0; part_id < p.data_count; part_id++)
-            pdat.pos_s.push_back({distpos(eng), distpos(eng), distpos(eng)});
-
-        sched.add_patch(p, pdat);
-
-    } else {
-        sched.patch_list._next_patch_id++;
-    }
-    
-    sched.owned_patch_id = sched.patch_list.build_local();
-
-    // std::cout << sched.dump_status() << std::endl;
-    sched.patch_list.build_global();
-    // std::cout << sched.dump_status() << std::endl;
-
-    //*
-    sched.patch_tree.build_from_patchtable(sched.patch_list.global, HilbertLB::max_box_sz);
-    sched.patch_data.sim_box.min_box_sim_s = {-1};
-    sched.patch_data.sim_box.max_box_sim_s = {1};
-
-    // std::cout << sched.dump_status() << std::endl;
-
-    std::cout << "build local" << std::endl;
-    sched.owned_patch_id = sched.patch_list.build_local();
-    sched.patch_list.build_local_idx_map();
-    sched.update_local_dtcnt_value();
-    sched.update_local_load_value();
-
-    // sched.patch_list.build_global();
-
-    std::cout << " ------ step time = " << 0 << " ------" << std::endl;
-    {
-        SerialPatchTree<f32_3> sptree(sched.patch_tree, sched.get_box_tranform<f32_3>());
-        sptree.attach_buf();
-
-        PatchField<f32> h_field;
-        h_field.local_nodes_value.resize(sched.patch_list.local.size());
-        for (u64 idx = 0; idx < sched.patch_list.local.size(); idx++) {
-            h_field.local_nodes_value[idx] = 0.1f;
+        } else {
+            sched.patch_list._next_patch_id++;
         }
-        h_field.build_global(mpi_type_f32);
+        
+        sched.owned_patch_id = sched.patch_list.build_local();
 
-        InterfaceHandler<f32_3, f32> interface_hndl;
-        interface_hndl.compute_interface_list<InterfaceSelector_SPH<f32_3, f32>>(sched, sptree, h_field);
-        interface_hndl.comm_interfaces(sched);
-        interface_hndl.print_current_interf_map();
+        // std::cout << sched.dump_status() << std::endl;
+        sched.patch_list.build_global();
+        // std::cout << sched.dump_status() << std::endl;
 
-        //sched.dump_local_patches(format("patches_%d_node%d", 0, mpi_handler::world_rank));
+        //*
+        sched.patch_tree.build_from_patchtable(sched.patch_list.global, HilbertLB::max_box_sz);
+        sched.patch_data.sim_box.min_box_sim_s = {-1};
+        sched.patch_data.sim_box.max_box_sim_s = {1};
 
-        dump_state("step"+std::to_string(0)+"/",sched);
+        // std::cout << sched.dump_status() << std::endl;
+
+        std::cout << "build local" << std::endl;
+        sched.owned_patch_id = sched.patch_list.build_local();
+        sched.patch_list.build_local_idx_map();
+        sched.update_local_dtcnt_value();
+        sched.update_local_load_value();
+
+        // sched.patch_list.build_global();
+
+        {
+            SerialPatchTree<f32_3> sptree(sched.patch_tree, sched.get_box_tranform<f32_3>());
+            sptree.attach_buf();
+
+            PatchField<f32> h_field;
+            h_field.local_nodes_value.resize(sched.patch_list.local.size());
+            for (u64 idx = 0; idx < sched.patch_list.local.size(); idx++) {
+                h_field.local_nodes_value[idx] = 0.1f;
+            }
+            h_field.build_global(mpi_type_f32);
+
+            InterfaceHandler<f32_3, f32> interface_hndl;
+            interface_hndl.compute_interface_list<InterfaceSelector_SPH<f32_3, f32>>(sched, sptree, h_field);
+            interface_hndl.comm_interfaces(sched);
+            interface_hndl.print_current_interf_map();
+
+            //sched.dump_local_patches(format("patches_%d_node%d", 0, mpi_handler::world_rank));
+
+        }
+
     }
 
-    for (u32 stepi = 1; stepi < 6; stepi++) {
-        std::cout << " ------ step time = " << stepi << " ------" << std::endl;
+    static void step(SchedulerMPI & sched,TestSimInfo & siminfo){
+
+        SyCLHandler & hndl = SyCLHandler::get_instance();
+        
         // std::cout << sched.dump_status() << std::endl;
         sched.scheduler_step(true, true);
 
@@ -178,7 +173,7 @@ int main(int argc, char *argv[]){
                     std::unique_ptr<sycl::buffer<f32_3>> pos = std::make_unique<sycl::buffer<f32_3>>(pdat.pos_s.data(),pdat.pos_s.size());
 
 
-                    if(true && stepi > 2){
+                    if(true && siminfo.time > 2){
                         hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
                             auto posacc= pos->get_access<sycl::access::mode::read_write>(cgh);
                             
@@ -195,26 +190,58 @@ int main(int argc, char *argv[]){
 
             
             reatribute_particles(sched, sptree);
+        }
+    }
+
+};
+
+
+template<class Timestepper,class SimInfo>
+class SimulationSPH{public:
+
+    static void run_sim(){
+
+        SchedulerMPI sched = SchedulerMPI(2000,1);
+        sched.init_mpi_required_types();
+
+
+        SimInfo siminfo;
+
+        Timestepper::init(sched,siminfo);
+
+        dump_state("step"+std::to_string(0)+"/",sched);
+
+
+
+        std::cout << " ------ init sim ------" << std::endl;
+        for (u32 stepi = 1; stepi < 6; stepi++) {
+            std::cout << " ------ step time = " << stepi << " ------" << std::endl;
+            siminfo.time = stepi;
+            Timestepper::step(sched,siminfo);
 
             dump_state("step"+std::to_string(stepi)+"/",sched);
         }
 
-        // TODO test if a interface of size 0.5x0.5x0.5 exist == error
+        sched.free_mpi_required_types();
+
     }
 
-    // std::cout << sched.dump_status() << std::endl;
+};
 
-    std::cout << "changing crit\n";
-    sched.crit_patch_merge = 30;
-    sched.crit_patch_split = 100;
-    sched.scheduler_step(true, true);
+int main(int argc, char *argv[]){
 
-    // std::cout << sched.dump_status() << std::endl;
-    //*/
 
-    printf("shoudl resize : %d",sched.should_resize_box(mpi_handler::world_rank >4 ));
+    std::cout << shamrock_title_bar_big << std::endl;
 
-    sched.free_mpi_required_types();
+    mpi_handler::init();
+
+    Cmdopt & opt = Cmdopt::get_instance();
+    opt.init(argc, argv,"./shamrock");
+
+    SyCLHandler & hndl = SyCLHandler::get_instance();
+    hndl.init_sycl();
+
+    SimulationSPH<TestTimestepper,TestSimInfo>::run_sim();
 
     mpi_handler::close();
 
