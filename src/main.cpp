@@ -5,6 +5,7 @@
 #include "interfaces/interface_selector.hpp"
 #include "io/dump.hpp"
 #include "particles/particle_patch_mover.hpp"
+#include "io/logs.hpp"
 #include "patch/patch_field.hpp"
 #include "patch/patch_reduc_tree.hpp"
 #include "patch/patchdata.hpp"
@@ -19,6 +20,7 @@
 #include "sys/sycl_mpi_interop.hpp"
 #include "unittests/shamrocktest.hpp"
 #include "utils/string_utils.hpp"
+#include "utils/time_utils.hpp"
 #include <memory>
 #include <mpi.h>
 #include <string>
@@ -40,11 +42,14 @@ class TestTimestepper{public:
         patchdata_layout::set(1, 0, 0, 0, 0, 0);
         patchdata_layout::sync(MPI_COMM_WORLD);
 
+        
         if (mpi_handler::world_rank == 0) {
+
+            auto t = timings::start_timer("dumm setup", timings::timingtype::function);
             Patch p;
 
-            p.data_count    = 1e5;
-            p.load_value    = 1e5;
+            p.data_count    = 1e7;
+            p.load_value    = 1e7;
             p.node_owner_id = mpi_handler::world_rank;
 
             p.x_min = 0;
@@ -67,9 +72,12 @@ class TestTimestepper{public:
 
             sched.add_patch(p, pdat);
 
+            t.stop();
+
         } else {
             sched.patch_list._next_patch_id++;
         }
+        mpi::barrier(MPI_COMM_WORLD);
         
         sched.owned_patch_id = sched.patch_list.build_local();
 
@@ -99,7 +107,7 @@ class TestTimestepper{public:
             PatchField<f32> h_field;
             h_field.local_nodes_value.resize(sched.patch_list.local.size());
             for (u64 idx = 0; idx < sched.patch_list.local.size(); idx++) {
-                h_field.local_nodes_value[idx] = 0.1f;
+                h_field.local_nodes_value[idx] = 0.02f;
             }
             h_field.build_global(mpi_type_f32);
 
@@ -157,7 +165,7 @@ class TestTimestepper{public:
             PatchField<f32> h_field;
             h_field.local_nodes_value.resize(sched.patch_list.local.size());
             for (u64 idx = 0; idx < sched.patch_list.local.size(); idx++) {
-                h_field.local_nodes_value[idx] = 0.1f;
+                h_field.local_nodes_value[idx] = 0.02f;
             }
             h_field.build_global(mpi_type_f32);
 
@@ -199,17 +207,26 @@ class TestTimestepper{public:
 template<class Timestepper,class SimInfo>
 class SimulationSPH{public:
 
+
+
     static void run_sim(){
 
-        SchedulerMPI sched = SchedulerMPI(2000,1);
+        SchedulerMPI sched = SchedulerMPI(1e6,1);
         sched.init_mpi_required_types();
+
+        logfiles::open_log_files();
+
 
 
         SimInfo siminfo;
 
+        auto t = timings::start_timer("init timestepper", timings::timingtype::function);
         Timestepper::init(sched,siminfo);
+        t.stop();
 
         dump_state("step"+std::to_string(0)+"/",sched);
+
+        timings::dump_timings("### init_step ###");
 
 
 
@@ -217,10 +234,17 @@ class SimulationSPH{public:
         for (u32 stepi = 1; stepi < 6; stepi++) {
             std::cout << " ------ step time = " << stepi << " ------" << std::endl;
             siminfo.time = stepi;
+
+            auto step_timer = timings::start_timer("timestepper step", timings::timingtype::function);
             Timestepper::step(sched,siminfo);
+            step_timer.stop();
 
             dump_state("step"+std::to_string(stepi)+"/",sched);
+
+            timings::dump_timings("### ""step"+std::to_string(stepi)+" ###");
         }
+
+        logfiles::close_log_files();
 
         sched.free_mpi_required_types();
 

@@ -11,10 +11,13 @@
 
 #include "loadbalancing_hilbert.hpp"
 
+#include "io/logs.hpp"
 #include "sys/sycl_handler.hpp"
 
 
 std::vector<std::tuple<u64, i32, i32, i32>> HilbertLB::make_change_list(std::vector<Patch> &global_patch_list) {
+
+    auto t = timings::start_timer("HilbertLB::make_change_list", timings::function);
 
     std::vector<std::tuple<u64, i32, i32, i32>> change_list;
 
@@ -157,6 +160,6 @@ std::vector<std::tuple<u64, i32, i32, i32>> HilbertLB::make_change_list(std::vec
     }
 
 
-
+    t.stop();
     return change_list;
 }

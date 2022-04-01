@@ -1,8 +1,10 @@
 #include "scheduler_mpi.hpp"
 
+#include <ctime>
 #include <sstream>
 #include <stdexcept>
 
+#include "io/logs.hpp"
 #include "loadbalancing_hilbert.hpp"
 
 #include "sys/sycl_handler.hpp"
@@ -90,6 +92,8 @@ std::tuple<f64_3,f64_3> SchedulerMPI::get_box_tranform(){
 
 //TODO clean the output of this function
 void SchedulerMPI::scheduler_step(bool do_split_merge, bool do_load_balancing){
+
+    auto global_timer = timings::start_timer("SchedulerMPI::scheduler_step", timings::function);
 
     if(!is_mpi_sycl_interop_active()) throw std::runtime_error("sycl mpi interop not initialized");
     if(!patch::is_mpi_patch_type_active()) throw std::runtime_error("mpi patch type not initialized");
@@ -185,6 +189,7 @@ void SchedulerMPI::scheduler_step(bool do_split_merge, bool do_load_balancing){
 
 
     if(do_load_balancing){
+        auto t = timings::start_timer("load balancing", timings::function);
         timer.start();
         // generate LB change list 
         std::vector<std::tuple<u64, i32, i32,i32>> change_list = 
@@ -200,6 +205,7 @@ void SchedulerMPI::scheduler_step(bool do_split_merge, bool do_load_balancing){
         patch_data.apply_change_list(change_list, patch_list);
         timer.end();
         std::cout << " | apply balancing : " << timer.get_time_str() << std::endl;
+        t.stop();
     }
 
 
@@ -216,6 +222,8 @@ void SchedulerMPI::scheduler_step(bool do_split_merge, bool do_load_balancing){
     patch_list.build_local_idx_map();
     update_local_dtcnt_value();
     update_local_load_value();
+
+    global_timer.stop();
 
 }
 
@@ -368,6 +376,7 @@ std::string SchedulerMPI::dump_status(){
 
 
 inline void SchedulerMPI::split_patches(std::unordered_set<u64> split_rq){
+    auto t = timings::start_timer("SchedulerMPI::split_patches", timings::function);
     for(u64 tree_id : split_rq){
 
         patch_tree.split_node(tree_id);
@@ -400,9 +409,11 @@ inline void SchedulerMPI::split_patches(std::unordered_set<u64> split_rq){
             patch_list.global[idx_p7]);
 
     }
+    t.stop();
 }
 
 inline void SchedulerMPI::merge_patches(std::unordered_set<u64> merge_rq){
+    auto t = timings::start_timer("SchedulerMPI::merge_patches", timings::function);
     for(u64 tree_id : merge_rq){
 
         PatchTree::PTNode & to_merge_node = patch_tree.tree[tree_id];
@@ -441,6 +452,7 @@ inline void SchedulerMPI::merge_patches(std::unordered_set<u64> merge_rq){
         to_merge_node.linked_patchid = patch_id0;
 
     }
+    t.stop();
 }
 
 

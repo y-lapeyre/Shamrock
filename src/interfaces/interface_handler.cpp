@@ -1,6 +1,7 @@
 #include "interface_handler.hpp"
 #include "aliases.hpp"
 
+#include "io/logs.hpp"
 #include "patch/patchdata_exchanger.hpp"
 
 template <class vectype, class primtype>
@@ -13,6 +14,7 @@ void _comm_interfaces(SchedulerMPI &sched, std::vector<InterfaceComm<vectype>> &
         interface_map[p.id_patch] = std::vector<std::tuple<u64, std::unique_ptr<PatchData>>>();
     }
 
+    auto t1 = timings::start_timer("generate interfaces", timings::timingtype::function);
     std::vector<std::unique_ptr<PatchData>> comm_pdat;
     std::vector<u64_2> comm_vec;
     if (interface_comm_list.size() > 0) {
@@ -35,14 +37,21 @@ void _comm_interfaces(SchedulerMPI &sched, std::vector<InterfaceComm<vectype>> &
 
         //std::cout << "\n split \n";
     }
+    t1.stop();
 
+    auto t2 = timings::start_timer("patch_data_exchange_object", timings::timingtype::mpi);
     patch_data_exchange_object(sched.patch_list.global, comm_pdat,comm_vec,interface_map);
+    t2.stop();
 }
 
 template <> void InterfaceHandler<f32_3, f32>::comm_interfaces(SchedulerMPI &sched) {
+    auto t = timings::start_timer("comm interfaces", timings::timingtype::function);
     _comm_interfaces<f32_3, f32>(sched, interface_comm_list, interface_map);
+    t.stop();
 }
 
 template <> void InterfaceHandler<f64_3, f64>::comm_interfaces(SchedulerMPI &sched) {
+    auto t = timings::start_timer("comm interfaces", timings::timingtype::function);
     _comm_interfaces<f64_3, f64>(sched, interface_comm_list, interface_map);
+    t.stop();
 }

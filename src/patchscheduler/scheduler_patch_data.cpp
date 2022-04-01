@@ -14,6 +14,7 @@
 #include <stdexcept>
 #include <vector>
 
+#include "io/logs.hpp"
 #include "patch/patchdata.hpp"
 #include "loadbalancing_hilbert.hpp"
 
@@ -21,6 +22,8 @@
 
 
 void SchedulerPatchData::apply_change_list(std::vector<std::tuple<u64, i32, i32,i32>> change_list,SchedulerPatchList& patch_list){
+
+    auto t = timings::start_timer("SchedulerPatchData::apply_change_list", timings::mpi);
 
     std::vector<MPI_Request> rq_lst;
 
@@ -66,6 +69,8 @@ void SchedulerPatchData::apply_change_list(std::vector<std::tuple<u64, i32, i32,
         }
 
     }
+
+    t.stop();
 }
 
 
