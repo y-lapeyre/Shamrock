@@ -16,3 +16,23 @@ if("${BUILD_TEST}")
 
 
 endif()
+
+
+
+if("${BUILD_SIM}")
+
+    target_sources(shamrock
+        PRIVATE
+            karras_alg.cpp
+            key_morton_sort.cpp
+            morton_kernels.cpp
+            reduction_alg.cpp
+        PUBLIC
+            karras_alg.hpp
+            key_morton_sort.hpp
+            morton_kernels.hpp
+            reduction_alg.hpp
+    )
+
+
+endif()

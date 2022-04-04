@@ -23,4 +23,18 @@ if("${BUILD_TEST}")
 
 
 endif()
+
+
+if("${BUILD_SIM}")
+
+    target_sources(shamrock
+        PRIVATE
+            radix_tree.cpp
+        PUBLIC
+            radix_tree.hpp
+    )
+
+
+endif()
+
 add_subdirectory(kernels)

@@ -18,6 +18,7 @@
 #include "sys/cmdopt.hpp"
 #include "sys/mpi_handler.hpp"
 #include "sys/sycl_mpi_interop.hpp"
+#include "tree/radix_tree.hpp"
 #include "unittests/shamrocktest.hpp"
 #include "utils/string_utils.hpp"
 #include "utils/time_utils.hpp"
@@ -176,9 +177,15 @@ class TestTimestepper{public:
 
             //sched.dump_local_patches(format("patches_%d_node%d", stepi, mpi_handler::world_rank));
 
+
+            // Radix_Tree<u32, f32_3> r;
+            // auto& a = r.pos_min_buf;
+
             for(auto & [id,pdat] : sched.patch_data.owned_data){
                 if(pdat.pos_s.size() > 0){
                     std::unique_ptr<sycl::buffer<f32_3>> pos = std::make_unique<sycl::buffer<f32_3>>(pdat.pos_s.data(),pdat.pos_s.size());
+
+                    Radix_Tree<u32, f32_3> rtree(hndl.get_queue_compute(0),pos);
 
 
                     if(true && siminfo.time > 2){

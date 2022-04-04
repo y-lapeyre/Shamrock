@@ -1,84 +1,88 @@
 #pragma once
 
+
 #include "aliases.hpp"
+#include <memory>
+#include <stdexcept>
+#include <tuple>
 #include <vector>
 
-//TODO write class destructor
-template<class u_morton,class u_ixyz,class vec3>
-class Radix_Tree{
+#include "kernels/morton_kernels.hpp"
+#include "tree/kernels/key_morton_sort.hpp"
+#include "tree/kernels/reduction_alg.hpp"
 
 
+template<class morton_repr>
+struct morton_types;
 
-    ///////////////////////////////////
-    // Normal radix tree
-    ///////////////////////////////////
+template<>
+struct morton_types<u32>{
+    using int_repr = u16_3;
+};
 
-    /**
-     * @brief true if leaf_cell_count == 1
-     */
-    bool mono_cell_mode = false;
+template<>
+struct morton_types<u64>{
+    using int_repr = u32_3;
+};
 
-    sycl::buffer<u32>* sort_index_map = nullptr;
-
-
-    u32 leaf_cell_count = 0;
-    u32 internal_cell_count = 0;
-
-    /**
-     * @brief list of morton codes of the tree leafs (so reduced morton set if reduction applied)
-     */
-    sycl::buffer<u_morton>* buf_leaf_morton   = nullptr;
-    
-    sycl::buffer<u32>* buf_rchild_id   = nullptr;
-    sycl::buffer<u32>* buf_lchild_id   = nullptr;
-    sycl::buffer<u8 >* buf_rchild_flag = nullptr;
-    sycl::buffer<u8 >* buf_lchild_flag = nullptr;
-    sycl::buffer<u32>* buf_endrange    = nullptr;
-
-    sycl::buffer<u_ixyz>* buf_ipos_min = nullptr;
-    sycl::buffer<u_ixyz>* buf_ipos_max = nullptr;
-
-    sycl::buffer<vec3>* buf_pos_min    = nullptr;
-    sycl::buffer<vec3>* buf_pos_max    = nullptr;
+inline u32 get_next_pow2_val(u32 val){
+    u32 val_rounded_pow = pow(2,32-__builtin_clz(val));
+    if(val == pow(2,32-__builtin_clz(val)-1)){
+        val_rounded_pow = val;
+    }
+    return val_rounded_pow;
+}
 
 
-    /**
-     * @brief build tree (warning buf_morton will be sorted)
-     * 
-     * @param queue sycl queue
-     * @param buf_morton morton code in buffer (warning : it will be sorted) 
-     * @param morton_code_count number of valid morton codes
-     * @param morton_code_count_rounded_pow lenght of buf_morton
-     * @param use_reduction use reduction algorithm
-     * @param reduction_level level of reduction
-     */
-    void build_tree(
-        sycl::queue & queue,
-        sycl::buffer<u_morton>* buf_morton, 
-        u32 morton_code_count, 
-        u32 morton_code_count_rounded_pow,
-        bool use_reduction, 
-        u32 reduction_level);
+template<class u_morton,class vec3>
+class Radix_Tree{public:
+
+    typedef typename morton_types<u_morton>::int_repr vec3i;
+
+    //std::unique_ptr<sycl::buffer<vec3i>> pos_min_buf;
+
+    std::tuple<vec3,vec3> box_coord;
+    std::unique_ptr<sycl::buffer<u_morton>> buf_morton;
+    std::unique_ptr<sycl::buffer<u32>> buf_particle_index_map;
 
 
-
-
-
-
-
-
-
-    ///////////////////////////////////
-    // This part is all about the reduction
-    ///////////////////////////////////
-
-    bool is_reduction_active = true;
-    u16 reduction_level = 0;
-
-    float reduction_factor = 0;
-
+    //aka ranges of index to use
+    u32 tree_leaf_count;
     std::vector<u32> reduc_index_map;
-    sycl::buffer<   u32  >* buf_reduc_index_map = nullptr;
+
+
+    inline void pos_to_buffer(sycl::queue & queue,std::unique_ptr<sycl::buffer<vec3>> & pos_buf){
+
+        u32 morton_len = get_next_pow2_val(pos_buf->size());
+
+        buf_morton = std::make_unique<sycl::buffer<u_morton>>(morton_len);
+
+        sycl_xyz_to_morton<u_morton,vec3>(queue, pos_buf->size(), pos_buf,std::get<0>(box_coord),std::get<1>(box_coord),buf_morton);
+
+        sycl_fill_trailling_buffer<u_morton>(queue, pos_buf->size(),morton_len,buf_morton);
+    }
+
+    inline void sort_morton_buf(sycl::queue &queue){
+        buf_particle_index_map = std::make_unique<sycl::buffer<u32>>(sycl::range(buf_morton->size()));
+
+        sycl_sort_morton_key_pair(queue, buf_morton->size(), buf_particle_index_map, buf_morton);
+    }
+
+    inline Radix_Tree(sycl::queue & queue,std::unique_ptr<sycl::buffer<vec3>> & pos_buf){
+        if(pos_buf->size() > i32_max-1){
+            throw std::runtime_error("number of element in patch above i32_max-1");
+        }
+
+        pos_to_buffer(queue,pos_buf);
+
+        sort_morton_buf(queue);
+
+
+        // return a sycl buffer from reduc index map instead
+        reduction_alg(queue, pos_buf->size(), buf_morton, 0, reduc_index_map, tree_leaf_count);
+        
+
+    }
 
 
 
