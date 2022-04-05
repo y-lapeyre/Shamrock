@@ -1,4 +1,3 @@
-#include "CL/sycl/range.hpp"
 #include "aliases.hpp"
 #include "interfaces/interface_generator.hpp"
 #include "interfaces/interface_handler.hpp"

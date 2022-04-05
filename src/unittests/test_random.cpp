@@ -1,6 +1,5 @@
 
-#include "CL/sycl/access/access.hpp"
-#include "CL/sycl/stream.hpp"
+
 #include "unittests/shamrocktest.hpp"
 
 #include "sys/sycl_handler.hpp"

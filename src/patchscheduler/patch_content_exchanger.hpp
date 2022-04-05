@@ -1,7 +1,6 @@
 #pragma once
 
-#include "CL/sycl/buffer.hpp"
-#include "CL/sycl/stream.hpp"
+
 #include "aliases.hpp"
 #include "patch/serialpatchtree.hpp"
 #include "utils/geometry_utils.hpp"

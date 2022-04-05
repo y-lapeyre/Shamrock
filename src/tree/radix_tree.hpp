@@ -1,7 +1,6 @@
 #pragma once
 
 
-#include "CL/sycl/buffer.hpp"
 #include "aliases.hpp"
 #include <memory>
 #include <stdexcept>
