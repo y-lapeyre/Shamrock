@@ -6,6 +6,7 @@
 #include "io/dump.hpp"
 #include "particles/particle_patch_mover.hpp"
 #include "io/logs.hpp"
+#include "patch/patch.hpp"
 #include "patch/patch_field.hpp"
 #include "patch/patch_reduc_tree.hpp"
 #include "patch/patchdata.hpp"
@@ -185,7 +186,10 @@ class TestTimestepper{public:
                 if(pdat.pos_s.size() > 0){
                     std::unique_ptr<sycl::buffer<f32_3>> pos = std::make_unique<sycl::buffer<f32_3>>(pdat.pos_s.data(),pdat.pos_s.size());
 
-                    Radix_Tree<u32, f32_3> rtree(hndl.get_queue_compute(0),pos);
+                    Patch & cur_p = sched.patch_list.global[sched.patch_list.id_patch_to_global_idx[id]];
+
+                    
+                    Radix_Tree<u32, f32_3> rtree(hndl.get_queue_compute(0),sched.patch_data.sim_box.get_box<f32>(cur_p),pos);
 
 
                     if(true && siminfo.time > 2){

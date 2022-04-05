@@ -287,7 +287,7 @@ void split_patchdata<f64_3>(PatchData & original_pd,
 
 
     f64_3 translate_factor = min_box_sim;
-    f64_3 scale_factor = max_box_sim - min_box_sim;
+    f64_3 scale_factor = (max_box_sim - min_box_sim)/HilbertLB::max_box_sz;
 
     f64_3 bmin_p0 = f64_3{p0.x_min,p0.y_min,p0.z_min}*scale_factor + translate_factor;
     f64_3 bmin_p1 = f64_3{p1.x_min,p1.y_min,p1.z_min}*scale_factor + translate_factor;

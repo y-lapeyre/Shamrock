@@ -1,7 +1,10 @@
 #pragma once
 
 #include "aliases.hpp"
+#include "patch/patch.hpp"
 #include "patch/patchdata.hpp"
+#include "patchscheduler/loadbalancing_hilbert.hpp"
+#include <tuple>
 
 
 /**
@@ -60,5 +63,31 @@ class SimulationBoxInfo {
 
         min_box_sim_d = center - cur_delt;
         max_box_sim_d = center + cur_delt;
+    }
+
+    template<class primtype>
+    inline std::tuple<sycl::vec<primtype,3>,sycl::vec<primtype,3>> get_box(Patch & p);
+
+    template<>
+    inline std::tuple<f32_3,f32_3> get_box<f32>(Patch & p){
+        using vec3 = sycl::vec<f32,3>;
+        vec3 translate_factor = min_box_sim_s;
+        vec3 scale_factor = (max_box_sim_s - min_box_sim_s)/HilbertLB::max_box_sz;
+
+        vec3 bmin_p = vec3{p.x_min,p.y_min,p.z_min}*scale_factor + translate_factor;
+        vec3 bmax_p = (vec3{p.x_max,p.y_max,p.z_max}+ 1)*scale_factor + translate_factor;
+        return {bmin_p,bmax_p};
+    }
+
+    template<>
+    inline std::tuple<f64_3,f64_3> get_box<f64>(Patch & p){
+        using vec3 = sycl::vec<f64,3>;
+        vec3 translate_factor = min_box_sim_d;
+        vec3 scale_factor = (max_box_sim_d - min_box_sim_d)/HilbertLB::max_box_sz;
+
+        vec3 bmin_p = vec3{p.x_min,p.y_min,p.z_min}*scale_factor + translate_factor;
+        vec3 bmax_p = (vec3{p.x_max,p.y_max,p.z_max}+ 1)*scale_factor + translate_factor;
+        return {bmin_p,bmax_p};
+        
     }
 };
