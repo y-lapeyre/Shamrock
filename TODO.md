@@ -1,14 +1,14 @@
-- [ ] Change sycl handler to namespace ? (aka )
+- [ ] Change sycl handler to namespace ? (aka SyCLHandler -> sycl_handler::)
 - [ ] Builder for SchedulerMPI since it won't work with no patches
 - [ ] move init/free required type in SchedulerMPI to patch & sycl interop class 
 - [ ] move sycl interop init in mpi_handler
 - [ ] runtime error in SchedulerMPI construction if patch type inactive
-- [ ] find a better solution for sim_box (probably separate class since it allows to store translate/scalling factors)
+- [ ] make SimulationBox templated and sotre tranlate & scale factor
 - [ ] track uses of max_box_sz in the code (should find a way to abstract it)
 - [ ] namedtimer destructor = end if not already stopped
 - [ ] instance __compute_object_patch_owner with f32/f64 modes (compile time reduction)
 - [ ] put instance of simbox in the SchedulerMPI
-- [ ] rename SchedulerMPI to PatchScheduler ?
+- [ ] rename SchedulerMPI to PatchScheduler to handle the gpu scheduling from the same?
 - [ ] add interger fields to patchdata
 - [ ] patchdata nvars to templates (perf gain ???)
 - [ ] patchdata_isend -> patchdata::pisend 
@@ -18,4 +18,4 @@
 - [ ] SerialPatchTree attach buf by default and use accesors
 - [ ] replace pos_s & pos_d by a templated postype
 - [ ] move sycl kernels to namespaces instead of ::
-- [ ] bind patch to specific GPU for the gpu cache
+- [ ] bind patch to specific GPU for the gpu cache ?
