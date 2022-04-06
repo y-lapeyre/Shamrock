@@ -35,7 +35,7 @@ void sycl_xyz_to_morton<u32,f32_3>(
                 r -= b_box_min;
                 r /= b_box_max - b_box_min;
 
-                m[i] = morton_3d::coord_to_morton<u32,f32,u16_3>(r.x(),r.y(),r.z());
+                m[i] = morton_3d::coord_to_morton<u32,f32>(r.x(),r.y(),r.z());
                 
             });
 
@@ -76,7 +76,7 @@ void sycl_xyz_to_morton<u32,f64_3>(
                 r -= b_box_min;
                 r /= b_box_max - b_box_min;
 
-                m[i] = morton_3d::coord_to_morton<u32,f64,u16_3>(r.x(),r.y(),r.z());
+                m[i] = morton_3d::coord_to_morton<u32,f64>(r.x(),r.y(),r.z());
                 
             });
 
@@ -117,7 +117,7 @@ void sycl_xyz_to_morton<u64,f32_3>(
                 r -= b_box_min;
                 r /= b_box_max - b_box_min;
 
-                m[i] = morton_3d::coord_to_morton<u64,f32,u32_3>(r.x(),r.y(),r.z());
+                m[i] = morton_3d::coord_to_morton<u64,f32>(r.x(),r.y(),r.z());
                 
             });
 
@@ -158,7 +158,7 @@ void sycl_xyz_to_morton<u64,f64_3>(
                 r -= b_box_min;
                 r /= b_box_max - b_box_min;
 
-                m[i] = morton_3d::coord_to_morton<u64,f64,u32_3>(r.x(),r.y(),r.z());
+                m[i] = morton_3d::coord_to_morton<u64,f64>(r.x(),r.y(),r.z());
                 
             });
 
