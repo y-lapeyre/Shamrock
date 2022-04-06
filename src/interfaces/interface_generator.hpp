@@ -245,8 +245,8 @@ template <class vectype, class field_type, class InterfaceSelector> class Interf
                     for (u64 j = 0; j < global_pcount; j++) {
                         if (interface_list[{i, j}].sender_patch_id == u64_max)
                             break;
-                        std::cout << "(" << sched.patch_list.id_patch_to_global_idx[interface_list[{i, j}].sender_patch_id] << ","
-                                << interface_list[{i, j}].global_patch_idx_recv << ") ";
+                        // std::cout << "(" << sched.patch_list.id_patch_to_global_idx[interface_list[{i, j}].sender_patch_id] << ","
+                        //         << interface_list[{i, j}].global_patch_idx_recv << ") ";
 
                         InterfaceComInternal tmp = interface_list[{i, j}];
                         
@@ -273,7 +273,7 @@ template <class vectype, class field_type, class InterfaceSelector> class Interf
 
 
                     }
-                    std::cout << std::endl;
+                    //std::cout << std::endl;
                 }
 
             }

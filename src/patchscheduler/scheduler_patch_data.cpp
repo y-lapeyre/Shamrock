@@ -14,6 +14,7 @@
 #include <stdexcept>
 #include <vector>
 
+#include "io/logs.hpp"
 #include "patch/patchdata.hpp"
 #include "loadbalancing_hilbert.hpp"
 
@@ -21,6 +22,8 @@
 
 
 void SchedulerPatchData::apply_change_list(std::vector<std::tuple<u64, i32, i32,i32>> change_list,SchedulerPatchList& patch_list){
+
+    auto t = timings::start_timer("SchedulerPatchData::apply_change_list", timings::mpi);
 
     std::vector<MPI_Request> rq_lst;
 
@@ -66,6 +69,8 @@ void SchedulerPatchData::apply_change_list(std::vector<std::tuple<u64, i32, i32,
         }
 
     }
+
+    t.stop();
 }
 
 
@@ -282,7 +287,7 @@ void split_patchdata<f64_3>(PatchData & original_pd,
 
 
     f64_3 translate_factor = min_box_sim;
-    f64_3 scale_factor = max_box_sim - min_box_sim;
+    f64_3 scale_factor = (max_box_sim - min_box_sim)/HilbertLB::max_box_sz;
 
     f64_3 bmin_p0 = f64_3{p0.x_min,p0.y_min,p0.z_min}*scale_factor + translate_factor;
     f64_3 bmin_p1 = f64_3{p1.x_min,p1.y_min,p1.z_min}*scale_factor + translate_factor;

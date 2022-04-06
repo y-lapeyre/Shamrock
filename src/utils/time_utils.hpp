@@ -58,7 +58,7 @@ inline std::string nanosec_to_time_str(double nanosec) {
 class Timer {
   public:
     std::chrono::steady_clock::time_point t_start, t_end;
-    double sec;
+    double nanosec;
 
     Timer(){};
 
@@ -66,11 +66,11 @@ class Timer {
 
     inline void end() {
         t_end = std::chrono::steady_clock::now();
-        sec   = double(std::chrono::duration_cast<std::chrono::nanoseconds>(t_end - t_start).count());
+        nanosec   = double(std::chrono::duration_cast<std::chrono::nanoseconds>(t_end - t_start).count());
     }
 
     inline std::string get_time_str() {
-        return nanosec_to_time_str(sec);
+        return nanosec_to_time_str(nanosec);
     }
 
     
