@@ -3,16 +3,21 @@
 #include <vector>
 #include <random>
 
+#include "io/logs.hpp"
 #include "patch/patch.hpp"
 #include "loadbalancing_hilbert.hpp"
 
 
 void SchedulerPatchList::build_global(){
+    auto t = timings::start_timer("SchedulerPatchList::build_global()",timings::mpi);
     mpi_handler::vector_allgatherv(local, patch::patch_MPI_type, global, patch::patch_MPI_type, MPI_COMM_WORLD);   
+    t.stop();
 }
 
 
 std::unordered_set<u64> SchedulerPatchList::build_local(){
+
+    auto t = timings::start_timer("SchedulerPatchList::build_local",timings::function);
 
     std::unordered_set<u64> out_ids;
 
@@ -24,6 +29,7 @@ std::unordered_set<u64> SchedulerPatchList::build_local(){
             out_ids.insert(p.id_patch);
         }
     }
+    t.stop();
 
     return out_ids;
     

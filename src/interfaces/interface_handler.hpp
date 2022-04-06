@@ -16,6 +16,7 @@
 
 #include "aliases.hpp"
 #include "interfaces/interface_generator.hpp"
+#include "io/logs.hpp"
 #include "patchscheduler/scheduler_mpi.hpp"
 
 /**
@@ -51,8 +52,10 @@ template <class vectype, class primtype> class InterfaceHandler {
      */
     template <class interface_selector>
     inline void compute_interface_list(SchedulerMPI &sched, SerialPatchTree<vectype> sptree, PatchField<primtype> h_field) {
+        auto t = timings::start_timer("compute_interface_list", timings::function);
         interface_comm_list = Interface_Generator<vectype, primtype, interface_selector>::get_interfaces_comm_list(
             sched, sptree, h_field, format("interfaces_%d_node%d", 0, mpi_handler::world_rank));
+        t.stop();
     }
 
     /**

@@ -18,38 +18,7 @@
 #include "patch/patchdata.hpp"
 
 #include "scheduler_patch_list.hpp"
-
-/**
- * @brief Store the information related to the size of the simulation box to convert patch integer coordinates to floating
- * point ones.
- *
- */
-class SimulationBoxInfo {
-  public:
-    f32_3 min_box_sim_s; ///< minimum coordinate of the box (if single precision)
-    f32_3 max_box_sim_s; ///< maximum coordinate of the box (if single precision)
-
-    f64_3 min_box_sim_d; ///< minimum coordinate of the box (if double precision)
-    f64_3 max_box_sim_d; ///< maximum coordinate of the box (if double precision)
-
-    // TODO implement box size reduction here
-
-    /**
-     * @brief reset box simulation size
-     */
-    inline void reset_box_size() {
-
-        if (patchdata_layout::nVarpos_s == 1) {
-            min_box_sim_s = {HUGE_VALF};
-            max_box_sim_s = {-HUGE_VALF};
-        }
-
-        if (patchdata_layout::nVarpos_d == 1) {
-            min_box_sim_s = {HUGE_VAL};
-            max_box_sim_s = {-HUGE_VAL};
-        }
-    }
-};
+#include "sim_box.hpp"
 
 /**
  * @brief Class to handle PatchData owned by the node

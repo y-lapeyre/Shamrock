@@ -1,12 +1,14 @@
 //#include "test_tree.hpp"
 
-#include "tree/local/kernels/key_morton_sort.hpp"
+//#include "tree/kernels/key_morton_sort.hpp"
 #include "sys/sycl_handler.hpp"
 #include "utils/string_utils.hpp"
 #include <algorithm>
 #include <random>
 
 #include "unittests/shamrocktest.hpp"
+
+#if False
 
 #if defined(PRECISION_MORTON_DOUBLE)
     #define FILL(i) morton_list[i] = 18446744073709551615ul
@@ -118,3 +120,5 @@ Test_start("morton::",key_pair_sort,1){
             Test_assert(("index [" +format("%d",i)+ "]").c_str(),  unsorted[i]  == morton_list[i]);
         }
 }
+
+#endif

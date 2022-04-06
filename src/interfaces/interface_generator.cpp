@@ -68,6 +68,11 @@ std::vector<std::unique_ptr<PatchData>> InterfaceVolumeGenerator::append_interfa
     std::vector<std::unique_ptr<PatchData>> pdat_vec(boxs_min.size());
     for (auto & p : pdat_vec) {
         p = std::make_unique<PatchData>();
+        // p->pos_s.reserve(patchdata_layout::nVarpos_d*pdat.pos_s.size()/8);
+        // p->U1_s.reserve(patchdata_layout::nVarU1_s*pdat.pos_s.size()/8);
+        // p->U1_d.reserve(patchdata_layout::nVarU1_d*pdat.pos_s.size()/8);
+        // p->U3_s.reserve(patchdata_layout::nVarU3_s*pdat.pos_s.size()/8);
+        // p->U3_d.reserve(patchdata_layout::nVarU3_d*pdat.pos_s.size()/8);
     }
 
     if (pdat.pos_s.size() > 0) {
@@ -79,14 +84,14 @@ std::vector<std::unique_ptr<PatchData>> InterfaceVolumeGenerator::append_interfa
                 for (u32 j = 0; j < patchdata_layout::nVarU1_s; j++) {
                     pdat_vec[flag_choice[idx]]->U1_s.push_back(pdat.U1_s[idx * patchdata_layout::nVarU1_s + j]);
                 }
-                for (u32 j = 0; j < patchdata_layout::nVarU1_s; j++) {
+                for (u32 j = 0; j < patchdata_layout::nVarU1_d; j++) {
                     pdat_vec[flag_choice[idx]]->U1_d.push_back(pdat.U1_d[idx * patchdata_layout::nVarU1_d + j]);
                 }
 
-                for (u32 j = 0; j < patchdata_layout::nVarU1_s; j++) {
+                for (u32 j = 0; j < patchdata_layout::nVarU3_s; j++) {
                     pdat_vec[flag_choice[idx]]->U3_s.push_back(pdat.U3_s[idx * patchdata_layout::nVarU3_s + j]);
                 }
-                for (u32 j = 0; j < patchdata_layout::nVarU3_s; j++) {
+                for (u32 j = 0; j < patchdata_layout::nVarU3_d; j++) {
                     pdat_vec[flag_choice[idx]]->U3_d.push_back(pdat.U3_d[idx * patchdata_layout::nVarU3_d + j]);
                 }
             }
@@ -148,6 +153,11 @@ std::vector<std::unique_ptr<PatchData>> InterfaceVolumeGenerator::append_interfa
     std::vector<std::unique_ptr<PatchData>> pdat_vec(boxs_min.size());
     for (auto & p : pdat_vec) {
         p = std::make_unique<PatchData>();
+        // p->pos_d.reserve(patchdata_layout::nVarpos_d*pdat.pos_d.size()/8);
+        // p->U1_s.reserve(patchdata_layout::nVarU1_s*pdat.pos_d.size()/8);
+        // p->U1_d.reserve(patchdata_layout::nVarU1_d*pdat.pos_d.size()/8);
+        // p->U3_s.reserve(patchdata_layout::nVarU3_s*pdat.pos_d.size()/8);
+        // p->U3_d.reserve(patchdata_layout::nVarU3_d*pdat.pos_d.size()/8);
     }
 
     if (pdat.pos_d.size() > 0) {
@@ -161,14 +171,14 @@ std::vector<std::unique_ptr<PatchData>> InterfaceVolumeGenerator::append_interfa
                 for (u32 j = 0; j < patchdata_layout::nVarU1_s; j++) {
                     pdat_vec[flag_choice[idx]]->U1_s.push_back(pdat.U1_s[idx * patchdata_layout::nVarU1_s + j]);
                 }
-                for (u32 j = 0; j < patchdata_layout::nVarU1_s; j++) {
+                for (u32 j = 0; j < patchdata_layout::nVarU1_d; j++) {
                     pdat_vec[flag_choice[idx]]->U1_d.push_back(pdat.U1_d[idx * patchdata_layout::nVarU1_d + j]);
                 }
 
-                for (u32 j = 0; j < patchdata_layout::nVarU1_s; j++) {
+                for (u32 j = 0; j < patchdata_layout::nVarU3_s; j++) {
                     pdat_vec[flag_choice[idx]]->U3_s.push_back(pdat.U3_s[idx * patchdata_layout::nVarU3_s + j]);
                 }
-                for (u32 j = 0; j < patchdata_layout::nVarU3_s; j++) {
+                for (u32 j = 0; j < patchdata_layout::nVarU3_d; j++) {
                     pdat_vec[flag_choice[idx]]->U3_d.push_back(pdat.U3_d[idx * patchdata_layout::nVarU3_d + j]);
                 }
             }

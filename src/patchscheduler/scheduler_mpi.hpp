@@ -22,6 +22,7 @@
 #include "patch/patchtree.hpp"
 #include "scheduler_patch_list.hpp"
 #include "scheduler_patch_data.hpp"
+#include "sys/sycl_mpi_interop.hpp"
 
 /**
  * @brief The MPI scheduler
@@ -53,7 +54,6 @@ class SchedulerMPI{public:
     void scheduler_step(bool do_split_merge,bool do_load_balancing);
     
     
-
     void init_mpi_required_types();
     
     void free_mpi_required_types();
@@ -82,6 +82,13 @@ class SchedulerMPI{public:
 
     template<class vectype>
     std::tuple<vectype,vectype> get_box_tranform();
+
+    inline bool should_resize_box(bool node_in){
+        u16 tmp = node_in;
+        u16 out = 0;
+        mpi::allreduce(&tmp, &out, 1, mpi_type_u16, MPI_MAX, MPI_COMM_WORLD);
+        return out;
+    }
 
     [[deprecated]]
     void dump_local_patches(std::string filename);

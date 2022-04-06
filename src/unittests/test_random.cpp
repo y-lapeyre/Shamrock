@@ -1,10 +1,12 @@
 
+
 #include "unittests/shamrocktest.hpp"
 
 #include "sys/sycl_handler.hpp"
 #include <chrono>
 #include <memory>
 #include <mutex>
+#include <ostream>
 #include <queue>
 #include <thread>
 #include <vector>
@@ -170,6 +172,79 @@ Test_start("issue_mpi::", allgatherv, 4){
 
 }
 
+
+
+
+
+
+Test_start("sycl::", custom_iterator, 1){
+
+    std::vector<u32> test_vec(10);
+    {
+        sycl::buffer<u32> buf(test_vec.data(),test_vec.size());
+
+        SyCLHandler::get_instance().get_queue_compute(0).submit([&](sycl::handler &cgh) {
+            auto out = buf.get_access<sycl::access::mode::write>(cgh);
+
+
+            class Tree_it{public:
+
+                u32 max_val;
+
+                Tree_it(u32 i){
+                    max_val = i;
+                }
+
+                u32 curr_id;
+
+                using value_type = const u32 ;
+                using reference = const u32& ;
+                using pointer = const u32* ;
+                using difference_type = std::ptrdiff_t ;
+                using iterator_category	= std::forward_iterator_tag ;
+
+                reference operator* () { return curr_id ; }
+                //pointer operator-> () { return &**this ; }
+
+                Tree_it& operator++ () { ++curr_id ; return *this ; }
+                Tree_it operator++ (int) { const auto temp(*this) ; ++*this ; return temp ; }
+
+                bool operator== ( const Tree_it& that ) const { return curr_id == that.curr_id ; }
+                bool operator!= ( const Tree_it& that ) const { return !(*this==that) ; }
+
+                const Tree_it begin(){
+                    return Tree_it{curr_id};
+                }
+
+                const Tree_it end(){
+                    return Tree_it{curr_id};
+                }
+            };
+
+            
+
+            cgh.parallel_for<class TestIterator>(sycl::range<1>(10), [=](sycl::item<1> item) {
+                u32 acc = 0;
+
+                // for(const u32 & i : Tree_it(10)){
+                //     acc++;
+                // }
+
+                for(u32 i = 0 ; i < 10; i ++){
+                    acc++;
+                }
+
+                out[item] = acc;
+
+            });
+        });
+    }
+
+    for(u32 i : test_vec){
+        std::cout << i << std::endl;
+    }
+
+}
 
 Test_start("sycl::", parallel_sumbit, 1){
 

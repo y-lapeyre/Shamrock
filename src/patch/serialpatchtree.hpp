@@ -12,6 +12,7 @@
 #pragma once
 
 
+#include "io/logs.hpp"
 #include "patch/patch_field.hpp"
 #include "patch/patchtree.hpp"
 #include "patchscheduler/scheduler_mpi.hpp"
@@ -39,7 +40,7 @@ template<class fp_prec_vec>
 class SerialPatchTree{public:
 
     
-
+    //TODO use unique pointer instead
     sycl::buffer<PtNode<fp_prec_vec>>* serial_tree_buf = nullptr;
     sycl::buffer<u64>*    linked_patch_ids_buf = nullptr;
 
@@ -82,7 +83,9 @@ class SerialPatchTree{public:
     public: 
 
     inline SerialPatchTree(PatchTree &ptree, std::tuple<fp_prec_vec,fp_prec_vec> box_tranform){
+        auto t = timings::start_timer("build serial ptree", timings::function);
         build_from_patch_tree(ptree, std::get<0>(box_tranform), std::get<1>(box_tranform));
+        t.stop();
     }
 
     /**

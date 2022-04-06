@@ -15,11 +15,15 @@
 
 namespace morton_3d {
 
-    template <class morton_prec, class fp_prec, class int_repr> morton_prec coord_to_morton(fp_prec x, fp_prec y, fp_prec z);
+    template <class morton_prec, class fp_prec, class int_vec> morton_prec coord_to_morton(fp_prec x, fp_prec y, fp_prec z);
 
-    template <class morton_prec, class fp_prec, class int_repr> int_repr morton_to_ipos(morton_prec morton);
+    template <class morton_prec, class fp_prec, class int_vec> int_vec morton_to_ipos(morton_prec morton);
 
-    template <class morton_prec, class fp_prec, class int_repr> int_repr get_offset(u32 clz_);
+    template <class morton_prec, class fp_prec, class int_vec> int_vec get_offset(u32 clz_);
+
+
+
+
 
     template <> inline u64 coord_to_morton<u64, f64, u32_3>(f64 x, f64 y, f64 z) {
         x = sycl::fmin(sycl::fmax(x * 2097152., 0.), 2097152. - 1.);
