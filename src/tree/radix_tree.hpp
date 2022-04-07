@@ -8,23 +8,13 @@
 #include <vector>
 
 #include "kernels/morton_kernels.hpp"
+#include "sfc/morton.hpp"
 #include "tree/kernels/karras_alg.hpp"
 #include "tree/kernels/key_morton_sort.hpp"
 #include "tree/kernels/reduction_alg.hpp"
 
 
-template<class morton_repr>
-struct morton_types;
 
-template<>
-struct morton_types<u32>{
-    using int_repr = u16_3;
-};
-
-template<>
-struct morton_types<u64>{
-    using int_repr = u32_3;
-};
 
 inline u32 get_next_pow2_val(u32 val){
     u32 val_rounded_pow = pow(2,32-__builtin_clz(val));
@@ -38,7 +28,7 @@ inline u32 get_next_pow2_val(u32 val){
 template<class u_morton,class vec3>
 class Radix_Tree{public:
 
-    typedef typename morton_types<u_morton>::int_repr vec3i;
+    typedef typename morton_3d::morton_types<u_morton>::int_repr vec3i;
 
     //std::unique_ptr<sycl::buffer<vec3i>> pos_min_buf;
 
@@ -122,6 +112,18 @@ class Radix_Tree{public:
         }else{
             one_cell_mode = true;
         }
+    }
+
+    std::unique_ptr<sycl::buffer<vec3i>> & buf_pos_min_cell;
+    std::unique_ptr<sycl::buffer<vec3i>> & buf_pos_max_cell;
+
+    inline void compute_cellvolume(){
+
+        
+        buf_pos_min_cell = std::make_unique< sycl::buffer<vec3i>>(tree_internal_count + tree_leaf_count);
+        buf_pos_max_cell = std::make_unique< sycl::buffer<vec3i>>(tree_internal_count + tree_leaf_count);
+
+
     }
 
 
