@@ -1,12 +1,12 @@
 #pragma once
-#include "CL/sycl/queue.hpp"
+
 #include "aliases.hpp"
 #include "sfc/morton.hpp"
 #include <memory>
 
 
 template<class u_morton>
-void compute_cell_ranges(
+void sycl_compute_cell_ranges(
 
     sycl::queue & queue,
 

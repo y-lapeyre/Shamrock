@@ -9,6 +9,8 @@
 
 #include "kernels/morton_kernels.hpp"
 #include "sfc/morton.hpp"
+#include "tree/kernels/compute_ranges.hpp"
+#include "tree/kernels/convert_ranges.hpp"
 #include "tree/kernels/karras_alg.hpp"
 #include "tree/kernels/key_morton_sort.hpp"
 #include "tree/kernels/reduction_alg.hpp"
@@ -28,7 +30,7 @@ inline u32 get_next_pow2_val(u32 val){
 template<class u_morton,class vec3>
 class Radix_Tree{public:
 
-    typedef typename morton_3d::morton_types<u_morton>::int_repr vec3i;
+    typedef typename morton_3d::morton_types<u_morton>::int_vec_repr vec3i;
 
     //std::unique_ptr<sycl::buffer<vec3i>> pos_min_buf;
 
@@ -114,15 +116,43 @@ class Radix_Tree{public:
         }
     }
 
-    std::unique_ptr<sycl::buffer<vec3i>> & buf_pos_min_cell;
-    std::unique_ptr<sycl::buffer<vec3i>> & buf_pos_max_cell;
+    std::unique_ptr<sycl::buffer<vec3i>> buf_pos_min_cell;
+    std::unique_ptr<sycl::buffer<vec3i>> buf_pos_max_cell;
 
-    inline void compute_cellvolume(){
+    std::unique_ptr<sycl::buffer<vec3>> buf_pos_min_cell_flt;
+    std::unique_ptr<sycl::buffer<vec3>> buf_pos_max_cell_flt;
+
+    inline void compute_cellvolume(sycl::queue & queue){
+
+        std::cout << "compute_cellvolume" << std::endl;
 
         
         buf_pos_min_cell = std::make_unique< sycl::buffer<vec3i>>(tree_internal_count + tree_leaf_count);
         buf_pos_max_cell = std::make_unique< sycl::buffer<vec3i>>(tree_internal_count + tree_leaf_count);
 
+
+        sycl_compute_cell_ranges(
+            queue, 
+            tree_leaf_count,
+            tree_internal_count, 
+            buf_tree_morton, 
+            buf_lchild_id, 
+            buf_rchild_id, 
+            buf_lchild_flag, 
+            buf_rchild_flag, 
+            buf_endrange, buf_pos_min_cell, buf_pos_max_cell);
+
+
+        buf_pos_min_cell_flt = std::make_unique< sycl::buffer<vec3>>(tree_internal_count + tree_leaf_count);
+        buf_pos_max_cell_flt = std::make_unique< sycl::buffer<vec3>>(tree_internal_count + tree_leaf_count);
+
+        std::cout << "sycl_convert_cell_range" << std::endl;
+
+        sycl_convert_cell_range<u_morton,vec3>(queue, tree_leaf_count, tree_internal_count, std::get<0>(box_coord), std::get<1>(box_coord), 
+            buf_pos_min_cell, 
+            buf_pos_max_cell, 
+            buf_pos_min_cell_flt, 
+            buf_pos_max_cell_flt);
 
     }
 

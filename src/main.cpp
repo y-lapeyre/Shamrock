@@ -181,8 +181,8 @@ class TestTimestepper {
                     Patch &cur_p = sched.patch_list.global[sched.patch_list.id_patch_to_global_idx[id]];
 
                     Radix_Tree<u32, f32_3> rtree =
-                        Radix_Tree<u32, f32_3>(hndl.get_queue_compute(0), sched.patch_data.sim_box.get_box<f32>(cur_p), pos)
-                            .compute_cellvolume();
+                        Radix_Tree<u32, f32_3>(hndl.get_queue_compute(0), sched.patch_data.sim_box.get_box<f32>(cur_p), pos);
+                    rtree.compute_cellvolume(hndl.get_queue_compute(0));
 
                     if (true && siminfo.time > 2) {
                         hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {

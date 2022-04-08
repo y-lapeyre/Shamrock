@@ -1,8 +1,21 @@
 
 #include "compute_ranges.hpp"
 
+#ifdef SYCL_COMP_DPCPP
+#define CLZ(x) sycl::clz(x)
+#endif
+
+#ifdef SYCL_COMP_HIPSYCL
+#define CLZ_host(x) __hipsycl_if_target_host(__builtin_clz(x))
+#define CLZ_cuda(x) __hipsycl_if_target_cuda(__clz(x))
+#define CLZ_hip(x) __hipsycl_if_target_hip(__clz(x))
+#define CLZ_spirv(x) __hipsycl_if_target_spirv(__clz(x))
+#define CLZ(x) CLZ_host(x) CLZ_cuda(x)
+#endif
+
+
 template<>
-void compute_cell_ranges(
+void sycl_compute_cell_ranges(
 
     sycl::queue & queue,
 
@@ -19,9 +32,9 @@ void compute_cell_ranges(
     std::unique_ptr<sycl::buffer<u16_3>>  & buf_pos_max_cell){
 
 
-    cl::sycl::range<1> range_radix_tree{internal_cnt};
+    sycl::range<1> range_radix_tree{internal_cnt};
 
-    auto ker_compute_cell_ranges = [&](cl::sycl::handler &cgh) {
+    auto ker_compute_cell_ranges = [&](sycl::handler &cgh) {
 
         auto morton_map = buf_morton->template get_access<sycl::access::mode::read>(cgh); 
         auto end_range_map = buf_endrange->get_access<sycl::access::mode::read>(cgh); 
@@ -38,11 +51,11 @@ void compute_cell_ranges(
 
         // Executing kernel
         cgh.parallel_for<class ComputeCellRange32>(
-            range_radix_tree, [=](cl::sycl::item<1> item) {
+            range_radix_tree, [=](sycl::item<1> item) {
 
                 u32 gid =(u32) item.get_id(0);
 
-                uint clz_ = sycl::clz(morton_map[gid]^morton_map[end_range_map[gid]]);
+                uint clz_ = CLZ(morton_map[gid]^morton_map[end_range_map[gid]]);
 
                 
                 pos_min_cell[gid] = morton_3d::morton_to_ipos<u32,f32>(morton_map[gid]& (0xFFFFFFFF << (32-clz_)));
@@ -77,7 +90,7 @@ void compute_cell_ranges(
 }
 
 template<>
-void compute_cell_ranges(
+void sycl_compute_cell_ranges(
 
     sycl::queue & queue,
 
@@ -93,9 +106,9 @@ void compute_cell_ranges(
     std::unique_ptr<sycl::buffer<u32_3>>  & buf_pos_min_cell,
     std::unique_ptr<sycl::buffer<u32_3>>  & buf_pos_max_cell){
 
-    cl::sycl::range<1> range_radix_tree{internal_cnt};
+    sycl::range<1> range_radix_tree{internal_cnt};
 
-    auto ker_compute_cell_ranges = [&](cl::sycl::handler &cgh) {
+    auto ker_compute_cell_ranges = [&](sycl::handler &cgh) {
 
         auto morton_map = buf_morton->template get_access<sycl::access::mode::read>(cgh); 
         auto end_range_map = buf_endrange->get_access<sycl::access::mode::read>(cgh); 
@@ -112,11 +125,11 @@ void compute_cell_ranges(
 
         // Executing kernel
         cgh.parallel_for<class ComputeCellRange64>(
-            range_radix_tree, [=](cl::sycl::item<1> item) {
+            range_radix_tree, [=](sycl::item<1> item) {
 
                 u32 gid =(u32) item.get_id(0);
 
-                uint clz_ = sycl::clz(morton_map[gid]^morton_map[end_range_map[gid]]);
+                uint clz_ = CLZ(morton_map[gid]^morton_map[end_range_map[gid]]);
 
                 #if defined(PRECISION_MORTON_DOUBLE)
                     pos_min_cell[gid] = morton_to_ixyz(morton_map[gid]& (0xFFFFFFFFFFFFFFFF << (64-clz_)));
