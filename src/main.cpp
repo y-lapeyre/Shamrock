@@ -184,6 +184,8 @@ class TestTimestepper {
                         Radix_Tree<u32, f32_3>(hndl.get_queue_compute(0), sched.patch_data.sim_box.get_box<f32>(cur_p), pos);
                     rtree.compute_cellvolume(hndl.get_queue_compute(0));
 
+                    walker::walk2(hndl.get_queue_compute(0), rtree ,[](){return 0.02f;});
+
                     if (true && siminfo.time > 2) {
                         hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
                             auto posacc = pos->get_access<sycl::access::mode::read_write>(cgh);
@@ -223,7 +225,7 @@ template <class Timestepper, class SimInfo> class SimulationSPH {
         timings::dump_timings("### init_step ###");
 
         std::cout << " ------ init sim ------" << std::endl;
-        for (u32 stepi = 1; stepi < 6; stepi++) {
+        for (u32 stepi = 1; stepi < 30; stepi++) {
             std::cout << " ------ step time = " << stepi << " ------" << std::endl;
             siminfo.time = stepi;
 

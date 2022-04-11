@@ -376,3 +376,59 @@ Test_start("sycl::", parallel_sumbit, 1){
     std::cout << "check : " << check << std::endl;
 
 }
+
+
+
+namespace walker{
+
+
+
+    template<class Tpred>
+    void walk(Tpred predicate){
+        predicate(1,2);
+    }
+
+};
+
+Test_start("testcpp::", test_lambda_walker, 1){
+    walker::walk([&](int i, int j){
+
+    });
+}
+
+
+/*
+#include <iostream>
+
+template <typename ... Ts>
+int Foo (int acc_in,Ts && ... multi_inputs)
+{
+
+    int acc = acc_in;
+
+    ([&] (auto & input)
+    {
+        // Do things in your "loop" lambda
+
+        acc += input(acc);
+
+    } (multi_inputs), ...);
+
+    return acc;
+}
+
+int main (int argc, char *argv[])
+{
+    int a = Foo(argc,[](int a){
+        return a*2;
+    },[](int a){
+        return a*2;
+    },[](int a){
+        return a*2;
+    },[](int a){
+        return a*2;
+    });
+
+    std::cout << a << std::endl;
+}
+*/
