@@ -1,10 +1,6 @@
 #pragma once
 
 
-#include "CL/sycl/accessor.hpp"
-#include "CL/sycl/group.hpp"
-#include "CL/sycl/handler.hpp"
-#include "CL/sycl/queue.hpp"
 #include "aliases.hpp"
 #include <array>
 #include <memory>
@@ -186,46 +182,244 @@ namespace walker {
 
 
 
-    template<typename T,class u_morton,class vec3>
+    template<class u_morton,class vec3, class Tpred>
     class WalkerKernel{
 
 
         private : 
-            sycl::accessor<u32 , 1, sycl::access::mode::read, sycl::access::target::global_buffer> cell_index_map;
-            sycl::accessor<u32 , 1, sycl::access::mode::read, sycl::access::target::global_buffer>  rchild_id     ;
-            sycl::accessor<u32 , 1, sycl::access::mode::read, sycl::access::target::global_buffer>  lchild_id     ;
-            sycl::accessor<u8  , 1, sycl::access::mode::read, sycl::access::target::global_buffer>  rchild_flag   ;
-            sycl::accessor<u8  , 1, sycl::access::mode::read, sycl::access::target::global_buffer>  lchild_flag   ;
-            sycl::accessor<vec3, 1, sycl::access::mode::read, sycl::access::target::global_buffer>  pos_min_cell  ;
-            sycl::accessor<vec3, 1, sycl::access::mode::read, sycl::access::target::global_buffer>  pos_max_cell  ;
+            sycl::accessor<u32 ,1,sycl::access::mode::read,sycl::target::device> cell_index_map;
+            sycl::accessor<u32 ,1,sycl::access::mode::read,sycl::target::device>  rchild_id     ;
+            sycl::accessor<u32 ,1,sycl::access::mode::read,sycl::target::device>  lchild_id     ;
+            sycl::accessor<u8  ,1,sycl::access::mode::read,sycl::target::device>  rchild_flag   ;
+            sycl::accessor<u8  ,1,sycl::access::mode::read,sycl::target::device>  lchild_flag   ;
+            sycl::accessor<vec3,1,sycl::access::mode::read,sycl::target::device>  pos_min_cell  ;
+            sycl::accessor<vec3,1,sycl::access::mode::read,sycl::target::device>  pos_max_cell  ;
 
             static constexpr u32 tree_depth = Radix_tree_depth<u_morton>::tree_depth;
             static constexpr u32 _nindex = 4294967295;
 
+            WalkerKernel();
+
+            u32 leaf_offset;
+
+            Tpred l_get_interaction_range;
 
         public:
-        WalkerKernel(Radix_Tree< u_morton,  vec3> & rtree,sycl::handler & cgh){
+        WalkerKernel(Radix_Tree< u_morton,  vec3> & rtree,sycl::handler & cgh, Tpred & predicate_get_interaction_range):
+            cell_index_map(rtree.buf_reduc_index_map-> template get_access<sycl::access::mode::read>(cgh)),
+            rchild_id     (rtree.buf_rchild_id  -> template get_access<sycl::access::mode::read>(cgh)),
+            lchild_id     (rtree.buf_lchild_id  -> template get_access<sycl::access::mode::read>(cgh)),
+            rchild_flag   (rtree.buf_rchild_flag-> template get_access<sycl::access::mode::read>(cgh)),
+            lchild_flag   (rtree.buf_lchild_flag-> template get_access<sycl::access::mode::read>(cgh)),
+            pos_min_cell  (rtree.buf_pos_min_cell_flt-> template get_access<sycl::access::mode::read>(cgh)),
+            pos_max_cell  (rtree.buf_pos_max_cell_flt-> template get_access<sycl::access::mode::read>(cgh)),
+            leaf_offset   (rtree.tree_internal_count),
+            l_get_interaction_range(predicate_get_interaction_range)
+        {
 
-            cell_index_map = rtree.buf_reduc_index_map-> template get_access<sycl::access::mode::read>(cgh);
-            rchild_id      = rtree.buf_rchild_id  -> template get_access<sycl::access::mode::read>(cgh);
-            lchild_id      = rtree.buf_lchild_id  -> template get_access<sycl::access::mode::read>(cgh);
-            rchild_flag    = rtree.buf_rchild_flag-> template get_access<sycl::access::mode::read>(cgh);
-            lchild_flag    = rtree.buf_lchild_flag-> template get_access<sycl::access::mode::read>(cgh);
-            pos_min_cell   = rtree.buf_pos_min_cell_flt-> template get_access<sycl::access::mode::read>(cgh);
-            pos_max_cell   = rtree.buf_pos_max_cell_flt-> template get_access<sycl::access::mode::read>(cgh);
+            
 
         }
 
-        template<class Tpred>
-        void operator()(sycl::item<1> item , Tpred && predicate_get_interaction_range ){
+        
+        inline void operator()(sycl::item<1> item) const {
+
+            u64 id_a = (u64)item.get_id(0);
+                
+            
+
+            vec3 xyz_a = {0,0,0};//could be recovered from lambda
+
+            vec3 inter_box_a_min = xyz_a - l_get_interaction_range(id_a);
+            vec3 inter_box_a_max = xyz_a + l_get_interaction_range(id_a);
+
+
+            u32 stack_cursor = tree_depth-1;
+            std::array<u32, tree_depth> id_stack;
+            id_stack[stack_cursor] = 0;
+
+            while(stack_cursor <tree_depth){
+
+                u32 current_node_id = id_stack[stack_cursor];
+                id_stack[stack_cursor] = _nindex;
+                stack_cursor++;
+
+                vec3 cur_pos_min_cell_b = pos_min_cell[current_node_id];
+                vec3 cur_pos_max_cell_b = pos_max_cell[current_node_id];
+                float int_r_max_cell = 0.02f;
+
+                vec3 inter_box_b_min = cur_pos_min_cell_b - int_r_max_cell;
+                vec3 inter_box_b_max = cur_pos_max_cell_b + int_r_max_cell;
+
+
+
+                bool cur_id_valid = 
+                    BBAA::cella_neigh_b(
+                        inter_box_a_min, inter_box_a_max, 
+                        cur_pos_min_cell_b, cur_pos_max_cell_b) ||
+                    BBAA::cella_neigh_b(
+                        xyz_a, xyz_a,                   
+                        inter_box_b_min, inter_box_b_max);
+
+
+
+
+
+
+                if(cur_id_valid){
+
+                    //leaf and can interact => force
+                    if(current_node_id >= leaf_offset){
+                        
+                        //printf("leaf : %d\n",current_node_id);
+
+                        //force
+
+                        //loop on particle indexes
+                        uint min_ids = cell_index_map[current_node_id];
+                        uint max_ids = cell_index_map[current_node_id+1];
+    
+                        for(unsigned int id_s = min_ids; id_s < max_ids;id_s ++){
+
+                            //uint id_b = particle_index_map[id_s];
+
+
+
+
+                        }
+                        
+
+
+
+                    //can interact not leaf => stack
+                    }else{
+
+                        u32 lid = lchild_id[current_node_id] + leaf_offset*lchild_flag[current_node_id];
+                        u32 rid = rchild_id[current_node_id] + leaf_offset*rchild_flag[current_node_id];
+                        
+
+                        id_stack[stack_cursor-1] = rid;
+                        stack_cursor --; 
+                    
+                        id_stack[stack_cursor-1] = lid;
+                        stack_cursor --;
+                        
+                    }
+                }else{
+                    //grav
+                }
+
+
+            }
+                
 
         }
 
         
     };
 
+    template<class u_morton,class vec3>
+    class Radix_tree_accessor{public:
+        sycl::accessor<u32 ,1,sycl::access::mode::read,sycl::target::device> cell_index_map;
+        sycl::accessor<u32 ,1,sycl::access::mode::read,sycl::target::device>  rchild_id     ;
+        sycl::accessor<u32 ,1,sycl::access::mode::read,sycl::target::device>  lchild_id     ;
+        sycl::accessor<u8  ,1,sycl::access::mode::read,sycl::target::device>  rchild_flag   ;
+        sycl::accessor<u8  ,1,sycl::access::mode::read,sycl::target::device>  lchild_flag   ;
+        sycl::accessor<vec3,1,sycl::access::mode::read,sycl::target::device>  pos_min_cell  ;
+        sycl::accessor<vec3,1,sycl::access::mode::read,sycl::target::device>  pos_max_cell  ;
+
+        static constexpr u32 tree_depth = Radix_tree_depth<u_morton>::tree_depth;
+        static constexpr u32 _nindex = 4294967295;
+
+        u32 leaf_offset;
+
+        
+        Radix_tree_accessor(Radix_Tree< u_morton,  vec3> & rtree,sycl::handler & cgh):
+            cell_index_map(rtree.buf_reduc_index_map-> template get_access<sycl::access::mode::read>(cgh)),
+            rchild_id     (rtree.buf_rchild_id  -> template get_access<sycl::access::mode::read>(cgh)),
+            lchild_id     (rtree.buf_lchild_id  -> template get_access<sycl::access::mode::read>(cgh)),
+            rchild_flag   (rtree.buf_rchild_flag-> template get_access<sycl::access::mode::read>(cgh)),
+            lchild_flag   (rtree.buf_lchild_flag-> template get_access<sycl::access::mode::read>(cgh)),
+            pos_min_cell  (rtree.buf_pos_min_cell_flt-> template get_access<sycl::access::mode::read>(cgh)),
+            pos_max_cell  (rtree.buf_pos_max_cell_flt-> template get_access<sycl::access::mode::read>(cgh)),
+            leaf_offset   (rtree.tree_internal_count)
+        {}
+    };
 
 
+    template<class Rta, class Functor_int_cd, class Functor_iter, class Functor_iter_excl>
+    inline void walk3(Rta & acc, Functor_int_cd && func_int_cd, Functor_iter && func_it, Functor_iter_excl && func_excl){
+        u32 stack_cursor = Rta::tree_depth-1;
+        std::array<u32, Rta::tree_depth> id_stack;
+        id_stack[stack_cursor] = 0;
+
+        while(stack_cursor <Rta::tree_depth){
+
+            u32 current_node_id = id_stack[stack_cursor];
+            id_stack[stack_cursor] = Rta::_nindex;
+            stack_cursor++;
+
+
+            bool cur_id_valid = func_int_cd(current_node_id);
+                // BBAA::cella_neigh_b(
+                //     inter_box_a_min, inter_box_a_max, 
+                //     cur_pos_min_cell_b, cur_pos_max_cell_b) ||
+                // BBAA::cella_neigh_b(
+                //     xyz_a, xyz_a,                   
+                //     inter_box_b_min, inter_box_b_max);
+
+
+
+
+
+
+            if(cur_id_valid){
+
+                //leaf and can interact => force
+                if(current_node_id >= acc.leaf_offset){
+                    
+                    //printf("leaf : %d\n",current_node_id);
+
+                    //force
+
+                    //loop on particle indexes
+                    uint min_ids = acc.cell_index_map[current_node_id];
+                    uint max_ids = acc.cell_index_map[current_node_id+1];
+
+                    for(unsigned int id_s = min_ids; id_s < max_ids;id_s ++){
+
+                        //uint id_b = particle_index_map[id_s];
+
+                        func_it(id_s);
+
+
+                    }
+                    
+
+
+
+                //can interact not leaf => stack
+                }else{
+
+                    u32 lid = acc.lchild_id[current_node_id] + acc.leaf_offset*acc.lchild_flag[current_node_id];
+                    u32 rid = acc.rchild_id[current_node_id] + acc.leaf_offset*acc.rchild_flag[current_node_id];
+                    
+
+                    id_stack[stack_cursor-1] = rid;
+                    stack_cursor --; 
+                
+                    id_stack[stack_cursor-1] = lid;
+                    stack_cursor --;
+                    
+                }
+            }else{
+                //grav
+                func_excl(current_node_id);
+            }
+
+
+        }
+    }
 
     
 
@@ -242,8 +436,13 @@ namespace walker {
         constexpr float Rker = 2;
 
         queue.submit([&](sycl::handler &cgh) {
+
+
+
             
-            WalkerKernel<class SPHtest, u_morton, vec3> wk(rtree, cgh);
+            WalkerKernel wk(rtree, cgh, predicate_get_interaction_range);
+
+
 
 
             cgh.parallel_for(sycl::range<1>(len_it), wk);

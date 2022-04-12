@@ -21,6 +21,7 @@
 #include "unittests/shamrocktest.hpp"
 #include "utils/string_utils.hpp"
 #include "utils/time_utils.hpp"
+#include <array>
 #include <memory>
 #include <mpi.h>
 #include <string>
@@ -36,7 +37,7 @@ class TestTimestepper {
   public:
     static void init(SchedulerMPI &sched, TestSimInfo &siminfo) {
 
-        patchdata_layout::set(1, 0, 0, 0, 0, 0);
+        patchdata_layout::set(1, 0, 1, 0, 0, 0);
         patchdata_layout::sync(MPI_COMM_WORLD);
 
         if (mpi_handler::world_rank == 0) {
@@ -63,8 +64,11 @@ class TestTimestepper {
             std::mt19937 eng(0x1111);
             std::uniform_real_distribution<f32> distpos(-1, 1);
 
-            for (u32 part_id = 0; part_id < p.data_count; part_id++)
+            for (u32 part_id = 0; part_id < p.data_count; part_id++){
                 pdat.pos_s.push_back({distpos(eng), distpos(eng), distpos(eng)});
+                pdat.U1_s.push_back(0.02f);
+            }
+                
 
             sched.add_patch(p, pdat);
 
@@ -178,13 +182,87 @@ class TestTimestepper {
                     std::unique_ptr<sycl::buffer<f32_3>> pos =
                         std::make_unique<sycl::buffer<f32_3>>(pdat.pos_s.data(), pdat.pos_s.size());
 
+                    std::unique_ptr<sycl::buffer<f32>> h_buf =
+                        std::make_unique<sycl::buffer<f32>>(pdat.U1_s.data(), pdat.U1_s.size());
+
                     Patch &cur_p = sched.patch_list.global[sched.patch_list.id_patch_to_global_idx[id]];
 
                     Radix_Tree<u32, f32_3> rtree =
                         Radix_Tree<u32, f32_3>(hndl.get_queue_compute(0), sched.patch_data.sim_box.get_box<f32>(cur_p), pos);
                     rtree.compute_cellvolume(hndl.get_queue_compute(0));
 
-                    walker::walk2(hndl.get_queue_compute(0), rtree ,[](){return 0.02f;});
+
+
+                    //*
+                    hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+
+                        auto hpart = h_buf->get_access<sycl::access::mode::read>(cgh);
+
+                        auto r = pos->get_access<sycl::access::mode::read>(cgh);
+
+                        walker::Radix_tree_accessor<u32,f32_3> tree_acc(rtree,cgh);
+
+                        
+                        cgh.parallel_for<class SPHTest>(sycl::range(pos->size()), [=](sycl::item<1> item) {
+                            u32 id_a = (u32)item.get_id(0);
+
+                            f32_3 xyz_a = r[id_a];//could be recovered from lambda
+
+                            f32_3 inter_box_a_min = xyz_a - hpart[id_a];
+                            f32_3 inter_box_a_max = xyz_a + hpart[id_a];
+
+                            walker::walk3(tree_acc, [xyz_a,inter_box_a_min,inter_box_a_max,&tree_acc](u32 node_id){
+                                f32_3 cur_pos_min_cell_b = tree_acc.pos_min_cell[node_id];
+                                f32_3 cur_pos_max_cell_b = tree_acc.pos_max_cell[node_id];
+                                float int_r_max_cell = 0.02f;
+
+                                f32_3 inter_box_b_min = cur_pos_min_cell_b - int_r_max_cell;
+                                f32_3 inter_box_b_max = cur_pos_max_cell_b + int_r_max_cell;
+
+                                return 
+                                    BBAA::cella_neigh_b(
+                                        inter_box_a_min, inter_box_a_max, 
+                                        cur_pos_min_cell_b, cur_pos_max_cell_b) ||
+                                    BBAA::cella_neigh_b(
+                                        xyz_a, xyz_a,                   
+                                        inter_box_b_min, inter_box_b_max);
+                            }, [](u32 part_idx_b){
+
+                            }, [](u32 node_id){});
+
+
+                        });
+                        
+                    });
+                    //*/
+
+
+                    /*
+                    hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+
+                        auto hpart = h_buf->get_access<sycl::access::mode::read>(cgh);
+
+                        std::array<u32, 0> aa;
+
+                        auto get_int_range = [hpart](u32 id_a){
+                            return hpart[id_a];
+                        };
+
+                        walker::WalkerKernel wk(rtree, cgh, get_int_range);
+
+                        cgh.parallel_for(sycl::range<1>(rtree.tree_leaf_count), wk);
+                    });
+                    //*/
+
+
+                    // 
+                    // walker::walk2(
+                    //     hndl.get_queue_compute(0),
+                    //     rtree ,
+                    //     [](u32 id_a){
+                    //         return 0.02f;
+                    //     }
+                    // );
 
                     if (true && siminfo.time > 2) {
                         hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
