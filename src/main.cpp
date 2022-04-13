@@ -33,11 +33,101 @@ class TestSimInfo {
     u32 time;
 };
 
+
+
+
+namespace constants {
+    constexpr f64 PI = 3.141592653589793238463;
+}
+
+namespace sph {
+namespace kernels {
+
+// 3d kernels only
+
+template <class flt_type> class M4 {public:
+    static constexpr flt_type Rkern = 2;
+
+    static constexpr flt_type norm = 1 / constants::PI;
+
+    static flt_type f(flt_type q) {
+
+        constexpr flt_type div3_4 = (3. / 4.);
+        constexpr flt_type div3_2 = (3. / 2.);
+        constexpr flt_type div1_4 = (1. / 4.);
+
+        if (q < 1) {
+            return 1 + q * q * (div3_4 * q - div3_2);
+        } else if (q < 2) {
+            return div1_4 * (2 - q) * (2 - q) * (2 - q);
+        } else
+            return 0;
+    }
+
+    static flt_type df(flt_type q) {
+
+        constexpr flt_type div9_4 = (9. / 4.);
+        constexpr flt_type div3_4 = (3. / 4.);
+
+        if (q < 1) {
+            return -3 * q + div9_4 * q * q;
+        } else if (q < 2) {
+            return -3 + 3 * q - div3_4 * q * q;
+        } else
+            return 0;
+    }
+
+    static flt_type W(flt_type r, flt_type h) { return norm * f(r / h) / (h * h * h); }
+
+    static flt_type dW(flt_type r, flt_type h) { return norm * df(r / h) / (h * h * h * h); }
+
+    static flt_type dhW(flt_type r, flt_type h) {
+        return -(norm) * (3 * f(r / h) + (r / h) * 3 * df(r / h)) / (h * h * h * h);
+    }
+};
+} // namespace kernels
+} // namespace sph
+
+
+
+template<class vec3,class flt_type>
+inline vec3 sph_pressure(
+    flt_type m_b,
+    flt_type rho_a_sq,
+    flt_type rho_b_sq,
+    flt_type P_a,
+    flt_type P_b,
+    flt_type omega_a,
+    flt_type omega_b,
+    flt_type qa_ab,
+    flt_type qb_ab,
+    vec3 nabla_Wab_ha,
+    vec3 nabla_Wab_hb){
+
+    flt_type sub_fact_a = rho_a_sq*omega_a;
+    flt_type sub_fact_b = rho_b_sq*omega_b;
+
+    vec3 acc_a = ((P_a + qa_ab)/(sub_fact_a))*nabla_Wab_ha;
+    vec3 acc_b = ((P_b + qb_ab)/(sub_fact_b))*nabla_Wab_hb;
+
+    if(sub_fact_a == 0) acc_a = {0,0,0};
+    if(sub_fact_b == 0) acc_b = {0,0,0};
+
+    return - m_b*(
+          acc_a
+        + acc_b
+    ); 
+}
+
+
+
+
+
 class TestTimestepper {
   public:
     static void init(SchedulerMPI &sched, TestSimInfo &siminfo) {
 
-        patchdata_layout::set(1, 0, 1, 0, 0, 0);
+        patchdata_layout::set(1, 0, 1, 0, 1, 0);
         patchdata_layout::sync(MPI_COMM_WORLD);
 
         if (mpi_handler::world_rank == 0) {
@@ -67,6 +157,7 @@ class TestTimestepper {
             for (u32 part_id = 0; part_id < p.data_count; part_id++){
                 pdat.pos_s.push_back({distpos(eng), distpos(eng), distpos(eng)});
                 pdat.U1_s.push_back(0.02f);
+                pdat.U3_s.push_back({0,0,0});
             }
                 
 
@@ -195,44 +286,60 @@ class TestTimestepper {
 
                     //*
                     hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
-
                         auto hpart = h_buf->get_access<sycl::access::mode::read>(cgh);
 
                         auto r = pos->get_access<sycl::access::mode::read>(cgh);
 
-                        walker::Radix_tree_accessor<u32,f32_3> tree_acc(rtree,cgh);
+                        walker::Radix_tree_accessor<u32, f32_3> tree_acc(rtree, cgh);
 
-                        
+                        constexpr const f32 Rkern = 2;
+
                         cgh.parallel_for<class SPHTest>(sycl::range(pos->size()), [=](sycl::item<1> item) {
                             u32 id_a = (u32)item.get_id(0);
 
-                            f32_3 xyz_a = r[id_a];//could be recovered from lambda
+                            f32_3 xyz_a = r[id_a]; // could be recovered from lambda
 
-                            f32_3 inter_box_a_min = xyz_a - hpart[id_a];
-                            f32_3 inter_box_a_max = xyz_a + hpart[id_a];
+                            f32 h_a = hpart[id_a];
 
-                            walker::walk3(tree_acc, [xyz_a,inter_box_a_min,inter_box_a_max,&tree_acc](u32 node_id){
-                                f32_3 cur_pos_min_cell_b = tree_acc.pos_min_cell[node_id];
-                                f32_3 cur_pos_max_cell_b = tree_acc.pos_max_cell[node_id];
-                                float int_r_max_cell = 0.02f;
+                            f32_3 inter_box_a_min = xyz_a - h_a * Rkern;
+                            f32_3 inter_box_a_max = xyz_a + h_a * Rkern;
 
-                                f32_3 inter_box_b_min = cur_pos_min_cell_b - int_r_max_cell;
-                                f32_3 inter_box_b_max = cur_pos_max_cell_b + int_r_max_cell;
+                            f32_3 sum_axyz{0,0,0};
 
-                                return 
-                                    BBAA::cella_neigh_b(
-                                        inter_box_a_min, inter_box_a_max, 
-                                        cur_pos_min_cell_b, cur_pos_max_cell_b) ||
-                                    BBAA::cella_neigh_b(
-                                        xyz_a, xyz_a,                   
-                                        inter_box_b_min, inter_box_b_max);
-                            }, [](u32 part_idx_b){
+                            walker::rtree_for(
+                                tree_acc,
+                                [&](u32 node_id) {
+                                    f32_3 cur_pos_min_cell_b = tree_acc.pos_min_cell[node_id];
+                                    f32_3 cur_pos_max_cell_b = tree_acc.pos_max_cell[node_id];
+                                    float int_r_max_cell     = 0.02f * Rkern;
 
-                            }, [](u32 node_id){});
+                                    using namespace walker::interaction_crit;
 
+                                    return sph_radix_cell_crit(xyz_a, inter_box_a_min, inter_box_a_max, cur_pos_min_cell_b,
+                                                               cur_pos_max_cell_b, int_r_max_cell);
+                                },
+                                [&](u32 id_b) {
+                                    f32_3 dr = xyz_a - r[id_b];
+                                    f32 rab = sycl::length(dr);
+                                    f32 h_b = hpart[id_b];
 
+                                    if(rab > h_a*Rkern && rab > h_b*Rkern) return;
+
+                                    f32_3 r_ab_unit = dr / rab;
+
+                                    if(rab < 1e-9){
+                                        r_ab_unit = {0,0,0};
+                                    }
+
+                                    sum_axyz += sph_pressure(
+                                        1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f
+                                        , 0.f,0.f, 
+                                        r_ab_unit*r_ab_unit*sph::kernels::M4<f32>::dW(rab,h_a), 
+                                        r_ab_unit*r_ab_unit*sph::kernels::M4<f32>::W(rab,h_b));
+
+                                },
+                                [](u32 node_id) {});
                         });
-                        
                     });
                     //*/
 
