@@ -79,7 +79,14 @@ class Radix_Tree{public:
 
 
         std::cout << "sort_morton_buf" << std::endl;
-        buf_particle_index_map = std::make_unique<sycl::buffer<u32>>(sycl::range(buf_morton->size()));
+        buf_particle_index_map = std::make_unique<sycl::buffer<u32>>(buf_morton->size());
+
+        queue.submit([&](sycl::handler &cgh) {
+            auto pidm = buf_particle_index_map->get_access<sycl::access::mode::discard_write>(cgh);
+            cgh.parallel_for(sycl::range(buf_morton->size()), [=](sycl::item<1> item) {
+                pidm[item] = item.get_id(0);
+            });
+        });
 
         sycl_sort_morton_key_pair(queue, buf_morton->size(), buf_particle_index_map, buf_morton);
 
