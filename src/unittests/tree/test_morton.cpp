@@ -9,11 +9,11 @@
 Test_start("morton::",min_max_value,1){
 
 
-    u32 m_0_32 = morton_3d::coord_to_morton<u32,f32,u16_3>(0, 0, 0);
-    u32 m_max_32 = morton_3d::coord_to_morton<u32,f32,u16_3>(1, 1, 1);
+    u32 m_0_32 = morton_3d::coord_to_morton<u32,f32>(0, 0, 0);
+    u32 m_max_32 = morton_3d::coord_to_morton<u32,f32>(1, 1, 1);
 
-    u64 m_0_64 = morton_3d::coord_to_morton<u64,f32,u32_3>(0, 0, 0);
-    u64 m_max_64 = morton_3d::coord_to_morton<u64,f32,u32_3>(1, 1, 1);
+    u64 m_0_64 = morton_3d::coord_to_morton<u64,f32>(0, 0, 0);
+    u64 m_max_64 = morton_3d::coord_to_morton<u64,f32>(1, 1, 1);
 
     
     Test_assert("min morton 64 == b0", m_0_64 == 0x0);    
