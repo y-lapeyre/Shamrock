@@ -20,3 +20,4 @@
 - [ ] move sycl kernels to namespaces instead of ::
 - [ ] bind patch to specific GPU for the gpu cache ?
 - [ ] to implement the variable h with cache we can create a fix array and keep neighbourgh in the walk stack, after we can iterate on all cells in the walk stack even if they are not leaf using the endrange (ineficient for big cells)
+- [ ] implement the interaction box computation of the radix tree using U1 buf instead of a separate buf

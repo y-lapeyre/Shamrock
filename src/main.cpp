@@ -28,99 +28,42 @@
 #include <unordered_map>
 #include <vector>
 
+#include "sph/kernels.hpp"
+#include "sph/sphpart.hpp"
+#include "sph/forces.hpp"
+
 class TestSimInfo {
   public:
     u32 time;
 };
 
 
+class CurDataLayout{public:
 
+    using pos_type = f32;
+    class U1_s{public:
+        static constexpr u32 nvar = 2;
 
-namespace constants {
-    constexpr f64 PI = 3.141592653589793238463;
-}
+        static constexpr u32 ihpart = 0;
+        static constexpr u32 iomega = 1;
+    };
 
-namespace sph {
-namespace kernels {
+    class U1_d{public:
+        static constexpr u32 nvar = 0;
+    };
 
-// 3d kernels only
+    class U3_s{public:
+        static constexpr u32 nvar = 3;
 
-template <class flt_type> class M4 {public:
-    static constexpr flt_type Rkern = 2;
+        static constexpr u32 ivxyz = 0;
+        static constexpr u32 iaxyz = 1;
+        static constexpr u32 iaxyz_old = 2;
+    };
 
-    static constexpr flt_type norm = 1 / constants::PI;
-
-    static flt_type f(flt_type q) {
-
-        constexpr flt_type div3_4 = (3. / 4.);
-        constexpr flt_type div3_2 = (3. / 2.);
-        constexpr flt_type div1_4 = (1. / 4.);
-
-        if (q < 1) {
-            return 1 + q * q * (div3_4 * q - div3_2);
-        } else if (q < 2) {
-            return div1_4 * (2 - q) * (2 - q) * (2 - q);
-        } else
-            return 0;
-    }
-
-    static flt_type df(flt_type q) {
-
-        constexpr flt_type div9_4 = (9. / 4.);
-        constexpr flt_type div3_4 = (3. / 4.);
-
-        if (q < 1) {
-            return -3 * q + div9_4 * q * q;
-        } else if (q < 2) {
-            return -3 + 3 * q - div3_4 * q * q;
-        } else
-            return 0;
-    }
-
-    static flt_type W(flt_type r, flt_type h) { return norm * f(r / h) / (h * h * h); }
-
-    static flt_type dW(flt_type r, flt_type h) { return norm * df(r / h) / (h * h * h * h); }
-
-    static flt_type dhW(flt_type r, flt_type h) {
-        return -(norm) * (3 * f(r / h) + (r / h) * 3 * df(r / h)) / (h * h * h * h);
-    }
+    class U3_d{public:
+        static constexpr u32 nvar = 0;
+    };
 };
-} // namespace kernels
-} // namespace sph
-
-
-
-template<class vec3,class flt_type>
-inline vec3 sph_pressure(
-    flt_type m_b,
-    flt_type rho_a_sq,
-    flt_type rho_b_sq,
-    flt_type P_a,
-    flt_type P_b,
-    flt_type omega_a,
-    flt_type omega_b,
-    flt_type qa_ab,
-    flt_type qb_ab,
-    vec3 nabla_Wab_ha,
-    vec3 nabla_Wab_hb){
-
-    flt_type sub_fact_a = rho_a_sq*omega_a;
-    flt_type sub_fact_b = rho_b_sq*omega_b;
-
-    vec3 acc_a = ((P_a + qa_ab)/(sub_fact_a))*nabla_Wab_ha;
-    vec3 acc_b = ((P_b + qb_ab)/(sub_fact_b))*nabla_Wab_hb;
-
-    if(sub_fact_a == 0) acc_a = {0,0,0};
-    if(sub_fact_b == 0) acc_b = {0,0,0};
-
-    return - m_b*(
-          acc_a
-        + acc_b
-    ); 
-}
-
-
-
 
 
 class TestTimestepper {
@@ -310,6 +253,36 @@ class TestTimestepper {
                     rtree.compute_cellvolume(hndl.get_queue_compute(0));
                     rtree.compute_int_boxes(hndl.get_queue_compute(0),h_buf );
 
+
+                    h_buf.reset();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
                     
 
                     //computation kernel
@@ -319,7 +292,9 @@ class TestTimestepper {
 
                         walker::Radix_tree_accessor<u32, f32_3> tree_acc(rtree, cgh);
 
-                        constexpr const f32 Rkern = 2;
+                        auto cell_int_r = rtree.buf_cell_interact_rad->get_access<sycl::access::mode::read>(cgh);
+
+                        using Kernel = sph::kernels::M4<f32>;
 
                         cgh.parallel_for<class SPHTest>(sycl::range(pos->size()), [=](sycl::item<1> item) {
                             u32 id_a = (u32)item.get_id(0);
@@ -328,8 +303,8 @@ class TestTimestepper {
 
                             f32 h_a = hpart[id_a];
 
-                            f32_3 inter_box_a_min = xyz_a - h_a * Rkern;
-                            f32_3 inter_box_a_max = xyz_a + h_a * Rkern;
+                            f32_3 inter_box_a_min = xyz_a - h_a * Kernel::Rkern;
+                            f32_3 inter_box_a_max = xyz_a + h_a * Kernel::Rkern;
 
                             f32_3 sum_axyz{0,0,0};
 
@@ -338,7 +313,7 @@ class TestTimestepper {
                                 [&](u32 node_id) {
                                     f32_3 cur_pos_min_cell_b = tree_acc.pos_min_cell[node_id];
                                     f32_3 cur_pos_max_cell_b = tree_acc.pos_max_cell[node_id];
-                                    float int_r_max_cell     = 0.02f * Rkern;
+                                    float int_r_max_cell     = cell_int_r[node_id] * Kernel::Rkern;
 
                                     using namespace walker::interaction_crit;
 
@@ -350,7 +325,7 @@ class TestTimestepper {
                                     f32 rab = sycl::length(dr);
                                     f32 h_b = hpart[id_b];
 
-                                    if(rab > h_a*Rkern && rab > h_b*Rkern) return;
+                                    if(rab > h_a*Kernel::Rkern && rab > h_b*Kernel::Rkern) return;
 
                                     f32_3 r_ab_unit = dr / rab;
 
@@ -361,8 +336,8 @@ class TestTimestepper {
                                     sum_axyz += sph_pressure(
                                         1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f
                                         , 0.f,0.f, 
-                                        r_ab_unit*r_ab_unit*sph::kernels::M4<f32>::dW(rab,h_a), 
-                                        r_ab_unit*r_ab_unit*sph::kernels::M4<f32>::W(rab,h_b));
+                                        r_ab_unit*r_ab_unit*Kernel::dW(rab,h_a), 
+                                        r_ab_unit*r_ab_unit*Kernel::W(rab,h_b));
 
                                 },
                                 [](u32 node_id) {});
