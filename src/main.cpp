@@ -3,18 +3,17 @@
 #include "interfaces/interface_handler.hpp"
 #include "interfaces/interface_selector.hpp"
 #include "io/dump.hpp"
-#include "particles/particle_patch_mover.hpp"
 #include "io/logs.hpp"
+#include "particles/particle_patch_mover.hpp"
 #include "patch/patch.hpp"
 #include "patch/patch_field.hpp"
 #include "patch/patch_reduc_tree.hpp"
 #include "patch/patchdata.hpp"
-#include "patch/serialpatchtree.hpp"
 #include "patch/patchdata_exchanger.hpp"
+#include "patch/serialpatchtree.hpp"
 #include "patchscheduler/loadbalancing_hilbert.hpp"
 #include "patchscheduler/patch_content_exchanger.hpp"
 #include "patchscheduler/scheduler_mpi.hpp"
-#include "particles/particle_patch_mover.hpp"
 #include "sys/cmdopt.hpp"
 #include "sys/mpi_handler.hpp"
 #include "sys/sycl_mpi_interop.hpp"
@@ -22,28 +21,115 @@
 #include "unittests/shamrocktest.hpp"
 #include "utils/string_utils.hpp"
 #include "utils/time_utils.hpp"
+#include <array>
 #include <memory>
 #include <mpi.h>
 #include <string>
 #include <unordered_map>
 #include <vector>
 
-class TestSimInfo{public:
-
+class TestSimInfo {
+  public:
     u32 time;
-
 };
 
 
 
-class TestTimestepper{public:
 
-    static void init(SchedulerMPI & sched,TestSimInfo & siminfo){
+namespace constants {
+    constexpr f64 PI = 3.141592653589793238463;
+}
 
-        patchdata_layout::set(1, 0, 0, 0, 0, 0);
+namespace sph {
+namespace kernels {
+
+// 3d kernels only
+
+template <class flt_type> class M4 {public:
+    static constexpr flt_type Rkern = 2;
+
+    static constexpr flt_type norm = 1 / constants::PI;
+
+    static flt_type f(flt_type q) {
+
+        constexpr flt_type div3_4 = (3. / 4.);
+        constexpr flt_type div3_2 = (3. / 2.);
+        constexpr flt_type div1_4 = (1. / 4.);
+
+        if (q < 1) {
+            return 1 + q * q * (div3_4 * q - div3_2);
+        } else if (q < 2) {
+            return div1_4 * (2 - q) * (2 - q) * (2 - q);
+        } else
+            return 0;
+    }
+
+    static flt_type df(flt_type q) {
+
+        constexpr flt_type div9_4 = (9. / 4.);
+        constexpr flt_type div3_4 = (3. / 4.);
+
+        if (q < 1) {
+            return -3 * q + div9_4 * q * q;
+        } else if (q < 2) {
+            return -3 + 3 * q - div3_4 * q * q;
+        } else
+            return 0;
+    }
+
+    static flt_type W(flt_type r, flt_type h) { return norm * f(r / h) / (h * h * h); }
+
+    static flt_type dW(flt_type r, flt_type h) { return norm * df(r / h) / (h * h * h * h); }
+
+    static flt_type dhW(flt_type r, flt_type h) {
+        return -(norm) * (3 * f(r / h) + (r / h) * 3 * df(r / h)) / (h * h * h * h);
+    }
+};
+} // namespace kernels
+} // namespace sph
+
+
+
+template<class vec3,class flt_type>
+inline vec3 sph_pressure(
+    flt_type m_b,
+    flt_type rho_a_sq,
+    flt_type rho_b_sq,
+    flt_type P_a,
+    flt_type P_b,
+    flt_type omega_a,
+    flt_type omega_b,
+    flt_type qa_ab,
+    flt_type qb_ab,
+    vec3 nabla_Wab_ha,
+    vec3 nabla_Wab_hb){
+
+    flt_type sub_fact_a = rho_a_sq*omega_a;
+    flt_type sub_fact_b = rho_b_sq*omega_b;
+
+    vec3 acc_a = ((P_a + qa_ab)/(sub_fact_a))*nabla_Wab_ha;
+    vec3 acc_b = ((P_b + qb_ab)/(sub_fact_b))*nabla_Wab_hb;
+
+    if(sub_fact_a == 0) acc_a = {0,0,0};
+    if(sub_fact_b == 0) acc_b = {0,0,0};
+
+    return - m_b*(
+          acc_a
+        + acc_b
+    ); 
+}
+
+
+
+
+
+class TestTimestepper {
+  public:
+    static void init(SchedulerMPI &sched, TestSimInfo &siminfo) {
+
+        patchdata_layout::set(1, 0, 2, 0, 3, 0);
         patchdata_layout::sync(MPI_COMM_WORLD);
 
-        
         if (mpi_handler::world_rank == 0) {
 
             auto t = timings::start_timer("dumm setup", timings::timingtype::function);
@@ -68,8 +154,15 @@ class TestTimestepper{public:
             std::mt19937 eng(0x1111);
             std::uniform_real_distribution<f32> distpos(-1, 1);
 
-            for (u32 part_id = 0; part_id < p.data_count; part_id++)
-                pdat.pos_s.push_back({distpos(eng), distpos(eng), distpos(eng)});
+            for (u32 part_id = 0; part_id < p.data_count; part_id++){
+                pdat.pos_s.push_back({distpos(eng), distpos(eng), distpos(eng)}); //r
+                pdat.U1_s.push_back(0.02f); //h
+                pdat.U1_s.push_back(0.00f); //omega
+                pdat.U3_s.push_back({0,0,0}); //v
+                pdat.U3_s.push_back({0,0,0}); //a
+                pdat.U3_s.push_back({0,0,0}); //a_old
+            }
+                
 
             sched.add_patch(p, pdat);
 
@@ -79,7 +172,7 @@ class TestTimestepper{public:
             sched.patch_list._next_patch_id++;
         }
         mpi::barrier(MPI_COMM_WORLD);
-        
+
         sched.owned_patch_id = sched.patch_list.build_local();
 
         // std::cout << sched.dump_status() << std::endl;
@@ -117,16 +210,14 @@ class TestTimestepper{public:
             interface_hndl.comm_interfaces(sched);
             interface_hndl.print_current_interf_map();
 
-            //sched.dump_local_patches(format("patches_%d_node%d", 0, mpi_handler::world_rank));
-
+            // sched.dump_local_patches(format("patches_%d_node%d", 0, mpi_handler::world_rank));
         }
-
     }
 
-    static void step(SchedulerMPI & sched,TestSimInfo & siminfo){
+    static void step(SchedulerMPI &sched, TestSimInfo &siminfo) {
 
-        SyCLHandler & hndl = SyCLHandler::get_instance();
-        
+        SyCLHandler &hndl = SyCLHandler::get_instance();
+
         // std::cout << sched.dump_status() << std::endl;
         sched.scheduler_step(true, true);
 
@@ -173,110 +264,172 @@ class TestTimestepper{public:
             InterfaceHandler<f32_3, f32> interface_hndl;
             interface_hndl.compute_interface_list<InterfaceSelector_SPH<f32_3, f32>>(sched, sptree, h_field);
             interface_hndl.comm_interfaces(sched);
-            //interface_hndl.print_current_interf_map();
+            // interface_hndl.print_current_interf_map();
 
-            //sched.dump_local_patches(format("patches_%d_node%d", stepi, mpi_handler::world_rank));
-
+            // sched.dump_local_patches(format("patches_%d_node%d", stepi, mpi_handler::world_rank));
 
             // Radix_Tree<u32, f32_3> r;
             // auto& a = r.pos_min_buf;
 
-            for(auto & [id,pdat] : sched.patch_data.owned_data){
-                if(pdat.pos_s.size() > 0){
-                    std::unique_ptr<sycl::buffer<f32_3>> pos = std::make_unique<sycl::buffer<f32_3>>(pdat.pos_s.data(),pdat.pos_s.size());
+            for (auto &[id, pdat] : sched.patch_data.owned_data) {
+                if (pdat.pos_s.size() > 0) {
 
-                    Patch & cur_p = sched.patch_list.global[sched.patch_list.id_patch_to_global_idx[id]];
+
+                    Patch &cur_p = sched.patch_list.global[sched.patch_list.id_patch_to_global_idx[id]];
+
+                    //init acc
+                    std::unique_ptr<sycl::buffer<f32_3>> pos =
+                        std::make_unique<sycl::buffer<f32_3>>(pdat.pos_s.data(), pdat.pos_s.size());
+                    std::unique_ptr<sycl::buffer<f32>> U1 =
+                        std::make_unique<sycl::buffer<f32>>(pdat.U1_s.data(), pdat.U1_s.size());
+                    std::unique_ptr<sycl::buffer<f32_3>> U3 =
+                        std::make_unique<sycl::buffer<f32_3>>(pdat.U3_s.data(), pdat.U3_s.size());
+
+
+
+
+                    std::unique_ptr<sycl::buffer<f32>> h_buf =
+                        std::make_unique<sycl::buffer<f32>>(pdat.pos_s.size());
+
+                    hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+                        auto U1acc = U1->get_access<sycl::access::mode::read>(cgh);
+                        auto hacc = h_buf->get_access<sycl::access::mode::discard_write>(cgh);
+
+                        cgh.parallel_for<class Modify_pos>(sycl::range(pos->size()), [=](sycl::item<1> item) {
+                            u32 i = (u32)item.get_id(0);
+
+                            hacc[i] = U1acc[i*2 + 0];
+                        });
+                    });
+
+
+                
+                    //radix tree computation
+                    Radix_Tree<u32, f32_3> rtree =
+                        Radix_Tree<u32, f32_3>(hndl.get_queue_compute(0), sched.patch_data.sim_box.get_box<f32>(cur_p), pos);
+                    rtree.compute_cellvolume(hndl.get_queue_compute(0));
+                    rtree.compute_int_boxes(hndl.get_queue_compute(0),h_buf );
 
                     
-                    Radix_Tree<u32, f32_3> rtree(hndl.get_queue_compute(0),sched.patch_data.sim_box.get_box<f32>(cur_p),pos);
 
+                    //computation kernel
+                    hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+                        auto hpart = h_buf->get_access<sycl::access::mode::read>(cgh);
+                        auto r = pos->get_access<sycl::access::mode::read>(cgh);
 
-                    if(true && siminfo.time > 2){
-                        hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
-                            auto posacc= pos->get_access<sycl::access::mode::read_write>(cgh);
-                            
-                            cgh.parallel_for<class Modify_pos>(sycl::range(pos->size()), [=](sycl::item<1> item) {
-                                u32 i = (u32)item.get_id(0);
+                        walker::Radix_tree_accessor<u32, f32_3> tree_acc(rtree, cgh);
 
-                                posacc[i] *= 1.1; 
-                            });
+                        constexpr const f32 Rkern = 2;
+
+                        cgh.parallel_for<class SPHTest>(sycl::range(pos->size()), [=](sycl::item<1> item) {
+                            u32 id_a = (u32)item.get_id(0);
+
+                            f32_3 xyz_a = r[id_a]; // could be recovered from lambda
+
+                            f32 h_a = hpart[id_a];
+
+                            f32_3 inter_box_a_min = xyz_a - h_a * Rkern;
+                            f32_3 inter_box_a_max = xyz_a + h_a * Rkern;
+
+                            f32_3 sum_axyz{0,0,0};
+
+                            walker::rtree_for(
+                                tree_acc,
+                                [&](u32 node_id) {
+                                    f32_3 cur_pos_min_cell_b = tree_acc.pos_min_cell[node_id];
+                                    f32_3 cur_pos_max_cell_b = tree_acc.pos_max_cell[node_id];
+                                    float int_r_max_cell     = 0.02f * Rkern;
+
+                                    using namespace walker::interaction_crit;
+
+                                    return sph_radix_cell_crit(xyz_a, inter_box_a_min, inter_box_a_max, cur_pos_min_cell_b,
+                                                               cur_pos_max_cell_b, int_r_max_cell);
+                                },
+                                [&](u32 id_b) {
+                                    f32_3 dr = xyz_a - r[id_b];
+                                    f32 rab = sycl::length(dr);
+                                    f32 h_b = hpart[id_b];
+
+                                    if(rab > h_a*Rkern && rab > h_b*Rkern) return;
+
+                                    f32_3 r_ab_unit = dr / rab;
+
+                                    if(rab < 1e-9){
+                                        r_ab_unit = {0,0,0};
+                                    }
+
+                                    sum_axyz += sph_pressure(
+                                        1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f
+                                        , 0.f,0.f, 
+                                        r_ab_unit*r_ab_unit*sph::kernels::M4<f32>::dW(rab,h_a), 
+                                        r_ab_unit*r_ab_unit*sph::kernels::M4<f32>::W(rab,h_b));
+
+                                },
+                                [](u32 node_id) {});
                         });
-                    }
+                    });
                 }
             }
 
-
-            
             reatribute_particles(sched, sptree);
         }
     }
-
 };
 
+template <class Timestepper, class SimInfo> class SimulationSPH {
+  public:
+    static void run_sim() {
 
-template<class Timestepper,class SimInfo>
-class SimulationSPH{public:
-
-
-
-    static void run_sim(){
-
-        SchedulerMPI sched = SchedulerMPI(1e6,1);
+        SchedulerMPI sched = SchedulerMPI(1e6, 1);
         sched.init_mpi_required_types();
 
         logfiles::open_log_files();
 
-
-
         SimInfo siminfo;
 
         auto t = timings::start_timer("init timestepper", timings::timingtype::function);
-        Timestepper::init(sched,siminfo);
+        Timestepper::init(sched, siminfo);
         t.stop();
 
-        dump_state("step"+std::to_string(0)+"/",sched);
+        dump_state("step" + std::to_string(0) + "/", sched);
 
         timings::dump_timings("### init_step ###");
 
-
-
         std::cout << " ------ init sim ------" << std::endl;
-        for (u32 stepi = 1; stepi < 6; stepi++) {
+        for (u32 stepi = 1; stepi < 30; stepi++) {
             std::cout << " ------ step time = " << stepi << " ------" << std::endl;
             siminfo.time = stepi;
 
             auto step_timer = timings::start_timer("timestepper step", timings::timingtype::function);
-            Timestepper::step(sched,siminfo);
+            Timestepper::step(sched, siminfo);
             step_timer.stop();
 
-            dump_state("step"+std::to_string(stepi)+"/",sched);
+            dump_state("step" + std::to_string(stepi) + "/", sched);
 
-            timings::dump_timings("### ""step"+std::to_string(stepi)+" ###");
+            timings::dump_timings("### "
+                                  "step" +
+                                  std::to_string(stepi) + " ###");
         }
 
         logfiles::close_log_files();
 
         sched.free_mpi_required_types();
-
     }
-
 };
 
-int main(int argc, char *argv[]){
-
+int main(int argc, char *argv[]) {
 
     std::cout << shamrock_title_bar_big << std::endl;
 
     mpi_handler::init();
 
-    Cmdopt & opt = Cmdopt::get_instance();
-    opt.init(argc, argv,"./shamrock");
+    Cmdopt &opt = Cmdopt::get_instance();
+    opt.init(argc, argv, "./shamrock");
 
-    SyCLHandler & hndl = SyCLHandler::get_instance();
+    SyCLHandler &hndl = SyCLHandler::get_instance();
     hndl.init_sycl();
 
-    SimulationSPH<TestTimestepper,TestSimInfo>::run_sim();
+    SimulationSPH<TestTimestepper, TestSimInfo>::run_sim();
 
     mpi_handler::close();
-
 }

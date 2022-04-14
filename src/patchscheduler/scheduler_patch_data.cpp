@@ -143,14 +143,14 @@ void split_patchdata<f32_3>(PatchData & original_pd,
             for(u32 j = 0 ; j < patchdata_layout::nVarU1_s ; j++){
                 pd0.U1_s.push_back(original_pd.U1_s[i*patchdata_layout::nVarU1_s + j]);
             }
-            for(u32 j = 0 ; j < patchdata_layout::nVarU1_s ; j++){
+            for(u32 j = 0 ; j < patchdata_layout::nVarU1_d ; j++){
                 pd0.U1_d.push_back(original_pd.U1_d[i*patchdata_layout::nVarU1_d + j]);
             }
             
-            for(u32 j = 0 ; j < patchdata_layout::nVarU1_s ; j++){
+            for(u32 j = 0 ; j < patchdata_layout::nVarU3_s ; j++){
                 pd0.U3_s.push_back(original_pd.U3_s[i*patchdata_layout::nVarU3_s + j]);
             }
-            for(u32 j = 0 ; j < patchdata_layout::nVarU3_s ; j++){
+            for(u32 j = 0 ; j < patchdata_layout::nVarU3_d ; j++){
                 pd0.U3_d.push_back(original_pd.U3_d[i*patchdata_layout::nVarU3_d + j]);
             }
         }
@@ -160,14 +160,14 @@ void split_patchdata<f32_3>(PatchData & original_pd,
             for(u32 j = 0 ; j < patchdata_layout::nVarU1_s ; j++){
                 pd1.U1_s.push_back(original_pd.U1_s[i*patchdata_layout::nVarU1_s + j]);
             }
-            for(u32 j = 0 ; j < patchdata_layout::nVarU1_s ; j++){
+            for(u32 j = 0 ; j < patchdata_layout::nVarU1_d ; j++){
                 pd1.U1_d.push_back(original_pd.U1_d[i*patchdata_layout::nVarU1_d + j]);
             }
             
-            for(u32 j = 0 ; j < patchdata_layout::nVarU1_s ; j++){
+            for(u32 j = 0 ; j < patchdata_layout::nVarU3_s ; j++){
                 pd1.U3_s.push_back(original_pd.U3_s[i*patchdata_layout::nVarU3_s + j]);
             }
-            for(u32 j = 0 ; j < patchdata_layout::nVarU3_s ; j++){
+            for(u32 j = 0 ; j < patchdata_layout::nVarU3_d ; j++){
                 pd1.U3_d.push_back(original_pd.U3_d[i*patchdata_layout::nVarU3_d + j]);
             }
         }
@@ -177,14 +177,14 @@ void split_patchdata<f32_3>(PatchData & original_pd,
             for(u32 j = 0 ; j < patchdata_layout::nVarU1_s ; j++){
                 pd2.U1_s.push_back(original_pd.U1_s[i*patchdata_layout::nVarU1_s + j]);
             }
-            for(u32 j = 0 ; j < patchdata_layout::nVarU1_s ; j++){
+            for(u32 j = 0 ; j < patchdata_layout::nVarU1_d ; j++){
                 pd2.U1_d.push_back(original_pd.U1_d[i*patchdata_layout::nVarU1_d + j]);
             }
             
-            for(u32 j = 0 ; j < patchdata_layout::nVarU1_s ; j++){
+            for(u32 j = 0 ; j < patchdata_layout::nVarU3_s ; j++){
                 pd2.U3_s.push_back(original_pd.U3_s[i*patchdata_layout::nVarU3_s + j]);
             }
-            for(u32 j = 0 ; j < patchdata_layout::nVarU3_s ; j++){
+            for(u32 j = 0 ; j < patchdata_layout::nVarU3_d ; j++){
                 pd2.U3_d.push_back(original_pd.U3_d[i*patchdata_layout::nVarU3_d + j]);
             }
         }
@@ -194,14 +194,14 @@ void split_patchdata<f32_3>(PatchData & original_pd,
             for(u32 j = 0 ; j < patchdata_layout::nVarU1_s ; j++){
                 pd3.U1_s.push_back(original_pd.U1_s[i*patchdata_layout::nVarU1_s + j]);
             }
-            for(u32 j = 0 ; j < patchdata_layout::nVarU1_s ; j++){
+            for(u32 j = 0 ; j < patchdata_layout::nVarU1_d ; j++){
                 pd3.U1_d.push_back(original_pd.U1_d[i*patchdata_layout::nVarU1_d + j]);
             }
             
-            for(u32 j = 0 ; j < patchdata_layout::nVarU1_s ; j++){
+            for(u32 j = 0 ; j < patchdata_layout::nVarU3_s ; j++){
                 pd3.U3_s.push_back(original_pd.U3_s[i*patchdata_layout::nVarU3_s + j]);
             }
-            for(u32 j = 0 ; j < patchdata_layout::nVarU3_s ; j++){
+            for(u32 j = 0 ; j < patchdata_layout::nVarU3_d ; j++){
                 pd3.U3_d.push_back(original_pd.U3_d[i*patchdata_layout::nVarU3_d + j]);
             }
         }
@@ -211,14 +211,14 @@ void split_patchdata<f32_3>(PatchData & original_pd,
             for(u32 j = 0 ; j < patchdata_layout::nVarU1_s ; j++){
                 pd4.U1_s.push_back(original_pd.U1_s[i*patchdata_layout::nVarU1_s + j]);
             }
-            for(u32 j = 0 ; j < patchdata_layout::nVarU1_s ; j++){
+            for(u32 j = 0 ; j < patchdata_layout::nVarU1_d ; j++){
                 pd4.U1_d.push_back(original_pd.U1_d[i*patchdata_layout::nVarU1_d + j]);
             }
             
-            for(u32 j = 0 ; j < patchdata_layout::nVarU1_s ; j++){
+            for(u32 j = 0 ; j < patchdata_layout::nVarU3_s ; j++){
                 pd4.U3_s.push_back(original_pd.U3_s[i*patchdata_layout::nVarU3_s + j]);
             }
-            for(u32 j = 0 ; j < patchdata_layout::nVarU3_s ; j++){
+            for(u32 j = 0 ; j < patchdata_layout::nVarU3_d ; j++){
                 pd4.U3_d.push_back(original_pd.U3_d[i*patchdata_layout::nVarU3_d + j]);
             }
         }
@@ -228,14 +228,14 @@ void split_patchdata<f32_3>(PatchData & original_pd,
             for(u32 j = 0 ; j < patchdata_layout::nVarU1_s ; j++){
                 pd5.U1_s.push_back(original_pd.U1_s[i*patchdata_layout::nVarU1_s + j]);
             }
-            for(u32 j = 0 ; j < patchdata_layout::nVarU1_s ; j++){
+            for(u32 j = 0 ; j < patchdata_layout::nVarU1_d ; j++){
                 pd5.U1_d.push_back(original_pd.U1_d[i*patchdata_layout::nVarU1_d + j]);
             }
             
-            for(u32 j = 0 ; j < patchdata_layout::nVarU1_s ; j++){
+            for(u32 j = 0 ; j < patchdata_layout::nVarU3_s ; j++){
                 pd5.U3_s.push_back(original_pd.U3_s[i*patchdata_layout::nVarU3_s + j]);
             }
-            for(u32 j = 0 ; j < patchdata_layout::nVarU3_s ; j++){
+            for(u32 j = 0 ; j < patchdata_layout::nVarU3_d ; j++){
                 pd5.U3_d.push_back(original_pd.U3_d[i*patchdata_layout::nVarU3_d + j]);
             }
         }
@@ -245,14 +245,14 @@ void split_patchdata<f32_3>(PatchData & original_pd,
             for(u32 j = 0 ; j < patchdata_layout::nVarU1_s ; j++){
                 pd6.U1_s.push_back(original_pd.U1_s[i*patchdata_layout::nVarU1_s + j]);
             }
-            for(u32 j = 0 ; j < patchdata_layout::nVarU1_s ; j++){
+            for(u32 j = 0 ; j < patchdata_layout::nVarU1_d ; j++){
                 pd6.U1_d.push_back(original_pd.U1_d[i*patchdata_layout::nVarU1_d + j]);
             }
             
-            for(u32 j = 0 ; j < patchdata_layout::nVarU1_s ; j++){
+            for(u32 j = 0 ; j < patchdata_layout::nVarU3_s ; j++){
                 pd6.U3_s.push_back(original_pd.U3_s[i*patchdata_layout::nVarU3_s + j]);
             }
-            for(u32 j = 0 ; j < patchdata_layout::nVarU3_s ; j++){
+            for(u32 j = 0 ; j < patchdata_layout::nVarU3_d ; j++){
                 pd6.U3_d.push_back(original_pd.U3_d[i*patchdata_layout::nVarU3_d + j]);
             }
         }
@@ -262,14 +262,14 @@ void split_patchdata<f32_3>(PatchData & original_pd,
             for(u32 j = 0 ; j < patchdata_layout::nVarU1_s ; j++){
                 pd7.U1_s.push_back(original_pd.U1_s[i*patchdata_layout::nVarU1_s + j]);
             }
-            for(u32 j = 0 ; j < patchdata_layout::nVarU1_s ; j++){
+            for(u32 j = 0 ; j < patchdata_layout::nVarU1_d ; j++){
                 pd7.U1_d.push_back(original_pd.U1_d[i*patchdata_layout::nVarU1_d + j]);
             }
             
-            for(u32 j = 0 ; j < patchdata_layout::nVarU1_s ; j++){
+            for(u32 j = 0 ; j < patchdata_layout::nVarU3_s ; j++){
                 pd7.U3_s.push_back(original_pd.U3_s[i*patchdata_layout::nVarU3_s + j]);
             }
-            for(u32 j = 0 ; j < patchdata_layout::nVarU3_s ; j++){
+            for(u32 j = 0 ; j < patchdata_layout::nVarU3_d ; j++){
                 pd7.U3_d.push_back(original_pd.U3_d[i*patchdata_layout::nVarU3_d + j]);
             }
         }
