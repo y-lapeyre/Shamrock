@@ -28,11 +28,27 @@ inline u32 get_next_pow2_val(u32 val){
     return val_rounded_pow;
 }
 
+template<class u_morton>
+class Radix_tree_depth;
+
+template<>
+class Radix_tree_depth<u32>{public:
+    static constexpr u32 tree_depth = 32;
+};
+
+template<>
+class Radix_tree_depth<u64>{public:
+    static constexpr u32 tree_depth = 64;
+};
+
 
 template<class u_morton,class vec3>
 class Radix_Tree{public:
 
     typedef typename morton_3d::morton_types<u_morton>::int_vec_repr vec3i;
+    typedef typename vec3::element_type flt;
+
+    static constexpr u32 tree_depth = Radix_tree_depth<u_morton>::tree_depth;
 
     //std::unique_ptr<sycl::buffer<vec3i>> pos_min_buf;
 
@@ -166,6 +182,90 @@ class Radix_Tree{public:
     }
 
 
+    std::unique_ptr<sycl::buffer<flt>> buf_cell_interact_rad;
+
+
+    inline void compute_int_boxes(sycl::queue & queue,std::unique_ptr<sycl::buffer<flt>> & int_rad_buf){
+
+        buf_cell_interact_rad = std::make_unique< sycl::buffer<flt>>(tree_internal_count + tree_leaf_count);
+        sycl::range<1> range_leaf_cell{tree_leaf_count};
+
+
+        queue.submit([&](sycl::handler &cgh) {
+
+            u32 offset_leaf = tree_internal_count;
+
+            auto h_max_cell = buf_cell_interact_rad->template get_access<sycl::access::mode::discard_write>(cgh);
+            auto h = int_rad_buf->template get_access<sycl::access::mode::read>(cgh);
+
+            auto cell_particle_ids = buf_reduc_index_map->template get_access<sycl::access::mode::read>(cgh);
+            auto particle_index_map = buf_particle_index_map->template get_access<sycl::access::mode::read>(cgh);
+
+
+            cgh.parallel_for(
+                range_leaf_cell, [=](sycl::item<1> item) {
+                    u32 gid = (u32) item.get_id(0);
+
+                    u32 min_ids = cell_particle_ids[gid];
+                    u32 max_ids = cell_particle_ids[gid+1];
+                    f32 h_tmp = 0;
+
+                    for(unsigned int id_s = min_ids; id_s < max_ids;id_s ++){
+        
+                        f32 h_a = h[particle_index_map[id_s]];
+                        h_tmp = (h_tmp > h_a ? h_tmp : h_a);
+                        
+                    }
+                    
+                    h_max_cell[offset_leaf + gid] = h_tmp;
+
+                }
+            );
+
+
+        });
+
+
+
+        sycl::range<1> range_tree{tree_internal_count};
+        auto ker_reduc_hmax = [&](sycl::handler &cgh) {
+
+            u32 offset_leaf = tree_internal_count;
+
+            auto h_max_cell = buf_cell_interact_rad->template get_access<sycl::access::mode::read_write>(cgh);
+
+            auto rchild_id      = buf_rchild_id  ->get_access<sycl::access::mode::read>(cgh);
+            auto lchild_id      = buf_lchild_id  ->get_access<sycl::access::mode::read>(cgh);
+            auto rchild_flag    = buf_rchild_flag->get_access<sycl::access::mode::read>(cgh);
+            auto lchild_flag    = buf_lchild_flag->get_access<sycl::access::mode::read>(cgh);
+
+            cgh.parallel_for(
+                range_tree, [=](sycl::item<1> item) {
+
+                    u32 gid = (u32) item.get_id(0);
+
+                    u32 lid = lchild_id[gid] + offset_leaf*lchild_flag[gid];
+                    u32 rid = rchild_id[gid] + offset_leaf*rchild_flag[gid];
+                    
+                    flt h_l = h_max_cell[lid];
+                    flt h_r = h_max_cell[rid];
+                    
+                    h_max_cell[gid] = (h_r > h_l ? h_r : h_l);
+
+                }
+            );
+
+        };
+
+        
+        for(u32 i = 0 ; i < tree_depth ; i++){
+            queue.submit(ker_reduc_hmax);
+        }
+
+
+    }
+
+
 
 };
 
@@ -191,18 +291,7 @@ namespace walker {
     }
 
 
-    template<class u_morton>
-    class Radix_tree_depth;
-
-    template<>
-    class Radix_tree_depth<u32>{public:
-        static constexpr u32 tree_depth = 32;
-    };
-
-    template<>
-    class Radix_tree_depth<u64>{public:
-        static constexpr u32 tree_depth = 64;
-    };
+    
 
     template<class u_morton,class vec3>
     class Radix_tree_accessor{public:
@@ -254,8 +343,8 @@ namespace walker {
                 if (current_node_id >= acc.leaf_offset) {
 
                     // loop on particle indexes
-                    uint min_ids = acc.cell_index_map[current_node_id];
-                    uint max_ids = acc.cell_index_map[current_node_id + 1];
+                    uint min_ids = acc.cell_index_map[current_node_id     -acc.leaf_offset];
+                    uint max_ids = acc.cell_index_map[current_node_id + 1 -acc.leaf_offset];
 
                     for (unsigned int id_s = min_ids; id_s < max_ids; id_s++) {
 
