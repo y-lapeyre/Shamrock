@@ -119,7 +119,8 @@ void SchedulerMPI::scheduler_step(bool do_split_merge, bool do_load_balancing){
         //std::cout << dump_status() << std::endl;
 
         //std::cout << "build_global_idx_map" <<std::endl;
-        timer.start();
+        
+        timer.start();//TODO check if it it used outside of split merge -> maybe need to be put before the if
         patch_list.build_global_idx_map();
         timer.end();
         std::cout << " | build_global_idx_map : " << timer.get_time_str() << std::endl;
@@ -220,6 +221,7 @@ void SchedulerMPI::scheduler_step(bool do_split_merge, bool do_load_balancing){
     owned_patch_id = patch_list.build_local();
     patch_list.reset_local_pack_index();
     patch_list.build_local_idx_map();
+    patch_list.build_global_idx_map();//TODO check if required : added because possible bug because of for each patch & serial patch tree
     update_local_dtcnt_value();
     update_local_load_value();
 
