@@ -214,137 +214,100 @@ class TestTimestepper {
             // Radix_Tree<u32, f32_3> r;
             // auto& a = r.pos_min_buf;
 
-            for (auto &[id, pdat] : sched.patch_data.owned_data) {
-                if (pdat.pos_s.size() > 0) {
+            sched.for_each_patch([&](u64 id_patch, Patch cur_p, std::unique_ptr<sycl::buffer<f32_3>> pos_s,
+                                     std::unique_ptr<sycl::buffer<f64_3>> pos_d, std::unique_ptr<sycl::buffer<f32>> U1_s,
+                                     std::unique_ptr<sycl::buffer<f64>> U1_d, std::unique_ptr<sycl::buffer<f32_3>> U3_s,
+                                     std::unique_ptr<sycl::buffer<f64_3>> U3_d) {
 
+                std::unique_ptr<sycl::buffer<f32>> h_buf =
+                    std::make_unique<sycl::buffer<f32>>(pos_s->size());
 
-                    Patch &cur_p = sched.patch_list.global[sched.patch_list.id_patch_to_global_idx[id]];
+                hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+                    auto U1acc = U1_s->get_access<sycl::access::mode::read>(cgh);
+                    auto hacc = h_buf->get_access<sycl::access::mode::discard_write>(cgh);
 
-                    //init acc
-                    std::unique_ptr<sycl::buffer<f32_3>> pos =
-                        std::make_unique<sycl::buffer<f32_3>>(pdat.pos_s.data(), pdat.pos_s.size());
-                    std::unique_ptr<sycl::buffer<f32>> U1 =
-                        std::make_unique<sycl::buffer<f32>>(pdat.U1_s.data(), pdat.U1_s.size());
-                    std::unique_ptr<sycl::buffer<f32_3>> U3 =
-                        std::make_unique<sycl::buffer<f32_3>>(pdat.U3_s.data(), pdat.U3_s.size());
+                    cgh.parallel_for(sycl::range(pos_s->size()), [=](sycl::item<1> item) {
+                        u32 i = (u32)item.get_id(0);
 
-
-
-
-                    std::unique_ptr<sycl::buffer<f32>> h_buf =
-                        std::make_unique<sycl::buffer<f32>>(pdat.pos_s.size());
-
-                    hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
-                        auto U1acc = U1->get_access<sycl::access::mode::read>(cgh);
-                        auto hacc = h_buf->get_access<sycl::access::mode::discard_write>(cgh);
-
-                        cgh.parallel_for<class Modify_pos>(sycl::range(pos->size()), [=](sycl::item<1> item) {
-                            u32 i = (u32)item.get_id(0);
-
-                            hacc[i] = U1acc[i*2 + 0];
-                        });
+                        hacc[i] = U1acc[i*2 + 0];
                     });
+                });
+
+
+            
+                //radix tree computation
+                Radix_Tree<u32, f32_3> rtree =
+                    Radix_Tree<u32, f32_3>(hndl.get_queue_compute(0), sched.patch_data.sim_box.get_box<f32>(cur_p), pos_s);
+                rtree.compute_cellvolume(hndl.get_queue_compute(0));
+                rtree.compute_int_boxes(hndl.get_queue_compute(0),h_buf );
+
+
+                h_buf.reset();
 
 
                 
-                    //radix tree computation
-                    Radix_Tree<u32, f32_3> rtree =
-                        Radix_Tree<u32, f32_3>(hndl.get_queue_compute(0), sched.patch_data.sim_box.get_box<f32>(cur_p), pos);
-                    rtree.compute_cellvolume(hndl.get_queue_compute(0));
-                    rtree.compute_int_boxes(hndl.get_queue_compute(0),h_buf );
 
+                //computation kernel
+                hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+                    auto hpart = h_buf->get_access<sycl::access::mode::read>(cgh);
+                    auto r = pos_s->get_access<sycl::access::mode::read>(cgh);
 
-                    h_buf.reset();
+                    walker::Radix_tree_accessor<u32, f32_3> tree_acc(rtree, cgh);
 
+                    auto cell_int_r = rtree.buf_cell_interact_rad->get_access<sycl::access::mode::read>(cgh);
 
+                    using Kernel = sph::kernels::M4<f32>;
 
+                    cgh.parallel_for<class SPHTest>(sycl::range(pos_s->size()), [=](sycl::item<1> item) {
+                        u32 id_a = (u32)item.get_id(0);
 
+                        f32_3 xyz_a = r[id_a]; // could be recovered from lambda
 
+                        f32 h_a = hpart[id_a];
 
+                        f32_3 inter_box_a_min = xyz_a - h_a * Kernel::Rkern;
+                        f32_3 inter_box_a_max = xyz_a + h_a * Kernel::Rkern;
 
+                        f32_3 sum_axyz{0,0,0};
 
+                        walker::rtree_for(
+                            tree_acc,
+                            [&](u32 node_id) {
+                                f32_3 cur_pos_min_cell_b = tree_acc.pos_min_cell[node_id];
+                                f32_3 cur_pos_max_cell_b = tree_acc.pos_max_cell[node_id];
+                                float int_r_max_cell     = cell_int_r[node_id] * Kernel::Rkern;
 
+                                using namespace walker::interaction_crit;
 
+                                return sph_radix_cell_crit(xyz_a, inter_box_a_min, inter_box_a_max, cur_pos_min_cell_b,
+                                                            cur_pos_max_cell_b, int_r_max_cell);
+                            },
+                            [&](u32 id_b) {
+                                f32_3 dr = xyz_a - r[id_b];
+                                f32 rab = sycl::length(dr);
+                                f32 h_b = hpart[id_b];
 
+                                if(rab > h_a*Kernel::Rkern && rab > h_b*Kernel::Rkern) return;
 
+                                f32_3 r_ab_unit = dr / rab;
 
+                                if(rab < 1e-9){
+                                    r_ab_unit = {0,0,0};
+                                }
 
+                                sum_axyz += sph_pressure(
+                                    1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f
+                                    , 0.f,0.f, 
+                                    r_ab_unit*r_ab_unit*Kernel::dW(rab,h_a), 
+                                    r_ab_unit*r_ab_unit*Kernel::W(rab,h_b));
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-                    
-
-                    //computation kernel
-                    hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
-                        auto hpart = h_buf->get_access<sycl::access::mode::read>(cgh);
-                        auto r = pos->get_access<sycl::access::mode::read>(cgh);
-
-                        walker::Radix_tree_accessor<u32, f32_3> tree_acc(rtree, cgh);
-
-                        auto cell_int_r = rtree.buf_cell_interact_rad->get_access<sycl::access::mode::read>(cgh);
-
-                        using Kernel = sph::kernels::M4<f32>;
-
-                        cgh.parallel_for<class SPHTest>(sycl::range(pos->size()), [=](sycl::item<1> item) {
-                            u32 id_a = (u32)item.get_id(0);
-
-                            f32_3 xyz_a = r[id_a]; // could be recovered from lambda
-
-                            f32 h_a = hpart[id_a];
-
-                            f32_3 inter_box_a_min = xyz_a - h_a * Kernel::Rkern;
-                            f32_3 inter_box_a_max = xyz_a + h_a * Kernel::Rkern;
-
-                            f32_3 sum_axyz{0,0,0};
-
-                            walker::rtree_for(
-                                tree_acc,
-                                [&](u32 node_id) {
-                                    f32_3 cur_pos_min_cell_b = tree_acc.pos_min_cell[node_id];
-                                    f32_3 cur_pos_max_cell_b = tree_acc.pos_max_cell[node_id];
-                                    float int_r_max_cell     = cell_int_r[node_id] * Kernel::Rkern;
-
-                                    using namespace walker::interaction_crit;
-
-                                    return sph_radix_cell_crit(xyz_a, inter_box_a_min, inter_box_a_max, cur_pos_min_cell_b,
-                                                               cur_pos_max_cell_b, int_r_max_cell);
-                                },
-                                [&](u32 id_b) {
-                                    f32_3 dr = xyz_a - r[id_b];
-                                    f32 rab = sycl::length(dr);
-                                    f32 h_b = hpart[id_b];
-
-                                    if(rab > h_a*Kernel::Rkern && rab > h_b*Kernel::Rkern) return;
-
-                                    f32_3 r_ab_unit = dr / rab;
-
-                                    if(rab < 1e-9){
-                                        r_ab_unit = {0,0,0};
-                                    }
-
-                                    sum_axyz += sph_pressure(
-                                        1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f
-                                        , 0.f,0.f, 
-                                        r_ab_unit*r_ab_unit*Kernel::dW(rab,h_a), 
-                                        r_ab_unit*r_ab_unit*Kernel::W(rab,h_b));
-
-                                },
-                                [](u32 node_id) {});
-                        });
+                            },
+                            [](u32 node_id) {});
                     });
-                }
-            }
+                });     
+
+            });
+
 
             reatribute_particles(sched, sptree);
         }
