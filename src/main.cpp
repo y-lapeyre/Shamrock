@@ -127,7 +127,7 @@ class TestTimestepper {
   public:
     static void init(SchedulerMPI &sched, TestSimInfo &siminfo) {
 
-        patchdata_layout::set(1, 0, 1, 0, 1, 0);
+        patchdata_layout::set(1, 0, 2, 0, 3, 0);
         patchdata_layout::sync(MPI_COMM_WORLD);
 
         if (mpi_handler::world_rank == 0) {
@@ -155,9 +155,12 @@ class TestTimestepper {
             std::uniform_real_distribution<f32> distpos(-1, 1);
 
             for (u32 part_id = 0; part_id < p.data_count; part_id++){
-                pdat.pos_s.push_back({distpos(eng), distpos(eng), distpos(eng)});
-                pdat.U1_s.push_back(0.02f);
-                pdat.U3_s.push_back({0,0,0});
+                pdat.pos_s.push_back({distpos(eng), distpos(eng), distpos(eng)}); //r
+                pdat.U1_s.push_back(0.02f); //h
+                pdat.U1_s.push_back(0.00f); //omega
+                pdat.U3_s.push_back({0,0,0}); //v
+                pdat.U3_s.push_back({0,0,0}); //a
+                pdat.U3_s.push_back({0,0,0}); //a_old
             }
                 
 
@@ -270,24 +273,48 @@ class TestTimestepper {
 
             for (auto &[id, pdat] : sched.patch_data.owned_data) {
                 if (pdat.pos_s.size() > 0) {
-                    std::unique_ptr<sycl::buffer<f32_3>> pos =
-                        std::make_unique<sycl::buffer<f32_3>>(pdat.pos_s.data(), pdat.pos_s.size());
 
-                    std::unique_ptr<sycl::buffer<f32>> h_buf =
-                        std::make_unique<sycl::buffer<f32>>(pdat.U1_s.data(), pdat.U1_s.size());
 
                     Patch &cur_p = sched.patch_list.global[sched.patch_list.id_patch_to_global_idx[id]];
 
+                    //init acc
+                    std::unique_ptr<sycl::buffer<f32_3>> pos =
+                        std::make_unique<sycl::buffer<f32_3>>(pdat.pos_s.data(), pdat.pos_s.size());
+                    std::unique_ptr<sycl::buffer<f32>> U1 =
+                        std::make_unique<sycl::buffer<f32>>(pdat.U1_s.data(), pdat.U1_s.size());
+                    std::unique_ptr<sycl::buffer<f32_3>> U3 =
+                        std::make_unique<sycl::buffer<f32_3>>(pdat.U3_s.data(), pdat.U3_s.size());
+
+
+
+
+                    std::unique_ptr<sycl::buffer<f32>> h_buf =
+                        std::make_unique<sycl::buffer<f32>>(pdat.pos_s.size());
+
+                    hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+                        auto U1acc = U1->get_access<sycl::access::mode::read>(cgh);
+                        auto hacc = h_buf->get_access<sycl::access::mode::discard_write>(cgh);
+
+                        cgh.parallel_for<class Modify_pos>(sycl::range(pos->size()), [=](sycl::item<1> item) {
+                            u32 i = (u32)item.get_id(0);
+
+                            hacc[i] = U1acc[i*2 + 0];
+                        });
+                    });
+
+
+                
+                    //radix tree computation
                     Radix_Tree<u32, f32_3> rtree =
                         Radix_Tree<u32, f32_3>(hndl.get_queue_compute(0), sched.patch_data.sim_box.get_box<f32>(cur_p), pos);
                     rtree.compute_cellvolume(hndl.get_queue_compute(0));
+                    rtree.compute_int_boxes(hndl.get_queue_compute(0),h_buf );
 
+                    
 
-
-                    //*
+                    //computation kernel
                     hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
                         auto hpart = h_buf->get_access<sycl::access::mode::read>(cgh);
-
                         auto r = pos->get_access<sycl::access::mode::read>(cgh);
 
                         walker::Radix_tree_accessor<u32, f32_3> tree_acc(rtree, cgh);
@@ -341,47 +368,6 @@ class TestTimestepper {
                                 [](u32 node_id) {});
                         });
                     });
-                    //*/
-
-
-                    /*
-                    hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
-
-                        auto hpart = h_buf->get_access<sycl::access::mode::read>(cgh);
-
-                        std::array<u32, 0> aa;
-
-                        auto get_int_range = [hpart](u32 id_a){
-                            return hpart[id_a];
-                        };
-
-                        walker::WalkerKernel wk(rtree, cgh, get_int_range);
-
-                        cgh.parallel_for(sycl::range<1>(rtree.tree_leaf_count), wk);
-                    });
-                    //*/
-
-
-                    // 
-                    // walker::walk2(
-                    //     hndl.get_queue_compute(0),
-                    //     rtree ,
-                    //     [](u32 id_a){
-                    //         return 0.02f;
-                    //     }
-                    // );
-
-                    if (true && siminfo.time > 2) {
-                        hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
-                            auto posacc = pos->get_access<sycl::access::mode::read_write>(cgh);
-
-                            cgh.parallel_for<class Modify_pos>(sycl::range(pos->size()), [=](sycl::item<1> item) {
-                                u32 i = (u32)item.get_id(0);
-
-                                posacc[i] *= 1.1;
-                            });
-                        });
-                    }
                 }
             }
 
