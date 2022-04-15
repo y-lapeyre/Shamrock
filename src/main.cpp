@@ -214,10 +214,10 @@ class TestTimestepper {
             // Radix_Tree<u32, f32_3> r;
             // auto& a = r.pos_min_buf;
 
-            sched.for_each_patch([&](u64 id_patch, Patch cur_p, std::unique_ptr<sycl::buffer<f32_3>> pos_s,
-                                     std::unique_ptr<sycl::buffer<f64_3>> pos_d, std::unique_ptr<sycl::buffer<f32>> U1_s,
-                                     std::unique_ptr<sycl::buffer<f64>> U1_d, std::unique_ptr<sycl::buffer<f32_3>> U3_s,
-                                     std::unique_ptr<sycl::buffer<f64_3>> U3_d) {
+            sched.for_each_patch([&](u64 id_patch, Patch cur_p, std::unique_ptr<sycl::buffer<f32_3>> & pos_s,
+                                     std::unique_ptr<sycl::buffer<f64_3>> & pos_d, std::unique_ptr<sycl::buffer<f32>> & U1_s,
+                                     std::unique_ptr<sycl::buffer<f64>> & U1_d, std::unique_ptr<sycl::buffer<f32_3>>  &U3_s,
+                                     std::unique_ptr<sycl::buffer<f64_3>> & U3_d) {
 
                 std::unique_ptr<sycl::buffer<f32>> h_buf =
                     std::make_unique<sycl::buffer<f32>>(pos_s->size());
@@ -242,7 +242,7 @@ class TestTimestepper {
                 rtree.compute_int_boxes(hndl.get_queue_compute(0),h_buf );
 
 
-                h_buf.reset();
+                //h_buf.reset();
 
 
                 
