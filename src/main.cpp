@@ -9,11 +9,13 @@
 #include "patch/patch_field.hpp"
 #include "patch/patch_reduc_tree.hpp"
 #include "patch/patchdata.hpp"
+#include "patch/patchdata_buffer.hpp"
 #include "patch/patchdata_exchanger.hpp"
 #include "patch/serialpatchtree.hpp"
 #include "patchscheduler/loadbalancing_hilbert.hpp"
 #include "patchscheduler/patch_content_exchanger.hpp"
 #include "patchscheduler/scheduler_mpi.hpp"
+#include "sph/sphpatch.hpp"
 #include "sys/cmdopt.hpp"
 #include "sys/mpi_handler.hpp"
 #include "sys/sycl_mpi_interop.hpp"
@@ -27,6 +29,7 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include <filesystem>
 
 #include "sph/kernels.hpp"
 #include "sph/sphpart.hpp"
@@ -41,18 +44,31 @@ class TestSimInfo {
 class CurDataLayout{public:
 
     using pos_type = f32;
-    class U1_s{public:
+
+    template<class prec>
+    class U1;
+    template<class prec>
+    class U3;
+
+    template<>
+    class U1<f32>{public:
         static constexpr u32 nvar = 2;
+
+        static constexpr std::array<const char*, 2> varnames {"hpart","omega"};
 
         static constexpr u32 ihpart = 0;
         static constexpr u32 iomega = 1;
     };
 
-    class U1_d{public:
+    template<>
+    class U1<f64>{public:
+        static constexpr std::array<const char*, 0> varnames {};
         static constexpr u32 nvar = 0;
     };
 
-    class U3_s{public:
+    template<>
+    class U3<f32>{public:
+        static constexpr std::array<const char*, 3> varnames {"vxyz","axyz","axyz_old"};
         static constexpr u32 nvar = 3;
 
         static constexpr u32 ivxyz = 0;
@@ -60,7 +76,9 @@ class CurDataLayout{public:
         static constexpr u32 iaxyz_old = 2;
     };
 
-    class U3_d{public:
+    template<>
+    class U3<f64>{public:
+        static constexpr std::array<const char*, 0> varnames {};
         static constexpr u32 nvar = 0;
     };
 };
@@ -196,13 +214,24 @@ class TestTimestepper {
             // std::cout << "pfield_reduced.detach_buf()" << std::endl;
             // pfield_reduced.detach_buf();
             // std::cout << " ------ > " << pfield_reduced.tree_field[0] << "\n\n\n";
+            auto timer_h_max = timings::start_timer("compute_hmax", timings::timingtype::function);
 
             PatchField<f32> h_field;
-            h_field.local_nodes_value.resize(sched.patch_list.local.size());
-            for (u64 idx = 0; idx < sched.patch_list.local.size(); idx++) {
-                h_field.local_nodes_value[idx] = 0.02f;
-            }
-            h_field.build_global(mpi_type_f32);
+            sched.compute_patch_field(
+                h_field, 
+                mpi_type_f32, 
+                [](sycl::queue & queue, Patch & p, PatchDataBuffer & pdat_buf){
+                    return patchdata::sph::get_h_max<CurDataLayout, f32>(queue, pdat_buf);
+                }
+            );
+
+            timer_h_max.stop();
+
+            // h_field.local_nodes_value.resize(sched.patch_list.local.size());
+            // for (u64 idx = 0; idx < sched.patch_list.local.size(); idx++) {
+            //     h_field.local_nodes_value[idx] = 0.02f;
+            // }
+            // h_field.build_global(mpi_type_f32);
 
             InterfaceHandler<f32_3, f32> interface_hndl;
             interface_hndl.compute_interface_list<InterfaceSelector_SPH<f32_3, f32>>(sched, sptree, h_field);
@@ -214,32 +243,32 @@ class TestTimestepper {
             // Radix_Tree<u32, f32_3> r;
             // auto& a = r.pos_min_buf;
 
-            sched.for_each_patch([&](u64 id_patch, Patch cur_p, std::unique_ptr<sycl::buffer<f32_3>> & pos_s,
-                                     std::unique_ptr<sycl::buffer<f64_3>> & pos_d, std::unique_ptr<sycl::buffer<f32>> & U1_s,
-                                     std::unique_ptr<sycl::buffer<f64>> & U1_d, std::unique_ptr<sycl::buffer<f32_3>>  &U3_s,
-                                     std::unique_ptr<sycl::buffer<f64_3>> & U3_d) {
-
-                std::unique_ptr<sycl::buffer<f32>> h_buf =
-                    std::make_unique<sycl::buffer<f32>>(pos_s->size());
-
-                hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
-                    auto U1acc = U1_s->get_access<sycl::access::mode::read>(cgh);
-                    auto hacc = h_buf->get_access<sycl::access::mode::discard_write>(cgh);
-
-                    cgh.parallel_for(sycl::range(pos_s->size()), [=](sycl::item<1> item) {
-                        u32 i = (u32)item.get_id(0);
-
-                        hacc[i] = U1acc[i*2 + 0];
-                    });
-                });
-
-
-            
+            sched.for_each_patch([&](u64 id_patch, Patch cur_p, PatchDataBuffer & pdat_buf) {
                 //radix tree computation
                 Radix_Tree<u32, f32_3> rtree =
-                    Radix_Tree<u32, f32_3>(hndl.get_queue_compute(0), sched.patch_data.sim_box.get_box<f32>(cur_p), pos_s);
+                    Radix_Tree<u32, f32_3>(hndl.get_queue_compute(0), sched.patch_data.sim_box.get_box<f32>(cur_p), pdat_buf.pos_s);
                 rtree.compute_cellvolume(hndl.get_queue_compute(0));
-                rtree.compute_int_boxes(hndl.get_queue_compute(0),h_buf );
+
+
+
+
+                // std::unique_ptr<sycl::buffer<f32>> h_buf =
+                //     std::make_unique<sycl::buffer<f32>>(pdat_buf.pos_s->size());
+
+                // hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+                //     auto U1acc = pdat_buf.U1_s->get_access<sycl::access::mode::read>(cgh);
+                //     auto hacc = h_buf->get_access<sycl::access::mode::discard_write>(cgh);
+
+                //     cgh.parallel_for(sycl::range(pdat_buf.pos_s->size()), [=](sycl::item<1> item) {
+                //         u32 i = (u32)item.get_id(0);
+
+                //         hacc[i] = U1acc[i*2 + 0];
+                //     });
+                // });
+
+                using iU1 = CurDataLayout::U1<f32>;
+
+                rtree.compute_int_boxes<iU1::nvar,iU1::ihpart>(hndl.get_queue_compute(0),pdat_buf.U1_s );
 
 
                 //h_buf.reset();
@@ -249,8 +278,8 @@ class TestTimestepper {
 
                 //computation kernel
                 hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
-                    auto hpart = h_buf->get_access<sycl::access::mode::read>(cgh);
-                    auto r = pos_s->get_access<sycl::access::mode::read>(cgh);
+                    auto U1 = pdat_buf.U1_s->get_access<sycl::access::mode::read>(cgh);
+                    auto r = pdat_buf.pos_s->get_access<sycl::access::mode::read>(cgh);
 
                     walker::Radix_tree_accessor<u32, f32_3> tree_acc(rtree, cgh);
 
@@ -258,12 +287,12 @@ class TestTimestepper {
 
                     using Kernel = sph::kernels::M4<f32>;
 
-                    cgh.parallel_for<class SPHTest>(sycl::range(pos_s->size()), [=](sycl::item<1> item) {
+                    cgh.parallel_for<class SPHTest>(sycl::range(pdat_buf.pos_s->size()), [=](sycl::item<1> item) {
                         u32 id_a = (u32)item.get_id(0);
 
                         f32_3 xyz_a = r[id_a]; // could be recovered from lambda
 
-                        f32 h_a = hpart[id_a];
+                        f32 h_a = U1[id_a*iU1::nvar + iU1::ihpart];
 
                         f32_3 inter_box_a_min = xyz_a - h_a * Kernel::Rkern;
                         f32_3 inter_box_a_max = xyz_a + h_a * Kernel::Rkern;
@@ -285,7 +314,7 @@ class TestTimestepper {
                             [&](u32 id_b) {
                                 f32_3 dr = xyz_a - r[id_b];
                                 f32 rab = sycl::length(dr);
-                                f32 h_b = hpart[id_b];
+                                f32 h_b = U1[id_b*iU1::nvar + iU1::ihpart];
 
                                 if(rab > h_a*Kernel::Rkern && rab > h_b*Kernel::Rkern) return;
 
@@ -329,6 +358,10 @@ template <class Timestepper, class SimInfo> class SimulationSPH {
         Timestepper::init(sched, siminfo);
         t.stop();
 
+
+
+        std::filesystem::create_directory("step" + std::to_string(0));
+
         dump_state("step" + std::to_string(0) + "/", sched);
 
         timings::dump_timings("### init_step ###");
@@ -341,6 +374,8 @@ template <class Timestepper, class SimInfo> class SimulationSPH {
             auto step_timer = timings::start_timer("timestepper step", timings::timingtype::function);
             Timestepper::step(sched, siminfo);
             step_timer.stop();
+
+            std::filesystem::create_directory("step" + std::to_string(stepi));
 
             dump_state("step" + std::to_string(stepi) + "/", sched);
 
