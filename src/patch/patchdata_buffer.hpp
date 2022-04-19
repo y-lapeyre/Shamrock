@@ -11,6 +11,7 @@
 
 #pragma once
 
+#include <memory>
 #include <stdexcept>
 #include <unordered_map>
 
@@ -26,23 +27,28 @@ class PatchDataBuffer{ public:
     u32 element_count;
 
 
-    sycl::buffer<f32_3> pos_s; ///< f32 's for position         
-    sycl::buffer<f64_3> pos_d; ///< f64 's for position         
-    sycl::buffer<f32>   U1_s ; ///< f32 's for internal fields  
-    sycl::buffer<f64>   U1_d ; ///< f64 's for internal fields  
-    sycl::buffer<f32_3> U3_s ; ///< f32_3 's for internal fields
-    sycl::buffer<f64_3> U3_d ; ///< f64_3 's for internal fields
+    std::unique_ptr<sycl::buffer<f32_3>> pos_s; ///< f32 's for position         
+    std::unique_ptr<sycl::buffer<f64_3>> pos_d; ///< f64 's for position         
+    std::unique_ptr<sycl::buffer<f32>  > U1_s ; ///< f32 's for internal fields  
+    std::unique_ptr<sycl::buffer<f64>  > U1_d ; ///< f64 's for internal fields  
+    std::unique_ptr<sycl::buffer<f32_3>> U3_s ; ///< f32_3 's for internal fields
+    std::unique_ptr<sycl::buffer<f64_3>> U3_d ; ///< f64_3 's for internal fields
+
+
 };
 
 
 inline PatchDataBuffer attach_to_patchData(PatchData & pdat){
-    return PatchDataBuffer{
-        u32(pdat.pos_s.size() + pdat.pos_d.size()),
-        sycl::buffer<f32_3> (pdat.pos_s.data(),pdat.pos_s.size()),
-        sycl::buffer<f64_3> (pdat.pos_d.data(),pdat.pos_d.size()),
-        sycl::buffer<f32>   (pdat.U1_s .data(),pdat.U1_s .size()),
-        sycl::buffer<f64>   (pdat.U1_d .data(),pdat.U1_d .size()),
-        sycl::buffer<f32_3> (pdat.U3_s .data(),pdat.U3_s .size()),
-        sycl::buffer<f64_3> (pdat.U3_d .data(),pdat.U3_d .size())    
-    };
+    PatchDataBuffer pdatbuf;
+    
+    pdatbuf.element_count = u32(pdat.pos_s.size() + pdat.pos_d.size());
+
+    if(! pdat.pos_s.empty()) pdatbuf.pos_s = std::make_unique<sycl::buffer<f32_3>>(pdat.pos_s.data(),pdat.pos_s.size());
+    if(! pdat.pos_d.empty()) pdatbuf.pos_d = std::make_unique<sycl::buffer<f64_3>>(pdat.pos_d.data(),pdat.pos_d.size());
+    if(! pdat.U1_s .empty()) pdatbuf.U1_s  = std::make_unique<sycl::buffer<f32>  >(pdat.U1_s .data(),pdat.U1_s .size());
+    if(! pdat.U1_d .empty()) pdatbuf.U1_d  = std::make_unique<sycl::buffer<f64>  >(pdat.U1_d .data(),pdat.U1_d .size());
+    if(! pdat.U3_s .empty()) pdatbuf.U3_s  = std::make_unique<sycl::buffer<f32_3>>(pdat.U3_s .data(),pdat.U3_s .size());
+    if(! pdat.U3_d .empty()) pdatbuf.U3_d  = std::make_unique<sycl::buffer<f64_3>>(pdat.U3_d .data(),pdat.U3_d .size());
+
+    return pdatbuf;
 }
