@@ -244,12 +244,27 @@ class TestTimestepper {
             // auto& a = r.pos_min_buf;
 
             sched.for_each_patch([&](u64 id_patch, Patch cur_p, PatchDataBuffer & pdat_buf) {
+
+                std::cout << "patch : " << id_patch << "\n";
+
+                std::cout << "  - building tree : ";
+
+                {
+
+                    std::tuple<f32_3,f32_3> box = sched.patch_data.sim_box.get_box<f32>(cur_p);
+                    std::cout << "{" << std::get<0>(box).x() << "," << std::get<0>(box).y() << "," << std::get<0>(box).z() << "} -> ";
+                    std::cout << "{" << std::get<1>(box).x() << "," << std::get<1>(box).y() << "," << std::get<1>(box).z() << "}\n";
+
+                }
+                
                 //radix tree computation
                 Radix_Tree<u32, f32_3> rtree =
                     Radix_Tree<u32, f32_3>(hndl.get_queue_compute(0), sched.patch_data.sim_box.get_box<f32>(cur_p), pdat_buf.pos_s);
                 rtree.compute_cellvolume(hndl.get_queue_compute(0));
 
+                using iU1 = CurDataLayout::U1<f32>;
 
+                rtree.compute_int_boxes<iU1::nvar,iU1::ihpart>(hndl.get_queue_compute(0),pdat_buf.U1_s );
 
 
                 // std::unique_ptr<sycl::buffer<f32>> h_buf =
@@ -266,15 +281,13 @@ class TestTimestepper {
                 //     });
                 // });
 
-                using iU1 = CurDataLayout::U1<f32>;
-
-                rtree.compute_int_boxes<iU1::nvar,iU1::ihpart>(hndl.get_queue_compute(0),pdat_buf.U1_s );
+                
 
 
                 //h_buf.reset();
 
-
                 
+                std::cout << "  - compute force\n";
 
                 //computation kernel
                 hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
@@ -334,9 +347,21 @@ class TestTimestepper {
                             [](u32 node_id) {});
                     });
                 });     
+                
+                
+                interface_hndl.for_each_interface(id_patch, hndl.get_queue_compute(0), [](u64 patch_id, u64 interf_patch_id, PatchDataBuffer & interfpdat, std::tuple<f32_3,f32_3> box){
+
+                    std::cout << "  - adding interface : "<<interf_patch_id << " : ";
+                    std::cout << "{" << std::get<0>(box).x() << "," << std::get<0>(box).y() << "," << std::get<0>(box).z() << "} -> ";
+                    std::cout << "{" << std::get<1>(box).x() << "," << std::get<1>(box).y() << "," << std::get<1>(box).z() << "}\n";
+
+                });
+
 
             });
 
+
+            
 
             reatribute_particles(sched, sptree);
         }

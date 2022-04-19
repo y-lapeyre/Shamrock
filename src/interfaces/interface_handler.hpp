@@ -17,7 +17,9 @@
 #include "aliases.hpp"
 #include "interfaces/interface_generator.hpp"
 #include "io/logs.hpp"
+#include "patch/patchdata_buffer.hpp"
 #include "patchscheduler/scheduler_mpi.hpp"
+#include "sph/sphpatch.hpp"
 
 /**
  * @brief 
@@ -75,6 +77,9 @@ template <class vectype, class primtype> class InterfaceHandler {
         return interface_map[key];
     }
 
+
+    
+
     /**
      * @brief 
      * 
@@ -88,4 +93,26 @@ template <class vectype, class primtype> class InterfaceHandler {
             }
         }
     }
+
+
+
+    template<class Function>
+    inline void for_each_interface(u64 patch_id,sycl::queue & queue, Function && fct){
+
+        const std::vector<std::tuple<u64, std::unique_ptr<PatchData>>> & p_interf_lst = get_interface_list(patch_id);
+
+        for (auto & [int_pid, pdat_ptr] : p_interf_lst) {
+
+            if(pdat_ptr->pos_s.size() + pdat_ptr->pos_d.size() > 0){
+
+                PatchDataBuffer pdat_buf = attach_to_patchData(*pdat_ptr);
+
+                auto t = patchdata::sph::get_patchdata_BBAA<vectype>(queue, pdat_buf);
+
+                fct(patch_id,int_pid,pdat_buf,t);
+            }
+        }
+
+    }
+
 };

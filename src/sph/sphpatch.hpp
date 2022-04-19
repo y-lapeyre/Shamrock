@@ -35,5 +35,23 @@ namespace patchdata {
         }
 
 
+        template<class vec>
+        inline std::tuple<vec,vec> get_patchdata_BBAA(sycl::queue & queue,PatchDataBuffer & pdatbuf);
+
+        template<>
+        inline std::tuple<f32_3,f32_3> get_patchdata_BBAA(sycl::queue & queue,PatchDataBuffer & pdatbuf){
+
+            return syclalg::get_min_max<f32_3, 1,0>(queue, pdatbuf.pos_s);
+
+        }
+
+        template<>
+        inline std::tuple<f64_3,f64_3> get_patchdata_BBAA(sycl::queue & queue,PatchDataBuffer & pdatbuf){
+
+            return syclalg::get_min_max<f64_3, 1,0>(queue, pdatbuf.pos_d);
+
+        }
+
+
     }
 }
