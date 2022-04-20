@@ -21,6 +21,8 @@
 #include "utils/geometry_utils.hpp"
 
 
+//TODO use range based loop and emplace_back instead 
+
 void SchedulerPatchData::apply_change_list(std::vector<std::tuple<u64, i32, i32,i32>> change_list,SchedulerPatchList& patch_list){
 
     auto t = timings::start_timer("SchedulerPatchData::apply_change_list", timings::mpi);
@@ -28,7 +30,7 @@ void SchedulerPatchData::apply_change_list(std::vector<std::tuple<u64, i32, i32,
     std::vector<MPI_Request> rq_lst;
 
     //send
-    for(u32 i = 0 ; i < change_list.size(); i++){
+    for(u32 i = 0 ; i < change_list.size(); i++){ // switch to range based
         auto & [idx,old_owner,new_owner,tag_comm] = change_list[i];
 
         //if i'm sender
