@@ -35,6 +35,18 @@ class PatchDataBuffer{ public:
     std::unique_ptr<sycl::buffer<f64_3>> U3_d ; ///< f64_3 's for internal fields
 
 
+    template<class type> std::unique_ptr<sycl::buffer<type>> & get_pos();
+    template<> std::unique_ptr<sycl::buffer<f32_3>> & get_pos<f32_3>(){return pos_s;}
+    template<> std::unique_ptr<sycl::buffer<f64_3>> & get_pos<f64_3>(){return pos_d;}
+
+    template<class type> std::unique_ptr<sycl::buffer<type>> & get_U1();
+    template<> std::unique_ptr<sycl::buffer<f32>> & get_U1<f32>(){return U1_s;}
+    template<> std::unique_ptr<sycl::buffer<f64>> & get_U1<f64>(){return U1_d;}
+
+    template<class type> std::unique_ptr<sycl::buffer<type>> & get_U3();
+    template<> std::unique_ptr<sycl::buffer<f32_3>> & get_U3<f32_3>(){return U3_s;}
+    template<> std::unique_ptr<sycl::buffer<f64_3>> & get_U3<f64_3>(){return U3_d;}
+
 };
 
 

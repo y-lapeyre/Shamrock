@@ -136,6 +136,8 @@ class SchedulerMPI{public:
 
                 PatchDataBuffer pdatbuf = attach_to_patchData(pdat);
 
+                //TODO should feed the sycl queue to the lambda
+
                 fct(id,cur_p,pdatbuf);
             }
         }

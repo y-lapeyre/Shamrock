@@ -3,3 +3,14 @@ CompileFlags:
   Add: [
     -Wconversion
     ]
+
+# InlayHints:
+#   Enabled: Yes
+#   ParameterNames: Yes
+#   DeducedTypes: Yes
+
+# Diagnostics:
+#   ClangTidy:
+#     Add: [
+#       modernize*
+#       ]

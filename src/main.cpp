@@ -15,6 +15,7 @@
 #include "patchscheduler/loadbalancing_hilbert.hpp"
 #include "patchscheduler/patch_content_exchanger.hpp"
 #include "patchscheduler/scheduler_mpi.hpp"
+#include "sph/leapfrog.hpp"
 #include "sph/sphpatch.hpp"
 #include "sys/cmdopt.hpp"
 #include "sys/mpi_handler.hpp"
@@ -31,9 +32,9 @@
 #include <vector>
 #include <filesystem>
 
+#include "sph/forces.hpp"
 #include "sph/kernels.hpp"
 #include "sph/sphpart.hpp"
-#include "sph/forces.hpp"
 
 class TestSimInfo {
   public:
@@ -51,7 +52,7 @@ class CurDataLayout{public:
     class U3;
 
     template<>
-    class U1<f32>{public:
+    class U1<pos_type>{public:
         static constexpr u32 nvar = 2;
 
         static constexpr std::array<const char*, 2> varnames {"hpart","omega"};
@@ -61,13 +62,7 @@ class CurDataLayout{public:
     };
 
     template<>
-    class U1<f64>{public:
-        static constexpr std::array<const char*, 0> varnames {};
-        static constexpr u32 nvar = 0;
-    };
-
-    template<>
-    class U3<f32>{public:
+    class U3<pos_type>{public:
         static constexpr std::array<const char*, 3> varnames {"vxyz","axyz","axyz_old"};
         static constexpr u32 nvar = 3;
 
@@ -76,11 +71,17 @@ class CurDataLayout{public:
         static constexpr u32 iaxyz_old = 2;
     };
 
-    template<>
-    class U3<f64>{public:
-        static constexpr std::array<const char*, 0> varnames {};
-        static constexpr u32 nvar = 0;
-    };
+    // template<>
+    // class U1<f64>{public:
+    //     static constexpr std::array<const char*, 0> varnames {};
+    //     static constexpr u32 nvar = 0;
+    // };
+
+    // template<>
+    // class U3<f64>{public:
+    //     static constexpr std::array<const char*, 0> varnames {};
+    //     static constexpr u32 nvar = 0;
+    // };
 };
 
 
@@ -116,12 +117,11 @@ class TestTimestepper {
             std::uniform_real_distribution<f32> distpos(-1, 1);
 
             for (u32 part_id = 0; part_id < p.data_count; part_id++){
-                pdat.pos_s.push_back({distpos(eng), distpos(eng), distpos(eng)}); //r
-                pdat.U1_s.push_back(0.02f); //h
-                pdat.U1_s.push_back(0.00f); //omega
-                pdat.U3_s.push_back({0,0,0}); //v
-                pdat.U3_s.push_back({0,0,0}); //a
-                pdat.U3_s.push_back({0,0,0}); //a_old
+                pdat.pos_s.emplace_back(f32_3{distpos(eng), distpos(eng), distpos(eng)}); //r
+                //                      h    omega
+                pdat.U1_s.emplace_back(0.02f,0.00f);
+                //                           v          a             a_old
+                pdat.U3_s.emplace_back(f32_3{0,0,0},f32_3{0,0,0},f32_3{0,0,0});
             }
                 
 
@@ -243,6 +243,23 @@ class TestTimestepper {
             // Radix_Tree<u32, f32_3> r;
             // auto& a = r.pos_min_buf;
 
+            //predictor & a swap step
+
+            f32 dt_cur = 0.1f;
+
+            sched.for_each_patch([&](u64 id_patch, Patch cur_p, PatchDataBuffer & pdat_buf) {
+
+                leapfrog_predictor<f32, CurDataLayout::U3<f32>>(
+                    hndl.get_queue_compute(0), 
+                    pdat_buf.element_count, 
+                    dt_cur, 
+                    pdat_buf.pos_s, 
+                    pdat_buf.U3_s);
+
+            });
+
+
+
             sched.for_each_patch([&](u64 id_patch, Patch cur_p, PatchDataBuffer & pdat_buf) {
 
                 std::cout << "patch : " << id_patch << "\n";
@@ -264,7 +281,7 @@ class TestTimestepper {
 
                 using iU1 = CurDataLayout::U1<f32>;
 
-                rtree.compute_int_boxes<iU1::nvar,iU1::ihpart>(hndl.get_queue_compute(0),pdat_buf.U1_s );
+                rtree.compute_int_boxes<iU1::nvar,iU1::ihpart>(hndl.get_queue_compute(0),pdat_buf.U1_s ,1);
 
 
                 // std::unique_ptr<sycl::buffer<f32>> h_buf =
