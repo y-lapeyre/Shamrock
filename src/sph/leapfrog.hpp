@@ -10,6 +10,7 @@
 #include "sph/sphpatch.hpp"
 #include "tree/radix_tree.hpp"
 #include <memory>
+#include <tuple>
 #include <unordered_map>
 
 
@@ -219,7 +220,7 @@ class SPHTimestepperLeapfrog{
             std::cout << "patch : n°"<<id_patch << " -> making radix tree" << std::endl;
 
             //radix tree computation
-            radix_trees[id_patch] = std::make_unique<Radix_Tree<u_morton, pos_vec>>(hndl.get_queue_compute(0), sched.patch_data.sim_box.get_box<pos_prec>(cur_p), pdat_buf.pos_s);
+            radix_trees[id_patch] = std::make_unique<Radix_Tree<u_morton, pos_vec>>(hndl.get_queue_compute(0), sched.patch_data.sim_box.get_box<pos_prec>(cur_p), pdat_buf.get_pos<pos_vec>());
             
 
         });
@@ -246,6 +247,24 @@ class SPHTimestepperLeapfrog{
         });
 
 
+        sched.for_each_patch([&](u64 id_patch, Patch cur_p, PatchDataBuffer & pdat_buf) {
+
+            std::cout << "patch : n°" << id_patch << " -> iterate h" << std::endl;
+
+            std::unordered_map<u64, std::unique_ptr<Radix_Tree<u_morton, pos_vec>>> interface_trees;
+            
+            interface_hndl.for_each_interface(id_patch, hndl.get_queue_compute(0), [&hndl, &sched, &interface_trees](u64 patch_id, u64 interf_patch_id, PatchDataBuffer & interfpdat, std::tuple<f32_3,f32_3> box){
+
+                std::cout << "  - interface : "<<interf_patch_id << " making tree" << std::endl;
+
+                
+                interface_trees[interf_patch_id] = std::make_unique<Radix_Tree<u_morton, pos_vec>>(hndl.get_queue_compute(0), box, interfpdat.get_pos<pos_vec>());
+
+
+            });
+            
+
+        });
 
 
 
