@@ -1,7 +1,8 @@
 #pragma once
 
 #include "aliases.hpp"
-#include "hipSYCL/sycl/buffer.hpp"
+#include "patchscheduler/scheduler_mpi.hpp"
+#include <memory>
 #include <unordered_map>
 #include <vector>
 
@@ -14,17 +15,26 @@ class PatchComputeField{public:
 
     std::unordered_map<u64, std::vector<T>> field_data;
 
-    template<class Function>
-    inline void generate(u64 patch_id, u32 obj_cnt , Function && lambda){
 
-        field_data[patch_id].resize(obj_cnt);
-        sycl::buffer<T> field_buf(field_data[patch_id].data(),field_data[patch_id].size());
+    inline void generate(SchedulerMPI & sched){
 
-        lambda(field_buf);
+        sched.for_each_patch([&](u64 id_patch, Patch cur_p, PatchDataBuffer & pdat_buf) {
+            field_data[id_patch].resize(pdat_buf.element_count);
+            sycl::buffer<T> field_buf(field_data[id_patch].data(),field_data[id_patch].size());
+        });
 
     }
 
+    std::unordered_map<u64, std::unique_ptr<sycl::buffer<T>>> field_data_buf;
+    inline void to_sycl(){
+        for (auto & [key,dat] : field_data) {
+            field_data_buf[key] = std::make_unique<sycl::buffer<T>>(dat.data(),dat.size());
+        }
+    }
 
+    inline void to_map(){
+        field_data_buf.clear();
+    }
 
 
 

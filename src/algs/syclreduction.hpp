@@ -1,8 +1,6 @@
 #pragma once
 
 #include "aliases.hpp"
-#include "hipSYCL/sycl/access.hpp"
-#include "hipSYCL/sycl/buffer.hpp"
 #include <memory>
 
 namespace syclalg {

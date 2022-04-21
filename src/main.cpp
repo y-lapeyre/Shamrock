@@ -207,7 +207,7 @@ template <class Timestepper, class SimInfo> class SimulationSPH {
   public:
     static void run_sim() {
 
-        SchedulerMPI sched = SchedulerMPI(1e6, 1);
+        SchedulerMPI sched = SchedulerMPI(8e6, 1);
         sched.init_mpi_required_types();
 
         logfiles::open_log_files();
@@ -250,7 +250,120 @@ template <class Timestepper, class SimInfo> class SimulationSPH {
     }
 };
 
+
+/*
+template<class T>
+struct ConvertToVec{typedef std::vector<T> Type;};
+
+template <typename... Args>
+struct convert_tuple_to_vec;
+
+template <typename... Args>
+struct convert_tuple_to_vec<std::tuple<Args...>>
+{
+    typedef std::tuple<typename ConvertToVec<Args>::Type...> type;
+};
+
+using ttt = std::tuple<f32,f64,u32>;
+using ttt_res  = std::tuple<
+        std::vector<f32>,
+        std::vector<f64>,
+        std::vector<u32>
+    >;
+
+typedef convert_tuple_to_vec<ttt>::type tt2 ;
+
+static_assert(
+        std::is_same<
+            convert_tuple_to_vec<ttt>::type,
+            ttt_res
+        >::value, ""
+    );
+
+*/
+
+class DL{
+    using pos = f32_3;
+    using type1 = f32;
+    using type2 = f32;
+};
+
+class empty_desc{};
+
+template<
+    class _Tpos,
+    class _T1 = u8, u32 _nvar1 = 0,class _Desc1 = empty_desc,
+    class _T2 = u8, u32 _nvar2 = 0,class _Desc2 = empty_desc,
+    class _T3 = u8, u32 _nvar3 = 0,class _Desc3 = empty_desc,
+    class _T4 = u8, u32 _nvar4 = 0,class _Desc4 = empty_desc,
+    class _T5 = u8, u32 _nvar5 = 0,class _Desc5 = empty_desc,
+    class _T6 = u8, u32 _nvar6 = 0,class _Desc6 = empty_desc,
+    class _T7 = u8, u32 _nvar7 = 0,class _Desc7 = empty_desc,
+    class _T8 = u8, u32 _nvar8 = 0,class _Desc8 = empty_desc
+>
+class Layout{public:
+    using Tpos = _Tpos;
+
+    using T1 = _T1;
+    using T2 = _T2;
+    using T3 = _T3;
+    using T4 = _T4;
+    using T5 = _T5;
+    using T6 = _T6;
+    using T7 = _T7;
+    using T8 = _T8;
+
+
+    static constexpr u32 nvar1 = _nvar1;
+    static constexpr u32 nvar2 = _nvar2;
+    static constexpr u32 nvar3 = _nvar3;
+    static constexpr u32 nvar4 = _nvar4;
+    static constexpr u32 nvar5 = _nvar5;
+    static constexpr u32 nvar6 = _nvar6;
+    static constexpr u32 nvar7 = _nvar7;
+    static constexpr u32 nvar8 = _nvar8;
+
+    using desc1 = _Desc1;
+    using desc2 = _Desc2;
+    using desc3 = _Desc3;
+    using desc4 = _Desc4;
+    using desc5 = _Desc5;
+    using desc6 = _Desc6;
+    using desc7 = _Desc7;
+    using desc8 = _Desc8;
+};
+
+template<class Layout > class PData{
+    std::vector<typename Layout::Tpos> pos;
+    std::vector<typename Layout::T1> v1;
+    std::vector<typename Layout::T2> v2;
+    std::vector<typename Layout::T3> v3;
+    std::vector<typename Layout::T4> v4;
+    std::vector<typename Layout::T5> v5;
+    std::vector<typename Layout::T6> v6;
+    std::vector<typename Layout::T7> v7;
+};
+
+
 int main(int argc, char *argv[]) {
+
+    class V1_layout{public:
+        u32 ihpart = 0;
+    };
+
+    class V2_layout{public:
+        u32 ivxyz = 0;
+        u32 iaxyz = 1;
+        u32 iaxyz_old = 2;
+    };
+
+    using Lay = Layout<
+        f32_3, 
+        f32  ,1,V1_layout,
+        f32_3,3,V2_layout>;
+
+    PData<Lay> aa;
+
 
     std::cout << shamrock_title_bar_big << std::endl;
 

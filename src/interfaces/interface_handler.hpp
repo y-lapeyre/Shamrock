@@ -28,6 +28,8 @@
  * 
  * @tparam vectype 
  * @tparam primtype 
+ * //TODO check that for periodic BC case : if a patch has itself as interface, is there any bug because of map {map } repr
+ * //TODO put the flag choice thing in a separate function to avoid recomputation
  */
 template <class vectype, class primtype> class InterfaceHandler {
 

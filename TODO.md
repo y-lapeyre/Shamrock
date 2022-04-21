@@ -25,3 +25,4 @@
 - [ ] create a Shamrock loop handler to handle interface compute field patch field & ect
 - [ ] use only patch_id or id_patch not both
 - [ ] in interface split the get_flag_id part and cache it to avoid recomputing it
+- [ ] for the templated patch do something like shown in main.cpp
