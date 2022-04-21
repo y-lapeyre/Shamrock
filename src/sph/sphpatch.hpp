@@ -18,7 +18,7 @@ namespace patchdata {
         template<class DataLayout, class htype>
         inline htype get_h_max(sycl::queue & queue, PatchDataBuffer & pdatbuf){
 
-            using U = typename DataLayout::template U1<htype>;
+            using U = typename DataLayout::template U1<htype>::T;
 
             htype tmp;
 

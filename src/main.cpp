@@ -28,6 +28,7 @@
 #include <memory>
 #include <mpi.h>
 #include <string>
+#include <type_traits>
 #include <unordered_map>
 #include <vector>
 #include <filesystem>
@@ -42,17 +43,16 @@ class TestSimInfo {
 };
 
 
+
+
+
 class CurDataLayout{public:
 
     using pos_type = f32;
 
-    template<class prec>
-    class U1;
-    template<class prec>
-    class U3;
-
-    template<>
-    class U1<pos_type>{public:
+    
+    
+    class U1_s{public:
         static constexpr u32 nvar = 2;
 
         static constexpr std::array<const char*, 2> varnames {"hpart","omega"};
@@ -61,8 +61,8 @@ class CurDataLayout{public:
         static constexpr u32 iomega = 1;
     };
 
-    template<>
-    class U3<pos_type>{public:
+    
+    class U3_s{public:
         static constexpr std::array<const char*, 3> varnames {"vxyz","axyz","axyz_old"};
         static constexpr u32 nvar = 3;
 
@@ -82,11 +82,23 @@ class CurDataLayout{public:
     //     static constexpr std::array<const char*, 0> varnames {};
     //     static constexpr u32 nvar = 0;
     // };
+
+    template<class prec>
+    struct U1 { using T = std::void_t<>; };
+    template<class prec>
+    struct U3 { using T = std::void_t<>; };
+    template<>
+    struct U1<f32> { using T = U1_s; };
+    template<>
+    struct U3<f32> { using T = U3_s; };
 };
 
 
 class TestTimestepper {
   public:
+
+    
+
     static void init(SchedulerMPI &sched, TestSimInfo &siminfo) {
 
         patchdata_layout::set(1, 0, 2, 0, 3, 0);
@@ -119,9 +131,12 @@ class TestTimestepper {
             for (u32 part_id = 0; part_id < p.data_count; part_id++){
                 pdat.pos_s.emplace_back(f32_3{distpos(eng), distpos(eng), distpos(eng)}); //r
                 //                      h    omega
-                pdat.U1_s.emplace_back(0.02f,0.00f);
+                pdat.U1_s.emplace_back(0.02f);
+                pdat.U1_s.emplace_back(0.00f);
                 //                           v          a             a_old
-                pdat.U3_s.emplace_back(f32_3{0,0,0},f32_3{0,0,0},f32_3{0,0,0});
+                pdat.U3_s.emplace_back(f32_3{0.f,0.f,0.f});
+                pdat.U3_s.emplace_back(f32_3{0.f,0.f,0.f});
+                pdat.U3_s.emplace_back(f32_3{0.f,0.f,0.f});
             }
                 
 
@@ -177,211 +192,14 @@ class TestTimestepper {
 
     static void step(SchedulerMPI &sched, TestSimInfo &siminfo) {
 
+        SPHTimestepperLeapfrog<CurDataLayout> leapfrog;
+
         SyCLHandler &hndl = SyCLHandler::get_instance();
 
         // std::cout << sched.dump_status() << std::endl;
         sched.scheduler_step(true, true);
 
-        std::cout << " reduc " << std::endl;
-        {
-
-            // std::cout << sched.dump_status() << std::endl;
-
-            // PatchField<u64> dtcnt_field;
-            // dtcnt_field.local_nodes_value.resize(sched.patch_list.local.size());
-            // for (u64 idx = 0; idx < sched.patch_list.local.size(); idx++) {
-            //     dtcnt_field.local_nodes_value[idx] = sched.patch_list.local[idx].data_count;
-            // }
-
-            // std::cout << "dtcnt_field.build_global(mpi_type_u64);" << std::endl;
-            // dtcnt_field.build_global(mpi_type_u64);
-
-            // std::cout << "len 1 : " << dtcnt_field.local_nodes_value.size() << std::endl;
-            // std::cout << "len 2 : " << dtcnt_field.global_values.size() << std::endl;
-
-            SerialPatchTree<f32_3> sptree(sched.patch_tree, sched.get_box_tranform<f32_3>());
-            // sptree.dump_dat();
-
-            // std::cout << "len 3 : " << sptree.get_element_count() << std::endl;
-
-            // std::cout << "sptree.attach_buf();" << std::endl;
-            sptree.attach_buf();
-
-            // std::cout << "sptree.reduce_field" << std::endl;
-            // PatchFieldReduction<u64> pfield_reduced =
-            //     sptree.reduce_field<u64, Reduce_DataCount>(hndl.get_queue_alt(0), sched, dtcnt_field);
-
-            // std::cout << "pfield_reduced.detach_buf()" << std::endl;
-            // pfield_reduced.detach_buf();
-            // std::cout << " ------ > " << pfield_reduced.tree_field[0] << "\n\n\n";
-            auto timer_h_max = timings::start_timer("compute_hmax", timings::timingtype::function);
-
-            PatchField<f32> h_field;
-            sched.compute_patch_field(
-                h_field, 
-                mpi_type_f32, 
-                [](sycl::queue & queue, Patch & p, PatchDataBuffer & pdat_buf){
-                    return patchdata::sph::get_h_max<CurDataLayout, f32>(queue, pdat_buf);
-                }
-            );
-
-            timer_h_max.stop();
-
-            // h_field.local_nodes_value.resize(sched.patch_list.local.size());
-            // for (u64 idx = 0; idx < sched.patch_list.local.size(); idx++) {
-            //     h_field.local_nodes_value[idx] = 0.02f;
-            // }
-            // h_field.build_global(mpi_type_f32);
-
-            InterfaceHandler<f32_3, f32> interface_hndl;
-            interface_hndl.compute_interface_list<InterfaceSelector_SPH<f32_3, f32>>(sched, sptree, h_field);
-            interface_hndl.comm_interfaces(sched);
-            // interface_hndl.print_current_interf_map();
-
-            // sched.dump_local_patches(format("patches_%d_node%d", stepi, mpi_handler::world_rank));
-
-            // Radix_Tree<u32, f32_3> r;
-            // auto& a = r.pos_min_buf;
-
-            //predictor & a swap step
-
-            f32 dt_cur = 0.1f;
-
-            sched.for_each_patch([&](u64 id_patch, Patch cur_p, PatchDataBuffer & pdat_buf) {
-
-                leapfrog_predictor<f32, CurDataLayout::U3<f32>>(
-                    hndl.get_queue_compute(0), 
-                    pdat_buf.element_count, 
-                    dt_cur, 
-                    pdat_buf.pos_s, 
-                    pdat_buf.U3_s);
-
-            });
-
-
-
-            sched.for_each_patch([&](u64 id_patch, Patch cur_p, PatchDataBuffer & pdat_buf) {
-
-                std::cout << "patch : " << id_patch << "\n";
-
-                std::cout << "  - building tree : ";
-
-                {
-
-                    std::tuple<f32_3,f32_3> box = sched.patch_data.sim_box.get_box<f32>(cur_p);
-                    std::cout << "{" << std::get<0>(box).x() << "," << std::get<0>(box).y() << "," << std::get<0>(box).z() << "} -> ";
-                    std::cout << "{" << std::get<1>(box).x() << "," << std::get<1>(box).y() << "," << std::get<1>(box).z() << "}\n";
-
-                }
-                
-                //radix tree computation
-                Radix_Tree<u32, f32_3> rtree =
-                    Radix_Tree<u32, f32_3>(hndl.get_queue_compute(0), sched.patch_data.sim_box.get_box<f32>(cur_p), pdat_buf.pos_s);
-                rtree.compute_cellvolume(hndl.get_queue_compute(0));
-
-                using iU1 = CurDataLayout::U1<f32>;
-
-                rtree.compute_int_boxes<iU1::nvar,iU1::ihpart>(hndl.get_queue_compute(0),pdat_buf.U1_s ,1);
-
-
-                // std::unique_ptr<sycl::buffer<f32>> h_buf =
-                //     std::make_unique<sycl::buffer<f32>>(pdat_buf.pos_s->size());
-
-                // hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
-                //     auto U1acc = pdat_buf.U1_s->get_access<sycl::access::mode::read>(cgh);
-                //     auto hacc = h_buf->get_access<sycl::access::mode::discard_write>(cgh);
-
-                //     cgh.parallel_for(sycl::range(pdat_buf.pos_s->size()), [=](sycl::item<1> item) {
-                //         u32 i = (u32)item.get_id(0);
-
-                //         hacc[i] = U1acc[i*2 + 0];
-                //     });
-                // });
-
-                
-
-
-                //h_buf.reset();
-
-                
-                std::cout << "  - compute force\n";
-
-                //computation kernel
-                hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
-                    auto U1 = pdat_buf.U1_s->get_access<sycl::access::mode::read>(cgh);
-                    auto r = pdat_buf.pos_s->get_access<sycl::access::mode::read>(cgh);
-
-                    walker::Radix_tree_accessor<u32, f32_3> tree_acc(rtree, cgh);
-
-                    auto cell_int_r = rtree.buf_cell_interact_rad->get_access<sycl::access::mode::read>(cgh);
-
-                    using Kernel = sph::kernels::M4<f32>;
-
-                    cgh.parallel_for<class SPHTest>(sycl::range(pdat_buf.pos_s->size()), [=](sycl::item<1> item) {
-                        u32 id_a = (u32)item.get_id(0);
-
-                        f32_3 xyz_a = r[id_a]; // could be recovered from lambda
-
-                        f32 h_a = U1[id_a*iU1::nvar + iU1::ihpart];
-
-                        f32_3 inter_box_a_min = xyz_a - h_a * Kernel::Rkern;
-                        f32_3 inter_box_a_max = xyz_a + h_a * Kernel::Rkern;
-
-                        f32_3 sum_axyz{0,0,0};
-
-                        walker::rtree_for(
-                            tree_acc,
-                            [&](u32 node_id) {
-                                f32_3 cur_pos_min_cell_b = tree_acc.pos_min_cell[node_id];
-                                f32_3 cur_pos_max_cell_b = tree_acc.pos_max_cell[node_id];
-                                float int_r_max_cell     = cell_int_r[node_id] * Kernel::Rkern;
-
-                                using namespace walker::interaction_crit;
-
-                                return sph_radix_cell_crit(xyz_a, inter_box_a_min, inter_box_a_max, cur_pos_min_cell_b,
-                                                            cur_pos_max_cell_b, int_r_max_cell);
-                            },
-                            [&](u32 id_b) {
-                                f32_3 dr = xyz_a - r[id_b];
-                                f32 rab = sycl::length(dr);
-                                f32 h_b = U1[id_b*iU1::nvar + iU1::ihpart];
-
-                                if(rab > h_a*Kernel::Rkern && rab > h_b*Kernel::Rkern) return;
-
-                                f32_3 r_ab_unit = dr / rab;
-
-                                if(rab < 1e-9){
-                                    r_ab_unit = {0,0,0};
-                                }
-
-                                sum_axyz += sph_pressure(
-                                    1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f
-                                    , 0.f,0.f, 
-                                    r_ab_unit*r_ab_unit*Kernel::dW(rab,h_a), 
-                                    r_ab_unit*r_ab_unit*Kernel::W(rab,h_b));
-
-                            },
-                            [](u32 node_id) {});
-                    });
-                });     
-                
-                
-                interface_hndl.for_each_interface(id_patch, hndl.get_queue_compute(0), [](u64 patch_id, u64 interf_patch_id, PatchDataBuffer & interfpdat, std::tuple<f32_3,f32_3> box){
-
-                    std::cout << "  - adding interface : "<<interf_patch_id << " : ";
-                    std::cout << "{" << std::get<0>(box).x() << "," << std::get<0>(box).y() << "," << std::get<0>(box).z() << "} -> ";
-                    std::cout << "{" << std::get<1>(box).x() << "," << std::get<1>(box).y() << "," << std::get<1>(box).z() << "}\n";
-
-                });
-
-
-            });
-
-
-            
-
-            reatribute_particles(sched, sptree);
-        }
+        leapfrog.step(sched);
     }
 };
 

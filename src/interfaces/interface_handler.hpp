@@ -21,6 +21,8 @@
 #include "patchscheduler/scheduler_mpi.hpp"
 #include "sph/sphpatch.hpp"
 
+#include "interface_handler_impl.hpp"
+
 /**
  * @brief 
  * 
@@ -66,6 +68,20 @@ template <class vectype, class primtype> class InterfaceHandler {
      * @param sched 
      */
     void comm_interfaces(SchedulerMPI &sched);
+
+
+    template <class T> PatchComputeFieldInterfaces<T> comm_interfaces_field(SchedulerMPI &sched,PatchComputeField<T> &pcomp_field) {
+
+        PatchComputeFieldInterfaces<T> interface_field_map;
+
+        auto t = timings::start_timer("comm interfaces", timings::timingtype::function);
+        impl::comm_interfaces_field<T,vectype>(sched, pcomp_field, interface_comm_list, interface_field_map.interface_map);
+        t.stop();
+
+        return interface_field_map;
+    }
+
+    
 
     /**
      * @brief Get the interface list object
@@ -116,3 +132,26 @@ template <class vectype, class primtype> class InterfaceHandler {
     }
 
 };
+
+
+
+template <> void InterfaceHandler<f32_3, f32>::comm_interfaces(SchedulerMPI &sched) {
+    auto t = timings::start_timer("comm interfaces", timings::timingtype::function);
+    impl::comm_interfaces<f32_3, f32>(sched, interface_comm_list, interface_map);
+    t.stop();
+}
+
+template <> void InterfaceHandler<f64_3, f64>::comm_interfaces(SchedulerMPI &sched) {
+    auto t = timings::start_timer("comm interfaces", timings::timingtype::function);
+    impl::comm_interfaces<f64_3, f64>(sched, interface_comm_list, interface_map);
+    t.stop();
+}
+
+
+
+
+
+
+
+
+
