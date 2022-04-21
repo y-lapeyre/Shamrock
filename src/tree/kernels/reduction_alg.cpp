@@ -17,7 +17,7 @@ void sycl_generate_split_table(sycl::queue &queue, u32 morton_count, std::unique
 
     queue.submit([&](sycl::handler &cgh) {
         auto m         = buf_morton->template get_access<sycl::access::mode::read>(cgh);
-        auto split_out = buf_split_table->get_access<sycl::access::mode::write>(cgh);
+        auto split_out = buf_split_table->get_access<sycl::access::mode::discard_write>(cgh);
 
         cgh.parallel_for<kername>(range_morton_count, [=](sycl::item<1> item) {
             u32 i = (u32)item.get_id(0);
@@ -61,7 +61,7 @@ void sycl_reduction_iteration(sycl::queue &queue, u32 morton_count, std::unique_
 
         auto m         = buf_morton->template get_access<sycl::access::mode::read>(cgh);
         auto split_in  = buf_split_table_in->get_access<sycl::access::mode::read>(cgh);
-        auto split_out = buf_split_table_out->get_access<sycl::access::mode::write>(cgh);
+        auto split_out = buf_split_table_out->get_access<sycl::access::mode::discard_write>(cgh); // was only write before check if ok
 
         cgh.parallel_for<kername>(range_morton_count, [=](sycl::item<1> item) {
             int i = item.get_id(0);
