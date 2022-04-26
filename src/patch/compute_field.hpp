@@ -18,7 +18,7 @@ class PatchComputeField{public:
 
     inline void generate(SchedulerMPI & sched){
 
-        sched.for_each_patch([&](u64 id_patch, Patch cur_p, PatchDataBuffer & pdat_buf) {
+        sched.for_each_patch_buf([&](u64 id_patch, Patch cur_p, PatchDataBuffer & pdat_buf) {
             field_data[id_patch].resize(pdat_buf.element_count);
             sycl::buffer<T> field_buf(field_data[id_patch].data(),field_data[id_patch].size());
         });

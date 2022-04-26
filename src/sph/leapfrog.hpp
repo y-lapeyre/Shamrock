@@ -7,6 +7,7 @@
 #include "particles/particle_patch_mover.hpp"
 #include "patch/compute_field.hpp"
 #include "patch/patchdata.hpp"
+#include "patch/patchdata_buffer.hpp"
 #include "patch/serialpatchtree.hpp"
 #include "patchscheduler/scheduler_mpi.hpp"
 #include "sph/kernels.hpp"
@@ -28,7 +29,7 @@ inline void make_merge_patches(
 
 
 
-    sched.for_each_patch([&](u64 id_patch, Patch cur_p, PatchDataBuffer & pdat_buf) {
+    sched.for_each_patch_buf([&](u64 id_patch, Patch cur_p, PatchDataBuffer & pdat_buf) {
 
         SyCLHandler &hndl = SyCLHandler::get_instance();
 
@@ -351,7 +352,7 @@ class SPHTimestepperLeapfrog{public:
 
         f32 dt_cur = 0.1f;
 
-        sched.for_each_patch([&](u64 id_patch, Patch cur_p, PatchDataBuffer & pdat_buf) {
+        sched.for_each_patch_buf([&](u64 id_patch, Patch cur_p, PatchDataBuffer & pdat_buf) {
 
             std::cout << "patch : n°"<<id_patch << " -> leapfrog predictor" << std::endl;
 
@@ -425,7 +426,7 @@ class SPHTimestepperLeapfrog{public:
         auto tgen_trees = timings::start_timer("radix tree compute", timings::sycl);
         std::unordered_map<u64, std::unique_ptr<Radix_Tree<u_morton, pos_vec>>> radix_trees;
 
-        sched.for_each_patch([&](u64 id_patch, Patch cur_p, PatchDataBuffer & pdat_buf) {
+        sched.for_each_patch([&](u64 id_patch, Patch cur_p) {
             std::cout << "patch : n°"<<id_patch << " -> making radix tree" << std::endl;
 
             PatchDataBuffer & mpdat_buf = merge_pdat_buf[id_patch];
@@ -437,13 +438,13 @@ class SPHTimestepperLeapfrog{public:
         });
 
 
-        sched.for_each_patch([&](u64 id_patch, Patch cur_p, PatchDataBuffer & pdat_buf) {
+        sched.for_each_patch([&](u64 id_patch, Patch cur_p) {
             std::cout << "patch : n°"<<id_patch << " -> radix tree compute volume" << std::endl;
             radix_trees[id_patch]->compute_cellvolume(hndl.get_queue_compute(0));
         });
 
 
-        sched.for_each_patch([&](u64 id_patch, Patch cur_p, PatchDataBuffer & pdat_buf) {
+        sched.for_each_patch([&](u64 id_patch, Patch cur_p) {
 
             std::cout << "patch : n°"<<id_patch << " -> radix tree compute volume" << std::endl;
 
@@ -473,8 +474,10 @@ class SPHTimestepperLeapfrog{public:
 
 
         
-        sched.for_each_patch([&](u64 id_patch, Patch cur_p, PatchDataBuffer & pdat_buf) {
+        sched.for_each_patch_buf([&](u64 id_patch, Patch cur_p, PatchDataBuffer & pdat_buf) {
             std::cout << "patch : n°" << id_patch << "init h iter" << std::endl;
+
+            PatchDataBuffer & pdat_buf_merge = merge_pdat_buf[id_patch];
             
             sycl::buffer<f32> & hnew = *hnew_field.field_data_buf[id_patch];
             sycl::buffer<f32> eps_h = sycl::buffer<f32>(pdat_buf.element_count);
@@ -500,8 +503,10 @@ class SPHTimestepperLeapfrog{public:
 
 
 
-            /*
+            
             hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+
+                auto h_new = hnew.get_access<sycl::access::mode::read_write>();
 
                 using u1_acc = decltype( pdat_buf.U1_s->get_access<sycl::access::mode::read>(cgh));
                 using r_acc = decltype( pdat_buf.pos_s->get_access<sycl::access::mode::read>(cgh));
@@ -565,7 +570,7 @@ class SPHTimestepperLeapfrog{public:
                         [](u32 node_id) {});
                 });
             }); 
-            */
+            
 
             
 

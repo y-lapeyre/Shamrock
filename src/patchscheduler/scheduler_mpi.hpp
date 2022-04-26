@@ -123,7 +123,7 @@ class SchedulerMPI{public:
 
 
     template<class Function>
-    inline void for_each_patch(Function && fct){
+    inline void for_each_patch_buf(Function && fct){
 
         SyCLHandler &hndl = SyCLHandler::get_instance();
 
@@ -139,6 +139,27 @@ class SchedulerMPI{public:
                 //TODO should feed the sycl queue to the lambda
 
                 fct(id,cur_p,pdatbuf);
+            }
+        }
+
+    }
+
+    template<class Function>
+    inline void for_each_patch(Function && fct){
+
+        SyCLHandler &hndl = SyCLHandler::get_instance();
+
+        for (auto &[id, pdat] : patch_data.owned_data) {
+
+            if (pdat.pos_s.size() + pdat.pos_d.size() > 0) {
+
+
+                Patch &cur_p = patch_list.global[patch_list.id_patch_to_global_idx[id]];
+
+
+                //TODO should feed the sycl queue to the lambda
+
+                fct(id,cur_p);
             }
         }
 
