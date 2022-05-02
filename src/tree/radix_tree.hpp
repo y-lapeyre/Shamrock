@@ -109,7 +109,7 @@ class Radix_Tree{public:
 
         // return a sycl buffer from reduc index map instead
         std::cout << "reduction_alg" << std::endl;
-        reduction_alg(queue, pos_buf->size(), buf_morton, 0, reduc_index_map, tree_leaf_count);
+        reduction_alg(queue, pos_buf->size(), buf_morton, 5, reduc_index_map, tree_leaf_count);
         
         std::cout << " -> " << pos_buf->size() << " " << buf_morton->size() << " " << tree_leaf_count << std::endl;
 
@@ -375,6 +375,136 @@ namespace walker {
             }
         }
     }
+
+    template <class Rta, class Functor_int_cd, class Functor_iter, class Functor_iter_excl, class arr_type>
+    inline void rtree_for_fill_cache(Rta &acc,arr_type & cell_cache, Functor_int_cd &&func_int_cd) {
+
+        constexpr u32 cache_sz = cell_cache.size();
+        u32 cache_pos = 0;
+
+        auto push_in_cache = [&cell_cache,&cache_pos](u32 id){
+            cell_cache[cache_pos] = id;
+            cache_pos ++;
+        };
+
+        u32 stack_cursor = Rta::tree_depth - 1;
+        std::array<u32, Rta::tree_depth> id_stack;
+        id_stack[stack_cursor] = 0;
+
+        auto get_el_cnt_in_stack = [&]() -> u32{
+            return Rta::tree_depth - stack_cursor;
+        };
+
+        while ((stack_cursor < Rta::tree_depth) && (cache_pos + get_el_cnt_in_stack < cache_sz)) {
+
+            u32 current_node_id    = id_stack[stack_cursor];
+            id_stack[stack_cursor] = Rta::_nindex;
+            stack_cursor++;
+
+            bool cur_id_valid = func_int_cd(current_node_id);
+
+            if (cur_id_valid) {
+
+                // leaf and can interact => force
+                if (current_node_id >= acc.leaf_offset) {
+
+                    //can interact => add to cache
+                    push_in_cache(current_node_id);
+
+                    // can interact not leaf => stack
+                } else {
+
+                    u32 lid = acc.lchild_id[current_node_id] + acc.leaf_offset * acc.lchild_flag[current_node_id];
+                    u32 rid = acc.rchild_id[current_node_id] + acc.leaf_offset * acc.rchild_flag[current_node_id];
+
+                    id_stack[stack_cursor - 1] = rid;
+                    stack_cursor--;
+
+                    id_stack[stack_cursor - 1] = lid;
+                    stack_cursor--;
+                }
+            } else {
+                // grav
+                //.....
+            }
+        }
+
+        while (stack_cursor < Rta::tree_depth) {
+            u32 current_node_id    = id_stack[stack_cursor];
+            id_stack[stack_cursor] = Rta::_nindex;
+            stack_cursor++;
+            push_in_cache(current_node_id);
+        }
+
+        if(cache_pos < cache_sz){
+            push_in_cache(u32_max);
+        }
+    }
+
+    template <class Rta, class Functor_int_cd, class Functor_iter, class Functor_iter_excl, class arr_type>
+    inline void rtree_for(Rta &acc,arr_type & cell_cache, Functor_int_cd &&func_int_cd, Functor_iter &&func_it) {
+
+        constexpr u32 cache_sz = cell_cache.size();
+
+        std::array<u32, Rta::tree_depth> id_stack;
+
+        auto walk_step = [&](u32 start_id){
+            u32 stack_cursor = Rta::tree_depth - 1;
+            id_stack[stack_cursor] = start_id;
+
+            while (stack_cursor < Rta::tree_depth) {
+
+                u32 current_node_id    = id_stack[stack_cursor];
+                id_stack[stack_cursor] = Rta::_nindex;
+                stack_cursor++;
+
+                bool cur_id_valid = func_int_cd(current_node_id);
+
+                if (cur_id_valid) {
+
+                    // leaf and can interact => force
+                    if (current_node_id >= acc.leaf_offset) {
+
+                        // loop on particle indexes
+                        uint min_ids = acc.cell_index_map[current_node_id     -acc.leaf_offset];
+                        uint max_ids = acc.cell_index_map[current_node_id + 1 -acc.leaf_offset];
+
+                        for (unsigned int id_s = min_ids; id_s < max_ids; id_s++) {
+
+                            //recover old index before morton sort
+                            uint id_b = acc.particle_index_map[id_s];
+
+                            //iteration function
+                            func_it(id_b);
+                        }
+
+                        // can interact not leaf => stack
+                    } else {
+
+                        u32 lid = acc.lchild_id[current_node_id] + acc.leaf_offset * acc.lchild_flag[current_node_id];
+                        u32 rid = acc.rchild_id[current_node_id] + acc.leaf_offset * acc.rchild_flag[current_node_id];
+
+                        id_stack[stack_cursor - 1] = rid;
+                        stack_cursor--;
+
+                        id_stack[stack_cursor - 1] = lid;
+                        stack_cursor--;
+                    }
+                } else {
+                    // grav
+                    //...
+                }
+            }
+        };
+
+        for (u32 cache_pos = 0; cache_pos < cache_sz && cell_cache[cache_pos] != u32_max; cache_pos ++) {
+            walk_step(cache_pos);
+        }
+
+        
+    }
+
+    
 
 
 

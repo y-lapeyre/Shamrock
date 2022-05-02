@@ -139,7 +139,7 @@ inline void make_merge_patches(
                 std::cout <<  "patch : n°"<< id_patch << " -> interface : "<<interf_patch_id << " merging" << std::endl;
 
                 min_box = sycl::min(std::get<0>(box),min_box);
-                max_box = sycl::min(std::get<1>(box),max_box);
+                max_box = sycl::max(std::get<1>(box),max_box);
 
                 if(nVarpos_s > 0){
                     hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
