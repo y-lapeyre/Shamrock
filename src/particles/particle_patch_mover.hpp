@@ -154,6 +154,26 @@ inline void reatribute_particles<f32_3>(SchedulerMPI & sched, SerialPatchTree<f3
 
             PatchData & pdat_recv = sched.patch_data.owned_data[recv_id];
 
+            {
+                std::cout << "recv : " << recv_id << " <- " << send_id << std::endl;
+
+                std::cout << "cnt : " << pdat->pos_s.size() << std::endl;
+
+                for(f32 a : pdat->U1_s){
+                    std :: cout << a << " ";
+                }std::cout << std::endl;
+
+                for (u32 i = 0; i < pdat->pos_s.size(); i++) {
+
+                    f32 val = pdat->U1_s[i*2 + 0];
+                    if(val == 0){
+                        std::cout << "----- fail id " << i  << " " << val << std::endl;
+                        int a ;
+                        std::cin >> a;
+                    }
+                }
+            }
+
             //*
             pdat_recv.insert_particles(
                 pdat->pos_s,

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "CL/sycl/buffer.hpp"
 #include "CL/sycl/builtins.hpp"
 #include "aliases.hpp"
 #include "interfaces/interface_handler.hpp"
@@ -19,6 +20,11 @@
 #include <tuple>
 #include <unordered_map>
 #include <vector>
+#include "forces.hpp"
+
+
+constexpr f32 gpart_mass = 1e-5;
+
 
 template<class vec>
 struct MergedPatchDataBuffer {public:
@@ -131,6 +137,8 @@ inline void make_merge_patches(
 
         
 
+        
+
         interface_hndl.for_each_interface(
             id_patch, 
             hndl.get_queue_compute(0), 
@@ -204,12 +212,172 @@ inline void make_merge_patches(
         );
 
         merge_pdat_buf[id_patch].box = {min_box,max_box};
+
+
+        
         
 
     });
 
 
 }
+
+
+template<class pos_prec,class pos_vec>
+inline void write_back_merge_patches(
+    SchedulerMPI & sched,
+    InterfaceHandler<pos_vec, pos_prec> & interface_hndl,
+    
+    std::unordered_map<u64,MergedPatchDataBuffer<pos_vec>> & merge_pdat_buf){
+
+
+    SyCLHandler &hndl = SyCLHandler::get_instance();
+
+    sched.for_each_patch_buf([&](u64 id_patch, Patch cur_p, PatchDataBuffer & pdat_buf) {
+
+
+        std::cout << "patch : n°"<<id_patch << " -> write back merge buf" << std::endl;
+
+
+        using namespace patchdata_layout;
+
+
+        if(nVarpos_s > 0){
+            hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+                auto dest = pdat_buf.pos_s->get_access<sycl::access::mode::discard_write>(cgh);
+                auto source = merge_pdat_buf[id_patch].data.pos_s->template get_access<sycl::access::mode::read>(cgh);
+                cgh.parallel_for( sycl::range{pdat_buf.element_count*nVarpos_s}, [=](sycl::item<1> item) { dest[item] = source[item]; });
+            });
+        }
+
+        if(nVarpos_d > 0){
+            hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+                auto dest = pdat_buf.pos_d->get_access<sycl::access::mode::discard_write>(cgh);
+                auto source = merge_pdat_buf[id_patch].data.pos_d->template get_access<sycl::access::mode::read>(cgh);
+                cgh.parallel_for( sycl::range{pdat_buf.element_count*nVarpos_d}, [=](sycl::item<1> item) { dest[item] = source[item]; });
+            });
+        }
+
+        if(nVarU1_s > 0){
+            hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+                auto dest = pdat_buf.U1_s->get_access<sycl::access::mode::discard_write>(cgh);
+                auto source = merge_pdat_buf[id_patch].data.U1_s->template get_access<sycl::access::mode::read>(cgh);
+                cgh.parallel_for( sycl::range{pdat_buf.element_count*nVarU1_s}, [=](sycl::item<1> item) { dest[item] = source[item]; });
+            });
+        }
+
+        if(nVarU1_d > 0){
+            hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+                auto dest = pdat_buf.U1_d->get_access<sycl::access::mode::discard_write>(cgh);
+                auto source = merge_pdat_buf[id_patch].data.U1_d->template get_access<sycl::access::mode::read>(cgh);
+                cgh.parallel_for( sycl::range{pdat_buf.element_count*nVarU1_d}, [=](sycl::item<1> item) { dest[item] = source[item]; });
+            });
+        }
+
+        if(nVarU3_s > 0){
+            hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+                auto dest = pdat_buf.U3_s->get_access<sycl::access::mode::discard_write>(cgh);
+                auto source = merge_pdat_buf[id_patch].data.U3_s->template get_access<sycl::access::mode::read>(cgh);
+                cgh.parallel_for( sycl::range{pdat_buf.element_count*nVarU3_s}, [=](sycl::item<1> item) { dest[item] = source[item]; });
+            });
+        }
+
+        if(nVarU3_d > 0){
+            hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+                auto dest = pdat_buf.U3_d->get_access<sycl::access::mode::discard_write>(cgh);
+                auto source = merge_pdat_buf[id_patch].data.U3_d->template get_access<sycl::access::mode::read>(cgh);
+                cgh.parallel_for( sycl::range{pdat_buf.element_count*nVarU3_d}, [=](sycl::item<1> item) { dest[item] = source[item]; });
+            });
+        }
+
+    });
+
+}
+
+
+template<class T>
+class IntMergedPatchComputeField{public:
+    
+
+    u32 or_element_cnt;
+    u32 tot_element_cnt;
+    std::unique_ptr<sycl::buffer<T>> buf;
+
+    inline void gen(
+        std::vector<T> & patch_comp_field ,
+        std::vector<std::tuple<u64, std::unique_ptr<std::vector<T>>>> &interfaces){
+
+
+        SyCLHandler &hndl = SyCLHandler::get_instance();
+        
+        u32 len_main = patch_comp_field.size();
+        or_element_cnt = len_main;
+
+        {
+            for (auto & [int_pid, pdat_ptr] : interfaces) {
+                len_main += (pdat_ptr->size());
+            }
+        }
+
+        tot_element_cnt = len_main;
+
+        buf = std::make_unique<sycl::buffer<T>>(tot_element_cnt);
+
+        sycl::buffer<T> buf_pcfield(patch_comp_field.data(),patch_comp_field.size());
+
+        u32 offset = 0;
+
+        hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+            auto source = buf_pcfield.template get_access<sycl::access::mode::read>(cgh);
+            auto dest = buf->template get_access<sycl::access::mode::discard_write>(cgh);
+            cgh.parallel_for( sycl::range{or_element_cnt}, [=](sycl::item<1> item) { dest[item] = source[item]; });
+        });
+        offset += or_element_cnt;
+
+        for (auto & [int_pid, pdat_ptr] : interfaces) {
+
+            if (pdat_ptr->size() > 0) {
+
+                sycl::buffer<T> buf_pcifield(pdat_ptr->data(),pdat_ptr->size());
+                u32 len_pci = pdat_ptr->size();
+
+                hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+                    auto source = buf_pcifield.template get_access<sycl::access::mode::read>(cgh);
+                    auto dest = buf->template get_access<sycl::access::mode::discard_write>(cgh);
+                    auto off = offset;
+                    cgh.parallel_for( sycl::range{len_pci}, [=](sycl::item<1> item) { dest[item.get_id(0) + off] = source[item]; });
+                });
+                offset += len_pci;
+
+            }
+        }
+
+    }
+
+};
+
+
+template<class T>
+inline void make_merge_patches_comp_field(
+    SchedulerMPI & sched,
+    PatchComputeField<T> & fields,
+    PatchComputeFieldInterfaces<T> & interfaces,
+    std::unordered_map<u64,IntMergedPatchComputeField<T>> & merge_pdat_buf){
+
+
+
+    sched.for_each_patch([&](u64 id_patch, Patch cur_p) {
+        std::cout << "patch : n°"<<id_patch << " -> merge compute field" << std::endl;
+        merge_pdat_buf[id_patch].gen(fields.field_data[id_patch],interfaces.interface_map[id_patch]);
+    });
+
+}
+
+ 
+
+
+
+
 
 template <class flt,class DataLayoutU3>
 inline void leapfrog_predictor(sycl::queue &queue, u32 npart, flt dt, 
@@ -347,6 +515,30 @@ class SPHTimestepperLeapfrog{public:
     inline void step(SchedulerMPI &sched){
         SyCLHandler &hndl = SyCLHandler::get_instance();
 
+        std::cout << "chech no h null" << std::endl;
+        sched.for_each_patch_buf([&](u64 id_patch, Patch cur_p, PatchDataBuffer & pdat_buf) {
+
+            std::cout << "pid : " << id_patch << std::endl;
+            
+
+            std::cout << "cnt : " << pdat_buf.element_count << std::endl;
+
+            auto U1 = 
+                //merge_pdat_buf[id_patch].data.U1_s
+                pdat_buf.U1_s
+            ->template get_access<sycl::access::mode::read>();
+
+            for (u32 i = 0; i < pdat_buf.element_count; i++) {
+
+                f32 val = U1[i*2 + 0];
+                if(val == 0){
+                    std::cout << "----- fail id " << i  << " " << val << std::endl;
+                    int a ;
+                    std::cin >> a;
+                }
+            }
+        });
+
 
         SerialPatchTree<pos_vec> sptree(sched.patch_tree, sched.get_box_tranform<pos_vec>());
         sptree.attach_buf();
@@ -354,7 +546,7 @@ class SPHTimestepperLeapfrog{public:
 
         //cfl
 
-        f32 dt_cur = 0.1f;
+        f32 dt_cur = 0.001f;
 
         sched.for_each_patch_buf([&](u64 id_patch, Patch cur_p, PatchDataBuffer & pdat_buf) {
 
@@ -376,8 +568,54 @@ class SPHTimestepperLeapfrog{public:
 
         });
 
+
+        std::cout << "chech no h null" << std::endl;
+        sched.for_each_patch_buf([&](u64 id_patch, Patch cur_p, PatchDataBuffer & pdat_buf) {
+
+            std::cout << "pid : " << id_patch << std::endl;
+
+            std::cout << "cnt : " << pdat_buf.element_count << std::endl;
+
+            auto U1 = 
+                //merge_pdat_buf[id_patch].data.U1_s
+                pdat_buf.U1_s
+            ->template get_access<sycl::access::mode::read>();
+
+            for (u32 i = 0; i < pdat_buf.element_count; i++) {
+
+                f32 val = U1[i*2 + 0];
+                if(val == 0){
+                    std::cout << "----- fail id " << i  << " " << val << std::endl;
+                    int a ;
+                    std::cin >> a;
+                }
+            }
+        });
+
         std::cout << "particle reatribution" << std::endl;
         reatribute_particles(sched, sptree);
+
+        std::cout << "chech no h null" << std::endl;
+        sched.for_each_patch_buf([&](u64 id_patch, Patch cur_p, PatchDataBuffer & pdat_buf) {
+
+            std::cout << "pid : " << id_patch << std::endl;
+
+            std::cout << "cnt : " << pdat_buf.element_count << std::endl;
+            auto U1 = 
+                //merge_pdat_buf[id_patch].data.U1_s
+                pdat_buf.U1_s
+            ->template get_access<sycl::access::mode::read>();
+
+            for (u32 i = 0; i < pdat_buf.element_count; i++) {
+
+                f32 val = U1[i*2 + 0];
+                if(val == 0){
+                    std::cout << "----- fail id " << i  << " " << val << std::endl;
+                    int a ;
+                    std::cin >> a;
+                }
+            }
+        });
 
 
 
@@ -483,11 +721,16 @@ class SPHTimestepperLeapfrog{public:
             PatchDataBuffer & pdat_buf_merge = merge_pdat_buf[id_patch].data;
             
             sycl::buffer<f32> & hnew = *hnew_field.field_data_buf[id_patch];
+            sycl::buffer<f32> & omega = *omega_field.field_data_buf[id_patch];
             sycl::buffer<f32> eps_h = sycl::buffer<f32>(merge_pdat_buf[id_patch].or_element_cnt);
 
             sycl::range range_npart{merge_pdat_buf[id_patch].or_element_cnt};
 
             std::cout << "   original size : " << merge_pdat_buf[id_patch].or_element_cnt << " | merged : " << pdat_buf_merge.element_count << std::endl;
+
+
+            
+
 
             hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
                 
@@ -509,12 +752,110 @@ class SPHTimestepperLeapfrog{public:
 
 
             
+            for (u32 it_num = 0 ; it_num < 4; it_num++) {
+                std::cout << "patch : n°" << id_patch << "h iter" << std::endl;
+                hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+
+                    auto h_new = hnew.get_access<sycl::access::mode::read_write>(cgh);
+                    auto eps = eps_h.get_access<sycl::access::mode::read_write>(cgh);
+
+                    auto U1 = pdat_buf_merge.get_U1<f32>()->get_access<sycl::access::mode::read>(cgh);
+                    auto r = pdat_buf_merge.pos_s->get_access<sycl::access::mode::read>(cgh);
+                    
+                    using Rta = walker::Radix_tree_accessor<u32, f32_3>;
+                    Rta tree_acc(*radix_trees[id_patch], cgh);
+
+
+
+                    auto cell_int_r = radix_trees[id_patch]->buf_cell_interact_rad->template get_access<sycl::access::mode::read>(cgh);
+
+                    f32 part_mass = gpart_mass;
+
+                    constexpr f32 h_max_tot_max_evol = htol_up_tol;
+                    constexpr f32 h_max_evol_p = htol_up_tol;
+                    constexpr f32 h_max_evol_m = 1/htol_up_tol;
+
+                    cgh.parallel_for<class SPHTest>(range_npart, [=](sycl::item<1> item) {
+                        u32 id_a = (u32)item.get_id(0);
+
+
+                        if(eps[id_a] > 1e-4){
+
+                            f32_3 xyz_a = r[id_a]; // could be recovered from lambda
+
+                            f32 h_a = h_new[id_a];
+                            //f32 h_a2 = h_a*h_a;
+
+                            f32_3 inter_box_a_min = xyz_a - h_a * Kernel::Rkern;
+                            f32_3 inter_box_a_max = xyz_a + h_a * Kernel::Rkern;
+
+                            f32 rho_sum = 0;
+                            f32 part_omega_sum = 0;
+                            
+                            walker::rtree_for(
+                                tree_acc,
+                                [&tree_acc,&xyz_a,&inter_box_a_min,&inter_box_a_max,&cell_int_r](u32 node_id) {
+                                    f32_3 cur_pos_min_cell_b = tree_acc.pos_min_cell[node_id];
+                                    f32_3 cur_pos_max_cell_b = tree_acc.pos_max_cell[node_id];
+                                    float int_r_max_cell     = cell_int_r[node_id] * Kernel::Rkern;
+
+                                    using namespace walker::interaction_crit;
+
+                                    return sph_radix_cell_crit(xyz_a, inter_box_a_min, inter_box_a_max, cur_pos_min_cell_b,
+                                                                cur_pos_max_cell_b, int_r_max_cell);
+                                },
+                                [&r,&xyz_a,&h_a,&rho_sum,&part_mass,&part_omega_sum](u32 id_b) {
+                                    //f32_3 dr = xyz_a - r[id_b];
+                                    f32 rab = sycl::distance( xyz_a , r[id_b]);
+
+                                    if(rab > h_a*Kernel::Rkern) return;
+
+                                    //f32 rab = sycl::sqrt(rab2);
+
+                                    rho_sum += part_mass*Kernel::W(rab,h_a);
+                                    part_omega_sum += part_mass * Kernel::dhW(rab,h_a);
+
+                                },
+                                [](u32 node_id) {});
+                            
+
+                            
+                            f32 rho_ha = rho_h(part_mass, h_a);
+                            f32 omega_a = 1 + (h_a/(3*rho_ha))*part_omega_sum;
+                            f32 new_h = h_a - (rho_ha - rho_sum)/((-3*rho_ha/h_a)*omega_a);
+
+                            bool max_achieved = false;
+                            if(new_h < h_a*h_max_evol_m) new_h = h_max_evol_m*h_a;
+                            if(new_h > h_a*h_max_evol_p) new_h = h_max_evol_p*h_a;
+
+                            
+                            f32 ha_0 = U1[id_a*DU1::nvar + DU1::ihpart];
+                            
+                            
+                            if (new_h < ha_0*h_max_tot_max_evol) {
+                                h_new[id_a] = new_h;
+                                eps[id_a] = sycl::fabs(new_h - h_a)/ha_0;
+                            }else{
+                                h_new[id_a] = ha_0*h_max_tot_max_evol;
+                                eps[id_a] = -1;
+                            }
+                        }
+
+                    });
+
+                }); 
+
+            }
+
+
+
+
+            std::cout << "patch : n°" << id_patch << "compute omega" << std::endl;
             hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
 
                 auto h_new = hnew.get_access<sycl::access::mode::read_write>(cgh);
-                auto eps = eps_h.get_access<sycl::access::mode::read_write>(cgh);
+                auto omga = omega.get_access<sycl::access::mode::discard_write>(cgh);
 
-                auto U1 = pdat_buf_merge.get_U1<f32>()->get_access<sycl::access::mode::read>(cgh);
                 auto r = pdat_buf_merge.pos_s->get_access<sycl::access::mode::read>(cgh);
                 
                 using Rta = walker::Radix_tree_accessor<u32, f32_3>;
@@ -524,85 +865,231 @@ class SPHTimestepperLeapfrog{public:
 
                 auto cell_int_r = radix_trees[id_patch]->buf_cell_interact_rad->template get_access<sycl::access::mode::read>(cgh);
 
-                f32 part_mass = 1;
+                f32 part_mass = gpart_mass;
 
+                constexpr f32 h_max_tot_max_evol = htol_up_tol;
                 constexpr f32 h_max_evol_p = htol_up_tol;
                 constexpr f32 h_max_evol_m = 1/htol_up_tol;
 
-                cgh.parallel_for<class SPHTest>(range_npart, [=](sycl::item<1> item) {
+                cgh.parallel_for<class write_omega>(range_npart, [=](sycl::item<1> item) {
                     u32 id_a = (u32)item.get_id(0);
 
+                    f32_3 xyz_a = r[id_a]; // could be recovered from lambda
 
-                    if(eps[id_a] > 1e-4){
+                    f32 h_a = h_new[id_a];
+                    //f32 h_a2 = h_a*h_a;
 
-                        f32_3 xyz_a = r[id_a]; // could be recovered from lambda
+                    f32_3 inter_box_a_min = xyz_a - h_a * Kernel::Rkern;
+                    f32_3 inter_box_a_max = xyz_a + h_a * Kernel::Rkern;
 
-                        f32 h_a = h_new[id_a];
-                        //f32 h_a2 = h_a*h_a;
+                    f32 rho_sum = 0;
+                    f32 part_omega_sum = 0;
+                    
+                    walker::rtree_for(
+                        tree_acc,
+                        [&tree_acc,&xyz_a,&inter_box_a_min,&inter_box_a_max,&cell_int_r](u32 node_id) {
+                            f32_3 cur_pos_min_cell_b = tree_acc.pos_min_cell[node_id];
+                            f32_3 cur_pos_max_cell_b = tree_acc.pos_max_cell[node_id];
+                            float int_r_max_cell     = cell_int_r[node_id] * Kernel::Rkern;
 
-                        f32_3 inter_box_a_min = xyz_a - h_a * Kernel::Rkern;
-                        f32_3 inter_box_a_max = xyz_a + h_a * Kernel::Rkern;
+                            using namespace walker::interaction_crit;
 
-                        f32 rho_sum = 0;
-                        f32 part_omega_sum = 0;
-                        
-                        walker::rtree_for(
-                            tree_acc,
-                            [&tree_acc,&xyz_a,&inter_box_a_min,&inter_box_a_max,&cell_int_r](u32 node_id) {
-                                f32_3 cur_pos_min_cell_b = tree_acc.pos_min_cell[node_id];
-                                f32_3 cur_pos_max_cell_b = tree_acc.pos_max_cell[node_id];
-                                float int_r_max_cell     = cell_int_r[node_id] * Kernel::Rkern;
+                            return sph_radix_cell_crit(xyz_a, inter_box_a_min, inter_box_a_max, cur_pos_min_cell_b,
+                                                        cur_pos_max_cell_b, int_r_max_cell);
+                        },
+                        [&r,&xyz_a,&h_a,&rho_sum,&part_mass,&part_omega_sum](u32 id_b) {
+                            //f32_3 dr = xyz_a - r[id_b];
+                            f32 rab = sycl::distance( xyz_a , r[id_b]);
 
-                                using namespace walker::interaction_crit;
+                            if(rab > h_a*Kernel::Rkern) return;
 
-                                return sph_radix_cell_crit(xyz_a, inter_box_a_min, inter_box_a_max, cur_pos_min_cell_b,
-                                                            cur_pos_max_cell_b, int_r_max_cell);
-                            },
-                            [&r,&xyz_a,&h_a,&rho_sum,&part_mass,&part_omega_sum](u32 id_b) {
-                                //f32_3 dr = xyz_a - r[id_b];
-                                f32 rab = sycl::distance( xyz_a , r[id_b]);
+                            //f32 rab = sycl::sqrt(rab2);
 
-                                if(rab > h_a*Kernel::Rkern) return;
+                            rho_sum += part_mass*Kernel::W(rab,h_a);
+                            part_omega_sum += part_mass * Kernel::dhW(rab,h_a);
 
-                                //f32 rab = sycl::sqrt(rab2);
+                        },
+                        [](u32 node_id) {});
+                    
 
-                                rho_sum += part_mass*Kernel::W(rab,h_a);
-                                part_omega_sum += part_mass * Kernel::dhW(rab,h_a);
-
-                            },
-                            [](u32 node_id) {});
-                        
-
-                        
-                        f32 rho_ha = rho_h(part_mass, h_a);
-                        f32 omega_a = 1 + (h_a/(3*rho_ha))*part_omega_sum;
-                        f32 new_h = h_a - (rho_ha - rho_sum)/((-3*rho_ha/h_a)*omega_a);
-
-                        if(new_h < h_a*h_max_evol_m) new_h = h_max_evol_m*h_a;
-                        if(new_h > h_a*h_max_evol_p) new_h = h_max_evol_p*h_a;
-
-                        h_new[id_a] = new_h;
-                        eps[id_a] = sycl::fabs(new_h - h_a)/U1[id_a*DU1::nvar + DU1::ihpart];
-                        
-
-                    }
+                    
+                    f32 rho_ha = rho_h(part_mass, h_a);
+                    omga[id_a] = 1 + (h_a/(3*rho_ha))*part_omega_sum;
+                    
 
                 });
-
 
             }); 
             
 
             
+            
+
+
+
+            //write back h test
+            //*
+            hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+
+                auto h_new = hnew.get_access<sycl::access::mode::read>(cgh);
+
+                auto U1 = pdat_buf_merge.get_U1<f32>()->get_access<sycl::access::mode::write>(cgh);
+
+                cgh.parallel_for<class write_back_h>(range_npart, [=](sycl::item<1> item) {
+                    u32 id_a = (u32)item.get_id(0);
+
+                    U1[id_a*DU1::nvar + DU1::ihpart] = h_new[id_a];
+
+                });
+
+            });
+            //*/
+
 
 
         });
 
+        //
+
+
+        
+
         hnew_field.to_map();
         omega_field.to_map();
 
+        std::cout << "echange interface hnew" << std::endl;
+        PatchComputeFieldInterfaces<pos_prec> hnew_field_interfaces = interface_hndl.template comm_interfaces_field<pos_prec>(sched,hnew_field);
         std::cout << "echange interface omega" << std::endl;
         PatchComputeFieldInterfaces<pos_prec> omega_field_interfaces = interface_hndl.template comm_interfaces_field<pos_prec>(sched,omega_field);
+
+        std::unordered_map<u64, IntMergedPatchComputeField<f32>> hnew_field_merged;
+        make_merge_patches_comp_field<f32>(sched, hnew_field, hnew_field_interfaces, hnew_field_merged);
+        std::unordered_map<u64, IntMergedPatchComputeField<f32>> omega_field_merged;
+        make_merge_patches_comp_field<f32>(sched, omega_field, omega_field_interfaces, omega_field_merged);
+
+
+        sched.for_each_patch([&](u64 id_patch, Patch cur_p) {
+
+            PatchDataBuffer & pdat_buf_merge = merge_pdat_buf[id_patch].data;
+            
+            sycl::buffer<f32> & hnew =  * hnew_field_merged[id_patch].buf;
+            sycl::buffer<f32> & omega = * omega_field_merged[id_patch].buf;
+
+            sycl::range range_npart{merge_pdat_buf[id_patch].or_element_cnt};
+
+            std::cout << "patch : n°" << id_patch << "compute forces" << std::endl;
+            hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+
+                auto h_new = hnew.get_access<sycl::access::mode::read>(cgh);
+                auto omga = omega.get_access<sycl::access::mode::read>(cgh);
+
+                auto r = pdat_buf_merge.pos_s->get_access<sycl::access::mode::read>(cgh);
+                auto axyz = pdat_buf_merge.U3_s->get_access<sycl::access::mode::discard_write>(cgh);
+                
+                using Rta = walker::Radix_tree_accessor<u32, f32_3>;
+                Rta tree_acc(*radix_trees[id_patch], cgh);
+
+
+
+                auto cell_int_r = radix_trees[id_patch]->buf_cell_interact_rad->template get_access<sycl::access::mode::read>(cgh);
+
+                f32 part_mass = gpart_mass;
+                f32 cs = 1;
+
+                constexpr f32 htol = htol_up_tol;
+
+
+                cgh.parallel_for<class forces>(range_npart, [=](sycl::item<1> item) {
+                    u32 id_a = (u32) item.get_id(0);
+
+                    f32_3 sum_axyz = {0,0,0};
+                    f32 h_a = h_new[id_a];
+
+                    f32_3 xyz_a = r[id_a];
+
+                    f32 rho_a = rho_h(part_mass, h_a);
+                    f32 rho_a_sq = rho_a*rho_a;
+
+                    f32 P_a = cs*cs*rho_a;;
+                    f32 omega_a = omga[id_a];
+
+
+                    f32_3 inter_box_a_min = xyz_a - h_a * Kernel::Rkern;
+                    f32_3 inter_box_a_max = xyz_a + h_a * Kernel::Rkern;
+
+                    
+                    
+                    walker::rtree_for(
+                        tree_acc,
+                        [&tree_acc,&xyz_a,&inter_box_a_min,&inter_box_a_max,&cell_int_r](u32 node_id) {
+                            f32_3 cur_pos_min_cell_b = tree_acc.pos_min_cell[node_id];
+                            f32_3 cur_pos_max_cell_b = tree_acc.pos_max_cell[node_id];
+                            float int_r_max_cell     = cell_int_r[node_id] * Kernel::Rkern * htol;
+
+                            using namespace walker::interaction_crit;
+
+                            return sph_radix_cell_crit(xyz_a, inter_box_a_min, inter_box_a_max, cur_pos_min_cell_b,
+                                                        cur_pos_max_cell_b, int_r_max_cell);
+                        },
+                        [&](u32 id_b) {
+                            //compute only omega_a
+                            f32_3 dr = xyz_a - r[id_b];
+                            f32 rab = sycl::length(dr);
+                            f32 h_b = h_new[id_b];
+
+                            if(rab > h_a*Kernel::Rkern && rab > h_b*Kernel::Rkern) return;
+
+                            f32_3 r_ab_unit = dr / rab;
+
+                            if(rab < 1e-9){
+                                r_ab_unit = {0,0,0};
+                            }
+
+                            
+                            f32 rho_b = rho_h(part_mass, h_b);
+                            f32 P_b = cs*cs*rho_b;
+                            f32 omega_b = omga[id_b];
+
+                            sum_axyz += sph_pressure<f32_3,f32>(
+                                part_mass, rho_a_sq, rho_b*rho_b, P_a, P_b, omega_a, omega_b
+                                , 0,0, r_ab_unit*Kernel::dW(rab,h_a), r_ab_unit*Kernel::dW(rab,h_b));
+
+
+                        },
+                        [](u32 node_id) {});
+                    
+
+                    
+                    axyz[id_a] = sum_axyz;
+                    
+
+                });
+
+            }); 
+
+
+            leapfrog_predictor<pos_prec, DU3>(
+                hndl.get_queue_compute(0), 
+                merge_pdat_buf[id_patch].or_element_cnt, 
+                dt_cur, 
+                pdat_buf_merge.get_pos<pos_vec>(), 
+                pdat_buf_merge.get_U3<pos_vec>());
+
+        });
+
+
+
+
+        write_back_merge_patches(sched,interface_hndl, merge_pdat_buf);
+
+
+
+        
+
+
+
+
+
 
 
 

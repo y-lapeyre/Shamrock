@@ -109,8 +109,8 @@ class TestTimestepper {
             auto t = timings::start_timer("dumm setup", timings::timingtype::function);
             Patch p;
 
-            p.data_count    = 1e7;
-            p.load_value    = 1e7;
+            p.data_count    = 1e5;
+            p.load_value    = 1e5;
             p.node_owner_id = mpi_handler::world_rank;
 
             p.x_min = 0;
@@ -207,7 +207,7 @@ template <class Timestepper, class SimInfo> class SimulationSPH {
   public:
     static void run_sim() {
 
-        SchedulerMPI sched = SchedulerMPI(8e6, 1);
+        SchedulerMPI sched = SchedulerMPI(8e4, 1);
         sched.init_mpi_required_types();
 
         logfiles::open_log_files();
