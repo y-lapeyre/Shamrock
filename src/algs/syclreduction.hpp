@@ -2,12 +2,15 @@
 
 #include "aliases.hpp"
 #include <memory>
+#include <stdexcept>
 
 namespace syclalg {
 
     //TODO to optimize
     template<class T, u32 nvar, u32 offset>
     inline T get_max(sycl::queue & queue, std::unique_ptr<sycl::buffer<T>> & buf){
+
+        if(!buf) throw std::runtime_error("syclalg::get_max : input buffer not allocated");
 
         T accum = buf->get_host_access()[0];
 
@@ -36,6 +39,9 @@ namespace syclalg {
 
     template<class T, u32 nvar, u32 offset> 
     inline std::tuple<T,T> get_min_max(sycl::queue & queue, std::unique_ptr<sycl::buffer<T>> & buf){
+
+        if(!buf) throw std::runtime_error("syclalg::get_max : input buffer not allocated");
+
         T accum_min = buf->get_host_access()[0];
         T accum_max = buf->get_host_access()[0];
 

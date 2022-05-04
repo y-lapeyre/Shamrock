@@ -515,6 +515,7 @@ class SPHTimestepperLeapfrog{public:
     inline void step(SchedulerMPI &sched){
         SyCLHandler &hndl = SyCLHandler::get_instance();
 
+        /*
         std::cout << "chech no h null" << std::endl;
         sched.for_each_patch_buf([&](u64 id_patch, Patch cur_p, PatchDataBuffer & pdat_buf) {
 
@@ -538,6 +539,7 @@ class SPHTimestepperLeapfrog{public:
                 }
             }
         });
+        */
 
 
         SerialPatchTree<pos_vec> sptree(sched.patch_tree, sched.get_box_tranform<pos_vec>());
@@ -568,7 +570,7 @@ class SPHTimestepperLeapfrog{public:
 
         });
 
-
+        /*
         std::cout << "chech no h null" << std::endl;
         sched.for_each_patch_buf([&](u64 id_patch, Patch cur_p, PatchDataBuffer & pdat_buf) {
 
@@ -591,7 +593,9 @@ class SPHTimestepperLeapfrog{public:
                 }
             }
         });
+        */
 
+        /*
         std::cout << "particle reatribution" << std::endl;
         reatribute_particles(sched, sptree);
 
@@ -616,6 +620,7 @@ class SPHTimestepperLeapfrog{public:
                 }
             }
         });
+        */
 
 
 

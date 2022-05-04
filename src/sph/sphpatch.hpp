@@ -18,6 +18,8 @@ namespace patchdata {
         template<class DataLayout, class htype>
         inline htype get_h_max(sycl::queue & queue, PatchDataBuffer & pdatbuf){
 
+            if(pdatbuf.element_count == 0) return 0;
+
             using U = typename DataLayout::template U1<htype>::T;
 
             htype tmp;

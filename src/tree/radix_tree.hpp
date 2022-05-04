@@ -123,7 +123,7 @@ class Radix_Tree{public:
 
 
 
-        if(tree_leaf_count > 3){
+        if(tree_leaf_count > 1){
 
             tree_internal_count = tree_leaf_count-1;
 
@@ -136,8 +136,11 @@ class Radix_Tree{public:
             sycl_karras_alg(queue, tree_internal_count, buf_tree_morton, buf_lchild_id, buf_rchild_id, buf_lchild_flag, buf_rchild_flag, buf_endrange);
 
             one_cell_mode = false;
-        }else{
+        }else if(tree_leaf_count == 1){
+            throw std::runtime_error(__LOC_PREFIX__  + std::string("one cell mode is not implemented"));
             one_cell_mode = true;
+        }else{
+            throw std::runtime_error(__LOC_PREFIX__  + std::string("empty patch should be skipped"));
         }
     }
 
