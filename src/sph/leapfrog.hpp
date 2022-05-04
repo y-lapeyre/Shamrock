@@ -1010,7 +1010,7 @@ class SPHTimestepperLeapfrog{public:
                     f32 rho_a = rho_h(part_mass, h_a);
                     f32 rho_a_sq = rho_a*rho_a;
 
-                    f32 P_a = cs*cs*rho_a;;
+                    f32 P_a = cs*cs*rho_a;
                     f32 omega_a = omga[id_a];
 
 
@@ -1068,7 +1068,7 @@ class SPHTimestepperLeapfrog{public:
             }); 
 
 
-            leapfrog_predictor<pos_prec, DU3>(
+            leapfrog_corrector<pos_prec, DU3>(
                 hndl.get_queue_compute(0), 
                 merge_pdat_buf[id_patch].or_element_cnt, 
                 dt_cur, 

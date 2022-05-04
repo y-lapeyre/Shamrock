@@ -154,7 +154,7 @@ inline void reatribute_particles<f32_3>(SchedulerMPI & sched, SerialPatchTree<f3
 
             PatchData & pdat_recv = sched.patch_data.owned_data[recv_id];
 
-            {
+            /*{
                 std::cout << "recv : " << recv_id << " <- " << send_id << std::endl;
 
                 std::cout << "cnt : " << pdat->pos_s.size() << std::endl;
@@ -172,7 +172,7 @@ inline void reatribute_particles<f32_3>(SchedulerMPI & sched, SerialPatchTree<f3
                         std::cin >> a;
                     }
                 }
-            }
+            }*/
 
             //*
             pdat_recv.insert_particles(
