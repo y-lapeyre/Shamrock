@@ -1,5 +1,6 @@
 #pragma once
 #include "aliases.hpp"
+#include "io/logs.hpp"
 #include "patch/patch.hpp"
 #include "patch/patchdata.hpp"
 #include "patchscheduler/scheduler_mpi.hpp"
@@ -149,9 +150,13 @@ inline void dump_simbox(std::string prefix, SchedulerMPI & sched){
 
 inline void dump_state(std::string prefix, SchedulerMPI & sched){
 
+    auto t = timings::start_timer("dump_state", timings::timingtype::function);
+
     dump_patch_data(prefix, sched);
 
     dump_patch_list(prefix, sched);
     dump_simbox(prefix, sched);
+
+    t.stop();
 
 }

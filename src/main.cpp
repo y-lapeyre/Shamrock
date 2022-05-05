@@ -109,8 +109,8 @@ class TestTimestepper {
             auto t = timings::start_timer("dumm setup", timings::timingtype::function);
             Patch p;
 
-            p.data_count    = 1e7;
-            p.load_value    = 1e7;
+            p.data_count    = 3e7;
+            p.load_value    = 3e7;
             p.node_owner_id = mpi_handler::world_rank;
 
             p.x_min = 0;
@@ -170,7 +170,7 @@ class TestTimestepper {
 
         // sched.patch_list.build_global();
 
-        {
+        /*{
             SerialPatchTree<f32_3> sptree(sched.patch_tree, sched.get_box_tranform<f32_3>());
             sptree.attach_buf();
 
@@ -187,7 +187,7 @@ class TestTimestepper {
             interface_hndl.print_current_interf_map();
 
             // sched.dump_local_patches(format("patches_%d_node%d", 0, mpi_handler::world_rank));
-        }
+        }*/
     }
 
     static void step(SchedulerMPI &sched, TestSimInfo &siminfo) {
@@ -214,19 +214,24 @@ template <class Timestepper, class SimInfo> class SimulationSPH {
 
         SimInfo siminfo;
 
+        std::cout << " ------ init sim ------" << std::endl;
+
         auto t = timings::start_timer("init timestepper", timings::timingtype::function);
         Timestepper::init(sched, siminfo);
         t.stop();
+
+        std::cout << " --- init sim done ----" << std::endl;
 
 
 
         std::filesystem::create_directory("step" + std::to_string(0));
 
+        std::cout << "dumping state"<<std::endl;
         dump_state("step" + std::to_string(0) + "/", sched);
 
         timings::dump_timings("### init_step ###");
 
-        std::cout << " ------ init sim ------" << std::endl;
+        
         for (u32 stepi = 1; stepi < 30; stepi++) {
             std::cout << " ------ step time = " << stepi << " ------" << std::endl;
             siminfo.time = stepi;

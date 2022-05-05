@@ -5,7 +5,7 @@ import struct
 import matplotlib.pyplot as plt
 # mayavi.mlab.options.backend = 'envisage'
 
-mayavi.mlab.figure(figure=None, bgcolor=None, fgcolor=None, engine=None, size=(1920, 1080))
+#mayavi.mlab.figure(figure=None, bgcolor=None, fgcolor=None, engine=None, size=(1920, 1080))
 
 def plot_patchdata(filename):
 
@@ -51,16 +51,38 @@ def plot_patchdata(filename):
 
     f.close()
 
-    dic["x"] = dic["x"][::10]
-    dic["y"] = dic["y"][::10]
-    dic["z"] = dic["z"][::10]
-    dic["h"] = dic["h"][::10]
+    #dic["x"] = dic["x"][::10]
+    #dic["y"] = dic["y"][::10]
+    #dic["z"] = dic["z"][::10]
+    #dic["h"] = dic["h"][::10]
 
     #print(dic["h"][:1000])
 
-    mayavi.mlab.points3d(dic["x"],dic["y"],dic["z"],dic["h"], scale_factor=0.5)
+    #mayavi.mlab.points3d(dic["x"],dic["y"],dic["z"],dic["h"], scale_factor=0.5)
 
-    #plt.plot(dic["x"], dic["h"],'.',color='black')
+    dic_filtered = {
+        "x" : [],
+        "y" : [],
+        "z" : [],
+        "h" : [],
+    }
+
+    for i in range(len(dic["x"])):
+
+        cd = True
+        #cd = cd and dic["y"][i] < 0.1 and dic["y"][i] > -0.1
+        cd = cd and dic["z"][i] < 0.3e-2 and dic["z"][i] > -0.3e-2
+
+
+        if cd :
+
+            dic_filtered["x"].append(dic["x"][i])
+            dic_filtered["y"].append(dic["y"][i])
+            dic_filtered["z"].append(dic["z"][i])
+            dic_filtered["h"].append(dic["h"][i])
+
+
+    plt.scatter(dic_filtered["x"], dic_filtered["y"], c=dic_filtered["h"], cmap='nipy_spectral',vmin=0,vmax=0.025)
 
 
 
@@ -74,9 +96,9 @@ def plot_content(filename):
 for a in sys.argv[2::]:
     plot_content(a)
 
+plt.colorbar()
 
-
-#plt.show()
+plt.show()
 #mayavi.mlab.show()
-print("saving ...")
-mayavi.mlab.savefig(sys.argv[1])
+#print("saving ...")
+#mayavi.mlab.savefig(sys.argv[1])

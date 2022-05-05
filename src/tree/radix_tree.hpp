@@ -1,6 +1,7 @@
 #pragma once
 
 
+#include "CL/sycl/access/access.hpp"
 #include "aliases.hpp"
 #include <array>
 #include <memory>
@@ -113,17 +114,13 @@ class Radix_Tree{public:
         
         std::cout << " -> " << pos_buf->size() << " " << buf_morton->size() << " " << tree_leaf_count << std::endl;
 
-
-        buf_reduc_index_map = std::make_unique<sycl::buffer<u32>>(reduc_index_map.data(),reduc_index_map.size());
-
-        std::cout << "sycl_morton_remap_reduction" << std::endl;
-        buf_tree_morton = std::make_unique<sycl::buffer<u_morton>>(tree_leaf_count);
-
-        sycl_morton_remap_reduction(queue, tree_leaf_count, buf_reduc_index_map, buf_morton, buf_tree_morton);
-
-
-
         if(tree_leaf_count > 1){
+            buf_reduc_index_map = std::make_unique<sycl::buffer<u32>>(reduc_index_map.data(),reduc_index_map.size());
+
+            std::cout << "sycl_morton_remap_reduction" << std::endl;
+            buf_tree_morton = std::make_unique<sycl::buffer<u_morton>>(tree_leaf_count);
+
+            sycl_morton_remap_reduction(queue, tree_leaf_count, buf_reduc_index_map, buf_morton, buf_tree_morton);
 
             tree_internal_count = tree_leaf_count-1;
 
@@ -137,8 +134,36 @@ class Radix_Tree{public:
 
             one_cell_mode = false;
         }else if(tree_leaf_count == 1){
-            throw shamrock_exc("one cell mode is not implemented");
+            //throw shamrock_exc("one cell mode is not implemented");
+            //TODO do some extensive test on one cell mode
             one_cell_mode = true;
+
+            tree_internal_count = 1;
+            tree_leaf_count = 2;
+            reduc_index_map.push_back(0);
+
+            buf_reduc_index_map = std::make_unique<sycl::buffer<u32>>(reduc_index_map.data(),reduc_index_map.size());
+
+            buf_lchild_id = std::make_unique<sycl::buffer<u32>>(tree_internal_count);
+            buf_rchild_id = std::make_unique<sycl::buffer<u32>>(tree_internal_count);
+            buf_lchild_flag = std::make_unique<sycl::buffer<u8>>(tree_internal_count);
+            buf_rchild_flag = std::make_unique<sycl::buffer<u8>>(tree_internal_count);
+            buf_endrange = std::make_unique<sycl::buffer<u32>>(tree_internal_count);
+
+            {    
+                auto rchild_id   = (buf_rchild_id  ->get_access<sycl::access::mode::discard_write>());
+                auto lchild_id   = (buf_lchild_id  ->get_access<sycl::access::mode::discard_write>());
+                auto rchild_flag = (buf_rchild_flag->get_access<sycl::access::mode::discard_write>());
+                auto lchild_flag = (buf_lchild_flag->get_access<sycl::access::mode::discard_write>());
+                auto endrange    = (buf_endrange   ->get_access<sycl::access::mode::discard_write>());
+
+                rchild_id[0] = 0;
+                lchild_id[0] = 1;
+                rchild_flag[0] = 1;
+                lchild_flag[0] = 1;
+                endrange[0] = 1;
+            }
+
         }else{
             throw shamrock_exc("empty patch should be skipped");
         }
@@ -151,24 +176,51 @@ class Radix_Tree{public:
     std::unique_ptr<sycl::buffer<vec3>> buf_pos_max_cell_flt;
 
     inline void compute_cellvolume(sycl::queue & queue){
+        if(!one_cell_mode){
 
-        std::cout << "compute_cellvolume" << std::endl;
+            std::cout << "compute_cellvolume" << std::endl;
 
-        
-        buf_pos_min_cell = std::make_unique< sycl::buffer<vec3i>>(tree_internal_count + tree_leaf_count);
-        buf_pos_max_cell = std::make_unique< sycl::buffer<vec3i>>(tree_internal_count + tree_leaf_count);
+            
+            buf_pos_min_cell = std::make_unique< sycl::buffer<vec3i>>(tree_internal_count + tree_leaf_count);
+            buf_pos_max_cell = std::make_unique< sycl::buffer<vec3i>>(tree_internal_count + tree_leaf_count);
 
 
-        sycl_compute_cell_ranges(
-            queue, 
-            tree_leaf_count,
-            tree_internal_count, 
-            buf_tree_morton, 
-            buf_lchild_id, 
-            buf_rchild_id, 
-            buf_lchild_flag, 
-            buf_rchild_flag, 
-            buf_endrange, buf_pos_min_cell, buf_pos_max_cell);
+            sycl_compute_cell_ranges(
+                queue, 
+                tree_leaf_count,
+                tree_internal_count, 
+                buf_tree_morton, 
+                buf_lchild_id, 
+                buf_rchild_id, 
+                buf_lchild_flag, 
+                buf_rchild_flag, 
+                buf_endrange, buf_pos_min_cell, buf_pos_max_cell);
+
+        }else{
+            //throw shamrock_exc("one cell mode is not implemented");
+            //TODO do some extensive test on one cell mode
+
+            buf_pos_min_cell     = std::make_unique< sycl::buffer<vec3i>>(tree_internal_count + tree_leaf_count);
+            buf_pos_max_cell     = std::make_unique< sycl::buffer<vec3i>>(tree_internal_count + tree_leaf_count);
+
+            {
+                auto pos_min_cell = buf_pos_min_cell->template get_access<sycl::access::mode::discard_write>();
+                auto pos_max_cell = buf_pos_max_cell->template get_access<sycl::access::mode::discard_write>();
+
+                pos_min_cell[0] = {0};
+                pos_max_cell[0] = morton_3d::morton_types<u_morton>::max_vec;
+
+                pos_min_cell[1] = {0};
+                pos_max_cell[1] = morton_3d::morton_types<u_morton>::max_vec;
+
+                pos_min_cell[2] = {0};
+                pos_max_cell[2] = {0};
+
+
+            }
+            
+
+        }
 
 
         buf_pos_min_cell_flt = std::make_unique< sycl::buffer<vec3>>(tree_internal_count + tree_leaf_count);

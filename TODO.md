@@ -26,3 +26,5 @@
 - [ ] use only patch_id or id_patch not both
 - [ ] in interface split the get_flag_id part and cache it to avoid recomputing it
 - [ ] for the templated patch do something like shown in main.cpp
+- [ ] check validity of one cell mode
+- [ ] clean the leapfrog

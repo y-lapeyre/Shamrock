@@ -237,6 +237,7 @@ inline void write_back_merge_patches(
     SyCLHandler &hndl = SyCLHandler::get_instance();
 
     sched.for_each_patch_buf([&](u64 id_patch, Patch cur_p, PatchDataBuffer & pdat_buf) {
+        if(merge_pdat_buf[id_patch].or_element_cnt == 0) std::cout << " empty => skipping" << std::endl;
 
 
         std::cout << "patch : n°"<<id_patch << " -> write back merge buf" << std::endl;
@@ -518,32 +519,6 @@ class SPHTimestepperLeapfrog{public:
     inline void step(SchedulerMPI &sched){
         SyCLHandler &hndl = SyCLHandler::get_instance();
 
-        /*
-        std::cout << "chech no h null" << std::endl;
-        sched.for_each_patch_buf([&](u64 id_patch, Patch cur_p, PatchDataBuffer & pdat_buf) {
-
-            std::cout << "pid : " << id_patch << std::endl;
-            
-
-            std::cout << "cnt : " << pdat_buf.element_count << std::endl;
-
-            auto U1 = 
-                //merge_pdat_buf[id_patch].data.U1_s
-                pdat_buf.U1_s
-            ->template get_access<sycl::access::mode::read>();
-
-            for (u32 i = 0; i < pdat_buf.element_count; i++) {
-
-                f32 val = U1[i*2 + 0];
-                if(val == 0){
-                    std::cout << "----- fail id " << i  << " " << val << std::endl;
-                    int a ;
-                    std::cin >> a;
-                }
-            }
-        });
-        */
-
 
         SerialPatchTree<pos_vec> sptree(sched.patch_tree, sched.get_box_tranform<pos_vec>());
         sptree.attach_buf();
@@ -659,9 +634,11 @@ class SPHTimestepperLeapfrog{public:
         });
         */
 
-        /*
+        
         std::cout << "particle reatribution" << std::endl;
         reatribute_particles(sched, sptree);
+
+        /*
 
         std::cout << "chech no h null" << std::endl;
         sched.for_each_patch_buf([&](u64 id_patch, Patch cur_p, PatchDataBuffer & pdat_buf) {
@@ -737,9 +714,15 @@ class SPHTimestepperLeapfrog{public:
         std::unordered_map<u64, std::unique_ptr<Radix_Tree<u_morton, pos_vec>>> radix_trees;
 
         sched.for_each_patch([&](u64 id_patch, Patch cur_p) {
+
+            
+
             std::cout << "patch : n°"<<id_patch << " -> making radix tree" << std::endl;
+            if(merge_pdat_buf[id_patch].or_element_cnt == 0) std::cout << " empty => skipping" << std::endl;
 
             PatchDataBuffer & mpdat_buf = merge_pdat_buf[id_patch].data;
+
+
             std::tuple<f32_3,f32_3> & box = merge_pdat_buf[id_patch].box; 
 
             //radix tree computation
@@ -750,6 +733,7 @@ class SPHTimestepperLeapfrog{public:
 
         sched.for_each_patch([&](u64 id_patch, Patch cur_p) {
             std::cout << "patch : n°"<<id_patch << " -> radix tree compute volume" << std::endl;
+            if(merge_pdat_buf[id_patch].or_element_cnt == 0) std::cout << " empty => skipping" << std::endl;
             radix_trees[id_patch]->compute_cellvolume(hndl.get_queue_compute(0));
         });
 
@@ -757,6 +741,7 @@ class SPHTimestepperLeapfrog{public:
         sched.for_each_patch([&](u64 id_patch, Patch cur_p) {
 
             std::cout << "patch : n°"<<id_patch << " -> radix tree compute interaction box" << std::endl;
+            if(merge_pdat_buf[id_patch].or_element_cnt == 0) std::cout << " empty => skipping" << std::endl;
 
             PatchDataBuffer & mpdat_buf = merge_pdat_buf[id_patch].data;
 
@@ -786,6 +771,7 @@ class SPHTimestepperLeapfrog{public:
         
         sched.for_each_patch([&](u64 id_patch, Patch cur_p) {
             std::cout << "patch : n°" << id_patch << "init h iter" << std::endl;
+            if(merge_pdat_buf[id_patch].or_element_cnt == 0) std::cout << " empty => skipping" << std::endl;
 
             PatchDataBuffer & pdat_buf_merge = merge_pdat_buf[id_patch].data;
             
@@ -1038,6 +1024,7 @@ class SPHTimestepperLeapfrog{public:
 
 
         sched.for_each_patch([&](u64 id_patch, Patch cur_p) {
+            if(merge_pdat_buf[id_patch].or_element_cnt == 0) std::cout << " empty => skipping" << std::endl;
 
             PatchDataBuffer & pdat_buf_merge = merge_pdat_buf[id_patch].data;
             

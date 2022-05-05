@@ -180,6 +180,11 @@ void sycl_fill_trailling_buffer<u32>(
     std::unique_ptr<sycl::buffer<u32>> & buf_morton
     ){
 
+    if(fill_count - morton_count == 0){
+        std::cout << "skipping" << std::endl;
+        return;
+    }
+
     sycl::range<1> range_npart{fill_count - morton_count};
 
     auto ker_fill_trailling_buf = [&](sycl::handler &cgh) {
@@ -206,6 +211,11 @@ void sycl_fill_trailling_buffer<u64>(
     u32 fill_count,
     std::unique_ptr<sycl::buffer<u64>> & buf_morton
     ){
+
+    if(fill_count - morton_count == 0){
+        std::cout << "skipping" << std::endl;
+        return;
+    }
 
     sycl::range<1> range_npart{fill_count - morton_count};
 
