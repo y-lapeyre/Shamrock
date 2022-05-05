@@ -70,7 +70,7 @@ void SchedulerMPI::sync_build_LB(bool global_patch_sync, bool balance_load){
 
 template<>
 std::tuple<f32_3,f32_3> SchedulerMPI::get_box_tranform(){
-    if(patchdata_layout::nVarpos_s == 0) throw std::runtime_error("cannot query single precision box, position is currently double precision");
+    if(patchdata_layout::nVarpos_s == 0) throw shamrock_exc("cannot query single precision box, position is currently double precision");
 
     f32_3 translate_factor = patch_data.sim_box.min_box_sim_s;
     f32_3 scale_factor = (patch_data.sim_box.max_box_sim_s - patch_data.sim_box.min_box_sim_s)/HilbertLB::max_box_sz;
@@ -80,7 +80,7 @@ std::tuple<f32_3,f32_3> SchedulerMPI::get_box_tranform(){
 
 template<>
 std::tuple<f64_3,f64_3> SchedulerMPI::get_box_tranform(){
-    if(patchdata_layout::nVarpos_s == 0) throw std::runtime_error("cannot query single precision box, position is currently double precision");
+    if(patchdata_layout::nVarpos_s == 0) throw shamrock_exc("cannot query single precision box, position is currently double precision");
 
     f64_3 translate_factor = patch_data.sim_box.min_box_sim_d;
     f64_3 scale_factor = (patch_data.sim_box.max_box_sim_d - patch_data.sim_box.min_box_sim_d)/HilbertLB::max_box_sz;
@@ -95,8 +95,8 @@ void SchedulerMPI::scheduler_step(bool do_split_merge, bool do_load_balancing){
 
     auto global_timer = timings::start_timer("SchedulerMPI::scheduler_step", timings::function);
 
-    if(!is_mpi_sycl_interop_active()) throw std::runtime_error("sycl mpi interop not initialized");
-    if(!patch::is_mpi_patch_type_active()) throw std::runtime_error("mpi patch type not initialized");
+    if(!is_mpi_sycl_interop_active()) throw shamrock_exc("sycl mpi interop not initialized");
+    if(!patch::is_mpi_patch_type_active()) throw shamrock_exc("mpi patch type not initialized");
 
     Timer timer;
 
@@ -563,6 +563,6 @@ void SchedulerMPI::dump_local_patches(std::string filename){
         fout.close();
 
     }else{
-        throw std::runtime_error("position precision was not set");
+        throw shamrock_exc("position precision was not set");
     }
 }

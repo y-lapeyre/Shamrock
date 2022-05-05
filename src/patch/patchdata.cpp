@@ -38,7 +38,7 @@ void patchdata_layout::set(u32 arg_nVarpos_s, u32 arg_nVarpos_d, u32 arg_nVarU1_
                 u32 arg_nVarU3_d) {
 
     if(arg_nVarpos_s + arg_nVarpos_d != 1) 
-        throw std::runtime_error("nVarpos_s + nVarpos_d should be equal to 1");
+        throw shamrock_exc("nVarpos_s + nVarpos_d should be equal to 1");
 
     patchdata_layout::nVarpos_s = arg_nVarpos_s;
     patchdata_layout::nVarpos_d = arg_nVarpos_d;

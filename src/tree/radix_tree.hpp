@@ -74,7 +74,7 @@ class Radix_Tree{public:
 
     inline Radix_Tree(sycl::queue & queue,std::tuple<vec3,vec3> treebox,std::unique_ptr<sycl::buffer<vec3>> & pos_buf){
         if(pos_buf->size() > i32_max-1){
-            throw std::runtime_error("number of element in patch above i32_max-1");
+            throw shamrock_exc("number of element in patch above i32_max-1");
         }
 
 
@@ -137,10 +137,10 @@ class Radix_Tree{public:
 
             one_cell_mode = false;
         }else if(tree_leaf_count == 1){
-            throw std::runtime_error(__LOC_PREFIX__  + std::string("one cell mode is not implemented"));
+            throw shamrock_exc("one cell mode is not implemented");
             one_cell_mode = true;
         }else{
-            throw std::runtime_error(__LOC_PREFIX__  + std::string("empty patch should be skipped"));
+            throw shamrock_exc("empty patch should be skipped");
         }
     }
 

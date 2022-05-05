@@ -2,6 +2,7 @@
 
 #include "CL/sycl/buffer.hpp"
 #include "CL/sycl/builtins.hpp"
+#include "algs/syclreduction.hpp"
 #include "aliases.hpp"
 #include "interfaces/interface_handler.hpp"
 #include "interfaces/interface_selector.hpp"
@@ -15,8 +16,10 @@
 #include "sph/kernels.hpp"
 #include "sph/sphpart.hpp"
 #include "sph/sphpatch.hpp"
+#include "sys/sycl_mpi_interop.hpp"
 #include "tree/radix_tree.hpp"
 #include <memory>
+#include <mpi.h>
 #include <tuple>
 #include <unordered_map>
 #include <vector>
@@ -547,8 +550,69 @@ class SPHTimestepperLeapfrog{public:
 
 
         //cfl
+        std::unordered_map<u64, f32> min_cfl_map;
+        sched.for_each_patch_buf([&](u64 id_patch, Patch cur_p, PatchDataBuffer & pdat_buf) {
 
-        f32 dt_cur = 0.001f;
+            u32 npart_patch = pdat_buf.get_pos<pos_vec>()->size();
+
+            std::unique_ptr<sycl::buffer<f32>> buf_cfl = std::make_unique<sycl::buffer<f32>>(npart_patch);
+
+            cl::sycl::range<1> range_npart{npart_patch};
+
+            
+
+            auto ker_Reduc_step_mincfl = [&](cl::sycl::handler &cgh) {
+
+                auto arr = buf_cfl->get_access<sycl::access::mode::discard_write>(cgh);
+
+                auto U1 = pdat_buf.get_U1<pos_prec>()->template get_access<sycl::access::mode::read>(cgh);
+                auto U3 = pdat_buf.get_U3<pos_vec>()->template get_access<sycl::access::mode::read>(cgh);
+
+                f32 cs = 1;
+
+                constexpr u32 nvar_U3 = DU3::nvar;
+                constexpr u32 iaxyz = DU3::iaxyz;
+
+                constexpr u32 nvar_U1 = DU1::nvar;
+                constexpr u32 ih = DU1::ihpart;
+
+                constexpr f32 C_cour = 0.3;
+                constexpr f32 C_force = 0.3;
+
+                cgh.parallel_for<class Initial_dtcfl>( range_npart, [=](cl::sycl::item<1> item) {
+
+                    u32 i = (u32) item.get_id(0);
+                    
+                    f32 h_a = U1[nvar_U1*i + ih];
+                    f32_3 axyz = U3[nvar_U3*i + iaxyz];
+
+                    f32 dtcfl_P = C_cour*h_a/cs;
+                    f32 dtcfl_a = C_force*sycl::sqrt(h_a/sycl::length(axyz));
+
+                    arr[i] = sycl::min(dtcfl_P,dtcfl_a);
+
+                });
+
+            };
+
+            hndl.get_queue_compute(0).submit(ker_Reduc_step_mincfl);
+
+            f32 min_cfl = syclalg::get_min<f32, 1, 0>(hndl.get_queue_compute(0), buf_cfl);
+
+            min_cfl_map[id_patch] = min_cfl;
+        });
+
+        f32 cur_cfl_dt = HUGE_VALF;
+        for (auto & [k,cfl] : min_cfl_map) {
+            cur_cfl_dt = sycl::min(cur_cfl_dt,cfl);
+        }
+
+        std::cout << "node dt cfl : " << cur_cfl_dt << std::endl;
+
+        f32 dt_cur;
+        mpi::allreduce(&cur_cfl_dt, &dt_cur, 1, mpi_type_f32, MPI_MIN, MPI_COMM_WORLD);
+
+        std::cout << " --- current dt  : " << dt_cur << std::endl;
 
         sched.for_each_patch_buf([&](u64 id_patch, Patch cur_p, PatchDataBuffer & pdat_buf) {
 

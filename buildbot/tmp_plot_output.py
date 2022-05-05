@@ -51,12 +51,12 @@ def plot_patchdata(filename):
 
     f.close()
 
-    dic["x"] = dic["x"][::]
-    dic["y"] = dic["y"][::]
-    dic["z"] = dic["z"][::]
-    dic["h"] = dic["h"][::]
+    dic["x"] = dic["x"][::10]
+    dic["y"] = dic["y"][::10]
+    dic["z"] = dic["z"][::10]
+    dic["h"] = dic["h"][::10]
 
-    print(dic["h"][:1000])
+    #print(dic["h"][:1000])
 
     mayavi.mlab.points3d(dic["x"],dic["y"],dic["z"],dic["h"], scale_factor=0.5)
 
@@ -78,4 +78,5 @@ for a in sys.argv[2::]:
 
 #plt.show()
 #mayavi.mlab.show()
+print("saving ...")
 mayavi.mlab.savefig(sys.argv[1])

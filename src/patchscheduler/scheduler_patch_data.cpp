@@ -482,7 +482,7 @@ void SchedulerPatchData::split_patchdata(u64 key_orginal, Patch &p0, Patch &p1, 
 
     //TODO maybe unecessary
     if(patchdata_layout::nVarpos_s + patchdata_layout::nVarpos_d != 1) 
-        throw std::runtime_error("nVarpos_s + nVarpos_d should be equal to 1");
+        throw shamrock_exc("nVarpos_s + nVarpos_d should be equal to 1");
     
     auto search = owned_data.find(key_orginal);
 
@@ -527,7 +527,7 @@ void SchedulerPatchData::split_patchdata(u64 key_orginal, Patch &p0, Patch &p1, 
 void SchedulerPatchData::merge_patchdata(u64 new_key, u64 old_key0, u64 old_key1, u64 old_key2, u64 old_key3, u64 old_key4, u64 old_key5, u64 old_key6, u64 old_key7){
     //TODO maybe unecessary
     if(patchdata_layout::nVarpos_s + patchdata_layout::nVarpos_d != 1) 
-        throw std::runtime_error("nVarpos_s + nVarpos_d should be equal to 1");
+        throw shamrock_exc("nVarpos_s + nVarpos_d should be equal to 1");
 
     auto search0 = owned_data.find(old_key0);
     auto search1 = owned_data.find(old_key1);
@@ -539,28 +539,28 @@ void SchedulerPatchData::merge_patchdata(u64 new_key, u64 old_key0, u64 old_key1
     auto search7 = owned_data.find(old_key7);
 
     if(search0 == owned_data.end()){
-        throw std::runtime_error(format("patchdata for key=%d was not owned by the node",old_key0));
+        throw shamrock_exc(format("patchdata for key=%d was not owned by the node",old_key0));
     }
     if(search1 == owned_data.end()){
-        throw std::runtime_error(format("patchdata for key=%d was not owned by the node",old_key1));
+        throw shamrock_exc(format("patchdata for key=%d was not owned by the node",old_key1));
     }
     if(search2 == owned_data.end()){
-        throw std::runtime_error(format("patchdata for key=%d was not owned by the node",old_key2));
+        throw shamrock_exc(format("patchdata for key=%d was not owned by the node",old_key2));
     }
     if(search3 == owned_data.end()){
-        throw std::runtime_error(format("patchdata for key=%d was not owned by the node",old_key3));
+        throw shamrock_exc(format("patchdata for key=%d was not owned by the node",old_key3));
     }
     if(search4 == owned_data.end()){
-        throw std::runtime_error(format("patchdata for key=%d was not owned by the node",old_key4));
+        throw shamrock_exc(format("patchdata for key=%d was not owned by the node",old_key4));
     }
     if(search5 == owned_data.end()){
-        throw std::runtime_error(format("patchdata for key=%d was not owned by the node",old_key5));
+        throw shamrock_exc(format("patchdata for key=%d was not owned by the node",old_key5));
     }
     if(search6 == owned_data.end()){
-        throw std::runtime_error(format("patchdata for key=%d was not owned by the node",old_key6));
+        throw shamrock_exc(format("patchdata for key=%d was not owned by the node",old_key6));
     }
     if(search7 == owned_data.end()){
-        throw std::runtime_error(format("patchdata for key=%d was not owned by the node",old_key7));
+        throw shamrock_exc(format("patchdata for key=%d was not owned by the node",old_key7));
     }
 
 

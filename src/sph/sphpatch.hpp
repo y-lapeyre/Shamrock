@@ -29,7 +29,7 @@ namespace patchdata {
             } else if constexpr (std::is_same<htype, f64>::value){
                 tmp = syclalg::get_max<f64, U::nvar, U::ihpart>(queue, pdatbuf.U1_d);
             }else{
-                throw std::runtime_error("get_h_max -> current htype not handled");
+                throw shamrock_exc("get_h_max -> current htype not handled");
             }
 
             return tmp;

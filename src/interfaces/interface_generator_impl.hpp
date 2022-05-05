@@ -21,7 +21,7 @@ namespace impl {
                                                                             std::vector<f32_3> boxs_max){
 
         if (boxs_min.size() > u8_max - 1) {
-            throw std::runtime_error("this algo is not build to handle more than 2^8 - 2 boxes as input");
+            throw shamrock_exc("this algo is not build to handle more than 2^8 - 2 boxes as input");
         }
 
         std::vector<u8> flag_choice(pdat.pos_s.size());
@@ -72,7 +72,7 @@ namespace impl {
                                                                             std::vector<f64_3> boxs_max){
 
         if (boxs_min.size() > u8_max - 1) {
-            throw std::runtime_error("this algo is not build to handle more than 2^8 - 2 boxes as input");
+            throw shamrock_exc("this algo is not build to handle more than 2^8 - 2 boxes as input");
         }
 
         std::vector<u8> flag_choice(pdat.pos_d.size());

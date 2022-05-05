@@ -99,7 +99,7 @@ inline void dump_patch_list(std::string prefix, SchedulerMPI & sched){
     if(mpi_handler::world_rank == 0){
 
         if(sched.patch_list.global.size() > u64(u32_max)){
-            throw std::runtime_error("patch list size > u32_max not handled by dump");
+            throw shamrock_exc("patch list size > u32_max not handled by dump");
         }
 
         MPI_Status st;

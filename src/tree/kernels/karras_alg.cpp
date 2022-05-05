@@ -27,17 +27,17 @@ void __sycl_karras_alg(sycl::queue &queue, u32 internal_cell_count, std::unique_
     sycl::range<1> range_radix_tree{internal_cell_count};
 
     if (in_morton == NULL)
-        throw std::runtime_error("in_morton isn't allocated");
+        throw shamrock_exc("in_morton isn't allocated");
     if (out_buf_lchild_id == NULL)
-        throw std::runtime_error("out_buf_lchild_id isn't allocated");
+        throw shamrock_exc("out_buf_lchild_id isn't allocated");
     if (out_buf_rchild_id == NULL)
-        throw std::runtime_error("out_buf_rchild_id isn't allocated");
+        throw shamrock_exc("out_buf_rchild_id isn't allocated");
     if (out_buf_lchild_flag == NULL)
-        throw std::runtime_error("out_buf_lchild_flag isn't allocated");
+        throw shamrock_exc("out_buf_lchild_flag isn't allocated");
     if (out_buf_rchild_flag == NULL)
-        throw std::runtime_error("out_buf_rchild_flag isn't allocated");
+        throw shamrock_exc("out_buf_rchild_flag isn't allocated");
     if (out_buf_endrange == NULL)
-        throw std::runtime_error("out_buf_endrange isn't allocated");
+        throw shamrock_exc("out_buf_endrange isn't allocated");
 
     queue.submit([&](sycl::handler &cgh) {
         //@TODO add check if split count above 2G
