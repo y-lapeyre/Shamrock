@@ -20,3 +20,11 @@
 - [ ] move sycl kernels to namespaces instead of ::
 - [ ] bind patch to specific GPU for the gpu cache ?
 - [ ] to implement the variable h with cache we can create a fix array and keep neighbourgh in the walk stack, after we can iterate on all cells in the walk stack even if they are not leaf using the endrange (ineficient for big cells)
+- [ ] implement the interaction box computation of the radix tree using U1 buf instead of a separate buf
+- [ ] modify interface handler to exchange only some fields (exemple: exchange only omega ad later position and else)
+- [ ] create a Shamrock loop handler to handle interface compute field patch field & ect
+- [ ] use only patch_id or id_patch not both
+- [ ] in interface split the get_flag_id part and cache it to avoid recomputing it
+- [ ] for the templated patch do something like shown in main.cpp
+- [ ] check validity of one cell mode
+- [ ] clean the leapfrog

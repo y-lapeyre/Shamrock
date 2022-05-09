@@ -39,8 +39,8 @@ void sycl_compute_cell_ranges(
         auto morton_map = buf_morton->template get_access<sycl::access::mode::read>(cgh); 
         auto end_range_map = buf_endrange->get_access<sycl::access::mode::read>(cgh); 
 
-        auto pos_min_cell = buf_pos_min_cell->template get_access<sycl::access::mode::write>(cgh); 
-        auto pos_max_cell = buf_pos_max_cell->template get_access<sycl::access::mode::write>(cgh); 
+        auto pos_min_cell = buf_pos_min_cell->template get_access<sycl::access::mode::discard_write>(cgh); //was "write" before changed to fix warning 
+        auto pos_max_cell = buf_pos_max_cell->template get_access<sycl::access::mode::discard_write>(cgh); //was "write" before changed to fix warning 
 
         auto rchild_flag    = buf_rchild_flag->get_access<sycl::access::mode::read>(cgh);
         auto lchild_flag    = buf_lchild_flag->get_access<sycl::access::mode::read>(cgh);
@@ -113,8 +113,8 @@ void sycl_compute_cell_ranges(
         auto morton_map = buf_morton->template get_access<sycl::access::mode::read>(cgh); 
         auto end_range_map = buf_endrange->get_access<sycl::access::mode::read>(cgh); 
 
-        auto pos_min_cell = buf_pos_min_cell->template get_access<sycl::access::mode::write>(cgh); 
-        auto pos_max_cell = buf_pos_max_cell->template get_access<sycl::access::mode::write>(cgh); 
+        auto pos_min_cell = buf_pos_min_cell->template get_access<sycl::access::mode::discard_write>(cgh); //was "write" before changed to fix warning 
+        auto pos_max_cell = buf_pos_max_cell->template get_access<sycl::access::mode::discard_write>(cgh); //was "write" before changed to fix warning 
 
         auto rchild_flag    = buf_rchild_flag->get_access<sycl::access::mode::read>(cgh);
         auto lchild_flag    = buf_lchild_flag->get_access<sycl::access::mode::read>(cgh);

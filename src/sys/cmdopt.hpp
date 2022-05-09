@@ -16,6 +16,8 @@
 #include <string_view>
 #include <vector>
 
+#include "aliases.hpp"
+
 class Cmdopt {
   public:
   private:
@@ -32,7 +34,7 @@ class Cmdopt {
   public:
 
     inline void check_init(){
-        if(! init_done) throw std::runtime_error("Cmdopt uninitialized");
+        if(! init_done) throw shamrock_exc("Cmdopt uninitialized");
     }
     
 

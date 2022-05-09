@@ -12,6 +12,7 @@
 #pragma once
 
 #include <fstream>
+#include <memory>
 #include <stdexcept>
 #include <tuple>
 #include <unordered_set>
@@ -19,9 +20,11 @@
 #include "aliases.hpp"
 #include "patch/patch.hpp"
 #include "patch/patchdata.hpp"
+#include "patch/patchdata_buffer.hpp"
 #include "patch/patchtree.hpp"
 #include "scheduler_patch_list.hpp"
 #include "scheduler_patch_data.hpp"
+#include "sys/sycl_handler.hpp"
 #include "sys/sycl_mpi_interop.hpp"
 
 /**
@@ -116,6 +119,71 @@ class SchedulerMPI{public:
 
     [[deprecated]]
     void sync_build_LB(bool global_patch_sync, bool balance_load);
+
+
+
+    template<class Function>
+    inline void for_each_patch_buf(Function && fct){
+
+        SyCLHandler &hndl = SyCLHandler::get_instance();
+
+        for (auto &[id, pdat] : patch_data.owned_data) {
+
+            if (pdat.pos_s.size() + pdat.pos_d.size() > 0) {
+
+
+                Patch &cur_p = patch_list.global[patch_list.id_patch_to_global_idx[id]];
+
+                PatchDataBuffer pdatbuf = attach_to_patchData(pdat);
+
+                //TODO should feed the sycl queue to the lambda
+
+                fct(id,cur_p,pdatbuf);
+            }
+        }
+
+    }
+
+    template<class Function>
+    inline void for_each_patch(Function && fct){
+
+        SyCLHandler &hndl = SyCLHandler::get_instance();
+
+        for (auto &[id, pdat] : patch_data.owned_data) {
+
+            if (pdat.pos_s.size() + pdat.pos_d.size() > 0) {
+
+
+                Patch &cur_p = patch_list.global[patch_list.id_patch_to_global_idx[id]];
+
+
+                //TODO should feed the sycl queue to the lambda
+
+                fct(id,cur_p);
+            }
+        }
+
+    }
+
+    template<class Function, class Pfield>
+    inline void compute_patch_field(Pfield & field, MPI_Datatype & dtype , Function && lambda){
+        field.local_nodes_value.resize(patch_list.local.size());
+
+        SyCLHandler &hndl = SyCLHandler::get_instance();
+
+        for (u64 idx = 0; idx < patch_list.local.size(); idx++) {
+
+            Patch &cur_p = patch_list.global[idx];
+            PatchDataBuffer pdatbuf = attach_to_patchData(patch_data.owned_data[cur_p.id_patch]);
+
+            field.local_nodes_value[idx] = lambda(hndl.get_queue_compute(0),cur_p,pdatbuf);
+
+        }
+
+        field.build_global(dtype);
+
+    }
+
 
 
     private:

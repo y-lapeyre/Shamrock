@@ -9,11 +9,14 @@
 #include "patch/patch_field.hpp"
 #include "patch/patch_reduc_tree.hpp"
 #include "patch/patchdata.hpp"
+#include "patch/patchdata_buffer.hpp"
 #include "patch/patchdata_exchanger.hpp"
 #include "patch/serialpatchtree.hpp"
 #include "patchscheduler/loadbalancing_hilbert.hpp"
 #include "patchscheduler/patch_content_exchanger.hpp"
 #include "patchscheduler/scheduler_mpi.hpp"
+#include "sph/leapfrog.hpp"
+#include "sph/sphpatch.hpp"
 #include "sys/cmdopt.hpp"
 #include "sys/mpi_handler.hpp"
 #include "sys/sycl_mpi_interop.hpp"
@@ -25,8 +28,14 @@
 #include <memory>
 #include <mpi.h>
 #include <string>
+#include <type_traits>
 #include <unordered_map>
 #include <vector>
+#include <filesystem>
+
+#include "sph/forces.hpp"
+#include "sph/kernels.hpp"
+#include "sph/sphpart.hpp"
 
 class TestSimInfo {
   public:
@@ -36,95 +45,60 @@ class TestSimInfo {
 
 
 
-namespace constants {
-    constexpr f64 PI = 3.141592653589793238463;
-}
 
-namespace sph {
-namespace kernels {
+class CurDataLayout{public:
 
-// 3d kernels only
+    using pos_type = f32;
 
-template <class flt_type> class M4 {public:
-    static constexpr flt_type Rkern = 2;
+    
+    
+    class U1_s{public:
+        static constexpr u32 nvar = 2;
 
-    static constexpr flt_type norm = 1 / constants::PI;
+        static constexpr std::array<const char*, 2> varnames {"hpart","omega"};
 
-    static flt_type f(flt_type q) {
+        static constexpr u32 ihpart = 0;
+        static constexpr u32 iomega = 1;
+    };
 
-        constexpr flt_type div3_4 = (3. / 4.);
-        constexpr flt_type div3_2 = (3. / 2.);
-        constexpr flt_type div1_4 = (1. / 4.);
+    
+    class U3_s{public:
+        static constexpr std::array<const char*, 3> varnames {"vxyz","axyz","axyz_old"};
+        static constexpr u32 nvar = 3;
 
-        if (q < 1) {
-            return 1 + q * q * (div3_4 * q - div3_2);
-        } else if (q < 2) {
-            return div1_4 * (2 - q) * (2 - q) * (2 - q);
-        } else
-            return 0;
-    }
+        static constexpr u32 ivxyz = 0;
+        static constexpr u32 iaxyz = 1;
+        static constexpr u32 iaxyz_old = 2;
+    };
 
-    static flt_type df(flt_type q) {
+    // template<>
+    // class U1<f64>{public:
+    //     static constexpr std::array<const char*, 0> varnames {};
+    //     static constexpr u32 nvar = 0;
+    // };
 
-        constexpr flt_type div9_4 = (9. / 4.);
-        constexpr flt_type div3_4 = (3. / 4.);
+    // template<>
+    // class U3<f64>{public:
+    //     static constexpr std::array<const char*, 0> varnames {};
+    //     static constexpr u32 nvar = 0;
+    // };
 
-        if (q < 1) {
-            return -3 * q + div9_4 * q * q;
-        } else if (q < 2) {
-            return -3 + 3 * q - div3_4 * q * q;
-        } else
-            return 0;
-    }
-
-    static flt_type W(flt_type r, flt_type h) { return norm * f(r / h) / (h * h * h); }
-
-    static flt_type dW(flt_type r, flt_type h) { return norm * df(r / h) / (h * h * h * h); }
-
-    static flt_type dhW(flt_type r, flt_type h) {
-        return -(norm) * (3 * f(r / h) + (r / h) * 3 * df(r / h)) / (h * h * h * h);
-    }
+    template<class prec>
+    struct U1 { using T = std::void_t<>; };
+    template<class prec>
+    struct U3 { using T = std::void_t<>; };
+    template<>
+    struct U1<f32> { using T = U1_s; };
+    template<>
+    struct U3<f32> { using T = U3_s; };
 };
-} // namespace kernels
-} // namespace sph
-
-
-
-template<class vec3,class flt_type>
-inline vec3 sph_pressure(
-    flt_type m_b,
-    flt_type rho_a_sq,
-    flt_type rho_b_sq,
-    flt_type P_a,
-    flt_type P_b,
-    flt_type omega_a,
-    flt_type omega_b,
-    flt_type qa_ab,
-    flt_type qb_ab,
-    vec3 nabla_Wab_ha,
-    vec3 nabla_Wab_hb){
-
-    flt_type sub_fact_a = rho_a_sq*omega_a;
-    flt_type sub_fact_b = rho_b_sq*omega_b;
-
-    vec3 acc_a = ((P_a + qa_ab)/(sub_fact_a))*nabla_Wab_ha;
-    vec3 acc_b = ((P_b + qb_ab)/(sub_fact_b))*nabla_Wab_hb;
-
-    if(sub_fact_a == 0) acc_a = {0,0,0};
-    if(sub_fact_b == 0) acc_b = {0,0,0};
-
-    return - m_b*(
-          acc_a
-        + acc_b
-    ); 
-}
-
-
-
 
 
 class TestTimestepper {
   public:
+
+    
+
     static void init(SchedulerMPI &sched, TestSimInfo &siminfo) {
 
         patchdata_layout::set(1, 0, 2, 0, 3, 0);
@@ -135,8 +109,8 @@ class TestTimestepper {
             auto t = timings::start_timer("dumm setup", timings::timingtype::function);
             Patch p;
 
-            p.data_count    = 1e7;
-            p.load_value    = 1e7;
+            p.data_count    = 1e6;
+            p.load_value    = 1e6;
             p.node_owner_id = mpi_handler::world_rank;
 
             p.x_min = 0;
@@ -155,12 +129,14 @@ class TestTimestepper {
             std::uniform_real_distribution<f32> distpos(-1, 1);
 
             for (u32 part_id = 0; part_id < p.data_count; part_id++){
-                pdat.pos_s.push_back({distpos(eng), distpos(eng), distpos(eng)}); //r
-                pdat.U1_s.push_back(0.02f); //h
-                pdat.U1_s.push_back(0.00f); //omega
-                pdat.U3_s.push_back({0,0,0}); //v
-                pdat.U3_s.push_back({0,0,0}); //a
-                pdat.U3_s.push_back({0,0,0}); //a_old
+                pdat.pos_s.emplace_back(f32_3{distpos(eng), distpos(eng), distpos(eng)}); //r
+                //                      h    omega
+                pdat.U1_s.emplace_back(0.02f);
+                pdat.U1_s.emplace_back(0.00f);
+                //                           v          a             a_old
+                pdat.U3_s.emplace_back(f32_3{0.f,0.f,0.f});
+                pdat.U3_s.emplace_back(f32_3{0.f,0.f,0.f});
+                pdat.U3_s.emplace_back(f32_3{0.f,0.f,0.f});
             }
                 
 
@@ -194,7 +170,7 @@ class TestTimestepper {
 
         // sched.patch_list.build_global();
 
-        {
+        /*{
             SerialPatchTree<f32_3> sptree(sched.patch_tree, sched.get_box_tranform<f32_3>());
             sptree.attach_buf();
 
@@ -211,168 +187,19 @@ class TestTimestepper {
             interface_hndl.print_current_interf_map();
 
             // sched.dump_local_patches(format("patches_%d_node%d", 0, mpi_handler::world_rank));
-        }
+        }*/
     }
 
     static void step(SchedulerMPI &sched, TestSimInfo &siminfo) {
+
+        SPHTimestepperLeapfrog<CurDataLayout> leapfrog;
 
         SyCLHandler &hndl = SyCLHandler::get_instance();
 
         // std::cout << sched.dump_status() << std::endl;
         sched.scheduler_step(true, true);
 
-        std::cout << " reduc " << std::endl;
-        {
-
-            // std::cout << sched.dump_status() << std::endl;
-
-            // PatchField<u64> dtcnt_field;
-            // dtcnt_field.local_nodes_value.resize(sched.patch_list.local.size());
-            // for (u64 idx = 0; idx < sched.patch_list.local.size(); idx++) {
-            //     dtcnt_field.local_nodes_value[idx] = sched.patch_list.local[idx].data_count;
-            // }
-
-            // std::cout << "dtcnt_field.build_global(mpi_type_u64);" << std::endl;
-            // dtcnt_field.build_global(mpi_type_u64);
-
-            // std::cout << "len 1 : " << dtcnt_field.local_nodes_value.size() << std::endl;
-            // std::cout << "len 2 : " << dtcnt_field.global_values.size() << std::endl;
-
-            SerialPatchTree<f32_3> sptree(sched.patch_tree, sched.get_box_tranform<f32_3>());
-            // sptree.dump_dat();
-
-            // std::cout << "len 3 : " << sptree.get_element_count() << std::endl;
-
-            // std::cout << "sptree.attach_buf();" << std::endl;
-            sptree.attach_buf();
-
-            // std::cout << "sptree.reduce_field" << std::endl;
-            // PatchFieldReduction<u64> pfield_reduced =
-            //     sptree.reduce_field<u64, Reduce_DataCount>(hndl.get_queue_alt(0), sched, dtcnt_field);
-
-            // std::cout << "pfield_reduced.detach_buf()" << std::endl;
-            // pfield_reduced.detach_buf();
-            // std::cout << " ------ > " << pfield_reduced.tree_field[0] << "\n\n\n";
-
-            PatchField<f32> h_field;
-            h_field.local_nodes_value.resize(sched.patch_list.local.size());
-            for (u64 idx = 0; idx < sched.patch_list.local.size(); idx++) {
-                h_field.local_nodes_value[idx] = 0.02f;
-            }
-            h_field.build_global(mpi_type_f32);
-
-            InterfaceHandler<f32_3, f32> interface_hndl;
-            interface_hndl.compute_interface_list<InterfaceSelector_SPH<f32_3, f32>>(sched, sptree, h_field);
-            interface_hndl.comm_interfaces(sched);
-            // interface_hndl.print_current_interf_map();
-
-            // sched.dump_local_patches(format("patches_%d_node%d", stepi, mpi_handler::world_rank));
-
-            // Radix_Tree<u32, f32_3> r;
-            // auto& a = r.pos_min_buf;
-
-            for (auto &[id, pdat] : sched.patch_data.owned_data) {
-                if (pdat.pos_s.size() > 0) {
-
-
-                    Patch &cur_p = sched.patch_list.global[sched.patch_list.id_patch_to_global_idx[id]];
-
-                    //init acc
-                    std::unique_ptr<sycl::buffer<f32_3>> pos =
-                        std::make_unique<sycl::buffer<f32_3>>(pdat.pos_s.data(), pdat.pos_s.size());
-                    std::unique_ptr<sycl::buffer<f32>> U1 =
-                        std::make_unique<sycl::buffer<f32>>(pdat.U1_s.data(), pdat.U1_s.size());
-                    std::unique_ptr<sycl::buffer<f32_3>> U3 =
-                        std::make_unique<sycl::buffer<f32_3>>(pdat.U3_s.data(), pdat.U3_s.size());
-
-
-
-
-                    std::unique_ptr<sycl::buffer<f32>> h_buf =
-                        std::make_unique<sycl::buffer<f32>>(pdat.pos_s.size());
-
-                    hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
-                        auto U1acc = U1->get_access<sycl::access::mode::read>(cgh);
-                        auto hacc = h_buf->get_access<sycl::access::mode::discard_write>(cgh);
-
-                        cgh.parallel_for<class Modify_pos>(sycl::range(pos->size()), [=](sycl::item<1> item) {
-                            u32 i = (u32)item.get_id(0);
-
-                            hacc[i] = U1acc[i*2 + 0];
-                        });
-                    });
-
-
-                
-                    //radix tree computation
-                    Radix_Tree<u32, f32_3> rtree =
-                        Radix_Tree<u32, f32_3>(hndl.get_queue_compute(0), sched.patch_data.sim_box.get_box<f32>(cur_p), pos);
-                    rtree.compute_cellvolume(hndl.get_queue_compute(0));
-                    rtree.compute_int_boxes(hndl.get_queue_compute(0),h_buf );
-
-                    
-
-                    //computation kernel
-                    hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
-                        auto hpart = h_buf->get_access<sycl::access::mode::read>(cgh);
-                        auto r = pos->get_access<sycl::access::mode::read>(cgh);
-
-                        walker::Radix_tree_accessor<u32, f32_3> tree_acc(rtree, cgh);
-
-                        constexpr const f32 Rkern = 2;
-
-                        cgh.parallel_for<class SPHTest>(sycl::range(pos->size()), [=](sycl::item<1> item) {
-                            u32 id_a = (u32)item.get_id(0);
-
-                            f32_3 xyz_a = r[id_a]; // could be recovered from lambda
-
-                            f32 h_a = hpart[id_a];
-
-                            f32_3 inter_box_a_min = xyz_a - h_a * Rkern;
-                            f32_3 inter_box_a_max = xyz_a + h_a * Rkern;
-
-                            f32_3 sum_axyz{0,0,0};
-
-                            walker::rtree_for(
-                                tree_acc,
-                                [&](u32 node_id) {
-                                    f32_3 cur_pos_min_cell_b = tree_acc.pos_min_cell[node_id];
-                                    f32_3 cur_pos_max_cell_b = tree_acc.pos_max_cell[node_id];
-                                    float int_r_max_cell     = 0.02f * Rkern;
-
-                                    using namespace walker::interaction_crit;
-
-                                    return sph_radix_cell_crit(xyz_a, inter_box_a_min, inter_box_a_max, cur_pos_min_cell_b,
-                                                               cur_pos_max_cell_b, int_r_max_cell);
-                                },
-                                [&](u32 id_b) {
-                                    f32_3 dr = xyz_a - r[id_b];
-                                    f32 rab = sycl::length(dr);
-                                    f32 h_b = hpart[id_b];
-
-                                    if(rab > h_a*Rkern && rab > h_b*Rkern) return;
-
-                                    f32_3 r_ab_unit = dr / rab;
-
-                                    if(rab < 1e-9){
-                                        r_ab_unit = {0,0,0};
-                                    }
-
-                                    sum_axyz += sph_pressure(
-                                        1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f
-                                        , 0.f,0.f, 
-                                        r_ab_unit*r_ab_unit*sph::kernels::M4<f32>::dW(rab,h_a), 
-                                        r_ab_unit*r_ab_unit*sph::kernels::M4<f32>::W(rab,h_b));
-
-                                },
-                                [](u32 node_id) {});
-                        });
-                    });
-                }
-            }
-
-            reatribute_particles(sched, sptree);
-        }
+        leapfrog.step(sched);
     }
 };
 
@@ -380,22 +207,31 @@ template <class Timestepper, class SimInfo> class SimulationSPH {
   public:
     static void run_sim() {
 
-        SchedulerMPI sched = SchedulerMPI(1e6, 1);
+        SchedulerMPI sched = SchedulerMPI(1e5, 1);
         sched.init_mpi_required_types();
 
         logfiles::open_log_files();
 
         SimInfo siminfo;
 
+        std::cout << " ------ init sim ------" << std::endl;
+
         auto t = timings::start_timer("init timestepper", timings::timingtype::function);
         Timestepper::init(sched, siminfo);
         t.stop();
 
+        std::cout << " --- init sim done ----" << std::endl;
+
+
+
+        std::filesystem::create_directory("step" + std::to_string(0));
+
+        std::cout << "dumping state"<<std::endl;
         dump_state("step" + std::to_string(0) + "/", sched);
 
         timings::dump_timings("### init_step ###");
 
-        std::cout << " ------ init sim ------" << std::endl;
+        
         for (u32 stepi = 1; stepi < 30; stepi++) {
             std::cout << " ------ step time = " << stepi << " ------" << std::endl;
             siminfo.time = stepi;
@@ -403,6 +239,8 @@ template <class Timestepper, class SimInfo> class SimulationSPH {
             auto step_timer = timings::start_timer("timestepper step", timings::timingtype::function);
             Timestepper::step(sched, siminfo);
             step_timer.stop();
+
+            std::filesystem::create_directory("step" + std::to_string(stepi));
 
             dump_state("step" + std::to_string(stepi) + "/", sched);
 
@@ -417,7 +255,120 @@ template <class Timestepper, class SimInfo> class SimulationSPH {
     }
 };
 
+
+/*
+template<class T>
+struct ConvertToVec{typedef std::vector<T> Type;};
+
+template <typename... Args>
+struct convert_tuple_to_vec;
+
+template <typename... Args>
+struct convert_tuple_to_vec<std::tuple<Args...>>
+{
+    typedef std::tuple<typename ConvertToVec<Args>::Type...> type;
+};
+
+using ttt = std::tuple<f32,f64,u32>;
+using ttt_res  = std::tuple<
+        std::vector<f32>,
+        std::vector<f64>,
+        std::vector<u32>
+    >;
+
+typedef convert_tuple_to_vec<ttt>::type tt2 ;
+
+static_assert(
+        std::is_same<
+            convert_tuple_to_vec<ttt>::type,
+            ttt_res
+        >::value, ""
+    );
+
+*/
+
+class DL{
+    using pos = f32_3;
+    using type1 = f32;
+    using type2 = f32;
+};
+
+class empty_desc{};
+
+template<
+    class _Tpos,
+    class _T1 = u8, u32 _nvar1 = 0,class _Desc1 = empty_desc,
+    class _T2 = u8, u32 _nvar2 = 0,class _Desc2 = empty_desc,
+    class _T3 = u8, u32 _nvar3 = 0,class _Desc3 = empty_desc,
+    class _T4 = u8, u32 _nvar4 = 0,class _Desc4 = empty_desc,
+    class _T5 = u8, u32 _nvar5 = 0,class _Desc5 = empty_desc,
+    class _T6 = u8, u32 _nvar6 = 0,class _Desc6 = empty_desc,
+    class _T7 = u8, u32 _nvar7 = 0,class _Desc7 = empty_desc,
+    class _T8 = u8, u32 _nvar8 = 0,class _Desc8 = empty_desc
+>
+class Layout{public:
+    using Tpos = _Tpos;
+
+    using T1 = _T1;
+    using T2 = _T2;
+    using T3 = _T3;
+    using T4 = _T4;
+    using T5 = _T5;
+    using T6 = _T6;
+    using T7 = _T7;
+    using T8 = _T8;
+
+
+    static constexpr u32 nvar1 = _nvar1;
+    static constexpr u32 nvar2 = _nvar2;
+    static constexpr u32 nvar3 = _nvar3;
+    static constexpr u32 nvar4 = _nvar4;
+    static constexpr u32 nvar5 = _nvar5;
+    static constexpr u32 nvar6 = _nvar6;
+    static constexpr u32 nvar7 = _nvar7;
+    static constexpr u32 nvar8 = _nvar8;
+
+    using desc1 = _Desc1;
+    using desc2 = _Desc2;
+    using desc3 = _Desc3;
+    using desc4 = _Desc4;
+    using desc5 = _Desc5;
+    using desc6 = _Desc6;
+    using desc7 = _Desc7;
+    using desc8 = _Desc8;
+};
+
+template<class Layout > class PData{
+    std::vector<typename Layout::Tpos> pos;
+    std::vector<typename Layout::T1> v1;
+    std::vector<typename Layout::T2> v2;
+    std::vector<typename Layout::T3> v3;
+    std::vector<typename Layout::T4> v4;
+    std::vector<typename Layout::T5> v5;
+    std::vector<typename Layout::T6> v6;
+    std::vector<typename Layout::T7> v7;
+};
+
+
 int main(int argc, char *argv[]) {
+
+    class V1_layout{public:
+        u32 ihpart = 0;
+    };
+
+    class V2_layout{public:
+        u32 ivxyz = 0;
+        u32 iaxyz = 1;
+        u32 iaxyz_old = 2;
+    };
+
+    using Lay = Layout<
+        f32_3, 
+        f32  ,1,V1_layout,
+        f32_3,3,V2_layout>;
+
+    PData<Lay> aa;
+
 
     std::cout << shamrock_title_bar_big << std::endl;
 

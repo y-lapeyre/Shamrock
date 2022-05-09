@@ -59,9 +59,8 @@ endif()
 
 
 
-
-
-
+# to hide mac OS specific warnings with hipsycl
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-nonportable-include-path")
 
 ######################
 # Add compilation flags depending upon the build type

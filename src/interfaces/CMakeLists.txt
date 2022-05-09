@@ -5,7 +5,6 @@ target_sources(shamrock
     PRIVATE
         #scheduler.cpp
         interface_generator.cpp
-        interface_handler.cpp
     PUBLIC
         
         #patchdata.hpp
@@ -35,7 +34,6 @@ if("${BUILD_TEST}")
     PRIVATE
         #scheduler.cpp
         interface_generator.cpp
-        interface_handler.cpp
     PUBLIC
         #patchdata.hpp
         #scheduler.hpp

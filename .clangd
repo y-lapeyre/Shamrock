@@ -3,3 +3,10 @@ CompileFlags:
   Add: [
     -Wconversion
     ]
+
+
+# Diagnostics:
+#   ClangTidy:
+#     Add: [
+#       modernize*
+#       ]

@@ -12,20 +12,34 @@
 
 #include "aliases.hpp"
 #include "sfc/bmi.hpp"
+#include <type_traits>
 
 namespace morton_3d {
 
     template<class morton_repr>
-    struct morton_types;
+    struct morton_types{
+        using int_vec_repr_base = std::void_t<>;
+        using int_vec_repr = std::void_t<>;
+    };
 
     template<>
     struct morton_types<u32>{
+        using int_vec_repr_base = u16;
         using int_vec_repr = u16_3;
+        static constexpr int_vec_repr_base max_val = 1024-1;
+
+        //not possible yet in hipsycl
+        //static constexpr int_vec_repr max_vec = int_vec_repr{max_val};
     };
 
     template<>
     struct morton_types<u64>{
+        using int_vec_repr_base = u32;
         using int_vec_repr = u32_3;
+        static constexpr int_vec_repr_base max_val = 2097152-1;
+
+        //not possible yet in hipsycl
+        //static constexpr int_vec_repr max_vec = int_vec_repr{max_val};
     };
 
 

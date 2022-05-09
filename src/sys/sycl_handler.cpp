@@ -57,7 +57,7 @@ SyCLHandler& SyCLHandler::get_instance(){
 void SyCLHandler::init_sycl(){
 
     if(compute_queues.size() + alt_queues.size() > 0){
-        throw std::runtime_error("ERROR : sycl already initialized");
+        throw shamrock_exc("ERROR : sycl already initialized");
     }
 
     printf("\x1B[36m >>> init SYCL instances <<< \033[0m\n");
@@ -86,7 +86,7 @@ void SyCLHandler::init_sycl(){
         split_alt_comp = sycl_cfg.find(":");
 
         if(split_alt_comp == std::string::npos){
-            throw std::runtime_error("wring layout should be ...:...");
+            throw shamrock_exc("wring layout should be ...:...");
         }
 
         std::string alt_cfg = sycl_cfg.substr(0, split_alt_comp);
