@@ -72,10 +72,11 @@ template <class vectype, class field_type, class InterfaceSelector> class Interf
         u64 receiver_patch_id;
         vectype interf_box_min;
         vectype interf_box_max;
+        vectype interf_offset;
     };
 
     inline static sycl::buffer<InterfaceComInternal, 2> get_interface_list_v1(SchedulerMPI &sched, SerialPatchTree<vectype> &sptree,
-                                             PatchField<typename vectype::element_type> pfield) {
+                                             PatchField<typename vectype::element_type> pfield,vectype interf_offset) {
 
         SyCLHandler &hndl = SyCLHandler::get_instance();
 
@@ -126,12 +127,14 @@ template <class vectype, class field_type, class InterfaceSelector> class Interf
                 gbox_min[i] = vectype{sched.patch_list.global[i].x_min, sched.patch_list.global[i].y_min,
                                       sched.patch_list.global[i].z_min} *
                                   std::get<1>(box_transform) +
-                              std::get<0>(box_transform);
+                              std::get<0>(box_transform)
+                              + interf_offset; //to handle offset on interfaces
                 gbox_max[i] = (vectype{sched.patch_list.global[i].x_max, sched.patch_list.global[i].y_max,
                                        sched.patch_list.global[i].z_max} +
                                1) *
                                   std::get<1>(box_transform) +
-                              std::get<0>(box_transform);
+                              std::get<0>(box_transform)
+                              + interf_offset; //to handle offset on interfaces
             }
         }
 
@@ -157,6 +160,8 @@ template <class vectype, class field_type, class InterfaceSelector> class Interf
             auto interface_list = interface_list_buf.template get_access<sycl::access::mode::discard_write>(cgh);
 
             u64 cnt_patch = global_pcount;
+
+            vectype offset = interf_offset;
 
             cgh.parallel_for(sycl::range<1>(local_pcount), [=](sycl::item<1> item) {
                 u64 cur_patch_idx    = (u64)item.get_id(0);
@@ -190,7 +195,8 @@ template <class vectype, class field_type, class InterfaceSelector> class Interf
                                 cur_patch_id,
                                 test_patch_id,
                                 std::get<0>(box_interf),
-                                std::get<1>(box_interf)
+                                std::get<1>(box_interf),
+                                offset
                                 };
                             interface_ptr++;
                         }
@@ -198,7 +204,7 @@ template <class vectype, class field_type, class InterfaceSelector> class Interf
                 }
 
                 if (interface_ptr < global_pcount) {
-                    interface_list[{cur_patch_idx, interface_ptr}] = InterfaceComInternal{u64_max,u64_max,u64_max,u64_max,vectype{},vectype{}};
+                    interface_list[{cur_patch_idx, interface_ptr}] = InterfaceComInternal{u64_max,u64_max,u64_max,u64_max,vectype{},vectype{},vectype{}};
                 }
             });
         });
@@ -244,7 +250,7 @@ template <class vectype, class field_type, class InterfaceSelector> class Interf
         std::vector<InterfaceComm<vectype>> comm_vec;
         if (local_pcount != 0){
 
-            sycl::buffer<InterfaceComInternal, 2> interface_list_buf = get_interface_list_v1(sched, sptree, pfield);
+            sycl::buffer<InterfaceComInternal, 2> interface_list_buf = get_interface_list_v1(sched, sptree, pfield, {0,0,0});
 
             std::ofstream write_out(fout);
 

@@ -207,7 +207,7 @@ template <class Timestepper, class SimInfo> class SimulationSPH {
   public:
     static void run_sim() {
 
-        SchedulerMPI sched = SchedulerMPI(1e5, 1);
+        SchedulerMPI sched = SchedulerMPI(2e5, 1);
         sched.init_mpi_required_types();
 
         logfiles::open_log_files();
