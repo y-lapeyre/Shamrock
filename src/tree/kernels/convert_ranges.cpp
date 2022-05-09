@@ -25,8 +25,11 @@ void sycl_convert_cell_range<u32,f32_3>(sycl::queue & queue,
         auto pos_min_cell = buf_pos_min_cell->get_access<sycl::access::mode::read>(cgh);
         auto pos_max_cell = buf_pos_max_cell->get_access<sycl::access::mode::read>(cgh);
 
-        auto pos_min_cell_flt = buf_pos_min_cell_flt->get_access<sycl::access::mode::discard_write>(cgh);
-        auto pos_max_cell_flt = buf_pos_max_cell_flt->get_access<sycl::access::mode::discard_write>(cgh);
+        // auto pos_min_cell_flt = buf_pos_min_cell_flt->get_access<sycl::access::mode::discard_write>(cgh);
+        // auto pos_max_cell_flt = buf_pos_max_cell_flt->get_access<sycl::access::mode::discard_write>(cgh);
+
+        auto pos_min_cell_flt = sycl::accessor { *buf_pos_min_cell_flt, cgh, sycl::write_only, sycl::property::no_init{}};
+        auto pos_max_cell_flt = sycl::accessor { *buf_pos_max_cell_flt, cgh, sycl::write_only, sycl::property::no_init{}};
 
         cgh.parallel_for<class Convert_cell_range_u32_f32>(
             range_cell, [=](sycl::item<1> item) {
@@ -82,8 +85,11 @@ void sycl_convert_cell_range<u64,f32_3>(sycl::queue & queue,
         auto pos_min_cell = buf_pos_min_cell->get_access<sycl::access::mode::read>(cgh);
         auto pos_max_cell = buf_pos_max_cell->get_access<sycl::access::mode::read>(cgh);
 
-        auto pos_min_cell_flt = buf_pos_min_cell_flt->get_access<sycl::access::mode::discard_write>(cgh);
-        auto pos_max_cell_flt = buf_pos_max_cell_flt->get_access<sycl::access::mode::discard_write>(cgh);
+        // auto pos_min_cell_flt = buf_pos_min_cell_flt->get_access<sycl::access::mode::discard_write>(cgh);
+        // auto pos_max_cell_flt = buf_pos_max_cell_flt->get_access<sycl::access::mode::discard_write>(cgh);
+
+        auto pos_min_cell_flt = sycl::accessor { *buf_pos_min_cell_flt, cgh, sycl::write_only, sycl::property::no_init{}};
+        auto pos_max_cell_flt = sycl::accessor { *buf_pos_max_cell_flt, cgh, sycl::write_only, sycl::property::no_init{}};
 
         cgh.parallel_for<class Convert_cell_range_u64_f32>(
             range_cell, [=](sycl::item<1> item) {
@@ -139,8 +145,11 @@ void sycl_convert_cell_range<u32,f64_3>(sycl::queue & queue,
         auto pos_min_cell = buf_pos_min_cell->get_access<sycl::access::mode::read>(cgh);
         auto pos_max_cell = buf_pos_max_cell->get_access<sycl::access::mode::read>(cgh);
 
-        auto pos_min_cell_flt = buf_pos_min_cell_flt->get_access<sycl::access::mode::discard_write>(cgh);
-        auto pos_max_cell_flt = buf_pos_max_cell_flt->get_access<sycl::access::mode::discard_write>(cgh);
+        // auto pos_min_cell_flt = buf_pos_min_cell_flt->get_access<sycl::access::mode::discard_write>(cgh);
+        // auto pos_max_cell_flt = buf_pos_max_cell_flt->get_access<sycl::access::mode::discard_write>(cgh);
+
+        auto pos_min_cell_flt = sycl::accessor { *buf_pos_min_cell_flt, cgh, sycl::write_only, sycl::property::no_init{}};
+        auto pos_max_cell_flt = sycl::accessor { *buf_pos_max_cell_flt, cgh, sycl::write_only, sycl::property::no_init{}};
 
         cgh.parallel_for<class Convert_cell_range_u32_f64>(
             range_cell, [=](sycl::item<1> item) {
@@ -196,8 +205,11 @@ void sycl_convert_cell_range<u64,f64_3>(sycl::queue & queue,
         auto pos_min_cell = buf_pos_min_cell->get_access<sycl::access::mode::read>(cgh);
         auto pos_max_cell = buf_pos_max_cell->get_access<sycl::access::mode::read>(cgh);
 
-        auto pos_min_cell_flt = buf_pos_min_cell_flt->get_access<sycl::access::mode::discard_write>(cgh);
-        auto pos_max_cell_flt = buf_pos_max_cell_flt->get_access<sycl::access::mode::discard_write>(cgh);
+        // auto pos_min_cell_flt = buf_pos_min_cell_flt->get_access<sycl::access::mode::discard_write>(cgh);
+        // auto pos_max_cell_flt = buf_pos_max_cell_flt->get_access<sycl::access::mode::discard_write>(cgh);
+
+        auto pos_min_cell_flt = sycl::accessor { *buf_pos_min_cell_flt, cgh, sycl::write_only, sycl::property::no_init{}};
+        auto pos_max_cell_flt = sycl::accessor { *buf_pos_max_cell_flt, cgh, sycl::write_only, sycl::property::no_init{}};
 
         cgh.parallel_for<class Convert_cell_range_u64_f64>(
             range_cell, [=](sycl::item<1> item) {

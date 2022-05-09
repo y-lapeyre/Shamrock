@@ -131,7 +131,7 @@ std::tuple<u64,u64,u64,u64,u64,u64,u64,u64> SchedulerPatchList::split_patch(u64 
 
     p7.id_patch = _next_patch_id;
     _next_patch_id ++;
-
+    //TODO use emplace_back instead
     u64 idx_p1 = global.size();
     global.push_back(p1);
 

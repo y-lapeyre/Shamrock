@@ -1,6 +1,7 @@
 #pragma once
 
 
+
 #include "aliases.hpp"
 #include <array>
 #include <memory>
@@ -74,7 +75,7 @@ class Radix_Tree{public:
 
     inline Radix_Tree(sycl::queue & queue,std::tuple<vec3,vec3> treebox,std::unique_ptr<sycl::buffer<vec3>> & pos_buf){
         if(pos_buf->size() > i32_max-1){
-            throw std::runtime_error("number of element in patch above i32_max-1");
+            throw shamrock_exc("number of element in patch above i32_max-1");
         }
 
 
@@ -109,21 +110,17 @@ class Radix_Tree{public:
 
         // return a sycl buffer from reduc index map instead
         std::cout << "reduction_alg" << std::endl;
-        reduction_alg(queue, pos_buf->size(), buf_morton, 0, reduc_index_map, tree_leaf_count);
+        reduction_alg(queue, pos_buf->size(), buf_morton, 5, reduc_index_map, tree_leaf_count);
         
         std::cout << " -> " << pos_buf->size() << " " << buf_morton->size() << " " << tree_leaf_count << std::endl;
 
+        if(tree_leaf_count > 1){
+            buf_reduc_index_map = std::make_unique<sycl::buffer<u32>>(reduc_index_map.data(),reduc_index_map.size());
 
-        buf_reduc_index_map = std::make_unique<sycl::buffer<u32>>(reduc_index_map.data(),reduc_index_map.size());
+            std::cout << "sycl_morton_remap_reduction" << std::endl;
+            buf_tree_morton = std::make_unique<sycl::buffer<u_morton>>(tree_leaf_count);
 
-        std::cout << "sycl_morton_remap_reduction" << std::endl;
-        buf_tree_morton = std::make_unique<sycl::buffer<u_morton>>(tree_leaf_count);
-
-        sycl_morton_remap_reduction(queue, tree_leaf_count, buf_reduc_index_map, buf_morton, buf_tree_morton);
-
-
-
-        if(tree_leaf_count > 3){
+            sycl_morton_remap_reduction(queue, tree_leaf_count, buf_reduc_index_map, buf_morton, buf_tree_morton);
 
             tree_internal_count = tree_leaf_count-1;
 
@@ -136,8 +133,39 @@ class Radix_Tree{public:
             sycl_karras_alg(queue, tree_internal_count, buf_tree_morton, buf_lchild_id, buf_rchild_id, buf_lchild_flag, buf_rchild_flag, buf_endrange);
 
             one_cell_mode = false;
-        }else{
+        }else if(tree_leaf_count == 1){
+            //throw shamrock_exc("one cell mode is not implemented");
+            //TODO do some extensive test on one cell mode
             one_cell_mode = true;
+
+            tree_internal_count = 1;
+            tree_leaf_count = 2;
+            reduc_index_map.push_back(0);
+
+            buf_reduc_index_map = std::make_unique<sycl::buffer<u32>>(reduc_index_map.data(),reduc_index_map.size());
+
+            buf_lchild_id = std::make_unique<sycl::buffer<u32>>(tree_internal_count);
+            buf_rchild_id = std::make_unique<sycl::buffer<u32>>(tree_internal_count);
+            buf_lchild_flag = std::make_unique<sycl::buffer<u8>>(tree_internal_count);
+            buf_rchild_flag = std::make_unique<sycl::buffer<u8>>(tree_internal_count);
+            buf_endrange = std::make_unique<sycl::buffer<u32>>(tree_internal_count);
+
+            {    
+                auto rchild_id   = (buf_rchild_id  ->get_access<sycl::access::mode::discard_write>());
+                auto lchild_id   = (buf_lchild_id  ->get_access<sycl::access::mode::discard_write>());
+                auto rchild_flag = (buf_rchild_flag->get_access<sycl::access::mode::discard_write>());
+                auto lchild_flag = (buf_lchild_flag->get_access<sycl::access::mode::discard_write>());
+                auto endrange    = (buf_endrange   ->get_access<sycl::access::mode::discard_write>());
+
+                rchild_id[0] = 0;
+                lchild_id[0] = 1;
+                rchild_flag[0] = 1;
+                lchild_flag[0] = 1;
+                endrange[0] = 1;
+            }
+
+        }else{
+            throw shamrock_exc("empty patch should be skipped");
         }
     }
 
@@ -148,24 +176,51 @@ class Radix_Tree{public:
     std::unique_ptr<sycl::buffer<vec3>> buf_pos_max_cell_flt;
 
     inline void compute_cellvolume(sycl::queue & queue){
+        if(!one_cell_mode){
 
-        std::cout << "compute_cellvolume" << std::endl;
+            std::cout << "compute_cellvolume" << std::endl;
 
-        
-        buf_pos_min_cell = std::make_unique< sycl::buffer<vec3i>>(tree_internal_count + tree_leaf_count);
-        buf_pos_max_cell = std::make_unique< sycl::buffer<vec3i>>(tree_internal_count + tree_leaf_count);
+            
+            buf_pos_min_cell = std::make_unique< sycl::buffer<vec3i>>(tree_internal_count + tree_leaf_count);
+            buf_pos_max_cell = std::make_unique< sycl::buffer<vec3i>>(tree_internal_count + tree_leaf_count);
 
 
-        sycl_compute_cell_ranges(
-            queue, 
-            tree_leaf_count,
-            tree_internal_count, 
-            buf_tree_morton, 
-            buf_lchild_id, 
-            buf_rchild_id, 
-            buf_lchild_flag, 
-            buf_rchild_flag, 
-            buf_endrange, buf_pos_min_cell, buf_pos_max_cell);
+            sycl_compute_cell_ranges(
+                queue, 
+                tree_leaf_count,
+                tree_internal_count, 
+                buf_tree_morton, 
+                buf_lchild_id, 
+                buf_rchild_id, 
+                buf_lchild_flag, 
+                buf_rchild_flag, 
+                buf_endrange, buf_pos_min_cell, buf_pos_max_cell);
+
+        }else{
+            //throw shamrock_exc("one cell mode is not implemented");
+            //TODO do some extensive test on one cell mode
+
+            buf_pos_min_cell     = std::make_unique< sycl::buffer<vec3i>>(tree_internal_count + tree_leaf_count);
+            buf_pos_max_cell     = std::make_unique< sycl::buffer<vec3i>>(tree_internal_count + tree_leaf_count);
+
+            {
+                auto pos_min_cell = buf_pos_min_cell->template get_access<sycl::access::mode::discard_write>();
+                auto pos_max_cell = buf_pos_max_cell->template get_access<sycl::access::mode::discard_write>();
+
+                pos_min_cell[0] = {0};
+                pos_max_cell[0] = {morton_3d::morton_types<u_morton>::max_val};
+
+                pos_min_cell[1] = {0};
+                pos_max_cell[1] = {morton_3d::morton_types<u_morton>::max_val};
+
+                pos_min_cell[2] = {0};
+                pos_max_cell[2] = {0};
+
+
+            }
+            
+
+        }
 
 
         buf_pos_min_cell_flt = std::make_unique< sycl::buffer<vec3>>(tree_internal_count + tree_leaf_count);
@@ -184,8 +239,8 @@ class Radix_Tree{public:
 
     std::unique_ptr<sycl::buffer<flt>> buf_cell_interact_rad;
 
-
-    inline void compute_int_boxes(sycl::queue & queue,std::unique_ptr<sycl::buffer<flt>> & int_rad_buf){
+    template<u32 nvar = 1, u32 hoffset = 0>
+    inline void compute_int_boxes(sycl::queue & queue,std::unique_ptr<sycl::buffer<flt>> & int_rad_buf, flt tolerance){
 
         buf_cell_interact_rad = std::make_unique< sycl::buffer<flt>>(tree_internal_count + tree_leaf_count);
         sycl::range<1> range_leaf_cell{tree_leaf_count};
@@ -201,6 +256,8 @@ class Radix_Tree{public:
             auto cell_particle_ids = buf_reduc_index_map->template get_access<sycl::access::mode::read>(cgh);
             auto particle_index_map = buf_particle_index_map->template get_access<sycl::access::mode::read>(cgh);
 
+            flt tol = tolerance;
+
 
             cgh.parallel_for(
                 range_leaf_cell, [=](sycl::item<1> item) {
@@ -212,7 +269,7 @@ class Radix_Tree{public:
 
                     for(unsigned int id_s = min_ids; id_s < max_ids;id_s ++){
         
-                        f32 h_a = h[particle_index_map[id_s]];
+                        f32 h_a = h[particle_index_map[id_s]*nvar + hoffset]*tol;
                         h_tmp = (h_tmp > h_a ? h_tmp : h_a);
                         
                     }
@@ -373,6 +430,136 @@ namespace walker {
             }
         }
     }
+
+    template <class Rta, class Functor_int_cd, class Functor_iter, class Functor_iter_excl, class arr_type>
+    inline void rtree_for_fill_cache(Rta &acc,arr_type & cell_cache, Functor_int_cd &&func_int_cd) {
+
+        constexpr u32 cache_sz = cell_cache.size();
+        u32 cache_pos = 0;
+
+        auto push_in_cache = [&cell_cache,&cache_pos](u32 id){
+            cell_cache[cache_pos] = id;
+            cache_pos ++;
+        };
+
+        u32 stack_cursor = Rta::tree_depth - 1;
+        std::array<u32, Rta::tree_depth> id_stack;
+        id_stack[stack_cursor] = 0;
+
+        auto get_el_cnt_in_stack = [&]() -> u32{
+            return Rta::tree_depth - stack_cursor;
+        };
+
+        while ((stack_cursor < Rta::tree_depth) && (cache_pos + get_el_cnt_in_stack < cache_sz)) {
+
+            u32 current_node_id    = id_stack[stack_cursor];
+            id_stack[stack_cursor] = Rta::_nindex;
+            stack_cursor++;
+
+            bool cur_id_valid = func_int_cd(current_node_id);
+
+            if (cur_id_valid) {
+
+                // leaf and can interact => force
+                if (current_node_id >= acc.leaf_offset) {
+
+                    //can interact => add to cache
+                    push_in_cache(current_node_id);
+
+                    // can interact not leaf => stack
+                } else {
+
+                    u32 lid = acc.lchild_id[current_node_id] + acc.leaf_offset * acc.lchild_flag[current_node_id];
+                    u32 rid = acc.rchild_id[current_node_id] + acc.leaf_offset * acc.rchild_flag[current_node_id];
+
+                    id_stack[stack_cursor - 1] = rid;
+                    stack_cursor--;
+
+                    id_stack[stack_cursor - 1] = lid;
+                    stack_cursor--;
+                }
+            } else {
+                // grav
+                //.....
+            }
+        }
+
+        while (stack_cursor < Rta::tree_depth) {
+            u32 current_node_id    = id_stack[stack_cursor];
+            id_stack[stack_cursor] = Rta::_nindex;
+            stack_cursor++;
+            push_in_cache(current_node_id);
+        }
+
+        if(cache_pos < cache_sz){
+            push_in_cache(u32_max);
+        }
+    }
+
+    template <class Rta, class Functor_int_cd, class Functor_iter, class Functor_iter_excl, class arr_type>
+    inline void rtree_for(Rta &acc,arr_type & cell_cache, Functor_int_cd &&func_int_cd, Functor_iter &&func_it) {
+
+        constexpr u32 cache_sz = cell_cache.size();
+
+        std::array<u32, Rta::tree_depth> id_stack;
+
+        auto walk_step = [&](u32 start_id){
+            u32 stack_cursor = Rta::tree_depth - 1;
+            id_stack[stack_cursor] = start_id;
+
+            while (stack_cursor < Rta::tree_depth) {
+
+                u32 current_node_id    = id_stack[stack_cursor];
+                id_stack[stack_cursor] = Rta::_nindex;
+                stack_cursor++;
+
+                bool cur_id_valid = func_int_cd(current_node_id);
+
+                if (cur_id_valid) {
+
+                    // leaf and can interact => force
+                    if (current_node_id >= acc.leaf_offset) {
+
+                        // loop on particle indexes
+                        uint min_ids = acc.cell_index_map[current_node_id     -acc.leaf_offset];
+                        uint max_ids = acc.cell_index_map[current_node_id + 1 -acc.leaf_offset];
+
+                        for (unsigned int id_s = min_ids; id_s < max_ids; id_s++) {
+
+                            //recover old index before morton sort
+                            uint id_b = acc.particle_index_map[id_s];
+
+                            //iteration function
+                            func_it(id_b);
+                        }
+
+                        // can interact not leaf => stack
+                    } else {
+
+                        u32 lid = acc.lchild_id[current_node_id] + acc.leaf_offset * acc.lchild_flag[current_node_id];
+                        u32 rid = acc.rchild_id[current_node_id] + acc.leaf_offset * acc.rchild_flag[current_node_id];
+
+                        id_stack[stack_cursor - 1] = rid;
+                        stack_cursor--;
+
+                        id_stack[stack_cursor - 1] = lid;
+                        stack_cursor--;
+                    }
+                } else {
+                    // grav
+                    //...
+                }
+            }
+        };
+
+        for (u32 cache_pos = 0; cache_pos < cache_sz && cell_cache[cache_pos] != u32_max; cache_pos ++) {
+            walk_step(cache_pos);
+        }
+
+        
+    }
+
+    
 
 
 

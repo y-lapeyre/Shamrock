@@ -30,11 +30,22 @@
 #include <unordered_map>
 #include <vector>
 
+#include "interface_generator_impl.hpp"
+
 class InterfaceVolumeGenerator {
   public:
+
+    
+
     template <class vectype>
     static std::vector<std::unique_ptr<PatchData>> append_interface(sycl::queue &queue, PatchData & pdat_buf,
                                                   std::vector<vectype> boxs_min, std::vector<vectype> boxs_max);
+
+    template <class T, class vectype>
+    inline static std::vector<std::unique_ptr<std::vector<T>>> append_interface_field(sycl::queue &queue, PatchData & pdat_buf, std::vector<T> & pdat_cfield,
+                                                  std::vector<vectype> boxs_min, std::vector<vectype> boxs_max){
+        return impl::append_interface_field<T,vectype>(queue,pdat_buf,pdat_cfield,boxs_min,boxs_max);
+    }
 };
 
 
@@ -72,7 +83,7 @@ template <class vectype, class field_type, class InterfaceSelector> class Interf
         const u64 global_pcount = sched.patch_list.global.size();
 
         if (local_pcount == 0)
-            throw std::runtime_error("local patch count is zero this function can not run");
+            throw shamrock_exc("local patch count is zero this function can not run");
 
         sycl::buffer<u64> patch_ids_buf(local_pcount);
         sycl::buffer<vectype> local_box_min_buf(local_pcount);

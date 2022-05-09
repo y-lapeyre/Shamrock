@@ -19,23 +19,27 @@ inline void reatribute_particles<f32_3>(SchedulerMPI & sched, SerialPatchTree<f3
     bool err_id_in_newid = false;
     std::unordered_map<u64, sycl::buffer<u64>> newid_buf_map;
     for(auto & [id,pdat] : sched.patch_data.owned_data ){
-        std::unique_ptr<sycl::buffer<f32_3>> pos = std::make_unique<sycl::buffer<f32_3>>(pdat.pos_s.data(),pdat.pos_s.size());
+        if(pdat.pos_s.size() > 0){
 
-        newid_buf_map.insert({
-            id,
-            __compute_object_patch_owner<f32_3, class ComputeObejctPatchOwners_f32>(
-                hndl.get_queue_compute(0), 
-                *pos, 
-                sptree)});
+            std::unique_ptr<sycl::buffer<f32_3>> pos = std::make_unique<sycl::buffer<f32_3>>(pdat.pos_s.data(),pdat.pos_s.size());
 
-        pos.reset();
+            newid_buf_map.insert({
+                id,
+                __compute_object_patch_owner<f32_3, class ComputeObejctPatchOwners_f32>(
+                    hndl.get_queue_compute(0), 
+                    *pos, 
+                    sptree)});
 
-        
-        {
-            auto nid = newid_buf_map.at(id).get_access<sycl::access::mode::read>();
-            for(u32 i = 0 ; i < pdat.pos_s.size() ; i++){
-                err_id_in_newid = err_id_in_newid || (nid[i] == u64_max);
+            pos.reset();
+
+            
+            {
+                auto nid = newid_buf_map.at(id).get_access<sycl::access::mode::read>();
+                for(u32 i = 0 ; i < pdat.pos_s.size() ; i++){
+                    err_id_in_newid = err_id_in_newid || (nid[i] == u64_max);
+                }
             }
+
         }
         
     }
@@ -78,15 +82,18 @@ inline void reatribute_particles<f32_3>(SchedulerMPI & sched, SerialPatchTree<f3
         sptree.attach_buf();
 
         for(auto & [id,pdat] : sched.patch_data.owned_data ){
-            std::unique_ptr<sycl::buffer<f32_3>> pos = std::make_unique<sycl::buffer<f32_3>>(pdat.pos_s.data(),pdat.pos_s.size());
+            if(pdat.pos_s.size() > 0){
+                std::unique_ptr<sycl::buffer<f32_3>> pos = std::make_unique<sycl::buffer<f32_3>>(pdat.pos_s.data(),pdat.pos_s.size());
 
-            newid_buf_map.at(id)=
-                __compute_object_patch_owner<f32_3, class ComputeObejctPatchOwners2>(
-                    hndl.get_queue_compute(0), 
-                    *pos, 
-                    sptree);
+                newid_buf_map.at(id)=
+                    __compute_object_patch_owner<f32_3, class ComputeObejctPatchOwners2>(
+                        hndl.get_queue_compute(0), 
+                        *pos, 
+                        sptree);
 
-            pos.reset();
+                pos.reset();
+
+            }
             
         }
         
@@ -153,6 +160,26 @@ inline void reatribute_particles<f32_3>(SchedulerMPI & sched, SerialPatchTree<f3
             //std::cout << "    " << send_id << " len : " << pdat->pos_s.size() << "\n"; 
 
             PatchData & pdat_recv = sched.patch_data.owned_data[recv_id];
+
+            /*{
+                std::cout << "recv : " << recv_id << " <- " << send_id << std::endl;
+
+                std::cout << "cnt : " << pdat->pos_s.size() << std::endl;
+
+                for(f32 a : pdat->U1_s){
+                    std :: cout << a << " ";
+                }std::cout << std::endl;
+
+                for (u32 i = 0; i < pdat->pos_s.size(); i++) {
+
+                    f32 val = pdat->U1_s[i*2 + 0];
+                    if(val == 0){
+                        std::cout << "----- fail id " << i  << " " << val << std::endl;
+                        int a ;
+                        std::cin >> a;
+                    }
+                }
+            }*/
 
             //*
             pdat_recv.insert_particles(

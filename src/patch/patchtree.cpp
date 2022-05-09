@@ -154,7 +154,7 @@ void PatchTree::split_node(u64 id){
 void PatchTree::merge_node_dm1(u64 idparent){
 
     if(!tree[idparent].child_are_all_leafs ){
-        throw std::runtime_error("node should be parent of only leafs");
+        throw shamrock_exc("node should be parent of only leafs");
     }
     
     leaf_key.erase(tree[idparent].childs_id[0]);

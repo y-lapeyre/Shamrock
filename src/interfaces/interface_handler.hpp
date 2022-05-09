@@ -17,13 +17,19 @@
 #include "aliases.hpp"
 #include "interfaces/interface_generator.hpp"
 #include "io/logs.hpp"
+#include "patch/patchdata_buffer.hpp"
 #include "patchscheduler/scheduler_mpi.hpp"
+#include "sph/sphpatch.hpp"
+
+#include "interface_handler_impl.hpp"
 
 /**
  * @brief 
  * 
  * @tparam vectype 
  * @tparam primtype 
+ * //TODO check that for periodic BC case : if a patch has itself as interface, is there any bug because of map {map } repr
+ * //TODO put the flag choice thing in a separate function to avoid recomputation
  */
 template <class vectype, class primtype> class InterfaceHandler {
 
@@ -65,6 +71,20 @@ template <class vectype, class primtype> class InterfaceHandler {
      */
     void comm_interfaces(SchedulerMPI &sched);
 
+
+    template <class T> PatchComputeFieldInterfaces<T> comm_interfaces_field(SchedulerMPI &sched,PatchComputeField<T> &pcomp_field) {
+
+        PatchComputeFieldInterfaces<T> interface_field_map;
+
+        auto t = timings::start_timer("comm interfaces", timings::timingtype::function);
+        impl::comm_interfaces_field<T,vectype>(sched, pcomp_field, interface_comm_list, interface_field_map.interface_map);
+        t.stop();
+
+        return interface_field_map;
+    }
+
+    
+
     /**
      * @brief Get the interface list object
      * 
@@ -74,6 +94,9 @@ template <class vectype, class primtype> class InterfaceHandler {
     inline const std::vector<std::tuple<u64, std::unique_ptr<PatchData>>> &get_interface_list(u64 key) {
         return interface_map[key];
     }
+
+
+    
 
     /**
      * @brief 
@@ -88,4 +111,49 @@ template <class vectype, class primtype> class InterfaceHandler {
             }
         }
     }
+
+
+
+    template<class Function>
+    inline void for_each_interface(u64 patch_id,sycl::queue & queue, Function && fct){
+
+        const std::vector<std::tuple<u64, std::unique_ptr<PatchData>>> & p_interf_lst = get_interface_list(patch_id);
+
+        for (auto & [int_pid, pdat_ptr] : p_interf_lst) {
+
+            if(pdat_ptr->pos_s.size() + pdat_ptr->pos_d.size() > 0){
+
+                PatchDataBuffer pdat_buf = attach_to_patchData(*pdat_ptr);
+
+                auto t = patchdata::sph::get_patchdata_BBAA<vectype>(queue, pdat_buf);
+
+                fct(patch_id,int_pid,pdat_buf,t);
+            }
+        }
+
+    }
+
 };
+
+
+
+template <> void InterfaceHandler<f32_3, f32>::comm_interfaces(SchedulerMPI &sched) {
+    auto t = timings::start_timer("comm interfaces", timings::timingtype::function);
+    impl::comm_interfaces<f32_3, f32>(sched, interface_comm_list, interface_map);
+    t.stop();
+}
+
+template <> void InterfaceHandler<f64_3, f64>::comm_interfaces(SchedulerMPI &sched) {
+    auto t = timings::start_timer("comm interfaces", timings::timingtype::function);
+    impl::comm_interfaces<f64_3, f64>(sched, interface_comm_list, interface_map);
+    t.stop();
+}
+
+
+
+
+
+
+
+
+

@@ -12,6 +12,7 @@
 #include "patchdata.hpp"
 
 #include <algorithm>
+#include <array>
 #include <exception>
 #include <stdexcept>
 #include <vector>
@@ -37,7 +38,7 @@ void patchdata_layout::set(u32 arg_nVarpos_s, u32 arg_nVarpos_d, u32 arg_nVarU1_
                 u32 arg_nVarU3_d) {
 
     if(arg_nVarpos_s + arg_nVarpos_d != 1) 
-        throw std::runtime_error("nVarpos_s + nVarpos_d should be equal to 1");
+        throw shamrock_exc("nVarpos_s + nVarpos_d should be equal to 1");
 
     patchdata_layout::nVarpos_s = arg_nVarpos_s;
     patchdata_layout::nVarpos_d = arg_nVarpos_d;
@@ -265,29 +266,43 @@ void PatchData::extract_particle(u32 pidx,
     const u64 idx_U1_d  = pidx * patchdata_layout::nVarU1_d ;
     const u64 idx_U3_s  = pidx * patchdata_layout::nVarU3_s ;
     const u64 idx_U3_d  = pidx * patchdata_layout::nVarU3_d ;
- 
+
+    const u64 idx_out_pos_s = out_pos_s.size();
+    const u64 idx_out_pos_d = out_pos_d.size();
+    const u64 idx_out_U1_s  = out_U1_s .size();
+    const u64 idx_out_U1_d  = out_U1_d .size();
+    const u64 idx_out_U3_s  = out_U3_s .size();
+    const u64 idx_out_U3_d  = out_U3_d .size();
+
+    out_pos_s.resize(idx_out_pos_s + patchdata_layout::nVarpos_s);
+    out_pos_d.resize(idx_out_pos_d + patchdata_layout::nVarpos_d);
+    out_U1_s .resize(idx_out_U1_s  + patchdata_layout::nVarU1_s );
+    out_U1_d .resize(idx_out_U1_d  + patchdata_layout::nVarU1_d );
+    out_U3_s .resize(idx_out_U3_s  + patchdata_layout::nVarU3_s );
+    out_U3_d .resize(idx_out_U3_d  + patchdata_layout::nVarU3_d );
+
     for(u32 i = patchdata_layout::nVarpos_s-1 ; i < patchdata_layout::nVarpos_s ; i--){
-        out_pos_s.push_back(fast_extract(idx_pos_s + i, pos_s));
+        out_pos_s[idx_out_pos_s + i] = (fast_extract(idx_pos_s + i, pos_s));
     }
 
     for(u32 i = patchdata_layout::nVarpos_d-1 ; i < patchdata_layout::nVarpos_d ; i--){
-        out_pos_d.push_back(fast_extract(idx_pos_d + i, pos_d));
+        out_pos_d[idx_out_pos_d + i] = (fast_extract(idx_pos_d + i, pos_d));
     }
 
     for(u32 i = patchdata_layout::nVarU1_s-1 ; i < patchdata_layout::nVarU1_s ; i--){
-        out_U1_s.push_back(fast_extract(idx_U1_s + i, U1_s));
+        out_U1_s[idx_out_U1_s + i] = (fast_extract(idx_U1_s + i, U1_s));
     }
 
     for(u32 i = patchdata_layout::nVarU1_d-1 ; i < patchdata_layout::nVarU1_d ; i--){
-        out_U1_d.push_back(fast_extract(idx_U1_d + i, U1_d));
+        out_U1_d[idx_out_U1_d + i] = (fast_extract(idx_U1_d + i, U1_d));
     }
 
     for(u32 i = patchdata_layout::nVarU3_s-1 ; i < patchdata_layout::nVarU3_s ; i--){
-        out_U3_s.push_back(fast_extract(idx_U3_s + i, U3_s));
+        out_U3_s[idx_out_U3_s + i] = (fast_extract(idx_U3_s + i, U3_s));
     }
 
     for(u32 i = patchdata_layout::nVarU3_d-1 ; i < patchdata_layout::nVarU3_d ; i--){
-        out_U3_d.push_back(fast_extract(idx_U3_d + i, U3_d));
+        out_U3_d[idx_out_U3_d + i] = (fast_extract(idx_U3_d + i, U3_d));
     }
 
 }

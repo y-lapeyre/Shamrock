@@ -22,11 +22,13 @@
 template<class type>
 class PatchField{public:
 
+    using T = type;
+
     std::vector<type> local_nodes_value;
 
     std::vector<type> global_values;
 
-    inline void build_global(MPI_Datatype dtype){
+    inline void build_global(MPI_Datatype & dtype){
         mpi_handler::vector_allgatherv(local_nodes_value, dtype, global_values, dtype, MPI_COMM_WORLD);
     }
 
