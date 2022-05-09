@@ -1,7 +1,6 @@
 #pragma once
 
-#include "CL/sycl/buffer.hpp"
-#include "CL/sycl/builtins.hpp"
+
 #include "algs/syclreduction.hpp"
 #include "aliases.hpp"
 #include "interfaces/interface_handler.hpp"
@@ -532,11 +531,11 @@ class SPHTimestepperLeapfrog{public:
 
             std::unique_ptr<sycl::buffer<f32>> buf_cfl = std::make_unique<sycl::buffer<f32>>(npart_patch);
 
-            cl::sycl::range<1> range_npart{npart_patch};
+            sycl::range<1> range_npart{npart_patch};
 
             
 
-            auto ker_Reduc_step_mincfl = [&](cl::sycl::handler &cgh) {
+            auto ker_Reduc_step_mincfl = [&](sycl::handler &cgh) {
 
                 auto arr = buf_cfl->get_access<sycl::access::mode::discard_write>(cgh);
 
@@ -554,7 +553,7 @@ class SPHTimestepperLeapfrog{public:
                 constexpr f32 C_cour = 0.3;
                 constexpr f32 C_force = 0.3;
 
-                cgh.parallel_for<class Initial_dtcfl>( range_npart, [=](cl::sycl::item<1> item) {
+                cgh.parallel_for<class Initial_dtcfl>( range_npart, [=](sycl::item<1> item) {
 
                     u32 i = (u32) item.get_id(0);
                     

@@ -1,7 +1,7 @@
 #pragma once
 
 
-#include "CL/sycl/access/access.hpp"
+
 #include "aliases.hpp"
 #include <array>
 #include <memory>
@@ -208,10 +208,10 @@ class Radix_Tree{public:
                 auto pos_max_cell = buf_pos_max_cell->template get_access<sycl::access::mode::discard_write>();
 
                 pos_min_cell[0] = {0};
-                pos_max_cell[0] = morton_3d::morton_types<u_morton>::max_vec;
+                pos_max_cell[0] = {morton_3d::morton_types<u_morton>::max_val};
 
                 pos_min_cell[1] = {0};
-                pos_max_cell[1] = morton_3d::morton_types<u_morton>::max_vec;
+                pos_max_cell[1] = {morton_3d::morton_types<u_morton>::max_val};
 
                 pos_min_cell[2] = {0};
                 pos_max_cell[2] = {0};

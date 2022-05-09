@@ -27,7 +27,9 @@ namespace morton_3d {
         using int_vec_repr_base = u16;
         using int_vec_repr = u16_3;
         static constexpr int_vec_repr_base max_val = 1024-1;
-        static constexpr int_vec_repr max_vec = int_vec_repr{max_val};
+
+        //not possible yet in hipsycl
+        //static constexpr int_vec_repr max_vec = int_vec_repr{max_val};
     };
 
     template<>
@@ -35,7 +37,9 @@ namespace morton_3d {
         using int_vec_repr_base = u32;
         using int_vec_repr = u32_3;
         static constexpr int_vec_repr_base max_val = 2097152-1;
-        static constexpr int_vec_repr max_vec = int_vec_repr{max_val};
+
+        //not possible yet in hipsycl
+        //static constexpr int_vec_repr max_vec = int_vec_repr{max_val};
     };
 
 
