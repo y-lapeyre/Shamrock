@@ -39,7 +39,7 @@ class InterfaceVolumeGenerator {
 
     template <class vectype>
     static std::vector<std::unique_ptr<PatchData>> append_interface(sycl::queue &queue, PatchData & pdat_buf,
-                                                  std::vector<vectype> boxs_min, std::vector<vectype> boxs_max);
+                                                  std::vector<vectype> boxs_min, std::vector<vectype> boxs_max,vectype add_offset);
 
     template <class T, class vectype>
     inline static std::vector<std::unique_ptr<std::vector<T>>> append_interface_field(sycl::queue &queue, PatchData & pdat_buf, std::vector<T> & pdat_cfield,
@@ -58,6 +58,7 @@ struct InterfaceComm{
     u64 receiver_patch_id;
     vectype interf_box_min;
     vectype interf_box_max;
+    vectype interf_offset;
 };
 
 template <class vectype, class field_type, class InterfaceSelector> class Interface_Generator {
@@ -161,7 +162,7 @@ template <class vectype, class field_type, class InterfaceSelector> class Interf
 
             u64 cnt_patch = global_pcount;
 
-            vectype offset = interf_offset;
+            vectype offset = -interf_offset;
 
             cgh.parallel_for(sycl::range<1>(local_pcount), [=](sycl::item<1> item) {
                 u64 cur_patch_idx    = (u64)item.get_id(0);
@@ -240,7 +241,7 @@ template <class vectype, class field_type, class InterfaceSelector> class Interf
      * @param pfield the interaction radius field
      */
     inline static std::vector<InterfaceComm<vectype>> get_interfaces_comm_list(SchedulerMPI &sched, SerialPatchTree<vectype> &sptree,
-                                           PatchField<typename vectype::element_type> pfield,std::string fout) {
+                                           PatchField<typename vectype::element_type> pfield,std::string fout,bool periodic) {
 
         SyCLHandler &hndl = SyCLHandler::get_instance();
 
@@ -250,50 +251,78 @@ template <class vectype, class field_type, class InterfaceSelector> class Interf
         std::vector<InterfaceComm<vectype>> comm_vec;
         if (local_pcount != 0){
 
-            sycl::buffer<InterfaceComInternal, 2> interface_list_buf = get_interface_list_v1(sched, sptree, pfield, {0,0,0});
-
             std::ofstream write_out(fout);
 
-            {
-                auto interface_list = interface_list_buf.template get_access<sycl::access::mode::read>();
 
-                for (u64 i = 0; i < local_pcount; i++) {
-                    //std::cout << "- " << sched.patch_list.local[i].id_patch << " : ";
-                    for (u64 j = 0; j < global_pcount; j++) {
-                        if (interface_list[{i, j}].sender_patch_id == u64_max)
-                            break;
-                        // std::cout << "(" << sched.patch_list.id_patch_to_global_idx[interface_list[{i, j}].sender_patch_id] << ","
-                        //         << interface_list[{i, j}].global_patch_idx_recv << ") ";
+            auto add_interfaces = [&](vectype offset){
+                sycl::buffer<InterfaceComInternal, 2> interface_list_buf = get_interface_list_v1(sched, sptree, pfield, offset);
+                {
+                    auto interface_list = interface_list_buf.template get_access<sycl::access::mode::read>();
 
-                        InterfaceComInternal tmp = interface_list[{i, j}];
-                        
-                        comm_vec.push_back(InterfaceComm<vectype>{
-                                sched.patch_list.id_patch_to_global_idx[tmp.sender_patch_id],
-                                tmp.global_patch_idx_recv,
-                                tmp.sender_patch_id,
-                                tmp.receiver_patch_id,
-                                tmp.interf_box_min,
-                                tmp.interf_box_max
-                            });
+                    for (u64 i = 0; i < local_pcount; i++) {
+                        //std::cout << "- " << sched.patch_list.local[i].id_patch << " : ";
+                        for (u64 j = 0; j < global_pcount; j++) {
+                            if (interface_list[{i, j}].sender_patch_id == u64_max)
+                                break;
+                            // std::cout << "(" << sched.patch_list.id_patch_to_global_idx[interface_list[{i, j}].sender_patch_id] << ","
+                            //         << interface_list[{i, j}].global_patch_idx_recv << ") ";
 
-                        write_out << 
-                            interface_list[{i, j}].local_patch_idx_send << "|" <<
-                            interface_list[{i, j}].global_patch_idx_recv << "|" <<
-                            interface_list[{i, j}].sender_patch_id << "|" <<
-                            interface_list[{i, j}].receiver_patch_id << "|" <<
-                            interface_list[{i, j}].interf_box_min.x() << "|" <<
-                            interface_list[{i, j}].interf_box_max.x() << "|" << 
-                            interface_list[{i, j}].interf_box_min.y() << "|" <<
-                            interface_list[{i, j}].interf_box_max.y() << "|" << 
-                            interface_list[{i, j}].interf_box_min.z() << "|" <<
-                            interface_list[{i, j}].interf_box_max.z() << "|" << "\n";
+                            InterfaceComInternal tmp = interface_list[{i, j}];
+                            
+                            comm_vec.push_back(InterfaceComm<vectype>{
+                                    sched.patch_list.id_patch_to_global_idx[tmp.sender_patch_id],
+                                    tmp.global_patch_idx_recv,
+                                    tmp.sender_patch_id,
+                                    tmp.receiver_patch_id,
+                                    tmp.interf_box_min,
+                                    tmp.interf_box_max,
+                                    tmp.interf_offset
+                                });
+
+                            write_out << 
+                                interface_list[{i, j}].local_patch_idx_send << "|" <<
+                                interface_list[{i, j}].global_patch_idx_recv << "|" <<
+                                interface_list[{i, j}].sender_patch_id << "|" <<
+                                interface_list[{i, j}].receiver_patch_id << "|" <<
+                                interface_list[{i, j}].interf_box_min.x() << "|" <<
+                                interface_list[{i, j}].interf_box_max.x() << "|" << 
+                                interface_list[{i, j}].interf_box_min.y() << "|" <<
+                                interface_list[{i, j}].interf_box_max.y() << "|" << 
+                                interface_list[{i, j}].interf_box_min.z() << "|" <<
+                                interface_list[{i, j}].interf_box_max.z() << "|" <<
+                                interface_list[{i, j}].interf_offset.x() << "|" << 
+                                interface_list[{i, j}].interf_offset.y() << "|" <<
+                                interface_list[{i, j}].interf_offset.z() << "|" << "\n";
 
 
+                        }
+                        //std::cout << std::endl;
                     }
-                    //std::cout << std::endl;
-                }
 
+                }
+            };
+
+
+            if (! periodic) {
+                add_interfaces({0,0,0});
+            }else {
+                auto [min_box, max_box] = sched.get_box_volume<vectype>();
+                vectype offset_base = max_box - min_box;
+
+                for (i32 ix : {-1,0,1}) {
+                for (i32 iy : {-1,0,1}) {
+                for (i32 iz : {-1,0,1}) {
+                    add_interfaces({
+                        offset_base.x()*ix,
+                        offset_base.y()*iy,
+                        offset_base.z()*iz,
+                    });
+                }
+                }
+                }
             }
+
+            
 
             write_out.close();
         }

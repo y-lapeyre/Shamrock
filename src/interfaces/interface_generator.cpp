@@ -19,7 +19,7 @@
 template <>
 std::vector<std::unique_ptr<PatchData>> InterfaceVolumeGenerator::append_interface<f32_3>(sycl::queue &queue, PatchData & pdat,
                                                                         std::vector<f32_3> boxs_min,
-                                                                        std::vector<f32_3> boxs_max) {
+                                                                        std::vector<f32_3> boxs_max,f32_3 add_offset) {
 
 
     std::vector<u8> flag_choice = impl::get_flag_choice(queue, pdat, boxs_min, boxs_max);
@@ -39,7 +39,7 @@ std::vector<std::unique_ptr<PatchData>> InterfaceVolumeGenerator::append_interfa
         for (u32 idx = 0; idx < pdat.pos_s.size(); idx++) {
             if (flag_choice[idx] < pdat_vec.size()) {
 
-                pdat_vec[flag_choice[idx]]->pos_s.push_back(pdat.pos_s[idx]);
+                pdat_vec[flag_choice[idx]]->pos_s.push_back(pdat.pos_s[idx] + add_offset);
                 for (u32 j = 0; j < patchdata_layout::nVarU1_s; j++) {
                     pdat_vec[flag_choice[idx]]->U1_s.push_back(pdat.U1_s[idx * patchdata_layout::nVarU1_s + j]);
                 }
@@ -64,7 +64,7 @@ std::vector<std::unique_ptr<PatchData>> InterfaceVolumeGenerator::append_interfa
 template <>
 std::vector<std::unique_ptr<PatchData>> InterfaceVolumeGenerator::append_interface<f64_3>(sycl::queue &queue, PatchData & pdat,
                                                                         std::vector<f64_3> boxs_min,
-                                                                        std::vector<f64_3> boxs_max) {
+                                                                        std::vector<f64_3> boxs_max,f64_3 add_offset) {
 
     std::vector<u8> flag_choice = impl::get_flag_choice(queue, pdat, boxs_min, boxs_max);
     
@@ -85,7 +85,7 @@ std::vector<std::unique_ptr<PatchData>> InterfaceVolumeGenerator::append_interfa
             if (flag_choice[idx] < pdat_vec.size()) {
 
 
-                pdat_vec[flag_choice[idx]]->pos_d.push_back(pdat.pos_d[idx]);
+                pdat_vec[flag_choice[idx]]->pos_d.push_back(pdat.pos_d[idx] + add_offset);
                 for (u32 j = 0; j < patchdata_layout::nVarU1_s; j++) {
                     pdat_vec[flag_choice[idx]]->U1_s.push_back(pdat.U1_s[idx * patchdata_layout::nVarU1_s + j]);
                 }

@@ -3,6 +3,7 @@
 
 #include "algs/syclreduction.hpp"
 #include "aliases.hpp"
+#include "hipSYCL/sycl/libkernel/builtins.hpp"
 #include "interfaces/interface_handler.hpp"
 #include "interfaces/interface_selector.hpp"
 #include "io/logs.hpp"
@@ -500,6 +501,43 @@ inline void swap_a_field(sycl::queue &queue, u32 npart,
 }
 
 
+template<class flt>
+inline void position_modulo(sycl::queue &queue, u32 npart, 
+    std::unique_ptr<sycl::buffer<sycl::vec<flt, 3>>> &buf_xyz,
+    std::tuple<sycl::vec<flt, 3>,sycl::vec<flt, 3>> box){
+
+    using vec3 = sycl::vec<flt, 3>;
+
+    sycl::range<1> range_npart{npart};
+
+    auto ker_predict_step = [&](sycl::handler &cgh) {
+        auto xyz = buf_xyz->template get_access<sycl::access::mode::read_write>(cgh);
+
+        vec3 box_min = std::get<0>(box);
+        vec3 box_max = std::get<1>(box);
+        vec3 delt = box_max - box_min;
+
+        // Executing kernel
+        cgh.parallel_for(range_npart, [=](sycl::item<1> item) {
+            u32 gid = (u32)item.get_id();
+
+            vec3 r = xyz[gid] - box_min;
+
+            r = sycl::fmod(r,delt);
+            r+= delt;
+            r = sycl::fmod(r,delt);
+            r+= box_min;
+
+            xyz[gid] = r;
+
+        });
+    };
+
+    queue.submit(ker_predict_step);
+
+}
+
+
 
 template<class DataLayout>
 class SPHTimestepperLeapfrog{public:
@@ -516,6 +554,11 @@ class SPHTimestepperLeapfrog{public:
     using DU3 = typename DataLayout::template U3<pos_prec>::T;
 
     inline void step(SchedulerMPI &sched){
+
+
+        bool periodic_bc = true;
+
+
         SyCLHandler &hndl = SyCLHandler::get_instance();
 
 
@@ -606,6 +649,10 @@ class SPHTimestepperLeapfrog{public:
                 pdat_buf.element_count, 
                 pdat_buf.get_U3<pos_vec>());
 
+            if (periodic_bc) {
+                position_modulo<pos_prec>(hndl.get_queue_compute(0), pdat_buf.element_count, pdat_buf.get_pos<pos_vec>(), sched.get_box_volume<pos_vec>());
+            }
+
         });
 
         /*
@@ -635,7 +682,7 @@ class SPHTimestepperLeapfrog{public:
 
         
         std::cout << "particle reatribution" << std::endl;
-        reatribute_particles(sched, sptree);
+        reatribute_particles(sched, sptree,periodic_bc);
 
         /*
 
@@ -689,8 +736,8 @@ class SPHTimestepperLeapfrog{public:
 
 
         InterfaceHandler<pos_vec, pos_prec> interface_hndl;
-        interface_hndl.template compute_interface_list<InterfaceSelector_SPH<pos_vec, pos_prec>>(sched, sptree, h_field);
-        interface_hndl.comm_interfaces(sched);
+        interface_hndl.template compute_interface_list<InterfaceSelector_SPH<pos_vec, pos_prec>>(sched, sptree, h_field,periodic_bc);
+        interface_hndl.comm_interfaces(sched,periodic_bc);
 
 
 
@@ -1012,9 +1059,9 @@ class SPHTimestepperLeapfrog{public:
         omega_field.to_map();
 
         std::cout << "echange interface hnew" << std::endl;
-        PatchComputeFieldInterfaces<pos_prec> hnew_field_interfaces = interface_hndl.template comm_interfaces_field<pos_prec>(sched,hnew_field);
+        PatchComputeFieldInterfaces<pos_prec> hnew_field_interfaces = interface_hndl.template comm_interfaces_field<pos_prec>(sched,hnew_field,periodic_bc);
         std::cout << "echange interface omega" << std::endl;
-        PatchComputeFieldInterfaces<pos_prec> omega_field_interfaces = interface_hndl.template comm_interfaces_field<pos_prec>(sched,omega_field);
+        PatchComputeFieldInterfaces<pos_prec> omega_field_interfaces = interface_hndl.template comm_interfaces_field<pos_prec>(sched,omega_field,periodic_bc);
 
         std::unordered_map<u64, IntMergedPatchComputeField<f32>> hnew_field_merged;
         make_merge_patches_comp_field<f32>(sched, hnew_field, hnew_field_interfaces, hnew_field_merged);

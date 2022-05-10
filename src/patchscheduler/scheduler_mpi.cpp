@@ -80,7 +80,7 @@ std::tuple<f32_3,f32_3> SchedulerMPI::get_box_tranform(){
 
 template<>
 std::tuple<f64_3,f64_3> SchedulerMPI::get_box_tranform(){
-    if(patchdata_layout::nVarpos_s == 0) throw shamrock_exc("cannot query single precision box, position is currently double precision");
+    if(patchdata_layout::nVarpos_d == 0) throw shamrock_exc("cannot query double precision box, position is currently single precision");
 
     f64_3 translate_factor = patch_data.sim_box.min_box_sim_d;
     f64_3 scale_factor = (patch_data.sim_box.max_box_sim_d - patch_data.sim_box.min_box_sim_d)/HilbertLB::max_box_sz;
@@ -88,6 +88,20 @@ std::tuple<f64_3,f64_3> SchedulerMPI::get_box_tranform(){
     return {translate_factor,scale_factor};
 }
 
+
+template<>
+std::tuple<f32_3,f32_3> SchedulerMPI::get_box_volume(){
+    if(patchdata_layout::nVarpos_s == 0) throw shamrock_exc("cannot query single precision box, position is currently double precision");
+
+    return {patch_data.sim_box.min_box_sim_s,patch_data.sim_box.max_box_sim_s};
+}
+
+template<>
+std::tuple<f64_3,f64_3> SchedulerMPI::get_box_volume(){
+    if(patchdata_layout::nVarpos_d == 0) throw shamrock_exc("cannot query double precision box, position is currently single precision");
+
+    return {patch_data.sim_box.min_box_sim_d,patch_data.sim_box.max_box_sim_d};
+}
 
 
 //TODO clean the output of this function

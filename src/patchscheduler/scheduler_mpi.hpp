@@ -86,6 +86,9 @@ class SchedulerMPI{public:
     template<class vectype>
     std::tuple<vectype,vectype> get_box_tranform();
 
+    template<class vectype>
+    std::tuple<vectype,vectype> get_box_volume();
+
     inline bool should_resize_box(bool node_in){
         u16 tmp = node_in;
         u16 out = 0;
