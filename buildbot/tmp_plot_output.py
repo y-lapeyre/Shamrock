@@ -96,7 +96,14 @@ def get_plot_patchdata(filename):
     points[:,2] = np.array(dic_filtered["z"])
 
     point_cloud = pv.PolyData(points)
-    point_cloud["hpart"] = np.array(dic_filtered["h"])
+
+    h = np.array(dic_filtered["h"])
+    hfac = 1.2
+    m = 1e-5
+
+
+    point_cloud["hpart"] = h
+    point_cloud["rho"] = m*(hfac/h)*(hfac/h)*(hfac/h)
     #point_cloud.plot(eye_dome_lighting=True)
     #plotter.add_mesh(point_cloud,scalars='hpart', cmap="viridis", render_points_as_spheres=True)
 
@@ -139,10 +146,75 @@ def make_gif():
     plotter.open_gif("out.gif")
     for f in frame:
         for p in f:
-            plotter.add_mesh(p,scalars='hpart', cmap="viridis", render_points_as_spheres=True)
+            plotter.add_mesh(p,scalars='hpart', cmap="viridis",clim=[0.0150,0.03], render_points_as_spheres=True)
         plotter.show_grid()
         plotter.write_frame()
         plotter.clear()
+    plotter.close()
+
+def make_gif_with_load():
+
+    plotter = pv.Plotter(window_size=([1920, 1080]),notebook=False, off_screen=True)
+    plotter.open_gif("out.gif")
+
+    idx = 0
+
+    while True : 
+        file_list = glob.glob("./step"+str(idx)+"/patchdata*")
+        print(file_list)
+
+        if len(file_list) == 0 :
+            break
+
+
+        tmp = []
+
+        for i in file_list:
+            print("plotting : {}".format(i))
+            tmp.append(get_plot_patchdata(i))
+
+        idx = idx + 1
+
+        for p in tmp:
+            plotter.add_mesh(p,scalars='rho', cmap="viridis", render_points_as_spheres=True,clim=[1.5,3])
+        plotter.show_grid()
+        plotter.write_frame()
+        plotter.clear()
+
+
+    plotter.close()
+
+
+def make_movie_with_load():
+
+    plotter = pv.Plotter(window_size=([1920, 1080]),notebook=False, off_screen=True)
+    plotter.open_movie("out.mp4")
+
+    idx = 0
+
+    while True : 
+        file_list = glob.glob("./step"+str(idx)+"/patchdata*")
+        print(file_list)
+
+        if len(file_list) == 0 :
+            break
+
+
+        tmp = []
+
+        for i in file_list:
+            print("plotting : {}".format(i))
+            tmp.append(get_plot_patchdata(i))
+
+        idx = idx + 1
+
+        for p in tmp:
+            plotter.add_mesh(p,scalars='rho', cmap="viridis", render_points_as_spheres=True,clim=[1.5,3])
+        plotter.show_grid()
+        plotter.write_frame()
+        plotter.clear()
+
+
     plotter.close()
 
 def make_figs():
@@ -159,9 +231,12 @@ def make_figs():
         idx = idx + 1
     plotter.close()
 
-loading_frames()
-make_gif()
+#loading_frames()
+#make_gif()
 #plot_content()
+
+make_gif_with_load()
+#make_movie_with_load()
 
 #plt.colorbar()
 

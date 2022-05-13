@@ -3,6 +3,8 @@
 
 #include "algs/syclreduction.hpp"
 #include "aliases.hpp"
+#include "hipSYCL/sycl/access.hpp"
+#include "hipSYCL/sycl/buffer.hpp"
 #include "hipSYCL/sycl/libkernel/builtins.hpp"
 #include "interfaces/interface_handler.hpp"
 #include "interfaces/interface_selector.hpp"
@@ -20,6 +22,7 @@
 #include "tree/radix_tree.hpp"
 #include <memory>
 #include <mpi.h>
+#include <string>
 #include <tuple>
 #include <unordered_map>
 #include <vector>
@@ -35,6 +38,101 @@ struct MergedPatchDataBuffer {public:
     PatchDataBuffer data;
     std::tuple<vec,vec> box;
 };
+
+template<class pos_vec>
+inline void dump_merged_patches(std::string prefix, SchedulerMPI & sched,std::unordered_map<u64,MergedPatchDataBuffer<pos_vec>> & merged_map){
+    struct PatchFile{
+        MPI_File mfile;
+        std::string name;
+    };
+
+    std::unordered_map<u64, u64> pfile_map;
+    std::vector<PatchFile> patch_files(sched.patch_list.global.size());
+
+    for(u32 i = 0 ; i < sched.patch_list.global.size(); i++){
+        pfile_map[sched.patch_list.global[i].id_patch] = i;
+        patch_files[i].name = prefix + "patchdata_merged_" + std::to_string(sched.patch_list.global[i].id_patch) + ".bin";
+    }
+    
+    for(PatchFile & pf : patch_files){
+
+        //std::cout << "opening : " << pf.name << std::endl;
+        int rc = mpi::file_open(MPI_COMM_WORLD, pf.name.c_str(), MPI_MODE_CREATE | MPI_MODE_WRONLY , MPI_INFO_NULL, &pf.mfile);
+
+        if (rc) {
+            printf( "Unable to open file \"%s\"\n", pf.name.c_str() );fflush(stdout);
+        }
+    }
+    
+
+    {
+
+        for(auto & [pid,pdat] : merged_map){
+            
+
+            MPI_File & mfilepatch = patch_files[pfile_map[pid]].mfile;
+
+
+            PatchData tmp;
+            {
+                if(pdat.data.pos_s) tmp.pos_s.resize(pdat.data.pos_s->size());
+                if(pdat.data.pos_d) tmp.pos_d.resize(pdat.data.pos_d->size());
+                if(pdat.data.U1_s)  tmp.U1_s.resize(pdat.data.U1_s->size());
+                if(pdat.data.U1_d)  tmp.U1_d.resize(pdat.data.U1_d->size());
+                if(pdat.data.U3_s)  tmp.U3_s.resize(pdat.data.U3_s->size());
+                if(pdat.data.U3_d)  tmp.U3_d.resize(pdat.data.U3_d->size());
+
+
+            
+                if(pdat.data.pos_s) {auto pos_s = pdat.data.pos_s->template get_access<sycl::access::mode::read>();for (u32 i = 0; i < tmp.pos_s.size(); i++) { tmp.pos_s[i] = pos_s[i];}}
+                if(pdat.data.pos_d) {auto pos_d = pdat.data.pos_d->template get_access<sycl::access::mode::read>();for (u32 i = 0; i < tmp.pos_d.size(); i++) { tmp.pos_d[i] = pos_d[i];}}
+                if(pdat.data.U1_s)  {auto U1_s  = pdat.data.U1_s ->template get_access<sycl::access::mode::read>();for (u32 i = 0; i < tmp.U1_s.size(); i++) { tmp.U1_s[i] = U1_s[i]; }}
+                if(pdat.data.U1_d)  {auto U1_d  = pdat.data.U1_d ->template get_access<sycl::access::mode::read>();for (u32 i = 0; i < tmp.U1_d.size(); i++) { tmp.U1_d[i] = U1_d[i]; }}
+                if(pdat.data.U3_s)  {auto U3_s  = pdat.data.U3_s ->template get_access<sycl::access::mode::read>();for (u32 i = 0; i < tmp.U3_s.size(); i++) { tmp.U3_s[i] = U3_s[i]; }}
+                if(pdat.data.U3_d)  {auto U3_d  = pdat.data.U3_d ->template get_access<sycl::access::mode::read>();for (u32 i = 0; i < tmp.U3_d.size(); i++) { tmp.U3_d[i] = U3_d[i]; }}
+
+            }
+
+
+
+            u32 sz_pref[6];
+
+            sz_pref[0] = tmp.pos_s.size();
+            sz_pref[1] = tmp.pos_d.size();
+            sz_pref[2] = tmp.U1_s.size() ;
+            sz_pref[3] = tmp.U1_d.size() ;
+            sz_pref[4] = tmp.U3_s.size() ;
+            sz_pref[5] = tmp.U3_d.size() ;
+
+            // std::cout << "writing "<< patch_files[pfile_map[pid]].name <<" from rank = " << mpi_handler::world_rank << " {" << 
+            // sz_pref[0]<<","<<
+            // sz_pref[1]<<","<<
+            // sz_pref[2]<<","<<
+            // sz_pref[3]<<","<<
+            // sz_pref[4]<<","<<
+            // sz_pref[5]<<"}"<<
+            // std::endl;
+
+            MPI_Status st;
+            mpi::file_write(mfilepatch,sz_pref, 6, mpi_type_u32, &st);
+
+            mpi::file_write(mfilepatch, tmp.pos_s.data(), sz_pref[0] , mpi_type_f32_3, &st);
+            mpi::file_write(mfilepatch, tmp.pos_d.data(), sz_pref[1] , mpi_type_f64_3, &st);
+            mpi::file_write(mfilepatch, tmp.U1_s.data() , sz_pref[2] , mpi_type_f32  , &st);
+            mpi::file_write(mfilepatch, tmp.U1_d.data() , sz_pref[3] , mpi_type_f64  , &st);
+            mpi::file_write(mfilepatch, tmp.U3_s.data() , sz_pref[4] , mpi_type_f32_3, &st);
+            mpi::file_write(mfilepatch, tmp.U3_d.data() , sz_pref[5] , mpi_type_f64_3, &st);
+
+        }
+
+
+        
+    }
+
+    for(PatchFile & pf : patch_files){
+        mpi::file_close(&pf.mfile);
+    }
+}
 
 template<class pos_prec,class pos_vec>
 inline void make_merge_patches(
@@ -299,6 +397,95 @@ inline void write_back_merge_patches(
 }
 
 
+
+
+
+
+template<class T>
+struct MergedPatchCompFieldBuffer {public:
+    u32 or_element_cnt;
+    std::unique_ptr<sycl::buffer<T>> buf;
+};
+
+template<class pos_prec,class pos_vec,class T>
+inline void make_merge_patches_comp_field(
+    SchedulerMPI & sched,
+    InterfaceHandler<pos_vec, pos_prec> & interface_hndl,
+
+    PatchComputeField<f32> & comp_field,
+    PatchComputeFieldInterfaces<f32> & comp_field_interf,
+
+    std::unordered_map<u64,MergedPatchCompFieldBuffer<T>> & merge_pdat_comp_field){
+
+
+
+    sched.for_each_patch([&](u64 id_patch, Patch cur_p) {
+
+        SyCLHandler &hndl = SyCLHandler::get_instance();
+
+        auto & compfield_buf = comp_field.field_data_buf[id_patch];
+
+        std::cout << "patch : n°"<<id_patch << " -> making merge comp field" << std::endl;
+
+        u32 len_main = compfield_buf->size();
+        merge_pdat_comp_field[id_patch].or_element_cnt = len_main;
+
+        {
+            
+            const std::vector<std::tuple<u64, std::unique_ptr<std::vector<T>>>> & p_interf_lst = comp_field_interf.interface_map[id_patch];
+            for (auto & [int_pid, pdat_ptr] : p_interf_lst) {
+                len_main += (pdat_ptr->size());
+            }
+        }
+
+
+        merge_pdat_comp_field[id_patch].buf = std::make_unique<sycl::buffer<f32>>(len_main);
+
+
+        u32 offset_buf = 0;
+
+        
+        hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+            auto source = compfield_buf->get_access<sycl::access::mode::read>(cgh);
+            auto dest = merge_pdat_comp_field[id_patch].buf->template get_access<sycl::access::mode::discard_write>(cgh);
+            cgh.parallel_for( sycl::range{compfield_buf->size()}, [=](sycl::item<1> item) { dest[item] = source[item]; });
+        });
+        offset_buf += compfield_buf->size();
+        
+
+        std::vector<std::tuple<u64, std::unique_ptr<std::vector<T>>>> & p_interf_lst = comp_field_interf.interface_map[id_patch];
+
+        for (auto & [int_pid, pdat_ptr] : p_interf_lst) {
+
+            if(pdat_ptr->size() > 0){
+
+                //std::cout <<  "patch : n°"<< id_patch << " -> interface : "<<interf_patch_id << " merging" << std::endl;
+                sycl::buffer<T> tmp_buf = sycl::buffer<T>(pdat_ptr->data(),pdat_ptr->size());
+
+                u32 len_int =  pdat_ptr->size();
+
+                hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+                    auto source = tmp_buf.template get_access<sycl::access::mode::read>(cgh);
+                    auto dest = merge_pdat_comp_field[id_patch].buf->template get_access<sycl::access::mode::discard_write>(cgh);
+                    auto off = offset_buf;
+                    cgh.parallel_for( sycl::range{len_int}, [=](sycl::item<1> item) { dest[item.get_id(0) + off] = source[item]; });
+                });
+                offset_buf += len_int;
+                
+            }
+        }
+
+
+
+        
+        
+
+    });
+
+
+}
+
+
 template<class T>
 class IntMergedPatchComputeField{public:
     
@@ -360,7 +547,7 @@ class IntMergedPatchComputeField{public:
 
 };
 
-
+/*
 template<class T>
 inline void make_merge_patches_comp_field(
     SchedulerMPI & sched,
@@ -376,6 +563,7 @@ inline void make_merge_patches_comp_field(
     });
 
 }
+*/
 
  
 
@@ -553,7 +741,7 @@ class SPHTimestepperLeapfrog{public:
     using DU1 = typename DataLayout::template U1<pos_prec>::T;
     using DU3 = typename DataLayout::template U3<pos_prec>::T;
 
-    inline void step(SchedulerMPI &sched){
+    inline void step(SchedulerMPI &sched,std::string dump_folder){
 
 
         bool periodic_bc = true;
@@ -726,7 +914,7 @@ class SPHTimestepperLeapfrog{public:
             h_field, 
             get_mpi_type<pos_prec>(), 
             [htol_up_tol](sycl::queue & queue, Patch & p, PatchDataBuffer & pdat_buf){
-                return patchdata::sph::get_h_max<DataLayout, pos_prec>(queue, pdat_buf)*htol_up_tol;
+                return patchdata::sph::get_h_max<DataLayout, pos_prec>(queue, pdat_buf)*htol_up_tol*Kernel::Rkern;
             }
         );
 
@@ -750,7 +938,7 @@ class SPHTimestepperLeapfrog{public:
         hndl.get_queue_compute(0).wait();
         tmerge_buf.stop();
 
-
+        dump_merged_patches(dump_folder+"/merged0_", sched, merge_pdat_buf);
 
 
 
@@ -1063,11 +1251,47 @@ class SPHTimestepperLeapfrog{public:
         std::cout << "echange interface omega" << std::endl;
         PatchComputeFieldInterfaces<pos_prec> omega_field_interfaces = interface_hndl.template comm_interfaces_field<pos_prec>(sched,omega_field,periodic_bc);
 
-        std::unordered_map<u64, IntMergedPatchComputeField<f32>> hnew_field_merged;
-        make_merge_patches_comp_field<f32>(sched, hnew_field, hnew_field_interfaces, hnew_field_merged);
-        std::unordered_map<u64, IntMergedPatchComputeField<f32>> omega_field_merged;
-        make_merge_patches_comp_field<f32>(sched, omega_field, omega_field_interfaces, omega_field_merged);
+        hnew_field.to_sycl();
+        omega_field.to_sycl();
 
+        std::unordered_map<u64, MergedPatchCompFieldBuffer<f32>> hnew_field_merged;
+        make_merge_patches_comp_field<f32>(sched,  interface_hndl,hnew_field, hnew_field_interfaces, hnew_field_merged);
+        std::unordered_map<u64, MergedPatchCompFieldBuffer<f32>> omega_field_merged;
+        make_merge_patches_comp_field<f32>(sched,  interface_hndl, omega_field, omega_field_interfaces, omega_field_merged);
+
+        //*
+
+        sched.for_each_patch([&](u64 id_patch, Patch cur_p) {
+            if(merge_pdat_buf[id_patch].or_element_cnt == 0) std::cout << " empty => skipping" << std::endl;
+
+            PatchDataBuffer & pdat_buf_merge = merge_pdat_buf[id_patch].data;
+            
+            sycl::buffer<f32> & hnew =  * hnew_field_merged[id_patch].buf;
+            sycl::buffer<f32> & omega = * omega_field_merged[id_patch].buf;
+
+            std::cout << "patch : n°" << id_patch << "write back merged" << std::endl;
+            hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+
+                sycl::range range_npart{hnew.size()};
+
+                auto hw = pdat_buf_merge.U1_s->get_access<sycl::access::mode::write>(cgh);
+                auto hr = hnew.get_access<sycl::access::mode::write>(cgh);
+
+                cgh.parallel_for(range_npart, [=](sycl::item<1> item) {
+
+                    hw[item.get_id(0)*DU1::nvar + DU1::ihpart] = hr[item];
+
+                });
+
+
+
+            });
+
+        });
+
+
+        dump_merged_patches(dump_folder+"/merged1_", sched, merge_pdat_buf);
+        //*/
 
         sched.for_each_patch([&](u64 id_patch, Patch cur_p) {
             if(merge_pdat_buf[id_patch].or_element_cnt == 0) std::cout << " empty => skipping" << std::endl;
@@ -1086,7 +1310,7 @@ class SPHTimestepperLeapfrog{public:
                 auto omga = omega.get_access<sycl::access::mode::read>(cgh);
 
                 auto r = pdat_buf_merge.pos_s->get_access<sycl::access::mode::read>(cgh);
-                auto axyz = pdat_buf_merge.U3_s->get_access<sycl::access::mode::discard_write>(cgh);
+                auto U3 = pdat_buf_merge.U3_s->get_access<sycl::access::mode::discard_write>(cgh);
                 
                 using Rta = walker::Radix_tree_accessor<u32, f32_3>;
                 Rta tree_acc(*radix_trees[id_patch], cgh);
@@ -1162,12 +1386,24 @@ class SPHTimestepperLeapfrog{public:
                     
 
                     
-                    axyz[id_a] = sum_axyz;
+                    U3[id_a*DU3::nvar + DU3::iaxyz] = sum_axyz;
                     
 
                 });
 
             }); 
+/*
+            hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+                auto U3 = pdat_buf_merge.U3_s->get_access<sycl::access::mode::read_write>(cgh);
+
+                cgh.parallel_for<class forces>(range_npart, [=](sycl::item<1> item) {
+                    u32 id_a = (u32) item.get_id(0);
+
+                    U3[id_a*DU3::nvar + DU3::iaxyz] -= 2.f*U3[id_a*DU3::nvar + DU3::ivxyz] ;
+
+                });
+            });
+*/
 
 
             leapfrog_corrector<pos_prec, DU3>(

@@ -96,6 +96,9 @@ class SchedulerMPI{public:
         return out;
     }
 
+    template<class vectype>
+    void set_box_volume(std::tuple<vectype,vectype> box);
+
     [[deprecated]]
     void dump_local_patches(std::string filename);
 

@@ -103,6 +103,25 @@ std::tuple<f64_3,f64_3> SchedulerMPI::get_box_volume(){
     return {patch_data.sim_box.min_box_sim_d,patch_data.sim_box.max_box_sim_d};
 }
 
+template<>
+void SchedulerMPI::set_box_volume(std::tuple<f32_3,f32_3> box){
+    if(patchdata_layout::nVarpos_s == 0) throw shamrock_exc("cannot query single precision box, position is currently double precision");
+
+    patch_data.sim_box.min_box_sim_s = std::get<0>(box);
+    patch_data.sim_box.max_box_sim_s = std::get<1>(box);
+
+}
+
+template<>
+void SchedulerMPI::set_box_volume(std::tuple<f64_3,f64_3> box){
+    if(patchdata_layout::nVarpos_d == 0) throw shamrock_exc("cannot query double precision box, position is currently single precision");
+
+    patch_data.sim_box.min_box_sim_d = std::get<0>(box);
+    patch_data.sim_box.max_box_sim_d = std::get<1>(box);
+
+}
+
+
 
 //TODO clean the output of this function
 void SchedulerMPI::scheduler_step(bool do_split_merge, bool do_load_balancing){
