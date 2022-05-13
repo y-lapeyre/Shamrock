@@ -134,6 +134,14 @@ inline void dump_merged_patches(std::string prefix, SchedulerMPI & sched,std::un
     }
 }
 
+
+
+
+
+
+
+
+
 template<class pos_prec,class pos_vec>
 inline void make_merge_patches(
     SchedulerMPI & sched,
@@ -726,6 +734,100 @@ inline void position_modulo(sycl::queue &queue, u32 npart,
 }
 
 
+/*
+inline void print_interf_status(InterfaceHandler<f32_3, f32> & interf_hndl,PatchComputeFieldInterfaces<f32> & pcfi){
+    //for(auto & [id_pr, dat_vec] : interf_hndl.interface_map){
+        for(auto & [id_ps, pdat] : (interf_hndl.interface_map[0])){
+            std::cout << "int : " << 0 << " <- " << id_ps << " : " << pdat->U1_s.size() << std::endl;
+        }
+    //}
+
+    std::cout << std::endl;
+
+    //for(auto & [id_pr, dat_vec] : pcfi.interface_map){
+        for(auto & [id_ps, pdat] : (pcfi.interface_map[0])){
+            std::cout << "int : " << 0 << " <- " << id_ps << " : " << pdat->size() << std::endl;
+        }
+    //}
+}
+*/
+
+
+
+/*
+inline void dump_interf(std::string dump_pref, InterfaceHandler<f32_3, f32> & interf_hndl,PatchComputeFieldInterfaces<f32> & pcfi){
+
+    //print_interf_status(interf_hndl,pcfi);
+
+
+    u32 ii = 0;
+    for(auto & [id_pr, dat_vec] : interf_hndl.interface_map){
+        for(u32 idx = 0; idx < dat_vec.size() ; idx ++){
+
+            u32 id_ps = std::get<0>(dat_vec[idx]);
+
+            std::string fdump = dump_pref + std::to_string(id_pr) + "-" + std::to_string(id_ps) +"__"+std::to_string(ii)+ ".bin";
+
+            std::cout << "dump interf : " << fdump << std::endl;
+
+            std::unique_ptr<std::vector<f32>> & hf = std::get<1>(pcfi.interface_map[id_pr][idx]);
+            std::unique_ptr<PatchData> & pdat = std::get<1>(dat_vec[idx]);
+
+            std::cout << "-> " <<  pdat->U1_s.size() << " : " <<hf->size() << std::endl;
+
+            PatchData pdat_w;
+
+            pdat_w.pos_s.resize(pdat->pos_s.size());
+            pdat_w.pos_d.resize(pdat->pos_d.size());
+            pdat_w.U1_s.resize(pdat->U1_s.size());
+            pdat_w.U1_d.resize(pdat->U1_d.size());
+            pdat_w.U3_s.resize(pdat->U3_s.size());
+            pdat_w.U3_d.resize(pdat->U3_d.size());
+
+            for (u32 i = 0; i < hf->size(); i++) {
+                pdat_w.U1_s[i*2 + 0] = (*hf)[i];
+            }
+
+            u32 sz_pref[6];
+
+            sz_pref[0] = pdat_w.pos_s.size();
+            sz_pref[1] = pdat_w.pos_d.size();
+            sz_pref[2] = pdat_w.U1_s.size() ;
+            sz_pref[3] = pdat_w.U1_d.size() ;
+            sz_pref[4] = pdat_w.U3_s.size() ;
+            sz_pref[5] = pdat_w.U3_d.size() ;
+
+            MPI_File mfile;
+            mpi::file_open(MPI_COMM_WORLD,fdump.c_str(), MPI_MODE_CREATE | MPI_MODE_WRONLY , MPI_INFO_NULL, &mfile);
+
+            MPI_Status st;
+            mpi::file_write(mfile,sz_pref, 6, mpi_type_u32, &st);
+
+            mpi::file_write(mfile, pdat_w.pos_s.data(), sz_pref[0] , mpi_type_f32_3, &st);
+            mpi::file_write(mfile, pdat_w.pos_d.data(), sz_pref[1] , mpi_type_f64_3, &st);
+            mpi::file_write(mfile, pdat_w.U1_s.data() , sz_pref[2] , mpi_type_f32  , &st);
+            mpi::file_write(mfile, pdat_w.U1_d.data() , sz_pref[3] , mpi_type_f64  , &st);
+            mpi::file_write(mfile, pdat_w.U3_s.data() , sz_pref[4] , mpi_type_f32_3, &st);
+            mpi::file_write(mfile, pdat_w.U3_d.data() , sz_pref[5] , mpi_type_f64_3, &st);
+
+            mpi::file_close(&mfile);
+
+            ii++;
+
+        }
+    }
+
+}
+*/
+
+
+
+
+
+
+
+
+
 
 template<class DataLayout>
 class SPHTimestepperLeapfrog{public:
@@ -1001,6 +1103,8 @@ class SPHTimestepperLeapfrog{public:
         hnew_field.to_sycl();
         omega_field.to_sycl();
 
+        
+
 
         
         sched.for_each_patch([&](u64 id_patch, Patch cur_p) {
@@ -1240,7 +1344,7 @@ class SPHTimestepperLeapfrog{public:
 
         //
 
-
+        dump_merged_patches(dump_folder+"/merged05_", sched, merge_pdat_buf);
         
 
         hnew_field.to_map();
@@ -1250,6 +1354,10 @@ class SPHTimestepperLeapfrog{public:
         PatchComputeFieldInterfaces<pos_prec> hnew_field_interfaces = interface_hndl.template comm_interfaces_field<pos_prec>(sched,hnew_field,periodic_bc);
         std::cout << "echange interface omega" << std::endl;
         PatchComputeFieldInterfaces<pos_prec> omega_field_interfaces = interface_hndl.template comm_interfaces_field<pos_prec>(sched,omega_field,periodic_bc);
+
+
+        //dump_interf(dump_folder+"/interf_",interface_hndl,hnew_field_interfaces);
+
 
         hnew_field.to_sycl();
         omega_field.to_sycl();

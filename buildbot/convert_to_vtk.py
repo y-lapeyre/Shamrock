@@ -113,7 +113,7 @@ ugrid = vtkmodules.vtkCommonDataModel.vtkUnstructuredGrid()
 ugrid.SetPoints(points)
 
 
-for k in ["h"]:
+for k in ["h","omega"]:
     if not k in ["x","y","z"]:
         values = vtk.vtkDoubleArray()
         values.SetName(k)

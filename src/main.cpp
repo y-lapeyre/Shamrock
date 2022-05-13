@@ -240,7 +240,7 @@ class TestTimestepper {
                 [&pdat](f32_3 r,f32 h){
                     pdat.pos_s.emplace_back(r); //r
                     //                      h    omega
-                    pdat.U1_s.emplace_back(h);
+                    pdat.U1_s.emplace_back(h*2);
                     pdat.U1_s.emplace_back(0.00f);
                     //                           v          a             a_old
                     pdat.U3_s.emplace_back(f32_3{0.f,0.f,0.f});
@@ -248,41 +248,42 @@ class TestTimestepper {
                     pdat.U3_s.emplace_back(f32_3{0.f,0.f,0.f});
                 });
 
+            if(false){
+                f32 a = 0.3;
+                strech_mapping_axis(std::get<0>(box).x(),std::get<1>(box).x(), pdat.pos_s.size(),
 
-            f32 a = 0.3;
-            strech_mapping_axis(std::get<0>(box).x(),std::get<1>(box).x(), pdat.pos_s.size(),
-
-                [&](u32 i) -> f32{
-                    return pdat.pos_s[i].x();
-                }
-                ,
-                [&](u32 i,f32 r){
-                    pdat.pos_s[i].x() = r;
-                },
-                
-                [&](f32 x) -> f32{
-
-                    f32 x_min = std::get<0>(box).x();
-                    f32 x_max = std::get<1>(box).x();
-                    constexpr f32 pi = 3.141612;
-
+                    [&](u32 i) -> f32{
+                        return pdat.pos_s[i].x();
+                    }
+                    ,
+                    [&](u32 i,f32 r){
+                        pdat.pos_s[i].x() = r;
+                    },
                     
+                    [&](f32 x) -> f32{
 
-                    return 1+a*sycl::cos(2*pi*(x-x_min)/(x_max-x_min));
-                }, 
-                [&](f32 x) -> f32{
+                        f32 x_min = std::get<0>(box).x();
+                        f32 x_max = std::get<1>(box).x();
+                        constexpr f32 pi = 3.141612;
 
-                    f32 xmin = std::get<0>(box).x();
-                    f32 xmax = std::get<1>(box).x();
+                        
 
-                    constexpr f32 pi = 3.141612;
+                        return 1+a*sycl::cos(2*pi*(x-x_min)/(x_max-x_min));
+                    }, 
+                    [&](f32 x) -> f32{
 
-                    return x - xmin + (a*(-xmax + xmin)* sycl::sin((2*pi*(-x + xmin))/ (xmax - xmin)))/(2.*pi);
-                });
+                        f32 xmin = std::get<0>(box).x();
+                        f32 xmax = std::get<1>(box).x();
+
+                        constexpr f32 pi = 3.141612;
+
+                        return x - xmin + (a*(-xmax + xmin)* sycl::sin((2*pi*(-x + xmin))/ (xmax - xmin)))/(2.*pi);
+                    });
 
 
-            p.data_count = pdat.pos_s.size();
-            p.load_value = pdat.pos_s.size();
+                p.data_count = pdat.pos_s.size();
+                p.load_value = pdat.pos_s.size();
+            }
 
             /*
             p.data_count    = 1e6;
