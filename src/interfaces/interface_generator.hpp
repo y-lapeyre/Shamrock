@@ -164,6 +164,8 @@ template <class vectype, class field_type, class InterfaceSelector> class Interf
 
             vectype offset = -interf_offset;
 
+            bool is_off_not_bull = (offset.x() == 0) && (offset.y() == 0) && (offset.z() == 0);
+
             cgh.parallel_for(sycl::range<1>(local_pcount), [=](sycl::item<1> item) {
                 u64 cur_patch_idx    = (u64)item.get_id(0);
                 u64 cur_patch_id     = pid[cur_patch_idx];
@@ -184,9 +186,12 @@ template <class vectype, class field_type, class InterfaceSelector> class Interf
                         std::tuple<vectype, vectype> b2 = InterfaceSelector::get_compute_box_sz(
                             test_lbox_min, test_lbox_max, global_field[test_patch_idx], local_field[cur_patch_idx]);
 
+
+                        bool int_cd = ((!is_off_not_bull) || (test_patch_id != cur_patch_id));
+
                         if (BBAA::intersect_not_null_cella_b(std::get<0>(b1), std::get<1>(b1), std::get<0>(b2),
                                                              std::get<1>(b2)) &&
-                            (test_patch_id != cur_patch_id)) {
+                            (int_cd)) {
 
                             std::tuple<vectype,vectype> box_interf = BBAA::get_intersect_cella_b(std::get<0>(b1), std::get<1>(b1), std::get<0>(b2),
                                                              std::get<1>(b2));
@@ -262,6 +267,10 @@ template <class vectype, class field_type, class InterfaceSelector> class Interf
                     for (u64 i = 0; i < local_pcount; i++) {
                         //std::cout << "- " << sched.patch_list.local[i].id_patch << " : ";
                         for (u64 j = 0; j < global_pcount; j++) {
+
+                            //std::cout << "(" << sched.patch_list.id_patch_to_global_idx[interface_list[{i, j}].sender_patch_id] << ","
+                            //         << interface_list[{i, j}].global_patch_idx_recv << ") ";
+
                             if (interface_list[{i, j}].sender_patch_id == u64_max)
                                 break;
                             // std::cout << "(" << sched.patch_list.id_patch_to_global_idx[interface_list[{i, j}].sender_patch_id] << ","
