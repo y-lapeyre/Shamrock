@@ -88,76 +88,93 @@ def get_plot_patchdata(filename):
 
     return dic
 
+def write_dic_to_vtk(dic,filename):
 
-
-dic = {}
-for fname in sys.argv[2::]:
-    dic_tmp = get_plot_patchdata(fname)
-
-    for k in dic_tmp.keys():
-
-        if not k in dic.keys():
-            dic[k] = []
-
-        dic[k] += dic_tmp[k]
-
-points = vtk.vtkPoints()
-points.SetNumberOfPoints(len(dic["x"]))
-for i in range(len(dic["x"])):
-    points.SetPoint(i,(dic["x"][i],dic["y"][i],dic["z"][i]))
+    points = vtk.vtkPoints()
+    points.SetNumberOfPoints(len(dic["x"]))
+    for i in range(len(dic["x"])):
+        points.SetPoint(i,(dic["x"][i],dic["y"][i],dic["z"][i]))
 
 
 
-ugrid = vtkmodules.vtkCommonDataModel.vtkUnstructuredGrid()
+    ugrid = vtkmodules.vtkCommonDataModel.vtkUnstructuredGrid()
 
-ugrid.SetPoints(points)
+    ugrid.SetPoints(points)
 
 
-for k in ["h","omega"]:
-    if not k in ["x","y","z"]:
-        values = vtk.vtkDoubleArray()
-        values.SetName(k)
-        values.SetNumberOfValues(len(dic["x"]))
+    for k in ["h","omega"]:
+        if not k in ["x","y","z"]:
+            values = vtk.vtkDoubleArray()
+            values.SetName(k)
+            values.SetNumberOfValues(len(dic["x"]))
+            for i in range(len(dic["x"])):
+                values.SetValue(i,dic[k][i])
+
+            ugrid.GetPointData().AddArray(values)
+
+
+    for desc in [
+        ["v","vx","vy","vz"]
+        ]:
+
+        vect = vtk.vtkDoubleArray()
+        vect.SetName(desc[0])
+        vect.SetNumberOfComponents(3)
+        vect.SetNumberOfValues(len(dic["x"])*3)
+
         for i in range(len(dic["x"])):
-            values.SetValue(i,dic[k][i])
+            vect.SetTuple(i,(dic[desc[1]][i],dic[desc[2]][i],dic[desc[3]][i]))
 
-        ugrid.GetPointData().AddArray(values)
-
-
-for desc in [
-    ["v","vx","vy","vz"]
-    ]:
-
-    vect = vtk.vtkDoubleArray()
-    vect.SetName(desc[0])
-    vect.SetNumberOfComponents(3)
-    vect.SetNumberOfValues(len(dic["x"])*3)
-
-    for i in range(len(dic["x"])):
-        vect.SetTuple(i,(dic[desc[1]][i],dic[desc[2]][i],dic[desc[3]][i]))
-
-        ugrid.GetPointData().AddArray(vect)
+            ugrid.GetPointData().AddArray(vect)
 
 
-for desc in [
-    ["a","ax","ay","az"]
-    ]:
+    for desc in [
+        ["a","ax","ay","az"]
+        ]:
 
-    vect = vtk.vtkDoubleArray()
-    vect.SetName(desc[0])
-    vect.SetNumberOfComponents(3)
-    vect.SetNumberOfValues(len(dic["x"])*3)
+        vect = vtk.vtkDoubleArray()
+        vect.SetName(desc[0])
+        vect.SetNumberOfComponents(3)
+        vect.SetNumberOfValues(len(dic["x"])*3)
 
-    for i in range(len(dic["x"])):
-        vect.SetTuple(i,(dic[desc[1]][i],dic[desc[2]][i],dic[desc[3]][i]))
+        for i in range(len(dic["x"])):
+            vect.SetTuple(i,(dic[desc[1]][i],dic[desc[2]][i],dic[desc[3]][i]))
 
-        ugrid.GetPointData().AddArray(vect)
+            ugrid.GetPointData().AddArray(vect)
 
 
 
 
-fn = sys.argv[1] + '.vtu'
-writer = vtk.vtkUnstructuredGridWriter()
-writer.SetFileName(fn)
-writer.SetInputData(ugrid)
-writer.Write()
+    fn = filename + '.vtu'
+    writer = vtk.vtkUnstructuredGridWriter()
+    writer.SetFileName(fn)
+    writer.SetInputData(ugrid)
+    writer.Write()
+
+
+
+
+import glob
+for idx in range(183):
+
+    file_list = glob.glob("./step"+str(idx)+"/patchdata*")
+
+    dic = {}
+
+    for fname in file_list:
+        print("converting : {}".format(fname))
+        dic_tmp = get_plot_patchdata(fname)
+
+        for k in dic_tmp.keys():
+
+            if not k in dic.keys():
+                dic[k] = []
+
+            dic[k] += dic_tmp[k]
+
+    write_dic_to_vtk(dic,"step"+str(idx))
+
+    
+
+
+
