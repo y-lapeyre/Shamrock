@@ -155,7 +155,7 @@ def write_dic_to_vtk(dic,filename):
 
 
 import glob
-for idx in range(183):
+for idx in range(500):
 
     file_list = glob.glob("./step"+str(idx)+"/patchdata*")
 

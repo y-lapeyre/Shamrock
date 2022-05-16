@@ -123,8 +123,13 @@ inline void correct_box_fcc(f32 r_particle, std::tuple<sycl::vec<flt, 3>,sycl::v
     u32 j = iboc_dim.y();
     u32 k = iboc_dim.z();
 
+    //modify values to get even number on each axis to corect the periodicity
+    if(i%2 == 1) i++;
+    if(j%2 == 1) j++;
+    if(k%2 == 1) k++;
+
     vec3 r_a = {
-        2*i + ((j+k) % 2), 
+        2*i + 1,//((j+k) % 2), 
         sycl::sqrt(3.)*(j + (1./3.)*(k % 2)),
         2*sycl::sqrt(6.)*k/3
     };
@@ -146,14 +151,7 @@ inline void correct_box_fcc(f32 r_particle, std::tuple<sycl::vec<flt, 3>,sycl::v
 
     std::get<1>(box) =  r_a;
 
-    std::cout << "current box : (" <<
-        std::get<0>(box).x() << ", " <<
-        std::get<0>(box).y() << ", " <<
-        std::get<0>(box).z() << ")" 
-        << " to (" <<
-        std::get<1>(box).x() << ", " <<
-        std::get<1>(box).y() << ", " <<
-        std::get<1>(box).z() << ")" << std::endl;
+    
     
 }
 
@@ -268,11 +266,21 @@ class TestTimestepper {
         patchdata_layout::set(1, 0, 2, 0, 3, 0);
         patchdata_layout::sync(MPI_COMM_WORLD);
 
+        f32_3 box_dim = {1,1,1};
+
+        /*
+        box_dim.x() *= 4;
+        box_dim.y() /= 2;
+        box_dim.z() /= 2;
+        */
+
         std::tuple<f32_3,f32_3> box = {
-            f32_3{-1,-1,-1}, f32_3{1,1,1}
+            -box_dim,box_dim
         };
 
-        f32 dr = 0.01;
+        
+
+        f32 dr = 0.02;
         correct_box_fcc<f32>(dr,box);
 
         sched.set_box_volume<f32_3>(box);
@@ -392,8 +400,8 @@ class TestTimestepper {
 
         //*
         sched.patch_tree.build_from_patchtable(sched.patch_list.global, HilbertLB::max_box_sz);
-        sched.patch_data.sim_box.min_box_sim_s = {-1};
-        sched.patch_data.sim_box.max_box_sim_s = {1};
+        //sched.patch_data.sim_box.min_box_sim_s = {-1};
+        //sched.patch_data.sim_box.max_box_sim_s = {1};
 
         // std::cout << sched.dump_status() << std::endl;
 
@@ -442,6 +450,8 @@ template <class Timestepper, class SimInfo> class SimulationSPH {
   public:
     static void run_sim() {
 
+        SyCLHandler &hndl = SyCLHandler::get_instance();
+
         SchedulerMPI sched = SchedulerMPI(1e6, 1);
         sched.init_mpi_required_types();
 
@@ -467,7 +477,44 @@ template <class Timestepper, class SimInfo> class SimulationSPH {
         timings::dump_timings("### init_step ###");
 
         
-        for (u32 stepi = 1; stepi < 5; stepi++) {
+        for (u32 stepi = 1; stepi < 500; stepi++) {
+
+            if(stepi == 5){
+
+                auto box = sched.get_box_volume<f32_3>();
+
+                sched.for_each_patch_buf(
+                    [&](u64 id_patch, Patch cur_p, PatchDataBuffer & pdat_buf) {
+
+                        hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+                            auto r = pdat_buf.pos_s->get_access<sycl::access::mode::read>(cgh);
+                            auto U3 = pdat_buf.U3_s->get_access<sycl::access::mode::discard_write>(cgh);
+
+                            f32 deltv = 0.01;
+                            u32 nmode = 2;
+                            constexpr f32 pi = 3.141612;
+                            f32 x_min = std::get<0>(box).x();
+                            f32 x_max = std::get<1>(box).x();
+
+                            cgh.parallel_for( sycl::range{pdat_buf.element_count}, [=](sycl::item<1> item) { 
+
+                                f32 x = r[item].x();
+
+                                U3[item.get_id(0)*CurDataLayout::U3_s::nvar + CurDataLayout::U3_s::ivxyz] = 
+                                    {
+                                        deltv*sycl::cos(nmode*2.*pi*(x-x_min)/(x_max-x_min)),
+                                        0,
+                                        0
+                                    }
+                                ; 
+                            });
+                        });
+
+                    }
+                );
+            }
+
+
             std::cout << " ------ step time = " << stepi << " ------" << std::endl;
 
             std::filesystem::create_directory("step" + std::to_string(stepi));
