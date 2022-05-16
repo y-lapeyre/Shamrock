@@ -202,7 +202,7 @@ Test_start("patch::patch_reduc_tree::", generation, -1) {
                 }
             }
 
-            dump_state("step"+std::to_string(stepi)+"/",sched);
+            dump_state("step"+std::to_string(stepi)+"/",sched,0);
         }
 
         // TODO test if a interface of size 0.5x0.5x0.5 exist == error

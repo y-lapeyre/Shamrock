@@ -42,7 +42,8 @@
 
 class TestSimInfo {
   public:
-    u32 time;
+    u32 stepcnt;
+    f64 time;
 };
 
 
@@ -441,7 +442,7 @@ class TestTimestepper {
         // std::cout << sched.dump_status() << std::endl;
         sched.scheduler_step(true, true);
 
-        leapfrog.step(sched,dump_folder,siminfo.time);
+        leapfrog.step(sched,dump_folder,siminfo.stepcnt,siminfo.time);
     }
 };
 
@@ -457,6 +458,7 @@ template <class Timestepper, class SimInfo> class SimulationSPH {
         logfiles::open_log_files();
 
         SimInfo siminfo;
+        siminfo.time = 0;
 
         std::cout << " ------ init sim ------" << std::endl;
 
@@ -471,7 +473,7 @@ template <class Timestepper, class SimInfo> class SimulationSPH {
         std::filesystem::create_directory("step" + std::to_string(0));
 
         std::cout << "dumping state"<<std::endl;
-        dump_state("step" + std::to_string(0) + "/", sched);
+        dump_state("step" + std::to_string(0) + "/", sched,siminfo.time);
 
         timings::dump_timings("### init_step ###");
 
@@ -492,18 +494,18 @@ template <class Timestepper, class SimInfo> class SimulationSPH {
                             f32 deltv = 0.01;
                             u32 nmode = 2;
                             constexpr f32 pi = 3.141612;
-                            f32 x_min = std::get<0>(box).x();
-                            f32 x_max = std::get<1>(box).x();
+                            f32 z_min = std::get<0>(box).z();
+                            f32 z_max = std::get<1>(box).z();
 
                             cgh.parallel_for( sycl::range{pdat_buf.element_count}, [=](sycl::item<1> item) { 
 
-                                f32 x = r[item].x();
+                                f32 z = r[item].z();
 
                                 U3[item.get_id(0)*CurDataLayout::U3_s::nvar + CurDataLayout::U3_s::ivxyz] = 
                                     {
-                                        deltv*sycl::cos(nmode*2.*pi*(x-x_min)/(x_max-x_min)),
                                         0,
-                                        0
+                                        0,
+                                        deltv*sycl::cos(nmode*2.*pi*(z-z_min)/(z_max-z_min))
                                     }
                                 ; 
                             });
@@ -516,9 +518,11 @@ template <class Timestepper, class SimInfo> class SimulationSPH {
 
             std::cout << " ------ step time = " << stepi << " ------" << std::endl;
 
+            std::cout << "time : " << siminfo.time << std::endl;
+
             std::filesystem::create_directory("step" + std::to_string(stepi));
 
-            siminfo.time = stepi;
+            siminfo.stepcnt = stepi;
 
             auto step_timer = timings::start_timer("timestepper step", timings::timingtype::function);
             Timestepper::step(sched, siminfo,"step" + std::to_string(stepi));
@@ -526,7 +530,7 @@ template <class Timestepper, class SimInfo> class SimulationSPH {
 
             
 
-            dump_state("step" + std::to_string(stepi) + "/", sched);
+            dump_state("step" + std::to_string(stepi) + "/", sched,siminfo.time);
 
             timings::dump_timings("### "
                                   "step" +

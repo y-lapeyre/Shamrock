@@ -88,6 +88,9 @@ def get_plot_patchdata(filename):
 
     return dic
 
+
+
+
 def write_dic_to_vtk(dic,filename):
 
     points = vtk.vtkPoints()
@@ -148,21 +151,28 @@ def write_dic_to_vtk(dic,filename):
     fn = filename + '.vtu'
     writer = vtk.vtkUnstructuredGridWriter()
     writer.SetFileName(fn)
+    writer.SetFileTypeToBinary()
     writer.SetInputData(ugrid)
     writer.Write()
 
 
 
 
+
 import glob
-for idx in range(500):
+for idx in range(50):
 
     file_list = glob.glob("./step"+str(idx)+"/patchdata*")
 
+    f = open("./step"+str(idx)+"/timeval.bin","rb")
+    tval, = struct.unpack("d",f.read(8))
+    f.close()
+
+    
     dic = {}
 
     for fname in file_list:
-        print("converting : {}".format(fname))
+        print("converting : {} t = {}".format(fname,tval))
         dic_tmp = get_plot_patchdata(fname)
 
         for k in dic_tmp.keys():
@@ -174,7 +184,6 @@ for idx in range(500):
 
     write_dic_to_vtk(dic,"step"+str(idx))
 
+    lst.append({"timestep" : tval, "file" : "step"+str(idx)+'.vtu'})
+
     
-
-
-

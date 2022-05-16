@@ -148,7 +148,33 @@ inline void dump_simbox(std::string prefix, SchedulerMPI & sched){
     mpi::file_close(&simbox_file);
 }
 
-inline void dump_state(std::string prefix, SchedulerMPI & sched){
+inline void dump_siminfo(std::string prefix, f64 time){
+    MPI_File timeval_file;
+    std::string fname = prefix + "timeval.bin";
+
+    int rc = mpi::file_open(MPI_COMM_WORLD, fname.c_str(), MPI_MODE_CREATE | MPI_MODE_WRONLY , MPI_INFO_NULL, &timeval_file);
+
+    if (rc) {
+        printf( "Unable to open file \"%s\"\n", fname.c_str() );fflush(stdout);
+    }
+
+
+
+    if(mpi_handler::world_rank == 0){
+
+
+        MPI_Status st;
+        mpi::file_write(timeval_file, &time, 1,mpi_type_f64,&st);
+
+        
+    }
+
+
+
+    mpi::file_close(&timeval_file);
+}
+
+inline void dump_state(std::string prefix, SchedulerMPI & sched, f64 time){
 
     auto t = timings::start_timer("dump_state", timings::timingtype::function);
 
@@ -156,6 +182,7 @@ inline void dump_state(std::string prefix, SchedulerMPI & sched){
 
     dump_patch_list(prefix, sched);
     dump_simbox(prefix, sched);
+    dump_siminfo(prefix,time);
 
     t.stop();
 
