@@ -1,7 +1,6 @@
 #pragma once
 
 #include "aliases.hpp"
-#include "hipSYCL/sycl/libkernel/builtins.hpp"
 
 inline constexpr f64 hfact = 1.2;
 

@@ -3,9 +3,6 @@
 
 #include "algs/syclreduction.hpp"
 #include "aliases.hpp"
-#include "hipSYCL/sycl/access.hpp"
-#include "hipSYCL/sycl/buffer.hpp"
-#include "hipSYCL/sycl/libkernel/builtins.hpp"
 #include "interfaces/interface_handler.hpp"
 #include "interfaces/interface_selector.hpp"
 #include "io/logs.hpp"

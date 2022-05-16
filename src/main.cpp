@@ -1,5 +1,4 @@
 #include "aliases.hpp"
-#include "hipSYCL/sycl/libkernel/vec.hpp"
 #include "interfaces/interface_generator.hpp"
 #include "interfaces/interface_handler.hpp"
 #include "interfaces/interface_selector.hpp"
