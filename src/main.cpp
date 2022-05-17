@@ -280,7 +280,7 @@ class TestTimestepper {
 
         
 
-        f32 dr = 0.02;
+        f32 dr = 0.04;
         correct_box_fcc<f32>(dr,box);
 
         sched.set_box_volume<f32_3>(box);
@@ -525,7 +525,9 @@ template <class Timestepper, class SimInfo> class SimulationSPH {
             siminfo.stepcnt = stepi;
 
             auto step_timer = timings::start_timer("timestepper step", timings::timingtype::function);
+            
             Timestepper::step(sched, siminfo,"step" + std::to_string(stepi));
+
             step_timer.stop();
 
             

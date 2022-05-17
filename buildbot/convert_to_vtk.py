@@ -145,6 +145,20 @@ def write_dic_to_vtk(dic,filename):
 
             ugrid.GetPointData().AddArray(vect)
 
+    for desc in [
+        ["a_old","ax_old","ay_old","az_old"]
+        ]:
+
+        vect = vtk.vtkDoubleArray()
+        vect.SetName(desc[0])
+        vect.SetNumberOfComponents(3)
+        vect.SetNumberOfValues(len(dic["x"])*3)
+
+        for i in range(len(dic["x"])):
+            vect.SetTuple(i,(dic[desc[1]][i],dic[desc[2]][i],dic[desc[3]][i]))
+
+            ugrid.GetPointData().AddArray(vect)
+
 
 
 
@@ -160,9 +174,11 @@ def write_dic_to_vtk(dic,filename):
 
 
 import glob
-for idx in range(50):
+for idx in range(1,50):
 
     file_list = glob.glob("./step"+str(idx)+"/patchdata*")
+
+    print(file_list)
 
     f = open("./step"+str(idx)+"/timeval.bin","rb")
     tval, = struct.unpack("d",f.read(8))
@@ -184,6 +200,6 @@ for idx in range(50):
 
     write_dic_to_vtk(dic,"step"+str(idx))
 
-    lst.append({"timestep" : tval, "file" : "step"+str(idx)+'.vtu'})
+    #lst.append({"timestep" : tval, "file" : "step"+str(idx)+'.vtu'})
 
     

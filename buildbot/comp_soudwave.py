@@ -117,15 +117,19 @@ def plot_soundwave(idx : int, toff : float):
 
     h_arr = np.array(dic["h"])
 
-    m = 1e-5
+    #m = 1e-5
+    m = 2e-4
     hfac = 1.2
     rho = m*(hfac/h_arr)*(hfac/h_arr)*(hfac/h_arr)
 
+    #dv0 = 1e-2
     dv0 = 1e-2
     nmode = 2
     z_min = -1
-    z_max = 1.0249114036560059
-    cs = 1/(1.694)*1.0362095232493131
+    #z_max = 1.0249114036560059
+    #z_max = 0.992251
+    z_max = 0.9595917
+    cs = 1#/(1.694)*1.0362095232493131
     z = np.array(dic["z"])
 
     zs = z_max - z_min
@@ -136,7 +140,11 @@ def plot_soundwave(idx : int, toff : float):
     anal_vz = dv0*np.cos(nmode*2.*np.pi*(z-z_min)/(z_max-z_min))*np.cos(omega*tval)
 
 
-    rho_0 = 0.220325
+    #rho_0 = 0.22097201794744842
+    #rho_0 = 0.02684098807585487
+    rho_0 = 0.55
+    #rho_0 = 1.7392566998603394
+    #rho_0 = 0.2203
     drho_0 = rho_0*(dv0/cs)
 
     anal_rho = rho_0 + drho_0*np.sin(nmode*2.*np.pi*(z-z_min)/(z_max-z_min))*np.sin(omega*tval)
@@ -165,9 +173,13 @@ f.close()
     
 plot_soundwave(5,toff)
 
+plot_soundwave(25,toff)
+
 plot_soundwave(50,toff)
 
-plot_soundwave(101,toff)
+plot_soundwave(75,toff)
+
+plot_soundwave(100,toff)
 
 plot_soundwave(150,toff)
 

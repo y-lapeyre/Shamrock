@@ -1,6 +1,7 @@
 #pragma once
 
 
+#include "CL/sycl/stream.hpp"
 #include "algs/syclreduction.hpp"
 #include "aliases.hpp"
 #include "interfaces/interface_handler.hpp"
@@ -26,7 +27,7 @@
 #include "forces.hpp"
 
 
-constexpr f32 gpart_mass = 1e-5;
+constexpr f32 gpart_mass =2e-4;
 
 
 template<class vec>
@@ -906,7 +907,7 @@ class SPHTimestepperLeapfrog{public:
             min_cfl_map[id_patch] = min_cfl;
         });
 
-        f32 cur_cfl_dt = HUGE_VALF;
+        f32 cur_cfl_dt = 0.001;
         for (auto & [k,cfl] : min_cfl_map) {
             cur_cfl_dt = sycl::min(cur_cfl_dt,cfl);
         }
@@ -1183,7 +1184,7 @@ class SPHTimestepperLeapfrog{public:
                             f32_3 inter_box_a_max = xyz_a + h_a * Kernel::Rkern;
 
                             f32 rho_sum = 0;
-                            f32 part_omega_sum = 0;
+                            f32 sumdWdh = 0;
                             
                             walker::rtree_for(
                                 tree_acc,
@@ -1197,7 +1198,7 @@ class SPHTimestepperLeapfrog{public:
                                     return sph_radix_cell_crit(xyz_a, inter_box_a_min, inter_box_a_max, cur_pos_min_cell_b,
                                                                 cur_pos_max_cell_b, int_r_max_cell);
                                 },
-                                [&r,&xyz_a,&h_a,&rho_sum,&part_mass,&part_omega_sum](u32 id_b) {
+                                [&r,&xyz_a,&h_a,&rho_sum,&part_mass,&sumdWdh](u32 id_b) {
                                     //f32_3 dr = xyz_a - r[id_b];
                                     f32 rab = sycl::distance( xyz_a , r[id_b]);
 
@@ -1206,7 +1207,7 @@ class SPHTimestepperLeapfrog{public:
                                     //f32 rab = sycl::sqrt(rab2);
 
                                     rho_sum += part_mass*Kernel::W(rab,h_a);
-                                    part_omega_sum += part_mass * Kernel::dhW(rab,h_a);
+                                    sumdWdh += part_mass*Kernel::dhW(rab,h_a);
 
                                 },
                                 [](u32 node_id) {});
@@ -1214,8 +1215,14 @@ class SPHTimestepperLeapfrog{public:
 
                             
                             f32 rho_ha = rho_h(part_mass, h_a);
-                            f32 omega_a = 1 + (h_a/(3*rho_ha))*part_omega_sum;
-                            f32 new_h = h_a - (rho_ha - rho_sum)/((-3*rho_ha/h_a)*omega_a);
+
+                            f32 f_iter = rho_sum - rho_ha;
+                            f32 df_iter = sumdWdh + 3*rho_ha/h_a;
+
+                            //f32 omega_a = 1 + (h_a/(3*rho_ha))*sumdWdh;
+                            //f32 new_h = h_a - (rho_ha - rho_sum)/((-3*rho_ha/h_a)*omega_a);
+
+                            f32 new_h = h_a - f_iter/df_iter;
 
 
                             if(new_h < h_a*h_max_evol_m) new_h = h_max_evol_m*h_a;
@@ -1413,7 +1420,7 @@ class SPHTimestepperLeapfrog{public:
             sycl::range range_npart{merge_pdat_buf[id_patch].or_element_cnt};
 
             
-            if(step_cnt > 5){
+            if(step_cnt > 4){
                 std::cout << "patch : n°" << id_patch << "compute forces" << std::endl;
                 hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
 
@@ -1435,6 +1442,8 @@ class SPHTimestepperLeapfrog{public:
 
                     constexpr f32 htol = htol_up_tol;
 
+
+                    //sycl::stream out(65000,65000,cgh);
 
                     cgh.parallel_for<class forces>(range_npart, [=](sycl::item<1> item) {
                         u32 id_a = (u32) item.get_id(0);
@@ -1487,15 +1496,20 @@ class SPHTimestepperLeapfrog{public:
                                 f32 P_b = cs*cs*rho_b;
                                 f32 omega_b = omga[id_b];
 
-                                sum_axyz += sph_pressure<f32_3,f32>(
+
+                                f32_3 tmp = sph_pressure<f32_3,f32>(
                                     part_mass, rho_a_sq, rho_b*rho_b, P_a, P_b, omega_a, omega_b
                                     , 0,0, r_ab_unit*Kernel::dW(rab,h_a), r_ab_unit*Kernel::dW(rab,h_b));
 
 
+                                //out << omega_a<< " " << tmp << "\n";
+
+                                sum_axyz += tmp;
+
                             },
                             [](u32 node_id) {});
                         
-
+                        //out << "sum : " << sum_axyz << "\n";
                         
                         U3[id_a*DU3::nvar + DU3::iaxyz] = sum_axyz;
                         
@@ -1517,27 +1531,30 @@ class SPHTimestepperLeapfrog{public:
             });
 */
 
-
-            leapfrog_corrector<pos_prec, DU3>(
-                hndl.get_queue_compute(0), 
-                merge_pdat_buf[id_patch].or_element_cnt, 
-                dt_cur, 
-                pdat_buf_merge.get_pos<pos_vec>(), 
-                pdat_buf_merge.get_U3<pos_vec>());
+            if(step_cnt > 5){
+                leapfrog_corrector<pos_prec, DU3>(
+                    hndl.get_queue_compute(0), 
+                    merge_pdat_buf[id_patch].or_element_cnt, 
+                    dt_cur, 
+                    pdat_buf_merge.get_pos<pos_vec>(), 
+                    pdat_buf_merge.get_U3<pos_vec>());
+            }
 
 
             auto tmp_acc = omega.get_access<sycl::access::mode::read>();
 
+            //*
             std::cout << "exemple val " << tmp_acc[0] << " "
               << tmp_acc[0] << " "
               << tmp_acc[50] << " "
               << tmp_acc[1000] << " "
               << tmp_acc[3452] << " "
               << tmp_acc[8888] << " "
-              << tmp_acc[100000] << " "
+              << tmp_acc[25000] << " "
               << tmp_acc[8719] << " "
               << tmp_acc[819] << " "
               << tmp_acc[4541] << std::endl;
+              //*/
         });
 
 
