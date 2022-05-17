@@ -46,7 +46,7 @@ template <class flt_type> class M4 {public:
     inline static flt_type dW(flt_type r, flt_type h) { return norm * df(r / h) / (h * h * h * h); }
 
     inline static flt_type dhW(flt_type r, flt_type h) {
-        return -(norm) * (3 * f(r / h) + (r / h) * 3 * df(r / h)) / (h * h * h * h);
+        return -(norm) * (3 * f(r / h) + (r / h) * df(r / h)) / (h * h * h * h);
     }
 };
 
