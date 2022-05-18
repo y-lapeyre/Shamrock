@@ -204,3 +204,31 @@ void merge_patches(std::unordered_set<u64> merge_rq){
     }
 }
 ```
+
+
+# New implementation : 
+
+layout setting : 
+
+```c++
+patchdata_layout::reset_fields();
+
+patchdata_layout::add_field(FieldDescriptor<f32>("rho",1));
+patchdata_layout::add_field(FieldDescriptor<f32_3>("axyz",1));
+
+patchdata_layout::add_field(FieldDescriptor<f32>("dustfrac",nbins));
+patchdata_layout::add_field(FieldDescriptor<f32_3>("dustdeltv",nbins));
+
+patchdata_layout::commit_layout();
+
+SchedulerBuilder buildsched();
+
+DataBuilder dbuild = setup_fcc ......
+
+buildsched.add_data(dbuild)
+
+PatchScheduler psched = dbuild.build(1e6, 1e6/8);
+
+run_sim();
+
+```
