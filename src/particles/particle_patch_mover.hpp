@@ -9,10 +9,10 @@
 #include <unordered_map>
 
 template <class vecprec>
-inline void reatribute_particles(SchedulerMPI & sched, SerialPatchTree<vecprec> & sptree);
+inline void reatribute_particles(SchedulerMPI & sched, SerialPatchTree<vecprec> & sptree,bool periodic);
 
 template<>
-inline void reatribute_particles<f32_3>(SchedulerMPI & sched, SerialPatchTree<f32_3> & sptree){
+inline void reatribute_particles<f32_3>(SchedulerMPI & sched, SerialPatchTree<f32_3> & sptree,bool periodic){
 
     SyCLHandler & hndl = SyCLHandler::get_instance();
 
@@ -46,7 +46,13 @@ inline void reatribute_particles<f32_3>(SchedulerMPI & sched, SerialPatchTree<f3
 
     printf("err_id_in_newid : %d \n", err_id_in_newid);
 
-    if(sched.should_resize_box(err_id_in_newid)){
+    bool synced_should_res_box = sched.should_resize_box(err_id_in_newid);
+
+    if (periodic && synced_should_res_box) {
+        throw shamrock_exc("box cannot be resized in periodic mode");
+    }
+
+    if(synced_should_res_box){
         sched.patch_data.sim_box.reset_box_size();
         
         for(auto & [id,pdat] : sched.patch_data.owned_data ){
@@ -198,7 +204,7 @@ inline void reatribute_particles<f32_3>(SchedulerMPI & sched, SerialPatchTree<f3
 
 
 template<>
-inline void reatribute_particles<f64_3>(SchedulerMPI & sched, SerialPatchTree<f64_3> & sptree){
+inline void reatribute_particles<f64_3>(SchedulerMPI & sched, SerialPatchTree<f64_3> & sptree,bool periodic){
 
     SyCLHandler & hndl = SyCLHandler::get_instance();
 
@@ -228,7 +234,13 @@ inline void reatribute_particles<f64_3>(SchedulerMPI & sched, SerialPatchTree<f6
 
     printf("err_id_in_newid : %d \n", err_id_in_newid);
 
-    if(sched.should_resize_box(err_id_in_newid)){
+    bool synced_should_res_box = sched.should_resize_box(err_id_in_newid);
+
+    if (periodic && synced_should_res_box) {
+        throw shamrock_exc("box cannot be resized in periodic mode");
+    }
+
+    if(synced_should_res_box){
         sched.patch_data.sim_box.reset_box_size();
 
         

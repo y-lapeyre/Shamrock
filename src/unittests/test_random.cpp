@@ -1,10 +1,16 @@
 
 
+#include "CL/sycl/buffer.hpp"
+#include "CL/sycl/usm.hpp"
+#include "CL/sycl/usm/usm_allocator.hpp"
+#include "CL/sycl/usm/usm_enums.hpp"
+#include "sys/mpi_handler.hpp"
 #include "unittests/shamrocktest.hpp"
 
 #include "sys/sycl_handler.hpp"
 #include <chrono>
 #include <memory>
+#include <mpi.h>
 #include <mutex>
 #include <ostream>
 #include <queue>
@@ -394,6 +400,59 @@ Test_start("testcpp::", test_lambda_walker, 1){
     walker::walk([&](int i, int j){
 
     });
+}
+
+Test_start("test_MPI_CUDA", test1, 2){
+
+    sycl::queue & q = SyCLHandler::get_instance().get_queue_compute(0);
+
+    u32 len_test = 10000;
+
+    f32* ptr_send;
+    f32* ptr_recv;
+    
+    if(mpi_handler::world_rank == 0){
+        ptr_send = sycl::malloc_device<f32>(len_test,q);
+
+        q.parallel_for(sycl::range<1>(len_test),[=] (sycl::item<1> item) {
+            size_t id = item.get_linear_id();
+            ptr_send[id] = id*0.2;
+        });
+
+        mpi::send(ptr_send, len_test,MPI_FLOAT, 1, 0, MPI_COMM_WORLD);
+
+        sycl::free(ptr_send,q);
+    }
+
+    if(mpi_handler::world_rank == 1){
+        ptr_recv = sycl::malloc_device<f32>(len_test,q);
+
+        MPI_Status st;
+        mpi::recv(ptr_recv, len_test,MPI_FLOAT, 0, 0, MPI_COMM_WORLD, &st);
+
+        f32* res = new f32[len_test];
+
+
+        q.memcpy(res,ptr_recv,sizeof(int)*len_test);
+        q.wait();
+
+        sycl::free(ptr_recv,q);
+
+        for(u32 i = 0 ; i < len_test; i++){
+            std::cout << res[i] << " ";
+        }
+
+        std::cout << std::endl;
+
+        delete[] res;
+
+    }
+
+
+
+    
+    
+
 }
 
 

@@ -25,8 +25,11 @@
 #include "utils/string_utils.hpp"
 #include "utils/time_utils.hpp"
 #include <array>
+#include <cstdlib>
+#include <iterator>
 #include <memory>
 #include <mpi.h>
+#include <ostream>
 #include <string>
 #include <type_traits>
 #include <unordered_map>
@@ -39,7 +42,8 @@
 
 class TestSimInfo {
   public:
-    u32 time;
+    u32 stepcnt;
+    f64 time;
 };
 
 
@@ -59,6 +63,7 @@ class CurDataLayout{public:
 
         static constexpr u32 ihpart = 0;
         static constexpr u32 iomega = 1;
+    
     };
 
     
@@ -69,6 +74,7 @@ class CurDataLayout{public:
         static constexpr u32 ivxyz = 0;
         static constexpr u32 iaxyz = 1;
         static constexpr u32 iaxyz_old = 2;
+        
     };
 
     // template<>
@@ -94,6 +100,162 @@ class CurDataLayout{public:
 };
 
 
+
+
+template<class flt>
+inline void correct_box_fcc(f32 r_particle, std::tuple<sycl::vec<flt, 3>,sycl::vec<flt, 3>> & box){
+
+    using vec3 = sycl::vec<flt, 3>;
+
+    vec3 box_min = std::get<0>(box);
+    vec3 box_max = std::get<1>(box);
+
+    vec3 box_dim = box_max - box_min;
+
+    vec3 iboc_dim = (box_dim / 
+        vec3({
+            2,
+            sycl::sqrt(3.),
+            2*sycl::sqrt(6.)/3
+        }))/r_particle;
+
+    u32 i = iboc_dim.x();
+    u32 j = iboc_dim.y();
+    u32 k = iboc_dim.z();
+
+    //modify values to get even number on each axis to corect the periodicity
+    if(i%2 == 1) i++;
+    if(j%2 == 1) j++;
+    if(k%2 == 1) k++;
+
+    vec3 r_a = {
+        2*i + 1,//((j+k) % 2), 
+        sycl::sqrt(3.)*(j + (1./3.)*(k % 2)),
+        2*sycl::sqrt(6.)*k/3
+    };
+
+    r_a.x() -=1;
+
+    r_a *= r_particle;
+
+    std::cout << "resizing box from (" <<
+        box_dim.x() << ", " <<
+        box_dim.y() << ", " <<
+        box_dim.z() << ")" 
+        << " to (" <<
+        r_a.x() << ", " <<
+        r_a.y() << ", " <<
+        r_a.z() << ")" << std::endl;
+
+    r_a += box_min;
+
+    std::get<1>(box) =  r_a;
+
+    
+    
+}
+
+template<class flt,class Tpred_select,class Tpred_pusher>
+inline void add_particles_fcc(
+    flt r_particle, 
+    std::tuple<sycl::vec<flt, 3>,sycl::vec<flt, 3>> box,
+    Tpred_select && selector,
+    Tpred_pusher && part_pusher ){
+    
+    using vec3 = sycl::vec<flt, 3>;
+
+    vec3 box_min = std::get<0>(box);
+    vec3 box_max = std::get<1>(box);
+
+    vec3 box_dim = box_max - box_min;
+
+    vec3 iboc_dim = (box_dim / 
+        vec3({
+            2,
+            sycl::sqrt(3.),
+            2*sycl::sqrt(6.)/3
+        }))/r_particle;
+
+    std::cout << "len vector : (" << iboc_dim.x() << ", " << iboc_dim.y() << ", " << iboc_dim.z() << ")" << std::endl;
+
+    for(u32 i = 0 ; i < iboc_dim.x(); i++){
+        for(u32 j = 0 ; j < iboc_dim.y(); j++){
+            for(u32 k = 0 ; k < iboc_dim.z(); k++){
+
+                vec3 r_a = {
+                    2*i + ((j+k) % 2),
+                    sycl::sqrt(3.)*(j + (1./3.)*(k % 2)),
+                    2*sycl::sqrt(6.)*k/3
+                };
+
+                r_a *= r_particle;
+                r_a += box_min;
+
+                if(selector(r_a)) part_pusher(r_a, r_particle);
+
+            }
+        }
+    }
+
+}
+
+
+
+
+
+
+
+template<class flt, class Tgetter,class Tsetter,class Trho_x,class TM_x>
+inline void strech_mapping_axis(
+    flt x_min,
+    flt x_max,
+    
+    u32 el_count,
+
+    Tgetter getter,
+    Tsetter setter,
+
+    Trho_x rho_x,
+    TM_x M_x){
+
+    auto f_x = [&](flt x,flt x_0) -> flt{
+        return (M_x(x)/ M_x(x_max)) - (x_0 - x_min)/(x_max-x_min);
+    };
+
+    auto fp_x = [&](flt x) -> flt{
+        return rho_x(x)/M_x(x_max);
+    };
+
+    for(u32 i = 0; i < el_count; i++){
+
+        flt x_0 = getter(i);
+        flt x = x_0;
+        while(!(sycl::fabs(f_x(x,x_0)) < 1e-6)){
+
+            x -= f_x(x,x_0)/fp_x(x);
+
+            //printf("-> %f %e\n",x,f_x(x,x_0));
+
+        }
+
+        setter(i,x);
+        //printf("x_in : %f | x_out : %f | f : %e\n",x_0,x,sycl::fabs(f_x(x,x_0)));
+    }
+
+    
+
+}
+
+
+
+
+
+
+
+
+
+
+
 class TestTimestepper {
   public:
 
@@ -104,13 +266,31 @@ class TestTimestepper {
         patchdata_layout::set(1, 0, 2, 0, 3, 0);
         patchdata_layout::sync(MPI_COMM_WORLD);
 
+        f32_3 box_dim = {1,1,1};
+
+        /*
+        box_dim.x() *= 4;
+        box_dim.y() /= 2;
+        box_dim.z() /= 2;
+        */
+
+        std::tuple<f32_3,f32_3> box = {
+            -box_dim,box_dim
+        };
+
+        
+
+        f32 dr = 0.04;
+        correct_box_fcc<f32>(dr,box);
+
+        sched.set_box_volume<f32_3>(box);
+
         if (mpi_handler::world_rank == 0) {
 
             auto t = timings::start_timer("dumm setup", timings::timingtype::function);
             Patch p;
 
-            p.data_count    = 1e6;
-            p.load_value    = 1e6;
+            
             p.node_owner_id = mpi_handler::world_rank;
 
             p.x_min = 0;
@@ -125,6 +305,68 @@ class TestTimestepper {
 
             PatchData pdat;
 
+            
+
+            add_particles_fcc(
+                dr, 
+                box , 
+                [](f32_3 r){return true;}, 
+                [&pdat](f32_3 r,f32 h){
+                    pdat.pos_s.emplace_back(r); //r
+                    //                      h    omega
+                    pdat.U1_s.emplace_back(h*2);
+                    pdat.U1_s.emplace_back(0.00f);
+                    //                           v          a             a_old
+                    pdat.U3_s.emplace_back(f32_3{0.f,0.f,0.f});
+                    pdat.U3_s.emplace_back(f32_3{0.f,0.f,0.f});
+                    pdat.U3_s.emplace_back(f32_3{0.f,0.f,0.f});
+                });
+
+            std::cout << "paticles count " << pdat.pos_s.size() << std::endl;
+
+            //exit(0);
+
+            if(false){
+                f32 a = 0.001;
+
+                f32 nmode = 1;
+                strech_mapping_axis(std::get<0>(box).x(),std::get<1>(box).x(), pdat.pos_s.size(),
+
+                    [&](u32 i) -> f32{
+                        return pdat.pos_s[i].x();
+                    }
+                    ,
+                    [&](u32 i,f32 r){
+                        pdat.pos_s[i].x() = r;
+                    },
+                    
+                    [&](f32 x) -> f32{
+
+                        f32 x_min = std::get<0>(box).x();
+                        f32 x_max = std::get<1>(box).x();
+                        constexpr f32 pi = 3.141612;
+
+                        return 1+a*sycl::cos(nmode*2.*pi*(x-x_min)/(x_max-x_min));
+                    }, 
+                    [&](f32 x) -> f32{
+
+                        f32 xmin = std::get<0>(box).x();
+                        f32 xmax = std::get<1>(box).x();
+
+                        constexpr f32 pi = 3.141612;
+
+                        return x - xmin + (a*(-xmax + xmin)* sycl::sin((nmode*2.*pi*(-x + xmin))/ (xmax - xmin)))/(nmode*2.*pi);
+                    });
+
+                
+
+                p.data_count = pdat.pos_s.size();
+                p.load_value = pdat.pos_s.size();
+            }
+
+            /*
+            p.data_count    = 1e6;
+            p.load_value    = 1e6;
             std::mt19937 eng(0x1111);
             std::uniform_real_distribution<f32> distpos(-1, 1);
 
@@ -138,6 +380,7 @@ class TestTimestepper {
                 pdat.U3_s.emplace_back(f32_3{0.f,0.f,0.f});
                 pdat.U3_s.emplace_back(f32_3{0.f,0.f,0.f});
             }
+            */
                 
 
             sched.add_patch(p, pdat);
@@ -157,8 +400,8 @@ class TestTimestepper {
 
         //*
         sched.patch_tree.build_from_patchtable(sched.patch_list.global, HilbertLB::max_box_sz);
-        sched.patch_data.sim_box.min_box_sim_s = {-1};
-        sched.patch_data.sim_box.max_box_sim_s = {1};
+        //sched.patch_data.sim_box.min_box_sim_s = {-1};
+        //sched.patch_data.sim_box.max_box_sim_s = {1};
 
         // std::cout << sched.dump_status() << std::endl;
 
@@ -190,7 +433,7 @@ class TestTimestepper {
         }*/
     }
 
-    static void step(SchedulerMPI &sched, TestSimInfo &siminfo) {
+    static void step(SchedulerMPI &sched, TestSimInfo &siminfo, std::string dump_folder) {
 
         SPHTimestepperLeapfrog<CurDataLayout> leapfrog;
 
@@ -199,7 +442,7 @@ class TestTimestepper {
         // std::cout << sched.dump_status() << std::endl;
         sched.scheduler_step(true, true);
 
-        leapfrog.step(sched);
+        leapfrog.step(sched,dump_folder,siminfo.stepcnt,siminfo.time);
     }
 };
 
@@ -207,12 +450,15 @@ template <class Timestepper, class SimInfo> class SimulationSPH {
   public:
     static void run_sim() {
 
-        SchedulerMPI sched = SchedulerMPI(1e5, 1);
+        SyCLHandler &hndl = SyCLHandler::get_instance();
+
+        SchedulerMPI sched = SchedulerMPI(1e6, 1);
         sched.init_mpi_required_types();
 
         logfiles::open_log_files();
 
         SimInfo siminfo;
+        siminfo.time = 0;
 
         std::cout << " ------ init sim ------" << std::endl;
 
@@ -227,22 +473,66 @@ template <class Timestepper, class SimInfo> class SimulationSPH {
         std::filesystem::create_directory("step" + std::to_string(0));
 
         std::cout << "dumping state"<<std::endl;
-        dump_state("step" + std::to_string(0) + "/", sched);
+        dump_state("step" + std::to_string(0) + "/", sched,siminfo.time);
 
         timings::dump_timings("### init_step ###");
 
         
-        for (u32 stepi = 1; stepi < 30; stepi++) {
-            std::cout << " ------ step time = " << stepi << " ------" << std::endl;
-            siminfo.time = stepi;
+        for (u32 stepi = 1; stepi < 500; stepi++) {
 
-            auto step_timer = timings::start_timer("timestepper step", timings::timingtype::function);
-            Timestepper::step(sched, siminfo);
-            step_timer.stop();
+            if(stepi == 5){
+
+                auto box = sched.get_box_volume<f32_3>();
+
+                sched.for_each_patch_buf(
+                    [&](u64 id_patch, Patch cur_p, PatchDataBuffer & pdat_buf) {
+
+                        hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+                            auto r = pdat_buf.pos_s->get_access<sycl::access::mode::read>(cgh);
+                            auto U3 = pdat_buf.U3_s->get_access<sycl::access::mode::discard_write>(cgh);
+
+                            f32 deltv = 0.01;
+                            u32 nmode = 2;
+                            constexpr f32 pi = 3.141612;
+                            f32 z_min = std::get<0>(box).z();
+                            f32 z_max = std::get<1>(box).z();
+
+                            cgh.parallel_for( sycl::range{pdat_buf.element_count}, [=](sycl::item<1> item) { 
+
+                                f32 z = r[item].z();
+
+                                U3[item.get_id(0)*CurDataLayout::U3_s::nvar + CurDataLayout::U3_s::ivxyz] = 
+                                    {
+                                        0,
+                                        0,
+                                        deltv*sycl::cos(nmode*2.*pi*(z-z_min)/(z_max-z_min))
+                                    }
+                                ; 
+                            });
+                        });
+
+                    }
+                );
+            }
+
+
+            std::cout << " ------ step time = " << stepi << " ------" << std::endl;
+
+            std::cout << "time : " << siminfo.time << std::endl;
 
             std::filesystem::create_directory("step" + std::to_string(stepi));
 
-            dump_state("step" + std::to_string(stepi) + "/", sched);
+            siminfo.stepcnt = stepi;
+
+            auto step_timer = timings::start_timer("timestepper step", timings::timingtype::function);
+            
+            Timestepper::step(sched, siminfo,"step" + std::to_string(stepi));
+
+            step_timer.stop();
+
+            
+
+            dump_state("step" + std::to_string(stepi) + "/", sched,siminfo.time);
 
             timings::dump_timings("### "
                                   "step" +

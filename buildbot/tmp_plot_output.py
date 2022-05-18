@@ -1,13 +1,21 @@
-import mayavi
-import mayavi.mlab
+import pyvista as pv
+import numpy as np 
+
+import glob
+
 import sys
 import struct
 import matplotlib.pyplot as plt
-# mayavi.mlab.options.backend = 'envisage'
+#mayavi.mlab.options.backend = 'envisage'
 
 #mayavi.mlab.figure(figure=None, bgcolor=None, fgcolor=None, engine=None, size=(1920, 1080))
 
-def plot_patchdata(filename):
+
+
+
+frame = []
+
+def get_plot_patchdata(filename):
 
     f = open(filename,"rb")
 
@@ -51,10 +59,10 @@ def plot_patchdata(filename):
 
     f.close()
 
-    #dic["x"] = dic["x"][::10]
-    #dic["y"] = dic["y"][::10]
-    #dic["z"] = dic["z"][::10]
-    #dic["h"] = dic["h"][::10]
+    dic["x"] = dic["x"][::]
+    dic["y"] = dic["y"][::]
+    dic["z"] = dic["z"][::]
+    dic["h"] = dic["h"][::]
 
     #print(dic["h"][:1000])
 
@@ -71,7 +79,7 @@ def plot_patchdata(filename):
 
         cd = True
         #cd = cd and dic["y"][i] < 0.1 and dic["y"][i] > -0.1
-        cd = cd and dic["z"][i] < 0.3e-2 and dic["z"][i] > -0.3e-2
+        #cd = cd and dic["z"][i] < 0.3e-2 and dic["z"][i] > -0.3e-2
 
 
         if cd :
@@ -81,24 +89,159 @@ def plot_patchdata(filename):
             dic_filtered["z"].append(dic["z"][i])
             dic_filtered["h"].append(dic["h"][i])
 
+    points = np.zeros((len(dic_filtered["x"]),3))
 
-    plt.scatter(dic_filtered["x"], dic_filtered["y"], c=dic_filtered["h"], cmap='nipy_spectral',vmin=0,vmax=0.025)
+    points[:,0] = np.array(dic_filtered["x"])
+    points[:,1] = np.array(dic_filtered["y"])
+    points[:,2] = np.array(dic_filtered["z"])
+
+    point_cloud = pv.PolyData(points)
+
+    h = np.array(dic_filtered["h"])
+    hfac = 1.2
+    m = 1e-5
 
 
+    point_cloud["hpart"] = h
+    point_cloud["rho"] = m*(hfac/h)*(hfac/h)*(hfac/h)
+    #point_cloud.plot(eye_dome_lighting=True)
+    #plotter.add_mesh(point_cloud,scalars='hpart', cmap="viridis", render_points_as_spheres=True)
 
-def plot_content(filename):
+    return point_cloud
 
-    print("plotting : {}".format(filename))
+    #plt.scatter(dic_filtered["x"], dic_filtered["y"], c=dic_filtered["h"], cmap='nipy_spectral',vmin=0,vmax=0.025)
 
-    if "patchdata" in filename:
-        plot_patchdata(filename)
+def loading_frames():
 
-for a in sys.argv[2::]:
-    plot_content(a)
+    idx = 0
 
-plt.colorbar()
+    while True : 
+        file_list = glob.glob("./step"+str(idx)+"/patchdata*")
+        print(file_list)
 
-plt.show()
+        if len(file_list) == 0 :
+            break
+
+
+        tmp = []
+
+        for i in file_list:
+            print("plotting : {}".format(i))
+            tmp.append(get_plot_patchdata(i))
+
+        frame.append(tmp)
+
+        idx = idx + 1
+
+def plot_content():
+    for f in frame:
+        plotter = pv.Plotter(window_size=([1920, 1080]))
+        for p in f:
+            plotter.add_mesh(p,scalars='hpart', cmap="viridis", render_points_as_spheres=True)
+        plotter.show_grid()
+        plotter.show()
+
+def make_gif():
+    plotter = pv.Plotter(window_size=([1920, 1080]),notebook=False, off_screen=True)
+    plotter.open_gif("out.gif")
+    for f in frame:
+        for p in f:
+            plotter.add_mesh(p,scalars='hpart', cmap="viridis",clim=[0.0150,0.03], render_points_as_spheres=True)
+        plotter.show_grid()
+        plotter.write_frame()
+        plotter.clear()
+    plotter.close()
+
+def make_gif_with_load():
+
+    plotter = pv.Plotter(window_size=([1920, 1080]),notebook=False, off_screen=True)
+    plotter.open_gif("out.gif")
+
+    idx = 0
+
+    while True : 
+        file_list = glob.glob("./step"+str(idx)+"/patchdata*")
+        print(file_list)
+
+        if len(file_list) == 0 :
+            break
+
+
+        tmp = []
+
+        for i in file_list:
+            print("plotting : {}".format(i))
+            tmp.append(get_plot_patchdata(i))
+
+        idx = idx + 1
+
+        for p in tmp:
+            plotter.add_mesh(p,scalars='rho', cmap="viridis", render_points_as_spheres=True,clim=[1.5,3])
+        plotter.show_grid()
+        plotter.write_frame()
+        plotter.clear()
+
+
+    plotter.close()
+
+
+def make_movie_with_load():
+
+    plotter = pv.Plotter(window_size=([1920, 1080]),notebook=False, off_screen=True)
+    plotter.open_movie("out.mp4")
+
+    idx = 0
+
+    while True : 
+        file_list = glob.glob("./step"+str(idx)+"/patchdata*")
+        print(file_list)
+
+        if len(file_list) == 0 :
+            break
+
+
+        tmp = []
+
+        for i in file_list:
+            print("plotting : {}".format(i))
+            tmp.append(get_plot_patchdata(i))
+
+        idx = idx + 1
+
+        for p in tmp:
+            plotter.add_mesh(p,scalars='rho', cmap="viridis", render_points_as_spheres=True,clim=[1.5,3])
+        plotter.show_grid()
+        plotter.write_frame()
+        plotter.clear()
+
+
+    plotter.close()
+
+def make_figs():
+    plotter = pv.Plotter(window_size=([1920, 1080]),off_screen=True)
+    idx = 0
+    for f in frame:
+        for p in f:
+            plotter.add_mesh(p,scalars='hpart', cmap="viridis", render_points_as_spheres=True)
+        plotter.show_grid()
+        #plotter.save_graphic("step"+str(idx)+".pdf")
+        plotter.show(screenshot="step"+str(idx)+".png")
+        plotter.clear()
+
+        idx = idx + 1
+    plotter.close()
+
+#loading_frames()
+#make_gif()
+#plot_content()
+
+make_gif_with_load()
+#make_movie_with_load()
+
+#plt.colorbar()
+
+#plt.show()
 #mayavi.mlab.show()
 #print("saving ...")
 #mayavi.mlab.savefig(sys.argv[1])
+

@@ -55,7 +55,7 @@ class Test{public:
 
 #define Test_start(group,name, node_cnt) void test_func_##name (TestResults& t);\
 void (*test_func_ptr_##name)(TestResults&) = test_func_##name;\
-Test test_class_obj_##name (group #name,node_cnt,test_func_ptr_##name);\
+Test test_class_obj_##name (group ":" #name,node_cnt,test_func_ptr_##name);\
 void test_func_##name (TestResults& __test_result_ref)
 
 

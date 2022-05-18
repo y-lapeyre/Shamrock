@@ -10,7 +10,7 @@ namespace impl {
     
     template <class vectype, class primtype>
     void comm_interfaces(SchedulerMPI &sched, std::vector<InterfaceComm<vectype>> &interface_comm_list,
-                        std::unordered_map<u64, std::vector<std::tuple<u64, std::unique_ptr<PatchData>>>> &interface_map) {
+                        std::unordered_map<u64, std::vector<std::tuple<u64, std::unique_ptr<PatchData>>>> &interface_map,bool periodic) {
         SyCLHandler &hndl = SyCLHandler::get_instance();
 
         interface_map.clear();
@@ -28,7 +28,7 @@ namespace impl {
                 if (sched.patch_list.global[interface_comm_list[i].global_patch_idx_send].data_count > 0) {
                     std::vector<std::unique_ptr<PatchData>> pret = InterfaceVolumeGenerator::append_interface<vectype>(
                         hndl.get_queue_alt(0), sched.patch_data.owned_data[interface_comm_list[i].sender_patch_id],
-                        {interface_comm_list[i].interf_box_min}, {interface_comm_list[i].interf_box_max});
+                        {interface_comm_list[i].interf_box_min}, {interface_comm_list[i].interf_box_max},interface_comm_list[i].interf_offset);
                     for (auto &pdat : pret) {
                         comm_pdat.push_back(std::move(pdat));
                     }
@@ -53,7 +53,7 @@ namespace impl {
 
     template <class T,class vectype>
     void comm_interfaces_field(SchedulerMPI &sched, PatchComputeField<T> &pcomp_field, std::vector<InterfaceComm<vectype>> &interface_comm_list,
-                        std::unordered_map<u64, std::vector<std::tuple<u64, std::unique_ptr<std::vector<T>>>>> &interface_field_map) {
+                        std::unordered_map<u64, std::vector<std::tuple<u64, std::unique_ptr<std::vector<T>>>>> &interface_field_map,bool periodic) {
 
         SyCLHandler &hndl = SyCLHandler::get_instance();
 

@@ -14,21 +14,21 @@ namespace impl{
 
 
 template<class T>
-    inline void vector_isend(std::vector<T> &p, std::vector<MPI_Request> &rq_lst, i32 rank_dest, i32 tag, MPI_Comm comm){
-        rq_lst.resize(rq_lst.size() + 1);
-        mpi::isend(p.data(), p.size(), get_mpi_type<T>(), rank_dest, tag, comm, &rq_lst[rq_lst.size() - 1]);
-    }
+inline void vector_isend(std::vector<T> &p, std::vector<MPI_Request> &rq_lst, i32 rank_dest, i32 tag, MPI_Comm comm){
+    rq_lst.resize(rq_lst.size() + 1);
+    mpi::isend(p.data(), p.size(), get_mpi_type<T>(), rank_dest, tag, comm, &rq_lst[rq_lst.size() - 1]);
+}
 
-    template<class T>
-    inline void vector_irecv(std::vector<T> & pdat, std::vector<MPI_Request> &rq_lst, i32 rank_source, i32 tag, MPI_Comm comm){
-        MPI_Status st;
-        i32 cnt;
-        int i = mpi::probe(rank_source, tag,comm, & st);
-        mpi::get_count(&st, get_mpi_type<T>(), &cnt);
-        rq_lst.resize(rq_lst.size() + 1);
-        pdat.resize(cnt);
-        mpi::irecv(pdat.data(), cnt, get_mpi_type<T>(), rank_source, tag, comm, &rq_lst[rq_lst.size() - 1]);
-    }
+template<class T>
+inline void vector_irecv(std::vector<T> & pdat, std::vector<MPI_Request> &rq_lst, i32 rank_source, i32 tag, MPI_Comm comm){
+    MPI_Status st;
+    i32 cnt;
+    int i = mpi::probe(rank_source, tag,comm, & st);
+    mpi::get_count(&st, get_mpi_type<T>(), &cnt);
+    rq_lst.resize(rq_lst.size() + 1);
+    pdat.resize(cnt);
+    mpi::irecv(pdat.data(), cnt, get_mpi_type<T>(), rank_source, tag, comm, &rq_lst[rq_lst.size() - 1]);
+}
 
 
 
@@ -123,11 +123,24 @@ inline void patch_data_exchange_object(
     std::vector<MPI_Status> st_lst(rq_lst.size());
     mpi::waitall(rq_lst.size(), rq_lst.data(), st_lst.data());
 
+    /*
+    for(auto & [id_ps, pdat] : (recv_obj[0])){
+        std::cout << "int : " << 0 << " <- " << id_ps << " : " << pdat->size() << std::endl;
+    }std::cout << std::endl;
+    */
     
     //TODO check that this sort is valid
     for(auto & [key,obj] : recv_obj){
-        std::sort(obj.begin(), obj.end());
+        std::sort(obj.begin(), obj.end(),[] (const auto& lhs, const auto& rhs) {
+            return std::get<0>(lhs) < std::get<0>(rhs);
+        });
     }
+
+    /*
+    for(auto & [id_ps, pdat] : (recv_obj[0])){
+        std::cout << "int : " << 0 << " <- " << id_ps << " : " << pdat->size() << std::endl;
+    }std::cout << std::endl;
+    */
 
 }
 
@@ -227,11 +240,24 @@ inline void patch_data_field_exchange_object(
     std::vector<MPI_Status> st_lst(rq_lst.size());
     mpi::waitall(rq_lst.size(), rq_lst.data(), st_lst.data());
 
-    
+    /*
+    for(auto & [id_ps, pdat] : (recv_obj[0])){
+        std::cout << "int : " << 0 << " <- " << id_ps << " : " << pdat->size() << std::endl;
+    }std::cout << std::endl;
+    */
+
     //TODO check that this sort is valid
     for(auto & [key,obj] : recv_obj){
-        std::sort(obj.begin(), obj.end());
+        std::sort(obj.begin(), obj.end(),[] (const auto& lhs, const auto& rhs) {
+            return std::get<0>(lhs) < std::get<0>(rhs);
+        });
     }
+
+    /*
+    for(auto & [id_ps, pdat] : (recv_obj[0])){
+        std::cout << "int : " << 0 << " <- " << id_ps << " : " << pdat->size() << std::endl;
+    }std::cout << std::endl;
+    */
 
 }
 
