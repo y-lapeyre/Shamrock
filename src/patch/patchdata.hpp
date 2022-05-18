@@ -11,9 +11,11 @@
 
 #pragma once
 
+#include <mpi.h>
 #include <random>
 #include <vector>
 
+#include "CL/sycl/usm.hpp"
 #include "aliases.hpp"
 #include "flags.hpp"
 #include "sys/mpi_handler.hpp"
@@ -140,3 +142,139 @@ PatchData patchdata_gen_dummy_data(std::mt19937 &eng);
  * @return false
  */
 bool patch_data_check_match(PatchData &p1, PatchData &p2);
+
+
+// TODO Make & Test of the new patchdata model
+
+enum FieldAllocMode{
+    SharedUSM,
+    DeviceUSM,
+    DeviceMPIUSM
+};
+
+template<class T, FieldAllocMode alloctype>
+class Field{public:
+
+    std::vector<std::string> name_list;
+
+    u32 nvar;
+    u32 obj_cnt;
+
+    u32 current_lenght;
+    u32 storage_capacity;
+
+    u64 memsize;
+
+    T* field_data = nullptr;
+
+
+    sycl::queue & owner_queue;
+
+
+    inline T* _alloc_buf(u32 sz){
+        T* ret;
+        if constexpr (alloctype == SharedUSM){
+            ret = sycl::malloc_shared<T>(sz, owner_queue);
+        }else if constexpr (alloctype == DeviceUSM) {
+            ret = sycl::malloc_device<T>(sz, owner_queue);
+        }else if constexpr (alloctype == DeviceMPIUSM) {
+            ret = sycl::malloc_device<T>(sz, owner_queue);
+        }
+        return ret;
+    }
+
+    inline void _free_buf(){
+        sycl::free(field_data, owner_queue);
+    }
+
+
+
+
+    inline Field(){
+
+    }
+
+    inline T* data(){
+        return field_data;
+    }
+
+    inline void resize(u32 obj_count){
+
+        u32 new_len = obj_cnt*nvar;
+
+        if(new_len > storage_capacity){
+            T* new_buf = _alloc_buf(new_len);
+            //TODO finish
+        }
+
+
+
+        obj_cnt = obj_count;
+        current_lenght = obj_cnt*nvar;
+    }
+
+
+
+
+
+
+
+
+
+    T* host_storage_buf = nullptr;
+
+    inline void mpi_send(int dest, int tag, MPI_Comm comm){
+        if constexpr (alloctype == SharedUSM){
+            mpi::send(field_data, current_lenght,get_mpi_type<T>(), dest, tag, comm);
+        }else if constexpr (alloctype == DeviceUSM) {
+
+            host_storage_buf = new T[current_lenght];
+
+            owner_queue.memcpy(host_storage_buf, field_data, current_lenght*sizeof(T));
+
+            owner_queue.wait();
+
+            mpi::send(host_storage_buf, current_lenght,get_mpi_type<T>(), dest, tag, comm);
+
+            delete[] host_storage_buf;
+
+        }else if constexpr (alloctype == DeviceMPIUSM) {
+            mpi::send(field_data, current_lenght,get_mpi_type<T>(), dest, tag, comm);
+        }
+    }
+
+
+    inline MPI_Status mpi_recv(int source, int tag, MPI_Comm comm){
+        MPI_Status st;
+        if constexpr (alloctype == SharedUSM){
+            mpi::recv(field_data, current_lenght,get_mpi_type<T>(), source, tag, comm, &st);
+        }else if constexpr (alloctype == DeviceUSM) {
+
+            host_storage_buf = new T[current_lenght];
+
+            mpi::recv(host_storage_buf, current_lenght,get_mpi_type<T>(), source, tag, comm, &st);
+
+            owner_queue.memcpy(field_data,host_storage_buf, current_lenght*sizeof(T));
+
+            owner_queue.wait();
+
+            delete[] host_storage_buf;
+
+        }else if constexpr (alloctype == DeviceMPIUSM) {
+            mpi::recv(field_data, current_lenght,get_mpi_type<T>(), source, tag, comm, &st);
+        }
+    }
+
+
+
+
+
+
+
+
+};
+
+// To be renmed PatchData in the end
+class PatchDataUSM{
+
+};
