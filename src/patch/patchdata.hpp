@@ -18,72 +18,99 @@
 #include "CL/sycl/usm.hpp"
 #include "aliases.hpp"
 #include "flags.hpp"
+#include "patch/patchdata_field.hpp"
 #include "sys/mpi_handler.hpp"
 #include "sys/sycl_mpi_interop.hpp"
 #include "utils/sycl_vector_utils.hpp"
 
+#include "patchdata_layout.hpp"
 
-//TODO study if patchdata can be templated by the patchdata layout to unroll for loop on nvar
-
-/**
- * @brief manage the information on the layout of patchdata
- */
-namespace patchdata_layout {
-
-inline u32 nVarpos_s; ///< number of f32 per object for position
-inline u32 nVarpos_d; ///< number of f64 per object for position
-inline u32 nVarU1_s;  ///< number of f32 per object for internal fields
-inline u32 nVarU1_d;  ///< number of f64 per object for internal fields
-inline u32 nVarU3_s;  ///< number of f32_3 per object for internal fields
-inline u32 nVarU3_d;  ///< number of f64_3 per object for internal fields
-
-/**
- * @brief should be check if true before communication with patchdata_s
- */
-inline bool layout_synced = false;
-
-/**
- * @brief sync the patchdata layout accors the MPI communicator \p comm
- *
- * @param comm the MPI communicator
- */
-void sync(MPI_Comm comm);
-
-/**
- * @brief set the patchdata layout on this node
- *
- * @param arg_nVarpos_s ///< number of f32 per object for position
- * @param arg_nVarpos_d ///< number of f64 per object for position
- * @param arg_nVarU1_s  ///< number of f32 per object for internal fields
- * @param arg_nVarU1_d  ///< number of f64 per object for internal fields
- * @param arg_nVarU3_s  ///< number of f32_3 per object for internal fields
- * @param arg_nVarU3_d  ///< number of f64_3 per object for internal fields
- */
-void set(u32 arg_nVarpos_s, u32 arg_nVarpos_d, u32 arg_nVarU1_s, u32 arg_nVarU1_d, u32 arg_nVarU3_s, u32 arg_nVarU3_d);
-
-/**
- * @brief should be check before using the layout
- *
- * //TODO add runtime exception check to function using it
- *
- * @return true patchdata_layout is synced
- * @return false  patchdata_layout isnt synced
- */
-bool is_synced();
-
-} // namespace patchdata_layout
 
 /**
  * @brief PatchData container class, the layout is described in patchdata_layout
  */
 class PatchData {
   public:
-    std::vector<f32_3> pos_s; ///< f32 's for position
-    std::vector<f64_3> pos_d; ///< f64 's for position
-    std::vector<f32> U1_s;    ///< f32 's for internal fields
-    std::vector<f64> U1_d;    ///< f64 's for internal fields
-    std::vector<f32_3> U3_s;  ///< f32_3 's for internal fields
-    std::vector<f64_3> U3_d;  ///< f64_3 's for internal fields
+    PatchDataLayout & patchdata_layout;
+
+    std::vector<PatchDataField<f32   >> fields_f32;
+    std::vector<PatchDataField<f32_2 >> fields_f32_2;
+    std::vector<PatchDataField<f32_3 >> fields_f32_3;
+    std::vector<PatchDataField<f32_4 >> fields_f32_4;
+    std::vector<PatchDataField<f32_8 >> fields_f32_8;
+    std::vector<PatchDataField<f32_16>> fields_f32_16;
+
+    std::vector<PatchDataField<f64   >> fields_f64;
+    std::vector<PatchDataField<f64_2 >> fields_f64_2;
+    std::vector<PatchDataField<f64_3 >> fields_f64_3;
+    std::vector<PatchDataField<f64_4 >> fields_f64_4;
+    std::vector<PatchDataField<f64_8 >> fields_f64_8;
+    std::vector<PatchDataField<f64_16>> fields_f64_16;
+
+    std::vector<PatchDataField<u32   >> fields_u32;
+
+    std::vector<PatchDataField<u64   >> fields_u64;
+
+    inline PatchData(PatchDataLayout & pdl) : patchdata_layout(pdl){
+
+        for (auto a : pdl.fields_f32) {
+            fields_f32.push_back(PatchDataField<f32>(a.name,a.nvar));
+        }
+
+        for (auto a : pdl.fields_f32_2) {
+            fields_f32_2.push_back(PatchDataField<f32_2>(a.name,a.nvar));
+        }
+
+        for (auto a : pdl.fields_f32_3) {
+            fields_f32_3.push_back(PatchDataField<f32_3>(a.name,a.nvar));
+        }
+
+        for (auto a : pdl.fields_f32_4) {
+            fields_f32_4.push_back(PatchDataField<f32_4>(a.name,a.nvar));
+        }
+
+        for (auto a : pdl.fields_f32_8) {
+            fields_f32_8.push_back(PatchDataField<f32_8>(a.name,a.nvar));
+        }
+
+        for (auto a : pdl.fields_f32_16) {
+            fields_f32_16.push_back(PatchDataField<f32_16>(a.name,a.nvar));
+        }
+
+
+        for (auto a : pdl.fields_f64) {
+            fields_f64.push_back(PatchDataField<f64>(a.name,a.nvar));
+        }
+
+        for (auto a : pdl.fields_f64_2) {
+            fields_f64_2.push_back(PatchDataField<f64_2>(a.name,a.nvar));
+        }
+
+        for (auto a : pdl.fields_f64_3) {
+            fields_f64_3.push_back(PatchDataField<f64_3>(a.name,a.nvar));
+        }
+
+        for (auto a : pdl.fields_f64_4) {
+            fields_f64_4.push_back(PatchDataField<f64_4>(a.name,a.nvar));
+        }
+
+        for (auto a : pdl.fields_f64_8) {
+            fields_f64_8.push_back(PatchDataField<f64_8>(a.name,a.nvar));
+        }
+
+        for (auto a : pdl.fields_f64_16) {
+            fields_f64_16.push_back(PatchDataField<f64_16>(a.name,a.nvar));
+        }
+
+
+        for (auto a : pdl.fields_u32) {
+            fields_u32.push_back(PatchDataField<u32>(a.name,a.nvar));
+        }
+
+        for (auto a : pdl.fields_u64) {
+            fields_u64.push_back(PatchDataField<u64>(a.name,a.nvar));
+        }
+    }
 
     /**
      * @brief extract particle at index pidx and insert it in the provided vectors
@@ -131,7 +158,7 @@ void patchdata_irecv(PatchData &pdat, std::vector<MPI_Request> &rq_lst, i32 rank
  * @param eng the mersen twister
  * @return PatchData the generated PatchData
  */
-PatchData patchdata_gen_dummy_data(std::mt19937 &eng);
+PatchData patchdata_gen_dummy_data(PatchDataLayout & pdl, std::mt19937 &eng);
 
 /**
  * @brief check if two PatchData content match
@@ -143,138 +170,3 @@ PatchData patchdata_gen_dummy_data(std::mt19937 &eng);
  */
 bool patch_data_check_match(PatchData &p1, PatchData &p2);
 
-
-// TODO Make & Test of the new patchdata model
-
-enum FieldAllocMode{
-    SharedUSM,
-    DeviceUSM,
-    DeviceMPIUSM
-};
-
-template<class T, FieldAllocMode alloctype>
-class Field{public:
-
-    std::vector<std::string> name_list;
-
-    u32 nvar;
-    u32 obj_cnt;
-
-    u32 current_lenght;
-    u32 storage_capacity;
-
-    u64 memsize;
-
-    T* field_data = nullptr;
-
-
-    sycl::queue & owner_queue;
-
-
-    inline T* _alloc_buf(u32 sz){
-        T* ret;
-        if constexpr (alloctype == SharedUSM){
-            ret = sycl::malloc_shared<T>(sz, owner_queue);
-        }else if constexpr (alloctype == DeviceUSM) {
-            ret = sycl::malloc_device<T>(sz, owner_queue);
-        }else if constexpr (alloctype == DeviceMPIUSM) {
-            ret = sycl::malloc_device<T>(sz, owner_queue);
-        }
-        return ret;
-    }
-
-    inline void _free_buf(){
-        sycl::free(field_data, owner_queue);
-    }
-
-
-
-
-    inline Field(){
-
-    }
-
-    inline T* data(){
-        return field_data;
-    }
-
-    inline void resize(u32 obj_count){
-
-        u32 new_len = obj_cnt*nvar;
-
-        if(new_len > storage_capacity){
-            T* new_buf = _alloc_buf(new_len);
-            //TODO finish
-        }
-
-
-
-        obj_cnt = obj_count;
-        current_lenght = obj_cnt*nvar;
-    }
-
-
-
-
-
-
-
-
-
-    T* host_storage_buf = nullptr;
-
-    inline void mpi_send(int dest, int tag, MPI_Comm comm){
-        if constexpr (alloctype == SharedUSM){
-            mpi::send(field_data, current_lenght,get_mpi_type<T>(), dest, tag, comm);
-        }else if constexpr (alloctype == DeviceUSM) {
-
-            host_storage_buf = new T[current_lenght];
-
-            owner_queue.memcpy(host_storage_buf, field_data, current_lenght*sizeof(T));
-
-            owner_queue.wait();
-
-            mpi::send(host_storage_buf, current_lenght,get_mpi_type<T>(), dest, tag, comm);
-
-            delete[] host_storage_buf;
-
-        }else if constexpr (alloctype == DeviceMPIUSM) {
-            mpi::send(field_data, current_lenght,get_mpi_type<T>(), dest, tag, comm);
-        }
-    }
-
-
-    inline MPI_Status mpi_recv(int source, int tag, MPI_Comm comm){
-        MPI_Status st;
-        if constexpr (alloctype == SharedUSM){
-            mpi::recv(field_data, current_lenght,get_mpi_type<T>(), source, tag, comm, &st);
-        }else if constexpr (alloctype == DeviceUSM) {
-
-            host_storage_buf = new T[current_lenght];
-
-            mpi::recv(host_storage_buf, current_lenght,get_mpi_type<T>(), source, tag, comm, &st);
-
-            owner_queue.memcpy(field_data,host_storage_buf, current_lenght*sizeof(T));
-
-            owner_queue.wait();
-
-            delete[] host_storage_buf;
-
-        }else if constexpr (alloctype == DeviceMPIUSM) {
-            mpi::recv(field_data, current_lenght,get_mpi_type<T>(), source, tag, comm, &st);
-        }
-    }
-
-
-
-
-
-
-
-
-};
-
-// To be renmed PatchData in the end
-class PatchDataUSM{
-
-};
