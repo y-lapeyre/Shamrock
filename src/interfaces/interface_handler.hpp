@@ -107,7 +107,7 @@ template <class vectype, class primtype> class InterfaceHandler {
         for (const auto &[pid, int_vec] : interface_map) {
             printf(" pid : %d :\n", pid);
             for (auto &[a, b] : int_vec) {
-                printf("    -> %d : len %d\n", a, b->pos_s.size() + b->pos_d.size());
+                //printf("    -> %d : len %d\n", a, b->obj_cnt);
             }
         }
     }
@@ -121,7 +121,7 @@ template <class vectype, class primtype> class InterfaceHandler {
 
         for (auto & [int_pid, pdat_ptr] : p_interf_lst) {
 
-            if(pdat_ptr->pos_s.size() + pdat_ptr->pos_d.size() > 0){
+            if(! pdat_ptr->is_empty()){
 
                 PatchDataBuffer pdat_buf = attach_to_patchData(*pdat_ptr);
 

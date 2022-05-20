@@ -42,9 +42,31 @@ class FieldDescriptor{public:
         return ret;                                                               \
                                                                                        \
                                                                                        \
-    }                                                               
+    }                                                               \
+    template<> inline u32 get_field_idx<T>(std::string field_name){    \
+                                                                                      \
+        bool found = false;                                                           \
+        u32 ret;                                                       \
+                                                                                      \
+        for (u32 idx = 0; idx < fields_##T.size() ; idx++) {        \
+            auto a = fields_##T[idx];                                             \
+            if(a.name == field_name){                                                  \
+                if(found) throw shamrock_exc("field ("+field_name+") exist multiple times");      \
+                ret = idx; found = true;                                                 \
+            }                                                                          \
+        }                                                                               \
+                                                                                        \
+                                                                           \
+        if(!found) throw shamrock_exc("field ("+field_name+") not found");                                                               \
+                                                                                 \
+        return ret;                                                               \
+                                                                                       \
+                                                                                       \
+    }   
 
-
+enum PositionprecMode{
+    xyz32,xyz64
+};
 
 class PatchDataLayout {
 
@@ -56,6 +78,11 @@ public:
 
     template<class T>
     FieldDescriptor<T> get_field(std::string field_name);
+
+    template<class T>
+    u32 get_field_idx(std::string field_name);
+
+    PositionprecMode xyz_mode;
 
 
     __add_field_type(i64   );

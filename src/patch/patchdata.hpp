@@ -123,11 +123,32 @@ class PatchData {
      * @param out_U3_s 
      * @param out_U3_d 
      */
-    void extract_particle(u32 pidx, std::vector<f32_3> &out_pos_s, std::vector<f64_3> &out_pos_d, std::vector<f32> &out_U1_s,
-                          std::vector<f64> &out_U1_d, std::vector<f32_3> &out_U3_s, std::vector<f64_3> &out_U3_d);
+    void extract_particle(u32 pidx, PatchData & out_pdat);
 
-    void insert_particles(std::vector<f32_3> &in_pos_s, std::vector<f64_3> &in_pos_d, std::vector<f32> &in_U1_s,
-                          std::vector<f64> &in_U1_d, std::vector<f32_3> &in_U3_s, std::vector<f64_3> &in_U3_d);
+    void insert_particles(PatchData & pdat);
+
+    template<class Tvecbox>
+    void split_patchdata(PatchData & pd0,PatchData & pd1,PatchData & pd2,PatchData & pd3,PatchData & pd4,PatchData & pd5,PatchData & pd6,PatchData & pd7,
+        Tvecbox bmin_p0,Tvecbox bmin_p1,Tvecbox bmin_p2,Tvecbox bmin_p3,Tvecbox bmin_p4,Tvecbox bmin_p5,Tvecbox bmin_p6,Tvecbox bmin_p7,
+        Tvecbox bmax_p0,Tvecbox bmax_p1,Tvecbox bmax_p2,Tvecbox bmax_p3,Tvecbox bmax_p4,Tvecbox bmax_p5,Tvecbox bmax_p6,Tvecbox bmax_p7);
+    
+    void append_subset_to(std::vector<u32> & idxs, PatchData & pdat);
+
+    inline u32 get_obj_cnt(){
+        u32 ret;
+        if(patchdata_layout.xyz_mode == xyz32){
+            u32 ixyz = patchdata_layout.get_field_idx<f32_3>("xyz");
+            ret = fields_f32_3[ixyz].get_obj_cnt();
+        }else if(patchdata_layout.xyz_mode == xyz64){
+            u32 ixyz = patchdata_layout.get_field_idx<f64_3>("xyz");
+            ret = fields_f64_3[ixyz].get_obj_cnt();
+        }
+        return ret;
+    }
+
+    inline bool is_empty(){
+        return get_obj_cnt() == 0;
+    }
 };
 
 /**
