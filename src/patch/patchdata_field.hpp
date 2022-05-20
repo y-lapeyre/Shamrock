@@ -42,6 +42,10 @@ class PatchDataField {
         return obj_cnt;
     }
 
+    inline std::string get_name(){
+        return field_name;
+    }
+
     inline void resize(u32 new_obj_cnt){
         field_data.resize(new_obj_cnt*nvar);
         obj_cnt = new_obj_cnt;

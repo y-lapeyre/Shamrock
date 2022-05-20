@@ -24,7 +24,7 @@ class FieldDescriptor{public:
 #define __add_field_type(T) \
     std::vector<FieldDescriptor< T >> fields_##T;\
     template<> inline void add_field<T>(std::string field_name, u32 nvar){fields_##T.push_back(FieldDescriptor<T>(field_name,nvar));}\
-    template<> inline FieldDescriptor<T> get_field<T>(std::string field_name){    \
+    template<> [[nodiscard]] inline FieldDescriptor<T> get_field<T>(std::string field_name){    \
                                                                                       \
         bool found = false;                                                           \
         FieldDescriptor<T> ret;                                                       \
@@ -43,7 +43,7 @@ class FieldDescriptor{public:
                                                                                        \
                                                                                        \
     }                                                               \
-    template<> inline u32 get_field_idx<T>(std::string field_name){    \
+    template<> [[nodiscard]] inline u32 get_field_idx<T>(std::string field_name){    \
                                                                                       \
         bool found = false;                                                           \
         u32 ret;                                                       \

@@ -1,3 +1,4 @@
+#include "patch/patchdata_layout.hpp"
 #include "unittests/shamrocktest.hpp"
 
 #include <random>
@@ -7,7 +8,7 @@
 #include "patch/patchdata.hpp"
 #include "patchscheduler/scheduler_mpi.hpp"
 
-
+/*
 Test_start("patchdata::", sync_patchdata_layout, -1) {
 
     if (mpi_handler::world_rank == 0) {
@@ -24,7 +25,7 @@ Test_start("patchdata::", sync_patchdata_layout, -1) {
     Test_assert("sync nVarU3_d ",patchdata_layout::nVarU3_d  == 1);
 
 }
-
+*/
 
 
 Test_start("patchdata::", send_recv_patchdata, 2){
@@ -32,22 +33,23 @@ Test_start("patchdata::", send_recv_patchdata, 2){
     std::mt19937 eng(0x1111);  
 
 
-    if (mpi_handler::world_rank == 0) {
-        patchdata_layout::set(1, 0, 4, 6, 2, 1);
-    }
+    PatchDataLayout pdl;
 
-    patchdata_layout::sync(MPI_COMM_WORLD);
+    pdl.add_field<f32_3>("xyz", 1);
+    pdl.xyz_mode = xyz32;
+
+    pdl.add_field<f64_8>("test", 2);
     create_sycl_mpi_types();
 
 
 
-    PatchData d1_check = patchdata_gen_dummy_data (eng);
-    PatchData d2_check = patchdata_gen_dummy_data (eng);
+    PatchData d1_check = patchdata_gen_dummy_data (pdl,eng);
+    PatchData d2_check = patchdata_gen_dummy_data (pdl,eng);
 
 
 
     std::vector<MPI_Request> rq_lst;
-    PatchData recv_d;
+    PatchData recv_d(pdl);
 
     if(mpi_handler::world_rank == 0){
         patchdata_isend(d1_check, rq_lst, 1, 0, MPI_COMM_WORLD);

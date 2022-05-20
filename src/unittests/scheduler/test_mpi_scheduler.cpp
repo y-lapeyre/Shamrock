@@ -25,7 +25,7 @@
 
 
 
-
+/*
 
 Test_start("SchedulerPatchData::", apply_change_list, -1){
 
@@ -129,8 +129,9 @@ Test_start("SchedulerPatchData::", apply_change_list, -1){
     sche.free_mpi_required_types();
 
 }
+*/
 
-
+/*
 
 Test_start("mpi_scheduler::", testLB, -1){
 
@@ -211,9 +212,10 @@ Test_start("mpi_scheduler::", testLB, -1){
     sche.free_mpi_required_types();
 
 }
+*/
 
 
-
+/*
 Test_start("mpi_scheduler::", test_split, -1){
 
 
@@ -267,41 +269,42 @@ Test_start("mpi_scheduler::", test_split, -1){
     //std::cout << sched.dump_status() << std::endl;
 
 
-    //*
-    sched.patch_tree.build_from_patchtable(sched.patch_list.global, HilbertLB::max_box_sz);
-    sched.patch_data.sim_box.min_box_sim_s = {-1};
-    sched.patch_data.sim_box.max_box_sim_s = {1};
+    //
+    //sched.patch_tree.build_from_patchtable(sched.patch_list.global, HilbertLB::max_box_sz);
+    //sched.patch_data.sim_box.min_box_sim_s = {-1};
+    //sched.patch_data.sim_box.max_box_sim_s = {1};
 
     
     //std::cout << sched.dump_status() << std::endl;
 
-    std::cout << "build local" <<std::endl;
-    sched.owned_patch_id = sched.patch_list.build_local();
-    sched.patch_list.build_local_idx_map();
-    sched.update_local_dtcnt_value();
-    sched.update_local_load_value();
-
-
-    for(u32 stepi = 0 ; stepi < 5; stepi ++){
-        std::cout << "step : " <<stepi<< std::endl;
-        //std::cout << sched.dump_status() << std::endl;
-        sched.scheduler_step(true, true);
-        
-    }
+    //std::cout << "build local" <<std::endl;
+    //sched.owned_patch_id = sched.patch_list.build_local();
+    //sched.patch_list.build_local_idx_map();
+    //sched.update_local_dtcnt_value();
+    //sched.update_local_load_value();
+//
+//
+    //for(u32 stepi = 0 ; stepi < 5; stepi ++){
+    //    std::cout << "step : " <<stepi<< std::endl;
+    //    //std::cout << sched.dump_status() << std::endl;
+    //    sched.scheduler_step(true, true);
+    //    
+    //}
+//
+    ////std::cout << sched.dump_status() << std::endl;
+    //
+    //std::cout << "changing crit\n";
+    //sched.crit_patch_merge = 30;
+    //sched.crit_patch_split = 100;
+    //sched.scheduler_step(true, true);
+//
 
     //std::cout << sched.dump_status() << std::endl;
-    
-    std::cout << "changing crit\n";
-    sched.crit_patch_merge = 30;
-    sched.crit_patch_split = 100;
-    sched.scheduler_step(true, true);
-
-
-    //std::cout << sched.dump_status() << std::endl;
-    //*/
+    ///
 
 
 
     sched.free_mpi_required_types();
 
 }
+*/

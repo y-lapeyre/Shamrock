@@ -9,25 +9,31 @@
 #include "patch/patchdata.hpp"
 #include "patch/patchdata_buffer.hpp"
 #include "algs/syclreduction.hpp"
+#include "patch/patchdata_layout.hpp"
 #include <stdexcept>
 #include <type_traits>
+
+#include "sph_aliases.hpp"
 
 namespace patchdata {
     namespace sph {
 
-        template<class DataLayout, class htype>
-        inline htype get_h_max(sycl::queue & queue, PatchDataBuffer & pdatbuf){
+        template<class htype>
+        inline htype get_h_max(PatchDataLayout & pdl,sycl::queue & queue, PatchDataBuffer & pdatbuf){
 
             if(pdatbuf.element_count == 0) return 0;
-
-            using U = typename DataLayout::template U1<htype>::T;
 
             htype tmp;
 
             if constexpr (std::is_same<htype, f32>::value){
-                tmp = syclalg::get_max<f32, U::nvar, U::ihpart>(queue, pdatbuf.U1_s);
+
+                u32 ihpart = pdl.get_field_idx<f32>(::sph::field_names::field_hpart);
+                tmp = syclalg::get_max<f32>(queue, pdatbuf.fields_f32[ihpart].buf);
+
             } else if constexpr (std::is_same<htype, f64>::value){
-                tmp = syclalg::get_max<f64, U::nvar, U::ihpart>(queue, pdatbuf.U1_d);
+                u32 ihpart = pdl.get_field_idx<f64>(::sph::field_names::field_hpart);
+                tmp = syclalg::get_max<f64>(queue, pdatbuf.fields_f64[ihpart].buf);
+                
             }else{
                 throw shamrock_exc("get_h_max -> current htype not handled");
             }
@@ -43,14 +49,15 @@ namespace patchdata {
         template<>
         inline std::tuple<f32_3,f32_3> get_patchdata_BBAA(sycl::queue & queue,PatchDataBuffer & pdatbuf){
 
-            return syclalg::get_min_max<f32_3, 1,0>(queue, pdatbuf.pos_s);
+            u32 ihpart = pdatbuf.pdl.get_field_idx<f32_3>("xyz");
+            return syclalg::get_min_max<f32_3>(queue, pdatbuf.fields_f32_3[ihpart].buf);
 
         }
 
         template<>
         inline std::tuple<f64_3,f64_3> get_patchdata_BBAA(sycl::queue & queue,PatchDataBuffer & pdatbuf){
-
-            return syclalg::get_min_max<f64_3, 1,0>(queue, pdatbuf.pos_d);
+            u32 ihpart = pdatbuf.pdl.get_field_idx<f64_3>("xyz");
+            return syclalg::get_min_max<f64_3>(queue, pdatbuf.fields_f64_3[ihpart].buf);
 
         }
 
