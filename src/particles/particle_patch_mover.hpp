@@ -2,6 +2,7 @@
 
 #include "aliases.hpp"
 #include "patch/patchdata_exchanger.hpp"
+#include "patch/patchdata_field.hpp"
 #include "patch/serialpatchtree.hpp"
 #include "patchscheduler/patch_content_exchanger.hpp"
 #include "patchscheduler/scheduler_mpi.hpp"
@@ -19,9 +20,13 @@ inline void reatribute_particles<f32_3>(SchedulerMPI & sched, SerialPatchTree<f3
     bool err_id_in_newid = false;
     std::unordered_map<u64, sycl::buffer<u64>> newid_buf_map;
     for(auto & [id,pdat] : sched.patch_data.owned_data ){
-        if(pdat.pos_s.size() > 0){
+        if(! pdat.is_empty()){
 
-            std::unique_ptr<sycl::buffer<f32_3>> pos = std::make_unique<sycl::buffer<f32_3>>(pdat.pos_s.data(),pdat.pos_s.size());
+
+            u32 ixyz = sched.pdl.get_field_idx<f32_3>("xyz");
+            PatchDataField<f32_3> xyz_field =  pdat.fields_f32_3[ixyz];
+
+            std::unique_ptr<sycl::buffer<f32_3>> pos = std::make_unique<sycl::buffer<f32_3>>(xyz_field.data(),xyz_field.size());
 
             newid_buf_map.insert({
                 id,
@@ -35,7 +40,7 @@ inline void reatribute_particles<f32_3>(SchedulerMPI & sched, SerialPatchTree<f3
             
             {
                 auto nid = newid_buf_map.at(id).get_access<sycl::access::mode::read>();
-                for(u32 i = 0 ; i < pdat.pos_s.size() ; i++){
+                for(u32 i = 0 ; i < pdat.get_obj_cnt() ; i++){
                     err_id_in_newid = err_id_in_newid || (nid[i] == u64_max);
                 }
             }
@@ -43,6 +48,8 @@ inline void reatribute_particles<f32_3>(SchedulerMPI & sched, SerialPatchTree<f3
         }
         
     }
+
+    
 
     printf("err_id_in_newid : %d \n", err_id_in_newid);
 
@@ -56,7 +63,13 @@ inline void reatribute_particles<f32_3>(SchedulerMPI & sched, SerialPatchTree<f3
         sched.patch_data.sim_box.reset_box_size();
         
         for(auto & [id,pdat] : sched.patch_data.owned_data ){
-            for(f32_3 & r : pdat.pos_s){
+
+            u32 ixyz = sched.pdl.get_field_idx<f32_3>("xyz");
+            PatchDataField<f32_3> xyz_field =  pdat.fields_f32_3[ixyz];
+
+            for(u32 i = 0 ; i < pdat.get_obj_cnt(); i++){
+
+                f32_3 r = xyz_field.data()[i];
                 sched.patch_data.sim_box.min_box_sim_s = sycl::min(sched.patch_data.sim_box.min_box_sim_s,r);
                 sched.patch_data.sim_box.max_box_sim_s = sycl::max(sched.patch_data.sim_box.max_box_sim_s,r);
             }
@@ -88,7 +101,7 @@ inline void reatribute_particles<f32_3>(SchedulerMPI & sched, SerialPatchTree<f3
         sptree.attach_buf();
 
         for(auto & [id,pdat] : sched.patch_data.owned_data ){
-            if(pdat.pos_s.size() > 0){
+            if(! pdat.is_empty()){
                 std::unique_ptr<sycl::buffer<f32_3>> pos = std::make_unique<sycl::buffer<f32_3>>(pdat.pos_s.data(),pdat.pos_s.size());
 
                 newid_buf_map.at(id)=
@@ -113,7 +126,7 @@ inline void reatribute_particles<f32_3>(SchedulerMPI & sched, SerialPatchTree<f3
     std::vector<u64_2> comm_vec;
 
     for(auto & [id,pdat] : sched.patch_data.owned_data){
-        if(pdat.pos_s.size() > 0){
+        if(! pdat.is_empty()){
 
             sycl::buffer<u64> & newid = newid_buf_map.at(id);
 
@@ -128,7 +141,7 @@ inline void reatribute_particles<f32_3>(SchedulerMPI & sched, SerialPatchTree<f3
                         std::unique_ptr<PatchData> & pdat_int = send_map[nid[i]];
 
                         if(! pdat_int){
-                            pdat_int = std::make_unique<PatchData>();
+                            pdat_int = std::make_unique<PatchData>(sched.pdl);
                         }
 
                         pdat.extract_particle(i, pdat_int->pos_s, pdat_int->pos_d, pdat_int->U1_s, pdat_int->U1_d, pdat_int->U3_s, pdat_int->U3_d);
@@ -198,10 +211,12 @@ inline void reatribute_particles<f32_3>(SchedulerMPI & sched, SerialPatchTree<f3
                 //*/
         }
     }
+
+    
 }
 
 
-
+#if false
 
 template<>
 inline void reatribute_particles<f64_3>(SchedulerMPI & sched, SerialPatchTree<f64_3> & sptree,bool periodic){
@@ -366,3 +381,5 @@ inline void reatribute_particles<f64_3>(SchedulerMPI & sched, SerialPatchTree<f6
         }
     }
 }
+
+#endif
