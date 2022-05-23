@@ -9,6 +9,83 @@
 #include "sys/sycl_handler.hpp"
 #include <unordered_map>
 
+
+template<class vecprec> 
+inline std::unordered_map<u64, sycl::buffer<u64>> get_new_id_map(SchedulerMPI & sched, SerialPatchTree<vecprec> & sptree);
+
+template<> 
+inline std::unordered_map<u64, sycl::buffer<u64>> get_new_id_map<f32_3>(SchedulerMPI & sched, SerialPatchTree<f32_3> & sptree){
+
+    SyCLHandler & hndl = SyCLHandler::get_instance();
+
+    std::unordered_map<u64, sycl::buffer<u64>> newid_buf_map;
+
+    for(auto & [id,pdat] : sched.patch_data.owned_data ){
+        if(! pdat.is_empty()){
+
+
+            u32 ixyz = sched.pdl.get_field_idx<f32_3>("xyz");
+            PatchDataField<f32_3> xyz_field =  pdat.fields_f32_3[ixyz];
+
+            std::unique_ptr<sycl::buffer<f32_3>> pos = std::make_unique<sycl::buffer<f32_3>>(xyz_field.data(),xyz_field.size());
+
+            newid_buf_map.insert({
+                id,
+                __compute_object_patch_owner<f32_3, class ComputeObejctPatchOwners_f32>(
+                    hndl.get_queue_compute(0), 
+                    *pos, 
+                    sptree)});
+
+            pos.reset();
+
+        }
+        
+    }
+
+    return newid_buf_map;
+
+}
+
+
+
+template<> 
+inline std::unordered_map<u64, sycl::buffer<u64>> get_new_id_map<f64_3>(SchedulerMPI & sched, SerialPatchTree<f64_3> & sptree){
+
+    SyCLHandler & hndl = SyCLHandler::get_instance();
+
+    std::unordered_map<u64, sycl::buffer<u64>> newid_buf_map;
+
+    for(auto & [id,pdat] : sched.patch_data.owned_data ){
+        if(! pdat.is_empty()){
+
+
+            u32 ixyz = sched.pdl.get_field_idx<f64_3>("xyz");
+            PatchDataField<f64_3> xyz_field =  pdat.fields_f64_3[ixyz];
+
+            std::unique_ptr<sycl::buffer<f64_3>> pos = std::make_unique<sycl::buffer<f64_3>>(xyz_field.data(),xyz_field.size());
+
+            newid_buf_map.insert({
+                id,
+                __compute_object_patch_owner<f64_3, class ComputeObejctPatchOwners_f32>(
+                    hndl.get_queue_compute(0), 
+                    *pos, 
+                    sptree)});
+
+            pos.reset();
+
+        }
+        
+    }
+
+    return newid_buf_map;
+
+}
+
+
+
+
+
+
 template <class vecprec>
 inline void reatribute_particles(SchedulerMPI & sched, SerialPatchTree<vecprec> & sptree,bool periodic);
 
@@ -102,13 +179,17 @@ inline void reatribute_particles<f32_3>(SchedulerMPI & sched, SerialPatchTree<f3
 
         for(auto & [id,pdat] : sched.patch_data.owned_data ){
             if(! pdat.is_empty()){
-                std::unique_ptr<sycl::buffer<f32_3>> pos = std::make_unique<sycl::buffer<f32_3>>(pdat.pos_s.data(),pdat.pos_s.size());
+                u32 ixyz = sched.pdl.get_field_idx<f32_3>("xyz");
+                PatchDataField<f32_3> xyz_field =  pdat.fields_f32_3[ixyz];
 
-                newid_buf_map.at(id)=
-                    __compute_object_patch_owner<f32_3, class ComputeObejctPatchOwners2>(
+                std::unique_ptr<sycl::buffer<f32_3>> pos = std::make_unique<sycl::buffer<f32_3>>(xyz_field.data(),xyz_field.size());
+
+                newid_buf_map.insert({
+                    id,
+                    __compute_object_patch_owner<f32_3, class ComputeObejctPatchOwners2_f32>(
                         hndl.get_queue_compute(0), 
                         *pos, 
-                        sptree);
+                        sptree)});
 
                 pos.reset();
 
@@ -135,7 +216,10 @@ inline void reatribute_particles<f32_3>(SchedulerMPI & sched, SerialPatchTree<f3
                 auto nid = newid.get_access<sycl::access::mode::read>();
                 
                 std::unordered_map<u64 , std::unique_ptr<PatchData>> send_map;
-                for(u32 i = pdat.pos_s.size()-1 ; i < pdat.pos_s.size() ; i--){
+
+                const u32 cnt = pdat.get_obj_cnt();
+
+                for(u32 i = cnt-1 ; i < cnt ; i--){
                     if(id != nid[i]){
                         //std::cout << id  << " " << i << " " << nid[i] << "\n";
                         std::unique_ptr<PatchData> & pdat_int = send_map[nid[i]];
@@ -144,7 +228,7 @@ inline void reatribute_particles<f32_3>(SchedulerMPI & sched, SerialPatchTree<f3
                             pdat_int = std::make_unique<PatchData>(sched.pdl);
                         }
 
-                        pdat.extract_particle(i, pdat_int->pos_s, pdat_int->pos_d, pdat_int->U1_s, pdat_int->U1_d, pdat_int->U3_s, pdat_int->U3_d);
+                        pdat.extract_particle(i, *pdat_int);
                     }
                         
                 }//std::cout << std::endl;
@@ -168,7 +252,7 @@ inline void reatribute_particles<f32_3>(SchedulerMPI & sched, SerialPatchTree<f3
         //std::cout << comm_vec[i].x() << " " << comm_vec[i].y() << " " << comm_pdat[i].get() << std::endl; 
     }
 
-    patch_data_exchange_object(
+    patch_data_exchange_object(sched.pdl,
         sched.patch_list.global, 
         comm_pdat, comm_vec, 
         part_xchg_map);
@@ -201,13 +285,7 @@ inline void reatribute_particles<f32_3>(SchedulerMPI & sched, SerialPatchTree<f3
             }*/
 
             //*
-            pdat_recv.insert_particles(
-                pdat->pos_s,
-                pdat->pos_d,
-                pdat->U1_s,
-                pdat->U1_d,
-                pdat->U3_s,
-                pdat->U3_d);
+            pdat_recv.insert_particles( *pdat);
                 //*/
         }
     }

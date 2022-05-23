@@ -9,7 +9,7 @@
 template<class T>
 class PatchDataField {
 
-    std::vector<T> field_data;
+    
 
     std::string field_name;
 
@@ -19,6 +19,9 @@ class PatchDataField {
     u32 val_cnt;
 
     public:
+
+    //TODO find a way to add particles easily cf setup require public vector
+    std::vector<T> field_data;
 
     using Field_type = T;
 

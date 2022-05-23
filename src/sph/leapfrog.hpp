@@ -37,6 +37,7 @@ struct MergedPatchDataBuffer {public:
     std::tuple<vec,vec> box;
 };
 
+/*
 template<class pos_vec>
 inline void dump_merged_patches(std::string prefix, SchedulerMPI & sched,std::unordered_map<u64,MergedPatchDataBuffer<pos_vec>> & merged_map){
     struct PatchFile{
@@ -131,7 +132,7 @@ inline void dump_merged_patches(std::string prefix, SchedulerMPI & sched,std::un
         mpi::file_close(&pf.mfile);
     }
 }
-
+*/
 
 
 
@@ -161,86 +162,275 @@ inline void make_merge_patches(
         //std::cout << "patch : n°"<<id_patch << " -> making merge buf" << std::endl;
 
         u32 len_main = pdat_buf.element_count;
-        merge_pdat_buf[id_patch].or_element_cnt = len_main;
+
+        u32 original_element = len_main;
+        //merge_pdat_buf[id_patch].or_element_cnt = len_main;
 
         {
             const std::vector<std::tuple<u64, std::unique_ptr<PatchData>>> & p_interf_lst = interface_hndl.get_interface_list(id_patch);
             for (auto & [int_pid, pdat_ptr] : p_interf_lst) {
-                len_main += (pdat_ptr->pos_s.size() + pdat_ptr->pos_d.size());
+                len_main += (pdat_ptr->get_obj_cnt());
             }
         }
+        
+        u32 total_element = len_main;
+        //merge_pdat_buf[id_patch].data.element_count = len_main;
 
-        using namespace patchdata_layout;
-
-        merge_pdat_buf[id_patch].data.element_count = len_main;
-        if(nVarpos_s > 0) merge_pdat_buf[id_patch].data.pos_s = std::make_unique<sycl::buffer<f32_3>>(nVarpos_s * len_main);
-        if(nVarpos_d > 0) merge_pdat_buf[id_patch].data.pos_d = std::make_unique<sycl::buffer<f64_3>>(nVarpos_d * len_main);
-        if(nVarU1_s  > 0) merge_pdat_buf[id_patch].data.U1_s  = std::make_unique<sycl::buffer<f32>>  (nVarU1_s  * len_main);
-        if(nVarU1_d  > 0) merge_pdat_buf[id_patch].data.U1_d  = std::make_unique<sycl::buffer<f64>>  (nVarU1_d  * len_main);
-        if(nVarU3_s  > 0) merge_pdat_buf[id_patch].data.U3_s  = std::make_unique<sycl::buffer<f32_3>>(nVarU3_s  * len_main);
-        if(nVarU3_d  > 0) merge_pdat_buf[id_patch].data.U3_d  = std::make_unique<sycl::buffer<f64_3>>(nVarU3_d  * len_main);
+        
+        PatchDataBuffer merged_buf(pdat_buf.pdl, total_element);
 
 
-        u32 offset_pos_s = 0;
-        u32 offset_pos_d = 0;
-        u32 offset_U1_s  = 0;
-        u32 offset_U1_d  = 0;
-        u32 offset_U3_s  = 0;
-        u32 offset_U3_d  = 0;
 
-        if(nVarpos_s > 0){
-            hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
-                auto source = pdat_buf.pos_s->get_access<sycl::access::mode::read>(cgh);
-                auto dest = merge_pdat_buf[id_patch].data.pos_s->template get_access<sycl::access::mode::discard_write>(cgh);
-                cgh.parallel_for( sycl::range{pdat_buf.element_count*nVarpos_s}, [=](sycl::item<1> item) { dest[item] = source[item]; });
-            });
-            offset_pos_s += pdat_buf.element_count*nVarpos_s;
+        std::vector<u32> fields_f32_offset;
+        std::vector<u32> fields_f32_2_offset;
+        std::vector<u32> fields_f32_3_offset;
+        std::vector<u32> fields_f32_4_offset;
+        std::vector<u32> fields_f32_8_offset;
+        std::vector<u32> fields_f32_16_offset;
+        std::vector<u32> fields_f64_offset;
+        std::vector<u32> fields_f64_2_offset;
+        std::vector<u32> fields_f64_3_offset;
+        std::vector<u32> fields_f64_4_offset;
+        std::vector<u32> fields_f64_8_offset;
+        std::vector<u32> fields_f64_16_offset;
+        std::vector<u32> fields_u32_offset;
+        std::vector<u32> fields_u64_offset;
+
+
+
+
+
+
+
+        for(u32 idx = 0; idx < pdat_buf.pdl.fields_f32.size(); idx++){
+            fields_f32_offset.push_back(0);
         }
 
-        if(nVarpos_d > 0){
-            hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
-                auto source = pdat_buf.pos_d->get_access<sycl::access::mode::read>(cgh);
-                auto dest = merge_pdat_buf[id_patch].data.pos_d->template get_access<sycl::access::mode::discard_write>(cgh);
-                cgh.parallel_for( sycl::range{pdat_buf.element_count*nVarpos_d}, [=](sycl::item<1> item) { dest[item] = source[item]; });
-            });
-            offset_pos_d += pdat_buf.element_count*nVarpos_d;
+        for(u32 idx = 0; idx <  pdat_buf.pdl.fields_f32_2.size(); idx++){
+            fields_f32_2_offset.push_back(0);
         }
 
-        if(nVarU1_s > 0){
-            hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
-                auto source = pdat_buf.U1_s->get_access<sycl::access::mode::read>(cgh);
-                auto dest = merge_pdat_buf[id_patch].data.U1_s->template get_access<sycl::access::mode::discard_write>(cgh);
-                cgh.parallel_for( sycl::range{pdat_buf.element_count*nVarU1_s}, [=](sycl::item<1> item) { dest[item] = source[item]; });
-            });
-            offset_U1_s += pdat_buf.element_count*nVarU1_s;
+        for(u32 idx = 0; idx <  pdat_buf.pdl.fields_f32_3.size(); idx++){
+            fields_f32_3_offset.push_back(0);
         }
 
-        if(nVarU1_d > 0){
-            hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
-                auto source = pdat_buf.U1_d->get_access<sycl::access::mode::read>(cgh);
-                auto dest = merge_pdat_buf[id_patch].data.U1_d->template get_access<sycl::access::mode::discard_write>(cgh);
-                cgh.parallel_for( sycl::range{pdat_buf.element_count*nVarU1_d}, [=](sycl::item<1> item) { dest[item] = source[item]; });
-            });
-            offset_U1_d += pdat_buf.element_count*nVarU1_d;
+        for(u32 idx = 0; idx <  pdat_buf.pdl.fields_f32_4.size(); idx++){
+            fields_f32_4_offset.push_back(0);
         }
 
-        if(nVarU3_s > 0){
-            hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
-                auto source = pdat_buf.U3_s->get_access<sycl::access::mode::read>(cgh);
-                auto dest = merge_pdat_buf[id_patch].data.U3_s->template get_access<sycl::access::mode::discard_write>(cgh);
-                cgh.parallel_for( sycl::range{pdat_buf.element_count*nVarU3_s}, [=](sycl::item<1> item) { dest[item] = source[item]; });
-            });
-            offset_U3_s += pdat_buf.element_count*nVarU3_s;
+        for(u32 idx = 0; idx <  pdat_buf.pdl.fields_f32_8.size(); idx++){
+            fields_f32_8_offset.push_back(0);
         }
 
-        if(nVarU3_d > 0){
-            hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
-                auto source = pdat_buf.U3_d->get_access<sycl::access::mode::read>(cgh);
-                auto dest = merge_pdat_buf[id_patch].data.U3_d->template get_access<sycl::access::mode::discard_write>(cgh);
-                cgh.parallel_for( sycl::range{pdat_buf.element_count*nVarU3_d}, [=](sycl::item<1> item) { dest[item] = source[item]; });
-            });
-            offset_U3_d += pdat_buf.element_count*nVarU3_d;
+        for(u32 idx = 0; idx <  pdat_buf.pdl.fields_f32_16.size(); idx++){
+            fields_f32_16_offset.push_back(0);
         }
+
+        for(u32 idx = 0; idx <  pdat_buf.pdl.fields_f64.size(); idx++){
+            fields_f64_offset.push_back(0);
+        }
+
+        for(u32 idx = 0; idx <  pdat_buf.pdl.fields_f64_2.size(); idx++){
+            fields_f64_2_offset.push_back(0);
+        }
+
+        for(u32 idx = 0; idx <  pdat_buf.pdl.fields_f64_3.size(); idx++){
+            fields_f64_3_offset.push_back(0);
+        }
+
+        for(u32 idx = 0; idx <  pdat_buf.pdl.fields_f64_4.size(); idx++){
+            fields_f64_4_offset.push_back(0);
+        }
+
+        for(u32 idx = 0; idx <  pdat_buf.pdl.fields_f64_8.size(); idx++){
+            fields_f64_8_offset.push_back(0);
+        }
+
+        for(u32 idx = 0; idx <  pdat_buf.pdl.fields_f64_16.size(); idx++){
+            fields_f64_16_offset.push_back(0);
+        }
+
+        for(u32 idx = 0; idx <  pdat_buf.pdl.fields_u32.size(); idx++){
+            fields_u32_offset.push_back(0);
+        }
+
+        for(u32 idx = 0; idx <  pdat_buf.pdl.fields_u64.size(); idx++){
+            fields_u64_offset.push_back(0);
+        }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        for(u32 idx = 0; idx < pdat_buf.pdl.fields_f32.size(); idx++){
+            u32 nvar = merged_buf.pdl.fields_f32[idx].nvar;
+            hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+                auto source = pdat_buf.fields_f32[idx].buf->get_access<sycl::access::mode::read>(cgh);
+                auto dest = merged_buf.fields_f32[idx].buf->get_access<sycl::access::mode::discard_write>(cgh);
+                cgh.parallel_for( sycl::range{pdat_buf.element_count*nvar}, [=](sycl::item<1> item) { dest[item] = source[item]; });
+            });
+            fields_f32_offset[idx] += pdat_buf.element_count  *  nvar ;
+        }
+
+        for(u32 idx = 0; idx < pdat_buf.pdl.fields_f32_2.size(); idx++){
+            u32 nvar = merged_buf.pdl.fields_f32_2[idx].nvar;
+            hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+                auto source = pdat_buf.fields_f32_2[idx].buf->get_access<sycl::access::mode::read>(cgh);
+                auto dest = merged_buf.fields_f32_2[idx].buf->get_access<sycl::access::mode::discard_write>(cgh);
+                cgh.parallel_for( sycl::range{pdat_buf.element_count*nvar}, [=](sycl::item<1> item) { dest[item] = source[item]; });
+            });
+            fields_f32_2_offset[idx] += pdat_buf.element_count  *  nvar ;
+        }
+
+        for(u32 idx = 0; idx < pdat_buf.pdl.fields_f32_3.size(); idx++){
+            u32 nvar = merged_buf.pdl.fields_f32_3[idx].nvar;
+            hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+                auto source = pdat_buf.fields_f32_3[idx].buf->get_access<sycl::access::mode::read>(cgh);
+                auto dest = merged_buf.fields_f32_3[idx].buf->get_access<sycl::access::mode::discard_write>(cgh);
+                cgh.parallel_for( sycl::range{pdat_buf.element_count*nvar}, [=](sycl::item<1> item) { dest[item] = source[item]; });
+            });
+            fields_f32_3_offset[idx] += pdat_buf.element_count  *  nvar ;
+        }
+
+        for(u32 idx = 0; idx < pdat_buf.pdl.fields_f32_4.size(); idx++){
+            u32 nvar = merged_buf.pdl.fields_f32_4[idx].nvar;
+            hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+                auto source = pdat_buf.fields_f32_4[idx].buf->get_access<sycl::access::mode::read>(cgh);
+                auto dest = merged_buf.fields_f32_4[idx].buf->get_access<sycl::access::mode::discard_write>(cgh);
+                cgh.parallel_for( sycl::range{pdat_buf.element_count*nvar}, [=](sycl::item<1> item) { dest[item] = source[item]; });
+            });
+            fields_f32_4_offset[idx] += pdat_buf.element_count  *  nvar ;
+        }
+
+        for(u32 idx = 0; idx < pdat_buf.pdl.fields_f32_8.size(); idx++){
+            u32 nvar = merged_buf.pdl.fields_f32_8[idx].nvar;
+            hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+                auto source = pdat_buf.fields_f32_8[idx].buf->get_access<sycl::access::mode::read>(cgh);
+                auto dest = merged_buf.fields_f32_8[idx].buf->get_access<sycl::access::mode::discard_write>(cgh);
+                cgh.parallel_for( sycl::range{pdat_buf.element_count*nvar}, [=](sycl::item<1> item) { dest[item] = source[item]; });
+            });
+            fields_f32_8_offset[idx] += pdat_buf.element_count  *  nvar ;
+        }
+
+        for(u32 idx = 0; idx < pdat_buf.pdl.fields_f32_16.size(); idx++){
+            u32 nvar = merged_buf.pdl.fields_f32_16[idx].nvar;
+            hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+                auto source = pdat_buf.fields_f32_16[idx].buf->get_access<sycl::access::mode::read>(cgh);
+                auto dest = merged_buf.fields_f32_16[idx].buf->get_access<sycl::access::mode::discard_write>(cgh);
+                cgh.parallel_for( sycl::range{pdat_buf.element_count*nvar}, [=](sycl::item<1> item) { dest[item] = source[item]; });
+            });
+            fields_f32_16_offset[idx] += pdat_buf.element_count  *  nvar ;
+        }
+
+
+
+
+
+
+        for(u32 idx = 0; idx < pdat_buf.pdl.fields_f64.size(); idx++){
+            u32 nvar = merged_buf.pdl.fields_f64[idx].nvar;
+            hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+                auto source = pdat_buf.fields_f64[idx].buf->get_access<sycl::access::mode::read>(cgh);
+                auto dest = merged_buf.fields_f64[idx].buf->get_access<sycl::access::mode::discard_write>(cgh);
+                cgh.parallel_for( sycl::range{pdat_buf.element_count*nvar}, [=](sycl::item<1> item) { dest[item] = source[item]; });
+            });
+            fields_f64_offset[idx] += pdat_buf.element_count  *  nvar ;
+        }
+
+        for(u32 idx = 0; idx < pdat_buf.pdl.fields_f64_2.size(); idx++){
+            u32 nvar = merged_buf.pdl.fields_f64_2[idx].nvar;
+            hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+                auto source = pdat_buf.fields_f64_2[idx].buf->get_access<sycl::access::mode::read>(cgh);
+                auto dest = merged_buf.fields_f64_2[idx].buf->get_access<sycl::access::mode::discard_write>(cgh);
+                cgh.parallel_for( sycl::range{pdat_buf.element_count*nvar}, [=](sycl::item<1> item) { dest[item] = source[item]; });
+            });
+            fields_f64_2_offset[idx] += pdat_buf.element_count  *  nvar ;
+        }
+
+        for(u32 idx = 0; idx < pdat_buf.pdl.fields_f64_3.size(); idx++){
+            u32 nvar = merged_buf.pdl.fields_f64_3[idx].nvar;
+            hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+                auto source = pdat_buf.fields_f64_3[idx].buf->get_access<sycl::access::mode::read>(cgh);
+                auto dest = merged_buf.fields_f64_3[idx].buf->get_access<sycl::access::mode::discard_write>(cgh);
+                cgh.parallel_for( sycl::range{pdat_buf.element_count*nvar}, [=](sycl::item<1> item) { dest[item] = source[item]; });
+            });
+            fields_f64_3_offset[idx] += pdat_buf.element_count  *  nvar ;
+        }
+
+        for(u32 idx = 0; idx < pdat_buf.pdl.fields_f64_4.size(); idx++){
+            u32 nvar = merged_buf.pdl.fields_f64_4[idx].nvar;
+            hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+                auto source = pdat_buf.fields_f64_4[idx].buf->get_access<sycl::access::mode::read>(cgh);
+                auto dest = merged_buf.fields_f64_4[idx].buf->get_access<sycl::access::mode::discard_write>(cgh);
+                cgh.parallel_for( sycl::range{pdat_buf.element_count*nvar}, [=](sycl::item<1> item) { dest[item] = source[item]; });
+            });
+            fields_f64_4_offset[idx] += pdat_buf.element_count  *  nvar ;
+        }
+
+        for(u32 idx = 0; idx < pdat_buf.pdl.fields_f64_8.size(); idx++){
+            u32 nvar = merged_buf.pdl.fields_f64_8[idx].nvar;
+            hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+                auto source = pdat_buf.fields_f64_8[idx].buf->get_access<sycl::access::mode::read>(cgh);
+                auto dest = merged_buf.fields_f64_8[idx].buf->get_access<sycl::access::mode::discard_write>(cgh);
+                cgh.parallel_for( sycl::range{pdat_buf.element_count*nvar}, [=](sycl::item<1> item) { dest[item] = source[item]; });
+            });
+            fields_f64_8_offset[idx] += pdat_buf.element_count  *  nvar ;
+        }
+
+        for(u32 idx = 0; idx < pdat_buf.pdl.fields_f64_16.size(); idx++){
+            u32 nvar = merged_buf.pdl.fields_f64_16[idx].nvar;
+            hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+                auto source = pdat_buf.fields_f64_16[idx].buf->get_access<sycl::access::mode::read>(cgh);
+                auto dest = merged_buf.fields_f64_16[idx].buf->get_access<sycl::access::mode::discard_write>(cgh);
+                cgh.parallel_for( sycl::range{pdat_buf.element_count*nvar}, [=](sycl::item<1> item) { dest[item] = source[item]; });
+            });
+            fields_f64_16_offset[idx] += pdat_buf.element_count  *  nvar ;
+        }
+
+
+
+        for(u32 idx = 0; idx < pdat_buf.pdl.fields_u32.size(); idx++){
+            u32 nvar = merged_buf.pdl.fields_u32[idx].nvar;
+            hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+                auto source = pdat_buf.fields_u32[idx].buf->get_access<sycl::access::mode::read>(cgh);
+                auto dest = merged_buf.fields_u32[idx].buf->get_access<sycl::access::mode::discard_write>(cgh);
+                cgh.parallel_for( sycl::range{pdat_buf.element_count*nvar}, [=](sycl::item<1> item) { dest[item] = source[item]; });
+            });
+            fields_u32_offset[idx] += pdat_buf.element_count  *  nvar ;
+        }
+
+        for(u32 idx = 0; idx < pdat_buf.pdl.fields_u64.size(); idx++){
+            u32 nvar = merged_buf.pdl.fields_u64[idx].nvar;
+            hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+                auto source = pdat_buf.fields_u64[idx].buf->get_access<sycl::access::mode::read>(cgh);
+                auto dest = merged_buf.fields_u64[idx].buf->get_access<sycl::access::mode::discard_write>(cgh);
+                cgh.parallel_for( sycl::range{pdat_buf.element_count*nvar}, [=](sycl::item<1> item) { dest[item] = source[item]; });
+            });
+            fields_u64_offset[idx] += pdat_buf.element_count  *  nvar ;
+        }
+
+
+
+
+
+
+
 
         
 
@@ -256,73 +446,167 @@ inline void make_merge_patches(
                 min_box = sycl::min(std::get<0>(box),min_box);
                 max_box = sycl::max(std::get<1>(box),max_box);
 
-                if(nVarpos_s > 0){
+
+
+
+
+
+
+                for(u32 idx = 0; idx < interfpdat.pdl.fields_f32.size(); idx++){
+                    u32 nvar = merged_buf.pdl.fields_f32[idx].nvar;
                     hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
-                        auto source = interfpdat.pos_s->get_access<sycl::access::mode::read>(cgh);
-                        auto dest = merge_pdat_buf[id_patch].data.pos_s->template get_access<sycl::access::mode::discard_write>(cgh);
-                        auto off = offset_pos_s;
-                        cgh.parallel_for( sycl::range{interfpdat.element_count*nVarpos_s}, [=](sycl::item<1> item) { dest[item.get_id(0) + off] = source[item]; });
+                        auto source = interfpdat.fields_f32[idx].buf->get_access<sycl::access::mode::read>(cgh);
+                        auto dest = merged_buf.fields_f32[idx].buf->get_access<sycl::access::mode::discard_write>(cgh);
+                        auto off = fields_f32_offset[idx];
+                        cgh.parallel_for( sycl::range{interfpdat.element_count*nvar}, [=](sycl::item<1> item) { dest[item.get_id(0) + off] = source[item]; });
                     });
-                    offset_pos_s += interfpdat.element_count*nVarpos_s;
+                    fields_f32_offset[idx] += interfpdat.element_count  *  nvar ;
                 }
 
-                if(nVarpos_d > 0){
+                for(u32 idx = 0; idx < interfpdat.pdl.fields_f32_2.size(); idx++){
+                    u32 nvar = merged_buf.pdl.fields_f32_2[idx].nvar;
                     hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
-                        auto source = interfpdat.pos_d->get_access<sycl::access::mode::read>(cgh);
-                        auto dest = merge_pdat_buf[id_patch].data.pos_d->template get_access<sycl::access::mode::discard_write>(cgh);
-                        auto off = offset_pos_d;
-                        cgh.parallel_for( sycl::range{interfpdat.element_count*nVarpos_d}, [=](sycl::item<1> item) { dest[item.get_id(0) + off] = source[item]; });
-                    });
-                    offset_pos_d += interfpdat.element_count*nVarpos_d;
+                        auto source = interfpdat.fields_f32_2[idx].buf->get_access<sycl::access::mode::read>(cgh);
+                        auto dest = merged_buf.fields_f32_2[idx].buf->get_access<sycl::access::mode::discard_write>(cgh);
+                        auto off = fields_f32_2_offset[idx];
+                        cgh.parallel_for( sycl::range{interfpdat.element_count*nvar}, [=](sycl::item<1> item) { dest[item.get_id(0) + off] = source[item]; });                    });
+                    fields_f32_2_offset[idx] += interfpdat.element_count  *  nvar ;
                 }
 
-                if(nVarU1_s > 0){
+                for(u32 idx = 0; idx < interfpdat.pdl.fields_f32_3.size(); idx++){
+                    u32 nvar = merged_buf.pdl.fields_f32_3[idx].nvar;
                     hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
-                        auto source = interfpdat.U1_s->get_access<sycl::access::mode::read>(cgh);
-                        auto dest = merge_pdat_buf[id_patch].data.U1_s->template get_access<sycl::access::mode::discard_write>(cgh);
-                        auto off = offset_U1_s;
-                        cgh.parallel_for( sycl::range{interfpdat.element_count*nVarU1_s}, [=](sycl::item<1> item) { dest[item.get_id(0) + off] = source[item]; });
-                    });
-                    offset_U1_s += interfpdat.element_count*nVarU1_s;
+                        auto source = interfpdat.fields_f32_3[idx].buf->get_access<sycl::access::mode::read>(cgh);
+                        auto dest = merged_buf.fields_f32_3[idx].buf->get_access<sycl::access::mode::discard_write>(cgh);
+                        auto off = fields_f32_3_offset[idx];
+                        cgh.parallel_for( sycl::range{interfpdat.element_count*nvar}, [=](sycl::item<1> item) { dest[item.get_id(0) + off] = source[item]; });                    });
+                    fields_f32_3_offset[idx] += interfpdat.element_count  *  nvar ;
                 }
 
-                if(nVarU1_d > 0){
+                for(u32 idx = 0; idx < interfpdat.pdl.fields_f32_4.size(); idx++){
+                    u32 nvar = merged_buf.pdl.fields_f32_4[idx].nvar;
                     hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
-                        auto source = interfpdat.U1_d->get_access<sycl::access::mode::read>(cgh);
-                        auto dest = merge_pdat_buf[id_patch].data.U1_d->template get_access<sycl::access::mode::discard_write>(cgh);
-                        auto off = offset_U1_d;
-                        cgh.parallel_for( sycl::range{interfpdat.element_count*nVarU1_d}, [=](sycl::item<1> item) { dest[item.get_id(0) + off] = source[item]; });
-                    });
-                    offset_U1_d += interfpdat.element_count*nVarU1_d;
+                        auto source = interfpdat.fields_f32_4[idx].buf->get_access<sycl::access::mode::read>(cgh);
+                        auto dest = merged_buf.fields_f32_4[idx].buf->get_access<sycl::access::mode::discard_write>(cgh);
+                        auto off = fields_f32_4_offset[idx];
+                        cgh.parallel_for( sycl::range{interfpdat.element_count*nvar}, [=](sycl::item<1> item) { dest[item.get_id(0) + off] = source[item]; });                    });
+                    fields_f32_4_offset[idx] += interfpdat.element_count  *  nvar ;
                 }
 
-                if(nVarU3_s > 0){
+                for(u32 idx = 0; idx < interfpdat.pdl.fields_f32_8.size(); idx++){
+                    u32 nvar = merged_buf.pdl.fields_f32_8[idx].nvar;
                     hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
-                        auto source = interfpdat.U3_s->get_access<sycl::access::mode::read>(cgh);
-                        auto dest = merge_pdat_buf[id_patch].data.U3_s->template get_access<sycl::access::mode::discard_write>(cgh);
-                        auto off = offset_U3_s;
-                        cgh.parallel_for( sycl::range{interfpdat.element_count*nVarU3_s}, [=](sycl::item<1> item) { dest[item.get_id(0) + off] = source[item]; });
-                    });
-                    offset_U3_s += interfpdat.element_count*nVarU3_s;
+                        auto source = interfpdat.fields_f32_8[idx].buf->get_access<sycl::access::mode::read>(cgh);
+                        auto dest = merged_buf.fields_f32_8[idx].buf->get_access<sycl::access::mode::discard_write>(cgh);
+                        auto off = fields_f32_8_offset[idx];
+                        cgh.parallel_for( sycl::range{interfpdat.element_count*nvar}, [=](sycl::item<1> item) { dest[item.get_id(0) + off] = source[item]; });                    });
+                    fields_f32_8_offset[idx] += interfpdat.element_count  *  nvar ;
                 }
 
-                if(nVarU3_d > 0){
+                for(u32 idx = 0; idx < interfpdat.pdl.fields_f32_16.size(); idx++){
+                    u32 nvar = merged_buf.pdl.fields_f32_16[idx].nvar;
                     hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
-                        auto source = interfpdat.U3_d->get_access<sycl::access::mode::read>(cgh);
-                        auto dest = merge_pdat_buf[id_patch].data.U3_d->template get_access<sycl::access::mode::discard_write>(cgh);
-                        auto off = offset_U3_d;
-                        cgh.parallel_for( sycl::range{interfpdat.element_count*nVarU3_d}, [=](sycl::item<1> item) { dest[item.get_id(0) + off] = source[item]; });
-                    });
-                    offset_U3_d += interfpdat.element_count*nVarU3_d;
+                        auto source = interfpdat.fields_f32_16[idx].buf->get_access<sycl::access::mode::read>(cgh);
+                        auto dest = merged_buf.fields_f32_16[idx].buf->get_access<sycl::access::mode::discard_write>(cgh);
+                        auto off = fields_f32_16_offset[idx];
+                        cgh.parallel_for( sycl::range{interfpdat.element_count*nvar}, [=](sycl::item<1> item) { dest[item.get_id(0) + off] = source[item]; });                    });
+                    fields_f32_16_offset[idx] += interfpdat.element_count  *  nvar ;
                 }
+
+
+
+
+
+
+                for(u32 idx = 0; idx < interfpdat.pdl.fields_f64.size(); idx++){
+                    u32 nvar = merged_buf.pdl.fields_f64[idx].nvar;
+                    hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+                        auto source = interfpdat.fields_f64[idx].buf->get_access<sycl::access::mode::read>(cgh);
+                        auto dest = merged_buf.fields_f64[idx].buf->get_access<sycl::access::mode::discard_write>(cgh);
+                        auto off = fields_f64_offset[idx];
+                        cgh.parallel_for( sycl::range{interfpdat.element_count*nvar}, [=](sycl::item<1> item) { dest[item.get_id(0) + off] = source[item]; });                    });
+                    fields_f64_offset[idx] += interfpdat.element_count  *  nvar ;
+                }
+
+                for(u32 idx = 0; idx < interfpdat.pdl.fields_f64_2.size(); idx++){
+                    u32 nvar = merged_buf.pdl.fields_f64_2[idx].nvar;
+                    hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+                        auto source = interfpdat.fields_f64_2[idx].buf->get_access<sycl::access::mode::read>(cgh);
+                        auto dest = merged_buf.fields_f64_2[idx].buf->get_access<sycl::access::mode::discard_write>(cgh);
+                        auto off = fields_f64_2_offset[idx];
+                        cgh.parallel_for( sycl::range{interfpdat.element_count*nvar}, [=](sycl::item<1> item) { dest[item.get_id(0) + off] = source[item]; });                    });
+                    fields_f64_2_offset[idx] += interfpdat.element_count  *  nvar ;
+                }
+
+                for(u32 idx = 0; idx < interfpdat.pdl.fields_f64_3.size(); idx++){
+                    u32 nvar = merged_buf.pdl.fields_f64_3[idx].nvar;
+                    hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+                        auto source = interfpdat.fields_f64_3[idx].buf->get_access<sycl::access::mode::read>(cgh);
+                        auto dest = merged_buf.fields_f64_3[idx].buf->get_access<sycl::access::mode::discard_write>(cgh);
+                        auto off = fields_f64_3_offset[idx];
+                        cgh.parallel_for( sycl::range{interfpdat.element_count*nvar}, [=](sycl::item<1> item) { dest[item.get_id(0) + off] = source[item]; });                    });
+                    fields_f64_3_offset[idx] += interfpdat.element_count  *  nvar ;
+                }
+
+                for(u32 idx = 0; idx < interfpdat.pdl.fields_f64_4.size(); idx++){
+                    u32 nvar = merged_buf.pdl.fields_f64_4[idx].nvar;
+                    hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+                        auto source = interfpdat.fields_f64_4[idx].buf->get_access<sycl::access::mode::read>(cgh);
+                        auto dest = merged_buf.fields_f64_4[idx].buf->get_access<sycl::access::mode::discard_write>(cgh);
+                        auto off = fields_f64_4_offset[idx];
+                        cgh.parallel_for( sycl::range{interfpdat.element_count*nvar}, [=](sycl::item<1> item) { dest[item.get_id(0) + off] = source[item]; });                    });
+                    fields_f64_4_offset[idx] += interfpdat.element_count  *  nvar ;
+                }
+
+                for(u32 idx = 0; idx < interfpdat.pdl.fields_f64_8.size(); idx++){
+                    u32 nvar = merged_buf.pdl.fields_f64_8[idx].nvar;
+                    hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+                        auto source = interfpdat.fields_f64_8[idx].buf->get_access<sycl::access::mode::read>(cgh);
+                        auto dest = merged_buf.fields_f64_8[idx].buf->get_access<sycl::access::mode::discard_write>(cgh);
+                        auto off = fields_f64_8_offset[idx];
+                        cgh.parallel_for( sycl::range{interfpdat.element_count*nvar}, [=](sycl::item<1> item) { dest[item.get_id(0) + off] = source[item]; });                    });
+                    fields_f64_8_offset[idx] += interfpdat.element_count  *  nvar ;
+                }
+
+                for(u32 idx = 0; idx < interfpdat.pdl.fields_f64_16.size(); idx++){
+                    u32 nvar = merged_buf.pdl.fields_f64_16[idx].nvar;
+                    hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+                        auto source = interfpdat.fields_f64_16[idx].buf->get_access<sycl::access::mode::read>(cgh);
+                        auto dest = merged_buf.fields_f64_16[idx].buf->get_access<sycl::access::mode::discard_write>(cgh);
+                        auto off = fields_f64_16_offset[idx];
+                        cgh.parallel_for( sycl::range{interfpdat.element_count*nvar}, [=](sycl::item<1> item) { dest[item.get_id(0) + off] = source[item]; });                    });
+                    fields_f64_16_offset[idx] += interfpdat.element_count  *  nvar ;
+                }
+
+
+
+                for(u32 idx = 0; idx < interfpdat.pdl.fields_u32.size(); idx++){
+                    u32 nvar = merged_buf.pdl.fields_u32[idx].nvar;
+                    hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+                        auto source = interfpdat.fields_u32[idx].buf->get_access<sycl::access::mode::read>(cgh);
+                        auto dest = merged_buf.fields_u32[idx].buf->get_access<sycl::access::mode::discard_write>(cgh);
+                        auto off = fields_u32_offset[idx];
+                        cgh.parallel_for( sycl::range{interfpdat.element_count*nvar}, [=](sycl::item<1> item) { dest[item.get_id(0) + off] = source[item]; });                    });
+                    fields_u32_offset[idx] += interfpdat.element_count  *  nvar ;
+                }
+
+                for(u32 idx = 0; idx < interfpdat.pdl.fields_u64.size(); idx++){
+                    u32 nvar = merged_buf.pdl.fields_u64[idx].nvar;
+                    hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+                        auto source = interfpdat.fields_u64[idx].buf->get_access<sycl::access::mode::read>(cgh);
+                        auto dest = merged_buf.fields_u64[idx].buf->get_access<sycl::access::mode::discard_write>(cgh);
+                        auto off = fields_u64_offset[idx];
+                        cgh.parallel_for( sycl::range{interfpdat.element_count*nvar}, [=](sycl::item<1> item) { dest[item.get_id(0) + off] = source[item]; });                    });
+                    fields_u64_offset[idx] += interfpdat.element_count  *  nvar ;
+                }
+
             }
         );
 
-        merge_pdat_buf[id_patch].box = {min_box,max_box};
+
+        merge_pdat_buf.insert({original_element,merged_buf,{min_box,max_box}});
 
 
-        
-        
 
     });
 
@@ -347,54 +631,145 @@ inline void write_back_merge_patches(
         std::cout << "patch : n°"<<id_patch << " -> write back merge buf" << std::endl;
 
 
-        using namespace patchdata_layout;
 
 
-        if(nVarpos_s > 0){
+
+
+
+
+
+
+        for(u32 idx = 0; idx < pdat_buf.pdl.fields_f32.size(); idx++){
+            u32 nvar = pdat_buf.pdl.fields_f32[idx].nvar;
             hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
-                auto dest = pdat_buf.pos_s->get_access<sycl::access::mode::discard_write>(cgh);
-                auto source = merge_pdat_buf[id_patch].data.pos_s->template get_access<sycl::access::mode::read>(cgh);
-                cgh.parallel_for( sycl::range{pdat_buf.element_count*nVarpos_s}, [=](sycl::item<1> item) { dest[item] = source[item]; });
+                auto dest = pdat_buf.fields_f32[idx].buf->get_access<sycl::access::mode::read>(cgh);
+                auto source = merge_pdat_buf.at(id_patch).fields_f32[idx].buf->get_access<sycl::access::mode::discard_write>(cgh);
+                cgh.parallel_for( sycl::range{pdat_buf.element_count*nvar}, [=](sycl::item<1> item) { dest[item] = source[item]; });
             });
         }
 
-        if(nVarpos_d > 0){
+        for(u32 idx = 0; idx < pdat_buf.pdl.fields_f32_2.size(); idx++){
+            u32 nvar = pdat_buf.pdl.fields_f32_2[idx].nvar;
             hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
-                auto dest = pdat_buf.pos_d->get_access<sycl::access::mode::discard_write>(cgh);
-                auto source = merge_pdat_buf[id_patch].data.pos_d->template get_access<sycl::access::mode::read>(cgh);
-                cgh.parallel_for( sycl::range{pdat_buf.element_count*nVarpos_d}, [=](sycl::item<1> item) { dest[item] = source[item]; });
+                auto dest = pdat_buf.fields_f32_2[idx].buf->get_access<sycl::access::mode::read>(cgh);
+                auto source = merge_pdat_buf.at(id_patch).fields_f32_2[idx].buf->get_access<sycl::access::mode::discard_write>(cgh);
+                cgh.parallel_for( sycl::range{pdat_buf.element_count*nvar}, [=](sycl::item<1> item) { dest[item] = source[item]; });
             });
         }
 
-        if(nVarU1_s > 0){
+        for(u32 idx = 0; idx < pdat_buf.pdl.fields_f32_3.size(); idx++){
+            u32 nvar = pdat_buf.pdl.fields_f32_3[idx].nvar;
             hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
-                auto dest = pdat_buf.U1_s->get_access<sycl::access::mode::discard_write>(cgh);
-                auto source = merge_pdat_buf[id_patch].data.U1_s->template get_access<sycl::access::mode::read>(cgh);
-                cgh.parallel_for( sycl::range{pdat_buf.element_count*nVarU1_s}, [=](sycl::item<1> item) { dest[item] = source[item]; });
+                auto dest = pdat_buf.fields_f32_3[idx].buf->get_access<sycl::access::mode::read>(cgh);
+                auto source = merge_pdat_buf.at(id_patch).fields_f32_3[idx].buf->get_access<sycl::access::mode::discard_write>(cgh);
+                cgh.parallel_for( sycl::range{pdat_buf.element_count*nvar}, [=](sycl::item<1> item) { dest[item] = source[item]; });
             });
         }
 
-        if(nVarU1_d > 0){
+        for(u32 idx = 0; idx < pdat_buf.pdl.fields_f32_4.size(); idx++){
+            u32 nvar = pdat_buf.pdl.fields_f32_4[idx].nvar;
             hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
-                auto dest = pdat_buf.U1_d->get_access<sycl::access::mode::discard_write>(cgh);
-                auto source = merge_pdat_buf[id_patch].data.U1_d->template get_access<sycl::access::mode::read>(cgh);
-                cgh.parallel_for( sycl::range{pdat_buf.element_count*nVarU1_d}, [=](sycl::item<1> item) { dest[item] = source[item]; });
+                auto dest = pdat_buf.fields_f32_4[idx].buf->get_access<sycl::access::mode::read>(cgh);
+                auto source = merge_pdat_buf.at(id_patch).fields_f32_4[idx].buf->get_access<sycl::access::mode::discard_write>(cgh);
+                cgh.parallel_for( sycl::range{pdat_buf.element_count*nvar}, [=](sycl::item<1> item) { dest[item] = source[item]; });
             });
         }
 
-        if(nVarU3_s > 0){
+        for(u32 idx = 0; idx < pdat_buf.pdl.fields_f32_8.size(); idx++){
+            u32 nvar = pdat_buf.pdl.fields_f32_8[idx].nvar;
             hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
-                auto dest = pdat_buf.U3_s->get_access<sycl::access::mode::discard_write>(cgh);
-                auto source = merge_pdat_buf[id_patch].data.U3_s->template get_access<sycl::access::mode::read>(cgh);
-                cgh.parallel_for( sycl::range{pdat_buf.element_count*nVarU3_s}, [=](sycl::item<1> item) { dest[item] = source[item]; });
+                auto dest = pdat_buf.fields_f32_8[idx].buf->get_access<sycl::access::mode::read>(cgh);
+                auto source = merge_pdat_buf.at(id_patch).fields_f32_8[idx].buf->get_access<sycl::access::mode::discard_write>(cgh);
+                cgh.parallel_for( sycl::range{pdat_buf.element_count*nvar}, [=](sycl::item<1> item) { dest[item] = source[item]; });
             });
         }
 
-        if(nVarU3_d > 0){
+        for(u32 idx = 0; idx < pdat_buf.pdl.fields_f32_16.size(); idx++){
+            u32 nvar = pdat_buf.pdl.fields_f32_16[idx].nvar;
             hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
-                auto dest = pdat_buf.U3_d->get_access<sycl::access::mode::discard_write>(cgh);
-                auto source = merge_pdat_buf[id_patch].data.U3_d->template get_access<sycl::access::mode::read>(cgh);
-                cgh.parallel_for( sycl::range{pdat_buf.element_count*nVarU3_d}, [=](sycl::item<1> item) { dest[item] = source[item]; });
+                auto dest = pdat_buf.fields_f32_16[idx].buf->get_access<sycl::access::mode::read>(cgh);
+                auto source = merge_pdat_buf.at(id_patch).fields_f32_16[idx].buf->get_access<sycl::access::mode::discard_write>(cgh);
+                cgh.parallel_for( sycl::range{pdat_buf.element_count*nvar}, [=](sycl::item<1> item) { dest[item] = source[item]; });
+            });
+        }
+
+
+
+
+
+
+        for(u32 idx = 0; idx < pdat_buf.pdl.fields_f64.size(); idx++){
+            u32 nvar = pdat_buf.pdl.fields_f64[idx].nvar;
+            hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+                auto dest = pdat_buf.fields_f64[idx].buf->get_access<sycl::access::mode::read>(cgh);
+                auto source = merge_pdat_buf.at(id_patch).fields_f64[idx].buf->get_access<sycl::access::mode::discard_write>(cgh);
+                cgh.parallel_for( sycl::range{pdat_buf.element_count*nvar}, [=](sycl::item<1> item) { dest[item] = source[item]; });
+            });
+        }
+
+        for(u32 idx = 0; idx < pdat_buf.pdl.fields_f64_2.size(); idx++){
+            u32 nvar = pdat_buf.pdl.fields_f64_2[idx].nvar;
+            hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+                auto dest = pdat_buf.fields_f64_2[idx].buf->get_access<sycl::access::mode::read>(cgh);
+                auto source = merge_pdat_buf.at(id_patch).fields_f64_2[idx].buf->get_access<sycl::access::mode::discard_write>(cgh);
+                cgh.parallel_for( sycl::range{pdat_buf.element_count*nvar}, [=](sycl::item<1> item) { dest[item] = source[item]; });
+            });
+        }
+
+        for(u32 idx = 0; idx < pdat_buf.pdl.fields_f64_3.size(); idx++){
+            u32 nvar = pdat_buf.pdl.fields_f64_3[idx].nvar;
+            hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+                auto dest = pdat_buf.fields_f64_3[idx].buf->get_access<sycl::access::mode::read>(cgh);
+                auto source = merge_pdat_buf.at(id_patch).fields_f64_3[idx].buf->get_access<sycl::access::mode::discard_write>(cgh);
+                cgh.parallel_for( sycl::range{pdat_buf.element_count*nvar}, [=](sycl::item<1> item) { dest[item] = source[item]; });
+            });
+        }
+
+        for(u32 idx = 0; idx < pdat_buf.pdl.fields_f64_4.size(); idx++){
+            u32 nvar = pdat_buf.pdl.fields_f64_4[idx].nvar;
+            hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+                auto dest = pdat_buf.fields_f64_4[idx].buf->get_access<sycl::access::mode::read>(cgh);
+                auto source = merge_pdat_buf.at(id_patch).fields_f64_4[idx].buf->get_access<sycl::access::mode::discard_write>(cgh);
+                cgh.parallel_for( sycl::range{pdat_buf.element_count*nvar}, [=](sycl::item<1> item) { dest[item] = source[item]; });
+            });
+        }
+
+        for(u32 idx = 0; idx < pdat_buf.pdl.fields_f64_8.size(); idx++){
+            u32 nvar = pdat_buf.pdl.fields_f64_8[idx].nvar;
+            hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+                auto dest = pdat_buf.fields_f64_8[idx].buf->get_access<sycl::access::mode::read>(cgh);
+                auto source = merge_pdat_buf.at(id_patch).fields_f64_8[idx].buf->get_access<sycl::access::mode::discard_write>(cgh);
+                cgh.parallel_for( sycl::range{pdat_buf.element_count*nvar}, [=](sycl::item<1> item) { dest[item] = source[item]; });
+            });
+        }
+
+        for(u32 idx = 0; idx < pdat_buf.pdl.fields_f64_16.size(); idx++){
+            u32 nvar = pdat_buf.pdl.fields_f64_16[idx].nvar;
+            hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+                auto dest = pdat_buf.fields_f64_16[idx].buf->get_access<sycl::access::mode::read>(cgh);
+                auto source = merge_pdat_buf.at(id_patch).fields_f64_16[idx].buf->get_access<sycl::access::mode::discard_write>(cgh);
+                cgh.parallel_for( sycl::range{pdat_buf.element_count*nvar}, [=](sycl::item<1> item) { dest[item] = source[item]; });
+            });
+        }
+
+
+
+        for(u32 idx = 0; idx < pdat_buf.pdl.fields_u32.size(); idx++){
+            u32 nvar = pdat_buf.pdl.fields_u32[idx].nvar;
+            hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+                auto dest = pdat_buf.fields_u32[idx].buf->get_access<sycl::access::mode::read>(cgh);
+                auto source = merge_pdat_buf.at(id_patch).fields_u32[idx].buf->get_access<sycl::access::mode::discard_write>(cgh);
+                cgh.parallel_for( sycl::range{pdat_buf.element_count*nvar}, [=](sycl::item<1> item) { dest[item] = source[item]; });
+            });
+        }
+
+
+        for(u32 idx = 0; idx < pdat_buf.pdl.fields_u64.size(); idx++){
+            u32 nvar = pdat_buf.pdl.fields_u64[idx].nvar;
+            hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+                auto dest = pdat_buf.fields_u64[idx].buf->get_access<sycl::access::mode::read>(cgh);
+                auto source = merge_pdat_buf.at(id_patch).fields_u64[idx].buf->get_access<sycl::access::mode::discard_write>(cgh);
+                cgh.parallel_for( sycl::range{pdat_buf.element_count*nvar}, [=](sycl::item<1> item) { dest[item] = source[item]; });
             });
         }
 

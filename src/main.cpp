@@ -11,6 +11,7 @@
 #include "patch/patchdata.hpp"
 #include "patch/patchdata_buffer.hpp"
 #include "patch/patchdata_exchanger.hpp"
+#include "patch/patchdata_layout.hpp"
 #include "patch/serialpatchtree.hpp"
 #include "patchscheduler/loadbalancing_hilbert.hpp"
 #include "patchscheduler/patch_content_exchanger.hpp"
@@ -254,17 +255,12 @@ inline void strech_mapping_axis(
 
 
 
-
-
 class TestTimestepper {
   public:
 
     
 
     static void init(SchedulerMPI &sched, TestSimInfo &siminfo) {
-
-        patchdata_layout::set(1, 0, 2, 0, 3, 0);
-        patchdata_layout::sync(MPI_COMM_WORLD);
 
         f32_3 box_dim = {1,1,1};
 
@@ -303,26 +299,30 @@ class TestTimestepper {
 
             p.pack_node_index = u64_max;
 
-            PatchData pdat;
+            PatchData pdat(sched.pdl);
 
-            
+            u32 ixyz = sched.pdl.get_field_idx<f32_3>("xyz");
+            u32 ivxyz = sched.pdl.get_field_idx<f32_3>("vxyz");
+            u32 iaxyz = sched.pdl.get_field_idx<f32_3>("axyz");
+            u32 iaxyz_old = sched.pdl.get_field_idx<f32_3>("axyz_old");
+
+            u32 ihpart = sched.pdl.get_field_idx<f32_3>("xyz");
 
             add_particles_fcc(
                 dr, 
                 box , 
                 [](f32_3 r){return true;}, 
-                [&pdat](f32_3 r,f32 h){
-                    pdat.pos_s.emplace_back(r); //r
-                    //                      h    omega
-                    pdat.U1_s.emplace_back(h*2);
-                    pdat.U1_s.emplace_back(0.00f);
+                [&](f32_3 r,f32 h){
+                    pdat.fields_f32_3[ixyz].field_data.emplace_back(r); //r
+                    //                      h    
+                    pdat.fields_f32[ihpart].field_data.emplace_back(h*2);
                     //                           v          a             a_old
-                    pdat.U3_s.emplace_back(f32_3{0.f,0.f,0.f});
-                    pdat.U3_s.emplace_back(f32_3{0.f,0.f,0.f});
-                    pdat.U3_s.emplace_back(f32_3{0.f,0.f,0.f});
+                    pdat.fields_f32_3[ivxyz].field_data.emplace_back(f32_3{0.f,0.f,0.f});
+                    pdat.fields_f32_3[iaxyz].field_data.emplace_back(f32_3{0.f,0.f,0.f});
+                    pdat.fields_f32_3[iaxyz_old].field_data.emplace_back(f32_3{0.f,0.f,0.f});
                 });
 
-            std::cout << "paticles count " << pdat.pos_s.size() << std::endl;
+            std::cout << "paticles count " << pdat.get_obj_cnt() << std::endl;
 
             //exit(0);
 
@@ -330,14 +330,14 @@ class TestTimestepper {
                 f32 a = 0.001;
 
                 f32 nmode = 1;
-                strech_mapping_axis(std::get<0>(box).x(),std::get<1>(box).x(), pdat.pos_s.size(),
+                strech_mapping_axis(std::get<0>(box).x(),std::get<1>(box).x(), pdat.get_obj_cnt(),
 
                     [&](u32 i) -> f32{
-                        return pdat.pos_s[i].x();
+                        return pdat.fields_f32_3[ixyz].field_data[i].x();
                     }
                     ,
                     [&](u32 i,f32 r){
-                        pdat.pos_s[i].x() = r;
+                        pdat.fields_f32_3[ixyz].field_data[i].x() = r;
                     },
                     
                     [&](f32 x) -> f32{
@@ -360,8 +360,8 @@ class TestTimestepper {
 
                 
 
-                p.data_count = pdat.pos_s.size();
-                p.load_value = pdat.pos_s.size();
+                p.data_count = pdat.get_obj_cnt();
+                p.load_value = pdat.get_obj_cnt();
             }
 
             /*
@@ -452,7 +452,16 @@ template <class Timestepper, class SimInfo> class SimulationSPH {
 
         SyCLHandler &hndl = SyCLHandler::get_instance();
 
-        SchedulerMPI sched = SchedulerMPI(1e6, 1);
+        PatchDataLayout pdl;
+
+        pdl.add_field<f32_3>("xyz", 1);
+        pdl.add_field<f32>("hpart", 1);
+        pdl.add_field<f32_3>("vxyz",1);
+        pdl.add_field<f32_3>("axyz",1);
+        pdl.add_field<f32_3>("axyz_old",1);
+
+
+        SchedulerMPI sched = SchedulerMPI(pdl,1e6, 1);
         sched.init_mpi_required_types();
 
         logfiles::open_log_files();
@@ -484,12 +493,15 @@ template <class Timestepper, class SimInfo> class SimulationSPH {
 
                 auto box = sched.get_box_volume<f32_3>();
 
+                u32 ixyz = pdl.get_field_idx<f32_3>("xyz");
+                u32 ivxyz = pdl.get_field_idx<f32_3>("vxyz");
+
                 sched.for_each_patch_buf(
                     [&](u64 id_patch, Patch cur_p, PatchDataBuffer & pdat_buf) {
 
                         hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
-                            auto r = pdat_buf.pos_s->get_access<sycl::access::mode::read>(cgh);
-                            auto U3 = pdat_buf.U3_s->get_access<sycl::access::mode::discard_write>(cgh);
+                            auto r = pdat_buf.fields_f32_3[ixyz].buf->get_access<sycl::access::mode::read>(cgh);
+                            auto v = pdat_buf.fields_f32_3[ivxyz].buf->get_access<sycl::access::mode::discard_write>(cgh);
 
                             f32 deltv = 0.01;
                             u32 nmode = 2;
@@ -501,8 +513,7 @@ template <class Timestepper, class SimInfo> class SimulationSPH {
 
                                 f32 z = r[item].z();
 
-                                U3[item.get_id(0)*CurDataLayout::U3_s::nvar + CurDataLayout::U3_s::ivxyz] = 
-                                    {
+                                v[item] = {
                                         0,
                                         0,
                                         deltv*sycl::cos(nmode*2.*pi*(z-z_min)/(z_max-z_min))
@@ -546,118 +557,9 @@ template <class Timestepper, class SimInfo> class SimulationSPH {
 };
 
 
-/*
-template<class T>
-struct ConvertToVec{typedef std::vector<T> Type;};
-
-template <typename... Args>
-struct convert_tuple_to_vec;
-
-template <typename... Args>
-struct convert_tuple_to_vec<std::tuple<Args...>>
-{
-    typedef std::tuple<typename ConvertToVec<Args>::Type...> type;
-};
-
-using ttt = std::tuple<f32,f64,u32>;
-using ttt_res  = std::tuple<
-        std::vector<f32>,
-        std::vector<f64>,
-        std::vector<u32>
-    >;
-
-typedef convert_tuple_to_vec<ttt>::type tt2 ;
-
-static_assert(
-        std::is_same<
-            convert_tuple_to_vec<ttt>::type,
-            ttt_res
-        >::value, ""
-    );
-
-*/
-
-class DL{
-    using pos = f32_3;
-    using type1 = f32;
-    using type2 = f32;
-};
-
-class empty_desc{};
-
-template<
-    class _Tpos,
-    class _T1 = u8, u32 _nvar1 = 0,class _Desc1 = empty_desc,
-    class _T2 = u8, u32 _nvar2 = 0,class _Desc2 = empty_desc,
-    class _T3 = u8, u32 _nvar3 = 0,class _Desc3 = empty_desc,
-    class _T4 = u8, u32 _nvar4 = 0,class _Desc4 = empty_desc,
-    class _T5 = u8, u32 _nvar5 = 0,class _Desc5 = empty_desc,
-    class _T6 = u8, u32 _nvar6 = 0,class _Desc6 = empty_desc,
-    class _T7 = u8, u32 _nvar7 = 0,class _Desc7 = empty_desc,
-    class _T8 = u8, u32 _nvar8 = 0,class _Desc8 = empty_desc
->
-class Layout{public:
-    using Tpos = _Tpos;
-
-    using T1 = _T1;
-    using T2 = _T2;
-    using T3 = _T3;
-    using T4 = _T4;
-    using T5 = _T5;
-    using T6 = _T6;
-    using T7 = _T7;
-    using T8 = _T8;
-
-
-    static constexpr u32 nvar1 = _nvar1;
-    static constexpr u32 nvar2 = _nvar2;
-    static constexpr u32 nvar3 = _nvar3;
-    static constexpr u32 nvar4 = _nvar4;
-    static constexpr u32 nvar5 = _nvar5;
-    static constexpr u32 nvar6 = _nvar6;
-    static constexpr u32 nvar7 = _nvar7;
-    static constexpr u32 nvar8 = _nvar8;
-
-    using desc1 = _Desc1;
-    using desc2 = _Desc2;
-    using desc3 = _Desc3;
-    using desc4 = _Desc4;
-    using desc5 = _Desc5;
-    using desc6 = _Desc6;
-    using desc7 = _Desc7;
-    using desc8 = _Desc8;
-};
-
-template<class Layout > class PData{
-    std::vector<typename Layout::Tpos> pos;
-    std::vector<typename Layout::T1> v1;
-    std::vector<typename Layout::T2> v2;
-    std::vector<typename Layout::T3> v3;
-    std::vector<typename Layout::T4> v4;
-    std::vector<typename Layout::T5> v5;
-    std::vector<typename Layout::T6> v6;
-    std::vector<typename Layout::T7> v7;
-};
-
 
 int main(int argc, char *argv[]) {
 
-    class V1_layout{public:
-        u32 ihpart = 0;
-    };
-
-    class V2_layout{public:
-        u32 ivxyz = 0;
-        u32 iaxyz = 1;
-        u32 iaxyz_old = 2;
-    };
-
-    using Lay = Layout<
-        f32_3, 
-        f32  ,1,V1_layout,
-        f32_3,3,V2_layout>;
-
-    PData<Lay> aa;
 
 
     std::cout << shamrock_title_bar_big << std::endl;
@@ -670,7 +572,21 @@ int main(int argc, char *argv[]) {
     SyCLHandler &hndl = SyCLHandler::get_instance();
     hndl.init_sycl();
 
+
+
+
+
+
+
     SimulationSPH<TestTimestepper, TestSimInfo>::run_sim();
+
+
+
+
+
+
+
+
 
     mpi_handler::close();
 }
