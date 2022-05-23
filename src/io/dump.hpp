@@ -263,37 +263,37 @@ inline void dump_patch_data(std::string prefix, SchedulerMPI & sched){
             for(auto a : pdat.fields_f32){
                 u32 sz = a.size();
                 using T = decltype(a)::Field_type;
-                mpi::file_write(mfilepatch,a.data(), 1, get_mpi_type<T>(), &st);
+                mpi::file_write(mfilepatch,a.data(), sz, get_mpi_type<T>(), &st);
             }
 
             for(auto a : pdat.fields_f32_2){
                 u32 sz = a.size();
                 using T = decltype(a)::Field_type;
-                mpi::file_write(mfilepatch,a.data(), 1, get_mpi_type<T>(), &st);
+                mpi::file_write(mfilepatch,a.data(), sz, get_mpi_type<T>(), &st);
             }
 
             for(auto a : pdat.fields_f32_3){
                 u32 sz = a.size();
                 using T = decltype(a)::Field_type;
-                mpi::file_write(mfilepatch,a.data(), 1, get_mpi_type<T>(), &st);
+                mpi::file_write(mfilepatch,a.data(), sz, get_mpi_type<T>(), &st);
             }
 
             for(auto a : pdat.fields_f32_4){
                 u32 sz = a.size();
                 using T = decltype(a)::Field_type;
-                mpi::file_write(mfilepatch,a.data(), 1, get_mpi_type<T>(), &st);
+                mpi::file_write(mfilepatch,a.data(), sz, get_mpi_type<T>(), &st);
             }
 
             for(auto a : pdat.fields_f32_8){
                 u32 sz = a.size();
                 using T = decltype(a)::Field_type;
-                mpi::file_write(mfilepatch,a.data(), 1, get_mpi_type<T>(), &st);
+                mpi::file_write(mfilepatch,a.data(), sz, get_mpi_type<T>(), &st);
             }
 
             for(auto a : pdat.fields_f32_16){
                 u32 sz = a.size();
                 using T = decltype(a)::Field_type;
-                mpi::file_write(mfilepatch,a.data(), 1, get_mpi_type<T>(), &st);
+                mpi::file_write(mfilepatch,a.data(), sz, get_mpi_type<T>(), &st);
             }
 
 
@@ -307,37 +307,37 @@ inline void dump_patch_data(std::string prefix, SchedulerMPI & sched){
             for(auto a : pdat.fields_f64){
                 u32 sz = a.size();
                 using T = decltype(a)::Field_type;
-                mpi::file_write(mfilepatch,a.data(), 1, get_mpi_type<T>(), &st);
+                mpi::file_write(mfilepatch,a.data(), sz, get_mpi_type<T>(), &st);
             }
 
             for(auto a : pdat.fields_f64_2){
                 u32 sz = a.size();
                 using T = decltype(a)::Field_type;
-                mpi::file_write(mfilepatch,a.data(), 1, get_mpi_type<T>(), &st);
+                mpi::file_write(mfilepatch,a.data(), sz, get_mpi_type<T>(), &st);
             }
 
             for(auto a : pdat.fields_f64_3){
                 u32 sz = a.size();
                 using T = decltype(a)::Field_type;
-                mpi::file_write(mfilepatch,a.data(), 1, get_mpi_type<T>(), &st);
+                mpi::file_write(mfilepatch,a.data(), sz, get_mpi_type<T>(), &st);
             }
 
             for(auto a : pdat.fields_f64_4){
                 u32 sz = a.size();
                 using T = decltype(a)::Field_type;
-                mpi::file_write(mfilepatch,a.data(), 1, get_mpi_type<T>(), &st);
+                mpi::file_write(mfilepatch,a.data(), sz, get_mpi_type<T>(), &st);
             }
 
             for(auto a : pdat.fields_f64_8){
                 u32 sz = a.size();
                 using T = decltype(a)::Field_type;
-                mpi::file_write(mfilepatch,a.data(), 1, get_mpi_type<T>(), &st);
+                mpi::file_write(mfilepatch,a.data(), sz, get_mpi_type<T>(), &st);
             }
 
             for(auto a : pdat.fields_f64_16){
                 u32 sz = a.size();
                 using T = decltype(a)::Field_type;
-                mpi::file_write(mfilepatch,a.data(), 1, get_mpi_type<T>(), &st);
+                mpi::file_write(mfilepatch,a.data(), sz, get_mpi_type<T>(), &st);
             }
 
 
@@ -347,13 +347,13 @@ inline void dump_patch_data(std::string prefix, SchedulerMPI & sched){
             for(auto a : pdat.fields_u32){
                 u32 sz = a.size();
                 using T = decltype(a)::Field_type;
-                mpi::file_write(mfilepatch,a.data(), 1, get_mpi_type<T>(), &st);
+                mpi::file_write(mfilepatch,a.data(), sz, get_mpi_type<T>(), &st);
             }
 
             for(auto a : pdat.fields_u64){
                 u32 sz = a.size();
                 using T = decltype(a)::Field_type;
-                mpi::file_write(mfilepatch,a.data(), 1, get_mpi_type<T>(), &st);
+                mpi::file_write(mfilepatch,a.data(), sz, get_mpi_type<T>(), &st);
             }
 
 

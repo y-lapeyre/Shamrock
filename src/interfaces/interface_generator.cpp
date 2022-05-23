@@ -29,13 +29,14 @@ std::vector<std::unique_ptr<PatchData>> InterfaceVolumeGenerator::append_interfa
         p = std::make_unique<PatchData>(pdat.patchdata_layout);
     }
 
-    std::vector<std::vector<u32>> idxs;
+    std::vector<std::vector<u32>> idxs(boxs_min.size());
 
     for (u32 i = 0; i < flag_choice.size(); i++) {
-        if(flag_choice[i] < pdat_vec.size()){
+        if(flag_choice[i] < boxs_min.size()){
             idxs[flag_choice[i]].push_back(i);
         }
     }
+
 
     if (! pdat.is_empty()) {
         for (u32 i = 0; i < idxs.size(); i++) {
@@ -59,10 +60,10 @@ std::vector<std::unique_ptr<PatchData>> InterfaceVolumeGenerator::append_interfa
         p = std::make_unique<PatchData>(pdat.patchdata_layout);
     }
 
-    std::vector<std::vector<u32>> idxs;
+    std::vector<std::vector<u32>> idxs(boxs_min.size());
 
     for (u32 i = 0; i < flag_choice.size(); i++) {
-        if(flag_choice[i] < pdat_vec.size()){
+        if(flag_choice[i] < boxs_min.size()){
             idxs[flag_choice[i]].push_back(i);
         }
     }

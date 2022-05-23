@@ -169,7 +169,11 @@ inline void make_merge_patches(
         {
             const std::vector<std::tuple<u64, std::unique_ptr<PatchData>>> & p_interf_lst = interface_hndl.get_interface_list(id_patch);
             for (auto & [int_pid, pdat_ptr] : p_interf_lst) {
-                len_main += (pdat_ptr->get_obj_cnt());
+
+
+                u32 cnt = pdat_ptr->get_obj_cnt();
+                std::cout << "received interf : " << cnt << std::endl;
+                len_main += (cnt);
             }
         }
         
@@ -1896,9 +1900,14 @@ class SPHTimestepperLeapfrog{public:
 
                 });
             });
+
+            
 */
 
             if(step_cnt > 5){
+
+                std::cout << "leapfrog corrector " << std::endl;
+
                 leapfrog_corrector<pos_prec>(
                     hndl.get_queue_compute(0), 
                    merge_pdat_buf.at(id_patch).or_element_cnt, 
@@ -1907,11 +1916,11 @@ class SPHTimestepperLeapfrog{public:
                     pdat_buf_merge.fields_f32_3[iaxyz],
                     pdat_buf_merge.fields_f32_3[iaxyz_old]);
             }
-
-
+            /*
+            std::cout << "omega access corrector " << std::endl;
             auto tmp_acc = omega.get_access<sycl::access::mode::read>();
 
-            //*
+            
             std::cout << "exemple val " << tmp_acc[0] << " "
               << tmp_acc[0] << " "
               << tmp_acc[50] << " "

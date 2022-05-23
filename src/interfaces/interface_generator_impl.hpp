@@ -1,5 +1,6 @@
 #pragma once
 
+#include "CL/sycl/stream.hpp"
 #include "patch/patchdata.hpp"
 #include "patch/patchdata_field.hpp"
 #include "utils/geometry_utils.hpp"
@@ -44,7 +45,10 @@ namespace impl {
 
             sycl::buffer<f32_3> pos_s_buf = sycl::buffer<f32_3>(pos_field.data(),pos_field.size());
 
+            ;
+
             queue.submit([&](sycl::handler &cgh) {
+                
                 auto pos_s = pos_s_buf.get_access<sycl::access::mode::read>(cgh);
 
                 auto bmin = bmin_buf.get_access<sycl::access::mode::read>(cgh);
@@ -54,6 +58,7 @@ namespace impl {
 
                 u8 num_boxes = boxs_min.size();
 
+
                 cgh.parallel_for<class BuildInterfacef32>(range, [=](sycl::item<1> item) {
                     u64 i = (u64)item.get_id(0);
 
@@ -61,6 +66,7 @@ namespace impl {
                     index_box[i] = u8_max;
 
                     for (u8 idx = 0; idx < num_boxes; idx++) {
+
                         if (BBAA::is_particle_in_patch<f32_3>(pos_i, bmin[idx], bmax[idx])) {
                             index_box[i] = idx;
                         }
