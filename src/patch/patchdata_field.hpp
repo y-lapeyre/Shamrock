@@ -9,7 +9,7 @@
 template<class T>
 class PatchDataField {
 
-    
+    std::vector<T> field_data;
 
     std::string field_name;
 
@@ -21,12 +21,13 @@ class PatchDataField {
     public:
 
     //TODO find a way to add particles easily cf setup require public vector
-    std::vector<T> field_data;
+    
 
     using Field_type = T;
 
     inline PatchDataField(std::string name, u32 nvar) : field_name(name) , nvar(nvar){
-
+        obj_cnt = 0;
+        val_cnt = 0;
     };
 
     inline T* data(){
@@ -58,6 +59,15 @@ class PatchDataField {
     inline void expand(u32 obj_to_add){
         resize(obj_cnt + obj_to_add);
     }
+
+
+
+    inline void insert_element(T v){
+        u32 ins_pos = val_cnt;
+        expand(1);
+        field_data[ins_pos] = v;
+    }
+
 
     inline void insert(PatchDataField<T> &f2){
         field_data.insert(field_data.end(), f2.field_data.begin(), f2.field_data.end());

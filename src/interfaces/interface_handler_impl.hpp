@@ -78,7 +78,7 @@ namespace impl {
 
 
                     std::vector<std::unique_ptr<PCField>> pret = InterfaceVolumeGenerator::append_interface_field<T,vectype>(
-                        hndl.get_queue_alt(0), sched.patch_data.owned_data[interface_comm_list[i].sender_patch_id],pcomp_field.field_data[interface_comm_list[i].sender_patch_id],
+                        hndl.get_queue_alt(0), sched.patch_data.owned_data.at(interface_comm_list[i].sender_patch_id),pcomp_field.field_data[interface_comm_list[i].sender_patch_id],
                         {interface_comm_list[i].interf_box_min}, {interface_comm_list[i].interf_box_max});
 
 

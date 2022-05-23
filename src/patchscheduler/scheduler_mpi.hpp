@@ -182,7 +182,7 @@ class SchedulerMPI{public:
         for (u64 idx = 0; idx < patch_list.local.size(); idx++) {
 
             Patch &cur_p = patch_list.global[idx];
-            PatchDataBuffer pdatbuf = attach_to_patchData(patch_data.owned_data[cur_p.id_patch]);
+            PatchDataBuffer pdatbuf = attach_to_patchData(patch_data.owned_data.at(cur_p.id_patch));
 
             field.local_nodes_value[idx] = lambda(hndl.get_queue_compute(0),cur_p,pdatbuf);
 

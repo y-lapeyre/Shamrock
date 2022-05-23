@@ -66,7 +66,7 @@ inline std::unordered_map<u64, sycl::buffer<u64>> get_new_id_map<f64_3>(Schedule
 
             newid_buf_map.insert({
                 id,
-                __compute_object_patch_owner<f64_3, class ComputeObejctPatchOwners_f32>(
+                __compute_object_patch_owner<f64_3, class ComputeObejctPatchOwners_f64>(
                     hndl.get_queue_compute(0), 
                     *pos, 
                     sptree)});
@@ -107,7 +107,7 @@ inline void reatribute_particles<f32_3>(SchedulerMPI & sched, SerialPatchTree<f3
 
             newid_buf_map.insert({
                 id,
-                __compute_object_patch_owner<f32_3, class ComputeObejctPatchOwners_f32>(
+                __compute_object_patch_owner<f32_3, class ComputeObjectPatchOwners_f32_old>(
                     hndl.get_queue_compute(0), 
                     *pos, 
                     sptree)});
@@ -186,7 +186,7 @@ inline void reatribute_particles<f32_3>(SchedulerMPI & sched, SerialPatchTree<f3
 
                 newid_buf_map.insert({
                     id,
-                    __compute_object_patch_owner<f32_3, class ComputeObejctPatchOwners2_f32>(
+                    __compute_object_patch_owner<f32_3, class ComputeObjectPatchOwners2_f32_old>(
                         hndl.get_queue_compute(0), 
                         *pos, 
                         sptree)});
@@ -262,7 +262,8 @@ inline void reatribute_particles<f32_3>(SchedulerMPI & sched, SerialPatchTree<f3
         for(auto & [send_id, pdat] : vec_r){
             //std::cout << "    " << send_id << " len : " << pdat->pos_s.size() << "\n"; 
 
-            PatchData & pdat_recv = sched.patch_data.owned_data[recv_id];
+            //TODO if crash here it means that this was implicit init => bad
+            PatchData & pdat_recv = sched.patch_data.owned_data.at(recv_id);
 
             /*{
                 std::cout << "recv : " << recv_id << " <- " << send_id << std::endl;

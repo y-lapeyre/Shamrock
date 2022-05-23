@@ -27,34 +27,26 @@
 class PatchDataBuffer{ public:
 
     u32 element_count;
-    template<class T>
-    struct PatchDataFieldBuffer{
-        std::unique_ptr<sycl::buffer<T>> buf;
-        //PatchDataField<T> & field_ref;
-    };
-
-
-
-
+    
     PatchDataLayout & pdl;
 
-    std::vector<PatchDataFieldBuffer<f32   >> fields_f32;
-    std::vector<PatchDataFieldBuffer<f32_2 >> fields_f32_2;
-    std::vector<PatchDataFieldBuffer<f32_3 >> fields_f32_3;
-    std::vector<PatchDataFieldBuffer<f32_4 >> fields_f32_4;
-    std::vector<PatchDataFieldBuffer<f32_8 >> fields_f32_8;
-    std::vector<PatchDataFieldBuffer<f32_16>> fields_f32_16;
+    std::vector<std::unique_ptr<sycl::buffer<f32   >>> fields_f32;
+    std::vector<std::unique_ptr<sycl::buffer<f32_2 >>> fields_f32_2;
+    std::vector<std::unique_ptr<sycl::buffer<f32_3 >>> fields_f32_3;
+    std::vector<std::unique_ptr<sycl::buffer<f32_4 >>> fields_f32_4;
+    std::vector<std::unique_ptr<sycl::buffer<f32_8 >>> fields_f32_8;
+    std::vector<std::unique_ptr<sycl::buffer<f32_16>>> fields_f32_16;
 
-    std::vector<PatchDataFieldBuffer<f64   >> fields_f64;
-    std::vector<PatchDataFieldBuffer<f64_2 >> fields_f64_2;
-    std::vector<PatchDataFieldBuffer<f64_3 >> fields_f64_3;
-    std::vector<PatchDataFieldBuffer<f64_4 >> fields_f64_4;
-    std::vector<PatchDataFieldBuffer<f64_8 >> fields_f64_8;
-    std::vector<PatchDataFieldBuffer<f64_16>> fields_f64_16;
+    std::vector<std::unique_ptr<sycl::buffer<f64   >>> fields_f64;
+    std::vector<std::unique_ptr<sycl::buffer<f64_2 >>> fields_f64_2;
+    std::vector<std::unique_ptr<sycl::buffer<f64_3 >>> fields_f64_3;
+    std::vector<std::unique_ptr<sycl::buffer<f64_4 >>> fields_f64_4;
+    std::vector<std::unique_ptr<sycl::buffer<f64_8 >>> fields_f64_8;
+    std::vector<std::unique_ptr<sycl::buffer<f64_16>>> fields_f64_16;
 
-    std::vector<PatchDataFieldBuffer<u32   >> fields_u32;
+    std::vector<std::unique_ptr<sycl::buffer<u32   >>> fields_u32;
 
-    std::vector<PatchDataFieldBuffer<u64   >> fields_u64;
+    std::vector<std::unique_ptr<sycl::buffer<u64   >>> fields_u64;
 
     inline PatchDataBuffer(PatchDataLayout & pdl) : pdl(pdl) {}
 
@@ -69,7 +61,7 @@ class PatchDataBuffer{ public:
                 buf = std::make_unique<sycl::buffer<f32>>(pdl.fields_f32[idx].nvar * element_count);
             
 
-            fields_f32.push_back({std::move(buf)});
+            fields_f32.push_back(std::move(buf));
         }
 
         
@@ -79,7 +71,7 @@ class PatchDataBuffer{ public:
                 buf = std::make_unique<sycl::buffer<f32_2>>(pdl.fields_f32_2[idx].nvar * element_count);
             
 
-            fields_f32_2.push_back({std::move(buf)});
+            fields_f32_2.push_back(std::move(buf));
         }
 
         for(u32 idx = 0; idx <  pdl.fields_f32_3.size(); idx++){
@@ -88,7 +80,7 @@ class PatchDataBuffer{ public:
                 buf = std::make_unique<sycl::buffer<f32_3>>(pdl.fields_f32_3[idx].nvar * element_count);
             
 
-            fields_f32_3.push_back({std::move(buf)});
+            fields_f32_3.push_back(std::move(buf));
         }
 
         for(u32 idx = 0; idx <  pdl.fields_f32_4.size(); idx++){
@@ -97,7 +89,7 @@ class PatchDataBuffer{ public:
                 buf = std::make_unique<sycl::buffer<f32_4>>(pdl.fields_f32_4[idx].nvar * element_count);
             
 
-            fields_f32_4.push_back({std::move(buf)});
+            fields_f32_4.push_back(std::move(buf));
         }
 
         for(u32 idx = 0; idx <  pdl.fields_f32_8.size(); idx++){
@@ -106,7 +98,7 @@ class PatchDataBuffer{ public:
                 buf = std::make_unique<sycl::buffer<f32_8>>(pdl.fields_f32_8[idx].nvar * element_count);
             
 
-            fields_f32_8.push_back({std::move(buf)});
+            fields_f32_8.push_back(std::move(buf));
         }
 
         for(u32 idx = 0; idx <  pdl.fields_f32_16.size(); idx++){
@@ -115,7 +107,7 @@ class PatchDataBuffer{ public:
                 buf = std::make_unique<sycl::buffer<f32_16>>(pdl.fields_f32_16[idx].nvar * element_count);
             
 
-            fields_f32_16.push_back({std::move(buf)});
+            fields_f32_16.push_back(std::move(buf));
         }
         
 
@@ -128,7 +120,7 @@ class PatchDataBuffer{ public:
                 buf = std::make_unique<sycl::buffer<f64>>(pdl.fields_f64[idx].nvar * element_count);
             
 
-            fields_f64.push_back({std::move(buf)});
+            fields_f64.push_back(std::move(buf));
         }
 
         
@@ -138,7 +130,7 @@ class PatchDataBuffer{ public:
                 buf = std::make_unique<sycl::buffer<f64_2>>(pdl.fields_f64_2[idx].nvar * element_count);
             
 
-            fields_f64_2.push_back({std::move(buf)});
+            fields_f64_2.push_back(std::move(buf));
         }
 
         for(u32 idx = 0; idx <  pdl.fields_f64_3.size(); idx++){
@@ -147,7 +139,7 @@ class PatchDataBuffer{ public:
                 buf = std::make_unique<sycl::buffer<f64_3>>(pdl.fields_f64_3[idx].nvar * element_count);
             
 
-            fields_f64_3.push_back({std::move(buf)});
+            fields_f64_3.push_back(std::move(buf));
         }
 
         for(u32 idx = 0; idx <  pdl.fields_f64_4.size(); idx++){
@@ -156,7 +148,7 @@ class PatchDataBuffer{ public:
                 buf = std::make_unique<sycl::buffer<f64_4>>(pdl.fields_f64_4[idx].nvar * element_count);
             
 
-            fields_f64_4.push_back({std::move(buf)});
+            fields_f64_4.push_back(std::move(buf));
         }
 
         for(u32 idx = 0; idx <  pdl.fields_f64_8.size(); idx++){
@@ -165,7 +157,7 @@ class PatchDataBuffer{ public:
                 buf = std::make_unique<sycl::buffer<f64_8>>(pdl.fields_f64_8[idx].nvar * element_count);
             
 
-            fields_f64_8.push_back({std::move(buf)});
+            fields_f64_8.push_back(std::move(buf));
         }
 
         for(u32 idx = 0; idx <  pdl.fields_f64_16.size(); idx++){
@@ -174,7 +166,7 @@ class PatchDataBuffer{ public:
                 buf = std::make_unique<sycl::buffer<f64_16>>(pdl.fields_f64_16[idx].nvar * element_count);
             
 
-            fields_f64_16.push_back({std::move(buf)});
+            fields_f64_16.push_back(std::move(buf));
         }
 
 
@@ -187,7 +179,7 @@ class PatchDataBuffer{ public:
                 buf = std::make_unique<sycl::buffer<u32>>(pdl.fields_u32[idx].nvar * element_count);
             
 
-            fields_u32.push_back({std::move(buf)});
+            fields_u32.push_back(std::move(buf));
         }
 
         for(u32 idx = 0; idx <  pdl.fields_u64.size(); idx++){
@@ -197,7 +189,7 @@ class PatchDataBuffer{ public:
             buf = std::make_unique<sycl::buffer<u64>>(pdl.fields_u64[idx].nvar * element_count);
             
 
-            fields_u64.push_back({std::move(buf)});
+            fields_u64.push_back(std::move(buf));
         }
 
 
@@ -211,6 +203,8 @@ inline PatchDataBuffer attach_to_patchData(PatchData & pdat){
     PatchDataBuffer pdatbuf(pdat.patchdata_layout);
     
     pdatbuf.element_count = u32(pdat.get_obj_cnt());
+
+    std::cout << "attach to pdat : " << pdatbuf.element_count << std::endl;
 
 
     for(u32 idx = 0; idx < pdat.patchdata_layout.fields_f32.size(); idx++){

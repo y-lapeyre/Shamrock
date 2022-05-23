@@ -306,28 +306,39 @@ class TestTimestepper {
             u32 iaxyz = sched.pdl.get_field_idx<f32_3>("axyz");
             u32 iaxyz_old = sched.pdl.get_field_idx<f32_3>("axyz_old");
 
-            u32 ihpart = sched.pdl.get_field_idx<f32_3>("xyz");
+            u32 ihpart = sched.pdl.get_field_idx<f32>("hpart");
+
+            std::cout << "ixyz : " << ixyz << std::endl;
+            std::cout << "ivxyz : " << ivxyz << std::endl;
+            std::cout << "iaxyz : " << iaxyz << std::endl;
+            std::cout << "iaxyz_old : " << iaxyz_old << std::endl;
+            std::cout << "ihpart : " << ihpart << std::endl;
+
+            
 
             add_particles_fcc(
                 dr, 
                 box , 
                 [](f32_3 r){return true;}, 
                 [&](f32_3 r,f32 h){
-                    pdat.fields_f32_3[ixyz].field_data.emplace_back(r); //r
+                    pdat.fields_f32_3[ixyz].insert_element(r); //r
                     //                      h    
-                    pdat.fields_f32[ihpart].field_data.emplace_back(h*2);
+                    pdat.fields_f32[ihpart].insert_element(h*2);
                     //                           v          a             a_old
-                    pdat.fields_f32_3[ivxyz].field_data.emplace_back(f32_3{0.f,0.f,0.f});
-                    pdat.fields_f32_3[iaxyz].field_data.emplace_back(f32_3{0.f,0.f,0.f});
-                    pdat.fields_f32_3[iaxyz_old].field_data.emplace_back(f32_3{0.f,0.f,0.f});
+                    pdat.fields_f32_3[ivxyz].insert_element(f32_3{0.f,0.f,0.f});
+                    pdat.fields_f32_3[iaxyz].insert_element(f32_3{0.f,0.f,0.f});
+                    pdat.fields_f32_3[iaxyz_old].insert_element(f32_3{0.f,0.f,0.f});
                 });
+
+            //std::cout << "tmp  " << pdat.fields_f32_3[ixyz].field_data.size();
 
             std::cout << "paticles count " << pdat.get_obj_cnt() << std::endl;
 
             //exit(0);
 
             if(false){
-                f32 a = 0.001;
+                /*
+                f32 a = 0.01;
 
                 f32 nmode = 1;
                 strech_mapping_axis(std::get<0>(box).x(),std::get<1>(box).x(), pdat.get_obj_cnt(),
@@ -358,11 +369,13 @@ class TestTimestepper {
                         return x - xmin + (a*(-xmax + xmin)* sycl::sin((nmode*2.*pi*(-x + xmin))/ (xmax - xmin)))/(nmode*2.*pi);
                     });
 
-                
+                */
 
-                p.data_count = pdat.get_obj_cnt();
-                p.load_value = pdat.get_obj_cnt();
+                
             }
+
+            p.data_count = pdat.get_obj_cnt();
+            p.load_value = pdat.get_obj_cnt();
 
             /*
             p.data_count    = 1e6;
@@ -435,7 +448,7 @@ class TestTimestepper {
 
     static void step(SchedulerMPI &sched, TestSimInfo &siminfo, std::string dump_folder) {
 
-        SPHTimestepperLeapfrog<CurDataLayout> leapfrog;
+        SPHTimestepperLeapfrog<f32> leapfrog;
 
         SyCLHandler &hndl = SyCLHandler::get_instance();
 
@@ -453,6 +466,8 @@ template <class Timestepper, class SimInfo> class SimulationSPH {
         SyCLHandler &hndl = SyCLHandler::get_instance();
 
         PatchDataLayout pdl;
+
+        pdl.xyz_mode = xyz32;
 
         pdl.add_field<f32_3>("xyz", 1);
         pdl.add_field<f32>("hpart", 1);
@@ -500,8 +515,8 @@ template <class Timestepper, class SimInfo> class SimulationSPH {
                     [&](u64 id_patch, Patch cur_p, PatchDataBuffer & pdat_buf) {
 
                         hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
-                            auto r = pdat_buf.fields_f32_3[ixyz].buf->get_access<sycl::access::mode::read>(cgh);
-                            auto v = pdat_buf.fields_f32_3[ivxyz].buf->get_access<sycl::access::mode::discard_write>(cgh);
+                            auto r = pdat_buf.fields_f32_3[ixyz]->get_access<sycl::access::mode::read>(cgh);
+                            auto v = pdat_buf.fields_f32_3[ivxyz]->get_access<sycl::access::mode::discard_write>(cgh);
 
                             f32 deltv = 0.01;
                             u32 nmode = 2;
