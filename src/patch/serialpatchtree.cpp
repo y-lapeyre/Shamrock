@@ -1,3 +1,11 @@
+// -------------------------------------------------------//
+//
+// SHAMROCK code for hydrodynamics
+// Copyright(C) 2021-2022 Timothée David--Cléris <timothee.david--cleris@ens-lyon.fr>
+// Licensed under CeCILL 2.1 License, see LICENSE for more information
+//
+// -------------------------------------------------------//
+
 #include "serialpatchtree.hpp"
 
 void get_serial_tree_fp32(u64 root_key, PatchTree &ptree, std::vector<PtNode<f32_3>> &result_tree,

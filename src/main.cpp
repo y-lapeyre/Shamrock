@@ -1,3 +1,24 @@
+// -------------------------------------------------------//
+//
+// SHAMROCK code for hydrodynamics
+// Copyright(C) 2021-2022 Timothée David--Cléris <timothee.david--cleris@ens-lyon.fr>
+// Licensed under CeCILL 2.1 License, see LICENSE for more information
+//
+// -------------------------------------------------------//
+
+
+/**
+ * @file main.cpp
+ * @author your name (you@domain.com)
+ * @brief 
+ * @version 0.1
+ * @date 2022-05-24
+ * 
+ * @copyright Copyright (c) 2022
+ * 
+ */
+
+
 #include "aliases.hpp"
 #include "interfaces/interface_generator.hpp"
 #include "interfaces/interface_handler.hpp"
