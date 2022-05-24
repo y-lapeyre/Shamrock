@@ -7,6 +7,7 @@
 #include "io/logs.hpp"
 #include "loadbalancing_hilbert.hpp"
 
+#include "patch/patchdata_layout.hpp"
 #include "sys/sycl_handler.hpp"
 #include "utils/time_utils.hpp"
 
@@ -35,7 +36,7 @@ void SchedulerMPI::free_mpi_required_types(){
     }
 }
 
-SchedulerMPI::SchedulerMPI(u64 crit_split,u64 crit_merge){
+SchedulerMPI::SchedulerMPI(PatchDataLayout & pdl, u64 crit_split,u64 crit_merge) : pdl(pdl), patch_data(pdl){
 
     crit_patch_split = crit_split;
     crit_patch_merge = crit_merge;
@@ -70,7 +71,7 @@ void SchedulerMPI::sync_build_LB(bool global_patch_sync, bool balance_load){
 
 template<>
 std::tuple<f32_3,f32_3> SchedulerMPI::get_box_tranform(){
-    if(patchdata_layout::nVarpos_s == 0) throw shamrock_exc("cannot query single precision box, position is currently double precision");
+    if(pdl.xyz_mode == xyz64) throw shamrock_exc("cannot query single precision box, position is currently double precision");
 
     f32_3 translate_factor = patch_data.sim_box.min_box_sim_s;
     f32_3 scale_factor = (patch_data.sim_box.max_box_sim_s - patch_data.sim_box.min_box_sim_s)/HilbertLB::max_box_sz;
@@ -80,7 +81,7 @@ std::tuple<f32_3,f32_3> SchedulerMPI::get_box_tranform(){
 
 template<>
 std::tuple<f64_3,f64_3> SchedulerMPI::get_box_tranform(){
-    if(patchdata_layout::nVarpos_d == 0) throw shamrock_exc("cannot query double precision box, position is currently single precision");
+    if(pdl.xyz_mode == xyz32) throw shamrock_exc("cannot query double precision box, position is currently single precision");
 
     f64_3 translate_factor = patch_data.sim_box.min_box_sim_d;
     f64_3 scale_factor = (patch_data.sim_box.max_box_sim_d - patch_data.sim_box.min_box_sim_d)/HilbertLB::max_box_sz;
@@ -91,21 +92,21 @@ std::tuple<f64_3,f64_3> SchedulerMPI::get_box_tranform(){
 
 template<>
 std::tuple<f32_3,f32_3> SchedulerMPI::get_box_volume(){
-    if(patchdata_layout::nVarpos_s == 0) throw shamrock_exc("cannot query single precision box, position is currently double precision");
+   if(pdl.xyz_mode == xyz64) throw shamrock_exc("cannot query single precision box, position is currently double precision");
 
     return {patch_data.sim_box.min_box_sim_s,patch_data.sim_box.max_box_sim_s};
 }
 
 template<>
 std::tuple<f64_3,f64_3> SchedulerMPI::get_box_volume(){
-    if(patchdata_layout::nVarpos_d == 0) throw shamrock_exc("cannot query double precision box, position is currently single precision");
+    if(pdl.xyz_mode == xyz32) throw shamrock_exc("cannot query double precision box, position is currently single precision");
 
     return {patch_data.sim_box.min_box_sim_d,patch_data.sim_box.max_box_sim_d};
 }
 
 template<>
 void SchedulerMPI::set_box_volume(std::tuple<f32_3,f32_3> box){
-    if(patchdata_layout::nVarpos_s == 0) throw shamrock_exc("cannot query single precision box, position is currently double precision");
+    if(pdl.xyz_mode == xyz64) throw shamrock_exc("cannot query single precision box, position is currently double precision");
 
     patch_data.sim_box.min_box_sim_s = std::get<0>(box);
     patch_data.sim_box.max_box_sim_s = std::get<1>(box);
@@ -114,7 +115,7 @@ void SchedulerMPI::set_box_volume(std::tuple<f32_3,f32_3> box){
 
 template<>
 void SchedulerMPI::set_box_volume(std::tuple<f64_3,f64_3> box){
-    if(patchdata_layout::nVarpos_d == 0) throw shamrock_exc("cannot query double precision box, position is currently single precision");
+    if(pdl.xyz_mode == xyz32) throw shamrock_exc("cannot query double precision box, position is currently single precision");
 
     patch_data.sim_box.min_box_sim_d = std::get<0>(box);
     patch_data.sim_box.max_box_sim_d = std::get<1>(box);
@@ -377,6 +378,7 @@ std::string SchedulerMPI::dump_status(){
     ss << " -> SchedulerPatchData\n";
     ss << "    owned data : \n";
 
+    /*
     for(auto & [k,pdat] : patch_data.owned_data){
         ss << "      -> id : " << k << " len : (" << 
             pdat.pos_s.size() << " " <<pdat.pos_d.size() << " " <<
@@ -384,6 +386,7 @@ std::string SchedulerMPI::dump_status(){
             pdat.U3_s.size() << " " <<pdat.U3_d.size() << " " 
         << ")\n";
     }
+    */
 
 
     ss << " -> SchedulerPatchTree\n";
@@ -529,7 +532,7 @@ inline void SchedulerMPI::set_patch_pack_values(std::unordered_set<u64> merge_rq
 void SchedulerMPI::dump_local_patches(std::string filename){
     std::ofstream fout(filename);
 
-    if(patchdata_layout::nVarpos_s == 1){
+    if(pdl.xyz_mode == xyz32){
 
         std::tuple<f32_3,f32_3> box_transform = get_box_tranform<f32_3>();
 
@@ -562,7 +565,7 @@ void SchedulerMPI::dump_local_patches(std::string filename){
 
         fout.close();
 
-    }else if (patchdata_layout::nVarpos_d == 1){
+    }else if (pdl.xyz_mode == xyz64){
         
         std::tuple<f64_3,f64_3> box_transform = get_box_tranform<f64_3>();
 

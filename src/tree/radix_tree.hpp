@@ -239,7 +239,6 @@ class Radix_Tree{public:
 
     std::unique_ptr<sycl::buffer<flt>> buf_cell_interact_rad;
 
-    template<u32 nvar = 1, u32 hoffset = 0>
     inline void compute_int_boxes(sycl::queue & queue,std::unique_ptr<sycl::buffer<flt>> & int_rad_buf, flt tolerance){
 
         buf_cell_interact_rad = std::make_unique< sycl::buffer<flt>>(tree_internal_count + tree_leaf_count);
@@ -269,7 +268,7 @@ class Radix_Tree{public:
 
                     for(unsigned int id_s = min_ids; id_s < max_ids;id_s ++){
         
-                        f32 h_a = h[particle_index_map[id_s]*nvar + hoffset]*tol;
+                        f32 h_a = h[particle_index_map[id_s]]*tol;
                         h_tmp = (h_tmp > h_a ? h_tmp : h_a);
                         
                     }

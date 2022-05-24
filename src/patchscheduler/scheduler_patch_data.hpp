@@ -17,6 +17,7 @@
 #include "patch/patch.hpp"
 #include "patch/patchdata.hpp"
 
+#include "patch/patchdata_layout.hpp"
 #include "scheduler_patch_list.hpp"
 #include "sim_box.hpp"
 
@@ -26,6 +27,8 @@
  */
 class SchedulerPatchData {
   public:
+
+    PatchDataLayout & pdl;
 
     /**
      * @brief map container for patchdata owned by the current node (layout : id_patch,data)
@@ -80,4 +83,7 @@ class SchedulerPatchData {
      */
     void merge_patchdata(u64 new_key, u64 old_key0, u64 old_key1, u64 old_key2, u64 old_key3, u64 old_key4, u64 old_key5,
                          u64 old_key6, u64 old_key7);
+
+
+    inline SchedulerPatchData(PatchDataLayout & pdl) : pdl(pdl), sim_box(pdl){}
 };

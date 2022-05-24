@@ -10,6 +10,10 @@
  */
 
 #include "patchdata.hpp"
+#include "aliases.hpp"
+#include "patch/patchdata_field.hpp"
+#include "sys/sycl_mpi_interop.hpp"
+#include "utils/geometry_utils.hpp"
 
 #include <algorithm>
 #include <array>
@@ -23,148 +27,306 @@
 
 
 
-void patchdata_layout::sync(MPI_Comm comm) {
-    mpi::bcast(&patchdata_layout::nVarpos_s, 1, mpi_type_u32, 0, comm);
-    mpi::bcast(&patchdata_layout::nVarpos_d, 1, mpi_type_u32, 0, comm);
-    mpi::bcast(&patchdata_layout::nVarU1_s , 1, mpi_type_u32, 0, comm);
-    mpi::bcast(&patchdata_layout::nVarU1_d , 1, mpi_type_u32, 0, comm);
-    mpi::bcast(&patchdata_layout::nVarU3_s , 1, mpi_type_u32, 0, comm);
-    mpi::bcast(&patchdata_layout::nVarU3_d , 1, mpi_type_u32, 0, comm);
-
-    layout_synced = true;
-}
-
-void patchdata_layout::set(u32 arg_nVarpos_s, u32 arg_nVarpos_d, u32 arg_nVarU1_s, u32 arg_nVarU1_d, u32 arg_nVarU3_s,
-                u32 arg_nVarU3_d) {
-
-    if(arg_nVarpos_s + arg_nVarpos_d != 1) 
-        throw shamrock_exc("nVarpos_s + nVarpos_d should be equal to 1");
-
-    patchdata_layout::nVarpos_s = arg_nVarpos_s;
-    patchdata_layout::nVarpos_d = arg_nVarpos_d;
-    patchdata_layout::nVarU1_s  = arg_nVarU1_s;
-    patchdata_layout::nVarU1_d  = arg_nVarU1_d;
-    patchdata_layout::nVarU3_s  = arg_nVarU3_s;
-    patchdata_layout::nVarU3_d  = arg_nVarU3_d;
-
-
-}
-
-//TODO add check in function calling this one with throw runtimer error
-bool patchdata_layout::is_synced(){
-    return layout_synced;
-}
-
-
-
-
-
-
 void patchdata_isend(PatchData &p, std::vector<MPI_Request> &rq_lst, i32 rank_dest, i32 tag, MPI_Comm comm) {
-    if(patchdata_layout::nVarpos_s > 0){
+
+    for (auto a : p.fields_f32) {
         rq_lst.resize(rq_lst.size() + 1);
-        mpi::isend(p.pos_s.data(), p.pos_s.size(), mpi_type_f32_3, rank_dest, tag, comm, &rq_lst[rq_lst.size() - 1]);
+        mpi::isend(a.data(), a.size(), mpi_type_f32, rank_dest, tag, comm, &rq_lst[rq_lst.size() - 1]);
     }
 
-    if(patchdata_layout::nVarpos_d > 0){
+    for (auto a : p.fields_f32_2) {
         rq_lst.resize(rq_lst.size() + 1);
-        mpi::isend(p.pos_d.data(), p.pos_d.size(), mpi_type_f64_3, rank_dest, tag, comm, &rq_lst[rq_lst.size() - 1]);
+        mpi::isend(a.data(), a.size(), mpi_type_f32_2, rank_dest, tag, comm, &rq_lst[rq_lst.size() - 1]);
     }
 
-    if(patchdata_layout::nVarU1_s > 0){
+    for (auto a : p.fields_f32_3) {
         rq_lst.resize(rq_lst.size() + 1);
-        mpi::isend(p.U1_s.data(), p.U1_s.size(), mpi_type_f32, rank_dest, tag, comm, &rq_lst[rq_lst.size() - 1]);
+        mpi::isend(a.data(), a.size(), mpi_type_f32_3, rank_dest, tag, comm, &rq_lst[rq_lst.size() - 1]);
     }
 
-    if(patchdata_layout::nVarU1_d > 0){
+    for (auto a : p.fields_f32_4) {
         rq_lst.resize(rq_lst.size() + 1);
-        mpi::isend(p.U1_d.data(), p.U1_d.size(), mpi_type_f64, rank_dest, tag, comm, &rq_lst[rq_lst.size() - 1]);
+        mpi::isend(a.data(), a.size(), mpi_type_f32_4, rank_dest, tag, comm, &rq_lst[rq_lst.size() - 1]);
     }
 
-    if(patchdata_layout::nVarU3_s > 0){
+    for (auto a : p.fields_f32_8) {
         rq_lst.resize(rq_lst.size() + 1);
-        mpi::isend(p.U3_s.data(), p.U3_s.size(), mpi_type_f32_3, rank_dest, tag, comm, &rq_lst[rq_lst.size() - 1]);
+        mpi::isend(a.data(), a.size(), mpi_type_f32_8, rank_dest, tag, comm, &rq_lst[rq_lst.size() - 1]);
     }
 
-    if(patchdata_layout::nVarU3_d > 0){
+    for (auto a : p.fields_f32_16) {
         rq_lst.resize(rq_lst.size() + 1);
-        mpi::isend(p.U3_d.data(), p.U3_d.size(), mpi_type_f64_3, rank_dest, tag, comm, &rq_lst[rq_lst.size() - 1]);
+        mpi::isend(a.data(), a.size(), mpi_type_f32_16, rank_dest, tag, comm, &rq_lst[rq_lst.size() - 1]);
+    }
+
+
+    for (auto a : p.fields_f64) {
+        rq_lst.resize(rq_lst.size() + 1);
+        mpi::isend(a.data(), a.size(), mpi_type_f64, rank_dest, tag, comm, &rq_lst[rq_lst.size() - 1]);
+    }
+
+    for (auto a : p.fields_f64_2) {
+        rq_lst.resize(rq_lst.size() + 1);
+        mpi::isend(a.data(), a.size(), mpi_type_f64_2, rank_dest, tag, comm, &rq_lst[rq_lst.size() - 1]);
+    }
+
+    for (auto a : p.fields_f64_3) {
+        rq_lst.resize(rq_lst.size() + 1);
+        mpi::isend(a.data(), a.size(), mpi_type_f64_3, rank_dest, tag, comm, &rq_lst[rq_lst.size() - 1]);
+    }
+
+    for (auto a : p.fields_f64_4) {
+        rq_lst.resize(rq_lst.size() + 1);
+        mpi::isend(a.data(), a.size(), mpi_type_f64_4, rank_dest, tag, comm, &rq_lst[rq_lst.size() - 1]);
+    }
+
+    for (auto a : p.fields_f64_8) {
+        rq_lst.resize(rq_lst.size() + 1);
+        mpi::isend(a.data(), a.size(), mpi_type_f64_8, rank_dest, tag, comm, &rq_lst[rq_lst.size() - 1]);
+    }
+
+    for (auto a : p.fields_f64_16) {
+        rq_lst.resize(rq_lst.size() + 1);
+        mpi::isend(a.data(), a.size(), mpi_type_f64_16, rank_dest, tag, comm, &rq_lst[rq_lst.size() - 1]);
+    }
+
+    for (auto a : p.fields_u32) {
+        rq_lst.resize(rq_lst.size() + 1);
+        mpi::isend(a.data(), a.size(), mpi_type_u32, rank_dest, tag, comm, &rq_lst[rq_lst.size() - 1]);
+    }
+
+    for (auto a : p.fields_u64) {
+        rq_lst.resize(rq_lst.size() + 1);
+        mpi::isend(a.data(), a.size(), mpi_type_u64, rank_dest, tag, comm, &rq_lst[rq_lst.size() - 1]);
     }
 }
 
 void patchdata_irecv(PatchData & pdat, std::vector<MPI_Request> &rq_lst, i32 rank_source, i32 tag, MPI_Comm comm){
 
-    if(patchdata_layout::nVarpos_s > 0){
+    for (auto & a : pdat.fields_f32) {
+        MPI_Status st;
+        i32 cnt;
+        int i = mpi::probe(rank_source, tag,comm, & st);
+        mpi::get_count(&st, mpi_type_f32, &cnt);
+        rq_lst.resize(rq_lst.size() + 1);
+
+        u32 len = cnt / a.get_nvar();
+
+        a.resize(len);
+
+        rq_lst.resize(rq_lst.size() + 1);
+        mpi::irecv(a.data(), cnt, mpi_type_f32, rank_source, tag, comm, &rq_lst[rq_lst.size() - 1]);
+    }
+
+
+    for (auto & a : pdat.fields_f32_2) {
+        MPI_Status st;
+        i32 cnt;
+        int i = mpi::probe(rank_source, tag,comm, & st);
+        mpi::get_count(&st, mpi_type_f32_2, &cnt);
+        rq_lst.resize(rq_lst.size() + 1);
+
+        u32 len = cnt / a.get_nvar();
+
+        a.resize(len);
+
+        rq_lst.resize(rq_lst.size() + 1);
+        mpi::irecv(a.data(), cnt, mpi_type_f32_2, rank_source, tag, comm, &rq_lst[rq_lst.size() - 1]);
+    }
+
+    for (auto & a : pdat.fields_f32_3) {
         MPI_Status st;
         i32 cnt;
         int i = mpi::probe(rank_source, tag,comm, & st);
         mpi::get_count(&st, mpi_type_f32_3, &cnt);
         rq_lst.resize(rq_lst.size() + 1);
-        pdat.pos_s.resize(cnt);
-        mpi::irecv(pdat.pos_s.data(), cnt, mpi_type_f32_3, rank_source, tag, comm, &rq_lst[rq_lst.size() - 1]);
-    }
 
-    if(patchdata_layout::nVarpos_d > 0){
-        MPI_Status st;
-        i32 cnt;
-        mpi::probe(rank_source, tag,comm, & st);
-        mpi::get_count(&st, mpi_type_f64_3, &cnt);
+        u32 len = cnt / a.get_nvar();
+
+        a.resize(len);
+
         rq_lst.resize(rq_lst.size() + 1);
-        pdat.pos_d.resize(cnt);
-        mpi::irecv(pdat.pos_d.data(), cnt, mpi_type_f64_3, rank_source, tag, comm, &rq_lst[rq_lst.size() - 1]);
+        mpi::irecv(a.data(), cnt, mpi_type_f32_3, rank_source, tag, comm, &rq_lst[rq_lst.size() - 1]);
     }
 
-
-    if(patchdata_layout::nVarU1_s > 0){
+    for (auto & a : pdat.fields_f32_4) {
         MPI_Status st;
         i32 cnt;
-        mpi::probe(rank_source, tag,comm, & st);
-        mpi::get_count(&st, mpi_type_f32, &cnt);
+        int i = mpi::probe(rank_source, tag,comm, & st);
+        mpi::get_count(&st, mpi_type_f32_4, &cnt);
         rq_lst.resize(rq_lst.size() + 1);
-        pdat.U1_s.resize(cnt);
-        mpi::irecv(pdat.U1_s.data(), cnt, mpi_type_f32, rank_source, tag, comm, &rq_lst[rq_lst.size() - 1]);
+
+        u32 len = cnt / a.get_nvar();
+
+        a.resize(len);
+
+        rq_lst.resize(rq_lst.size() + 1);
+        mpi::irecv(a.data(), cnt, mpi_type_f32_4, rank_source, tag, comm, &rq_lst[rq_lst.size() - 1]);
+    }
+
+    for (auto & a : pdat.fields_f32_8) {
+        MPI_Status st;
+        i32 cnt;
+        int i = mpi::probe(rank_source, tag,comm, & st);
+        mpi::get_count(&st, mpi_type_f32_8, &cnt);
+        rq_lst.resize(rq_lst.size() + 1);
+
+        u32 len = cnt / a.get_nvar();
+
+        a.resize(len);
+
+        rq_lst.resize(rq_lst.size() + 1);
+        mpi::irecv(a.data(), cnt, mpi_type_f32_8, rank_source, tag, comm, &rq_lst[rq_lst.size() - 1]);
+    }
+
+    for (auto & a : pdat.fields_f32_16) {
+        MPI_Status st;
+        i32 cnt;
+        int i = mpi::probe(rank_source, tag,comm, & st);
+        mpi::get_count(&st, mpi_type_f32_16, &cnt);
+        rq_lst.resize(rq_lst.size() + 1);
+
+        u32 len = cnt / a.get_nvar();
+
+        a.resize(len);
+
+        rq_lst.resize(rq_lst.size() + 1);
+        mpi::irecv(a.data(), cnt, mpi_type_f32_16, rank_source, tag, comm, &rq_lst[rq_lst.size() - 1]);
     }
 
 
-    if(patchdata_layout::nVarU1_d > 0){
+
+
+
+    for (auto & a : pdat.fields_f64) {
         MPI_Status st;
         i32 cnt;
-        mpi::probe(rank_source, tag,comm, & st);
+        int i = mpi::probe(rank_source, tag,comm, & st);
         mpi::get_count(&st, mpi_type_f64, &cnt);
         rq_lst.resize(rq_lst.size() + 1);
-        pdat.U1_d.resize(cnt);
-        mpi::irecv(pdat.U1_d.data(), cnt, mpi_type_f64, rank_source, tag, comm, &rq_lst[rq_lst.size() - 1]);
-    }
 
+        u32 len = cnt / a.get_nvar();
 
+        a.resize(len);
 
-
-    if(patchdata_layout::nVarU3_s > 0){
-        MPI_Status st;
-        i32 cnt;
-        mpi::probe(rank_source, tag,comm, & st);
-        mpi::get_count(&st, mpi_type_f32_3, &cnt);
         rq_lst.resize(rq_lst.size() + 1);
-        pdat.U3_s.resize(cnt);
-        mpi::irecv(pdat.U3_s.data(), cnt, mpi_type_f32_3, rank_source, tag, comm, &rq_lst[rq_lst.size() - 1]);
+        mpi::irecv(a.data(), cnt, mpi_type_f64, rank_source, tag, comm, &rq_lst[rq_lst.size() - 1]);
     }
 
 
-    if(patchdata_layout::nVarU3_d > 0){
+    for (auto & a : pdat.fields_f64_2) {
         MPI_Status st;
         i32 cnt;
-        mpi::probe(rank_source, tag,comm, & st);
+        int i = mpi::probe(rank_source, tag,comm, & st);
+        mpi::get_count(&st, mpi_type_f64_2, &cnt);
+        rq_lst.resize(rq_lst.size() + 1);
+
+        u32 len = cnt / a.get_nvar();
+
+        a.resize(len);
+
+        rq_lst.resize(rq_lst.size() + 1);
+        mpi::irecv(a.data(), cnt, mpi_type_f64_2, rank_source, tag, comm, &rq_lst[rq_lst.size() - 1]);
+    }
+
+    for (auto & a : pdat.fields_f64_3) {
+        MPI_Status st;
+        i32 cnt;
+        int i = mpi::probe(rank_source, tag,comm, & st);
         mpi::get_count(&st, mpi_type_f64_3, &cnt);
         rq_lst.resize(rq_lst.size() + 1);
-        pdat.U3_d.resize(cnt);
-        mpi::irecv(pdat.U3_d.data(), cnt, mpi_type_f64_3, rank_source, tag, comm, &rq_lst[rq_lst.size() - 1]);
+
+        u32 len = cnt / a.get_nvar();
+
+        a.resize(len);
+
+        rq_lst.resize(rq_lst.size() + 1);
+        mpi::irecv(a.data(), cnt, mpi_type_f64_3, rank_source, tag, comm, &rq_lst[rq_lst.size() - 1]);
+    }
+
+    for (auto & a : pdat.fields_f64_4) {
+        MPI_Status st;
+        i32 cnt;
+        int i = mpi::probe(rank_source, tag,comm, & st);
+        mpi::get_count(&st, mpi_type_f64_4, &cnt);
+        rq_lst.resize(rq_lst.size() + 1);
+
+        u32 len = cnt / a.get_nvar();
+
+        a.resize(len);
+
+        rq_lst.resize(rq_lst.size() + 1);
+        mpi::irecv(a.data(), cnt, mpi_type_f64_4, rank_source, tag, comm, &rq_lst[rq_lst.size() - 1]);
+    }
+
+    for (auto & a : pdat.fields_f64_8) {
+        MPI_Status st;
+        i32 cnt;
+        int i = mpi::probe(rank_source, tag,comm, & st);
+        mpi::get_count(&st, mpi_type_f64_8, &cnt);
+        rq_lst.resize(rq_lst.size() + 1);
+
+        u32 len = cnt / a.get_nvar();
+
+        a.resize(len);
+
+        rq_lst.resize(rq_lst.size() + 1);
+        mpi::irecv(a.data(), cnt, mpi_type_f64_8, rank_source, tag, comm, &rq_lst[rq_lst.size() - 1]);
+    }
+
+    for (auto & a : pdat.fields_f64_16) {
+        MPI_Status st;
+        i32 cnt;
+        int i = mpi::probe(rank_source, tag,comm, & st);
+        mpi::get_count(&st, mpi_type_f64_16, &cnt);
+        rq_lst.resize(rq_lst.size() + 1);
+
+        u32 len = cnt / a.get_nvar();
+
+        a.resize(len);
+
+        rq_lst.resize(rq_lst.size() + 1);
+        mpi::irecv(a.data(), cnt, mpi_type_f64_16, rank_source, tag, comm, &rq_lst[rq_lst.size() - 1]);
+    }
+    
+
+
+
+    for (auto & a : pdat.fields_u32) {
+        MPI_Status st;
+        i32 cnt;
+        int i = mpi::probe(rank_source, tag,comm, & st);
+        mpi::get_count(&st, mpi_type_u32, &cnt);
+        rq_lst.resize(rq_lst.size() + 1);
+
+        u32 len = cnt / a.get_nvar();
+
+        a.resize(len);
+
+        rq_lst.resize(rq_lst.size() + 1);
+        mpi::irecv(a.data(), cnt, mpi_type_u32, rank_source, tag, comm, &rq_lst[rq_lst.size() - 1]);
+    }
+
+    for (auto & a : pdat.fields_u64) {
+        MPI_Status st;
+        i32 cnt;
+        int i = mpi::probe(rank_source, tag,comm, & st);
+        mpi::get_count(&st, mpi_type_u64, &cnt);
+        rq_lst.resize(rq_lst.size() + 1);
+
+        u32 len = cnt / a.get_nvar();
+
+        a.resize(len);
+
+        rq_lst.resize(rq_lst.size() + 1);
+        mpi::irecv(a.data(), cnt, mpi_type_u64, rank_source, tag, comm, &rq_lst[rq_lst.size() - 1]);
     }
 
 
 }
 
 
-PatchData patchdata_gen_dummy_data(std::mt19937& eng){
+PatchData patchdata_gen_dummy_data(PatchDataLayout & pdl, std::mt19937& eng){
 
     std::uniform_int_distribution<u64> distu64(1,1000);
 
@@ -172,70 +334,193 @@ PatchData patchdata_gen_dummy_data(std::mt19937& eng){
 
     u32 num_part = distu64(eng);
 
-    PatchData d;
+    PatchData pdat(pdl);
+
+
+    for (auto & a : pdat.fields_f32) {
+        a.resize(num_part);
+    }
+
+
+    for (auto & a : pdat.fields_f32_2) {
+        a.resize(num_part);
+    }
+
+    for (auto & a : pdat.fields_f32_3) {
+        a.resize(num_part);
+    }
+
+    for (auto & a : pdat.fields_f32_4) {
+        a.resize(num_part);
+    }
+
+    for (auto & a : pdat.fields_f32_8) {
+        a.resize(num_part);
+    }
+
+    for (auto & a : pdat.fields_f32_16) {
+        a.resize(num_part);
+    }
+
+    for (auto & a : pdat.fields_f64) {
+        a.resize(num_part);
+    }
+
+    for (auto & a : pdat.fields_f64_2) {
+        a.resize(num_part);
+    }
+
+    for (auto & a : pdat.fields_f64_3) {
+        a.resize(num_part);
+    }
+
+    for (auto & a : pdat.fields_f64_4) {
+        a.resize(num_part);
+    }
+
+    for (auto & a : pdat.fields_f64_8) {
+        a.resize(num_part);
+    }
+
+    for (auto & a : pdat.fields_f64_16) {
+        a.resize(num_part);
+    }
+
+    for (auto & a : pdat.fields_u32) {
+        a.resize(num_part);
+    }
+
+    for (auto & a : pdat.fields_u64) {
+        a.resize(num_part);
+    }
+
+
 
 
     for (u32 i = 0 ; i < num_part; i++) {
-        for (u32 ii = 0; ii < patchdata_layout::nVarpos_s; ii ++) {
-            d.pos_s.push_back( f32_3{distfd(eng),distfd(eng),distfd(eng)} );
-        }
-        
-        for (u32 ii = 0; ii < patchdata_layout::nVarpos_d; ii ++) {
-            d.pos_d.push_back( f64_3{distfd(eng),distfd(eng),distfd(eng)} );
+        for (auto & a : pdat.fields_f32) {
+            for(u32 i = 0 ; i < a.get_nvar(); i++) a.data()[i*a.get_nvar()] = f32(distfd(eng));
         }
 
-        for (u32 ii = 0; ii < patchdata_layout::nVarU1_s; ii ++) {
-            d.U1_s.push_back( f32(distfd(eng)) );
+
+        for (auto & a : pdat.fields_f32_2) {
+            for(u32 i = 0 ; i < a.get_nvar(); i++) a.data()[i*a.get_nvar()] = f32_2{distfd(eng),distfd(eng)};
         }
 
-        for (u32 ii = 0; ii < patchdata_layout::nVarU1_d; ii ++) {
-            d.U1_d.push_back( f64(distfd(eng)) );
+        for (auto & a : pdat.fields_f32_3) {
+            for(u32 i = 0 ; i < a.get_nvar(); i++) a.data()[i*a.get_nvar()] = f32_3{distfd(eng),distfd(eng),distfd(eng)};
         }
 
-        for (u32 ii = 0; ii < patchdata_layout::nVarU3_s; ii ++) {
-            d.U3_s.push_back( f32_3{distfd(eng),distfd(eng),distfd(eng)} );
+        for (auto & a : pdat.fields_f32_4) {
+            for(u32 i = 0 ; i < a.get_nvar(); i++) a.data()[i*a.get_nvar()] = f32_4{distfd(eng),distfd(eng),distfd(eng),distfd(eng)};
         }
 
-        for (u32 ii = 0; ii < patchdata_layout::nVarU3_d; ii ++) {
-            d.U3_d.push_back( f64_3{distfd(eng),distfd(eng),distfd(eng)} );
+        for (auto & a : pdat.fields_f32_8) {
+            for(u32 i = 0 ; i < a.get_nvar(); i++) a.data()[i*a.get_nvar()] = f32_8{distfd(eng),distfd(eng),distfd(eng),distfd(eng),distfd(eng),distfd(eng),distfd(eng),distfd(eng)};
+        }
+
+        for (auto & a : pdat.fields_f32_16) {
+            for(u32 i = 0 ; i < a.get_nvar(); i++) a.data()[i*a.get_nvar()] = f32_16{distfd(eng),distfd(eng),distfd(eng),distfd(eng),distfd(eng),distfd(eng),distfd(eng),distfd(eng),distfd(eng),distfd(eng),distfd(eng),distfd(eng),distfd(eng),distfd(eng),distfd(eng),distfd(eng)};
+        }
+
+        for (auto & a : pdat.fields_f64) {
+            for(u32 i = 0 ; i < a.get_nvar(); i++) a.data()[i*a.get_nvar()] = f64(distfd(eng));
+        }
+
+        for (auto & a : pdat.fields_f64_2) {
+            for(u32 i = 0 ; i < a.get_nvar(); i++) a.data()[i*a.get_nvar()] = f64_2{distfd(eng),distfd(eng)};
+        }
+
+        for (auto & a : pdat.fields_f64_3) {
+            for(u32 i = 0 ; i < a.get_nvar(); i++) a.data()[i*a.get_nvar()] = f64_3{distfd(eng),distfd(eng),distfd(eng)};
+        }
+
+        for (auto & a : pdat.fields_f64_4) {
+            for(u32 i = 0 ; i < a.get_nvar(); i++) a.data()[i*a.get_nvar()] = f64_4{distfd(eng),distfd(eng),distfd(eng),distfd(eng)};
+        }
+
+        for (auto & a : pdat.fields_f64_8) {
+            for(u32 i = 0 ; i < a.get_nvar(); i++) a.data()[i*a.get_nvar()] = f64_8{distfd(eng),distfd(eng),distfd(eng),distfd(eng),distfd(eng),distfd(eng),distfd(eng),distfd(eng)};
+        }
+
+        for (auto & a : pdat.fields_f64_16) {
+            for(u32 i = 0 ; i < a.get_nvar(); i++) a.data()[i*a.get_nvar()] = f64_16{distfd(eng),distfd(eng),distfd(eng),distfd(eng),distfd(eng),distfd(eng),distfd(eng),distfd(eng),distfd(eng),distfd(eng),distfd(eng),distfd(eng),distfd(eng),distfd(eng),distfd(eng),distfd(eng)};
+        }
+
+        for (auto & a : pdat.fields_u32) {
+            for(u32 i = 0 ; i < a.get_nvar(); i++) a.data()[i*a.get_nvar()] = u32(distu64(eng));
+        }
+
+        for (auto & a : pdat.fields_u64) {
+            for(u32 i = 0 ; i < a.get_nvar(); i++) a.data()[i*a.get_nvar()] = u64(distu64(eng));
         }
     }
 
-    return d;
+    return pdat;
 }
+
 
 bool patch_data_check_match(PatchData& p1, PatchData& p2){
     bool check = true;
-    check = check && ( p1.pos_s.size() == p2.pos_s.size());
-    check = check && ( p1.pos_d.size() == p2.pos_d.size());
-    check = check && ( p1.U1_s.size()  == p2.U1_s.size() );
-    check = check && ( p1.U1_d.size()  == p2.U1_d.size() );
-    check = check && ( p1.U3_s.size()  == p2.U3_s.size() );
-    check = check && ( p1.U3_d.size()  == p2.U3_d.size() );
 
-
-    for (u32 i = 0; i < p1.pos_s.size(); i ++) {
-        check = check && (test_eq3(p1.pos_s[i] , p2.pos_s[i] ));
-    }
-    
-    for (u32 i = 0; i < p1.pos_d.size(); i ++) {
-        check = check && (test_eq3(p1.pos_d[i] , p2.pos_d[i] ));
+    for(u32 idx = 0; idx < p1.patchdata_layout.fields_f32.size(); idx++){
+        check = p1.fields_f32[idx].check_field_match(p2.fields_f32[idx]);
     }
 
-    for (u32 i = 0; i < p1.U1_s.size(); i ++) {
-        check = check && (p1.U1_s[i] == p2.U1_s[i] );
-    }
-    
-    for (u32 i = 0; i < p1.U1_d.size(); i ++) {
-        check = check && (p1.U1_d[i] == p2.U1_d[i] );
+    for(u32 idx = 0; idx < p1.patchdata_layout.fields_f32_2.size(); idx++){
+        check = p1.fields_f32_2[idx].check_field_match(p2.fields_f32_2[idx]);
     }
 
-    for (u32 i = 0; i < p1.U3_s.size(); i ++) {
-        check = check && (test_eq3(p1.U3_s[i] , p2.U3_s[i] ));
+    for(u32 idx = 0; idx < p1.patchdata_layout.fields_f32_3.size(); idx++){
+        check = p1.fields_f32_3[idx].check_field_match(p2.fields_f32_3[idx]);
     }
-    
-    for (u32 i = 0; i < p1.U3_d.size(); i ++) {
-        check = check && (test_eq3(p1.U3_d[i] , p2.U3_d[i] ));
+
+    for(u32 idx = 0; idx < p1.patchdata_layout.fields_f32_4.size(); idx++){
+        check = p1.fields_f32_4[idx].check_field_match(p2.fields_f32_4[idx]);
+    }
+
+    for(u32 idx = 0; idx < p1.patchdata_layout.fields_f32_8.size(); idx++){
+        check = p1.fields_f32_8[idx].check_field_match(p2.fields_f32_8[idx]);
+    }
+
+    for(u32 idx = 0; idx < p1.patchdata_layout.fields_f32_16.size(); idx++){
+        check = p1.fields_f32_16[idx].check_field_match(p2.fields_f32_16[idx]);
+    }
+
+
+
+    for(u32 idx = 0; idx < p1.patchdata_layout.fields_f64.size(); idx++){
+        check = p1.fields_f64[idx].check_field_match(p2.fields_f64[idx]);
+    }
+
+    for(u32 idx = 0; idx < p1.patchdata_layout.fields_f64_2.size(); idx++){
+        check = p1.fields_f64_2[idx].check_field_match(p2.fields_f64_2[idx]);
+    }
+
+    for(u32 idx = 0; idx < p1.patchdata_layout.fields_f64_3.size(); idx++){
+        check = p1.fields_f64_3[idx].check_field_match(p2.fields_f64_3[idx]);
+    }
+
+    for(u32 idx = 0; idx < p1.patchdata_layout.fields_f64_4.size(); idx++){
+        check = p1.fields_f64_4[idx].check_field_match(p2.fields_f64_4[idx]);
+    }
+
+    for(u32 idx = 0; idx < p1.patchdata_layout.fields_f64_8.size(); idx++){
+        check = p1.fields_f64_8[idx].check_field_match(p2.fields_f64_8[idx]);
+    }
+
+    for(u32 idx = 0; idx < p1.patchdata_layout.fields_f64_16.size(); idx++){
+        check = p1.fields_f64_16[idx].check_field_match(p2.fields_f64_16[idx]);
+    }
+
+
+
+    for(u32 idx = 0; idx < p1.patchdata_layout.fields_u32.size(); idx++){
+        check = p1.fields_u32[idx].check_field_match(p2.fields_u32[idx]);
+    }
+
+    for(u32 idx = 0; idx < p1.patchdata_layout.fields_u64.size(); idx++){
+        check = p1.fields_u64[idx].check_field_match(p2.fields_u64[idx]);
     }
 
     return check;
@@ -252,66 +537,438 @@ template<class obj> obj fast_extract(u32 idx, std::vector<obj>& cnt){
     return extr;
 }
 
-void PatchData::extract_particle(u32 pidx, 
-    std::vector<f32_3> &out_pos_s, 
-    std::vector<f64_3> &out_pos_d, 
-    std::vector<f32> &out_U1_s, 
-    std::vector<f64> &out_U1_d, 
-    std::vector<f32_3> &out_U3_s, 
-    std::vector<f64_3> &out_U3_d){
 
-    const u64 idx_pos_s = pidx * patchdata_layout::nVarpos_s;
-    const u64 idx_pos_d = pidx * patchdata_layout::nVarpos_d;
-    const u64 idx_U1_s  = pidx * patchdata_layout::nVarU1_s ;
-    const u64 idx_U1_d  = pidx * patchdata_layout::nVarU1_d ;
-    const u64 idx_U3_s  = pidx * patchdata_layout::nVarU3_s ;
-    const u64 idx_U3_d  = pidx * patchdata_layout::nVarU3_d ;
+template<class obj> obj fast_extract_ptr(u32 idx, u32 lenght ,obj* cnt){
 
-    const u64 idx_out_pos_s = out_pos_s.size();
-    const u64 idx_out_pos_d = out_pos_d.size();
-    const u64 idx_out_U1_s  = out_U1_s .size();
-    const u64 idx_out_U1_d  = out_U1_d .size();
-    const u64 idx_out_U3_s  = out_U3_s .size();
-    const u64 idx_out_U3_d  = out_U3_d .size();
+    obj end_ = cnt[lenght-1];
+    obj extr = cnt[idx];
 
-    out_pos_s.resize(idx_out_pos_s + patchdata_layout::nVarpos_s);
-    out_pos_d.resize(idx_out_pos_d + patchdata_layout::nVarpos_d);
-    out_U1_s .resize(idx_out_U1_s  + patchdata_layout::nVarU1_s );
-    out_U1_d .resize(idx_out_U1_d  + patchdata_layout::nVarU1_d );
-    out_U3_s .resize(idx_out_U3_s  + patchdata_layout::nVarU3_s );
-    out_U3_d .resize(idx_out_U3_d  + patchdata_layout::nVarU3_d );
+    cnt[idx] = end_;
 
-    for(u32 i = patchdata_layout::nVarpos_s-1 ; i < patchdata_layout::nVarpos_s ; i--){
-        out_pos_s[idx_out_pos_s + i] = (fast_extract(idx_pos_s + i, pos_s));
+    return extr;
+}
+
+void PatchData::extract_particle(u32 pidx, PatchData & out_pdat){
+
+    
+    for(u32 idx = 0; idx < patchdata_layout.fields_f32.size(); idx++){
+        const u32 nvar = fields_f32[idx].get_nvar();
+        const u32 idx_val = pidx*nvar;
+        const u32 idx_out_val = out_pdat.fields_f32[idx].size();
+
+        out_pdat.fields_f32[idx].expand(1);
+
+        for(u32 i = nvar-1 ; i < nvar ; i--){
+            fields_f32[idx].data()[idx_out_val + i] = (fast_extract_ptr(idx_val + i,fields_f32[idx].size(), fields_f32[idx].data()));
+        }
     }
 
-    for(u32 i = patchdata_layout::nVarpos_d-1 ; i < patchdata_layout::nVarpos_d ; i--){
-        out_pos_d[idx_out_pos_d + i] = (fast_extract(idx_pos_d + i, pos_d));
+    for(u32 idx = 0; idx < patchdata_layout.fields_f32_2.size(); idx++){
+        const u32 nvar = fields_f32_2[idx].get_nvar();
+        const u32 idx_val = pidx*nvar;
+        const u32 idx_out_val = out_pdat.fields_f32_2[idx].size();
+
+        out_pdat.fields_f32_2[idx].expand(1);
+
+        for(u32 i = nvar-1 ; i < nvar ; i--){
+            fields_f32_2[idx].data()[idx_out_val + i] = (fast_extract_ptr(idx_val + i,fields_f32_2[idx].size(), fields_f32_2[idx].data()));
+        }
     }
 
-    for(u32 i = patchdata_layout::nVarU1_s-1 ; i < patchdata_layout::nVarU1_s ; i--){
-        out_U1_s[idx_out_U1_s + i] = (fast_extract(idx_U1_s + i, U1_s));
+    for(u32 idx = 0; idx < patchdata_layout.fields_f32_3.size(); idx++){
+        const u32 nvar = fields_f32_3[idx].get_nvar();
+        const u32 idx_val = pidx*nvar;
+        const u32 idx_out_val = out_pdat.fields_f32_3[idx].size();
+
+        out_pdat.fields_f32_3[idx].expand(1);
+
+        for(u32 i = nvar-1 ; i < nvar ; i--){
+            fields_f32_3[idx].data()[idx_out_val + i] = (fast_extract_ptr(idx_val + i,fields_f32_3[idx].size(), fields_f32_3[idx].data()));
+        }
     }
 
-    for(u32 i = patchdata_layout::nVarU1_d-1 ; i < patchdata_layout::nVarU1_d ; i--){
-        out_U1_d[idx_out_U1_d + i] = (fast_extract(idx_U1_d + i, U1_d));
+    for(u32 idx = 0; idx < patchdata_layout.fields_f32_4.size(); idx++){
+        const u32 nvar = fields_f32_4[idx].get_nvar();
+        const u32 idx_val = pidx*nvar;
+        const u32 idx_out_val = out_pdat.fields_f32_4[idx].size();
+
+        out_pdat.fields_f32_4[idx].expand(1);
+
+        for(u32 i = nvar-1 ; i < nvar ; i--){
+            fields_f32_4[idx].data()[idx_out_val + i] = (fast_extract_ptr(idx_val + i,fields_f32_4[idx].size(), fields_f32_4[idx].data()));
+        }
     }
 
-    for(u32 i = patchdata_layout::nVarU3_s-1 ; i < patchdata_layout::nVarU3_s ; i--){
-        out_U3_s[idx_out_U3_s + i] = (fast_extract(idx_U3_s + i, U3_s));
+    for(u32 idx = 0; idx < patchdata_layout.fields_f32_8.size(); idx++){
+        const u32 nvar = fields_f32_8[idx].get_nvar();
+        const u32 idx_val = pidx*nvar;
+        const u32 idx_out_val = out_pdat.fields_f32_8[idx].size();
+
+        out_pdat.fields_f32_8[idx].expand(1);
+
+        for(u32 i = nvar-1 ; i < nvar ; i--){
+            fields_f32_8[idx].data()[idx_out_val + i] = (fast_extract_ptr(idx_val + i,fields_f32_8[idx].size(), fields_f32_8[idx].data()));
+        }
     }
 
-    for(u32 i = patchdata_layout::nVarU3_d-1 ; i < patchdata_layout::nVarU3_d ; i--){
-        out_U3_d[idx_out_U3_d + i] = (fast_extract(idx_U3_d + i, U3_d));
+    for(u32 idx = 0; idx < patchdata_layout.fields_f32_16.size(); idx++){
+        const u32 nvar = fields_f32_16[idx].get_nvar();
+        const u32 idx_val = pidx*nvar;
+        const u32 idx_out_val = out_pdat.fields_f32_16[idx].size();
+
+        out_pdat.fields_f32_16[idx].expand(1);
+
+        for(u32 i = nvar-1 ; i < nvar ; i--){
+            fields_f32_16[idx].data()[idx_out_val + i] = (fast_extract_ptr(idx_val + i,fields_f32_16[idx].size(), fields_f32_16[idx].data()));
+        }
+    }
+
+
+
+
+
+
+
+    for(u32 idx = 0; idx < patchdata_layout.fields_f64.size(); idx++){
+        const u32 nvar = fields_f64[idx].get_nvar();
+        const u32 idx_val = pidx*nvar;
+        const u32 idx_out_val = out_pdat.fields_f64[idx].size();
+
+        out_pdat.fields_f64[idx].expand(1);
+
+        for(u32 i = nvar-1 ; i < nvar ; i--){
+            fields_f64[idx].data()[idx_out_val + i] = (fast_extract_ptr(idx_val + i,fields_f64[idx].size(), fields_f64[idx].data()));
+        }
+    }
+
+    for(u32 idx = 0; idx < patchdata_layout.fields_f64_2.size(); idx++){
+        const u32 nvar = fields_f64_2[idx].get_nvar();
+        const u32 idx_val = pidx*nvar;
+        const u32 idx_out_val = out_pdat.fields_f64_2[idx].size();
+
+        out_pdat.fields_f64_2[idx].expand(1);
+
+        for(u32 i = nvar-1 ; i < nvar ; i--){
+            fields_f64_2[idx].data()[idx_out_val + i] = (fast_extract_ptr(idx_val + i,fields_f64_2[idx].size(), fields_f64_2[idx].data()));
+        }
+    }
+
+    for(u32 idx = 0; idx < patchdata_layout.fields_f64_3.size(); idx++){
+        const u32 nvar = fields_f64_3[idx].get_nvar();
+        const u32 idx_val = pidx*nvar;
+        const u32 idx_out_val = out_pdat.fields_f64_3[idx].size();
+
+        out_pdat.fields_f64_3[idx].expand(1);
+
+        for(u32 i = nvar-1 ; i < nvar ; i--){
+            fields_f64_3[idx].data()[idx_out_val + i] = (fast_extract_ptr(idx_val + i,fields_f64_3[idx].size(), fields_f64_3[idx].data()));
+        }
+    }
+
+    for(u32 idx = 0; idx < patchdata_layout.fields_f64_4.size(); idx++){
+        const u32 nvar = fields_f64_4[idx].get_nvar();
+        const u32 idx_val = pidx*nvar;
+        const u32 idx_out_val = out_pdat.fields_f64_4[idx].size();
+
+        out_pdat.fields_f64_4[idx].expand(1);
+
+        for(u32 i = nvar-1 ; i < nvar ; i--){
+            fields_f64_4[idx].data()[idx_out_val + i] = (fast_extract_ptr(idx_val + i,fields_f64_4[idx].size(), fields_f64_4[idx].data()));
+        }
+    }
+
+    for(u32 idx = 0; idx < patchdata_layout.fields_f64_8.size(); idx++){
+        const u32 nvar = fields_f64_8[idx].get_nvar();
+        const u32 idx_val = pidx*nvar;
+        const u32 idx_out_val = out_pdat.fields_f64_8[idx].size();
+
+        out_pdat.fields_f64_8[idx].expand(1);
+
+        for(u32 i = nvar-1 ; i < nvar ; i--){
+            fields_f64_8[idx].data()[idx_out_val + i] = (fast_extract_ptr(idx_val + i,fields_f64_8[idx].size(), fields_f64_8[idx].data()));
+        }
+    }
+
+    for(u32 idx = 0; idx < patchdata_layout.fields_f64_16.size(); idx++){
+        const u32 nvar = fields_f64_16[idx].get_nvar();
+        const u32 idx_val = pidx*nvar;
+        const u32 idx_out_val = out_pdat.fields_f64_16[idx].size();
+
+        out_pdat.fields_f64_16[idx].expand(1);
+
+        for(u32 i = nvar-1 ; i < nvar ; i--){
+            fields_f64_16[idx].data()[idx_out_val + i] = (fast_extract_ptr(idx_val + i,fields_f64_16[idx].size(), fields_f64_16[idx].data()));
+        }
+    }
+
+
+
+
+
+
+
+    for(u32 idx = 0; idx < patchdata_layout.fields_u32.size(); idx++){
+        const u32 nvar = fields_u32[idx].get_nvar();
+        const u32 idx_val = pidx*nvar;
+        const u32 idx_out_val = out_pdat.fields_u32[idx].size();
+
+        out_pdat.fields_u32[idx].expand(1);
+
+        for(u32 i = nvar-1 ; i < nvar ; i--){
+            fields_u32[idx].data()[idx_out_val + i] = (fast_extract_ptr(idx_val + i,fields_u32[idx].size(), fields_u32[idx].data()));
+        }
+    }
+
+    for(u32 idx = 0; idx < patchdata_layout.fields_u64.size(); idx++){
+        const u32 nvar = fields_u64[idx].get_nvar();
+        const u32 idx_val = pidx*nvar;
+        const u32 idx_out_val = out_pdat.fields_u64[idx].size();
+
+        out_pdat.fields_u64[idx].expand(1);
+
+        for(u32 i = nvar-1 ; i < nvar ; i--){
+            fields_u64[idx].data()[idx_out_val + i] = (fast_extract_ptr(idx_val + i,fields_u64[idx].size(), fields_u64[idx].data()));
+        }
     }
 
 }
 
-void PatchData::insert_particles(std::vector<f32_3> &in_pos_s, std::vector<f64_3> &in_pos_d, std::vector<f32> &in_U1_s, std::vector<f64> &in_U1_d, std::vector<f32_3> &in_U3_s, std::vector<f64_3> &in_U3_d){
-    pos_s.insert(pos_s.end(),in_pos_s.begin(), in_pos_s.end());
-    pos_d.insert(pos_d.end(),in_pos_d.begin(), in_pos_d.end());
-    U1_s .insert(U1_s .end(),in_U1_s .begin(), in_U1_s .end());
-    U1_d .insert(U1_d .end(),in_U1_d .begin(), in_U1_d .end());
-    U3_s .insert(U3_s .end(),in_U3_s .begin(), in_U3_s .end());
-    U3_d .insert(U3_d .end(),in_U3_d .begin(), in_U3_d .end());
+void PatchData::insert_particles(PatchData & pdat){
+    for(u32 idx = 0; idx < patchdata_layout.fields_f32.size(); idx++){
+        fields_f32[idx].insert(pdat.fields_f32[idx]);
+    }
+
+    for(u32 idx = 0; idx < patchdata_layout.fields_f32_2.size(); idx++){
+        fields_f32_2[idx].insert(pdat.fields_f32_2[idx]);
+    }
+
+    for(u32 idx = 0; idx < patchdata_layout.fields_f32_3.size(); idx++){
+        fields_f32_3[idx].insert(pdat.fields_f32_3[idx]);
+    }
+
+    for(u32 idx = 0; idx < patchdata_layout.fields_f32_4.size(); idx++){
+        fields_f32_4[idx].insert(pdat.fields_f32_4[idx]);
+    }
+
+    for(u32 idx = 0; idx < patchdata_layout.fields_f32_8.size(); idx++){
+        fields_f32_8[idx].insert(pdat.fields_f32_8[idx]);
+    }
+
+    for(u32 idx = 0; idx < patchdata_layout.fields_f32_16.size(); idx++){
+        fields_f32_16[idx].insert(pdat.fields_f32_16[idx]);
+    }
+
+
+
+    for(u32 idx = 0; idx < patchdata_layout.fields_f64.size(); idx++){
+        fields_f64[idx].insert(pdat.fields_f64[idx]);
+    }
+
+    for(u32 idx = 0; idx < patchdata_layout.fields_f64_2.size(); idx++){
+        fields_f64_2[idx].insert(pdat.fields_f64_2[idx]);
+    }
+
+    for(u32 idx = 0; idx < patchdata_layout.fields_f64_3.size(); idx++){
+        fields_f64_3[idx].insert(pdat.fields_f64_3[idx]);
+    }
+
+    for(u32 idx = 0; idx < patchdata_layout.fields_f64_4.size(); idx++){
+        fields_f64_4[idx].insert(pdat.fields_f64_4[idx]);
+    }
+
+    for(u32 idx = 0; idx < patchdata_layout.fields_f64_8.size(); idx++){
+        fields_f64_8[idx].insert(pdat.fields_f64_8[idx]);
+    }
+
+    for(u32 idx = 0; idx < patchdata_layout.fields_f64_16.size(); idx++){
+        fields_f64_16[idx].insert(pdat.fields_f64_16[idx]);
+    }
+
+
+
+
+
+    for(u32 idx = 0; idx < patchdata_layout.fields_u32.size(); idx++){
+        fields_u32[idx].insert(pdat.fields_u32[idx]);
+    }
+
+    for(u32 idx = 0; idx < patchdata_layout.fields_u64.size(); idx++){
+        fields_u64[idx].insert(pdat.fields_u64[idx]);
+    }
+
+}
+
+
+
+void PatchData::append_subset_to(std::vector<u32> & idxs, PatchData &pdat){
+    for(u32 idx = 0; idx < patchdata_layout.fields_f32.size(); idx++){
+        fields_f32[idx].append_subset_to(idxs, pdat.fields_f32[idx]);
+    }
+
+    for(u32 idx = 0; idx < patchdata_layout.fields_f32_2.size(); idx++){
+        fields_f32_2[idx].append_subset_to(idxs, pdat.fields_f32_2[idx]);
+    }
+
+    for(u32 idx = 0; idx < patchdata_layout.fields_f32_3.size(); idx++){
+        fields_f32_3[idx].append_subset_to(idxs, pdat.fields_f32_3[idx]);
+    }
+
+    for(u32 idx = 0; idx < patchdata_layout.fields_f32_4.size(); idx++){
+        fields_f32_4[idx].append_subset_to(idxs, pdat.fields_f32_4[idx]);
+    }
+
+    for(u32 idx = 0; idx < patchdata_layout.fields_f32_8.size(); idx++){
+        fields_f32_8[idx].append_subset_to(idxs, pdat.fields_f32_8[idx]);
+    }
+
+    for(u32 idx = 0; idx < patchdata_layout.fields_f32_16.size(); idx++){
+        fields_f32_16[idx].append_subset_to(idxs, pdat.fields_f32_16[idx]);
+    }
+
+
+    for(u32 idx = 0; idx < patchdata_layout.fields_f64.size(); idx++){
+        fields_f64[idx].append_subset_to(idxs, pdat.fields_f64[idx]);
+    }
+
+    for(u32 idx = 0; idx < patchdata_layout.fields_f64_2.size(); idx++){
+        fields_f64_2[idx].append_subset_to(idxs, pdat.fields_f64_2[idx]);
+    }
+
+    for(u32 idx = 0; idx < patchdata_layout.fields_f64_3.size(); idx++){
+        fields_f64_3[idx].append_subset_to(idxs, pdat.fields_f64_3[idx]);
+    }
+
+    for(u32 idx = 0; idx < patchdata_layout.fields_f64_4.size(); idx++){
+        fields_f64_4[idx].append_subset_to(idxs, pdat.fields_f64_4[idx]);
+    }
+
+    for(u32 idx = 0; idx < patchdata_layout.fields_f64_8.size(); idx++){
+        fields_f64_8[idx].append_subset_to(idxs, pdat.fields_f64_8[idx]);
+    }
+
+    for(u32 idx = 0; idx < patchdata_layout.fields_f64_16.size(); idx++){
+        fields_f64_16[idx].append_subset_to(idxs, pdat.fields_f64_16[idx]);
+    }
+
+
+    for(u32 idx = 0; idx < patchdata_layout.fields_u32.size(); idx++){
+        fields_u32[idx].append_subset_to(idxs, pdat.fields_u32[idx]);
+    }
+
+    for(u32 idx = 0; idx < patchdata_layout.fields_u64.size(); idx++){
+        fields_u64[idx].append_subset_to(idxs, pdat.fields_u64[idx]);
+    }
+}
+
+template<>
+void PatchData::split_patchdata<f32_3>(
+    PatchData &pd0, PatchData &pd1, PatchData &pd2, PatchData &pd3, PatchData &pd4, PatchData &pd5, PatchData &pd6, PatchData &pd7, 
+    f32_3 bmin_p0, f32_3 bmin_p1, f32_3 bmin_p2, f32_3 bmin_p3, f32_3 bmin_p4, f32_3 bmin_p5, f32_3 bmin_p6, f32_3 bmin_p7, 
+    f32_3 bmax_p0, f32_3 bmax_p1, f32_3 bmax_p2, f32_3 bmax_p3, f32_3 bmax_p4, f32_3 bmax_p5, f32_3 bmax_p6, f32_3 bmax_p7){
+
+    u32 field_ipos = patchdata_layout.get_field_idx<f32_3>("xyz");
+    //TODO check that nvar on this field is 1 on creation
+
+    const u32 obj_cnt = fields_f32_3[field_ipos].size();
+
+    std::vector<u32> idx_p0;
+    std::vector<u32> idx_p1;
+    std::vector<u32> idx_p2;
+    std::vector<u32> idx_p3;
+    std::vector<u32> idx_p4;
+    std::vector<u32> idx_p5;
+    std::vector<u32> idx_p6;
+    std::vector<u32> idx_p7;
+
+    for (u32 i = 0; i < obj_cnt; i++) {
+    
+        f32_3 current_pos = fields_f32_3[field_ipos].data()[i];
+
+        bool bp0 = BBAA::is_particle_in_patch<f32_3>( current_pos, bmin_p0,bmax_p0);
+        bool bp1 = BBAA::is_particle_in_patch<f32_3>( current_pos, bmin_p1,bmax_p1);
+        bool bp2 = BBAA::is_particle_in_patch<f32_3>( current_pos, bmin_p2,bmax_p2);
+        bool bp3 = BBAA::is_particle_in_patch<f32_3>( current_pos, bmin_p3,bmax_p3);
+        bool bp4 = BBAA::is_particle_in_patch<f32_3>( current_pos, bmin_p4,bmax_p4);
+        bool bp5 = BBAA::is_particle_in_patch<f32_3>( current_pos, bmin_p5,bmax_p5);
+        bool bp6 = BBAA::is_particle_in_patch<f32_3>( current_pos, bmin_p6,bmax_p6);
+        bool bp7 = BBAA::is_particle_in_patch<f32_3>( current_pos, bmin_p7,bmax_p7);
+
+        if(bp0) idx_p0.push_back(i);
+        if(bp1) idx_p1.push_back(i);
+        if(bp2) idx_p2.push_back(i);
+        if(bp3) idx_p3.push_back(i);
+        if(bp4) idx_p4.push_back(i);
+        if(bp5) idx_p5.push_back(i);
+        if(bp6) idx_p6.push_back(i);
+        if(bp7) idx_p7.push_back(i);
+    }
+
+    //TODO create a extract subpatch function
+
+    append_subset_to(idx_p0, pd0);
+    append_subset_to(idx_p1, pd1);
+    append_subset_to(idx_p2, pd2);
+    append_subset_to(idx_p3, pd3);
+    append_subset_to(idx_p4, pd4);
+    append_subset_to(idx_p5, pd5);
+    append_subset_to(idx_p6, pd6);
+    append_subset_to(idx_p7, pd7);
+
+}
+
+
+template<>
+void PatchData::split_patchdata<f64_3>(
+    PatchData &pd0, PatchData &pd1, PatchData &pd2, PatchData &pd3, PatchData &pd4, PatchData &pd5, PatchData &pd6, PatchData &pd7, 
+    f64_3 bmin_p0, f64_3 bmin_p1, f64_3 bmin_p2, f64_3 bmin_p3, f64_3 bmin_p4, f64_3 bmin_p5, f64_3 bmin_p6, f64_3 bmin_p7, 
+    f64_3 bmax_p0, f64_3 bmax_p1, f64_3 bmax_p2, f64_3 bmax_p3, f64_3 bmax_p4, f64_3 bmax_p5, f64_3 bmax_p6, f64_3 bmax_p7){
+
+    u32 field_ipos = patchdata_layout.get_field_idx<f64_3>("xyz");
+    //TODO check that nvar on this field is 1 on creation
+
+    const u32 obj_cnt = fields_f64_3[field_ipos].size();
+
+    std::vector<u32> idx_p0;
+    std::vector<u32> idx_p1;
+    std::vector<u32> idx_p2;
+    std::vector<u32> idx_p3;
+    std::vector<u32> idx_p4;
+    std::vector<u32> idx_p5;
+    std::vector<u32> idx_p6;
+    std::vector<u32> idx_p7;
+
+    for (u32 i = 0; i < obj_cnt; i++) {
+    
+        f64_3 current_pos = fields_f64_3[field_ipos].data()[i];
+
+        bool bp0 = BBAA::is_particle_in_patch<f64_3>( current_pos, bmin_p0,bmax_p0);
+        bool bp1 = BBAA::is_particle_in_patch<f64_3>( current_pos, bmin_p1,bmax_p1);
+        bool bp2 = BBAA::is_particle_in_patch<f64_3>( current_pos, bmin_p2,bmax_p2);
+        bool bp3 = BBAA::is_particle_in_patch<f64_3>( current_pos, bmin_p3,bmax_p3);
+        bool bp4 = BBAA::is_particle_in_patch<f64_3>( current_pos, bmin_p4,bmax_p4);
+        bool bp5 = BBAA::is_particle_in_patch<f64_3>( current_pos, bmin_p5,bmax_p5);
+        bool bp6 = BBAA::is_particle_in_patch<f64_3>( current_pos, bmin_p6,bmax_p6);
+        bool bp7 = BBAA::is_particle_in_patch<f64_3>( current_pos, bmin_p7,bmax_p7);
+
+        if(bp0) idx_p0.push_back(i);
+        if(bp1) idx_p1.push_back(i);
+        if(bp2) idx_p2.push_back(i);
+        if(bp3) idx_p3.push_back(i);
+        if(bp4) idx_p4.push_back(i);
+        if(bp5) idx_p5.push_back(i);
+        if(bp6) idx_p6.push_back(i);
+        if(bp7) idx_p7.push_back(i);
+    }
+
+    //TODO create a extract subpatch function
+
+    append_subset_to(idx_p0, pd0);
+    append_subset_to(idx_p1, pd1);
+    append_subset_to(idx_p2, pd2);
+    append_subset_to(idx_p3, pd3);
+    append_subset_to(idx_p4, pd4);
+    append_subset_to(idx_p5, pd5);
+    append_subset_to(idx_p6, pd6);
+    append_subset_to(idx_p7, pd7);
+
 }

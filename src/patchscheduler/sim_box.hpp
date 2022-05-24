@@ -3,6 +3,7 @@
 #include "aliases.hpp"
 #include "patch/patch.hpp"
 #include "patch/patchdata.hpp"
+#include "patch/patchdata_layout.hpp"
 #include "patchscheduler/loadbalancing_hilbert.hpp"
 #include <tuple>
 
@@ -13,6 +14,9 @@
  */
 class SimulationBoxInfo {
   public:
+
+    PatchDataLayout & pdl;
+
     f32_3 min_box_sim_s; ///< minimum coordinate of the box (if single precision)
     f32_3 max_box_sim_s; ///< maximum coordinate of the box (if single precision)
 
@@ -26,12 +30,12 @@ class SimulationBoxInfo {
      */
     inline void reset_box_size() {
 
-        if (patchdata_layout::nVarpos_s == 1) {
+        if (pdl.xyz_mode == xyz32) {
             min_box_sim_s = {HUGE_VALF};
             max_box_sim_s = {-HUGE_VALF};
         }
 
-        if (patchdata_layout::nVarpos_d == 1) {
+        if (pdl.xyz_mode == xyz64) {
             min_box_sim_s = {HUGE_VAL};
             max_box_sim_s = {-HUGE_VAL};
         }
@@ -90,4 +94,6 @@ class SimulationBoxInfo {
         return {bmin_p,bmax_p};
         
     }
+
+    inline SimulationBoxInfo(PatchDataLayout & pdl) : pdl(pdl){}
 };
