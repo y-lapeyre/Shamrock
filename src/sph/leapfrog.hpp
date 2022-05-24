@@ -6,6 +6,7 @@
 #include "aliases.hpp"
 #include "interfaces/interface_handler.hpp"
 #include "interfaces/interface_selector.hpp"
+#include "io/dump.hpp"
 #include "io/logs.hpp"
 #include "particles/particle_patch_mover.hpp"
 #include "patch/compute_field.hpp"
@@ -37,7 +38,7 @@ struct MergedPatchDataBuffer {public:
     std::tuple<vec,vec> box;
 };
 
-/*
+
 template<class pos_vec>
 inline void dump_merged_patches(std::string prefix, SchedulerMPI & sched,std::unordered_map<u64,MergedPatchDataBuffer<pos_vec>> & merged_map){
     struct PatchFile{
@@ -72,55 +73,159 @@ inline void dump_merged_patches(std::string prefix, SchedulerMPI & sched,std::un
             MPI_File & mfilepatch = patch_files[pfile_map[pid]].mfile;
 
 
-            PatchData tmp;
+            PatchData tmp(pdat.data->pdl);
             {
-                if(pdat.data.pos_s) tmp.pos_s.resize(pdat.data.pos_s->size());
-                if(pdat.data.pos_d) tmp.pos_d.resize(pdat.data.pos_d->size());
-                if(pdat.data.U1_s)  tmp.U1_s.resize(pdat.data.U1_s->size());
-                if(pdat.data.U1_d)  tmp.U1_d.resize(pdat.data.U1_d->size());
-                if(pdat.data.U3_s)  tmp.U3_s.resize(pdat.data.U3_s->size());
-                if(pdat.data.U3_d)  tmp.U3_d.resize(pdat.data.U3_d->size());
+                PatchDataBuffer & pdat_buf = * pdat.data;
 
 
-            
-                if(pdat.data.pos_s) {auto pos_s = pdat.data.pos_s->template get_access<sycl::access::mode::read>();for (u32 i = 0; i < tmp.pos_s.size(); i++) { tmp.pos_s[i] = pos_s[i];}}
-                if(pdat.data.pos_d) {auto pos_d = pdat.data.pos_d->template get_access<sycl::access::mode::read>();for (u32 i = 0; i < tmp.pos_d.size(); i++) { tmp.pos_d[i] = pos_d[i];}}
-                if(pdat.data.U1_s)  {auto U1_s  = pdat.data.U1_s ->template get_access<sycl::access::mode::read>();for (u32 i = 0; i < tmp.U1_s.size(); i++) { tmp.U1_s[i] = U1_s[i]; }}
-                if(pdat.data.U1_d)  {auto U1_d  = pdat.data.U1_d ->template get_access<sycl::access::mode::read>();for (u32 i = 0; i < tmp.U1_d.size(); i++) { tmp.U1_d[i] = U1_d[i]; }}
-                if(pdat.data.U3_s)  {auto U3_s  = pdat.data.U3_s ->template get_access<sycl::access::mode::read>();for (u32 i = 0; i < tmp.U3_s.size(); i++) { tmp.U3_s[i] = U3_s[i]; }}
-                if(pdat.data.U3_d)  {auto U3_d  = pdat.data.U3_d ->template get_access<sycl::access::mode::read>();for (u32 i = 0; i < tmp.U3_d.size(); i++) { tmp.U3_d[i] = U3_d[i]; }}
+
+                for(u32 idx = 0; idx < pdat_buf.fields_f32.size(); idx++){
+                    tmp.fields_f32[idx].resize( pdat_buf.fields_f32[idx]->size() );
+                }
+
+                for(u32 idx = 0; idx < pdat_buf.fields_f32_2.size(); idx++){
+                    tmp.fields_f32_2[idx].resize( pdat_buf.fields_f32_2[idx]->size() );
+                }
+
+                for(u32 idx = 0; idx < pdat_buf.fields_f32_3.size(); idx++){
+                    tmp.fields_f32_3[idx].resize( pdat_buf.fields_f32_3[idx]->size() );
+                }
+
+                for(u32 idx = 0; idx < pdat_buf.fields_f32_4.size(); idx++){
+                    tmp.fields_f32_4[idx].resize( pdat_buf.fields_f32_4[idx]->size() );
+                }
+
+                for(u32 idx = 0; idx < pdat_buf.fields_f32_8.size(); idx++){
+                    tmp.fields_f32_8[idx].resize( pdat_buf.fields_f32_8[idx]->size() );
+                }
+
+                for(u32 idx = 0; idx < pdat_buf.fields_f32_16.size(); idx++){
+                    tmp.fields_f32_16[idx].resize( pdat_buf.fields_f32_16[idx]->size() );
+                }
+
+
+
+                for(u32 idx = 0; idx < pdat_buf.fields_f64.size(); idx++){
+                    tmp.fields_f64[idx].resize( pdat_buf.fields_f64[idx]->size() );
+                }
+
+                for(u32 idx = 0; idx < pdat_buf.fields_f64_2.size(); idx++){
+                    tmp.fields_f64_2[idx].resize( pdat_buf.fields_f64_2[idx]->size() );
+                }
+
+                for(u32 idx = 0; idx < pdat_buf.fields_f64_3.size(); idx++){
+                    tmp.fields_f64_3[idx].resize( pdat_buf.fields_f64_3[idx]->size() );
+                }
+
+                for(u32 idx = 0; idx < pdat_buf.fields_f64_4.size(); idx++){
+                    tmp.fields_f64_4[idx].resize( pdat_buf.fields_f64_4[idx]->size() );
+                }
+
+                for(u32 idx = 0; idx < pdat_buf.fields_f64_8.size(); idx++){
+                    tmp.fields_f64_8[idx].resize( pdat_buf.fields_f64_8[idx]->size() );
+                }
+
+                for(u32 idx = 0; idx < pdat_buf.fields_f64_16.size(); idx++){
+                    tmp.fields_f64_16[idx].resize( pdat_buf.fields_f64_16[idx]->size() );
+                }
+
+
+                for(u32 idx = 0; idx < pdat_buf.fields_u32.size(); idx++){
+                    tmp.fields_u32[idx].resize( pdat_buf.fields_u32[idx]->size() );
+                }
+
+                for(u32 idx = 0; idx < pdat_buf.fields_u64.size(); idx++){
+                    tmp.fields_u64[idx].resize( pdat_buf.fields_u64[idx]->size() );
+                }
+
+
+
+                for(u32 idx = 0; idx < pdat_buf.fields_f32.size(); idx++){
+                    auto acc = pdat_buf.fields_f32[idx]->get_access<sycl::access::mode::read>();
+                    for (u32 i = 0; i < pdat_buf.fields_f32[idx]->size(); i++) { tmp.fields_f32[idx].data()[i] = acc[i];}
+                }
+
+                for(u32 idx = 0; idx < pdat_buf.fields_f32_2.size(); idx++){
+                    auto acc = pdat_buf.fields_f32_2[idx]->get_access<sycl::access::mode::read>();
+                    for (u32 i = 0; i < pdat_buf.fields_f32_2[idx]->size(); i++) { tmp.fields_f32_2[idx].data()[i] = acc[i];}
+                }
+
+                for(u32 idx = 0; idx < pdat_buf.fields_f32_3.size(); idx++){
+                    auto acc = pdat_buf.fields_f32_3[idx]->get_access<sycl::access::mode::read>();
+                    for (u32 i = 0; i < pdat_buf.fields_f32_3[idx]->size(); i++) { tmp.fields_f32_3[idx].data()[i] = acc[i];}
+                }
+
+                for(u32 idx = 0; idx < pdat_buf.fields_f32_4.size(); idx++){
+                    auto acc = pdat_buf.fields_f32_4[idx]->get_access<sycl::access::mode::read>();
+                    for (u32 i = 0; i < pdat_buf.fields_f32_4[idx]->size(); i++) { tmp.fields_f32_4[idx].data()[i] = acc[i];}
+                }
+
+                for(u32 idx = 0; idx < pdat_buf.fields_f32_8.size(); idx++){
+                    auto acc = pdat_buf.fields_f32_8[idx]->get_access<sycl::access::mode::read>();
+                    for (u32 i = 0; i < pdat_buf.fields_f32_8[idx]->size(); i++) { tmp.fields_f32_8[idx].data()[i] = acc[i];}
+                }
+
+                for(u32 idx = 0; idx < pdat_buf.fields_f32_16.size(); idx++){
+                    auto acc = pdat_buf.fields_f32_16[idx]->get_access<sycl::access::mode::read>();
+                    for (u32 i = 0; i < pdat_buf.fields_f32_16[idx]->size(); i++) { tmp.fields_f32_16[idx].data()[i] = acc[i];}
+                }
+
+
+
+
+                for(u32 idx = 0; idx < pdat_buf.fields_f64.size(); idx++){
+                    auto acc = pdat_buf.fields_f64[idx]->get_access<sycl::access::mode::read>();
+                    for (u32 i = 0; i < pdat_buf.fields_f64[idx]->size(); i++) { tmp.fields_f64[idx].data()[i] = acc[i];}
+                }
+
+                for(u32 idx = 0; idx < pdat_buf.fields_f64_2.size(); idx++){
+                    auto acc = pdat_buf.fields_f64_2[idx]->get_access<sycl::access::mode::read>();
+                    for (u32 i = 0; i < pdat_buf.fields_f64_2[idx]->size(); i++) { tmp.fields_f64_2[idx].data()[i] = acc[i];}
+                }
+
+                for(u32 idx = 0; idx < pdat_buf.fields_f64_3.size(); idx++){
+                    auto acc = pdat_buf.fields_f64_3[idx]->get_access<sycl::access::mode::read>();
+                    for (u32 i = 0; i < pdat_buf.fields_f64_3[idx]->size(); i++) { tmp.fields_f64_3[idx].data()[i] = acc[i];}
+                }
+
+                for(u32 idx = 0; idx < pdat_buf.fields_f64_4.size(); idx++){
+                    auto acc = pdat_buf.fields_f64_4[idx]->get_access<sycl::access::mode::read>();
+                    for (u32 i = 0; i < pdat_buf.fields_f64_4[idx]->size(); i++) { tmp.fields_f64_4[idx].data()[i] = acc[i];}
+                }
+
+                for(u32 idx = 0; idx < pdat_buf.fields_f64_8.size(); idx++){
+                    auto acc = pdat_buf.fields_f64_8[idx]->get_access<sycl::access::mode::read>();
+                    for (u32 i = 0; i < pdat_buf.fields_f64_8[idx]->size(); i++) { tmp.fields_f64_8[idx].data()[i] = acc[i];}
+                }
+
+                for(u32 idx = 0; idx < pdat_buf.fields_f64_16.size(); idx++){
+                    auto acc = pdat_buf.fields_f64_16[idx]->get_access<sycl::access::mode::read>();
+                    for (u32 i = 0; i < pdat_buf.fields_f64_16[idx]->size(); i++) { tmp.fields_f64_16[idx].data()[i] = acc[i];}
+                }
+
+
+
+
+                for(u32 idx = 0; idx < pdat_buf.fields_u32.size(); idx++){
+                    auto acc = pdat_buf.fields_u32[idx]->get_access<sycl::access::mode::read>();
+                    for (u32 i = 0; i < pdat_buf.fields_u32[idx]->size(); i++) { tmp.fields_u32[idx].data()[i] = acc[i];}
+                }
+
+                for(u32 idx = 0; idx < pdat_buf.fields_u64.size(); idx++){
+                    auto acc = pdat_buf.fields_u64[idx]->get_access<sycl::access::mode::read>();
+                    for (u32 i = 0; i < pdat_buf.fields_u64[idx]->size(); i++) { tmp.fields_u64[idx].data()[i] = acc[i];}
+                }
+
 
             }
 
 
 
-            u32 sz_pref[6];
+            
 
-            sz_pref[0] = tmp.pos_s.size();
-            sz_pref[1] = tmp.pos_d.size();
-            sz_pref[2] = tmp.U1_s.size() ;
-            sz_pref[3] = tmp.U1_d.size() ;
-            sz_pref[4] = tmp.U3_s.size() ;
-            sz_pref[5] = tmp.U3_d.size() ;
 
-            // std::cout << "writing "<< patch_files[pfile_map[pid]].name <<" from rank = " << mpi_handler::world_rank << " {" << 
-            // sz_pref[0]<<","<<
-            // sz_pref[1]<<","<<
-            // sz_pref[2]<<","<<
-            // sz_pref[3]<<","<<
-            // sz_pref[4]<<","<<
-            // sz_pref[5]<<"}"<<
-            // std::endl;
 
-            MPI_Status st;
-            mpi::file_write(mfilepatch,sz_pref, 6, mpi_type_u32, &st);
-
-            mpi::file_write(mfilepatch, tmp.pos_s.data(), sz_pref[0] , mpi_type_f32_3, &st);
-            mpi::file_write(mfilepatch, tmp.pos_d.data(), sz_pref[1] , mpi_type_f64_3, &st);
-            mpi::file_write(mfilepatch, tmp.U1_s.data() , sz_pref[2] , mpi_type_f32  , &st);
-            mpi::file_write(mfilepatch, tmp.U1_d.data() , sz_pref[3] , mpi_type_f64  , &st);
-            mpi::file_write(mfilepatch, tmp.U3_s.data() , sz_pref[4] , mpi_type_f32_3, &st);
-            mpi::file_write(mfilepatch, tmp.U3_d.data() , sz_pref[5] , mpi_type_f64_3, &st);
+            file_write_patchdata(mfilepatch, tmp);
 
         }
 
@@ -132,7 +237,7 @@ inline void dump_merged_patches(std::string prefix, SchedulerMPI & sched,std::un
         mpi::file_close(&pf.mfile);
     }
 }
-*/
+
 
 
 
@@ -1418,7 +1523,7 @@ class SPHTimestepperLeapfrog{public:
         hndl.get_queue_compute(0).wait();
         tmerge_buf.stop();
 
-        //dump_merged_patches(dump_folder+"/merged0_", sched, merge_pdat_buf);
+        dump_merged_patches(dump_folder+"/merged0_", sched, merge_pdat_buf);
 
 
 

@@ -4,87 +4,181 @@ import struct
 import vtk
 import vtkmodules
 
+def extract(header,data):
+    tmp = data.split(header)
+    return tmp[0],tmp[1]
+
+def read_header_field(header_f,dic_res):
+
+    tmp = header_f
+
+    while len(tmp) > 0:
+        tmp_in = tmp[:72]
+        tmp =tmp[72:]
+
+        nb = tmp_in[:64]
+        nvarb = tmp_in[64:68]
+        obj_cntb = tmp_in[68:72]
+
+        name = str(nb.decode('utf-8')).rstrip("\x00")
+        nvar = int.from_bytes(nvarb, "little") 
+        obj_cnt = int.from_bytes(obj_cntb, "little") 
+
+        dic_res.append({"name":name, "nvar":nvar, "obj_cnt":obj_cnt})
+
 
 
 def get_plot_patchdata(filename):
 
     f = open(filename,"rb")
 
-    header = (f.read(24))
-    header_unpacked = list(struct.unpack("IIIIII", header))
+    data = f.read()
 
-    dic = {}
-    
-    desc_nam = ["x","y","z"]
-    desc_len = [ 4 , 4 , 4 ]
-    tot_len = sum(desc_len)
+    data = data.split(b"##header end##\n\0")
 
-    for a in desc_nam:
-        dic[a] = []
+    head = data[0].split(b"##header start##")[1]
+    data = data[1]
 
-    byte = "a"
-    for i in range(header_unpacked[0]):
-        byte = f.read(tot_len)
-        x,y,z = (struct.unpack("fff", byte))
+    tmp,head = (extract(b"#f32\0\0\0\0",head))
+    head_f32   ,head = (extract(b"#f32_2\0\0",head))
+    head_f32_2 ,head = (extract(b"#f32_3\0\0",head))
+    head_f32_3 ,head = (extract(b"#f32_4\0\0",head))
+    head_f32_4 ,head = (extract(b"#f32_8\0\0",head))
+    head_f32_8 ,head = (extract(b"#f32_16\0",head))
+    head_f32_16,head = (extract(b"#f64\0\0\0\0",head))
+    head_f64   ,head = (extract(b"#f64_2\0\0",head))
+    head_f64_2 ,head = (extract(b"#f64_3\0\0",head))
+    head_f64_3 ,head = (extract(b"#f64_4\0\0",head))
+    head_f64_4 ,head = (extract(b"#f64_8\0\0",head))
+    head_f64_8 ,head = (extract(b"#f64_16\0",head))
+    head_f64_16,head = (extract(b"#u32\0\0\0\0",head))
+    head_u32   ,head_u64 = (extract(b"#u64\0\0\0\0",head))
 
-        dic["x"].append(x)
-        dic["y"].append(y)
-        dic["z"].append(z)
+    #print(head_f32,head_f32_3)
+
+    dic_fields = {
+        "f32"    : [],
+        "f32_2"  : [],
+        "f32_3"  : [],    
+        "f32_4"  : [],
+        "f32_8"  : [],
+        "f32_16" : [],
+        "f64"    : [],
+        "f64_2"  : [],
+        "f64_3"  : [],
+        "f64_4"  : [],
+        "f64_8"  : [],
+        "f64_16" : [],
+        "u32"    : [],
+        "u64"    : []
+    }
+
+    read_header_field(head_f32,dic_fields["f32"])
+    read_header_field(head_f32_2,dic_fields["f32_2"])
+    read_header_field(head_f32_3,dic_fields["f32_3"])
+    read_header_field(head_f32_4,dic_fields["f32_4"])
+    read_header_field(head_f32_8,dic_fields["f32_8"])
+    read_header_field(head_f32_16,dic_fields["f32_16"])
+
+    read_header_field(head_f64,dic_fields["f64"])
+    read_header_field(head_f64_2,dic_fields["f64_2"])
+    read_header_field(head_f64_3,dic_fields["f64_3"])
+    read_header_field(head_f64_4,dic_fields["f64_4"])
+    read_header_field(head_f64_8,dic_fields["f64_8"])
+    read_header_field(head_f64_16,dic_fields["f64_16"])
+
+    read_header_field(head_u32,dic_fields["u32"])
+    read_header_field(head_u64,dic_fields["u64"])
+
+    print(dic_fields)
+
+    for field in dic_fields["f32"]:
+        elements = field["obj_cnt"]*field["nvar"]
+        off_data = elements*4
+        data_field = data[:off_data]
+
+        #print(data_field)
+        data = data[off_data:]
+
+        field["field"] = []
+
+        for i in range(elements):
+           field["field"].append(struct.unpack("f", data_field[i*4:(i+1)*4]))
+
+    for field in dic_fields["f32_3"]:
+        elements = field["obj_cnt"]*field["nvar"]
+        off_data = elements*4*3
+        data_field = data[:off_data]
+
+        #print(data_field)
+        data = data[off_data:]
+
+        field["field"] = []
+
+        for i in range(elements):
+           field["field"].append(struct.unpack("fff", data_field[i*12:(i+1)*12]))
 
 
+    #print(dic_fields)
 
-    desc_nam = ["h","omega"]
-    desc_len = [ 4 , 4     ]
-    tot_len = sum(desc_len)
+    dic = {
+        "x" : [],
+        "y" : [],
+        "z" : [],
+        "vx" : [],
+        "vy" : [],
+        "vz" : [],
+        "ax" : [],
+        "ay" : [],
+        "az" : [],
+        "ax_old" : [],
+        "ay_old" : [],
+        "az_old" : [],
+        "h" : [],
+        }
 
-    for a in desc_nam:
-        dic[a] = []
+    for field in dic_fields["f32_3"]:
 
-    byte = "a"
-    for i in range(header_unpacked[0]):
-        byte = f.read(tot_len)
-        h,om = (struct.unpack("ff", byte))
+        if field["name"] == ("xyz"):
 
-        dic["h"].append(h)
-        dic["omega"].append(om)
+            for a in field["field"]:
+                x,y,z = a
+                dic["x"].append(x)
+                dic["y"].append(y)
+                dic["z"].append(z)
 
+        if field["name"] == ("vxyz"):
 
+            for a in field["field"]:
+                x,y,z = a
+                dic["vx"].append(x)
+                dic["vy"].append(y)
+                dic["vz"].append(z)
 
+        if field["name"] == ("axyz"):
 
+            for a in field["field"]:
+                x,y,z = a
+                dic["ax"].append(x)
+                dic["ay"].append(y)
+                dic["az"].append(z)
 
-    desc_nam = ["vx","vy","vz","ax","ay","az","ax_old","ay_old","az_old"]
-    desc_len = [ 4 , 4  , 4 ,4 , 4  , 4 ,4 , 4  , 4   ]
-    tot_len = sum(desc_len)
+        if field["name"] == ("axyz_old"):
 
-    for a in desc_nam:
-        dic[a] = []
+            for a in field["field"]:
+                x,y,z = a
+                dic["ax_old"].append(x)
+                dic["ay_old"].append(y)
+                dic["az_old"].append(z)
 
-    byte = "a"
-    for i in range(header_unpacked[0]):
-        byte = f.read(tot_len)
-        vx,vy,vz,ax,ay,az,ax_old,ay_old,az_old = (struct.unpack("fffffffff", byte))
+    for field in dic_fields["f32"]:
 
-        dic["vx"].append(vx)
-        dic["vy"].append(vy)
-        dic["vz"].append(vz)
-        dic["ax"].append(ax)
-        dic["ay"].append(ay)
-        dic["az"].append(az)
-        dic["ax_old"].append(ax_old)
-        dic["ay_old"].append(ay_old)
-        dic["az_old"].append(az_old)
+        if field["name"] == ("hpart"):
 
+            for a in field["field"]:
+                x, = a
+                dic["h"].append(x)
 
-
-
-
-
-    f.close()
-
-    dic["x"] = dic["x"][::]
-    dic["y"] = dic["y"][::]
-    dic["z"] = dic["z"][::]
-    dic["h"] = dic["h"][::]
 
     return dic
 
@@ -105,7 +199,7 @@ def write_dic_to_vtk(dic,filename):
     ugrid.SetPoints(points)
 
 
-    for k in ["h","omega"]:
+    for k in ["h"]:
         if not k in ["x","y","z"]:
             values = vtk.vtkDoubleArray()
             values.SetName(k)
@@ -180,6 +274,9 @@ for idx in range(1,50):
 
     print(file_list)
 
+    if len(file_list) == 0:
+        break
+
     f = open("./step"+str(idx)+"/timeval.bin","rb")
     tval, = struct.unpack("d",f.read(8))
     f.close()
@@ -198,8 +295,39 @@ for idx in range(1,50):
 
             dic[k] += dic_tmp[k]
 
+
     write_dic_to_vtk(dic,"step"+str(idx))
 
     #lst.append({"timestep" : tval, "file" : "step"+str(idx)+'.vtu'})
 
     
+import glob
+for idx in range(1,50):
+
+    file_list = glob.glob("./step"+str(idx)+"/merged0_patchdata*")
+
+    print(file_list)
+
+    if len(file_list) == 0:
+        break
+
+    f = open("./step"+str(idx)+"/timeval.bin","rb")
+    tval, = struct.unpack("d",f.read(8))
+    f.close()
+
+    
+    dic = {}
+
+    for fname in file_list:
+        print("converting : {} t = {}".format(fname,tval))
+        dic_tmp = get_plot_patchdata(fname)
+
+        for k in dic_tmp.keys():
+
+            if not k in dic.keys():
+                dic[k] = []
+
+            dic[k] += dic_tmp[k]
+
+
+    write_dic_to_vtk(dic,"merged_step"+str(idx))

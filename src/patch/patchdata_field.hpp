@@ -68,6 +68,12 @@ class PatchDataField {
         field_data[ins_pos] = v;
     }
 
+    inline void apply_offset(T off){
+        for(T & v : field_data){
+            v += off;
+        }
+    }
+
 
     inline void insert(PatchDataField<T> &f2){
         field_data.insert(field_data.end(), f2.field_data.begin(), f2.field_data.end());

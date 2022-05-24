@@ -12,6 +12,385 @@
 #include <unordered_map>
 #include <vector>
 
+inline void file_write_patchdata(MPI_File & mfilepatch , PatchData & pdat){
+
+    MPI_Status st;
+
+    std::string head = "##header start##\n";
+    head.resize(16);
+    mpi::file_write(mfilepatch,head.c_str(), 16, mpi_type_u8, &st);
+
+    head = "#f32";
+    head.resize(8);
+    mpi::file_write(mfilepatch,head.c_str(), 8, mpi_type_u8, &st);
+
+    for(auto a : pdat.fields_f32){
+        std::string sz = a.get_name();
+        u32 obj_cnt = a.get_obj_cnt();
+        u32 nvar = a.get_nvar();
+
+        if(sz.size() > 64) throw shamrock_exc("field name must be shorter than 64 chars");
+
+        sz.resize(64);
+
+        mpi::file_write(mfilepatch,sz.c_str(), 64, mpi_type_u8, &st);
+        mpi::file_write(mfilepatch,&nvar, 1, mpi_type_u32, &st);
+        mpi::file_write(mfilepatch,&obj_cnt, 1, mpi_type_u32, &st);
+    }
+
+    head = "#f32_2";
+    head.resize(8);
+    mpi::file_write(mfilepatch,head.c_str(), 8, mpi_type_u8, &st);
+
+    for(auto a : pdat.fields_f32_2){
+        std::string sz = a.get_name();
+        u32 obj_cnt = a.get_obj_cnt();
+        u32 nvar = a.get_nvar();
+
+        if(sz.size() > 64) throw shamrock_exc("field name must be shorter than 64 chars");
+
+        sz.resize(64);
+
+        mpi::file_write(mfilepatch,sz.c_str(), 64, mpi_type_u8, &st);
+        mpi::file_write(mfilepatch,&nvar, 1, mpi_type_u32, &st);
+        mpi::file_write(mfilepatch,&obj_cnt, 1, mpi_type_u32, &st);
+    }
+
+    head = "#f32_3";
+    head.resize(8);
+    mpi::file_write(mfilepatch,head.c_str(), 8, mpi_type_u8, &st);
+
+    for(auto a : pdat.fields_f32_3){
+        std::string sz = a.get_name();
+        u32 obj_cnt = a.get_obj_cnt();
+        u32 nvar = a.get_nvar();
+
+        if(sz.size() > 64) throw shamrock_exc("field name must be shorter than 64 chars");
+
+        sz.resize(64);
+
+        mpi::file_write(mfilepatch,sz.c_str(), 64, mpi_type_u8, &st);
+        mpi::file_write(mfilepatch,&nvar, 1, mpi_type_u32, &st);
+        mpi::file_write(mfilepatch,&obj_cnt, 1, mpi_type_u32, &st);
+    }
+
+    head = "#f32_4";
+    head.resize(8);
+    mpi::file_write(mfilepatch,head.c_str(), 8, mpi_type_u8, &st);
+
+    for(auto a : pdat.fields_f32_4){
+        std::string sz = a.get_name();
+        u32 obj_cnt = a.get_obj_cnt();
+        u32 nvar = a.get_nvar();
+
+        if(sz.size() > 64) throw shamrock_exc("field name must be shorter than 64 chars");
+
+        sz.resize(64);
+
+        mpi::file_write(mfilepatch,sz.c_str(), 64, mpi_type_u8, &st);
+        mpi::file_write(mfilepatch,&nvar, 1, mpi_type_u32, &st);
+        mpi::file_write(mfilepatch,&obj_cnt, 1, mpi_type_u32, &st);
+    }
+
+    head = "#f32_8";
+    head.resize(8);
+    mpi::file_write(mfilepatch,head.c_str(), 8, mpi_type_u8, &st);
+
+    for(auto a : pdat.fields_f32_8){
+        std::string sz = a.get_name();
+        u32 obj_cnt = a.get_obj_cnt();
+        u32 nvar = a.get_nvar();
+
+        if(sz.size() > 64) throw shamrock_exc("field name must be shorter than 64 chars");
+
+        sz.resize(64);
+
+        mpi::file_write(mfilepatch,sz.c_str(), 64, mpi_type_u8, &st);
+        mpi::file_write(mfilepatch,&nvar, 1, mpi_type_u32, &st);
+        mpi::file_write(mfilepatch,&obj_cnt, 1, mpi_type_u32, &st);
+    }
+
+    head = "#f32_16";
+    head.resize(8);
+    mpi::file_write(mfilepatch,head.c_str(), 8, mpi_type_u8, &st);
+
+    for(auto a : pdat.fields_f32_16){
+        std::string sz = a.get_name();
+        u32 obj_cnt = a.get_obj_cnt();
+        u32 nvar = a.get_nvar();
+
+        if(sz.size() > 64) throw shamrock_exc("field name must be shorter than 64 chars");
+
+        sz.resize(64);
+
+        mpi::file_write(mfilepatch,sz.c_str(), 64, mpi_type_u8, &st);
+        mpi::file_write(mfilepatch,&nvar, 1, mpi_type_u32, &st);
+        mpi::file_write(mfilepatch,&obj_cnt, 1, mpi_type_u32, &st);
+    }
+
+
+
+
+
+
+
+    head = "#f64";
+    head.resize(8);
+    mpi::file_write(mfilepatch,head.c_str(), 8, mpi_type_u8, &st);
+
+    for(auto a : pdat.fields_f64){
+        std::string sz = a.get_name();
+        u32 obj_cnt = a.get_obj_cnt();
+        u32 nvar = a.get_nvar();
+
+        if(sz.size() > 64) throw shamrock_exc("field name must be shorter than 64 chars");
+
+        sz.resize(64);
+
+        mpi::file_write(mfilepatch,sz.c_str(), 64, mpi_type_u8, &st);
+        mpi::file_write(mfilepatch,&nvar, 1, mpi_type_u32, &st);
+        mpi::file_write(mfilepatch,&obj_cnt, 1, mpi_type_u32, &st);
+    }
+
+    head = "#f64_2";
+    head.resize(8);
+    mpi::file_write(mfilepatch,head.c_str(), 8, mpi_type_u8, &st);
+
+    for(auto a : pdat.fields_f64_2){
+        std::string sz = a.get_name();
+        u32 obj_cnt = a.get_obj_cnt();
+        u32 nvar = a.get_nvar();
+
+        if(sz.size() > 64) throw shamrock_exc("field name must be shorter than 64 chars");
+
+        sz.resize(64);
+
+        mpi::file_write(mfilepatch,sz.c_str(), 64, mpi_type_u8, &st);
+        mpi::file_write(mfilepatch,&nvar, 1, mpi_type_u32, &st);
+        mpi::file_write(mfilepatch,&obj_cnt, 1, mpi_type_u32, &st);
+    }
+
+    head = "#f64_3";
+    head.resize(8);
+    mpi::file_write(mfilepatch,head.c_str(), 8, mpi_type_u8, &st);
+
+    for(auto a : pdat.fields_f64_3){
+        std::string sz = a.get_name();
+        u32 obj_cnt = a.get_obj_cnt();
+        u32 nvar = a.get_nvar();
+
+        if(sz.size() > 64) throw shamrock_exc("field name must be shorter than 64 chars");
+
+        sz.resize(64);
+
+        mpi::file_write(mfilepatch,sz.c_str(), 64, mpi_type_u8, &st);
+        mpi::file_write(mfilepatch,&nvar, 1, mpi_type_u32, &st);
+        mpi::file_write(mfilepatch,&obj_cnt, 1, mpi_type_u32, &st);
+    }
+
+    head = "#f64_4";
+    head.resize(8);
+    mpi::file_write(mfilepatch,head.c_str(), 8, mpi_type_u8, &st);
+
+    for(auto a : pdat.fields_f64_4){
+        std::string sz = a.get_name();
+        u32 obj_cnt = a.get_obj_cnt();
+        u32 nvar = a.get_nvar();
+
+        if(sz.size() > 64) throw shamrock_exc("field name must be shorter than 64 chars");
+
+        sz.resize(64);
+
+        mpi::file_write(mfilepatch,sz.c_str(), 64, mpi_type_u8, &st);
+        mpi::file_write(mfilepatch,&nvar, 1, mpi_type_u32, &st);
+        mpi::file_write(mfilepatch,&obj_cnt, 1, mpi_type_u32, &st);
+    }
+
+    head = "#f64_8";
+    head.resize(8);
+    mpi::file_write(mfilepatch,head.c_str(), 8, mpi_type_u8, &st);
+
+    for(auto a : pdat.fields_f64_8){
+        std::string sz = a.get_name();
+        u32 obj_cnt = a.get_obj_cnt();
+        u32 nvar = a.get_nvar();
+
+        if(sz.size() > 64) throw shamrock_exc("field name must be shorter than 64 chars");
+
+        sz.resize(64);
+
+        mpi::file_write(mfilepatch,sz.c_str(), 64, mpi_type_u8, &st);
+        mpi::file_write(mfilepatch,&nvar, 1, mpi_type_u32, &st);
+        mpi::file_write(mfilepatch,&obj_cnt, 1, mpi_type_u32, &st);
+    }
+
+    head = "#f64_16";
+    head.resize(8);
+    mpi::file_write(mfilepatch,head.c_str(), 8, mpi_type_u8, &st);
+
+    for(auto a : pdat.fields_f64_16){
+        std::string sz = a.get_name();
+        u32 obj_cnt = a.get_obj_cnt();
+        u32 nvar = a.get_nvar();
+
+        if(sz.size() > 64) throw shamrock_exc("field name must be shorter than 64 chars");
+
+        sz.resize(64);
+
+        mpi::file_write(mfilepatch,sz.c_str(), 64, mpi_type_u8, &st);
+        mpi::file_write(mfilepatch,&nvar, 1, mpi_type_u32, &st);
+        mpi::file_write(mfilepatch,&obj_cnt, 1, mpi_type_u32, &st);
+    }
+
+
+
+
+    head = "#u32";
+    head.resize(8);
+    mpi::file_write(mfilepatch,head.c_str(), 8, mpi_type_u8, &st);
+
+    for(auto a : pdat.fields_u32){
+        std::string sz = a.get_name();
+        u32 obj_cnt = a.get_obj_cnt();
+        u32 nvar = a.get_nvar();
+
+        if(sz.size() > 64) throw shamrock_exc("field name must be shorter than 64 chars");
+
+        sz.resize(64);
+
+        mpi::file_write(mfilepatch,sz.c_str(), 64, mpi_type_u8, &st);
+        mpi::file_write(mfilepatch,&nvar, 1, mpi_type_u32, &st);
+        mpi::file_write(mfilepatch,&obj_cnt, 1, mpi_type_u32, &st);
+    }
+
+    head = "#u64";
+    head.resize(8);
+    mpi::file_write(mfilepatch,head.c_str(), 8, mpi_type_u8, &st);
+
+    for(auto a : pdat.fields_u64){
+        std::string sz = a.get_name();
+        u32 obj_cnt = a.get_obj_cnt();
+        u32 nvar = a.get_nvar();
+
+        if(sz.size() > 64) throw shamrock_exc("field name must be shorter than 64 chars");
+
+        sz.resize(64);
+
+        mpi::file_write(mfilepatch,sz.c_str(), 64, mpi_type_u8, &st);
+        mpi::file_write(mfilepatch,&nvar, 1, mpi_type_u32, &st);
+        mpi::file_write(mfilepatch,&obj_cnt, 1, mpi_type_u32, &st);
+    }
+
+
+    head = "##header end##\n";
+    head.resize(16);
+    mpi::file_write(mfilepatch,head.c_str(), 16, mpi_type_u8, &st);
+
+
+
+
+
+
+
+
+    for(auto a : pdat.fields_f32){
+        u32 sz = a.size();
+        using T = decltype(a)::Field_type;
+        mpi::file_write(mfilepatch,a.data(), sz, get_mpi_type<T>(), &st);
+    }
+
+    for(auto a : pdat.fields_f32_2){
+        u32 sz = a.size();
+        using T = decltype(a)::Field_type;
+        mpi::file_write(mfilepatch,a.data(), sz, get_mpi_type<T>(), &st);
+    }
+
+    for(auto a : pdat.fields_f32_3){
+        u32 sz = a.size();
+        using T = decltype(a)::Field_type;
+        mpi::file_write(mfilepatch,a.data(), sz, get_mpi_type<T>(), &st);
+    }
+
+    for(auto a : pdat.fields_f32_4){
+        u32 sz = a.size();
+        using T = decltype(a)::Field_type;
+        mpi::file_write(mfilepatch,a.data(), sz, get_mpi_type<T>(), &st);
+    }
+
+    for(auto a : pdat.fields_f32_8){
+        u32 sz = a.size();
+        using T = decltype(a)::Field_type;
+        mpi::file_write(mfilepatch,a.data(), sz, get_mpi_type<T>(), &st);
+    }
+
+    for(auto a : pdat.fields_f32_16){
+        u32 sz = a.size();
+        using T = decltype(a)::Field_type;
+        mpi::file_write(mfilepatch,a.data(), sz, get_mpi_type<T>(), &st);
+    }
+
+
+
+
+
+
+
+
+
+    for(auto a : pdat.fields_f64){
+        u32 sz = a.size();
+        using T = decltype(a)::Field_type;
+        mpi::file_write(mfilepatch,a.data(), sz, get_mpi_type<T>(), &st);
+    }
+
+    for(auto a : pdat.fields_f64_2){
+        u32 sz = a.size();
+        using T = decltype(a)::Field_type;
+        mpi::file_write(mfilepatch,a.data(), sz, get_mpi_type<T>(), &st);
+    }
+
+    for(auto a : pdat.fields_f64_3){
+        u32 sz = a.size();
+        using T = decltype(a)::Field_type;
+        mpi::file_write(mfilepatch,a.data(), sz, get_mpi_type<T>(), &st);
+    }
+
+    for(auto a : pdat.fields_f64_4){
+        u32 sz = a.size();
+        using T = decltype(a)::Field_type;
+        mpi::file_write(mfilepatch,a.data(), sz, get_mpi_type<T>(), &st);
+    }
+
+    for(auto a : pdat.fields_f64_8){
+        u32 sz = a.size();
+        using T = decltype(a)::Field_type;
+        mpi::file_write(mfilepatch,a.data(), sz, get_mpi_type<T>(), &st);
+    }
+
+    for(auto a : pdat.fields_f64_16){
+        u32 sz = a.size();
+        using T = decltype(a)::Field_type;
+        mpi::file_write(mfilepatch,a.data(), sz, get_mpi_type<T>(), &st);
+    }
+
+
+
+
+
+    for(auto a : pdat.fields_u32){
+        u32 sz = a.size();
+        using T = decltype(a)::Field_type;
+        mpi::file_write(mfilepatch,a.data(), sz, get_mpi_type<T>(), &st);
+    }
+
+    for(auto a : pdat.fields_u64){
+        u32 sz = a.size();
+        using T = decltype(a)::Field_type;
+        mpi::file_write(mfilepatch,a.data(), sz, get_mpi_type<T>(), &st);
+    }
+
+}
+
 inline void dump_patch_data(std::string prefix, SchedulerMPI & sched){
 
     struct PatchFile{
@@ -45,317 +424,8 @@ inline void dump_patch_data(std::string prefix, SchedulerMPI & sched){
             MPI_Status st;
             MPI_File & mfilepatch = patch_files[pfile_map[pid]].mfile;
 
-            for(auto a : pdat.fields_f32){
-                std::string sz = a.get_name();
-                u32 obj_cnt = a.get_obj_cnt();
-                u32 nvar = a.get_nvar();
 
-                if(sz.size() > 64) throw shamrock_exc("field name must be shorter than 64 chars");
-
-                sz.resize(64);
-
-                mpi::file_write(mfilepatch,sz.c_str(), 64, mpi_type_u8, &st);
-                mpi::file_write(mfilepatch,&nvar, 1, mpi_type_u32, &st);
-                mpi::file_write(mfilepatch,&obj_cnt, 1, mpi_type_u32, &st);
-            }
-
-            for(auto a : pdat.fields_f32_2){
-                std::string sz = a.get_name();
-                u32 obj_cnt = a.get_obj_cnt();
-                u32 nvar = a.get_nvar();
-
-                if(sz.size() > 64) throw shamrock_exc("field name must be shorter than 64 chars");
-
-                sz.resize(64);
-
-                mpi::file_write(mfilepatch,sz.c_str(), 64, mpi_type_u8, &st);
-                mpi::file_write(mfilepatch,&nvar, 1, mpi_type_u32, &st);
-                mpi::file_write(mfilepatch,&obj_cnt, 1, mpi_type_u32, &st);
-            }
-
-            for(auto a : pdat.fields_f32_3){
-                std::string sz = a.get_name();
-                u32 obj_cnt = a.get_obj_cnt();
-                u32 nvar = a.get_nvar();
-
-                if(sz.size() > 64) throw shamrock_exc("field name must be shorter than 64 chars");
-
-                sz.resize(64);
-
-                mpi::file_write(mfilepatch,sz.c_str(), 64, mpi_type_u8, &st);
-                mpi::file_write(mfilepatch,&nvar, 1, mpi_type_u32, &st);
-                mpi::file_write(mfilepatch,&obj_cnt, 1, mpi_type_u32, &st);
-            }
-
-            for(auto a : pdat.fields_f32_4){
-                std::string sz = a.get_name();
-                u32 obj_cnt = a.get_obj_cnt();
-                u32 nvar = a.get_nvar();
-
-                if(sz.size() > 64) throw shamrock_exc("field name must be shorter than 64 chars");
-
-                sz.resize(64);
-
-                mpi::file_write(mfilepatch,sz.c_str(), 64, mpi_type_u8, &st);
-                mpi::file_write(mfilepatch,&nvar, 1, mpi_type_u32, &st);
-                mpi::file_write(mfilepatch,&obj_cnt, 1, mpi_type_u32, &st);
-            }
-
-            for(auto a : pdat.fields_f32_8){
-                std::string sz = a.get_name();
-                u32 obj_cnt = a.get_obj_cnt();
-                u32 nvar = a.get_nvar();
-
-                if(sz.size() > 64) throw shamrock_exc("field name must be shorter than 64 chars");
-
-                sz.resize(64);
-
-                mpi::file_write(mfilepatch,sz.c_str(), 64, mpi_type_u8, &st);
-                mpi::file_write(mfilepatch,&nvar, 1, mpi_type_u32, &st);
-                mpi::file_write(mfilepatch,&obj_cnt, 1, mpi_type_u32, &st);
-            }
-
-            for(auto a : pdat.fields_f32_16){
-                std::string sz = a.get_name();
-                u32 obj_cnt = a.get_obj_cnt();
-                u32 nvar = a.get_nvar();
-
-                if(sz.size() > 64) throw shamrock_exc("field name must be shorter than 64 chars");
-
-                sz.resize(64);
-
-                mpi::file_write(mfilepatch,sz.c_str(), 64, mpi_type_u8, &st);
-                mpi::file_write(mfilepatch,&nvar, 1, mpi_type_u32, &st);
-                mpi::file_write(mfilepatch,&obj_cnt, 1, mpi_type_u32, &st);
-            }
-
-
-
-
-
-
-
-
-
-            for(auto a : pdat.fields_f64){
-                std::string sz = a.get_name();
-                u32 obj_cnt = a.get_obj_cnt();
-                u32 nvar = a.get_nvar();
-
-                if(sz.size() > 64) throw shamrock_exc("field name must be shorter than 64 chars");
-
-                sz.resize(64);
-
-                mpi::file_write(mfilepatch,sz.c_str(), 64, mpi_type_u8, &st);
-                mpi::file_write(mfilepatch,&nvar, 1, mpi_type_u32, &st);
-                mpi::file_write(mfilepatch,&obj_cnt, 1, mpi_type_u32, &st);
-            }
-
-            for(auto a : pdat.fields_f64_2){
-                std::string sz = a.get_name();
-                u32 obj_cnt = a.get_obj_cnt();
-                u32 nvar = a.get_nvar();
-
-                if(sz.size() > 64) throw shamrock_exc("field name must be shorter than 64 chars");
-
-                sz.resize(64);
-
-                mpi::file_write(mfilepatch,sz.c_str(), 64, mpi_type_u8, &st);
-                mpi::file_write(mfilepatch,&nvar, 1, mpi_type_u32, &st);
-                mpi::file_write(mfilepatch,&obj_cnt, 1, mpi_type_u32, &st);
-            }
-
-            for(auto a : pdat.fields_f64_3){
-                std::string sz = a.get_name();
-                u32 obj_cnt = a.get_obj_cnt();
-                u32 nvar = a.get_nvar();
-
-                if(sz.size() > 64) throw shamrock_exc("field name must be shorter than 64 chars");
-
-                sz.resize(64);
-
-                mpi::file_write(mfilepatch,sz.c_str(), 64, mpi_type_u8, &st);
-                mpi::file_write(mfilepatch,&nvar, 1, mpi_type_u32, &st);
-                mpi::file_write(mfilepatch,&obj_cnt, 1, mpi_type_u32, &st);
-            }
-
-            for(auto a : pdat.fields_f64_4){
-                std::string sz = a.get_name();
-                u32 obj_cnt = a.get_obj_cnt();
-                u32 nvar = a.get_nvar();
-
-                if(sz.size() > 64) throw shamrock_exc("field name must be shorter than 64 chars");
-
-                sz.resize(64);
-
-                mpi::file_write(mfilepatch,sz.c_str(), 64, mpi_type_u8, &st);
-                mpi::file_write(mfilepatch,&nvar, 1, mpi_type_u32, &st);
-                mpi::file_write(mfilepatch,&obj_cnt, 1, mpi_type_u32, &st);
-            }
-
-            for(auto a : pdat.fields_f64_8){
-                std::string sz = a.get_name();
-                u32 obj_cnt = a.get_obj_cnt();
-                u32 nvar = a.get_nvar();
-
-                if(sz.size() > 64) throw shamrock_exc("field name must be shorter than 64 chars");
-
-                sz.resize(64);
-
-                mpi::file_write(mfilepatch,sz.c_str(), 64, mpi_type_u8, &st);
-                mpi::file_write(mfilepatch,&nvar, 1, mpi_type_u32, &st);
-                mpi::file_write(mfilepatch,&obj_cnt, 1, mpi_type_u32, &st);
-            }
-
-            for(auto a : pdat.fields_f64_16){
-                std::string sz = a.get_name();
-                u32 obj_cnt = a.get_obj_cnt();
-                u32 nvar = a.get_nvar();
-
-                if(sz.size() > 64) throw shamrock_exc("field name must be shorter than 64 chars");
-
-                sz.resize(64);
-
-                mpi::file_write(mfilepatch,sz.c_str(), 64, mpi_type_u8, &st);
-                mpi::file_write(mfilepatch,&nvar, 1, mpi_type_u32, &st);
-                mpi::file_write(mfilepatch,&obj_cnt, 1, mpi_type_u32, &st);
-            }
-
-
-
-
-
-            for(auto a : pdat.fields_u32){
-                std::string sz = a.get_name();
-                u32 obj_cnt = a.get_obj_cnt();
-                u32 nvar = a.get_nvar();
-
-                if(sz.size() > 64) throw shamrock_exc("field name must be shorter than 64 chars");
-
-                sz.resize(64);
-
-                mpi::file_write(mfilepatch,sz.c_str(), 64, mpi_type_u8, &st);
-                mpi::file_write(mfilepatch,&nvar, 1, mpi_type_u32, &st);
-                mpi::file_write(mfilepatch,&obj_cnt, 1, mpi_type_u32, &st);
-            }
-
-            for(auto a : pdat.fields_u64){
-                std::string sz = a.get_name();
-                u32 obj_cnt = a.get_obj_cnt();
-                u32 nvar = a.get_nvar();
-
-                if(sz.size() > 64) throw shamrock_exc("field name must be shorter than 64 chars");
-
-                sz.resize(64);
-
-                mpi::file_write(mfilepatch,sz.c_str(), 64, mpi_type_u8, &st);
-                mpi::file_write(mfilepatch,&nvar, 1, mpi_type_u32, &st);
-                mpi::file_write(mfilepatch,&obj_cnt, 1, mpi_type_u32, &st);
-            }
-
-
-
-
-
-
-
-
-            for(auto a : pdat.fields_f32){
-                u32 sz = a.size();
-                using T = decltype(a)::Field_type;
-                mpi::file_write(mfilepatch,a.data(), sz, get_mpi_type<T>(), &st);
-            }
-
-            for(auto a : pdat.fields_f32_2){
-                u32 sz = a.size();
-                using T = decltype(a)::Field_type;
-                mpi::file_write(mfilepatch,a.data(), sz, get_mpi_type<T>(), &st);
-            }
-
-            for(auto a : pdat.fields_f32_3){
-                u32 sz = a.size();
-                using T = decltype(a)::Field_type;
-                mpi::file_write(mfilepatch,a.data(), sz, get_mpi_type<T>(), &st);
-            }
-
-            for(auto a : pdat.fields_f32_4){
-                u32 sz = a.size();
-                using T = decltype(a)::Field_type;
-                mpi::file_write(mfilepatch,a.data(), sz, get_mpi_type<T>(), &st);
-            }
-
-            for(auto a : pdat.fields_f32_8){
-                u32 sz = a.size();
-                using T = decltype(a)::Field_type;
-                mpi::file_write(mfilepatch,a.data(), sz, get_mpi_type<T>(), &st);
-            }
-
-            for(auto a : pdat.fields_f32_16){
-                u32 sz = a.size();
-                using T = decltype(a)::Field_type;
-                mpi::file_write(mfilepatch,a.data(), sz, get_mpi_type<T>(), &st);
-            }
-
-
-
-
-
-
-
-
-
-            for(auto a : pdat.fields_f64){
-                u32 sz = a.size();
-                using T = decltype(a)::Field_type;
-                mpi::file_write(mfilepatch,a.data(), sz, get_mpi_type<T>(), &st);
-            }
-
-            for(auto a : pdat.fields_f64_2){
-                u32 sz = a.size();
-                using T = decltype(a)::Field_type;
-                mpi::file_write(mfilepatch,a.data(), sz, get_mpi_type<T>(), &st);
-            }
-
-            for(auto a : pdat.fields_f64_3){
-                u32 sz = a.size();
-                using T = decltype(a)::Field_type;
-                mpi::file_write(mfilepatch,a.data(), sz, get_mpi_type<T>(), &st);
-            }
-
-            for(auto a : pdat.fields_f64_4){
-                u32 sz = a.size();
-                using T = decltype(a)::Field_type;
-                mpi::file_write(mfilepatch,a.data(), sz, get_mpi_type<T>(), &st);
-            }
-
-            for(auto a : pdat.fields_f64_8){
-                u32 sz = a.size();
-                using T = decltype(a)::Field_type;
-                mpi::file_write(mfilepatch,a.data(), sz, get_mpi_type<T>(), &st);
-            }
-
-            for(auto a : pdat.fields_f64_16){
-                u32 sz = a.size();
-                using T = decltype(a)::Field_type;
-                mpi::file_write(mfilepatch,a.data(), sz, get_mpi_type<T>(), &st);
-            }
-
-
-
-
-
-            for(auto a : pdat.fields_u32){
-                u32 sz = a.size();
-                using T = decltype(a)::Field_type;
-                mpi::file_write(mfilepatch,a.data(), sz, get_mpi_type<T>(), &st);
-            }
-
-            for(auto a : pdat.fields_u64){
-                u32 sz = a.size();
-                using T = decltype(a)::Field_type;
-                mpi::file_write(mfilepatch,a.data(), sz, get_mpi_type<T>(), &st);
-            }
-
+            file_write_patchdata(mfilepatch, pdat);
 
         }
 
