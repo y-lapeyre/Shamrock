@@ -21,6 +21,7 @@
 #include "patch/patch.hpp"
 #include "patch/patchdata.hpp"
 #include "patch/patchdata_buffer.hpp"
+#include "patch/patchdata_layout.hpp"
 #include "patch/patchtree.hpp"
 #include "scheduler_patch_list.hpp"
 #include "scheduler_patch_data.hpp"
@@ -32,6 +33,8 @@
  * 
  */
 class SchedulerMPI{public:
+
+    PatchDataLayout & pdl;
 
     u64 crit_patch_split; ///< splitting limit (if load value > crit_patch_split => patch split)
     u64 crit_patch_merge; ///< merging limit (if load value < crit_patch_merge => patch merge)
@@ -61,7 +64,7 @@ class SchedulerMPI{public:
     
     void free_mpi_required_types();
 
-    SchedulerMPI(u64 crit_split,u64 crit_merge);
+    SchedulerMPI(PatchDataLayout & pdl, u64 crit_split,u64 crit_merge);
 
     ~SchedulerMPI();
 
@@ -72,13 +75,13 @@ class SchedulerMPI{public:
 
     inline void update_local_dtcnt_value(){
         for(u64 id : owned_patch_id){
-            patch_list.local[patch_list.id_patch_to_local_idx[id]].data_count = patch_data.owned_data[id].pos_s.size() + patch_data.owned_data[id].pos_d.size() ;
+            patch_list.local[patch_list.id_patch_to_local_idx[id]].data_count = patch_data.owned_data.at(id).get_obj_cnt();
         }
     }
 
     inline void update_local_load_value(){
         for(u64 id : owned_patch_id){
-            patch_list.local[patch_list.id_patch_to_local_idx[id]].load_value = patch_data.owned_data[id].pos_s.size() + patch_data.owned_data[id].pos_d.size() ;
+            patch_list.local[patch_list.id_patch_to_local_idx[id]].load_value = patch_data.owned_data.at(id).get_obj_cnt();
         }
     }
 
@@ -118,9 +121,8 @@ class SchedulerMPI{public:
 
         patch_list.global.push_back(p);
 
-        patch_data.owned_data[p.id_patch] = pdat;
+        patch_data.owned_data.insert({p.id_patch , pdat});
 
-        
     }
 
     [[deprecated]]
@@ -135,7 +137,7 @@ class SchedulerMPI{public:
 
         for (auto &[id, pdat] : patch_data.owned_data) {
 
-            if (pdat.pos_s.size() + pdat.pos_d.size() > 0) {
+            if (! pdat.is_empty()) {
 
 
                 Patch &cur_p = patch_list.global[patch_list.id_patch_to_global_idx[id]];
@@ -157,7 +159,7 @@ class SchedulerMPI{public:
 
         for (auto &[id, pdat] : patch_data.owned_data) {
 
-            if (pdat.pos_s.size() + pdat.pos_d.size() > 0) {
+            if (! pdat.is_empty()) {
 
 
                 Patch &cur_p = patch_list.global[patch_list.id_patch_to_global_idx[id]];
@@ -180,7 +182,7 @@ class SchedulerMPI{public:
         for (u64 idx = 0; idx < patch_list.local.size(); idx++) {
 
             Patch &cur_p = patch_list.global[idx];
-            PatchDataBuffer pdatbuf = attach_to_patchData(patch_data.owned_data[cur_p.id_patch]);
+            PatchDataBuffer pdatbuf = attach_to_patchData(patch_data.owned_data.at(cur_p.id_patch));
 
             field.local_nodes_value[idx] = lambda(hndl.get_queue_compute(0),cur_p,pdatbuf);
 

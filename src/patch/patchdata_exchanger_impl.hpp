@@ -1,6 +1,7 @@
 #pragma once
 
 
+#include "patch/patchdata_layout.hpp"
 #include "sys/mpi_handler.hpp"
 #include "patch/patch.hpp"
 #include "patch/patchdata.hpp"
@@ -34,6 +35,7 @@ inline void vector_irecv(std::vector<T> & pdat, std::vector<MPI_Request> &rq_lst
 
 
 inline void patch_data_exchange_object(
+    PatchDataLayout & pdl,
     std::vector<Patch> & global_patch_list,
     std::vector<std::unique_ptr<PatchData>> &send_comm_pdat,
     std::vector<u64_2> &send_comm_vec,
@@ -103,7 +105,7 @@ inline void patch_data_exchange_object(
                     // std::cout << format("recv (%3d,%3d) : %d -> %d / %d\n", psend.id_patch, precv.id_patch,
                     //                     psend.node_owner_id, precv.node_owner_id, global_comm_tag[i]);
                     recv_obj[precv.id_patch].push_back(
-                        {psend.id_patch, std::make_unique<PatchData>()}); // patchdata_irecv(recv_rq, psend.node_owner_id,
+                        {psend.id_patch, std::make_unique<PatchData>(pdl)}); // patchdata_irecv(recv_rq, psend.node_owner_id,
                                                                           // global_comm_tag[i], MPI_COMM_WORLD)}
                     patchdata_irecv(*std::get<1>(recv_obj[precv.id_patch][recv_obj[precv.id_patch].size() - 1]),
                                     rq_lst, psend.node_owner_id, global_comm_tag[i], MPI_COMM_WORLD);

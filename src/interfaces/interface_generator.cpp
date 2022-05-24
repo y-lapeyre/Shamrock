@@ -14,7 +14,7 @@
 #include "interface_generator_impl.hpp"
 
 
-
+//TODO can merge those 2 func
 
 template <>
 std::vector<std::unique_ptr<PatchData>> InterfaceVolumeGenerator::append_interface<f32_3>(sycl::queue &queue, PatchData & pdat,
@@ -26,36 +26,27 @@ std::vector<std::unique_ptr<PatchData>> InterfaceVolumeGenerator::append_interfa
 
     std::vector<std::unique_ptr<PatchData>> pdat_vec(boxs_min.size());
     for (auto & p : pdat_vec) {
-        p = std::make_unique<PatchData>();
-        // p->pos_s.reserve(patchdata_layout::nVarpos_d*pdat.pos_s.size()/8);
-        // p->U1_s.reserve(patchdata_layout::nVarU1_s*pdat.pos_s.size()/8);
-        // p->U1_d.reserve(patchdata_layout::nVarU1_d*pdat.pos_s.size()/8);
-        // p->U3_s.reserve(patchdata_layout::nVarU3_s*pdat.pos_s.size()/8);
-        // p->U3_d.reserve(patchdata_layout::nVarU3_d*pdat.pos_s.size()/8);
+        p = std::make_unique<PatchData>(pdat.patchdata_layout);
     }
 
-    if (pdat.pos_s.size() > 0) {
+    std::vector<std::vector<u32>> idxs(boxs_min.size());
 
-        for (u32 idx = 0; idx < pdat.pos_s.size(); idx++) {
-            if (flag_choice[idx] < pdat_vec.size()) {
-
-                pdat_vec[flag_choice[idx]]->pos_s.push_back(pdat.pos_s[idx] + add_offset);
-                for (u32 j = 0; j < patchdata_layout::nVarU1_s; j++) {
-                    pdat_vec[flag_choice[idx]]->U1_s.push_back(pdat.U1_s[idx * patchdata_layout::nVarU1_s + j]);
-                }
-                for (u32 j = 0; j < patchdata_layout::nVarU1_d; j++) {
-                    pdat_vec[flag_choice[idx]]->U1_d.push_back(pdat.U1_d[idx * patchdata_layout::nVarU1_d + j]);
-                }
-
-                for (u32 j = 0; j < patchdata_layout::nVarU3_s; j++) {
-                    pdat_vec[flag_choice[idx]]->U3_s.push_back(pdat.U3_s[idx * patchdata_layout::nVarU3_s + j]);
-                }
-                for (u32 j = 0; j < patchdata_layout::nVarU3_d; j++) {
-                    pdat_vec[flag_choice[idx]]->U3_d.push_back(pdat.U3_d[idx * patchdata_layout::nVarU3_d + j]);
-                }
-            }
+    for (u32 i = 0; i < flag_choice.size(); i++) {
+        if(flag_choice[i] < boxs_min.size()){
+            idxs[flag_choice[i]].push_back(i);
         }
     }
+
+
+    if (! pdat.is_empty()) {
+        for (u32 i = 0; i < idxs.size(); i++) {
+            pdat.append_subset_to(idxs[i], *pdat_vec[i]);
+            u32 ixyz = pdat.patchdata_layout.get_field_idx<f32_3>("xyz");
+            pdat_vec[i]->fields_f32_3[ixyz].apply_offset(add_offset);
+        }
+    }
+
+    
 
     return pdat_vec;
 
@@ -67,41 +58,29 @@ std::vector<std::unique_ptr<PatchData>> InterfaceVolumeGenerator::append_interfa
                                                                         std::vector<f64_3> boxs_max,f64_3 add_offset) {
 
     std::vector<u8> flag_choice = impl::get_flag_choice(queue, pdat, boxs_min, boxs_max);
-    
+
     std::vector<std::unique_ptr<PatchData>> pdat_vec(boxs_min.size());
     for (auto & p : pdat_vec) {
-        p = std::make_unique<PatchData>();
-        // p->pos_d.reserve(patchdata_layout::nVarpos_d*pdat.pos_d.size()/8);
-        // p->U1_s.reserve(patchdata_layout::nVarU1_s*pdat.pos_d.size()/8);
-        // p->U1_d.reserve(patchdata_layout::nVarU1_d*pdat.pos_d.size()/8);
-        // p->U3_s.reserve(patchdata_layout::nVarU3_s*pdat.pos_d.size()/8);
-        // p->U3_d.reserve(patchdata_layout::nVarU3_d*pdat.pos_d.size()/8);
+        p = std::make_unique<PatchData>(pdat.patchdata_layout);
     }
 
-    if (pdat.pos_d.size() > 0) {
+    std::vector<std::vector<u32>> idxs(boxs_min.size());
 
-
-        for (u32 idx = 0; idx < pdat.pos_d.size(); idx++) {
-            if (flag_choice[idx] < pdat_vec.size()) {
-
-
-                pdat_vec[flag_choice[idx]]->pos_d.push_back(pdat.pos_d[idx] + add_offset);
-                for (u32 j = 0; j < patchdata_layout::nVarU1_s; j++) {
-                    pdat_vec[flag_choice[idx]]->U1_s.push_back(pdat.U1_s[idx * patchdata_layout::nVarU1_s + j]);
-                }
-                for (u32 j = 0; j < patchdata_layout::nVarU1_d; j++) {
-                    pdat_vec[flag_choice[idx]]->U1_d.push_back(pdat.U1_d[idx * patchdata_layout::nVarU1_d + j]);
-                }
-
-                for (u32 j = 0; j < patchdata_layout::nVarU3_s; j++) {
-                    pdat_vec[flag_choice[idx]]->U3_s.push_back(pdat.U3_s[idx * patchdata_layout::nVarU3_s + j]);
-                }
-                for (u32 j = 0; j < patchdata_layout::nVarU3_d; j++) {
-                    pdat_vec[flag_choice[idx]]->U3_d.push_back(pdat.U3_d[idx * patchdata_layout::nVarU3_d + j]);
-                }
-            }
+    for (u32 i = 0; i < flag_choice.size(); i++) {
+        if(flag_choice[i] < boxs_min.size()){
+            idxs[flag_choice[i]].push_back(i);
         }
     }
+
+    if (! pdat.is_empty()) {
+        for (u32 i = 0; i < idxs.size(); i++) {
+            pdat.append_subset_to(idxs[i], *pdat_vec[i]);
+            u32 ixyz = pdat.patchdata_layout.get_field_idx<f64_3>("xyz");
+            pdat_vec[i]->fields_f64_3[ixyz].apply_offset(add_offset);
+        }
+    }
+
+    
 
     return pdat_vec;
 

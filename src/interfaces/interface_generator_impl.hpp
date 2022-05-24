@@ -1,6 +1,8 @@
 #pragma once
 
+#include "CL/sycl/stream.hpp"
 #include "patch/patchdata.hpp"
+#include "patch/patchdata_field.hpp"
 #include "utils/geometry_utils.hpp"
 #include <vector>
 
@@ -24,20 +26,29 @@ namespace impl {
             throw shamrock_exc("this algo is not build to handle more than 2^8 - 2 boxes as input");
         }
 
-        std::vector<u8> flag_choice(pdat.pos_s.size());
 
-        if (pdat.pos_s.size() > 0) {
+        //TODO change this func when implementing the USM patch without the pos_s_buf/pos_d_buf
+        std::vector<u8> flag_choice(pdat.get_obj_cnt());
+
+        if (! pdat.is_empty()) {
         
             sycl::buffer<u8> flag_buf(flag_choice.data(),flag_choice.size());
 
             sycl::buffer<f32_3> bmin_buf(boxs_min.data(),boxs_min.size());
             sycl::buffer<f32_3> bmax_buf(boxs_max.data(),boxs_max.size());
 
-            sycl::range<1> range{pdat.pos_s.size()};
+            sycl::range<1> range{pdat.get_obj_cnt()};
 
-            sycl::buffer<f32_3> pos_s_buf = sycl::buffer<f32_3>(pdat.pos_s.data(),pdat.pos_s.size());
+            u32 field_ipos = pdat.patchdata_layout.get_field_idx<f32_3>("xyz");
+
+            PatchDataField<f32_3> & pos_field = pdat.fields_f32_3[field_ipos];
+
+            sycl::buffer<f32_3> pos_s_buf = sycl::buffer<f32_3>(pos_field.data(),pos_field.size());
+
+            ;
 
             queue.submit([&](sycl::handler &cgh) {
+                
                 auto pos_s = pos_s_buf.get_access<sycl::access::mode::read>(cgh);
 
                 auto bmin = bmin_buf.get_access<sycl::access::mode::read>(cgh);
@@ -47,6 +58,7 @@ namespace impl {
 
                 u8 num_boxes = boxs_min.size();
 
+
                 cgh.parallel_for<class BuildInterfacef32>(range, [=](sycl::item<1> item) {
                     u64 i = (u64)item.get_id(0);
 
@@ -54,6 +66,7 @@ namespace impl {
                     index_box[i] = u8_max;
 
                     for (u8 idx = 0; idx < num_boxes; idx++) {
+
                         if (BBAA::is_particle_in_patch<f32_3>(pos_i, bmin[idx], bmax[idx])) {
                             index_box[i] = idx;
                         }
@@ -75,17 +88,21 @@ namespace impl {
             throw shamrock_exc("this algo is not build to handle more than 2^8 - 2 boxes as input");
         }
 
-        std::vector<u8> flag_choice(pdat.pos_d.size());
+        std::vector<u8> flag_choice(pdat.get_obj_cnt());
 
-        if (pdat.pos_d.size() > 0) {
+        if (! pdat.is_empty()) {
             sycl::buffer<u8> flag_buf(flag_choice.data(),flag_choice.size());
 
             sycl::buffer<f64_3> bmin_buf(boxs_min.data(),boxs_min.size());
             sycl::buffer<f64_3> bmax_buf(boxs_max.data(),boxs_max.size());
 
-            sycl::range<1> range{pdat.pos_d.size()};
+            sycl::range<1> range{pdat.get_obj_cnt()};
 
-            sycl::buffer<f64_3> pos_d_buf = sycl::buffer<f64_3>(pdat.pos_d.data(),pdat.pos_d.size());
+            u32 field_ipos = pdat.patchdata_layout.get_field_idx<f64_3>("xyz");
+
+            PatchDataField<f64_3> & pos_field = pdat.fields_f64_3[field_ipos];
+
+            sycl::buffer<f64_3> pos_d_buf = sycl::buffer<f64_3>(pos_field.data(),pos_field.size());
 
             queue.submit([&](sycl::handler &cgh) {
                 auto pos_d = pos_d_buf.get_access<sycl::access::mode::read>(cgh);

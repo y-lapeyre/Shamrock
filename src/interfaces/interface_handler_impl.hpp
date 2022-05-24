@@ -26,14 +26,17 @@ namespace impl {
             for (u64 i = 0; i < interface_comm_list.size(); i++) {
 
                 if (sched.patch_list.global[interface_comm_list[i].global_patch_idx_send].data_count > 0) {
+
+                    auto patch_in = sched.patch_data.owned_data.at(interface_comm_list[i].sender_patch_id);
+
                     std::vector<std::unique_ptr<PatchData>> pret = InterfaceVolumeGenerator::append_interface<vectype>(
-                        hndl.get_queue_alt(0), sched.patch_data.owned_data[interface_comm_list[i].sender_patch_id],
+                        hndl.get_queue_alt(0), patch_in,
                         {interface_comm_list[i].interf_box_min}, {interface_comm_list[i].interf_box_max},interface_comm_list[i].interf_offset);
                     for (auto &pdat : pret) {
                         comm_pdat.push_back(std::move(pdat));
                     }
                 } else {
-                    comm_pdat.push_back(std::make_unique<PatchData>());
+                    comm_pdat.push_back(std::make_unique<PatchData>(sched.pdl));
                 }
                 comm_vec.push_back(
                     u64_2{interface_comm_list[i].global_patch_idx_send, interface_comm_list[i].global_patch_idx_recv});
@@ -44,7 +47,7 @@ namespace impl {
         t1.stop();
 
         auto t2 = timings::start_timer("patch_data_exchange_object", timings::timingtype::mpi);
-        patch_data_exchange_object(sched.patch_list.global, comm_pdat,comm_vec,interface_map);
+        patch_data_exchange_object(sched.pdl,sched.patch_list.global, comm_pdat,comm_vec,interface_map);
         t2.stop();
     }
 
@@ -75,7 +78,7 @@ namespace impl {
 
 
                     std::vector<std::unique_ptr<PCField>> pret = InterfaceVolumeGenerator::append_interface_field<T,vectype>(
-                        hndl.get_queue_alt(0), sched.patch_data.owned_data[interface_comm_list[i].sender_patch_id],pcomp_field.field_data[interface_comm_list[i].sender_patch_id],
+                        hndl.get_queue_alt(0), sched.patch_data.owned_data.at(interface_comm_list[i].sender_patch_id),pcomp_field.field_data[interface_comm_list[i].sender_patch_id],
                         {interface_comm_list[i].interf_box_min}, {interface_comm_list[i].interf_box_max});
 
 

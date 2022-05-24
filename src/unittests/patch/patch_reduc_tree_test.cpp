@@ -23,6 +23,7 @@ class Reduce_DataCount {
     }
 };
 
+#if false
 Test_start("patch::patch_reduc_tree::", generation, -1) {
 
     SyCLHandler &hndl = SyCLHandler::get_instance();
@@ -220,3 +221,4 @@ Test_start("patch::patch_reduc_tree::", generation, -1) {
 
     sched.free_mpi_required_types();
 }
+#endif
