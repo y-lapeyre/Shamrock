@@ -21,6 +21,7 @@
 
 
 #include "aliases.hpp"
+#include <ostream>
 template <class T> inline bool test_eq1(T a, T b) {
     bool eqx = a == b;
     return eqx;
@@ -85,6 +86,8 @@ template <class T> inline bool test_eq16(T a, T b) {
 
 
 template <class T> inline bool test_sycl_eq(T a, T b);
+
+template <class T> inline void print_vec(std::ostream & ostream, T a);
 
 
 template <> inline bool test_sycl_eq<f32>(f32 a, f32 b){
@@ -182,4 +185,72 @@ template <> inline bool test_sycl_eq<u64_8>(u64_8 a, u64_8 b){
 
 template <> inline bool test_sycl_eq<u64_16>(u64_16 a, u64_16 b){
     return test_eq16(a, b);
+}
+
+
+
+template<> inline void print_vec(std::ostream &ostream, f32 a){
+    ostream << a;
+}
+
+template<> inline void print_vec(std::ostream &ostream, f32_2 a){
+    ostream << "("<< a.x() <<","<< a.y()<<")";
+}
+
+template<> inline void print_vec(std::ostream &ostream, f32_3 a){
+    ostream << "("<< a.x() <<","<< a.y()<<","<< a.z()<<")";
+}
+
+template<> inline void print_vec(std::ostream &ostream, f32_4 a){
+    ostream << "("<< a.x() <<","<< a.y()<<","<< a.z()<<","<< a.w()<<")";
+}
+
+template<> inline void print_vec(std::ostream &ostream, f32_8 a){
+    ostream << "("<< a.s0() <<","<< a.s1()<<","<< a.s2()<<","<< a.s3()<<
+    a.s4() <<","<< a.s5()<<","<< a.s6()<<","<< a.s7()<<")";
+}
+
+template<> inline void print_vec(std::ostream &ostream, f32_16 a){
+    ostream << "("<< a.s0() <<","<< a.s1()<<","<< a.s2()<<","<< a.s3()<<
+    a.s4() <<","<< a.s5()<<","<< a.s6()<<","<< a.s7()<<
+    a.s8() <<","<< a.s9()<<","<< a.sA()<<","<< a.sB()<<
+    a.sC() <<","<< a.sD()<<","<< a.sE()<<","<< a.sF()<<")";
+}
+
+
+template<> inline void print_vec(std::ostream &ostream, f64 a){
+    ostream << a;
+}
+
+template<> inline void print_vec(std::ostream &ostream, f64_2 a){
+    ostream << "("<< a.x() <<","<< a.y()<<")";
+}
+
+template<> inline void print_vec(std::ostream &ostream, f64_3 a){
+    ostream << "("<< a.x() <<","<< a.y()<<","<< a.z()<<")";
+}
+
+template<> inline void print_vec(std::ostream &ostream, f64_4 a){
+    ostream << "("<< a.x() <<","<< a.y()<<","<< a.z()<<","<< a.w()<<")";
+}
+
+template<> inline void print_vec(std::ostream &ostream, f64_8 a){
+    ostream << "("<< a.s0() <<","<< a.s1()<<","<< a.s2()<<","<< a.s3()<<
+    a.s4() <<","<< a.s5()<<","<< a.s6()<<","<< a.s7()<<")";
+}
+
+template<> inline void print_vec(std::ostream &ostream, f64_16 a){
+    ostream << "("<< a.s0() <<","<< a.s1()<<","<< a.s2()<<","<< a.s3()<<
+    a.s4() <<","<< a.s5()<<","<< a.s6()<<","<< a.s7()<<
+    a.s8() <<","<< a.s9()<<","<< a.sA()<<","<< a.sB()<<
+    a.sC() <<","<< a.sD()<<","<< a.sE()<<","<< a.sF()<<")";
+}
+
+template<> inline void print_vec(std::ostream &ostream, u32 a){
+    ostream << a;
+}
+
+
+template<> inline void print_vec(std::ostream &ostream, u64 a){
+    ostream << a;
 }

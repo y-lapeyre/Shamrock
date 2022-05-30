@@ -299,7 +299,7 @@ for idx in range(1,50):
     write_dic_to_vtk(dic,"step"+str(idx))
 
     #lst.append({"timestep" : tval, "file" : "step"+str(idx)+'.vtu'})
-
+exit()
     
 import glob
 for idx in range(1,50):

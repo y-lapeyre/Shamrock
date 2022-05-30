@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "CL/sycl/stream.hpp"
+#include "aliases.hpp"
 #include "patch/patchdata.hpp"
 #include "patch/patchdata_field.hpp"
 #include "utils/geometry_utils.hpp"

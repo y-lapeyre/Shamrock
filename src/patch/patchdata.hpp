@@ -19,11 +19,9 @@
 
 #pragma once
 
-#include <mpi.h>
 #include <random>
 #include <vector>
 
-#include "CL/sycl/usm.hpp"
 #include "aliases.hpp"
 #include "flags.hpp"
 #include "patch/patchdata_field.hpp"

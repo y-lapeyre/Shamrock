@@ -6,18 +6,12 @@
 //
 // -------------------------------------------------------//
 
-
-#include "CL/sycl/buffer.hpp"
-#include "CL/sycl/usm.hpp"
-#include "CL/sycl/usm/usm_allocator.hpp"
-#include "CL/sycl/usm/usm_enums.hpp"
 #include "sys/mpi_handler.hpp"
 #include "unittests/shamrocktest.hpp"
 
 #include "sys/sycl_handler.hpp"
 #include <chrono>
 #include <memory>
-#include <mpi.h>
 #include <mutex>
 #include <ostream>
 #include <queue>

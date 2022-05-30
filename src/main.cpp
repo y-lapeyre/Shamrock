@@ -50,7 +50,6 @@
 #include <cstdlib>
 #include <iterator>
 #include <memory>
-#include <mpi.h>
 #include <ostream>
 #include <string>
 #include <type_traits>
@@ -70,56 +69,6 @@ class TestSimInfo {
 
 
 
-
-
-class CurDataLayout{public:
-
-    using pos_type = f32;
-
-    
-    
-    class U1_s{public:
-        static constexpr u32 nvar = 2;
-
-        static constexpr std::array<const char*, 2> varnames {"hpart","omega"};
-
-        static constexpr u32 ihpart = 0;
-        static constexpr u32 iomega = 1;
-    
-    };
-
-    
-    class U3_s{public:
-        static constexpr std::array<const char*, 3> varnames {"vxyz","axyz","axyz_old"};
-        static constexpr u32 nvar = 3;
-
-        static constexpr u32 ivxyz = 0;
-        static constexpr u32 iaxyz = 1;
-        static constexpr u32 iaxyz_old = 2;
-        
-    };
-
-    // template<>
-    // class U1<f64>{public:
-    //     static constexpr std::array<const char*, 0> varnames {};
-    //     static constexpr u32 nvar = 0;
-    // };
-
-    // template<>
-    // class U3<f64>{public:
-    //     static constexpr std::array<const char*, 0> varnames {};
-    //     static constexpr u32 nvar = 0;
-    // };
-
-    template<class prec>
-    struct U1 { using T = std::void_t<>; };
-    template<class prec>
-    struct U3 { using T = std::void_t<>; };
-    template<>
-    struct U1<f32> { using T = U1_s; };
-    template<>
-    struct U3<f32> { using T = U3_s; };
-};
 
 
 

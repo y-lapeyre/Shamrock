@@ -428,6 +428,8 @@ inline void dump_patch_data(std::string prefix, SchedulerMPI & sched){
     {
 
         for(auto & [pid,pdat] : sched.patch_data.owned_data){
+
+            std::cout << "[" << mpi_handler::world_rank << "] writing pdat : " << pid << std::endl;
             
             MPI_Status st;
             MPI_File & mfilepatch = patch_files[pfile_map[pid]].mfile;

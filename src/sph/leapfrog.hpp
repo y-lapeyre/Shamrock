@@ -9,7 +9,6 @@
 #pragma once
 
 
-#include "CL/sycl/stream.hpp"
 #include "algs/syclreduction.hpp"
 #include "aliases.hpp"
 #include "interfaces/interface_handler.hpp"
@@ -28,7 +27,6 @@
 #include "sys/sycl_mpi_interop.hpp"
 #include "tree/radix_tree.hpp"
 #include <memory>
-#include <mpi.h>
 #include <string>
 #include <tuple>
 #include <unordered_map>

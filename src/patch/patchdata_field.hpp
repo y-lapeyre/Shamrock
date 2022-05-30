@@ -8,11 +8,15 @@
 
 #pragma once
 
+#include <iostream>
+#include <random>
 #include <vector>
 
 #include "aliases.hpp"
 
+#include "sys/sycl_mpi_interop.hpp"
 #include "utils/sycl_vector_utils.hpp"
+#include "sys/mpi_handler.hpp"
 
 template<class T>
 class PatchDataField {
@@ -95,7 +99,15 @@ class PatchDataField {
         match = match && (obj_cnt    == f2.obj_cnt);
         match = match && (val_cnt    == f2.val_cnt);
 
+        std::cout << "fieldname : " << field_name << std::endl;
+        std::cout << "val_cnt : " << val_cnt << std::endl;
+
         for (u32 i = 0; i < val_cnt; i++) {
+            //std::cout << i << " " << test_sycl_eq(data()[i],f2.data()[i]) << " " ;
+            //print_vec(std::cout, data()[i]);
+            //std::cout <<" ";
+            //print_vec(std::cout, f2.data()[i]);
+            //std::cout <<  std::endl;
             match = match && test_sycl_eq(data()[i],f2.data()[i]);
         }
 
@@ -130,5 +142,159 @@ class PatchDataField {
         }
     }
 
+
+    void gen_mock_data(u32 obj_cnt, std::mt19937& eng);
+
+
+
+
+
 };
 
+
+
+template<class T>
+inline void patchdata_field_isend( PatchDataField<T> &p, std::vector<MPI_Request> &rq_lst, i32 rank_dest, i32 tag, MPI_Comm comm){
+    rq_lst.resize(rq_lst.size() + 1);
+    mpi::isend(p.data(), p.size(), get_mpi_type<T>(), rank_dest, tag, comm, &rq_lst[rq_lst.size() - 1]);
+}
+
+template<class T>
+inline void patchdata_field_irecv(PatchDataField<T> &p, std::vector<MPI_Request> &rq_lst, i32 rank_source, i32 tag, MPI_Comm comm){
+    MPI_Status st;
+    i32 cnt;
+    int i = mpi::probe(rank_source, tag,comm, & st);
+    mpi::get_count(&st, get_mpi_type<T>(), &cnt);
+
+    u32 len = cnt / p.get_nvar();
+
+    p.resize(len);
+
+    rq_lst.resize(rq_lst.size() + 1);
+    mpi::irecv(p.data(), cnt, get_mpi_type<T>(), rank_source, tag, comm, &rq_lst[rq_lst.size() - 1]);
+}
+
+
+
+
+template<> inline void PatchDataField<f32>::gen_mock_data(u32 obj_cnt, std::mt19937 &eng){
+    resize(obj_cnt);
+    std::uniform_real_distribution<f64> distf64(1,6000);
+    for (auto & a : field_data) {
+        a = f32(distf64(eng));
+    }
+}
+
+template<> inline void PatchDataField<f32_2>::gen_mock_data(u32 obj_cnt, std::mt19937 &eng){
+    resize(obj_cnt);
+    std::uniform_real_distribution<f64> distf64(1,6000);
+    for (auto & a : field_data) {
+        a = f32_2{distf64(eng),distf64(eng)};
+    }
+}
+
+template<> inline void PatchDataField<f32_3>::gen_mock_data(u32 obj_cnt, std::mt19937 &eng){
+    resize(obj_cnt);
+    std::uniform_real_distribution<f64> distf64(1,6000);
+    for (auto & a : field_data) {
+        a = f32_3{distf64(eng),distf64(eng),distf64(eng)};
+    }
+}
+
+template<> inline void PatchDataField<f32_4>::gen_mock_data(u32 obj_cnt, std::mt19937 &eng){
+    resize(obj_cnt);
+    std::uniform_real_distribution<f64> distf64(1,6000);
+    for (auto & a : field_data) {
+        a = f32_4{distf64(eng),distf64(eng),distf64(eng),distf64(eng)};
+    }
+}
+
+template<> inline void PatchDataField<f32_8>::gen_mock_data(u32 obj_cnt, std::mt19937 &eng){
+    resize(obj_cnt);
+    std::uniform_real_distribution<f64> distf64(1,6000);
+    for (auto & a : field_data) {
+        a = f32_8{distf64(eng),distf64(eng),distf64(eng),distf64(eng),distf64(eng),distf64(eng),distf64(eng),distf64(eng)};
+    }
+}
+
+template<> inline void PatchDataField<f32_16>::gen_mock_data(u32 obj_cnt, std::mt19937 &eng){
+    resize(obj_cnt);
+    std::uniform_real_distribution<f64> distf64(1,6000);
+    for (auto & a : field_data) {
+        a = f32_16{
+            distf64(eng),distf64(eng),distf64(eng),distf64(eng),distf64(eng),distf64(eng),distf64(eng),distf64(eng),
+            distf64(eng),distf64(eng),distf64(eng),distf64(eng),distf64(eng),distf64(eng),distf64(eng),distf64(eng)
+            };
+    }
+}
+
+
+
+
+
+template<> inline void PatchDataField<f64>::gen_mock_data(u32 obj_cnt, std::mt19937 &eng){
+    resize(obj_cnt);
+    std::uniform_real_distribution<f64> distf64(1,6000);
+    for (auto & a : field_data) {
+        a = f64(distf64(eng));
+    }
+}
+
+template<> inline void PatchDataField<f64_2>::gen_mock_data(u32 obj_cnt, std::mt19937 &eng){
+    resize(obj_cnt);
+    std::uniform_real_distribution<f64> distf64(1,6000);
+    for (auto & a : field_data) {
+        a = f64_2{distf64(eng),distf64(eng)};
+    }
+}
+
+template<> inline void PatchDataField<f64_3>::gen_mock_data(u32 obj_cnt, std::mt19937 &eng){
+    resize(obj_cnt);
+    std::uniform_real_distribution<f64> distf64(1,6000);
+    for (auto & a : field_data) {
+        a = f64_3{distf64(eng),distf64(eng),distf64(eng)};
+    }
+}
+
+template<> inline void PatchDataField<f64_4>::gen_mock_data(u32 obj_cnt, std::mt19937 &eng){
+    resize(obj_cnt);
+    std::uniform_real_distribution<f64> distf64(1,6000);
+    for (auto & a : field_data) {
+        a = f64_4{distf64(eng),distf64(eng),distf64(eng),distf64(eng)};
+    }
+}
+
+template<> inline void PatchDataField<f64_8>::gen_mock_data(u32 obj_cnt, std::mt19937 &eng){
+    resize(obj_cnt);
+    std::uniform_real_distribution<f64> distf64(1,6000);
+    for (auto & a : field_data) {
+        a = f64_8{distf64(eng),distf64(eng),distf64(eng),distf64(eng),distf64(eng),distf64(eng),distf64(eng),distf64(eng)};
+    }
+}
+
+template<> inline void PatchDataField<f64_16>::gen_mock_data(u32 obj_cnt, std::mt19937 &eng){
+    resize(obj_cnt);
+    std::uniform_real_distribution<f64> distf64(1,6000);
+    for (auto & a : field_data) {
+        a = f64_16{
+            distf64(eng),distf64(eng),distf64(eng),distf64(eng),distf64(eng),distf64(eng),distf64(eng),distf64(eng),
+            distf64(eng),distf64(eng),distf64(eng),distf64(eng),distf64(eng),distf64(eng),distf64(eng),distf64(eng)
+            };
+    }
+}
+
+
+template<> inline void PatchDataField<u32>::gen_mock_data(u32 obj_cnt, std::mt19937 &eng){
+    resize(obj_cnt);
+    std::uniform_int_distribution<u32> distu32(1,6000);
+    for (auto & a : field_data) {
+        a = distu32(eng);
+    }
+}
+template<> inline void PatchDataField<u64>::gen_mock_data(u32 obj_cnt, std::mt19937 &eng){
+    resize(obj_cnt);
+    std::uniform_int_distribution<u64> distu64(1,6000);
+    for (auto & a : field_data) {
+        a = distu64(eng);
+    }
+}

@@ -27,6 +27,7 @@
 #include "loadbalancing_hilbert.hpp"
 
 #include "patch/patchdata_layout.hpp"
+#include "sys/mpi_handler.hpp"
 #include "utils/geometry_utils.hpp"
 
 
@@ -61,6 +62,10 @@ void SchedulerPatchData::apply_change_list(std::vector<std::tuple<u64, i32, i32,
         }
     }
 
+
+    for (MPI_Request a  : rq_lst) {
+        std::cout << mpi_handler::world_rank << " " << a << std::endl;
+    }
 
     //wait
     std::vector<MPI_Status> st_lst(rq_lst.size());
