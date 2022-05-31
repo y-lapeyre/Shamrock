@@ -20,7 +20,7 @@
 
 
 #include <vector>
-#define MPI_LOGGER_ENABLED
+//#define MPI_LOGGER_ENABLED
 
 #include <cstdio>
 #include "mpi_wrapper.hpp"

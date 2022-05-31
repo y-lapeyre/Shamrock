@@ -99,8 +99,8 @@ class PatchDataField {
         match = match && (obj_cnt    == f2.obj_cnt);
         match = match && (val_cnt    == f2.val_cnt);
 
-        std::cout << "fieldname : " << field_name << std::endl;
-        std::cout << "val_cnt : " << val_cnt << std::endl;
+        //std::cout << "fieldname : " << field_name << std::endl;
+        //std::cout << "val_cnt : " << val_cnt << std::endl;
 
         for (u32 i = 0; i < val_cnt; i++) {
             //std::cout << i << " " << test_sycl_eq(data()[i],f2.data()[i]) << " " ;

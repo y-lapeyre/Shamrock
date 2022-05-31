@@ -59,7 +59,7 @@ Test_start("patch/patchdata.cpp", isend_irecv, 2){
     pdl.add_field<f32_2>("f32_2", 1);
 
     pdl.add_field<f32_3>("f32_3", 1);
-    pdl.add_field<f32_3>("f32_3'", 1);
+    pdl.add_field<f32_3>("f32_3'", 2);
     pdl.add_field<f32_3>("f32_3''", 1);
 
     pdl.add_field<f32_4>("f32_4", 1);
@@ -99,26 +99,14 @@ Test_start("patch/patchdata.cpp", isend_irecv, 2){
     }
     
 
-    //std::cout << d2_check.fields_f32.size() << std::endl;
 
-    /*
-    if(mpi_handler::world_rank == 0){
-        patchdata_field_isend(d1_check.fields_f32[0], rq_lst, 1, 0, MPI_COMM_WORLD);
-        patchdata_field_irecv(recv_d.fields_f32[0],rq_lst, 1, 0, MPI_COMM_WORLD);
-    }
 
-    if(mpi_handler::world_rank == 1){
-        patchdata_field_isend(d2_check.fields_f32[0], rq_lst, 0, 0, MPI_COMM_WORLD);
-        patchdata_field_irecv(recv_d.fields_f32[0],rq_lst, 0, 0, MPI_COMM_WORLD);
-    }
-    */
-
-    std::cout << "request len : [" << mpi_handler::world_rank << "] " << rq_lst.size() << std::endl;
+    //std::cout << "request len : [" << mpi_handler::world_rank << "] " << rq_lst.size() << std::endl;
 
     std::vector<MPI_Status> st_lst(rq_lst.size());
     mpi::waitall(rq_lst.size(), rq_lst.data(), st_lst.data());
 
-    /*
+    
     if(mpi_handler::world_rank == 0){
         Test_assert("recv_d == d2_check", patch_data_check_match(recv_d, d2_check));
     }
@@ -126,140 +114,9 @@ Test_start("patch/patchdata.cpp", isend_irecv, 2){
     if(mpi_handler::world_rank == 1){
         Test_assert("recv_d == d1_check", patch_data_check_match(recv_d, d1_check));
     }
-    */
+    
 
 
-    //////tmp/////
-    if(mpi_handler::world_rank == 0){
-
-        PatchData & p1 = recv_d;
-        PatchData & p2 = d2_check;
-        for(u32 idx = 0; idx < p1.patchdata_layout.fields_f32.size(); idx++){
-            Test_assert("recv_d == d1_check (f32)", p1.fields_f32[idx].check_field_match(p2.fields_f32[idx]));
-        }
-
-        for(u32 idx = 0; idx < p1.patchdata_layout.fields_f32_2.size(); idx++){
-            Test_assert("recv_d == d1_check (f32_2)", p1.fields_f32_2[idx].check_field_match(p2.fields_f32_2[idx]));
-        }
-
-        for(u32 idx = 0; idx < p1.patchdata_layout.fields_f32_3.size(); idx++){
-            Test_assert("recv_d == d1_check (f32_3)", p1.fields_f32_3[idx].check_field_match(p2.fields_f32_3[idx]));
-        }
-
-        for(u32 idx = 0; idx < p1.patchdata_layout.fields_f32_4.size(); idx++){
-            Test_assert("recv_d == d1_check (f32_4)", p1.fields_f32_4[idx].check_field_match(p2.fields_f32_4[idx]));
-        }
-
-        for(u32 idx = 0; idx < p1.patchdata_layout.fields_f32_8.size(); idx++){
-            Test_assert("recv_d == d1_check (f32_8)", p1.fields_f32_8[idx].check_field_match(p2.fields_f32_8[idx]));
-        }
-
-        for(u32 idx = 0; idx < p1.patchdata_layout.fields_f32_16.size(); idx++){
-            Test_assert("recv_d == d1_check (f32_16)", p1.fields_f32_16[idx].check_field_match(p2.fields_f32_16[idx]));
-        }
-
-
-
-        for(u32 idx = 0; idx < p1.patchdata_layout.fields_f64.size(); idx++){
-            Test_assert("recv_d == d1_check (f64)", p1.fields_f64[idx].check_field_match(p2.fields_f64[idx]));
-        }
-
-        for(u32 idx = 0; idx < p1.patchdata_layout.fields_f64_2.size(); idx++){
-            Test_assert("recv_d == d1_check (f64_2)", p1.fields_f64_2[idx].check_field_match(p2.fields_f64_2[idx]));
-        }
-
-        for(u32 idx = 0; idx < p1.patchdata_layout.fields_f64_3.size(); idx++){
-            Test_assert("recv_d == d1_check (f64_3)", p1.fields_f64_3[idx].check_field_match(p2.fields_f64_3[idx]));
-        }
-
-        for(u32 idx = 0; idx < p1.patchdata_layout.fields_f64_4.size(); idx++){
-            Test_assert("recv_d == d1_check (f64_4)", p1.fields_f64_4[idx].check_field_match(p2.fields_f64_4[idx]));
-        }
-
-        for(u32 idx = 0; idx < p1.patchdata_layout.fields_f64_8.size(); idx++){
-            Test_assert("recv_d == d1_check (f64_8)", p1.fields_f64_8[idx].check_field_match(p2.fields_f64_8[idx]));
-        }
-
-        for(u32 idx = 0; idx < p1.patchdata_layout.fields_f64_16.size(); idx++){
-            Test_assert("recv_d == d1_check (f64_16)", p1.fields_f64_16[idx].check_field_match(p2.fields_f64_16[idx]));
-        }
-
-
-
-        for(u32 idx = 0; idx < p1.patchdata_layout.fields_u32.size(); idx++){
-            Test_assert("recv_d == d1_check (u32)", p1.fields_u32[idx].check_field_match(p2.fields_u32[idx]));
-        }
-
-        for(u32 idx = 0; idx < p1.patchdata_layout.fields_u64.size(); idx++){
-            Test_assert("recv_d == d1_check (u64)", p1.fields_u64[idx].check_field_match(p2.fields_u64[idx]));
-        }
-    }
-
-    if(mpi_handler::world_rank == 1){
-
-        PatchData & p1 = recv_d;
-        PatchData & p2 = d1_check;
-        for(u32 idx = 0; idx < p1.patchdata_layout.fields_f32.size(); idx++){
-            Test_assert("recv_d == d1_check (f32)", p1.fields_f32[idx].check_field_match(p2.fields_f32[idx]));
-        }
-
-        for(u32 idx = 0; idx < p1.patchdata_layout.fields_f32_2.size(); idx++){
-            Test_assert("recv_d == d1_check (f32_2)", p1.fields_f32_2[idx].check_field_match(p2.fields_f32_2[idx]));
-        }
-
-        for(u32 idx = 0; idx < p1.patchdata_layout.fields_f32_3.size(); idx++){
-            Test_assert("recv_d == d1_check (f32_3)", p1.fields_f32_3[idx].check_field_match(p2.fields_f32_3[idx]));
-        }
-
-        for(u32 idx = 0; idx < p1.patchdata_layout.fields_f32_4.size(); idx++){
-            Test_assert("recv_d == d1_check (f32_4)", p1.fields_f32_4[idx].check_field_match(p2.fields_f32_4[idx]));
-        }
-
-        for(u32 idx = 0; idx < p1.patchdata_layout.fields_f32_8.size(); idx++){
-            Test_assert("recv_d == d1_check (f32_8)", p1.fields_f32_8[idx].check_field_match(p2.fields_f32_8[idx]));
-        }
-
-        for(u32 idx = 0; idx < p1.patchdata_layout.fields_f32_16.size(); idx++){
-            Test_assert("recv_d == d1_check (f32_16)", p1.fields_f32_16[idx].check_field_match(p2.fields_f32_16[idx]));
-        }
-
-
-
-        for(u32 idx = 0; idx < p1.patchdata_layout.fields_f64.size(); idx++){
-            Test_assert("recv_d == d1_check (f64)", p1.fields_f64[idx].check_field_match(p2.fields_f64[idx]));
-        }
-
-        for(u32 idx = 0; idx < p1.patchdata_layout.fields_f64_2.size(); idx++){
-            Test_assert("recv_d == d1_check (f64_2)", p1.fields_f64_2[idx].check_field_match(p2.fields_f64_2[idx]));
-        }
-
-        for(u32 idx = 0; idx < p1.patchdata_layout.fields_f64_3.size(); idx++){
-            Test_assert("recv_d == d1_check (f64_3)", p1.fields_f64_3[idx].check_field_match(p2.fields_f64_3[idx]));
-        }
-
-        for(u32 idx = 0; idx < p1.patchdata_layout.fields_f64_4.size(); idx++){
-            Test_assert("recv_d == d1_check (f64_4)", p1.fields_f64_4[idx].check_field_match(p2.fields_f64_4[idx]));
-        }
-
-        for(u32 idx = 0; idx < p1.patchdata_layout.fields_f64_8.size(); idx++){
-            Test_assert("recv_d == d1_check (f64_8)", p1.fields_f64_8[idx].check_field_match(p2.fields_f64_8[idx]));
-        }
-
-        for(u32 idx = 0; idx < p1.patchdata_layout.fields_f64_16.size(); idx++){
-            Test_assert("recv_d == d1_check (f64_16)", p1.fields_f64_16[idx].check_field_match(p2.fields_f64_16[idx]));
-        }
-
-
-
-        for(u32 idx = 0; idx < p1.patchdata_layout.fields_u32.size(); idx++){
-            Test_assert("recv_d == d1_check (u32)", p1.fields_u32[idx].check_field_match(p2.fields_u32[idx]));
-        }
-
-        for(u32 idx = 0; idx < p1.patchdata_layout.fields_u64.size(); idx++){
-            Test_assert("recv_d == d1_check (u64)", p1.fields_u64[idx].check_field_match(p2.fields_u64[idx]));
-        }
-    }
-    //////////////
 
     free_sycl_mpi_types();
 }
