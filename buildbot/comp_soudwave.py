@@ -282,10 +282,8 @@ plot_soundwave(150,toff)
 
 plot_soundwave(200,toff)
 
-plot_soundwave(300,toff)
-
-plot_soundwave(400,toff)
-
-plot_soundwave(499,toff)
+#plot_soundwave(300,toff)
+#plot_soundwave(400,toff)
+#plot_soundwave(499,toff)
 
 plt.show()

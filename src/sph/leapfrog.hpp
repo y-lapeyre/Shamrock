@@ -19,6 +19,7 @@
 #include "patch/compute_field.hpp"
 #include "patch/patchdata.hpp"
 #include "patch/patchdata_buffer.hpp"
+#include "patch/patchdata_field.hpp"
 #include "patch/serialpatchtree.hpp"
 #include "patchscheduler/scheduler_mpi.hpp"
 #include "sph/kernels.hpp"
@@ -26,6 +27,7 @@
 #include "sph/sphpatch.hpp"
 #include "sys/sycl_mpi_interop.hpp"
 #include "tree/radix_tree.hpp"
+#include <filesystem>
 #include <memory>
 #include <string>
 #include <tuple>
@@ -932,7 +934,7 @@ inline void make_merge_patches_comp_field(
 
         {
             
-            const std::vector<std::tuple<u64, std::unique_ptr<std::vector<T>>>> & p_interf_lst = comp_field_interf.interface_map[id_patch];
+            const std::vector<std::tuple<u64, std::unique_ptr<PatchDataField<T>>>> & p_interf_lst = comp_field_interf.interface_map[id_patch];
             for (auto & [int_pid, pdat_ptr] : p_interf_lst) {
                 len_main += (pdat_ptr->size());
             }
@@ -953,7 +955,7 @@ inline void make_merge_patches_comp_field(
         offset_buf += compfield_buf->size();
         
 
-        std::vector<std::tuple<u64, std::unique_ptr<std::vector<T>>>> & p_interf_lst = comp_field_interf.interface_map[id_patch];
+        std::vector<std::tuple<u64, std::unique_ptr<PatchDataField<T>>>> & p_interf_lst = comp_field_interf.interface_map[id_patch];
 
         for (auto & [int_pid, pdat_ptr] : p_interf_lst) {
 
@@ -1458,9 +1460,16 @@ class SPHTimestepperLeapfrog{public:
         });
         */
 
+        std::filesystem::create_directory("step_before_reatrib" + std::to_string(step_cnt));
+        std::cout << "dumping state"<<std::endl;
+        dump_state("step_before_reatrib" + std::to_string(step_cnt) + "/", sched,step_time);
         
         std::cout << "particle reatribution" << std::endl;
         reatribute_particles(sched, sptree,periodic_bc);
+
+        std::filesystem::create_directory("step_after_reatrib" + std::to_string(step_cnt));
+        std::cout << "dumping state"<<std::endl;
+        dump_state("step_after_reatrib" + std::to_string(step_cnt) + "/", sched,step_time);
 
         /*
 
@@ -1499,6 +1508,11 @@ class SPHTimestepperLeapfrog{public:
 
         std::cout << "exhanging interfaces" << std::endl;
         auto timer_h_max = timings::start_timer("compute_hmax", timings::timingtype::function);
+
+        std::cout << "owned_data : " << std::endl;
+        for (auto & [k,a] : sched.patch_data.owned_data) {
+            std::cout << " pdat : " << k << std::endl;
+        }
 
         PatchField<f32> h_field;
         sched.compute_patch_field(

@@ -416,7 +416,7 @@ inline void dump_patch_data(std::string prefix, SchedulerMPI & sched){
     
     for(PatchFile & pf : patch_files){
 
-        //std::cout << "opening : " << pf.name << std::endl;
+        std::cout << "opening : " << pf.name << std::endl;
         int rc = mpi::file_open(MPI_COMM_WORLD, pf.name.c_str(), MPI_MODE_CREATE | MPI_MODE_WRONLY , MPI_INFO_NULL, &pf.mfile);
 
         if (rc) {

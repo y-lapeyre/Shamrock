@@ -553,8 +553,10 @@ void PatchData::extract_particle(u32 pidx, PatchData & out_pdat){
         out_pdat.fields_f32[idx].expand(1);
 
         for(u32 i = nvar-1 ; i < nvar ; i--){
-            fields_f32[idx].data()[idx_out_val + i] = (fast_extract_ptr(idx_val + i,fields_f32[idx].size(), fields_f32[idx].data()));
+            out_pdat.fields_f32[idx].data()[idx_out_val + i] = (fast_extract_ptr(idx_val + i,fields_f32[idx].size(), fields_f32[idx].data()));
         }
+
+        fields_f32[idx].shrink(1);
     }
 
     for(u32 idx = 0; idx < patchdata_layout.fields_f32_2.size(); idx++){
@@ -565,8 +567,10 @@ void PatchData::extract_particle(u32 pidx, PatchData & out_pdat){
         out_pdat.fields_f32_2[idx].expand(1);
 
         for(u32 i = nvar-1 ; i < nvar ; i--){
-            fields_f32_2[idx].data()[idx_out_val + i] = (fast_extract_ptr(idx_val + i,fields_f32_2[idx].size(), fields_f32_2[idx].data()));
+            out_pdat.fields_f32_2[idx].data()[idx_out_val + i] = (fast_extract_ptr(idx_val + i,fields_f32_2[idx].size(), fields_f32_2[idx].data()));
         }
+
+        fields_f32_2[idx].shrink(1);
     }
 
     for(u32 idx = 0; idx < patchdata_layout.fields_f32_3.size(); idx++){
@@ -577,8 +581,10 @@ void PatchData::extract_particle(u32 pidx, PatchData & out_pdat){
         out_pdat.fields_f32_3[idx].expand(1);
 
         for(u32 i = nvar-1 ; i < nvar ; i--){
-            fields_f32_3[idx].data()[idx_out_val + i] = (fast_extract_ptr(idx_val + i,fields_f32_3[idx].size(), fields_f32_3[idx].data()));
+            out_pdat.fields_f32_3[idx].data()[idx_out_val + i] = (fast_extract_ptr(idx_val + i,fields_f32_3[idx].size(), fields_f32_3[idx].data()));
         }
+
+        fields_f32_3[idx].shrink(1);
     }
 
     for(u32 idx = 0; idx < patchdata_layout.fields_f32_4.size(); idx++){
@@ -589,8 +595,10 @@ void PatchData::extract_particle(u32 pidx, PatchData & out_pdat){
         out_pdat.fields_f32_4[idx].expand(1);
 
         for(u32 i = nvar-1 ; i < nvar ; i--){
-            fields_f32_4[idx].data()[idx_out_val + i] = (fast_extract_ptr(idx_val + i,fields_f32_4[idx].size(), fields_f32_4[idx].data()));
+            out_pdat.fields_f32_4[idx].data()[idx_out_val + i] = (fast_extract_ptr(idx_val + i,fields_f32_4[idx].size(), fields_f32_4[idx].data()));
         }
+
+        fields_f32_4[idx].shrink(1);
     }
 
     for(u32 idx = 0; idx < patchdata_layout.fields_f32_8.size(); idx++){
@@ -601,8 +609,10 @@ void PatchData::extract_particle(u32 pidx, PatchData & out_pdat){
         out_pdat.fields_f32_8[idx].expand(1);
 
         for(u32 i = nvar-1 ; i < nvar ; i--){
-            fields_f32_8[idx].data()[idx_out_val + i] = (fast_extract_ptr(idx_val + i,fields_f32_8[idx].size(), fields_f32_8[idx].data()));
+            out_pdat.fields_f32_8[idx].data()[idx_out_val + i] = (fast_extract_ptr(idx_val + i,fields_f32_8[idx].size(), fields_f32_8[idx].data()));
         }
+
+        fields_f32_8[idx].shrink(1);
     }
 
     for(u32 idx = 0; idx < patchdata_layout.fields_f32_16.size(); idx++){
@@ -613,10 +623,11 @@ void PatchData::extract_particle(u32 pidx, PatchData & out_pdat){
         out_pdat.fields_f32_16[idx].expand(1);
 
         for(u32 i = nvar-1 ; i < nvar ; i--){
-            fields_f32_16[idx].data()[idx_out_val + i] = (fast_extract_ptr(idx_val + i,fields_f32_16[idx].size(), fields_f32_16[idx].data()));
+            out_pdat.fields_f32_16[idx].data()[idx_out_val + i] = (fast_extract_ptr(idx_val + i,fields_f32_16[idx].size(), fields_f32_16[idx].data()));
         }
-    }
 
+        fields_f32_16[idx].shrink(1);
+    }
 
 
 
@@ -631,8 +642,10 @@ void PatchData::extract_particle(u32 pidx, PatchData & out_pdat){
         out_pdat.fields_f64[idx].expand(1);
 
         for(u32 i = nvar-1 ; i < nvar ; i--){
-            fields_f64[idx].data()[idx_out_val + i] = (fast_extract_ptr(idx_val + i,fields_f64[idx].size(), fields_f64[idx].data()));
+            out_pdat.fields_f64[idx].data()[idx_out_val + i] = (fast_extract_ptr(idx_val + i,fields_f64[idx].size(), fields_f64[idx].data()));
         }
+
+        fields_f64[idx].shrink(1);
     }
 
     for(u32 idx = 0; idx < patchdata_layout.fields_f64_2.size(); idx++){
@@ -643,8 +656,10 @@ void PatchData::extract_particle(u32 pidx, PatchData & out_pdat){
         out_pdat.fields_f64_2[idx].expand(1);
 
         for(u32 i = nvar-1 ; i < nvar ; i--){
-            fields_f64_2[idx].data()[idx_out_val + i] = (fast_extract_ptr(idx_val + i,fields_f64_2[idx].size(), fields_f64_2[idx].data()));
+            out_pdat.fields_f64_2[idx].data()[idx_out_val + i] = (fast_extract_ptr(idx_val + i,fields_f64_2[idx].size(), fields_f64_2[idx].data()));
         }
+
+        fields_f64_2[idx].shrink(1);
     }
 
     for(u32 idx = 0; idx < patchdata_layout.fields_f64_3.size(); idx++){
@@ -655,8 +670,10 @@ void PatchData::extract_particle(u32 pidx, PatchData & out_pdat){
         out_pdat.fields_f64_3[idx].expand(1);
 
         for(u32 i = nvar-1 ; i < nvar ; i--){
-            fields_f64_3[idx].data()[idx_out_val + i] = (fast_extract_ptr(idx_val + i,fields_f64_3[idx].size(), fields_f64_3[idx].data()));
+            out_pdat.fields_f64_3[idx].data()[idx_out_val + i] = (fast_extract_ptr(idx_val + i,fields_f64_3[idx].size(), fields_f64_3[idx].data()));
         }
+
+        fields_f64_3[idx].shrink(1);
     }
 
     for(u32 idx = 0; idx < patchdata_layout.fields_f64_4.size(); idx++){
@@ -667,8 +684,10 @@ void PatchData::extract_particle(u32 pidx, PatchData & out_pdat){
         out_pdat.fields_f64_4[idx].expand(1);
 
         for(u32 i = nvar-1 ; i < nvar ; i--){
-            fields_f64_4[idx].data()[idx_out_val + i] = (fast_extract_ptr(idx_val + i,fields_f64_4[idx].size(), fields_f64_4[idx].data()));
+            out_pdat.fields_f64_4[idx].data()[idx_out_val + i] = (fast_extract_ptr(idx_val + i,fields_f64_4[idx].size(), fields_f64_4[idx].data()));
         }
+
+        fields_f64_4[idx].shrink(1);
     }
 
     for(u32 idx = 0; idx < patchdata_layout.fields_f64_8.size(); idx++){
@@ -679,8 +698,10 @@ void PatchData::extract_particle(u32 pidx, PatchData & out_pdat){
         out_pdat.fields_f64_8[idx].expand(1);
 
         for(u32 i = nvar-1 ; i < nvar ; i--){
-            fields_f64_8[idx].data()[idx_out_val + i] = (fast_extract_ptr(idx_val + i,fields_f64_8[idx].size(), fields_f64_8[idx].data()));
+            out_pdat.fields_f64_8[idx].data()[idx_out_val + i] = (fast_extract_ptr(idx_val + i,fields_f64_8[idx].size(), fields_f64_8[idx].data()));
         }
+
+        fields_f64_8[idx].shrink(1);
     }
 
     for(u32 idx = 0; idx < patchdata_layout.fields_f64_16.size(); idx++){
@@ -691,14 +712,11 @@ void PatchData::extract_particle(u32 pidx, PatchData & out_pdat){
         out_pdat.fields_f64_16[idx].expand(1);
 
         for(u32 i = nvar-1 ; i < nvar ; i--){
-            fields_f64_16[idx].data()[idx_out_val + i] = (fast_extract_ptr(idx_val + i,fields_f64_16[idx].size(), fields_f64_16[idx].data()));
+            out_pdat.fields_f64_16[idx].data()[idx_out_val + i] = (fast_extract_ptr(idx_val + i,fields_f64_16[idx].size(), fields_f64_16[idx].data()));
         }
+
+        fields_f64_16[idx].shrink(1);
     }
-
-
-
-
-
 
 
     for(u32 idx = 0; idx < patchdata_layout.fields_u32.size(); idx++){
@@ -709,8 +727,10 @@ void PatchData::extract_particle(u32 pidx, PatchData & out_pdat){
         out_pdat.fields_u32[idx].expand(1);
 
         for(u32 i = nvar-1 ; i < nvar ; i--){
-            fields_u32[idx].data()[idx_out_val + i] = (fast_extract_ptr(idx_val + i,fields_u32[idx].size(), fields_u32[idx].data()));
+            out_pdat.fields_u32[idx].data()[idx_out_val + i] = (fast_extract_ptr(idx_val + i,fields_u32[idx].size(), fields_u32[idx].data()));
         }
+
+        fields_u32[idx].shrink(1);
     }
 
     for(u32 idx = 0; idx < patchdata_layout.fields_u64.size(); idx++){
@@ -721,9 +741,13 @@ void PatchData::extract_particle(u32 pidx, PatchData & out_pdat){
         out_pdat.fields_u64[idx].expand(1);
 
         for(u32 i = nvar-1 ; i < nvar ; i--){
-            fields_u64[idx].data()[idx_out_val + i] = (fast_extract_ptr(idx_val + i,fields_u64[idx].size(), fields_u64[idx].data()));
+            out_pdat.fields_u64[idx].data()[idx_out_val + i] = (fast_extract_ptr(idx_val + i,fields_u64[idx].size(), fields_u64[idx].data()));
         }
+
+        fields_u64[idx].shrink(1);
     }
+
+
 
 }
 

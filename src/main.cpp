@@ -445,7 +445,7 @@ template <class Timestepper, class SimInfo> class SimulationSPH {
         pdl.add_field<f32_3>("axyz_old",1);
 
 
-        SchedulerMPI sched = SchedulerMPI(pdl,1e6, 1);
+        SchedulerMPI sched = SchedulerMPI(pdl,20000, 1);
         sched.init_mpi_required_types();
 
         logfiles::open_log_files();

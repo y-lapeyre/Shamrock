@@ -9,6 +9,7 @@
 #pragma once
 
 
+#include "patch/patchdata_field.hpp"
 #include "patch/patchdata_layout.hpp"
 #include "sys/mpi_handler.hpp"
 #include "patch/patch.hpp"
@@ -127,7 +128,7 @@ inline void patch_data_exchange_object(
                 // psend.node_owner_id, global_comm_tag[i], MPI_COMM_WORLD);
             }
         }
-        std::cout << std::endl;
+        //std::cout << std::endl;
     }
 
     std::vector<MPI_Status> st_lst(rq_lst.size());
@@ -162,9 +163,9 @@ inline void patch_data_exchange_object(
 template<class T>
 inline void patch_data_field_exchange_object(
     std::vector<Patch> & global_patch_list,
-    std::vector<std::unique_ptr<std::vector<T>>> &send_comm_pdat,
+    std::vector<std::unique_ptr<PatchDataField<T>>> &send_comm_pdat,
     std::vector<u64_2> &send_comm_vec,
-    std::unordered_map<u64, std::vector<std::tuple<u64, std::unique_ptr<std::vector<T>>>>> & recv_obj
+    std::unordered_map<u64, std::vector<std::tuple<u64, std::unique_ptr<PatchDataField<T>>>>> & recv_obj
     ){
 
     //TODO enable if ultra verbose
@@ -204,7 +205,7 @@ inline void patch_data_field_exchange_object(
                 //TODO enable if ultra verbose
                 //std::cout << format("send : (%3d,%3d) : %d -> %d / %d\n", psend.id_patch, precv.id_patch,
                 //                    psend.node_owner_id, precv.node_owner_id, local_comm_tag[i]);
-                vector_isend<T>(*send_comm_pdat[i], rq_lst, precv.node_owner_id, local_comm_tag[i], MPI_COMM_WORLD);
+                patchdata_field_isend<T>(*send_comm_pdat[i], rq_lst, precv.node_owner_id, local_comm_tag[i], MPI_COMM_WORLD);
             }
 
             // std::cout << format("send : (%3d,%3d) : %d -> %d /
@@ -230,9 +231,9 @@ inline void patch_data_field_exchange_object(
                     // std::cout << format("recv (%3d,%3d) : %d -> %d / %d\n", psend.id_patch, precv.id_patch,
                     //                     psend.node_owner_id, precv.node_owner_id, global_comm_tag[i]);
                     recv_obj[precv.id_patch].push_back(
-                        {psend.id_patch, std::make_unique<std::vector<T>>()}); // patchdata_irecv(recv_rq, psend.node_owner_id,
+                        {psend.id_patch, std::make_unique<PatchDataField<T>>("comp_field",1)}); // patchdata_irecv(recv_rq, psend.node_owner_id,
                                                                           // global_comm_tag[i], MPI_COMM_WORLD)}
-                    vector_irecv<T>(*std::get<1>(recv_obj[precv.id_patch][recv_obj[precv.id_patch].size() - 1]),
+                    patchdata_field_irecv<T>(*std::get<1>(recv_obj[precv.id_patch][recv_obj[precv.id_patch].size() - 1]),
                                     rq_lst, psend.node_owner_id, global_comm_tag[i], MPI_COMM_WORLD);
                 }
 

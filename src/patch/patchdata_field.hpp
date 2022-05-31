@@ -72,6 +72,10 @@ class PatchDataField {
         resize(obj_cnt + obj_to_add);
     }
 
+    inline void shrink(u32 obj_to_rem){
+        resize(obj_cnt - obj_to_rem);
+    }
+
 
 
     inline void insert_element(T v){
@@ -88,7 +92,14 @@ class PatchDataField {
 
 
     inline void insert(PatchDataField<T> &f2){
-        field_data.insert(field_data.end(), f2.field_data.begin(), f2.field_data.end());
+
+        const u32 idx_st = field_data.size();
+        expand(f2.obj_cnt);
+
+        for (u32 i = 0; i < f2.val_cnt; i++) {
+            field_data[idx_st + i] = f2.field_data[i];
+        }
+
     }
 
     inline bool check_field_match(PatchDataField<T> &f2){

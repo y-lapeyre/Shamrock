@@ -9,12 +9,14 @@
 #pragma once
 
 #include "aliases.hpp"
+#include "patch/patchdata.hpp"
 #include "patch/patchdata_exchanger.hpp"
 #include "patch/patchdata_field.hpp"
 #include "patch/serialpatchtree.hpp"
 #include "patchscheduler/patch_content_exchanger.hpp"
 #include "patchscheduler/scheduler_mpi.hpp"
 #include "sys/sycl_handler.hpp"
+#include "utils/sycl_vector_utils.hpp"
 #include <unordered_map>
 
 
@@ -257,7 +259,18 @@ inline void reatribute_particles<f32_3>(SchedulerMPI & sched, SerialPatchTree<f3
     std::unordered_map<u64, std::vector<std::tuple<u64, std::unique_ptr<PatchData>>>> part_xchg_map;
     for(u32 i = 0; i < comm_pdat.size(); i++){
         
-        //std::cout << comm_vec[i].x() << " " << comm_vec[i].y() << " " << comm_pdat[i].get() << std::endl; 
+        std::cout << comm_vec[i].x() << " -> " << comm_vec[i].y() << " data : " << comm_pdat[i].get() << std::endl; 
+
+        PatchData & pdat = *comm_pdat[i];
+
+        u32 ixyz = pdat.patchdata_layout.get_field_idx<f32_3>("xyz");
+
+        for (u32 i = 0; i < pdat.get_obj_cnt(); i++) {
+            print_vec(std::cout, pdat.fields_f32_3[ixyz].data()[i]);
+            std::cout << std::endl;
+        }
+
+
     }
 
     patch_data_exchange_object(sched.pdl,
@@ -272,6 +285,16 @@ inline void reatribute_particles<f32_3>(SchedulerMPI & sched, SerialPatchTree<f3
 
             //TODO if crash here it means that this was implicit init => bad
             PatchData & pdat_recv = sched.patch_data.owned_data.at(recv_id);
+
+
+            std::cout << send_id << " -> " << recv_id << " recv data : " << std::endl; 
+
+            u32 ixyz = pdat->patchdata_layout.get_field_idx<f32_3>("xyz");
+
+            for (u32 i = 0; i < pdat->get_obj_cnt(); i++) {
+                print_vec(std::cout, pdat->fields_f32_3[ixyz].data()[i]);
+                std::cout << std::endl;
+            }
 
             /*{
                 std::cout << "recv : " << recv_id << " <- " << send_id << std::endl;

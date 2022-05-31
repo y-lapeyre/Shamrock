@@ -150,23 +150,28 @@ namespace impl {
 
 
     template <class T, class vectype>
-    inline std::vector<std::unique_ptr<std::vector<T>>> append_interface_field(sycl::queue &queue, PatchData & pdat, std::vector<T> & pdat_cfield,
+    inline std::vector<std::unique_ptr<PatchDataField<T>>> append_interface_field(sycl::queue &queue, PatchData & pdat, PatchDataField<T> & pdat_cfield,
                                                                             std::vector<vectype> boxs_min,
                                                                             std::vector<vectype> boxs_max) {
 
         std::vector<u8> flag_choice = impl::get_flag_choice(queue, pdat, boxs_min, boxs_max);
-        
-        std::vector<std::unique_ptr<std::vector<T>>> pdat_vec(boxs_min.size());
+
+        std::vector<std::unique_ptr<PatchDataField<T>>> pdat_vec(boxs_min.size());
         for (auto & p : pdat_vec) {
-            p = std::make_unique<std::vector<T>>();
+            p = std::make_unique<PatchDataField<T>>("comp_field",1);
         }
 
-        if (pdat_cfield.size() > 0) {
-            for (u32 idx = 0; idx < pdat_cfield.size(); idx++) {
-                if (flag_choice[idx] < pdat_vec.size()) {
+        std::vector<std::vector<u32>> idxs(boxs_min.size());
 
-                    pdat_vec[flag_choice[idx]]->push_back(pdat_cfield[idx]);
-                }
+        for (u32 i = 0; i < flag_choice.size(); i++) {
+            if(flag_choice[i] < boxs_min.size()){
+                idxs[flag_choice[i]].push_back(i);
+            }
+        }
+
+        if (! pdat.is_empty()) {
+            for (u32 i = 0; i < idxs.size(); i++) {
+                pdat_cfield.append_subset_to(idxs[i], *pdat_vec[i]);
             }
         }
 
