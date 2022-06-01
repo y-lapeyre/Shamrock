@@ -872,57 +872,16 @@ class SPHTimestepperLeapfrog{public:
 
             sph::algs::SmoothingLenghtCompute<f32, u32, Kernel> h_iterator(sched.pdl,htol_up_tol,htol_up_iter);
 
-
-            sycl_init_h_iter_bufs(
+            h_iterator.iterate_smoothing_lenght(
                 hndl.get_queue_compute(0), 
                 merge_pdat_buf.at(id_patch).or_element_cnt, 
-                ihpart, 
+                gpart_mass, 
+                *radix_trees[id_patch], 
                 pdat_buf_merge, 
                 hnew, 
                 omega, 
                 eps_h);
 
-
-
-        
-            for (u32 it_num = 0 ; it_num < 30; it_num++) {
-                //std::cout << "patch : n°" << id_patch << "h iter" << std::endl;
-                
-                sycl_h_iter_step(hndl.get_queue_compute(0), 
-                    merge_pdat_buf.at(id_patch).or_element_cnt, 
-                    ihpart, 
-                    ixyz,
-                    gpart_mass,
-                    htol_up_tol,
-                    htol_up_iter,
-                    *radix_trees[id_patch],
-                    pdat_buf_merge, 
-                    hnew, 
-                    omega, 
-                    eps_h);
-
-            }
-
-
-
-
-            std::cout << "patch : n°" << id_patch << "compute omega" << std::endl;
-            sycl_h_iter_omega(hndl.get_queue_compute(0), 
-                merge_pdat_buf.at(id_patch).or_element_cnt, 
-                ihpart, 
-                ixyz,
-                gpart_mass,
-                htol_up_tol,
-                htol_up_iter,
-                *radix_trees[id_patch],
-                pdat_buf_merge, 
-                hnew, 
-                omega, 
-                eps_h);
-            
-            
-
-            
             
 
 
