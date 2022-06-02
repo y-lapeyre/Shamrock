@@ -546,6 +546,16 @@ int main(int argc, char *argv[]) {
 
 
 
+    auto test_l = [](int a){
+        return a;
+    };
+
+
+    static_assert(std::is_same<decltype(test_l(0)), int>::value, "retval must be bool");
+
+
+
+
     std::cout << shamrock_title_bar_big << std::endl;
 
     mpi_handler::init();
