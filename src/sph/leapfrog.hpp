@@ -17,6 +17,7 @@
 #include "io/logs.hpp"
 #include "particles/particle_patch_mover.hpp"
 #include "patch/compute_field.hpp"
+#include "patch/global_var.hpp"
 #include "patch/merged_patch.hpp"
 #include "patch/patchdata.hpp"
 #include "patch/patchdata_buffer.hpp"
@@ -38,7 +39,7 @@
 
 constexpr f32 gpart_mass = 2e-4;
 
-template <class flt> class SPHTimestepperLeapfrogAlgs {
+template <class flt,class Kernel,class u_morton> class SPHTimestepperLeapfrogAlgs {public:
 
     using vec3 = sycl::vec<flt, 3>;
 
@@ -46,7 +47,7 @@ template <class flt> class SPHTimestepperLeapfrogAlgs {
         std::is_same<flt, f16>::value || std::is_same<flt, f32>::value || std::is_same<flt, f64>::value
     , "Leapfrog : floating point type should be one of (f16,f32,f64)");
 
-    inline void sycl_leapfrog_predictor(sycl::queue &queue, u32 npart, flt dt, std::unique_ptr<sycl::buffer<vec3>> &buf_xyz,
+    inline static void sycl_leapfrog_predictor(sycl::queue &queue, u32 npart, flt dt, std::unique_ptr<sycl::buffer<vec3>> &buf_xyz,
                                         std::unique_ptr<sycl::buffer<vec3>> &buf_vxyz,
                                         std::unique_ptr<sycl::buffer<vec3>> &buf_axyz) {
 
@@ -78,7 +79,7 @@ template <class flt> class SPHTimestepperLeapfrogAlgs {
         queue.submit(ker_predict_step);
     }
 
-    inline void sycl_leapfrog_corrector(sycl::queue &queue, u32 npart, flt dt, std::unique_ptr<sycl::buffer<vec3>> &buf_vxyz,
+    inline static void sycl_leapfrog_corrector(sycl::queue &queue, u32 npart, flt dt, std::unique_ptr<sycl::buffer<vec3>> &buf_vxyz,
                                         std::unique_ptr<sycl::buffer<vec3>> &buf_axyz,
                                         std::unique_ptr<sycl::buffer<vec3>> &buf_axyz_old) {
 
@@ -105,7 +106,7 @@ template <class flt> class SPHTimestepperLeapfrogAlgs {
         queue.submit(ker_corect_step);
     }
 
-    inline void sycl_swap_a_field(sycl::queue &queue, u32 npart, std::unique_ptr<sycl::buffer<vec3>> &buf_axyz,
+    inline static void sycl_swap_a_field(sycl::queue &queue, u32 npart, std::unique_ptr<sycl::buffer<vec3>> &buf_axyz,
                                 std::unique_ptr<sycl::buffer<vec3>> &buf_axyz_old) {
         sycl::range<1> range_npart{npart};
 
@@ -126,7 +127,7 @@ template <class flt> class SPHTimestepperLeapfrogAlgs {
         queue.submit(ker_swap_a);
     }
 
-    inline void sycl_position_modulo(sycl::queue &queue, u32 npart, std::unique_ptr<sycl::buffer<vec3>> &buf_xyz,
+    inline static void sycl_position_modulo(sycl::queue &queue, u32 npart, std::unique_ptr<sycl::buffer<vec3>> &buf_xyz,
                                     std::tuple<vec3, vec3> box) {
 
         sycl::range<1> range_npart{npart};
@@ -158,6 +159,311 @@ template <class flt> class SPHTimestepperLeapfrogAlgs {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    //mandatory variables
+    SchedulerMPI &sched;
+    bool periodic_mode;
+    flt htol_up_tol  = 1.4;
+    flt htol_up_iter = 1.2;
+    
+    //internal variables
+    std::unique_ptr<SerialPatchTree<vec3>> sptree;
+    flt dt_cur;
+
+
+
+
+
+
+    SPHTimestepperLeapfrogAlgs(SchedulerMPI &sched,bool periodic_mode,flt htol_up_tol,
+        flt htol_up_iter ) : sched(sched), periodic_mode(periodic_mode) , htol_up_tol(htol_up_tol) , htol_up_iter(htol_up_iter){}
+
+
+
+    inline void init_stepper(){
+        SyCLHandler &hndl = SyCLHandler::get_instance();
+
+        sptree = std::make_unique<SerialPatchTree<vec3>>(sched.patch_tree, sched.get_box_tranform<vec3>());
+        sptree.attach_buf();
+
+    }
+
+    template<class CFLLambda>
+    inline flt get_cfl_time(flt dt_max, CFLLambda && cfl_fct){
+        GlobalVariable<min,flt> cfl_glb_var;
+
+        cfl_glb_var.compute_var_patch(sched, [&](u64 id_patch, PatchDataBuffer &pdat_buf) {
+
+            SyCLHandler &hndl = SyCLHandler::get_instance();
+
+            u32 npart_patch = pdat_buf.element_count;
+
+            std::unique_ptr<sycl::buffer<flt>> buf_cfl = std::make_unique<sycl::buffer<flt>>(npart_patch);
+
+            sycl::range<1> range_npart{npart_patch};
+
+            hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+                cfl_fct(cgh,npart_patch,pdat_buf,buf_cfl);
+            });
+
+            flt min_cfl = syclalg::get_min<flt>(hndl.get_queue_compute(0), buf_cfl);
+
+            return min_cfl;
+        });
+
+        cfl_glb_var.reduce_val();
+
+        flt cfl_val = cfl_glb_var.get_val();
+
+        std::cout << "CFL : " << "phy = " << cfl_val << " req : " << dt_max << std::endl;
+
+
+        dt_cur = sycl::min(dt_max,dt_cur);
+
+        return dt_cur;
+    }
+
+    inline void step_predict(){
+
+        SyCLHandler &hndl = SyCLHandler::get_instance();
+
+        const u32 ixyz      = sched.pdl.get_field_idx<vec3>("xyz");
+        const u32 ivxyz     = sched.pdl.get_field_idx<vec3>("vxyz");
+        const u32 iaxyz     = sched.pdl.get_field_idx<vec3>("axyz");
+        const u32 iaxyz_old = sched.pdl.get_field_idx<vec3>("axyz_old");
+
+        sched.for_each_patch_buf([&](u64 id_patch, Patch cur_p, PatchDataBuffer &pdat_buf) {
+            std::cout << "patch : n°" << id_patch << " -> leapfrog predictor" << std::endl;
+
+            sycl_leapfrog_predictor(hndl.get_queue_compute(0), pdat_buf.element_count, dt_cur,
+                                              pdat_buf.fields_f32_3.at(ixyz), pdat_buf.fields_f32_3.at(ivxyz),
+                                              pdat_buf.fields_f32_3.at(iaxyz));
+
+            std::cout << "patch : n°" << id_patch << " -> a field swap" << std::endl;
+
+            sycl_swap_a_field(hndl.get_queue_compute(0), pdat_buf.element_count, pdat_buf.fields_f32_3.at(iaxyz),
+                                        pdat_buf.fields_f32_3.at(iaxyz_old));
+
+            if (periodic_mode) {
+                sycl_position_modulo(hndl.get_queue_compute(0), pdat_buf.element_count,
+                                               pdat_buf.fields_f32_3[ixyz], sched.get_box_volume<vec3>());
+            }
+        });
+
+    }
+
+    inline void exchange_particles(){
+        std::cout << "particle reatribution" << std::endl;
+        reatribute_particles(sched, sptree, periodic_mode);
+    }
+
+
+    InterfaceHandler<vec3, flt> interface_hndl;
+
+    inline void make_interf(){
+
+        std::cout << "exhanging interfaces" << std::endl;
+        auto timer_h_max = timings::start_timer("compute_hmax", timings::timingtype::function);
+
+        std::cout << "owned_data : " << std::endl;
+        for (auto &[k, a] : sched.patch_data.owned_data) {
+            std::cout << " pdat : " << k << std::endl;
+        }
+
+        flt loc_htol_up_tol = htol_up_tol;
+
+        PatchField<flt> h_field;
+        sched.compute_patch_field(
+            h_field, get_mpi_type<flt>(), [loc_htol_up_tol](sycl::queue &queue, Patch &p, PatchDataBuffer &pdat_buf) {
+                return patchdata::sph::get_h_max<flt>(pdat_buf.pdl, queue, pdat_buf) * loc_htol_up_tol * Kernel::Rkern;
+            });
+
+        timer_h_max.stop();
+
+        interface_hndl.template compute_interface_list<InterfaceSelector_SPH<vec3, flt>>(sched, sptree, h_field,
+                                                                                                 periodic_mode);
+        interface_hndl.comm_interfaces(sched, periodic_mode);
+    }
+
+
+    std::unordered_map<u64, MergedPatchDataBuffer<vec3>> merge_pdat_buf;
+    inline void make_merge_bufs(){
+
+        SyCLHandler &hndl = SyCLHandler::get_instance();
+
+        // merging strat
+        auto tmerge_buf = timings::start_timer("buffer merging", timings::sycl);
+        
+        make_merge_patches(sched, interface_hndl, merge_pdat_buf);
+        hndl.get_queue_compute(0).wait();
+        tmerge_buf.stop();
+    }
+
+    std::unordered_map<u64, std::unique_ptr<Radix_Tree<u_morton, vec3>>> radix_trees;
+    inline void init_trees(){
+
+        SyCLHandler &hndl = SyCLHandler::get_instance();
+
+        const u32 ixyz      = sched.pdl.get_field_idx<vec3>("xyz");
+        const u32 ivxyz     = sched.pdl.get_field_idx<vec3>("vxyz");
+        const u32 iaxyz     = sched.pdl.get_field_idx<vec3>("axyz");
+        const u32 iaxyz_old = sched.pdl.get_field_idx<vec3>("axyz_old");
+
+        const u32 ihpart = sched.pdl.get_field_idx<flt>("ihpart");
+
+        auto tgen_trees = timings::start_timer("radix tree compute", timings::sycl);
+        
+
+        sched.for_each_patch([&](u64 id_patch, Patch cur_p) {
+            std::cout << "patch : n°" << id_patch << " -> making radix tree" << std::endl;
+            if (merge_pdat_buf.at(id_patch).or_element_cnt == 0)
+                std::cout << " empty => skipping" << std::endl;
+
+            PatchDataBuffer &mpdat_buf = *merge_pdat_buf.at(id_patch).data;
+
+            std::tuple<f32_3, f32_3> &box = merge_pdat_buf.at(id_patch).box;
+
+            // radix tree computation
+            radix_trees[id_patch] = std::make_unique<Radix_Tree<u_morton, vec3>>(hndl.get_queue_compute(0), box,
+                                                                                    mpdat_buf.fields_f32_3[ixyz]);
+        });
+
+        sched.for_each_patch([&](u64 id_patch, Patch cur_p) {
+            std::cout << "patch : n°" << id_patch << " -> radix tree compute volume" << std::endl;
+            if (merge_pdat_buf.at(id_patch).or_element_cnt == 0)
+                std::cout << " empty => skipping" << std::endl;
+            radix_trees[id_patch]->compute_cellvolume(hndl.get_queue_compute(0));
+        });
+
+        sched.for_each_patch([&](u64 id_patch, Patch cur_p) {
+            std::cout << "patch : n°" << id_patch << " -> radix tree compute interaction box" << std::endl;
+            if (merge_pdat_buf.at(id_patch).or_element_cnt == 0)
+                std::cout << " empty => skipping" << std::endl;
+
+            PatchDataBuffer &mpdat_buf = *merge_pdat_buf.at(id_patch).data;
+
+            radix_trees[id_patch]->compute_int_boxes(hndl.get_queue_compute(0), mpdat_buf.fields_f32[ihpart], htol_up_tol);
+        });
+        hndl.get_queue_compute(0).wait();
+        tgen_trees.stop();
+    }
+
+    PatchComputeField<f32> hnew_field;
+    PatchComputeField<f32> omega_field;
+    inline void make_pcomp_field(){
+
+        const u32 ixyz      = sched.pdl.get_field_idx<vec3>("xyz");
+        const u32 ivxyz     = sched.pdl.get_field_idx<vec3>("vxyz");
+        const u32 iaxyz     = sched.pdl.get_field_idx<vec3>("axyz");
+        const u32 iaxyz_old = sched.pdl.get_field_idx<vec3>("axyz_old");
+
+        const u32 ihpart = sched.pdl.get_field_idx<flt>("ihpart");
+
+        SyCLHandler &hndl = SyCLHandler::get_instance();
+
+        hnew_field.generate(sched);
+        omega_field.generate(sched);
+
+        hnew_field.to_sycl();
+        omega_field.to_sycl();
+
+        sched.for_each_patch([&](u64 id_patch, Patch cur_p) {
+            std::cout << "patch : n°" << id_patch << "init h iter" << std::endl;
+            if (merge_pdat_buf.at(id_patch).or_element_cnt == 0)
+                std::cout << " empty => skipping" << std::endl;
+
+            PatchDataBuffer &pdat_buf_merge = *merge_pdat_buf.at(id_patch).data;
+
+            sycl::buffer<f32> &hnew  = *hnew_field.field_data_buf[id_patch];
+            sycl::buffer<f32> &omega = *omega_field.field_data_buf[id_patch];
+            sycl::buffer<f32> eps_h  = sycl::buffer<f32>(merge_pdat_buf.at(id_patch).or_element_cnt);
+
+            sycl::range range_npart{merge_pdat_buf.at(id_patch).or_element_cnt};
+
+            std::cout << "   original size : " << merge_pdat_buf.at(id_patch).or_element_cnt
+                      << " | merged : " << pdat_buf_merge.element_count << std::endl;
+
+            sph::algs::SmoothingLenghtCompute<f32, u32, Kernel> h_iterator(sched.pdl, htol_up_tol, htol_up_iter);
+
+            h_iterator.iterate_smoothing_lenght(hndl.get_queue_compute(0), merge_pdat_buf.at(id_patch).or_element_cnt,
+                                                gpart_mass, *radix_trees[id_patch], pdat_buf_merge, hnew, omega, eps_h);
+
+            // write back h test
+            //*
+            hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+                auto h_new = hnew.get_access<sycl::access::mode::read>(cgh);
+
+                auto acc_hpart = pdat_buf_merge.fields_f32.at(ihpart)->get_access<sycl::access::mode::write>(cgh);
+
+                cgh.parallel_for<class write_back_h>(range_npart,
+                                                     [=](sycl::item<1> item) { acc_hpart[item] = h_new[item]; });
+            });
+            //*/
+        });
+
+        //
+
+        hnew_field.to_map();
+        omega_field.to_map();
+
+        std::cout << "echange interface hnew" << std::endl;
+        PatchComputeFieldInterfaces<flt> hnew_field_interfaces =
+            interface_hndl.template comm_interfaces_field<flt>(sched, hnew_field, periodic_mode);
+        std::cout << "echange interface omega" << std::endl;
+        PatchComputeFieldInterfaces<flt> omega_field_interfaces =
+            interface_hndl.template comm_interfaces_field<flt>(sched, omega_field, periodic_mode);
+
+        hnew_field.to_sycl();
+        omega_field.to_sycl();
+
+        std::unordered_map<u64, MergedPatchCompFieldBuffer<f32>> hnew_field_merged;
+        make_merge_patches_comp_field<f32>(sched, interface_hndl, hnew_field, hnew_field_interfaces, hnew_field_merged);
+        std::unordered_map<u64, MergedPatchCompFieldBuffer<f32>> omega_field_merged;
+        make_merge_patches_comp_field<f32>(sched, interface_hndl, omega_field, omega_field_interfaces, omega_field_merged);
+
+    }
+
+
+    template<class CFLLambda>
+    inline flt stepper_prestep(flt dt_max,CFLLambda && cfl_fct){
+        init_stepper();
+
+        flt dt = get_cfl_time(dt_max, cfl_fct);
+
+        exchange_particles();
+
+        make_interf();
+
+        
+        make_merge_bufs();
+
+        init_trees();
+
+        return dt;
+    }
+
 };
 
 template <class pos_prec> class SPHTimestepperLeapfrog {
@@ -184,12 +490,10 @@ template <class pos_prec> class SPHTimestepperLeapfrog {
 
         const u32 ihpart = sched.pdl.get_field_idx<f32>("hpart");
 
-        // cfl
-        std::unordered_map<u64, f32> min_cfl_map;
-        sched.for_each_patch_buf([&](u64 id_patch, Patch cur_p, PatchDataBuffer &pdat_buf) {
-            u32 npart_patch = pdat_buf.element_count;
+        GlobalVariable<min,f32> cfl_glb_var;
 
-            std::cout << "npart_patch : " << npart_patch << std::endl;
+        cfl_glb_var.compute_var_patch(sched, [&](u64 id_patch, PatchDataBuffer &pdat_buf) {
+            u32 npart_patch = pdat_buf.element_count;
 
             std::unique_ptr<sycl::buffer<f32>> buf_cfl = std::make_unique<sycl::buffer<f32>>(npart_patch);
 
@@ -223,18 +527,19 @@ template <class pos_prec> class SPHTimestepperLeapfrog {
 
             f32 min_cfl = syclalg::get_min<f32>(hndl.get_queue_compute(0), buf_cfl);
 
-            min_cfl_map[id_patch] = min_cfl;
+
+
+
+
+            return min_cfl;
         });
 
-        f32 cur_cfl_dt = 0.001;
-        for (auto &[k, cfl] : min_cfl_map) {
-            cur_cfl_dt = sycl::min(cur_cfl_dt, cfl);
-        }
+        cfl_glb_var.reduce_val();
 
-        std::cout << "node dt cfl : " << cur_cfl_dt << std::endl;
 
-        f32 dt_cur;
-        mpi::allreduce(&cur_cfl_dt, &dt_cur, 1, mpi_type_f32, MPI_MIN, MPI_COMM_WORLD);
+        f32 cfl_val = cfl_glb_var.get_val();
+
+        f32 dt_cur = sycl::min(f32(0.001),cfl_val);
 
         std::cout << " --- current dt  : " << dt_cur << std::endl;
 
@@ -243,17 +548,17 @@ template <class pos_prec> class SPHTimestepperLeapfrog {
         sched.for_each_patch_buf([&](u64 id_patch, Patch cur_p, PatchDataBuffer &pdat_buf) {
             std::cout << "patch : n°" << id_patch << " -> leapfrog predictor" << std::endl;
 
-            SPHTimestepperLeapfrogAlgs<pos_prec>::sycl_leapfrog_predictor(hndl.get_queue_compute(0), pdat_buf.element_count, dt_cur,
+            SPHTimestepperLeapfrogAlgs<pos_prec,Kernel,u_morton>::sycl_leapfrog_predictor(hndl.get_queue_compute(0), pdat_buf.element_count, dt_cur,
                                               pdat_buf.fields_f32_3.at(ixyz), pdat_buf.fields_f32_3.at(ivxyz),
                                               pdat_buf.fields_f32_3.at(iaxyz));
 
             std::cout << "patch : n°" << id_patch << " -> a field swap" << std::endl;
 
-            SPHTimestepperLeapfrogAlgs<pos_prec>::sycl_swap_a_field(hndl.get_queue_compute(0), pdat_buf.element_count, pdat_buf.fields_f32_3.at(iaxyz),
+            SPHTimestepperLeapfrogAlgs<pos_prec,Kernel,u_morton>::sycl_swap_a_field(hndl.get_queue_compute(0), pdat_buf.element_count, pdat_buf.fields_f32_3.at(iaxyz),
                                         pdat_buf.fields_f32_3.at(iaxyz_old));
 
             if (periodic_bc) {
-                SPHTimestepperLeapfrogAlgs<pos_prec>::sycl_position_modulo(hndl.get_queue_compute(0), pdat_buf.element_count,
+                SPHTimestepperLeapfrogAlgs<pos_prec,Kernel,u_morton>::sycl_position_modulo(hndl.get_queue_compute(0), pdat_buf.element_count,
                                                pdat_buf.fields_f32_3[ixyz], sched.get_box_volume<pos_vec>());
             }
         });
@@ -292,7 +597,6 @@ template <class pos_prec> class SPHTimestepperLeapfrog {
         hndl.get_queue_compute(0).wait();
         tmerge_buf.stop();
 
-        // dump_merged_patches(dump_folder+"/merged0_", sched, merge_pdat_buf);
 
         auto tgen_trees = timings::start_timer("radix tree compute", timings::sycl);
         std::unordered_map<u64, std::unique_ptr<Radix_Tree<u_morton, pos_vec>>> radix_trees;
@@ -376,8 +680,6 @@ template <class pos_prec> class SPHTimestepperLeapfrog {
 
         //
 
-        // dump_merged_patches(dump_folder+"/merged05_", sched, merge_pdat_buf);
-
         hnew_field.to_map();
         omega_field.to_map();
 
@@ -388,8 +690,6 @@ template <class pos_prec> class SPHTimestepperLeapfrog {
         PatchComputeFieldInterfaces<pos_prec> omega_field_interfaces =
             interface_hndl.template comm_interfaces_field<pos_prec>(sched, omega_field, periodic_bc);
 
-        // dump_interf(dump_folder+"/interf_",interface_hndl,hnew_field_interfaces);
-
         hnew_field.to_sycl();
         omega_field.to_sycl();
 
@@ -398,32 +698,7 @@ template <class pos_prec> class SPHTimestepperLeapfrog {
         std::unordered_map<u64, MergedPatchCompFieldBuffer<f32>> omega_field_merged;
         make_merge_patches_comp_field<f32>(sched, interface_hndl, omega_field, omega_field_interfaces, omega_field_merged);
 
-        //* check if comment change sth
 
-        sched.for_each_patch([&](u64 id_patch, Patch cur_p) {
-            if (merge_pdat_buf.at(id_patch).or_element_cnt == 0)
-                std::cout << " empty => skipping" << std::endl;
-
-            PatchDataBuffer &pdat_buf_merge = *merge_pdat_buf.at(id_patch).data;
-
-            sycl::buffer<f32> &hnew  = *hnew_field_merged[id_patch].buf;
-            sycl::buffer<f32> &omega = *omega_field_merged[id_patch].buf;
-
-            std::cout << "patch : n°" << id_patch << "write back merged" << std::endl;
-            hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
-                sycl::range range_npart{hnew.size()};
-
-                auto hw = pdat_buf_merge.fields_f32[ihpart]->get_access<sycl::access::mode::write>(cgh);
-                auto hr = hnew.get_access<sycl::access::mode::write>(cgh);
-
-                cgh.parallel_for(range_npart, [=](sycl::item<1> item) {
-                    hw[item] = hr[item];
-                });
-            });
-        });
-
-        // dump_merged_patches(dump_folder+"/merged1_", sched, merge_pdat_buf);
-        //*/
 
         sched.for_each_patch([&](u64 id_patch, Patch cur_p) {
             if (merge_pdat_buf.at(id_patch).or_element_cnt == 0)
@@ -525,7 +800,7 @@ template <class pos_prec> class SPHTimestepperLeapfrog {
 
                 std::cout << "leapfrog corrector " << std::endl;
 
-                SPHTimestepperLeapfrogAlgs<pos_prec>::sycl_leapfrog_corrector(hndl.get_queue_compute(0), merge_pdat_buf.at(id_patch).or_element_cnt,
+                SPHTimestepperLeapfrogAlgs<pos_prec,Kernel,u_morton>::sycl_leapfrog_corrector(hndl.get_queue_compute(0), merge_pdat_buf.at(id_patch).or_element_cnt,
                                                   dt_cur, pdat_buf_merge.fields_f32_3[ivxyz],
                                                   pdat_buf_merge.fields_f32_3[iaxyz],
                                                   pdat_buf_merge.fields_f32_3[iaxyz_old]);
