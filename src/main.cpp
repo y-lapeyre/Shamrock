@@ -418,7 +418,7 @@ class TestTimestepper {
 
     static void step(SchedulerMPI &sched, TestSimInfo &siminfo, std::string dump_folder) {
 
-        SPHTimestepperLeapfrog<f32> leapfrog;
+        SPHTimestepperLeapfrogIsotGas<f32> leapfrog;
 
         SyCLHandler &hndl = SyCLHandler::get_instance();
 
