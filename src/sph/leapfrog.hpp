@@ -198,7 +198,7 @@ template <class flt,class Kernel,class u_morton> class SPHTimestepperLeapfrogAlg
 
 
 
-    inline void step(flt old_time, bool do_force, bool do_corrector){
+    inline flt step(flt old_time, bool do_force, bool do_corrector){
 
 
         const flt loc_htol_up_tol  = htol_up_tol;
@@ -540,6 +540,8 @@ template <class flt,class Kernel,class u_morton> class SPHTimestepperLeapfrogAlg
         });
 
         write_back_merge_patches(sched, interface_hndl, merge_pdat_buf);
+
+        return step_time;
     }
 
 };
@@ -564,6 +566,6 @@ template <class flt> class SPHTimestepperLeapfrog {
         bool do_force = step_cnt > 4;
         bool do_corrector = step_cnt > 5;
 
-        stepper.step(step_time, do_force, do_corrector);
+        step_time = stepper.step(step_time, do_force, do_corrector);
     }
 };
