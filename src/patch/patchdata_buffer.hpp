@@ -203,6 +203,83 @@ class PatchDataBuffer{ public:
 
     }
 
+    template<class T>
+    inline std::unique_ptr<sycl::buffer<T>>& get_field(u32 id);
+
+    template<>
+    inline std::unique_ptr<sycl::buffer<f32>>& get_field(u32 id){
+        return fields_f32[id];
+    }
+
+    template<>
+    inline std::unique_ptr<sycl::buffer<f32_2>>& get_field(u32 id){
+        return fields_f32_2[id];
+    }
+
+    template<>
+    inline std::unique_ptr<sycl::buffer<f32_3>>& get_field(u32 id){
+        return fields_f32_3[id];
+    }
+
+    template<>
+    inline std::unique_ptr<sycl::buffer<f32_4>>& get_field(u32 id){
+        return fields_f32_4[id];
+    }
+
+    template<>
+    inline std::unique_ptr<sycl::buffer<f32_8>>& get_field(u32 id){
+        return fields_f32_8[id];
+    }
+
+    template<>
+    inline std::unique_ptr<sycl::buffer<f32_16>>& get_field(u32 id){
+        return fields_f32_16[id];
+    }
+
+
+    template<>
+    inline std::unique_ptr<sycl::buffer<f64>>& get_field(u32 id){
+        return fields_f64[id];
+    }
+
+    template<>
+    inline std::unique_ptr<sycl::buffer<f64_2>>& get_field(u32 id){
+        return fields_f64_2[id];
+    }
+
+    template<>
+    inline std::unique_ptr<sycl::buffer<f64_3>>& get_field(u32 id){
+        return fields_f64_3[id];
+    }
+
+    template<>
+    inline std::unique_ptr<sycl::buffer<f64_4>>& get_field(u32 id){
+        return fields_f64_4[id];
+    }
+
+    template<>
+    inline std::unique_ptr<sycl::buffer<f64_8>>& get_field(u32 id){
+        return fields_f64_8[id];
+    }
+
+    template<>
+    inline std::unique_ptr<sycl::buffer<f64_16>>& get_field(u32 id){
+        return fields_f64_16[id];
+    }
+
+    template<>
+    inline std::unique_ptr<sycl::buffer<u32>>& get_field(u32 id){
+        return fields_u32[id];
+    }
+
+
+    template<>
+    inline std::unique_ptr<sycl::buffer<u64>>& get_field(u32 id){
+        return fields_u64[id];
+    }
+
+
+
 };
 
 
