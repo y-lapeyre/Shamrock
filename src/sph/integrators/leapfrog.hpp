@@ -36,9 +36,11 @@
 #include <unordered_map>
 #include <vector>
 
-constexpr f32 gpart_mass = 2e-4;
+namespace integrators {
 
-template <class flt,class Kernel,class u_morton> class SPHTimestepperLeapfrog {public:
+namespace sph {
+
+    template <class flt,class Kernel,class u_morton> class LeapfrogGeneral {public:
 
     using vec3 = sycl::vec<flt, 3>;
 
@@ -46,85 +48,32 @@ template <class flt,class Kernel,class u_morton> class SPHTimestepperLeapfrog {p
         std::is_same<flt, f16>::value || std::is_same<flt, f32>::value || std::is_same<flt, f64>::value
     , "Leapfrog : floating point type should be one of (f16,f32,f64)");
 
-    inline static void sycl_leapfrog_predictor(sycl::queue &queue, u32 npart, flt dt, std::unique_ptr<sycl::buffer<vec3>> &buf_xyz,
-                                        std::unique_ptr<sycl::buffer<vec3>> &buf_vxyz,
-                                        std::unique_ptr<sycl::buffer<vec3>> &buf_axyz) {
+
+    
+    inline static void sycl_move_parts(sycl::queue &queue, u32 npart, flt dt, std::unique_ptr<sycl::buffer<vec3>> &buf_xyz,
+                                        std::unique_ptr<sycl::buffer<vec3>> &buf_vxyz) {
 
         sycl::range<1> range_npart{npart};
 
         auto ker_predict_step = [&](sycl::handler &cgh) {
             auto acc_xyz  = buf_xyz->template get_access<sycl::access::mode::read_write>(cgh);
             auto acc_vxyz = buf_vxyz->template get_access<sycl::access::mode::read_write>(cgh);
-            auto acc_axyz = buf_axyz->template get_access<sycl::access::mode::read_write>(cgh);
 
             // Executing kernel
             cgh.parallel_for(range_npart, [=](sycl::item<1> item) {
                 u32 gid = (u32)item.get_id();
 
                 vec3 &vxyz = acc_vxyz[item];
-                vec3 &axyz = acc_axyz[item];
 
-                // v^{n + 1/2} = v^n + dt/2 a^n
-                vxyz = vxyz + (dt / 2) * (axyz);
-
-                // r^{n + 1} = r^n + dt v^{n + 1/2}
                 acc_xyz[item] = acc_xyz[item] + dt * vxyz;
 
-                // v^* = v^{n + 1/2} + dt/2 a^n
-                vxyz = vxyz + (dt / 2) * (axyz);
             });
         };
 
         queue.submit(ker_predict_step);
     }
 
-    inline static void sycl_leapfrog_corrector(sycl::queue &queue, u32 npart, flt dt, std::unique_ptr<sycl::buffer<vec3>> &buf_vxyz,
-                                        std::unique_ptr<sycl::buffer<vec3>> &buf_axyz,
-                                        std::unique_ptr<sycl::buffer<vec3>> &buf_axyz_old) {
 
-        sycl::range<1> range_npart{npart};
-
-        auto ker_corect_step = [&](sycl::handler &cgh) {
-            auto acc_vxyz     = buf_vxyz->template get_access<sycl::access::mode::read_write>(cgh);
-            auto acc_axyz     = buf_axyz->template get_access<sycl::access::mode::read_write>(cgh);
-            auto acc_axyz_old = buf_axyz_old->template get_access<sycl::access::mode::read_write>(cgh);
-
-            // Executing kernel
-            cgh.parallel_for(range_npart, [=](sycl::item<1> item) {
-                u32 gid = (u32)item.get_id();
-
-                vec3 &vxyz     = acc_vxyz[item];
-                vec3 &axyz     = acc_axyz[item];
-                vec3 &axyz_old = acc_axyz_old[item];
-
-                // v^* = v^{n + 1/2} + dt/2 a^n
-                vxyz = vxyz + (dt / 2) * (axyz - axyz_old);
-            });
-        };
-
-        queue.submit(ker_corect_step);
-    }
-
-    inline static void sycl_swap_a_field(sycl::queue &queue, u32 npart, std::unique_ptr<sycl::buffer<vec3>> &buf_axyz,
-                                std::unique_ptr<sycl::buffer<vec3>> &buf_axyz_old) {
-        sycl::range<1> range_npart{npart};
-
-        auto ker_swap_a = [&](sycl::handler &cgh) {
-            auto acc_axyz     = buf_axyz->template get_access<sycl::access::mode::read_write>(cgh);
-            auto acc_axyz_old = buf_axyz_old->template get_access<sycl::access::mode::read_write>(cgh);
-
-            // Executing kernel
-            cgh.parallel_for(range_npart, [=](sycl::item<1> item) {
-                vec3 axyz     = acc_axyz[item];
-                vec3 axyz_old = acc_axyz_old[item];
-
-                acc_axyz[item]     = axyz_old;
-                acc_axyz_old[item] = axyz;
-            });
-        };
-
-        queue.submit(ker_swap_a);
-    }
 
     inline static void sycl_position_modulo(sycl::queue &queue, u32 npart, std::unique_ptr<sycl::buffer<vec3>> &buf_xyz,
                                     std::tuple<vec3, vec3> box) {
@@ -188,21 +137,27 @@ template <class flt,class Kernel,class u_morton> class SPHTimestepperLeapfrog {p
     flt htol_up_iter ;
     
 
+    flt sph_gpart_mass;
 
 
 
-
-    SPHTimestepperLeapfrog(SchedulerMPI &sched,bool periodic_mode,flt htol_up_tol,
-        flt htol_up_iter ) : 
+    LeapfrogGeneral(SchedulerMPI &sched,bool periodic_mode,flt htol_up_tol,
+        flt htol_up_iter ,flt sph_gpart_mass) : 
             sched(sched), 
             periodic_mode(periodic_mode) , 
             htol_up_tol(htol_up_tol) , 
-            htol_up_iter(htol_up_iter)
+            htol_up_iter(htol_up_iter),
+            sph_gpart_mass(sph_gpart_mass)
         {}
 
 
-    template<class LambdaCFL, class LambdaForce>
-    inline flt step(flt old_time, bool do_force, bool do_corrector,LambdaCFL && cfl_compute,LambdaForce && force_compute){
+    template<class LambdaCFL,class LambdaUpdateTime,class LambdaSwapDer, class LambdaForce, class LambdaCorrector>
+    inline flt step(flt old_time, bool do_force, bool do_corrector,
+        LambdaCFL && lambda_cfl,
+        LambdaUpdateTime && lambda_update_time,
+        LambdaSwapDer && lambda_swap_der,
+        LambdaForce && lambda_compute_forces,
+        LambdaCorrector && lambda_correct){
 
         SyCLHandler &hndl = SyCLHandler::get_instance();
 
@@ -227,7 +182,7 @@ template <class flt,class Kernel,class u_morton> class SPHTimestepperLeapfrog {p
         //compute cfl
         auto get_cfl = [&]() -> flt{
             GlobalVariable<min,flt> cfl_glb_var;
-            cfl_glb_var.compute_var_patch(sched, cfl_compute);
+            cfl_glb_var.compute_var_patch(sched, lambda_cfl);
             cfl_glb_var.reduce_val();
             return cfl_glb_var.get_val();
         };
@@ -251,14 +206,17 @@ template <class flt,class Kernel,class u_morton> class SPHTimestepperLeapfrog {p
         sched.for_each_patch_buf([&](u64 id_patch, Patch cur_p, PatchDataBuffer &pdat_buf) {
             std::cout << "patch : n°" << id_patch << " -> leapfrog predictor" << std::endl;
 
-            sycl_leapfrog_predictor(hndl.get_queue_compute(0), pdat_buf.element_count, dt_cur,
-                                              pdat_buf.fields_f32_3.at(ixyz), pdat_buf.fields_f32_3.at(ivxyz),
-                                              pdat_buf.fields_f32_3.at(iaxyz));
+            lambda_update_time(hndl.get_queue_compute(0),pdat_buf,sycl::range<1> {pdat_buf.element_count},dt_cur/2);
+
+            sycl_move_parts(hndl.get_queue_compute(0), pdat_buf.element_count, dt_cur,
+                                              pdat_buf.fields_f32_3.at(ixyz), pdat_buf.fields_f32_3.at(ivxyz));
+
+            lambda_update_time(hndl.get_queue_compute(0),pdat_buf,sycl::range<1> {pdat_buf.element_count},dt_cur/2);
+
 
             std::cout << "patch : n°" << id_patch << " -> a field swap" << std::endl;
 
-            sycl_swap_a_field(hndl.get_queue_compute(0), pdat_buf.element_count, pdat_buf.fields_f32_3.at(iaxyz),
-                                        pdat_buf.fields_f32_3.at(iaxyz_old));
+            lambda_swap_der(hndl.get_queue_compute(0),pdat_buf,sycl::range<1> {pdat_buf.element_count});
 
             if (periodic_mode) {
                 sycl_position_modulo(hndl.get_queue_compute(0), pdat_buf.element_count,
@@ -367,10 +325,10 @@ template <class flt,class Kernel,class u_morton> class SPHTimestepperLeapfrog {p
             std::cout << "   original size : " << merge_pdat_buf.at(id_patch).or_element_cnt
                       << " | merged : " << pdat_buf_merge.element_count << std::endl;
 
-            sph::algs::SmoothingLenghtCompute<f32, u32, Kernel> h_iterator(sched.pdl, htol_up_tol, htol_up_iter);
+            ::sph::algs::SmoothingLenghtCompute<f32, u32, Kernel> h_iterator(sched.pdl, htol_up_tol, htol_up_iter);
 
             h_iterator.iterate_smoothing_lenght(hndl.get_queue_compute(0), merge_pdat_buf.at(id_patch).or_element_cnt,
-                                                gpart_mass, *radix_trees[id_patch], pdat_buf_merge, hnew, omega, eps_h);
+                                                sph_gpart_mass, *radix_trees[id_patch], pdat_buf_merge, hnew, omega, eps_h);
 
             // write back h test
             //*
@@ -408,10 +366,12 @@ template <class flt,class Kernel,class u_morton> class SPHTimestepperLeapfrog {p
         std::unordered_map<u64, MergedPatchCompFieldBuffer<f32>> omega_field_merged;
         make_merge_patches_comp_field<f32>(sched, interface_hndl, omega_field, omega_field_interfaces, omega_field_merged);
 
+        //TODO add looping on corrector step
+
 
         //compute force
         if (do_force) {
-            force_compute(sched,radix_trees,merge_pdat_buf,hnew_field_merged,omega_field_merged,htol_up_tol);
+            lambda_compute_forces(sched,radix_trees,merge_pdat_buf,hnew_field_merged,omega_field_merged,htol_up_tol);
         }
 
 
@@ -428,10 +388,9 @@ template <class flt,class Kernel,class u_morton> class SPHTimestepperLeapfrog {p
 
                 std::cout << "leapfrog corrector " << std::endl;
 
-                sycl_leapfrog_corrector(hndl.get_queue_compute(0), merge_pdat_buf.at(id_patch).or_element_cnt,
-                                                dt_cur, pdat_buf_merge.fields_f32_3[ivxyz],
-                                                pdat_buf_merge.fields_f32_3[iaxyz],
-                                                pdat_buf_merge.fields_f32_3[iaxyz_old]);
+                
+
+                lambda_correct(hndl.get_queue_compute(0),pdat_buf_merge,sycl::range<1> {merge_pdat_buf.at(id_patch).or_element_cnt},dt_cur/2);
             }
         });
 
@@ -441,3 +400,10 @@ template <class flt,class Kernel,class u_morton> class SPHTimestepperLeapfrog {p
     }
 
 };
+
+
+
+
+}
+
+}

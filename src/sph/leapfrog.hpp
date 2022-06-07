@@ -11,16 +11,20 @@
 #include "algs/syclreduction.hpp"
 #include "aliases.hpp"
 
+#include "patch/patchdata_buffer.hpp"
 #include "sph/integrators/leapfrog.hpp"
 #include "forces.hpp"
+
+constexpr f32 gpart_mass = 2e-4;
+
 
 template <class flt> class SPHTimestepperLeapfrogIsotGas {
   public:
     using vec3 = sycl::vec<flt, 3>;
-
     using u_morton = u32;
-
     using Kernel = sph::kernels::M4<f32>;
+
+    using Stepper = integrators::sph::LeapfrogGeneral<flt, Kernel, u_morton>;
 
     inline void step(SchedulerMPI &sched, std::string dump_folder, u32 step_cnt, f64 &step_time) {
 
@@ -36,8 +40,7 @@ template <class flt> class SPHTimestepperLeapfrogIsotGas {
 
 
 
-        SPHTimestepperLeapfrog<flt, Kernel, u_morton> stepper(sched,periodic_bc,htol_up_tol,htol_up_iter);
-
+        Stepper stepper(sched,periodic_bc,htol_up_tol,htol_up_iter,gpart_mass);
         bool do_force = step_cnt > 4;
         bool do_corrector = step_cnt > 5;
 
@@ -55,7 +58,10 @@ template <class flt> class SPHTimestepperLeapfrogIsotGas {
 
         const u32 ihpart    = sched.pdl.get_field_idx<flt>("hpart");
 
-        step_time = stepper.step(step_time, do_force, do_corrector,
+
+
+
+        step_time = stepper.step(step_time, do_force, do_corrector, 
         
         [&](u64 id_patch, PatchDataBuffer &pdat_buf) {
                 u32 npart_patch = pdat_buf.element_count;
@@ -93,9 +99,49 @@ template <class flt> class SPHTimestepperLeapfrogIsotGas {
                 flt min_cfl = syclalg::get_min<flt>(hndl.get_queue_compute(0), buf_cfl);
 
                 return min_cfl;
-            },
+            }, 
+            
+            [&](sycl::queue&  queue, PatchDataBuffer& buf, sycl::range<1> range_npart ,flt hdt){
+                auto ker_predict_step = [&](sycl::handler &cgh) {
+                    auto acc_xyz  = buf.get_field<vec3>(ixyz)->template get_access<sycl::access::mode::read_write>(cgh);
+                    auto acc_vxyz = buf.get_field<vec3>(ivxyz)->template get_access<sycl::access::mode::read_write>(cgh);
+                    auto acc_axyz = buf.get_field<vec3>(iaxyz)->template get_access<sycl::access::mode::read_write>(cgh);
 
+                    // Executing kernel
+                    cgh.parallel_for(range_npart, [=](sycl::item<1> item) {
+                        u32 gid = (u32)item.get_id();
 
+                        vec3 &vxyz = acc_vxyz[item];
+                        vec3 &axyz = acc_axyz[item];
+
+                        // v^{n + 1/2} = v^n + dt/2 a^n
+                        vxyz = vxyz + (hdt) * (axyz);
+
+                    });
+                };
+
+                queue.submit(ker_predict_step);
+            }, 
+            
+            [&](sycl::queue&  queue, PatchDataBuffer& buf, sycl::range<1> range_npart ){
+                auto ker_predict_step = [&](sycl::handler &cgh) {
+                    auto acc_axyz = buf.get_field<vec3>(iaxyz)->template get_access<sycl::access::mode::read_write>(cgh);
+                    auto acc_axyz_old = buf.get_field<vec3>(iaxyz_old)->template get_access<sycl::access::mode::read_write>(cgh);
+
+                    // Executing kernel
+                    cgh.parallel_for(range_npart, [=](sycl::item<1> item) {
+                        vec3 axyz     = acc_axyz[item];
+                        vec3 axyz_old = acc_axyz_old[item];
+
+                        acc_axyz[item]     = axyz_old;
+                        acc_axyz_old[item] = axyz;
+
+                    });
+                };
+
+                queue.submit(ker_predict_step);
+            }, 
+            
             [&](
 
 
@@ -207,8 +253,33 @@ template <class flt> class SPHTimestepperLeapfrogIsotGas {
 
                 });
 
-            }
-        
-        );
+            }, 
+            
+            [&](sycl::queue&  queue, PatchDataBuffer& buf, sycl::range<1> range_npart ,flt hdt){
+                
+
+                auto ker_corect_step = [&](sycl::handler &cgh) {
+                    auto acc_vxyz     = buf.get_field<vec3>(ivxyz)->template get_access<sycl::access::mode::read_write>(cgh);
+                    auto acc_axyz     = buf.get_field<vec3>(iaxyz)->template get_access<sycl::access::mode::read_write>(cgh);
+                    auto acc_axyz_old = buf.get_field<vec3>(iaxyz_old)->template get_access<sycl::access::mode::read_write>(cgh);
+
+                    // Executing kernel
+                    cgh.parallel_for(range_npart, [=](sycl::item<1> item) {
+                        u32 gid = (u32)item.get_id();
+
+                        vec3 &vxyz     = acc_vxyz[item];
+                        vec3 &axyz     = acc_axyz[item];
+                        vec3 &axyz_old = acc_axyz_old[item];
+
+                        // v^* = v^{n + 1/2} + dt/2 a^n
+                        vxyz = vxyz + (hdt) * (axyz - axyz_old);
+                    });
+                };
+
+                queue.submit(ker_corect_step);
+            });
+
+
+
     }
 };
