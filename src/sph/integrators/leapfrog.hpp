@@ -151,11 +151,12 @@ namespace sph {
         {}
 
 
-    template<class LambdaCFL,class LambdaUpdateTime,class LambdaSwapDer, class LambdaForce, class LambdaCorrector>
+    template<class LambdaCFL,class LambdaUpdateTime,class LambdaSwapDer,class LambdaPostSync, class LambdaForce, class LambdaCorrector>
     inline flt step(flt old_time, bool do_force, bool do_corrector,
         LambdaCFL && lambda_cfl,
         LambdaUpdateTime && lambda_update_time,
         LambdaSwapDer && lambda_swap_der,
+        LambdaPostSync && lambda_post_sync,
         LambdaForce && lambda_compute_forces,
         LambdaCorrector && lambda_correct){
 
@@ -368,6 +369,7 @@ namespace sph {
 
         //TODO add looping on corrector step
 
+        lambda_post_sync(sched, merge_pdat_buf,hnew_field_merged,omega_field_merged);
 
         //compute force
         if (do_force) {

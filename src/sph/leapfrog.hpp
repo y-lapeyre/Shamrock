@@ -140,8 +140,15 @@ template <class flt> class SPHTimestepperLeapfrogIsotGas {
                 };
 
                 queue.submit(ker_predict_step);
-            }, 
-            
+            },
+            [&](SchedulerMPI & sched, 
+                std::unordered_map<u64, MergedPatchDataBuffer<vec3>>& merge_pdat_buf, 
+                std::unordered_map<u64, MergedPatchCompFieldBuffer<flt>>& hnew_field_merged,
+                std::unordered_map<u64, MergedPatchCompFieldBuffer<flt>>& omega_field_merged
+                ) {
+
+                }
+            ,
             [&](
 
 
