@@ -60,7 +60,7 @@ inline void make_merge_patches(
 
 
                 u32 cnt = pdat_ptr->get_obj_cnt();
-                std::cout << "received interf : " << cnt << std::endl;
+                //std::cout << "received interf : " << cnt << std::endl;
                 len_main += (cnt);
             }
         }

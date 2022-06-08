@@ -289,7 +289,7 @@ inline PatchDataBuffer attach_to_patchData(PatchData & pdat){
     
     pdatbuf.element_count = u32(pdat.get_obj_cnt());
 
-    std::cout << "attach to pdat : " << pdatbuf.element_count << std::endl;
+    //std::cout << "attach to pdat : " << pdatbuf.element_count << std::endl;
 
 
     for(u32 idx = 0; idx < pdat.patchdata_layout.fields_f32.size(); idx++){

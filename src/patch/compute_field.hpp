@@ -33,6 +33,15 @@ class PatchComputeField{public:
         });
     }
 
+    
+    inline void generate(SchedulerMPI & sched, std::unordered_map<u64, u32>& size_map){
+        sched.for_each_patch([&](u64 id_patch, Patch cur_p) {
+            field_data.insert({id_patch,PatchDataField<T>("comp_field",1)});
+            field_data.at(id_patch).resize(size_map[id_patch]);
+            sycl::buffer<T> field_buf(field_data.at(id_patch).data(),field_data.at(id_patch).size());
+        });
+    }
+
     std::unordered_map<u64, std::unique_ptr<sycl::buffer<T>>> field_data_buf;
     inline void to_sycl(){
         for (auto & [key,dat] : field_data) {

@@ -195,7 +195,7 @@ namespace sph {
 
         //compute dt step
 
-        f32 dt_cur = sycl::min(f32(0.001),cfl_val);
+        f32 dt_cur = cfl_val;
 
         std::cout << " --- current dt  : " << dt_cur << std::endl;
 

@@ -8,12 +8,19 @@
 
 #pragma once
 
+#include "CL/sycl/buffer.hpp"
+#include "CL/sycl/range.hpp"
 #include "algs/syclreduction.hpp"
 #include "aliases.hpp"
 
 #include "patch/patchdata_buffer.hpp"
 #include "sph/integrators/leapfrog.hpp"
 #include "forces.hpp"
+#include "algs/integrators_utils.hpp"
+#include "algs/cfl_utils.hpp"
+#include "sph/sphpart.hpp"
+#include <memory>
+#include <unordered_map>
 
 constexpr f32 gpart_mass = 2e-4;
 
@@ -58,21 +65,17 @@ template <class flt> class SPHTimestepperLeapfrogIsotGas {
 
         const u32 ihpart    = sched.pdl.get_field_idx<flt>("hpart");
 
-
+        PatchComputeField<f32> pressure_field;
 
 
         step_time = stepper.step(step_time, do_force, do_corrector, 
         
         [&](u64 id_patch, PatchDataBuffer &pdat_buf) {
-                u32 npart_patch = pdat_buf.element_count;
 
-                std::unique_ptr<sycl::buffer<flt>> buf_cfl = std::make_unique<sycl::buffer<flt>>(npart_patch);
+            
+                flt cfl_val = CflUtility<flt>::basic_cfl(pdat_buf, [&](sycl::handler &cgh, sycl::buffer<flt> & buf_cfl, sycl::range<1> range_it){
 
-                sycl::range<1> range_npart{npart_patch};
-
-                auto ker_reduc_step_mincfl = [&](sycl::handler &cgh) {
-                    auto arr = buf_cfl->template get_access<sycl::access::mode::discard_write>(cgh);
-
+                    auto arr = buf_cfl.template get_access<sycl::access::mode::discard_write>(cgh);
                     auto acc_hpart = pdat_buf.get_field<flt>(ihpart)->template get_access<sycl::access::mode::read>(cgh);
                     auto acc_axyz  = pdat_buf.get_field<vec3>(iaxyz)->template get_access<sycl::access::mode::read>(cgh);
 
@@ -81,7 +84,7 @@ template <class flt> class SPHTimestepperLeapfrogIsotGas {
                     const flt c_cour  = cfl_cour;
                     const flt c_force = cfl_force;
 
-                    cgh.parallel_for<class Initial_dtcfl>(range_npart, [=](sycl::item<1> item) {
+                    cgh.parallel_for<class Initial_dtcfl>(range_it, [=](sycl::item<1> item) {
                         u32 i = (u32)item.get_id(0);
 
                         flt h_a    = acc_hpart[item];
@@ -92,35 +95,17 @@ template <class flt> class SPHTimestepperLeapfrogIsotGas {
 
                         arr[i] = sycl::min(dtcfl_p, dtcfl_a);
                     });
-                };
 
-                hndl.get_queue_compute(0).submit(ker_reduc_step_mincfl);
+                });
 
-                flt min_cfl = syclalg::get_min<flt>(hndl.get_queue_compute(0), buf_cfl);
+                std::cout << "cfl dt : " << cfl_val << std::endl;
 
-                return min_cfl;
+                return sycl::min(f32(0.001),cfl_val);
+
             }, 
             
             [&](sycl::queue&  queue, PatchDataBuffer& buf, sycl::range<1> range_npart ,flt hdt){
-                auto ker_predict_step = [&](sycl::handler &cgh) {
-                    auto acc_xyz  = buf.get_field<vec3>(ixyz)->template get_access<sycl::access::mode::read_write>(cgh);
-                    auto acc_vxyz = buf.get_field<vec3>(ivxyz)->template get_access<sycl::access::mode::read_write>(cgh);
-                    auto acc_axyz = buf.get_field<vec3>(iaxyz)->template get_access<sycl::access::mode::read_write>(cgh);
-
-                    // Executing kernel
-                    cgh.parallel_for(range_npart, [=](sycl::item<1> item) {
-                        u32 gid = (u32)item.get_id();
-
-                        vec3 &vxyz = acc_vxyz[item];
-                        vec3 &axyz = acc_axyz[item];
-
-                        // v^{n + 1/2} = v^n + dt/2 a^n
-                        vxyz = vxyz + (hdt) * (axyz);
-
-                    });
-                };
-
-                queue.submit(ker_predict_step);
+                field_advance_time(queue, * buf.get_field<vec3>(ivxyz), *buf.get_field<vec3>(iaxyz), range_npart, hdt);
             }, 
             
             [&](sycl::queue&  queue, PatchDataBuffer& buf, sycl::range<1> range_npart ){
@@ -147,6 +132,37 @@ template <class flt> class SPHTimestepperLeapfrogIsotGas {
                 std::unordered_map<u64, MergedPatchCompFieldBuffer<flt>>& omega_field_merged
                 ) {
 
+
+                    std::unordered_map<u64, u32> size_map;
+
+                    for(auto & [k,buf] : merge_pdat_buf){
+                        size_map[k] = buf.data->element_count;
+                    }
+
+                    pressure_field.generate(sched,size_map);
+                    pressure_field.to_sycl();
+
+                    sched.for_each_patch([&](u64 id_patch, Patch cur_p) {
+                        sycl::buffer<f32> &hnew  = *hnew_field_merged[id_patch].buf;
+                        sycl::buffer<f32> &press  = *pressure_field.field_data_buf[id_patch];
+
+                        sycl::range range_npart{hnew.size()};
+
+                        hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+                            auto h = hnew.get_access<sycl::access::mode::read>(cgh);
+
+                            auto p = press.get_access<sycl::access::mode::discard_write>(cgh);
+
+                            cgh.parallel_for<class write_back_h>(range_npart,
+                                                                [=](sycl::item<1> item) { 
+                                                                    
+                                                                    p[item] = eos_cs*eos_cs*rho_h(gpart_mass, h[item])  ; 
+                                                                    
+                                                                    
+                                                                    });
+                        });
+
+                    });
                 }
             ,
             [&](
@@ -171,6 +187,8 @@ template <class flt> class SPHTimestepperLeapfrogIsotGas {
                     sycl::buffer<f32> &hnew  = *hnew_field_merged[id_patch].buf;
                     sycl::buffer<f32> &omega = *omega_field_merged[id_patch].buf;
 
+                    sycl::buffer<f32> &press  = *pressure_field.field_data_buf[id_patch];
+
                     sycl::range range_npart{merge_pdat_buf.at(id_patch).or_element_cnt};
 
                 
@@ -188,8 +206,11 @@ template <class flt> class SPHTimestepperLeapfrogIsotGas {
                         auto cell_int_r =
                             radix_trees[id_patch]->buf_cell_interact_rad->template get_access<sycl::access::mode::read>(cgh);
 
+
+                        auto pres = press.get_access<sycl::access::mode::read>(cgh);
+
                         const f32 part_mass = gpart_mass;
-                        const f32 cs        = eos_cs;
+                        //const f32 cs        = eos_cs;
 
                         const f32 htol = htol_up_tol;
 
@@ -206,7 +227,8 @@ template <class flt> class SPHTimestepperLeapfrogIsotGas {
                             f32 rho_a    = rho_h(part_mass, h_a);
                             f32 rho_a_sq = rho_a * rho_a;
 
-                            f32 P_a     = cs * cs * rho_a;
+                            f32 P_a     = pres[id_a];
+                            //f32 P_a     = cs * cs * rho_a;
                             f32 omega_a = omga[id_a];
 
                             f32_3 inter_box_a_min = xyz_a - h_a * Kernel::Rkern;
@@ -240,7 +262,8 @@ template <class flt> class SPHTimestepperLeapfrogIsotGas {
                                     }
 
                                     f32 rho_b   = rho_h(part_mass, h_b);
-                                    f32 P_b     = cs * cs * rho_b;
+                                    f32 P_b     = pres[id_b];
+                                    //f32 P_b     = cs * cs * rho_b;
                                     f32 omega_b = omga[id_b];
 
                                     f32_3 tmp = sph_pressure<f32_3, f32>(part_mass, rho_a_sq, rho_b * rho_b, P_a, P_b, omega_a,
