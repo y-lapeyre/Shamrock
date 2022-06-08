@@ -1,11 +1,25 @@
-#include "CL/sycl/buffer.hpp"
-#include "CL/sycl/range.hpp"
+
 #include "aliases.hpp"
 #include "utils/sycl_vector_utils.hpp"
 #include <iostream>
 
 template<class T, class flt>
 inline void field_advance_time(sycl::queue & queue, sycl::buffer<T> & buf_val, sycl::buffer<T> & buf_der, sycl::range<1> elem_range, flt dt){
+
+    std::cout << "hdt : " << dt << std::endl;
+    std::cout << "before  ###############" << std::endl;
+    {
+        auto acc_du = buf_val.template get_access<sycl::access::mode::read>();
+        auto acc_u = buf_der.template get_access<sycl::access::mode::read>();
+
+        std::cout << "v: ";
+        print_vec(std::cout, acc_u[1000]);
+        std::cout << " a: ";
+        print_vec(std::cout, acc_du[1000]);
+        std::cout << std::endl;
+
+    }
+
 
     auto ker_advance_time = [&](sycl::handler &cgh) {
         auto acc_du = buf_val.template get_access<sycl::access::mode::read>(cgh);

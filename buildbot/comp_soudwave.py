@@ -280,10 +280,10 @@ plot_soundwave(100,toff)
 
 plot_soundwave(150,toff)
 
-plot_soundwave(200,toff)
+#plot_soundwave(200,toff)
 
 
-plot_soundwave(250,toff)
+#plot_soundwave(250,toff)
 
 #plot_soundwave(300,toff)
 #plot_soundwave(400,toff)

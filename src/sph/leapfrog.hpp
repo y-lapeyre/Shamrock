@@ -8,8 +8,6 @@
 
 #pragma once
 
-#include "CL/sycl/buffer.hpp"
-#include "CL/sycl/range.hpp"
 #include "algs/syclreduction.hpp"
 #include "aliases.hpp"
 
@@ -105,7 +103,38 @@ template <class flt> class SPHTimestepperLeapfrogIsotGas {
             }, 
             
             [&](sycl::queue&  queue, PatchDataBuffer& buf, sycl::range<1> range_npart ,flt hdt){
-                field_advance_time(queue, * buf.get_field<vec3>(ivxyz), *buf.get_field<vec3>(iaxyz), range_npart, hdt);
+                /*
+                sycl::buffer<vec3> & vxyz =  * buf.get_field<vec3>(ivxyz);
+                sycl::buffer<vec3> & axyz =  * buf.get_field<vec3>(iaxyz);
+
+                field_advance_time(
+                    queue, 
+                    vxyz, 
+                    axyz, 
+                    range_npart,
+                    hdt);
+
+                */
+
+                auto ker_predict_step = [&](sycl::handler &cgh) {
+                    auto acc_xyz  = buf.get_field<vec3>(ixyz)->template get_access<sycl::access::mode::read_write>(cgh);
+                    auto acc_vxyz = buf.get_field<vec3>(ivxyz)->template get_access<sycl::access::mode::read_write>(cgh);
+                    auto acc_axyz = buf.get_field<vec3>(iaxyz)->template get_access<sycl::access::mode::read_write>(cgh);
+
+                    // Executing kernel
+                    cgh.parallel_for(range_npart, [=](sycl::item<1> item) {
+                        u32 gid = (u32)item.get_id();
+
+                        vec3 &vxyz = acc_vxyz[item];
+                        vec3 &axyz = acc_axyz[item];
+
+                        // v^{n + 1/2} = v^n + dt/2 a^n
+                        vxyz = vxyz + (hdt) * (axyz);
+
+                    });
+                };
+
+                queue.submit(ker_predict_step);
             }, 
             
             [&](sycl::queue&  queue, PatchDataBuffer& buf, sycl::range<1> range_npart ){
@@ -153,13 +182,13 @@ template <class flt> class SPHTimestepperLeapfrogIsotGas {
 
                             auto p = press.get_access<sycl::access::mode::discard_write>(cgh);
 
-                            cgh.parallel_for<class write_back_h>(range_npart,
-                                                                [=](sycl::item<1> item) { 
-                                                                    
-                                                                    p[item] = eos_cs*eos_cs*rho_h(gpart_mass, h[item])  ; 
-                                                                    
-                                                                    
-                                                                    });
+                            cgh.parallel_for(range_npart,
+                                    [=](sycl::item<1> item) { 
+                                        
+                                        p[item] = eos_cs*eos_cs*rho_h(gpart_mass, h[item])  ; 
+                                        
+                                        
+                                        });
                         });
 
                     });
