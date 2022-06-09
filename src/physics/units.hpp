@@ -11,6 +11,80 @@
 #include "aliases.hpp"
 
 
+namespace units {
+
+    constexpr f64 au_m = 149597870700; //(m)
+    constexpr f64 ly_m = 9460730472580800; //(m)
+    constexpr f64 pc_m = 3.0857e16;//(m)
+
+    constexpr f64 mn_s = 60;//(s)
+    constexpr f64 hr_s = 3600;//(s)
+    constexpr f64 dy_s = 24*hr_s;//(s)
+    constexpr f64 yr_s = 31557600;//(s)
+
+    constexpr f64 earth_mass_kg = 5.9722e24; //(kg)
+    constexpr f64 jupiter_mass_kg = 1.898e27; //(kg)
+    constexpr f64 sol_mass_kg   = 1.98847e30; //(kg)
+
+    constexpr f64 eV_J = 1.602176634e-19; // (J)
+    constexpr f64 erg_J = 1e-7; // (J)
+
+    /*
+    * physical constants
+    */
+    constexpr f64 c_si = 299792458;   //(m.s-1)
+    constexpr f64 G_si = 6.67430e-11; //(m^3 kg-1 s-2)
+    constexpr f64 kB_si = 1.380649e-23; //(m2 kg s^-2 K^-1 )
+
+    enum UnitEntry{
+        s,m,kg,A,K,mol,cd,
+        mn,hr,dy,yr,
+        au,ly,pc,
+        earth_mass, jupiter_mass, sol_mass, Hz 	, N, Pa, J 	, W, C 	,V 	, F, ohm , eV,  erg, 
+    };
+
+    inline std::string get_symbol(UnitEntry a){
+
+        switch (a) {
+            case s              : return "s"              ; break; 
+            case m              : return "m"              ; break;
+            case kg             : return "kg"             ; break;
+            case A              : return "A"              ; break;
+            case K              : return "K"              ; break;
+            case mol            : return "mol"            ; break;
+            case cd             : return "cd"             ; break;
+            case mn             : return "mn"             ; break;
+            case hr             : return "hr"             ; break;
+            case dy             : return "dy"             ; break;
+            case yr             : return "yr"             ; break;
+            case au             : return "au"             ; break;
+            case ly             : return "ly"             ; break;
+            case pc             : return "pc"             ; break;
+            case earth_mass     : return "earth_mass"     ; break;
+            case jupiter_mass   : return "jupiter_mass"   ; break;
+            case sol_mass       : return "sol_mass"       ; break;
+            case Hz             : return "Hz"             ; break;
+            case N              : return "N"              ; break;
+            case Pa             : return "Pa"             ; break;
+            case J              : return "J"              ; break;
+            case W              : return "W"              ; break;
+            case C              : return "C"              ; break;
+            case V              : return "V"              ; break;
+            case F              : return "F"              ; break;
+            case ohm            : return "ohm"            ; break;
+            case eV             : return "eV"             ; break;
+            case erg            : return "erg"            ; break;
+        }
+
+        return "err";
+    }
+
+
+} // namespace units
+
+
+
+
 template<class flt>
 class Units{
 
@@ -25,28 +99,6 @@ class Units{
     public:
 
     
-    static constexpr flt au_m = 149597870700; //(m)
-    static constexpr flt ly_m = 9460730472580800; //(m)
-    static constexpr flt pc_m = 3.0857e16;//(m)
-
-    static constexpr flt mn_s = 60;//(s)
-    static constexpr flt hr_s = 3600;//(s)
-    static constexpr flt dy_s = 24*hr_s;//(s)
-    static constexpr flt yr_s = 31557600;//(s)
-
-    static constexpr flt earth_mass_kg = 5.9722e24; //(kg)
-    static constexpr flt jupiter_mass_kg = 1.898e27; //(kg)
-    static constexpr flt sol_mass_kg   = 1.98847e30; //(kg)
-
-    static constexpr flt eV_J = 1.602176634e-19; // (J)
-    static constexpr flt erg_J = 1e-7; // (J)
-
-    /*
-    * physical constants
-    */
-    static constexpr flt c_si = 299792458;   //(m.s-1)
-    static constexpr flt G_si = 6.67430e-11; //(m^3 kg-1 s-2)
-    static constexpr flt kB_si = 1.380649e-23; //(m2 kg s^-2 K^-1 )
     
 
 
@@ -146,20 +198,20 @@ class Units{
 
 
         //other times units
-        mn(s*mn_s),
-        hr(s*hr_s),
-        dy(s*dy_s),
-        yr(s*yr_s),
+        mn(s*units::mn_s),
+        hr(s*units::hr_s),
+        dy(s*units::dy_s),
+        yr(s*units::yr_s),
 
         //other lenght units
-        au(m*au_m),
-        ly(m*ly_m),
-        pc(m*pc_m),
+        au(m*units::au_m),
+        ly(m*units::ly_m),
+        pc(m*units::pc_m),
 
         //other mass units
-        earth_mass(kg*earth_mass_kg),
-        jupiter_mass(kg*jupiter_mass_kg),
-        sol_mass(kg*sol_mass_kg),
+        earth_mass(kg*units::earth_mass_kg),
+        jupiter_mass(kg*units::jupiter_mass_kg),
+        sol_mass(kg*units::sol_mass_kg),
 
         //other e current units
 
@@ -204,15 +256,15 @@ class Units{
         /*
         * alternative derived units
         */
-        eV  (J*eV_J), // (J)
-        erg (J*erg_J), // (J)
+        eV  (J*units::eV_J), // (J)
+        erg (J*units::erg_J), // (J)
 
         /*
         * constants
         */ 
-        c (c_si * (m/s)),   //(m.s-1)
-        G (G_si * (m*m*m/(kg*s*s))), //(m^3 kg-1 s-2)
-        kB (kB_si * (m*m*kg / (s*s*K)))//(m2 kg s^-2 K^-1 )
+        c (units::c_si * (m/s)),   //(m.s-1)
+        G (units::G_si * (m*m*m/(kg*s*s))), //(m^3 kg-1 s-2)
+        kB (units::kB_si * (m*m*kg / (s*s*K)))//(m2 kg s^-2 K^-1 )
         
         {}
 };

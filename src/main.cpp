@@ -37,6 +37,7 @@
 #include "patchscheduler/loadbalancing_hilbert.hpp"
 #include "patchscheduler/patch_content_exchanger.hpp"
 #include "patchscheduler/scheduler_mpi.hpp"
+#include "physics/units.hpp"
 #include "sph/leapfrog.hpp"
 #include "sph/sphpatch.hpp"
 #include "sys/cmdopt.hpp"
@@ -568,7 +569,17 @@ int main(int argc, char *argv[]) {
 
 
 
+    Units<f64> code_units(
+        units::yr_s,
+        units::au_m,
+        units::earth_mass_kg,
+        1,
+        1,
+        1,
+        1
+    );
 
+    
 
 
 
