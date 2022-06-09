@@ -179,22 +179,22 @@ class Units{
 
 
     Units(
-        flt unit_s   = 1,
-        flt unit_m   = 1,
-        flt unit_kg  = 1,
-        flt unit_A   = 1,
-        flt unit_K   = 1,
-        flt unit_mol = 1,
-        flt unit_cd  = 1
+        flt unit_time   = 1,
+        flt unit_lenght   = 1,
+        flt unit_mass  = 1,
+        flt unit_current   = 1,
+        flt unit_temperature   = 1,
+        flt unit_qte = 1,
+        flt unit_lumint  = 1
         ) :
 
-        s  (unit_s  ),
-        m  (unit_m  ),
-        kg (unit_kg ),
-        A  (unit_A  ),
-        K  (unit_K  ),
-        mol(unit_mol),
-        cd (unit_cd ),
+        s  (unit_time  ),
+        m  (unit_lenght  ),
+        kg (unit_mass ),
+        A  (unit_current  ),
+        K  (unit_temperature  ),
+        mol(unit_qte),
+        cd (unit_lumint ),
 
 
         //other times units
