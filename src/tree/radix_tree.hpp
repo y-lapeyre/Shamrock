@@ -54,8 +54,8 @@ class Radix_tree_depth<u64>{public:
 template<class u_morton,class vec3>
 class Radix_Tree{public:
 
-    typedef typename morton_3d::morton_types<u_morton>::int_vec_repr vec3i;
-    typedef typename vec3::element_type flt;
+    using vec3i = typename morton_3d::morton_types<u_morton>::int_vec_repr;
+    using flt = typename vec3::element_type;
 
     static constexpr u32 tree_depth = Radix_tree_depth<u_morton>::tree_depth;
 

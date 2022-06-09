@@ -295,7 +295,7 @@ class TestTimestepper {
                     //                      h    
                     pdat.fields_f32[ihpart].insert_element(h*2);
                     //                           v          a             a_old
-                    pdat.fields_f32_3[ivxyz].insert_element(f32_3{0.f,0.f,0.f});
+                    pdat.fields_f32_3[ivxyz].insert_element(f32_3{0.F,0.F,0.F});
                     pdat.fields_f32_3[iaxyz].insert_element(f32_3{0.f,0.f,0.f});
                     pdat.fields_f32_3[iaxyz_old].insert_element(f32_3{0.f,0.f,0.f});
                 });
