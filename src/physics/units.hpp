@@ -10,185 +10,213 @@
 
 #include "aliases.hpp"
 
-namespace units {
-
-namespace SI_cst{
-
-    /*
-    * lenghts units
-    */
-    constexpr f64 m = 1;//(m)
-    constexpr f64 km = 1000;//(m)
-    constexpr f64 nm = 1e-9;//(m)
-    constexpr f64 au = 149597870700; //(m)
-    constexpr f64 ly = 9460730472580800; //(m)
-    constexpr f64 pc = 3.0857e16;//(m)
-
-    /*
-    * time units
-    */
-    constexpr f64 s = 1;
-    constexpr f64 mn = 60;
-    constexpr f64 hr = 60*mn;
-    constexpr f64 dy = 24*hr;
-    constexpr f64 yr = 31557600;
-
-
-    /*
-    * mass units
-    */
-    constexpr f64 earth_mass = 5.9722e24; //(kg)
-    constexpr f64 jupiter_mass = 1.898e27; //(kg)
-    constexpr f64 sol_mass   = 1.98847e30; //(kg)
-
-    /*
-    * physical constants
-    */
-    constexpr f64 c = 299792458;   //(m.s-1)
-    constexpr f64 g = 6.67430e-11; //(m^3 kg-1 s-2)
-
-
-    
-} // namespace SI_cst
-
-} // namespace units
 
 template<class flt>
-class UnitSystem{ public:
+class Units{
 
     static_assert(
         std::is_same<flt, f16>::value || std::is_same<flt, f32>::value || std::is_same<flt, f64>::value
     , "UnitSystem : floating point type should be one of (f16,f32,f64)");
-
-    flt to_si_lenght;
-    flt to_si_mass;
-    flt to_si_time;
-    flt to_si_elec_cur;
-    flt to_si_temp;
-    flt to_si_qte;
-    flt to_si_lum_int;
-
-    flt to_si_lenght_2;
-    flt to_si_mass_2;
-    flt to_si_time_2;
-    flt to_si_elec_cur_2;
-    flt to_si_temp_2;
-    flt to_si_qte_2;
-    flt to_si_lum_int_2;
-
-    flt to_si_lenght_3;
-    flt to_si_mass_3;
-    flt to_si_time_3;
-    flt to_si_elec_cur_3;
-    flt to_si_temp_3;
-    flt to_si_qte_3;
-    flt to_si_lum_int_3;
-
+    
+    
+    
+    
+    
+    public:
 
     
+    static constexpr flt au_m = 149597870700; //(m)
+    static constexpr flt ly_m = 9460730472580800; //(m)
+    static constexpr flt pc_m = 3.0857e16;//(m)
 
+    static constexpr flt mn_s = 60;//(s)
+    static constexpr flt hr_s = 3600;//(s)
+    static constexpr flt dy_s = 24*hr_s;//(s)
+    static constexpr flt yr_s = 31557600;//(s)
 
+    static constexpr flt earth_mass_kg = 5.9722e24; //(kg)
+    static constexpr flt jupiter_mass_kg = 1.898e27; //(kg)
+    static constexpr flt sol_mass_kg   = 1.98847e30; //(kg)
 
-
-
-    /*
-    * lenghts units
-    */
-    flt m; //(m)
-    flt km; //(m)
-    flt nm; //(m)
-    flt au; //(m)
-    flt ly; //(m)
-    flt pc; //(m)
-
-
-    /*
-    * time units
-    */
-    flt s; //(s)
-    flt mn; //(s)
-    flt hr; //(s)
-    flt dy; //(s)
-    flt yr; //(s)
-
-    /*
-    * mass units
-    */
-    flt earth_mass; //(kg)
-    flt jupiter_mass;   //(kg)
-    flt sol_mass;   //(kg)
+    static constexpr flt eV_J = 1.602176634e-19; // (J)
+    static constexpr flt erg_J = 1e-7; // (J)
 
     /*
     * physical constants
     */
-    flt c;  //(m.s-1)
-    flt g;  //(m^3 kg-1 s-2)
-
-    #define add_conversion(name,unit) name = units::SI_cst::name/(unit)
+    static constexpr flt c_si = 299792458;   //(m.s-1)
+    static constexpr flt G_si = 6.67430e-11; //(m^3 kg-1 s-2)
+    static constexpr flt kB_si = 1.380649e-23; //(m2 kg s^-2 K^-1 )
     
-    inline void update_units(){
-
-        add_conversion(m,to_si_lenght);
-        add_conversion(km,to_si_lenght);
-        add_conversion(nm,to_si_lenght);
-        add_conversion(au,to_si_lenght);
-        add_conversion(ly,to_si_lenght);
-        add_conversion(pc,to_si_lenght);
-
-        add_conversion(s, to_si_time);
-        add_conversion(mn, to_si_time);
-        add_conversion(hr, to_si_time);
-        add_conversion(dy, to_si_time);
-        add_conversion(hr, to_si_time);
 
 
-        add_conversion(earth_mass,to_si_mass);
-        add_conversion(jupiter_mass,to_si_mass);
-        add_conversion(sol_mass,to_si_mass);
-
-        add_conversion(c,to_si_lenght/to_si_time);
-        add_conversion(g,to_si_lenght_3/(to_si_mass*to_si_time_2));
+    /*
+    * base units
+    */
+    const flt s,m,kg,A,K,mol,cd;
 
 
-    }
+
+    /*
+    * alternative base units
+    */
+
+    //other times units
+    const flt mn,hr,dy,yr;
+
+    //other lenght units
+    const flt au,ly,pc;
+
+    //other mass units
+    const flt earth_mass, jupiter_mass, sol_mass;
+
+    //other e current units
+
+    //other temperature units
+
+    //other quantity units
+
+    //other luminous intensity units
 
 
-    inline void set_code_units(
-        flt unit_lenght = 1,
-        flt unit_mass = 1,
-        flt unit_time = 1,
-        flt unit_electric_current = 1,
-        flt unit_thermo_temperature = 1,
-        flt unit_amount_of_substance = 1,
-        flt unit_luminous_intensity = 1
-        ){
-
-        to_si_lenght     = unit_lenght;
-        to_si_mass       = unit_mass;
-        to_si_time       = unit_time;
-        to_si_elec_cur   = unit_electric_current;
-        to_si_temp       = unit_thermo_temperature;
-        to_si_qte        = unit_amount_of_substance;
-        to_si_lum_int    = unit_luminous_intensity;
-
-        to_si_lenght_2     = to_si_lenght*to_si_lenght;
-        to_si_mass_2       = to_si_mass*to_si_mass;
-        to_si_time_2       = to_si_time*to_si_time;
-        to_si_elec_cur_2   = to_si_elec_cur*to_si_elec_cur;
-        to_si_temp_2       = to_si_temp*to_si_temp;
-        to_si_qte_2        = to_si_qte*to_si_qte;
-        to_si_lum_int_2    = to_si_lum_int*to_si_lum_int;
-
-        to_si_lenght_3     = to_si_lenght*to_si_lenght*to_si_lenght;
-        to_si_mass_3       = to_si_mass*to_si_mass*to_si_mass;
-        to_si_time_3       = to_si_time*to_si_time*to_si_time;
-        to_si_elec_cur_3   = to_si_elec_cur*to_si_elec_cur*to_si_elec_cur;
-        to_si_temp_3       = to_si_temp*to_si_temp*to_si_temp;
-        to_si_qte_3        = to_si_qte*to_si_qte*to_si_qte;
-        to_si_lum_int_3    = to_si_lum_int*to_si_lum_int*to_si_lum_int;
-
-        update_units();
-    }
 
 
+    /*
+    * derived units
+    */
+    const flt Hz 	;///< hertz : frequency (s−1) 	
+    const flt N 	;///< (kg⋅m⋅s−2) 	
+    const flt Pa 	;///< (kg⋅m−1⋅s−2) 	(N/m2)
+    const flt J 	;///< (kg⋅m2⋅s−2) 	(N⋅m = Pa⋅m3)
+    const flt W 	;///< (kg⋅m2⋅s−3) 	(J/s)
+    const flt C 	;///< (s⋅A) 	
+    const flt V 	;///< (kg⋅m2⋅s−3⋅A−1) 	(W/A) = (J/C)
+    const flt F 	;///< (kg−1⋅m−2⋅s4⋅A2) 	(C/V) = (C2/J)
+    const flt ohm 	;///< (kg⋅m2⋅s−3⋅A−2) 	(V/A) = (J⋅s/C2)
+    //const flt S 	;///< (kg−1⋅m−2⋅s3⋅A2) 	(ohm−1)
+    //const flt Wb 	;///< (kg⋅m2⋅s−2⋅A−1) 	(V⋅s)
+    //const flt T 	;///< (kg⋅s−2⋅A−1) 	(Wb/m2)
+    //const flt H 	;///< (kg⋅m2⋅s−2⋅A−2) 	(Wb/A)
+    //const flt degC 	;///< relative to 273.15 K 	(K) 	
+    //const flt lm 	;///< (cd⋅sr) 	(cd⋅sr)
+    //const flt lx 	;///< (cd⋅sr⋅m−2) 	(lm/m2)
+    //const flt l 	;///< (s−1) 	
+    //const flt Gy 	;///< (m2⋅s−2) 	(J/kg)
+    //const flt Sv 	;///< (m2⋅s−2) 	(J/kg)
+    //const flt kat 	;///< (mol⋅s−1) 	
+
+
+
+    /*
+    * alternative derived units
+    */
+    const flt eV; // (J)
+    const flt erg; // (J)
+    
+
+
+
+
+
+    /*
+    * constants
+    */ 
+    const flt c;   //(m.s-1)
+    const flt G; //(m^3 kg-1 s-2)
+    const flt kB; //(m2 kg s^-2 K^-1 )
+
+
+    Units(
+        flt unit_s   = 1,
+        flt unit_m   = 1,
+        flt unit_kg  = 1,
+        flt unit_A   = 1,
+        flt unit_K   = 1,
+        flt unit_mol = 1,
+        flt unit_cd  = 1
+        ) :
+
+        s  (unit_s  ),
+        m  (unit_m  ),
+        kg (unit_kg ),
+        A  (unit_A  ),
+        K  (unit_K  ),
+        mol(unit_mol),
+        cd (unit_cd ),
+
+
+        //other times units
+        mn(s*mn_s),
+        hr(s*hr_s),
+        dy(s*dy_s),
+        yr(s*yr_s),
+
+        //other lenght units
+        au(m*au_m),
+        ly(m*ly_m),
+        pc(m*pc_m),
+
+        //other mass units
+        earth_mass(kg*earth_mass_kg),
+        jupiter_mass(kg*jupiter_mass_kg),
+        sol_mass(kg*sol_mass_kg),
+
+        //other e current units
+
+        //other temperature units
+
+        //other quantity units
+
+        //other luminous intensity units
+
+
+
+
+
+
+        /*
+        * derived units
+        */
+
+        
+        Hz 	    (1/s),// (s−1) 	
+        N 	    (kg*m/(s*s)),// (kg⋅m⋅s−2) 	
+        Pa 	    (N / (m*m)),// (kg⋅m−1⋅s−2) 	(N/m2)
+        J 	    (N*m),// (kg⋅m2⋅s−2) 	(N⋅m = Pa⋅m3)
+        W 	    (J/s),// (kg⋅m2⋅s−3) 	(J/s)
+        C 	    (s*A),// (s⋅A) 	
+        V 	    (J/C),// (kg⋅m2⋅s−3⋅A−1) 	(W/A) = (J/C)
+        F 	    (C/V),// (kg−1⋅m−2⋅s4⋅A2) 	(C/V) = (C2/J)
+        ohm 	(V/A),// (kg⋅m2⋅s−3⋅A−2) 	(V/A) = (J⋅s/C2)
+        //S 	(),// (kg−1⋅m−2⋅s3⋅A2) 	(Ω−1)
+        //Wb 	(),// (kg⋅m2⋅s−2⋅A−1) 	(V⋅s)
+        //T 	(),// (kg⋅s−2⋅A−1) 	(Wb/m2)
+        //H 	(),// (kg⋅m2⋅s−2⋅A−2) 	(Wb/A)
+        //degC 	(),// relative to 273.15 K 	(K) 	
+        //lm 	(),// (cd⋅sr) 	(cd⋅sr)
+        //lx 	(),// (cd⋅sr⋅m−2) 	(lm/m2)
+        //l 	(),// (s−1) 	
+        //Gy 	(),// (m2⋅s−2) 	(J/kg)
+        //Sv 	(),// (m2⋅s−2) 	(J/kg)
+        //kat 	(),// (mol⋅s−1) 	
+
+
+        /*
+        * alternative derived units
+        */
+        eV  (J*eV_J), // (J)
+        erg (J*erg_J), // (J)
+
+        /*
+        * constants
+        */ 
+        c (c_si * (m/s)),   //(m.s-1)
+        G (G_si * (m*m*m/(kg*s*s))), //(m^3 kg-1 s-2)
+        kB (kB_si * (m*m*kg / (s*s*K)))//(m2 kg s^-2 K^-1 )
+        
+        {}
 };
+
+const Units<f64> si_units = Units<f64>();
+
+
