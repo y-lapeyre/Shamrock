@@ -12,7 +12,6 @@
 #include <random>
 #include <vector>
 
-#include "CL/sycl/access/access.hpp"
 #include "aliases.hpp"
 
 #include "sys/sycl_mpi_interop.hpp"

@@ -1,6 +1,5 @@
 #pragma once
 
-#include "CL/sycl/buffer.hpp"
 #include "aliases.hpp"
 #include "patch/patchdata.hpp"
 #include "patch/patchdata_field.hpp"
@@ -116,7 +115,7 @@ class SPHSetup{
 
         for (auto & [pid,pdat] : sched.patch_data.owned_data) {
 
-            PatchDataField<flt> & f = pdat.get_field<flt>(sched.pdl.get_field_idx<flt>("hpart"));
+            PatchDataField<flt> & f = pdat.template get_field<flt>(sched.pdl.get_field_idx<flt>("hpart"));
 
             f.override(dr);
         }

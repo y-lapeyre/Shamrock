@@ -8,7 +8,6 @@
 
 #pragma once
 
-#include "CL/sycl/types.hpp"
 #include "aliases.hpp"
 #include "patch/patchdata_buffer.hpp"
 #include <memory>

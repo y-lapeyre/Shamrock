@@ -237,12 +237,6 @@ class TestTimestepper {
 
         f32_3 box_dim = {1,1,1};
 
-        /*
-        box_dim.x() *= 4;
-        box_dim.y() /= 2;
-        box_dim.z() /= 2;
-        */
-
         std::tuple<f32_3,f32_3> box = {
             -box_dim,box_dim
         };
