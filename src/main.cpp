@@ -568,11 +568,12 @@ int main(int argc, char *argv[]) {
     SyCLHandler &hndl = SyCLHandler::get_instance();
     hndl.init_sycl();
 
+    /*
     {
         RunScriptHandler rscript;
         rscript.run_ipython();
     }
-    
+    */
 
 
 

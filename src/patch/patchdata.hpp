@@ -129,9 +129,12 @@ class PatchData {
      * @param out_U3_s 
      * @param out_U3_d 
      */
-    void extract_particle(u32 pidx, PatchData & out_pdat);
+    void extract_element(u32 pidx, PatchData & out_pdat);
 
-    void insert_particles(PatchData & pdat);
+    void insert_elements(PatchData & pdat);
+
+    void resize(u32 new_obj_cnt);
+
 
     template<class Tvecbox>
     void split_patchdata(PatchData & pd0,PatchData & pd1,PatchData & pd2,PatchData & pd3,PatchData & pd4,PatchData & pd5,PatchData & pd6,PatchData & pd7,
@@ -155,6 +158,36 @@ class PatchData {
     inline bool is_empty(){
         return get_obj_cnt() == 0;
     }
+
+
+
+
+
+
+
+
+
+
+
+
+
+    template<class T> PatchDataField<T> & get_field(u32 idx){}
+
+    template<> inline PatchDataField<f32   > & get_field(u32 idx){return fields_f32[idx];}
+    template<> inline PatchDataField<f32_2 >& get_field(u32 idx){return fields_f32_2[idx];}
+    template<> inline PatchDataField<f32_3 >& get_field(u32 idx){return fields_f32_3[idx];}
+    template<> inline PatchDataField<f32_4 >& get_field(u32 idx){return fields_f32_4[idx];}
+    template<> inline PatchDataField<f32_8 >& get_field(u32 idx){return fields_f32_8[idx];}
+    template<> inline PatchDataField<f32_16>& get_field(u32 idx){return fields_f32_16[idx];}
+    template<> inline PatchDataField<f64   >& get_field(u32 idx){return fields_f64[idx];}
+    template<> inline PatchDataField<f64_2 >& get_field(u32 idx){return fields_f64_2[idx];}
+    template<> inline PatchDataField<f64_3 >& get_field(u32 idx){return fields_f64_3[idx];}
+    template<> inline PatchDataField<f64_4 >& get_field(u32 idx){return fields_f64_4[idx];}
+    template<> inline PatchDataField<f64_8 >& get_field(u32 idx){return fields_f64_8[idx];}
+    template<> inline PatchDataField<f64_16>& get_field(u32 idx){return fields_f64_16[idx];}
+    template<> inline PatchDataField<u32   >& get_field(u32 idx){return fields_u32[idx];}
+    template<> inline PatchDataField<u64   >& get_field(u32 idx){return fields_u64[idx];}
+    
 };
 
 /**

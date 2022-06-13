@@ -1,0 +1,113 @@
+#pragma once
+
+#include "aliases.hpp"
+#include "patch/patchdata.hpp"
+#include "patch/patchdata_field.hpp"
+#include "patch/serialpatchtree.hpp"
+#include "patchscheduler/scheduler_mpi.hpp"
+#include "sys/mpi_handler.hpp"
+#include "particles/particle_patch_mover.hpp"
+#include <memory>
+#include <vector>
+
+
+template <class flt>
+class SPHSetup{
+
+    using vec3 = sycl::vec<flt, 3>;
+
+    PatchScheduler & sched;
+
+    bool periodic_mode;
+
+    SPHSetup(PatchScheduler & scheduler,bool periodic) : sched(scheduler), periodic_mode(periodic) {}
+
+    
+    inline void init_setup(){
+        if (mpi_handler::world_rank == 0) {
+            Patch root;
+
+            root.node_owner_id = mpi_handler::world_rank;
+
+            root.x_min = 0;
+            root.y_min = 0;
+            root.z_min = 0;
+
+            root.x_max = HilbertLB::max_box_sz;
+            root.y_max = HilbertLB::max_box_sz;
+            root.z_max = HilbertLB::max_box_sz;
+
+            root.pack_node_index = u64_max;
+
+            PatchData pdat(sched.pdl);
+
+            root.data_count = pdat.get_obj_cnt();
+            root.load_value = pdat.get_obj_cnt();
+
+            sched.add_patch(root,pdat);  
+
+        } else {
+            sched.patch_list._next_patch_id++;
+        }  
+
+        mpi::barrier(MPI_COMM_WORLD);
+
+        sched.owned_patch_id = sched.patch_list.build_local();
+
+        sched.patch_list.build_global();
+
+        sched.patch_tree.build_from_patchtable(sched.patch_list.global, HilbertLB::max_box_sz);
+
+        std::cout << "build local" << std::endl;
+        sched.owned_patch_id = sched.patch_list.build_local();
+        sched.patch_list.build_local_idx_map();
+        sched.update_local_dtcnt_value();
+        sched.update_local_load_value();
+    }
+
+    template<class LambdaSelect>
+    inline void add_particules_fcc(flt dr, std::tuple<vec3,vec3> box,LambdaSelect && selector, bool periodic_mode){
+
+        if(mpi_handler::world_rank == 0){
+            std::vector<vec3> vec;
+
+            add_particles_fcc(
+                dr, 
+                box , 
+                selector, 
+                [&](f32_3 r,f32 h){
+                    vec.push_back(r); 
+                });
+
+            std::cout << ">>> adding : " << vec.size() << " objects" << std::endl;
+
+            PatchData tmp(sched.pdl);
+            tmp.resize(vec.size());
+
+            PatchDataField<vec3> & f = tmp.get_field<vec3>(sched.pdl.get_field_idx<vec3>("xyz"));
+
+            sycl::buffer<vec3> buf (vec.data(),vec.size());
+
+            f.override(buf);
+
+            if(sched.owned_patch_id.empty()) throw shamrock_exc("the scheduler does not have patch in that rank");
+
+            u64 insert_id = *sched.owned_patch_id.begin();
+
+            sched.patch_data.owned_data[insert_id].insert_elements(tmp);
+        }
+
+        sched.scheduler_step(false, false);
+
+        {
+            SerialPatchTree<vec3> sptree(sched.patch_tree, sched.get_box_tranform<vec3>());
+            sptree.attach_buf();
+            reatribute_particles(sched, sptree, periodic_mode);
+        }
+
+        sched.scheduler_step(true, true);
+        
+    }
+
+
+};

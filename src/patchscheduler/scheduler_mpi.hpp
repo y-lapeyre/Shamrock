@@ -122,7 +122,7 @@ class PatchScheduler{public:
      * @param p 
      * @param pdat 
      */
-    [[deprecated]]
+    //[[deprecated]]
     inline void add_patch(Patch & p, PatchData & pdat){
         p.id_patch = patch_list._next_patch_id;
         patch_list._next_patch_id ++;

@@ -238,7 +238,7 @@ inline void reatribute_particles<f32_3>(PatchScheduler & sched, SerialPatchTree<
                             pdat_int = std::make_unique<PatchData>(sched.pdl);
                         }
 
-                        pdat.extract_particle(i, *pdat_int);
+                        pdat.extract_element(i, *pdat_int);
                     }
                         
                 }//std::cout << std::endl;
@@ -321,7 +321,7 @@ inline void reatribute_particles<f32_3>(PatchScheduler & sched, SerialPatchTree<
             }*/
 
             //*
-            pdat_recv.insert_particles( *pdat);
+            pdat_recv.insert_elements( *pdat);
                 //*/
         }
     }

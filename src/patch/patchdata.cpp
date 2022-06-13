@@ -542,7 +542,7 @@ template<class obj> obj fast_extract_ptr(u32 idx, u32 lenght ,obj* cnt){
     return extr;
 }
 
-void PatchData::extract_particle(u32 pidx, PatchData & out_pdat){
+void PatchData::extract_element(u32 pidx, PatchData & out_pdat){
 
     
     for(u32 idx = 0; idx < patchdata_layout.fields_f32.size(); idx++){
@@ -751,7 +751,7 @@ void PatchData::extract_particle(u32 pidx, PatchData & out_pdat){
 
 }
 
-void PatchData::insert_particles(PatchData & pdat){
+void PatchData::insert_elements(PatchData & pdat){
     for(u32 idx = 0; idx < patchdata_layout.fields_f32.size(); idx++){
         fields_f32[idx].insert(pdat.fields_f32[idx]);
     }
@@ -816,6 +816,71 @@ void PatchData::insert_particles(PatchData & pdat){
 
 }
 
+
+
+void PatchData::resize(u32 new_obj_cnt){
+    for(u32 idx = 0; idx < patchdata_layout.fields_f32.size(); idx++){
+        fields_f32[idx].resize(new_obj_cnt);
+    }
+
+    for(u32 idx = 0; idx < patchdata_layout.fields_f32_2.size(); idx++){
+        fields_f32_2[idx].resize(new_obj_cnt);
+    }
+
+    for(u32 idx = 0; idx < patchdata_layout.fields_f32_3.size(); idx++){
+        fields_f32_3[idx].resize(new_obj_cnt);
+    }
+
+    for(u32 idx = 0; idx < patchdata_layout.fields_f32_4.size(); idx++){
+        fields_f32_4[idx].resize(new_obj_cnt);
+    }
+
+    for(u32 idx = 0; idx < patchdata_layout.fields_f32_8.size(); idx++){
+        fields_f32_8[idx].resize(new_obj_cnt);
+    }
+
+    for(u32 idx = 0; idx < patchdata_layout.fields_f32_16.size(); idx++){
+        fields_f32_16[idx].resize(new_obj_cnt);
+    }
+
+
+
+    for(u32 idx = 0; idx < patchdata_layout.fields_f64.size(); idx++){
+        fields_f64[idx].resize(new_obj_cnt);
+    }
+
+    for(u32 idx = 0; idx < patchdata_layout.fields_f64_2.size(); idx++){
+        fields_f64_2[idx].resize(new_obj_cnt);
+    }
+
+    for(u32 idx = 0; idx < patchdata_layout.fields_f64_3.size(); idx++){
+        fields_f64_3[idx].resize(new_obj_cnt);
+    }
+
+    for(u32 idx = 0; idx < patchdata_layout.fields_f64_4.size(); idx++){
+        fields_f64_4[idx].resize(new_obj_cnt);
+    }
+
+    for(u32 idx = 0; idx < patchdata_layout.fields_f64_8.size(); idx++){
+        fields_f64_8[idx].resize(new_obj_cnt);
+    }
+
+    for(u32 idx = 0; idx < patchdata_layout.fields_f64_16.size(); idx++){
+        fields_f64_16[idx].resize(new_obj_cnt);
+    }
+
+
+
+
+
+    for(u32 idx = 0; idx < patchdata_layout.fields_u32.size(); idx++){
+        fields_u32[idx].resize(new_obj_cnt);
+    }
+
+    for(u32 idx = 0; idx < patchdata_layout.fields_u64.size(); idx++){
+        fields_u64[idx].resize(new_obj_cnt);
+    }
+}
 
 
 void PatchData::append_subset_to(std::vector<u32> & idxs, PatchData &pdat){

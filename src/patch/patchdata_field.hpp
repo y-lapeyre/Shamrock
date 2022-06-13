@@ -12,6 +12,7 @@
 #include <random>
 #include <vector>
 
+#include "CL/sycl/access/access.hpp"
 #include "aliases.hpp"
 
 #include "sys/sycl_mpi_interop.hpp"
@@ -100,6 +101,20 @@ class PatchDataField {
             field_data[idx_st + i] = f2.field_data[i];
         }
 
+    }
+
+    inline void override(sycl::buffer<T> & data){
+
+        if(data.size() !=  val_cnt) throw shamrock_exc("buffer size doesn't match patchdata field size");
+
+        if(val_cnt > 0) {
+            auto acc = data.template get_access<sycl::access::mode::read>();
+
+            for(u32 i = 0; i < val_cnt ; i++){
+                field_data[i] = acc[i];
+            }
+        }
+        
     }
 
     inline bool check_field_match(PatchDataField<T> &f2){

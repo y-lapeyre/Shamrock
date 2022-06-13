@@ -278,14 +278,14 @@ void SchedulerPatchData::merge_patchdata(u64 new_key, u64 old_key0, u64 old_key1
 
     PatchData new_pdat(pdl);
 
-    new_pdat.insert_particles(search0->second);
-    new_pdat.insert_particles(search1->second);
-    new_pdat.insert_particles(search2->second);
-    new_pdat.insert_particles(search3->second);
-    new_pdat.insert_particles(search4->second);
-    new_pdat.insert_particles(search5->second);
-    new_pdat.insert_particles(search6->second);
-    new_pdat.insert_particles(search7->second);
+    new_pdat.insert_elements(search0->second);
+    new_pdat.insert_elements(search1->second);
+    new_pdat.insert_elements(search2->second);
+    new_pdat.insert_elements(search3->second);
+    new_pdat.insert_elements(search4->second);
+    new_pdat.insert_elements(search5->second);
+    new_pdat.insert_elements(search6->second);
+    new_pdat.insert_elements(search7->second);
 
     owned_data.erase(old_key0);
     owned_data.erase(old_key1);
