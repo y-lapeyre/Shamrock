@@ -85,7 +85,7 @@ template <class vectype, class field_type, class InterfaceSelector> class Interf
         vectype interf_offset;
     };
 
-    inline static sycl::buffer<InterfaceComInternal, 2> get_interface_list_v1(SchedulerMPI &sched, SerialPatchTree<vectype> &sptree,
+    inline static sycl::buffer<InterfaceComInternal, 2> get_interface_list_v1(PatchScheduler &sched, SerialPatchTree<vectype> &sptree,
                                              PatchField<typename vectype::element_type> pfield,vectype interf_offset) {
 
         SyCLHandler &hndl = SyCLHandler::get_instance();
@@ -254,7 +254,7 @@ template <class vectype, class field_type, class InterfaceSelector> class Interf
      * @param sptree
      * @param pfield the interaction radius field
      */
-    inline static std::vector<InterfaceComm<vectype>> get_interfaces_comm_list(SchedulerMPI &sched, SerialPatchTree<vectype> &sptree,
+    inline static std::vector<InterfaceComm<vectype>> get_interfaces_comm_list(PatchScheduler &sched, SerialPatchTree<vectype> &sptree,
                                            PatchField<typename vectype::element_type> pfield,std::string fout,bool periodic) {
 
         SyCLHandler &hndl = SyCLHandler::get_instance();
@@ -372,7 +372,7 @@ template <class vectype, class field_type, class InterfaceSelector> class Interf
     }
 
 
-    inline static void comm_interface(SchedulerMPI &sched, std::vector<InterfaceComm<vectype>> & interface_comm_list){
+    inline static void comm_interface(PatchScheduler &sched, std::vector<InterfaceComm<vectype>> & interface_comm_list){
 
         SyCLHandler &hndl = SyCLHandler::get_instance();
 

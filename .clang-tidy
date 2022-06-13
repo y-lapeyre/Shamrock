@@ -12,6 +12,7 @@ Checks: >
   mpi-*,
   modernize-*,
   -modernize-macro-to-enum,
+  -modernize-use-trailing-return-type,
   hicpp-*
 ...
 

@@ -31,7 +31,7 @@ struct MergedPatchCompFieldBuffer {public:
 
 template<class pos_prec,class pos_vec>
 inline void make_merge_patches(
-    SchedulerMPI & sched,
+    PatchScheduler & sched,
     InterfaceHandler<pos_vec, pos_prec> & interface_hndl,
     
     std::unordered_map<u64,MergedPatchDataBuffer<pos_vec>> & merge_pdat_buf){
@@ -513,7 +513,7 @@ inline void make_merge_patches(
 
 template<class pos_prec,class pos_vec>
 inline void write_back_merge_patches(
-    SchedulerMPI & sched,
+    PatchScheduler & sched,
     InterfaceHandler<pos_vec, pos_prec> & interface_hndl,
     
     std::unordered_map<u64,MergedPatchDataBuffer<pos_vec>> & merge_pdat_buf){
@@ -678,7 +678,7 @@ inline void write_back_merge_patches(
 
 template<class pos_prec,class pos_vec,class T>
 inline void make_merge_patches_comp_field(
-    SchedulerMPI & sched,
+    PatchScheduler & sched,
     InterfaceHandler<pos_vec, pos_prec> & interface_hndl,
 
     PatchComputeField<f32> & comp_field,

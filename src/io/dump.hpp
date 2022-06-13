@@ -431,7 +431,7 @@ inline void file_write_patchdata(MPI_File & mfilepatch , PatchData & pdat){
 
 }
 
-inline void dump_patch_data(std::string prefix, SchedulerMPI & sched){
+inline void dump_patch_data(std::string prefix, PatchScheduler & sched){
 
     struct PatchFile{
         MPI_File mfile;
@@ -480,7 +480,7 @@ inline void dump_patch_data(std::string prefix, SchedulerMPI & sched){
     }
 }
 
-inline void dump_patch_list(std::string prefix, SchedulerMPI & sched){
+inline void dump_patch_list(std::string prefix, PatchScheduler & sched){
     
 
     MPI_File patch_list_file;
@@ -509,7 +509,7 @@ inline void dump_patch_list(std::string prefix, SchedulerMPI & sched){
     mpi::file_close(&patch_list_file);
 }
 
-inline void dump_simbox(std::string prefix, SchedulerMPI & sched){
+inline void dump_simbox(std::string prefix, PatchScheduler & sched){
     MPI_File simbox_file;
     std::string fname = prefix + "simbox.bin";
 
@@ -571,7 +571,7 @@ inline void dump_siminfo(std::string prefix, f64 time){
     mpi::file_close(&timeval_file);
 }
 
-inline void dump_state(std::string prefix, SchedulerMPI & sched, f64 time){
+inline void dump_state(std::string prefix, PatchScheduler & sched, f64 time){
 
     auto t = timings::start_timer("dump_state", timings::timingtype::function);
 
@@ -597,7 +597,7 @@ inline void dump_state(std::string prefix, SchedulerMPI & sched, f64 time){
 
 
 template<class pos_vec>
-inline void dump_merged_patches(std::string prefix, SchedulerMPI & sched,std::unordered_map<u64,MergedPatchDataBuffer<pos_vec>> & merged_map){
+inline void dump_merged_patches(std::string prefix, PatchScheduler & sched,std::unordered_map<u64,MergedPatchDataBuffer<pos_vec>> & merged_map){
     struct PatchFile{
         MPI_File mfile;
         std::string name;

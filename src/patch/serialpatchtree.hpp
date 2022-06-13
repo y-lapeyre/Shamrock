@@ -117,7 +117,7 @@ class SerialPatchTree{public:
 
 
     template<class type, class reduc_func>
-    inline PatchFieldReduction<type> reduce_field(sycl::queue & queue,SchedulerMPI & sched, PatchField<type> & pfield){
+    inline PatchFieldReduction<type> reduce_field(sycl::queue & queue,PatchScheduler & sched, PatchField<type> & pfield){
 
         PatchFieldReduction<type> predfield;
 

@@ -38,6 +38,7 @@
 #include "patchscheduler/patch_content_exchanger.hpp"
 #include "patchscheduler/scheduler_mpi.hpp"
 #include "physics/units.hpp"
+#include "runscript/rscripthandler.hpp"
 #include "sph/leapfrog.hpp"
 #include "sph/sphpatch.hpp"
 #include "sys/cmdopt.hpp"
@@ -231,7 +232,7 @@ class TestTimestepper {
 
     
 
-    static void init(SchedulerMPI &sched, TestSimInfo &siminfo) {
+    static void init(PatchScheduler &sched, TestSimInfo &siminfo) {
 
         f32_3 box_dim = {1,1,1};
 
@@ -417,7 +418,7 @@ class TestTimestepper {
         }*/
     }
 
-    static void step(SchedulerMPI &sched, TestSimInfo &siminfo, std::string dump_folder) {
+    static void step(PatchScheduler &sched, TestSimInfo &siminfo, std::string dump_folder) {
 
         SPHTimestepperLeapfrogIsotGas<f32> leapfrog;
 
@@ -446,7 +447,7 @@ template <class Timestepper, class SimInfo> class SimulationSPH {
         pdl.add_field<f32_3>("axyz_old",1);
 
 
-        SchedulerMPI sched = SchedulerMPI(pdl,20000, 1);
+        PatchScheduler sched = PatchScheduler(pdl,20000, 1);
         sched.init_mpi_required_types();
 
         logfiles::open_log_files();
@@ -567,7 +568,11 @@ int main(int argc, char *argv[]) {
     SyCLHandler &hndl = SyCLHandler::get_instance();
     hndl.init_sycl();
 
-
+    {
+        RunScriptHandler rscript;
+        rscript.run_ipython();
+    }
+    
 
 
 

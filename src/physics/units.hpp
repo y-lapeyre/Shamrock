@@ -263,13 +263,13 @@ class Units{
 
 
     Units(
-        flt unit_time   = 1,
-        flt unit_lenght   = 1,
-        flt unit_mass  = 1,
-        flt unit_current   = 1,
-        flt unit_temperature   = 1,
-        flt unit_qte = 1,
-        flt unit_lumint  = 1
+        flt unit_time  ,
+        flt unit_lenght  ,
+        flt unit_mass ,
+        flt unit_current  ,
+        flt unit_temperature  ,
+        flt unit_qte,
+        flt unit_lumint 
         ) :
 
         s  (1/unit_time  ),
@@ -356,6 +356,6 @@ class Units{
         {}
 };
 
-const Units<f64> si_units = Units<f64>();
+const Units<f64> si_units = Units<f64>(1,1,1,1,1,1,1);
 
 

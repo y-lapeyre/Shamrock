@@ -65,7 +65,7 @@ template <class vectype, class primtype> class InterfaceHandler {
      * @param h_field 
      */
     template <class interface_selector>
-    inline void compute_interface_list(SchedulerMPI &sched, SerialPatchTree<vectype> sptree, PatchField<primtype> h_field,bool periodic) {
+    inline void compute_interface_list(PatchScheduler &sched, SerialPatchTree<vectype> sptree, PatchField<primtype> h_field,bool periodic) {
         auto t = timings::start_timer("compute_interface_list", timings::function);
         interface_comm_list = Interface_Generator<vectype, primtype, interface_selector>::get_interfaces_comm_list(
             sched, sptree, h_field, format("interfaces_%d_node%d", 0, mpi_handler::world_rank),periodic);
@@ -77,10 +77,10 @@ template <class vectype, class primtype> class InterfaceHandler {
      * 
      * @param sched 
      */
-    void comm_interfaces(SchedulerMPI &sched,bool periodic);
+    void comm_interfaces(PatchScheduler &sched,bool periodic);
 
 
-    template <class T> PatchComputeFieldInterfaces<T> comm_interfaces_field(SchedulerMPI &sched,PatchComputeField<T> &pcomp_field,bool periodic) {
+    template <class T> PatchComputeFieldInterfaces<T> comm_interfaces_field(PatchScheduler &sched,PatchComputeField<T> &pcomp_field,bool periodic) {
 
         PatchComputeFieldInterfaces<T> interface_field_map;
 
@@ -145,13 +145,13 @@ template <class vectype, class primtype> class InterfaceHandler {
 
 
 
-template <> void InterfaceHandler<f32_3, f32>::comm_interfaces(SchedulerMPI &sched,bool periodic) {
+template <> void InterfaceHandler<f32_3, f32>::comm_interfaces(PatchScheduler &sched,bool periodic) {
     auto t = timings::start_timer("comm interfaces", timings::timingtype::function);
     impl::comm_interfaces<f32_3, f32>(sched, interface_comm_list, interface_map,periodic);
     t.stop();
 }
 
-template <> void InterfaceHandler<f64_3, f64>::comm_interfaces(SchedulerMPI &sched,bool periodic) {
+template <> void InterfaceHandler<f64_3, f64>::comm_interfaces(PatchScheduler &sched,bool periodic) {
     auto t = timings::start_timer("comm interfaces", timings::timingtype::function);
     impl::comm_interfaces<f64_3, f64>(sched, interface_comm_list, interface_map,periodic);
     t.stop();

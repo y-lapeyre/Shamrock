@@ -31,7 +31,7 @@ template <class flt> class SPHTimestepperLeapfrogIsotGas {
 
     using Stepper = integrators::sph::LeapfrogGeneral<flt, Kernel, u_morton>;
 
-    inline void step(SchedulerMPI &sched, std::string dump_folder, u32 step_cnt, f64 &step_time) {
+    inline void step(PatchScheduler &sched, std::string dump_folder, u32 step_cnt, f64 &step_time) {
 
         bool periodic_bc = true;
 
@@ -129,7 +129,7 @@ template <class flt> class SPHTimestepperLeapfrogIsotGas {
 
                 queue.submit(ker_predict_step);
             },
-            [&](SchedulerMPI & sched, 
+            [&](PatchScheduler & sched, 
                 std::unordered_map<u64, MergedPatchDataBuffer<vec3>>& merge_pdat_buf, 
                 std::unordered_map<u64, MergedPatchCompFieldBuffer<flt>>& hnew_field_merged,
                 std::unordered_map<u64, MergedPatchCompFieldBuffer<flt>>& omega_field_merged
@@ -159,7 +159,7 @@ template <class flt> class SPHTimestepperLeapfrogIsotGas {
                             cgh.parallel_for(range_npart,
                                     [=](sycl::item<1> item) { 
                                         
-                                        p[item] = eos_cs*eos_cs*rho_h(gpart_mass, h[item])  ; 
+                                        p[item] =   eos_cs*eos_cs*rho_h(gpart_mass, h[item])  ; 
                                         
                                         
                                         });
@@ -171,7 +171,7 @@ template <class flt> class SPHTimestepperLeapfrogIsotGas {
             [&](
 
 
-                SchedulerMPI & sched, 
+                PatchScheduler & sched, 
                 std::unordered_map<u64, std::unique_ptr<Radix_Tree<u_morton, vec3>>>& radix_trees,
                 std::unordered_map<u64, MergedPatchDataBuffer<vec3>>& merge_pdat_buf, 
                 std::unordered_map<u64, MergedPatchCompFieldBuffer<flt>>& hnew_field_merged,

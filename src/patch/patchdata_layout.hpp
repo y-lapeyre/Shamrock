@@ -9,6 +9,7 @@
 #pragma once
 
 #include "aliases.hpp"
+#include <sstream>
 
 
 
@@ -71,6 +72,15 @@ class FieldDescriptor{public:
                                                                                        \
                                                                                        \
     }   
+
+
+#define __add_field_desc_gen(T) \
+    for (auto f : fields_##T){\
+        ss << f.name << " : nvar=" <<f.nvar << " type : " << #T << "\n";\
+    }
+    
+
+
 
 enum PositionprecMode{
     xyz32,xyz64
@@ -159,5 +169,80 @@ public:
     //__add_field_type(f16_16);
     __add_field_type(f32_16);
     __add_field_type(f64_16);
+
+
+    inline std::string get_description_str(){
+        std::stringstream ss;
+
+        __add_field_desc_gen(i64   );
+        __add_field_desc_gen(i32   );
+        //__add_field_desc_gen(i16   );
+        //__add_field_desc_gen( i8   );
+        __add_field_desc_gen(u64   );
+        __add_field_desc_gen(u32   );
+        //__add_field_desc_gen(u16   );
+        //__add_field_desc_gen( u8   );
+        //__add_field_desc_gen(f16   );
+        __add_field_desc_gen(f32   );
+        __add_field_desc_gen(f64   );
+        //__add_field_desc_gen(i64_2 );
+        //__add_field_desc_gen(i32_2 );
+        //__add_field_desc_gen(i16_2 );
+        //__add_field_desc_gen( i8_2 );
+        //__add_field_desc_gen(u64_2 );
+        //__add_field_desc_gen(u32_2 );
+        //__add_field_desc_gen(u16_2 );
+        //__add_field_desc_gen( u8_2 );
+        //__add_field_desc_gen(f16_2 );
+        __add_field_desc_gen(f32_2 );
+        __add_field_desc_gen(f64_2 );
+        //__add_field_desc_gen(i64_3 );
+        //__add_field_desc_gen(i32_3 );
+        //__add_field_desc_gen(i16_3 );
+        //__add_field_desc_gen( i8_3 );
+        //__add_field_desc_gen(u64_3 );
+        //__add_field_desc_gen(u32_3 );
+        //__add_field_desc_gen(u16_3 );
+        //__add_field_desc_gen( u8_3 );
+        //__add_field_desc_gen(f16_3 );
+        __add_field_desc_gen(f32_3 );
+        __add_field_desc_gen(f64_3 );
+        //__add_field_desc_gen(i64_4 );
+        //__add_field_desc_gen(i32_4 );
+        //__add_field_desc_gen(i16_4 );
+        //__add_field_desc_gen( i8_4 );
+        //__add_field_desc_gen(u64_4 );
+        //__add_field_desc_gen(u32_4 );
+        //__add_field_desc_gen(u16_4 );
+        //__add_field_desc_gen( u8_4 );
+        //__add_field_desc_gen(f16_4 );
+        __add_field_desc_gen(f32_4 );
+        __add_field_desc_gen(f64_4 );
+        //__add_field_desc_gen(i64_8 );
+        //__add_field_desc_gen(i32_8 );
+        //__add_field_desc_gen(i16_8 );
+        //__add_field_desc_gen( i8_8 );
+        //__add_field_desc_gen(u64_8 );
+        //__add_field_desc_gen(u32_8 );
+        //__add_field_desc_gen(u16_8 );
+        //__add_field_desc_gen( u8_8 );
+        //__add_field_desc_gen(f16_8 );
+        __add_field_desc_gen(f32_8 );
+        __add_field_desc_gen(f64_8 );
+        //__add_field_desc_gen(i64_16);
+        //__add_field_desc_gen(i32_16);
+        //__add_field_desc_gen(i16_16);
+        //__add_field_desc_gen( i8_16);
+        //__add_field_desc_gen(u64_16);
+        //__add_field_desc_gen(u32_16);
+        //__add_field_desc_gen(u16_16);
+        //__add_field_desc_gen( u8_16);
+        //__add_field_desc_gen(f16_16);
+        __add_field_desc_gen(f32_16);
+        __add_field_desc_gen(f64_16);
+
+
+        return ss.str();
+    }
 
 };

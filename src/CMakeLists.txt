@@ -120,6 +120,9 @@ endif()
 set(MPI_CXX_SKIP_MPICXX true)
 find_package(MPI REQUIRED COMPONENTS C)
 
+find_package (Python3 COMPONENTS Interpreter Development )
+
+
 
 include_directories(AFTER "${CMAKE_SOURCE_DIR}")
 
@@ -143,6 +146,9 @@ if("${BUILD_SIM}")
     message(">>> adding sph target <<<")
     add_executable(shamrock main.cpp version.cpp)
     target_link_libraries(shamrock PUBLIC MPI::MPI_C)
+    target_link_libraries(shamrock PUBLIC  Python3::Python)
+
+
 
 endif()
 
@@ -161,6 +167,7 @@ if("${BUILD_TEST}")
     #add_executable(shamrock_test main_test.cpp version.cpp)
     add_executable(shamrock_test main_test.cpp  version.cpp)
     target_link_libraries(shamrock_test PUBLIC MPI::MPI_C)
+    target_link_libraries(shamrock_test PUBLIC Python3::Python)
 
     #find_package(nlohmann_json 3.2.0 REQUIRED)
     #target_link_libraries(shamrock_test PUBLIC nlohmann_json::nlohmann_json)
@@ -174,3 +181,4 @@ add_subdirectory(interfaces)
 add_subdirectory(tree)
 add_subdirectory(unittests)
 add_subdirectory(patchscheduler)
+add_subdirectory(runscript)

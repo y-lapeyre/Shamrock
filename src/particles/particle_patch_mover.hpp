@@ -21,10 +21,10 @@
 
 
 template<class vecprec> 
-inline std::unordered_map<u64, sycl::buffer<u64>> get_new_id_map(SchedulerMPI & sched, SerialPatchTree<vecprec> & sptree);
+inline std::unordered_map<u64, sycl::buffer<u64>> get_new_id_map(PatchScheduler & sched, SerialPatchTree<vecprec> & sptree);
 
 template<> 
-inline std::unordered_map<u64, sycl::buffer<u64>> get_new_id_map<f32_3>(SchedulerMPI & sched, SerialPatchTree<f32_3> & sptree){
+inline std::unordered_map<u64, sycl::buffer<u64>> get_new_id_map<f32_3>(PatchScheduler & sched, SerialPatchTree<f32_3> & sptree){
 
     SyCLHandler & hndl = SyCLHandler::get_instance();
 
@@ -59,7 +59,7 @@ inline std::unordered_map<u64, sycl::buffer<u64>> get_new_id_map<f32_3>(Schedule
 
 
 template<> 
-inline std::unordered_map<u64, sycl::buffer<u64>> get_new_id_map<f64_3>(SchedulerMPI & sched, SerialPatchTree<f64_3> & sptree){
+inline std::unordered_map<u64, sycl::buffer<u64>> get_new_id_map<f64_3>(PatchScheduler & sched, SerialPatchTree<f64_3> & sptree){
 
     SyCLHandler & hndl = SyCLHandler::get_instance();
 
@@ -97,10 +97,10 @@ inline std::unordered_map<u64, sycl::buffer<u64>> get_new_id_map<f64_3>(Schedule
 
 
 template <class vecprec>
-inline void reatribute_particles(SchedulerMPI & sched, SerialPatchTree<vecprec> & sptree,bool periodic);
+inline void reatribute_particles(PatchScheduler & sched, SerialPatchTree<vecprec> & sptree,bool periodic);
 
 template<>
-inline void reatribute_particles<f32_3>(SchedulerMPI & sched, SerialPatchTree<f32_3> & sptree,bool periodic){
+inline void reatribute_particles<f32_3>(PatchScheduler & sched, SerialPatchTree<f32_3> & sptree,bool periodic){
 
     SyCLHandler & hndl = SyCLHandler::get_instance();
 

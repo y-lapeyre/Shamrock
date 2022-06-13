@@ -28,7 +28,7 @@ class GlobalVariable{
 
 
     template<class Lambda>
-    inline void compute_var_patch(SchedulerMPI & sched, Lambda && compute_fct){
+    inline void compute_var_patch(PatchScheduler & sched, Lambda && compute_fct){
 
 
         sched.for_each_patch_buf([&](u64 id_patch, Patch cur_p, PatchDataBuffer &pdat_buf) {

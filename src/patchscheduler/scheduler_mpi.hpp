@@ -40,7 +40,7 @@
  * @brief The MPI scheduler
  * 
  */
-class SchedulerMPI{public:
+class PatchScheduler{public:
 
     PatchDataLayout & pdl;
 
@@ -72,9 +72,9 @@ class SchedulerMPI{public:
     
     void free_mpi_required_types();
 
-    SchedulerMPI(PatchDataLayout & pdl, u64 crit_split,u64 crit_merge);
+    PatchScheduler(PatchDataLayout & pdl, u64 crit_split,u64 crit_merge);
 
-    ~SchedulerMPI();
+    ~PatchScheduler();
 
 
 

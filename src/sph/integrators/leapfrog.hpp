@@ -131,7 +131,7 @@ namespace sph {
 
 
     //mandatory variables
-    SchedulerMPI &sched;
+    PatchScheduler &sched;
     bool periodic_mode;
     flt htol_up_tol  ;
     flt htol_up_iter ;
@@ -141,7 +141,7 @@ namespace sph {
 
 
 
-    LeapfrogGeneral(SchedulerMPI &sched,bool periodic_mode,flt htol_up_tol,
+    LeapfrogGeneral(PatchScheduler &sched,bool periodic_mode,flt htol_up_tol,
         flt htol_up_iter ,flt sph_gpart_mass) : 
             sched(sched), 
             periodic_mode(periodic_mode) , 
