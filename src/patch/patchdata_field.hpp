@@ -117,6 +117,16 @@ class PatchDataField {
         
     }
 
+    inline void override(const T val){
+
+        if(val_cnt > 0) {
+            for(u32 i = 0; i < val_cnt ; i++){
+                field_data[i] = val;
+            }
+        }
+        
+    }
+
     inline bool check_field_match(PatchDataField<T> &f2){
         bool match = true;
 

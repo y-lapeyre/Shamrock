@@ -1,5 +1,6 @@
 #pragma once
 
+#include "CL/sycl/buffer.hpp"
 #include "aliases.hpp"
 #include "patch/patchdata.hpp"
 #include "patch/patchdata_field.hpp"
@@ -19,6 +20,9 @@ class SPHSetup{
     PatchScheduler & sched;
 
     bool periodic_mode;
+
+
+    public:
 
     SPHSetup(PatchScheduler & scheduler,bool periodic) : sched(scheduler), periodic_mode(periodic) {}
 
@@ -66,7 +70,7 @@ class SPHSetup{
     }
 
     template<class LambdaSelect>
-    inline void add_particules_fcc(flt dr, std::tuple<vec3,vec3> box,LambdaSelect && selector, bool periodic_mode){
+    inline void add_particules_fcc(flt dr, std::tuple<vec3,vec3> box,LambdaSelect && selector){
 
         if(mpi_handler::world_rank == 0){
             std::vector<vec3> vec;
@@ -94,8 +98,11 @@ class SPHSetup{
 
             u64 insert_id = *sched.owned_patch_id.begin();
 
-            sched.patch_data.owned_data[insert_id].insert_elements(tmp);
+            sched.patch_data.owned_data.at(insert_id).insert_elements(tmp);
         }
+
+
+        //TODO apply position modulo here
 
         sched.scheduler_step(false, false);
 
@@ -106,6 +113,13 @@ class SPHSetup{
         }
 
         sched.scheduler_step(true, true);
+
+        for (auto & [pid,pdat] : sched.patch_data.owned_data) {
+
+            PatchDataField<flt> & f = pdat.get_field<flt>(sched.pdl.get_field_idx<flt>("hpart"));
+
+            f.override(dr);
+        }
         
     }
 

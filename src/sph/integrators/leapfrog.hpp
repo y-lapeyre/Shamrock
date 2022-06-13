@@ -219,7 +219,7 @@ namespace sph {
 
             lambda_swap_der(hndl.get_queue_compute(0),pdat_buf,sycl::range<1> {pdat_buf.element_count});
 
-            if (periodic_mode) {
+            if (periodic_mode) {//TODO generalise position modulo in the scheduler
                 sycl_position_modulo(hndl.get_queue_compute(0), pdat_buf.element_count,
                                                pdat_buf.fields_f32_3[ixyz], sched.get_box_volume<vec3>());
             }

@@ -39,6 +39,7 @@
 #include "patchscheduler/scheduler_mpi.hpp"
 #include "physics/units.hpp"
 #include "runscript/rscripthandler.hpp"
+#include "setup/SPHSetup.hpp"
 #include "sph/leapfrog.hpp"
 #include "sph/sphpatch.hpp"
 #include "sys/cmdopt.hpp"
@@ -253,169 +254,10 @@ class TestTimestepper {
 
         sched.set_box_volume<f32_3>(box);
 
-        if (mpi_handler::world_rank == 0) {
+        SPHSetup<f32> setup(sched,true);
 
-            auto t = timings::start_timer("dumm setup", timings::timingtype::function);
-            Patch p;
-
-            
-            p.node_owner_id = mpi_handler::world_rank;
-
-            p.x_min = 0;
-            p.y_min = 0;
-            p.z_min = 0;
-
-            p.x_max = HilbertLB::max_box_sz;
-            p.y_max = HilbertLB::max_box_sz;
-            p.z_max = HilbertLB::max_box_sz;
-
-            p.pack_node_index = u64_max;
-
-            PatchData pdat(sched.pdl);
-
-            u32 ixyz = sched.pdl.get_field_idx<f32_3>("xyz");
-            u32 ivxyz = sched.pdl.get_field_idx<f32_3>("vxyz");
-            u32 iaxyz = sched.pdl.get_field_idx<f32_3>("axyz");
-            u32 iaxyz_old = sched.pdl.get_field_idx<f32_3>("axyz_old");
-
-            u32 ihpart = sched.pdl.get_field_idx<f32>("hpart");
-
-            std::cout << "ixyz : " << ixyz << std::endl;
-            std::cout << "ivxyz : " << ivxyz << std::endl;
-            std::cout << "iaxyz : " << iaxyz << std::endl;
-            std::cout << "iaxyz_old : " << iaxyz_old << std::endl;
-            std::cout << "ihpart : " << ihpart << std::endl;
-
-            
-
-            add_particles_fcc(
-                dr, 
-                box , 
-                [](f32_3 r){return true;}, 
-                [&](f32_3 r,f32 h){
-                    pdat.fields_f32_3[ixyz].insert_element(r); //r
-                    //                      h    
-                    pdat.fields_f32[ihpart].insert_element(h*2);
-                    //                           v          a             a_old
-                    pdat.fields_f32_3[ivxyz].insert_element(f32_3{0.F,0.F,0.F});
-                    pdat.fields_f32_3[iaxyz].insert_element(f32_3{0.f,0.f,0.f});
-                    pdat.fields_f32_3[iaxyz_old].insert_element(f32_3{0.f,0.f,0.f});
-                });
-
-            //std::cout << "tmp  " << pdat.fields_f32_3[ixyz].field_data.size();
-
-            std::cout << "paticles count " << pdat.get_obj_cnt() << std::endl;
-
-            //exit(0);
-
-            if(false){
-                /*
-                f32 a = 0.01;
-
-                f32 nmode = 1;
-                strech_mapping_axis(std::get<0>(box).x(),std::get<1>(box).x(), pdat.get_obj_cnt(),
-
-                    [&](u32 i) -> f32{
-                        return pdat.fields_f32_3[ixyz].field_data[i].x();
-                    }
-                    ,
-                    [&](u32 i,f32 r){
-                        pdat.fields_f32_3[ixyz].field_data[i].x() = r;
-                    },
-                    
-                    [&](f32 x) -> f32{
-
-                        f32 x_min = std::get<0>(box).x();
-                        f32 x_max = std::get<1>(box).x();
-                        constexpr f32 pi = 3.141612;
-
-                        return 1+a*sycl::cos(nmode*2.*pi*(x-x_min)/(x_max-x_min));
-                    }, 
-                    [&](f32 x) -> f32{
-
-                        f32 xmin = std::get<0>(box).x();
-                        f32 xmax = std::get<1>(box).x();
-
-                        constexpr f32 pi = 3.141612;
-
-                        return x - xmin + (a*(-xmax + xmin)* sycl::sin((nmode*2.*pi*(-x + xmin))/ (xmax - xmin)))/(nmode*2.*pi);
-                    });
-
-                */
-
-                
-            }
-
-            p.data_count = pdat.get_obj_cnt();
-            p.load_value = pdat.get_obj_cnt();
-
-            /*
-            p.data_count    = 1e6;
-            p.load_value    = 1e6;
-            std::mt19937 eng(0x1111);
-            std::uniform_real_distribution<f32> distpos(-1, 1);
-
-            for (u32 part_id = 0; part_id < p.data_count; part_id++){
-                pdat.pos_s.emplace_back(f32_3{distpos(eng), distpos(eng), distpos(eng)}); //r
-                //                      h    omega
-                pdat.U1_s.emplace_back(0.02f);
-                pdat.U1_s.emplace_back(0.00f);
-                //                           v          a             a_old
-                pdat.U3_s.emplace_back(f32_3{0.f,0.f,0.f});
-                pdat.U3_s.emplace_back(f32_3{0.f,0.f,0.f});
-                pdat.U3_s.emplace_back(f32_3{0.f,0.f,0.f});
-            }
-            */
-                
-
-            sched.add_patch(p, pdat);
-
-            t.stop();
-
-        } else {
-            sched.patch_list._next_patch_id++;
-        }
-        mpi::barrier(MPI_COMM_WORLD);
-
-        sched.owned_patch_id = sched.patch_list.build_local();
-
-        // std::cout << sched.dump_status() << std::endl;
-        sched.patch_list.build_global();
-        // std::cout << sched.dump_status() << std::endl;
-
-        //*
-        sched.patch_tree.build_from_patchtable(sched.patch_list.global, HilbertLB::max_box_sz);
-        //sched.patch_data.sim_box.min_box_sim_s = {-1};
-        //sched.patch_data.sim_box.max_box_sim_s = {1};
-
-        // std::cout << sched.dump_status() << std::endl;
-
-        std::cout << "build local" << std::endl;
-        sched.owned_patch_id = sched.patch_list.build_local();
-        sched.patch_list.build_local_idx_map();
-        sched.update_local_dtcnt_value();
-        sched.update_local_load_value();
-
-        // sched.patch_list.build_global();
-
-        /*{
-            SerialPatchTree<f32_3> sptree(sched.patch_tree, sched.get_box_tranform<f32_3>());
-            sptree.attach_buf();
-
-            PatchField<f32> h_field;
-            h_field.local_nodes_value.resize(sched.patch_list.local.size());
-            for (u64 idx = 0; idx < sched.patch_list.local.size(); idx++) {
-                h_field.local_nodes_value[idx] = 0.02f;
-            }
-            h_field.build_global(mpi_type_f32);
-
-            InterfaceHandler<f32_3, f32> interface_hndl;
-            interface_hndl.compute_interface_list<InterfaceSelector_SPH<f32_3, f32>>(sched, sptree, h_field);
-            interface_hndl.comm_interfaces(sched);
-            interface_hndl.print_current_interf_map();
-
-            // sched.dump_local_patches(format("patches_%d_node%d", 0, mpi_handler::world_rank));
-        }*/
+        setup.init_setup();
+        setup.add_particules_fcc(dr, box, [](f32_3 r){return true;});
     }
 
     static void step(PatchScheduler &sched, TestSimInfo &siminfo, std::string dump_folder) {
