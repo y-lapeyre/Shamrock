@@ -11,8 +11,8 @@
 #include "aliases.hpp"
 #include "patch/patchdata_buffer.hpp"
 #include "patch/patchdata_layout.hpp"
-#include "sph/kernels.hpp"
-#include "sph/sphpart.hpp"
+#include "sph/base/kernels.hpp"
+#include "sph/base/sphpart.hpp"
 #include "tree/radix_tree.hpp"
 
 namespace impl {

@@ -61,8 +61,8 @@
 #include <filesystem>
 
 #include "sph/forces.hpp"
-#include "sph/kernels.hpp"
-#include "sph/sphpart.hpp"
+#include "sph/base/kernels.hpp"
+#include "sph/base/sphpart.hpp"
 
 class TestSimInfo {
   public:
@@ -281,7 +281,7 @@ template <class Timestepper, class SimInfo> class SimulationSPH {
         pdl.add_field<f32_3>("vxyz",1);
         pdl.add_field<f32_3>("axyz",1);
         pdl.add_field<f32_3>("axyz_old",1);
-        
+
 
 
         PatchScheduler sched = PatchScheduler(pdl,20000, 1);

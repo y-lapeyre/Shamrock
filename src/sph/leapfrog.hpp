@@ -16,7 +16,7 @@
 #include "forces.hpp"
 #include "algs/integrators_utils.hpp"
 #include "algs/cfl_utils.hpp"
-#include "sph/sphpart.hpp"
+#include "sph/base/sphpart.hpp"
 #include <memory>
 #include <unordered_map>
 
