@@ -51,10 +51,7 @@ from IPython import start_ipython
 from traitlets.config.loader import Config
 import sys
 
-
-
 c = Config()
-
 
 banner ="SHAMROCK Ipython terminal\n" + "Python %s\n"%sys.version.split("\n")[0]
 

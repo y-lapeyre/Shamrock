@@ -1,7 +1,5 @@
 # Patch Scheduler : 
-- [ ] rename SchedulerMPI to PatchScheduler to handle the gpu scheduling from the same?
 
-- [ ] patchdata nvars to templates (perf gain ???)
 - [ ] patchdata_isend -> patchdata::pisend 
 - [ ] patchdata_irecv -> patchdata::pirecv
 - [ ] USM version of the patches
@@ -9,7 +7,6 @@
 
 - [ ] implement PatchDataBuffer with unique ptrs 
 - [ ] PatchDataBufferCache ?
-- [ ] add interger fields to patchdata
 
 - [ ] put instance of simbox in the SchedulerMPI
 

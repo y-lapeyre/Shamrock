@@ -173,20 +173,20 @@ class PatchData {
 
     template<class T> PatchDataField<T> & get_field(u32 idx){}
 
-    template<> inline PatchDataField<f32   > & get_field(u32 idx){return fields_f32[idx];}
-    template<> inline PatchDataField<f32_2 >& get_field(u32 idx){return fields_f32_2[idx];}
-    template<> inline PatchDataField<f32_3 >& get_field(u32 idx){return fields_f32_3[idx];}
-    template<> inline PatchDataField<f32_4 >& get_field(u32 idx){return fields_f32_4[idx];}
-    template<> inline PatchDataField<f32_8 >& get_field(u32 idx){return fields_f32_8[idx];}
-    template<> inline PatchDataField<f32_16>& get_field(u32 idx){return fields_f32_16[idx];}
-    template<> inline PatchDataField<f64   >& get_field(u32 idx){return fields_f64[idx];}
-    template<> inline PatchDataField<f64_2 >& get_field(u32 idx){return fields_f64_2[idx];}
-    template<> inline PatchDataField<f64_3 >& get_field(u32 idx){return fields_f64_3[idx];}
-    template<> inline PatchDataField<f64_4 >& get_field(u32 idx){return fields_f64_4[idx];}
-    template<> inline PatchDataField<f64_8 >& get_field(u32 idx){return fields_f64_8[idx];}
-    template<> inline PatchDataField<f64_16>& get_field(u32 idx){return fields_f64_16[idx];}
-    template<> inline PatchDataField<u32   >& get_field(u32 idx){return fields_u32[idx];}
-    template<> inline PatchDataField<u64   >& get_field(u32 idx){return fields_u64[idx];}
+    template<> inline PatchDataField<f32   > & get_field(u32 idx){return fields_f32.at(idx);}
+    template<> inline PatchDataField<f32_2 >& get_field(u32 idx){return fields_f32_2.at(idx);}
+    template<> inline PatchDataField<f32_3 >& get_field(u32 idx){return fields_f32_3.at(idx);}
+    template<> inline PatchDataField<f32_4 >& get_field(u32 idx){return fields_f32_4.at(idx);}
+    template<> inline PatchDataField<f32_8 >& get_field(u32 idx){return fields_f32_8.at(idx);}
+    template<> inline PatchDataField<f32_16>& get_field(u32 idx){return fields_f32_16.at(idx);}
+    template<> inline PatchDataField<f64   >& get_field(u32 idx){return fields_f64.at(idx);}
+    template<> inline PatchDataField<f64_2 >& get_field(u32 idx){return fields_f64_2.at(idx);}
+    template<> inline PatchDataField<f64_3 >& get_field(u32 idx){return fields_f64_3.at(idx);}
+    template<> inline PatchDataField<f64_4 >& get_field(u32 idx){return fields_f64_4.at(idx);}
+    template<> inline PatchDataField<f64_8 >& get_field(u32 idx){return fields_f64_8.at(idx);}
+    template<> inline PatchDataField<f64_16>& get_field(u32 idx){return fields_f64_16.at(idx);}
+    template<> inline PatchDataField<u32   >& get_field(u32 idx){return fields_u32.at(idx);}
+    template<> inline PatchDataField<u64   >& get_field(u32 idx){return fields_u64.at(idx);}
     
 };
 

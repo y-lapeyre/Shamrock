@@ -24,7 +24,7 @@
 #include "patch/serialpatchtree.hpp"
 #include "patchscheduler/scheduler_mpi.hpp"
 #include "sph/kernels.hpp"
-#include "sph/smoothing_lenght.hpp"
+#include "sph/algs/smoothing_lenght.hpp"
 #include "sph/sphpart.hpp"
 #include "sph/sphpatch.hpp"
 #include "sys/sycl_mpi_interop.hpp"
@@ -195,7 +195,7 @@ namespace sph {
 
         //compute dt step
 
-        f32 dt_cur = cfl_val;
+        flt dt_cur = cfl_val;
 
         std::cout << " --- current dt  : " << dt_cur << std::endl;
 
@@ -210,7 +210,7 @@ namespace sph {
             lambda_update_time(hndl.get_queue_compute(0),pdat_buf,sycl::range<1> {pdat_buf.element_count},dt_cur/2);
 
             sycl_move_parts(hndl.get_queue_compute(0), pdat_buf.element_count, dt_cur,
-                                              pdat_buf.fields_f32_3.at(ixyz), pdat_buf.fields_f32_3.at(ivxyz));
+                                              pdat_buf.get_field<vec3>(ixyz), pdat_buf.get_field<vec3>(ivxyz));
 
             lambda_update_time(hndl.get_queue_compute(0),pdat_buf,sycl::range<1> {pdat_buf.element_count},dt_cur/2);
 
@@ -221,7 +221,7 @@ namespace sph {
 
             if (periodic_mode) {//TODO generalise position modulo in the scheduler
                 sycl_position_modulo(hndl.get_queue_compute(0), pdat_buf.element_count,
-                                               pdat_buf.fields_f32_3[ixyz], sched.get_box_volume<vec3>());
+                                               pdat_buf.get_field<vec3>(ixyz), sched.get_box_volume<vec3>());
             }
         });
 
@@ -236,7 +236,7 @@ namespace sph {
 
 
         //compute hmax
-        PatchField<f32> h_field;
+        PatchField<flt> h_field;
         sched.compute_patch_field(
             h_field, get_mpi_type<flt>(), [loc_htol_up_tol](sycl::queue &queue, Patch &p, PatchDataBuffer &pdat_buf) {
                 return patchdata::sph::get_h_max<flt>(pdat_buf.pdl, queue, pdat_buf) * loc_htol_up_tol * Kernel::Rkern;
@@ -271,11 +271,11 @@ namespace sph {
 
             PatchDataBuffer &mpdat_buf = *merge_pdat_buf.at(id_patch).data;
 
-            std::tuple<f32_3, f32_3> &box = merge_pdat_buf.at(id_patch).box;
+            std::tuple<vec3, vec3> &box = merge_pdat_buf.at(id_patch).box;
 
             // radix tree computation
             radix_trees[id_patch] = std::make_unique<Radix_Tree<u_morton, vec3>>(hndl.get_queue_compute(0), box,
-                                                                                    mpdat_buf.fields_f32_3[ixyz]);
+                                                                                    mpdat_buf.get_field<vec3>(ixyz));
         });
 
         sched.for_each_patch([&](u64 id_patch, Patch cur_p) {
@@ -292,7 +292,7 @@ namespace sph {
 
             PatchDataBuffer &mpdat_buf = *merge_pdat_buf.at(id_patch).data;
 
-            radix_trees[id_patch]->compute_int_boxes(hndl.get_queue_compute(0), mpdat_buf.fields_f32[ihpart], htol_up_tol);
+            radix_trees[id_patch]->compute_int_boxes(hndl.get_queue_compute(0), mpdat_buf.get_field<flt>(ihpart), htol_up_tol);
         });
         hndl.get_queue_compute(0).wait();
         tgen_trees.stop();
@@ -300,8 +300,8 @@ namespace sph {
 
         //create compute field for new h and omega
         std::cout << "making omega field" << std::endl;
-        PatchComputeField<f32> hnew_field;
-        PatchComputeField<f32> omega_field;
+        PatchComputeField<flt> hnew_field;
+        PatchComputeField<flt> omega_field;
 
         hnew_field.generate(sched);
         omega_field.generate(sched);
@@ -317,16 +317,16 @@ namespace sph {
 
             PatchDataBuffer &pdat_buf_merge = *merge_pdat_buf.at(id_patch).data;
 
-            sycl::buffer<f32> &hnew  = *hnew_field.field_data_buf[id_patch];
-            sycl::buffer<f32> &omega = *omega_field.field_data_buf[id_patch];
-            sycl::buffer<f32> eps_h  = sycl::buffer<f32>(merge_pdat_buf.at(id_patch).or_element_cnt);
+            sycl::buffer<flt> &hnew  = *hnew_field.field_data_buf[id_patch];
+            sycl::buffer<flt> &omega = *omega_field.field_data_buf[id_patch];
+            sycl::buffer<flt> eps_h  = sycl::buffer<flt>(merge_pdat_buf.at(id_patch).or_element_cnt);
 
             sycl::range range_npart{merge_pdat_buf.at(id_patch).or_element_cnt};
 
             std::cout << "   original size : " << merge_pdat_buf.at(id_patch).or_element_cnt
                       << " | merged : " << pdat_buf_merge.element_count << std::endl;
 
-            ::sph::algs::SmoothingLenghtCompute<f32, u32, Kernel> h_iterator(sched.pdl, htol_up_tol, htol_up_iter);
+            ::sph::algs::SmoothingLenghtCompute<flt, u32, Kernel> h_iterator(sched.pdl, htol_up_tol, htol_up_iter);
 
             h_iterator.iterate_smoothing_lenght(hndl.get_queue_compute(0), merge_pdat_buf.at(id_patch).or_element_cnt,
                                                 sph_gpart_mass, *radix_trees[id_patch], pdat_buf_merge, hnew, omega, eps_h);
@@ -334,9 +334,9 @@ namespace sph {
             // write back h test
             //*
             hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
-                auto h_new = hnew.get_access<sycl::access::mode::read>(cgh);
+                auto h_new = hnew.template get_access<sycl::access::mode::read>(cgh);
 
-                auto acc_hpart = pdat_buf_merge.fields_f32.at(ihpart)->get_access<sycl::access::mode::write>(cgh);
+                auto acc_hpart = pdat_buf_merge.get_field<flt>(ihpart)->template get_access<sycl::access::mode::write>(cgh);
 
                 cgh.parallel_for<class write_back_h>(range_npart,
                                                      [=](sycl::item<1> item) { acc_hpart[item] = h_new[item]; });
@@ -362,10 +362,10 @@ namespace sph {
         omega_field.to_sycl();
 
         //merge compute fields
-        std::unordered_map<u64, MergedPatchCompFieldBuffer<f32>> hnew_field_merged;
-        make_merge_patches_comp_field<f32>(sched, interface_hndl, hnew_field, hnew_field_interfaces, hnew_field_merged);
-        std::unordered_map<u64, MergedPatchCompFieldBuffer<f32>> omega_field_merged;
-        make_merge_patches_comp_field<f32>(sched, interface_hndl, omega_field, omega_field_interfaces, omega_field_merged);
+        std::unordered_map<u64, MergedPatchCompFieldBuffer<flt>> hnew_field_merged;
+        make_merge_patches_comp_field<flt>(sched, interface_hndl, hnew_field, hnew_field_interfaces, hnew_field_merged);
+        std::unordered_map<u64, MergedPatchCompFieldBuffer<flt>> omega_field_merged;
+        make_merge_patches_comp_field<flt>(sched, interface_hndl, omega_field, omega_field_interfaces, omega_field_merged);
 
         //TODO add looping on corrector step
 

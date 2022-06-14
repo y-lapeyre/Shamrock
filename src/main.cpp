@@ -281,6 +281,7 @@ template <class Timestepper, class SimInfo> class SimulationSPH {
         pdl.add_field<f32_3>("vxyz",1);
         pdl.add_field<f32_3>("axyz",1);
         pdl.add_field<f32_3>("axyz_old",1);
+        
 
 
         PatchScheduler sched = PatchScheduler(pdl,20000, 1);
@@ -404,12 +405,12 @@ int main(int argc, char *argv[]) {
     SyCLHandler &hndl = SyCLHandler::get_instance();
     hndl.init_sycl();
 
-    /*
+    //*
     {
         RunScriptHandler rscript;
         rscript.run_ipython();
     }
-    */
+    //*/
 
 
 
