@@ -27,6 +27,21 @@ class EquationsOfState {
         return cs*cs*rho;
     }
 
+    inline static flt apply_eos_isothermal(sycl::queue & queue, flt cs, flt part_mass, sycl::buffer<flt> & h_buf, sycl::buffer<flt> & out_pressure){
+        sycl::range range_npart{h_buf.size()};
+
+        queue.submit([&](sycl::handler &cgh) {
+            auto h = h_buf.get_access<sycl::access::mode::read>(cgh);
+            auto p = out_pressure.get_access<sycl::access::mode::discard_write>(cgh);
+
+            auto _cs = cs;
+            auto pmass = part_mass;
+
+            cgh.parallel_for(range_npart, [=](sycl::item<1> item) { 
+                p[item] =   eos_isothermal(_cs,rho_h(pmass, h[item]))  ; 
+            });
+        });
+    }
 
 
 };

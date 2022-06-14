@@ -205,7 +205,7 @@ inline void patch_data_field_exchange_object(
                 //TODO enable if ultra verbose
                 //std::cout << format("send : (%3d,%3d) : %d -> %d / %d\n", psend.id_patch, precv.id_patch,
                 //                    psend.node_owner_id, precv.node_owner_id, local_comm_tag[i]);
-                patchdata_field_isend<T>(*send_comm_pdat[i], rq_lst, precv.node_owner_id, local_comm_tag[i], MPI_COMM_WORLD);
+                patchdata_field::isend<T>(*send_comm_pdat[i], rq_lst, precv.node_owner_id, local_comm_tag[i], MPI_COMM_WORLD);
             }
 
             // std::cout << format("send : (%3d,%3d) : %d -> %d /
@@ -233,7 +233,7 @@ inline void patch_data_field_exchange_object(
                     recv_obj[precv.id_patch].push_back(
                         {psend.id_patch, std::make_unique<PatchDataField<T>>("comp_field",1)}); // patchdata_irecv(recv_rq, psend.node_owner_id,
                                                                           // global_comm_tag[i], MPI_COMM_WORLD)}
-                    patchdata_field_irecv<T>(*std::get<1>(recv_obj[precv.id_patch][recv_obj[precv.id_patch].size() - 1]),
+                    patchdata_field::irecv<T>(*std::get<1>(recv_obj[precv.id_patch][recv_obj[precv.id_patch].size() - 1]),
                                     rq_lst, psend.node_owner_id, global_comm_tag[i], MPI_COMM_WORLD);
                 }
 
