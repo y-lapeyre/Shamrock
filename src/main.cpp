@@ -41,6 +41,7 @@
 #include "runscript/rscripthandler.hpp"
 #include "setup/SPHSetup.hpp"
 #include "sph/leapfrog.hpp"
+#include "sph/gas_sync.hpp"
 #include "sph/sphpatch.hpp"
 #include "sys/cmdopt.hpp"
 #include "sys/mpi_handler.hpp"
@@ -267,6 +268,55 @@ class TestTimestepper {
     }
 };
 
+
+
+class TestTimestepperSync {
+  public:
+
+    SPHTimestepperLeapfrogIsotGasSync<f32> leapfrog;
+
+    void init(PatchScheduler &sched, TestSimInfo &siminfo) {
+
+
+        f32_3 box_dim = {1,1,1};
+
+        std::tuple<f32_3,f32_3> box = {
+            -box_dim,box_dim
+        };
+
+        
+
+        f32 dr = 0.04;
+        correct_box_fcc<f32>(dr,box);
+
+        sched.set_box_volume<f32_3>(box);
+
+        SPHSetup<f32> setup(sched,true);
+
+        setup.init_setup();
+        setup.add_particules_fcc(dr, box, [](f32_3 r){return true;});
+
+        leapfrog.sync_parts.push_back(
+            SPHTimestepperLeapfrogIsotGasSync<f32>::SyncPart{
+                {0,0,0},
+                {0,0,0},
+                1.e11
+            });
+    }
+
+    void step(PatchScheduler &sched, TestSimInfo &siminfo, std::string dump_folder) {
+
+        
+
+        SyCLHandler &hndl = SyCLHandler::get_instance();
+
+        // std::cout << sched.dump_status() << std::endl;
+        sched.scheduler_step(true, true);
+
+        leapfrog.step(sched,dump_folder,siminfo.stepcnt,siminfo.time);
+    }
+};
+
 template <class Timestepper, class SimInfo> class SimulationSPH {
   public:
     static void run_sim() {
@@ -295,7 +345,8 @@ template <class Timestepper, class SimInfo> class SimulationSPH {
         std::cout << " ------ init sim ------" << std::endl;
 
         auto t = timings::start_timer("init timestepper", timings::timingtype::function);
-        Timestepper::init(sched, siminfo);
+        Timestepper stepper;
+        stepper.init(sched, siminfo);
         t.stop();
 
         std::cout << " --- init sim done ----" << std::endl;
@@ -312,7 +363,7 @@ template <class Timestepper, class SimInfo> class SimulationSPH {
         
         for (u32 stepi = 1; stepi < 500; stepi++) {
 
-            if(stepi == 5){
+            if(stepi == 5 && true){
 
                 auto box = sched.get_box_volume<f32_3>();
 
@@ -360,7 +411,7 @@ template <class Timestepper, class SimInfo> class SimulationSPH {
 
             auto step_timer = timings::start_timer("timestepper step", timings::timingtype::function);
             
-            Timestepper::step(sched, siminfo,"step" + std::to_string(stepi));
+            stepper.step(sched, siminfo,"step" + std::to_string(stepi));
 
             step_timer.stop();
 
@@ -440,7 +491,7 @@ int main(int argc, char *argv[]) {
 
 
     SimulationSPH<TestTimestepper, TestSimInfo>::run_sim();
-
+    //SimulationSPH<TestTimestepperSync, TestSimInfo>::run_sim();
 
 
 
