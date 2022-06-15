@@ -16,6 +16,8 @@
 #include "patch/patchdata.hpp"
 #include "sys/sycl_mpi_interop.hpp"
 #include <vector>
+
+#include "io/logs.hpp"
 namespace patchdata_exchanger {
 
 
@@ -55,6 +57,8 @@ inline void patch_data_exchange_object(
     // std::cout << "len comm_pdat : " << send_comm_pdat.size() << std::endl;
     // std::cout << "len comm_vec : " << send_comm_vec.size() << std::endl;
 
+    auto timer_transf = timings::start_timer("patch_data_exchange_object", timings::function);
+
     std::vector<i32> local_comm_tag(send_comm_vec.size());
     {
         i32 iterator = 0;
@@ -68,12 +72,18 @@ inline void patch_data_exchange_object(
         }
     }
 
+    auto timer_allgatherv = timings::start_timer("allgatherv", timings::mpi);
     std::vector<u64_2> global_comm_vec;
     std::vector<i32> global_comm_tag;
     mpi_handler::vector_allgatherv(send_comm_vec, mpi_type_u64_2, global_comm_vec, mpi_type_u64_2, MPI_COMM_WORLD);
     mpi_handler::vector_allgatherv(local_comm_tag, mpi_type_i32, global_comm_tag, mpi_type_i32, MPI_COMM_WORLD);
+    timer_allgatherv.stop();
 
     std::vector<MPI_Request> rq_lst;
+
+    auto timer_transfmpi = timings::start_timer("patchdata_exchanger", timings::mpi);
+
+    u64 dtcnt = 0;
 
     {
         for (u64 i = 0; i < send_comm_vec.size(); i++) {
@@ -88,7 +98,7 @@ inline void patch_data_exchange_object(
                 //TODO enable if ultra verbose
                 //std::cout << format("send : (%3d,%3d) : %d -> %d / %d\n", psend.id_patch, precv.id_patch,
                 //                    psend.node_owner_id, precv.node_owner_id, local_comm_tag[i]);
-                patchdata_isend(*send_comm_pdat[i], rq_lst, precv.node_owner_id, local_comm_tag[i], MPI_COMM_WORLD);
+                dtcnt += patchdata_isend(*send_comm_pdat[i], rq_lst, precv.node_owner_id, local_comm_tag[i], MPI_COMM_WORLD);
             }
 
             // std::cout << format("send : (%3d,%3d) : %d -> %d /
@@ -116,7 +126,7 @@ inline void patch_data_exchange_object(
                     recv_obj[precv.id_patch].push_back(
                         {psend.id_patch, std::make_unique<PatchData>(pdl)}); // patchdata_irecv(recv_rq, psend.node_owner_id,
                                                                           // global_comm_tag[i], MPI_COMM_WORLD)}
-                    patchdata_irecv(*std::get<1>(recv_obj[precv.id_patch][recv_obj[precv.id_patch].size() - 1]),
+                    dtcnt += patchdata_irecv(*std::get<1>(recv_obj[precv.id_patch][recv_obj[precv.id_patch].size() - 1]),
                                     rq_lst, psend.node_owner_id, global_comm_tag[i], MPI_COMM_WORLD);
                 }
 
@@ -133,6 +143,8 @@ inline void patch_data_exchange_object(
 
     std::vector<MPI_Status> st_lst(rq_lst.size());
     mpi::waitall(rq_lst.size(), rq_lst.data(), st_lst.data());
+
+    timer_transfmpi.stop(dtcnt);
 
     /*
     for(auto & [id_ps, pdat] : (recv_obj[0])){
@@ -153,6 +165,8 @@ inline void patch_data_exchange_object(
     }std::cout << std::endl;
     */
 
+    timer_transf.stop();
+
 }
 
 
@@ -172,6 +186,9 @@ inline void patch_data_field_exchange_object(
     // std::cout << "len comm_pdat : " << send_comm_pdat.size() << std::endl;
     // std::cout << "len comm_vec : " << send_comm_vec.size() << std::endl;
 
+    auto timer_transf = timings::start_timer("patch_data_field_exchange_object", timings::function);
+
+
     std::vector<i32> local_comm_tag(send_comm_vec.size());
     {
         i32 iterator = 0;
@@ -185,12 +202,19 @@ inline void patch_data_field_exchange_object(
         }
     }
 
+    auto timer_allgatherv = timings::start_timer("allgatherv", timings::mpi);
     std::vector<u64_2> global_comm_vec;
     std::vector<i32> global_comm_tag;
     mpi_handler::vector_allgatherv(send_comm_vec, mpi_type_u64_2, global_comm_vec, mpi_type_u64_2, MPI_COMM_WORLD);
     mpi_handler::vector_allgatherv(local_comm_tag, mpi_type_i32, global_comm_tag, mpi_type_i32, MPI_COMM_WORLD);
+    timer_allgatherv.stop();
+
 
     std::vector<MPI_Request> rq_lst;
+
+    auto timer_transfmpi = timings::start_timer("patchdata_exchanger", timings::mpi);
+
+    u64 dtcnt = 0;
 
     {
         for (u64 i = 0; i < send_comm_vec.size(); i++) {
@@ -205,7 +229,7 @@ inline void patch_data_field_exchange_object(
                 //TODO enable if ultra verbose
                 //std::cout << format("send : (%3d,%3d) : %d -> %d / %d\n", psend.id_patch, precv.id_patch,
                 //                    psend.node_owner_id, precv.node_owner_id, local_comm_tag[i]);
-                patchdata_field::isend<T>(*send_comm_pdat[i], rq_lst, precv.node_owner_id, local_comm_tag[i], MPI_COMM_WORLD);
+                dtcnt += patchdata_field::isend<T>(*send_comm_pdat[i], rq_lst, precv.node_owner_id, local_comm_tag[i], MPI_COMM_WORLD);
             }
 
             // std::cout << format("send : (%3d,%3d) : %d -> %d /
@@ -233,7 +257,7 @@ inline void patch_data_field_exchange_object(
                     recv_obj[precv.id_patch].push_back(
                         {psend.id_patch, std::make_unique<PatchDataField<T>>("comp_field",1)}); // patchdata_irecv(recv_rq, psend.node_owner_id,
                                                                           // global_comm_tag[i], MPI_COMM_WORLD)}
-                    patchdata_field::irecv<T>(*std::get<1>(recv_obj[precv.id_patch][recv_obj[precv.id_patch].size() - 1]),
+                    dtcnt += patchdata_field::irecv<T>(*std::get<1>(recv_obj[precv.id_patch][recv_obj[precv.id_patch].size() - 1]),
                                     rq_lst, psend.node_owner_id, global_comm_tag[i], MPI_COMM_WORLD);
                 }
 
@@ -250,6 +274,8 @@ inline void patch_data_field_exchange_object(
 
     std::vector<MPI_Status> st_lst(rq_lst.size());
     mpi::waitall(rq_lst.size(), rq_lst.data(), st_lst.data());
+
+    timer_transfmpi.stop(dtcnt);
 
     /*
     for(auto & [id_ps, pdat] : (recv_obj[0])){
@@ -269,6 +295,8 @@ inline void patch_data_field_exchange_object(
         std::cout << "int : " << 0 << " <- " << id_ps << " : " << pdat->size() << std::endl;
     }std::cout << std::endl;
     */
+
+    timer_transf.stop();
 
 }
 

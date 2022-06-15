@@ -16,7 +16,6 @@
 #include "sph/base/sphpart.hpp"
 #include "tree/radix_tree.hpp"
 
-
 namespace sph {
 namespace algs {
 

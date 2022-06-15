@@ -26,6 +26,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cstdio>
 #include <exception>
 #include <stdexcept>
 #include <vector>
@@ -315,7 +316,7 @@ void patchdata_irecv(PatchData & pdat, std::vector<MPI_Request> &rq_lst, i32 ran
 
 u64 patchdata_irecv(PatchData & pdat, std::vector<MPI_Request> &rq_lst, i32 rank_source, i32 tag, MPI_Comm comm){
 
-    u64 total_data_transf;
+    u64 total_data_transf = 0;
 
     for (auto & a : pdat.fields_f32) {        //std::cout << "["<< mpi_handler::world_rank <<"] recv field : " << a.get_name() << std::endl;
         total_data_transf += patchdata_field::irecv(a, rq_lst, rank_source, tag, comm);

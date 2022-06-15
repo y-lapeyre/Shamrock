@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include <cstdio>
 #include <iostream>
 #include <random>
 #include <vector>
@@ -205,6 +206,7 @@ namespace patchdata_field {
 
         rq_lst.resize(rq_lst.size() + 1);
         mpi::irecv(p.data(), cnt, get_mpi_type<T>(), rank_source, tag, comm, &rq_lst[rq_lst.size() - 1]);
+
         return sizeof(T)*cnt;
     }
 }

@@ -9,6 +9,7 @@
 #pragma once
 
 
+#include <cstdio>
 #include <string>
 #include <tuple>
 #include <vector>
@@ -99,6 +100,7 @@ namespace timings {
         }
 
         inline void stop(u64 data_transfered){
+
             time.end();
             active_timers --;
             timer_log.push_back(LogTimers{
@@ -107,7 +109,7 @@ namespace timings {
                 kind,
                 active_timers,
                 true,
-                static_cast<f64>(data_transfered),
+                f64(data_transfered),
                 (u64(data_transfered))/(time.nanosec/1.e9)});
         }
     };
@@ -138,11 +140,13 @@ namespace timings {
 
                 
                 
-                std::string out = format("%-50s %2.9f %3.1f\n",str.c_str(), a.time,100*a.time/total);
+                std::string out = format("%-50s %2.9f %3.1f ",str.c_str(), a.time,100*a.time/total);
 
                 if (a.is_bandwidth) {
                     out += readable_sizeof(a.data_transfered);
-                    out += " Bandwith : " + readable_sizeof(a.bandwith) + ".s-1";
+                    out += " Bandwith : " + readable_sizeof(a.bandwith) + ".s-1\n";
+                }else {
+                    out += "\n";
                 }
                 
 
