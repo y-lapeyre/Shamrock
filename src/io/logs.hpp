@@ -42,7 +42,7 @@ namespace logfiles {
             mpi::file_close(&a);
         }
     }
-}
+} // namespace logfiles
 
 
 
@@ -54,7 +54,18 @@ namespace timings {
         mpi
     };
 
-    inline std::vector<std::tuple<std::string,f64,timingtype,u32>> timer_log;
+    struct LogTimers {
+        std::string name;
+        f64 time;
+        timingtype timekind;
+        u32 active_timers;
+
+        bool is_bandwidth;
+        f64 data_transfered;
+        f64 bandwith;
+    };
+
+    inline std::vector<LogTimers> timer_log;
     inline u32 active_timers = 0;
 
     class NamedTimer{
@@ -77,7 +88,27 @@ namespace timings {
         inline void stop(){
             time.end();
             active_timers --;
-            timer_log.push_back({name,time.nanosec/1.e9, kind,active_timers});
+            timer_log.push_back(LogTimers{
+                name,
+                time.nanosec/1.e9, 
+                kind,
+                active_timers,
+                false,
+                -1,
+                -1});
+        }
+
+        inline void stop(u64 data_transfered){
+            time.end();
+            active_timers --;
+            timer_log.push_back(LogTimers{
+                name,
+                time.nanosec/1.e9, 
+                kind,
+                active_timers,
+                true,
+                static_cast<f64>(data_transfered),
+                (u64(data_transfered))/(time.nanosec/1.e9)});
         }
     };
 
@@ -94,18 +125,28 @@ namespace timings {
             mpi::file_write(logfiles::timing_files[mpi_handler::world_rank], header.data(), header.size(), mpi_type_u8, &st);
 
             f64 total = 0;
-            for(auto & [name,time,kind,indent] : timer_log){
-                if(indent == 0) total += time;
+            for(auto & a : timer_log){
+                if(a.active_timers == 0) total += a.time;
             }
 
-            for(auto & [name,time,kind,indent] : timer_log){
+            for(auto & a : timer_log){
 
                 std::string str = "";
-                for(u32 i = 0; i < indent; i ++){
+                for(u32 i = 0; i < a.active_timers; i ++){
                     str += "  ";
-                }str += name;
+                }str += a.name;
+
                 
-                std::string out = format("%-50s %2.9f %3.1f\n",str.c_str(), time,100*time/total);
+                
+                std::string out = format("%-50s %2.9f %3.1f\n",str.c_str(), a.time,100*a.time/total);
+
+                if (a.is_bandwidth) {
+                    out += readable_sizeof(a.data_transfered);
+                    out += " Bandwith : " + readable_sizeof(a.bandwith) + ".s-1";
+                }
+                
+
+
                 mpi::file_write(logfiles::timing_files[mpi_handler::world_rank], out.data(), out.size(), mpi_type_u8, &st);
             }
         }

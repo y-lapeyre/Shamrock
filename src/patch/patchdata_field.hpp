@@ -186,13 +186,14 @@ class PatchDataField {
 
 namespace patchdata_field {
     template<class T>
-    inline void isend( PatchDataField<T> &p, std::vector<MPI_Request> &rq_lst, i32 rank_dest, i32 tag, MPI_Comm comm){
+    inline u64 isend( PatchDataField<T> &p, std::vector<MPI_Request> &rq_lst, i32 rank_dest, i32 tag, MPI_Comm comm){
         rq_lst.resize(rq_lst.size() + 1);
         mpi::isend(p.data(), p.size(), get_mpi_type<T>(), rank_dest, tag, comm, &rq_lst[rq_lst.size() - 1]);
+        return sizeof(T)*p.size();
     }
 
     template<class T>
-    inline void irecv(PatchDataField<T> &p, std::vector<MPI_Request> &rq_lst, i32 rank_source, i32 tag, MPI_Comm comm){
+    inline u64 irecv(PatchDataField<T> &p, std::vector<MPI_Request> &rq_lst, i32 rank_source, i32 tag, MPI_Comm comm){
         MPI_Status st;
         i32 cnt;
         int i = mpi::probe(rank_source, tag,comm, & st);
@@ -204,6 +205,7 @@ namespace patchdata_field {
 
         rq_lst.resize(rq_lst.size() + 1);
         mpi::irecv(p.data(), cnt, get_mpi_type<T>(), rank_source, tag, comm, &rq_lst[rq_lst.size() - 1]);
+        return sizeof(T)*cnt;
     }
 }
 

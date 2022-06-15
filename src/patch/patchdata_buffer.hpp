@@ -56,11 +56,11 @@ class PatchDataBuffer{ public:
 
     std::vector<std::unique_ptr<sycl::buffer<u64   >>> fields_u64;
 
-    inline PatchDataBuffer(PatchDataLayout & pdl) : pdl(pdl) {}
+    inline PatchDataBuffer(PatchDataLayout & pdl) : element_count(0), pdl(pdl) {}
 
-    inline PatchDataBuffer(PatchDataLayout & pdl, u32 cnt) : pdl(pdl) {
+    inline PatchDataBuffer(PatchDataLayout & pdl, u32 cnt) : element_count(cnt), pdl(pdl) {
 
-        element_count = u32(cnt);
+        
 
 
         for(u32 idx = 0; idx < pdl.fields_f32.size(); idx++){
