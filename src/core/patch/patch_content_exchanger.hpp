@@ -10,8 +10,8 @@
 
 
 #include "aliases.hpp"
-#include "patch/serialpatchtree.hpp"
-#include "utils/geometry_utils.hpp"
+#include "serialpatchtree.hpp"
+#include "core/utils/geometry_utils.hpp"
 
 template <class posvec, class kername>
 inline sycl::buffer<u64> __compute_object_patch_owner(sycl::queue &queue, sycl::buffer<posvec> &position_buffer,

@@ -6,10 +6,10 @@
 //
 // -------------------------------------------------------//
 
-#include "sys/mpi_handler.hpp"
+#include "core/sys/mpi_handler.hpp"
 #include "unittests/shamrocktest.hpp"
 
-#include "sys/sycl_handler.hpp"
+#include "core/sys/sycl_handler.hpp"
 #include <chrono>
 #include <memory>
 #include <mutex>

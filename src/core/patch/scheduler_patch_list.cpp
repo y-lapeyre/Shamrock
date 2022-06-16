@@ -11,8 +11,8 @@
 #include <vector>
 #include <random>
 
-#include "io/logs.hpp"
-#include "patch/patch.hpp"
+#include "core/io/logs.hpp"
+#include "patch.hpp"
 #include "loadbalancing_hilbert.hpp"
 
 

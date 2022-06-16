@@ -10,7 +10,7 @@
 
 #include "algs/syclreduction.hpp"
 #include "aliases.hpp"
-#include "patch/patchdata_buffer.hpp"
+#include "core/patch/patchdata_buffer.hpp"
 template<class flt>
 class CflUtility{public:
 

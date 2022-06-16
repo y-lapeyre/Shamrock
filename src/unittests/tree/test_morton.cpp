@@ -9,8 +9,8 @@
 #include "aliases.hpp"
 #include "unittests/shamrocktest.hpp"
 
-#include "sfc/morton.hpp"
-#include "tree/kernels/morton_kernels.hpp"
+#include "core/sfc/morton.hpp"
+#include "core/tree/kernels/morton_kernels.hpp"
 #include <memory>
 #include <vector>
 

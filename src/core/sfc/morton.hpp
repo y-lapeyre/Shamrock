@@ -19,7 +19,7 @@
 #pragma once
 
 #include "aliases.hpp"
-#include "sfc/bmi.hpp"
+#include "bmi.hpp"
 #include <type_traits>
 
 namespace morton_3d {

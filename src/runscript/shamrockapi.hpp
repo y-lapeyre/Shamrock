@@ -1,9 +1,9 @@
 #pragma once
 
 #include "aliases.hpp"
-#include "io/logs.hpp"
-#include "patch/patchdata_layout.hpp"
-#include "patchscheduler/scheduler_mpi.hpp"
+#include "core/io/logs.hpp"
+#include "core/patch/patchdata_layout.hpp"
+#include "core/patch/scheduler_mpi.hpp"
 #include <memory>
 
 

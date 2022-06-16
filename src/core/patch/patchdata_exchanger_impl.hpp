@@ -9,15 +9,15 @@
 #pragma once
 
 
-#include "patch/patchdata_field.hpp"
-#include "patch/patchdata_layout.hpp"
-#include "sys/mpi_handler.hpp"
-#include "patch/patch.hpp"
-#include "patch/patchdata.hpp"
-#include "sys/sycl_mpi_interop.hpp"
+#include "patchdata_field.hpp"
+#include "patchdata_layout.hpp"
+#include "core/sys/mpi_handler.hpp"
+#include "patch.hpp"
+#include "patchdata.hpp"
+#include "core/sys/sycl_mpi_interop.hpp"
 #include <vector>
 
-#include "io/logs.hpp"
+#include "core/io/logs.hpp"
 namespace patchdata_exchanger {
 
 

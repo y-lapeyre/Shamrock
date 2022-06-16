@@ -23,8 +23,8 @@
 #include <tuple>
 
 #include "aliases.hpp"
-#include "patch/patch.hpp"
-#include "sfc/hilbert.hpp"
+#include "patch.hpp"
+#include "core/sfc/hilbert.hpp"
 
 /**
  * @brief hilbert load balancing

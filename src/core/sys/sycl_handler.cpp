@@ -14,9 +14,9 @@
 #include <unordered_map>
 #include <vector>
 
-#include "utils/string_utils.hpp"
+#include "core/utils/string_utils.hpp"
 
-#include "sys/cmdopt.hpp"
+#include "cmdopt.hpp"
 
 
 auto exception_handler = [] (sycl::exception_list exceptions) {

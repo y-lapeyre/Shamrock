@@ -9,14 +9,14 @@
 #pragma once
 
 #include "aliases.hpp"
-#include "patch/patchdata.hpp"
-#include "patch/patchdata_exchanger.hpp"
-#include "patch/patchdata_field.hpp"
-#include "patch/serialpatchtree.hpp"
-#include "patchscheduler/patch_content_exchanger.hpp"
-#include "patchscheduler/scheduler_mpi.hpp"
-#include "sys/sycl_handler.hpp"
-#include "utils/sycl_vector_utils.hpp"
+#include "patchdata.hpp"
+#include "patchdata_exchanger.hpp"
+#include "patchdata_field.hpp"
+#include "serialpatchtree.hpp"
+#include "patch_content_exchanger.hpp"
+#include "scheduler_mpi.hpp"
+#include "core/sys/sycl_handler.hpp"
+#include "core/utils/sycl_vector_utils.hpp"
 #include <unordered_map>
 
 

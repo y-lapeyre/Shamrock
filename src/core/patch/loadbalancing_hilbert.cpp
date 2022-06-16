@@ -19,8 +19,8 @@
 
 #include "loadbalancing_hilbert.hpp"
 
-#include "io/logs.hpp"
-#include "sys/sycl_handler.hpp"
+#include "core/io/logs.hpp"
+#include "core/sys/sycl_handler.hpp"
 
 
 std::vector<std::tuple<u64, i32, i32, i32>> HilbertLB::make_change_list(std::vector<Patch> &global_patch_list) {

@@ -12,12 +12,12 @@
 #include <sstream>
 #include <stdexcept>
 
-#include "io/logs.hpp"
+#include "core/io/logs.hpp"
 #include "loadbalancing_hilbert.hpp"
 
-#include "patch/patchdata_layout.hpp"
-#include "sys/sycl_handler.hpp"
-#include "utils/time_utils.hpp"
+#include "patchdata_layout.hpp"
+#include "core/sys/sycl_handler.hpp"
+#include "core/utils/time_utils.hpp"
 
 
 

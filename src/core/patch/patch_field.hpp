@@ -20,7 +20,7 @@
 
 #include <vector>
 
-#include "sys/mpi_handler.hpp"
+#include "core/sys/mpi_handler.hpp"
 
 /**
  * @brief Define a field attached to a patch (exemple: FMM multipoles, hmax in SPH)

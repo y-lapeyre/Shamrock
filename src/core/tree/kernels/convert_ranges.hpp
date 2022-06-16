@@ -9,7 +9,7 @@
 #pragma once
 
 #include "aliases.hpp"
-#include "sfc/morton.hpp"
+#include "core/sfc/morton.hpp"
 #include <memory>
 
 

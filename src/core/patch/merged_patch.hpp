@@ -9,9 +9,9 @@
 #pragma once
 
 #include "aliases.hpp"
-#include "interfaces/interface_handler.hpp"
+#include "core/patch/interfaces/interface_handler.hpp"
 #include "patchdata_buffer.hpp"
-#include "patchscheduler/scheduler_mpi.hpp"
+#include "scheduler_mpi.hpp"
 
 template<class vec>
 struct MergedPatchDataBuffer {public:

@@ -24,10 +24,10 @@
 
 #include "aliases.hpp"
 #include "flags.hpp"
-#include "patch/patchdata_field.hpp"
-#include "sys/mpi_handler.hpp"
-#include "sys/sycl_mpi_interop.hpp"
-#include "utils/sycl_vector_utils.hpp"
+#include "patchdata_field.hpp"
+#include "core/sys/mpi_handler.hpp"
+#include "core/sys/sycl_mpi_interop.hpp"
+#include "core/utils/sycl_vector_utils.hpp"
 
 #include "patchdata_layout.hpp"
 

@@ -14,10 +14,10 @@
 #include <tuple>
 #include <vector>
 #include "aliases.hpp"
-#include "sys/mpi_handler.hpp"
-#include "sys/sycl_mpi_interop.hpp"
-#include "utils/string_utils.hpp"
-#include "utils/time_utils.hpp"
+#include "core/sys/mpi_handler.hpp"
+#include "core/sys/sycl_mpi_interop.hpp"
+#include "core/utils/string_utils.hpp"
+#include "core/utils/time_utils.hpp"
 
 namespace logfiles {
     inline bool dump_timings = true;

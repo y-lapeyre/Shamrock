@@ -11,9 +11,8 @@
 #include "algs/syclreduction.hpp"
 #include "aliases.hpp"
 
-#include "hipSYCL/sycl/buffer.hpp"
-#include "hipSYCL/sycl/libkernel/builtins.hpp"
-#include "patch/patchdata_buffer.hpp"
+
+#include "core/patch/patchdata_buffer.hpp"
 #include "physics/units.hpp"
 #include "sph/integrators/leapfrog.hpp"
 #include "forces.hpp"
@@ -96,7 +95,7 @@ template <class flt> class SPHTimestepperLeapfrogIsotGasSync {
                     const flt c_cour  = cfl_cour;
                     const flt c_force = cfl_force;
 
-                    cgh.parallel_for<class Initial_dtcfl>(range_it, [=](sycl::item<1> item) {
+                    cgh.parallel_for(range_it, [=](sycl::item<1> item) {
                         u32 i = (u32)item.get_id(0);
 
                         flt h_a    = acc_hpart[item];
@@ -233,7 +232,7 @@ template <class flt> class SPHTimestepperLeapfrogIsotGasSync {
 
                         // sycl::stream out(65000,65000,cgh);
 
-                        cgh.parallel_for<class forces>(range_npart, [=](sycl::item<1> item) {
+                        cgh.parallel_for(range_npart, [=](sycl::item<1> item) {
                             u32 id_a = (u32)item.get_id(0);
 
                             f32_3 sum_axyz = {0, 0, 0};
@@ -323,7 +322,7 @@ template <class flt> class SPHTimestepperLeapfrogIsotGasSync {
 
                             u32 num_sync = sync_parts.size();
 
-                            cgh.parallel_for<class forces>(range_npart, [=](sycl::item<1> item) {
+                            cgh.parallel_for(range_npart, [=](sycl::item<1> item) {
                                 u32 id_a = (u32)item.get_id(0);
 
                                 f32_3 xyz_a = r[id_a];

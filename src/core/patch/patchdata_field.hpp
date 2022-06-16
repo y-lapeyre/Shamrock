@@ -15,9 +15,9 @@
 
 #include "aliases.hpp"
 
-#include "sys/sycl_mpi_interop.hpp"
-#include "utils/sycl_vector_utils.hpp"
-#include "sys/mpi_handler.hpp"
+#include "core/sys/sycl_mpi_interop.hpp"
+#include "core/utils/sycl_vector_utils.hpp"
+#include "core/sys/mpi_handler.hpp"
 
 template<class T>
 class PatchDataField {

@@ -10,9 +10,9 @@
 #include "unittests/shamrocktest.hpp"
 #include <sstream>
 
-#include "sys/cmdopt.hpp"
-#include "utils/string_utils.hpp"
-#include "sys/sycl_handler.hpp"
+#include "core/sys/cmdopt.hpp"
+#include "core/utils/string_utils.hpp"
+#include "core/sys/sycl_handler.hpp"
 
 
 bool has_option(

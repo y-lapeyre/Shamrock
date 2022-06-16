@@ -9,9 +9,9 @@
 #pragma once
 
 #include "aliases.hpp"
-#include "patch/patchdata.hpp"
-#include "patch/patchdata_field.hpp"
-#include "utils/geometry_utils.hpp"
+#include "core/patch/patchdata.hpp"
+#include "core/patch/patchdata_field.hpp"
+#include "core/utils/geometry_utils.hpp"
 #include <vector>
 
 

@@ -18,13 +18,13 @@
 #include <vector>
 
 #include "kernels/morton_kernels.hpp"
-#include "sfc/morton.hpp"
-#include "tree/kernels/compute_ranges.hpp"
-#include "tree/kernels/convert_ranges.hpp"
-#include "tree/kernels/karras_alg.hpp"
-#include "tree/kernels/key_morton_sort.hpp"
-#include "tree/kernels/reduction_alg.hpp"
-#include "utils/geometry_utils.hpp"
+#include "core/sfc/morton.hpp"
+#include "kernels/compute_ranges.hpp"
+#include "kernels/convert_ranges.hpp"
+#include "kernels/karras_alg.hpp"
+#include "kernels/key_morton_sort.hpp"
+#include "kernels/reduction_alg.hpp"
+#include "core/utils/geometry_utils.hpp"
 
 
 

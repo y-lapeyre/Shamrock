@@ -23,10 +23,10 @@
 #include <stdexcept>
 #include <unordered_map>
 
-#include "patch/patchdata.hpp"
-#include "patch/patchdata_field.hpp"
-#include "patch/patchdata_layout.hpp"
-#include "sys/sycl_handler.hpp"
+#include "patchdata.hpp"
+#include "patchdata_field.hpp"
+#include "patchdata_layout.hpp"
+#include "core/sys/sycl_handler.hpp"
 
 /**
  * @brief sycl buffer loaded version of PatchData

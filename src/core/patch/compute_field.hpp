@@ -9,8 +9,8 @@
 #pragma once
 
 #include "aliases.hpp"
-#include "patch/patchdata_field.hpp"
-#include "patchscheduler/scheduler_mpi.hpp"
+#include "patchdata_field.hpp"
+#include "scheduler_mpi.hpp"
 #include <memory>
 #include <unordered_map>
 #include <vector>

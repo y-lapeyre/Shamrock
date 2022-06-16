@@ -26,15 +26,15 @@
 #include <unordered_set>
 
 #include "aliases.hpp"
-#include "patch/patch.hpp"
-#include "patch/patchdata.hpp"
-#include "patch/patchdata_buffer.hpp"
-#include "patch/patchdata_layout.hpp"
-#include "patch/patchtree.hpp"
+#include "patch.hpp"
+#include "patchdata.hpp"
+#include "patchdata_buffer.hpp"
+#include "patchdata_layout.hpp"
+#include "patchtree.hpp"
 #include "scheduler_patch_list.hpp"
 #include "scheduler_patch_data.hpp"
-#include "sys/sycl_handler.hpp"
-#include "sys/sycl_mpi_interop.hpp"
+#include "core/sys/sycl_handler.hpp"
+#include "core/sys/sycl_mpi_interop.hpp"
 
 /**
  * @brief The MPI scheduler

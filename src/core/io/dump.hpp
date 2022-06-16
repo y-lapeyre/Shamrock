@@ -8,15 +8,15 @@
 
 #pragma once
 #include "aliases.hpp"
-#include "io/logs.hpp"
-#include "patch/merged_patch.hpp"
-#include "patch/patch.hpp"
-#include "patch/patchdata.hpp"
-#include "patch/patchdata_layout.hpp"
-#include "patchscheduler/scheduler_mpi.hpp"
-#include "sys/sycl_mpi_interop.hpp"
+#include "core/io/logs.hpp"
+#include "core/patch/merged_patch.hpp"
+#include "core/patch/patch.hpp"
+#include "core/patch/patchdata.hpp"
+#include "core/patch/patchdata_layout.hpp"
+#include "core/patch/scheduler_mpi.hpp"
+#include "core/sys/sycl_mpi_interop.hpp"
 #include <stdexcept>
-#include <sys/mpi_handler.hpp>
+#include "core/sys/mpi_handler.hpp"
 #include <string>
 #include <unordered_map>
 #include <vector>

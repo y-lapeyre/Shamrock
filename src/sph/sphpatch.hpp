@@ -14,10 +14,10 @@
 
 #pragma once
 
-#include "patch/patchdata.hpp"
-#include "patch/patchdata_buffer.hpp"
+#include "core/patch/patchdata.hpp"
+#include "core/patch/patchdata_buffer.hpp"
 #include "algs/syclreduction.hpp"
-#include "patch/patchdata_layout.hpp"
+#include "core/patch/patchdata_layout.hpp"
 #include <stdexcept>
 #include <type_traits>
 

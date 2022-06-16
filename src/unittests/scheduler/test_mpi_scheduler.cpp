@@ -17,9 +17,9 @@
 
 
 
-#include "patchscheduler/scheduler_mpi.hpp"
+#include "core/patch/scheduler_mpi.hpp"
 
-#include "sys/sycl_mpi_interop.hpp"
+#include "core/sys/sycl_mpi_interop.hpp"
 
 #include "flags.hpp"
 
@@ -27,8 +27,8 @@
 
 #include "test_patch_utils.hpp"
 
-#include "sfc/hilbert.hpp"
-#include "patchscheduler/loadbalancing_hilbert.hpp"
+#include "core/sfc/hilbert.hpp"
+#include "core/patch/loadbalancing_hilbert.hpp"
 
 
 

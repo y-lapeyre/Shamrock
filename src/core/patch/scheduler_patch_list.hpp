@@ -25,7 +25,7 @@
 #include <unordered_map>
 #include <unordered_set>
 
-#include "patch/patch.hpp"
+#include "patch.hpp"
 
 /**
  * @brief Handle the patch list of the mpi scheduler

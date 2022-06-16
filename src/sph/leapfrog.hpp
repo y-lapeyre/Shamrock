@@ -11,7 +11,7 @@
 #include "algs/syclreduction.hpp"
 #include "aliases.hpp"
 
-#include "patch/patchdata_buffer.hpp"
+#include "core/patch/patchdata_buffer.hpp"
 #include "sph/integrators/leapfrog.hpp"
 #include "forces.hpp"
 #include "algs/integrators_utils.hpp"
@@ -219,7 +219,7 @@ template <class flt> class SPHTimestepperLeapfrogIsotGas {
 
                         // sycl::stream out(65000,65000,cgh);
 
-                        cgh.parallel_for<class forces>(range_npart, [=](sycl::item<1> item) {
+                        cgh.parallel_for(range_npart, [=](sycl::item<1> item) {
                             u32 id_a = (u32)item.get_id(0);
 
                             f32_3 sum_axyz = {0, 0, 0};

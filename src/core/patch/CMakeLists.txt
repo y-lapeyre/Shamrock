@@ -4,12 +4,23 @@ if("${BUILD_SIM}")
 target_sources(shamrock
     PRIVATE
         #scheduler.cpp
-        patch.cpp
-        patchdata.cpp
-        patchtree.cpp
-        serialpatchtree.cpp
-        patchdata_buffer.cpp
+        
+        
+        
+        
         global_var.cpp
+        loadbalancing_hilbert.cpp 
+        patch.cpp 
+        patchdata_buffer.cpp 
+        patchdata.cpp 
+        patchtree.cpp 
+        scheduler_mpi.cpp 
+        scheduler_patch_data.cpp 
+        scheduler_patch_list.cpp 
+        serialpatchtree.cpp
+
+
+        
     PUBLIC
         patch.hpp
         
@@ -39,18 +50,28 @@ if("${BUILD_TEST}")
 
     target_sources(shamrock_test
     PRIVATE
-        #scheduler.cpp
-        patch.cpp
-        patchdata.cpp
-        patchtree.cpp
-        serialpatchtree.cpp
-        patchdata_buffer.cpp
-        global_var.cpp
+
+        
+        
+    global_var.cpp
+    loadbalancing_hilbert.cpp 
+    patch.cpp 
+    patchdata_buffer.cpp 
+    patchdata.cpp 
+    patchtree.cpp 
+    scheduler_mpi.cpp 
+    scheduler_patch_data.cpp 
+    scheduler_patch_list.cpp 
+    serialpatchtree.cpp
+
+
     PUBLIC
-        patch.hpp
+        #patch.hpp
         #patchdata.hpp
         #scheduler.hpp
     )
 
 
 endif()
+
+add_subdirectory(interfaces)

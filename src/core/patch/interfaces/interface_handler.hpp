@@ -23,11 +23,11 @@
 #include <vector>
 
 #include "aliases.hpp"
-#include "interfaces/interface_generator.hpp"
-#include "io/logs.hpp"
-#include "patch/patchdata_buffer.hpp"
-#include "patchscheduler/scheduler_mpi.hpp"
-#include "sph/sphpatch.hpp"
+#include "core/patch/interfaces/interface_generator.hpp"
+#include "core/io/logs.hpp"
+#include "core/patch/patchdata_buffer.hpp"
+#include "core/patch/scheduler_mpi.hpp"
+#include "sph/sphpatch.hpp" //TODO remove sph dependancy
 
 #include "interface_handler_impl.hpp"
 

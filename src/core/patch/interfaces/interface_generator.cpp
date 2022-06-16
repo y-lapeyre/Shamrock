@@ -13,11 +13,11 @@
 #include <vector>
 
 #include "aliases.hpp"
-#include "patch/patch.hpp"
-#include "patch/patchdata.hpp"
-#include "patch/patchdata_buffer.hpp"
-#include "patchscheduler/scheduler_patch_data.hpp"
-#include "utils/geometry_utils.hpp"
+#include "core/patch/patch.hpp"
+#include "core/patch/patchdata.hpp"
+#include "core/patch/patchdata_buffer.hpp"
+#include "core/patch/scheduler_patch_data.hpp"
+#include "core/utils/geometry_utils.hpp"
 
 #include "interface_generator_impl.hpp"
 

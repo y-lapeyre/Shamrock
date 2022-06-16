@@ -10,8 +10,8 @@
 //#include "test_tree.hpp"
 
 
-#include "tree/kernels/karras_alg.hpp"
-#include "sys/sycl_handler.hpp"
+#include "core/tree/kernels/karras_alg.hpp"
+#include "core/sys/sycl_handler.hpp"
 #include <memory>
 #include <vector>
 #include "unittests/shamrocktest.hpp"

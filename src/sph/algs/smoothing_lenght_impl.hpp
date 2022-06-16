@@ -9,11 +9,11 @@
 #pragma once
 
 #include "aliases.hpp"
-#include "patch/patchdata_buffer.hpp"
-#include "patch/patchdata_layout.hpp"
+#include "core/patch/patchdata_buffer.hpp"
+#include "core/patch/patchdata_layout.hpp"
 #include "sph/base/kernels.hpp"
 #include "sph/base/sphpart.hpp"
-#include "tree/radix_tree.hpp"
+#include "core/tree/radix_tree.hpp"
 
 namespace impl {
 

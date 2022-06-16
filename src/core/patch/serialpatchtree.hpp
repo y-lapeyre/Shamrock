@@ -20,13 +20,13 @@
 #pragma once
 
 
-#include "io/logs.hpp"
-#include "patch/patch_field.hpp"
-#include "patch/patchtree.hpp"
-#include "patchscheduler/scheduler_mpi.hpp"
-#include "sys/sycl_handler.hpp"
+#include "core/io/logs.hpp"
+#include "patch_field.hpp"
+#include "patchtree.hpp"
+#include "scheduler_mpi.hpp"
+#include "core/sys/sycl_handler.hpp"
 #include "aliases.hpp"
-#include "patch/patch_reduc_tree.hpp"
+#include "patch_reduc_tree.hpp"
 #include <tuple>
 
 template<class fp_prec_vec>

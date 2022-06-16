@@ -30,7 +30,7 @@
 #include "aliases.hpp"
 #include "patch.hpp"
 
-#include "utils/geometry_utils.hpp"
+#include "core/utils/geometry_utils.hpp"
 
 
 /**

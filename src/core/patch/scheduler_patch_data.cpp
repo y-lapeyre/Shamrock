@@ -22,13 +22,13 @@
 #include <stdexcept>
 #include <vector>
 
-#include "io/logs.hpp"
-#include "patch/patchdata.hpp"
+#include "core/io/logs.hpp"
+#include "patchdata.hpp"
 #include "loadbalancing_hilbert.hpp"
 
-#include "patch/patchdata_layout.hpp"
-#include "sys/mpi_handler.hpp"
-#include "utils/geometry_utils.hpp"
+#include "patchdata_layout.hpp"
+#include "core/sys/mpi_handler.hpp"
+#include "core/utils/geometry_utils.hpp"
 
 
 //TODO use range based loop and emplace_back instead 

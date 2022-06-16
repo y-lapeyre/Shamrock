@@ -9,7 +9,7 @@
 #pragma once
 
 #include "aliases.hpp"
-#include "utils/sycl_vector_utils.hpp"
+#include "core/utils/sycl_vector_utils.hpp"
 #include <iostream>
 
 template<class T, class flt>

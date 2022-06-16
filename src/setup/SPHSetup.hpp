@@ -1,12 +1,12 @@
 #pragma once
 
 #include "aliases.hpp"
-#include "patch/patchdata.hpp"
-#include "patch/patchdata_field.hpp"
-#include "patch/serialpatchtree.hpp"
-#include "patchscheduler/scheduler_mpi.hpp"
-#include "sys/mpi_handler.hpp"
-#include "particles/particle_patch_mover.hpp"
+#include "core/patch/patchdata.hpp"
+#include "core/patch/patchdata_field.hpp"
+#include "core/patch/serialpatchtree.hpp"
+#include "core/patch/scheduler_mpi.hpp"
+#include "core/sys/mpi_handler.hpp"
+#include "core/patch/particle_patch_mover.hpp"
 #include <memory>
 #include <vector>
 

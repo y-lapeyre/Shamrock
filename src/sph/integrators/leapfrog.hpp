@@ -10,25 +10,25 @@
 
 #include "algs/syclreduction.hpp"
 #include "aliases.hpp"
-#include "interfaces/interface_handler.hpp"
-#include "interfaces/interface_selector.hpp"
-#include "io/dump.hpp"
-#include "io/logs.hpp"
-#include "particles/particle_patch_mover.hpp"
-#include "patch/compute_field.hpp"
-#include "patch/global_var.hpp"
-#include "patch/merged_patch.hpp"
-#include "patch/patchdata.hpp"
-#include "patch/patchdata_buffer.hpp"
-#include "patch/patchdata_field.hpp"
-#include "patch/serialpatchtree.hpp"
-#include "patchscheduler/scheduler_mpi.hpp"
+#include "core/patch/interfaces/interface_handler.hpp"
+#include "core/patch/interfaces/interface_selector.hpp"
+#include "core/io/dump.hpp"
+#include "core/io/logs.hpp"
+#include "core/patch/particle_patch_mover.hpp"
+#include "core/patch/compute_field.hpp"
+#include "core/patch/global_var.hpp"
+#include "core/patch/merged_patch.hpp"
+#include "core/patch/patchdata.hpp"
+#include "core/patch/patchdata_buffer.hpp"
+#include "core/patch/patchdata_field.hpp"
+#include "core/patch/serialpatchtree.hpp"
+#include "core/patch/scheduler_mpi.hpp"
 #include "sph/base/kernels.hpp"
 #include "sph/algs/smoothing_lenght.hpp"
 #include "sph/base/sphpart.hpp"
 #include "sph/sphpatch.hpp"
-#include "sys/sycl_mpi_interop.hpp"
-#include "tree/radix_tree.hpp"
+#include "core/sys/sycl_mpi_interop.hpp"
+#include "core/tree/radix_tree.hpp"
 #include <filesystem>
 #include <memory>
 #include <string>
@@ -338,7 +338,7 @@ namespace sph {
 
                 auto acc_hpart = pdat_buf_merge.get_field<flt>(ihpart)->template get_access<sycl::access::mode::write>(cgh);
 
-                cgh.parallel_for<class write_back_h>(range_npart,
+                cgh.parallel_for(range_npart,
                                                      [=](sycl::item<1> item) { acc_hpart[item] = h_new[item]; });
             });
             //*/

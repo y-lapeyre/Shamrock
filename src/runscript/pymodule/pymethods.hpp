@@ -1,7 +1,7 @@
 #pragma once
 
 #include "aliases.hpp"
-#include "patch/patchdata_layout.hpp"
+#include "core/patch/patchdata_layout.hpp"
 #include "pylib.hpp"
 #include <memory>
 #include <object.h>

@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include "sys/sycl_handler.hpp"
+#include "core/sys/sycl_handler.hpp"
 #include <tuple>
 
 template <class vectype, class field_type> class InterfaceSelector_SPH {

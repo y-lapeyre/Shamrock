@@ -9,10 +9,10 @@
 #pragma once
 
 #include "aliases.hpp"
-#include "patch/patch.hpp"
-#include "patch/patchdata.hpp"
-#include "patch/patchdata_layout.hpp"
-#include "patchscheduler/loadbalancing_hilbert.hpp"
+#include "patch.hpp"
+#include "patchdata.hpp"
+#include "patchdata_layout.hpp"
+#include "loadbalancing_hilbert.hpp"
 #include <tuple>
 
 
