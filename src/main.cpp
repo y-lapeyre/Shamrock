@@ -20,38 +20,42 @@
 
 
 #include "aliases.hpp"
+#include "core/io/dump.hpp"
+#include "core/io/logs.hpp"
 #include "core/patch/interfaces/interface_generator.hpp"
 #include "core/patch/interfaces/interface_handler.hpp"
 #include "core/patch/interfaces/interface_selector.hpp"
-#include "core/io/dump.hpp"
-#include "core/io/logs.hpp"
+#include "core/patch/loadbalancing_hilbert.hpp"
 #include "core/patch/particle_patch_mover.hpp"
 #include "core/patch/patch.hpp"
+#include "core/patch/patch_content_exchanger.hpp"
 #include "core/patch/patch_field.hpp"
 #include "core/patch/patch_reduc_tree.hpp"
 #include "core/patch/patchdata.hpp"
 #include "core/patch/patchdata_buffer.hpp"
 #include "core/patch/patchdata_exchanger.hpp"
 #include "core/patch/patchdata_layout.hpp"
-#include "core/patch/serialpatchtree.hpp"
-#include "core/patch/loadbalancing_hilbert.hpp"
-#include "core/patch/patch_content_exchanger.hpp"
 #include "core/patch/scheduler_mpi.hpp"
-#include "physics/units.hpp"
-#include "runscript/rscripthandler.hpp"
-#include "setup/SPHSetup.hpp"
-#include "sph/leapfrog.hpp"
-#include "sph/gas_sync.hpp"
-#include "sph/sphpatch.hpp"
+#include "core/patch/serialpatchtree.hpp"
 #include "core/sys/cmdopt.hpp"
 #include "core/sys/mpi_handler.hpp"
 #include "core/sys/sycl_mpi_interop.hpp"
 #include "core/tree/radix_tree.hpp"
-#include "unittests/shamrocktest.hpp"
 #include "core/utils/string_utils.hpp"
 #include "core/utils/time_utils.hpp"
+#include "physics/units.hpp"
+#include "runscript/rscripthandler.hpp"
+#include "setup/SPHSetup.hpp"
+#include "sph/base/kernels.hpp"
+#include "sph/base/sphpart.hpp"
+#include "sph/forces.hpp"
+#include "sph/gas_sync.hpp"
+#include "sph/leapfrog.hpp"
+#include "sph/sphpatch.hpp"
+#include "unittests/shamrocktest.hpp"
 #include <array>
 #include <cstdlib>
+#include <filesystem>
 #include <iterator>
 #include <memory>
 #include <ostream>
@@ -59,11 +63,6 @@
 #include <type_traits>
 #include <unordered_map>
 #include <vector>
-#include <filesystem>
-
-#include "sph/forces.hpp"
-#include "sph/base/kernels.hpp"
-#include "sph/base/sphpart.hpp"
 
 class TestSimInfo {
   public:

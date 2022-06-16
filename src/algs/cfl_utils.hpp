@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "algs/syclreduction.hpp"
+#include "core/utils/syclreduction.hpp"
 #include "aliases.hpp"
 #include "core/patch/patchdata_buffer.hpp"
 template<class flt>

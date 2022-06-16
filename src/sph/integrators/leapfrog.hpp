@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "algs/syclreduction.hpp"
+#include "core/utils/syclreduction.hpp"
 #include "aliases.hpp"
 #include "core/patch/interfaces/interface_handler.hpp"
 #include "core/patch/interfaces/interface_selector.hpp"
