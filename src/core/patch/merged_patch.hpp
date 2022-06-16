@@ -729,7 +729,7 @@ inline void make_merge_patches_comp_field(
             if(pdat_ptr->size() > 0){
 
                 //std::cout <<  "patch : n°"<< id_patch << " -> interface : "<<interf_patch_id << " merging" << std::endl;
-                sycl::buffer<T> tmp_buf = sycl::buffer<T>(pdat_ptr->data(),pdat_ptr->size());
+                sycl::buffer<T> tmp_buf = sycl::buffer<T>(pdat_ptr->usm_data(),pdat_ptr->size());
 
                 u32 len_int =  pdat_ptr->size();
 

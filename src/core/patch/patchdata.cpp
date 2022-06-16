@@ -561,7 +561,7 @@ void PatchData::extract_element(u32 pidx, PatchData & out_pdat){
         out_pdat.fields_f32[idx].expand(1);
 
         for(u32 i = nvar-1 ; i < nvar ; i--){
-            out_pdat.fields_f32[idx].data()[idx_out_val + i] = (fast_extract_ptr(idx_val + i,fields_f32[idx].size(), fields_f32[idx].data()));
+            out_pdat.fields_f32[idx].usm_data()[idx_out_val + i] = (fast_extract_ptr(idx_val + i,fields_f32[idx].size(), fields_f32[idx].usm_data()));
         }
 
         fields_f32[idx].shrink(1);
@@ -575,7 +575,7 @@ void PatchData::extract_element(u32 pidx, PatchData & out_pdat){
         out_pdat.fields_f32_2[idx].expand(1);
 
         for(u32 i = nvar-1 ; i < nvar ; i--){
-            out_pdat.fields_f32_2[idx].data()[idx_out_val + i] = (fast_extract_ptr(idx_val + i,fields_f32_2[idx].size(), fields_f32_2[idx].data()));
+            out_pdat.fields_f32_2[idx].usm_data()[idx_out_val + i] = (fast_extract_ptr(idx_val + i,fields_f32_2[idx].size(), fields_f32_2[idx].usm_data()));
         }
 
         fields_f32_2[idx].shrink(1);
@@ -589,7 +589,7 @@ void PatchData::extract_element(u32 pidx, PatchData & out_pdat){
         out_pdat.fields_f32_3[idx].expand(1);
 
         for(u32 i = nvar-1 ; i < nvar ; i--){
-            out_pdat.fields_f32_3[idx].data()[idx_out_val + i] = (fast_extract_ptr(idx_val + i,fields_f32_3[idx].size(), fields_f32_3[idx].data()));
+            out_pdat.fields_f32_3[idx].usm_data()[idx_out_val + i] = (fast_extract_ptr(idx_val + i,fields_f32_3[idx].size(), fields_f32_3[idx].usm_data()));
         }
 
         fields_f32_3[idx].shrink(1);
@@ -603,7 +603,7 @@ void PatchData::extract_element(u32 pidx, PatchData & out_pdat){
         out_pdat.fields_f32_4[idx].expand(1);
 
         for(u32 i = nvar-1 ; i < nvar ; i--){
-            out_pdat.fields_f32_4[idx].data()[idx_out_val + i] = (fast_extract_ptr(idx_val + i,fields_f32_4[idx].size(), fields_f32_4[idx].data()));
+            out_pdat.fields_f32_4[idx].usm_data()[idx_out_val + i] = (fast_extract_ptr(idx_val + i,fields_f32_4[idx].size(), fields_f32_4[idx].usm_data()));
         }
 
         fields_f32_4[idx].shrink(1);
@@ -617,7 +617,7 @@ void PatchData::extract_element(u32 pidx, PatchData & out_pdat){
         out_pdat.fields_f32_8[idx].expand(1);
 
         for(u32 i = nvar-1 ; i < nvar ; i--){
-            out_pdat.fields_f32_8[idx].data()[idx_out_val + i] = (fast_extract_ptr(idx_val + i,fields_f32_8[idx].size(), fields_f32_8[idx].data()));
+            out_pdat.fields_f32_8[idx].usm_data()[idx_out_val + i] = (fast_extract_ptr(idx_val + i,fields_f32_8[idx].size(), fields_f32_8[idx].usm_data()));
         }
 
         fields_f32_8[idx].shrink(1);
@@ -631,7 +631,7 @@ void PatchData::extract_element(u32 pidx, PatchData & out_pdat){
         out_pdat.fields_f32_16[idx].expand(1);
 
         for(u32 i = nvar-1 ; i < nvar ; i--){
-            out_pdat.fields_f32_16[idx].data()[idx_out_val + i] = (fast_extract_ptr(idx_val + i,fields_f32_16[idx].size(), fields_f32_16[idx].data()));
+            out_pdat.fields_f32_16[idx].usm_data()[idx_out_val + i] = (fast_extract_ptr(idx_val + i,fields_f32_16[idx].size(), fields_f32_16[idx].usm_data()));
         }
 
         fields_f32_16[idx].shrink(1);
@@ -650,7 +650,7 @@ void PatchData::extract_element(u32 pidx, PatchData & out_pdat){
         out_pdat.fields_f64[idx].expand(1);
 
         for(u32 i = nvar-1 ; i < nvar ; i--){
-            out_pdat.fields_f64[idx].data()[idx_out_val + i] = (fast_extract_ptr(idx_val + i,fields_f64[idx].size(), fields_f64[idx].data()));
+            out_pdat.fields_f64[idx].usm_data()[idx_out_val + i] = (fast_extract_ptr(idx_val + i,fields_f64[idx].size(), fields_f64[idx].usm_data()));
         }
 
         fields_f64[idx].shrink(1);
@@ -664,7 +664,7 @@ void PatchData::extract_element(u32 pidx, PatchData & out_pdat){
         out_pdat.fields_f64_2[idx].expand(1);
 
         for(u32 i = nvar-1 ; i < nvar ; i--){
-            out_pdat.fields_f64_2[idx].data()[idx_out_val + i] = (fast_extract_ptr(idx_val + i,fields_f64_2[idx].size(), fields_f64_2[idx].data()));
+            out_pdat.fields_f64_2[idx].usm_data()[idx_out_val + i] = (fast_extract_ptr(idx_val + i,fields_f64_2[idx].size(), fields_f64_2[idx].usm_data()));
         }
 
         fields_f64_2[idx].shrink(1);
@@ -678,7 +678,7 @@ void PatchData::extract_element(u32 pidx, PatchData & out_pdat){
         out_pdat.fields_f64_3[idx].expand(1);
 
         for(u32 i = nvar-1 ; i < nvar ; i--){
-            out_pdat.fields_f64_3[idx].data()[idx_out_val + i] = (fast_extract_ptr(idx_val + i,fields_f64_3[idx].size(), fields_f64_3[idx].data()));
+            out_pdat.fields_f64_3[idx].usm_data()[idx_out_val + i] = (fast_extract_ptr(idx_val + i,fields_f64_3[idx].size(), fields_f64_3[idx].usm_data()));
         }
 
         fields_f64_3[idx].shrink(1);
@@ -692,7 +692,7 @@ void PatchData::extract_element(u32 pidx, PatchData & out_pdat){
         out_pdat.fields_f64_4[idx].expand(1);
 
         for(u32 i = nvar-1 ; i < nvar ; i--){
-            out_pdat.fields_f64_4[idx].data()[idx_out_val + i] = (fast_extract_ptr(idx_val + i,fields_f64_4[idx].size(), fields_f64_4[idx].data()));
+            out_pdat.fields_f64_4[idx].usm_data()[idx_out_val + i] = (fast_extract_ptr(idx_val + i,fields_f64_4[idx].size(), fields_f64_4[idx].usm_data()));
         }
 
         fields_f64_4[idx].shrink(1);
@@ -706,7 +706,7 @@ void PatchData::extract_element(u32 pidx, PatchData & out_pdat){
         out_pdat.fields_f64_8[idx].expand(1);
 
         for(u32 i = nvar-1 ; i < nvar ; i--){
-            out_pdat.fields_f64_8[idx].data()[idx_out_val + i] = (fast_extract_ptr(idx_val + i,fields_f64_8[idx].size(), fields_f64_8[idx].data()));
+            out_pdat.fields_f64_8[idx].usm_data()[idx_out_val + i] = (fast_extract_ptr(idx_val + i,fields_f64_8[idx].size(), fields_f64_8[idx].usm_data()));
         }
 
         fields_f64_8[idx].shrink(1);
@@ -720,7 +720,7 @@ void PatchData::extract_element(u32 pidx, PatchData & out_pdat){
         out_pdat.fields_f64_16[idx].expand(1);
 
         for(u32 i = nvar-1 ; i < nvar ; i--){
-            out_pdat.fields_f64_16[idx].data()[idx_out_val + i] = (fast_extract_ptr(idx_val + i,fields_f64_16[idx].size(), fields_f64_16[idx].data()));
+            out_pdat.fields_f64_16[idx].usm_data()[idx_out_val + i] = (fast_extract_ptr(idx_val + i,fields_f64_16[idx].size(), fields_f64_16[idx].usm_data()));
         }
 
         fields_f64_16[idx].shrink(1);
@@ -735,7 +735,7 @@ void PatchData::extract_element(u32 pidx, PatchData & out_pdat){
         out_pdat.fields_u32[idx].expand(1);
 
         for(u32 i = nvar-1 ; i < nvar ; i--){
-            out_pdat.fields_u32[idx].data()[idx_out_val + i] = (fast_extract_ptr(idx_val + i,fields_u32[idx].size(), fields_u32[idx].data()));
+            out_pdat.fields_u32[idx].usm_data()[idx_out_val + i] = (fast_extract_ptr(idx_val + i,fields_u32[idx].size(), fields_u32[idx].usm_data()));
         }
 
         fields_u32[idx].shrink(1);
@@ -749,7 +749,7 @@ void PatchData::extract_element(u32 pidx, PatchData & out_pdat){
         out_pdat.fields_u64[idx].expand(1);
 
         for(u32 i = nvar-1 ; i < nvar ; i--){
-            out_pdat.fields_u64[idx].data()[idx_out_val + i] = (fast_extract_ptr(idx_val + i,fields_u64[idx].size(), fields_u64[idx].data()));
+            out_pdat.fields_u64[idx].usm_data()[idx_out_val + i] = (fast_extract_ptr(idx_val + i,fields_u64[idx].size(), fields_u64[idx].usm_data()));
         }
 
         fields_u64[idx].shrink(1);
@@ -973,7 +973,7 @@ void PatchData::split_patchdata<f32_3>(
 
     for (u32 i = 0; i < obj_cnt; i++) {
     
-        f32_3 current_pos = fields_f32_3[field_ipos].data()[i];
+        f32_3 current_pos = fields_f32_3[field_ipos].usm_data()[i];
 
         bool bp0 = BBAA::is_particle_in_patch<f32_3>( current_pos, bmin_p0,bmax_p0);
         bool bp1 = BBAA::is_particle_in_patch<f32_3>( current_pos, bmin_p1,bmax_p1);
@@ -1030,7 +1030,7 @@ void PatchData::split_patchdata<f64_3>(
 
     for (u32 i = 0; i < obj_cnt; i++) {
     
-        f64_3 current_pos = fields_f64_3[field_ipos].data()[i];
+        f64_3 current_pos = fields_f64_3[field_ipos].usm_data()[i];
 
         bool bp0 = BBAA::is_particle_in_patch<f64_3>( current_pos, bmin_p0,bmax_p0);
         bool bp1 = BBAA::is_particle_in_patch<f64_3>( current_pos, bmin_p1,bmax_p1);

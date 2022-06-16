@@ -37,7 +37,7 @@ inline std::unordered_map<u64, sycl::buffer<u64>> get_new_id_map<f32_3>(PatchSch
             u32 ixyz = sched.pdl.get_field_idx<f32_3>("xyz");
             PatchDataField<f32_3> xyz_field =  pdat.fields_f32_3[ixyz];
 
-            std::unique_ptr<sycl::buffer<f32_3>> pos = std::make_unique<sycl::buffer<f32_3>>(xyz_field.data(),xyz_field.size());
+            std::unique_ptr<sycl::buffer<f32_3>> pos = std::make_unique<sycl::buffer<f32_3>>(xyz_field.usm_data(),xyz_field.size());
 
             newid_buf_map.insert({
                 id,
@@ -72,7 +72,7 @@ inline std::unordered_map<u64, sycl::buffer<u64>> get_new_id_map<f64_3>(PatchSch
             u32 ixyz = sched.pdl.get_field_idx<f64_3>("xyz");
             PatchDataField<f64_3> xyz_field =  pdat.fields_f64_3[ixyz];
 
-            std::unique_ptr<sycl::buffer<f64_3>> pos = std::make_unique<sycl::buffer<f64_3>>(xyz_field.data(),xyz_field.size());
+            std::unique_ptr<sycl::buffer<f64_3>> pos = std::make_unique<sycl::buffer<f64_3>>(xyz_field.usm_data(),xyz_field.size());
 
             newid_buf_map.insert({
                 id,
@@ -113,7 +113,7 @@ inline void reatribute_particles<f32_3>(PatchScheduler & sched, SerialPatchTree<
             u32 ixyz = sched.pdl.get_field_idx<f32_3>("xyz");
             PatchDataField<f32_3> xyz_field =  pdat.fields_f32_3[ixyz];
 
-            std::unique_ptr<sycl::buffer<f32_3>> pos = std::make_unique<sycl::buffer<f32_3>>(xyz_field.data(),xyz_field.size());
+            std::unique_ptr<sycl::buffer<f32_3>> pos = std::make_unique<sycl::buffer<f32_3>>(xyz_field.usm_data(),xyz_field.size());
 
             newid_buf_map.insert({
                 id,
@@ -156,7 +156,7 @@ inline void reatribute_particles<f32_3>(PatchScheduler & sched, SerialPatchTree<
 
             for(u32 i = 0 ; i < pdat.get_obj_cnt(); i++){
 
-                f32_3 r = xyz_field.data()[i];
+                f32_3 r = xyz_field.usm_data()[i];
                 sched.patch_data.sim_box.min_box_sim_s = sycl::min(sched.patch_data.sim_box.min_box_sim_s,r);
                 sched.patch_data.sim_box.max_box_sim_s = sycl::max(sched.patch_data.sim_box.max_box_sim_s,r);
             }
@@ -192,7 +192,7 @@ inline void reatribute_particles<f32_3>(PatchScheduler & sched, SerialPatchTree<
                 u32 ixyz = sched.pdl.get_field_idx<f32_3>("xyz");
                 PatchDataField<f32_3> xyz_field =  pdat.fields_f32_3[ixyz];
 
-                std::unique_ptr<sycl::buffer<f32_3>> pos = std::make_unique<sycl::buffer<f32_3>>(xyz_field.data(),xyz_field.size());
+                std::unique_ptr<sycl::buffer<f32_3>> pos = std::make_unique<sycl::buffer<f32_3>>(xyz_field.usm_data(),xyz_field.size());
 
                 newid_buf_map.insert({
                     id,

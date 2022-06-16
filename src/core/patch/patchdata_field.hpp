@@ -43,7 +43,7 @@ class PatchDataField {
         val_cnt = 0;
     };
 
-    inline T* data(){
+    inline T* usm_data(){
         return field_data.data();
     }
 
@@ -144,7 +144,7 @@ class PatchDataField {
             //std::cout <<" ";
             //print_vec(std::cout, f2.data()[i]);
             //std::cout <<  std::endl;
-            match = match && test_sycl_eq(data()[i],f2.data()[i]);
+            match = match && test_sycl_eq(usm_data()[i],f2.usm_data()[i]);
         }
 
         return match;
@@ -172,7 +172,7 @@ class PatchDataField {
             const u32 idx_push = start_enque + i*nvar;
 
             for(u32 a = 0; a < nvar ; a++){
-                pfield.data()[idx_push + a] = data()[idx_extr + a];
+                pfield.usm_data()[idx_push + a] = usm_data()[idx_extr + a];
             }
 
         }
@@ -189,7 +189,7 @@ namespace patchdata_field {
     template<class T>
     inline u64 isend( PatchDataField<T> &p, std::vector<MPI_Request> &rq_lst, i32 rank_dest, i32 tag, MPI_Comm comm){
         rq_lst.resize(rq_lst.size() + 1);
-        mpi::isend(p.data(), p.size(), get_mpi_type<T>(), rank_dest, tag, comm, &rq_lst[rq_lst.size() - 1]);
+        mpi::isend(p.usm_data(), p.size(), get_mpi_type<T>(), rank_dest, tag, comm, &rq_lst[rq_lst.size() - 1]);
         return sizeof(T)*p.size();
     }
 
@@ -205,7 +205,7 @@ namespace patchdata_field {
         p.resize(len);
 
         rq_lst.resize(rq_lst.size() + 1);
-        mpi::irecv(p.data(), cnt, get_mpi_type<T>(), rank_source, tag, comm, &rq_lst[rq_lst.size() - 1]);
+        mpi::irecv(p.usm_data(), cnt, get_mpi_type<T>(), rank_source, tag, comm, &rq_lst[rq_lst.size() - 1]);
 
         return sizeof(T)*cnt;
     }
