@@ -11,38 +11,25 @@
 #include "core/utils/syclreduction.hpp"
 #include "aliases.hpp"
 
-
 #include "core/patch/patchdata_buffer.hpp"
-#include "physics/units.hpp"
-#include "sph/integrators/leapfrog.hpp"
+#include "models/sph/integrators/leapfrog.hpp"
 #include "forces.hpp"
-#include "algs/integrators_utils.hpp"
-#include "algs/cfl_utils.hpp"
-#include "sph/base/sphpart.hpp"
+#include "models/algs/integrators_utils.hpp"
+#include "models/algs/cfl_utils.hpp"
+#include "models/sph/base/sphpart.hpp"
 #include <memory>
 #include <unordered_map>
-#include <vector>
+
+constexpr f32 gpart_mass = 2e-4;
 
 
-
-template <class flt> class SPHTimestepperLeapfrogIsotGasSync {
+template <class flt> class SPHTimestepperLeapfrogIsotGas {
   public:
-
-  constexpr static  f32 gpart_mass = 2e-4;
-
     using vec3 = sycl::vec<flt, 3>;
     using u_morton = u32;
     using Kernel = sph::kernels::M4<f32>;
 
     using Stepper = integrators::sph::LeapfrogGeneral<flt, Kernel, u_morton>;
-
-    struct SyncPart {
-        vec3 pos;
-        vec3 vel;
-        flt mass;
-    };
-
-    std::vector<SyncPart> sync_parts;
 
     inline void step(PatchScheduler &sched, std::string dump_folder, u32 step_cnt, f64 &step_time) {
 
@@ -95,7 +82,7 @@ template <class flt> class SPHTimestepperLeapfrogIsotGasSync {
                     const flt c_cour  = cfl_cour;
                     const flt c_force = cfl_force;
 
-                    cgh.parallel_for(range_it, [=](sycl::item<1> item) {
+                    cgh.parallel_for<class Initial_dtcfl>(range_it, [=](sycl::item<1> item) {
                         u32 i = (u32)item.get_id(0);
 
                         flt h_a    = acc_hpart[item];
@@ -111,7 +98,7 @@ template <class flt> class SPHTimestepperLeapfrogIsotGasSync {
 
                 std::cout << "cfl dt : " << cfl_val << std::endl;
 
-                return sycl::min(f32(0.005),cfl_val);
+                return sycl::min(f32(0.001),cfl_val);
 
             }, 
             
@@ -298,60 +285,6 @@ template <class flt> class SPHTimestepperLeapfrogIsotGasSync {
                     
 
                 });
-
-                if(sync_parts.size() > 0){
-                    sched.for_each_patch([&](u64 id_patch, Patch cur_p) {
-                        if (merge_pdat_buf.at(id_patch).or_element_cnt == 0){
-                            std::cout << " empty => skipping" << std::endl;return;
-                        }
-
-                        SyCLHandler &hndl = SyCLHandler::get_instance();
-
-                        PatchDataBuffer &pdat_buf_merge = *merge_pdat_buf.at(id_patch).data;
-
-                        sycl::buffer<SyncPart> syncs ( sync_parts.data(), sync_parts.size() );
-
-                        sycl::range range_npart{merge_pdat_buf.at(id_patch).or_element_cnt};
-
-                        hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
-
-                            auto r        = pdat_buf_merge.get_field<f32_3>(ixyz)->get_access<sycl::access::mode::read>(cgh);
-                            auto acc_axyz = pdat_buf_merge.get_field<f32_3>(iaxyz)->get_access<sycl::access::mode::read_write>(cgh);
-
-                            auto acc_synk = syncs.template get_access<sycl::access::mode::read>(cgh);
-
-                            u32 num_sync = sync_parts.size();
-
-                            cgh.parallel_for(range_npart, [=](sycl::item<1> item) {
-                                u32 id_a = (u32)item.get_id(0);
-
-                                f32_3 xyz_a = r[id_a];
-
-                                f32_3 sum_axyz{0,0,0};
-
-                                for(u32 i = 0; i < num_sync; i++){
-
-                                    SyncPart p = acc_synk[i];
-
-                                    vec3 dr = xyz_a - p.pos;
-
-                                    flt val =  units::G_si * gpart_mass * p.mass / (sycl::dot(dr,dr));
-
-                                    if(val > 1e2) {
-                                        val = 1e2;
-                                    }
-
-                                    sum_axyz -= val * dr / (sycl::length(dr));
-                                }
-
-                                acc_axyz[id_a] += sum_axyz;
-                            });
-                        });
-                        
-
-                    });
-
-                }
 
             }, 
             
