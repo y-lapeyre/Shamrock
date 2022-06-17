@@ -22,11 +22,11 @@
 
 #include "core/io/logs.hpp"
 #include "patch_field.hpp"
-#include "base/patchtree.hpp"
+#include "core/patch/base/patchtree.hpp"
 #include "core/patch/scheduler/scheduler_mpi.hpp"
 #include "core/sys/sycl_handler.hpp"
 #include "aliases.hpp"
-#include "patch_reduc_tree.hpp"
+#include "core/patch/utility/patch_reduc_tree.hpp"
 #include <tuple>
 
 template<class fp_prec_vec>

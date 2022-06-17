@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "core/patch/compute_field.hpp"
+#include "core/patch/utility/compute_field.hpp"
 #include "core/patch/scheduler/scheduler_mpi.hpp"
 #include "interface_generator.hpp"
 #include "core/patch/patchdata_exchanger.hpp"

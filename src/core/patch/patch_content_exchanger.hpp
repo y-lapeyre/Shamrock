@@ -10,7 +10,7 @@
 
 
 #include "aliases.hpp"
-#include "serialpatchtree.hpp"
+#include "core/patch/utility/serialpatchtree.hpp"
 #include "core/utils/geometry_utils.hpp"
 
 template <class posvec, class kername>

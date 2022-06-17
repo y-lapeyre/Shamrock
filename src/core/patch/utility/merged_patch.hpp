@@ -10,7 +10,7 @@
 
 #include "aliases.hpp"
 #include "core/patch/interfaces/interface_handler.hpp"
-#include "patchdata_buffer.hpp"
+#include "core/patch/patchdata_buffer.hpp"
 #include "core/patch/scheduler/scheduler_mpi.hpp"
 
 template<class vec>

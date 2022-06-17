@@ -7,21 +7,21 @@
 // -------------------------------------------------------//
 
 #include "aliases.hpp"
+#include "core/io/dump.hpp"
+#include "core/patch/base/patchdata.hpp"
 #include "core/patch/interfaces/interface_generator.hpp"
 #include "core/patch/interfaces/interface_handler.hpp"
 #include "core/patch/interfaces/interface_selector.hpp"
-#include "core/io/dump.hpp"
-#include "core/patch/patch_field.hpp"
-#include "core/patch/patch_reduc_tree.hpp"
-#include "core/patch/base/patchdata.hpp"
-#include "core/patch/serialpatchtree.hpp"
-#include "core/patch/scheduler/loadbalancing_hilbert.hpp"
 #include "core/patch/patch_content_exchanger.hpp"
+#include "core/patch/scheduler/loadbalancing_hilbert.hpp"
 #include "core/patch/scheduler/scheduler_mpi.hpp"
+#include "core/patch/utility/patch_field.hpp"
+#include "core/patch/utility/patch_reduc_tree.hpp"
+#include "core/patch/utility/serialpatchtree.hpp"
 #include "core/sys/mpi_handler.hpp"
 #include "core/sys/sycl_mpi_interop.hpp"
-#include "unittests/shamrocktest.hpp"
 #include "core/utils/string_utils.hpp"
+#include "unittests/shamrocktest.hpp"
 #include <string>
 
 class Reduce_DataCount {

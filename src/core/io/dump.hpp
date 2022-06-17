@@ -9,7 +9,7 @@
 #pragma once
 #include "aliases.hpp"
 #include "core/io/logs.hpp"
-#include "core/patch/merged_patch.hpp"
+#include "core/patch/utility/merged_patch.hpp"
 #include "core/patch/base/patch.hpp"
 #include "core/patch/base/patchdata.hpp"
 #include "core/patch/base/patchdata_layout.hpp"
