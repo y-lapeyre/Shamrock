@@ -14,8 +14,8 @@
 #include "core/patch/patchdata_buffer.hpp"
 #include "models/sph/integrators/leapfrog.hpp"
 #include "forces.hpp"
-#include "models/algs/integrators_utils.hpp"
-#include "models/algs/cfl_utils.hpp"
+#include "models/generic/algs/integrators_utils.hpp"
+#include "models/generic/algs/cfl_utils.hpp"
 #include "models/sph/base/sphpart.hpp"
 #include <memory>
 #include <unordered_map>
