@@ -9,11 +9,11 @@
 #pragma once
 
 
-#include "base/patchdata_field.hpp"
-#include "base/patchdata_layout.hpp"
+#include "core/patch/base/patchdata_field.hpp"
+#include "core/patch/base/patchdata_layout.hpp"
 #include "core/sys/mpi_handler.hpp"
-#include "base/patch.hpp"
-#include "base/patchdata.hpp"
+#include "core/patch/base/patch.hpp"
+#include "core/patch/base/patchdata.hpp"
 #include "core/sys/sycl_mpi_interop.hpp"
 #include <vector>
 

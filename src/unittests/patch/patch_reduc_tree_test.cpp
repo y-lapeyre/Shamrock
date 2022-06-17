@@ -12,7 +12,7 @@
 #include "core/patch/interfaces/interface_generator.hpp"
 #include "core/patch/interfaces/interface_handler.hpp"
 #include "core/patch/interfaces/interface_selector.hpp"
-#include "core/patch/patch_content_exchanger.hpp"
+#include "core/patch/comm/patch_content_exchanger.hpp"
 #include "core/patch/scheduler/loadbalancing_hilbert.hpp"
 #include "core/patch/scheduler/scheduler_mpi.hpp"
 #include "core/patch/utility/patch_field.hpp"

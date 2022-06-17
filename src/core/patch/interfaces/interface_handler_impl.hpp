@@ -11,7 +11,7 @@
 #include "core/patch/utility/compute_field.hpp"
 #include "core/patch/scheduler/scheduler_mpi.hpp"
 #include "interface_generator.hpp"
-#include "core/patch/patchdata_exchanger.hpp"
+#include "core/patch/comm/patchdata_exchanger.hpp"
 #include <vector>
 
 namespace impl {

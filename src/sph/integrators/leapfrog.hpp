@@ -14,7 +14,7 @@
 #include "core/patch/interfaces/interface_selector.hpp"
 #include "core/io/dump.hpp"
 #include "core/io/logs.hpp"
-#include "core/patch/particle_patch_mover.hpp"
+#include "core/patch/comm/patch_object_mover.hpp"
 #include "core/patch/utility/compute_field.hpp"
 #include "core/patch/utility/global_var.hpp"
 #include "core/patch/utility/merged_patch.hpp"

@@ -6,7 +6,7 @@
 #include "core/patch/utility/serialpatchtree.hpp"
 #include "core/patch/scheduler/scheduler_mpi.hpp"
 #include "core/sys/mpi_handler.hpp"
-#include "core/patch/particle_patch_mover.hpp"
+#include "core/patch/comm/patch_object_mover.hpp"
 #include <memory>
 #include <vector>
 

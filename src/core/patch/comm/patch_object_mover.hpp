@@ -9,11 +9,11 @@
 #pragma once
 
 #include "aliases.hpp"
-#include "base/patchdata.hpp"
+#include "core/patch/base/patchdata.hpp"
 #include "patchdata_exchanger.hpp"
-#include "base/patchdata_field.hpp"
+#include "core/patch/base/patchdata_field.hpp"
 #include "core/patch/utility/serialpatchtree.hpp"
-#include "core/patch/patch_content_exchanger.hpp"
+#include "patch_content_exchanger.hpp"
 #include "core/patch/scheduler/scheduler_mpi.hpp"
 #include "core/sys/sycl_handler.hpp"
 #include "core/utils/sycl_vector_utils.hpp"

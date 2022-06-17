@@ -9,8 +9,8 @@
 #pragma once
 
 
-#include "base/patchdata_field.hpp"
-#include "base/patchdata_layout.hpp"
+#include "core/patch/base/patchdata_field.hpp"
+#include "core/patch/base/patchdata_layout.hpp"
 #include "patchdata_exchanger_impl.hpp"
 #include <vector>
 
