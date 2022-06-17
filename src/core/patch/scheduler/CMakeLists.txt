@@ -8,9 +8,10 @@ target_sources(shamrock
         
         
         
-        global_var.cpp
-        patchdata_buffer.cpp 
-        serialpatchtree.cpp
+        loadbalancing_hilbert.cpp 
+        scheduler_mpi.cpp 
+        scheduler_patch_data.cpp 
+        scheduler_patch_list.cpp 
 
 
         
@@ -46,9 +47,10 @@ if("${BUILD_TEST}")
 
         
         
-    global_var.cpp
-    patchdata_buffer.cpp 
-    serialpatchtree.cpp
+    loadbalancing_hilbert.cpp 
+    scheduler_mpi.cpp 
+    scheduler_patch_data.cpp 
+    scheduler_patch_list.cpp 
 
 
     PUBLIC
@@ -59,8 +61,4 @@ if("${BUILD_TEST}")
 
 
 endif()
-
-add_subdirectory(base)
-add_subdirectory(scheduler)
-add_subdirectory(interfaces)
 

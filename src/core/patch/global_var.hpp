@@ -9,7 +9,7 @@
 #pragma once
 
 #include "aliases.hpp"
-#include "scheduler_mpi.hpp"
+#include "core/patch/scheduler/scheduler_mpi.hpp"
 
 enum GlobalVariableType{
     min,max,sum

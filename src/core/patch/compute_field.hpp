@@ -11,7 +11,7 @@
 #include "aliases.hpp"
 #include "base/patchdata_field.hpp"
 #include "base/patchdata_field.hpp"
-#include "scheduler_mpi.hpp"
+#include "core/patch/scheduler/scheduler_mpi.hpp"
 #include <memory>
 #include <unordered_map>
 #include <vector>

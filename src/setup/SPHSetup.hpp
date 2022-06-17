@@ -4,7 +4,7 @@
 #include "core/patch/base/patchdata.hpp"
 #include "core/patch/base/patchdata_field.hpp"
 #include "core/patch/serialpatchtree.hpp"
-#include "core/patch/scheduler_mpi.hpp"
+#include "core/patch/scheduler/scheduler_mpi.hpp"
 #include "core/sys/mpi_handler.hpp"
 #include "core/patch/particle_patch_mover.hpp"
 #include <memory>

@@ -12,9 +12,9 @@
 #include <map>
 #include <random>
 #include <vector>
-#include "core/patch/scheduler_patch_list.hpp"
+#include "core/patch/scheduler/scheduler_patch_list.hpp"
 #include "core/sfc/hilbert.hpp"
-#include "core/patch/loadbalancing_hilbert.hpp"
+#include "core/patch/scheduler/loadbalancing_hilbert.hpp"
 
 
 

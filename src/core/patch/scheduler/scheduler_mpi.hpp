@@ -26,11 +26,11 @@
 #include <unordered_set>
 
 #include "aliases.hpp"
-#include "base/patch.hpp"
-#include "base/patchdata.hpp"
-#include "patchdata_buffer.hpp"
-#include "base/patchdata_layout.hpp"
-#include "base/patchtree.hpp"
+#include "core/patch/base/patch.hpp"
+#include "core/patch/base/patchdata.hpp"
+#include "core/patch/patchdata_buffer.hpp"
+#include "core/patch/base/patchdata_layout.hpp"
+#include "core/patch/base/patchtree.hpp"
 #include "scheduler_patch_list.hpp"
 #include "scheduler_patch_data.hpp"
 #include "core/sys/sycl_handler.hpp"

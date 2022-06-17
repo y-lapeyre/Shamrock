@@ -22,7 +22,7 @@
 #include "core/patch/patchdata_buffer.hpp"
 #include "core/patch/base/patchdata_field.hpp"
 #include "core/patch/serialpatchtree.hpp"
-#include "core/patch/scheduler_mpi.hpp"
+#include "core/patch/scheduler/scheduler_mpi.hpp"
 #include "sph/base/kernels.hpp"
 #include "sph/algs/smoothing_lenght.hpp"
 #include "sph/base/sphpart.hpp"

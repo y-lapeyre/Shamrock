@@ -8,7 +8,7 @@
 
 #include "unittests/shamrocktest.hpp"
 
-#include "core/patch/scheduler_patch_list.hpp"
+#include "core/patch/scheduler/scheduler_patch_list.hpp"
 #include "test_patch_utils.hpp"
 #include "core/utils/geometry_utils.hpp"
 

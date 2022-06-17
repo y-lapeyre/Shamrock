@@ -13,7 +13,7 @@
 #include "core/patch/base/patch.hpp"
 #include "core/patch/base/patchdata.hpp"
 #include "core/patch/base/patchdata_layout.hpp"
-#include "core/patch/scheduler_mpi.hpp"
+#include "core/patch/scheduler/scheduler_mpi.hpp"
 #include "core/sys/sycl_mpi_interop.hpp"
 #include <stdexcept>
 #include "core/sys/mpi_handler.hpp"

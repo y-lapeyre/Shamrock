@@ -22,12 +22,12 @@
 #include <cmath>
 #include <map>
 
-#include "base/patch.hpp"
-#include "base/patchdata.hpp"
+#include "core/patch/base/patch.hpp"
+#include "core/patch/base/patchdata.hpp"
 
-#include "base/patchdata_layout.hpp"
+#include "core/patch/base/patchdata_layout.hpp"
 #include "scheduler_patch_list.hpp"
-#include "sim_box.hpp"
+#include "core/patch/sim_box.hpp"
 
 /**
  * @brief Class to handle PatchData owned by the node

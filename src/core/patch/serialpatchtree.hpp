@@ -23,7 +23,7 @@
 #include "core/io/logs.hpp"
 #include "patch_field.hpp"
 #include "base/patchtree.hpp"
-#include "scheduler_mpi.hpp"
+#include "core/patch/scheduler/scheduler_mpi.hpp"
 #include "core/sys/sycl_handler.hpp"
 #include "aliases.hpp"
 #include "patch_reduc_tree.hpp"

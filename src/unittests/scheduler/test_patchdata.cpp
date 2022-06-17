@@ -14,7 +14,7 @@
 
 
 #include "core/patch/base/patchdata.hpp"
-#include "core/patch/scheduler_mpi.hpp"
+#include "core/patch/scheduler/scheduler_mpi.hpp"
 
 /*
 Test_start("patchdata::", sync_patchdata_layout, -1) {

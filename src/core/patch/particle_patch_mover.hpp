@@ -14,7 +14,7 @@
 #include "base/patchdata_field.hpp"
 #include "serialpatchtree.hpp"
 #include "patch_content_exchanger.hpp"
-#include "scheduler_mpi.hpp"
+#include "core/patch/scheduler/scheduler_mpi.hpp"
 #include "core/sys/sycl_handler.hpp"
 #include "core/utils/sycl_vector_utils.hpp"
 #include <unordered_map>

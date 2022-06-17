@@ -12,7 +12,7 @@
 #include "base/patch.hpp"
 #include "base/patchdata.hpp"
 #include "base/patchdata_layout.hpp"
-#include "loadbalancing_hilbert.hpp"
+#include "core/patch/scheduler/loadbalancing_hilbert.hpp" //TODO remove dependancy from hilbert
 #include <tuple>
 
 
