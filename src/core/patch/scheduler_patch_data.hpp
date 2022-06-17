@@ -22,10 +22,10 @@
 #include <cmath>
 #include <map>
 
-#include "patch.hpp"
-#include "patchdata.hpp"
+#include "base/patch.hpp"
+#include "base/patchdata.hpp"
 
-#include "patchdata_layout.hpp"
+#include "base/patchdata_layout.hpp"
 #include "scheduler_patch_list.hpp"
 #include "sim_box.hpp"
 

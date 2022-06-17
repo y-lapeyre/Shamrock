@@ -9,9 +9,9 @@
 #pragma once
 
 #include "aliases.hpp"
-#include "patchdata.hpp"
+#include "base/patchdata.hpp"
 #include "patchdata_exchanger.hpp"
-#include "patchdata_field.hpp"
+#include "base/patchdata_field.hpp"
 #include "serialpatchtree.hpp"
 #include "patch_content_exchanger.hpp"
 #include "scheduler_mpi.hpp"

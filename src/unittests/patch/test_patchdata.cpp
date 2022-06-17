@@ -7,8 +7,8 @@
 // -------------------------------------------------------//
 
 #include "aliases.hpp"
-#include "core/patch/patchdata.hpp"
-#include "core/patch/patchdata_layout.hpp"
+#include "core/patch/base/patchdata.hpp"
+#include "core/patch/base/patchdata_layout.hpp"
 #include "core/sys/mpi_handler.hpp"
 #include "core/sys/sycl_mpi_interop.hpp"
 #include "unittests/shamrocktest.hpp"

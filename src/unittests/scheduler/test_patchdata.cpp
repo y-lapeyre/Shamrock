@@ -6,14 +6,14 @@
 //
 // -------------------------------------------------------//
 
-#include "core/patch/patchdata_layout.hpp"
+#include "core/patch/base/patchdata_layout.hpp"
 #include "unittests/shamrocktest.hpp"
 
 #include <random>
 #include <vector>
 
 
-#include "core/patch/patchdata.hpp"
+#include "core/patch/base/patchdata.hpp"
 #include "core/patch/scheduler_mpi.hpp"
 
 /*

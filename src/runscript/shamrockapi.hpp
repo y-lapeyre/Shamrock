@@ -2,7 +2,7 @@
 
 #include "aliases.hpp"
 #include "core/io/logs.hpp"
-#include "core/patch/patchdata_layout.hpp"
+#include "core/patch/base/patchdata_layout.hpp"
 #include "core/patch/scheduler_mpi.hpp"
 #include <memory>
 

@@ -23,10 +23,10 @@
 #include <vector>
 
 #include "core/io/logs.hpp"
-#include "patchdata.hpp"
+#include "base/patchdata.hpp"
 #include "loadbalancing_hilbert.hpp"
 
-#include "patchdata_layout.hpp"
+#include "base/patchdata_layout.hpp"
 #include "core/sys/mpi_handler.hpp"
 #include "core/utils/geometry_utils.hpp"
 

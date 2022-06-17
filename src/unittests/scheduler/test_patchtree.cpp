@@ -6,7 +6,7 @@
 //
 // -------------------------------------------------------//
 
-#include "core/patch/patchtree.hpp"
+#include "core/patch/base/patchtree.hpp"
 
 #include "unittests/shamrocktest.hpp"
 #include <map>

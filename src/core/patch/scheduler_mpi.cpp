@@ -15,7 +15,7 @@
 #include "core/io/logs.hpp"
 #include "loadbalancing_hilbert.hpp"
 
-#include "patchdata_layout.hpp"
+#include "base/patchdata_layout.hpp"
 #include "core/sys/sycl_handler.hpp"
 #include "core/utils/time_utils.hpp"
 

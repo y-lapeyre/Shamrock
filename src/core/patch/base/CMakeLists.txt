@@ -8,18 +8,13 @@ target_sources(shamrock
         
         
         
-        global_var.cpp
-        loadbalancing_hilbert.cpp 
-        patchdata_buffer.cpp 
-        scheduler_mpi.cpp 
-        scheduler_patch_data.cpp 
-        scheduler_patch_list.cpp 
-        serialpatchtree.cpp
+        patch.cpp 
+        patchdata.cpp 
+        patchtree.cpp 
 
 
         
     PUBLIC
-        #patch.hpp
         
         #patchdata.hpp
         #scheduler.hpp
@@ -36,7 +31,6 @@ target_sources(shamrock_visu
         #patch.cpp
         #patchdata.cpp
     PUBLIC
-        #patch.hpp
         #patchdata.hpp
         #scheduler.hpp
     )
@@ -48,15 +42,9 @@ if("${BUILD_TEST}")
     target_sources(shamrock_test
     PRIVATE
 
-        
-        
-    global_var.cpp
-    loadbalancing_hilbert.cpp 
-    patchdata_buffer.cpp 
-    scheduler_mpi.cpp 
-    scheduler_patch_data.cpp 
-    scheduler_patch_list.cpp 
-    serialpatchtree.cpp
+    patch.cpp 
+    patchdata.cpp 
+    patchtree.cpp 
 
 
     PUBLIC
@@ -67,6 +55,3 @@ if("${BUILD_TEST}")
 
 
 endif()
-
-add_subdirectory(interfaces)
-add_subdirectory(base)

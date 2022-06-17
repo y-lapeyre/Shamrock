@@ -19,10 +19,10 @@
 
 #pragma once
 #include "aliases.hpp"
-#include "core/patch/patch.hpp"
-#include "core/patch/patchdata.hpp"
+#include "core/patch/base/patch.hpp"
+#include "core/patch/base/patchdata.hpp"
 #include "core/patch/patchdata_buffer.hpp"
-#include "core/patch/patchdata_field.hpp"
+#include "core/patch/base/patchdata_field.hpp"
 #include "core/patch/serialpatchtree.hpp"
 #include "core/patch/scheduler_mpi.hpp"
 #include "core/patch/scheduler_patch_data.hpp"

@@ -10,7 +10,7 @@
 
 #include "aliases.hpp"
 #include "core/patch/patchdata_buffer.hpp"
-#include "core/patch/patchdata_layout.hpp"
+#include "core/patch/base/patchdata_layout.hpp"
 #include "sph/base/kernels.hpp"
 #include "sph/base/sphpart.hpp"
 #include "core/tree/radix_tree.hpp"

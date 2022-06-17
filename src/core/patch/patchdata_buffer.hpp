@@ -23,9 +23,9 @@
 #include <stdexcept>
 #include <unordered_map>
 
-#include "patchdata.hpp"
-#include "patchdata_field.hpp"
-#include "patchdata_layout.hpp"
+#include "base/patchdata.hpp"
+#include "base/patchdata_field.hpp"
+#include "base/patchdata_layout.hpp"
 #include "core/sys/sycl_handler.hpp"
 
 /**

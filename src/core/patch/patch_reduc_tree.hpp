@@ -29,7 +29,7 @@
 
 #include "core/sys/sycl_handler.hpp"
 
-#include "patchtree.hpp"
+#include "base/patchtree.hpp"
 
 template<class type>
 class PatchFieldReduction{public:

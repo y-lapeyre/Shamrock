@@ -8,7 +8,7 @@
 
 #include "aliases.hpp"
 #include "core/patch/patch_field.hpp"
-#include "core/patch/patchdata_field.hpp"
+#include "core/patch/base/patchdata_field.hpp"
 #include "core/sys/mpi_handler.hpp"
 #include "core/sys/sycl_mpi_interop.hpp"
 #include "unittests/shamrocktest.hpp"

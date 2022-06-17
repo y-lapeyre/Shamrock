@@ -13,7 +13,7 @@
 #include "core/io/dump.hpp"
 #include "core/patch/patch_field.hpp"
 #include "core/patch/patch_reduc_tree.hpp"
-#include "core/patch/patchdata.hpp"
+#include "core/patch/base/patchdata.hpp"
 #include "core/patch/serialpatchtree.hpp"
 #include "core/patch/loadbalancing_hilbert.hpp"
 #include "core/patch/patch_content_exchanger.hpp"

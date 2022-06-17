@@ -10,9 +10,9 @@
 #include "aliases.hpp"
 #include "core/io/logs.hpp"
 #include "core/patch/merged_patch.hpp"
-#include "core/patch/patch.hpp"
-#include "core/patch/patchdata.hpp"
-#include "core/patch/patchdata_layout.hpp"
+#include "core/patch/base/patch.hpp"
+#include "core/patch/base/patchdata.hpp"
+#include "core/patch/base/patchdata_layout.hpp"
 #include "core/patch/scheduler_mpi.hpp"
 #include "core/sys/sycl_mpi_interop.hpp"
 #include <stdexcept>
