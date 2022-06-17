@@ -12,6 +12,7 @@
 
 inline constexpr f64 PI = 3.141592653589793238463;
 
+namespace models {
 namespace sph {
 namespace kernels {
 
@@ -60,3 +61,4 @@ template <class flt_type> class M4 {public:
 
 } // namespace kernels
 } // namespace sph
+} // namespace models

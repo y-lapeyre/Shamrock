@@ -1,70 +1,38 @@
-// -------------------------------------------------------//
-//
-// SHAMROCK code for hydrodynamics
-// Copyright(C) 2021-2022 Timothée David--Cléris <timothee.david--cleris@ens-lyon.fr>
-// Licensed under CeCILL 2.1 License, see LICENSE for more information
-//
-// -------------------------------------------------------//
-
 #pragma once
 
-#include "core/utils/syclreduction.hpp"
 #include "aliases.hpp"
-
-
-#include "core/patch/patchdata_buffer.hpp"
-#include "models/generic/physics/units.hpp"
-#include "models/sph/integrators/leapfrog.hpp"
-#include "forces.hpp"
-#include "models/generic/algs/integrators_utils.hpp"
 #include "models/generic/algs/cfl_utils.hpp"
-#include "models/sph/base/sphpart.hpp"
-#include <memory>
-#include <unordered_map>
-#include <vector>
+#include "core/patch/scheduler/scheduler_mpi.hpp"
+#include "models/sph/forces.hpp"
+#include "models/sph/integrators/leapfrog.hpp"
+#include "models/generic/algs/integrators_utils.hpp"
 
 
+namespace models::sph {
 
-template <class flt> class SPHTimestepperLeapfrogIsotGasSync {
-  public:
+template<class flt, class u_morton, class Kernel>
+class GasOnlyViscoLeapfrog{public: 
+    flt gpart_mass;
+    bool periodic_bc = true;
 
-  constexpr static  f32 gpart_mass = 2e-4;
+    flt htol_up_tol  = 1.4;
+    flt htol_up_iter = 1.2;
+
+    flt cfl_cour  = 0.1;
+    flt cfl_force = 0.1;
+
+    bool do_force ;
+    bool do_corrector ;
+
+    const flt eos_cs = 1; //TODO move to EOS
 
     using vec3 = sycl::vec<flt, 3>;
-    using u_morton = u32;
-    using Kernel = models::sph::kernels::M4<f32>;
-
     using Stepper = integrators::sph::LeapfrogGeneral<flt, Kernel, u_morton>;
 
-    struct SyncPart {
-        vec3 pos;
-        vec3 vel;
-        flt mass;
-    };
 
-    std::vector<SyncPart> sync_parts;
-
-    inline void step(PatchScheduler &sched, std::string dump_folder, u32 step_cnt, f64 &step_time) {
-
-        bool periodic_bc = true;
-
-        flt htol_up_tol  = 1.4;
-        flt htol_up_iter = 1.2;
-
-        const flt cfl_cour  = 0.1;
-        const flt cfl_force = 0.1;
-
-        const flt eos_cs = 1;
-
-
+    void step(PatchScheduler &sched, f64 &step_time) {
 
         Stepper stepper(sched,periodic_bc,htol_up_tol,htol_up_iter,gpart_mass);
-        bool do_force = step_cnt > 4;
-        bool do_corrector = step_cnt > 5;
-
-
-
-
 
 
         SyCLHandler &hndl = SyCLHandler::get_instance();
@@ -95,7 +63,7 @@ template <class flt> class SPHTimestepperLeapfrogIsotGasSync {
                     const flt c_cour  = cfl_cour;
                     const flt c_force = cfl_force;
 
-                    cgh.parallel_for(range_it, [=](sycl::item<1> item) {
+                    cgh.parallel_for<class Initial_dtcfl>(range_it, [=](sycl::item<1> item) {
                         u32 i = (u32)item.get_id(0);
 
                         flt h_a    = acc_hpart[item];
@@ -111,7 +79,7 @@ template <class flt> class SPHTimestepperLeapfrogIsotGasSync {
 
                 std::cout << "cfl dt : " << cfl_val << std::endl;
 
-                return sycl::min(f32(0.005),cfl_val);
+                return sycl::min(f32(0.001),cfl_val);
 
             }, 
             
@@ -164,6 +132,9 @@ template <class flt> class SPHTimestepperLeapfrogIsotGasSync {
 
                         sycl::range range_npart{hnew.size()};
 
+                        auto cs = eos_cs;
+                        auto part_mass = gpart_mass;
+
                         hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
                             auto h = hnew.get_access<sycl::access::mode::read>(cgh);
 
@@ -172,7 +143,7 @@ template <class flt> class SPHTimestepperLeapfrogIsotGasSync {
                             cgh.parallel_for(range_npart,
                                     [=](sycl::item<1> item) { 
                                         
-                                        p[item] =   eos_cs*eos_cs*rho_h(gpart_mass, h[item])  ; 
+                                        p[item] =   cs*cs*rho_h(part_mass, h[item])  ; 
                                         
                                         
                                         });
@@ -214,6 +185,9 @@ template <class flt> class SPHTimestepperLeapfrogIsotGasSync {
                         auto omga  = omega.get_access<sycl::access::mode::read>(cgh);
 
                         auto r        = pdat_buf_merge.get_field<f32_3>(ixyz)->get_access<sycl::access::mode::read>(cgh);
+
+                        auto vxyz        = pdat_buf_merge.get_field<f32_3>(ivxyz)->get_access<sycl::access::mode::read>(cgh);
+
                         auto acc_axyz = pdat_buf_merge.get_field<f32_3>(iaxyz)->get_access<sycl::access::mode::discard_write>(cgh);
 
                         using Rta = walker::Radix_tree_accessor<u32, f32_3>;
@@ -244,6 +218,8 @@ template <class flt> class SPHTimestepperLeapfrogIsotGasSync {
                             f32 rho_a_sq = rho_a * rho_a;
 
                             f32 P_a     = pres[id_a];
+                            f32_3 v_a = vxyz[id_a];
+                            f32 cs_a = sycl::sqrt(P_a/rho_a);
                             //f32 P_a     = cs * cs * rho_a;
                             f32 omega_a = omga[id_a];
 
@@ -277,13 +253,39 @@ template <class flt> class SPHTimestepperLeapfrogIsotGasSync {
                                         r_ab_unit = {0, 0, 0};
                                     }
 
+                                    f32_3 v_b = vxyz[id_a];
+
+                                    f32_3 v_ab = v_a - v_b;
+
+                                    f32 v_ab_rabu = sycl::dot(v_ab,r_ab_unit);
+
+                                    const f32 alpha_av = 0.1;
+                                    const f32 beta_av = 2;
+                                    
+
                                     f32 rho_b   = rho_h(part_mass, h_b);
                                     f32 P_b     = pres[id_b];
                                     //f32 P_b     = cs * cs * rho_b;
                                     f32 omega_b = omga[id_b];
 
+                                    f32 cs_b = sycl::sqrt(P_b/rho_b);
+
+                                    f32 vsig_a = alpha_av*cs_a + beta_av*sycl::abs(v_ab_rabu);
+                                    f32 vsig_b = alpha_av*cs_b + beta_av*sycl::abs(v_ab_rabu);
+
+                                    f32 qa_ab = 0;
+                                    f32 qb_ab = 0;
+
+                                    if (v_ab_rabu < 0){
+                                        qa_ab = -f32(0.5f)*rho_a*vsig_a*v_ab_rabu;
+                                    }
+
+                                    if (v_ab_rabu < 0){
+                                        qb_ab = -f32(0.5f)*rho_b*vsig_b*v_ab_rabu;
+                                    }
+
                                     f32_3 tmp = sph_pressure<f32_3, f32>(part_mass, rho_a_sq, rho_b * rho_b, P_a, P_b, omega_a,
-                                                                        omega_b, 0, 0, r_ab_unit * Kernel::dW(rab, h_a),
+                                                                        omega_b, qa_ab, qb_ab, r_ab_unit * Kernel::dW(rab, h_a),
                                                                         r_ab_unit * Kernel::dW(rab, h_b));
 
                                     sum_axyz += tmp;
@@ -298,60 +300,6 @@ template <class flt> class SPHTimestepperLeapfrogIsotGasSync {
                     
 
                 });
-
-                if(sync_parts.size() > 0){
-                    sched.for_each_patch([&](u64 id_patch, Patch cur_p) {
-                        if (merge_pdat_buf.at(id_patch).or_element_cnt == 0){
-                            std::cout << " empty => skipping" << std::endl;return;
-                        }
-
-                        SyCLHandler &hndl = SyCLHandler::get_instance();
-
-                        PatchDataBuffer &pdat_buf_merge = *merge_pdat_buf.at(id_patch).data;
-
-                        sycl::buffer<SyncPart> syncs ( sync_parts.data(), sync_parts.size() );
-
-                        sycl::range range_npart{merge_pdat_buf.at(id_patch).or_element_cnt};
-
-                        hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
-
-                            auto r        = pdat_buf_merge.get_field<f32_3>(ixyz)->get_access<sycl::access::mode::read>(cgh);
-                            auto acc_axyz = pdat_buf_merge.get_field<f32_3>(iaxyz)->get_access<sycl::access::mode::read_write>(cgh);
-
-                            auto acc_synk = syncs.template get_access<sycl::access::mode::read>(cgh);
-
-                            u32 num_sync = sync_parts.size();
-
-                            cgh.parallel_for(range_npart, [=](sycl::item<1> item) {
-                                u32 id_a = (u32)item.get_id(0);
-
-                                f32_3 xyz_a = r[id_a];
-
-                                f32_3 sum_axyz{0,0,0};
-
-                                for(u32 i = 0; i < num_sync; i++){
-
-                                    SyncPart p = acc_synk[i];
-
-                                    vec3 dr = xyz_a - p.pos;
-
-                                    flt val =  units::G_si * gpart_mass * p.mass / (sycl::dot(dr,dr));
-
-                                    if(val > 1e2) {
-                                        val = 1e2;
-                                    }
-
-                                    sum_axyz -= val * dr / (sycl::length(dr));
-                                }
-
-                                acc_axyz[id_a] += sum_axyz;
-                            });
-                        });
-                        
-
-                    });
-
-                }
 
             }, 
             
@@ -379,7 +327,8 @@ template <class flt> class SPHTimestepperLeapfrogIsotGasSync {
                 queue.submit(ker_corect_step);
             });
 
-
-
     }
+
 };
+
+} // namespace models::sph

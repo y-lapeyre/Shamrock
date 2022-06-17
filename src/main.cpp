@@ -25,13 +25,13 @@
 #include "core/patch/base/patch.hpp"
 #include "core/patch/base/patchdata.hpp"
 #include "core/patch/base/patchdata_layout.hpp"
+#include "core/patch/comm/patch_content_exchanger.hpp"
+#include "core/patch/comm/patch_object_mover.hpp"
+#include "core/patch/comm/patchdata_exchanger.hpp"
 #include "core/patch/interfaces/interface_generator.hpp"
 #include "core/patch/interfaces/interface_handler.hpp"
 #include "core/patch/interfaces/interface_selector.hpp"
-#include "core/patch/comm/patch_content_exchanger.hpp"
-#include "core/patch/comm/patch_object_mover.hpp"
 #include "core/patch/patchdata_buffer.hpp"
-#include "core/patch/comm/patchdata_exchanger.hpp"
 #include "core/patch/scheduler/loadbalancing_hilbert.hpp"
 #include "core/patch/scheduler/scheduler_mpi.hpp"
 #include "core/patch/utility/patch_field.hpp"
@@ -44,14 +44,17 @@
 #include "core/utils/string_utils.hpp"
 #include "core/utils/time_utils.hpp"
 #include "models/generic/physics/units.hpp"
-#include "runscript/rscripthandler.hpp"
 #include "models/generic/setup/SPHSetup.hpp"
+#include "models/sph/base/kernels.hpp"
 #include "models/sph/base/kernels.hpp"
 #include "models/sph/base/sphpart.hpp"
 #include "models/sph/forces.hpp"
 #include "models/sph/gas_sync.hpp"
 #include "models/sph/leapfrog.hpp"
+#include "models/sph/models/gas_only.hpp"
+#include "models/sph/models/gas_only_visco.hpp"
 #include "models/sph/sphpatch.hpp"
+#include "runscript/rscripthandler.hpp"
 #include "unittests/shamrocktest.hpp"
 #include <array>
 #include <cstdlib>
@@ -237,13 +240,16 @@ class TestTimestepper {
 
         f32_3 box_dim = {1,1,1};
 
+        box_dim.y() /= 4;
+
         std::tuple<f32_3,f32_3> box = {
             -box_dim,box_dim
         };
 
         
 
-        f32 dr = 0.04;
+        //f32 dr = 0.04; //for soundwave
+        f32 dr = 0.02;
         correct_box_fcc<f32>(dr,box);
 
         sched.set_box_volume<f32_3>(box);
@@ -256,14 +262,43 @@ class TestTimestepper {
 
     static void step(PatchScheduler &sched, TestSimInfo &siminfo, std::string dump_folder) {
 
-        SPHTimestepperLeapfrogIsotGas<f32> leapfrog;
+        using namespace models::sph;
+
+        //GasOnlyLeapfrog<f32, u32, kernels::M4<f32>> leapfrog;
+        GasOnlyViscoLeapfrog<f32, u32, kernels::M4<f32>> leapfrog;
+
+
+        const f32 htol_up_tol  = 1.4;
+        const f32 htol_up_iter = 1.2;
+
+        const f32 cfl_cour  = 0.1;
+        const f32 cfl_force = 0.3;
+
+        //const flt eos_cs = 1;
+
+        bool do_force = siminfo.stepcnt > 4;
+        bool do_corrector = siminfo.stepcnt > 5;
+
+        leapfrog.htol_up_tol = htol_up_tol;
+        leapfrog.htol_up_iter = htol_up_iter;
+        leapfrog.cfl_cour = cfl_cour;
+        leapfrog.cfl_force = cfl_force;
+        leapfrog.do_force = do_force;
+        leapfrog.do_corrector = do_corrector;
+
+        leapfrog.gpart_mass = 2e-4;
+
+
+        //SPHTimestepperLeapfrogIsotGas<f32> leapfrog;
 
         SyCLHandler &hndl = SyCLHandler::get_instance();
 
         // std::cout << sched.dump_status() << std::endl;
         sched.scheduler_step(true, true);
 
-        leapfrog.step(sched,dump_folder,siminfo.stepcnt,siminfo.time);
+        leapfrog.step(sched,siminfo.time);
+
+        //leapfrog.step(sched,dump_folder,siminfo.stepcnt,siminfo.time);
     }
 };
 
@@ -333,7 +368,8 @@ template <class Timestepper, class SimInfo> class SimulationSPH {
 
 
 
-        PatchScheduler sched = PatchScheduler(pdl,20000, 1);
+        PatchScheduler sched = PatchScheduler(pdl,20000, 1); //soundwave test
+        //PatchScheduler sched = PatchScheduler(pdl,100000, 1);
         sched.init_mpi_required_types();
 
         logfiles::open_log_files();
@@ -360,8 +396,10 @@ template <class Timestepper, class SimInfo> class SimulationSPH {
         timings::dump_timings("### init_step ###");
 
         
-        for (u32 stepi = 1; stepi < 500; stepi++) {
+        for (u32 stepi = 1; stepi < 1e4; stepi++) {
 
+
+            /* //wave setup
             if(stepi == 5 && true){
 
                 auto box = sched.get_box_volume<f32_3>();
@@ -398,13 +436,67 @@ template <class Timestepper, class SimInfo> class SimulationSPH {
                     }
                 );
             }
+            */
+
+            if(stepi == 5 && true){
+
+                auto box = sched.get_box_volume<f32_3>();
+
+                u32 ixyz = pdl.get_field_idx<f32_3>("xyz");
+                u32 ivxyz = pdl.get_field_idx<f32_3>("vxyz");
+
+                sched.for_each_patch_buf(
+                    [&](u64 id_patch, Patch cur_p, PatchDataBuffer & pdat_buf) {
+
+                        hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+                            auto r = pdat_buf.fields_f32_3[ixyz]->get_access<sycl::access::mode::read>(cgh);
+                            auto v = pdat_buf.fields_f32_3[ivxyz]->get_access<sycl::access::mode::discard_write>(cgh);
+
+                            f32 deltv = 1e-4;
+                            u32 nmode = 4;
+                            constexpr f32 pi = 3.141612;
+                            f32 x_min = std::get<0>(box).x();
+                            f32 x_max = std::get<1>(box).x();
+
+
+                            cgh.parallel_for( sycl::range{pdat_buf.element_count}, [=](sycl::item<1> item) { 
+                                u32 i = item.get_id(0);
+                                f32 x = r[item].x();
+                                f32 z = r[item].z();
+
+                                f32 pert = 0;
+
+
+                                if(z > 0){
+                                    pert = 1; 
+                                }else{
+                                    pert = -1;
+                                }pert *= 0.1;
+
+
+                                v[item] = {
+                                        pert,
+                                        0,
+                                        deltv*sycl::cos(nmode*2.*pi*(x-x_min)/(x_max-x_min))
+                                    }
+                                ;
+
+                                
+                            });
+                        });
+
+                    }
+                );
+            }
 
 
             std::cout << " ------ step time = " << stepi << " ------" << std::endl;
 
             std::cout << "time : " << siminfo.time << std::endl;
 
-            std::filesystem::create_directory("step" + std::to_string(stepi));
+            if(stepi % 5 == 0){
+                std::filesystem::create_directory("step" + std::to_string(stepi/5));
+            }
 
             siminfo.stepcnt = stepi;
 
@@ -415,8 +507,10 @@ template <class Timestepper, class SimInfo> class SimulationSPH {
             step_timer.stop();
 
             
-
-            dump_state("step" + std::to_string(stepi) + "/", sched,siminfo.time);
+            if(stepi % 5 == 0){
+                dump_state("step" + std::to_string(stepi/5) + "/", sched,siminfo.time);
+            }
+            
 
             timings::dump_timings("### "
                                   "step" +

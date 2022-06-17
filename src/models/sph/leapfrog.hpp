@@ -27,7 +27,7 @@ template <class flt> class SPHTimestepperLeapfrogIsotGas {
   public:
     using vec3 = sycl::vec<flt, 3>;
     using u_morton = u32;
-    using Kernel = sph::kernels::M4<f32>;
+    using Kernel = models::sph::kernels::M4<f32>;
 
     using Stepper = integrators::sph::LeapfrogGeneral<flt, Kernel, u_morton>;
 
