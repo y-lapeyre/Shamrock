@@ -135,6 +135,10 @@ def get_plot_patchdata(filename):
         "ay_old" : [],
         "az_old" : [],
         "h" : [],
+
+        "u" : [],
+        "du" : [],
+        "du_old" : []
         }
 
     for field in dic_fields["f32_3"]:
@@ -179,6 +183,24 @@ def get_plot_patchdata(filename):
                 x, = a
                 dic["h"].append(x)
 
+        if field["name"] == ("u"):
+
+            for a in field["field"]:
+                x, = a
+                dic["u"].append(x)
+
+        if field["name"] == ("du"):
+
+            for a in field["field"]:
+                x, = a
+                dic["du"].append(x)
+
+        if field["name"] == ("du_old"):
+
+            for a in field["field"]:
+                x, = a
+                dic["du_old"].append(x)
+
 
     return dic
 
@@ -199,7 +221,7 @@ def write_dic_to_vtk(dic,filename):
     ugrid.SetPoints(points)
 
 
-    for k in ["h"]:
+    for k in ["h","u","du","du_old"]:
         if not k in ["x","y","z"]:
             values = vtk.vtkDoubleArray()
             values.SetName(k)
@@ -268,7 +290,7 @@ def write_dic_to_vtk(dic,filename):
 
 
 import glob
-for idx in range(260,1000):
+for idx in range(0,1000):
 
     file_list = glob.glob("./step"+str(idx)+"/patchdata*")
 

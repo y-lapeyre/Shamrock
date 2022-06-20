@@ -11,7 +11,7 @@
 namespace models::sph {
 
 template<class flt, class u_morton, class Kernel>
-class GasOnlyViscoLeapfrog{public: 
+class GasOnlyInternalU{public: 
     flt gpart_mass;
     bool periodic_bc = true;
 
@@ -43,6 +43,10 @@ class GasOnlyViscoLeapfrog{public:
         const u32 iaxyz_old = sched.pdl.get_field_idx<vec3>("axyz_old");
 
         const u32 ihpart    = sched.pdl.get_field_idx<flt>("hpart");
+
+        const u32 iu    = sched.pdl.get_field_idx<flt>("u");
+        const u32 idu    = sched.pdl.get_field_idx<flt>("du");
+        const u32 idu_old    = sched.pdl.get_field_idx<flt>("du_old");
 
         PatchComputeField<f32> pressure_field;
 
@@ -90,10 +94,16 @@ class GasOnlyViscoLeapfrog{public:
 
                 field_advance_time(queue, vxyz, axyz, range_npart, hdt);
 
+                sycl::buffer<flt> & u =  * buf.get_field<flt>(iu);
+                sycl::buffer<flt> & du =  * buf.get_field<flt>(idu);
+
+                field_advance_time(queue, u, du, range_npart, hdt);
+
             }, 
             
             [&](sycl::queue&  queue, PatchDataBuffer& buf, sycl::range<1> range_npart ){
-                auto ker_predict_step = [&](sycl::handler &cgh) {
+
+                queue.submit([&](sycl::handler &cgh) {
                     auto acc_axyz = buf.get_field<vec3>(iaxyz)->template get_access<sycl::access::mode::read_write>(cgh);
                     auto acc_axyz_old = buf.get_field<vec3>(iaxyz_old)->template get_access<sycl::access::mode::read_write>(cgh);
 
@@ -106,9 +116,25 @@ class GasOnlyViscoLeapfrog{public:
                         acc_axyz_old[item] = axyz;
 
                     });
-                };
+                });
 
-                queue.submit(ker_predict_step);
+
+                queue.submit([&](sycl::handler &cgh) {
+                    auto acc_du = buf.get_field<flt>(idu)->template get_access<sycl::access::mode::read_write>(cgh);
+                    auto acc_du_old = buf.get_field<flt>(idu_old)->template get_access<sycl::access::mode::read_write>(cgh);
+
+                    // Executing kernel
+                    cgh.parallel_for(range_npart, [=](sycl::item<1> item) {
+                        flt du     = acc_du[item];
+                        flt du_old = acc_du_old[item];
+
+                        acc_du[item]     = du_old;
+                        acc_du_old[item] = du;
+
+                    });
+                });
+
+
             },
             [&](PatchScheduler & sched, 
                 std::unordered_map<u64, MergedPatchDataBuffer<vec3>>& merge_pdat_buf, 
@@ -130,20 +156,26 @@ class GasOnlyViscoLeapfrog{public:
                         sycl::buffer<f32> &hnew  = *hnew_field_merged[id_patch].buf;
                         sycl::buffer<f32> &press  = *pressure_field.field_data_buf[id_patch];
 
+                        PatchDataBuffer &pdat_buf_merge = *merge_pdat_buf.at(id_patch).data;
+
                         sycl::range range_npart{hnew.size()};
 
                         auto cs = eos_cs;
                         auto part_mass = gpart_mass;
 
+                        const flt gamma = 7./5.;
+
                         hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
                             auto h = hnew.get_access<sycl::access::mode::read>(cgh);
+
+                            auto acc_u = pdat_buf_merge.get_field<flt>(iu)->template get_access<sycl::access::mode::read>(cgh);
 
                             auto p = press.get_access<sycl::access::mode::discard_write>(cgh);
 
                             cgh.parallel_for(range_npart,
                                     [=](sycl::item<1> item) { 
                                         
-                                        p[item] =   cs*cs*rho_h(part_mass, h[item])  ; 
+                                        p[item] = (gamma-1) * rho_h(part_mass, h[item]) *acc_u[item] ; 
                                         
                                         
                                         });
@@ -190,6 +222,8 @@ class GasOnlyViscoLeapfrog{public:
 
                         auto acc_axyz = pdat_buf_merge.get_field<f32_3>(iaxyz)->get_access<sycl::access::mode::discard_write>(cgh);
 
+                        auto acc_du = pdat_buf_merge.get_field<flt>(idu)->template get_access<sycl::access::mode::discard_write>(cgh);
+
                         using Rta = walker::Radix_tree_accessor<u32, f32_3>;
                         Rta tree_acc(*radix_trees[id_patch], cgh);
 
@@ -204,7 +238,7 @@ class GasOnlyViscoLeapfrog{public:
 
                         const f32 htol = htol_up_tol;
 
-                        // sycl::stream out(65000,65000,cgh);
+                        sycl::stream out(1024,1024,cgh);
 
                         cgh.parallel_for(range_npart, [=](sycl::item<1> item) {
                             u32 id_a = (u32)item.get_id(0);
@@ -225,6 +259,8 @@ class GasOnlyViscoLeapfrog{public:
 
                             f32_3 inter_box_a_min = xyz_a - h_a * Kernel::Rkern;
                             f32_3 inter_box_a_max = xyz_a + h_a * Kernel::Rkern;
+
+                            f32 psum_u = 0;
 
                             walker::rtree_for(
                                 tree_acc,
@@ -253,7 +289,7 @@ class GasOnlyViscoLeapfrog{public:
                                         r_ab_unit = {0, 0, 0};
                                     }
 
-                                    f32_3 v_b = vxyz[id_a];
+                                    f32_3 v_b = vxyz[id_b];
 
                                     f32_3 v_ab = v_a - v_b;
 
@@ -289,12 +325,25 @@ class GasOnlyViscoLeapfrog{public:
                                                                         r_ab_unit * Kernel::dW(rab, h_b));
 
                                     sum_axyz += tmp;
+
+                                    f32 tmp_du = part_mass*sycl::dot(v_ab,Kernel::dW(rab, h_a) * r_ab_unit);
+
+
+                                    psum_u += tmp_du;
                                 },
                                 [](u32 node_id) {});
 
                             // out << "sum : " << sum_axyz << "\n";
 
                             acc_axyz[id_a] = sum_axyz;
+
+
+                            
+                            f32 du = psum_u*P_a/(rho_a_sq*omega_a);
+                            
+                           
+
+                            acc_du[id_a] = du;
                         });
                     });
                     
@@ -306,7 +355,7 @@ class GasOnlyViscoLeapfrog{public:
             [&](sycl::queue&  queue, PatchDataBuffer& buf, sycl::range<1> range_npart ,flt hdt){
                 
 
-                auto ker_corect_step = [&](sycl::handler &cgh) {
+                queue.submit([&](sycl::handler &cgh) {
                     auto acc_vxyz     = buf.get_field<vec3>(ivxyz)->template get_access<sycl::access::mode::read_write>(cgh);
                     auto acc_axyz     = buf.get_field<vec3>(iaxyz)->template get_access<sycl::access::mode::read_write>(cgh);
                     auto acc_axyz_old = buf.get_field<vec3>(iaxyz_old)->template get_access<sycl::access::mode::read_write>(cgh);
@@ -322,9 +371,26 @@ class GasOnlyViscoLeapfrog{public:
                         // v^* = v^{n + 1/2} + dt/2 a^n
                         vxyz = vxyz + (hdt) * (axyz - axyz_old);
                     });
-                };
+                });
 
-                queue.submit(ker_corect_step);
+
+                queue.submit([&](sycl::handler &cgh) {
+                    auto acc_u     = buf.get_field<flt>(iu)->template get_access<sycl::access::mode::read_write>(cgh);
+                    auto acc_du     = buf.get_field<flt>(idu)->template get_access<sycl::access::mode::read_write>(cgh);
+                    auto acc_du_old = buf.get_field<flt>(idu_old)->template get_access<sycl::access::mode::read_write>(cgh);
+
+                    // Executing kernel
+                    cgh.parallel_for(range_npart, [=](sycl::item<1> item) {
+                        u32 gid = (u32)item.get_id();
+
+                        flt &u     = acc_u[item];
+                        flt &du     = acc_du[item];
+                        flt &du_old = acc_du_old[item];
+
+                        // v^* = v^{n + 1/2} + dt/2 a^n
+                        u = u + (hdt) * (du - du_old);
+                    });
+                });
             });
 
     }

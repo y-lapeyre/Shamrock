@@ -7,7 +7,9 @@
 #include "core/patch/scheduler/scheduler_mpi.hpp"
 #include "core/sys/mpi_handler.hpp"
 #include "core/patch/comm/patch_object_mover.hpp"
+#include "core/sys/sycl_mpi_interop.hpp"
 #include <memory>
+#include <mpi.h>
 #include <vector>
 
 
@@ -19,6 +21,8 @@ class SPHSetup{
     PatchScheduler & sched;
 
     bool periodic_mode;
+
+    u64 part_cnt = 0;
 
 
     public:
@@ -87,6 +91,8 @@ class SPHSetup{
             PatchData tmp(sched.pdl);
             tmp.resize(vec.size());
 
+            part_cnt+= vec.size();
+
             PatchDataField<vec3> & f = tmp.get_field<vec3>(sched.pdl.get_field_idx<vec3>("xyz"));
 
             sycl::buffer<vec3> buf (vec.data(),vec.size());
@@ -122,5 +128,15 @@ class SPHSetup{
         
     }
 
+
+    inline flt get_part_mass(flt tot_mass){
+
+        u64 part = 0;
+
+
+        mpi::allreduce(&part_cnt, &part, 1, mpi_type_u64, MPI_SUM, MPI_COMM_WORLD);
+
+        return tot_mass/part;
+    }
 
 };
