@@ -290,7 +290,7 @@ def write_dic_to_vtk(dic,filename):
 
 
 import glob
-for idx in range(0,1000):
+for idx in range(170,1000):
 
     file_list = glob.glob("./step"+str(idx)+"/patchdata*")
 

@@ -60,13 +60,17 @@ std::vector<std::tuple<u64, i32, i32, i32>> HilbertLB::make_change_list(std::vec
     //sort hilbert code
     std::sort(patch_dt.begin(), patch_dt.end());
 
-
+    u64 accum = 0;
     //compute increments for load
-    for (u64 i = 1; i < global_patch_list.size(); i++) {
-        std::get<1>(patch_dt[i]) += std::get<1>(patch_dt[i-1]);
+    for (u64 i = 0; i < global_patch_list.size(); i++) {
+        u64 cur_val = std::get<1>(patch_dt[i]);
+        std::get<1>(patch_dt[i]) = accum;
+        accum += cur_val;
     }
 
-    /*
+    
+
+    //*
     {
         double target_datacnt = double(std::get<1>(patch_dt[global_patch_list.size()-1]))/mpi_handler::world_size;
         for(auto t : patch_dt){
@@ -80,7 +84,7 @@ std::vector<std::tuple<u64, i32, i32, i32>> HilbertLB::make_change_list(std::vec
                 std::endl;
         }
     }
-    */
+    //*/
 
 
     //compute new owners

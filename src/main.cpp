@@ -269,8 +269,8 @@ class TestTimestepper {
         //sedov
         f32_3 box_dim = {1,1,1};
 
-        box_dim.y() /= 16;
-        box_dim.x() /= 16;
+        box_dim.y() /= 32;
+        box_dim.x() /= 32;
 
         std::tuple<f32_3,f32_3> box = {
             -box_dim,box_dim

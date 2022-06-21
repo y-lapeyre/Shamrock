@@ -29,7 +29,7 @@ protected:
 
 
 
-class ShamrockAPI{
+class ShamrockCtx{
 
     std::unique_ptr<PatchDataLayout> pdl;
     std::unique_ptr<PatchScheduler> sched;
@@ -93,11 +93,11 @@ class ShamrockAPI{
     }
 
 
-    inline ShamrockAPI(){
+    inline ShamrockCtx(){
         logfiles::open_log_files();
     }
 
-    inline ~ShamrockAPI(){
+    inline ~ShamrockCtx(){
         logfiles::close_log_files();
     }
 };
