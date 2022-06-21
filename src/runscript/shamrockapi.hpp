@@ -29,21 +29,15 @@ protected:
 
 
 
-class ShamrockCtx{
+class ShamrockCtx{public:
 
     std::unique_ptr<PatchDataLayout> pdl;
     std::unique_ptr<PatchScheduler> sched;
 
     
 
-    inline void print_version(){
-        std::cout << git_info_str << std::endl;
-    }
 
-
-
-
-    inline void pdata_layout_reset(){
+    inline void pdata_layout_new(){
         if(sched){
             throw ShamAPIException("cannot modify patch data layout while the scheduler is on");
         }
@@ -84,12 +78,17 @@ class ShamrockCtx{
    
 
     inline void init_sched(u64 crit_split,u64 crit_merge){
+
+        if(!pdl){
+            throw ShamAPIException("patch data layout is not initialized");
+        }
+
         sched = std::make_unique<PatchScheduler>(*pdl,crit_split,crit_merge);
         sched->init_mpi_required_types();
     }
 
     inline void close_sched(){
-        sched = std::unique_ptr<PatchScheduler>();
+        sched.reset();
     }
 
 

@@ -270,8 +270,8 @@ class GasOnlyViscoLeapfrog{public:
 
                                     f32 cs_b = sycl::sqrt(P_b/rho_b);
 
-                                    f32 vsig_a = alpha_av*cs_a + beta_av*sycl::abs(v_ab_rabu);
-                                    f32 vsig_b = alpha_av*cs_b + beta_av*sycl::abs(v_ab_rabu);
+                                    f32 vsig_a = alpha_av*cs_a + beta_av*sycl::fabs(v_ab_rabu);
+                                    f32 vsig_b = alpha_av*cs_b + beta_av*sycl::fabs(v_ab_rabu);
 
                                     f32 qa_ab = 0;
                                     f32 qb_ab = 0;

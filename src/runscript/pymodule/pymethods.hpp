@@ -123,10 +123,5 @@ static PyMethodDef Pyshamrock_Methods[] = {
 };
 
 
-static PyModuleDef Pyshamrock_Module = {
-    PyModuleDef_HEAD_INIT, "shamrock", NULL, -1, Pyshamrock_Methods,
-    NULL, NULL, NULL, NULL
-};
-static PyObject* PyInit_shamrock(void) {
-    return PyModule_Create(&Pyshamrock_Module);
-}
+
+

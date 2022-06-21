@@ -6,7 +6,7 @@
 
 
 #include <iostream>
-#include "pymodule/pymethods.hpp"
+#include "pymodule/pyinitshamrock.hpp"
 
 bool is_already_active = false;
 

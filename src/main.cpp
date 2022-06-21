@@ -287,8 +287,8 @@ class TestTimestepper {
         setup.init_setup();
 
 
-        setup.add_particules_fcc(dr, box, [&](f32_3 r){return sycl::abs(r.z()) < box_dim.z()/1.99;});
-        setup.add_particules_fcc(dr*2, box, [&](f32_3 r){return sycl::abs(r.z()) >= box_dim.z()/1.99;});
+        setup.add_particules_fcc(dr, box, [&](f32_3 r){return sycl::fabs(r.z()) < box_dim.z()/1.99;});
+        setup.add_particules_fcc(dr*2, box, [&](f32_3 r){return sycl::fabs(r.z()) >= box_dim.z()/1.99;});
 
         part_mass = setup.get_part_mass(0.0010986328125);
         //part_mass = 7.783467665607285e-08;
@@ -302,7 +302,7 @@ class TestTimestepper {
             for (u32 i =0; i <f.size() ; i++) {
                 f32_3 r = xyz.usm_data()[i] ;
 
-                if (sycl::abs(r.z()) < box_dim.z()/2){
+                if (sycl::fabs(r.z()) < box_dim.z()/2){
                     f.usm_data()[i] = 1/(((5./3.) - 1)*1);
                 }else{
                     f.usm_data()[i] = 0.1/(((5./3.) - 1)*0.125);
