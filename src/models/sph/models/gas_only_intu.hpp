@@ -29,6 +29,8 @@ class GasOnlyInternalU{public:
     using vec3 = sycl::vec<flt, 3>;
     using Stepper = integrators::sph::LeapfrogGeneral<flt, Kernel, u_morton>;
 
+    const flt gamma_eos = 5./3.;
+
 
     void step(PatchScheduler &sched, f64 &step_time) {
 
@@ -163,7 +165,7 @@ class GasOnlyInternalU{public:
                         auto cs = eos_cs;
                         auto part_mass = gpart_mass;
 
-                        const flt gamma = 7./5.;
+                        const flt gamma = gamma_eos;
 
                         hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
                             auto h = hnew.get_access<sycl::access::mode::read>(cgh);
@@ -238,7 +240,9 @@ class GasOnlyInternalU{public:
 
                         const f32 htol = htol_up_tol;
 
-                        sycl::stream out(1024,1024,cgh);
+                        const flt gamma = gamma_eos;
+
+                        //sycl::stream out(1024,1024,cgh);
 
                         cgh.parallel_for(range_npart, [=](sycl::item<1> item) {
                             u32 id_a = (u32)item.get_id(0);
@@ -253,7 +257,7 @@ class GasOnlyInternalU{public:
 
                             f32 P_a     = pres[id_a];
                             f32_3 v_a = vxyz[id_a];
-                            f32 cs_a = sycl::sqrt(P_a/rho_a);
+                            f32 cs_a = sycl::sqrt(gamma*P_a/rho_a);
                             //f32 P_a     = cs * cs * rho_a;
                             f32 omega_a = omga[id_a];
 
@@ -304,7 +308,7 @@ class GasOnlyInternalU{public:
                                     //f32 P_b     = cs * cs * rho_b;
                                     f32 omega_b = omga[id_b];
 
-                                    f32 cs_b = sycl::sqrt(P_b/rho_b);
+                                    f32 cs_b = sycl::sqrt(gamma*P_b/rho_b);
 
                                     f32 vsig_a = alpha_av*cs_a + beta_av*sycl::abs(v_ab_rabu);
                                     f32 vsig_b = alpha_av*cs_b + beta_av*sycl::abs(v_ab_rabu);
