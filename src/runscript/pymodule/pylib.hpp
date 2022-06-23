@@ -60,10 +60,7 @@ static void dealloc(Type *self){                            \
                             \
 static PyObject * objnew(PyTypeObject *type, PyObject *args, PyObject *kwds){                            \
     Type *self;                            \
-    self = (Type *) type->tp_alloc(type, 0);                            \
-    if (self != NULL) {                            \
-        self->model = std::make_unique<IntType>();                            \
-    }                            \
+    self = (Type *) type->tp_alloc(type, 0);                                         \
     return (PyObject *) self;                            \
 }
 
@@ -71,23 +68,13 @@ static PyObject * objnew(PyTypeObject *type, PyObject *args, PyObject *kwds){   
 
 #define __ADD_PYBIND__     {                       \
                             \
-std::string tp_name_str = "shamrock."+name;                            \
+static std::string name = get_name();                            \
                             \
-static PyTypeObject pytype = {                            \
-    PyVarObject_HEAD_INIT(NULL, 0)                            \
-    .tp_name = tp_name_str.c_str(),                            \
-    .tp_doc = PyDoc_STR(descriptor.c_str()),                            \
-    .tp_basicsize = sizeof(Type),                            \
-    .tp_itemsize = 0,                            \
-    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,                            \
-    .tp_new = objnew,                            \
-    .tp_dealloc = (destructor) dealloc,                            \
-    .tp_methods = methods,                            \
-};                            \
+static PyTypeObject pytype = get_pytype();                            \
                             \
-std::string notready_str = "[pybind] " + name + " not ready";                            \
-std::string failedtype   = "[pybind] " + name + " failed to be added";                            \
-std::string typeready    = "[pybind] " + name + " type ready";                            \
+static std::string notready_str = "[pybind] " + name + " not ready";                            \
+static std::string failedtype   = "[pybind] " + name + " failed to be added";                            \
+static std::string typeready    = "[pybind] " + name + " type ready";                            \
                             \
 if (PyType_Ready(&pytype) < 0)                            \
     throw ShamAPIException(notready_str);                            \

@@ -21,15 +21,7 @@ static PyObject* PyInit_shamrock(void) {
     if (m == NULL)
         return NULL;
 
-    if (PyType_Ready(&PyShamCtxType) < 0)
-            return NULL;
-            
-    Py_INCREF(&PyShamCtxType);
-    if (PyModule_AddObject(m, "Context", (PyObject *) &PyShamCtxType) < 0) {
-        Py_DECREF(&PyShamCtxType);
-        Py_DECREF(m);
-        return NULL;
-    }
+    
     
 
     for(auto fct : init_python_binding_lst){
