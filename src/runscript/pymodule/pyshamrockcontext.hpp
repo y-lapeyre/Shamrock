@@ -2,6 +2,7 @@
 
 #include "pylib.hpp"
 #include "runscript/shamrockapi.hpp"
+#include <array>
 #include <exception>
 #include <memory>
 
@@ -11,86 +12,82 @@ struct PySHAMROCKContext{
     std::unique_ptr<ShamrockCtx> ctx;
 };
 
+class PySHAMROCKContextImpl {public:
+
+    static void dealloc(PySHAMROCKContext *self){
+
+        std::cout << "free Shamrock Context : " << self << std::endl;
+        
+
+        self->ctx.reset();
+
+        Py_TYPE(self)->tp_free((PyObject *) self);
+    }
+
+    static PyObject * objnew(PyTypeObject *type, PyObject *args, PyObject *kwds){
+        PySHAMROCKContext *self;
+        self = (PySHAMROCKContext *) type->tp_alloc(type, 0);
+        if (self != NULL) {
+            self->ctx = std::make_unique<ShamrockCtx>();
+        }
+
+        std::cout << "new Shamrock Context : " << self << std::endl;
+
+        return (PyObject *) self;
+    }
 
 
-static void
-PySHAMROCKContext_dealloc(PySHAMROCKContext *self)
-{
+    #define PySHamExcHandle(a)           \
+        try {           \
+            a;          \
+        } catch (ShamAPIException const & e) {          \
+            PyErr_SetString(PyExc_RuntimeError, e.what());          \
+            return NULL;          \
+        }
 
-    std::cout << "free Shamrock Context : " << self << std::endl;
-    
+    static PyObject * reset(PySHAMROCKContext *self, PyObject *Py_UNUSED(ignored)){
+        std::cout << "resetting context" << std::endl;
 
-    self->ctx.reset();
-
-    Py_TYPE(self)->tp_free((PyObject *) self);
-}
-
-static PyObject *
-PySHAMROCKContext_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
-{
-    PySHAMROCKContext *self;
-    self = (PySHAMROCKContext *) type->tp_alloc(type, 0);
-    if (self != NULL) {
+        self->ctx.reset();
         self->ctx = std::make_unique<ShamrockCtx>();
+
+        return Py_None;
     }
 
-    std::cout << "new Shamrock Context : " << self << std::endl;
+    static PyObject * pdata_layout_new(PySHAMROCKContext *self, PyObject *Py_UNUSED(ignored)){
+        PySHamExcHandle(self->ctx->pdata_layout_new());
+        return Py_None;
+    }
 
-    return (PyObject *) self;
-}
+    static PyObject * init_sched(PySHAMROCKContext *self, PyObject *args){
 
+        i32 split_crit , merge_crit;
 
-#define PySHamExcHandle(a)           \
-    try {           \
-        a;          \
-    } catch (ShamAPIException const & e) {          \
-        PyErr_SetString(PyExc_TypeError, e.what());          \
-        return NULL;          \
+        if(!PyArg_ParseTuple(args, "ii",&split_crit,&merge_crit)) {
+            return NULL;
+        }
+
+        PySHamExcHandle(self->ctx->init_sched(split_crit,merge_crit));
+
+        return Py_None;
+    }
+
+    static PyObject * close_sched(PySHAMROCKContext *self, PyObject *Py_UNUSED(ignored)){
+        PySHamExcHandle(self->ctx->close_sched());
+        return Py_None;
     }
 
 
 
-static PyObject *
-PySHAMROCKContext_pdata_layout_new(PySHAMROCKContext *self, PyObject *Py_UNUSED(ignored))
-{
-    std::cout << "resetting the layout" << std::endl;
-
-    PySHamExcHandle(self->ctx->pdata_layout_new());
-
-    return Py_None;
-}
-
-static PyObject *
-PySHAMROCKContext_init_sched(PySHAMROCKContext *self, PyObject *Py_UNUSED(ignored))
-{
-    std::cout << "init the scheduler" << std::endl;
-
-    PySHamExcHandle(self->ctx->init_sched(100000,1));
-
-    return Py_None;
-}
-
-static PyObject *
-PySHAMROCKContext_close_sched(PySHAMROCKContext *self, PyObject *Py_UNUSED(ignored))
-{
-    std::cout << "closing the scheduler" << std::endl;
-
-    PySHamExcHandle(self->ctx->close_sched());
-
-    return Py_None;
-}
 
 
+};
 
-static PyMethodDef PySHAMROCKContext_methods[] = {
-    {"pdata_layout_new", (PyCFunction) PySHAMROCKContext_pdata_layout_new, METH_NOARGS,
-     "Initialise a new patchdata layout"
-    },
-    {"init_sched", (PyCFunction) PySHAMROCKContext_init_sched, METH_NOARGS,
-     "Initialise a new patchdata layout"
-    },{"close_sched", (PyCFunction) PySHAMROCKContext_close_sched, METH_NOARGS,
-     "Initialise a new patchdata layout"
-    },
+static PyMethodDef methods [] = {
+    {"reset", (PyCFunction) PySHAMROCKContextImpl::reset, METH_NOARGS,"doc str"},
+    {"pdata_layout_new", (PyCFunction) PySHAMROCKContextImpl::pdata_layout_new, METH_NOARGS,"doc str"},
+    {"init_sched", (PyCFunction) PySHAMROCKContextImpl::init_sched, METH_VARARGS,"doc str"},
+    {"close_sched", (PyCFunction) PySHAMROCKContextImpl::close_sched, METH_NOARGS,"doc str"},
     {NULL}  /* Sentinel */
 };
 
@@ -102,8 +99,8 @@ static PyTypeObject PyShamCtxType = {
     .tp_basicsize = sizeof(PySHAMROCKContext),
     .tp_itemsize = 0,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
-    .tp_new = PySHAMROCKContext_new,
+    .tp_new = PySHAMROCKContextImpl::objnew,
     //.tp_init = (initproc) PySHAMROCKContext_init,
-    .tp_dealloc = (destructor) PySHAMROCKContext_dealloc,
-    .tp_methods = PySHAMROCKContext_methods,
+    .tp_dealloc = (destructor) PySHAMROCKContextImpl::dealloc,
+    .tp_methods = methods,
 };

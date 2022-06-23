@@ -4,9 +4,14 @@ if("${BUILD_SIM}")
 target_sources(shamrock
     PRIVATE
         #scheduler.cpp
-        interface_generator.cpp
-        interface_handler.cpp
+        
+        
+        basic_sph_gas.cpp 
+
+
+        
     PUBLIC
+        #patch.hpp
         
         #patchdata.hpp
         #scheduler.hpp
@@ -23,6 +28,7 @@ target_sources(shamrock_visu
         #patch.cpp
         #patchdata.cpp
     PUBLIC
+        #patch.hpp
         #patchdata.hpp
         #scheduler.hpp
     )
@@ -33,10 +39,14 @@ if("${BUILD_TEST}")
 
     target_sources(shamrock_test
     PRIVATE
-        #scheduler.cpp
-        interface_generator.cpp
-        interface_handler.cpp
+
+        
+        
+    basic_sph_gas.cpp 
+
+
     PUBLIC
+        #patch.hpp
         #patchdata.hpp
         #scheduler.hpp
     )

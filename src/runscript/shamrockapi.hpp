@@ -93,10 +93,10 @@ class ShamrockCtx{public:
 
 
     inline ShamrockCtx(){
-        logfiles::open_log_files();
+        //logfiles::open_log_files();
     }
 
     inline ~ShamrockCtx(){
-        logfiles::close_log_files();
+        //logfiles::close_log_files();
     }
 };
