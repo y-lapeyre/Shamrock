@@ -19,6 +19,7 @@
 - [ ] SerialPatchTree attach buf by default and use accesors
 
 
+- [ ] Transform box info into boundary condition stuff
 
 # Hardware stuff : 
 - [ ] Change sycl handler to namespace ? (aka SyCLHandler -> sycl_handler::)

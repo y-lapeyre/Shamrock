@@ -1,167 +1,326 @@
 #include "basic_sph_gas.hpp"
 #include "aliases.hpp"
-#include "models/sph/base/kernels.hpp"
+#include "models/generic/algs/cfl_utils.hpp"
+#include "runscript/shamrockapi.hpp"
+#include "models/generic/algs/integrators_utils.hpp"
+#include "models/sph/forces.hpp"
 
 #include <array>
 #include <memory>
-
-#include "runscript/pymodule/pylib.hpp"
-#include "runscript/shamrockapi.hpp"
-#include "runscript/pymodule/pyshamrockcontext.hpp"
+#include <string>
 
 
-
-using namespace models::sph;
-
-
+const std::string console_tag = "[BasicSPHGas] ";
 
 
 template<class flt, class u_morton, class Kernel> 
-void BasicSPHGas<flt,u_morton,Kernel>::init(){
-
-}
-
-template<class flt, class u_morton, class Kernel> 
-void BasicSPHGas<flt,u_morton,Kernel>::evolve(PatchScheduler &sched, f64 &step_time){
-
-}
-template<class flt, class u_morton, class Kernel> 
-void BasicSPHGas<flt,u_morton,Kernel>::dump(std::string prefix){
-
-}
-template<class flt, class u_morton, class Kernel> 
-void BasicSPHGas<flt,u_morton,Kernel>::restart_dump(std::string prefix){
-
-}
-template<class flt, class u_morton, class Kernel> 
-void BasicSPHGas<flt,u_morton,Kernel>::close(){
-
-}
-
-
-
-
-
-
-template<class flt, class u_morton, class Kernel>
-struct PySHAMROCK_Model_BasicSPHGas{
-    PyObject_HEAD
-    /* Type-specific fields go here. */
-    std::unique_ptr<BasicSPHGas<flt, u_morton, Kernel>> model;
-    
-};
-
-template<class flt, class u_morton, class Kernel>
-struct PySHAMROCK_Model_BasicSPHGasIMPL{
-
-    using Type = PySHAMROCK_Model_BasicSPHGas<flt,u_morton,Kernel>;
-    using IntType = BasicSPHGas<flt,u_morton,Kernel>;
-    inline static const std::string descriptor = "SPH model for basic gas";
-
-    __ADD_METHODS__
-
-
-    static std::string get_name();
-
-
-    inline static PyTypeObject* type_ptr = nullptr;
-
-
-
-    static PyObject * init(Type * self, PyObject *Py_UNUSED(ignored)){
-        self->model = std::make_unique<IntType>();
-        self->model->init();
-        return Py_None;
+void models::sph::BasicSPHGas<flt,u_morton,Kernel>::check_valid(){
+    if (cfl_cour < 0) {
+        throw ShamAPIException(console_tag + "cfl courant not set");
     }
 
-    static PyObject * evolve(Type * self, PyObject * args){
+    if (cfl_force < 0) {
+        throw ShamAPIException(console_tag + "cfl force not set");
+    }
+
+    if (gpart_mass < 0) {
+        throw ShamAPIException(console_tag + "particle mass not set");
+    }
+}
+
+
+
+template<class flt, class u_morton, class Kernel> 
+void models::sph::BasicSPHGas<flt,u_morton,Kernel>::init(){
+
+}
+
+template<class flt, class u_morton, class Kernel> 
+void models::sph::BasicSPHGas<flt,u_morton,Kernel>::evolve(PatchScheduler &sched, f64 &step_time){
+
+    check_valid();
+
+
+    Stepper stepper(sched,periodic_bc,htol_up_tol,htol_up_iter,gpart_mass);
+
+
+    SyCLHandler &hndl = SyCLHandler::get_instance();
+
+    const u32 ixyz      = sched.pdl.get_field_idx<vec3>("xyz");
+    const u32 ivxyz     = sched.pdl.get_field_idx<vec3>("vxyz");
+    const u32 iaxyz     = sched.pdl.get_field_idx<vec3>("axyz");
+    const u32 iaxyz_old = sched.pdl.get_field_idx<vec3>("axyz_old");
+
+    const u32 ihpart    = sched.pdl.get_field_idx<flt>("hpart");
+
+    PatchComputeField<f32> pressure_field;
+
+
+    step_time = stepper.step(step_time, true, true, 
+
+        [&](u64 id_patch, PatchDataBuffer &pdat_buf) {
         
-        //*
-        if (PyObject_IsInstance(args, (PyObject *)PyShamCtxType_ptr)){
-            std::cout << "testing" << std::endl;
-        }else {
-            return NULL;
-        }
-        //*/
+            flt cfl_val = CflUtility<flt>::basic_cfl(pdat_buf, [&](sycl::handler &cgh, sycl::buffer<flt> & buf_cfl, sycl::range<1> range_it){
 
-        return Py_None;
-    }
+                auto arr = buf_cfl.template get_access<sycl::access::mode::discard_write>(cgh);
+                auto acc_hpart = pdat_buf.get_field<flt>(ihpart)->template get_access<sycl::access::mode::read>(cgh);
+                auto acc_axyz  = pdat_buf.get_field<vec3>(iaxyz)->template get_access<sycl::access::mode::read>(cgh);
 
-    static void dump(std::string prefix){}
-    static void restart_dump(std::string prefix){}
+                const flt cs = eos_cs;
 
-    static PyObject * close(Type * self, PyObject *Py_UNUSED(ignored)){
-        self->model.reset();
-        return Py_None;
-    }
+                const flt c_cour  = cfl_cour;
+                const flt c_force = cfl_force;
 
-    static void set_cfl_cour(flt Ccour){}
-    static void set_cfl_force(flt Cforce){}
+                cgh.parallel_for<class Initial_dtcfl>(range_it, [=](sycl::item<1> item) {
+                    u32 i = (u32)item.get_id(0);
 
+                    flt h_a    = acc_hpart[item];
+                    vec3 axyz = acc_axyz[item];
 
+                    flt dtcfl_p = c_cour * h_a / cs;
+                    flt dtcfl_a = c_force * sycl::sqrt(h_a / sycl::length(axyz));
 
+                    arr[i] = sycl::min(dtcfl_p, dtcfl_a);
+                });
 
-    static void add_object_pybind(PyObject * module){
+            });
 
-        static PyMethodDef methods [] = {
-            {"init", (PyCFunction) init, METH_NOARGS,"init"},
-            {"evolve", (PyCFunction) evolve, METH_O,"evolve"},
-            {"close", (PyCFunction) close, METH_NOARGS,"close"},
-            {NULL}  /* Sentinel */
-        };
+            std::cout << "cfl dt : " << cfl_val << std::endl;
 
-        static std::string name = get_name();
-        static std::string tp_name_str = "shamrock." + name;                                                                
-                                                                                                                            
-        static PyTypeObject pytype = {                                                                                      
-            PyVarObject_HEAD_INIT(NULL, 0).tp_name = tp_name_str.c_str(),                                                   
-            .tp_doc                                = PyDoc_STR(descriptor.c_str()),                                         
-            .tp_basicsize                          = sizeof(Type),                                                          
-            .tp_itemsize                           = 0,                                                                     
-            .tp_flags                              = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,                              
-            .tp_new                                = objnew,                                                                
-            .tp_dealloc                            = (destructor)dealloc,                                                   
-            .tp_methods                            = methods,                                                               
-        };  
+            return sycl::min(f32(0.001),cfl_val);
 
-        type_ptr = &pytype;
+        }, 
+        
+        [&](sycl::queue&  queue, PatchDataBuffer& buf, sycl::range<1> range_npart ,flt hdt){
+            
+            sycl::buffer<vec3> & vxyz =  * buf.get_field<vec3>(ivxyz);
+            sycl::buffer<vec3> & axyz =  * buf.get_field<vec3>(iaxyz);
 
-                                                                      
-        static std::string notready_str = "[pybind] " + name + " not ready";                                                
-        static std::string failedtype   = "[pybind] " + name + " failed to be added";                                       
-        static std::string typeready    = "[pybind] " + name + " type ready";                                               
-                                                                                                                            
-        if (PyType_Ready(type_ptr) < 0)                                                                                      
-            throw ShamAPIException(notready_str);                                                                           
-                                                                                                                            
-        Py_INCREF(type_ptr);                                                                                                 
-        if (PyModule_AddObject(module, name.c_str(), (PyObject *)type_ptr) < 0) {                                            
-            Py_DECREF(type_ptr);                                                                                             
-            Py_DECREF(module);                                                                                              
-            throw ShamAPIException(failedtype);                                                                             
-        }                                                                                                                   
-                                                                                                                            
-        std::cout << typeready << std::endl;    
-    }
+            field_advance_time(queue, vxyz, axyz, range_npart, hdt);
+
+        }, 
+        
+        [&](sycl::queue&  queue, PatchDataBuffer& buf, sycl::range<1> range_npart ){
+            auto ker_predict_step = [&](sycl::handler &cgh) {
+                auto acc_axyz = buf.get_field<vec3>(iaxyz)->template get_access<sycl::access::mode::read_write>(cgh);
+                auto acc_axyz_old = buf.get_field<vec3>(iaxyz_old)->template get_access<sycl::access::mode::read_write>(cgh);
+
+                // Executing kernel
+                cgh.parallel_for(range_npart, [=](sycl::item<1> item) {
+                    vec3 axyz     = acc_axyz[item];
+                    vec3 axyz_old = acc_axyz_old[item];
+
+                    acc_axyz[item]     = axyz_old;
+                    acc_axyz_old[item] = axyz;
+
+                });
+            };
+
+            queue.submit(ker_predict_step);
+        },
+        [&](PatchScheduler & sched, 
+            std::unordered_map<u64, MergedPatchDataBuffer<vec3>>& merge_pdat_buf, 
+            std::unordered_map<u64, MergedPatchCompFieldBuffer<flt>>& hnew_field_merged,
+            std::unordered_map<u64, MergedPatchCompFieldBuffer<flt>>& omega_field_merged
+            ) {
 
 
+                std::unordered_map<u64, u32> size_map;
+
+                for(auto & [k,buf] : merge_pdat_buf){
+                    size_map[k] = buf.data->element_count;
+                }
+
+                pressure_field.generate(sched,size_map);
+                pressure_field.to_sycl();
+
+                sched.for_each_patch([&](u64 id_patch, Patch cur_p) {
+                    sycl::buffer<f32> &hnew  = *hnew_field_merged[id_patch].buf;
+                    sycl::buffer<f32> &press  = *pressure_field.field_data_buf[id_patch];
+
+                    sycl::range range_npart{hnew.size()};
+
+                    auto cs = eos_cs;
+                    auto part_mass = gpart_mass;
+
+                    hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+                        auto h = hnew.get_access<sycl::access::mode::read>(cgh);
+
+                        auto p = press.get_access<sycl::access::mode::discard_write>(cgh);
+
+                        cgh.parallel_for(range_npart,
+                                [=](sycl::item<1> item) { 
+                                    
+                                    p[item] =   cs*cs*rho_h(part_mass, h[item])  ; 
+                                    
+                                    
+                                    });
+                    });
+
+                });
+            }
+        ,
+        [&](
 
 
-};
+            PatchScheduler & sched, 
+            std::unordered_map<u64, std::unique_ptr<Radix_Tree<u_morton, vec3>>>& radix_trees,
+            std::unordered_map<u64, MergedPatchDataBuffer<vec3>>& merge_pdat_buf, 
+            std::unordered_map<u64, MergedPatchCompFieldBuffer<flt>>& hnew_field_merged,
+            std::unordered_map<u64, MergedPatchCompFieldBuffer<flt>>& omega_field_merged,
+            flt htol_up_tol
+            ){
+            sched.for_each_patch([&](u64 id_patch, Patch cur_p) {
+                if (merge_pdat_buf.at(id_patch).or_element_cnt == 0){
+                    std::cout << " empty => skipping" << std::endl;return;
+                }
 
-template<> std::string PySHAMROCK_Model_BasicSPHGasIMPL<f32, u32, kernels::M4<f32>>::get_name(){
-    return "BasicSPHGas_single_morton32_M4";
+                SyCLHandler &hndl = SyCLHandler::get_instance();
+
+                PatchDataBuffer &pdat_buf_merge = *merge_pdat_buf.at(id_patch).data;
+
+                sycl::buffer<f32> &hnew  = *hnew_field_merged[id_patch].buf;
+                sycl::buffer<f32> &omega = *omega_field_merged[id_patch].buf;
+
+                sycl::buffer<f32> &press  = *pressure_field.field_data_buf[id_patch];
+
+                sycl::range range_npart{merge_pdat_buf.at(id_patch).or_element_cnt};
+
+            
+                std::cout << "patch : n°" << id_patch << "compute forces" << std::endl;
+                hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+                    auto h_new = hnew.get_access<sycl::access::mode::read>(cgh);
+                    auto omga  = omega.get_access<sycl::access::mode::read>(cgh);
+
+                    auto r        = pdat_buf_merge.get_field<f32_3>(ixyz)->get_access<sycl::access::mode::read>(cgh);
+                    auto acc_axyz = pdat_buf_merge.get_field<f32_3>(iaxyz)->get_access<sycl::access::mode::discard_write>(cgh);
+
+                    using Rta = walker::Radix_tree_accessor<u32, f32_3>;
+                    Rta tree_acc(*radix_trees[id_patch], cgh);
+
+                    auto cell_int_r =
+                        radix_trees[id_patch]->buf_cell_interact_rad->template get_access<sycl::access::mode::read>(cgh);
+
+
+                    auto pres = press.get_access<sycl::access::mode::read>(cgh);
+
+                    const f32 part_mass = gpart_mass;
+                    //const f32 cs        = eos_cs;
+
+                    const f32 htol = htol_up_tol;
+
+                    // sycl::stream out(65000,65000,cgh);
+
+                    cgh.parallel_for(range_npart, [=](sycl::item<1> item) {
+                        u32 id_a = (u32)item.get_id(0);
+
+                        f32_3 sum_axyz = {0, 0, 0};
+                        f32 h_a        = h_new[id_a];
+
+                        f32_3 xyz_a = r[id_a];
+
+                        f32 rho_a    = rho_h(part_mass, h_a);
+                        f32 rho_a_sq = rho_a * rho_a;
+
+                        f32 P_a     = pres[id_a];
+                        //f32 P_a     = cs * cs * rho_a;
+                        f32 omega_a = omga[id_a];
+
+                        f32_3 inter_box_a_min = xyz_a - h_a * Kernel::Rkern;
+                        f32_3 inter_box_a_max = xyz_a + h_a * Kernel::Rkern;
+
+                        walker::rtree_for(
+                            tree_acc,
+                            [&tree_acc, &xyz_a, &inter_box_a_min, &inter_box_a_max, &cell_int_r,&htol](u32 node_id) {
+                                f32_3 cur_pos_min_cell_b = tree_acc.pos_min_cell[node_id];
+                                f32_3 cur_pos_max_cell_b = tree_acc.pos_max_cell[node_id];
+                                float int_r_max_cell     = cell_int_r[node_id] * Kernel::Rkern * htol;
+
+                                using namespace walker::interaction_crit;
+
+                                return sph_radix_cell_crit(xyz_a, inter_box_a_min, inter_box_a_max, cur_pos_min_cell_b,
+                                                        cur_pos_max_cell_b, int_r_max_cell);
+                            },
+                            [&](u32 id_b) {
+                                // compute only omega_a
+                                f32_3 dr = xyz_a - r[id_b];
+                                f32 rab  = sycl::length(dr);
+                                f32 h_b  = h_new[id_b];
+
+                                if (rab > h_a * Kernel::Rkern && rab > h_b * Kernel::Rkern)
+                                    return;
+
+                                f32_3 r_ab_unit = dr / rab;
+
+                                if (rab < 1e-9) {
+                                    r_ab_unit = {0, 0, 0};
+                                }
+
+                                f32 rho_b   = rho_h(part_mass, h_b);
+                                f32 P_b     = pres[id_b];
+                                //f32 P_b     = cs * cs * rho_b;
+                                f32 omega_b = omga[id_b];
+
+                                f32_3 tmp = sph_pressure<f32_3, f32>(part_mass, rho_a_sq, rho_b * rho_b, P_a, P_b, omega_a,
+                                                                    omega_b, 0, 0, r_ab_unit * Kernel::dW(rab, h_a),
+                                                                    r_ab_unit * Kernel::dW(rab, h_b));
+
+                                sum_axyz += tmp;
+                            },
+                            [](u32 node_id) {});
+
+                        // out << "sum : " << sum_axyz << "\n";
+
+                        acc_axyz[id_a] = sum_axyz;
+                    });
+                });
+                
+
+            });
+
+        }, 
+        
+        [&](sycl::queue&  queue, PatchDataBuffer& buf, sycl::range<1> range_npart ,flt hdt){
+            
+
+            auto ker_corect_step = [&](sycl::handler &cgh) {
+                auto acc_vxyz     = buf.get_field<vec3>(ivxyz)->template get_access<sycl::access::mode::read_write>(cgh);
+                auto acc_axyz     = buf.get_field<vec3>(iaxyz)->template get_access<sycl::access::mode::read_write>(cgh);
+                auto acc_axyz_old = buf.get_field<vec3>(iaxyz_old)->template get_access<sycl::access::mode::read_write>(cgh);
+
+                // Executing kernel
+                cgh.parallel_for(range_npart, [=](sycl::item<1> item) {
+                    u32 gid = (u32)item.get_id();
+
+                    vec3 &vxyz     = acc_vxyz[item];
+                    vec3 &axyz     = acc_axyz[item];
+                    vec3 &axyz_old = acc_axyz_old[item];
+
+                    // v^* = v^{n + 1/2} + dt/2 a^n
+                    vxyz = vxyz + (hdt) * (axyz - axyz_old);
+                });
+            };
+
+            queue.submit(ker_corect_step);
+        });
+}
+
+template<class flt, class u_morton, class Kernel> 
+void models::sph::BasicSPHGas<flt,u_morton,Kernel>::dump(std::string prefix){
+    std::cout << "dump : "<< prefix << std::endl;
+}
+
+template<class flt, class u_morton, class Kernel> 
+void models::sph::BasicSPHGas<flt,u_morton,Kernel>::restart_dump(std::string prefix){
+    std::cout << "restart dump : "<< prefix << std::endl;
+}
+
+template<class flt, class u_morton, class Kernel> 
+void models::sph::BasicSPHGas<flt,u_morton,Kernel>::close(){
+    
 }
 
 
 
+template class models::sph::BasicSPHGas<f32,u32,models::sph::kernels::M4<f32>>;
 
-
-addpybinding(basicsphgas){
-    PySHAMROCK_Model_BasicSPHGasIMPL<f32, u32, kernels::M4<f32>>::add_object_pybind(module);
-    //PySHAMROCK_Model_BasicSPHGasIMPL<f64, u32, kernels::M4<f64>>::add_object_pybind(module);
-    //PySHAMROCK_Model_BasicSPHGasIMPL<f32, u64, kernels::M4<f32>>::add_object_pybind(module);
-    //PySHAMROCK_Model_BasicSPHGasIMPL<f64, u64, kernels::M4<f64>>::add_object_pybind(module);
-}
-
-template<> class BasicSPHGas<f32,u32,kernels::M4<f32>>;

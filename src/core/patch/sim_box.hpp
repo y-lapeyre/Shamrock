@@ -19,6 +19,7 @@
 /**
  * @brief Store the information related to the size of the simulation box to convert patch integer coordinates to floating
  * point ones.
+ * //TODO transform this class into boundary condition handler
  */
 class SimulationBoxInfo {
   public:

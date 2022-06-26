@@ -9,8 +9,13 @@
 #pragma once
 
 #include "aliases.hpp"
+#include "core/patch/interfaces/interface_handler.hpp"
+#include "core/patch/interfaces/interface_selector.hpp"
 #include "core/patch/patchdata_buffer.hpp"
 #include "core/patch/base/patchdata_layout.hpp"
+#include "core/patch/scheduler/scheduler_mpi.hpp"
+#include "core/patch/utility/merged_patch.hpp"
+#include "core/patch/utility/serialpatchtree.hpp"
 #include "models/sph/base/kernels.hpp"
 #include "models/sph/algs/smoothing_lenght_impl.hpp"
 #include "models/sph/base/sphpart.hpp"
@@ -93,6 +98,131 @@ class SmoothingLenghtCompute{
                 hnew, 
                 omega, 
                 eps_h);
+
+    }
+
+
+    inline void compute_smoothing_lenght(PatchScheduler &sched,bool periodic_mode,flt htol_up_tol,
+        flt htol_up_iter ,flt sph_gpart_mass){
+
+        SyCLHandler &hndl = SyCLHandler::get_instance();
+
+        const flt loc_htol_up_tol  = htol_up_tol;
+        const flt loc_htol_up_iter = htol_up_iter;
+
+        const u32 ixyz      = sched.pdl.get_field_idx<vec>("xyz");
+        const u32 ihpart    = sched.pdl.get_field_idx<flt>("hpart");
+
+
+        //Init serial patch tree
+        SerialPatchTree<vec> sptree(sched.patch_tree, sched.get_box_tranform<vec>());
+        sptree.attach_buf();
+
+
+        //compute hmax
+        PatchField<flt> h_field;
+        sched.compute_patch_field(
+            h_field, get_mpi_type<flt>(), [loc_htol_up_tol](sycl::queue &queue, Patch &p, PatchDataBuffer &pdat_buf) {
+                return patchdata::sph::get_h_max<flt>(pdat_buf.pdl, queue, pdat_buf) * loc_htol_up_tol * Kernel::Rkern;
+            });
+
+
+
+        //make interfaces
+        InterfaceHandler<vec, flt> interface_hndl;
+        interface_hndl.template compute_interface_list<InterfaceSelector_SPH<vec, flt>>(sched, sptree, h_field,
+                                                                                                 periodic_mode);
+        interface_hndl.comm_interfaces(sched, periodic_mode);
+
+
+        // merging strategy
+        std::unordered_map<u64, MergedPatchDataBuffer<vec>> merge_pdat_buf;
+        make_merge_patches(sched, interface_hndl, merge_pdat_buf);
+
+
+        //make trees
+        std::unordered_map<u64, std::unique_ptr<Radix_Tree<morton_prec, vec>>> radix_trees;
+
+        sched.for_each_patch([&](u64 id_patch, Patch cur_p) {
+            std::cout << "patch : n°" << id_patch << " -> making radix tree" << std::endl;
+            if (merge_pdat_buf.at(id_patch).or_element_cnt == 0)
+                std::cout << " empty => skipping" << std::endl;
+
+            PatchDataBuffer &mpdat_buf = *merge_pdat_buf.at(id_patch).data;
+
+            std::tuple<vec, vec> &box = merge_pdat_buf.at(id_patch).box;
+
+            // radix tree computation
+            radix_trees[id_patch] = std::make_unique<Radix_Tree<morton_prec, vec>>(hndl.get_queue_compute(0), box,
+                                                                                    mpdat_buf.get_field<vec>(ixyz));
+        });
+
+        sched.for_each_patch([&](u64 id_patch, Patch cur_p) {
+            std::cout << "patch : n°" << id_patch << " -> radix tree compute volume" << std::endl;
+            if (merge_pdat_buf.at(id_patch).or_element_cnt == 0)
+                std::cout << " empty => skipping" << std::endl;
+            radix_trees[id_patch]->compute_cellvolume(hndl.get_queue_compute(0));
+        });
+
+        sched.for_each_patch([&](u64 id_patch, Patch cur_p) {
+            std::cout << "patch : n°" << id_patch << " -> radix tree compute interaction box" << std::endl;
+            if (merge_pdat_buf.at(id_patch).or_element_cnt == 0)
+                std::cout << " empty => skipping" << std::endl;
+
+            PatchDataBuffer &mpdat_buf = *merge_pdat_buf.at(id_patch).data;
+
+            radix_trees[id_patch]->compute_int_boxes(hndl.get_queue_compute(0), mpdat_buf.get_field<flt>(ihpart), htol_up_tol);
+        });
+
+
+
+        //create compute field for new h and omega
+        std::cout << "making omega field" << std::endl;
+        PatchComputeField<flt> hnew_field;
+        PatchComputeField<flt> omega_field;
+
+        hnew_field.generate(sched);
+        omega_field.generate(sched);
+
+        hnew_field.to_sycl();
+        omega_field.to_sycl();
+
+        //iterate smoothing lenght
+        sched.for_each_patch([&](u64 id_patch, Patch cur_p) {
+            std::cout << "patch : n°" << id_patch << "init h iter" << std::endl;
+            if (merge_pdat_buf.at(id_patch).or_element_cnt == 0)
+                std::cout << " empty => skipping" << std::endl;
+
+            PatchDataBuffer &pdat_buf_merge = *merge_pdat_buf.at(id_patch).data;
+
+            sycl::buffer<flt> &hnew  = *hnew_field.field_data_buf[id_patch];
+            sycl::buffer<flt> &omega = *omega_field.field_data_buf[id_patch];
+            sycl::buffer<flt> eps_h  = sycl::buffer<flt>(merge_pdat_buf.at(id_patch).or_element_cnt);
+
+            sycl::range range_npart{merge_pdat_buf.at(id_patch).or_element_cnt};
+
+            std::cout << "   original size : " << merge_pdat_buf.at(id_patch).or_element_cnt
+                      << " | merged : " << pdat_buf_merge.element_count << std::endl;
+
+            ::sph::algs::SmoothingLenghtCompute<flt, u32, Kernel> h_iterator(sched.pdl, htol_up_tol, htol_up_iter);
+
+            h_iterator.iterate_smoothing_lenght(hndl.get_queue_compute(0), merge_pdat_buf.at(id_patch).or_element_cnt,
+                                                sph_gpart_mass, *radix_trees[id_patch], pdat_buf_merge, hnew, omega, eps_h);
+
+            // write back h test
+            //*
+            hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+                auto h_new = hnew.template get_access<sycl::access::mode::read>(cgh);
+
+                auto acc_hpart = pdat_buf_merge.get_field<flt>(ihpart)->template get_access<sycl::access::mode::write>(cgh);
+
+                cgh.parallel_for(range_npart,
+                                                     [=](sycl::item<1> item) { acc_hpart[item] = h_new[item]; });
+            });
+            //*/
+        });
+
+        write_back_merge_patches(sched, interface_hndl, merge_pdat_buf);
 
     }
 

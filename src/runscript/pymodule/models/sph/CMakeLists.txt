@@ -3,7 +3,7 @@ if("${BUILD_SIM}")
 
 target_sources(shamrock
     PRIVATE
-    pyshamrockcontext.cpp
+    pymodel_basic_sph_gas.cpp
     PUBLIC
         
         #patchdata.hpp
@@ -31,7 +31,7 @@ if("${BUILD_TEST}")
 
     target_sources(shamrock_test
     PRIVATE
-    pyshamrockcontext.cpp
+    pymodel_basic_sph_gas.cpp
     PUBLIC
         #patchdata.hpp
         #scheduler.hpp
@@ -39,5 +39,3 @@ if("${BUILD_TEST}")
 
 
 endif()
-
-add_subdirectory(models)
