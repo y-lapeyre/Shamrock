@@ -33,13 +33,19 @@ RunScriptHandler::RunScriptHandler(){
 }
 
 void RunScriptHandler::run_file(std::string filepath){
+
+    std::cout << "-----------------------------------" << std::endl;
+    std::cout << "running pyscript : " << filepath << std::endl;
+    std::cout << "-----------------------------------" << std::endl;
     Py_Initialize();
     FILE *file = fopen(filepath.c_str(), "r");
-    //PyRun_SimpleFile(file, "test.py");
     PyRun_SimpleFileExFlags(file, filepath.c_str(), 0, nullptr);
     if (Py_FinalizeEx() < 0) {
         exit(120);
     }
+    std::cout << "-----------------------------------" << std::endl;
+    std::cout << "pyscript end" << std::endl;
+    std::cout << "-----------------------------------" << std::endl;
 }
 
 

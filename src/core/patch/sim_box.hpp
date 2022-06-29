@@ -12,8 +12,46 @@
 #include "base/patch.hpp"
 #include "base/patchdata.hpp"
 #include "base/patchdata_layout.hpp"
+#include "core/patch/patchdata_buffer.hpp"
 #include "core/patch/scheduler/loadbalancing_hilbert.hpp" //TODO remove dependancy from hilbert
+#include <memory>
 #include <tuple>
+#include "boundary_condition.hpp"
+
+
+
+template<class flt>
+class SimulationVolume {
+
+    using vec = sycl::vec<flt,3>;
+
+    using vec_box = std::tuple<vec,vec>;
+
+    vec_box box;
+
+    vec_box last_used_volume;
+
+    //computed when update_volume() is called
+    vec translate_factor;
+    vec scale_factor;
+
+    BoundaryConditions<flt> bc;
+
+    public: 
+
+    inline BoundaryConditions<flt> & get_boundaries(){
+        return bc;
+    }
+
+    vec_box get_patch_volume(Patch & p);
+
+    vec_box apply_boundaries(PatchDataBuffer & p);
+
+    void update_volume();
+
+};
+
+
 
 
 /**

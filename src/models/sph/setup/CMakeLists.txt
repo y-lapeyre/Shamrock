@@ -3,9 +3,15 @@ if("${BUILD_SIM}")
 
 target_sources(shamrock
     PRIVATE
-    pymodel_basic_sph_gas.cpp
-    pymodelsetup_sph.cpp
+        #scheduler.cpp
+        
+        
+        sph_setup.cpp 
+
+
+        
     PUBLIC
+        #patch.hpp
         
         #patchdata.hpp
         #scheduler.hpp
@@ -22,6 +28,7 @@ target_sources(shamrock_visu
         #patch.cpp
         #patchdata.cpp
     PUBLIC
+        #patch.hpp
         #patchdata.hpp
         #scheduler.hpp
     )
@@ -32,9 +39,14 @@ if("${BUILD_TEST}")
 
     target_sources(shamrock_test
     PRIVATE
-    pymodel_basic_sph_gas.cpp
-    pymodelsetup_sph.cpp
+
+        
+        
+    sph_setup.cpp 
+
+
     PUBLIC
+        #patch.hpp
         #patchdata.hpp
         #scheduler.hpp
     )

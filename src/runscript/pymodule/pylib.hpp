@@ -51,10 +51,13 @@ class CPyObject {
 
 
 
-#define __ADD_METHODS__                            \
+#define __ADD_METHODS__(field)                            \
                             \
 static void dealloc(Type *self){                            \
-    self->model.reset();                            \
+    if(self->field != nullptr){\
+        delete self->field;\
+        self->field = nullptr;\
+    }                            \
     Py_TYPE(self)->tp_free((PyObject *) self);                            \
 }                            \
                             \

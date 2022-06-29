@@ -19,6 +19,7 @@
 #include "core/sys/sycl_handler.hpp"
 #include "core/utils/time_utils.hpp"
 
+#include "core/sys/sycl_mpi_interop.hpp"
 
 
 
@@ -55,7 +56,12 @@ PatchScheduler::~PatchScheduler(){
 
 }
 
-
+bool PatchScheduler::should_resize_box(bool node_in){
+    u16 tmp = node_in;
+    u16 out = 0;
+    mpi::allreduce(&tmp, &out, 1, mpi_type_u16, MPI_MAX, MPI_COMM_WORLD);
+    return out;
+}
 
 
 

@@ -7,12 +7,18 @@
 using namespace models::sph;
 
 
+
+
+
+
+
+
+
 template<class flt, class u_morton, class Kernel>
 struct PySHAMROCK_Model_BasicSPHGas{
     PyObject_HEAD
     /* Type-specific fields go here. */
-    std::unique_ptr<BasicSPHGas<flt, u_morton, Kernel>> model;
-    
+    BasicSPHGas<flt, u_morton, Kernel>* model;
 };
 
 
@@ -23,7 +29,19 @@ struct PySHAMROCK_Model_BasicSPHGasIMPL{
     using IntType = BasicSPHGas<flt,u_morton,Kernel>;
     inline static const std::string descriptor = "SPH model for basic gas";
 
-    __ADD_METHODS__
+    static void dealloc(Type *self) {                                                                                       \
+        if (self->model != nullptr) {                                                                                       \
+            delete self->model;                                                                                             \
+            self->model = nullptr;                                                                                          \
+        }                                                                                                                   \
+        Py_TYPE(self)->tp_free((PyObject *)self);                                                                           \
+    }                                                                                                                       \
+                                                                                                                            \
+    static PyObject *objnew(PyTypeObject *type, PyObject *args, PyObject *kwds) {                                           \
+        Type *self;                                                                                                         \
+        self = (Type *)type->tp_alloc(type, 0);                                                                             \
+        return (PyObject *)self;                                                                                            \
+    }
 
 
     static std::string get_name();
@@ -34,7 +52,7 @@ struct PySHAMROCK_Model_BasicSPHGasIMPL{
 
 
     static PyObject * init(Type * self, PyObject *Py_UNUSED(ignored)){
-        self->model = std::make_unique<IntType>();
+        self->model = new IntType();
         self->model->init();
         return Py_None;
     }
@@ -43,7 +61,10 @@ struct PySHAMROCK_Model_BasicSPHGasIMPL{
         
         //*
         if (PyObject_IsInstance(args, (PyObject *)PyShamCtxType_ptr)){
-            std::cout << "testing" << std::endl;
+
+            PySHAMROCKContext* ctx = (PySHAMROCKContext*) args;
+
+            std::cout << "ctx ptr : " << ctx <<std::endl;
         }else {
             return NULL;
         }
@@ -56,7 +77,7 @@ struct PySHAMROCK_Model_BasicSPHGasIMPL{
     static void restart_dump(std::string prefix){}
 
     static PyObject * close(Type * self, PyObject *Py_UNUSED(ignored)){
-        self->model.reset();
+        delete self->model;
         return Py_None;
     }
 

@@ -9,7 +9,7 @@
 struct PySHAMROCKContext{
     PyObject_HEAD
     /* Type-specific fields go here. */
-    std::unique_ptr<ShamrockCtx> ctx;
+    ShamrockCtx* ctx;
 };
 
 

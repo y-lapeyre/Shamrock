@@ -34,9 +34,6 @@ class ShamrockCtx{public:
     std::unique_ptr<PatchDataLayout> pdl;
     std::unique_ptr<PatchScheduler> sched;
 
-    
-
-
     inline void pdata_layout_new(){
         if(sched){
             throw ShamAPIException("cannot modify patch data layout while the scheduler is on");
