@@ -9,92 +9,19 @@
 
 using namespace models::sph;
 
-#define MakeContainer(Container_name, ...)                                                                                  \
-    struct Container_name {                                                                                                 \
-        using InternalType = __VA_ARGS__;                                                                                   \
-        InternalType *ptr  = nullptr;                                                                                       \
-                                                                                                                            \
-        bool is_allocated() { return ptr != nullptr; }                                                                      \
-                                                                                                                            \
-        void alloc() {                                                                                                      \
-            if (is_allocated()) {                                                                                           \
-                throw ShamAPIException("container already allocated");                                                      \
-            }                                                                                                               \
-                                                                                                                            \
-            ptr = new InternalType();                                                                                       \
-        }                                                                                                                   \
-                                                                                                                            \
-        void dealloc() {                                                                                                    \
-                                                                                                                            \
-            if (!is_allocated()) {                                                                                          \
-                throw ShamAPIException("container already deallocated");                                                    \
-            }                                                                                                               \
-                                                                                                                            \
-            delete ptr;                                                                                                     \
-            ptr = nullptr;                                                                                                  \
-        }                                                                                                                   \
-                                                                                                                            \
-        void reset() {                                                                                                      \
-            if (is_allocated()) {                                                                                           \
-                dealloc();                                                                                                  \
-                alloc();                                                                                                    \
-            } else {                                                                                                        \
-                alloc();                                                                                                    \
-            }                                                                                                               \
-        }                                                                                                                   \
-    }
 
-#define MakePyContainer(PyContainer_name, ...)                                                                              \
-    struct PyContainer_name {                                                                                               \
-        using ContainerType = __VA_ARGS__;                                                                                  \
-        PyObject_HEAD ContainerType container;                                                                              \
-    };
+template <class flt, class Kernel> 
+MakeContainer(Container_Model_SetupSPH, SetupSPH<flt, Kernel>);
 
-#define AddPyContainer_methods(PyContainer_name)                                                                            \
-    static void dealloc(PyContainer_name *self) {                                                                           \
-        if (self->container.is_allocated()) {                                                                               \
-            self->container.dealloc();                                                                                      \
-        }                                                                                                                   \
-        Py_TYPE(self)->tp_free((PyObject *)self);                                                                           \
-    }                                                                                                                       \
-    static PyObject *objnew(PyTypeObject *type, PyObject *args, PyObject *kwds) {                                           \
-        PyContainer_name *self;                                                                                             \
-        self = (PyContainer_name *)type->tp_alloc(type, 0);                                                                 \
-                                                                                                                            \
-        if (self != NULL) {                                                                                                 \
-            self->container.alloc();                                                                                        \
-        }                                                                                                                   \
-        return (PyObject *)self;                                                                                            \
-    }                                                                                                                       \
-                                                                                                                            \
-    static PyObject *reset(PyContainer_name *self, PyObject *Py_UNUSED(ignored)) {                                          \
-        self->container.reset();                                                                                            \
-        return Py_None;                                                                                                     \
-    }                                                                                                                       \
-                                                                                                                            \
-    static PyObject *clear(PyContainer_name *self, PyObject *Py_UNUSED(ignored)) {                                          \
-        if (self->container.is_allocated()) {                                                                               \
-            self->container.dealloc();                                                                                      \
-        }                                                                                                                   \
-        return Py_None;                                                                                                     \
-    }
-
-template <class flt, class u_morton, class Kernel> 
-MakeContainer(Container_Model_SetupSPH, SetupSPH<flt, u_morton, Kernel>);
-
-template<class flt, class u_morton, class Kernel>
-MakePyContainer(PySHAMROCK_Model_SetupSPH, Container_Model_SetupSPH<flt, u_morton, Kernel>)
+template<class flt, class Kernel>
+MakePyContainer(PySHAMROCK_Model_SetupSPH, Container_Model_SetupSPH<flt, Kernel>)
 
 
-
-
-
-
-template<class flt, class u_morton, class Kernel>
+template<class flt, class Kernel>
 struct PySHAMROCK_Model_SetupSPHIMPL{
 
-    using Type = PySHAMROCK_Model_SetupSPH<flt,u_morton,Kernel>;
-    using IntType = SetupSPH<flt,u_morton,Kernel>;
+    using Type = PySHAMROCK_Model_SetupSPH<flt,Kernel>;
+    using IntType = SetupSPH<flt,Kernel>;
     inline static const std::string descriptor = "SPH setup";
                                                                                            
                                                                                                                             
@@ -243,8 +170,8 @@ struct PySHAMROCK_Model_SetupSPHIMPL{
 
 };
 
-template<> std::string PySHAMROCK_Model_SetupSPHIMPL<f32, u32, kernels::M4<f32>>::get_name(){
-    return "SetupSPH_single_morton32_M4";
+template<> std::string PySHAMROCK_Model_SetupSPHIMPL<f32, kernels::M4<f32>>::get_name(){
+    return "SetupSPH_M4_single";
 }
 
 
@@ -252,7 +179,7 @@ template<> std::string PySHAMROCK_Model_SetupSPHIMPL<f32, u32, kernels::M4<f32>>
 
 
 addpybinding(setupsph){
-    PySHAMROCK_Model_SetupSPHIMPL<f32, u32, kernels::M4<f32>>::add_object_pybind(module);
+    PySHAMROCK_Model_SetupSPHIMPL<f32, kernels::M4<f32>>::add_object_pybind(module);
     //PySHAMROCK_Model_SetupSPHIMPL<f64, u32, kernels::M4<f64>>::add_object_pybind(module);
     //PySHAMROCK_Model_SetupSPHIMPL<f32, u64, kernels::M4<f32>>::add_object_pybind(module);
     //PySHAMROCK_Model_SetupSPHIMPL<f64, u64, kernels::M4<f64>>::add_object_pybind(module);

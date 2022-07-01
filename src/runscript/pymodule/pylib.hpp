@@ -51,6 +51,88 @@ class CPyObject {
 
 
 
+
+
+
+
+
+
+#define MakeContainer(Container_name, ...)                                                                                  \
+    struct Container_name {                                                                                                 \
+        using InternalType = __VA_ARGS__;                                                                                   \
+        InternalType *ptr  = nullptr;                                                                                       \
+                                                                                                                            \
+        bool is_allocated() { return ptr != nullptr; }                                                                      \
+                                                                                                                            \
+        void alloc() {                                                                                                      \
+            if (is_allocated()) {                                                                                           \
+                throw ShamAPIException("container already allocated");                                                      \
+            }                                                                                                               \
+                                                                                                                            \
+            ptr = new InternalType();                                                                                       \
+        }                                                                                                                   \
+                                                                                                                            \
+        void dealloc() {                                                                                                    \
+                                                                                                                            \
+            if (!is_allocated()) {                                                                                          \
+                throw ShamAPIException("container already deallocated");                                                    \
+            }                                                                                                               \
+                                                                                                                            \
+            delete ptr;                                                                                                     \
+            ptr = nullptr;                                                                                                  \
+        }                                                                                                                   \
+                                                                                                                            \
+        void reset() {                                                                                                      \
+            if (is_allocated()) {                                                                                           \
+                dealloc();                                                                                                  \
+                alloc();                                                                                                    \
+            } else {                                                                                                        \
+                alloc();                                                                                                    \
+            }                                                                                                               \
+        }                                                                                                                   \
+    }
+
+#define MakePyContainer(PyContainer_name, ...)                                                                              \
+    struct PyContainer_name {                                                                                               \
+        using ContainerType = __VA_ARGS__;                                                                                  \
+        PyObject_HEAD ContainerType container;                                                                              \
+    };
+
+#define AddPyContainer_methods(PyContainer_name)                                                                            \
+    static void dealloc(PyContainer_name *self) {                                                                           \
+        if (self->container.is_allocated()) {                                                                               \
+            self->container.dealloc();                                                                                      \
+        }                                                                                                                   \
+        Py_TYPE(self)->tp_free((PyObject *)self);                                                                           \
+    }                                                                                                                       \
+    static PyObject *objnew(PyTypeObject *type, PyObject *args, PyObject *kwds) {                                           \
+        PyContainer_name *self;                                                                                             \
+        self = (PyContainer_name *)type->tp_alloc(type, 0);                                                                 \
+                                                                                                                            \
+        if (self != NULL) {                                                                                                 \
+            self->container.alloc();                                                                                        \
+        }                                                                                                                   \
+        return (PyObject *)self;                                                                                            \
+    }                                                                                                                       \
+                                                                                                                            \
+    static PyObject *reset(PyContainer_name *self, PyObject *Py_UNUSED(ignored)) {                                          \
+        self->container.reset();                                                                                            \
+        return Py_None;                                                                                                     \
+    }                                                                                                                       \
+                                                                                                                            \
+    static PyObject *clear(PyContainer_name *self, PyObject *Py_UNUSED(ignored)) {                                          \
+        if (self->container.is_allocated()) {                                                                               \
+            self->container.dealloc();                                                                                      \
+        }                                                                                                                   \
+        return Py_None;                                                                                                     \
+    }
+
+
+
+    
+
+
+
 #define __ADD_METHODS__(field)                            \
                             \
 static void dealloc(Type *self){                            \

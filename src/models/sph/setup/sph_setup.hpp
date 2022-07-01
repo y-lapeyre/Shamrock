@@ -11,7 +11,7 @@
 
 namespace models::sph {
 
-    template<class flt, class u_morton, class Kernel>
+    template<class flt, class Kernel>
     class SetupSPH {
 
         using vec = sycl::vec<flt,3>;
@@ -29,6 +29,10 @@ namespace models::sph {
 
         inline std::tuple<vec,vec> get_ideal_box(flt dr, std::tuple<vec,vec> box){
             return get_ideal_fcc_box(dr, box);
+        }
+
+        inline vec get_box_dim(flt dr, u32 xcnt, u32 ycnt, u32 zcnt){
+            return get_box_dim(dr, xcnt, ycnt, zcnt);
         }
         
 

@@ -1,15 +1,18 @@
 #pragma once
 
 #include "core/patch/scheduler/scheduler_mpi.hpp"
+#include "core/utils/string_utils.hpp"
 #include "models/sph/integrators/leapfrog.hpp"
 #include <string>
 
 namespace models::sph {
 
-    template<class flt, class u_morton, class Kernel>
+    template<class flt, class Kernel>
     class BasicSPHGas {
 
         using vec3 = sycl::vec<flt, 3>;
+
+        using u_morton = u32;
         using Stepper = integrators::sph::LeapfrogGeneral<flt, Kernel, u_morton>;
 
         static constexpr flt htol_up_tol  = 1.4;
@@ -29,9 +32,34 @@ namespace models::sph {
         public:
 
         void init();
-        void evolve(PatchScheduler &sched, f64 &step_time);
+
+        f64 evolve(PatchScheduler &sched, f64 current_time, f64 target_time);
         void dump(std::string prefix);
         void restart_dump(std::string prefix);
+
+        inline f64 simulate_until(PatchScheduler &sched, f64 start_time, f64 end_time, u32 freq_dump, u32 freq_restart_dump,std::string prefix_dump){
+            f64 step_time = start_time;
+
+            u32 step_cnt = 0;
+
+            while(step_time < end_time){
+
+                if(step_cnt % freq_dump){
+                    dump(prefix_dump + "dump_" + format("%06d",step_cnt));
+                }
+
+                if(step_cnt % freq_restart_dump){
+                    restart_dump(prefix_dump + "restart_dump_" + format("%06d",step_cnt));
+                }
+
+                step_time = evolve(sched, step_time, end_time);
+                step_cnt++;
+            }
+
+
+            return step_time;
+        }
+
         void close();
 
 

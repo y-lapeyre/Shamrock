@@ -9,39 +9,24 @@ using namespace models::sph;
 
 
 
+template<class flt, class Kernel>
+MakeContainer(Container_Model_BasicSPHGas, BasicSPHGas<flt, Kernel>);
 
+template<class flt, class Kernel>
+MakePyContainer(PySHAMROCK_Model_BasicSPHGas, Container_Model_BasicSPHGas<flt, Kernel>)
 
-
-
-
-template<class flt, class u_morton, class Kernel>
-struct PySHAMROCK_Model_BasicSPHGas{
-    PyObject_HEAD
-    /* Type-specific fields go here. */
-    BasicSPHGas<flt, u_morton, Kernel>* model;
-};
 
 
 template<class flt, class u_morton, class Kernel>
 struct PySHAMROCK_Model_BasicSPHGasIMPL{
 
-    using Type = PySHAMROCK_Model_BasicSPHGas<flt,u_morton,Kernel>;
-    using IntType = BasicSPHGas<flt,u_morton,Kernel>;
+    using Type = PySHAMROCK_Model_BasicSPHGas<flt,Kernel>;
+    using IntType = BasicSPHGas<flt,Kernel>;
     inline static const std::string descriptor = "SPH model for basic gas";
 
-    static void dealloc(Type *self) {                                                                                       \
-        if (self->model != nullptr) {                                                                                       \
-            delete self->model;                                                                                             \
-            self->model = nullptr;                                                                                          \
-        }                                                                                                                   \
-        Py_TYPE(self)->tp_free((PyObject *)self);                                                                           \
-    }                                                                                                                       \
-                                                                                                                            \
-    static PyObject *objnew(PyTypeObject *type, PyObject *args, PyObject *kwds) {                                           \
-        Type *self;                                                                                                         \
-        self = (Type *)type->tp_alloc(type, 0);                                                                             \
-        return (PyObject *)self;                                                                                            \
-    }
+
+
+    AddPyContainer_methods(Type)
 
 
     static std::string get_name();
@@ -52,8 +37,7 @@ struct PySHAMROCK_Model_BasicSPHGasIMPL{
 
 
     static PyObject * init(Type * self, PyObject *Py_UNUSED(ignored)){
-        self->model = new IntType();
-        self->model->init();
+        self->container.ptr->init();
         return Py_None;
     }
 
@@ -77,7 +61,6 @@ struct PySHAMROCK_Model_BasicSPHGasIMPL{
     static void restart_dump(std::string prefix){}
 
     static PyObject * close(Type * self, PyObject *Py_UNUSED(ignored)){
-        delete self->model;
         return Py_None;
     }
 

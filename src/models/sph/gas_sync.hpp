@@ -28,7 +28,7 @@
 template <class flt> class SPHTimestepperLeapfrogIsotGasSync {
   public:
 
-  constexpr static  f32 gpart_mass = 2e-4;
+  constexpr static f32 gpart_mass = 2e-4;
 
     using vec3 = sycl::vec<flt, 3>;
     using u_morton = u32;

@@ -5,8 +5,8 @@
 #include "core/sys/mpi_handler.hpp"
 
 
-template<class flt, class u_morton, class Kernel>
-void models::sph::SetupSPH<flt,u_morton,Kernel>::init(PatchScheduler & sched){
+template<class flt, class Kernel>
+void models::sph::SetupSPH<flt,Kernel>::init(PatchScheduler & sched){
     if (mpi_handler::world_rank == 0) {
         Patch root;
 
@@ -49,8 +49,8 @@ void models::sph::SetupSPH<flt,u_morton,Kernel>::init(PatchScheduler & sched){
 }
 
 
-template<class flt, class u_morton, class Kernel>
-void models::sph::SetupSPH<flt,u_morton,Kernel>::add_particules_fcc(PatchScheduler & sched, flt dr, std::tuple<vec,vec> box){
+template<class flt, class Kernel>
+void models::sph::SetupSPH<flt,Kernel>::add_particules_fcc(PatchScheduler & sched, flt dr, std::tuple<vec,vec> box){
 
     if(mpi_handler::world_rank == 0){
         std::vector<vec> vec_acc;
@@ -104,4 +104,4 @@ void models::sph::SetupSPH<flt,u_morton,Kernel>::add_particules_fcc(PatchSchedul
     }
 }
 
-template class models::sph::SetupSPH<f32,u32,models::sph::kernels::M4<f32>>;
+template class models::sph::SetupSPH<f32,models::sph::kernels::M4<f32>>;

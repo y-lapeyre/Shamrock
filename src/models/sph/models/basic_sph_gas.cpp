@@ -13,8 +13,8 @@
 const std::string console_tag = "[BasicSPHGas] ";
 
 
-template<class flt, class u_morton, class Kernel> 
-void models::sph::BasicSPHGas<flt,u_morton,Kernel>::check_valid(){
+template<class flt, class Kernel> 
+void models::sph::BasicSPHGas<flt,Kernel>::check_valid(){
     if (cfl_cour < 0) {
         throw ShamAPIException(console_tag + "cfl courant not set");
     }
@@ -30,13 +30,13 @@ void models::sph::BasicSPHGas<flt,u_morton,Kernel>::check_valid(){
 
 
 
-template<class flt, class u_morton, class Kernel> 
-void models::sph::BasicSPHGas<flt,u_morton,Kernel>::init(){
+template<class flt, class Kernel> 
+void models::sph::BasicSPHGas<flt,Kernel>::init(){
 
 }
 
-template<class flt, class u_morton, class Kernel> 
-void models::sph::BasicSPHGas<flt,u_morton,Kernel>::evolve(PatchScheduler &sched, f64 &step_time){
+template<class flt, class Kernel> 
+f64 models::sph::BasicSPHGas<flt,Kernel>::evolve(PatchScheduler &sched, f64 old_time, f64 target_time){
 
     check_valid();
 
@@ -56,7 +56,7 @@ void models::sph::BasicSPHGas<flt,u_morton,Kernel>::evolve(PatchScheduler &sched
     PatchComputeField<f32> pressure_field;
 
 
-    step_time = stepper.step(step_time, true, true, 
+    f64 step_time = stepper.step(old_time, true, true, 
 
         [&](u64 id_patch, PatchDataBuffer &pdat_buf) {
         
@@ -87,7 +87,13 @@ void models::sph::BasicSPHGas<flt,u_morton,Kernel>::evolve(PatchScheduler &sched
 
             std::cout << "cfl dt : " << cfl_val << std::endl;
 
-            return sycl::min(f32(0.001),cfl_val);
+            f32 cfl_dt_loc = sycl::min(f32(0.001),cfl_val);
+
+            if(cfl_dt_loc + old_time > target_time){
+                cfl_dt_loc = target_time - old_time;
+            }
+
+            return cfl_dt_loc;
 
         }, 
         
@@ -303,24 +309,26 @@ void models::sph::BasicSPHGas<flt,u_morton,Kernel>::evolve(PatchScheduler &sched
 
             queue.submit(ker_corect_step);
         });
+
+    return step_time;
 }
 
-template<class flt, class u_morton, class Kernel> 
-void models::sph::BasicSPHGas<flt,u_morton,Kernel>::dump(std::string prefix){
+template<class flt, class Kernel> 
+void models::sph::BasicSPHGas<flt,Kernel>::dump(std::string prefix){
     std::cout << "dump : "<< prefix << std::endl;
 }
 
-template<class flt, class u_morton, class Kernel> 
-void models::sph::BasicSPHGas<flt,u_morton,Kernel>::restart_dump(std::string prefix){
+template<class flt, class Kernel> 
+void models::sph::BasicSPHGas<flt,Kernel>::restart_dump(std::string prefix){
     std::cout << "restart dump : "<< prefix << std::endl;
 }
 
-template<class flt, class u_morton, class Kernel> 
-void models::sph::BasicSPHGas<flt,u_morton,Kernel>::close(){
+template<class flt, class Kernel> 
+void models::sph::BasicSPHGas<flt,Kernel>::close(){
     
 }
 
 
 
-template class models::sph::BasicSPHGas<f32,u32,models::sph::kernels::M4<f32>>;
+template class models::sph::BasicSPHGas<f32,models::sph::kernels::M4<f32>>;
 

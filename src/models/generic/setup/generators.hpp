@@ -49,6 +49,31 @@ inline std::tuple<sycl::vec<flt, 3>,sycl::vec<flt, 3>> get_ideal_fcc_box(flt r_p
 }
 
 
+template<class flt>
+inline sycl::vec<flt, 3> get_box_dim(flt r_particle, u32 xcnt, u32 ycnt, u32 zcnt){
+
+    using vec3 = sycl::vec<flt, 3>;
+
+    u32 i = xcnt;
+    u32 j = ycnt;
+    u32 k = zcnt;
+
+    auto get_pos = [&](u32 i, u32 j, u32 k){
+        vec3 r_a = {
+            2*i + ((j+k) % 2),
+            sycl::sqrt(3.)*(j + (1./3.)*(k % 2)),
+            2*sycl::sqrt(6.)*k/3
+        };
+
+        r_a *= r_particle;
+
+        return r_a;
+    };
+
+    return get_pos(i+1,j+1,k+1);
+}
+
+
 template<class flt,class Tpred_select,class Tpred_pusher>
 inline void add_particles_fcc(
     flt r_particle, 
