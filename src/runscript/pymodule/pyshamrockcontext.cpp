@@ -153,17 +153,28 @@ static PyMethodDef methods[] = {
     {NULL} /* Sentinel */
 };
 
-static PyTypeObject PyShamCtxType = {
-    PyVarObject_HEAD_INIT(NULL, 0).tp_name = "shamrock.Context",
-    .tp_doc                                = PyDoc_STR("Shamrock context"),
-    .tp_basicsize                          = sizeof(PySHAMROCKContext),
-    .tp_itemsize                           = 0,
-    .tp_flags                              = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
-    .tp_new                                = PySHAMROCKContextImpl::objnew,
-    //.tp_init = (initproc) PySHAMROCKContext_init,
-    .tp_dealloc = (destructor)PySHAMROCKContextImpl::dealloc,
-    .tp_methods = methods,
+
+
+static auto getctxtype_obj = []() -> PyTypeObject {
+    PyTypeObject ptype = {
+        PyVarObject_HEAD_INIT(NULL, 0)
+    };
+
+    ptype.tp_name = "shamrock.Context";
+    ptype.tp_doc                                = PyDoc_STR("Shamrock context");
+    ptype.tp_basicsize                          = sizeof(PySHAMROCKContext);
+    ptype.tp_itemsize                           = 0;
+    ptype.tp_flags                              = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE;
+    ptype.tp_new                                = PySHAMROCKContextImpl::objnew;
+    //ptype.tp_init = (initproc) PySHAMROCKContext_init;
+    ptype.tp_dealloc = (destructor)PySHAMROCKContextImpl::dealloc;
+    ptype.tp_methods = methods;
+
+    return ptype;
+
 };
+
+static PyTypeObject PyShamCtxType = getctxtype_obj();
 
 addpybinding(shamctx) {
 

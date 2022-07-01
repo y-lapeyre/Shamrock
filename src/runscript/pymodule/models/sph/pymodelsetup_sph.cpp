@@ -135,15 +135,17 @@ struct PySHAMROCK_Model_SetupSPHIMPL{
         static std::string tp_name_str = "shamrock." + name;                                                                
                                                                                                                             
         static PyTypeObject pytype = {                                                                                      
-            PyVarObject_HEAD_INIT(NULL, 0).tp_name = tp_name_str.c_str(),                                                   
-            .tp_doc                                = PyDoc_STR(descriptor.c_str()),                                         
-            .tp_basicsize                          = sizeof(Type),                                                          
-            .tp_itemsize                           = 0,                                                                     
-            .tp_flags                              = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,                              
-            .tp_new                                = objnew,                                                                
-            .tp_dealloc                            = (destructor)dealloc,                                                   
-            .tp_methods                            = methods,                                                               
-        };  
+            PyVarObject_HEAD_INIT(NULL, 0)
+            };
+        pytype.tp_name = tp_name_str.c_str();
+        pytype.tp_basicsize                          = sizeof(Type);                                              
+        pytype.tp_itemsize                           = 0;                                                                                                         
+        pytype.tp_dealloc                            = (destructor)dealloc;                           
+        pytype.tp_flags                              = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE;         
+        pytype.tp_doc                                = PyDoc_STR(descriptor.c_str());                                  
+        pytype.tp_methods                            = methods;                                   
+        pytype.tp_new                                = objnew;                                                                 
+          
 
         type_ptr = &pytype;
 
