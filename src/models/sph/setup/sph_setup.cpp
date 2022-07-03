@@ -55,7 +55,7 @@ void models::sph::SetupSPH<flt,Kernel>::add_particules_fcc(PatchScheduler & sche
     if(mpi_handler::world_rank == 0){
         std::vector<vec> vec_acc;
 
-        add_particles_fcc(
+        generic::setup::generators::add_particles_fcc(
             dr, 
             box , 
             [](sycl::vec<flt,3> r){return true;}, 
@@ -70,11 +70,16 @@ void models::sph::SetupSPH<flt,Kernel>::add_particules_fcc(PatchScheduler & sche
 
         part_cnt += vec_acc.size();
 
-        PatchDataField<vec> & f = tmp.get_field<vec>(sched.pdl.get_field_idx<vec>("xyz"));
+        {        
+            PatchDataField<vec> & f = tmp.get_field<vec>(sched.pdl.get_field_idx<vec>("xyz"));
+            sycl::buffer<vec> buf (vec_acc.data(),vec_acc.size());
+            f.override(buf);
+        }
 
-        sycl::buffer<vec> buf (vec_acc.data(),vec_acc.size());
-
-        f.override(buf);
+        {
+            PatchDataField<flt> & f = tmp.get_field<flt>(sched.pdl.get_field_idx<flt>("hpart"));
+            f.override(dr);
+        }
 
         if(sched.owned_patch_id.empty()) throw shamrock_exc("the scheduler does not have patch in that rank");
 
@@ -86,21 +91,38 @@ void models::sph::SetupSPH<flt,Kernel>::add_particules_fcc(PatchScheduler & sche
 
     //TODO apply position modulo here
 
+    for (auto & [pid,pdat] : sched.patch_data.owned_data) {
+        std::cout << "patch id : " << pid << " len = " << pdat.get_obj_cnt() << std::endl;
+    }
+
     sched.scheduler_step(false, false);
 
+    for (auto & [pid,pdat] : sched.patch_data.owned_data) {
+        std::cout << "patch id : " << pid << " len = " << pdat.get_obj_cnt() << std::endl;
+    }
+
     {
+        auto [m,M] = sched.get_box_tranform<vec>();
+
+        std::cout << "box transf" 
+            << m.x() << " " << m.y() << " " << m.z() 
+            << " | "
+            << M.x() << " " << M.y() << " " << M.z() 
+            << std::endl;
+
         SerialPatchTree<vec> sptree(sched.patch_tree, sched.get_box_tranform<vec>());
         sptree.attach_buf();
         reatribute_particles(sched, sptree, periodic_mode);
     }
 
+    for (auto & [pid,pdat] : sched.patch_data.owned_data) {
+        std::cout << "patch id : " << pid << " len = " << pdat.get_obj_cnt() << std::endl;
+    }
+
     sched.scheduler_step(true, true);
 
     for (auto & [pid,pdat] : sched.patch_data.owned_data) {
-
-        PatchDataField<flt> & f = pdat.template get_field<flt>(sched.pdl.get_field_idx<flt>("hpart"));
-
-        f.override(dr);
+        std::cout << "patch id : " << pid << " len = " << pdat.get_obj_cnt() << std::endl;
     }
 }
 

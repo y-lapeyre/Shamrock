@@ -2,9 +2,14 @@
 
 #include "aliases.hpp"
 #include "core/io/logs.hpp"
+#include "core/patch/base/patchdata.hpp"
 #include "core/patch/base/patchdata_layout.hpp"
 #include "core/patch/scheduler/scheduler_mpi.hpp"
+#include "core/sys/mpi_handler.hpp"
+#include <map>
 #include <memory>
+#include <tuple>
+#include <vector>
 
 
 class ShamAPIException : public std::exception
@@ -95,5 +100,48 @@ class ShamrockCtx{public:
 
     inline ~ShamrockCtx(){
         //logfiles::close_log_files();
+    }
+
+    inline std::vector<std::unique_ptr<PatchData>> gather_data(u32 rank){
+        return sched->gather_data(rank);
+    }
+
+    inline std::vector<std::unique_ptr<PatchData>> allgather_data(){
+        std::vector<std::unique_ptr<PatchData>> recv_data;
+
+        for(u32 i = 0; i < mpi_handler::world_size; i++){
+            if (i == mpi_handler::world_rank) {
+                recv_data = sched->gather_data(i);
+            }else{
+                sched->gather_data(i);
+            }
+        }
+
+        return recv_data;
+    }
+
+    void set_box_size(std::tuple<f64_3, f64_3> box) {
+
+        if (!pdl) {
+            throw ShamAPIException("patch data layout is not initialized");
+        }
+
+        if (!sched) {
+            throw ShamAPIException("scheduler is not initialized");
+        }
+
+        switch (pdl->xyz_mode) {
+        case xyz32: {
+            auto conv_vec = [](f64_3 v) -> f32_3 { return {v.x(), v.y(), v.z()}; };
+
+            f32_3 vec0 = conv_vec(std::get<0>(box));
+            f32_3 vec1 = conv_vec(std::get<1>(box));
+
+            sched->set_box_volume<f32_3>({vec0, vec1});
+        }; break;
+        case xyz64: {
+            sched->set_box_volume<f64_3>(box);
+        }; break;
+        }
     }
 };

@@ -9,10 +9,16 @@
 #include "scheduler_mpi.hpp"
 
 #include <ctime>
+#include <memory>
+#include <mpi.h>
 #include <sstream>
 #include <stdexcept>
+#include <vector>
 
 #include "core/io/logs.hpp"
+#include "core/patch/base/patchdata.hpp"
+#include "core/patch/base/patchdata_field.hpp"
+#include "core/sys/mpi_handler.hpp"
 #include "loadbalancing_hilbert.hpp"
 
 #include "core/patch/base/patchdata_layout.hpp"
@@ -141,6 +147,8 @@ void PatchScheduler::set_box_volume(std::tuple<f64_3,f64_3> box){
 //TODO clean the output of this function
 void PatchScheduler::scheduler_step(bool do_split_merge, bool do_load_balancing){
 
+    //std::cout << dump_status();
+
     auto global_timer = timings::start_timer("SchedulerMPI::scheduler_step", timings::function);
 
     if(!is_mpi_sycl_interop_active()) throw shamrock_exc("sycl mpi interop not initialized");
@@ -158,7 +166,7 @@ void PatchScheduler::scheduler_step(bool do_split_merge, bool do_load_balancing)
     timer.end();
     std::cout << " | sync global : " << timer.get_time_str() << std::endl;
 
-
+    //std::cout << dump_status();
 
     std::unordered_set<u64> split_rq;
     std::unordered_set<u64> merge_rq;
@@ -214,6 +222,8 @@ void PatchScheduler::scheduler_step(bool do_split_merge, bool do_load_balancing)
         }std::cout << std::endl;
         //*/
 
+        //std::cout << dump_status() << std::endl;
+
         //std::cout << "split_patches" <<std::endl;
         timer.start();
         split_patches(split_rq);
@@ -257,6 +267,8 @@ void PatchScheduler::scheduler_step(bool do_split_merge, bool do_load_balancing)
         t.stop();
     }
 
+    //std::cout << dump_status();
+
 
     if(do_split_merge){
         patch_list.build_local_idx_map();
@@ -274,6 +286,8 @@ void PatchScheduler::scheduler_step(bool do_split_merge, bool do_load_balancing)
     update_local_load_value();
 
     global_timer.stop();
+
+    //std::cout << dump_status();
 
 }
 
@@ -391,6 +405,10 @@ std::string PatchScheduler::dump_status(){
 
     ss << " -> SchedulerPatchData\n";
     ss << "    owned data : \n";
+
+    for (auto & [pid,pdat] : patch_data.owned_data) {
+        ss << "patch id : " << pid << " len = " << pdat.get_obj_cnt() << "\n";
+    }
 
     /*
     for(auto & [k,pdat] : patch_data.owned_data){
@@ -615,4 +633,41 @@ void PatchScheduler::dump_local_patches(std::string filename){
     }else{
         throw shamrock_exc("position precision was not set");
     }
+}
+
+
+
+
+std::vector<std::unique_ptr<PatchData>> PatchScheduler::gather_data(u32 rank){
+
+    auto plist = this->patch_list.global;
+    auto pdata = this->patch_data.owned_data;
+
+    std::vector<std::unique_ptr<PatchData>> ret;
+
+    ret.resize(plist.size());
+
+    std::vector<MPI_Request> rq_lst;
+
+    for (u32 i = 0; i < plist.size(); i++) {
+        auto & cpatch = plist[i];
+        if(cpatch.node_owner_id == mpi_handler::world_rank){
+            patchdata_isend(pdata.at(cpatch.id_patch), rq_lst, 0, i, MPI_COMM_WORLD);
+        }
+    }
+
+    if(mpi_handler::world_rank == rank){
+        for (u32 i = 0; i < plist.size(); i++) {
+            ret.at(i) = std::make_unique<PatchData>(pdl);
+            patchdata_irecv(*ret.at(i),rq_lst, plist[i].node_owner_id, i, MPI_COMM_WORLD);
+        }
+    }
+
+
+    std::vector<MPI_Status> sts;
+    sts.resize(rq_lst.size());
+    mpi::waitall(rq_lst.size(), rq_lst.data(), sts.data());
+
+    return ret;
+
 }

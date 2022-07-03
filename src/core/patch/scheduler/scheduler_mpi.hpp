@@ -24,6 +24,7 @@
 #include <stdexcept>
 #include <tuple>
 #include <unordered_set>
+#include <vector>
 
 #include "aliases.hpp"
 #include "core/patch/base/patch.hpp"
@@ -106,6 +107,8 @@ class PatchScheduler{public:
 
     [[deprecated]]
     void dump_local_patches(std::string filename);
+
+    std::vector<std::unique_ptr<PatchData>> gather_data(u32 rank);
 
 
     /**

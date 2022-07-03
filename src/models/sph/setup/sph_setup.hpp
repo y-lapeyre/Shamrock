@@ -7,6 +7,7 @@
 #include "core/patch/utility/serialpatchtree.hpp"
 
 #include "models/generic/setup/generators.hpp"
+#include "models/generic/setup/modifiers.hpp"
 
 
 namespace models::sph {
@@ -27,12 +28,25 @@ namespace models::sph {
             periodic_mode = periodic;
         }
 
-        inline std::tuple<vec,vec> get_ideal_box(flt dr, std::tuple<vec,vec> box){
-            return get_ideal_fcc_box(dr, box);
-        }
+        
+        
+        
 
         inline vec get_box_dim(flt dr, u32 xcnt, u32 ycnt, u32 zcnt){
-            return get_box_dim(dr, xcnt, ycnt, zcnt);
+            return generic::setup::generators::get_box_dim(dr, xcnt, ycnt, zcnt);
+        }
+
+        inline std::tuple<vec,vec> get_ideal_box(flt dr, std::tuple<vec,vec> box){
+            return generic::setup::generators::get_ideal_fcc_box(dr, box);
+        }
+
+        template<class T> 
+        inline void set_value_in_box(PatchScheduler & sched, T val, std::string name, std::tuple<vec,vec> box){
+            generic::setup::modifiers::set_value_in_box(sched, val,  name, box);
+        }
+
+        inline void pertub_eigenmode_wave(PatchScheduler &sched, std::array<flt, 2> & ampls, vec k, flt phase){
+            generic::setup::modifiers::pertub_eigenmode_wave(sched, ampls, k, phase);
         }
         
 

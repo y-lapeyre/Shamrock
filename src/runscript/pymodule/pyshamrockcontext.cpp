@@ -1,4 +1,8 @@
 #include "pyshamrockcontext.hpp"
+#include "core/patch/base/patchdata_field.hpp"
+#include <floatobject.h>
+#include <map>
+#include <vector>
 
 #define PySHamExcHandle(a)                                                                                                  \
     try {                                                                                                                   \
@@ -7,6 +11,48 @@
         PyErr_SetString(PyExc_RuntimeError, e.what());                                                                      \
         return NULL;                                                                                                        \
     }
+
+
+template<class T> PyObject* convert(T val);
+
+template<> PyObject* convert(f32 val){
+    return PyFloat_FromDouble(f64(val));
+}
+
+template<> PyObject* convert(f64 val){
+    return PyFloat_FromDouble(f64(val));
+}
+
+template<> PyObject* convert(f32_2 val){
+    return Py_BuildValue("[f,f]",val.x(),val.y());
+}
+
+template<> PyObject* convert(f64_2 val){
+    return Py_BuildValue("[d,d]",val.x(),val.y());
+}
+
+template<> PyObject* convert(f32_3 val){
+    return Py_BuildValue("[f,f,f]",val.x(),val.y(),val.z());
+}
+
+template<> PyObject* convert(f64_3 val){
+    return Py_BuildValue("[d,d,d]",val.x(),val.y(),val.z());
+}
+
+
+template<class T> void append_to_map(std::vector<PatchDataField<T>> & pfields, std::map<std::string, PyObject*> map_app){
+    for(PatchDataField<T> & field : pfields){
+
+        auto & refobj = map_app[field.get_name()];
+
+        std::cout << "appending " << field.get_name() << " (" << field.size() << " elements)" << std::endl;
+
+        for (u32 i = 0 ; i < field.size(); i++) {
+            PyList_Append(refobj,convert(field.usm_data()[i]));
+        }
+    }
+}
+
 
 
 class PySHAMROCKContextImpl {
@@ -141,6 +187,51 @@ class PySHAMROCKContextImpl {
         PySHamExcHandle(self->ctx->close_sched());
         return Py_None;
     }
+
+    
+
+    static PyObject* collect_data(PySHAMROCKContext *self, PyObject *Py_UNUSED(ignored)){
+
+        auto data = self->ctx->allgather_data();
+
+        std::cout << "collected : " << data.size() << " patches" << std::endl;
+
+        auto dic = PyDict_New();
+
+        std::map<std::string, PyObject*> fields;
+
+        for (auto fname : self->ctx->pdl->get_field_names()) {
+            fields.insert({fname,PyList_New(0)});
+        }
+
+        
+
+        for (auto & pdat : data) {
+            append_to_map(pdat->fields_f32_3, fields);
+        }
+
+        for (auto & [k,v] : fields) {
+            PyDict_SetItemString(dic, k.c_str(), v);
+        }
+        
+
+        return dic;
+    }
+
+    static PyObject* set_box_size(PySHAMROCKContext *self, PyObject * args){
+
+        f64 xm,xM,ym,yM,zm,zM;
+
+        if(!PyArg_ParseTuple(args, "((dd)(dd)(dd))",&xm,&xM,&ym,&yM,&zm,&zM)) {
+            return NULL;
+        }
+
+        self->ctx->set_box_size({{xm,ym,zm},{xM,yM,zM}});
+
+        return Py_None;
+
+    }
+
 };
 
 static PyMethodDef methods[] = {
@@ -150,6 +241,8 @@ static PyMethodDef methods[] = {
     {"pdata_layout_get_str", (PyCFunction)PySHAMROCKContextImpl::pdata_layout_get_str, METH_NOARGS, "doc str"},
     {"init_sched", (PyCFunction)PySHAMROCKContextImpl::init_sched, METH_VARARGS, "doc str"},
     {"close_sched", (PyCFunction)PySHAMROCKContextImpl::close_sched, METH_NOARGS, "doc str"},
+    {"collect_data", (PyCFunction)PySHAMROCKContextImpl::collect_data, METH_NOARGS, "doc str"},
+    {"set_box_size", (PyCFunction)PySHAMROCKContextImpl::set_box_size, METH_VARARGS, "doc str"},
     {NULL} /* Sentinel */
 };
 

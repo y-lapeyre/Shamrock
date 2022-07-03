@@ -10,6 +10,7 @@
 
 #include "aliases.hpp"
 #include <sstream>
+#include <vector>
 
 
 
@@ -77,6 +78,11 @@ class FieldDescriptor{public:
 #define __add_field_desc_gen(T) \
     for (auto f : fields_##T){\
         ss << f.name << " : nvar=" <<f.nvar << " type : " << #T << "\n";\
+    }
+
+#define __append_fields_names(vec,T) \
+    for (auto f : fields_##T){\
+        vec.push_back(f.name);\
     }
     
 
@@ -243,6 +249,80 @@ public:
 
 
         return ss.str();
+    }
+
+    inline std::vector<std::string> get_field_names(){
+        std::vector<std::string> ret ;
+
+        __append_fields_names(ret,i64   );
+        __append_fields_names(ret,i32   );
+        //__append_fields_names(ret,i16   );
+        //__append_fields_names(ret, i8   );
+        __append_fields_names(ret,u64   );
+        __append_fields_names(ret,u32   );
+        //__append_fields_names(ret,u16   );
+        //__append_fields_names(ret, u8   );
+        //__append_fields_names(ret,f16   );
+        __append_fields_names(ret,f32   );
+        __append_fields_names(ret,f64   );
+        //__append_fields_names(ret,i64_2 );
+        //__append_fields_names(ret,i32_2 );
+        //__append_fields_names(ret,i16_2 );
+        //__append_fields_names(ret, i8_2 );
+        //__append_fields_names(ret,u64_2 );
+        //__append_fields_names(ret,u32_2 );
+        //__append_fields_names(ret,u16_2 );
+        //__append_fields_names(ret, u8_2 );
+        //__append_fields_names(ret,f16_2 );
+        __append_fields_names(ret,f32_2 );
+        __append_fields_names(ret,f64_2 );
+        //__append_fields_names(ret,i64_3 );
+        //__append_fields_names(ret,i32_3 );
+        //__append_fields_names(ret,i16_3 );
+        //__append_fields_names(ret, i8_3 );
+        //__append_fields_names(ret,u64_3 );
+        //__append_fields_names(ret,u32_3 );
+        //__append_fields_names(ret,u16_3 );
+        //__append_fields_names(ret, u8_3 );
+        //__append_fields_names(ret,f16_3 );
+        __append_fields_names(ret,f32_3 );
+        __append_fields_names(ret,f64_3 );
+        //__append_fields_names(ret,i64_4 );
+        //__append_fields_names(ret,i32_4 );
+        //__append_fields_names(ret,i16_4 );
+        //__append_fields_names(ret, i8_4 );
+        //__append_fields_names(ret,u64_4 );
+        //__append_fields_names(ret,u32_4 );
+        //__append_fields_names(ret,u16_4 );
+        //__append_fields_names(ret, u8_4 );
+        //__append_fields_names(ret,f16_4 );
+        __append_fields_names(ret,f32_4 );
+        __append_fields_names(ret,f64_4 );
+        //__append_fields_names(ret,i64_8 );
+        //__append_fields_names(ret,i32_8 );
+        //__append_fields_names(ret,i16_8 );
+        //__append_fields_names(ret, i8_8 );
+        //__append_fields_names(ret,u64_8 );
+        //__append_fields_names(ret,u32_8 );
+        //__append_fields_names(ret,u16_8 );
+        //__append_fields_names(ret, u8_8 );
+        //__append_fields_names(ret,f16_8 );
+        __append_fields_names(ret,f32_8 );
+        __append_fields_names(ret,f64_8 );
+        //__append_fields_names(ret,i64_16);
+        //__append_fields_names(ret,i32_16);
+        //__append_fields_names(ret,i16_16);
+        //__append_fields_names(ret, i8_16);
+        //__append_fields_names(ret,u64_16);
+        //__append_fields_names(ret,u32_16);
+        //__append_fields_names(ret,u16_16);
+        //__append_fields_names(ret, u8_16);
+        //__append_fields_names(ret,f16_16);
+        __append_fields_names(ret,f32_16);
+        __append_fields_names(ret,f64_16);
+
+
+        return ret;
     }
 
 };

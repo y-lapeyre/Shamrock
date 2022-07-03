@@ -159,7 +159,67 @@ class PatchData {
         return get_obj_cnt() == 0;
     }
 
+    /*
+    inline void expand(u32 obj_to_add){
+        for (auto a : fields_f32) {
+            a.expand(obj_to_add);
+        }
 
+        for (auto a : fields_f32_2) {
+            a.expand(obj_to_add);
+        }
+
+        for (auto a : fields_f32_3) {
+            a.expand(obj_to_add);        
+        }
+
+        for (auto a : fields_f32_4) {
+            a.expand(obj_to_add);        
+        }
+
+        for (auto a : fields_f32_8) {
+            a.expand(obj_to_add);        
+        }
+
+        for (auto a : fields_f32_16) {
+            a.expand(obj_to_add);        
+        }
+
+
+        for (auto a : fields_f64) {
+            a.expand(obj_to_add);        
+        }
+
+        for (auto a : fields_f64_2) {
+            a.expand(obj_to_add);        
+        }
+
+        for (auto a : fields_f64_3) {
+            a.expand(obj_to_add);        
+        }
+
+        for (auto a : fields_f64_4) {
+            a.expand(obj_to_add);        
+        }
+
+        for (auto a : fields_f64_8) {
+            a.expand(obj_to_add);        
+        }
+
+        for (auto a : fields_f64_16) {
+            a.expand(obj_to_add);        
+        }
+
+
+        for (auto a : fields_u32) {
+            a.expand(obj_to_add);        
+        }
+
+        for (auto a : fields_u64) {
+            a.expand(obj_to_add);        
+        }
+    }
+    */
 
 
 

@@ -5,6 +5,10 @@
 #include "runscript/pymodule/pyshamrockcontext.hpp"
 #include "models/sph/setup/sph_setup.hpp"
 #include "models/sph/base/kernels.hpp"
+#include <methodobject.h>
+#include <modsupport.h>
+#include <object.h>
+#include <tuple>
 
 
 using namespace models::sph;
@@ -23,12 +27,8 @@ struct PySHAMROCK_Model_SetupSPHIMPL{
     using Type = PySHAMROCK_Model_SetupSPH<flt,Kernel>;
     using IntType = SetupSPH<flt,Kernel>;
     inline static const std::string descriptor = "SPH setup";
-                                                                                           
-                                                                                                                            
+                                                                                                                                                                                       
     AddPyContainer_methods(Type)
-
-
-
 
     static std::string get_name();
 
@@ -38,7 +38,6 @@ struct PySHAMROCK_Model_SetupSPHIMPL{
 
 
     static PyObject * init(Type * self, PyObject * arg){
-        
         if (PyObject_IsInstance(arg, (PyObject *)PyShamCtxType_ptr)){
 
             PySHAMROCKContext* ctx = (PySHAMROCKContext*) arg;
@@ -53,7 +52,41 @@ struct PySHAMROCK_Model_SetupSPHIMPL{
         return Py_None;
     }
 
+    static PyObject * get_box_dim_icnt(Type * self, PyObject * args){
+        f64 dr;
+        u32 ix,iy,iz;
+
+        if(!PyArg_ParseTuple(args, "d(III)",&dr,&ix,&iy,&iz)) {
+            return NULL;
+        }
+
+        auto dim = self->container.ptr->get_box_dim(dr, ix, iy, iz);
+
+        return Py_BuildValue("ddd", f64(dim.x()), f64(dim.y()), f64(dim.z()));
+    }
+
+    static PyObject * get_ideal_box(Type * self, PyObject * args){
+        f64 dr, xm,xM, ym,yM, zm,zM;
+
+        if(!PyArg_ParseTuple(args, "d((dd)(dd)(dd))",&dr,&xm,&xM,&ym,&yM,&zm,&zM)) {
+            return NULL;
+        }
+
+        auto new_dim = self->container.ptr->get_ideal_box(dr, {{flt(xm),flt(ym),flt(zm)},{flt(xM),flt(yM),flt(zM)}});
+
+        xm = std::get<0>(new_dim).x();
+        ym = std::get<0>(new_dim).y();
+        zm = std::get<0>(new_dim).z();
+        xM = std::get<1>(new_dim).x();
+        yM = std::get<1>(new_dim).y();
+        zM = std::get<1>(new_dim).z();
+
+        return Py_BuildValue("((dd)(dd)(dd))", f64(xm),f64(ym),f64(zm),f64(xM),f64(yM),f64(zM));
+    }
+
     static PyObject * add_cube_fcc(Type * self, PyObject * args){
+
+        //TODO add check in the code to check if box size is set before running function that depend on it
         
         PySHAMROCKContext * pyctx;
         f64 dr;
@@ -127,7 +160,9 @@ struct PySHAMROCK_Model_SetupSPHIMPL{
             {"clear", (PyCFunction) clear, METH_NOARGS,"clear memory for object"},
 
             {"init", (PyCFunction) init, METH_O,"init"},
+            {"get_box_dim_icnt", (PyCFunction) get_box_dim_icnt, METH_VARARGS,"get_box_dim_icnt"},
             {"add_cube_fcc", (PyCFunction) add_cube_fcc, METH_VARARGS,"add_cube_fcc"},
+            {"get_ideal_box", (PyCFunction) get_ideal_box, METH_VARARGS, "get_ideal_box"},
             {NULL}  /* Sentinel */
         };
 

@@ -621,7 +621,7 @@ int main(int argc, char *argv[]) {
     //*
     {
         RunScriptHandler rscript;
-        rscript.run_file("runscript_test.py");
+        rscript.run_file("../exemples/runscript_test.py");
         rscript.run_ipython();
     }
     //*/
