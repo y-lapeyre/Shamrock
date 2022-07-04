@@ -326,7 +326,7 @@ namespace sph {
             std::cout << "   original size : " << merge_pdat_buf.at(id_patch).or_element_cnt
                       << " | merged : " << pdat_buf_merge.element_count << std::endl;
 
-            ::sph::algs::SmoothingLenghtCompute<flt, u32, Kernel> h_iterator(sched.pdl, htol_up_tol, htol_up_iter);
+            models::sph::algs::SmoothingLenghtCompute<flt, u32, Kernel> h_iterator(sched.pdl, htol_up_tol, htol_up_iter);
 
             h_iterator.iterate_smoothing_lenght(hndl.get_queue_compute(0), merge_pdat_buf.at(id_patch).or_element_cnt,
                                                 sph_gpart_mass, *radix_trees[id_patch], pdat_buf_merge, hnew, omega, eps_h);

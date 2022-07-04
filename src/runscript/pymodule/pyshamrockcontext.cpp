@@ -1,6 +1,7 @@
 #include "pyshamrockcontext.hpp"
 #include "core/patch/base/patchdata_field.hpp"
 #include <floatobject.h>
+#include <longobject.h>
 #include <map>
 #include <vector>
 
@@ -23,6 +24,15 @@ template<> PyObject* convert(f64 val){
     return PyFloat_FromDouble(f64(val));
 }
 
+template<> PyObject* convert(u64 val){
+    return PyLong_FromLong(long(val));
+}
+
+template<> PyObject* convert(u32 val){
+    return PyLong_FromLong(long(val));
+}
+
+
 template<> PyObject* convert(f32_2 val){
     return Py_BuildValue("[f,f]",val.x(),val.y());
 }
@@ -38,6 +48,49 @@ template<> PyObject* convert(f32_3 val){
 template<> PyObject* convert(f64_3 val){
     return Py_BuildValue("[d,d,d]",val.x(),val.y(),val.z());
 }
+
+template<> PyObject* convert(f32_4 val){
+    return Py_BuildValue("[f,f,f,f]",val.x(),val.y(),val.z(),val.w());
+}
+
+template<> PyObject* convert(f64_4 val){
+    return Py_BuildValue("[d,d,d,d]",val.x(),val.y(),val.z(),val.w());
+}
+
+template<> PyObject* convert(f32_8 val){
+    return Py_BuildValue("[f,f,f,f,f,f,f,f]",
+    val.s0() ,val.s1(),val.s2(),val.s3(),
+    val.s4() ,val.s5(),val.s6(),val.s7()
+    );
+}
+
+template<> PyObject* convert(f64_8 val){
+    return Py_BuildValue("[d,d,d,d,d,d,d,d]",
+    val.s0() ,val.s1(),val.s2(),val.s3(),
+    val.s4() ,val.s5(),val.s6(),val.s7()
+    );
+}
+
+template<> PyObject* convert(f32_16 val){
+    return Py_BuildValue("[f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f]",
+    val.s0() ,val.s1(),val.s2(),val.s3(),
+    val.s4() ,val.s5(),val.s6(),val.s7(),
+    val.s8() ,val.s9(),val.sA(),val.sB(),
+    val.sC() ,val.sD(),val.sE(),val.sF()
+    );
+}
+
+template<> PyObject* convert(f64_16 val){
+    return Py_BuildValue("[d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d]",
+    val.s0() ,val.s1(),val.s2(),val.s3(),
+    val.s4() ,val.s5(),val.s6(),val.s7(),
+    val.s8() ,val.s9(),val.sA(),val.sB(),
+    val.sC() ,val.sD(),val.sE(),val.sF()
+    );
+}
+
+
+
 
 
 template<class T> void append_to_map(std::vector<PatchDataField<T>> & pfields, std::map<std::string, PyObject*> map_app){
@@ -207,8 +260,24 @@ class PySHAMROCKContextImpl {
         
 
         for (auto & pdat : data) {
+
+            append_to_map(pdat->fields_f32, fields);
+            append_to_map(pdat->fields_f32_2, fields);
             append_to_map(pdat->fields_f32_3, fields);
+            append_to_map(pdat->fields_f32_4, fields);
+            append_to_map(pdat->fields_f32_8, fields);
+            append_to_map(pdat->fields_f32_16, fields);
+            append_to_map(pdat->fields_f64, fields);
+            append_to_map(pdat->fields_f64_2, fields);
+            append_to_map(pdat->fields_f64_3, fields);
+            append_to_map(pdat->fields_f64_4, fields);
+            append_to_map(pdat->fields_f64_8, fields);
+            append_to_map(pdat->fields_f64_16, fields);
+            append_to_map(pdat->fields_u32, fields);
+            append_to_map(pdat->fields_u64, fields);
         }
+
+
 
         for (auto & [k,v] : fields) {
             PyDict_SetItemString(dic, k.c_str(), v);

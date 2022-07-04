@@ -5,6 +5,7 @@
 #include "runscript/pymodule/pyshamrockcontext.hpp"
 #include "models/sph/setup/sph_setup.hpp"
 #include "models/sph/base/kernels.hpp"
+#include <floatobject.h>
 #include <methodobject.h>
 #include <modsupport.h>
 #include <object.h>
@@ -149,7 +150,46 @@ struct PySHAMROCK_Model_SetupSPHIMPL{
         return Py_None;
     }
 
+    static PyObject* set_boundaries(Type * self, PyObject * args){
+        i32 boundary_mode;
+        if(!PyArg_ParseTuple(args, "p",&boundary_mode)) {
+            return NULL;
+        }
 
+        std::cout << "setting boundary mode : " << boundary_mode << std::endl;
+
+        self->container.ptr->set_boundaries(boundary_mode);
+
+        return Py_None;
+
+    }
+
+    static PyObject* set_total_mass(Type * self, PyObject * args){
+        f64 val;
+        if(!PyArg_ParseTuple(args, "d",&val)) {
+            return NULL;
+        }
+
+        self->container.ptr->set_total_mass(val);
+
+        return Py_None;
+    }
+
+    static PyObject* get_part_mass(Type * self, PyObject *Py_UNUSED(ignored)){
+        return PyFloat_FromDouble(f64(self->container.ptr->get_part_mass()));
+    }
+
+    static PyObject* update_smoothing_lenght(Type * self, PyObject * args){
+        PySHAMROCKContext * pyctx;
+
+        if(!PyArg_ParseTuple(args, "O!",PyShamCtxType_ptr,&pyctx)) {
+            return NULL;
+        }
+
+        self->container.ptr->update_smoothing_lenght(*pyctx->ctx->sched);
+
+        return Py_None;
+    }
 
 
     static void add_object_pybind(PyObject * module){
@@ -163,6 +203,13 @@ struct PySHAMROCK_Model_SetupSPHIMPL{
             {"get_box_dim_icnt", (PyCFunction) get_box_dim_icnt, METH_VARARGS,"get_box_dim_icnt"},
             {"add_cube_fcc", (PyCFunction) add_cube_fcc, METH_VARARGS,"add_cube_fcc"},
             {"get_ideal_box", (PyCFunction) get_ideal_box, METH_VARARGS, "get_ideal_box"},
+            {"set_boundaries", (PyCFunction) set_boundaries, METH_VARARGS, "set boundary conditions mode"},
+
+            {"set_total_mass", (PyCFunction) set_total_mass, METH_VARARGS, "set total mass"},
+            {"get_part_mass", (PyCFunction) get_part_mass, METH_NOARGS, "get particle mass"},
+
+            {"update_smoothing_lenght", (PyCFunction) update_smoothing_lenght, METH_VARARGS, "update smoothing lenght"},
+
             {NULL}  /* Sentinel */
         };
 

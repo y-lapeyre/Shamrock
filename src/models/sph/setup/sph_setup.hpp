@@ -9,6 +9,7 @@
 #include "models/generic/setup/generators.hpp"
 #include "models/generic/setup/modifiers.hpp"
 
+#include "models/sph/algs/smoothing_lenght.hpp"
 
 namespace models::sph {
 
@@ -19,6 +20,8 @@ namespace models::sph {
 
         bool periodic_mode;
         u64 part_cnt = 0;
+
+        flt part_mass;
 
         public:
 
@@ -52,10 +55,26 @@ namespace models::sph {
 
         void add_particules_fcc(PatchScheduler & sched, flt dr, std::tuple<vec,vec> box);
 
-        inline flt set_total_mass(flt tot_mass){
+        inline void set_total_mass(flt tot_mass){
             u64 part = 0;
             mpi::allreduce(&part_cnt, &part, 1, mpi_type_u64, MPI_SUM, MPI_COMM_WORLD);
-            return tot_mass/part;
+            part_mass = tot_mass/part;
+        }
+
+        inline flt get_part_mass(){
+            return part_mass;
+        }
+
+        inline void update_smoothing_lenght(PatchScheduler & sched){
+            using Updater = algs::SmoothingLenghtCompute<flt,u32,Kernel>;
+
+            algs::compute_smoothing_lenght<flt, u32, Kernel>(
+                sched, 
+                periodic_mode, 
+                1.2, 
+                1.2, 
+                part_mass);
+                
         }
 
     };

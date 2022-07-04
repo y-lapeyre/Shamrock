@@ -21,7 +21,7 @@
 #include "models/sph/base/sphpart.hpp"
 #include "core/tree/radix_tree.hpp"
 
-namespace sph {
+namespace models::sph {
 namespace algs {
 
 template<class flt, class morton_prec, class Kernel>
@@ -37,9 +37,6 @@ class SmoothingLenghtCompute{
 
     u32 ihpart;
     u32 ixyz;
-
-
-
 
     public:
 
@@ -102,8 +99,17 @@ class SmoothingLenghtCompute{
     }
 
 
-    inline void compute_smoothing_lenght(PatchScheduler &sched,bool periodic_mode,flt htol_up_tol,
+};
+
+
+
+template<class flt, class u_morton, class Kernel>
+inline void compute_smoothing_lenght(PatchScheduler &sched,bool periodic_mode,flt htol_up_tol,
         flt htol_up_iter ,flt sph_gpart_mass){
+
+        using vec = sycl::vec<flt, 3>;
+        using Rtree = Radix_Tree<u_morton, vec>;
+        using Rta = walker::Radix_tree_accessor<u_morton, vec>;
 
         SyCLHandler &hndl = SyCLHandler::get_instance();
 
@@ -141,7 +147,7 @@ class SmoothingLenghtCompute{
 
 
         //make trees
-        std::unordered_map<u64, std::unique_ptr<Radix_Tree<morton_prec, vec>>> radix_trees;
+        std::unordered_map<u64, std::unique_ptr<Radix_Tree<u_morton, vec>>> radix_trees;
 
         sched.for_each_patch([&](u64 id_patch, Patch cur_p) {
             std::cout << "patch : n°" << id_patch << " -> making radix tree" << std::endl;
@@ -153,7 +159,7 @@ class SmoothingLenghtCompute{
             std::tuple<vec, vec> &box = merge_pdat_buf.at(id_patch).box;
 
             // radix tree computation
-            radix_trees[id_patch] = std::make_unique<Radix_Tree<morton_prec, vec>>(hndl.get_queue_compute(0), box,
+            radix_trees[id_patch] = std::make_unique<Radix_Tree<u_morton, vec>>(hndl.get_queue_compute(0), box,
                                                                                     mpdat_buf.get_field<vec>(ixyz));
         });
 
@@ -204,7 +210,7 @@ class SmoothingLenghtCompute{
             std::cout << "   original size : " << merge_pdat_buf.at(id_patch).or_element_cnt
                       << " | merged : " << pdat_buf_merge.element_count << std::endl;
 
-            ::sph::algs::SmoothingLenghtCompute<flt, u32, Kernel> h_iterator(sched.pdl, htol_up_tol, htol_up_iter);
+            SmoothingLenghtCompute<flt, u32, Kernel> h_iterator(sched.pdl, htol_up_tol, htol_up_iter);
 
             h_iterator.iterate_smoothing_lenght(hndl.get_queue_compute(0), merge_pdat_buf.at(id_patch).or_element_cnt,
                                                 sph_gpart_mass, *radix_trees[id_patch], pdat_buf_merge, hnew, omega, eps_h);
@@ -225,10 +231,6 @@ class SmoothingLenghtCompute{
         write_back_merge_patches(sched, interface_hndl, merge_pdat_buf);
 
     }
-
-    
-
-};
 
 } // namespace algs
 } // namespace sph
