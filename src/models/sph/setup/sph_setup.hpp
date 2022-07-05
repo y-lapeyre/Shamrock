@@ -10,6 +10,7 @@
 #include "models/generic/setup/modifiers.hpp"
 
 #include "models/sph/algs/smoothing_lenght.hpp"
+#include <tuple>
 
 namespace models::sph {
 
@@ -48,7 +49,7 @@ namespace models::sph {
             generic::setup::modifiers::set_value_in_box(sched, val,  name, box);
         }
 
-        inline void pertub_eigenmode_wave(PatchScheduler &sched, std::array<flt, 2> & ampls, vec k, flt phase){
+        inline void pertub_eigenmode_wave(PatchScheduler &sched, std::tuple<flt,flt> ampls, vec k, flt phase){
             generic::setup::modifiers::pertub_eigenmode_wave(sched, ampls, k, phase);
         }
         

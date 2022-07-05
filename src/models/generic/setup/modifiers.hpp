@@ -28,17 +28,11 @@ inline void set_value_in_box(PatchScheduler &sched, T val, std::string name, std
 }
 
 template <class flt>
-inline void pertub_eigenmode_wave(PatchScheduler &sched, std::array<flt, 2> & ampls, sycl::vec<flt, 3> k, flt phase) {
+inline void pertub_eigenmode_wave(PatchScheduler &sched, std::tuple<flt, flt> ampls, sycl::vec<flt, 3> k, flt phase) {
 
     using vec = sycl::vec<flt, 3>;
 
-    flt norm = ampls[0] * ampls[0] + ampls[1] * ampls[1];
-
-    if (sycl::fabs(norm - 1) > 1e-5) {
-        throw std::runtime_error("eigenmode vector is not normalized");
-    }
-
-    if (ampls[0] != 0) {
+    if (std::get<0>(ampls) != 0) {
         throw std::runtime_error("density perturbation not implemented");
     }
 
@@ -47,7 +41,7 @@ inline void pertub_eigenmode_wave(PatchScheduler &sched, std::array<flt, 2> & am
         PatchDataField<vec> &xyz  = pdat.template get_field<vec>(sched.pdl.get_field_idx<vec>("xyz"));
         PatchDataField<vec> &vxyz = pdat.template get_field<vec>(sched.pdl.get_field_idx<vec>("vxyz"));
 
-        flt ampl = ampls[1];
+        flt ampl = std::get<1>(ampls);
 
         for (u32 i = 0; i < xyz.size(); i++) {
             vec r              = xyz.usm_data()[i];

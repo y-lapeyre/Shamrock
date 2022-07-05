@@ -3,6 +3,10 @@
 #include "runscript/shamrockapi.hpp"
 #include "runscript/pymodule/pyshamrockcontext.hpp"
 #include "models/sph/models/basic_sph_gas.hpp"
+#include <floatobject.h>
+#include <methodobject.h>
+#include <object.h>
+#include <string>
 
 using namespace models::sph;
 
@@ -17,7 +21,7 @@ MakePyContainer(PySHAMROCK_Model_BasicSPHGas, Container_Model_BasicSPHGas<flt, K
 
 
 
-template<class flt, class u_morton, class Kernel>
+template<class flt, class Kernel>
 struct PySHAMROCK_Model_BasicSPHGasIMPL{
 
     using Type = PySHAMROCK_Model_BasicSPHGas<flt,Kernel>;
@@ -43,29 +47,87 @@ struct PySHAMROCK_Model_BasicSPHGasIMPL{
 
     static PyObject * evolve(Type * self, PyObject * args){
         
-        //*
-        if (PyObject_IsInstance(args, (PyObject *)PyShamCtxType_ptr)){
+        PySHAMROCKContext * pyctx;
 
-            PySHAMROCKContext* ctx = (PySHAMROCKContext*) args;
+        f64 current_t;
+        f64 target_time;
 
-            std::cout << "ctx ptr : " << ctx <<std::endl;
-        }else {
+        if(!PyArg_ParseTuple(args, "O!dd",PyShamCtxType_ptr,&pyctx,&current_t,&target_time)) {
             return NULL;
         }
-        //*/
 
-        return Py_None;
+        f64 new_t = self->container.ptr->evolve(
+            *pyctx->ctx->sched, 
+            current_t, 
+            target_time);
+
+        return PyFloat_FromDouble(new_t);
     }
 
-    static void dump(std::string prefix){}
-    static void restart_dump(std::string prefix){}
+    static PyObject * simulate_until(Type * self, PyObject * args){ 
+        PySHAMROCKContext * pyctx;
+
+        f64 start_time;
+        f64 end_time;
+        u32 freq_dump;
+        u32 freq_restart_dump;
+
+        const char* prefix_dump;
+
+
+        if(!PyArg_ParseTuple(args, "O!ddIIs",PyShamCtxType_ptr,&pyctx,&start_time,&end_time,&freq_dump,&freq_restart_dump,&prefix_dump)) {
+            return NULL;
+        }
+
+        std::string str_prefix_dump = std::string(prefix_dump);
+
+        std::cout << "start_time :" << start_time << std::endl;
+        std::cout << "end_time :" << end_time << std::endl;
+        std::cout << "freq_dump :" << freq_dump << std::endl;
+        std::cout << "freq_restart_dump :" << freq_restart_dump << std::endl;
+        std::cout << "prefix_dump :" << str_prefix_dump << std::endl;
+
+        f64 cur_t = self->container.ptr->simulate_until(*pyctx->ctx->sched, start_time, end_time, freq_dump, freq_restart_dump, str_prefix_dump);
+
+        return PyFloat_FromDouble(cur_t);
+    }
+
 
     static PyObject * close(Type * self, PyObject *Py_UNUSED(ignored)){
         return Py_None;
     }
 
-    static void set_cfl_cour(flt Ccour){}
-    static void set_cfl_force(flt Cforce){}
+    static PyObject * set_cfl_cour(Type * self, PyObject * args){
+        f64 c_val;
+        if(!PyArg_ParseTuple(args, "d",&c_val)) {
+            return NULL;
+        }
+
+        self->container.ptr->set_cfl_cour(c_val);
+
+        return Py_None;
+    }
+    static PyObject * set_cfl_force(Type * self, PyObject * args){
+        f64 c_val;
+        if(!PyArg_ParseTuple(args, "d",&c_val)) {
+            return NULL;
+        }
+
+        self->container.ptr->set_cfl_force(c_val);
+
+        return Py_None;
+    }
+
+    static PyObject * set_particle_mass(Type * self, PyObject * args){
+        f64 c_val;
+        if(!PyArg_ParseTuple(args, "d",&c_val)) {
+            return NULL;
+        }
+
+        self->container.ptr->set_particle_mass(c_val);
+
+        return Py_None;
+    }
 
 
 
@@ -73,8 +135,21 @@ struct PySHAMROCK_Model_BasicSPHGasIMPL{
     static void add_object_pybind(PyObject * module){
 
         static PyMethodDef methods [] = {
+
+
+            {"reset", (PyCFunction) reset, METH_NOARGS,"reset object"},
+            {"clear", (PyCFunction) clear, METH_NOARGS,"clear memory for object"},
+
             {"init", (PyCFunction) init, METH_NOARGS,"init"},
-            {"evolve", (PyCFunction) evolve, METH_O,"evolve"},
+
+            {"evolve", (PyCFunction) evolve, METH_VARARGS,"evolve"},
+            {"simulate_until", (PyCFunction) simulate_until, METH_VARARGS,"simulate_until"},
+
+
+            {"set_cfl_cour", (PyCFunction) set_cfl_cour, METH_VARARGS,"set_cfl_cour"},
+            {"set_cfl_force", (PyCFunction) set_cfl_force, METH_VARARGS,"set_cfl_force"},
+            {"set_particle_mass", (PyCFunction) set_particle_mass, METH_VARARGS,"set_particle_mass"},
+
             {"close", (PyCFunction) close, METH_NOARGS,"close"},
             {NULL}  /* Sentinel */
         };
@@ -120,8 +195,8 @@ struct PySHAMROCK_Model_BasicSPHGasIMPL{
 
 };
 
-template<> std::string PySHAMROCK_Model_BasicSPHGasIMPL<f32, u32, kernels::M4<f32>>::get_name(){
-    return "BasicSPHGas_single_morton32_M4";
+template<> std::string PySHAMROCK_Model_BasicSPHGasIMPL<f32, kernels::M4<f32>>::get_name(){
+    return "BasicSPHGas_M4_single";
 }
 
 
@@ -129,7 +204,7 @@ template<> std::string PySHAMROCK_Model_BasicSPHGasIMPL<f32, u32, kernels::M4<f3
 
 
 addpybinding(basicsphgas){
-    PySHAMROCK_Model_BasicSPHGasIMPL<f32, u32, kernels::M4<f32>>::add_object_pybind(module);
+    PySHAMROCK_Model_BasicSPHGasIMPL<f32, kernels::M4<f32>>::add_object_pybind(module);
     //PySHAMROCK_Model_BasicSPHGasIMPL<f64, u32, kernels::M4<f64>>::add_object_pybind(module);
     //PySHAMROCK_Model_BasicSPHGasIMPL<f32, u64, kernels::M4<f32>>::add_object_pybind(module);
     //PySHAMROCK_Model_BasicSPHGasIMPL<f64, u64, kernels::M4<f64>>::add_object_pybind(module);

@@ -69,7 +69,7 @@ struct PySHAMROCK_Model_SetupSPHIMPL{
     static PyObject * get_ideal_box(Type * self, PyObject * args){
         f64 dr, xm,xM, ym,yM, zm,zM;
 
-        if(!PyArg_ParseTuple(args, "d((dd)(dd)(dd))",&dr,&xm,&xM,&ym,&yM,&zm,&zM)) {
+        if(!PyArg_ParseTuple(args, "d((ddd)(ddd))",&dr,&xm,&ym,&zm,&xM,&yM,&zM)) {
             return NULL;
         }
 
@@ -82,7 +82,7 @@ struct PySHAMROCK_Model_SetupSPHIMPL{
         yM = std::get<1>(new_dim).y();
         zM = std::get<1>(new_dim).z();
 
-        return Py_BuildValue("((dd)(dd)(dd))", f64(xm),f64(ym),f64(zm),f64(xM),f64(yM),f64(zM));
+        return Py_BuildValue("((ddd)(ddd))", f64(xm),f64(ym),f64(zm),f64(xM),f64(yM),f64(zM));
     }
 
     static PyObject * add_cube_fcc(Type * self, PyObject * args){
@@ -100,7 +100,7 @@ struct PySHAMROCK_Model_SetupSPHIMPL{
 
         std::cout << PyShamCtxType_ptr << std::endl;
 
-        if(!PyArg_ParseTuple(args, "O!d((dd)(dd)(dd))",PyShamCtxType_ptr,&pyctx,&dr,&xmin,&xmax,&ymin,&ymax,&zmin,&zmax)) {
+        if(!PyArg_ParseTuple(args, "O!d((ddd)(ddd))",PyShamCtxType_ptr,&pyctx,&dr,&xmin,&ymin,&zmin,&xmax,&ymax,&zmax)) {
             return NULL;
         }
 
@@ -191,6 +191,24 @@ struct PySHAMROCK_Model_SetupSPHIMPL{
         return Py_None;
     }
 
+    static PyObject* pertub_eigenmode_wave(Type * self, PyObject * args){
+        PySHAMROCKContext * pyctx;
+
+        f64 ampl0,ampl1,kx,ky,kz,phi;
+
+        if(!PyArg_ParseTuple(args, "O!(dd)(ddd)d",PyShamCtxType_ptr,&pyctx
+            ,&ampl0,&ampl1,&kx,&ky,&kz,&phi)) {
+            return NULL;
+        }
+
+        self->container.ptr->pertub_eigenmode_wave(*pyctx->ctx->sched, 
+            {flt(ampl0),flt(ampl1)}, 
+            {flt(kx),flt(ky),flt(kz)}, 
+            flt(phi));
+
+        return Py_None;
+    }
+
 
     static void add_object_pybind(PyObject * module){
 
@@ -207,6 +225,8 @@ struct PySHAMROCK_Model_SetupSPHIMPL{
 
             {"set_total_mass", (PyCFunction) set_total_mass, METH_VARARGS, "set total mass"},
             {"get_part_mass", (PyCFunction) get_part_mass, METH_NOARGS, "get particle mass"},
+            
+            {"pertub_eigenmode_wave", (PyCFunction) pertub_eigenmode_wave, METH_VARARGS, "pertub_eigenmode_wave"},
 
             {"update_smoothing_lenght", (PyCFunction) update_smoothing_lenght, METH_VARARGS, "update smoothing lenght"},
 

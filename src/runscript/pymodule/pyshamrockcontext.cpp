@@ -291,7 +291,7 @@ class PySHAMROCKContextImpl {
 
         f64 xm,xM,ym,yM,zm,zM;
 
-        if(!PyArg_ParseTuple(args, "((dd)(dd)(dd))",&xm,&xM,&ym,&yM,&zm,&zM)) {
+        if(!PyArg_ParseTuple(args, "((ddd)(ddd))",&xm,&ym,&zm,&xM,&yM,&zM)) {
             return NULL;
         }
 

@@ -50,6 +50,8 @@ namespace generic::setup::generators {
         u32 j = iboc_dim.y();
         u32 k = iboc_dim.z();
 
+        std::cout << "get_ideal_box_idim :" << i << " " << j << " " << k << std::endl;
+
         i -= i%2;
         j -= j%2;
         k -= k%2;

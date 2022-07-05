@@ -615,14 +615,49 @@ int main(int argc, char *argv[]) {
     Cmdopt &opt = Cmdopt::get_instance();
     opt.init(argc, argv, "./shamrock");
 
+    
+
     SyCLHandler &hndl = SyCLHandler::get_instance();
     hndl.init_sycl();
 
     //*
     {
         RunScriptHandler rscript;
-        rscript.run_file("../exemples/runscript_test.py");
-        rscript.run_ipython();
+        
+        if(opt.has_option("--ipython")){
+            rscript.run_ipython();
+        }else if(opt.has_option("--rscript")){
+            std::string fname = std::string(opt.get_option("--rscript"));
+
+            rscript.run_file(fname);
+        }else{
+            using namespace units;
+
+            Units<f64> code_units(
+                yr_s,
+                au_m,
+                earth_mass_kg,
+                1,
+                1,
+                1,
+                1
+            );
+
+            //to init values in code
+            f64 planet_mass = 2*code_units.jupiter_mass;
+
+            std::cout << "planet mass : " << planet_mass << " code_unit mass" << std::endl;
+
+            std::cout << "planet mass : " << planet_mass/code_units.jupiter_mass << " " << get_symbol(jupiter_mass) << std::endl;
+
+
+
+
+
+            SimulationSPH<TestTimestepper, TestSimInfo>::run_sim();
+            //SimulationSPH<TestTimestepperSync, TestSimInfo>::run_sim();
+        }
+        
     }
     //*/
 
@@ -630,31 +665,7 @@ int main(int argc, char *argv[]) {
 
 
 
-    using namespace units;
-
-    Units<f64> code_units(
-        yr_s,
-        au_m,
-        earth_mass_kg,
-        1,
-        1,
-        1,
-        1
-    );
-
-    //to init values in code
-    f64 planet_mass = 2*code_units.jupiter_mass;
-
-    std::cout << "planet mass : " << planet_mass << " code_unit mass" << std::endl;
-
-    std::cout << "planet mass : " << planet_mass/code_units.jupiter_mass << " " << get_symbol(jupiter_mass) << std::endl;
-
-
-
-
-
-    SimulationSPH<TestTimestepper, TestSimInfo>::run_sim();
-    //SimulationSPH<TestTimestepperSync, TestSimInfo>::run_sim();
+    
 
 
 
