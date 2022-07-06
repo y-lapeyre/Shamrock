@@ -24,6 +24,41 @@
 #include "aliases.hpp"
 
 
+
+
+class ShamrockSyclException : public std::exception
+{
+public:
+    explicit ShamrockSyclException(const char* message)
+        : msg_(message) {}
+
+
+    explicit ShamrockSyclException(const std::string& message)
+        : msg_(message) {}
+
+    virtual ~ShamrockSyclException() noexcept {}
+
+    virtual const char* what() const noexcept {
+       return msg_.c_str();
+    }
+
+protected:
+    std::string msg_;
+};
+
+
+namespace sycl_handler {
+
+    void init();
+
+
+} // namespace sycl_handler
+
+
+
+
+
+
 /**
  * @brief new implementation of the SYCL handler
  * 

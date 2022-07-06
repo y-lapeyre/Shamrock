@@ -465,63 +465,63 @@ PatchData patchdata_gen_dummy_data(PatchDataLayout & pdl, std::mt19937& eng){
 bool patch_data_check_match(PatchData& p1, PatchData& p2){
     bool check = true;
 
-    for(u32 idx = 0; idx < p1.patchdata_layout.fields_f32.size(); idx++){
+    for(u32 idx = 0; idx < p1.pdl.fields_f32.size(); idx++){
         check = p1.fields_f32[idx].check_field_match(p2.fields_f32[idx]);
     }
 
-    for(u32 idx = 0; idx < p1.patchdata_layout.fields_f32_2.size(); idx++){
+    for(u32 idx = 0; idx < p1.pdl.fields_f32_2.size(); idx++){
         check = p1.fields_f32_2[idx].check_field_match(p2.fields_f32_2[idx]);
     }
 
-    for(u32 idx = 0; idx < p1.patchdata_layout.fields_f32_3.size(); idx++){
+    for(u32 idx = 0; idx < p1.pdl.fields_f32_3.size(); idx++){
         check = p1.fields_f32_3[idx].check_field_match(p2.fields_f32_3[idx]);
     }
 
-    for(u32 idx = 0; idx < p1.patchdata_layout.fields_f32_4.size(); idx++){
+    for(u32 idx = 0; idx < p1.pdl.fields_f32_4.size(); idx++){
         check = p1.fields_f32_4[idx].check_field_match(p2.fields_f32_4[idx]);
     }
 
-    for(u32 idx = 0; idx < p1.patchdata_layout.fields_f32_8.size(); idx++){
+    for(u32 idx = 0; idx < p1.pdl.fields_f32_8.size(); idx++){
         check = p1.fields_f32_8[idx].check_field_match(p2.fields_f32_8[idx]);
     }
 
-    for(u32 idx = 0; idx < p1.patchdata_layout.fields_f32_16.size(); idx++){
+    for(u32 idx = 0; idx < p1.pdl.fields_f32_16.size(); idx++){
         check = p1.fields_f32_16[idx].check_field_match(p2.fields_f32_16[idx]);
     }
 
 
 
-    for(u32 idx = 0; idx < p1.patchdata_layout.fields_f64.size(); idx++){
+    for(u32 idx = 0; idx < p1.pdl.fields_f64.size(); idx++){
         check = p1.fields_f64[idx].check_field_match(p2.fields_f64[idx]);
     }
 
-    for(u32 idx = 0; idx < p1.patchdata_layout.fields_f64_2.size(); idx++){
+    for(u32 idx = 0; idx < p1.pdl.fields_f64_2.size(); idx++){
         check = p1.fields_f64_2[idx].check_field_match(p2.fields_f64_2[idx]);
     }
 
-    for(u32 idx = 0; idx < p1.patchdata_layout.fields_f64_3.size(); idx++){
+    for(u32 idx = 0; idx < p1.pdl.fields_f64_3.size(); idx++){
         check = p1.fields_f64_3[idx].check_field_match(p2.fields_f64_3[idx]);
     }
 
-    for(u32 idx = 0; idx < p1.patchdata_layout.fields_f64_4.size(); idx++){
+    for(u32 idx = 0; idx < p1.pdl.fields_f64_4.size(); idx++){
         check = p1.fields_f64_4[idx].check_field_match(p2.fields_f64_4[idx]);
     }
 
-    for(u32 idx = 0; idx < p1.patchdata_layout.fields_f64_8.size(); idx++){
+    for(u32 idx = 0; idx < p1.pdl.fields_f64_8.size(); idx++){
         check = p1.fields_f64_8[idx].check_field_match(p2.fields_f64_8[idx]);
     }
 
-    for(u32 idx = 0; idx < p1.patchdata_layout.fields_f64_16.size(); idx++){
+    for(u32 idx = 0; idx < p1.pdl.fields_f64_16.size(); idx++){
         check = p1.fields_f64_16[idx].check_field_match(p2.fields_f64_16[idx]);
     }
 
 
 
-    for(u32 idx = 0; idx < p1.patchdata_layout.fields_u32.size(); idx++){
+    for(u32 idx = 0; idx < p1.pdl.fields_u32.size(); idx++){
         check = p1.fields_u32[idx].check_field_match(p2.fields_u32[idx]);
     }
 
-    for(u32 idx = 0; idx < p1.patchdata_layout.fields_u64.size(); idx++){
+    for(u32 idx = 0; idx < p1.pdl.fields_u64.size(); idx++){
         check = p1.fields_u64[idx].check_field_match(p2.fields_u64[idx]);
     }
 
@@ -553,7 +553,7 @@ template<class obj> obj fast_extract_ptr(u32 idx, u32 lenght ,obj* cnt){
 void PatchData::extract_element(u32 pidx, PatchData & out_pdat){
 
     
-    for(u32 idx = 0; idx < patchdata_layout.fields_f32.size(); idx++){
+    for(u32 idx = 0; idx < pdl.fields_f32.size(); idx++){
         const u32 nvar = fields_f32[idx].get_nvar();
         const u32 idx_val = pidx*nvar;
         const u32 idx_out_val = out_pdat.fields_f32[idx].size();
@@ -567,7 +567,7 @@ void PatchData::extract_element(u32 pidx, PatchData & out_pdat){
         fields_f32[idx].shrink(1);
     }
 
-    for(u32 idx = 0; idx < patchdata_layout.fields_f32_2.size(); idx++){
+    for(u32 idx = 0; idx < pdl.fields_f32_2.size(); idx++){
         const u32 nvar = fields_f32_2[idx].get_nvar();
         const u32 idx_val = pidx*nvar;
         const u32 idx_out_val = out_pdat.fields_f32_2[idx].size();
@@ -581,7 +581,7 @@ void PatchData::extract_element(u32 pidx, PatchData & out_pdat){
         fields_f32_2[idx].shrink(1);
     }
 
-    for(u32 idx = 0; idx < patchdata_layout.fields_f32_3.size(); idx++){
+    for(u32 idx = 0; idx < pdl.fields_f32_3.size(); idx++){
         const u32 nvar = fields_f32_3[idx].get_nvar();
         const u32 idx_val = pidx*nvar;
         const u32 idx_out_val = out_pdat.fields_f32_3[idx].size();
@@ -595,7 +595,7 @@ void PatchData::extract_element(u32 pidx, PatchData & out_pdat){
         fields_f32_3[idx].shrink(1);
     }
 
-    for(u32 idx = 0; idx < patchdata_layout.fields_f32_4.size(); idx++){
+    for(u32 idx = 0; idx < pdl.fields_f32_4.size(); idx++){
         const u32 nvar = fields_f32_4[idx].get_nvar();
         const u32 idx_val = pidx*nvar;
         const u32 idx_out_val = out_pdat.fields_f32_4[idx].size();
@@ -609,7 +609,7 @@ void PatchData::extract_element(u32 pidx, PatchData & out_pdat){
         fields_f32_4[idx].shrink(1);
     }
 
-    for(u32 idx = 0; idx < patchdata_layout.fields_f32_8.size(); idx++){
+    for(u32 idx = 0; idx < pdl.fields_f32_8.size(); idx++){
         const u32 nvar = fields_f32_8[idx].get_nvar();
         const u32 idx_val = pidx*nvar;
         const u32 idx_out_val = out_pdat.fields_f32_8[idx].size();
@@ -623,7 +623,7 @@ void PatchData::extract_element(u32 pidx, PatchData & out_pdat){
         fields_f32_8[idx].shrink(1);
     }
 
-    for(u32 idx = 0; idx < patchdata_layout.fields_f32_16.size(); idx++){
+    for(u32 idx = 0; idx < pdl.fields_f32_16.size(); idx++){
         const u32 nvar = fields_f32_16[idx].get_nvar();
         const u32 idx_val = pidx*nvar;
         const u32 idx_out_val = out_pdat.fields_f32_16[idx].size();
@@ -642,7 +642,7 @@ void PatchData::extract_element(u32 pidx, PatchData & out_pdat){
 
 
 
-    for(u32 idx = 0; idx < patchdata_layout.fields_f64.size(); idx++){
+    for(u32 idx = 0; idx < pdl.fields_f64.size(); idx++){
         const u32 nvar = fields_f64[idx].get_nvar();
         const u32 idx_val = pidx*nvar;
         const u32 idx_out_val = out_pdat.fields_f64[idx].size();
@@ -656,7 +656,7 @@ void PatchData::extract_element(u32 pidx, PatchData & out_pdat){
         fields_f64[idx].shrink(1);
     }
 
-    for(u32 idx = 0; idx < patchdata_layout.fields_f64_2.size(); idx++){
+    for(u32 idx = 0; idx < pdl.fields_f64_2.size(); idx++){
         const u32 nvar = fields_f64_2[idx].get_nvar();
         const u32 idx_val = pidx*nvar;
         const u32 idx_out_val = out_pdat.fields_f64_2[idx].size();
@@ -670,7 +670,7 @@ void PatchData::extract_element(u32 pidx, PatchData & out_pdat){
         fields_f64_2[idx].shrink(1);
     }
 
-    for(u32 idx = 0; idx < patchdata_layout.fields_f64_3.size(); idx++){
+    for(u32 idx = 0; idx < pdl.fields_f64_3.size(); idx++){
         const u32 nvar = fields_f64_3[idx].get_nvar();
         const u32 idx_val = pidx*nvar;
         const u32 idx_out_val = out_pdat.fields_f64_3[idx].size();
@@ -684,7 +684,7 @@ void PatchData::extract_element(u32 pidx, PatchData & out_pdat){
         fields_f64_3[idx].shrink(1);
     }
 
-    for(u32 idx = 0; idx < patchdata_layout.fields_f64_4.size(); idx++){
+    for(u32 idx = 0; idx < pdl.fields_f64_4.size(); idx++){
         const u32 nvar = fields_f64_4[idx].get_nvar();
         const u32 idx_val = pidx*nvar;
         const u32 idx_out_val = out_pdat.fields_f64_4[idx].size();
@@ -698,7 +698,7 @@ void PatchData::extract_element(u32 pidx, PatchData & out_pdat){
         fields_f64_4[idx].shrink(1);
     }
 
-    for(u32 idx = 0; idx < patchdata_layout.fields_f64_8.size(); idx++){
+    for(u32 idx = 0; idx < pdl.fields_f64_8.size(); idx++){
         const u32 nvar = fields_f64_8[idx].get_nvar();
         const u32 idx_val = pidx*nvar;
         const u32 idx_out_val = out_pdat.fields_f64_8[idx].size();
@@ -712,7 +712,7 @@ void PatchData::extract_element(u32 pidx, PatchData & out_pdat){
         fields_f64_8[idx].shrink(1);
     }
 
-    for(u32 idx = 0; idx < patchdata_layout.fields_f64_16.size(); idx++){
+    for(u32 idx = 0; idx < pdl.fields_f64_16.size(); idx++){
         const u32 nvar = fields_f64_16[idx].get_nvar();
         const u32 idx_val = pidx*nvar;
         const u32 idx_out_val = out_pdat.fields_f64_16[idx].size();
@@ -727,7 +727,7 @@ void PatchData::extract_element(u32 pidx, PatchData & out_pdat){
     }
 
 
-    for(u32 idx = 0; idx < patchdata_layout.fields_u32.size(); idx++){
+    for(u32 idx = 0; idx < pdl.fields_u32.size(); idx++){
         const u32 nvar = fields_u32[idx].get_nvar();
         const u32 idx_val = pidx*nvar;
         const u32 idx_out_val = out_pdat.fields_u32[idx].size();
@@ -741,7 +741,7 @@ void PatchData::extract_element(u32 pidx, PatchData & out_pdat){
         fields_u32[idx].shrink(1);
     }
 
-    for(u32 idx = 0; idx < patchdata_layout.fields_u64.size(); idx++){
+    for(u32 idx = 0; idx < pdl.fields_u64.size(); idx++){
         const u32 nvar = fields_u64[idx].get_nvar();
         const u32 idx_val = pidx*nvar;
         const u32 idx_out_val = out_pdat.fields_u64[idx].size();
@@ -760,53 +760,53 @@ void PatchData::extract_element(u32 pidx, PatchData & out_pdat){
 }
 
 void PatchData::insert_elements(PatchData & pdat){
-    for(u32 idx = 0; idx < patchdata_layout.fields_f32.size(); idx++){
+    for(u32 idx = 0; idx < pdl.fields_f32.size(); idx++){
         fields_f32[idx].insert(pdat.fields_f32[idx]);
     }
 
-    for(u32 idx = 0; idx < patchdata_layout.fields_f32_2.size(); idx++){
+    for(u32 idx = 0; idx < pdl.fields_f32_2.size(); idx++){
         fields_f32_2[idx].insert(pdat.fields_f32_2[idx]);
     }
 
-    for(u32 idx = 0; idx < patchdata_layout.fields_f32_3.size(); idx++){
+    for(u32 idx = 0; idx < pdl.fields_f32_3.size(); idx++){
         fields_f32_3[idx].insert(pdat.fields_f32_3[idx]);
     }
 
-    for(u32 idx = 0; idx < patchdata_layout.fields_f32_4.size(); idx++){
+    for(u32 idx = 0; idx < pdl.fields_f32_4.size(); idx++){
         fields_f32_4[idx].insert(pdat.fields_f32_4[idx]);
     }
 
-    for(u32 idx = 0; idx < patchdata_layout.fields_f32_8.size(); idx++){
+    for(u32 idx = 0; idx < pdl.fields_f32_8.size(); idx++){
         fields_f32_8[idx].insert(pdat.fields_f32_8[idx]);
     }
 
-    for(u32 idx = 0; idx < patchdata_layout.fields_f32_16.size(); idx++){
+    for(u32 idx = 0; idx < pdl.fields_f32_16.size(); idx++){
         fields_f32_16[idx].insert(pdat.fields_f32_16[idx]);
     }
 
 
 
-    for(u32 idx = 0; idx < patchdata_layout.fields_f64.size(); idx++){
+    for(u32 idx = 0; idx < pdl.fields_f64.size(); idx++){
         fields_f64[idx].insert(pdat.fields_f64[idx]);
     }
 
-    for(u32 idx = 0; idx < patchdata_layout.fields_f64_2.size(); idx++){
+    for(u32 idx = 0; idx < pdl.fields_f64_2.size(); idx++){
         fields_f64_2[idx].insert(pdat.fields_f64_2[idx]);
     }
 
-    for(u32 idx = 0; idx < patchdata_layout.fields_f64_3.size(); idx++){
+    for(u32 idx = 0; idx < pdl.fields_f64_3.size(); idx++){
         fields_f64_3[idx].insert(pdat.fields_f64_3[idx]);
     }
 
-    for(u32 idx = 0; idx < patchdata_layout.fields_f64_4.size(); idx++){
+    for(u32 idx = 0; idx < pdl.fields_f64_4.size(); idx++){
         fields_f64_4[idx].insert(pdat.fields_f64_4[idx]);
     }
 
-    for(u32 idx = 0; idx < patchdata_layout.fields_f64_8.size(); idx++){
+    for(u32 idx = 0; idx < pdl.fields_f64_8.size(); idx++){
         fields_f64_8[idx].insert(pdat.fields_f64_8[idx]);
     }
 
-    for(u32 idx = 0; idx < patchdata_layout.fields_f64_16.size(); idx++){
+    for(u32 idx = 0; idx < pdl.fields_f64_16.size(); idx++){
         fields_f64_16[idx].insert(pdat.fields_f64_16[idx]);
     }
 
@@ -814,11 +814,11 @@ void PatchData::insert_elements(PatchData & pdat){
 
 
 
-    for(u32 idx = 0; idx < patchdata_layout.fields_u32.size(); idx++){
+    for(u32 idx = 0; idx < pdl.fields_u32.size(); idx++){
         fields_u32[idx].insert(pdat.fields_u32[idx]);
     }
 
-    for(u32 idx = 0; idx < patchdata_layout.fields_u64.size(); idx++){
+    for(u32 idx = 0; idx < pdl.fields_u64.size(); idx++){
         fields_u64[idx].insert(pdat.fields_u64[idx]);
     }
 
@@ -827,53 +827,53 @@ void PatchData::insert_elements(PatchData & pdat){
 
 
 void PatchData::resize(u32 new_obj_cnt){
-    for(u32 idx = 0; idx < patchdata_layout.fields_f32.size(); idx++){
+    for(u32 idx = 0; idx < pdl.fields_f32.size(); idx++){
         fields_f32[idx].resize(new_obj_cnt);
     }
 
-    for(u32 idx = 0; idx < patchdata_layout.fields_f32_2.size(); idx++){
+    for(u32 idx = 0; idx < pdl.fields_f32_2.size(); idx++){
         fields_f32_2[idx].resize(new_obj_cnt);
     }
 
-    for(u32 idx = 0; idx < patchdata_layout.fields_f32_3.size(); idx++){
+    for(u32 idx = 0; idx < pdl.fields_f32_3.size(); idx++){
         fields_f32_3[idx].resize(new_obj_cnt);
     }
 
-    for(u32 idx = 0; idx < patchdata_layout.fields_f32_4.size(); idx++){
+    for(u32 idx = 0; idx < pdl.fields_f32_4.size(); idx++){
         fields_f32_4[idx].resize(new_obj_cnt);
     }
 
-    for(u32 idx = 0; idx < patchdata_layout.fields_f32_8.size(); idx++){
+    for(u32 idx = 0; idx < pdl.fields_f32_8.size(); idx++){
         fields_f32_8[idx].resize(new_obj_cnt);
     }
 
-    for(u32 idx = 0; idx < patchdata_layout.fields_f32_16.size(); idx++){
+    for(u32 idx = 0; idx < pdl.fields_f32_16.size(); idx++){
         fields_f32_16[idx].resize(new_obj_cnt);
     }
 
 
 
-    for(u32 idx = 0; idx < patchdata_layout.fields_f64.size(); idx++){
+    for(u32 idx = 0; idx < pdl.fields_f64.size(); idx++){
         fields_f64[idx].resize(new_obj_cnt);
     }
 
-    for(u32 idx = 0; idx < patchdata_layout.fields_f64_2.size(); idx++){
+    for(u32 idx = 0; idx < pdl.fields_f64_2.size(); idx++){
         fields_f64_2[idx].resize(new_obj_cnt);
     }
 
-    for(u32 idx = 0; idx < patchdata_layout.fields_f64_3.size(); idx++){
+    for(u32 idx = 0; idx < pdl.fields_f64_3.size(); idx++){
         fields_f64_3[idx].resize(new_obj_cnt);
     }
 
-    for(u32 idx = 0; idx < patchdata_layout.fields_f64_4.size(); idx++){
+    for(u32 idx = 0; idx < pdl.fields_f64_4.size(); idx++){
         fields_f64_4[idx].resize(new_obj_cnt);
     }
 
-    for(u32 idx = 0; idx < patchdata_layout.fields_f64_8.size(); idx++){
+    for(u32 idx = 0; idx < pdl.fields_f64_8.size(); idx++){
         fields_f64_8[idx].resize(new_obj_cnt);
     }
 
-    for(u32 idx = 0; idx < patchdata_layout.fields_f64_16.size(); idx++){
+    for(u32 idx = 0; idx < pdl.fields_f64_16.size(); idx++){
         fields_f64_16[idx].resize(new_obj_cnt);
     }
 
@@ -881,72 +881,72 @@ void PatchData::resize(u32 new_obj_cnt){
 
 
 
-    for(u32 idx = 0; idx < patchdata_layout.fields_u32.size(); idx++){
+    for(u32 idx = 0; idx < pdl.fields_u32.size(); idx++){
         fields_u32[idx].resize(new_obj_cnt);
     }
 
-    for(u32 idx = 0; idx < patchdata_layout.fields_u64.size(); idx++){
+    for(u32 idx = 0; idx < pdl.fields_u64.size(); idx++){
         fields_u64[idx].resize(new_obj_cnt);
     }
 }
 
 
 void PatchData::append_subset_to(std::vector<u32> & idxs, PatchData &pdat){
-    for(u32 idx = 0; idx < patchdata_layout.fields_f32.size(); idx++){
+    for(u32 idx = 0; idx < pdl.fields_f32.size(); idx++){
         fields_f32[idx].append_subset_to(idxs, pdat.fields_f32[idx]);
     }
 
-    for(u32 idx = 0; idx < patchdata_layout.fields_f32_2.size(); idx++){
+    for(u32 idx = 0; idx < pdl.fields_f32_2.size(); idx++){
         fields_f32_2[idx].append_subset_to(idxs, pdat.fields_f32_2[idx]);
     }
 
-    for(u32 idx = 0; idx < patchdata_layout.fields_f32_3.size(); idx++){
+    for(u32 idx = 0; idx < pdl.fields_f32_3.size(); idx++){
         fields_f32_3[idx].append_subset_to(idxs, pdat.fields_f32_3[idx]);
     }
 
-    for(u32 idx = 0; idx < patchdata_layout.fields_f32_4.size(); idx++){
+    for(u32 idx = 0; idx < pdl.fields_f32_4.size(); idx++){
         fields_f32_4[idx].append_subset_to(idxs, pdat.fields_f32_4[idx]);
     }
 
-    for(u32 idx = 0; idx < patchdata_layout.fields_f32_8.size(); idx++){
+    for(u32 idx = 0; idx < pdl.fields_f32_8.size(); idx++){
         fields_f32_8[idx].append_subset_to(idxs, pdat.fields_f32_8[idx]);
     }
 
-    for(u32 idx = 0; idx < patchdata_layout.fields_f32_16.size(); idx++){
+    for(u32 idx = 0; idx < pdl.fields_f32_16.size(); idx++){
         fields_f32_16[idx].append_subset_to(idxs, pdat.fields_f32_16[idx]);
     }
 
 
-    for(u32 idx = 0; idx < patchdata_layout.fields_f64.size(); idx++){
+    for(u32 idx = 0; idx < pdl.fields_f64.size(); idx++){
         fields_f64[idx].append_subset_to(idxs, pdat.fields_f64[idx]);
     }
 
-    for(u32 idx = 0; idx < patchdata_layout.fields_f64_2.size(); idx++){
+    for(u32 idx = 0; idx < pdl.fields_f64_2.size(); idx++){
         fields_f64_2[idx].append_subset_to(idxs, pdat.fields_f64_2[idx]);
     }
 
-    for(u32 idx = 0; idx < patchdata_layout.fields_f64_3.size(); idx++){
+    for(u32 idx = 0; idx < pdl.fields_f64_3.size(); idx++){
         fields_f64_3[idx].append_subset_to(idxs, pdat.fields_f64_3[idx]);
     }
 
-    for(u32 idx = 0; idx < patchdata_layout.fields_f64_4.size(); idx++){
+    for(u32 idx = 0; idx < pdl.fields_f64_4.size(); idx++){
         fields_f64_4[idx].append_subset_to(idxs, pdat.fields_f64_4[idx]);
     }
 
-    for(u32 idx = 0; idx < patchdata_layout.fields_f64_8.size(); idx++){
+    for(u32 idx = 0; idx < pdl.fields_f64_8.size(); idx++){
         fields_f64_8[idx].append_subset_to(idxs, pdat.fields_f64_8[idx]);
     }
 
-    for(u32 idx = 0; idx < patchdata_layout.fields_f64_16.size(); idx++){
+    for(u32 idx = 0; idx < pdl.fields_f64_16.size(); idx++){
         fields_f64_16[idx].append_subset_to(idxs, pdat.fields_f64_16[idx]);
     }
 
 
-    for(u32 idx = 0; idx < patchdata_layout.fields_u32.size(); idx++){
+    for(u32 idx = 0; idx < pdl.fields_u32.size(); idx++){
         fields_u32[idx].append_subset_to(idxs, pdat.fields_u32[idx]);
     }
 
-    for(u32 idx = 0; idx < patchdata_layout.fields_u64.size(); idx++){
+    for(u32 idx = 0; idx < pdl.fields_u64.size(); idx++){
         fields_u64[idx].append_subset_to(idxs, pdat.fields_u64[idx]);
     }
 }
@@ -957,7 +957,7 @@ void PatchData::split_patchdata<f32_3>(
     f32_3 bmin_p0, f32_3 bmin_p1, f32_3 bmin_p2, f32_3 bmin_p3, f32_3 bmin_p4, f32_3 bmin_p5, f32_3 bmin_p6, f32_3 bmin_p7, 
     f32_3 bmax_p0, f32_3 bmax_p1, f32_3 bmax_p2, f32_3 bmax_p3, f32_3 bmax_p4, f32_3 bmax_p5, f32_3 bmax_p6, f32_3 bmax_p7){
 
-    u32 field_ipos = patchdata_layout.get_field_idx<f32_3>("xyz");
+    u32 field_ipos = pdl.get_field_idx<f32_3>("xyz");
     //TODO check that nvar on this field is 1 on creation
 
     const u32 obj_cnt = fields_f32_3[field_ipos].size();
@@ -1014,7 +1014,7 @@ void PatchData::split_patchdata<f64_3>(
     f64_3 bmin_p0, f64_3 bmin_p1, f64_3 bmin_p2, f64_3 bmin_p3, f64_3 bmin_p4, f64_3 bmin_p5, f64_3 bmin_p6, f64_3 bmin_p7, 
     f64_3 bmax_p0, f64_3 bmax_p1, f64_3 bmax_p2, f64_3 bmax_p3, f64_3 bmax_p4, f64_3 bmax_p5, f64_3 bmax_p6, f64_3 bmax_p7){
 
-    u32 field_ipos = patchdata_layout.get_field_idx<f64_3>("xyz");
+    u32 field_ipos = pdl.get_field_idx<f64_3>("xyz");
     //TODO check that nvar on this field is 1 on creation
 
     const u32 obj_cnt = fields_f64_3[field_ipos].size();

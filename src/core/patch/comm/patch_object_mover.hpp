@@ -263,7 +263,7 @@ inline void reatribute_particles<f32_3>(PatchScheduler & sched, SerialPatchTree<
 
         PatchData & pdat = *comm_pdat[i];
 
-        u32 ixyz = pdat.patchdata_layout.get_field_idx<f32_3>("xyz");
+        u32 ixyz = pdat.pdl.get_field_idx<f32_3>("xyz");
 
         /*
         for (u32 i = 0; i < pdat.get_obj_cnt(); i++) {
@@ -291,7 +291,7 @@ inline void reatribute_particles<f32_3>(PatchScheduler & sched, SerialPatchTree<
 
             //std::cout << send_id << " -> " << recv_id << " recv data : " << std::endl; 
 
-            u32 ixyz = pdat->patchdata_layout.get_field_idx<f32_3>("xyz");
+            u32 ixyz = pdat->pdl.get_field_idx<f32_3>("xyz");
 
             /*
             for (u32 i = 0; i < pdat->get_obj_cnt(); i++) {

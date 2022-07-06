@@ -40,12 +40,12 @@ pmass = -1
 hfac = 1.2
 
 bsz = 1
-dr = 0.04
-
-plt.style.use("~/Documents/cosmicshine.mplstyle")
+dr = 0.02
 
 
-aspect_rat = 1/8
+
+
+aspect_rat = 1/4
 
 
 
@@ -134,7 +134,7 @@ dic_final = ctx.collect_data()
 
 
 
-
+plt.style.use("~/Documents/cosmicshine.mplstyle")
 
 print_dist(dic_setup,"$\omega t = 0$","setup.pdf",0)
 print_dist(dic_final,r"$\omega t = 2 \pi$ ","final.pdf",t_end)

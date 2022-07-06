@@ -42,7 +42,11 @@ namespace models::sph {
 
             u32 step_cnt = 0;
 
+            
+
             while(step_time < end_time){
+
+                std::cout << "[BasicSPHGas] simulate until " << format("%2.2f / %2.2f (%3.1f %)\n",step_time,end_time,100*step_time/end_time);
 
                 if(step_cnt % freq_dump){
                     dump(prefix_dump + "dump_" + format("%06d",step_cnt));

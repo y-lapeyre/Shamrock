@@ -38,7 +38,9 @@
 #include "core/patch/utility/patch_reduc_tree.hpp"
 #include "core/patch/utility/serialpatchtree.hpp"
 #include "core/sys/cmdopt.hpp"
+#include "core/sys/log.hpp"
 #include "core/sys/mpi_handler.hpp"
+#include "core/sys/sycl_handler.hpp"
 #include "core/sys/sycl_mpi_interop.hpp"
 #include "core/tree/radix_tree.hpp"
 #include "core/utils/string_utils.hpp"
@@ -615,7 +617,11 @@ int main(int argc, char *argv[]) {
     Cmdopt &opt = Cmdopt::get_instance();
     opt.init(argc, argv, "./shamrock");
 
-    
+    logger::normal_ln("[main]", 1,2,4,3.f);
+
+    sycl_handler::init();
+
+
 
     SyCLHandler &hndl = SyCLHandler::get_instance();
     hndl.init_sycl();

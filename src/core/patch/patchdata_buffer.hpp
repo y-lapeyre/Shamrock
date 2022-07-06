@@ -285,14 +285,14 @@ class PatchDataBuffer{ public:
 
 
 inline PatchDataBuffer attach_to_patchData(PatchData & pdat){
-    PatchDataBuffer pdatbuf(pdat.patchdata_layout);
+    PatchDataBuffer pdatbuf(pdat.pdl);
     
     pdatbuf.element_count = u32(pdat.get_obj_cnt());
 
     //std::cout << "attach to pdat : " << pdatbuf.element_count << std::endl;
 
 
-    for(u32 idx = 0; idx < pdat.patchdata_layout.fields_f32.size(); idx++){
+    for(u32 idx = 0; idx < pdat.pdl.fields_f32.size(); idx++){
         std::unique_ptr<sycl::buffer<f32>> buf;
 
         if(pdat.fields_f32[idx].get_obj_cnt() > 0){
@@ -303,7 +303,7 @@ inline PatchDataBuffer attach_to_patchData(PatchData & pdat){
     }
 
     
-    for(u32 idx = 0; idx < pdat.patchdata_layout.fields_f32_2.size(); idx++){
+    for(u32 idx = 0; idx < pdat.pdl.fields_f32_2.size(); idx++){
         std::unique_ptr<sycl::buffer<f32_2>> buf;
 
         if(pdat.fields_f32_2[idx].get_obj_cnt() > 0){
@@ -313,7 +313,7 @@ inline PatchDataBuffer attach_to_patchData(PatchData & pdat){
         pdatbuf.fields_f32_2.push_back({std::move(buf)});
     }
 
-    for(u32 idx = 0; idx < pdat.patchdata_layout.fields_f32_3.size(); idx++){
+    for(u32 idx = 0; idx < pdat.pdl.fields_f32_3.size(); idx++){
         std::unique_ptr<sycl::buffer<f32_3>> buf;
 
         if(pdat.fields_f32_3[idx].get_obj_cnt() > 0){
@@ -323,7 +323,7 @@ inline PatchDataBuffer attach_to_patchData(PatchData & pdat){
         pdatbuf.fields_f32_3.push_back({std::move(buf)});
     }
 
-    for(u32 idx = 0; idx < pdat.patchdata_layout.fields_f32_4.size(); idx++){
+    for(u32 idx = 0; idx < pdat.pdl.fields_f32_4.size(); idx++){
         std::unique_ptr<sycl::buffer<f32_4>> buf;
 
         if(pdat.fields_f32_4[idx].get_obj_cnt() > 0){
@@ -333,7 +333,7 @@ inline PatchDataBuffer attach_to_patchData(PatchData & pdat){
         pdatbuf.fields_f32_4.push_back({std::move(buf)});
     }
 
-    for(u32 idx = 0; idx < pdat.patchdata_layout.fields_f32_8.size(); idx++){
+    for(u32 idx = 0; idx < pdat.pdl.fields_f32_8.size(); idx++){
         std::unique_ptr<sycl::buffer<f32_8>> buf;
 
         if(pdat.fields_f32_8[idx].get_obj_cnt() > 0){
@@ -343,7 +343,7 @@ inline PatchDataBuffer attach_to_patchData(PatchData & pdat){
         pdatbuf.fields_f32_8.push_back({std::move(buf)});
     }
 
-    for(u32 idx = 0; idx < pdat.patchdata_layout.fields_f32_16.size(); idx++){
+    for(u32 idx = 0; idx < pdat.pdl.fields_f32_16.size(); idx++){
         std::unique_ptr<sycl::buffer<f32_16>> buf;
 
         if(pdat.fields_f32_16[idx].get_obj_cnt() > 0){
@@ -357,7 +357,7 @@ inline PatchDataBuffer attach_to_patchData(PatchData & pdat){
 
 
 
-    for(u32 idx = 0; idx < pdat.patchdata_layout.fields_f64.size(); idx++){
+    for(u32 idx = 0; idx < pdat.pdl.fields_f64.size(); idx++){
         std::unique_ptr<sycl::buffer<f64>> buf;
 
         if(pdat.fields_f64[idx].get_obj_cnt() > 0){
@@ -368,7 +368,7 @@ inline PatchDataBuffer attach_to_patchData(PatchData & pdat){
     }
 
     
-    for(u32 idx = 0; idx < pdat.patchdata_layout.fields_f64_2.size(); idx++){
+    for(u32 idx = 0; idx < pdat.pdl.fields_f64_2.size(); idx++){
         std::unique_ptr<sycl::buffer<f64_2>> buf;
 
         if(pdat.fields_f64_2[idx].get_obj_cnt() > 0){
@@ -378,7 +378,7 @@ inline PatchDataBuffer attach_to_patchData(PatchData & pdat){
         pdatbuf.fields_f64_2.push_back({std::move(buf)});
     }
 
-    for(u32 idx = 0; idx < pdat.patchdata_layout.fields_f64_3.size(); idx++){
+    for(u32 idx = 0; idx < pdat.pdl.fields_f64_3.size(); idx++){
         std::unique_ptr<sycl::buffer<f64_3>> buf;
 
         if(pdat.fields_f64_3[idx].get_obj_cnt() > 0){
@@ -388,7 +388,7 @@ inline PatchDataBuffer attach_to_patchData(PatchData & pdat){
         pdatbuf.fields_f64_3.push_back({std::move(buf)});
     }
 
-    for(u32 idx = 0; idx < pdat.patchdata_layout.fields_f64_4.size(); idx++){
+    for(u32 idx = 0; idx < pdat.pdl.fields_f64_4.size(); idx++){
         std::unique_ptr<sycl::buffer<f64_4>> buf;
 
         if(pdat.fields_f64_4[idx].get_obj_cnt() > 0){
@@ -398,7 +398,7 @@ inline PatchDataBuffer attach_to_patchData(PatchData & pdat){
         pdatbuf.fields_f64_4.push_back({std::move(buf)});
     }
 
-    for(u32 idx = 0; idx < pdat.patchdata_layout.fields_f64_8.size(); idx++){
+    for(u32 idx = 0; idx < pdat.pdl.fields_f64_8.size(); idx++){
         std::unique_ptr<sycl::buffer<f64_8>> buf;
 
         if(pdat.fields_f64_8[idx].get_obj_cnt() > 0){
@@ -408,7 +408,7 @@ inline PatchDataBuffer attach_to_patchData(PatchData & pdat){
         pdatbuf.fields_f64_8.push_back({std::move(buf)});
     }
 
-    for(u32 idx = 0; idx < pdat.patchdata_layout.fields_f64_16.size(); idx++){
+    for(u32 idx = 0; idx < pdat.pdl.fields_f64_16.size(); idx++){
         std::unique_ptr<sycl::buffer<f64_16>> buf;
 
         if(pdat.fields_f64_16[idx].get_obj_cnt() > 0){
@@ -422,7 +422,7 @@ inline PatchDataBuffer attach_to_patchData(PatchData & pdat){
 
 
 
-    for(u32 idx = 0; idx < pdat.patchdata_layout.fields_u32.size(); idx++){
+    for(u32 idx = 0; idx < pdat.pdl.fields_u32.size(); idx++){
         std::unique_ptr<sycl::buffer<u32>> buf;
 
         if(pdat.fields_u32[idx].get_obj_cnt() > 0){
@@ -432,7 +432,7 @@ inline PatchDataBuffer attach_to_patchData(PatchData & pdat){
         pdatbuf.fields_u32.push_back({std::move(buf)});
     }
 
-    for(u32 idx = 0; idx < pdat.patchdata_layout.fields_u64.size(); idx++){
+    for(u32 idx = 0; idx < pdat.pdl.fields_u64.size(); idx++){
         std::unique_ptr<sycl::buffer<u64>> buf;
 
         if(pdat.fields_u64[idx].get_obj_cnt() > 0){

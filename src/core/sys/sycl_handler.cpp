@@ -8,6 +8,7 @@
 
 #include "sycl_handler.hpp"
 
+#include <memory>
 #include <ostream>
 #include <stdexcept>
 #include <string>
@@ -53,6 +54,51 @@ void print_device_info(const sycl::device &Device){
         << readable_sizeof(Device.get_info<sycl::info::device::global_mem_size>()) << "\n";
 }
 
+
+namespace sycl_handler {
+    bool already_on = false;
+
+    const auto &Platforms = sycl::platform::get_platforms();
+
+    std::unique_ptr<sycl::queue> compute_queue;
+    std::unique_ptr<sycl::queue> alt_queue;
+
+    void init(){
+
+        if(already_on) { 
+            throw ShamrockSyclException("Sycl Handler is already on");
+        }
+
+        printf("\x1B[36m >>> init SYCL instances <<< \033[0m\n");
+
+        Cmdopt & opt = Cmdopt::get_instance();
+
+        if(opt.has_option("--sycl-cfg")){
+            std::string sycl_cfg = std::string(opt.get_option("--sycl-cfg"));
+            std::cout << "chosen sycl config : " << sycl_cfg << std::endl;
+
+            size_t split_alt_comp = 0;
+            split_alt_comp = sycl_cfg.find(":");
+
+            if(split_alt_comp == std::string::npos){
+                throw shamrock_exc("sycl-cfg layout should be x:x");
+            }
+
+            std::string alt_cfg = sycl_cfg.substr(0, split_alt_comp);
+            std::string comp_cfg = sycl_cfg.substr(split_alt_comp+1, sycl_cfg.length());
+
+        }else {
+            std::cout << "[SYCL Handler] Please specify a sycl configuration (--sycl-cfg x:x)" << std::endl;
+            throw ShamrockSyclException("Sycl Handler need configuration (--sycl-cfg x:x)");
+        }
+
+
+
+
+
+        already_on = true;
+    }
+} // namespace sycl_handler
 
 
 

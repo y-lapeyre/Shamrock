@@ -37,7 +37,7 @@
  */
 class PatchData {
   public:
-    PatchDataLayout & patchdata_layout;
+    PatchDataLayout & pdl;
 
     std::vector<PatchDataField<f32   >> fields_f32;
     std::vector<PatchDataField<f32_2 >> fields_f32_2;
@@ -57,7 +57,7 @@ class PatchData {
 
     std::vector<PatchDataField<u64   >> fields_u64;
 
-    inline PatchData(PatchDataLayout & pdl) : patchdata_layout(pdl){
+    inline PatchData(PatchDataLayout & pdl) : pdl(pdl){
 
         for (auto a : pdl.fields_f32) {
             fields_f32.push_back(PatchDataField<f32>(a.name,a.nvar));
@@ -145,11 +145,11 @@ class PatchData {
 
     inline u32 get_obj_cnt(){
         u32 ret;
-        if(patchdata_layout.xyz_mode == xyz32){
-            u32 ixyz = patchdata_layout.get_field_idx<f32_3>("xyz");
+        if(pdl.xyz_mode == xyz32){
+            u32 ixyz = pdl.get_field_idx<f32_3>("xyz");
             ret = fields_f32_3[ixyz].get_obj_cnt();
-        }else if(patchdata_layout.xyz_mode == xyz64){
-            u32 ixyz = patchdata_layout.get_field_idx<f64_3>("xyz");
+        }else if(pdl.xyz_mode == xyz64){
+            u32 ixyz = pdl.get_field_idx<f64_3>("xyz");
             ret = fields_f64_3[ixyz].get_obj_cnt();
         }
         return ret;
