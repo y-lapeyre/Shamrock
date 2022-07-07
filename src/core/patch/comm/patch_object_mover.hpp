@@ -138,7 +138,7 @@ inline void reatribute_particles<f32_3>(PatchScheduler & sched, SerialPatchTree<
 
     
 
-    printf("err_id_in_newid : %d \n", err_id_in_newid);
+    logger::debug_ln("Patch Object Mover", "err_id_in_newid :",err_id_in_newid);
 
     bool synced_should_res_box = sched.should_resize_box(err_id_in_newid);
 
@@ -173,13 +173,12 @@ inline void reatribute_particles<f32_3>(PatchScheduler & sched, SerialPatchTree<
         sched.patch_data.sim_box.min_box_sim_s = new_minbox;
         sched.patch_data.sim_box.max_box_sim_s = new_maxbox;
 
-        printf("resize box to  : {%f,%f,%f,%f,%f,%f}\n",new_minbox.x(),new_minbox.y(),new_minbox.z(),new_maxbox.x(),new_maxbox.y(),new_maxbox.z());
+        logger::debug_ln("Patch Object Mover", "resize box to  :",new_minbox,new_maxbox);
         sched.patch_data.sim_box.clean_box<f32>(1.2);
 
         new_minbox = sched.patch_data.sim_box.min_box_sim_s;
         new_maxbox = sched.patch_data.sim_box.max_box_sim_s;
-        printf("resize box to  : {%f,%f,%f,%f,%f,%f}\n",new_minbox.x(),new_minbox.y(),new_minbox.z(),new_maxbox.x(),new_maxbox.y(),new_maxbox.z());
-
+        logger::debug_ln("Patch Object Mover", "resize box to  :",new_minbox,new_maxbox);
         
 
 

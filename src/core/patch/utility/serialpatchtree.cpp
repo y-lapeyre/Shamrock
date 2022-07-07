@@ -7,6 +7,7 @@
 // -------------------------------------------------------//
 
 #include "serialpatchtree.hpp"
+#include "core/sys/log.hpp"
 
 void get_serial_tree_fp32(u64 root_key, PatchTree &ptree, std::vector<PtNode<f32_3>> &result_tree,
                           std::vector<u64> &result_tree_linked_patch_id, u64 &counter, u32 &max_level,
@@ -158,13 +159,13 @@ void SerialPatchTree<f32_3>::build_from_patch_tree(PatchTree &ptree, f32_3 trans
     u64 cnt     = 0;
     level_count = 0;//TODO add root_id set
     for (u64 root_id : ptree.roots_id) {
-        std::cout << "get serial tree fp32 root id : " << root_id << std::endl;
+        logger::debug_ln("Serial Patch Tree","get serial tree fp32 root id :" , root_id);
         get_serial_tree_fp32(root_id, ptree, serial_tree, linked_patch_ids, cnt, level_count, translate_factor,
                              scale_factor);
     }
 
-    std::cout << "len int = " << serial_tree.size() << std::endl;
-    std::cout << "level_count = " << level_count << std::endl;
+    logger::debug_ln("Serial Patch Tree","tree internal cell count = " , serial_tree.size());
+    logger::debug_ln("Serial Patch Tree","level_count =" , level_count);
 }
 
 template <>

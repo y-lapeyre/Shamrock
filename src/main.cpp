@@ -617,7 +617,33 @@ int main(int argc, char *argv[]) {
     Cmdopt &opt = Cmdopt::get_instance();
     opt.init(argc, argv, "./shamrock");
 
-    logger::normal_ln("[main]", 1,2,4,3.f);
+    if(opt.has_option("--loglevel")){
+        std::string level = std::string(opt.get_option("--loglevel"));
+
+        i32 a = atoi(level.c_str());
+
+        if(i8(a) != a){
+            logger::err_ln("Cmd OPT", "you must select a loglevel in a 8bit integer range");
+        }
+
+        logger::loglevel = a;
+
+        if(a == i8_max){
+            logger::raw_ln("If you've seen spam in your life i can garantee you, this is worst");
+        }
+
+        logger::raw_ln("-> modified loglevel to",logger::loglevel,"enabled log types : ");
+        logger::raw_ln(terminal_effects::faint + "-----------" + terminal_effects::reset);
+        logger::debug_mpi_ln("xxx", "xxx");
+        logger::debug_ln("xxx", "xxx");
+        logger::info_ln("xxx", "xxx");
+        logger::normal_ln("xxx", "xxx");
+        logger::warn_ln("xxx", "xxx");
+        logger::err_ln("xxx", "xxx");
+        logger::raw_ln(terminal_effects::faint + "-----------" + terminal_effects::reset);
+    }
+
+    logger::info_ln("main", 1,2,4,3.f);
 
     sycl_handler::init();
 

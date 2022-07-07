@@ -5,6 +5,7 @@ target_sources(shamrock
     PRIVATE
         mpi_handler.cpp
         sycl_handler.cpp
+        sycl_mpi_interop.cpp
     PUBLIC
         mpi_handler.hpp
         sycl_handler.hpp
@@ -31,6 +32,7 @@ if("${BUILD_TEST}")
     PRIVATE
         mpi_handler.cpp
         sycl_handler.cpp
+        sycl_mpi_interop.cpp
     PUBLIC
         mpi_handler.hpp
         sycl_handler.hpp

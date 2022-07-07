@@ -36,7 +36,7 @@ inline void make_merge_patches(
     
     std::unordered_map<u64,MergedPatchDataBuffer<pos_vec>> & merge_pdat_buf){
 
-    std::cout << "merging patches" << std::endl;
+    logger::debug_sycl_ln("Merged Patch","make_merge_patches");
 
     sched.for_each_patch_buf([&](u64 id_patch, Patch cur_p, PatchDataBuffer & pdat_buf) {
 
@@ -47,7 +47,7 @@ inline void make_merge_patches(
         f32_3 min_box = std::get<0>(tmp_box);
         f32_3 max_box = std::get<1>(tmp_box);
 
-        //std::cout << "patch : n°"<<id_patch << " -> making merge buf" << std::endl;
+        logger::debug_sycl_ln("Merged Patch","patch : n°",id_patch , "-> making merge buf");
 
         u32 len_main = pdat_buf.element_count;
 
@@ -519,13 +519,15 @@ inline void write_back_merge_patches(
     std::unordered_map<u64,MergedPatchDataBuffer<pos_vec>> & merge_pdat_buf){
 
 
+    logger::debug_sycl_ln("Merged Patch","write back merged buffers");
+
     SyCLHandler &hndl = SyCLHandler::get_instance();
 
     sched.for_each_patch_buf([&](u64 id_patch, Patch cur_p, PatchDataBuffer & pdat_buf) {
         if(merge_pdat_buf.at(id_patch).or_element_cnt == 0) std::cout << " empty => skipping" << std::endl;
 
 
-        std::cout << "patch : n°"<<id_patch << " -> write back merge buf" << std::endl;
+        logger::debug_sycl_ln("Merged Patch","patch : n°",id_patch , "-> write back merge buf");
 
 
 
@@ -686,7 +688,7 @@ inline void make_merge_patches_comp_field(
 
     std::unordered_map<u64,MergedPatchCompFieldBuffer<T>> & merge_pdat_comp_field){
 
-
+    logger::debug_sycl_ln("Merged Patch","make_merge_patches_comp_field");
 
     sched.for_each_patch([&](u64 id_patch, Patch cur_p) {
 
@@ -694,7 +696,7 @@ inline void make_merge_patches_comp_field(
 
         auto & compfield_buf = comp_field.field_data_buf[id_patch];
 
-        std::cout << "patch : n°"<<id_patch << " -> making merge comp field" << std::endl;
+        logger::debug_sycl_ln("Merged Patch","patch : n°",id_patch , "-> making merge comp field");
 
         u32 len_main = compfield_buf->size();
         merge_pdat_comp_field[id_patch].or_element_cnt = len_main;

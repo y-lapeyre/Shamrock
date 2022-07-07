@@ -1,5 +1,14 @@
+// -------------------------------------------------------//
+//
+// SHAMROCK code for hydrodynamics
+// Copyright(C) 2021-2022 Timothée David--Cléris <timothee.david--cleris@ens-lyon.fr>
+// Licensed under CeCILL 2.1 License, see LICENSE for more information
+//
+// -------------------------------------------------------//
+
 #include "basic_sph_gas.hpp"
 #include "aliases.hpp"
+#include "core/sys/log.hpp"
 #include "models/generic/algs/cfl_utils.hpp"
 #include "runscript/shamrockapi.hpp"
 #include "models/generic/algs/integrators_utils.hpp"
@@ -39,6 +48,8 @@ template<class flt, class Kernel>
 f64 models::sph::BasicSPHGas<flt,Kernel>::evolve(PatchScheduler &sched, f64 old_time, f64 target_time){
 
     check_valid();
+
+    logger::info_ln("BasicSPHGas", "evolve t=",old_time);
 
 
     Stepper stepper(sched,periodic_bc,htol_up_tol,htol_up_iter,gpart_mass);
@@ -85,7 +96,7 @@ f64 models::sph::BasicSPHGas<flt,Kernel>::evolve(PatchScheduler &sched, f64 old_
 
             });
 
-            std::cout << "cfl dt : " << cfl_val << std::endl;
+            logger::info_ln("BasicSPHGas", "cfl dt :",cfl_val);
 
             f32 cfl_dt_loc = sycl::min(f32(0.001),cfl_val);
 
@@ -178,7 +189,7 @@ f64 models::sph::BasicSPHGas<flt,Kernel>::evolve(PatchScheduler &sched, f64 old_
             ){
             sched.for_each_patch([&](u64 id_patch, Patch cur_p) {
                 if (merge_pdat_buf.at(id_patch).or_element_cnt == 0){
-                    std::cout << " empty => skipping" << std::endl;return;
+                    logger::info_ln("BasicSPHGas","patch id =",id_patch,"is empty => skipping");
                 }
 
                 SyCLHandler &hndl = SyCLHandler::get_instance();
@@ -193,7 +204,8 @@ f64 models::sph::BasicSPHGas<flt,Kernel>::evolve(PatchScheduler &sched, f64 old_
                 sycl::range range_npart{merge_pdat_buf.at(id_patch).or_element_cnt};
 
             
-                std::cout << "patch : n°" << id_patch << "compute forces" << std::endl;
+                logger::info_ln("BasicSPHGas","patch : n°" ,id_patch , "compute forces");
+
                 hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
                     auto h_new = hnew.get_access<sycl::access::mode::read>(cgh);
                     auto omga  = omega.get_access<sycl::access::mode::read>(cgh);

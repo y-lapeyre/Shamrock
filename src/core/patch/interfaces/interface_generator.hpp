@@ -470,7 +470,7 @@ template <class vectype, class field_type, class InterfaceSelector> class Interf
         if(global_comm_vec.size() > 0){
 
 
-            std::cout << std::endl;
+            //std::cout << std::endl;
             for(u64 i = 0 ; i < global_comm_vec.size(); i++){
 
 
@@ -492,7 +492,7 @@ template <class vectype, class field_type, class InterfaceSelector> class Interf
                 }
 
             }
-            std::cout << std::endl;
+           // std::cout << std::endl;
             
 
         }

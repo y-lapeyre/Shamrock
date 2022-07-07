@@ -109,7 +109,7 @@ inline void patch_data_exchange_object(
 
     if (global_comm_vec.size() > 0) {
 
-        std::cout << std::endl;
+        //std::cout << std::endl;
         for (u64 i = 0; i < global_comm_vec.size(); i++) {
 
             const Patch &psend = global_patch_list[global_comm_vec[i].x()];
@@ -240,7 +240,7 @@ inline void patch_data_field_exchange_object(
 
     if (global_comm_vec.size() > 0) {
 
-        std::cout << std::endl;
+        //std::cout << std::endl;
         for (u64 i = 0; i < global_comm_vec.size(); i++) {
 
             const Patch &psend = global_patch_list[global_comm_vec[i].x()];
@@ -269,7 +269,7 @@ inline void patch_data_field_exchange_object(
                 // psend.node_owner_id, global_comm_tag[i], MPI_COMM_WORLD);
             }
         }
-        std::cout << std::endl;
+        //std::cout << std::endl;
     }
 
     std::vector<MPI_Status> st_lst(rq_lst.size());

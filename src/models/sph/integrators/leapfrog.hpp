@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include "core/sys/log.hpp"
 #include "core/utils/syclreduction.hpp"
 #include "aliases.hpp"
 #include "core/patch/interfaces/interface_handler.hpp"
@@ -173,7 +174,7 @@ namespace sph {
         const u32 ihpart    = sched.pdl.get_field_idx<flt>("hpart");
 
 
-
+        logger::info_ln("SPHLeapfrog", "step t=",old_time, "do_force =",do_force, "do_corrector =",do_corrector);
 
         //Init serial patch tree
         SerialPatchTree<vec3> sptree(sched.patch_tree, sched.get_box_tranform<vec3>());
@@ -197,7 +198,7 @@ namespace sph {
 
         flt dt_cur = cfl_val;
 
-        std::cout << " --- current dt  : " << dt_cur << std::endl;
+        logger::info_ln("SPHLeapfrog", "current dt  :",dt_cur);
 
         //advance time
         flt step_time = old_time;
@@ -205,7 +206,8 @@ namespace sph {
 
         //leapfrog predictor
         sched.for_each_patch_buf([&](u64 id_patch, Patch cur_p, PatchDataBuffer &pdat_buf) {
-            std::cout << "patch : n°" << id_patch << " -> leapfrog predictor" << std::endl;
+
+            logger::debug_ln("SPHLeapfrog", "patch : n°",id_patch,"->","predictor");
 
             lambda_update_time(hndl.get_queue_compute(0),pdat_buf,sycl::range<1> {pdat_buf.element_count},dt_cur/2);
 
@@ -215,7 +217,7 @@ namespace sph {
             lambda_update_time(hndl.get_queue_compute(0),pdat_buf,sycl::range<1> {pdat_buf.element_count},dt_cur/2);
 
 
-            std::cout << "patch : n°" << id_patch << " -> a field swap" << std::endl;
+            logger::debug_ln("SPHLeapfrog", "patch : n°",id_patch,"->","dt fields swap");
 
             lambda_swap_der(hndl.get_queue_compute(0),pdat_buf,sycl::range<1> {pdat_buf.element_count});
 
@@ -226,12 +228,12 @@ namespace sph {
         });
 
         //move particles between patches
-        std::cout << "particle reatribution" << std::endl;
+        logger::debug_ln("SPHLeapfrog", "particle reatribution");
         reatribute_particles(sched, sptree, periodic_mode);
 
         
 
-        std::cout << "exhanging interfaces" << std::endl;
+        logger::debug_ln("SPHLeapfrog", "compute hmax of each patches");
         auto timer_h_max = timings::start_timer("compute_hmax", timings::timingtype::function);
 
 
@@ -244,14 +246,16 @@ namespace sph {
 
         timer_h_max.stop();
 
-
+        logger::debug_ln("SPHLeapfrog", "compute interface list");
         //make interfaces
         InterfaceHandler<vec3, flt> interface_hndl;
         interface_hndl.template compute_interface_list<InterfaceSelector_SPH<vec3, flt>>(sched, sptree, h_field,
                                                                                                  periodic_mode);
+
+        logger::debug_ln("SPHLeapfrog", "communicate interfaces");
         interface_hndl.comm_interfaces(sched, periodic_mode);
 
-
+        logger::debug_ln("SPHLeapfrog", "merging interfaces with data");
         // merging strategy
         auto tmerge_buf = timings::start_timer("buffer merging", timings::sycl);
         std::unordered_map<u64, MergedPatchDataBuffer<vec3>> merge_pdat_buf;
@@ -259,15 +263,15 @@ namespace sph {
         hndl.get_queue_compute(0).wait();
         tmerge_buf.stop();
 
-
         //make trees
         auto tgen_trees = timings::start_timer("radix tree compute", timings::sycl);
         std::unordered_map<u64, std::unique_ptr<Radix_Tree<u_morton, vec3>>> radix_trees;
 
         sched.for_each_patch([&](u64 id_patch, Patch cur_p) {
-            std::cout << "patch : n°" << id_patch << " -> making radix tree" << std::endl;
+            logger::debug_ln("SPHLeapfrog","patch : n°",id_patch,"->","making Radix Tree");
+
             if (merge_pdat_buf.at(id_patch).or_element_cnt == 0)
-                std::cout << " empty => skipping" << std::endl;
+                logger::debug_ln("SPHLeapfrog","patch : n°",id_patch,"->","is empty skipping tree build");
 
             PatchDataBuffer &mpdat_buf = *merge_pdat_buf.at(id_patch).data;
 
@@ -279,16 +283,17 @@ namespace sph {
         });
 
         sched.for_each_patch([&](u64 id_patch, Patch cur_p) {
-            std::cout << "patch : n°" << id_patch << " -> radix tree compute volume" << std::endl;
+            logger::debug_ln("SPHLeapfrog","patch : n°",id_patch,"->","compute radix tree cell volumes");
             if (merge_pdat_buf.at(id_patch).or_element_cnt == 0)
-                std::cout << " empty => skipping" << std::endl;
+                logger::debug_ln("SPHLeapfrog","patch : n°",id_patch,"->","is empty skipping tree volumes step");
+
             radix_trees[id_patch]->compute_cellvolume(hndl.get_queue_compute(0));
         });
 
         sched.for_each_patch([&](u64 id_patch, Patch cur_p) {
-            std::cout << "patch : n°" << id_patch << " -> radix tree compute interaction box" << std::endl;
+            logger::debug_ln("SPHLeapfrog","patch : n°",id_patch,"->","compute Radix Tree interaction boxes");
             if (merge_pdat_buf.at(id_patch).or_element_cnt == 0)
-                std::cout << " empty => skipping" << std::endl;
+                logger::debug_ln("SPHLeapfrog","patch : n°",id_patch,"->","is empty skipping interaction box compute");
 
             PatchDataBuffer &mpdat_buf = *merge_pdat_buf.at(id_patch).data;
 
@@ -299,7 +304,8 @@ namespace sph {
 
 
         //create compute field for new h and omega
-        std::cout << "making omega field" << std::endl;
+        logger::debug_ln("SPHLeapfrog","init compute fields : hnew, omega");
+        
         PatchComputeField<flt> hnew_field;
         PatchComputeField<flt> omega_field;
 
@@ -311,9 +317,10 @@ namespace sph {
 
         //iterate smoothing lenght
         sched.for_each_patch([&](u64 id_patch, Patch cur_p) {
-            std::cout << "patch : n°" << id_patch << "init h iter" << std::endl;
+
+            logger::debug_ln("SPHLeapfrog","patch : n°",id_patch,"->","Init h iteration");
             if (merge_pdat_buf.at(id_patch).or_element_cnt == 0)
-                std::cout << " empty => skipping" << std::endl;
+                logger::debug_ln("SPHLeapfrog","patch : n°",id_patch,"->","is empty skipping h iteration");
 
             PatchDataBuffer &pdat_buf_merge = *merge_pdat_buf.at(id_patch).data;
 
@@ -323,8 +330,8 @@ namespace sph {
 
             sycl::range range_npart{merge_pdat_buf.at(id_patch).or_element_cnt};
 
-            std::cout << "   original size : " << merge_pdat_buf.at(id_patch).or_element_cnt
-                      << " | merged : " << pdat_buf_merge.element_count << std::endl;
+            logger::debug_ln("SPHLeapfrog","merging -> original size :" , merge_pdat_buf.at(id_patch).or_element_cnt
+                      , "| merged :" , pdat_buf_merge.element_count);
 
             models::sph::algs::SmoothingLenghtCompute<flt, u32, Kernel> h_iterator(sched.pdl, htol_up_tol, htol_up_iter);
 
@@ -351,10 +358,10 @@ namespace sph {
         hnew_field.to_map();
         omega_field.to_map();
 
-        std::cout << "echange interface hnew" << std::endl;
+        logger::debug_ln("SPHLeapfrog","exchange interface hnew");
         PatchComputeFieldInterfaces<flt> hnew_field_interfaces =
             interface_hndl.template comm_interfaces_field<flt>(sched, hnew_field, periodic_mode);
-        std::cout << "echange interface omega" << std::endl;
+        logger::debug_ln("SPHLeapfrog","exchange interface omega");
         PatchComputeFieldInterfaces<flt> omega_field_interfaces =
             interface_hndl.template comm_interfaces_field<flt>(sched, omega_field, periodic_mode);
 
@@ -388,7 +395,7 @@ namespace sph {
 
             if (do_corrector) {
 
-                std::cout << "leapfrog corrector " << std::endl;
+                logger::debug_ln("SPHLeapfrog","leapfrog corrector");
 
                 
 

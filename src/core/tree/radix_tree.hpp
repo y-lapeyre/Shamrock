@@ -17,6 +17,8 @@
 #include <tuple>
 #include <vector>
 
+#include "core/sys/log.hpp"
+#include "core/utils/string_utils.hpp"
 #include "kernels/morton_kernels.hpp"
 #include "core/sfc/morton.hpp"
 #include "kernels/compute_ranges.hpp"
@@ -87,23 +89,24 @@ class Radix_Tree{public:
         }
 
 
-        std::cout 
-            << std::get<0>(treebox).x() <<","<<std::get<0>(treebox).y() <<","<<std::get<0>(treebox).z() << " | "
-            << std::get<1>(treebox).x() <<","<<std::get<1>(treebox).y() <<","<<std::get<1>(treebox).z() << std::endl;
+        logger::debug_sycl_ln("RadixTree", "box dim :",std::get<0>(treebox),std::get<1>(treebox));
 
         box_coord = treebox;
 
-        std::cout << "pos_to_morton" << std::endl;
+        
         u32 morton_len = get_next_pow2_val(pos_buf->size());
+        logger::debug_sycl_ln("RadixTree", "morton buffer lenght :",morton_len);
 
         buf_morton = std::make_unique<sycl::buffer<u_morton>>(morton_len);
 
+        logger::debug_sycl_ln("RadixTree","xyz to morton");
         sycl_xyz_to_morton<u_morton,vec3>(queue, pos_buf->size(), pos_buf,std::get<0>(box_coord),std::get<1>(box_coord),buf_morton);
 
+        logger::debug_sycl_ln("RadixTree","fill trailling buffer");
         sycl_fill_trailling_buffer<u_morton>(queue, pos_buf->size(),morton_len,buf_morton);
 
 
-        std::cout << "sort_morton_buf" << std::endl;
+        logger::debug_sycl_ln("RadixTree","sorting morton buffer");
         buf_particle_index_map = std::make_unique<sycl::buffer<u32>>(buf_morton->size());
 
         queue.submit([&](sycl::handler &cgh) {
@@ -117,15 +120,15 @@ class Radix_Tree{public:
 
 
         // return a sycl buffer from reduc index map instead
-        std::cout << "reduction_alg" << std::endl;
+        logger::debug_sycl_ln("RadixTree","reduction algorithm"); //TODO put reduction level in class member
         reduction_alg(queue, pos_buf->size(), buf_morton, 5, reduc_index_map, tree_leaf_count);
         
-        std::cout << " -> " << pos_buf->size() << " " << buf_morton->size() << " " << tree_leaf_count << std::endl;
+        logger::debug_sycl_ln("RadixTree","reduction results : (before :",pos_buf->size()," | after :",tree_leaf_count,") ratio :",format("%2.2f",f32(pos_buf->size())/f32(tree_leaf_count)));
 
         if(tree_leaf_count > 1){
             buf_reduc_index_map = std::make_unique<sycl::buffer<u32>>(reduc_index_map.data(),reduc_index_map.size());
 
-            std::cout << "sycl_morton_remap_reduction" << std::endl;
+            logger::debug_sycl_ln("RadixTree","sycl_morton_remap_reduction");
             buf_tree_morton = std::make_unique<sycl::buffer<u_morton>>(tree_leaf_count);
 
             sycl_morton_remap_reduction(queue, tree_leaf_count, buf_reduc_index_map, buf_morton, buf_tree_morton);
@@ -186,7 +189,7 @@ class Radix_Tree{public:
     inline void compute_cellvolume(sycl::queue & queue){
         if(!one_cell_mode){
 
-            std::cout << "compute_cellvolume" << std::endl;
+            logger::debug_sycl_ln("RadixTree","compute_cellvolume");
 
             
             buf_pos_min_cell = std::make_unique< sycl::buffer<vec3i>>(tree_internal_count + tree_leaf_count);
@@ -234,7 +237,7 @@ class Radix_Tree{public:
         buf_pos_min_cell_flt = std::make_unique< sycl::buffer<vec3>>(tree_internal_count + tree_leaf_count);
         buf_pos_max_cell_flt = std::make_unique< sycl::buffer<vec3>>(tree_internal_count + tree_leaf_count);
 
-        std::cout << "sycl_convert_cell_range" << std::endl;
+        logger::debug_sycl_ln("RadixTree","sycl_convert_cell_range");
 
         sycl_convert_cell_range<u_morton,vec3>(queue, tree_leaf_count, tree_internal_count, std::get<0>(box_coord), std::get<1>(box_coord), 
             buf_pos_min_cell, 
@@ -248,6 +251,9 @@ class Radix_Tree{public:
     std::unique_ptr<sycl::buffer<flt>> buf_cell_interact_rad;
 
     inline void compute_int_boxes(sycl::queue & queue,std::unique_ptr<sycl::buffer<flt>> & int_rad_buf, flt tolerance){
+
+
+        logger::debug_sycl_ln("RadixTree","compute int boxes");
 
         buf_cell_interact_rad = std::make_unique< sycl::buffer<flt>>(tree_internal_count + tree_leaf_count);
         sycl::range<1> range_leaf_cell{tree_leaf_count};

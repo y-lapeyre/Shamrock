@@ -33,7 +33,66 @@
 
 
 
+void PatchData::init_fields(){
 
+        for (auto a : pdl.fields_f32) {
+            fields_f32.push_back(PatchDataField<f32>(a.name,a.nvar));
+        }
+
+        for (auto a : pdl.fields_f32_2) {
+            fields_f32_2.push_back(PatchDataField<f32_2>(a.name,a.nvar));
+        }
+
+        for (auto a : pdl.fields_f32_3) {
+            fields_f32_3.push_back(PatchDataField<f32_3>(a.name,a.nvar));
+        }
+
+        for (auto a : pdl.fields_f32_4) {
+            fields_f32_4.push_back(PatchDataField<f32_4>(a.name,a.nvar));
+        }
+
+        for (auto a : pdl.fields_f32_8) {
+            fields_f32_8.push_back(PatchDataField<f32_8>(a.name,a.nvar));
+        }
+
+        for (auto a : pdl.fields_f32_16) {
+            fields_f32_16.push_back(PatchDataField<f32_16>(a.name,a.nvar));
+        }
+
+
+        for (auto a : pdl.fields_f64) {
+            fields_f64.push_back(PatchDataField<f64>(a.name,a.nvar));
+        }
+
+        for (auto a : pdl.fields_f64_2) {
+            fields_f64_2.push_back(PatchDataField<f64_2>(a.name,a.nvar));
+        }
+
+        for (auto a : pdl.fields_f64_3) {
+            fields_f64_3.push_back(PatchDataField<f64_3>(a.name,a.nvar));
+        }
+
+        for (auto a : pdl.fields_f64_4) {
+            fields_f64_4.push_back(PatchDataField<f64_4>(a.name,a.nvar));
+        }
+
+        for (auto a : pdl.fields_f64_8) {
+            fields_f64_8.push_back(PatchDataField<f64_8>(a.name,a.nvar));
+        }
+
+        for (auto a : pdl.fields_f64_16) {
+            fields_f64_16.push_back(PatchDataField<f64_16>(a.name,a.nvar));
+        }
+
+
+        for (auto a : pdl.fields_u32) {
+            fields_u32.push_back(PatchDataField<u32>(a.name,a.nvar));
+        }
+
+        for (auto a : pdl.fields_u64) {
+            fields_u64.push_back(PatchDataField<u64>(a.name,a.nvar));
+        }
+}
 
 
 

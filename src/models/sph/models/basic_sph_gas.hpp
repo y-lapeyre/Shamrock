@@ -1,6 +1,15 @@
+// -------------------------------------------------------//
+//
+// SHAMROCK code for hydrodynamics
+// Copyright(C) 2021-2022 Timothée David--Cléris <timothee.david--cleris@ens-lyon.fr>
+// Licensed under CeCILL 2.1 License, see LICENSE for more information
+//
+// -------------------------------------------------------//
+
 #pragma once
 
 #include "core/patch/scheduler/scheduler_mpi.hpp"
+#include "core/sys/log.hpp"
 #include "core/utils/string_utils.hpp"
 #include "models/sph/integrators/leapfrog.hpp"
 #include <string>
@@ -46,7 +55,7 @@ namespace models::sph {
 
             while(step_time < end_time){
 
-                std::cout << "[BasicSPHGas] simulate until " << format("%2.2f / %2.2f (%3.1f %)\n",step_time,end_time,100*step_time/end_time);
+                logger::normal_ln("BasicSPHGas", "simulate until",format("%2.2f / %2.2f (%3.1f %)",step_time,end_time,100*step_time/end_time));
 
                 if(step_cnt % freq_dump){
                     dump(prefix_dump + "dump_" + format("%06d",step_cnt));
