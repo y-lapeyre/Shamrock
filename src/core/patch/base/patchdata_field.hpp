@@ -32,7 +32,7 @@ inline void copydata(T* source, T* dest, u32 cnt){
 template<class T>
 class PatchDataField {
 
-    T* _data;
+    //T* _data;
     std::vector<T> field_data;
 
     std::string field_name;
@@ -62,13 +62,13 @@ class PatchDataField {
         val_cnt = 0;
 
         capacity = min_capa;
-        _data = new T[capacity];logger::debug_alloc_ln("PatchDataField", "allocate field :",_data , "len =",capacity);
+        //_data = new T[capacity];logger::debug_alloc_ln("PatchDataField", "allocate field :",_data , "len =",capacity);
 
     };
 
     inline ~PatchDataField(){
-        logger::debug_alloc_ln("PatchDataField", "free field :",_data , "len =",capacity);
-        delete[] _data;
+        //logger::debug_alloc_ln("PatchDataField", "free field :",_data , "len =",capacity);
+        //delete[] _data;
     }
 
 
@@ -102,16 +102,16 @@ class PatchDataField {
         field_data.resize(new_size);
 
 
-        if (new_size > capacity) {
-            u32 new_capa = safe_fact*new_size;
-            T* new_ptr = new T[new_capa];       logger::debug_alloc_ln("PatchDataField", "allocate : ",new_ptr, "capacity :",new_capa);
-            copydata(_data, new_ptr, val_cnt);  logger::debug_alloc_ln("PatchDataField", "copy from : ",_data, " to :",new_ptr, "cnt :",val_cnt);
-            delete [] _data;                    logger::debug_alloc_ln("PatchDataField", "delete old buf : ",_data);
-            _data = new_ptr;
-            capacity = new_capa;
-        }else{
-            
-        }
+        // if (new_size > capacity) {
+        //     u32 new_capa = safe_fact*new_size;
+        //     T* new_ptr = new T[new_capa];       logger::debug_alloc_ln("PatchDataField", "allocate : ",new_ptr, "capacity :",new_capa);
+        //     copydata(_data, new_ptr, val_cnt);  logger::debug_alloc_ln("PatchDataField", "copy from : ",_data, " to :",new_ptr, "cnt :",val_cnt);
+        //     delete [] _data;                    logger::debug_alloc_ln("PatchDataField", "delete old buf : ",_data);
+        //     _data = new_ptr;
+        //     capacity = new_capa;
+        // }else{
+        //     
+        // }
 
 
 
