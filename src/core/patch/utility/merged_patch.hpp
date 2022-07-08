@@ -40,7 +40,7 @@ inline void make_merge_patches(
 
     sched.for_each_patch_buf([&](u64 id_patch, Patch cur_p, PatchDataBuffer & pdat_buf) {
 
-        SyCLHandler &hndl = SyCLHandler::get_instance();
+        
 
         auto tmp_box = sched.patch_data.sim_box.get_box<pos_prec>(cur_p);
 
@@ -174,7 +174,7 @@ inline void make_merge_patches(
 
         for(u32 idx = 0; idx < pdat_buf.pdl.fields_f32.size(); idx++){
             u32 nvar = merged_buf->pdl.fields_f32[idx].nvar;
-            hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+            sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
                 auto source = pdat_buf.fields_f32[idx]->get_access<sycl::access::mode::read>(cgh);
                 auto dest = merged_buf->fields_f32[idx]->get_access<sycl::access::mode::discard_write>(cgh);
                 cgh.parallel_for( sycl::range{pdat_buf.element_count*nvar}, [=](sycl::item<1> item) { dest[item] = source[item]; });
@@ -184,7 +184,7 @@ inline void make_merge_patches(
 
         for(u32 idx = 0; idx < pdat_buf.pdl.fields_f32_2.size(); idx++){
             u32 nvar = merged_buf->pdl.fields_f32_2[idx].nvar;
-            hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+            sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
                 auto source = pdat_buf.fields_f32_2[idx]->get_access<sycl::access::mode::read>(cgh);
                 auto dest = merged_buf->fields_f32_2[idx]->get_access<sycl::access::mode::discard_write>(cgh);
                 cgh.parallel_for( sycl::range{pdat_buf.element_count*nvar}, [=](sycl::item<1> item) { dest[item] = source[item]; });
@@ -194,7 +194,7 @@ inline void make_merge_patches(
 
         for(u32 idx = 0; idx < pdat_buf.pdl.fields_f32_3.size(); idx++){
             u32 nvar = merged_buf->pdl.fields_f32_3[idx].nvar;
-            hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+            sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
                 auto source = pdat_buf.fields_f32_3[idx]->get_access<sycl::access::mode::read>(cgh);
                 auto dest = merged_buf->fields_f32_3[idx]->get_access<sycl::access::mode::discard_write>(cgh);
                 cgh.parallel_for( sycl::range{pdat_buf.element_count*nvar}, [=](sycl::item<1> item) { dest[item] = source[item]; });
@@ -204,7 +204,7 @@ inline void make_merge_patches(
 
         for(u32 idx = 0; idx < pdat_buf.pdl.fields_f32_4.size(); idx++){
             u32 nvar = merged_buf->pdl.fields_f32_4[idx].nvar;
-            hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+            sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
                 auto source = pdat_buf.fields_f32_4[idx]->get_access<sycl::access::mode::read>(cgh);
                 auto dest = merged_buf->fields_f32_4[idx]->get_access<sycl::access::mode::discard_write>(cgh);
                 cgh.parallel_for( sycl::range{pdat_buf.element_count*nvar}, [=](sycl::item<1> item) { dest[item] = source[item]; });
@@ -214,7 +214,7 @@ inline void make_merge_patches(
 
         for(u32 idx = 0; idx < pdat_buf.pdl.fields_f32_8.size(); idx++){
             u32 nvar = merged_buf->pdl.fields_f32_8[idx].nvar;
-            hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+            sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
                 auto source = pdat_buf.fields_f32_8[idx]->get_access<sycl::access::mode::read>(cgh);
                 auto dest = merged_buf->fields_f32_8[idx]->get_access<sycl::access::mode::discard_write>(cgh);
                 cgh.parallel_for( sycl::range{pdat_buf.element_count*nvar}, [=](sycl::item<1> item) { dest[item] = source[item]; });
@@ -224,7 +224,7 @@ inline void make_merge_patches(
 
         for(u32 idx = 0; idx < pdat_buf.pdl.fields_f32_16.size(); idx++){
             u32 nvar = merged_buf->pdl.fields_f32_16[idx].nvar;
-            hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+            sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
                 auto source = pdat_buf.fields_f32_16[idx]->get_access<sycl::access::mode::read>(cgh);
                 auto dest = merged_buf->fields_f32_16[idx]->get_access<sycl::access::mode::discard_write>(cgh);
                 cgh.parallel_for( sycl::range{pdat_buf.element_count*nvar}, [=](sycl::item<1> item) { dest[item] = source[item]; });
@@ -239,7 +239,7 @@ inline void make_merge_patches(
 
         for(u32 idx = 0; idx < pdat_buf.pdl.fields_f64.size(); idx++){
             u32 nvar = merged_buf->pdl.fields_f64[idx].nvar;
-            hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+            sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
                 auto source = pdat_buf.fields_f64[idx]->get_access<sycl::access::mode::read>(cgh);
                 auto dest = merged_buf->fields_f64[idx]->get_access<sycl::access::mode::discard_write>(cgh);
                 cgh.parallel_for( sycl::range{pdat_buf.element_count*nvar}, [=](sycl::item<1> item) { dest[item] = source[item]; });
@@ -249,7 +249,7 @@ inline void make_merge_patches(
 
         for(u32 idx = 0; idx < pdat_buf.pdl.fields_f64_2.size(); idx++){
             u32 nvar = merged_buf->pdl.fields_f64_2[idx].nvar;
-            hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+            sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
                 auto source = pdat_buf.fields_f64_2[idx]->get_access<sycl::access::mode::read>(cgh);
                 auto dest = merged_buf->fields_f64_2[idx]->get_access<sycl::access::mode::discard_write>(cgh);
                 cgh.parallel_for( sycl::range{pdat_buf.element_count*nvar}, [=](sycl::item<1> item) { dest[item] = source[item]; });
@@ -259,7 +259,7 @@ inline void make_merge_patches(
 
         for(u32 idx = 0; idx < pdat_buf.pdl.fields_f64_3.size(); idx++){
             u32 nvar = merged_buf->pdl.fields_f64_3[idx].nvar;
-            hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+            sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
                 auto source = pdat_buf.fields_f64_3[idx]->get_access<sycl::access::mode::read>(cgh);
                 auto dest = merged_buf->fields_f64_3[idx]->get_access<sycl::access::mode::discard_write>(cgh);
                 cgh.parallel_for( sycl::range{pdat_buf.element_count*nvar}, [=](sycl::item<1> item) { dest[item] = source[item]; });
@@ -269,7 +269,7 @@ inline void make_merge_patches(
 
         for(u32 idx = 0; idx < pdat_buf.pdl.fields_f64_4.size(); idx++){
             u32 nvar = merged_buf->pdl.fields_f64_4[idx].nvar;
-            hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+            sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
                 auto source = pdat_buf.fields_f64_4[idx]->get_access<sycl::access::mode::read>(cgh);
                 auto dest = merged_buf->fields_f64_4[idx]->get_access<sycl::access::mode::discard_write>(cgh);
                 cgh.parallel_for( sycl::range{pdat_buf.element_count*nvar}, [=](sycl::item<1> item) { dest[item] = source[item]; });
@@ -279,7 +279,7 @@ inline void make_merge_patches(
 
         for(u32 idx = 0; idx < pdat_buf.pdl.fields_f64_8.size(); idx++){
             u32 nvar = merged_buf->pdl.fields_f64_8[idx].nvar;
-            hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+            sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
                 auto source = pdat_buf.fields_f64_8[idx]->get_access<sycl::access::mode::read>(cgh);
                 auto dest = merged_buf->fields_f64_8[idx]->get_access<sycl::access::mode::discard_write>(cgh);
                 cgh.parallel_for( sycl::range{pdat_buf.element_count*nvar}, [=](sycl::item<1> item) { dest[item] = source[item]; });
@@ -289,7 +289,7 @@ inline void make_merge_patches(
 
         for(u32 idx = 0; idx < pdat_buf.pdl.fields_f64_16.size(); idx++){
             u32 nvar = merged_buf->pdl.fields_f64_16[idx].nvar;
-            hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+            sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
                 auto source = pdat_buf.fields_f64_16[idx]->get_access<sycl::access::mode::read>(cgh);
                 auto dest = merged_buf->fields_f64_16[idx]->get_access<sycl::access::mode::discard_write>(cgh);
                 cgh.parallel_for( sycl::range{pdat_buf.element_count*nvar}, [=](sycl::item<1> item) { dest[item] = source[item]; });
@@ -301,7 +301,7 @@ inline void make_merge_patches(
 
         for(u32 idx = 0; idx < pdat_buf.pdl.fields_u32.size(); idx++){
             u32 nvar = merged_buf->pdl.fields_u32[idx].nvar;
-            hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+            sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
                 auto source = pdat_buf.fields_u32[idx]->get_access<sycl::access::mode::read>(cgh);
                 auto dest = merged_buf->fields_u32[idx]->get_access<sycl::access::mode::discard_write>(cgh);
                 cgh.parallel_for( sycl::range{pdat_buf.element_count*nvar}, [=](sycl::item<1> item) { dest[item] = source[item]; });
@@ -311,7 +311,7 @@ inline void make_merge_patches(
 
         for(u32 idx = 0; idx < pdat_buf.pdl.fields_u64.size(); idx++){
             u32 nvar = merged_buf->pdl.fields_u64[idx].nvar;
-            hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+            sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
                 auto source = pdat_buf.fields_u64[idx]->get_access<sycl::access::mode::read>(cgh);
                 auto dest = merged_buf->fields_u64[idx]->get_access<sycl::access::mode::discard_write>(cgh);
                 cgh.parallel_for( sycl::range{pdat_buf.element_count*nvar}, [=](sycl::item<1> item) { dest[item] = source[item]; });
@@ -332,7 +332,7 @@ inline void make_merge_patches(
 
         interface_hndl.for_each_interface(
             id_patch, 
-            hndl.get_queue_compute(0), 
+            sycl_handler::get_compute_queue(), 
             [&](u64 patch_id, u64 interf_patch_id, PatchDataBuffer & interfpdat, std::tuple<f32_3,f32_3> box){
 
                 //std::cout <<  "patch : n°"<< id_patch << " -> interface : "<<interf_patch_id << " merging" << std::endl;
@@ -348,7 +348,7 @@ inline void make_merge_patches(
 
                 for(u32 idx = 0; idx < interfpdat.pdl.fields_f32.size(); idx++){
                     u32 nvar = merged_buf->pdl.fields_f32[idx].nvar;
-                    hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+                    sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
                         auto source = interfpdat.fields_f32[idx]->get_access<sycl::access::mode::read>(cgh);
                         auto dest = merged_buf->fields_f32[idx]->get_access<sycl::access::mode::discard_write>(cgh);
                         auto off = fields_f32_offset[idx];
@@ -359,7 +359,7 @@ inline void make_merge_patches(
 
                 for(u32 idx = 0; idx < interfpdat.pdl.fields_f32_2.size(); idx++){
                     u32 nvar = merged_buf->pdl.fields_f32_2[idx].nvar;
-                    hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+                    sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
                         auto source = interfpdat.fields_f32_2[idx]->get_access<sycl::access::mode::read>(cgh);
                         auto dest = merged_buf->fields_f32_2[idx]->get_access<sycl::access::mode::discard_write>(cgh);
                         auto off = fields_f32_2_offset[idx];
@@ -369,7 +369,7 @@ inline void make_merge_patches(
 
                 for(u32 idx = 0; idx < interfpdat.pdl.fields_f32_3.size(); idx++){
                     u32 nvar = merged_buf->pdl.fields_f32_3[idx].nvar;
-                    hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+                    sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
                         auto source = interfpdat.fields_f32_3[idx]->get_access<sycl::access::mode::read>(cgh);
                         auto dest = merged_buf->fields_f32_3[idx]->get_access<sycl::access::mode::discard_write>(cgh);
                         auto off = fields_f32_3_offset[idx];
@@ -379,7 +379,7 @@ inline void make_merge_patches(
 
                 for(u32 idx = 0; idx < interfpdat.pdl.fields_f32_4.size(); idx++){
                     u32 nvar = merged_buf->pdl.fields_f32_4[idx].nvar;
-                    hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+                    sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
                         auto source = interfpdat.fields_f32_4[idx]->get_access<sycl::access::mode::read>(cgh);
                         auto dest = merged_buf->fields_f32_4[idx]->get_access<sycl::access::mode::discard_write>(cgh);
                         auto off = fields_f32_4_offset[idx];
@@ -389,7 +389,7 @@ inline void make_merge_patches(
 
                 for(u32 idx = 0; idx < interfpdat.pdl.fields_f32_8.size(); idx++){
                     u32 nvar = merged_buf->pdl.fields_f32_8[idx].nvar;
-                    hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+                    sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
                         auto source = interfpdat.fields_f32_8[idx]->get_access<sycl::access::mode::read>(cgh);
                         auto dest = merged_buf->fields_f32_8[idx]->get_access<sycl::access::mode::discard_write>(cgh);
                         auto off = fields_f32_8_offset[idx];
@@ -399,7 +399,7 @@ inline void make_merge_patches(
 
                 for(u32 idx = 0; idx < interfpdat.pdl.fields_f32_16.size(); idx++){
                     u32 nvar = merged_buf->pdl.fields_f32_16[idx].nvar;
-                    hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+                    sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
                         auto source = interfpdat.fields_f32_16[idx]->get_access<sycl::access::mode::read>(cgh);
                         auto dest = merged_buf->fields_f32_16[idx]->get_access<sycl::access::mode::discard_write>(cgh);
                         auto off = fields_f32_16_offset[idx];
@@ -414,7 +414,7 @@ inline void make_merge_patches(
 
                 for(u32 idx = 0; idx < interfpdat.pdl.fields_f64.size(); idx++){
                     u32 nvar = merged_buf->pdl.fields_f64[idx].nvar;
-                    hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+                    sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
                         auto source = interfpdat.fields_f64[idx]->get_access<sycl::access::mode::read>(cgh);
                         auto dest = merged_buf->fields_f64[idx]->get_access<sycl::access::mode::discard_write>(cgh);
                         auto off = fields_f64_offset[idx];
@@ -424,7 +424,7 @@ inline void make_merge_patches(
 
                 for(u32 idx = 0; idx < interfpdat.pdl.fields_f64_2.size(); idx++){
                     u32 nvar = merged_buf->pdl.fields_f64_2[idx].nvar;
-                    hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+                    sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
                         auto source = interfpdat.fields_f64_2[idx]->get_access<sycl::access::mode::read>(cgh);
                         auto dest = merged_buf->fields_f64_2[idx]->get_access<sycl::access::mode::discard_write>(cgh);
                         auto off = fields_f64_2_offset[idx];
@@ -434,7 +434,7 @@ inline void make_merge_patches(
 
                 for(u32 idx = 0; idx < interfpdat.pdl.fields_f64_3.size(); idx++){
                     u32 nvar = merged_buf->pdl.fields_f64_3[idx].nvar;
-                    hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+                    sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
                         auto source = interfpdat.fields_f64_3[idx]->get_access<sycl::access::mode::read>(cgh);
                         auto dest = merged_buf->fields_f64_3[idx]->get_access<sycl::access::mode::discard_write>(cgh);
                         auto off = fields_f64_3_offset[idx];
@@ -444,7 +444,7 @@ inline void make_merge_patches(
 
                 for(u32 idx = 0; idx < interfpdat.pdl.fields_f64_4.size(); idx++){
                     u32 nvar = merged_buf->pdl.fields_f64_4[idx].nvar;
-                    hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+                    sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
                         auto source = interfpdat.fields_f64_4[idx]->get_access<sycl::access::mode::read>(cgh);
                         auto dest = merged_buf->fields_f64_4[idx]->get_access<sycl::access::mode::discard_write>(cgh);
                         auto off = fields_f64_4_offset[idx];
@@ -454,7 +454,7 @@ inline void make_merge_patches(
 
                 for(u32 idx = 0; idx < interfpdat.pdl.fields_f64_8.size(); idx++){
                     u32 nvar = merged_buf->pdl.fields_f64_8[idx].nvar;
-                    hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+                    sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
                         auto source = interfpdat.fields_f64_8[idx]->get_access<sycl::access::mode::read>(cgh);
                         auto dest = merged_buf->fields_f64_8[idx]->get_access<sycl::access::mode::discard_write>(cgh);
                         auto off = fields_f64_8_offset[idx];
@@ -464,7 +464,7 @@ inline void make_merge_patches(
 
                 for(u32 idx = 0; idx < interfpdat.pdl.fields_f64_16.size(); idx++){
                     u32 nvar = merged_buf->pdl.fields_f64_16[idx].nvar;
-                    hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+                    sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
                         auto source = interfpdat.fields_f64_16[idx]->get_access<sycl::access::mode::read>(cgh);
                         auto dest = merged_buf->fields_f64_16[idx]->get_access<sycl::access::mode::discard_write>(cgh);
                         auto off = fields_f64_16_offset[idx];
@@ -476,7 +476,7 @@ inline void make_merge_patches(
 
                 for(u32 idx = 0; idx < interfpdat.pdl.fields_u32.size(); idx++){
                     u32 nvar = merged_buf->pdl.fields_u32[idx].nvar;
-                    hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+                    sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
                         auto source = interfpdat.fields_u32[idx]->get_access<sycl::access::mode::read>(cgh);
                         auto dest = merged_buf->fields_u32[idx]->get_access<sycl::access::mode::discard_write>(cgh);
                         auto off = fields_u32_offset[idx];
@@ -486,7 +486,7 @@ inline void make_merge_patches(
 
                 for(u32 idx = 0; idx < interfpdat.pdl.fields_u64.size(); idx++){
                     u32 nvar = merged_buf->pdl.fields_u64[idx].nvar;
-                    hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+                    sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
                         auto source = interfpdat.fields_u64[idx]->get_access<sycl::access::mode::read>(cgh);
                         auto dest = merged_buf->fields_u64[idx]->get_access<sycl::access::mode::discard_write>(cgh);
                         auto off = fields_u64_offset[idx];
@@ -521,7 +521,7 @@ inline void write_back_merge_patches(
 
     logger::debug_sycl_ln("Merged Patch","write back merged buffers");
 
-    SyCLHandler &hndl = SyCLHandler::get_instance();
+    
 
     sched.for_each_patch_buf([&](u64 id_patch, Patch cur_p, PatchDataBuffer & pdat_buf) {
         if(merge_pdat_buf.at(id_patch).or_element_cnt == 0) std::cout << " empty => skipping" << std::endl;
@@ -540,7 +540,7 @@ inline void write_back_merge_patches(
 
         for(u32 idx = 0; idx < pdat_buf.pdl.fields_f32.size(); idx++){
             u32 nvar = pdat_buf.pdl.fields_f32[idx].nvar;
-            hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+            sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
                 auto dest = pdat_buf.fields_f32[idx]->get_access<sycl::access::mode::discard_write>(cgh);
                 auto source = merge_pdat_buf.at(id_patch).data->fields_f32[idx]->template get_access<sycl::access::mode::read>(cgh);
                 cgh.parallel_for( sycl::range{pdat_buf.element_count*nvar}, [=](sycl::item<1> item) { dest[item] = source[item]; });
@@ -549,7 +549,7 @@ inline void write_back_merge_patches(
 
         for(u32 idx = 0; idx < pdat_buf.pdl.fields_f32_2.size(); idx++){
             u32 nvar = pdat_buf.pdl.fields_f32_2[idx].nvar;
-            hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+            sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
                 auto dest = pdat_buf.fields_f32_2[idx]->get_access<sycl::access::mode::discard_write>(cgh);
                 auto source = merge_pdat_buf.at(id_patch).data->fields_f32_2[idx]->template get_access<sycl::access::mode::read>(cgh);
                 cgh.parallel_for( sycl::range{pdat_buf.element_count*nvar}, [=](sycl::item<1> item) { dest[item] = source[item]; });
@@ -558,7 +558,7 @@ inline void write_back_merge_patches(
 
         for(u32 idx = 0; idx < pdat_buf.pdl.fields_f32_3.size(); idx++){
             u32 nvar = pdat_buf.pdl.fields_f32_3[idx].nvar;
-            hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+            sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
                 auto dest = pdat_buf.fields_f32_3[idx]->get_access<sycl::access::mode::discard_write>(cgh);
                 auto source = merge_pdat_buf.at(id_patch).data->fields_f32_3[idx]->template get_access<sycl::access::mode::read>(cgh);
                 cgh.parallel_for( sycl::range{pdat_buf.element_count*nvar}, [=](sycl::item<1> item) { dest[item] = source[item]; });
@@ -567,7 +567,7 @@ inline void write_back_merge_patches(
 
         for(u32 idx = 0; idx < pdat_buf.pdl.fields_f32_4.size(); idx++){
             u32 nvar = pdat_buf.pdl.fields_f32_4[idx].nvar;
-            hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+            sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
                 auto dest = pdat_buf.fields_f32_4[idx]->get_access<sycl::access::mode::discard_write>(cgh);
                 auto source = merge_pdat_buf.at(id_patch).data->fields_f32_4[idx]->template get_access<sycl::access::mode::read>(cgh);
                 cgh.parallel_for( sycl::range{pdat_buf.element_count*nvar}, [=](sycl::item<1> item) { dest[item] = source[item]; });
@@ -576,7 +576,7 @@ inline void write_back_merge_patches(
 
         for(u32 idx = 0; idx < pdat_buf.pdl.fields_f32_8.size(); idx++){
             u32 nvar = pdat_buf.pdl.fields_f32_8[idx].nvar;
-            hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+            sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
                 auto dest = pdat_buf.fields_f32_8[idx]->get_access<sycl::access::mode::discard_write>(cgh);
                 auto source = merge_pdat_buf.at(id_patch).data->fields_f32_8[idx]->template get_access<sycl::access::mode::read>(cgh);
                 cgh.parallel_for( sycl::range{pdat_buf.element_count*nvar}, [=](sycl::item<1> item) { dest[item] = source[item]; });
@@ -585,7 +585,7 @@ inline void write_back_merge_patches(
 
         for(u32 idx = 0; idx < pdat_buf.pdl.fields_f32_16.size(); idx++){
             u32 nvar = pdat_buf.pdl.fields_f32_16[idx].nvar;
-            hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+            sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
                 auto dest = pdat_buf.fields_f32_16[idx]->get_access<sycl::access::mode::discard_write>(cgh);
                 auto source = merge_pdat_buf.at(id_patch).data->fields_f32_16[idx]->template get_access<sycl::access::mode::read>(cgh);
                 cgh.parallel_for( sycl::range{pdat_buf.element_count*nvar}, [=](sycl::item<1> item) { dest[item] = source[item]; });
@@ -599,7 +599,7 @@ inline void write_back_merge_patches(
 
         for(u32 idx = 0; idx < pdat_buf.pdl.fields_f64.size(); idx++){
             u32 nvar = pdat_buf.pdl.fields_f64[idx].nvar;
-            hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+            sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
                 auto dest = pdat_buf.fields_f64[idx]->get_access<sycl::access::mode::discard_write>(cgh);
                 auto source = merge_pdat_buf.at(id_patch).data->fields_f64[idx]->template get_access<sycl::access::mode::read>(cgh);
                 cgh.parallel_for( sycl::range{pdat_buf.element_count*nvar}, [=](sycl::item<1> item) { dest[item] = source[item]; });
@@ -608,7 +608,7 @@ inline void write_back_merge_patches(
 
         for(u32 idx = 0; idx < pdat_buf.pdl.fields_f64_2.size(); idx++){
             u32 nvar = pdat_buf.pdl.fields_f64_2[idx].nvar;
-            hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+            sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
                 auto dest = pdat_buf.fields_f64_2[idx]->get_access<sycl::access::mode::discard_write>(cgh);
                 auto source = merge_pdat_buf.at(id_patch).data->fields_f64_2[idx]->template get_access<sycl::access::mode::read>(cgh);
                 cgh.parallel_for( sycl::range{pdat_buf.element_count*nvar}, [=](sycl::item<1> item) { dest[item] = source[item]; });
@@ -617,7 +617,7 @@ inline void write_back_merge_patches(
 
         for(u32 idx = 0; idx < pdat_buf.pdl.fields_f64_3.size(); idx++){
             u32 nvar = pdat_buf.pdl.fields_f64_3[idx].nvar;
-            hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+            sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
                 auto dest = pdat_buf.fields_f64_3[idx]->get_access<sycl::access::mode::discard_write>(cgh);
                 auto source = merge_pdat_buf.at(id_patch).data->fields_f64_3[idx]->template get_access<sycl::access::mode::read>(cgh);
                 cgh.parallel_for( sycl::range{pdat_buf.element_count*nvar}, [=](sycl::item<1> item) { dest[item] = source[item]; });
@@ -626,7 +626,7 @@ inline void write_back_merge_patches(
 
         for(u32 idx = 0; idx < pdat_buf.pdl.fields_f64_4.size(); idx++){
             u32 nvar = pdat_buf.pdl.fields_f64_4[idx].nvar;
-            hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+            sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
                 auto dest = pdat_buf.fields_f64_4[idx]->get_access<sycl::access::mode::discard_write>(cgh);
                 auto source = merge_pdat_buf.at(id_patch).data->fields_f64_4[idx]->template get_access<sycl::access::mode::read>(cgh);
                 cgh.parallel_for( sycl::range{pdat_buf.element_count*nvar}, [=](sycl::item<1> item) { dest[item] = source[item]; });
@@ -635,7 +635,7 @@ inline void write_back_merge_patches(
 
         for(u32 idx = 0; idx < pdat_buf.pdl.fields_f64_8.size(); idx++){
             u32 nvar = pdat_buf.pdl.fields_f64_8[idx].nvar;
-            hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+            sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
                 auto dest = pdat_buf.fields_f64_8[idx]->get_access<sycl::access::mode::discard_write>(cgh);
                 auto source = merge_pdat_buf.at(id_patch).data->fields_f64_8[idx]->template get_access<sycl::access::mode::read>(cgh);
                 cgh.parallel_for( sycl::range{pdat_buf.element_count*nvar}, [=](sycl::item<1> item) { dest[item] = source[item]; });
@@ -644,7 +644,7 @@ inline void write_back_merge_patches(
 
         for(u32 idx = 0; idx < pdat_buf.pdl.fields_f64_16.size(); idx++){
             u32 nvar = pdat_buf.pdl.fields_f64_16[idx].nvar;
-            hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+            sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
                 auto dest = pdat_buf.fields_f64_16[idx]->get_access<sycl::access::mode::discard_write>(cgh);
                 auto source = merge_pdat_buf.at(id_patch).data->fields_f64_16[idx]->template get_access<sycl::access::mode::read>(cgh);
                 cgh.parallel_for( sycl::range{pdat_buf.element_count*nvar}, [=](sycl::item<1> item) { dest[item] = source[item]; });
@@ -655,7 +655,7 @@ inline void write_back_merge_patches(
 
         for(u32 idx = 0; idx < pdat_buf.pdl.fields_u32.size(); idx++){
             u32 nvar = pdat_buf.pdl.fields_u32[idx].nvar;
-            hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+            sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
                 auto dest = pdat_buf.fields_u32[idx]->get_access<sycl::access::mode::discard_write>(cgh);
                 auto source = merge_pdat_buf.at(id_patch).data->fields_u32[idx]->template get_access<sycl::access::mode::read>(cgh);
                 cgh.parallel_for( sycl::range{pdat_buf.element_count*nvar}, [=](sycl::item<1> item) { dest[item] = source[item]; });
@@ -665,7 +665,7 @@ inline void write_back_merge_patches(
 
         for(u32 idx = 0; idx < pdat_buf.pdl.fields_u64.size(); idx++){
             u32 nvar = pdat_buf.pdl.fields_u64[idx].nvar;
-            hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+            sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
                 auto dest = pdat_buf.fields_u64[idx]->get_access<sycl::access::mode::discard_write>(cgh);
                 auto source = merge_pdat_buf.at(id_patch).data->fields_u64[idx]->template get_access<sycl::access::mode::read>(cgh);
                 cgh.parallel_for( sycl::range{pdat_buf.element_count*nvar}, [=](sycl::item<1> item) { dest[item] = source[item]; });
@@ -692,7 +692,7 @@ inline void make_merge_patches_comp_field(
 
     sched.for_each_patch([&](u64 id_patch, Patch cur_p) {
 
-        SyCLHandler &hndl = SyCLHandler::get_instance();
+        
 
         auto & compfield_buf = comp_field.field_data_buf[id_patch];
 
@@ -716,7 +716,7 @@ inline void make_merge_patches_comp_field(
         u32 offset_buf = 0;
 
         
-        hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+        sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
             auto source = compfield_buf->get_access<sycl::access::mode::read>(cgh);
             auto dest = merge_pdat_comp_field[id_patch].buf->template get_access<sycl::access::mode::discard_write>(cgh);
             cgh.parallel_for( sycl::range{compfield_buf->size()}, [=](sycl::item<1> item) { dest[item] = source[item]; });
@@ -735,7 +735,7 @@ inline void make_merge_patches_comp_field(
 
                 u32 len_int =  pdat_ptr->size();
 
-                hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+                sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
                     auto source = tmp_buf.template get_access<sycl::access::mode::read>(cgh);
                     auto dest = merge_pdat_comp_field[id_patch].buf->template get_access<sycl::access::mode::discard_write>(cgh);
                     auto off = offset_buf;

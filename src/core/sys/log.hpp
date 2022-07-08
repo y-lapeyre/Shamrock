@@ -106,24 +106,8 @@ namespace terminal_effects {
 
 }
 
-#define DECLARE_LOG_LEVEL(_name, color, loginf, logval)                                                                     \
-                                                                                                                            \
-    constexpr i8 log_##_name = (logval);                                                                                              \
-                                                                                                                            \
-    template <typename... Types> inline void _name(std::string module_name, Types... var2) {                                \
-        if (loglevel >= log_##_name) {                                                                                      \
-            std::cout << "[" + (color) + module_name + terminal_effects::reset + "] " + (color) + (loginf) +          \
-                             terminal_effects::reset + ": ";                                                                \
-            print(var2...);                                                                                                 \
-        }                                                                                                                   \
-    }                                                                                                                       \
-                                                                                                                            \
-    template <typename... Types> inline void _name##_ln(std::string module_name, Types... var2) {                           \
-        if (loglevel >= log_##_name) {                                                                                      \
-            _name(module_name, var2...);                                                                                    \
-            std::cout << std::endl;                                                                                         \
-        }                                                                                                                   \
-    }
+
+
 
 namespace logger {
 
@@ -237,15 +221,64 @@ namespace logger {
 
     inline i8 loglevel = 0;
 
-    //DECLARE_LOG_LEVEL(debug,terminal_effects::colors_foreground_8b::green,"Debug",10)
+    #define LIST_LEVEL                                                                                                      \
+    X(debug_mpi, terminal_effects::colors_foreground_8b::blue, "Debug MPI ", i8_max)                                        \
+    X(debug_sycl, terminal_effects::colors_foreground_8b::magenta, "Debug SYCL", 10)                                        \
+    X(debug, terminal_effects::colors_foreground_8b::green, "Debug ", 10)                                                   \
+    X(info, terminal_effects::colors_foreground_8b::cyan, "", 1)                                                            \
+    X(normal, terminal_effects::bold, "", 0)                                                                                \
+    X(warn, terminal_effects::colors_foreground_8b::yellow, "Warning ", -1)                                                 \
+    X(err, terminal_effects::colors_foreground_8b::red, "Error ", -10)
 
-    DECLARE_LOG_LEVEL(debug_mpi,terminal_effects::colors_foreground_8b::blue,"Debug MPI ",i8_max)
-    DECLARE_LOG_LEVEL(debug_sycl,terminal_effects::colors_foreground_8b::magenta,"Debug SYCL",10)
-    DECLARE_LOG_LEVEL(debug,terminal_effects::colors_foreground_8b::green,"Debug ",10)
-    DECLARE_LOG_LEVEL(info,terminal_effects::colors_foreground_8b::cyan,"",1)
-    DECLARE_LOG_LEVEL(normal,terminal_effects::bold,"",0)
-    DECLARE_LOG_LEVEL(warn,terminal_effects::colors_foreground_8b::yellow,"Warning ",-1)
-    DECLARE_LOG_LEVEL(err,terminal_effects::colors_foreground_8b::red,"Error ",-10)
+
+
+    //////////////////////////////
+    //declare all the log levels
+    //////////////////////////////
+    #define DECLARE_LOG_LEVEL(_name, color, loginf, logval)                                                                     \
+                                                                                                                            \
+    constexpr i8 log_##_name = (logval);                                                                                              \
+                                                                                                                            \
+    template <typename... Types> inline void _name(std::string module_name, Types... var2) {                                \
+        if (loglevel >= log_##_name) {                                                                                      \
+            std::cout << "[" + (color) + module_name + terminal_effects::reset + "] " + (color) + (loginf) +          \
+                             terminal_effects::reset + ": ";                                                                \
+            print(var2...);                                                                                                 \
+        }                                                                                                                   \
+    }                                                                                                                       \
+                                                                                                                            \
+    template <typename... Types> inline void _name##_ln(std::string module_name, Types... var2) {                           \
+        if (loglevel >= log_##_name) {                                                                                      \
+            _name(module_name, var2...);                                                                                    \
+            std::cout << std::endl;                                                                                         \
+        }                                                                                                                   \
+    }
+
+    #define X DECLARE_LOG_LEVEL
+    LIST_LEVEL
+    #undef X
+
+    #undef DECLARE_LOG_LEVEL
+    ///////////////////////////////////
+    // log level declared
+    ///////////////////////////////////
+
+
+
+    #define IsActivePrint(_name, color, loginf, logval) \
+        _name##_ln("xxx", "xxx","(","logger::" #_name,")");
+
+    inline void print_active_level(){
+
+        logger::raw_ln(terminal_effects::faint + "----------------------" + terminal_effects::reset);
+        #define X IsActivePrint
+        LIST_LEVEL
+        #undef X
+        logger::raw_ln(terminal_effects::faint + "----------------------" + terminal_effects::reset);
+
+    }
+
+    #undef IsActivePrint
 
 
 

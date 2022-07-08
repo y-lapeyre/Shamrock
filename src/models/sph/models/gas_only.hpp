@@ -44,7 +44,7 @@ class GasOnlyLeapfrog{public:
         Stepper stepper(sched,periodic_bc,htol_up_tol,htol_up_iter,gpart_mass);
 
 
-        SyCLHandler &hndl = SyCLHandler::get_instance();
+        
 
         const u32 ixyz      = sched.pdl.get_field_idx<vec3>("xyz");
         const u32 ivxyz     = sched.pdl.get_field_idx<vec3>("vxyz");
@@ -144,7 +144,7 @@ class GasOnlyLeapfrog{public:
                         auto cs = eos_cs;
                         auto part_mass = gpart_mass;
 
-                        hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+                        sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
                             auto h = hnew.get_access<sycl::access::mode::read>(cgh);
 
                             auto p = press.get_access<sycl::access::mode::discard_write>(cgh);
@@ -176,7 +176,7 @@ class GasOnlyLeapfrog{public:
                         std::cout << " empty => skipping" << std::endl;return;
                     }
 
-                    SyCLHandler &hndl = SyCLHandler::get_instance();
+                    
 
                     PatchDataBuffer &pdat_buf_merge = *merge_pdat_buf.at(id_patch).data;
 
@@ -189,7 +189,7 @@ class GasOnlyLeapfrog{public:
 
                 
                     std::cout << "patch : n°" << id_patch << "compute forces" << std::endl;
-                    hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+                    sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
                         auto h_new = hnew.get_access<sycl::access::mode::read>(cgh);
                         auto omga  = omega.get_access<sycl::access::mode::read>(cgh);
 

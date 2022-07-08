@@ -85,7 +85,7 @@ namespace integrator {
 
             sycl::range<1> range{10};
 
-            SyCLHandler::get_instance().get_default().submit([&](sycl::handler &cgh) {
+            sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
                 auto ff = fres.get_access<sycl::access::mode::read_write>(cgh);
 
                 cgh.parallel_for<class Write_chosen_node>(range, [=](sycl::item<1> item) {
@@ -190,7 +190,7 @@ Test_start("sycl::", custom_iterator, 1){
     {
         sycl::buffer<u32> buf(test_vec.data(),test_vec.size());
 
-        SyCLHandler::get_instance().get_queue_compute(0).submit([&](sycl::handler &cgh) {
+        sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
             auto out = buf.get_access<sycl::access::mode::write>(cgh);
 
 
@@ -253,6 +253,8 @@ Test_start("sycl::", custom_iterator, 1){
 
 }
 
+
+#if false
 Test_start("sycl::", parallel_sumbit, 1){
 
     std::vector<std::vector<u32>> vec_to_up;
@@ -384,7 +386,7 @@ Test_start("sycl::", parallel_sumbit, 1){
 
 }
 
-
+#endif
 
 namespace walker{
 
@@ -405,7 +407,7 @@ Test_start("testcpp::", test_lambda_walker, 1){
 
 Test_start("test_MPI_CUDA", test1, 2){
 
-    sycl::queue & q = SyCLHandler::get_instance().get_queue_compute(0);
+    sycl::queue & q = sycl_handler::get_compute_queue();
 
     u32 len_test = 10000;
 

@@ -51,13 +51,16 @@ namespace sycl_handler {
 
     void init();
 
+    sycl::queue & get_compute_queue();
+    sycl::queue & get_alt_queue();
+
 
 } // namespace sycl_handler
 
 
 
 
-
+#if false
 
 /**
  * @brief new implementation of the SYCL handler
@@ -120,3 +123,5 @@ class SyCLHandler{public:
          */
         static SyCLHandler& get_instance();
 };
+
+#endif

@@ -161,7 +161,7 @@ namespace sph {
         LambdaForce && lambda_compute_forces,
         LambdaCorrector && lambda_correct){
 
-        SyCLHandler &hndl = SyCLHandler::get_instance();
+        
 
         const flt loc_htol_up_tol  = htol_up_tol;
         const flt loc_htol_up_iter = htol_up_iter;
@@ -209,20 +209,20 @@ namespace sph {
 
             logger::debug_ln("SPHLeapfrog", "patch : n°",id_patch,"->","predictor");
 
-            lambda_update_time(hndl.get_queue_compute(0),pdat_buf,sycl::range<1> {pdat_buf.element_count},dt_cur/2);
+            lambda_update_time(sycl_handler::get_compute_queue(),pdat_buf,sycl::range<1> {pdat_buf.element_count},dt_cur/2);
 
-            sycl_move_parts(hndl.get_queue_compute(0), pdat_buf.element_count, dt_cur,
+            sycl_move_parts(sycl_handler::get_compute_queue(), pdat_buf.element_count, dt_cur,
                                               pdat_buf.get_field<vec3>(ixyz), pdat_buf.get_field<vec3>(ivxyz));
 
-            lambda_update_time(hndl.get_queue_compute(0),pdat_buf,sycl::range<1> {pdat_buf.element_count},dt_cur/2);
+            lambda_update_time(sycl_handler::get_compute_queue(),pdat_buf,sycl::range<1> {pdat_buf.element_count},dt_cur/2);
 
 
             logger::debug_ln("SPHLeapfrog", "patch : n°",id_patch,"->","dt fields swap");
 
-            lambda_swap_der(hndl.get_queue_compute(0),pdat_buf,sycl::range<1> {pdat_buf.element_count});
+            lambda_swap_der(sycl_handler::get_compute_queue(),pdat_buf,sycl::range<1> {pdat_buf.element_count});
 
             if (periodic_mode) {//TODO generalise position modulo in the scheduler
-                sycl_position_modulo(hndl.get_queue_compute(0), pdat_buf.element_count,
+                sycl_position_modulo(sycl_handler::get_compute_queue(), pdat_buf.element_count,
                                                pdat_buf.get_field<vec3>(ixyz), sched.get_box_volume<vec3>());
             }
         });
@@ -260,7 +260,7 @@ namespace sph {
         auto tmerge_buf = timings::start_timer("buffer merging", timings::sycl);
         std::unordered_map<u64, MergedPatchDataBuffer<vec3>> merge_pdat_buf;
         make_merge_patches(sched, interface_hndl, merge_pdat_buf);
-        hndl.get_queue_compute(0).wait();
+        sycl_handler::get_compute_queue().wait();
         tmerge_buf.stop();
 
         //make trees
@@ -278,7 +278,7 @@ namespace sph {
             std::tuple<vec3, vec3> &box = merge_pdat_buf.at(id_patch).box;
 
             // radix tree computation
-            radix_trees[id_patch] = std::make_unique<Radix_Tree<u_morton, vec3>>(hndl.get_queue_compute(0), box,
+            radix_trees[id_patch] = std::make_unique<Radix_Tree<u_morton, vec3>>(sycl_handler::get_compute_queue(), box,
                                                                                     mpdat_buf.get_field<vec3>(ixyz));
         });
 
@@ -287,7 +287,7 @@ namespace sph {
             if (merge_pdat_buf.at(id_patch).or_element_cnt == 0)
                 logger::debug_ln("SPHLeapfrog","patch : n°",id_patch,"->","is empty skipping tree volumes step");
 
-            radix_trees[id_patch]->compute_cellvolume(hndl.get_queue_compute(0));
+            radix_trees[id_patch]->compute_cellvolume(sycl_handler::get_compute_queue());
         });
 
         sched.for_each_patch([&](u64 id_patch, Patch cur_p) {
@@ -297,9 +297,9 @@ namespace sph {
 
             PatchDataBuffer &mpdat_buf = *merge_pdat_buf.at(id_patch).data;
 
-            radix_trees[id_patch]->compute_int_boxes(hndl.get_queue_compute(0), mpdat_buf.get_field<flt>(ihpart), htol_up_tol);
+            radix_trees[id_patch]->compute_int_boxes(sycl_handler::get_compute_queue(), mpdat_buf.get_field<flt>(ihpart), htol_up_tol);
         });
-        hndl.get_queue_compute(0).wait();
+        sycl_handler::get_compute_queue().wait();
         tgen_trees.stop();
 
 
@@ -335,12 +335,12 @@ namespace sph {
 
             models::sph::algs::SmoothingLenghtCompute<flt, u32, Kernel> h_iterator(sched.pdl, htol_up_tol, htol_up_iter);
 
-            h_iterator.iterate_smoothing_lenght(hndl.get_queue_compute(0), merge_pdat_buf.at(id_patch).or_element_cnt,
+            h_iterator.iterate_smoothing_lenght(sycl_handler::get_compute_queue(), merge_pdat_buf.at(id_patch).or_element_cnt,
                                                 sph_gpart_mass, *radix_trees[id_patch], pdat_buf_merge, hnew, omega, eps_h);
 
             // write back h test
             //*
-            hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+            sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
                 auto h_new = hnew.template get_access<sycl::access::mode::read>(cgh);
 
                 auto acc_hpart = pdat_buf_merge.get_field<flt>(ihpart)->template get_access<sycl::access::mode::write>(cgh);
@@ -399,7 +399,7 @@ namespace sph {
 
                 
 
-                lambda_correct(hndl.get_queue_compute(0),pdat_buf_merge,sycl::range<1> {merge_pdat_buf.at(id_patch).or_element_cnt},dt_cur/2);
+                lambda_correct(sycl_handler::get_compute_queue(),pdat_buf_merge,sycl::range<1> {merge_pdat_buf.at(id_patch).or_element_cnt},dt_cur/2);
             }
         });
 

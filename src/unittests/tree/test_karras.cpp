@@ -55,7 +55,7 @@ Test_start("tree::kernels::",karras_alg,1){
         std::unique_ptr<sycl::buffer<u32>     > out_buf_endrange    = std::make_unique<sycl::buffer<u32>     >(out_endrange   .data(),out_endrange   .size());
 
         sycl_karras_alg<u_morton>(
-            SyCLHandler::get_instance().get_queue_compute(0),
+            sycl_handler::get_compute_queue(),
             morton_list.size()-1, 
             buf_morton, 
             out_buf_lchild_id,

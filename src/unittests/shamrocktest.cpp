@@ -123,7 +123,7 @@ Options :
 
     mpi_handler::init();printf("\n");
 
-    SyCLHandler::get_instance().init_sycl();
+    sycl_handler::init();
 
     if(!run_only){
         printf("\n------------ Tests list --------------\n");

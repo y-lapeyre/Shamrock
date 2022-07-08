@@ -26,7 +26,7 @@ inline std::unordered_map<u64, sycl::buffer<u64>> get_new_id_map(PatchScheduler 
 template<> 
 inline std::unordered_map<u64, sycl::buffer<u64>> get_new_id_map<f32_3>(PatchScheduler & sched, SerialPatchTree<f32_3> & sptree){
 
-    SyCLHandler & hndl = SyCLHandler::get_instance();
+    
 
     std::unordered_map<u64, sycl::buffer<u64>> newid_buf_map;
 
@@ -42,7 +42,7 @@ inline std::unordered_map<u64, sycl::buffer<u64>> get_new_id_map<f32_3>(PatchSch
             newid_buf_map.insert({
                 id,
                 __compute_object_patch_owner<f32_3, class ComputeObejctPatchOwners_f32>(
-                    hndl.get_queue_compute(0), 
+                    sycl_handler::get_compute_queue(), 
                     *pos, 
                     sptree)});
 
@@ -61,7 +61,7 @@ inline std::unordered_map<u64, sycl::buffer<u64>> get_new_id_map<f32_3>(PatchSch
 template<> 
 inline std::unordered_map<u64, sycl::buffer<u64>> get_new_id_map<f64_3>(PatchScheduler & sched, SerialPatchTree<f64_3> & sptree){
 
-    SyCLHandler & hndl = SyCLHandler::get_instance();
+    
 
     std::unordered_map<u64, sycl::buffer<u64>> newid_buf_map;
 
@@ -77,7 +77,7 @@ inline std::unordered_map<u64, sycl::buffer<u64>> get_new_id_map<f64_3>(PatchSch
             newid_buf_map.insert({
                 id,
                 __compute_object_patch_owner<f64_3, class ComputeObejctPatchOwners_f64>(
-                    hndl.get_queue_compute(0), 
+                    sycl_handler::get_compute_queue(), 
                     *pos, 
                     sptree)});
 
@@ -102,7 +102,7 @@ inline void reatribute_particles(PatchScheduler & sched, SerialPatchTree<vecprec
 template<>
 inline void reatribute_particles<f32_3>(PatchScheduler & sched, SerialPatchTree<f32_3> & sptree,bool periodic){
 
-    SyCLHandler & hndl = SyCLHandler::get_instance();
+    
 
     bool err_id_in_newid = false;
     std::unordered_map<u64, sycl::buffer<u64>> newid_buf_map;
@@ -118,7 +118,7 @@ inline void reatribute_particles<f32_3>(PatchScheduler & sched, SerialPatchTree<
             newid_buf_map.insert({
                 id,
                 __compute_object_patch_owner<f32_3, class ComputeObjectPatchOwners_f32_old>(
-                    hndl.get_queue_compute(0), 
+                    sycl_handler::get_compute_queue(), 
                     *pos, 
                     sptree)});
 
@@ -196,7 +196,7 @@ inline void reatribute_particles<f32_3>(PatchScheduler & sched, SerialPatchTree<
                 newid_buf_map.insert({
                     id,
                     __compute_object_patch_owner<f32_3, class ComputeObjectPatchOwners2_f32_old>(
-                        hndl.get_queue_compute(0), 
+                        sycl_handler::get_compute_queue(), 
                         *pos, 
                         sptree)});
 
@@ -334,7 +334,7 @@ inline void reatribute_particles<f32_3>(PatchScheduler & sched, SerialPatchTree<
 template<>
 inline void reatribute_particles<f64_3>(SchedulerMPI & sched, SerialPatchTree<f64_3> & sptree,bool periodic){
 
-    SyCLHandler & hndl = SyCLHandler::get_instance();
+    
 
     bool err_id_in_newid = false;
     std::unordered_map<u64, sycl::buffer<u64>> newid_buf_map;
@@ -344,7 +344,7 @@ inline void reatribute_particles<f64_3>(SchedulerMPI & sched, SerialPatchTree<f6
         newid_buf_map.insert({
             id,
             __compute_object_patch_owner<f64_3, class ComputeObejctPatchOwners_f64>(
-                hndl.get_queue_compute(0), 
+                sycl_handler::get_compute_queue(), 
                 *pos, 
                 sptree)});
 
@@ -410,7 +410,7 @@ inline void reatribute_particles<f64_3>(SchedulerMPI & sched, SerialPatchTree<f6
 
             newid_buf_map.at(id)=
                 __compute_object_patch_owner<f64_3, class ComputeObejctPatchOwners2_f64>(
-                    hndl.get_queue_compute(0), 
+                    sycl_handler::get_compute_queue(), 
                     *pos, 
                     sptree);
 

@@ -19,7 +19,7 @@ namespace impl {
     template <class vectype, class primtype>
     void comm_interfaces(PatchScheduler &sched, std::vector<InterfaceComm<vectype>> &interface_comm_list,
                         std::unordered_map<u64, std::vector<std::tuple<u64, std::unique_ptr<PatchData>>>> &interface_map,bool periodic) {
-        SyCLHandler &hndl = SyCLHandler::get_instance();
+        
 
         interface_map.clear();
         for (const Patch &p : sched.patch_list.global) {
@@ -38,7 +38,7 @@ namespace impl {
                     auto patch_in = sched.patch_data.owned_data.at(interface_comm_list[i].sender_patch_id);
 
                     std::vector<std::unique_ptr<PatchData>> pret = InterfaceVolumeGenerator::append_interface<vectype>(
-                        hndl.get_queue_alt(0), patch_in,
+                        sycl_handler::get_alt_queue(), patch_in,
                         {interface_comm_list[i].interf_box_min}, {interface_comm_list[i].interf_box_max},interface_comm_list[i].interf_offset);
                     for (auto &pdat : pret) {
                         comm_pdat.push_back(std::move(pdat));
@@ -66,7 +66,7 @@ namespace impl {
     void comm_interfaces_field(PatchScheduler &sched, PatchComputeField<T> &pcomp_field, std::vector<InterfaceComm<vectype>> &interface_comm_list,
                         std::unordered_map<u64, std::vector<std::tuple<u64, std::unique_ptr<PatchDataField<T>>>>> &interface_field_map,bool periodic) {
 
-        SyCLHandler &hndl = SyCLHandler::get_instance();
+        
 
         using PCField = PatchDataField<T>;
 
@@ -86,7 +86,7 @@ namespace impl {
 
 
                     std::vector<std::unique_ptr<PCField>> pret = InterfaceVolumeGenerator::append_interface_field<T,vectype>(
-                        hndl.get_queue_alt(0),
+                        sycl_handler::get_alt_queue(),
                         sched.patch_data.owned_data.at(interface_comm_list[i].sender_patch_id),
                         pcomp_field.field_data.at(interface_comm_list[i].sender_patch_id),
                         {interface_comm_list[i].interf_box_min}, {interface_comm_list[i].interf_box_max});

@@ -17,7 +17,7 @@ class CflUtility{public:
     template<class LambdaCFL>
     inline static flt basic_cfl(PatchDataBuffer &pdat_buf,LambdaCFL && lambda_internal){
 
-        SyCLHandler &hndl = SyCLHandler::get_instance();
+        
 
         u32 npart_patch = pdat_buf.element_count;
 
@@ -31,9 +31,9 @@ class CflUtility{public:
             lambda_internal(cgh,*buf_cfl, range_npart);
         };
 
-        hndl.get_queue_compute(0).submit(ker_reduc_step_mincfl);
+        sycl_handler::get_compute_queue().submit(ker_reduc_step_mincfl);
 
-        flt min_cfl = syclalg::get_min<flt>(hndl.get_queue_compute(0), buf_cfl);
+        flt min_cfl = syclalg::get_min<flt>(sycl_handler::get_compute_queue(), buf_cfl);
 
         return min_cfl;
 

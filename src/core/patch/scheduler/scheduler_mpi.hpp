@@ -138,7 +138,7 @@ class PatchScheduler{public:
     template<class Function>
     inline void for_each_patch_buf(Function && fct){
 
-        SyCLHandler &hndl = SyCLHandler::get_instance();
+        
 
         for (auto &[id, pdat] : patch_data.owned_data) {
 
@@ -160,7 +160,7 @@ class PatchScheduler{public:
     template<class Function>
     inline void for_each_patch(Function && fct){
 
-        SyCLHandler &hndl = SyCLHandler::get_instance();
+        
 
         for (auto &[id, pdat] : patch_data.owned_data) {
 
@@ -182,7 +182,7 @@ class PatchScheduler{public:
     inline void compute_patch_field(Pfield & field, MPI_Datatype & dtype , Function && lambda){
         field.local_nodes_value.resize(patch_list.local.size());
 
-        SyCLHandler &hndl = SyCLHandler::get_instance();
+        
 
         for (u64 idx = 0; idx < patch_list.local.size(); idx++) {
 
@@ -190,7 +190,7 @@ class PatchScheduler{public:
 
             PatchDataBuffer pdatbuf = attach_to_patchData(patch_data.owned_data.at(cur_p.id_patch));
 
-            field.local_nodes_value[idx] = lambda(hndl.get_queue_compute(0),cur_p,pdatbuf);
+            field.local_nodes_value[idx] = lambda(sycl_handler::get_compute_queue(),cur_p,pdatbuf);
 
         }
 

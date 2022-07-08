@@ -67,6 +67,16 @@ namespace sycl_handler {
     std::unique_ptr<sycl::queue> compute_queue;
     std::unique_ptr<sycl::queue> alt_queue;
 
+    sycl::queue & get_compute_queue(){
+        if(!already_on){ throw ShamrockSyclException("sycl handler is not initialized");}
+        return * compute_queue;
+    }
+
+    sycl::queue & get_alt_queue(){
+        if(!already_on){ throw ShamrockSyclException("sycl handler is not initialized");}
+        return * alt_queue;
+    }
+
     void init(){
 
 
@@ -247,6 +257,7 @@ namespace sycl_handler {
 } // namespace sycl_handler
 
 
+#if false
 
 SyCLHandler& SyCLHandler::get_instance(){
     static SyCLHandler instance;
@@ -454,7 +465,7 @@ sycl::queue & SyCLHandler::get_default(){
 }
 
 
-
+#endif
 
 
 /*

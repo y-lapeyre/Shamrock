@@ -348,7 +348,7 @@ class TestTimestepper {
 
         //SPHTimestepperLeapfrogIsotGas<f32> leapfrog;
 
-        SyCLHandler &hndl = SyCLHandler::get_instance();
+        
 
         // std::cout << sched.dump_status() << std::endl;
         sched.scheduler_step(true, true);
@@ -399,7 +399,7 @@ class TestTimestepperSync {
 
         
 
-        SyCLHandler &hndl = SyCLHandler::get_instance();
+        
 
         // std::cout << sched.dump_status() << std::endl;
         sched.scheduler_step(true, true);
@@ -412,7 +412,7 @@ template <class Timestepper, class SimInfo> class SimulationSPH {
   public:
     static void run_sim() {
 
-        SyCLHandler &hndl = SyCLHandler::get_instance();
+        
 
         PatchDataLayout pdl;
 
@@ -472,7 +472,7 @@ template <class Timestepper, class SimInfo> class SimulationSPH {
                 sched.for_each_patch_buf(
                     [&](u64 id_patch, Patch cur_p, PatchDataBuffer & pdat_buf) {
 
-                        hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+                        sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
                             auto r = pdat_buf.fields_f32_3[ixyz]->get_access<sycl::access::mode::read>(cgh);
                             auto v = pdat_buf.fields_f32_3[ivxyz]->get_access<sycl::access::mode::discard_write>(cgh);
 
@@ -510,7 +510,7 @@ template <class Timestepper, class SimInfo> class SimulationSPH {
                 sched.for_each_patch_buf(
                     [&](u64 id_patch, Patch cur_p, PatchDataBuffer & pdat_buf) {
 
-                        hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+                        sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
                             auto r = pdat_buf.fields_f32_3[ixyz]->get_access<sycl::access::mode::read>(cgh);
                             auto v = pdat_buf.fields_f32_3[ivxyz]->get_access<sycl::access::mode::discard_write>(cgh);
 
@@ -617,6 +617,10 @@ int main(int argc, char *argv[]) {
     Cmdopt &opt = Cmdopt::get_instance();
     opt.init(argc, argv, "./shamrock");
 
+    if(opt.has_option("--nocolor")){
+        terminal_effects::disable_colors();
+    }
+
     if(opt.has_option("--loglevel")){
         std::string level = std::string(opt.get_option("--loglevel"));
 
@@ -633,24 +637,14 @@ int main(int argc, char *argv[]) {
         }
 
         logger::raw_ln("-> modified loglevel to",logger::loglevel,"enabled log types : ");
-        logger::raw_ln(terminal_effects::faint + "-----------" + terminal_effects::reset);
-        logger::debug_mpi_ln("xxx", "xxx");
-        logger::debug_ln("xxx", "xxx");
-        logger::info_ln("xxx", "xxx");
-        logger::normal_ln("xxx", "xxx");
-        logger::warn_ln("xxx", "xxx");
-        logger::err_ln("xxx", "xxx");
-        logger::raw_ln(terminal_effects::faint + "-----------" + terminal_effects::reset);
+        logger::raw_ln(terminal_effects::faint + "----------------------" + terminal_effects::reset);
+        logger::print_active_level();
+        logger::raw_ln(terminal_effects::faint + "----------------------" + terminal_effects::reset);
     }
 
-    logger::info_ln("main", 1,2,4,3.f);
 
     sycl_handler::init();
 
-
-
-    SyCLHandler &hndl = SyCLHandler::get_instance();
-    hndl.init_sycl();
 
     //*
     {

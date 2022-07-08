@@ -34,7 +34,7 @@ class Reduce_DataCount {
 #if false
 Test_start("patch::patch_reduc_tree::", generation, -1) {
 
-    SyCLHandler &hndl = SyCLHandler::get_instance();
+    
 
     SchedulerMPI sched = SchedulerMPI(2500, 1);
     sched.init_mpi_required_types();
@@ -116,7 +116,7 @@ Test_start("patch::patch_reduc_tree::", generation, -1) {
 
         std::cout << "sptree.reduce_field" << std::endl;
         PatchFieldReduction<u64> pfield_reduced =
-            sptree.reduce_field<u64, Reduce_DataCount>(hndl.get_queue_alt(0), sched, dtcnt_field);
+            sptree.reduce_field<u64, Reduce_DataCount>(sycl_handler::get_alt_queue(), sched, dtcnt_field);
 
         std::cout << "pfield_reduced.detach_buf()" << std::endl;
         pfield_reduced.detach_buf();
@@ -171,7 +171,7 @@ Test_start("patch::patch_reduc_tree::", generation, -1) {
 
             // std::cout << "sptree.reduce_field" << std::endl;
             PatchFieldReduction<u64> pfield_reduced =
-                sptree.reduce_field<u64, Reduce_DataCount>(hndl.get_queue_alt(0), sched, dtcnt_field);
+                sptree.reduce_field<u64, Reduce_DataCount>(sycl_handler::get_alt_queue(), sched, dtcnt_field);
 
             // std::cout << "pfield_reduced.detach_buf()" << std::endl;
             pfield_reduced.detach_buf();
@@ -197,7 +197,7 @@ Test_start("patch::patch_reduc_tree::", generation, -1) {
                     sycl::buffer<f32_3> pos(pdat.pos_s.data(),pdat.pos_s.size());
 
                     sycl::buffer<u64> newid = __compute_object_patch_owner<f32_3, class ComputeObejctPatchOwners>(
-                        hndl.get_queue_compute(0), 
+                        sycl_handler::get_compute_queue(), 
                         pos, 
                         sptree);
 

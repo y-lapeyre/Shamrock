@@ -111,7 +111,7 @@ inline void compute_smoothing_lenght(PatchScheduler &sched,bool periodic_mode,fl
         using Rtree = Radix_Tree<u_morton, vec>;
         using Rta = walker::Radix_tree_accessor<u_morton, vec>;
 
-        SyCLHandler &hndl = SyCLHandler::get_instance();
+        
 
         const flt loc_htol_up_tol  = htol_up_tol;
         const flt loc_htol_up_iter = htol_up_iter;
@@ -159,7 +159,7 @@ inline void compute_smoothing_lenght(PatchScheduler &sched,bool periodic_mode,fl
             std::tuple<vec, vec> &box = merge_pdat_buf.at(id_patch).box;
 
             // radix tree computation
-            radix_trees[id_patch] = std::make_unique<Radix_Tree<u_morton, vec>>(hndl.get_queue_compute(0), box,
+            radix_trees[id_patch] = std::make_unique<Radix_Tree<u_morton, vec>>(sycl_handler::get_compute_queue(), box,
                                                                                     mpdat_buf.get_field<vec>(ixyz));
         });
 
@@ -167,7 +167,7 @@ inline void compute_smoothing_lenght(PatchScheduler &sched,bool periodic_mode,fl
             std::cout << "patch : n°" << id_patch << " -> radix tree compute volume" << std::endl;
             if (merge_pdat_buf.at(id_patch).or_element_cnt == 0)
                 std::cout << " empty => skipping" << std::endl;
-            radix_trees[id_patch]->compute_cellvolume(hndl.get_queue_compute(0));
+            radix_trees[id_patch]->compute_cellvolume(sycl_handler::get_compute_queue());
         });
 
         sched.for_each_patch([&](u64 id_patch, Patch cur_p) {
@@ -177,7 +177,7 @@ inline void compute_smoothing_lenght(PatchScheduler &sched,bool periodic_mode,fl
 
             PatchDataBuffer &mpdat_buf = *merge_pdat_buf.at(id_patch).data;
 
-            radix_trees[id_patch]->compute_int_boxes(hndl.get_queue_compute(0), mpdat_buf.get_field<flt>(ihpart), htol_up_tol);
+            radix_trees[id_patch]->compute_int_boxes(sycl_handler::get_compute_queue(), mpdat_buf.get_field<flt>(ihpart), htol_up_tol);
         });
 
 
@@ -212,12 +212,12 @@ inline void compute_smoothing_lenght(PatchScheduler &sched,bool periodic_mode,fl
 
             SmoothingLenghtCompute<flt, u32, Kernel> h_iterator(sched.pdl, htol_up_tol, htol_up_iter);
 
-            h_iterator.iterate_smoothing_lenght(hndl.get_queue_compute(0), merge_pdat_buf.at(id_patch).or_element_cnt,
+            h_iterator.iterate_smoothing_lenght(sycl_handler::get_compute_queue(), merge_pdat_buf.at(id_patch).or_element_cnt,
                                                 sph_gpart_mass, *radix_trees[id_patch], pdat_buf_merge, hnew, omega, eps_h);
 
             // write back h test
             //*
-            hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+            sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
                 auto h_new = hnew.template get_access<sycl::access::mode::read>(cgh);
 
                 auto acc_hpart = pdat_buf_merge.get_field<flt>(ihpart)->template get_access<sycl::access::mode::write>(cgh);

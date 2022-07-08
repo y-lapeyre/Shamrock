@@ -88,7 +88,7 @@ template <class vectype, class field_type, class InterfaceSelector> class Interf
     inline static sycl::buffer<InterfaceComInternal, 2> get_interface_list_v1(PatchScheduler &sched, SerialPatchTree<vectype> &sptree,
                                              PatchField<typename vectype::element_type> pfield,vectype interf_offset) {
 
-        SyCLHandler &hndl = SyCLHandler::get_instance();
+        
 
         const u64 local_pcount  = sched.patch_list.local.size();
         const u64 global_pcount = sched.patch_list.global.size();
@@ -154,7 +154,7 @@ template <class vectype, class field_type, class InterfaceSelector> class Interf
         sycl::buffer<field_type> buf_local_field_val(pfield.local_nodes_value.data(),pfield.local_nodes_value.size());
         sycl::buffer<field_type> buf_global_field_val(pfield.global_values.data(),pfield.global_values.size());
 
-        hndl.get_queue_alt(0).submit([&](sycl::handler &cgh) {
+        sycl_handler::get_alt_queue().submit([&](sycl::handler &cgh) {
             auto pid  = patch_ids_buf.get_access<sycl::access::mode::read>(cgh);
             auto gpid = global_ids_buf.get_access<sycl::access::mode::read>(cgh);
 
@@ -257,7 +257,7 @@ template <class vectype, class field_type, class InterfaceSelector> class Interf
     inline static std::vector<InterfaceComm<vectype>> get_interfaces_comm_list(PatchScheduler &sched, SerialPatchTree<vectype> &sptree,
                                            PatchField<typename vectype::element_type> pfield,std::string fout,bool periodic) {
 
-        SyCLHandler &hndl = SyCLHandler::get_instance();
+        
 
         const u64 local_pcount  = sched.patch_list.local.size();
         const u64 global_pcount = sched.patch_list.global.size();
@@ -374,7 +374,7 @@ template <class vectype, class field_type, class InterfaceSelector> class Interf
 
     inline static void comm_interface(PatchScheduler &sched, std::vector<InterfaceComm<vectype>> & interface_comm_list){
 
-        SyCLHandler &hndl = SyCLHandler::get_instance();
+        
 
 
         std::unordered_map<u64,std::vector<std::tuple<u64,std::unique_ptr<PatchData>>>> Interface_map;
@@ -394,7 +394,7 @@ template <class vectype, class field_type, class InterfaceSelector> class Interf
                 
                 if(sched.patch_list.global[interface_comm_list[i].global_patch_idx_send].data_count > 0){
                     std::vector<std::unique_ptr<PatchData>> pret = InterfaceVolumeGenerator::append_interface<vectype>( 
-                        hndl.get_queue_alt(0), 
+                        sycl_handler::get_alt_queue(), 
                         sched.patch_data.owned_data[interface_comm_list[i].sender_patch_id], 
                         {interface_comm_list[i].interf_box_min}, 
                         {interface_comm_list[i].interf_box_max});
@@ -527,7 +527,7 @@ static T reduce(T v0, T v1, T v2, T v3, T v4, T v5, T v6, T v7) {
     inline void gen_interfaces(SchedulerMPI &sched, SerialPatchTree<vectype> &sptree,
                                PatchField<typename vectype::element_type> pfield) {
 
-        SyCLHandler & hndl = SyCLHandler::get_instance();
+        
 
         const u64 local_pcount = sched.patch_list.local.size();
         const u64 global_pcount = sched.patch_list.global.size();
