@@ -79,7 +79,7 @@ inline void patch_data_exchange_object(
     mpi_handler::vector_allgatherv(local_comm_tag, mpi_type_i32, global_comm_tag, mpi_type_i32, MPI_COMM_WORLD);
     timer_allgatherv.stop();
 
-    std::vector<MPI_Request> rq_lst;
+    std::vector<PatchDataMpiRequest> rq_lst;
 
     auto timer_transfmpi = timings::start_timer("patchdata_exchanger", timings::mpi);
 
@@ -141,8 +141,7 @@ inline void patch_data_exchange_object(
         //std::cout << std::endl;
     }
 
-    std::vector<MPI_Status> st_lst(rq_lst.size());
-    mpi::waitall(rq_lst.size(), rq_lst.data(), st_lst.data());
+    waitall_pdat_mpi_rq(rq_lst);
 
     timer_transfmpi.stop(dtcnt);
 
@@ -210,7 +209,7 @@ inline void patch_data_field_exchange_object(
     timer_allgatherv.stop();
 
 
-    std::vector<MPI_Request> rq_lst;
+    std::vector<patchdata_field::PatchDataFieldMpiRequest<T>> rq_lst;
 
     auto timer_transfmpi = timings::start_timer("patchdata_exchanger", timings::mpi);
 
@@ -272,8 +271,7 @@ inline void patch_data_field_exchange_object(
         //std::cout << std::endl;
     }
 
-    std::vector<MPI_Status> st_lst(rq_lst.size());
-    mpi::waitall(rq_lst.size(), rq_lst.data(), st_lst.data());
+    patchdata_field::waitall(rq_lst);
 
     timer_transfmpi.stop(dtcnt);
 

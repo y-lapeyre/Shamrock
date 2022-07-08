@@ -19,6 +19,7 @@
 
 #pragma once
 
+#include <mpi.h>
 #include <random>
 #include <vector>
 
@@ -196,6 +197,75 @@ class PatchData {
     
 };
 
+
+struct PatchDataMpiRequest{
+    std::vector<patchdata_field::PatchDataFieldMpiRequest<f32   >> mpi_rq_fields_f32;
+    std::vector<patchdata_field::PatchDataFieldMpiRequest<f32_2 >> mpi_rq_fields_f32_2;
+    std::vector<patchdata_field::PatchDataFieldMpiRequest<f32_3 >> mpi_rq_fields_f32_3;
+    std::vector<patchdata_field::PatchDataFieldMpiRequest<f32_4 >> mpi_rq_fields_f32_4;
+    std::vector<patchdata_field::PatchDataFieldMpiRequest<f32_8 >> mpi_rq_fields_f32_8;
+    std::vector<patchdata_field::PatchDataFieldMpiRequest<f32_16>> mpi_rq_fields_f32_16;
+    std::vector<patchdata_field::PatchDataFieldMpiRequest<f64   >> mpi_rq_fields_f64;
+    std::vector<patchdata_field::PatchDataFieldMpiRequest<f64_2 >> mpi_rq_fields_f64_2;
+    std::vector<patchdata_field::PatchDataFieldMpiRequest<f64_3 >> mpi_rq_fields_f64_3;
+    std::vector<patchdata_field::PatchDataFieldMpiRequest<f64_4 >> mpi_rq_fields_f64_4;
+    std::vector<patchdata_field::PatchDataFieldMpiRequest<f64_8 >> mpi_rq_fields_f64_8;
+    std::vector<patchdata_field::PatchDataFieldMpiRequest<f64_16>> mpi_rq_fields_f64_16;
+    std::vector<patchdata_field::PatchDataFieldMpiRequest<u32   >> mpi_rq_fields_u32;
+    std::vector<patchdata_field::PatchDataFieldMpiRequest<u64   >> mpi_rq_fields_u64;
+
+    inline void finalize(){
+        for(auto b : mpi_rq_fields_f32   ){b.finalize();}
+        for(auto b : mpi_rq_fields_f32_2 ){b.finalize();}
+        for(auto b : mpi_rq_fields_f32_3 ){b.finalize();}
+        for(auto b : mpi_rq_fields_f32_4 ){b.finalize();}
+        for(auto b : mpi_rq_fields_f32_8 ){b.finalize();}
+        for(auto b : mpi_rq_fields_f32_16){b.finalize();}
+        for(auto b : mpi_rq_fields_f64   ){b.finalize();}
+        for(auto b : mpi_rq_fields_f64_2 ){b.finalize();}
+        for(auto b : mpi_rq_fields_f64_3 ){b.finalize();}
+        for(auto b : mpi_rq_fields_f64_4 ){b.finalize();}
+        for(auto b : mpi_rq_fields_f64_8 ){b.finalize();}
+        for(auto b : mpi_rq_fields_f64_16){b.finalize();}
+        for(auto b : mpi_rq_fields_u32   ){b.finalize();}
+        for(auto b : mpi_rq_fields_u64   ){b.finalize();}
+    }
+}; 
+
+inline void waitall_pdat_mpi_rq(std::vector<PatchDataMpiRequest> & rq_lst){
+    
+    std::vector<MPI_Request> rqst;
+
+    auto insertor = [&](auto in){
+        std::vector<MPI_Request> rloc = patchdata_field::get_rqs(in);
+        rqst.insert(rqst.end(), rloc.begin(), rloc.end());
+    };
+
+    for(auto a : rq_lst){
+        insertor(a.mpi_rq_fields_f32   );
+        insertor(a.mpi_rq_fields_f32_2 );
+        insertor(a.mpi_rq_fields_f32_3 );
+        insertor(a.mpi_rq_fields_f32_4 );
+        insertor(a.mpi_rq_fields_f32_8 );
+        insertor(a.mpi_rq_fields_f32_16);
+        insertor(a.mpi_rq_fields_f64   );
+        insertor(a.mpi_rq_fields_f64_2 );
+        insertor(a.mpi_rq_fields_f64_3 );
+        insertor(a.mpi_rq_fields_f64_4 );
+        insertor(a.mpi_rq_fields_f64_8 );
+        insertor(a.mpi_rq_fields_f64_16);
+        insertor(a.mpi_rq_fields_u32   );
+        insertor(a.mpi_rq_fields_u64   );        
+    }
+
+    std::vector<MPI_Status> st_lst(rqst.size());
+    mpi::waitall(rqst.size(), rqst.data(), st_lst.data());
+
+    for(auto a : rq_lst){
+        a.finalize();
+    }
+}
+
 /**
  * @brief perform a MPI isend with a PatchData object
  *
@@ -205,7 +275,7 @@ class PatchData {
  * @param tag MPI communication tag
  * @param comm MPI communicator
  */
-u64 patchdata_isend(PatchData &p, std::vector<MPI_Request> &rq_lst, i32 rank_dest, i32 tag, MPI_Comm comm);
+u64 patchdata_isend(PatchData &p, std::vector<PatchDataMpiRequest> &rq_lst, i32 rank_dest, i32 tag, MPI_Comm comm);
 
 /**
  * @brief perform a MPI irecv with a PatchData object
@@ -216,7 +286,7 @@ u64 patchdata_isend(PatchData &p, std::vector<MPI_Request> &rq_lst, i32 rank_des
  * @param comm  MPI communicator
  * @return the received patchdata (it works but weird because asynchronous)
  */
-u64 patchdata_irecv(PatchData &pdat, std::vector<MPI_Request> &rq_lst, i32 rank_source, i32 tag, MPI_Comm comm);
+u64 patchdata_irecv(PatchData &pdat, std::vector<PatchDataMpiRequest> &rq_lst, i32 rank_source, i32 tag, MPI_Comm comm);
 
 /**
  * @brief generate dummy patchdata from a mersen twister

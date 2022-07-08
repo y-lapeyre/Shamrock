@@ -37,7 +37,7 @@ void SchedulerPatchData::apply_change_list(std::vector<std::tuple<u64, i32, i32,
 
     auto t = timings::start_timer("SchedulerPatchData::apply_change_list", timings::mpi);
 
-    std::vector<MPI_Request> rq_lst;
+    std::vector<PatchDataMpiRequest> rq_lst;
 
     //send
     for(u32 i = 0 ; i < change_list.size(); i++){ // switch to range based
@@ -62,14 +62,16 @@ void SchedulerPatchData::apply_change_list(std::vector<std::tuple<u64, i32, i32,
         }
     }
 
-
+    /*
     for (MPI_Request a  : rq_lst) {
         std::cout << mpi_handler::world_rank << " " << a << std::endl;
     }
+    */
 
     //wait
-    std::vector<MPI_Status> st_lst(rq_lst.size());
-    mpi::waitall(rq_lst.size(), rq_lst.data(), st_lst.data());
+    //std::vector<MPI_Status> st_lst(rq_lst.size());
+    //mpi::waitall(rq_lst.size(), rq_lst.data(), st_lst.data());
+    waitall_pdat_mpi_rq(rq_lst);
 
 
     //erase old patchdata

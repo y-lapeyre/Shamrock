@@ -42,7 +42,7 @@ Test_start("patch/patchdata_field.cpp", isend_irecv_f32, 2){
     d1_check.gen_mock_data(distu64(eng), eng);
     d2_check.gen_mock_data(distu64(eng), eng);
 
-    std::vector<MPI_Request> rq_lst;
+    std::vector<patchdata_field::PatchDataFieldMpiRequest<f32>> rq_lst;
     PatchDataField<f32> recv_d("test",1);
 
     if(mpi_handler::world_rank == 0){
@@ -57,8 +57,7 @@ Test_start("patch/patchdata_field.cpp", isend_irecv_f32, 2){
 
     std::cout << "request len : [" << mpi_handler::world_rank << "] " << rq_lst.size() << std::endl;
 
-    std::vector<MPI_Status> st_lst(rq_lst.size());
-    mpi::waitall(rq_lst.size(), rq_lst.data(), st_lst.data());
+    patchdata_field::waitall(rq_lst);
 
     
     if(mpi_handler::world_rank == 0){

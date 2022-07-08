@@ -56,7 +56,7 @@ Test_start("patchdata::", send_recv_patchdata, 2){
 
 
 
-    std::vector<MPI_Request> rq_lst;
+    std::vector<PatchDataMpiRequest> rq_lst;
     PatchData recv_d(pdl);
 
     if(mpi_handler::world_rank == 0){
@@ -69,8 +69,7 @@ Test_start("patchdata::", send_recv_patchdata, 2){
         patchdata_irecv(recv_d,rq_lst, 0, 0, MPI_COMM_WORLD);
     }
 
-    std::vector<MPI_Status> st_lst(rq_lst.size());
-    mpi::waitall(rq_lst.size(), rq_lst.data(), st_lst.data());
+    waitall_pdat_mpi_rq(rq_lst);
 
 
     if(mpi_handler::world_rank == 0){

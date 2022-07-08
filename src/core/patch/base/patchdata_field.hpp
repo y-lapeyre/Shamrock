@@ -15,21 +15,37 @@
 
 #include "aliases.hpp"
 
+#include "core/sys/log.hpp"
 #include "core/sys/sycl_mpi_interop.hpp"
 #include "core/utils/sycl_vector_utils.hpp"
 #include "core/sys/mpi_handler.hpp"
 
+
+template<class T>
+inline void copydata(T* source, T* dest, u32 cnt){
+    for (u32 i = 0; i < cnt; i++) {
+        dest[i] = source[i];
+    }
+}
+
+
 template<class T>
 class PatchDataField {
 
+    T* _data;
     std::vector<T> field_data;
 
     std::string field_name;
 
-    u32 nvar;
-    u32 obj_cnt;
+    u32 nvar; //number of variable per object
+    u32 obj_cnt; // number of contained object
 
-    u32 val_cnt;
+    u32 val_cnt; // nvar*obj_cnt
+
+    u32 capacity;
+
+    constexpr static u32 min_capa = 100;
+    constexpr static f32 safe_fact = 1.25;
 
     public:
 
@@ -38,10 +54,25 @@ class PatchDataField {
 
     using Field_type = T;
 
+
+
+
     inline PatchDataField(std::string name, u32 nvar) : field_name(name) , nvar(nvar){
         obj_cnt = 0;
         val_cnt = 0;
+
+        capacity = min_capa;
+        _data = new T[capacity];logger::debug_alloc_ln("PatchDataField", "allocate field :",_data , "len =",capacity);
+
     };
+
+    inline ~PatchDataField(){
+        logger::debug_alloc_ln("PatchDataField", "free field :",_data , "len =",capacity);
+        delete[] _data;
+    }
+
+
+
 
     inline T* usm_data(){
         return field_data.data();
@@ -64,7 +95,26 @@ class PatchDataField {
     }
 
     inline void resize(u32 new_obj_cnt){
-        field_data.resize(new_obj_cnt*nvar);
+
+        logger::debug_alloc_ln("PatchDataField", "resize from : ",val_cnt, "to :",new_obj_cnt*nvar);
+
+        u32 new_size = new_obj_cnt*nvar;
+        field_data.resize(new_size);
+
+
+        if (new_size > capacity) {
+            u32 new_capa = safe_fact*new_size;
+            T* new_ptr = new T[new_capa];       logger::debug_alloc_ln("PatchDataField", "allocate : ",new_ptr, "capacity :",new_capa);
+            copydata(_data, new_ptr, val_cnt);  logger::debug_alloc_ln("PatchDataField", "copy from : ",_data, " to :",new_ptr, "cnt :",val_cnt);
+            delete [] _data;                    logger::debug_alloc_ln("PatchDataField", "delete old buf : ",_data);
+            _data = new_ptr;
+            capacity = new_capa;
+        }else{
+            
+        }
+
+
+
         obj_cnt = new_obj_cnt;
         val_cnt = new_obj_cnt*nvar;
     }
@@ -188,22 +238,22 @@ class PatchDataField {
 namespace patchdata_field {
 
     template<class T>
-    struct PatchDataMpiRequest{
+    struct PatchDataFieldMpiRequest{
         MPI_Request mpi_rq;
 
-        inline void callback(){}
+        inline void finalize(){}
     };
 
 
     template<class T>
-    inline u64 isend( PatchDataField<T> &p, std::vector<MPI_Request> &rq_lst, i32 rank_dest, i32 tag, MPI_Comm comm){
+    inline u64 isend( PatchDataField<T> &p, std::vector<PatchDataFieldMpiRequest<T>> &rq_lst, i32 rank_dest, i32 tag, MPI_Comm comm){
         rq_lst.resize(rq_lst.size() + 1);
-        mpi::isend(p.usm_data(), p.size(), get_mpi_type<T>(), rank_dest, tag, comm, &rq_lst[rq_lst.size() - 1]);
+        mpi::isend(p.usm_data(), p.size(), get_mpi_type<T>(), rank_dest, tag, comm, &(rq_lst[rq_lst.size() - 1].mpi_rq));
         return sizeof(T)*p.size();
     }
 
     template<class T>
-    inline u64 irecv(PatchDataField<T> &p, std::vector<MPI_Request> &rq_lst, i32 rank_source, i32 tag, MPI_Comm comm){
+    inline u64 irecv(PatchDataField<T> &p, std::vector<PatchDataFieldMpiRequest<T>> &rq_lst, i32 rank_source, i32 tag, MPI_Comm comm){
         MPI_Status st;
         i32 cnt;
         int i = mpi::probe(rank_source, tag,comm, & st);
@@ -214,13 +264,24 @@ namespace patchdata_field {
         p.resize(len);
 
         rq_lst.resize(rq_lst.size() + 1);
-        mpi::irecv(p.usm_data(), cnt, get_mpi_type<T>(), rank_source, tag, comm, &rq_lst[rq_lst.size() - 1]);
+        mpi::irecv(p.usm_data(), cnt, get_mpi_type<T>(), rank_source, tag, comm, &(rq_lst[rq_lst.size() - 1].mpi_rq));
 
         return sizeof(T)*cnt;
     }
 
+    template<class T> 
+    inline std::vector<MPI_Request> get_rqs(std::vector<PatchDataFieldMpiRequest<T>> &rq_lst){
+        std::vector<MPI_Request> addrs;
+
+        for(auto a : rq_lst){
+            addrs.push_back(a.mpi_rq);
+        }
+
+        return addrs;
+    }
+
     template<class T>
-    inline void waitall(std::vector<PatchDataMpiRequest<T>> &rq_lst){
+    inline void waitall(std::vector<PatchDataFieldMpiRequest<T>> &rq_lst){
         std::vector<MPI_Request> addrs;
 
         for(auto a : rq_lst){
@@ -231,7 +292,7 @@ namespace patchdata_field {
         mpi::waitall(addrs.size(), addrs.data(), st_lst.data());
 
         for(auto a : rq_lst){
-            a.callback();
+            a.finalize();
         }
     }
 }
@@ -239,126 +300,3 @@ namespace patchdata_field {
 
 
 
-
-
-template<> inline void PatchDataField<f32>::gen_mock_data(u32 obj_cnt, std::mt19937 &eng){
-    resize(obj_cnt);
-    std::uniform_real_distribution<f64> distf64(1,6000);
-    for (auto & a : field_data) {
-        a = f32(distf64(eng));
-    }
-}
-
-template<> inline void PatchDataField<f32_2>::gen_mock_data(u32 obj_cnt, std::mt19937 &eng){
-    resize(obj_cnt);
-    std::uniform_real_distribution<f64> distf64(1,6000);
-    for (auto & a : field_data) {
-        a = f32_2{distf64(eng),distf64(eng)};
-    }
-}
-
-template<> inline void PatchDataField<f32_3>::gen_mock_data(u32 obj_cnt, std::mt19937 &eng){
-    resize(obj_cnt);
-    std::uniform_real_distribution<f64> distf64(1,6000);
-    for (auto & a : field_data) {
-        a = f32_3{distf64(eng),distf64(eng),distf64(eng)};
-    }
-}
-
-template<> inline void PatchDataField<f32_4>::gen_mock_data(u32 obj_cnt, std::mt19937 &eng){
-    resize(obj_cnt);
-    std::uniform_real_distribution<f64> distf64(1,6000);
-    for (auto & a : field_data) {
-        a = f32_4{distf64(eng),distf64(eng),distf64(eng),distf64(eng)};
-    }
-}
-
-template<> inline void PatchDataField<f32_8>::gen_mock_data(u32 obj_cnt, std::mt19937 &eng){
-    resize(obj_cnt);
-    std::uniform_real_distribution<f64> distf64(1,6000);
-    for (auto & a : field_data) {
-        a = f32_8{distf64(eng),distf64(eng),distf64(eng),distf64(eng),distf64(eng),distf64(eng),distf64(eng),distf64(eng)};
-    }
-}
-
-template<> inline void PatchDataField<f32_16>::gen_mock_data(u32 obj_cnt, std::mt19937 &eng){
-    resize(obj_cnt);
-    std::uniform_real_distribution<f64> distf64(1,6000);
-    for (auto & a : field_data) {
-        a = f32_16{
-            distf64(eng),distf64(eng),distf64(eng),distf64(eng),distf64(eng),distf64(eng),distf64(eng),distf64(eng),
-            distf64(eng),distf64(eng),distf64(eng),distf64(eng),distf64(eng),distf64(eng),distf64(eng),distf64(eng)
-            };
-    }
-}
-
-
-
-
-
-template<> inline void PatchDataField<f64>::gen_mock_data(u32 obj_cnt, std::mt19937 &eng){
-    resize(obj_cnt);
-    std::uniform_real_distribution<f64> distf64(1,6000);
-    for (auto & a : field_data) {
-        a = f64(distf64(eng));
-    }
-}
-
-template<> inline void PatchDataField<f64_2>::gen_mock_data(u32 obj_cnt, std::mt19937 &eng){
-    resize(obj_cnt);
-    std::uniform_real_distribution<f64> distf64(1,6000);
-    for (auto & a : field_data) {
-        a = f64_2{distf64(eng),distf64(eng)};
-    }
-}
-
-template<> inline void PatchDataField<f64_3>::gen_mock_data(u32 obj_cnt, std::mt19937 &eng){
-    resize(obj_cnt);
-    std::uniform_real_distribution<f64> distf64(1,6000);
-    for (auto & a : field_data) {
-        a = f64_3{distf64(eng),distf64(eng),distf64(eng)};
-    }
-}
-
-template<> inline void PatchDataField<f64_4>::gen_mock_data(u32 obj_cnt, std::mt19937 &eng){
-    resize(obj_cnt);
-    std::uniform_real_distribution<f64> distf64(1,6000);
-    for (auto & a : field_data) {
-        a = f64_4{distf64(eng),distf64(eng),distf64(eng),distf64(eng)};
-    }
-}
-
-template<> inline void PatchDataField<f64_8>::gen_mock_data(u32 obj_cnt, std::mt19937 &eng){
-    resize(obj_cnt);
-    std::uniform_real_distribution<f64> distf64(1,6000);
-    for (auto & a : field_data) {
-        a = f64_8{distf64(eng),distf64(eng),distf64(eng),distf64(eng),distf64(eng),distf64(eng),distf64(eng),distf64(eng)};
-    }
-}
-
-template<> inline void PatchDataField<f64_16>::gen_mock_data(u32 obj_cnt, std::mt19937 &eng){
-    resize(obj_cnt);
-    std::uniform_real_distribution<f64> distf64(1,6000);
-    for (auto & a : field_data) {
-        a = f64_16{
-            distf64(eng),distf64(eng),distf64(eng),distf64(eng),distf64(eng),distf64(eng),distf64(eng),distf64(eng),
-            distf64(eng),distf64(eng),distf64(eng),distf64(eng),distf64(eng),distf64(eng),distf64(eng),distf64(eng)
-            };
-    }
-}
-
-
-template<> inline void PatchDataField<u32>::gen_mock_data(u32 obj_cnt, std::mt19937 &eng){
-    resize(obj_cnt);
-    std::uniform_int_distribution<u32> distu32(1,6000);
-    for (auto & a : field_data) {
-        a = distu32(eng);
-    }
-}
-template<> inline void PatchDataField<u64>::gen_mock_data(u32 obj_cnt, std::mt19937 &eng){
-    resize(obj_cnt);
-    std::uniform_int_distribution<u64> distu64(1,6000);
-    for (auto & a : field_data) {
-        a = distu64(eng);
-    }
-}

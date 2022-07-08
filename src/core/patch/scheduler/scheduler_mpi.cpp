@@ -647,7 +647,7 @@ std::vector<std::unique_ptr<PatchData>> PatchScheduler::gather_data(u32 rank){
 
     ret.resize(plist.size());
 
-    std::vector<MPI_Request> rq_lst;
+    std::vector<PatchDataMpiRequest> rq_lst;
 
     for (u32 i = 0; i < plist.size(); i++) {
         auto & cpatch = plist[i];
@@ -664,9 +664,7 @@ std::vector<std::unique_ptr<PatchData>> PatchScheduler::gather_data(u32 rank){
     }
 
 
-    std::vector<MPI_Status> sts;
-    sts.resize(rq_lst.size());
-    mpi::waitall(rq_lst.size(), rq_lst.data(), sts.data());
+    waitall_pdat_mpi_rq(rq_lst);
 
     return ret;
 

@@ -442,7 +442,7 @@ template <class vectype, class field_type, class InterfaceSelector> class Interf
         
 
 
-        std::vector<MPI_Request> rq_lst;
+        std::vector<PatchDataMpiRequest> rq_lst;
 
         {
             for(u64 i = 0 ; i < comm_vec.size(); i++){
@@ -498,8 +498,7 @@ template <class vectype, class field_type, class InterfaceSelector> class Interf
         }
 
 
-        std::vector<MPI_Status> st_lst(rq_lst.size());
-        mpi::waitall(rq_lst.size(), rq_lst.data(), st_lst.data());
+        waitall_pdat_mpi_rq(rq_lst);
 
         
     }

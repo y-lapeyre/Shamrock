@@ -36,125 +36,128 @@
 void PatchData::init_fields(){
 
         for (auto a : pdl.fields_f32) {
-            fields_f32.push_back(PatchDataField<f32>(a.name,a.nvar));
+            fields_f32.emplace_back(a.name,a.nvar);
         }
 
         for (auto a : pdl.fields_f32_2) {
-            fields_f32_2.push_back(PatchDataField<f32_2>(a.name,a.nvar));
+            fields_f32_2.emplace_back(a.name,a.nvar);
         }
 
         for (auto a : pdl.fields_f32_3) {
-            fields_f32_3.push_back(PatchDataField<f32_3>(a.name,a.nvar));
+            fields_f32_3.emplace_back(a.name,a.nvar);
         }
 
         for (auto a : pdl.fields_f32_4) {
-            fields_f32_4.push_back(PatchDataField<f32_4>(a.name,a.nvar));
+            fields_f32_4.emplace_back(a.name,a.nvar);
         }
 
         for (auto a : pdl.fields_f32_8) {
-            fields_f32_8.push_back(PatchDataField<f32_8>(a.name,a.nvar));
+            fields_f32_8.emplace_back(a.name,a.nvar);
         }
 
         for (auto a : pdl.fields_f32_16) {
-            fields_f32_16.push_back(PatchDataField<f32_16>(a.name,a.nvar));
+            fields_f32_16.emplace_back(a.name,a.nvar);
         }
 
 
         for (auto a : pdl.fields_f64) {
-            fields_f64.push_back(PatchDataField<f64>(a.name,a.nvar));
+            fields_f64.emplace_back(a.name,a.nvar);
         }
 
         for (auto a : pdl.fields_f64_2) {
-            fields_f64_2.push_back(PatchDataField<f64_2>(a.name,a.nvar));
+            fields_f64_2.emplace_back(a.name,a.nvar);
         }
 
         for (auto a : pdl.fields_f64_3) {
-            fields_f64_3.push_back(PatchDataField<f64_3>(a.name,a.nvar));
+            fields_f64_3.emplace_back(a.name,a.nvar);
         }
 
         for (auto a : pdl.fields_f64_4) {
-            fields_f64_4.push_back(PatchDataField<f64_4>(a.name,a.nvar));
+            fields_f64_4.emplace_back(a.name,a.nvar);
         }
 
         for (auto a : pdl.fields_f64_8) {
-            fields_f64_8.push_back(PatchDataField<f64_8>(a.name,a.nvar));
+            fields_f64_8.emplace_back(a.name,a.nvar);
         }
 
         for (auto a : pdl.fields_f64_16) {
-            fields_f64_16.push_back(PatchDataField<f64_16>(a.name,a.nvar));
+            fields_f64_16.emplace_back(a.name,a.nvar);
         }
 
 
         for (auto a : pdl.fields_u32) {
-            fields_u32.push_back(PatchDataField<u32>(a.name,a.nvar));
+            fields_u32.emplace_back(a.name,a.nvar);
         }
 
         for (auto a : pdl.fields_u64) {
-            fields_u64.push_back(PatchDataField<u64>(a.name,a.nvar));
+            fields_u64.emplace_back(a.name,a.nvar);
         }
 }
 
 
 
-u64 patchdata_isend(PatchData &p, std::vector<MPI_Request> &rq_lst, i32 rank_dest, i32 tag, MPI_Comm comm) {
+u64 patchdata_isend(PatchData &p, std::vector<PatchDataMpiRequest> &rq_lst, i32 rank_dest, i32 tag, MPI_Comm comm) {
+
+    rq_lst.resize(rq_lst.size()+1);
+    auto & ref = rq_lst[rq_lst.size()-1];
 
     u64 total_data_transf = 0;
 
     for (auto & a : p.fields_f32) {        //std::cout << "["<< mpi_handler::world_rank <<"] sending field : " << a.get_name() << std::endl;
-        total_data_transf += patchdata_field::isend(a,rq_lst, rank_dest, tag, comm);
+        total_data_transf += patchdata_field::isend(a,ref.mpi_rq_fields_f32, rank_dest, tag, comm);
     }
 
     for (auto & a : p.fields_f32_2) {        //std::cout << "["<< mpi_handler::world_rank <<"] sending field : " << a.get_name() << std::endl;
-         total_data_transf += patchdata_field::isend(a,rq_lst, rank_dest, tag, comm);
+         total_data_transf += patchdata_field::isend(a,ref.mpi_rq_fields_f32_2, rank_dest, tag, comm);
     }
 
     for (auto & a : p.fields_f32_3) {        //std::cout << "["<< mpi_handler::world_rank <<"] sending field : " << a.get_name() << std::endl;
-         total_data_transf += patchdata_field::isend(a,rq_lst, rank_dest, tag, comm);
+         total_data_transf += patchdata_field::isend(a,ref.mpi_rq_fields_f32_3, rank_dest, tag, comm);
     }
 
     for (auto & a : p.fields_f32_4) {        //std::cout << "["<< mpi_handler::world_rank <<"] sending field : " << a.get_name() << std::endl;
-         total_data_transf += patchdata_field::isend(a,rq_lst, rank_dest, tag, comm);
+         total_data_transf += patchdata_field::isend(a,ref.mpi_rq_fields_f32_4, rank_dest, tag, comm);
     }
 
     for (auto & a : p.fields_f32_8) {        //std::cout << "["<< mpi_handler::world_rank <<"] sending field : " << a.get_name() << std::endl;
-         total_data_transf += patchdata_field::isend(a,rq_lst, rank_dest, tag, comm);
+         total_data_transf += patchdata_field::isend(a,ref.mpi_rq_fields_f32_8, rank_dest, tag, comm);
     }
 
     for (auto & a : p.fields_f32_16) {        //std::cout << "["<< mpi_handler::world_rank <<"] sending field : " << a.get_name() << std::endl;
-         total_data_transf += patchdata_field::isend(a,rq_lst, rank_dest, tag, comm);
+         total_data_transf += patchdata_field::isend(a,ref.mpi_rq_fields_f32_16, rank_dest, tag, comm);
     }
 
 
     for (auto & a : p.fields_f64) {        //std::cout << "["<< mpi_handler::world_rank <<"] sending field : " << a.get_name() << std::endl;
-         total_data_transf += patchdata_field::isend(a,rq_lst, rank_dest, tag, comm);
+         total_data_transf += patchdata_field::isend(a,ref.mpi_rq_fields_f64, rank_dest, tag, comm);
     }
 
     for (auto & a : p.fields_f64_2) {        //std::cout << "["<< mpi_handler::world_rank <<"] sending field : " << a.get_name() << std::endl;
-         total_data_transf += patchdata_field::isend(a,rq_lst, rank_dest, tag, comm);
+         total_data_transf += patchdata_field::isend(a,ref.mpi_rq_fields_f64_2, rank_dest, tag, comm);
     }
 
     for (auto & a : p.fields_f64_3) {        //std::cout << "["<< mpi_handler::world_rank <<"] sending field : " << a.get_name() << std::endl;
-         total_data_transf += patchdata_field::isend(a,rq_lst, rank_dest, tag, comm);
+         total_data_transf += patchdata_field::isend(a,ref.mpi_rq_fields_f64_3, rank_dest, tag, comm);
     }
 
     for (auto & a : p.fields_f64_4) {        //std::cout << "["<< mpi_handler::world_rank <<"] sending field : " << a.get_name() << std::endl;
-         total_data_transf += patchdata_field::isend(a,rq_lst, rank_dest, tag, comm);
+         total_data_transf += patchdata_field::isend(a,ref.mpi_rq_fields_f64_4, rank_dest, tag, comm);
     }
 
     for (auto & a : p.fields_f64_8) {        //std::cout << "["<< mpi_handler::world_rank <<"] sending field : " << a.get_name() << std::endl;
-         total_data_transf += patchdata_field::isend(a,rq_lst, rank_dest, tag, comm);
+         total_data_transf += patchdata_field::isend(a,ref.mpi_rq_fields_f64_8, rank_dest, tag, comm);
     }
 
     for (auto & a : p.fields_f64_16) {        //std::cout << "["<< mpi_handler::world_rank <<"] sending field : " << a.get_name() << std::endl;
-         total_data_transf += patchdata_field::isend(a,rq_lst, rank_dest, tag, comm);
+         total_data_transf += patchdata_field::isend(a,ref.mpi_rq_fields_f64_16, rank_dest, tag, comm);
     }
 
     for (auto & a : p.fields_u32) {        //std::cout << "["<< mpi_handler::world_rank <<"] sending field : " << a.get_name() << std::endl;
-         total_data_transf += patchdata_field::isend(a,rq_lst, rank_dest, tag, comm);
+         total_data_transf += patchdata_field::isend(a,ref.mpi_rq_fields_u32, rank_dest, tag, comm);
     }
 
     for (auto & a : p.fields_u64) {        //std::cout << "["<< mpi_handler::world_rank <<"] sending field : " << a.get_name() << std::endl;
-         total_data_transf += patchdata_field::isend(a,rq_lst, rank_dest, tag, comm);
+         total_data_transf += patchdata_field::isend(a,ref.mpi_rq_fields_u64, rank_dest, tag, comm);
     }
 
     return total_data_transf;
@@ -373,33 +376,36 @@ void patchdata_irecv(PatchData & pdat, std::vector<MPI_Request> &rq_lst, i32 ran
 */
 
 
-u64 patchdata_irecv(PatchData & pdat, std::vector<MPI_Request> &rq_lst, i32 rank_source, i32 tag, MPI_Comm comm){
+u64 patchdata_irecv(PatchData & pdat, std::vector<PatchDataMpiRequest> &rq_lst, i32 rank_source, i32 tag, MPI_Comm comm){
+
+    rq_lst.resize(rq_lst.size()+1);
+    auto & ref = rq_lst[rq_lst.size()-1];
 
     u64 total_data_transf = 0;
 
     for (auto & a : pdat.fields_f32) {        //std::cout << "["<< mpi_handler::world_rank <<"] recv field : " << a.get_name() << std::endl;
-        total_data_transf += patchdata_field::irecv(a, rq_lst, rank_source, tag, comm);
+        total_data_transf += patchdata_field::irecv(a, ref.mpi_rq_fields_f32, rank_source, tag, comm);
     }
 
 
     for (auto & a : pdat.fields_f32_2) {        //std::cout << "["<< mpi_handler::world_rank <<"] recv field : " << a.get_name() << std::endl;
-        total_data_transf += patchdata_field::irecv(a, rq_lst, rank_source, tag, comm);
+        total_data_transf += patchdata_field::irecv(a, ref.mpi_rq_fields_f32_2, rank_source, tag, comm);
     }
 
     for (auto & a : pdat.fields_f32_3) {        //std::cout << "["<< mpi_handler::world_rank <<"] recv field : " << a.get_name() << std::endl;
-        total_data_transf += patchdata_field::irecv(a, rq_lst, rank_source, tag, comm);
+        total_data_transf += patchdata_field::irecv(a, ref.mpi_rq_fields_f32_3, rank_source, tag, comm);
     }
 
     for (auto & a : pdat.fields_f32_4) {        //std::cout << "["<< mpi_handler::world_rank <<"] recv field : " << a.get_name() << std::endl;
-        total_data_transf += patchdata_field::irecv(a, rq_lst, rank_source, tag, comm);
+        total_data_transf += patchdata_field::irecv(a, ref.mpi_rq_fields_f32_4, rank_source, tag, comm);
     }
 
     for (auto & a : pdat.fields_f32_8) {        //std::cout << "["<< mpi_handler::world_rank <<"] recv field : " << a.get_name() << std::endl;
-        total_data_transf += patchdata_field::irecv(a, rq_lst, rank_source, tag, comm);
+        total_data_transf += patchdata_field::irecv(a, ref.mpi_rq_fields_f32_8, rank_source, tag, comm);
     }
 
     for (auto & a : pdat.fields_f32_16) {        //std::cout << "["<< mpi_handler::world_rank <<"] recv field : " << a.get_name() << std::endl;
-        total_data_transf += patchdata_field::irecv(a, rq_lst, rank_source, tag, comm);
+        total_data_transf += patchdata_field::irecv(a, ref.mpi_rq_fields_f32_16, rank_source, tag, comm);
     }
 
 
@@ -407,39 +413,39 @@ u64 patchdata_irecv(PatchData & pdat, std::vector<MPI_Request> &rq_lst, i32 rank
 
 
     for (auto & a : pdat.fields_f64) {        //std::cout << "["<< mpi_handler::world_rank <<"] recv field : " << a.get_name() << std::endl;
-        total_data_transf += patchdata_field::irecv(a, rq_lst, rank_source, tag, comm);
+        total_data_transf += patchdata_field::irecv(a, ref.mpi_rq_fields_f64, rank_source, tag, comm);
     }
 
 
     for (auto & a : pdat.fields_f64_2) {        //std::cout << "["<< mpi_handler::world_rank <<"] recv field : " << a.get_name() << std::endl;
-        total_data_transf += patchdata_field::irecv(a, rq_lst, rank_source, tag, comm);
+        total_data_transf += patchdata_field::irecv(a, ref.mpi_rq_fields_f64_2, rank_source, tag, comm);
     }
 
     for (auto & a : pdat.fields_f64_3) {        //std::cout << "["<< mpi_handler::world_rank <<"] recv field : " << a.get_name() << std::endl;
-        total_data_transf += patchdata_field::irecv(a, rq_lst, rank_source, tag, comm);
+        total_data_transf += patchdata_field::irecv(a, ref.mpi_rq_fields_f64_3, rank_source, tag, comm);
     }
 
     for (auto & a : pdat.fields_f64_4) {        //std::cout << "["<< mpi_handler::world_rank <<"] recv field : " << a.get_name() << std::endl;
-        total_data_transf += patchdata_field::irecv(a, rq_lst, rank_source, tag, comm);
+        total_data_transf += patchdata_field::irecv(a, ref.mpi_rq_fields_f64_4, rank_source, tag, comm);
     }
 
     for (auto & a : pdat.fields_f64_8) {        //std::cout << "["<< mpi_handler::world_rank <<"] recv field : " << a.get_name() << std::endl;
-        total_data_transf += patchdata_field::irecv(a, rq_lst, rank_source, tag, comm);
+        total_data_transf += patchdata_field::irecv(a, ref.mpi_rq_fields_f64_8, rank_source, tag, comm);
     }
 
     for (auto & a : pdat.fields_f64_16) {        //std::cout << "["<< mpi_handler::world_rank <<"] recv field : " << a.get_name() << std::endl;
-        total_data_transf += patchdata_field::irecv(a, rq_lst, rank_source, tag, comm);
+        total_data_transf += patchdata_field::irecv(a, ref.mpi_rq_fields_f64_16, rank_source, tag, comm);
     }
     
 
 
 
     for (auto & a : pdat.fields_u32) {        //std::cout << "["<< mpi_handler::world_rank <<"] recv field : " << a.get_name() << std::endl;
-        total_data_transf += patchdata_field::irecv(a, rq_lst, rank_source, tag, comm);
+        total_data_transf += patchdata_field::irecv(a, ref.mpi_rq_fields_u32, rank_source, tag, comm);
     }
 
     for (auto & a : pdat.fields_u64) {        //std::cout << "["<< mpi_handler::world_rank <<"] recv field : " << a.get_name() << std::endl;
-        total_data_transf += patchdata_field::irecv(a, rq_lst, rank_source, tag, comm);
+        total_data_transf += patchdata_field::irecv(a, ref.mpi_rq_fields_u64, rank_source, tag, comm);
     }
 
     return total_data_transf;
