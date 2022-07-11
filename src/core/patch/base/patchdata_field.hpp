@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <cstdio>
 #include <iostream>
 #include <random>
@@ -16,13 +17,16 @@
 #include "aliases.hpp"
 
 #include "core/sys/log.hpp"
+#include "core/sys/sycl_handler.hpp"
 #include "core/sys/sycl_mpi_interop.hpp"
+#include "core/utils/string_utils.hpp"
 #include "core/utils/sycl_vector_utils.hpp"
 #include "core/sys/mpi_handler.hpp"
 
 
 template<class T>
 inline void copydata(T* source, T* dest, u32 cnt){
+    logger::debug_alloc_ln("PatchDataField", "copy data src:",source , "dest:",dest, "len=",cnt);
     for (u32 i = 0; i < cnt; i++) {
         dest[i] = source[i];
     }
@@ -32,8 +36,8 @@ inline void copydata(T* source, T* dest, u32 cnt){
 template<class T>
 class PatchDataField {
 
-    T* _data;
-    std::vector<T> field_data;
+    T* _data = nullptr;
+    //std::vector<T> field_data;
 
     std::string field_name;
 
@@ -49,12 +53,14 @@ class PatchDataField {
 
 
     void _alloc(){
-        //_data = new T[capacity];logger::debug_alloc_ln("PatchDataField", "allocate field :",_data , "len =",capacity);
+        _data = new T[capacity];logger::debug_alloc_ln("PatchDataField", "allocate field :",_data , "len =",capacity);
     }
 
     void _free(){
-        logger::debug_alloc_ln("PatchDataField", "free field :",_data , "len =",capacity);
-        //delete[] _data;
+        if(_data != nullptr) {
+            logger::debug_alloc_ln("PatchDataField", "free field :",_data , "len =",capacity);
+            delete[] _data;
+        }
     }
 
     public:
@@ -71,29 +77,48 @@ class PatchDataField {
         obj_cnt = 0;
         val_cnt = 0;
 
-        capacity = min_capa;
-        _alloc();
+        capacity = 0;
+        //_alloc();
 
     };
 
-    //PatchDataField(const PatchDataField &other) : p{new resource{*(other.p)}} {}
-    //PatchDataField(PatchDataField &&other) : p{other.p} { other.p = nullptr; }
-    //PatchDataField &operator=(const PatchDataField &other) {
-    //    if (&other != this) {
-    //        delete p;
-    //        p = nullptr;
-    //        p = new resource{*(other.p)};
-    //    }
-    //    return *this;
-    //}
-    //PatchDataField &operator=(PatchDataField &&other) {
-    //    if (&other != this) {
-    //        delete p;
-    //        p       = other.p;
-    //        other.p = nullptr;
-    //    }
-    //    return *this;
-    //}
+
+    PatchDataField(const PatchDataField& other) {
+
+        field_name  = other.field_name  ;
+        nvar        = other.nvar        ; 
+        obj_cnt     = other.obj_cnt     ;
+        val_cnt     = other.val_cnt     ; 
+        capacity    = other.capacity    ;
+
+        //field_data = other.field_data;
+
+        if (capacity != 0) {
+            _alloc();
+            copydata(other._data,_data, capacity);
+        }
+        
+    }
+
+
+    PatchDataField(PatchDataField &&other) = delete;
+    /* : _data(other._data){ 
+        other._data = nullptr; 
+    }*/
+
+    PatchDataField &operator=(const PatchDataField &other) = delete;
+
+    PatchDataField &operator=(PatchDataField &&other) =delete;
+    
+    /*noexcept {
+        if (&other != this) {
+            _free();
+            _data       = other._data;
+            other._data = nullptr;
+        }
+        return *this;
+    }*/
+    
 
     inline ~PatchDataField(){
         logger::debug_alloc_ln("PatchDataField", "free field :",_data , "len =",capacity);
@@ -104,7 +129,8 @@ class PatchDataField {
 
 
     inline T* usm_data(){
-        return field_data.data();
+        //return field_data.data();
+        return _data;
     }
 
     inline u32 size(){
@@ -128,19 +154,23 @@ class PatchDataField {
         logger::debug_alloc_ln("PatchDataField", "resize from : ",val_cnt, "to :",new_obj_cnt*nvar);
 
         u32 new_size = new_obj_cnt*nvar;
-        field_data.resize(new_size);
+        //field_data.resize(new_size);
 
-
-        if (new_size > capacity) {
+        //*
+        if(capacity == 0){
+            capacity = safe_fact*new_size;
+            _alloc();
+        }else if (new_size > capacity) {
             u32 new_capa = safe_fact*new_size;
             T* new_ptr = new T[new_capa];       logger::debug_alloc_ln("PatchDataField", "allocate : ",new_ptr, "capacity :",new_capa);
-            copydata(_data, new_ptr, val_cnt);  logger::debug_alloc_ln("PatchDataField", "copy from : ",_data, " to :",new_ptr, "cnt :",val_cnt);
+            copydata(_data, new_ptr, val_cnt);  
             delete [] _data;                    logger::debug_alloc_ln("PatchDataField", "delete old buf : ",_data);
             _data = new_ptr;
             capacity = new_capa;
         }else{
             
         }
+        //*/
 
 
 
@@ -161,23 +191,28 @@ class PatchDataField {
     inline void insert_element(T v){
         u32 ins_pos = val_cnt;
         expand(1);
-        field_data[ins_pos] = v;
+        //field_data[ins_pos] = v;
+        _data[ins_pos] = v;
     }
 
     inline void apply_offset(T off){
-        for(T & v : field_data){
-            v += off;
+        for (u32 i = 0; i < val_cnt; i++) {
+            _data[i] += off;
         }
+        //for(T & v : field_data){
+        //    v += off;
+        //}
     }
 
 
     inline void insert(PatchDataField<T> &f2){
 
-        const u32 idx_st = field_data.size();
+        const u32 idx_st = val_cnt;//field_data.size();
         expand(f2.obj_cnt);
 
         for (u32 i = 0; i < f2.val_cnt; i++) {
-            field_data[idx_st + i] = f2.field_data[i];
+            //field_data[idx_st + i] = f2.field_data[i];
+            _data[idx_st + i] = f2._data[i];
         }
 
     }
@@ -190,7 +225,8 @@ class PatchDataField {
             auto acc = data.template get_access<sycl::access::mode::read>();
 
             for(u32 i = 0; i < val_cnt ; i++){
-                field_data[i] = acc[i];
+                //field_data[i] = acc[i];
+                _data[i] = acc[i];
             }
         }
         
@@ -200,7 +236,8 @@ class PatchDataField {
 
         if(val_cnt > 0) {
             for(u32 i = 0; i < val_cnt ; i++){
-                field_data[i] = val;
+                //field_data[i] = val;
+                _data[i] = val;
             }
         }
         

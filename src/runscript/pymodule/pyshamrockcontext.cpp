@@ -8,6 +8,7 @@
 
 #include "pyshamrockcontext.hpp"
 #include "core/patch/base/patchdata_field.hpp"
+#include "core/sys/mpi_handler.hpp"
 #include <floatobject.h>
 #include <longobject.h>
 #include <map>
@@ -309,6 +310,14 @@ class PySHAMROCKContextImpl {
 
     }
 
+    static PyObject* get_world_size(PySHAMROCKContext *self, PyObject *Py_UNUSED(ignored)){
+        return PyLong_FromLong(mpi_handler::world_size);
+    }
+
+    static PyObject* get_world_rank(PySHAMROCKContext *self, PyObject *Py_UNUSED(ignored)){
+        return PyLong_FromLong(mpi_handler::world_rank);
+    }
+
 };
 
 static PyMethodDef methods[] = {
@@ -320,6 +329,8 @@ static PyMethodDef methods[] = {
     {"close_sched", (PyCFunction)PySHAMROCKContextImpl::close_sched, METH_NOARGS, "doc str"},
     {"collect_data", (PyCFunction)PySHAMROCKContextImpl::collect_data, METH_NOARGS, "doc str"},
     {"set_box_size", (PyCFunction)PySHAMROCKContextImpl::set_box_size, METH_VARARGS, "doc str"},
+    {"get_world_size", (PyCFunction)PySHAMROCKContextImpl::get_world_size, METH_NOARGS, "doc str"},
+    {"get_world_rank", (PyCFunction)PySHAMROCKContextImpl::get_world_rank, METH_NOARGS, "doc str"},
     {NULL} /* Sentinel */
 };
 

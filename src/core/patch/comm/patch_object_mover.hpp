@@ -35,7 +35,7 @@ inline std::unordered_map<u64, sycl::buffer<u64>> get_new_id_map<f32_3>(PatchSch
 
 
             u32 ixyz = sched.pdl.get_field_idx<f32_3>("xyz");
-            PatchDataField<f32_3> xyz_field =  pdat.fields_f32_3[ixyz];
+            PatchDataField<f32_3> & xyz_field =  pdat.fields_f32_3[ixyz];
 
             std::unique_ptr<sycl::buffer<f32_3>> pos = std::make_unique<sycl::buffer<f32_3>>(xyz_field.usm_data(),xyz_field.size());
 
@@ -70,7 +70,7 @@ inline std::unordered_map<u64, sycl::buffer<u64>> get_new_id_map<f64_3>(PatchSch
 
 
             u32 ixyz = sched.pdl.get_field_idx<f64_3>("xyz");
-            PatchDataField<f64_3> xyz_field =  pdat.fields_f64_3[ixyz];
+            PatchDataField<f64_3> & xyz_field =  pdat.fields_f64_3[ixyz];
 
             std::unique_ptr<sycl::buffer<f64_3>> pos = std::make_unique<sycl::buffer<f64_3>>(xyz_field.usm_data(),xyz_field.size());
 
@@ -111,7 +111,7 @@ inline void reatribute_particles<f32_3>(PatchScheduler & sched, SerialPatchTree<
 
 
             u32 ixyz = sched.pdl.get_field_idx<f32_3>("xyz");
-            PatchDataField<f32_3> xyz_field =  pdat.fields_f32_3[ixyz];
+            PatchDataField<f32_3> & xyz_field =  pdat.fields_f32_3[ixyz];
 
             std::unique_ptr<sycl::buffer<f32_3>> pos = std::make_unique<sycl::buffer<f32_3>>(xyz_field.usm_data(),xyz_field.size());
 
@@ -152,7 +152,7 @@ inline void reatribute_particles<f32_3>(PatchScheduler & sched, SerialPatchTree<
         for(auto & [id,pdat] : sched.patch_data.owned_data ){
 
             u32 ixyz = sched.pdl.get_field_idx<f32_3>("xyz");
-            PatchDataField<f32_3> xyz_field =  pdat.fields_f32_3[ixyz];
+            PatchDataField<f32_3> & xyz_field =  pdat.fields_f32_3[ixyz];
 
             for(u32 i = 0 ; i < pdat.get_obj_cnt(); i++){
 
@@ -189,7 +189,7 @@ inline void reatribute_particles<f32_3>(PatchScheduler & sched, SerialPatchTree<
         for(auto & [id,pdat] : sched.patch_data.owned_data ){
             if(! pdat.is_empty()){
                 u32 ixyz = sched.pdl.get_field_idx<f32_3>("xyz");
-                PatchDataField<f32_3> xyz_field =  pdat.fields_f32_3[ixyz];
+                PatchDataField<f32_3> & xyz_field =  pdat.fields_f32_3[ixyz];
 
                 std::unique_ptr<sycl::buffer<f32_3>> pos = std::make_unique<sycl::buffer<f32_3>>(xyz_field.usm_data(),xyz_field.size());
 

@@ -17,7 +17,6 @@
 #include "core/patch/comm/patch_object_mover.hpp"
 #include "core/sys/sycl_mpi_interop.hpp"
 #include <memory>
-#include <mpi.h>
 #include <vector>
 
 

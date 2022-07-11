@@ -35,63 +35,13 @@
 
 void PatchData::init_fields(){
 
-        for (auto a : pdl.fields_f32) {
-            fields_f32.emplace_back(a.name,a.nvar);
+    #define X(arg) \
+        for (auto a : pdl.fields_##arg) {\
+            fields_##arg.emplace_back(a.name,a.nvar);\
         }
+    XMAC_LIST_ENABLED_FIELD
+    #undef X
 
-        for (auto a : pdl.fields_f32_2) {
-            fields_f32_2.emplace_back(a.name,a.nvar);
-        }
-
-        for (auto a : pdl.fields_f32_3) {
-            fields_f32_3.emplace_back(a.name,a.nvar);
-        }
-
-        for (auto a : pdl.fields_f32_4) {
-            fields_f32_4.emplace_back(a.name,a.nvar);
-        }
-
-        for (auto a : pdl.fields_f32_8) {
-            fields_f32_8.emplace_back(a.name,a.nvar);
-        }
-
-        for (auto a : pdl.fields_f32_16) {
-            fields_f32_16.emplace_back(a.name,a.nvar);
-        }
-
-
-        for (auto a : pdl.fields_f64) {
-            fields_f64.emplace_back(a.name,a.nvar);
-        }
-
-        for (auto a : pdl.fields_f64_2) {
-            fields_f64_2.emplace_back(a.name,a.nvar);
-        }
-
-        for (auto a : pdl.fields_f64_3) {
-            fields_f64_3.emplace_back(a.name,a.nvar);
-        }
-
-        for (auto a : pdl.fields_f64_4) {
-            fields_f64_4.emplace_back(a.name,a.nvar);
-        }
-
-        for (auto a : pdl.fields_f64_8) {
-            fields_f64_8.emplace_back(a.name,a.nvar);
-        }
-
-        for (auto a : pdl.fields_f64_16) {
-            fields_f64_16.emplace_back(a.name,a.nvar);
-        }
-
-
-        for (auto a : pdl.fields_u32) {
-            fields_u32.emplace_back(a.name,a.nvar);
-        }
-
-        for (auto a : pdl.fields_u64) {
-            fields_u64.emplace_back(a.name,a.nvar);
-        }
 }
 
 

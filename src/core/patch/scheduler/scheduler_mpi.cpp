@@ -10,7 +10,6 @@
 
 #include <ctime>
 #include <memory>
-#include <mpi.h>
 #include <sstream>
 #include <stdexcept>
 #include <vector>
@@ -645,7 +644,12 @@ std::vector<std::unique_ptr<PatchData>> PatchScheduler::gather_data(u32 rank){
 
     std::vector<std::unique_ptr<PatchData>> ret;
 
-    ret.resize(plist.size());
+
+    if (mpi_handler::world_rank == 0) {
+         ret.resize(plist.size());
+    }
+
+    
 
     std::vector<PatchDataMpiRequest> rq_lst;
 
@@ -656,7 +660,7 @@ std::vector<std::unique_ptr<PatchData>> PatchScheduler::gather_data(u32 rank){
         }
     }
 
-    if(mpi_handler::world_rank == rank){
+    if(mpi_handler::world_rank == 0){
         for (u32 i = 0; i < plist.size(); i++) {
             ret.at(i) = std::make_unique<PatchData>(pdl);
             patchdata_irecv(*ret.at(i),rq_lst, plist[i].node_owner_id, i, MPI_COMM_WORLD);

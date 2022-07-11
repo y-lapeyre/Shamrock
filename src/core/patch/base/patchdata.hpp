@@ -19,7 +19,6 @@
 
 #pragma once
 
-#include <mpi.h>
 #include <random>
 #include <vector>
 
