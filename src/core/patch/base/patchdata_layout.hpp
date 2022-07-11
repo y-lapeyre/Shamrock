@@ -9,12 +9,11 @@
 #pragma once
 
 #include "aliases.hpp"
+#include "core/patch/base/enabled_fields.hpp"
 #include <sstream>
 #include <vector>
 
 
-
-//TODO WIP module
 
 template<class T>
 class FieldDescriptor{public: 
@@ -75,16 +74,6 @@ class FieldDescriptor{public:
     }   
 
 
-#define __add_field_desc_gen(T) \
-    for (auto f : fields_##T){\
-        ss << f.name << " : nvar=" <<f.nvar << " type : " << #T << "\n";\
-    }
-
-#define __append_fields_names(vec,T) \
-    for (auto f : fields_##T){\
-        vec.push_back(f.name);\
-    }
-    
 
 
 
@@ -108,221 +97,15 @@ public:
 
     PositionprecMode xyz_mode;
 
-
-    __add_field_type(i64   );
-    __add_field_type(i32   );
-    //__add_field_type(i16   );
-    //__add_field_type( i8   );
-    __add_field_type(u64   );
-    __add_field_type(u32   );
-    //__add_field_type(u16   );
-    //__add_field_type( u8   );
-    //__add_field_type(f16   );
-    __add_field_type(f32   );
-    __add_field_type(f64   );
-    //__add_field_type(i64_2 );
-    //__add_field_type(i32_2 );
-    //__add_field_type(i16_2 );
-    //__add_field_type( i8_2 );
-    //__add_field_type(u64_2 );
-    //__add_field_type(u32_2 );
-    //__add_field_type(u16_2 );
-    //__add_field_type( u8_2 );
-    //__add_field_type(f16_2 );
-    __add_field_type(f32_2 );
-    __add_field_type(f64_2 );
-    //__add_field_type(i64_3 );
-    //__add_field_type(i32_3 );
-    //__add_field_type(i16_3 );
-    //__add_field_type( i8_3 );
-    //__add_field_type(u64_3 );
-    //__add_field_type(u32_3 );
-    //__add_field_type(u16_3 );
-    //__add_field_type( u8_3 );
-    //__add_field_type(f16_3 );
-    __add_field_type(f32_3 );
-    __add_field_type(f64_3 );
-    //__add_field_type(i64_4 );
-    //__add_field_type(i32_4 );
-    //__add_field_type(i16_4 );
-    //__add_field_type( i8_4 );
-    //__add_field_type(u64_4 );
-    //__add_field_type(u32_4 );
-    //__add_field_type(u16_4 );
-    //__add_field_type( u8_4 );
-    //__add_field_type(f16_4 );
-    __add_field_type(f32_4 );
-    __add_field_type(f64_4 );
-    //__add_field_type(i64_8 );
-    //__add_field_type(i32_8 );
-    //__add_field_type(i16_8 );
-    //__add_field_type( i8_8 );
-    //__add_field_type(u64_8 );
-    //__add_field_type(u32_8 );
-    //__add_field_type(u16_8 );
-    //__add_field_type( u8_8 );
-    //__add_field_type(f16_8 );
-    __add_field_type(f32_8 );
-    __add_field_type(f64_8 );
-    //__add_field_type(i64_16);
-    //__add_field_type(i32_16);
-    //__add_field_type(i16_16);
-    //__add_field_type( i8_16);
-    //__add_field_type(u64_16);
-    //__add_field_type(u32_16);
-    //__add_field_type(u16_16);
-    //__add_field_type( u8_16);
-    //__add_field_type(f16_16);
-    __add_field_type(f32_16);
-    __add_field_type(f64_16);
+    #define X(f) __add_field_type(f);
+    XMAC_LIST_ENABLED_FIELD
+    #undef X
 
 
-    inline std::string get_description_str(){
-        std::stringstream ss;
+    std::string get_description_str();
 
-        __add_field_desc_gen(i64   );
-        __add_field_desc_gen(i32   );
-        //__add_field_desc_gen(i16   );
-        //__add_field_desc_gen( i8   );
-        __add_field_desc_gen(u64   );
-        __add_field_desc_gen(u32   );
-        //__add_field_desc_gen(u16   );
-        //__add_field_desc_gen( u8   );
-        //__add_field_desc_gen(f16   );
-        __add_field_desc_gen(f32   );
-        __add_field_desc_gen(f64   );
-        //__add_field_desc_gen(i64_2 );
-        //__add_field_desc_gen(i32_2 );
-        //__add_field_desc_gen(i16_2 );
-        //__add_field_desc_gen( i8_2 );
-        //__add_field_desc_gen(u64_2 );
-        //__add_field_desc_gen(u32_2 );
-        //__add_field_desc_gen(u16_2 );
-        //__add_field_desc_gen( u8_2 );
-        //__add_field_desc_gen(f16_2 );
-        __add_field_desc_gen(f32_2 );
-        __add_field_desc_gen(f64_2 );
-        //__add_field_desc_gen(i64_3 );
-        //__add_field_desc_gen(i32_3 );
-        //__add_field_desc_gen(i16_3 );
-        //__add_field_desc_gen( i8_3 );
-        //__add_field_desc_gen(u64_3 );
-        //__add_field_desc_gen(u32_3 );
-        //__add_field_desc_gen(u16_3 );
-        //__add_field_desc_gen( u8_3 );
-        //__add_field_desc_gen(f16_3 );
-        __add_field_desc_gen(f32_3 );
-        __add_field_desc_gen(f64_3 );
-        //__add_field_desc_gen(i64_4 );
-        //__add_field_desc_gen(i32_4 );
-        //__add_field_desc_gen(i16_4 );
-        //__add_field_desc_gen( i8_4 );
-        //__add_field_desc_gen(u64_4 );
-        //__add_field_desc_gen(u32_4 );
-        //__add_field_desc_gen(u16_4 );
-        //__add_field_desc_gen( u8_4 );
-        //__add_field_desc_gen(f16_4 );
-        __add_field_desc_gen(f32_4 );
-        __add_field_desc_gen(f64_4 );
-        //__add_field_desc_gen(i64_8 );
-        //__add_field_desc_gen(i32_8 );
-        //__add_field_desc_gen(i16_8 );
-        //__add_field_desc_gen( i8_8 );
-        //__add_field_desc_gen(u64_8 );
-        //__add_field_desc_gen(u32_8 );
-        //__add_field_desc_gen(u16_8 );
-        //__add_field_desc_gen( u8_8 );
-        //__add_field_desc_gen(f16_8 );
-        __add_field_desc_gen(f32_8 );
-        __add_field_desc_gen(f64_8 );
-        //__add_field_desc_gen(i64_16);
-        //__add_field_desc_gen(i32_16);
-        //__add_field_desc_gen(i16_16);
-        //__add_field_desc_gen( i8_16);
-        //__add_field_desc_gen(u64_16);
-        //__add_field_desc_gen(u32_16);
-        //__add_field_desc_gen(u16_16);
-        //__add_field_desc_gen( u8_16);
-        //__add_field_desc_gen(f16_16);
-        __add_field_desc_gen(f32_16);
-        __add_field_desc_gen(f64_16);
-
-
-        return ss.str();
-    }
-
-    inline std::vector<std::string> get_field_names(){
-        std::vector<std::string> ret ;
-
-        __append_fields_names(ret,i64   );
-        __append_fields_names(ret,i32   );
-        //__append_fields_names(ret,i16   );
-        //__append_fields_names(ret, i8   );
-        __append_fields_names(ret,u64   );
-        __append_fields_names(ret,u32   );
-        //__append_fields_names(ret,u16   );
-        //__append_fields_names(ret, u8   );
-        //__append_fields_names(ret,f16   );
-        __append_fields_names(ret,f32   );
-        __append_fields_names(ret,f64   );
-        //__append_fields_names(ret,i64_2 );
-        //__append_fields_names(ret,i32_2 );
-        //__append_fields_names(ret,i16_2 );
-        //__append_fields_names(ret, i8_2 );
-        //__append_fields_names(ret,u64_2 );
-        //__append_fields_names(ret,u32_2 );
-        //__append_fields_names(ret,u16_2 );
-        //__append_fields_names(ret, u8_2 );
-        //__append_fields_names(ret,f16_2 );
-        __append_fields_names(ret,f32_2 );
-        __append_fields_names(ret,f64_2 );
-        //__append_fields_names(ret,i64_3 );
-        //__append_fields_names(ret,i32_3 );
-        //__append_fields_names(ret,i16_3 );
-        //__append_fields_names(ret, i8_3 );
-        //__append_fields_names(ret,u64_3 );
-        //__append_fields_names(ret,u32_3 );
-        //__append_fields_names(ret,u16_3 );
-        //__append_fields_names(ret, u8_3 );
-        //__append_fields_names(ret,f16_3 );
-        __append_fields_names(ret,f32_3 );
-        __append_fields_names(ret,f64_3 );
-        //__append_fields_names(ret,i64_4 );
-        //__append_fields_names(ret,i32_4 );
-        //__append_fields_names(ret,i16_4 );
-        //__append_fields_names(ret, i8_4 );
-        //__append_fields_names(ret,u64_4 );
-        //__append_fields_names(ret,u32_4 );
-        //__append_fields_names(ret,u16_4 );
-        //__append_fields_names(ret, u8_4 );
-        //__append_fields_names(ret,f16_4 );
-        __append_fields_names(ret,f32_4 );
-        __append_fields_names(ret,f64_4 );
-        //__append_fields_names(ret,i64_8 );
-        //__append_fields_names(ret,i32_8 );
-        //__append_fields_names(ret,i16_8 );
-        //__append_fields_names(ret, i8_8 );
-        //__append_fields_names(ret,u64_8 );
-        //__append_fields_names(ret,u32_8 );
-        //__append_fields_names(ret,u16_8 );
-        //__append_fields_names(ret, u8_8 );
-        //__append_fields_names(ret,f16_8 );
-        __append_fields_names(ret,f32_8 );
-        __append_fields_names(ret,f64_8 );
-        //__append_fields_names(ret,i64_16);
-        //__append_fields_names(ret,i32_16);
-        //__append_fields_names(ret,i16_16);
-        //__append_fields_names(ret, i8_16);
-        //__append_fields_names(ret,u64_16);
-        //__append_fields_names(ret,u32_16);
-        //__append_fields_names(ret,u16_16);
-        //__append_fields_names(ret, u8_16);
-        //__append_fields_names(ret,f16_16);
-        __append_fields_names(ret,f32_16);
-        __append_fields_names(ret,f64_16);
-
-
-        return ret;
-    }
+    std::vector<std::string> get_field_names();
 
 };
+
+#undef __add_field_type

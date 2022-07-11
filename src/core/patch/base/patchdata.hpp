@@ -24,6 +24,7 @@
 #include <vector>
 
 #include "aliases.hpp"
+#include "core/patch/base/enabled_fields.hpp"
 #include "flags.hpp"
 #include "patchdata_field.hpp"
 #include "core/sys/mpi_handler.hpp"
@@ -43,23 +44,9 @@ class PatchData {
   public:
     PatchDataLayout & pdl;
 
-    std::vector<PatchDataField<f32   >> fields_f32;
-    std::vector<PatchDataField<f32_2 >> fields_f32_2;
-    std::vector<PatchDataField<f32_3 >> fields_f32_3;
-    std::vector<PatchDataField<f32_4 >> fields_f32_4;
-    std::vector<PatchDataField<f32_8 >> fields_f32_8;
-    std::vector<PatchDataField<f32_16>> fields_f32_16;
-
-    std::vector<PatchDataField<f64   >> fields_f64;
-    std::vector<PatchDataField<f64_2 >> fields_f64_2;
-    std::vector<PatchDataField<f64_3 >> fields_f64_3;
-    std::vector<PatchDataField<f64_4 >> fields_f64_4;
-    std::vector<PatchDataField<f64_8 >> fields_f64_8;
-    std::vector<PatchDataField<f64_16>> fields_f64_16;
-
-    std::vector<PatchDataField<u32   >> fields_u32;
-
-    std::vector<PatchDataField<u64   >> fields_u64;
+    #define X(_arg) std::vector<PatchDataField<_arg>> fields_##_arg ;
+    XMAC_LIST_ENABLED_FIELD
+    #undef X
 
     inline PatchData(PatchDataLayout & pdl) : pdl(pdl){
         init_fields();
@@ -180,20 +167,9 @@ class PatchData {
 
     template<class T> PatchDataField<T> & get_field(u32 idx){}
 
-    template<> inline PatchDataField<f32   > & get_field(u32 idx){return fields_f32.at(idx);}
-    template<> inline PatchDataField<f32_2 >& get_field(u32 idx){return fields_f32_2.at(idx);}
-    template<> inline PatchDataField<f32_3 >& get_field(u32 idx){return fields_f32_3.at(idx);}
-    template<> inline PatchDataField<f32_4 >& get_field(u32 idx){return fields_f32_4.at(idx);}
-    template<> inline PatchDataField<f32_8 >& get_field(u32 idx){return fields_f32_8.at(idx);}
-    template<> inline PatchDataField<f32_16>& get_field(u32 idx){return fields_f32_16.at(idx);}
-    template<> inline PatchDataField<f64   >& get_field(u32 idx){return fields_f64.at(idx);}
-    template<> inline PatchDataField<f64_2 >& get_field(u32 idx){return fields_f64_2.at(idx);}
-    template<> inline PatchDataField<f64_3 >& get_field(u32 idx){return fields_f64_3.at(idx);}
-    template<> inline PatchDataField<f64_4 >& get_field(u32 idx){return fields_f64_4.at(idx);}
-    template<> inline PatchDataField<f64_8 >& get_field(u32 idx){return fields_f64_8.at(idx);}
-    template<> inline PatchDataField<f64_16>& get_field(u32 idx){return fields_f64_16.at(idx);}
-    template<> inline PatchDataField<u32   >& get_field(u32 idx){return fields_u32.at(idx);}
-    template<> inline PatchDataField<u64   >& get_field(u32 idx){return fields_u64.at(idx);}
+    #define X(_arg) template<> inline PatchDataField<_arg> & get_field(u32 idx){return fields_##_arg.at(idx);}
+    XMAC_LIST_ENABLED_FIELD
+    #undef X
     
 };
 

@@ -8,7 +8,10 @@
 
 #pragma once
 
-
+/**
+ * @brief X macro listing all enabled field types in the scheduler
+ * 
+ */
 #define XMAC_LIST_ENABLED_FIELD \
     X(f32   ) \
     X(f32_2 ) \

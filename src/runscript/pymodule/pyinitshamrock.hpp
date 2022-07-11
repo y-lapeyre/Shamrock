@@ -29,17 +29,10 @@ static PyObject* PyInit_shamrock(void) {
     if (m == NULL)
         return NULL;
 
-    
-    
-
     for(auto fct : init_python_binding_lst){
         fct(m);
     }
 
-
-    //return PyModule_Create(&Pyshamrock_Module);
     return m;
 
-
-    //return PyModule_Create(&Pyshamrock_Module);
 }
