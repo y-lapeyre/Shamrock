@@ -13,3 +13,4 @@ AlignOperands:   true
 AlignTrailingComments: true
 
 BreakBeforeConceptDeclarations : true
+NamespaceIndentation: All

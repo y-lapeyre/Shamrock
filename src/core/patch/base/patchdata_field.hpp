@@ -149,6 +149,7 @@ class PatchDataField {
         return field_name;
     }
 
+    //add overflow check
     inline void resize(u32 new_obj_cnt){
 
         logger::debug_alloc_ln("PatchDataField", "resize from : ",val_cnt, "to :",new_obj_cnt*nvar);
@@ -241,6 +242,20 @@ class PatchDataField {
             }
         }
         
+    }
+
+    // use only if nvar = 1
+    template<class Lambdacd>
+    inline std::vector<u32> get_elements_with_range(Lambdacd && cd_true, T vmin, T vmax){
+        std::vector<u32> idxs;
+
+        for(u32 i = 0; i < val_cnt ; i++){
+            if (cd_true(_data[i], vmin, vmax)) {
+                idxs.push_back(i);
+            }
+        }
+        
+        return idxs;
     }
 
     inline bool check_field_match(PatchDataField<T> &f2){
