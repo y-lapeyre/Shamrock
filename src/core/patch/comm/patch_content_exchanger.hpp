@@ -44,6 +44,8 @@ inline sycl::buffer<u64> __compute_object_patch_owner(sycl::queue &queue, sycl::
             u64 current_node = 0;
             u64 result_node  = u64_max;
 
+            auto xyz = pos[i];
+
             //out << i << " : \n";
 
             for (u32 step = 0; step < max_lev+1; step++) {
@@ -51,28 +53,28 @@ inline sycl::buffer<u64> __compute_object_patch_owner(sycl::queue &queue, sycl::
 
                 if (cur_node.childs_id0 != u64_max) {
 
-                    if (BBAA::is_particle_in_patch(pos[i], tnode[cur_node.childs_id0].box_min,
+                    if (BBAA::is_particle_in_patch(xyz, tnode[cur_node.childs_id0].box_min,
                                                    tnode[cur_node.childs_id0].box_max)) {
                         current_node = cur_node.childs_id0;
-                    } else if (BBAA::is_particle_in_patch(pos[i], tnode[cur_node.childs_id1].box_min,
+                    } else if (BBAA::is_particle_in_patch(xyz, tnode[cur_node.childs_id1].box_min,
                                                           tnode[cur_node.childs_id1].box_max)) {
                         current_node = cur_node.childs_id1;
-                    } else if (BBAA::is_particle_in_patch(pos[i], tnode[cur_node.childs_id2].box_min,
+                    } else if (BBAA::is_particle_in_patch(xyz, tnode[cur_node.childs_id2].box_min,
                                                           tnode[cur_node.childs_id2].box_max)) {
                         current_node = cur_node.childs_id2;
-                    } else if (BBAA::is_particle_in_patch(pos[i], tnode[cur_node.childs_id3].box_min,
+                    } else if (BBAA::is_particle_in_patch(xyz, tnode[cur_node.childs_id3].box_min,
                                                           tnode[cur_node.childs_id3].box_max)) {
                         current_node = cur_node.childs_id3;
-                    } else if (BBAA::is_particle_in_patch(pos[i], tnode[cur_node.childs_id4].box_min,
+                    } else if (BBAA::is_particle_in_patch(xyz, tnode[cur_node.childs_id4].box_min,
                                                           tnode[cur_node.childs_id4].box_max)) {
                         current_node = cur_node.childs_id4;
-                    } else if (BBAA::is_particle_in_patch(pos[i], tnode[cur_node.childs_id5].box_min,
+                    } else if (BBAA::is_particle_in_patch(xyz, tnode[cur_node.childs_id5].box_min,
                                                           tnode[cur_node.childs_id5].box_max)) {
                         current_node = cur_node.childs_id5;
-                    } else if (BBAA::is_particle_in_patch(pos[i], tnode[cur_node.childs_id6].box_min,
+                    } else if (BBAA::is_particle_in_patch(xyz, tnode[cur_node.childs_id6].box_min,
                                                           tnode[cur_node.childs_id6].box_max)) {
                         current_node = cur_node.childs_id6;
-                    } else if (BBAA::is_particle_in_patch(pos[i], tnode[cur_node.childs_id7].box_min,
+                    } else if (BBAA::is_particle_in_patch(xyz, tnode[cur_node.childs_id7].box_min,
                                                           tnode[cur_node.childs_id7].box_max)) {
                         current_node = cur_node.childs_id7;
                     }

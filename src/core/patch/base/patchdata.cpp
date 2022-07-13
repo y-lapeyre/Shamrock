@@ -121,50 +121,12 @@ bool patch_data_check_match(PatchData& p1, PatchData& p2){
 }
 
 
-// TODO move those func into patch data field
-
-template<class obj> obj fast_extract(u32 idx, std::vector<obj>& cnt){
-
-    obj end_ = *(cnt.end()-1);
-    obj extr = cnt[idx];
-
-    cnt[idx] = end_;
-    cnt.pop_back();
-
-    return extr;
-}
-
-
-template<class obj> obj fast_extract_ptr(u32 idx, u32 lenght ,obj* cnt){
-
-    obj end_ = cnt[lenght-1];
-    obj extr = cnt[idx];
-
-    cnt[idx] = end_;
-
-    return extr;
-}
-
-template<class T>
-void sub_extract(u32 pidx, PatchDataField<T> & from, PatchDataField<T> & to){
-    const u32 nvar = from.get_nvar();
-    const u32 idx_val = pidx*nvar;
-    const u32 idx_out_val = to.size();
-
-    to.expand(1);
-
-    for(u32 i = nvar-1 ; i < nvar ; i--){
-        to.usm_data()[idx_out_val + i] = (fast_extract_ptr(idx_val + i,from.size(), from.usm_data()));
-    }
-
-    from.shrink(1);
-}
 
 void PatchData::extract_element(u32 pidx, PatchData & out_pdat){
 
     #define X(arg) \
         for(u32 idx = 0; idx < pdl.fields_##arg.size(); idx++){\
-            sub_extract(pidx, fields_##arg[idx], out_pdat.fields_##arg[idx]);\
+            fields_##arg[idx].extract_element(pidx, out_pdat.fields_##arg[idx]);\
         }
     XMAC_LIST_ENABLED_FIELD
     #undef X

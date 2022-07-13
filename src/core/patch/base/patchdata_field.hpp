@@ -258,6 +258,36 @@ class PatchDataField {
         return idxs;
     }
 
+    inline void extract_element(u32 pidx, PatchDataField<T> & to){
+
+        auto fast_extract_ptr = [](u32 idx, u32 lenght ,T* cnt){
+
+            T end_ = cnt[lenght-1];
+            T extr = cnt[idx];
+
+            cnt[idx] = end_;
+
+            return extr;
+        };
+
+        auto sub_extract = [fast_extract_ptr](u32 pidx, PatchDataField<T> & from, PatchDataField<T> & to){
+            const u32 nvar = from.get_nvar();
+            const u32 idx_val = pidx*nvar;
+            const u32 idx_out_val = to.size();
+
+            to.expand(1);
+
+            for(u32 i = nvar-1 ; i < nvar ; i--){
+                to.usm_data()[idx_out_val + i] = (fast_extract_ptr(idx_val + i,from.size(), from.usm_data()));
+            }
+
+            from.shrink(1);
+        };
+
+        sub_extract(pidx,*this,to);
+
+    }
+
     inline bool check_field_match(PatchDataField<T> &f2){
         bool match = true;
 
@@ -375,6 +405,14 @@ namespace patchdata_field {
         for(auto a : rq_lst){
             a.finalize();
         }
+    }
+
+
+
+    template<class T>
+    inline void file_write(MPI_File fh, PatchDataField<T> &p){
+        MPI_Status st;
+        mpi::file_write(fh, p.usm_data(),  p.size(), get_mpi_type<T>(), &st);
     }
 }
 
