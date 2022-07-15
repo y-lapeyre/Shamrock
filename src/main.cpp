@@ -70,6 +70,9 @@
 #include <unordered_map>
 #include <vector>
 
+
+
+#if false
 class TestSimInfo {
   public:
     u32 stepcnt;
@@ -596,33 +599,49 @@ template <class Timestepper, class SimInfo> class SimulationSPH {
 
 
 
+auto test_l = [](int a){
+    return a;
+};
+
+
+static_assert(std::is_same<decltype(test_l(0)), int>::value, "retval must be bool");
+
+
+
+
+#endif
+
+
 int main(int argc, char *argv[]) {
-
-
-
-    auto test_l = [](int a){
-        return a;
-    };
-
-
-    static_assert(std::is_same<decltype(test_l(0)), int>::value, "retval must be bool");
 
 
 
 
     std::cout << shamrock_title_bar_big << std::endl;
 
+    opts::register_opt("--sycl-cfg","(idcomp:idalt) ", "specify the compute & alt queue index");
+    opts::register_opt("--loglevel","(logvalue)", "specify a log level");
+
+    opts::register_opt("--nocolor",{}, "disable colored ouput");
+
+    opts::register_opt("--rscript","(filepath)", "run shamrock with python runscirpt");
+    opts::register_opt("--ipython",{}, "run shamrock in Ipython mode");
+
+    opts::init(argc, argv);
+
+    if(opts::is_help_mode()){
+        return 0;
+    }
+
+
     mpi_handler::init();
 
-    Cmdopt &opt = Cmdopt::get_instance();
-    opt.init(argc, argv, "./shamrock");
-
-    if(opt.has_option("--nocolor")){
+    if(opts::has_option("--nocolor")){
         terminal_effects::disable_colors();
     }
 
-    if(opt.has_option("--loglevel")){
-        std::string level = std::string(opt.get_option("--loglevel"));
+    if(opts::has_option("--loglevel")){
+        std::string level = std::string(opts::get_option("--loglevel"));
 
         i32 a = atoi(level.c_str());
 
@@ -650,10 +669,10 @@ int main(int argc, char *argv[]) {
     {
         RunScriptHandler rscript;
         
-        if(opt.has_option("--ipython")){
+        if(opts::has_option("--ipython")){
             rscript.run_ipython();
-        }else if(opt.has_option("--rscript")){
-            std::string fname = std::string(opt.get_option("--rscript"));
+        }else if(opts::has_option("--rscript")){
+            std::string fname = std::string(opts::get_option("--rscript"));
 
             rscript.run_file(fname);
         }else{
@@ -680,7 +699,7 @@ int main(int argc, char *argv[]) {
 
 
 
-            SimulationSPH<TestTimestepper, TestSimInfo>::run_sim();
+            //SimulationSPH<TestTimestepper, TestSimInfo>::run_sim();
             //SimulationSPH<TestTimestepperSync, TestSimInfo>::run_sim();
         }
         
