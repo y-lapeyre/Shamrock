@@ -98,10 +98,10 @@ namespace sycl_handler {
 
 
 
-        Cmdopt & opt = Cmdopt::get_instance();
+        
 
-        if(opt.has_option("--sycl-cfg")){
-            std::string sycl_cfg = std::string(opt.get_option("--sycl-cfg"));
+        if(opts::has_option("--sycl-cfg")){
+            std::string sycl_cfg = std::string(opts::get_option("--sycl-cfg"));
 
             logger::normal_ln("SYCL Handler", "chosen sycl config :",sycl_cfg);
 

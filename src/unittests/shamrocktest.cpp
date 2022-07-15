@@ -69,28 +69,17 @@ std::string make_test_output(TestResults t_res){
 //TODO add memory clean as an assertion
 int run_all_tests(int argc, char *argv[]){
 
-    std::string usage_str = R"%(Usage : ./shamrock_test2 [options]
-Options :
-  --help              Display this information
-  --test-list         Display the list of tests available
-  --run-only <name>   Run only the test with the specified name
-  --full-output        Print the list of all assertions in each test
-  -o <filename>       Output test result to file
-    )%";
-
-
-    Cmdopt & opt = Cmdopt::get_instance();
-    opt.init(argc, argv,usage_str);
+    opts::init(argc, argv);
 
     using namespace mpi_handler;
     
 
 
-    if(opt.is_help_mode()){
+    if(opts::is_help_mode()){
         return 0;
     }
 
-    if(opt.has_option("--test-list")){
+    if(opts::has_option("--test-list")){
         for (unsigned int i = 0; i < test_name_lst.size(); i++) {
             if(test_node_count[i] == -1){
                 printf("- [any] %-15s\n",test_name_lst[i].c_str());
@@ -103,19 +92,19 @@ Options :
 
     bool run_only = false;
     std::string run_only_name = "";
-    if(opt.has_option("--run-only")){
-        run_only_name = opt.get_option("--run-only");
+    if(opts::has_option("--run-only")){
+        run_only_name = opts::get_option("--run-only");
         run_only = true;
     }
 
 
-    bool full_output = opt.has_option("--full-output");
+    bool full_output = opts::has_option("--full-output");
 
-    bool out_to_file = opt.has_option("-o");
+    bool out_to_file = opts::has_option("-o");
 
     if(out_to_file){
-        if(opt.get_option("-o").size() == 0){
-            opt.print_help();
+        if(opts::get_option("-o").size() == 0){
+            opts::print_help();
         }
     }
 
@@ -311,7 +300,7 @@ Options :
         //printf("%s\n",s_out.c_str());
 
         if(out_to_file){
-            write_string_to_file(std::string(opt.get_option("-o")), s_out);
+            write_string_to_file(std::string(opts::get_option("-o")), s_out);
         }
         
     }

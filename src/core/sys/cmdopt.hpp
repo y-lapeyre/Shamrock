@@ -19,6 +19,8 @@
 
 #pragma once
 
+
+#include <optional>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -26,6 +28,29 @@
 
 #include "aliases.hpp"
 
+
+
+
+
+
+
+namespace opts{
+
+    bool has_option(const std::string_view &option_name);
+    std::string_view get_option(const std::string_view &option_name);
+    void register_opt(std::string name, std::optional<std::string> args,std::string description);
+    void init(int argc, char *argv[]);
+    void print_help();
+    bool is_help_mode();
+
+}
+
+
+
+
+
+
+#if false
 class Cmdopt {
   public:
   private:
@@ -107,3 +132,5 @@ class Cmdopt {
 
 
 };
+
+#endif
