@@ -11,9 +11,11 @@
 #include <cstdint>
 #include <cstdio>
 #include <iostream>
+#include <memory>
 #include <random>
 #include <vector>
 
+#include "CL/sycl/buffer.hpp"
 #include "aliases.hpp"
 
 #include "core/sys/log.hpp"
@@ -126,12 +128,23 @@ class PatchDataField {
     }
 
 
-    
+
 
     inline T* usm_data(){
         //return field_data.data();
         return _data;
     }
+
+    inline std::unique_ptr<sycl::buffer<T>> data(){
+        //return field_data.data();
+        if(capacity > 0){
+            return std::make_unique<sycl::buffer<T>>(_data,capacity);
+        }
+        return std::unique_ptr<sycl::buffer<T>>();
+    }
+
+
+
 
     inline u32 size(){
         return val_cnt;
@@ -258,58 +271,9 @@ class PatchDataField {
         return idxs;
     }
 
-    inline void extract_element(u32 pidx, PatchDataField<T> & to){
+    void extract_element(u32 pidx, PatchDataField<T> & to);
 
-        auto fast_extract_ptr = [](u32 idx, u32 lenght ,T* cnt){
-
-            T end_ = cnt[lenght-1];
-            T extr = cnt[idx];
-
-            cnt[idx] = end_;
-
-            return extr;
-        };
-
-        auto sub_extract = [fast_extract_ptr](u32 pidx, PatchDataField<T> & from, PatchDataField<T> & to){
-            const u32 nvar = from.get_nvar();
-            const u32 idx_val = pidx*nvar;
-            const u32 idx_out_val = to.size();
-
-            to.expand(1);
-
-            for(u32 i = nvar-1 ; i < nvar ; i--){
-                to.usm_data()[idx_out_val + i] = (fast_extract_ptr(idx_val + i,from.size(), from.usm_data()));
-            }
-
-            from.shrink(1);
-        };
-
-        sub_extract(pidx,*this,to);
-
-    }
-
-    inline bool check_field_match(PatchDataField<T> &f2){
-        bool match = true;
-
-        match = match && (field_name == f2.field_name);
-        match = match && (nvar       == f2.nvar);
-        match = match && (obj_cnt    == f2.obj_cnt);
-        match = match && (val_cnt    == f2.val_cnt);
-
-        //std::cout << "fieldname : " << field_name << std::endl;
-        //std::cout << "val_cnt : " << val_cnt << std::endl;
-
-        for (u32 i = 0; i < val_cnt; i++) {
-            //std::cout << i << " " << test_sycl_eq(data()[i],f2.data()[i]) << " " ;
-            //print_vec(std::cout, data()[i]);
-            //std::cout <<" ";
-            //print_vec(std::cout, f2.data()[i]);
-            //std::cout <<  std::endl;
-            match = match && test_sycl_eq(usm_data()[i],f2.usm_data()[i]);
-        }
-
-        return match;
-    }
+    bool check_field_match(PatchDataField<T> &f2);
 
     /**
      * @brief Copy all objects in idxs to pfield
@@ -317,27 +281,7 @@ class PatchDataField {
      * @param idxs 
      * @param pfield 
      */
-    inline void append_subset_to(std::vector<u32> & idxs, PatchDataField & pfield){
-
-        if(pfield.nvar != nvar) throw shamrock_exc("field must be similar for extraction");
-
-        const u32 start_enque = pfield.val_cnt;
-
-        const u32 nvar = get_nvar();
-
-        pfield.expand(idxs.size());
-
-        for (u32 i = 0; i < idxs.size(); i++) {
-
-            const u32 idx_extr = idxs[i]*nvar;
-            const u32 idx_push = start_enque + i*nvar;
-
-            for(u32 a = 0; a < nvar ; a++){
-                pfield.usm_data()[idx_push + a] = usm_data()[idx_extr + a];
-            }
-
-        }
-    }
+    void append_subset_to(std::vector<u32> & idxs, PatchDataField & pfield);
 
 
     void gen_mock_data(u32 obj_cnt, std::mt19937& eng);
@@ -348,18 +292,54 @@ class PatchDataField {
 
 namespace patchdata_field {
 
+    enum comm_type {
+        CopyToHost, DirectGPU
+    };
+    enum op_type{
+        Isend,Irecv
+    };
+
+    extern comm_type current_mode;
+
+
     template<class T>
     struct PatchDataFieldMpiRequest{
         MPI_Request mpi_rq;
+        comm_type comm_mode;
+        op_type comm_op;
+        T* comm_ptr;
+        u32 comm_sz;
+        PatchDataField<T> &pdat_field;
 
-        inline void finalize(){}
+
+        PatchDataFieldMpiRequest<T> (
+            PatchDataField<T> &pdat_field,
+            comm_type comm_mode,
+            op_type comm_op,
+            u32 comm_sz
+            );
+
+        inline T* get_mpi_ptr(){
+            return comm_ptr;
+        }
+
+        void finalize();
     };
 
 
     template<class T>
     inline u64 isend( PatchDataField<T> &p, std::vector<PatchDataFieldMpiRequest<T>> &rq_lst, i32 rank_dest, i32 tag, MPI_Comm comm){
-        rq_lst.resize(rq_lst.size() + 1);
-        mpi::isend(p.usm_data(), p.size(), get_mpi_type<T>(), rank_dest, tag, comm, &(rq_lst[rq_lst.size() - 1].mpi_rq));
+
+        u32 size_comm = p.size();
+
+        rq_lst.emplace_back(p,current_mode,Isend,size_comm);
+            
+        u32 rq_index = rq_lst.size() - 1;
+
+        auto & rq = rq_lst[rq_index];   
+
+        mpi::isend(rq.get_mpi_ptr(), size_comm, get_mpi_type<T>(), rank_dest, tag, comm, &(rq_lst[rq_index].mpi_rq));
+        
         return sizeof(T)*p.size();
     }
 
@@ -372,10 +352,15 @@ namespace patchdata_field {
 
         u32 len = cnt / p.get_nvar();
 
-        p.resize(len);
 
-        rq_lst.resize(rq_lst.size() + 1);
-        mpi::irecv(p.usm_data(), cnt, get_mpi_type<T>(), rank_source, tag, comm, &(rq_lst[rq_lst.size() - 1].mpi_rq));
+
+        rq_lst.emplace_back(p,current_mode,Irecv,len);
+            
+        u32 rq_index = rq_lst.size() - 1;
+
+        auto & rq = rq_lst[rq_index];   
+
+        mpi::irecv(rq.get_mpi_ptr(), cnt, get_mpi_type<T>(), rank_source, tag, comm, &(rq_lst[rq_index].mpi_rq));
 
         return sizeof(T)*cnt;
     }
