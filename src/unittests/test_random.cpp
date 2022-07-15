@@ -6,12 +6,15 @@
 //
 // -------------------------------------------------------//
 
+#include "core/sys/log.hpp"
 #include "core/sys/mpi_handler.hpp"
+#include "core/sys/sycl_mpi_interop.hpp"
 #include "unittests/shamrocktest.hpp"
 
 #include "core/sys/sycl_handler.hpp"
 #include <chrono>
 #include <memory>
+#include <mpi.h>
 #include <mutex>
 #include <ostream>
 #include <queue>
@@ -57,6 +60,246 @@ Test_start("",test_overload_new,2){
     delete a;
 
 }
+
+
+
+Test_start("usm", test_usm, -1){
+
+    sycl::queue & queue = sycl_handler::get_compute_queue();
+
+    unsigned int lenght = 7;
+    int* a = new int[7]{0,1,2,3,4,5,6}; 
+    int* b = new int[7]{6,5,4,3,2,1,0};
+    int* c = new int[7];
+
+    printf("a   b   c\n");
+    for(unsigned int i = 0 ; i < lenght; i++){
+        printf("%d | %d | %d\n",a[i],b[i],c[i]);
+    }
+
+
+
+
+    int* buf_a = sycl::malloc_device<int>(lenght,queue);
+    int* buf_b = sycl::malloc_device<int>(lenght,queue);
+    int* buf_c = sycl::malloc_device<int>(lenght,queue);
+
+    auto event_cp_a = queue.memcpy(buf_a,a,sizeof(int)*lenght);
+    auto event_cp_b = queue.memcpy(buf_b,b,sizeof(int)*lenght);
+
+    auto event_ker = queue.submit([&] (sycl::handler& cgh) {
+
+        cgh.depends_on({event_cp_a,event_cp_b});
+        queue.parallel_for<class vector_addition>(sycl::range<1>(lenght),[=] (sycl::item<1> item) {
+            size_t id = item.get_linear_id();
+            buf_c[id] = buf_a[id] + buf_b[id];
+        });
+
+    });
+    queue.submit([&](sycl::handler & cgh){
+        cgh.depends_on(event_ker);
+        queue.memcpy(c,buf_c,sizeof(int)*lenght);
+    });
+    
+
+    queue.wait();
+
+    sycl::free(buf_a,queue);
+    sycl::free(buf_b,queue);
+    sycl::free(buf_c,queue);
+
+    printf("a   b   c\n");
+    for(unsigned int i = 0 ; i < lenght; i++){
+        printf("%d | %d | %d\n",a[i],b[i],c[i]);
+    }
+}
+
+
+namespace testing_mpi {
+
+    template<class T>
+    struct PatchDataFieldMpiRequest{
+        MPI_Request mpi_rq;
+
+        inline void finalize(){}
+    };
+
+
+    template<class T>
+    inline void isend( sycl::buffer<T> &buf,sycl::queue & queue,u32 len, std::vector<PatchDataFieldMpiRequest<T>> &rq_lst, i32 rank_dest, i32 tag, MPI_Comm comm){
+        rq_lst.resize(rq_lst.size() + 1);
+        u32 rq_index = rq_lst.size() - 1;
+
+        T* tmp_usm;
+        
+        queue.submit([&](sycl::handler& cgh){
+
+            tmp_usm = sycl::malloc_device<T>(len,queue);
+
+        });
+
+        auto ker_copy = queue.submit([&](sycl::handler& cgh){
+
+            sycl::accessor acc {buf,cgh,sycl::read_only};
+
+
+            cgh.parallel_for(sycl::range<1>{len},[=](sycl::item<1> i){
+                tmp_usm[i] = acc[i];
+            });
+        });
+
+        queue.submit([&](sycl::handler& cgh){
+
+            cgh.depends_on(ker_copy);
+
+            mpi::isend(tmp_usm, len, get_mpi_type<T>(), rank_dest, tag, comm, &(rq_lst[rq_index].mpi_rq));
+
+        });
+
+    }
+
+    template<class T>
+    inline void irecv(sycl::buffer<T> &buf,sycl::queue & queue,u32 len_normal, std::vector<PatchDataFieldMpiRequest<T>> &rq_lst, i32 rank_source, i32 tag, MPI_Comm comm){
+        
+        T* tmp_usm;
+        
+        auto ker_recv = queue.submit([&](sycl::handler& cgh){
+            MPI_Status st;
+            i32 cnt;
+            int i = mpi::probe(rank_source, tag,comm, & st);
+            mpi::get_count(&st, get_mpi_type<T>(), &cnt);
+
+            u32 len = cnt ;
+            tmp_usm = sycl::malloc_device<T>(len,queue);
+            logger::raw_ln("received len :",len);
+
+
+            rq_lst.resize(rq_lst.size() + 1);
+            u32 rq_index = rq_lst.size() - 1;
+
+            mpi::irecv(tmp_usm, cnt, get_mpi_type<T>(), rank_source, tag, comm, &(rq_lst[rq_index].mpi_rq));
+        });
+
+        auto ker_copy = queue.submit([&](sycl::handler& cgh){
+
+            cgh.depends_on(ker_recv);
+
+            sycl::accessor acc {buf,cgh,sycl::write_only};
+
+            cgh.parallel_for(sycl::range<1>{len_normal},[=](sycl::item<1> i){
+                acc[i] = tmp_usm[i];
+            });
+        });
+
+    }
+
+    template<class T> 
+    inline std::vector<MPI_Request> get_rqs(std::vector<PatchDataFieldMpiRequest<T>> &rq_lst){
+        std::vector<MPI_Request> addrs;
+
+        for(auto a : rq_lst){
+            addrs.push_back(a.mpi_rq);
+        }
+
+        return addrs;
+    }
+
+    template<class T>
+    inline void waitall(std::vector<PatchDataFieldMpiRequest<T>> &rq_lst){
+        std::vector<MPI_Request> addrs;
+
+        for(auto a : rq_lst){
+            addrs.push_back(a.mpi_rq);
+        }
+
+        std::vector<MPI_Status> st_lst(addrs.size());
+        mpi::waitall(addrs.size(), addrs.data(), st_lst.data());
+
+        for(auto a : rq_lst){
+            a.finalize();
+        }
+    }
+
+
+
+}
+
+
+template<class T>
+void Send_SYCL_BUF(sycl::queue & queue, sycl::buffer<T> & buf, u32 len){
+
+    T* tmp_usm = sycl::malloc_device<T>(len,queue);
+    queue.submit([&](sycl::handler& cgh){
+
+        sycl::accessor acc {buf,cgh,sycl::read_only};
+
+
+        cgh.parallel_for(sycl::range<1>{len},[=](sycl::item<1> i){
+            tmp_usm[i] = acc[i];
+        });
+    });
+
+    mpi::send(tmp_usm, len, get_mpi_type<T>(), 1, 0, MPI_COMM_WORLD);
+    
+    sycl::free(tmp_usm,queue);
+}
+
+template<class T>
+void Recv_SYCL_BUF(sycl::queue & queue, sycl::buffer<T> & buf, u32 len){
+
+    T* tmp_usm = sycl::malloc_device<T>(len,queue);
+    
+    MPI_Status st;
+    mpi::recv(tmp_usm, len, get_mpi_type<T>(), 0, 0, MPI_COMM_WORLD, &st);
+
+    queue.submit([&](sycl::handler& cgh){
+
+        sycl::accessor acc {buf,cgh,sycl::write_only};
+
+        cgh.parallel_for(sycl::range<1>{len},[=](sycl::item<1> i){
+            acc[i] = tmp_usm[i];
+        });
+    });
+
+}
+
+Test_start("sycl", mpi_buffer_comm, 2){
+
+    sycl::queue & queue = sycl_handler::get_compute_queue();
+
+    constexpr u32 len = 10;
+
+    sycl::buffer<int> buf (len);
+
+    std::vector<testing_mpi::PatchDataFieldMpiRequest<int>> rq_lst;
+
+    if(mpi_handler::world_rank == 0){
+        queue.submit([&] (sycl::handler& cgh) {
+            sycl::accessor acc {buf,cgh,sycl::write_only};
+
+            cgh.parallel_for(sycl::range<1>{len},[=](sycl::item<1> i){
+                acc[i] = i.get_linear_id();
+            });
+
+        });
+
+
+        testing_mpi::isend(buf, queue, len,rq_lst , 1 ,0,MPI_COMM_WORLD);
+    }else{
+        testing_mpi::irecv(buf, queue, len, rq_lst, 0, 0, MPI_COMM_WORLD);
+    }
+
+
+
+
+    {
+        sycl::host_accessor acc {buf ,sycl::read_only};
+        for(u32 i = 0; i < len; i++){
+            logger::raw_ln(i,acc[i]);
+        }
+    }
+}
+
 
 
 class ForcePressure{public:

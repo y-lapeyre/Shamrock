@@ -69,6 +69,20 @@ std::string make_test_output(TestResults t_res){
 //TODO add memory clean as an assertion
 int run_all_tests(int argc, char *argv[]){
 
+    std::cout << shamrock_title_bar_big << std::endl;
+
+    opts::register_opt("--sycl-cfg","(idcomp:idalt) ", "specify the compute & alt queue index");
+    opts::register_opt("--loglevel","(logvalue)", "specify a log level");
+    opts::register_opt("--nocolor",{}, "disable colored ouput");
+
+    opts::register_opt("--test-list",{}, "print test availables");
+    opts::register_opt("--run-only",{"(test name)"}, "run only this test");
+    opts::register_opt("--full-output",{}, "print the assertions in the tests");
+
+
+    opts::register_opt("-o",{"(filepath)"}, "output test report in that file");
+
+
     opts::init(argc, argv);
 
     using namespace mpi_handler;
