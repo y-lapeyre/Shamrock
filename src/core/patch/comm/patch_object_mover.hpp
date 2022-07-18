@@ -8,6 +8,7 @@
 
 #pragma once
 
+
 #include "aliases.hpp"
 #include "core/patch/base/patchdata.hpp"
 #include "patchdata_exchanger.hpp"
@@ -37,13 +38,13 @@ inline std::unordered_map<u64, sycl::buffer<u64>> get_new_id_map<f32_3>(PatchSch
             u32 ixyz = sched.pdl.get_field_idx<f32_3>("xyz");
             PatchDataField<f32_3> & xyz_field =  pdat.fields_f32_3[ixyz];
 
-            std::unique_ptr<sycl::buffer<f32_3>> pos = std::make_unique<sycl::buffer<f32_3>>(xyz_field.usm_data(),xyz_field.size());
+            auto pos = xyz_field.data();
 
             newid_buf_map.insert({
                 id,
                 __compute_object_patch_owner<f32_3, class ComputeObejctPatchOwners_f32>(
                     sycl_handler::get_compute_queue(), 
-                    *pos, 
+                    *pos, xyz_field.size(),
                     sptree)});
 
             pos.reset();
@@ -72,13 +73,13 @@ inline std::unordered_map<u64, sycl::buffer<u64>> get_new_id_map<f64_3>(PatchSch
             u32 ixyz = sched.pdl.get_field_idx<f64_3>("xyz");
             PatchDataField<f64_3> & xyz_field =  pdat.fields_f64_3[ixyz];
 
-            std::unique_ptr<sycl::buffer<f64_3>> pos = std::make_unique<sycl::buffer<f64_3>>(xyz_field.usm_data(),xyz_field.size());
+            auto pos = xyz_field.data();
 
             newid_buf_map.insert({
                 id,
                 __compute_object_patch_owner<f64_3, class ComputeObejctPatchOwners_f64>(
                     sycl_handler::get_compute_queue(), 
-                    *pos, 
+                    *pos, xyz_field.size(),
                     sptree)});
 
             pos.reset();
@@ -113,13 +114,13 @@ inline void reatribute_particles<f32_3>(PatchScheduler & sched, SerialPatchTree<
             u32 ixyz = sched.pdl.get_field_idx<f32_3>("xyz");
             PatchDataField<f32_3> & xyz_field =  pdat.fields_f32_3[ixyz];
 
-            std::unique_ptr<sycl::buffer<f32_3>> pos = std::make_unique<sycl::buffer<f32_3>>(xyz_field.usm_data(),xyz_field.size());
+            auto pos = xyz_field.data();
 
             newid_buf_map.insert({
                 id,
                 __compute_object_patch_owner<f32_3, class ComputeObjectPatchOwners_f32_old>(
                     sycl_handler::get_compute_queue(), 
-                    *pos, 
+                    *pos, xyz_field.size(),
                     sptree)});
 
             pos.reset();
@@ -154,12 +155,22 @@ inline void reatribute_particles<f32_3>(PatchScheduler & sched, SerialPatchTree<
             u32 ixyz = sched.pdl.get_field_idx<f32_3>("xyz");
             PatchDataField<f32_3> & xyz_field =  pdat.fields_f32_3[ixyz];
 
-            for(u32 i = 0 ; i < pdat.get_obj_cnt(); i++){
+            {
 
-                f32_3 r = xyz_field.usm_data()[i];
-                sched.patch_data.sim_box.min_box_sim_s = sycl::min(sched.patch_data.sim_box.min_box_sim_s,r);
-                sched.patch_data.sim_box.max_box_sim_s = sycl::max(sched.patch_data.sim_box.max_box_sim_s,r);
+                auto buf = xyz_field.data();
+
+                sycl::host_accessor acc{*buf, sycl::read_only};
+
+                for(u32 i = 0 ; i < pdat.get_obj_cnt(); i++){
+
+                    f32_3 r = acc[i];
+                    sched.patch_data.sim_box.min_box_sim_s = sycl::min(sched.patch_data.sim_box.min_box_sim_s,r);
+                    sched.patch_data.sim_box.max_box_sim_s = sycl::max(sched.patch_data.sim_box.max_box_sim_s,r);
+
+                }
             }
+
+            
         }
         f32_3 new_minbox = sched.patch_data.sim_box.min_box_sim_s;
         f32_3 new_maxbox = sched.patch_data.sim_box.max_box_sim_s;
@@ -191,13 +202,13 @@ inline void reatribute_particles<f32_3>(PatchScheduler & sched, SerialPatchTree<
                 u32 ixyz = sched.pdl.get_field_idx<f32_3>("xyz");
                 PatchDataField<f32_3> & xyz_field =  pdat.fields_f32_3[ixyz];
 
-                std::unique_ptr<sycl::buffer<f32_3>> pos = std::make_unique<sycl::buffer<f32_3>>(xyz_field.usm_data(),xyz_field.size());
+                auto pos = xyz_field.data();
 
                 newid_buf_map.insert({
                     id,
                     __compute_object_patch_owner<f32_3, class ComputeObjectPatchOwners2_f32_old>(
                         sycl_handler::get_compute_queue(), 
-                        *pos, 
+                        *pos,  xyz_field.size(),
                         sptree)});
 
                 pos.reset();

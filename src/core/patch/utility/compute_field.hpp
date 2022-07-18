@@ -28,7 +28,6 @@ class PatchComputeField{public:
         sched.for_each_patch_buf([&](u64 id_patch, Patch cur_p, PatchDataBuffer & pdat_buf) {
             field_data.insert({id_patch,PatchDataField<T>("comp_field",1)});
             field_data.at(id_patch).resize(pdat_buf.element_count);
-            sycl::buffer<T> field_buf(field_data.at(id_patch).usm_data(),field_data.at(id_patch).size());
         });
     }
 
@@ -37,7 +36,6 @@ class PatchComputeField{public:
         sched.for_each_patch([&](u64 id_patch, Patch cur_p) {
             field_data.insert({id_patch,PatchDataField<T>("comp_field",1)});
             field_data.at(id_patch).resize(size_map[id_patch]);
-            sycl::buffer<T> field_buf(field_data.at(id_patch).usm_data(),field_data.at(id_patch).size());
         });
     }
 

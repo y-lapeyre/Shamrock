@@ -14,10 +14,10 @@
 #include "core/utils/geometry_utils.hpp"
 
 template <class posvec, class kername>
-inline sycl::buffer<u64> __compute_object_patch_owner(sycl::queue &queue, sycl::buffer<posvec> &position_buffer,
+inline sycl::buffer<u64> __compute_object_patch_owner(sycl::queue &queue, sycl::buffer<posvec> &position_buffer, u32 len,
                                                       SerialPatchTree<posvec> &sptree) {
 
-    sycl::buffer<u64> new_owned_id(position_buffer.size());
+    sycl::buffer<u64> new_owned_id(len);
 
     // std::cout << "linked id state :\n";
     // {
@@ -37,7 +37,7 @@ inline sycl::buffer<u64> __compute_object_patch_owner(sycl::queue &queue, sycl::
 
         //sycl::stream out(1024, 768, cgh);
 
-        cgh.parallel_for<kername>(sycl::range(position_buffer.size()), [=](sycl::item<1> item) {
+        cgh.parallel_for<kername>(sycl::range(len), [=](sycl::item<1> item) {
             u32 i = (u32)item.get_id(0);
 
             // TODO implement the version with multiple roots

@@ -7,6 +7,8 @@
 // -------------------------------------------------------//
 
 #include "pyshamrockcontext.hpp"
+#include "CL/sycl/access/access.hpp"
+#include "CL/sycl/accessor.hpp"
 #include "core/patch/base/patchdata_field.hpp"
 #include "core/sys/mpi_handler.hpp"
 #include <floatobject.h>
@@ -109,9 +111,19 @@ template<class T> void append_to_map(std::vector<PatchDataField<T>> & pfields, s
 
         std::cout << "appending " << field.get_name() << " (" << field.size() << " elements)" << std::endl;
 
-        for (u32 i = 0 ; i < field.size(); i++) {
-            PyList_Append(refobj,convert(field.usm_data()[i]));
+        {
+
+            auto buf = field.data();
+
+            sycl::host_accessor acc{ *buf, sycl::read_only};
+
+            for (u32 i = 0 ; i < field.size(); i++) {
+                PyList_Append(refobj,convert(acc[i]));
+            }
+
         }
+
+        
     }
 }
 

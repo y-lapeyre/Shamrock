@@ -6,7 +6,7 @@ namespace impl::copy_to_host {
 
     using namespace patchdata_field;
 
-    namespace isend {
+    namespace send {
         template <class T> inline T *init(PatchDataField<T> &pdat_field, u32 comm_sz) {
 
             T *comm_ptr = sycl::malloc_host<T>(comm_sz, sycl_handler::get_compute_queue());
@@ -38,9 +38,9 @@ namespace impl::copy_to_host {
 
             sycl::free(comm_ptr, sycl_handler::get_compute_queue());
         }
-    } // namespace isend
+    } // namespace send
 
-    namespace irecv {
+    namespace recv {
         template <class T> T *init(u32 comm_sz) {
             T *comm_ptr = sycl::malloc_host<T>(comm_sz, sycl_handler::get_compute_queue());
 
@@ -72,6 +72,6 @@ namespace impl::copy_to_host {
 
             sycl::free(comm_ptr, sycl_handler::get_compute_queue());
         }
-    } // namespace irecv
+    } // namespace recv
 
 } // namespace impl::copy_to_host

@@ -11,6 +11,8 @@
 #include "core/patch/base/pdat_comm_impl/pdat_comm_cp_to_host.hpp"
 #include "core/patch/base/pdat_comm_impl/pdat_comm_directgpu.hpp"
 
+//TODO use hash for name + nvar to check if the field match before doing operation on them
+
 template <class T> void PatchDataField<T>::extract_element(u32 pidx, PatchDataField<T> &to) {
 
     auto fast_extract_ptr = [](u32 idx, u32 lenght, auto cnt) {
@@ -57,9 +59,6 @@ template <class T> bool PatchDataField<T>::check_field_match(PatchDataField<T> &
     match = match && (obj_cnt == f2.obj_cnt);
     match = match && (val_cnt == f2.val_cnt);
 
-    // std::cout << "fieldname : " << field_name << std::endl;
-    // std::cout << "val_cnt : " << val_cnt << std::endl;
-
     auto buf = data();
     sycl::host_accessor acc{*buf};
 
@@ -67,11 +66,6 @@ template <class T> bool PatchDataField<T>::check_field_match(PatchDataField<T> &
     sycl::host_accessor acc_f2{*buf};
 
     for (u32 i = 0; i < val_cnt; i++) {
-        // std::cout << i << " " << test_sycl_eq(data()[i],f2.data()[i]) << " " ;
-        // print_vec(std::cout, data()[i]);
-        // std::cout <<" ";
-        // print_vec(std::cout, f2.data()[i]);
-        // std::cout <<  std::endl;
         match = match && test_sycl_eq(acc[i], acc_f2[i]);
     }
 
@@ -89,16 +83,25 @@ template <class T> void PatchDataField<T>::append_subset_to(std::vector<u32> &id
 
     pfield.expand(idxs.size());
 
-    for (u32 i = 0; i < idxs.size(); i++) {
+    {
 
-        const u32 idx_extr = idxs[i] * nvar;
-        const u32 idx_push = start_enque + i * nvar;
+        auto buf_curr  = data();
+        auto buf_other  = pfield.data();
 
-        for (u32 a = 0; a < nvar; a++) {
-            pfield.usm_data()[idx_push + a] = usm_data()[idx_extr + a];
+        sycl::host_accessor acc_curr{*buf_curr};
+        sycl::host_accessor acc_other{*buf_other};
+
+        for (u32 i = 0; i < idxs.size(); i++) {
+
+            const u32 idx_extr = idxs[i] * nvar;
+            const u32 idx_push = start_enque + i * nvar;
+
+            for (u32 a = 0; a < nvar; a++) {
+                acc_other[idx_push + a] = acc_curr[idx_extr + a];
+            }
         }
+        
     }
-
     // auto buf_cur  = data();
     // auto buf_other  = data();
     //
@@ -255,21 +258,21 @@ namespace patchdata_field {
 
         logger::debug_mpi_ln("PatchDataField MPI Comm", "starting mpi sycl comm ", comm_sz, comm_op, comm_mode);
 
-        if (comm_mode == CopyToHost && comm_op == Isend) {
+        if (comm_mode == CopyToHost && comm_op == Send) {
 
-            comm_ptr = impl::copy_to_host::isend::init<T>(pdat_field, comm_sz);
+            comm_ptr = impl::copy_to_host::send::init<T>(pdat_field, comm_sz);
 
-        } else if (comm_mode == CopyToHost && comm_op == Irecv) {
+        } else if (comm_mode == CopyToHost && comm_op == Recv) {
 
-            comm_ptr = impl::copy_to_host::irecv::init<T>(comm_sz);
+            comm_ptr = impl::copy_to_host::recv::init<T>(comm_sz);
 
-        } else if (comm_mode == DirectGPU && comm_op == Isend) {
+        } else if (comm_mode == DirectGPU && comm_op == Send) {
 
-            comm_ptr = impl::directgpu::isend::init<T>(pdat_field, comm_sz);
+            comm_ptr = impl::directgpu::send::init<T>(pdat_field, comm_sz);
 
-        } else if (comm_mode == DirectGPU && comm_op == Irecv) {
+        } else if (comm_mode == DirectGPU && comm_op == Recv) {
 
-            comm_ptr = impl::directgpu::irecv::init<T>(comm_sz);
+            comm_ptr = impl::directgpu::recv::init<T>(comm_sz);
 
         } else {
             logger::err_ln("PatchDataField MPI Comm", "communication mode & op combination not implemented :", comm_mode,
@@ -283,21 +286,21 @@ namespace patchdata_field {
 
         pdat_field.resize(comm_sz);
 
-        if (comm_mode == CopyToHost && comm_op == Isend) {
+        if (comm_mode == CopyToHost && comm_op == Send) {
 
-            impl::copy_to_host::isend::finalize<T>(comm_ptr);
+            impl::copy_to_host::send::finalize<T>(comm_ptr);
 
-        } else if (comm_mode == CopyToHost && comm_op == Irecv) {
+        } else if (comm_mode == CopyToHost && comm_op == Recv) {
 
-            impl::copy_to_host::irecv::finalize<T>(pdat_field, comm_ptr, comm_sz);
+            impl::copy_to_host::recv::finalize<T>(pdat_field, comm_ptr, comm_sz);
 
-        } else if (comm_mode == DirectGPU && comm_op == Isend) {
+        } else if (comm_mode == DirectGPU && comm_op == Send) {
 
-            impl::directgpu::isend::finalize<T>(comm_ptr);
+            impl::directgpu::send::finalize<T>(comm_ptr);
 
-        } else if (comm_mode == DirectGPU && comm_op == Irecv) {
+        } else if (comm_mode == DirectGPU && comm_op == Recv) {
 
-            impl::directgpu::irecv::finalize<T>(pdat_field, comm_ptr, comm_sz);
+            impl::directgpu::recv::finalize<T>(pdat_field, comm_ptr, comm_sz);
 
         } else {
             logger::err_ln("PatchDataField MPI Comm", "communication mode & op combination not implemented :", comm_mode,

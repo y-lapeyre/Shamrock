@@ -51,13 +51,13 @@ namespace impl {
 
             PatchDataField<f32_3> & pos_field = pdat.fields_f32_3[field_ipos];
 
-            sycl::buffer<f32_3> pos_s_buf = sycl::buffer<f32_3>(pos_field.usm_data(),pos_field.size());
+            auto pos_s_buf = pos_field.data();
 
-            ;
+            
 
             queue.submit([&](sycl::handler &cgh) {
                 
-                auto pos_s = pos_s_buf.get_access<sycl::access::mode::read>(cgh);
+                auto pos_s = pos_s_buf->get_access<sycl::access::mode::read>(cgh);
 
                 auto bmin = bmin_buf.get_access<sycl::access::mode::read>(cgh);
                 auto bmax = bmax_buf.get_access<sycl::access::mode::read>(cgh);
@@ -110,10 +110,10 @@ namespace impl {
 
             PatchDataField<f64_3> & pos_field = pdat.fields_f64_3[field_ipos];
 
-            sycl::buffer<f64_3> pos_d_buf = sycl::buffer<f64_3>(pos_field.usm_data(),pos_field.size());
+            auto pos_d_buf = pos_field.data();
 
             queue.submit([&](sycl::handler &cgh) {
-                auto pos_d = pos_d_buf.get_access<sycl::access::mode::read>(cgh);
+                auto pos_d = pos_d_buf->get_access<sycl::access::mode::read>(cgh);
 
                 auto bmin = bmin_buf.get_access<sycl::access::mode::read>(cgh);
                 auto bmax = bmax_buf.get_access<sycl::access::mode::read>(cgh);

@@ -296,7 +296,7 @@ namespace patchdata_field {
         CopyToHost, DirectGPU
     };
     enum op_type{
-        Isend,Irecv
+        Send,Recv
     };
 
     extern comm_type current_mode;
@@ -332,7 +332,7 @@ namespace patchdata_field {
 
         u32 size_comm = p.size();
 
-        rq_lst.emplace_back(p,current_mode,Isend,size_comm);
+        rq_lst.emplace_back(p,current_mode,Send,size_comm);
             
         u32 rq_index = rq_lst.size() - 1;
 
@@ -354,7 +354,7 @@ namespace patchdata_field {
 
 
 
-        rq_lst.emplace_back(p,current_mode,Irecv,len);
+        rq_lst.emplace_back(p,current_mode,Recv,len);
             
         u32 rq_index = rq_lst.size() - 1;
 
@@ -397,7 +397,12 @@ namespace patchdata_field {
     template<class T>
     inline void file_write(MPI_File fh, PatchDataField<T> &p){
         MPI_Status st;
-        mpi::file_write(fh, p.usm_data(),  p.size(), get_mpi_type<T>(), &st);
+
+        PatchDataFieldMpiRequest<T> rq (p, current_mode, Send,p.size());
+
+        mpi::file_write(fh, rq.get_mpi_ptr(),  p.size(), get_mpi_type<T>(), &st);
+
+        rq.finalize();
     }
 }
 
