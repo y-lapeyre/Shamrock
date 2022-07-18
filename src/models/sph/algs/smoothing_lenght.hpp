@@ -201,8 +201,8 @@ inline void compute_smoothing_lenght(PatchScheduler &sched,bool periodic_mode,fl
 
             PatchDataBuffer &pdat_buf_merge = *merge_pdat_buf.at(id_patch).data;
 
-            sycl::buffer<flt> &hnew  = *hnew_field.field_data_buf[id_patch];
-            sycl::buffer<flt> &omega = *omega_field.field_data_buf[id_patch];
+            auto &hnew  = hnew_field.get_buf(id_patch);
+            auto &omega = omega_field.get_buf(id_patch);
             sycl::buffer<flt> eps_h  = sycl::buffer<flt>(merge_pdat_buf.at(id_patch).or_element_cnt);
 
             sycl::range range_npart{merge_pdat_buf.at(id_patch).or_element_cnt};
@@ -213,12 +213,12 @@ inline void compute_smoothing_lenght(PatchScheduler &sched,bool periodic_mode,fl
             SmoothingLenghtCompute<flt, u32, Kernel> h_iterator(sched.pdl, htol_up_tol, htol_up_iter);
 
             h_iterator.iterate_smoothing_lenght(sycl_handler::get_compute_queue(), merge_pdat_buf.at(id_patch).or_element_cnt,
-                                                sph_gpart_mass, *radix_trees[id_patch], pdat_buf_merge, hnew, omega, eps_h);
+                                                sph_gpart_mass, *radix_trees[id_patch], pdat_buf_merge, *hnew, *omega, eps_h);
 
             // write back h test
             //*
             sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
-                auto h_new = hnew.template get_access<sycl::access::mode::read>(cgh);
+                auto h_new = hnew->template get_access<sycl::access::mode::read>(cgh);
 
                 auto acc_hpart = pdat_buf_merge.get_field<flt>(ihpart)->template get_access<sycl::access::mode::write>(cgh);
 
@@ -229,6 +229,9 @@ inline void compute_smoothing_lenght(PatchScheduler &sched,bool periodic_mode,fl
         });
 
         write_back_merge_patches(sched, interface_hndl, merge_pdat_buf);
+
+        //hnew_field.to_map();
+        //omega_field.to_map();
 
     }
 

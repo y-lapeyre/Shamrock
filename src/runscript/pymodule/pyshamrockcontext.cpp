@@ -7,8 +7,6 @@
 // -------------------------------------------------------//
 
 #include "pyshamrockcontext.hpp"
-#include "CL/sycl/access/access.hpp"
-#include "CL/sycl/accessor.hpp"
 #include "core/patch/base/patchdata_field.hpp"
 #include "core/sys/mpi_handler.hpp"
 #include <floatobject.h>

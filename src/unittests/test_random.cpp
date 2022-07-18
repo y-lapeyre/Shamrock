@@ -144,7 +144,7 @@ namespace testing_mpi {
 
 
             cgh.parallel_for(sycl::range<1>{len},[=](sycl::item<1> i){
-                tmp_usm[i] = acc[i];
+                tmp_usm[i.get_linear_id()] = acc[i];
             });
         });
 
@@ -187,7 +187,7 @@ namespace testing_mpi {
             sycl::accessor acc {buf,cgh,sycl::write_only};
 
             cgh.parallel_for(sycl::range<1>{len_normal},[=](sycl::item<1> i){
-                acc[i] = tmp_usm[i];
+                acc[i] = tmp_usm[i.get_linear_id()];
             });
         });
 

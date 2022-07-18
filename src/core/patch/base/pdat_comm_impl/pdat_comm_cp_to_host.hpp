@@ -22,7 +22,7 @@ namespace impl::copy_to_host {
 
                     T *ptr = comm_ptr;
 
-                    cgh.parallel_for(sycl::range<1>{comm_sz}, [=](sycl::item<1> item) { ptr[item] = acc[item]; });
+                    cgh.parallel_for(sycl::range<1>{comm_sz}, [=](sycl::item<1> item) { ptr[item.get_linear_id()] = acc[item]; });
                 });
 
                 ker_copy.wait();
@@ -60,7 +60,7 @@ namespace impl::copy_to_host {
 
                     T *ptr = comm_ptr;
 
-                    cgh.parallel_for(sycl::range<1>{comm_sz}, [=](sycl::item<1> item) { acc[item] = ptr[item]; });
+                    cgh.parallel_for(sycl::range<1>{comm_sz}, [=](sycl::item<1> item) { acc[item] = ptr[item.get_linear_id()]; });
                 });
 
                 ker_copy.wait();

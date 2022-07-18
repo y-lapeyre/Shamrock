@@ -152,7 +152,7 @@ f64 models::sph::BasicSPHGas<flt,Kernel>::evolve(PatchScheduler &sched, f64 old_
 
                 sched.for_each_patch([&](u64 id_patch, Patch cur_p) {
                     sycl::buffer<f32> &hnew  = *hnew_field_merged[id_patch].buf;
-                    sycl::buffer<f32> &press  = *pressure_field.field_data_buf[id_patch];
+                    sycl::buffer<f32> &press  = *pressure_field.get_buf(id_patch);
 
                     sycl::range range_npart{hnew.size()};
 
@@ -197,7 +197,7 @@ f64 models::sph::BasicSPHGas<flt,Kernel>::evolve(PatchScheduler &sched, f64 old_
                 sycl::buffer<f32> &hnew  = *hnew_field_merged[id_patch].buf;
                 sycl::buffer<f32> &omega = *omega_field_merged[id_patch].buf;
 
-                sycl::buffer<f32> &press  = *pressure_field.field_data_buf[id_patch];
+                sycl::buffer<f32> &press  = *pressure_field.get_buf(id_patch);
 
                 sycl::range range_npart{merge_pdat_buf.at(id_patch).or_element_cnt};
 

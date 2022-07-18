@@ -15,7 +15,7 @@
 #include <random>
 #include <vector>
 
-#include "CL/sycl/buffer.hpp"
+
 #include "aliases.hpp"
 
 #include "core/sys/log.hpp"
@@ -32,6 +32,23 @@ inline void copydata(T* source, T* dest, u32 cnt){
     for (u32 i = 0; i < cnt; i++) {
         dest[i] = source[i];
     }
+}
+
+template<class T>
+inline void copydata_buf(sycl::buffer<T> & source, sycl::buffer<T> &  dest, u32 cnt){
+    logger::debug_alloc_ln("PatchDataField", "copy data src->dest: len=",cnt);
+    
+    sycl_handler::get_compute_queue().submit([&](sycl::handler & cgh){
+
+        sycl::accessor src {source};
+        sycl::accessor dst {dest};
+
+        cgh.parallel_for([=](sycl::item<1> i){
+            dst[i] = src[i];
+        });
+
+    });
+    
 }
 
 

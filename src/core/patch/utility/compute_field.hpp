@@ -21,6 +21,9 @@
 template<class T>
 class PatchComputeField{public:
 
+    
+
+    public:
     std::unordered_map<u64, PatchDataField<T>> field_data;
 
 
@@ -39,7 +42,17 @@ class PatchComputeField{public:
         });
     }
 
+
+    private:
     std::unordered_map<u64, std::unique_ptr<sycl::buffer<T>>> field_data_buf;
+
+
+    public:
+
+    inline std::unique_ptr<sycl::buffer<T>> & get_buf(u64 id_patch){
+        return field_data_buf.at(id_patch);
+    }
+    
     inline void to_sycl(){
         for (auto & [key,dat] : field_data) {
             field_data_buf[key] = std::make_unique<sycl::buffer<T>>(dat.usm_data(),dat.size());
