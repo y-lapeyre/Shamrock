@@ -731,12 +731,12 @@ inline void make_merge_patches_comp_field(
             if(pdat_ptr->size() > 0){
 
                 //std::cout <<  "patch : n°"<< id_patch << " -> interface : "<<interf_patch_id << " merging" << std::endl;
-                sycl::buffer<T> tmp_buf = sycl::buffer<T>(pdat_ptr->usm_data(),pdat_ptr->size());
+                auto tmp_buf = pdat_ptr->get_sub_buf();
 
                 u32 len_int =  pdat_ptr->size();
 
                 sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
-                    auto source = tmp_buf.template get_access<sycl::access::mode::read>(cgh);
+                    auto source = tmp_buf->template get_access<sycl::access::mode::read>(cgh);
                     auto dest = merge_pdat_comp_field[id_patch].buf->template get_access<sycl::access::mode::discard_write>(cgh);
                     auto off = offset_buf;
                     cgh.parallel_for( sycl::range{len_int}, [=](sycl::item<1> item) { dest[item.get_id(0) + off] = source[item]; });

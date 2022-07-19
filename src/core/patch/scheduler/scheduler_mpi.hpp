@@ -136,6 +136,7 @@ class PatchScheduler{public:
 
 
     template<class Function>
+    [[deprecated]]
     inline void for_each_patch_buf(Function && fct){
 
         

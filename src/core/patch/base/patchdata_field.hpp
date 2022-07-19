@@ -26,37 +26,14 @@
 #include "core/utils/sycl_vector_utils.hpp"
 #include "core/sys/mpi_handler.hpp"
 
+#include "core/utils/sycl_algs.hpp"
 
-template<class T>
-inline void copydata(T* source, T* dest, u32 cnt){
-    logger::debug_alloc_ln("PatchDataField", "copy data src:",source , "dest:",dest, "len=",cnt);
-    for (u32 i = 0; i < cnt; i++) {
-        dest[i] = source[i];
-    }
-}
-
-template<class T>
-inline void copydata_buf(sycl::buffer<T> & source, sycl::buffer<T> &  dest, u32 cnt){
-    logger::debug_alloc_ln("PatchDataField", "copy data src->dest: len=",cnt);
-    
-    sycl_handler::get_compute_queue().submit([&](sycl::handler & cgh){
-
-        sycl::accessor src {source};
-        sycl::accessor dst {dest};
-
-        cgh.parallel_for(sycl::range<1>{cnt},[=](sycl::item<1> i){
-            dst[i] = src[i];
-        });
-
-    });
-    
-}
 
 
 template<class T>
 class PatchDataField {
 
-    T* _data = nullptr;
+    //T* _data = nullptr;
     //std::vector<T> field_data;
 
     std::unique_ptr<sycl::buffer<T>> buf;
@@ -75,19 +52,16 @@ class PatchDataField {
 
 
     void _alloc(){
-        _data = new T[capacity];
         buf = std::make_unique<sycl::buffer<T>>(capacity);
         
-        logger::debug_alloc_ln("PatchDataField", "allocate field :",_data , "len =",capacity);
+        logger::debug_alloc_ln("PatchDataField", "allocate field :" , "len =",capacity);
     }
 
     void _free(){
-        if(_data != nullptr) {
-            logger::debug_alloc_ln("PatchDataField", "free field :",_data , "len =",capacity);
-            delete[] _data;
-        }
 
         if(buf){
+                        logger::debug_alloc_ln("PatchDataField", "free field :" , "len =",capacity);
+
             buf.reset();
         }
     }
@@ -124,7 +98,8 @@ class PatchDataField {
 
         if (capacity != 0) {
             _alloc();
-            copydata(other._data,_data, capacity);
+            //copydata(other._data,_data, capacity);
+            syclalgs::basic::copybuf_discard(*other.buf, *buf, capacity);
         }
         
     }
@@ -150,22 +125,20 @@ class PatchDataField {
     
 
     inline ~PatchDataField(){
-        logger::debug_alloc_ln("PatchDataField", "free field :",_data , "len =",capacity);
+        logger::debug_alloc_ln("PatchDataField", "free field :" , "len =",capacity);
         _free();
     }
 
 
 
 
-    inline T* usm_data(){
-        //return field_data.data();
-        return _data;
+    inline std::unique_ptr<sycl::buffer<T>> & get_buf(){
+        return buf;
     }
 
     inline std::unique_ptr<sycl::buffer<T>> get_sub_buf(){
-        //return field_data.data();
         if(capacity > 0){
-            return std::make_unique<sycl::buffer<T>>(_data,capacity);
+            return std::make_unique<sycl::buffer<T>>(*buf,0,val_cnt);
         }
         return std::unique_ptr<sycl::buffer<T>>();
     }
@@ -206,7 +179,6 @@ class PatchDataField {
             u32 old_capa = capacity;
             capacity = safe_fact*new_size;
 
-            T* old_ptr = _data;
             sycl::buffer<T>* old_buf = buf.release();
 
 
@@ -215,12 +187,11 @@ class PatchDataField {
             
 
 
+  
+            syclalgs::basic::copybuf_discard(*old_buf, *buf, val_cnt);
 
-            copydata(old_ptr, _data, val_cnt);  
-            copydata_buf(*old_buf, *buf, val_cnt);
 
-
-            delete [] old_ptr;                    logger::debug_alloc_ln("PatchDataField", "delete old buf : ",_data);
+            logger::debug_alloc_ln("PatchDataField", "delete old buf : ");
             delete old_buf;
         }else{
             
@@ -247,12 +218,23 @@ class PatchDataField {
         u32 ins_pos = val_cnt;
         expand(1);
         //field_data[ins_pos] = v;
-        _data[ins_pos] = v;
+
+
+        {
+            sycl::host_accessor acc {*buf};
+
+            acc[ins_pos] = v;
+        }
+        
     }
 
     inline void apply_offset(T off){
-        for (u32 i = 0; i < val_cnt; i++) {
-            _data[i] += off;
+
+        {
+            sycl::host_accessor acc {*buf};
+            for (u32 i = 0; i < val_cnt; i++) {
+                acc[i] += off;
+            }
         }
         //for(T & v : field_data){
         //    v += off;
@@ -265,9 +247,15 @@ class PatchDataField {
         const u32 idx_st = val_cnt;//field_data.size();
         expand(f2.obj_cnt);
 
-        for (u32 i = 0; i < f2.val_cnt; i++) {
-            //field_data[idx_st + i] = f2.field_data[i];
-            _data[idx_st + i] = f2._data[i];
+        {
+            sycl::host_accessor acc {*buf};
+            sycl::host_accessor acc_f2{*f2.get_buf()};
+
+            for (u32 i = 0; i < f2.val_cnt; i++) {
+                //field_data[idx_st + i] = f2.field_data[i];
+                acc[idx_st + i] = acc_f2[i];
+            }
+
         }
 
     }
@@ -276,12 +264,19 @@ class PatchDataField {
 
         if(data.size() !=  val_cnt) throw shamrock_exc("buffer size doesn't match patchdata field size");
 
-        if(val_cnt > 0) {
-            auto acc = data.template get_access<sycl::access::mode::read>();
+        
 
-            for(u32 i = 0; i < val_cnt ; i++){
-                //field_data[i] = acc[i];
-                _data[i] = acc[i];
+        if(val_cnt > 0) {
+
+            {
+                sycl::host_accessor acc_cur {*buf};
+                auto acc = data.template get_access<sycl::access::mode::read>();
+
+                for(u32 i = 0; i < val_cnt ; i++){
+                    //field_data[i] = acc[i];
+                    acc_cur[i] = acc[i];
+                }
+
             }
         }
         
@@ -290,9 +285,14 @@ class PatchDataField {
     inline void override(const T val){
 
         if(val_cnt > 0) {
-            for(u32 i = 0; i < val_cnt ; i++){
-                //field_data[i] = val;
-                _data[i] = val;
+
+            {
+                sycl::host_accessor acc {*buf};
+                for(u32 i = 0; i < val_cnt ; i++){
+                    //field_data[i] = val;
+                    acc[i] = val;
+                }
+
             }
         }
         
@@ -303,10 +303,15 @@ class PatchDataField {
     inline std::vector<u32> get_elements_with_range(Lambdacd && cd_true, T vmin, T vmax){
         std::vector<u32> idxs;
 
-        for(u32 i = 0; i < val_cnt ; i++){
-            if (cd_true(_data[i], vmin, vmax)) {
-                idxs.push_back(i);
+        {
+            sycl::host_accessor acc {*buf};
+
+            for(u32 i = 0; i < val_cnt ; i++){
+                if (cd_true(acc[i], vmin, vmax)) {
+                    idxs.push_back(i);
+                }
             }
+
         }
         
         return idxs;

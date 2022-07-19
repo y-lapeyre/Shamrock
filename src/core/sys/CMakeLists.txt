@@ -7,6 +7,7 @@ target_sources(shamrock
         sycl_handler.cpp
         sycl_mpi_interop.cpp
         cmdopt.cpp
+        log.cpp
     PUBLIC
         mpi_handler.hpp
         sycl_handler.hpp
@@ -35,6 +36,7 @@ if("${BUILD_TEST}")
         sycl_handler.cpp
         sycl_mpi_interop.cpp
         cmdopt.cpp
+        log.cpp
     PUBLIC
         mpi_handler.hpp
         sycl_handler.hpp

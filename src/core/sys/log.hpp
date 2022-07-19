@@ -9,6 +9,10 @@
 #pragma once 
 
 #include "aliases.hpp"
+#include "core/sys/mpi_handler.hpp"
+#include "core/utils/string_utils.hpp"
+#include <chrono>
+#include <fstream>
 #include <string>
 #include <iostream>
 
@@ -286,6 +290,33 @@ namespace logger {
 
 
 
+
+
+    
+}
+
+
+
+
+
+
+namespace logfiles {
+
+
+
+    namespace timings {
+
+        void register_begin(std::string name);
+
+        void register_end(std::string name);
+
+        void register_end_nocoma(std::string name);
+    
+    }
+
+    void open_files();
+
+    void close_files();
 
 
     

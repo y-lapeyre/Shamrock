@@ -14,6 +14,7 @@
 #include <tuple>
 #include <vector>
 #include "aliases.hpp"
+#include "core/sys/log.hpp"
 #include "core/sys/mpi_handler.hpp"
 #include "core/sys/sycl_mpi_interop.hpp"
 #include "core/utils/string_utils.hpp"
@@ -84,6 +85,7 @@ namespace timings {
             kind = t;
             active_timers ++;
             time.start();
+            logfiles::timings::register_begin(n);
         }
 
         inline void stop(){
@@ -97,6 +99,7 @@ namespace timings {
                 false,
                 -1,
                 -1});
+            logfiles::timings::register_end(name);
         }
 
         inline void stop(u64 data_transfered){
@@ -111,6 +114,7 @@ namespace timings {
                 true,
                 f64(data_transfered),
                 (u64(data_transfered))/(time.nanosec/1.e9)});
+            logfiles::timings::register_end(name);
         }
     };
 

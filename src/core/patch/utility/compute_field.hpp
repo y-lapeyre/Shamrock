@@ -55,7 +55,7 @@ class PatchComputeField{public:
     
     inline void to_sycl(){
         for (auto & [key,dat] : field_data) {
-            field_data_buf[key] = std::make_unique<sycl::buffer<T>>(dat.usm_data(),dat.size());
+            field_data_buf[key] = dat.get_sub_buf();
         }
     }
 

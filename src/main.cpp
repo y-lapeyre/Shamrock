@@ -664,6 +664,8 @@ int main(int argc, char *argv[]) {
 
     sycl_handler::init();
 
+    logfiles::open_files();
+
 
     //*
     {
@@ -714,7 +716,7 @@ int main(int argc, char *argv[]) {
 
 
 
-
+    logfiles::close_files();
 
 
 
