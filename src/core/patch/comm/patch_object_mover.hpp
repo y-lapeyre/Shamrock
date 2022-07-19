@@ -38,7 +38,7 @@ inline std::unordered_map<u64, sycl::buffer<u64>> get_new_id_map<f32_3>(PatchSch
             u32 ixyz = sched.pdl.get_field_idx<f32_3>("xyz");
             PatchDataField<f32_3> & xyz_field =  pdat.fields_f32_3[ixyz];
 
-            auto pos = xyz_field.data();
+            auto pos = xyz_field.get_sub_buf();
 
             newid_buf_map.insert({
                 id,
@@ -73,7 +73,7 @@ inline std::unordered_map<u64, sycl::buffer<u64>> get_new_id_map<f64_3>(PatchSch
             u32 ixyz = sched.pdl.get_field_idx<f64_3>("xyz");
             PatchDataField<f64_3> & xyz_field =  pdat.fields_f64_3[ixyz];
 
-            auto pos = xyz_field.data();
+            auto pos = xyz_field.get_sub_buf();
 
             newid_buf_map.insert({
                 id,
@@ -114,7 +114,7 @@ inline void reatribute_particles<f32_3>(PatchScheduler & sched, SerialPatchTree<
             u32 ixyz = sched.pdl.get_field_idx<f32_3>("xyz");
             PatchDataField<f32_3> & xyz_field =  pdat.fields_f32_3[ixyz];
 
-            auto pos = xyz_field.data();
+            auto pos = xyz_field.get_sub_buf();
 
             newid_buf_map.insert({
                 id,
@@ -157,7 +157,7 @@ inline void reatribute_particles<f32_3>(PatchScheduler & sched, SerialPatchTree<
 
             {
 
-                auto buf = xyz_field.data();
+                auto buf = xyz_field.get_sub_buf();
 
                 sycl::host_accessor acc{*buf, sycl::read_only};
 
@@ -202,7 +202,7 @@ inline void reatribute_particles<f32_3>(PatchScheduler & sched, SerialPatchTree<
                 u32 ixyz = sched.pdl.get_field_idx<f32_3>("xyz");
                 PatchDataField<f32_3> & xyz_field =  pdat.fields_f32_3[ixyz];
 
-                auto pos = xyz_field.data();
+                auto pos = xyz_field.get_sub_buf();
 
                 newid_buf_map.insert({
                     id,

@@ -16,6 +16,7 @@
 #include <vector>
 
 
+
 #include "aliases.hpp"
 
 #include "core/sys/log.hpp"
@@ -43,7 +44,7 @@ inline void copydata_buf(sycl::buffer<T> & source, sycl::buffer<T> &  dest, u32 
         sycl::accessor src {source};
         sycl::accessor dst {dest};
 
-        cgh.parallel_for([=](sycl::item<1> i){
+        cgh.parallel_for(sycl::range<1>{cnt},[=](sycl::item<1> i){
             dst[i] = src[i];
         });
 
@@ -57,6 +58,8 @@ class PatchDataField {
 
     T* _data = nullptr;
     //std::vector<T> field_data;
+
+    std::unique_ptr<sycl::buffer<T>> buf;
 
     std::string field_name;
 
@@ -72,13 +75,20 @@ class PatchDataField {
 
 
     void _alloc(){
-        _data = new T[capacity];logger::debug_alloc_ln("PatchDataField", "allocate field :",_data , "len =",capacity);
+        _data = new T[capacity];
+        buf = std::make_unique<sycl::buffer<T>>(capacity);
+        
+        logger::debug_alloc_ln("PatchDataField", "allocate field :",_data , "len =",capacity);
     }
 
     void _free(){
         if(_data != nullptr) {
             logger::debug_alloc_ln("PatchDataField", "free field :",_data , "len =",capacity);
             delete[] _data;
+        }
+
+        if(buf){
+            buf.reset();
         }
     }
 
@@ -152,7 +162,7 @@ class PatchDataField {
         return _data;
     }
 
-    inline std::unique_ptr<sycl::buffer<T>> data(){
+    inline std::unique_ptr<sycl::buffer<T>> get_sub_buf(){
         //return field_data.data();
         if(capacity > 0){
             return std::make_unique<sycl::buffer<T>>(_data,capacity);
@@ -179,7 +189,7 @@ class PatchDataField {
         return field_name;
     }
 
-    //add overflow check
+    //TODO add overflow check
     inline void resize(u32 new_obj_cnt){
 
         logger::debug_alloc_ln("PatchDataField", "resize from : ",val_cnt, "to :",new_obj_cnt*nvar);
@@ -192,12 +202,26 @@ class PatchDataField {
             capacity = safe_fact*new_size;
             _alloc();
         }else if (new_size > capacity) {
-            u32 new_capa = safe_fact*new_size;
-            T* new_ptr = new T[new_capa];       logger::debug_alloc_ln("PatchDataField", "allocate : ",new_ptr, "capacity :",new_capa);
-            copydata(_data, new_ptr, val_cnt);  
-            delete [] _data;                    logger::debug_alloc_ln("PatchDataField", "delete old buf : ",_data);
-            _data = new_ptr;
-            capacity = new_capa;
+            
+            u32 old_capa = capacity;
+            capacity = safe_fact*new_size;
+
+            T* old_ptr = _data;
+            sycl::buffer<T>* old_buf = buf.release();
+
+
+            _alloc();
+
+            
+
+
+
+            copydata(old_ptr, _data, val_cnt);  
+            copydata_buf(*old_buf, *buf, val_cnt);
+
+
+            delete [] old_ptr;                    logger::debug_alloc_ln("PatchDataField", "delete old buf : ",_data);
+            delete old_buf;
         }else{
             
         }

@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include "CL/sycl/accessor.hpp"
 #include "core/patch/scheduler/scheduler_mpi.hpp"
 #include "core/utils/geometry_utils.hpp"
 #include <stdexcept>
@@ -25,13 +26,24 @@ inline void set_value_in_box(PatchScheduler &sched, T val, std::string name, std
 
         PatchDataField<T> &f = pdat.template get_field<T>(sched.pdl.get_field_idx<T>(name));
 
-        for (u32 i = 0; i < f.size(); i++) {
-            vec r = xyz.usm_data()[i];
 
-            if (BBAA::is_particle_in_patch(r, std::get<0>(box), std::get<1>(box))) {
-                f.usm_data()[i] = val;
+        {
+            auto buf = f.get_sub_buf();
+            sycl::host_accessor acc {*buf};
+
+            auto buf_xyz = xyz.get_sub_buf();
+            sycl::host_accessor acc_xyz {*buf_xyz};
+
+            for (u32 i = 0; i < f.size(); i++) {
+                vec r = acc_xyz[i];
+
+                if (BBAA::is_particle_in_patch(r, std::get<0>(box), std::get<1>(box))) {
+                    acc[i] = val;
+                }
             }
+
         }
+        
     }
 }
 
@@ -51,11 +63,23 @@ inline void pertub_eigenmode_wave(PatchScheduler &sched, std::tuple<flt, flt> am
 
         flt ampl = std::get<1>(ampls);
 
-        for (u32 i = 0; i < xyz.size(); i++) {
-            vec r              = xyz.usm_data()[i];
-            flt rkphi          = sycl::dot(r, k) + phase;
-            vxyz.usm_data()[i] = ampl * sycl::sin(rkphi);
+        {
+
+            auto buf_xyz = xyz.get_sub_buf();
+            sycl::host_accessor acc_xyz {*buf_xyz};
+
+            auto buf_vxyz = vxyz.get_sub_buf();
+            sycl::host_accessor acc_vxyz {*buf_vxyz};
+
+            for (u32 i = 0; i < xyz.size(); i++) {
+                vec r              = acc_xyz[i];
+                flt rkphi          = sycl::dot(r, k) + phase;
+                acc_vxyz[i] = ampl * sycl::sin(rkphi);
+            }
+
         }
+
+        
     }
 }
 

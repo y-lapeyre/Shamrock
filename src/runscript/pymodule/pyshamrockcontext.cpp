@@ -111,7 +111,7 @@ template<class T> void append_to_map(std::vector<PatchDataField<T>> & pfields, s
 
         {
 
-            auto buf = field.data();
+            auto buf = field.get_sub_buf();
 
             sycl::host_accessor acc{ *buf, sycl::read_only};
 

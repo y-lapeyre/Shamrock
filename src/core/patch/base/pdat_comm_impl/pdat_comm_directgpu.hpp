@@ -12,7 +12,7 @@ namespace impl::directgpu {
             T *comm_ptr = sycl::malloc_device<T>(comm_sz, sycl_handler::get_compute_queue());
             logger::debug_sycl_ln("PatchDataField MPI Comm", "sycl::malloc_device", comm_sz, "->", comm_ptr);
 
-            auto buf = pdat_field.data();
+            auto buf = pdat_field.get_sub_buf();
 
             if (pdat_field.size() > 0) {
                 logger::debug_sycl_ln("PatchDataField MPI Comm", "copy buffer -> USM");
@@ -50,7 +50,7 @@ namespace impl::directgpu {
         };
 
         template <class T> void finalize(PatchDataField<T> &pdat_field, T *comm_ptr, u32 comm_sz) {
-            auto buf = pdat_field.data();
+            auto buf = pdat_field.get_sub_buf();
 
             if (pdat_field.size() > 0) {
                 logger::debug_sycl_ln("PatchDataField MPI Comm", "copy USM -> buffer");
