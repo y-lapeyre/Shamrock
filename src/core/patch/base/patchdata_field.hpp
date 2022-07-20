@@ -33,9 +33,6 @@
 template<class T>
 class PatchDataField {
 
-    //T* _data = nullptr;
-    //std::vector<T> field_data;
-
     std::unique_ptr<sycl::buffer<T>> buf;
 
     std::string field_name;
@@ -60,7 +57,7 @@ class PatchDataField {
     void _free(){
 
         if(buf){
-                        logger::debug_alloc_ln("PatchDataField", "free field :" , "len =",capacity);
+            logger::debug_alloc_ln("PatchDataField", "free field :" , "len =",capacity);
 
             buf.reset();
         }

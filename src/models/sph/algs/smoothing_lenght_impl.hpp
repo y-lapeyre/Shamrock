@@ -65,6 +65,9 @@ namespace impl {
 
 
 
+    template<class A,class B,class C> class Kernel_Iterh;
+    template<class A,class B,class C> class Kernel_Finalize_omega;
+
     template<class morton_prec, class Kernel>
     class IntSmoothingLenghtCompute{public:
 
@@ -135,7 +138,7 @@ namespace impl {
                 const f32 h_max_evol_p = htol_up_iter;
                 const f32 h_max_evol_m = 1/htol_up_iter;
 
-                cgh.parallel_for<class SPHTest>(range_npart, [=](sycl::item<1> item) {
+                cgh.parallel_for<Kernel_Iterh<f32, morton_prec, Kernel>>(range_npart, [=](sycl::item<1> item) {
                     u32 id_a = (u32)item.get_id(0);
 
 
@@ -288,7 +291,7 @@ namespace impl {
                 const f32 h_max_evol_p = htol_up_tol;
                 const f32 h_max_evol_m = 1/htol_up_tol;
 
-                cgh.parallel_for<class write_omega>(range_npart, [=](sycl::item<1> item) {
+                cgh.parallel_for<Kernel_Finalize_omega<f32, morton_prec, Kernel>>(range_npart, [=](sycl::item<1> item) {
                     u32 id_a = (u32)item.get_id(0);
 
                     f32_3 xyz_a = r[id_a]; // could be recovered from lambda

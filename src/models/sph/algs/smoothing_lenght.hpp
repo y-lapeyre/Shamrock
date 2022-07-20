@@ -8,7 +8,9 @@
 
 #pragma once
 
+
 #include "aliases.hpp"
+#include "core/io/logs.hpp"
 #include "core/patch/interfaces/interface_handler.hpp"
 #include "core/patch/interfaces/interface_selector.hpp"
 #include "core/patch/patchdata_buffer.hpp"
@@ -16,6 +18,7 @@
 #include "core/patch/scheduler/scheduler_mpi.hpp"
 #include "core/patch/utility/merged_patch.hpp"
 #include "core/patch/utility/serialpatchtree.hpp"
+#include "core/sys/log.hpp"
 #include "models/sph/base/kernels.hpp"
 #include "models/sph/algs/smoothing_lenght_impl.hpp"
 #include "models/sph/base/sphpart.hpp"
@@ -65,6 +68,8 @@ class SmoothingLenghtCompute{
         sycl::buffer<flt> & omega,
         sycl::buffer<flt> & eps_h){
 
+        auto timer = timings::start_timer("iterate_smoothing_lenght",timings::function);
+
         impl::sycl_init_h_iter_bufs(queue, or_element_cnt,ihpart, pdat_buf_merge, hnew, omega, eps_h);
 
         for (u32 it_num = 0 ; it_num < 30; it_num++) {
@@ -81,6 +86,16 @@ class SmoothingLenghtCompute{
                 hnew, 
                 omega, 
                 eps_h);
+
+            //{
+            //    sycl::host_accessor acc {eps_h};
+            //
+            //    logger::raw_ln("------eps_h-----");
+            //    for (u32 i = 0; i < eps_h.size(); i ++) {
+            //        logger::raw(acc[i],",");
+            //    }
+            //    logger::raw_ln("----------------");
+            //}
         }
 
         impl::IntSmoothingLenghtCompute<morton_prec, Kernel>::template sycl_h_iter_omega<flt>(queue, 
@@ -95,6 +110,8 @@ class SmoothingLenghtCompute{
                 hnew, 
                 omega, 
                 eps_h);
+
+        timer.stop();
 
     }
 

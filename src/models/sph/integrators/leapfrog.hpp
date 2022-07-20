@@ -161,7 +161,7 @@ namespace sph {
         LambdaForce && lambda_compute_forces,
         LambdaCorrector && lambda_correct){
 
-        
+        auto time_step = timings::start_timer("SPHLeapfrog::step()", timings::timingtype::function);
 
         const flt loc_htol_up_tol  = htol_up_tol;
         const flt loc_htol_up_iter = htol_up_iter;
@@ -264,7 +264,7 @@ namespace sph {
         tmerge_buf.stop();
 
         //make trees
-        auto tgen_trees = timings::start_timer("radix tree compute", timings::sycl);
+        auto tgen_trees = timings::start_timer("radix tree gen", timings::sycl);
         std::unordered_map<u64, std::unique_ptr<Radix_Tree<u_morton, vec3>>> radix_trees;
 
         sched.for_each_patch([&](u64 id_patch, Patch cur_p) {
@@ -315,6 +315,8 @@ namespace sph {
         hnew_field.to_sycl();
         omega_field.to_sycl();
 
+        auto time_hiter = timings::start_timer("h iter", timings::sycl);
+
         //iterate smoothing lenght
         sched.for_each_patch([&](u64 id_patch, Patch cur_p) {
 
@@ -350,6 +352,7 @@ namespace sph {
             });
             //*/
         });
+        time_hiter.stop();
 
 
 
@@ -358,6 +361,9 @@ namespace sph {
         hnew_field.to_map();
         omega_field.to_map();
 
+        
+        auto time_xchg_new_f = timings::start_timer("comm_interfaces_field (s)", timings::sycl);
+
         logger::debug_ln("SPHLeapfrog","exchange interface hnew");
         PatchComputeFieldInterfaces<flt> hnew_field_interfaces =
             interface_hndl.template comm_interfaces_field<flt>(sched, hnew_field, periodic_mode);
@@ -365,8 +371,12 @@ namespace sph {
         PatchComputeFieldInterfaces<flt> omega_field_interfaces =
             interface_hndl.template comm_interfaces_field<flt>(sched, omega_field, periodic_mode);
 
+        time_xchg_new_f.stop();
+
         hnew_field.to_sycl();
         omega_field.to_sycl();
+
+        auto time_merge_cfield = timings::start_timer("merge compute fields", timings::sycl);
 
         //merge compute fields
         std::unordered_map<u64, MergedPatchCompFieldBuffer<flt>> hnew_field_merged;
@@ -374,15 +384,27 @@ namespace sph {
         std::unordered_map<u64, MergedPatchCompFieldBuffer<flt>> omega_field_merged;
         make_merge_patches_comp_field<flt>(sched, interface_hndl, omega_field, omega_field_interfaces, omega_field_merged);
 
+        time_merge_cfield.stop();
+
         //TODO add looping on corrector step
 
+        auto time_lambda_post_sync = timings::start_timer("post sync", timings::sycl);
+
         lambda_post_sync(sched, merge_pdat_buf,hnew_field_merged,omega_field_merged);
+
+        time_lambda_post_sync.stop();
+
+
+        auto time_force = timings::start_timer("force compute", timings::sycl);
 
         //compute force
         if (do_force) {
             lambda_compute_forces(sched,radix_trees,merge_pdat_buf,hnew_field_merged,omega_field_merged,htol_up_tol);
         }
 
+        time_force.stop();
+
+        auto time_corrector = timings::start_timer("corrector", timings::sycl);
 
 
         //leapfrog corrector
@@ -403,7 +425,15 @@ namespace sph {
             }
         });
 
+        time_corrector.stop();
+
+        auto twrite_back = timings::start_timer("corrector", timings::sycl);
+
         write_back_merge_patches(sched, interface_hndl, merge_pdat_buf);
+
+        twrite_back.stop();
+
+        time_step.stop();
 
         return step_time;
     }

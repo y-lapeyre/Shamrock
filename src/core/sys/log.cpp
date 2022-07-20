@@ -1,5 +1,15 @@
 #include "log.hpp"
+#include <chrono>
 
+template<typename T>
+u64 get_now_val(){
+    auto now = std::chrono::high_resolution_clock::now();
+    auto now_ms = std::chrono::time_point_cast<T>(now);
+    auto epoch = now_ms.time_since_epoch();
+    auto value = std::chrono::duration_cast<T>(epoch);
+    
+    return value.count();
+}
 
 namespace logfiles {
 
@@ -11,8 +21,7 @@ namespace logfiles {
         std::ofstream timings_file;
 
         void register_begin(std::string name){
-            auto now = std::chrono::high_resolution_clock::now();
-            time_t now_val = std::chrono::high_resolution_clock::to_time_t(now);
+            auto now_val = get_now_val<std::chrono::microseconds>();
 
             const char* rstr =  
 R"({
@@ -35,8 +44,7 @@ R"({
         }
 
         void register_end(std::string name){
-            auto now = std::chrono::high_resolution_clock::now();
-            time_t now_val = std::chrono::high_resolution_clock::to_time_t(now);
+            auto now_val = get_now_val<std::chrono::microseconds>();
 
             const char* rstr =  
 R"({
@@ -59,8 +67,7 @@ R"({
         }
 
         void register_end_nocoma(std::string name){
-            auto now = std::chrono::high_resolution_clock::now();
-            time_t now_val = std::chrono::high_resolution_clock::to_time_t(now);
+            auto now_val = get_now_val<std::chrono::microseconds>();
 
             const char* rstr =  
 R"({
@@ -94,8 +101,9 @@ R"({
         timings::register_begin("SHAMROCK");
     }
 
-    void close_files(){timings::timings_file << "]";
+    void close_files(){
         timings::register_end_nocoma("SHAMROCK");
+        timings::timings_file << "]";
         timings::timings_file.close();
     }
 

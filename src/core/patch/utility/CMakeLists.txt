@@ -10,6 +10,7 @@ target_sources(shamrock
         
         global_var.cpp
         serialpatchtree.cpp
+        merged_patch.cpp
 
 
         
@@ -47,6 +48,7 @@ if("${BUILD_TEST}")
         
     global_var.cpp
     serialpatchtree.cpp
+    merged_patch.cpp
 
 
     PUBLIC

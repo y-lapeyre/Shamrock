@@ -9,11 +9,19 @@
 #include "patchdata_field.hpp"
 #include "CL/sycl/access/access.hpp"
 #include "CL/sycl/accessor.hpp"
+#include "CL/sycl/buffer.hpp"
+#include "CL/sycl/properties/accessor_properties.hpp"
+#include "CL/sycl/range.hpp"
 #include "core/patch/base/enabled_fields.hpp"
 #include "core/patch/base/pdat_comm_impl/pdat_comm_cp_to_host.hpp"
 #include "core/patch/base/pdat_comm_impl/pdat_comm_directgpu.hpp"
+#include "core/sys/sycl_handler.hpp"
+#include "core/utils/sycl_algs.hpp"
+#include <memory>
 
 //TODO use hash for name + nvar to check if the field match before doing operation on them
+
+template<class T> class Kernel_Extract_element;
 
 template <class T> void PatchDataField<T>::extract_element(u32 pidx, PatchDataField<T> &to) {
 
@@ -36,15 +44,25 @@ template <class T> void PatchDataField<T>::extract_element(u32 pidx, PatchDataFi
         to.expand(1);
 
         {
+            
             auto buf_to   = to.get_sub_buf();
             auto buf_from = from.get_sub_buf();
 
-            sycl::host_accessor acc_to{*buf_to};
-            sycl::host_accessor acc_from{*buf_from};
+            sycl_handler::get_compute_queue().submit([&](sycl::handler & cgh){
 
-            for (u32 i = nvar - 1; i < nvar; i--) {
-                acc_to[idx_out_val + i] = (fast_extract_ptr(idx_val + i, from_sz, acc_from));
-            }
+                sycl::accessor acc_to {*buf_to, cgh, sycl::write_only};
+                sycl::accessor acc_from {*buf_from, cgh, sycl::read_write};
+
+                const u32 nvar_loc = nvar;
+                
+                cgh.single_task<Kernel_Extract_element<T>>( [=](){
+                    for (u32 i = nvar_loc - 1; i < nvar_loc; i--) {
+                        acc_to[idx_out_val + i] = (fast_extract_ptr(idx_val + i, from_sz, acc_from));
+                    }
+                });
+
+            });
+
         }
 
         from.shrink(1);
@@ -52,6 +70,11 @@ template <class T> void PatchDataField<T>::extract_element(u32 pidx, PatchDataFi
 
     sub_extract(pidx, *this, to);
 }
+
+
+
+
+template<class T> class PdatField_checkfieldmatch;
 
 template <class T> bool PatchDataField<T>::check_field_match(PatchDataField<T> &f2) {
     bool match = true;
@@ -62,19 +85,35 @@ template <class T> bool PatchDataField<T>::check_field_match(PatchDataField<T> &
     match = match && (val_cnt == f2.val_cnt);
 
     {
-        auto buf = get_sub_buf();
-        sycl::host_accessor acc{*buf};
 
-        auto buf_f2 = f2.get_sub_buf();
-        sycl::host_accessor acc_f2{*buf};
+        using buf_t = std::unique_ptr<sycl::buffer<T>>;
 
-        for (u32 i = 0; i < val_cnt; i++) {
-            match = match && test_sycl_eq(acc[i], acc_f2[i]);
-        }
+        buf_t buf = get_sub_buf();
+        buf_t buf_f2 = f2.get_sub_buf();
+        
+        sycl::buffer<u8> res_buf(buf->size());
+
+        sycl_handler::get_compute_queue().submit([&](sycl::handler & cgh){
+
+            sycl::accessor acc1 {*buf, cgh, sycl::read_only};
+            sycl::accessor acc2 {*buf_f2, cgh, sycl::read_only};
+
+            sycl::accessor acc_res {res_buf, cgh, sycl::write_only, sycl::no_init};
+
+            cgh.parallel_for<PdatField_checkfieldmatch<T>>(sycl::range<1>{buf->size()}, [=](sycl::item<1> i){
+                acc_res[i] = test_sycl_eq(acc1[i] , acc2[i]);
+            });
+
+        });
+        
+        match = match && syclalgs::reduction::is_all_true(res_buf);
+
     }
 
     return match;
 }
+
+template<class T> class PdatField_append_subset_to;
 
 template <class T> void PatchDataField<T>::append_subset_to(std::vector<u32> &idxs, PatchDataField &pfield) {
 
@@ -87,43 +126,38 @@ template <class T> void PatchDataField<T>::append_subset_to(std::vector<u32> &id
 
     pfield.expand(idxs.size());
 
+
     {
+        using buf_t = std::unique_ptr<sycl::buffer<T>>;
 
-        auto buf_curr  = get_sub_buf();
-        auto buf_other  = pfield.get_sub_buf();
+        buf_t buf = get_sub_buf();
+        buf_t buf_other  = pfield.get_sub_buf();
 
-        sycl::host_accessor acc_curr{*buf_curr};
-        sycl::host_accessor acc_other{*buf_other};
+        sycl::buffer<u32> idxs_buf(idxs.data(), idxs.size());
 
-        for (u32 i = 0; i < idxs.size(); i++) {
+        sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
 
-            const u32 idx_extr = idxs[i] * nvar;
-            const u32 idx_push = start_enque + i * nvar;
+            sycl::accessor acc_curr {*buf, cgh, sycl::read_only};
+            sycl::accessor acc_other {*buf_other, cgh, sycl::write_only};
+            sycl::accessor acc_idxs {idxs_buf, cgh, sycl::read_only};
 
-            for (u32 a = 0; a < nvar; a++) {
-                acc_other[idx_push + a] = acc_curr[idx_extr + a];
-            }
-        }
-        
+            const u32 nvar_loc = nvar;
+            const u32 start_enque_loc = start_enque;
+
+            cgh.parallel_for<PdatField_append_subset_to<T>>
+                (sycl::range<1>{idxs.size()}, 
+                    [=](sycl::item<1> i){
+                        const u32 idx_extr = acc_idxs[i] * nvar_loc;
+                        const u32 idx_push = start_enque_loc + i.get_linear_id() * nvar_loc;
+                
+                        for (u32 a = 0; a < nvar_loc; a++) {
+                            acc_other[idx_push + a] = acc_curr[idx_extr + a];
+                        }
+                    }       
+            );
+
+        });
     }
-    // auto buf_cur  = data();
-    // auto buf_other  = data();
-    //
-    //{
-    //     sycl::host_accessor acc_cur{*buf_cur};
-    //     sycl::host_accessor acc_other{*buf_cur};
-    //
-    //     for (u32 i = 0; i < idxs.size(); i++) {
-    //
-    //         const u32 idx_extr = idxs[i]*nvar;
-    //         const u32 idx_push = start_enque + i*nvar;
-    //
-    //         for(u32 a = 0; a < nvar ; a++){
-    //             acc_other[idx_push + a] = acc_cur[idx_extr + a];
-    //         }
-    //
-    //     }
-    // }
 }
 
 #define X(a) template class PatchDataField<a>;

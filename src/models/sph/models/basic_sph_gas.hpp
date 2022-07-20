@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include "CL/sycl/builtins.hpp"
 #include "core/patch/scheduler/scheduler_mpi.hpp"
 #include "core/sys/log.hpp"
 #include "core/utils/string_utils.hpp"
@@ -53,7 +54,7 @@ namespace models::sph {
 
             
 
-            while(step_time < end_time){
+            while(step_time < end_time && sycl::fabs(step_time - end_time) > 1e-8){
 
                 logger::normal_ln("BasicSPHGas", "simulate until",format("%2.2f / %2.2f (%3.1f %)",step_time,end_time,100*step_time/end_time));
 

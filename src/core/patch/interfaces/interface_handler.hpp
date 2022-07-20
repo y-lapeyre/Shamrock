@@ -23,10 +23,12 @@
 #include <vector>
 
 #include "aliases.hpp"
+#include "core/patch/base/patchdata.hpp"
 #include "core/patch/interfaces/interface_generator.hpp"
 #include "core/io/logs.hpp"
 #include "core/patch/patchdata_buffer.hpp"
 #include "core/patch/scheduler/scheduler_mpi.hpp"
+#include "core/sys/sycl_handler.hpp"
 #include "models/sph/sphpatch.hpp" //TODO remove sph dependancy
 
 #include "interface_handler_impl.hpp"
@@ -123,7 +125,8 @@ template <class vectype, class primtype> class InterfaceHandler {
 
 
     template<class Function>
-    inline void for_each_interface(u64 patch_id,sycl::queue & queue, Function && fct){
+    [[deprecated]]
+    inline void for_each_interface_buf(u64 patch_id,sycl::queue & queue, Function && fct){
 
         const std::vector<std::tuple<u64, std::unique_ptr<PatchData>>> & p_interf_lst = get_interface_list(patch_id);
 
@@ -141,9 +144,31 @@ template <class vectype, class primtype> class InterfaceHandler {
 
     }
 
+    template<class Function>
+    inline void for_each_interface(u64 patch_id, Function && fct){
+
+        const std::vector<std::tuple<u64, std::unique_ptr<PatchData>>> & p_interf_lst = get_interface_list(patch_id);
+
+        for (auto & [int_pid, pdat_ptr] : p_interf_lst) {
+
+            if(! pdat_ptr->is_empty()){
+
+                PatchData & pdat = *pdat_ptr;
+
+                u32 ihpart = pdat.pdl.get_field_idx<vectype>("xyz");
+                auto buf = pdat.get_field<vectype>(ihpart).get_sub_buf();
+                auto t = syclalg::get_min_max<vectype>(sycl_handler::get_compute_queue(), buf);
+
+                fct(patch_id,int_pid,pdat,t);
+            }
+        }
+
+    }
+
 };
 
-
+template class InterfaceHandler<f32_3,f32>;
+template class InterfaceHandler<f64_3,f64>;
 
 
 
