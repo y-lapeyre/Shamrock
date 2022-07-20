@@ -49,23 +49,25 @@ class PatchComputeField{public:
 
     public:
 
-    inline std::unique_ptr<sycl::buffer<T>> & get_buf(u64 id_patch){
-        return field_data_buf.at(id_patch);
-    }
-    
-    inline void to_sycl(){
-        for (auto & [key,dat] : field_data) {
-            field_data_buf[key] = dat.get_sub_buf();
-        }
-    }
-    
-    inline void to_map(){
-        field_data_buf.clear();
-    }
-
     //inline std::unique_ptr<sycl::buffer<T>> & get_buf(u64 id_patch){
-    //    return field_data.at(id_patch).get_buf();
+    //    return field_data_buf.at(id_patch);
     //}
+
+    inline std::unique_ptr<sycl::buffer<T>> get_sub_buf(u64 id_patch){
+        return field_data.at(id_patch).get_sub_buf();
+    }
+    
+    //inline void to_sycl(){
+    //    for (auto & [key,dat] : field_data) {
+    //        //field_data_buf[key] = dat.get_sub_buf();
+    //    }
+    //}
+    //
+    //inline void to_map(){
+    //    //field_data_buf.clear();
+    //}
+
+    
 
 };
 

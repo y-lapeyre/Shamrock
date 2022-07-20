@@ -376,7 +376,7 @@ inline void make_merge_patches_comp_field(
 
         
 
-        auto & compfield_buf = comp_field.get_buf(id_patch);
+        auto compfield_buf = comp_field.get_sub_buf(id_patch);
 
         logger::debug_sycl_ln("Merged Patch","patch : n°",id_patch , "-> making merge comp field");
 

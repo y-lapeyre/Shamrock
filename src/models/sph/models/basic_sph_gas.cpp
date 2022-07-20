@@ -148,11 +148,10 @@ f64 models::sph::BasicSPHGas<flt,Kernel>::evolve(PatchScheduler &sched, f64 old_
                 }
 
                 pressure_field.generate(sched,size_map);
-                pressure_field.to_sycl();
 
                 sched.for_each_patch([&](u64 id_patch, Patch cur_p) {
                     sycl::buffer<f32> &hnew  = *hnew_field_merged[id_patch].buf;
-                    sycl::buffer<f32> &press  = *pressure_field.get_buf(id_patch);
+                    auto press  = pressure_field.get_sub_buf(id_patch);
 
                     sycl::range range_npart{hnew.size()};
 
@@ -162,7 +161,7 @@ f64 models::sph::BasicSPHGas<flt,Kernel>::evolve(PatchScheduler &sched, f64 old_
                     sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
                         auto h = hnew.get_access<sycl::access::mode::read>(cgh);
 
-                        auto p = press.get_access<sycl::access::mode::discard_write>(cgh);
+                        auto p = press->get_access<sycl::access::mode::discard_write>(cgh);
 
                         cgh.parallel_for(range_npart,
                                 [=](sycl::item<1> item) { 
@@ -197,7 +196,7 @@ f64 models::sph::BasicSPHGas<flt,Kernel>::evolve(PatchScheduler &sched, f64 old_
                 sycl::buffer<f32> &hnew  = *hnew_field_merged[id_patch].buf;
                 sycl::buffer<f32> &omega = *omega_field_merged[id_patch].buf;
 
-                sycl::buffer<f32> &press  = *pressure_field.get_buf(id_patch);
+                auto press  = pressure_field.get_sub_buf(id_patch);
 
                 sycl::range range_npart{merge_pdat_buf.at(id_patch).or_element_cnt};
 
@@ -218,7 +217,7 @@ f64 models::sph::BasicSPHGas<flt,Kernel>::evolve(PatchScheduler &sched, f64 old_
                         radix_trees[id_patch]->buf_cell_interact_rad->template get_access<sycl::access::mode::read>(cgh);
 
 
-                    auto pres = press.get_access<sycl::access::mode::read>(cgh);
+                    auto pres = press->get_access<sycl::access::mode::read>(cgh);
 
                     const f32 part_mass = gpart_mass;
                     //const f32 cs        = eos_cs;

@@ -312,8 +312,6 @@ namespace sph {
         hnew_field.generate(sched);
         omega_field.generate(sched);
 
-        hnew_field.to_sycl();
-        omega_field.to_sycl();
 
         auto time_hiter = timings::start_timer("h iter", timings::sycl);
 
@@ -326,8 +324,8 @@ namespace sph {
 
             PatchDataBuffer &pdat_buf_merge = *merge_pdat_buf.at(id_patch).data;
 
-            auto & hnew  = hnew_field.get_buf(id_patch);
-            auto & omega = omega_field.get_buf(id_patch);
+            auto hnew  = hnew_field.get_sub_buf(id_patch);
+            auto omega = omega_field.get_sub_buf(id_patch);
             sycl::buffer<flt> eps_h  = sycl::buffer<flt>(merge_pdat_buf.at(id_patch).or_element_cnt);
 
             sycl::range range_npart{merge_pdat_buf.at(id_patch).or_element_cnt};
@@ -357,10 +355,6 @@ namespace sph {
 
 
 
-        // exchange new h and omega
-        hnew_field.to_map();
-        omega_field.to_map();
-
         
         auto time_xchg_new_f = timings::start_timer("comm_interfaces_field (s)", timings::sycl);
 
@@ -373,8 +367,6 @@ namespace sph {
 
         time_xchg_new_f.stop();
 
-        hnew_field.to_sycl();
-        omega_field.to_sycl();
 
         auto time_merge_cfield = timings::start_timer("merge compute fields", timings::sycl);
 

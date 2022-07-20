@@ -143,7 +143,6 @@ template <class flt> class SPHTimestepperLeapfrogIsotGas {
                     }
 
                     pressure_field.generate(sched,size_map);
-                    pressure_field.to_sycl();
 
                     sched.for_each_patch([&](u64 id_patch, Patch cur_p) {
                         sycl::buffer<f32> &hnew  = *hnew_field_merged[id_patch].buf;

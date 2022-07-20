@@ -207,9 +207,6 @@ inline void compute_smoothing_lenght(PatchScheduler &sched,bool periodic_mode,fl
         hnew_field.generate(sched);
         omega_field.generate(sched);
 
-        hnew_field.to_sycl();
-        omega_field.to_sycl();
-
         //iterate smoothing lenght
         sched.for_each_patch([&](u64 id_patch, Patch cur_p) {
             std::cout << "patch : n°" << id_patch << "init h iter" << std::endl;
@@ -218,8 +215,8 @@ inline void compute_smoothing_lenght(PatchScheduler &sched,bool periodic_mode,fl
 
             PatchDataBuffer &pdat_buf_merge = *merge_pdat_buf.at(id_patch).data;
 
-            auto &hnew  = hnew_field.get_buf(id_patch);
-            auto &omega = omega_field.get_buf(id_patch);
+            auto hnew  = hnew_field.get_sub_buf(id_patch);
+            auto omega = omega_field.get_sub_buf(id_patch);
             sycl::buffer<flt> eps_h  = sycl::buffer<flt>(merge_pdat_buf.at(id_patch).or_element_cnt);
 
             sycl::range range_npart{merge_pdat_buf.at(id_patch).or_element_cnt};
