@@ -26,6 +26,31 @@
 namespace patchdata {
     namespace sph {
 
+
+        template<class htype>
+        inline htype get_h_max(PatchDataLayout & pdl,sycl::queue & queue, PatchData & pdat){
+
+            if(pdat.get_obj_cnt() == 0) return 0;
+
+            htype tmp;
+
+            if constexpr (std::is_same<htype, f32>::value){
+
+                u32 ihpart = pdl.get_field_idx<f32>(::sph::field_names::field_hpart);
+                tmp = syclalg::get_max<f32>(queue, pdat.fields_f32[ihpart].get_buf());
+
+            } else if constexpr (std::is_same<htype, f64>::value){
+                u32 ihpart = pdl.get_field_idx<f64>(::sph::field_names::field_hpart);
+                tmp = syclalg::get_max<f64>(queue, pdat.fields_f64[ihpart].get_buf());
+                
+            }else{
+                throw shamrock_exc("get_h_max -> current htype not handled");
+            }
+
+            return tmp;
+
+        }
+
         template<class htype>
         inline htype get_h_max(PatchDataLayout & pdl,sycl::queue & queue, PatchDataBuffer & pdatbuf){
 

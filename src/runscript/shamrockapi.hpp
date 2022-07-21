@@ -117,8 +117,8 @@ class ShamrockCtx{public:
     inline std::vector<std::unique_ptr<PatchData>> allgather_data(){
         std::vector<std::unique_ptr<PatchData>> recv_data;
 
-        for(u32 i = 0; i < u32(mpi_handler::world_size); i++){
-            if (i == u32(mpi_handler::world_size)) {
+        for(u32 i = 0; i < mpi_handler::uworld_size; i++){
+            if (i == mpi_handler::uworld_rank) {
                 recv_data = sched->gather_data(i);
             }else{
                 sched->gather_data(i);

@@ -8,6 +8,7 @@
 
 #include "basic_sph_gas.hpp"
 #include "aliases.hpp"
+#include "core/patch/base/patchdata.hpp"
 #include "core/sys/log.hpp"
 #include "core/sys/sycl_handler.hpp"
 #include "models/generic/algs/cfl_utils.hpp"
@@ -68,13 +69,15 @@ f64 models::sph::BasicSPHGas<flt,Kernel>::evolve(PatchScheduler &sched, f64 old_
 
     f64 step_time = stepper.step(old_time, true, true, 
 
-        [&](u64 id_patch, PatchDataBuffer &pdat_buf) {
+        [&](u64  /*id_patch*/, PatchData &pdat) {
         
-            flt cfl_val = CflUtility<flt>::basic_cfl(pdat_buf, [&](sycl::handler &cgh, sycl::buffer<flt> & buf_cfl, sycl::range<1> range_it){
+            flt cfl_val = CflUtility<flt>::basic_cfl(pdat, [&](sycl::handler &cgh, sycl::buffer<flt> & buf_cfl, sycl::range<1> range_it){
 
                 auto arr = buf_cfl.template get_access<sycl::access::mode::discard_write>(cgh);
-                auto acc_hpart = pdat_buf.get_field<flt>(ihpart)->template get_access<sycl::access::mode::read>(cgh);
-                auto acc_axyz  = pdat_buf.get_field<vec3>(iaxyz)->template get_access<sycl::access::mode::read>(cgh);
+
+
+                auto acc_hpart = pdat.get_field<flt>(ihpart).get_buf()->template get_access<sycl::access::mode::read>(cgh);
+                auto acc_axyz  = pdat.get_field<vec3>(iaxyz).get_buf()->template get_access<sycl::access::mode::read>(cgh);
 
                 const flt cs = eos_cs;
 
@@ -107,19 +110,19 @@ f64 models::sph::BasicSPHGas<flt,Kernel>::evolve(PatchScheduler &sched, f64 old_
 
         }, 
         
-        [&](sycl::queue&  queue, PatchDataBuffer& buf, sycl::range<1> range_npart ,flt hdt){
+        [&](sycl::queue&  queue, PatchData& pdat, sycl::range<1> range_npart ,flt hdt){
             
-            sycl::buffer<vec3> & vxyz =  * buf.get_field<vec3>(ivxyz);
-            sycl::buffer<vec3> & axyz =  * buf.get_field<vec3>(iaxyz);
+            sycl::buffer<vec3> & vxyz =  * pdat.get_field<vec3>(ivxyz).get_buf();
+            sycl::buffer<vec3> & axyz =  * pdat.get_field<vec3>(iaxyz).get_buf();
 
             field_advance_time(queue, vxyz, axyz, range_npart, hdt);
 
         }, 
         
-        [&](sycl::queue&  queue, PatchDataBuffer& buf, sycl::range<1> range_npart ){
+        [&](sycl::queue&  queue, PatchData& pdat, sycl::range<1> range_npart ){
             auto ker_predict_step = [&](sycl::handler &cgh) {
-                auto acc_axyz = buf.get_field<vec3>(iaxyz)->template get_access<sycl::access::mode::read_write>(cgh);
-                auto acc_axyz_old = buf.get_field<vec3>(iaxyz_old)->template get_access<sycl::access::mode::read_write>(cgh);
+                auto acc_axyz = pdat.get_field<vec3>(iaxyz).get_buf()->template get_access<sycl::access::mode::read_write>(cgh);
+                auto acc_axyz_old = pdat.get_field<vec3>(iaxyz_old).get_buf()->template get_access<sycl::access::mode::read_write>(cgh);
 
                 // Executing kernel
                 cgh.parallel_for(range_npart, [=](sycl::item<1> item) {

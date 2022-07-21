@@ -205,25 +205,25 @@ namespace sph {
         step_time += dt_cur;
 
         //leapfrog predictor
-        sched.for_each_patch_buf([&](u64 id_patch, Patch cur_p, PatchDataBuffer &pdat_buf) {
+        sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
 
             logger::debug_ln("SPHLeapfrog", "patch : n°",id_patch,"->","predictor");
 
-            lambda_update_time(sycl_handler::get_compute_queue(),pdat_buf,sycl::range<1> {pdat_buf.element_count},dt_cur/2);
+            lambda_update_time(sycl_handler::get_compute_queue(),pdat,sycl::range<1> {pdat.get_obj_cnt()},dt_cur/2);
 
-            sycl_move_parts(sycl_handler::get_compute_queue(), pdat_buf.element_count, dt_cur,
-                                              pdat_buf.get_field<vec3>(ixyz), pdat_buf.get_field<vec3>(ivxyz));
+            sycl_move_parts(sycl_handler::get_compute_queue(), pdat.get_obj_cnt(), dt_cur,
+                                              pdat.get_field<vec3>(ixyz).get_buf(), pdat.get_field<vec3>(ivxyz).get_buf());
 
-            lambda_update_time(sycl_handler::get_compute_queue(),pdat_buf,sycl::range<1> {pdat_buf.element_count},dt_cur/2);
+            lambda_update_time(sycl_handler::get_compute_queue(),pdat,sycl::range<1> {pdat.get_obj_cnt()},dt_cur/2);
 
 
             logger::debug_ln("SPHLeapfrog", "patch : n°",id_patch,"->","dt fields swap");
 
-            lambda_swap_der(sycl_handler::get_compute_queue(),pdat_buf,sycl::range<1> {pdat_buf.element_count});
+            lambda_swap_der(sycl_handler::get_compute_queue(),pdat,sycl::range<1> {pdat.get_obj_cnt()});
 
             if (periodic_mode) {//TODO generalise position modulo in the scheduler
-                sycl_position_modulo(sycl_handler::get_compute_queue(), pdat_buf.element_count,
-                                               pdat_buf.get_field<vec3>(ixyz), sched.get_box_volume<vec3>());
+                sycl_position_modulo(sycl_handler::get_compute_queue(), pdat.get_obj_cnt(),
+                                               pdat.get_field<vec3>(ixyz).get_buf(), sched.get_box_volume<vec3>());
             }
         });
 
@@ -239,9 +239,14 @@ namespace sph {
 
         //compute hmax
         PatchField<flt> h_field;
+        //sched.compute_patch_field(
+        //    h_field, get_mpi_type<flt>(), [loc_htol_up_tol](sycl::queue &queue, Patch &p, PatchDataBuffer &pdat_buf) {
+        //        return patchdata::sph::get_h_max<flt>(pdat_buf.pdl, queue, pdat_buf) * loc_htol_up_tol * Kernel::Rkern;
+        //    });
+
         sched.compute_patch_field(
-            h_field, get_mpi_type<flt>(), [loc_htol_up_tol](sycl::queue &queue, Patch &p, PatchDataBuffer &pdat_buf) {
-                return patchdata::sph::get_h_max<flt>(pdat_buf.pdl, queue, pdat_buf) * loc_htol_up_tol * Kernel::Rkern;
+            h_field, get_mpi_type<flt>(), [loc_htol_up_tol](sycl::queue &queue, Patch &p, PatchData &pdat) {
+                return patchdata::sph::get_h_max<flt>(pdat.pdl, queue, pdat) * loc_htol_up_tol * Kernel::Rkern;
             });
 
         timer_h_max.stop();

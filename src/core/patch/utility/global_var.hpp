@@ -9,6 +9,7 @@
 #pragma once
 
 #include "aliases.hpp"
+#include "core/patch/base/patchdata.hpp"
 #include "core/patch/scheduler/scheduler_mpi.hpp"
 
 enum GlobalVariableType{
@@ -31,15 +32,15 @@ class GlobalVariable{
     inline void compute_var_patch(PatchScheduler & sched, Lambda && compute_fct){
 
 
-        sched.for_each_patch_buf([&](u64 id_patch, Patch cur_p, PatchDataBuffer &pdat_buf) {
-
+        //sched.for_each_patch_buf([&](u64 id_patch, Patch cur_p, PatchDataBuffer &pdat_buf) {
+        sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
             static_assert(
                 std::is_same<
-                    decltype(compute_fct(id_patch,pdat_buf)),
+                    decltype(compute_fct(id_patch,pdat)),
                     T>::value
                 , "lambda funct should return the Global variable type");
             
-            val_map[id_patch] = compute_fct(id_patch,pdat_buf);
+            val_map[id_patch] = compute_fct(id_patch,pdat);
 
         });
 
