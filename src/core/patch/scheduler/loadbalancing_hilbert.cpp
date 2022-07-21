@@ -123,7 +123,7 @@ std::vector<std::tuple<u64, i32, i32, i32>> HilbertLB::make_change_list(std::vec
         //pack nodes
         sycl_handler::get_alt_queue().submit([&](sycl::handler &cgh) {
             auto ptch = patch_buf.get_access<sycl::access::mode::read>(cgh);
-            auto pdt  = dt_buf.get_access<sycl::access::mode::read>(cgh);
+            //auto pdt  = dt_buf.get_access<sycl::access::mode::read>(cgh);
             auto chosen_node = new_owner.get_access<sycl::access::mode::write>(cgh);
 
             cgh.parallel_for<class Edit_chosen_node>(range, [=](sycl::item<1> item) {

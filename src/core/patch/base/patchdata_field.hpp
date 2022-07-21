@@ -13,12 +13,14 @@
 #include <iostream>
 #include <memory>
 #include <random>
+#include <type_traits>
 #include <vector>
 
 
 
 #include "aliases.hpp"
 
+#include "core/patch/base/enabled_fields.hpp"
 #include "core/sys/log.hpp"
 #include "core/sys/sycl_handler.hpp"
 #include "core/sys/sycl_mpi_interop.hpp"
@@ -32,6 +34,34 @@
 
 template<class T>
 class PatchDataField {
+
+    static constexpr bool isprimitive = 
+        std::is_same<T, f32>::value ||
+        std::is_same<T, f64>::value ||
+        std::is_same<T, u32>::value ||
+        std::is_same<T, u64>::value;
+
+    static constexpr bool is_in_type_list = 
+        #define X(args)  std::is_same<T, args>::value ||
+        XMAC_LIST_ENABLED_FIELD true
+        #undef X
+        ;
+
+    static_assert(is_in_type_list
+        , "PatchDataField must be one of those types : "
+
+        #define X(args) #args " "
+        XMAC_LIST_ENABLED_FIELD
+        #undef X
+        );
+
+    using EnableIfPrimitive = enable_if_t<isprimitive>;
+
+    using EnableIfVec = enable_if_t< is_in_type_list && (!isprimitive)>;
+
+
+
+
 
     std::unique_ptr<sycl::buffer<T>> buf;
 
@@ -173,7 +203,7 @@ class PatchDataField {
             _alloc();
         }else if (new_size > capacity) {
             
-            u32 old_capa = capacity;
+            //u32 old_capa = capacity;
             capacity = safe_fact*new_size;
 
             sycl::buffer<T>* old_buf = buf.release();
@@ -255,6 +285,23 @@ class PatchDataField {
 
         }
 
+    }
+
+    inline void overwrite(PatchDataField<T> &f2, u32 obj_cnt){
+        if(val_cnt < obj_cnt){
+            throw shamrock_exc("to overwrite you need more element in the field");
+        }
+
+        {
+            sycl::host_accessor acc {*buf};
+            sycl::host_accessor acc_f2{*f2.get_buf()};
+
+            for (u32 i = 0; i < obj_cnt; i++) {
+                //field_data[idx_st + i] = f2.field_data[i];
+                acc[i] = acc_f2[i];
+            }
+
+        }
     }
 
     inline void override(sycl::buffer<T> & data){
@@ -390,7 +437,7 @@ namespace patchdata_field {
     inline u64 irecv(PatchDataField<T> &p, std::vector<PatchDataFieldMpiRequest<T>> &rq_lst, i32 rank_source, i32 tag, MPI_Comm comm){
         MPI_Status st;
         i32 cnt;
-        int i = mpi::probe(rank_source, tag,comm, & st);
+        mpi::probe(rank_source, tag,comm, & st);
         mpi::get_count(&st, get_mpi_type<T>(), &cnt);
 
         u32 len = cnt / p.get_nvar();

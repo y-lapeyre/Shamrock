@@ -49,8 +49,8 @@ template<class flt, class T>
 auto MergedPatchCompField<flt,T>::merge_patches_cfield(
     PatchScheduler & sched,
     InterfaceHandler<vec, flt> & interface_hndl,
-    PatchComputeField<f32> & comp_field,
-    PatchComputeFieldInterfaces<f32> & comp_field_interf) -> std::unordered_map<u64,MergedPatchCompField<flt,T>> {
+    PatchComputeField<T> & comp_field,
+    PatchComputeFieldInterfaces<T> & comp_field_interf) -> std::unordered_map<u64,MergedPatchCompField<flt,T>> {
 
 
     std::unordered_map<u64,MergedPatchCompField<flt,T>> merged_data;
@@ -58,11 +58,26 @@ auto MergedPatchCompField<flt,T>::merge_patches_cfield(
 
     sched.for_each_patch([&](u64 id_patch, Patch cur_p) {
 
+        auto compfield = comp_field.get_field(id_patch);
 
+        merged_data.emplace(id_patch,MergedPatchCompField<flt,T>());
 
+        auto merged_field = merged_data.at(id_patch);
+
+        merged_field.or_element_cnt = compfield.size();
+        merged_field.buf.insert(compfield);
+
+        std::vector<std::tuple<u64, std::unique_ptr<PatchDataField<T>>>> & p_interf_lst = comp_field_interf.interface_map[id_patch];
+
+        for (auto & [int_pid, pdat_ptr] : p_interf_lst) {
+
+            merged_field.buf.insert(*pdat_ptr);
+
+        }
 
     });
 
+    return merged_data;
 
 }
 

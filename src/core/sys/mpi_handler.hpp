@@ -33,6 +33,7 @@ namespace mpi_handler{
     inline bool working = false;
 
     inline i32 world_rank, world_size;
+    inline u32 uworld_rank, uworld_size;
     //inline Logger* global_logger;
 
     /**
@@ -51,7 +52,6 @@ namespace mpi_handler{
     * 
     */
     void close();
-
 
 
 

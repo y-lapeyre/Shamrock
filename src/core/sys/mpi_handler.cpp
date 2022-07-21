@@ -47,6 +47,9 @@ void mpi_handler::init(){
     mpi::comm_size(MPI_COMM_WORLD, &world_size);
     mpi::comm_rank(MPI_COMM_WORLD, &world_rank);
 
+    uworld_rank = world_rank;
+    uworld_size = world_size;
+
 
     if(world_size < 1){
         throw "";

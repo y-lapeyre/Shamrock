@@ -144,6 +144,15 @@ void PatchData::insert_elements(PatchData & pdat){
 
 }
 
+void PatchData::overwrite(PatchData &pdat, u32 obj_cnt){
+    #define X(arg) \
+        for(u32 idx = 0; idx < pdl.fields_##arg.size(); idx++){\
+            fields_##arg[idx].overwrite(pdat.fields_##arg[idx],obj_cnt);\
+        }
+    XMAC_LIST_ENABLED_FIELD
+    #undef X
+}
+
 
 
 void PatchData::resize(u32 new_obj_cnt){

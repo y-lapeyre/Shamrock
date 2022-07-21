@@ -77,20 +77,22 @@ class PatchData {
     void append_subset_to(std::vector<u32> & idxs, PatchData & pdat);
 
     inline u32 get_obj_cnt(){
-        u32 ret;
         if(pdl.xyz_mode == xyz32){
             u32 ixyz = pdl.get_field_idx<f32_3>("xyz");
-            ret = fields_f32_3[ixyz].get_obj_cnt();
-        }else if(pdl.xyz_mode == xyz64){
-            u32 ixyz = pdl.get_field_idx<f64_3>("xyz");
-            ret = fields_f64_3[ixyz].get_obj_cnt();
+            return fields_f32_3[ixyz].get_obj_cnt();
         }
-        return ret;
+        if(pdl.xyz_mode == xyz64){
+            u32 ixyz = pdl.get_field_idx<f64_3>("xyz");
+            return fields_f64_3[ixyz].get_obj_cnt();
+        }
+        throw shamrock_exc("patchdata layout is not xyz32 or xyz64");
     }
 
     inline bool is_empty(){
         return get_obj_cnt() == 0;
     }
+
+    void overwrite(PatchData & pdat, u32 obj_cnt);
 
     /*
     inline void expand(u32 obj_to_add){
@@ -164,7 +166,7 @@ class PatchData {
 
 
 
-    template<class T> PatchDataField<T> & get_field(u32 idx){}
+    template<class T> PatchDataField<T> & get_field(u32 idx);
 
     #define X(_arg) template<> inline PatchDataField<_arg> & get_field(u32 idx){return fields_##_arg.at(idx);}
     XMAC_LIST_ENABLED_FIELD

@@ -25,7 +25,7 @@ class MergedPatchData {public:
 
     using vec = sycl::vec<flt, 3>;
 
-    u32 or_element_cnt;
+    u32 or_element_cnt = 0;
     PatchData data;
     std::tuple<vec,vec> box;
 
@@ -35,24 +35,31 @@ class MergedPatchData {public:
         PatchScheduler & sched,
         InterfaceHandler<vec, flt> & interface_hndl);
 
-    
+    inline void write_back(PatchData & pdat){
+        pdat.overwrite(data, or_element_cnt);
+    }
 
 };
 
 template<class flt,class T>
 class MergedPatchCompField {public:
 
-
     using vec = sycl::vec<flt, 3>;
 
-    u32 or_element_cnt;
+    u32 or_element_cnt = 0;
     PatchDataField<T> buf;
+
+    MergedPatchCompField() : buf("comp_field",1) {};
 
     static std::unordered_map<u64,MergedPatchCompField<flt,T>> merge_patches_cfield(  
         PatchScheduler & sched,
         InterfaceHandler<vec, flt> & interface_hndl,
-        PatchComputeField<f32> & comp_field,
-        PatchComputeFieldInterfaces<f32> & comp_field_interf);
+        PatchComputeField<T> & comp_field,
+        PatchComputeFieldInterfaces<T> & comp_field_interf);
+
+    inline void write_back(PatchDataField<T> & field){
+        field.overwrite(buf, or_element_cnt);
+    }
 
 };
 
@@ -110,14 +117,15 @@ class MergedPatchCompField {public:
 
 
 template<class vec>
-struct MergedPatchDataBuffer {public:
+
+struct [[deprecated]] MergedPatchDataBuffer {public:
     u32 or_element_cnt;
     std::unique_ptr<PatchDataBuffer> data;
     std::tuple<vec,vec> box;
 };
 
 template<class T>
-struct MergedPatchCompFieldBuffer {public:
+struct [[deprecated]]MergedPatchCompFieldBuffer {public:
     u32 or_element_cnt;
     std::unique_ptr<sycl::buffer<T>> buf;
 };
@@ -125,6 +133,7 @@ struct MergedPatchCompFieldBuffer {public:
 
 
 template<class pos_prec,class pos_vec>
+[[deprecated]]
 inline void make_merge_patches(
     PatchScheduler & sched,
     InterfaceHandler<pos_vec, pos_prec> & interface_hndl,
@@ -327,6 +336,7 @@ inline void make_merge_patches(
 
 
 template<class pos_prec,class pos_vec>
+[[deprecated]]
 inline void write_back_merge_patches(
     PatchScheduler & sched,
     InterfaceHandler<pos_vec, pos_prec> & interface_hndl,
@@ -361,6 +371,7 @@ inline void write_back_merge_patches(
 
 
 template<class pos_prec,class pos_vec,class T>
+[[deprecated]]
 inline void make_merge_patches_comp_field(
     PatchScheduler & sched,
     InterfaceHandler<pos_vec, pos_prec> & interface_hndl,

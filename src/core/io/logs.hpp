@@ -26,8 +26,8 @@ namespace logfiles {
 
     inline void open_log_files(){
         if(dump_timings){
-            timing_files.resize(mpi_handler::world_size);
-            for(u32 id = 0 ; id < mpi_handler::world_size ; id++){
+            timing_files.resize(mpi_handler::uworld_size);
+            for(u32 id = 0 ; id < mpi_handler::uworld_size ; id++){
                 std::string fname = "timing_"+std::to_string(id) + ".txt";
 
                 int rc = mpi::file_open(MPI_COMM_WORLD, fname.c_str(), MPI_MODE_CREATE | MPI_MODE_WRONLY , MPI_INFO_NULL, &timing_files[id]);
