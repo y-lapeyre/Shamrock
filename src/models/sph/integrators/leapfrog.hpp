@@ -260,49 +260,71 @@ namespace sph {
         logger::debug_ln("SPHLeapfrog", "communicate interfaces");
         interface_hndl.comm_interfaces(sched, periodic_mode);
 
+        
+        
         logger::debug_ln("SPHLeapfrog", "merging interfaces with data");
         // merging strategy
         auto tmerge_buf = timings::start_timer("buffer merging", timings::sycl);
+        
+        
+        
         std::unordered_map<u64, MergedPatchDataBuffer<vec3>> merge_pdat_buf;
         make_merge_patches(sched, interface_hndl, merge_pdat_buf);
+
+
+        std::unordered_map<u64, MergedPatchData<flt>> merge_pdat = 
+            MergedPatchData<flt>::merge_patches(sched,interface_hndl);
+
+
+
+
+        
+
+
         sycl_handler::get_compute_queue().wait();
         tmerge_buf.stop();
+        
 
         //make trees
         auto tgen_trees = timings::start_timer("radix tree gen", timings::sycl);
         std::unordered_map<u64, std::unique_ptr<Radix_Tree<u_morton, vec3>>> radix_trees;
 
-        sched.for_each_patch([&](u64 id_patch, Patch cur_p) {
+        sched.for_each_patch([&](u64 id_patch, Patch  /*cur_p*/) {
             logger::debug_ln("SPHLeapfrog","patch : n°",id_patch,"->","making Radix Tree");
 
-            if (merge_pdat_buf.at(id_patch).or_element_cnt == 0)
+            if (merge_pdat.at(id_patch).or_element_cnt == 0)
                 logger::debug_ln("SPHLeapfrog","patch : n°",id_patch,"->","is empty skipping tree build");
 
-            PatchDataBuffer &mpdat_buf = *merge_pdat_buf.at(id_patch).data;
+            //PatchDataBuffer &mpdat_buf = *merge_pdat_buf.at(id_patch).data;
+            PatchData & mpdat = merge_pdat.at(id_patch).data;
 
-            std::tuple<vec3, vec3> &box = merge_pdat_buf.at(id_patch).box;
+            auto buf_xyz = mpdat.get_field<vec3>(ixyz).get_sub_buf();
+
+            std::tuple<vec3, vec3> &box = merge_pdat.at(id_patch).box;
 
             // radix tree computation
             radix_trees[id_patch] = std::make_unique<Radix_Tree<u_morton, vec3>>(sycl_handler::get_compute_queue(), box,
-                                                                                    mpdat_buf.get_field<vec3>(ixyz));
+                                                                                    buf_xyz);
         });
 
-        sched.for_each_patch([&](u64 id_patch, Patch cur_p) {
+        sched.for_each_patch([&](u64 id_patch, Patch  /*cur_p*/) {
             logger::debug_ln("SPHLeapfrog","patch : n°",id_patch,"->","compute radix tree cell volumes");
-            if (merge_pdat_buf.at(id_patch).or_element_cnt == 0)
+            if (merge_pdat.at(id_patch).or_element_cnt == 0)
                 logger::debug_ln("SPHLeapfrog","patch : n°",id_patch,"->","is empty skipping tree volumes step");
 
             radix_trees[id_patch]->compute_cellvolume(sycl_handler::get_compute_queue());
         });
 
-        sched.for_each_patch([&](u64 id_patch, Patch cur_p) {
+        sched.for_each_patch([&](u64 id_patch, Patch  /*cur_p*/) {
             logger::debug_ln("SPHLeapfrog","patch : n°",id_patch,"->","compute Radix Tree interaction boxes");
-            if (merge_pdat_buf.at(id_patch).or_element_cnt == 0)
+            if (merge_pdat.at(id_patch).or_element_cnt == 0)
                 logger::debug_ln("SPHLeapfrog","patch : n°",id_patch,"->","is empty skipping interaction box compute");
 
-            PatchDataBuffer &mpdat_buf = *merge_pdat_buf.at(id_patch).data;
+            PatchData & mpdat = merge_pdat.at(id_patch).data;
 
-            radix_trees[id_patch]->compute_int_boxes(sycl_handler::get_compute_queue(), mpdat_buf.get_field<flt>(ihpart), htol_up_tol);
+            auto buf_h = mpdat.get_field<flt>(ihpart).get_sub_buf();
+
+            radix_trees[id_patch]->compute_int_boxes(sycl_handler::get_compute_queue(), buf_h, htol_up_tol);
         });
         sycl_handler::get_compute_queue().wait();
         tgen_trees.stop();
@@ -321,34 +343,34 @@ namespace sph {
         auto time_hiter = timings::start_timer("h iter", timings::sycl);
 
         //iterate smoothing lenght
-        sched.for_each_patch([&](u64 id_patch, Patch cur_p) {
+        sched.for_each_patch([&](u64 id_patch, Patch  /*cur_p*/) {
 
             logger::debug_ln("SPHLeapfrog","patch : n°",id_patch,"->","Init h iteration");
-            if (merge_pdat_buf.at(id_patch).or_element_cnt == 0)
+            if (merge_pdat.at(id_patch).or_element_cnt == 0)
                 logger::debug_ln("SPHLeapfrog","patch : n°",id_patch,"->","is empty skipping h iteration");
 
-            PatchDataBuffer &pdat_buf_merge = *merge_pdat_buf.at(id_patch).data;
+            PatchData &pdat_merge = merge_pdat.at(id_patch).data;
 
             auto hnew  = hnew_field.get_sub_buf(id_patch);
             auto omega = omega_field.get_sub_buf(id_patch);
-            sycl::buffer<flt> eps_h  = sycl::buffer<flt>(merge_pdat_buf.at(id_patch).or_element_cnt);
+            sycl::buffer<flt> eps_h  = sycl::buffer<flt>(merge_pdat.at(id_patch).or_element_cnt);
 
-            sycl::range range_npart{merge_pdat_buf.at(id_patch).or_element_cnt};
+            sycl::range range_npart{merge_pdat.at(id_patch).or_element_cnt};
 
-            logger::debug_ln("SPHLeapfrog","merging -> original size :" , merge_pdat_buf.at(id_patch).or_element_cnt
-                      , "| merged :" , pdat_buf_merge.element_count);
+            logger::debug_ln("SPHLeapfrog","merging -> original size :" , merge_pdat.at(id_patch).or_element_cnt
+                      , "| merged :" , pdat_merge.get_obj_cnt());
 
             models::sph::algs::SmoothingLenghtCompute<flt, u32, Kernel> h_iterator(sched.pdl, htol_up_tol, htol_up_iter);
 
-            h_iterator.iterate_smoothing_lenght(sycl_handler::get_compute_queue(), merge_pdat_buf.at(id_patch).or_element_cnt,
-                                                sph_gpart_mass, *radix_trees[id_patch], pdat_buf_merge, *hnew, *omega, eps_h);
+            h_iterator.iterate_smoothing_lenght(sycl_handler::get_compute_queue(), merge_pdat.at(id_patch).or_element_cnt,
+                                                sph_gpart_mass, *radix_trees[id_patch], pdat_merge, *hnew, *omega, eps_h);
 
             // write back h test
             //*
             sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
                 auto h_new = hnew->template get_access<sycl::access::mode::read>(cgh);
 
-                auto acc_hpart = pdat_buf_merge.get_field<flt>(ihpart)->template get_access<sycl::access::mode::write>(cgh);
+                auto acc_hpart = pdat_merge.get_field<flt>(ihpart).get_buf()->template get_access<sycl::access::mode::write>(cgh);
 
                 cgh.parallel_for(range_npart,
                                                      [=](sycl::item<1> item) { acc_hpart[item] = h_new[item]; });
@@ -387,7 +409,7 @@ namespace sph {
 
         auto time_lambda_post_sync = timings::start_timer("post sync", timings::sycl);
 
-        lambda_post_sync(sched, merge_pdat_buf,hnew_field_merged,omega_field_merged);
+        lambda_post_sync(sched, merge_pdat,hnew_field_merged,omega_field_merged);
 
         time_lambda_post_sync.stop();
 
@@ -396,7 +418,7 @@ namespace sph {
 
         //compute force
         if (do_force) {
-            lambda_compute_forces(sched,radix_trees,merge_pdat_buf,hnew_field_merged,omega_field_merged,htol_up_tol);
+            lambda_compute_forces(sched,radix_trees,merge_pdat,hnew_field_merged,omega_field_merged,htol_up_tol);
         }
 
         time_force.stop();
@@ -405,12 +427,12 @@ namespace sph {
 
 
         //leapfrog corrector
-        sched.for_each_patch([&](u64 id_patch, Patch cur_p) {
-            if (merge_pdat_buf.at(id_patch).or_element_cnt == 0){
+        sched.for_each_patch([&](u64 id_patch, Patch  /*cur_p*/) {
+            if (merge_pdat.at(id_patch).or_element_cnt == 0){
                 std::cout << " empty => skipping" << std::endl;return;
             }
 
-            PatchDataBuffer &pdat_buf_merge = *merge_pdat_buf.at(id_patch).data;
+            PatchData &pdat_merge = merge_pdat.at(id_patch).data;
 
             if (do_corrector) {
 
@@ -418,7 +440,7 @@ namespace sph {
 
                 
 
-                lambda_correct(sycl_handler::get_compute_queue(),pdat_buf_merge,sycl::range<1> {merge_pdat_buf.at(id_patch).or_element_cnt},dt_cur/2);
+                lambda_correct(sycl_handler::get_compute_queue(),pdat_merge,sycl::range<1> {merge_pdat.at(id_patch).or_element_cnt},dt_cur/2);
             }
         });
 
@@ -426,7 +448,8 @@ namespace sph {
 
         auto twrite_back = timings::start_timer("corrector", timings::sycl);
 
-        write_back_merge_patches(sched, interface_hndl, merge_pdat_buf);
+        //write_back_merge_patches(sched, interface_hndl, merge_pdat);
+        write_back_merge_patches(sched, merge_pdat);
 
         twrite_back.stop();
 

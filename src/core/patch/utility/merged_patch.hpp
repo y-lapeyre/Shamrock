@@ -31,6 +31,7 @@ class MergedPatchData {public:
 
     MergedPatchData(PatchDataLayout & pdl) : data(pdl){};
 
+    [[nodiscard]]
     static std::unordered_map<u64,MergedPatchData<flt>> merge_patches(
         PatchScheduler & sched,
         InterfaceHandler<vec, flt> & interface_hndl);
@@ -40,6 +41,30 @@ class MergedPatchData {public:
     }
 
 };
+
+
+template<class flt>
+inline void write_back_merge_patches(
+    PatchScheduler & sched,
+    std::unordered_map<u64,MergedPatchData<flt>> & merge_pdat){
+
+
+    logger::debug_sycl_ln("Merged Patch","write back merged buffers");
+
+    
+
+    sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData & pdat) {
+        if(merge_pdat.at(id_patch).or_element_cnt == 0) std::cout << " empty => skipping" << std::endl;
+
+
+        logger::debug_sycl_ln("Merged Patch","patch : n°",id_patch , "-> write back merge buf");
+
+
+        merge_pdat.at(id_patch).write_back(pdat);
+
+    });
+
+}
 
 template<class flt,class T>
 class MergedPatchCompField {public:
@@ -51,6 +76,7 @@ class MergedPatchCompField {public:
 
     MergedPatchCompField() : buf("comp_field",1) {};
 
+    [[nodiscard]]
     static std::unordered_map<u64,MergedPatchCompField<flt,T>> merge_patches_cfield(  
         PatchScheduler & sched,
         InterfaceHandler<vec, flt> & interface_hndl,

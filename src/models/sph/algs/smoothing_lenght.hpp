@@ -11,6 +11,7 @@
 
 #include "aliases.hpp"
 #include "core/io/logs.hpp"
+#include "core/patch/base/patchdata.hpp"
 #include "core/patch/interfaces/interface_handler.hpp"
 #include "core/patch/interfaces/interface_selector.hpp"
 #include "core/patch/patchdata_buffer.hpp"
@@ -53,6 +54,66 @@ class SmoothingLenghtCompute{
 
         this->htol_up_tol  = htol_up_tol;
         this->htol_up_iter = htol_up_iter;
+    }
+
+    inline void iterate_smoothing_lenght(
+        sycl::queue & queue,
+        u32 or_element_cnt,
+        
+        flt gpart_mass,
+
+        Rtree & radix_t,
+
+        PatchData & pdat_merge,
+        sycl::buffer<flt> & hnew,
+        sycl::buffer<flt> & omega,
+        sycl::buffer<flt> & eps_h){
+
+        auto timer = timings::start_timer("iterate_smoothing_lenght",timings::function);
+
+        impl::sycl_init_h_iter_bufs(queue, or_element_cnt,ihpart, pdat_merge, hnew, omega, eps_h);
+
+        for (u32 it_num = 0 ; it_num < 30; it_num++) {
+
+            impl::IntSmoothingLenghtCompute<morton_prec, Kernel>::template sycl_h_iter_step<flt>(queue, 
+                or_element_cnt, 
+                ihpart, 
+                ixyz,
+                gpart_mass,
+                htol_up_tol,
+                htol_up_iter,
+                radix_t,
+                pdat_merge, 
+                hnew, 
+                omega, 
+                eps_h);
+
+            //{
+            //    sycl::host_accessor acc {eps_h};
+            //
+            //    logger::raw_ln("------eps_h-----");
+            //    for (u32 i = 0; i < eps_h.size(); i ++) {
+            //        logger::raw(acc[i],",");
+            //    }
+            //    logger::raw_ln("----------------");
+            //}
+        }
+
+        impl::IntSmoothingLenghtCompute<morton_prec, Kernel>::template sycl_h_iter_omega<flt>(queue, 
+                or_element_cnt, 
+                ihpart, 
+                ixyz,
+                gpart_mass,
+                htol_up_tol,
+                htol_up_iter,
+                radix_t,
+                pdat_merge, 
+                hnew, 
+                omega, 
+                eps_h);
+
+        timer.stop();
+
     }
 
     inline void iterate_smoothing_lenght(

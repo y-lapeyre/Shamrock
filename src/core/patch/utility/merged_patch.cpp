@@ -26,7 +26,7 @@ auto MergedPatchData<flt>::merge_patches(
             [&](u64 patch_id, u64 interf_patch_id, PatchData & interfpdat, std::tuple<vec,vec> box){
 
                 std::get<0>(pbox) = sycl::min(std::get<0>(box),std::get<0>(pbox));
-                std::get<1>(pbox) = sycl::min(std::get<1>(box),std::get<1>(pbox));
+                std::get<1>(pbox) = sycl::max(std::get<1>(box),std::get<1>(pbox));
 
                 ret.data.insert_elements(interfpdat);
 

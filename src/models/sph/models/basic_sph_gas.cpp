@@ -138,7 +138,7 @@ f64 models::sph::BasicSPHGas<flt,Kernel>::evolve(PatchScheduler &sched, f64 old_
             queue.submit(ker_predict_step);
         },
         [&](PatchScheduler & sched, 
-            std::unordered_map<u64, MergedPatchDataBuffer<vec3>>& merge_pdat_buf, 
+            std::unordered_map<u64, MergedPatchData<flt>>& merge_pdat, 
             std::unordered_map<u64, MergedPatchCompFieldBuffer<flt>>& hnew_field_merged,
             std::unordered_map<u64, MergedPatchCompFieldBuffer<flt>>& omega_field_merged
             ) {
@@ -146,8 +146,8 @@ f64 models::sph::BasicSPHGas<flt,Kernel>::evolve(PatchScheduler &sched, f64 old_
 
                 std::unordered_map<u64, u32> size_map;
 
-                for(auto & [k,buf] : merge_pdat_buf){
-                    size_map[k] = buf.data->element_count;
+                for(auto & [k,buf] : merge_pdat){
+                    size_map[k] = buf.data.get_obj_cnt();
                 }
 
                 pressure_field.generate(sched,size_map);
@@ -183,25 +183,25 @@ f64 models::sph::BasicSPHGas<flt,Kernel>::evolve(PatchScheduler &sched, f64 old_
 
             PatchScheduler & sched, 
             std::unordered_map<u64, std::unique_ptr<Radix_Tree<u_morton, vec3>>>& radix_trees,
-            std::unordered_map<u64, MergedPatchDataBuffer<vec3>>& merge_pdat_buf, 
+            std::unordered_map<u64, MergedPatchData<flt>>& merge_pdat, 
             std::unordered_map<u64, MergedPatchCompFieldBuffer<flt>>& hnew_field_merged,
             std::unordered_map<u64, MergedPatchCompFieldBuffer<flt>>& omega_field_merged,
             flt htol_up_tol
             ){
             sched.for_each_patch([&](u64 id_patch, Patch cur_p) {
-                if (merge_pdat_buf.at(id_patch).or_element_cnt == 0){
+                if (merge_pdat.at(id_patch).or_element_cnt == 0){
                     logger::info_ln("BasicSPHGas","patch id =",id_patch,"is empty => skipping");
                 }
 
 
-                PatchDataBuffer &pdat_buf_merge = *merge_pdat_buf.at(id_patch).data;
+                PatchData & pdat_merge = merge_pdat.at(id_patch).data;
 
                 sycl::buffer<f32> &hnew  = *hnew_field_merged[id_patch].buf;
                 sycl::buffer<f32> &omega = *omega_field_merged[id_patch].buf;
 
                 auto press  = pressure_field.get_sub_buf(id_patch);
 
-                sycl::range range_npart{merge_pdat_buf.at(id_patch).or_element_cnt};
+                sycl::range range_npart{merge_pdat.at(id_patch).or_element_cnt};
 
             
                 logger::info_ln("BasicSPHGas","patch : n°" ,id_patch , "compute forces");
@@ -210,8 +210,8 @@ f64 models::sph::BasicSPHGas<flt,Kernel>::evolve(PatchScheduler &sched, f64 old_
                     auto h_new = hnew.get_access<sycl::access::mode::read>(cgh);
                     auto omga  = omega.get_access<sycl::access::mode::read>(cgh);
 
-                    auto r        = pdat_buf_merge.get_field<f32_3>(ixyz)->get_access<sycl::access::mode::read>(cgh);
-                    auto acc_axyz = pdat_buf_merge.get_field<f32_3>(iaxyz)->get_access<sycl::access::mode::discard_write>(cgh);
+                    auto r        = pdat_merge.get_field<f32_3>(ixyz).get_buf()->get_access<sycl::access::mode::read>(cgh);
+                    auto acc_axyz = pdat_merge.get_field<f32_3>(iaxyz).get_buf()->get_access<sycl::access::mode::discard_write>(cgh);
 
                     using Rta = walker::Radix_tree_accessor<u32, f32_3>;
                     Rta tree_acc(*radix_trees[id_patch], cgh);
@@ -298,13 +298,13 @@ f64 models::sph::BasicSPHGas<flt,Kernel>::evolve(PatchScheduler &sched, f64 old_
 
         }, 
         
-        [&](sycl::queue&  queue, PatchDataBuffer& buf, sycl::range<1> range_npart ,flt hdt){
+        [&](sycl::queue&  queue, PatchData& buf, sycl::range<1> range_npart ,flt hdt){
             
 
             auto ker_corect_step = [&](sycl::handler &cgh) {
-                auto acc_vxyz     = buf.get_field<vec3>(ivxyz)->template get_access<sycl::access::mode::read_write>(cgh);
-                auto acc_axyz     = buf.get_field<vec3>(iaxyz)->template get_access<sycl::access::mode::read_write>(cgh);
-                auto acc_axyz_old = buf.get_field<vec3>(iaxyz_old)->template get_access<sycl::access::mode::read_write>(cgh);
+                auto acc_vxyz     = buf.get_field<vec3>(ivxyz).get_buf()->template get_access<sycl::access::mode::read_write>(cgh);
+                auto acc_axyz     = buf.get_field<vec3>(iaxyz).get_buf()->template get_access<sycl::access::mode::read_write>(cgh);
+                auto acc_axyz_old = buf.get_field<vec3>(iaxyz_old).get_buf()->template get_access<sycl::access::mode::read_write>(cgh);
 
                 // Executing kernel
                 cgh.parallel_for(range_npart, [=](sycl::item<1> item) {
