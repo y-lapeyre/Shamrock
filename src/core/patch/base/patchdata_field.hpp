@@ -305,9 +305,9 @@ class PatchDataField {
         }
     }
 
-    inline void override(sycl::buffer<T> & data){
+    inline void override(sycl::buffer<T> & data, u32 cnt){
 
-        if(data.size() !=  val_cnt) throw shamrock_exc("buffer size doesn't match patchdata field size"); // TODO remove ref to size
+        if(cnt !=  val_cnt) throw shamrock_exc("buffer size doesn't match patchdata field size"); // TODO remove ref to size
 
         
 

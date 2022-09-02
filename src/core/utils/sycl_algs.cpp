@@ -1,5 +1,12 @@
+// -------------------------------------------------------//
+//
+// SHAMROCK code for hydrodynamics
+// Copyright(C) 2021-2022 Timothée David--Cléris <timothee.david--cleris@ens-lyon.fr>
+// Licensed under CeCILL 2.1 License, see LICENSE for more information
+//
+// -------------------------------------------------------//
+
 #include "sycl_algs.hpp"
-#include "CL/sycl/accessor.hpp"
 #include "core/patch/base/enabled_fields.hpp"
 
 template<class T>
@@ -86,7 +93,7 @@ namespace syclalgs {
     }
 
     namespace reduction {
-        bool is_all_true(sycl::buffer<u8> & buf){
+        bool is_all_true(sycl::buffer<u8> & buf,u32 cnt){
 
             //TODO do it on GPU pleeeaze
 
@@ -94,7 +101,7 @@ namespace syclalgs {
             {
                 sycl::host_accessor acc{buf};
 
-                for (u32 i = 0; i < buf.size(); i++) { //TODO remove ref to size
+                for (u32 i = 0; i < cnt; i++) { //TODO remove ref to size
                     res = res && (acc[i] != 0);
                 }
             }

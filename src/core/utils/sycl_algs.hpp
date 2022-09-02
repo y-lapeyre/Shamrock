@@ -1,6 +1,13 @@
+// -------------------------------------------------------//
+//
+// SHAMROCK code for hydrodynamics
+// Copyright(C) 2021-2022 Timothée David--Cléris <timothee.david--cleris@ens-lyon.fr>
+// Licensed under CeCILL 2.1 License, see LICENSE for more information
+//
+// -------------------------------------------------------//
+
 #pragma once
 
-#include "CL/sycl/buffer.hpp"
 #include "aliases.hpp"
 #include "core/sys/sycl_handler.hpp"
 
@@ -19,7 +26,7 @@ namespace syclalgs {
 
     namespace reduction {
 
-        bool is_all_true(sycl::buffer<u8> & buf);
+        bool is_all_true(sycl::buffer<u8> & buf, u32 cnt);
         
     }
 

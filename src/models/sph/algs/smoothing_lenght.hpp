@@ -227,18 +227,21 @@ inline void compute_smoothing_lenght(PatchScheduler &sched,bool periodic_mode,fl
         //make trees
         std::unordered_map<u64, std::unique_ptr<Radix_Tree<u_morton, vec>>> radix_trees;
 
+
         sched.for_each_patch([&](u64 id_patch, Patch cur_p) {
             std::cout << "patch : n°" << id_patch << " -> making radix tree" << std::endl;
             if (merge_pdat_buf.at(id_patch).or_element_cnt == 0)
                 std::cout << " empty => skipping" << std::endl;
 
-            PatchDataBuffer &mpdat_buf = *merge_pdat_buf.at(id_patch).data;
+            MergedPatchDataBuffer<vec> & mpdat = merge_pdat_buf.at(id_patch);
+
+            PatchDataBuffer &mpdat_buf = *mpdat.data;
 
             std::tuple<vec, vec> &box = merge_pdat_buf.at(id_patch).box;
 
             // radix tree computation
             radix_trees[id_patch] = std::make_unique<Radix_Tree<u_morton, vec>>(sycl_handler::get_compute_queue(), box,
-                                                                                    mpdat_buf.get_field<vec>(ixyz));
+                                                                                    mpdat_buf.get_field<vec>(ixyz), mpdat_buf.element_count);
         });
 
         sched.for_each_patch([&](u64 id_patch, Patch cur_p) {

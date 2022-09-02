@@ -151,7 +151,7 @@ struct [[deprecated]] MergedPatchDataBuffer {public:
 };
 
 template<class T>
-struct [[deprecated]]MergedPatchCompFieldBuffer {public:
+struct [[deprecated]] MergedPatchCompFieldBuffer {public:
     u32 or_element_cnt;
     std::unique_ptr<sycl::buffer<T>> buf;
 };

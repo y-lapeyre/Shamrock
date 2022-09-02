@@ -73,7 +73,7 @@ Test_start("SchedulerPatchList::",build_select_corectness,-1){
     for(const Patch &p : check_vec){
         patch_list.global.push_back(p);
     }
-    patch_list.build_local();
+    auto res = patch_list.build_local();
 
 
     //check corectness of local patch list

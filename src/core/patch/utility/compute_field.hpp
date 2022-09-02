@@ -9,6 +9,7 @@
 #pragma once
 
 #include "aliases.hpp"
+#include "core/patch/base/patchdata.hpp"
 #include "core/patch/base/patchdata_field.hpp"
 #include "core/patch/scheduler/scheduler_mpi.hpp"
 #include <memory>
@@ -28,9 +29,14 @@ class PatchComputeField{public:
 
 
     inline void generate(PatchScheduler & sched){
-        sched.for_each_patch_buf([&](u64 id_patch, Patch cur_p, PatchDataBuffer & pdat_buf) {
+        // sched.for_each_patch_buf([&](u64 id_patch, Patch cur_p, PatchDataBuffer & pdat_buf) {
+        //     field_data.insert({id_patch,PatchDataField<T>("comp_field",1)});
+        //     field_data.at(id_patch).resize(pdat_buf.element_count);
+        // });
+
+        sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData & pdat) {
             field_data.insert({id_patch,PatchDataField<T>("comp_field",1)});
-            field_data.at(id_patch).resize(pdat_buf.element_count);
+            field_data.at(id_patch).resize(pdat.get_obj_cnt());
         });
     }
 
@@ -44,15 +50,16 @@ class PatchComputeField{public:
 
 
     private:
-    std::unordered_map<u64, std::unique_ptr<sycl::buffer<T>>> field_data_buf;
+    //std::unordered_map<u64, std::unique_ptr<sycl::buffer<T>>> field_data_buf;
 
 
     public:
 
-    //inline std::unique_ptr<sycl::buffer<T>> & get_buf(u64 id_patch){
-    //    return field_data_buf.at(id_patch);
-    //}
+    inline std::unique_ptr<sycl::buffer<T>> & get_buf(u64 id_patch){
+        return field_data.at(id_patch).get_buf();
+    }
 
+    [[deprecated]]
     inline std::unique_ptr<sycl::buffer<T>> get_sub_buf(u64 id_patch){
         return field_data.at(id_patch).get_sub_buf();
     }

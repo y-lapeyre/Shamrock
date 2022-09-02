@@ -51,7 +51,7 @@ namespace impl {
 
             PatchDataField<f32_3> & pos_field = pdat.fields_f32_3[field_ipos];
 
-            auto pos_s_buf = pos_field.get_sub_buf();
+            auto & pos_s_buf = pos_field.get_buf();
 
             
 
@@ -110,7 +110,7 @@ namespace impl {
 
             PatchDataField<f64_3> & pos_field = pdat.fields_f64_3[field_ipos];
 
-            auto pos_d_buf = pos_field.get_sub_buf();
+            auto & pos_d_buf = pos_field.get_buf();
 
             queue.submit([&](sycl::handler &cgh) {
                 auto pos_d = pos_d_buf->get_access<sycl::access::mode::read>(cgh);

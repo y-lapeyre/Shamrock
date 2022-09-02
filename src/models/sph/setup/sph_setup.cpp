@@ -78,10 +78,11 @@ void models::sph::SetupSPH<flt,Kernel>::add_particules_fcc(PatchScheduler & sche
 
         part_cnt += vec_acc.size();
 
-        {        
+        {      
+            u32 len = vec_acc.size();
             PatchDataField<vec> & f = tmp.get_field<vec>(sched.pdl.get_field_idx<vec>("xyz"));
-            sycl::buffer<vec> buf (vec_acc.data(),vec_acc.size());
-            f.override(buf);
+            sycl::buffer<vec> buf (vec_acc.data(),len);
+            f.override(buf,len);
         }
 
         {

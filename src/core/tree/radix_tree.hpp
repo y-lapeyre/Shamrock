@@ -83,8 +83,8 @@ class Radix_Tree{public:
     std::unique_ptr<sycl::buffer<u8>>       buf_rchild_flag;
     std::unique_ptr<sycl::buffer<u32>>      buf_endrange;
 
-    inline Radix_Tree(sycl::queue & queue,std::tuple<vec3,vec3> treebox,std::unique_ptr<sycl::buffer<vec3>> & pos_buf){
-        if(pos_buf->size() > i32_max-1){
+    inline Radix_Tree(sycl::queue & queue,std::tuple<vec3,vec3> treebox,std::unique_ptr<sycl::buffer<vec3>> & pos_buf, u32 cnt_obj){
+        if(cnt_obj > i32_max-1){
             throw shamrock_exc("number of element in patch above i32_max-1");
         }
 
@@ -94,36 +94,36 @@ class Radix_Tree{public:
         box_coord = treebox;
 
         
-        u32 morton_len = get_next_pow2_val(pos_buf->size());
+        u32 morton_len = get_next_pow2_val(cnt_obj);
         logger::debug_sycl_ln("RadixTree", "morton buffer lenght :",morton_len);
 
         buf_morton = std::make_unique<sycl::buffer<u_morton>>(morton_len);
 
         logger::debug_sycl_ln("RadixTree","xyz to morton");
-        sycl_xyz_to_morton<u_morton,vec3>(queue, pos_buf->size(), pos_buf,std::get<0>(box_coord),std::get<1>(box_coord),buf_morton);
+        sycl_xyz_to_morton<u_morton,vec3>(queue, cnt_obj, pos_buf,std::get<0>(box_coord),std::get<1>(box_coord),buf_morton);
 
         logger::debug_sycl_ln("RadixTree","fill trailling buffer");
-        sycl_fill_trailling_buffer<u_morton>(queue, pos_buf->size(),morton_len,buf_morton);
+        sycl_fill_trailling_buffer<u_morton>(queue, cnt_obj,morton_len,buf_morton);
 
 
         logger::debug_sycl_ln("RadixTree","sorting morton buffer");
-        buf_particle_index_map = std::make_unique<sycl::buffer<u32>>(buf_morton->size());
+        buf_particle_index_map = std::make_unique<sycl::buffer<u32>>(morton_len);
 
         queue.submit([&](sycl::handler &cgh) {
             auto pidm = buf_particle_index_map->get_access<sycl::access::mode::discard_write>(cgh);
-            cgh.parallel_for(sycl::range(buf_morton->size()), [=](sycl::item<1> item) {
+            cgh.parallel_for(sycl::range(morton_len), [=](sycl::item<1> item) {
                 pidm[item] = item.get_id(0);
             });
         });
 
-        sycl_sort_morton_key_pair(queue, buf_morton->size(), buf_particle_index_map, buf_morton);
+        sycl_sort_morton_key_pair(queue, morton_len, buf_particle_index_map, buf_morton);
 
 
         // return a sycl buffer from reduc index map instead
         logger::debug_sycl_ln("RadixTree","reduction algorithm"); //TODO put reduction level in class member
-        reduction_alg(queue, pos_buf->size(), buf_morton, 5, reduc_index_map, tree_leaf_count);
+        reduction_alg(queue, cnt_obj, buf_morton, 5, reduc_index_map, tree_leaf_count);
         
-        logger::debug_sycl_ln("RadixTree","reduction results : (before :",pos_buf->size()," | after :",tree_leaf_count,") ratio :",format("%2.2f",f32(pos_buf->size())/f32(tree_leaf_count)));
+        logger::debug_sycl_ln("RadixTree","reduction results : (before :",cnt_obj," | after :",tree_leaf_count,") ratio :",format("%2.2f",f32(cnt_obj)/f32(tree_leaf_count)));
 
         if(tree_leaf_count > 1){
             buf_reduc_index_map = std::make_unique<sycl::buffer<u32>>(reduc_index_map.data(),reduc_index_map.size());

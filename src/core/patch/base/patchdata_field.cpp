@@ -45,8 +45,8 @@ template <class T> void PatchDataField<T>::extract_element(u32 pidx, PatchDataFi
 
         {
             
-            auto buf_to   = to.get_sub_buf();
-            auto buf_from = from.get_sub_buf();
+            auto & buf_to   = to.get_buf();
+            auto & buf_from = from.get_buf();
 
             sycl_handler::get_compute_queue().submit([&](sycl::handler & cgh){
 
@@ -84,14 +84,16 @@ template <class T> bool PatchDataField<T>::check_field_match(PatchDataField<T> &
     match = match && (obj_cnt == f2.obj_cnt);
     match = match && (val_cnt == f2.val_cnt);
 
+    u32 & check_len = val_cnt;
+
     {
 
         using buf_t = std::unique_ptr<sycl::buffer<T>>;
 
-        buf_t buf = get_sub_buf();
-        buf_t buf_f2 = f2.get_sub_buf();
+        buf_t & buf = get_buf();
+        buf_t & buf_f2 = f2.get_buf();
         
-        sycl::buffer<u8> res_buf(buf->size());
+        sycl::buffer<u8> res_buf(check_len);
 
         sycl_handler::get_compute_queue().submit([&](sycl::handler & cgh){
 
@@ -100,13 +102,13 @@ template <class T> bool PatchDataField<T>::check_field_match(PatchDataField<T> &
 
             sycl::accessor acc_res {res_buf, cgh, sycl::write_only, sycl::no_init};
 
-            cgh.parallel_for<PdatField_checkfieldmatch<T>>(sycl::range<1>{buf->size()}, [=](sycl::item<1> i){
+            cgh.parallel_for<PdatField_checkfieldmatch<T>>(sycl::range<1>{check_len}, [=](sycl::item<1> i){
                 acc_res[i] = test_sycl_eq(acc1[i] , acc2[i]);
             });
 
         });
         
-        match = match && syclalgs::reduction::is_all_true(res_buf);
+        match = match && syclalgs::reduction::is_all_true(res_buf,val_cnt);
 
     }
 
@@ -130,8 +132,8 @@ template <class T> void PatchDataField<T>::append_subset_to(std::vector<u32> &id
     {
         using buf_t = std::unique_ptr<sycl::buffer<T>>;
 
-        buf_t buf = get_sub_buf();
-        buf_t buf_other  = pfield.get_sub_buf();
+        buf_t & buf = get_buf();
+        buf_t & buf_other  = pfield.get_buf();
 
         sycl::buffer<u32> idxs_buf(idxs.data(), idxs.size());
 
@@ -185,7 +187,7 @@ template <> void PatchDataField<f32>::gen_mock_data(u32 obj_cnt, std::mt19937 &e
     std::uniform_real_distribution<f64> distf64(1, 6000);
 
     {
-        auto buf = get_sub_buf();
+        auto & buf = get_buf();
         sycl::host_accessor acc{*buf, sycl::write_only};
 
         for (u32 i = 0; i < val_cnt; i++) {
@@ -203,7 +205,7 @@ template <> void PatchDataField<f32_2>::gen_mock_data(u32 obj_cnt, std::mt19937 
     std::uniform_real_distribution<f64> distf64(1, 6000);
 
     {
-        auto buf = get_sub_buf();
+        auto & buf = get_buf();
         sycl::host_accessor acc{*buf, sycl::write_only};
 
         for (u32 i = 0; i < val_cnt; i++) {
@@ -217,7 +219,7 @@ template <> void PatchDataField<f32_3>::gen_mock_data(u32 obj_cnt, std::mt19937 
     std::uniform_real_distribution<f64> distf64(1, 6000);
 
     {
-        auto buf = get_sub_buf();
+        auto & buf = get_buf();
         sycl::host_accessor acc{*buf, sycl::write_only};
 
         for (u32 i = 0; i < val_cnt; i++) {
@@ -231,7 +233,7 @@ template <> void PatchDataField<f32_4>::gen_mock_data(u32 obj_cnt, std::mt19937 
     std::uniform_real_distribution<f64> distf64(1, 6000);
 
     {
-        auto buf = get_sub_buf();
+        auto & buf = get_buf();
         sycl::host_accessor acc{*buf, sycl::write_only};
 
         for (u32 i = 0; i < val_cnt; i++) {
@@ -245,7 +247,7 @@ template <> void PatchDataField<f32_8>::gen_mock_data(u32 obj_cnt, std::mt19937 
     std::uniform_real_distribution<f64> distf64(1, 6000);
 
     {
-        auto buf = get_sub_buf();
+        auto & buf = get_buf();
         sycl::host_accessor acc{*buf, sycl::write_only};
 
         for (u32 i = 0; i < val_cnt; i++) {
@@ -260,7 +262,7 @@ template <> void PatchDataField<f32_16>::gen_mock_data(u32 obj_cnt, std::mt19937
     std::uniform_real_distribution<f64> distf64(1, 6000);
 
     {
-        auto buf = get_sub_buf();
+        auto & buf = get_buf();
         sycl::host_accessor acc{*buf, sycl::write_only};
 
         for (u32 i = 0; i < val_cnt; i++) {
@@ -276,7 +278,7 @@ template <> void PatchDataField<f64>::gen_mock_data(u32 obj_cnt, std::mt19937 &e
     std::uniform_real_distribution<f64> distf64(1, 6000);
 
     {
-        auto buf = get_sub_buf();
+        auto & buf = get_buf();
         sycl::host_accessor acc{*buf, sycl::write_only};
 
         for (u32 i = 0; i < val_cnt; i++) {
@@ -290,7 +292,7 @@ template <> void PatchDataField<f64_2>::gen_mock_data(u32 obj_cnt, std::mt19937 
     std::uniform_real_distribution<f64> distf64(1, 6000);
 
     {
-        auto buf = get_sub_buf();
+        auto & buf = get_buf();
         sycl::host_accessor acc{*buf, sycl::write_only};
 
         for (u32 i = 0; i < val_cnt; i++) {
@@ -304,7 +306,7 @@ template <> void PatchDataField<f64_3>::gen_mock_data(u32 obj_cnt, std::mt19937 
     std::uniform_real_distribution<f64> distf64(1, 6000);
 
     {
-        auto buf = get_sub_buf();
+        auto & buf = get_buf();
         sycl::host_accessor acc{*buf, sycl::write_only};
 
         for (u32 i = 0; i < val_cnt; i++) {
@@ -318,7 +320,7 @@ template <> void PatchDataField<f64_4>::gen_mock_data(u32 obj_cnt, std::mt19937 
     std::uniform_real_distribution<f64> distf64(1, 6000);
 
     {
-        auto buf = get_sub_buf();
+        auto & buf = get_buf();
         sycl::host_accessor acc{*buf, sycl::write_only};
 
         for (u32 i = 0; i < val_cnt; i++) {
@@ -332,7 +334,7 @@ template <> void PatchDataField<f64_8>::gen_mock_data(u32 obj_cnt, std::mt19937 
     std::uniform_real_distribution<f64> distf64(1, 6000);
 
     {
-        auto buf = get_sub_buf();
+        auto & buf = get_buf();
         sycl::host_accessor acc{*buf, sycl::write_only};
 
         for (u32 i = 0; i < val_cnt; i++) {
@@ -347,7 +349,7 @@ template <> void PatchDataField<f64_16>::gen_mock_data(u32 obj_cnt, std::mt19937
     std::uniform_real_distribution<f64> distf64(1, 6000);
 
     {
-        auto buf = get_sub_buf();
+        auto & buf = get_buf();
         sycl::host_accessor acc{*buf, sycl::write_only};
 
         for (u32 i = 0; i < val_cnt; i++) {
@@ -363,7 +365,7 @@ template <> void PatchDataField<u32>::gen_mock_data(u32 obj_cnt, std::mt19937 &e
     std::uniform_int_distribution<u32> distu32(1, 6000);
 
     {
-        auto buf = get_sub_buf();
+        auto & buf = get_buf();
         sycl::host_accessor acc{*buf, sycl::write_only};
 
         for (u32 i = 0; i < val_cnt; i++) {
@@ -376,7 +378,7 @@ template <> void PatchDataField<u64>::gen_mock_data(u32 obj_cnt, std::mt19937 &e
     std::uniform_int_distribution<u64> distu64(1, 6000);
 
     {
-        auto buf = get_sub_buf();
+        auto & buf = get_buf();
         sycl::host_accessor acc{*buf, sycl::write_only};
 
         for (u32 i = 0; i < val_cnt; i++) {

@@ -1,3 +1,11 @@
+// -------------------------------------------------------//
+//
+// SHAMROCK code for hydrodynamics
+// Copyright(C) 2021-2022 Timothée David--Cléris <timothee.david--cleris@ens-lyon.fr>
+// Licensed under CeCILL 2.1 License, see LICENSE for more information
+//
+// -------------------------------------------------------//
+
 #pragma once
 
 #include "core/patch/base/patchdata_field.hpp"
@@ -7,12 +15,12 @@ namespace impl::copy_to_host {
     using namespace patchdata_field;
 
     namespace send {
-        template <class T> inline T *init(PatchDataField<T> &pdat_field, u32 comm_sz) {
+        template <class T> inline T * init(PatchDataField<T> &pdat_field, u32 comm_sz) {
 
             T *comm_ptr = sycl::malloc_host<T>(comm_sz, sycl_handler::get_compute_queue());
             logger::debug_sycl_ln("PatchDataField MPI Comm", "sycl::malloc_host", comm_sz, "->", comm_ptr);
 
-            auto buf = pdat_field.get_sub_buf();
+            auto & buf = pdat_field.get_buf();
 
             if (pdat_field.size() > 0) {
                 logger::debug_sycl_ln("PatchDataField MPI Comm", "copy buffer -> USM");
@@ -50,7 +58,7 @@ namespace impl::copy_to_host {
         };
 
         template <class T> void finalize(PatchDataField<T> &pdat_field, T *comm_ptr, u32 comm_sz) {
-            auto buf = pdat_field.get_sub_buf();
+            auto & buf = pdat_field.get_buf();
 
             if (pdat_field.size() > 0) {
                 logger::debug_sycl_ln("PatchDataField MPI Comm", "copy USM -> buffer");

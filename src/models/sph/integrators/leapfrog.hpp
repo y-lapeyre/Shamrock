@@ -304,7 +304,7 @@ namespace sph {
 
             // radix tree computation
             radix_trees[id_patch] = std::make_unique<Radix_Tree<u_morton, vec3>>(sycl_handler::get_compute_queue(), box,
-                                                                                    buf_xyz);
+                                                                                    buf_xyz,mpdat.get_obj_cnt());
         });
 
         sched.for_each_patch([&](u64 id_patch, Patch  /*cur_p*/) {

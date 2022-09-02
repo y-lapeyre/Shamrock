@@ -12,11 +12,11 @@
 #include "base/patch.hpp"
 #include "base/patchdata.hpp"
 #include "base/patchdata_layout.hpp"
+#include "boundary_condition.hpp"
 #include "core/patch/patchdata_buffer.hpp"
 #include "core/patch/scheduler/loadbalancing_hilbert.hpp" //TODO remove dependancy from hilbert
 #include <memory>
 #include <tuple>
-#include "boundary_condition.hpp"
 
 
 
@@ -45,7 +45,7 @@ class SimulationVolume {
 
     vec_box get_patch_volume(Patch & p);
 
-    vec_box apply_boundaries(PatchDataBuffer & p);
+    //vec_box apply_boundaries(PatchDataBuffer & p);
 
     void update_volume();
 
