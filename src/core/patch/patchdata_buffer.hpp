@@ -285,7 +285,7 @@ class [[deprecated]] PatchDataBuffer{ public:
 };
 
 
-
+[[deprecated]]
 inline PatchDataBuffer attach_to_patchData(PatchData & pdat){
     PatchDataBuffer pdatbuf(pdat.pdl);
     

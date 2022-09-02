@@ -156,7 +156,7 @@ f64 models::sph::BasicSPHGas<flt,Kernel>::evolve(PatchScheduler &sched, f64 old_
                     sycl::buffer<f32> &hnew  = *hnew_field_merged[id_patch].buf;
                     auto press  = pressure_field.get_sub_buf(id_patch);
 
-                    sycl::range range_npart{hnew.size()};
+                    sycl::range range_npart{hnew.size()}; //TODO remove ref to size
 
                     auto cs = eos_cs;
                     auto part_mass = gpart_mass;

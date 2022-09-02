@@ -163,6 +163,7 @@ class PatchDataField {
         return buf;
     }
 
+    [[deprecated]]
     inline std::unique_ptr<sycl::buffer<T>> get_sub_buf(){
         if(capacity > 0){
             return std::make_unique<sycl::buffer<T>>(*buf,0,val_cnt);
@@ -306,7 +307,7 @@ class PatchDataField {
 
     inline void override(sycl::buffer<T> & data){
 
-        if(data.size() !=  val_cnt) throw shamrock_exc("buffer size doesn't match patchdata field size");
+        if(data.size() !=  val_cnt) throw shamrock_exc("buffer size doesn't match patchdata field size"); // TODO remove ref to size
 
         
 

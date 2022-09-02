@@ -94,7 +94,7 @@ namespace syclalgs {
             {
                 sycl::host_accessor acc{buf};
 
-                for (u32 i = 0; i < buf.size(); i++) {
+                for (u32 i = 0; i < buf.size(); i++) { //TODO remove ref to size
                     res = res && (acc[i] != 0);
                 }
             }

@@ -417,7 +417,7 @@ inline void make_merge_patches_comp_field(
 
         logger::debug_sycl_ln("Merged Patch","patch : n°",id_patch , "-> making merge comp field");
 
-        u32 len_main = compfield_buf->size();
+        u32 len_main = compfield_buf->size();// TODO remove ref to size
         merge_pdat_comp_field[id_patch].or_element_cnt = len_main;
 
         {
@@ -438,9 +438,11 @@ inline void make_merge_patches_comp_field(
         sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
             auto source = compfield_buf->get_access<sycl::access::mode::read>(cgh);
             auto dest = merge_pdat_comp_field[id_patch].buf->template get_access<sycl::access::mode::discard_write>(cgh);
-            cgh.parallel_for( sycl::range{compfield_buf->size()}, [=](sycl::item<1> item) { dest[item] = source[item]; });
+            cgh.parallel_for( sycl::range{
+                compfield_buf->size() // TODO remove ref to size
+            }, [=](sycl::item<1> item) { dest[item] = source[item]; });
         });
-        offset_buf += compfield_buf->size();
+        offset_buf += compfield_buf->size();// TODO remove ref to size
         
 
         std::vector<std::tuple<u64, std::unique_ptr<PatchDataField<T>>>> & p_interf_lst = comp_field_interf.interface_map[id_patch];
