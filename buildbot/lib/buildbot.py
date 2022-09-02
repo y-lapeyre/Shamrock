@@ -41,8 +41,13 @@ abs_src_dir = os.path.join(abs_proj_dir,"src")
 
 
 def print_buildbot_info(utility_name):
-    
-    col_cnt = os.get_terminal_size().columns
+
+    col_cnt = 100
+
+    try: 
+        col_cnt = os.get_terminal_size().columns
+    except : 
+        print("Warn : couldn't get terminal size")
 
     if(col_cnt > 112):
         print(title_wide)
