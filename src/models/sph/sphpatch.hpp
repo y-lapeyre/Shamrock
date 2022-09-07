@@ -34,14 +34,16 @@ namespace patchdata {
 
             htype tmp;
 
+            u32 nobj = pdat.get_obj_cnt();
+
             if constexpr (std::is_same<htype, f32>::value){
 
                 u32 ihpart = pdl.get_field_idx<f32>(::sph::field_names::field_hpart);
-                tmp = syclalg::get_max<f32>(queue, pdat.fields_f32[ihpart].get_buf());
+                tmp = syclalg::get_max<f32>(queue, pdat.fields_f32[ihpart].get_buf(),nobj);
 
             } else if constexpr (std::is_same<htype, f64>::value){
                 u32 ihpart = pdl.get_field_idx<f64>(::sph::field_names::field_hpart);
-                tmp = syclalg::get_max<f64>(queue, pdat.fields_f64[ihpart].get_buf());
+                tmp = syclalg::get_max<f64>(queue, pdat.fields_f64[ihpart].get_buf(),nobj);
                 
             }else{
                 throw shamrock_exc("get_h_max -> current htype not handled");
@@ -52,20 +54,24 @@ namespace patchdata {
         }
 
         template<class htype>
+        [[deprecated]]
         inline htype get_h_max(PatchDataLayout & pdl,sycl::queue & queue, PatchDataBuffer & pdatbuf){
 
             if(pdatbuf.element_count == 0) return 0;
 
             htype tmp;
 
+
+            u32 & nobj = pdatbuf.element_count;
+
             if constexpr (std::is_same<htype, f32>::value){
 
                 u32 ihpart = pdl.get_field_idx<f32>(::sph::field_names::field_hpart);
-                tmp = syclalg::get_max<f32>(queue, pdatbuf.fields_f32[ihpart]);
+                tmp = syclalg::get_max<f32>(queue, pdatbuf.fields_f32[ihpart],nobj);
 
             } else if constexpr (std::is_same<htype, f64>::value){
                 u32 ihpart = pdl.get_field_idx<f64>(::sph::field_names::field_hpart);
-                tmp = syclalg::get_max<f64>(queue, pdatbuf.fields_f64[ihpart]);
+                tmp = syclalg::get_max<f64>(queue, pdatbuf.fields_f64[ihpart],nobj);
                 
             }else{
                 throw shamrock_exc("get_h_max -> current htype not handled");
@@ -77,20 +83,21 @@ namespace patchdata {
 
 
         template<class vec>
+        [[deprecated]]
         inline std::tuple<vec,vec> get_patchdata_BBAA(sycl::queue & queue,PatchDataBuffer & pdatbuf);
 
         template<>
         inline std::tuple<f32_3,f32_3> get_patchdata_BBAA(sycl::queue & queue,PatchDataBuffer & pdatbuf){
 
             u32 ihpart = pdatbuf.pdl.get_field_idx<f32_3>("xyz");
-            return syclalg::get_min_max<f32_3>(queue, pdatbuf.fields_f32_3[ihpart]);
+            return syclalg::get_min_max<f32_3>(queue, pdatbuf.fields_f32_3[ihpart],pdatbuf.element_count);
 
         }
 
         template<>
         inline std::tuple<f64_3,f64_3> get_patchdata_BBAA(sycl::queue & queue,PatchDataBuffer & pdatbuf){
             u32 ihpart = pdatbuf.pdl.get_field_idx<f64_3>("xyz");
-            return syclalg::get_min_max<f64_3>(queue, pdatbuf.fields_f64_3[ihpart]);
+            return syclalg::get_min_max<f64_3>(queue, pdatbuf.fields_f64_3[ihpart],pdatbuf.element_count);
 
         }
 

@@ -65,13 +65,15 @@ inline void pertub_eigenmode_wave(PatchScheduler &sched, std::tuple<flt, flt> am
 
         {
 
-            auto buf_xyz = xyz.get_sub_buf();
+            u32 cnt = pdat.get_obj_cnt();
+
+            auto & buf_xyz = xyz.get_buf();
             sycl::host_accessor acc_xyz {*buf_xyz};
 
-            auto buf_vxyz = vxyz.get_sub_buf();
+            auto & buf_vxyz = vxyz.get_buf();
             sycl::host_accessor acc_vxyz {*buf_vxyz};
 
-            for (u32 i = 0; i < xyz.size(); i++) {
+            for (u32 i = 0; i < cnt; i++) {
                 vec r              = acc_xyz[i];
                 flt rkphi          = sycl::dot(r, k) + phase;
                 acc_vxyz[i] = ampl * sycl::sin(rkphi);

@@ -298,7 +298,7 @@ namespace sph {
             //PatchDataBuffer &mpdat_buf = *merge_pdat_buf.at(id_patch).data;
             PatchData & mpdat = merge_pdat.at(id_patch).data;
 
-            auto buf_xyz = mpdat.get_field<vec3>(ixyz).get_sub_buf();
+            auto & buf_xyz = mpdat.get_field<vec3>(ixyz).get_buf();
 
             std::tuple<vec3, vec3> &box = merge_pdat.at(id_patch).box;
 
@@ -322,7 +322,7 @@ namespace sph {
 
             PatchData & mpdat = merge_pdat.at(id_patch).data;
 
-            auto buf_h = mpdat.get_field<flt>(ihpart).get_sub_buf();
+            auto & buf_h = mpdat.get_field<flt>(ihpart).get_buf();
 
             radix_trees[id_patch]->compute_int_boxes(sycl_handler::get_compute_queue(), buf_h, htol_up_tol);
         });
@@ -351,8 +351,8 @@ namespace sph {
 
             PatchData &pdat_merge = merge_pdat.at(id_patch).data;
 
-            auto hnew  = hnew_field.get_sub_buf(id_patch);
-            auto omega = omega_field.get_sub_buf(id_patch);
+            auto & hnew  = hnew_field.get_buf(id_patch);
+            auto & omega = omega_field.get_buf(id_patch);
             sycl::buffer<flt> eps_h  = sycl::buffer<flt>(merge_pdat.at(id_patch).or_element_cnt);
 
             sycl::range range_npart{merge_pdat.at(id_patch).or_element_cnt};

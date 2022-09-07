@@ -61,7 +61,7 @@ class CflUtility{public:
 
         sycl_handler::get_compute_queue().submit(ker_reduc_step_mincfl);
 
-        flt min_cfl = syclalg::get_min<flt>(sycl_handler::get_compute_queue(), buf_cfl);
+        flt min_cfl = syclalg::get_min<flt>(sycl_handler::get_compute_queue(), buf_cfl,npart_patch);
 
         return min_cfl;
 

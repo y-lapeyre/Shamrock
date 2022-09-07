@@ -16,7 +16,7 @@ namespace syclalg {
 
     //TODO to optimize
     template<class T>
-    inline T get_max(sycl::queue & queue, std::unique_ptr<sycl::buffer<T>> & buf){
+    inline T get_max(sycl::queue & queue, std::unique_ptr<sycl::buffer<T>> & buf, u32 len){
 
         T accum;
 
@@ -36,7 +36,7 @@ namespace syclalg {
                 // });
 
                 
-                for (u32 i = 0; i < buf->size(); i++) {
+                for (u32 i = 0; i < len; i++) {
                     accum = sycl::max(accum,acc[i]);
                 }
             }
@@ -51,7 +51,7 @@ namespace syclalg {
 
     //TODO to optimize
     template<class T>
-    inline T get_min(sycl::queue & queue, std::unique_ptr<sycl::buffer<T>> & buf){
+    inline T get_min(sycl::queue & queue, std::unique_ptr<sycl::buffer<T>> & buf, u32 len){
 
         T accum;
 
@@ -72,10 +72,10 @@ namespace syclalg {
                 // });
 
                 
-                for (u32 i = 0; i < buf->size(); i++) {
+                for (u32 i = 0; i < len; i++) {
                     accum = sycl::min(accum,acc[i]);
                 }
-            }
+            } 
 
         }else {
             throw shamrock_exc("syclalg::get_min : input buffer not allocated");
@@ -89,7 +89,7 @@ namespace syclalg {
 
 
     template<class T> 
-    inline std::tuple<T,T> get_min_max(sycl::queue & queue, std::unique_ptr<sycl::buffer<T>> & buf){
+    inline std::tuple<T,T> get_min_max(sycl::queue & queue, std::unique_ptr<sycl::buffer<T>> & buf, u32 len){
         
         T accum_min, accum_max;
 
@@ -110,7 +110,7 @@ namespace syclalg {
                 //     });
                 // });
 
-                for (u32 i = 0; i < buf->size(); i++) {
+                for (u32 i = 0; i < len; i++) {
                     accum_min = sycl::min(accum_min,acc[i]);
                     accum_max = sycl::max(accum_max,acc[i]);
                 }

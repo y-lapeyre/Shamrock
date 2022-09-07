@@ -115,10 +115,10 @@ template <class vectype, class primtype> class InterfaceHandler {
     inline void print_current_interf_map() {
 
         for (const auto &[pid, int_vec] : interface_map) {
-            printf(" pid : %d :\n", pid);
-            for (auto &[a, b] : int_vec) {
-                //printf("    -> %d : len %d\n", a, b->obj_cnt);
-            }
+            printf(" pid : %lu :\n", pid);
+            // for (auto &[a, b] : int_vec) {
+            //     //printf("    -> %d : len %d\n", a, b->obj_cnt);
+            // }
         }
     }
 
@@ -155,9 +155,12 @@ template <class vectype, class primtype> class InterfaceHandler {
 
                 PatchData & pdat = *pdat_ptr;
 
-                u32 ihpart = pdat.pdl.get_field_idx<vectype>("xyz");
-                auto buf = pdat.get_field<vectype>(ihpart).get_sub_buf();
-                auto t = syclalg::get_min_max<vectype>(sycl_handler::get_compute_queue(), buf);
+                u32 ixyz = pdat.pdl.get_field_idx<vectype>("xyz");
+
+                u32 nobj = pdat.get_obj_cnt();
+
+                auto & buf = pdat.get_field<vectype>(ixyz).get_buf();
+                auto t = syclalg::get_min_max<vectype>(sycl_handler::get_compute_queue(), buf,nobj);
 
                 fct(patch_id,int_pid,pdat,t);
             }
