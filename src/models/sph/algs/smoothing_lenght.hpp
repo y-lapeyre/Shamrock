@@ -116,6 +116,7 @@ class SmoothingLenghtCompute{
 
     }
 
+    [[deprecated]]
     inline void iterate_smoothing_lenght(
         sycl::queue & queue,
         u32 or_element_cnt,
@@ -159,7 +160,7 @@ class SmoothingLenghtCompute{
             //}
         }
 
-        impl::IntSmoothingLenghtCompute<morton_prec, Kernel>::template sycl_h_iter_omega<flt>(queue, 
+        impl::IntSmoothingLenghtCompute<morton_prec, Kernel>::template _sycl_h_iter_omega<flt>(queue, 
                 or_element_cnt, 
                 ihpart, 
                 ixyz,

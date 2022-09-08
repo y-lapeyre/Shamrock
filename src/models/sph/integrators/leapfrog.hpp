@@ -267,9 +267,14 @@ namespace sph {
         auto tmerge_buf = timings::start_timer("buffer merging", timings::sycl);
         
         
-        
+        //old
         std::unordered_map<u64, MergedPatchDataBuffer<vec3>> merge_pdat_buf;
         make_merge_patches(sched, interface_hndl, merge_pdat_buf);
+
+        
+
+
+
 
 
         std::unordered_map<u64, MergedPatchData<flt>> merge_pdat = 

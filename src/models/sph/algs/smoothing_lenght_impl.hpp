@@ -97,6 +97,7 @@ namespace impl {
 
 
     template<class flt>
+    [[deprecated]]
     inline void sycl_init_h_iter_bufs(
         sycl::queue & queue, 
         u32 or_element_cnt,
@@ -463,6 +464,7 @@ namespace impl {
         
 
         template<class flt>
+        [[deprecated]]
         static void sycl_h_iter_step(
             sycl::queue & queue,
             u32 or_element_cnt,
@@ -616,7 +618,8 @@ namespace impl {
 
 
         template<class flt>
-        static void sycl_h_iter_omega(
+        [[deprecated]]
+        static void _sycl_h_iter_omega(
             sycl::queue & queue,
             u32 or_element_cnt,
             
@@ -636,7 +639,7 @@ namespace impl {
         );
 
         template<>
-        inline static void sycl_h_iter_omega<f32>(
+        inline static void _sycl_h_iter_omega<f32>(
             sycl::queue & queue,
             u32 or_element_cnt,
             
