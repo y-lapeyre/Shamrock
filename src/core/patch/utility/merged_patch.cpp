@@ -67,11 +67,11 @@ auto MergedPatchCompField<flt,T>::merge_patches_cfield(
 
     sched.for_each_patch([&](u64 id_patch, Patch cur_p) {
 
-        auto compfield = comp_field.get_field(id_patch);
+        auto & compfield = comp_field.get_field(id_patch);
 
-        merged_data.emplace(id_patch,MergedPatchCompField<flt,T>());
+        merged_data.insert({id_patch,MergedPatchCompField<flt,T>()});
 
-        auto merged_field = merged_data.at(id_patch);
+        auto & merged_field = merged_data.at(id_patch);
 
         merged_field.or_element_cnt = compfield.size();
         merged_field.buf.insert(compfield);

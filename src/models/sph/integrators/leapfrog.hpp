@@ -268,11 +268,8 @@ namespace sph {
         
         
         //old
-        std::unordered_map<u64, MergedPatchDataBuffer<vec3>> merge_pdat_buf;
-        make_merge_patches(sched, interface_hndl, merge_pdat_buf);
-
-        
-
+        //std::unordered_map<u64, MergedPatchDataBuffer<vec3>> merge_pdat_buf;
+        //make_merge_patches(sched, interface_hndl, merge_pdat_buf);
 
 
 
@@ -403,10 +400,16 @@ namespace sph {
         auto time_merge_cfield = timings::start_timer("merge compute fields", timings::sycl);
 
         //merge compute fields
-        std::unordered_map<u64, MergedPatchCompFieldBuffer<flt>> hnew_field_merged;
-        make_merge_patches_comp_field<flt>(sched, interface_hndl, hnew_field, hnew_field_interfaces, hnew_field_merged);
-        std::unordered_map<u64, MergedPatchCompFieldBuffer<flt>> omega_field_merged;
-        make_merge_patches_comp_field<flt>(sched, interface_hndl, omega_field, omega_field_interfaces, omega_field_merged);
+        //std::unordered_map<u64, MergedPatchCompFieldBuffer<flt>> hnew_field_merged;
+        //make_merge_patches_comp_field<flt>(sched, interface_hndl, hnew_field, hnew_field_interfaces, hnew_field_merged);
+        //std::unordered_map<u64, MergedPatchCompFieldBuffer<flt>> omega_field_merged;
+        //make_merge_patches_comp_field<flt>(sched, interface_hndl, omega_field, omega_field_interfaces, omega_field_merged);
+
+        std::unordered_map<u64, MergedPatchCompField<flt, flt>> hnew_field_merged = MergedPatchCompField<flt,flt>::
+            merge_patches_cfield(sched,interface_hndl,hnew_field,hnew_field_interfaces);
+
+        std::unordered_map<u64, MergedPatchCompField<flt, flt>> omega_field_merged = MergedPatchCompField<flt,flt>::
+            merge_patches_cfield(sched,interface_hndl,omega_field,omega_field_interfaces);
 
         time_merge_cfield.stop();
 

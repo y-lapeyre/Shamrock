@@ -139,8 +139,8 @@ f64 models::sph::BasicSPHGas<flt,Kernel>::evolve(PatchScheduler &sched, f64 old_
         },
         [&](PatchScheduler & sched, 
             std::unordered_map<u64, MergedPatchData<flt>>& merge_pdat, 
-            std::unordered_map<u64, MergedPatchCompFieldBuffer<flt>>& hnew_field_merged,
-            std::unordered_map<u64, MergedPatchCompFieldBuffer<flt>>& omega_field_merged
+            std::unordered_map<u64, MergedPatchCompField<flt,flt>>& hnew_field_merged,
+            std::unordered_map<u64, MergedPatchCompField<flt,flt>>& omega_field_merged
             ) {
 
 
@@ -153,7 +153,7 @@ f64 models::sph::BasicSPHGas<flt,Kernel>::evolve(PatchScheduler &sched, f64 old_
                 pressure_field.generate(sched,size_map);
 
                 sched.for_each_patch([&](u64 id_patch, Patch cur_p) {
-                    sycl::buffer<f32> &hnew  = *hnew_field_merged[id_patch].buf;
+                    auto & hnew  = hnew_field_merged[id_patch].buf.get_buf();
                     auto & press  = pressure_field.get_buf(id_patch);
 
                     sycl::range range_npart{size_map[id_patch]}; //TODO remove ref to size
@@ -162,7 +162,7 @@ f64 models::sph::BasicSPHGas<flt,Kernel>::evolve(PatchScheduler &sched, f64 old_
                     auto part_mass = gpart_mass;
 
                     sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
-                        auto h = hnew.get_access<sycl::access::mode::read>(cgh);
+                        auto h = hnew->template get_access<sycl::access::mode::read>(cgh);
 
                         auto p = press->get_access<sycl::access::mode::discard_write>(cgh);
 
@@ -184,8 +184,8 @@ f64 models::sph::BasicSPHGas<flt,Kernel>::evolve(PatchScheduler &sched, f64 old_
             PatchScheduler & sched, 
             std::unordered_map<u64, std::unique_ptr<Radix_Tree<u_morton, vec3>>>& radix_trees,
             std::unordered_map<u64, MergedPatchData<flt>>& merge_pdat, 
-            std::unordered_map<u64, MergedPatchCompFieldBuffer<flt>>& hnew_field_merged,
-            std::unordered_map<u64, MergedPatchCompFieldBuffer<flt>>& omega_field_merged,
+            std::unordered_map<u64, MergedPatchCompField<flt,flt>>& hnew_field_merged,
+            std::unordered_map<u64, MergedPatchCompField<flt,flt>>& omega_field_merged,
             flt htol_up_tol
             ){
             sched.for_each_patch([&](u64 id_patch, Patch cur_p) {
@@ -196,8 +196,8 @@ f64 models::sph::BasicSPHGas<flt,Kernel>::evolve(PatchScheduler &sched, f64 old_
 
                 PatchData & pdat_merge = merge_pdat.at(id_patch).data;
 
-                sycl::buffer<f32> &hnew  = *hnew_field_merged[id_patch].buf;
-                sycl::buffer<f32> &omega = *omega_field_merged[id_patch].buf;
+                sycl::buffer<f32> &hnew  = *hnew_field_merged[id_patch].buf.get_buf();
+                sycl::buffer<f32> &omega = *omega_field_merged[id_patch].buf.get_buf();
 
                 auto & press  = pressure_field.get_buf(id_patch);
 
