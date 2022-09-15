@@ -16,6 +16,7 @@
 #include "aliases.hpp"
 #include "core/sys/log.hpp"
 #include "core/sys/mpi_handler.hpp"
+#include "core/sys/sycl_handler.hpp"
 #include "core/sys/sycl_mpi_interop.hpp"
 #include "core/utils/string_utils.hpp"
 #include "core/utils/time_utils.hpp"
@@ -89,6 +90,7 @@ namespace timings {
         }
 
         inline void stop(){
+            //sycl_handler::get_compute_queue().wait();
             time.end();
             active_timers --;
             timer_log.push_back(LogTimers{
@@ -103,7 +105,7 @@ namespace timings {
         }
 
         inline void stop(u64 data_transfered){
-
+            //sycl_handler::get_compute_queue().wait();
             time.end();
             active_timers --;
             timer_log.push_back(LogTimers{

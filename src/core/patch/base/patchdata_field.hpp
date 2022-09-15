@@ -18,6 +18,7 @@
 
 
 
+#include "access/access.hpp"
 #include "aliases.hpp"
 
 #include "core/patch/base/enabled_fields.hpp"
@@ -103,23 +104,20 @@ class PatchDataField {
 
 
 
-    inline PatchDataField(std::string name, u32 nvar) : field_name(name) , nvar(nvar){
-        obj_cnt = 0;
-        val_cnt = 0;
-
-        capacity = 0;
+    inline PatchDataField(std::string name, u32 nvar) : field_name(name) , nvar(nvar), obj_cnt(0), val_cnt(0), capacity(0){
+        
         //_alloc();
 
     };
 
 
-    PatchDataField(const PatchDataField& other) {
+    PatchDataField(const PatchDataField& other) : field_name  (other.field_name)  ,
+        nvar        (other.nvar      )  , 
+        obj_cnt     (other.obj_cnt   )  ,
+        val_cnt     (other.val_cnt   )  , 
+        capacity    (other.capacity  )  {
 
-        field_name  = other.field_name  ;
-        nvar        = other.nvar        ; 
-        obj_cnt     = other.obj_cnt     ;
-        val_cnt     = other.val_cnt     ; 
-        capacity    = other.capacity    ;
+        ;
 
         //field_data = other.field_data;
 
@@ -242,51 +240,13 @@ class PatchDataField {
 
 
 
-    inline void insert_element(T v){
-        u32 ins_pos = val_cnt;
-        expand(1);
-        //field_data[ins_pos] = v;
+    void insert_element(T v);
 
+    void apply_offset(T off);
 
-        {
-            sycl::host_accessor acc {*buf};
+    void insert(PatchDataField<T> &f2);
 
-            acc[ins_pos] = v;
-        }
-        
-    }
-
-    inline void apply_offset(T off){
-
-        {
-            sycl::host_accessor acc {*buf};
-            for (u32 i = 0; i < val_cnt; i++) {
-                acc[i] += off;
-            }
-        }
-        //for(T & v : field_data){
-        //    v += off;
-        //}
-    }
-
-
-    inline void insert(PatchDataField<T> &f2){
-
-        const u32 idx_st = val_cnt;//field_data.size();
-        expand(f2.obj_cnt);
-
-        {
-            sycl::host_accessor acc {*buf};
-            sycl::host_accessor acc_f2{*f2.get_buf()};
-
-            for (u32 i = 0; i < f2.val_cnt; i++) {
-                //field_data[idx_st + i] = f2.field_data[i];
-                acc[idx_st + i] = acc_f2[i];
-            }
-
-        }
-
-    }
+    
 
     inline void overwrite(PatchDataField<T> &f2, u32 obj_cnt){
         if(val_cnt < obj_cnt){

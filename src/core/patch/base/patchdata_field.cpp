@@ -160,6 +160,121 @@ template <class T> void PatchDataField<T>::append_subset_to(std::vector<u32> &id
 }
 
 
+
+template<class T> class PdatField_insert_element;
+
+template<class T> void PatchDataField<T>::insert_element(T v){
+    u32 ins_pos = val_cnt;
+    expand(1);
+
+    sycl_handler::get_compute_queue().submit([&] (sycl::handler& cgh) {
+
+        auto id_ins = ins_pos;
+        auto val = v;
+        sycl::accessor acc {*buf, cgh, sycl::write_only};
+
+
+        cgh.single_task<PdatField_insert_element<T>>([=] () {
+            acc[id_ins] = val;
+        });
+    });
+
+}
+
+
+
+
+
+
+
+
+template<class T> class PdatField_apply_offset;
+
+template<class T> void PatchDataField<T>::apply_offset(T off){
+
+    sycl_handler::get_compute_queue().submit([&] (sycl::handler& cgh) {
+        
+        auto val = off;
+        sycl::accessor acc {*buf, cgh, sycl::read_write};
+
+        cgh.parallel_for<PdatField_apply_offset<T>>(sycl::range<1>{val_cnt}, [=](sycl::id<1> idx){
+            acc[idx] += val;
+        });
+    });
+
+}
+
+
+
+template<class T> class PdatField_insert;
+
+template<class T> void PatchDataField<T>::insert(PatchDataField<T> &f2){
+
+    const u32 old_val_cnt = val_cnt;//field_data.size();
+    expand(f2.obj_cnt);
+
+    sycl_handler::get_compute_queue().submit([&] (sycl::handler& cgh) {
+        
+        const u32 idx_st = old_val_cnt;
+        sycl::accessor acc {*buf, cgh};
+        sycl::accessor acc_f2 {*f2.get_buf(), cgh};
+
+        cgh.parallel_for<PdatField_insert<T>>(sycl::range<1>{f2.val_cnt}, [=](sycl::id<1> idx){
+            acc[idx_st + idx] = acc_f2[idx];
+        });
+    });
+
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 //////////////////////////////////////////////////////////////////////////
 // Define the patchdata field for all classes in XMAC_LIST_ENABLED_FIELD
 //////////////////////////////////////////////////////////////////////////

@@ -308,14 +308,14 @@ f64 models::sph::BasicSPHGas<flt,Kernel>::evolve(PatchScheduler &sched, f64 old_
 
                 // Executing kernel
                 cgh.parallel_for(range_npart, [=](sycl::item<1> item) {
-                    u32 gid = (u32)item.get_id();
-
-                    vec3 &vxyz     = acc_vxyz[item];
-                    vec3 &axyz     = acc_axyz[item];
-                    vec3 &axyz_old = acc_axyz_old[item];
+                    //u32 gid = (u32)item.get_id();
+                    //
+                    //vec3 &vxyz     = acc_vxyz[item];
+                    //vec3 &axyz     = acc_axyz[item];
+                    //vec3 &axyz_old = acc_axyz_old[item];
 
                     // v^* = v^{n + 1/2} + dt/2 a^n
-                    vxyz = vxyz + (hdt) * (axyz - axyz_old);
+                    acc_vxyz[item] = acc_vxyz[item] + (hdt) * (acc_axyz[item] - acc_axyz_old[item]);
                 });
             };
 
