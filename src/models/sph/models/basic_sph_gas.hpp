@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "CL/sycl/builtins.hpp"
+
 #include "core/patch/scheduler/scheduler_mpi.hpp"
 #include "core/sys/log.hpp"
 #include "core/utils/string_utils.hpp"

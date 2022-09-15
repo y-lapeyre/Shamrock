@@ -256,7 +256,9 @@ namespace impl {
                                 //f32_3 dr = xyz_a - r[id_b];
                                 f32 rab = sycl::distance( xyz_a , r[id_b]);
 
-                                if(rab > h_a*Kernel::Rkern) return;
+                                if(rab > h_a*Kernel::Rkern) { 
+                                    return;
+                                }
 
                                 //f32 rab = sycl::sqrt(rab2);
 

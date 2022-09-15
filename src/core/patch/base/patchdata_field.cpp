@@ -7,11 +7,8 @@
 // -------------------------------------------------------//
 
 #include "patchdata_field.hpp"
-#include "CL/sycl/access/access.hpp"
-#include "CL/sycl/accessor.hpp"
-#include "CL/sycl/buffer.hpp"
-#include "CL/sycl/properties/accessor_properties.hpp"
-#include "CL/sycl/range.hpp"
+
+#include "aliases.hpp"
 #include "core/patch/base/enabled_fields.hpp"
 #include "core/patch/base/pdat_comm_impl/pdat_comm_cp_to_host.hpp"
 #include "core/patch/base/pdat_comm_impl/pdat_comm_directgpu.hpp"
@@ -182,9 +179,11 @@ XMAC_LIST_ENABLED_FIELD
 // data mocking for patchdata field
 //////////////////////////////////////////////////////////////////////////
 
+const u32 obj_mock_cnt = 6000;
+
 template <> void PatchDataField<f32>::gen_mock_data(u32 obj_cnt, std::mt19937 &eng) {
     resize(obj_cnt);
-    std::uniform_real_distribution<f64> distf64(1, 6000);
+    std::uniform_real_distribution<f64> distf64(1, obj_mock_cnt);
 
     {
         auto & buf = get_buf();
@@ -202,7 +201,7 @@ template <> void PatchDataField<f32>::gen_mock_data(u32 obj_cnt, std::mt19937 &e
 
 template <> void PatchDataField<f32_2>::gen_mock_data(u32 obj_cnt, std::mt19937 &eng) {
     resize(obj_cnt);
-    std::uniform_real_distribution<f64> distf64(1, 6000);
+    std::uniform_real_distribution<f64> distf64(1, obj_mock_cnt);
 
     {
         auto & buf = get_buf();
@@ -216,7 +215,7 @@ template <> void PatchDataField<f32_2>::gen_mock_data(u32 obj_cnt, std::mt19937 
 
 template <> void PatchDataField<f32_3>::gen_mock_data(u32 obj_cnt, std::mt19937 &eng) {
     resize(obj_cnt);
-    std::uniform_real_distribution<f64> distf64(1, 6000);
+    std::uniform_real_distribution<f64> distf64(1, obj_mock_cnt);
 
     {
         auto & buf = get_buf();
@@ -230,7 +229,7 @@ template <> void PatchDataField<f32_3>::gen_mock_data(u32 obj_cnt, std::mt19937 
 
 template <> void PatchDataField<f32_4>::gen_mock_data(u32 obj_cnt, std::mt19937 &eng) {
     resize(obj_cnt);
-    std::uniform_real_distribution<f64> distf64(1, 6000);
+    std::uniform_real_distribution<f64> distf64(1, obj_mock_cnt);
 
     {
         auto & buf = get_buf();
@@ -244,7 +243,7 @@ template <> void PatchDataField<f32_4>::gen_mock_data(u32 obj_cnt, std::mt19937 
 
 template <> void PatchDataField<f32_8>::gen_mock_data(u32 obj_cnt, std::mt19937 &eng) {
     resize(obj_cnt);
-    std::uniform_real_distribution<f64> distf64(1, 6000);
+    std::uniform_real_distribution<f64> distf64(1, obj_mock_cnt);
 
     {
         auto & buf = get_buf();
@@ -259,7 +258,7 @@ template <> void PatchDataField<f32_8>::gen_mock_data(u32 obj_cnt, std::mt19937 
 
 template <> void PatchDataField<f32_16>::gen_mock_data(u32 obj_cnt, std::mt19937 &eng) {
     resize(obj_cnt);
-    std::uniform_real_distribution<f64> distf64(1, 6000);
+    std::uniform_real_distribution<f64> distf64(1, obj_mock_cnt);
 
     {
         auto & buf = get_buf();
@@ -275,7 +274,7 @@ template <> void PatchDataField<f32_16>::gen_mock_data(u32 obj_cnt, std::mt19937
 
 template <> void PatchDataField<f64>::gen_mock_data(u32 obj_cnt, std::mt19937 &eng) {
     resize(obj_cnt);
-    std::uniform_real_distribution<f64> distf64(1, 6000);
+    std::uniform_real_distribution<f64> distf64(1, obj_mock_cnt);
 
     {
         auto & buf = get_buf();
@@ -289,7 +288,7 @@ template <> void PatchDataField<f64>::gen_mock_data(u32 obj_cnt, std::mt19937 &e
 
 template <> void PatchDataField<f64_2>::gen_mock_data(u32 obj_cnt, std::mt19937 &eng) {
     resize(obj_cnt);
-    std::uniform_real_distribution<f64> distf64(1, 6000);
+    std::uniform_real_distribution<f64> distf64(1, obj_mock_cnt);
 
     {
         auto & buf = get_buf();
@@ -303,7 +302,7 @@ template <> void PatchDataField<f64_2>::gen_mock_data(u32 obj_cnt, std::mt19937 
 
 template <> void PatchDataField<f64_3>::gen_mock_data(u32 obj_cnt, std::mt19937 &eng) {
     resize(obj_cnt);
-    std::uniform_real_distribution<f64> distf64(1, 6000);
+    std::uniform_real_distribution<f64> distf64(1, obj_mock_cnt);
 
     {
         auto & buf = get_buf();
@@ -317,7 +316,7 @@ template <> void PatchDataField<f64_3>::gen_mock_data(u32 obj_cnt, std::mt19937 
 
 template <> void PatchDataField<f64_4>::gen_mock_data(u32 obj_cnt, std::mt19937 &eng) {
     resize(obj_cnt);
-    std::uniform_real_distribution<f64> distf64(1, 6000);
+    std::uniform_real_distribution<f64> distf64(1, obj_mock_cnt);
 
     {
         auto & buf = get_buf();
@@ -331,7 +330,7 @@ template <> void PatchDataField<f64_4>::gen_mock_data(u32 obj_cnt, std::mt19937 
 
 template <> void PatchDataField<f64_8>::gen_mock_data(u32 obj_cnt, std::mt19937 &eng) {
     resize(obj_cnt);
-    std::uniform_real_distribution<f64> distf64(1, 6000);
+    std::uniform_real_distribution<f64> distf64(1, obj_mock_cnt);
 
     {
         auto & buf = get_buf();
@@ -346,7 +345,7 @@ template <> void PatchDataField<f64_8>::gen_mock_data(u32 obj_cnt, std::mt19937 
 
 template <> void PatchDataField<f64_16>::gen_mock_data(u32 obj_cnt, std::mt19937 &eng) {
     resize(obj_cnt);
-    std::uniform_real_distribution<f64> distf64(1, 6000);
+    std::uniform_real_distribution<f64> distf64(1, obj_mock_cnt);
 
     {
         auto & buf = get_buf();
@@ -362,7 +361,7 @@ template <> void PatchDataField<f64_16>::gen_mock_data(u32 obj_cnt, std::mt19937
 
 template <> void PatchDataField<u32>::gen_mock_data(u32 obj_cnt, std::mt19937 &eng) {
     resize(obj_cnt);
-    std::uniform_int_distribution<u32> distu32(1, 6000);
+    std::uniform_int_distribution<u32> distu32(1, obj_mock_cnt);
 
     {
         auto & buf = get_buf();
@@ -375,7 +374,7 @@ template <> void PatchDataField<u32>::gen_mock_data(u32 obj_cnt, std::mt19937 &e
 }
 template <> void PatchDataField<u64>::gen_mock_data(u32 obj_cnt, std::mt19937 &eng) {
     resize(obj_cnt);
-    std::uniform_int_distribution<u64> distu64(1, 6000);
+    std::uniform_int_distribution<u64> distu64(1, obj_mock_cnt);
 
     {
         auto & buf = get_buf();

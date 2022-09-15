@@ -136,7 +136,7 @@ dic_final = ctx.collect_data()
 if(ctx.get_world_rank() == 0):
         
 
-    plt.style.use("~/Documents/cosmicshine.mplstyle")
+    #plt.style.use("~/Documents/cosmicshine.mplstyle")
 
     print_dist(dic_setup,"$\omega t = 0$","setup.pdf",0)
     print_dist(dic_final,r"$\omega t = 2 \pi$ ","final.pdf",t_end)

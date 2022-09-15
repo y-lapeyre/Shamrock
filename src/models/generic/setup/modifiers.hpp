@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "CL/sycl/accessor.hpp"
+
 #include "core/patch/scheduler/scheduler_mpi.hpp"
 #include "core/utils/geometry_utils.hpp"
 #include <stdexcept>
