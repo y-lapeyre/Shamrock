@@ -124,25 +124,25 @@ template <class vectype, class primtype> class InterfaceHandler {
 
 
 
-    template<class Function>
-    [[deprecated]]
-    inline void for_each_interface_buf(u64 patch_id,sycl::queue & queue, Function && fct){
-
-        const std::vector<std::tuple<u64, std::unique_ptr<PatchData>>> & p_interf_lst = get_interface_list(patch_id);
-
-        for (auto & [int_pid, pdat_ptr] : p_interf_lst) {
-
-            if(! pdat_ptr->is_empty()){
-
-                PatchDataBuffer pdat_buf = attach_to_patchData(*pdat_ptr);
-
-                auto t = patchdata::sph::get_patchdata_BBAA<vectype>(queue, pdat_buf);
-
-                fct(patch_id,int_pid,pdat_buf,t);
-            }
-        }
-
-    }
+    //template<class Function>
+    //[[deprecated]]
+    //inline void for_each_interface_buf(u64 patch_id,sycl::queue & queue, Function && fct){
+//
+    //    const std::vector<std::tuple<u64, std::unique_ptr<PatchData>>> & p_interf_lst = get_interface_list(patch_id);
+//
+    //    for (auto & [int_pid, pdat_ptr] : p_interf_lst) {
+//
+    //        if(! pdat_ptr->is_empty()){
+//
+    //            PatchDataBuffer pdat_buf = attach_to_patchData(*pdat_ptr);
+//
+    //            auto t = patchdata::sph::get_patchdata_BBAA<vectype>(queue, pdat_buf);
+//
+    //            fct(patch_id,int_pid,pdat_buf,t);
+    //        }
+    //    }
+//
+    //}
 
     template<class Function>
     inline void for_each_interface(u64 patch_id, Function && fct){

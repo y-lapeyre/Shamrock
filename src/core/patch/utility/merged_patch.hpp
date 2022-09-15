@@ -156,7 +156,7 @@ struct [[deprecated]] MergedPatchCompFieldBuffer {public:
     std::unique_ptr<sycl::buffer<T>> buf;
 };
 
-
+#if false
 
 template<class pos_prec,class pos_vec>
 [[deprecated]]
@@ -476,3 +476,4 @@ inline void make_merge_patches_comp_field(
 
 
 }
+#endif

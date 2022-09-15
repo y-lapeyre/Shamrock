@@ -161,13 +161,13 @@ class PatchDataField {
         return buf;
     }
 
-    [[deprecated]]
-    inline std::unique_ptr<sycl::buffer<T>> get_sub_buf(){
-        if(capacity > 0){
-            return std::make_unique<sycl::buffer<T>>(*buf,0,val_cnt);
-        }
-        return std::unique_ptr<sycl::buffer<T>>();
-    }
+    //[[deprecated]]
+    //inline std::unique_ptr<sycl::buffer<T>> get_sub_buf(){
+    //    if(capacity > 0){
+    //        return std::make_unique<sycl::buffer<T>>(*buf,0,val_cnt);
+    //    }
+    //    return std::unique_ptr<sycl::buffer<T>>();
+    //}
 
 
 

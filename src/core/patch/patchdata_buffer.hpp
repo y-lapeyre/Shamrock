@@ -285,29 +285,29 @@ class [[deprecated]] PatchDataBuffer{ public:
 };
 
 
-[[deprecated]]
-inline PatchDataBuffer attach_to_patchData(PatchData & pdat){
-    PatchDataBuffer pdatbuf(pdat.pdl);
-    
-    pdatbuf.element_count = u32(pdat.get_obj_cnt());
-
-    //std::cout << "attach to pdat : " << pdatbuf.element_count << std::endl;
-
-    #define X(arg) \
-    for(u32 idx = 0; idx < pdat.pdl.fields_##arg.size(); idx++){\
-        std::unique_ptr<sycl::buffer<arg>> buf = pdat.fields_##arg[idx].get_sub_buf();\
-\
-        pdatbuf.fields_##arg.push_back({std::move(buf)});\
-    }
-
-    XMAC_LIST_ENABLED_FIELD
-    #undef X
-
-
-
-
-
-
-
-    return pdatbuf;
-}
+//[[deprecated]]
+//inline PatchDataBuffer attach_to_patchData(PatchData & pdat){
+//    PatchDataBuffer pdatbuf(pdat.pdl);
+//    
+//    pdatbuf.element_count = u32(pdat.get_obj_cnt());
+//
+//    //std::cout << "attach to pdat : " << pdatbuf.element_count << std::endl;
+//
+//    #define X(arg) \
+//    for(u32 idx = 0; idx < pdat.pdl.fields_##arg.size(); idx++){\
+//        std::unique_ptr<sycl::buffer<arg>> buf = pdat.fields_##arg[idx].get_sub_buf();\
+//\
+//        pdatbuf.fields_##arg.push_back({std::move(buf)});\
+//    }
+//
+//    XMAC_LIST_ENABLED_FIELD
+//    #undef X
+//
+//
+//
+//
+//
+//
+//
+//    return pdatbuf;
+//}
