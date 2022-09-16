@@ -235,6 +235,11 @@ class PatchDataField {
     }
 
     inline void shrink(u32 obj_to_rem){
+
+        if(obj_to_rem > obj_cnt){
+            throw shamrock_exc("impossible to remove more object than there is in the patchdata field");
+        }
+
         resize(obj_cnt - obj_to_rem);
     }
 

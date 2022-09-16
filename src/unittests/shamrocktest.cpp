@@ -217,8 +217,11 @@ int run_all_tests(int argc, char *argv[]){
         #endif
 
         //printf("    assertion list :\n");
-        if(full_output){
-            for(unsigned int j = 0; j < t.lst_assert.size(); j++){
+        
+        for(unsigned int j = 0; j < t.lst_assert.size(); j++){
+
+
+            if(full_output || (!t.lst_assert[j].success)){
                 printf("        [%d/%zu] : ",j+1,t.lst_assert.size());
                 printf("%-20s",t.lst_assert[j].assert_name.c_str());
                 
@@ -226,13 +229,15 @@ int run_all_tests(int argc, char *argv[]){
                     std::cout << "  (\033[;32mSucces\033[0m)\n";
                 }else{
                     std::cout << "  (\033[1;31m Fail \033[0m)\n";
+                    std::cout << "----- logs : \n" << t.lst_assert[j].log << "\n-----" << std::endl;
                 }
-                
-                //std::cout << "            logs : " << t.lst_assert[j].log << "\n";
             }
+            
+            //std::cout << "            logs : " << t.lst_assert[j].log << "\n";
+        }
 
             
-        }
+        
 
         u32 succes_cnt = 0;
         for(unsigned int j = 0; j < t.lst_assert.size(); j++){

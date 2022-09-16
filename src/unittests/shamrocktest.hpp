@@ -68,7 +68,15 @@ void test_func_##name (TestResults& __test_result_ref)
 
 
 
-#define Test_assert(name,result) __test_result_ref.lst_assert.push_back({name, result, ""});
+#define Test_assert(name,result)  \
+{\
+    std::string log = "";\
+    if(!(result)){\
+        log = __LOC_PREFIX__ + std::string( "\n    -> \"" #result "\" should be true");\
+    }\
+    __test_result_ref.lst_assert.push_back({name, result, log});\
+}
+
 #define Test_assert_log(name,result,log) __test_result_ref.lst_assert.push_back({name, result, log});
 
 

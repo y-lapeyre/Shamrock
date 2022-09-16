@@ -16,6 +16,40 @@
 
 
 
+
+/**
+*   Checking PatchDataField status after constructor
+*/
+Test_start("patch/patchdata_field.cpp", patch_data_field_constructor, 1){
+
+    PatchDataField<f32> d_check("test",1);
+
+    Test_assert("name field match", d_check.get_name() == "test");
+    Test_assert("nvar field match", d_check.get_nvar() == 1);
+    Test_assert("buffer not allocated", !d_check.get_buf());
+
+    Test_assert("is new field empty", d_check.size() == 0);
+    Test_assert("is new field empty", d_check.get_obj_cnt() == 0);
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 Test_start("patch/patchdata_field.cpp", patch_data_field_check_match,1){
     std::mt19937 eng(0x1111);  
 
