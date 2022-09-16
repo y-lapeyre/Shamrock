@@ -8,7 +8,7 @@ target_sources(shamrock
         
         
         sim_box.cpp
-        patchdata_buffer.cpp 
+        #patchdata_buffer.cpp 
 
 
         
@@ -44,7 +44,7 @@ if("${BUILD_TEST}")
 
         
     sim_box.cpp
-    patchdata_buffer.cpp 
+    #patchdata_buffer.cpp 
 
 
     PUBLIC

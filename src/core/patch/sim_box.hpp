@@ -13,7 +13,7 @@
 #include "base/patchdata.hpp"
 #include "base/patchdata_layout.hpp"
 #include "boundary_condition.hpp"
-#include "core/patch/patchdata_buffer.hpp"
+//#include "core/patch/patchdata_buffer.hpp"
 #include "core/patch/scheduler/loadbalancing_hilbert.hpp" //TODO remove dependancy from hilbert
 #include <memory>
 #include <tuple>

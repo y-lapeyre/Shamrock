@@ -15,7 +15,7 @@
 #include "core/patch/base/patchdata_field.hpp"
 #include "core/patch/base/patchdata_layout.hpp"
 #include "core/patch/interfaces/interface_handler.hpp"
-#include "core/patch/patchdata_buffer.hpp"
+//#include "core/patch/patchdata_buffer.hpp"
 #include "core/patch/scheduler/scheduler_mpi.hpp"
 
 
@@ -140,7 +140,7 @@ class MergedPatchCompField {public:
 
 
 
-
+#if false
 
 template<class vec>
 
@@ -156,7 +156,7 @@ struct [[deprecated]] MergedPatchCompFieldBuffer {public:
     std::unique_ptr<sycl::buffer<T>> buf;
 };
 
-#if false
+
 
 template<class pos_prec,class pos_vec>
 [[deprecated]]

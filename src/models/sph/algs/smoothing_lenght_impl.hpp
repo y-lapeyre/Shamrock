@@ -10,7 +10,7 @@
 
 #include "aliases.hpp"
 #include "core/patch/base/patchdata.hpp"
-#include "core/patch/patchdata_buffer.hpp"
+//#include "core/patch/patchdata_buffer.hpp"
 #include "core/patch/base/patchdata_layout.hpp"
 #include "models/sph/base/kernels.hpp"
 #include "models/sph/base/sphpart.hpp"
@@ -94,7 +94,7 @@ namespace impl {
 
 
 
-
+    #if false
 
     template<class flt>
     [[deprecated]]
@@ -142,6 +142,8 @@ namespace impl {
 
         });
     }
+
+    #endif
 
 
 
@@ -464,6 +466,7 @@ namespace impl {
 
 
         
+        #if false
 
         template<class flt>
         [[deprecated]]
@@ -735,6 +738,8 @@ namespace impl {
 
             }); 
         }
+
+        #endif
 
 
     };

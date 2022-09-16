@@ -15,7 +15,7 @@
 #include "core/patch/base/patchdata_layout.hpp"
 #include "core/patch/interfaces/interface_handler.hpp"
 #include "core/patch/interfaces/interface_selector.hpp"
-#include "core/patch/patchdata_buffer.hpp"
+//#include "core/patch/patchdata_buffer.hpp"
 #include "core/patch/scheduler/scheduler_mpi.hpp"
 #include "core/patch/utility/merged_patch.hpp"
 #include "core/patch/utility/serialpatchtree.hpp"
@@ -116,6 +116,7 @@ class SmoothingLenghtCompute{
 
     }
 
+    #if false
     [[deprecated]]
     inline void iterate_smoothing_lenght(
         sycl::queue & queue,
@@ -176,6 +177,8 @@ class SmoothingLenghtCompute{
         timer.stop();
 
     }
+
+    #endif
 
 
 };

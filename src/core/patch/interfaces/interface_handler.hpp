@@ -26,7 +26,7 @@
 #include "core/patch/base/patchdata.hpp"
 #include "core/patch/interfaces/interface_generator.hpp"
 #include "core/io/logs.hpp"
-#include "core/patch/patchdata_buffer.hpp"
+//#include "core/patch/patchdata_buffer.hpp"
 #include "core/patch/scheduler/scheduler_mpi.hpp"
 #include "core/sys/sycl_handler.hpp"
 #include "models/sph/sphpatch.hpp" //TODO remove sph dependancy

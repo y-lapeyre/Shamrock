@@ -15,7 +15,7 @@
 #pragma once
 
 #include "core/patch/base/patchdata.hpp"
-#include "core/patch/patchdata_buffer.hpp"
+//#include "core/patch/patchdata_buffer.hpp"
 #include "core/utils/syclreduction.hpp"
 #include "core/patch/base/patchdata_layout.hpp"
 #include <stdexcept>
@@ -53,6 +53,9 @@ namespace patchdata {
 
         }
 
+
+        #if false
+
         template<class htype>
         [[deprecated]]
         inline htype get_h_max(PatchDataLayout & pdl,sycl::queue & queue, PatchDataBuffer & pdatbuf){
@@ -81,6 +84,7 @@ namespace patchdata {
 
         }
 
+        
 
         template<class vec>
         [[deprecated]]
@@ -101,6 +105,8 @@ namespace patchdata {
 
         }
 
+
+        #endif
 
     }
 }
