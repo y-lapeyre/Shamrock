@@ -83,6 +83,6 @@ void test_func_##name (TestResults& __test_result_ref)
 //start test (name of the test, number of mpi node to use)
 //Test_assert("assert name", succes boolean, "log corresponding to the assertion");
 
+void run_py_script(std::string pysrc);
 
-
-int run_all_tests(int argc, char *argv[]);
+int run_all_tests();

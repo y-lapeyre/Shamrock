@@ -9,6 +9,7 @@ Checks: >
   -bugprone-easily-swappable-parameters,
   readability-identifier-naming,
   cppcoreguidelines-*,
+  -cppcoreguidelines-avoid-magic-numbers,
   mpi-*,
   modernize-*,
   -modernize-macro-to-enum,

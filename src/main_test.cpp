@@ -6,8 +6,38 @@
 //
 // -------------------------------------------------------//
 
+#include "core/sys/cmdopt.hpp"
+#include "unittests/shamrockbench.hpp"
 #include "unittests/shamrocktest.hpp"
 
 int main(int argc, char *argv[]){
-    return run_all_tests(argc,argv);
+
+
+    std::cout << shamrock_title_bar_big << std::endl;
+
+    opts::register_opt("--sycl-cfg","(idcomp:idalt) ", "specify the compute & alt queue index");
+    opts::register_opt("--loglevel","(logvalue)", "specify a log level");
+    opts::register_opt("--nocolor",{}, "disable colored ouput");
+
+    opts::register_opt("--test-list",{}, "print test availables");
+    opts::register_opt("--bench-list",{}, "print test availables");
+    opts::register_opt("--run-only",{"(test name)"}, "run only this test");
+    opts::register_opt("--full-output",{}, "print the assertions in the tests");
+
+    opts::register_opt("--benchmark",{}, "print the assertions in the tests");
+
+
+    opts::register_opt("-o",{"(filepath)"}, "output test report in that file");
+
+
+    opts::init(argc, argv);
+    if(opts::is_help_mode()){
+        return 0;
+    }
+
+    if(opts::has_option("--benchmark")){
+        return run_all_bench();
+    }else{
+        return run_all_tests();
+    }
 }

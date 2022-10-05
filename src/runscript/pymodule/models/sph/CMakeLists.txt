@@ -4,6 +4,8 @@ if("${BUILD_SIM}")
 target_sources(shamrock
     PRIVATE
     pymodel_basic_sph_gas.cpp
+
+    pymodel_basic_sph_gas_selfgrav.cpp
     pymodelsetup_sph.cpp
     PUBLIC
         

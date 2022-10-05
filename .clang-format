@@ -5,12 +5,15 @@ IndentWidth: 4
 Language: Cpp
 ColumnLimit: 125
 
-AlignAfterOpenBracket: Align
+AlignAfterOpenBracket: BlockIndent
 AlignConsecutiveAssignments: true
 
 AlignEscapedNewlines: Right
 AlignOperands:   true
 AlignTrailingComments: true
+
+
+AlwaysBreakTemplateDeclarations: MultiLine
 
 BreakBeforeConceptDeclarations : true
 NamespaceIndentation: All

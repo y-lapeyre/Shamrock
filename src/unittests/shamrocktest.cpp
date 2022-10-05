@@ -8,6 +8,7 @@
 
 
 #include "unittests/shamrocktest.hpp"
+#include <cstdlib>
 #include <sstream>
 
 #include "core/sys/cmdopt.hpp"
@@ -67,31 +68,17 @@ std::string make_test_output(TestResults t_res){
 
 
 //TODO add memory clean as an assertion
-int run_all_tests(int argc, char *argv[]){
+int run_all_tests(){
 
-    std::cout << shamrock_title_bar_big << std::endl;
+    
 
-    opts::register_opt("--sycl-cfg","(idcomp:idalt) ", "specify the compute & alt queue index");
-    opts::register_opt("--loglevel","(logvalue)", "specify a log level");
-    opts::register_opt("--nocolor",{}, "disable colored ouput");
-
-    opts::register_opt("--test-list",{}, "print test availables");
-    opts::register_opt("--run-only",{"(test name)"}, "run only this test");
-    opts::register_opt("--full-output",{}, "print the assertions in the tests");
-
-
-    opts::register_opt("-o",{"(filepath)"}, "output test report in that file");
-
-
-    opts::init(argc, argv);
 
     using namespace mpi_handler;
     
 
 
-    if(opts::is_help_mode()){
-        return 0;
-    }
+    
+
 
     if(opts::has_option("--test-list")){
         for (unsigned int i = 0; i < test_name_lst.size(); i++) {
@@ -329,4 +316,78 @@ int run_all_tests(int argc, char *argv[]){
 
 
     return 0;
+}
+
+
+std::string matplotlibstyle = R"==(
+
+# Set color cycle: blue, green, yellow, red, violet, gray
+axes.prop_cycle : cycler('color', ['0C5DA5', '00B945', 'FF9500', 'FF2C00', '845B97', '474747', '9e9e9e'])
+
+# Set default figure size
+figure.figsize : 10,5
+
+# Set x axis
+xtick.direction : in
+xtick.major.size : 5
+xtick.major.width : 1
+xtick.minor.size : 3
+xtick.minor.width : 1
+xtick.minor.visible : True
+xtick.top : True
+
+# Set y axis
+ytick.direction : in
+ytick.major.size : 5
+ytick.major.width : 1
+ytick.minor.size : 3
+ytick.minor.width : 1
+ytick.minor.visible : True
+ytick.right : True
+
+# Set line widths
+axes.linewidth : 1.5
+grid.linewidth : 0.5
+lines.linewidth : 1.
+
+# Remove legend frame
+legend.frameon : False
+
+# Always save as 'tight'
+savefig.bbox : tight
+savefig.pad_inches : 0.05
+
+# Use serif fonts
+# font.serif : Times
+font.family : serif
+font.size : 15
+mathtext.fontset : dejavuserif
+
+# Use LaTeX for math formatting
+text.usetex : True
+text.latex.preamble : \usepackage{amsmath} \usepackage{amssymb}
+
+)==";
+
+
+
+
+void run_py_script(std::string pysrc){
+
+    auto style_exist = []() -> bool{
+        std::ifstream f("custom_style.mplstyle");
+        return f.good();
+    };
+
+    if (!style_exist()) {
+        std::ofstream style_file("custom_style.mplstyle");
+        style_file << matplotlibstyle;
+        style_file.close();
+    }
+
+    std::ofstream py_file("tmp.py");
+    py_file << pysrc;
+    py_file.close();
+
+    system("python3 tmp.py");
 }
