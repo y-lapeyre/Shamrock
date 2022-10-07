@@ -764,6 +764,7 @@ template <class T> struct SymTensor3d_5 {
         };
     }
 
+
     template <class Tacc> inline void store(Tacc &acc, u32 offset) {
         acc[offset + 0]  = v_00000;
         acc[offset + 1]  = v_00001;
@@ -845,7 +846,6 @@ template<class T> SymTensor3d_4<T> operator*(const T &a, const SymTensor3d_4<T> 
 }
 
 
-
 //rank 3 ops
 template<class T> T operator*(const SymTensor3d_3<T> &a, const SymTensor3d_3<T> &b){
     return a.inner(b);
@@ -900,6 +900,145 @@ template<class T> SymTensor3d_1<T> operator*(const T &a, const SymTensor3d_1<T> 
 
 
 
+//outer product
+
+
+template<class T> SymTensor3d_5<T> operator%(const SymTensor3d_4<T> &a, const SymTensor3d_1<T> &b){
+    return SymTensor3d_5<T>{
+        a.v_0000 * b.v_0,
+        a.v_0001 * b.v_0,
+        a.v_0002 * b.v_0,
+        a.v_0011 * b.v_0,
+        a.v_0012 * b.v_0,
+        a.v_0022 * b.v_0,
+        a.v_0111 * b.v_0,
+        a.v_0112 * b.v_0,
+        a.v_0122 * b.v_0,
+        a.v_0222 * b.v_0,
+        a.v_1111 * b.v_0,
+        a.v_1112 * b.v_0,
+        a.v_1122 * b.v_0,
+        a.v_1222 * b.v_0,
+        a.v_2222 * b.v_0,
+        a.v_1111 * b.v_1,
+        a.v_1112 * b.v_1,
+        a.v_1122 * b.v_1,
+        a.v_1222 * b.v_1,
+        a.v_2222 * b.v_1,
+        a.v_2222 * b.v_2
+    };
+}
+
+template<class T> SymTensor3d_5<T> operator%(const SymTensor3d_3<T> &a, const SymTensor3d_2<T> &b){
+    return SymTensor3d_5<T>{
+        a.v_000 * b.v_00,
+        a.v_001 * b.v_00,
+        a.v_002 * b.v_00,
+        a.v_011 * b.v_00,
+        a.v_012 * b.v_00,
+        a.v_022 * b.v_00,
+        a.v_111 * b.v_00,
+        a.v_112 * b.v_00,
+        a.v_122 * b.v_00,
+        a.v_222 * b.v_00,
+        a.v_111 * b.v_01,
+        a.v_112 * b.v_01,
+        a.v_122 * b.v_01,
+        a.v_222 * b.v_01,
+        a.v_222 * b.v_02,
+        a.v_111 * b.v_11,
+        a.v_112 * b.v_11,
+        a.v_122 * b.v_11,
+        a.v_222 * b.v_11,
+        a.v_222 * b.v_12,
+        a.v_222 * b.v_22
+    };
+}
+
+template<class T> SymTensor3d_4<T> operator%(const SymTensor3d_3<T> &a, const SymTensor3d_1<T> &b){
+    return SymTensor3d_4<T>{
+        a.v_000 * b.v_0,
+        a.v_001 * b.v_0,
+        a.v_002 * b.v_0,
+        a.v_011 * b.v_0,
+        a.v_012 * b.v_0,
+        a.v_022 * b.v_0,
+        a.v_111 * b.v_0,
+        a.v_112 * b.v_0,
+        a.v_122 * b.v_0,
+        a.v_222 * b.v_0,
+        a.v_111 * b.v_1,
+        a.v_112 * b.v_1,
+        a.v_122 * b.v_1,
+        a.v_222 * b.v_1,
+        a.v_222 * b.v_2
+    };
+}
+
+
+
+template<class T> SymTensor3d_4<T> operator%(const SymTensor3d_2<T> &a, const SymTensor3d_2<T> &b){
+    return SymTensor3d_4<T>{
+        a.v_00 * b.v_00,
+        a.v_01 * b.v_00,
+        a.v_02 * b.v_00,
+        a.v_11 * b.v_00,
+        a.v_12 * b.v_00,
+        a.v_22 * b.v_00,
+        a.v_11 * b.v_01,
+        a.v_12 * b.v_01,
+        a.v_22 * b.v_01,
+        a.v_22 * b.v_02,
+        a.v_11 * b.v_11,
+        a.v_12 * b.v_11,
+        a.v_22 * b.v_11,
+        a.v_22 * b.v_12,
+        a.v_22 * b.v_22
+    };
+}
+
+
+template<class T> SymTensor3d_3<T> operator%(const SymTensor3d_2<T> &a, const SymTensor3d_1<T> &b){
+    return SymTensor3d_3<T>{
+        a.v_00 * b.v_0 + a.v_00 * b.v_0 + a.v_00 * b.v_0,
+        a.v_01 * b.v_0 + a.v_01 * b.v_0 + a.v_00 * b.v_1,
+        a.v_02 * b.v_0 + a.v_02 * b.v_0 + a.v_00 * b.v_2,
+        a.v_11 * b.v_0 + a.v_01 * b.v_1 + a.v_01 * b.v_1,
+        a.v_12 * b.v_0 + a.v_02 * b.v_1 + a.v_01 * b.v_2,
+        a.v_22 * b.v_0 + a.v_02 * b.v_2 + a.v_02 * b.v_2,
+        a.v_11 * b.v_1 + a.v_11 * b.v_1 + a.v_11 * b.v_1,
+        a.v_12 * b.v_1 + a.v_12 * b.v_1 + a.v_11 * b.v_2,
+        a.v_22 * b.v_1 + a.v_12 * b.v_2 + a.v_12 * b.v_2,
+        a.v_22 * b.v_2 + a.v_22 * b.v_2 + a.v_22 * b.v_2
+    };
+}
+
+template<class T> SymTensor3d_2<T> operator%(const SymTensor3d_1<T> &a, const SymTensor3d_1<T> &b){
+    return SymTensor3d_2<T>{
+        a.v_0 * b.v_0 + a.v_0 * b.v_0,
+        a.v_1 * b.v_0 + a.v_0 * b.v_1,
+        a.v_2 * b.v_0 + a.v_0 * b.v_2,
+        a.v_1 * b.v_1 + a.v_1 * b.v_1,
+        a.v_2 * b.v_1 + a.v_1 * b.v_2,
+        a.v_2 * b.v_2 + a.v_2 * b.v_2
+    };
+}
+
+
+
+
+template<class T> SymTensor3d_5<T> operator%(const SymTensor3d_2<T> &a, const SymTensor3d_3<T> &b){
+    return b % a;
+}
+template<class T> SymTensor3d_5<T> operator%(const SymTensor3d_1<T> &a, const SymTensor3d_4<T> &b){
+    return b % a;
+}
+template<class T> SymTensor3d_4<T> operator%(const SymTensor3d_1<T> &a, const SymTensor3d_3<T> &b){
+    return b % a;
+}
+template<class T> SymTensor3d_3<T> operator%(const SymTensor3d_1<T> &a, const SymTensor3d_2<T> &b){
+    return b % a;
+}
 
 
 
@@ -942,6 +1081,32 @@ template<class T> struct TensorCollection<T,0, 5> {
                                 A4.v_2222 * A1.v_2};
 
         return {1, A1, A2, A3, A4, A5};
+    }
+
+    inline static TensorCollection zeros() {
+        auto A1 = SymTensor3d_1<T>{0, 0, 0};
+
+        auto A2 = SymTensor3d_2<T>{
+            0, 0, 0, 0, 0, 0,
+        };
+
+        auto A3 =
+            SymTensor3d_3<T>{0, 0, 0, 0, 0,
+                            0, 0, 0, 0, 0};
+
+        auto A4 =
+            SymTensor3d_4<T>{0, 0, 0, 0, 0,
+                            0, 0, 0, 0, 0,
+                            0, 0, 0, 0, 0};
+
+        auto A5 = SymTensor3d_5<T>{0, 0, 0, 0,
+                                0, 0, 0, 0,
+                                0, 0, 0, 0,
+                                0, 0, 0, 0,
+                                0, 0, 0, 0,
+                                0};
+
+        return {0, A1, A2,A3,A4};
     }
 
     template <class Tacc> inline void store(Tacc &acc, u32 offset) {
@@ -993,6 +1158,25 @@ template <class T> struct TensorCollection<T,0, 4> {
         return {1, A1, A2, A3, A4};
     }
 
+    inline static TensorCollection zeros() {
+        auto A1 = SymTensor3d_1<T>{0, 0, 0};
+
+        auto A2 = SymTensor3d_2<T>{
+            0, 0, 0, 0, 0, 0,
+        };
+
+        auto A3 =
+            SymTensor3d_3<T>{0, 0, 0, 0, 0,
+                            0, 0, 0, 0, 0};
+
+        auto A4 =
+            SymTensor3d_4<T>{0, 0, 0, 0, 0,
+                            0, 0, 0, 0, 0,
+                            0, 0, 0, 0, 0};
+
+        return {0, A1, A2,A3,A4};
+    }
+
     template <class Tacc> inline void store(Tacc &acc, u32 offset) {
         acc[offset + 0] = t0;
         t1.store(acc, offset + SymTensor3d_1<T>::compo_offset);
@@ -1032,6 +1216,20 @@ template <class T> struct TensorCollection<T,0, 3> {
         return {1, A1, A2, A3};
     }
 
+    inline static TensorCollection zeros() {
+        auto A1 = SymTensor3d_1<T>{0, 0, 0};
+
+        auto A2 = SymTensor3d_2<T>{
+            0, 0, 0, 0, 0, 0,
+        };
+
+        auto A3 =
+            SymTensor3d_3<T>{0, 0, 0, 0, 0,
+                            0, 0, 0, 0, 0};
+
+        return {0, A1, A2,A3};
+    }
+
     template <class Tacc> inline void store(Tacc &acc, u32 offset) {
         acc[offset + 0] = t0;
         t1.store(acc, offset + SymTensor3d_1<T>::compo_offset);
@@ -1064,6 +1262,16 @@ template <class T> struct TensorCollection<T,0, 2> {
         return {1, A1, A2};
     }
 
+    inline static TensorCollection zeros() {
+        auto A1 = SymTensor3d_1<T>{0, 0, 0};
+
+        auto A2 = SymTensor3d_2<T>{
+            0, 0, 0, 0, 0, 0,
+        };
+
+        return {0, A1, A2};
+    }
+
     template <class Tacc> inline void store(Tacc &acc, u32 offset) {
         acc[offset + 0] = t0;
         t1.store(acc, offset + SymTensor3d_1<T>::compo_offset);
@@ -1088,6 +1296,11 @@ template <class T> struct TensorCollection<T,0, 1> {
 
         return {1, A1};
     }
+    inline static TensorCollection zeros() {
+        auto A1 = SymTensor3d_1<T>{0, 0, 0};
+
+        return {0, A1};
+    }
 
     template <class Tacc> inline void store(Tacc &acc, u32 offset) {
         acc[offset + 0] = t0;
@@ -1105,6 +1318,7 @@ template <class T> struct TensorCollection<T,0, 0> {
     static constexpr u32 num_component = 1;
 
     inline static TensorCollection from_vec(const sycl::vec<T, 3> &v) { return {1}; }
+    inline static TensorCollection zeros() { return {0}; }
 
     template <class Tacc> inline void store(Tacc &acc, u32 offset) { acc[offset + 0] = t0; }
 

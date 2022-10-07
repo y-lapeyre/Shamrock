@@ -614,6 +614,112 @@ Test_start("fmm", tmp, 1){
 
 }
 
+
+Test_start("fmm", multipole_moment_offset, 1){
+
+    std::mt19937 eng(0x1111);
+
+
+    std::uniform_real_distribution<f64> distf64(-1, 1);
+
+
+
+    //f64_3 s_bp = f64_3{distf64(eng), distf64(eng), distf64(eng)};
+    //f64_3 s_b  = f64_3{distf64(eng), distf64(eng), distf64(eng)};
+
+    f64_3 s_bp = f64_3{1, 0, 0};
+    f64_3 s_b  = f64_3{0, 0, 0};
+
+
+    auto B_nB = TensorCollection<f64,0,5>::zeros();
+    auto B_nBp = TensorCollection<f64,0,5>::zeros();
+    
+    for (u32 i = 0; i < 100; i++) {
+        
+        f64_3 x_1 = f64_3{distf64(eng), distf64(eng), distf64(eng)};
+
+        f64_3 bj = x_1 - s_b;
+        f64_3 bpj = x_1 - s_bp;
+
+        auto tB_nB = TensorCollection<f64,0,5>::from_vec(bj);
+
+        
+
+        auto tB_nBp = TensorCollection<f64,0,5>::from_vec(bpj);
+
+        B_nB.t0 += tB_nB.t0;
+        B_nB.t1 += tB_nB.t1;
+        B_nB.t2 += tB_nB.t2;
+        B_nB.t3 += tB_nB.t3;
+        B_nB.t4 += tB_nB.t4;
+        B_nB.t5 += tB_nB.t5;
+
+        B_nBp.t0 += tB_nBp.t0;
+        B_nBp.t1 += tB_nBp.t1;
+        B_nBp.t2 += tB_nBp.t2;
+        B_nBp.t3 += tB_nBp.t3;
+        B_nBp.t4 += tB_nBp.t4;
+        B_nBp.t5 += tB_nBp.t5;
+
+    }
+
+    auto d = s_b-s_bp;
+
+
+    TensorCollection<f64, 0, 5> d_ = TensorCollection<f64, 0, 5>::from_vec(d);
+
+    auto B_nb_offseted = offset_multipole(B_nB,d);
+
+    
+    auto diff_0 = B_nBp.t0 - B_nb_offseted.t0;
+    auto diff_1 = B_nBp.t1 - B_nb_offseted.t1;
+    auto diff_2 = B_nBp.t2 - B_nb_offseted.t2;
+    auto diff_3 = B_nBp.t3 - B_nb_offseted.t3;
+    auto diff_4 = B_nBp.t4 - B_nb_offseted.t4;
+    auto diff_5 = B_nBp.t5 - B_nb_offseted.t5;
+
+    f64 diff = 
+        (diff_0*diff_0) + 
+        (diff_1*diff_1) + 
+        (diff_2*diff_2) + 
+        (diff_3*diff_3) + 
+        (diff_4*diff_4) + 
+        (diff_5*diff_5);
+
+    printf("order 0 %f\n",B_nB.t0);
+
+
+
+
+    printf("diff %e\n",diff);
+
+    printf("dvec   %f %f %f\n",d.x(),d.y(),d.z());
+
+    printf("np     %f %f %f\n",B_nBp.t1.v_0,B_nBp.t1.v_1,B_nBp.t1.v_2);
+    printf("B      %f %f %f\n",B_nB.t1.v_0,B_nB.t1.v_1,B_nB.t1.v_2);
+    printf("offset %f %f %f\n",B_nb_offseted.t1.v_0,B_nb_offseted.t1.v_1,B_nb_offseted.t1.v_2);
+    
+    printf("------ order 2 ---------\n");
+    printf("B      %f %f %f %f %f %f\n",B_nB.t2.v_00,B_nB.t2.v_01,B_nB.t2.v_02,B_nB.t2.v_11,B_nB.t2.v_12,B_nB.t2.v_22);
+    printf("np     %f %f %f %f %f %f\n",B_nBp.t2.v_00,B_nBp.t2.v_01,B_nBp.t2.v_02,B_nBp.t2.v_11,B_nBp.t2.v_12,B_nBp.t2.v_22);
+    printf("offset %f %f %f %f %f %f\n",B_nb_offseted.t2.v_00,B_nb_offseted.t2.v_01,B_nb_offseted.t2.v_02,B_nb_offseted.t2.v_11,B_nb_offseted.t2.v_12,B_nb_offseted.t2.v_22);
+    printf("d      %f %f %f %f %f %f\n",d_.t2.v_00,d_.t2.v_01,d_.t2.v_02,d_.t2.v_11,d_.t2.v_12,d_.t2.v_22);
+    
+
+    auto DG = GreenFuncGravCartesian<f64, 0, 5>::get_der_tensors(s_b - f64_3{5,1,2});
+
+    auto err = (DG.t2 * (B_nb_offseted.t1 % d_.t1)) - ( 2*(B_nb_offseted.t1 * DG.t2 * d_.t1));
+
+    printf("%f\n ", err*err);
+
+    printf("%e %e %e %e %e %e\n",(diff_0*diff_0) , 
+        (diff_1*diff_1) , 
+        (diff_2*diff_2) , 
+        (diff_3*diff_3) , 
+        (diff_4*diff_4) , 
+        (diff_5*diff_5));
+}
+
 Bench_start("fmm shit", "fmm performance", fmm_perf, 1){
     Register_score(1)
 
