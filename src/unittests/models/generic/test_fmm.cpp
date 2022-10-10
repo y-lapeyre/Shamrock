@@ -720,22 +720,17 @@ Test_start("fmm", multipole_moment_offset, 1){
         (diff_5*diff_5));
 }
 
-Bench_start("fmm shit", "fmm performance", fmm_perf, 1){
-    Register_score(1)
 
 
 
+Bench_start("fmm shit", "multipole_compute", fmm_perf_multipole, 1){
     
-    
-    
+        
     std::vector<f64_3> pos_table = {{1,1,1}};
 
     sycl::buffer<f64_3> buf_pos = sycl::buffer<f64_3>(pos_table.data(), pos_table.size());
 
-
     constexpr u32 order = 5;
-
-
 
     constexpr u32 number_elem_multip = TensorCollection<f64,0,order>::num_component;
     sycl::buffer<f64> buf_multipoles = sycl::buffer<f64>(number_elem_multip);
@@ -766,3 +761,68 @@ Bench_start("fmm shit", "fmm performance", fmm_perf, 1){
     TimeitFor(100,l())
 
 }
+
+
+Bench_start("fmm shit", "multipole_offset", fmm_perf_offset, 1){
+    
+        
+    std::vector<f64_3> pos_table = {{1,1,1}};
+
+    sycl::buffer<f64_3> buf_pos = sycl::buffer<f64_3>(pos_table.data(), pos_table.size());
+
+    constexpr u32 order = 5;
+
+    constexpr u32 number_elem_multip = TensorCollection<f64,0,order>::num_component;
+    sycl::buffer<f64> buf_multipoles = sycl::buffer<f64>(number_elem_multip);
+
+
+    //compute multipoles
+    auto l = [&]{
+        sycl::host_accessor<f64_3> pos {buf_pos};
+        sycl::host_accessor<f64> multipoles {buf_multipoles};
+
+        f64_3 sa = {0,0,0};
+        f64_3 sb = {0,0,0};
+
+        for (u32 j = 0; j < pos_table.size(); j ++) {
+
+            f64_3 xj = pos[j];
+
+            f64_3 bj = xj - sb;
+
+            auto B_n = TensorCollection<f64,0,order>::from_vec(bj);
+
+
+            
+        }
+
+    };
+
+    l();
+
+
+
+    sycl::buffer<f64> buf_multipoles2 = sycl::buffer<f64>(number_elem_multip);
+
+
+    auto l2 = [&]{
+        sycl::host_accessor<f64> multipoles_old {buf_multipoles};
+        sycl::host_accessor<f64> multipoles_new {buf_multipoles2};
+
+        f64_3 d_vec = {1,2,3};
+
+        for (u32 j = 0; j < pos_table.size(); j ++) {
+
+            auto B_n = TensorCollection<f64,0,order>::load(multipoles_old,0);
+
+            offset_multipole(B_n,d_vec).store(multipoles_new, 0);
+            
+        }
+
+    };
+
+
+    TimeitFor(1000,l2())
+
+}
+
