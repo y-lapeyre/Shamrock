@@ -7,6 +7,7 @@
 // -------------------------------------------------------//
 
 #include "core/sys/cmdopt.hpp"
+#include "core/sys/log.hpp"
 #include "unittests/shamrockbench.hpp"
 #include "unittests/shamrocktest.hpp"
 
@@ -33,6 +34,27 @@ int main(int argc, char *argv[]){
     opts::init(argc, argv);
     if(opts::is_help_mode()){
         return 0;
+    }
+
+    if(opts::has_option("--loglevel")){
+        std::string level = std::string(opts::get_option("--loglevel"));
+
+        i32 a = atoi(level.c_str());
+
+        if(i8(a) != a){
+            logger::err_ln("Cmd OPT", "you must select a loglevel in a 8bit integer range");
+        }
+
+        logger::loglevel = a;
+
+        if(a == i8_max){
+            logger::raw_ln("If you've seen spam in your life i can garantee you, this is worst");
+        }
+
+        logger::raw_ln("-> modified loglevel to",logger::loglevel,"enabled log types : ");
+        logger::raw_ln(terminal_effects::faint + "----------------------" + terminal_effects::reset);
+        logger::print_active_level();
+        logger::raw_ln(terminal_effects::faint + "----------------------" + terminal_effects::reset);
     }
 
     if(opts::has_option("--benchmark")){

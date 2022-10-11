@@ -2,6 +2,8 @@
 #include "aliases.hpp"
 #include "buffer.hpp"
 #include "builtins.hpp"
+#include "core/sys/sycl_handler.hpp"
+#include "core/tree/radix_tree.hpp"
 #include "models/generic/physics/fmm.hpp"
 
 #include "types.hpp"
@@ -618,8 +620,6 @@ Test_start("fmm", tmp, 1){
 Test_start("fmm", multipole_moment_offset, 1){
 
     std::mt19937 eng(0x1111);
-
-
     std::uniform_real_distribution<f64> distf64(-1, 1);
 
 
@@ -720,6 +720,44 @@ Test_start("fmm", multipole_moment_offset, 1){
         (diff_5*diff_5));
 }
 
+
+
+
+
+
+Test_start("fmm", radix_tree_fmm, 1){
+
+    using flt = f64;
+    using vec = sycl::vec<flt,3>;
+    using morton_mode = u32;
+
+    std::mt19937 eng(0x1111);
+    std::uniform_real_distribution<flt> distf(-1, 1);
+
+    constexpr u32 npart = 1e6;
+
+    auto pos_part = std::make_unique<sycl::buffer<vec>>(npart);
+
+    {
+        sycl::host_accessor<f64_3> pos {*pos_part};
+
+        for (u32 i = 0; i < npart; i ++) {
+            pos[i] = f64_3{distf(eng), distf(eng), distf(eng)};
+        }
+    }
+
+
+
+    Radix_Tree<morton_mode, vec> rtree = Radix_Tree<morton_mode, vec>(sycl_handler::get_compute_queue(), {vec{-1},vec{1}},pos_part, npart );
+
+
+
+
+
+
+
+
+}
 
 
 
