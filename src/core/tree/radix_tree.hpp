@@ -358,6 +358,21 @@ namespace walker {
                     xyz_a, xyz_a,                   
                     inter_box_b_min, inter_box_b_max);
         }
+
+
+        template<class vec3,class flt>
+        inline bool sph_cell_cell_crit(vec3 cella_min,vec3 cella_max,vec3 cellb_min, vec3 cellb_max, flt rint_a, flt rint_b){
+
+            vec3 inter_box_a_min = cella_min - rint_a;
+            vec3 inter_box_a_max = cella_max + rint_a;
+
+            vec3 inter_box_b_min = cellb_min - rint_b;
+            vec3 inter_box_b_max = cellb_max + rint_b;
+
+            return BBAA::cella_neigh_b(inter_box_a_min, inter_box_a_max, cellb_min,cellb_max) ||
+                BBAA::cella_neigh_b(inter_box_b_min, inter_box_b_max, cella_min,cella_max) ;
+
+        }
     }
 
 
@@ -393,8 +408,66 @@ namespace walker {
         {}
     };
 
+
+    template<class Rta,class Functor_iter>
+    inline void iter_object_in_cell(const Rta &acc,const u32 & cell_id, Functor_iter &&func_it){
+        // loop on particle indexes
+        uint min_ids = acc.cell_index_map[cell_id     -acc.leaf_offset];
+        uint max_ids = acc.cell_index_map[cell_id + 1 -acc.leaf_offset];
+
+        for (unsigned int id_s = min_ids; id_s < max_ids; id_s++) {
+
+            //recover old index before morton sort
+            uint id_b = acc.particle_index_map[id_s];
+
+            //iteration function
+            func_it(id_b);
+        }
+    }
+
+
     template <class Rta, class Functor_int_cd, class Functor_iter, class Functor_iter_excl>
-    inline void rtree_for(Rta &acc, Functor_int_cd &&func_int_cd, Functor_iter &&func_it, Functor_iter_excl &&func_excl) {
+    inline void rtree_for_cell(const Rta &acc, Functor_int_cd &&func_int_cd, Functor_iter &&func_it, Functor_iter_excl &&func_excl) {
+        u32 stack_cursor = Rta::tree_depth - 1;
+        std::array<u32, Rta::tree_depth> id_stack;
+        id_stack[stack_cursor] = 0;
+
+        while (stack_cursor < Rta::tree_depth) {
+
+            u32 current_node_id    = id_stack[stack_cursor];
+            id_stack[stack_cursor] = Rta::_nindex;
+            stack_cursor++;
+
+            bool cur_id_valid = func_int_cd(current_node_id);
+
+            if (cur_id_valid) {
+
+                // leaf and cell can interact
+                if (current_node_id >= acc.leaf_offset) {
+
+                    func_it(current_node_id);
+
+                    // can interact not leaf => stack
+                } else {
+
+                    u32 lid = acc.lchild_id[current_node_id] + acc.leaf_offset * acc.lchild_flag[current_node_id];
+                    u32 rid = acc.rchild_id[current_node_id] + acc.leaf_offset * acc.rchild_flag[current_node_id];
+
+                    id_stack[stack_cursor - 1] = rid;
+                    stack_cursor--;
+
+                    id_stack[stack_cursor - 1] = lid;
+                    stack_cursor--;
+                }
+            } else {
+                // grav
+                func_excl(current_node_id);
+            }
+        }
+    }
+
+    template <class Rta, class Functor_int_cd, class Functor_iter, class Functor_iter_excl>
+    inline void rtree_for(const Rta &acc, Functor_int_cd &&func_int_cd, Functor_iter &&func_it, Functor_iter_excl &&func_excl) {
         u32 stack_cursor = Rta::tree_depth - 1;
         std::array<u32, Rta::tree_depth> id_stack;
         id_stack[stack_cursor] = 0;
@@ -413,17 +486,19 @@ namespace walker {
                 if (current_node_id >= acc.leaf_offset) {
 
                     // loop on particle indexes
-                    uint min_ids = acc.cell_index_map[current_node_id     -acc.leaf_offset];
-                    uint max_ids = acc.cell_index_map[current_node_id + 1 -acc.leaf_offset];
+                    //uint min_ids = acc.cell_index_map[current_node_id     -acc.leaf_offset];
+                    //uint max_ids = acc.cell_index_map[current_node_id + 1 -acc.leaf_offset];
+                    //
+                    //for (unsigned int id_s = min_ids; id_s < max_ids; id_s++) {
+                    //
+                    //    //recover old index before morton sort
+                    //    uint id_b = acc.particle_index_map[id_s];
+                    //
+                    //    //iteration function
+                    //    func_it(id_b);
+                    //}
 
-                    for (unsigned int id_s = min_ids; id_s < max_ids; id_s++) {
-
-                        //recover old index before morton sort
-                        uint id_b = acc.particle_index_map[id_s];
-
-                        //iteration function
-                        func_it(id_b);
-                    }
+                    iter_object_in_cell(acc, current_node_id, func_it);
 
                     // can interact not leaf => stack
                 } else {
