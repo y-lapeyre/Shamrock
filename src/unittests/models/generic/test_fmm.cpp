@@ -1185,7 +1185,7 @@ Test_start("fmm", radix_tree_fmm, 1){
     std::mt19937 eng(0x1111);
     std::uniform_real_distribution<flt> distf(-1, 1);
 
-    constexpr u32 npart = 1e7;
+    constexpr u32 npart = 1e3;
 
     auto pos_part = std::make_unique<sycl::buffer<vec>>(npart);
     auto buf_force = std::make_unique<sycl::buffer<vec>>(npart);
@@ -1378,13 +1378,29 @@ Test_start("fmm", radix_tree_fmm, 1){
 
             vec sa = (cur_pos_min_cell_a + cur_pos_max_cell_a)/2;
 
+            vec dc_a = (cur_pos_max_cell_a - cur_pos_min_cell_a);
+
+            flt l_cell_a = sycl::max(sycl::max(dc_a.x(),dc_a.y()),dc_a.z());
+
             auto dM_k = SymTensorCollection<flt, 1, 5>::zeros();
+
+            constexpr flt open_crit = 0.1;
+            constexpr flt open_crit_sq = open_crit*open_crit;
 
             walker::rtree_for_cell(
                 tree_acc,
-                [&tree_acc,&cur_pos_min_cell_a,&cur_pos_max_cell_a](u32 id_cell_b){
+                [&tree_acc,&cur_pos_min_cell_a,&cur_pos_max_cell_a,&sa,&l_cell_a](u32 id_cell_b){
                     vec cur_pos_min_cell_b = tree_acc.pos_min_cell[id_cell_b];
                     vec cur_pos_max_cell_b = tree_acc.pos_max_cell[id_cell_b];
+
+                    vec dc_b = (cur_pos_max_cell_b - cur_pos_min_cell_b);
+
+                    vec sb = (cur_pos_min_cell_b + cur_pos_max_cell_b)/2;
+                    vec r_fmm = sb-sa;
+
+                    flt l_cell_b = sycl::max(sycl::max(dc_b.x(),dc_b.y()),dc_b.z());
+
+                    flt opening_angle_sq = (l_cell_a + l_cell_b)*(l_cell_a + l_cell_b)/sycl::dot(r_fmm,r_fmm);
 
                     using namespace walker::interaction_crit;
 
@@ -1394,17 +1410,52 @@ Test_start("fmm", radix_tree_fmm, 1){
                         cur_pos_min_cell_b,
                         cur_pos_max_cell_b, 
                         0, 
-                        0);
+                        0) || (opening_angle_sq > open_crit_sq);
                 },
                 [&](u32 node_b) {
 
-                    vec sb = (tree_acc.pos_min_cell[node_b] + tree_acc.pos_max_cell[node_b])/2;
+                    vec cur_pos_min_cell_b = tree_acc.pos_min_cell[node_b];
+                    vec cur_pos_max_cell_b = tree_acc.pos_max_cell[node_b];
+
+                    vec dc_b = (cur_pos_max_cell_b - cur_pos_min_cell_b);
+
+                    vec sb = (cur_pos_min_cell_b + cur_pos_max_cell_b)/2;
                     vec r_fmm = sb-sa;
 
-                    auto Q_n = SymTensorCollection<flt, 0, fmm_order>::load(multipoles,node_b*SymTensorCollection<flt,0,fmm_order>::num_component);
-                    auto D_n = GreenFuncGravCartesian<flt, 1, fmm_order+1>::get_der_tensors(r_fmm);
+                    flt l_cell_b = sycl::max(sycl::max(dc_b.x(),dc_b.y()),dc_b.z());
+
+                    flt opening_angle_sq = (l_cell_a + l_cell_b)*(l_cell_a + l_cell_b)/sycl::dot(r_fmm,r_fmm);
+
+                    if(opening_angle_sq < open_crit_sq){
+                        auto Q_n = SymTensorCollection<flt, 0, fmm_order>::load(multipoles,node_b*SymTensorCollection<flt,0,fmm_order>::num_component);
+                        auto D_n = GreenFuncGravCartesian<flt, 1, fmm_order+1>::get_der_tensors(r_fmm);
+                        
+                        dM_k += get_dM_mat(D_n,Q_n);
+                    }else{
+                        walker::iter_object_in_cell(tree_acc, id_cell_a, [&](u32 id_a){
+
+                            vec x_i = xyz[id_a];
+                            vec sum_fi{0};
+
+                            walker::iter_object_in_cell(tree_acc, node_b, [&](u32 id_b){
+
+                                if(id_a != id_b){
+                                    vec x_j = xyz[id_b];
+
+                                    vec real_r = x_i-x_j;
+
+                                    flt r_n = sycl::sqrt(sycl::dot(real_r,real_r));
+                                    sum_fi += real_r/(r_n*r_n*r_n);
+                                }
+
+                            });
+
+                            fxyz[id_a] += sum_fi;
+
+                        });
+                    }
+
                     
-                    dM_k += get_dM_mat(D_n,Q_n);
 
                 },
                 [&](u32 node_b){
@@ -1450,6 +1501,50 @@ Test_start("fmm", radix_tree_fmm, 1){
 
 
     sycl_handler::get_compute_queue().wait();
+
+
+
+    {
+
+        sycl::host_accessor<vec> pos {*pos_part};
+        sycl::host_accessor<vec> force {*buf_force};
+
+        flt err_sum = 0;
+        flt err_max = 0;
+
+        for (u32 i = 0; i < npart; i++) {
+            vec sum_fi{0};
+
+            vec x_i = pos[i];
+
+            for(u32 j = 0; j < npart; j++){
+
+                if (i!=j) {
+
+                    vec x_j = pos[j];
+
+                    vec real_r = x_i-x_j;
+
+                    flt r_n = sycl::sqrt(sycl::dot(real_r,real_r));
+                    sum_fi += real_r/(r_n*r_n*r_n);
+
+                }
+
+            }
+
+            flt err = sycl::distance(force[i],sum_fi)/sycl::length(sum_fi);
+
+            if(i<10){
+                logger::raw_ln("local relative error : ",format("%e (%e %e %e) (%e %e %e)",err, force[i].x(),force[i].y(),force[i].z(), sum_fi.x(),sum_fi.y(),sum_fi.z()));
+            }
+            err_sum += err;
+
+            err_max = sycl::max(err_max,err);
+
+        }
+
+        logger::raw_ln("global relative error :",format("avg = %e max = %e",err_sum/npart,err_max));
+    }
 
 
 
@@ -1775,7 +1870,7 @@ Bench_start("fmm", "compute_tree_multipoles", compute_tree_multipoles, 1){
 
             vec sa = (cur_pos_min_cell_a + cur_pos_max_cell_a)/2;
 
-            auto dM_k = SymTensorCollection<flt, 1, 5>::zeros();
+            auto dM_k = SymTensorCollection<flt, 1, fmm_order+1>::zeros();
 
             walker::rtree_for_cell(
                 tree_acc,

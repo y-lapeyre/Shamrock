@@ -1040,8 +1040,8 @@ inline SymTensorCollection<T,1,3> get_dM_mat(SymTensorCollection<T,1,3> & D, Sym
 
 
     auto M_1 = TD1 * TQ0 + TD2 * TQ1 + (TD3 * TQ2)*(1./2.) ;
-    auto M_2 = ((-1.)*TD2 * TQ0) - TD3 * TQ1 ;
-    auto M_3 = (1./2.) * (TD3 *TQ0  );
+    auto M_2 = (T(-1.)*TD2 * TQ0) - TD3 * TQ1 ;
+    auto M_3 = T(1./2.) * (TD3 *TQ0  );
 
     return SymTensorCollection<T, 1, 3>{
         M_1,M_2,M_3
@@ -1062,7 +1062,7 @@ inline SymTensorCollection<T,1,2> get_dM_mat(SymTensorCollection<T,1,2> & D, Sym
 
 
     auto M_1 = TD1 * TQ0 + TD2 * TQ1 ;
-    auto M_2 = ((-1.)*TD2 * TQ0) ;
+    auto M_2 = (T(-1.)*TD2 * TQ0) ;
 
     return SymTensorCollection<T, 1, 2>{
         M_1,M_2
@@ -1407,6 +1407,140 @@ inline SymTensorCollection<T,0,4> offset_multipole(
         Qn2,
         Qn3,
         Qn4
+    };
+}
+
+
+template<class T>
+inline SymTensorCollection<T,0,3> offset_multipole(
+    const SymTensorCollection<T,0,3> & Q,
+    const sycl::vec<T,3> & offset){
+
+    SymTensorCollection<T, 0, 5> d = SymTensorCollection<T, 0, 5>::from_vec(offset);
+    
+
+    auto Qn1 = Q.t1 + Q.t0 * d.t1;
+
+
+
+    //mathematica out
+    //auto Qn2 = SymTensor3d_2<T>{
+    //    Q.t2.v_00 + 2*Q.t1.v_0*d.t1.v_0 + Q.t0*d.t2.v_00,
+    //    Q.t2.v_01 + Q.t1.v_1*d.t1.v_0 + Q.t1.v_0*d.t1.v_1 + Q.t0*d.t2.v_01,
+    //    Q.t2.v_02 + Q.t1.v_2*d.t1.v_0 + Q.t1.v_0*d.t1.v_2 + Q.t0*d.t2.v_02,
+    //    Q.t2.v_11 + 2*Q.t1.v_1*d.t1.v_1 + Q.t0*d.t2.v_11,
+    //    Q.t2.v_12 + Q.t1.v_2*d.t1.v_1 + Q.t1.v_1*d.t1.v_2 + Q.t0*d.t2.v_12,
+    //    Q.t2.v_22 + 2*Q.t1.v_2*d.t1.v_2 + Q.t0*d.t2.v_22
+    //};
+
+    // symbolic Qn2 : d_\mu Qn1_\nu + Q1_\mu d_\nu + Q2
+    auto Qn2 = SymTensor3d_2<T>{
+        d.t1.v_0 * Qn1.v_0 + Q.t1.v_0 * d.t1.v_0 + Q.t2.v_00,
+        d.t1.v_0 * Qn1.v_1 + Q.t1.v_0 * d.t1.v_1 + Q.t2.v_01,
+        d.t1.v_0 * Qn1.v_2 + Q.t1.v_0 * d.t1.v_2 + Q.t2.v_02,
+        d.t1.v_1 * Qn1.v_1 + Q.t1.v_1 * d.t1.v_1 + Q.t2.v_11,
+        d.t1.v_1 * Qn1.v_2 + Q.t1.v_1 * d.t1.v_2 + Q.t2.v_12,
+        d.t1.v_2 * Qn1.v_2 + Q.t1.v_2 * d.t1.v_2 + Q.t2.v_22
+    };
+
+
+    
+    
+    //mathematica out
+    //auto Qn3 = SymTensor3d_3<T>{
+    //    Q.t3.v_000 + 3*Q.t2.v_00*d.t1.v_0 + 3*Q.t1.v_0*d.t2.v_00 + Q.t0*d.t3.v_000,
+    //    Q.t3.v_001 + 2*Q.t2.v_01*d.t1.v_0 + Q.t2.v_00*d.t1.v_1 + Q.t1.v_1*d.t2.v_00 + 2*Q.t1.v_0*d.t2.v_01 + Q.t0*d.t3.v_001,
+    //    Q.t3.v_002 + 2*Q.t2.v_02*d.t1.v_0 + Q.t2.v_00*d.t1.v_2 + Q.t1.v_2*d.t2.v_00 + 2*Q.t1.v_0*d.t2.v_02 + Q.t0*d.t3.v_002,
+    //    Q.t3.v_011 + Q.t2.v_11*d.t1.v_0 + 2*Q.t2.v_01*d.t1.v_1 + 2*Q.t1.v_1*d.t2.v_01 + Q.t1.v_0*d.t2.v_11 + Q.t0*d.t3.v_011,
+    //    Q.t3.v_012 + Q.t2.v_12*d.t1.v_0 + Q.t2.v_02*d.t1.v_1 + Q.t2.v_01*d.t1.v_2 + Q.t1.v_2*d.t2.v_01 + Q.t1.v_1*d.t2.v_02 + Q.t1.v_0*d.t2.v_12 + Q.t0*d.t3.v_012,
+    //    Q.t3.v_022 + Q.t2.v_22*d.t1.v_0 + 2*Q.t2.v_02*d.t1.v_2 + 2*Q.t1.v_2*d.t2.v_02 + Q.t1.v_0*d.t2.v_22 + Q.t0*d.t3.v_022,
+    //    Q.t3.v_111 + 3*Q.t2.v_11*d.t1.v_1 + 3*Q.t1.v_1*d.t2.v_11 + Q.t0*d.t3.v_111,
+    //    Q.t3.v_112 + 2*Q.t2.v_12*d.t1.v_1 + Q.t2.v_11*d.t1.v_2 + Q.t1.v_2*d.t2.v_11 + 2*Q.t1.v_1*d.t2.v_12 + Q.t0*d.t3.v_112,
+    //    Q.t3.v_122 + Q.t2.v_22*d.t1.v_1 + 2*Q.t2.v_12*d.t1.v_2 + 2*Q.t1.v_2*d.t2.v_12 + Q.t1.v_1*d.t2.v_22 + Q.t0*d.t3.v_122,
+    //    Q.t3.v_222 + 3*Q.t2.v_22*d.t1.v_2 + 3*Q.t1.v_2*d.t2.v_22 + Q.t0*d.t3.v_222
+    //};
+
+    // symbolic Qn3 : d_\mu Qn2_\nu\delta + d_\nu * (Qn2_ \mu \delta - d_\mu Qn1_\delta) + Q2_\mu\nu d_\delta + Q3
+    auto Qn3 = SymTensor3d_3<T>{
+        d.t1.v_0 * Qn2.v_00 + d.t1.v_0 * (Qn2.v_00 - d.t1.v_0 * Qn1.v_0) + Q.t2.v_00 * d.t1.v_0 + Q.t3.v_000,
+        d.t1.v_0 * Qn2.v_01 + d.t1.v_0 * (Qn2.v_01 - d.t1.v_0 * Qn1.v_1) + Q.t2.v_00 * d.t1.v_1 + Q.t3.v_001,
+        d.t1.v_0 * Qn2.v_02 + d.t1.v_0 * (Qn2.v_02 - d.t1.v_0 * Qn1.v_2) + Q.t2.v_00 * d.t1.v_2 + Q.t3.v_002,
+        d.t1.v_0 * Qn2.v_11 + d.t1.v_1 * (Qn2.v_01 - d.t1.v_0 * Qn1.v_1) + Q.t2.v_01 * d.t1.v_1 + Q.t3.v_011,
+        d.t1.v_0 * Qn2.v_12 + d.t1.v_1 * (Qn2.v_02 - d.t1.v_0 * Qn1.v_2) + Q.t2.v_01 * d.t1.v_2 + Q.t3.v_012,
+        d.t1.v_0 * Qn2.v_22 + d.t1.v_2 * (Qn2.v_02 - d.t1.v_0 * Qn1.v_2) + Q.t2.v_02 * d.t1.v_2 + Q.t3.v_022,
+        d.t1.v_1 * Qn2.v_11 + d.t1.v_1 * (Qn2.v_11 - d.t1.v_1 * Qn1.v_1) + Q.t2.v_11 * d.t1.v_1 + Q.t3.v_111,
+        d.t1.v_1 * Qn2.v_12 + d.t1.v_1 * (Qn2.v_12 - d.t1.v_1 * Qn1.v_2) + Q.t2.v_11 * d.t1.v_2 + Q.t3.v_112,
+        d.t1.v_1 * Qn2.v_22 + d.t1.v_2 * (Qn2.v_12 - d.t1.v_1 * Qn1.v_2) + Q.t2.v_12 * d.t1.v_2 + Q.t3.v_122,
+        d.t1.v_2 * Qn2.v_22 + d.t1.v_2 * (Qn2.v_22 - d.t1.v_2 * Qn1.v_2) + Q.t2.v_22 * d.t1.v_2 + Q.t3.v_222
+    };
+
+    
+    
+    //auto Qn4 = SymTensor3d_4<T>{
+    //    Q.t4.v_0000 + 4*Q.t3.v_000*d.t1.v_0 + 6*Q.t2.v_00*d.t2.v_00 + 4*Q.t1.v_0*d.t3.v_000 + Q.t0*d.t4.v_0000,
+    //    Q.t4.v_0001 + 3*Q.t3.v_001*d.t1.v_0 + Q.t3.v_000*d.t1.v_1 + 3*Q.t2.v_01*d.t2.v_00 + 3*Q.t2.v_00*d.t2.v_01 + Q.t1.v_1*d.t3.v_000 + 3*Q.t1.v_0*d.t3.v_001 + Q.t0*d.t4.v_0001,
+    //    Q.t4.v_0002 + 3*Q.t3.v_002*d.t1.v_0 + Q.t3.v_000*d.t1.v_2 + 3*Q.t2.v_02*d.t2.v_00 + 3*Q.t2.v_00*d.t2.v_02 + Q.t1.v_2*d.t3.v_000 + 3*Q.t1.v_0*d.t3.v_002 + Q.t0*d.t4.v_0002,
+    //    Q.t4.v_0011 + 2*Q.t3.v_011*d.t1.v_0 + 2*Q.t3.v_001*d.t1.v_1 + Q.t2.v_11*d.t2.v_00 + 4*Q.t2.v_01*d.t2.v_01 + Q.t2.v_00*d.t2.v_11 + 2*Q.t1.v_1*d.t3.v_001 + 2*Q.t1.v_0*d.t3.v_011 + Q.t0*d.t4.v_0011,
+    //    Q.t4.v_0012 + 2*Q.t3.v_012*d.t1.v_0 + Q.t3.v_002*d.t1.v_1 + Q.t3.v_001*d.t1.v_2 + Q.t2.v_12*d.t2.v_00 + 2*Q.t2.v_02*d.t2.v_01 + 2*Q.t2.v_01*d.t2.v_02 + Q.t2.v_00*d.t2.v_12 + Q.t1.v_2*d.t3.v_001 + Q.t1.v_1*d.t3.v_002 + 2*Q.t1.v_0*d.t3.v_012 + Q.t0*d.t4.v_0012,
+    //    Q.t4.v_0022 + 2*Q.t3.v_022*d.t1.v_0 + 2*Q.t3.v_002*d.t1.v_2 + Q.t2.v_22*d.t2.v_00 + 4*Q.t2.v_02*d.t2.v_02 + Q.t2.v_00*d.t2.v_22 + 2*Q.t1.v_2*d.t3.v_002 + 2*Q.t1.v_0*d.t3.v_022 + Q.t0*d.t4.v_0022,
+    //    Q.t4.v_0111 + Q.t3.v_111*d.t1.v_0 + 3*Q.t3.v_011*d.t1.v_1 + 3*Q.t2.v_11*d.t2.v_01 + 3*Q.t2.v_01*d.t2.v_11 + 3*Q.t1.v_1*d.t3.v_011 + Q.t1.v_0*d.t3.v_111 + Q.t0*d.t4.v_0111,
+    //    Q.t4.v_0112 + Q.t3.v_112*d.t1.v_0 + 2*Q.t3.v_012*d.t1.v_1 + Q.t3.v_011*d.t1.v_2 + 2*Q.t2.v_12*d.t2.v_01 + Q.t2.v_11*d.t2.v_02 + Q.t2.v_02*d.t2.v_11 + 2*Q.t2.v_01*d.t2.v_12 + Q.t1.v_2*d.t3.v_011 + 2*Q.t1.v_1*d.t3.v_012 + Q.t1.v_0*d.t3.v_112 + Q.t0*d.t4.v_0112,
+    //    Q.t4.v_0122 + Q.t3.v_122*d.t1.v_0 + Q.t3.v_022*d.t1.v_1 + 2*Q.t3.v_012*d.t1.v_2 + Q.t2.v_22*d.t2.v_01 + 2*Q.t2.v_12*d.t2.v_02 + 2*Q.t2.v_02*d.t2.v_12 + Q.t2.v_01*d.t2.v_22 + 2*Q.t1.v_2*d.t3.v_012 + Q.t1.v_1*d.t3.v_022 + Q.t1.v_0*d.t3.v_122 + Q.t0*d.t4.v_0122,
+    //    Q.t4.v_0222 + Q.t3.v_222*d.t1.v_0 + 3*Q.t3.v_022*d.t1.v_2 + 3*Q.t2.v_22*d.t2.v_02 + 3*Q.t2.v_02*d.t2.v_22 + 3*Q.t1.v_2*d.t3.v_022 + Q.t1.v_0*d.t3.v_222 + Q.t0*d.t4.v_0222,
+    //    Q.t4.v_1111 + 4*Q.t3.v_111*d.t1.v_1 + 6*Q.t2.v_11*d.t2.v_11 + 4*Q.t1.v_1*d.t3.v_111 + Q.t0*d.t4.v_1111,
+    //    Q.t4.v_1112 + 3*Q.t3.v_112*d.t1.v_1 + Q.t3.v_111*d.t1.v_2 + 3*Q.t2.v_12*d.t2.v_11 + 3*Q.t2.v_11*d.t2.v_12 + Q.t1.v_2*d.t3.v_111 + 3*Q.t1.v_1*d.t3.v_112 + Q.t0*d.t4.v_1112,
+    //    Q.t4.v_1122 + 2*Q.t3.v_122*d.t1.v_1 + 2*Q.t3.v_112*d.t1.v_2 + Q.t2.v_22*d.t2.v_11 + 4*Q.t2.v_12*d.t2.v_12 + Q.t2.v_11*d.t2.v_22 + 2*Q.t1.v_2*d.t3.v_112 + 2*Q.t1.v_1*d.t3.v_122 + Q.t0*d.t4.v_1122,
+    //    Q.t4.v_1222 + Q.t3.v_222*d.t1.v_1 + 3*Q.t3.v_122*d.t1.v_2 + 3*Q.t2.v_22*d.t2.v_12 + 3*Q.t2.v_12*d.t2.v_22 + 3*Q.t1.v_2*d.t3.v_122 + Q.t1.v_1*d.t3.v_222 + Q.t0*d.t4.v_1222,
+    //    Q.t4.v_2222 + 4*Q.t3.v_222*d.t1.v_2 + 6*Q.t2.v_22*d.t2.v_22 + 4*Q.t1.v_2*d.t3.v_222 + Q.t0*d.t4.v_2222
+    //};
+
+
+    return {
+        Q.t0,
+        Qn1,
+        Qn2,
+        Qn3
+    };
+}
+
+
+template<class T>
+inline SymTensorCollection<T,0,2> offset_multipole(
+    const SymTensorCollection<T,0,2> & Q,
+    const sycl::vec<T,3> & offset){
+
+    SymTensorCollection<T, 0, 1> d = SymTensorCollection<T, 0, 1>::from_vec(offset);
+    
+
+    auto Qn1 = Q.t1 + Q.t0 * d.t1;
+
+
+
+    //mathematica out
+    //auto Qn2 = SymTensor3d_2<T>{
+    //    Q.t2.v_00 + 2*Q.t1.v_0*d.t1.v_0 + Q.t0*d.t2.v_00,
+    //    Q.t2.v_01 + Q.t1.v_1*d.t1.v_0 + Q.t1.v_0*d.t1.v_1 + Q.t0*d.t2.v_01,
+    //    Q.t2.v_02 + Q.t1.v_2*d.t1.v_0 + Q.t1.v_0*d.t1.v_2 + Q.t0*d.t2.v_02,
+    //    Q.t2.v_11 + 2*Q.t1.v_1*d.t1.v_1 + Q.t0*d.t2.v_11,
+    //    Q.t2.v_12 + Q.t1.v_2*d.t1.v_1 + Q.t1.v_1*d.t1.v_2 + Q.t0*d.t2.v_12,
+    //    Q.t2.v_22 + 2*Q.t1.v_2*d.t1.v_2 + Q.t0*d.t2.v_22
+    //};
+
+    // symbolic Qn2 : d_\mu Qn1_\nu + Q1_\mu d_\nu + Q2
+    auto Qn2 = SymTensor3d_2<T>{
+        d.t1.v_0 * Qn1.v_0 + Q.t1.v_0 * d.t1.v_0 + Q.t2.v_00,
+        d.t1.v_0 * Qn1.v_1 + Q.t1.v_0 * d.t1.v_1 + Q.t2.v_01,
+        d.t1.v_0 * Qn1.v_2 + Q.t1.v_0 * d.t1.v_2 + Q.t2.v_02,
+        d.t1.v_1 * Qn1.v_1 + Q.t1.v_1 * d.t1.v_1 + Q.t2.v_11,
+        d.t1.v_1 * Qn1.v_2 + Q.t1.v_1 * d.t1.v_2 + Q.t2.v_12,
+        d.t1.v_2 * Qn1.v_2 + Q.t1.v_2 * d.t1.v_2 + Q.t2.v_22
+    };
+
+
+    return {
+        Q.t0,
+        Qn1,
+        Qn2
     };
 }
 

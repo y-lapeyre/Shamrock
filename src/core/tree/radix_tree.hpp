@@ -10,6 +10,7 @@
 
 
 
+#include "access/access.hpp"
 #include "aliases.hpp"
 #include <array>
 #include <memory>
@@ -17,6 +18,7 @@
 #include <tuple>
 #include <vector>
 
+#include "buffer.hpp"
 #include "core/sys/log.hpp"
 #include "core/utils/string_utils.hpp"
 #include "kernels/morton_kernels.hpp"
@@ -27,6 +29,7 @@
 #include "kernels/key_morton_sort.hpp"
 #include "kernels/reduction_alg.hpp"
 #include "core/utils/geometry_utils.hpp"
+#include "properties/accessor_properties.hpp"
 
 
 
@@ -332,6 +335,37 @@ class Radix_Tree{public:
             queue.submit(ker_reduc_hmax);
         }
 
+
+    }
+
+
+    inline Radix_Tree<u_morton, vec3> cut_tree(sycl::queue & queue,std::tuple<vec3,vec3> cut_range){
+
+        {
+            u32 total_count = tree_internal_count + tree_leaf_count;
+            sycl::buffer<u8> valid_node = sycl::buffer<u8>(total_count);
+
+            sycl::range<1> range_tree{total_count};
+
+            queue.submit([&](sycl::handler &cgh) {
+
+                sycl::accessor acc_valid_node{valid_node, cgh , sycl::write_only, sycl::no_init};
+
+                sycl::accessor acc_pos_cell_min{*buf_pos_min_cell_flt, cgh , sycl::read_only};
+                sycl::accessor acc_pos_cell_max{*buf_pos_max_cell_flt, cgh , sycl::read_only};
+
+                vec3 v_max = std::get<0>(cut_range);
+                vec3 v_min = std::get<0>(cut_range);
+
+                cgh.parallel_for(range_tree, [=](sycl::item<1> item) {
+
+                    acc_valid_node[item] = BBAA::cella_neigh_b(v_min, v_max, acc_pos_cell_min[item], acc_pos_cell_max[item]);
+
+                });
+            });
+
+            //TODO code extraction part
+        }
 
     }
 

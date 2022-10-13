@@ -1,3 +1,17 @@
+# New TODOs : 
+
+    - Tree Field for multipoles
+    - treecut method
+    - move send_recv_mpi_ sycl buffers to mpi_sycl_introp module
+    - implement tree send
+    - implement tree field send
+
+
+
+
+
+
+
 # Patch Scheduler : 
 
 - [ ] patchdata_isend -> patchdata::pisend 
