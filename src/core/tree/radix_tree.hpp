@@ -10,7 +10,6 @@
 
 
 
-#include "access/access.hpp"
 #include "aliases.hpp"
 #include <array>
 #include <memory>
@@ -18,7 +17,7 @@
 #include <tuple>
 #include <vector>
 
-#include "buffer.hpp"
+
 #include "core/patch/base/patchdata.hpp"
 #include "core/sys/log.hpp"
 #include "core/utils/string_utils.hpp"
@@ -30,7 +29,6 @@
 #include "kernels/key_morton_sort.hpp"
 #include "kernels/reduction_alg.hpp"
 #include "core/utils/geometry_utils.hpp"
-#include "properties/accessor_properties.hpp"
 
 
 
@@ -87,17 +85,17 @@ class Radix_Tree{
     //std::vector<u32> reduc_index_map;
     std::unique_ptr<sycl::buffer<u32>> buf_reduc_index_map;
 
-    std::unique_ptr<sycl::buffer<u_morton>> buf_tree_morton;
-    std::unique_ptr<sycl::buffer<u32>>      buf_lchild_id;
-    std::unique_ptr<sycl::buffer<u32>>      buf_rchild_id;
-    std::unique_ptr<sycl::buffer<u8>>       buf_lchild_flag;
-    std::unique_ptr<sycl::buffer<u8>>       buf_rchild_flag;
-    std::unique_ptr<sycl::buffer<u32>>      buf_endrange;
+    std::unique_ptr<sycl::buffer<u_morton>> buf_tree_morton; // size = leaf cnt
+    std::unique_ptr<sycl::buffer<u32>>      buf_lchild_id;   // size = internal
+    std::unique_ptr<sycl::buffer<u32>>      buf_rchild_id;   // size = internal
+    std::unique_ptr<sycl::buffer<u8>>       buf_lchild_flag; // size = internal
+    std::unique_ptr<sycl::buffer<u8>>       buf_rchild_flag; // size = internal
+    std::unique_ptr<sycl::buffer<u32>>      buf_endrange;    // size = internal
 
-    std::unique_ptr<sycl::buffer<vec3i>>    buf_pos_min_cell;
-    std::unique_ptr<sycl::buffer<vec3i>>    buf_pos_max_cell;
-    std::unique_ptr<sycl::buffer<vec3>>     buf_pos_min_cell_flt;
-    std::unique_ptr<sycl::buffer<vec3>>     buf_pos_max_cell_flt;
+    std::unique_ptr<sycl::buffer<vec3i>>    buf_pos_min_cell;     //size = total count
+    std::unique_ptr<sycl::buffer<vec3i>>    buf_pos_max_cell;     //size = total count
+    std::unique_ptr<sycl::buffer<vec3>>     buf_pos_min_cell_flt; //size = total count
+    std::unique_ptr<sycl::buffer<vec3>>     buf_pos_max_cell_flt; //size = total count
 
 
     Radix_Tree(sycl::queue & queue,std::tuple<vec3,vec3> treebox,std::unique_ptr<sycl::buffer<vec3>> & pos_buf, u32 cnt_obj);

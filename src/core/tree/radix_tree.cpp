@@ -8,12 +8,14 @@
 
 #include "radix_tree.hpp"
 
+
 #include "access/access.hpp"
-#include "accessor.hpp"
 #include "aliases.hpp"
 #include "buffer.hpp"
 #include "kernels/morton_kernels.hpp"
 #include "properties/accessor_properties.hpp"
+#include "range.hpp"
+#include <tuple>
 #include <vector>
 
 
@@ -264,14 +266,15 @@ std::tuple<Radix_Tree<u_morton, vec3>, PatchData> Radix_Tree<u_morton, vec3>::cu
     sycl::queue &queue, const std::tuple<vec3, vec3> &cut_range, const PatchData &pdat_source
 ) {
 
-
     Radix_Tree<u_morton, vec3> ret_tree;
+    ret_tree.box_coord = box_coord;
 
-    ret_tree.box_coord = cut_range;
 
-    {
+    u32 total_count             = tree_internal_count + tree_leaf_count;
+    sycl::range<1> range_tree{total_count};
 
-        u32 total_count             = tree_internal_count + tree_leaf_count;
+    auto init_valid_buf = [&]() -> sycl::buffer<u8>{
+        
         sycl::buffer<u8> valid_node = sycl::buffer<u8>(total_count);
 
         sycl::range<1> range_tree{total_count};
@@ -290,11 +293,83 @@ std::tuple<Radix_Tree<u_morton, vec3>, PatchData> Radix_Tree<u_morton, vec3>::cu
             });
         });
 
-        ret_tree.tree_internal_count = 0;
-        ret_tree.tree_leaf_count = 0;
+        return valid_node;
+    };
+
+
+    
+
+    {
+
+        
+        sycl::buffer<u8> valid_node = init_valid_buf();
+
+        //flag 1 valid
+        //flag 0 to be deleted 
+        //flag 2 anything below should be deleted (2 if initialy 0 & parent = 1)
+        // basically 2 is le thing that would end up in the excluded lambda part
+
+        {// cascade zeros down the tree
+
+            sycl::buffer<u8> valid_node_new = sycl::buffer<u8>(total_count);
+
+            for(u32 it = 0; it < tree_depth; it++){
+                queue.submit([&](sycl::handler &cgh) {
+                    sycl::accessor acc_valid_node_old{valid_node, cgh, sycl::read_only};
+                    sycl::accessor acc_valid_node_new{valid_node_new, cgh, sycl::write_only,sycl::no_init};
+
+                    sycl::accessor acc_pos_cell_min{*buf_pos_min_cell_flt, cgh, sycl::read_only};
+                    sycl::accessor acc_pos_cell_max{*buf_pos_max_cell_flt, cgh, sycl::read_only};
+
+                    sycl::accessor acc_lchild_id   {*buf_lchild_id  ,cgh,sycl::read_only};
+                    sycl::accessor acc_rchild_id   {*buf_rchild_id  ,cgh,sycl::read_only};
+                    sycl::accessor acc_lchild_flag {*buf_lchild_flag,cgh,sycl::read_only};
+                    sycl::accessor acc_rchild_flag {*buf_rchild_flag,cgh,sycl::read_only};
+
+                    u32 leaf_offset = tree_internal_count;
+
+                    cgh.parallel_for(sycl::range<1>(tree_internal_count), [=](sycl::item<1> item) {
+
+                        u32 lid = acc_lchild_id[item] + leaf_offset * acc_lchild_flag[item];
+                        u32 rid = acc_rchild_id[item] + leaf_offset * acc_rchild_flag[item];
+
+                        u8 old_nid_falg = acc_valid_node_old[item];
+
+                        if(item.get_linear_id() == 0){
+                            acc_valid_node_new[item] = old_nid_falg;
+                        }
+
+                        if(old_nid_falg == 0 || old_nid_falg == 2){
+                            acc_valid_node_new[lid] = 0;
+                            acc_valid_node_new[rid] = 0;
+                        }else{
+                            u8 old_lid_falg = acc_valid_node_old[lid];
+                            u8 old_rid_falg = acc_valid_node_old[rid];
+
+                            if(old_lid_falg == 0) { old_lid_falg = 2; }
+                            if(old_rid_falg == 0) { old_rid_falg = 2; }
+
+                            acc_valid_node_new[lid] = old_lid_falg;
+                            acc_valid_node_new[rid] = old_rid_falg;
+                        }
+
+                    });
+                });
+
+                std::swap(valid_node,valid_node_new);
+            }
+
+        }
+
+
+
         sycl::buffer<u32> node_id_remap(total_count);
 
-        {
+        ret_tree.tree_internal_count = 0;
+        ret_tree.tree_leaf_count = 0;
+        
+
+        {//count leafs and nodes
             sycl::host_accessor acc_valid_node{valid_node, sycl::read_only};
             sycl::host_accessor acc_node_id_remap{valid_node, sycl::write_only, sycl::no_init};
 
@@ -322,6 +397,38 @@ std::tuple<Radix_Tree<u_morton, vec3>, PatchData> Radix_Tree<u_morton, vec3>::cu
         }
 
 
+
+
+        ret_tree.buf_tree_morton = std::make_unique<sycl::buffer<u_morton>>(ret_tree.tree_leaf_count);
+
+        ret_tree.buf_lchild_id = std::make_unique<sycl::buffer<u32>>(ret_tree.tree_internal_count);  
+        ret_tree.buf_rchild_id = std::make_unique<sycl::buffer<u32>>(ret_tree.tree_internal_count);  
+        ret_tree.buf_lchild_flag = std::make_unique<sycl::buffer<u8>>(ret_tree.tree_internal_count);
+        ret_tree.buf_rchild_flag = std::make_unique<sycl::buffer<u8>>(ret_tree.tree_internal_count);
+        ret_tree.buf_endrange = std::make_unique<sycl::buffer<u32>>(ret_tree.tree_internal_count);   
+
+        ret_tree.buf_pos_min_cell     = std::make_unique<sycl::buffer<vec3i>>(ret_tree.tree_leaf_count+ret_tree.tree_internal_count);     
+        ret_tree.buf_pos_max_cell     = std::make_unique<sycl::buffer<vec3i>>(ret_tree.tree_leaf_count+ret_tree.tree_internal_count);     
+        ret_tree.buf_pos_min_cell_flt = std::make_unique<sycl::buffer<vec3>> (ret_tree.tree_leaf_count+ret_tree.tree_internal_count); 
+        ret_tree.buf_pos_max_cell_flt = std::make_unique<sycl::buffer<vec3>> (ret_tree.tree_leaf_count+ret_tree.tree_internal_count); 
+
+
+        queue.submit([&](sycl::handler &cgh) {
+            sycl::accessor remap_nid{node_id_remap, cgh, sycl::read_only};
+
+            sycl::accessor new_buf_tree_morton {*ret_tree.buf_tree_morton, cgh, sycl::write_only,sycl::no_init};
+            sycl::accessor old_buf_tree_morton {*buf_tree_morton, cgh, sycl::read_only,sycl::no_init};
+
+            cgh.parallel_for(range_tree, [=](sycl::item<1> item) {
+                
+                u32 new_nid = remap_nid[item];
+
+                if (new_nid != u32_max){
+                    new_buf_tree_morton[new_nid] = old_buf_tree_morton[item];
+                }
+
+            });
+        });
 
         // TODO code extraction part
     }

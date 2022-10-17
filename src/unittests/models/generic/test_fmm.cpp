@@ -1,17 +1,12 @@
-#include "access/access.hpp"
-#include "accessor.hpp"
+
 #include "aliases.hpp"
-#include "buffer.hpp"
-#include "builtins.hpp"
 #include "core/sys/log.hpp"
 #include "core/sys/sycl_handler.hpp"
 #include "core/tree/radix_tree.hpp"
 #include "models/generic/math/tensors/collections.hpp"
 #include "models/generic/physics/fmm.hpp"
 
-#include "properties/accessor_properties.hpp"
-#include "range.hpp"
-#include "types.hpp"
+
 #include "unittests/shamrockbench.hpp"
 #include "unittests/shamrocktest.hpp"
 #include <cstdio>
@@ -1026,7 +1021,7 @@ Test_start("fmm", tmp, 1){
 
     std::uniform_real_distribution<f64> distf64(-1, 1);
 
-    f64 avg_spa = 0.1;
+    f64 avg_spa = 3e-3;
     std::uniform_real_distribution<f64> distf64_red(-avg_spa, avg_spa);
 
 
@@ -1041,7 +1036,15 @@ Test_start("fmm", tmp, 1){
         f64_3 x_i = s_a + f64_3{distf64_red(eng), distf64_red(eng), distf64_red(eng)};
         f64_3 x_j = s_b + f64_3{distf64_red(eng), distf64_red(eng), distf64_red(eng)};
 
-        f64 angle = (sycl::distance(x_i, s_a) + sycl::distance(x_j, s_b)) / sycl::distance(s_a, s_b);
+        auto dist_func = [](f64_3 a, f64_3 b){
+            f64_3 d = a - b;
+
+            f64_3 dabs = sycl::fabs(d);
+
+            return sycl::max(sycl::max(dabs.x(),dabs.y()),dabs.z());
+        };
+
+        f64 angle = 2*(dist_func(x_i, s_a) + dist_func(x_j, s_b)) / dist_func(s_a, s_b);
 
         prec_fmm_pot_out_file << format(" %e %e %e %e %e %e %e\n"
             ,angle
@@ -1196,13 +1199,13 @@ Test_start("fmm", radix_tree_fmm, 1){
 
         for (u32 i = 0; i < npart; i ++) {
             pos[i] = vec{distf(eng), distf(eng), distf(eng)};
-            force[i] = vec{0};
+            force[i] = vec{0,0,0};
         }
     }
 
     auto rtree = Radix_Tree<morton_mode, vec>(
             sycl_handler::get_compute_queue(), 
-            {vec{-1},vec{1}},
+            {vec{-1,-1,-1},vec{1,1,1}},
             pos_part, 
             npart 
         );
@@ -1239,7 +1242,7 @@ Test_start("fmm", radix_tree_fmm, 1){
                 u32 max_ids = cell_particle_ids[gid+1];
 
                 vec cell_pmax = cell_max[offset_leaf + gid];
-                vec cell_pmin = cell_max[offset_leaf + gid];
+                vec cell_pmin = cell_min[offset_leaf + gid];
 
                 vec s_b = (cell_pmax + cell_pmin)/2;
 
@@ -1311,7 +1314,7 @@ Test_start("fmm", radix_tree_fmm, 1){
                 if(should_compute){
 
                     vec cell_pmax = cell_max[cid];
-                    vec cell_pmin = cell_max[cid];
+                    vec cell_pmin = cell_min[cid];
 
                     vec sbp = (cell_pmax + cell_pmin)/2;
 
@@ -1321,7 +1324,7 @@ Test_start("fmm", radix_tree_fmm, 1){
 
                     auto add_multipole_offset = [&](u32 s_cid){
                         vec s_cell_pmax = cell_max[s_cid];
-                        vec s_cell_pmin = cell_max[s_cid];
+                        vec s_cell_pmin = cell_min[s_cid];
 
                         vec sb = (s_cell_pmax + s_cell_pmin)/2;
 
@@ -1435,7 +1438,7 @@ Test_start("fmm", radix_tree_fmm, 1){
                         walker::iter_object_in_cell(tree_acc, id_cell_a, [&](u32 id_a){
 
                             vec x_i = xyz[id_a];
-                            vec sum_fi{0};
+                            vec sum_fi{0,0,0};
 
                             walker::iter_object_in_cell(tree_acc, node_b, [&](u32 id_b){
 
@@ -1513,7 +1516,7 @@ Test_start("fmm", radix_tree_fmm, 1){
         flt err_max = 0;
 
         for (u32 i = 0; i < npart; i++) {
-            vec sum_fi{0};
+            vec sum_fi{0,0,0};
 
             vec x_i = pos[i];
 
@@ -1684,7 +1687,7 @@ Bench_start("fmm", "compute_tree_multipoles", compute_tree_multipoles, 1){
 
         for (u32 i = 0; i < npart; i ++) {
             pos[i] = vec{distf(eng), distf(eng), distf(eng)};
-            force[i] = vec{0};
+            force[i] = vec{0,0,0};
         }
     }
 
@@ -1694,7 +1697,7 @@ Bench_start("fmm", "compute_tree_multipoles", compute_tree_multipoles, 1){
 
     auto rtree = Radix_Tree<morton_mode, vec>(
             sycl_handler::get_compute_queue(), 
-            {vec{-1},vec{1}},
+            {vec{-1,-1,-1},vec{1,1,1}},
             pos_part, 
             npart 
         );
@@ -1731,7 +1734,7 @@ Bench_start("fmm", "compute_tree_multipoles", compute_tree_multipoles, 1){
                 u32 max_ids = cell_particle_ids[gid+1];
 
                 vec cell_pmax = cell_max[offset_leaf + gid];
-                vec cell_pmin = cell_max[offset_leaf + gid];
+                vec cell_pmin = cell_min[offset_leaf + gid];
 
                 vec s_b = (cell_pmax + cell_pmin)/2;
 
@@ -1803,7 +1806,7 @@ Bench_start("fmm", "compute_tree_multipoles", compute_tree_multipoles, 1){
                 if(should_compute){
 
                     vec cell_pmax = cell_max[cid];
-                    vec cell_pmin = cell_max[cid];
+                    vec cell_pmin = cell_min[cid];
 
                     vec sbp = (cell_pmax + cell_pmin)/2;
 
@@ -1813,7 +1816,7 @@ Bench_start("fmm", "compute_tree_multipoles", compute_tree_multipoles, 1){
 
                     auto add_multipole_offset = [&](u32 s_cid){
                         vec s_cell_pmax = cell_max[s_cid];
-                        vec s_cell_pmin = cell_max[s_cid];
+                        vec s_cell_pmin = cell_min[s_cid];
 
                         vec sb = (s_cell_pmax + s_cell_pmin)/2;
 
