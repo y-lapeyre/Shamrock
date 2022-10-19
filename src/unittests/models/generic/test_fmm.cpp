@@ -1430,6 +1430,7 @@ Test_start("fmm", radix_tree_fmm, 1){
                     flt opening_angle_sq = (l_cell_a + l_cell_b)*(l_cell_a + l_cell_b)/sycl::dot(r_fmm,r_fmm);
 
                     if(opening_angle_sq < open_crit_sq){
+                        //this is useless this lambda is already executed only if cd above true
                         auto Q_n = SymTensorCollection<flt, 0, fmm_order>::load(multipoles,node_b*SymTensorCollection<flt,0,fmm_order>::num_component);
                         auto D_n = GreenFuncGravCartesian<flt, 1, fmm_order+1>::get_der_tensors(r_fmm);
                         

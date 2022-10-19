@@ -117,9 +117,22 @@ class Radix_Tree{
 
     std::tuple<Radix_Tree<u_morton, vec3>,PatchData> cut_tree(sycl::queue & queue,const std::tuple<vec3,vec3> & cut_range, const PatchData & pdat_source);
 
-
+    template<class T> void print_tree_field(sycl::buffer<T> & buf_field);
 
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 namespace walker {

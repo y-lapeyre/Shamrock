@@ -54,9 +54,9 @@ namespace morton_3d {
 
     template <class morton_prec, class fp_prec> morton_prec coord_to_morton(fp_prec x, fp_prec y, fp_prec z);
 
-    template <class morton_prec, class fp_prec> typename morton_types<morton_prec>::int_vec_repr morton_to_ipos(morton_prec morton);
+    template <class morton_prec> typename morton_types<morton_prec>::int_vec_repr morton_to_ipos(morton_prec morton);
 
-    template <class morton_prec, class fp_prec> typename morton_types<morton_prec>::int_vec_repr get_offset(u32 clz_);
+    template <class morton_prec> typename morton_types<morton_prec>::int_vec_repr get_offset(u32 clz_);
 
 
 
@@ -106,7 +106,7 @@ namespace morton_3d {
         return xx * 4 + yy * 2 + zz;
     }
 
-    template <> inline u32_3 morton_to_ipos<u64, f64>(u64 morton) {
+    template <> inline u32_3 morton_to_ipos<u64>(u64 morton) {
 
         u32_3 pos;
         pos.x() = bmi::contract_bits<u64, 2>((morton & 0x4924924924924924) >> 2);
@@ -116,27 +116,7 @@ namespace morton_3d {
         return pos;
     }
 
-    template <> inline u32_3 morton_to_ipos<u64, f32>(u64 morton) {
-
-        u32_3 pos;
-        pos.x() = bmi::contract_bits<u64, 2>((morton & 0x4924924924924924) >> 2);
-        pos.y() = bmi::contract_bits<u64, 2>((morton & 0x2492492492492492) >> 1);
-        pos.z() = bmi::contract_bits<u64, 2>((morton & 0x1249249249249249) >> 0);
-
-        return pos;
-    }
-
-    template <> inline u16_3 morton_to_ipos<u32, f64>(u32 morton) {
-
-        u16_3 pos;
-        pos.s0() = (u16)bmi::contract_bits<u32, 2>((morton & 0x24924924) >> 2);
-        pos.s1() = (u16)bmi::contract_bits<u32, 2>((morton & 0x12492492) >> 1);
-        pos.s2() = (u16)bmi::contract_bits<u32, 2>((morton & 0x09249249) >> 0);
-
-        return pos;
-    }
-
-    template <> inline u16_3 morton_to_ipos<u32, f32>(u32 morton) {
+    template <> inline u16_3 morton_to_ipos<u32>(u32 morton) {
 
         u16_3 pos;
         pos.s0() = (u16)bmi::contract_bits<u32, 2>((morton & 0x24924924) >> 2);
@@ -146,7 +126,7 @@ namespace morton_3d {
         return pos;
     }
     
-    template <> inline u32_3 get_offset<u64, f64>(uint clz_) {
+    template <> inline u32_3 get_offset<u64>(uint clz_) {
         u32_3 mx;
         mx.s0() = 2097152 >> ((clz_ + 1) / 3);
         mx.s1() = 2097152 >> ((clz_ - 0) / 3);
@@ -154,23 +134,7 @@ namespace morton_3d {
         return mx;
     }
 
-    template <> inline u32_3 get_offset<u64, f32>(uint clz_) {
-        u32_3 mx;
-        mx.s0() = 2097152 >> ((clz_ + 1) / 3);
-        mx.s1() = 2097152 >> ((clz_ - 0) / 3);
-        mx.s2() = 2097152 >> ((clz_ - 1) / 3);
-        return mx;
-    }
-
-    template <> inline u16_3 get_offset<u32, f64>(uint clz_) {
-        u16_3 mx;
-        mx.s0() = 1024 >> ((clz_ - 0) / 3);
-        mx.s1() = 1024 >> ((clz_ - 1) / 3);
-        mx.s2() = 1024 >> ((clz_ - 2) / 3);
-        return mx;
-    }
-
-    template <> inline u16_3 get_offset<u32, f32>(uint clz_) {
+    template <> inline u16_3 get_offset<u32>(uint clz_) {
         u16_3 mx;
         mx.s0() = 1024 >> ((clz_ - 0) / 3);
         mx.s1() = 1024 >> ((clz_ - 1) / 3);

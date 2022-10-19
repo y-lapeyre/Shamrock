@@ -14,6 +14,7 @@
 #include "core/patch/base/pdat_comm_impl/pdat_comm_directgpu.hpp"
 #include "core/sys/sycl_handler.hpp"
 #include "core/utils/sycl_algs.hpp"
+#include <cstdio>
 #include <memory>
 
 //TODO use hash for name + nvar to check if the field match before doing operation on them
@@ -114,7 +115,7 @@ template <class T> bool PatchDataField<T>::check_field_match(PatchDataField<T> &
 
 template<class T> class PdatField_append_subset_to;
 
-template <class T> void PatchDataField<T>::append_subset_to(std::vector<u32> &idxs, PatchDataField &pfield) {
+template <class T> void PatchDataField<T>::append_subset_to(const std::vector<u32> &idxs, PatchDataField &pfield) {
 
     if (pfield.nvar != nvar)
         throw shamrock_exc("field must be similar for extraction");
@@ -125,38 +126,80 @@ template <class T> void PatchDataField<T>::append_subset_to(std::vector<u32> &id
 
     pfield.expand(idxs.size());
 
+    
 
+
+
+    using buf_t = std::unique_ptr<sycl::buffer<T>>;
+
+    buf_t & buf = get_buf();
+    buf_t & buf_other  = pfield.get_buf();
+
+    u32 sz = idxs.size();
+
+
+    
+
+    sycl::buffer<u32> idxs_buf(idxs.data(), sz);
+
+    #ifdef false
     {
-        using buf_t = std::unique_ptr<sycl::buffer<T>>;
+        sycl::host_accessor acc_idxs {idxs_buf, sycl::read_only};
+        sycl::host_accessor acc_curr {*buf, sycl::read_only};
+        sycl::host_accessor acc_other {*buf_other, sycl::write_only, sycl::no_init};
 
-        buf_t & buf = get_buf();
-        buf_t & buf_other  = pfield.get_buf();
+        const u32 nvar_loc = nvar;
+        const u32 start_enque_loc = start_enque;
 
-        sycl::buffer<u32> idxs_buf(idxs.data(), idxs.size());
 
-        sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
+        for(u32 gid = 0; gid < sz; gid++){
 
-            sycl::accessor acc_curr {*buf, cgh, sycl::read_only};
-            sycl::accessor acc_other {*buf_other, cgh, sycl::write_only};
-            sycl::accessor acc_idxs {idxs_buf, cgh, sycl::read_only};
+            u32 _sz = sz;
+        
+            const u32 idx_extr = acc_idxs[gid] * nvar_loc;
+            const u32 idx_push = start_enque_loc + gid * nvar_loc;
+    
+            for (u32 a = 0; a < nvar_loc; a++) {
+                auto tmp = acc_curr[idx_extr + a];
+                acc_other[idx_push + a] = tmp;
+            }  
 
-            const u32 nvar_loc = nvar;
-            const u32 start_enque_loc = start_enque;
+        }
 
-            cgh.parallel_for<PdatField_append_subset_to<T>>
-                (sycl::range<1>{idxs.size()}, 
-                    [=](sycl::item<1> i){
-                        const u32 idx_extr = acc_idxs[i] * nvar_loc;
-                        const u32 idx_push = start_enque_loc + i.get_linear_id() * nvar_loc;
-                
-                        for (u32 a = 0; a < nvar_loc; a++) {
-                            acc_other[idx_push + a] = acc_curr[idx_extr + a];
-                        }
-                    }       
-            );
+        //printf("extracting : (%u)\n",sz);
+        //for(u32 i = 0; i < sz; i++){
+        //    printf("%u ",acc_idxs[i]);
+        //}
+        //printf("\n");
+    }
+    #endif
+    
+    sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
+
+        sycl::accessor acc_curr {*buf, cgh, sycl::read_only};
+        sycl::accessor acc_other {*buf_other, cgh, sycl::write_only, sycl::no_init};
+        sycl::accessor acc_idxs {idxs_buf, cgh, sycl::read_only};
+
+        const u32 nvar_loc = nvar;
+        const u32 start_enque_loc = start_enque;
+
+        cgh.parallel_for(sycl::range<1>{sz},  [=](sycl::item<1> i){
+
+            const u32 gid = i.get_linear_id();
+        
+            const u32 idx_extr = acc_idxs[gid] * nvar_loc;
+            const u32 idx_push = start_enque_loc + gid * nvar_loc;
+    
+            for (u32 a = 0; a < nvar_loc; a++) {
+                acc_other[idx_push + a] = acc_curr[idx_extr + a];
+            }       
 
         });
-    }
+
+    });
+
+    
+
 }
 
 

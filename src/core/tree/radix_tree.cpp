@@ -9,12 +9,8 @@
 #include "radix_tree.hpp"
 
 
-#include "access/access.hpp"
 #include "aliases.hpp"
-#include "buffer.hpp"
 #include "kernels/morton_kernels.hpp"
-#include "properties/accessor_properties.hpp"
-#include "range.hpp"
 #include <tuple>
 #include <vector>
 
@@ -60,6 +56,8 @@ Radix_Tree<u_morton, vec3>::Radix_Tree(
     std::vector<u32> reduc_index_map;
     reduction_alg(queue, cnt_obj, buf_morton, 5, reduc_index_map, tree_leaf_count);
 
+    u32 reduc_index_map_len = reduc_index_map.size();
+
     logger::debug_sycl_ln(
         "RadixTree", "reduction results : (before :", cnt_obj, " | after :", tree_leaf_count,
         ") ratio :", format("%2.2f", f32(cnt_obj) / f32(tree_leaf_count))
@@ -70,16 +68,26 @@ Radix_Tree<u_morton, vec3>::Radix_Tree(
         //buf_reduc_index_map = std::make_unique<sycl::buffer<u32>>(reduc_index_map.data(),reduc_index_map.size());
 
         {
-            sycl::buffer<u32> tmp (reduc_index_map.data(), reduc_index_map.size());
-            buf_reduc_index_map = std::make_unique<sycl::buffer<u32>>(reduc_index_map.size());
+
+            sycl::buffer<u32> tmp (reduc_index_map.data(), reduc_index_map_len);
+                
+            buf_reduc_index_map = std::make_unique<sycl::buffer<u32>>(reduc_index_map_len);
         
             queue.submit([&](sycl::handler &cgh) {
                 auto source = tmp.get_access<sycl::access::mode::read>(cgh);
                 auto dest = buf_reduc_index_map->get_access<sycl::access::mode::discard_write>(cgh);
-                cgh.parallel_for(sycl::range(reduc_index_map.size()), [=](sycl::item<1> item) { dest[item] = source[item]; });
+                cgh.parallel_for(sycl::range(reduc_index_map_len), [=](sycl::item<1> item) { dest[item] = source[item]; });
             });
-        
+
+            //HIPSYCL segfault otherwise because looks like the destructor of the sycl buffer 
+            //doesn't wait for the end of the queue resulting in out of bound access
+            #ifdef SYCL_COMP_HIPSYCL
+            queue.wait();
+            #endif
+
         }
+        
+        
         
 
         
@@ -261,13 +269,100 @@ void Radix_Tree<u_morton, vec3>::compute_int_boxes(
     }
 }
 
+
+
+template<class T>
+std::string print_member(const T & a);
+
+template<> std::string print_member(const u8 & a){
+    return format("%d",u32(a));
+}
+
+template<> std::string print_member(const u32 & a){
+    return format("%d",a);
+}
+
+
+template <class u_morton, class vec3> template<class T>
+void Radix_Tree<u_morton, vec3>::print_tree_field(sycl::buffer<T> & buf_field){
+
+    sycl::host_accessor acc{buf_field, sycl::read_only};
+
+    u32 total_count             = tree_internal_count + tree_leaf_count;
+
+    u32 offset_leaf = tree_internal_count;
+
+    sycl::host_accessor rchild_id   {*buf_rchild_id  };
+    sycl::host_accessor lchild_id   {*buf_lchild_id  };
+    sycl::host_accessor rchild_flag {*buf_rchild_flag};
+    sycl::host_accessor lchild_flag {*buf_lchild_flag};
+
+
+    auto printer = [&](){
+
+        auto get_print_step = [&](u32 gid, std::string prefix, bool is_left, auto & step_ref) -> std::string{
+
+            std::string ret_val = "";
+
+            if(!is_left){
+                ret_val += prefix;
+            }
+
+            std::string val = " (" + print_member(acc[gid])+ ") ";
+            std::string val_empt = std::string(val.size(),' ');
+
+            ret_val += (is_left ? "╦══" : "╚══" );
+            ret_val += val;
+
+            if (gid < offset_leaf){
+                u32 lid = lchild_id[gid] + offset_leaf * lchild_flag[gid];
+                u32 rid = rchild_id[gid] + offset_leaf * rchild_flag[gid];
+
+                ret_val += step_ref(lid, prefix + (is_left ? "║  " + val_empt: "   " + val_empt), true ,step_ref);
+                ret_val += step_ref(rid, prefix + (is_left ? "║  " + val_empt: "   " + val_empt), false,step_ref);
+            }else{
+                ret_val += "\n";
+            }
+
+
+            return ret_val;
+            
+
+        };
+
+
+        logger::raw_ln(get_print_step(0,"",false,get_print_step));
+    };
+
+    printer();
+    
+
+}
+
+
+template void Radix_Tree<u32, f64_3>::print_tree_field(sycl::buffer<u32> &buf_field);
+template void Radix_Tree<u32, f32_3>::print_tree_field(sycl::buffer<u32> &buf_field);
+template void Radix_Tree<u64, f64_3>::print_tree_field(sycl::buffer<u32> &buf_field);
+template void Radix_Tree<u64, f32_3>::print_tree_field(sycl::buffer<u32> &buf_field);
+
+
+
+
+
+
+
+
+
+
+
+
+
 template <class u_morton, class vec3>
 std::tuple<Radix_Tree<u_morton, vec3>, PatchData> Radix_Tree<u_morton, vec3>::cut_tree(
     sycl::queue &queue, const std::tuple<vec3, vec3> &cut_range, const PatchData &pdat_source
 ) {
 
-    Radix_Tree<u_morton, vec3> ret_tree;
-    ret_tree.box_coord = box_coord;
+    
 
 
     u32 total_count             = tree_internal_count + tree_leaf_count;
@@ -285,8 +380,8 @@ std::tuple<Radix_Tree<u_morton, vec3>, PatchData> Radix_Tree<u_morton, vec3>::cu
             sycl::accessor acc_pos_cell_min{*buf_pos_min_cell_flt, cgh, sycl::read_only};
             sycl::accessor acc_pos_cell_max{*buf_pos_max_cell_flt, cgh, sycl::read_only};
 
-            vec3 v_max = std::get<0>(cut_range);
-            vec3 v_min = std::get<1>(cut_range);
+            vec3 v_min = std::get<0>(cut_range);
+            vec3 v_max = std::get<1>(cut_range);
 
             cgh.parallel_for(range_tree, [=](sycl::item<1> item) {
                 acc_valid_node[item] = BBAA::cella_neigh_b(v_min, v_max, acc_pos_cell_min[item], acc_pos_cell_max[item]);
@@ -299,10 +394,16 @@ std::tuple<Radix_Tree<u_morton, vec3>, PatchData> Radix_Tree<u_morton, vec3>::cu
 
     
 
-    {
+
+    
+
+    {        
+
+        logger::debug_sycl_ln("Radixtree", "computing valid node buf");
+
+        sycl::buffer<u8> valid_node = init_valid_buf();
 
         
-        sycl::buffer<u8> valid_node = init_valid_buf();
 
         //flag 1 valid
         //flag 0 to be deleted 
@@ -314,12 +415,12 @@ std::tuple<Radix_Tree<u_morton, vec3>, PatchData> Radix_Tree<u_morton, vec3>::cu
             sycl::buffer<u8> valid_node_new = sycl::buffer<u8>(total_count);
 
             for(u32 it = 0; it < tree_depth; it++){
+
+
+                logger::debug_sycl_ln("Radixtree", "cascading zeros step : ",it);
                 queue.submit([&](sycl::handler &cgh) {
                     sycl::accessor acc_valid_node_old{valid_node, cgh, sycl::read_only};
                     sycl::accessor acc_valid_node_new{valid_node_new, cgh, sycl::write_only,sycl::no_init};
-
-                    sycl::accessor acc_pos_cell_min{*buf_pos_min_cell_flt, cgh, sycl::read_only};
-                    sycl::accessor acc_pos_cell_max{*buf_pos_max_cell_flt, cgh, sycl::read_only};
 
                     sycl::accessor acc_lchild_id   {*buf_lchild_id  ,cgh,sycl::read_only};
                     sycl::accessor acc_rchild_id   {*buf_rchild_id  ,cgh,sycl::read_only};
@@ -362,12 +463,109 @@ std::tuple<Radix_Tree<u_morton, vec3>, PatchData> Radix_Tree<u_morton, vec3>::cu
         }
 
 
+        {
+            logger::debug_sycl_ln("Radixtree", "valid_node_state");
+            print_tree_field(valid_node);
+            logger::raw_ln("");
+        }
 
-        sycl::buffer<u32> node_id_remap(total_count);
 
+
+        sycl::buffer<u32> morton_id_remap(tree_leaf_count);
+
+        auto print_morton_id_remap = [&]{
+            logger::debug_sycl_ln("Radixtree", "morton_id_remap");
+
+            sycl::buffer<u32> print_map(total_count);
+
+            sycl::host_accessor acc {print_map};
+            sycl::host_accessor acc_leaf {morton_id_remap};
+
+            for(u32 i = 0; i < tree_leaf_count; i++){
+                acc[i + tree_internal_count] = acc_leaf[i];
+            }
+
+            for(u32 i = 0; i < tree_internal_count; i++){
+                acc[i] = acc_leaf[i];
+            }
+
+            print_tree_field(print_map);
+            logger::raw_ln("");
+        };
+
+
+        {// cascade new indexes up the tree
+
+
+            {
+                sycl::host_accessor acc_leaf {morton_id_remap};
+                for(u32 i = 0; i < tree_leaf_count; i++){
+                    acc_leaf[i] = i;
+                }
+            }
+
+            print_morton_id_remap();
+
+            for(u32 it = 0; it < tree_depth; it++){
+
+                queue.submit([&](sycl::handler &cgh) {
+                    sycl::accessor acc_remap_node{morton_id_remap, cgh, sycl::read_write};
+
+                    sycl::accessor acc_valid_node{valid_node, cgh, sycl::read_only};
+
+                    sycl::accessor acc_lchild_id   {*buf_lchild_id  ,cgh,sycl::read_only};
+                    sycl::accessor acc_rchild_id   {*buf_rchild_id  ,cgh,sycl::read_only};
+                    //sycl::accessor acc_lchild_flag {*buf_lchild_flag,cgh,sycl::read_only};
+                    //sycl::accessor acc_rchild_flag {*buf_rchild_flag,cgh,sycl::read_only};
+
+                    u32 leaf_offset = tree_internal_count;
+
+                    cgh.parallel_for(sycl::range<1>(tree_internal_count), [=](sycl::item<1> item) {
+
+                        u32 nid = acc_remap_node[item];
+                        u32 lid = acc_lchild_id[item];
+                        u32 rid = acc_rchild_id[item];
+
+                        u8 nid_falg = acc_valid_node[item];
+
+                        if(nid_falg == 0 || nid_falg == 2){
+                            acc_remap_node[lid] = nid;
+                            acc_remap_node[rid] = nid;
+                        };
+
+                    });
+                });
+
+
+
+            }
+
+        }
+
+        print_morton_id_remap();
+
+
+
+
+
+
+
+        Radix_Tree<u_morton, vec3> ret_tree;
+        ret_tree.box_coord = box_coord;
         ret_tree.tree_internal_count = 0;
         ret_tree.tree_leaf_count = 0;
+
+
+
         
+
+
+
+
+
+
+
+        #if false
 
         {//count leafs and nodes
             sycl::host_accessor acc_valid_node{valid_node, sycl::read_only};
@@ -429,6 +627,8 @@ std::tuple<Radix_Tree<u_morton, vec3>, PatchData> Radix_Tree<u_morton, vec3>::cu
 
             });
         });
+
+        #endif
 
         // TODO code extraction part
     }
