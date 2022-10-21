@@ -192,3 +192,129 @@ template<> inline MPI_Datatype & get_mpi_type<f64_16   >(){return mpi_type_f64_1
 void create_sycl_mpi_types();
 
 void free_sycl_mpi_types();
+
+
+
+
+
+namespace mpi_sycl_interop {
+
+
+
+    enum comm_type {
+        CopyToHost, DirectGPU
+    };
+    enum op_type{
+        Send,Recv
+    };
+
+    extern comm_type current_mode;
+
+
+
+    template<class T>
+    struct BufferMpiRequest{
+        MPI_Request mpi_rq;
+        comm_type comm_mode;
+        op_type comm_op;
+        T* comm_ptr;
+        u32 comm_sz;
+        std::unique_ptr<sycl::buffer<T>> &pdat_field;
+
+
+        BufferMpiRequest<T> (
+            std::unique_ptr<sycl::buffer<T>> &pdat_field,
+            comm_type comm_mode,
+            op_type comm_op,
+            u32 comm_sz
+            );
+
+        inline T* get_mpi_ptr(){
+            return comm_ptr;
+        }
+
+        void finalize();
+    };
+
+
+    template<class T>
+    inline u64 isend( std::unique_ptr<sycl::buffer<T>> &p, std::vector<BufferMpiRequest<T>> &rq_lst, i32 rank_dest, i32 tag, MPI_Comm comm){
+
+        u32 size_comm = p.size();
+
+        rq_lst.emplace_back(p,current_mode,Send,size_comm);
+            
+        u32 rq_index = rq_lst.size() - 1;
+
+        auto & rq = rq_lst[rq_index];   
+
+        mpi::isend(rq.get_mpi_ptr(), size_comm, get_mpi_type<T>(), rank_dest, tag, comm, &(rq_lst[rq_index].mpi_rq));
+        
+        return sizeof(T)*p.size();
+    }
+
+    template<class T>
+    inline u64 irecv(std::unique_ptr<sycl::buffer<T>> &p, std::vector<BufferMpiRequest<T>> &rq_lst, i32 rank_source, i32 tag, MPI_Comm comm){
+        MPI_Status st;
+        i32 cnt;
+        mpi::probe(rank_source, tag,comm, & st);
+        mpi::get_count(&st, get_mpi_type<T>(), &cnt);
+
+        u32 len = cnt / p.get_nvar();
+
+
+
+        rq_lst.emplace_back(p,current_mode,Recv,len);
+            
+        u32 rq_index = rq_lst.size() - 1;
+
+        auto & rq = rq_lst[rq_index];   
+
+        mpi::irecv(rq.get_mpi_ptr(), cnt, get_mpi_type<T>(), rank_source, tag, comm, &(rq_lst[rq_index].mpi_rq));
+
+        return sizeof(T)*cnt;
+    }
+
+    template<class T> 
+    inline std::vector<MPI_Request> get_rqs(std::vector<BufferMpiRequest<T>> &rq_lst){
+        std::vector<MPI_Request> addrs;
+
+        for(auto a : rq_lst){
+            addrs.push_back(a.mpi_rq);
+        }
+
+        return addrs;
+    }
+
+    template<class T>
+    inline void waitall(std::vector<BufferMpiRequest<T>> &rq_lst){
+        std::vector<MPI_Request> addrs;
+
+        for(auto a : rq_lst){
+            addrs.push_back(a.mpi_rq);
+        }
+
+        std::vector<MPI_Status> st_lst(addrs.size());
+        mpi::waitall(addrs.size(), addrs.data(), st_lst.data());
+
+        for(auto a : rq_lst){
+            a.finalize();
+        }
+    }
+
+
+
+    template<class T>
+    inline void file_write(MPI_File fh, std::unique_ptr<sycl::buffer<T>> &p){
+        MPI_Status st;
+
+        BufferMpiRequest<T> rq (p, current_mode, Send,p.size());
+
+        mpi::file_write(fh, rq.get_mpi_ptr(),  p.size(), get_mpi_type<T>(), &st);
+
+        rq.finalize();
+    }
+
+
+
+}

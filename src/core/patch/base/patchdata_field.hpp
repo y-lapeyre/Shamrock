@@ -156,7 +156,7 @@ class PatchDataField {
 
 
 
-    inline std::unique_ptr<sycl::buffer<T>> & get_buf(){
+    inline std::unique_ptr<sycl::buffer<T>> & get_buf() {
         return buf;
     }
 
@@ -171,19 +171,19 @@ class PatchDataField {
 
 
 
-    inline u32 size(){
+    [[nodiscard]] inline const u32 & size() const{
         return val_cnt;
     }
 
-    inline u32 get_nvar(){
+    [[nodiscard]] inline const u32 & get_nvar() const {
         return nvar;
     }
 
-    inline u32 get_obj_cnt(){
+    [[nodiscard]] inline const u32 & get_obj_cnt() const {
         return obj_cnt;
     }
 
-    inline std::string get_name(){
+    [[nodiscard]] inline const std::string & get_name() const {
         return field_name;
     }
 
@@ -309,7 +309,7 @@ class PatchDataField {
 
     // use only if nvar = 1
     template<class Lambdacd>
-    inline std::vector<u32> get_elements_with_range(Lambdacd && cd_true, T vmin, T vmax){
+    inline std::vector<u32> get_elements_with_range(Lambdacd && cd_true, T vmin, T vmax) const {
         std::vector<u32> idxs;
 
         {
@@ -336,7 +336,7 @@ class PatchDataField {
      * @param idxs 
      * @param pfield 
      */
-    void append_subset_to(const std::vector<u32> & idxs, PatchDataField & pfield);
+    void append_subset_to(const std::vector<u32> & idxs, PatchDataField & pfield) const ;
 
 
     void gen_mock_data(u32 obj_cnt, std::mt19937& eng);

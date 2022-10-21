@@ -85,4 +85,4 @@ void test_func_##name (TestResults& __test_result_ref)
 
 void run_py_script(std::string pysrc);
 
-int run_all_tests();
+int run_all_tests(int argc, char *argv[]);

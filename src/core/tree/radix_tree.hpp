@@ -97,6 +97,18 @@ class Radix_Tree{
     std::unique_ptr<sycl::buffer<vec3>>     buf_pos_min_cell_flt; //size = total count
     std::unique_ptr<sycl::buffer<vec3>>     buf_pos_max_cell_flt; //size = total count
 
+    inline bool is_tree_built(){
+        return bool(buf_lchild_id) && bool(buf_rchild_id) && bool(buf_lchild_flag) && bool(buf_rchild_flag) && bool(buf_endrange);
+    }
+
+    inline bool are_range_int_built(){
+        return bool(buf_pos_min_cell) && bool(buf_pos_max_cell);
+    }
+
+    inline bool are_range_float_built(){
+        return bool(buf_pos_min_cell_flt) && bool(buf_pos_max_cell_flt);
+    }
+
 
     Radix_Tree(sycl::queue & queue,std::tuple<vec3,vec3> treebox,std::unique_ptr<sycl::buffer<vec3>> & pos_buf, u32 cnt_obj);
 
@@ -115,7 +127,7 @@ class Radix_Tree{
     void compute_int_boxes(sycl::queue & queue,std::unique_ptr<sycl::buffer<flt>> & int_rad_buf, flt tolerance);
 
 
-    std::tuple<Radix_Tree<u_morton, vec3>,PatchData> cut_tree(sycl::queue & queue,const std::tuple<vec3,vec3> & cut_range, const PatchData & pdat_source);
+    std::tuple<Radix_Tree<u_morton, vec3>,std::unique_ptr<sycl::buffer<u32>>, PatchData> cut_tree(sycl::queue & queue,const std::tuple<vec3,vec3> & cut_range, const PatchData & pdat_source);
 
     template<class T> void print_tree_field(sycl::buffer<T> & buf_field);
 
@@ -124,7 +136,7 @@ class Radix_Tree{
 
 
 
-
+//TODO move h iter thing + multipoles to a tree field class
 
 
 

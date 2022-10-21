@@ -76,4 +76,4 @@ for(u32 __cnt = 0 ; __cnt < count ; __cnt ++){Timer timer; timer.start(); \
 } \
 timer.end(); __bench_result_ref.scores.push_back(timer.nanosec);}
 
-int run_all_bench();
+int run_all_bench(int argc, char *argv[]);

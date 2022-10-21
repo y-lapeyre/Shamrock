@@ -634,7 +634,7 @@ int main(int argc, char *argv[]) {
     }
 
 
-    mpi_handler::init();
+    mpi_handler::init(argc,argv);
 
     if(opts::has_option("--nocolor")){
         terminal_effects::disable_colors();

@@ -36,7 +36,7 @@ std::string rename_com(MPI_Comm m){
 
 
 
-void mpi_handler::init(){
+void mpi_handler::init(int argc, char *argv[]){
 
     #ifdef MPI_LOGGER_ENABLED
     std::cout << "%MPI_DEFINE:MPI_COMM_WORLD="<<MPI_COMM_WORLD<<"\n";

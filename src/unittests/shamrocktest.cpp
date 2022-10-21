@@ -68,7 +68,7 @@ std::string make_test_output(TestResults t_res){
 
 
 //TODO add memory clean as an assertion
-int run_all_tests(){
+int run_all_tests(int argc, char *argv[]){
 
     
 
@@ -111,7 +111,7 @@ int run_all_tests(){
 
 
 
-    mpi_handler::init();printf("\n");
+    mpi_handler::init(argc,argv);printf("\n");
 
     sycl_handler::init();
 

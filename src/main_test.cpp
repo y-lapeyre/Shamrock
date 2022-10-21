@@ -58,8 +58,8 @@ int main(int argc, char *argv[]){
     }
 
     if(opts::has_option("--benchmark")){
-        return run_all_bench();
+        return run_all_bench(argc,argv);
     }else{
-        return run_all_tests();
+        return run_all_tests(argc,argv);
     }
 }

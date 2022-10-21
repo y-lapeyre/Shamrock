@@ -7,6 +7,7 @@
 // -------------------------------------------------------//
 
 #include "sycl_mpi_interop.hpp"
+#include "core/sys/sycl_handler.hpp"
 
 
 
@@ -238,3 +239,286 @@ void free_sycl_mpi_types(){
 
     __mpi_sycl_type_active = false;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#define XMAC_COMM_TYPE_ENABLED \
+    X(f32   ) \
+    X(f32_2 ) \
+    X(f32_3 ) \
+    X(f32_4 ) \
+    X(f32_8 ) \
+    X(f32_16) \
+    X(f64   ) \
+    X(f64_2 ) \
+    X(f64_3 ) \
+    X(f64_4 ) \
+    X(f64_8 ) \
+    X(f64_16) \
+    X(u32   ) \
+    X(u64   )
+
+
+
+
+
+
+
+
+
+namespace impl::copy_to_host {
+
+    using namespace mpi_sycl_interop;
+
+    namespace send {
+        template <class T> inline T * init(std::unique_ptr<sycl::buffer<T>> &buf, u32 comm_sz) {
+
+            T *comm_ptr = sycl::malloc_host<T>(comm_sz, sycl_handler::get_compute_queue());
+            logger::debug_sycl_ln("PatchDataField MPI Comm", "sycl::malloc_host", comm_sz, "->", comm_ptr);
+
+
+            if (comm_sz > 0) {
+                logger::debug_sycl_ln("PatchDataField MPI Comm", "copy buffer -> USM");
+
+                auto ker_copy = sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
+                    sycl::accessor acc{*buf, cgh, sycl::read_only};
+
+                    T *ptr = comm_ptr;
+
+                    cgh.parallel_for(sycl::range<1>{comm_sz}, [=](sycl::item<1> item) { ptr[item.get_linear_id()] = acc[item]; });
+                });
+
+                ker_copy.wait();
+            } else {
+                logger::debug_sycl_ln("PatchDataField MPI Comm", "copy buffer -> USM (skipped size=0)");
+            }
+
+            return comm_ptr;
+        }
+
+        template <class T> inline void finalize(T *comm_ptr) {
+            logger::debug_sycl_ln("PatchDataField MPI Comm", "sycl::free", comm_ptr);
+
+            sycl::free(comm_ptr, sycl_handler::get_compute_queue());
+        }
+    } // namespace send
+
+    namespace recv {
+        template <class T> T *init(u32 comm_sz) {
+            T *comm_ptr = sycl::malloc_host<T>(comm_sz, sycl_handler::get_compute_queue());
+
+            logger::debug_sycl_ln("PatchDataField MPI Comm", "sycl::malloc_host", comm_sz);
+
+            return comm_ptr;
+        };
+
+        template <class T> void finalize(std::unique_ptr<sycl::buffer<T>> &buf, T *comm_ptr, u32 comm_sz) {
+            
+
+            if (comm_sz > 0) {
+                logger::debug_sycl_ln("PatchDataField MPI Comm", "copy USM -> buffer");
+
+                auto ker_copy = sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
+                    sycl::accessor acc{*buf, cgh, sycl::write_only};
+
+                    T *ptr = comm_ptr;
+
+                    cgh.parallel_for(sycl::range<1>{comm_sz}, [=](sycl::item<1> item) { acc[item] = ptr[item.get_linear_id()]; });
+                });
+
+                ker_copy.wait();
+            } else {
+                logger::debug_sycl_ln("PatchDataField MPI Comm", "copy USM -> buffer (skipped size=0)");
+            }
+
+            logger::debug_sycl_ln("PatchDataField MPI Comm", "sycl::free", comm_ptr);
+
+            sycl::free(comm_ptr, sycl_handler::get_compute_queue());
+        }
+    } // namespace recv
+
+} // namespace impl::copy_to_host
+
+
+
+
+
+
+
+
+
+
+namespace impl::directgpu {
+
+    using namespace mpi_sycl_interop;
+
+    namespace send {
+        template <class T> inline T *init(std::unique_ptr<sycl::buffer<T>> &buf, u32 comm_sz) {
+
+            T *comm_ptr = sycl::malloc_device<T>(comm_sz, sycl_handler::get_compute_queue());
+            logger::debug_sycl_ln("PatchDataField MPI Comm", "sycl::malloc_device", comm_sz, "->", comm_ptr);
+
+            
+
+            if (comm_sz > 0) {
+                logger::debug_sycl_ln("PatchDataField MPI Comm", "copy buffer -> USM");
+
+                auto ker_copy = sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
+                    sycl::accessor acc{*buf, cgh, sycl::read_only};
+
+                    T *ptr = comm_ptr;
+
+                    cgh.parallel_for(sycl::range<1>{comm_sz}, [=](sycl::item<1> item) { ptr[item.get_linear_id()] = acc[item]; });
+                });
+
+                ker_copy.wait();
+            } else {
+                logger::debug_sycl_ln("PatchDataField MPI Comm", "copy buffer -> USM (skipped size=0)");
+            }
+
+            return comm_ptr;
+        }
+
+        template <class T> inline void finalize(T *comm_ptr) {
+            logger::debug_sycl_ln("PatchDataField MPI Comm", "sycl::free", comm_ptr);
+
+            sycl::free(comm_ptr, sycl_handler::get_compute_queue());
+        }
+    } // namespace send
+
+    namespace recv {
+        template <class T> T *init(u32 comm_sz) {
+            T *comm_ptr = sycl::malloc_device<T>(comm_sz, sycl_handler::get_compute_queue());
+
+            logger::debug_sycl_ln("PatchDataField MPI Comm", "sycl::malloc_device", comm_sz);
+
+            return comm_ptr;
+        };
+
+        template <class T> void finalize(std::unique_ptr<sycl::buffer<T>> &buf, T *comm_ptr, u32 comm_sz) {
+            
+
+            if (comm_sz > 0) {
+                logger::debug_sycl_ln("PatchDataField MPI Comm", "copy USM -> buffer");
+
+                auto ker_copy = sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
+                    sycl::accessor acc{*buf, cgh, sycl::write_only};
+
+                    T *ptr = comm_ptr;
+
+                    cgh.parallel_for(sycl::range<1>{comm_sz}, [=](sycl::item<1> item) { acc[item] = ptr[item.get_linear_id()]; });
+                });
+
+                ker_copy.wait();
+            } else {
+                logger::debug_sycl_ln("PatchDataField MPI Comm", "copy USM -> buffer (skipped size=0)");
+            }
+
+            logger::debug_sycl_ln("PatchDataField MPI Comm", "sycl::free", comm_ptr);
+
+            sycl::free(comm_ptr, sycl_handler::get_compute_queue());
+        }
+    } // namespace recv
+
+
+
+
+} // namespace impl::directgpu
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+namespace mpi_sycl_interop {
+
+    comm_type current_mode = CopyToHost;
+
+    template <class T>
+    BufferMpiRequest<T>::BufferMpiRequest(std::unique_ptr<sycl::buffer<T>> &pdat_field, comm_type comm_mode,
+                                                          op_type comm_op, u32 comm_sz)
+        : comm_mode(comm_mode), comm_op(comm_op), comm_sz(comm_sz), pdat_field(pdat_field) {
+
+        logger::debug_mpi_ln("PatchDataField MPI Comm", "starting mpi sycl comm ", comm_sz, comm_op, comm_mode);
+
+        if (comm_mode == CopyToHost && comm_op == Send) {
+
+            comm_ptr = impl::copy_to_host::send::init<T>(pdat_field, comm_sz);
+
+        } else if (comm_mode == CopyToHost && comm_op == Recv) {
+
+            comm_ptr = impl::copy_to_host::recv::init<T>(comm_sz);
+
+        } else if (comm_mode == DirectGPU && comm_op == Send) {
+
+            comm_ptr = impl::directgpu::send::init<T>(pdat_field, comm_sz);
+
+        } else if (comm_mode == DirectGPU && comm_op == Recv) {
+
+            comm_ptr = impl::directgpu::recv::init<T>(comm_sz);
+
+        } else {
+            logger::err_ln("PatchDataField MPI Comm", "communication mode & op combination not implemented :", comm_mode,
+                           comm_op);
+        }
+    }
+
+    template <class T> void BufferMpiRequest<T>::finalize() {
+
+        logger::debug_mpi_ln("PatchDataField MPI Comm", "finalizing mpi sycl comm ", comm_sz, comm_op, comm_mode);
+
+        pdat_field = std::make_unique<sycl::buffer<T>>(comm_sz);
+
+        if (comm_mode == CopyToHost && comm_op == Send) {
+
+            impl::copy_to_host::send::finalize<T>(comm_ptr);
+
+        } else if (comm_mode == CopyToHost && comm_op == Recv) {
+
+            impl::copy_to_host::recv::finalize<T>(pdat_field, comm_ptr, comm_sz);
+
+        } else if (comm_mode == DirectGPU && comm_op == Send) {
+
+            impl::directgpu::send::finalize<T>(comm_ptr);
+
+        } else if (comm_mode == DirectGPU && comm_op == Recv) {
+
+            impl::directgpu::recv::finalize<T>(pdat_field, comm_ptr, comm_sz);
+
+        } else {
+            logger::err_ln("PatchDataField MPI Comm", "communication mode & op combination not implemented :", comm_mode,
+                           comm_op);
+        }
+    }
+
+#define X(a) template struct BufferMpiRequest<a>;
+    XMAC_COMM_TYPE_ENABLED
+#undef X
+
+} // namespace mpi_sycl_interop

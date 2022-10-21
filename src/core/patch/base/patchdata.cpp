@@ -167,7 +167,7 @@ void PatchData::resize(u32 new_obj_cnt){
 }
 
 
-void PatchData::append_subset_to(std::vector<u32> & idxs, PatchData &pdat){
+void PatchData::append_subset_to(std::vector<u32> & idxs, PatchData &pdat) const {
 
     #define X(arg) \
         for(u32 idx = 0; idx < pdl.fields_##arg.size(); idx++){\

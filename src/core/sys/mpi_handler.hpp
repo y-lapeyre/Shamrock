@@ -45,7 +45,7 @@ namespace mpi_handler{
     /**
     * @brief initialize MPI comm and logger
     */
-    void init();
+    void init(int argc, char *argv[]);
 
     /**
     * @brief close MPI context

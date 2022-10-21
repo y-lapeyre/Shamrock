@@ -36,7 +36,7 @@ std::string make_test_output(BenchmarkResults t_res){
 
 
 //TODO add memory clean as an assertion
-int run_all_bench(){
+int run_all_bench(int argc, char *argv[]){
 
     //std::cout << shamrock_title_bar_big << std::endl;
 
@@ -80,7 +80,7 @@ int run_all_bench(){
 
 
 
-    mpi_handler::init();printf("\n");
+    mpi_handler::init(argc,argv);printf("\n");
 
     sycl_handler::init();
 

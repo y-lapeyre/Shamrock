@@ -337,3 +337,10 @@ Test_start("sycl_handler::",test_sycl_mpi_types_comm,2){
     free_sycl_mpi_types();
 
 }
+
+
+
+Test_start("sycl_handler::",test_sycl_buffer_mpi_comm,2){
+
+
+}
