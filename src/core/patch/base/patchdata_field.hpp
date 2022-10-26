@@ -43,7 +43,7 @@ class PatchDataField {
 
     static constexpr bool is_in_type_list = 
         #define X(args)  std::is_same<T, args>::value ||
-        XMAC_LIST_ENABLED_FIELD true
+        XMAC_LIST_ENABLED_FIELD false
         #undef X
         ;
 
@@ -398,8 +398,11 @@ namespace patchdata_field {
         return sizeof(T)*p.size();
     }
 
+
+    
+
     template<class T>
-    inline u64 irecv(PatchDataField<T> &p, std::vector<PatchDataFieldMpiRequest<T>> &rq_lst, i32 rank_source, i32 tag, MPI_Comm comm){
+    inline u64 irecv_probe(PatchDataField<T> &p, std::vector<PatchDataFieldMpiRequest<T>> &rq_lst, i32 rank_source, i32 tag, MPI_Comm comm){
         MPI_Status st;
         i32 cnt;
         mpi::probe(rank_source, tag,comm, & st);

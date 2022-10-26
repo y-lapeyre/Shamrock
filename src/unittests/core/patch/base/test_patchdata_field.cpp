@@ -81,12 +81,12 @@ Test_start("patch/patchdata_field.cpp", isend_irecv_f32, 2){
 
     if(mpi_handler::world_rank == 0){
         patchdata_field::isend(d1_check, rq_lst, 1, 0, MPI_COMM_WORLD);
-        patchdata_field::irecv(recv_d,rq_lst, 1, 0, MPI_COMM_WORLD);
+        patchdata_field::irecv_probe(recv_d,rq_lst, 1, 0, MPI_COMM_WORLD);
     }
 
     if(mpi_handler::world_rank == 1){
         patchdata_field::isend(d2_check, rq_lst, 0, 0, MPI_COMM_WORLD);
-        patchdata_field::irecv(recv_d,rq_lst, 0, 0, MPI_COMM_WORLD);
+        patchdata_field::irecv_probe(recv_d,rq_lst, 0, 0, MPI_COMM_WORLD);
     }
 
     std::cout << "request len : [" << mpi_handler::world_rank << "] " << rq_lst.size() << std::endl;

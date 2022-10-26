@@ -90,12 +90,12 @@ Test_start("patch/patchdata.cpp", isend_irecv, 2){
     
     if(mpi_handler::world_rank == 0){
         patchdata_isend(d1_check, rq_lst, 1, 0, MPI_COMM_WORLD);
-        patchdata_irecv(recv_d,rq_lst, 1, 0, MPI_COMM_WORLD);
+        patchdata_irecv_probe(recv_d,rq_lst, 1, 0, MPI_COMM_WORLD);
     }
 
     if(mpi_handler::world_rank == 1){
         patchdata_isend(d2_check, rq_lst, 0, 0, MPI_COMM_WORLD);
-        patchdata_irecv(recv_d,rq_lst, 0, 0, MPI_COMM_WORLD);
+        patchdata_irecv_probe(recv_d,rq_lst, 0, 0, MPI_COMM_WORLD);
     }
     
 

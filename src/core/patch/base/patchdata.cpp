@@ -67,7 +67,7 @@ u64 patchdata_isend(PatchData &p, std::vector<PatchDataMpiRequest> &rq_lst, i32 
 
 
 
-u64 patchdata_irecv(PatchData & pdat, std::vector<PatchDataMpiRequest> &rq_lst, i32 rank_source, i32 tag, MPI_Comm comm){
+u64 patchdata_irecv_probe(PatchData & pdat, std::vector<PatchDataMpiRequest> &rq_lst, i32 rank_source, i32 tag, MPI_Comm comm){
 
     rq_lst.resize(rq_lst.size()+1);
     auto & ref = rq_lst[rq_lst.size()-1];
@@ -76,7 +76,7 @@ u64 patchdata_irecv(PatchData & pdat, std::vector<PatchDataMpiRequest> &rq_lst, 
 
     #define X(arg) \
         for (auto & a : pdat.fields_##arg) {\
-            total_data_transf += patchdata_field::irecv(a, ref.mpi_rq_fields_##arg, rank_source, tag, comm);\
+            total_data_transf += patchdata_field::irecv_probe(a, ref.mpi_rq_fields_##arg, rank_source, tag, comm);\
         }
     XMAC_LIST_ENABLED_FIELD
     #undef X

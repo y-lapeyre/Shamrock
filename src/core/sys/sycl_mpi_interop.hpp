@@ -105,7 +105,7 @@ inline MPI_Datatype mpi_type_f64_16;
 
 
 template<class type>
-inline MPI_Datatype & get_mpi_type(); 
+MPI_Datatype & get_mpi_type(); 
 
 //coments due to weird implementation of half prec in hipsycl
 
@@ -197,6 +197,28 @@ void free_sycl_mpi_types();
 
 
 
+
+#define XMAC_COMM_TYPE_ENABLED \
+    X(f32   ) \
+    X(f32_2 ) \
+    X(f32_3 ) \
+    X(f32_4 ) \
+    X(f32_8 ) \
+    X(f32_16) \
+    X(f64   ) \
+    X(f64_2 ) \
+    X(f64_3 ) \
+    X(f64_4 ) \
+    X(f64_8 ) \
+    X(f64_16) \
+    X(u8   )  \
+    X(u32   ) \
+    X(u64   )
+
+
+
+
+
 namespace mpi_sycl_interop {
 
 
@@ -214,6 +236,22 @@ namespace mpi_sycl_interop {
 
     template<class T>
     struct BufferMpiRequest{
+
+        static constexpr bool is_in_type_list = 
+            #define X(args)  std::is_same<T, args>::value ||
+            XMAC_COMM_TYPE_ENABLED false
+            #undef X
+            ;
+
+        static_assert(is_in_type_list
+            , "BufferMpiRequest must be one of those types : "
+
+            #define X(args) #args " "
+            XMAC_COMM_TYPE_ENABLED
+            #undef X
+            );
+
+
         MPI_Request mpi_rq;
         comm_type comm_mode;
         op_type comm_op;
@@ -238,11 +276,9 @@ namespace mpi_sycl_interop {
 
 
     template<class T>
-    inline u64 isend( std::unique_ptr<sycl::buffer<T>> &p, std::vector<BufferMpiRequest<T>> &rq_lst, i32 rank_dest, i32 tag, MPI_Comm comm){
+    inline u64 isend( std::unique_ptr<sycl::buffer<T>> &p, const u32 &size_comm, std::vector<BufferMpiRequest<T>> &rq_lst, i32 rank_dest, i32 tag, MPI_Comm comm){
 
-        u32 size_comm = p.size();
-
-        rq_lst.emplace_back(p,current_mode,Send,size_comm);
+        rq_lst.push_back(BufferMpiRequest<T>(p,current_mode,Send,size_comm));
             
         u32 rq_index = rq_lst.size() - 1;
 
@@ -250,30 +286,38 @@ namespace mpi_sycl_interop {
 
         mpi::isend(rq.get_mpi_ptr(), size_comm, get_mpi_type<T>(), rank_dest, tag, comm, &(rq_lst[rq_index].mpi_rq));
         
-        return sizeof(T)*p.size();
+        return sizeof(T)*size_comm;
     }
 
+
     template<class T>
-    inline u64 irecv(std::unique_ptr<sycl::buffer<T>> &p, std::vector<BufferMpiRequest<T>> &rq_lst, i32 rank_source, i32 tag, MPI_Comm comm){
-        MPI_Status st;
-        i32 cnt;
-        mpi::probe(rank_source, tag,comm, & st);
-        mpi::get_count(&st, get_mpi_type<T>(), &cnt);
-
-        u32 len = cnt / p.get_nvar();
-
-
-
-        rq_lst.emplace_back(p,current_mode,Recv,len);
+    inline u64 irecv(std::unique_ptr<sycl::buffer<T>> &p, const u32 &size_comm, std::vector<BufferMpiRequest<T>> &rq_lst, i32 rank_source, i32 tag, MPI_Comm comm){
+        
+        rq_lst.push_back(BufferMpiRequest<T>(p,current_mode,Recv,size_comm));
             
         u32 rq_index = rq_lst.size() - 1;
 
         auto & rq = rq_lst[rq_index];   
 
-        mpi::irecv(rq.get_mpi_ptr(), cnt, get_mpi_type<T>(), rank_source, tag, comm, &(rq_lst[rq_index].mpi_rq));
+        mpi::irecv(rq.get_mpi_ptr(), size_comm, get_mpi_type<T>(), rank_source, tag, comm, &(rq_lst[rq_index].mpi_rq));
 
-        return sizeof(T)*cnt;
+        return sizeof(T)*size_comm;
     }
+
+    template<class T>
+    inline u64 irecv_probe(std::unique_ptr<sycl::buffer<T>> &p, std::vector<BufferMpiRequest<T>> &rq_lst, i32 rank_source, i32 tag, MPI_Comm comm){
+        MPI_Status st;
+        i32 cnt;
+        mpi::probe(rank_source, tag,comm, & st);
+        mpi::get_count(&st, get_mpi_type<T>(), &cnt);
+
+        u32 len = cnt ;
+
+        return irecv(p, len, rq_lst, rank_source,tag,comm);
+    }
+
+
+    
 
     template<class T> 
     inline std::vector<MPI_Request> get_rqs(std::vector<BufferMpiRequest<T>> &rq_lst){
@@ -305,12 +349,12 @@ namespace mpi_sycl_interop {
 
 
     template<class T>
-    inline void file_write(MPI_File fh, std::unique_ptr<sycl::buffer<T>> &p){
+    inline void file_write(MPI_File fh, std::unique_ptr<sycl::buffer<T>> &p, const u32 &size_comm){
         MPI_Status st;
 
-        BufferMpiRequest<T> rq (p, current_mode, Send,p.size());
+        BufferMpiRequest<T> rq (p, current_mode, Send,size_comm);
 
-        mpi::file_write(fh, rq.get_mpi_ptr(),  p.size(), get_mpi_type<T>(), &st);
+        mpi::file_write(fh, rq.get_mpi_ptr(),  size_comm, get_mpi_type<T>(), &st);
 
         rq.finalize();
     }

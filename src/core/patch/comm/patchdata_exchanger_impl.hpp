@@ -126,7 +126,7 @@ inline void patch_data_exchange_object(
                     recv_obj[precv.id_patch].push_back(
                         {psend.id_patch, std::make_unique<PatchData>(pdl)}); // patchdata_irecv(recv_rq, psend.node_owner_id,
                                                                           // global_comm_tag[i], MPI_COMM_WORLD)}
-                    dtcnt += patchdata_irecv(*std::get<1>(recv_obj[precv.id_patch][recv_obj[precv.id_patch].size() - 1]),
+                    dtcnt += patchdata_irecv_probe(*std::get<1>(recv_obj[precv.id_patch][recv_obj[precv.id_patch].size() - 1]),
                                     rq_lst, psend.node_owner_id, global_comm_tag[i], MPI_COMM_WORLD);
                 }
 
@@ -256,7 +256,7 @@ inline void patch_data_field_exchange_object(
                     recv_obj[precv.id_patch].push_back(
                         {psend.id_patch, std::make_unique<PatchDataField<T>>("comp_field",1)}); // patchdata_irecv(recv_rq, psend.node_owner_id,
                                                                           // global_comm_tag[i], MPI_COMM_WORLD)}
-                    dtcnt += patchdata_field::irecv<T>(*std::get<1>(recv_obj[precv.id_patch][recv_obj[precv.id_patch].size() - 1]),
+                    dtcnt += patchdata_field::irecv_probe<T>(*std::get<1>(recv_obj[precv.id_patch][recv_obj[precv.id_patch].size() - 1]),
                                     rq_lst, psend.node_owner_id, global_comm_tag[i], MPI_COMM_WORLD);
                 }
 

@@ -22,25 +22,34 @@
 
 #include "aliases.hpp"
 #include <ostream>
-template <class T> inline bool test_eq1(T a, T b) {
-    bool eqx = a == b;
-    return eqx;
-}
+#include <random> 
 
-template <class T> inline bool test_eq2(T a, T b) {
+
+template <class T> inline bool test_sycl_eq(const T & a, const T & b);
+
+template <class T> inline void print_vec(std::ostream & ostream, T a);
+
+template<class T> inline T next_obj(std::mt19937 &  eng, std::uniform_real_distribution<f64> & distval);
+
+
+
+
+
+
+template <class T> inline bool test_sycl_eq(const sycl::vec<T, 2> & a, const sycl::vec<T, 2> & b) {
     bool eqx = a.x() == b.x();
     bool eqy = a.y() == b.y();
     return eqx && eqy;
 }
 
-template <class T> inline bool test_eq3(T a, T b) {
+template <class T> inline bool test_sycl_eq(const sycl::vec<T, 3> & a, const sycl::vec<T, 3> & b) {
     bool eqx = a.x() == b.x();
     bool eqy = a.y() == b.y();
     bool eqz = a.z() == b.z();
     return eqx && eqy && eqz;
 }
 
-template <class T> inline bool test_eq4(T a, T b) {
+template <class T> inline bool test_sycl_eq(const sycl::vec<T, 4> & a, const sycl::vec<T, 4> & b) {
     bool eqx = a.x() == b.x();
     bool eqy = a.y() == b.y();
     bool eqz = a.z() == b.z();
@@ -48,7 +57,7 @@ template <class T> inline bool test_eq4(T a, T b) {
     return eqx && eqy && eqz && eqw;
 }
 
-template <class T> inline bool test_eq8(T a, T b) {
+template <class T> inline bool test_sycl_eq(const sycl::vec<T, 8> & a, const sycl::vec<T, 8> & b) {
     bool eqs0 = a.s0() == b.s0();
     bool eqs1 = a.s1() == b.s1();
     bool eqs2 = a.s2() == b.s2();
@@ -60,7 +69,7 @@ template <class T> inline bool test_eq8(T a, T b) {
     return eqs0 && eqs1 && eqs2 && eqs3 && eqs4 && eqs5 && eqs6 && eqs7;
 }
 
-template <class T> inline bool test_eq16(T a, T b) {
+template <class T> inline bool test_sycl_eq(const sycl::vec<T, 16> & a, const sycl::vec<T, 16> & b) {
     bool eqs0 = a.s0() == b.s0();
     bool eqs1 = a.s1() == b.s1();
     bool eqs2 = a.s2() == b.s2();
@@ -85,132 +94,63 @@ template <class T> inline bool test_eq16(T a, T b) {
 
 
 
-template <class T> inline bool test_sycl_eq(T a, T b);
-
-template <class T> inline void print_vec(std::ostream & ostream, T a);
-
-
-template <> inline bool test_sycl_eq<f32>(f32 a, f32 b){
-    return test_eq1(a, b);
-}
-
-template <> inline bool test_sycl_eq<f32_2>(f32_2 a, f32_2 b){
-    return test_eq2(a, b);
-}
-
-template <> inline bool test_sycl_eq<f32_3>(f32_3 a, f32_3 b){
-    return test_eq3(a, b);
-}
-
-template <> inline bool test_sycl_eq<f32_4>(f32_4 a, f32_4 b){
-    return test_eq4(a, b);
-}
-
-template <> inline bool test_sycl_eq<f32_8>(f32_8 a, f32_8 b){
-    return test_eq8(a, b);
-}
-
-template <> inline bool test_sycl_eq<f32_16>(f32_16 a, f32_16 b){
-    return test_eq16(a, b);
-}
-
-
-template <> inline bool test_sycl_eq<f64>(f64 a, f64 b){
-    return test_eq1(a, b);
-}
-
-template <> inline bool test_sycl_eq<f64_2>(f64_2 a, f64_2 b){
-    return test_eq2(a, b);
-}
-
-template <> inline bool test_sycl_eq<f64_3>(f64_3 a, f64_3 b){
-    return test_eq3(a, b);
-}
-
-template <> inline bool test_sycl_eq<f64_4>(f64_4 a, f64_4 b){
-    return test_eq4(a, b);
-}
-
-template <> inline bool test_sycl_eq<f64_8>(f64_8 a, f64_8 b){
-    return test_eq8(a, b);
-}
-
-template <> inline bool test_sycl_eq<f64_16>(f64_16 a, f64_16 b){
-    return test_eq16(a, b);
-}
-
-template <> inline bool test_sycl_eq<u32>(u32 a, u32 b){
-    return test_eq1(a, b);
-}
-
-template <> inline bool test_sycl_eq<u32_2>(u32_2 a, u32_2 b){
-    return test_eq2(a, b);
-}
-
-template <> inline bool test_sycl_eq<u32_3>(u32_3 a, u32_3 b){
-    return test_eq3(a, b);
-}
-
-template <> inline bool test_sycl_eq<u32_4>(u32_4 a, u32_4 b){
-    return test_eq4(a, b);
-}
-
-template <> inline bool test_sycl_eq<u32_8>(u32_8 a, u32_8 b){
-    return test_eq8(a, b);
-}
-
-template <> inline bool test_sycl_eq<u32_16>(u32_16 a, u32_16 b){
-    return test_eq16(a, b);
-}
-
-template <> inline bool test_sycl_eq<u64>(u64 a, u64 b){
-    return test_eq1(a, b);
-}
-
-template <> inline bool test_sycl_eq<u64_2>(u64_2 a, u64_2 b){
-    return test_eq2(a, b);
-}
-
-template <> inline bool test_sycl_eq<u64_3>(u64_3 a, u64_3 b){
-    return test_eq3(a, b);
-}
-
-template <> inline bool test_sycl_eq<u64_4>(u64_4 a, u64_4 b){
-    return test_eq4(a, b);
-}
-
-template <> inline bool test_sycl_eq<u64_8>(u64_8 a, u64_8 b){
-    return test_eq8(a, b);
-}
-
-template <> inline bool test_sycl_eq<u64_16>(u64_16 a, u64_16 b){
-    return test_eq16(a, b);
+template <class T> inline bool test_sycl_eq(const T & a, const T & b) {
+    bool eqx = a == b;
+    return eqx;
 }
 
 
 
-template<> inline void print_vec(std::ostream &ostream, f32 a){
-    ostream << a;
-}
 
-template<> inline void print_vec(std::ostream &ostream, f32_2 a){
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+template<class T> inline void print_vec(std::ostream &ostream, sycl::vec<T,2> a){
     ostream << "("<< a.x() <<","<< a.y()<<")";
 }
 
-template<> inline void print_vec(std::ostream &ostream, f32_3 a){
+template<class T> inline void print_vec(std::ostream &ostream, sycl::vec<T,3> a){
     ostream << "("<< a.x() <<","<< a.y()<<","<< a.z()<<")";
 }
 
-template<> inline void print_vec(std::ostream &ostream, f32_4 a){
+template<class T> inline void print_vec(std::ostream &ostream, sycl::vec<T,4> a){
     ostream << "("<< a.x() <<","<< a.y()<<","<< a.z()<<","<< a.w()<<")";
 }
 
-template<> inline void print_vec(std::ostream &ostream, f32_8 a){
+template<class T> inline void print_vec(std::ostream &ostream, sycl::vec<T,8> a){
     ostream << "("<< a.s0() <<","<< a.s1()<<","<< a.s2()<<","<< a.s3()<<
     a.s4() <<","<< a.s5()<<","<< a.s6()<<","<< a.s7()<<")";
 }
 
-template<> inline void print_vec(std::ostream &ostream, f32_16 a){
+template<class T> inline void print_vec(std::ostream &ostream, sycl::vec<T,16> a){
     ostream << "("<< a.s0() <<","<< a.s1()<<","<< a.s2()<<","<< a.s3()<<
     a.s4() <<","<< a.s5()<<","<< a.s6()<<","<< a.s7()<<
     a.s8() <<","<< a.s9()<<","<< a.sA()<<","<< a.sB()<<
@@ -218,39 +158,74 @@ template<> inline void print_vec(std::ostream &ostream, f32_16 a){
 }
 
 
-template<> inline void print_vec(std::ostream &ostream, f64 a){
-    ostream << a;
-}
-
-template<> inline void print_vec(std::ostream &ostream, f64_2 a){
-    ostream << "("<< a.x() <<","<< a.y()<<")";
-}
-
-template<> inline void print_vec(std::ostream &ostream, f64_3 a){
-    ostream << "("<< a.x() <<","<< a.y()<<","<< a.z()<<")";
-}
-
-template<> inline void print_vec(std::ostream &ostream, f64_4 a){
-    ostream << "("<< a.x() <<","<< a.y()<<","<< a.z()<<","<< a.w()<<")";
-}
-
-template<> inline void print_vec(std::ostream &ostream, f64_8 a){
-    ostream << "("<< a.s0() <<","<< a.s1()<<","<< a.s2()<<","<< a.s3()<<
-    a.s4() <<","<< a.s5()<<","<< a.s6()<<","<< a.s7()<<")";
-}
-
-template<> inline void print_vec(std::ostream &ostream, f64_16 a){
-    ostream << "("<< a.s0() <<","<< a.s1()<<","<< a.s2()<<","<< a.s3()<<
-    a.s4() <<","<< a.s5()<<","<< a.s6()<<","<< a.s7()<<
-    a.s8() <<","<< a.s9()<<","<< a.sA()<<","<< a.sB()<<
-    a.sC() <<","<< a.sD()<<","<< a.sE()<<","<< a.sF()<<")";
-}
-
-template<> inline void print_vec(std::ostream &ostream, u32 a){
+template<class T> inline void print_vec(std::ostream &ostream, T a){
     ostream << a;
 }
 
 
-template<> inline void print_vec(std::ostream &ostream, u64 a){
-    ostream << a;
+
+
+
+
+
+
+
+template<> inline i64 next_obj(std::mt19937 &  eng, std::uniform_real_distribution<f64> & distval){ return i64(distval(eng));}
+template<> inline i32 next_obj(std::mt19937 &  eng, std::uniform_real_distribution<f64> & distval){ return i32(distval(eng));}
+template<> inline i16 next_obj(std::mt19937 &  eng, std::uniform_real_distribution<f64> & distval){ return i16(distval(eng));}
+template<> inline i8  next_obj(std::mt19937 &  eng, std::uniform_real_distribution<f64> & distval){ return i8 (distval(eng));}
+template<> inline u64 next_obj(std::mt19937 &  eng, std::uniform_real_distribution<f64> & distval){ return u64(distval(eng));}
+template<> inline u32 next_obj(std::mt19937 &  eng, std::uniform_real_distribution<f64> & distval){ return u32(distval(eng));}
+template<> inline u16 next_obj(std::mt19937 &  eng, std::uniform_real_distribution<f64> & distval){ return u16(distval(eng));}
+template<> inline u8  next_obj(std::mt19937 &  eng, std::uniform_real_distribution<f64> & distval){ return u8 (distval(eng));}
+#ifdef SYCL_COMP_DPCPP
+template<> inline f16 next_obj(std::mt19937 &  eng, std::uniform_real_distribution<f64> & distval){ return f16(distval(eng));}
+#endif
+template<> inline f32 next_obj(std::mt19937 &  eng, std::uniform_real_distribution<f64> & distval){ return f32(distval(eng));}
+template<> inline f64 next_obj(std::mt19937 &  eng, std::uniform_real_distribution<f64> & distval){ return f64(distval(eng));}
+
+
+
+
+template<> inline sycl::vec<f32,2> next_obj(std::mt19937 & eng, std::uniform_real_distribution<f64> & distval){return sycl::vec<f32,2> {next_obj<f32>(eng,distval),next_obj<f32>(eng,distval)};}
+template<> inline sycl::vec<f32,3> next_obj(std::mt19937 & eng, std::uniform_real_distribution<f64> & distval){return sycl::vec<f32,3> {next_obj<f32>(eng,distval),next_obj<f32>(eng,distval),next_obj<f32>(eng,distval)};}
+template<> inline sycl::vec<f32,4> next_obj(std::mt19937 & eng, std::uniform_real_distribution<f64> & distval){return sycl::vec<f32,4> {next_obj<f32>(eng,distval),next_obj<f32>(eng,distval),next_obj<f32>(eng,distval),next_obj<f32>(eng,distval)};}
+
+template<> inline sycl::vec<f32,8> next_obj(std::mt19937 & eng, std::uniform_real_distribution<f64> & distval){
+    return sycl::vec<f32,8> {
+        next_obj<f32>(eng,distval),next_obj<f32>(eng,distval),next_obj<f32>(eng,distval),next_obj<f32>(eng,distval),
+        next_obj<f32>(eng,distval),next_obj<f32>(eng,distval),next_obj<f32>(eng,distval),next_obj<f32>(eng,distval)
+    };
+}
+
+template<> inline sycl::vec<f32,16> next_obj(std::mt19937 & eng, std::uniform_real_distribution<f64> & distval){
+    return sycl::vec<f32,16> {
+        next_obj<f32>(eng,distval),next_obj<f32>(eng,distval),next_obj<f32>(eng,distval),next_obj<f32>(eng,distval),
+        next_obj<f32>(eng,distval),next_obj<f32>(eng,distval),next_obj<f32>(eng,distval),next_obj<f32>(eng,distval),
+        next_obj<f32>(eng,distval),next_obj<f32>(eng,distval),next_obj<f32>(eng,distval),next_obj<f32>(eng,distval),
+        next_obj<f32>(eng,distval),next_obj<f32>(eng,distval),next_obj<f32>(eng,distval),next_obj<f32>(eng,distval)
+    };
+}
+
+
+
+
+template<> inline sycl::vec<f64,2> next_obj(std::mt19937 & eng, std::uniform_real_distribution<f64> & distval){return sycl::vec<f64,2> {next_obj<f64>(eng,distval),next_obj<f64>(eng,distval)};}
+template<> inline sycl::vec<f64,3> next_obj(std::mt19937 & eng, std::uniform_real_distribution<f64> & distval){return sycl::vec<f64,3> {next_obj<f64>(eng,distval),next_obj<f64>(eng,distval),next_obj<f64>(eng,distval)};}
+template<> inline sycl::vec<f64,4> next_obj(std::mt19937 & eng, std::uniform_real_distribution<f64> & distval){return sycl::vec<f64,4> {next_obj<f64>(eng,distval),next_obj<f64>(eng,distval),next_obj<f64>(eng,distval),next_obj<f64>(eng,distval)};}
+
+template<> inline sycl::vec<f64,8> next_obj(std::mt19937 & eng, std::uniform_real_distribution<f64> & distval){
+    return sycl::vec<f64,8> {
+        next_obj<f64>(eng,distval),next_obj<f64>(eng,distval),next_obj<f64>(eng,distval),next_obj<f64>(eng,distval),
+        next_obj<f64>(eng,distval),next_obj<f64>(eng,distval),next_obj<f64>(eng,distval),next_obj<f64>(eng,distval)
+    };
+}
+
+template<> inline sycl::vec<f64,16> next_obj(std::mt19937 & eng, std::uniform_real_distribution<f64> & distval){
+    return sycl::vec<f64,16> {
+        next_obj<f64>(eng,distval),next_obj<f64>(eng,distval),next_obj<f64>(eng,distval),next_obj<f64>(eng,distval),
+        next_obj<f64>(eng,distval),next_obj<f64>(eng,distval),next_obj<f64>(eng,distval),next_obj<f64>(eng,distval),
+        next_obj<f64>(eng,distval),next_obj<f64>(eng,distval),next_obj<f64>(eng,distval),next_obj<f64>(eng,distval),
+        next_obj<f64>(eng,distval),next_obj<f64>(eng,distval),next_obj<f64>(eng,distval),next_obj<f64>(eng,distval)
+    };
 }

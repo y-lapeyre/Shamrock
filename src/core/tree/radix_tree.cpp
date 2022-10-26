@@ -956,8 +956,8 @@ std::tuple<Radix_Tree<u_morton, vec3>,std::unique_ptr<sycl::buffer<u32>>, PatchD
 
                             u32 store_val = cur_id;
 
-                            if(store_val >= tree_internal_count){
-                                store_val -= tree_internal_count;
+                            if(store_val >= old_tree_leaf_offset){
+                                store_val -= old_tree_leaf_offset;
                             }
 
                             acc_new_node_id_to_old[item] = store_val;

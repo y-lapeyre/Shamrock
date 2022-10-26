@@ -256,28 +256,6 @@ void free_sycl_mpi_types(){
 
 
 
-#define XMAC_COMM_TYPE_ENABLED \
-    X(f32   ) \
-    X(f32_2 ) \
-    X(f32_3 ) \
-    X(f32_4 ) \
-    X(f32_8 ) \
-    X(f32_16) \
-    X(f64   ) \
-    X(f64_2 ) \
-    X(f64_3 ) \
-    X(f64_4 ) \
-    X(f64_8 ) \
-    X(f64_16) \
-    X(u32   ) \
-    X(u64   )
-
-
-
-
-
-
-
 
 
 namespace impl::copy_to_host {
@@ -288,7 +266,7 @@ namespace impl::copy_to_host {
         template <class T> inline T * init(std::unique_ptr<sycl::buffer<T>> &buf, u32 comm_sz) {
 
             T *comm_ptr = sycl::malloc_host<T>(comm_sz, sycl_handler::get_compute_queue());
-            logger::debug_sycl_ln("PatchDataField MPI Comm", "sycl::malloc_host", comm_sz, "->", comm_ptr);
+            logger::debug_sycl_ln("PatchDataField MPI Comm", "sycl::malloc_host", comm_sz, "->", reinterpret_cast<void *>(comm_ptr));
 
 
             if (comm_sz > 0) {
@@ -311,7 +289,7 @@ namespace impl::copy_to_host {
         }
 
         template <class T> inline void finalize(T *comm_ptr) {
-            logger::debug_sycl_ln("PatchDataField MPI Comm", "sycl::free", comm_ptr);
+            logger::debug_sycl_ln("PatchDataField MPI Comm", "sycl::free", reinterpret_cast<void *>(comm_ptr));
 
             sycl::free(comm_ptr, sycl_handler::get_compute_queue());
         }
@@ -345,7 +323,7 @@ namespace impl::copy_to_host {
                 logger::debug_sycl_ln("PatchDataField MPI Comm", "copy USM -> buffer (skipped size=0)");
             }
 
-            logger::debug_sycl_ln("PatchDataField MPI Comm", "sycl::free", comm_ptr);
+            logger::debug_sycl_ln("PatchDataField MPI Comm", "sycl::free", reinterpret_cast<void *>(comm_ptr));
 
             sycl::free(comm_ptr, sycl_handler::get_compute_queue());
         }
@@ -360,7 +338,7 @@ namespace impl::copy_to_host {
 
 
 
-
+#ifdef SYCL_COMP_DPCPP
 
 namespace impl::directgpu {
 
@@ -440,7 +418,7 @@ namespace impl::directgpu {
 } // namespace impl::directgpu
 
 
-
+#endif
 
 
 
@@ -475,7 +453,9 @@ namespace mpi_sycl_interop {
 
             comm_ptr = impl::copy_to_host::recv::init<T>(comm_sz);
 
-        } else if (comm_mode == DirectGPU && comm_op == Send) {
+        } 
+#ifdef SYCL_COMP_DPCPP
+        else if (comm_mode == DirectGPU && comm_op == Send) {
 
             comm_ptr = impl::directgpu::send::init<T>(pdat_field, comm_sz);
 
@@ -483,7 +463,9 @@ namespace mpi_sycl_interop {
 
             comm_ptr = impl::directgpu::recv::init<T>(comm_sz);
 
-        } else {
+        } 
+#endif
+        else {
             logger::err_ln("PatchDataField MPI Comm", "communication mode & op combination not implemented :", comm_mode,
                            comm_op);
         }
@@ -503,7 +485,9 @@ namespace mpi_sycl_interop {
 
             impl::copy_to_host::recv::finalize<T>(pdat_field, comm_ptr, comm_sz);
 
-        } else if (comm_mode == DirectGPU && comm_op == Send) {
+        }
+#ifdef SYCL_COMP_DPCPP
+         else if (comm_mode == DirectGPU && comm_op == Send) {
 
             impl::directgpu::send::finalize<T>(comm_ptr);
 
@@ -511,7 +495,9 @@ namespace mpi_sycl_interop {
 
             impl::directgpu::recv::finalize<T>(pdat_field, comm_ptr, comm_sz);
 
-        } else {
+        } 
+#endif
+        else {
             logger::err_ln("PatchDataField MPI Comm", "communication mode & op combination not implemented :", comm_mode,
                            comm_op);
         }
