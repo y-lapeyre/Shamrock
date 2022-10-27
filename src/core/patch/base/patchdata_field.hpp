@@ -351,10 +351,10 @@ namespace patchdata_field {
         CopyToHost, DirectGPU
     };
     enum op_type{
-        Send,Recv
+        Send,Recv_Probe
     };
 
-    extern comm_type current_mode;
+    extern comm_type current_mode; // point this one to the same one in sycl_mpi_interop
 
 
     template<class T>
@@ -363,7 +363,7 @@ namespace patchdata_field {
         comm_type comm_mode;
         op_type comm_op;
         T* comm_ptr;
-        u32 comm_sz;
+        u32 comm_val_cnt;
         PatchDataField<T> &pdat_field;
 
 
@@ -371,7 +371,7 @@ namespace patchdata_field {
             PatchDataField<T> &pdat_field,
             comm_type comm_mode,
             op_type comm_op,
-            u32 comm_sz
+            u32 comm_val_cnt
             );
 
         inline T* get_mpi_ptr(){
@@ -385,15 +385,13 @@ namespace patchdata_field {
     template<class T>
     inline u64 isend( PatchDataField<T> &p, std::vector<PatchDataFieldMpiRequest<T>> &rq_lst, i32 rank_dest, i32 tag, MPI_Comm comm){
 
-        u32 size_comm = p.size();
-
-        rq_lst.emplace_back(p,current_mode,Send,size_comm);
+        rq_lst.emplace_back(p,current_mode,Send,p.size());
             
         u32 rq_index = rq_lst.size() - 1;
 
         auto & rq = rq_lst[rq_index];   
 
-        mpi::isend(rq.get_mpi_ptr(), size_comm, get_mpi_type<T>(), rank_dest, tag, comm, &(rq_lst[rq_index].mpi_rq));
+        mpi::isend(rq.get_mpi_ptr(), p.size(), get_mpi_type<T>(), rank_dest, tag, comm, &(rq_lst[rq_index].mpi_rq));
         
         return sizeof(T)*p.size();
     }
@@ -408,17 +406,17 @@ namespace patchdata_field {
         mpi::probe(rank_source, tag,comm, & st);
         mpi::get_count(&st, get_mpi_type<T>(), &cnt);
 
-        u32 len = cnt / p.get_nvar();
+        u32 val_cnt = cnt;
 
 
 
-        rq_lst.emplace_back(p,current_mode,Recv,len);
+        rq_lst.emplace_back(p,current_mode,Recv_Probe,val_cnt);
             
         u32 rq_index = rq_lst.size() - 1;
 
         auto & rq = rq_lst[rq_index];   
 
-        mpi::irecv(rq.get_mpi_ptr(), cnt, get_mpi_type<T>(), rank_source, tag, comm, &(rq_lst[rq_index].mpi_rq));
+        mpi::irecv(rq.get_mpi_ptr(), val_cnt, get_mpi_type<T>(), rank_source, tag, comm, &(rq_lst[rq_index].mpi_rq));
 
         return sizeof(T)*cnt;
     }

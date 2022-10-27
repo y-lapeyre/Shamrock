@@ -227,7 +227,7 @@ namespace mpi_sycl_interop {
         CopyToHost, DirectGPU
     };
     enum op_type{
-        Send,Recv
+        Send,Recv_Probe
     };
 
     extern comm_type current_mode;
@@ -257,11 +257,11 @@ namespace mpi_sycl_interop {
         op_type comm_op;
         T* comm_ptr;
         u32 comm_sz;
-        std::unique_ptr<sycl::buffer<T>> &pdat_field;
+        std::unique_ptr<sycl::buffer<T>> &sycl_buf;
 
 
         BufferMpiRequest<T> (
-            std::unique_ptr<sycl::buffer<T>> &pdat_field,
+            std::unique_ptr<sycl::buffer<T>> &sycl_buf,
             comm_type comm_mode,
             op_type comm_op,
             u32 comm_sz
@@ -273,6 +273,7 @@ namespace mpi_sycl_interop {
 
         void finalize();
     };
+
 
 
     template<class T>
@@ -293,7 +294,7 @@ namespace mpi_sycl_interop {
     template<class T>
     inline u64 irecv(std::unique_ptr<sycl::buffer<T>> &p, const u32 &size_comm, std::vector<BufferMpiRequest<T>> &rq_lst, i32 rank_source, i32 tag, MPI_Comm comm){
         
-        rq_lst.push_back(BufferMpiRequest<T>(p,current_mode,Recv,size_comm));
+        rq_lst.push_back(BufferMpiRequest<T>(p,current_mode,Recv_Probe,size_comm));
             
         u32 rq_index = rq_lst.size() - 1;
 
@@ -362,3 +363,42 @@ namespace mpi_sycl_interop {
 
 
 }
+
+
+
+
+namespace impl::copy_to_host {
+
+    namespace send {
+        template <class T> T *init(std::unique_ptr<sycl::buffer<T>> &buf, u32 comm_sz);
+
+        template <class T> void finalize(T *comm_ptr);
+    } // namespace send
+
+    namespace recv {
+        template <class T> T *init(u32 comm_sz);
+
+        template <class T> void finalize(std::unique_ptr<sycl::buffer<T>> &buf, T *comm_ptr, u32 comm_sz);
+    } // namespace recv
+
+
+} // namespace impl::copy_to_host
+
+
+namespace impl::directgpu {
+
+    namespace send {
+        template <class T> T *init(std::unique_ptr<sycl::buffer<T>> &buf, u32 comm_sz);
+
+        template <class T> void finalize(T *comm_ptr);
+    } // namespace send
+
+    namespace recv {
+        template <class T> T *init(u32 comm_sz);
+
+        template <class T> void finalize(std::unique_ptr<sycl::buffer<T>> &buf, T *comm_ptr, u32 comm_sz);
+    } // namespace recv
+
+
+} // namespace impl::directgpu
+

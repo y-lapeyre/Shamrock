@@ -10,8 +10,9 @@
 
 #include "aliases.hpp"
 #include "core/patch/base/enabled_fields.hpp"
-#include "core/patch/base/pdat_comm_impl/pdat_comm_cp_to_host.hpp"
-#include "core/patch/base/pdat_comm_impl/pdat_comm_directgpu.hpp"
+//#include "core/patch/base/pdat_comm_impl/pdat_comm_cp_to_host.hpp"
+//#include "core/patch/base/pdat_comm_impl/pdat_comm_directgpu.hpp"
+#include "core/sys/sycl_mpi_interop.hpp"
 #include "core/sys/sycl_handler.hpp"
 #include "core/utils/sycl_algs.hpp"
 #include <cstdio>
@@ -549,26 +550,26 @@ namespace patchdata_field {
 
     template <class T>
     PatchDataFieldMpiRequest<T>::PatchDataFieldMpiRequest(PatchDataField<T> &pdat_field, comm_type comm_mode,
-                                                          op_type comm_op, u32 comm_sz)
-        : comm_mode(comm_mode), comm_op(comm_op), comm_sz(comm_sz), pdat_field(pdat_field) {
+                                                          op_type comm_op, u32 comm_val_cnt)
+        : comm_mode(comm_mode), comm_op(comm_op), comm_val_cnt(comm_val_cnt), pdat_field(pdat_field) {
 
-        logger::debug_mpi_ln("PatchDataField MPI Comm", "starting mpi sycl comm ", comm_sz, comm_op, comm_mode);
+        logger::debug_mpi_ln("PatchDataField MPI Comm", "starting mpi sycl comm ", comm_val_cnt, comm_op, comm_mode);
 
         if (comm_mode == CopyToHost && comm_op == Send) {
 
-            comm_ptr = impl::copy_to_host::send::init<T>(pdat_field, comm_sz);
+            comm_ptr = impl::copy_to_host::send::init<T>(pdat_field.get_buf(), comm_val_cnt);
 
-        } else if (comm_mode == CopyToHost && comm_op == Recv) {
+        } else if (comm_mode == CopyToHost && comm_op == Recv_Probe) {
 
-            comm_ptr = impl::copy_to_host::recv::init<T>(comm_sz);
+            comm_ptr = impl::copy_to_host::recv::init<T>(comm_val_cnt);
 
         } else if (comm_mode == DirectGPU && comm_op == Send) {
 
-            comm_ptr = impl::directgpu::send::init<T>(pdat_field, comm_sz);
+            comm_ptr = impl::directgpu::send::init<T>(pdat_field.get_buf(), comm_val_cnt);
 
-        } else if (comm_mode == DirectGPU && comm_op == Recv) {
+        } else if (comm_mode == DirectGPU && comm_op == Recv_Probe) {
 
-            comm_ptr = impl::directgpu::recv::init<T>(comm_sz);
+            comm_ptr = impl::directgpu::recv::init<T>(comm_val_cnt);
 
         } else {
             logger::err_ln("PatchDataField MPI Comm", "communication mode & op combination not implemented :", comm_mode,
@@ -578,25 +579,26 @@ namespace patchdata_field {
 
     template <class T> void PatchDataFieldMpiRequest<T>::finalize() {
 
-        logger::debug_mpi_ln("PatchDataField MPI Comm", "finalizing mpi sycl comm ", comm_sz, comm_op, comm_mode);
+        logger::debug_mpi_ln("PatchDataField MPI Comm", "finalizing mpi sycl comm ", comm_val_cnt, comm_op, comm_mode);
 
-        pdat_field.resize(comm_sz);
-
+        if(comm_op == Recv_Probe){
+            pdat_field.resize(comm_val_cnt/pdat_field.get_nvar());
+        }
+        
         if (comm_mode == CopyToHost && comm_op == Send) {
 
             impl::copy_to_host::send::finalize<T>(comm_ptr);
 
-        } else if (comm_mode == CopyToHost && comm_op == Recv) {
-
-            impl::copy_to_host::recv::finalize<T>(pdat_field, comm_ptr, comm_sz);
+        } else if (comm_mode == CopyToHost && comm_op == Recv_Probe) {
+            impl::copy_to_host::recv::finalize<T>(pdat_field.get_buf(), comm_ptr,comm_val_cnt);
 
         } else if (comm_mode == DirectGPU && comm_op == Send) {
 
             impl::directgpu::send::finalize<T>(comm_ptr);
 
-        } else if (comm_mode == DirectGPU && comm_op == Recv) {
+        } else if (comm_mode == DirectGPU && comm_op == Recv_Probe) {
 
-            impl::directgpu::recv::finalize<T>(pdat_field, comm_ptr, comm_sz);
+            impl::copy_to_host::recv::finalize<T>(pdat_field.get_buf(), comm_ptr,comm_val_cnt);
 
         } else {
             logger::err_ln("PatchDataField MPI Comm", "communication mode & op combination not implemented :", comm_mode,

@@ -338,8 +338,6 @@ namespace impl::copy_to_host {
 
 
 
-#ifdef SYCL_COMP_DPCPP
-
 namespace impl::directgpu {
 
     using namespace mpi_sycl_interop;
@@ -389,7 +387,6 @@ namespace impl::directgpu {
 
         template <class T> void finalize(std::unique_ptr<sycl::buffer<T>> &buf, T *comm_ptr, u32 comm_sz) {
             
-
             if (comm_sz > 0) {
                 logger::debug_sycl_ln("PatchDataField MPI Comm", "copy USM -> buffer");
 
@@ -418,8 +415,6 @@ namespace impl::directgpu {
 } // namespace impl::directgpu
 
 
-#endif
-
 
 
 
@@ -439,32 +434,29 @@ namespace mpi_sycl_interop {
     comm_type current_mode = CopyToHost;
 
     template <class T>
-    BufferMpiRequest<T>::BufferMpiRequest(std::unique_ptr<sycl::buffer<T>> &pdat_field, comm_type comm_mode,
+    BufferMpiRequest<T>::BufferMpiRequest(std::unique_ptr<sycl::buffer<T>> &sycl_buf, comm_type comm_mode,
                                                           op_type comm_op, u32 comm_sz)
-        : comm_mode(comm_mode), comm_op(comm_op), comm_sz(comm_sz), pdat_field(pdat_field) {
+        : comm_mode(comm_mode), comm_op(comm_op), comm_sz(comm_sz), sycl_buf(sycl_buf) {
 
         logger::debug_mpi_ln("PatchDataField MPI Comm", "starting mpi sycl comm ", comm_sz, comm_op, comm_mode);
 
         if (comm_mode == CopyToHost && comm_op == Send) {
 
-            comm_ptr = impl::copy_to_host::send::init<T>(pdat_field, comm_sz);
+            comm_ptr = impl::copy_to_host::send::init<T>(sycl_buf, comm_sz);
 
-        } else if (comm_mode == CopyToHost && comm_op == Recv) {
+        } else if (comm_mode == CopyToHost && comm_op == Recv_Probe) {
 
             comm_ptr = impl::copy_to_host::recv::init<T>(comm_sz);
 
-        } 
-#ifdef SYCL_COMP_DPCPP
-        else if (comm_mode == DirectGPU && comm_op == Send) {
+        } else if (comm_mode == DirectGPU && comm_op == Send) {
 
-            comm_ptr = impl::directgpu::send::init<T>(pdat_field, comm_sz);
+            comm_ptr = impl::directgpu::send::init<T>(sycl_buf, comm_sz);
 
-        } else if (comm_mode == DirectGPU && comm_op == Recv) {
+        } else if (comm_mode == DirectGPU && comm_op == Recv_Probe) {
 
             comm_ptr = impl::directgpu::recv::init<T>(comm_sz);
 
         } 
-#endif
         else {
             logger::err_ln("PatchDataField MPI Comm", "communication mode & op combination not implemented :", comm_mode,
                            comm_op);
@@ -475,29 +467,25 @@ namespace mpi_sycl_interop {
 
         logger::debug_mpi_ln("PatchDataField MPI Comm", "finalizing mpi sycl comm ", comm_sz, comm_op, comm_mode);
 
-        pdat_field = std::make_unique<sycl::buffer<T>>(comm_sz);
+        sycl_buf = std::make_unique<sycl::buffer<T>>(comm_sz);
 
         if (comm_mode == CopyToHost && comm_op == Send) {
 
             impl::copy_to_host::send::finalize<T>(comm_ptr);
 
-        } else if (comm_mode == CopyToHost && comm_op == Recv) {
+        } else if (comm_mode == CopyToHost && comm_op == Recv_Probe) {
 
-            impl::copy_to_host::recv::finalize<T>(pdat_field, comm_ptr, comm_sz);
+            impl::copy_to_host::recv::finalize<T>(sycl_buf, comm_ptr, comm_sz);
 
-        }
-#ifdef SYCL_COMP_DPCPP
-         else if (comm_mode == DirectGPU && comm_op == Send) {
+        } else if (comm_mode == DirectGPU && comm_op == Send) {
 
             impl::directgpu::send::finalize<T>(comm_ptr);
 
-        } else if (comm_mode == DirectGPU && comm_op == Recv) {
+        } else if (comm_mode == DirectGPU && comm_op == Recv_Probe) {
 
-            impl::directgpu::recv::finalize<T>(pdat_field, comm_ptr, comm_sz);
+            impl::directgpu::recv::finalize<T>(sycl_buf, comm_ptr, comm_sz);
 
-        } 
-#endif
-        else {
+        } else {
             logger::err_ln("PatchDataField MPI Comm", "communication mode & op combination not implemented :", comm_mode,
                            comm_op);
         }

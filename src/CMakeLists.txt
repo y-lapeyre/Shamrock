@@ -65,7 +65,7 @@ SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-nonportable-include-path")
 ######################
 # Add compilation flags depending upon the build type
 ######################
-set(CMAKE_CXX_FLAGS_DEBUG "-g -Wno-unknown-cuda-version -Wno-linker-warnings -fsanitize=address")# -Wall -Wextra") #
+set(CMAKE_CXX_FLAGS_DEBUG "-g -Wno-unknown-cuda-version -Wno-linker-warnings")# -fsanitize=address")# -Wall -Wextra") #
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native")#-DNDEBUG ")#-Wall -Wextra -Wunknown-cuda-version -Wno-linker-warnings")
 
 if (CMAKE_BUILD_TYPE STREQUAL "GCOV")
