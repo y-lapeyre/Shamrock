@@ -92,10 +92,10 @@ class Radix_Tree{
     std::unique_ptr<sycl::buffer<u8>>       buf_rchild_flag; // size = internal
     std::unique_ptr<sycl::buffer<u32>>      buf_endrange;    // size = internal
 
-    std::unique_ptr<sycl::buffer<vec3i>>    buf_pos_min_cell;     //size = total count
-    std::unique_ptr<sycl::buffer<vec3i>>    buf_pos_max_cell;     //size = total count
-    std::unique_ptr<sycl::buffer<vec3>>     buf_pos_min_cell_flt; //size = total count
-    std::unique_ptr<sycl::buffer<vec3>>     buf_pos_max_cell_flt; //size = total count
+    std::unique_ptr<sycl::buffer<vec3i>>    buf_pos_min_cell;     // size = total count
+    std::unique_ptr<sycl::buffer<vec3i>>    buf_pos_max_cell;     // size = total count
+    std::unique_ptr<sycl::buffer<vec3>>     buf_pos_min_cell_flt; // size = total count
+    std::unique_ptr<sycl::buffer<vec3>>     buf_pos_max_cell_flt; // size = total count
 
     inline bool is_tree_built(){
         return bool(buf_lchild_id) && bool(buf_rchild_id) && bool(buf_lchild_flag) && bool(buf_rchild_flag) && bool(buf_endrange);

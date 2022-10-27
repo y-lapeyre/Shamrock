@@ -477,15 +477,20 @@ std::tuple<Radix_Tree<u_morton, vec3>,std::unique_ptr<sycl::buffer<u32>>, PatchD
 
             sycl::buffer<u32> print_map(total_count);
 
-            sycl::host_accessor acc {print_map};
-            sycl::host_accessor acc_leaf {valid_tree_morton};
+            {
 
-            for(u32 i = 0; i < tree_leaf_count; i++){
-                acc[i + tree_internal_count] = acc_leaf[i];
-            }
             
-            for(u32 i = 0; i < tree_internal_count; i++){
-                acc[i] = acc_leaf[i];
+                sycl::host_accessor acc {print_map};
+                sycl::host_accessor acc_leaf {valid_tree_morton};
+
+                for(u32 i = 0; i < tree_leaf_count; i++){
+                    acc[i + tree_internal_count] = acc_leaf[i];
+                }
+                
+                for(u32 i = 0; i < tree_internal_count; i++){
+                    acc[i] = acc_leaf[i];
+                }
+
             }
             
             print_tree_field(print_map);
