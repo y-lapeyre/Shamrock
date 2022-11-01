@@ -17,6 +17,9 @@
  * 
  */
 
+//%Impl status : Clean unfinished
+// move to "good" when new handler implemented
+
 #pragma once
 
 #include <memory>
@@ -32,6 +35,67 @@
 #include "models/sph/sphpatch.hpp" //TODO remove sph dependancy
 
 #include "interface_handler_impl.hpp"
+
+
+
+
+
+
+
+
+
+
+
+enum InterfacehandlerImpl {
+    Tree_Send
+};
+
+
+
+template<InterfacehandlerImpl impl_type, class pos_prec, class Tree> class Interfacehandler{
+
+    using flt = pos_prec;
+    using vec = sycl::vec<flt, 3>;
+
+    template<class Func_interactcrit>
+    void compute_interface_list(PatchScheduler &sched, SerialPatchTree<vec> sptree, Func_interactcrit && interact_crit,bool periodic);
+
+    //TODO
+    void initial_fetch();
+
+    void fetch_field();
+
+
+    template<class Function> void for_each_interface(u64 patch_id, Function && fct);
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 /**
  * @brief 
@@ -181,22 +245,7 @@ template class LegacyInterfacehandler<f64_3,f64>;
 
 
 
-enum InterfacehandlerImpl {
-    Tree_Send
-};
 
 
 
-template<InterfacehandlerImpl impl_type> class Interfacehandler{
 
-    void compute_interface_list();
-
-    //TODO
-    void initial_fetch();
-
-    void fetch_field();
-
-
-
-    template<class Function> void for_each_interface(u64 patch_id, Function && fct);
-};
