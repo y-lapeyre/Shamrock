@@ -2,6 +2,9 @@
 
 #include "aliases.hpp"
 
+
+//%Impl status : Clean
+
 template <class T> struct SymTensor3d_1 {
 
     static constexpr u32 compo_cnt     = 3;

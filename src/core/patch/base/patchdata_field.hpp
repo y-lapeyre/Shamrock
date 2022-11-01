@@ -6,6 +6,8 @@
 //
 // -------------------------------------------------------//
 
+//%Impl status : Good
+
 #pragma once
 
 #include <cstdint>

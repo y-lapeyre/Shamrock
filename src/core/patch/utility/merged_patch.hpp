@@ -34,7 +34,7 @@ class MergedPatchData {public:
     [[nodiscard]]
     static std::unordered_map<u64,MergedPatchData<flt>> merge_patches(
         PatchScheduler & sched,
-        InterfaceHandler<vec, flt> & interface_hndl);
+        LegacyInterfacehandler<vec, flt> & interface_hndl);
 
     inline void write_back(PatchData & pdat){
         pdat.overwrite(data, or_element_cnt);
@@ -79,7 +79,7 @@ class MergedPatchCompField {public:
     [[nodiscard]]
     static std::unordered_map<u64,MergedPatchCompField<flt,T>> merge_patches_cfield(  
         PatchScheduler & sched,
-        InterfaceHandler<vec, flt> & interface_hndl,
+        LegacyInterfacehandler<vec, flt> & interface_hndl,
         PatchComputeField<T> & comp_field,
         PatchComputeFieldInterfaces<T> & comp_field_interf);
 

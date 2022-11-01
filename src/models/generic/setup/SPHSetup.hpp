@@ -20,6 +20,8 @@
 #include <vector>
 
 
+//%Impl status : Good
+
 template <class flt>
 class SPHSetup{
 

@@ -7,6 +7,7 @@
 // -------------------------------------------------------//
 
 
+
 /**
  * @file aliases.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
@@ -15,6 +16,9 @@
  * @copyright Copyright Timothée David--Cléris (c) 2021
  * 
  */
+
+
+//%Impl status : Good
 
 
 #pragma once

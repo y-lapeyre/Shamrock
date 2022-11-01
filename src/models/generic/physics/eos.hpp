@@ -9,8 +9,10 @@
 #pragma once
 
 #include "aliases.hpp"
-#include "patch/patchdata_buffer.hpp"
 #include <memory>
+
+//%Impl status : Clean unfinished
+
 
 enum EquationsOfStateType{
     isothermal

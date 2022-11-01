@@ -20,6 +20,8 @@
 #include <memory>
 #include <string>
 
+//%Impl status : Clean unfinished
+
 
 const std::string console_tag = "[BasicSPHGasSelfGrav] ";
 

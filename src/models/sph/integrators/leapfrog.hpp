@@ -37,6 +37,9 @@
 #include <unordered_map>
 #include <vector>
 
+//%Impl status : Good
+
+
 namespace integrators {
 
 namespace sph {
@@ -253,7 +256,7 @@ namespace sph {
 
         logger::debug_ln("SPHLeapfrog", "compute interface list");
         //make interfaces
-        InterfaceHandler<vec3, flt> interface_hndl;
+        LegacyInterfacehandler<vec3, flt> interface_hndl;
         interface_hndl.template compute_interface_list<InterfaceSelector_SPH<vec3, flt>>(sched, sptree, h_field,
                                                                                                  periodic_mode);
 

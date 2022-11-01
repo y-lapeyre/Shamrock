@@ -41,7 +41,7 @@
  * //TODO check that for periodic BC case : if a patch has itself as interface, is there any bug because of map {map } repr
  * //TODO put the flag choice thing in a separate function to avoid recomputation
  */
-template <class vectype, class primtype> class InterfaceHandler {
+template <class vectype, class primtype> class LegacyInterfacehandler {
 
   private:
     /**
@@ -170,8 +170,8 @@ template <class vectype, class primtype> class InterfaceHandler {
 
 };
 
-template class InterfaceHandler<f32_3,f32>;
-template class InterfaceHandler<f64_3,f64>;
+template class LegacyInterfacehandler<f32_3,f32>;
+template class LegacyInterfacehandler<f64_3,f64>;
 
 
 
@@ -181,3 +181,22 @@ template class InterfaceHandler<f64_3,f64>;
 
 
 
+enum InterfacehandlerImpl {
+    Tree_Send
+};
+
+
+
+template<InterfacehandlerImpl impl_type> class Interfacehandler{
+
+    void compute_interface_list();
+
+    //TODO
+    void initial_fetch();
+
+    void fetch_field();
+
+
+
+    template<class Function> void for_each_interface(u64 patch_id, Function && fct);
+};

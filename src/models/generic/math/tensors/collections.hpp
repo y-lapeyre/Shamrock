@@ -2,6 +2,10 @@
 
 #include "symtensors.hpp"
 
+
+
+//%Impl status : Good
+
 template <class T, u32 low_order, u32 high_order> struct SymTensorCollection;
 
 

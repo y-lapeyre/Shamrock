@@ -6,6 +6,8 @@
 //
 // -------------------------------------------------------//
 
+//%Impl status : Deprecated
+
 #pragma once
 
 #include "core/utils/syclreduction.hpp"

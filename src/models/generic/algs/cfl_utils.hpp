@@ -14,6 +14,8 @@
 //#include "core/patch/patchdata_buffer.hpp"
 
 
+//%Impl status : Good
+
 template<class flt>
 class CflUtility{public:
 

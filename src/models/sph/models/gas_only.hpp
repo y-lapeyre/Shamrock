@@ -14,6 +14,7 @@
 #include "models/sph/integrators/leapfrog.hpp"
 #include "models/generic/algs/integrators_utils.hpp"
 
+//%Impl status : Deprecated
 
 namespace models::sph {
 

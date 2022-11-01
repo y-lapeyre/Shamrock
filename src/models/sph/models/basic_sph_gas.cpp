@@ -20,6 +20,8 @@
 #include <memory>
 #include <string>
 
+//%Impl status : Good
+
 
 const std::string console_tag = "[BasicSPHGas] ";
 

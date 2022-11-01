@@ -8,6 +8,9 @@
 
 #pragma once
 
+
+//%Impl status : Good
+
 #include "aliases.hpp"
 
 inline constexpr f64 hfact = 1.2;

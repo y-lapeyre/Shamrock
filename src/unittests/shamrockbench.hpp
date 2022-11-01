@@ -19,6 +19,7 @@
 
 
 
+//%Impl status : Clean
 
 class BenchmarkResults{public:
     std::string bench_name;

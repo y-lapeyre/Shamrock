@@ -8,6 +8,9 @@
 
 #pragma once 
 
+//%Impl status : Good
+
+
 #include "aliases.hpp"
 
 inline constexpr f64 PI = 3.141592653589793238463;

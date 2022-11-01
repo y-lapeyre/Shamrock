@@ -14,7 +14,7 @@
 template<class flt>
 auto MergedPatchData<flt>::merge_patches(
     PatchScheduler & sched,
-    InterfaceHandler<vec, flt> & interface_hndl) -> std::unordered_map<u64,MergedPatchData<flt>> {
+    LegacyInterfacehandler<vec, flt> & interface_hndl) -> std::unordered_map<u64,MergedPatchData<flt>> {
 
     std::unordered_map<u64,MergedPatchData<flt>> merged_data;
     
@@ -57,7 +57,7 @@ auto MergedPatchData<flt>::merge_patches(
 template<class flt, class T>
 auto MergedPatchCompField<flt,T>::merge_patches_cfield(
     PatchScheduler & sched,
-    InterfaceHandler<vec, flt> & interface_hndl,
+    LegacyInterfacehandler<vec, flt> & interface_hndl,
     PatchComputeField<T> & comp_field,
     PatchComputeFieldInterfaces<T> & comp_field_interf) -> std::unordered_map<u64,MergedPatchCompField<flt,T>> {
 

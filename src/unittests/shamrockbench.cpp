@@ -6,6 +6,8 @@
 //
 // -------------------------------------------------------//
 
+//%Impl status : Clean
+
 
 #include "unittests/shamrockbench.hpp"
 #include <cmath>

@@ -6,6 +6,9 @@
 //
 // -------------------------------------------------------//
 
+
+//%Impl status : Good
+
 #include "core/sys/cmdopt.hpp"
 #include "core/sys/log.hpp"
 #include "unittests/shamrockbench.hpp"

@@ -6,6 +6,9 @@
 //
 // -------------------------------------------------------//
 
+
+//%Impl status : Good
+
 #pragma once
 
 
@@ -217,7 +220,7 @@ inline void compute_smoothing_lenght(PatchScheduler &sched,bool periodic_mode,fl
 
 
         //make interfaces
-        InterfaceHandler<vec, flt> interface_hndl;
+        LegacyInterfacehandler<vec, flt> interface_hndl;
         interface_hndl.template compute_interface_list<InterfaceSelector_SPH<vec, flt>>(sched, sptree, h_field,
                                                                                                  periodic_mode);
         interface_hndl.comm_interfaces(sched, periodic_mode);

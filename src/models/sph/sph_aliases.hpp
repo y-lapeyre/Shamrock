@@ -6,6 +6,9 @@
 //
 // -------------------------------------------------------//
 
+//%Impl status : Deprecated
+
+
 #pragma once
 
 #include <string>
