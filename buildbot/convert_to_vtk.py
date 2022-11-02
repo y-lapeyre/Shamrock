@@ -135,6 +135,10 @@ def get_plot_patchdata(filename):
         "ay_old" : [],
         "az_old" : [],
         "h" : [],
+
+        "u" : [],
+        "du" : [],
+        "du_old" : []
         }
 
     for field in dic_fields["f32_3"]:
@@ -179,6 +183,24 @@ def get_plot_patchdata(filename):
                 x, = a
                 dic["h"].append(x)
 
+        if field["name"] == ("u"):
+
+            for a in field["field"]:
+                x, = a
+                dic["u"].append(x)
+
+        if field["name"] == ("du"):
+
+            for a in field["field"]:
+                x, = a
+                dic["du"].append(x)
+
+        if field["name"] == ("du_old"):
+
+            for a in field["field"]:
+                x, = a
+                dic["du_old"].append(x)
+
 
     return dic
 
@@ -199,7 +221,7 @@ def write_dic_to_vtk(dic,filename):
     ugrid.SetPoints(points)
 
 
-    for k in ["h"]:
+    for k in ["h","u","du","du_old"]:
         if not k in ["x","y","z"]:
             values = vtk.vtkDoubleArray()
             values.SetName(k)
@@ -268,7 +290,7 @@ def write_dic_to_vtk(dic,filename):
 
 
 import glob
-for idx in range(1,50):
+for idx in range(170,1000):
 
     file_list = glob.glob("./step"+str(idx)+"/patchdata*")
 
@@ -299,10 +321,10 @@ for idx in range(1,50):
     write_dic_to_vtk(dic,"step"+str(idx))
 
     #lst.append({"timestep" : tval, "file" : "step"+str(idx)+'.vtu'})
-
+exit()
     
 import glob
-for idx in range(1,50):
+for idx in range(1,1000):
 
     file_list = glob.glob("./step"+str(idx)+"/merged0_patchdata*")
 
@@ -331,3 +353,68 @@ for idx in range(1,50):
 
 
     write_dic_to_vtk(dic,"merged_step"+str(idx))
+
+
+
+
+import glob
+for idx in range(1,1000):
+
+    file_list = glob.glob("./step_before_reatrib"+str(idx)+"/patchdata*")
+
+    print(file_list)
+
+    if len(file_list) == 0:
+        break
+
+    f = open("./step_before_reatrib"+str(idx)+"/timeval.bin","rb")
+    tval, = struct.unpack("d",f.read(8))
+    f.close()
+
+    
+    dic = {}
+
+    for fname in file_list:
+        print("converting : {} t = {}".format(fname,tval))
+        dic_tmp = get_plot_patchdata(fname)
+
+        for k in dic_tmp.keys():
+
+            if not k in dic.keys():
+                dic[k] = []
+
+            dic[k] += dic_tmp[k]
+
+
+    write_dic_to_vtk(dic,"step_before_reatrib"+str(idx))
+
+import glob
+for idx in range(1,1000):
+
+    file_list = glob.glob("./step_after_reatrib"+str(idx)+"/patchdata*")
+
+    print(file_list)
+
+    if len(file_list) == 0:
+        break
+
+    f = open("./step_after_reatrib"+str(idx)+"/timeval.bin","rb")
+    tval, = struct.unpack("d",f.read(8))
+    f.close()
+
+    
+    dic = {}
+
+    for fname in file_list:
+        print("converting : {} t = {}".format(fname,tval))
+        dic_tmp = get_plot_patchdata(fname)
+
+        for k in dic_tmp.keys():
+
+            if not k in dic.keys():
+                dic[k] = []
+
+            dic[k] += dic_tmp[k]
+
+
+    write_dic_to_vtk(dic,"step_after_reatrib"+str(idx))

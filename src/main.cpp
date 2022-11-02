@@ -20,48 +20,60 @@
 
 
 #include "aliases.hpp"
-#include "interfaces/interface_generator.hpp"
-#include "interfaces/interface_handler.hpp"
-#include "interfaces/interface_selector.hpp"
-#include "io/dump.hpp"
-#include "io/logs.hpp"
-#include "particles/particle_patch_mover.hpp"
-#include "patch/patch.hpp"
-#include "patch/patch_field.hpp"
-#include "patch/patch_reduc_tree.hpp"
-#include "patch/patchdata.hpp"
-#include "patch/patchdata_buffer.hpp"
-#include "patch/patchdata_exchanger.hpp"
-#include "patch/patchdata_layout.hpp"
-#include "patch/serialpatchtree.hpp"
-#include "patchscheduler/loadbalancing_hilbert.hpp"
-#include "patchscheduler/patch_content_exchanger.hpp"
-#include "patchscheduler/scheduler_mpi.hpp"
-#include "sph/leapfrog.hpp"
-#include "sph/sphpatch.hpp"
-#include "sys/cmdopt.hpp"
-#include "sys/mpi_handler.hpp"
-#include "sys/sycl_mpi_interop.hpp"
-#include "tree/radix_tree.hpp"
+#include "core/io/dump.hpp"
+#include "core/io/logs.hpp"
+#include "core/patch/base/patch.hpp"
+#include "core/patch/base/patchdata.hpp"
+#include "core/patch/base/patchdata_layout.hpp"
+#include "core/patch/comm/patch_content_exchanger.hpp"
+#include "core/patch/comm/patch_object_mover.hpp"
+#include "core/patch/comm/patchdata_exchanger.hpp"
+#include "core/patch/interfaces/interface_generator.hpp"
+#include "core/patch/interfaces/interface_handler.hpp"
+#include "core/patch/interfaces/interface_selector.hpp"
+//#include "core/patch/patchdata_buffer.hpp"
+#include "core/patch/scheduler/loadbalancing_hilbert.hpp"
+#include "core/patch/scheduler/scheduler_mpi.hpp"
+#include "core/patch/utility/patch_field.hpp"
+#include "core/patch/utility/patch_reduc_tree.hpp"
+#include "core/patch/utility/serialpatchtree.hpp"
+#include "core/sys/cmdopt.hpp"
+#include "core/sys/log.hpp"
+#include "core/sys/mpi_handler.hpp"
+#include "core/sys/sycl_handler.hpp"
+#include "core/sys/sycl_mpi_interop.hpp"
+#include "core/tree/radix_tree.hpp"
+#include "core/utils/string_utils.hpp"
+#include "core/utils/time_utils.hpp"
+#include "models/generic/physics/units.hpp"
+#include "models/generic/setup/SPHSetup.hpp"
+#include "models/sph/base/kernels.hpp"
+#include "models/sph/base/kernels.hpp"
+#include "models/sph/base/sphpart.hpp"
+#include "models/sph/forces.hpp"
+//#include "models/sph/gas_sync.hpp"
+//#include "models/sph/leapfrog.hpp"
+//#include "models/sph/models/gas_only.hpp"
+//#include "models/sph/models/gas_only_intu.hpp"
+//#include "models/sph/models/gas_only_visco.hpp"
+#include "models/sph/sphpatch.hpp"
+#include "runscript/rscripthandler.hpp"
 #include "unittests/shamrocktest.hpp"
-#include "utils/string_utils.hpp"
-#include "utils/time_utils.hpp"
 #include <array>
 #include <cstdlib>
+#include <filesystem>
 #include <iterator>
 #include <memory>
-#include <mpi.h>
 #include <ostream>
 #include <string>
 #include <type_traits>
 #include <unordered_map>
 #include <vector>
-#include <filesystem>
 
-#include "sph/forces.hpp"
-#include "sph/kernels.hpp"
-#include "sph/sphpart.hpp"
 
+//%Impl status : Should rewrite
+
+#if false
 class TestSimInfo {
   public:
     u32 stepcnt;
@@ -70,56 +82,6 @@ class TestSimInfo {
 
 
 
-
-
-class CurDataLayout{public:
-
-    using pos_type = f32;
-
-    
-    
-    class U1_s{public:
-        static constexpr u32 nvar = 2;
-
-        static constexpr std::array<const char*, 2> varnames {"hpart","omega"};
-
-        static constexpr u32 ihpart = 0;
-        static constexpr u32 iomega = 1;
-    
-    };
-
-    
-    class U3_s{public:
-        static constexpr std::array<const char*, 3> varnames {"vxyz","axyz","axyz_old"};
-        static constexpr u32 nvar = 3;
-
-        static constexpr u32 ivxyz = 0;
-        static constexpr u32 iaxyz = 1;
-        static constexpr u32 iaxyz_old = 2;
-        
-    };
-
-    // template<>
-    // class U1<f64>{public:
-    //     static constexpr std::array<const char*, 0> varnames {};
-    //     static constexpr u32 nvar = 0;
-    // };
-
-    // template<>
-    // class U3<f64>{public:
-    //     static constexpr std::array<const char*, 0> varnames {};
-    //     static constexpr u32 nvar = 0;
-    // };
-
-    template<class prec>
-    struct U1 { using T = std::void_t<>; };
-    template<class prec>
-    struct U3 { using T = std::void_t<>; };
-    template<>
-    struct U1<f32> { using T = U1_s; };
-    template<>
-    struct U3<f32> { using T = U3_s; };
-};
 
 
 
@@ -274,22 +236,144 @@ inline void strech_mapping_axis(
 
 
 
-
+f32 part_mass;
 
 class TestTimestepper {
   public:
 
     
 
-    static void init(SchedulerMPI &sched, TestSimInfo &siminfo) {
+    static void init(PatchScheduler &sched, TestSimInfo &siminfo) {
+
+        
+
+        
+        /*soundwave
 
         f32_3 box_dim = {1,1,1};
 
-        /*
-        box_dim.x() *= 4;
-        box_dim.y() /= 2;
-        box_dim.z() /= 2;
+        box_dim.y() /= 4;
+
+        std::tuple<f32_3,f32_3> box = {
+            -box_dim,box_dim
+        };
+        
+        f32 dr = 0.04; //for soundwave
+        
+        correct_box_fcc<f32>(dr,box);
+
+        sched.set_box_volume<f32_3>(box);
+
+        SPHSetup<f32> setup(sched,true);
+
+        setup.init_setup();
+
+
+        setup.add_particules_fcc(dr, box, [](f32_3 r){return true;});
         */
+
+        //sedov
+        f32_3 box_dim = {1,1,1};
+
+        box_dim.y() /= 32;
+        box_dim.x() /= 32;
+
+        std::tuple<f32_3,f32_3> box = {
+            -box_dim,box_dim
+        };
+        
+        f32 dr = 0.0025; //for soundwave
+        
+        correct_box_fcc<f32>(dr,box);
+
+        sched.set_box_volume<f32_3>(box);
+
+        SPHSetup<f32> setup(sched,true);
+
+        setup.init_setup();
+
+
+        setup.add_particules_fcc(dr, box, [&](f32_3 r){return sycl::fabs(r.z()) < box_dim.z()/1.99;});
+        setup.add_particules_fcc(dr*2, box, [&](f32_3 r){return sycl::fabs(r.z()) >= box_dim.z()/1.99;});
+
+        part_mass = setup.get_part_mass(0.0010986328125);
+        //part_mass = 7.783467665607285e-08;
+
+        for (auto & [pid,pdat] : sched.patch_data.owned_data) {
+
+            PatchDataField<f32_3> & xyz = pdat.get_field<f32_3>(sched.pdl.get_field_idx<f32_3>("xyz"));
+
+            PatchDataField<f32> & f = pdat.template get_field<f32>(sched.pdl.get_field_idx<f32>("u"));
+
+            for (u32 i =0; i <f.size() ; i++) {
+                f32_3 r = xyz.usm_data()[i] ;
+
+                if (sycl::fabs(r.z()) < box_dim.z()/2){
+                    f.usm_data()[i] = 1/(((5./3.) - 1)*1);
+                }else{
+                    f.usm_data()[i] = 0.1/(((5./3.) - 1)*0.125);
+                }
+            }
+
+            //f.override(dr);
+        }
+
+    }
+
+    static void step(PatchScheduler &sched, TestSimInfo &siminfo, std::string dump_folder) {
+
+        using namespace models::sph;
+
+        //GasOnlyLeapfrog<f32, u32, kernels::M4<f32>> leapfrog;
+        //GasOnlyViscoLeapfrog<f32, u32, kernels::M4<f32>> leapfrog;
+        GasOnlyInternalU<f32, u32, kernels::M4<f32>> leapfrog;
+
+
+        const f32 htol_up_tol  = 1.4;
+        const f32 htol_up_iter = 1.2;
+
+        const f32 cfl_cour  = 0.02;
+        const f32 cfl_force = 0.3;
+
+        //const flt eos_cs = 1;
+
+        bool do_force = siminfo.stepcnt > 4;
+        bool do_corrector = siminfo.stepcnt > 5;
+
+        leapfrog.htol_up_tol = htol_up_tol;
+        leapfrog.htol_up_iter = htol_up_iter;
+        leapfrog.cfl_cour = cfl_cour;
+        leapfrog.cfl_force = cfl_force;
+        leapfrog.do_force = do_force;
+        leapfrog.do_corrector = do_corrector;
+
+        leapfrog.gpart_mass = part_mass;
+
+
+        //SPHTimestepperLeapfrogIsotGas<f32> leapfrog;
+
+        
+
+        // std::cout << sched.dump_status() << std::endl;
+        sched.scheduler_step(true, true);
+
+        leapfrog.step(sched,siminfo.time);
+
+        //leapfrog.step(sched,dump_folder,siminfo.stepcnt,siminfo.time);
+    }
+};
+
+
+
+class TestTimestepperSync {
+  public:
+
+    SPHTimestepperLeapfrogIsotGasSync<f32> leapfrog;
+
+    void init(PatchScheduler &sched, TestSimInfo &siminfo) {
+
+
+        f32_3 box_dim = {1,1,1};
 
         std::tuple<f32_3,f32_3> box = {
             -box_dim,box_dim
@@ -302,176 +386,24 @@ class TestTimestepper {
 
         sched.set_box_volume<f32_3>(box);
 
-        if (mpi_handler::world_rank == 0) {
+        SPHSetup<f32> setup(sched,true);
 
-            auto t = timings::start_timer("dumm setup", timings::timingtype::function);
-            Patch p;
+        setup.init_setup();
+        setup.add_particules_fcc(dr, box, [](f32_3 r){return true;});
 
-            
-            p.node_owner_id = mpi_handler::world_rank;
-
-            p.x_min = 0;
-            p.y_min = 0;
-            p.z_min = 0;
-
-            p.x_max = HilbertLB::max_box_sz;
-            p.y_max = HilbertLB::max_box_sz;
-            p.z_max = HilbertLB::max_box_sz;
-
-            p.pack_node_index = u64_max;
-
-            PatchData pdat(sched.pdl);
-
-            u32 ixyz = sched.pdl.get_field_idx<f32_3>("xyz");
-            u32 ivxyz = sched.pdl.get_field_idx<f32_3>("vxyz");
-            u32 iaxyz = sched.pdl.get_field_idx<f32_3>("axyz");
-            u32 iaxyz_old = sched.pdl.get_field_idx<f32_3>("axyz_old");
-
-            u32 ihpart = sched.pdl.get_field_idx<f32>("hpart");
-
-            std::cout << "ixyz : " << ixyz << std::endl;
-            std::cout << "ivxyz : " << ivxyz << std::endl;
-            std::cout << "iaxyz : " << iaxyz << std::endl;
-            std::cout << "iaxyz_old : " << iaxyz_old << std::endl;
-            std::cout << "ihpart : " << ihpart << std::endl;
-
-            
-
-            add_particles_fcc(
-                dr, 
-                box , 
-                [](f32_3 r){return true;}, 
-                [&](f32_3 r,f32 h){
-                    pdat.fields_f32_3[ixyz].insert_element(r); //r
-                    //                      h    
-                    pdat.fields_f32[ihpart].insert_element(h*2);
-                    //                           v          a             a_old
-                    pdat.fields_f32_3[ivxyz].insert_element(f32_3{0.f,0.f,0.f});
-                    pdat.fields_f32_3[iaxyz].insert_element(f32_3{0.f,0.f,0.f});
-                    pdat.fields_f32_3[iaxyz_old].insert_element(f32_3{0.f,0.f,0.f});
-                });
-
-            //std::cout << "tmp  " << pdat.fields_f32_3[ixyz].field_data.size();
-
-            std::cout << "paticles count " << pdat.get_obj_cnt() << std::endl;
-
-            //exit(0);
-
-            if(false){
-                /*
-                f32 a = 0.01;
-
-                f32 nmode = 1;
-                strech_mapping_axis(std::get<0>(box).x(),std::get<1>(box).x(), pdat.get_obj_cnt(),
-
-                    [&](u32 i) -> f32{
-                        return pdat.fields_f32_3[ixyz].field_data[i].x();
-                    }
-                    ,
-                    [&](u32 i,f32 r){
-                        pdat.fields_f32_3[ixyz].field_data[i].x() = r;
-                    },
-                    
-                    [&](f32 x) -> f32{
-
-                        f32 x_min = std::get<0>(box).x();
-                        f32 x_max = std::get<1>(box).x();
-                        constexpr f32 pi = 3.141612;
-
-                        return 1+a*sycl::cos(nmode*2.*pi*(x-x_min)/(x_max-x_min));
-                    }, 
-                    [&](f32 x) -> f32{
-
-                        f32 xmin = std::get<0>(box).x();
-                        f32 xmax = std::get<1>(box).x();
-
-                        constexpr f32 pi = 3.141612;
-
-                        return x - xmin + (a*(-xmax + xmin)* sycl::sin((nmode*2.*pi*(-x + xmin))/ (xmax - xmin)))/(nmode*2.*pi);
-                    });
-
-                */
-
-                
-            }
-
-            p.data_count = pdat.get_obj_cnt();
-            p.load_value = pdat.get_obj_cnt();
-
-            /*
-            p.data_count    = 1e6;
-            p.load_value    = 1e6;
-            std::mt19937 eng(0x1111);
-            std::uniform_real_distribution<f32> distpos(-1, 1);
-
-            for (u32 part_id = 0; part_id < p.data_count; part_id++){
-                pdat.pos_s.emplace_back(f32_3{distpos(eng), distpos(eng), distpos(eng)}); //r
-                //                      h    omega
-                pdat.U1_s.emplace_back(0.02f);
-                pdat.U1_s.emplace_back(0.00f);
-                //                           v          a             a_old
-                pdat.U3_s.emplace_back(f32_3{0.f,0.f,0.f});
-                pdat.U3_s.emplace_back(f32_3{0.f,0.f,0.f});
-                pdat.U3_s.emplace_back(f32_3{0.f,0.f,0.f});
-            }
-            */
-                
-
-            sched.add_patch(p, pdat);
-
-            t.stop();
-
-        } else {
-            sched.patch_list._next_patch_id++;
-        }
-        mpi::barrier(MPI_COMM_WORLD);
-
-        sched.owned_patch_id = sched.patch_list.build_local();
-
-        // std::cout << sched.dump_status() << std::endl;
-        sched.patch_list.build_global();
-        // std::cout << sched.dump_status() << std::endl;
-
-        //*
-        sched.patch_tree.build_from_patchtable(sched.patch_list.global, HilbertLB::max_box_sz);
-        //sched.patch_data.sim_box.min_box_sim_s = {-1};
-        //sched.patch_data.sim_box.max_box_sim_s = {1};
-
-        // std::cout << sched.dump_status() << std::endl;
-
-        std::cout << "build local" << std::endl;
-        sched.owned_patch_id = sched.patch_list.build_local();
-        sched.patch_list.build_local_idx_map();
-        sched.update_local_dtcnt_value();
-        sched.update_local_load_value();
-
-        // sched.patch_list.build_global();
-
-        /*{
-            SerialPatchTree<f32_3> sptree(sched.patch_tree, sched.get_box_tranform<f32_3>());
-            sptree.attach_buf();
-
-            PatchField<f32> h_field;
-            h_field.local_nodes_value.resize(sched.patch_list.local.size());
-            for (u64 idx = 0; idx < sched.patch_list.local.size(); idx++) {
-                h_field.local_nodes_value[idx] = 0.02f;
-            }
-            h_field.build_global(mpi_type_f32);
-
-            InterfaceHandler<f32_3, f32> interface_hndl;
-            interface_hndl.compute_interface_list<InterfaceSelector_SPH<f32_3, f32>>(sched, sptree, h_field);
-            interface_hndl.comm_interfaces(sched);
-            interface_hndl.print_current_interf_map();
-
-            // sched.dump_local_patches(format("patches_%d_node%d", 0, mpi_handler::world_rank));
-        }*/
+        leapfrog.sync_parts.push_back(
+            SPHTimestepperLeapfrogIsotGasSync<f32>::SyncPart{
+                {0,0,0},
+                {0,0,0},
+                1.e11
+            });
     }
 
-    static void step(SchedulerMPI &sched, TestSimInfo &siminfo, std::string dump_folder) {
+    void step(PatchScheduler &sched, TestSimInfo &siminfo, std::string dump_folder) {
 
-        SPHTimestepperLeapfrog<f32> leapfrog;
+        
 
-        SyCLHandler &hndl = SyCLHandler::get_instance();
+        
 
         // std::cout << sched.dump_status() << std::endl;
         sched.scheduler_step(true, true);
@@ -484,7 +416,7 @@ template <class Timestepper, class SimInfo> class SimulationSPH {
   public:
     static void run_sim() {
 
-        SyCLHandler &hndl = SyCLHandler::get_instance();
+        
 
         PatchDataLayout pdl;
 
@@ -495,8 +427,15 @@ template <class Timestepper, class SimInfo> class SimulationSPH {
         pdl.add_field<f32_3>("axyz",1);
         pdl.add_field<f32_3>("axyz_old",1);
 
+        // disable u for soundwave
+        pdl.add_field<f32>("u", 1);
+        pdl.add_field<f32>("du",1);
+        pdl.add_field<f32>("du_old",1);
 
-        SchedulerMPI sched = SchedulerMPI(pdl,1e6, 1);
+
+
+        //PatchScheduler sched = PatchScheduler(pdl,20000, 1); //soundwave test
+        PatchScheduler sched = PatchScheduler(pdl,100000, 1);
         sched.init_mpi_required_types();
 
         logfiles::open_log_files();
@@ -507,7 +446,8 @@ template <class Timestepper, class SimInfo> class SimulationSPH {
         std::cout << " ------ init sim ------" << std::endl;
 
         auto t = timings::start_timer("init timestepper", timings::timingtype::function);
-        Timestepper::init(sched, siminfo);
+        Timestepper stepper;
+        stepper.init(sched, siminfo);
         t.stop();
 
         std::cout << " --- init sim done ----" << std::endl;
@@ -522,9 +462,11 @@ template <class Timestepper, class SimInfo> class SimulationSPH {
         timings::dump_timings("### init_step ###");
 
         
-        for (u32 stepi = 1; stepi < 500; stepi++) {
+        for (u32 stepi = 1; stepi < 1e4; stepi++) {
 
-            if(stepi == 5){
+
+            /* //wave setup
+            if(stepi == 5 && true){
 
                 auto box = sched.get_box_volume<f32_3>();
 
@@ -534,7 +476,7 @@ template <class Timestepper, class SimInfo> class SimulationSPH {
                 sched.for_each_patch_buf(
                     [&](u64 id_patch, Patch cur_p, PatchDataBuffer & pdat_buf) {
 
-                        hndl.get_queue_compute(0).submit([&](sycl::handler &cgh) {
+                        sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
                             auto r = pdat_buf.fields_f32_3[ixyz]->get_access<sycl::access::mode::read>(cgh);
                             auto v = pdat_buf.fields_f32_3[ivxyz]->get_access<sycl::access::mode::discard_write>(cgh);
 
@@ -560,25 +502,90 @@ template <class Timestepper, class SimInfo> class SimulationSPH {
                     }
                 );
             }
+            */
+
+            if(stepi == 5 && false){
+
+                auto box = sched.get_box_volume<f32_3>();
+
+                u32 ixyz = pdl.get_field_idx<f32_3>("xyz");
+                u32 ivxyz = pdl.get_field_idx<f32_3>("vxyz");
+
+                sched.for_each_patch_buf(
+                    [&](u64 id_patch, Patch cur_p, PatchDataBuffer & pdat_buf) {
+
+                        sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
+                            auto r = pdat_buf.fields_f32_3[ixyz]->get_access<sycl::access::mode::read>(cgh);
+                            auto v = pdat_buf.fields_f32_3[ivxyz]->get_access<sycl::access::mode::discard_write>(cgh);
+
+                            f32 deltv = 1e-4;
+                            u32 nmode = 4;
+                            constexpr f32 pi = 3.141612;
+                            f32 x_min = std::get<0>(box).x();
+                            f32 x_max = std::get<1>(box).x();
+
+
+                            cgh.parallel_for( sycl::range{pdat_buf.element_count}, [=](sycl::item<1> item) { 
+                                u32 i = item.get_id(0);
+                                f32 x = r[item].x();
+                                f32 z = r[item].z();
+
+                                f32 pert = 0;
+
+
+                                if(z > 0){
+                                    pert = 1; 
+                                }else{
+                                    pert = -1;
+                                }pert *= 0.1;
+
+
+                                v[item] = {
+                                        pert,
+                                        0,
+                                        deltv*sycl::cos(nmode*2.*pi*(x-x_min)/(x_max-x_min))
+                                    }
+                                ;
+
+                                
+                            });
+                        });
+
+                    }
+                );
+            }
 
 
             std::cout << " ------ step time = " << stepi << " ------" << std::endl;
 
             std::cout << "time : " << siminfo.time << std::endl;
 
-            std::filesystem::create_directory("step" + std::to_string(stepi));
+
+            //std::filesystem::create_directory("step" + std::to_string(stepi));
+            
+            u32 skip_cnt = 20;
+
+            //*
+            if(stepi % skip_cnt == 0){
+                std::filesystem::create_directory("step" + std::to_string(stepi/skip_cnt));
+            }
+            //*/
 
             siminfo.stepcnt = stepi;
 
             auto step_timer = timings::start_timer("timestepper step", timings::timingtype::function);
             
-            Timestepper::step(sched, siminfo,"step" + std::to_string(stepi));
+            stepper.step(sched, siminfo,"step" + std::to_string(stepi));
 
             step_timer.stop();
 
+            //dump_state("step" + std::to_string(stepi) + "/", sched,siminfo.time);
+            //*
+            if(stepi % skip_cnt == 0){
+                dump_state("step" + std::to_string(stepi/skip_cnt) + "/", sched,siminfo.time);
+            }
+            //*/
             
-
-            dump_state("step" + std::to_string(stepi) + "/", sched,siminfo.time);
 
             timings::dump_timings("### "
                                   "step" +
@@ -593,32 +600,124 @@ template <class Timestepper, class SimInfo> class SimulationSPH {
 
 
 
+auto test_l = [](int a){
+    return a;
+};
+
+
+static_assert(std::is_same<decltype(test_l(0)), int>::value, "retval must be bool");
+
+
+
+
+#endif
+
+
 int main(int argc, char *argv[]) {
+
 
 
 
     std::cout << shamrock_title_bar_big << std::endl;
 
-    mpi_handler::init();
+    opts::register_opt("--sycl-cfg","(idcomp:idalt) ", "specify the compute & alt queue index");
+    opts::register_opt("--loglevel","(logvalue)", "specify a log level");
 
-    Cmdopt &opt = Cmdopt::get_instance();
-    opt.init(argc, argv, "./shamrock");
+    opts::register_opt("--nocolor",{}, "disable colored ouput");
 
-    SyCLHandler &hndl = SyCLHandler::get_instance();
-    hndl.init_sycl();
+    opts::register_opt("--rscript","(filepath)", "run shamrock with python runscirpt");
+    opts::register_opt("--ipython",{}, "run shamrock in Ipython mode");
 
+    opts::init(argc, argv);
 
-
-
-
-
-
-    SimulationSPH<TestTimestepper, TestSimInfo>::run_sim();
+    if(opts::is_help_mode()){
+        return 0;
+    }
 
 
+    mpi_handler::init(argc,argv);
+
+    if(opts::has_option("--nocolor")){
+        terminal_effects::disable_colors();
+    }
+
+    if(opts::has_option("--loglevel")){
+        std::string level = std::string(opts::get_option("--loglevel"));
+
+        i32 a = atoi(level.c_str());
+
+        if(i8(a) != a){
+            logger::err_ln("Cmd OPT", "you must select a loglevel in a 8bit integer range");
+        }
+
+        logger::loglevel = a;
+
+        if(a == i8_max){
+            logger::raw_ln("If you've seen spam in your life i can garantee you, this is worst");
+        }
+
+        logger::raw_ln("-> modified loglevel to",logger::loglevel,"enabled log types : ");
+        logger::raw_ln(terminal_effects::faint + "----------------------" + terminal_effects::reset);
+        logger::print_active_level();
+        logger::raw_ln(terminal_effects::faint + "----------------------" + terminal_effects::reset);
+    }
+
+
+    sycl_handler::init();
+
+    logfiles::open_files();
+
+
+    //*
+    {
+        RunScriptHandler rscript;
+        
+        if(opts::has_option("--ipython")){
+            rscript.run_ipython();
+        }else if(opts::has_option("--rscript")){
+            std::string fname = std::string(opts::get_option("--rscript"));
+
+            rscript.run_file(fname);
+        }else{
+            using namespace units;
+
+            Units<f64> code_units(
+                yr_s,
+                au_m,
+                earth_mass_kg,
+                1,
+                1,
+                1,
+                1
+            );
+
+            //to init values in code
+            f64 planet_mass = 2*code_units.jupiter_mass;
+
+            std::cout << "planet mass : " << planet_mass << " code_unit mass" << std::endl;
+
+            std::cout << "planet mass : " << planet_mass/code_units.jupiter_mass << " " << get_symbol(jupiter_mass) << std::endl;
 
 
 
+
+
+            //SimulationSPH<TestTimestepper, TestSimInfo>::run_sim();
+            //SimulationSPH<TestTimestepperSync, TestSimInfo>::run_sim();
+        }
+        
+    }
+    //*/
+
+
+
+
+
+    
+
+
+
+    logfiles::close_files();
 
 
 

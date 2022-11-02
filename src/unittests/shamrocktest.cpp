@@ -6,13 +6,17 @@
 //
 // -------------------------------------------------------//
 
+//%Impl status : Good
+
+
 
 #include "unittests/shamrocktest.hpp"
+#include <cstdlib>
 #include <sstream>
 
-#include "sys/cmdopt.hpp"
-#include "utils/string_utils.hpp"
-#include "sys/sycl_handler.hpp"
+#include "core/sys/cmdopt.hpp"
+#include "core/utils/string_utils.hpp"
+#include "core/sys/sycl_handler.hpp"
 
 
 bool has_option(
@@ -69,28 +73,17 @@ std::string make_test_output(TestResults t_res){
 //TODO add memory clean as an assertion
 int run_all_tests(int argc, char *argv[]){
 
-    std::string usage_str = R"%(Usage : ./shamrock_test2 [options]
-Options :
-  --help              Display this information
-  --test-list         Display the list of tests available
-  --run-only <name>   Run only the test with the specified name
-  --full-output        Print the list of all assertions in each test
-  -o <filename>       Output test result to file
-    )%";
+    
 
-
-    Cmdopt & opt = Cmdopt::get_instance();
-    opt.init(argc, argv,usage_str);
 
     using namespace mpi_handler;
     
 
 
-    if(opt.is_help_mode()){
-        return 0;
-    }
+    
 
-    if(opt.has_option("--test-list")){
+
+    if(opts::has_option("--test-list")){
         for (unsigned int i = 0; i < test_name_lst.size(); i++) {
             if(test_node_count[i] == -1){
                 printf("- [any] %-15s\n",test_name_lst[i].c_str());
@@ -103,27 +96,27 @@ Options :
 
     bool run_only = false;
     std::string run_only_name = "";
-    if(opt.has_option("--run-only")){
-        run_only_name = opt.get_option("--run-only");
+    if(opts::has_option("--run-only")){
+        run_only_name = opts::get_option("--run-only");
         run_only = true;
     }
 
 
-    bool full_output = opt.has_option("--full-output");
+    bool full_output = opts::has_option("--full-output");
 
-    bool out_to_file = opt.has_option("-o");
+    bool out_to_file = opts::has_option("-o");
 
     if(out_to_file){
-        if(opt.get_option("-o").size() == 0){
-            opt.print_help();
+        if(opts::get_option("-o").size() == 0){
+            opts::print_help();
         }
     }
 
 
 
-    mpi_handler::init();printf("\n");
+    mpi_handler::init(argc,argv);printf("\n");
 
-    SyCLHandler::get_instance().init_sycl();
+    sycl_handler::init();
 
     if(!run_only){
         printf("\n------------ Tests list --------------\n");
@@ -214,8 +207,11 @@ Options :
         #endif
 
         //printf("    assertion list :\n");
-        if(full_output){
-            for(unsigned int j = 0; j < t.lst_assert.size(); j++){
+        
+        for(unsigned int j = 0; j < t.lst_assert.size(); j++){
+
+
+            if(full_output || (!t.lst_assert[j].success)){
                 printf("        [%d/%zu] : ",j+1,t.lst_assert.size());
                 printf("%-20s",t.lst_assert[j].assert_name.c_str());
                 
@@ -223,13 +219,15 @@ Options :
                     std::cout << "  (\033[;32mSucces\033[0m)\n";
                 }else{
                     std::cout << "  (\033[1;31m Fail \033[0m)\n";
+                    std::cout << "----- logs : \n" << t.lst_assert[j].log << "\n-----" << std::endl;
                 }
-                
-                //std::cout << "            logs : " << t.lst_assert[j].log << "\n";
             }
+            
+            //std::cout << "            logs : " << t.lst_assert[j].log << "\n";
+        }
 
             
-        }
+        
 
         u32 succes_cnt = 0;
         for(unsigned int j = 0; j < t.lst_assert.size(); j++){
@@ -311,7 +309,7 @@ Options :
         //printf("%s\n",s_out.c_str());
 
         if(out_to_file){
-            write_string_to_file(std::string(opt.get_option("-o")), s_out);
+            write_string_to_file(std::string(opts::get_option("-o")), s_out);
         }
         
     }
@@ -321,4 +319,78 @@ Options :
 
 
     return 0;
+}
+
+
+std::string matplotlibstyle = R"==(
+
+# Set color cycle: blue, green, yellow, red, violet, gray
+axes.prop_cycle : cycler('color', ['0C5DA5', '00B945', 'FF9500', 'FF2C00', '845B97', '474747', '9e9e9e'])
+
+# Set default figure size
+figure.figsize : 10,5
+
+# Set x axis
+xtick.direction : in
+xtick.major.size : 5
+xtick.major.width : 1
+xtick.minor.size : 3
+xtick.minor.width : 1
+xtick.minor.visible : True
+xtick.top : True
+
+# Set y axis
+ytick.direction : in
+ytick.major.size : 5
+ytick.major.width : 1
+ytick.minor.size : 3
+ytick.minor.width : 1
+ytick.minor.visible : True
+ytick.right : True
+
+# Set line widths
+axes.linewidth : 1.5
+grid.linewidth : 0.5
+lines.linewidth : 1.
+
+# Remove legend frame
+legend.frameon : False
+
+# Always save as 'tight'
+savefig.bbox : tight
+savefig.pad_inches : 0.05
+
+# Use serif fonts
+# font.serif : Times
+font.family : serif
+font.size : 15
+mathtext.fontset : dejavuserif
+
+# Use LaTeX for math formatting
+text.usetex : True
+text.latex.preamble : \usepackage{amsmath} \usepackage{amssymb}
+
+)==";
+
+
+
+
+void run_py_script(std::string pysrc){
+
+    auto style_exist = []() -> bool{
+        std::ifstream f("custom_style.mplstyle");
+        return f.good();
+    };
+
+    if (!style_exist()) {
+        std::ofstream style_file("custom_style.mplstyle");
+        style_file << matplotlibstyle;
+        style_file.close();
+    }
+
+    std::ofstream py_file("tmp.py");
+    py_file << pysrc;
+    py_file.close();
+
+    system("python3 tmp.py");
 }

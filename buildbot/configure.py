@@ -88,13 +88,36 @@ if args.ninja:
     build_sys = BuildSystem.Ninja
 
 
+
+
+sycl_cmp = -1
+if args.compiler == "dpcpp":
+    sycl_cmp = SyclCompiler.DPCPP
+    abs_build_dir += "_dpcpp"
+elif args.compiler == "hipsycl":
+    sycl_cmp = SyclCompiler.HipSYCL
+    abs_build_dir += "_hipsycl"
+
+sycl_be = -1
+if args.backend == "omp":
+    sycl_be = SyCLBE.OpenMP
+elif args.backend == "cuda":
+    sycl_be = SyCLBE.CUDA
+
+
+
+
+
 target_buildmode = BuildMode.Normal
 if args.buildmode == "Normal":
     target_buildmode = BuildMode.Normal
+    
 elif args.buildmode == "Release":
     target_buildmode = BuildMode.Release
+    abs_build_dir += "_release"
 elif args.buildmode == "Debug":
     target_buildmode = BuildMode.Debug
+    abs_build_dir += "_debug"
 
 
 
@@ -108,17 +131,6 @@ if args.visu:
 
 
 
-sycl_cmp = -1
-if args.compiler == "dpcpp":
-    sycl_cmp = SyclCompiler.DPCPP
-elif args.compiler == "hipsycl":
-    sycl_cmp = SyclCompiler.HipSYCL
-
-sycl_be = -1
-if args.backend == "omp":
-    sycl_be = SyCLBE.OpenMP
-elif args.backend == "cuda":
-    sycl_be = SyCLBE.CUDA
 
 
 

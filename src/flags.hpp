@@ -15,6 +15,8 @@
  * 
  */
 
+//%Impl status : Good
+
 #pragma once
 
 #include "aliases.hpp"

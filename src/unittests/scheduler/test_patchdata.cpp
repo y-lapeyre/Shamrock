@@ -6,15 +6,15 @@
 //
 // -------------------------------------------------------//
 
-#include "patch/patchdata_layout.hpp"
+#include "core/patch/base/patchdata_layout.hpp"
 #include "unittests/shamrocktest.hpp"
 
 #include <random>
 #include <vector>
 
 
-#include "patch/patchdata.hpp"
-#include "patchscheduler/scheduler_mpi.hpp"
+#include "core/patch/base/patchdata.hpp"
+#include "core/patch/scheduler/scheduler_mpi.hpp"
 
 /*
 Test_start("patchdata::", sync_patchdata_layout, -1) {
@@ -56,21 +56,20 @@ Test_start("patchdata::", send_recv_patchdata, 2){
 
 
 
-    std::vector<MPI_Request> rq_lst;
+    std::vector<PatchDataMpiRequest> rq_lst;
     PatchData recv_d(pdl);
 
     if(mpi_handler::world_rank == 0){
         patchdata_isend(d1_check, rq_lst, 1, 0, MPI_COMM_WORLD);
-        patchdata_irecv(recv_d,rq_lst, 1, 0, MPI_COMM_WORLD);
+        patchdata_irecv_probe(recv_d,rq_lst, 1, 0, MPI_COMM_WORLD);
     }
 
     if(mpi_handler::world_rank == 1){
         patchdata_isend(d2_check, rq_lst, 0, 0, MPI_COMM_WORLD);
-        patchdata_irecv(recv_d,rq_lst, 0, 0, MPI_COMM_WORLD);
+        patchdata_irecv_probe(recv_d,rq_lst, 0, 0, MPI_COMM_WORLD);
     }
 
-    std::vector<MPI_Status> st_lst(rq_lst.size());
-    mpi::waitall(rq_lst.size(), rq_lst.data(), st_lst.data());
+    waitall_pdat_mpi_rq(rq_lst);
 
 
     if(mpi_handler::world_rank == 0){

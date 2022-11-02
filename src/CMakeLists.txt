@@ -65,8 +65,8 @@ SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-nonportable-include-path")
 ######################
 # Add compilation flags depending upon the build type
 ######################
-set(CMAKE_CXX_FLAGS_DEBUG "-g -Wunknown-cuda-version -Wall -Wextra -Wno-linker-warnings")
-set(CMAKE_CXX_FLAGS_RELEASE "-O3 ")#-DNDEBUG ")#-Wall -Wextra -Wunknown-cuda-version -Wno-linker-warnings")
+set(CMAKE_CXX_FLAGS_DEBUG "-g -Wno-unknown-cuda-version -Wno-linker-warnings")# -fsanitize=address")# -Wall -Wextra") #
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native")#-DNDEBUG ")#-Wall -Wextra -Wunknown-cuda-version -Wno-linker-warnings")
 
 if (CMAKE_BUILD_TYPE STREQUAL "GCOV")
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g --coverage")
@@ -120,6 +120,9 @@ endif()
 set(MPI_CXX_SKIP_MPICXX true)
 find_package(MPI REQUIRED COMPONENTS C)
 
+find_package (Python3 COMPONENTS Interpreter Development )
+
+
 
 include_directories(AFTER "${CMAKE_SOURCE_DIR}")
 
@@ -143,6 +146,9 @@ if("${BUILD_SIM}")
     message(">>> adding sph target <<<")
     add_executable(shamrock main.cpp version.cpp)
     target_link_libraries(shamrock PUBLIC MPI::MPI_C)
+    target_link_libraries(shamrock PUBLIC  Python3::Python)
+
+
 
 endif()
 
@@ -161,16 +167,14 @@ if("${BUILD_TEST}")
     #add_executable(shamrock_test main_test.cpp version.cpp)
     add_executable(shamrock_test main_test.cpp  version.cpp)
     target_link_libraries(shamrock_test PUBLIC MPI::MPI_C)
+    target_link_libraries(shamrock_test PUBLIC Python3::Python)
 
     #find_package(nlohmann_json 3.2.0 REQUIRED)
     #target_link_libraries(shamrock_test PUBLIC nlohmann_json::nlohmann_json)
 
 endif()
 
-add_subdirectory(sys)
-add_subdirectory(patch)
-add_subdirectory(interfaces)
-
-add_subdirectory(tree)
+add_subdirectory(core)
 add_subdirectory(unittests)
-add_subdirectory(patchscheduler)
+add_subdirectory(runscript)
+add_subdirectory(models)
