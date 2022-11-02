@@ -56,6 +56,10 @@ class Radix_tree_depth{
 };
 
 
+
+
+
+
 template<class u_morton,class vec3>
 class Radix_Tree{
     
@@ -127,11 +131,122 @@ class Radix_Tree{
     void compute_int_boxes(sycl::queue & queue,std::unique_ptr<sycl::buffer<flt>> & int_rad_buf, flt tolerance);
 
 
-    std::tuple<Radix_Tree<u_morton, vec3>,std::unique_ptr<sycl::buffer<u32>>, PatchData> cut_tree(sycl::queue & queue,const std::tuple<vec3,vec3> & cut_range, const PatchData & pdat_source);
+
+
+
+
+
+
+
+    template<class T>
+    class RadixTreeField{public:
+        u32 nvar;
+        std::unique_ptr<sycl::buffer<T>> radix_tree_field_buf;
+    };
+
+    template<class T, class LambdaComputeLeaf, class LambdaCombinator>
+    inline RadixTreeField<T> compute_field(sycl::queue & queue,u32 nvar,
+    
+        LambdaComputeLeaf && compute_leaf, LambdaCombinator && combine) const{
+
+        RadixTreeField<T> ret;
+        ret.nvar = nvar;
+
+        logger::debug_sycl_ln("RadixTree", "compute_field");
+
+        ret.radix_tree_field_buf = std::make_unique<sycl::buffer<T>>(tree_internal_count + tree_leaf_count);
+        sycl::range<1> range_leaf_cell{tree_leaf_count};
+
+        queue.submit([&](sycl::handler &cgh) {
+            u32 offset_leaf = tree_internal_count;
+
+            auto tree_field = sycl::accessor{* ret.radix_tree_field_buf, cgh ,sycl::write_only, sycl::no_init};
+
+            auto cell_particle_ids  = buf_reduc_index_map->template get_access<sycl::access::mode::read>(cgh);
+            auto particle_index_map = buf_particle_index_map->template get_access<sycl::access::mode::read>(cgh);
+
+            compute_leaf(cgh,[&](auto && lambda_loop){
+                cgh.parallel_for(range_leaf_cell, [=](sycl::item<1> item) {
+                    u32 gid = (u32)item.get_id(0);
+
+                    u32 min_ids = cell_particle_ids[gid];
+                    u32 max_ids = cell_particle_ids[gid + 1];
+
+
+                    lambda_loop([&](auto && particle_it){
+                            for (unsigned int id_s = min_ids; id_s < max_ids; id_s++) {
+                                particle_it(particle_index_map[id_s]);
+                            }
+                        },
+                        tree_field,
+                        [&](){
+                            return nvar*(offset_leaf + gid);
+                        }
+                    );
+
+                });
+            });
+
+            
+        });
+
+        sycl::range<1> range_tree{tree_internal_count};
+        auto ker_reduc_hmax = [&](sycl::handler &cgh) {
+            u32 offset_leaf = tree_internal_count;
+
+            auto tree_field = ret.radix_tree_field_buf->template get_access<sycl::access::mode::read_write>(cgh);
+
+            auto rchild_id   = buf_rchild_id->get_access<sycl::access::mode::read>(cgh);
+            auto lchild_id   = buf_lchild_id->get_access<sycl::access::mode::read>(cgh);
+            auto rchild_flag = buf_rchild_flag->get_access<sycl::access::mode::read>(cgh);
+            auto lchild_flag = buf_lchild_flag->get_access<sycl::access::mode::read>(cgh);
+
+            cgh.parallel_for(range_tree, [=](sycl::item<1> item) {
+                u32 gid = (u32)item.get_id(0);
+
+                u32 lid = lchild_id[gid] + offset_leaf * lchild_flag[gid];
+                u32 rid = rchild_id[gid] + offset_leaf * rchild_flag[gid];
+
+                combine(
+                    [&](u32 nvar_id) -> T{
+                        return tree_field[nvar*lid + nvar_id];
+                    },
+                    [&](u32 nvar_id) -> T{
+                        return tree_field[nvar*rid + nvar_id];
+                    },
+                    tree_field,
+                    [&](){
+                        return nvar*(gid);
+                    }
+                );
+            });
+        };
+
+        for (u32 i = 0; i < tree_depth; i++) {
+            queue.submit(ker_reduc_hmax);
+        }
+
+        return std::move(ret);
+    }
+
+
+    struct CuttedTree{
+        Radix_Tree<u_morton, vec3> rtree;
+        std::unique_ptr<sycl::buffer<u32>> new_node_id_to_old;
+
+        std::unique_ptr<sycl::buffer<u32>> pdat_extract_id;
+    };
+
+    CuttedTree cut_tree(sycl::queue & queue,const std::tuple<vec3,vec3> & cut_range);
 
     template<class T> void print_tree_field(sycl::buffer<T> & buf_field);
 
 };
+
+
+
+
+
 
 
 

@@ -7,7 +7,7 @@ __pycache__
 
 #compile/build/test folders
 build_*
-tools
+
 test_pipeline
 test_res_*
 tmp.json
@@ -23,7 +23,7 @@ version.cpp
 *.log
 *.out
 *.pdf
-*.tex
+.tex
 *.toc
 
 

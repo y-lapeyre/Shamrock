@@ -1556,7 +1556,7 @@ Test_start("fmm", radix_tree_fmm, 1){
 
 }
 
-
+#if false
 
 Bench_start("fmm shit", "multipole_compute", fmm_perf_multipole, 1){
     
@@ -1958,3 +1958,5 @@ Bench_start("fmm", "compute_tree_multipoles", compute_tree_multipoles, 1){
 
 
 }
+
+#endif

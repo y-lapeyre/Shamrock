@@ -11,6 +11,9 @@
 #include "aliases.hpp"
 #include "core/sys/sycl_handler.hpp"
 
+
+//%Impl status : Clean
+
 namespace syclalgs {
 
     namespace basic {
@@ -28,6 +31,10 @@ namespace syclalgs {
 
         bool is_all_true(sycl::buffer<u8> & buf, u32 cnt);
         
-    }
+    } // namespace reduction
+
+    namespace convert {
+        template<class T> sycl::buffer<T> vector_to_buf(std::vector<T> && vec);
+    } // namespace convert
 
 } // namespace syclalgs

@@ -1,5 +1,6 @@
 
 #include "nbody_selfgrav.hpp"
+#include "core/patch/interfaces/interface_handler.hpp"
 #include "core/patch/utility/serialpatchtree.hpp"
 #include "core/tree/radix_tree.hpp"
 #include "runscript/shamrockapi.hpp"
@@ -240,9 +241,11 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(PatchScheduler &sched, f64 old_ti
 
         constexpr u32 reduc_level = 5;
 
+        using RadTree = Radix_Tree<u_morton, vec3>;
+
         //make trees
         auto tgen_trees = timings::start_timer("radix tree gen", timings::sycl);
-        std::unordered_map<u64, std::unique_ptr<Radix_Tree<u_morton, vec3>>> radix_trees;
+        std::unordered_map<u64, std::unique_ptr<RadTree>> radix_trees;
 
         sched.for_each_patch_data([&](u64 id_patch, Patch & cur_p, PatchData & pdat) {
             logger::debug_ln("SPHLeapfrog","patch : n°",id_patch,"->","making Radix Tree");
@@ -256,39 +259,37 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(PatchScheduler &sched, f64 old_ti
                 std::tuple<vec3, vec3> box = sched.patch_data.sim_box.get_box<flt>(cur_p);
 
                 // radix tree computation
-                radix_trees[id_patch] = std::make_unique<Radix_Tree<u_morton, vec3>>(sycl_handler::get_compute_queue(), box,
+                radix_trees[id_patch] = std::make_unique<RadTree>(sycl_handler::get_compute_queue(), box,
                                                                                     buf_xyz,pdat.get_obj_cnt(),reduc_level);
             }
                 
         });
 
 
-
-        /*
-        sched.for_each_patch([&](u64 id_patch, Patch  cur_p) {
+        sched.for_each_patch_data([&](u64 id_patch, Patch &  /*cur_p*/, PatchData & pdat) {
             logger::debug_ln("SPHLeapfrog","patch : n°",id_patch,"->","compute radix tree cell volumes");
-            if (merge_pdat.at(id_patch).or_element_cnt == 0)
-                logger::debug_ln("SPHLeapfrog","patch : n°",id_patch,"->","is empty skipping tree volumes step");
-
-            radix_trees[id_patch]->compute_cellvolume(sycl_handler::get_compute_queue());
+            if (pdat.is_empty()){
+                logger::debug_ln("SPHLeapfrog","patch : n°",id_patch,"->","is empty skipping tree build");
+            }else{
+                radix_trees[id_patch]->compute_cellvolume(sycl_handler::get_compute_queue());
+            }
         });
 
-        sched.for_each_patch([&](u64 id_patch, Patch cur_p) {
-            logger::debug_ln("SPHLeapfrog","patch : n°",id_patch,"->","compute Radix Tree interaction boxes");
-            if (merge_pdat.at(id_patch).or_element_cnt == 0)
-                logger::debug_ln("SPHLeapfrog","patch : n°",id_patch,"->","is empty skipping interaction box compute");
 
-            PatchData & mpdat = merge_pdat.at(id_patch).data;
-
-            auto & buf_h = mpdat.get_field<flt>(ihpart).get_buf();
-
-            radix_trees[id_patch]->compute_int_boxes(sycl_handler::get_compute_queue(), buf_h, htol_up_tol);
-        });
-
-        */
 
         sycl_handler::get_compute_queue().wait();
         tgen_trees.stop();
+
+
+
+        using InterfHndl =  Interfacehandler<Tree_Send, flt, RadTree>;
+        InterfHndl interf_hndl = InterfHndl();
+
+        
+
+
+
+        
 
 
 

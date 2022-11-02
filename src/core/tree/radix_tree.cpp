@@ -6,6 +6,9 @@
 //
 // -------------------------------------------------------//
 
+
+//%Impl status : Clean unfinished
+
 #include "radix_tree.hpp"
 
 
@@ -358,8 +361,8 @@ template void Radix_Tree<u64, f32_3>::print_tree_field(sycl::buffer<u32> &buf_fi
 
 
 template <class u_morton, class vec3>
-std::tuple<Radix_Tree<u_morton, vec3>,std::unique_ptr<sycl::buffer<u32>>, PatchData> Radix_Tree<u_morton, vec3>::cut_tree(
-    sycl::queue &queue, const std::tuple<vec3, vec3> &cut_range, const PatchData &pdat_source
+typename Radix_Tree<u_morton, vec3>::CuttedTree Radix_Tree<u_morton, vec3>::cut_tree(
+    sycl::queue &queue, const std::tuple<vec3, vec3> &cut_range
 ) {
 
     
@@ -1015,13 +1018,13 @@ std::tuple<Radix_Tree<u_morton, vec3>,std::unique_ptr<sycl::buffer<u32>>, PatchD
         ret.print_tree_field(*new_node_id_to_old_v2);
 
 
-        
-        PatchData ret_pdat(pdat_source.pdl);
 
-        pdat_source.append_subset_to(extract_id,ret_pdat);
-
-
-        return {std::move(ret), std::move(new_node_id_to_old_v2), std::move(ret_pdat)};
+        return CuttedTree{
+            std::move(ret), 
+            std::move(new_node_id_to_old_v2), 
+            std::make_unique<sycl::buffer<u32>>(
+                syclalgs::convert::vector_to_buf(std::move(extract_id))
+                )};
 
     }
 }

@@ -9,6 +9,9 @@
 #include "sycl_algs.hpp"
 #include "core/patch/base/enabled_fields.hpp"
 
+//%Impl status : Clean
+
+
 template<class T>
 class SyclAlg_CopyBuf;
 
@@ -18,7 +21,8 @@ class SyclAlg_CopyBufDiscard;
 template<class T>
 class SyclAlg_AddWithFactor;
 
-template<class T> class SyclAlg_write_with_offset_into;
+template<class T> 
+class SyclAlg_write_with_offset_into;
 
 namespace syclalgs {
 
@@ -111,6 +115,23 @@ namespace syclalgs {
         } 
     }
 
+
+    namespace convert {
+        template<class T> 
+        sycl::buffer<T> vector_to_buf(std::vector<T> && vec){
+
+            u32 cnt = vec.size();
+            sycl::buffer<T> ret(cnt);
+
+            sycl::buffer<T> alias(vec.data(),cnt);
+
+            basic::copybuf_discard(alias, ret, cnt);
+
+            return std::move(ret);
+
+        }
+    }
+
 }
 
 
@@ -132,5 +153,11 @@ XMAC_LIST_ENABLED_FIELD
 
 #define X(arg)\
 template void syclalgs::basic::write_with_offset_into(sycl::buffer<arg> &buf_ctn, sycl::buffer<arg> &buf_in, u32 offset, u32 element_count);
+XMAC_LIST_ENABLED_FIELD
+#undef X
+
+
+#define X(arg)\
+template sycl::buffer<arg> syclalgs::convert::vector_to_buf(std::vector<arg> && vec);
 XMAC_LIST_ENABLED_FIELD
 #undef X

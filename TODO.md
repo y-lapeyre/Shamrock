@@ -1,12 +1,24 @@
 # New TODOs : 
 
     - Tree Field for multipoles
-    - treecut method
-    - move send_recv_mpi_ sycl buffers to mpi_sycl_introp module
     - implement tree send
     - implement tree field send
 
+    - Implement full tree field (aka patch field + radix tree field)
 
+
+# Endgame : 
+
+Scheduler : Move data
+
+Full tree = Patch Octree (Radix tree)
+full tree field = Patch field X Radix tree field
+
+interaction condition = interact cond for full tree (eventually using n full tree field)
+
+based on the interaction condition : 
+    full walk = walk in patch octree and then on radix tree if unroll
+    interface handler prepare data for a full walk
 
 
 
@@ -16,27 +28,15 @@
 
 - [ ] patchdata_isend -> patchdata::pisend 
 - [ ] patchdata_irecv -> patchdata::pirecv
-- [ ] USM version of the patches
 - [ ] Builder for SchedulerMPI since it won't work with no patches
-
-- [ ] implement PatchDataBuffer with unique ptrs 
-- [ ] PatchDataBufferCache ?
-
 - [ ] put instance of simbox in the SchedulerMPI
-
-- [ ] bind patch to specific GPU for the gpu cache ?
-
 - [ ] runtime error in SchedulerMPI construction if patch type inactive
 - [ ] make SimulationBox templated and store tranlate & scale factor
-- [ ] replace pos_s & pos_d by a templated postype
 - [ ] for the templated patch do something like shown in main.cpp
 - [ ] SerialPatchTree attach buf by default and use accesors
-
-
 - [ ] Transform box info into boundary condition stuff
 
 # Hardware stuff : 
-- [ ] Change sycl handler to namespace ? (aka SyCLHandler -> sycl_handler::)
 - [ ] Create hardware class to detect environment & handle MPI + sycl
 - [ ] move init/free required type in SchedulerMPI to patch & sycl interop class 
 - [ ] move sycl interop init in mpi_handler
