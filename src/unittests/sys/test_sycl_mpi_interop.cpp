@@ -8,13 +8,13 @@
 
 #include "unittests/shamrocktest.hpp"
 
-#include "sys/mpi_handler.hpp"
-#include "sys/sycl_handler.hpp"
-#include "sys/sycl_mpi_interop.hpp"
+#include "core/sys/mpi_handler.hpp"
+#include "core/sys/sycl_handler.hpp"
+#include "core/sys/sycl_mpi_interop.hpp"
 
 #include <random>
 
-#include "utils/sycl_vector_utils.hpp"
+#include "core/utils/sycl_vector_utils.hpp"
 
 int get_mpi_size(MPI_Datatype md){
     MPI_Aint lbs;
@@ -104,6 +104,29 @@ Test_start("sycl_handler::",test_sycl_mpi_types_sizes,-1){
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 template<class T>
 void test_type1(TestResults &__test_result_ref,std::mt19937 &  eng, std::uniform_real_distribution<f64> & distval,MPI_Datatype mpi_t,const char* name){
 
@@ -146,8 +169,8 @@ void test_type2(TestResults &__test_result_ref,std::mt19937 &  eng, std::uniform
         MPI_Status st;
         mpi::recv(&a_recv   , 2, mpi_t   , 0, 0, MPI_COMM_WORLD, &st);
 
-        Test_assert(format("test send/recv %s[0]  ",name), test_eq2(a_recv[0] , a_check[0])   );
-        Test_assert(format("test send/recv %s[1]  ",name), test_eq2(a_recv[1] , a_check[1])   );
+        Test_assert(format("test send/recv %s[0]  ",name), test_sycl_eq(a_recv[0] , a_check[0])   );
+        Test_assert(format("test send/recv %s[1]  ",name), test_sycl_eq(a_recv[1] , a_check[1])   );
 
     }
 
@@ -171,8 +194,8 @@ void test_type3(TestResults &__test_result_ref,std::mt19937 &  eng, std::uniform
         MPI_Status st;
         mpi::recv(&a_recv   , 2, mpi_t   , 0, 0, MPI_COMM_WORLD, &st);
 
-        Test_assert(format("test send/recv %s[0]  ",name), test_eq3(a_recv[0] , a_check[0])   );
-        Test_assert(format("test send/recv %s[1]  ",name), test_eq3(a_recv[1] , a_check[1])   );
+        Test_assert(format("test send/recv %s[0]  ",name), test_sycl_eq(a_recv[0] , a_check[0])   );
+        Test_assert(format("test send/recv %s[1]  ",name), test_sycl_eq(a_recv[1] , a_check[1])   );
 
     }
 
@@ -196,8 +219,8 @@ void test_type4(TestResults &__test_result_ref,std::mt19937 &  eng, std::uniform
         MPI_Status st;
         mpi::recv(&a_recv   , 2, mpi_t   , 0, 0, MPI_COMM_WORLD, &st);
 
-        Test_assert(format("test send/recv %s[0]  ",name), test_eq4(a_recv[0] , a_check[0])   );
-        Test_assert(format("test send/recv %s[1]  ",name), test_eq4(a_recv[1] , a_check[1])   );
+        Test_assert(format("test send/recv %s[0]  ",name), test_sycl_eq(a_recv[0] , a_check[0])   );
+        Test_assert(format("test send/recv %s[1]  ",name), test_sycl_eq(a_recv[1] , a_check[1])   );
 
     }
 
@@ -221,8 +244,8 @@ void test_type8(TestResults &__test_result_ref,std::mt19937 &  eng, std::uniform
         MPI_Status st;
         mpi::recv(&a_recv   , 2, mpi_t   , 0, 0, MPI_COMM_WORLD, &st);
 
-        Test_assert(format("test send/recv %s[0]  ",name), test_eq8(a_recv[0] , a_check[0])   );
-        Test_assert(format("test send/recv %s[1]  ",name), test_eq8(a_recv[1] , a_check[1])   );
+        Test_assert(format("test send/recv %s[0]  ",name), test_sycl_eq(a_recv[0] , a_check[0])   );
+        Test_assert(format("test send/recv %s[1]  ",name), test_sycl_eq(a_recv[1] , a_check[1])   );
 
     }
 
@@ -246,8 +269,8 @@ void test_type16(TestResults &__test_result_ref,std::mt19937 &  eng, std::unifor
         MPI_Status st;
         mpi::recv(&a_recv   , 2, mpi_t   , 0, 0, MPI_COMM_WORLD, &st);
 
-        Test_assert(format("test send/recv %s[0]  ",name), test_eq16(a_recv[0] , a_check[0])   );
-        Test_assert(format("test send/recv %s[1]  ",name), test_eq16(a_recv[1] , a_check[1])   );
+        Test_assert(format("test send/recv %s[0]  ",name), test_sycl_eq(a_recv[0] , a_check[0])   );
+        Test_assert(format("test send/recv %s[1]  ",name), test_sycl_eq(a_recv[1] , a_check[1])   );
 
     }
 
@@ -333,6 +356,77 @@ Test_start("sycl_handler::",test_sycl_mpi_types_comm,2){
     test_type16<f32_16>(__test_result_ref, eng, distval,mpi_type_f32_16,"f32_16");
     test_type16<f64_16>(__test_result_ref, eng, distval,mpi_type_f64_16,"f64_16");
 
+
+    free_sycl_mpi_types();
+
+}
+
+
+
+
+template<class T> inline void test_type_comm(TestResults &__test_result_ref,std::mt19937 &  eng, std::uniform_real_distribution<f64> & distval,MPI_Datatype mpi_t,const char* name){
+    constexpr u32 npart = 1000;
+
+    using namespace mpi_sycl_interop;
+
+    static_assert(
+            #define X(args)  std::is_same<T, args>::value ||
+            XMAC_COMM_TYPE_ENABLED true
+            #undef X
+            );
+
+    std::unique_ptr<sycl::buffer<T>> buf = std::make_unique<sycl::buffer<T>>(npart);
+
+    {
+        sycl::host_accessor acc {*buf, sycl::write_only, sycl::no_init};
+
+        for (u32 i = 0; i < npart; i++) {
+            acc[i] = next_obj<T>(eng, distval);
+        }
+    }
+
+    std::vector<mpi_sycl_interop::BufferMpiRequest<T>> rqs;
+
+    if(mpi_handler::world_rank == 0){
+        isend(buf,npart, rqs, 1, 0, MPI_COMM_WORLD);
+
+        waitall(rqs);
+    }else{
+        std::unique_ptr<sycl::buffer<T>> recv;
+        irecv_probe(recv, rqs, 0, 0, MPI_COMM_WORLD);
+
+
+        waitall(rqs);
+
+
+        {
+            sycl::host_accessor acc {*buf, sycl::read_only};
+            sycl::host_accessor acc_recv {*recv, sycl::read_only};
+
+            for (u32 i = 0; i < npart; i++) {
+                Test_assert("equal", test_sycl_eq(acc[i],acc_recv[i]));
+            }
+        }
+
+
+    }
+    
+}
+
+
+
+Test_start("sycl_mpi_interop::",test_sycl_buffer_mpi_comm,2){
+
+
+
+    std::mt19937 eng(0x1171);        
+    std::uniform_real_distribution<f64> distval(-1e9,1e9);
+
+    create_sycl_mpi_types();
+
+    #define X(args) test_type_comm<args>(__test_result_ref, eng, distval,mpi_type_##args,#args);
+    XMAC_COMM_TYPE_ENABLED
+    #undef X
 
     free_sycl_mpi_types();
 

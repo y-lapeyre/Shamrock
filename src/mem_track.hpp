@@ -17,6 +17,9 @@
 
 #include <cstring>
 
+
+//%Impl status : Deprecated
+
 #define MEM_TRACK_ENABLED
 
 

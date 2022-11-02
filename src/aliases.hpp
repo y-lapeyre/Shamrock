@@ -7,6 +7,7 @@
 // -------------------------------------------------------//
 
 
+
 /**
  * @file aliases.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
@@ -15,6 +16,9 @@
  * @copyright Copyright Timothée David--Cléris (c) 2021
  * 
  */
+
+
+//%Impl status : Good
 
 
 #pragma once
@@ -31,6 +35,10 @@
 
 //#define PTR_FREE(...)      {if(__VA_ARGS__ != NULL){ delete   __VA_ARGS__; __VA_ARGS__ = NULL; }else{ throw_with_pos("trying to free \"" #__VA_ARGS__ "\" but it was already free'd");}}
 //#define PTR_FREE_ARR(...)  {if(__VA_ARGS__ != NULL){ delete[] __VA_ARGS__; __VA_ARGS__ = NULL; }else{ throw_with_pos("trying to free array \"" #__VA_ARGS__ "\" but it was already free'd");}}
+
+template <bool B, class T = void>
+using enable_if_t = typename std::enable_if<B, T>;
+
 
 #ifdef SYCL_COMP_HIPSYCL
 typedef sycl::detail::s_long   i64;
@@ -103,8 +111,6 @@ TYPEDEFS_TYPES(16)
 
 
 
-
-#define ERR_ID_64 18446744073709551615u
 
 
 extern std::string git_info_str;

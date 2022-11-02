@@ -6,8 +6,7 @@ __pycache__
 #*.sycl
 
 #compile/build/test folders
-build
-build_pipe
+build_*
 tools
 test_pipeline
 test_res_*

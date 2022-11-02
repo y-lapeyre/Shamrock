@@ -10,7 +10,7 @@
 
 #include "aliases.hpp"
 
-#include "sfc/hilbert.hpp"
+#include "core/sfc/hilbert.hpp"
 
 Test_start("sfc::", hilbert, 1) {
     

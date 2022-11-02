@@ -7,21 +7,21 @@
 // -------------------------------------------------------//
 
 #include "aliases.hpp"
-#include "interfaces/interface_generator.hpp"
-#include "interfaces/interface_handler.hpp"
-#include "interfaces/interface_selector.hpp"
-#include "io/dump.hpp"
-#include "patch/patch_field.hpp"
-#include "patch/patch_reduc_tree.hpp"
-#include "patch/patchdata.hpp"
-#include "patch/serialpatchtree.hpp"
-#include "patchscheduler/loadbalancing_hilbert.hpp"
-#include "patchscheduler/patch_content_exchanger.hpp"
-#include "patchscheduler/scheduler_mpi.hpp"
-#include "sys/mpi_handler.hpp"
-#include "sys/sycl_mpi_interop.hpp"
+#include "core/io/dump.hpp"
+#include "core/patch/base/patchdata.hpp"
+#include "core/patch/interfaces/interface_generator.hpp"
+#include "core/patch/interfaces/interface_handler.hpp"
+#include "core/patch/interfaces/interface_selector.hpp"
+#include "core/patch/comm/patch_content_exchanger.hpp"
+#include "core/patch/scheduler/loadbalancing_hilbert.hpp"
+#include "core/patch/scheduler/scheduler_mpi.hpp"
+#include "core/patch/utility/patch_field.hpp"
+#include "core/patch/utility/patch_reduc_tree.hpp"
+#include "core/patch/utility/serialpatchtree.hpp"
+#include "core/sys/mpi_handler.hpp"
+#include "core/sys/sycl_mpi_interop.hpp"
+#include "core/utils/string_utils.hpp"
 #include "unittests/shamrocktest.hpp"
-#include "utils/string_utils.hpp"
 #include <string>
 
 class Reduce_DataCount {
@@ -34,7 +34,7 @@ class Reduce_DataCount {
 #if false
 Test_start("patch::patch_reduc_tree::", generation, -1) {
 
-    SyCLHandler &hndl = SyCLHandler::get_instance();
+    
 
     SchedulerMPI sched = SchedulerMPI(2500, 1);
     sched.init_mpi_required_types();
@@ -116,7 +116,7 @@ Test_start("patch::patch_reduc_tree::", generation, -1) {
 
         std::cout << "sptree.reduce_field" << std::endl;
         PatchFieldReduction<u64> pfield_reduced =
-            sptree.reduce_field<u64, Reduce_DataCount>(hndl.get_queue_alt(0), sched, dtcnt_field);
+            sptree.reduce_field<u64, Reduce_DataCount>(sycl_handler::get_alt_queue(), sched, dtcnt_field);
 
         std::cout << "pfield_reduced.detach_buf()" << std::endl;
         pfield_reduced.detach_buf();
@@ -171,7 +171,7 @@ Test_start("patch::patch_reduc_tree::", generation, -1) {
 
             // std::cout << "sptree.reduce_field" << std::endl;
             PatchFieldReduction<u64> pfield_reduced =
-                sptree.reduce_field<u64, Reduce_DataCount>(hndl.get_queue_alt(0), sched, dtcnt_field);
+                sptree.reduce_field<u64, Reduce_DataCount>(sycl_handler::get_alt_queue(), sched, dtcnt_field);
 
             // std::cout << "pfield_reduced.detach_buf()" << std::endl;
             pfield_reduced.detach_buf();
@@ -197,7 +197,7 @@ Test_start("patch::patch_reduc_tree::", generation, -1) {
                     sycl::buffer<f32_3> pos(pdat.pos_s.data(),pdat.pos_s.size());
 
                     sycl::buffer<u64> newid = __compute_object_patch_owner<f32_3, class ComputeObejctPatchOwners>(
-                        hndl.get_queue_compute(0), 
+                        sycl_handler::get_compute_queue(), 
                         pos, 
                         sptree);
 

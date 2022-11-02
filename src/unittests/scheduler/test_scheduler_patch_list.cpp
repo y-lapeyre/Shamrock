@@ -8,9 +8,9 @@
 
 #include "unittests/shamrocktest.hpp"
 
-#include "patchscheduler/scheduler_patch_list.hpp"
+#include "core/patch/scheduler/scheduler_patch_list.hpp"
 #include "test_patch_utils.hpp"
-#include "utils/geometry_utils.hpp"
+#include "core/utils/geometry_utils.hpp"
 
 //TODO add other test to check "make_fake_patch_list"
 Test_start("SchedulerPatchList::fake_patch_list_gen()::",patch_are_cubes,-1){
@@ -73,7 +73,7 @@ Test_start("SchedulerPatchList::",build_select_corectness,-1){
     for(const Patch &p : check_vec){
         patch_list.global.push_back(p);
     }
-    patch_list.build_local();
+    auto res = patch_list.build_local();
 
 
     //check corectness of local patch list

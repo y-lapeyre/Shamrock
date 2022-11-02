@@ -11,7 +11,7 @@
 #include <vector>
 #include <random>
 
-#include "patchscheduler/scheduler_mpi.hpp"
+#include "core/patch/scheduler/scheduler_mpi.hpp"
 
 
 inline void make_global_local_check_vec(std::vector<Patch> & global, std::vector<Patch> & local){

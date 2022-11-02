@@ -1,7 +1,19 @@
-# Patch Scheduler : 
-- [ ] rename SchedulerMPI to PatchScheduler to handle the gpu scheduling from the same?
+# New TODOs : 
 
-- [ ] patchdata nvars to templates (perf gain ???)
+    - Tree Field for multipoles
+    - treecut method
+    - move send_recv_mpi_ sycl buffers to mpi_sycl_introp module
+    - implement tree send
+    - implement tree field send
+
+
+
+
+
+
+
+# Patch Scheduler : 
+
 - [ ] patchdata_isend -> patchdata::pisend 
 - [ ] patchdata_irecv -> patchdata::pirecv
 - [ ] USM version of the patches
@@ -9,7 +21,6 @@
 
 - [ ] implement PatchDataBuffer with unique ptrs 
 - [ ] PatchDataBufferCache ?
-- [ ] add interger fields to patchdata
 
 - [ ] put instance of simbox in the SchedulerMPI
 
@@ -22,6 +33,7 @@
 - [ ] SerialPatchTree attach buf by default and use accesors
 
 
+- [ ] Transform box info into boundary condition stuff
 
 # Hardware stuff : 
 - [ ] Change sycl handler to namespace ? (aka SyCLHandler -> sycl_handler::)
