@@ -1203,11 +1203,13 @@ Test_start("fmm", radix_tree_fmm, 1){
         }
     }
 
+    constexpr u32 reduc_level = 5;
+
     auto rtree = Radix_Tree<morton_mode, vec>(
             sycl_handler::get_compute_queue(), 
             {vec{-1,-1,-1},vec{1,1,1}},
             pos_part, 
-            npart 
+            npart , reduc_level
         );
 
     rtree.compute_cellvolume(sycl_handler::get_compute_queue());
@@ -1696,11 +1698,14 @@ Bench_start("fmm", "compute_tree_multipoles", compute_tree_multipoles, 1){
 
     auto bench_lambda = [&pos_part,&buf_force](){
 
+    
+    constexpr u32 reduc_level = 5;
+
     auto rtree = Radix_Tree<morton_mode, vec>(
             sycl_handler::get_compute_queue(), 
             {vec{-1,-1,-1},vec{1,1,1}},
             pos_part, 
-            npart 
+            npart ,reduc_level
         );
 
     rtree.compute_cellvolume(sycl_handler::get_compute_queue());

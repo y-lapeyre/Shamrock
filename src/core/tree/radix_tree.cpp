@@ -20,7 +20,7 @@
 
 template <class u_morton, class vec3>
 Radix_Tree<u_morton, vec3>::Radix_Tree(
-    sycl::queue &queue, std::tuple<vec3, vec3> treebox, std::unique_ptr<sycl::buffer<vec3>> &pos_buf, u32 cnt_obj
+    sycl::queue &queue, std::tuple<vec3, vec3> treebox, std::unique_ptr<sycl::buffer<vec3>> &pos_buf, u32 cnt_obj, u32 reduc_level
 ) {
     if (cnt_obj > i32_max - 1) {
         throw shamrock_exc("number of element in patch above i32_max-1");
@@ -54,7 +54,7 @@ Radix_Tree<u_morton, vec3>::Radix_Tree(
     // return a sycl buffer from reduc index map instead
     logger::debug_sycl_ln("RadixTree", "reduction algorithm"); // TODO put reduction level in class member
     std::vector<u32> reduc_index_map;
-    reduction_alg(queue, cnt_obj, buf_morton, 5, reduc_index_map, tree_leaf_count);
+    reduction_alg(queue, cnt_obj, buf_morton, reduc_level, reduc_index_map, tree_leaf_count);
 
     u32 reduc_index_map_len = reduc_index_map.size();
 

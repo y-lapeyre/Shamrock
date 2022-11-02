@@ -40,11 +40,14 @@ Test_start("radix_tree",inclusion_ok,1){
         }
     }
 
+    
+    constexpr u32 reduc_level = 5;
+
     auto rtree = Radix_Tree<morton_mode, vec>(
             sycl_handler::get_compute_queue(), 
             {vec{-1,-1,-1},vec{1,1,1}},
             pdat.get_field<vec>(id_xyz).get_buf(), 
-            npart 
+            npart , reduc_level
         );
 
     rtree.compute_cellvolume(sycl_handler::get_compute_queue());
@@ -139,11 +142,14 @@ Test_start("radix_tree", tree_cut, 1){
         }
     }
 
+
+    constexpr u32 reduc_level = 5;
+
     auto rtree = Radix_Tree<morton_mode, vec>(
             sycl_handler::get_compute_queue(), 
             {vec{-1,-1,-1},vec{1,1,1}},
             pdat.get_field<vec>(id_xyz).get_buf(), 
-            npart 
+            npart ,reduc_level
         );
 
     rtree.compute_cellvolume(sycl_handler::get_compute_queue());

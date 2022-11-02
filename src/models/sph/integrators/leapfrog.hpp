@@ -290,6 +290,9 @@ namespace sph {
         tmerge_buf.stop();
         
 
+
+        constexpr u32 reduc_level = 5;
+
         //make trees
         auto tgen_trees = timings::start_timer("radix tree gen", timings::sycl);
         std::unordered_map<u64, std::unique_ptr<Radix_Tree<u_morton, vec3>>> radix_trees;
@@ -309,7 +312,7 @@ namespace sph {
 
             // radix tree computation
             radix_trees[id_patch] = std::make_unique<Radix_Tree<u_morton, vec3>>(sycl_handler::get_compute_queue(), box,
-                                                                                    buf_xyz,mpdat.get_obj_cnt());
+                                                                                    buf_xyz,mpdat.get_obj_cnt(),reduc_level);
         });
 
         sched.for_each_patch([&](u64 id_patch, Patch  /*cur_p*/) {

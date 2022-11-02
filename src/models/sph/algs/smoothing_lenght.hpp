@@ -235,6 +235,8 @@ inline void compute_smoothing_lenght(PatchScheduler &sched,bool periodic_mode,fl
         std::unordered_map<u64, std::unique_ptr<Radix_Tree<u_morton, vec>>> radix_trees;
 
 
+        constexpr u32 reduc_level = 5;
+
         sched.for_each_patch([&](u64 id_patch, Patch  /*cur_p*/) {
             logger::debug_ln("SPHLeapfrog","patch : n°",id_patch,"->","making Radix Tree");
 
@@ -250,7 +252,7 @@ inline void compute_smoothing_lenght(PatchScheduler &sched,bool periodic_mode,fl
 
             // radix tree computation
             radix_trees[id_patch] = std::make_unique<Radix_Tree<u_morton, vec>>(sycl_handler::get_compute_queue(), box,
-                                                                                    buf_xyz,mpdat.get_obj_cnt());
+                                                                                    buf_xyz,mpdat.get_obj_cnt(),reduc_level);
         });
 
         sched.for_each_patch([&](u64 id_patch, Patch  /*cur_p*/) {
