@@ -22,10 +22,20 @@ message(STATUS "compiler folder : ${COMP_ROOT_DIR}")
 LIST(APPEND CMAKE_SYSTEM_PROGRAM_PATH  "${COMP_ROOT_DIR}/bin")
 LIST(APPEND CMAKE_SYSTEM_LIBRARY_PATH  "${COMP_ROOT_DIR}/bin/lib")
 
+
+
+######################
+# Add compilation flags depending upon the build type
+######################
+set(CMAKE_CXX_FLAGS_DEBUG "-g -Wno-unknown-cuda-version -Wno-linker-warnings")# -fsanitize=address")# -Wall -Wextra") #
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native")#-DNDEBUG ")#-Wall -Wextra -Wunknown-cuda-version -Wno-linker-warnings")
+
+
+
 if("${SyCL_Compiler}" STREQUAL "DPCPP")
 
     set(CMAKE_CXX_COMPILER "${COMP_ROOT_DIR}/bin/clang++")
-    set(CMAKE_CXX_FLAGS "-fsycl -std=c++17 -pedantic-errors -fcolor-diagnostics -DSYCL_COMP_DPCPP")
+    set(CMAKE_CXX_FLAGS "-g -fsycl -std=c++17 -pedantic-errors -fcolor-diagnostics -DSYCL_COMP_DPCPP")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -I${COMP_ROOT_DIR}/include -I${COMP_ROOT_DIR}/include/sycl")
 
     ######################
@@ -45,11 +55,16 @@ if("${SyCL_Compiler}" STREQUAL "HIPSYCL")
     set(CMAKE_CXX_COMPILER "${COMP_ROOT_DIR}/bin/syclcc")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -pedantic-errors -fcolor-diagnostics  -DSYCL_COMP_HIPSYCL -I${COMP_ROOT_DIR}/include -I${COMP_ROOT_DIR}/include/sycl")
     
+
+
     ######################
     # Chose sycl backend
     ######################
     if("${SyCL_Compiler_BE}" STREQUAL "OMP")
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --hipsycl-cpu-cxx=g++ --hipsycl-config-file=${COMP_ROOT_DIR}/etc/hipSYCL/syclcc.json --hipsycl-targets='omp' --hipsycl-platform=cpu")
+
+        set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=address")# ")# -Wall -Wextra") #
+
     else()
         message(FATAL_ERROR "unsuported backend : ${SyCL_Compiler_BE}")
     endif()
@@ -62,11 +77,7 @@ endif()
 # to hide mac OS specific warnings with hipsycl
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-nonportable-include-path")
 
-######################
-# Add compilation flags depending upon the build type
-######################
-set(CMAKE_CXX_FLAGS_DEBUG "-g -Wno-unknown-cuda-version -Wno-linker-warnings")# -fsanitize=address")# -Wall -Wextra") #
-set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native")#-DNDEBUG ")#-Wall -Wextra -Wunknown-cuda-version -Wno-linker-warnings")
+
 
 if (CMAKE_BUILD_TYPE STREQUAL "GCOV")
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g --coverage")
