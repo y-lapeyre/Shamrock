@@ -48,7 +48,22 @@ void sycl_generate_split_table(sycl::queue &queue, u32 morton_count, std::unique
 #endif
 
 #ifdef SYCL_COMP_HIPSYCL
-#define DELTA_host(x, y) __hipsycl_if_target_host(((y > _morton_cnt - 1 || y < 0) ? -1 : int(__builtin_clz(m[x] ^ m[y]))))
+
+
+template<class T>
+int internal_clz(T a);
+
+template<>
+inline int internal_clz(u32 a){
+    return __builtin_clz(a);
+}
+
+template<>
+inline int internal_clz(u64 a){
+    return __builtin_clzl(a);
+}
+
+#define DELTA_host(x, y) __hipsycl_if_target_host(((y > _morton_cnt - 1 || y < 0) ? -1 : int(internal_clz(m[x] ^ m[y]))))
 #define DELTA_cuda(x, y) __hipsycl_if_target_cuda(((y > _morton_cnt - 1 || y < 0) ? -1 : int(__clz(m[x] ^ m[y]))))
 #define DELTA_hip(x, y) __hipsycl_if_target_hip(((y > _morton_cnt - 1 || y < 0) ? -1 : int(__clz(m[x] ^ m[y]))))
 #define DELTA_spirv(x, y) __hipsycl_if_target_spirv(((y > _morton_cnt - 1 || y < 0) ? -1 : int(__clz(m[x] ^ m[y]))))

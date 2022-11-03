@@ -502,5 +502,47 @@ Test_start("radix_tree", tree_cut, 1){
     auto cut = rtree.cut_tree(sycl_handler::get_compute_queue(), {vec{-1,-1,-1},vec{0,0.5,1}});
 
 
+}
+
+
+
+
+
+
+
+
+
+Test_start("radix_tree", treeleveljump_cell_range_test, 1){
+
+    using flt = f32;
+    using vec = sycl::vec<flt,3>;
+    using morton_mode = u32;
+
+    std::vector<vec> pos_part{
+        vec{0,0,0},vec{0.05,0,0},
+        vec{1,0,0},vec{0.95,0,0}
+    };
+
+    std::unique_ptr<sycl::buffer<vec>> xyz  = std::make_unique<sycl::buffer<vec>>(pos_part.data(),pos_part.size());
+
+
+    auto rtree = Radix_Tree<morton_mode, vec>(
+            sycl_handler::get_compute_queue(), 
+            {vec{0,0,0},vec{1,1,1}},
+            xyz, 
+            4 ,0
+        );
+
+    rtree.compute_cellvolume(sycl_handler::get_compute_queue());
+
+    {
+        auto acc_min = sycl::host_accessor{*rtree.buf_pos_min_cell_flt};
+        auto acc_max = sycl::host_accessor{*rtree.buf_pos_max_cell_flt};
+
+        for(u32 i = 0 ; i < 7; i++){
+            logger::raw_ln(i,acc_min[i],acc_max[i]);
+        }
+    }
+
 
 }

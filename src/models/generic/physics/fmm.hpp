@@ -1015,10 +1015,10 @@ inline SymTensorCollection<T,1,4> get_dM_mat(SymTensorCollection<T,1,4> & D, Sym
     SymTensor3d_3<T> & TQ3 = Q.t3;
 
 
-    auto M_1 = TD1 * TQ0 + TD2 * TQ1 + (TD3 * TQ2)*(1./2.) + (TD4 * TQ3)*(1./6.) ;
-    auto M_2 = ((-1.)*TD2 * TQ0) - TD3 * TQ1 - (TD4 * TQ2)*(1./2.) ;
-    auto M_3 = (1./2.) * (TD3 *TQ0 + TD4 *TQ1 );
-    auto M_4 = (1./6.) * (((-1.)*(TD4 *TQ0)) );
+    auto M_1 = TD1 * TQ0 + TD2 * TQ1 + (TD3 * TQ2)*T(1./2.) + (TD4 * TQ3)*T(1./6.) ;
+    auto M_2 = (T(-1.)*TD2 * TQ0) - TD3 * TQ1 - (TD4 * TQ2)*T(1./2.) ;
+    auto M_3 = T(1./2.) * (TD3 *TQ0 + TD4 *TQ1 );
+    auto M_4 = T(1./6.) * ((T(-1.)*(TD4 *TQ0)) );
 
     return SymTensorCollection<T, 1, 4>{
         M_1,M_2,M_3,M_4

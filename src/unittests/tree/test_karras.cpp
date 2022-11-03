@@ -17,9 +17,9 @@
 #include "unittests/shamrocktest.hpp"
 
 
-Test_start("tree::kernels::",karras_alg,1){
-
-    using u_morton = u32;
+template<class mprec>
+inline void test_karras_alg(TestResults & __test_result_ref){
+    using u_morton = mprec;
 
     std::vector<u_morton> morton_list = {
         0x0,
@@ -132,4 +132,13 @@ Test_start("tree::kernels::",karras_alg,1){
     Test_assert("out_endrange[9]  == 12", out_endrange[9]  == 12);
     Test_assert("out_endrange[10] == 9",  out_endrange[10] == 9);
     Test_assert("out_endrange[11] == 12", out_endrange[11] == 12);
+}
+
+
+Test_start("tree::kernels::",karras_alg32,1){
+    test_karras_alg<u32>(__test_result_ref);
+}
+
+Test_start("tree::kernels::",karras_alg64,1){
+    test_karras_alg<u64>(__test_result_ref);
 }
