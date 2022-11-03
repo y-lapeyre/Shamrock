@@ -343,7 +343,54 @@ namespace walker {
 
             //iteration function
             func_it(id_b);
+
         }
+        
+
+        /*
+        std::array<u32, 16> stack_run;
+
+        u32 run_cursor = 16;
+
+        auto is_stack_full = [&]() -> bool{
+            return run_cursor == 0;
+        };
+
+        auto is_stack_not_empty = [&]() -> bool{
+            return run_cursor < 16;
+        };
+
+        auto push_stack = [&](u32 val){
+            run_cursor --;
+            stack_run[run_cursor] = val;
+        };
+
+        auto pop_stack = [&]() -> u32 {
+            u32 v = stack_run[run_cursor];
+            run_cursor ++;
+            return v;
+        };
+
+        auto empty_stack = [&](){
+            while (is_stack_not_empty()) {
+                func_it(pop_stack());
+            }
+        };
+
+        for (unsigned int id_s = min_ids; id_s < max_ids; id_s++) {
+            uint id_b = acc.particle_index_map[id_s];
+
+            if(is_stack_full()){
+                empty_stack();
+            }
+            
+            push_stack(id_b);
+
+        }
+
+        empty_stack();
+        */
+        
     }
 
 
