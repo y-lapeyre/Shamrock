@@ -186,7 +186,6 @@ class Radix_Tree{
 
                 });
             });
-
             
         });
 
@@ -227,6 +226,34 @@ class Radix_Tree{
         }
 
         return std::move(ret);
+    }
+
+
+    template<class LambdaComputeLeaf>
+    inline void for_each_leaf(sycl::queue & queue, LambdaComputeLeaf && lambda_leaf){
+
+
+        sycl::range<1> range_leaf = sycl::range<1>{tree_leaf_count};
+
+        u32 leaf_offset = tree_internal_count;
+
+
+        queue.submit([&](sycl::handler &cgh) {
+            u32 offset_leaf = tree_internal_count;
+
+            auto cell_particle_ids  = buf_reduc_index_map->template get_access<sycl::access::mode::read>(cgh);
+            auto particle_index_map = buf_particle_index_map->template get_access<sycl::access::mode::read>(cgh);
+
+            lambda_leaf(cgh,[&](auto && lambda_loop){
+                cgh.parallel_for(range_leaf, [=](sycl::item<1> item) {
+                    u32 gid = (u32)item.get_id(0);
+
+
+
+                });
+            });
+            
+        });
     }
 
 
@@ -432,6 +459,118 @@ namespace walker {
                 func_excl(current_node_id);
             }
         }
+    }
+
+    //prototype of walk using nested lambdas
+    template<class u_morton,class vec3>
+    inline void r_tree_for_each_leaf(Radix_Tree<u_morton, vec3> & rtree){
+
+        using Rta = walker::Radix_tree_accessor<u_morton, vec3>;
+        sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
+            Rta tree_acc(rtree, cgh);
+
+            sycl::range<1> range_leaf = sycl::range<1>{rtree.tree_leaf_count};
+
+            u32 leaf_offset = rtree.tree_internal_count;
+
+            
+            
+
+            auto par_for = [&](auto && for_each_leaf){
+
+                cgh.parallel_for(range_leaf, [=](sycl::item<1> item) {
+
+                    u32 id_cell_a = (u32)item.get_id(0) + leaf_offset;
+
+                    auto walk_loop = [&](u32 id_cell_a, auto && for_other_cell){
+
+                        u32 stack_cursor = Rta::tree_depth - 1;
+                        std::array<u32, Rta::tree_depth> id_stack;
+                        id_stack[stack_cursor] = 0;
+
+                        while (stack_cursor < Rta::tree_depth) {
+
+                            u32 current_node_id    = id_stack[stack_cursor];
+                            id_stack[stack_cursor] = Rta::_nindex;
+                            stack_cursor++;
+
+                            auto walk_logic = [&](bool cur_id_valid , auto && func_leaf_found, auto && func_node_rejected){
+
+                                if (cur_id_valid) {
+
+                                    // leaf and can interact => force
+                                    if (current_node_id >= leaf_offset) {
+
+                                        func_leaf_found();
+
+                                        // can interact not leaf => stack
+                                    } else {
+
+                                        u32 lid = tree_acc.lchild_id[current_node_id] + tree_acc.leaf_offset * tree_acc.lchild_flag[current_node_id];
+                                        u32 rid = tree_acc.rchild_id[current_node_id] + tree_acc.leaf_offset * tree_acc.rchild_flag[current_node_id];
+
+                                        id_stack[stack_cursor - 1] = rid;
+                                        stack_cursor--;
+
+                                        id_stack[stack_cursor - 1] = lid;
+                                        stack_cursor--;
+                                    }
+                                } else {
+                                    // grav
+
+                                    func_node_rejected();
+                                }
+                            };
+
+                            for_other_cell(walk_logic);
+
+                        }
+
+                    };
+
+                    for_each_leaf(id_cell_a, walk_loop);
+
+                });
+
+
+            };
+
+
+            auto func_user = [](auto && par_for){
+                //user accessors
+
+                par_for([&](u32 id_cell_a, auto && walk_loop){
+
+                
+                    //user funcs
+
+                    walk_loop(id_cell_a,
+                        [](u32 node_b, auto && walk_logic) -> bool {
+
+                            //user defs for the cell pair a-b (current_node_id) return interact cd
+
+                            bool cells_interact = false;
+                            
+                            walk_logic(cells_interact,
+                                [&](){
+                                    //func_leaf_found
+                                },
+                                [&](){
+                                    //func_node_rejected
+                                }
+                            );
+
+                        }
+                    );
+
+                });
+
+            };
+
+            func_user(par_for);
+
+        });
+
     }
 
     template <class Rta, class Functor_int_cd, class Functor_iter, class Functor_iter_excl>

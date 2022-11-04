@@ -1383,13 +1383,60 @@ Result_nompi_fmm_testing<flt,morton_mode,fmm_order> nompi_fmm_testing(std::uniqu
     }
 
 
+    std::unique_ptr<sycl::buffer<vec>> cell_centers = std::make_unique<sycl::buffer<vec>>(rtree.tree_internal_count + rtree.tree_leaf_count);
+    std::unique_ptr<sycl::buffer<flt>> cell_lenght = std::make_unique<sycl::buffer<flt>>(rtree.tree_internal_count + rtree.tree_leaf_count);
+
+    sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
+
+
+        sycl::range<1> range_tree = sycl::range<1>{rtree.tree_leaf_count + rtree.tree_internal_count};
+
+        auto pos_min_cell = sycl::accessor{*rtree.buf_pos_min_cell_flt,cgh,sycl::read_only};
+        auto pos_max_cell = sycl::accessor{*rtree.buf_pos_max_cell_flt,cgh,sycl::read_only};
+
+
+        auto c_centers = sycl::accessor{*cell_centers,cgh,sycl::write_only,sycl::no_init};
+        auto c_lenght = sycl::accessor{*cell_lenght,cgh,sycl::write_only,sycl::no_init};
+
+        cgh.parallel_for(range_tree, [=](sycl::item<1> item) {
+            vec cur_pos_min_cell_a = pos_min_cell[item];
+            vec cur_pos_max_cell_a = pos_max_cell[item];
+
+            vec sa = (cur_pos_min_cell_a + cur_pos_max_cell_a)/2;
+
+            vec dc_a = (cur_pos_max_cell_a - cur_pos_min_cell_a);
+
+            flt l_cell_a = sycl::max(sycl::max(dc_a.x(),dc_a.y()),dc_a.z());
+
+            c_centers[item] = sa;
+            c_lenght[item] = l_cell_a;
+        });
+
+    });
 
     
+
+    rtree.for_each_leaf(sycl_handler::get_compute_queue(), [&](sycl::handler &cgh,auto && node_looper){
+        auto c_centers = sycl::accessor{*cell_centers,cgh,sycl::read_only};
+        auto c_lenght = sycl::accessor{*cell_lenght,cgh,sycl::read_only};
+
+        auto xyz = sycl::accessor {*pos_part, cgh,sycl::read_only};
+        auto fxyz = sycl::accessor {*buf_force, cgh,sycl::read_write};
+
+        auto multipoles = sycl::accessor {*grav_multipoles, cgh,sycl::read_only};
+
+        node_looper([](){
+            
+        });
+    });
 
     sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
 
         using Rta = walker::Radix_tree_accessor<morton_mode, vec>;
         Rta tree_acc(rtree, cgh);
+
+        auto c_centers = sycl::accessor{*cell_centers,cgh,sycl::read_only};
+        auto c_lenght = sycl::accessor{*cell_lenght,cgh,sycl::read_only};
 
         sycl::range<1> range_leaf = sycl::range<1>{rtree.tree_leaf_count};
 
@@ -1408,11 +1455,8 @@ Result_nompi_fmm_testing<flt,morton_mode,fmm_order> nompi_fmm_testing(std::uniqu
             vec cur_pos_min_cell_a = tree_acc.pos_min_cell[id_cell_a];
             vec cur_pos_max_cell_a = tree_acc.pos_max_cell[id_cell_a];
 
-            vec sa = (cur_pos_min_cell_a + cur_pos_max_cell_a)/2;
-
-            vec dc_a = (cur_pos_max_cell_a - cur_pos_min_cell_a);
-
-            flt l_cell_a = sycl::max(sycl::max(dc_a.x(),dc_a.y()),dc_a.z());
+            vec sa = c_centers[id_cell_a];
+            flt l_cell_a = c_lenght[id_cell_a];
 
             auto dM_k = SymTensorCollection<flt, 1, fmm_order+1>::zeros();
 
@@ -1421,16 +1465,13 @@ Result_nompi_fmm_testing<flt,morton_mode,fmm_order> nompi_fmm_testing(std::uniqu
 
             walker::rtree_for_cell(
                 tree_acc,
-                [&tree_acc,&cur_pos_min_cell_a,&cur_pos_max_cell_a,&sa,&l_cell_a](u32 id_cell_b){
+                [&tree_acc,&cur_pos_min_cell_a,&cur_pos_max_cell_a,&sa,&l_cell_a,&c_centers,&c_lenght](u32 id_cell_b){
                     vec cur_pos_min_cell_b = tree_acc.pos_min_cell[id_cell_b];
                     vec cur_pos_max_cell_b = tree_acc.pos_max_cell[id_cell_b];
 
-                    vec dc_b = (cur_pos_max_cell_b - cur_pos_min_cell_b);
-
-                    vec sb = (cur_pos_min_cell_b + cur_pos_max_cell_b)/2;
+                    vec sb = c_centers[id_cell_b];
                     vec r_fmm = sb-sa;
-
-                    flt l_cell_b = sycl::max(sycl::max(dc_b.x(),dc_b.y()),dc_b.z());
+                    flt l_cell_b = c_lenght[id_cell_b];
 
                     flt opening_angle_sq = (l_cell_a + l_cell_b)*(l_cell_a + l_cell_b)/sycl::dot(r_fmm,r_fmm);
 
@@ -1447,15 +1488,9 @@ Result_nompi_fmm_testing<flt,morton_mode,fmm_order> nompi_fmm_testing(std::uniqu
                 [&](u32 node_b) {
                     
                     
-                    vec cur_pos_min_cell_b = tree_acc.pos_min_cell[node_b];
-                    vec cur_pos_max_cell_b = tree_acc.pos_max_cell[node_b];
-
-                    vec dc_b = (cur_pos_max_cell_b - cur_pos_min_cell_b);
-
-                    vec sb = (cur_pos_min_cell_b + cur_pos_max_cell_b)/2;
+                    vec sb = c_centers[node_b];
                     vec r_fmm = sb-sa;
-
-                    flt l_cell_b = sycl::max(sycl::max(dc_b.x(),dc_b.y()),dc_b.z());
+                    flt l_cell_b = c_lenght[node_b];
 
                     flt opening_angle_sq = (l_cell_a + l_cell_b)*(l_cell_a + l_cell_b)/sycl::dot(r_fmm,r_fmm);
 
@@ -1479,8 +1514,8 @@ Result_nompi_fmm_testing<flt,morton_mode,fmm_order> nompi_fmm_testing(std::uniqu
 
                                     vec real_r = x_i-x_j;
 
-                                    flt r_n = sycl::sqrt(sycl::dot(real_r,real_r));
-                                    sum_fi += real_r/(r_n*r_n*r_n);
+                                    flt inv_r_n = sycl::rsqrt(sycl::dot(real_r,real_r));
+                                    sum_fi += real_r*(inv_r_n*inv_r_n*inv_r_n);
                                 }
 
                             });
@@ -1493,7 +1528,7 @@ Result_nompi_fmm_testing<flt,morton_mode,fmm_order> nompi_fmm_testing(std::uniqu
                 },
                 [&](u32 node_b){
 
-                    vec sb = (tree_acc.pos_min_cell[node_b] + tree_acc.pos_max_cell[node_b])/2;
+                    vec sb = c_centers[node_b];
                     vec r_fmm = sb-sa;
 
                     auto Q_n = SymTensorCollection<flt, 0, fmm_order>::load(multipoles,node_b*SymTensorCollection<flt,0,fmm_order>::num_component);
@@ -1633,10 +1668,12 @@ Test_start("fmm", radix_tree_fmm, 1){
     
 
     {
-        auto pos = pos_partgen_distrib<f32>(1e4);
+        auto pos = pos_partgen_distrib<f32>(1e6);
         auto res = nompi_fmm_testing<f32,u32,4>(pos,reduc_level);
         Test_assert("fmm_f32_u32_order4", res.prec < 1e-5);
     }
+
+    return;
 
     {
         auto pos = pos_partgen_distrib<f32>(1e4);
