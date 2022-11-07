@@ -1430,6 +1430,152 @@ Result_nompi_fmm_testing<flt,morton_mode,fmm_order> nompi_fmm_testing(std::uniqu
         });
     });
 
+    walker::r_tree_for_each_leaf(rtree, [&](sycl::handler &cgh,auto && par_for){
+
+        //user accessors
+        auto c_centers = sycl::accessor{*cell_centers,cgh,sycl::read_only};
+        auto c_lenght = sycl::accessor{*cell_lenght,cgh,sycl::read_only};
+
+        auto xyz = sycl::accessor {*pos_part, cgh,sycl::read_only};
+        auto fxyz = sycl::accessor {*buf_force, cgh,sycl::read_write};
+
+        auto multipoles = sycl::accessor {*grav_multipoles, cgh,sycl::read_only};
+
+
+        auto pos_min_cell = rtree.buf_pos_min_cell_flt-> template get_access<sycl::access::mode::read>(cgh);
+        auto pos_max_cell = rtree.buf_pos_max_cell_flt-> template get_access<sycl::access::mode::read>(cgh);
+
+
+        par_for([=](const u32 & id_cell_a, auto && walk_loop,auto && obj_iterator){
+
+        
+            //user funcs
+            vec cur_pos_min_cell_a = pos_min_cell[id_cell_a];
+            vec cur_pos_max_cell_a = pos_max_cell[id_cell_a];
+
+            vec sa = c_centers[id_cell_a];
+            flt l_cell_a = c_lenght[id_cell_a];
+
+            auto dM_k = SymTensorCollection<flt, 1, fmm_order+1>::zeros();
+
+            constexpr flt open_crit = 0.3;
+            constexpr flt open_crit_sq = open_crit*open_crit;
+
+
+            walk_loop(id_cell_a,
+                [&](const u32 & id_cell_b, auto && walk_logic){
+
+                    //user defs for the cell pair a-b (current_node_id) return interact cd
+                    vec cur_pos_min_cell_b = pos_min_cell[id_cell_b];
+                    vec cur_pos_max_cell_b = pos_max_cell[id_cell_b];
+
+                    vec sb = c_centers[id_cell_b];
+                    vec r_fmm = sb-sa;
+                    flt l_cell_b = c_lenght[id_cell_b];
+
+                    flt opening_angle_sq = (l_cell_a + l_cell_b)*(l_cell_a + l_cell_b)/sycl::dot(r_fmm,r_fmm);
+
+                    using namespace walker::interaction_crit;
+
+                    const bool cells_interact = sph_cell_cell_crit(
+                        cur_pos_min_cell_a, 
+                        cur_pos_max_cell_a, 
+                        cur_pos_min_cell_b,
+                        cur_pos_max_cell_b, 
+                        0, 
+                        0) || (opening_angle_sq > open_crit_sq);
+                    
+                    walk_logic(cells_interact,
+                        [&](){
+                            //func_leaf_found
+
+                            vec sb = c_centers[id_cell_b];
+                            vec r_fmm = sb-sa;
+                            flt l_cell_b = c_lenght[id_cell_b];
+
+                            flt opening_angle_sq = (l_cell_a + l_cell_b)*(l_cell_a + l_cell_b)/sycl::dot(r_fmm,r_fmm);
+
+                            if(opening_angle_sq < open_crit_sq){
+                                //this is useless this lambda is already executed only if cd above true
+                                auto Q_n = SymTensorCollection<flt, 0, fmm_order>::load(multipoles,id_cell_b*SymTensorCollection<flt,0,fmm_order>::num_component);
+                                auto D_n = GreenFuncGravCartesian<flt, 1, fmm_order+1>::get_der_tensors(r_fmm);
+                                
+                                dM_k += get_dM_mat(D_n,Q_n);
+                            }else{
+                            
+                                obj_iterator( id_cell_a, [&](u32 id_a){
+
+                                    vec x_i = xyz[id_a];
+                                    vec sum_fi{0,0,0};
+
+                                    obj_iterator( id_cell_b, [&](u32 id_b){
+
+                                        if(id_a != id_b){
+                                            vec x_j = xyz[id_b];
+
+                                            vec real_r = x_i-x_j;
+
+                                            flt inv_r_n = sycl::rsqrt(sycl::dot(real_r,real_r));
+                                            sum_fi += real_r*(inv_r_n*inv_r_n*inv_r_n);
+                                        }
+
+                                    });
+
+                                    fxyz[id_a] += sum_fi;
+
+                                });
+                            }
+
+
+                        },
+                        [&](){
+                            //func_node_rejected
+                            vec sb = c_centers[id_cell_b];
+                            vec r_fmm = sb-sa;
+
+                            auto Q_n = SymTensorCollection<flt, 0, fmm_order>::load(multipoles,id_cell_b*SymTensorCollection<flt,0,fmm_order>::num_component);
+                            auto D_n = GreenFuncGravCartesian<flt, 1, fmm_order+1>::get_der_tensors(r_fmm);
+                            
+                            dM_k += get_dM_mat(D_n,Q_n);
+                        }
+                    );
+
+                }
+            );
+
+
+            obj_iterator(  id_cell_a, [&](u32 id_a){
+
+                auto ai = SymTensorCollection<flt, 0, fmm_order>::from_vec(xyz[id_a]);
+
+                auto tensor_to_sycl = [](SymTensor3d_1<flt> a){
+                    return vec{a.v_0,a.v_1,a.v_2};
+                };
+
+                vec tmp {0,0,0};
+
+                tmp += tensor_to_sycl(dM_k.t1*ai.t0);
+                tmp += tensor_to_sycl(dM_k.t2*ai.t1);
+                tmp += tensor_to_sycl(dM_k.t3*ai.t2);
+                if constexpr (fmm_order >= 3) { tmp += tensor_to_sycl(dM_k.t4*ai.t3); }
+                if constexpr (fmm_order >= 4) { tmp += tensor_to_sycl(dM_k.t5*ai.t4); }
+                fxyz[id_a]  += tmp;
+
+                //auto dphi_0 = tensor_to_sycl(dM_k.t1*ai.t0);
+                //auto dphi_1 = tensor_to_sycl(dM_k.t2*ai.t1);
+                //auto dphi_2 = tensor_to_sycl(dM_k.t3*ai.t2);
+                //auto dphi_3 = tensor_to_sycl(dM_k.t4*ai.t3);
+                //auto dphi_4 = tensor_to_sycl(dM_k.t5*ai.t4);
+                //fxyz[id_a]  += dphi_0+ dphi_1+ dphi_2+ dphi_3+ dphi_4;
+
+            });
+
+        });
+
+    });
+
+
+    #if false
     sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
 
         using Rta = walker::Radix_tree_accessor<morton_mode, vec>;
@@ -1571,6 +1717,7 @@ Result_nompi_fmm_testing<flt,morton_mode,fmm_order> nompi_fmm_testing(std::uniqu
 
 
     });
+    #endif
 
 
 
@@ -1581,7 +1728,7 @@ Result_nompi_fmm_testing<flt,morton_mode,fmm_order> nompi_fmm_testing(std::uniqu
 
 
     flt prec = 0;
-    if(npart < 1e4){
+    if(npart <= 1e4){
 
         sycl::host_accessor<vec> pos {*pos_part};
         sycl::host_accessor<vec> force {*buf_force};
