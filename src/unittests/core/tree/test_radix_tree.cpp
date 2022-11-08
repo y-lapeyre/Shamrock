@@ -187,7 +187,7 @@ Test_start("radix_tree",test_new_pfield_compute,1){
     
 
 
-    auto compute_old = [&]() -> auto{
+    auto compute_old = [&]() -> auto {
         logger::debug_sycl_ln("RadixTree", "compute int boxes");
 
         auto buf_cell_interact_rad = std::make_unique<sycl::buffer<flt>>(rtree.tree_internal_count + rtree.tree_leaf_count);
@@ -423,7 +423,11 @@ Bench_start("tree field old compute performance", "treefieldcomputeperf_new", tr
 
 
 
+Test_start("radix_tree", tree_comm, 2){
 
+
+
+}
 
 
 

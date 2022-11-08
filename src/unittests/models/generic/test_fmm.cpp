@@ -1190,6 +1190,9 @@ struct Result_nompi_fmm_testing{
     f64 time;
     f64 prec;
 
+    f64 leaf_cnt;
+    f64 reject_cnt;
+
     std::unique_ptr<sycl::buffer<vec>> & pos_buf;
     std::unique_ptr<sycl::buffer<vec>> force_buf;
 
@@ -1199,13 +1202,13 @@ struct Result_nompi_fmm_testing{
 };
 
 template<class flt, class morton_mode, u32 fmm_order>
-Result_nompi_fmm_testing<flt,morton_mode,fmm_order> nompi_fmm_testing(std::unique_ptr<sycl::buffer<sycl::vec<flt,3>>> & pos_part, u32 reduc_level){
+Result_nompi_fmm_testing<flt,morton_mode,fmm_order> nompi_fmm_testing(std::unique_ptr<sycl::buffer<sycl::vec<flt,3>>> & pos_part, u32 reduc_level,flt open_crit){
 
     using vec = sycl::vec<flt,3>;
 
     u32 npart = pos_part->size();
 
-    
+    const flt pre_open_crit_sq = open_crit*open_crit;
 
 
     auto buf_force = std::make_unique<sycl::buffer<vec>>(npart);
@@ -1414,23 +1417,237 @@ Result_nompi_fmm_testing<flt,morton_mode,fmm_order> nompi_fmm_testing(std::uniqu
 
     });
 
+
+    f64 r_f,r_r;
+
+    {
+
+
+        auto c_centers = sycl::host_accessor{*cell_centers,sycl::read_only};
+        auto c_lenght = sycl::host_accessor{*cell_lenght,sycl::read_only};
+
+
+        auto pos_min_cell = sycl::host_accessor{*rtree.buf_pos_min_cell_flt};
+        auto pos_max_cell = sycl::host_accessor{*rtree.buf_pos_max_cell_flt};
+
+        auto sample = [&](u32 id){
+
+            auto [found_leafs, rejected_nodes] = rtree.get_walk_res_set([&](u32 cell_b) -> bool{
+                u32 cell_a = rtree.tree_internal_count + id;
+
+                vec cur_pos_min_cell_a = pos_min_cell[cell_a];
+                vec cur_pos_max_cell_a = pos_max_cell[cell_a];
+
+                vec sa = c_centers[cell_a];
+                flt l_cell_a = c_lenght[cell_a];
+
+                //user defs for the cell pair a-b (current_node_id) return interact cd
+                vec cur_pos_min_cell_b = pos_min_cell[cell_b];
+                vec cur_pos_max_cell_b = pos_max_cell[cell_b];
+
+                vec sb = c_centers[cell_b];
+                vec r_fmm = sb-sa;
+                flt l_cell_b = c_lenght[cell_b];
+
+                flt opening_angle_sq = (l_cell_a + l_cell_b)*(l_cell_a + l_cell_b)/sycl::dot(r_fmm,r_fmm);
+
+                using namespace walker::interaction_crit;
+
+                const bool cells_interact = sph_cell_cell_crit(
+                    cur_pos_min_cell_a, 
+                    cur_pos_max_cell_a, 
+                    cur_pos_min_cell_b,
+                    cur_pos_max_cell_b, 
+                    0, 
+                    0) || (opening_angle_sq > pre_open_crit_sq);
+
+                return cells_interact;
+            });
+
+            logger::raw_ln("leaf",id,": found -> leafs ",found_leafs.size()," reject :",rejected_nodes.size());
+
+            return std::pair<u32,u32>{found_leafs.size(), rejected_nodes.size()};
+
+        };
+
+        auto [r1_f,r1_r] = sample(0);
+        auto [re_f,re_r] = sample(rtree.tree_leaf_count-1);
+        auto [rm_f,rm_r] = sample(rtree.tree_leaf_count/2);
+
+        r_f = (r1_f + re_f + rm_f)/3.;
+        r_r = (r1_r + re_r + rm_r)/3.;
+
+        
+        u32 leaf_offset = rtree.tree_internal_count;
+        auto particle_index_map = sycl::host_accessor{*rtree.buf_particle_index_map};
+        auto cell_index_map = sycl::host_accessor{*rtree.buf_reduc_index_map};
+        auto end_range = sycl::host_accessor{*rtree.buf_endrange};
+            
+
+        auto loop_part = [&](u32 cell_id, auto && func_it){
+
+
+            uint min_ids = 0;
+            uint max_ids = 0;
+
+            if(cell_id >= leaf_offset){
+                min_ids = cell_index_map[cell_id - leaf_offset    ];
+                max_ids = cell_index_map[cell_id + 1 - leaf_offset];
+            }else{
+                u32 e = end_range[cell_id];
+                min_ids = cell_index_map[ sycl::min(e,cell_id)];
+                max_ids = cell_index_map[ sycl::max(e,cell_id)];
+            }
+
+
+            for (unsigned int id_s = min_ids; id_s < max_ids; id_s++) {
+
+                //recover old index before morton sort
+                uint id_b = particle_index_map[id_s];
+
+                //iteration function
+                func_it(id_b);
+
+            }
+        };
+
+
+
+        auto multipoles = sycl::host_accessor {*grav_multipoles,sycl::read_only};
+        auto xyz = sycl::host_accessor {*pos_part,sycl::read_only};
+
+
+
+        std::string f_name = "fmm_tree_test_";
+
+        f_name += "order_"+std::to_string(fmm_order);
+        if constexpr (std::is_same_v<u32, morton_mode>){
+            f_name += "_u32";
+        }
+        if constexpr (std::is_same_v<u64, morton_mode>){
+            f_name += "_u64";
+        }
+
+        if constexpr (std::is_same_v<f32, flt>){
+            f_name += "_f32";
+        }
+        if constexpr (std::is_same_v<f64, flt>){
+            f_name += "_f64";
+        }
+        f_name += ".txt";
+
+
+        std::ofstream prec_fmm_force_out_file(f_name);
+
+
+        auto test_prec_pair = [&](u32 cell_a, u32 cell_b){
+
+            vec cur_pos_min_cell_a = pos_min_cell[cell_a];
+            vec cur_pos_max_cell_a = pos_max_cell[cell_a];
+
+            vec sa = c_centers[cell_a];
+            flt l_cell_a = c_lenght[cell_a];
+
+
+
+            vec sb = c_centers[cell_b];
+            vec r_fmm = sb-sa;
+
+            flt l_cell_b = c_lenght[cell_b];
+
+            flt opening_angle_sq = (l_cell_a + l_cell_b)*(l_cell_a + l_cell_b)/sycl::dot(r_fmm,r_fmm);
+
+            auto Q_n = SymTensorCollection<flt, 0, fmm_order>::load(multipoles,cell_b*SymTensorCollection<flt,0,fmm_order>::num_component);
+            auto D_n = GreenFuncGravCartesian<flt, 1, fmm_order+1>::get_der_tensors(r_fmm);
+            
+            auto dM_k = get_dM_mat(D_n,Q_n);
+
+
+            u32 part_cnt = 0;
+            flt sum_error = 0;
+            flt max_err = 0;
+
+            loop_part( cell_a, [&](u32 id_a){
+
+                part_cnt++;
+
+                auto ai = SymTensorCollection<flt, 0, fmm_order>::from_vec(xyz[id_a] - sa);
+
+                auto tensor_to_sycl = [](SymTensor3d_1<flt> a){
+                    return vec{a.v_0,a.v_1,a.v_2};
+                };
+
+                vec f_fmm {0,0,0};
+
+                f_fmm += tensor_to_sycl(dM_k.t1*ai.t0);
+                f_fmm += tensor_to_sycl(dM_k.t2*ai.t1);
+                f_fmm += tensor_to_sycl(dM_k.t3*ai.t2);
+                if constexpr (fmm_order >= 3) { f_fmm += tensor_to_sycl(dM_k.t4*ai.t3); }
+                if constexpr (fmm_order >= 4) { f_fmm += tensor_to_sycl(dM_k.t5*ai.t4); }
+
+
+
+
+                vec x_i = xyz[id_a];
+                vec sum_fi{0,0,0};
+
+                loop_part(cell_b, [&](u32 id_b){
+                    if(id_a != id_b){
+                        vec x_j = xyz[id_b];
+
+                        vec real_r = x_i-x_j;
+
+                        flt inv_r_n = sycl::rsqrt(sycl::dot(real_r,real_r));
+                        sum_fi += real_r*(inv_r_n*inv_r_n*inv_r_n);
+                    }
+
+                });
+
+
+
+
+                vec delta = sum_fi-f_fmm;
+
+                flt err =  sycl::distance(f_fmm,sum_fi)/sycl::length(sum_fi);
+
+                sum_error += err;
+
+                max_err = sycl::fmax(err,max_err);
+
+            });
+
+            sum_error /= part_cnt;
+            
+
+            //logger::raw_ln("theta = ",sycl::sqrt(opening_angle_sq),"sumerr =",sum_error, "mx_err =",max_err);
+
+            prec_fmm_force_out_file << format("%e %e %e\n"
+                , sycl::sqrt(opening_angle_sq) 
+                , sum_error 
+                , max_err) ;
+
+
+        };
+
+        
+
+        //for(u32 i = 0; i < rtree.tree_leaf_count; i++){
+        //    for(u32 j = 0; j < rtree.tree_leaf_count + rtree.tree_internal_count; j++){
+        //        if(leaf_offset + i != j) test_prec_pair(leaf_offset + i, j);
+        //    }
+        //} 
+
+        prec_fmm_force_out_file.close();
+    }
+
+
+
+
     
 
-    rtree.for_each_leaf(sycl_handler::get_compute_queue(), [&](sycl::handler &cgh,auto && node_looper){
-        auto c_centers = sycl::accessor{*cell_centers,cgh,sycl::read_only};
-        auto c_lenght = sycl::accessor{*cell_lenght,cgh,sycl::read_only};
-
-        auto xyz = sycl::accessor {*pos_part, cgh,sycl::read_only};
-        auto fxyz = sycl::accessor {*buf_force, cgh,sycl::read_write};
-
-        auto multipoles = sycl::accessor {*grav_multipoles, cgh,sycl::read_only};
-
-        node_looper([](){
-            
-        });
-    });
-
-    walker::r_tree_for_each_leaf(rtree, [&](sycl::handler &cgh,auto && par_for){
+    
+    #if false
+    rtree.for_each_leaf(sycl_handler::get_compute_queue(), [&](sycl::handler &cgh,auto && par_for){
 
         //user accessors
         auto c_centers = sycl::accessor{*cell_centers,cgh,sycl::read_only};
@@ -1458,7 +1675,7 @@ Result_nompi_fmm_testing<flt,morton_mode,fmm_order> nompi_fmm_testing(std::uniqu
 
             auto dM_k = SymTensorCollection<flt, 1, fmm_order+1>::zeros();
 
-            constexpr flt open_crit = 0.3;
+            constexpr flt open_crit = 0.1;
             constexpr flt open_crit_sq = open_crit*open_crit;
 
 
@@ -1502,7 +1719,8 @@ Result_nompi_fmm_testing<flt,morton_mode,fmm_order> nompi_fmm_testing(std::uniqu
                                 
                                 dM_k += get_dM_mat(D_n,Q_n);
                             }else{
-                            
+                                
+                                
                                 obj_iterator( id_cell_a, [&](u32 id_a){
 
                                     vec x_i = xyz[id_a];
@@ -1573,9 +1791,10 @@ Result_nompi_fmm_testing<flt,morton_mode,fmm_order> nompi_fmm_testing(std::uniqu
         });
 
     });
+    #endif
 
 
-    #if false
+    //#if false
     sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
 
         using Rta = walker::Radix_tree_accessor<morton_mode, vec>;
@@ -1594,6 +1813,9 @@ Result_nompi_fmm_testing<flt,morton_mode,fmm_order> nompi_fmm_testing(std::uniqu
         auto multipoles = sycl::accessor {*grav_multipoles, cgh,sycl::read_only};
 
 
+        const auto open_crit_sq = pre_open_crit_sq;
+
+
         cgh.parallel_for(range_leaf, [=](sycl::item<1> item) {
 
             u32 id_cell_a = (u32)item.get_id(0) + leaf_offset;
@@ -1606,12 +1828,9 @@ Result_nompi_fmm_testing<flt,morton_mode,fmm_order> nompi_fmm_testing(std::uniqu
 
             auto dM_k = SymTensorCollection<flt, 1, fmm_order+1>::zeros();
 
-            constexpr flt open_crit = 0.3;
-            constexpr flt open_crit_sq = open_crit*open_crit;
-
             walker::rtree_for_cell(
                 tree_acc,
-                [&tree_acc,&cur_pos_min_cell_a,&cur_pos_max_cell_a,&sa,&l_cell_a,&c_centers,&c_lenght](u32 id_cell_b){
+                [&tree_acc,&cur_pos_min_cell_a,&cur_pos_max_cell_a,&sa,&l_cell_a,&c_centers,&c_lenght,&open_crit_sq](u32 id_cell_b){
                     vec cur_pos_min_cell_b = tree_acc.pos_min_cell[id_cell_b];
                     vec cur_pos_max_cell_b = tree_acc.pos_max_cell[id_cell_b];
 
@@ -1634,19 +1853,19 @@ Result_nompi_fmm_testing<flt,morton_mode,fmm_order> nompi_fmm_testing(std::uniqu
                 [&](u32 node_b) {
                     
                     
-                    vec sb = c_centers[node_b];
-                    vec r_fmm = sb-sa;
-                    flt l_cell_b = c_lenght[node_b];
-
-                    flt opening_angle_sq = (l_cell_a + l_cell_b)*(l_cell_a + l_cell_b)/sycl::dot(r_fmm,r_fmm);
-
-                    if(opening_angle_sq < open_crit_sq){
-                        //this is useless this lambda is already executed only if cd above true
-                        auto Q_n = SymTensorCollection<flt, 0, fmm_order>::load(multipoles,node_b*SymTensorCollection<flt,0,fmm_order>::num_component);
-                        auto D_n = GreenFuncGravCartesian<flt, 1, fmm_order+1>::get_der_tensors(r_fmm);
-                        
-                        dM_k += get_dM_mat(D_n,Q_n);
-                    }else{
+                    //vec sb = c_centers[node_b];
+                    //vec r_fmm = sb-sa;
+                    //flt l_cell_b = c_lenght[node_b];
+//
+                    //flt opening_angle_sq = (l_cell_a + l_cell_b)*(l_cell_a + l_cell_b)/sycl::dot(r_fmm,r_fmm);
+//
+                    //if(opening_angle_sq < open_crit_sq){
+                    //    //this is useless this lambda is already executed only if cd above true
+                    //    auto Q_n = SymTensorCollection<flt, 0, fmm_order>::load(multipoles,node_b*SymTensorCollection<flt,0,fmm_order>::num_component);
+                    //    auto D_n = GreenFuncGravCartesian<flt, 1, fmm_order+1>::get_der_tensors(r_fmm);
+                    //    
+                    //    dM_k += get_dM_mat(D_n,Q_n);
+                    //}else{
                     
                         walker::iter_object_in_cell(tree_acc, id_cell_a, [&](u32 id_a){
 
@@ -1669,7 +1888,7 @@ Result_nompi_fmm_testing<flt,morton_mode,fmm_order> nompi_fmm_testing(std::uniqu
                             fxyz[id_a] += sum_fi;
 
                         });
-                    }
+                    //}
 
                 },
                 [&](u32 node_b){
@@ -1689,7 +1908,7 @@ Result_nompi_fmm_testing<flt,morton_mode,fmm_order> nompi_fmm_testing(std::uniqu
 
             walker::iter_object_in_cell(tree_acc, id_cell_a, [&](u32 id_a){
 
-                auto ai = SymTensorCollection<flt, 0, fmm_order>::from_vec(xyz[id_a]);
+                auto ai = SymTensorCollection<flt, 0, fmm_order>::from_vec(xyz[id_a] - sa);
 
                 auto tensor_to_sycl = [](SymTensor3d_1<flt> a){
                     return vec{a.v_0,a.v_1,a.v_2};
@@ -1717,7 +1936,7 @@ Result_nompi_fmm_testing<flt,morton_mode,fmm_order> nompi_fmm_testing(std::uniqu
 
 
     });
-    #endif
+    //#endif
 
 
 
@@ -1775,6 +1994,7 @@ Result_nompi_fmm_testing<flt,morton_mode,fmm_order> nompi_fmm_testing(std::uniqu
     return Result_nompi_fmm_testing<flt,morton_mode,fmm_order>{
         timer.nanosec,
         prec,
+        r_f,r_r,
         pos_part,
         std::move(buf_force),
         std::move(rtree),
@@ -1812,11 +2032,12 @@ Test_start("fmm", radix_tree_fmm, 1){
 
     
     constexpr u32 reduc_level = 5;
+    constexpr f64 open_crit = 0.5;
     
 
     {
         auto pos = pos_partgen_distrib<f32>(1e6);
-        auto res = nompi_fmm_testing<f32,u32,4>(pos,reduc_level);
+        auto res = nompi_fmm_testing<f32,u32,4>(pos,reduc_level,open_crit);
         Test_assert("fmm_f32_u32_order4", res.prec < 1e-5);
     }
 
@@ -1824,19 +2045,19 @@ Test_start("fmm", radix_tree_fmm, 1){
 
     {
         auto pos = pos_partgen_distrib<f32>(1e4);
-        auto res = nompi_fmm_testing<f32,u64,4>(pos,reduc_level);
+        auto res = nompi_fmm_testing<f32,u64,4>(pos,reduc_level,open_crit);
         Test_assert("fmm_f32_u64_order4", res.prec < 1e-5);
     }
 
     {
         auto pos = pos_partgen_distrib<f64>(1e4);
-        auto res = nompi_fmm_testing<f64,u32,4>(pos,reduc_level);
+        auto res = nompi_fmm_testing<f64,u32,4>(pos,reduc_level,open_crit);
         Test_assert("fmm_f64_u32_order4", res.prec < 1e-5);
     }
 
     {
         auto pos = pos_partgen_distrib<f64>(1e4);
-        auto res = nompi_fmm_testing<f64,u64,4>(pos,reduc_level);
+        auto res = nompi_fmm_testing<f64,u64,4>(pos,reduc_level,open_crit);
         Test_assert("fmm_f64_u64_order4", res.prec < 1e-5);
     }
 
@@ -1859,8 +2080,8 @@ Test_start("fmm", radix_tree_fmm, 1){
     
         std::unique_ptr<sycl::buffer<vec>> pos_part  = std::make_unique<sycl::buffer<vec>>(pos_part_tmp.data(),pos_part_tmp.size());
 
-        auto res_u32 = nompi_fmm_testing<flt,u32,4>(pos_part,0);
-        auto res_u64 = nompi_fmm_testing<flt,u64,4>(pos_part,0);
+        auto res_u32 = nompi_fmm_testing<flt,u32,4>(pos_part,0,0.1);
+        auto res_u64 = nompi_fmm_testing<flt,u64,4>(pos_part,0,0.1);
 
         logger::raw_ln("u32 :",res_u32.prec,"u64 :",res_u64.prec);
 
@@ -2097,7 +2318,7 @@ void run_test_no_mpi_fmm(BenchmarkResults &__bench_result_ref){
 
             auto pos_part = pos_partgen_distrib<flt>(cnt);
 
-            auto res = nompi_fmm_testing<flt, morton_mode, fmm_order>(pos_part,i);
+            auto res = nompi_fmm_testing<flt, morton_mode, fmm_order>(pos_part,i,0.5);
 
             Register_score("%result = " + std::to_string(cnt) + "," + std::to_string(res.time));
 

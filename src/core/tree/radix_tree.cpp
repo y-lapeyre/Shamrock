@@ -29,6 +29,8 @@ Radix_Tree<u_morton, vec3>::Radix_Tree(
         throw shamrock_exc("number of element in patch above i32_max-1");
     }
 
+    obj_cnt = cnt_obj;
+
     logger::debug_sycl_ln("RadixTree", "box dim :", std::get<0>(treebox), std::get<1>(treebox));
 
     box_coord = treebox;

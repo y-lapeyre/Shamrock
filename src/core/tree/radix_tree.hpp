@@ -33,35 +33,22 @@
 
 
 
-inline u32 get_next_pow2_val(u32 val){
-    u32 val_rounded_pow = pow(2,32-__builtin_clz(val));
-    if(val == pow(2,32-__builtin_clz(val)-1)){
-        val_rounded_pow = val;
-    }
-    return val_rounded_pow;
-}
+template<class u_morton,class vec3>
+class Radix_Tree{
 
-template<class u_morton>
-class Radix_tree_depth{
-
-    static constexpr auto get_tree_depth = []() -> u32{
+    static constexpr auto get_tree_depth = []() -> u32 {
         if constexpr (std::is_same<u_morton,u32>::value){return 32;}
         if constexpr (std::is_same<u_morton,u64>::value){return 64;}
         return 0;
     };
 
-    public : 
-
-    static constexpr u32 tree_depth = get_tree_depth();
-};
-
-
-
-
-
-
-template<class u_morton,class vec3>
-class Radix_Tree{
+    static constexpr auto get_next_pow2_val = [](u32 val){
+        u32 val_rounded_pow = pow(2,32-__builtin_clz(val));
+        if(val == pow(2,32-__builtin_clz(val)-1)){
+            val_rounded_pow = val;
+        }
+        return val_rounded_pow;
+    };
     
     Radix_Tree(){}
     
@@ -70,12 +57,13 @@ class Radix_Tree{
     using vec3i = typename morton_3d::morton_types<u_morton>::int_vec_repr;
     using flt = typename vec3::element_type;
 
-    static constexpr u32 tree_depth = Radix_tree_depth<u_morton>::tree_depth;
+    static constexpr u32 tree_depth = get_tree_depth();
 
 
 
     std::tuple<vec3,vec3> box_coord;
 
+    u32 obj_cnt;
     u32 tree_leaf_count;
     u32 tree_internal_count;
 
@@ -86,7 +74,6 @@ class Radix_Tree{
     std::unique_ptr<sycl::buffer<u_morton>> buf_morton;
     std::unique_ptr<sycl::buffer<u32>> buf_particle_index_map;
 
-    //std::vector<u32> reduc_index_map;
     std::unique_ptr<sycl::buffer<u32>> buf_reduc_index_map;
 
     std::unique_ptr<sycl::buffer<u_morton>> buf_tree_morton; // size = leaf cnt
@@ -145,116 +132,19 @@ class Radix_Tree{
     };
 
     template<class T, class LambdaComputeLeaf, class LambdaCombinator>
-    inline RadixTreeField<T> compute_field(sycl::queue & queue,u32 nvar,
+    RadixTreeField<T> compute_field(sycl::queue & queue,u32 nvar,
+        LambdaComputeLeaf && compute_leaf, LambdaCombinator && combine) const ;
+
+
+    template<class LambdaForEachCell>
+    std::pair<std::set<u32>, std::set<u32>> get_walk_res_set(LambdaForEachCell && interact_cd) const;
+
+
+        
+    template<class LambdaForEachCell> 
+    void for_each_leaf(sycl::queue & queue, LambdaForEachCell && par_for_each_cell) const;
     
-        LambdaComputeLeaf && compute_leaf, LambdaCombinator && combine) const{
 
-        RadixTreeField<T> ret;
-        ret.nvar = nvar;
-
-        logger::debug_sycl_ln("RadixTree", "compute_field");
-
-        ret.radix_tree_field_buf = std::make_unique<sycl::buffer<T>>(tree_internal_count + tree_leaf_count);
-        sycl::range<1> range_leaf_cell{tree_leaf_count};
-
-        queue.submit([&](sycl::handler &cgh) {
-            u32 offset_leaf = tree_internal_count;
-
-            auto tree_field = sycl::accessor{* ret.radix_tree_field_buf, cgh ,sycl::write_only, sycl::no_init};
-
-            auto cell_particle_ids  = buf_reduc_index_map->template get_access<sycl::access::mode::read>(cgh);
-            auto particle_index_map = buf_particle_index_map->template get_access<sycl::access::mode::read>(cgh);
-
-            compute_leaf(cgh,[&](auto && lambda_loop){
-                cgh.parallel_for(range_leaf_cell, [=](sycl::item<1> item) {
-                    u32 gid = (u32)item.get_id(0);
-
-                    u32 min_ids = cell_particle_ids[gid];
-                    u32 max_ids = cell_particle_ids[gid + 1];
-
-
-                    lambda_loop([&](auto && particle_it){
-                            for (unsigned int id_s = min_ids; id_s < max_ids; id_s++) {
-                                particle_it(particle_index_map[id_s]);
-                            }
-                        },
-                        tree_field,
-                        [&](){
-                            return nvar*(offset_leaf + gid);
-                        }
-                    );
-
-                });
-            });
-            
-        });
-
-        sycl::range<1> range_tree{tree_internal_count};
-        auto ker_reduc_hmax = [&](sycl::handler &cgh) {
-            u32 offset_leaf = tree_internal_count;
-
-            auto tree_field = ret.radix_tree_field_buf->template get_access<sycl::access::mode::read_write>(cgh);
-
-            auto rchild_id   = buf_rchild_id->get_access<sycl::access::mode::read>(cgh);
-            auto lchild_id   = buf_lchild_id->get_access<sycl::access::mode::read>(cgh);
-            auto rchild_flag = buf_rchild_flag->get_access<sycl::access::mode::read>(cgh);
-            auto lchild_flag = buf_lchild_flag->get_access<sycl::access::mode::read>(cgh);
-
-            cgh.parallel_for(range_tree, [=](sycl::item<1> item) {
-                u32 gid = (u32)item.get_id(0);
-
-                u32 lid = lchild_id[gid] + offset_leaf * lchild_flag[gid];
-                u32 rid = rchild_id[gid] + offset_leaf * rchild_flag[gid];
-
-                combine(
-                    [&](u32 nvar_id) -> T{
-                        return tree_field[nvar*lid + nvar_id];
-                    },
-                    [&](u32 nvar_id) -> T{
-                        return tree_field[nvar*rid + nvar_id];
-                    },
-                    tree_field,
-                    [&](){
-                        return nvar*(gid);
-                    }
-                );
-            });
-        };
-
-        for (u32 i = 0; i < tree_depth; i++) {
-            queue.submit(ker_reduc_hmax);
-        }
-
-        return std::move(ret);
-    }
-
-
-    template<class LambdaComputeLeaf>
-    inline void for_each_leaf(sycl::queue & queue, LambdaComputeLeaf && lambda_leaf){
-
-
-        sycl::range<1> range_leaf = sycl::range<1>{tree_leaf_count};
-
-        u32 leaf_offset = tree_internal_count;
-
-
-        queue.submit([&](sycl::handler &cgh) {
-            u32 offset_leaf = tree_internal_count;
-
-            auto cell_particle_ids  = buf_reduc_index_map->template get_access<sycl::access::mode::read>(cgh);
-            auto particle_index_map = buf_particle_index_map->template get_access<sycl::access::mode::read>(cgh);
-
-            lambda_leaf(cgh,[&](auto && lambda_loop){
-                cgh.parallel_for(range_leaf, [=](sycl::item<1> item) {
-                    u32 gid = (u32)item.get_id(0);
-
-
-
-                });
-            });
-            
-        });
-    }
 
 
     struct CuttedTree{
@@ -268,23 +158,359 @@ class Radix_Tree{
 
     template<class T> void print_tree_field(sycl::buffer<T> & buf_field);
 
+
+
+    
+
+
 };
 
 
 
+template<class u_morton,class vec3>
+template<class T, class LambdaComputeLeaf, class LambdaCombinator>
+inline typename Radix_Tree<u_morton, vec3>::template RadixTreeField<T> Radix_Tree<u_morton, vec3>::compute_field(sycl::queue & queue,u32 nvar,
+
+    LambdaComputeLeaf && compute_leaf, LambdaCombinator && combine) const{
+
+    RadixTreeField<T> ret;
+    ret.nvar = nvar;
+
+    logger::debug_sycl_ln("RadixTree", "compute_field");
+
+    ret.radix_tree_field_buf = std::make_unique<sycl::buffer<T>>(tree_internal_count + tree_leaf_count);
+    sycl::range<1> range_leaf_cell{tree_leaf_count};
+
+    queue.submit([&](sycl::handler &cgh) {
+        u32 offset_leaf = tree_internal_count;
+
+        auto tree_field = sycl::accessor{* ret.radix_tree_field_buf, cgh ,sycl::write_only, sycl::no_init};
+
+        auto cell_particle_ids  = buf_reduc_index_map->template get_access<sycl::access::mode::read>(cgh);
+        auto particle_index_map = buf_particle_index_map->template get_access<sycl::access::mode::read>(cgh);
+
+        compute_leaf(cgh,[&](auto && lambda_loop){
+            cgh.parallel_for(range_leaf_cell, [=](sycl::item<1> item) {
+                u32 gid = (u32)item.get_id(0);
+
+                u32 min_ids = cell_particle_ids[gid];
+                u32 max_ids = cell_particle_ids[gid + 1];
+
+
+                lambda_loop([&](auto && particle_it){
+                        for (unsigned int id_s = min_ids; id_s < max_ids; id_s++) {
+                            particle_it(particle_index_map[id_s]);
+                        }
+                    },
+                    tree_field,
+                    [&](){
+                        return nvar*(offset_leaf + gid);
+                    }
+                );
+
+            });
+        });
+        
+    });
+
+    sycl::range<1> range_tree{tree_internal_count};
+    auto ker_reduc_hmax = [&](sycl::handler &cgh) {
+        u32 offset_leaf = tree_internal_count;
+
+        auto tree_field = ret.radix_tree_field_buf->template get_access<sycl::access::mode::read_write>(cgh);
+
+        auto rchild_id   = buf_rchild_id->get_access<sycl::access::mode::read>(cgh);
+        auto lchild_id   = buf_lchild_id->get_access<sycl::access::mode::read>(cgh);
+        auto rchild_flag = buf_rchild_flag->get_access<sycl::access::mode::read>(cgh);
+        auto lchild_flag = buf_lchild_flag->get_access<sycl::access::mode::read>(cgh);
+
+        cgh.parallel_for(range_tree, [=](sycl::item<1> item) {
+            u32 gid = (u32)item.get_id(0);
+
+            u32 lid = lchild_id[gid] + offset_leaf * lchild_flag[gid];
+            u32 rid = rchild_id[gid] + offset_leaf * rchild_flag[gid];
+
+            combine(
+                [&](u32 nvar_id) -> T {
+                    return tree_field[nvar*lid + nvar_id];
+                },
+                [&](u32 nvar_id) -> T {
+                    return tree_field[nvar*rid + nvar_id];
+                },
+                tree_field,
+                [&](){
+                    return nvar*(gid);
+                }
+            );
+        });
+    };
+
+    for (u32 i = 0; i < tree_depth; i++) {
+        queue.submit(ker_reduc_hmax);
+    }
+
+    return std::move(ret);
+}
 
 
 
 
+
+
+template<class u_morton,class vec3>
+template<class LambdaForEachCell>
+inline std::pair<std::set<u32>, std::set<u32>> Radix_Tree<u_morton, vec3>::get_walk_res_set(LambdaForEachCell && interact_cd) const {
+
+
+    std::set<u32> leaf_list;
+    std::set<u32> rejected_list;
+    
+
+    auto particle_index_map = sycl::host_accessor{*buf_particle_index_map};
+    auto cell_index_map = sycl::host_accessor{*buf_reduc_index_map};
+    auto rchild_id      = sycl::host_accessor{*buf_rchild_id  };
+    auto lchild_id      = sycl::host_accessor{*buf_lchild_id  };
+    auto rchild_flag    = sycl::host_accessor{*buf_rchild_flag};
+    auto lchild_flag    = sycl::host_accessor{*buf_lchild_flag};
+
+    sycl::range<1> range_leaf = sycl::range<1>{tree_leaf_count};
+
+    u32 leaf_offset = tree_internal_count;
+
+
+
+
+
+    u32 stack_cursor = tree_depth - 1;
+    std::array<u32, tree_depth> id_stack;
+    id_stack[stack_cursor] = 0;
+
+    while (stack_cursor < tree_depth) {
+
+        u32 current_node_id    = id_stack[stack_cursor];
+        id_stack[stack_cursor] = tree_depth;
+        stack_cursor++;
+
+        
+
+
+        if (interact_cd(current_node_id)) {
+
+            // leaf and can interact => force
+            if (current_node_id >= leaf_offset) {
+
+                leaf_list.insert(current_node_id);
+
+                // can interact not leaf => stack
+            } else {
+
+                u32 lid = lchild_id[current_node_id] + leaf_offset * lchild_flag[current_node_id];
+                u32 rid = rchild_id[current_node_id] + leaf_offset * rchild_flag[current_node_id];
+
+                id_stack[stack_cursor - 1] = rid;
+                stack_cursor--;
+
+                id_stack[stack_cursor - 1] = lid;
+                stack_cursor--;
+            }
+        } else {
+            // grav
+
+            rejected_list.insert(current_node_id);
+        }
+    }
+
+
+    return std::pair<std::set<u32>, std::set<u32>>{std::move(leaf_list),std::move(rejected_list)};
+
+
+}
+
+
+
+template<class u_morton,class vec3>
+template<class LambdaForEachCell> 
+inline void Radix_Tree<u_morton, vec3>::for_each_leaf(sycl::queue & queue, LambdaForEachCell && par_for_each_cell) const {
+
+
+    queue.submit([&](sycl::handler &cgh) {
+
+        auto particle_index_map = buf_particle_index_map-> template get_access<sycl::access::mode::read>(cgh);
+        auto cell_index_map = buf_reduc_index_map-> template get_access<sycl::access::mode::read>(cgh);
+        auto rchild_id      = buf_rchild_id  -> template get_access<sycl::access::mode::read>(cgh);
+        auto lchild_id      = buf_lchild_id  -> template get_access<sycl::access::mode::read>(cgh);
+        auto rchild_flag    = buf_rchild_flag-> template get_access<sycl::access::mode::read>(cgh);
+        auto lchild_flag    = buf_lchild_flag-> template get_access<sycl::access::mode::read>(cgh);
+
+        sycl::range<1> range_leaf = sycl::range<1>{tree_leaf_count};
+
+        u32 leaf_offset = tree_internal_count;
+
+        
+        
+
+        auto par_for = [&](auto && for_each_leaf){
+
+            cgh.parallel_for(range_leaf, [=](sycl::item<1> item) {
+
+                u32 id_cell_a = (u32)item.get_id(0) + leaf_offset;
+
+                auto iter_obj_cell = [&](u32 cell_id, auto && func_it){
+                    uint min_ids = cell_index_map[cell_id     -leaf_offset];
+                    uint max_ids = cell_index_map[cell_id + 1 -leaf_offset];
+
+                    for (unsigned int id_s = min_ids; id_s < max_ids; id_s++) {
+
+                        //recover old index before morton sort
+                        uint id_b = particle_index_map[id_s];
+
+                        //iteration function
+                        func_it(id_b);
+
+                    }
+                };
+
+                auto walk_loop = [&](u32 id_cell_a, auto && for_other_cell){
+
+                    u32 stack_cursor = tree_depth - 1;
+                    std::array<u32, tree_depth> id_stack;
+                    id_stack[stack_cursor] = 0;
+
+                    while (stack_cursor < tree_depth) {
+
+                        u32 current_node_id    = id_stack[stack_cursor];
+                        id_stack[stack_cursor] = tree_depth;
+                        stack_cursor++;
+
+                        
+
+                        auto walk_logic = [&](const bool & cur_id_valid , auto && func_leaf_found, auto && func_node_rejected){
+
+                            if (cur_id_valid) {
+
+                                // leaf and can interact => force
+                                if (current_node_id >= leaf_offset) {
+
+                                    func_leaf_found();
+
+                                    // can interact not leaf => stack
+                                } else {
+
+                                    u32 lid = lchild_id[current_node_id] + leaf_offset * lchild_flag[current_node_id];
+                                    u32 rid = rchild_id[current_node_id] + leaf_offset * rchild_flag[current_node_id];
+
+                                    id_stack[stack_cursor - 1] = rid;
+                                    stack_cursor--;
+
+                                    id_stack[stack_cursor - 1] = lid;
+                                    stack_cursor--;
+                                }
+                            } else {
+                                // grav
+
+                                func_node_rejected();
+                            }
+                        };
+
+                        for_other_cell(current_node_id,walk_logic);
+
+                    }
+
+                };
+
+                for_each_leaf(id_cell_a, walk_loop,iter_obj_cell);
+
+            });
+
+
+        };
+
+        par_for_each_cell(cgh,par_for);
+
+    });
+}
+
+
+
+namespace tree_comm {
+
+    template<class u_morton,class vec3>
+    class RadixTreeMPIRequest{
+        template<class T> using Request = mpi_sycl_interop::BufferMpiRequest<T>;
+        using RTree = Radix_Tree<u_morton,vec3>;
+
+        mpi_sycl_interop::comm_type comm_mode;
+        mpi_sycl_interop::op_type comm_op;
+
+        RTree &rtree;
+
+        std::vector<Request<u_morton>> rq_u_morton;
+        std::vector<Request<u32>> rq_u32;
+        std::vector<Request<u8>> rq_u8;
+
+
+        std::vector<Request<typename RTree::vec3i>> rq_vec3i;
+
+        inline RadixTreeMPIRequest(
+            RTree & rtree,
+            mpi_sycl_interop::op_type comm_op
+            ) : rtree(rtree) , comm_mode(mpi_sycl_interop::current_mode) , comm_op(comm_op) {}
+
+        inline void finalize(){
+            mpi_sycl_interop::waitall(rq_u_morton);
+            mpi_sycl_interop::waitall(rq_u32);
+            mpi_sycl_interop::waitall(rq_u8);
+            mpi_sycl_interop::waitall(rq_vec3i);
+
+            if(comm_op == mpi_sycl_interop::Recv_Probe){
+                rtree.obj_cnt = rtree.buf_morton->size();
+                rtree.tree_leaf_count = rtree.buf_morton->size();
+                rtree.tree_internal_count = rtree.buf_morton->size();
+
+                //TODO one cell mode
+            }
+        }
+
+    };
+
+
+
+
+    template<class u_morton,class vec3>
+    inline void comm_isend(Radix_Tree<u_morton,vec3> &rtree, std::vector<RadixTreeMPIRequest<u_morton,vec3>> & rqs,i32 rank_dest, 
+            i32 tag,
+            MPI_Comm comm){
+
+        rqs.push_back(RadixTreeMPIRequest<u_morton,vec3>(
+            rtree,
+            mpi_sycl_interop::op_type::Send
+        ));
+
+        auto & rq = rqs.back();
+        
+
+
+        mpi_sycl_interop::isend(rq.rtree.buf_morton,rq.rtree.obj_cnt, rq.rq_u_morton, rank_dest, tag, comm);
+        mpi_sycl_interop::isend(rq.rtree.buf_particle_index_map,rq.rtree.obj_cnt, rq.rq_u32, rank_dest, tag, comm);
+
+        mpi_sycl_interop::isend(rq.rtree.buf_reduc_index_map, rq.rtree.tree_leaf_count+1, rq.rq_u32, rank_dest, tag, comm);
+
+        mpi_sycl_interop::isend(rq.rtree.buf_tree_morton, rq.rtree.tree_leaf_count,rq.rq_u_morton, rank_dest, tag, comm);
+        mpi_sycl_interop::isend(rq.rtree.buf_lchild_id,rq.rtree.tree_internal_count, rq.rq_u32, rank_dest, tag, comm);
+        mpi_sycl_interop::isend(rq.rtree.buf_rchild_id,rq.rtree.tree_internal_count, rq.rq_u32, rank_dest, tag, comm);
+        mpi_sycl_interop::isend(rq.rtree.buf_lchild_flag,rq.rtree.tree_internal_count, rq.rq_u8, rank_dest, tag, comm);
+        mpi_sycl_interop::isend(rq.rtree.buf_rchild_flag,rq.rtree.tree_internal_count, rq.rq_u8, rank_dest, tag, comm);
+        mpi_sycl_interop::isend(rq.rtree.buf_endrange,rq.rtree.tree_internal_count, rq.rq_u32, rank_dest, tag, comm);
+
+        mpi_sycl_interop::isend(rq.rtree.buf_pos_min_cell,rq.rtree.tree_internal_count + rq.rtree.tree_leaf_count, rq.rq_vec3i, rank_dest, tag, comm);
+        mpi_sycl_interop::isend(rq.rtree.buf_pos_max_cell,rq.rtree.tree_internal_count + rq.rtree.tree_leaf_count, rq.rq_vec3i, rank_dest, tag, comm);
+    }
+    
+
+}
 
 
 //TODO move h iter thing + multipoles to a tree field class
-
-
-
-
-
-
 
 
 
@@ -337,7 +563,7 @@ namespace walker {
         sycl::accessor<vec3,1,sycl::access::mode::read,sycl::target::device>  pos_min_cell  ;
         sycl::accessor<vec3,1,sycl::access::mode::read,sycl::target::device>  pos_max_cell  ;
 
-        static constexpr u32 tree_depth = Radix_tree_depth<u_morton>::tree_depth;
+        static constexpr u32 tree_depth = Radix_Tree<u_morton,vec3>::tree_depth;
         static constexpr u32 _nindex = 4294967295;
 
         u32 leaf_offset;
@@ -461,108 +687,6 @@ namespace walker {
         }
     }
 
-    //prototype of walk using nested lambdas
-    template<class u_morton,class vec3, class LambdaForEachCell>
-    inline void r_tree_for_each_leaf(Radix_Tree<u_morton, vec3> & rtree, LambdaForEachCell && par_for_each_cell){
-
-        using Rta = walker::Radix_tree_accessor<u_morton, vec3>;
-        sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
-
-            auto particle_index_map = rtree.buf_particle_index_map-> template get_access<sycl::access::mode::read>(cgh);
-            auto cell_index_map = rtree.buf_reduc_index_map-> template get_access<sycl::access::mode::read>(cgh);
-            auto rchild_id      = rtree.buf_rchild_id  -> template get_access<sycl::access::mode::read>(cgh);
-            auto lchild_id      = rtree.buf_lchild_id  -> template get_access<sycl::access::mode::read>(cgh);
-            auto rchild_flag    = rtree.buf_rchild_flag-> template get_access<sycl::access::mode::read>(cgh);
-            auto lchild_flag    = rtree.buf_lchild_flag-> template get_access<sycl::access::mode::read>(cgh);
-
-            sycl::range<1> range_leaf = sycl::range<1>{rtree.tree_leaf_count};
-
-            u32 leaf_offset = rtree.tree_internal_count;
-
-            
-            
-
-            auto par_for = [&](auto && for_each_leaf){
-
-                cgh.parallel_for(range_leaf, [=](sycl::item<1> item) {
-
-                    u32 id_cell_a = (u32)item.get_id(0) + leaf_offset;
-
-                    auto iter_obj_cell = [&](u32 cell_id, auto && func_it){
-                        uint min_ids = cell_index_map[cell_id     -leaf_offset];
-                        uint max_ids = cell_index_map[cell_id + 1 -leaf_offset];
-
-                        for (unsigned int id_s = min_ids; id_s < max_ids; id_s++) {
-
-                            //recover old index before morton sort
-                            uint id_b = particle_index_map[id_s];
-
-                            //iteration function
-                            func_it(id_b);
-
-                        }
-                    };
-
-                    auto walk_loop = [&](u32 id_cell_a, auto && for_other_cell){
-
-                        u32 stack_cursor = Rta::tree_depth - 1;
-                        std::array<u32, Rta::tree_depth> id_stack;
-                        id_stack[stack_cursor] = 0;
-
-                        while (stack_cursor < Rta::tree_depth) {
-
-                            u32 current_node_id    = id_stack[stack_cursor];
-                            id_stack[stack_cursor] = Rta::_nindex;
-                            stack_cursor++;
-
-                            
-
-                            auto walk_logic = [&](const bool & cur_id_valid , auto && func_leaf_found, auto && func_node_rejected){
-
-                                if (cur_id_valid) {
-
-                                    // leaf and can interact => force
-                                    if (current_node_id >= leaf_offset) {
-
-                                        func_leaf_found();
-
-                                        // can interact not leaf => stack
-                                    } else {
-
-                                        u32 lid = lchild_id[current_node_id] + leaf_offset * lchild_flag[current_node_id];
-                                        u32 rid = rchild_id[current_node_id] + leaf_offset * rchild_flag[current_node_id];
-
-                                        id_stack[stack_cursor - 1] = rid;
-                                        stack_cursor--;
-
-                                        id_stack[stack_cursor - 1] = lid;
-                                        stack_cursor--;
-                                    }
-                                } else {
-                                    // grav
-
-                                    func_node_rejected();
-                                }
-                            };
-
-                            for_other_cell(current_node_id,walk_logic);
-
-                        }
-
-                    };
-
-                    for_each_leaf(id_cell_a, walk_loop,iter_obj_cell);
-
-                });
-
-
-            };
-
-            par_for_each_cell(cgh,par_for);
-
-        });
-
-    }
 
     template <class Rta, class Functor_int_cd, class Functor_iter, class Functor_iter_excl>
     inline void rtree_for(const Rta &acc, Functor_int_cd &&func_int_cd, Functor_iter &&func_it, Functor_iter_excl &&func_excl) {

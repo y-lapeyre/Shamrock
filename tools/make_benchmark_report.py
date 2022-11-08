@@ -107,7 +107,7 @@ def plot_tree_fmm_no_mpi_perf():
     is_on = False
     for l in lns:
 
-        if "fmm_no_mpi" in l:
+        if "fmm_order4_no_mpi_f32_u32" in l:
             is_on = True
         if "%end_bench" in l:
             is_on = False
