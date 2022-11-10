@@ -61,7 +61,6 @@ Radix_Tree<u_morton, vec3>::Radix_Tree(
     std::vector<u32> reduc_index_map;
     reduction_alg(queue, cnt_obj, buf_morton, reduc_level, reduc_index_map, tree_leaf_count);
 
-    u32 reduc_index_map_len = reduc_index_map.size();
 
     logger::debug_sycl_ln(
         "RadixTree", "reduction results : (before :", cnt_obj, " | after :", tree_leaf_count,
@@ -72,25 +71,9 @@ Radix_Tree<u_morton, vec3>::Radix_Tree(
 
         //buf_reduc_index_map = std::make_unique<sycl::buffer<u32>>(reduc_index_map.data(),reduc_index_map.size());
 
-        {
-
-            sycl::buffer<u32> tmp (reduc_index_map.data(), reduc_index_map_len);
                 
-            buf_reduc_index_map = std::make_unique<sycl::buffer<u32>>(reduc_index_map_len);
+        buf_reduc_index_map = std::make_unique<sycl::buffer<u32>>(syclalgs::convert::vector_to_buf(reduc_index_map));
         
-            queue.submit([&](sycl::handler &cgh) {
-                auto source = tmp.get_access<sycl::access::mode::read>(cgh);
-                auto dest = buf_reduc_index_map->get_access<sycl::access::mode::discard_write>(cgh);
-                cgh.parallel_for(sycl::range(reduc_index_map_len), [=](sycl::item<1> item) { dest[item] = source[item]; });
-            });
-
-            //HIPSYCL segfault otherwise because looks like the destructor of the sycl buffer 
-            //doesn't wait for the end of the queue resulting in out of bound access
-            #ifdef SYCL_COMP_HIPSYCL
-            queue.wait();
-            #endif
-
-        }
         
         
         
@@ -125,7 +108,7 @@ Radix_Tree<u_morton, vec3>::Radix_Tree(
         tree_leaf_count     = 2;
         reduc_index_map.push_back(0);
 
-        buf_reduc_index_map = std::make_unique<sycl::buffer<u32>>(reduc_index_map.data(), reduc_index_map.size());
+        buf_reduc_index_map = std::make_unique<sycl::buffer<u32>>(syclalgs::convert::vector_to_buf(reduc_index_map));
 
         buf_lchild_id   = std::make_unique<sycl::buffer<u32>>(tree_internal_count);
         buf_rchild_id   = std::make_unique<sycl::buffer<u32>>(tree_internal_count);

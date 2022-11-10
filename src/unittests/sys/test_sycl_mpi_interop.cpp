@@ -371,7 +371,7 @@ template<class T> inline void test_type_comm(TestResults &__test_result_ref,std:
 
     static_assert(
             #define X(args)  std::is_same<T, args>::value ||
-            XMAC_COMM_TYPE_ENABLED true
+            XMAC_SYCLMPI_TYPE_ENABLED true
             #undef X
             );
 
@@ -425,7 +425,7 @@ Test_start("sycl_mpi_interop::",test_sycl_buffer_mpi_comm,2){
     create_sycl_mpi_types();
 
     #define X(args) test_type_comm<args>(__test_result_ref, eng, distval,mpi_type_##args,#args);
-    XMAC_COMM_TYPE_ENABLED
+    XMAC_SYCLMPI_TYPE_ENABLED
     #undef X
 
     free_sycl_mpi_types();

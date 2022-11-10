@@ -198,7 +198,7 @@ void free_sycl_mpi_types();
 
 
 
-#define XMAC_COMM_TYPE_ENABLED \
+#define XMAC_SYCLMPI_TYPE_ENABLED \
     X(f32   ) \
     X(f32_2 ) \
     X(f32_3 ) \
@@ -213,6 +213,8 @@ void free_sycl_mpi_types();
     X(f64_16) \
     X(u8   )  \
     X(u32   ) \
+    X(u32_3 ) \
+    X(u16_3 ) \
     X(u64   )
 
 
@@ -239,7 +241,7 @@ namespace mpi_sycl_interop {
 
         static constexpr bool is_in_type_list = 
             #define X(args)  std::is_same<T, args>::value ||
-            XMAC_COMM_TYPE_ENABLED false
+            XMAC_SYCLMPI_TYPE_ENABLED false
             #undef X
             ;
 
@@ -247,7 +249,7 @@ namespace mpi_sycl_interop {
             , "BufferMpiRequest must be one of those types : "
 
             #define X(args) #args " "
-            XMAC_COMM_TYPE_ENABLED
+            XMAC_SYCLMPI_TYPE_ENABLED
             #undef X
             );
 

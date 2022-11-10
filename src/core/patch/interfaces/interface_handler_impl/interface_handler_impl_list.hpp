@@ -1,6 +1,7 @@
 #include "aliases.hpp"
 
 #include "core/patch/scheduler/scheduler_mpi.hpp"
+#include "core/patch/simulation_domain.hpp"
 #include "core/patch/utility/serialpatchtree.hpp"
 
 
@@ -13,11 +14,15 @@ enum InterfacehandlerImpl {
     Tree_Send
 };
 
+
 //forward definition of the interface handler
 
 template<InterfacehandlerImpl impl_type, class pos_prec, class Tree> class Interfacehandler{
 
     public:
+
+
+    
 
     using flt = pos_prec;
     using vec = sycl::vec<flt, 3>;
@@ -25,9 +30,9 @@ template<InterfacehandlerImpl impl_type, class pos_prec, class Tree> class Inter
     template<class Func_interactcrit>
     void compute_interface_list(
         PatchScheduler &sched, 
-        SerialPatchTree<vec> sptree, 
-        Func_interactcrit && interact_crit,
-        bool periodic);
+        SerialPatchTree<vec> & sptree, 
+        SimulationDomain<flt> & bc, 
+        Func_interactcrit && interact_crit);
 
     //TODO
     void initial_fetch();

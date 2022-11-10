@@ -421,11 +421,97 @@ Bench_start("tree field old compute performance", "treefieldcomputeperf_new", tr
 
 
 
+template<class flt, class morton_mode>
+void test_tree_comm(TestResults &__test_result_ref){
 
+    using vec = sycl::vec<flt,3>;
+    using vec3i = typename morton_3d::morton_types<morton_mode>::int_vec_repr;
+
+    std::mt19937 eng(0x1111);
+    std::uniform_real_distribution<flt> distf(-1, 1);
+
+    constexpr u32 npart = 1000;
+
+    PatchDataLayout pdl;
+    pdl.add_field<vec>("xyz", 1);
+
+    const auto id_xyz = pdl.get_field_idx<vec>("xyz");
+
+    PatchData pdat(pdl);
+    pdat.resize(npart);
+
+    {
+        auto & pos_part = pdat.get_field<vec>(id_xyz).get_buf();
+        sycl::host_accessor<vec> pos {*pos_part};
+
+        for (u32 i = 0; i < npart; i ++) {
+            pos[i] = vec{distf(eng), distf(eng), distf(eng)};
+        }
+    }
+
+    
+    constexpr u32 reduc_level = 5;
+
+    auto rtree = Radix_Tree<morton_mode, vec>(
+            sycl_handler::get_compute_queue(), 
+            {vec{-1,-1,-1},vec{1,1,1}},
+            pdat.get_field<vec>(id_xyz).get_buf(), 
+            npart , reduc_level
+        );
+
+    rtree.compute_cellvolume(sycl_handler::get_compute_queue());
+
+
+
+
+
+    if(mpi_handler::world_rank == 0){
+        std::vector<tree_comm::RadixTreeMPIRequest<morton_mode, vec>> rqs;
+        tree_comm::comm_isend(rtree, rqs, 1, 0, MPI_COMM_WORLD);
+        tree_comm::wait_all(rqs);
+    }
+
+    if(mpi_handler::world_rank == 1){
+        std::vector<tree_comm::RadixTreeMPIRequest<morton_mode, vec>> rqs;
+
+        auto rtree_recv = Radix_Tree<morton_mode, vec>::make_empty();
+
+        tree_comm::comm_irecv_probe(rtree_recv, rqs, 0, 0, MPI_COMM_WORLD);
+        tree_comm::wait_all(rqs);
+
+        using t = sycl::vec<float, 3>::element_type;
+
+        Test_assert("",rtree.one_cell_mode == rtree_recv.one_cell_mode);
+        Test_assert("",test_sycl_eq(std::get<0>(rtree.box_coord) , std::get<0>(rtree_recv.box_coord)));
+        Test_assert("",test_sycl_eq(std::get<1>(rtree.box_coord) , std::get<1>(rtree_recv.box_coord)));
+        Test_assert("",rtree.obj_cnt == rtree_recv.obj_cnt);
+        Test_assert("",rtree.tree_leaf_count == rtree_recv.tree_leaf_count);
+        Test_assert("",rtree.tree_internal_count == rtree_recv.tree_internal_count);
+
+
+        Test_assert("",syclalgs::reduction::equals(*rtree.buf_morton, *rtree_recv.buf_morton, rtree.obj_cnt));
+        Test_assert("",syclalgs::reduction::equals(*rtree.buf_particle_index_map, *rtree_recv.buf_particle_index_map, rtree.obj_cnt));
+
+        Test_assert("",syclalgs::reduction::equals(*rtree.buf_reduc_index_map, *rtree_recv.buf_reduc_index_map, rtree.tree_leaf_count+1));
+
+        Test_assert("",syclalgs::reduction::equals(*rtree.buf_tree_morton, *rtree_recv.buf_tree_morton, rtree.tree_leaf_count));
+
+
+        Test_assert("",syclalgs::reduction::equals(*rtree.buf_lchild_id, *rtree_recv.buf_lchild_id, rtree.tree_internal_count));
+        Test_assert("",syclalgs::reduction::equals(*rtree.buf_rchild_id, *rtree_recv.buf_rchild_id, rtree.tree_internal_count));
+        Test_assert("",syclalgs::reduction::equals(*rtree.buf_lchild_flag, *rtree_recv.buf_lchild_flag, rtree.tree_internal_count));
+        Test_assert("",syclalgs::reduction::equals(*rtree.buf_rchild_flag, *rtree_recv.buf_rchild_flag, rtree.tree_internal_count));
+        Test_assert("",syclalgs::reduction::equals(*rtree.buf_endrange, *rtree_recv.buf_endrange, rtree.tree_internal_count));
+
+        Test_assert("",syclalgs::reduction::equals(*rtree.buf_pos_min_cell, *rtree_recv.buf_pos_min_cell, rtree.tree_internal_count + rtree.tree_leaf_count));
+        Test_assert("",syclalgs::reduction::equals(*rtree.buf_pos_max_cell, *rtree_recv.buf_pos_max_cell, rtree.tree_internal_count + rtree.tree_leaf_count));
+    }
+
+}
 
 Test_start("radix_tree", tree_comm, 2){
 
-
+    test_tree_comm<f32,u32>(__test_result_ref); 
 
 }
 

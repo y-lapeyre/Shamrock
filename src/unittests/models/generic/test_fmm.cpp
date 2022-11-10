@@ -1432,7 +1432,7 @@ Result_nompi_fmm_testing<flt,morton_mode,fmm_order> nompi_fmm_testing(std::uniqu
 
         auto sample = [&](u32 id){
 
-            auto [found_leafs, rejected_nodes] = rtree.get_walk_res_set([&](u32 cell_b) -> bool{
+            auto [found_leafs, rejected_nodes] = rtree.get_walk_res_set([&](u32 cell_b) -> bool {
                 u32 cell_a = rtree.tree_internal_count + id;
 
                 vec cur_pos_min_cell_a = pos_min_cell[cell_a];
@@ -2032,16 +2032,14 @@ Test_start("fmm", radix_tree_fmm, 1){
 
     
     constexpr u32 reduc_level = 5;
-    constexpr f64 open_crit = 0.5;
+    constexpr f64 open_crit = 0.3;
     
 
     {
-        auto pos = pos_partgen_distrib<f32>(1e6);
+        auto pos = pos_partgen_distrib<f32>(1e4);
         auto res = nompi_fmm_testing<f32,u32,4>(pos,reduc_level,open_crit);
         Test_assert("fmm_f32_u32_order4", res.prec < 1e-5);
     }
-
-    return;
 
     {
         auto pos = pos_partgen_distrib<f32>(1e4);

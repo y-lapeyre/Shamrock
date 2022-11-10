@@ -22,7 +22,34 @@
 #include "aliases.hpp"
 #include <tuple>
 
+
+
+template<class flt>
+class ALignedAxisBoundingBox{
+    //TODO replace std::tuple<vec,vec> by this class
+    using vec = sycl::vec<flt,3>;
+
+    public:
+    vec min_coord;
+    vec max_coord;
+
+    ALignedAxisBoundingBox(const vec & min, const vec & max) : min_coord(min), max_coord(max){}
+
+    inline vec get_size() const {
+        return max_coord - min_coord;
+    }
+
+    inline flt get_max_side_lenght() const {
+        const vec sz = get_size();
+        return sycl::fmax(sycl::fmax(sz.x(),sz.y()),sz.z());
+    }
+};
+
+
+
 namespace BBAA {
+
+    
 
     template<class VecType> bool is_particle_in_patch(VecType part_pos,VecType pos_min_patch,VecType pos_max_patch);
 

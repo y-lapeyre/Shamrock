@@ -170,7 +170,7 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(PatchScheduler &sched, f64 old_ti
 
 
 
-    auto leapfrog_lambda = [&](flt old_time, bool do_force, bool do_corrector) -> flt{
+    auto leapfrog_lambda = [&](flt old_time, bool do_force, bool do_corrector) -> flt {
 
         const u32 ixyz      = sched.pdl.get_field_idx<vec3>("xyz");
         const u32 ivxyz     = sched.pdl.get_field_idx<vec3>("vxyz");
@@ -282,11 +282,33 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(PatchScheduler &sched, f64 old_ti
 
 
 
+
+        auto box = sched.get_box_tranform<vec3>();
+        SimulationDomain<flt> sd(Free, std::get<0>(box), std::get<1>(box));
+
+
+
+        flt open_crit_sq = 0.3*0.3;
+
         using InterfHndl =  Interfacehandler<Tree_Send, flt, RadTree>;
         InterfHndl interf_hndl = InterfHndl();
+        interf_hndl.compute_interface_list(sched,sptree,sd,
+        [=](vec3 b1_min, vec3 b1_max,vec3 b2_min, vec3 b2_max) -> bool {
+            vec3 s1 = (b1_max + b1_min)/2;
+            vec3 s2 = (b2_max + b2_min)/2;
 
-        
+            vec3 r_fmm = s2-s1;
 
+            vec3 d1 = b1_max - b1_min;
+            vec3 d2 = b2_max - b2_min;
+
+            flt l1 = sycl::max(sycl::max(d1.x(),d1.y()),d1.z());
+            flt l2 = sycl::max(sycl::max(d2.x(),d2.y()),d2.z());
+
+            flt opening_angle_sq = (l1 + l2)*(l1 + l2)/sycl::dot(r_fmm,r_fmm);
+
+            return opening_angle_sq < open_crit_sq;
+        });
 
 
         
