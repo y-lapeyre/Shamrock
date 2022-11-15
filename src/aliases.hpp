@@ -113,7 +113,8 @@ TYPEDEFS_TYPES(16)
 
 
 
-extern std::string git_info_str;
+extern const std::string git_info_str;
+extern const std::string git_commit_hash;
 
 
 
