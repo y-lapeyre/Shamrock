@@ -14,7 +14,7 @@
 #include "unittests/shamrocktest.hpp"
 #include <random>
 
-
+/*
 Test_start("patch/patchdata.cpp", patch_data_check_match,1){
     std::mt19937 eng(0x1111);  
 
@@ -45,6 +45,40 @@ Test_start("patch/patchdata.cpp", patch_data_check_match,1){
     PatchData d_check = patchdata_gen_dummy_data (pdl,eng);
 
     Test_assert("patch_data_check_match reflexivity", patch_data_check_match(d_check, d_check));
+}
+*/
+
+
+TestStart(Unittest, "patchdata.cpp/patch_data_check_match()",patch_data_check_match, -1){
+    std::mt19937 eng(0x1111);  
+
+
+    PatchDataLayout pdl;
+    pdl.xyz_mode = xyz32;
+    
+    pdl.add_field<f32>("f32", 1);
+    pdl.add_field<f32_2>("f32_2", 1);
+
+    pdl.add_field<f32_3>("f32_3", 1);
+    pdl.add_field<f32_3>("f32_3'", 1);
+    pdl.add_field<f32_3>("f32_3''", 1);
+
+    pdl.add_field<f32_4>("f32_4", 1);
+    pdl.add_field<f32_8>("f32_8", 1);
+    pdl.add_field<f32_16>("f32_16", 1);
+    pdl.add_field<f64>("f64", 1);
+    pdl.add_field<f64_2>("f64_2", 1);
+    pdl.add_field<f64_3>("f64_3", 1);
+    pdl.add_field<f64_4>("f64_4", 1);
+    pdl.add_field<f64_8>("f64_8", 1);
+    pdl.add_field<f64_16>("f64_16", 1);
+
+    pdl.add_field<u32>("u32", 1);
+    pdl.add_field<u64>("u64", 1);
+
+    PatchData d_check = patchdata_gen_dummy_data (pdl,eng);
+
+    asserts.assert_add("reflexivity",  patch_data_check_match(d_check, d_check));
 }
 
 Test_start("patch/patchdata.cpp", isend_irecv, 2){

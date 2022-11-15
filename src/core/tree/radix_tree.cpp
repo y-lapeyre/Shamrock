@@ -347,7 +347,7 @@ template void Radix_Tree<u64, f32_3>::print_tree_field(sycl::buffer<u32> &buf_fi
 
 template <class u_morton, class vec3>
 typename Radix_Tree<u_morton, vec3>::CuttedTree Radix_Tree<u_morton, vec3>::cut_tree(
-    sycl::queue &queue, const std::tuple<vec3, vec3> &cut_range
+    sycl::queue &queue, sycl::buffer<u8> & valid_node
 ) {
 
     
@@ -356,40 +356,11 @@ typename Radix_Tree<u_morton, vec3>::CuttedTree Radix_Tree<u_morton, vec3>::cut_
     u32 total_count             = tree_internal_count + tree_leaf_count;
     sycl::range<1> range_tree{total_count};
 
-    auto init_valid_buf = [&]() -> sycl::buffer<u8>{
-        
-        sycl::buffer<u8> valid_node = sycl::buffer<u8>(total_count);
-
-        sycl::range<1> range_tree{total_count};
-
-        queue.submit([&](sycl::handler &cgh) {
-            sycl::accessor acc_valid_node{valid_node, cgh, sycl::write_only, sycl::no_init};
-
-            sycl::accessor acc_pos_cell_min{*buf_pos_min_cell_flt, cgh, sycl::read_only};
-            sycl::accessor acc_pos_cell_max{*buf_pos_max_cell_flt, cgh, sycl::read_only};
-
-            vec3 v_min = std::get<0>(cut_range);
-            vec3 v_max = std::get<1>(cut_range);
-
-            cgh.parallel_for(range_tree, [=](sycl::item<1> item) {
-                acc_valid_node[item] = BBAA::cella_neigh_b(v_min, v_max, acc_pos_cell_min[item], acc_pos_cell_max[item]);
-            });
-        });
-
-        return valid_node;
-    };
-
-
-    
-
 
     
 
     {        
 
-        logger::debug_sycl_ln("Radixtree", "computing valid node buf");
-
-        sycl::buffer<u8> valid_node = init_valid_buf();
 
         
 

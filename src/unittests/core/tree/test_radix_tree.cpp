@@ -589,7 +589,47 @@ Test_start("radix_tree", tree_cut, 1){
     }
 
 
-    auto cut = rtree.cut_tree(sycl_handler::get_compute_queue(), {vec{-1,-1,-1},vec{0,0.5,1}});
+
+
+
+    std::tuple<vec, vec> cur_range{vec{-1,-1,-1},vec{0,0.5,1}};
+
+
+    u32 total_count             = rtree.tree_internal_count + rtree.tree_leaf_count;
+    sycl::range<1> range_tree{total_count};
+
+    logger::debug_sycl_ln("Radixtree", "computing valid node buf");
+
+    auto init_valid_buf = [&]() -> sycl::buffer<u8>{
+        
+        sycl::buffer<u8> valid_node = sycl::buffer<u8>(total_count);
+
+        sycl::range<1> range_tree{total_count};
+
+        sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
+            sycl::accessor acc_valid_node{valid_node, cgh, sycl::write_only, sycl::no_init};
+
+            sycl::accessor acc_pos_cell_min{*rtree.buf_pos_min_cell_flt, cgh, sycl::read_only};
+            sycl::accessor acc_pos_cell_max{*rtree.buf_pos_max_cell_flt, cgh, sycl::read_only};
+
+            vec v_min = std::get<0>(cur_range);
+            vec v_max = std::get<1>(cur_range);
+
+            cgh.parallel_for(range_tree, [=](sycl::item<1> item) {
+                acc_valid_node[item] = BBAA::cella_neigh_b(v_min, v_max, acc_pos_cell_min[item], acc_pos_cell_max[item]);
+            });
+        });
+
+        return valid_node;
+    };
+
+
+    
+    std::unique_ptr<sycl::buffer<u8>> valid_buf = std::make_unique<sycl::buffer<u8>>(init_valid_buf());
+
+    auto cut = rtree.cut_tree(sycl_handler::get_compute_queue(), *valid_buf);
+
+    valid_buf.reset();
 
 
 }
@@ -636,3 +676,6 @@ Test_start("radix_tree", treeleveljump_cell_range_test, 1){
 
 
 }
+
+
+

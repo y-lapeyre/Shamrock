@@ -340,39 +340,39 @@ class GreenFuncGravCartesian <T,0,2>{public:
 template<class T>
 class GreenFuncGravCartesian <T,0,1>{public:
     inline static SymTensorCollection<T, 0,1> get_der_tensors(sycl::vec<T,3> r){
-    T r1 = r.x();
-    T r2 = r.y();
-    T r3 = r.z();
+        T r1 = r.x();
+        T r2 = r.y();
+        T r3 = r.z();
 
-    T r1pow2 = r.x()*r.x();
-    T r2pow2 = r.y()*r.y();
-    T r3pow2 = r.z()*r.z();
+        T r1pow2 = r.x()*r.x();
+        T r2pow2 = r.y()*r.y();
+        T r3pow2 = r.z()*r.z();
 
-    T r1pow3 = r.x()*r1pow2;
-    T r2pow3 = r.y()*r2pow2;
-    T r3pow3 = r.z()*r3pow2;
+        T r1pow3 = r.x()*r1pow2;
+        T r2pow3 = r.y()*r2pow2;
+        T r3pow3 = r.z()*r3pow2;
 
-    T rsq = r1pow2 + r2pow2 + r3pow2;
+        T rsq = r1pow2 + r2pow2 + r3pow2;
 
-    T rnorm = sycl::sqrt(rsq);
+        T rnorm = sycl::sqrt(rsq);
 
-    T rm2 = 1/(rsq);
+        T rm2 = 1/(rsq);
 
-    T g0 = 1/rnorm;
-    T g1 = -1*rm2*g0;
-    
-    auto D1 = SymTensor3d_1<T>{
-        g1*r1,
-        g1*r2,
-        g1*r3
-    };
+        T g0 = 1/rnorm;
+        T g1 = -1*rm2*g0;
+        
+        auto D1 = SymTensor3d_1<T>{
+            g1*r1,
+            g1*r2,
+            g1*r3
+        };
 
-    auto D0 = g0;
+        auto D0 = g0;
 
-    return SymTensorCollection<T,0,1>{
-        D0,D1
-    };
-}
+        return SymTensorCollection<T,0,1>{
+            D0,D1
+        };
+    }
 };
 
 

@@ -167,7 +167,7 @@ class Radix_Tree{
         std::unique_ptr<sycl::buffer<u32>> pdat_extract_id;
     };
 
-    CuttedTree cut_tree(sycl::queue & queue,const std::tuple<vec3,vec3> & cut_range);
+    CuttedTree cut_tree(sycl::queue &queue, sycl::buffer<u8> & valid_node);
 
     template<class T> void print_tree_field(sycl::buffer<T> & buf_field);
 

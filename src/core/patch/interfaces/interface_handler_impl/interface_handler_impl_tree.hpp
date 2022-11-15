@@ -57,7 +57,7 @@ namespace impl{
     namespace generator {
         
         template<class flt,class Func_interactcrit,class... Args>
-        inline sycl::buffer<impl::CommInd, 2> compute_buf_interact(PatchScheduler &sched, SerialPatchTree<sycl::vec<flt, 3>> & sptree, sycl::vec<flt, 3> interf_offset, Func_interactcrit && interact_crit, Args ... args){
+        inline sycl::buffer<impl::CommInd, 2> compute_buf_interact(PatchScheduler &sched, SerialPatchTree<sycl::vec<flt, 3>> & sptree, sycl::vec<flt, 3> test_patch_offset, Func_interactcrit && interact_crit, Args ... args){
 
             using vec = sycl::vec<flt, 3>;
 
@@ -147,7 +147,7 @@ namespace impl{
 
                     u64 cnt_patch = global_pcount;
 
-                    vec offset = -interf_offset;
+                    vec offset = test_patch_offset;
 
                     bool is_off_not_bull = (offset.x() == 0) && (offset.y() == 0) && (offset.z() == 0);
 
@@ -161,8 +161,10 @@ namespace impl{
 
                         for (u64 test_patch_idx = 0; test_patch_idx < cnt_patch; test_patch_idx++) {
 
-                            vec test_lbox_min = gbox_min[test_patch_idx];
-                            vec test_lbox_max = gbox_max[test_patch_idx];
+                            //keep in mind that we compute patch that we have to send
+                            //so we apply this offset on the patch we test against rather than ours
+                            vec test_lbox_min = gbox_min[test_patch_idx] + offset;
+                            vec test_lbox_max = gbox_max[test_patch_idx] + offset;
                             u64 test_patch_id     = gpid[test_patch_idx];
 
                             {
@@ -236,37 +238,79 @@ class Interfacehandler<Tree_Send,pos_prec,Radix_Tree<u_morton, sycl::vec<pos_pre
         u64 receiver_patch_id;
 
         vec applied_offset;
-        u32_3 periodicity_vector;
+        i32_3 periodicity_vector;
 
-        CutTree cutted_tree;
+        std::unique_ptr<CutTree> cutted_tree;
     };
 
 
-    
-
+    //contain the list of interface that this node should send
+    std::vector<CommListing> interf_send_map;
     
     template<class Func_interactcrit,class... Args>
     inline void internal_compute_interf_list(PatchScheduler &sched, SerialPatchTree<vec> & sptree, SimulationDomain<flt> & bc, Func_interactcrit && interact_crit, Args ... args){
 
-        vec per_vec = bc.get_periodicity_vector();
+        const vec per_vec = bc.get_periodicity_vector();
+
+        const u64 local_pcount  = sched.patch_list.local.size();
+        const u64 global_pcount = sched.patch_list.global.size();
 
 
         logger::debug_ln("Interfacehandler", "computing interface list");
 
-        
 
-        auto append_interface = [&](u32_3 periodicity_vec) -> sycl::buffer<impl::CommInd, 2> {
+
+
+        auto append_interface = [&](i32_3 periodicity_vec) -> auto {
+
+            using namespace impl;
+
+
+            //meaning in the interface we look at r |-> r + off
+            //equivalent to our patch being moved r |-> r - off
+            //keep in mind that we compute patch that we have to send
+            //so we apply this offset on the patch we test against rather than ours
             vec off {
                 per_vec.x() * periodicity_vec.x(),
                 per_vec.y() * periodicity_vec.y(),
                 per_vec.z() * periodicity_vec.z(),
             };
-            return impl::generator::compute_buf_interact(sched, sptree, off, interact_crit, args...);
+
+            sycl::buffer<CommInd, 2> cbuf = generator::compute_buf_interact(sched, sptree, -off, interact_crit, args...);
+
+            {
+                auto interface_list = sycl::host_accessor {cbuf, sycl::read_only};
+
+                for (u64 i = 0; i < local_pcount; i++) {
+                    for (u64 j = 0; j < global_pcount; j++) {
+
+                        if (interface_list[{i, j}].sender_patch_id == u64_max){
+                            break;
+                        }
+                        CommInd tmp = interface_list[{i, j}];
+
+                        CommListing tmp_push;
+                        tmp_push.applied_offset = off;
+                        tmp_push.periodicity_vector = periodicity_vec;
+                        tmp_push.local_patch_idx_send  = tmp.local_patch_idx_send ;
+                        tmp_push.global_patch_idx_recv = tmp.global_patch_idx_recv;
+                        tmp_push.sender_patch_id       = tmp.sender_patch_id      ;
+                        tmp_push.receiver_patch_id     = tmp.receiver_patch_id    ;
+
+                        interf_send_map.push_back(std::move(tmp_push));
+
+                    }
+                }
+
+            }
+
         };
 
-        //now convert to vectors and group them
-
         //then make trees
+
+        
+
+
     }
 
 

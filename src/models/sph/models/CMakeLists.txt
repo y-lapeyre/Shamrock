@@ -5,7 +5,7 @@ target_sources(shamrock
     PRIVATE
         #scheduler.cpp
         
-        basic_sph_gas_selfgrav.cpp 
+        basic_sph_gas_uint.cpp 
         basic_sph_gas.cpp 
 
 
@@ -42,7 +42,7 @@ if("${BUILD_TEST}")
 
         
         
-    basic_sph_gas_selfgrav.cpp 
+    basic_sph_gas_uint.cpp 
     basic_sph_gas.cpp 
 
 
