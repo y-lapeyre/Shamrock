@@ -18,6 +18,8 @@
 #include "core/utils/string_utils.hpp"
 #include "core/sys/sycl_handler.hpp"
 
+#include "core/sys/mpi_handler.hpp"
+
 
 bool has_option(
     const std::vector<std::string_view>& args, 
@@ -513,6 +515,21 @@ namespace impl::shamrocktest {
 
 
         return get_str();
+    }
+
+
+    TestResult Test::run(){
+        if(node_count != -1){
+            if(node_count != mpi_handler::world_size){
+                throw shamrock_exc("trying to run a test with wrong number of nodes");
+            }
+        }
+
+        TestResult r{type, name,mpi_handler::world_rank};
+
+        test_functor(r.asserts,r.test_data);
+
+        return std::move(r);
     }
 
 

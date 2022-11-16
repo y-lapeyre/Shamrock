@@ -27,7 +27,7 @@
 #include <utility>
 #include <vector>
 #include <iostream>
-#include "core/sys/mpi_handler.hpp"
+//#include "core/sys/mpi_handler.hpp"
 #include "core/sys/sycl_handler.hpp"
 #include "aliases.hpp"
 #include "core/utils/time_utils.hpp"
@@ -197,20 +197,7 @@ namespace impl::shamrocktest {
         inline Test (const TestType & type, std::string  name, const i32 & node_count,void (*func)(TestAssertList &, TestDataList &) ) :
         type(type), name(std::move(name)),node_count(node_count), test_functor(func){}
 
-        inline TestResult run(){
-
-            if(node_count != -1){
-                if(node_count != mpi_handler::world_size){
-                    throw shamrock_exc("trying to run a test with wrong number of nodes");
-                }
-            }
-
-            TestResult r{type, name,mpi_handler::world_rank};
-
-            test_functor(r.asserts,r.test_data);
-
-            return std::move(r);
-        }
+        TestResult run();
     };
 
     inline std::vector<Test> static_init_vec_tests{};
