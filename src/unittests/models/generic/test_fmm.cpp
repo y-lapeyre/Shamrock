@@ -901,120 +901,13 @@ class FMM_prec_eval<T,0>{public:
 
 
 
-const std::string fmm_plot_script_pot = R"==(
-
-import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib
-
-matplotlib.use('GTK3Agg')
-
-
-plt.style.use('custom_style.mplstyle')
-
-res = np.loadtxt("fmm_pot_prec.txt")
-
-res = res[np.argsort(res[:, 0])]
-
-
-def plot_curve(X,Y,lab):
-
-    ratio = 40
-
-    cnt = len(X)//ratio 
-
-    X_m = X.reshape((cnt,ratio))
-    X_m = np.max(X_m,axis=1)
-
-    Y_m = Y.reshape((cnt,ratio))
-    Y_m = np.max(Y_m,axis=1)
-
-
-    plt.plot(X_m,Y_m, label = lab)
-
-
-plot_curve(res[:,0],np.abs(res[:,6]), "order 0")
-plot_curve(res[:,0],np.abs(res[:,5]), "order 1")
-plot_curve(res[:,0],np.abs(res[:,4]), "order 2")
-plot_curve(res[:,0],np.abs(res[:,3]), "order 3")
-plot_curve(res[:,0],np.abs(res[:,2]), "order 4")
-plot_curve(res[:,0],np.abs(res[:,1]), "order 5")
-
-plt.xscale('log')
-plt.yscale('log')
-
-plt.xlabel(r"$\theta$")
-
-plt.ylabel(r"$\vert \phi_{\rm fmm} - \phi_{\rm th} \vert /\vert \phi_{\rm th}\vert$")
-
-plt.legend()
-plt.grid()
-plt.savefig("fmm_precision_pot.pdf")
-
-)==";
-
-
-
-
-
-const std::string fmm_plot_script_force = R"==(
-
-import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib
-
-matplotlib.use('GTK3Agg')
-
-
-plt.style.use('custom_style.mplstyle')
-
-res = np.loadtxt("fmm_force_prec.txt")
-
-res = res[np.argsort(res[:, 0])]
-
-
-def plot_curve(X,Y,lab):
-
-    ratio = 40
-
-    cnt = len(X)//ratio 
-
-    X_m = X.reshape((cnt,ratio))
-    X_m = np.max(X_m,axis=1)
-
-    Y_m = Y.reshape((cnt,ratio))
-    Y_m = np.max(Y_m,axis=1)
-
-
-    plt.plot(X_m,Y_m, label = lab)
-
-
-plot_curve(res[:,0],np.abs(res[:,5]), "order 1")
-plot_curve(res[:,0],np.abs(res[:,4]), "order 2")
-plot_curve(res[:,0],np.abs(res[:,3]), "order 3")
-plot_curve(res[:,0],np.abs(res[:,2]), "order 4")
-plot_curve(res[:,0],np.abs(res[:,1]), "order 5")
-
-plt.xscale('log')
-plt.yscale('log')
-
-plt.xlabel(r"$\theta$")
-
-plt.ylabel(r"$\vert \mathbf{f}_{\rm fmm} - \mathbf{f}_{\rm th} \vert /\vert \mathbf{f}_{\rm th}\vert$")
-
-plt.legend()
-plt.grid()
-plt.savefig("fmm_precision_force.pdf")
-
-)==";
 
 
 
 
 
 
-Test_start("fmm", tmp, 1){
-
+TestStart(Analysis,"models/generic/fmm/precision", fmm_prec, 1){
 
     std::mt19937 eng(0x1111);
 
@@ -1025,8 +918,24 @@ Test_start("fmm", tmp, 1){
     std::uniform_real_distribution<f64> distf64_red(-avg_spa, avg_spa);
 
 
-    std::ofstream prec_fmm_pot_out_file("fmm_pot_prec.txt");
-    std::ofstream prec_fmm_force_out_file("fmm_force_prec.txt");
+    struct Entry{
+        f64 angle         ;
+        f64 result_pot_5  ;
+        f64 result_pot_4  ;
+        f64 result_pot_3  ;
+        f64 result_pot_2  ;
+        f64 result_pot_1  ;
+        f64 result_pot_0  ;
+        f64 result_force_5;
+        f64 result_force_4;
+        f64 result_force_3;
+        f64 result_force_2;
+        f64 result_force_1;
+    };
+    std::vector<Entry> vec_result;
+
+    
+
     for(u32 i = 0; i < 2e4; i++){
 
 
@@ -1045,47 +954,81 @@ Test_start("fmm", tmp, 1){
         };
 
         f64 angle = 2*(dist_func(x_i, s_a) + dist_func(x_j, s_b)) / dist_func(s_a, s_b);
-
-        prec_fmm_pot_out_file << format(" %e %e %e %e %e %e %e\n"
-            ,angle
-            ,FMM_prec_eval<f64, 5>::eval_prec_fmm_pot(x_i, x_j, s_a, s_b)
-            ,FMM_prec_eval<f64, 4>::eval_prec_fmm_pot(x_i, x_j, s_a, s_b)
-            ,FMM_prec_eval<f64, 3>::eval_prec_fmm_pot(x_i, x_j, s_a, s_b)
-            ,FMM_prec_eval<f64, 2>::eval_prec_fmm_pot(x_i, x_j, s_a, s_b)
-            ,FMM_prec_eval<f64, 1>::eval_prec_fmm_pot(x_i, x_j, s_a, s_b)
-            ,FMM_prec_eval<f64, 0>::eval_prec_fmm_pot(x_i, x_j, s_a, s_b));
-
-        prec_fmm_force_out_file << format(" %e %e %e %e %e %e\n"
-            ,angle
-            ,FMM_prec_eval<f64, 5>::eval_prec_fmm_force(x_i, x_j, s_a, s_b)
-            ,FMM_prec_eval<f64, 4>::eval_prec_fmm_force(x_i, x_j, s_a, s_b)
-            ,FMM_prec_eval<f64, 3>::eval_prec_fmm_force(x_i, x_j, s_a, s_b)
-            ,FMM_prec_eval<f64, 2>::eval_prec_fmm_force(x_i, x_j, s_a, s_b)
-            ,FMM_prec_eval<f64, 1>::eval_prec_fmm_force(x_i, x_j, s_a, s_b));
-    
+        
+        vec_result.push_back(Entry{
+            angle,
+            FMM_prec_eval<f64, 5>::eval_prec_fmm_pot(x_i, x_j, s_a, s_b),
+            FMM_prec_eval<f64, 4>::eval_prec_fmm_pot(x_i, x_j, s_a, s_b),
+            FMM_prec_eval<f64, 3>::eval_prec_fmm_pot(x_i, x_j, s_a, s_b),
+            FMM_prec_eval<f64, 2>::eval_prec_fmm_pot(x_i, x_j, s_a, s_b),
+            FMM_prec_eval<f64, 1>::eval_prec_fmm_pot(x_i, x_j, s_a, s_b),
+            FMM_prec_eval<f64, 0>::eval_prec_fmm_pot(x_i, x_j, s_a, s_b),
+            FMM_prec_eval<f64, 5>::eval_prec_fmm_force(x_i, x_j, s_a, s_b),
+            FMM_prec_eval<f64, 4>::eval_prec_fmm_force(x_i, x_j, s_a, s_b),
+            FMM_prec_eval<f64, 3>::eval_prec_fmm_force(x_i, x_j, s_a, s_b),
+            FMM_prec_eval<f64, 2>::eval_prec_fmm_force(x_i, x_j, s_a, s_b),
+            FMM_prec_eval<f64, 1>::eval_prec_fmm_force(x_i, x_j, s_a, s_b)
+        });
     }
-    prec_fmm_pot_out_file.close();
-    prec_fmm_force_out_file.close();
 
-    run_py_script(fmm_plot_script_pot);
+    std::sort(vec_result.begin(), vec_result.end(), [](const auto& i, const auto& j) { return i.angle < j.angle; } );
 
-    run_py_script(fmm_plot_script_force);
 
+    std::vector<f64> vec_angle         ;
+    std::vector<f64> vec_result_pot_5  ;
+    std::vector<f64> vec_result_pot_4  ;
+    std::vector<f64> vec_result_pot_3  ;
+    std::vector<f64> vec_result_pot_2  ;
+    std::vector<f64> vec_result_pot_1  ;
+    std::vector<f64> vec_result_pot_0  ;
+    std::vector<f64> vec_result_force_5;
+    std::vector<f64> vec_result_force_4;
+    std::vector<f64> vec_result_force_3;
+    std::vector<f64> vec_result_force_2;
+    std::vector<f64> vec_result_force_1;
+
+    for(auto & f : vec_result){
+        vec_angle         .push_back(f.angle         );
+        vec_result_pot_5  .push_back(f.result_pot_5  );
+        vec_result_pot_4  .push_back(f.result_pot_4  );
+        vec_result_pot_3  .push_back(f.result_pot_3  );
+        vec_result_pot_2  .push_back(f.result_pot_2  );
+        vec_result_pot_1  .push_back(f.result_pot_1  );
+        vec_result_pot_0  .push_back(f.result_pot_0  );
+        vec_result_force_5.push_back(f.result_force_5);
+        vec_result_force_4.push_back(f.result_force_4);
+        vec_result_force_3.push_back(f.result_force_3);
+        vec_result_force_2.push_back(f.result_force_2);
+        vec_result_force_1.push_back(f.result_force_1);
+    }
+
+    auto & dataset_prec = testdata.new_dataset("fmm_precision");
+
+    dataset_prec.add_data("angle",          vec_angle         );
+    dataset_prec.add_data("result_pot_5",   vec_result_pot_5  );
+    dataset_prec.add_data("result_pot_4",   vec_result_pot_4  );
+    dataset_prec.add_data("result_pot_3",   vec_result_pot_3  );
+    dataset_prec.add_data("result_pot_2",   vec_result_pot_2  );
+    dataset_prec.add_data("result_pot_1",   vec_result_pot_1  );
+    dataset_prec.add_data("result_pot_0",   vec_result_pot_0  );
+    dataset_prec.add_data("result_force_5", vec_result_force_5);
+    dataset_prec.add_data("result_force_4", vec_result_force_4);
+    dataset_prec.add_data("result_force_3", vec_result_force_3);
+    dataset_prec.add_data("result_force_2", vec_result_force_2);
+    dataset_prec.add_data("result_force_1", vec_result_force_1);
 }
 
 
-Test_start("fmm", multipole_moment_offset, 1){
+TestStart(Unittest,"models/generic/fmm/multipole_moment_offset", multipole_moment_offset, 1){
 
     std::mt19937 eng(0x1111);
     std::uniform_real_distribution<f64> distf64(-1, 1);
 
+    f64_3 s_bp = f64_3{distf64(eng), distf64(eng), distf64(eng)};
+    f64_3 s_b  = f64_3{distf64(eng), distf64(eng), distf64(eng)};
 
-
-    //f64_3 s_bp = f64_3{distf64(eng), distf64(eng), distf64(eng)};
-    //f64_3 s_b  = f64_3{distf64(eng), distf64(eng), distf64(eng)};
-
-    f64_3 s_bp = f64_3{1, 0, 0};
-    f64_3 s_b  = f64_3{0, 0, 0};
+    //f64_3 s_bp = f64_3{1, 0, 0};
+    //f64_3 s_b  = f64_3{0, 0, 0};
 
 
     auto B_nB = SymTensorCollection<f64,0,5>::zeros();
@@ -1143,6 +1086,9 @@ Test_start("fmm", multipole_moment_offset, 1){
         (diff_4*diff_4) + 
         (diff_5*diff_5);
 
+    asserts.assert_add("multipole offset valid", diff < 1e-13);
+    
+
     printf("order 0 %f\n",B_nB.t0);
 
 
@@ -1178,9 +1124,6 @@ Test_start("fmm", multipole_moment_offset, 1){
 template<class flt, u32 fmm_order>
 void are_u32_u64_morton_same(u32 npart, u32 reduc_level){
     using vec = sycl::vec<flt,3>;
-
-
-
 }
 
 template<class flt, class morton_mode, u32 fmm_order>
@@ -2028,7 +1971,7 @@ std::unique_ptr<sycl::buffer<sycl::vec<flt,3>>> pos_partgen_distrib(u32 npart){
 }
 
 
-Test_start("fmm", radix_tree_fmm, 1){
+TestStart(Unittest,"models/generic/fmm/fmm_1_gpu_prec", fmm_1_gpu_prec , 1){
 
     
     constexpr u32 reduc_level = 5;
@@ -2038,25 +1981,25 @@ Test_start("fmm", radix_tree_fmm, 1){
     {
         auto pos = pos_partgen_distrib<f32>(1e4);
         auto res = nompi_fmm_testing<f32,u32,4>(pos,reduc_level,open_crit);
-        Test_assert("fmm_f32_u32_order4", res.prec < 1e-5);
+        asserts.assert_add("fmm_f32_u32_order4", res.prec < 1e-5);
     }
 
     {
         auto pos = pos_partgen_distrib<f32>(1e4);
         auto res = nompi_fmm_testing<f32,u64,4>(pos,reduc_level,open_crit);
-        Test_assert("fmm_f32_u64_order4", res.prec < 1e-5);
+        asserts.assert_add("fmm_f32_u64_order4", res.prec < 1e-5);
     }
 
     {
         auto pos = pos_partgen_distrib<f64>(1e4);
         auto res = nompi_fmm_testing<f64,u32,4>(pos,reduc_level,open_crit);
-        Test_assert("fmm_f64_u32_order4", res.prec < 1e-5);
+        asserts.assert_add("fmm_f64_u32_order4", res.prec < 1e-5);
     }
 
     {
         auto pos = pos_partgen_distrib<f64>(1e4);
         auto res = nompi_fmm_testing<f64,u64,4>(pos,reduc_level,open_crit);
-        Test_assert("fmm_f64_u64_order4", res.prec < 1e-5);
+        asserts.assert_add("fmm_f64_u64_order4", res.prec < 1e-5);
     }
 
 

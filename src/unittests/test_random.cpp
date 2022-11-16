@@ -22,7 +22,7 @@
 #include <vector>
 
 
-TestStart(Analysis, "first_test",first_test, -1){
+TestStart(Unittest, "first_test",first_test, -1){
     auto & dataset = testdata.new_dataset("output");
 
     dataset.add_data("T", {0,1,2,3,4});

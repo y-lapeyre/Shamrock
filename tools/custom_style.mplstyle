@@ -30,7 +30,7 @@ grid.linewidth : 0.5
 lines.linewidth : 1.
 
 # Remove legend frame
-legend.frameon : False
+legend.frameon : True
 
 # Always save as 'tight'
 savefig.bbox : tight

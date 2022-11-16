@@ -405,7 +405,7 @@ namespace impl::shamrocktest {
         std::string acc = "\n{\n";
 
         acc += R"(    "value" : )" + std::to_string(value) + ",\n" ;
-        acc += R"(    "type" : ")" + name + "\"" ;
+        acc += R"(    "name" : ")" + name + "\"" ;
 
         if(! comment.empty()){
             acc += ",\n" R"(    "comment" : ")" + comment + "\"" ;
