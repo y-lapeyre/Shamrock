@@ -495,7 +495,7 @@ namespace mpi_sycl_interop {
     }
 
 #define X(a) template struct BufferMpiRequest<a>;
-    XMAC_COMM_TYPE_ENABLED
+    XMAC_SYCLMPI_TYPE_ENABLED
 #undef X
 
 } // namespace mpi_sycl_interop

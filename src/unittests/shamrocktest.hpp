@@ -24,9 +24,10 @@
 #pragma once
 
 #include <string>
+#include <utility>
 #include <vector>
 #include <iostream>
-#include "core/sys/mpi_handler.hpp"
+//#include "core/sys/mpi_handler.hpp"
 #include "core/sys/sycl_handler.hpp"
 #include "aliases.hpp"
 #include "core/utils/time_utils.hpp"
@@ -90,3 +91,131 @@ void test_func_##name (TestResults& __test_result_ref)
 void run_py_script(std::string pysrc);
 
 int run_all_tests(int argc, char *argv[]);
+
+
+
+
+
+enum TestType{
+    Benchmark,Analysis,Unittest
+};
+
+namespace impl::shamrocktest {
+
+    
+
+    struct TestAssert{
+        bool value;
+        std::string name;
+        std::string comment;
+
+        std::string serialize();
+        
+    };
+
+    struct DataNode{
+        std::string name;
+        std::vector<f64> data;
+
+
+        std::string serialize();
+    };
+
+    struct TestData{
+        std::string dataset_name;
+        std::vector<DataNode> dataset;
+
+        inline void add_data(std::string name, const std::vector<f64> & v){
+            std::vector<f64> new_vec;
+            for(f64 f : v){
+                new_vec.push_back(f);
+            }
+            dataset.push_back(DataNode{std::move(name),std::move(new_vec)});
+        }
+
+
+        std::string serialize();
+    }; 
+
+    struct TestAssertList{
+        std::vector<TestAssert> asserts;
+
+        //define member function here
+        //to register asserts
+
+
+        inline void assert_add(std::string assert_name,bool v){
+            asserts.push_back(TestAssert{v,std::move(assert_name),""});
+        }
+
+        inline void assert_add_comment(std::string assert_name,bool v,std::string comment){
+            asserts.push_back(TestAssert{v,std::move(assert_name),std::move(comment)});
+        }
+
+        std::string serialize();
+    };
+
+    struct TestDataList{
+        std::vector<TestData> test_data;
+
+        //define member function here
+        //to register test data
+
+        [[nodiscard]]
+        inline TestData & new_dataset(std::string name){
+            test_data.push_back(TestData{std::move(name),{}});
+            return test_data.back();
+        }
+
+
+        std::string serialize();
+    };
+
+    struct TestResult{
+        TestType type;
+        std::string name;
+        u32 world_rank;
+        TestAssertList asserts;
+        TestDataList test_data;
+
+        inline TestResult (const TestType & type, std::string  name, const u32 & world_rank) :
+        type(type), name(std::move(name)), world_rank(world_rank),asserts(),test_data()
+        {}
+
+
+        std::string serialize();
+        
+    };
+
+    struct Test{
+        TestType type;
+        std::string name;
+        i32 node_count;
+        void (*test_functor)(TestAssertList &, TestDataList &);
+
+
+        inline Test (const TestType & type, std::string  name, const i32 & node_count,void (*func)(TestAssertList &, TestDataList &) ) :
+        type(type), name(std::move(name)),node_count(node_count), test_functor(func){}
+
+        TestResult run();
+    };
+
+    inline std::vector<Test> static_init_vec_tests{};
+
+    struct TestStaticInit{
+        inline explicit TestStaticInit(Test t){
+            static_init_vec_tests.push_back(std::move(t));
+        }
+    };
+
+}
+
+namespace shamrock::test {
+    int run_all_tests(int argc, char *argv[], bool run_bench,bool run_analysis, bool run_unittest);
+}
+
+
+#define TestStart(type,name,func_name, node_cnt) void test_func_##func_name (impl::shamrocktest::TestAssertList & asserts, impl::shamrocktest::TestDataList & testdata);\
+void (*test_func_ptr_##func_name)(impl::shamrocktest::TestAssertList &, impl::shamrocktest::TestDataList &) = test_func_##func_name;\
+impl::shamrocktest::TestStaticInit test_class_obj_##func_name (impl::shamrocktest::Test{type,name,node_cnt,test_func_ptr_##func_name});\
+void test_func_##func_name (impl::shamrocktest::TestAssertList & asserts, impl::shamrocktest::TestDataList & testdata)

@@ -340,39 +340,39 @@ class GreenFuncGravCartesian <T,0,2>{public:
 template<class T>
 class GreenFuncGravCartesian <T,0,1>{public:
     inline static SymTensorCollection<T, 0,1> get_der_tensors(sycl::vec<T,3> r){
-    T r1 = r.x();
-    T r2 = r.y();
-    T r3 = r.z();
+        T r1 = r.x();
+        T r2 = r.y();
+        T r3 = r.z();
 
-    T r1pow2 = r.x()*r.x();
-    T r2pow2 = r.y()*r.y();
-    T r3pow2 = r.z()*r.z();
+        T r1pow2 = r.x()*r.x();
+        T r2pow2 = r.y()*r.y();
+        T r3pow2 = r.z()*r.z();
 
-    T r1pow3 = r.x()*r1pow2;
-    T r2pow3 = r.y()*r2pow2;
-    T r3pow3 = r.z()*r3pow2;
+        T r1pow3 = r.x()*r1pow2;
+        T r2pow3 = r.y()*r2pow2;
+        T r3pow3 = r.z()*r3pow2;
 
-    T rsq = r1pow2 + r2pow2 + r3pow2;
+        T rsq = r1pow2 + r2pow2 + r3pow2;
 
-    T rnorm = sycl::sqrt(rsq);
+        T rnorm = sycl::sqrt(rsq);
 
-    T rm2 = 1/(rsq);
+        T rm2 = 1/(rsq);
 
-    T g0 = 1/rnorm;
-    T g1 = -1*rm2*g0;
-    
-    auto D1 = SymTensor3d_1<T>{
-        g1*r1,
-        g1*r2,
-        g1*r3
-    };
+        T g0 = 1/rnorm;
+        T g1 = -1*rm2*g0;
+        
+        auto D1 = SymTensor3d_1<T>{
+            g1*r1,
+            g1*r2,
+            g1*r3
+        };
 
-    auto D0 = g0;
+        auto D0 = g0;
 
-    return SymTensorCollection<T,0,1>{
-        D0,D1
-    };
-}
+        return SymTensorCollection<T,0,1>{
+            D0,D1
+        };
+    }
 };
 
 
@@ -1015,10 +1015,10 @@ inline SymTensorCollection<T,1,4> get_dM_mat(SymTensorCollection<T,1,4> & D, Sym
     SymTensor3d_3<T> & TQ3 = Q.t3;
 
 
-    auto M_1 = TD1 * TQ0 + TD2 * TQ1 + (TD3 * TQ2)*(1./2.) + (TD4 * TQ3)*(1./6.) ;
-    auto M_2 = ((-1.)*TD2 * TQ0) - TD3 * TQ1 - (TD4 * TQ2)*(1./2.) ;
-    auto M_3 = (1./2.) * (TD3 *TQ0 + TD4 *TQ1 );
-    auto M_4 = (1./6.) * (((-1.)*(TD4 *TQ0)) );
+    auto M_1 = TD1 * TQ0 + TD2 * TQ1 + (TD3 * TQ2)*T(1./2.) + (TD4 * TQ3)*T(1./6.) ;
+    auto M_2 = (T(-1.)*TD2 * TQ0) - TD3 * TQ1 - (TD4 * TQ2)*T(1./2.) ;
+    auto M_3 = T(1./2.) * (TD3 *TQ0 + TD4 *TQ1 );
+    auto M_4 = T(1./6.) * ((T(-1.)*(TD4 *TQ0)) );
 
     return SymTensorCollection<T, 1, 4>{
         M_1,M_2,M_3,M_4

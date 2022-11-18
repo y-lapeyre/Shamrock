@@ -6,7 +6,7 @@
 //
 // -------------------------------------------------------//
 
-#include "basic_sph_gas_selfgrav.hpp"
+#include "basic_sph_gas_uint.hpp"
 #include "aliases.hpp"
 #include "core/patch/base/patchdata.hpp"
 #include "core/sys/log.hpp"
@@ -27,7 +27,7 @@ const std::string console_tag = "[BasicSPHGasSelfGrav] ";
 
 
 template<class flt, class Kernel> 
-void models::sph::BasicSPHGasSelfGrav<flt,Kernel>::check_valid(){
+void models::sph::BasicSPHGasUInterne<flt,Kernel>::check_valid(){
     if (cfl_cour < 0) {
         throw ShamAPIException(console_tag + "cfl courant not set");
     }
@@ -44,12 +44,12 @@ void models::sph::BasicSPHGasSelfGrav<flt,Kernel>::check_valid(){
 
 
 template<class flt, class Kernel> 
-void models::sph::BasicSPHGasSelfGrav<flt,Kernel>::init(){
+void models::sph::BasicSPHGasUInterne<flt,Kernel>::init(){
 
 }
 
 template<class flt, class Kernel> 
-f64 models::sph::BasicSPHGasSelfGrav<flt,Kernel>::evolve(PatchScheduler &sched, f64 old_time, f64 target_time){
+f64 models::sph::BasicSPHGasUInterne<flt,Kernel>::evolve(PatchScheduler &sched, f64 old_time, f64 target_time){
 
     check_valid();
 
@@ -328,21 +328,21 @@ f64 models::sph::BasicSPHGasSelfGrav<flt,Kernel>::evolve(PatchScheduler &sched, 
 }
 
 template<class flt, class Kernel> 
-void models::sph::BasicSPHGasSelfGrav<flt,Kernel>::dump(std::string prefix){
+void models::sph::BasicSPHGasUInterne<flt,Kernel>::dump(std::string prefix){
     std::cout << "dump : "<< prefix << std::endl;
 }
 
 template<class flt, class Kernel> 
-void models::sph::BasicSPHGasSelfGrav<flt,Kernel>::restart_dump(std::string prefix){
+void models::sph::BasicSPHGasUInterne<flt,Kernel>::restart_dump(std::string prefix){
     std::cout << "restart dump : "<< prefix << std::endl;
 }
 
 template<class flt, class Kernel> 
-void models::sph::BasicSPHGasSelfGrav<flt,Kernel>::close(){
+void models::sph::BasicSPHGasUInterne<flt,Kernel>::close(){
     
 }
 
 
 
-template class models::sph::BasicSPHGasSelfGrav<f32,models::sph::kernels::M4<f32>>;
+template class models::sph::BasicSPHGasUInterne<f32,models::sph::kernels::M4<f32>>;
 

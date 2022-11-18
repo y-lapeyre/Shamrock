@@ -27,8 +27,12 @@ std::string make_test_output(BenchmarkResults t_res){
     output << "%world_size = " << mpi_handler::world_size << std::endl;
     output << "%world_rank = " << mpi_handler::world_rank << std::endl;
 
-    for(auto s : t_res.scores){
-        output << "%result = " << s <<std::endl;
+    output << "%compute_queue_name = " << sycl_handler::get_compute_queue().get_device().get_info<sycl::info::device::name>() << std::endl;
+    output << "%alt_queue_name = " << sycl_handler::get_alt_queue().get_device().get_info<sycl::info::device::name>() << std::endl;
+
+
+    for(auto s : t_res.entries){
+        output << s << std::endl;
     }
 
     output << "%end_bench" << std::endl;
@@ -176,45 +180,8 @@ int run_all_bench(int argc, char *argv[]){
 
         //printf("    assertion list :\n");
         
-        u32 cnt = t.scores.size();
-        f64 avg = 0.f;
 
-        for (f64 s : t.scores){
-            avg += s/cnt;
-        }
-
-        f64 var = 0.f;
-        for (f64 s : t.scores){
-            var += (s - avg)*(s - avg)/cnt;
-        }
-
-        f64 sigma = std::sqrt(var);
-
-
-        std::string identifier = "ns";
-        f64 div = 1;
-
-        if (avg > 1000){
-            identifier = "mus";
-            div *= 1000;
-        }
-
-        if (avg/div > 1000){
-            identifier = "ms";
-            div *= 1000;
-        }
-
-        if (avg/div > 1000){
-            identifier = "s";
-            div *= 1000;
-        }
-            
-        std::cout << "       Result : avg = " << avg/div <<" "<< identifier <<" sigma = " << sigma/div <<" "<< identifier <<std::endl;
-        
-        std::cout << " (" << timer.get_time_str() << ")" <<std::endl;
-
-        
-        std::cout << std::endl;
+        rank_test_res_out << std::endl;
 
         rank_test_res_out << make_test_output(t) << std::endl << std::endl;
 

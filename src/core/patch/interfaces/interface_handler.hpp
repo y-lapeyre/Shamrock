@@ -41,39 +41,8 @@
 
 
 
-
-
-
-
-
-enum InterfacehandlerImpl {
-    Tree_Send
-};
-
-
-
-template<InterfacehandlerImpl impl_type, class pos_prec, class Tree> class Interfacehandler{
-
-    using flt = pos_prec;
-    using vec = sycl::vec<flt, 3>;
-
-    template<class Func_interactcrit>
-    void compute_interface_list(PatchScheduler &sched, SerialPatchTree<vec> sptree, Func_interactcrit && interact_crit,bool periodic);
-
-    //TODO
-    void initial_fetch();
-
-    void fetch_field();
-
-
-    template<class Function> void for_each_interface(u64 patch_id, Function && fct);
-};
-
-
-
-
-
-
+#include "interface_handler_impl/interface_handler_impl_list.hpp"
+#include "interface_handler_impl/interface_handler_impl_tree.hpp"
 
 
 

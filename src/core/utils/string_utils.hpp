@@ -44,6 +44,22 @@ inline void write_string_to_file(std::string filename, std::string s) {
     myfile.close();
 }
 
+//taken from https://en.cppreference.com/w/cpp/string/basic_string/replace
+inline void replace_all(std::string& inout, std::string_view what, std::string_view with)
+{
+    for (std::string::size_type pos{};
+         inout.npos != (pos = inout.find(what.data(), pos, what.length()));
+         pos += with.length()) {
+        inout.replace(pos, what.length(), with.data(), with.length());
+    }
+}
+
+inline std::string increase_indent(std::string in){
+    std::string out = in;
+    replace_all(out, "\n", "\n    ");
+    return "    " + out;
+}
+
 inline std::string trunc_str(std::string s , u32 max_len){
 
     if(max_len < 5) throw std::invalid_argument("max len should be above 4");
