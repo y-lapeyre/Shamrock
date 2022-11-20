@@ -3,6 +3,7 @@
 #include "core/sys/log.hpp"
 #include "core/sys/sycl_handler.hpp"
 #include "core/tree/radix_tree.hpp"
+#include "hipSYCL/sycl/libkernel/accessor.hpp"
 #include "models/generic/math/tensors/collections.hpp"
 #include "models/generic/physics/fmm.hpp"
 
@@ -27,13 +28,13 @@ class FMM_prec_eval{public:
         sycl::buffer<f64_3> buf_pos = sycl::buffer<f64_3>(pos_table.data(), pos_table.size());
 
         constexpr u32 number_elem_multip = SymTensorCollection<f64,0,order>::num_component;
-        sycl::buffer<f64> buf_multipoles = sycl::buffer<f64>(number_elem_multip);
+        sycl::buffer<f64> buf_multipoles {number_elem_multip};
 
 
         //compute multipoles
         {
-            sycl::host_accessor<f64_3> pos {buf_pos};
-            sycl::host_accessor<f64> multipoles {buf_multipoles};
+            sycl::host_accessor<f64_3> pos {buf_pos, sycl::read_only};
+            sycl::host_accessor<f64> multipoles {buf_multipoles, sycl::write_only, sycl::no_init};
 
             for (u32 j = 0; j < pos_table.size(); j ++) {
 
@@ -54,7 +55,7 @@ class FMM_prec_eval{public:
         //compute fmm
         {
             
-            sycl::host_accessor<f64> multipoles {buf_multipoles};
+            sycl::host_accessor<f64> multipoles {buf_multipoles, sycl::read_only};
 
             f64_3 r_fmm = sb-sa;
 
@@ -100,13 +101,13 @@ class FMM_prec_eval{public:
         using moment_types = SymTensorCollection<f64,0,order-1>;
 
         constexpr u32 number_elem_multip = moment_types::num_component;
-        sycl::buffer<f64> buf_multipoles = sycl::buffer<f64>(number_elem_multip);
+        sycl::buffer<f64> buf_multipoles {number_elem_multip};
 
 
         //compute multipoles
         {
-            sycl::host_accessor<f64_3> pos {buf_pos};
-            sycl::host_accessor<f64> multipoles {buf_multipoles};
+            sycl::host_accessor<f64_3> pos {buf_pos,sycl::read_only};
+            sycl::host_accessor<f64> multipoles {buf_multipoles,sycl::write_only,sycl::no_init};
 
             for (u32 j = 0; j < pos_table.size(); j ++) {
 
@@ -127,7 +128,7 @@ class FMM_prec_eval{public:
         //compute fmm
         {
             
-            sycl::host_accessor<f64> multipoles {buf_multipoles};
+            sycl::host_accessor<f64> multipoles {buf_multipoles,sycl::read_only};
 
             f64_3 r_fmm = sb-sa;
 

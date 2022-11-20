@@ -7,6 +7,7 @@
 // -------------------------------------------------------//
 
 #include "sycl_algs.hpp"
+#include "hipSYCL/sycl/libkernel/accessor.hpp"
 #include "sycl_vector_utils.hpp"
 #include "core/sys/sycl_mpi_interop.hpp"
 
@@ -101,13 +102,26 @@ namespace syclalgs {
     }
 
     namespace reduction {
+
+
+
+
+
+
+
+
+
+
+
+
+
         bool is_all_true(sycl::buffer<u8> & buf,u32 cnt){
 
             //TODO do it on GPU pleeeaze
 
             bool res = true;
             {
-                sycl::host_accessor acc{buf};
+                sycl::host_accessor acc{buf, sycl::read_only};
 
                 for (u32 i = 0; i < cnt; i++) { //TODO remove ref to size
                     res = res && (acc[i] != 0);
@@ -152,7 +166,7 @@ namespace syclalgs {
             //HIPSYCL segfault otherwise because looks like the destructor of the sycl buffer 
             //doesn't wait for the end of the queue resulting in out of bound access
             #ifdef SYCL_COMP_HIPSYCL
-            queue.wait();
+            sycl_handler::get_compute_queue().wait();
             #endif
 
             return std::move(ret);
@@ -172,7 +186,7 @@ namespace syclalgs {
             //HIPSYCL segfault otherwise because looks like the destructor of the sycl buffer 
             //doesn't wait for the end of the queue resulting in out of bound access
             #ifdef SYCL_COMP_HIPSYCL
-            queue.wait();
+            sycl_handler::get_compute_queue().wait();
             #endif
 
             return std::move(ret);

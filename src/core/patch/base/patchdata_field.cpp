@@ -348,7 +348,7 @@ template <> void PatchDataField<f32>::gen_mock_data(u32 obj_cnt, std::mt19937 &e
 
     {
         auto & buf = get_buf();
-        sycl::host_accessor acc{*buf, sycl::write_only};
+        sycl::host_accessor acc{*buf, sycl::write_only, sycl::no_init};
 
         for (u32 i = 0; i < val_cnt; i++) {
             acc[i] = f32(distf64(eng));
@@ -366,7 +366,7 @@ template <> void PatchDataField<f32_2>::gen_mock_data(u32 obj_cnt, std::mt19937 
 
     {
         auto & buf = get_buf();
-        sycl::host_accessor acc{*buf, sycl::write_only};
+        sycl::host_accessor acc{*buf, sycl::write_only, sycl::no_init};
 
         for (u32 i = 0; i < val_cnt; i++) {
             acc[i] = f32_2{distf64(eng), distf64(eng)};
@@ -380,7 +380,7 @@ template <> void PatchDataField<f32_3>::gen_mock_data(u32 obj_cnt, std::mt19937 
 
     {
         auto & buf = get_buf();
-        sycl::host_accessor acc{*buf, sycl::write_only};
+        sycl::host_accessor acc{*buf, sycl::write_only, sycl::no_init};
 
         for (u32 i = 0; i < val_cnt; i++) {
             acc[i] = f32_3{distf64(eng), distf64(eng), distf64(eng)};
@@ -394,7 +394,7 @@ template <> void PatchDataField<f32_4>::gen_mock_data(u32 obj_cnt, std::mt19937 
 
     {
         auto & buf = get_buf();
-        sycl::host_accessor acc{*buf, sycl::write_only};
+        sycl::host_accessor acc{*buf, sycl::write_only, sycl::no_init};
 
         for (u32 i = 0; i < val_cnt; i++) {
             acc[i] = f32_4{distf64(eng), distf64(eng), distf64(eng), distf64(eng)};
@@ -408,7 +408,7 @@ template <> void PatchDataField<f32_8>::gen_mock_data(u32 obj_cnt, std::mt19937 
 
     {
         auto & buf = get_buf();
-        sycl::host_accessor acc{*buf, sycl::write_only};
+        sycl::host_accessor acc{*buf, sycl::write_only, sycl::no_init};
 
         for (u32 i = 0; i < val_cnt; i++) {
             acc[i] = f32_8{distf64(eng), distf64(eng), distf64(eng), distf64(eng),
@@ -423,7 +423,7 @@ template <> void PatchDataField<f32_16>::gen_mock_data(u32 obj_cnt, std::mt19937
 
     {
         auto & buf = get_buf();
-        sycl::host_accessor acc{*buf, sycl::write_only};
+        sycl::host_accessor acc{*buf, sycl::write_only, sycl::no_init};
 
         for (u32 i = 0; i < val_cnt; i++) {
             acc[i] = f32_16{distf64(eng), distf64(eng), distf64(eng), distf64(eng), distf64(eng), distf64(eng),
@@ -439,7 +439,7 @@ template <> void PatchDataField<f64>::gen_mock_data(u32 obj_cnt, std::mt19937 &e
 
     {
         auto & buf = get_buf();
-        sycl::host_accessor acc{*buf, sycl::write_only};
+        sycl::host_accessor acc{*buf, sycl::write_only, sycl::no_init};
 
         for (u32 i = 0; i < val_cnt; i++) {
             acc[i] = f64(distf64(eng));
@@ -453,7 +453,7 @@ template <> void PatchDataField<f64_2>::gen_mock_data(u32 obj_cnt, std::mt19937 
 
     {
         auto & buf = get_buf();
-        sycl::host_accessor acc{*buf, sycl::write_only};
+        sycl::host_accessor acc{*buf, sycl::write_only, sycl::no_init};
 
         for (u32 i = 0; i < val_cnt; i++) {
             acc[i] = f64_2{distf64(eng), distf64(eng)};
@@ -467,7 +467,7 @@ template <> void PatchDataField<f64_3>::gen_mock_data(u32 obj_cnt, std::mt19937 
 
     {
         auto & buf = get_buf();
-        sycl::host_accessor acc{*buf, sycl::write_only};
+        sycl::host_accessor acc{*buf, sycl::write_only, sycl::no_init};
 
         for (u32 i = 0; i < val_cnt; i++) {
             acc[i] = f64_3{distf64(eng), distf64(eng), distf64(eng)};
@@ -481,7 +481,7 @@ template <> void PatchDataField<f64_4>::gen_mock_data(u32 obj_cnt, std::mt19937 
 
     {
         auto & buf = get_buf();
-        sycl::host_accessor acc{*buf, sycl::write_only};
+        sycl::host_accessor acc{*buf, sycl::write_only, sycl::no_init};
 
         for (u32 i = 0; i < val_cnt; i++) {
             acc[i] = f64_4{distf64(eng), distf64(eng), distf64(eng), distf64(eng)};
@@ -495,7 +495,7 @@ template <> void PatchDataField<f64_8>::gen_mock_data(u32 obj_cnt, std::mt19937 
 
     {
         auto & buf = get_buf();
-        sycl::host_accessor acc{*buf, sycl::write_only};
+        sycl::host_accessor acc{*buf, sycl::write_only, sycl::no_init};
 
         for (u32 i = 0; i < val_cnt; i++) {
             acc[i] = f64_8{distf64(eng), distf64(eng), distf64(eng), distf64(eng),
@@ -510,7 +510,7 @@ template <> void PatchDataField<f64_16>::gen_mock_data(u32 obj_cnt, std::mt19937
 
     {
         auto & buf = get_buf();
-        sycl::host_accessor acc{*buf, sycl::write_only};
+        sycl::host_accessor acc{*buf, sycl::write_only, sycl::no_init};
 
         for (u32 i = 0; i < val_cnt; i++) {
             acc[i] = f64_16{distf64(eng), distf64(eng), distf64(eng), distf64(eng), distf64(eng), distf64(eng),
@@ -526,7 +526,7 @@ template <> void PatchDataField<u32>::gen_mock_data(u32 obj_cnt, std::mt19937 &e
 
     {
         auto & buf = get_buf();
-        sycl::host_accessor acc{*buf, sycl::write_only};
+        sycl::host_accessor acc{*buf, sycl::write_only, sycl::no_init};
 
         for (u32 i = 0; i < val_cnt; i++) {
             acc[i] = distu32(eng);
@@ -539,7 +539,7 @@ template <> void PatchDataField<u64>::gen_mock_data(u32 obj_cnt, std::mt19937 &e
 
     {
         auto & buf = get_buf();
-        sycl::host_accessor acc{*buf, sycl::write_only};
+        sycl::host_accessor acc{*buf, sycl::write_only, sycl::no_init};
 
         for (u32 i = 0; i < val_cnt; i++) {
             acc[i] = distu64(eng);

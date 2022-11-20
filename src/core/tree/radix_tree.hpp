@@ -16,6 +16,7 @@
 #include <stdexcept>
 #include <tuple>
 #include <vector>
+#include <set>
 
 
 #include "core/patch/base/patchdata.hpp"

@@ -15,6 +15,7 @@
 #include <sstream>
 
 #include "core/sys/cmdopt.hpp"
+#include "core/sys/log.hpp"
 #include "core/utils/string_utils.hpp"
 #include "core/sys/sycl_handler.hpp"
 
@@ -608,26 +609,60 @@ namespace shamrock::test {
         std::vector<u32> selected_tests = {};
 
         for (u32 i = 0; i < static_init_vec_tests.size(); i++) {
-            
-            if(run_only){
-                if(run_only_name.compare(static_init_vec_tests[i].name) ==0){
-                    selected_tests.push_back(i);
-                }
-            }else{
-                bool any_node_cnt = (static_init_vec_tests[i].node_count == -1);
-                if(any_node_cnt || (static_init_vec_tests[i].node_count == world_size)){
-                    selected_tests.push_back(i);
+
+
+            auto can_run = [&](impl::shamrocktest::Test & t) -> bool{
+
+                bool any_node_cnt = (t.node_count == -1);
+                bool world_size_ok = t.node_count == world_size;
+
+                bool can_run_type = false;
+
+                auto test_type = t.type;
+                can_run_type = can_run_type || (run_unittest && (Unittest == test_type)) ;
+                can_run_type = can_run_type || (run_analysis && (Analysis == test_type)) ;
+                can_run_type = can_run_type || (run_bench && (Benchmark == test_type)) ;
+
+                return can_run_type && (any_node_cnt || world_size_ok );
+            };
+
+            auto print_test = [&](impl::shamrocktest::Test & t, bool enabled){
+                bool any_node_cnt = (t.node_count == -1);
+
+                if (enabled) {
+                
                     if(any_node_cnt){
                         printf(" - [\033[;32many\033[0m] ");
                     }else{
                         printf(" - [\033[;32m%03d\033[0m] ",static_init_vec_tests[i].node_count);
                     }
-                    
                     std::cout << "\033[;32m"<<static_init_vec_tests[i].name <<  "\033[0m " <<std::endl;
+
                 }else{
-                    printf(" - [\033[;31m%03d\033[0m] ",static_init_vec_tests[i].node_count);
+                    if(any_node_cnt){
+                        printf(" - [\033[;31many\033[0m] ");
+                    }else{
+                        printf(" - [\033[;31m%03d\033[0m] ",static_init_vec_tests[i].node_count);
+                    }
                     std::cout << "\033[;31m"<<static_init_vec_tests[i].name <<  "\033[0m " <<std::endl;
                 }
+
+
+            };
+
+            bool run_test = can_run(static_init_vec_tests[i]);
+
+            if(run_only){
+                if(run_only_name.compare(static_init_vec_tests[i].name) ==0){
+                    if(run_test) {
+                        selected_tests.push_back(i);
+                    }else{
+                        logger::err_ln("TEST", "test can not run under the following configuration");
+                    }
+                }
+            }else{
+                print_test(static_init_vec_tests[i], run_test);
+                if(run_test) {selected_tests.push_back(i);}
             }
 
         }
