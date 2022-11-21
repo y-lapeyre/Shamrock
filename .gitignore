@@ -24,8 +24,7 @@ version.cpp
 *.log
 *.out
 *.pdf
-.tex
 *.toc
-
+report.tex
 
 .DS_Store

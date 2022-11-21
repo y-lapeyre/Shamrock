@@ -344,6 +344,6 @@ if __name__ == '__main__':
 
     fout = repport_template.replace("%%%%%%%%%%%%%%%%%data", buf)
 
-    f = open("main.tex",'w')
+    f = open("report.tex",'w')
     f.write(fout)
     f.close()
