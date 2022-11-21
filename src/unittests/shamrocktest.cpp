@@ -818,6 +818,16 @@ namespace shamrock::test {
 
             s_out += R"(    "commit_hash" : ")" + git_commit_hash + "\",\n" ;
             s_out += R"(    "world_size" : ")" + std::to_string(mpi_handler::world_size) + "\",\n" ;
+
+            #ifdef SYCL_COMP_DPCPP
+            s_out += R"(    "compiler" : "DPCPP",)" "\n" ;
+            #elifdef SYCL_COMP_HIPSYCL
+            s_out += R"(    "compiler" : "HipSYCL",)" "\n" ;
+            #else
+            s_out += R"(    "compiler" : "Unknown",)" "\n" ;
+            #endif  
+
+
             s_out += R"(    "results" : )"   "[\n\n" ;
             s_out += increase_indent(out_res_string);
             s_out += "\n    ]\n}";

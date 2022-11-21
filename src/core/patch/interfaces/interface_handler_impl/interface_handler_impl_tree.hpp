@@ -227,7 +227,7 @@ class Interfacehandler<Tree_Send,pos_prec,Radix_Tree<u_morton, sycl::vec<pos_pre
     using vec = sycl::vec<flt, 3>;
 
     private : 
-
+    using RadixTree = Radix_Tree<u_morton, vec>;
     using CutTree = typename Radix_Tree<u_morton, vec>::CuttedTree;
 
     //Store the result of a tree cut
@@ -248,7 +248,7 @@ class Interfacehandler<Tree_Send,pos_prec,Radix_Tree<u_morton, sycl::vec<pos_pre
     std::vector<CommListing> interf_send_map;
     
     template<class Func_interactcrit,class... Args>
-    inline void internal_compute_interf_list(PatchScheduler &sched, SerialPatchTree<vec> & sptree, SimulationDomain<flt> & bc, Func_interactcrit && interact_crit, Args ... args){
+    inline void internal_compute_interf_list(PatchScheduler &sched, SerialPatchTree<vec> & sptree, SimulationDomain<flt> & bc,std::unordered_map<u64, RadixTree> & rtrees, Func_interactcrit && interact_crit, Args ... args){
 
         const vec per_vec = bc.get_periodicity_vector();
 
@@ -306,9 +306,16 @@ class Interfacehandler<Tree_Send,pos_prec,Radix_Tree<u_morton, sycl::vec<pos_pre
 
         };
 
-        //then make trees
+        //then cutted make trees
 
-        
+        for(auto & comm : interf_send_map){
+            //sender_patch_id -> receiver_patch_id
+
+            //better if done using class i thinks
+
+        }
+        //u32 total_count = rtree.tree_internal_count + rtree.tree_leaf_count;
+        //sycl::range<1> range_tree{total_count};
 
 
     }
