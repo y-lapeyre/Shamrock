@@ -292,7 +292,7 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(PatchScheduler &sched, f64 old_ti
 
         using InterfHndl =  Interfacehandler<Tree_Send, flt, RadTree>;
         InterfHndl interf_hndl = InterfHndl();
-        interf_hndl.compute_interface_list(sched,sptree,sd,
+        interf_hndl.compute_interface_list(sched,sptree,sd,radix_trees,
         [=](vec3 b1_min, vec3 b1_max,vec3 b2_min, vec3 b2_max) -> bool {
             vec3 s1 = (b1_max + b1_min)/2;
             vec3 s2 = (b2_max + b2_min)/2;

@@ -23,6 +23,7 @@
 
 #pragma once
 
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -91,7 +92,6 @@ void test_func_##name (TestResults& __test_result_ref)
 void run_py_script(std::string pysrc);
 
 int run_all_tests(int argc, char *argv[]);
-
 
 
 
@@ -191,10 +191,10 @@ namespace impl::shamrocktest {
         TestType type;
         std::string name;
         i32 node_count;
-        void (*test_functor)(TestAssertList &, TestDataList &);
+        void (*test_functor)();
 
 
-        inline Test (const TestType & type, std::string  name, const i32 & node_count,void (*func)(TestAssertList &, TestDataList &) ) :
+        inline Test (const TestType & type, std::string  name, const i32 & node_count,void (*func)() ) :
         type(type), name(std::move(name)),node_count(node_count), test_functor(func){}
 
         TestResult run();
@@ -208,14 +208,19 @@ namespace impl::shamrocktest {
         }
     };
 
+    extern TestResult current_test;
+
 }
 
 namespace shamrock::test {
     int run_all_tests(int argc, char *argv[], bool run_bench,bool run_analysis, bool run_unittest);
+
+    inline impl::shamrocktest::TestAssertList & asserts(){return impl::shamrocktest::current_test.asserts;};
+    inline impl::shamrocktest::TestDataList & test_data(){return impl::shamrocktest::current_test.test_data;};
 }
 
 
-#define TestStart(type,name,func_name, node_cnt) void test_func_##func_name (impl::shamrocktest::TestAssertList & asserts, impl::shamrocktest::TestDataList & testdata);\
-void (*test_func_ptr_##func_name)(impl::shamrocktest::TestAssertList &, impl::shamrocktest::TestDataList &) = test_func_##func_name;\
+#define TestStart(type,name,func_name, node_cnt) void test_func_##func_name ();\
+void (*test_func_ptr_##func_name)() = test_func_##func_name;\
 impl::shamrocktest::TestStaticInit test_class_obj_##func_name (impl::shamrocktest::Test{type,name,node_cnt,test_func_ptr_##func_name});\
-void test_func_##func_name (impl::shamrocktest::TestAssertList & asserts, impl::shamrocktest::TestDataList & testdata)
+void test_func_##func_name ()

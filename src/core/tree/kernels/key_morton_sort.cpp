@@ -58,7 +58,7 @@ class Bitonic_sort_B4_morton64;
 class Bitonic_sort_B2_morton64;
 
 template<>
-void sycl_sort_morton_key_pair(
+void sycl_sort_morton_key_pair<u32, MultiKernel>(
     sycl::queue & queue,
     u32 morton_count_rounded_pow,
     std::unique_ptr<sycl::buffer<u32>>      & buf_index,
@@ -336,7 +336,7 @@ void sycl_sort_morton_key_pair(
 
 
 template<>
-void sycl_sort_morton_key_pair(
+void sycl_sort_morton_key_pair<u64, MultiKernel>(
     sycl::queue & queue,
     u32 morton_count_rounded_pow,
     std::unique_ptr<sycl::buffer<u32>>      & buf_index,

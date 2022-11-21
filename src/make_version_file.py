@@ -34,6 +34,9 @@ str_ += "\n\n"
 
 str_ += "const std::string git_commit_hash = \""+git_hash+"\";\n"
 
+str_ += "const std::string compile_arg = \""+sys.argv[2]+"\";\n"
+
+
 if not (strfile == str_):
     f = open(sys.argv[1],'w')
     f.write(str_)

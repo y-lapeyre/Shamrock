@@ -155,6 +155,9 @@ def plot_tree_fmm_no_mpi_perf():
     plt.savefig("figures/tree_fmm_no_mpi.pdf")
 
 
+    
+
+
 
 plt.clf()
 

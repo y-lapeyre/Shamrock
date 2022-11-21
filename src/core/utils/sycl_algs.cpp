@@ -7,7 +7,6 @@
 // -------------------------------------------------------//
 
 #include "sycl_algs.hpp"
-#include "hipSYCL/sycl/libkernel/accessor.hpp"
 #include "sycl_vector_utils.hpp"
 #include "core/sys/sycl_mpi_interop.hpp"
 

@@ -227,7 +227,7 @@ class Interfacehandler<Tree_Send,pos_prec,Radix_Tree<u_morton, sycl::vec<pos_pre
     using vec = sycl::vec<flt, 3>;
 
     private : 
-    using RadixTree = Radix_Tree<u_morton, vec>;
+    using RadixTree = std::unique_ptr<Radix_Tree<u_morton, vec>>;
     using CutTree = typename Radix_Tree<u_morton, vec>::CuttedTree;
 
     //Store the result of a tree cut
@@ -326,9 +326,9 @@ class Interfacehandler<Tree_Send,pos_prec,Radix_Tree<u_morton, sycl::vec<pos_pre
     // for now interact crit has shape (vec,vec) -> bool 
     // in order to pass for exemple h max we need a full tree field (patch field + radix tree field) 
     template<class Func_interactcrit,class... Args>
-    inline void compute_interface_list(PatchScheduler &sched, SerialPatchTree<vec> & sptree, SimulationDomain<flt> & bc, Func_interactcrit && interact_crit, Args & ... args){
+    inline void compute_interface_list(PatchScheduler &sched, SerialPatchTree<vec> & sptree, SimulationDomain<flt> & bc,std::unordered_map<u64, RadixTree> & rtrees, Func_interactcrit && interact_crit, Args & ... args){
 
-        internal_compute_interf_list(sched, sptree, bc, interact_crit, impl::pfield_convertion::buffered_pfield{args}...);
+        internal_compute_interf_list(sched, sptree, bc,rtrees, interact_crit, impl::pfield_convertion::buffered_pfield{args}...);
 
     }
 

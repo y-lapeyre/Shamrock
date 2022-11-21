@@ -518,6 +518,8 @@ namespace impl::shamrocktest {
         return get_str();
     }
 
+    TestResult current_test{Unittest,"",-1};
+
 
     TestResult Test::run(){
         if(node_count != -1){
@@ -526,11 +528,12 @@ namespace impl::shamrocktest {
             }
         }
 
-        TestResult r{type, name,mpi_handler::world_rank};
+        current_test = TestResult{type, name,mpi_handler::world_rank};
 
-        test_functor(r.asserts,r.test_data);
+        test_functor();
 
-        return std::move(r);
+
+        return std::move(current_test);
     }
 
 
@@ -611,7 +614,7 @@ namespace shamrock::test {
         for (u32 i = 0; i < static_init_vec_tests.size(); i++) {
 
 
-            auto can_run = [&](impl::shamrocktest::Test & t) -> bool{
+            auto can_run = [&](impl::shamrocktest::Test & t) -> bool {
 
                 bool any_node_cnt = (t.node_count == -1);
                 bool world_size_ok = t.node_count == world_size;
@@ -819,13 +822,15 @@ namespace shamrock::test {
             s_out += R"(    "commit_hash" : ")" + git_commit_hash + "\",\n" ;
             s_out += R"(    "world_size" : ")" + std::to_string(mpi_handler::world_size) + "\",\n" ;
 
-            #ifdef SYCL_COMP_DPCPP
+            #if defined (SYCL_COMP_DPCPP)
             s_out += R"(    "compiler" : "DPCPP",)" "\n" ;
-            #elifdef SYCL_COMP_HIPSYCL
+            #elif defined (SYCL_COMP_HIPSYCL)
             s_out += R"(    "compiler" : "HipSYCL",)" "\n" ;
             #else
             s_out += R"(    "compiler" : "Unknown",)" "\n" ;
             #endif  
+
+            s_out += R"(    "comp_args" : ")" + compile_arg + "\",\n" ;
 
 
             s_out += R"(    "results" : )"   "[\n\n" ;

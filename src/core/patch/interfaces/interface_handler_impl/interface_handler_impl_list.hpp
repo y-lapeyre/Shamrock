@@ -27,12 +27,8 @@ template<InterfacehandlerImpl impl_type, class pos_prec, class Tree> class Inter
     using flt = pos_prec;
     using vec = sycl::vec<flt, 3>;
 
-    template<class Func_interactcrit>
-    void compute_interface_list(
-        PatchScheduler &sched, 
-        SerialPatchTree<vec> & sptree, 
-        SimulationDomain<flt> & bc, 
-        Func_interactcrit && interact_crit);
+    //template<class Func_interactcrit>
+    //void compute_interface_list(PatchScheduler &sched, SerialPatchTree<vec> & sptree, SimulationDomain<flt> & bc,std::unordered_map<u64, RadixTree> & rtrees, Func_interactcrit && interact_crit, Args & ... args);
 
     //TODO
     void initial_fetch();
