@@ -144,8 +144,36 @@ namespace impl::shamrocktest {
         //to register asserts
 
 
-        inline void assert_add(std::string assert_name,bool v){
+        inline void assert_bool(std::string assert_name,bool v){
             asserts.push_back(TestAssert{v,std::move(assert_name),""});
+        }
+
+        template<class T>
+        inline void assert_equal(std::string assert_name,T a, T b){
+
+            bool t = a==b;
+            std::string comment = "";
+
+            if(!t){
+                comment = "left="+std::to_string(a) + " right=" + std::to_string(b);
+            }
+
+            asserts.push_back(TestAssert{t,std::move(assert_name),comment});
+        }
+
+
+        
+        inline void assert_float_equal(std::string assert_name,f64 a, f64 b, f64 eps){
+            f64 diff = sycl::fabs(a - b);
+
+            bool t = diff < eps;
+            std::string comment = "";
+
+            if(!t){
+                comment = "left="+std::to_string(a) + " right=" + std::to_string(b) + " diff="+ std::to_string(diff);
+            }
+
+            asserts.push_back(TestAssert{t,std::move(assert_name),comment});
         }
 
         inline void assert_add_comment(std::string assert_name,bool v,std::string comment){
@@ -224,3 +252,5 @@ namespace shamrock::test {
 void (*test_func_ptr_##func_name)() = test_func_##func_name;\
 impl::shamrocktest::TestStaticInit test_class_obj_##func_name (impl::shamrocktest::Test{type,name,node_cnt,test_func_ptr_##func_name});\
 void test_func_##func_name ()
+
+

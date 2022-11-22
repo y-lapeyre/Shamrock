@@ -28,8 +28,8 @@ TestStart(Unittest, "first_test",first_test, -1){
     dataset.add_data("T", {0,1,2,3,4});
     dataset.add_data("X", {0,1,2,3,4});
 
-    shamrock::test::asserts().assert_add("why not", true);
-    shamrock::test::asserts().assert_add("why not", false);
+    shamrock::test::asserts().assert_bool("why not", true);
+    shamrock::test::asserts().assert_bool("why not", false);
     shamrock::test::asserts().assert_add_comment("why not", false,"tatatat");
 }
 

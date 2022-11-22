@@ -342,7 +342,7 @@ def make_sort_perf_plot(reports) -> str:
             vec_N = get_test_dataset(s,n,"Nobj");
             vec_T = get_test_dataset(s,n,"t_sort");
 
-            plt.plot(np.array(vec_N),np.abs(vec_T)*1e-9, label = n)
+            plt.plot(np.array(vec_N),np.abs(vec_T), label = n)
 
     axs.set_title('Bitonic sort perf')
 
@@ -371,7 +371,7 @@ def make_sort_perf_plot(reports) -> str:
             n = dataset["dataset_name"]
 
             vec_N = np.array(get_test_dataset(s,n,"Nobj"));
-            vec_T = np.array(get_test_dataset(s,n,"t_sort"))*1e-9;
+            vec_T = np.array(get_test_dataset(s,n,"t_sort"));
 
             plt.plot(np.array(vec_N),vec_N/(np.abs(vec_T)), label = n)
 
@@ -417,6 +417,115 @@ def make_sort_perf_plot(reports) -> str:
 
 
 
+
+
+
+
+
+def make_reduc_perf_plot(reports) -> str:
+    reduc_perf = []
+    
+    for rep in reports:
+        for r in rep["results"]:
+            if r["type"] == "Benchmark" and r["name"] == "core/utils/sycl_algs:reduction":
+                reduc_perf.append(r)
+
+    fig,axs = plt.subplots(nrows=1,ncols=1,figsize=(15,6))
+
+    for s in reduc_perf:
+
+        for dataset in s["test_data"]:
+
+            n = dataset["dataset_name"]
+
+            vec_N = get_test_dataset(s,n,"Nobj");
+            vec_T = get_test_dataset(s,n,"t_sort");
+
+            plt.plot(np.array(vec_N),np.abs(vec_T), label = n)
+
+    axs.set_title('Reduction perf')
+
+    axs.set_xscale('log')
+    axs.set_yscale('log')
+
+    axs.set_xlabel(r"$N$")
+
+    axs.set_ylabel(r"$t_{\rm sort} (s)$")
+
+    axs.legend()
+    axs.grid()
+
+    plt.tight_layout()
+
+    plt.savefig("figures/reduc_perf.pdf")
+
+
+
+    fig,axs = plt.subplots(nrows=1,ncols=1,figsize=(15,6))
+
+    for s in reduc_perf:
+
+        for dataset in s["test_data"]:
+
+            n = dataset["dataset_name"]
+
+            vec_N = get_test_dataset(s,n,"Nobj");
+            vec_T = get_test_dataset(s,n,"t_sort");
+
+            plt.plot(np.array(vec_N),vec_N/np.abs(vec_T), label = n)
+
+    axs.set_title('Bitonic sort perf')
+
+    axs.set_xscale('log')
+    axs.set_yscale('log')
+
+    axs.set_xlabel(r"$N$")
+
+    axs.set_ylabel(r"key per s")
+
+    axs.legend()
+    axs.grid()
+
+    plt.tight_layout()
+
+    plt.savefig("figures/reduc_perf_comp.pdf")
+
+    return r"""
+
+    \subsection{Reduction performance}
+
+    \begin{figure}[ht!]
+    \center
+    \includegraphics[width=1\textwidth]{figures/reduc_perf.pdf}
+    \caption{Precision of the fmm using multiple parameters. 
+    On the left we compare fmm precision of the potential versus theory, the y axis is limited to $10^{-16}$ as we hit normally the limit of double precision floating point numbers. On the right the same comparaison can be seen for the corresponding force.}
+    \label{fig:fmm_prec}
+    \end{figure}
+
+    \begin{figure}[ht!]
+    \center
+    \includegraphics[width=1\textwidth]{figures/reduc_perf_comp.pdf}
+    \caption{Precision of the fmm using multiple parameters. 
+    On the left we compare fmm precision of the potential versus theory, the y axis is limited to $10^{-16}$ as we hit normally the limit of double precision floating point numbers. On the right the same comparaison can be seen for the corresponding force.}
+    \label{fig:fmm_prec}
+    \end{figure}
+
+    \textbf{To check} : In Fig.\ref{fig:fmm_prec} We should see the potential hitting the limit of double precision normally.
+
+    """
+
+
+
+
+
+
+
+
+
+
+
+
+
 #to use do : python ..this file.. shamrock_benchmark_report
 
 plt.style.use('custom_style.mplstyle')
@@ -437,6 +546,7 @@ if __name__ == '__main__':
     buf += make_fmm_prec_plot(jsons)
     buf += r"\section{Sycl algs perf}"
     buf += make_sort_perf_plot(jsons)
+    buf += make_reduc_perf_plot(jsons)
 
     fout = repport_template.replace("%%%%%%%%%%%%%%%%%data", buf)
 

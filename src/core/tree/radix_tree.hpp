@@ -159,6 +159,7 @@ class Radix_Tree{
     void for_each_leaf(sycl::queue & queue, LambdaForEachCell && par_for_each_cell) const;
     
 
+    std::tuple<flt,flt> get_min_max_cell_side_lenght();
 
 
     struct CuttedTree{
@@ -443,6 +444,63 @@ inline void Radix_Tree<u_morton, vec3>::for_each_leaf(sycl::queue & queue, Lambd
 
     });
 }
+
+
+template<class u_morton,class vec3>
+inline auto Radix_Tree<u_morton, vec3>::get_min_max_cell_side_lenght() -> std::tuple<flt,flt>{
+
+    u32 len = tree_leaf_count;
+
+    sycl::buffer<flt> min_side_lenght {len};
+    sycl::buffer<flt> max_side_lenght {len};
+
+    auto & q = sycl_handler::get_compute_queue();
+
+    q.submit([&](sycl::handler &cgh) {
+        u32 offset_leaf = tree_internal_count;
+
+        sycl::accessor pos_min_cell { *buf_pos_min_cell_flt,cgh,sycl::read_only};
+        sycl::accessor pos_max_cell { *buf_pos_max_cell_flt,cgh,sycl::read_only};
+
+        sycl::accessor s_lengh_min { min_side_lenght,cgh,sycl::write_only,sycl::no_init};
+        sycl::accessor s_lengh_max { max_side_lenght,cgh,sycl::write_only,sycl::no_init};
+
+        sycl::range<1> range_tree{tree_internal_count};
+
+        cgh.parallel_for(range_tree, [=](sycl::item<1> item) {
+            u32 gid = (u32)item.get_id(0);
+
+            vec3 min = pos_min_cell[gid + offset_leaf];
+            vec3 max = pos_max_cell[gid + offset_leaf];
+
+            vec3 sz = max - min;
+
+            s_lengh_min[gid] = sycl::fmin(sycl::fmin(sz.x(),sz.y()),sz.z());
+            s_lengh_max[gid] = sycl::fmax(sycl::fmax(sz.x(),sz.y()),sz.z());
+        });
+    });
+
+    struct MaxOp{
+        flt operator()(const flt & a, const flt & b)
+        {
+            return sycl::max(a,b);
+        }
+    };
+
+    struct MinOp{
+        flt operator()(const flt & a, const flt & b)
+        {
+            return sycl::min(a,b);
+        }
+    };
+
+    flt min = syclalgs::reduction::reduce<flt,MinOp>(q, min_side_lenght, 0,len);
+    flt max = syclalgs::reduction::reduce<flt,MaxOp>(q, max_side_lenght, 0,len);
+
+    return {min,max};
+}
+
+
 
 
 

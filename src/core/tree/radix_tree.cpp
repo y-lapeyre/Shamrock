@@ -288,7 +288,7 @@ void Radix_Tree<u_morton, vec3>::print_tree_field(sycl::buffer<T> & buf_field){
 
     auto printer = [&](){
 
-        auto get_print_step = [&](u32 gid, std::string prefix, bool is_left, auto & step_ref) -> std::string{
+        auto get_print_step = [&](u32 gid, std::string prefix, bool is_left, auto & step_ref) -> std::string {
 
             std::string ret_val = "";
 

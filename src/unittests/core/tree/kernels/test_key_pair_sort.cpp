@@ -1,3 +1,4 @@
+#include "core/sys/log.hpp"
 #include "unittests/shamrocktest.hpp"
 
 #include <random>
@@ -37,7 +38,7 @@ template<class u_morton, SortImplType impl> void unit_test_key_pair(){
 
 
     for(u32 i = 0; i < size_test; i++){
-        shamrock::test::asserts().assert_add("index [" +format("%d",i)+ "]",  unsorted[i]  == morton_list[i]);
+        shamrock::test::asserts().assert_bool("index [" +format("%d",i)+ "]",  unsorted[i]  == morton_list[i]);
     }
 }
 
@@ -75,7 +76,7 @@ template<class u_morton, SortImplType impl> f64 benchmark_key_pair_sort(const u3
 
     }
 
-    return t.nanosec;
+    return t.nanosec*1e-9;
 
 }
 
@@ -97,6 +98,9 @@ TestStart(Unittest, "core/tree/kernels/key_pair_sort", key_pair_sort_test, 1){
 constexpr u32 lim_bench = 1e9;
 
 template<class u_morton, SortImplType impl> void wrapper_bench_key_sort(std::string name){
+
+    logger::info_ln("ShamrockTest","testing :",name);
+    
     std::vector<f64> test_sz;
     for(f64 i = 16; i < lim_bench; i*=2){
         test_sz.push_back(i);
@@ -107,6 +111,7 @@ template<class u_morton, SortImplType impl> void wrapper_bench_key_sort(std::str
     std::vector<f64> results;
 
     for(const f64 & sz : test_sz){
+        logger::debug_ln("ShamrockTest","N=",sz);
         results.push_back(benchmark_key_pair_sort<u_morton,impl>(sz));
     }
 

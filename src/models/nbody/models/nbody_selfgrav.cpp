@@ -97,6 +97,61 @@ void sycl_position_modulo(sycl::queue &queue, u32 npart, std::unique_ptr<sycl::b
 
 
 
+
+
+
+template<class flt>
+class FMMInteract_cd{
+
+    using vec = sycl::vec<flt, 3>;
+
+    flt opening_crit_sq;
+
+    public:
+
+    explicit FMMInteract_cd(flt open_crit) : opening_crit_sq(open_crit*open_crit){};
+
+    static bool interact_cd_cell_cell(const FMMInteract_cd & cd,vec b1_min, vec b1_max,vec b2_min, vec b2_max){
+        vec s1 = (b1_max + b1_min)/2;
+        vec s2 = (b2_max + b2_min)/2;
+
+        vec r_fmm = s2-s1;
+
+        vec d1 = b1_max - b1_min;
+        vec d2 = b2_max - b2_min;
+
+        flt l1 = sycl::max(sycl::max(d1.x(),d1.y()),d1.z());
+        flt l2 = sycl::max(sycl::max(d2.x(),d2.y()),d2.z());
+
+        flt opening_angle_sq = (l1 + l2)*(l1 + l2)/sycl::dot(r_fmm,r_fmm);
+
+        return opening_angle_sq < cd.opening_crit_sq;
+    }
+
+    static bool interact_cd_cell_patch(const FMMInteract_cd & cd,vec b1_min, vec b1_max,vec b2_min, vec b2_max, flt b1_min_slenght, flt b1_max_slenght, flt b2_min_slenght, flt b2_max_slenght){
+        
+        vec c1 = (b1_max + b1_min)/2;
+        flt L1 = sycl::max(sycl::max(c1.x(),c1.y()),c1.z());
+
+        flt dist_to_surf = sycl::sqrt(BBAA::get_sq_distance_to_BBAAsurface(c1, b2_min, b2_max));
+
+        flt opening_angle_sq = (L1 + b2_max_slenght)/(dist_to_surf - b2_min_slenght/2);
+        opening_angle_sq *= opening_angle_sq;
+
+        return opening_angle_sq < cd.opening_crit_sq;
+    }
+
+    static bool interact_cd_cell_patch_outdomain(const FMMInteract_cd & cd,vec b1_min, vec b1_max,vec b2_min, vec b2_max, flt b1_min_slenght, flt b1_max_slenght, flt b2_min_slenght, flt b2_max_slenght){
+        return false;
+    }
+};
+
+
+
+
+
+
+
 template<class flt> 
 f64 models::nbody::Nbody_SelfGrav<flt>::evolve(PatchScheduler &sched, f64 old_time, f64 target_time){
 
@@ -287,34 +342,52 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(PatchScheduler &sched, f64 old_ti
         SimulationDomain<flt> sd(Free, std::get<0>(box), std::get<1>(box));
 
 
+        struct MaxOp{
+            flt operator()(const flt & a, const flt & b)
+            {
+                return sycl::max(a,b);
+            }
+        };
 
-        flt open_crit_sq = 0.3*0.3;
+        struct MinOp{
+            flt operator()(const flt & a, const flt & b)
+            {
+                return sycl::min(a,b);
+            }
+        };
+
+        PatchField<flt> max_slenght_cells;
+        PatchField<flt> min_slenght_cells;
+
+
+        std::unordered_map<u64, flt> min_slenght_map;
+        std::unordered_map<u64, flt> max_slenght_map;
+
+        for(auto & [k,rtree_ptr] : radix_trees){
+            auto [min,max] = rtree_ptr->get_min_max_cell_side_lenght();
+            min_slenght_map[k] = min;
+            max_slenght_map[k] = max;
+        }
+
+        sched.compute_patch_field(
+            min_slenght_cells, get_mpi_type<flt>(), [&](sycl::queue & /*queue*/, Patch &p, PatchData & /*pdat*/) {
+                return min_slenght_map[p.id_patch];
+            });
+
+        sched.compute_patch_field(
+            max_slenght_cells, get_mpi_type<flt>(), [&](sycl::queue & /*queue*/, Patch &p, PatchData & /*pdat*/) {
+                return max_slenght_map[p.id_patch];
+            });
+
+        flt open_crit = 0.3;
 
         using InterfHndl =  Interfacehandler<Tree_Send, flt, RadTree>;
         InterfHndl interf_hndl = InterfHndl();
-        interf_hndl.compute_interface_list(sched,sptree,sd,radix_trees,
-        [=](vec3 b1_min, vec3 b1_max,vec3 b2_min, vec3 b2_max) -> bool {
-            vec3 s1 = (b1_max + b1_min)/2;
-            vec3 s2 = (b2_max + b2_min)/2;
-
-            vec3 r_fmm = s2-s1;
-
-            vec3 d1 = b1_max - b1_min;
-            vec3 d2 = b2_max - b2_min;
-
-            flt l1 = sycl::max(sycl::max(d1.x(),d1.y()),d1.z());
-            flt l2 = sycl::max(sycl::max(d2.x(),d2.y()),d2.z());
-
-            flt opening_angle_sq = (l1 + l2)*(l1 + l2)/sycl::dot(r_fmm,r_fmm);
-
-            return opening_angle_sq < open_crit_sq;
-        });
+        interf_hndl.compute_interface_list(sched,sptree,sd,radix_trees,FMMInteract_cd<flt>(open_crit),min_slenght_cells,max_slenght_cells);
 
 
         
-
-
-
+        
 
         //make interfaces
 

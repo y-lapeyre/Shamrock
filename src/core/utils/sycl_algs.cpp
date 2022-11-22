@@ -106,14 +106,6 @@ namespace syclalgs {
 
 
 
-
-
-
-
-
-
-
-
         bool is_all_true(sycl::buffer<u8> & buf,u32 cnt){
 
             //TODO do it on GPU pleeeaze
@@ -147,7 +139,12 @@ namespace syclalgs {
 
 
             return is_all_true(res,cnt);
+
         }
+
+
+
+
     }
 
 

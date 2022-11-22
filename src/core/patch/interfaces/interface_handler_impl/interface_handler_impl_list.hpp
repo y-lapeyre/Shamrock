@@ -8,6 +8,13 @@
 #pragma once
 
 
+
+
+
+
+
+
+
 //%Impl status : Clean unfinished
 
 enum InterfacehandlerImpl {
