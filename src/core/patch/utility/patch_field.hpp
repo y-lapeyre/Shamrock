@@ -22,6 +22,12 @@
 
 #include "core/sys/mpi_handler.hpp"
 
+template<class type>
+class BufferedPField{public:
+    sycl::buffer<type> buf_local;
+    sycl::buffer<type> buf_global;
+};
+
 /**
  * @brief Define a field attached to a patch (exemple: FMM multipoles, hmax in SPH)
  * 
@@ -38,6 +44,16 @@ class PatchField{public:
 
     inline void build_global(MPI_Datatype & dtype){
         mpi_handler::vector_allgatherv(local_nodes_value, dtype, global_values, dtype, MPI_COMM_WORLD);
+    }
+
+
+    
+
+    inline BufferedPField<type> get_buffers(){
+        return BufferedPField<type>{
+            sycl::buffer<type>(local_nodes_value.data(),local_nodes_value.size()),
+            sycl::buffer<type>(global_values.data(),global_values.size()),
+        };
     }
 
 };

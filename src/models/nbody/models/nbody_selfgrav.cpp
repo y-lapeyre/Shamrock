@@ -1,6 +1,7 @@
 
 #include "nbody_selfgrav.hpp"
 #include "core/patch/interfaces/interface_handler.hpp"
+#include "core/patch/utility/full_tree_field.hpp"
 #include "core/patch/utility/serialpatchtree.hpp"
 #include "core/tree/radix_tree.hpp"
 #include "runscript/shamrockapi.hpp"
@@ -342,23 +343,18 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(PatchScheduler &sched, f64 old_ti
         SimulationDomain<flt> sd(Free, std::get<0>(box), std::get<1>(box));
 
 
-        struct MaxOp{
-            flt operator()(const flt & a, const flt & b)
-            {
-                return sycl::max(a,b);
-            }
-        };
+        
 
-        struct MinOp{
-            flt operator()(const flt & a, const flt & b)
-            {
-                return sycl::min(a,b);
-            }
-        };
+
+
+
+
+
+
+        //generate the tree field for the box size info
 
         PatchField<flt> max_slenght_cells;
         PatchField<flt> min_slenght_cells;
-
 
         std::unordered_map<u64, flt> min_slenght_map;
         std::unordered_map<u64, flt> max_slenght_map;
@@ -379,11 +375,70 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(PatchScheduler &sched, f64 old_ti
                 return max_slenght_map[p.id_patch];
             });
 
+        using RtreeField = typename RadTree::template RadixTreeField<flt>;
+        std::unordered_map<u64, std::unique_ptr<RtreeField>> min_tree_slenght_map;
+        std::unordered_map<u64, std::unique_ptr<RtreeField>> max_tree_slenght_map;
+
+        for(auto & [k,rtree_ptr] : radix_trees){
+            std::unique_ptr<RtreeField> & field_min = min_tree_slenght_map[k];
+            std::unique_ptr<RtreeField> & field_max = max_tree_slenght_map[k];
+
+            u32 total_cell_bount = rtree_ptr->tree_internal_count + rtree_ptr->tree_leaf_count;
+
+            field_min = std::make_unique<RtreeField>();
+            field_min->nvar = 1;
+            field_min->radix_tree_field_buf = std::make_unique<sycl::buffer<flt>>(total_cell_bount);
+
+            field_max = std::make_unique<RtreeField>();
+            field_max->nvar = 1;
+            field_max->radix_tree_field_buf = std::make_unique<sycl::buffer<flt>>(total_cell_bount);
+
+            auto & buf_pos_min_cell_flt = rtree_ptr->buf_pos_min_cell_flt;
+            auto & buf_pos_max_cell_flt = rtree_ptr->buf_pos_max_cell_flt;
+
+            auto & rfield_buf_min = field_min->radix_tree_field_buf;
+            auto & rfield_buf_max = field_max->radix_tree_field_buf;
+
+            sycl_handler::get_compute_queue().submit([&](sycl::handler & cgh){
+
+                sycl::accessor box_min_cell {*buf_pos_min_cell_flt, cgh,sycl::read_only};
+                sycl::accessor box_max_cell {*buf_pos_max_cell_flt, cgh,sycl::read_only};
+
+                sycl::accessor s_lengh_min {*rfield_buf_min, cgh,sycl::write_only,sycl::no_init};
+                sycl::accessor s_lengh_max {*rfield_buf_max, cgh,sycl::write_only,sycl::no_init};
+
+                cgh.parallel_for(sycl::range<1>{total_cell_bount}, [=](sycl::item<1> item) {
+
+                    vec3 bmin = box_min_cell[item];
+                    vec3 bmax = box_max_cell[item];
+
+                    vec3 sz = bmax - bmin;
+
+                    s_lengh_min[item] = sycl::fmin(sycl::fmin(sz.x(),sz.y()),sz.z());
+                    s_lengh_max[item] = sycl::fmax(sycl::fmax(sz.x(),sz.y()),sz.z());
+
+                });
+
+            });
+
+        }
+
+        FullTreeField<flt, RadTree> min_slenght{
+            std::move(min_slenght_cells),
+            std::move(min_tree_slenght_map)
+        };
+
+        FullTreeField<flt, RadTree> max_slenght{
+            std::move(min_slenght_cells),
+            std::move(min_tree_slenght_map)
+        };
+
+
         flt open_crit = 0.3;
 
         using InterfHndl =  Interfacehandler<Tree_Send, flt, RadTree>;
         InterfHndl interf_hndl = InterfHndl();
-        interf_hndl.compute_interface_list(sched,sptree,sd,radix_trees,FMMInteract_cd<flt>(open_crit),min_slenght_cells,max_slenght_cells);
+        interf_hndl.compute_interface_list(sched,sptree,sd,radix_trees,FMMInteract_cd<flt>(open_crit),min_slenght,max_slenght);
 
 
         

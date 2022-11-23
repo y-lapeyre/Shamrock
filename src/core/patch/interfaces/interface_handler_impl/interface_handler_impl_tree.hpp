@@ -27,16 +27,6 @@ namespace impl{
 
     namespace pfield_convertion {
 
-        template<class T>
-        struct buffered_pfield{
-            sycl::buffer<T> local_vals;
-            sycl::buffer<T> global_vals;
-
-            inline explicit buffered_pfield(PatchField<T> & pf) :
-                local_vals(pf.local_nodes_value.data(),pf.local_nodes_value.size()),
-                global_vals(pf.global_values.data(),pf.global_values.size())
-            {}
-        };
 
         template<class T>
         struct accessed_pfield{
@@ -44,9 +34,9 @@ namespace impl{
             sycl::accessor<T ,1,sycl::access::mode::read,sycl::target::device> acc_glo;
 
 
-            inline accessed_pfield(buffered_pfield<T> & pf, sycl::handler & cgh) :
-                acc_loc(sycl::accessor{pf.local_vals,cgh,sycl::read_only}),
-                acc_glo(sycl::accessor{pf.global_vals,cgh,sycl::read_only})
+            inline accessed_pfield(BufferedPField<T> & pf, sycl::handler & cgh) :
+                acc_loc(sycl::accessor{pf.buf_local,cgh,sycl::read_only}),
+                acc_glo(sycl::accessor{pf.buf_global,cgh,sycl::read_only})
             {}
 
             inline T get_local(u32 i) const {
@@ -259,7 +249,7 @@ namespace impl{
                 };
                 
 
-                compute_interf(impl::pfield_convertion::accessed_pfield{args, cgh}...);
+                compute_interf(impl::pfield_convertion::accessed_pfield{args.patch_field, cgh}...);
 
 
             });
@@ -270,6 +260,7 @@ namespace impl{
     }
 
 }
+
 
 
 
@@ -412,14 +403,17 @@ class Interfacehandler<Tree_Send,pos_prec,Radix_Tree<u_morton, sycl::vec<pos_pre
 
             auto & rtree = rtrees[comm.sender_patch_id];
 
-            u32 total_count             = rtree.tree_internal_count + rtree.tree_leaf_count;
+            u32 total_count             = rtree->tree_internal_count + rtree->tree_leaf_count;
             sycl::range<1> range_tree{total_count};
 
             logger::debug_sycl_ln("Radixtree", "computing valid node buf");
 
             
+            
 
-            auto init_valid_buf = [&]() -> sycl::buffer<u8> {
+
+
+            auto init_valid_buf = [&](auto ... copied_vals) -> sycl::buffer<u8> {
                 
                 sycl::buffer<u8> valid_node = sycl::buffer<u8>(total_count);
 
@@ -428,20 +422,51 @@ class Interfacehandler<Tree_Send,pos_prec,Radix_Tree<u_morton, sycl::vec<pos_pre
                 sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
                     sycl::accessor acc_valid_node{valid_node, cgh, sycl::write_only, sycl::no_init};
 
-                    sycl::accessor acc_pos_cell_min{*rtree.buf_pos_min_cell_flt, cgh, sycl::read_only};
-                    sycl::accessor acc_pos_cell_max{*rtree.buf_pos_max_cell_flt, cgh, sycl::read_only};
+                    sycl::accessor acc_pos_cell_min{*rtree->buf_pos_min_cell_flt, cgh, sycl::read_only};
+                    sycl::accessor acc_pos_cell_max{*rtree->buf_pos_max_cell_flt, cgh, sycl::read_only};
 
                     
                     InteractCrit cd = interact_crit;
 
-                    vec test_lbox_min = comm.box_receiver_min;
-                    vec test_lbox_max = comm.box_receiver_max;
+                    vec test_lbox_min = comm.receiver_box_min;
+                    vec test_lbox_max = comm.receiver_box_max;
 
                     u32 cur_patch_idx = comm.local_patch_idx_send;
 
-                    u32 test_patch_idx = comm.global_patch_idx_send;
+                    u32 test_patch_idx = comm.global_patch_idx_recv;
 
                     bool is_off_not_bull = (comm.applied_offset.x() == 0) && (comm.applied_offset.y() == 0) && (comm.applied_offset.z() == 0);
+
+
+
+
+                    auto fct_interact = [=](
+                        bool is_off_not_bull, 
+                        vec cur_lbox_min, vec cur_lbox_max, vec test_lbox_min, vec test_lbox_max, 
+                        auto ... args) -> bool {
+
+
+                        bool int_crit;
+
+                        // check if us (cur_patch_id) : (patch) interact with any of the leafs of the (other) traget patch (eg test_patch_id)
+                        // so the relation is : R(Sender, U receiver leaf)  aka interact_cd_cell_patch
+                        if (is_off_not_bull) {
+                            int_crit = InteractCrit::interact_cd_cell_patch_outdomain(cd,
+                                cur_lbox_min, cur_lbox_max, test_lbox_min, test_lbox_max,
+                                copied_vals...,
+                                args...
+                            );
+                        }else{
+                            int_crit = InteractCrit::interact_cd_cell_patch(cd,
+                                cur_lbox_min, cur_lbox_max, test_lbox_min, test_lbox_max,
+                                copied_vals...,
+                                args...
+                            );
+                        } 
+
+                        return int_crit;
+
+                    };
 
 
                     auto kernel = [&](auto ... interact_args){
@@ -450,31 +475,12 @@ class Interfacehandler<Tree_Send,pos_prec,Radix_Tree<u_morton, sycl::vec<pos_pre
                             auto cur_lbox_min = acc_pos_cell_min[item];
                             auto cur_lbox_max = acc_pos_cell_max[item];
 
-
-
-                            bool int_crit ;
-
-                            // check if us (cur_patch_id) : (patch) interact with any of the leafs of the (other) traget patch (eg test_patch_id)
-                            // so the relation is : R(Sender, U receiver leaf)  aka interact_cd_cell_patch
-                            if (is_off_not_bull) {
-                                int_crit = InteractCrit::interact_cd_cell_patch_outdomain(cd,
-                                    cur_lbox_min, cur_lbox_max, test_lbox_min, test_lbox_max,
-                                    //acc_fields.get_local(cur_patch_idx)...,
-                                    interact_args...
-                                );
-                                //Ok for sph and nobyd but we should implement it with a general tree
-                                //TODO reimplement with tree field
-                                // TODO here it shouldnt be the field of the patch
-                            }else{
-                                int_crit = InteractCrit::interact_cd_cell_patch(cd,
-                                    cur_lbox_min, cur_lbox_max, test_lbox_min, test_lbox_max,
-                                    //acc_fields.get_local(cur_patch_idx)...,
-                                    interact_args...
-                                );
-                            } 
-
+                            acc_valid_node[item] = fct_interact(
+                                cur_lbox_min, cur_lbox_max, test_lbox_min, test_lbox_max,
+                                interact_args...
+                            );
                             
-                            acc_valid_node[item] = int_crit;
+
                         });
                     };
 
@@ -484,7 +490,7 @@ class Interfacehandler<Tree_Send,pos_prec,Radix_Tree<u_morton, sycl::vec<pos_pre
 
                     
 
-                    convert_to_vals(impl::pfield_convertion::accessed_pfield{args, cgh}...);
+                    convert_to_vals(impl::pfield_convertion::accessed_pfield{args.patch_field, cgh}...);
 
                 });
                 
@@ -532,7 +538,7 @@ class Interfacehandler<Tree_Send,pos_prec,Radix_Tree<u_morton, sycl::vec<pos_pre
         //constexpr bool has_patch_special_case = (std::is_same<decltype(InteractCrit::interact_cd_cell_patch),bool(field_extract_type<decltype(args)>...)>::value);
         //static_assert(has_patch_special_case, "special case must be written for this");//TODO better err msg
 
-        internal_compute_interf_list(sched, sptree, bc,rtrees, interact_crit, impl::pfield_convertion::buffered_pfield{args} ...);
+        internal_compute_interf_list(sched, sptree, bc,rtrees, interact_crit, args.get_buffers() ...);
 
     }
 
