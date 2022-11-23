@@ -1,5 +1,5 @@
 
-<img src="doc/logosham_white.png" alt="logo" width="800"/>
+<img src="doc/logosham_white.png" alt="logo" width="600"/>
 
 
 # Getting started
