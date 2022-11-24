@@ -465,7 +465,7 @@ inline auto Radix_Tree<u_morton, vec3>::get_min_max_cell_side_lenght() -> std::t
         sycl::accessor s_lengh_min { min_side_lenght,cgh,sycl::write_only,sycl::no_init};
         sycl::accessor s_lengh_max { max_side_lenght,cgh,sycl::write_only,sycl::no_init};
 
-        sycl::range<1> range_tree{tree_internal_count};
+        sycl::range<1> range_tree{tree_leaf_count};
 
         cgh.parallel_for(range_tree, [=](sycl::item<1> item) {
             u32 gid = (u32)item.get_id(0);
@@ -505,6 +505,8 @@ inline auto Radix_Tree<u_morton, vec3>::get_min_max_cell_side_lenght() -> std::t
 
 
 namespace tree_comm {
+
+    
 
     template<class u_morton,class vec3>
     class RadixTreeMPIRequest{public:

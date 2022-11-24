@@ -126,20 +126,21 @@ class FMMInteract_cd{
 
         flt opening_angle_sq = (l1 + l2)*(l1 + l2)/sycl::dot(r_fmm,r_fmm);
 
-        return opening_angle_sq < cd.opening_crit_sq;
+        return opening_angle_sq > cd.opening_crit_sq;
     }
 
     static bool interact_cd_cell_patch(const FMMInteract_cd & cd,vec b1_min, vec b1_max,vec b2_min, vec b2_max, flt b1_min_slenght, flt b1_max_slenght, flt b2_min_slenght, flt b2_max_slenght){
         
         vec c1 = (b1_max + b1_min)/2;
-        flt L1 = sycl::max(sycl::max(c1.x(),c1.y()),c1.z());
+        vec s1 = (b1_max - b1_min);
+        flt L1 = sycl::max(sycl::max(s1.x(),s1.y()),s1.z());
 
         flt dist_to_surf = sycl::sqrt(BBAA::get_sq_distance_to_BBAAsurface(c1, b2_min, b2_max));
 
-        flt opening_angle_sq = (L1 + b2_max_slenght)/(dist_to_surf - b2_min_slenght/2);
+        flt opening_angle_sq = (L1 + b2_max_slenght)/(dist_to_surf + b2_min_slenght/2);
         opening_angle_sq *= opening_angle_sq;
 
-        return opening_angle_sq < cd.opening_crit_sq;
+        return opening_angle_sq > cd.opening_crit_sq;
     }
 
     static bool interact_cd_cell_patch_outdomain(const FMMInteract_cd & cd,vec b1_min, vec b1_max,vec b2_min, vec b2_max, flt b1_min_slenght, flt b1_max_slenght, flt b2_min_slenght, flt b2_max_slenght){
@@ -353,11 +354,18 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(PatchScheduler &sched, f64 old_ti
 
         //generate the tree field for the box size info
 
-        PatchField<flt> max_slenght_cells;
-        PatchField<flt> min_slenght_cells;
+        FullTreeField<flt, RadTree> min_slenght;
+        FullTreeField<flt, RadTree> max_slenght;
+
+        PatchField<flt> & max_slenght_cells = max_slenght.patch_field;
+        PatchField<flt> & min_slenght_cells = min_slenght.patch_field;
 
         std::unordered_map<u64, flt> min_slenght_map;
         std::unordered_map<u64, flt> max_slenght_map;
+
+        using RtreeField = typename RadTree::template RadixTreeField<flt>;
+        std::unordered_map<u64, std::unique_ptr<RtreeField>> & min_tree_slenght_map = min_slenght.patch_tree_fields;
+        std::unordered_map<u64, std::unique_ptr<RtreeField>> & max_tree_slenght_map = max_slenght.patch_tree_fields;
 
         for(auto & [k,rtree_ptr] : radix_trees){
             auto [min,max] = rtree_ptr->get_min_max_cell_side_lenght();
@@ -375,9 +383,6 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(PatchScheduler &sched, f64 old_ti
                 return max_slenght_map[p.id_patch];
             });
 
-        using RtreeField = typename RadTree::template RadixTreeField<flt>;
-        std::unordered_map<u64, std::unique_ptr<RtreeField>> min_tree_slenght_map;
-        std::unordered_map<u64, std::unique_ptr<RtreeField>> max_tree_slenght_map;
 
         for(auto & [k,rtree_ptr] : radix_trees){
             std::unique_ptr<RtreeField> & field_min = min_tree_slenght_map[k];
@@ -423,19 +428,7 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(PatchScheduler &sched, f64 old_ti
 
         }
 
-        FullTreeField<flt, RadTree> min_slenght{
-            std::move(min_slenght_cells),
-            std::move(min_tree_slenght_map)
-        };
-
-        FullTreeField<flt, RadTree> max_slenght{
-            std::move(min_slenght_cells),
-            std::move(min_tree_slenght_map)
-        };
-
-
-        flt open_crit = 0.3;
-
+        flt open_crit = 1;
         using InterfHndl =  Interfacehandler<Tree_Send, flt, RadTree>;
         InterfHndl interf_hndl = InterfHndl();
         interf_hndl.compute_interface_list(sched,sptree,sd,radix_trees,FMMInteract_cd<flt>(open_crit),min_slenght,max_slenght);

@@ -12,11 +12,11 @@ class FullTreeField{public:
     PatchField<T> patch_field;
     std::unordered_map<u64, std::unique_ptr<TreeField_t>> patch_tree_fields;
 
-    inline FullTreeField(
-        PatchField<T> && pf, 
-        std::unordered_map<u64, std::unique_ptr<TreeField_t>> && ptf) :
-        patch_field(pf), patch_tree_fields(ptf)
-    {}
+    //inline FullTreeField(
+    //    PatchField<T> && pf, 
+    //    std::unordered_map<u64, std::unique_ptr<TreeField_t>> && ptf) :
+    //    patch_field(pf), patch_tree_fields(ptf)
+    //{}
 
 
     class BufferedFullTreeField{public:

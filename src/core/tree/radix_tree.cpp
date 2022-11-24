@@ -422,11 +422,11 @@ typename Radix_Tree<u_morton, vec3>::CuttedTree Radix_Tree<u_morton, vec3>::cut_
         }
 
 
-        {
-            logger::debug_sycl_ln("Radixtree", "valid_node_state");
-            print_tree_field(valid_node);
-            logger::raw_ln("");
-        }
+        //{
+        //    logger::debug_sycl_ln("Radixtree", "valid_node_state");
+        //    print_tree_field(valid_node);
+        //    logger::raw_ln("");
+        //}
 
 
         sycl::buffer<u8> valid_tree_morton (tree_leaf_count);
@@ -482,7 +482,7 @@ typename Radix_Tree<u_morton, vec3>::CuttedTree Radix_Tree<u_morton, vec3>::cut_
             });
         });
 
-        print_valid_morton();
+        //print_valid_morton();
 
 
 
@@ -644,7 +644,6 @@ typename Radix_Tree<u_morton, vec3>::CuttedTree Radix_Tree<u_morton, vec3>::cut_
 
 
 
-        logger::raw_ln("len new tree",ret.tree_internal_count);
 
         #if false
         std::unique_ptr<sycl::buffer<u32>> new_node_id_to_old_naive = std::make_unique<sycl::buffer<u32>>(ret.tree_leaf_count + ret.tree_internal_count);
@@ -680,7 +679,7 @@ typename Radix_Tree<u_morton, vec3>::CuttedTree Radix_Tree<u_morton, vec3>::cut_
                     vec3i cur_pos_max_cell_b = old_tree_acc_pos_max_cell[j];
 
 
-                    auto is_same_box = [&]() -> bool{
+                    auto is_same_box = [&]() -> bool {
                         return 
                             (cur_pos_min_cell_a.x() == cur_pos_min_cell_b.x()) && 
                             (cur_pos_min_cell_a.y() == cur_pos_min_cell_b.y()) && 
@@ -757,7 +756,7 @@ typename Radix_Tree<u_morton, vec3>::CuttedTree Radix_Tree<u_morton, vec3>::cut_
 
                     //logger::raw_ln("i ->",cur_pos_min_cell_a,cur_pos_max_cell_a , "| ptr ->",cur_pos_min_cell_b,cur_pos_max_cell_b);
 
-                    auto is_same_box = [&]() -> bool{
+                    auto is_same_box = [&]() -> bool {
                         return 
                             (cur_pos_min_cell_a.x() == cur_pos_min_cell_b.x()) && 
                             (cur_pos_min_cell_a.y() == cur_pos_min_cell_b.y()) && 
@@ -894,7 +893,7 @@ typename Radix_Tree<u_morton, vec3>::CuttedTree Radix_Tree<u_morton, vec3>::cut_
 
                         //logger::raw_ln("i ->",cur_pos_min_cell_a,cur_pos_max_cell_a , "| ptr ->",cur_pos_min_cell_b,cur_pos_max_cell_b);
 
-                        auto is_same_box = [&]() -> bool{
+                        auto is_same_box = [&]() -> bool {
                             return 
                                 (cur_pos_min_cell_a.x() == cur_pos_min_cell_b.x()) && 
                                 (cur_pos_min_cell_a.y() == cur_pos_min_cell_b.y()) && 
@@ -971,8 +970,12 @@ typename Radix_Tree<u_morton, vec3>::CuttedTree Radix_Tree<u_morton, vec3>::cut_
             });
         }
 
-        ret.print_tree_field(*new_node_id_to_old_v2);
+        //ret.print_tree_field(*new_node_id_to_old_v2);
 
+        logger::debug_ln("TreeCutter",
+            "tree cut cells:",tree_internal_count,"->",ret.tree_internal_count,
+            "obj:",obj_cnt,"->",extract_id.size()
+            );
 
 
         return CuttedTree{
