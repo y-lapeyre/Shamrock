@@ -7,11 +7,13 @@
 // -------------------------------------------------------//
 
 #include "basic_sph_gas_uint.hpp"
+#include "access/access.hpp"
 #include "aliases.hpp"
 #include "core/patch/base/patchdata.hpp"
 #include "core/sys/log.hpp"
 #include "core/sys/sycl_handler.hpp"
 #include "models/generic/algs/cfl_utils.hpp"
+#include "properties/accessor_properties.hpp"
 #include "runscript/shamrockapi.hpp"
 #include "models/generic/algs/integrators_utils.hpp"
 #include "models/sph/forces.hpp"
@@ -23,7 +25,7 @@
 //%Impl status : Clean unfinished
 
 
-const std::string console_tag = "[BasicSPHGasSelfGrav] ";
+const std::string console_tag = "[BasicSPHGasUInterne] ";
 
 
 template<class flt, class Kernel> 
@@ -41,8 +43,6 @@ void models::sph::BasicSPHGasUInterne<flt,Kernel>::check_valid(){
     }
 }
 
-
-
 template<class flt, class Kernel> 
 void models::sph::BasicSPHGasUInterne<flt,Kernel>::init(){
 
@@ -53,7 +53,7 @@ f64 models::sph::BasicSPHGasUInterne<flt,Kernel>::evolve(PatchScheduler &sched, 
 
     check_valid();
 
-    logger::info_ln("BasicSPHGasSelfGrav", "evolve t=",old_time);
+    logger::info_ln("BasicSPHGasUInterne", "evolve t=",old_time);
 
 
     Stepper stepper(sched,periodic_bc,htol_up_tol,htol_up_iter,gpart_mass);
@@ -63,6 +63,10 @@ f64 models::sph::BasicSPHGasUInterne<flt,Kernel>::evolve(PatchScheduler &sched, 
     const u32 ivxyz     = sched.pdl.get_field_idx<vec3>("vxyz");
     const u32 iaxyz     = sched.pdl.get_field_idx<vec3>("axyz");
     const u32 iaxyz_old = sched.pdl.get_field_idx<vec3>("axyz_old");
+
+    const u32 iuint      = sched.pdl.get_field_idx<flt>("uint");
+    const u32 iduint     = sched.pdl.get_field_idx<flt>("duint");
+    const u32 iduint_old = sched.pdl.get_field_idx<flt>("duint_old");
 
     const u32 ihpart    = sched.pdl.get_field_idx<flt>("hpart");
 
@@ -100,7 +104,7 @@ f64 models::sph::BasicSPHGasUInterne<flt,Kernel>::evolve(PatchScheduler &sched, 
 
             });
 
-            logger::info_ln("BasicSPHGasSelfGrav", "cfl dt :",cfl_val);
+            logger::info_ln("BasicSPHGasUInterne", "cfl dt :",cfl_val);
 
             f32 cfl_dt_loc = sycl::min(f32(0.001),cfl_val);
 
@@ -119,12 +123,21 @@ f64 models::sph::BasicSPHGasUInterne<flt,Kernel>::evolve(PatchScheduler &sched, 
 
             field_advance_time(queue, vxyz, axyz, range_npart, hdt);
 
+            sycl::buffer<flt> & uint  =  * pdat.get_field<flt>(iuint ).get_buf();
+            sycl::buffer<flt> & duint =  * pdat.get_field<flt>(iduint).get_buf();
+
+            field_advance_time(queue, uint, duint, range_npart, hdt);
+
         }, 
         
         [&](sycl::queue&  queue, PatchData& pdat, sycl::range<1> range_npart ){
             auto ker_predict_step = [&](sycl::handler &cgh) {
                 auto acc_axyz = pdat.get_field<vec3>(iaxyz).get_buf()->template get_access<sycl::access::mode::read_write>(cgh);
                 auto acc_axyz_old = pdat.get_field<vec3>(iaxyz_old).get_buf()->template get_access<sycl::access::mode::read_write>(cgh);
+
+                auto acc_duint = pdat.get_field<flt>(iduint).get_buf()->template get_access<sycl::access::mode::read_write>(cgh);
+                auto acc_duint_old = pdat.get_field<flt>(iduint_old).get_buf()->template get_access<sycl::access::mode::read_write>(cgh);
+
 
                 // Executing kernel
                 cgh.parallel_for(range_npart, [=](sycl::item<1> item) {
@@ -133,6 +146,13 @@ f64 models::sph::BasicSPHGasUInterne<flt,Kernel>::evolve(PatchScheduler &sched, 
 
                     acc_axyz[item]     = axyz_old;
                     acc_axyz_old[item] = axyz;
+
+
+                    flt duint     = acc_duint[item];
+                    flt duint_old = acc_duint_old[item];
+
+                    acc_duint[item]     = duint_old;
+                    acc_duint_old[item] = duint;
 
                 });
             };
@@ -160,18 +180,23 @@ f64 models::sph::BasicSPHGasUInterne<flt,Kernel>::evolve(PatchScheduler &sched, 
 
                     sycl::range range_npart{size_map[id_patch]}; //TODO remove ref to size
 
-                    auto cs = eos_cs;
+                    constexpr flt gamma = 5./3.;
                     auto part_mass = gpart_mass;
+
+                    sycl::buffer<flt> & uint = * merge_pdat.at(id_patch).data.template get_field<flt>(iuint ).get_buf();
+
 
                     sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
                         auto h = hnew->template get_access<sycl::access::mode::read>(cgh);
 
                         auto p = press->get_access<sycl::access::mode::discard_write>(cgh);
 
+                        sycl::accessor acc_u {uint, cgh, sycl::read_only};
+
                         cgh.parallel_for(range_npart,
                                 [=](sycl::item<1> item) { 
                                     
-                                    p[item] =   cs*cs*rho_h(part_mass, h[item])  ; 
+                                    p[item] =  (gamma-1) * rho_h(part_mass, h[item]) *acc_u[item]  ; 
                                     
                                     
                                     });
@@ -192,7 +217,7 @@ f64 models::sph::BasicSPHGasUInterne<flt,Kernel>::evolve(PatchScheduler &sched, 
             ){
             sched.for_each_patch([&](u64 id_patch, Patch cur_p) {
                 if (merge_pdat.at(id_patch).or_element_cnt == 0){
-                    logger::info_ln("BasicSPHGasSelfGrav","patch id =",id_patch,"is empty => skipping");
+                    logger::info_ln("BasicSPHGasUInterne","patch id =",id_patch,"is empty => skipping");
                 }
 
 
@@ -205,8 +230,9 @@ f64 models::sph::BasicSPHGasUInterne<flt,Kernel>::evolve(PatchScheduler &sched, 
 
                 sycl::range range_npart{merge_pdat.at(id_patch).or_element_cnt};
 
+
             
-                logger::info_ln("BasicSPHGasSelfGrav","patch : n°" ,id_patch , "compute forces");
+                logger::info_ln("BasicSPHGasUInterne","patch : n°" ,id_patch , "compute forces");
 
                 sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
                     auto h_new = hnew.get_access<sycl::access::mode::read>(cgh);
@@ -214,6 +240,14 @@ f64 models::sph::BasicSPHGasUInterne<flt,Kernel>::evolve(PatchScheduler &sched, 
 
                     auto r        = pdat_merge.get_field<f32_3>(ixyz).get_buf()->get_access<sycl::access::mode::read>(cgh);
                     auto acc_axyz = pdat_merge.get_field<f32_3>(iaxyz).get_buf()->get_access<sycl::access::mode::discard_write>(cgh);
+
+
+
+                    sycl::accessor uint {*pdat_merge.get_field<flt>(iuint).get_buf(), cgh, sycl::read_only};
+
+                    sycl::accessor acc_duint {*pdat_merge.get_field<flt>(iduint).get_buf(), cgh, sycl::write_only, sycl::no_init};
+
+
 
                     using Rta = walker::Radix_tree_accessor<u32, f32_3>;
                     Rta tree_acc(*radix_trees[id_patch], cgh);
@@ -235,6 +269,7 @@ f64 models::sph::BasicSPHGasUInterne<flt,Kernel>::evolve(PatchScheduler &sched, 
                         u32 id_a = (u32)item.get_id(0);
 
                         f32_3 sum_axyz = {0, 0, 0};
+                        f32 sum_du_a = 0;
                         f32 h_a        = h_new[id_a];
 
                         f32_3 xyz_a = r[id_a];
@@ -281,6 +316,19 @@ f64 models::sph::BasicSPHGasUInterne<flt,Kernel>::evolve(PatchScheduler &sched, 
                                 //f32 P_b     = cs * cs * rho_b;
                                 f32 omega_b = omga[id_b];
 
+                                //////////////////
+                                //internal energy update
+                                // scalar : f32  | vector : f32_3
+
+
+
+                                //sum_du_a += ........;
+
+
+                                //////////////////
+
+
+
                                 f32_3 tmp = sph_pressure<f32_3, f32>(part_mass, rho_a_sq, rho_b * rho_b, P_a, P_b, omega_a,
                                                                     omega_b, 0, 0, r_ab_unit * Kernel::dW(rab, h_a),
                                                                     r_ab_unit * Kernel::dW(rab, h_b));
@@ -292,6 +340,7 @@ f64 models::sph::BasicSPHGasUInterne<flt,Kernel>::evolve(PatchScheduler &sched, 
                         // out << "sum : " << sum_axyz << "\n";
 
                         acc_axyz[id_a] = sum_axyz;
+                        acc_duint[id_a] = sum_du_a;
                     });
                 });
                 
@@ -308,6 +357,11 @@ f64 models::sph::BasicSPHGasUInterne<flt,Kernel>::evolve(PatchScheduler &sched, 
                 auto acc_axyz     = buf.get_field<vec3>(iaxyz).get_buf()->template get_access<sycl::access::mode::read_write>(cgh);
                 auto acc_axyz_old = buf.get_field<vec3>(iaxyz_old).get_buf()->template get_access<sycl::access::mode::read_write>(cgh);
 
+                auto acc_uint     = buf.get_field<flt>(iuint).get_buf()->template get_access<sycl::access::mode::read_write>(cgh);
+                auto acc_duint     = buf.get_field<flt>(iduint).get_buf()->template get_access<sycl::access::mode::read_write>(cgh);
+                auto acc_duint_old = buf.get_field<flt>(iduint_old).get_buf()->template get_access<sycl::access::mode::read_write>(cgh);
+
+
                 // Executing kernel
                 cgh.parallel_for(range_npart, [=](sycl::item<1> item) {
                     //u32 gid = (u32)item.get_id();
@@ -318,6 +372,8 @@ f64 models::sph::BasicSPHGasUInterne<flt,Kernel>::evolve(PatchScheduler &sched, 
 
                     // v^* = v^{n + 1/2} + dt/2 a^n
                     acc_vxyz[item] = acc_vxyz[item] + (hdt) * (acc_axyz[item] - acc_axyz_old[item]);
+
+                    acc_uint[item] = acc_uint[item] + (hdt) * (acc_duint[item] - acc_duint_old[item]);
                 });
             };
 

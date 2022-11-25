@@ -31,10 +31,10 @@ inline void set_value_in_box(PatchScheduler &sched, T val, std::string name, std
 
 
         {
-            auto buf = f.get_sub_buf();
+            auto & buf = f.get_buf();
             sycl::host_accessor acc {*buf};
 
-            auto buf_xyz = xyz.get_sub_buf();
+            auto & buf_xyz = xyz.get_buf();
             sycl::host_accessor acc_xyz {*buf_xyz};
 
             for (u32 i = 0; i < f.size(); i++) {
