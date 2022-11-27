@@ -97,12 +97,18 @@ bsz = 1
 dr = 0.02
 
 
-aspect_rat = 1/4
+aspect_rat = 1
 
 
 
 #set box size
-bdim = setup.get_ideal_box(dr,((-bsz*aspect_rat,-bsz*aspect_rat,-bsz),(bsz*aspect_rat,bsz*aspect_rat,bsz)))
+#bdim = setup.get_ideal_box(dr,((-bsz*aspect_rat,-bsz*aspect_rat,-bsz),(bsz*aspect_rat,bsz*aspect_rat,bsz)))
+#dimm,dimM = bdim
+#xm,ym,zm = dimm
+#xM,yM,zM = dimM
+#vol_b = (xM-xm)*(yM-ym)*(zM-zm)
+#print("box resized to :",bdim,"| volume :",vol_b)
+bdim = ((-1,-1,-1),(1,1,1))
 dimm,dimM = bdim
 xm,ym,zm = dimm
 xM,yM,zM = dimM

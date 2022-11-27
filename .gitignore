@@ -7,6 +7,7 @@ __pycache__
 
 #compile/build/test folders
 build_*
+build
 
 test_pipeline
 test_res_*
@@ -23,8 +24,7 @@ version.cpp
 *.log
 *.out
 *.pdf
-.tex
 *.toc
-
+report.tex
 
 .DS_Store

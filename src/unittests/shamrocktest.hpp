@@ -23,6 +23,7 @@
 
 #pragma once
 
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -32,16 +33,20 @@
 #include "aliases.hpp"
 #include "core/utils/time_utils.hpp"
 
+[[deprecated]]
 inline std::vector<int> test_node_count;
+[[deprecated]]
 inline std::vector<std::string> test_name_lst;
 
-struct TestAssert{
+
+struct [[deprecated]] TestAssert {
     std::string assert_name;
     bool success;
     std::string log;
 };
 
-class TestResults{public:
+
+class [[deprecated]] TestResults{public:
     std::string test_name;
     std::vector<TestAssert> lst_assert = std::vector<TestAssert>(0);
 
@@ -50,10 +55,11 @@ class TestResults{public:
     }
 };
 
+[[deprecated]]
 inline std::vector<void (*)(TestResults &)> test_fct_lst;
 
 
-class Test{public:
+class [[deprecated]] Test{public:
     
 
     Test(std::string test_name,int node_used,void (*test_func)(TestResults &) ){
@@ -88,10 +94,10 @@ void test_func_##name (TestResults& __test_result_ref)
 //start test (name of the test, number of mpi node to use)
 //Test_assert("assert name", succes boolean, "log corresponding to the assertion");
 
+[[deprecated]]
 void run_py_script(std::string pysrc);
 
 int run_all_tests(int argc, char *argv[]);
-
 
 
 
@@ -144,8 +150,36 @@ namespace impl::shamrocktest {
         //to register asserts
 
 
-        inline void assert_add(std::string assert_name,bool v){
+        inline void assert_bool(std::string assert_name,bool v){
             asserts.push_back(TestAssert{v,std::move(assert_name),""});
+        }
+
+        template<class T>
+        inline void assert_equal(std::string assert_name,T a, T b){
+
+            bool t = a==b;
+            std::string comment = "";
+
+            if(!t){
+                comment = "left="+std::to_string(a) + " right=" + std::to_string(b);
+            }
+
+            asserts.push_back(TestAssert{t,std::move(assert_name),comment});
+        }
+
+
+        
+        inline void assert_float_equal(std::string assert_name,f64 a, f64 b, f64 eps){
+            f64 diff = sycl::fabs(a - b);
+
+            bool t = diff < eps;
+            std::string comment = "";
+
+            if(!t){
+                comment = "left="+std::to_string(a) + " right=" + std::to_string(b) + " diff="+ std::to_string(diff);
+            }
+
+            asserts.push_back(TestAssert{t,std::move(assert_name),comment});
         }
 
         inline void assert_add_comment(std::string assert_name,bool v,std::string comment){
@@ -191,10 +225,10 @@ namespace impl::shamrocktest {
         TestType type;
         std::string name;
         i32 node_count;
-        void (*test_functor)(TestAssertList &, TestDataList &);
+        void (*test_functor)();
 
 
-        inline Test (const TestType & type, std::string  name, const i32 & node_count,void (*func)(TestAssertList &, TestDataList &) ) :
+        inline Test (const TestType & type, std::string  name, const i32 & node_count,void (*func)() ) :
         type(type), name(std::move(name)),node_count(node_count), test_functor(func){}
 
         TestResult run();
@@ -208,14 +242,21 @@ namespace impl::shamrocktest {
         }
     };
 
+    extern TestResult current_test;
+
 }
 
 namespace shamrock::test {
     int run_all_tests(int argc, char *argv[], bool run_bench,bool run_analysis, bool run_unittest);
+
+    inline impl::shamrocktest::TestAssertList & asserts(){return impl::shamrocktest::current_test.asserts;};
+    inline impl::shamrocktest::TestDataList & test_data(){return impl::shamrocktest::current_test.test_data;};
 }
 
 
-#define TestStart(type,name,func_name, node_cnt) void test_func_##func_name (impl::shamrocktest::TestAssertList & asserts, impl::shamrocktest::TestDataList & testdata);\
-void (*test_func_ptr_##func_name)(impl::shamrocktest::TestAssertList &, impl::shamrocktest::TestDataList &) = test_func_##func_name;\
+#define TestStart(type,name,func_name, node_cnt) void test_func_##func_name ();\
+void (*test_func_ptr_##func_name)() = test_func_##func_name;\
 impl::shamrocktest::TestStaticInit test_class_obj_##func_name (impl::shamrocktest::Test{type,name,node_cnt,test_func_ptr_##func_name});\
-void test_func_##func_name (impl::shamrocktest::TestAssertList & asserts, impl::shamrocktest::TestDataList & testdata)
+void test_func_##func_name ()
+
+
