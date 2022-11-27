@@ -12,8 +12,16 @@ namespace syclalgs::reduction::impl {
 
 
         sycl::buffer<T> buf_int(len);
+
+        #ifdef SYCL_COMP_HIPSYCL
+        q.wait();
+        #endif
+        
         ::syclalgs::basic::write_with_offset_into(buf_int,buf1,start_id,len);
 
+        #ifdef SYCL_COMP_HIPSYCL
+        q.wait();
+        #endif
 
         u32 part_size = work_group_size * 2;
 
@@ -53,6 +61,10 @@ namespace syclalgs::reduction::impl {
                 });
             });
 
+            #ifdef SYCL_COMP_HIPSYCL
+            q.wait();
+            #endif
+
             len = n_wgroups;
         }
 
@@ -68,6 +80,10 @@ namespace syclalgs::reduction::impl {
                 acc_rec[0] = global_mem[0];
             });
         });
+
+        #ifdef SYCL_COMP_HIPSYCL
+        q.wait();
+        #endif
 
 
 
@@ -136,7 +152,7 @@ namespace syclalgs::reduction {
     template<class T, class Op> inline T reduce(sycl::queue & q, sycl::buffer<T> & buf1, u32 start_id, u32 end_id){
 
         return impl::reduce_sycl_2020<T, Op>(q, buf1, start_id, end_id);
-
+        //return impl::reduce_manual<T, Op, 16>(q, buf1, start_id, end_id);
     }
 
 }

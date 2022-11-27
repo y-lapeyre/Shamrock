@@ -90,7 +90,7 @@ namespace syclalgs {
             sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
 
                 sycl::accessor source {buf_in, cgh, sycl::read_only};
-                sycl::accessor dest {buf_ctn, cgh, sycl::write_only};
+                sycl::accessor dest {buf_ctn, cgh, sycl::write_only, sycl::no_init};
                 u32 off = offset;
                 cgh.parallel_for<SyclAlg_write_with_offset_into<T>>( sycl::range{element_count}, [=](sycl::item<1> item) { dest[item.get_id(0) + off] = source[item]; });
             });
