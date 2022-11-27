@@ -17,7 +17,7 @@
 //#include "core/patch/base/pdat_comm_impl/pdat_comm_directgpu.hpp"
 #include "core/sys/sycl_mpi_interop.hpp"
 #include "core/sys/sycl_handler.hpp"
-#include "core/utils/sycl_algs.hpp"
+#include "core/algs/sycl/sycl_algs.hpp"
 #include <cstdio>
 #include <memory>
 

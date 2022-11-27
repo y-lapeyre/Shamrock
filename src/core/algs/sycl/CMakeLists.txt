@@ -3,7 +3,7 @@ if("${BUILD_SIM}")
 
 target_sources(shamrock
     PRIVATE
-        
+        sycl_algs.cpp
     PUBLIC
     )
 
@@ -23,7 +23,7 @@ if("${BUILD_TEST}")
 
     target_sources(shamrock_test
     PRIVATE
-        
+        sycl_algs.cpp
     PUBLIC
     )
 

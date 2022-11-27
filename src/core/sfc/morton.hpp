@@ -27,6 +27,10 @@
 
 namespace morton_3d {
 
+    /** 
+     * @brief Helper struct to get types corresponding to a morton code representation
+     * @tparam morton_repr u32 (32 bits) or u64 (64 bits) 
+     */
     template <class morton_repr> struct morton_types {
         using int_vec_repr_base = std::void_t<>;
         using int_vec_repr      = std::void_t<>;

@@ -7,7 +7,7 @@
 // -------------------------------------------------------//
 
 #include "sycl_algs.hpp"
-#include "sycl_vector_utils.hpp"
+#include "core/utils/sycl_vector_utils.hpp"
 #include "core/sys/sycl_mpi_interop.hpp"
 
 //%Impl status : Clean

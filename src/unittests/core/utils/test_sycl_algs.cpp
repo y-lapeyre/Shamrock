@@ -2,7 +2,7 @@
 #include "unittests/shamrocktest.hpp"
 
 #include <random>
-#include "core/utils/sycl_algs.hpp"
+#include "core/algs/sycl/sycl_algs.hpp"
 #include "core/utils/sycl_vector_utils.hpp"
 
 template<class T> void unit_test_reduc(){
@@ -32,7 +32,7 @@ template<class T> void unit_test_reduc(){
             }
         };
 
-        sycl_ret = syclalgs::reduction::reduce<T,Op,32>(sycl_handler::get_compute_queue(), buf, 0, size_test);
+        sycl_ret = syclalgs::reduction::impl::reduce_manual<T,Op,32>(sycl_handler::get_compute_queue(), buf, 0, size_test);
 
     }
 
@@ -83,7 +83,7 @@ template<class T> f64 bench_reduction(const u32 & size_test){
             }
         };
 
-        sycl_ret = syclalgs::reduction::reduce<T,Op,32>(q, buf, 0, size_test);
+        sycl_ret = syclalgs::reduction::impl::reduce_manual<T,Op,32>(q, buf, 0, size_test);
 
         q.wait();
 
