@@ -62,6 +62,7 @@ namespace opts {
         }
 
         if(error){
+            print_help();
             throw ShamAPIException(err_buf + "names are not registered in ::opts");
         }
     }

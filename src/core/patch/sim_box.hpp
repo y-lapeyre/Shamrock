@@ -12,7 +12,7 @@
 #include "base/patch.hpp"
 #include "base/patchdata.hpp"
 #include "base/patchdata_layout.hpp"
-#include "boundary_condition.hpp"
+//#include "boundary_condition.hpp"
 //#include "core/patch/patchdata_buffer.hpp"
 #include "core/patch/scheduler/loadbalancing_hilbert.hpp" //TODO remove dependancy from hilbert
 #include <memory>
@@ -20,6 +20,7 @@
 
 
 
+#if false
 template<class flt>
 class SimulationVolume {
 
@@ -35,11 +36,11 @@ class SimulationVolume {
     vec translate_factor;
     vec scale_factor;
 
-    BoundaryConditions<flt> bc;
+    SimulationDomain<flt> bc;
 
     public: 
 
-    inline BoundaryConditions<flt> & get_boundaries(){
+    inline SimulationDomain<flt> & get_boundaries(){
         return bc;
     }
 
@@ -50,7 +51,7 @@ class SimulationVolume {
     void update_volume();
 
 };
-
+#endif
 
 
 

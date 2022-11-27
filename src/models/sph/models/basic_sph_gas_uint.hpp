@@ -21,7 +21,7 @@
 namespace models::sph {
 
     template<class flt, class Kernel>
-    class BasicSPHGasSelfGrav {
+    class BasicSPHGasUInterne {
 
         using vec3 = sycl::vec<flt, 3>;
 

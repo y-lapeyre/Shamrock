@@ -229,3 +229,13 @@ template<> inline sycl::vec<f64,16> next_obj(std::mt19937 & eng, std::uniform_re
         next_obj<f64>(eng,distval),next_obj<f64>(eng,distval),next_obj<f64>(eng,distval),next_obj<f64>(eng,distval)
     };
 }
+
+
+
+
+
+
+template<> inline sycl::vec<u16,3> next_obj(std::mt19937 & eng, std::uniform_real_distribution<f64> & distval){return sycl::vec<u16,3> {next_obj<u16>(eng,distval),next_obj<u16>(eng,distval),next_obj<u16>(eng,distval)};}
+
+
+template<> inline sycl::vec<u32,3> next_obj(std::mt19937 & eng, std::uniform_real_distribution<f64> & distval){return sycl::vec<u32,3> {next_obj<u32>(eng,distval),next_obj<u32>(eng,distval),next_obj<u32>(eng,distval)};}

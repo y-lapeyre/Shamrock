@@ -12,6 +12,11 @@
 #include "flags.hpp"
 #include <memory>
 
+
+enum SortImplType{
+    MultiKernel
+};
+
 /**
  * @brief sort morton code and generate remap table 
  *
@@ -21,7 +26,7 @@
  * @param buf_index buffer countaining the index map corresponding to the sorting
  * @param buf_morton morton buffer that will be sorted
  */
-template<class u_morton>
+template<class u_morton, SortImplType impl = MultiKernel>
 void sycl_sort_morton_key_pair(
     sycl::queue & queue,
     u32 morton_count_rounded_pow,

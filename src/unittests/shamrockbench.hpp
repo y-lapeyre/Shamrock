@@ -23,7 +23,9 @@
 
 class BenchmarkResults{public:
     std::string bench_name;
-    std::vector<f64> scores = std::vector<f64>();
+
+
+    std::vector<std::string> entries = std::vector<std::string>();
 
     BenchmarkResults(std::string parbench_name){
         bench_name = parbench_name;
@@ -57,24 +59,25 @@ void bench_func_##func_name (BenchmarkResults& __bench_result_ref)
 
 #define Register_score(result)  \
 {\
-    __bench_result_ref.scores.push_back(result);\
+    __bench_result_ref.entries.push_back(result);\
 }
 
 
-#define Timeit(code) \
-{Timer timer; timer.start(); \
-{ \
-    code ; \
-} \
-timer.end(); __bench_result_ref.scores.push_back(timer.nanosec);}
 
-
-
-#define TimeitFor(count,code) \
-for(u32 __cnt = 0 ; __cnt < count ; __cnt ++){Timer timer; timer.start(); \
-{ \
-    code ; \
-} \
-timer.end(); __bench_result_ref.scores.push_back(timer.nanosec);}
+//#define Timeit(code) \
+//{Timer timer; timer.start(); \
+//{ \
+//    code ; \
+//} \
+//timer.end(); __bench_result_ref.scores.push_back(timer.nanosec);}
+//
+//
+//
+//#define TimeitFor(count,code) \
+//for(u32 __cnt = 0 ; __cnt < count ; __cnt ++){Timer timer; timer.start(); \
+//{ \
+//    code ; \
+//} \
+//timer.end(); __bench_result_ref.scores.push_back(timer.nanosec);}
 
 int run_all_bench(int argc, char *argv[]);

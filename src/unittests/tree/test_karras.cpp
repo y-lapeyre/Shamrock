@@ -17,9 +17,9 @@
 #include "unittests/shamrocktest.hpp"
 
 
-Test_start("tree::kernels::",karras_alg,1){
-
-    using u_morton = u32;
+template<class mprec>
+inline void test_karras_alg(){
+    using u_morton = mprec;
 
     std::vector<u_morton> morton_list = {
         0x0,
@@ -67,69 +67,77 @@ Test_start("tree::kernels::",karras_alg,1){
 
     }
 
-    Test_assert("out_lchild_id[0]  == 7",  out_lchild_id[0]  == 7);
-    Test_assert("out_lchild_id[1]  == 0",  out_lchild_id[1]  == 0);
-    Test_assert("out_lchild_id[2]  == 2",  out_lchild_id[2]  == 2);
-    Test_assert("out_lchild_id[3]  == 1",  out_lchild_id[3]  == 1);
-    Test_assert("out_lchild_id[4]  == 5",  out_lchild_id[4]  == 5);
-    Test_assert("out_lchild_id[5]  == 4",  out_lchild_id[5]  == 4);
-    Test_assert("out_lchild_id[6]  == 6",  out_lchild_id[6]  == 6);
-    Test_assert("out_lchild_id[7]  == 3",  out_lchild_id[7]  == 3);
-    Test_assert("out_lchild_id[8]  == 8",  out_lchild_id[8]  == 8);
-    Test_assert("out_lchild_id[9]  == 10", out_lchild_id[9]  == 10);
-    Test_assert("out_lchild_id[10] == 9",  out_lchild_id[10] == 9);
-    Test_assert("out_lchild_id[11] == 11", out_lchild_id[11] == 11);
+    shamrock::test::asserts().assert_bool("out_lchild_id[0]  == 7",  out_lchild_id[0]  == 7);
+    shamrock::test::asserts().assert_bool("out_lchild_id[1]  == 0",  out_lchild_id[1]  == 0);
+    shamrock::test::asserts().assert_bool("out_lchild_id[2]  == 2",  out_lchild_id[2]  == 2);
+    shamrock::test::asserts().assert_bool("out_lchild_id[3]  == 1",  out_lchild_id[3]  == 1);
+    shamrock::test::asserts().assert_bool("out_lchild_id[4]  == 5",  out_lchild_id[4]  == 5);
+    shamrock::test::asserts().assert_bool("out_lchild_id[5]  == 4",  out_lchild_id[5]  == 4);
+    shamrock::test::asserts().assert_bool("out_lchild_id[6]  == 6",  out_lchild_id[6]  == 6);
+    shamrock::test::asserts().assert_bool("out_lchild_id[7]  == 3",  out_lchild_id[7]  == 3);
+    shamrock::test::asserts().assert_bool("out_lchild_id[8]  == 8",  out_lchild_id[8]  == 8);
+    shamrock::test::asserts().assert_bool("out_lchild_id[9]  == 10", out_lchild_id[9]  == 10);
+    shamrock::test::asserts().assert_bool("out_lchild_id[10] == 9",  out_lchild_id[10] == 9);
+    shamrock::test::asserts().assert_bool("out_lchild_id[11] == 11", out_lchild_id[11] == 11);
 
-    Test_assert("out_rchild_id[0]  == 8",  out_rchild_id[0]  == 8);
-    Test_assert("out_rchild_id[1]  == 1",  out_rchild_id[1]  == 1);
-    Test_assert("out_rchild_id[2]  == 3",  out_rchild_id[2]  == 3);
-    Test_assert("out_rchild_id[3]  == 2",  out_rchild_id[3]  == 2);
-    Test_assert("out_rchild_id[4]  == 6",  out_rchild_id[4]  == 6);
-    Test_assert("out_rchild_id[5]  == 5",  out_rchild_id[5]  == 5);
-    Test_assert("out_rchild_id[6]  == 7",  out_rchild_id[6]  == 7);
-    Test_assert("out_rchild_id[7]  == 4",  out_rchild_id[7]  == 4);
-    Test_assert("out_rchild_id[8]  == 9",  out_rchild_id[8]  == 9);
-    Test_assert("out_rchild_id[9]  == 11", out_rchild_id[9]  == 11);
-    Test_assert("out_rchild_id[10] == 10", out_rchild_id[10] == 10);
-    Test_assert("out_rchild_id[11] == 12", out_rchild_id[11] == 12);
+    shamrock::test::asserts().assert_bool("out_rchild_id[0]  == 8",  out_rchild_id[0]  == 8);
+    shamrock::test::asserts().assert_bool("out_rchild_id[1]  == 1",  out_rchild_id[1]  == 1);
+    shamrock::test::asserts().assert_bool("out_rchild_id[2]  == 3",  out_rchild_id[2]  == 3);
+    shamrock::test::asserts().assert_bool("out_rchild_id[3]  == 2",  out_rchild_id[3]  == 2);
+    shamrock::test::asserts().assert_bool("out_rchild_id[4]  == 6",  out_rchild_id[4]  == 6);
+    shamrock::test::asserts().assert_bool("out_rchild_id[5]  == 5",  out_rchild_id[5]  == 5);
+    shamrock::test::asserts().assert_bool("out_rchild_id[6]  == 7",  out_rchild_id[6]  == 7);
+    shamrock::test::asserts().assert_bool("out_rchild_id[7]  == 4",  out_rchild_id[7]  == 4);
+    shamrock::test::asserts().assert_bool("out_rchild_id[8]  == 9",  out_rchild_id[8]  == 9);
+    shamrock::test::asserts().assert_bool("out_rchild_id[9]  == 11", out_rchild_id[9]  == 11);
+    shamrock::test::asserts().assert_bool("out_rchild_id[10] == 10", out_rchild_id[10] == 10);
+    shamrock::test::asserts().assert_bool("out_rchild_id[11] == 12", out_rchild_id[11] == 12);
 
 
-    Test_assert("out_lchild_flag[0]  == 0",  out_lchild_flag[0]  == 0);
-    Test_assert("out_lchild_flag[1]  == 1",  out_lchild_flag[1]  == 1);
-    Test_assert("out_lchild_flag[2]  == 1",  out_lchild_flag[2]  == 1);
-    Test_assert("out_lchild_flag[3]  == 0",  out_lchild_flag[3]  == 0);
-    Test_assert("out_lchild_flag[4]  == 0",  out_lchild_flag[4]  == 0);
-    Test_assert("out_lchild_flag[5]  == 1",  out_lchild_flag[5]  == 1);
-    Test_assert("out_lchild_flag[6]  == 1",  out_lchild_flag[6]  == 1);
-    Test_assert("out_lchild_flag[7]  == 0",  out_lchild_flag[7]  == 0);
-    Test_assert("out_lchild_flag[8]  == 1",  out_lchild_flag[8]  == 1);
-    Test_assert("out_lchild_flag[9]  == 0",  out_lchild_flag[9]  == 0);
-    Test_assert("out_lchild_flag[10] == 1",  out_lchild_flag[10] == 1);
-    Test_assert("out_lchild_flag[11] == 1",  out_lchild_flag[11] == 1);
+    shamrock::test::asserts().assert_bool("out_lchild_flag[0]  == 0",  out_lchild_flag[0]  == 0);
+    shamrock::test::asserts().assert_bool("out_lchild_flag[1]  == 1",  out_lchild_flag[1]  == 1);
+    shamrock::test::asserts().assert_bool("out_lchild_flag[2]  == 1",  out_lchild_flag[2]  == 1);
+    shamrock::test::asserts().assert_bool("out_lchild_flag[3]  == 0",  out_lchild_flag[3]  == 0);
+    shamrock::test::asserts().assert_bool("out_lchild_flag[4]  == 0",  out_lchild_flag[4]  == 0);
+    shamrock::test::asserts().assert_bool("out_lchild_flag[5]  == 1",  out_lchild_flag[5]  == 1);
+    shamrock::test::asserts().assert_bool("out_lchild_flag[6]  == 1",  out_lchild_flag[6]  == 1);
+    shamrock::test::asserts().assert_bool("out_lchild_flag[7]  == 0",  out_lchild_flag[7]  == 0);
+    shamrock::test::asserts().assert_bool("out_lchild_flag[8]  == 1",  out_lchild_flag[8]  == 1);
+    shamrock::test::asserts().assert_bool("out_lchild_flag[9]  == 0",  out_lchild_flag[9]  == 0);
+    shamrock::test::asserts().assert_bool("out_lchild_flag[10] == 1",  out_lchild_flag[10] == 1);
+    shamrock::test::asserts().assert_bool("out_lchild_flag[11] == 1",  out_lchild_flag[11] == 1);
 
-    Test_assert("out_rchild_flag[0]  == 0",  out_rchild_flag[0]  == 0);
-    Test_assert("out_rchild_flag[1]  == 1",  out_rchild_flag[1]  == 1);
-    Test_assert("out_rchild_flag[2]  == 1",  out_rchild_flag[2]  == 1);
-    Test_assert("out_rchild_flag[3]  == 0",  out_rchild_flag[3]  == 0);
-    Test_assert("out_rchild_flag[4]  == 0",  out_rchild_flag[4]  == 0);
-    Test_assert("out_rchild_flag[5]  == 1",  out_rchild_flag[5]  == 1);
-    Test_assert("out_rchild_flag[6]  == 1",  out_rchild_flag[6]  == 1);
-    Test_assert("out_rchild_flag[7]  == 0",  out_rchild_flag[7]  == 0);
-    Test_assert("out_rchild_flag[8]  == 0",  out_rchild_flag[8]  == 0);
-    Test_assert("out_rchild_flag[9]  == 0",  out_rchild_flag[9]  == 0);
-    Test_assert("out_rchild_flag[10] == 1",  out_rchild_flag[10] == 1);
-    Test_assert("out_rchild_flag[11] == 1",  out_rchild_flag[11] == 1);
+    shamrock::test::asserts().assert_bool("out_rchild_flag[0]  == 0",  out_rchild_flag[0]  == 0);
+    shamrock::test::asserts().assert_bool("out_rchild_flag[1]  == 1",  out_rchild_flag[1]  == 1);
+    shamrock::test::asserts().assert_bool("out_rchild_flag[2]  == 1",  out_rchild_flag[2]  == 1);
+    shamrock::test::asserts().assert_bool("out_rchild_flag[3]  == 0",  out_rchild_flag[3]  == 0);
+    shamrock::test::asserts().assert_bool("out_rchild_flag[4]  == 0",  out_rchild_flag[4]  == 0);
+    shamrock::test::asserts().assert_bool("out_rchild_flag[5]  == 1",  out_rchild_flag[5]  == 1);
+    shamrock::test::asserts().assert_bool("out_rchild_flag[6]  == 1",  out_rchild_flag[6]  == 1);
+    shamrock::test::asserts().assert_bool("out_rchild_flag[7]  == 0",  out_rchild_flag[7]  == 0);
+    shamrock::test::asserts().assert_bool("out_rchild_flag[8]  == 0",  out_rchild_flag[8]  == 0);
+    shamrock::test::asserts().assert_bool("out_rchild_flag[9]  == 0",  out_rchild_flag[9]  == 0);
+    shamrock::test::asserts().assert_bool("out_rchild_flag[10] == 1",  out_rchild_flag[10] == 1);
+    shamrock::test::asserts().assert_bool("out_rchild_flag[11] == 1",  out_rchild_flag[11] == 1);
 
-    Test_assert("out_endrange[0]  == 12", out_endrange[0]  == 12);
-    Test_assert("out_endrange[1]  == 0",  out_endrange[1]  == 0);
-    Test_assert("out_endrange[2]  == 3",  out_endrange[2]  == 3);
-    Test_assert("out_endrange[3]  == 0",  out_endrange[3]  == 0);
-    Test_assert("out_endrange[4]  == 7",  out_endrange[4]  == 7);
-    Test_assert("out_endrange[5]  == 4",  out_endrange[5]  == 4);
-    Test_assert("out_endrange[6]  == 7",  out_endrange[6]  == 7);
-    Test_assert("out_endrange[7]  == 0",  out_endrange[7]  == 0);
-    Test_assert("out_endrange[8]  == 12", out_endrange[8]  == 12);
-    Test_assert("out_endrange[9]  == 12", out_endrange[9]  == 12);
-    Test_assert("out_endrange[10] == 9",  out_endrange[10] == 9);
-    Test_assert("out_endrange[11] == 12", out_endrange[11] == 12);
+    shamrock::test::asserts().assert_bool("out_endrange[0]  == 12", out_endrange[0]  == 12);
+    shamrock::test::asserts().assert_bool("out_endrange[1]  == 0",  out_endrange[1]  == 0);
+    shamrock::test::asserts().assert_bool("out_endrange[2]  == 3",  out_endrange[2]  == 3);
+    shamrock::test::asserts().assert_bool("out_endrange[3]  == 0",  out_endrange[3]  == 0);
+    shamrock::test::asserts().assert_bool("out_endrange[4]  == 7",  out_endrange[4]  == 7);
+    shamrock::test::asserts().assert_bool("out_endrange[5]  == 4",  out_endrange[5]  == 4);
+    shamrock::test::asserts().assert_bool("out_endrange[6]  == 7",  out_endrange[6]  == 7);
+    shamrock::test::asserts().assert_bool("out_endrange[7]  == 0",  out_endrange[7]  == 0);
+    shamrock::test::asserts().assert_bool("out_endrange[8]  == 12", out_endrange[8]  == 12);
+    shamrock::test::asserts().assert_bool("out_endrange[9]  == 12", out_endrange[9]  == 12);
+    shamrock::test::asserts().assert_bool("out_endrange[10] == 9",  out_endrange[10] == 9);
+    shamrock::test::asserts().assert_bool("out_endrange[11] == 12", out_endrange[11] == 12);
+}
+
+TestStart(Unittest, "core/tree/kernels/karras_alg (32)", karras_utest32, 1){
+    test_karras_alg<u32>();
+}
+
+TestStart(Unittest, "core/tree/kernels/karras_alg (64)", karras_utest64, 1){
+    test_karras_alg<u64>();
 }

@@ -10,7 +10,7 @@
 #include "runscript/pymodule/pylib.hpp"
 #include "runscript/shamrockapi.hpp"
 #include "runscript/pymodule/pyshamrockcontext.hpp"
-#include "models/sph/models/basic_sph_gas_selfgrav.hpp"
+#include "models/sph/models/basic_sph_gas_uint.hpp"
 #include <floatobject.h>
 #include <methodobject.h>
 #include <object.h>
@@ -22,19 +22,19 @@ using namespace models::sph;
 
 
 template<class flt, class Kernel>
-MakeContainer(Container_Model_BasicSPHGasSelfGrav, BasicSPHGasSelfGrav<flt, Kernel>);
+MakeContainer(Container_Model_BasicSPHGasUInterne, BasicSPHGasUInterne<flt, Kernel>);
 
 template<class flt, class Kernel>
-MakePyContainer(PySHAMROCK_Model_BasicSPHGasSelfGrav, Container_Model_BasicSPHGasSelfGrav<flt, Kernel>)
+MakePyContainer(PySHAMROCK_Model_BasicSPHGasUInterne, Container_Model_BasicSPHGasUInterne<flt, Kernel>)
 
 
 
 template<class flt, class Kernel>
-struct PySHAMROCK_Model_BasicSPHGasSelfGravIMPL{
+struct PySHAMROCK_Model_BasicSPHGasUInterneIMPL{
 
-    using Type = PySHAMROCK_Model_BasicSPHGasSelfGrav<flt,Kernel>;
-    using IntType = BasicSPHGasSelfGrav<flt,Kernel>;
-    inline static const std::string descriptor = "SPH model for basic gas";
+    using Type = PySHAMROCK_Model_BasicSPHGasUInterne<flt,Kernel>;
+    using IntType = BasicSPHGasUInterne<flt,Kernel>;
+    inline static const std::string descriptor = "SPH model for basic gas with internal energy";
 
 
 
@@ -203,18 +203,18 @@ struct PySHAMROCK_Model_BasicSPHGasSelfGravIMPL{
 
 };
 
-template<> std::string PySHAMROCK_Model_BasicSPHGasSelfGravIMPL<f32, kernels::M4<f32>>::get_name(){
-    return "BasicSPHGasSelfGrav_M4_single";
+template<> std::string PySHAMROCK_Model_BasicSPHGasUInterneIMPL<f32, kernels::M4<f32>>::get_name(){
+    return "BasicSPHGasUInterne_M4_single";
 }
 
 
 
 
 
-addpybinding(basicsphgasSelfGrav){
-    PySHAMROCK_Model_BasicSPHGasSelfGravIMPL<f32, kernels::M4<f32>>::add_object_pybind(module);
-    //PySHAMROCK_Model_BasicSPHGasSelfGravIMPL<f64, u32, kernels::M4<f64>>::add_object_pybind(module);
-    //PySHAMROCK_Model_BasicSPHGasSelfGravIMPL<f32, u64, kernels::M4<f32>>::add_object_pybind(module);
-    //PySHAMROCK_Model_BasicSPHGasSelfGravIMPL<f64, u64, kernels::M4<f64>>::add_object_pybind(module);
+addpybinding(basicsphgasUInterne){
+    PySHAMROCK_Model_BasicSPHGasUInterneIMPL<f32, kernels::M4<f32>>::add_object_pybind(module);
+    //PySHAMROCK_Model_BasicSPHGasUInterneIMPL<f64, u32, kernels::M4<f64>>::add_object_pybind(module);
+    //PySHAMROCK_Model_BasicSPHGasUInterneIMPL<f32, u64, kernels::M4<f32>>::add_object_pybind(module);
+    //PySHAMROCK_Model_BasicSPHGasUInterneIMPL<f64, u64, kernels::M4<f64>>::add_object_pybind(module);
 }
 

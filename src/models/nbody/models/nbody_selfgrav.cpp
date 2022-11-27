@@ -1,5 +1,7 @@
 
 #include "nbody_selfgrav.hpp"
+#include "core/patch/interfaces/interface_handler.hpp"
+#include "core/patch/utility/full_tree_field.hpp"
 #include "core/patch/utility/serialpatchtree.hpp"
 #include "core/tree/radix_tree.hpp"
 #include "runscript/shamrockapi.hpp"
@@ -96,6 +98,62 @@ void sycl_position_modulo(sycl::queue &queue, u32 npart, std::unique_ptr<sycl::b
 
 
 
+
+
+
+template<class flt>
+class FMMInteract_cd{
+
+    using vec = sycl::vec<flt, 3>;
+
+    flt opening_crit_sq;
+
+    public:
+
+    explicit FMMInteract_cd(flt open_crit) : opening_crit_sq(open_crit*open_crit){};
+
+    static bool interact_cd_cell_cell(const FMMInteract_cd & cd,vec b1_min, vec b1_max,vec b2_min, vec b2_max){
+        vec s1 = (b1_max + b1_min)/2;
+        vec s2 = (b2_max + b2_min)/2;
+
+        vec r_fmm = s2-s1;
+
+        vec d1 = b1_max - b1_min;
+        vec d2 = b2_max - b2_min;
+
+        flt l1 = sycl::max(sycl::max(d1.x(),d1.y()),d1.z());
+        flt l2 = sycl::max(sycl::max(d2.x(),d2.y()),d2.z());
+
+        flt opening_angle_sq = (l1 + l2)*(l1 + l2)/sycl::dot(r_fmm,r_fmm);
+
+        return opening_angle_sq > cd.opening_crit_sq;
+    }
+
+    static bool interact_cd_cell_patch(const FMMInteract_cd & cd,vec b1_min, vec b1_max,vec b2_min, vec b2_max, flt b1_min_slenght, flt b1_max_slenght, flt b2_min_slenght, flt b2_max_slenght){
+        
+        vec c1 = (b1_max + b1_min)/2;
+        vec s1 = (b1_max - b1_min);
+        flt L1 = sycl::max(sycl::max(s1.x(),s1.y()),s1.z());
+
+        flt dist_to_surf = sycl::sqrt(BBAA::get_sq_distance_to_BBAAsurface(c1, b2_min, b2_max));
+
+        flt opening_angle_sq = (L1 + b2_max_slenght)/(dist_to_surf + b2_min_slenght/2);
+        opening_angle_sq *= opening_angle_sq;
+
+        return opening_angle_sq > cd.opening_crit_sq;
+    }
+
+    static bool interact_cd_cell_patch_outdomain(const FMMInteract_cd & cd,vec b1_min, vec b1_max,vec b2_min, vec b2_max, flt b1_min_slenght, flt b1_max_slenght, flt b2_min_slenght, flt b2_max_slenght){
+        return false;
+    }
+};
+
+
+
+
+
+
+
 template<class flt> 
 f64 models::nbody::Nbody_SelfGrav<flt>::evolve(PatchScheduler &sched, f64 old_time, f64 target_time){
 
@@ -169,7 +227,7 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(PatchScheduler &sched, f64 old_ti
 
 
 
-    auto leapfrog_lambda = [&](flt old_time, bool do_force, bool do_corrector) -> flt{
+    auto leapfrog_lambda = [&](flt old_time, bool do_force, bool do_corrector) -> flt {
 
         const u32 ixyz      = sched.pdl.get_field_idx<vec3>("xyz");
         const u32 ivxyz     = sched.pdl.get_field_idx<vec3>("vxyz");
@@ -240,9 +298,11 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(PatchScheduler &sched, f64 old_ti
 
         constexpr u32 reduc_level = 5;
 
+        using RadTree = Radix_Tree<u_morton, vec3>;
+
         //make trees
         auto tgen_trees = timings::start_timer("radix tree gen", timings::sycl);
-        std::unordered_map<u64, std::unique_ptr<Radix_Tree<u_morton, vec3>>> radix_trees;
+        std::unordered_map<u64, std::unique_ptr<RadTree>> radix_trees;
 
         sched.for_each_patch_data([&](u64 id_patch, Patch & cur_p, PatchData & pdat) {
             logger::debug_ln("SPHLeapfrog","patch : n°",id_patch,"->","making Radix Tree");
@@ -256,42 +316,126 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(PatchScheduler &sched, f64 old_ti
                 std::tuple<vec3, vec3> box = sched.patch_data.sim_box.get_box<flt>(cur_p);
 
                 // radix tree computation
-                radix_trees[id_patch] = std::make_unique<Radix_Tree<u_morton, vec3>>(sycl_handler::get_compute_queue(), box,
+                radix_trees[id_patch] = std::make_unique<RadTree>(sycl_handler::get_compute_queue(), box,
                                                                                     buf_xyz,pdat.get_obj_cnt(),reduc_level);
             }
                 
         });
 
 
-
-        /*
-        sched.for_each_patch([&](u64 id_patch, Patch  cur_p) {
+        sched.for_each_patch_data([&](u64 id_patch, Patch &  /*cur_p*/, PatchData & pdat) {
             logger::debug_ln("SPHLeapfrog","patch : n°",id_patch,"->","compute radix tree cell volumes");
-            if (merge_pdat.at(id_patch).or_element_cnt == 0)
-                logger::debug_ln("SPHLeapfrog","patch : n°",id_patch,"->","is empty skipping tree volumes step");
-
-            radix_trees[id_patch]->compute_cellvolume(sycl_handler::get_compute_queue());
+            if (pdat.is_empty()){
+                logger::debug_ln("SPHLeapfrog","patch : n°",id_patch,"->","is empty skipping tree build");
+            }else{
+                radix_trees[id_patch]->compute_cellvolume(sycl_handler::get_compute_queue());
+            }
         });
 
-        sched.for_each_patch([&](u64 id_patch, Patch cur_p) {
-            logger::debug_ln("SPHLeapfrog","patch : n°",id_patch,"->","compute Radix Tree interaction boxes");
-            if (merge_pdat.at(id_patch).or_element_cnt == 0)
-                logger::debug_ln("SPHLeapfrog","patch : n°",id_patch,"->","is empty skipping interaction box compute");
 
-            PatchData & mpdat = merge_pdat.at(id_patch).data;
-
-            auto & buf_h = mpdat.get_field<flt>(ihpart).get_buf();
-
-            radix_trees[id_patch]->compute_int_boxes(sycl_handler::get_compute_queue(), buf_h, htol_up_tol);
-        });
-
-        */
 
         sycl_handler::get_compute_queue().wait();
         tgen_trees.stop();
 
 
 
+
+        auto box = sched.get_box_tranform<vec3>();
+        SimulationDomain<flt> sd(Free, std::get<0>(box), std::get<1>(box));
+
+
+        
+
+
+
+
+
+
+
+        //generate the tree field for the box size info
+
+        FullTreeField<flt, RadTree> min_slenght;
+        FullTreeField<flt, RadTree> max_slenght;
+
+        PatchField<flt> & max_slenght_cells = max_slenght.patch_field;
+        PatchField<flt> & min_slenght_cells = min_slenght.patch_field;
+
+        std::unordered_map<u64, flt> min_slenght_map;
+        std::unordered_map<u64, flt> max_slenght_map;
+
+        using RtreeField = typename RadTree::template RadixTreeField<flt>;
+        std::unordered_map<u64, std::unique_ptr<RtreeField>> & min_tree_slenght_map = min_slenght.patch_tree_fields;
+        std::unordered_map<u64, std::unique_ptr<RtreeField>> & max_tree_slenght_map = max_slenght.patch_tree_fields;
+
+        for(auto & [k,rtree_ptr] : radix_trees){
+            auto [min,max] = rtree_ptr->get_min_max_cell_side_lenght();
+            min_slenght_map[k] = min;
+            max_slenght_map[k] = max;
+        }
+
+        sched.compute_patch_field(
+            min_slenght_cells, get_mpi_type<flt>(), [&](sycl::queue & /*queue*/, Patch &p, PatchData & /*pdat*/) {
+                return min_slenght_map[p.id_patch];
+            });
+
+        sched.compute_patch_field(
+            max_slenght_cells, get_mpi_type<flt>(), [&](sycl::queue & /*queue*/, Patch &p, PatchData & /*pdat*/) {
+                return max_slenght_map[p.id_patch];
+            });
+
+
+        for(auto & [k,rtree_ptr] : radix_trees){
+            std::unique_ptr<RtreeField> & field_min = min_tree_slenght_map[k];
+            std::unique_ptr<RtreeField> & field_max = max_tree_slenght_map[k];
+
+            u32 total_cell_bount = rtree_ptr->tree_internal_count + rtree_ptr->tree_leaf_count;
+
+            field_min = std::make_unique<RtreeField>();
+            field_min->nvar = 1;
+            field_min->radix_tree_field_buf = std::make_unique<sycl::buffer<flt>>(total_cell_bount);
+
+            field_max = std::make_unique<RtreeField>();
+            field_max->nvar = 1;
+            field_max->radix_tree_field_buf = std::make_unique<sycl::buffer<flt>>(total_cell_bount);
+
+            auto & buf_pos_min_cell_flt = rtree_ptr->buf_pos_min_cell_flt;
+            auto & buf_pos_max_cell_flt = rtree_ptr->buf_pos_max_cell_flt;
+
+            auto & rfield_buf_min = field_min->radix_tree_field_buf;
+            auto & rfield_buf_max = field_max->radix_tree_field_buf;
+
+            sycl_handler::get_compute_queue().submit([&](sycl::handler & cgh){
+
+                sycl::accessor box_min_cell {*buf_pos_min_cell_flt, cgh,sycl::read_only};
+                sycl::accessor box_max_cell {*buf_pos_max_cell_flt, cgh,sycl::read_only};
+
+                sycl::accessor s_lengh_min {*rfield_buf_min, cgh,sycl::write_only,sycl::no_init};
+                sycl::accessor s_lengh_max {*rfield_buf_max, cgh,sycl::write_only,sycl::no_init};
+
+                cgh.parallel_for(sycl::range<1>{total_cell_bount}, [=](sycl::item<1> item) {
+
+                    vec3 bmin = box_min_cell[item];
+                    vec3 bmax = box_max_cell[item];
+
+                    vec3 sz = bmax - bmin;
+
+                    s_lengh_min[item] = sycl::fmin(sycl::fmin(sz.x(),sz.y()),sz.z());
+                    s_lengh_max[item] = sycl::fmax(sycl::fmax(sz.x(),sz.y()),sz.z());
+
+                });
+
+            });
+
+        }
+
+        flt open_crit = 1;
+        using InterfHndl =  Interfacehandler<Tree_Send, flt, RadTree>;
+        InterfHndl interf_hndl = InterfHndl();
+        interf_hndl.compute_interface_list(sched,sptree,sd,radix_trees,FMMInteract_cd<flt>(open_crit),min_slenght,max_slenght);
+
+
+        
+        
 
         //make interfaces
 

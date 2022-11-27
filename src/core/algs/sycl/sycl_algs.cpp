@@ -7,7 +7,11 @@
 // -------------------------------------------------------//
 
 #include "sycl_algs.hpp"
-#include "core/patch/base/enabled_fields.hpp"
+#include "core/utils/sycl_vector_utils.hpp"
+#include "core/sys/sycl_mpi_interop.hpp"
+
+//%Impl status : Clean
+
 
 template<class T>
 class SyclAlg_CopyBuf;
@@ -18,7 +22,11 @@ class SyclAlg_CopyBufDiscard;
 template<class T>
 class SyclAlg_AddWithFactor;
 
-template<class T> class SyclAlg_write_with_offset_into;
+template<class T> 
+class SyclAlg_write_with_offset_into;
+
+template<class T> 
+class SyclAlg_IsSame;
 
 namespace syclalgs {
 
@@ -82,7 +90,7 @@ namespace syclalgs {
             sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
 
                 sycl::accessor source {buf_in, cgh, sycl::read_only};
-                sycl::accessor dest {buf_ctn, cgh, sycl::write_only};
+                sycl::accessor dest {buf_ctn, cgh, sycl::write_only, sycl::no_init};
                 u32 off = offset;
                 cgh.parallel_for<SyclAlg_write_with_offset_into<T>>( sycl::range{element_count}, [=](sycl::item<1> item) { dest[item.get_id(0) + off] = source[item]; });
             });
@@ -93,13 +101,18 @@ namespace syclalgs {
     }
 
     namespace reduction {
+
+
+
+
+
         bool is_all_true(sycl::buffer<u8> & buf,u32 cnt){
 
             //TODO do it on GPU pleeeaze
 
             bool res = true;
             {
-                sycl::host_accessor acc{buf};
+                sycl::host_accessor acc{buf, sycl::read_only};
 
                 for (u32 i = 0; i < cnt; i++) { //TODO remove ref to size
                     res = res && (acc[i] != 0);
@@ -109,28 +122,109 @@ namespace syclalgs {
             return res;
 
         } 
+
+        template<class T> bool equals(sycl::buffer<T> &buf1, sycl::buffer<T> &buf2, u32 cnt){
+
+            sycl::buffer<u8> res (cnt);
+            sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
+
+                sycl::accessor acc1 {buf1, cgh, sycl::read_only};
+                sycl::accessor acc2 {buf2, cgh, sycl::read_only};
+
+                sycl::accessor out {res, cgh, sycl::write_only, sycl::no_init};
+                
+                cgh.parallel_for<SyclAlg_IsSame<T>>( sycl::range{cnt}, [=](sycl::item<1> item) { 
+                    out[item] = test_sycl_eq(acc1[item],acc2[item]); });
+            });
+
+
+            return is_all_true(res,cnt);
+
+        }
+
+
+
+
+    }
+
+
+    namespace convert {
+        template<class T> 
+        sycl::buffer<T> vector_to_buf(std::vector<T> && vec){
+
+            u32 cnt = vec.size();
+            sycl::buffer<T> ret(cnt);
+
+            sycl::buffer<T> alias(vec.data(),cnt);
+
+            basic::copybuf_discard(alias, ret, cnt);
+
+            //HIPSYCL segfault otherwise because looks like the destructor of the sycl buffer 
+            //doesn't wait for the end of the queue resulting in out of bound access
+            #ifdef SYCL_COMP_HIPSYCL
+            sycl_handler::get_compute_queue().wait();
+            #endif
+
+            return std::move(ret);
+
+        }
+
+        template<class T> 
+        sycl::buffer<T> vector_to_buf(std::vector<T> & vec){
+
+            u32 cnt = vec.size();
+            sycl::buffer<T> ret(cnt);
+
+            sycl::buffer<T> alias(vec.data(),cnt);
+
+            basic::copybuf_discard(alias, ret, cnt);
+
+            //HIPSYCL segfault otherwise because looks like the destructor of the sycl buffer 
+            //doesn't wait for the end of the queue resulting in out of bound access
+            #ifdef SYCL_COMP_HIPSYCL
+            sycl_handler::get_compute_queue().wait();
+            #endif
+
+            return std::move(ret);
+
+        }
     }
 
 }
 
 
-
 #define X(arg)\
 template void syclalgs::basic::copybuf_discard<arg>(sycl::buffer<arg> & source, sycl::buffer<arg> & dest, u32 cnt);
-XMAC_LIST_ENABLED_FIELD
+XMAC_SYCLMPI_TYPE_ENABLED
 #undef X
 
 #define X(arg)\
 template void syclalgs::basic::copybuf<arg>(sycl::buffer<arg> & source, sycl::buffer<arg> & dest, u32 cnt);
-XMAC_LIST_ENABLED_FIELD
+XMAC_SYCLMPI_TYPE_ENABLED
 #undef X
 
 #define X(arg)\
 template void syclalgs::basic::add_with_factor_to<arg>(sycl::buffer<arg> & buf, arg factor, sycl::buffer<arg> & op, u32 cnt);
-XMAC_LIST_ENABLED_FIELD
+XMAC_SYCLMPI_TYPE_ENABLED
 #undef X
 
 #define X(arg)\
 template void syclalgs::basic::write_with_offset_into(sycl::buffer<arg> &buf_ctn, sycl::buffer<arg> &buf_in, u32 offset, u32 element_count);
-XMAC_LIST_ENABLED_FIELD
+XMAC_SYCLMPI_TYPE_ENABLED
+#undef X
+
+#define X(arg)\
+template bool syclalgs::reduction::equals(sycl::buffer<arg> &buf1, sycl::buffer<arg> &buf2, u32 cnt);
+XMAC_SYCLMPI_TYPE_ENABLED
+#undef X
+
+
+#define X(arg)\
+template sycl::buffer<arg> syclalgs::convert::vector_to_buf(std::vector<arg> && vec);
+XMAC_SYCLMPI_TYPE_ENABLED
+#undef X
+
+#define X(arg)\
+template sycl::buffer<arg> syclalgs::convert::vector_to_buf(std::vector<arg> & vec);
+XMAC_SYCLMPI_TYPE_ENABLED
 #undef X

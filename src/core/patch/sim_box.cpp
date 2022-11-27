@@ -8,6 +8,8 @@
 
 #include "sim_box.hpp"
 
+
+#if false
 template<> 
 auto SimulationVolume<f32>::get_patch_volume(Patch &p) -> vec_box{
     vec bmin_p = vec{p.x_min,p.y_min,p.z_min}*scale_factor + translate_factor;
@@ -29,3 +31,4 @@ void SimulationVolume<f32>::update_volume(){
         
     }
 }
+#endif

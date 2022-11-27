@@ -15,7 +15,8 @@
 #include <random>
 
 
-Test_start("patch/patchdata.cpp", patch_data_check_match,1){
+
+TestStart(Unittest, "patchdata.cpp/patch_data_check_match",patch_data_check_match, 1){
     std::mt19937 eng(0x1111);  
 
 
@@ -44,10 +45,13 @@ Test_start("patch/patchdata.cpp", patch_data_check_match,1){
 
     PatchData d_check = patchdata_gen_dummy_data (pdl,eng);
 
-    Test_assert("patch_data_check_match reflexivity", patch_data_check_match(d_check, d_check));
+    shamrock::test::asserts().assert_bool("reflexivity",  patch_data_check_match(d_check, d_check));
 }
 
-Test_start("patch/patchdata.cpp", isend_irecv, 2){
+
+
+
+TestStart(Unittest, "patchdata.cpp/isend_irecv",patch_data_isend_irecv, 2){
     std::mt19937 eng(0x1111);  
 
     create_sycl_mpi_types();
@@ -107,11 +111,11 @@ Test_start("patch/patchdata.cpp", isend_irecv, 2){
 
     
     if(mpi_handler::world_rank == 0){
-        Test_assert("recv_d == d2_check", patch_data_check_match(recv_d, d2_check));
+        shamrock::test::asserts().assert_bool("recv_d == d2_check", patch_data_check_match(recv_d, d2_check));
     }
 
     if(mpi_handler::world_rank == 1){
-        Test_assert("recv_d == d1_check", patch_data_check_match(recv_d, d1_check));
+        shamrock::test::asserts().assert_bool("recv_d == d1_check", patch_data_check_match(recv_d, d1_check));
     }
     
 

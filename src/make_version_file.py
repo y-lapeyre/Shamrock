@@ -21,7 +21,7 @@ git_head = str_git[str_git.find("HEAD -> ")+8:str_git.find(")")]
 str_ = '''
 #include "aliases.hpp"
 
-std::string git_info_str = R"%%(
+const std::string git_info_str = R"%%(
 
 '''
 
@@ -30,8 +30,11 @@ str_ += "     HEAD   : "+git_head+"\n"
 str_ += "     modified files (since last commit):"+"\n"
 str_ += os.popen("git diff-index --name-only HEAD -- | sed \"s/^/        /g\"").read()
 str_ += r')%%";'
+str_ += "\n\n"
 
+str_ += "const std::string git_commit_hash = \""+git_hash+"\";\n"
 
+str_ += "const std::string compile_arg = \""+sys.argv[2]+"\";\n"
 
 
 if not (strfile == str_):

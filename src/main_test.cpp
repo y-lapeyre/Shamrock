@@ -24,11 +24,12 @@ int main(int argc, char *argv[]){
     opts::register_opt("--nocolor",{}, "disable colored ouput");
 
     opts::register_opt("--test-list",{}, "print test availables");
-    opts::register_opt("--bench-list",{}, "print test availables");
     opts::register_opt("--run-only",{"(test name)"}, "run only this test");
     opts::register_opt("--full-output",{}, "print the assertions in the tests");
 
-    opts::register_opt("--benchmark",{}, "print the assertions in the tests");
+    opts::register_opt("--benchmark",{}, "run only benchmarks");
+    opts::register_opt("--analysis",{}, "run only analysis");
+    opts::register_opt("--unittest",{}, "run only unittest");
 
 
     opts::register_opt("-o",{"(filepath)"}, "output test report in that file");
@@ -60,9 +61,16 @@ int main(int argc, char *argv[]){
         logger::raw_ln(terminal_effects::faint + "----------------------" + terminal_effects::reset);
     }
 
-    if(opts::has_option("--benchmark")){
-        return run_all_bench(argc,argv);
-    }else{
-        return run_all_tests(argc,argv);
+    bool run_bench    = opts::has_option("--benchmark") ;
+    bool run_analysis = opts::has_option("--analysis") ;
+    bool run_unittest = opts::has_option("--unittest") ;
+
+    if((run_bench || run_unittest || run_analysis) == false){
+        run_bench = true;
+        run_analysis = true;
+        run_unittest = true;
     }
+    
+    return shamrock::test::run_all_tests(argc,argv,run_bench,run_analysis,run_unittest);
+    
 }
