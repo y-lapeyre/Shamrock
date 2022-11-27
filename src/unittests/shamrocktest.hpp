@@ -33,16 +33,20 @@
 #include "aliases.hpp"
 #include "core/utils/time_utils.hpp"
 
+[[deprecated]]
 inline std::vector<int> test_node_count;
+[[deprecated]]
 inline std::vector<std::string> test_name_lst;
 
-struct TestAssert{
+
+struct [[deprecated]] TestAssert {
     std::string assert_name;
     bool success;
     std::string log;
 };
 
-class TestResults{public:
+
+class [[deprecated]] TestResults{public:
     std::string test_name;
     std::vector<TestAssert> lst_assert = std::vector<TestAssert>(0);
 
@@ -51,10 +55,11 @@ class TestResults{public:
     }
 };
 
+[[deprecated]]
 inline std::vector<void (*)(TestResults &)> test_fct_lst;
 
 
-class Test{public:
+class [[deprecated]] Test{public:
     
 
     Test(std::string test_name,int node_used,void (*test_func)(TestResults &) ){
@@ -89,6 +94,7 @@ void test_func_##name (TestResults& __test_result_ref)
 //start test (name of the test, number of mpi node to use)
 //Test_assert("assert name", succes boolean, "log corresponding to the assertion");
 
+[[deprecated]]
 void run_py_script(std::string pysrc);
 
 int run_all_tests(int argc, char *argv[]);
