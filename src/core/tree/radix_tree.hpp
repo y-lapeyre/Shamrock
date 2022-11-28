@@ -480,22 +480,10 @@ inline auto Radix_Tree<u_morton, vec3>::get_min_max_cell_side_lenght() -> std::t
         });
     });
 
-    struct MaxOp{
-        flt operator()(const flt & a, const flt & b)
-        {
-            return sycl::max(a,b);
-        }
-    };
+    
 
-    struct MinOp{
-        flt operator()(const flt & a, const flt & b)
-        {
-            return sycl::min(a,b);
-        }
-    };
-
-    flt min = syclalgs::reduction::reduce<flt,MinOp>(q, min_side_lenght, 0,len);
-    flt max = syclalgs::reduction::reduce<flt,MaxOp>(q, max_side_lenght, 0,len);
+    flt min = syclalgs::reduction::reduce(q, min_side_lenght, 0,len,sycl::minimum<flt>{});
+    flt max = syclalgs::reduction::reduce(q, max_side_lenght, 0,len,sycl::maximum<flt>{});
 
     return {min,max};
 }

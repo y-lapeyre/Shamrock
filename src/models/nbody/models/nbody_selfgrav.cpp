@@ -296,7 +296,7 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(PatchScheduler &sched, f64 old_ti
 
 
 
-        constexpr u32 reduc_level = 5;
+        constexpr u32 reduc_level = 2;
 
         using RadTree = Radix_Tree<u_morton, vec3>;
 
