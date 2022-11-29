@@ -30,6 +30,8 @@ namespace syclalgs {
         template<class T> sycl::buffer<T> vector_to_buf(std::vector<T> && vec);
 
         template<class T> sycl::buffer<T> vector_to_buf(std::vector<T> & vec);
+
+        //template<class T> std::unique_ptr<sycl::buffer<u32>> duplicate(std::unique_ptr<sycl::buffer<u32>> & vec);
     } // namespace convert
 
 } // namespace syclalgs

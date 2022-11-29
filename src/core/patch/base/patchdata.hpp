@@ -51,6 +51,27 @@ class PatchData {
         init_fields();
     }
 
+
+    inline PatchData(const PatchData & other) : pdl(other.pdl){
+        #define X(_arg)                                                     \
+        for(const auto & src : other.fields_##_arg){                           \
+            this->fields_##_arg.emplace_back(src);                    \
+        }
+        XMAC_LIST_ENABLED_FIELD
+        #undef X
+    }
+
+
+    inline PatchData duplicate(){
+        const PatchData& current = *this;
+        return PatchData(current);
+    }
+
+    inline std::unique_ptr<PatchData> duplicate_to_ptr(){
+        const PatchData& current = *this;
+        return std::make_unique<PatchData>(current);
+    }
+
     /**
      * @brief extract particle at index pidx and insert it in the provided vectors
      * 

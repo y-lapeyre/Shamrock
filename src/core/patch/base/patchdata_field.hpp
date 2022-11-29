@@ -130,6 +130,18 @@ class PatchDataField {
         
     }
 
+    
+
+    inline PatchDataField duplicate() const {
+        const PatchDataField& current = *this;
+        return PatchDataField(current);
+    }
+
+    inline std::unique_ptr<PatchDataField> duplicate_to_ptr() const {
+        const PatchDataField& current = *this;
+        return std::make_unique<PatchDataField>(current);
+    }
+
 
     PatchDataField(PatchDataField &&other) = delete;
     /* : _data(other._data){ 

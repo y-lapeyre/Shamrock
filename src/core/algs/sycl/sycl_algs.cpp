@@ -96,6 +96,19 @@ namespace syclalgs {
             });
         }
 
+
+
+        template<class T> 
+        std::unique_ptr<sycl::buffer<T>> duplicate(const std::unique_ptr<sycl::buffer<T>> & vec){
+            if (!vec) {
+                return {};
+            }else{
+                auto buf = std::make_unique<sycl::buffer<T>>(vec->size());
+                copybuf_discard(*vec,*buf, vec->size());
+                return std::move(buf);
+            }
+        }
+
         
 
     }
@@ -210,6 +223,11 @@ XMAC_SYCLMPI_TYPE_ENABLED
 
 #define X(arg)\
 template void syclalgs::basic::write_with_offset_into(sycl::buffer<arg> &buf_ctn, sycl::buffer<arg> &buf_in, u32 offset, u32 element_count);
+XMAC_SYCLMPI_TYPE_ENABLED
+#undef X
+
+#define X(arg)\
+template std::unique_ptr<sycl::buffer<arg>> syclalgs::basic::duplicate(const std::unique_ptr<sycl::buffer<arg>> & vec);
 XMAC_SYCLMPI_TYPE_ENABLED
 #undef X
 

@@ -102,7 +102,6 @@ class Radix_Tree{
     }
 
 
-    Radix_Tree(sycl::queue & queue,std::tuple<vec3,vec3> treebox,std::unique_ptr<sycl::buffer<vec3>> & pos_buf, u32 cnt_obj, u32 reduc_level);
 
     
 
@@ -120,6 +119,40 @@ class Radix_Tree{
 
 
 
+    Radix_Tree(sycl::queue & queue,std::tuple<vec3,vec3> treebox,std::unique_ptr<sycl::buffer<vec3>> & pos_buf, u32 cnt_obj, u32 reduc_level);
+
+    inline Radix_Tree(const Radix_Tree & other) : 
+        box_coord(other.box_coord), 
+        obj_cnt(other.obj_cnt), 
+        tree_leaf_count(other.tree_leaf_count), 
+        tree_internal_count(other.tree_internal_count),
+        one_cell_mode(other.one_cell_mode),
+    
+        buf_morton              (syclalgs::basic::duplicate(other.buf_morton             )),
+        buf_particle_index_map  (syclalgs::basic::duplicate(other.buf_particle_index_map )),
+        buf_reduc_index_map     (syclalgs::basic::duplicate(other.buf_reduc_index_map    )),
+        buf_tree_morton         (syclalgs::basic::duplicate(other.buf_tree_morton        )), // size = leaf cnt
+        buf_lchild_id           (syclalgs::basic::duplicate(other.buf_lchild_id          )),   // size = internal
+        buf_rchild_id           (syclalgs::basic::duplicate(other.buf_rchild_id          )),   // size = internal
+        buf_lchild_flag         (syclalgs::basic::duplicate(other.buf_lchild_flag        )), // size = internal
+        buf_rchild_flag         (syclalgs::basic::duplicate(other.buf_rchild_flag        )), // size = internal
+        buf_endrange            (syclalgs::basic::duplicate(other.buf_endrange           )),    // size = internal
+        buf_pos_min_cell        (syclalgs::basic::duplicate(other.buf_pos_min_cell       )),     // size = total count
+        buf_pos_max_cell        (syclalgs::basic::duplicate(other.buf_pos_max_cell       )),     // size = total count
+        buf_pos_min_cell_flt    (syclalgs::basic::duplicate(other.buf_pos_min_cell_flt   )), // size = total count
+        buf_pos_max_cell_flt    (syclalgs::basic::duplicate(other.buf_pos_max_cell_flt   )), // size = total count
+        buf_cell_interact_rad   (syclalgs::basic::duplicate(other.buf_cell_interact_rad  )) //TODO pull this one in a tree field
+    {}
+
+    inline Radix_Tree duplicate(){
+        const auto & cur = *this;
+        return Radix_Tree(cur);
+    }
+
+    inline std::unique_ptr<Radix_Tree> duplicate_to_ptr(){
+        const auto & cur = *this;
+        return std::make_unique<Radix_Tree>(cur);
+    }
 
 
     bool is_same(Radix_Tree & other){
@@ -562,9 +595,11 @@ namespace tree_comm {
 
 
     template<class u_morton,class vec3>
-    inline void comm_isend(Radix_Tree<u_morton,vec3> &rtree, std::vector<RadixTreeMPIRequest<u_morton,vec3>> & rqs,i32 rank_dest, 
+    inline u64 comm_isend(Radix_Tree<u_morton,vec3> &rtree, std::vector<RadixTreeMPIRequest<u_morton,vec3>> & rqs,i32 rank_dest, 
             i32 tag,
             MPI_Comm comm){
+
+        u64 ret_len = 0;
 
         rqs.push_back(RadixTreeMPIRequest<u_morton,vec3>(
             rtree,
@@ -575,29 +610,31 @@ namespace tree_comm {
         
 
 
-        mpi_sycl_interop::isend(rq.rtree.buf_morton,rq.rtree.obj_cnt, rq.rq_u_morton, rank_dest, tag, comm);
-        mpi_sycl_interop::isend(rq.rtree.buf_particle_index_map,rq.rtree.obj_cnt, rq.rq_u32, rank_dest, tag, comm);
+        ret_len += mpi_sycl_interop::isend(rq.rtree.buf_morton,rq.rtree.obj_cnt, rq.rq_u_morton, rank_dest, tag, comm);
+        ret_len += mpi_sycl_interop::isend(rq.rtree.buf_particle_index_map,rq.rtree.obj_cnt, rq.rq_u32, rank_dest, tag, comm);
 
-        mpi_sycl_interop::isend(rq.rtree.buf_reduc_index_map, rq.rtree.tree_leaf_count+1, rq.rq_u32, rank_dest, tag, comm);
+        ret_len += mpi_sycl_interop::isend(rq.rtree.buf_reduc_index_map, rq.rtree.tree_leaf_count+1, rq.rq_u32, rank_dest, tag, comm);
 
-        mpi_sycl_interop::isend(rq.rtree.buf_tree_morton, rq.rtree.tree_leaf_count,rq.rq_u_morton, rank_dest, tag, comm);
-        mpi_sycl_interop::isend(rq.rtree.buf_lchild_id,rq.rtree.tree_internal_count, rq.rq_u32, rank_dest, tag, comm);
-        mpi_sycl_interop::isend(rq.rtree.buf_rchild_id,rq.rtree.tree_internal_count, rq.rq_u32, rank_dest, tag, comm);
-        mpi_sycl_interop::isend(rq.rtree.buf_lchild_flag,rq.rtree.tree_internal_count, rq.rq_u8, rank_dest, tag, comm);
-        mpi_sycl_interop::isend(rq.rtree.buf_rchild_flag,rq.rtree.tree_internal_count, rq.rq_u8, rank_dest, tag, comm);
-        mpi_sycl_interop::isend(rq.rtree.buf_endrange,rq.rtree.tree_internal_count, rq.rq_u32, rank_dest, tag, comm);
+        ret_len += mpi_sycl_interop::isend(rq.rtree.buf_tree_morton, rq.rtree.tree_leaf_count,rq.rq_u_morton, rank_dest, tag, comm);
+        ret_len += mpi_sycl_interop::isend(rq.rtree.buf_lchild_id,rq.rtree.tree_internal_count, rq.rq_u32, rank_dest, tag, comm);
+        ret_len += mpi_sycl_interop::isend(rq.rtree.buf_rchild_id,rq.rtree.tree_internal_count, rq.rq_u32, rank_dest, tag, comm);
+        ret_len += mpi_sycl_interop::isend(rq.rtree.buf_lchild_flag,rq.rtree.tree_internal_count, rq.rq_u8, rank_dest, tag, comm);
+        ret_len += mpi_sycl_interop::isend(rq.rtree.buf_rchild_flag,rq.rtree.tree_internal_count, rq.rq_u8, rank_dest, tag, comm);
+        ret_len += mpi_sycl_interop::isend(rq.rtree.buf_endrange,rq.rtree.tree_internal_count, rq.rq_u32, rank_dest, tag, comm);
 
-        mpi_sycl_interop::isend(rq.rtree.buf_pos_min_cell,rq.rtree.tree_internal_count + rq.rtree.tree_leaf_count, rq.rq_vec3i, rank_dest, tag, comm);
-        mpi_sycl_interop::isend(rq.rtree.buf_pos_max_cell,rq.rtree.tree_internal_count + rq.rtree.tree_leaf_count, rq.rq_vec3i, rank_dest, tag, comm);
+        ret_len += mpi_sycl_interop::isend(rq.rtree.buf_pos_min_cell,rq.rtree.tree_internal_count + rq.rtree.tree_leaf_count, rq.rq_vec3i, rank_dest, tag, comm);
+        ret_len += mpi_sycl_interop::isend(rq.rtree.buf_pos_max_cell,rq.rtree.tree_internal_count + rq.rtree.tree_leaf_count, rq.rq_vec3i, rank_dest, tag, comm);
 
-        mpi_sycl_interop::isend(rq.rtree.buf_pos_min_cell_flt,rq.rtree.tree_internal_count + rq.rtree.tree_leaf_count, rq.rq_vec, rank_dest, tag, comm);
-        mpi_sycl_interop::isend(rq.rtree.buf_pos_max_cell_flt,rq.rtree.tree_internal_count + rq.rtree.tree_leaf_count, rq.rq_vec, rank_dest, tag, comm);
+        ret_len += mpi_sycl_interop::isend(rq.rtree.buf_pos_min_cell_flt,rq.rtree.tree_internal_count + rq.rtree.tree_leaf_count, rq.rq_vec, rank_dest, tag, comm);
+        ret_len += mpi_sycl_interop::isend(rq.rtree.buf_pos_max_cell_flt,rq.rtree.tree_internal_count + rq.rtree.tree_leaf_count, rq.rq_vec, rank_dest, tag, comm);
+
+        return ret_len;
     }
     
 
 
     template<class u_morton,class vec3>
-    inline void comm_irecv_probe(Radix_Tree<u_morton,vec3> &rtree, std::vector<RadixTreeMPIRequest<u_morton,vec3>> & rqs,i32 rank_source, 
+    inline u64 comm_irecv_probe(Radix_Tree<u_morton,vec3> &rtree, std::vector<RadixTreeMPIRequest<u_morton,vec3>> & rqs,i32 rank_source, 
             i32 tag,
             MPI_Comm comm){
 
@@ -608,26 +645,28 @@ namespace tree_comm {
 
         auto & rq = rqs.back();
         
+        u64 ret_len = 0;
+
+        ret_len += mpi_sycl_interop::irecv_probe(rq.rtree.buf_morton, rq.rq_u_morton, rank_source, tag, comm);
+        ret_len += mpi_sycl_interop::irecv_probe(rq.rtree.buf_particle_index_map, rq.rq_u32, rank_source, tag, comm);
+
+        ret_len += mpi_sycl_interop::irecv_probe(rq.rtree.buf_reduc_index_map, rq.rq_u32, rank_source, tag, comm);
+
+        ret_len += mpi_sycl_interop::irecv_probe(rq.rtree.buf_tree_morton,rq.rq_u_morton, rank_source, tag, comm);
+        ret_len += mpi_sycl_interop::irecv_probe(rq.rtree.buf_lchild_id, rq.rq_u32, rank_source, tag, comm);
+        ret_len += mpi_sycl_interop::irecv_probe(rq.rtree.buf_rchild_id, rq.rq_u32, rank_source, tag, comm);
+        ret_len += mpi_sycl_interop::irecv_probe(rq.rtree.buf_lchild_flag, rq.rq_u8, rank_source, tag, comm);
+        ret_len += mpi_sycl_interop::irecv_probe(rq.rtree.buf_rchild_flag, rq.rq_u8, rank_source, tag, comm);
+        ret_len += mpi_sycl_interop::irecv_probe(rq.rtree.buf_endrange, rq.rq_u32, rank_source, tag, comm);
+
+        ret_len += mpi_sycl_interop::irecv_probe(rq.rtree.buf_pos_min_cell, rq.rq_vec3i, rank_source, tag, comm);
+        ret_len += mpi_sycl_interop::irecv_probe(rq.rtree.buf_pos_max_cell, rq.rq_vec3i, rank_source, tag, comm);
 
 
-        mpi_sycl_interop::irecv_probe(rq.rtree.buf_morton, rq.rq_u_morton, rank_source, tag, comm);
-        mpi_sycl_interop::irecv_probe(rq.rtree.buf_particle_index_map, rq.rq_u32, rank_source, tag, comm);
+        ret_len += mpi_sycl_interop::irecv_probe(rq.rtree.buf_pos_min_cell_flt, rq.rq_vec, rank_source, tag, comm);
+        ret_len += mpi_sycl_interop::irecv_probe(rq.rtree.buf_pos_max_cell_flt, rq.rq_vec, rank_source, tag, comm);
 
-        mpi_sycl_interop::irecv_probe(rq.rtree.buf_reduc_index_map, rq.rq_u32, rank_source, tag, comm);
-
-        mpi_sycl_interop::irecv_probe(rq.rtree.buf_tree_morton,rq.rq_u_morton, rank_source, tag, comm);
-        mpi_sycl_interop::irecv_probe(rq.rtree.buf_lchild_id, rq.rq_u32, rank_source, tag, comm);
-        mpi_sycl_interop::irecv_probe(rq.rtree.buf_rchild_id, rq.rq_u32, rank_source, tag, comm);
-        mpi_sycl_interop::irecv_probe(rq.rtree.buf_lchild_flag, rq.rq_u8, rank_source, tag, comm);
-        mpi_sycl_interop::irecv_probe(rq.rtree.buf_rchild_flag, rq.rq_u8, rank_source, tag, comm);
-        mpi_sycl_interop::irecv_probe(rq.rtree.buf_endrange, rq.rq_u32, rank_source, tag, comm);
-
-        mpi_sycl_interop::irecv_probe(rq.rtree.buf_pos_min_cell, rq.rq_vec3i, rank_source, tag, comm);
-        mpi_sycl_interop::irecv_probe(rq.rtree.buf_pos_max_cell, rq.rq_vec3i, rank_source, tag, comm);
-
-
-        mpi_sycl_interop::irecv_probe(rq.rtree.buf_pos_min_cell_flt, rq.rq_vec, rank_source, tag, comm);
-        mpi_sycl_interop::irecv_probe(rq.rtree.buf_pos_max_cell_flt, rq.rq_vec, rank_source, tag, comm);
+        return ret_len;
     }
 
 }
