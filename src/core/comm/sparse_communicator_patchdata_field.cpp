@@ -22,11 +22,15 @@ struct SparseCommExchanger<PatchDataField<T>>{
                     const Patch &psend = communicator.global_patch_list[communicator.send_comm_vec[i].x()];
                     const Patch &precv = communicator.global_patch_list[communicator.send_comm_vec[i].y()];
 
+                    if(precv.node_owner_id >= mpi_handler::world_size){
+                        throw "";
+                    }
+
                     if (psend.node_owner_id == precv.node_owner_id) {
                         auto & vec = recv_obj[precv.id_patch];
                         vec.push_back({psend.id_patch, send_comm_pdat[i]->duplicate_to_ptr()});
                     } else {
-                        
+                        std::cout << "send : " << mpi_handler::world_rank << " " << precv.node_owner_id << std::endl;
                         dtcnt += patchdata_field::isend<T>(*send_comm_pdat[i], rq_lst, precv.node_owner_id, communicator.local_comm_tag[i], MPI_COMM_WORLD);
                     }
                     
@@ -60,7 +64,8 @@ struct SparseCommExchanger<PatchDataField<T>>{
             patchdata_field::waitall(rq_lst);
 
             timer_transfmpi.stop(dtcnt);
-        communicator.xcgh_byte_cnt += dtcnt;
+
+            communicator.xcgh_byte_cnt += dtcnt;
 
             //TODO check that this sort is valid
             for(auto & [key,obj] : recv_obj){

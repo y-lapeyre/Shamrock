@@ -46,11 +46,7 @@ class SparsePatchCommunicator {
         {
             i32 iterator = 0;
             for (u64 i = 0; i < send_comm_vec.size(); i++) {
-                const Patch &psend = global_patch_list[send_comm_vec[i].x()];
-                const Patch &precv = global_patch_list[send_comm_vec[i].y()];
-
                 local_comm_tag[i] = iterator;
-
                 iterator++;
             }
         }
@@ -59,6 +55,12 @@ class SparsePatchCommunicator {
         mpi_handler::vector_allgatherv(send_comm_vec, mpi_type_u64_2, global_comm_vec, mpi_type_u64_2, MPI_COMM_WORLD);
         mpi_handler::vector_allgatherv(local_comm_tag, mpi_type_i32, global_comm_tag, mpi_type_i32, MPI_COMM_WORLD);
         timer_allgatherv.stop();
+
+        xcgh_byte_cnt += 
+            (send_comm_vec.size() * sizeof(u64) * 2)  + 
+            (global_comm_vec.size() * sizeof(u64) * 2)  + 
+            (local_comm_tag.size() * sizeof(i32))  + 
+            (global_comm_tag.size() * sizeof(i32));
     }
 
     [[nodiscard]] inline u64 get_xchg_byte_count() const {
