@@ -21,7 +21,9 @@ def make_sparse_comm_plot(fileprefix,report) -> str:
     
     for r in report["results"]:
         if r["type"] == "Benchmark" and r["name"] == "core/comm/sparse_communicator_patchdata_field:":
-            sparse_comm_result.append(r)
+
+            if(not (get_test_dataset(r,"bandwith","nb_obj") == None)):
+                sparse_comm_result.append(r)
 
     if len(sparse_comm_result) == 0:
         return ""
@@ -59,12 +61,12 @@ def make_sparse_comm_plot(fileprefix,report) -> str:
     axs[2].set_title('comm bandwith')
 
     axs[0].set_xscale('log')
-    axs[1].set_yscale('log')
+    axs[1].set_xscale('log')
     axs[2].set_xscale('log')
 
-    axs[0].set_xscale('log')
+    axs[0].set_yscale('log')
     axs[1].set_yscale('log')
-    #axs[2].set_yscale('log')
+    axs[2].set_yscale('log')
 
     axs[0].set_xlabel(r"$n_{\rm obj}$")
     axs[1].set_xlabel(r"$n_{\rm obj}$")

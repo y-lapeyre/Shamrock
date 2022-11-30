@@ -22,15 +22,16 @@ struct SparseCommExchanger<PatchDataField<T>>{
                     const Patch &psend = communicator.global_patch_list[communicator.send_comm_vec[i].x()];
                     const Patch &precv = communicator.global_patch_list[communicator.send_comm_vec[i].y()];
 
-                    if(precv.node_owner_id >= mpi_handler::world_size){
-                        throw "";
-                    }
+                    //if(precv.node_owner_id >= mpi_handler::world_size){
+                    //    throw "";
+                    //}
 
                     if (psend.node_owner_id == precv.node_owner_id) {
                         auto & vec = recv_obj[precv.id_patch];
+                        dtcnt += send_comm_pdat[i]->memsize();
                         vec.push_back({psend.id_patch, send_comm_pdat[i]->duplicate_to_ptr()});
                     } else {
-                        std::cout << "send : " << mpi_handler::world_rank << " " << precv.node_owner_id << std::endl;
+                        //std::cout << "send : " << mpi_handler::world_rank << " " << precv.node_owner_id << std::endl;
                         dtcnt += patchdata_field::isend<T>(*send_comm_pdat[i], rq_lst, precv.node_owner_id, communicator.local_comm_tag[i], MPI_COMM_WORLD);
                     }
                     
@@ -52,7 +53,7 @@ struct SparseCommExchanger<PatchDataField<T>>{
                             recv_obj[precv.id_patch].push_back(
                                 {psend.id_patch, std::make_unique<PatchDataField<T>>("comp_field",1)}); // patchdata_irecv(recv_rq, psend.node_owner_id,
                                                                                 // global_comm_tag[i], MPI_COMM_WORLD)}
-                            dtcnt += patchdata_field::irecv_probe<T>(*std::get<1>(recv_obj[precv.id_patch][recv_obj[precv.id_patch].size() - 1]),
+                            patchdata_field::irecv_probe<T>(*std::get<1>(recv_obj[precv.id_patch][recv_obj[precv.id_patch].size() - 1]),
                                             rq_lst, psend.node_owner_id, communicator.global_comm_tag[i], MPI_COMM_WORLD);
                         }
 
@@ -80,6 +81,6 @@ struct SparseCommExchanger<PatchDataField<T>>{
     }
 };
 
-#define X(_arg_) template class SparseCommExchanger<PatchDataField<_arg_>>;
+#define X(_arg_) template struct SparseCommExchanger<PatchDataField<_arg_>>;
 XMAC_LIST_ENABLED_FIELD
 #undef X

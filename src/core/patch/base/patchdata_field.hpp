@@ -189,6 +189,10 @@ class PatchDataField {
         return val_cnt;
     }
 
+    [[nodiscard]] inline const u64 memsize() const{
+        return val_cnt*sizeof(T);
+    }
+
     [[nodiscard]] inline const u32 & get_nvar() const {
         return nvar;
     }

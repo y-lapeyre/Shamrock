@@ -125,7 +125,7 @@ TestStart(Benchmark, "core/comm/sparse_communicator_patchdata_field:", func_name
     u32 nb_part_per_patch = 1e5;
 
 
-    u32 max_patch_per_node = 100;
+    
     std::mt19937 eng (0x2525 + mpi_handler::world_rank);
     
 
@@ -139,11 +139,22 @@ TestStart(Benchmark, "core/comm/sparse_communicator_patchdata_field:", func_name
     std::vector<f64> fetch_bandwith  ;
     std::vector<f64> comm_bandwith   ;
 
-    
+    u64 max_mem_sz = 2e9;
 
-    u32 nsample = 50;
-    for(u32 i = 0 ; i < nsample; i++){
-        auto res = benchmark_comm(eng, max_patch_per_node, nb_part_per_patch);
+    f64 max_patch_per_node = 1;
+
+    u32 n_max_sample = 40;
+    for(u32 i = 0 ; i < n_max_sample; i++){
+
+        max_patch_per_node *= 1.2;
+
+        if(u64(max_patch_per_node)*u64(nb_part_per_patch) > max_mem_sz){
+            break;
+        }
+
+        logger::debug_ln("Test",i,"/",n_max_sample," | testing comm : ",u32(max_patch_per_node), nb_part_per_patch);
+
+        auto res = benchmark_comm(eng, u32(max_patch_per_node), nb_part_per_patch);
         nb_patch        .push_back(res.nb_patch        );
         nb_obj          .push_back(res.nb_obj          );
         fetch_time      .push_back(res.fetch_time      );
@@ -152,13 +163,14 @@ TestStart(Benchmark, "core/comm/sparse_communicator_patchdata_field:", func_name
         comm_bandwith   .push_back(res.comm_bandwith   );
     }
 
-    bandwith_dataset.add_data("nb_patch", nb_patch        );
-    bandwith_dataset.add_data("nb_obj", nb_obj          );
-    bandwith_dataset.add_data("fetch_time", fetch_time      );
-    bandwith_dataset.add_data("comm_time", comm_time       );
-    bandwith_dataset.add_data("fetch_bandwith", fetch_bandwith  );
-    bandwith_dataset.add_data("comm_bandwith", comm_bandwith   );
-
+    if(mpi_handler::world_rank == 0){
+        bandwith_dataset.add_data("nb_patch", nb_patch        );
+        bandwith_dataset.add_data("nb_obj", nb_obj          );
+        bandwith_dataset.add_data("fetch_time", fetch_time      );
+        bandwith_dataset.add_data("comm_time", comm_time       );
+        bandwith_dataset.add_data("fetch_bandwith", fetch_bandwith  );
+        bandwith_dataset.add_data("comm_bandwith", comm_bandwith   );
+    }
     patch::free_MPI_patch_type();
 
 }

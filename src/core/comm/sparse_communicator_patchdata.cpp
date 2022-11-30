@@ -25,6 +25,7 @@ struct SparseCommExchanger<PatchData>{
 
                 if (psend.node_owner_id == precv.node_owner_id) {
                     auto & vec = recv_obj[precv.id_patch];
+                    dtcnt += send_comm_pdat[i]->memsize();
                     vec.push_back({psend.id_patch, send_comm_pdat[i]->duplicate_to_ptr()});
                 } else {
                     
@@ -45,7 +46,7 @@ struct SparseCommExchanger<PatchData>{
 
                     if (psend.node_owner_id != precv.node_owner_id) {
                         recv_obj[precv.id_patch].push_back({psend.id_patch, std::make_unique<PatchData>(pdl)}); 
-                        dtcnt += patchdata_irecv_probe(*std::get<1>(recv_obj[precv.id_patch][recv_obj[precv.id_patch].size() - 1]),
+                        patchdata_irecv_probe(*std::get<1>(recv_obj[precv.id_patch][recv_obj[precv.id_patch].size() - 1]),
                                         rq_lst, psend.node_owner_id, communicator.global_comm_tag[i], MPI_COMM_WORLD);
                     }
                 }

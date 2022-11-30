@@ -109,6 +109,19 @@ class PatchData {
         throw shamrock_exc("patchdata layout is not xyz32 or xyz64");
     }
 
+    inline u64 memsize(){
+        u64 sum = 0; 
+
+        #define X(_arg)                                                     \
+        for(const auto & src : fields_##_arg){                           \
+            sum += src.memsize();                    \
+        }
+        XMAC_LIST_ENABLED_FIELD
+        #undef X
+
+        return sum;
+    }
+
     inline bool is_empty(){
         return get_obj_cnt() == 0;
     }
