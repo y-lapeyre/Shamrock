@@ -1,18 +1,22 @@
 #include "core/tree/radix_tree.hpp"
 #include "sparse_communicator.hpp"
 
+#include "core/patch/base/patchdata_field.hpp"
 
-template <class u_morton, class vec3> 
-struct SparseCommExchanger<Radix_Tree<u_morton, vec3>>{
 
-    static SparseCommResult<Radix_Tree<u_morton, vec3>> sp_xchg(SparsePatchCommunicator & communicator, const SparseCommSource<Radix_Tree<u_morton, vec3>> &send_comm_pdat){
+template <class T> 
+struct SparseCommExchanger<RadixTreeField<T>>{
 
-        SparseCommResult<Radix_Tree<u_morton, vec3>> recv_obj;
+    //TODO emit warning that here the sycl buffer will be used with it's internal size
+    static SparseCommResult<RadixTreeField<T>> sp_xchg(SparsePatchCommunicator & communicator, const SparseCommSource<RadixTreeField<T>> &send_comm_pdat){
+
+        SparseCommResult<RadixTreeField<T>> recv_obj;
 
         if(!send_comm_pdat.empty()){
 
-            std::vector<tree_comm::RadixTreeMPIRequest<u_morton, vec3>> rq_lst;
-
+            u32 nvar = send_comm_pdat[0]->nvar;
+        
+            std::vector<mpi_sycl_interop::BufferMpiRequest<T>> rq_lst;
 
             auto timer_transfmpi = timings::start_timer("patchdata_exchanger", timings::mpi);
 
@@ -23,13 +27,19 @@ struct SparseCommExchanger<Radix_Tree<u_morton, vec3>>{
                     const Patch &psend = communicator.global_patch_list[communicator.send_comm_vec[i].x()];
                     const Patch &precv = communicator.global_patch_list[communicator.send_comm_vec[i].y()];
 
+                    //if(precv.node_owner_id >= mpi_handler::world_size){
+                    //    throw "";
+                    //}
+
+                    auto & send_buf = send_comm_pdat[i]->radix_tree_field_buf;
+
                     if (psend.node_owner_id == precv.node_owner_id) {
                         auto & vec = recv_obj[precv.id_patch];
-                        dtcnt += send_comm_pdat[i]->memsize();
-                        vec.push_back({psend.id_patch, send_comm_pdat[i]->duplicate_to_ptr()});
+                        dtcnt += send_buf->get_size();
+                        vec.push_back({psend.id_patch, std::make_unique<RadixTreeField<T>>(RadixTreeField<T>{nvar,syclalgs::basic::duplicate(send_buf)})});
                     } else {
-                        
-                        dtcnt += tree_comm::comm_isend(*send_comm_pdat[i], rq_lst, precv.node_owner_id, communicator.local_comm_tag[i], MPI_COMM_WORLD);
+                        //std::cout << "send : " << mpi_handler::world_rank << " " << precv.node_owner_id << std::endl;
+                        dtcnt += mpi_sycl_interop::isend(send_buf,send_buf->size(), rq_lst, precv.node_owner_id, communicator.local_comm_tag[i], MPI_COMM_WORLD);
                     }
                     
                 }
@@ -48,9 +58,11 @@ struct SparseCommExchanger<Radix_Tree<u_morton, vec3>>{
                         if (psend.node_owner_id != precv.node_owner_id) {
                             
                             recv_obj[precv.id_patch].push_back(
-                                {psend.id_patch, std::make_unique<Radix_Tree<u_morton, vec3>>(Radix_Tree<u_morton, vec3>::make_empty())}); // patchdata_irecv(recv_rq, psend.node_owner_id,
+                                {psend.id_patch, std::make_unique<RadixTreeField<T>>()}); // patchdata_irecv(recv_rq, psend.node_owner_id,
                                                                                 // global_comm_tag[i], MPI_COMM_WORLD)}
-                            tree_comm::comm_irecv_probe(*std::get<1>(recv_obj[precv.id_patch][recv_obj[precv.id_patch].size() - 1]),
+
+                            auto & ref_write = std::get<1>(recv_obj[precv.id_patch][recv_obj[precv.id_patch].size() - 1]);
+                            mpi_sycl_interop::irecv_probe<T>(ref_write->radix_tree_field_buf,
                                             rq_lst, psend.node_owner_id, communicator.global_comm_tag[i], MPI_COMM_WORLD);
                         }
 
@@ -59,10 +71,11 @@ struct SparseCommExchanger<Radix_Tree<u_morton, vec3>>{
                 //std::cout << std::endl;
             }
 
-            tree_comm::wait_all(rq_lst);
+            mpi_sycl_interop::waitall(rq_lst);
 
             timer_transfmpi.stop(dtcnt);
-        communicator.xcgh_byte_cnt += dtcnt;
+
+            communicator.xcgh_byte_cnt += dtcnt;
 
             //TODO check that this sort is valid
             for(auto & [key,obj] : recv_obj){
@@ -71,21 +84,12 @@ struct SparseCommExchanger<Radix_Tree<u_morton, vec3>>{
                 });
             }
 
-
-
         }
 
         return std::move(recv_obj);
     }
 };
 
-
-
-
-
-
-
-template struct SparseCommExchanger<Radix_Tree<u32, f32_3>>;
-template struct SparseCommExchanger<Radix_Tree<u64, f32_3>>;
-template struct SparseCommExchanger<Radix_Tree<u32, f64_3>>;
-template struct SparseCommExchanger<Radix_Tree<u64, f64_3>>;
+#define X(_arg_) template struct SparseCommExchanger<RadixTreeField<_arg_>>;
+XMAC_LIST_ENABLED_FIELD
+#undef X

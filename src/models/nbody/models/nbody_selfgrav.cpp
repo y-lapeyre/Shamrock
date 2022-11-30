@@ -432,8 +432,8 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(PatchScheduler &sched, f64 old_ti
         using InterfHndl =  Interfacehandler<Tree_Send, flt, RadTree>;
         InterfHndl interf_hndl = InterfHndl();
         interf_hndl.compute_interface_list(sched,sptree,sd,radix_trees,FMMInteract_cd<flt>(open_crit),min_slenght,max_slenght);
-
-
+        interf_hndl.initial_fetch(sched);
+        interf_hndl.comm_trees();
         
         
 

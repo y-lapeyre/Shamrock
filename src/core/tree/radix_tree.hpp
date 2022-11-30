@@ -32,6 +32,53 @@
 #include "core/utils/geometry_utils.hpp"
 
 
+template<class T>
+class RadixTreeField{public:
+    u32 nvar;
+    std::unique_ptr<sycl::buffer<T>> radix_tree_field_buf;
+
+    RadixTreeField() = default;
+    
+    RadixTreeField(
+        u32 nvar, 
+        std::unique_ptr<sycl::buffer<T>> radix_tree_field_buf
+        ) : nvar(nvar), radix_tree_field_buf(radix_tree_field_buf){}
+
+    RadixTreeField(RadixTreeField<T> & src, sycl::buffer<u32> & id_extract_field) : 
+        radix_tree_field_buf(std::make_unique<sycl::buffer<T>>(id_extract_field.size())),
+        nvar(src.nvar)
+    {
+        //cut new field according to the id map
+
+        #if false
+        sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
+
+            sycl::accessor acc_curr {*buf, cgh, sycl::read_only};
+            sycl::accessor acc_other {*buf_other, cgh, sycl::write_only, sycl::no_init};
+            sycl::accessor acc_idxs {idxs_buf, cgh, sycl::read_only};
+
+            const u32 nvar_loc = nvar;
+            const u32 start_enque_loc = start_enque;
+
+            cgh.parallel_for(sycl::range<1>{sz},  [=](sycl::item<1> i){
+
+                const u32 gid = i.get_linear_id();
+            
+                const u32 idx_extr = acc_idxs[gid] * nvar_loc;
+                const u32 idx_push = start_enque_loc + gid * nvar_loc;
+        
+                for (u32 a = 0; a < nvar_loc; a++) {
+                    acc_other[idx_push + a] = acc_curr[idx_extr + a];
+                }       
+
+            });
+
+        });
+        #endif
+        
+    }
+};
+
 
 
 template<class u_morton,class vec3>
@@ -144,6 +191,40 @@ class Radix_Tree{
         buf_cell_interact_rad   (syclalgs::basic::duplicate(other.buf_cell_interact_rad  )) //TODO pull this one in a tree field
     {}
 
+    [[nodiscard]] inline u64 memsize() const {
+        u64 sum = 0;
+
+        sum += sizeof(box_coord);
+        sum += sizeof(obj_cnt);
+        sum += sizeof(tree_leaf_count);
+        sum += sizeof(tree_internal_count);
+        sum += sizeof(one_cell_mode);
+
+        auto add_ptr = [&](auto & a){
+            if(a){
+                sum += a->byte_size();
+            }
+        };
+
+        add_ptr(buf_morton              );
+        add_ptr(buf_particle_index_map  );
+        add_ptr(buf_reduc_index_map     );
+        add_ptr(buf_tree_morton         );
+        add_ptr(buf_lchild_id           );
+        add_ptr(buf_rchild_id           );
+        add_ptr(buf_lchild_flag         );
+        add_ptr(buf_rchild_flag         );
+        add_ptr(buf_endrange            );
+        add_ptr(buf_pos_min_cell        );
+        add_ptr(buf_pos_max_cell        );
+        add_ptr(buf_pos_min_cell_flt    );
+        add_ptr(buf_pos_max_cell_flt    );
+        add_ptr(buf_cell_interact_rad   );
+
+
+        return sum;
+    }
+
     inline Radix_Tree duplicate(){
         const auto & cur = *this;
         return Radix_Tree(cur);
@@ -172,11 +253,9 @@ class Radix_Tree{
 
 
 
+    
     template<class T>
-    class RadixTreeField{public:
-        u32 nvar;
-        std::unique_ptr<sycl::buffer<T>> radix_tree_field_buf;
-    };
+    using RadixTreeField = RadixTreeField<T>;
 
     template<class T, class LambdaComputeLeaf, class LambdaCombinator>
     RadixTreeField<T> compute_field(sycl::queue & queue,u32 nvar,

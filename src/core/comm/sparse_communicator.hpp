@@ -34,11 +34,11 @@ class SparsePatchCommunicator {
 
 
   public:
-    std::vector<Patch> global_patch_list;
+    std::vector<Patch> & global_patch_list;
     std::vector<u64_2> send_comm_vec;
 
-    SparsePatchCommunicator(std::vector<Patch> global_patch_list, std::vector<u64_2> send_comm_vec)
-        : global_patch_list(std::move(global_patch_list)), send_comm_vec(std::move(send_comm_vec)),
+    SparsePatchCommunicator(std::vector<Patch> & global_patch_list, std::vector<u64_2> send_comm_vec)
+        : global_patch_list(global_patch_list), send_comm_vec(std::move(send_comm_vec)),
           local_comm_tag(send_comm_vec.size()) {}
 
     inline void fetch_comm_table() {
