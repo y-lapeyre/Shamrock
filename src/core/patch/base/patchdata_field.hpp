@@ -30,7 +30,7 @@
 #include "core/utils/sycl_vector_utils.hpp"
 #include "core/sys/mpi_handler.hpp"
 
-#include "core/utils/sycl_algs.hpp"
+#include "core/algs/sycl/sycl_algs.hpp"
 
 
 

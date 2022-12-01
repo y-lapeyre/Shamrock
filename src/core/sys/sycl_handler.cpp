@@ -24,6 +24,40 @@
 #include "log.hpp"
 
 
+
+auto check_queue_is_valid(sycl::queue & q){
+
+    auto test_kernel = [](sycl::queue & q){
+        sycl::buffer<u32> b{10};
+
+        q.submit([&](sycl::handler & cgh){
+            sycl::accessor acc {b, cgh,sycl::write_only,sycl::no_init};
+
+            cgh.parallel_for(sycl::range<1>{1},[=](sycl::item<1> i){
+                acc[i] = i.get_linear_id();
+            });
+        });
+
+        q.wait();
+    };
+
+
+    std::exception_ptr eptr;
+    try {
+        test_kernel(q);
+        logger::info_ln("SYCL Hanlder", "selected queue :",q.get_device().get_info<sycl::info::device::name>()," working !");
+    } catch(...) {
+        eptr = std::current_exception(); // capture
+    }
+
+    if (eptr) {
+        logger::err_ln("SYCL Hanlder", "selected queue :",q.get_device().get_info<sycl::info::device::name>(),"does not function properly");
+        std::rethrow_exception(eptr);
+    }
+
+
+}
+
 auto exception_handler = [] (sycl::exception_list exceptions) {
     for (std::exception_ptr const& e : exceptions) {
         try {
@@ -226,6 +260,9 @@ namespace sycl_handler {
                     key_global++;
                 }
             }
+
+            check_queue_is_valid(*compute_queue);
+            check_queue_is_valid(*alt_queue);
 
 
             logger::info_ln("SYCL Handler", "init done");

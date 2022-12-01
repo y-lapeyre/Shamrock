@@ -600,7 +600,7 @@ Test_start("radix_tree", tree_cut, 1){
 
     logger::debug_sycl_ln("Radixtree", "computing valid node buf");
 
-    auto init_valid_buf = [&]() -> sycl::buffer<u8>{
+    auto init_valid_buf = [&]() -> sycl::buffer<u8> {
         
         sycl::buffer<u8> valid_node = sycl::buffer<u8>(total_count);
 
