@@ -96,6 +96,7 @@ void models::nbody::NBodySetup<flt>::add_particules_fcc(PatchScheduler & sched, 
     }
 
 
+
     //TODO apply position modulo here
 
     for (auto & [pid,pdat] : sched.patch_data.owned_data) {
@@ -107,6 +108,9 @@ void models::nbody::NBodySetup<flt>::add_particules_fcc(PatchScheduler & sched, 
     for (auto & [pid,pdat] : sched.patch_data.owned_data) {
         std::cout << "patch id : " << pid << " len = " << pdat.get_obj_cnt() << std::endl;
     }
+
+
+    
 
     {
         auto [m,M] = sched.get_box_tranform<vec>();
@@ -122,15 +126,23 @@ void models::nbody::NBodySetup<flt>::add_particules_fcc(PatchScheduler & sched, 
         reatribute_particles(sched, sptree, periodic_mode);
     }
 
-    for (auto & [pid,pdat] : sched.patch_data.owned_data) {
-        std::cout << "patch id : " << pid << " len = " << pdat.get_obj_cnt() << std::endl;
-    }
-
-    sched.scheduler_step(true, true);
+    
 
     for (auto & [pid,pdat] : sched.patch_data.owned_data) {
         std::cout << "patch id : " << pid << " len = " << pdat.get_obj_cnt() << std::endl;
     }
+
+    //std::cout << sched.dump_status() << "\n\n\n\n\n\n\n\n\n\n\n\n\n\n"<< std::endl;
+
+    sched.scheduler_step(true, false);
+
+
+    //std::cout << sched.dump_status() << "\n\n\n\n\n\n\n\n\n\n\n\n\n\n"<< std::endl;
+
+    for (auto & [pid,pdat] : sched.patch_data.owned_data) {
+        std::cout << "patch id : " << pid << " len = " << pdat.get_obj_cnt() << std::endl;
+    }
+
 }
 
 template class models::nbody::NBodySetup<f32>;

@@ -10,6 +10,7 @@ target_sources(shamrock
         sparse_communicator_patchdata.cpp
         sparse_communicator_patchdata_field.cpp
         sparse_communicator_radix_tree.cpp
+        sparse_communicator_rtree_buf.cpp
         #patchdata_buffer.cpp 
 
 
@@ -33,6 +34,7 @@ if("${BUILD_TEST}")
     sparse_communicator_patchdata.cpp
     sparse_communicator_patchdata_field.cpp
     sparse_communicator_radix_tree.cpp
+    sparse_communicator_rtree_buf.cpp
     #patchdata_buffer.cpp 
 
 

@@ -99,14 +99,13 @@ namespace syclalgs {
 
 
         template<class T> 
-        std::unique_ptr<sycl::buffer<T>> duplicate(const std::unique_ptr<sycl::buffer<T>> & vec){
-            if (!vec) {
-                return {};
-            }else{
-                auto buf = std::make_unique<sycl::buffer<T>>(vec->size());
-                copybuf_discard(*vec,*buf, vec->size());
+        std::unique_ptr<sycl::buffer<T>> duplicate(const std::unique_ptr<sycl::buffer<T>> & buf_in){
+            if(buf_in){
+                auto buf = std::make_unique<sycl::buffer<T>>(buf_in->size());
+                copybuf_discard(*buf_in,*buf, buf_in->size());
                 return std::move(buf);
             }
+            return {};
         }
 
         

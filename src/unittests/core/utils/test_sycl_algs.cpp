@@ -86,22 +86,44 @@ template<class T>
 void unit_test_reduc(){
 
 
-
+    #ifdef SYCL_COMP_DPCPP
     unit_test_reduc<f64>("reduction : manual wg=32",
-        [](sycl::queue & q, sycl::buffer<T> & buf1, u32 start_id, u32 end_id){
+        [](sycl::queue & q, sycl::buffer<T> & buf1, u32 start_id, u32 end_id) -> T {
             return syclalgs::reduction::impl::manual_reduce_impl<32>::reduce_manual(q, buf1, start_id, end_id, sycl::plus<>{});
         }
     );
     unit_test_reduc<f64>("reduction : sycl2020", 
-        [](sycl::queue & q, sycl::buffer<T> & buf1, u32 start_id, u32 end_id){
+        [](sycl::queue & q, sycl::buffer<T> & buf1, u32 start_id, u32 end_id) -> T {
             return syclalgs::reduction::impl::reduce_sycl_2020(q, buf1, start_id, end_id, sycl::plus<>{});
         }
     );
     unit_test_reduc<f64>("reduction : main",
-        [](sycl::queue & q, sycl::buffer<T> & buf1, u32 start_id, u32 end_id){
+        [](sycl::queue & q, sycl::buffer<T> & buf1, u32 start_id, u32 end_id) -> T {
             return syclalgs::reduction::reduce(q, buf1, start_id, end_id, sycl::plus<>{});
         }
     );
+    #endif
+
+
+    #ifdef SYCL_COMP_HIPSYCL
+    unit_test_reduc<f64>("reduction : manual wg=32",
+        [](sycl::queue & q, sycl::buffer<T> & buf1, u32 start_id, u32 end_id) -> T {
+            return syclalgs::reduction::impl::manual_reduce_impl<32>::reduce_manual(q, buf1, start_id, end_id, sycl::plus<T>{});
+        }
+    );
+    unit_test_reduc<f64>("reduction : sycl2020", 
+        [](sycl::queue & q, sycl::buffer<T> & buf1, u32 start_id, u32 end_id) -> T {
+            return syclalgs::reduction::impl::reduce_sycl_2020(q, buf1, start_id, end_id, sycl::plus<T>{});
+        }
+    );
+    unit_test_reduc<f64>("reduction : main",
+        [](sycl::queue & q, sycl::buffer<T> & buf1, u32 start_id, u32 end_id) -> T {
+            return syclalgs::reduction::reduce(q, buf1, start_id, end_id, sycl::plus<T>{});
+        }
+    );
+    #endif
+
+
 }
 
 TestStart(Unittest, "core/utils/sycl_algs:reduction", reduc_kernel_utest, 1){
@@ -155,6 +177,8 @@ template<class T> void bench_type(std::string Tname){
         vals.push_back(next_obj<T>(eng,distf));
     }
 
+
+    #ifdef SYCL_COMP_DPCPP
     bench_mark_indiv<T>(Tname + " manual : wg=2",vals,[](sycl::queue & q, sycl::buffer<T> & buf1, u32 start_id, u32 end_id){
         return syclalgs::reduction::impl::manual_reduce_impl<2>::reduce_manual(q, buf1, start_id, end_id, sycl::plus<>{});
     });
@@ -180,6 +204,36 @@ template<class T> void bench_type(std::string Tname){
     bench_mark_indiv<T>(Tname + " sycl2020 reduction",vals,[](sycl::queue & q, sycl::buffer<T> & buf1, u32 start_id, u32 end_id){
         return syclalgs::reduction::impl::reduce_sycl_2020(q, buf1, start_id, end_id, sycl::plus<>{});
     });
+    #endif
+
+
+    #ifdef SYCL_COMP_HIPSYCL
+    bench_mark_indiv<T>(Tname + " manual : wg=2",vals,[](sycl::queue & q, sycl::buffer<T> & buf1, u32 start_id, u32 end_id){
+        return syclalgs::reduction::impl::manual_reduce_impl<2>::reduce_manual(q, buf1, start_id, end_id, sycl::plus<T>{});
+    });
+    bench_mark_indiv<T>(Tname + " manual : wg=4",vals,[](sycl::queue & q, sycl::buffer<T> & buf1, u32 start_id, u32 end_id){
+        return syclalgs::reduction::impl::manual_reduce_impl<4>::reduce_manual(q, buf1, start_id, end_id, sycl::plus<T>{});
+    });
+    bench_mark_indiv<T>(Tname + " manual : wg=8",vals,[](sycl::queue & q, sycl::buffer<T> & buf1, u32 start_id, u32 end_id){
+        return syclalgs::reduction::impl::manual_reduce_impl<8>::reduce_manual(q, buf1, start_id, end_id, sycl::plus<T>{});
+    });
+    bench_mark_indiv<T>(Tname + " manual : wg=16",vals,[](sycl::queue & q, sycl::buffer<T> & buf1, u32 start_id, u32 end_id){
+        return syclalgs::reduction::impl::manual_reduce_impl<16>::reduce_manual(q, buf1, start_id, end_id, sycl::plus<T>{});
+    });
+    bench_mark_indiv<T>(Tname + " manual : wg=32",vals,[](sycl::queue & q, sycl::buffer<T> & buf1, u32 start_id, u32 end_id){
+        return syclalgs::reduction::impl::manual_reduce_impl<32>::reduce_manual(q, buf1, start_id, end_id, sycl::plus<T>{});
+    });
+    bench_mark_indiv<T>(Tname + " manual : wg=64",vals,[](sycl::queue & q, sycl::buffer<T> & buf1, u32 start_id, u32 end_id){
+        return syclalgs::reduction::impl::manual_reduce_impl<64>::reduce_manual(q, buf1, start_id, end_id, sycl::plus<T>{});
+    });
+    bench_mark_indiv<T>(Tname + " manual : wg=128",vals,[](sycl::queue & q, sycl::buffer<T> & buf1, u32 start_id, u32 end_id){
+        return syclalgs::reduction::impl::manual_reduce_impl<128>::reduce_manual(q, buf1, start_id, end_id, sycl::plus<T>{});
+    });
+
+    bench_mark_indiv<T>(Tname + " sycl2020 reduction",vals,[](sycl::queue & q, sycl::buffer<T> & buf1, u32 start_id, u32 end_id){
+        return syclalgs::reduction::impl::reduce_sycl_2020(q, buf1, start_id, end_id, sycl::plus<T>{});
+    });
+    #endif
 }
 
 TestStart(Benchmark, "core/utils/sycl_algs:reduction", reduc_kernel_bench, 1){

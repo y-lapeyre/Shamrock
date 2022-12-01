@@ -96,6 +96,7 @@ class PatchData {
         Tvecbox bmax_p0,Tvecbox bmax_p1,Tvecbox bmax_p2,Tvecbox bmax_p3,Tvecbox bmax_p4,Tvecbox bmax_p5,Tvecbox bmax_p6,Tvecbox bmax_p7);
     
     void append_subset_to(std::vector<u32> & idxs, PatchData & pdat) const ;
+    void append_subset_to(sycl::buffer<u32> & idxs, u32 sz, PatchData & pdat) const ;
 
     inline u32 get_obj_cnt(){
         if(pdl.xyz_mode == xyz32){

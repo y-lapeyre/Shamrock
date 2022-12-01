@@ -160,8 +160,9 @@ namespace syclalgs::reduction {
 
     template<class T, class Op> inline T reduce(sycl::queue & q, sycl::buffer<T> & buf1, u32 start_id, u32 end_id, Op op){
 
-        return impl::reduce_sycl_2020<T, Op>(q, buf1, start_id, end_id,op);
+        //return impl::reduce_sycl_2020<T, Op>(q, buf1, start_id, end_id,op);
         //return impl::reduce_manual<T, Op, 16>(q, buf1, start_id, end_id,op);
+        return T{};
     }
 
 }

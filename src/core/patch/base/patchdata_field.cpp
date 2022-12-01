@@ -117,9 +117,11 @@ template <class T> bool PatchDataField<T>::check_field_match(PatchDataField<T> &
     return match;
 }
 
+
+
 template<class T> class PdatField_append_subset_to;
 
-template <class T> void PatchDataField<T>::append_subset_to(const std::vector<u32> &idxs, PatchDataField &pfield) const {
+template <class T> void PatchDataField<T>::append_subset_to(sycl::buffer<u32> &idxs_buf,u32 sz, PatchDataField &pfield) const {
 
     if (pfield.nvar != nvar)
         throw shamrock_exc("field must be similar for extraction");
@@ -128,7 +130,7 @@ template <class T> void PatchDataField<T>::append_subset_to(const std::vector<u3
 
     const u32 nvar = get_nvar();
 
-    pfield.expand(idxs.size());
+    pfield.expand(sz);
 
     
 
@@ -138,12 +140,6 @@ template <class T> void PatchDataField<T>::append_subset_to(const std::vector<u3
 
     buf_t & buf_other  = pfield.get_buf();
 
-    u32 sz = idxs.size();
-
-
-    
-
-    sycl::buffer<u32> idxs_buf(idxs.data(), sz);
 
     #ifdef false
     {
@@ -201,6 +197,37 @@ template <class T> void PatchDataField<T>::append_subset_to(const std::vector<u3
 
     });
 
+    
+
+}
+
+template <class T> void PatchDataField<T>::append_subset_to(const std::vector<u32> &idxs, PatchDataField &pfield) const {
+
+    if (pfield.nvar != nvar)
+        throw shamrock_exc("field must be similar for extraction");
+
+    const u32 start_enque = pfield.val_cnt;
+
+    const u32 nvar = get_nvar();
+
+    //pfield.expand(idxs.size());
+
+    
+
+
+
+    using buf_t = std::unique_ptr<sycl::buffer<T>>;
+
+    buf_t & buf_other  = pfield.get_buf();
+
+    u32 sz = idxs.size();
+
+
+    
+
+    sycl::buffer<u32> idxs_buf(idxs.data(), sz);
+
+    append_subset_to(idxs_buf,sz,pfield);
     
 
 }

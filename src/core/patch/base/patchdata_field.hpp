@@ -355,6 +355,7 @@ class PatchDataField {
      * @param pfield 
      */
     void append_subset_to(const std::vector<u32> & idxs, PatchDataField & pfield) const ;
+    void append_subset_to(sycl::buffer<u32> &idxs_buf,u32 sz, PatchDataField &pfield) const;
 
 
     void gen_mock_data(u32 obj_cnt, std::mt19937& eng);

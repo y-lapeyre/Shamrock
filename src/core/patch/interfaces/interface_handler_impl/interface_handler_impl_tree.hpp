@@ -129,11 +129,11 @@ class Interfacehandler<Tree_Send,pos_prec,Radix_Tree<u_morton, sycl::vec<pos_pre
             auto & comm = interf_send_map[i];
             UnrolledCutTree & ctree = tree_send_map;
 
-            PatchData & pdat_to_cut = sched.patch_data.owned_data[comm.sender_patch_id];
+            PatchData & pdat_to_cut = sched.patch_data.owned_data.at(comm.sender_patch_id);
 
             src.push_back(std::make_unique<PatchData>(sched.pdl));
             
-            pdat_to_cut.append_subset_to(ctree.list_pdat_extract_id[i], src[src.size()-1]);
+            pdat_to_cut.append_subset_to(*ctree.list_pdat_extract_id[i], ctree.list_pdat_extract_id[i]->size() , *src[src.size()-1]);
 
         }
 
@@ -152,9 +152,7 @@ class Interfacehandler<Tree_Send,pos_prec,Radix_Tree<u_morton, sycl::vec<pos_pre
 
             std::unique_ptr<RadixTreeField<T>> & rtree_field_src = tree_fields[comm.sender_patch_id];
 
-            src.push_back(std::make_unique<RadixTreeField<T>>());
-            
-            //pdat_to_cut.append_subset_to(ctree.list_pdat_extract_id[i], src[src.size()-1]);
+            src.push_back(std::make_unique<RadixTreeField<T>>(*rtree_field_src,* ctree.list_new_node_id_to_old[i]));
 
         }
 
