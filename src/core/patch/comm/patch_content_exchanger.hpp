@@ -81,14 +81,16 @@ inline sycl::buffer<u64> __compute_object_patch_owner(sycl::queue &queue, sycl::
                     //out << current_node << " " << linked_node_id[current_node] << "\n";
                 } else {
                     // out << "-> result\n";
+                    //out << cur_node.box_min << " " << cur_node.box_max << "\n";
                     result_node = linked_node_id[current_node];
                     break;
                 }
 
                 
             }
-
-            //out << "-> " << current_node << " " << linked_node_id[current_node] << "\n";
+            //if(current_node != linked_node_id[current_node]){
+            //    out << "-> " << current_node << " " << linked_node_id[current_node] << "\n";
+            //}
 
             new_id[i] = result_node;
         });

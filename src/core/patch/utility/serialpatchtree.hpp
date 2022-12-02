@@ -231,8 +231,24 @@ class SerialPatchTree{public:
             serial_tree[idx].childs_id4  << ", "<< 
             serial_tree[idx].childs_id5  << ", "<< 
             serial_tree[idx].childs_id6  << ", "<< 
-            serial_tree[idx].childs_id7  << ", "
-            << ")" << std::endl;
+            serial_tree[idx].childs_id7 
+            << ")";
+            
+            std::cout << " (" << 
+            serial_tree[idx].box_min.x()  << ", "<< 
+            serial_tree[idx].box_min.y()  << ", "<< 
+            serial_tree[idx].box_min.z()
+            << ")";
+
+            std::cout << " (" << 
+            serial_tree[idx].box_max.x()  << ", "<< 
+            serial_tree[idx].box_max.y()  << ", "<< 
+            serial_tree[idx].box_max.z()
+            << ")";
+
+            std::cout << " = " << linked_patch_ids[idx];
+
+            std::cout << std::endl;
         }
     }
 

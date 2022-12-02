@@ -36,7 +36,7 @@ Test_start("patchdata::", sync_patchdata_layout, -1) {
 */
 
 
-Test_start("patchdata::", send_recv_patchdata, 2){
+TestStart(Unittest,"patchdata::", send_recv_patchdata, 2){
 
     std::mt19937 eng(0x1111);  
 
@@ -71,13 +71,15 @@ Test_start("patchdata::", send_recv_patchdata, 2){
 
     waitall_pdat_mpi_rq(rq_lst);
 
+    
+
 
     if(mpi_handler::world_rank == 0){
-        Test_assert("recv_d == d2_check", patch_data_check_match(recv_d, d2_check));
+        shamrock::test::asserts().assert_bool("recv_d == d2_check", patch_data_check_match(recv_d, d2_check));
     }
 
     if(mpi_handler::world_rank == 1){
-        Test_assert("recv_d == d1_check", patch_data_check_match(recv_d, d1_check));
+        shamrock::test::asserts().assert_bool("recv_d == d1_check", patch_data_check_match(recv_d, d1_check));
     }
 
 

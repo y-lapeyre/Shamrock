@@ -84,16 +84,46 @@ template<class T,class Fct> f64 bench_reduction(Fct && red_fct, const u32 & size
 
 template<class T>
 void unit_test_reduc(){
-    struct Op{
-        T operator()(const T & a, const T & b)
-        {
-            return a + b;
-        }
-    };
 
-    unit_test_reduc<f64>("reduction : manual wg=32",syclalgs::reduction::impl::reduce_manual<f64,Op,32>);
-    unit_test_reduc<f64>("reduction : sycl2020",syclalgs::reduction::impl::reduce_sycl_2020<f64,Op>);
-    unit_test_reduc<f64>("reduction : main",syclalgs::reduction::reduce<f64,Op>);
+
+    #ifdef SYCL_COMP_DPCPP
+    unit_test_reduc<f64>("reduction : manual wg=32",
+        [](sycl::queue & q, sycl::buffer<T> & buf1, u32 start_id, u32 end_id) -> T {
+            return syclalgs::reduction::impl::manual_reduce_impl<32>::reduce_manual(q, buf1, start_id, end_id, sycl::plus<>{});
+        }
+    );
+    unit_test_reduc<f64>("reduction : sycl2020", 
+        [](sycl::queue & q, sycl::buffer<T> & buf1, u32 start_id, u32 end_id) -> T {
+            return syclalgs::reduction::impl::reduce_sycl_2020(q, buf1, start_id, end_id, sycl::plus<>{});
+        }
+    );
+    unit_test_reduc<f64>("reduction : main",
+        [](sycl::queue & q, sycl::buffer<T> & buf1, u32 start_id, u32 end_id) -> T {
+            return syclalgs::reduction::reduce(q, buf1, start_id, end_id, sycl::plus<>{});
+        }
+    );
+    #endif
+
+
+    #ifdef SYCL_COMP_HIPSYCL
+    unit_test_reduc<f64>("reduction : manual wg=32",
+        [](sycl::queue & q, sycl::buffer<T> & buf1, u32 start_id, u32 end_id) -> T {
+            return syclalgs::reduction::impl::manual_reduce_impl<32>::reduce_manual(q, buf1, start_id, end_id, sycl::plus<T>{});
+        }
+    );
+    unit_test_reduc<f64>("reduction : sycl2020", 
+        [](sycl::queue & q, sycl::buffer<T> & buf1, u32 start_id, u32 end_id) -> T {
+            return syclalgs::reduction::impl::reduce_sycl_2020(q, buf1, start_id, end_id, sycl::plus<T>{});
+        }
+    );
+    unit_test_reduc<f64>("reduction : main",
+        [](sycl::queue & q, sycl::buffer<T> & buf1, u32 start_id, u32 end_id) -> T {
+            return syclalgs::reduction::reduce(q, buf1, start_id, end_id, sycl::plus<T>{});
+        }
+    );
+    #endif
+
+
 }
 
 TestStart(Unittest, "core/utils/sycl_algs:reduction", reduc_kernel_utest, 1){
@@ -111,20 +141,13 @@ TestStart(Unittest, "core/utils/sycl_algs:reduction", reduc_kernel_utest, 1){
 
 constexpr u32 lim_bench = 1e8;
 
-template<u32 wg_size, class T>
-void bench_mark_indiv_manual(std::string name,std::vector<T> & vals){
-
-    struct Op{
-            T operator()(const T & a, const T & b)
-            {
-                return a + b;
-            }
-        };
+template<class T,class Fct>
+void bench_mark_indiv(std::string name,std::vector<T> & vals, Fct && fct){
 
     logger::info_ln("ShamrockTest","testing :",name);
     
     std::vector<f64> test_sz;
-    for(f64 i = 16; i < lim_bench; i*=1.3){
+    for(f64 i = 16; i < lim_bench; i*=1.1){
         test_sz.push_back(i);
     }
 
@@ -134,7 +157,7 @@ void bench_mark_indiv_manual(std::string name,std::vector<T> & vals){
 
     for(const f64 & sz : test_sz){
         logger::debug_ln("ShamrockTest","N=",sz);
-        results.push_back(bench_reduction<T>(syclalgs::reduction::impl::reduce_manual<T,Op,wg_size>,u32(sz),vals));
+        results.push_back(bench_reduction<T>(fct,u32(sz),vals));
     }
 
     res.add_data("Nobj", test_sz);
@@ -142,36 +165,6 @@ void bench_mark_indiv_manual(std::string name,std::vector<T> & vals){
     
 }
 
-template<class T>
-void bench_mark_indiv_sycl2020(std::string name,std::vector<T> & vals){
-
-    struct Op{
-            T operator()(const T & a, const T & b)
-            {
-                return a + b;
-            }
-        };
-
-    logger::info_ln("ShamrockTest","testing :",name);
-    
-    std::vector<f64> test_sz;
-    for(f64 i = 16; i < lim_bench; i*=1.3){
-        test_sz.push_back(i);
-    }
-
-    auto & res = shamrock::test::test_data().new_dataset(name);
-
-    std::vector<f64> results;
-
-    for(const f64 & sz : test_sz){
-        logger::debug_ln("ShamrockTest","N=",sz);
-        results.push_back(bench_reduction<T>(syclalgs::reduction::impl::reduce_sycl_2020<T, Op>,u32(sz),vals));
-    }
-
-    res.add_data("Nobj", test_sz);
-    res.add_data("t_sort", results);
-    
-}
 
 template<class T> void bench_type(std::string Tname){
 
@@ -184,19 +177,68 @@ template<class T> void bench_type(std::string Tname){
         vals.push_back(next_obj<T>(eng,distf));
     }
 
-    bench_mark_indiv_manual<2,T>(Tname + " manual : wg=2",vals);
-    bench_mark_indiv_manual<4,T>(Tname + " manual : wg=4",vals);
-    bench_mark_indiv_manual<8,T>(Tname + " manual : wg=8",vals);
-    bench_mark_indiv_manual<16,T>(Tname + " manual : wg=16",vals);
-    bench_mark_indiv_manual<32,T>(Tname + " manual : wg=32",vals);
-    bench_mark_indiv_manual<64,T>(Tname + " manual : wg=64",vals);
-    bench_mark_indiv_manual<128,T>(Tname + " manual : wg=128",vals);
 
-    bench_mark_indiv_sycl2020<T>(Tname + " sycl2020 reduction",vals);
+    #ifdef SYCL_COMP_DPCPP
+    bench_mark_indiv<T>(Tname + " manual : wg=2",vals,[](sycl::queue & q, sycl::buffer<T> & buf1, u32 start_id, u32 end_id){
+        return syclalgs::reduction::impl::manual_reduce_impl<2>::reduce_manual(q, buf1, start_id, end_id, sycl::plus<>{});
+    });
+    bench_mark_indiv<T>(Tname + " manual : wg=4",vals,[](sycl::queue & q, sycl::buffer<T> & buf1, u32 start_id, u32 end_id){
+        return syclalgs::reduction::impl::manual_reduce_impl<4>::reduce_manual(q, buf1, start_id, end_id, sycl::plus<>{});
+    });
+    bench_mark_indiv<T>(Tname + " manual : wg=8",vals,[](sycl::queue & q, sycl::buffer<T> & buf1, u32 start_id, u32 end_id){
+        return syclalgs::reduction::impl::manual_reduce_impl<8>::reduce_manual(q, buf1, start_id, end_id, sycl::plus<>{});
+    });
+    bench_mark_indiv<T>(Tname + " manual : wg=16",vals,[](sycl::queue & q, sycl::buffer<T> & buf1, u32 start_id, u32 end_id){
+        return syclalgs::reduction::impl::manual_reduce_impl<16>::reduce_manual(q, buf1, start_id, end_id, sycl::plus<>{});
+    });
+    bench_mark_indiv<T>(Tname + " manual : wg=32",vals,[](sycl::queue & q, sycl::buffer<T> & buf1, u32 start_id, u32 end_id){
+        return syclalgs::reduction::impl::manual_reduce_impl<32>::reduce_manual(q, buf1, start_id, end_id, sycl::plus<>{});
+    });
+    bench_mark_indiv<T>(Tname + " manual : wg=64",vals,[](sycl::queue & q, sycl::buffer<T> & buf1, u32 start_id, u32 end_id){
+        return syclalgs::reduction::impl::manual_reduce_impl<64>::reduce_manual(q, buf1, start_id, end_id, sycl::plus<>{});
+    });
+    bench_mark_indiv<T>(Tname + " manual : wg=128",vals,[](sycl::queue & q, sycl::buffer<T> & buf1, u32 start_id, u32 end_id){
+        return syclalgs::reduction::impl::manual_reduce_impl<128>::reduce_manual(q, buf1, start_id, end_id, sycl::plus<>{});
+    });
+
+    bench_mark_indiv<T>(Tname + " sycl2020 reduction",vals,[](sycl::queue & q, sycl::buffer<T> & buf1, u32 start_id, u32 end_id){
+        return syclalgs::reduction::impl::reduce_sycl_2020(q, buf1, start_id, end_id, sycl::plus<>{});
+    });
+    #endif
+
+
+    #ifdef SYCL_COMP_HIPSYCL
+    bench_mark_indiv<T>(Tname + " manual : wg=2",vals,[](sycl::queue & q, sycl::buffer<T> & buf1, u32 start_id, u32 end_id){
+        return syclalgs::reduction::impl::manual_reduce_impl<2>::reduce_manual(q, buf1, start_id, end_id, sycl::plus<T>{});
+    });
+    bench_mark_indiv<T>(Tname + " manual : wg=4",vals,[](sycl::queue & q, sycl::buffer<T> & buf1, u32 start_id, u32 end_id){
+        return syclalgs::reduction::impl::manual_reduce_impl<4>::reduce_manual(q, buf1, start_id, end_id, sycl::plus<T>{});
+    });
+    bench_mark_indiv<T>(Tname + " manual : wg=8",vals,[](sycl::queue & q, sycl::buffer<T> & buf1, u32 start_id, u32 end_id){
+        return syclalgs::reduction::impl::manual_reduce_impl<8>::reduce_manual(q, buf1, start_id, end_id, sycl::plus<T>{});
+    });
+    bench_mark_indiv<T>(Tname + " manual : wg=16",vals,[](sycl::queue & q, sycl::buffer<T> & buf1, u32 start_id, u32 end_id){
+        return syclalgs::reduction::impl::manual_reduce_impl<16>::reduce_manual(q, buf1, start_id, end_id, sycl::plus<T>{});
+    });
+    bench_mark_indiv<T>(Tname + " manual : wg=32",vals,[](sycl::queue & q, sycl::buffer<T> & buf1, u32 start_id, u32 end_id){
+        return syclalgs::reduction::impl::manual_reduce_impl<32>::reduce_manual(q, buf1, start_id, end_id, sycl::plus<T>{});
+    });
+    bench_mark_indiv<T>(Tname + " manual : wg=64",vals,[](sycl::queue & q, sycl::buffer<T> & buf1, u32 start_id, u32 end_id){
+        return syclalgs::reduction::impl::manual_reduce_impl<64>::reduce_manual(q, buf1, start_id, end_id, sycl::plus<T>{});
+    });
+    bench_mark_indiv<T>(Tname + " manual : wg=128",vals,[](sycl::queue & q, sycl::buffer<T> & buf1, u32 start_id, u32 end_id){
+        return syclalgs::reduction::impl::manual_reduce_impl<128>::reduce_manual(q, buf1, start_id, end_id, sycl::plus<T>{});
+    });
+
+    bench_mark_indiv<T>(Tname + " sycl2020 reduction",vals,[](sycl::queue & q, sycl::buffer<T> & buf1, u32 start_id, u32 end_id){
+        return syclalgs::reduction::impl::reduce_sycl_2020(q, buf1, start_id, end_id, sycl::plus<T>{});
+    });
+    #endif
 }
 
 TestStart(Benchmark, "core/utils/sycl_algs:reduction", reduc_kernel_bench, 1){
 
     bench_type<f64>("f32");
     bench_type<f64>("f64");
+
 }

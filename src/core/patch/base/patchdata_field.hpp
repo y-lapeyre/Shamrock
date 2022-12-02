@@ -130,6 +130,18 @@ class PatchDataField {
         
     }
 
+    
+
+    inline PatchDataField duplicate() const {
+        const PatchDataField& current = *this;
+        return PatchDataField(current);
+    }
+
+    inline std::unique_ptr<PatchDataField> duplicate_to_ptr() const {
+        const PatchDataField& current = *this;
+        return std::make_unique<PatchDataField>(current);
+    }
+
 
     PatchDataField(PatchDataField &&other) = delete;
     /* : _data(other._data){ 
@@ -175,6 +187,10 @@ class PatchDataField {
 
     [[nodiscard]] inline const u32 & size() const{
         return val_cnt;
+    }
+
+    [[nodiscard]] inline const u64 memsize() const{
+        return val_cnt*sizeof(T);
     }
 
     [[nodiscard]] inline const u32 & get_nvar() const {
@@ -339,6 +355,7 @@ class PatchDataField {
      * @param pfield 
      */
     void append_subset_to(const std::vector<u32> & idxs, PatchDataField & pfield) const ;
+    void append_subset_to(sycl::buffer<u32> &idxs_buf,u32 sz, PatchDataField &pfield) const;
 
 
     void gen_mock_data(u32 obj_cnt, std::mt19937& eng);

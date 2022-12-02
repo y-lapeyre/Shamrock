@@ -4,14 +4,18 @@
 #include "core/patch/utility/full_tree_field.hpp"
 #include "core/patch/utility/serialpatchtree.hpp"
 #include "core/tree/radix_tree.hpp"
+#include "models/generic/math/tensors/collections.hpp"
 #include "runscript/shamrockapi.hpp"
 
 #include "models/generic/algs/integrators_utils.hpp"
 
 #include "core/patch/comm/patch_object_mover.hpp"
+#include "models/generic/physics/fmm.hpp"
 
 
 const std::string console_tag = "[NBodySelfGrav] ";
+
+constexpr u32 fmm_order = 4;
 
 
 template<class flt> 
@@ -151,6 +155,148 @@ class FMMInteract_cd{
 
 
 
+template<class Tree,class vec, class flt>
+void compute_multipoles(Tree & rtree, sycl::buffer<vec> & pos_part, sycl::buffer<flt> & grav_multipoles){
+    logger::debug_sycl_ln("RTreeFMM", "computing leaf moments (",rtree.tree_leaf_count,")");
+    sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
+
+        u32 offset_leaf = rtree.tree_internal_count;
+
+        auto xyz = sycl::accessor {pos_part, cgh,sycl::read_only};
+        auto cell_particle_ids =sycl::accessor {*rtree.buf_reduc_index_map, cgh,sycl::read_only};
+        auto particle_index_map = sycl::accessor {*rtree.buf_particle_index_map, cgh,sycl::read_only};
+        auto cell_max = sycl::accessor{*rtree.buf_pos_max_cell_flt,cgh,sycl::read_only};
+        auto cell_min = sycl::accessor{*rtree.buf_pos_min_cell_flt,cgh,sycl::read_only};
+        auto multipoles = sycl::accessor {grav_multipoles, cgh,sycl::write_only,sycl::no_init};
+
+
+        sycl::range<1> range_leaf_cell{rtree.tree_leaf_count};
+
+        cgh.parallel_for(range_leaf_cell, [=](sycl::item<1> item) {
+                u32 gid = (u32) item.get_id(0);
+
+                u32 min_ids = cell_particle_ids[gid];
+                u32 max_ids = cell_particle_ids[gid+1];
+
+                vec cell_pmax = cell_max[offset_leaf + gid];
+                vec cell_pmin = cell_min[offset_leaf + gid];
+
+                vec s_b = (cell_pmax + cell_pmin)/2;
+
+                auto B_n = SymTensorCollection<flt,0,fmm_order>::zeros();
+
+                for(u32 id_s = min_ids; id_s < max_ids;id_s ++){
+                    u32 idx_j = particle_index_map[id_s];
+                    vec bj = xyz[idx_j] - s_b;
+
+                    auto tB_n = SymTensorCollection<flt,0,fmm_order>::from_vec(bj);
+    
+                    constexpr flt m_j = 1;
+
+                    tB_n *= m_j;
+                    B_n += tB_n;
+                }
+                
+                B_n.store(multipoles, (gid+offset_leaf)*SymTensorCollection<flt,0,fmm_order>::num_component);
+
+            }
+        );
+
+    });
+
+
+
+    auto buf_is_computed = std::make_unique< sycl::buffer<u8>>( (rtree.tree_internal_count + rtree.tree_leaf_count)  );
+
+    sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
+        auto is_computed = sycl::accessor {*buf_is_computed, cgh , sycl::write_only, sycl::no_init};
+        sycl::range<1> range_internal_count{rtree.tree_internal_count + rtree.tree_leaf_count};
+
+        u32 int_cnt = rtree.tree_internal_count;
+
+        cgh.parallel_for(range_internal_count, [=](sycl::item<1> item) {
+            is_computed[item] = item.get_linear_id() >= int_cnt;
+        });
+    });
+
+
+
+    for (u32 iter = 0; iter < rtree.tree_depth ; iter ++) {
+    
+        sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
+
+            u32 leaf_offset = rtree.tree_internal_count;
+
+            auto cell_max = sycl::accessor{*rtree.buf_pos_max_cell_flt,cgh,sycl::read_only};
+            auto cell_min = sycl::accessor{*rtree.buf_pos_min_cell_flt,cgh,sycl::read_only};
+            auto multipoles = sycl::accessor {grav_multipoles, cgh,sycl::read_write};
+            auto is_computed = sycl::accessor {*buf_is_computed, cgh , sycl::read_write};
+
+            sycl::range<1> range_internal_count{rtree.tree_internal_count};
+
+            auto rchild_id   = sycl::accessor{*rtree.buf_rchild_id  ,cgh,sycl::read_only};
+            auto lchild_id   = sycl::accessor{*rtree.buf_lchild_id  ,cgh,sycl::read_only};
+            auto rchild_flag = sycl::accessor{*rtree.buf_rchild_flag,cgh,sycl::read_only};
+            auto lchild_flag = sycl::accessor{*rtree.buf_lchild_flag,cgh,sycl::read_only};
+
+            cgh.parallel_for(range_internal_count, [=](sycl::item<1> item) {
+
+                u32 cid = item.get_linear_id();
+
+                u32 lid = lchild_id[cid] + leaf_offset * lchild_flag[cid];
+                u32 rid = rchild_id[cid] + leaf_offset * rchild_flag[cid];
+
+                bool should_compute = (!is_computed[cid]) && (is_computed[lid] && is_computed[rid]);
+
+                if(should_compute){
+
+                    vec cell_pmax = cell_max[cid];
+                    vec cell_pmin = cell_min[cid];
+
+                    vec sbp = (cell_pmax + cell_pmin)/2;
+
+                    auto B_n = SymTensorCollection<flt,0,fmm_order>::zeros();
+
+
+
+                    auto add_multipole_offset = [&](u32 s_cid){
+                        vec s_cell_pmax = cell_max[s_cid];
+                        vec s_cell_pmin = cell_min[s_cid];
+
+                        vec sb = (s_cell_pmax + s_cell_pmin)/2;
+
+                        auto d = sb-sbp;
+
+                        auto B_ns = SymTensorCollection<flt, 0, fmm_order>::load(multipoles, s_cid*SymTensorCollection<flt,0,fmm_order>::num_component);
+
+                        auto B_ns_offseted = offset_multipole(B_ns,d);
+
+                        B_n += B_ns_offseted;
+
+                    };
+
+
+                    add_multipole_offset(lid);
+                    add_multipole_offset(rid);
+
+                    is_computed[cid] = true;
+                    B_n.store(multipoles,cid*SymTensorCollection<flt,0,fmm_order>::num_component);
+
+                }
+
+            });
+
+        });
+
+    }
+}
+
+
+
+
+
+
+
 
 
 
@@ -244,6 +390,7 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(PatchScheduler &sched, f64 old_ti
 
         //Init serial patch tree
         SerialPatchTree<vec3> sptree(sched.patch_tree, sched.get_box_tranform<vec3>());
+        sptree.dump_dat();
         sptree.attach_buf();
 
         //compute cfl
@@ -261,6 +408,7 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(PatchScheduler &sched, f64 old_ti
         //advance time
         flt step_time = old_time;
         step_time += dt_cur;
+
 
         //leapfrog predictor
         sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
@@ -287,7 +435,6 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(PatchScheduler &sched, f64 old_ti
 
 
 
-
         //move particles between patches
         logger::debug_ln("SPHLeapfrog", "particle reatribution");
         reatribute_particles(sched, sptree, periodic_bc);
@@ -296,7 +443,8 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(PatchScheduler &sched, f64 old_ti
 
 
 
-        constexpr u32 reduc_level = 5;
+
+        constexpr u32 reduc_level = 2;
 
         using RadTree = Radix_Tree<u_morton, vec3>;
 
@@ -305,7 +453,7 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(PatchScheduler &sched, f64 old_ti
         std::unordered_map<u64, std::unique_ptr<RadTree>> radix_trees;
 
         sched.for_each_patch_data([&](u64 id_patch, Patch & cur_p, PatchData & pdat) {
-            logger::debug_ln("SPHLeapfrog","patch : n°",id_patch,"->","making Radix Tree");
+            logger::debug_ln("SPHLeapfrog","patch : n°",id_patch,"->","making Radix Tree ( N=",pdat.get_obj_cnt(),")");
 
             if (pdat.is_empty()){
                 logger::debug_ln("SPHLeapfrog","patch : n°",id_patch,"->","is empty skipping tree build");
@@ -345,11 +493,83 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(PatchScheduler &sched, f64 old_ti
 
 
         
+        //generate tree fields
+
+        std::unordered_map<u64, std::unique_ptr<RadixTreeField<flt> >> cell_lenghts;
+        std::unordered_map<u64, std::unique_ptr<RadixTreeField<vec3>>> cell_centers;
+
+        sched.for_each_patch_data([&](u64 id_patch, Patch &  /*cur_p*/, PatchData & pdat) {
+
+            auto & rtree = *radix_trees[id_patch];
+
+            auto & c_len = cell_lenghts[id_patch];
+            auto & c_cen = cell_centers[id_patch];
+
+            c_len = std::make_unique<RadixTreeField<flt> >(); 
+            c_cen = std::make_unique<RadixTreeField<vec3>>();
+
+            c_len->nvar = 1;
+            c_cen->nvar = 1;
+
+            auto & cell_lenght  = c_len->radix_tree_field_buf;
+            auto & cell_centers = c_cen->radix_tree_field_buf;
+
+            cell_centers = std::make_unique<sycl::buffer<vec3>>(rtree.tree_internal_count + rtree.tree_leaf_count);
+            cell_lenght = std::make_unique<sycl::buffer<flt>>(rtree.tree_internal_count + rtree.tree_leaf_count);
+
+            sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
+
+
+                sycl::range<1> range_tree = sycl::range<1>{rtree.tree_leaf_count + rtree.tree_internal_count};
+
+                auto pos_min_cell = sycl::accessor{*rtree.buf_pos_min_cell_flt,cgh,sycl::read_only};
+                auto pos_max_cell = sycl::accessor{*rtree.buf_pos_max_cell_flt,cgh,sycl::read_only};
+
+
+                auto c_centers = sycl::accessor{*cell_centers,cgh,sycl::write_only,sycl::no_init};
+                auto c_lenght = sycl::accessor{*cell_lenght,cgh,sycl::write_only,sycl::no_init};
+
+                cgh.parallel_for(range_tree, [=](sycl::item<1> item) {
+                    vec3 cur_pos_min_cell_a = pos_min_cell[item];
+                    vec3 cur_pos_max_cell_a = pos_max_cell[item];
+
+                    vec3 sa = (cur_pos_min_cell_a + cur_pos_max_cell_a)/2;
+
+                    vec3 dc_a = (cur_pos_max_cell_a - cur_pos_min_cell_a);
+
+                    flt l_cell_a = sycl::max(sycl::max(dc_a.x(),dc_a.y()),dc_a.z());
+
+                    c_centers[item] = sa;
+                    c_lenght[item] = l_cell_a;
+                });
+
+            });
+
+
+        });
 
 
 
 
+        std::unordered_map<u64, std::unique_ptr<RadixTreeField<flt> >> multipoles;
 
+        sched.for_each_patch_data([&](u64 id_patch, Patch &  /*cur_p*/, PatchData & pdat) {
+
+            auto & rtree = *radix_trees[id_patch];
+            
+            u32 num_component_multipoles_fmm = (rtree.tree_internal_count + rtree.tree_leaf_count)*SymTensorCollection<flt,0,fmm_order>::num_component;
+
+            auto & ref_field = multipoles[id_patch];
+            ref_field = std::make_unique<RadixTreeField<flt> >(); 
+
+            ref_field->nvar = SymTensorCollection<flt,0,fmm_order>::num_component;
+            auto & grav_multipoles = ref_field->radix_tree_field_buf;
+
+            grav_multipoles = std::make_unique< sycl::buffer<flt>>( num_component_multipoles_fmm  );
+
+            compute_multipoles(rtree, *pdat.get_field<vec3>(ixyz).get_buf(), *grav_multipoles);
+
+        });
 
 
         //generate the tree field for the box size info
@@ -428,22 +648,418 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(PatchScheduler &sched, f64 old_ti
 
         }
 
+
+        //make interfaces
         flt open_crit = 1;
         using InterfHndl =  Interfacehandler<Tree_Send, flt, RadTree>;
         InterfHndl interf_hndl = InterfHndl();
         interf_hndl.compute_interface_list(sched,sptree,sd,radix_trees,FMMInteract_cd<flt>(open_crit),min_slenght,max_slenght);
+        interf_hndl.initial_fetch(sched);
+        interf_hndl.comm_trees();
+        
+        auto interf_pdat = interf_hndl.comm_pdat(sched);
+        auto interf_multipoles = interf_hndl.comm_tree_field(sched, multipoles);
 
+        sycl_handler::get_compute_queue().wait();
 
         
-        
-
-        //make interfaces
-
-
-
         //force
 
+        sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
 
+            logger::debug_ln("Selfgrav", "summing self grav to patch :",cur_p.id_patch);
+
+            auto & pos_part_f  = pdat.get_field<vec3>(ixyz);
+            auto & buf_force_f = pdat.get_field<vec3>(iaxyz);
+
+            auto & pos_part_b  = pos_part_f.get_buf();
+            auto & buf_force_b = buf_force_f.get_buf();
+
+            auto & pos_part  = *pos_part_b;
+            auto & buf_force = *buf_force_b;
+
+
+            auto & rtree = *radix_trees[id_patch];
+
+
+            auto & c_len = cell_lenghts[id_patch];
+            auto & c_cen = cell_centers[id_patch];
+
+            auto & cell_lenght  = c_len->radix_tree_field_buf;
+            auto & cell_centers = c_cen->radix_tree_field_buf;
+
+
+            auto & grav_multipoles_f = multipoles[id_patch];
+            auto & grav_multipoles = grav_multipoles_f->radix_tree_field_buf;
+
+            
+            sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
+
+                using vec = vec3;
+
+                using Rta = walker::Radix_tree_accessor<u_morton, vec>;
+                Rta tree_acc(rtree, cgh);
+
+                auto c_centers = sycl::accessor{*cell_centers,cgh,sycl::read_only};
+                auto c_lenght = sycl::accessor{*cell_lenght,cgh,sycl::read_only};
+
+                sycl::range<1> range_leaf = sycl::range<1>{rtree.tree_leaf_count};
+
+                u32 leaf_offset = rtree.tree_internal_count;
+
+                auto xyz = sycl::accessor {pos_part, cgh,sycl::read_only};
+                auto fxyz = sycl::accessor {buf_force, cgh,sycl::read_write};
+
+                auto multipoles = sycl::accessor {*grav_multipoles, cgh,sycl::read_only};
+
+
+                const auto open_crit_sq = open_crit*open_crit;
+
+                
+                //auto out = sycl::stream(1024, 768, cgh);
+
+                cgh.parallel_for(range_leaf, [=](sycl::item<1> item) {
+
+                    u32 id_cell_a = (u32)item.get_id(0) + leaf_offset;
+
+                    vec cur_pos_min_cell_a = tree_acc.pos_min_cell[id_cell_a];
+                    vec cur_pos_max_cell_a = tree_acc.pos_max_cell[id_cell_a];
+
+                    vec sa = c_centers[id_cell_a];
+                    flt l_cell_a = c_lenght[id_cell_a];
+
+                    auto dM_k = SymTensorCollection<flt, 1, fmm_order+1>::zeros();
+
+                    //out << id_cell_a << "\n";
+//#if false
+                    walker::rtree_for_cell(
+                        tree_acc,
+                        [&tree_acc,&cur_pos_min_cell_a,&cur_pos_max_cell_a,&sa,&l_cell_a,&c_centers,&c_lenght,&open_crit_sq](u32 id_cell_b){
+                            vec cur_pos_min_cell_b = tree_acc.pos_min_cell[id_cell_b];
+                            vec cur_pos_max_cell_b = tree_acc.pos_max_cell[id_cell_b];
+
+                            vec sb = c_centers[id_cell_b];
+                            vec r_fmm = sb-sa;
+                            flt l_cell_b = c_lenght[id_cell_b];
+
+                            flt opening_angle_sq = (l_cell_a + l_cell_b)*(l_cell_a + l_cell_b)/sycl::dot(r_fmm,r_fmm);
+
+                            using namespace walker::interaction_crit;
+
+                            return sph_cell_cell_crit(
+                                cur_pos_min_cell_a, 
+                                cur_pos_max_cell_a, 
+                                cur_pos_min_cell_b,
+                                cur_pos_max_cell_b, 
+                                0, 
+                                0) || (opening_angle_sq > open_crit_sq);
+                        },
+                        [&](u32 node_b) {
+                            
+                            
+                            //vec sb = c_centers[node_b];
+                            //vec r_fmm = sb-sa;
+                            //flt l_cell_b = c_lenght[node_b];
+
+                            
+                                walker::iter_object_in_cell(tree_acc, id_cell_a, [&](u32 id_a){
+
+                                    vec x_i = xyz[id_a];
+                                    vec sum_fi{0,0,0};
+
+                                    walker::iter_object_in_cell(tree_acc, node_b, [&](u32 id_b){
+
+                                        if(id_a != id_b){
+                                            vec x_j = xyz[id_b];
+
+                                            vec real_r = x_i-x_j;
+
+                                            flt inv_r_n = sycl::rsqrt(sycl::dot(real_r,real_r));
+                                            sum_fi += real_r*(inv_r_n*inv_r_n*inv_r_n);
+                                        }
+
+                                    });
+
+                                    fxyz[id_a] += sum_fi;
+
+                                });
+                            //}
+
+                        },
+                        [&](u32 node_b){
+
+                            vec sb = c_centers[node_b];
+                            vec r_fmm = sb-sa;
+
+                            auto Q_n = SymTensorCollection<flt, 0, fmm_order>::load(multipoles,node_b*SymTensorCollection<flt,0,fmm_order>::num_component);
+                            auto D_n = GreenFuncGravCartesian<flt, 1, fmm_order+1>::get_der_tensors(r_fmm);
+                            
+                            dM_k += get_dM_mat(D_n,Q_n);
+
+                        }
+                    );
+
+//#endif
+
+                    walker::iter_object_in_cell(tree_acc, id_cell_a, [&](u32 id_a){
+
+                        auto ai = SymTensorCollection<flt, 0, fmm_order>::from_vec(xyz[id_a] - sa);
+
+                        auto tensor_to_sycl = [](SymTensor3d_1<flt> a){
+                            return vec{a.v_0,a.v_1,a.v_2};
+                        };
+
+                        vec tmp {0,0,0};
+
+                        tmp += tensor_to_sycl(dM_k.t1*ai.t0);
+                        tmp += tensor_to_sycl(dM_k.t2*ai.t1);
+                        tmp += tensor_to_sycl(dM_k.t3*ai.t2);
+                        if constexpr (fmm_order >= 3) { tmp += tensor_to_sycl(dM_k.t4*ai.t3); }
+                        if constexpr (fmm_order >= 4) { tmp += tensor_to_sycl(dM_k.t5*ai.t4); }
+                        fxyz[id_a]  += tmp;
+
+                        //auto dphi_0 = tensor_to_sycl(dM_k.t1*ai.t0);
+                        //auto dphi_1 = tensor_to_sycl(dM_k.t2*ai.t1);
+                        //auto dphi_2 = tensor_to_sycl(dM_k.t3*ai.t2);
+                        //auto dphi_3 = tensor_to_sycl(dM_k.t4*ai.t3);
+                        //auto dphi_4 = tensor_to_sycl(dM_k.t5*ai.t4);
+                        //fxyz[id_a]  += dphi_0+ dphi_1+ dphi_2+ dphi_3+ dphi_4;
+
+                    });
+
+                });
+
+
+            });
+            
+
+        });
+
+
+                
+        sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
+
+
+
+            auto & pos_part = *pdat.get_field<vec3>(ixyz).get_buf();
+            auto & buf_force = *pdat.get_field<vec3>(iaxyz).get_buf();
+
+
+            auto & rtree_cur = *radix_trees[id_patch];
+
+
+
+            auto & c_len = cell_lenghts[id_patch];
+            auto & c_cen = cell_centers[id_patch];
+
+            auto & cur_cell_lenght  = c_len->radix_tree_field_buf;
+            auto & cur_cell_centers = c_cen->radix_tree_field_buf;
+
+
+
+            for(u32 interf_id = 0; interf_id < interf_pdat[id_patch].size(); interf_id ++){
+
+
+                auto & rtree_interf = *std::get<1>(interf_hndl.tree_recv_map[id_patch][interf_id]);
+
+                auto & pdat_interf = *std::get<1>(interf_pdat[id_patch][interf_id]);
+
+                auto & pos_part_interf = *pdat_interf.template get_field<vec3>(ixyz).get_buf();
+
+                auto & multipole_interf = *std::get<1>(interf_multipoles[id_patch][interf_id]);
+
+
+
+                //compute interface cell info
+                auto interf_cell_centers = std::make_unique<sycl::buffer<vec3>>(rtree_interf.tree_internal_count + rtree_interf.tree_leaf_count);
+                auto interf_cell_lenght = std::make_unique<sycl::buffer<flt>>(rtree_interf.tree_internal_count + rtree_interf.tree_leaf_count);
+
+                sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
+
+
+                    sycl::range<1> range_tree = sycl::range<1>{rtree_interf.tree_leaf_count + rtree_interf.tree_internal_count};
+
+                    auto pos_min_cell = sycl::accessor{*rtree_interf.buf_pos_min_cell_flt,cgh,sycl::read_only};
+                    auto pos_max_cell = sycl::accessor{*rtree_interf.buf_pos_max_cell_flt,cgh,sycl::read_only};
+
+
+                    auto c_centers = sycl::accessor{*interf_cell_centers,cgh,sycl::write_only,sycl::no_init};
+                    auto c_lenght = sycl::accessor{*interf_cell_lenght,cgh,sycl::write_only,sycl::no_init};
+
+                    cgh.parallel_for(range_tree, [=](sycl::item<1> item) {
+                        vec3 cur_pos_min_cell_a = pos_min_cell[item];
+                        vec3 cur_pos_max_cell_a = pos_max_cell[item];
+
+                        vec3 sa = (cur_pos_min_cell_a + cur_pos_max_cell_a)/2;
+
+                        vec3 dc_a = (cur_pos_max_cell_a - cur_pos_min_cell_a);
+
+                        flt l_cell_a = sycl::max(sycl::max(dc_a.x(),dc_a.y()),dc_a.z());
+
+                        c_centers[item] = sa;
+                        c_lenght[item] = l_cell_a;
+                    });
+
+                });
+
+                
+
+
+                sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
+
+                    using vec = vec3;
+
+                    using Rta = walker::Radix_tree_accessor<u_morton, vec>;
+                    Rta tree_acc_curr(rtree_cur, cgh);
+                    Rta tree_acc_interf(rtree_interf, cgh);
+
+
+
+                    auto interf_c_centers = sycl::accessor{*interf_cell_centers,cgh,sycl::read_only};
+                    auto interf_c_lenght = sycl::accessor{*interf_cell_lenght,cgh,sycl::read_only};
+
+
+                    auto cur_c_centers = sycl::accessor{*cur_cell_centers,cgh,sycl::read_only};
+                    auto cur_c_lenght = sycl::accessor{*cur_cell_lenght,cgh,sycl::read_only};
+
+
+                    sycl::range<1> cur_range_leaf = sycl::range<1>{rtree_cur.tree_leaf_count};
+
+
+                    u32 cur_leaf_offset = rtree_cur.tree_internal_count;
+                    u32 interf_leaf_offset = rtree_interf.tree_internal_count;
+
+
+
+                    auto xyz = sycl::accessor {pos_part, cgh,sycl::read_only};
+
+                    auto xyz_interf = sycl::accessor {pos_part_interf, cgh,sycl::read_only};
+                    auto fxyz = sycl::accessor {buf_force, cgh,sycl::read_write};
+
+                    auto multipoles = sycl::accessor {*multipole_interf.radix_tree_field_buf, cgh,sycl::read_only};
+
+
+
+
+                    const auto open_crit_sq = open_crit*open_crit;
+
+
+                    cgh.parallel_for(cur_range_leaf, [=](sycl::item<1> item) {
+
+                        u32 id_cell_a = (u32)item.get_id(0) + cur_leaf_offset;
+
+                        vec cur_pos_min_cell_a = tree_acc_curr.pos_min_cell[id_cell_a];
+                        vec cur_pos_max_cell_a = tree_acc_curr.pos_max_cell[id_cell_a];
+
+                        vec sa = cur_c_centers[id_cell_a];
+                        flt l_cell_a = cur_c_lenght[id_cell_a];
+
+                        auto dM_k = SymTensorCollection<flt, 1, fmm_order+1>::zeros();
+
+
+
+                        walker::rtree_for_cell(tree_acc_interf,
+                            [&](u32 id_cell_b){
+                                vec cur_pos_min_cell_b = tree_acc_interf.pos_min_cell[id_cell_b];
+                                vec cur_pos_max_cell_b = tree_acc_interf.pos_max_cell[id_cell_b];
+
+                                vec sb = interf_c_centers[id_cell_b];
+                                vec r_fmm = sb-sa;
+                                flt l_cell_b = interf_c_lenght[id_cell_b];
+
+                                flt opening_angle_sq = (l_cell_a + l_cell_b)*(l_cell_a + l_cell_b)/sycl::dot(r_fmm,r_fmm);
+
+                                using namespace walker::interaction_crit;
+
+                                return sph_cell_cell_crit(
+                                    cur_pos_min_cell_a, 
+                                    cur_pos_max_cell_a, 
+                                    cur_pos_min_cell_b,
+                                    cur_pos_max_cell_b, 
+                                    0, 
+                                    0) || (opening_angle_sq > open_crit_sq);
+                            },
+                            [&](u32 node_b) {
+                        
+                                
+                                    walker::iter_object_in_cell(tree_acc_curr, id_cell_a, [&](u32 id_a){
+
+                                        vec x_i = xyz[id_a];
+                                        vec sum_fi{0,0,0};
+
+                                        walker::iter_object_in_cell(tree_acc_interf, node_b, [&](u32 id_b){
+
+                                            if(id_a != id_b){
+                                                vec x_j = xyz_interf[id_b];
+
+                                                vec real_r = x_i-x_j;
+
+                                                flt inv_r_n = sycl::rsqrt(sycl::dot(real_r,real_r));
+                                                sum_fi += real_r*(inv_r_n*inv_r_n*inv_r_n);
+                                            }
+
+                                        });
+
+                                        fxyz[id_a] += sum_fi;
+
+                                    });
+                                //}
+
+                            },
+                            [&](u32 node_b){
+
+                                vec sb = interf_c_centers[node_b];
+                                vec r_fmm = sb-sa;
+
+                                auto Q_n = SymTensorCollection<flt, 0, fmm_order>::load(multipoles,node_b*SymTensorCollection<flt,0,fmm_order>::num_component);
+                                auto D_n = GreenFuncGravCartesian<flt, 1, fmm_order+1>::get_der_tensors(r_fmm);
+                                
+                                dM_k += get_dM_mat(D_n,Q_n);
+
+                            }
+                        );
+
+
+
+                        walker::iter_object_in_cell(tree_acc_curr, id_cell_a, [&](u32 id_a){
+
+                            auto ai = SymTensorCollection<flt, 0, fmm_order>::from_vec(xyz[id_a] - sa);
+
+                            auto tensor_to_sycl = [](SymTensor3d_1<flt> a){
+                                return vec{a.v_0,a.v_1,a.v_2};
+                            };
+
+                            vec tmp {0,0,0};
+
+                            tmp += tensor_to_sycl(dM_k.t1*ai.t0);
+                            tmp += tensor_to_sycl(dM_k.t2*ai.t1);
+                            tmp += tensor_to_sycl(dM_k.t3*ai.t2);
+                            if constexpr (fmm_order >= 3) { tmp += tensor_to_sycl(dM_k.t4*ai.t3); }
+                            if constexpr (fmm_order >= 4) { tmp += tensor_to_sycl(dM_k.t5*ai.t4); }
+                            fxyz[id_a]  += tmp;
+
+                            //auto dphi_0 = tensor_to_sycl(dM_k.t1*ai.t0);
+                            //auto dphi_1 = tensor_to_sycl(dM_k.t2*ai.t1);
+                            //auto dphi_2 = tensor_to_sycl(dM_k.t3*ai.t2);
+                            //auto dphi_3 = tensor_to_sycl(dM_k.t4*ai.t3);
+                            //auto dphi_4 = tensor_to_sycl(dM_k.t5*ai.t4);
+                            //fxyz[id_a]  += dphi_0+ dphi_1+ dphi_2+ dphi_3+ dphi_4;
+
+                        });
+
+
+
+                    });
+
+
+                });
+
+
+                sycl_handler::get_compute_queue().wait();
+
+            }
+
+        });
 
         //leapfrog predictor
         sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {

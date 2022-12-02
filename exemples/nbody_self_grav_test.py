@@ -135,15 +135,15 @@ setup.clear()
 
 def print_dist(dic, cname : str,fname : str,tval):
 
-    plt.figure()
+    #plt.figure()
 
     xyz = np.array(dic["xyz"])
-    vxyz = np.array(dic["vxyz"])
+    axyz = np.array(dic["axyz"])
 
 
 
     plt.title(cname)
-    plt.scatter(xyz[:,2], vxyz[:,2],label = "simulation")
+    plt.scatter((xyz[:,0]**2 +xyz[:,1]**2 +xyz[:,2]**2)**0.5 , (axyz[:,0]**2 +axyz[:,1]**2 +axyz[:,2]**2)**0.5,label = "simulation")
     plt.legend()
     plt.savefig(fname)
 
@@ -165,9 +165,18 @@ model.set_cfl_force(0.3)
 model.set_particle_mass(pmass)
 
 
-twant = 1
+twant = 1e-3
 
 t_end = model.simulate_until(ctx, 0,twant ,1,1,"dump_")
 model.clear()
 
 dic_final = ctx.collect_data()
+print_dist(dic_final,"$t = 0$","end.pdf",0)
+
+plt.ylim(-3e4,2e5)
+
+plt.xlabel(r"$\vert \mathbf{r} \vert$")
+
+plt.ylabel(r"$\vert \mathbf{f} \vert$")
+
+plt.show()

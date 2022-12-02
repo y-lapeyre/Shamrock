@@ -1,5 +1,7 @@
 #pragma once
 
+#include "core/comm/sparse_communicator.hpp"
+#include "core/patch/utility/compute_field.hpp"
 #include "core/tree/radix_tree.hpp"
 #include "interface_handler_impl_list.hpp"
 #include "interf_impl_util.hpp"
@@ -42,17 +44,21 @@ class Interfacehandler<Tree_Send,pos_prec,Radix_Tree<u_morton, sycl::vec<pos_pre
 
         vec receiver_box_min;
         vec receiver_box_max;
-
-        std::unique_ptr<CutTree> cutted_tree;
     };
 
-    
-
+    struct UnrolledCutTree{
+        std::vector<std::unique_ptr<Radix_Tree<u_morton, vec>>> list_rtree;
+        std::vector<std::unique_ptr<sycl::buffer<u32>>> list_new_node_id_to_old;
+        std::vector<std::unique_ptr<sycl::buffer<u32>>> list_pdat_extract_id;
+    };
 
 
 
     //contain the list of interface that this node should send
     std::vector<CommListingSend> interf_send_map;
+    UnrolledCutTree tree_send_map;
+
+
     
     template<class InteractCrit,class... Args>
     inline void internal_compute_interf_list(PatchScheduler &sched, SerialPatchTree<vec> & sptree, SimulationDomain<flt> & bc,std::unordered_map<u64, RadixTree> & rtrees, const InteractCrit & interact_crit, Args ... args);
@@ -66,7 +72,7 @@ class Interfacehandler<Tree_Send,pos_prec,Radix_Tree<u_morton, sycl::vec<pos_pre
     };
 
     
-
+    std::unique_ptr<SparsePatchCommunicator> communicator;
 
     public:
 
@@ -93,16 +99,72 @@ class Interfacehandler<Tree_Send,pos_prec,Radix_Tree<u_morton, sycl::vec<pos_pre
 
 
 
-    void initial_fetch(){
-        //patchdata_exchanger::impl::radix_tree_exchange_object(
-        //    std::vector<Patch> &global_patch_list, 
-        //    std::vector<std::unique_ptr<Radix_Tree<u_morton, vec3>>> &send_comm_pdat, 
-        //    std::vector<u64_2> &send_comm_vec, std::unordered_map<u64, 
-        //    std::vector<std::tuple<u64, std::unique_ptr<Radix_Tree<u_morton, vec3>>>>> &recv_obj
-        //    )
+    void initial_fetch(PatchScheduler &sched){
+        
+        std::vector<u64_2> send_vec;
+
+        for(auto & comm : interf_send_map){
+            u64 sender_idx = sched.patch_list.id_patch_to_global_idx[comm.sender_patch_id];
+            u64 recv_idx = comm.global_patch_idx_recv;
+            send_vec.push_back(u64_2{sender_idx, recv_idx});
+        }
+
+        communicator = std::make_unique<SparsePatchCommunicator>(sched.patch_list.global, std::move(send_vec));
+        communicator->fetch_comm_table();
+
+        logger::debug_ln("Interfaces", "fetching comm table");//TODO Add bandwith check
     }
 
-    void fetch_field();
+
+    SparseCommResult<Radix_Tree<u_morton, vec>> tree_recv_map;
+    void comm_trees(){
+        tree_recv_map = communicator->sparse_exchange(tree_send_map.list_rtree);
+    }
+
+    SparseCommResult<PatchData> comm_pdat(PatchScheduler &sched){
+
+        SparseCommSource<PatchData> src;
+
+        for(u32 i = 0 ; i < interf_send_map.size(); i ++){
+            auto & comm = interf_send_map[i];
+            UnrolledCutTree & ctree = tree_send_map;
+
+            PatchData & pdat_to_cut = sched.patch_data.owned_data.at(comm.sender_patch_id);
+
+            src.push_back(std::make_unique<PatchData>(sched.pdl));
+            
+            pdat_to_cut.append_subset_to(*ctree.list_pdat_extract_id[i], ctree.list_pdat_extract_id[i]->size() , *src[src.size()-1]);
+
+        }
+
+        return communicator->sparse_exchange(src);
+
+    }
+
+    template<class T>
+    SparseCommResult<RadixTreeField<T>> comm_tree_field(PatchScheduler &sched, std::unordered_map<u64, std::unique_ptr<RadixTreeField<T>>> & tree_fields){
+
+        SparseCommSource<RadixTreeField<T>> src;
+
+        for(u32 i = 0 ; i < interf_send_map.size(); i ++){
+            auto & comm = interf_send_map[i];
+            UnrolledCutTree & ctree = tree_send_map;
+
+            std::unique_ptr<RadixTreeField<T>> & rtree_field_src = tree_fields[comm.sender_patch_id];
+
+            src.push_back(std::make_unique<RadixTreeField<T>>(*rtree_field_src,* ctree.list_new_node_id_to_old[i]));
+
+        }
+
+        return communicator->sparse_exchange(src);
+
+    }
+
+
+
+
+
+
 
 
     template<class Function> void for_each_interface(u64 patch_id, Function && fct);
@@ -301,8 +363,11 @@ void Interfacehandler<Tree_Send,pos_prec,Radix_Tree<u_morton, sycl::vec<pos_prec
         auto buf = init_valid_buf_val_unrolled(get_val(args)...);
 
         logger::debug_ln("InterfaceHandler", "gen tree for interf :",comm.sender_patch_id,"->",comm.receiver_patch_id);
-        comm.cutted_tree = std::make_unique<CutTree>(rtree->cut_tree(sycl_handler::get_compute_queue(), buf));
+        CutTree out (rtree->cut_tree(sycl_handler::get_compute_queue(), buf));
 
+        tree_send_map.list_rtree.push_back(std::make_unique<Radix_Tree<u_morton, vec>>(std::move(out.rtree)));
+        tree_send_map.list_pdat_extract_id.push_back(std::move(out.pdat_extract_id));
+        tree_send_map.list_new_node_id_to_old.push_back(std::move(out.new_node_id_to_old));
 
     }
 

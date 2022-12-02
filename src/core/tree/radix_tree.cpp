@@ -877,6 +877,8 @@ typename Radix_Tree<u_morton, vec3>::CuttedTree Radix_Tree<u_morton, vec3>::cut_
 
                 sycl::range<1> range_node = sycl::range<1>{ret.tree_leaf_count + ret.tree_internal_count};
 
+                
+                auto out = sycl::stream(128, 128, cgh);
 
                 cgh.parallel_for(range_node, [=](sycl::item<1> item) {
 
@@ -959,7 +961,20 @@ typename Radix_Tree<u_morton, vec3>::CuttedTree Radix_Tree<u_morton, vec3>::cut_
                             cur_id = rid;
                             //logger::raw_ln("id : ",i,"moving to ",cur_id);
                             
-                        }                
+                        }else{
+
+                            out << "[WARNING] Tree cut had a weird behavior during old cell search\n";
+
+                            u32 store_val = cur_id;
+
+                            if(store_val >= old_tree_leaf_offset){
+                                store_val -= old_tree_leaf_offset;
+                            }
+
+                            acc_new_node_id_to_old[item] = store_val;
+
+                            break;
+                        }             
 
 
 

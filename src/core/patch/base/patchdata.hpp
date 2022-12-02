@@ -51,6 +51,27 @@ class PatchData {
         init_fields();
     }
 
+
+    inline PatchData(const PatchData & other) : pdl(other.pdl){
+        #define X(_arg)                                                     \
+        for(const auto & src : other.fields_##_arg){                           \
+            this->fields_##_arg.emplace_back(src);                    \
+        }
+        XMAC_LIST_ENABLED_FIELD
+        #undef X
+    }
+
+
+    inline PatchData duplicate(){
+        const PatchData& current = *this;
+        return PatchData(current);
+    }
+
+    inline std::unique_ptr<PatchData> duplicate_to_ptr(){
+        const PatchData& current = *this;
+        return std::make_unique<PatchData>(current);
+    }
+
     /**
      * @brief extract particle at index pidx and insert it in the provided vectors
      * 
@@ -75,6 +96,7 @@ class PatchData {
         Tvecbox bmax_p0,Tvecbox bmax_p1,Tvecbox bmax_p2,Tvecbox bmax_p3,Tvecbox bmax_p4,Tvecbox bmax_p5,Tvecbox bmax_p6,Tvecbox bmax_p7);
     
     void append_subset_to(std::vector<u32> & idxs, PatchData & pdat) const ;
+    void append_subset_to(sycl::buffer<u32> & idxs, u32 sz, PatchData & pdat) const ;
 
     inline u32 get_obj_cnt(){
         if(pdl.xyz_mode == xyz32){
@@ -86,6 +108,19 @@ class PatchData {
             return fields_f64_3[ixyz].get_obj_cnt();
         }
         throw shamrock_exc("patchdata layout is not xyz32 or xyz64");
+    }
+
+    inline u64 memsize(){
+        u64 sum = 0; 
+
+        #define X(_arg)                                                     \
+        for(const auto & src : fields_##_arg){                           \
+            sum += src.memsize();                    \
+        }
+        XMAC_LIST_ENABLED_FIELD
+        #undef X
+
+        return sum;
     }
 
     inline bool is_empty(){
