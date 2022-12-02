@@ -9,6 +9,7 @@
 #include "basic_sph_gas_uint.hpp"
 #include "access/access.hpp"
 #include "aliases.hpp"
+#include "builtins.hpp"
 #include "core/patch/base/patchdata.hpp"
 #include "core/sys/log.hpp"
 #include "core/sys/sycl_handler.hpp"
@@ -264,6 +265,9 @@ f64 models::sph::BasicSPHGasUInterne<flt,Kernel>::evolve(PatchScheduler &sched, 
 
                     const f32 htol = htol_up_tol;
 
+                    const flt cs = eos_cs;
+                    constexpr flt gamma = 5./3.;
+
                     //sycl::stream out(65000,65000,cgh);
 
                     cgh.parallel_for(range_npart, [=](sycl::item<1> item) {
@@ -282,6 +286,11 @@ f64 models::sph::BasicSPHGasUInterne<flt,Kernel>::evolve(PatchScheduler &sched, 
                         f32 P_a     = pres[id_a];
                         //f32 P_a     = cs * cs * rho_a;
                         f32 omega_a = omga[id_a];
+
+                        f32 lambda_shock = 0.0;
+                        f32 alpha_AV = 0.0;
+                        f32 beta_AV = 2.0;
+                    
 
                         f32_3 inter_box_a_min = xyz_a - h_a * Kernel::Rkern;
                         f32_3 inter_box_a_max = xyz_a + h_a * Kernel::Rkern;
@@ -324,8 +333,8 @@ f64 models::sph::BasicSPHGasUInterne<flt,Kernel>::evolve(PatchScheduler &sched, 
                                 //internal energy update
                                 // scalar : f32  | vector : f32_3
 
-
-                                
+                                auto v_sig_a = alpha_AV * cs + beta_AV * sycl::distance(v_ab, dr);
+                                lambda_shock +=  part_mass * v_sig_a * 0.5 * (sycl::pow(sycl::dot(v_ab, dr), 2.f) * Kernel::dW(rab, h_a));
                                 sum_du_a += part_mass * sycl::dot(v_ab , r_ab_unit) * Kernel::dW(rab, h_a);
 
                                 //out << sum_du_a << "\n";
@@ -341,7 +350,10 @@ f64 models::sph::BasicSPHGasUInterne<flt,Kernel>::evolve(PatchScheduler &sched, 
                                 sum_axyz += tmp;
                             },
                             [](u32 node_id) {});
+                            
                             sum_du_a = P_a / (rho_a_sq * omega_a) * sum_du_a;
+                            lambda_shock = - 1 / (omega_a * rho_a) * lambda_shock;
+                            sum_du_a = sum_du_a + lambda_shock;
 
                         // out << "sum : " << sum_axyz << "\n";
 
