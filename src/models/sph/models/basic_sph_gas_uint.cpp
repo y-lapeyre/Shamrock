@@ -239,6 +239,7 @@ f64 models::sph::BasicSPHGasUInterne<flt,Kernel>::evolve(PatchScheduler &sched, 
                     auto omga  = omega.get_access<sycl::access::mode::read>(cgh);
 
                     auto r        = pdat_merge.get_field<f32_3>(ixyz).get_buf()->get_access<sycl::access::mode::read>(cgh);
+                    auto v        = pdat_merge.get_field<f32_3>(ivxyz).get_buf()->get_access<sycl::access::mode::read>(cgh);
                     auto acc_axyz = pdat_merge.get_field<f32_3>(iaxyz).get_buf()->get_access<sycl::access::mode::discard_write>(cgh);
 
 
@@ -273,6 +274,7 @@ f64 models::sph::BasicSPHGasUInterne<flt,Kernel>::evolve(PatchScheduler &sched, 
                         f32 h_a        = h_new[id_a];
 
                         f32_3 xyz_a = r[id_a];
+                        f32_3 vxyz_a = v[id_a];
 
                         f32 rho_a    = rho_h(part_mass, h_a);
                         f32 rho_a_sq = rho_a * rho_a;
@@ -299,6 +301,8 @@ f64 models::sph::BasicSPHGasUInterne<flt,Kernel>::evolve(PatchScheduler &sched, 
                             [&](u32 id_b) {
                                 // compute only omega_a
                                 f32_3 dr = xyz_a - r[id_b];
+                                f32_3 vxyz_b = v[id_b];
+                                f32_3 v_ab = vxyz_a - vxyz_b;
                                 f32 rab  = sycl::length(dr);
                                 f32 h_b  = h_new[id_b];
 
@@ -316,16 +320,17 @@ f64 models::sph::BasicSPHGasUInterne<flt,Kernel>::evolve(PatchScheduler &sched, 
                                 //f32 P_b     = cs * cs * rho_b;
                                 f32 omega_b = omga[id_b];
 
-                                //////////////////
+                                /////////////////
                                 //internal energy update
                                 // scalar : f32  | vector : f32_3
 
 
+                                
+                                sum_du_a += part_mass * sycl::dot(v_ab , r_ab_unit) * Kernel::dW(rab, h_b);
 
-                                //sum_du_a += ........;
 
 
-                                //////////////////
+                                /////////////////
 
 
 
@@ -336,6 +341,7 @@ f64 models::sph::BasicSPHGasUInterne<flt,Kernel>::evolve(PatchScheduler &sched, 
                                 sum_axyz += tmp;
                             },
                             [](u32 node_id) {});
+                            sum_du_a = P_a / (rho_a_sq * omega_a) * sum_du_a;
 
                         // out << "sum : " << sum_axyz << "\n";
 

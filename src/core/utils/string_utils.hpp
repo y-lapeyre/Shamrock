@@ -21,7 +21,11 @@
 
 #include <fstream>
 #include <string>
+#include <cstdarg>
+
 #include "aliases.hpp"
+
+
 
 inline std::string format(const char *fmt...) {
     std::string s{};

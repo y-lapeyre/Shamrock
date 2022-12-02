@@ -42,7 +42,7 @@ if("${SyCL_Compiler}" STREQUAL "DPCPP")
     # Chose sycl backend
     ######################
     if("${SyCL_Compiler_BE}" STREQUAL "CUDA")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsycl-targets=nvptx64-nvidia-cuda ")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsycl-targets=nvptx64-nvidia-cuda -Xsycl-target-backend --cuda-gpu-arch=sm_72")
     else()
         message(FATAL_ERROR "unsuported backend : ${SyCL_Compiler_BE}")
     endif()
