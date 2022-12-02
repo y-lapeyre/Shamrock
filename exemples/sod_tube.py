@@ -91,7 +91,7 @@ ctx.pdata_layout_add_field("duint_old",1,"f32")
 
 
 #start the scheduler
-ctx.init_sched(int(1e6),1)
+ctx.init_sched(int(1e8),1)
 
 gamma = 5./3.
 
@@ -119,7 +119,7 @@ def sim_setup(ctx : shamrock.Context):
     setup.init(ctx)
 
     bdim = (256,24,24)
-
+    #bdim = (512,48,48)
     (xs,ys,zs) = setup.get_box_dim_icnt(1,bdim)
 
     #todo set box size to otherwise split patchdata won't work in the setup
@@ -183,7 +183,7 @@ print_dist(ctx,"setup","setup")
 
 model = shamrock.BasicSPHGasUInterne_M4_single()
 model.init()
-model.set_cfl_cour(0.3)
+model.set_cfl_cour(1e-1)
 model.set_cfl_force(0.3)
 
 
