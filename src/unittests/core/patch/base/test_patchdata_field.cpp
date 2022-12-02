@@ -15,51 +15,34 @@
 #include <random>
 
 
-
+const std::string base = "core/patch/base/patchdata_field";
 
 /**
 *   Checking PatchDataField status after constructor
 */
-Test_start("patch/patchdata_field.cpp", patch_data_field_constructor, 1){
+TestStart(Unittest,base + ":constructor", patch_data_field_constructor, 1){
 
     PatchDataField<f32> d_check("test",1);
 
-    Test_assert("name field match", d_check.get_name() == "test");
-    Test_assert("nvar field match", d_check.get_nvar() == 1);
-    Test_assert("buffer not allocated", !d_check.get_buf());
+    shamrock::test::asserts().assert_bool("name field match", d_check.get_name() == "test");
+    shamrock::test::asserts().assert_bool("nvar field match", d_check.get_nvar() == 1);
+    shamrock::test::asserts().assert_bool("buffer not allocated", !d_check.get_buf());
 
-    Test_assert("is new field empty", d_check.size() == 0);
-    Test_assert("is new field empty", d_check.get_obj_cnt() == 0);
+    shamrock::test::asserts().assert_bool("is new field empty", d_check.size() == 0);
+    shamrock::test::asserts().assert_bool("is new field empty", d_check.get_obj_cnt() == 0);
 
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-Test_start("patch/patchdata_field.cpp", patch_data_field_check_match,1){
+TestStart(Unittest,base + ":patch_data_field_check_match", patch_data_field_check_match,1){
     std::mt19937 eng(0x1111);  
 
     PatchDataField<f32> d_check("test",1);
     d_check.gen_mock_data(10000, eng);
 
-    Test_assert("patch_data_check_match reflexivity", d_check.check_field_match(d_check));
+    shamrock::test::asserts().assert_bool("reflexivity", d_check.check_field_match(d_check));
 }
 
-Test_start("patch/patchdata_field.cpp", isend_irecv_f32, 2){
+TestStart(Unittest,base + ":isend_irecv_f32", isend_irecv_f32, 2){
     std::mt19937 eng(0x1111);  
 
     
@@ -97,13 +80,13 @@ Test_start("patch/patchdata_field.cpp", isend_irecv_f32, 2){
     if(mpi_handler::world_rank == 0){
         PatchDataField<f32> & p1 = recv_d;
         PatchDataField<f32> & p2 = d2_check;
-        Test_assert("recv_d == d1_check (f32)", p1.check_field_match(p2));
+        shamrock::test::asserts().assert_bool("recv_d == d1_check (f32)", p1.check_field_match(p2));
     }
 
     if(mpi_handler::world_rank == 1){
         PatchDataField<f32> & p1 = recv_d;
         PatchDataField<f32> & p2 = d1_check;
-        Test_assert("recv_d == d1_check (f32)", p1.check_field_match(p2));
+        shamrock::test::asserts().assert_bool("recv_d == d1_check (f32)", p1.check_field_match(p2));
     }
 
     free_sycl_mpi_types();

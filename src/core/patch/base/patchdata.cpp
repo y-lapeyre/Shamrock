@@ -167,6 +167,16 @@ void PatchData::resize(u32 new_obj_cnt){
 }
 
 
+
+void PatchData::append_subset_to(sycl::buffer<u32> & idxs, u32 sz, PatchData & pdat) const {
+    #define X(arg) \
+        for(u32 idx = 0; idx < pdl.fields_##arg.size(); idx++){\
+            fields_##arg[idx].append_subset_to(idxs, sz, pdat.fields_##arg[idx]);\
+        }
+    XMAC_LIST_ENABLED_FIELD
+    #undef X
+}
+
 void PatchData::append_subset_to(std::vector<u32> & idxs, PatchData &pdat) const {
 
     #define X(arg) \
@@ -187,7 +197,7 @@ void PatchData::split_patchdata<f32_3>(
     u32 field_ipos = pdl.get_field_idx<f32_3>("xyz");
     //TODO check that nvar on this field is 1 on creation
 
-    auto get_vec_idx = [&](f32_3 vmin, f32_3 vmax) -> std::vector<u32>{
+    auto get_vec_idx = [&](f32_3 vmin, f32_3 vmax) -> std::vector<u32> {
         return fields_f32_3[field_ipos].get_elements_with_range(
             [&](f32_3 val,f32_3 vmin, f32_3 vmax){
                 return BBAA::is_particle_in_patch<f32_3>(val, vmin,vmax);
@@ -204,6 +214,19 @@ void PatchData::split_patchdata<f32_3>(
     std::vector<u32> idx_p5 = get_vec_idx(bmin_p5,bmax_p5);
     std::vector<u32> idx_p6 = get_vec_idx(bmin_p6,bmax_p6);
     std::vector<u32> idx_p7 = get_vec_idx(bmin_p7,bmax_p7);
+
+    u32 el_cnt_new = idx_p0.size()+
+                    idx_p1.size()+
+                    idx_p2.size()+
+                    idx_p3.size()+
+                    idx_p4.size()+
+                    idx_p5.size()+
+                    idx_p6.size()+
+                    idx_p7.size();
+
+    if(get_obj_cnt() != el_cnt_new){
+        throw "issue in the patch split : new element count doesn't match the old one";
+    }
 
     //TODO create a extract subpatch function
 
@@ -228,7 +251,7 @@ void PatchData::split_patchdata<f64_3>(
     u32 field_ipos = pdl.get_field_idx<f64_3>("xyz");
     //TODO check that nvar on this field is 1 on creation
 
-    auto get_vec_idx = [&](f64_3 vmin, f64_3 vmax) -> std::vector<u32>{
+    auto get_vec_idx = [&](f64_3 vmin, f64_3 vmax) -> std::vector<u32> {
         return fields_f64_3[field_ipos].get_elements_with_range(
             [&](f64_3 val,f64_3 vmin, f64_3 vmax){
                 return BBAA::is_particle_in_patch<f64_3>(val, vmin,vmax);
