@@ -336,21 +336,19 @@ f64 models::sph::BasicSPHGasUInterne<flt,Kernel>::evolve(PatchScheduler &sched, 
                                 /////////////////
                                 //internal energy update
                                 // scalar : f32  | vector : f32_3
+                                f32 alpha_a = alpha_AV; 
+                                f32 alpha_b = alpha_AV;
+                                f32 vsig_a = sycl::max(alpha_a*cs_a - beta_AV*v_ab_r_ab,0.f); 
+                                f32 vsig_b = sycl::max(alpha_b*cs_b - beta_AV*v_ab_r_ab,0.f); 
 
-                                auto v_sig_a = alpha_AV * cs + beta_AV * sycl::distance(v_ab, dr);
+                                auto v_sig_a = alpha_AV * cs_a + beta_AV * sycl::distance(v_ab, dr);
                                 lambda_shock +=  part_mass * v_sig_a * 0.5f * (sycl::pow(sycl::dot(v_ab, dr), 2.f) * Kernel::dW(rab, h_a));
                                 sum_du_a += part_mass * sycl::dot(v_ab , r_ab_unit) * Kernel::dW(rab, h_a);
 
                                 //out << sum_du_a << "\n";
 
                                 /////////////////
-
-
-                                f32 alpha_a = alpha_AV; 
-                                f32 alpha_b = alpha_AV;                                 ; 
-                                
-                                f32 vsig_a = sycl::max(alpha_a*cs_a - beta_AV*v_ab_r_ab,0.f); 
-                                f32 vsig_b = sycl::max(alpha_b*cs_b - beta_AV*v_ab_r_ab,0.f);                                 
+                                                        
                                 f32 qa_ab = - 0.5f*rho_a*vsig_a*v_ab_r_ab; 
                                 f32 qb_ab = - 0.5f*rho_b*vsig_b*v_ab_r_ab;
 
