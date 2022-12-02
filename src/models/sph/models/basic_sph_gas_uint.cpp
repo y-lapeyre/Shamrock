@@ -264,7 +264,7 @@ f64 models::sph::BasicSPHGasUInterne<flt,Kernel>::evolve(PatchScheduler &sched, 
 
                     const f32 htol = htol_up_tol;
 
-                    // sycl::stream out(65000,65000,cgh);
+                    //sycl::stream out(65000,65000,cgh);
 
                     cgh.parallel_for(range_npart, [=](sycl::item<1> item) {
                         u32 id_a = (u32)item.get_id(0);
@@ -326,9 +326,9 @@ f64 models::sph::BasicSPHGasUInterne<flt,Kernel>::evolve(PatchScheduler &sched, 
 
 
                                 
-                                sum_du_a += part_mass * sycl::dot(v_ab , r_ab_unit) * Kernel::dW(rab, h_b);
+                                sum_du_a += part_mass * sycl::dot(v_ab , r_ab_unit) * Kernel::dW(rab, h_a);
 
-
+                                //out << sum_du_a << "\n";
 
                                 /////////////////
 

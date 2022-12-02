@@ -181,7 +181,7 @@ print_dist(ctx,"setup","setup")
 #exit()
 
 
-model = shamrock.BasicSPHGas_M4_single()
+model = shamrock.BasicSPHGasUInterne_M4_single()
 model.init()
 model.set_cfl_cour(0.3)
 model.set_cfl_force(0.3)
