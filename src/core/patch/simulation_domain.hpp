@@ -12,6 +12,7 @@
 #include <memory>
 #include <vector>
 #include "core/utils/geometry_utils.hpp"
+#include <optional>
 
 enum BCType {
     Free, 
@@ -23,6 +24,8 @@ enum BCType {
     AntiPeriodic
 };
 
+
+
 template<class flt>
 class SimulationDomain {public:
 
@@ -32,12 +35,25 @@ class SimulationDomain {public:
     using vec_box = std::tuple<vec,vec>;
 
     ALignedAxisBoundingBox<flt> box_bc;
+    
+    std::optional<u32_3> periodic_search_min_vec;
+    std::optional<u32_3> periodic_search_max_vec;
 
     SimulationDomain(const BCType & boundary_type,vec min, vec max) :
         box_bc(ALignedAxisBoundingBox<flt>(min,max)),
         boundary_type(boundary_type)
     {
         check_boundary();
+    }
+
+
+    inline bool has_outdomain_object(){
+        switch (boundary_type) {
+            case Periodic: return true; break;
+            case PeriodicShearing: return true; break;
+            default: ;
+        }
+        return false;
     }
 
 
@@ -89,6 +105,14 @@ class SimulationDomain {public:
         }
 
         return pvec;
+    }
+
+    inline void set_periodic_search_range(u32_3 min, u32_3 max){
+        if(!(has_outdomain_object())){
+            throw shamrock_exc("[SimulationDomain] Can not set periodic search range without periodic bc");
+        }
+        periodic_search_min_vec = min;
+        periodic_search_max_vec = max;
     }
 
 

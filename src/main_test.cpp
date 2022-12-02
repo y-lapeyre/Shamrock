@@ -65,7 +65,7 @@ int main(int argc, char *argv[]){
     bool run_analysis = opts::has_option("--analysis") ;
     bool run_unittest = opts::has_option("--unittest") ;
 
-    if(run_bench || run_unittest || run_analysis == false){
+    if((run_bench || run_unittest || run_analysis) == false){
         run_bench = true;
         run_analysis = true;
         run_unittest = true;

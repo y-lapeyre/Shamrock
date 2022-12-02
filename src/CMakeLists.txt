@@ -63,7 +63,7 @@ if("${SyCL_Compiler}" STREQUAL "HIPSYCL")
     if("${SyCL_Compiler_BE}" STREQUAL "OMP")
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --hipsycl-cpu-cxx=g++ --hipsycl-config-file=${COMP_ROOT_DIR}/etc/hipSYCL/syclcc.json --hipsycl-targets='omp' --hipsycl-platform=cpu")
 
-        set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=address")# ")# -Wall -Wextra") #
+        set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} ")#-fsanitize=address")# ")# -Wall -Wextra") #
 
     else()
         message(FATAL_ERROR "unsuported backend : ${SyCL_Compiler_BE}")
@@ -149,7 +149,7 @@ include_directories(AFTER "${CMAKE_SOURCE_DIR}")
 add_custom_command(
     OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/version.cpp 
            ${CMAKE_CURRENT_SOURCE_DIR}/version__.cpp 
-    COMMAND python3 ${CMAKE_CURRENT_SOURCE_DIR}/make_version_file.py ${CMAKE_CURRENT_SOURCE_DIR}/version.cpp
+    COMMAND python3 ${CMAKE_CURRENT_SOURCE_DIR}/make_version_file.py ${CMAKE_CURRENT_SOURCE_DIR}/version.cpp "${CMAKE_CXX_FLAGS}"
   )
 
 if("${BUILD_SIM}")

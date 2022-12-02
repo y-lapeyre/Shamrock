@@ -118,7 +118,7 @@ namespace logger {
     
 
     
-
+    
 
 
 
@@ -228,7 +228,7 @@ namespace logger {
     #define LIST_LEVEL                                                                                                      \
     X(debug_alloc, terminal_effects::colors_foreground_8b::red, "Debug Alloc ", i8_max)                                     \
     X(debug_mpi, terminal_effects::colors_foreground_8b::blue, "Debug MPI ", i8_max-1)                                      \
-    X(debug_sycl, terminal_effects::colors_foreground_8b::magenta, "Debug SYCL", 10)                                        \
+    X(debug_sycl, terminal_effects::colors_foreground_8b::magenta, "Debug SYCL", 11)                                        \
     X(debug, terminal_effects::colors_foreground_8b::green, "Debug ", 10)                                                   \
     X(info, terminal_effects::colors_foreground_8b::cyan, "", 1)                                                            \
     X(normal, terminal_effects::bold, "", 0)                                                                                \

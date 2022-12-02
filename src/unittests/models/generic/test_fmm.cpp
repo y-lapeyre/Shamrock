@@ -27,13 +27,13 @@ class FMM_prec_eval{public:
         sycl::buffer<f64_3> buf_pos = sycl::buffer<f64_3>(pos_table.data(), pos_table.size());
 
         constexpr u32 number_elem_multip = SymTensorCollection<f64,0,order>::num_component;
-        sycl::buffer<f64> buf_multipoles = sycl::buffer<f64>(number_elem_multip);
+        sycl::buffer<f64> buf_multipoles {number_elem_multip};
 
 
         //compute multipoles
         {
-            sycl::host_accessor<f64_3> pos {buf_pos};
-            sycl::host_accessor<f64> multipoles {buf_multipoles};
+            sycl::host_accessor pos {buf_pos, sycl::read_only};
+            sycl::host_accessor multipoles {buf_multipoles, sycl::write_only, sycl::no_init};
 
             for (u32 j = 0; j < pos_table.size(); j ++) {
 
@@ -54,7 +54,7 @@ class FMM_prec_eval{public:
         //compute fmm
         {
             
-            sycl::host_accessor<f64> multipoles {buf_multipoles};
+            sycl::host_accessor multipoles {buf_multipoles, sycl::read_only};
 
             f64_3 r_fmm = sb-sa;
 
@@ -100,13 +100,13 @@ class FMM_prec_eval{public:
         using moment_types = SymTensorCollection<f64,0,order-1>;
 
         constexpr u32 number_elem_multip = moment_types::num_component;
-        sycl::buffer<f64> buf_multipoles = sycl::buffer<f64>(number_elem_multip);
+        sycl::buffer<f64> buf_multipoles {number_elem_multip};
 
 
         //compute multipoles
         {
-            sycl::host_accessor<f64_3> pos {buf_pos};
-            sycl::host_accessor<f64> multipoles {buf_multipoles};
+            sycl::host_accessor pos {buf_pos,sycl::read_only};
+            sycl::host_accessor multipoles {buf_multipoles,sycl::write_only,sycl::no_init};
 
             for (u32 j = 0; j < pos_table.size(); j ++) {
 
@@ -127,7 +127,7 @@ class FMM_prec_eval{public:
         //compute fmm
         {
             
-            sycl::host_accessor<f64> multipoles {buf_multipoles};
+            sycl::host_accessor multipoles {buf_multipoles,sycl::read_only};
 
             f64_3 r_fmm = sb-sa;
 
@@ -269,7 +269,7 @@ TestStart(Analysis,"models/generic/fmm/precision", fmm_prec, 1){
         vec_result_force_1.push_back(f.result_force_1);
     }
 
-    auto & dataset_prec = testdata.new_dataset("fmm_precision");
+    auto & dataset_prec = shamrock::test::test_data().new_dataset("fmm_precision");
 
     dataset_prec.add_data("angle",          vec_angle         );
     dataset_prec.add_data("result_pot_5",   vec_result_pot_5  );
@@ -353,7 +353,7 @@ TestStart(Unittest,"models/generic/fmm/multipole_moment_offset", multipole_momen
         (diff_4*diff_4) + 
         (diff_5*diff_5);
 
-    asserts.assert_add("multipole offset valid", diff < 1e-13);
+    shamrock::test::asserts().assert_bool("multipole offset valid", diff < 1e-13);
     
 
     printf("order 0 %f\n",B_nB.t0);
@@ -1248,25 +1248,25 @@ TestStart(Unittest,"models/generic/fmm/fmm_1_gpu_prec", fmm_1_gpu_prec , 1){
     {
         auto pos = pos_partgen_distrib<f32>(1e4);
         auto res = nompi_fmm_testing<f32,u32,4>(pos,reduc_level,open_crit);
-        asserts.assert_add("fmm_f32_u32_order4", res.prec < 1e-5);
+        shamrock::test::asserts().assert_bool("fmm_f32_u32_order4", res.prec < 1e-5);
     }
 
     {
         auto pos = pos_partgen_distrib<f32>(1e4);
         auto res = nompi_fmm_testing<f32,u64,4>(pos,reduc_level,open_crit);
-        asserts.assert_add("fmm_f32_u64_order4", res.prec < 1e-5);
+        shamrock::test::asserts().assert_bool("fmm_f32_u64_order4", res.prec < 1e-5);
     }
 
     {
         auto pos = pos_partgen_distrib<f64>(1e4);
         auto res = nompi_fmm_testing<f64,u32,4>(pos,reduc_level,open_crit);
-        asserts.assert_add("fmm_f64_u32_order4", res.prec < 1e-5);
+        shamrock::test::asserts().assert_bool("fmm_f64_u32_order4", res.prec < 1e-5);
     }
 
     {
         auto pos = pos_partgen_distrib<f64>(1e4);
         auto res = nompi_fmm_testing<f64,u64,4>(pos,reduc_level,open_crit);
-        asserts.assert_add("fmm_f64_u64_order4", res.prec < 1e-5);
+        shamrock::test::asserts().assert_bool("fmm_f64_u64_order4", res.prec < 1e-5);
     }
 
 
