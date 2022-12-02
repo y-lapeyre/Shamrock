@@ -290,6 +290,8 @@ f64 models::sph::BasicSPHGasUInterne<flt,Kernel>::evolve(PatchScheduler &sched, 
                         f32 lambda_shock = 0.0;
                         f32 alpha_AV = 0.0;
                         f32 beta_AV = 2.0;
+
+                        f32 cs_a = sycl::sqrt(gamma*P_a/rho_a);
                     
 
                         f32_3 inter_box_a_min = xyz_a - h_a * Kernel::Rkern;
@@ -328,13 +330,15 @@ f64 models::sph::BasicSPHGasUInterne<flt,Kernel>::evolve(PatchScheduler &sched, 
                                 f32 P_b     = pres[id_b];
                                 //f32 P_b     = cs * cs * rho_b;
                                 f32 omega_b = omga[id_b];
+                                f32 cs_b = sycl::sqrt(gamma*P_b/rho_b); 
+                                f32 v_ab_r_ab = sycl::dot(v_ab,r_ab_unit);
 
                                 /////////////////
                                 //internal energy update
                                 // scalar : f32  | vector : f32_3
 
                                 auto v_sig_a = alpha_AV * cs + beta_AV * sycl::distance(v_ab, dr);
-                                lambda_shock +=  part_mass * v_sig_a * 0.5 * (sycl::pow(sycl::dot(v_ab, dr), 2.f) * Kernel::dW(rab, h_a));
+                                lambda_shock +=  part_mass * v_sig_a * 0.5f * (sycl::pow(sycl::dot(v_ab, dr), 2.f) * Kernel::dW(rab, h_a));
                                 sum_du_a += part_mass * sycl::dot(v_ab , r_ab_unit) * Kernel::dW(rab, h_a);
 
                                 //out << sum_du_a << "\n";
@@ -342,9 +346,16 @@ f64 models::sph::BasicSPHGasUInterne<flt,Kernel>::evolve(PatchScheduler &sched, 
                                 /////////////////
 
 
+                                f32 alpha_a = alpha_AV; 
+                                f32 alpha_b = alpha_AV;                                 ; 
+                                
+                                f32 vsig_a = sycl::max(alpha_a*cs_a - beta_AV*v_ab_r_ab,0.f); 
+                                f32 vsig_b = sycl::max(alpha_b*cs_b - beta_AV*v_ab_r_ab,0.f);                                 
+                                f32 qa_ab = - 0.5f*rho_a*vsig_a*v_ab_r_ab; 
+                                f32 qb_ab = - 0.5f*rho_b*vsig_b*v_ab_r_ab;
 
                                 f32_3 tmp = sph_pressure<f32_3, f32>(part_mass, rho_a_sq, rho_b * rho_b, P_a, P_b, omega_a,
-                                                                    omega_b, 0, 0, r_ab_unit * Kernel::dW(rab, h_a),
+                                                                    omega_b, qa_ab, qb_ab, r_ab_unit * Kernel::dW(rab, h_a),
                                                                     r_ab_unit * Kernel::dW(rab, h_b));
 
                                 sum_axyz += tmp;
