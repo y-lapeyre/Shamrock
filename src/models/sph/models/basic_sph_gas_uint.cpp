@@ -288,7 +288,7 @@ f64 models::sph::BasicSPHGasUInterne<flt,Kernel>::evolve(PatchScheduler &sched, 
                         f32 omega_a = omga[id_a];
 
                         f32 lambda_shock = 0.0;
-                        f32 alpha_AV = 0.0;
+                        f32 alpha_AV = 1.0;
                         f32 beta_AV = 2.0;
 
                         f32 cs_a = sycl::sqrt(gamma*P_a/rho_a);

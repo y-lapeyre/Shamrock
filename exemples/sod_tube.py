@@ -192,9 +192,9 @@ print("Current part mass :", pmass)
 
 model.set_particle_mass(pmass)
 t_end = 0
-nstep = 10
+nstep = 15
 for i in range(nstep):
-    t_end = model.simulate_until(ctx, t_end,t_end+1e-3 ,1,1,"dump_")
+    t_end = model.simulate_until(ctx, t_end,t_end+1e-2 ,1,1,"dump_")
     print_dist(ctx,"t = " + str(t_end),"step_"+str(i))
 
 
