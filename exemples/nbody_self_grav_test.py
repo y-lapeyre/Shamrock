@@ -78,7 +78,7 @@ ctx.pdata_layout_add_field("axyz_old",1,"f32_3")
 
 
 #start the scheduler
-ctx.init_sched(int(1e4),1)
+ctx.init_sched(int(1e6),1)
 
 
 
@@ -165,15 +165,16 @@ model.set_cfl_force(0.3)
 model.set_particle_mass(pmass)
 
 
-twant = 1e-3
+twant = 5e-2
 
 t_end = model.simulate_until(ctx, 0,twant ,1,1,"dump_")
 model.clear()
 
 dic_final = ctx.collect_data()
 print_dist(dic_final,"$t = 0$","end.pdf",0)
+write_dic_to_vtk(dic_final,"end")
 
-plt.ylim(-3e4,2e5)
+plt.ylim(-1,10)
 
 plt.xlabel(r"$\vert \mathbf{r} \vert$")
 

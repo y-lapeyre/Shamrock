@@ -921,9 +921,9 @@ typename Radix_Tree<u_morton, vec3>::CuttedTree Radix_Tree<u_morton, vec3>::cut_
 
                             u32 store_val = cur_id;
 
-                            if(store_val >= old_tree_leaf_offset){
-                                store_val -= old_tree_leaf_offset;
-                            }
+                            //if(store_val >= old_tree_leaf_offset){
+                            //    store_val -= old_tree_leaf_offset;
+                            //}
 
                             acc_new_node_id_to_old[item] = store_val;
 
@@ -967,9 +967,9 @@ typename Radix_Tree<u_morton, vec3>::CuttedTree Radix_Tree<u_morton, vec3>::cut_
 
                             u32 store_val = cur_id;
 
-                            if(store_val >= old_tree_leaf_offset){
-                                store_val -= old_tree_leaf_offset;
-                            }
+                            //if(store_val >= old_tree_leaf_offset){
+                            //    store_val -= old_tree_leaf_offset;
+                            //}
 
                             acc_new_node_id_to_old[item] = store_val;
 
