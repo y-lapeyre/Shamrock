@@ -341,7 +341,7 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(PatchScheduler &sched, f64 old_ti
                 vec3 axyz     = acc_axyz[item];
                 vec3 axyz_old = acc_axyz_old[item];
 
-                acc_axyz[item]     = axyz_old;
+                acc_axyz[item]     = vec3{0,0,0};
                 acc_axyz_old[item] = axyz;
 
             });
@@ -396,7 +396,7 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(PatchScheduler &sched, f64 old_ti
         sptree.attach_buf();
 
         //compute cfl
-        flt cfl_val = 1e-3;
+        flt cfl_val = 1e-2;
 
 
 
@@ -652,7 +652,7 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(PatchScheduler &sched, f64 old_ti
 
 
         //make interfaces
-        flt open_crit = 1;
+        flt open_crit = 0.3;
         using InterfHndl =  Interfacehandler<Tree_Send, flt, RadTree>;
         InterfHndl interf_hndl = InterfHndl();
         interf_hndl.compute_interface_list(sched,sptree,sd,radix_trees,FMMInteract_cd<flt>(open_crit),min_slenght,max_slenght);
@@ -773,7 +773,7 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(PatchScheduler &sched, f64 old_ti
                                         vec real_r = x_i-x_j;
 
                                         flt inv_r_n = sycl::rsqrt(sycl::dot(real_r,real_r));
-                                        sum_fi += m*real_r*(inv_r_n*inv_r_n*inv_r_n);
+                                        sum_fi -= m*real_r*(inv_r_n*inv_r_n*inv_r_n);
                                     }
 
                                 });
@@ -814,7 +814,7 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(PatchScheduler &sched, f64 old_ti
                         tmp += tensor_to_sycl(dM_k.t3*ai.t2);
                         if constexpr (fmm_order >= 3) { tmp += tensor_to_sycl(dM_k.t4*ai.t3); }
                         if constexpr (fmm_order >= 4) { tmp += tensor_to_sycl(dM_k.t5*ai.t4); }
-                        fxyz[id_a]  += tmp;
+                        fxyz[id_a]  -= tmp;
 
                         //auto dphi_0 = tensor_to_sycl(dM_k.t1*ai.t0);
                         //auto dphi_1 = tensor_to_sycl(dM_k.t2*ai.t1);
@@ -993,14 +993,14 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(PatchScheduler &sched, f64 old_ti
 
                                         walker::iter_object_in_cell(tree_acc_interf, node_b, [&](u32 id_b){
 
-                                            if(id_a != id_b){
+                                            //if(id_a != id_b){
                                                 vec x_j = xyz_interf[id_b];
 
                                                 vec real_r = x_i-x_j;
 
                                                 flt inv_r_n = sycl::rsqrt(sycl::dot(real_r,real_r));
-                                                sum_fi += m*real_r*(inv_r_n*inv_r_n*inv_r_n);
-                                            }
+                                                sum_fi -= m*real_r*(inv_r_n*inv_r_n*inv_r_n);
+                                            //}
 
                                         });
 
@@ -1045,7 +1045,7 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(PatchScheduler &sched, f64 old_ti
                             if constexpr (fmm_order >= 3) { tmp += tensor_to_sycl(dM_k.t4*ai.t3); }
                             if constexpr (fmm_order >= 4) { tmp += tensor_to_sycl(dM_k.t5*ai.t4); }
 
-                            fxyz[id_a]  += tmp;
+                            fxyz[id_a]  -= tmp;
 
                             //auto dphi_0 = tensor_to_sycl(dM_k.t1*ai.t0);
                             //auto dphi_1 = tensor_to_sycl(dM_k.t2*ai.t1);

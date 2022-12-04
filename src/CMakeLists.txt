@@ -27,16 +27,21 @@ LIST(APPEND CMAKE_SYSTEM_LIBRARY_PATH  "${COMP_ROOT_DIR}/bin/lib")
 ######################
 # Add compilation flags depending upon the build type
 ######################
-set(CMAKE_CXX_FLAGS_DEBUG "-g -Wno-unknown-cuda-version -Wno-linker-warnings")# -fsanitize=address")# -Wall -Wextra") #
-set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native")#-DNDEBUG ")#-Wall -Wextra -Wunknown-cuda-version -Wno-linker-warnings")
+set(CMAKE_CXX_FLAGS "-std=c++17 -pedantic-errors -fcolor-diagnostics") 
+set(CMAKE_CXX_FLAGS_DEBUG "-g")# -fsanitize=address")# -Wall -Wextra") #
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native -DNDEBUG")#-DNDEBUG ")#-Wall -Wextra -Wunknown-cuda-version -Wno-linker-warnings")
 
 
-
+######################
+# Compiler selection
+######################
 if("${SyCL_Compiler}" STREQUAL "DPCPP")
 
     set(CMAKE_CXX_COMPILER "${COMP_ROOT_DIR}/bin/clang++")
-    set(CMAKE_CXX_FLAGS "-g -fsycl -std=c++17 -pedantic-errors -fcolor-diagnostics -DSYCL_COMP_DPCPP")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -I${COMP_ROOT_DIR}/include -I${COMP_ROOT_DIR}/include/sycl")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsycl -DSYCL_COMP_DPCPP")
+
+    include_directories(AFTER SYSTEM "${COMP_ROOT_DIR}/include")
+    include_directories(AFTER SYSTEM "${COMP_ROOT_DIR}/include/sycl")
 
     ######################
     # Chose sycl backend
@@ -53,9 +58,10 @@ endif()
 if("${SyCL_Compiler}" STREQUAL "HIPSYCL")
 
     set(CMAKE_CXX_COMPILER "${COMP_ROOT_DIR}/bin/syclcc")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -pedantic-errors -fcolor-diagnostics  -DSYCL_COMP_HIPSYCL -I${COMP_ROOT_DIR}/include -I${COMP_ROOT_DIR}/include/sycl")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSYCL_COMP_HIPSYCL")
     
-
+    include_directories(AFTER SYSTEM "${COMP_ROOT_DIR}/include")
+    include_directories(AFTER SYSTEM "${COMP_ROOT_DIR}/include/sycl")
 
     ######################
     # Chose sycl backend
@@ -100,29 +106,7 @@ if("${XRAY_INSTRUMENTATION}")
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fxray-instrument")
 endif()
 
-######################
-# Add compilation utilisation flags
-######################
 
-#morton precision
-if("${Morton_precision}" STREQUAL "double")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DPRECISION_MORTON_DOUBLE")
-endif()
-
-#physics precision
-if("${Physics_precision}" STREQUAL "single")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DPRECISION_FULL_SINGLE")
-endif()
-
-if("${Physics_precision}" STREQUAL "mixed")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DPRECISION_MIXED")
-endif()
-
-if("${Physics_precision}" STREQUAL "double")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DPRECISION_FULL_DOUBLE")
-endif()
-
-#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -lmpi_cxx")
 
 
 ######################

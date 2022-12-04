@@ -11,6 +11,7 @@
 
 #include "aliases.hpp"
 #include "core/patch/base/patchdata.hpp"
+#include "core/sys/log.hpp"
 #include "patchdata_exchanger.hpp"
 #include "core/patch/base/patchdata_field.hpp"
 #include "core/patch/utility/serialpatchtree.hpp"
@@ -261,7 +262,7 @@ inline void reatribute_particles<f32_3>(PatchScheduler & sched, SerialPatchTree<
     std::unordered_map<u64, std::vector<std::tuple<u64, std::unique_ptr<PatchData>>>> part_xchg_map;
     for(u32 i = 0; i < comm_pdat.size(); i++){
         
-        std::cout << comm_vec[i].x() << " -> " << comm_vec[i].y() << " data : " << comm_pdat[i].get() << std::endl; 
+        logger::debug_ln("PatchObjMover",  comm_vec[i].x() , "->" , comm_vec[i].y() , "data  size :" , comm_pdat[i]->get_obj_cnt() ); 
 
         PatchData & pdat = *comm_pdat[i];
 
