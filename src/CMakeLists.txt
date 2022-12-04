@@ -71,6 +71,9 @@ if("${SyCL_Compiler}" STREQUAL "HIPSYCL")
 
         set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG}" )#-fsanitize=address")# ")# -Wall -Wextra") #
 
+    elseif("${SyCL_Compiler_BE}" STREQUAL "CUDA")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --hipsycl-config-file=${COMP_ROOT_DIR}/etc/hipSYCL/syclcc.json --hipsycl-targets='cuda:sm_70'")
+
     else()
         message(FATAL_ERROR "unsuported backend : ${SyCL_Compiler_BE}")
     endif()
