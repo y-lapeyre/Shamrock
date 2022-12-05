@@ -135,13 +135,16 @@ class FMMInteract_cd{
 
     static bool interact_cd_cell_patch(const FMMInteract_cd & cd,vec b1_min, vec b1_max,vec b2_min, vec b2_max, flt b1_min_slenght, flt b1_max_slenght, flt b2_min_slenght, flt b2_max_slenght){
         
+        //return true;
+        return interact_cd_cell_cell(cd, b1_min, b1_max, b2_min, b2_max);
+        
         vec c1 = (b1_max + b1_min)/2;
         vec s1 = (b1_max - b1_min);
         flt L1 = sycl::max(sycl::max(s1.x(),s1.y()),s1.z());
 
         flt dist_to_surf = sycl::sqrt(BBAA::get_sq_distance_to_BBAAsurface(c1, b2_min, b2_max));
 
-        flt opening_angle_sq = (L1 + b2_max_slenght)/(dist_to_surf + b2_min_slenght/2);
+        flt opening_angle_sq = (L1 + b2_max_slenght)/(dist_to_surf /*+ b2_min_slenght/2*/);
         opening_angle_sq *= opening_angle_sq;
 
         return opening_angle_sq > cd.opening_crit_sq;
@@ -652,7 +655,7 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(PatchScheduler &sched, f64 old_ti
 
 
         //make interfaces
-        flt open_crit = 0.3;
+        flt open_crit = 0.5;
         using InterfHndl =  Interfacehandler<Tree_Send, flt, RadTree>;
         InterfHndl interf_hndl = InterfHndl();
         interf_hndl.compute_interface_list(sched,sptree,sd,radix_trees,FMMInteract_cd<flt>(open_crit),min_slenght,max_slenght);
