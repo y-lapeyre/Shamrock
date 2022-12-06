@@ -28,35 +28,66 @@ std::tuple<f64,f64> benchmark_periodic_box(f32 dr, u32 npatch){
     pdl.add_field<f32_3>("axyz",1);
     pdl.add_field<f32_3>("axyz_old",1);
 
+    auto id_v = pdl.get_field_idx<f32_3>("vxyz");
+    auto id_a = pdl.get_field_idx<f32_3>("axyz");
+
     PatchScheduler sched = PatchScheduler(pdl,Nesti/npatch, 1);
     sched.init_mpi_required_types();
 
+    auto setup = [&]() -> std::tuple<flt,f64>{
+        using Setup = models::sph::SetupSPH<f32, models::sph::kernels::M4<f32>>;
 
-    using Setup = models::sph::SetupSPH<f32, models::sph::kernels::M4<f32>>;
+        Setup setup;
+        setup.init(sched);
 
-    Setup setup;
-    setup.init(sched);
+        auto box = setup.get_ideal_box(dr, {vec{-1,-1,-1},vec{1,1,1}});
 
-    auto box = setup.get_ideal_box(dr, {vec{-1,-1,-1},vec{1,1,1}});
-    std::get<0>(box).x() -= 1e-6;
-    std::get<0>(box).y() -= 1e-6;
-    std::get<0>(box).z() -= 1e-6;
-    std::get<1>(box).x() += 1e-6;
-    std::get<1>(box).y() += 1e-6;
-    std::get<1>(box).z() += 1e-6;
-    sched.set_box_volume(box);
+        //auto ebox = box;
+        //std::get<0>(ebox).x() -= 1e-5;
+        //std::get<0>(ebox).y() -= 1e-5;
+        //std::get<0>(ebox).z() -= 1e-5;
+        //std::get<1>(ebox).x() += 1e-5;
+        //std::get<1>(ebox).y() += 1e-5;
+        //std::get<1>(ebox).z() += 1e-5;
+        sched.set_box_volume<f32_3>(box);
 
-    setup.set_boundaries(true);
-    setup.add_particules_fcc(sched, dr, box);
-    setup.set_total_mass(8.);
 
-    auto pmass = setup.get_part_mass();
+        setup.set_boundaries(true);
+        setup.add_particules_fcc(sched, dr, box);
+        setup.set_total_mass(8.);
+        
+        sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
+            pdat.get_field<f32_3>(id_v).override(f32_3{0,0,0});
+            pdat.get_field<f32_3>(id_a).override(f32_3{0,0,0});
+        });
 
-    auto Npart = 8./pmass;
 
-    for(u32 i = 0; i < 5; i++){
-        setup.update_smoothing_lenght(sched);
-    }
+
+        sched.scheduler_step(true, true);
+
+        sched.scheduler_step(true, true);
+
+        sched.scheduler_step(true, true);
+
+
+
+        auto pmass = setup.get_part_mass();
+
+        auto Npart = 8./pmass;
+
+        //setup.pertub_eigenmode_wave(sched, {0,0}, {0,0,1}, 0);
+
+        for(u32 i = 0; i < 5; i++){
+            setup.update_smoothing_lenght(sched);
+        }
+
+        return {pmass,Npart};
+    };
+
+    auto [pmass,Npart] = setup();
+
+
+    
 
 
     if(sched.patch_list.global.size() != npatch){
@@ -88,6 +119,8 @@ std::tuple<f64,f64> benchmark_periodic_box(f32 dr, u32 npatch){
     sycl_handler::get_compute_queue().wait();
 
     t.end();
+
+    model.close();
 
     return {Npart,t.nanosec/1e9};
 

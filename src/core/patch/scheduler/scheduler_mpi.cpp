@@ -130,6 +130,11 @@ void PatchScheduler::set_box_volume(std::tuple<f32_3,f32_3> box){
     patch_data.sim_box.min_box_sim_s = std::get<0>(box);
     patch_data.sim_box.max_box_sim_s = std::get<1>(box);
 
+    logger::debug_ln("PatchScheduler", "box resized to :",
+        patch_data.sim_box.min_box_sim_s,
+        patch_data.sim_box.max_box_sim_s 
+    );
+
 }
 
 template<>
@@ -138,6 +143,11 @@ void PatchScheduler::set_box_volume(std::tuple<f64_3,f64_3> box){
 
     patch_data.sim_box.min_box_sim_d = std::get<0>(box);
     patch_data.sim_box.max_box_sim_d = std::get<1>(box);
+
+    logger::debug_ln("PatchScheduler", "box resized to :",
+        patch_data.sim_box.min_box_sim_d,
+        patch_data.sim_box.max_box_sim_d 
+    );
 
 }
 

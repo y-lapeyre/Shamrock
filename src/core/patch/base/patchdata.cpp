@@ -225,7 +225,30 @@ void PatchData::split_patchdata<f32_3>(
                     idx_p7.size();
 
     if(get_obj_cnt() != el_cnt_new){
-        throw "issue in the patch split : new element count doesn't match the old one";
+
+        f32_3 vmin = sycl::fmin(bmin_p0,bmin_p1);
+        vmin = sycl::fmin(vmin,bmin_p2);
+        vmin = sycl::fmin(vmin,bmin_p3);
+        vmin = sycl::fmin(vmin,bmin_p4);
+        vmin = sycl::fmin(vmin,bmin_p5);
+        vmin = sycl::fmin(vmin,bmin_p6);
+        vmin = sycl::fmin(vmin,bmin_p7);
+
+        f32_3 vmax = sycl::fmax(bmax_p0,bmax_p1);
+        vmax = sycl::fmax(vmax,bmax_p2);
+        vmax = sycl::fmax(vmax,bmax_p3);
+        vmax = sycl::fmax(vmax,bmax_p4);
+        vmax = sycl::fmax(vmax,bmax_p5);
+        vmax = sycl::fmax(vmax,bmax_p6);
+        vmax = sycl::fmax(vmax,bmax_p7);
+
+        fields_f32_3[field_ipos].check_err_range(
+            [&](f32_3 val,f32_3 vmin, f32_3 vmax){
+                return BBAA::is_particle_in_patch<f32_3>(val, vmin,vmax);
+            },
+            vmin,vmax);
+
+        throw ShamrockSyclException("issue in the patch split : new element count doesn't match the old one");
     }
 
     //TODO create a extract subpatch function

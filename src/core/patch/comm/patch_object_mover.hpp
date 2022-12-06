@@ -124,7 +124,20 @@ inline void reatribute_particles<f32_3>(PatchScheduler & sched, SerialPatchTree<
             {
                 auto nid = newid_buf_map.at(id).get_access<sycl::access::mode::read>();
                 for(u32 i = 0 ; i < pdat.get_obj_cnt() ; i++){
-                    err_id_in_newid = err_id_in_newid || (nid[i] == u64_max);
+                    bool err = nid[i] == u64_max;
+                    err_id_in_newid = err_id_in_newid || (err);
+                }
+            }
+
+            if (periodic && err_id_in_newid) {
+                auto nid = newid_buf_map.at(id).get_access<sycl::access::mode::read>();
+                for(u32 i = 0 ; i < pdat.get_obj_cnt() ; i++){
+                    bool err = nid[i] == u64_max;
+
+                    if(periodic && err){
+                        logger::err_ln("Patch Object Mover", "id = ",i, "is out of bound with periodic mode");
+                        throw shamrock_exc("error");
+                    }
                 }
             }
 
@@ -139,6 +152,12 @@ inline void reatribute_particles<f32_3>(PatchScheduler & sched, SerialPatchTree<
     bool synced_should_res_box = sched.should_resize_box(err_id_in_newid);
 
     if (periodic && synced_should_res_box) {
+
+
+
+
+
+
         throw shamrock_exc("box cannot be resized in periodic mode");
     }
 
