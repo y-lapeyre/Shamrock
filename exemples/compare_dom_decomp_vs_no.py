@@ -218,6 +218,7 @@ plt.ylim(-1,10)
 plt.xlabel(r"$\vert \mathbf{r} \vert$")
 plt.ylabel(r"$\vert \mathbf{f} \vert$")
 
+plt.savefig("grav_diff.pdf")
 plt.show()
 
 
