@@ -12,6 +12,7 @@ HipSYCL :
 | Backend | Supported | arch |
 | --- | ---  | ---  |
 | OpenMP | V  | x86 & amr64 |
+| CUDA | V  | x86 & amr64 |
 
 ## Setup SYCL
 
