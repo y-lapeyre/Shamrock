@@ -286,7 +286,10 @@ f64 models::sph::BasicSPHGasUInterne<flt,Kernel>::evolve(PatchScheduler &sched, 
                         f32 P_a     = pres[id_a];
                         //f32 P_a     = cs * cs * rho_a;
                         f32 omega_a = omga[id_a];
-
+                        
+                        f32 vsig_u;
+                        f32 lambda_viscous_heating = 0.0;
+                        f32 lambda_conductivity = 0.0;
                         f32 lambda_shock = 0.0;
                         const f32 alpha_AV = 1.0;
                         const f32 beta_AV = 2.0;
@@ -339,10 +342,12 @@ f64 models::sph::BasicSPHGasUInterne<flt,Kernel>::evolve(PatchScheduler &sched, 
                                 f32 alpha_a = alpha_AV; 
                                 f32 alpha_b = alpha_AV;
                                 f32 vsig_a = alpha_a*cs_a + beta_AV*sycl::abs(v_ab_r_ab); 
-                                f32 vsig_b = alpha_b*cs_b + beta_AV*sycl::abs(v_ab_r_ab); 
+                                f32 vsig_b = alpha_b*cs_b + beta_AV*sycl::abs(v_ab_r_ab);
+                                vsig_u =  sycl::abs(sycl::dot(v_ab, dr));
 
                                 //auto v_sig_a = alpha_AV * cs_a + beta_AV * sycl::distance(v_ab, dr);
-                                lambda_shock +=  part_mass * vsig_a * 0.5f * (sycl::pow(sycl::dot(v_ab, dr), 2.f) * Kernel::dW(rab, h_a));
+                                lambda_viscous_heating +=  part_mass * vsig_a * 0.5f * (sycl::pow(sycl::dot(v_ab, dr), 2.f) * Kernel::dW(rab, h_a));
+                                lambda_conductivity += part_mass * 0.5f * (Kernel::dW(rab, h_a) / (rho_a_sq * omega_a) + Kernel::dW(rab, h_b) / (rho_b_sq * omega_b))
                                 sum_du_a += part_mass * sycl::dot(v_ab , r_ab_unit) * Kernel::dW(rab, h_a);
 
                                 //out << sum_du_a << "\n";
@@ -363,7 +368,8 @@ f64 models::sph::BasicSPHGasUInterne<flt,Kernel>::evolve(PatchScheduler &sched, 
                             [](u32 node_id) {});
                             
                             sum_du_a = P_a / (rho_a_sq * omega_a) * sum_du_a;
-                            lambda_shock = - 1 / (omega_a * rho_a) * lambda_shock;
+                            lambda_viscous_heating = - 1 / (omega_a * rho_a) * lambda_viscous_heating;
+                            lambda_shock = lambda_viscous_heating + lambda_conductivity
                             sum_du_a = sum_du_a + lambda_shock;
 
                         // out << "sum : " << sum_axyz << "\n";
