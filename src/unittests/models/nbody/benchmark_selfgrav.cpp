@@ -2,8 +2,9 @@
 
 #include "core/patch/base/patchdata_layout.hpp"
 #include "core/patch/scheduler/scheduler_mpi.hpp"
-#include "models/sph/models/basic_sph_gas.hpp"
-#include "models/sph/setup/sph_setup.hpp"
+
+#include "models/nbody/models/nbody_selfgrav.hpp"
+#include "models/nbody/setup/nbody_setup.hpp"
 #include "unittests/shamrocktest.hpp"
 
 
@@ -13,7 +14,7 @@
 
 
 template<class flt> 
-std::tuple<f64,f64> benchmark_periodic_box(f32 dr, u32 npatch){
+std::tuple<f64,f64> benchmark_selfgrav(f32 dr, u32 npatch){
 
     using vec = sycl::vec<flt,3>;
 
@@ -35,7 +36,7 @@ std::tuple<f64,f64> benchmark_periodic_box(f32 dr, u32 npatch){
     sched.init_mpi_required_types();
 
     auto setup = [&]() -> std::tuple<flt,f64>{
-        using Setup = models::sph::SetupSPH<f32, models::sph::kernels::M4<f32>>;
+        using Setup = models::nbody::NBodySetup<f32>;
 
         Setup setup;
         setup.init(sched);
@@ -77,10 +78,6 @@ std::tuple<f64,f64> benchmark_periodic_box(f32 dr, u32 npatch){
 
         //setup.pertub_eigenmode_wave(sched, {0,0}, {0,0,1}, 0);
 
-        for(u32 i = 0; i < 5; i++){
-            setup.update_smoothing_lenght(sched);
-        }
-
         return {pmass,Npart};
     };
 
@@ -96,7 +93,7 @@ std::tuple<f64,f64> benchmark_periodic_box(f32 dr, u32 npatch){
 
     
 
-    using Model = models::sph::BasicSPHGas<f32, models::sph::kernels::M4<f32>>;
+    using Model = models::nbody::Nbody_SelfGrav<f32>;
 
     Model model ;
 
@@ -107,7 +104,6 @@ std::tuple<f64,f64> benchmark_periodic_box(f32 dr, u32 npatch){
     const f32 cfl_force = 0.3;
 
     model.set_cfl_force(0.3);
-    model.set_cfl_cour(0.02);
     model.set_particle_mass(pmass);
 
     sycl_handler::get_compute_queue().wait();
@@ -127,7 +123,7 @@ std::tuple<f64,f64> benchmark_periodic_box(f32 dr, u32 npatch){
 }
 
 template<class flt>
-void benchmark_periodic_box_main(u32 npatch, std::string name){
+void benchmark_selfgrav_main(u32 npatch, std::string name){
 
 
     std::vector<f64> npart;
@@ -136,7 +132,7 @@ void benchmark_periodic_box_main(u32 npatch, std::string name){
     {
 
         
-        f64 part_per_g = 4000000;
+        f64 part_per_g = 3000000;
 
         f64 multiplier = mpi_handler::world_size;
 
@@ -151,7 +147,7 @@ void benchmark_periodic_box_main(u32 npatch, std::string name){
 
     auto should_stop = [&](f64 dr){
 
-        f64 part_per_g = 4000000;
+        f64 part_per_g = 3000000;
 
         f64 Nesti = (2.F/dr)*(2.F/dr)*(2.F/dr);
 
@@ -173,11 +169,9 @@ void benchmark_periodic_box_main(u32 npatch, std::string name){
 
     };
 
-
-
     f32 dr = 0.05;
     for(; should_stop(dr); dr /= 1.1){
-        auto [N,t] = benchmark_periodic_box<flt>(dr, npatch);
+        auto [N,t] = benchmark_selfgrav<flt>(dr, npatch);
         npart.push_back(N);
         times.push_back(t);
     }
@@ -190,10 +184,10 @@ void benchmark_periodic_box_main(u32 npatch, std::string name){
 
 }
 
-TestStart(Benchmark, "benchmark periodic box sph", bench_per_box_sph, -1){
+TestStart(Benchmark, "benchmark selfgrav nbody", bench_selfgrav_nbody, -1){
 
-    benchmark_periodic_box_main<f32>(1,"patch_1");
-    benchmark_periodic_box_main<f32>(8,"patch_8");
-    benchmark_periodic_box_main<f32>(64,"patch_64");
+    benchmark_selfgrav_main<f32>(1,"patch_1");
+    benchmark_selfgrav_main<f32>(8,"patch_8");
+    benchmark_selfgrav_main<f32>(64,"patch_64");
 
 }
