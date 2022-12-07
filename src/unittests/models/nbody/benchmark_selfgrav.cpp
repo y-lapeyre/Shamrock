@@ -132,24 +132,19 @@ void benchmark_selfgrav_main(u32 npatch, std::string name){
     {
 
         
-        f64 part_per_g = 3000000;
+        f64 part_per_g = 2500000;
 
-        f64 multiplier = mpi_handler::world_size;
-
-        if(npatch < multiplier){
-            multiplier = 1;
-        }
 
         f64 gsz = sycl_handler::get_compute_queue().get_device().get_info<sycl::info::device::global_mem_size>();
 
-        logger::raw_ln("limit = ", part_per_g*(multiplier*gsz/1.3)/(1024.*1024.*1024.));
+        logger::raw_ln("limit = ", part_per_g*(gsz/1.3)/(1024.*1024.*1024.));
     }
 
     auto should_stop = [&](f64 dr){
 
-        f64 part_per_g = 3000000;
+        f64 part_per_g = 2500000;
 
-        f64 Nesti = (2.F/dr)*(2.F/dr)*(2.F/dr);
+        f64 Nesti = (1.F/dr)*(1.F/dr)*(1.F/dr);
 
         f64 multiplier = mpi_handler::world_size;
 
@@ -163,11 +158,13 @@ void benchmark_selfgrav_main(u32 npatch, std::string name){
         f64 b = multiplier*gsz/1.3;
 
 
-        logger::raw_ln(a,b);
+        logger::raw_ln(Nesti,a,b);
 
         return a < b;
 
     };
+
+
 
     f32 dr = 0.05;
     for(; should_stop(dr); dr /= 1.1){
@@ -187,7 +184,7 @@ void benchmark_selfgrav_main(u32 npatch, std::string name){
 TestStart(Benchmark, "benchmark selfgrav nbody", bench_selfgrav_nbody, -1){
 
     benchmark_selfgrav_main<f32>(1,"patch_1");
-    benchmark_selfgrav_main<f32>(8,"patch_8");
-    benchmark_selfgrav_main<f32>(64,"patch_64");
+    //benchmark_selfgrav_main<f32>(8,"patch_8");
+    //benchmark_selfgrav_main<f32>(64,"patch_64");
 
 }

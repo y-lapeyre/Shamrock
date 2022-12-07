@@ -136,7 +136,7 @@ class FMMInteract_cd{
     static bool interact_cd_cell_patch(const FMMInteract_cd & cd,vec b1_min, vec b1_max,vec b2_min, vec b2_max, flt b1_min_slenght, flt b1_max_slenght, flt b2_min_slenght, flt b2_max_slenght){
         
         //return true;
-        return interact_cd_cell_cell(cd, b1_min, b1_max, b2_min, b2_max);
+        //return interact_cd_cell_cell(cd, b1_min, b1_max, b2_min, b2_max);
         
         vec c1 = (b1_max + b1_min)/2;
         vec s1 = (b1_max - b1_min);

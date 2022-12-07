@@ -13,7 +13,7 @@
 
 
 template<class flt> 
-std::tuple<f64,f64> benchmark_periodic_box(f32 dr, u32 npatch){
+std::tuple<f64,f64,f64> benchmark_periodic_box(f32 dr, u32 npatch){
 
     using vec = sycl::vec<flt,3>;
 
@@ -107,7 +107,7 @@ std::tuple<f64,f64> benchmark_periodic_box(f32 dr, u32 npatch){
     const f32 cfl_force = 0.3;
 
     model.set_cfl_force(0.3);
-    model.set_cfl_cour(0.02);
+    model.set_cfl_cour(0.25);
     model.set_particle_mass(pmass);
 
     sycl_handler::get_compute_queue().wait();
@@ -115,14 +115,14 @@ std::tuple<f64,f64> benchmark_periodic_box(f32 dr, u32 npatch){
     Timer t;
     t.start();
     
-    model.evolve(sched, 0, 1e-3);
+    f64 t2 = model.evolve(sched, 0, 1e-3);
     sycl_handler::get_compute_queue().wait();
 
     t.end();
 
     model.close();
 
-    return {Npart,t.nanosec/1e9};
+    return {Npart,t.nanosec/1.e9, 2./t2};
 
 }
 
@@ -132,28 +132,23 @@ void benchmark_periodic_box_main(u32 npatch, std::string name){
 
     std::vector<f64> npart;
     std::vector<f64> times;
+    std::vector<f64> niter;
 
     {
 
         
         f64 part_per_g = 4000000;
 
-        f64 multiplier = mpi_handler::world_size;
-
-        if(npatch < multiplier){
-            multiplier = 1;
-        }
-
         f64 gsz = sycl_handler::get_compute_queue().get_device().get_info<sycl::info::device::global_mem_size>();
 
-        logger::raw_ln("limit = ", part_per_g*(multiplier*gsz/1.3)/(1024.*1024.*1024.));
+        logger::raw_ln("limit = ", part_per_g*(gsz/1.3)/(1024.*1024.*1024.));
     }
 
     auto should_stop = [&](f64 dr){
 
         f64 part_per_g = 4000000;
 
-        f64 Nesti = (2.F/dr)*(2.F/dr)*(2.F/dr);
+        f64 Nesti = (1.F/dr)*(1.F/dr)*(1.F/dr);
 
         f64 multiplier = mpi_handler::world_size;
 
@@ -167,7 +162,7 @@ void benchmark_periodic_box_main(u32 npatch, std::string name){
         f64 b = multiplier*gsz/1.3;
 
 
-        logger::raw_ln(a,b);
+        logger::raw_ln(Nesti,a,b);
 
         return a < b;
 
@@ -177,15 +172,17 @@ void benchmark_periodic_box_main(u32 npatch, std::string name){
 
     f32 dr = 0.05;
     for(; should_stop(dr); dr /= 1.1){
-        auto [N,t] = benchmark_periodic_box<flt>(dr, npatch);
+        auto [N,t, ni] = benchmark_periodic_box<flt>(dr, npatch);
         npart.push_back(N);
         times.push_back(t);
+        niter.push_back(ni);
     }
 
     if(mpi_handler::world_rank == 0){
         auto & dset = shamrock::test::test_data().new_dataset(name);
         dset.add_data("Npart", npart);
         dset.add_data("times", times);
+        dset.add_data("niter", niter);
     }
 
 }

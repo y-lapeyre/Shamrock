@@ -102,7 +102,7 @@ f64 models::sph::BasicSPHGas<flt,Kernel>::evolve(PatchScheduler &sched, f64 old_
 
             logger::info_ln("BasicSPHGas", "cfl dt :",cfl_val);
 
-            f32 cfl_dt_loc = sycl::min(f32(0.001),cfl_val);
+            f32 cfl_dt_loc = cfl_val;//sycl::min(f32(0.001),cfl_val);
 
             if(cfl_dt_loc + old_time > target_time){
                 cfl_dt_loc = target_time - old_time;
