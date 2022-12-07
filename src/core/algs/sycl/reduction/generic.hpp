@@ -110,12 +110,8 @@ namespace syclalgs::reduction::impl {
 
         u32 len = end_id - start_id;
 
-
         sycl::buffer<T> buf_int(len);
         ::syclalgs::basic::write_with_offset_into(buf_int,buf1,start_id,len);
-
-
-
 
         sycl::buffer<T> recov {1};
 
@@ -146,8 +142,6 @@ namespace syclalgs::reduction::impl {
         }
 
         return rec;
-
-
 
     }
 

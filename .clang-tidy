@@ -10,6 +10,7 @@ Checks: >
   readability-identifier-naming,
   cppcoreguidelines-*,
   -cppcoreguidelines-avoid-magic-numbers,
+  -cppcoreguidelines-macro-usage,
   mpi-*,
   modernize-*,
   -modernize-macro-to-enum,
