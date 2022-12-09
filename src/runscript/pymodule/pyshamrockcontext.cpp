@@ -12,7 +12,6 @@
 #include <floatobject.h>
 #include <longobject.h>
 #include <map>
-#include <modsupport.h>
 #include <vector>
 
 #define PySHamExcHandle(a)                                                                                                  \
