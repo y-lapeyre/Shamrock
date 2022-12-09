@@ -69,7 +69,9 @@ void models::nbody::NBodySetup<flt>::add_particules_fcc(PatchScheduler & sched, 
         generic::setup::generators::add_particles_fcc(
             dr, 
             box , 
-            [](sycl::vec<flt,3> r){return true;}, 
+            [&box](sycl::vec<flt,3> r){
+                return BBAA::is_particle_in_patch(r, std::get<0>(box), std::get<1>(box));
+            }, 
             [&](sycl::vec<flt,3> r,flt h){
                 vec_acc.push_back(r); 
             });

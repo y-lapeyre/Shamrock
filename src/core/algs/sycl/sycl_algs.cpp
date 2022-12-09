@@ -110,7 +110,7 @@ namespace syclalgs {
 
         
 
-    }
+    } // namespace basic
 
     namespace reduction {
 
@@ -200,9 +200,9 @@ namespace syclalgs {
             return std::move(ret);
 
         }
-    }
+    } // namespace convert
 
-}
+} // namespace syclalgs
 
 
 #define X(arg)\

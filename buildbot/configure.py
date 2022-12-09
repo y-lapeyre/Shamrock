@@ -57,7 +57,7 @@ if args.interactive:
 
         args.shamrock = input("    do you want to compile the shamrock mode (y/n)") == "y"
         args.test = input("    do you want to compile the test mode (y/n)") == "y"
-        args.visu = input("    do you want to compile the visualisation mode (y/n)") == "y"
+        args.visu = False
 
         args.compiler = input("    which compiler are you using (hipsycl/dpcpp)")
 
@@ -72,7 +72,7 @@ if args.interactive:
 
         print("    shamrock   =",args.shamrock)
         print("    test       =",args.test)
-        print("    visu       =",args.visu)
+        #print("    visu       =",args.visu)
 
         
 

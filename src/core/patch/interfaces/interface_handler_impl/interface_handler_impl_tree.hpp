@@ -147,7 +147,7 @@ class Interfacehandler<Tree_Send,pos_prec,Radix_Tree<u_morton, sycl::vec<pos_pre
         SparseCommSource<RadixTreeField<T>> src;
 
         for(u32 i = 0 ; i < interf_send_map.size(); i ++){
-            auto & comm = interf_send_map[i];
+            CommListingSend & comm = interf_send_map[i];
             UnrolledCutTree & ctree = tree_send_map;
 
             std::unique_ptr<RadixTreeField<T>> & rtree_field_src = tree_fields[comm.sender_patch_id];

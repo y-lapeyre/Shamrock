@@ -459,10 +459,10 @@ Result_nompi_fmm_testing<flt,morton_mode,fmm_order> nompi_fmm_testing(std::uniqu
     
     
     u32 num_component_multipoles_fmm = (rtree.tree_internal_count + rtree.tree_leaf_count)*SymTensorCollection<flt,0,fmm_order>::num_component;
-    logger::debug_sycl_ln("RTreeFMM", "allocating",num_component_multipoles_fmm,"component for multipoles");
+    logger::debug_ln("RTreeFMM", "allocating",num_component_multipoles_fmm,"component for multipoles");
     auto grav_multipoles = std::make_unique< sycl::buffer<flt>>( num_component_multipoles_fmm  );
 
-    logger::debug_sycl_ln("RTreeFMM", "computing leaf moments (",rtree.tree_leaf_count,")");
+    logger::debug_ln("RTreeFMM", "computing leaf moments (",rtree.tree_leaf_count,")");
     sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
 
         u32 offset_leaf = rtree.tree_internal_count;
@@ -525,8 +525,11 @@ Result_nompi_fmm_testing<flt,morton_mode,fmm_order> nompi_fmm_testing(std::uniqu
     });
 
 
-
+    logger::debug_ln("RTreeFMM", "iterating moment cascade");
     for (u32 iter = 0; iter < rtree.tree_depth ; iter ++) {
+
+
+        
     
         sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
 
@@ -596,6 +599,8 @@ Result_nompi_fmm_testing<flt,morton_mode,fmm_order> nompi_fmm_testing(std::uniqu
     }
 
 
+
+    logger::debug_ln("RTreeFMM", "computing cell infos");
     std::unique_ptr<sycl::buffer<vec>> cell_centers = std::make_unique<sycl::buffer<vec>>(rtree.tree_internal_count + rtree.tree_leaf_count);
     std::unique_ptr<sycl::buffer<flt>> cell_lenght = std::make_unique<sycl::buffer<flt>>(rtree.tree_internal_count + rtree.tree_leaf_count);
 
@@ -626,229 +631,6 @@ Result_nompi_fmm_testing<flt,morton_mode,fmm_order> nompi_fmm_testing(std::uniqu
         });
 
     });
-
-
-    f64 r_f,r_r;
-
-    {
-
-
-        auto c_centers = sycl::host_accessor{*cell_centers,sycl::read_only};
-        auto c_lenght = sycl::host_accessor{*cell_lenght,sycl::read_only};
-
-
-        auto pos_min_cell = sycl::host_accessor{*rtree.buf_pos_min_cell_flt};
-        auto pos_max_cell = sycl::host_accessor{*rtree.buf_pos_max_cell_flt};
-
-        auto sample = [&](u32 id){
-
-            auto [found_leafs, rejected_nodes] = rtree.get_walk_res_set([&](u32 cell_b) -> bool {
-                u32 cell_a = rtree.tree_internal_count + id;
-
-                vec cur_pos_min_cell_a = pos_min_cell[cell_a];
-                vec cur_pos_max_cell_a = pos_max_cell[cell_a];
-
-                vec sa = c_centers[cell_a];
-                flt l_cell_a = c_lenght[cell_a];
-
-                //user defs for the cell pair a-b (current_node_id) return interact cd
-                vec cur_pos_min_cell_b = pos_min_cell[cell_b];
-                vec cur_pos_max_cell_b = pos_max_cell[cell_b];
-
-                vec sb = c_centers[cell_b];
-                vec r_fmm = sb-sa;
-                flt l_cell_b = c_lenght[cell_b];
-
-                flt opening_angle_sq = (l_cell_a + l_cell_b)*(l_cell_a + l_cell_b)/sycl::dot(r_fmm,r_fmm);
-
-                using namespace walker::interaction_crit;
-
-                const bool cells_interact = sph_cell_cell_crit(
-                    cur_pos_min_cell_a, 
-                    cur_pos_max_cell_a, 
-                    cur_pos_min_cell_b,
-                    cur_pos_max_cell_b, 
-                    0, 
-                    0) || (opening_angle_sq > pre_open_crit_sq);
-
-                return cells_interact;
-            });
-
-            logger::raw_ln("leaf",id,": found -> leafs ",found_leafs.size()," reject :",rejected_nodes.size());
-
-            return std::pair<u32,u32>{found_leafs.size(), rejected_nodes.size()};
-
-        };
-
-        auto [r1_f,r1_r] = sample(0);
-        auto [re_f,re_r] = sample(rtree.tree_leaf_count-1);
-        auto [rm_f,rm_r] = sample(rtree.tree_leaf_count/2);
-
-        r_f = (r1_f + re_f + rm_f)/3.;
-        r_r = (r1_r + re_r + rm_r)/3.;
-
-        
-        u32 leaf_offset = rtree.tree_internal_count;
-        auto particle_index_map = sycl::host_accessor{*rtree.buf_particle_index_map};
-        auto cell_index_map = sycl::host_accessor{*rtree.buf_reduc_index_map};
-        auto end_range = sycl::host_accessor{*rtree.buf_endrange};
-            
-
-        auto loop_part = [&](u32 cell_id, auto && func_it){
-
-
-            uint min_ids = 0;
-            uint max_ids = 0;
-
-            if(cell_id >= leaf_offset){
-                min_ids = cell_index_map[cell_id - leaf_offset    ];
-                max_ids = cell_index_map[cell_id + 1 - leaf_offset];
-            }else{
-                u32 e = end_range[cell_id];
-                min_ids = cell_index_map[ sycl::min(e,cell_id)];
-                max_ids = cell_index_map[ sycl::max(e,cell_id)];
-            }
-
-
-            for (unsigned int id_s = min_ids; id_s < max_ids; id_s++) {
-
-                //recover old index before morton sort
-                uint id_b = particle_index_map[id_s];
-
-                //iteration function
-                func_it(id_b);
-
-            }
-        };
-
-
-
-        auto multipoles = sycl::host_accessor {*grav_multipoles,sycl::read_only};
-        auto xyz = sycl::host_accessor {*pos_part,sycl::read_only};
-
-
-
-        std::string f_name = "fmm_tree_test_";
-
-        f_name += "order_"+std::to_string(fmm_order);
-        if constexpr (std::is_same_v<u32, morton_mode>){
-            f_name += "_u32";
-        }
-        if constexpr (std::is_same_v<u64, morton_mode>){
-            f_name += "_u64";
-        }
-
-        if constexpr (std::is_same_v<f32, flt>){
-            f_name += "_f32";
-        }
-        if constexpr (std::is_same_v<f64, flt>){
-            f_name += "_f64";
-        }
-        f_name += ".txt";
-
-
-        std::ofstream prec_fmm_force_out_file(f_name);
-
-
-        auto test_prec_pair = [&](u32 cell_a, u32 cell_b){
-
-            vec cur_pos_min_cell_a = pos_min_cell[cell_a];
-            vec cur_pos_max_cell_a = pos_max_cell[cell_a];
-
-            vec sa = c_centers[cell_a];
-            flt l_cell_a = c_lenght[cell_a];
-
-
-
-            vec sb = c_centers[cell_b];
-            vec r_fmm = sb-sa;
-
-            flt l_cell_b = c_lenght[cell_b];
-
-            flt opening_angle_sq = (l_cell_a + l_cell_b)*(l_cell_a + l_cell_b)/sycl::dot(r_fmm,r_fmm);
-
-            auto Q_n = SymTensorCollection<flt, 0, fmm_order>::load(multipoles,cell_b*SymTensorCollection<flt,0,fmm_order>::num_component);
-            auto D_n = GreenFuncGravCartesian<flt, 1, fmm_order+1>::get_der_tensors(r_fmm);
-            
-            auto dM_k = get_dM_mat(D_n,Q_n);
-
-
-            u32 part_cnt = 0;
-            flt sum_error = 0;
-            flt max_err = 0;
-
-            loop_part( cell_a, [&](u32 id_a){
-
-                part_cnt++;
-
-                auto ai = SymTensorCollection<flt, 0, fmm_order>::from_vec(xyz[id_a] - sa);
-
-                auto tensor_to_sycl = [](SymTensor3d_1<flt> a){
-                    return vec{a.v_0,a.v_1,a.v_2};
-                };
-
-                vec f_fmm {0,0,0};
-
-                f_fmm += tensor_to_sycl(dM_k.t1*ai.t0);
-                f_fmm += tensor_to_sycl(dM_k.t2*ai.t1);
-                f_fmm += tensor_to_sycl(dM_k.t3*ai.t2);
-                if constexpr (fmm_order >= 3) { f_fmm += tensor_to_sycl(dM_k.t4*ai.t3); }
-                if constexpr (fmm_order >= 4) { f_fmm += tensor_to_sycl(dM_k.t5*ai.t4); }
-
-
-
-
-                vec x_i = xyz[id_a];
-                vec sum_fi{0,0,0};
-
-                loop_part(cell_b, [&](u32 id_b){
-                    if(id_a != id_b){
-                        vec x_j = xyz[id_b];
-
-                        vec real_r = x_i-x_j;
-
-                        flt inv_r_n = sycl::rsqrt(sycl::dot(real_r,real_r));
-                        sum_fi += real_r*(inv_r_n*inv_r_n*inv_r_n);
-                    }
-
-                });
-
-
-
-
-                vec delta = sum_fi-f_fmm;
-
-                flt err =  sycl::distance(f_fmm,sum_fi)/sycl::length(sum_fi);
-
-                sum_error += err;
-
-                max_err = sycl::fmax(err,max_err);
-
-            });
-
-            sum_error /= part_cnt;
-            
-
-            //logger::raw_ln("theta = ",sycl::sqrt(opening_angle_sq),"sumerr =",sum_error, "mx_err =",max_err);
-
-            prec_fmm_force_out_file << format("%e %e %e\n"
-                , sycl::sqrt(opening_angle_sq) 
-                , sum_error 
-                , max_err) ;
-
-
-        };
-
-        
-
-        //for(u32 i = 0; i < rtree.tree_leaf_count; i++){
-        //    for(u32 j = 0; j < rtree.tree_leaf_count + rtree.tree_internal_count; j++){
-        //        if(leaf_offset + i != j) test_prec_pair(leaf_offset + i, j);
-        //    }
-        //} 
-
-        prec_fmm_force_out_file.close();
-    }
 
 
 
@@ -1005,6 +787,8 @@ Result_nompi_fmm_testing<flt,morton_mode,fmm_order> nompi_fmm_testing(std::uniqu
 
 
     //#if false
+
+    logger::debug_ln("RTreeFMM", "walking");
     sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
 
         using Rta = walker::Radix_tree_accessor<morton_mode, vec>;
@@ -1148,13 +932,71 @@ Result_nompi_fmm_testing<flt,morton_mode,fmm_order> nompi_fmm_testing(std::uniqu
     });
     //#endif
 
-
-
-
-
     sycl_handler::get_compute_queue().wait();
     timer.end();
 
+
+
+    f64 r_f,r_r;
+
+    {
+
+
+        auto c_centers = sycl::host_accessor{*cell_centers,sycl::read_only};
+        auto c_lenght = sycl::host_accessor{*cell_lenght,sycl::read_only};
+
+
+        auto pos_min_cell = sycl::host_accessor{*rtree.buf_pos_min_cell_flt};
+        auto pos_max_cell = sycl::host_accessor{*rtree.buf_pos_max_cell_flt};
+
+        auto sample = [&](u32 id){
+
+            auto [found_leafs, rejected_nodes] = rtree.get_walk_res_set([&](u32 cell_b) -> bool {
+                u32 cell_a = rtree.tree_internal_count + id;
+
+                vec cur_pos_min_cell_a = pos_min_cell[cell_a];
+                vec cur_pos_max_cell_a = pos_max_cell[cell_a];
+
+                vec sa = c_centers[cell_a];
+                flt l_cell_a = c_lenght[cell_a];
+
+                //user defs for the cell pair a-b (current_node_id) return interact cd
+                vec cur_pos_min_cell_b = pos_min_cell[cell_b];
+                vec cur_pos_max_cell_b = pos_max_cell[cell_b];
+
+                vec sb = c_centers[cell_b];
+                vec r_fmm = sb-sa;
+                flt l_cell_b = c_lenght[cell_b];
+
+                flt opening_angle_sq = (l_cell_a + l_cell_b)*(l_cell_a + l_cell_b)/sycl::dot(r_fmm,r_fmm);
+
+                using namespace walker::interaction_crit;
+
+                const bool cells_interact = sph_cell_cell_crit(
+                    cur_pos_min_cell_a, 
+                    cur_pos_max_cell_a, 
+                    cur_pos_min_cell_b,
+                    cur_pos_max_cell_b, 
+                    0, 
+                    0) || (opening_angle_sq > pre_open_crit_sq);
+
+                return cells_interact;
+            });
+
+            logger::raw_ln("leaf",id,": found -> leafs ",found_leafs.size()," reject :",rejected_nodes.size());
+
+            return std::pair<u32,u32>{found_leafs.size(), rejected_nodes.size()};
+
+        };
+
+        auto [r1_f,r1_r] = sample(0);
+        auto [re_f,re_r] = sample(rtree.tree_leaf_count-1);
+        auto [rm_f,rm_r] = sample(rtree.tree_leaf_count/2);
+
+        r_f = (r1_f + re_f + rm_f)/3.;
+        r_r = (r1_r + re_r + rm_r)/3.;
+
+    }
 
     flt prec = 0;
     if(npart <= 1e4){
@@ -1515,55 +1357,156 @@ template<class flt, class morton_mode, u32 fmm_order>
 class Cascade_multip;
 
 template<class flt, class morton_mode, u32 fmm_order>
-void run_test_no_mpi_fmm(BenchmarkResults &__bench_result_ref){
+void run_test_no_mpi_fmm(std::string dset_name){
 
-    for(u32 i = 0;i < 6; i++){
+    auto & dset = shamrock::test::test_data().new_dataset(dset_name);
 
-        Register_score("%tree_reduc = " + std::to_string(i));
-        for(u32 cnt : list_npart_test){
+    std::vector<f64> Npart;
+    std::vector<f64> time_red0_full;
+    std::vector<f64> time_red1_full;
+    std::vector<f64> time_red2_full;
+    std::vector<f64> time_red3_full;
+    std::vector<f64> time_red4_full;
+    std::vector<f64> time_red5_full;
+    std::vector<f64> time_red6_full;
+    std::vector<f64> time_red7_full;
+    std::vector<f64> time_red8_full;
+    std::vector<f64> red0_leaf_found;
+    std::vector<f64> red1_leaf_found;
+    std::vector<f64> red2_leaf_found;
+    std::vector<f64> red3_leaf_found;
+    std::vector<f64> red4_leaf_found;
+    std::vector<f64> red5_leaf_found;
+    std::vector<f64> red6_leaf_found;
+    std::vector<f64> red7_leaf_found;
+    std::vector<f64> red8_leaf_found;
+    std::vector<f64> red0_leaf_rej;
+    std::vector<f64> red1_leaf_rej;
+    std::vector<f64> red2_leaf_rej;
+    std::vector<f64> red3_leaf_rej;
+    std::vector<f64> red4_leaf_rej;
+    std::vector<f64> red5_leaf_rej;
+    std::vector<f64> red6_leaf_rej;
+    std::vector<f64> red7_leaf_rej;
+    std::vector<f64> red8_leaf_rej;
 
-            if(cnt / i > 1e6) continue;
+    auto get_max_part = [&](){
+        f64 gsz = sycl_handler::get_compute_queue().get_device().get_info<sycl::info::device::global_mem_size>();
+        f64 part_per_g = 2500000;
 
-            auto pos_part = pos_partgen_distrib<flt>(cnt);
+        return (gsz/(1024.*1024.*1024.))*part_per_g / 10.;
+    };
 
-            auto res = nompi_fmm_testing<flt, morton_mode, fmm_order>(pos_part,i,0.5);
+    f64 Nmax = get_max_part();
 
-            Register_score("%result = " + std::to_string(cnt) + "," + std::to_string(res.time));
+    for(f64 cnt = 1000; cnt <= Nmax; cnt *= 1.5){
+        logger::debug_ln("Benchmark FMM", "cnt =",cnt);
 
+        auto pos_part = pos_partgen_distrib<flt>(u32(cnt));
+        Npart.push_back(u32(cnt));
 
+        {
+            auto res_red0 = nompi_fmm_testing<flt, morton_mode, fmm_order>(pos_part,0,0.5);
+            time_red0_full.push_back(res_red0.time);
+            red0_leaf_found.push_back(res_red0.leaf_cnt);
+            red0_leaf_rej.push_back(res_red0.reject_cnt);
         }
+        {
+            auto res_red1 = nompi_fmm_testing<flt, morton_mode, fmm_order>(pos_part,1,0.5);
+            time_red1_full.push_back(res_red1.time);
+            red1_leaf_found.push_back(res_red1.leaf_cnt);
+            red1_leaf_rej.push_back(res_red1.reject_cnt);
+        }
+        {
+            auto res_red2 = nompi_fmm_testing<flt, morton_mode, fmm_order>(pos_part,2,0.5);
+            time_red2_full.push_back(res_red2.time);
+            red2_leaf_found.push_back(res_red2.leaf_cnt);
+            red2_leaf_rej.push_back(res_red2.reject_cnt);
+        }
+        {
+            auto res_red3 = nompi_fmm_testing<flt, morton_mode, fmm_order>(pos_part,3,0.5);
+            time_red3_full.push_back(res_red3.time);
+            red3_leaf_found.push_back(res_red3.leaf_cnt);
+            red3_leaf_rej.push_back(res_red3.reject_cnt);
+        }
+        {
+            auto res_red4 = nompi_fmm_testing<flt, morton_mode, fmm_order>(pos_part,4,0.5);
+            time_red4_full.push_back(res_red4.time);
+            red4_leaf_found.push_back(res_red4.leaf_cnt);
+            red4_leaf_rej.push_back(res_red4.reject_cnt);
+        }
+        {
+            auto res_red5 = nompi_fmm_testing<flt, morton_mode, fmm_order>(pos_part,5,0.5);
+            time_red5_full.push_back(res_red5.time);
+            red5_leaf_found.push_back(res_red5.leaf_cnt);
+            red5_leaf_rej.push_back(res_red5.reject_cnt);
+        }
+        {
+            auto res_red6 = nompi_fmm_testing<flt, morton_mode, fmm_order>(pos_part,6,0.5);
+            time_red6_full.push_back(res_red6.time);
+            red6_leaf_found.push_back(res_red6.leaf_cnt);
+            red6_leaf_rej.push_back(res_red6.reject_cnt);
+        }
+        {
+            auto res_red7 = nompi_fmm_testing<flt, morton_mode, fmm_order>(pos_part,7,0.5);
+            time_red7_full.push_back(res_red7.time);
+            red7_leaf_found.push_back(res_red7.leaf_cnt);
+            red7_leaf_rej.push_back(res_red7.reject_cnt);
+        }
+        {
+            auto res_red8 = nompi_fmm_testing<flt, morton_mode, fmm_order>(pos_part,8,0.5);
+            time_red8_full.push_back(res_red8.time);
+            red8_leaf_found.push_back(res_red8.leaf_cnt);
+            red8_leaf_rej.push_back(res_red8.reject_cnt);
+        }
+
+        
 
     }
 
+    dset.add_data("Npart", Npart);
+    dset.add_data("time_red0_full", time_red0_full);
+    dset.add_data("time_red1_full", time_red1_full);
+    dset.add_data("time_red2_full", time_red2_full);
+    dset.add_data("time_red3_full", time_red3_full);
+    dset.add_data("time_red4_full", time_red4_full);
+    dset.add_data("time_red5_full", time_red5_full);
+    dset.add_data("time_red6_full", time_red6_full);
+    dset.add_data("time_red7_full", time_red7_full);
+    dset.add_data("time_red8_full", time_red8_full);
+    dset.add_data("red0_leaf_found", red0_leaf_found);
+    dset.add_data("red1_leaf_found", red1_leaf_found);
+    dset.add_data("red2_leaf_found", red2_leaf_found);
+    dset.add_data("red3_leaf_found", red3_leaf_found);
+    dset.add_data("red4_leaf_found", red4_leaf_found);
+    dset.add_data("red5_leaf_found", red5_leaf_found);
+    dset.add_data("red6_leaf_found", red6_leaf_found);
+    dset.add_data("red7_leaf_found", red7_leaf_found);
+    dset.add_data("red8_leaf_found", red8_leaf_found);
+    dset.add_data("red0_leaf_rej", red0_leaf_rej);
+    dset.add_data("red1_leaf_rej", red1_leaf_rej);
+    dset.add_data("red2_leaf_rej", red2_leaf_rej);
+    dset.add_data("red3_leaf_rej", red3_leaf_rej);
+    dset.add_data("red4_leaf_rej", red4_leaf_rej);
+    dset.add_data("red5_leaf_rej", red5_leaf_rej);
+    dset.add_data("red6_leaf_rej", red6_leaf_rej);
+    dset.add_data("red7_leaf_rej", red7_leaf_rej);
+    dset.add_data("red8_leaf_rej", red8_leaf_rej);
 
 }
 
 
 
-Bench_start("fmm_order3_no_mpi_f32_u32", "fmm_order3_no_mpi_f32_u32", fmm_order3_no_mpi_f32_u32, 1){
-    run_test_no_mpi_fmm<f32,u32,3>(__bench_result_ref);
-}
+TestStart(Benchmark, "fmm_no_mpi performance", fmm_no_mpi, 1){
+    run_test_no_mpi_fmm<f32,u32,3>("case f32,u32, order = 3");
 
-Bench_start("fmm_order4_no_mpi_f32_u32", "fmm_order4_no_mpi_f32_u32", fmm_order4_no_mpi_f32_u32, 1){
-    run_test_no_mpi_fmm<f32,u32,4>(__bench_result_ref);
-}
+    run_test_no_mpi_fmm<f32,u32,4>("case f32,u32, order = 4");
 
+    run_test_no_mpi_fmm<f32,u64,3>("case f32,u64, order = 3");
 
-Bench_start("fmm_order3_no_mpi_f32_u64", "fmm_order3_no_mpi_f32_u64", fmm_order3_no_mpi_f32_u64, 1){
-    run_test_no_mpi_fmm<f32,u64,3>(__bench_result_ref);
-}
+    run_test_no_mpi_fmm<f32,u64,4>("case f32,u64, order = 4");
 
-Bench_start("fmm_order4_no_mpi_f32_u64", "fmm_order4_no_mpi_f32_u64", fmm_order4_no_mpi_f32_u64, 1){
-    run_test_no_mpi_fmm<f32,u64,4>(__bench_result_ref);
-}
+    run_test_no_mpi_fmm<f64,u64,3>("case f64,u64, order = 3");
 
-
-
-
-Bench_start("fmm_order3_no_mpi_f64_u64", "fmm_order3_no_mpi_f64_u64", fmm_order3_no_mpi_f64_u64, 1){
-    run_test_no_mpi_fmm<f64,u64,3>(__bench_result_ref);
-}
-
-Bench_start("fmm_order4_no_mpi_f64_u64", "fmm_order4_no_mpi_f64_u64", fmm_order4_no_mpi_f64_u64, 1){
-    run_test_no_mpi_fmm<f64,u64,4>(__bench_result_ref);
+    run_test_no_mpi_fmm<f64,u64,4>("case f64,u64, order = 4");
 }

@@ -11,6 +11,7 @@
 
 #include "aliases.hpp"
 #include "core/patch/base/patchdata.hpp"
+#include "core/sys/log.hpp"
 #include "patchdata_exchanger.hpp"
 #include "core/patch/base/patchdata_field.hpp"
 #include "core/patch/utility/serialpatchtree.hpp"
@@ -123,7 +124,20 @@ inline void reatribute_particles<f32_3>(PatchScheduler & sched, SerialPatchTree<
             {
                 auto nid = newid_buf_map.at(id).get_access<sycl::access::mode::read>();
                 for(u32 i = 0 ; i < pdat.get_obj_cnt() ; i++){
-                    err_id_in_newid = err_id_in_newid || (nid[i] == u64_max);
+                    bool err = nid[i] == u64_max;
+                    err_id_in_newid = err_id_in_newid || (err);
+                }
+            }
+
+            if (periodic && err_id_in_newid) {
+                auto nid = newid_buf_map.at(id).get_access<sycl::access::mode::read>();
+                for(u32 i = 0 ; i < pdat.get_obj_cnt() ; i++){
+                    bool err = nid[i] == u64_max;
+
+                    if(periodic && err){
+                        logger::err_ln("Patch Object Mover", "id = ",i, "is out of bound with periodic mode");
+                        throw shamrock_exc("error");
+                    }
                 }
             }
 
@@ -138,6 +152,12 @@ inline void reatribute_particles<f32_3>(PatchScheduler & sched, SerialPatchTree<
     bool synced_should_res_box = sched.should_resize_box(err_id_in_newid);
 
     if (periodic && synced_should_res_box) {
+
+
+
+
+
+
         throw shamrock_exc("box cannot be resized in periodic mode");
     }
 
@@ -261,7 +281,7 @@ inline void reatribute_particles<f32_3>(PatchScheduler & sched, SerialPatchTree<
     std::unordered_map<u64, std::vector<std::tuple<u64, std::unique_ptr<PatchData>>>> part_xchg_map;
     for(u32 i = 0; i < comm_pdat.size(); i++){
         
-        std::cout << comm_vec[i].x() << " -> " << comm_vec[i].y() << " data : " << comm_pdat[i].get() << std::endl; 
+        logger::debug_ln("PatchObjMover",  comm_vec[i].x() , "->" , comm_vec[i].y() , "data  size :" , comm_pdat[i]->get_obj_cnt() ); 
 
         PatchData & pdat = *comm_pdat[i];
 

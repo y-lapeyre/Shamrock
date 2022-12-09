@@ -862,8 +862,8 @@ typename Radix_Tree<u_morton, vec3>::CuttedTree Radix_Tree<u_morton, vec3>::cut_
                 
                 sycl::accessor acc_new_node_id_to_old {*new_node_id_to_old,cgh,sycl::write_only, sycl::no_init};
                 
-                sycl::accessor new_tree_acc_pos_min_cell{*ret.buf_pos_min_cell,cgh,sycl::read_only};
-                sycl::accessor new_tree_acc_pos_max_cell{*ret.buf_pos_max_cell,cgh,sycl::read_only};
+                sycl::accessor new_tree_acc_pos_min_cell{*ret.buf_pos_min_cell,cgh,sycl::read_write};
+                sycl::accessor new_tree_acc_pos_max_cell{*ret.buf_pos_max_cell,cgh,sycl::read_write};
 
                 sycl::accessor old_tree_acc_pos_min_cell{*buf_pos_min_cell,cgh,sycl::read_only};
                 sycl::accessor old_tree_acc_pos_max_cell{*buf_pos_max_cell,cgh,sycl::read_only};
@@ -882,7 +882,7 @@ typename Radix_Tree<u_morton, vec3>::CuttedTree Radix_Tree<u_morton, vec3>::cut_
 
                 cgh.parallel_for(range_node, [=](sycl::item<1> item) {
 
-                    //logger::raw_ln();
+                    //logger::raw_ln("\n \n ----------------\n \nnode : ",item.get_id(0));
 
                     vec3i cur_pos_min_cell_a = new_tree_acc_pos_min_cell[item];
                     vec3i cur_pos_max_cell_a = new_tree_acc_pos_max_cell[item];
@@ -915,15 +915,25 @@ typename Radix_Tree<u_morton, vec3>::CuttedTree Radix_Tree<u_morton, vec3>::cut_
                                 (cur_pos_max_cell_a.z() <= other_max.z()) ; 
                         };
 
+                        auto contain_cell = [&](vec3i other_min, vec3i other_max) -> bool {
+                            return 
+                                (cur_pos_min_cell_a.x() <= other_min.x()) && 
+                                (cur_pos_min_cell_a.y() <= other_min.y()) && 
+                                (cur_pos_min_cell_a.z() <= other_min.z()) && 
+                                (cur_pos_max_cell_a.x() >= other_max.x()) && 
+                                (cur_pos_max_cell_a.y() >= other_max.y()) && 
+                                (cur_pos_max_cell_a.z() >= other_max.z()) ; 
+                        };
+
                         if(is_same_box()){
 
-                            //logger::raw_ln("id : ",i,"found ",cur_id);
+                            //logger::raw_ln("found ",cur_id);
 
                             u32 store_val = cur_id;
 
-                            if(store_val >= old_tree_leaf_offset){
-                                store_val -= old_tree_leaf_offset;
-                            }
+                            //if(store_val >= old_tree_leaf_offset){
+                            //    store_val -= old_tree_leaf_offset;
+                            //}
 
                             acc_new_node_id_to_old[item] = store_val;
 
@@ -952,28 +962,64 @@ typename Radix_Tree<u_morton, vec3>::CuttedTree Radix_Tree<u_morton, vec3>::cut_
                             cur_pos_max_cell_b = cur_pos_max_cell_bl;
 
                             cur_id = lid;
-                            //logger::raw_ln("id : ",i,"moving to ",cur_id);
+                            //logger::raw_ln("moving to ",cur_id);
 
                         }else if(r_ok){
                             cur_pos_min_cell_b = cur_pos_min_cell_br;
                             cur_pos_max_cell_b = cur_pos_max_cell_br;
 
                             cur_id = rid;
-                            //logger::raw_ln("id : ",i,"moving to ",cur_id);
+                            //logger::raw_ln("moving to ",cur_id);
                             
                         }else{
 
-                            out << "[WARNING] Tree cut had a weird behavior during old cell search\n";
 
-                            u32 store_val = cur_id;
+                            //if nothing is neither the same or a super set of our cell it means that
+                            // our cell is a superset of one of the child hence the following check
+                            bool l_contain = contain_cell(cur_pos_min_cell_bl,cur_pos_max_cell_bl);
+                            bool r_contain = contain_cell(cur_pos_min_cell_br,cur_pos_max_cell_br);
 
-                            if(store_val >= old_tree_leaf_offset){
-                                store_val -= old_tree_leaf_offset;
+                            //logger::raw_ln("options l=",lid,cur_pos_min_cell_bl,cur_pos_max_cell_bl,l_contain);
+                            //logger::raw_ln("options r=",rid,cur_pos_min_cell_br,cur_pos_max_cell_br,r_contain);
+
+                            if(l_contain){
+                                //logger::raw_ln("found ",cur_id);
+
+                                u32 store_val = cur_id;
+                                acc_new_node_id_to_old[item] = store_val;
+
+                                // TODO : check that no particules are outside of the bound when restricted by this line
+                                new_tree_acc_pos_min_cell[item] = cur_pos_min_cell_bl;
+                                new_tree_acc_pos_max_cell[item] = cur_pos_max_cell_bl;
+
+                                break;
+                            }else if(r_contain){
+                                //logger::raw_ln("found ",cur_id);
+
+                                u32 store_val = cur_id;
+                                acc_new_node_id_to_old[item] = store_val;
+
+                                // TODO : check that no particules are outside of the bound when restricted by this line
+                                new_tree_acc_pos_min_cell[item] = cur_pos_min_cell_br;
+                                new_tree_acc_pos_max_cell[item] = cur_pos_max_cell_br;
+
+                                break;
+                            }else{
+                                out << "[CRASH] Tree cut had a weird behavior during old cell search : \n";
+                                //throw "";
+
+                                u32 store_val = cur_id;
+
+                                //if(store_val >= old_tree_leaf_offset){
+                                //    store_val -= old_tree_leaf_offset;
+                                //}
+
+                                acc_new_node_id_to_old[item] = store_val;
+
+                                break;
                             }
 
-                            acc_new_node_id_to_old[item] = store_val;
-
-                            break;
+                            
                         }             
 
 
@@ -984,6 +1030,19 @@ typename Radix_Tree<u_morton, vec3>::CuttedTree Radix_Tree<u_morton, vec3>::cut_
 
             });
         }
+
+        //because we have updated the cell ranges in the tree cut
+        sycl_convert_cell_range<u_morton, vec3>(
+            queue, 
+            ret.tree_leaf_count, 
+            ret.tree_internal_count, 
+            std::get<0>(ret.box_coord), 
+            std::get<1>(ret.box_coord), 
+            ret.buf_pos_min_cell,
+            ret.buf_pos_max_cell, 
+            ret.buf_pos_min_cell_flt, 
+            ret.buf_pos_max_cell_flt
+        );
 
         //ret.print_tree_field(*new_node_id_to_old_v2);
 

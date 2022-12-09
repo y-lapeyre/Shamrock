@@ -344,6 +344,26 @@ class PatchDataField {
         return idxs;
     }
 
+    template<class Lambdacd>
+    inline void check_err_range(Lambdacd && cd_true, T vmin, T vmax) const {
+        
+        bool error = false;
+        {
+            sycl::host_accessor acc {*buf};
+
+            for(u32 i = 0; i < val_cnt ; i++){
+                if (!cd_true(acc[i], vmin, vmax)) {
+                    logger::err_ln("PatchDataField", "obj =",i,"->", acc[i], "not in range [",vmin,",",vmax,"]");
+                    error = true;
+                }
+            }
+
+        }
+        
+        throw shamrock_exc("obj not in range");
+        
+    }
+
     void extract_element(u32 pidx, PatchDataField<T> & to);
 
     bool check_field_match(PatchDataField<T> &f2);
