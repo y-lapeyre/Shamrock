@@ -268,6 +268,8 @@ f64 models::sph::BasicSPHGasUInterne<flt,Kernel>::evolve(PatchScheduler &sched, 
                     const flt cs = eos_cs;
                     constexpr flt gamma = 5./3.;
 
+                    const f32 alpha_u = 1.0;
+
                     //sycl::stream out(65000,65000,cgh);
 
                     cgh.parallel_for(range_npart, [=](sycl::item<1> item) {
@@ -286,7 +288,9 @@ f64 models::sph::BasicSPHGasUInterne<flt,Kernel>::evolve(PatchScheduler &sched, 
                         f32 P_a     = pres[id_a];
                         //f32 P_a     = cs * cs * rho_a;
                         f32 omega_a = omga[id_a];
-                        
+
+                        const flt u_a = uint[id_a];
+
                         f32 vsig_u;
                         f32 lambda_viscous_heating = 0.0;
                         f32 lambda_conductivity = 0.0;
@@ -319,6 +323,7 @@ f64 models::sph::BasicSPHGasUInterne<flt,Kernel>::evolve(PatchScheduler &sched, 
                                 f32_3 v_ab = vxyz_a - vxyz_b;
                                 f32 rab  = sycl::length(dr);
                                 f32 h_b  = h_new[id_b];
+                                const flt u_b = uint[id_b];
 
                                 if (rab > h_a * Kernel::Rkern && rab > h_b * Kernel::Rkern)
                                     return;
@@ -343,11 +348,11 @@ f64 models::sph::BasicSPHGasUInterne<flt,Kernel>::evolve(PatchScheduler &sched, 
                                 f32 alpha_b = alpha_AV;
                                 f32 vsig_a = alpha_a*cs_a + beta_AV*sycl::abs(v_ab_r_ab); 
                                 f32 vsig_b = alpha_b*cs_b + beta_AV*sycl::abs(v_ab_r_ab);
-                                vsig_u =  sycl::abs(sycl::dot(v_ab, dr));
+                                vsig_u =  sycl::abs(v_ab_r_ab);
 
                                 //auto v_sig_a = alpha_AV * cs_a + beta_AV * sycl::distance(v_ab, dr);
                                 lambda_viscous_heating +=  part_mass * vsig_a * 0.5f * (sycl::pow(sycl::dot(v_ab, dr), 2.f) * Kernel::dW(rab, h_a));
-                                lambda_conductivity += part_mass * 0.5f * (Kernel::dW(rab, h_a) / (rho_a_sq * omega_a) + Kernel::dW(rab, h_b) / (rho_b_sq * omega_b))
+                                lambda_conductivity += part_mass * alpha_u * vsig_u * (u_a - u_b)* 0.5f * (Kernel::dW(rab, h_a) / (rho_a * omega_a) + Kernel::dW(rab, h_b) / (rho_b * omega_b));
                                 sum_du_a += part_mass * sycl::dot(v_ab , r_ab_unit) * Kernel::dW(rab, h_a);
 
                                 //out << sum_du_a << "\n";
@@ -369,7 +374,7 @@ f64 models::sph::BasicSPHGasUInterne<flt,Kernel>::evolve(PatchScheduler &sched, 
                             
                             sum_du_a = P_a / (rho_a_sq * omega_a) * sum_du_a;
                             lambda_viscous_heating = - 1 / (omega_a * rho_a) * lambda_viscous_heating;
-                            lambda_shock = lambda_viscous_heating + lambda_conductivity
+                            lambda_shock = lambda_viscous_heating + lambda_conductivity;
                             sum_du_a = sum_du_a + lambda_shock;
 
                         // out << "sum : " << sum_axyz << "\n";

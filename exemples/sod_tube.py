@@ -165,12 +165,6 @@ def print_dist(ctx : shamrock.Context, cname : str,fname : str):
 
     write_dic_to_vtk(dic, fname)
 
-    #xyz = np.array(dic["xyz"])
-#
-    #hpart = np.array(dic["hpart"])
-#
-    #plt.plot(xyz[:,0], hpart,".",label = cname)
-    #plt.savefig(fname+".pdf")
  
 
 
@@ -201,3 +195,9 @@ for i in range(nstep):
 model.clear()
 
 print_dist(ctx,"t = " + str(t_end),"end")
+
+import json
+dic = ctx.collect_data()
+tmp = open("result2.json",'w')
+json.dump(dic,tmp ,indent=4)
+tmp.close()
