@@ -7,14 +7,11 @@
 // -------------------------------------------------------//
 
 #include "basic_sph_gas_uint.hpp"
-#include "access/access.hpp"
 #include "aliases.hpp"
-#include "builtins.hpp"
 #include "core/patch/base/patchdata.hpp"
 #include "core/sys/log.hpp"
 #include "core/sys/sycl_handler.hpp"
 #include "models/generic/algs/cfl_utils.hpp"
-#include "properties/accessor_properties.hpp"
 #include "runscript/shamrockapi.hpp"
 #include "models/generic/algs/integrators_utils.hpp"
 #include "models/sph/forces.hpp"
