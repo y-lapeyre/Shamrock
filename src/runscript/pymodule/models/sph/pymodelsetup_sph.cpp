@@ -199,6 +199,80 @@ struct PySHAMROCK_Model_SetupSPHIMPL{
         return Py_None;
     }
 
+    static PyObject* set_value_in_box(Type * self, PyObject * args){
+
+        PySHAMROCKContext * pyctx;
+        f64 xmin;
+        f64 xmax;
+        f64 ymin;
+        f64 ymax;
+        f64 zmin;
+        f64 zmax;
+
+        char * fname;
+        char *ftype;
+
+        PyObject * fval;
+
+
+        std::cout << PyShamCtxType_ptr << std::endl;
+
+        if(!PyArg_ParseTuple(args, "O!((ddd)(ddd))ssO",PyShamCtxType_ptr,&pyctx,&xmin,&ymin,&zmin,&xmax,&ymax,&zmax,&fname,&ftype,&fval)) {
+            return NULL;
+        }
+
+
+
+        std::string stype = std::string(ftype);
+        std::string sname = std::string(fname);
+
+        using vec = sycl::vec<flt,3>;
+        std::tuple<vec,vec> box = {{xmin,ymin,zmin},{xmax,ymax,zmax}};
+
+
+        if (stype == "f32"){
+            f32 v {0};
+            if(test_cast<f32>(fval,v)){
+                self->container.ptr->set_value_in_box(*pyctx->ctx->sched,v,sname,box);
+            }else{
+                return NULL;
+            }
+            
+        }else if (stype == "f32_2"){
+            throw "unimplemented"; //self->container.ptr->set_value_in_box(*pyctx->ctx->sched,...,sname,box) <f32_2> ;
+        }else if (stype == "f32_3"){
+            throw "unimplemented"; //self->container.ptr->set_value_in_box(*pyctx->ctx->sched,...,sname,box) <f32_3> ;
+        }else if (stype == "f32_4"){
+            throw "unimplemented"; //self->container.ptr->set_value_in_box(*pyctx->ctx->sched,...,sname,box) <f32_4> ;
+        }else if (stype == "f32_8"){
+            throw "unimplemented"; //self->container.ptr->set_value_in_box(*pyctx->ctx->sched,...,sname,box) <f32_8> ;
+        }else if (stype == "f32_16"){
+            throw "unimplemented"; //self->container.ptr->set_value_in_box(*pyctx->ctx->sched,...,sname,box) <f32_16>;
+        }else if (stype == "f64"){
+            throw "unimplemented"; //self->container.ptr->set_value_in_box(*pyctx->ctx->sched,...,sname,box) <f64>   ;
+        }else if (stype == "f64_2"){
+            throw "unimplemented"; //self->container.ptr->set_value_in_box(*pyctx->ctx->sched,...,sname,box) <f64_2> ;
+        }else if (stype == "f64_3"){
+            throw "unimplemented"; //self->container.ptr->set_value_in_box(*pyctx->ctx->sched,...,sname,box) <f64_3> ;
+        }else if (stype == "f64_4"){
+            throw "unimplemented"; //self->container.ptr->set_value_in_box(*pyctx->ctx->sched,...,sname,box) <f64_4> ;
+        }else if (stype == "f64_8"){
+            throw "unimplemented"; //self->container.ptr->set_value_in_box(*pyctx->ctx->sched,...,sname,box) <f64_8> ;
+        }else if (stype == "f64_16"){
+            throw "unimplemented"; //self->container.ptr->set_value_in_box(*pyctx->ctx->sched,...,sname,box) <f64_16>;
+        }else if (stype == "u32"){
+            throw "unimplemented"; //self->container.ptr->set_value_in_box(*pyctx->ctx->sched,...,sname,box) <u32>   ;
+        }else if (stype == "u64"){
+            throw "unimplemented"; //self->container.ptr->set_value_in_box(*pyctx->ctx->sched,...,sname,box) <u64>   ;
+        }else{
+            return NULL;
+        }
+
+        std::cout << fname << " " << ftype << " " << fval << std::endl;
+
+        return Py_None;
+    }
+
     static PyObject* pertub_eigenmode_wave(Type * self, PyObject * args){
         PySHAMROCKContext * pyctx;
 
@@ -233,7 +307,7 @@ struct PySHAMROCK_Model_SetupSPHIMPL{
 
             {"set_total_mass", (PyCFunction) set_total_mass, METH_VARARGS, "set total mass"},
             {"get_part_mass", (PyCFunction) get_part_mass, METH_NOARGS, "get particle mass"},
-            
+            {"set_value_in_box", (PyCFunction) set_value_in_box, METH_VARARGS, "set value in a box"},
             {"pertub_eigenmode_wave", (PyCFunction) pertub_eigenmode_wave, METH_VARARGS, "pertub_eigenmode_wave"},
 
             {"update_smoothing_lenght", (PyCFunction) update_smoothing_lenght, METH_VARARGS, "update smoothing lenght"},

@@ -100,6 +100,27 @@ template<> PyObject* convert(f64_16 val){
 
 
 
+template<> bool test_cast(PyObject* o, f32 & val){
+
+    if(!PyFloat_Check(o)){
+        return false;
+    }
+
+    f64 ret = PyFloat_AS_DOUBLE(o);
+    val = ret;
+    return true;
+}
+
+template<> bool test_cast(PyObject* o, f64 & val){
+
+    if(!PyFloat_Check(o)){
+        return false;
+    }
+    
+    f64 ret = PyFloat_AS_DOUBLE(o);
+    val = ret;
+    return true;
+}
 
 
 template<class T> void append_to_map(std::vector<PatchDataField<T>> & pfields, std::map<std::string, PyObject*> map_app){

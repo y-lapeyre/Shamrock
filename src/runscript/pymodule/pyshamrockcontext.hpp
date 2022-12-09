@@ -22,3 +22,7 @@ struct PySHAMROCKContext{
 
 
 inline PyTypeObject * PyShamCtxType_ptr = nullptr;
+
+
+
+template<class T> bool test_cast(PyObject* o, T & val);
