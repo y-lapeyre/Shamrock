@@ -24,8 +24,6 @@
 #include "aliases.hpp"
 #include <cstdarg>
 
-
-
 inline std::string format(const char *fmt...) {
     std::string s{};
     va_list args, args2;
