@@ -27,7 +27,7 @@
 #include "loadbalancing_hilbert.hpp"
 
 #include "core/patch/base/patchdata_layout.hpp"
-#include "core/sys/mpi_handler.hpp"
+#include "shamrock/sys/mpi_handler.hpp"
 #include "core/utils/geometry_utils.hpp"
 
 

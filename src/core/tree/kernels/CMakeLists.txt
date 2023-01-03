@@ -25,7 +25,7 @@ endif()
 
 if("${BUILD_SIM}")
 
-    target_sources(shamrock
+    target_sources(shamrock_main
         PRIVATE
             karras_alg.cpp
             key_morton_sort.cpp

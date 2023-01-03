@@ -13,7 +13,7 @@
 #include "models/sph/base/kernels.hpp"
 #include "core/patch/comm/patch_object_mover.hpp"
 
-#include "core/sys/mpi_handler.hpp"
+#include "shamrock/sys/mpi_handler.hpp"
 
 
 template<class flt>

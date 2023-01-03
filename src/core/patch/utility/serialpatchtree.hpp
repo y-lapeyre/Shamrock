@@ -28,7 +28,7 @@
 #include "patch_field.hpp"
 #include "core/patch/base/patchtree.hpp"
 #include "core/patch/scheduler/scheduler_mpi.hpp"
-#include "core/sys/sycl_handler.hpp"
+#include "shamrock/sys/sycl_handler.hpp"
 #include "aliases.hpp"
 #include "core/patch/utility/patch_reduc_tree.hpp"
 #include <tuple>

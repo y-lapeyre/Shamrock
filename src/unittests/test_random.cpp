@@ -6,12 +6,12 @@
 //
 // -------------------------------------------------------//
 
-#include "core/sys/log.hpp"
-#include "core/sys/mpi_handler.hpp"
-#include "core/sys/sycl_mpi_interop.hpp"
+#include "shamrock/sys/log.hpp"
+#include "shamrock/sys/mpi_handler.hpp"
+#include "shamrock/sys/sycl_mpi_interop.hpp"
 #include "unittests/shamrocktest.hpp"
 
-#include "core/sys/sycl_handler.hpp"
+#include "shamrock/sys/sycl_handler.hpp"
 #include <chrono>
 #include <memory>
 #include <mpi.h>

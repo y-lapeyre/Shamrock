@@ -23,12 +23,12 @@
 #include "aliases.hpp"
 
 #include "core/patch/base/enabled_fields.hpp"
-#include "core/sys/log.hpp"
-#include "core/sys/sycl_handler.hpp"
-#include "core/sys/sycl_mpi_interop.hpp"
+#include "shamrock/sys/log.hpp"
+#include "shamrock/sys/sycl_handler.hpp"
+#include "shamrock/sys/sycl_mpi_interop.hpp"
 #include "core/utils/string_utils.hpp"
 #include "core/utils/sycl_vector_utils.hpp"
-#include "core/sys/mpi_handler.hpp"
+#include "shamrock/sys/mpi_handler.hpp"
 
 #include "core/algs/sycl/sycl_algs.hpp"
 

@@ -13,7 +13,7 @@
 #include "core/patch/base/patchdata.hpp"
 #include "core/patch/base/patchdata_layout.hpp"
 #include "core/patch/scheduler/scheduler_mpi.hpp"
-#include "core/sys/mpi_handler.hpp"
+#include "shamrock/sys/mpi_handler.hpp"
 #include <map>
 #include <memory>
 #include <tuple>

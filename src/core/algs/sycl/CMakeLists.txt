@@ -1,7 +1,7 @@
 
 if("${BUILD_SIM}")
 
-target_sources(shamrock
+target_sources(shamrock_main
     PRIVATE
         sycl_algs.cpp
     PUBLIC

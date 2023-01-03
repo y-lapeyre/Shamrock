@@ -7,7 +7,7 @@
 // -------------------------------------------------------//
 
 #include "core/algs/sycl/reduction/generic.hpp"
-#include "core/sys/log.hpp"
+#include "shamrock/sys/log.hpp"
 #include "unittests/shamrocktest.hpp"
 
 #include <random>

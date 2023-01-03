@@ -1,7 +1,7 @@
 
 if("${BUILD_SIM}")
 
-target_sources(shamrock
+target_sources(shamrock_main
     PRIVATE
     pymodel_basic_sph_gas.cpp
 

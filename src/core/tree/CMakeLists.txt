@@ -27,7 +27,7 @@ endif()
 
 if("${BUILD_SIM}")
 
-    target_sources(shamrock
+    target_sources(shamrock_main
         PRIVATE
             radix_tree.cpp
         PUBLIC

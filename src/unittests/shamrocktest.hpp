@@ -28,8 +28,8 @@
 #include <utility>
 #include <vector>
 #include <iostream>
-//#include "core/sys/mpi_handler.hpp"
-#include "core/sys/sycl_handler.hpp"
+//#include "shamrock/sys/mpi_handler.hpp"
+#include "shamrock/sys/sycl_handler.hpp"
 #include "aliases.hpp"
 #include "core/utils/time_utils.hpp"
 

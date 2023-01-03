@@ -20,7 +20,7 @@
 
 #include <vector>
 
-#include "core/sys/mpi_handler.hpp"
+#include "shamrock/sys/mpi_handler.hpp"
 
 template<class type>
 class BufferedPField{public:

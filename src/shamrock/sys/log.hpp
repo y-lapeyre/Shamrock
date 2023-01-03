@@ -9,7 +9,7 @@
 #pragma once 
 
 #include "aliases.hpp"
-#include "core/sys/mpi_handler.hpp"
+#include "shamrock/sys/mpi_handler.hpp"
 #include "core/utils/string_utils.hpp"
 #include <chrono>
 #include <fstream>

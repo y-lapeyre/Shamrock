@@ -8,7 +8,7 @@
 
 #include "sycl_algs.hpp"
 #include "core/utils/sycl_vector_utils.hpp"
-#include "core/sys/sycl_mpi_interop.hpp"
+#include "shamrock/sys/sycl_mpi_interop.hpp"
 
 //%Impl status : Clean
 

@@ -9,7 +9,7 @@
 //#include "test_tree.hpp"
 
 //#include "tree/kernels/key_morton_sort.hpp"
-#include "core/sys/sycl_handler.hpp"
+#include "shamrock/sys/sycl_handler.hpp"
 #include "core/utils/string_utils.hpp"
 #include <algorithm>
 #include <random>

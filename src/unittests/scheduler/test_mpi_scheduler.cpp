@@ -19,7 +19,7 @@
 
 #include "core/patch/scheduler/scheduler_mpi.hpp"
 
-#include "core/sys/sycl_mpi_interop.hpp"
+#include "shamrock/sys/sycl_mpi_interop.hpp"
 
 #include "flags.hpp"
 

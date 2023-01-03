@@ -11,7 +11,7 @@
 
 
 #include "core/tree/kernels/karras_alg.hpp"
-#include "core/sys/sycl_handler.hpp"
+#include "shamrock/sys/sycl_handler.hpp"
 #include <memory>
 #include <vector>
 #include "unittests/shamrocktest.hpp"

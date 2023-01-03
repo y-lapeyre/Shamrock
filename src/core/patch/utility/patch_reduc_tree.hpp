@@ -27,7 +27,7 @@
 
 
 
-#include "core/sys/sycl_handler.hpp"
+#include "shamrock/sys/sycl_handler.hpp"
 
 #include "core/patch/base/patchtree.hpp"
 

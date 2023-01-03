@@ -15,8 +15,8 @@
 #include <unordered_map>
 #include <vector>
 
-#include "core/sys/log.hpp"
-#include "core/sys/sycl_mpi_interop.hpp"
+#include "shamrock/sys/log.hpp"
+#include "shamrock/sys/sycl_mpi_interop.hpp"
 #include "core/utils/string_utils.hpp"
 
 #include "cmdopt.hpp"

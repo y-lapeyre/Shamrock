@@ -142,21 +142,14 @@ add_custom_command(
 if("${BUILD_SIM}")
 
     message(">>> adding sph target <<<")
-    add_executable(shamrock main.cpp version.cpp)
-    target_link_libraries(shamrock PUBLIC MPI::MPI_C)
-    target_link_libraries(shamrock PUBLIC  Python3::Python)
+    add_executable(shamrock_main main.cpp version.cpp)
+    target_link_libraries(shamrock_main PUBLIC MPI::MPI_C)
+    target_link_libraries(shamrock_main PUBLIC  Python3::Python)
 
-
+    add_executable(shamrock ALIAS shamrock_main)
 
 endif()
 
-#if("${BUILD_VISU}")
-
-    #message(">>> adding visualisation target <<<")
-
-    #add_executable(shamrock_visu main_visu.cpp version.cpp)
-
-#endif()
 
 if("${BUILD_TEST}")
 
@@ -171,6 +164,10 @@ if("${BUILD_TEST}")
     #target_link_libraries(shamrock_test PUBLIC nlohmann_json::nlohmann_json)
 
 endif()
+
+add_subdirectory(external)
+add_subdirectory(shamrock)
+add_subdirectory(shammodels)
 
 add_subdirectory(core)
 add_subdirectory(unittests)
