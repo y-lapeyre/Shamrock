@@ -150,13 +150,13 @@ if("${BUILD_SIM}")
 
 endif()
 
-if("${BUILD_VISU}")
+#if("${BUILD_VISU}")
 
-    message(">>> adding visualisation target <<<")
+    #message(">>> adding visualisation target <<<")
 
-    add_executable(shamrock_visu main_visu.cpp version.cpp)
+    #add_executable(shamrock_visu main_visu.cpp version.cpp)
 
-endif()
+#endif()
 
 if("${BUILD_TEST}")
 

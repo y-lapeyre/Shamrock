@@ -10,14 +10,6 @@ target_sources(shamrock
 endif()
 
 
-if("${BUILD_VISU}")
-
-target_sources(shamrock_visu
-    PRIVATE
-    PUBLIC
-    )
-
-endif()
 
 if("${BUILD_TEST}")
 
