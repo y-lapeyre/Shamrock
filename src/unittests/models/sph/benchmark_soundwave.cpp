@@ -1,3 +1,11 @@
+// -------------------------------------------------------//
+//
+// SHAMROCK code for hydrodynamics
+// Copyright(C) 2021-2022 Timothée David--Cléris <timothee.david--cleris@ens-lyon.fr>
+// Licensed under CeCILL 2.1 License, see LICENSE for more information
+//
+// -------------------------------------------------------//
+
 #include "aliases.hpp"
 
 #include "core/patch/base/patchdata_layout.hpp"
@@ -115,7 +123,7 @@ std::tuple<f64,f64,f64> benchmark_periodic_box(f32 dr, u32 npatch){
     Timer t;
     t.start();
     
-    f64 t2 = model.evolve(sched, 0, 1e-3);
+    f64 t2 = model.evolve(sched, 0, 100);
     sycl_handler::get_compute_queue().wait();
 
     t.end();
@@ -140,6 +148,7 @@ void benchmark_periodic_box_main(u32 npatch, std::string name){
         f64 part_per_g = 4000000;
 
         f64 gsz = sycl_handler::get_compute_queue().get_device().get_info<sycl::info::device::global_mem_size>();
+        gsz = 1024*1024*1024*1;
 
         logger::raw_ln("limit = ", part_per_g*(gsz/1.3)/(1024.*1024.*1024.));
     }
@@ -157,6 +166,7 @@ void benchmark_periodic_box_main(u32 npatch, std::string name){
         }
 
         f64 gsz = sycl_handler::get_compute_queue().get_device().get_info<sycl::info::device::global_mem_size>();
+        gsz = 1024*1024*1024*1;
 
         f64 a = (Nesti/part_per_g)*1024.*1024.*1024.;
         f64 b = multiplier*gsz/1.3;

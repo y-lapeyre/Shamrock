@@ -1,3 +1,11 @@
+// -------------------------------------------------------//
+//
+// SHAMROCK code for hydrodynamics
+// Copyright(C) 2021-2022 Timothée David--Cléris <timothee.david--cleris@ens-lyon.fr>
+// Licensed under CeCILL 2.1 License, see LICENSE for more information
+//
+// -------------------------------------------------------//
+
 #include "core/patch/base/patchdata.hpp"
 #include "core/patch/base/patchdata_layout.hpp"
 #include "unittests/shamrocktest.hpp"
@@ -679,3 +687,95 @@ Test_start("radix_tree", treeleveljump_cell_range_test, 1){
 
 
 
+
+
+
+template<class flt>
+std::unique_ptr<sycl::buffer<sycl::vec<flt,3>>> pos_partgen_distrib(u32 npart){
+
+    using vec = sycl::vec<flt,3>;
+
+    std::mt19937 eng(0x1111);
+    std::uniform_real_distribution<flt> distf(-1, 1);
+
+    auto pos_part = std::make_unique<sycl::buffer<vec>>(npart);
+
+    {
+        sycl::host_accessor<vec> pos {*pos_part};
+
+        for (u32 i = 0; i < npart; i ++) {
+
+
+            if(i%10000000 == 0) logger::raw_ln(i,"/",npart);
+            pos[i] = vec{distf(eng), distf(eng), distf(eng)};
+        }
+    }
+
+
+    return std::move(pos_part);
+}
+
+
+template<class morton_mode,class flt, u32 reduc_lev>
+inline void test_tree(std::string dset_name){
+
+
+    using vec = sycl::vec<flt,3>;
+
+    f64 Nmax_flt = 
+        1e7 * 
+        1;
+
+    u32 Nmax = u32(sycl::fmin(Nmax_flt,2e9));
+
+    auto pos = pos_partgen_distrib<flt>(Nmax);
+
+    std::vector<f64> times;
+    std::vector<f64> Npart;
+
+    for(f64 cnt = 1000; cnt < Nmax; cnt *= 1.1){
+        logger::debug_ln("TestTreePerf", cnt);
+        sycl_handler::get_compute_queue().wait();
+        Timer timer; timer.start();
+
+
+        Radix_Tree<morton_mode, vec> rtree = Radix_Tree<morton_mode, vec>(
+                sycl_handler::get_compute_queue(), 
+                {vec{-1,-1,-1},vec{1,1,1}},
+                pos, 
+                cnt , reduc_lev
+            );
+
+        rtree.compute_cellvolume(sycl_handler::get_compute_queue());
+
+        sycl_handler::get_compute_queue().wait();
+        timer.end();
+
+        times.push_back(timer.nanosec/1.e9);
+        Npart.push_back(u32(cnt));
+        
+    }
+
+
+    auto & dset = shamrock::test::test_data().new_dataset(dset_name);
+
+    dset.add_data("Npart", Npart);
+    dset.add_data("times", times);
+
+}
+
+
+TestStart(Benchmark, "tree build time", morton_tree_build, 1){
+    test_tree<u32, f32, 0>("u32, f32, 0");
+    test_tree<u64, f32, 0>("u64, f32, 0");
+    test_tree<u32, f64, 0>("u32, f64, 0");
+    test_tree<u64, f64, 0>("u64, f64, 0");
+    test_tree<u32, f32, 1>("u32, f32, 0");
+    test_tree<u64, f32, 1>("u64, f32, 0");
+    test_tree<u32, f64, 1>("u32, f64, 0");
+    test_tree<u64, f64, 1>("u64, f64, 0");
+    test_tree<u32, f32, 2>("u32, f32, 0");
+    test_tree<u64, f32, 2>("u64, f32, 0");
+    test_tree<u32, f64, 2>("u32, f64, 0");
+    test_tree<u64, f64, 2>("u64, f64, 0");
+}

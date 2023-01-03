@@ -1,3 +1,11 @@
+// -------------------------------------------------------//
+//
+// SHAMROCK code for hydrodynamics
+// Copyright(C) 2021-2022 Timothée David--Cléris <timothee.david--cleris@ens-lyon.fr>
+// Licensed under CeCILL 2.1 License, see LICENSE for more information
+//
+// -------------------------------------------------------//
+
 
 #include "aliases.hpp"
 #include "core/sys/log.hpp"
@@ -181,7 +189,7 @@ TestStart(Analysis,"models/generic/fmm/precision", fmm_prec, 1){
 
     std::uniform_real_distribution<f64> distf64(-1, 1);
 
-    f64 avg_spa = 3e-3;
+    f64 avg_spa = 1e-2;
     std::uniform_real_distribution<f64> distf64_red(-avg_spa, avg_spa);
 
 
@@ -203,7 +211,7 @@ TestStart(Analysis,"models/generic/fmm/precision", fmm_prec, 1){
 
     
 
-    for(u32 i = 0; i < 2e4; i++){
+    for(u32 i = 0; i < 1e5; i++){
 
 
         f64_3 s_a = f64_3{distf64(eng), distf64(eng), distf64(eng)};
@@ -1391,13 +1399,14 @@ void run_test_no_mpi_fmm(std::string dset_name){
     std::vector<f64> red8_leaf_rej;
 
     auto get_max_part = [&](){
-        f64 gsz = sycl_handler::get_compute_queue().get_device().get_info<sycl::info::device::global_mem_size>();
+        f64 gsz = sycl_handler::get_compute_queue().get_device().get_info<sycl::info::device::global_mem_size>();gsz = 1024*1024*1024*1;
         f64 part_per_g = 2500000;
 
-        return (gsz/(1024.*1024.*1024.))*part_per_g / 10.;
+        return (gsz/(1024.*1024.*1024.))*part_per_g / 100.;
     };
 
     f64 Nmax = get_max_part();
+    logger::debug_ln("Benchmark FMM", "Nmax =",Nmax);
 
     for(f64 cnt = 1000; cnt <= Nmax; cnt *= 1.5){
         logger::debug_ln("Benchmark FMM", "cnt =",cnt);
