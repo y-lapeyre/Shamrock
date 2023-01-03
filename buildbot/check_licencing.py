@@ -1,5 +1,6 @@
 from lib.buildbot import * 
 import glob
+import sys
 
 print_buildbot_info("licence check tool")
 
@@ -38,3 +39,5 @@ if len(missing_licence) > 0:
 
     for i in missing_licence:
         print(" -",i.split(abs_proj_dir)[-1])
+
+    sys.exit("Missing liscence for some source files")
