@@ -8,9 +8,9 @@
 
 #include "unittests/shamrocktest.hpp"
 
-#include "shamrock/sys/mpi_handler.hpp"
-#include "shamrock/sys/sycl_handler.hpp"
-#include "shamrock/sys/sycl_mpi_interop.hpp"
+#include "shamsys/mpi_handler.hpp"
+#include "shamsys/sycl_handler.hpp"
+#include "shamsys/sycl_mpi_interop.hpp"
 
 #include <random>
 

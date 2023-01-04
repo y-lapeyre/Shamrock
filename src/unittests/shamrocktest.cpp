@@ -14,12 +14,12 @@
 #include <cstdlib>
 #include <sstream>
 
-#include "shamrock/sys/cmdopt.hpp"
-#include "shamrock/sys/log.hpp"
+#include "shamsys/cmdopt.hpp"
+#include "shamsys/log.hpp"
 #include "core/utils/string_utils.hpp"
-#include "shamrock/sys/sycl_handler.hpp"
+#include "shamsys/sycl_handler.hpp"
 
-#include "shamrock/sys/mpi_handler.hpp"
+#include "shamsys/mpi_handler.hpp"
 
 
 bool has_option(

@@ -14,7 +14,7 @@
 
 #include "core/io/logs.hpp"
 #include "core/patch/scheduler/scheduler_mpi.hpp"
-#include "shamrock/sys/mpi_handler.hpp"
+#include "shamsys/mpi_handler.hpp"
 
 
 

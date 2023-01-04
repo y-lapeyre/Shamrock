@@ -7,7 +7,7 @@
 // -------------------------------------------------------//
 
 #include "sycl_mpi_interop.hpp"
-#include "shamrock/sys/sycl_handler.hpp"
+#include "shamsys/sycl_handler.hpp"
 
 
 

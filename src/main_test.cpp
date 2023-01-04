@@ -9,8 +9,8 @@
 
 //%Impl status : Good
 
-#include "shamrock/sys/cmdopt.hpp"
-#include "shamrock/sys/log.hpp"
+#include "shamsys/cmdopt.hpp"
+#include "shamsys/log.hpp"
 #include "unittests/shamrockbench.hpp"
 #include "unittests/shamrocktest.hpp"
 

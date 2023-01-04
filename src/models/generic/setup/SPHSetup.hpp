@@ -13,9 +13,9 @@
 #include "core/patch/base/patchdata_field.hpp"
 #include "core/patch/utility/serialpatchtree.hpp"
 #include "core/patch/scheduler/scheduler_mpi.hpp"
-#include "shamrock/sys/mpi_handler.hpp"
+#include "shamsys/mpi_handler.hpp"
 #include "core/patch/comm/patch_object_mover.hpp"
-#include "shamrock/sys/sycl_mpi_interop.hpp"
+#include "shamsys/sycl_mpi_interop.hpp"
 #include <memory>
 #include <vector>
 

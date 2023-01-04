@@ -12,8 +12,8 @@
 #include <string>
 #include <vector>
 #include <iostream>
-#include "shamrock/sys/mpi_handler.hpp"
-#include "shamrock/sys/sycl_handler.hpp"
+#include "shamsys/mpi_handler.hpp"
+#include "shamsys/sycl_handler.hpp"
 #include "aliases.hpp"
 #include "core/utils/time_utils.hpp"
 

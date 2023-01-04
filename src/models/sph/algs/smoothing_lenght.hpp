@@ -22,7 +22,7 @@
 #include "core/patch/scheduler/scheduler_mpi.hpp"
 #include "core/patch/utility/merged_patch.hpp"
 #include "core/patch/utility/serialpatchtree.hpp"
-#include "shamrock/sys/log.hpp"
+#include "shamsys/log.hpp"
 #include "core/tree/radix_tree.hpp"
 #include "models/sph/algs/smoothing_lenght_impl.hpp"
 #include "models/sph/base/kernels.hpp"

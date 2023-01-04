@@ -13,7 +13,7 @@
 #include <vector>
 
 #include "core/io/logs.hpp"
-#include "shamrock/sys/mpi_handler.hpp"
+#include "shamsys/mpi_handler.hpp"
 
 //TODO move to a contained module
 

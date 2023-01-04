@@ -10,7 +10,7 @@
 
 
 #include "core/patch/scheduler/scheduler_mpi.hpp"
-#include "shamrock/sys/log.hpp"
+#include "shamsys/log.hpp"
 #include "core/utils/string_utils.hpp"
 #include "models/sph/integrators/leapfrog.hpp"
 #include <string>

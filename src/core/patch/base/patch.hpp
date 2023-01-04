@@ -19,7 +19,7 @@
 #pragma once
 
 #include "aliases.hpp"
-#include "shamrock/sys/mpi_handler.hpp"
+#include "shamsys/mpi_handler.hpp"
 
 
 

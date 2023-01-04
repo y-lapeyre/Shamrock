@@ -8,8 +8,8 @@
 
 
 #include "aliases.hpp"
-#include "shamrock/sys/log.hpp"
-#include "shamrock/sys/sycl_handler.hpp"
+#include "shamsys/log.hpp"
+#include "shamsys/sycl_handler.hpp"
 #include "core/tree/radix_tree.hpp"
 #include "models/generic/math/tensors/collections.hpp"
 #include "models/generic/physics/fmm.hpp"

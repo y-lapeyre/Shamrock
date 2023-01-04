@@ -9,8 +9,8 @@
 #include "aliases.hpp"
 #include "core/patch/utility/patch_field.hpp"
 #include "core/patch/base/patchdata_field.hpp"
-#include "shamrock/sys/mpi_handler.hpp"
-#include "shamrock/sys/sycl_mpi_interop.hpp"
+#include "shamsys/mpi_handler.hpp"
+#include "shamsys/sycl_mpi_interop.hpp"
 #include "unittests/shamrocktest.hpp"
 #include <random>
 

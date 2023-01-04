@@ -20,7 +20,7 @@
 
 
 #include "core/patch/base/patchdata.hpp"
-#include "shamrock/sys/log.hpp"
+#include "shamsys/log.hpp"
 #include "core/utils/string_utils.hpp"
 #include "kernels/morton_kernels.hpp"
 #include "core/sfc/morton.hpp"

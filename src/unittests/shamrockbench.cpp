@@ -13,9 +13,9 @@
 #include <cmath>
 #include <sstream>
 
-#include "shamrock/sys/cmdopt.hpp"
+#include "shamsys/cmdopt.hpp"
 #include "core/utils/string_utils.hpp"
-#include "shamrock/sys/sycl_handler.hpp"
+#include "shamsys/sycl_handler.hpp"
 
 
 std::string make_test_output(BenchmarkResults t_res){

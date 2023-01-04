@@ -6,7 +6,7 @@
 //
 // -------------------------------------------------------//
 
-#include "shamrock/sys/log.hpp"
+#include "shamsys/log.hpp"
 #include "unittests/shamrocktest.hpp"
 
 #include <random>

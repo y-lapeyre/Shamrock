@@ -8,7 +8,7 @@
 
 #include "unittests/shamrocktest.hpp"
 
-#include "shamrock/sys/mpi_handler.hpp"
+#include "shamsys/mpi_handler.hpp"
 #include <random>
 #include <vector>
 

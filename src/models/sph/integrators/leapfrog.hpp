@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "shamrock/sys/log.hpp"
+#include "shamsys/log.hpp"
 #include "core/utils/syclreduction.hpp"
 #include "aliases.hpp"
 #include "core/patch/interfaces/interface_handler.hpp"
@@ -28,7 +28,7 @@
 #include "models/sph/algs/smoothing_lenght.hpp"
 #include "models/sph/base/sphpart.hpp"
 #include "models/sph/sphpatch.hpp"
-#include "shamrock/sys/sycl_mpi_interop.hpp"
+#include "shamsys/sycl_mpi_interop.hpp"
 #include "core/tree/radix_tree.hpp"
 #include <filesystem>
 #include <memory>

@@ -16,9 +16,9 @@
 #include "core/patch/base/patchdata.hpp"
 #include "core/patch/base/patchdata_layout.hpp"
 #include "core/patch/scheduler/scheduler_mpi.hpp"
-#include "shamrock/sys/sycl_mpi_interop.hpp"
+#include "shamsys/sycl_mpi_interop.hpp"
 #include <stdexcept>
-#include "shamrock/sys/mpi_handler.hpp"
+#include "shamsys/mpi_handler.hpp"
 #include <string>
 #include <type_traits>
 #include <unordered_map>
