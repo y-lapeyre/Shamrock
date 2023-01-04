@@ -14,7 +14,7 @@
 
 #include <random>
 
-#include "core/utils/sycl_vector_utils.hpp"
+#include "shamrock/utils/sycl_vector_utils.hpp"
 
 int get_mpi_size(MPI_Datatype md){
     MPI_Aint lbs;

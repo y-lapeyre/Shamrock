@@ -1,6 +1,6 @@
 name: Code checks - Copyright
 
-on: [push]
+on: [push, pull_request]
 
 jobs:
   copyright_check:

@@ -17,7 +17,7 @@
 
 
 
-#include "core/patch/scheduler/scheduler_mpi.hpp"
+#include "shamrock/patch/scheduler/scheduler_mpi.hpp"
 
 #include "shamsys/sycl_mpi_interop.hpp"
 
@@ -27,8 +27,8 @@
 
 #include "test_patch_utils.hpp"
 
-#include "core/sfc/hilbert.hpp"
-#include "core/patch/scheduler/loadbalancing_hilbert.hpp"
+#include "shamrock/sfc/hilbert.hpp"
+#include "shamrock/patch/scheduler/loadbalancing_hilbert.hpp"
 
 
 

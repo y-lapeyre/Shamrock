@@ -31,7 +31,7 @@
 //#include "shamsys/mpi_handler.hpp"
 #include "shamsys/sycl_handler.hpp"
 #include "aliases.hpp"
-#include "core/utils/time_utils.hpp"
+#include "shamrock/utils/time_utils.hpp"
 
 [[deprecated]]
 inline std::vector<int> test_node_count;

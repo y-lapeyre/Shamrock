@@ -10,7 +10,7 @@
 #include "runscript/pymodule/pylib.hpp"
 #include "runscript/shamrockapi.hpp"
 #include "runscript/pymodule/pyshamrockcontext.hpp"
-#include "models/sph/models/basic_sph_gas.hpp"
+#include "shammodels/sph/models/basic_sph_gas.hpp"
 #include <floatobject.h>
 #include <methodobject.h>
 #include <object.h>

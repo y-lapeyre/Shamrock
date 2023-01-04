@@ -6,13 +6,13 @@
 //
 // -------------------------------------------------------//
 
-#include "core/algs/sycl/reduction/generic.hpp"
+#include "shamrock/algs/sycl/reduction/generic.hpp"
 #include "shamsys/log.hpp"
 #include "unittests/shamrocktest.hpp"
 
 #include <random>
-#include "core/algs/sycl/sycl_algs.hpp"
-#include "core/utils/sycl_vector_utils.hpp"
+#include "shamrock/algs/sycl/sycl_algs.hpp"
+#include "shamrock/utils/sycl_vector_utils.hpp"
 
 template<class T,class Fct> void unit_test_reduc(std::string name, Fct && red_fct){
     std::vector<T> vals;

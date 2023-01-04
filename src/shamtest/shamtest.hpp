@@ -4,7 +4,7 @@ enum TestType{
     Benchmark,Analysis,Unittest
 };
 
-namespace impl::shamrocktest {
+namespace shamtest::details {
 
     
 
@@ -144,17 +144,17 @@ namespace impl::shamrocktest {
 
 }
 
-namespace shamrock::test {
+namespace shamtest {
     int run_all_tests(int argc, char *argv[], bool run_bench,bool run_analysis, bool run_unittest);
 
-    inline impl::shamrocktest::TestAssertList & asserts(){return impl::shamrocktest::current_test.asserts;};
-    inline impl::shamrocktest::TestDataList & test_data(){return impl::shamrocktest::current_test.test_data;};
+    inline shamtest::details::TestAssertList & asserts(){return shamtest::details::current_test.asserts;};
+    inline shamtest::details::TestDataList & test_data(){return shamtest::details::current_test.test_data;};
 }
 
 
 #define TestStart(type,name,func_name, node_cnt) void test_func_##func_name ();\
 void (*test_func_ptr_##func_name)() = test_func_##func_name;\
-impl::shamrocktest::TestStaticInit test_class_obj_##func_name (impl::shamrocktest::Test{type,name,node_cnt,test_func_ptr_##func_name});\
+shamtest::details::TestStaticInit test_class_obj_##func_name (shamtest::details::Test{type,name,node_cnt,test_func_ptr_##func_name});\
 void test_func_##func_name ()
 
 

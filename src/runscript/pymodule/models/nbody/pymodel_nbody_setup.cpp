@@ -7,7 +7,7 @@
 // -------------------------------------------------------//
 
 
-#include "models/nbody/setup/nbody_setup.hpp"
+#include "shammodels/nbody/setup/nbody_setup.hpp"
 
 
 #include "runscript/pymodule/pylib.hpp"

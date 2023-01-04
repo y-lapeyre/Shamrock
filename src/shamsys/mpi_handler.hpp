@@ -24,7 +24,7 @@
 
 #include <cstdio>
 #include "mpi_wrapper.hpp"
-#include "core/utils/string_utils.hpp"
+#include "shamrock/utils/string_utils.hpp"
 
 #include "aliases.hpp"
 

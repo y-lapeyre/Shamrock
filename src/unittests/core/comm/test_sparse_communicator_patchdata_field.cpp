@@ -6,11 +6,11 @@
 //
 // -------------------------------------------------------//
 
-#include "core/comm/sparse_communicator.hpp"
-#include "core/patch/scheduler/scheduler_patch_list.hpp"
+#include "shamrock/comm/sparse_communicator.hpp"
+#include "shamrock/patch/scheduler/scheduler_patch_list.hpp"
 #include "unittests/shamrocktest.hpp"
 
-#include "core/patch/base/patchdata_field.hpp"
+#include "shamrock/patch/base/patchdata_field.hpp"
 
 
 SchedulerPatchList make_plist(std::mt19937 & eng, u32 max_patch_per_node, u32 nb_part){

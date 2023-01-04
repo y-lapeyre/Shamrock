@@ -10,7 +10,7 @@
 //#include "test_tree.hpp"
 
 
-#include "core/tree/kernels/karras_alg.hpp"
+#include "shamrock/tree/kernels/karras_alg.hpp"
 #include "shamsys/sycl_handler.hpp"
 #include <memory>
 #include <vector>

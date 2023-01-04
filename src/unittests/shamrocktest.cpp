@@ -16,7 +16,7 @@
 
 #include "shamsys/cmdopt.hpp"
 #include "shamsys/log.hpp"
-#include "core/utils/string_utils.hpp"
+#include "shamrock/utils/string_utils.hpp"
 #include "shamsys/sycl_handler.hpp"
 
 #include "shamsys/mpi_handler.hpp"

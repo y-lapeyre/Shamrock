@@ -6,12 +6,12 @@
 //
 // -------------------------------------------------------//
 
-#include "core/patch/base/patchdata.hpp"
-#include "core/patch/base/patchdata_layout.hpp"
+#include "shamrock/patch/base/patchdata.hpp"
+#include "shamrock/patch/base/patchdata_layout.hpp"
 #include "unittests/shamrocktest.hpp"
 #include "unittests/shamrockbench.hpp"
 
-#include "core/tree/radix_tree.hpp"
+#include "shamrock/tree/radix_tree.hpp"
 #include <vector>
 
 

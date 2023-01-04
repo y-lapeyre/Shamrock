@@ -6,15 +6,15 @@
 //
 // -------------------------------------------------------//
 
-#include "core/patch/base/patchtree.hpp"
+#include "shamrock/patch/base/patchtree.hpp"
 
 #include "unittests/shamrocktest.hpp"
 #include <map>
 #include <random>
 #include <vector>
-#include "core/patch/scheduler/scheduler_patch_list.hpp"
-#include "core/sfc/hilbert.hpp"
-#include "core/patch/scheduler/loadbalancing_hilbert.hpp"
+#include "shamrock/patch/scheduler/scheduler_patch_list.hpp"
+#include "shamrock/sfc/hilbert.hpp"
+#include "shamrock/patch/scheduler/loadbalancing_hilbert.hpp"
 
 
 

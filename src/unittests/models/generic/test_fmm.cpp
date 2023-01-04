@@ -10,9 +10,9 @@
 #include "aliases.hpp"
 #include "shamsys/log.hpp"
 #include "shamsys/sycl_handler.hpp"
-#include "core/tree/radix_tree.hpp"
-#include "models/generic/math/tensors/collections.hpp"
-#include "models/generic/physics/fmm.hpp"
+#include "shamrock/tree/radix_tree.hpp"
+#include "shammodels/generic/math/tensors/collections.hpp"
+#include "shammodels/generic/physics/fmm.hpp"
 
 
 #include "unittests/shamrockbench.hpp"

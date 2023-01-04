@@ -8,10 +8,10 @@
 
 #include "aliases.hpp"
 
-#include "core/patch/base/patchdata_layout.hpp"
-#include "core/patch/scheduler/scheduler_mpi.hpp"
-#include "models/sph/models/basic_sph_gas.hpp"
-#include "models/sph/setup/sph_setup.hpp"
+#include "shamrock/patch/base/patchdata_layout.hpp"
+#include "shamrock/patch/scheduler/scheduler_mpi.hpp"
+#include "shammodels/sph/models/basic_sph_gas.hpp"
+#include "shammodels/sph/setup/sph_setup.hpp"
 #include "unittests/shamrocktest.hpp"
 
 
