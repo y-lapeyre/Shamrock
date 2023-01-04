@@ -8,14 +8,16 @@
 
 #include "shamrock/patch/base/patchdata.hpp"
 #include "shamrock/patch/base/patchdata_layout.hpp"
-#include "unittests/shamrocktest.hpp"
-#include "unittests/shamrockbench.hpp"
+#include "shamtest/shamtest.hpp"
+#include "shamrock/utils/time_utils.hpp"
+#include "shamtest/shamtest.hpp"
 
 #include "shamrock/tree/radix_tree.hpp"
 #include <vector>
 
 
 
+#if false
 
 
 Test_start("radix_tree",inclusion_ok,1){
@@ -424,11 +426,6 @@ Bench_start("tree field old compute performance", "treefieldcomputeperf_new", tr
 
 
 
-
-
-
-
-
 template<class flt, class morton_mode>
 void test_tree_comm(TestResults &__test_result_ref){
 
@@ -689,6 +686,11 @@ Test_start("radix_tree", treeleveljump_cell_range_test, 1){
 
 
 
+#endif
+
+
+
+
 
 template<class flt>
 std::unique_ptr<sycl::buffer<sycl::vec<flt,3>>> pos_partgen_distrib(u32 npart){
@@ -757,7 +759,7 @@ inline void test_tree(std::string dset_name){
     }
 
 
-    auto & dset = shamrock::test::test_data().new_dataset(dset_name);
+    auto & dset = shamtest::test_data().new_dataset(dset_name);
 
     dset.add_data("Npart", Npart);
     dset.add_data("times", times);

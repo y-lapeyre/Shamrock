@@ -7,8 +7,9 @@
 // -------------------------------------------------------//
 
 #include "shamrock/algs/sycl/reduction/generic.hpp"
+#include "shamrock/utils/time_utils.hpp"
 #include "shamsys/log.hpp"
-#include "unittests/shamrocktest.hpp"
+#include "shamtest/shamtest.hpp"
 
 #include <random>
 #include "shamrock/algs/sycl/sycl_algs.hpp"
@@ -43,7 +44,7 @@ template<class T,class Fct> void unit_test_reduc(std::string name, Fct && red_fc
         }
     }
 
-    shamrock::test::asserts().assert_float_equal(name, sycl::distance(sycl_ret ,check_val),0,1e-6);
+    shamtest::asserts().assert_float_equal(name, sycl::distance(sycl_ret ,check_val),0,1e-6);
 
 }
 
@@ -159,7 +160,7 @@ void bench_mark_indiv(std::string name,std::vector<T> & vals, Fct && fct){
         test_sz.push_back(i);
     }
 
-    auto & res = shamrock::test::test_data().new_dataset(name);
+    auto & res = shamtest::test_data().new_dataset(name);
 
     std::vector<f64> results;
 

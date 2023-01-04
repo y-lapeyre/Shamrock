@@ -13,7 +13,7 @@
 
 #include "shammodels/nbody/models/nbody_selfgrav.hpp"
 #include "shammodels/nbody/setup/nbody_setup.hpp"
-#include "unittests/shamrocktest.hpp"
+#include "shamtest/shamtest.hpp"
 
 
 
@@ -182,7 +182,7 @@ void benchmark_selfgrav_main(u32 npatch, std::string name){
     }
 
     if(mpi_handler::world_rank == 0){
-        auto & dset = shamrock::test::test_data().new_dataset(name);
+        auto & dset = shamtest::test_data().new_dataset(name);
         dset.add_data("Npart", npart);
         dset.add_data("times", times);
     }

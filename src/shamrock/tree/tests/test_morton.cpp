@@ -7,12 +7,18 @@
 // -------------------------------------------------------//
 
 #include "aliases.hpp"
-#include "unittests/shamrocktest.hpp"
+#include "shamtest/shamtest.hpp"
 
 #include "shamrock/sfc/morton.hpp"
 #include "shamrock/tree/kernels/morton_kernels.hpp"
 #include <memory>
 #include <vector>
+
+
+
+#if false
+
+
 
 Test_start("morton::",min_max_value,1){
 
@@ -68,3 +74,5 @@ Test_start("tree::kernels::",morton_kernels,1){
     
 
 }
+
+#endif

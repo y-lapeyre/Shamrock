@@ -14,7 +14,7 @@
 #include <algorithm>
 #include <random>
 
-#include "unittests/shamrocktest.hpp"
+#include "shamtest/shamtest.hpp"
 
 #if False
 

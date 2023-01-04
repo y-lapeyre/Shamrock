@@ -7,7 +7,7 @@
 // -------------------------------------------------------//
 
 #include "shamrock/patch/base/patchdata_layout.hpp"
-#include "unittests/shamrocktest.hpp"
+#include "shamtest/shamtest.hpp"
 
 #include <random>
 #include <vector>
@@ -75,11 +75,11 @@ TestStart(Unittest,"patchdata::", send_recv_patchdata, 2){
 
 
     if(mpi_handler::world_rank == 0){
-        shamrock::test::asserts().assert_bool("recv_d == d2_check", patch_data_check_match(recv_d, d2_check));
+        shamtest::asserts().assert_bool("recv_d == d2_check", patch_data_check_match(recv_d, d2_check));
     }
 
     if(mpi_handler::world_rank == 1){
-        shamrock::test::asserts().assert_bool("recv_d == d1_check", patch_data_check_match(recv_d, d1_check));
+        shamtest::asserts().assert_bool("recv_d == d1_check", patch_data_check_match(recv_d, d1_check));
     }
 
 

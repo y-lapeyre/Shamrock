@@ -11,8 +11,8 @@
 
 #include "shamsys/cmdopt.hpp"
 #include "shamsys/log.hpp"
-#include "unittests/shamrockbench.hpp"
-#include "unittests/shamrocktest.hpp"
+#include "shamtest/shamtest.hpp"
+#include "shamtest/shamtest.hpp"
 
 int main(int argc, char *argv[]){
 
@@ -71,6 +71,6 @@ int main(int argc, char *argv[]){
         run_unittest = true;
     }
     
-    return shamrock::test::run_all_tests(argc,argv,run_bench,run_analysis,run_unittest);
+    return shamtest::run_all_tests(argc,argv,run_bench,run_analysis,run_unittest);
     
 }

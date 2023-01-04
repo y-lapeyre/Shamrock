@@ -58,7 +58,7 @@
 //#include "shammodels/sph/models/gas_only_visco.hpp"
 #include "shammodels/sph/sphpatch.hpp"
 #include "runscript/rscripthandler.hpp"
-#include "unittests/shamrocktest.hpp"
+#include "shamtest/shamtest.hpp"
 #include <array>
 #include <cstdlib>
 #include <filesystem>

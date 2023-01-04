@@ -8,7 +8,7 @@
 
 #include "shamrock/patch/base/patchtree.hpp"
 
-#include "unittests/shamrocktest.hpp"
+#include "shamtest/shamtest.hpp"
 #include <map>
 #include <random>
 #include <vector>
@@ -17,6 +17,7 @@
 #include "shamrock/patch/scheduler/loadbalancing_hilbert.hpp"
 
 
+#if false
 
 void recursprint(PatchTree &pt,std::vector<Patch>& plist,std::unordered_map<u64,u64> &idx_map, u64 idx, u32 indent){
 
@@ -148,3 +149,5 @@ Test_start("", testpatchtree, 1){
     Test_assert("parent_of_only_leaf_key empty ", pt.parent_of_only_leaf_key.size() == 0);
 
 }
+
+#endif

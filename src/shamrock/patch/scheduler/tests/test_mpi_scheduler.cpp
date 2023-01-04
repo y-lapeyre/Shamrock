@@ -6,7 +6,7 @@
 //
 // -------------------------------------------------------//
 
-#include "unittests/shamrocktest.hpp"
+#include "shamtest/shamtest.hpp"
 
 #include <algorithm>
 #include <iterator>

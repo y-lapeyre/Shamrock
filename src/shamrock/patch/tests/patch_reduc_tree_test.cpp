@@ -21,7 +21,7 @@
 #include "shamsys/mpi_handler.hpp"
 #include "shamsys/sycl_mpi_interop.hpp"
 #include "shamrock/utils/string_utils.hpp"
-#include "unittests/shamrocktest.hpp"
+#include "shamtest/shamtest.hpp"
 #include <string>
 
 class Reduce_DataCount {

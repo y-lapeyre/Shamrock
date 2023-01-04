@@ -12,7 +12,7 @@
 #include "shamrock/patch/scheduler/scheduler_mpi.hpp"
 #include "shammodels/sph/models/basic_sph_gas.hpp"
 #include "shammodels/sph/setup/sph_setup.hpp"
-#include "unittests/shamrocktest.hpp"
+#include "shamtest/shamtest.hpp"
 
 
 
@@ -189,7 +189,7 @@ void benchmark_periodic_box_main(u32 npatch, std::string name){
     }
 
     if(mpi_handler::world_rank == 0){
-        auto & dset = shamrock::test::test_data().new_dataset(name);
+        auto & dset = shamtest::test_data().new_dataset(name);
         dset.add_data("Npart", npart);
         dset.add_data("times", times);
         dset.add_data("niter", niter);

@@ -6,8 +6,10 @@
 //
 // -------------------------------------------------------//
 
+#include "shamrock/utils/time_utils.hpp"
 #include "shamsys/log.hpp"
-#include "unittests/shamrocktest.hpp"
+#include "shamsys/sycl_handler.hpp"
+#include "shamtest/shamtest.hpp"
 
 #include <random>
 #include "shamrock/tree/kernels/key_morton_sort.hpp"
@@ -46,7 +48,7 @@ template<class u_morton, SortImplType impl> void unit_test_key_pair(){
 
 
     for(u32 i = 0; i < size_test; i++){
-        shamrock::test::asserts().assert_bool("index [" +format("%d",i)+ "]",  unsorted[i]  == morton_list[i]);
+        shamtest::asserts().assert_bool("index [" +format("%d",i)+ "]",  unsorted[i]  == morton_list[i]);
     }
 }
 
@@ -114,7 +116,7 @@ template<class u_morton, SortImplType impl> void wrapper_bench_key_sort(std::str
         test_sz.push_back(i);
     }
 
-    auto & res = shamrock::test::test_data().new_dataset(name);
+    auto & res = shamtest::test_data().new_dataset(name);
 
     std::vector<f64> results;
 

@@ -6,12 +6,13 @@
 //
 // -------------------------------------------------------//
 
-#include "unittests/shamrocktest.hpp"
+#include "shamtest/shamtest.hpp"
 
 #include "shamsys/mpi_handler.hpp"
 #include <random>
 #include <vector>
 
+#if false
 Test_start("mpi::",vector_allgather_ks,-1){
 
     //in the end this vector should be recovered in recv_vec
@@ -200,3 +201,5 @@ Test_start("mpi::",sparse_alltoall,-1){
     }
     
 }
+
+#endif

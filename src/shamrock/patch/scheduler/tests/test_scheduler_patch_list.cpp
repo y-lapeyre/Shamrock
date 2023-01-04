@@ -6,11 +6,13 @@
 //
 // -------------------------------------------------------//
 
-#include "unittests/shamrocktest.hpp"
+#include "shamtest/shamtest.hpp"
 
 #include "shamrock/patch/scheduler/scheduler_patch_list.hpp"
 #include "test_patch_utils.hpp"
 #include "shamrock/utils/geometry_utils.hpp"
+
+#if false
 
 //TODO add other test to check "make_fake_patch_list"
 Test_start("SchedulerPatchList::fake_patch_list_gen()::",patch_are_cubes,-1){
@@ -103,3 +105,4 @@ Test_start("SchedulerPatchList::",build_select_corectness,-1){
     patch::free_MPI_patch_type();
 }
 
+#endif

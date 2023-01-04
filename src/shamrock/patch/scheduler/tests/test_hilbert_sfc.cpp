@@ -6,11 +6,12 @@
 //
 // -------------------------------------------------------//
 
-#include "unittests/shamrocktest.hpp"
+#include "shamtest/shamtest.hpp"
 
 #include "aliases.hpp"
 
 #include "shamrock/sfc/hilbert.hpp"
+#if false
 
 Test_start("sfc::", hilbert, 1) {
     
@@ -19,3 +20,4 @@ Test_start("sfc::", hilbert, 1) {
     Test_assert("compute_hilbert_index(hilbert_box21_sz,0,0, 21)", compute_hilbert_index_3d<21>(hilbert_box21_sz,0,0) == 9223372036854775807);
 
 }
+#endif

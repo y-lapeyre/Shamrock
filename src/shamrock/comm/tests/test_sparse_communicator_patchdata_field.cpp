@@ -8,7 +8,7 @@
 
 #include "shamrock/comm/sparse_communicator.hpp"
 #include "shamrock/patch/scheduler/scheduler_patch_list.hpp"
-#include "unittests/shamrocktest.hpp"
+#include "shamtest/shamtest.hpp"
 
 #include "shamrock/patch/base/patchdata_field.hpp"
 
@@ -137,7 +137,7 @@ TestStart(Benchmark, "core/comm/sparse_communicator_patchdata_field:", func_name
     std::mt19937 eng (0x2525 + mpi_handler::world_rank);
     
 
-    auto & bandwith_dataset = shamrock::test::test_data().new_dataset("bandwith");
+    auto & bandwith_dataset = shamtest::test_data().new_dataset("bandwith");
 
 
     std::vector<f64> nb_patch        ;

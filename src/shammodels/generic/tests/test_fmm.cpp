@@ -8,6 +8,7 @@
 
 
 #include "aliases.hpp"
+#include "shamrock/utils/time_utils.hpp"
 #include "shamsys/log.hpp"
 #include "shamsys/sycl_handler.hpp"
 #include "shamrock/tree/radix_tree.hpp"
@@ -15,8 +16,8 @@
 #include "shammodels/generic/physics/fmm.hpp"
 
 
-#include "unittests/shamrockbench.hpp"
-#include "unittests/shamrocktest.hpp"
+#include "shamtest/shamtest.hpp"
+#include "shamtest/shamtest.hpp"
 #include <cstdio>
 #include <memory>
 #include <vector>
@@ -277,7 +278,7 @@ TestStart(Analysis,"models/generic/fmm/precision", fmm_prec, 1){
         vec_result_force_1.push_back(f.result_force_1);
     }
 
-    auto & dataset_prec = shamrock::test::test_data().new_dataset("fmm_precision");
+    auto & dataset_prec = shamtest::test_data().new_dataset("fmm_precision");
 
     dataset_prec.add_data("angle",          vec_angle         );
     dataset_prec.add_data("result_pot_5",   vec_result_pot_5  );
@@ -361,7 +362,7 @@ TestStart(Unittest,"models/generic/fmm/multipole_moment_offset", multipole_momen
         (diff_4*diff_4) + 
         (diff_5*diff_5);
 
-    shamrock::test::asserts().assert_bool("multipole offset valid", diff < 1e-13);
+    shamtest::asserts().assert_bool("multipole offset valid", diff < 1e-13);
     
 
     printf("order 0 %f\n",B_nB.t0);
@@ -1098,25 +1099,25 @@ TestStart(Unittest,"models/generic/fmm/fmm_1_gpu_prec", fmm_1_gpu_prec , 1){
     {
         auto pos = pos_partgen_distrib<f32>(1e4);
         auto res = nompi_fmm_testing<f32,u32,4>(pos,reduc_level,open_crit);
-        shamrock::test::asserts().assert_bool("fmm_f32_u32_order4", res.prec < 1e-5);
+        shamtest::asserts().assert_bool("fmm_f32_u32_order4", res.prec < 1e-5);
     }
 
     {
         auto pos = pos_partgen_distrib<f32>(1e4);
         auto res = nompi_fmm_testing<f32,u64,4>(pos,reduc_level,open_crit);
-        shamrock::test::asserts().assert_bool("fmm_f32_u64_order4", res.prec < 1e-5);
+        shamtest::asserts().assert_bool("fmm_f32_u64_order4", res.prec < 1e-5);
     }
 
     {
         auto pos = pos_partgen_distrib<f64>(1e4);
         auto res = nompi_fmm_testing<f64,u32,4>(pos,reduc_level,open_crit);
-        shamrock::test::asserts().assert_bool("fmm_f64_u32_order4", res.prec < 1e-5);
+        shamtest::asserts().assert_bool("fmm_f64_u32_order4", res.prec < 1e-5);
     }
 
     {
         auto pos = pos_partgen_distrib<f64>(1e4);
         auto res = nompi_fmm_testing<f64,u64,4>(pos,reduc_level,open_crit);
-        shamrock::test::asserts().assert_bool("fmm_f64_u64_order4", res.prec < 1e-5);
+        shamtest::asserts().assert_bool("fmm_f64_u64_order4", res.prec < 1e-5);
     }
 
 
@@ -1367,7 +1368,7 @@ class Cascade_multip;
 template<class flt, class morton_mode, u32 fmm_order>
 void run_test_no_mpi_fmm(std::string dset_name){
 
-    auto & dset = shamrock::test::test_data().new_dataset(dset_name);
+    auto & dset = shamtest::test_data().new_dataset(dset_name);
 
     std::vector<f64> Npart;
     std::vector<f64> time_red0_full;

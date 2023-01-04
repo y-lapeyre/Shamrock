@@ -11,7 +11,7 @@
 #include "shamrock/patch/base/patchdata_layout.hpp"
 #include "shamsys/mpi_handler.hpp"
 #include "shamsys/sycl_mpi_interop.hpp"
-#include "unittests/shamrocktest.hpp"
+#include "shamtest/shamtest.hpp"
 #include <random>
 
 
@@ -45,7 +45,7 @@ TestStart(Unittest, "patchdata.cpp/patch_data_check_match",patch_data_check_matc
 
     PatchData d_check = patchdata_gen_dummy_data (pdl,eng);
 
-    shamrock::test::asserts().assert_bool("reflexivity",  patch_data_check_match(d_check, d_check));
+    shamtest::asserts().assert_bool("reflexivity",  patch_data_check_match(d_check, d_check));
 }
 
 
@@ -111,11 +111,11 @@ TestStart(Unittest, "patchdata.cpp/isend_irecv",patch_data_isend_irecv, 2){
 
     
     if(mpi_handler::world_rank == 0){
-        shamrock::test::asserts().assert_bool("recv_d == d2_check", patch_data_check_match(recv_d, d2_check));
+        shamtest::asserts().assert_bool("recv_d == d2_check", patch_data_check_match(recv_d, d2_check));
     }
 
     if(mpi_handler::world_rank == 1){
-        shamrock::test::asserts().assert_bool("recv_d == d1_check", patch_data_check_match(recv_d, d1_check));
+        shamtest::asserts().assert_bool("recv_d == d1_check", patch_data_check_match(recv_d, d1_check));
     }
     
 
