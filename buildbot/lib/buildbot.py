@@ -231,7 +231,7 @@ def configure(src_dir :str, build_dir:str ,compiler : SyclCompiler, backend : Sy
 
 
     cmake_cmd = "cmake"
-    cmake_cmd += " -S " + src_dir
+    cmake_cmd += " -S " + src_dir + "/.."
     cmake_cmd += " -B " + build_dir
 
     if target_build_mode == BuildMode.Normal:

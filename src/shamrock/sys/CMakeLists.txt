@@ -18,7 +18,7 @@ set(HeadersTest
 )
 
 if("${BUILD_SIM}")
-target_sources(shamrock_main
+target_sources(shamrock
     PRIVATE
         ${Sources}
     PUBLIC

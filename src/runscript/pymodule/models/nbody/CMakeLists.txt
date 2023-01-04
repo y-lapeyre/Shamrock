@@ -1,7 +1,7 @@
 
 if("${BUILD_SIM}")
 
-target_sources(shamrock_main
+target_sources(shamrock
     PRIVATE
     pymodel_nbody_selfgrav.cpp
     pymodel_nbody_setup.cpp
