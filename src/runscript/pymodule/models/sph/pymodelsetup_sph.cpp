@@ -6,13 +6,13 @@
 //
 // -------------------------------------------------------//
 
-#include "core/patch/scheduler/scheduler_mpi.hpp"
-#include "core/utils/string_utils.hpp"
+#include "shamrock/patch/scheduler/scheduler_mpi.hpp"
+#include "shamrock/utils/string_utils.hpp"
 #include "runscript/pymodule/pylib.hpp"
 #include "runscript/shamrockapi.hpp"
 #include "runscript/pymodule/pyshamrockcontext.hpp"
-#include "models/sph/setup/sph_setup.hpp"
-#include "models/sph/base/kernels.hpp"
+#include "shammodels/sph/setup/sph_setup.hpp"
+#include "shammodels/sph/base/kernels.hpp"
 #include <floatobject.h>
 #include <methodobject.h>
 #include <modsupport.h>

@@ -9,11 +9,11 @@
 #pragma once
 
 #include "aliases.hpp"
-#include "core/io/logs.hpp"
-#include "core/patch/base/patchdata.hpp"
-#include "core/patch/base/patchdata_layout.hpp"
-#include "core/patch/scheduler/scheduler_mpi.hpp"
-#include "core/sys/mpi_handler.hpp"
+#include "shamrock/io/logs.hpp"
+#include "shamrock/patch/base/patchdata.hpp"
+#include "shamrock/patch/base/patchdata_layout.hpp"
+#include "shamrock/patch/scheduler/scheduler_mpi.hpp"
+#include "shamsys/mpi_handler.hpp"
 #include <map>
 #include <memory>
 #include <tuple>

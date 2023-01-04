@@ -7,8 +7,8 @@
 // -------------------------------------------------------//
 
 #include "pyshamrockcontext.hpp"
-#include "core/patch/base/patchdata_field.hpp"
-#include "core/sys/mpi_handler.hpp"
+#include "shamrock/patch/base/patchdata_field.hpp"
+#include "shamsys/mpi_handler.hpp"
 #include <floatobject.h>
 #include <longobject.h>
 #include <map>

@@ -1,5 +1,13 @@
+// -------------------------------------------------------//
+//
+// SHAMROCK code for hydrodynamics
+// Copyright(C) 2021-2022 Timothée David--Cléris <timothee.david--cleris@ens-lyon.fr>
+// Licensed under CeCILL 2.1 License, see LICENSE for more information
+//
+// -------------------------------------------------------//
 
-#include "models/nbody/setup/nbody_setup.hpp"
+
+#include "shammodels/nbody/setup/nbody_setup.hpp"
 
 
 #include "runscript/pymodule/pylib.hpp"

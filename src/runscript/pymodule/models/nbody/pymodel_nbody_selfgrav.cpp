@@ -10,7 +10,7 @@
 #include "runscript/pymodule/pylib.hpp"
 #include "runscript/shamrockapi.hpp"
 #include "runscript/pymodule/pyshamrockcontext.hpp"
-#include "models/nbody/models/nbody_selfgrav.hpp"
+#include "shammodels/nbody/models/nbody_selfgrav.hpp"
 
 
 using namespace models::nbody;

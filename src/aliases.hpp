@@ -23,7 +23,20 @@
 
 #pragma once
 
+
 #include <string.h>
+
+//#include <type_traits>
+//#include <cstdint>
+
+//#if __has_include(<detail/generic_type_lists.hpp>)
+//#include <detail/generic_type_lists.hpp>
+//#else
+//#include <sycl/sycl.hpp>
+//#endif
+
+
+
 #include <sycl/sycl.hpp>
 
 
@@ -109,7 +122,7 @@ TYPEDEFS_TYPES(4)
 TYPEDEFS_TYPES(8)
 TYPEDEFS_TYPES(16)
 
-
+#undef TYPEDEFS_TYPES
 
 
 

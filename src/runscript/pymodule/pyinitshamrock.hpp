@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "models/sph/models/basic_sph_gas.hpp"
+#include "shammodels/sph/models/basic_sph_gas.hpp"
 #include "pylib.hpp"
 
 #include "pymethods.hpp"
