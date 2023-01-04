@@ -38,3 +38,4 @@ if("${BUILD_SIM}")
 endif()
 
 add_subdirectory(kernels)
+add_subdirectory(tests)
