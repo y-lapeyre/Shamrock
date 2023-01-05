@@ -27,37 +27,9 @@
 #include "shamrock/utils/string_utils.hpp"
 
 #include "aliases.hpp"
+#include "shamsys/NodeInstance.hpp"
 
 namespace mpi_handler{
-
-    inline bool working = false;
-
-    inline i32 world_rank, world_size;
-    inline u32 uworld_rank, uworld_size;
-    //inline Logger* global_logger;
-
-    /**
-    * @brief Get the processor name 
-    * @return std::string processor name
-    */
-    std::string get_proc_name();
-
-    /**
-    * @brief initialize MPI comm and logger
-    */
-    void init(int argc, char *argv[]);
-
-    /**
-    * @brief close MPI context
-    * 
-    */
-    void close();
-
-
-
-
-    
-
 
 
     /**
@@ -74,7 +46,7 @@ namespace mpi_handler{
 
         u32 local_count = send_vec.size();
 
-        int* table_data_count = new int[world_size];
+        int* table_data_count = new int[shamsys::instance::world_size];
 
         //crash
         mpi::allgather(
@@ -90,11 +62,11 @@ namespace mpi_handler{
 
 
 
-        int* node_displacments_data_table = new int[world_size];
+        int* node_displacments_data_table = new int[shamsys::instance::world_size];
 
         node_displacments_data_table[0] = 0;
 
-        for(i32 i = 1 ; i < world_size; i++){
+        for(i32 i = 1 ; i < shamsys::instance::world_size; i++){
             node_displacments_data_table[i] = node_displacments_data_table[i-1] + table_data_count[i-1];
         }
         
@@ -141,7 +113,7 @@ namespace mpi_handler{
 
 
 
-        int* table_data_count = new int[world_size];
+        int* table_data_count = new int[shamsys::instance::world_size];
 
         mpi::allgather(
             &local_count, 
@@ -156,11 +128,11 @@ namespace mpi_handler{
 
 
 
-        int* node_displacments_data_table = new int[world_size];
+        int* node_displacments_data_table = new int[shamsys::instance::world_size];
 
         node_displacments_data_table[0] = 0;
 
-        for(i32 i = 1 ; i < world_size; i++){
+        for(i32 i = 1 ; i < shamsys::instance::world_size; i++){
             node_displacments_data_table[i] = node_displacments_data_table[i-1] + table_data_count[i-1];
         }
         

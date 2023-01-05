@@ -42,12 +42,12 @@ Test_start("patch::patch_reduc_tree::", generation, -1) {
     patchdata_layout::set(1, 0, 0, 0, 0, 0);
     patchdata_layout::sync(MPI_COMM_WORLD);
 
-    if (mpi_handler::world_rank == 0) {
+    if (shamsys::instance::world_rank == 0) {
         Patch p;
 
         p.data_count    = 1e4;
         p.load_value    = 1e4;
-        p.node_owner_id = mpi_handler::world_rank;
+        p.node_owner_id = shamsys::instance::world_rank;
 
         p.x_min = 0;
         p.y_min = 0;
@@ -116,7 +116,7 @@ Test_start("patch::patch_reduc_tree::", generation, -1) {
 
         std::cout << "sptree.reduce_field" << std::endl;
         PatchFieldReduction<u64> pfield_reduced =
-            sptree.reduce_field<u64, Reduce_DataCount>(sycl_handler::get_alt_queue(), sched, dtcnt_field);
+            sptree.reduce_field<u64, Reduce_DataCount>(shamsys::instance::get_alt_queue(), sched, dtcnt_field);
 
         std::cout << "pfield_reduced.detach_buf()" << std::endl;
         pfield_reduced.detach_buf();
@@ -136,7 +136,7 @@ Test_start("patch::patch_reduc_tree::", generation, -1) {
 
         
 
-        sched.dump_local_patches(format("patches_%d_node%d", 0, mpi_handler::world_rank));
+        sched.dump_local_patches(format("patches_%d_node%d", 0, shamsys::instance::world_rank));
     }
 
     for (u32 stepi = 1; stepi < 6; stepi++) {
@@ -171,7 +171,7 @@ Test_start("patch::patch_reduc_tree::", generation, -1) {
 
             // std::cout << "sptree.reduce_field" << std::endl;
             PatchFieldReduction<u64> pfield_reduced =
-                sptree.reduce_field<u64, Reduce_DataCount>(sycl_handler::get_alt_queue(), sched, dtcnt_field);
+                sptree.reduce_field<u64, Reduce_DataCount>(shamsys::instance::get_alt_queue(), sched, dtcnt_field);
 
             // std::cout << "pfield_reduced.detach_buf()" << std::endl;
             pfield_reduced.detach_buf();
@@ -189,7 +189,7 @@ Test_start("patch::patch_reduc_tree::", generation, -1) {
             interface_hndl.comm_interfaces(sched,false);
             interface_hndl.print_current_interf_map();
 
-            sched.dump_local_patches(format("patches_%d_node%d", stepi, mpi_handler::world_rank));
+            sched.dump_local_patches(format("patches_%d_node%d", stepi, shamsys::instance::world_rank));
 
 
             for(auto & [id,pdat] : sched.patch_data.owned_data){
@@ -197,7 +197,7 @@ Test_start("patch::patch_reduc_tree::", generation, -1) {
                     sycl::buffer<f32_3> pos(pdat.pos_s.data(),pdat.pos_s.size());
 
                     sycl::buffer<u64> newid = __compute_object_patch_owner<f32_3, class ComputeObejctPatchOwners>(
-                        sycl_handler::get_compute_queue(), 
+                        shamsys::instance::get_compute_queue(), 
                         pos, 
                         sptree);
 

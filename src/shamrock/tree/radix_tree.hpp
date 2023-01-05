@@ -50,7 +50,7 @@ class RadixTreeField{public:
     {
         //cut new field according to the id map
 
-        sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
+        shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
 
             sycl::accessor acc_curr {*src.radix_tree_field_buf, cgh, sycl::read_only};
             sycl::accessor acc_other {*radix_tree_field_buf, cgh, sycl::write_only, sycl::no_init};
@@ -563,7 +563,7 @@ inline auto Radix_Tree<u_morton, vec3>::get_min_max_cell_side_lenght() -> std::t
     sycl::buffer<flt> min_side_lenght {len};
     sycl::buffer<flt> max_side_lenght {len};
 
-    auto & q = sycl_handler::get_compute_queue();
+    auto & q = shamsys::instance::get_compute_queue();
 
     q.submit([&](sycl::handler &cgh) {
         u32 offset_leaf = tree_internal_count;

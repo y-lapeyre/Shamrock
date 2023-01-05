@@ -44,7 +44,7 @@ inline std::unordered_map<u64, sycl::buffer<u64>> get_new_id_map<f32_3>(PatchSch
             newid_buf_map.insert({
                 id,
                 __compute_object_patch_owner<f32_3, class ComputeObejctPatchOwners_f32>(
-                    sycl_handler::get_compute_queue(), 
+                    shamsys::instance::get_compute_queue(), 
                     *pos, xyz_field.size(),
                     sptree)});
 
@@ -77,7 +77,7 @@ inline std::unordered_map<u64, sycl::buffer<u64>> get_new_id_map<f64_3>(PatchSch
             newid_buf_map.insert({
                 id,
                 __compute_object_patch_owner<f64_3, class ComputeObejctPatchOwners_f64>(
-                    sycl_handler::get_compute_queue(), 
+                    shamsys::instance::get_compute_queue(), 
                     *pos, xyz_field.size(),
                     sptree)});
 
@@ -116,7 +116,7 @@ inline void reatribute_particles<f32_3>(PatchScheduler & sched, SerialPatchTree<
             newid_buf_map.insert({
                 id,
                 __compute_object_patch_owner<f32_3, class ComputeObjectPatchOwners_f32_old>(
-                    sycl_handler::get_compute_queue(), 
+                    shamsys::instance::get_compute_queue(), 
                     *pos, xyz_field.size(),
                     sptree)});
 
@@ -221,7 +221,7 @@ inline void reatribute_particles<f32_3>(PatchScheduler & sched, SerialPatchTree<
                 newid_buf_map.insert({
                     id,
                     __compute_object_patch_owner<f32_3, class ComputeObjectPatchOwners2_f32_old>(
-                        sycl_handler::get_compute_queue(), 
+                        shamsys::instance::get_compute_queue(), 
                         *pos,  xyz_field.size(),
                         sptree)});
 
@@ -367,7 +367,7 @@ inline void reatribute_particles<f64_3>(SchedulerMPI & sched, SerialPatchTree<f6
         newid_buf_map.insert({
             id,
             __compute_object_patch_owner<f64_3, class ComputeObejctPatchOwners_f64>(
-                sycl_handler::get_compute_queue(), 
+                shamsys::instance::get_compute_queue(), 
                 *pos, 
                 sptree)});
 
@@ -433,7 +433,7 @@ inline void reatribute_particles<f64_3>(SchedulerMPI & sched, SerialPatchTree<f6
 
             newid_buf_map.at(id)=
                 __compute_object_patch_owner<f64_3, class ComputeObejctPatchOwners2_f64>(
-                    sycl_handler::get_compute_queue(), 
+                    shamsys::instance::get_compute_queue(), 
                     *pos, 
                     sptree);
 

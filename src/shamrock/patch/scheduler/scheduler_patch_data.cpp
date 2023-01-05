@@ -44,7 +44,7 @@ void SchedulerPatchData::apply_change_list(std::vector<std::tuple<u64, i32, i32,
         auto & [idx,old_owner,new_owner,tag_comm] = change_list[i];
 
         //if i'm sender
-        if(old_owner == mpi_handler::world_rank){
+        if(old_owner == shamsys::instance::world_rank){
             auto & patchdata = owned_data.at(patch_list.global[idx].id_patch);
             patchdata_isend(patchdata, rq_lst, new_owner, tag_comm, MPI_COMM_WORLD);
         }
@@ -56,7 +56,7 @@ void SchedulerPatchData::apply_change_list(std::vector<std::tuple<u64, i32, i32,
         auto & id_patch = patch_list.global[idx].id_patch;
         
         //if i'm receiver
-        if(new_owner == mpi_handler::world_rank){
+        if(new_owner == shamsys::instance::world_rank){
             owned_data.emplace(id_patch,pdl);
             patchdata_irecv_probe(owned_data.at(id_patch), rq_lst, old_owner, tag_comm, MPI_COMM_WORLD);
         }
@@ -64,7 +64,7 @@ void SchedulerPatchData::apply_change_list(std::vector<std::tuple<u64, i32, i32,
 
     /*
     for (MPI_Request a  : rq_lst) {
-        std::cout << mpi_handler::world_rank << " " << a << std::endl;
+        std::cout << shamsys::instance::world_rank << " " << a << std::endl;
     }
     */
 
@@ -82,7 +82,7 @@ void SchedulerPatchData::apply_change_list(std::vector<std::tuple<u64, i32, i32,
         patch_list.global[idx].node_owner_id = new_owner;
 
         //if i'm sender delete old data
-        if(old_owner == mpi_handler::world_rank){
+        if(old_owner == shamsys::instance::world_rank){
             owned_data.erase(id_patch);
         }
 

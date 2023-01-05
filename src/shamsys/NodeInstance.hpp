@@ -24,7 +24,7 @@
 
 
 
-namespace shamsys::experimental::instance {
+namespace shamsys::instance {
 
 
     class ShamsysInstanceException : public std::exception {
@@ -83,4 +83,4 @@ namespace shamsys::experimental::instance {
     */
     std::string get_process_name();
 
-} // namespace shamsys::experimental::instance
+} // namespace shamsys::instance

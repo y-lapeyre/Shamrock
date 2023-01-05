@@ -476,7 +476,7 @@ template <class Timestepper, class SimInfo> class SimulationSPH {
                 sched.for_each_patch_buf(
                     [&](u64 id_patch, Patch cur_p, PatchDataBuffer & pdat_buf) {
 
-                        sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
+                        shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
                             auto r = pdat_buf.fields_f32_3[ixyz]->get_access<sycl::access::mode::read>(cgh);
                             auto v = pdat_buf.fields_f32_3[ivxyz]->get_access<sycl::access::mode::discard_write>(cgh);
 
@@ -514,7 +514,7 @@ template <class Timestepper, class SimInfo> class SimulationSPH {
                 sched.for_each_patch_buf(
                     [&](u64 id_patch, Patch cur_p, PatchDataBuffer & pdat_buf) {
 
-                        sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
+                        shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
                             auto r = pdat_buf.fields_f32_3[ixyz]->get_access<sycl::access::mode::read>(cgh);
                             auto v = pdat_buf.fields_f32_3[ivxyz]->get_access<sycl::access::mode::discard_write>(cgh);
 
@@ -635,7 +635,7 @@ int main(int argc, char *argv[]) {
     }
 
 
-    mpi_handler::init(argc,argv);
+    shamsys::instance::init(argc,argv);
 
     if(opts::has_option("--nocolor")){
         terminal_effects::disable_colors();
@@ -663,7 +663,6 @@ int main(int argc, char *argv[]) {
     }
 
 
-    sycl_handler::init();
 
     logfiles::open_files();
 
@@ -722,5 +721,5 @@ int main(int argc, char *argv[]) {
 
 
 
-    mpi_handler::close();
+    shamsys::instance::close();
 }

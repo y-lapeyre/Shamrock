@@ -1,3 +1,10 @@
+// -------------------------------------------------------//
+//
+// SHAMROCK code for hydrodynamics
+// Copyright(C) 2021-2022 Timothée David--Cléris <timothee.david--cleris@ens-lyon.fr>
+// Licensed under CeCILL 2.1 License, see LICENSE for more information
+//
+// -------------------------------------------------------//
 
 #include "NodeInstance.hpp"
 
@@ -6,7 +13,7 @@
 #include "shamsys/legacy/mpi_wrapper.hpp"
 #include "shamsys/legacy/sycl_mpi_interop.hpp"
 
-namespace shamsys::experimental::instance {
+namespace shamsys::instance {
 
 
 
@@ -283,10 +290,7 @@ namespace shamsys::experimental::instance {
         logger::info_ln("SYCL Handler", "init done");
 
 
-        logger::info_ln("SYCL Handler", "creating MPI type for interop");
-        create_sycl_mpi_types();
-
-        logger::info_ln("SYCL Handler", "MPI type for interop created");
+        
 
         
 
@@ -340,6 +344,12 @@ namespace shamsys::experimental::instance {
         mpi::barrier(MPI_COMM_WORLD);
         //if(world_rank == 0){
         logger::raw_ln("------------ MPI init ok ------------ \n");
+
+        logger::info_ln("SYCL Handler", "creating MPI type for interop");
+        create_sycl_mpi_types();
+        logger::info_ln("SYCL Handler", "MPI type for interop created");
+
+        logger::raw_ln("------------ MPI / SYCL init ok ------------ \n");
 
     }
 

@@ -50,7 +50,7 @@ template <class T> void PatchDataField<T>::extract_element(u32 pidx, PatchDataFi
             auto & buf_to   = to.get_buf();
             auto & buf_from = from.get_buf();
 
-            sycl_handler::get_compute_queue().submit([&](sycl::handler & cgh){
+            shamsys::instance::get_compute_queue().submit([&](sycl::handler & cgh){
 
                 sycl::accessor acc_to {*buf_to, cgh, sycl::write_only};
                 sycl::accessor acc_from {*buf_from, cgh, sycl::read_write};
@@ -97,7 +97,7 @@ template <class T> bool PatchDataField<T>::check_field_match(PatchDataField<T> &
         
         sycl::buffer<u8> res_buf(check_len);
 
-        sycl_handler::get_compute_queue().submit([&](sycl::handler & cgh){
+        shamsys::instance::get_compute_queue().submit([&](sycl::handler & cgh){
 
             sycl::accessor acc1 {*buf, cgh, sycl::read_only};
             sycl::accessor acc2 {*buf_f2, cgh, sycl::read_only};
@@ -173,7 +173,7 @@ template <class T> void PatchDataField<T>::append_subset_to(sycl::buffer<u32> &i
     }
     #endif
     
-    sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
+    shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
 
         sycl::accessor acc_curr {*buf, cgh, sycl::read_only};
         sycl::accessor acc_other {*buf_other, cgh, sycl::write_only, sycl::no_init};
@@ -240,7 +240,7 @@ template<class T> void PatchDataField<T>::insert_element(T v){
     u32 ins_pos = val_cnt;
     expand(1);
 
-    sycl_handler::get_compute_queue().submit([&] (sycl::handler& cgh) {
+    shamsys::instance::get_compute_queue().submit([&] (sycl::handler& cgh) {
 
         auto id_ins = ins_pos;
         auto val = v;
@@ -265,7 +265,7 @@ template<class T> class PdatField_apply_offset;
 
 template<class T> void PatchDataField<T>::apply_offset(T off){
 
-    sycl_handler::get_compute_queue().submit([&] (sycl::handler& cgh) {
+    shamsys::instance::get_compute_queue().submit([&] (sycl::handler& cgh) {
         
         auto val = off;
         sycl::accessor acc {*buf, cgh, sycl::read_write};
@@ -286,7 +286,7 @@ template<class T> void PatchDataField<T>::insert(PatchDataField<T> &f2){
     const u32 old_val_cnt = val_cnt;//field_data.size();
     expand(f2.obj_cnt);
 
-    sycl_handler::get_compute_queue().submit([&] (sycl::handler& cgh) {
+    shamsys::instance::get_compute_queue().submit([&] (sycl::handler& cgh) {
         
         const u32 idx_st = old_val_cnt;
         sycl::accessor acc {*buf, cgh};

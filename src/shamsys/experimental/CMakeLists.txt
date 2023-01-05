@@ -1,12 +1,12 @@
 
 set(Sources
-    NodeInstance.cpp
+    
 )
 set(SourcesTest
 
 )
-set(Headers
-    NodeInstance.hpp
+set(Headers 
+
 )
 set(HeadersTest
 

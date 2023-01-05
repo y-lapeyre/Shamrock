@@ -37,9 +37,9 @@ class CflUtility{public:
             lambda_internal(cgh,*buf_cfl, range_npart);
         };
 
-        sycl_handler::get_compute_queue().submit(ker_reduc_step_mincfl);
+        shamsys::instance::get_compute_queue().submit(ker_reduc_step_mincfl);
 
-        flt min_cfl = syclalg::get_min<flt>(sycl_handler::get_compute_queue(), buf_cfl);
+        flt min_cfl = syclalg::get_min<flt>(shamsys::instance::get_compute_queue(), buf_cfl);
 
         return min_cfl;
 
@@ -63,9 +63,9 @@ class CflUtility{public:
             lambda_internal(cgh,*buf_cfl, range_npart);
         };
 
-        sycl_handler::get_compute_queue().submit(ker_reduc_step_mincfl);
+        shamsys::instance::get_compute_queue().submit(ker_reduc_step_mincfl);
 
-        flt min_cfl = syclalg::get_min<flt>(sycl_handler::get_compute_queue(), buf_cfl,npart_patch);
+        flt min_cfl = syclalg::get_min<flt>(shamsys::instance::get_compute_queue(), buf_cfl,npart_patch);
 
         return min_cfl;
 

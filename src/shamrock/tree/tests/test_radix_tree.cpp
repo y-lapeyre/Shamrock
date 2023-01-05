@@ -54,13 +54,13 @@ Test_start("radix_tree",inclusion_ok,1){
     constexpr u32 reduc_level = 5;
 
     auto rtree = Radix_Tree<morton_mode, vec>(
-            sycl_handler::get_compute_queue(), 
+            shamsys::instance::get_compute_queue(), 
             {vec{-1,-1,-1},vec{1,1,1}},
             pdat.get_field<vec>(id_xyz).get_buf(), 
             npart , reduc_level
         );
 
-    rtree.compute_cellvolume(sycl_handler::get_compute_queue());
+    rtree.compute_cellvolume(shamsys::instance::get_compute_queue());
 
     {
         sycl::host_accessor tree_acc_pos_min_cell{*rtree.buf_pos_min_cell,sycl::read_only};
@@ -152,19 +152,19 @@ Test_start("radix_tree",test_new_pfield_compute,1){
     constexpr u32 reduc_level = 5;
 
     auto rtree = Radix_Tree<morton_mode, vec>(
-            sycl_handler::get_compute_queue(), 
+            shamsys::instance::get_compute_queue(), 
             {vec{-1,-1,-1},vec{1,1,1}},
             pdat.get_field<vec>(id_xyz).get_buf(), 
             npart , reduc_level
         );
 
-    rtree.compute_cellvolume(sycl_handler::get_compute_queue());
+    rtree.compute_cellvolume(shamsys::instance::get_compute_queue());
 
 
     flt h_tol = 1.2;
 
     auto h_max = rtree.compute_field<flt>(
-        sycl_handler::get_compute_queue(), 
+        shamsys::instance::get_compute_queue(), 
         1,
         [&](sycl::handler &cgh,auto && node_looper){
 
@@ -203,7 +203,7 @@ Test_start("radix_tree",test_new_pfield_compute,1){
         auto buf_cell_interact_rad = std::make_unique<sycl::buffer<flt>>(rtree.tree_internal_count + rtree.tree_leaf_count);
         sycl::range<1> range_leaf_cell{rtree.tree_leaf_count};
 
-        sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
+        shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
             u32 offset_leaf = rtree.tree_internal_count;
 
             auto h_max_cell = buf_cell_interact_rad->template get_access<sycl::access::mode::discard_write>(cgh);
@@ -256,7 +256,7 @@ Test_start("radix_tree",test_new_pfield_compute,1){
         };
 
         for (u32 i = 0; i < rtree.tree_depth; i++) {
-            sycl_handler::get_compute_queue().submit(ker_reduc_hmax);
+            shamsys::instance::get_compute_queue().submit(ker_reduc_hmax);
         }
 
         return std::move(buf_cell_interact_rad);
@@ -347,23 +347,23 @@ Bench_start("tree field old compute performance", "treefieldcomputeperf_new", tr
         
 
         auto rtree = Radix_Tree<morton_mode, vec>(
-                sycl_handler::get_compute_queue(), 
+                shamsys::instance::get_compute_queue(), 
                 {vec{-1,-1,-1},vec{1,1,1}},
                 pdat.get_field<vec>(id_xyz).get_buf(), 
                 npart , reduc_level
             );
 
-        rtree.compute_cellvolume(sycl_handler::get_compute_queue());
+        rtree.compute_cellvolume(shamsys::instance::get_compute_queue());
 
 
         flt h_tol = 1.2;
 
-        sycl_handler::get_compute_queue().wait();
+        shamsys::instance::get_compute_queue().wait();
 
         Timer timer; timer.start();
 
         auto h_max = rtree.compute_field<flt>(
-            sycl_handler::get_compute_queue(), 
+            shamsys::instance::get_compute_queue(), 
             1,
             [&](sycl::handler &cgh,auto && node_looper){
 
@@ -393,7 +393,7 @@ Bench_start("tree field old compute performance", "treefieldcomputeperf_new", tr
         );
 
 
-        sycl_handler::get_compute_queue().wait();
+        shamsys::instance::get_compute_queue().wait();
 
         timer.end();
 
@@ -458,25 +458,25 @@ void test_tree_comm(TestResults &__test_result_ref){
     constexpr u32 reduc_level = 5;
 
     auto rtree = Radix_Tree<morton_mode, vec>(
-            sycl_handler::get_compute_queue(), 
+            shamsys::instance::get_compute_queue(), 
             {vec{-1,-1,-1},vec{1,1,1}},
             pdat.get_field<vec>(id_xyz).get_buf(), 
             npart , reduc_level
         );
 
-    rtree.compute_cellvolume(sycl_handler::get_compute_queue());
+    rtree.compute_cellvolume(shamsys::instance::get_compute_queue());
 
 
 
 
 
-    if(mpi_handler::world_rank == 0){
+    if(shamsys::instance::world_rank == 0){
         std::vector<tree_comm::RadixTreeMPIRequest<morton_mode, vec>> rqs;
         tree_comm::comm_isend(rtree, rqs, 1, 0, MPI_COMM_WORLD);
         tree_comm::wait_all(rqs);
     }
 
-    if(mpi_handler::world_rank == 1){
+    if(shamsys::instance::world_rank == 1){
         std::vector<tree_comm::RadixTreeMPIRequest<morton_mode, vec>> rqs;
 
         auto rtree_recv = Radix_Tree<morton_mode, vec>::make_empty();
@@ -563,13 +563,13 @@ Test_start("radix_tree", tree_cut, 1){
     constexpr u32 reduc_level = 5;
 
     auto rtree = Radix_Tree<morton_mode, vec>(
-            sycl_handler::get_compute_queue(), 
+            shamsys::instance::get_compute_queue(), 
             {vec{-1,-1,-1},vec{1,1,1}},
             pdat.get_field<vec>(id_xyz).get_buf(), 
             npart ,reduc_level
         );
 
-    rtree.compute_cellvolume(sycl_handler::get_compute_queue());
+    rtree.compute_cellvolume(shamsys::instance::get_compute_queue());
 
 
 
@@ -611,7 +611,7 @@ Test_start("radix_tree", tree_cut, 1){
 
         sycl::range<1> range_tree{total_count};
 
-        sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
+        shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
             sycl::accessor acc_valid_node{valid_node, cgh, sycl::write_only, sycl::no_init};
 
             sycl::accessor acc_pos_cell_min{*rtree.buf_pos_min_cell_flt, cgh, sycl::read_only};
@@ -632,7 +632,7 @@ Test_start("radix_tree", tree_cut, 1){
     
     std::unique_ptr<sycl::buffer<u8>> valid_buf = std::make_unique<sycl::buffer<u8>>(init_valid_buf());
 
-    auto cut = rtree.cut_tree(sycl_handler::get_compute_queue(), *valid_buf);
+    auto cut = rtree.cut_tree(shamsys::instance::get_compute_queue(), *valid_buf);
 
     valid_buf.reset();
 
@@ -662,13 +662,13 @@ Test_start("radix_tree", treeleveljump_cell_range_test, 1){
 
 
     auto rtree = Radix_Tree<morton_mode, vec>(
-            sycl_handler::get_compute_queue(), 
+            shamsys::instance::get_compute_queue(), 
             {vec{0,0,0},vec{1,1,1}},
             xyz, 
             4 ,0
         );
 
-    rtree.compute_cellvolume(sycl_handler::get_compute_queue());
+    rtree.compute_cellvolume(shamsys::instance::get_compute_queue());
 
     {
         auto acc_min = sycl::host_accessor{*rtree.buf_pos_min_cell_flt};
@@ -737,20 +737,20 @@ inline void test_tree(std::string dset_name){
 
     for(f64 cnt = 1000; cnt < Nmax; cnt *= 1.1){
         logger::debug_ln("TestTreePerf", cnt);
-        sycl_handler::get_compute_queue().wait();
+        shamsys::instance::get_compute_queue().wait();
         Timer timer; timer.start();
 
 
         Radix_Tree<morton_mode, vec> rtree = Radix_Tree<morton_mode, vec>(
-                sycl_handler::get_compute_queue(), 
+                shamsys::instance::get_compute_queue(), 
                 {vec{-1,-1,-1},vec{1,1,1}},
                 pos, 
                 cnt , reduc_lev
             );
 
-        rtree.compute_cellvolume(sycl_handler::get_compute_queue());
+        rtree.compute_cellvolume(shamsys::instance::get_compute_queue());
 
-        sycl_handler::get_compute_queue().wait();
+        shamsys::instance::get_compute_queue().wait();
         timer.end();
 
         times.push_back(timer.nanosec/1.e9);

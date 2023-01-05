@@ -169,7 +169,7 @@ class FMMInteract_cd{
 template<class Tree,class vec, class flt>
 void compute_multipoles(Tree & rtree, sycl::buffer<vec> & pos_part, sycl::buffer<flt> & grav_multipoles, flt gpart_mass){
     logger::debug_sycl_ln("RTreeFMM", "computing leaf moments (",rtree.tree_leaf_count,")");
-    sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
+    shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
 
         u32 offset_leaf = rtree.tree_internal_count;
 
@@ -221,7 +221,7 @@ void compute_multipoles(Tree & rtree, sycl::buffer<vec> & pos_part, sycl::buffer
 
     auto buf_is_computed = std::make_unique< sycl::buffer<u8>>( (rtree.tree_internal_count + rtree.tree_leaf_count)  );
 
-    sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
+    shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
         auto is_computed = sycl::accessor {*buf_is_computed, cgh , sycl::write_only, sycl::no_init};
         sycl::range<1> range_internal_count{rtree.tree_internal_count + rtree.tree_leaf_count};
 
@@ -236,7 +236,7 @@ void compute_multipoles(Tree & rtree, sycl::buffer<vec> & pos_part, sycl::buffer
 
     for (u32 iter = 0; iter < rtree.tree_depth ; iter ++) {
     
-        sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
+        shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
 
             u32 leaf_offset = rtree.tree_internal_count;
 
@@ -428,20 +428,20 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(PatchScheduler &sched, f64 old_ti
 
             logger::debug_ln("SPHLeapfrog", "patch : n°",id_patch,"->","predictor");
 
-            lambda_update_time(sycl_handler::get_compute_queue(),pdat,sycl::range<1> {pdat.get_obj_cnt()},dt_cur/2);
+            lambda_update_time(shamsys::instance::get_compute_queue(),pdat,sycl::range<1> {pdat.get_obj_cnt()},dt_cur/2);
 
-            sycl_move_parts(sycl_handler::get_compute_queue(), pdat.get_obj_cnt(), dt_cur,
+            sycl_move_parts(shamsys::instance::get_compute_queue(), pdat.get_obj_cnt(), dt_cur,
                                               pdat.get_field<vec3>(ixyz).get_buf(), pdat.get_field<vec3>(ivxyz).get_buf());
 
-            lambda_update_time(sycl_handler::get_compute_queue(),pdat,sycl::range<1> {pdat.get_obj_cnt()},dt_cur/2);
+            lambda_update_time(shamsys::instance::get_compute_queue(),pdat,sycl::range<1> {pdat.get_obj_cnt()},dt_cur/2);
 
 
             logger::debug_ln("SPHLeapfrog", "patch : n°",id_patch,"->","dt fields swap");
 
-            lambda_swap_der(sycl_handler::get_compute_queue(),pdat,sycl::range<1> {pdat.get_obj_cnt()});
+            lambda_swap_der(shamsys::instance::get_compute_queue(),pdat,sycl::range<1> {pdat.get_obj_cnt()});
 
             if (periodic_bc) {//TODO generalise position modulo in the scheduler
-                sycl_position_modulo(sycl_handler::get_compute_queue(), pdat.get_obj_cnt(),
+                sycl_position_modulo(shamsys::instance::get_compute_queue(), pdat.get_obj_cnt(),
                                                pdat.get_field<vec3>(ixyz).get_buf(), sched.get_box_volume<vec3>());
             }
         });
@@ -477,7 +477,7 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(PatchScheduler &sched, f64 old_ti
                 std::tuple<vec3, vec3> box = sched.patch_data.sim_box.get_box<flt>(cur_p);
 
                 // radix tree computation
-                radix_trees[id_patch] = std::make_unique<RadTree>(sycl_handler::get_compute_queue(), box,
+                radix_trees[id_patch] = std::make_unique<RadTree>(shamsys::instance::get_compute_queue(), box,
                                                                                     buf_xyz,pdat.get_obj_cnt(),reduc_level);
             }
                 
@@ -489,13 +489,13 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(PatchScheduler &sched, f64 old_ti
             if (pdat.is_empty()){
                 logger::debug_ln("SPHLeapfrog","patch : n°",id_patch,"->","is empty skipping tree build");
             }else{
-                radix_trees[id_patch]->compute_cellvolume(sycl_handler::get_compute_queue());
+                radix_trees[id_patch]->compute_cellvolume(shamsys::instance::get_compute_queue());
             }
         });
 
 
 
-        sycl_handler::get_compute_queue().wait();
+        shamsys::instance::get_compute_queue().wait();
         tgen_trees.stop();
 
 
@@ -530,7 +530,7 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(PatchScheduler &sched, f64 old_ti
             cell_centers = std::make_unique<sycl::buffer<vec3>>(rtree.tree_internal_count + rtree.tree_leaf_count);
             cell_lenght = std::make_unique<sycl::buffer<flt>>(rtree.tree_internal_count + rtree.tree_leaf_count);
 
-            sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
+            shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
 
 
                 sycl::range<1> range_tree = sycl::range<1>{rtree.tree_leaf_count + rtree.tree_internal_count};
@@ -637,7 +637,7 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(PatchScheduler &sched, f64 old_ti
             auto & rfield_buf_min = field_min->radix_tree_field_buf;
             auto & rfield_buf_max = field_max->radix_tree_field_buf;
 
-            sycl_handler::get_compute_queue().submit([&](sycl::handler & cgh){
+            shamsys::instance::get_compute_queue().submit([&](sycl::handler & cgh){
 
                 sycl::accessor box_min_cell {*buf_pos_min_cell_flt, cgh,sycl::read_only};
                 sycl::accessor box_max_cell {*buf_pos_max_cell_flt, cgh,sycl::read_only};
@@ -673,7 +673,7 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(PatchScheduler &sched, f64 old_ti
         auto interf_pdat = interf_hndl.comm_pdat(sched);
         auto interf_multipoles = interf_hndl.comm_tree_field(sched, multipoles);
 
-        sycl_handler::get_compute_queue().wait();
+        shamsys::instance::get_compute_queue().wait();
 
         
         //force
@@ -706,7 +706,7 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(PatchScheduler &sched, f64 old_ti
             auto & grav_multipoles = grav_multipoles_f->radix_tree_field_buf;
 
             
-            sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
+            shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
 
                 using vec = vec3;
 
@@ -887,7 +887,7 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(PatchScheduler &sched, f64 old_ti
                 auto interf_cell_centers = std::make_unique<sycl::buffer<vec3>>(rtree_interf.tree_internal_count + rtree_interf.tree_leaf_count);
                 auto interf_cell_lenght = std::make_unique<sycl::buffer<flt>>(rtree_interf.tree_internal_count + rtree_interf.tree_leaf_count);
 
-                sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
+                shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
 
 
                     sycl::range<1> range_tree = sycl::range<1>{rtree_interf.tree_leaf_count + rtree_interf.tree_internal_count};
@@ -917,7 +917,7 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(PatchScheduler &sched, f64 old_ti
                 
 
 
-                sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
+                shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
 
                     using vec = vec3;
 
@@ -1075,7 +1075,7 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(PatchScheduler &sched, f64 old_ti
                 });
 
 
-                sycl_handler::get_compute_queue().wait();
+                shamsys::instance::get_compute_queue().wait();
 
             }
 
@@ -1086,7 +1086,7 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(PatchScheduler &sched, f64 old_ti
 
             logger::debug_ln("SPHLeapfrog", "patch : n°",id_patch,"->","corrector");
 
-            lambda_correct(sycl_handler::get_compute_queue(),pdat,sycl::range<1> {pdat.get_obj_cnt()},dt_cur/2);
+            lambda_correct(shamsys::instance::get_compute_queue(),pdat,sycl::range<1> {pdat.get_obj_cnt()},dt_cur/2);
 
         });
 

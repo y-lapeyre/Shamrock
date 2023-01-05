@@ -33,7 +33,7 @@ template<class T,class Fct> void unit_test_reduc(std::string name, Fct && red_fc
     {
         sycl::buffer<T> buf {vals.data(),vals.size()};
 
-        sycl_ret = red_fct(sycl_handler::get_compute_queue(), buf, 0, size_test);
+        sycl_ret = red_fct(shamsys::instance::get_compute_queue(), buf, 0, size_test);
 
     }
 
@@ -54,7 +54,7 @@ template<class T,class Fct> f64 bench_reduction(Fct && red_fct, const u32 & size
 
     T sycl_ret;
 
-    auto & q = sycl_handler::get_compute_queue();
+    auto & q = shamsys::instance::get_compute_queue();
 
     Timer t;
 

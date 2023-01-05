@@ -167,7 +167,7 @@ template <class flt> class SPHTimestepperLeapfrogIsotGasSync {
 
                         sycl::range range_npart{hnew.size()};
 
-                        sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
+                        shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
                             auto h = hnew.get_access<sycl::access::mode::read>(cgh);
 
                             auto p = press.get_access<sycl::access::mode::discard_write>(cgh);
@@ -212,7 +212,7 @@ template <class flt> class SPHTimestepperLeapfrogIsotGasSync {
 
                 
                     std::cout << "patch : n°" << id_patch << "compute forces" << std::endl;
-                    sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
+                    shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
                         auto h_new = hnew.get_access<sycl::access::mode::read>(cgh);
                         auto omga  = omega.get_access<sycl::access::mode::read>(cgh);
 
@@ -316,7 +316,7 @@ template <class flt> class SPHTimestepperLeapfrogIsotGasSync {
 
                         sycl::range range_npart{merge_pdat_buf.at(id_patch).or_element_cnt};
 
-                        sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
+                        shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
 
                             auto r        = pdat_buf_merge.get_field<f32_3>(ixyz)->get_access<sycl::access::mode::read>(cgh);
                             auto acc_axyz = pdat_buf_merge.get_field<f32_3>(iaxyz)->get_access<sycl::access::mode::read_write>(cgh);

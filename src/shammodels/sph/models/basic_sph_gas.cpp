@@ -163,7 +163,7 @@ f64 models::sph::BasicSPHGas<flt,Kernel>::evolve(PatchScheduler &sched, f64 old_
                     auto cs = eos_cs;
                     auto part_mass = gpart_mass;
 
-                    sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
+                    shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
                         auto h = hnew->template get_access<sycl::access::mode::read>(cgh);
 
                         auto p = press->get_access<sycl::access::mode::discard_write>(cgh);
@@ -208,7 +208,7 @@ f64 models::sph::BasicSPHGas<flt,Kernel>::evolve(PatchScheduler &sched, f64 old_
             
                 logger::info_ln("BasicSPHGas","patch : n°" ,id_patch , "compute forces");
 
-                sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
+                shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
                     auto h_new = hnew.get_access<sycl::access::mode::read>(cgh);
                     auto omga  = omega.get_access<sycl::access::mode::read>(cgh);
 

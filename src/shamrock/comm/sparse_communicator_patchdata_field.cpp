@@ -30,7 +30,7 @@ struct SparseCommExchanger<PatchDataField<T>>{
                     const Patch &psend = communicator.global_patch_list[communicator.send_comm_vec[i].x()];
                     const Patch &precv = communicator.global_patch_list[communicator.send_comm_vec[i].y()];
 
-                    //if(precv.node_owner_id >= mpi_handler::world_size){
+                    //if(precv.node_owner_id >= shamsys::instance::world_size){
                     //    throw "";
                     //}
 
@@ -39,7 +39,7 @@ struct SparseCommExchanger<PatchDataField<T>>{
                         dtcnt += send_comm_pdat[i]->memsize();
                         vec.push_back({psend.id_patch, send_comm_pdat[i]->duplicate_to_ptr()});
                     } else {
-                        //std::cout << "send : " << mpi_handler::world_rank << " " << precv.node_owner_id << std::endl;
+                        //std::cout << "send : " << shamsys::instance::world_rank << " " << precv.node_owner_id << std::endl;
                         dtcnt += patchdata_field::isend<T>(*send_comm_pdat[i], rq_lst, precv.node_owner_id, communicator.local_comm_tag[i], MPI_COMM_WORLD);
                     }
                     
@@ -54,7 +54,7 @@ struct SparseCommExchanger<PatchDataField<T>>{
                     const Patch &psend = communicator.global_patch_list[communicator.global_comm_vec[i].x()];
                     const Patch &precv = communicator.global_patch_list[communicator.global_comm_vec[i].y()];
 
-                    if (precv.node_owner_id == mpi_handler::world_rank) {
+                    if (precv.node_owner_id == shamsys::instance::world_rank) {
 
                         if (psend.node_owner_id != precv.node_owner_id) {
                             

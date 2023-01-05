@@ -40,10 +40,10 @@ class SPHSetup{
 
     
     inline void init_setup(){
-        if (mpi_handler::world_rank == 0) {
+        if (shamsys::instance::world_rank == 0) {
             Patch root;
 
-            root.node_owner_id = mpi_handler::world_rank;
+            root.node_owner_id = shamsys::instance::world_rank;
 
             root.x_min = 0;
             root.y_min = 0;
@@ -84,7 +84,7 @@ class SPHSetup{
     template<class LambdaSelect>
     inline void add_particules_fcc(flt dr, std::tuple<vec3,vec3> box,LambdaSelect && selector){
 
-        if(mpi_handler::world_rank == 0){
+        if(shamsys::instance::world_rank == 0){
             std::vector<vec3> vec;
 
             add_particles_fcc(

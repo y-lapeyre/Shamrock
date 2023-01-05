@@ -206,7 +206,7 @@ class PatchScheduler{public:
     //
     //        PatchDataBuffer pdatbuf = attach_to_patchData(patch_data.owned_data.at(cur_p.id_patch));
     //
-    //        field.local_nodes_value[idx] = lambda(sycl_handler::get_compute_queue(),cur_p,pdatbuf);
+    //        field.local_nodes_value[idx] = lambda(shamsys::instance::get_compute_queue(),cur_p,pdatbuf);
     //
     //    }
     //
@@ -227,7 +227,7 @@ class PatchScheduler{public:
 
             Patch &cur_p = patch_list.local[idx];
 
-            field.local_nodes_value[idx] = lambda(sycl_handler::get_compute_queue(),cur_p,patch_data.owned_data.at(cur_p.id_patch));
+            field.local_nodes_value[idx] = lambda(shamsys::instance::get_compute_queue(),cur_p,patch_data.owned_data.at(cur_p.id_patch));
 
         }
 

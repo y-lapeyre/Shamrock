@@ -36,7 +36,7 @@ template<class u_morton, SortImplType impl> void unit_test_key_pair(){
         std::unique_ptr<sycl::buffer<u32>> buf_index = std::make_unique<sycl::buffer<u32>>(morton_list.size());
 
         sycl_sort_morton_key_pair<u_morton,impl>(
-            sycl_handler::get_compute_queue(),
+            shamsys::instance::get_compute_queue(),
             size_test,
             buf_index,
             buf_morton
@@ -69,18 +69,18 @@ template<class u_morton, SortImplType impl> f64 benchmark_key_pair_sort(const u3
         std::unique_ptr<sycl::buffer<u_morton>> buf_morton = std::make_unique<sycl::buffer<u_morton>>(morton_list.data(),morton_list.size());
         std::unique_ptr<sycl::buffer<u32>> buf_index = std::make_unique<sycl::buffer<u32>>(morton_list.size());
 
-        sycl_handler::get_compute_queue().wait();
+        shamsys::instance::get_compute_queue().wait();
 
         t.start();
 
         sycl_sort_morton_key_pair<u_morton,impl>(
-            sycl_handler::get_compute_queue(),
+            shamsys::instance::get_compute_queue(),
             nobj,
             buf_index,
             buf_morton
             );
 
-        sycl_handler::get_compute_queue().wait();
+        shamsys::instance::get_compute_queue().wait();
 
         t.end();
 

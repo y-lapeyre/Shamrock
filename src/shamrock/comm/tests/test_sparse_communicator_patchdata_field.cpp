@@ -23,9 +23,9 @@ SchedulerPatchList make_plist(std::mt19937 & eng, u32 max_patch_per_node, u32 nb
     for (u32 i = 0; i < nb_patch_test; i++) {
 
         Patch p;
-        p.id_patch = i + u64(mpi_handler::world_rank)*max_patch_per_node;
+        p.id_patch = i + u64(shamsys::instance::world_rank)*max_patch_per_node;
         p.data_count = nb_part;
-        p.node_owner_id = mpi_handler::world_rank;
+        p.node_owner_id = shamsys::instance::world_rank;
 
         plist.local.push_back(p);
     }
@@ -134,7 +134,7 @@ TestStart(Benchmark, "core/comm/sparse_communicator_patchdata_field:", func_name
 
 
     
-    std::mt19937 eng (0x2525 + mpi_handler::world_rank);
+    std::mt19937 eng (0x2525 + shamsys::instance::world_rank);
     
 
     auto & bandwith_dataset = shamtest::test_data().new_dataset("bandwith");
@@ -171,7 +171,7 @@ TestStart(Benchmark, "core/comm/sparse_communicator_patchdata_field:", func_name
         comm_bandwith   .push_back(res.comm_bandwith   );
     }
 
-    if(mpi_handler::world_rank == 0){
+    if(shamsys::instance::world_rank == 0){
         bandwith_dataset.add_data("nb_patch", nb_patch        );
         bandwith_dataset.add_data("nb_obj", nb_obj          );
         bandwith_dataset.add_data("fetch_time", fetch_time      );

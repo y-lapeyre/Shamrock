@@ -251,7 +251,7 @@ inline void compute_smoothing_lenght(PatchScheduler &sched,bool periodic_mode,fl
             std::tuple<vec, vec> &box = merge_pdat.at(id_patch).box;
 
             // radix tree computation
-            radix_trees[id_patch] = std::make_unique<Radix_Tree<u_morton, vec>>(sycl_handler::get_compute_queue(), box,
+            radix_trees[id_patch] = std::make_unique<Radix_Tree<u_morton, vec>>(shamsys::instance::get_compute_queue(), box,
                                                                                     buf_xyz,mpdat.get_obj_cnt(),reduc_level);
         });
 
@@ -260,7 +260,7 @@ inline void compute_smoothing_lenght(PatchScheduler &sched,bool periodic_mode,fl
             if (merge_pdat.at(id_patch).or_element_cnt == 0)
                 logger::debug_ln("SPHLeapfrog","patch : n°",id_patch,"->","is empty skipping tree volumes step");
 
-            radix_trees[id_patch]->compute_cellvolume(sycl_handler::get_compute_queue());
+            radix_trees[id_patch]->compute_cellvolume(shamsys::instance::get_compute_queue());
         });
 
         sched.for_each_patch([&](u64 id_patch, Patch  /*cur_p*/) {
@@ -272,7 +272,7 @@ inline void compute_smoothing_lenght(PatchScheduler &sched,bool periodic_mode,fl
 
             auto & buf_h = mpdat.get_field<flt>(ihpart).get_buf();
 
-            radix_trees[id_patch]->compute_int_boxes(sycl_handler::get_compute_queue(), buf_h, htol_up_tol);
+            radix_trees[id_patch]->compute_int_boxes(shamsys::instance::get_compute_queue(), buf_h, htol_up_tol);
         });
 
 
@@ -305,12 +305,12 @@ inline void compute_smoothing_lenght(PatchScheduler &sched,bool periodic_mode,fl
 
             SmoothingLenghtCompute<flt, u32, Kernel> h_iterator(sched.pdl, htol_up_tol, htol_up_iter);
 
-            h_iterator.iterate_smoothing_lenght(sycl_handler::get_compute_queue(), merge_pdat.at(id_patch).or_element_cnt,
+            h_iterator.iterate_smoothing_lenght(shamsys::instance::get_compute_queue(), merge_pdat.at(id_patch).or_element_cnt,
                                                 sph_gpart_mass, *radix_trees[id_patch], pdat_merge, *hnew, *omega, eps_h);
 
             // write back h test
             //*
-            sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
+            shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
                 auto h_new = hnew->template get_access<sycl::access::mode::read>(cgh);
 
                 auto acc_hpart = pdat_merge.get_field<flt>(ihpart).get_buf()->template get_access<sycl::access::mode::write>(cgh);
