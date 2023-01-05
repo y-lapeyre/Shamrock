@@ -20,7 +20,7 @@
 
 #include <vector>
 
-#include "shamsys/mpi_handler.hpp"
+#include "shamsys/legacy/mpi_handler.hpp"
 
 template<class type>
 class BufferedPField{public:

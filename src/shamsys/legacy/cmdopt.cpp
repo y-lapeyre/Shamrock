@@ -7,7 +7,7 @@
 // -------------------------------------------------------//
 
 #include "cmdopt.hpp"
-#include "shamsys/log.hpp"
+#include "shamsys/legacy/log.hpp"
 #include "runscript/shamrockapi.hpp"
 #include <optional>
 #include <string_view>

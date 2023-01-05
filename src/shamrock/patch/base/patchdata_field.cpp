@@ -15,8 +15,8 @@
 #include "shamrock/patch/base/enabled_fields.hpp"
 //#include "shamrock/patch/base/pdat_comm_impl/pdat_comm_cp_to_host.hpp"
 //#include "shamrock/patch/base/pdat_comm_impl/pdat_comm_directgpu.hpp"
-#include "shamsys/sycl_mpi_interop.hpp"
-#include "shamsys/sycl_handler.hpp"
+#include "shamsys/legacy/sycl_mpi_interop.hpp"
+#include "shamsys/legacy/sycl_handler.hpp"
 #include "shamrock/algs/sycl/sycl_algs.hpp"
 #include <cstdio>
 #include <memory>

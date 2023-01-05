@@ -7,7 +7,7 @@
 // -------------------------------------------------------//
 
 #include "aliases.hpp"
-#include "shamsys/sycl_handler.hpp"
+#include "shamsys/legacy/sycl_handler.hpp"
 
 
 //%Impl status : Clean

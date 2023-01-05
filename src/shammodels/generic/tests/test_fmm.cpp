@@ -9,8 +9,8 @@
 
 #include "aliases.hpp"
 #include "shamrock/utils/time_utils.hpp"
-#include "shamsys/log.hpp"
-#include "shamsys/sycl_handler.hpp"
+#include "shamsys/legacy/log.hpp"
+#include "shamsys/legacy/sycl_handler.hpp"
 #include "shamrock/tree/radix_tree.hpp"
 #include "shammodels/generic/math/tensors/collections.hpp"
 #include "shammodels/generic/physics/fmm.hpp"

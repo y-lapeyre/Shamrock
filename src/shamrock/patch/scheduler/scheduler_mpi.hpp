@@ -34,7 +34,7 @@
 #include "shamrock/patch/base/patchtree.hpp"
 #include "scheduler_patch_list.hpp"
 #include "scheduler_patch_data.hpp"
-#include "shamsys/sycl_handler.hpp"
+#include "shamsys/legacy/sycl_handler.hpp"
 
 /**
  * @brief The MPI scheduler

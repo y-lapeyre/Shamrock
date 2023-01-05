@@ -17,6 +17,8 @@
  * 
  */
 
+#pragma once
+
 #define OMPI_SKIP_MPICXX
 #include <mpi.h>
 

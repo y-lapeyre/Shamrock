@@ -14,10 +14,10 @@
 #include <tuple>
 #include <vector>
 #include "aliases.hpp"
-#include "shamsys/log.hpp"
-#include "shamsys/mpi_handler.hpp"
-#include "shamsys/sycl_handler.hpp"
-#include "shamsys/sycl_mpi_interop.hpp"
+#include "shamsys/legacy/log.hpp"
+#include "shamsys/legacy/mpi_handler.hpp"
+#include "shamsys/legacy/sycl_handler.hpp"
+#include "shamsys/legacy/sycl_mpi_interop.hpp"
 #include "shamrock/utils/string_utils.hpp"
 #include "shamrock/utils/time_utils.hpp"
 

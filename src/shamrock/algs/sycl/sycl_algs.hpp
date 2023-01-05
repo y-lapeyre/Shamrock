@@ -9,7 +9,7 @@
 #pragma once
 
 #include "aliases.hpp"
-#include "shamsys/sycl_handler.hpp"
+#include "shamsys/legacy/sycl_handler.hpp"
 #include "defs.hpp"
 #include "basic/basic.hpp"
 #include "reduction/generic.hpp"

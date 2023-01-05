@@ -26,8 +26,8 @@
 #include "shamrock/patch/utility/serialpatchtree.hpp"
 #include "shamrock/patch/scheduler/scheduler_mpi.hpp"
 #include "shamrock/patch/scheduler/scheduler_patch_data.hpp"
-#include "shamsys/mpi_handler.hpp"
-#include "shamsys/sycl_mpi_interop.hpp"
+#include "shamsys/legacy/mpi_handler.hpp"
+#include "shamsys/legacy/sycl_mpi_interop.hpp"
 #include "shamrock/utils/geometry_utils.hpp"
 #include "shamrock/utils/string_utils.hpp"
 #include <cstddef>

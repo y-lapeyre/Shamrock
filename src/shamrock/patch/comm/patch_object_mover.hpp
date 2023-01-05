@@ -11,13 +11,13 @@
 
 #include "aliases.hpp"
 #include "shamrock/patch/base/patchdata.hpp"
-#include "shamsys/log.hpp"
+#include "shamsys/legacy/log.hpp"
 #include "patchdata_exchanger.hpp"
 #include "shamrock/patch/base/patchdata_field.hpp"
 #include "shamrock/patch/utility/serialpatchtree.hpp"
 #include "patch_content_exchanger.hpp"
 #include "shamrock/patch/scheduler/scheduler_mpi.hpp"
-#include "shamsys/sycl_handler.hpp"
+#include "shamsys/legacy/sycl_handler.hpp"
 #include "shamrock/utils/sycl_vector_utils.hpp"
 #include <unordered_map>
 

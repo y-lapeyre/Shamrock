@@ -20,7 +20,7 @@
 #include "loadbalancing_hilbert.hpp"
 
 #include "shamrock/io/logs.hpp"
-#include "shamsys/sycl_handler.hpp"
+#include "shamsys/legacy/sycl_handler.hpp"
 
 
 std::vector<std::tuple<u64, i32, i32, i32>> HilbertLB::make_change_list(std::vector<Patch> &global_patch_list) {

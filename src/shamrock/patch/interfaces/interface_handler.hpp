@@ -31,7 +31,7 @@
 #include "shamrock/io/logs.hpp"
 //#include "shamrock/patch/patchdata_buffer.hpp"
 #include "shamrock/patch/scheduler/scheduler_mpi.hpp"
-#include "shamsys/sycl_handler.hpp"
+#include "shamsys/legacy/sycl_handler.hpp"
 #include "shammodels/sph/sphpatch.hpp" //TODO remove sph dependancy
 
 #include "interface_handler_impl.hpp"

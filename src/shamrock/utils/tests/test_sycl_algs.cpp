@@ -8,7 +8,7 @@
 
 #include "shamrock/algs/sycl/reduction/generic.hpp"
 #include "shamrock/utils/time_utils.hpp"
-#include "shamsys/log.hpp"
+#include "shamsys/legacy/log.hpp"
 #include "shamtest/shamtest.hpp"
 
 #include <random>

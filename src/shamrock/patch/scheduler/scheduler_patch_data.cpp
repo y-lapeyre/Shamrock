@@ -27,7 +27,7 @@
 #include "loadbalancing_hilbert.hpp"
 
 #include "shamrock/patch/base/patchdata_layout.hpp"
-#include "shamsys/mpi_handler.hpp"
+#include "shamsys/legacy/mpi_handler.hpp"
 #include "shamrock/utils/geometry_utils.hpp"
 
 

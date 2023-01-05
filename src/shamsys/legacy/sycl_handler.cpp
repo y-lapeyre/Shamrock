@@ -15,8 +15,8 @@
 #include <unordered_map>
 #include <vector>
 
-#include "shamsys/log.hpp"
-#include "shamsys/sycl_mpi_interop.hpp"
+#include "shamsys/legacy/log.hpp"
+#include "shamsys/legacy/sycl_mpi_interop.hpp"
 #include "shamrock/utils/string_utils.hpp"
 
 #include "cmdopt.hpp"
@@ -95,8 +95,6 @@ void print_device_info(const sycl::device &Device){
 
 namespace sycl_handler {
     bool already_on = false;
-
-    const auto &Platforms = sycl::platform::get_platforms();
 
     std::unique_ptr<sycl::queue> compute_queue;
     std::unique_ptr<sycl::queue> alt_queue;

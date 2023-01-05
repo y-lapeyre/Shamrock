@@ -18,8 +18,8 @@
 #include "shamrock/patch/utility/patch_field.hpp"
 #include "shamrock/patch/utility/patch_reduc_tree.hpp"
 #include "shamrock/patch/utility/serialpatchtree.hpp"
-#include "shamsys/mpi_handler.hpp"
-#include "shamsys/sycl_mpi_interop.hpp"
+#include "shamsys/legacy/mpi_handler.hpp"
+#include "shamsys/legacy/sycl_mpi_interop.hpp"
 #include "shamrock/utils/string_utils.hpp"
 #include "shamtest/shamtest.hpp"
 #include <string>

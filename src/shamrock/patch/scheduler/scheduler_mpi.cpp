@@ -17,14 +17,14 @@
 #include "shamrock/io/logs.hpp"
 #include "shamrock/patch/base/patchdata.hpp"
 #include "shamrock/patch/base/patchdata_field.hpp"
-#include "shamsys/mpi_handler.hpp"
+#include "shamsys/legacy/mpi_handler.hpp"
 #include "loadbalancing_hilbert.hpp"
 
 #include "shamrock/patch/base/patchdata_layout.hpp"
-#include "shamsys/sycl_handler.hpp"
+#include "shamsys/legacy/sycl_handler.hpp"
 #include "shamrock/utils/time_utils.hpp"
 
-#include "shamsys/sycl_mpi_interop.hpp"
+#include "shamsys/legacy/sycl_mpi_interop.hpp"
 
 
 

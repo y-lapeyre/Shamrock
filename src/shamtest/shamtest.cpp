@@ -15,12 +15,12 @@
 #include <sstream>
 
 #include "shamrock/utils/time_utils.hpp"
-#include "shamsys/cmdopt.hpp"
-#include "shamsys/log.hpp"
+#include "shamsys/legacy/cmdopt.hpp"
+#include "shamsys/legacy/log.hpp"
 #include "shamrock/utils/string_utils.hpp"
-#include "shamsys/sycl_handler.hpp"
+#include "shamsys/legacy/sycl_handler.hpp"
 
-#include "shamsys/mpi_handler.hpp"
+#include "shamsys/legacy/mpi_handler.hpp"
 
 
 bool has_option(

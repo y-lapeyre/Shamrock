@@ -9,8 +9,8 @@
 
 //%Impl status : Good
 
-#include "shamsys/cmdopt.hpp"
-#include "shamsys/log.hpp"
+#include "shamsys/legacy/cmdopt.hpp"
+#include "shamsys/legacy/log.hpp"
 #include "shamtest/shamtest.hpp"
 #include "shamtest/shamtest.hpp"
 
