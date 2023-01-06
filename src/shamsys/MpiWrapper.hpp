@@ -9,7 +9,7 @@
 /**
  * @file mpi_wrapper.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @brief 
+ * @brief This header does the MPI include and wrap MPI calls
  * @version 0.1
  * @date 2022-03-14
  * 
@@ -1167,5 +1167,6 @@ namespace mpi {
 
 
 
-}
+} // namespace mpi
 
+#undef CALL_LOG_RETURN

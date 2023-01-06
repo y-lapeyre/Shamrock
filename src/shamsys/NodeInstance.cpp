@@ -10,7 +10,7 @@
 
 #include "shamsys/legacy/cmdopt.hpp"
 #include "shamsys/legacy/log.hpp"
-#include "shamsys/legacy/mpi_wrapper.hpp"
+#include "shamsys/MpiWrapper.hpp"
 #include "shamsys/legacy/sycl_mpi_interop.hpp"
 
 namespace shamsys::instance {

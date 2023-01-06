@@ -1,12 +1,14 @@
 
 set(Sources
     NodeInstance.cpp
+    SyclMpiTypes.cpp
 )
 set(SourcesTest
     
 )
 set(Headers
-NodeInstance.hpp
+    NodeInstance.hpp
+    SyclMpiTypes.hpp
 )
 set(HeadersTest
 

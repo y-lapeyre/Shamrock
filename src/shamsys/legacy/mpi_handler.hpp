@@ -23,7 +23,7 @@
 //#define MPI_LOGGER_ENABLED
 
 #include <cstdio>
-#include "mpi_wrapper.hpp"
+#include "shamsys/MpiWrapper.hpp"
 #include "shamrock/utils/string_utils.hpp"
 
 #include "aliases.hpp"
