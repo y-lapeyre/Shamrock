@@ -16,9 +16,9 @@
 #include "shamrock/patch/base/patchdata.hpp"
 #include "shamrock/patch/base/patchdata_layout.hpp"
 #include "shamrock/patch/scheduler/scheduler_mpi.hpp"
-#include "shamsys/sycl_mpi_interop.hpp"
+#include "shamsys/legacy/sycl_mpi_interop.hpp"
 #include <stdexcept>
-#include "shamsys/mpi_handler.hpp"
+#include "shamsys/legacy/mpi_handler.hpp"
 #include <string>
 #include <type_traits>
 #include <unordered_map>
@@ -372,7 +372,7 @@ inline void dump_patch_data(std::string prefix, PatchScheduler & sched){
 
         for(auto & [pid,pdat] : sched.patch_data.owned_data){
 
-            std::cout << "[" << mpi_handler::world_rank << "] writing pdat : " << pid << std::endl;
+            std::cout << "[" << shamsys::instance::world_rank << "] writing pdat : " << pid << std::endl;
             
             MPI_Status st;
             MPI_File & mfilepatch = patch_files[pfile_map[pid]].mfile;
@@ -405,7 +405,7 @@ inline void dump_patch_list(std::string prefix, PatchScheduler & sched){
 
 
 
-    if(mpi_handler::world_rank == 0){
+    if(shamsys::instance::world_rank == 0){
 
         if(sched.patch_list.global.size() > u64(u32_max)){
             throw shamrock_exc("patch list size > u32_max not handled by dump");
@@ -432,7 +432,7 @@ inline void dump_simbox(std::string prefix, PatchScheduler & sched){
 
 
 
-    if(mpi_handler::world_rank == 0){
+    if(shamsys::instance::world_rank == 0){
 
 
         MPI_Status st;
@@ -468,7 +468,7 @@ inline void dump_siminfo(std::string prefix, f64 time){
 
 
 
-    if(mpi_handler::world_rank == 0){
+    if(shamsys::instance::world_rank == 0){
 
 
         MPI_Status st;

@@ -8,7 +8,7 @@
 
 #include "sycl_algs.hpp"
 #include "shamrock/utils/sycl_vector_utils.hpp"
-#include "shamsys/sycl_mpi_interop.hpp"
+#include "shamsys/legacy/sycl_mpi_interop.hpp"
 
 //%Impl status : Clean
 
@@ -34,7 +34,7 @@ namespace syclalgs {
 
         template<class T>
         void copybuf(sycl::buffer<T> & source, sycl::buffer<T> & dest, u32 cnt){
-            sycl_handler::get_compute_queue().submit([&](sycl::handler & cgh){
+            shamsys::instance::get_compute_queue().submit([&](sycl::handler & cgh){
 
                 sycl::accessor src {source,cgh,sycl::read_only};
                 sycl::accessor dst {dest,cgh,sycl::write_only};
@@ -51,7 +51,7 @@ namespace syclalgs {
         
         template<class T>
         void copybuf_discard(sycl::buffer<T> & source, sycl::buffer<T> & dest, u32 cnt){
-            sycl_handler::get_compute_queue().submit([&](sycl::handler & cgh){
+            shamsys::instance::get_compute_queue().submit([&](sycl::handler & cgh){
 
                 sycl::accessor src {source,cgh,sycl::read_only};
                 sycl::accessor dst {dest,cgh,sycl::write_only,sycl::no_init};
@@ -66,7 +66,7 @@ namespace syclalgs {
 
         template<class T>
         void add_with_factor_to(sycl::buffer<T> & buf, T factor, sycl::buffer<T> & op, u32 cnt){
-            sycl_handler::get_compute_queue().submit([&](sycl::handler & cgh){
+            shamsys::instance::get_compute_queue().submit([&](sycl::handler & cgh){
 
                 sycl::accessor acc {buf,cgh,sycl::read_write};
                 sycl::accessor dd {op,cgh,sycl::read_only};
@@ -87,7 +87,7 @@ namespace syclalgs {
 
         template<class T>
         void write_with_offset_into(sycl::buffer<T> & buf_ctn, sycl::buffer<T> & buf_in, u32 offset, u32 element_count){
-            sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
+            shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
 
                 sycl::accessor source {buf_in, cgh, sycl::read_only};
                 sycl::accessor dest {buf_ctn, cgh, sycl::write_only, sycl::no_init};
@@ -138,7 +138,7 @@ namespace syclalgs {
         template<class T> bool equals(sycl::buffer<T> &buf1, sycl::buffer<T> &buf2, u32 cnt){
 
             sycl::buffer<u8> res (cnt);
-            sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
+            shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
 
                 sycl::accessor acc1 {buf1, cgh, sycl::read_only};
                 sycl::accessor acc2 {buf2, cgh, sycl::read_only};
@@ -174,7 +174,7 @@ namespace syclalgs {
             //HIPSYCL segfault otherwise because looks like the destructor of the sycl buffer 
             //doesn't wait for the end of the queue resulting in out of bound access
             #ifdef SYCL_COMP_HIPSYCL
-            sycl_handler::get_compute_queue().wait();
+            shamsys::instance::get_compute_queue().wait();
             #endif
 
             return std::move(ret);
@@ -194,7 +194,7 @@ namespace syclalgs {
             //HIPSYCL segfault otherwise because looks like the destructor of the sycl buffer 
             //doesn't wait for the end of the queue resulting in out of bound access
             #ifdef SYCL_COMP_HIPSYCL
-            sycl_handler::get_compute_queue().wait();
+            shamsys::instance::get_compute_queue().wait();
             #endif
 
             return std::move(ret);

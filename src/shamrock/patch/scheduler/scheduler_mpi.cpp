@@ -17,14 +17,14 @@
 #include "shamrock/io/logs.hpp"
 #include "shamrock/patch/base/patchdata.hpp"
 #include "shamrock/patch/base/patchdata_field.hpp"
-#include "shamsys/mpi_handler.hpp"
+#include "shamsys/legacy/mpi_handler.hpp"
 #include "loadbalancing_hilbert.hpp"
 
 #include "shamrock/patch/base/patchdata_layout.hpp"
-#include "shamsys/sycl_handler.hpp"
+#include "shamsys/legacy/sycl_handler.hpp"
 #include "shamrock/utils/time_utils.hpp"
 
-#include "shamsys/sycl_mpi_interop.hpp"
+#include "shamsys/legacy/sycl_mpi_interop.hpp"
 
 
 
@@ -512,7 +512,7 @@ inline void PatchScheduler::merge_patches(std::unordered_set<u64> merge_rq){
         //print list of patch that will merge
         //std::cout << format("  -> (%d %d %d %d %d %d %d %d)\n", patch_id0, patch_id1, patch_id2, patch_id3, patch_id4, patch_id5, patch_id6, patch_id7);
         
-        if(patch_list.global[patch_list.id_patch_to_global_idx[ patch_id0 ]].node_owner_id == mpi_handler::world_rank){
+        if(patch_list.global[patch_list.id_patch_to_global_idx[ patch_id0 ]].node_owner_id == shamsys::instance::world_rank){
             patch_data.merge_patchdata(patch_id0, patch_id0, patch_id1, patch_id2, patch_id3, patch_id4, patch_id5, patch_id6, patch_id7);
         }
 
@@ -655,7 +655,7 @@ std::vector<std::unique_ptr<PatchData>> PatchScheduler::gather_data(u32 rank){
     std::vector<std::unique_ptr<PatchData>> ret;
 
 
-    if (mpi_handler::world_rank == 0) {
+    if (shamsys::instance::world_rank == 0) {
          ret.resize(plist.size());
     }
 
@@ -665,12 +665,12 @@ std::vector<std::unique_ptr<PatchData>> PatchScheduler::gather_data(u32 rank){
 
     for (u32 i = 0; i < plist.size(); i++) {
         auto & cpatch = plist[i];
-        if(cpatch.node_owner_id == mpi_handler::world_rank){
+        if(cpatch.node_owner_id == shamsys::instance::world_rank){
             patchdata_isend(pdata.at(cpatch.id_patch), rq_lst, 0, i, MPI_COMM_WORLD);
         }
     }
 
-    if(mpi_handler::world_rank == 0){
+    if(shamsys::instance::world_rank == 0){
         for (u32 i = 0; i < plist.size(); i++) {
             ret.at(i) = std::make_unique<PatchData>(pdl);
             patchdata_irecv_probe(*ret.at(i),rq_lst, plist[i].node_owner_id, i, MPI_COMM_WORLD);

@@ -1,17 +1,14 @@
 
 set(Sources
-    mpi_handler.cpp
-    sycl_handler.cpp
-    sycl_mpi_interop.cpp
-    cmdopt.cpp
-    log.cpp
+    NodeInstance.cpp
+    SyclMpiTypes.cpp
 )
 set(SourcesTest
     
 )
 set(Headers
-    mpi_handler.hpp
-    sycl_handler.hpp
+    NodeInstance.hpp
+    SyclMpiTypes.hpp
 )
 set(HeadersTest
 
@@ -36,3 +33,5 @@ target_sources(shamrock_test
 endif()
 
 add_subdirectory(tests)
+add_subdirectory(legacy)
+add_subdirectory(experimental)

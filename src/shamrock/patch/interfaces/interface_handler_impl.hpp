@@ -38,7 +38,7 @@ namespace impl {
                     auto patch_in = sched.patch_data.owned_data.at(interface_comm_list[i].sender_patch_id);
 
                     std::vector<std::unique_ptr<PatchData>> pret = InterfaceVolumeGenerator::append_interface<vectype>(
-                        sycl_handler::get_alt_queue(), patch_in,
+                        shamsys::instance::get_alt_queue(), patch_in,
                         {interface_comm_list[i].interf_box_min}, {interface_comm_list[i].interf_box_max},interface_comm_list[i].interf_offset);
                     for (auto &pdat : pret) {
                         comm_pdat.push_back(std::move(pdat));
@@ -86,7 +86,7 @@ namespace impl {
 
 
                     std::vector<std::unique_ptr<PCField>> pret = InterfaceVolumeGenerator::append_interface_field<T,vectype>(
-                        sycl_handler::get_alt_queue(),
+                        shamsys::instance::get_alt_queue(),
                         sched.patch_data.owned_data.at(interface_comm_list[i].sender_patch_id),
                         pcomp_field.field_data.at(interface_comm_list[i].sender_patch_id),
                         {interface_comm_list[i].interf_box_min}, {interface_comm_list[i].interf_box_max});

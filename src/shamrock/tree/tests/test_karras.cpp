@@ -11,7 +11,8 @@
 
 
 #include "shamrock/tree/kernels/karras_alg.hpp"
-#include "shamsys/sycl_handler.hpp"
+#include "shamsys/NodeInstance.hpp"
+#include "shamsys/legacy/sycl_handler.hpp"
 #include <memory>
 #include <vector>
 #include "shamtest/shamtest.hpp"
@@ -55,7 +56,7 @@ inline void test_karras_alg(){
         std::unique_ptr<sycl::buffer<u32>     > out_buf_endrange    = std::make_unique<sycl::buffer<u32>     >(out_endrange   .data(),out_endrange   .size());
 
         sycl_karras_alg<u_morton>(
-            sycl_handler::get_compute_queue(),
+            shamsys::instance::get_compute_queue(),
             morton_list.size()-1, 
             buf_morton, 
             out_buf_lchild_id,

@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "shamsys/log.hpp"
+#include "shamsys/legacy/log.hpp"
 #include "shamrock/utils/syclreduction.hpp"
 #include "aliases.hpp"
 #include "shamrock/patch/interfaces/interface_handler.hpp"
@@ -28,7 +28,7 @@
 #include "shammodels/sph/algs/smoothing_lenght.hpp"
 #include "shammodels/sph/base/sphpart.hpp"
 #include "shammodels/sph/sphpatch.hpp"
-#include "shamsys/sycl_mpi_interop.hpp"
+#include "shamsys/legacy/sycl_mpi_interop.hpp"
 #include "shamrock/tree/radix_tree.hpp"
 #include <filesystem>
 #include <memory>
@@ -212,20 +212,20 @@ namespace sph {
 
             logger::debug_ln("SPHLeapfrog", "patch : n°",id_patch,"->","predictor");
 
-            lambda_update_time(sycl_handler::get_compute_queue(),pdat,sycl::range<1> {pdat.get_obj_cnt()},dt_cur/2);
+            lambda_update_time(shamsys::instance::get_compute_queue(),pdat,sycl::range<1> {pdat.get_obj_cnt()},dt_cur/2);
 
-            sycl_move_parts(sycl_handler::get_compute_queue(), pdat.get_obj_cnt(), dt_cur,
+            sycl_move_parts(shamsys::instance::get_compute_queue(), pdat.get_obj_cnt(), dt_cur,
                                               pdat.get_field<vec3>(ixyz).get_buf(), pdat.get_field<vec3>(ivxyz).get_buf());
 
-            lambda_update_time(sycl_handler::get_compute_queue(),pdat,sycl::range<1> {pdat.get_obj_cnt()},dt_cur/2);
+            lambda_update_time(shamsys::instance::get_compute_queue(),pdat,sycl::range<1> {pdat.get_obj_cnt()},dt_cur/2);
 
 
             logger::debug_ln("SPHLeapfrog", "patch : n°",id_patch,"->","dt fields swap");
 
-            lambda_swap_der(sycl_handler::get_compute_queue(),pdat,sycl::range<1> {pdat.get_obj_cnt()});
+            lambda_swap_der(shamsys::instance::get_compute_queue(),pdat,sycl::range<1> {pdat.get_obj_cnt()});
 
             if (periodic_mode) {//TODO generalise position modulo in the scheduler
-                sycl_position_modulo(sycl_handler::get_compute_queue(), pdat.get_obj_cnt(),
+                sycl_position_modulo(shamsys::instance::get_compute_queue(), pdat.get_obj_cnt(),
                                                pdat.get_field<vec3>(ixyz).get_buf(), sched.get_box_volume<vec3>());
             }
         });
@@ -286,7 +286,7 @@ namespace sph {
         
 
 
-        sycl_handler::get_compute_queue().wait();
+        shamsys::instance::get_compute_queue().wait();
         tmerge_buf.stop();
         
 
@@ -311,7 +311,7 @@ namespace sph {
             std::tuple<vec3, vec3> &box = merge_pdat.at(id_patch).box;
 
             // radix tree computation
-            radix_trees[id_patch] = std::make_unique<Radix_Tree<u_morton, vec3>>(sycl_handler::get_compute_queue(), box,
+            radix_trees[id_patch] = std::make_unique<Radix_Tree<u_morton, vec3>>(shamsys::instance::get_compute_queue(), box,
                                                                                     buf_xyz,mpdat.get_obj_cnt(),reduc_level);
         });
 
@@ -320,7 +320,7 @@ namespace sph {
             if (merge_pdat.at(id_patch).or_element_cnt == 0)
                 logger::debug_ln("SPHLeapfrog","patch : n°",id_patch,"->","is empty skipping tree volumes step");
 
-            radix_trees[id_patch]->compute_cellvolume(sycl_handler::get_compute_queue());
+            radix_trees[id_patch]->compute_cellvolume(shamsys::instance::get_compute_queue());
         });
 
         sched.for_each_patch([&](u64 id_patch, Patch  /*cur_p*/) {
@@ -332,9 +332,9 @@ namespace sph {
 
             auto & buf_h = mpdat.get_field<flt>(ihpart).get_buf();
 
-            radix_trees[id_patch]->compute_int_boxes(sycl_handler::get_compute_queue(), buf_h, htol_up_tol);
+            radix_trees[id_patch]->compute_int_boxes(shamsys::instance::get_compute_queue(), buf_h, htol_up_tol);
         });
-        sycl_handler::get_compute_queue().wait();
+        shamsys::instance::get_compute_queue().wait();
         tgen_trees.stop();
 
 
@@ -370,12 +370,12 @@ namespace sph {
 
             models::sph::algs::SmoothingLenghtCompute<flt, u32, Kernel> h_iterator(sched.pdl, htol_up_tol, htol_up_iter);
 
-            h_iterator.iterate_smoothing_lenght(sycl_handler::get_compute_queue(), merge_pdat.at(id_patch).or_element_cnt,
+            h_iterator.iterate_smoothing_lenght(shamsys::instance::get_compute_queue(), merge_pdat.at(id_patch).or_element_cnt,
                                                 sph_gpart_mass, *radix_trees[id_patch], pdat_merge, *hnew, *omega, eps_h);
 
             // write back h test
             //*
-            sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
+            shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
                 auto h_new = hnew->template get_access<sycl::access::mode::read>(cgh);
 
                 auto acc_hpart = pdat_merge.get_field<flt>(ihpart).get_buf()->template get_access<sycl::access::mode::write>(cgh);
@@ -454,7 +454,7 @@ namespace sph {
 
                 
 
-                lambda_correct(sycl_handler::get_compute_queue(),pdat_merge,sycl::range<1> {merge_pdat.at(id_patch).or_element_cnt},dt_cur/2);
+                lambda_correct(shamsys::instance::get_compute_queue(),pdat_merge,sycl::range<1> {merge_pdat.at(id_patch).or_element_cnt},dt_cur/2);
             }
         });
 

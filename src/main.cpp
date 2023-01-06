@@ -37,11 +37,11 @@
 #include "shamrock/patch/utility/patch_field.hpp"
 #include "shamrock/patch/utility/patch_reduc_tree.hpp"
 #include "shamrock/patch/utility/serialpatchtree.hpp"
-#include "shamsys/cmdopt.hpp"
-#include "shamsys/log.hpp"
-#include "shamsys/mpi_handler.hpp"
-#include "shamsys/sycl_handler.hpp"
-#include "shamsys/sycl_mpi_interop.hpp"
+#include "shamsys/legacy/cmdopt.hpp"
+#include "shamsys/legacy/log.hpp"
+#include "shamsys/legacy/mpi_handler.hpp"
+#include "shamsys/legacy/sycl_handler.hpp"
+#include "shamsys/legacy/sycl_mpi_interop.hpp"
 #include "shamrock/tree/radix_tree.hpp"
 #include "shamrock/utils/string_utils.hpp"
 #include "shamrock/utils/time_utils.hpp"
@@ -476,7 +476,7 @@ template <class Timestepper, class SimInfo> class SimulationSPH {
                 sched.for_each_patch_buf(
                     [&](u64 id_patch, Patch cur_p, PatchDataBuffer & pdat_buf) {
 
-                        sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
+                        shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
                             auto r = pdat_buf.fields_f32_3[ixyz]->get_access<sycl::access::mode::read>(cgh);
                             auto v = pdat_buf.fields_f32_3[ivxyz]->get_access<sycl::access::mode::discard_write>(cgh);
 
@@ -514,7 +514,7 @@ template <class Timestepper, class SimInfo> class SimulationSPH {
                 sched.for_each_patch_buf(
                     [&](u64 id_patch, Patch cur_p, PatchDataBuffer & pdat_buf) {
 
-                        sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
+                        shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
                             auto r = pdat_buf.fields_f32_3[ixyz]->get_access<sycl::access::mode::read>(cgh);
                             auto v = pdat_buf.fields_f32_3[ivxyz]->get_access<sycl::access::mode::discard_write>(cgh);
 
@@ -635,7 +635,7 @@ int main(int argc, char *argv[]) {
     }
 
 
-    mpi_handler::init(argc,argv);
+    shamsys::instance::init(argc,argv);
 
     if(opts::has_option("--nocolor")){
         terminal_effects::disable_colors();
@@ -663,7 +663,6 @@ int main(int argc, char *argv[]) {
     }
 
 
-    sycl_handler::init();
 
     logfiles::open_files();
 
@@ -722,5 +721,5 @@ int main(int argc, char *argv[]) {
 
 
 
-    mpi_handler::close();
+    shamsys::instance::close();
 }

@@ -13,15 +13,15 @@
 #include "shammodels/sph/base/kernels.hpp"
 #include "shamrock/patch/comm/patch_object_mover.hpp"
 
-#include "shamsys/mpi_handler.hpp"
+#include "shamsys/legacy/mpi_handler.hpp"
 
 
 template<class flt>
 void models::nbody::NBodySetup<flt>::init(PatchScheduler & sched){
-    if (mpi_handler::world_rank == 0) {
+    if (shamsys::instance::world_rank == 0) {
         Patch root;
 
-        root.node_owner_id = mpi_handler::world_rank;
+        root.node_owner_id = shamsys::instance::world_rank;
 
         root.x_min = 0;
         root.y_min = 0;
@@ -63,7 +63,7 @@ void models::nbody::NBodySetup<flt>::init(PatchScheduler & sched){
 template<class flt>
 void models::nbody::NBodySetup<flt>::add_particules_fcc(PatchScheduler & sched, flt dr, std::tuple<vec,vec> box){
 
-    if(mpi_handler::world_rank == 0){
+    if(shamsys::instance::world_rank == 0){
         std::vector<vec> vec_acc;
 
         generic::setup::generators::add_particles_fcc(

@@ -321,7 +321,7 @@ inline void make_merge_patches(
 
         interface_hndl.for_each_interface_buf(
             id_patch, 
-            sycl_handler::get_compute_queue(), 
+            shamsys::instance::get_compute_queue(), 
             [&](u64 patch_id, u64 interf_patch_id, PatchDataBuffer & interfpdat, std::tuple<f32_3,f32_3> box){
 
                 //std::cout <<  "patch : n°"<< id_patch << " -> interface : "<<interf_patch_id << " merging" << std::endl;
@@ -435,7 +435,7 @@ inline void make_merge_patches_comp_field(
         u32 offset_buf = 0;
 
         
-        sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
+        shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
             auto source = compfield_buf->get_access<sycl::access::mode::read>(cgh);
             auto dest = merge_pdat_comp_field[id_patch].buf->template get_access<sycl::access::mode::discard_write>(cgh);
             cgh.parallel_for( sycl::range{
@@ -456,7 +456,7 @@ inline void make_merge_patches_comp_field(
 
                 u32 len_int =  pdat_ptr->size();
 
-                sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
+                shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
                     auto source = tmp_buf->template get_access<sycl::access::mode::read>(cgh);
                     auto dest = merge_pdat_comp_field[id_patch].buf->template get_access<sycl::access::mode::discard_write>(cgh);
                     auto off = offset_buf;

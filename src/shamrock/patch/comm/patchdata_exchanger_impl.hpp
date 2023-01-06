@@ -11,10 +11,10 @@
 
 #include "shamrock/patch/base/patchdata_field.hpp"
 #include "shamrock/patch/base/patchdata_layout.hpp"
-#include "shamsys/mpi_handler.hpp"
+#include "shamsys/legacy/mpi_handler.hpp"
 #include "shamrock/patch/base/patch.hpp"
 #include "shamrock/patch/base/patchdata.hpp"
-#include "shamsys/sycl_mpi_interop.hpp"
+#include "shamsys/legacy/sycl_mpi_interop.hpp"
 #include <vector>
 
 #include "shamrock/io/logs.hpp"
@@ -148,7 +148,7 @@ inline void patch_data_exchange_object(
             // std::cout << format("(%3d,%3d) : %d -> %d /
             // %d\n",global_comm_vec[i].x(),global_comm_vec[i].y(),psend.node_owner_id,precv.node_owner_id,iterator);
 
-            if (precv.node_owner_id == mpi_handler::world_rank) {
+            if (precv.node_owner_id == shamsys::instance::world_rank) {
 
                 if (psend.node_owner_id != precv.node_owner_id) {
                     //TODO enable if ultra verbose
@@ -278,7 +278,7 @@ inline void patch_data_field_exchange_object(
             // std::cout << format("(%3d,%3d) : %d -> %d /
             // %d\n",global_comm_vec[i].x(),global_comm_vec[i].y(),psend.node_owner_id,precv.node_owner_id,iterator);
 
-            if (precv.node_owner_id == mpi_handler::world_rank) {
+            if (precv.node_owner_id == shamsys::instance::world_rank) {
 
                 if (psend.node_owner_id != precv.node_owner_id) {
                     //TODO enable if ultra verbose
@@ -406,7 +406,7 @@ inline void radix_tree_exchange_object(
             // std::cout << format("(%3d,%3d) : %d -> %d /
             // %d\n",global_comm_vec[i].x(),global_comm_vec[i].y(),psend.node_owner_id,precv.node_owner_id,iterator);
 
-            if (precv.node_owner_id == mpi_handler::world_rank) {
+            if (precv.node_owner_id == shamsys::instance::world_rank) {
 
                 if (psend.node_owner_id != precv.node_owner_id) {
                     //TODO enable if ultra verbose

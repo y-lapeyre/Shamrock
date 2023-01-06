@@ -49,7 +49,7 @@ Test_start("tree::kernels::",morton_kernels,1){
         std::unique_ptr<sycl::buffer<f32_3>> buf_xyz    = std::make_unique<sycl::buffer<f32_3>>(xyz_32.data(),xyz_32.size());
         std::unique_ptr<sycl::buffer<u32>>   buf_morton = std::make_unique<sycl::buffer<u32>>(morton_32.data(),morton_32.size());
 
-        sycl_xyz_to_morton<u32,f32_3>(sycl_handler::get_compute_queue(), 2, buf_xyz, f32_3{0,0,0}, f32_3{1,1,1}, buf_morton);
+        sycl_xyz_to_morton<u32,f32_3>(shamsys::instance::get_compute_queue(), 2, buf_xyz, f32_3{0,0,0}, f32_3{1,1,1}, buf_morton);
 
     }
 
@@ -65,7 +65,7 @@ Test_start("tree::kernels::",morton_kernels,1){
         std::unique_ptr<sycl::buffer<f64_3>> buf_xyz    = std::make_unique<sycl::buffer<f64_3>>(xyz_64.data(),xyz_64.size());
         std::unique_ptr<sycl::buffer<u64>>   buf_morton = std::make_unique<sycl::buffer<u64>>(morton_64.data(),morton_64.size());
 
-        sycl_xyz_to_morton<u64,f64_3>(sycl_handler::get_compute_queue(), 2, buf_xyz, f64_3{0,0,0}, f64_3{1,1,1}, buf_morton);
+        sycl_xyz_to_morton<u64,f64_3>(shamsys::instance::get_compute_queue(), 2, buf_xyz, f64_3{0,0,0}, f64_3{1,1,1}, buf_morton);
 
     }
 

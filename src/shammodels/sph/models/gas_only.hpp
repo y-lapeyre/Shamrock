@@ -145,7 +145,7 @@ class GasOnlyLeapfrog{public:
                         auto cs = eos_cs;
                         auto part_mass = gpart_mass;
 
-                        sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
+                        shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
                             auto h = hnew.get_access<sycl::access::mode::read>(cgh);
 
                             auto p = press.get_access<sycl::access::mode::discard_write>(cgh);
@@ -190,7 +190,7 @@ class GasOnlyLeapfrog{public:
 
                 
                     std::cout << "patch : n°" << id_patch << "compute forces" << std::endl;
-                    sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
+                    shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
                         auto h_new = hnew.get_access<sycl::access::mode::read>(cgh);
                         auto omga  = omega.get_access<sycl::access::mode::read>(cgh);
 

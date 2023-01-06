@@ -26,8 +26,8 @@
 #include "shamrock/patch/utility/serialpatchtree.hpp"
 #include "shamrock/patch/scheduler/scheduler_mpi.hpp"
 #include "shamrock/patch/scheduler/scheduler_patch_data.hpp"
-#include "shamsys/mpi_handler.hpp"
-#include "shamsys/sycl_mpi_interop.hpp"
+#include "shamsys/legacy/mpi_handler.hpp"
+#include "shamsys/legacy/sycl_mpi_interop.hpp"
 #include "shamrock/utils/geometry_utils.hpp"
 #include "shamrock/utils/string_utils.hpp"
 #include <cstddef>
@@ -154,7 +154,7 @@ template <class vectype, class field_type, class InterfaceSelector> class Interf
         sycl::buffer<field_type> buf_local_field_val(pfield.local_nodes_value.data(),pfield.local_nodes_value.size());
         sycl::buffer<field_type> buf_global_field_val(pfield.global_values.data(),pfield.global_values.size());
 
-        sycl_handler::get_alt_queue().submit([&](sycl::handler &cgh) {
+        shamsys::instance::get_alt_queue().submit([&](sycl::handler &cgh) {
             auto pid  = patch_ids_buf.get_access<sycl::access::mode::read>(cgh);
             auto gpid = global_ids_buf.get_access<sycl::access::mode::read>(cgh);
 
@@ -394,7 +394,7 @@ template <class vectype, class field_type, class InterfaceSelector> class Interf
                 
                 if(sched.patch_list.global[interface_comm_list[i].global_patch_idx_send].data_count > 0){
                     std::vector<std::unique_ptr<PatchData>> pret = InterfaceVolumeGenerator::append_interface<vectype>( 
-                        sycl_handler::get_alt_queue(), 
+                        shamsys::instance::get_alt_queue(), 
                         sched.patch_data.owned_data[interface_comm_list[i].sender_patch_id], 
                         {interface_comm_list[i].interf_box_min}, 
                         {interface_comm_list[i].interf_box_max});
@@ -478,7 +478,7 @@ template <class vectype, class field_type, class InterfaceSelector> class Interf
                 const Patch & precv = sched.patch_list.global[global_comm_vec[i].y()];
                 //std::cout << format("(%3d,%3d) : %d -> %d / %d\n",global_comm_vec[i].x(),global_comm_vec[i].y(),psend.node_owner_id,precv.node_owner_id,iterator);
 
-                if(precv.node_owner_id == mpi_handler::world_rank){
+                if(precv.node_owner_id == shamsys::instance::world_rank){
 
                     if(psend.node_owner_id != precv.node_owner_id){
                         std::cout << format("recv (%3d,%3d) : %d -> %d / %d\n",global_comm_vec[i].x(),global_comm_vec[i].y(),psend.node_owner_id,precv.node_owner_id,global_comm_tag[i]);

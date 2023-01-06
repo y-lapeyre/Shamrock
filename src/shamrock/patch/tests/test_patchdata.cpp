@@ -9,8 +9,8 @@
 #include "aliases.hpp"
 #include "shamrock/patch/base/patchdata.hpp"
 #include "shamrock/patch/base/patchdata_layout.hpp"
-#include "shamsys/mpi_handler.hpp"
-#include "shamsys/sycl_mpi_interop.hpp"
+#include "shamsys/legacy/mpi_handler.hpp"
+#include "shamsys/legacy/sycl_mpi_interop.hpp"
 #include "shamtest/shamtest.hpp"
 #include <random>
 
@@ -92,12 +92,12 @@ TestStart(Unittest, "patchdata.cpp/isend_irecv",patch_data_isend_irecv, 2){
     PatchData recv_d(pdl);
 
     
-    if(mpi_handler::world_rank == 0){
+    if(shamsys::instance::world_rank == 0){
         patchdata_isend(d1_check, rq_lst, 1, 0, MPI_COMM_WORLD);
         patchdata_irecv_probe(recv_d,rq_lst, 1, 0, MPI_COMM_WORLD);
     }
 
-    if(mpi_handler::world_rank == 1){
+    if(shamsys::instance::world_rank == 1){
         patchdata_isend(d2_check, rq_lst, 0, 0, MPI_COMM_WORLD);
         patchdata_irecv_probe(recv_d,rq_lst, 0, 0, MPI_COMM_WORLD);
     }
@@ -105,16 +105,16 @@ TestStart(Unittest, "patchdata.cpp/isend_irecv",patch_data_isend_irecv, 2){
 
 
 
-    //std::cout << "request len : [" << mpi_handler::world_rank << "] " << rq_lst.size() << std::endl;
+    //std::cout << "request len : [" << shamsys::instance::world_rank << "] " << rq_lst.size() << std::endl;
 
     waitall_pdat_mpi_rq(rq_lst);
 
     
-    if(mpi_handler::world_rank == 0){
+    if(shamsys::instance::world_rank == 0){
         shamtest::asserts().assert_bool("recv_d == d2_check", patch_data_check_match(recv_d, d2_check));
     }
 
-    if(mpi_handler::world_rank == 1){
+    if(shamsys::instance::world_rank == 1){
         shamtest::asserts().assert_bool("recv_d == d1_check", patch_data_check_match(recv_d, d1_check));
     }
     

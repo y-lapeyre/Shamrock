@@ -31,7 +31,7 @@
 #include "shamrock/io/logs.hpp"
 //#include "shamrock/patch/patchdata_buffer.hpp"
 #include "shamrock/patch/scheduler/scheduler_mpi.hpp"
-#include "shamsys/sycl_handler.hpp"
+#include "shamsys/legacy/sycl_handler.hpp"
 #include "shammodels/sph/sphpatch.hpp" //TODO remove sph dependancy
 
 #include "interface_handler_impl.hpp"
@@ -103,7 +103,7 @@ template <class vectype, class primtype> class LegacyInterfacehandler {
     inline void compute_interface_list(PatchScheduler &sched, SerialPatchTree<vectype> sptree, PatchField<primtype> h_field,bool periodic) {
         auto t = timings::start_timer("compute_interface_list", timings::function);
         interface_comm_list = Interface_Generator<vectype, primtype, interface_selector>::get_interfaces_comm_list(
-            sched, sptree, h_field, format("interfaces_%d_node%d", 0, mpi_handler::world_rank),periodic);
+            sched, sptree, h_field, format("interfaces_%d_node%d", 0, shamsys::instance::world_rank),periodic);
         t.stop();
     }
 
@@ -193,7 +193,7 @@ template <class vectype, class primtype> class LegacyInterfacehandler {
                 u32 nobj = pdat.get_obj_cnt();
 
                 auto & buf = pdat.get_field<vectype>(ixyz).get_buf();
-                auto t = syclalg::get_min_max<vectype>(sycl_handler::get_compute_queue(), buf,nobj);
+                auto t = syclalg::get_min_max<vectype>(shamsys::instance::get_compute_queue(), buf,nobj);
 
                 fct(patch_id,int_pid,pdat,t);
             }

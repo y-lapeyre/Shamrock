@@ -857,7 +857,7 @@ typename Radix_Tree<u_morton, vec3>::CuttedTree Radix_Tree<u_morton, vec3>::cut_
 
 
 
-            sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
+            shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
 
                 
                 sycl::accessor acc_new_node_id_to_old {*new_node_id_to_old,cgh,sycl::write_only, sycl::no_init};

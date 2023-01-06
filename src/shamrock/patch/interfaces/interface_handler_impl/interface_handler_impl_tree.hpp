@@ -307,7 +307,7 @@ void Interfacehandler<Tree_Send,pos_prec,Radix_Tree<u_morton, sycl::vec<pos_prec
 
             sycl::range<1> range_tree{total_count};
 
-            sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
+            shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
 
                 sycl::accessor acc_valid_node{valid_node, cgh, sycl::write_only, sycl::no_init};
 
@@ -371,7 +371,7 @@ void Interfacehandler<Tree_Send,pos_prec,Radix_Tree<u_morton, sycl::vec<pos_prec
         auto buf = init_valid_buf_val_unrolled(get_val(args)...);
 
         logger::debug_ln("InterfaceHandler", "gen tree for interf :",comm.sender_patch_id,"->",comm.receiver_patch_id);
-        CutTree out (rtree->cut_tree(sycl_handler::get_compute_queue(), buf));
+        CutTree out (rtree->cut_tree(shamsys::instance::get_compute_queue(), buf));
 
         tree_send_map.list_rtree.push_back(std::make_unique<Radix_Tree<u_morton, vec>>(std::move(out.rtree)));
         tree_send_map.list_pdat_extract_id.push_back(std::move(out.pdat_extract_id));

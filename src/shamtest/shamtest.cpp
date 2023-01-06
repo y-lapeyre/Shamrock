@@ -15,12 +15,12 @@
 #include <sstream>
 
 #include "shamrock/utils/time_utils.hpp"
-#include "shamsys/cmdopt.hpp"
-#include "shamsys/log.hpp"
+#include "shamsys/legacy/cmdopt.hpp"
+#include "shamsys/legacy/log.hpp"
 #include "shamrock/utils/string_utils.hpp"
-#include "shamsys/sycl_handler.hpp"
+#include "shamsys/legacy/sycl_handler.hpp"
 
-#include "shamsys/mpi_handler.hpp"
+#include "shamsys/legacy/mpi_handler.hpp"
 
 
 bool has_option(
@@ -139,6 +139,8 @@ namespace shamtest::details {
 
     std::string TestResult::serialize(){
 
+        using namespace shamsys::instance;
+
         auto get_type_name = [](TestType t) -> std::string {
             switch (t) {
                 case Benchmark: return "Benchmark";
@@ -152,8 +154,8 @@ namespace shamtest::details {
                 "{\n"
                 R"(    "type" : ")" + get_type_name(type) + "\",\n" +
                 R"(    "name" : ")" + name + "\",\n" +
-                R"(    "compute_queue" : ")" + sycl_handler::get_compute_queue().get_device().get_info<sycl::info::device::name>() + "\",\n" +
-                R"(    "alt_queue" : ")" + sycl_handler::get_alt_queue().get_device().get_info<sycl::info::device::name>() + "\",\n" +
+                R"(    "compute_queue" : ")" + get_compute_queue().get_device().get_info<sycl::info::device::name>() + "\",\n" +
+                R"(    "alt_queue" : ")" + get_alt_queue().get_device().get_info<sycl::info::device::name>() + "\",\n" +
                 R"(    "world_rank" : )" + std::to_string(world_rank) + ",\n" +
                 R"(    "asserts" : )" + increase_indent( asserts.serialize())+ ",\n" +
                 R"(    "test_data" : )" + increase_indent( test_data.serialize()) + "\n" +
@@ -168,13 +170,16 @@ namespace shamtest::details {
 
 
     TestResult Test::run(){
+
+        using namespace shamsys::instance;
+
         if(node_count != -1){
-            if(node_count != mpi_handler::world_size){
+            if(node_count != world_size){
                 throw shamrock_exc("trying to run a test with wrong number of nodes");
             }
         }
 
-        current_test = TestResult{type, name,mpi_handler::world_rank};
+        current_test = TestResult{type, name,world_rank};
 
         test_functor();
 
@@ -246,10 +251,9 @@ namespace shamtest {
         }
 
 
+        using namespace shamsys;
 
-        mpi_handler::init(argc,argv);printf("\n");
-
-        sycl_handler::init();
+        instance::init(argc,argv);printf("\n");
 
         if(!run_only){
             printf("\n------------ Tests list --------------\n");
@@ -263,7 +267,7 @@ namespace shamtest {
             auto can_run = [&](shamtest::details::Test & t) -> bool {
 
                 bool any_node_cnt = (t.node_count == -1);
-                bool world_size_ok = t.node_count == world_size;
+                bool world_size_ok = t.node_count == instance::world_size;
 
                 bool can_run_type = false;
 
@@ -414,7 +418,7 @@ namespace shamtest {
         //recover result on node 0 and write to file if -o <outfile> specified
         std::string out_res_string;
 
-        if(world_size == 1){
+        if(instance::world_size == 1){
             out_res_string = rank_test_res_out.str();
         }else{
             std::string loc_string = rank_test_res_out.str();
@@ -422,24 +426,24 @@ namespace shamtest {
 
             //printf("sending : \n%s\n",loc_string.c_str());
 
-            int *counts = new int[world_size];
+            int *counts = new int[instance::world_size];
             int nelements = (int) loc_string.size();
             // Each process tells the root how many elements it holds
             mpi::gather(&nelements, 1, MPI_INT, counts, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
 
             // Displacements in the receive buffer for MPI_GATHERV
-            int *disps = new int[world_size];
+            int *disps = new int[instance::world_size];
             // Displacement for the first chunk of data - 0
-            for (int i = 0; i < world_size; i++)
+            for (int i = 0; i < instance::world_size; i++)
                 disps[i] = (i > 0) ? (disps[i-1] + counts[i-1]) : 0;
 
             // Place to hold the gathered data
             // Allocate at root only
             char *gather_data = NULL;
-            if (world_rank == 0)
+            if (instance::world_rank == 0)
                 // disps[size-1]+counts[size-1] == total number of elements
-                gather_data = new char[disps[world_size-1]+counts[world_size-1]];
+                gather_data = new char[disps[instance::world_size-1]+counts[instance::world_size-1]];
 
 
             // Collect everything into the root
@@ -447,15 +451,15 @@ namespace shamtest {
                         gather_data, counts, disps, MPI_CHAR, 0, MPI_COMM_WORLD);
 
             
-            if(world_rank == 0){
-                out_res_string = std::string(gather_data,disps[world_size-1]+counts[world_size-1]);
+            if(instance::world_rank == 0){
+                out_res_string = std::string(gather_data,disps[instance::world_size-1]+counts[instance::world_size-1]);
             }
 
         }
         
 
         //generate json output and write it into the specified file
-        if(world_rank == 0){
+        if(instance::world_rank == 0){
 
             if(out_res_string.back() == ','){
                 out_res_string = out_res_string.substr(0,out_res_string.size()-1);
@@ -466,7 +470,7 @@ namespace shamtest {
             s_out = "{\n";
 
             s_out += R"(    "commit_hash" : ")" + git_commit_hash + "\",\n" ;
-            s_out += R"(    "world_size" : ")" + std::to_string(mpi_handler::world_size) + "\",\n" ;
+            s_out += R"(    "world_size" : ")" + std::to_string(instance::world_size) + "\",\n" ;
 
             #if defined (SYCL_COMP_DPCPP)
             s_out += R"(    "compiler" : "DPCPP",)" "\n" ;
@@ -492,7 +496,7 @@ namespace shamtest {
         }
 
 
-        mpi_handler::close();
+        instance::close();
 
 
         return 0;

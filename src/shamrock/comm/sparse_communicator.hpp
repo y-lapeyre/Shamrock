@@ -14,7 +14,7 @@
 
 #include "shamrock/io/logs.hpp"
 #include "shamrock/patch/scheduler/scheduler_mpi.hpp"
-#include "shamsys/mpi_handler.hpp"
+#include "shamsys/legacy/mpi_handler.hpp"
 
 
 
@@ -136,7 +136,7 @@ struct SparseCommExchanger<PatchData>{
                     const Patch &psend = communicator.global_patch_list[communicator.global_comm_vec[i].x()];
                     const Patch &precv = communicator.global_patch_list[communicator.global_comm_vec[i].y()];
 
-                    if (precv.node_owner_id == mpi_handler::world_rank) {
+                    if (precv.node_owner_id == shamsys::instance::world_rank) {
 
                         if (psend.node_owner_id != precv.node_owner_id) {
                             recv_obj[precv.id_patch].push_back({psend.id_patch, std::make_unique<PatchData>(pdl)}); 

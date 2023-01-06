@@ -17,7 +17,7 @@ namespace impl::copy_to_host {
     namespace send {
         template <class T> inline T * init(PatchDataField<T> &pdat_field, u32 comm_sz) {
 
-            T *comm_ptr = sycl::malloc_host<T>(comm_sz, sycl_handler::get_compute_queue());
+            T *comm_ptr = sycl::malloc_host<T>(comm_sz, shamsys::instance::get_compute_queue());
             logger::debug_sycl_ln("PatchDataField MPI Comm", "sycl::malloc_host", comm_sz, "->", comm_ptr);
 
             auto & buf = pdat_field.get_buf();
@@ -25,7 +25,7 @@ namespace impl::copy_to_host {
             if (pdat_field.size() > 0) {
                 logger::debug_sycl_ln("PatchDataField MPI Comm", "copy buffer -> USM");
 
-                auto ker_copy = sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
+                auto ker_copy = shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
                     sycl::accessor acc{*buf, cgh, sycl::read_only};
 
                     T *ptr = comm_ptr;
@@ -44,13 +44,13 @@ namespace impl::copy_to_host {
         template <class T> inline void finalize(T *comm_ptr) {
             logger::debug_sycl_ln("PatchDataField MPI Comm", "sycl::free", comm_ptr);
 
-            sycl::free(comm_ptr, sycl_handler::get_compute_queue());
+            sycl::free(comm_ptr, shamsys::instance::get_compute_queue());
         }
     } // namespace send
 
     namespace recv {
         template <class T> T *init(u32 comm_sz) {
-            T *comm_ptr = sycl::malloc_host<T>(comm_sz, sycl_handler::get_compute_queue());
+            T *comm_ptr = sycl::malloc_host<T>(comm_sz, shamsys::instance::get_compute_queue());
 
             logger::debug_sycl_ln("PatchDataField MPI Comm", "sycl::malloc_host", comm_sz);
 
@@ -63,7 +63,7 @@ namespace impl::copy_to_host {
             if (pdat_field.size() > 0) {
                 logger::debug_sycl_ln("PatchDataField MPI Comm", "copy USM -> buffer");
 
-                auto ker_copy = sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
+                auto ker_copy = shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
                     sycl::accessor acc{*buf, cgh, sycl::write_only};
 
                     T *ptr = comm_ptr;
@@ -78,7 +78,7 @@ namespace impl::copy_to_host {
 
             logger::debug_sycl_ln("PatchDataField MPI Comm", "sycl::free", comm_ptr);
 
-            sycl::free(comm_ptr, sycl_handler::get_compute_queue());
+            sycl::free(comm_ptr, shamsys::instance::get_compute_queue());
         }
     } // namespace recv
 

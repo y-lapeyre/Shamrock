@@ -114,13 +114,13 @@ std::tuple<f64,f64> benchmark_selfgrav(f32 dr, u32 npatch){
     model.set_cfl_force(0.3);
     model.set_particle_mass(pmass);
 
-    sycl_handler::get_compute_queue().wait();
+    shamsys::instance::get_compute_queue().wait();
 
     Timer t;
     t.start();
     
     model.evolve(sched, 0, 1e-3);
-    sycl_handler::get_compute_queue().wait();
+    shamsys::instance::get_compute_queue().wait();
 
     t.end();
 
@@ -143,7 +143,7 @@ void benchmark_selfgrav_main(u32 npatch, std::string name){
         f64 part_per_g = 2500000;
 
 
-        f64 gsz = sycl_handler::get_compute_queue().get_device().get_info<sycl::info::device::global_mem_size>();gsz = 1024*1024*1024*1;
+        f64 gsz = shamsys::instance::get_compute_queue().get_device().get_info<sycl::info::device::global_mem_size>();gsz = 1024*1024*1024*1;
 
         logger::raw_ln("limit = ", part_per_g*(gsz/1.3)/(1024.*1024.*1024.));
     }
@@ -154,13 +154,13 @@ void benchmark_selfgrav_main(u32 npatch, std::string name){
 
         f64 Nesti = (1.F/dr)*(1.F/dr)*(1.F/dr);
 
-        f64 multiplier = mpi_handler::world_size;
+        f64 multiplier = shamsys::instance::world_size;
 
         if(npatch < multiplier){
             multiplier = 1;
         }
 
-        f64 gsz = sycl_handler::get_compute_queue().get_device().get_info<sycl::info::device::global_mem_size>();gsz = 1024*1024*1024*1;
+        f64 gsz = shamsys::instance::get_compute_queue().get_device().get_info<sycl::info::device::global_mem_size>();gsz = 1024*1024*1024*1;
 
         f64 a = (Nesti/part_per_g)*1024.*1024.*1024.;
         f64 b = multiplier*gsz/1.3;
@@ -181,7 +181,7 @@ void benchmark_selfgrav_main(u32 npatch, std::string name){
         times.push_back(t);
     }
 
-    if(mpi_handler::world_rank == 0){
+    if(shamsys::instance::world_rank == 0){
         auto & dset = shamtest::test_data().new_dataset(name);
         dset.add_data("Npart", npart);
         dset.add_data("times", times);

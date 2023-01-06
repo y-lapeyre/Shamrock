@@ -9,8 +9,8 @@
 
 #include "aliases.hpp"
 #include "shamrock/utils/time_utils.hpp"
-#include "shamsys/log.hpp"
-#include "shamsys/sycl_handler.hpp"
+#include "shamsys/legacy/log.hpp"
+#include "shamsys/legacy/sycl_handler.hpp"
 #include "shamrock/tree/radix_tree.hpp"
 #include "shammodels/generic/math/tensors/collections.hpp"
 #include "shammodels/generic/physics/fmm.hpp"
@@ -441,12 +441,12 @@ Result_nompi_fmm_testing<flt,morton_mode,fmm_order> nompi_fmm_testing(std::uniqu
 
 
 
-    sycl_handler::get_compute_queue().wait();
+    shamsys::instance::get_compute_queue().wait();
     Timer timer; timer.start();
 
 
     Radix_Tree<morton_mode, vec> rtree = Radix_Tree<morton_mode, vec>(
-            sycl_handler::get_compute_queue(), 
+            shamsys::instance::get_compute_queue(), 
             {vec{-1,-1,-1},vec{1,1,1}},
             pos_part, 
             npart , reduc_level
@@ -462,7 +462,7 @@ Result_nompi_fmm_testing<flt,morton_mode,fmm_order> nompi_fmm_testing(std::uniqu
     //    }
     //}
 
-    rtree.compute_cellvolume(sycl_handler::get_compute_queue());
+    rtree.compute_cellvolume(shamsys::instance::get_compute_queue());
 
 
     
@@ -472,7 +472,7 @@ Result_nompi_fmm_testing<flt,morton_mode,fmm_order> nompi_fmm_testing(std::uniqu
     auto grav_multipoles = std::make_unique< sycl::buffer<flt>>( num_component_multipoles_fmm  );
 
     logger::debug_ln("RTreeFMM", "computing leaf moments (",rtree.tree_leaf_count,")");
-    sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
+    shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
 
         u32 offset_leaf = rtree.tree_internal_count;
 
@@ -522,7 +522,7 @@ Result_nompi_fmm_testing<flt,morton_mode,fmm_order> nompi_fmm_testing(std::uniqu
 
     auto buf_is_computed = std::make_unique< sycl::buffer<u8>>( (rtree.tree_internal_count + rtree.tree_leaf_count)  );
 
-    sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
+    shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
         auto is_computed = sycl::accessor {*buf_is_computed, cgh , sycl::write_only, sycl::no_init};
         sycl::range<1> range_internal_count{rtree.tree_internal_count + rtree.tree_leaf_count};
 
@@ -540,7 +540,7 @@ Result_nompi_fmm_testing<flt,morton_mode,fmm_order> nompi_fmm_testing(std::uniqu
 
         
     
-        sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
+        shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
 
             u32 leaf_offset = rtree.tree_internal_count;
 
@@ -613,7 +613,7 @@ Result_nompi_fmm_testing<flt,morton_mode,fmm_order> nompi_fmm_testing(std::uniqu
     std::unique_ptr<sycl::buffer<vec>> cell_centers = std::make_unique<sycl::buffer<vec>>(rtree.tree_internal_count + rtree.tree_leaf_count);
     std::unique_ptr<sycl::buffer<flt>> cell_lenght = std::make_unique<sycl::buffer<flt>>(rtree.tree_internal_count + rtree.tree_leaf_count);
 
-    sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
+    shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
 
 
         sycl::range<1> range_tree = sycl::range<1>{rtree.tree_leaf_count + rtree.tree_internal_count};
@@ -648,7 +648,7 @@ Result_nompi_fmm_testing<flt,morton_mode,fmm_order> nompi_fmm_testing(std::uniqu
 
     
     #if false
-    rtree.for_each_leaf(sycl_handler::get_compute_queue(), [&](sycl::handler &cgh,auto && par_for){
+    rtree.for_each_leaf(shamsys::instance::get_compute_queue(), [&](sycl::handler &cgh,auto && par_for){
 
         //user accessors
         auto c_centers = sycl::accessor{*cell_centers,cgh,sycl::read_only};
@@ -798,7 +798,7 @@ Result_nompi_fmm_testing<flt,morton_mode,fmm_order> nompi_fmm_testing(std::uniqu
     //#if false
 
     logger::debug_ln("RTreeFMM", "walking");
-    sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
+    shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
 
         using Rta = walker::Radix_tree_accessor<morton_mode, vec>;
         Rta tree_acc(rtree, cgh);
@@ -941,7 +941,7 @@ Result_nompi_fmm_testing<flt,morton_mode,fmm_order> nompi_fmm_testing(std::uniqu
     });
     //#endif
 
-    sycl_handler::get_compute_queue().wait();
+    shamsys::instance::get_compute_queue().wait();
     timer.end();
 
 
@@ -1400,7 +1400,7 @@ void run_test_no_mpi_fmm(std::string dset_name){
     std::vector<f64> red8_leaf_rej;
 
     auto get_max_part = [&](){
-        f64 gsz = sycl_handler::get_compute_queue().get_device().get_info<sycl::info::device::global_mem_size>();gsz = 1024*1024*1024*1;
+        f64 gsz = shamsys::instance::get_compute_queue().get_device().get_info<sycl::info::device::global_mem_size>();gsz = 1024*1024*1024*1;
         f64 part_per_g = 2500000;
 
         return (gsz/(1024.*1024.*1024.))*part_per_g / 100.;

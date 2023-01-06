@@ -152,7 +152,7 @@ template <class flt> class SPHTimestepperLeapfrogIsotGas {
 
                         sycl::range range_npart{hnew.size()};
 
-                        sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
+                        shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
                             auto h = hnew.get_access<sycl::access::mode::read>(cgh);
 
                             auto p = press.get_access<sycl::access::mode::discard_write>(cgh);
@@ -197,7 +197,7 @@ template <class flt> class SPHTimestepperLeapfrogIsotGas {
 
                 
                     std::cout << "patch : n°" << id_patch << "compute forces" << std::endl;
-                    sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
+                    shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
                         auto h_new = hnew.get_access<sycl::access::mode::read>(cgh);
                         auto omga  = omega.get_access<sycl::access::mode::read>(cgh);
 

@@ -9,8 +9,8 @@
 #include "basic_sph_gas_uint.hpp"
 #include "aliases.hpp"
 #include "shamrock/patch/base/patchdata.hpp"
-#include "shamsys/log.hpp"
-#include "shamsys/sycl_handler.hpp"
+#include "shamsys/legacy/log.hpp"
+#include "shamsys/legacy/sycl_handler.hpp"
 #include "shammodels/generic/algs/cfl_utils.hpp"
 #include "runscript/shamrockapi.hpp"
 #include "shammodels/generic/algs/integrators_utils.hpp"
@@ -184,7 +184,7 @@ f64 models::sph::BasicSPHGasUInterne<flt,Kernel>::evolve(PatchScheduler &sched, 
                     sycl::buffer<flt> & uint = * merge_pdat.at(id_patch).data.template get_field<flt>(iuint ).get_buf();
 
 
-                    sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
+                    shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
                         auto h = hnew->template get_access<sycl::access::mode::read>(cgh);
 
                         auto p = press->get_access<sycl::access::mode::discard_write>(cgh);
@@ -232,7 +232,7 @@ f64 models::sph::BasicSPHGasUInterne<flt,Kernel>::evolve(PatchScheduler &sched, 
             
                 logger::info_ln("BasicSPHGasUInterne","patch : n°" ,id_patch , "compute forces");
 
-                sycl_handler::get_compute_queue().submit([&](sycl::handler &cgh) {
+                shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
                     auto h_new = hnew.get_access<sycl::access::mode::read>(cgh);
                     auto omga  = omega.get_access<sycl::access::mode::read>(cgh);
 

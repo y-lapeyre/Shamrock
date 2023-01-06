@@ -8,7 +8,7 @@
 
 #include "pyshamrockcontext.hpp"
 #include "shamrock/patch/base/patchdata_field.hpp"
-#include "shamsys/mpi_handler.hpp"
+#include "shamsys/legacy/mpi_handler.hpp"
 #include <floatobject.h>
 #include <longobject.h>
 #include <map>
@@ -342,11 +342,13 @@ class PySHAMROCKContextImpl {
     }
 
     static PyObject* get_world_size(PySHAMROCKContext *self, PyObject *Py_UNUSED(ignored)){
-        return PyLong_FromLong(mpi_handler::world_size);
+        using namespace shamsys::instance;
+        return PyLong_FromLong(world_size);
     }
 
     static PyObject* get_world_rank(PySHAMROCKContext *self, PyObject *Py_UNUSED(ignored)){
-        return PyLong_FromLong(mpi_handler::world_rank);
+        using namespace shamsys::instance;
+        return PyLong_FromLong(world_rank);
     }
 
 };

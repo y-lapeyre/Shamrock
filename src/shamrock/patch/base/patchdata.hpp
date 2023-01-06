@@ -26,8 +26,8 @@
 #include "shamrock/patch/base/enabled_fields.hpp"
 #include "flags.hpp"
 #include "patchdata_field.hpp"
-#include "shamsys/mpi_handler.hpp"
-#include "shamsys/sycl_mpi_interop.hpp"
+#include "shamsys/legacy/mpi_handler.hpp"
+#include "shamsys/legacy/sycl_mpi_interop.hpp"
 #include "shamrock/utils/sycl_vector_utils.hpp"
 
 #include "patchdata_layout.hpp"

@@ -20,7 +20,7 @@
 #include "loadbalancing_hilbert.hpp"
 
 #include "shamrock/io/logs.hpp"
-#include "shamsys/sycl_handler.hpp"
+#include "shamsys/legacy/sycl_handler.hpp"
 
 
 std::vector<std::tuple<u64, i32, i32, i32>> HilbertLB::make_change_list(std::vector<Patch> &global_patch_list) {
@@ -41,7 +41,7 @@ std::vector<std::tuple<u64, i32, i32, i32>> HilbertLB::make_change_list(std::vec
 
         sycl::range<1> range{global_patch_list.size()};
 
-        sycl_handler::get_alt_queue().submit([&](sycl::handler &cgh) {
+        shamsys::instance::get_alt_queue().submit([&](sycl::handler &cgh) {
             auto ptch = patch_buf.get_access<sycl::access::mode::read>(cgh);
             auto pdt  = dt_buf.get_access<sycl::access::mode::discard_write>(cgh);
 
@@ -72,7 +72,7 @@ std::vector<std::tuple<u64, i32, i32, i32>> HilbertLB::make_change_list(std::vec
 
     //*
     {
-        double target_datacnt = double(std::get<1>(patch_dt[global_patch_list.size()-1]))/mpi_handler::world_size;
+        double target_datacnt = double(std::get<1>(patch_dt[global_patch_list.size()-1]))/shamsys::instance::world_size;
         for(auto t : patch_dt){
             std::cout <<
                 std::get<0>(t) << " "<<
@@ -80,7 +80,7 @@ std::vector<std::tuple<u64, i32, i32, i32>> HilbertLB::make_change_list(std::vec
                 std::get<2>(t) << " "<<
                 sycl::clamp(
                     i32(std::get<1>(t)/target_datacnt)
-                    ,0,mpi_handler::world_size-1) << " " << (std::get<1>(t)/target_datacnt) << 
+                    ,0,i32(shamsys::instance::world_size)-1) << " " << (std::get<1>(t)/target_datacnt) << 
                 std::endl;
         }
     }
@@ -97,14 +97,14 @@ std::vector<std::tuple<u64, i32, i32, i32>> HilbertLB::make_change_list(std::vec
 
         sycl::range<1> range{global_patch_list.size()};
 
-        sycl_handler::get_alt_queue().submit([&](sycl::handler &cgh) {
+        shamsys::instance::get_alt_queue().submit([&](sycl::handler &cgh) {
             auto pdt  = dt_buf.get_access<sycl::access::mode::read>(cgh);
             auto chosen_node = new_owner.get_access<sycl::access::mode::discard_write>(cgh);
 
             //TODO [potential issue] here must check that the conversion to double doesn't mess up the target dt_cnt or find another way
-            double target_datacnt = double(std::get<1>(patch_dt[global_patch_list.size()-1]))/mpi_handler::world_size;
+            double target_datacnt = double(std::get<1>(patch_dt[global_patch_list.size()-1]))/shamsys::instance::world_size;
 
-            i32 wsize = mpi_handler::world_size;
+            i32 wsize = shamsys::instance::world_size;
 
 
             cgh.parallel_for<class Write_chosen_node>(range, [=](sycl::item<1> item) {
@@ -121,7 +121,7 @@ std::vector<std::tuple<u64, i32, i32, i32>> HilbertLB::make_change_list(std::vec
 
 
         //pack nodes
-        sycl_handler::get_alt_queue().submit([&](sycl::handler &cgh) {
+        shamsys::instance::get_alt_queue().submit([&](sycl::handler &cgh) {
             auto ptch = patch_buf.get_access<sycl::access::mode::read>(cgh);
             //auto pdt  = dt_buf.get_access<sycl::access::mode::read>(cgh);
             auto chosen_node = new_owner.get_access<sycl::access::mode::write>(cgh);
@@ -144,9 +144,9 @@ std::vector<std::tuple<u64, i32, i32, i32>> HilbertLB::make_change_list(std::vec
 
     //make change list
     {   
-        std::vector<u64> load_per_node(mpi_handler::world_size);
+        std::vector<u64> load_per_node(shamsys::instance::world_size);
 
-        std::vector<i32> tags_it_node(mpi_handler::world_size);
+        std::vector<i32> tags_it_node(shamsys::instance::world_size);
         for(u64 i = 0 ; i < global_patch_list.size(); i++){
 
             i32 old_owner = global_patch_list[i].node_owner_id;
@@ -165,7 +165,7 @@ std::vector<std::tuple<u64, i32, i32, i32>> HilbertLB::make_change_list(std::vec
         }
 
         std::cout << "load after balancing" << std::endl;
-        for(i32 nid = 0 ; nid < mpi_handler::world_size; nid ++){
+        for(i32 nid = 0 ; nid < shamsys::instance::world_size; nid ++){
             std::cout << nid << " " << load_per_node[nid] << std::endl;
         }
         

@@ -45,8 +45,8 @@ R"({
 
             timings_file << format(rstr,
                 name.c_str(),
-                mpi_handler::world_rank,
-                mpi_handler::world_rank,
+                shamsys::instance::world_rank,
+                shamsys::instance::world_rank,
                 now_val,
                 name.c_str());
         }
@@ -68,8 +68,8 @@ R"({
 
             timings_file << format(rstr,
                 name.c_str(),
-                mpi_handler::world_rank,
-                mpi_handler::world_rank,
+                shamsys::instance::world_rank,
+                shamsys::instance::world_rank,
                 now_val,
                 name.c_str());
         }
@@ -91,8 +91,8 @@ R"({
 
             timings_file << format(rstr,
                 name.c_str(),
-                mpi_handler::world_rank,
-                mpi_handler::world_rank,
+                shamsys::instance::world_rank,
+                shamsys::instance::world_rank,
                 now_val,
                 name.c_str());
         }
@@ -102,7 +102,7 @@ R"({
     void open_files(){
         logfiles_on = true;
 
-        u32 world_rank = mpi_handler::world_rank;
+        u32 world_rank = shamsys::instance::world_rank;
 
         timings::timings_file = std::ofstream("timings_"+std::to_string(world_rank));
         timings::timings_file << "[";

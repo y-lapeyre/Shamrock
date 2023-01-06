@@ -165,7 +165,7 @@ namespace impl{
             //sycl::buffer<flt> buf_local_field_val(pfield.local_nodes_value.data(),pfield.local_nodes_value.size());
             //sycl::buffer<flt> buf_global_field_val(pfield.global_values.data(),pfield.global_values.size());
 
-            sycl_handler::get_alt_queue().submit([&](sycl::handler &cgh) {
+            shamsys::instance::get_alt_queue().submit([&](sycl::handler &cgh) {
                 
 
                 

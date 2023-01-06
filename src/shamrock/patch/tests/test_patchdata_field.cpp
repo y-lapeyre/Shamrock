@@ -9,8 +9,8 @@
 #include "aliases.hpp"
 #include "shamrock/patch/utility/patch_field.hpp"
 #include "shamrock/patch/base/patchdata_field.hpp"
-#include "shamsys/mpi_handler.hpp"
-#include "shamsys/sycl_mpi_interop.hpp"
+#include "shamsys/legacy/mpi_handler.hpp"
+#include "shamsys/legacy/sycl_mpi_interop.hpp"
 #include "shamtest/shamtest.hpp"
 #include <random>
 
@@ -62,28 +62,28 @@ TestStart(Unittest,base + ":isend_irecv_f32", isend_irecv_f32, 2){
     std::vector<patchdata_field::PatchDataFieldMpiRequest<f32>> rq_lst;
     PatchDataField<f32> recv_d("test",1);
 
-    if(mpi_handler::world_rank == 0){
+    if(shamsys::instance::world_rank == 0){
         patchdata_field::isend(d1_check, rq_lst, 1, 0, MPI_COMM_WORLD);
         patchdata_field::irecv_probe(recv_d,rq_lst, 1, 0, MPI_COMM_WORLD);
     }
 
-    if(mpi_handler::world_rank == 1){
+    if(shamsys::instance::world_rank == 1){
         patchdata_field::isend(d2_check, rq_lst, 0, 0, MPI_COMM_WORLD);
         patchdata_field::irecv_probe(recv_d,rq_lst, 0, 0, MPI_COMM_WORLD);
     }
 
-    std::cout << "request len : [" << mpi_handler::world_rank << "] " << rq_lst.size() << std::endl;
+    std::cout << "request len : [" << shamsys::instance::world_rank << "] " << rq_lst.size() << std::endl;
 
     patchdata_field::waitall(rq_lst);
 
     
-    if(mpi_handler::world_rank == 0){
+    if(shamsys::instance::world_rank == 0){
         PatchDataField<f32> & p1 = recv_d;
         PatchDataField<f32> & p2 = d2_check;
         shamtest::asserts().assert_bool("recv_d == d1_check (f32)", p1.check_field_match(p2));
     }
 
-    if(mpi_handler::world_rank == 1){
+    if(shamsys::instance::world_rank == 1){
         PatchDataField<f32> & p1 = recv_d;
         PatchDataField<f32> & p2 = d1_check;
         shamtest::asserts().assert_bool("recv_d == d1_check (f32)", p1.check_field_match(p2));

@@ -9,7 +9,7 @@
 //#include "test_tree.hpp"
 
 //#include "tree/kernels/key_morton_sort.hpp"
-#include "shamsys/sycl_handler.hpp"
+#include "shamsys/legacy/sycl_handler.hpp"
 #include "shamrock/utils/string_utils.hpp"
 #include <algorithm>
 #include <random>

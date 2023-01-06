@@ -37,9 +37,9 @@ class ShamrockSyclException : public std::exception {
 
 namespace sycl_handler {
 
-    void init();
-
-    sycl::queue &get_compute_queue();
-    sycl::queue &get_alt_queue();
+    //void init();
+//
+    //sycl::queue &get_compute_queue();
+    //sycl::queue &get_alt_queue();
 
 } // namespace sycl_handler
