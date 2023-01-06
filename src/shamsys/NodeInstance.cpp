@@ -126,7 +126,7 @@ namespace shamsys::instance {
 
 
 
-    bool initialized(){
+    bool is_initialized(){
         int flag = false;
         mpi::initialized(&flag);
         return bool(compute_queue) && bool(alt_queue) && flag;
