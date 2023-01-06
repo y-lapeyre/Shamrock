@@ -1,5 +1,5 @@
 
-from .sections import unitests, configuration, sycl_algs, self_grav_fmm, sparse_comm, periodix_box_perf, nbody_selfgrav_perf
+from .sections import unitests, configuration, sycl_algs, self_grav_fmm, sparse_comm, periodix_box_perf, nbody_selfgrav_perf, bandwith_test
 
 def convert(fileprefix : str, json_input) -> str:
 
@@ -18,5 +18,7 @@ def convert(fileprefix : str, json_input) -> str:
     buf += periodix_box_perf.make_bench_periodic_box_report(fileprefix, json_input)
 
     buf += nbody_selfgrav_perf.make_bench_nbody_selfgrav_report(fileprefix, json_input)
+
+    buf += bandwith_test.make_bandwith_matrix_report(fileprefix, json_input)
     
     return buf
