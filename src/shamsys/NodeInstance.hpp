@@ -114,6 +114,10 @@ namespace shamsys::instance {
      */
     sycl::queue &get_compute_queue(u32 id = 0);
 
+    inline sycl::device get_compute_device(){
+        return get_compute_queue().get_device();
+    }
+
     /**
      * @brief Get the alternative queue
      * 
