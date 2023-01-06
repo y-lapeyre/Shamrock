@@ -49,7 +49,7 @@ inline MPI_Datatype __tmp_mpi_type_f64_3;
     base_name a;\
     MPI_Aint offset_##base_name = ((size_t) ( (char *)&(a.x()) - (char *)&(a) ));\
     mpi::type_create_struct( 1, & __len_vec2, &offset_##base_name, & mpi_type_##src_type, &mpi_type_##base_name );\
-    mpi::type_commit( &mpi_type_##base_name ); logger::debug_mpi_ln("SYCL MPI Interop", "init mpi type for : " #base_name );\
+    mpi::type_commit( &mpi_type_##base_name ); logger::debug_mpi_ln("SyclMpiTypes", "init mpi type for : " #base_name );\
 }
 
 #define __SYCL_TYPE_COMMIT_len3(base_name,src_type)\
@@ -58,7 +58,7 @@ inline MPI_Datatype __tmp_mpi_type_f64_3;
     MPI_Aint offset_##base_name = ((size_t) ( (char *)&(a.x()) - (char *)&(a) ));\
     mpi::type_create_struct( 1, & __len_vec3, &offset_##base_name, & mpi_type_##src_type, &__tmp_mpi_type_##base_name );\
     mpi::type_create_resized(__tmp_mpi_type_##base_name, 0, sizeof(base_name), &mpi_type_##base_name);\
-    mpi::type_commit( &mpi_type_##base_name ); logger::debug_mpi_ln("SYCL MPI Interop", "init mpi type for : " #base_name );\
+    mpi::type_commit( &mpi_type_##base_name ); logger::debug_mpi_ln("SyclMpiTypes", "init mpi type for : " #base_name );\
 }
 
 #define __SYCL_TYPE_COMMIT_len4(base_name,src_type)\
@@ -66,7 +66,7 @@ inline MPI_Datatype __tmp_mpi_type_f64_3;
     base_name a;\
     MPI_Aint offset_##base_name = ((size_t) ( (char *)&(a.x()) - (char *)&(a) ));\
     mpi::type_create_struct( 1, & __len_vec4, &offset_##base_name, & mpi_type_##src_type, &mpi_type_##base_name );\
-    mpi::type_commit( &mpi_type_##base_name ); logger::debug_mpi_ln("SYCL MPI Interop", "init mpi type for : " #base_name );\
+    mpi::type_commit( &mpi_type_##base_name ); logger::debug_mpi_ln("SyclMpiTypes", "init mpi type for : " #base_name );\
 }
 
 #define __SYCL_TYPE_COMMIT_len8(base_name,src_type)\
@@ -74,7 +74,7 @@ inline MPI_Datatype __tmp_mpi_type_f64_3;
     base_name a;\
     MPI_Aint offset_##base_name = ((size_t) ( (char *)&(a.s0()) - (char *)&(a) ));\
     mpi::type_create_struct( 1, & __len_vec8, &offset_##base_name, & mpi_type_##src_type, &mpi_type_##base_name );\
-    mpi::type_commit( &mpi_type_##base_name ); logger::debug_mpi_ln("SYCL MPI Interop", "init mpi type for : " #base_name );\
+    mpi::type_commit( &mpi_type_##base_name ); logger::debug_mpi_ln("SyclMpiTypes", "init mpi type for : " #base_name );\
 }
 
 #define __SYCL_TYPE_COMMIT_len16(base_name,src_type)\
@@ -82,7 +82,7 @@ inline MPI_Datatype __tmp_mpi_type_f64_3;
     base_name a;\
     MPI_Aint offset_##base_name = ((size_t) ( (char *)&(a.s0()) - (char *)&(a) ));\
     mpi::type_create_struct( 1, & __len_vec16, &offset_##base_name, & mpi_type_##src_type, &mpi_type_##base_name );\
-    mpi::type_commit( &mpi_type_##base_name ); logger::debug_mpi_ln("SYCL MPI Interop", "init mpi type for : " #base_name );\
+    mpi::type_commit( &mpi_type_##base_name ); logger::debug_mpi_ln("SyclMpiTypes", "init mpi type for : " #base_name );\
 }
 
 

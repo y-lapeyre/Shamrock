@@ -38,13 +38,13 @@ namespace shamsys::instance {
         std::exception_ptr eptr;
         try {
             test_kernel(q);
-            logger::info_ln("SYCL Hanlder", "selected queue :",q.get_device().get_info<sycl::info::device::name>()," working !");
+            logger::info_ln("NodeInstance", "selected queue :",q.get_device().get_info<sycl::info::device::name>()," working !");
         } catch(...) {
             eptr = std::current_exception(); // capture
         }
 
         if (eptr) {
-            logger::err_ln("SYCL Hanlder", "selected queue :",q.get_device().get_info<sycl::info::device::name>(),"does not function properly");
+            logger::err_ln("NodeInstance", "selected queue :",q.get_device().get_info<sycl::info::device::name>(),"does not function properly");
             std::rethrow_exception(eptr);
         }
 
@@ -139,13 +139,13 @@ namespace shamsys::instance {
         if(opts::has_option("--sycl-cfg")){
             std::string sycl_cfg = std::string(opts::get_option("--sycl-cfg"));
 
-            logger::normal_ln("SYCL Handler", "chosen sycl config :",sycl_cfg);
+            logger::normal_ln("NodeInstance", "chosen sycl config :",sycl_cfg);
 
             size_t split_alt_comp = 0;
             split_alt_comp = sycl_cfg.find(":");
 
             if(split_alt_comp == std::string::npos){
-                logger::err_ln("SYCL Handler", "sycl-cfg layout should be x:x");
+                logger::err_ln("NodeInstance", "sycl-cfg layout should be x:x");
                 throw ShamsysInstanceException("sycl-cfg layout should be x:x");
             }
 
@@ -158,11 +158,11 @@ namespace shamsys::instance {
                 try {
                     ialt = std::stoi(alt_cfg);
                 } catch (const std::invalid_argument & a) {
-                    logger::err_ln("SYCL Handler", "alt config is not an int");
+                    logger::err_ln("NodeInstance", "alt config is not an int");
                     throw ShamsysInstanceException("alt config is not an int");
                 }
             } catch (const std::out_of_range & a) {
-                logger::err_ln("SYCL Handler", "alt config is to big for an integer");
+                logger::err_ln("NodeInstance", "alt config is to big for an integer");
                 throw ShamsysInstanceException("alt config is to big for an integer");
             }
 
@@ -170,11 +170,11 @@ namespace shamsys::instance {
                 try {
                     icomp = std::stoi(comp_cfg);
                 } catch (const std::invalid_argument & a) {
-                    logger::err_ln("SYCL Handler", "compute config is not an int");
+                    logger::err_ln("NodeInstance", "compute config is not an int");
                     throw ShamsysInstanceException("compute config is not an int");
                 }
             } catch (const std::out_of_range & a) {
-                logger::err_ln("SYCL Handler", "compute config is to big for an integer");
+                logger::err_ln("NodeInstance", "compute config is to big for an integer");
                 throw ShamsysInstanceException("compute config is to big for an integer");
             }
 
@@ -182,8 +182,8 @@ namespace shamsys::instance {
 
         }else {
 
-            logger::err_ln("SYCL Handler", "Please specify a sycl configuration (--sycl-cfg x:x)");
-            //std::cout << "[SYCL Handler] Please specify a sycl configuration (--sycl-cfg x:x)" << std::endl;
+            logger::err_ln("NodeInstance", "Please specify a sycl configuration (--sycl-cfg x:x)");
+            //std::cout << "[NodeInstance] Please specify a sycl configuration (--sycl-cfg x:x)" << std::endl;
             throw ShamsysInstanceException("Sycl Handler need configuration (--sycl-cfg x:x)");
         }
 
@@ -270,12 +270,12 @@ namespace shamsys::instance {
                 auto DeviceName = Device.get_info<sycl::info::device::name>();
 
                 if(key_global == sycl_info.alt_queue_id){
-                    logger::info_ln("SYCL Handler", "init alt queue  : ", "|",DeviceName, "|", PlatformName, "|" , getDeviceTypeName(Device), "|");
+                    logger::info_ln("NodeInstance", "init alt queue  : ", "|",DeviceName, "|", PlatformName, "|" , getDeviceTypeName(Device), "|");
                     alt_queue = std::make_unique<sycl::queue>(Device,exception_handler);
                 }
 
                 if(key_global == sycl_info.compute_queue_id){
-                    logger::info_ln("SYCL Handler", "init comp queue : ", "|",DeviceName, "|", PlatformName, "|" , getDeviceTypeName(Device), "|");
+                    logger::info_ln("NodeInstance", "init comp queue : ", "|",DeviceName, "|", PlatformName, "|" , getDeviceTypeName(Device), "|");
                     compute_queue = std::make_unique<sycl::queue>(Device,exception_handler);
                 }
 
@@ -287,7 +287,7 @@ namespace shamsys::instance {
         check_queue_is_valid(*alt_queue);
 
 
-        logger::info_ln("SYCL Handler", "init done");
+        logger::info_ln("NodeInstance", "init done");
 
 
         
@@ -345,9 +345,9 @@ namespace shamsys::instance {
         //if(world_rank == 0){
         logger::raw_ln("------------ MPI init ok ------------ \n");
 
-        logger::info_ln("SYCL Handler", "creating MPI type for interop");
+        logger::info_ln("NodeInstance", "creating MPI type for interop");
         create_sycl_mpi_types();
-        logger::info_ln("SYCL Handler", "MPI type for interop created");
+        logger::info_ln("NodeInstance", "MPI type for interop created");
 
         logger::raw_ln("------------ MPI / SYCL init ok ------------ \n");
 
