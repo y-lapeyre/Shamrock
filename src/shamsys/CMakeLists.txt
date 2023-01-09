@@ -2,6 +2,7 @@
 set(Sources
     NodeInstance.cpp
     SyclMpiTypes.cpp
+    CommImplBuffer.cpp
 )
 set(SourcesTest
     
