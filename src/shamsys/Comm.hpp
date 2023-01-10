@@ -92,7 +92,7 @@ namespace shamsys::comm {
          * @param obj_ref 
          * @param comm_mode 
          */
-        CommBuffer( const T & obj_ref, Protocol comm_mode) : _int_type(build_variant(comm_mode,obj_ref)){}
+        CommBuffer( T & obj_ref, Protocol comm_mode) : _int_type(build_variant(comm_mode,obj_ref)){}
 
         /**
          * @brief  Construct a CommBuffer containing a copy of the content of obj_ref built from the details in det
@@ -101,7 +101,7 @@ namespace shamsys::comm {
          * @param det 
          * @param comm_mode 
          */
-        CommBuffer( const T & obj_ref, CommDetails<T> det, Protocol comm_mode) : _int_type(build_variant(comm_mode,obj_ref,det)){}
+        CommBuffer( T & obj_ref, CommDetails<T> det, Protocol comm_mode) : _int_type(build_variant(comm_mode,obj_ref,det)){}
 
         /**
          * @brief Construct a CommBuffer containing the moved object "moved_obj"
@@ -129,7 +129,22 @@ namespace shamsys::comm {
          * 
          * @return T 
          */
-        T copy_back();
+        T copy_back(){
+            return std::visit([=](auto&& arg) {
+                return arg.copy_back();
+            }, _int_type);
+        }
+
+        ///**
+        // * @brief return a copy of the held object in the buffer
+        // * 
+        // * @param des destination of the copy
+        // */
+        //void copy_back(T & dest){
+        //    std::visit([=](auto & arg) {
+        //        arg.copy_back(dest);
+        //    }, _int_type);
+        //}
 
         /**
          * @brief destroy the buffer and recover the held object
@@ -137,7 +152,12 @@ namespace shamsys::comm {
          * @param buf 
          * @return T 
          */
-        static T convert(CommBuffer && buf);
+        static T convert(CommBuffer && buf){
+            return std::visit([=](auto&& arg) {
+                using _t = typename std::remove_reference<decltype(arg)>::type;
+                return _t::convert(std::forward<_t>(arg));
+            }, buf._int_type);
+        }
 
 
         /// implement comm functions
