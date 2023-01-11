@@ -1,4 +1,5 @@
 #include "CommImplBuffer.hpp"
+#include "shamsys/legacy/log.hpp"
 
 
 namespace shamsys::comm::details {
@@ -99,8 +100,20 @@ namespace shamsys::comm::details {
         }
 
         ~CommBuffer(){
+            //logger::raw_ln("~CommBuffer()");
             sycl::free(usm_ptr,instance::get_compute_queue());
         }
+
+
+        CommBuffer(CommBuffer&& other) noexcept : 
+            usm_ptr(std::exchange(other.usm_ptr, nullptr)), 
+            details(other.details) {} // move constructor
+
+        CommBuffer& operator=(CommBuffer&& other) noexcept{
+            std::swap(usm_ptr, other.usm_ptr);
+            details = std::move(other.details);
+            return *this;
+        } // move assignment
 
         sycl::buffer<T> copy_back(){
             u64 len, off;
@@ -122,6 +135,11 @@ namespace shamsys::comm::details {
             //}
 
         }
+
+        //void copy_back(sycl::buffer<T> & buf){
+        //    
+        //}
+
         static sycl::buffer<T> convert(CommBuffer && buf){
 
         }
@@ -140,6 +158,7 @@ namespace shamsys::comm::details {
     class CommBuffer<sycl::buffer<T>,DirectGPU>{
         
         T* usm_ptr;
+        CommDetails<sycl::buffer<T>> details;
         
         public:
         CommBuffer(CommDetails<sycl::buffer<T>> det){
@@ -147,10 +166,10 @@ namespace shamsys::comm::details {
                 throw std::invalid_argument("cannot construct a buffer with a detail that doesn't specify the lenght");
             }
         }
-        CommBuffer( const sycl::buffer<T> & obj_ref){
+        CommBuffer( sycl::buffer<T> & obj_ref){
 
         }
-        CommBuffer( const sycl::buffer<T> & obj_ref, CommDetails<sycl::buffer<T>> det){
+        CommBuffer( sycl::buffer<T> & obj_ref, CommDetails<sycl::buffer<T>> det){
 
         }
         CommBuffer( sycl::buffer<T> && moved_obj){
@@ -163,6 +182,16 @@ namespace shamsys::comm::details {
         ~CommBuffer(){
             sycl::free(usm_ptr,instance::get_compute_queue());
         }
+
+        CommBuffer(CommBuffer&& other) noexcept : 
+            usm_ptr(std::exchange(other.usm_ptr, nullptr)), 
+            details(other.details) {} // move constructor
+
+        CommBuffer& operator=(CommBuffer&& other) noexcept{
+            std::swap(usm_ptr, other.usm_ptr);
+            details = std::move(other.details);
+            return *this;
+        } // move assignment
 
         sycl::buffer<T> copy_back(){
 
@@ -183,6 +212,7 @@ namespace shamsys::comm::details {
     class CommBuffer<sycl::buffer<T>,DirectGPUFlatten>{
         
         T* usm_ptr;
+        CommDetails<sycl::buffer<T>> details;
         
         public:
         CommBuffer(CommDetails<sycl::buffer<T>> det){
@@ -190,10 +220,10 @@ namespace shamsys::comm::details {
                 throw std::invalid_argument("cannot construct a buffer with a detail that doesn't specify the lenght");
             }
         }
-        CommBuffer( const sycl::buffer<T> & obj_ref){
+        CommBuffer( sycl::buffer<T> & obj_ref){
 
         }
-        CommBuffer( const sycl::buffer<T> & obj_ref, CommDetails<sycl::buffer<T>> det){
+        CommBuffer( sycl::buffer<T> & obj_ref, CommDetails<sycl::buffer<T>> det){
 
         }
         CommBuffer( sycl::buffer<T> && moved_obj){
@@ -205,6 +235,16 @@ namespace shamsys::comm::details {
         ~CommBuffer(){
             sycl::free(usm_ptr,instance::get_compute_queue());
         }
+
+        CommBuffer(CommBuffer&& other) noexcept : 
+            usm_ptr(std::exchange(other.usm_ptr, nullptr)), 
+            details(other.details) {} // move constructor
+
+        CommBuffer& operator=(CommBuffer&& other) noexcept{
+            std::swap(usm_ptr, other.usm_ptr);
+            details = std::move(other.details);
+            return *this;
+        } // move assignment
 
         sycl::buffer<T> copy_back(){
 

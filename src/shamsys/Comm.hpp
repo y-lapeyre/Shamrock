@@ -55,26 +55,19 @@ namespace shamsys::comm {
     template<class T> class CommBuffer{
         private:
 
-        using var_t = std::variant<
-            details::CommBuffer<T,CopyToHost>,
-            details::CommBuffer<T,DirectGPU>,
-            details::CommBuffer<T,DirectGPUFlatten>
-        >;
+        using var_t = 
+            std::optional<
+                std::variant<
+                    details::CommBuffer<T,CopyToHost>      ,
+                    details::CommBuffer<T,DirectGPU>       ,
+                    details::CommBuffer<T,DirectGPUFlatten>
+                >
+            >;
 
         var_t _int_type;
 
 
-        static constexpr auto build_variant = [](Protocol comm_mode, auto ... args) -> var_t{
-            if(comm_mode == CopyToHost){
-                return details::CommBuffer<T, CopyToHost>(args...);
-            }else if(comm_mode == DirectGPU){
-                return details::CommBuffer<T, DirectGPU>(args...);
-            }else if(comm_mode == DirectGPUFlatten){
-                return details::CommBuffer<T, DirectGPUFlatten>(args...);
-            }else{
-                throw std::invalid_argument("Protocol value selected does not fit within listed cases");
-            }
-        };
+
 
         public:
 
@@ -84,7 +77,15 @@ namespace shamsys::comm {
          * @param det 
          * @param comm_mode 
          */
-        CommBuffer(CommDetails<T> det, Protocol comm_mode) : _int_type(build_variant(comm_mode,det)){}
+        CommBuffer(CommDetails<T> det, Protocol comm_mode) {
+            if(comm_mode == CopyToHost){
+                _int_type = details::CommBuffer<T, CopyToHost>(det);
+            }else if(comm_mode == DirectGPU){
+                _int_type = details::CommBuffer<T, DirectGPU>(det);
+            }else if(comm_mode == DirectGPUFlatten){
+                _int_type = details::CommBuffer<T, DirectGPUFlatten>(det);
+            }
+        }
 
         /**
          * @brief Construct a CommBuffer containing a copy of the content of obj_ref
@@ -92,7 +93,15 @@ namespace shamsys::comm {
          * @param obj_ref 
          * @param comm_mode 
          */
-        CommBuffer( T & obj_ref, Protocol comm_mode) : _int_type(build_variant(comm_mode,obj_ref)){}
+        CommBuffer( T & obj_ref, Protocol comm_mode) {
+            if(comm_mode == CopyToHost){
+                _int_type = details::CommBuffer<T, CopyToHost>(obj_ref);
+            }else if(comm_mode == DirectGPU){
+                _int_type = details::CommBuffer<T, DirectGPU>(obj_ref);
+            }else if(comm_mode == DirectGPUFlatten){
+                _int_type = details::CommBuffer<T, DirectGPUFlatten>(obj_ref);
+            }
+        }
 
         /**
          * @brief  Construct a CommBuffer containing a copy of the content of obj_ref built from the details in det
@@ -101,7 +110,15 @@ namespace shamsys::comm {
          * @param det 
          * @param comm_mode 
          */
-        CommBuffer( T & obj_ref, CommDetails<T> det, Protocol comm_mode) : _int_type(build_variant(comm_mode,obj_ref,det)){}
+        CommBuffer( T & obj_ref, CommDetails<T> det, Protocol comm_mode) {
+            if(comm_mode == CopyToHost){
+                _int_type = details::CommBuffer<T, CopyToHost>(obj_ref,det);
+            }else if(comm_mode == DirectGPU){
+                _int_type = details::CommBuffer<T, DirectGPU>(obj_ref,det);
+            }else if(comm_mode == DirectGPUFlatten){
+                _int_type = details::CommBuffer<T, DirectGPUFlatten>(obj_ref,det);
+            }
+        }
 
         /**
          * @brief Construct a CommBuffer containing the moved object "moved_obj"
@@ -109,7 +126,15 @@ namespace shamsys::comm {
          * @param moved_obj 
          * @param comm_mode 
          */
-        CommBuffer( T && moved_obj, Protocol comm_mode) : _int_type(build_variant(comm_mode,moved_obj)){}
+        CommBuffer( T && moved_obj, Protocol comm_mode) {
+            if(comm_mode == CopyToHost){
+                _int_type = details::CommBuffer<T, CopyToHost>(moved_obj);
+            }else if(comm_mode == DirectGPU){
+                _int_type = details::CommBuffer<T, DirectGPU>(moved_obj);
+            }else if(comm_mode == DirectGPUFlatten){
+                _int_type = details::CommBuffer<T, DirectGPUFlatten>(moved_obj);
+            }
+        }
 
         /**
          * @brief  Construct a CommBuffer containing the moved object "moved_obj" built from the details in det
@@ -118,7 +143,16 @@ namespace shamsys::comm {
          * @param det 
          * @param comm_mode 
          */
-        CommBuffer( T && moved_obj, CommDetails<T> det, Protocol comm_mode) : _int_type(build_variant(comm_mode,moved_obj,det)){}
+        CommBuffer( T && moved_obj, CommDetails<T> det, Protocol comm_mode) {
+            if(comm_mode == CopyToHost){
+                _int_type = details::CommBuffer<T, CopyToHost>(moved_obj,det);
+            }else if(comm_mode == DirectGPU){
+                _int_type = details::CommBuffer<T, DirectGPU>(moved_obj,det);
+            }else if(comm_mode == DirectGPUFlatten){
+                _int_type = details::CommBuffer<T, DirectGPUFlatten>(moved_obj,det);
+            }
+        }
+
 
 
         /// obj recovery funcs
@@ -130,9 +164,9 @@ namespace shamsys::comm {
          * @return T 
          */
         T copy_back(){
-            return std::visit([=](auto&& arg) {
+            return std::visit([=](auto && arg) {
                 return arg.copy_back();
-            }, _int_type);
+            }, *_int_type);
         }
 
         ///**
@@ -141,7 +175,7 @@ namespace shamsys::comm {
         // * @param des destination of the copy
         // */
         //void copy_back(T & dest){
-        //    std::visit([=](auto & arg) {
+        //    std::visit([&](auto && arg) {
         //        arg.copy_back(dest);
         //    }, _int_type);
         //}
@@ -156,7 +190,7 @@ namespace shamsys::comm {
             return std::visit([=](auto&& arg) {
                 using _t = typename std::remove_reference<decltype(arg)>::type;
                 return _t::convert(std::forward<_t>(arg));
-            }, buf._int_type);
+            }, *buf._int_type);
         }
 
 
@@ -165,13 +199,13 @@ namespace shamsys::comm {
         CommRequest<T> isend(u32 rank_dest, u32 comm_flag, MPI_Comm comm){
             return std::visit([=](auto&& arg) {
                 return CommRequest<T>(arg.isend(rank_dest, comm_flag, comm));
-            }, _int_type);
+            }, *_int_type);
         }
 
         CommRequest<T> irecv(u32 rank_src, u32 comm_flag, MPI_Comm comm){
             return std::visit([=](auto&& arg) {
                 return CommRequest<T>(arg.irecv(rank_src, comm_flag, comm));
-            }, _int_type);
+            }, *_int_type);
         }
 
     };
