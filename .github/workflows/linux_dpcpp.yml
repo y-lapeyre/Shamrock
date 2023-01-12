@@ -13,6 +13,7 @@ jobs:
         with:
           python-version: '3.10' 
           
+          
       - name: Cache DPCPP
         id: cache-dpcpp
         uses: actions/cache@v3
@@ -29,6 +30,10 @@ jobs:
           tar -xf dpcpp-compiler.tar.gz
           echo "rm archive"
           rm dpcpp-compiler.tar.gz
+      
+      - name : Install pck (DPCPP)
+        run: |
+          sudo apt-get install -y -qq g++-10 clang libomp-dev
           
       - name : Check binary
         run: |
