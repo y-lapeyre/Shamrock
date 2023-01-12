@@ -69,7 +69,7 @@ if("${SyCL_Compiler}" STREQUAL "HIPSYCL")
     if("${SyCL_Compiler_BE}" STREQUAL "OMP")
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --hipsycl-cpu-cxx=g++ --hipsycl-config-file=${COMP_ROOT_DIR}/etc/hipSYCL/syclcc.json --hipsycl-targets='omp' --hipsycl-platform=cpu")
 
-        set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG}" )#-fsanitize=address")# ")# -Wall -Wextra") #
+        set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=address")# ")# -Wall -Wextra") #
 
     elseif("${SyCL_Compiler_BE}" STREQUAL "CUDA")
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --hipsycl-config-file=${COMP_ROOT_DIR}/etc/hipSYCL/syclcc.json --hipsycl-targets='cuda:sm_70'")

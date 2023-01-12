@@ -25,10 +25,9 @@ template<class T> void test_constructor_syclbuf(std::string prefix, std::mt19937
 
     CommBuffer buf {buf_comp, prot};
 
-    return;
     sycl::buffer<T> buf_comp2 = CommBuffer<sycl::buffer<T>>::convert(std::move(buf));
 
-    shamtest::asserts().assert_equal(prefix+"same size", buf_comp.size(), buf_comp2.size());
+    shamtest::asserts().assert_equal(prefix+std::string("same size"), buf_comp.size(), buf_comp2.size());
 
     {
         sycl::host_accessor acc1 {buf_comp};
@@ -38,9 +37,9 @@ template<class T> void test_constructor_syclbuf(std::string prefix, std::mt19937
 
         bool eq = true;
         for(u32 i = 0; i < npart; i++){
-            if(test_sycl_eq(acc1[i] , acc2[i])){
+            if(!test_sycl_eq(acc1[i] , acc2[i])){
                 eq = false;
-                id_err_list += std::to_string(i) + " ";
+                //id_err_list += std::to_string(i) + " ";
             }
         }
 
