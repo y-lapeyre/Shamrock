@@ -47,7 +47,7 @@ namespace shamsys::comm {
     ///// forward declaration /////
     template<class T> using CommDetails = details::CommDetails<T>;
     template<class T> class CommBuffer;
-    template<class T> class CommRequest;
+    using CommRequests = std::vector<MPI_Request>;
 
 
     ///// class implementations /////
@@ -196,15 +196,15 @@ namespace shamsys::comm {
 
         /// implement comm functions
 
-        CommRequest<T> isend(u32 rank_dest, u32 comm_flag, MPI_Comm comm){
-            return std::visit([=](auto&& arg) {
-                return CommRequest<T>(arg.isend(rank_dest, comm_flag, comm));
+        void isend(CommRequests & rqs, u32 rank_dest, u32 comm_tag, MPI_Comm comm){
+            std::visit([&](auto&& arg) {
+                arg.isend(rqs, rank_dest, comm_tag, comm);
             }, *_int_type);
         }
 
-        CommRequest<T> irecv(u32 rank_src, u32 comm_flag, MPI_Comm comm){
-            return std::visit([=](auto&& arg) {
-                return CommRequest<T>(arg.irecv(rank_src, comm_flag, comm));
+        void irecv(CommRequests & rqs, u32 rank_src, u32 comm_tag, MPI_Comm comm){
+            std::visit([&](auto&& arg) {
+                arg.irecv(rqs, rank_src, comm_tag, comm);
             }, *_int_type);
         }
 

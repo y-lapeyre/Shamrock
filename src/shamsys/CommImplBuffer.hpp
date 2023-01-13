@@ -3,10 +3,13 @@
 #include "shamsys/CommProtocol.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/MpiWrapper.hpp"
+#include "shamsys/SyclMpiTypes.hpp"
 
 #include <optional>
 
 namespace shamsys::comm::details {
+
+    using CommRequests = std::vector<MPI_Request>;
 
     template<class T> 
     class CommDetails<sycl::buffer<T>>{public:
@@ -41,8 +44,21 @@ namespace shamsys::comm::details {
         //void copy_back(sycl::buffer<T> & dest);
         static sycl::buffer<T> convert(CommBuffer && buf);
 
-        CommRequest<sycl::buffer<T>, comm_mode> isend(u32 rank_dest, u32 comm_flag, MPI_Comm comm);
-        CommRequest<sycl::buffer<T>, comm_mode> irecv(u32 rank_src, u32 comm_flag, MPI_Comm comm);
+        CommRequest<sycl::buffer<T>, comm_mode> isend(u32 rank_dest, u32 comm_tag, MPI_Comm comm);
+        CommRequest<sycl::buffer<T>, comm_mode> irecv(u32 rank_src, u32 comm_tag, MPI_Comm comm);
+    };
+
+
+
+
+    template<class T>
+    class CommRequest<sycl::buffer<T>,CopyToHost>{
+        
+
+        public:
+        void wait(){
+
+        }
     };
 
 
@@ -53,6 +69,8 @@ namespace shamsys::comm::details {
         
         T* usm_ptr;
         CommDetails<sycl::buffer<T>> details;
+
+        using Rq_t = CommRequest<sycl::buffer<T>, CopyToHost>;
         
         public:
 
@@ -195,11 +213,22 @@ namespace shamsys::comm::details {
             return buf.copy_back();
         }
 
-        CommRequest<sycl::buffer<T>, DirectGPU> isend(u32 rank_dest, u32 comm_flag, MPI_Comm comm){
-
+        void isend(CommRequests & rqs, u32 rank_dest, u32 comm_tag, MPI_Comm comm){
+            MPI_Request rq;
+            mpi::isend(
+                usm_ptr, 
+                details.comm_len, 
+                get_mpi_type<T>(), 
+                rank_dest, 
+                comm_tag, 
+                comm, 
+                rq);
+            rqs.push_back(rq);
         }
-        CommRequest<sycl::buffer<T>, DirectGPU> irecv(u32 rank_src, u32 comm_flag, MPI_Comm comm){
 
+        void irecv(CommRequests & rqs, u32 rank_src, u32 comm_tag, MPI_Comm comm){
+            MPI_Request rq;
+            mpi::irecv(usm_ptr, details.comm_len, get_mpi_type<T>(), rank_src, comm_tag, comm, rq);
         }
 
     };
@@ -254,10 +283,10 @@ namespace shamsys::comm::details {
 
         }
 
-        CommRequest<sycl::buffer<T>, DirectGPU> isend(u32 rank_dest, u32 comm_flag, MPI_Comm comm){
+        void isend(CommRequests & rqs, u32 rank_dest, u32 comm_flag, MPI_Comm comm){
 
         }
-        CommRequest<sycl::buffer<T>, DirectGPU> irecv(u32 rank_src, u32 comm_flag, MPI_Comm comm){
+        void irecv(CommRequests & rqs, u32 rank_src, u32 comm_flag, MPI_Comm comm){
 
         }
     };
@@ -307,10 +336,10 @@ namespace shamsys::comm::details {
 
         }
 
-        CommRequest<sycl::buffer<T>, DirectGPU> isend(u32 rank_dest, u32 comm_flag, MPI_Comm comm){
+        void isend(CommRequests & rqs, u32 rank_dest, u32 comm_flag, MPI_Comm comm){
 
         }
-        CommRequest<sycl::buffer<T>, DirectGPU> irecv(u32 rank_src, u32 comm_flag, MPI_Comm comm){
+        void irecv(CommRequests & rqs, u32 rank_src, u32 comm_flag, MPI_Comm comm){
 
         }
     };
