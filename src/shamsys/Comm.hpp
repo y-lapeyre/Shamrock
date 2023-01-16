@@ -47,7 +47,9 @@ namespace shamsys::comm {
     ///// forward declaration /////
     template<class T> using CommDetails = details::CommDetails<T>;
     template<class T> class CommBuffer;
-    using CommRequests = std::vector<MPI_Request>;
+
+
+    
 
 
     ///// class implementations /////
@@ -196,12 +198,28 @@ namespace shamsys::comm {
 
         /// implement comm functions
 
+        /**
+         * @brief similar to MPI_ISend but with the protocols containers
+         * 
+         * @param rqs 
+         * @param rank_dest 
+         * @param comm_tag 
+         * @param comm 
+         */
         void isend(CommRequests & rqs, u32 rank_dest, u32 comm_tag, MPI_Comm comm){
             std::visit([&](auto&& arg) {
                 arg.isend(rqs, rank_dest, comm_tag, comm);
             }, *_int_type);
         }
 
+        /**
+         * @brief similar to MPI_IRecv but with the protocols containers
+         * 
+         * @param rqs 
+         * @param rank_src 
+         * @param comm_tag 
+         * @param comm 
+         */
         void irecv(CommRequests & rqs, u32 rank_src, u32 comm_tag, MPI_Comm comm){
             std::visit([&](auto&& arg) {
                 arg.irecv(rqs, rank_src, comm_tag, comm);
@@ -209,20 +227,6 @@ namespace shamsys::comm {
         }
 
     };
-
-    template<class T> class CommRequest{
-        private:
-        std::variant<
-            details::CommRequest<T,CopyToHost>,
-            details::CommRequest<T,DirectGPU>,
-            details::CommRequest<T,DirectGPUFlatten>
-        > _int_type;
-
-        public:
-
-        template<Protocol comm_mode> explicit CommRequest(details::CommRequest<T,comm_mode> rq) : _int_type(rq){}
-    };
-
 
     template class CommBuffer<sycl::buffer<f32_3>>;
 
