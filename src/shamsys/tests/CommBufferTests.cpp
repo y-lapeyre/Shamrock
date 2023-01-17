@@ -87,5 +87,20 @@ TestStart(Unittest, "shamsys/comm/comm-buffer/syclbuffer", constructordestructor
     test_constructor_syclbuf<f64_16>("f64_16: ",eng,DirectGPU);
     test_constructor_syclbuf<u32   >("u32   : ",eng,DirectGPU);
     test_constructor_syclbuf<u64   >("u64   : ",eng,DirectGPU);
+
+    test_constructor_syclbuf<f32   >("f32   : ",eng,DirectGPUFlatten);
+    test_constructor_syclbuf<f32_2 >("f32_2 : ",eng,DirectGPUFlatten);
+    test_constructor_syclbuf<f32_3 >("f32_3 : ",eng,DirectGPUFlatten);
+    test_constructor_syclbuf<f32_4 >("f32_4 : ",eng,DirectGPUFlatten);
+    test_constructor_syclbuf<f32_8 >("f32_8 : ",eng,DirectGPUFlatten);
+    test_constructor_syclbuf<f32_16>("f32_16: ",eng,DirectGPUFlatten);
+    test_constructor_syclbuf<f64   >("f64   : ",eng,DirectGPUFlatten);
+    test_constructor_syclbuf<f64_2 >("f64_2 : ",eng,DirectGPUFlatten);
+    test_constructor_syclbuf<f64_3 >("f64_3 : ",eng,DirectGPUFlatten);
+    test_constructor_syclbuf<f64_4 >("f64_4 : ",eng,DirectGPUFlatten);
+    test_constructor_syclbuf<f64_8 >("f64_8 : ",eng,DirectGPUFlatten);
+    test_constructor_syclbuf<f64_16>("f64_16: ",eng,DirectGPUFlatten);
+    test_constructor_syclbuf<u32   >("u32   : ",eng,DirectGPUFlatten);
+    test_constructor_syclbuf<u64   >("u64   : ",eng,DirectGPUFlatten);
     
 }

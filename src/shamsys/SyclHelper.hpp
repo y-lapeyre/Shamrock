@@ -14,6 +14,9 @@ namespace shamsys::syclhelper::mock {
     
 } // namespace shamsys::syclhelper::mock
 
+
+
+
 template <class T> inline bool test_sycl_eq(const T & a, const T & b);
 
 template <class T> inline void print_vec(std::ostream & ostream, T a);
@@ -228,3 +231,20 @@ template<> inline sycl::vec<u16,3> next_obj(std::mt19937 & eng, std::uniform_rea
 
 
 template<> inline sycl::vec<u32,3> next_obj(std::mt19937 & eng, std::uniform_real_distribution<f64> & distval){return sycl::vec<u32,3> {next_obj<u32>(eng,distval),next_obj<u32>(eng,distval),next_obj<u32>(eng,distval)};}
+
+
+
+
+
+
+template<class T>
+struct get_base_sycl_type{
+    using type = T;
+    static const i32 int_len = 1;
+};
+
+template<class T, i32 N>
+struct get_base_sycl_type<sycl::vec<T, N>>{
+    using type = T;
+    static const i32 int_len = N;
+};

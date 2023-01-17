@@ -4,15 +4,498 @@
 
 namespace shamsys::comm::details {
 
+    //////////////////////////////////////////
+    //copy to host impl
+    //////////////////////////////////////////
+
+    template<class T>
+    void CommBuffer<sycl::buffer<T>,CopyToHost>::alloc_usm(u64 len){
+        usm_ptr = sycl::malloc_host<T>(len,instance::get_compute_queue());
+    }
+
+    template<class T>
+    void CommBuffer<sycl::buffer<T>,CopyToHost>::copy_to_usm(sycl::buffer<T> & obj_ref, u64 len, u64 offset){
+            
+            sycl::host_accessor acc {obj_ref};
+            for(u64 sz = 0;sz < len; sz ++){
+                usm_ptr[sz] = acc[sz + offset];
+            }
+        
+        }
+    template<class T>
+    sycl::buffer<T> CommBuffer<sycl::buffer<T>,CopyToHost>::build_from_usm(u64 len, u64 offset){
+
+        sycl::buffer<T> buf_ret (len);
+        {
+            sycl::host_accessor acc {buf_ret};
+            for(u64 sz = 0;sz < len; sz ++){
+                acc[sz + offset] = usm_ptr[sz];
+            }
+        }
+        return buf_ret;
+    }
+
+
+    //////////////////////////////////////////
+    //direct GPU impl
+    //////////////////////////////////////////
+
+    template<class T>
+    void CommBuffer<sycl::buffer<T>,DirectGPU>::alloc_usm(u64 len){
+        usm_ptr = sycl::malloc_device<T>(len,instance::get_compute_queue());
+    }
+
+    template<class T>
+    void CommBuffer<sycl::buffer<T>,DirectGPU>::copy_to_usm(sycl::buffer<T> & obj_ref, u64 len, u64 offset){
+        
+        auto ev = instance::get_compute_queue().submit([&](sycl::handler & cgh){
+            
+            sycl::accessor acc_buf {obj_ref, cgh, sycl::read_only};
+
+            u64 off = offset;
+            T* ptr = usm_ptr;
+
+            cgh.parallel_for(sycl::range<1>{len},[=](sycl::item<1> i){
+                ptr[i] = acc_buf[i + off];
+            });
+
+        });
+
+        ev.wait();//TODO wait for the event only when doing MPI calls
+    
+    }
+
+    template<class T>
+    sycl::buffer<T> CommBuffer<sycl::buffer<T>,DirectGPU>::build_from_usm(u64 len, u64 offset){
+
+        sycl::buffer<T> buf_ret (len);
+
+
+        auto ev = instance::get_compute_queue().submit([&](sycl::handler & cgh){
+            
+            sycl::accessor acc_buf {buf_ret, cgh, sycl::write_only};
+
+            u64 off = offset;
+            T* ptr = usm_ptr;
+
+            cgh.parallel_for(sycl::range<1>{len},[=](sycl::item<1> i){
+                acc_buf[i + off] = ptr[i];
+            });
+
+        });
+
+        ev.wait();//TODO wait for the event only when doing MPI calls
+
+        return buf_ret;
+    }
 
 
 
 
 
-    //template<class T, Protocol comm_mode> 
-    //class CommRequest<sycl::buffer<T>,comm_mode>{
-//
-    //};
+
+
+
+
+
+
+
+
+
+
+    //////////////////////////////////////////
+    //direct GPU flattened impl
+    //////////////////////////////////////////
+
+    template<class T>
+    void CommBuffer<sycl::buffer<T>,DirectGPUFlatten>::alloc_usm(u64 len){
+        usm_ptr = sycl::malloc_device<ptr_t>(len*int_len,instance::get_compute_queue());
+    }
+
+
+
+    
+
+    template<class T>
+    void flatten_copy_to_usm(sycl::buffer<T> & obj_ref, T* usm_ptr, u64 len, u64 offset){
+        
+        auto ev = instance::get_compute_queue().submit([&](sycl::handler & cgh){
+            
+            sycl::accessor acc_buf {obj_ref, cgh, sycl::read_only};
+
+            u64 off = offset;
+            T* ptr = usm_ptr;
+
+            cgh.parallel_for(sycl::range<1>{len},[=](sycl::item<1> i){
+                ptr[i] = acc_buf[i + off];
+            });
+
+        });
+
+        ev.wait();//TODO wait for the event only when doing MPI calls
+    
+    }
+
+    template<class T>
+    void flatten_build_from_usm(sycl::buffer<T> & buf_ret,T* usm_ptr, u64 len, u64 offset){
+
+        auto ev = instance::get_compute_queue().submit([&](sycl::handler & cgh){
+            
+            sycl::accessor acc_buf {buf_ret, cgh, sycl::write_only};
+
+            u64 off = offset;
+            T* ptr = usm_ptr;
+
+            cgh.parallel_for(sycl::range<1>{len},[=](sycl::item<1> i){
+                acc_buf[i + off] = ptr[i];
+            });
+
+        });
+
+        ev.wait();//TODO wait for the event only when doing MPI calls
+
+    }
+
+
+    template<class T>
+    void flatten_copy_to_usm(sycl::buffer<sycl::vec<T,2>> & obj_ref, T* usm_ptr, u64 len, u64 offset){
+        
+        auto ev = instance::get_compute_queue().submit([&](sycl::handler & cgh){
+            
+            sycl::accessor acc_buf {obj_ref, cgh, sycl::read_only};
+
+            u64 off = offset;
+            T* ptr = usm_ptr;
+
+            cgh.parallel_for(sycl::range<1>{len},[=](sycl::item<1> i){
+                ptr[i*2 + 0] = acc_buf[i + off].x();
+                ptr[i*2 + 1] = acc_buf[i + off].y();
+            });
+
+        });
+
+        ev.wait();//TODO wait for the event only when doing MPI calls
+    
+    }
+
+    template<class T>
+    void flatten_build_from_usm(sycl::buffer<sycl::vec<T,2>> & buf_ret,T* usm_ptr, u64 len, u64 offset){
+
+        auto ev = instance::get_compute_queue().submit([&](sycl::handler & cgh){
+            
+            sycl::accessor acc_buf {buf_ret, cgh, sycl::write_only};
+
+            u64 off = offset;
+            T* ptr = usm_ptr;
+
+            cgh.parallel_for(sycl::range<1>{len},[=](sycl::item<1> i){
+
+                acc_buf[i + off].x() = ptr[i*2 + 0];
+                acc_buf[i + off].y() = ptr[i*2 + 1];
+            });
+
+        });
+
+        ev.wait();//TODO wait for the event only when doing MPI calls
+
+    }
+
+
+
+
+    template<class T>
+    void flatten_copy_to_usm(sycl::buffer<sycl::vec<T,3>> & obj_ref, T* usm_ptr, u64 len, u64 offset){
+        
+        auto ev = instance::get_compute_queue().submit([&](sycl::handler & cgh){
+            
+            sycl::accessor acc_buf {obj_ref, cgh, sycl::read_only};
+
+            u64 off = offset;
+            T* ptr = usm_ptr;
+
+            cgh.parallel_for(sycl::range<1>{len},[=](sycl::item<1> i){
+                ptr[i*3 + 0] = acc_buf[i + off].x();
+                ptr[i*3 + 1] = acc_buf[i + off].y();
+                ptr[i*3 + 2] = acc_buf[i + off].z();
+            });
+
+        });
+
+        ev.wait();//TODO wait for the event only when doing MPI calls
+    
+    }
+
+    template<class T>
+    void flatten_build_from_usm(sycl::buffer<sycl::vec<T,3>> & buf_ret,T* usm_ptr, u64 len, u64 offset){
+
+        auto ev = instance::get_compute_queue().submit([&](sycl::handler & cgh){
+            
+            sycl::accessor acc_buf {buf_ret, cgh, sycl::write_only};
+
+            u64 off = offset;
+            T* ptr = usm_ptr;
+
+            cgh.parallel_for(sycl::range<1>{len},[=](sycl::item<1> i){
+
+                acc_buf[i + off].x() = ptr[i*3 + 0];
+                acc_buf[i + off].y() = ptr[i*3 + 1];
+                acc_buf[i + off].z() = ptr[i*3 + 2];
+            });
+
+        });
+
+        ev.wait();//TODO wait for the event only when doing MPI calls
+
+    }
+
+    template<class T>
+    void flatten_copy_to_usm(sycl::buffer<sycl::vec<T,4>> & obj_ref, T* usm_ptr, u64 len, u64 offset){
+        
+        auto ev = instance::get_compute_queue().submit([&](sycl::handler & cgh){
+            
+            sycl::accessor acc_buf {obj_ref, cgh, sycl::read_only};
+
+            u64 off = offset;
+            T* ptr = usm_ptr;
+
+            cgh.parallel_for(sycl::range<1>{len},[=](sycl::item<1> i){
+                ptr[i*4 + 0] = acc_buf[i + off].x();
+                ptr[i*4 + 1] = acc_buf[i + off].y();
+                ptr[i*4 + 2] = acc_buf[i + off].z();
+                ptr[i*4 + 3] = acc_buf[i + off].w();
+            });
+
+        });
+
+        ev.wait();//TODO wait for the event only when doing MPI calls
+    
+    }
+
+    template<class T>
+    void flatten_build_from_usm(sycl::buffer<sycl::vec<T,4>> & buf_ret,T* usm_ptr, u64 len, u64 offset){
+
+        auto ev = instance::get_compute_queue().submit([&](sycl::handler & cgh){
+            
+            sycl::accessor acc_buf {buf_ret, cgh, sycl::write_only};
+
+            u64 off = offset;
+            T* ptr = usm_ptr;
+
+            cgh.parallel_for(sycl::range<1>{len},[=](sycl::item<1> i){
+
+                acc_buf[i + off].x() = ptr[i*4 + 0];
+                acc_buf[i + off].y() = ptr[i*4 + 1];
+                acc_buf[i + off].z() = ptr[i*4 + 2];
+                acc_buf[i + off].w() = ptr[i*4 + 3];
+            });
+
+        });
+
+        ev.wait();//TODO wait for the event only when doing MPI calls
+
+    }
+
+
+
+    template<class T>
+    void flatten_copy_to_usm(sycl::buffer<sycl::vec<T,8>> & obj_ref, T* usm_ptr, u64 len, u64 offset){
+        
+        auto ev = instance::get_compute_queue().submit([&](sycl::handler & cgh){
+            
+            sycl::accessor acc_buf {obj_ref, cgh, sycl::read_only};
+
+            u64 off = offset;
+            T* ptr = usm_ptr;
+
+            cgh.parallel_for(sycl::range<1>{len},[=](sycl::item<1> i){
+                ptr[i*8 + 0] = acc_buf[i + off].s0();
+                ptr[i*8 + 1] = acc_buf[i + off].s1();
+                ptr[i*8 + 2] = acc_buf[i + off].s2();
+                ptr[i*8 + 3] = acc_buf[i + off].s3();
+                ptr[i*8 + 4] = acc_buf[i + off].s4();
+                ptr[i*8 + 5] = acc_buf[i + off].s5();
+                ptr[i*8 + 6] = acc_buf[i + off].s6();
+                ptr[i*8 + 7] = acc_buf[i + off].s7();
+            });
+
+        });
+
+        ev.wait();//TODO wait for the event only when doing MPI calls
+    
+    }
+
+    template<class T>
+    void flatten_build_from_usm(sycl::buffer<sycl::vec<T,8>> & buf_ret,T* usm_ptr, u64 len, u64 offset){
+
+        auto ev = instance::get_compute_queue().submit([&](sycl::handler & cgh){
+            
+            sycl::accessor acc_buf {buf_ret, cgh, sycl::write_only};
+
+            u64 off = offset;
+            T* ptr = usm_ptr;
+
+            cgh.parallel_for(sycl::range<1>{len},[=](sycl::item<1> i){
+
+                acc_buf[i + off].s0() = ptr[i*8 + 0];
+                acc_buf[i + off].s1() = ptr[i*8 + 1];
+                acc_buf[i + off].s2() = ptr[i*8 + 2];
+                acc_buf[i + off].s3() = ptr[i*8 + 3];
+                acc_buf[i + off].s4() = ptr[i*8 + 4];
+                acc_buf[i + off].s5() = ptr[i*8 + 5];
+                acc_buf[i + off].s6() = ptr[i*8 + 6];
+                acc_buf[i + off].s7() = ptr[i*8 + 7];
+            });
+
+        });
+
+        ev.wait();//TODO wait for the event only when doing MPI calls
+
+    }
+
+
+
+    template<class T>
+    void flatten_copy_to_usm(sycl::buffer<sycl::vec<T,16>> & obj_ref, T* usm_ptr, u64 len, u64 offset){
+        
+        auto ev = instance::get_compute_queue().submit([&](sycl::handler & cgh){
+            
+            sycl::accessor acc_buf {obj_ref, cgh, sycl::read_only};
+
+            u64 off = offset;
+            T* ptr = usm_ptr;
+
+            cgh.parallel_for(sycl::range<1>{len},[=](sycl::item<1> i){
+                ptr[i*16 + 0] = acc_buf[i + off].s0();
+                ptr[i*16 + 1] = acc_buf[i + off].s1();
+                ptr[i*16 + 2] = acc_buf[i + off].s2();
+                ptr[i*16 + 3] = acc_buf[i + off].s3();
+                ptr[i*16 + 4] = acc_buf[i + off].s4();
+                ptr[i*16 + 5] = acc_buf[i + off].s5();
+                ptr[i*16 + 6] = acc_buf[i + off].s6();
+                ptr[i*16 + 7] = acc_buf[i + off].s7();
+                ptr[i*16 + 8] = acc_buf[i + off].s8();
+                ptr[i*16 + 9] = acc_buf[i + off].s9();
+                ptr[i*16 +10] = acc_buf[i + off].sA();
+                ptr[i*16 +11] = acc_buf[i + off].sB();
+                ptr[i*16 +12] = acc_buf[i + off].sC();
+                ptr[i*16 +13] = acc_buf[i + off].sD();
+                ptr[i*16 +14] = acc_buf[i + off].sE();
+                ptr[i*16 +15] = acc_buf[i + off].sF();
+            });
+
+        });
+
+        ev.wait();//TODO wait for the event only when doing MPI calls
+    
+    }
+
+    template<class T>
+    void flatten_build_from_usm(sycl::buffer<sycl::vec<T,16>> & buf_ret,T* usm_ptr, u64 len, u64 offset){
+
+        auto ev = instance::get_compute_queue().submit([&](sycl::handler & cgh){
+            
+            sycl::accessor acc_buf {buf_ret, cgh, sycl::write_only};
+
+            u64 off = offset;
+            T* ptr = usm_ptr;
+
+            cgh.parallel_for(sycl::range<1>{len},[=](sycl::item<1> i){
+
+                acc_buf[i + off].s0() = ptr[i*16 + 0];
+                acc_buf[i + off].s1() = ptr[i*16 + 1];
+                acc_buf[i + off].s2() = ptr[i*16 + 2];
+                acc_buf[i + off].s3() = ptr[i*16 + 3];
+                acc_buf[i + off].s4() = ptr[i*16 + 4];
+                acc_buf[i + off].s5() = ptr[i*16 + 5];
+                acc_buf[i + off].s6() = ptr[i*16 + 6];
+                acc_buf[i + off].s7() = ptr[i*16 + 7];
+                acc_buf[i + off].s8() = ptr[i*16 + 8];
+                acc_buf[i + off].s9() = ptr[i*16 + 9];
+                acc_buf[i + off].sA() = ptr[i*16 +10];
+                acc_buf[i + off].sB() = ptr[i*16 +11];
+                acc_buf[i + off].sC() = ptr[i*16 +12];
+                acc_buf[i + off].sD() = ptr[i*16 +13];
+                acc_buf[i + off].sE() = ptr[i*16 +14];
+                acc_buf[i + off].sF() = ptr[i*16 +15];
+            });
+
+        });
+
+        ev.wait();//TODO wait for the event only when doing MPI calls
+
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    template<class T>
+    void CommBuffer<sycl::buffer<T>,DirectGPUFlatten>::copy_to_usm(sycl::buffer<T> & obj_ref, u64 len, u64 offset){
+        
+        flatten_copy_to_usm(obj_ref,usm_ptr,len,offset);
+    
+    }
+
+    template<class T>
+    sycl::buffer<T> CommBuffer<sycl::buffer<T>,DirectGPUFlatten>::build_from_usm(u64 len, u64 offset){
+
+        sycl::buffer<T> buf_ret (len);
+
+        flatten_build_from_usm(buf_ret,usm_ptr,len,offset);
+
+        return buf_ret;
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     template class CommBuffer<sycl::buffer<f32   >,CopyToHost>;
