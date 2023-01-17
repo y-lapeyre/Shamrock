@@ -23,6 +23,8 @@ namespace shamsys::syclhelper::mock {
 
 
 
+namespace shamsys::syclhelper{
+
 
 template <class T> inline bool test_sycl_eq(const T & a, const T & b);
 
@@ -255,3 +257,5 @@ struct get_base_sycl_type<sycl::vec<T, N>>{
     using type = T;
     static const i32 int_len = N;
 };
+
+}

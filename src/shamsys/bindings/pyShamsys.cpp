@@ -7,7 +7,6 @@
 
 SHAMROCK_PY_MODULE(shamrock, m){
 
-    py::module sys_module = m.def_submodule("sys", "system handling part of shamrock");
 
     m.def("change_loglevel",[](u32 loglevel){
 
@@ -29,6 +28,36 @@ SHAMROCK_PY_MODULE(shamrock, m){
         Change the loglevel
 
     )pbdoc");
+
+
+
+    m.def("get_git_info",[](){
+        return git_info_str;
+    }, R"pbdoc(
+        Return git_info_str
+    )pbdoc");
+
+    m.def("print_git_info",[](){
+        logger::raw_ln(git_info_str);
+    }, R"pbdoc(
+        print git_info_str
+    )pbdoc");
+
+    m.def("get_compile_arg",[](){
+        return compile_arg;
+    }, R"pbdoc(
+        Return compile_arg
+    )pbdoc");
+
+    m.def("print_compile_arg",[](){
+        logger::raw_ln(compile_arg);
+    }, R"pbdoc(
+        print compile_arg
+    )pbdoc");
+
+
+
+    py::module sys_module = m.def_submodule("sys", "system handling part of shamrock");
 
     shamsys::instance::register_pymodules(sys_module);
 }

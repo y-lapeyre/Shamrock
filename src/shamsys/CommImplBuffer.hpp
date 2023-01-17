@@ -349,8 +349,8 @@ namespace shamsys::comm::details {
     template<class T> 
     class CommBuffer<sycl::buffer<T>,DirectGPUFlatten>{
 
-        using ptr_t = typename get_base_sycl_type<T>::type;
-        constexpr static u64 int_len = get_base_sycl_type<T>::int_len;
+        using ptr_t = typename shamsys::syclhelper::get_base_sycl_type<T>::type;
+        constexpr static u64 int_len = shamsys::syclhelper::get_base_sycl_type<T>::int_len;
 
         ptr_t* usm_ptr;
         CommDetails<sycl::buffer<T>> details;
