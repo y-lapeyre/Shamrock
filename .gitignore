@@ -28,3 +28,6 @@ version.cpp
 report.tex
 
 .DS_Store
+
+shamrock.egg-info
+*.so
