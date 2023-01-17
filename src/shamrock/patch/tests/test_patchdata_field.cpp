@@ -47,8 +47,6 @@ TestStart(Unittest,base + ":isend_irecv_f32", isend_irecv_f32, 2){
 
     
 
-    create_sycl_mpi_types();
-
 
 
     PatchDataField<f32> d1_check("test",1);
@@ -89,5 +87,4 @@ TestStart(Unittest,base + ":isend_irecv_f32", isend_irecv_f32, 2){
         shamtest::asserts().assert_bool("recv_d == d1_check (f32)", p1.check_field_match(p2));
     }
 
-    free_sycl_mpi_types();
 }

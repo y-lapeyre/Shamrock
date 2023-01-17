@@ -54,7 +54,6 @@ TestStart(Unittest, "patchdata.cpp/patch_data_check_match",patch_data_check_matc
 TestStart(Unittest, "patchdata.cpp/isend_irecv",patch_data_isend_irecv, 2){
     std::mt19937 eng(0x1111);  
 
-    create_sycl_mpi_types();
 
     PatchDataLayout pdl;
     pdl.xyz_mode = xyz32;
@@ -121,5 +120,4 @@ TestStart(Unittest, "patchdata.cpp/isend_irecv",patch_data_isend_irecv, 2){
 
 
 
-    free_sycl_mpi_types();
 }

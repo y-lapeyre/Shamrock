@@ -35,6 +35,27 @@ namespace shamsys::comm::details {
         return buf_ret;
     }
 
+template<class T>
+    void CommBuffer<sycl::buffer<T>,CopyToHost>::isend(CommRequests & rqs, u32 rank_dest, u32 comm_tag, MPI_Comm comm){
+            MPI_Request rq;
+            mpi::isend(
+                usm_ptr, 
+                details.comm_len, 
+                get_mpi_type<T>(), 
+                rank_dest, 
+                comm_tag, 
+                comm, 
+                &rq);
+            rqs.push(rq);
+        }
+
+template<class T>
+        void CommBuffer<sycl::buffer<T>,CopyToHost>::irecv(CommRequests & rqs, u32 rank_src, u32 comm_tag, MPI_Comm comm){
+            MPI_Request rq;
+            mpi::irecv(usm_ptr, details.comm_len, get_mpi_type<T>(), rank_src, comm_tag, comm, &rq);
+            rqs.push(rq);
+        }
+
 
     //////////////////////////////////////////
     //direct GPU impl
@@ -89,8 +110,26 @@ namespace shamsys::comm::details {
         return buf_ret;
     }
 
+    template<class T>
+    void CommBuffer<sycl::buffer<T>,DirectGPU>::isend(CommRequests & rqs, u32 rank_dest, u32 comm_tag, MPI_Comm comm){
+        MPI_Request rq;
+        mpi::isend(
+            usm_ptr, 
+            details.comm_len, 
+            get_mpi_type<T>(), 
+            rank_dest, 
+            comm_tag, 
+            comm, 
+            &rq);
+        rqs.push(rq);
+    }
 
-
+    template<class T>
+    void CommBuffer<sycl::buffer<T>,DirectGPU>::irecv(CommRequests & rqs, u32 rank_src, u32 comm_tag, MPI_Comm comm){
+        MPI_Request rq;
+        mpi::irecv(usm_ptr, details.comm_len, get_mpi_type<T>(), rank_src, comm_tag, comm, &rq);
+        rqs.push(rq);
+    }
 
 
 
@@ -457,7 +496,26 @@ namespace shamsys::comm::details {
         return buf_ret;
     }
 
+    template<class T>
+    void CommBuffer<sycl::buffer<T>,DirectGPUFlatten>::isend(CommRequests & rqs, u32 rank_dest, u32 comm_tag, MPI_Comm comm){
+        MPI_Request rq;
+        mpi::isend(
+            usm_ptr, 
+            details.comm_len*int_len, 
+            get_mpi_type<ptr_t>(), 
+            rank_dest, 
+            comm_tag, 
+            comm, 
+            &rq);
+        rqs.push(rq);
+    }
 
+    template<class T>
+    void CommBuffer<sycl::buffer<T>,DirectGPUFlatten>::irecv(CommRequests & rqs, u32 rank_src, u32 comm_tag, MPI_Comm comm){
+        MPI_Request rq;
+        mpi::irecv(usm_ptr, details.comm_len*int_len, get_mpi_type<ptr_t>(), rank_src, comm_tag, comm, &rq);
+        rqs.push(rq);
+    }
 
 
 

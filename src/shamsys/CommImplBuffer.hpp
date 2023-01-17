@@ -173,24 +173,9 @@ namespace shamsys::comm::details {
             return buf.copy_back();
         }
 
-        void isend(CommRequests & rqs, u32 rank_dest, u32 comm_tag, MPI_Comm comm){
-            MPI_Request rq;
-            mpi::isend(
-                usm_ptr, 
-                details.comm_len, 
-                get_mpi_type<T>(), 
-                rank_dest, 
-                comm_tag, 
-                comm, 
-                &rq);
-            rqs.push(rq);
-        }
+        void isend(CommRequests & rqs, u32 rank_dest, u32 comm_tag, MPI_Comm comm);
 
-        void irecv(CommRequests & rqs, u32 rank_src, u32 comm_tag, MPI_Comm comm){
-            MPI_Request rq;
-            mpi::irecv(usm_ptr, details.comm_len, get_mpi_type<T>(), rank_src, comm_tag, comm, &rq);
-            rqs.push(rq);
-        }
+        void irecv(CommRequests & rqs, u32 rank_src, u32 comm_tag, MPI_Comm comm);
 
     };
 
@@ -316,24 +301,9 @@ namespace shamsys::comm::details {
             return buf.copy_back();
         }
 
-        void isend(CommRequests & rqs, u32 rank_dest, u32 comm_tag, MPI_Comm comm){
-            MPI_Request rq;
-            mpi::isend(
-                usm_ptr, 
-                details.comm_len, 
-                get_mpi_type<T>(), 
-                rank_dest, 
-                comm_tag, 
-                comm, 
-                &rq);
-            rqs.push(rq);
-        }
+        void isend(CommRequests & rqs, u32 rank_dest, u32 comm_tag, MPI_Comm comm);
 
-        void irecv(CommRequests & rqs, u32 rank_src, u32 comm_tag, MPI_Comm comm){
-            MPI_Request rq;
-            mpi::irecv(usm_ptr, details.comm_len, get_mpi_type<T>(), rank_src, comm_tag, comm, &rq);
-            rqs.push(rq);
-        }
+        void irecv(CommRequests & rqs, u32 rank_src, u32 comm_tag, MPI_Comm comm);
 
     };
 
@@ -372,7 +342,7 @@ namespace shamsys::comm::details {
     class CommBuffer<sycl::buffer<T>,DirectGPUFlatten>{
 
         using ptr_t = typename get_base_sycl_type<T>::type;
-        const static u64 int_len = get_base_sycl_type<T>::int_len;
+        constexpr static u64 int_len = get_base_sycl_type<T>::int_len;
 
         ptr_t* usm_ptr;
         CommDetails<sycl::buffer<T>> details;
@@ -489,24 +459,9 @@ namespace shamsys::comm::details {
             return buf.copy_back();
         }
 
-        void isend(CommRequests & rqs, u32 rank_dest, u32 comm_tag, MPI_Comm comm){
-            MPI_Request rq;
-            mpi::isend(
-                usm_ptr, 
-                details.comm_len, 
-                get_mpi_type<T>(), 
-                rank_dest, 
-                comm_tag, 
-                comm, 
-                &rq);
-            rqs.push(rq);
-        }
+        void isend(CommRequests & rqs, u32 rank_dest, u32 comm_tag, MPI_Comm comm);
 
-        void irecv(CommRequests & rqs, u32 rank_src, u32 comm_tag, MPI_Comm comm){
-            MPI_Request rq;
-            mpi::irecv(usm_ptr, details.comm_len, get_mpi_type<T>(), rank_src, comm_tag, comm, &rq);
-            rqs.push(rq);
-        }
+        void irecv(CommRequests & rqs, u32 rank_src, u32 comm_tag, MPI_Comm comm);
 
     };
 

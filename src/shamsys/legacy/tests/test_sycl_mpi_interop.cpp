@@ -25,7 +25,6 @@ int get_mpi_size(MPI_Datatype md){
 
 TestStart(Unittest, "syclhandler/test_sycl_mpi_types_sizes", test_sycl_mpi_types_sizes, -1){
 
-    create_sycl_mpi_types();
 
     shamtest::asserts().assert_bool("mpi type i64    correct", get_mpi_size( mpi_type_i64   ) == sizeof(i64 ));
     shamtest::asserts().assert_bool("mpi type i32    correct", get_mpi_size( mpi_type_i32   ) == sizeof(i32 ));
@@ -93,8 +92,6 @@ TestStart(Unittest, "syclhandler/test_sycl_mpi_types_sizes", test_sycl_mpi_types
     shamtest::asserts().assert_bool("mpi type f16_16 correct", get_mpi_size( mpi_type_f16_16) == sizeof(f16_16));
     shamtest::asserts().assert_bool("mpi type f32_16 correct", get_mpi_size( mpi_type_f32_16) == sizeof(f32_16));
     shamtest::asserts().assert_bool("mpi type f64_16 correct", get_mpi_size( mpi_type_f64_16) == sizeof(f64_16));
-
-    free_sycl_mpi_types();
 
 }
 
@@ -281,7 +278,6 @@ Test_start("sycl_handler::",test_sycl_mpi_types_comm,2){
     std::mt19937 eng(0x1171);        
     std::uniform_real_distribution<f64> distval(-1e9,1e9);
 
-    create_sycl_mpi_types();
 
     test_type1<i64>(__test_result_ref, eng, distval,mpi_type_i64,"i64");
     test_type1<i32>(__test_result_ref, eng, distval,mpi_type_i32,"i32");
@@ -356,7 +352,6 @@ Test_start("sycl_handler::",test_sycl_mpi_types_comm,2){
     test_type16<f64_16>(__test_result_ref, eng, distval,mpi_type_f64_16,"f64_16");
 
 
-    free_sycl_mpi_types();
 
 }
 
@@ -421,13 +416,11 @@ Test_start("sycl_mpi_interop::",test_sycl_buffer_mpi_comm,2){
     std::mt19937 eng(0x1171);        
     std::uniform_real_distribution<f64> distval(-1e9,1e9);
 
-    create_sycl_mpi_types();
 
     #define X(args) test_type_comm<args>(__test_result_ref, eng, distval,mpi_type_##args,#args);
     XMAC_SYCLMPI_TYPE_ENABLED
     #undef X
 
-    free_sycl_mpi_types();
 
 }
 
