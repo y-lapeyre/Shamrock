@@ -1,30 +1,11 @@
-/*
-cf https://github.com/tdavidcl/Shamrock/issues/23 
+// -------------------------------------------------------//
+//
+// SHAMROCK code for hydrodynamics
+// Copyright(C) 2021-2022 Timothée David--Cléris <timothee.david--cleris@ens-lyon.fr>
+// Licensed under CeCILL 2.1 License, see LICENSE for more information
+//
+// -------------------------------------------------------//
 
-
-we want to user side to look like this
-
-
-////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////
-
-Communicator<... type ...> comm {MPI_COMM_WORLD, protocol::DirectGPU};
-
-auto tmp = comm.prepare_send_full(... obj to send ...);
-auto tmp = comm.prepare_send(... obj to send ...,details<... type ...>{.....});
-
-// ... do comm calls
-comm.isend(tmp,0 ,0);
-// ...
-
-comm.sync(); // note : sync only sync sycl with MPI, ie can be nonblocking
-
-////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////
-
-*/
 
 #pragma once
 

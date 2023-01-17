@@ -1,3 +1,12 @@
+// -------------------------------------------------------//
+//
+// SHAMROCK code for hydrodynamics
+// Copyright(C) 2021-2022 Timothée David--Cléris <timothee.david--cleris@ens-lyon.fr>
+// Licensed under CeCILL 2.1 License, see LICENSE for more information
+//
+// -------------------------------------------------------//
+
+
 #include "shamtest/shamtest.hpp"
 #include <random>
 
@@ -160,7 +169,7 @@ template<class T> void test_comm_syclbuf(std::string prefix, std::mt19937 & eng,
 
         details.comm_len = npart;
 
-        CommBuffer<sycl::buffer<T>> buf {details,prot};
+        CommBuffer buf {details,prot};
 
         CommRequests rqs;
         buf.irecv(rqs, 0,0,MPI_COMM_WORLD);
