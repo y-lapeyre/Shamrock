@@ -343,9 +343,9 @@ f64 models::sph::BasicSPHGasUInterne<flt,Kernel>::evolve(PatchScheduler &sched, 
                                 // scalar : f32  | vector : f32_3
                                 f32 alpha_a = alpha_AV; 
                                 f32 alpha_b = alpha_AV;
-                                f32 vsig_a = alpha_a*cs_a + beta_AV*sycl::abs(v_ab_r_ab); 
-                                f32 vsig_b = alpha_b*cs_b + beta_AV*sycl::abs(v_ab_r_ab);
-                                vsig_u =  sycl::abs(v_ab_r_ab);
+                                f32 vsig_a = alpha_a*cs_a + beta_AV*sycl::fabs(v_ab_r_ab); 
+                                f32 vsig_b = alpha_b*cs_b + beta_AV*sycl::fabs(v_ab_r_ab);
+                                vsig_u =  sycl::fabs(v_ab_r_ab);
 
                                 //auto v_sig_a = alpha_AV * cs_a + beta_AV * sycl::distance(v_ab, dr);
                                 lambda_viscous_heating +=  part_mass * vsig_a * 0.5f * (sycl::pow(sycl::dot(v_ab, dr), 2.f) * Kernel::dW(rab, h_a));

@@ -31,9 +31,7 @@
 
 //TODO move types init out
 void PatchScheduler::init_mpi_required_types(){
-    if(!is_mpi_sycl_interop_active()){
-        create_sycl_mpi_types();
-    }
+
 
     if(!patch::is_mpi_patch_type_active()){
         patch::create_MPI_patch_type();
@@ -41,9 +39,7 @@ void PatchScheduler::init_mpi_required_types(){
 }
 
 void PatchScheduler::free_mpi_required_types(){
-    if(is_mpi_sycl_interop_active()){
-        free_sycl_mpi_types();
-    }
+
 
     if(patch::is_mpi_patch_type_active()){
         patch::free_MPI_patch_type();

@@ -2,6 +2,8 @@
 set(Sources
     NodeInstance.cpp
     SyclMpiTypes.cpp
+    CommImplBuffer.cpp
+    SyclHelper.cpp
 )
 set(SourcesTest
     
@@ -9,6 +11,7 @@ set(SourcesTest
 set(Headers
     NodeInstance.hpp
     SyclMpiTypes.hpp
+    SyclHelper.hpp
 )
 set(HeadersTest
 

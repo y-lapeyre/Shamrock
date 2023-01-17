@@ -47,7 +47,7 @@ TestStart(Unittest,"patchdata::", send_recv_patchdata, 2){
     pdl.xyz_mode = xyz32;
 
     pdl.add_field<f64_8>("test", 2);
-    create_sycl_mpi_types();
+    
 
 
 
@@ -83,5 +83,4 @@ TestStart(Unittest,"patchdata::", send_recv_patchdata, 2){
     }
 
 
-    free_sycl_mpi_types();
 }

@@ -13,6 +13,7 @@ parts:
    chapters:
     - file: user-manual/compilation
     - file: user-manual/codebase_org
+    - file: user-manual/communication_protocol
     - file: control_script/control_script
     - file: mpi_scheduler/mpi_scheduler
       sections:
