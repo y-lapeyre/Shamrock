@@ -70,6 +70,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include <pybind11/embed.h>
 
 //%Impl status : Should rewrite
 
@@ -613,6 +614,28 @@ static_assert(std::is_same<decltype(test_l(0)), int>::value, "retval must be boo
 #endif
 
 
+const std::string run_ipython_src = R"(
+
+from IPython import start_ipython
+from traitlets.config.loader import Config
+import sys
+
+c = Config()
+
+banner ="SHAMROCK Ipython terminal\n" + "Python %s\n"%sys.version.split("\n")[0]
+
+c.TerminalInteractiveShell.banner1 = banner
+
+c.TerminalInteractiveShell.banner2 = """### 
+import shamrock
+###
+"""
+
+start_ipython(config=c)
+
+)";
+
+
 int main(int argc, char *argv[]) {
 
 
@@ -634,8 +657,9 @@ int main(int argc, char *argv[]) {
         return 0;
     }
 
-
-    shamsys::instance::init(argc,argv);
+    if(opts::has_option("--sycl-cfg")){
+        shamsys::instance::init(argc,argv);
+    }
 
     if(opts::has_option("--nocolor")){
         terminal_effects::disable_colors();
@@ -669,14 +693,20 @@ int main(int argc, char *argv[]) {
 
     //*
     {
-        RunScriptHandler rscript;
+        //RunScriptHandler rscript;
         
         if(opts::has_option("--ipython")){
-            rscript.run_ipython();
+
+            namespace py = pybind11;
+
+            py::scoped_interpreter guard{};
+            py::exec(run_ipython_src);
+
+            //rscript.run_ipython();
         }else if(opts::has_option("--rscript")){
             std::string fname = std::string(opts::get_option("--rscript"));
 
-            rscript.run_file(fname);
+            //rscript.run_file(fname);
         }else{
             using namespace units;
 

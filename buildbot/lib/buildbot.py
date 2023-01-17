@@ -257,8 +257,9 @@ def configure(src_dir :str, build_dir:str ,compiler : SyclCompiler, backend : Sy
 
         if(backend == SyCLBE.CUDA):
             cmake_cmd += " -DSyCL_Compiler_BE=CUDA"
+        cmake_cmd += " -DCMAKE_CXX_COMPILER=" + str(os.path.abspath(compiler_dir)) + "/bin/clang++"
+        
 
-    
     elif(compiler == SyclCompiler.HipSYCL):
         cmake_cmd += " -DSyCL_Compiler=HIPSYCL"
         if(not backend in SyclCompiler.HipSYCL_SUPPORT):
@@ -266,6 +267,12 @@ def configure(src_dir :str, build_dir:str ,compiler : SyclCompiler, backend : Sy
 
         if(backend == SyCLBE.OpenMP):
             cmake_cmd += " -DSyCL_Compiler_BE=OMP"
+        
+        
+        cmake_cmd += " -DCMAKE_CXX_COMPILER=" + str(os.path.abspath(compiler_dir)) + "/bin/syclcc"
+        compiler_arg = "--hipsycl-cpu-cxx=g++ --hipsycl-config-file="+str(os.path.abspath(compiler_dir))+"/etc/hipSYCL/syclcc.json --hipsycl-targets='omp' --hipsycl-platform=cpu"
+        cmake_cmd += " -DCMAKE_CXX_FLAGS=\"" +compiler_arg+ "\""
+
     
 
     cmake_cmd += " -DCOMP_ROOT_DIR="+str(os.path.abspath(compiler_dir))

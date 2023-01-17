@@ -27,7 +27,11 @@ LIST(APPEND CMAKE_SYSTEM_LIBRARY_PATH  "${COMP_ROOT_DIR}/bin/lib")
 ######################
 # Add compilation flags depending upon the build type
 ######################
-set(CMAKE_CXX_FLAGS "-std=c++17 -pedantic-errors -fcolor-diagnostics") 
+set(CMAKE_CXX_STANDARD 17 CACHE STRING "C++ version selection")  # or 11, 14, 17, 20
+set(CMAKE_CXX_STANDARD_REQUIRED ON)  # optional, ensure standard is supported
+set(CMAKE_CXX_EXTENSIONS OFF)  # optional, keep compiler extensions off
+
+set(CMAKE_CXX_FLAGS "-pedantic-errors -fcolor-diagnostics") 
 set(CMAKE_CXX_FLAGS_DEBUG "-g")# -fsanitize=address")# -Wall -Wextra") #
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native -DNDEBUG")#-DNDEBUG ")#-Wall -Wextra -Wunknown-cuda-version -Wno-linker-warnings")
 
@@ -37,11 +41,8 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native -DNDEBUG")#-DNDEBUG ")#-Wall -Wex
 ######################
 if("${SyCL_Compiler}" STREQUAL "DPCPP")
 
-    set(CMAKE_CXX_COMPILER "${COMP_ROOT_DIR}/bin/clang++")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsycl -DSYCL_COMP_DPCPP")
 
-    include_directories(AFTER SYSTEM "${COMP_ROOT_DIR}/include")
-    include_directories(AFTER SYSTEM "${COMP_ROOT_DIR}/include/sycl")
 
     ######################
     # Chose sycl backend
@@ -57,11 +58,9 @@ endif()
 
 if("${SyCL_Compiler}" STREQUAL "HIPSYCL")
 
-    set(CMAKE_CXX_COMPILER "${COMP_ROOT_DIR}/bin/syclcc")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSYCL_COMP_HIPSYCL")
     
-    include_directories(AFTER SYSTEM "${COMP_ROOT_DIR}/include")
-    include_directories(AFTER SYSTEM "${COMP_ROOT_DIR}/include/sycl")
+    
 
     ######################
     # Chose sycl backend
@@ -121,7 +120,6 @@ find_package (Python3 COMPONENTS Interpreter Development )
 
 add_subdirectory(external)
 
-include_directories(AFTER "${CMAKE_SOURCE_DIR}/src")
 
 
 
@@ -141,9 +139,31 @@ add_custom_command(
 if("${BUILD_SIM}")
 
     message(">>> adding sph target <<<")
+
+
+    if("${BUILD_PYLIB}")
+    pybind11_add_module(shamrock src/main.cpp src/version.cpp)
+    target_compile_definitions(shamrock PUBLIC LIB_BUILD)
+    else()
     add_executable(shamrock src/main.cpp src/version.cpp)
+    target_compile_definitions(shamrock PUBLIC EXECUTABLE_BUILD)
+    endif()
+    
+    
+    
     target_link_libraries(shamrock PUBLIC MPI::MPI_C)
-    target_link_libraries(shamrock PUBLIC  Python3::Python)
+    target_link_libraries(shamrock PUBLIC Python3::Python)
+
+    target_link_libraries(shamrock PUBLIC pybind11::embed)
+
+
+    target_include_directories(shamrock AFTER PUBLIC "${CMAKE_SOURCE_DIR}/src")
+    target_include_directories(shamrock AFTER PUBLIC  "${CMAKE_SOURCE_DIR}/external")
+    target_include_directories(shamrock SYSTEM AFTER PUBLIC  "${COMP_ROOT_DIR}/include")
+    target_include_directories(shamrock SYSTEM AFTER PUBLIC  "${COMP_ROOT_DIR}/include/sycl")
+
+    #do lib build instead if building the pylib
+
 
 endif()
 
@@ -156,6 +176,16 @@ if("${BUILD_TEST}")
     add_executable(shamrock_test src/main_test.cpp  src/version.cpp)
     target_link_libraries(shamrock_test PUBLIC MPI::MPI_C)
     target_link_libraries(shamrock_test PUBLIC Python3::Python)
+
+    target_link_libraries(shamrock_test PUBLIC pybind11::embed)
+
+    target_include_directories(shamrock_test AFTER PUBLIC "${CMAKE_SOURCE_DIR}/src")
+    target_include_directories(shamrock_test AFTER PUBLIC  "${CMAKE_SOURCE_DIR}/external")
+    target_include_directories(shamrock_test SYSTEM AFTER PUBLIC  "${COMP_ROOT_DIR}/include")
+    target_include_directories(shamrock_test SYSTEM AFTER PUBLIC  "${COMP_ROOT_DIR}/include/sycl")
+
+
+    target_compile_definitions(shamrock_test PUBLIC EXECUTABLE_BUILD)
 
     #find_package(nlohmann_json 3.2.0 REQUIRED)
     #target_link_libraries(shamrock_test PUBLIC nlohmann_json::nlohmann_json)
