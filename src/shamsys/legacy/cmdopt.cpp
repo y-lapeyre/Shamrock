@@ -122,14 +122,33 @@ namespace opts {
 
 
     
+    int argc;
+    char** argv;
 
+    void init(int _argc, char *_argv[]) { 
+        argc = _argc;
+        argv = _argv;
 
-    void init(int argc, char *argv[]) { 
         opts::register_opt("--help",{}, "show this message");
         executable_name = std::string_view(argv[0]);
         args = std::vector<std::string_view>(argv + 1, argv + argc); 
         init_done = true;
         check_args_registered();
+
+        
+    }
+
+    int get_argc(){
+        if(init_done){
+            return argc;
+        }
+        return NULL;
+    }
+    char** get_argv(){
+        if(init_done){
+            return argv;
+        }
+        return NULL;
     }
 
 

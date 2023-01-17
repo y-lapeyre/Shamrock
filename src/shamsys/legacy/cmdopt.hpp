@@ -43,6 +43,10 @@ namespace opts{
     void print_help();
     bool is_help_mode();
 
+
+    int get_argc();
+    char** get_argv();
+
 }
 
 
