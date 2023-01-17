@@ -16,8 +16,6 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(Default_comp "${CMAKE_CXX_COMPILER}")
 
 message(STATUS "chosen compiler : ${SyCL_Compiler}")
-message(STATUS "chosen backend  : ${SyCL_Compiler_BE}")
-message(STATUS "compiler folder : ${COMP_ROOT_DIR}")
 
 LIST(APPEND CMAKE_SYSTEM_PROGRAM_PATH  "${COMP_ROOT_DIR}/bin")
 LIST(APPEND CMAKE_SYSTEM_LIBRARY_PATH  "${COMP_ROOT_DIR}/bin/lib")
@@ -31,7 +29,7 @@ set(CMAKE_CXX_STANDARD 17 CACHE STRING "C++ version selection")  # or 11, 14, 17
 set(CMAKE_CXX_STANDARD_REQUIRED ON)  # optional, ensure standard is supported
 set(CMAKE_CXX_EXTENSIONS OFF)  # optional, keep compiler extensions off
 
-set(CMAKE_CXX_FLAGS "-pedantic-errors -fcolor-diagnostics") 
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pedantic-errors -fcolor-diagnostics") 
 set(CMAKE_CXX_FLAGS_DEBUG "-g")# -fsanitize=address")# -Wall -Wextra") #
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native -DNDEBUG")#-DNDEBUG ")#-Wall -Wextra -Wunknown-cuda-version -Wno-linker-warnings")
 
@@ -41,17 +39,7 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native -DNDEBUG")#-DNDEBUG ")#-Wall -Wex
 ######################
 if("${SyCL_Compiler}" STREQUAL "DPCPP")
 
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsycl -DSYCL_COMP_DPCPP")
-
-
-    ######################
-    # Chose sycl backend
-    ######################
-    if("${SyCL_Compiler_BE}" STREQUAL "CUDA")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsycl-targets=nvptx64-nvidia-cuda ")
-    else()
-        message(FATAL_ERROR "unsuported backend : ${SyCL_Compiler_BE}")
-    endif()
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSYCL_COMP_DPCPP")
 
 endif()
 
@@ -59,23 +47,6 @@ endif()
 if("${SyCL_Compiler}" STREQUAL "HIPSYCL")
 
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSYCL_COMP_HIPSYCL")
-    
-    
-
-    ######################
-    # Chose sycl backend
-    ######################
-    if("${SyCL_Compiler_BE}" STREQUAL "OMP")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --hipsycl-cpu-cxx=g++ --hipsycl-config-file=${COMP_ROOT_DIR}/etc/hipSYCL/syclcc.json --hipsycl-targets='omp' --hipsycl-platform=cpu")
-
-        set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=address")# ")# -Wall -Wextra") #
-
-    elseif("${SyCL_Compiler_BE}" STREQUAL "CUDA")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --hipsycl-config-file=${COMP_ROOT_DIR}/etc/hipSYCL/syclcc.json --hipsycl-targets='cuda:sm_70'")
-
-    else()
-        message(FATAL_ERROR "unsuported backend : ${SyCL_Compiler_BE}")
-    endif()
 
 endif()
 
@@ -84,29 +55,6 @@ endif()
 
 # to hide mac OS specific warnings with hipsycl
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-nonportable-include-path")
-
-
-
-if (CMAKE_BUILD_TYPE STREQUAL "GCOV")
-    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g --coverage")
-endif()
-
-if (CMAKE_BUILD_TYPE STREQUAL "COVERAGE_MAP")
-    #SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -fprofile-instr-generate -fcoverage-mapping -fcoverage-compilation-dir=. -fno-sycl-use-footer")
-    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g --coverage -fprofile-arcs -fprofile-instr-generate -ftest-coverage -fcoverage-mapping -fno-sycl-use-footer")
-
-endif()
-
-#set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -flto")
-
-
-######################
-# Add compilation flags for xray if enabled
-######################
-if("${XRAY_INSTRUMENTATION}")
-    message("-- add llvm-xray instrumentation")
-    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fxray-instrument")
-endif()
 
 
 
