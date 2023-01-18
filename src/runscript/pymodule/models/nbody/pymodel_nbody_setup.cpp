@@ -11,7 +11,7 @@
 
 
 #include "runscript/pymodule/pylib.hpp"
-#include "runscript/shamrockapi.hpp"
+#include "shamrock/legacy/ShamrockCtx.hpp"
 #include "runscript/pymodule/pyshamrockcontext.hpp"
 
 using namespace models::nbody;

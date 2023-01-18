@@ -9,7 +9,7 @@
 #include "shamrock/legacy/patch/scheduler/scheduler_mpi.hpp"
 #include "shamrock/legacy/utils/string_utils.hpp"
 #include "runscript/pymodule/pylib.hpp"
-#include "runscript/shamrockapi.hpp"
+#include "shamrock/legacy/ShamrockCtx.hpp"
 #include "runscript/pymodule/pyshamrockcontext.hpp"
 #include "shammodels/sph/setup/sph_setup.hpp"
 #include "shammodels/sph/base/kernels.hpp"

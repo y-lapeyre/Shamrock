@@ -122,9 +122,10 @@ namespace shamrock::sfc {
 
 } // namespace shamrock::sfc
 
+[[deprecated]]
 constexpr u64 hilbert_box21_sz = 2097152 - 1;
 
-template <int bits> 
+template <int bits> [[deprecated]]
 inline u64 compute_hilbert_index_3d(u64 x, u64 y, u64 z) {
 
     const int n = 3;

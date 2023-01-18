@@ -705,8 +705,8 @@ int main(int argc, char *argv[]) {
             //rscript.run_ipython();
         }else if(opts::has_option("--rscript")){
             std::string fname = std::string(opts::get_option("--rscript"));
-
-            //rscript.run_file(fname);
+            RunScriptHandler rscript;
+            rscript.run_file(fname);
         }else{
             using namespace units;
 

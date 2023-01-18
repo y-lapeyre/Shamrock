@@ -9,7 +9,7 @@
 #pragma once
 
 #include "pylib.hpp"
-#include "runscript/shamrockapi.hpp"
+#include "shamrock/legacy/ShamrockCtx.hpp"
 #include <array>
 #include <exception>
 #include <memory>
