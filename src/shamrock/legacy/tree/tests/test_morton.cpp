@@ -18,27 +18,6 @@
 
 #if false
 
-
-
-Test_start("morton::",min_max_value,1){
-
-
-    u32 m_0_32 = morton_3d::coord_to_morton<u32,f32>(0, 0, 0);
-    u32 m_max_32 = morton_3d::coord_to_morton<u32,f32>(1, 1, 1);
-
-    u64 m_0_64 = morton_3d::coord_to_morton<u64,f32>(0, 0, 0);
-    u64 m_max_64 = morton_3d::coord_to_morton<u64,f32>(1, 1, 1);
-
-    
-    Test_assert("min morton 64 == b0", m_0_64 == 0x0);    
-    Test_assert("max morton 64 == b63x1", m_max_64 == 0x7fffffffffffffff);
-    
-    Test_assert("min morton 32 == b0x0", m_0_32 == 0x0);    
-    Test_assert("max morton 32 == b30x1", m_max_32 == 0x3fffffff);
-    
-
-}
-
 Test_start("tree::kernels::",morton_kernels,1){
 
     std::vector<f32_3> xyz_32 {{0,0,0},{1,1,1}};

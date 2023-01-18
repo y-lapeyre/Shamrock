@@ -162,12 +162,12 @@ namespace morton_3d {
      * @brief Helper struct to get types corresponding to a morton code representation
      * @tparam morton_repr u32 (32 bits) or u64 (64 bits) 
      */
-    template <class morton_repr> struct morton_types {
+    template <class morton_repr> struct [[deprecated]] morton_types {
         using int_vec_repr_base = std::void_t<>;
         using int_vec_repr      = std::void_t<>;
     };
 
-    template <> struct morton_types<u32> {
+    template <> struct [[deprecated]] morton_types<u32> {
         using int_vec_repr_base                    = u16;
         using int_vec_repr                         = u16_3;
         static constexpr int_vec_repr_base max_val = 1024 - 1;
@@ -176,7 +176,7 @@ namespace morton_3d {
         // static constexpr int_vec_repr max_vec = int_vec_repr{max_val};
     };
 
-    template <> struct morton_types<u64> {
+    template <> struct [[deprecated]] morton_types<u64> {
         using int_vec_repr_base                    = u32;
         using int_vec_repr                         = u32_3;
         static constexpr int_vec_repr_base max_val = 2097152 - 1;
@@ -185,11 +185,11 @@ namespace morton_3d {
         // static constexpr int_vec_repr max_vec = int_vec_repr{max_val};
     };
 
-    template <class morton_prec, class fp_prec> morton_prec coord_to_morton(fp_prec x, fp_prec y, fp_prec z);
+    template <class morton_prec, class fp_prec> [[deprecated]] morton_prec coord_to_morton(fp_prec x, fp_prec y, fp_prec z);
 
-    template <class morton_prec> typename morton_types<morton_prec>::int_vec_repr morton_to_ipos(morton_prec morton);
+    template <class morton_prec> [[deprecated]] typename morton_types<morton_prec>::int_vec_repr morton_to_ipos(morton_prec morton);
 
-    template <class morton_prec> typename morton_types<morton_prec>::int_vec_repr get_offset(u32 clz_);
+    template <class morton_prec> [[deprecated]] typename morton_types<morton_prec>::int_vec_repr get_offset(u32 clz_);
 
     template <> inline u64 coord_to_morton<u64, f64>(f64 x, f64 y, f64 z) {
         x = sycl::fmin(sycl::fmax(x * 2097152., 0.), 2097152. - 1.);
