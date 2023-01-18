@@ -9,8 +9,8 @@
 #pragma once
 
 #include "aliases.hpp"
-#include "shamrock/patch/base/patchdata.hpp"
-#include "shamrock/patch/scheduler/scheduler_mpi.hpp"
+#include "shamrock/legacy/patch/base/patchdata.hpp"
+#include "shamrock/legacy/patch/scheduler/scheduler_mpi.hpp"
 
 enum GlobalVariableType{
     min,max,sum

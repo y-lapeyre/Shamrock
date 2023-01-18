@@ -6,14 +6,14 @@
 //
 // -------------------------------------------------------//
 
-#include "shamrock/algs/sycl/reduction/generic.hpp"
-#include "shamrock/utils/time_utils.hpp"
+#include "shamrock/legacy/algs/sycl/reduction/generic.hpp"
+#include "shamrock/legacy/utils/time_utils.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamtest/shamtest.hpp"
 
 #include <random>
-#include "shamrock/algs/sycl/sycl_algs.hpp"
-#include "shamrock/utils/sycl_vector_utils.hpp"
+#include "shamrock/legacy/algs/sycl/sycl_algs.hpp"
+#include "shamrock/legacy/utils/sycl_vector_utils.hpp"
 
 template<class T,class Fct> void unit_test_reduc(std::string name, Fct && red_fct){
     std::vector<T> vals;

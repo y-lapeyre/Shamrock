@@ -12,12 +12,12 @@
 #pragma once
 
 #include "aliases.hpp"
-#include "shamrock/patch/base/patchdata.hpp"
-//#include "shamrock/patch/patchdata_buffer.hpp"
-#include "shamrock/patch/base/patchdata_layout.hpp"
+#include "shamrock/legacy/patch/base/patchdata.hpp"
+//#include "shamrock/legacy/patch/patchdata_buffer.hpp"
+#include "shamrock/legacy/patch/base/patchdata_layout.hpp"
 #include "shammodels/sph/base/kernels.hpp"
 #include "shammodels/sph/base/sphpart.hpp"
-#include "shamrock/tree/radix_tree.hpp"
+#include "shamrock/legacy/tree/radix_tree.hpp"
 
 namespace impl {
 

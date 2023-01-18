@@ -6,13 +6,13 @@
 //
 // -------------------------------------------------------//
 
-#include "shamrock/patch/base/patchdata.hpp"
-#include "shamrock/patch/base/patchdata_layout.hpp"
+#include "shamrock/legacy/patch/base/patchdata.hpp"
+#include "shamrock/legacy/patch/base/patchdata_layout.hpp"
 #include "shamtest/shamtest.hpp"
-#include "shamrock/utils/time_utils.hpp"
+#include "shamrock/legacy/utils/time_utils.hpp"
 #include "shamtest/shamtest.hpp"
 
-#include "shamrock/tree/radix_tree.hpp"
+#include "shamrock/legacy/tree/radix_tree.hpp"
 #include <vector>
 
 

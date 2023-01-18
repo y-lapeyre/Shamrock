@@ -11,11 +11,11 @@
 
 #pragma once
 
-#include "shamrock/utils/syclreduction.hpp"
+#include "shamrock/legacy/utils/syclreduction.hpp"
 #include "aliases.hpp"
 
 
-#include "shamrock/patch/patchdata_buffer.hpp"
+#include "shamrock/legacy/patch/patchdata_buffer.hpp"
 #include "shammodels/generic/physics/units.hpp"
 #include "shammodels/sph/integrators/leapfrog.hpp"
 #include "forces.hpp"

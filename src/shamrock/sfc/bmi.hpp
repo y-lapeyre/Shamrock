@@ -20,7 +20,7 @@
 
 #include "aliases.hpp"
 
-namespace bmi {
+namespace shamrock::sfc::bmi {
 
     template<class inttype,int interleaving>
     inttype expand_bits(inttype);
@@ -73,4 +73,4 @@ namespace bmi {
         return src;
     }
 
-}
+} // namespace shamrock::sfc::bmi

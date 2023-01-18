@@ -8,10 +8,10 @@
 
 
 #include "aliases.hpp"
-#include "shamrock/utils/time_utils.hpp"
+#include "shamrock/legacy/utils/time_utils.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamsys/legacy/sycl_handler.hpp"
-#include "shamrock/tree/radix_tree.hpp"
+#include "shamrock/legacy/tree/radix_tree.hpp"
 #include "shammodels/generic/math/tensors/collections.hpp"
 #include "shammodels/generic/physics/fmm.hpp"
 

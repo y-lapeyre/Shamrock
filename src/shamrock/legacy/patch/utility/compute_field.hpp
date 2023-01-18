@@ -9,9 +9,9 @@
 #pragma once
 
 #include "aliases.hpp"
-#include "shamrock/patch/base/patchdata.hpp"
-#include "shamrock/patch/base/patchdata_field.hpp"
-#include "shamrock/patch/scheduler/scheduler_mpi.hpp"
+#include "shamrock/legacy/patch/base/patchdata.hpp"
+#include "shamrock/legacy/patch/base/patchdata_field.hpp"
+#include "shamrock/legacy/patch/scheduler/scheduler_mpi.hpp"
 #include <memory>
 #include <unordered_map>
 #include <vector>

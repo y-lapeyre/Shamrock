@@ -19,7 +19,7 @@
 
 #include "loadbalancing_hilbert.hpp"
 
-#include "shamrock/io/logs.hpp"
+#include "shamrock/legacy/io/logs.hpp"
 #include "shamsys/legacy/sycl_handler.hpp"
 
 

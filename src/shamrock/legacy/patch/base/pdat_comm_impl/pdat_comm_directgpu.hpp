@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "shamrock/patch/base/patchdata_field.hpp"
+#include "shamrock/legacy/patch/base/patchdata_field.hpp"
 
 namespace impl::directgpu {
 

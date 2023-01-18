@@ -9,7 +9,7 @@
 #pragma once
 
 #include "aliases.hpp"
-#include "shamrock/patch/base/enabled_fields.hpp"
+#include "shamrock/legacy/patch/base/enabled_fields.hpp"
 #include <sstream>
 #include <vector>
 

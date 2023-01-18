@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "shamrock/algs/sycl/basic/basic.hpp"
+#include "shamrock/legacy/algs/sycl/basic/basic.hpp"
 #include <functional>
 
 namespace syclalgs::reduction::impl {

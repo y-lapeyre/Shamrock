@@ -8,8 +8,8 @@
 
 
 #include "merged_patch.hpp"
-#include "shamrock/patch/base/enabled_fields.hpp"
-#include "shamrock/patch/base/patchdata.hpp"
+#include "shamrock/legacy/patch/base/enabled_fields.hpp"
+#include "shamrock/legacy/patch/base/patchdata.hpp"
 
 template<class flt>
 auto MergedPatchData<flt>::merge_patches(

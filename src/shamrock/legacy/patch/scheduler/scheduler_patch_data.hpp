@@ -22,12 +22,12 @@
 #include <cmath>
 #include <map>
 
-#include "shamrock/patch/base/patch.hpp"
-#include "shamrock/patch/base/patchdata.hpp"
+#include "shamrock/legacy/patch/base/patch.hpp"
+#include "shamrock/legacy/patch/base/patchdata.hpp"
 
-#include "shamrock/patch/base/patchdata_layout.hpp"
+#include "shamrock/legacy/patch/base/patchdata_layout.hpp"
 #include "scheduler_patch_list.hpp"
-#include "shamrock/patch/sim_box.hpp"
+#include "shamrock/legacy/patch/sim_box.hpp"
 
 /**
  * @brief Class to handle PatchData owned by the node

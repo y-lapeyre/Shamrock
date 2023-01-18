@@ -7,7 +7,7 @@
 // -------------------------------------------------------//
 
 #include "sycl_algs.hpp"
-#include "shamrock/utils/sycl_vector_utils.hpp"
+#include "shamrock/legacy/utils/sycl_vector_utils.hpp"
 #include "shamsys/legacy/sycl_mpi_interop.hpp"
 
 //%Impl status : Clean

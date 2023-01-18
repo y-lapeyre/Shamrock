@@ -6,15 +6,15 @@
 //
 // -------------------------------------------------------//
 
-#include "shamrock/patch/base/patchdata_layout.hpp"
+#include "shamrock/legacy/patch/base/patchdata_layout.hpp"
 #include "shamtest/shamtest.hpp"
 
 #include <random>
 #include <vector>
 
 
-#include "shamrock/patch/base/patchdata.hpp"
-#include "shamrock/patch/scheduler/scheduler_mpi.hpp"
+#include "shamrock/legacy/patch/base/patchdata.hpp"
+#include "shamrock/legacy/patch/scheduler/scheduler_mpi.hpp"
 
 /*
 Test_start("patchdata::", sync_patchdata_layout, -1) {

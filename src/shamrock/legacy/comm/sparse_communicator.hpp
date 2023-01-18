@@ -9,11 +9,11 @@
 #pragma once
 
 #include "aliases.hpp"
-#include "shamrock/patch/base/patch.hpp"
+#include "shamrock/legacy/patch/base/patch.hpp"
 #include <vector>
 
-#include "shamrock/io/logs.hpp"
-#include "shamrock/patch/scheduler/scheduler_mpi.hpp"
+#include "shamrock/legacy/io/logs.hpp"
+#include "shamrock/legacy/patch/scheduler/scheduler_mpi.hpp"
 #include "shamsys/legacy/mpi_handler.hpp"
 
 
@@ -94,7 +94,7 @@ class SparsePatchCommunicator {
 
 
 
-#include "shamrock/patch/base/patchdata.hpp"
+#include "shamrock/legacy/patch/base/patchdata.hpp"
 
 template <> 
 struct SparseCommExchanger<PatchData>{

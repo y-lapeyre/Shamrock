@@ -6,7 +6,7 @@
 //
 // -------------------------------------------------------//
 
-#include "shamrock/tree/radix_tree.hpp"
+#include "shamrock/legacy/tree/radix_tree.hpp"
 #include "sparse_communicator.hpp"
 
 

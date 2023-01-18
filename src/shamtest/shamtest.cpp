@@ -14,10 +14,10 @@
 #include <cstdlib>
 #include <sstream>
 
-#include "shamrock/utils/time_utils.hpp"
+#include "shamrock/legacy/utils/time_utils.hpp"
 #include "shamsys/legacy/cmdopt.hpp"
 #include "shamsys/legacy/log.hpp"
-#include "shamrock/utils/string_utils.hpp"
+#include "shamrock/legacy/utils/string_utils.hpp"
 #include "shamsys/legacy/sycl_handler.hpp"
 
 #include "shamsys/legacy/mpi_handler.hpp"

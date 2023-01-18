@@ -27,11 +27,11 @@
 #include <vector>
 
 #include "aliases.hpp"
-#include "shamrock/patch/base/patch.hpp"
-#include "shamrock/patch/base/patchdata.hpp"
-//#include "shamrock/patch/patchdata_buffer.hpp"
-#include "shamrock/patch/base/patchdata_layout.hpp"
-#include "shamrock/patch/base/patchtree.hpp"
+#include "shamrock/legacy/patch/base/patch.hpp"
+#include "shamrock/legacy/patch/base/patchdata.hpp"
+//#include "shamrock/legacy/patch/patchdata_buffer.hpp"
+#include "shamrock/legacy/patch/base/patchdata_layout.hpp"
+#include "shamrock/legacy/patch/base/patchtree.hpp"
 #include "scheduler_patch_list.hpp"
 #include "scheduler_patch_data.hpp"
 #include "shamsys/legacy/sycl_handler.hpp"

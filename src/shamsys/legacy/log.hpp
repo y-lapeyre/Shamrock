@@ -10,7 +10,7 @@
 
 #include "aliases.hpp"
 #include "shamsys/legacy/mpi_handler.hpp"
-#include "shamrock/utils/string_utils.hpp"
+#include "shamrock/legacy/utils/string_utils.hpp"
 #include <chrono>
 #include <fstream>
 #include <string>

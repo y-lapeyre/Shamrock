@@ -9,10 +9,10 @@
 #pragma once
 
 #include "aliases.hpp"
-#include "shamrock/patch/base/patch.hpp"
+#include "shamrock/legacy/patch/base/patch.hpp"
 #include <vector>
 
-#include "shamrock/io/logs.hpp"
+#include "shamrock/legacy/io/logs.hpp"
 #include "shamsys/legacy/mpi_handler.hpp"
 
 //TODO move to a contained module

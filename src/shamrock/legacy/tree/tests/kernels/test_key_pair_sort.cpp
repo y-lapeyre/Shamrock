@@ -6,13 +6,13 @@
 //
 // -------------------------------------------------------//
 
-#include "shamrock/utils/time_utils.hpp"
+#include "shamrock/legacy/utils/time_utils.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamsys/legacy/sycl_handler.hpp"
 #include "shamtest/shamtest.hpp"
 
 #include <random>
-#include "shamrock/tree/kernels/key_morton_sort.hpp"
+#include "shamrock/legacy/tree/kernels/key_morton_sort.hpp"
 
 template<class u_morton, SortImplType impl> void unit_test_key_pair(){
     std::vector<u_morton> morton_list;

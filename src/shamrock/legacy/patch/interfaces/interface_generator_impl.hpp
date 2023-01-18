@@ -9,9 +9,9 @@
 #pragma once
 
 #include "aliases.hpp"
-#include "shamrock/patch/base/patchdata.hpp"
-#include "shamrock/patch/base/patchdata_field.hpp"
-#include "shamrock/utils/geometry_utils.hpp"
+#include "shamrock/legacy/patch/base/patchdata.hpp"
+#include "shamrock/legacy/patch/base/patchdata_field.hpp"
+#include "shamrock/legacy/utils/geometry_utils.hpp"
 #include <vector>
 
 

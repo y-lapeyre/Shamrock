@@ -14,15 +14,15 @@
 #include <stdexcept>
 #include <vector>
 
-#include "shamrock/io/logs.hpp"
-#include "shamrock/patch/base/patchdata.hpp"
-#include "shamrock/patch/base/patchdata_field.hpp"
+#include "shamrock/legacy/io/logs.hpp"
+#include "shamrock/legacy/patch/base/patchdata.hpp"
+#include "shamrock/legacy/patch/base/patchdata_field.hpp"
 #include "shamsys/legacy/mpi_handler.hpp"
 #include "loadbalancing_hilbert.hpp"
 
-#include "shamrock/patch/base/patchdata_layout.hpp"
+#include "shamrock/legacy/patch/base/patchdata_layout.hpp"
 #include "shamsys/legacy/sycl_handler.hpp"
-#include "shamrock/utils/time_utils.hpp"
+#include "shamrock/legacy/utils/time_utils.hpp"
 
 #include "shamsys/legacy/sycl_mpi_interop.hpp"
 

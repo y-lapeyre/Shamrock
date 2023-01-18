@@ -22,13 +22,13 @@
 #include <stdexcept>
 #include <vector>
 
-#include "shamrock/io/logs.hpp"
-#include "shamrock/patch/base/patchdata.hpp"
+#include "shamrock/legacy/io/logs.hpp"
+#include "shamrock/legacy/patch/base/patchdata.hpp"
 #include "loadbalancing_hilbert.hpp"
 
-#include "shamrock/patch/base/patchdata_layout.hpp"
+#include "shamrock/legacy/patch/base/patchdata_layout.hpp"
 #include "shamsys/legacy/mpi_handler.hpp"
-#include "shamrock/utils/geometry_utils.hpp"
+#include "shamrock/legacy/utils/geometry_utils.hpp"
 
 
 //TODO use range based loop and emplace_back instead 

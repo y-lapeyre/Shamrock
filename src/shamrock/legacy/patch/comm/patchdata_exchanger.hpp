@@ -9,8 +9,8 @@
 #pragma once
 
 
-#include "shamrock/patch/base/patchdata_field.hpp"
-#include "shamrock/patch/base/patchdata_layout.hpp"
+#include "shamrock/legacy/patch/base/patchdata_field.hpp"
+#include "shamrock/legacy/patch/base/patchdata_layout.hpp"
 #include "patchdata_exchanger_impl.hpp"
 #include <vector>
 

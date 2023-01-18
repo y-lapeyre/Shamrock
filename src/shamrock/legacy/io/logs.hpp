@@ -18,8 +18,8 @@
 #include "shamsys/legacy/mpi_handler.hpp"
 #include "shamsys/legacy/sycl_handler.hpp"
 #include "shamsys/legacy/sycl_mpi_interop.hpp"
-#include "shamrock/utils/string_utils.hpp"
-#include "shamrock/utils/time_utils.hpp"
+#include "shamrock/legacy/utils/string_utils.hpp"
+#include "shamrock/legacy/utils/time_utils.hpp"
 
 namespace logfiles {
     inline bool dump_timings = true;

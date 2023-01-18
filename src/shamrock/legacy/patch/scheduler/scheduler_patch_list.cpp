@@ -11,8 +11,8 @@
 #include <vector>
 #include <random>
 
-#include "shamrock/io/logs.hpp"
-#include "shamrock/patch/base/patch.hpp"
+#include "shamrock/legacy/io/logs.hpp"
+#include "shamrock/legacy/patch/base/patch.hpp"
 #include "loadbalancing_hilbert.hpp"
 
 

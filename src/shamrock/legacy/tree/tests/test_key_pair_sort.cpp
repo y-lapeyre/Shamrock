@@ -10,7 +10,7 @@
 
 //#include "tree/kernels/key_morton_sort.hpp"
 #include "shamsys/legacy/sycl_handler.hpp"
-#include "shamrock/utils/string_utils.hpp"
+#include "shamrock/legacy/utils/string_utils.hpp"
 #include <algorithm>
 #include <random>
 

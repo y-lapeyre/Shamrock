@@ -13,11 +13,11 @@
 #include <vector>
 
 #include "aliases.hpp"
-#include "shamrock/patch/base/patch.hpp"
-#include "shamrock/patch/base/patchdata.hpp"
-//#include "shamrock/patch/patchdata_buffer.hpp"
-#include "shamrock/patch/scheduler/scheduler_patch_data.hpp"
-#include "shamrock/utils/geometry_utils.hpp"
+#include "shamrock/legacy/patch/base/patch.hpp"
+#include "shamrock/legacy/patch/base/patchdata.hpp"
+//#include "shamrock/legacy/patch/patchdata_buffer.hpp"
+#include "shamrock/legacy/patch/scheduler/scheduler_patch_data.hpp"
+#include "shamrock/legacy/utils/geometry_utils.hpp"
 
 #include "interface_generator_impl.hpp"
 

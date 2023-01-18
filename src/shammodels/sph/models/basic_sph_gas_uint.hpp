@@ -9,9 +9,9 @@
 #pragma once
 
 
-#include "shamrock/patch/scheduler/scheduler_mpi.hpp"
+#include "shamrock/legacy/patch/scheduler/scheduler_mpi.hpp"
 #include "shamsys/legacy/log.hpp"
-#include "shamrock/utils/string_utils.hpp"
+#include "shamrock/legacy/utils/string_utils.hpp"
 #include "shammodels/sph/integrators/leapfrog.hpp"
 #include <string>
 

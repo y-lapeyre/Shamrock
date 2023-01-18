@@ -30,7 +30,7 @@
 #include "aliases.hpp"
 #include "patch.hpp"
 
-#include "shamrock/utils/geometry_utils.hpp"
+#include "shamrock/legacy/utils/geometry_utils.hpp"
 
 
 /**

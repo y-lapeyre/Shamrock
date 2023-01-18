@@ -9,7 +9,7 @@
 #pragma once
 
 #include "shammodels/generic/algs/cfl_utils.hpp"
-#include "shamrock/patch/scheduler/scheduler_mpi.hpp"
+#include "shamrock/legacy/patch/scheduler/scheduler_mpi.hpp"
 #include "shammodels/sph/forces.hpp"
 #include "shammodels/sph/integrators/leapfrog.hpp"
 #include "shammodels/generic/algs/integrators_utils.hpp"

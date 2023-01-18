@@ -24,13 +24,13 @@
 #pragma once
 
 
-#include "shamrock/io/logs.hpp"
+#include "shamrock/legacy/io/logs.hpp"
 #include "patch_field.hpp"
-#include "shamrock/patch/base/patchtree.hpp"
-#include "shamrock/patch/scheduler/scheduler_mpi.hpp"
+#include "shamrock/legacy/patch/base/patchtree.hpp"
+#include "shamrock/legacy/patch/scheduler/scheduler_mpi.hpp"
 #include "shamsys/legacy/sycl_handler.hpp"
 #include "aliases.hpp"
-#include "shamrock/patch/utility/patch_reduc_tree.hpp"
+#include "shamrock/legacy/patch/utility/patch_reduc_tree.hpp"
 #include <tuple>
 
 template<class fp_prec_vec>

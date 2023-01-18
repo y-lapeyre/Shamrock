@@ -29,7 +29,7 @@
 
 #include "shamsys/legacy/sycl_handler.hpp"
 
-#include "shamrock/patch/base/patchtree.hpp"
+#include "shamrock/legacy/patch/base/patchtree.hpp"
 
 template<class type>
 class PatchFieldReduction{public:

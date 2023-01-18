@@ -24,7 +24,7 @@
 
 #include <cstdio>
 #include "shamsys/MpiWrapper.hpp"
-#include "shamrock/utils/string_utils.hpp"
+#include "shamrock/legacy/utils/string_utils.hpp"
 
 #include "aliases.hpp"
 #include "shamsys/NodeInstance.hpp"

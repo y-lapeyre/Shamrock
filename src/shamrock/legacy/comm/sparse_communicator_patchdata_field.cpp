@@ -8,7 +8,7 @@
 
 #include "sparse_communicator.hpp"
 
-#include "shamrock/patch/base/patchdata_field.hpp"
+#include "shamrock/legacy/patch/base/patchdata_field.hpp"
 
 
 template <class T> 

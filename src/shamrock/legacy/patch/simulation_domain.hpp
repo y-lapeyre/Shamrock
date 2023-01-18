@@ -11,7 +11,7 @@
 #include "aliases.hpp"
 #include <memory>
 #include <vector>
-#include "shamrock/utils/geometry_utils.hpp"
+#include "shamrock/legacy/utils/geometry_utils.hpp"
 #include <optional>
 
 enum BCType {

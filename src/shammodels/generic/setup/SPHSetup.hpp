@@ -9,12 +9,12 @@
 #pragma once
 
 #include "aliases.hpp"
-#include "shamrock/patch/base/patchdata.hpp"
-#include "shamrock/patch/base/patchdata_field.hpp"
-#include "shamrock/patch/utility/serialpatchtree.hpp"
-#include "shamrock/patch/scheduler/scheduler_mpi.hpp"
+#include "shamrock/legacy/patch/base/patchdata.hpp"
+#include "shamrock/legacy/patch/base/patchdata_field.hpp"
+#include "shamrock/legacy/patch/utility/serialpatchtree.hpp"
+#include "shamrock/legacy/patch/scheduler/scheduler_mpi.hpp"
 #include "shamsys/legacy/mpi_handler.hpp"
-#include "shamrock/patch/comm/patch_object_mover.hpp"
+#include "shamrock/legacy/patch/comm/patch_object_mover.hpp"
 #include "shamsys/legacy/sycl_mpi_interop.hpp"
 #include <memory>
 #include <vector>

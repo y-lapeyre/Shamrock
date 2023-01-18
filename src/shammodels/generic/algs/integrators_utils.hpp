@@ -12,7 +12,7 @@
 #pragma once
 
 #include "aliases.hpp"
-#include "shamrock/utils/sycl_vector_utils.hpp"
+#include "shamrock/legacy/utils/sycl_vector_utils.hpp"
 #include <iostream>
 
 template<class T, class flt>

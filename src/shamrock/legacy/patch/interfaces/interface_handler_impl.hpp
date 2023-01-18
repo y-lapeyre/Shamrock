@@ -8,10 +8,10 @@
 
 #pragma once
 
-#include "shamrock/patch/utility/compute_field.hpp"
-#include "shamrock/patch/scheduler/scheduler_mpi.hpp"
+#include "shamrock/legacy/patch/utility/compute_field.hpp"
+#include "shamrock/legacy/patch/scheduler/scheduler_mpi.hpp"
 #include "interface_generator.hpp"
-#include "shamrock/patch/comm/patchdata_exchanger.hpp"
+#include "shamrock/legacy/patch/comm/patchdata_exchanger.hpp"
 #include <vector>
 
 namespace impl {

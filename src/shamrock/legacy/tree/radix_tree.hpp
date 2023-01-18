@@ -19,9 +19,9 @@
 #include <set>
 
 
-#include "shamrock/patch/base/patchdata.hpp"
+#include "shamrock/legacy/patch/base/patchdata.hpp"
 #include "shamsys/legacy/log.hpp"
-#include "shamrock/utils/string_utils.hpp"
+#include "shamrock/legacy/utils/string_utils.hpp"
 #include "kernels/morton_kernels.hpp"
 #include "shamrock/sfc/morton.hpp"
 #include "kernels/compute_ranges.hpp"
@@ -29,7 +29,7 @@
 #include "kernels/karras_alg.hpp"
 #include "kernels/key_morton_sort.hpp"
 #include "kernels/reduction_alg.hpp"
-#include "shamrock/utils/geometry_utils.hpp"
+#include "shamrock/legacy/utils/geometry_utils.hpp"
 
 
 template<class T>

@@ -22,15 +22,15 @@
 
 #include "aliases.hpp"
 
-#include "shamrock/patch/base/enabled_fields.hpp"
+#include "shamrock/legacy/patch/base/enabled_fields.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamsys/legacy/sycl_handler.hpp"
 #include "shamsys/legacy/sycl_mpi_interop.hpp"
-#include "shamrock/utils/string_utils.hpp"
-#include "shamrock/utils/sycl_vector_utils.hpp"
+#include "shamrock/legacy/utils/string_utils.hpp"
+#include "shamrock/legacy/utils/sycl_vector_utils.hpp"
 #include "shamsys/legacy/mpi_handler.hpp"
 
-#include "shamrock/algs/sycl/sycl_algs.hpp"
+#include "shamrock/legacy/algs/sycl/sycl_algs.hpp"
 
 
 

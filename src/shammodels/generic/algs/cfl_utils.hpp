@@ -8,10 +8,10 @@
 
 #pragma once
 
-#include "shamrock/patch/base/patchdata.hpp"
-#include "shamrock/utils/syclreduction.hpp"
+#include "shamrock/legacy/patch/base/patchdata.hpp"
+#include "shamrock/legacy/utils/syclreduction.hpp"
 #include "aliases.hpp"
-//#include "shamrock/patch/patchdata_buffer.hpp"
+//#include "shamrock/legacy/patch/patchdata_buffer.hpp"
 
 
 //%Impl status : Good

@@ -13,8 +13,8 @@
 #include "base/patchdata.hpp"
 #include "base/patchdata_layout.hpp"
 //#include "boundary_condition.hpp"
-//#include "shamrock/patch/patchdata_buffer.hpp"
-#include "shamrock/patch/scheduler/loadbalancing_hilbert.hpp" //TODO remove dependancy from hilbert
+//#include "shamrock/legacy/patch/patchdata_buffer.hpp"
+#include "shamrock/legacy/patch/scheduler/loadbalancing_hilbert.hpp" //TODO remove dependancy from hilbert
 #include <memory>
 #include <tuple>
 

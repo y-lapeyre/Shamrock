@@ -19,17 +19,17 @@
 
 #pragma once
 #include "aliases.hpp"
-#include "shamrock/patch/base/patch.hpp"
-#include "shamrock/patch/base/patchdata.hpp"
-//#include "shamrock/patch/patchdata_buffer.hpp"
-#include "shamrock/patch/base/patchdata_field.hpp"
-#include "shamrock/patch/utility/serialpatchtree.hpp"
-#include "shamrock/patch/scheduler/scheduler_mpi.hpp"
-#include "shamrock/patch/scheduler/scheduler_patch_data.hpp"
+#include "shamrock/legacy/patch/base/patch.hpp"
+#include "shamrock/legacy/patch/base/patchdata.hpp"
+//#include "shamrock/legacy/patch/patchdata_buffer.hpp"
+#include "shamrock/legacy/patch/base/patchdata_field.hpp"
+#include "shamrock/legacy/patch/utility/serialpatchtree.hpp"
+#include "shamrock/legacy/patch/scheduler/scheduler_mpi.hpp"
+#include "shamrock/legacy/patch/scheduler/scheduler_patch_data.hpp"
 #include "shamsys/legacy/mpi_handler.hpp"
 #include "shamsys/legacy/sycl_mpi_interop.hpp"
-#include "shamrock/utils/geometry_utils.hpp"
-#include "shamrock/utils/string_utils.hpp"
+#include "shamrock/legacy/utils/geometry_utils.hpp"
+#include "shamrock/legacy/utils/string_utils.hpp"
 #include <cstddef>
 #include <fstream>
 #include <functional>

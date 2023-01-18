@@ -10,7 +10,7 @@
 
 
 #if false
-#include "shamrock/patch/base/patchdata.hpp"
+#include "shamrock/legacy/patch/base/patchdata.hpp"
 
 template <> 
 struct SparseCommExchanger<PatchData>{
