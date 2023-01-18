@@ -69,7 +69,7 @@ namespace shamrock::sfc {
             }
         }
 
-        inline static u16_3 morton_to_ipos(u32 morton) {
+        inline static u16_3 morton_to_icoord(u32 morton) {
 
             u16_3 pos;
             pos.s0() = (u16)bmi::contract_bits<u32, 2>((morton & 0x24924924U) >> 2U);
@@ -78,6 +78,7 @@ namespace shamrock::sfc {
 
             return pos;
         }
+
         inline static u16_3 get_offset(u32 clz_) {
             u16_3 mx;
             mx.s0() = 1024U >> ((clz_ - 0) / 3);
@@ -127,7 +128,7 @@ namespace shamrock::sfc {
             }
         }
 
-        inline static int_vec_repr morton_to_ipos(u64 morton) {
+        inline static int_vec_repr morton_to_icoord(u64 morton) {
 
             u32_3 pos;
             pos.x() = bmi::contract_bits<u64, 2>((morton & 0x4924924924924924U) >> 2U);

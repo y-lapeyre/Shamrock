@@ -82,14 +82,40 @@ namespace shamrock::sfc {
     template<class hilbert_repr, u32 dim>
     class HilbertCurve{};
 
-    template<> class HilbertCurve<u32,3>{public:
+    template<> class HilbertCurve<u64,3>{public:
     
         using int_vec_repr_base                    = u32;
         using int_vec_repr                         = u32_3;
         static constexpr int_vec_repr_base max_val = 2097152 - 1;
 
+
         inline static u64 icoord_to_hilbert(u64 x, u64 y, u64 z){
             return details::compute_hilbert_index_3d<21>(x, y, z);
+        }
+
+        template<class flt>
+        inline static u64 coord_to_hilbert(flt x, flt y, flt z){
+
+            constexpr bool ok_type = std::is_same<flt,f32>::value || std::is_same<flt,f64>::value;
+            static_assert(ok_type, "unknown input type");
+
+            if constexpr (std::is_same<flt,f32>::value){
+
+                x = sycl::fmin(sycl::fmax(x * 2097152.F, 0.F), 2097152.F - 1.F);
+                y = sycl::fmin(sycl::fmax(y * 2097152.F, 0.F), 2097152.F - 1.F);
+                z = sycl::fmin(sycl::fmax(z * 2097152.F, 0.F), 2097152.F - 1.F);
+
+                return icoord_to_hilbert(x, y, z);
+
+            }else if constexpr (std::is_same<flt,f64>::value){
+
+                x = sycl::fmin(sycl::fmax(x * 2097152., 0.), 2097152. - 1.);
+                y = sycl::fmin(sycl::fmax(y * 2097152., 0.), 2097152. - 1.);
+                z = sycl::fmin(sycl::fmax(z * 2097152., 0.), 2097152. - 1.);
+
+                return icoord_to_hilbert(x, y, z);
+
+            }
         }
     
     };

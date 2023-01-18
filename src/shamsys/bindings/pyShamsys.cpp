@@ -1,11 +1,11 @@
-#include "pybindaliases.hpp"
+#include "shambindings/pybindaliases.hpp"
 
 
 #include "pyNodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
 
 
-SHAMROCK_PY_MODULE(shamrock, m){
+Register_pymod(pysyslibinit){
 
 
     m.def("change_loglevel",[](u32 loglevel){

@@ -1,7 +1,7 @@
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/cmdopt.hpp"
 
-#include "pybindaliases.hpp"
+#include "shambindings/pybindaliases.hpp"
 
 
 
