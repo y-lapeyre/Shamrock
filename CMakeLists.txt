@@ -53,10 +53,6 @@ endif()
 
 
 
-# to hide mac OS specific warnings with hipsycl
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-nonportable-include-path")
-
-
 
 
 ######################
@@ -69,7 +65,8 @@ find_package (Python3 COMPONENTS Interpreter Development )
 add_subdirectory(external)
 
 
-
+#for some reason it doesn't work with target_include_directories
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -isystem ${COMP_ROOT_DIR}/include -isystem ${COMP_ROOT_DIR}/include/sycl")
 
 
 ######################
@@ -106,9 +103,7 @@ if("${BUILD_SIM}")
 
 
     target_include_directories(shamrock AFTER PUBLIC "${CMAKE_SOURCE_DIR}/src")
-    target_include_directories(shamrock AFTER PUBLIC  "${CMAKE_SOURCE_DIR}/external")
-    target_include_directories(shamrock SYSTEM AFTER PUBLIC  "${COMP_ROOT_DIR}/include")
-    target_include_directories(shamrock SYSTEM AFTER PUBLIC  "${COMP_ROOT_DIR}/include/sycl")
+    target_include_directories(shamrock AFTER PUBLIC "${CMAKE_SOURCE_DIR}/external")
 
     #do lib build instead if building the pylib
 
@@ -127,11 +122,9 @@ if("${BUILD_TEST}")
 
     target_link_libraries(shamrock_test PUBLIC pybind11::embed)
 
+    
     target_include_directories(shamrock_test AFTER PUBLIC "${CMAKE_SOURCE_DIR}/src")
-    target_include_directories(shamrock_test AFTER PUBLIC  "${CMAKE_SOURCE_DIR}/external")
-    target_include_directories(shamrock_test SYSTEM AFTER PUBLIC  "${COMP_ROOT_DIR}/include")
-    target_include_directories(shamrock_test SYSTEM AFTER PUBLIC  "${COMP_ROOT_DIR}/include/sycl")
-
+    target_include_directories(shamrock_test AFTER PUBLIC "${CMAKE_SOURCE_DIR}/external")
 
     target_compile_definitions(shamrock_test PUBLIC EXECUTABLE_BUILD)
 

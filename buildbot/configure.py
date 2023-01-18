@@ -4,146 +4,184 @@ import argparse
 from lib.buildbot import * 
 
 
+
+
 parser = argparse.ArgumentParser(description='Configure utility for the code')
 
-parser.add_argument("--ninja", action='store_true', help="use NINJA build system instead of Make")
-parser.add_argument('--buildmode',action='store', type=str, default="None", help='target build mode')
-
-parser.add_argument("--compiler", action='store_true', help="sycl compiler name")
-parser.add_argument("--syclbe", action='store_true', help="Sycl backend to use")
+parser.add_argument("--gen", help="use NINJA build system instead of Make")
+parser.add_argument("--build", help="change the build type")
 
 
-parser.add_argument("--test", action='store_true', help="add test target to build configuration")
-parser.add_argument("--shamrock", action='store_true', help="add shamrock target to build configuration")
-parser.add_argument("--visu", action='store_true', help="add visualisation target to build configuration")
 
-parser.add_argument('--interactive',     action='store_true', help='enables interactive configuration')
+parser.add_argument("--nocode", action='store_true', help="disable the build of the main executable")
+parser.add_argument("--lib", action='store_true', help="build the lib instead of the executable")
+parser.add_argument("--tests", action='store_true', help="enable the build of the tests")
 
-parser.add_argument("compiler_root",help="compiler location", type=str)
+parser.add_argument("--outdir", help="output directory")
+
+
+parser.add_argument("--cxxpath", action='store', help="select the compiler path")
+parser.add_argument("--cxxcompiler", action='store', help="select the compiler")
+parser.add_argument("--compiler", help="id of the compiler")
+parser.add_argument("--profile", help="select the compilation profile")
+
+parser.add_argument("--cppflags", help="c++ compilation flags")
+parser.add_argument("--cmakeargs", help="cmake configuration flags")
+
 
 args = parser.parse_args()
 
 
+
+abs_compiler_root_dir = ""
+
+if args.cxxpath.startswith("/"):
+    abs_compiler_root_dir = args.cxxpath
+else:
+    abs_compiler_root_dir = os.path.abspath(os.path.join(os.getcwd(),args.cxxpath))
+
+
+
 print_buildbot_info("configure tool")
 
-abs_build_dir = os.path.join(abs_proj_dir,"build")
-abs_compiler_root_dir = os.path.abspath(os.path.join(os.getcwd(),args.compiler_root))
+
 
 print("\033[1;34mCompiler directory \033[0;0m: "+ abs_compiler_root_dir)
-print("\033[1;34mBuild directory    \033[0;0m: "+ abs_build_dir)
 print()
 
 
-
-if args.interactive:
-    while 1:
-        print("\033[1;34mInteractive configuration \033[0;0m:")
-
-        args.ninja = input("    do you want to use ninja instead of make (y/n)") == "y"
-
-
-        print("    compile mode available :")
-        print("           0: Normal  (no special flags)")
-        print("           1: Release (optimisation flags)")
-        print("           2: Debug   (debug flags)")
-        tmp_release = int(input("    with which mode do you want to compile :"))
-
-        if tmp_release == 0:
-            args.buildmode = "Normal"
-        elif tmp_release == 1:
-            args.buildmode = "Release"
-        elif tmp_release == 2:
-            args.buildmode = "Debug"
-
-        args.shamrock = input("    do you want to compile the shamrock mode (y/n)") == "y"
-        args.test = input("    do you want to compile the test mode (y/n)") == "y"
-        args.visu = False
-
-        args.compiler = input("    which compiler are you using (hipsycl/dpcpp)")
-
-        args.backend = input("    which backend are you using (omp,cuda)")
-
-        print("\033[1;34mOptions summary \033[0;0m: ")
-
-        print("    ninja      =",args.ninja)
-        print("    build mode =",args.buildmode)
-        print("    compiler   =",args.compiler)
-        print("    backend    =",args.backend)
-
-        print("    shamrock   =",args.shamrock)
-        print("    test       =",args.test)
-        #print("    visu       =",args.visu)
-
-        
-
-        print()
-        if input("confirm choices (y/N)") == "y":
-            break
-            print()
-    print()
-
-
-build_sys = BuildSystem.Makefiles
-if args.ninja:
-    build_sys = BuildSystem.Ninja
+### interactive
 
 
 
+### processing results
 
-sycl_cmp = -1
-if args.compiler == "dpcpp":
-    sycl_cmp = SyclCompiler.DPCPP
-    abs_build_dir += "_dpcpp"
-elif args.compiler == "hipsycl":
-    sycl_cmp = SyclCompiler.HipSYCL
-    abs_build_dir += "_hipsycl"
-
-sycl_be = -1
-if args.backend == "omp":
-    sycl_be = SyCLBE.OpenMP
-elif args.backend == "cuda":
-    sycl_be = SyCLBE.CUDA
-
-
-
-
-
-target_buildmode = BuildMode.Normal
-if args.buildmode == "Normal":
-    target_buildmode = BuildMode.Normal
+if args.outdir == None : 
+    raise "no outdir specified"
     
-elif args.buildmode == "Release":
-    target_buildmode = BuildMode.Release
-    abs_build_dir += "_release"
-elif args.buildmode == "Debug":
-    target_buildmode = BuildMode.Debug
-    abs_build_dir += "_debug"
-
-
-
-target_lst = []
-if args.shamrock:
-    target_lst.append(Targets.SHAMROCK)
-if args.test:
-    target_lst.append(Targets.Test)
-if args.visu:
-    target_lst.append(Targets.Visu)
+print(args)
 
 
 
 
 
+cmake_cmd = ""
+
+cmake_cmd = "cmake"
+cmake_cmd += " -S " + abs_src_dir + "/.."
+cmake_cmd += " -B " + str(os.path.abspath(args.outdir))
+
+### chose the generator
+if args.gen == "ninja":
+    cmake_cmd += " -G Ninja"
+elif args.gen == "make":
+    cmake_cmd += ' -G "Unix Makefiles"'
+else:
+    raise "unknown generator"
 
 
 
 
 
-configure(
-    abs_src_dir, 
-    abs_build_dir,
-    sycl_cmp,
-    sycl_be,
-    abs_compiler_root_dir,
-    target_buildmode,
-    build_sys,
-    target_lst)
+comp_path = ""
+
+if args.cxxcompiler : 
+    comp_path = args.cxxcompiler
+
+### chose the compiler id
+if args.compiler == "dpcpp":
+    cmake_cmd += " -DSyCL_Compiler=DPCPP"
+    if comp_path == "":
+        comp_path = abs_compiler_root_dir + "/bin/clang++"
+
+elif args.compiler == "hipsycl":
+    cmake_cmd += " -DSyCL_Compiler=HIPSYCL"
+    if comp_path == "":
+        comp_path = abs_compiler_root_dir + "/bin/syclcc"
+
+else:
+    cmake_cmd += " -DSyCL_Compiler=UNKNOWN"
+    print("WARNING : The compiler is unknown")
+
+    if not (args.profile == NONE):
+        raise "can not select a profile with a unknown compiler"
+
+    if (args.cxxcompiler == NONE):
+        raise "you must select the compiler path if unknown"
+
+
+
+cmake_cmd += " -DCMAKE_CXX_COMPILER="+comp_path
+
+
+### pass if release or debug to cmake
+if args.build == "release":
+    cmake_cmd += " -DCMAKE_BUILD_TYPE=Release"
+elif args.build == "debug":
+    cmake_cmd += " -DCMAKE_BUILD_TYPE=Debug"
+
+
+
+cmake_cmd += " -DCOMP_ROOT_DIR="+abs_compiler_root_dir
+
+
+### target build
+if (not args.nocode):
+    cmake_cmd += " -DBUILD_SIM=true"
+
+if (args.lib):
+    cmake_cmd += " -DBUILD_PYLIB=true"
+
+if (args.tests):
+    cmake_cmd += " -DBUILD_TEST=true"
+
+
+
+
+
+
+
+
+cpp_flags = ""
+
+hipsyclconfigfile = "--hipsycl-config-file="+abs_compiler_root_dir+"/etc/hipSYCL/syclcc.json"
+
+profile_map = {
+    "dpcpp" : {
+        "cuda" : "-fsycl -fsycl-targets=nvptx64-nvidia-cuda"
+    },
+    "hipsycl" : {
+        "omp" : "--hipsycl-cpu-cxx=g++ --hipsycl-targets='omp' " + hipsyclconfigfile,
+        "omp_sanitizer" : "-fsanitize=address --hipsycl-cpu-cxx=g++ --hipsycl-targets='omp' " + hipsyclconfigfile
+    }
+}
+
+print(profile_map)
+
+if not args.profile:
+    print("WARNING : no profile were selected, you have to input the flag through 'cppflags'")
+else:
+    if not (args.profile in profile_map[args.compiler]):
+        raise "the selected profile is unknown for this compiler"
+    else:
+        cpp_flags += profile_map[args.compiler][args.profile]
+
+
+
+if args.cppflags:
+    if not (cpp_flags == ""):
+        cpp_flags += " "
+    cpp_flags += args.cppflags
+
+if args.cmakeargs:
+    cmake_cmd += " " + args.cmakeargs.replace("\"","")
+
+
+
+
+# TODO need a way to pass the configuration down aka is cuda or something else
+
+if not (cpp_flags == ""):
+    cmake_cmd += " -DCMAKE_CXX_FLAGS=\"" +cpp_flags+ "\""
+
+run_cmd(cmake_cmd)

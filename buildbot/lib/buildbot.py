@@ -89,7 +89,12 @@ def print_buildbot_info(utility_name):
 
 def run_cmd(str):
 
-    col_cnt = os.get_terminal_size().columns
+    col_cnt = 64
+
+    try: 
+        col_cnt = os.get_terminal_size().columns
+    except : 
+        print("Warn : couldn't get terminal size")
 
     print("\033[1;34mRunning \033[0;0m: " + str)
     print("\033[1;90mcmd out "+"-"*(col_cnt-8)+"\033[0;0m")
