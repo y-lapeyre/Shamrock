@@ -615,7 +615,6 @@ static_assert(std::is_same<decltype(test_l(0)), int>::value, "retval must be boo
 
 
 const std::string run_ipython_src = R"(
-import matplotlib
 from IPython import start_ipython
 from traitlets.config.loader import Config
 import sys
@@ -693,20 +692,22 @@ int main(int argc, char *argv[]) {
 
     //*
     {
+        namespace py = pybind11;
         //RunScriptHandler rscript;
         
         if(opts::has_option("--ipython")){
 
-            namespace py = pybind11;
-
             py::scoped_interpreter guard{};
+            py::object scipy = py::module_::import("matplotlib");
             py::exec(run_ipython_src);
 
             //rscript.run_ipython();
         }else if(opts::has_option("--rscript")){
             std::string fname = std::string(opts::get_option("--rscript"));
-            RunScriptHandler rscript;
-            rscript.run_file(fname);
+            //RunScriptHandler rscript;
+            //rscript.run_file(fname);
+
+            py::eval_file(fname);
         }else{
             using namespace units;
 

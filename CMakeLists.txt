@@ -60,8 +60,8 @@ endif()
 ######################
 set(MPI_CXX_SKIP_MPICXX true)
 find_package(MPI REQUIRED COMPONENTS C)
-find_package (Python3 COMPONENTS Interpreter Development )
 
+set(PYBIND11_FINDPYTHON ON)
 add_subdirectory(external)
 
 
@@ -89,17 +89,19 @@ if("${BUILD_SIM}")
     if("${BUILD_PYLIB}")
     pybind11_add_module(shamrock src/main.cpp src/version.cpp)
     target_compile_definitions(shamrock PUBLIC LIB_BUILD)
+    target_link_libraries(shamrock PUBLIC pybind11::module)
     else()
     add_executable(shamrock src/main.cpp src/version.cpp)
     target_compile_definitions(shamrock PUBLIC EXECUTABLE_BUILD)
+    target_link_libraries(shamrock PUBLIC pybind11::embed)
     endif()
     
+
     
     
     target_link_libraries(shamrock PUBLIC MPI::MPI_C)
-    target_link_libraries(shamrock PUBLIC Python3::Python)
 
-    target_link_libraries(shamrock PUBLIC pybind11::embed)
+    
 
 
     target_include_directories(shamrock AFTER PUBLIC "${CMAKE_SOURCE_DIR}/src")
@@ -118,7 +120,6 @@ if("${BUILD_TEST}")
     #add_executable(shamrock_test main_test.cpp version.cpp)
     add_executable(shamrock_test src/main_test.cpp  src/version.cpp)
     target_link_libraries(shamrock_test PUBLIC MPI::MPI_C)
-    target_link_libraries(shamrock_test PUBLIC Python3::Python)
 
     target_link_libraries(shamrock_test PUBLIC pybind11::embed)
 
