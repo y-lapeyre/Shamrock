@@ -698,8 +698,15 @@ int main(int argc, char *argv[]) {
         if(opts::has_option("--ipython")){
 
             py::scoped_interpreter guard{};
-            py::object scipy = py::module_::import("matplotlib");
+            
+            
+            std::cout << "--------------------------------------------" << std::endl;
+            std::cout << "-------------- ipython ---------------------" << std::endl;
+            std::cout << "--------------------------------------------" << std::endl;
             py::exec(run_ipython_src);
+            std::cout << "--------------------------------------------" << std::endl;
+            std::cout << "------------ ipython end -------------------" << std::endl;
+            std::cout << "--------------------------------------------\n" << std::endl;
 
             //rscript.run_ipython();
         }else if(opts::has_option("--rscript")){
@@ -707,7 +714,15 @@ int main(int argc, char *argv[]) {
             //RunScriptHandler rscript;
             //rscript.run_file(fname);
 
+            std::cout << "-----------------------------------" << std::endl;
+            std::cout << "running pyscript : " << fname << std::endl;
+            std::cout << "-----------------------------------" << std::endl;
             py::eval_file(fname);
+            std::cout << "-----------------------------------" << std::endl;
+            std::cout << "pyscript end" << std::endl;
+            std::cout << "-----------------------------------" << std::endl;
+
+            
         }else{
             using namespace units;
 
