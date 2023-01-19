@@ -1,7 +1,7 @@
 
 set(Sources
-    pySfc.cpp
-    pyShamrockCtx.cpp
+pySetupSPH.cpp
+pyModelsSPH.cpp
 )
 set(SourcesTest
     

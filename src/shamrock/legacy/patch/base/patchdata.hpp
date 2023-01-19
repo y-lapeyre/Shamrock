@@ -206,6 +206,12 @@ class PatchData {
     #define X(_arg) template<> inline PatchDataField<_arg> & get_field(u32 idx){return fields_##_arg.at(idx);}
     XMAC_LIST_ENABLED_FIELD
     #undef X
+
+
+    template<class T> std::vector<PatchDataField<T>> & get_field_list();
+    #define X(_arg) template<> inline std::vector<PatchDataField<_arg>> & get_field_list(){return fields_##_arg;}
+    XMAC_LIST_ENABLED_FIELD
+    #undef X
     
 };
 

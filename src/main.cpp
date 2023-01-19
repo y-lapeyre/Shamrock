@@ -615,7 +615,7 @@ static_assert(std::is_same<decltype(test_l(0)), int>::value, "retval must be boo
 
 
 const std::string run_ipython_src = R"(
-
+import matplotlib
 from IPython import start_ipython
 from traitlets.config.loader import Config
 import sys

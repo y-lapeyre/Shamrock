@@ -1,0 +1,152 @@
+#pragma once
+
+#include "shammodels/sph/setup/sph_setup.hpp"
+#include "shamrock/legacy/ShamrockCtx.hpp"
+#include <variant>
+
+
+
+template<class T>
+sycl::vec<f64, 3> convert_vec(T a);
+
+template<>
+sycl::vec<f64, 3> convert_vec(sycl::vec<f64, 3> a){
+    return sycl::vec<f64, 3> {a.x(), a.y(), a.z()};
+}
+
+template<>
+sycl::vec<f64, 3> convert_vec(sycl::vec<f32, 3> a){
+    return sycl::vec<f64, 3> {a.x(), a.y(), a.z()};
+}
+
+
+
+
+class NamedSetupSPH{
+    
+    
+    using var_t = std::variant<
+        models::sph::SetupSPH<f32, models::sph::kernels::M4<f32>>
+    >;
+
+    var_t setup;
+
+    public:
+
+    using vec = sycl::vec<f64,3>;
+
+    NamedSetupSPH(std::string kernel_name, std::string precision){
+        if(kernel_name == "M4" && precision == "single"){
+            setup = models::sph::SetupSPH<f32, models::sph::kernels::M4<f32>>{};
+        }else{
+            std::invalid_argument("unknown configuration");
+        }
+    }
+
+
+    void init(ShamrockCtx & ctx){
+
+        if(!ctx.sched){
+            throw std::runtime_error("cannot initialize a setup with an uninitialized scheduler");
+        }
+
+        std::visit([&](auto && arg) {
+            arg.init(*ctx.sched);
+        }, setup);
+    }
+
+    void set_boundaries(std::string type){
+        if(type == "periodic"){
+            std::visit([=](auto && arg) {
+                arg.set_boundaries(true);
+            }, setup);
+        }else if(type == "free"){
+            std::visit([=](auto && arg) {
+                arg.set_boundaries(false);
+            }, setup);
+        }else{
+            throw std::invalid_argument("this type of boundary is unknown");
+        }
+    }
+
+
+    inline vec get_box_dim(f64 dr, u32 xcnt, u32 ycnt, u32 zcnt){
+        return std::visit([&](auto && arg) {
+            return convert_vec(arg.get_box_dim(dr, xcnt, ycnt, zcnt));
+        }, setup);
+    }
+
+    inline std::tuple<vec,vec> get_ideal_box(f64 dr, std::tuple<vec,vec> box){
+        vec b1 = std::get<0>(box);
+        vec b2 = std::get<1>(box);
+        return std::visit([&](auto && arg) {
+            auto [a,b] = arg.get_ideal_box(dr, {{b1.x(), b1.y(), b1.z()},{b2.x(), b2.y(), b2.z()}});
+            return std::tuple<vec,vec>{convert_vec(a),convert_vec(b)};
+        }, setup);
+    }
+
+    template<class T> 
+    inline void set_value_in_box(ShamrockCtx & ctx, T val, std::string name, std::tuple<vec,vec> box){
+        
+        if(!ctx.sched){
+            throw std::runtime_error("cannot initialize a setup with an uninitialized scheduler");
+        }
+        
+        vec b1 = std::get<0>(box);
+        vec b2 = std::get<1>(box);
+
+        std::visit([&](auto && arg) {
+            arg.set_value_in_box(*ctx.sched, val, name, {{b1.x(), b1.y(), b1.z()},{b2.x(), b2.y(), b2.z()}});
+        }, setup);
+    }
+
+    inline void pertub_eigenmode_wave(ShamrockCtx & ctx, std::tuple<f64,f64> ampls, vec k, f64 phase){
+
+        if(!ctx.sched){
+            throw std::runtime_error("cannot initialize a setup with an uninitialized scheduler");
+        }
+
+        std::visit([&](auto && arg) {
+            arg.pertub_eigenmode_wave(*ctx.sched, {std::get<0>(ampls),std::get<1>(ampls)}, {k.x(), k.y(), k.z()}, phase);
+        }, setup);
+    }
+
+
+    inline void add_particules_fcc(ShamrockCtx & ctx, f64 dr, std::tuple<vec,vec> box){
+
+        if(!ctx.sched){
+            throw std::runtime_error("cannot initialize a setup with an uninitialized scheduler");
+        }
+
+        vec b1 = std::get<0>(box);
+        vec b2 = std::get<1>(box);
+
+        std::visit([&](auto && arg) {
+            arg.add_particules_fcc(*ctx.sched, dr, {{b1.x(), b1.y(), b1.z()},{b2.x(), b2.y(), b2.z()}});
+        }, setup);
+
+    }
+
+    inline void set_total_mass(f64 tot_mass){
+        std::visit([&](auto && arg) {
+            arg.set_total_mass(tot_mass);
+        }, setup);
+    }
+
+    inline f64 get_part_mass(){
+        return std::visit([&](auto && arg) {
+            return arg.get_part_mass();
+        }, setup);
+    }
+
+    void update_smoothing_lenght(ShamrockCtx & ctx){
+        if(!ctx.sched){
+            throw std::runtime_error("cannot initialize a setup with an uninitialized scheduler");
+        }
+
+        std::visit([&](auto && arg) {
+            arg.update_smoothing_lenght(*ctx.sched);
+        }, setup);
+    }
+
+};

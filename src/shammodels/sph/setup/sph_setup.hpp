@@ -51,6 +51,8 @@ namespace models::sph {
             return generic::setup::generators::get_box_dim(dr, xcnt, ycnt, zcnt);
         }
 
+        
+
         inline std::tuple<vec,vec> get_ideal_box(flt dr, std::tuple<vec,vec> box){
             return generic::setup::generators::get_ideal_fcc_box(dr, box);
         }
