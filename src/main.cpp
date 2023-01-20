@@ -57,7 +57,6 @@
 //#include "shammodels/sph/models/gas_only_intu.hpp"
 //#include "shammodels/sph/models/gas_only_visco.hpp"
 #include "shammodels/sph/sphpatch.hpp"
-#include "runscript/rscripthandler.hpp"
 #include "shamtest/shamtest.hpp"
 #include <array>
 #include <cstdlib>
@@ -70,7 +69,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include <pybind11/embed.h>
+#include "shambindings/pybindaliases.hpp"
 
 //%Impl status : Should rewrite
 
@@ -714,6 +713,8 @@ int main(int argc, char *argv[]) {
             //RunScriptHandler rscript;
             //rscript.run_file(fname);
 
+            py::scoped_interpreter guard{};
+
             std::cout << "-----------------------------------" << std::endl;
             std::cout << "running pyscript : " << fname << std::endl;
             std::cout << "-----------------------------------" << std::endl;
@@ -722,7 +723,7 @@ int main(int argc, char *argv[]) {
             std::cout << "pyscript end" << std::endl;
             std::cout << "-----------------------------------" << std::endl;
 
-            
+
         }else{
             using namespace units;
 
