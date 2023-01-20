@@ -13,7 +13,7 @@
 
 
 #include "aliases.hpp"
-#include "shamrock/patch/scheduler/scheduler_mpi.hpp"
+#include "shamrock/legacy/patch/scheduler/scheduler_mpi.hpp"
 
 
 class SimulationSPH{

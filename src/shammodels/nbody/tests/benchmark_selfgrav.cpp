@@ -8,8 +8,8 @@
 
 #include "aliases.hpp"
 
-#include "shamrock/patch/base/patchdata_layout.hpp"
-#include "shamrock/patch/scheduler/scheduler_mpi.hpp"
+#include "shamrock/legacy/patch/base/patchdata_layout.hpp"
+#include "shamrock/legacy/patch/scheduler/scheduler_mpi.hpp"
 
 #include "shammodels/nbody/models/nbody_selfgrav.hpp"
 #include "shammodels/nbody/setup/nbody_setup.hpp"

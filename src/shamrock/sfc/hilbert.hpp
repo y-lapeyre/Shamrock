@@ -31,9 +31,101 @@
 // Programming the Hilbert curve
 // killing J., 2004, AIPC, 707, 381. doi:10.1063/1.1751381
 
+
+
+namespace shamrock::sfc {
+
+
+    namespace details {
+        
+        template <int bits> 
+        inline u64 compute_hilbert_index_3d(u64 x, u64 y, u64 z) {
+
+            const int n = 3;
+            u64 X[3]    = {x, y, z};
+
+            u64 M = 1 << (bits - 1), P, Q, t;
+            int i;
+            // Inverse undo
+            for (Q = M; Q > 1; Q >>= 1) {
+                P = Q - 1;
+                for (i = 0; i < n; i++)
+                    if (X[i] & Q)
+                        X[0] ^= P; // invert
+                    else {
+                        t = (X[0] ^ X[i]) & P;
+                        X[0] ^= t;
+                        X[i] ^= t;
+                    }
+            } // exchange
+
+            // Gray encode
+            for (i = 1; i < n; i++)
+                X[i] ^= X[i - 1];
+            t = 0;
+            for (Q = M; Q > 1; Q >>= 1)
+                if (X[n - 1] & Q)
+                    t ^= Q - 1;
+            for (i = 0; i < n; i++)
+                X[i] ^= t;
+
+
+            X[0] = shamrock::sfc::bmi::expand_bits<u64,2>(X[0]) << 2;
+            X[1] = shamrock::sfc::bmi::expand_bits<u64,2>(X[1]) << 1;
+            X[2] = shamrock::sfc::bmi::expand_bits<u64,2>(X[2]);
+
+            return X[0] + X[1] + X[2];
+        }
+    } // namespace details
+
+        
+    template<class hilbert_repr, u32 dim>
+    class HilbertCurve{};
+
+    template<> class HilbertCurve<u64,3>{public:
+    
+        using int_vec_repr_base                    = u32;
+        using int_vec_repr                         = u32_3;
+        static constexpr int_vec_repr_base max_val = 2097152 - 1;
+
+
+        inline static u64 icoord_to_hilbert(u64 x, u64 y, u64 z){
+            return details::compute_hilbert_index_3d<21>(x, y, z);
+        }
+
+        template<class flt>
+        inline static u64 coord_to_hilbert(flt x, flt y, flt z){
+
+            constexpr bool ok_type = std::is_same<flt,f32>::value || std::is_same<flt,f64>::value;
+            static_assert(ok_type, "unknown input type");
+
+            if constexpr (std::is_same<flt,f32>::value){
+
+                x = sycl::fmin(sycl::fmax(x * 2097152.F, 0.F), 2097152.F - 1.F);
+                y = sycl::fmin(sycl::fmax(y * 2097152.F, 0.F), 2097152.F - 1.F);
+                z = sycl::fmin(sycl::fmax(z * 2097152.F, 0.F), 2097152.F - 1.F);
+
+                return icoord_to_hilbert(x, y, z);
+
+            }else if constexpr (std::is_same<flt,f64>::value){
+
+                x = sycl::fmin(sycl::fmax(x * 2097152., 0.), 2097152. - 1.);
+                y = sycl::fmin(sycl::fmax(y * 2097152., 0.), 2097152. - 1.);
+                z = sycl::fmin(sycl::fmax(z * 2097152., 0.), 2097152. - 1.);
+
+                return icoord_to_hilbert(x, y, z);
+
+            }
+        }
+    
+    };
+
+} // namespace shamrock::sfc
+
+[[deprecated]]
 constexpr u64 hilbert_box21_sz = 2097152 - 1;
 
-template <int bits> 
+template <int bits> [[deprecated]]
 inline u64 compute_hilbert_index_3d(u64 x, u64 y, u64 z) {
 
     const int n = 3;
@@ -65,9 +157,9 @@ inline u64 compute_hilbert_index_3d(u64 x, u64 y, u64 z) {
         X[i] ^= t;
 
 
-    X[0] = bmi::expand_bits<u64,2>(X[0]) << 2;
-    X[1] = bmi::expand_bits<u64,2>(X[1]) << 1;
-    X[2] = bmi::expand_bits<u64,2>(X[2]);
+    X[0] = shamrock::sfc::bmi::expand_bits<u64,2>(X[0]) << 2;
+    X[1] = shamrock::sfc::bmi::expand_bits<u64,2>(X[1]) << 1;
+    X[2] = shamrock::sfc::bmi::expand_bits<u64,2>(X[2]);
 
     return X[0] + X[1] + X[2];
 }

@@ -12,10 +12,10 @@
 #pragma once
 
 #include "aliases.hpp"
-#include "shamrock/patch/scheduler/scheduler_mpi.hpp"
+#include "shamrock/legacy/patch/scheduler/scheduler_mpi.hpp"
 
-#include "shamrock/patch/base/patch.hpp"
-#include "shamrock/patch/utility/serialpatchtree.hpp"
+#include "shamrock/legacy/patch/base/patch.hpp"
+#include "shamrock/legacy/patch/utility/serialpatchtree.hpp"
 
 #include "shammodels/generic/setup/generators.hpp"
 #include "shammodels/generic/setup/modifiers.hpp"
@@ -50,6 +50,8 @@ namespace models::sph {
         inline vec get_box_dim(flt dr, u32 xcnt, u32 ycnt, u32 zcnt){
             return generic::setup::generators::get_box_dim(dr, xcnt, ycnt, zcnt);
         }
+
+        
 
         inline std::tuple<vec,vec> get_ideal_box(flt dr, std::tuple<vec,vec> box){
             return generic::setup::generators::get_ideal_fcc_box(dr, box);

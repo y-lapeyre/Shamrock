@@ -71,7 +71,7 @@ CMakeLists.txt
 
 `src` is added to the include path to be able to do 
 ```c++
-#include "shamrock/scheduler/scheduler.hpp"
+#include "shamrock/legacy/scheduler/scheduler.hpp"
 ```
 
 allow for a better separation of the documentation/ source code/ utilities

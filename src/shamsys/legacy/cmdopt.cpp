@@ -8,11 +8,31 @@
 
 #include "cmdopt.hpp"
 #include "shamsys/legacy/log.hpp"
-#include "runscript/shamrockapi.hpp"
 #include <optional>
 #include <string_view>
 #include <vector>
 #include <string>
+
+
+class ShamCmdOptException : public std::exception
+{
+public:
+    explicit ShamCmdOptException(const char* message)
+        : msg_(message) {}
+
+
+    explicit ShamCmdOptException(const std::string& message)
+        : msg_(message) {}
+
+    virtual ~ShamCmdOptException() noexcept {}
+
+    virtual const char* what() const noexcept {
+       return msg_.c_str();
+    }
+
+protected:
+    std::string msg_;
+};
 
 namespace opts {
 
@@ -63,7 +83,7 @@ namespace opts {
 
         if(error){
             print_help();
-            throw ShamAPIException(err_buf + "names are not registered in ::opts");
+            throw ShamCmdOptException(err_buf + "names are not registered in ::opts");
         }
     }
 
@@ -71,7 +91,7 @@ namespace opts {
 
 
     void check_init(){
-        if(! init_done) throw ShamAPIException("Cmdopt uninitialized");
+        if(! init_done) throw ShamCmdOptException("Cmdopt uninitialized");
     }
 
 
@@ -83,7 +103,7 @@ namespace opts {
 
         if(!is_name_registered(option_name)){
             logger::err_ln("opts", "argument :",option_name, "is not registered");
-             throw ShamAPIException(std::string(option_name) + " option is not registered in ::opts");
+             throw ShamCmdOptException(std::string(option_name) + " option is not registered in ::opts");
         }
 
         for (auto it = args.begin(), end = args.end(); it != end; ++it) {
@@ -99,7 +119,7 @@ namespace opts {
 
         if(!is_name_registered(option_name)){
             logger::err_ln("opts", "argument :",option_name, "is not registered");
-             throw ShamAPIException(std::string(option_name) + " option is not registered in ::opts");
+             throw ShamCmdOptException(std::string(option_name) + " option is not registered in ::opts");
         }
         
         for (auto it = args.begin(), end = args.end(); it != end; ++it) {
@@ -122,14 +142,33 @@ namespace opts {
 
 
     
+    int argc;
+    char** argv;
 
+    void init(int _argc, char *_argv[]) { 
+        argc = _argc;
+        argv = _argv;
 
-    void init(int argc, char *argv[]) { 
         opts::register_opt("--help",{}, "show this message");
         executable_name = std::string_view(argv[0]);
         args = std::vector<std::string_view>(argv + 1, argv + argc); 
         init_done = true;
         check_args_registered();
+
+        
+    }
+
+    int get_argc(){
+        if(init_done){
+            return argc;
+        }
+        return NULL;
+    }
+    char** get_argv(){
+        if(init_done){
+            return argv;
+        }
+        return NULL;
     }
 
 

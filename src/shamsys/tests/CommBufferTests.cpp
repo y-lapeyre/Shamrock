@@ -26,7 +26,7 @@ template<class T> void test_constructor_syclbuf(std::string prefix, std::mt19937
     {
         sycl::host_accessor acc {buf_comp};
         for(u32 i = 0; i < npart; i++){
-            acc[i] = next_obj<T>(eng, distval);
+            acc[i] = shamsys::syclhelper::next_obj<T>(eng, distval);
         }
     }
 
@@ -46,7 +46,7 @@ template<class T> void test_constructor_syclbuf(std::string prefix, std::mt19937
 
         bool eq = true;
         for(u32 i = 0; i < npart; i++){
-            if(!test_sycl_eq(acc1[i] , acc2[i])){
+            if(!shamsys::syclhelper::test_sycl_eq(acc1[i] , acc2[i])){
                 eq = false;
                 //id_err_list += std::to_string(i) + " ";
             }
@@ -145,7 +145,7 @@ template<class T> void test_comm_syclbuf(std::string prefix, std::mt19937 & eng,
     {
         sycl::host_accessor acc {buf_comp};
         for(u32 i = 0; i < npart; i++){
-            acc[i] = next_obj<T>(eng, distval);
+            acc[i] = shamsys::syclhelper::next_obj<T>(eng, distval);
         }
     }
 
@@ -189,7 +189,7 @@ template<class T> void test_comm_syclbuf(std::string prefix, std::mt19937 & eng,
 
             bool eq = true;
             for(u32 i = 0; i < npart; i++){
-                if(!test_sycl_eq(acc1[i] , acc2[i])){
+                if(!shamsys::syclhelper::test_sycl_eq(acc1[i] , acc2[i])){
                     eq = false;
                     //id_err_list += std::to_string(i) + " ";
                 }

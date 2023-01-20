@@ -15,10 +15,10 @@
 
 #pragma once
 
-#include "shamrock/patch/base/patchdata.hpp"
-//#include "shamrock/patch/patchdata_buffer.hpp"
-#include "shamrock/utils/syclreduction.hpp"
-#include "shamrock/patch/base/patchdata_layout.hpp"
+#include "shamrock/legacy/patch/base/patchdata.hpp"
+//#include "shamrock/legacy/patch/patchdata_buffer.hpp"
+#include "shamrock/legacy/utils/syclreduction.hpp"
+#include "shamrock/legacy/patch/base/patchdata_layout.hpp"
 #include <stdexcept>
 #include <type_traits>
 

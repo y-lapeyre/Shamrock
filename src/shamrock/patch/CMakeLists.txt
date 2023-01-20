@@ -1,49 +1,31 @@
 
-if("${BUILD_SIM}")
+set(Sources
+    Patch.cpp
+)
+set(SourcesTest
+    
+)
+set(Headers
+    Patch.hpp
+)
+set(HeadersTest
 
+)
+
+if("${BUILD_SIM}")
 target_sources(shamrock
     PRIVATE
-        #scheduler.cpp
-        
-        
-        
-        sim_box.cpp
-        #patchdata_buffer.cpp 
-
-
-        
+        ${Sources}
     PUBLIC
-        #patch.hpp
-        
-        #patchdata.hpp
-        #scheduler.hpp
+        ${Headers}
     )
-
 endif()
-
-
 
 if("${BUILD_TEST}")
-
-    target_sources(shamrock_test
+target_sources(shamrock_test
     PRIVATE
-
-        
-    sim_box.cpp
-    #patchdata_buffer.cpp 
-
-
+        ${Sources} ${SourcesTest}
     PUBLIC
-        #patch.hpp
-        #patchdata.hpp
-        #scheduler.hpp
+        ${Headers} ${HeadersTest}
     )
-
-
 endif()
-
-add_subdirectory(base)
-add_subdirectory(scheduler)
-add_subdirectory(interfaces)
-add_subdirectory(utility)
-add_subdirectory(tests)

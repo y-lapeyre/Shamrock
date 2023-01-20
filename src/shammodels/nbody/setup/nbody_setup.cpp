@@ -11,7 +11,7 @@
 
 #include "nbody_setup.hpp"
 #include "shammodels/sph/base/kernels.hpp"
-#include "shamrock/patch/comm/patch_object_mover.hpp"
+#include "shamrock/legacy/patch/comm/patch_object_mover.hpp"
 
 #include "shamsys/legacy/mpi_handler.hpp"
 

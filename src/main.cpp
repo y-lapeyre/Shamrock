@@ -20,31 +20,31 @@
 
 
 #include "aliases.hpp"
-#include "shamrock/io/dump.hpp"
-#include "shamrock/io/logs.hpp"
-#include "shamrock/patch/base/patch.hpp"
-#include "shamrock/patch/base/patchdata.hpp"
-#include "shamrock/patch/base/patchdata_layout.hpp"
-#include "shamrock/patch/comm/patch_content_exchanger.hpp"
-#include "shamrock/patch/comm/patch_object_mover.hpp"
-#include "shamrock/patch/comm/patchdata_exchanger.hpp"
-#include "shamrock/patch/interfaces/interface_generator.hpp"
-#include "shamrock/patch/interfaces/interface_handler.hpp"
-#include "shamrock/patch/interfaces/interface_selector.hpp"
-//#include "shamrock/patch/patchdata_buffer.hpp"
-#include "shamrock/patch/scheduler/loadbalancing_hilbert.hpp"
-#include "shamrock/patch/scheduler/scheduler_mpi.hpp"
-#include "shamrock/patch/utility/patch_field.hpp"
-#include "shamrock/patch/utility/patch_reduc_tree.hpp"
-#include "shamrock/patch/utility/serialpatchtree.hpp"
+#include "shamrock/legacy/io/dump.hpp"
+#include "shamrock/legacy/io/logs.hpp"
+#include "shamrock/legacy/patch/base/patch.hpp"
+#include "shamrock/legacy/patch/base/patchdata.hpp"
+#include "shamrock/legacy/patch/base/patchdata_layout.hpp"
+#include "shamrock/legacy/patch/comm/patch_content_exchanger.hpp"
+#include "shamrock/legacy/patch/comm/patch_object_mover.hpp"
+#include "shamrock/legacy/patch/comm/patchdata_exchanger.hpp"
+#include "shamrock/legacy/patch/interfaces/interface_generator.hpp"
+#include "shamrock/legacy/patch/interfaces/interface_handler.hpp"
+#include "shamrock/legacy/patch/interfaces/interface_selector.hpp"
+//#include "shamrock/legacy/patch/patchdata_buffer.hpp"
+#include "shamrock/legacy/patch/scheduler/loadbalancing_hilbert.hpp"
+#include "shamrock/legacy/patch/scheduler/scheduler_mpi.hpp"
+#include "shamrock/legacy/patch/utility/patch_field.hpp"
+#include "shamrock/legacy/patch/utility/patch_reduc_tree.hpp"
+#include "shamrock/legacy/patch/utility/serialpatchtree.hpp"
 #include "shamsys/legacy/cmdopt.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamsys/legacy/mpi_handler.hpp"
 #include "shamsys/legacy/sycl_handler.hpp"
 #include "shamsys/legacy/sycl_mpi_interop.hpp"
-#include "shamrock/tree/radix_tree.hpp"
-#include "shamrock/utils/string_utils.hpp"
-#include "shamrock/utils/time_utils.hpp"
+#include "shamrock/legacy/tree/radix_tree.hpp"
+#include "shamrock/legacy/utils/string_utils.hpp"
+#include "shamrock/legacy/utils/time_utils.hpp"
 #include "shammodels/generic/physics/units.hpp"
 #include "shammodels/generic/setup/SPHSetup.hpp"
 #include "shammodels/sph/base/kernels.hpp"
@@ -57,7 +57,6 @@
 //#include "shammodels/sph/models/gas_only_intu.hpp"
 //#include "shammodels/sph/models/gas_only_visco.hpp"
 #include "shammodels/sph/sphpatch.hpp"
-#include "runscript/rscripthandler.hpp"
 #include "shamtest/shamtest.hpp"
 #include <array>
 #include <cstdlib>
@@ -70,6 +69,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "shambindings/pybindaliases.hpp"
 
 //%Impl status : Should rewrite
 
@@ -613,6 +613,27 @@ static_assert(std::is_same<decltype(test_l(0)), int>::value, "retval must be boo
 #endif
 
 
+const std::string run_ipython_src = R"(
+from IPython import start_ipython
+from traitlets.config.loader import Config
+import sys
+
+c = Config()
+
+banner ="SHAMROCK Ipython terminal\n" + "Python %s\n"%sys.version.split("\n")[0]
+
+c.TerminalInteractiveShell.banner1 = banner
+
+c.TerminalInteractiveShell.banner2 = """### 
+import shamrock
+###
+"""
+
+start_ipython(config=c)
+
+)";
+
+
 int main(int argc, char *argv[]) {
 
 
@@ -634,8 +655,9 @@ int main(int argc, char *argv[]) {
         return 0;
     }
 
-
-    shamsys::instance::init(argc,argv);
+    if(opts::has_option("--sycl-cfg")){
+        shamsys::instance::init(argc,argv);
+    }
 
     if(opts::has_option("--nocolor")){
         terminal_effects::disable_colors();
@@ -669,14 +691,39 @@ int main(int argc, char *argv[]) {
 
     //*
     {
-        RunScriptHandler rscript;
+        namespace py = pybind11;
+        //RunScriptHandler rscript;
         
         if(opts::has_option("--ipython")){
-            rscript.run_ipython();
+
+            py::scoped_interpreter guard{};
+            
+            
+            std::cout << "--------------------------------------------" << std::endl;
+            std::cout << "-------------- ipython ---------------------" << std::endl;
+            std::cout << "--------------------------------------------" << std::endl;
+            py::exec(run_ipython_src);
+            std::cout << "--------------------------------------------" << std::endl;
+            std::cout << "------------ ipython end -------------------" << std::endl;
+            std::cout << "--------------------------------------------\n" << std::endl;
+
+            //rscript.run_ipython();
         }else if(opts::has_option("--rscript")){
             std::string fname = std::string(opts::get_option("--rscript"));
+            //RunScriptHandler rscript;
+            //rscript.run_file(fname);
 
-            rscript.run_file(fname);
+            py::scoped_interpreter guard{};
+
+            std::cout << "-----------------------------------" << std::endl;
+            std::cout << "running pyscript : " << fname << std::endl;
+            std::cout << "-----------------------------------" << std::endl;
+            py::eval_file(fname);
+            std::cout << "-----------------------------------" << std::endl;
+            std::cout << "pyscript end" << std::endl;
+            std::cout << "-----------------------------------" << std::endl;
+
+
         }else{
             using namespace units;
 

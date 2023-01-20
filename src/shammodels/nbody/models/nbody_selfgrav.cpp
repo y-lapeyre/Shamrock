@@ -8,16 +8,16 @@
 
 
 #include "nbody_selfgrav.hpp"
-#include "shamrock/patch/interfaces/interface_handler.hpp"
-#include "shamrock/patch/utility/full_tree_field.hpp"
-#include "shamrock/patch/utility/serialpatchtree.hpp"
-#include "shamrock/tree/radix_tree.hpp"
+#include "shamrock/legacy/patch/interfaces/interface_handler.hpp"
+#include "shamrock/legacy/patch/utility/full_tree_field.hpp"
+#include "shamrock/legacy/patch/utility/serialpatchtree.hpp"
+#include "shamrock/legacy/tree/radix_tree.hpp"
 #include "shammodels/generic/math/tensors/collections.hpp"
-#include "runscript/shamrockapi.hpp"
+#include "shamrock/legacy/ShamrockCtx.hpp"
 
 #include "shammodels/generic/algs/integrators_utils.hpp"
 
-#include "shamrock/patch/comm/patch_object_mover.hpp"
+#include "shamrock/legacy/patch/comm/patch_object_mover.hpp"
 #include "shammodels/generic/physics/fmm.hpp"
 
 

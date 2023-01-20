@@ -8,11 +8,11 @@
 
 #include "basic_sph_gas_uint.hpp"
 #include "aliases.hpp"
-#include "shamrock/patch/base/patchdata.hpp"
+#include "shamrock/legacy/patch/base/patchdata.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamsys/legacy/sycl_handler.hpp"
 #include "shammodels/generic/algs/cfl_utils.hpp"
-#include "runscript/shamrockapi.hpp"
+#include "shamrock/legacy/ShamrockCtx.hpp"
 #include "shammodels/generic/algs/integrators_utils.hpp"
 #include "shammodels/sph/forces.hpp"
 
