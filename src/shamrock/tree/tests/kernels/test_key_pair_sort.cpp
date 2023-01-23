@@ -12,7 +12,7 @@
 #include "shamtest/shamtest.hpp"
 
 #include <random>
-#include "shamrock/legacy/tree/kernels/key_morton_sort.hpp"
+#include "shamrock/tree/kernels/key_morton_sort.hpp"
 
 template<class u_morton, SortImplType impl> void unit_test_key_pair(){
     std::vector<u_morton> morton_list;

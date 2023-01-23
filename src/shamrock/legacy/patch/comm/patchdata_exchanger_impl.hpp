@@ -18,7 +18,7 @@
 #include <vector>
 
 #include "shamrock/legacy/io/logs.hpp"
-#include "shamrock/legacy/tree/radix_tree.hpp"
+#include "shamrock/tree/radix_tree.hpp"
 namespace patchdata_exchanger {
 
 

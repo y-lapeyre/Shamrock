@@ -10,7 +10,7 @@
 //#include "test_tree.hpp"
 
 
-#include "shamrock/legacy/tree/kernels/karras_alg.hpp"
+#include "shamrock/tree/kernels/karras_alg.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/sycl_handler.hpp"
 #include <memory>

@@ -7,7 +7,7 @@
 // -------------------------------------------------------//
 
 #pragma once
-#include "shamrock/legacy/tree/radix_tree.hpp"
+#include "shamrock/tree/radix_tree.hpp"
 #include "interface_handler_impl_list.hpp"
 #include "shamrock/legacy/utils/interact_crit_utils.hpp"
 

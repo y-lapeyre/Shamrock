@@ -11,7 +11,7 @@
 #include "shamrock/legacy/patch/interfaces/interface_handler.hpp"
 #include "shamrock/legacy/patch/utility/full_tree_field.hpp"
 #include "shamrock/legacy/patch/utility/serialpatchtree.hpp"
-#include "shamrock/legacy/tree/radix_tree.hpp"
+#include "shamrock/tree/radix_tree.hpp"
 #include "shammodels/generic/math/tensors/collections.hpp"
 #include "shamrock/legacy/ShamrockCtx.hpp"
 

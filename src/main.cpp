@@ -42,7 +42,7 @@
 #include "shamsys/legacy/mpi_handler.hpp"
 #include "shamsys/legacy/sycl_handler.hpp"
 #include "shamsys/legacy/sycl_mpi_interop.hpp"
-#include "shamrock/legacy/tree/radix_tree.hpp"
+#include "shamrock/tree/radix_tree.hpp"
 #include "shamrock/legacy/utils/string_utils.hpp"
 #include "shamrock/legacy/utils/time_utils.hpp"
 #include "shammodels/generic/physics/units.hpp"

@@ -10,7 +10,7 @@
 
 #include "shamrock/legacy/comm/sparse_communicator.hpp"
 #include "shamrock/legacy/patch/utility/compute_field.hpp"
-#include "shamrock/legacy/tree/radix_tree.hpp"
+#include "shamrock/tree/radix_tree.hpp"
 #include "interface_handler_impl_list.hpp"
 #include "interf_impl_util.hpp"
 #include "shamrock/legacy/utils/interact_crit_utils.hpp"

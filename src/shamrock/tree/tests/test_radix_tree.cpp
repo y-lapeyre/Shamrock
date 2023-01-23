@@ -12,7 +12,7 @@
 #include "shamrock/legacy/utils/time_utils.hpp"
 #include "shamtest/shamtest.hpp"
 
-#include "shamrock/legacy/tree/radix_tree.hpp"
+#include "shamrock/tree/radix_tree.hpp"
 #include <vector>
 
 
