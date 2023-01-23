@@ -220,7 +220,7 @@ namespace impl {
 
 
 
-                auto cell_int_r = radix_t.buf_cell_interact_rad->template get_access<sycl::access::mode::read>(cgh);
+                auto cell_int_r = radix_t.buf_cell_interact_rad.radix_tree_field_buf->template get_access<sycl::access::mode::read>(cgh);
 
                 const f32 part_mass = gpart_mass;
 
@@ -372,7 +372,7 @@ namespace impl {
 
 
 
-                auto cell_int_r =radix_t.buf_cell_interact_rad->template get_access<sycl::access::mode::read>(cgh);
+                auto cell_int_r =radix_t.buf_cell_interact_rad.radix_tree_field_buf->template get_access<sycl::access::mode::read>(cgh);
 
                 const f32 part_mass = gpart_mass;
 

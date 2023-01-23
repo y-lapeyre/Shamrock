@@ -219,7 +219,7 @@ f64 models::sph::BasicSPHGas<flt,Kernel>::evolve(PatchScheduler &sched, f64 old_
                     Rta tree_acc(*radix_trees[id_patch], cgh);
 
                     auto cell_int_r =
-                        radix_trees[id_patch]->buf_cell_interact_rad->template get_access<sycl::access::mode::read>(cgh);
+                        radix_trees[id_patch]->buf_cell_interact_rad.radix_tree_field_buf->template get_access<sycl::access::mode::read>(cgh);
 
 
                     auto pres = press->get_access<sycl::access::mode::read>(cgh);

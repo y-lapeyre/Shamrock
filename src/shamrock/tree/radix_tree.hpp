@@ -33,7 +33,16 @@
 
 
 template<class T>
-class RadixTreeField{public:
+class RadixTreeField{
+    
+    RadixTreeField(
+        u32 nvar, u32 cnt): 
+        radix_tree_field_buf(std::make_unique<sycl::buffer<T>>(cnt*nvar)),
+        nvar(nvar) {}
+
+    
+    
+    public:
     u32 nvar;
     std::unique_ptr<sycl::buffer<T>> radix_tree_field_buf;
 
@@ -43,6 +52,10 @@ class RadixTreeField{public:
         u32 nvar, 
         std::unique_ptr<sycl::buffer<T>> radix_tree_field_buf
         ) : nvar(nvar), radix_tree_field_buf(std::move(radix_tree_field_buf)){}
+
+    static RadixTreeField<T> make_empty(u32 nvar, u32 cnt){
+        return RadixTreeField<T>(nvar, cnt);
+    }
 
     RadixTreeField(RadixTreeField<T> & src, sycl::buffer<u32> & id_extract_field) : 
         radix_tree_field_buf(std::make_unique<sycl::buffer<T>>(id_extract_field.size()*src.nvar)),
@@ -78,7 +91,7 @@ class RadixTreeField{public:
 
 
 
-template<class u_morton,class vec3>
+template<class u_morton,class vec>
 class Radix_Tree{
 
     static constexpr auto get_tree_depth = []() -> u32 {
@@ -100,13 +113,13 @@ class Radix_Tree{
     public:
 
     using vec3i = typename morton_3d::morton_types<u_morton>::int_vec_repr;
-    using flt = typename vec3::element_type;
+    using flt = typename vec::element_type;
 
     static constexpr u32 tree_depth = get_tree_depth();
 
 
 
-    std::tuple<vec3,vec3> box_coord;
+    std::tuple<vec,vec> box_coord;
 
     u32 obj_cnt;
     u32 tree_leaf_count;
@@ -130,8 +143,8 @@ class Radix_Tree{
 
     std::unique_ptr<sycl::buffer<vec3i>>    buf_pos_min_cell;     // size = total count
     std::unique_ptr<sycl::buffer<vec3i>>    buf_pos_max_cell;     // size = total count
-    std::unique_ptr<sycl::buffer<vec3>>     buf_pos_min_cell_flt; // size = total count
-    std::unique_ptr<sycl::buffer<vec3>>     buf_pos_max_cell_flt; // size = total count
+    std::unique_ptr<sycl::buffer<vec>>     buf_pos_min_cell_flt; // size = total count
+    std::unique_ptr<sycl::buffer<vec>>     buf_pos_max_cell_flt; // size = total count
 
     inline bool is_tree_built(){
         return bool(buf_lchild_id) && bool(buf_rchild_id) && bool(buf_lchild_flag) && bool(buf_rchild_flag) && bool(buf_endrange);
@@ -150,8 +163,8 @@ class Radix_Tree{
     
 
     
-    std::unique_ptr<sycl::buffer<flt>> buf_cell_interact_rad; //TODO pull this one in a tree field
-    
+    RadixTreeField<flt> buf_cell_interact_rad; //TODO pull this one in a tree field
+    void compute_int_boxes(sycl::queue & queue,std::unique_ptr<sycl::buffer<flt>> & int_rad_buf, flt tolerance);
     
     
     void compute_cellvolume(sycl::queue & queue);
@@ -159,11 +172,11 @@ class Radix_Tree{
 
     
 
-    void compute_int_boxes(sycl::queue & queue,std::unique_ptr<sycl::buffer<flt>> & int_rad_buf, flt tolerance);
+    
 
 
 
-    Radix_Tree(sycl::queue & queue,std::tuple<vec3,vec3> treebox,std::unique_ptr<sycl::buffer<vec3>> & pos_buf, u32 cnt_obj, u32 reduc_level);
+    Radix_Tree(sycl::queue & queue,std::tuple<vec,vec> treebox,std::unique_ptr<sycl::buffer<vec>> & pos_buf, u32 cnt_obj, u32 reduc_level);
 
     inline Radix_Tree(const Radix_Tree & other) : 
         box_coord(other.box_coord), 
@@ -185,7 +198,7 @@ class Radix_Tree{
         buf_pos_max_cell        (syclalgs::basic::duplicate(other.buf_pos_max_cell       )),     // size = total count
         buf_pos_min_cell_flt    (syclalgs::basic::duplicate(other.buf_pos_min_cell_flt   )), // size = total count
         buf_pos_max_cell_flt    (syclalgs::basic::duplicate(other.buf_pos_max_cell_flt   )), // size = total count
-        buf_cell_interact_rad   (syclalgs::basic::duplicate(other.buf_cell_interact_rad  )) //TODO pull this one in a tree field
+        buf_cell_interact_rad   (1,syclalgs::basic::duplicate(other.buf_cell_interact_rad.radix_tree_field_buf  )) //TODO pull this one in a tree field
     {}
 
     [[nodiscard]] inline u64 memsize() const {
@@ -216,7 +229,7 @@ class Radix_Tree{
         add_ptr(buf_pos_max_cell        );
         add_ptr(buf_pos_min_cell_flt    );
         add_ptr(buf_pos_max_cell_flt    );
-        add_ptr(buf_cell_interact_rad   );
+        add_ptr(buf_cell_interact_rad.radix_tree_field_buf   );
 
 
         return sum;
@@ -272,7 +285,7 @@ class Radix_Tree{
 
 
     struct CuttedTree{
-        Radix_Tree<u_morton, vec3> rtree;
+        Radix_Tree<u_morton, vec> rtree;
         std::unique_ptr<sycl::buffer<u32>> new_node_id_to_old;
 
         std::unique_ptr<sycl::buffer<u32>> pdat_extract_id;

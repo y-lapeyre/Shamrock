@@ -197,13 +197,15 @@ void Radix_Tree<u_morton, vec3>::compute_int_boxes(
 
     logger::debug_sycl_ln("RadixTree", "compute int boxes");
 
-    buf_cell_interact_rad = std::make_unique<sycl::buffer<flt>>(tree_internal_count + tree_leaf_count);
+    buf_cell_interact_rad = RadixTreeField<flt>::make_empty(1,tree_internal_count + tree_leaf_count);
     sycl::range<1> range_leaf_cell{tree_leaf_count};
+
+    auto & buf_cell_int_rad_buf = buf_cell_interact_rad.radix_tree_field_buf;
 
     queue.submit([&](sycl::handler &cgh) {
         u32 offset_leaf = tree_internal_count;
 
-        auto h_max_cell = buf_cell_interact_rad->template get_access<sycl::access::mode::discard_write>(cgh);
+        auto h_max_cell = buf_cell_int_rad_buf->template get_access<sycl::access::mode::discard_write>(cgh);
         auto h          = int_rad_buf->template get_access<sycl::access::mode::read>(cgh);
 
         auto cell_particle_ids  = buf_reduc_index_map->template get_access<sycl::access::mode::read>(cgh);
@@ -232,7 +234,7 @@ void Radix_Tree<u_morton, vec3>::compute_int_boxes(
     auto ker_reduc_hmax = [&](sycl::handler &cgh) {
         u32 offset_leaf = tree_internal_count;
 
-        auto h_max_cell = buf_cell_interact_rad->template get_access<sycl::access::mode::read_write>(cgh);
+        auto h_max_cell = buf_cell_int_rad_buf->template get_access<sycl::access::mode::read_write>(cgh);
 
         auto rchild_id   = buf_rchild_id->get_access<sycl::access::mode::read>(cgh);
         auto lchild_id   = buf_lchild_id->get_access<sycl::access::mode::read>(cgh);
