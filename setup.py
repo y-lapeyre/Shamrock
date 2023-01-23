@@ -104,7 +104,7 @@ class CMakeBuildbotBuild(build_ext):
 # logic and declaration, and simpler if you include description/version in a file.
 setup(
     name="shamrock",
-    version="0.0.1",
+    version="indev",
     author="Timothée David--Cléris",
     author_email="timothee.david--cleris@ens-lyon.fr",
     description="SHAMROCK Code for astrophysics",
