@@ -62,6 +62,52 @@ template <class flt_type> class M4 {public:
     }
 };
 
+
+
+
+
+template <class flt_type> class M6 {public:
+
+    using flt = flt_type;
+    inline static constexpr flt_type Rkern = 3;
+
+    inline static constexpr flt_type norm = 1 / (120*PI);
+
+    inline static flt_type f(flt_type q) {
+
+        if (q < 1.){
+            return -10.*q*q*q*q*q + 30.*q*q*q*q - 60.*q*q + 66.;
+        }else if (q < 2.) {
+            return -(q - 3.)*(q - 3.)*(q - 3.)*(q - 3.)*(q - 3.) + 6.*(q - 2.)*(q - 2.)*(q - 2.)*(q - 2.)*(q - 2.);
+        }else if (q < 3.) {
+            return -(q - 3.)*(q - 3.)*(q - 3.)*(q - 3.)*(q - 3.);
+        }else
+            return 0;
+    }
+
+    inline static flt_type df(flt_type q) {
+
+        if (q < 1.) {
+            return q*(-50.*q*q*q + 120.*q*q - 120.);
+        }else if (q < 2.) {
+            return -5.*(q - 3.)*(q - 3.)*(q - 3.)*(q - 3.) + 30.*(q - 2.)*(q - 2.)*(q - 2.)*(q - 2.);
+        }else if (q < 3.) {
+            return -5.*(q - 3.)*(q - 3.)*(q - 3.)*(q - 3.);
+        }else
+            return 0.;
+        
+    }
+
+    inline static flt_type W(flt_type r, flt_type h) { return norm * f(r / h) / (h * h * h); }
+
+    inline static flt_type dW(flt_type r, flt_type h) { return norm * df(r / h) / (h * h * h * h); }
+
+    inline static flt_type dhW(flt_type r, flt_type h) {
+        return -(norm) * (3 * f(r / h) + (r / h) * df(r / h)) / (h * h * h * h);
+    }
+};
+
+
 } // namespace kernels
 } // namespace sph
 } // namespace models

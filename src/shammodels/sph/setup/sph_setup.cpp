@@ -141,3 +141,4 @@ void models::sph::SetupSPH<flt,Kernel>::add_particules_fcc(PatchScheduler & sche
 }
 
 template class models::sph::SetupSPH<f32,models::sph::kernels::M4<f32>>;
+template class models::sph::SetupSPH<f32,models::sph::kernels::M6<f32>>;

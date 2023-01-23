@@ -88,7 +88,7 @@ f64 models::sph::BasicSPHGasUInterne<flt,Kernel>::evolve(PatchScheduler &sched, 
                 const flt c_cour  = cfl_cour;
                 const flt c_force = cfl_force;
 
-                cgh.parallel_for<class Initial_dtcfl>(range_it, [=](sycl::item<1> item) {
+                cgh.parallel_for(range_it, [=](sycl::item<1> item) {
                     u32 i = (u32)item.get_id(0);
 
                     flt h_a    = acc_hpart[item];
@@ -438,4 +438,5 @@ void models::sph::BasicSPHGasUInterne<flt,Kernel>::close(){
 
 
 template class models::sph::BasicSPHGasUInterne<f32,models::sph::kernels::M4<f32>>;
+template class models::sph::BasicSPHGasUInterne<f32,models::sph::kernels::M6<f32>>;
 
