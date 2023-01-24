@@ -22,8 +22,8 @@
 
 
 
-template <class u_morton, class vec3>
-RadixTree<u_morton, vec3>::RadixTree(
+template <class u_morton, class vec3 ,u32 dim>
+RadixTree<u_morton, vec3, dim>::RadixTree(
     sycl::queue &queue, std::tuple<vec3, vec3> treebox, std::unique_ptr<sycl::buffer<vec3>> &pos_buf, u32 cnt_obj, u32 reduc_level
 ) {
     if (cnt_obj > i32_max - 1) {
@@ -36,7 +36,7 @@ RadixTree<u_morton, vec3>::RadixTree(
 
     box_coord = treebox;
 
-    RadixTreeMortonBuilder<u_morton, vec3,3>::build(queue, box_coord, pos_buf, cnt_obj, buf_morton, buf_particle_index_map);
+    RadixTreeMortonBuilder<u_morton, vec3,dim>::build(queue, box_coord, pos_buf, cnt_obj, buf_morton, buf_particle_index_map);
 
     // return a sycl buffer from reduc index map instead
     logger::debug_sycl_ln("RadixTree", "reduction algorithm"); // TODO put reduction level in class member
@@ -121,13 +121,13 @@ RadixTree<u_morton, vec3>::RadixTree(
 
 
 
-template <class u_morton, class vec3> void RadixTree<u_morton, vec3>::compute_cellvolume(sycl::queue &queue) {
+template <class u_morton, class vec3, u32 dim> void RadixTree<u_morton, vec3, dim>::compute_cellvolume(sycl::queue &queue) {
     if (!one_cell_mode) {
 
         logger::debug_sycl_ln("RadixTree", "compute_cellvolume");
 
-        buf_pos_min_cell = std::make_unique<sycl::buffer<vec3i>>(tree_internal_count + tree_leaf_count);
-        buf_pos_max_cell = std::make_unique<sycl::buffer<vec3i>>(tree_internal_count + tree_leaf_count);
+        buf_pos_min_cell = std::make_unique<sycl::buffer<ipos_t>>(tree_internal_count + tree_leaf_count);
+        buf_pos_max_cell = std::make_unique<sycl::buffer<ipos_t>>(tree_internal_count + tree_leaf_count);
 
         sycl_compute_cell_ranges(
             queue, tree_leaf_count, tree_internal_count, buf_tree_morton, buf_lchild_id, buf_rchild_id, buf_lchild_flag,
@@ -138,8 +138,8 @@ template <class u_morton, class vec3> void RadixTree<u_morton, vec3>::compute_ce
         // throw shamrock_exc("one cell mode is not implemented");
         // TODO do some extensive test on one cell mode
 
-        buf_pos_min_cell = std::make_unique<sycl::buffer<vec3i>>(tree_internal_count + tree_leaf_count);
-        buf_pos_max_cell = std::make_unique<sycl::buffer<vec3i>>(tree_internal_count + tree_leaf_count);
+        buf_pos_min_cell = std::make_unique<sycl::buffer<ipos_t>>(tree_internal_count + tree_leaf_count);
+        buf_pos_max_cell = std::make_unique<sycl::buffer<ipos_t>>(tree_internal_count + tree_leaf_count);
 
         {
             auto pos_min_cell = buf_pos_min_cell->template get_access<sycl::access::mode::discard_write>();
@@ -172,8 +172,8 @@ template <class u_morton, class vec3> void RadixTree<u_morton, vec3>::compute_ce
 
 
 
-template <class u_morton, class vec>
-auto RadixTree<u_morton, vec>::compute_int_boxes(
+template <class u_morton, class vec,u32 dim>
+auto RadixTree<u_morton, vec, dim>::compute_int_boxes(
     sycl::queue &queue, std::unique_ptr<sycl::buffer<flt>> &int_rad_buf, flt tolerance
 ) -> RadixTreeField<flt>{
 
@@ -257,8 +257,8 @@ template<> std::string print_member(const u32 & a){
 }
 
 
-template <class u_morton, class vec3> template<class T>
-void RadixTree<u_morton, vec3>::print_tree_field(sycl::buffer<T> & buf_field){
+template <class u_morton, class vec3, u32 dim> template<class T>
+void RadixTree<u_morton, vec3, dim>::print_tree_field(sycl::buffer<T> & buf_field){
 
     sycl::host_accessor acc{buf_field, sycl::read_only};
 
@@ -314,10 +314,10 @@ void RadixTree<u_morton, vec3>::print_tree_field(sycl::buffer<T> & buf_field){
 }
 
 
-template void RadixTree<u32, f64_3>::print_tree_field(sycl::buffer<u32> &buf_field);
-template void RadixTree<u32, f32_3>::print_tree_field(sycl::buffer<u32> &buf_field);
-template void RadixTree<u64, f64_3>::print_tree_field(sycl::buffer<u32> &buf_field);
-template void RadixTree<u64, f32_3>::print_tree_field(sycl::buffer<u32> &buf_field);
+template void RadixTree<u32, f64_3,3>::print_tree_field(sycl::buffer<u32> &buf_field);
+template void RadixTree<u32, f32_3,3>::print_tree_field(sycl::buffer<u32> &buf_field);
+template void RadixTree<u64, f64_3,3>::print_tree_field(sycl::buffer<u32> &buf_field);
+template void RadixTree<u64, f32_3,3>::print_tree_field(sycl::buffer<u32> &buf_field);
 
 
 
@@ -331,8 +331,8 @@ template void RadixTree<u64, f32_3>::print_tree_field(sycl::buffer<u32> &buf_fie
 
 
 
-template <class u_morton, class vec3>
-typename RadixTree<u_morton, vec3>::CuttedTree RadixTree<u_morton, vec3>::cut_tree(
+template <class u_morton, class vec3, u32 dim>
+typename RadixTree<u_morton, vec3, dim>::CuttedTree RadixTree<u_morton, vec3, dim>::cut_tree(
     sycl::queue &queue, sycl::buffer<u8> & valid_node
 ) {
 
@@ -870,12 +870,12 @@ typename RadixTree<u_morton, vec3>::CuttedTree RadixTree<u_morton, vec3>::cut_tr
 
                     //logger::raw_ln("\n \n ----------------\n \nnode : ",item.get_id(0));
 
-                    vec3i cur_pos_min_cell_a = new_tree_acc_pos_min_cell[item];
-                    vec3i cur_pos_max_cell_a = new_tree_acc_pos_max_cell[item];
+                    ipos_t cur_pos_min_cell_a = new_tree_acc_pos_min_cell[item];
+                    ipos_t cur_pos_max_cell_a = new_tree_acc_pos_max_cell[item];
 
                     u32 cur_id = 0;
-                    vec3i cur_pos_min_cell_b = old_tree_acc_pos_min_cell[cur_id];
-                    vec3i cur_pos_max_cell_b = old_tree_acc_pos_max_cell[cur_id];
+                    ipos_t cur_pos_min_cell_b = old_tree_acc_pos_min_cell[cur_id];
+                    ipos_t cur_pos_max_cell_b = old_tree_acc_pos_max_cell[cur_id];
 
                     while(true){
 
@@ -891,7 +891,7 @@ typename RadixTree<u_morton, vec3>::CuttedTree RadixTree<u_morton, vec3>::cut_tr
                                 (cur_pos_max_cell_a.z() == cur_pos_max_cell_b.z()) ; 
                         };
 
-                        auto potential_cell = [&](vec3i other_min, vec3i other_max) -> bool {
+                        auto potential_cell = [&](ipos_t other_min, ipos_t other_max) -> bool {
                             return 
                                 (cur_pos_min_cell_a.x() >= other_min.x()) && 
                                 (cur_pos_min_cell_a.y() >= other_min.y()) && 
@@ -901,7 +901,7 @@ typename RadixTree<u_morton, vec3>::CuttedTree RadixTree<u_morton, vec3>::cut_tr
                                 (cur_pos_max_cell_a.z() <= other_max.z()) ; 
                         };
 
-                        auto contain_cell = [&](vec3i other_min, vec3i other_max) -> bool {
+                        auto contain_cell = [&](ipos_t other_min, ipos_t other_max) -> bool {
                             return 
                                 (cur_pos_min_cell_a.x() <= other_min.x()) && 
                                 (cur_pos_min_cell_a.y() <= other_min.y()) && 
@@ -930,11 +930,11 @@ typename RadixTree<u_morton, vec3>::CuttedTree RadixTree<u_morton, vec3>::cut_tr
                         u32 lid = old_tree_lchild_id[cur_id] + old_tree_leaf_offset * old_tree_lchild_flag[cur_id];
                         u32 rid = old_tree_rchild_id[cur_id] + old_tree_leaf_offset * old_tree_rchild_flag[cur_id];
 
-                        vec3i cur_pos_min_cell_bl = old_tree_acc_pos_min_cell[lid];
-                        vec3i cur_pos_max_cell_bl = old_tree_acc_pos_max_cell[lid];
+                        ipos_t cur_pos_min_cell_bl = old_tree_acc_pos_min_cell[lid];
+                        ipos_t cur_pos_max_cell_bl = old_tree_acc_pos_max_cell[lid];
 
-                        vec3i cur_pos_min_cell_br = old_tree_acc_pos_min_cell[rid];
-                        vec3i cur_pos_max_cell_br = old_tree_acc_pos_max_cell[rid];
+                        ipos_t cur_pos_min_cell_br = old_tree_acc_pos_min_cell[rid];
+                        ipos_t cur_pos_max_cell_br = old_tree_acc_pos_max_cell[rid];
 
                         bool l_ok = potential_cell(cur_pos_min_cell_bl,cur_pos_max_cell_bl);
                         bool r_ok = potential_cell(cur_pos_min_cell_br,cur_pos_max_cell_br);
@@ -1062,8 +1062,8 @@ typename RadixTree<u_morton, vec3>::CuttedTree RadixTree<u_morton, vec3>::cut_tr
 
 
 
-template class RadixTree<u32, f32_3>;
-template class RadixTree<u64, f32_3>;
+template class RadixTree<u32, f32_3,3>;
+template class RadixTree<u64, f32_3,3>;
 
-template class RadixTree<u32, f64_3>;
-template class RadixTree<u64, f64_3>;
+template class RadixTree<u32, f64_3,3>;
+template class RadixTree<u64, f64_3,3>;

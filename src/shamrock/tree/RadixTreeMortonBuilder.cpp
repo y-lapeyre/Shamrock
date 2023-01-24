@@ -12,8 +12,8 @@
 #include "shamsys/legacy/log.hpp"
 
 
-#include "kernels/morton_kernels.hpp"
 #include "kernels/key_morton_sort.hpp"
+#include "kernels/morton_kernels.hpp"
 
 
 
