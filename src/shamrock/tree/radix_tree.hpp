@@ -31,6 +31,8 @@
 #include "kernels/reduction_alg.hpp"
 #include "shamrock/legacy/utils/geometry_utils.hpp"
 
+#include "MortonBuilder.hpp"
+
 
 template<class T>
 class RadixTreeField{
@@ -91,6 +93,8 @@ class RadixTreeField{
 
 
 
+
+
 template<class u_morton,class vec>
 class Radix_Tree{
 
@@ -100,13 +104,7 @@ class Radix_Tree{
         return 0;
     };
 
-    static constexpr auto get_next_pow2_val = [](u32 val){
-        u32 val_rounded_pow = pow(2,32-__builtin_clz(val));
-        if(val == pow(2,32-__builtin_clz(val)-1)){
-            val_rounded_pow = val;
-        }
-        return val_rounded_pow;
-    };
+    
     
     Radix_Tree(){}
 
@@ -176,7 +174,12 @@ class Radix_Tree{
 
 
 
-    Radix_Tree(sycl::queue & queue,std::tuple<vec,vec> treebox,std::unique_ptr<sycl::buffer<vec>> & pos_buf, u32 cnt_obj, u32 reduc_level);
+    Radix_Tree(
+        sycl::queue & queue,
+        std::tuple<vec,vec> treebox,
+        std::unique_ptr<sycl::buffer<vec>> & pos_buf, 
+        u32 cnt_obj, 
+        u32 reduc_level);
 
     inline Radix_Tree(const Radix_Tree & other) : 
         box_coord(other.box_coord), 

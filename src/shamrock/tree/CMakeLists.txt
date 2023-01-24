@@ -1,40 +1,34 @@
 
-# if("${BUILD_TEST}")
+set(Sources
+    radix_tree.cpp
+    MortonBuilder.cpp
+)
+set(SourcesTest
 
-#     target_sources(shamrock_test
-#         PRIVATE
-#         PUBLIC
-#             patch.hpp
-#     )
+)
+set(Headers
 
+)
+set(HeadersTest
 
-# endif()
-
-#add_subdirectory(local)
-
-if("${BUILD_TEST}")
-
-    target_sources(shamrock_test
-        PRIVATE
-            radix_tree.cpp
-        PUBLIC
-            radix_tree.hpp
-    )
-
-
-endif()
-
+)
 
 if("${BUILD_SIM}")
-
     target_sources(shamrock
-        PRIVATE
-            radix_tree.cpp
-        PUBLIC
-            radix_tree.hpp
-    )
+    PRIVATE
+        ${Sources}
+    PUBLIC
+        ${Headers}
+)
+endif()
 
-
+if("${BUILD_TEST}")
+    target_sources(shamrock_test
+    PRIVATE
+        ${Sources} ${SourcesTest}
+    PUBLIC
+        ${Headers} ${HeadersTest}
+)
 endif()
 
 add_subdirectory(kernels)

@@ -21,6 +21,7 @@
 
 
 
+
 template <class u_morton, class vec3>
 Radix_Tree<u_morton, vec3>::Radix_Tree(
     sycl::queue &queue, std::tuple<vec3, vec3> treebox, std::unique_ptr<sycl::buffer<vec3>> &pos_buf, u32 cnt_obj, u32 reduc_level
@@ -35,26 +36,7 @@ Radix_Tree<u_morton, vec3>::Radix_Tree(
 
     box_coord = treebox;
 
-    u32 morton_len = get_next_pow2_val(cnt_obj);
-    logger::debug_sycl_ln("RadixTree", "morton buffer lenght :", morton_len);
-
-    buf_morton = std::make_unique<sycl::buffer<u_morton>>(morton_len);
-
-    logger::debug_sycl_ln("RadixTree", "xyz to morton");
-    sycl_xyz_to_morton<u_morton, vec3>(queue, cnt_obj, pos_buf, std::get<0>(box_coord), std::get<1>(box_coord), buf_morton);
-
-    logger::debug_sycl_ln("RadixTree", "fill trailling buffer");
-    sycl_fill_trailling_buffer<u_morton>(queue, cnt_obj, morton_len, buf_morton);
-
-    logger::debug_sycl_ln("RadixTree", "sorting morton buffer");
-    buf_particle_index_map = std::make_unique<sycl::buffer<u32>>(morton_len);
-
-    queue.submit([&](sycl::handler &cgh) {
-        auto pidm = buf_particle_index_map->get_access<sycl::access::mode::discard_write>(cgh);
-        cgh.parallel_for(sycl::range(morton_len), [=](sycl::item<1> item) { pidm[item] = item.get_id(0); });
-    });
-
-    sycl_sort_morton_key_pair(queue, morton_len, buf_particle_index_map, buf_morton);
+    RadixTreeMortonBuilder<u_morton, vec3>::build(queue, box_coord, pos_buf, cnt_obj, buf_morton, buf_particle_index_map);
 
     // return a sycl buffer from reduc index map instead
     logger::debug_sycl_ln("RadixTree", "reduction algorithm"); // TODO put reduction level in class member
