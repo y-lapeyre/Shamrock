@@ -20,6 +20,7 @@
 
 
 #include "shamrock/legacy/patch/base/patchdata.hpp"
+#include "shamrock/math/vectorManip.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamrock/legacy/utils/string_utils.hpp"
 #include "shamrock/sfc/morton.hpp"
@@ -102,15 +103,12 @@ class RadixTree{
         return 0;
     };
 
-    
-    
-    RadixTree(){}
+    RadixTree() = default;
 
-    
     public:
 
     using ipos_t = typename shamrock::sfc::MortonCodes<morton_t, dim>::int_vec_repr;
-    using flt = typename pos_t::element_type;
+    using coord_t = typename shamrock::math::vec_manip::VectorProperties<pos_t>::component_type;
 
     static constexpr u32 tree_depth = get_tree_depth();
 
@@ -125,19 +123,20 @@ class RadixTree{
     bool one_cell_mode = false;
 
 
-
+    //build by the RadixTreeMortonBuilder 
     std::unique_ptr<sycl::buffer<morton_t>> buf_morton;
     std::unique_ptr<sycl::buffer<u32>> buf_particle_index_map;
-
     std::unique_ptr<sycl::buffer<u32>> buf_reduc_index_map;
-
     std::unique_ptr<sycl::buffer<morton_t>> buf_tree_morton; // size = leaf cnt
+
+    //Karras alg
     std::unique_ptr<sycl::buffer<u32>>      buf_lchild_id;   // size = internal
     std::unique_ptr<sycl::buffer<u32>>      buf_rchild_id;   // size = internal
     std::unique_ptr<sycl::buffer<u8>>       buf_lchild_flag; // size = internal
     std::unique_ptr<sycl::buffer<u8>>       buf_rchild_flag; // size = internal
     std::unique_ptr<sycl::buffer<u32>>      buf_endrange;    // size = internal
 
+    
     std::unique_ptr<sycl::buffer<ipos_t>>    buf_pos_min_cell;     // size = total count
     std::unique_ptr<sycl::buffer<ipos_t>>    buf_pos_max_cell;     // size = total count
     std::unique_ptr<sycl::buffer<pos_t>>     buf_pos_min_cell_flt; // size = total count
@@ -160,7 +159,7 @@ class RadixTree{
     
 
     
-    RadixTreeField<flt> compute_int_boxes(sycl::queue & queue,std::unique_ptr<sycl::buffer<flt>> & int_rad_buf, flt tolerance);
+    RadixTreeField<coord_t> compute_int_boxes(sycl::queue & queue,std::unique_ptr<sycl::buffer<coord_t>> & int_rad_buf, coord_t tolerance);
     
     
     void compute_cellvolume(sycl::queue & queue);
@@ -280,7 +279,7 @@ class RadixTree{
     void for_each_leaf(sycl::queue & queue, LambdaForEachCell && par_for_each_cell) const;
     
 
-    std::tuple<flt,flt> get_min_max_cell_side_lenght();
+    std::tuple<coord_t,coord_t> get_min_max_cell_side_lenght();
 
 
     struct CuttedTree{
@@ -568,12 +567,12 @@ inline void RadixTree<u_morton, vec3, dim>::for_each_leaf(sycl::queue & queue, L
 
 
 template<class u_morton,class vec3, u32 dim>
-inline auto RadixTree<u_morton, vec3, dim>::get_min_max_cell_side_lenght() -> std::tuple<flt,flt>{
+inline auto RadixTree<u_morton, vec3, dim>::get_min_max_cell_side_lenght() -> std::tuple<coord_t,coord_t>{
 
     u32 len = tree_leaf_count;
 
-    sycl::buffer<flt> min_side_lenght {len};
-    sycl::buffer<flt> max_side_lenght {len};
+    sycl::buffer<coord_t> min_side_lenght {len};
+    sycl::buffer<coord_t> max_side_lenght {len};
 
     auto & q = shamsys::instance::get_compute_queue();
 
@@ -603,8 +602,8 @@ inline auto RadixTree<u_morton, vec3, dim>::get_min_max_cell_side_lenght() -> st
 
     
 
-    flt min = syclalgs::reduction::reduce(q, min_side_lenght, 0,len,sycl::minimum<flt>{});
-    flt max = syclalgs::reduction::reduce(q, max_side_lenght, 0,len,sycl::maximum<flt>{});
+    coord_t min = syclalgs::reduction::reduce(q, min_side_lenght, 0,len,sycl::minimum<coord_t>{});
+    coord_t max = syclalgs::reduction::reduce(q, max_side_lenght, 0,len,sycl::maximum<coord_t>{});
 
     return {min,max};
 }

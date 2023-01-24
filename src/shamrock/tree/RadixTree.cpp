@@ -174,12 +174,12 @@ template <class u_morton, class vec3, u32 dim> void RadixTree<u_morton, vec3, di
 
 template <class u_morton, class vec,u32 dim>
 auto RadixTree<u_morton, vec, dim>::compute_int_boxes(
-    sycl::queue &queue, std::unique_ptr<sycl::buffer<flt>> &int_rad_buf, flt tolerance
-) -> RadixTreeField<flt>{
+    sycl::queue &queue, std::unique_ptr<sycl::buffer<coord_t>> &int_rad_buf, coord_t tolerance
+) -> RadixTreeField<coord_t>{
 
     logger::debug_sycl_ln("RadixTree", "compute int boxes");
 
-    auto buf_cell_interact_rad = RadixTreeField<flt>::make_empty(1,tree_internal_count + tree_leaf_count);
+    auto buf_cell_interact_rad = RadixTreeField<coord_t>::make_empty(1,tree_internal_count + tree_leaf_count);
     sycl::range<1> range_leaf_cell{tree_leaf_count};
 
     auto & buf_cell_int_rad_buf = buf_cell_interact_rad.radix_tree_field_buf;
@@ -193,7 +193,7 @@ auto RadixTree<u_morton, vec, dim>::compute_int_boxes(
         auto cell_particle_ids  = buf_reduc_index_map->template get_access<sycl::access::mode::read>(cgh);
         auto particle_index_map = buf_particle_index_map->template get_access<sycl::access::mode::read>(cgh);
 
-        flt tol = tolerance;
+        coord_t tol = tolerance;
 
         cgh.parallel_for(range_leaf_cell, [=](sycl::item<1> item) {
             u32 gid = (u32)item.get_id(0);
@@ -229,8 +229,8 @@ auto RadixTree<u_morton, vec, dim>::compute_int_boxes(
             u32 lid = lchild_id[gid] + offset_leaf * lchild_flag[gid];
             u32 rid = rchild_id[gid] + offset_leaf * rchild_flag[gid];
 
-            flt h_l = h_max_cell[lid];
-            flt h_r = h_max_cell[rid];
+            coord_t h_l = h_max_cell[lid];
+            coord_t h_r = h_max_cell[rid];
 
             h_max_cell[gid] = (h_r > h_l ? h_r : h_l);
         });
