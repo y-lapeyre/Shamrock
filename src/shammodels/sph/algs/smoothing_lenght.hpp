@@ -23,7 +23,7 @@
 #include "shamrock/legacy/patch/utility/merged_patch.hpp"
 #include "shamrock/legacy/patch/utility/serialpatchtree.hpp"
 #include "shamsys/legacy/log.hpp"
-#include "shamrock/tree/radix_tree.hpp"
+#include "shamrock/tree/RadixTree.hpp"
 #include "shammodels/sph/algs/smoothing_lenght_impl.hpp"
 #include "shammodels/sph/base/kernels.hpp"
 #include "shammodels/sph/base/sphpart.hpp"

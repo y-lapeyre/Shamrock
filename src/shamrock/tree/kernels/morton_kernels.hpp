@@ -20,7 +20,7 @@
  * @param bounding_box_max 
  * @param out_morton 
  */
-template<class morton_t,class pos_t>
+template<class morton_t,class pos_t, u32 dim>
 void sycl_xyz_to_morton(
     sycl::queue & queue,
     u32 pos_count,

@@ -17,7 +17,7 @@
 #include "shamrock/legacy/patch/base/patchdata_layout.hpp"
 #include "shammodels/sph/base/kernels.hpp"
 #include "shammodels/sph/base/sphpart.hpp"
-#include "shamrock/tree/radix_tree.hpp"
+#include "shamrock/tree/RadixTree.hpp"
 
 namespace impl {
 

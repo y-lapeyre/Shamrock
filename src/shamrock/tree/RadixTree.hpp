@@ -30,7 +30,6 @@
 #include "kernels/reduction_alg.hpp"
 #include "shamrock/legacy/utils/geometry_utils.hpp"
 
-#include "MortonBuilder.hpp"
 
 
 template<class T>

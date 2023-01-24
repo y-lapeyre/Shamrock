@@ -15,7 +15,7 @@
 using namespace shamrock::sfc;
 
 template<>
-void sycl_xyz_to_morton<u32,f32_3>(
+void sycl_xyz_to_morton<u32,f32_3,3>(
     sycl::queue & queue,
     u32 pos_count,
     std::unique_ptr<sycl::buffer<f32_3>> & in_positions,
@@ -57,7 +57,7 @@ void sycl_xyz_to_morton<u32,f32_3>(
 }
 
 template<>
-void sycl_xyz_to_morton<u32,f64_3>(
+void sycl_xyz_to_morton<u32,f64_3,3>(
     sycl::queue & queue,
     u32 pos_count,
     std::unique_ptr<sycl::buffer<f64_3>> & in_positions,
@@ -100,7 +100,7 @@ void sycl_xyz_to_morton<u32,f64_3>(
 }
 
 template<>
-void sycl_xyz_to_morton<u64,f32_3>(
+void sycl_xyz_to_morton<u64,f32_3,3>(
     sycl::queue & queue,
     u32 pos_count,
     std::unique_ptr<sycl::buffer<f32_3>> & in_positions,
@@ -143,7 +143,7 @@ void sycl_xyz_to_morton<u64,f32_3>(
 }
 
 template<>
-void sycl_xyz_to_morton<u64,f64_3>(
+void sycl_xyz_to_morton<u64,f64_3,3>(
     sycl::queue & queue,
     u32 pos_count,
     std::unique_ptr<sycl::buffer<f64_3>> & in_positions,
@@ -193,7 +193,7 @@ void sycl_xyz_to_morton<u64,f64_3>(
 
 
 template<>
-void sycl_xyz_to_morton<u32,MortonCodes<u32, 3>::int_vec_repr>(
+void sycl_xyz_to_morton<u32,MortonCodes<u32, 3>::int_vec_repr,3>(
     sycl::queue & queue,
     u32 pos_count,
     std::unique_ptr<sycl::buffer<MortonCodes<u32, 3>::int_vec_repr>> & in_positions,
@@ -237,7 +237,7 @@ void sycl_xyz_to_morton<u32,MortonCodes<u32, 3>::int_vec_repr>(
 }
 
 template<>
-void sycl_xyz_to_morton<u64,MortonCodes<u64, 3>::int_vec_repr>(
+void sycl_xyz_to_morton<u64,MortonCodes<u64, 3>::int_vec_repr,3>(
     sycl::queue & queue,
     u32 pos_count,
     std::unique_ptr<sycl::buffer<MortonCodes<u64, 3>::int_vec_repr>> & in_positions,

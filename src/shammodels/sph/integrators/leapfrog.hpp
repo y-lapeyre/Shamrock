@@ -29,7 +29,7 @@
 #include "shammodels/sph/base/sphpart.hpp"
 #include "shammodels/sph/sphpatch.hpp"
 #include "shamsys/legacy/sycl_mpi_interop.hpp"
-#include "shamrock/tree/radix_tree.hpp"
+#include "shamrock/tree/RadixTree.hpp"
 #include <filesystem>
 #include <memory>
 #include <string>

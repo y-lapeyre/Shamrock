@@ -2,7 +2,7 @@
 
 #include "aliases.hpp"
 
-template<class morton_t, class pos_t>
+template<class morton_t, class pos_t, u32 dim>
 class RadixTreeMortonBuilder{public:
 
     static void build(

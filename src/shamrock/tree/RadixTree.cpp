@@ -9,7 +9,7 @@
 
 //%Impl status : Clean unfinished
 
-#include "radix_tree.hpp"
+#include "RadixTree.hpp"
 
 
 #include "aliases.hpp"
@@ -18,6 +18,7 @@
 
 
 
+#include "RadixTreeMortonBuilder.hpp"
 
 
 
@@ -35,7 +36,7 @@ Radix_Tree<u_morton, vec3>::Radix_Tree(
 
     box_coord = treebox;
 
-    RadixTreeMortonBuilder<u_morton, vec3>::build(queue, box_coord, pos_buf, cnt_obj, buf_morton, buf_particle_index_map);
+    RadixTreeMortonBuilder<u_morton, vec3,3>::build(queue, box_coord, pos_buf, cnt_obj, buf_morton, buf_particle_index_map);
 
     // return a sycl buffer from reduc index map instead
     logger::debug_sycl_ln("RadixTree", "reduction algorithm"); // TODO put reduction level in class member

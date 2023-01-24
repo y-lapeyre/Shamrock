@@ -1,7 +1,7 @@
 
 set(Sources
-    radix_tree.cpp
-    MortonBuilder.cpp
+    RadixTree.cpp
+    RadixTreeMortonBuilder.cpp
 )
 set(SourcesTest
 

@@ -1,5 +1,5 @@
 
-#include "MortonBuilder.hpp"
+#include "RadixTreeMortonBuilder.hpp"
 #include "shamrock/math/integerManip.hpp"
 #include "shamsys/legacy/log.hpp"
 
@@ -17,8 +17,8 @@
 
 
 
-template<class morton_t, class pos_t>
-void RadixTreeMortonBuilder<morton_t, pos_t>::build(
+template<class morton_t, class pos_t, u32 dim>
+void RadixTreeMortonBuilder<morton_t, pos_t, dim>::build(
     sycl::queue & queue,
     std::tuple<pos_t,pos_t> bounding_box,
     std::unique_ptr<sycl::buffer<pos_t>> & pos_buf, 
@@ -41,7 +41,7 @@ void RadixTreeMortonBuilder<morton_t, pos_t>::build(
     out_buf_morton = std::make_unique<sycl::buffer<morton_t>>(morton_len);
 
     logger::debug_sycl_ln("RadixTree", "xyz to morton");
-    sycl_xyz_to_morton<morton_t, pos_t>(queue, cnt_obj, pos_buf, std::get<0>(bounding_box), std::get<1>(bounding_box), out_buf_morton);
+    sycl_xyz_to_morton<morton_t, pos_t,dim>(queue, cnt_obj, pos_buf, std::get<0>(bounding_box), std::get<1>(bounding_box), out_buf_morton);
 
     logger::debug_sycl_ln("RadixTree", "fill trailling buffer");
     sycl_fill_trailling_buffer<morton_t>(queue, cnt_obj, morton_len, out_buf_morton);
@@ -61,15 +61,15 @@ void RadixTreeMortonBuilder<morton_t, pos_t>::build(
 
 
 
-template class RadixTreeMortonBuilder<u32,sycl::vec<f32, 3>>;
-template class RadixTreeMortonBuilder<u32,sycl::vec<f64, 3>>;
-template class RadixTreeMortonBuilder<u64,sycl::vec<f32, 3>>;
-template class RadixTreeMortonBuilder<u64,sycl::vec<f64, 3>>;
+template class RadixTreeMortonBuilder<u32,sycl::vec<f32, 3>,3>;
+template class RadixTreeMortonBuilder<u32,sycl::vec<f64, 3>,3>;
+template class RadixTreeMortonBuilder<u64,sycl::vec<f32, 3>,3>;
+template class RadixTreeMortonBuilder<u64,sycl::vec<f64, 3>,3>;
 
 using namespace shamrock::sfc;
 
-template class RadixTreeMortonBuilder<u32,MortonCodes<u32, 3>::int_vec_repr>;
-template class RadixTreeMortonBuilder<u64,MortonCodes<u64, 3>::int_vec_repr>;
+template class RadixTreeMortonBuilder<u32,MortonCodes<u32, 3>::int_vec_repr,3>;
+template class RadixTreeMortonBuilder<u64,MortonCodes<u64, 3>::int_vec_repr,3>;
 
 
 
