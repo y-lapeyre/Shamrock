@@ -109,6 +109,7 @@ class Radix_Tree{
     };
     
     Radix_Tree(){}
+
     
     public:
 
@@ -163,8 +164,7 @@ class Radix_Tree{
     
 
     
-    RadixTreeField<flt> buf_cell_interact_rad; //TODO pull this one in a tree field
-    void compute_int_boxes(sycl::queue & queue,std::unique_ptr<sycl::buffer<flt>> & int_rad_buf, flt tolerance);
+    RadixTreeField<flt> compute_int_boxes(sycl::queue & queue,std::unique_ptr<sycl::buffer<flt>> & int_rad_buf, flt tolerance);
     
     
     void compute_cellvolume(sycl::queue & queue);
@@ -197,8 +197,7 @@ class Radix_Tree{
         buf_pos_min_cell        (syclalgs::basic::duplicate(other.buf_pos_min_cell       )),     // size = total count
         buf_pos_max_cell        (syclalgs::basic::duplicate(other.buf_pos_max_cell       )),     // size = total count
         buf_pos_min_cell_flt    (syclalgs::basic::duplicate(other.buf_pos_min_cell_flt   )), // size = total count
-        buf_pos_max_cell_flt    (syclalgs::basic::duplicate(other.buf_pos_max_cell_flt   )), // size = total count
-        buf_cell_interact_rad   (1,syclalgs::basic::duplicate(other.buf_cell_interact_rad.radix_tree_field_buf  )) //TODO pull this one in a tree field
+        buf_pos_max_cell_flt    (syclalgs::basic::duplicate(other.buf_pos_max_cell_flt   )) // size = total count
     {}
 
     [[nodiscard]] inline u64 memsize() const {
@@ -229,7 +228,6 @@ class Radix_Tree{
         add_ptr(buf_pos_max_cell        );
         add_ptr(buf_pos_min_cell_flt    );
         add_ptr(buf_pos_max_cell_flt    );
-        add_ptr(buf_cell_interact_rad.radix_tree_field_buf   );
 
 
         return sum;

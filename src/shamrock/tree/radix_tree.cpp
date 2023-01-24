@@ -190,14 +190,14 @@ template <class u_morton, class vec3> void Radix_Tree<u_morton, vec3>::compute_c
 
 
 
-template <class u_morton, class vec3>
-void Radix_Tree<u_morton, vec3>::compute_int_boxes(
+template <class u_morton, class vec>
+auto Radix_Tree<u_morton, vec>::compute_int_boxes(
     sycl::queue &queue, std::unique_ptr<sycl::buffer<flt>> &int_rad_buf, flt tolerance
-) {
+) -> RadixTreeField<flt>{
 
     logger::debug_sycl_ln("RadixTree", "compute int boxes");
 
-    buf_cell_interact_rad = RadixTreeField<flt>::make_empty(1,tree_internal_count + tree_leaf_count);
+    auto buf_cell_interact_rad = RadixTreeField<flt>::make_empty(1,tree_internal_count + tree_leaf_count);
     sycl::range<1> range_leaf_cell{tree_leaf_count};
 
     auto & buf_cell_int_rad_buf = buf_cell_interact_rad.radix_tree_field_buf;
@@ -257,6 +257,8 @@ void Radix_Tree<u_morton, vec3>::compute_int_boxes(
     for (u32 i = 0; i < tree_depth; i++) {
         queue.submit(ker_reduc_hmax);
     }
+
+    return std::move(buf_cell_interact_rad);
 }
 
 

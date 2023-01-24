@@ -208,6 +208,7 @@ f64 models::sph::BasicSPHGasUInterne<flt,Kernel>::evolve(PatchScheduler &sched, 
 
             PatchScheduler & sched, 
             std::unordered_map<u64, std::unique_ptr<Radix_Tree<u_morton, vec3>>>& radix_trees,
+            std::unordered_map<u64, std::unique_ptr<RadixTreeField<flt> >> & cell_int_rads,
             std::unordered_map<u64, MergedPatchData<flt>>& merge_pdat, 
             std::unordered_map<u64, MergedPatchCompField<flt,flt>>& hnew_field_merged,
             std::unordered_map<u64, MergedPatchCompField<flt,flt>>& omega_field_merged,
@@ -252,7 +253,7 @@ f64 models::sph::BasicSPHGasUInterne<flt,Kernel>::evolve(PatchScheduler &sched, 
                     Rta tree_acc(*radix_trees[id_patch], cgh);
 
                     auto cell_int_r =
-                        radix_trees[id_patch]->buf_cell_interact_rad.radix_tree_field_buf->template get_access<sycl::access::mode::read>(cgh);
+                        cell_int_rads.at(id_patch)->radix_tree_field_buf->template get_access<sycl::access::mode::read>(cgh);
 
 
                     auto pres = press->get_access<sycl::access::mode::read>(cgh);
