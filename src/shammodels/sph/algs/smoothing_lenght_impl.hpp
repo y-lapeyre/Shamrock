@@ -175,7 +175,7 @@ namespace impl {
             flt htol_up_tol,
             flt htol_up_iter,
 
-            Radix_Tree<morton_prec, sycl::vec<flt,3>> & radix_t,
+            RadixTree<morton_prec, sycl::vec<flt,3>> & radix_t,
             RadixTreeField<flt> & int_rad,
 
             PatchData & pdat_merge,
@@ -196,7 +196,7 @@ namespace impl {
             f32 htol_up_tol,
             f32 htol_up_iter,
 
-            Radix_Tree<morton_prec, f32_3> & radix_t,
+            RadixTree<morton_prec, f32_3> & radix_t,
             RadixTreeField<f32> & int_rad,
 
             PatchData & pdat_merge,
@@ -329,7 +329,7 @@ namespace impl {
             flt htol_up_tol,
             flt htol_up_iter,
 
-            Radix_Tree<morton_prec, sycl::vec<flt,3>> & radix_t,
+            RadixTree<morton_prec, sycl::vec<flt,3>> & radix_t,
             RadixTreeField<flt> & int_rad,
 
             PatchData & pdat_merge,
@@ -350,7 +350,7 @@ namespace impl {
             f32 htol_up_tol,
             f32 htol_up_iter,
 
-            Radix_Tree<morton_prec, f32_3> & radix_t,
+            RadixTree<morton_prec, f32_3> & radix_t,
             RadixTreeField<f32> & int_rad,
 
             PatchData & pdat_merge,

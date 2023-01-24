@@ -741,7 +741,7 @@ inline void test_tree(std::string dset_name){
         Timer timer; timer.start();
 
 
-        Radix_Tree<morton_mode, vec> rtree = Radix_Tree<morton_mode, vec>(
+        RadixTree<morton_mode, vec> rtree = RadixTree<morton_mode, vec>(
                 shamsys::instance::get_compute_queue(), 
                 {vec{-1,-1,-1},vec{1,1,1}},
                 pos, 

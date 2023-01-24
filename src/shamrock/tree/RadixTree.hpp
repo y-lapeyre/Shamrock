@@ -94,7 +94,7 @@ class RadixTreeField{
 
 
 template<class u_morton,class vec>
-class Radix_Tree{
+class RadixTree{
 
     static constexpr auto get_tree_depth = []() -> u32 {
         if constexpr (std::is_same<u_morton,u32>::value){return 32;}
@@ -104,12 +104,12 @@ class Radix_Tree{
 
     
     
-    Radix_Tree(){}
+    RadixTree(){}
 
     
     public:
 
-    using vec3i = typename morton_3d::morton_types<u_morton>::int_vec_repr;
+    using vec3i = typename shamrock::sfc::MortonCodes<u_morton, 3>::int_vec_repr;
     using flt = typename vec::element_type;
 
     static constexpr u32 tree_depth = get_tree_depth();
@@ -172,14 +172,14 @@ class Radix_Tree{
 
 
 
-    Radix_Tree(
+    RadixTree(
         sycl::queue & queue,
         std::tuple<vec,vec> treebox,
         std::unique_ptr<sycl::buffer<vec>> & pos_buf, 
         u32 cnt_obj, 
         u32 reduc_level);
 
-    inline Radix_Tree(const Radix_Tree & other) : 
+    inline RadixTree(const RadixTree & other) : 
         box_coord(other.box_coord), 
         obj_cnt(other.obj_cnt), 
         tree_leaf_count(other.tree_leaf_count), 
@@ -234,18 +234,18 @@ class Radix_Tree{
         return sum;
     }
 
-    inline Radix_Tree duplicate(){
+    inline RadixTree duplicate(){
         const auto & cur = *this;
-        return Radix_Tree(cur);
+        return RadixTree(cur);
     }
 
-    inline std::unique_ptr<Radix_Tree> duplicate_to_ptr(){
+    inline std::unique_ptr<RadixTree> duplicate_to_ptr(){
         const auto & cur = *this;
-        return std::make_unique<Radix_Tree>(cur);
+        return std::make_unique<RadixTree>(cur);
     }
 
 
-    bool is_same(Radix_Tree & other){
+    bool is_same(RadixTree & other){
         bool cmp = true;
 
         cmp = cmp && (one_cell_mode == other.one_cell_mode);
@@ -284,7 +284,7 @@ class Radix_Tree{
 
 
     struct CuttedTree{
-        Radix_Tree<u_morton, vec> rtree;
+        RadixTree<u_morton, vec> rtree;
         std::unique_ptr<sycl::buffer<u32>> new_node_id_to_old;
 
         std::unique_ptr<sycl::buffer<u32>> pdat_extract_id;
@@ -296,7 +296,7 @@ class Radix_Tree{
 
 
 
-    static Radix_Tree make_empty(){return Radix_Tree();}
+    static RadixTree make_empty(){return RadixTree();}
 
 
 };
@@ -305,7 +305,7 @@ class Radix_Tree{
 
 template<class u_morton,class vec3>
 template<class T, class LambdaComputeLeaf, class LambdaCombinator>
-inline typename Radix_Tree<u_morton, vec3>::template RadixTreeField<T> Radix_Tree<u_morton, vec3>::compute_field(sycl::queue & queue,u32 nvar,
+inline typename RadixTree<u_morton, vec3>::template RadixTreeField<T> RadixTree<u_morton, vec3>::compute_field(sycl::queue & queue,u32 nvar,
 
     LambdaComputeLeaf && compute_leaf, LambdaCombinator && combine) const{
 
@@ -395,7 +395,7 @@ inline typename Radix_Tree<u_morton, vec3>::template RadixTreeField<T> Radix_Tre
 
 template<class u_morton,class vec3>
 template<class LambdaForEachCell>
-inline std::pair<std::set<u32>, std::set<u32>> Radix_Tree<u_morton, vec3>::get_walk_res_set(LambdaForEachCell && interact_cd) const {
+inline std::pair<std::set<u32>, std::set<u32>> RadixTree<u_morton, vec3>::get_walk_res_set(LambdaForEachCell && interact_cd) const {
 
 
     std::set<u32> leaf_list;
@@ -466,7 +466,7 @@ inline std::pair<std::set<u32>, std::set<u32>> Radix_Tree<u_morton, vec3>::get_w
 
 template<class u_morton,class vec3>
 template<class LambdaForEachCell> 
-inline void Radix_Tree<u_morton, vec3>::for_each_leaf(sycl::queue & queue, LambdaForEachCell && par_for_each_cell) const {
+inline void RadixTree<u_morton, vec3>::for_each_leaf(sycl::queue & queue, LambdaForEachCell && par_for_each_cell) const {
 
 
     queue.submit([&](sycl::handler &cgh) {
@@ -568,7 +568,7 @@ inline void Radix_Tree<u_morton, vec3>::for_each_leaf(sycl::queue & queue, Lambd
 
 
 template<class u_morton,class vec3>
-inline auto Radix_Tree<u_morton, vec3>::get_min_max_cell_side_lenght() -> std::tuple<flt,flt>{
+inline auto RadixTree<u_morton, vec3>::get_min_max_cell_side_lenght() -> std::tuple<flt,flt>{
 
     u32 len = tree_leaf_count;
 
@@ -620,7 +620,7 @@ namespace tree_comm {
     template<class u_morton,class vec3>
     class RadixTreeMPIRequest{public:
         template<class T> using Request = mpi_sycl_interop::BufferMpiRequest<T>;
-        using RTree = Radix_Tree<u_morton,vec3>;
+        using RTree = RadixTree<u_morton,vec3>;
 
         mpi_sycl_interop::comm_type comm_mode;
         mpi_sycl_interop::op_type comm_op;
@@ -683,7 +683,7 @@ namespace tree_comm {
 
 
     template<class u_morton,class vec3>
-    inline u64 comm_isend(Radix_Tree<u_morton,vec3> &rtree, std::vector<RadixTreeMPIRequest<u_morton,vec3>> & rqs,i32 rank_dest, 
+    inline u64 comm_isend(RadixTree<u_morton,vec3> &rtree, std::vector<RadixTreeMPIRequest<u_morton,vec3>> & rqs,i32 rank_dest, 
             i32 tag,
             MPI_Comm comm){
 
@@ -722,7 +722,7 @@ namespace tree_comm {
 
 
     template<class u_morton,class vec3>
-    inline u64 comm_irecv_probe(Radix_Tree<u_morton,vec3> &rtree, std::vector<RadixTreeMPIRequest<u_morton,vec3>> & rqs,i32 rank_source, 
+    inline u64 comm_irecv_probe(RadixTree<u_morton,vec3> &rtree, std::vector<RadixTreeMPIRequest<u_morton,vec3>> & rqs,i32 rank_source, 
             i32 tag,
             MPI_Comm comm){
 
@@ -813,13 +813,13 @@ namespace walker {
         sycl::accessor<vec3,1,sycl::access::mode::read,sycl::target::device>  pos_min_cell  ;
         sycl::accessor<vec3,1,sycl::access::mode::read,sycl::target::device>  pos_max_cell  ;
 
-        static constexpr u32 tree_depth = Radix_Tree<u_morton,vec3>::tree_depth;
+        static constexpr u32 tree_depth = RadixTree<u_morton,vec3>::tree_depth;
         static constexpr u32 _nindex = 4294967295;
 
         u32 leaf_offset;
 
         
-        Radix_tree_accessor(Radix_Tree< u_morton,  vec3> & rtree,sycl::handler & cgh):
+        Radix_tree_accessor(RadixTree< u_morton,  vec3> & rtree,sycl::handler & cgh):
             particle_index_map(rtree.buf_particle_index_map-> template get_access<sycl::access::mode::read>(cgh)),
             cell_index_map(rtree.buf_reduc_index_map-> template get_access<sycl::access::mode::read>(cgh)),
             rchild_id     (rtree.buf_rchild_id  -> template get_access<sycl::access::mode::read>(cgh)),

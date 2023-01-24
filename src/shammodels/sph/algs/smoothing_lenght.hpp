@@ -36,7 +36,7 @@ class SmoothingLenghtCompute{
 
     using vec = sycl::vec<flt, 3>;
 
-    using Rtree = Radix_Tree<morton_prec, vec>;
+    using Rtree = RadixTree<morton_prec, vec>;
     using Rta = walker::Radix_tree_accessor<morton_prec, vec>;
 
     flt htol_up_tol;
@@ -196,7 +196,7 @@ inline void compute_smoothing_lenght(PatchScheduler &sched,bool periodic_mode,fl
         flt htol_up_iter ,flt sph_gpart_mass){
 
         using vec = sycl::vec<flt, 3>;
-        using Rtree = Radix_Tree<u_morton, vec>;
+        using Rtree = RadixTree<u_morton, vec>;
         using Rta = walker::Radix_tree_accessor<u_morton, vec>;
 
         
@@ -235,7 +235,7 @@ inline void compute_smoothing_lenght(PatchScheduler &sched,bool periodic_mode,fl
 
 
         //make trees
-        std::unordered_map<u64, std::unique_ptr<Radix_Tree<u_morton, vec>>> radix_trees;
+        std::unordered_map<u64, std::unique_ptr<RadixTree<u_morton, vec>>> radix_trees;
         std::unordered_map<u64, std::unique_ptr<RadixTreeField<flt> >> cell_int_rads;
 
 
@@ -255,7 +255,7 @@ inline void compute_smoothing_lenght(PatchScheduler &sched,bool periodic_mode,fl
             std::tuple<vec, vec> &box = merge_pdat.at(id_patch).box;
 
             // radix tree computation
-            radix_trees[id_patch] = std::make_unique<Radix_Tree<u_morton, vec>>(shamsys::instance::get_compute_queue(), box,
+            radix_trees[id_patch] = std::make_unique<RadixTree<u_morton, vec>>(shamsys::instance::get_compute_queue(), box,
                                                                                     buf_xyz,mpdat.get_obj_cnt(),reduc_level);
         });
 

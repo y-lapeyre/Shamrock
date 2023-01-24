@@ -23,7 +23,7 @@
 
 
 template <class u_morton, class vec3>
-Radix_Tree<u_morton, vec3>::Radix_Tree(
+RadixTree<u_morton, vec3>::RadixTree(
     sycl::queue &queue, std::tuple<vec3, vec3> treebox, std::unique_ptr<sycl::buffer<vec3>> &pos_buf, u32 cnt_obj, u32 reduc_level
 ) {
     if (cnt_obj > i32_max - 1) {
@@ -121,7 +121,7 @@ Radix_Tree<u_morton, vec3>::Radix_Tree(
 
 
 
-template <class u_morton, class vec3> void Radix_Tree<u_morton, vec3>::compute_cellvolume(sycl::queue &queue) {
+template <class u_morton, class vec3> void RadixTree<u_morton, vec3>::compute_cellvolume(sycl::queue &queue) {
     if (!one_cell_mode) {
 
         logger::debug_sycl_ln("RadixTree", "compute_cellvolume");
@@ -173,7 +173,7 @@ template <class u_morton, class vec3> void Radix_Tree<u_morton, vec3>::compute_c
 
 
 template <class u_morton, class vec>
-auto Radix_Tree<u_morton, vec>::compute_int_boxes(
+auto RadixTree<u_morton, vec>::compute_int_boxes(
     sycl::queue &queue, std::unique_ptr<sycl::buffer<flt>> &int_rad_buf, flt tolerance
 ) -> RadixTreeField<flt>{
 
@@ -258,7 +258,7 @@ template<> std::string print_member(const u32 & a){
 
 
 template <class u_morton, class vec3> template<class T>
-void Radix_Tree<u_morton, vec3>::print_tree_field(sycl::buffer<T> & buf_field){
+void RadixTree<u_morton, vec3>::print_tree_field(sycl::buffer<T> & buf_field){
 
     sycl::host_accessor acc{buf_field, sycl::read_only};
 
@@ -314,10 +314,10 @@ void Radix_Tree<u_morton, vec3>::print_tree_field(sycl::buffer<T> & buf_field){
 }
 
 
-template void Radix_Tree<u32, f64_3>::print_tree_field(sycl::buffer<u32> &buf_field);
-template void Radix_Tree<u32, f32_3>::print_tree_field(sycl::buffer<u32> &buf_field);
-template void Radix_Tree<u64, f64_3>::print_tree_field(sycl::buffer<u32> &buf_field);
-template void Radix_Tree<u64, f32_3>::print_tree_field(sycl::buffer<u32> &buf_field);
+template void RadixTree<u32, f64_3>::print_tree_field(sycl::buffer<u32> &buf_field);
+template void RadixTree<u32, f32_3>::print_tree_field(sycl::buffer<u32> &buf_field);
+template void RadixTree<u64, f64_3>::print_tree_field(sycl::buffer<u32> &buf_field);
+template void RadixTree<u64, f32_3>::print_tree_field(sycl::buffer<u32> &buf_field);
 
 
 
@@ -332,7 +332,7 @@ template void Radix_Tree<u64, f32_3>::print_tree_field(sycl::buffer<u32> &buf_fi
 
 
 template <class u_morton, class vec3>
-typename Radix_Tree<u_morton, vec3>::CuttedTree Radix_Tree<u_morton, vec3>::cut_tree(
+typename RadixTree<u_morton, vec3>::CuttedTree RadixTree<u_morton, vec3>::cut_tree(
     sycl::queue &queue, sycl::buffer<u8> & valid_node
 ) {
 
@@ -480,7 +480,7 @@ typename Radix_Tree<u_morton, vec3>::CuttedTree Radix_Tree<u_morton, vec3>::cut_
 
         //generate the new tree
 
-        Radix_Tree ret;
+        RadixTree ret;
 
         ret.box_coord = box_coord;
 
@@ -1062,8 +1062,8 @@ typename Radix_Tree<u_morton, vec3>::CuttedTree Radix_Tree<u_morton, vec3>::cut_
 
 
 
-template class Radix_Tree<u32, f32_3>;
-template class Radix_Tree<u64, f32_3>;
+template class RadixTree<u32, f32_3>;
+template class RadixTree<u64, f32_3>;
 
-template class Radix_Tree<u32, f64_3>;
-template class Radix_Tree<u64, f64_3>;
+template class RadixTree<u32, f64_3>;
+template class RadixTree<u64, f64_3>;

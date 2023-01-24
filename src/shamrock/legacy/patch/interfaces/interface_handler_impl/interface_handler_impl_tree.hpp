@@ -27,7 +27,7 @@
 
 
 template<class pos_prec, class u_morton> 
-class Interfacehandler<Tree_Send,pos_prec,Radix_Tree<u_morton, sycl::vec<pos_prec, 3>>>{
+class Interfacehandler<Tree_Send,pos_prec,RadixTree<u_morton, sycl::vec<pos_prec, 3>>>{
 
     
 
@@ -37,8 +37,8 @@ class Interfacehandler<Tree_Send,pos_prec,Radix_Tree<u_morton, sycl::vec<pos_pre
     using vec = sycl::vec<flt, 3>;
 
     private : 
-    using RadixTree = std::unique_ptr<Radix_Tree<u_morton, vec>>;
-    using CutTree = typename Radix_Tree<u_morton, vec>::CuttedTree;
+    using RadixTreePtr = std::unique_ptr<RadixTree<u_morton, vec>>;
+    using CutTree = typename RadixTree<u_morton, vec>::CuttedTree;
 
     //Store the result of a tree cut
     struct CommListingSend {
@@ -55,7 +55,7 @@ class Interfacehandler<Tree_Send,pos_prec,Radix_Tree<u_morton, sycl::vec<pos_pre
     };
 
     struct UnrolledCutTree{
-        std::vector<std::unique_ptr<Radix_Tree<u_morton, vec>>> list_rtree;
+        std::vector<std::unique_ptr<RadixTree<u_morton, vec>>> list_rtree;
         std::vector<std::unique_ptr<sycl::buffer<u32>>> list_new_node_id_to_old;
         std::vector<std::unique_ptr<sycl::buffer<u32>>> list_pdat_extract_id;
     };
@@ -69,7 +69,7 @@ class Interfacehandler<Tree_Send,pos_prec,Radix_Tree<u_morton, sycl::vec<pos_pre
 
     
     template<class InteractCrit,class... Args>
-    inline void internal_compute_interf_list(PatchScheduler &sched, SerialPatchTree<vec> & sptree, SimulationDomain<flt> & bc,std::unordered_map<u64, RadixTree> & rtrees, const InteractCrit & interact_crit, Args ... args);
+    inline void internal_compute_interf_list(PatchScheduler &sched, SerialPatchTree<vec> & sptree, SimulationDomain<flt> & bc,std::unordered_map<u64, RadixTreePtr> & rtrees, const InteractCrit & interact_crit, Args ... args);
 
 
     template<class T> struct field_extract_type{
@@ -93,7 +93,7 @@ class Interfacehandler<Tree_Send,pos_prec,Radix_Tree<u_morton, sycl::vec<pos_pre
     // for now interact crit has shape (vec,vec) -> bool 
     // in order to pass for exemple h max we need a full tree field (patch field + radix tree field) 
     template<class InteractCrit,class... Args>
-    inline void compute_interface_list(PatchScheduler &sched, SerialPatchTree<vec> & sptree, SimulationDomain<flt> & bc,std::unordered_map<u64, RadixTree> & rtrees, InteractCrit && interact_crit, Args & ... args){
+    inline void compute_interface_list(PatchScheduler &sched, SerialPatchTree<vec> & sptree, SimulationDomain<flt> & bc,std::unordered_map<u64, RadixTreePtr> & rtrees, InteractCrit && interact_crit, Args & ... args){
 
         //check<InteractCrit,Args...>{};
         //constexpr bool has_patch_special_case = (std::is_same<decltype(InteractCrit::interact_cd_cell_patch),bool(field_extract_type<decltype(args)>...)>::value);
@@ -124,7 +124,7 @@ class Interfacehandler<Tree_Send,pos_prec,Radix_Tree<u_morton, sycl::vec<pos_pre
     }
 
 
-    SparseCommResult<Radix_Tree<u_morton, vec>> tree_recv_map;
+    SparseCommResult<RadixTree<u_morton, vec>> tree_recv_map;
     void comm_trees(){
         tree_recv_map = communicator->sparse_exchange(tree_send_map.list_rtree);
     }
@@ -189,7 +189,7 @@ class Interfacehandler<Tree_Send,pos_prec,Radix_Tree<u_morton, sycl::vec<pos_pre
 
 template<class pos_prec, class u_morton> 
 template<class InteractCrit,class... Args>
-void Interfacehandler<Tree_Send,pos_prec,Radix_Tree<u_morton, sycl::vec<pos_prec, 3>>>::internal_compute_interf_list(PatchScheduler &sched, SerialPatchTree<vec> & sptree, SimulationDomain<flt> & bc,std::unordered_map<u64, RadixTree> & rtrees, const InteractCrit & interact_crit, Args ... args){
+void Interfacehandler<Tree_Send,pos_prec,RadixTree<u_morton, sycl::vec<pos_prec, 3>>>::internal_compute_interf_list(PatchScheduler &sched, SerialPatchTree<vec> & sptree, SimulationDomain<flt> & bc,std::unordered_map<u64, RadixTreePtr> & rtrees, const InteractCrit & interact_crit, Args ... args){
 
     const vec per_vec = bc.get_periodicity_vector();
 
@@ -373,7 +373,7 @@ void Interfacehandler<Tree_Send,pos_prec,Radix_Tree<u_morton, sycl::vec<pos_prec
         logger::debug_ln("InterfaceHandler", "gen tree for interf :",comm.sender_patch_id,"->",comm.receiver_patch_id);
         CutTree out (rtree->cut_tree(shamsys::instance::get_compute_queue(), buf));
 
-        tree_send_map.list_rtree.push_back(std::make_unique<Radix_Tree<u_morton, vec>>(std::move(out.rtree)));
+        tree_send_map.list_rtree.push_back(std::make_unique<RadixTree<u_morton, vec>>(std::move(out.rtree)));
         tree_send_map.list_pdat_extract_id.push_back(std::move(out.pdat_extract_id));
         tree_send_map.list_new_node_id_to_old.push_back(std::move(out.new_node_id_to_old));
 
