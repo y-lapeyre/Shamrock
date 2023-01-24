@@ -12,6 +12,7 @@
 #include <memory>
 
 
+using namespace shamrock::sfc;
 
 template<>
 void sycl_xyz_to_morton<u32,f32_3>(
@@ -24,6 +25,7 @@ void sycl_xyz_to_morton<u32,f32_3>(
 
     sycl::range<1> range_cnt{pos_count};
 
+    using Morton = shamrock::sfc::MortonCodes<u32, 3>;
 
     queue.submit(
         [&](sycl::handler &cgh) {
@@ -31,8 +33,8 @@ void sycl_xyz_to_morton<u32,f32_3>(
             f32_3 b_box_min = bounding_box_min;
             f32_3 b_box_max = bounding_box_max;
 
-            auto xyz = in_positions->get_access<sycl::access::mode::read>(cgh);
-            auto m   = out_morton  ->get_access<sycl::access::mode::discard_write>(cgh);
+            sycl::accessor xyz {*in_positions, cgh, sycl::read_only};
+            sycl::accessor m   {*out_morton, cgh, sycl::write_only, sycl::no_init};
             
             cgh.parallel_for(range_cnt, [=](sycl::item<1> item) {
 
@@ -43,7 +45,7 @@ void sycl_xyz_to_morton<u32,f32_3>(
                 r -= b_box_min;
                 r /= b_box_max - b_box_min;
 
-                m[i] = morton_3d::coord_to_morton<u32,f32>(r.x(),r.y(),r.z());
+                m[i] = Morton::coord_to_morton(r.x(),r.y(),r.z());
                 
             });
 
@@ -66,14 +68,16 @@ void sycl_xyz_to_morton<u32,f64_3>(
     sycl::range<1> range_cnt{pos_count};
 
 
+    using Morton = shamrock::sfc::MortonCodes<u32, 3>;
+
     queue.submit(
         [&](sycl::handler &cgh) {
 
             f64_3 b_box_min = bounding_box_min;
             f64_3 b_box_max = bounding_box_max;
 
-            auto xyz = in_positions->get_access<sycl::access::mode::read>(cgh);
-            auto m   = out_morton  ->get_access<sycl::access::mode::discard_write>(cgh);
+            sycl::accessor xyz {*in_positions, cgh, sycl::read_only};
+            sycl::accessor m   {*out_morton, cgh, sycl::write_only, sycl::no_init};
             
             cgh.parallel_for(range_cnt, [=](sycl::item<1> item) {
 
@@ -84,7 +88,7 @@ void sycl_xyz_to_morton<u32,f64_3>(
                 r -= b_box_min;
                 r /= b_box_max - b_box_min;
 
-                m[i] = morton_3d::coord_to_morton<u32,f64>(r.x(),r.y(),r.z());
+                m[i] = Morton::coord_to_morton(r.x(),r.y(),r.z());
                 
             });
 
@@ -106,6 +110,8 @@ void sycl_xyz_to_morton<u64,f32_3>(
 
     sycl::range<1> range_cnt{pos_count};
 
+    
+    using Morton = shamrock::sfc::MortonCodes<u64, 3>;
 
     queue.submit(
         [&](sycl::handler &cgh) {
@@ -113,8 +119,8 @@ void sycl_xyz_to_morton<u64,f32_3>(
             f32_3 b_box_min = bounding_box_min;
             f32_3 b_box_max = bounding_box_max;
 
-            auto xyz = in_positions->get_access<sycl::access::mode::read>(cgh);
-            auto m   = out_morton  ->get_access<sycl::access::mode::discard_write>(cgh);
+            sycl::accessor xyz {*in_positions, cgh, sycl::read_only};
+            sycl::accessor m   {*out_morton, cgh, sycl::write_only, sycl::no_init};
             
             cgh.parallel_for(range_cnt, [=](sycl::item<1> item) {
 
@@ -125,7 +131,7 @@ void sycl_xyz_to_morton<u64,f32_3>(
                 r -= b_box_min;
                 r /= b_box_max - b_box_min;
 
-                m[i] = morton_3d::coord_to_morton<u64,f32>(r.x(),r.y(),r.z());
+                m[i] = Morton::coord_to_morton(r.x(),r.y(),r.z());
                 
             });
 
@@ -148,14 +154,16 @@ void sycl_xyz_to_morton<u64,f64_3>(
     sycl::range<1> range_cnt{pos_count};
 
 
+    using Morton = shamrock::sfc::MortonCodes<u64, 3>;
+
     queue.submit(
         [&](sycl::handler &cgh) {
 
             f64_3 b_box_min = bounding_box_min;
             f64_3 b_box_max = bounding_box_max;
 
-            auto xyz = in_positions->get_access<sycl::access::mode::read>(cgh);
-            auto m   = out_morton  ->get_access<sycl::access::mode::discard_write>(cgh);
+            sycl::accessor xyz {*in_positions, cgh, sycl::read_only};
+            sycl::accessor m   {*out_morton, cgh, sycl::write_only, sycl::no_init};
             
             cgh.parallel_for(range_cnt, [=](sycl::item<1> item) {
 
@@ -166,7 +174,7 @@ void sycl_xyz_to_morton<u64,f64_3>(
                 r -= b_box_min;
                 r /= b_box_max - b_box_min;
 
-                m[i] = morton_3d::coord_to_morton<u64,f64>(r.x(),r.y(),r.z());
+                m[i] = Morton::coord_to_morton(r.x(),r.y(),r.z());
                 
             });
 
@@ -176,6 +184,107 @@ void sycl_xyz_to_morton<u64,f64_3>(
     );
 
 }
+
+
+
+
+
+
+
+
+template<>
+void sycl_xyz_to_morton<u32,MortonCodes<u32, 3>::int_vec_repr>(
+    sycl::queue & queue,
+    u32 pos_count,
+    std::unique_ptr<sycl::buffer<MortonCodes<u32, 3>::int_vec_repr>> & in_positions,
+    MortonCodes<u32, 3>::int_vec_repr bounding_box_min,
+    MortonCodes<u32, 3>::int_vec_repr bounding_box_max,
+    std::unique_ptr<sycl::buffer<u32>> & out_morton){
+
+    using Morton = shamrock::sfc::MortonCodes<u32, 3>;
+    using pos_t = MortonCodes<u32, 3>::int_vec_repr;
+
+    if (!Morton::is_morton_bounding_box(bounding_box_min, bounding_box_max)) {
+        throw std::invalid_argument("integer coordinates can be used with MortonBuilder only if the boundaing box matches the coordinate range of morton codes");
+    }
+
+    sycl::range<1> range_cnt{pos_count};
+
+    queue.submit(
+        [&](sycl::handler &cgh) {
+
+            pos_t b_box_min = bounding_box_min;
+            pos_t b_box_max = bounding_box_max;
+
+            sycl::accessor xyz {*in_positions, cgh, sycl::read_only};
+            sycl::accessor m   {*out_morton, cgh, sycl::write_only, sycl::no_init};
+            
+            cgh.parallel_for(range_cnt, [=](sycl::item<1> item) {
+
+                int i = (int) item.get_id(0);
+                
+                pos_t r = xyz[i];
+
+                m[i] = Morton::icoord_to_morton(r.x(),r.y(),r.z());
+                
+            });
+
+
+        }
+
+    );
+
+}
+
+template<>
+void sycl_xyz_to_morton<u64,MortonCodes<u64, 3>::int_vec_repr>(
+    sycl::queue & queue,
+    u32 pos_count,
+    std::unique_ptr<sycl::buffer<MortonCodes<u64, 3>::int_vec_repr>> & in_positions,
+    MortonCodes<u64, 3>::int_vec_repr bounding_box_min,
+    MortonCodes<u64, 3>::int_vec_repr bounding_box_max,
+    std::unique_ptr<sycl::buffer<u64>> & out_morton){
+
+    using Morton = shamrock::sfc::MortonCodes<u64, 3>;
+    using pos_t = MortonCodes<u64, 3>::int_vec_repr;
+
+    if (!Morton::is_morton_bounding_box(bounding_box_min, bounding_box_max)) {
+        throw std::invalid_argument("integer coordinates can be used with MortonBuilder only if the boundaing box matches the coordinate range of morton codes");
+    }
+
+    sycl::range<1> range_cnt{pos_count};
+
+    queue.submit(
+        [&](sycl::handler &cgh) {
+
+            pos_t b_box_min = bounding_box_min;
+            pos_t b_box_max = bounding_box_max;
+
+            sycl::accessor xyz {*in_positions, cgh, sycl::read_only};
+            sycl::accessor m   {*out_morton, cgh, sycl::write_only, sycl::no_init};
+            
+            cgh.parallel_for(range_cnt, [=](sycl::item<1> item) {
+
+                int i = (int) item.get_id(0);
+                
+                pos_t r = xyz[i];
+
+                m[i] = Morton::icoord_to_morton(r.x(),r.y(),r.z());
+                
+            });
+
+
+        }
+
+    );
+
+}
+
+
+
+
+
+
 
 
 
@@ -201,7 +310,7 @@ void sycl_fill_trailling_buffer<u32>(
 
         cgh.parallel_for<class FillTraillingBuf_u32>(
             range_npart, [=](sycl::item<1> i) {
-                m[morton_count + i.get_id()] = 4294967295u;
+                m[morton_count + i.get_id()] = 4294967295U;
             }
         );
 
@@ -233,7 +342,7 @@ void sycl_fill_trailling_buffer<u64>(
 
         cgh.parallel_for<class FillTraillingBuf_u64>(
             range_npart, [=](sycl::item<1> i) {
-                m[morton_count + i.get_id()] = 18446744073709551615ul;
+                m[morton_count + i.get_id()] = 18446744073709551615UL;
             }
         );
 

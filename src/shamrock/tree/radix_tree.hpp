@@ -22,7 +22,6 @@
 #include "shamrock/legacy/patch/base/patchdata.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamrock/legacy/utils/string_utils.hpp"
-#include "kernels/morton_kernels.hpp"
 #include "shamrock/sfc/morton.hpp"
 #include "kernels/compute_ranges.hpp"
 #include "kernels/convert_ranges.hpp"

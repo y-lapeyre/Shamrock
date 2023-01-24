@@ -8,6 +8,15 @@
 #include "kernels/key_morton_sort.hpp"
 
 
+
+#include "shamrock/sfc/morton.hpp"
+
+
+
+
+
+
+
 template<class morton_t, class pos_t>
 void RadixTreeMortonBuilder<morton_t, pos_t>::build(
     sycl::queue & queue,
@@ -56,6 +65,11 @@ template class RadixTreeMortonBuilder<u32,sycl::vec<f32, 3>>;
 template class RadixTreeMortonBuilder<u32,sycl::vec<f64, 3>>;
 template class RadixTreeMortonBuilder<u64,sycl::vec<f32, 3>>;
 template class RadixTreeMortonBuilder<u64,sycl::vec<f64, 3>>;
+
+using namespace shamrock::sfc;
+
+template class RadixTreeMortonBuilder<u32,MortonCodes<u32, 3>::int_vec_repr>;
+template class RadixTreeMortonBuilder<u64,MortonCodes<u64, 3>::int_vec_repr>;
 
 
 

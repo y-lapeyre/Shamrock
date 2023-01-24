@@ -37,15 +37,26 @@ namespace shamrock::sfc {
         using int_vec_repr                         = u16_3;
         static constexpr int_vec_repr_base max_val = 1024 - 1;
 
-        static u64 icoord_to_morton(u64 x, u64 y, u64 z){
+        inline static u32 icoord_to_morton(u32 x, u32 y, u32 z){
             u32 xx = bmi::expand_bits<u32, 2>((u32)x);
             u32 yy = bmi::expand_bits<u32, 2>((u32)y);
             u32 zz = bmi::expand_bits<u32, 2>((u32)z);
             return xx * 4 + yy * 2 + zz;
         }
 
+        inline static bool is_morton_bounding_box(int_vec_repr min, int_vec_repr max) noexcept{
+            return  
+                min.x() == 0 &&
+                min.y() == 0 &&
+                min.z() == 0 &&
+                max.x() == max_val &&
+                max.y() == max_val &&
+                max.z() == max_val
+            ;
+        }
+
         template<class flt>
-        inline static u64 coord_to_morton(flt x, flt y, flt z){
+        inline static u32 coord_to_morton(flt x, flt y, flt z){
 
             constexpr bool ok_type = std::is_same<flt,f32>::value || std::is_same<flt,f64>::value;
             static_assert(ok_type, "unknown input type");
@@ -101,6 +112,18 @@ namespace shamrock::sfc {
             u64 yy = bmi::expand_bits<u64, 2>((u64)y);
             u64 zz = bmi::expand_bits<u64, 2>((u64)z);
             return xx * 4 + yy * 2 + zz;
+        }
+
+
+        inline static bool is_morton_bounding_box(int_vec_repr min, int_vec_repr max) noexcept{
+            return  
+                min.x() == 0 &&
+                min.y() == 0 &&
+                min.z() == 0 &&
+                max.x() == max_val &&
+                max.y() == max_val &&
+                max.z() == max_val
+            ;
         }
 
         template<class flt>

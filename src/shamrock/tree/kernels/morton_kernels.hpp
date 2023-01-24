@@ -20,14 +20,14 @@
  * @param bounding_box_max 
  * @param out_morton 
  */
-template<class u_morton,class vec3>
+template<class morton_t,class pos_t>
 void sycl_xyz_to_morton(
     sycl::queue & queue,
     u32 pos_count,
-    std::unique_ptr<sycl::buffer<vec3>> & in_positions,
-    vec3 bounding_box_min,
-    vec3 bounding_box_max,
-    std::unique_ptr<sycl::buffer<u_morton>> & out_morton);
+    std::unique_ptr<sycl::buffer<pos_t>> & in_positions,
+    pos_t bounding_box_min,
+    pos_t bounding_box_max,
+    std::unique_ptr<sycl::buffer<morton_t>> & out_morton);
 
 
 
@@ -39,10 +39,10 @@ void sycl_xyz_to_morton(
  * @param fill_count final lenght to be filled with error value
  * @param buf_morton morton buffer that will be updated
  */
-template<class u_morton>
+template<class morton_t>
 void sycl_fill_trailling_buffer(
     sycl::queue & queue,
     u32 morton_count,
     u32 fill_count,
-    std::unique_ptr<sycl::buffer<u_morton>> & buf_morton
+    std::unique_ptr<sycl::buffer<morton_t>> & buf_morton
     );
