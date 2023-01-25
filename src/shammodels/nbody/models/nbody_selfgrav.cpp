@@ -489,7 +489,8 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(PatchScheduler &sched, f64 old_ti
             if (pdat.is_empty()){
                 logger::debug_ln("SPHLeapfrog","patch : n°",id_patch,"->","is empty skipping tree build");
             }else{
-                radix_trees[id_patch]->compute_cellvolume(shamsys::instance::get_compute_queue());
+                radix_trees[id_patch]->compute_cell_ibounding_box(shamsys::instance::get_compute_queue());
+                radix_trees[id_patch]->convert_bounding_box(shamsys::instance::get_compute_queue());
             }
         });
 

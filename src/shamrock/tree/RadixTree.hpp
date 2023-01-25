@@ -97,6 +97,7 @@ class RadixTreeField{
 template<class morton_t,class pos_t, u32 dim>
 class RadixTree{
 
+    //utility lambda to get the tree depth
     static constexpr auto get_tree_depth = []() -> u32 {
         if constexpr (std::is_same<morton_t,u32>::value){return 32;}
         if constexpr (std::is_same<morton_t,u64>::value){return 64;}
@@ -112,15 +113,14 @@ class RadixTree{
 
     static constexpr u32 tree_depth = get_tree_depth();
 
-
-
-    std::tuple<pos_t,pos_t> box_coord; //TODO rename to bounding box
+    std::tuple<pos_t,pos_t> bounding_box;
 
     u32 obj_cnt;
     u32 tree_leaf_count;
     u32 tree_internal_count;
 
     bool one_cell_mode = false;
+    bool pos_t_range_built = false;
 
 
     //build by the RadixTreeMortonBuilder 
@@ -164,7 +164,8 @@ class RadixTree{
     RadixTreeField<coord_t> compute_int_boxes(sycl::queue & queue,std::unique_ptr<sycl::buffer<coord_t>> & int_rad_buf, coord_t tolerance);
     
     
-    void compute_cellvolume(sycl::queue & queue);
+    void compute_cell_ibounding_box(sycl::queue & queue);
+    void convert_bounding_box(sycl::queue & queue);
 
 
     
@@ -181,7 +182,7 @@ class RadixTree{
         u32 reduc_level);
 
     inline RadixTree(const RadixTree & other) : 
-        box_coord(other.box_coord), 
+        bounding_box(other.bounding_box), 
         obj_cnt(other.obj_cnt), 
         tree_leaf_count(other.tree_leaf_count), 
         tree_internal_count(other.tree_internal_count),
@@ -205,7 +206,7 @@ class RadixTree{
     [[nodiscard]] inline u64 memsize() const {
         u64 sum = 0;
 
-        sum += sizeof(box_coord);
+        sum += sizeof(bounding_box);
         sum += sizeof(obj_cnt);
         sum += sizeof(tree_leaf_count);
         sum += sizeof(tree_internal_count);
@@ -250,8 +251,8 @@ class RadixTree{
         bool cmp = true;
 
         cmp = cmp && (one_cell_mode == other.one_cell_mode);
-        cmp = cmp && (test_sycl_eq(std::get<0>(box_coord) , std::get<0>(other.box_coord)));
-        cmp = cmp && (test_sycl_eq(std::get<1>(box_coord) , std::get<1>(other.box_coord)));
+        cmp = cmp && (test_sycl_eq(std::get<0>(bounding_box) , std::get<0>(other.bounding_box)));
+        cmp = cmp && (test_sycl_eq(std::get<1>(bounding_box) , std::get<1>(other.bounding_box)));
         cmp = cmp && (obj_cnt == other.obj_cnt);
         cmp = cmp && (tree_leaf_count == other.tree_leaf_count);
         cmp = cmp && (tree_internal_count == other.tree_internal_count);
@@ -678,7 +679,7 @@ namespace tree_comm {
                     sycl::host_accessor bmin {*rtree.buf_pos_min_cell_flt};
                     sycl::host_accessor bmax {*rtree.buf_pos_max_cell_flt};
 
-                    rtree.box_coord = {bmin[0],bmax[0]};
+                    rtree.bounding_box = {bmin[0],bmax[0]};
                 }
 
                 //One cell mode check

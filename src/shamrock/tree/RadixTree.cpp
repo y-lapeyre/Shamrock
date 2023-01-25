@@ -34,9 +34,9 @@ RadixTree<u_morton, vec3, dim>::RadixTree(
 
     logger::debug_sycl_ln("RadixTree", "box dim :", std::get<0>(treebox), std::get<1>(treebox));
 
-    box_coord = treebox;
+    bounding_box = treebox;
 
-    RadixTreeMortonBuilder<u_morton, vec3,dim>::build(queue, box_coord, pos_buf, cnt_obj, buf_morton, buf_particle_index_map);
+    RadixTreeMortonBuilder<u_morton, vec3,dim>::build(queue, bounding_box, pos_buf, cnt_obj, buf_morton, buf_particle_index_map);
 
     // return a sycl buffer from reduc index map instead
     logger::debug_sycl_ln("RadixTree", "reduction algorithm"); // TODO put reduction level in class member
@@ -121,7 +121,7 @@ RadixTree<u_morton, vec3, dim>::RadixTree(
 
 
 
-template <class u_morton, class vec3, u32 dim> void RadixTree<u_morton, vec3, dim>::compute_cellvolume(sycl::queue &queue) {
+template <class u_morton, class vec3, u32 dim> void RadixTree<u_morton, vec3, dim>::compute_cell_ibounding_box(sycl::queue &queue) {
     if (!one_cell_mode) {
 
         logger::debug_sycl_ln("RadixTree", "compute_cellvolume");
@@ -156,15 +156,22 @@ template <class u_morton, class vec3, u32 dim> void RadixTree<u_morton, vec3, di
         }
     }
 
+}
+
+template <class u_morton, class vec3, u32 dim> void RadixTree<u_morton, vec3, dim>::convert_bounding_box(sycl::queue &queue) {
+
+
     buf_pos_min_cell_flt = std::make_unique<sycl::buffer<vec3>>(tree_internal_count + tree_leaf_count);
     buf_pos_max_cell_flt = std::make_unique<sycl::buffer<vec3>>(tree_internal_count + tree_leaf_count);
 
     logger::debug_sycl_ln("RadixTree", "sycl_convert_cell_range");
 
     sycl_convert_cell_range<u_morton, vec3>(
-        queue, tree_leaf_count, tree_internal_count, std::get<0>(box_coord), std::get<1>(box_coord), buf_pos_min_cell,
+        queue, tree_leaf_count, tree_internal_count, std::get<0>(bounding_box), std::get<1>(bounding_box), buf_pos_min_cell,
         buf_pos_max_cell, buf_pos_min_cell_flt, buf_pos_max_cell_flt
     );
+
+    pos_t_range_built = true;
 }
 
 
@@ -482,7 +489,7 @@ typename RadixTree<u_morton, vec3, dim>::CuttedTree RadixTree<u_morton, vec3, di
 
         RadixTree ret;
 
-        ret.box_coord = box_coord;
+        ret.bounding_box = bounding_box;
 
 
 
@@ -626,8 +633,8 @@ typename RadixTree<u_morton, vec3, dim>::CuttedTree RadixTree<u_morton, vec3, di
         }
 
 
-        ret.compute_cellvolume(queue);
-
+        ret.compute_cell_ibounding_box(queue);
+        ret.convert_bounding_box(queue);
 
 
 
@@ -1022,8 +1029,8 @@ typename RadixTree<u_morton, vec3, dim>::CuttedTree RadixTree<u_morton, vec3, di
             queue, 
             ret.tree_leaf_count, 
             ret.tree_internal_count, 
-            std::get<0>(ret.box_coord), 
-            std::get<1>(ret.box_coord), 
+            std::get<0>(ret.bounding_box), 
+            std::get<1>(ret.bounding_box), 
             ret.buf_pos_min_cell,
             ret.buf_pos_max_cell, 
             ret.buf_pos_min_cell_flt, 

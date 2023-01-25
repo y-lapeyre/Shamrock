@@ -748,7 +748,8 @@ inline void test_tree(std::string dset_name){
                 cnt , reduc_lev
             );
 
-        rtree.compute_cellvolume(shamsys::instance::get_compute_queue());
+        rtree.compute_cell_ibounding_box(shamsys::instance::get_compute_queue());
+        rtree.convert_bounding_box(shamsys::instance::get_compute_queue());
 
         shamsys::instance::get_compute_queue().wait();
         timer.end();

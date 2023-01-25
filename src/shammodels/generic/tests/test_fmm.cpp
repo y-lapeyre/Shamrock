@@ -462,7 +462,9 @@ Result_nompi_fmm_testing<flt,morton_mode,fmm_order> nompi_fmm_testing(std::uniqu
     //    }
     //}
 
-    rtree.compute_cellvolume(shamsys::instance::get_compute_queue());
+
+    rtree.compute_cell_ibounding_box(shamsys::instance::get_compute_queue());
+    rtree.convert_bounding_box(shamsys::instance::get_compute_queue());
 
 
     

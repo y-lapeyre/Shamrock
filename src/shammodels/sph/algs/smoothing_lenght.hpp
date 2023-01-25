@@ -264,7 +264,8 @@ inline void compute_smoothing_lenght(PatchScheduler &sched,bool periodic_mode,fl
             if (merge_pdat.at(id_patch).or_element_cnt == 0)
                 logger::debug_ln("SPHLeapfrog","patch : n°",id_patch,"->","is empty skipping tree volumes step");
 
-            radix_trees[id_patch]->compute_cellvolume(shamsys::instance::get_compute_queue());
+            radix_trees[id_patch]->compute_cell_ibounding_box(shamsys::instance::get_compute_queue());
+            radix_trees[id_patch]->convert_bounding_box(shamsys::instance::get_compute_queue());
         });
 
         sched.for_each_patch([&](u64 id_patch, Patch  /*cur_p*/) {
