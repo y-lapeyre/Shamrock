@@ -114,7 +114,7 @@ class RadixTree{
 
 
 
-    std::tuple<pos_t,pos_t> box_coord;
+    std::tuple<pos_t,pos_t> box_coord; //TODO rename to bounding box
 
     u32 obj_cnt;
     u32 tree_leaf_count;
@@ -136,10 +136,12 @@ class RadixTree{
     std::unique_ptr<sycl::buffer<u8>>       buf_rchild_flag; // size = internal
     std::unique_ptr<sycl::buffer<u32>>      buf_endrange;    // size = internal
 
-    
-    std::unique_ptr<sycl::buffer<ipos_t>>    buf_pos_min_cell;     // size = total count
+
+    std::unique_ptr<sycl::buffer<ipos_t>>    buf_pos_min_cell;     // size = total count //rename to ipos
     std::unique_ptr<sycl::buffer<ipos_t>>    buf_pos_max_cell;     // size = total count
-    std::unique_ptr<sycl::buffer<pos_t>>     buf_pos_min_cell_flt; // size = total count
+
+    //optional
+    std::unique_ptr<sycl::buffer<pos_t>>     buf_pos_min_cell_flt; // size = total count //drop the flt part
     std::unique_ptr<sycl::buffer<pos_t>>     buf_pos_max_cell_flt; // size = total count
 
     inline bool is_tree_built(){
@@ -299,6 +301,27 @@ class RadixTree{
 
 
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

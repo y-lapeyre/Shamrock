@@ -9,6 +9,7 @@
 #include "key_morton_sort.hpp"
 #include "aliases.hpp"
 #include "flags.hpp"
+#include "shamsys/legacy/log.hpp"
 
 
 //modified from http://www.bealto.com/gpu-sorting.html
@@ -64,6 +65,8 @@ void sycl_sort_morton_key_pair<u32, MultiKernel>(
     std::unique_ptr<sycl::buffer<u32>>      & buf_index,
     std::unique_ptr<sycl::buffer<u32>> & buf_morton
     ){
+        
+    logger::debug_sycl_ln("BitonicSorter", "submit : sycl_sort_morton_key_pair<u32, MultiKernel>");
 
     using u_morton = u32;
 
@@ -342,6 +345,8 @@ void sycl_sort_morton_key_pair<u64, MultiKernel>(
     std::unique_ptr<sycl::buffer<u32>>      & buf_index,
     std::unique_ptr<sycl::buffer<u64>> & buf_morton
     ){
+        
+    logger::debug_sycl_ln("BitonicSorter", "submit : sycl_sort_morton_key_pair<u64, MultiKernel>");
 
     using u_morton = u64;
 

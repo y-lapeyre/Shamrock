@@ -9,7 +9,9 @@
 #include "morton_kernels.hpp"
 #include "aliases.hpp"
 #include "shamrock/sfc/morton.hpp"
+#include "shamsys/legacy/log.hpp"
 #include <memory>
+
 
 
 using namespace shamrock::sfc;
@@ -22,6 +24,8 @@ void sycl_xyz_to_morton<u32,f32_3,3>(
     f32_3 bounding_box_min,
     f32_3 bounding_box_max,
     std::unique_ptr<sycl::buffer<u32>> & out_morton){
+        
+    logger::debug_sycl_ln("MortonKernels", "submit : sycl_xyz_to_morton<u32,f32_3,3>");
 
     sycl::range<1> range_cnt{pos_count};
 
@@ -64,6 +68,8 @@ void sycl_xyz_to_morton<u32,f64_3,3>(
     f64_3 bounding_box_min,
     f64_3 bounding_box_max,
     std::unique_ptr<sycl::buffer<u32>> & out_morton){
+        
+    logger::debug_sycl_ln("MortonKernels", "submit : sycl_xyz_to_morton<u32,f64_3,3>");
 
     sycl::range<1> range_cnt{pos_count};
 
@@ -107,6 +113,8 @@ void sycl_xyz_to_morton<u64,f32_3,3>(
     f32_3 bounding_box_min,
     f32_3 bounding_box_max,
     std::unique_ptr<sycl::buffer<u64>> & out_morton){
+        
+    logger::debug_sycl_ln("MortonKernels", "submit : sycl_xyz_to_morton<u64,f32_3,3>");
 
     sycl::range<1> range_cnt{pos_count};
 
@@ -150,6 +158,8 @@ void sycl_xyz_to_morton<u64,f64_3,3>(
     f64_3 bounding_box_min,
     f64_3 bounding_box_max,
     std::unique_ptr<sycl::buffer<u64>> & out_morton){
+        
+    logger::debug_sycl_ln("MortonKernels", "submit : sycl_xyz_to_morton<u64,f64_3,3>");
 
     sycl::range<1> range_cnt{pos_count};
 
@@ -200,6 +210,8 @@ void sycl_xyz_to_morton<u32,MortonCodes<u32, 3>::int_vec_repr,3>(
     MortonCodes<u32, 3>::int_vec_repr bounding_box_min,
     MortonCodes<u32, 3>::int_vec_repr bounding_box_max,
     std::unique_ptr<sycl::buffer<u32>> & out_morton){
+        
+    logger::debug_sycl_ln("MortonKernels", "submit : sycl_xyz_to_morton<u32,MortonCodes<u32, 3>::int_vec_repr,3>");
 
     using Morton = shamrock::sfc::MortonCodes<u32, 3>;
     using pos_t = MortonCodes<u32, 3>::int_vec_repr;
@@ -244,6 +256,8 @@ void sycl_xyz_to_morton<u64,MortonCodes<u64, 3>::int_vec_repr,3>(
     MortonCodes<u64, 3>::int_vec_repr bounding_box_min,
     MortonCodes<u64, 3>::int_vec_repr bounding_box_max,
     std::unique_ptr<sycl::buffer<u64>> & out_morton){
+        
+    logger::debug_sycl_ln("MortonKernels", "submit : sycl_xyz_to_morton<u64,MortonCodes<u64, 3>::int_vec_repr,3>");
 
     using Morton = shamrock::sfc::MortonCodes<u64, 3>;
     using pos_t = MortonCodes<u64, 3>::int_vec_repr;
@@ -296,6 +310,8 @@ void sycl_fill_trailling_buffer<u32>(
     u32 fill_count,
     std::unique_ptr<sycl::buffer<u32>> & buf_morton
     ){
+        
+    logger::debug_sycl_ln("MortonKernels", "submit : sycl_fill_trailling_buffer<u32>");
 
     if(fill_count - morton_count == 0){
         std::cout << "skipping" << std::endl;
@@ -328,6 +344,8 @@ void sycl_fill_trailling_buffer<u64>(
     u32 fill_count,
     std::unique_ptr<sycl::buffer<u64>> & buf_morton
     ){
+        
+    logger::debug_sycl_ln("MortonKernels", "submit : sycl_fill_trailling_buffer<u64>");
 
     if(fill_count - morton_count == 0){
         std::cout << "skipping" << std::endl;
