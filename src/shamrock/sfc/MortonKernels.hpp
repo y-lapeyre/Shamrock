@@ -1,6 +1,7 @@
 #pragma once
 
 #include "aliases.hpp"
+#include "shamrock/math/vectorManip.hpp"
 #include "shamrock/sfc/morton.hpp"
 
 
@@ -26,19 +27,30 @@ namespace shamrock::sfc{
             );
     } // namespace details
 
-    template<class morton_t,class pos_t, u32 dim>
+    template<class morton_t,class _pos_t, u32 dim>
     class MortonKernels{
 
         public:
 
-        class xyz_to_Morton;
         
         using Morton = MortonCodes<morton_t, dim>;
 
+        using pos_t = _pos_t;
+        using coord_t = typename shamrock::math::vec_manip::VectorProperties<pos_t>::component_type;
         using ipos_t  = typename Morton::int_vec_repr;
         using int_t = typename Morton::int_vec_repr_base;
 
-        
+        inline static std::tuple<pos_t,pos_t> get_transform(pos_t bounding_box_min,pos_t bounding_box_max){
+            return MortonConverter<morton_t, pos_t, dim>::get_transform(bounding_box_min, bounding_box_max);
+        }
+        inline static ipos_t to_morton_grid(pos_t pos, pos_t origin, pos_t scale){
+            return MortonConverter<morton_t, pos_t, dim>::to_morton_grid(pos, origin, scale);
+        }
+
+
+        inline static pos_t to_real_space(ipos_t pos, pos_t origin, pos_t scale){
+            return MortonConverter<morton_t, pos_t, dim>::to_real_space(pos, origin, scale);
+        }
 
         /**
         * @brief convert a buffer of 3d positions to morton codes
@@ -76,15 +88,14 @@ namespace shamrock::sfc{
         }
 
 
-        template<class u_morton, class vec_prec>
         static void sycl_irange_to_range(sycl::queue & queue,
             u32 buf_len , 
-            vec_prec bounding_box_min,
-            vec_prec bounding_box_max,
+            pos_t bounding_box_min,
+            pos_t bounding_box_max,
             std::unique_ptr<sycl::buffer<ipos_t>> & buf_pos_min_cell,
             std::unique_ptr<sycl::buffer<ipos_t>> & buf_pos_max_cell,
-            std::unique_ptr<sycl::buffer<vec_prec>> & out_buf_pos_min_cell_flt,
-            std::unique_ptr<sycl::buffer<vec_prec>> & out_buf_pos_max_cell_flt);
+            std::unique_ptr<sycl::buffer<pos_t>> & out_buf_pos_min_cell_flt,
+            std::unique_ptr<sycl::buffer<pos_t>> & out_buf_pos_max_cell_flt);
 
     };
 
