@@ -5,7 +5,6 @@ if("${BUILD_TEST}")
         PRIVATE
             karras_alg.cpp
             key_morton_sort.cpp
-            morton_kernels.cpp
             reduction_alg.cpp
             compute_ranges.cpp
             convert_ranges.cpp
@@ -29,7 +28,6 @@ if("${BUILD_SIM}")
         PRIVATE
             karras_alg.cpp
             key_morton_sort.cpp
-            morton_kernels.cpp
             reduction_alg.cpp
             compute_ranges.cpp
             convert_ranges.cpp

@@ -12,12 +12,10 @@
 #include "RadixTreeMortonBuilder.hpp"
 #include "kernels/key_morton_sort.hpp"
 #include "shamrock/math/integerManip.hpp"
+#include "shamrock/sfc/MortonKernels.hpp"
 #include "shamrock/sfc/morton.hpp"
-#include "shamrock/tree/kernels/morton_kernels.hpp"
 #include "shamsys/legacy/log.hpp"
 
-using namespace logger;
-using namespace shamrock::math::int_manip;
 
 template <class morton_t, class pos_t, u32 dim>
 void RadixTreeMortonBuilder<morton_t, pos_t, dim>::build(
@@ -28,6 +26,10 @@ void RadixTreeMortonBuilder<morton_t, pos_t, dim>::build(
     std::unique_ptr<sycl::buffer<morton_t>> &out_buf_morton,
     std::unique_ptr<sycl::buffer<u32>> &out_buf_particle_index_map
 ) {
+
+    using namespace logger;
+using namespace shamrock::math::int_manip;
+using namespace shamrock::sfc;
 
     if (cnt_obj > i32_max - 1) {
         throw std::invalid_argument("number of element in patch above i32_max-1");
@@ -40,7 +42,7 @@ void RadixTreeMortonBuilder<morton_t, pos_t, dim>::build(
     debug_sycl_ln("RadixTree", "morton buffer lenght :", morton_len);
     out_buf_morton = std::make_unique<sycl::buffer<morton_t>>(morton_len);
 
-    sycl_xyz_to_morton<morton_t, pos_t, dim>(
+    MortonKernels<morton_t, pos_t, dim>::sycl_xyz_to_morton(
         queue,
         cnt_obj,
         pos_buf,
@@ -49,12 +51,12 @@ void RadixTreeMortonBuilder<morton_t, pos_t, dim>::build(
         out_buf_morton
     );
 
-    sycl_fill_trailling_buffer<morton_t>(queue, cnt_obj, morton_len, out_buf_morton);
+    MortonKernels<morton_t, pos_t, dim>::sycl_fill_trailling_buffer(queue, cnt_obj, morton_len, out_buf_morton);
 
     out_buf_particle_index_map = std::make_unique<sycl::buffer<u32>>(morton_len);
 
     queue.submit([&](sycl::handler &cgh) {
-        sycl::accessor pidm{*out_buf_particle_index_map, sycl::write_only, sycl::no_init};
+        sycl::accessor pidm{*out_buf_particle_index_map, cgh, sycl::write_only, sycl::no_init};
 
         cgh.parallel_for(sycl::range(morton_len), [=](sycl::item<1> item) {
             pidm[item] = item.get_id(0);

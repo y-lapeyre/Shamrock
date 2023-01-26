@@ -30,12 +30,12 @@ namespace shamrock::math::int_manip {
         int internal_clz(T a);
 
         template<>
-        int internal_clz(u32 a){
+        inline int internal_clz(u32 a){
             return __builtin_clz(a);
         }
 
         template<>
-        int internal_clz(u64 a){
+        inline int internal_clz(u64 a){
             return __builtin_clzl(a);
         }
     }

@@ -36,6 +36,9 @@ namespace shamrock::sfc {
         using int_vec_repr_base                    = u16;
         using int_vec_repr                         = u16_3;
         static constexpr int_vec_repr_base max_val = 1024 - 1;
+        static constexpr int_vec_repr_base val_count = 1024;
+
+        static constexpr u32 err_code = 4294967295U;
 
         inline static u32 icoord_to_morton(u32 x, u32 y, u32 z){
             u32 xx = bmi::expand_bits<u32, 2>((u32)x);
@@ -106,6 +109,9 @@ namespace shamrock::sfc {
         using int_vec_repr_base                    = u32;
         using int_vec_repr                         = u32_3;
         static constexpr int_vec_repr_base max_val = 2097152 - 1;
+        static constexpr int_vec_repr_base val_count = 2097152;
+
+        static constexpr u64 err_code = 18446744073709551615UL;
 
         inline static u64 icoord_to_morton(u64 x, u64 y, u64 z){
             u64 xx = bmi::expand_bits<u64, 2>((u64)x);

@@ -10,7 +10,6 @@
 #include "shamtest/shamtest.hpp"
 
 #include "shamrock/sfc/morton.hpp"
-#include "shamrock/tree/kernels/morton_kernels.hpp"
 #include <memory>
 #include <vector>
 
