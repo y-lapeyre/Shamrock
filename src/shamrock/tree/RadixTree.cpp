@@ -19,6 +19,7 @@
 
 
 #include "RadixTreeMortonBuilder.hpp"
+#include "shamrock/sfc/MortonKernels.hpp"
 
 
 
@@ -146,10 +147,10 @@ template <class u_morton, class vec3, u32 dim> void RadixTree<u_morton, vec3, di
             auto pos_max_cell = buf_pos_max_cell->template get_access<sycl::access::mode::discard_write>();
 
             pos_min_cell[0] = {0};
-            pos_max_cell[0] = {morton_3d::morton_types<u_morton>::max_val};
+            pos_max_cell[0] = {Morton::max_val};
 
             pos_min_cell[1] = {0};
-            pos_max_cell[1] = {morton_3d::morton_types<u_morton>::max_val};
+            pos_max_cell[1] = {Morton::max_val};
 
             pos_min_cell[2] = {0};
             pos_max_cell[2] = {0};
@@ -158,18 +159,17 @@ template <class u_morton, class vec3, u32 dim> void RadixTree<u_morton, vec3, di
 
 }
 
-template <class u_morton, class vec3, u32 dim> void RadixTree<u_morton, vec3, dim>::convert_bounding_box(sycl::queue &queue) {
+template <class morton_t, class pos_t, u32 dim> void RadixTree<morton_t, pos_t, dim>::convert_bounding_box(sycl::queue &queue) {
 
 
-    buf_pos_min_cell_flt = std::make_unique<sycl::buffer<vec3>>(tree_internal_count + tree_leaf_count);
-    buf_pos_max_cell_flt = std::make_unique<sycl::buffer<vec3>>(tree_internal_count + tree_leaf_count);
+    buf_pos_min_cell_flt = std::make_unique<sycl::buffer<pos_t>>(tree_internal_count + tree_leaf_count);
+    buf_pos_max_cell_flt = std::make_unique<sycl::buffer<pos_t>>(tree_internal_count + tree_leaf_count);
 
     logger::debug_sycl_ln("RadixTree", "sycl_convert_cell_range");
 
-    sycl_convert_cell_range<u_morton, vec3>(
-        queue, tree_leaf_count, tree_internal_count, std::get<0>(bounding_box), std::get<1>(bounding_box), buf_pos_min_cell,
-        buf_pos_max_cell, buf_pos_min_cell_flt, buf_pos_max_cell_flt
-    );
+    shamrock::sfc::MortonKernels<morton_t, pos_t, dim>::sycl_irange_to_range(
+        queue, tree_leaf_count + tree_internal_count, std::get<0>(bounding_box), std::get<1>(bounding_box), buf_pos_min_cell,
+        buf_pos_max_cell, buf_pos_min_cell_flt, buf_pos_max_cell_flt);
 
     pos_t_range_built = true;
 }
@@ -328,6 +328,10 @@ template void RadixTree<u64, f32_3,3>::print_tree_field(sycl::buffer<u32> &buf_f
 
 
 
+template void RadixTree<u32, u32_3, 3>::print_tree_field(sycl::buffer<u32> &buf_field);
+template void RadixTree<u32, u64_3, 3>::print_tree_field(sycl::buffer<u32> &buf_field);
+template void RadixTree<u64, u32_3, 3>::print_tree_field(sycl::buffer<u32> &buf_field);
+template void RadixTree<u64, u64_3, 3>::print_tree_field(sycl::buffer<u32> &buf_field);
 
 
 
@@ -1025,10 +1029,9 @@ typename RadixTree<u_morton, vec3, dim>::CuttedTree RadixTree<u_morton, vec3, di
         }
 
         //because we have updated the cell ranges in the tree cut
-        sycl_convert_cell_range<u_morton, vec3>(
+        shamrock::sfc::MortonKernels<u_morton, vec3, dim>::sycl_irange_to_range(
             queue, 
-            ret.tree_leaf_count, 
-            ret.tree_internal_count, 
+            ret.tree_leaf_count + ret.tree_internal_count, 
             std::get<0>(ret.bounding_box), 
             std::get<1>(ret.bounding_box), 
             ret.buf_pos_min_cell,
@@ -1074,3 +1077,10 @@ template class RadixTree<u64, f32_3,3>;
 
 template class RadixTree<u32, f64_3,3>;
 template class RadixTree<u64, f64_3,3>;
+
+template class RadixTree<u32, u32_3, 3>;
+template class RadixTree<u64, u32_3, 3>;
+
+template class RadixTree<u32, u64_3, 3>;
+template class RadixTree<u64, u64_3, 3>;
+

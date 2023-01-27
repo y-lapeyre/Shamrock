@@ -66,14 +66,16 @@ using namespace shamrock::sfc;
     sycl_sort_morton_key_pair(queue, morton_len, out_buf_particle_index_map, out_buf_morton);
 }
 
-template class RadixTreeMortonBuilder<u32, sycl::vec<f32, 3>, 3>;
-template class RadixTreeMortonBuilder<u32, sycl::vec<f64, 3>, 3>;
-template class RadixTreeMortonBuilder<u64, sycl::vec<f32, 3>, 3>;
-template class RadixTreeMortonBuilder<u64, sycl::vec<f64, 3>, 3>;
 
-using namespace shamrock::sfc;
 
-template class RadixTreeMortonBuilder<u32, MortonCodes<u32, 3>::int_vec_repr, 3>;
-template class RadixTreeMortonBuilder<u64, MortonCodes<u64, 3>::int_vec_repr, 3>;
+
+template class RadixTreeMortonBuilder<u32, f32_3, 3>;
+template class RadixTreeMortonBuilder<u64, f32_3, 3>;
+template class RadixTreeMortonBuilder<u32, f64_3, 3>;
+template class RadixTreeMortonBuilder<u64, f64_3, 3>;
+template class RadixTreeMortonBuilder<u32, u32_3, 3>;
+template class RadixTreeMortonBuilder<u64, u32_3, 3>;
+template class RadixTreeMortonBuilder<u32, u64_3, 3>;
+template class RadixTreeMortonBuilder<u64, u64_3, 3>;
 
 /////

@@ -201,8 +201,8 @@ namespace shamrock::sfc {
         private : 
 
         static constexpr bool implemented_int = 
-            std::is_same<pos_t, u16_3>::value ||
-            std::is_same<pos_t, u32_3>::value;
+            std::is_same<pos_t, u32_3>::value ||
+            std::is_same<pos_t, u64_3>::value;
 
         static constexpr bool implemented_float = 
             std::is_same<pos_t, f32_3>::value ||
@@ -272,16 +272,16 @@ namespace shamrock::sfc {
             // to convert int coord to morton we need to have a cubic box
             // with 2^n side lenght >= max morton side lenght
 
-            int_t dx = bounding_box_max.x() - bounding_box_min.x();
-            int_t dy = bounding_box_max.y() - bounding_box_min.y();
-            int_t dz = bounding_box_max.z() - bounding_box_min.z();
+            coord_t dx = bounding_box_max.x() - bounding_box_min.x();
+            coord_t dy = bounding_box_max.y() - bounding_box_min.y();
+            coord_t dz = bounding_box_max.z() - bounding_box_min.z();
 
             if (!(dx == dy && dy == dz)) {
                 throw std::invalid_argument("The bounding box is ot a cube");
             }
 
             // validity condition
-            auto check_axis = [](int_t len) -> bool {
+            auto check_axis = [](coord_t len) -> bool {
                 bool is_pow2 = shamrock::math::int_manip::get_next_pow2_val(len) == len;
 
                 if (len > Morton::max_val && is_pow2) {
@@ -313,7 +313,7 @@ namespace shamrock::sfc {
             }
 
             // we can only use dx since they must be equal to reach this call
-            int_t scale = dx / (Morton::val_count);
+            coord_t scale = dx / (Morton::val_count);
 
             return {bounding_box_min,pos_t{scale,scale,scale}};
         }

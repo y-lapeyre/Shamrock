@@ -10,6 +10,23 @@
 namespace shamrock::sfc{
 
     namespace details {
+
+
+        template<class morton_t>
+        struct MortonInfo{
+            static constexpr morton_t err_code;
+        };
+
+        template<>
+        struct MortonInfo<u32>{
+            static constexpr u32 err_code = 4294967295U;
+        };
+
+        template<>
+        struct MortonInfo<u64>{
+            static constexpr u64 err_code = 18446744073709551615UL;
+        };
+
         /**
         * @brief fill the end of a buffer (indices from morton_count up to fill_count-1) with error values (maximum int value)
         * 
@@ -18,7 +35,7 @@ namespace shamrock::sfc{
         * @param fill_count final lenght to be filled with error value
         * @param buf_morton morton buffer that will be updated
         */
-        template<class morton_t, morton_t err_code>
+        template<class morton_t>
         void sycl_fill_trailling_buffer(
             sycl::queue & queue,
             u32 morton_count,
@@ -84,7 +101,7 @@ namespace shamrock::sfc{
             u32 fill_count,
             std::unique_ptr<sycl::buffer<morton_t>> & buf_morton
             ){
-                details::sycl_fill_trailling_buffer<morton_t, Morton::err_code>(queue, morton_count, fill_count, buf_morton);
+                details::sycl_fill_trailling_buffer<morton_t>(queue, morton_count, fill_count, buf_morton);
         }
 
 

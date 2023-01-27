@@ -574,6 +574,33 @@ template <> void PatchDataField<u64>::gen_mock_data(u32 obj_cnt, std::mt19937 &e
     }
 }
 
+template <> void PatchDataField<u32_3>::gen_mock_data(u32 obj_cnt, std::mt19937 &eng) {
+    resize(obj_cnt);
+    std::uniform_int_distribution<u32> distu32(1, obj_mock_cnt);
+
+    {
+        auto & buf = get_buf();
+        sycl::host_accessor acc{*buf, sycl::write_only, sycl::no_init};
+
+        for (u32 i = 0; i < val_cnt; i++) {
+            acc[i] = u32_3{distu32(eng),distu32(eng),distu32(eng)};
+        }
+    }
+}
+template <> void PatchDataField<u64_3>::gen_mock_data(u32 obj_cnt, std::mt19937 &eng) {
+    resize(obj_cnt);
+    std::uniform_int_distribution<u64> distu64(1, obj_mock_cnt);
+
+    {
+        auto & buf = get_buf();
+        sycl::host_accessor acc{*buf, sycl::write_only, sycl::no_init};
+
+        for (u32 i = 0; i < val_cnt; i++) {
+            acc[i] = u64_3{distu64(eng),distu64(eng),distu64(eng)};
+        }
+    }
+}
+
 namespace patchdata_field {
 
     comm_type current_mode = CopyToHost;

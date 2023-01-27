@@ -104,7 +104,18 @@ class RadixTree{
         return 0;
     };
 
+
+    static constexpr bool pos_is_int = 
+        std::is_same<pos_t, u16_3>::value ||
+        std::is_same<pos_t, u32_3>::value;
+
+    static constexpr bool pos_is_float = 
+        std::is_same<pos_t, f32_3>::value ||
+        std::is_same<pos_t, f64_3>::value;
+
     RadixTree() = default;
+
+    using Morton = shamrock::sfc::MortonCodes<morton_t, 3>;
 
     public:
 
@@ -619,8 +630,16 @@ inline auto RadixTree<u_morton, vec3, dim>::get_min_max_cell_side_lenght() -> st
 
             vec3 sz = max - min;
 
-            s_lengh_min[gid] = sycl::fmin(sycl::fmin(sz.x(),sz.y()),sz.z());
-            s_lengh_max[gid] = sycl::fmax(sycl::fmax(sz.x(),sz.y()),sz.z());
+            if constexpr (pos_is_float){
+                s_lengh_min[gid] = sycl::fmin(sycl::fmin(sz.x(),sz.y()),sz.z());
+                s_lengh_max[gid] = sycl::fmax(sycl::fmax(sz.x(),sz.y()),sz.z());
+            }
+
+            if constexpr (pos_is_int){
+                s_lengh_min[gid] = sycl::min(sycl::min(sz.x(),sz.y()),sz.z());
+                s_lengh_max[gid] = sycl::max(sycl::max(sz.x(),sz.y()),sz.z());
+            }
+
         });
     });
 

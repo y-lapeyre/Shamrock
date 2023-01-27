@@ -11,7 +11,6 @@ if("${BUILD_TEST}")
         PUBLIC
             karras_alg.hpp
             key_morton_sort.hpp
-            morton_kernels.hpp
             reduction_alg.hpp
             compute_ranges.hpp
             convert_ranges.hpp
@@ -34,7 +33,6 @@ if("${BUILD_SIM}")
         PUBLIC
             karras_alg.hpp
             key_morton_sort.hpp
-            morton_kernels.hpp
             reduction_alg.hpp
             compute_ranges.hpp
             convert_ranges.hpp
