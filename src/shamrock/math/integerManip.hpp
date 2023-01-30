@@ -42,15 +42,31 @@ namespace shamrock::math::int_manip {
 
     template<class T>
     inline constexpr T sycl_clz(T a) noexcept{
-        return 
-            __hipsycl_if_target_host(details::internal_clz(a))
-            __hipsycl_if_target_cuda(__clz(a))
-            __hipsycl_if_target_hip(__clz(a))
-            __hipsycl_if_target_spirv(__clz(a))
-            ;
+
+        __hipsycl_if_target_host(
+            return details::internal_clz(a);
+        )
+
+        __hipsycl_if_target_hiplike(
+            return __clz(a);
+        )
+
+        __hipsycl_if_target_spirv(
+            return __clz(a);
+        )
+
     }
 
     #endif
+
+    inline i32 clz_xor(u32 a, u32 b) noexcept {
+        return (i32) sycl_clz(a^b);
+    }
+
+    template<class Acc>
+    inline i32 karras_delta(i32 x, i32 y, u32 morton_lenght, Acc m) noexcept {
+        return ((y > morton_lenght - 1 || y < 0) ? -1 : int(shamrock::math::int_manip::sycl_clz(m[x] ^ m[y])));
+    }
 
 
 

@@ -14,6 +14,8 @@
 #include <memory>
 #include <vector>
 
+#include "shamrock/math/integerManip.hpp"
+
 class Kernel_generate_split_table_morton32;
 class Kernel_generate_split_table_morton64;
 
@@ -43,39 +45,14 @@ void sycl_generate_split_table(sycl::queue &queue, u32 morton_count, std::unique
     });
 }
 
-#ifdef SYCL_COMP_DPCPP
-#define DELTA(x, y) ((y > _morton_cnt - 1 || y < 0) ? -1 : int(sycl::clz(m[x] ^ m[y])))
-#endif
-
-#ifdef SYCL_COMP_HIPSYCL
-
-
-template<class T>
-int internal_clz(T a);
-
-template<>
-inline int internal_clz(u32 a){
-    return __builtin_clz(a);
-}
-
-template<>
-inline int internal_clz(u64 a){
-    return __builtin_clzl(a);
-}
-
-#define DELTA_host(x, y) __hipsycl_if_target_host(((y > _morton_cnt - 1 || y < 0) ? -1 : int(internal_clz(m[x] ^ m[y]))))
-#define DELTA_cuda(x, y) __hipsycl_if_target_cuda(((y > _morton_cnt - 1 || y < 0) ? -1 : int(__clz(m[x] ^ m[y]))))
-#define DELTA_hip(x, y) __hipsycl_if_target_hip(((y > _morton_cnt - 1 || y < 0) ? -1 : int(__clz(m[x] ^ m[y]))))
-#define DELTA_spirv(x, y) __hipsycl_if_target_spirv(((y > _morton_cnt - 1 || y < 0) ? -1 : int(__clz(m[x] ^ m[y]))))
-#define DELTA(x, y) DELTA_host(x, y) DELTA_cuda(x, y) DELTA_hip(x, y) DELTA_spirv(x, y)
-#endif
-
 class Kernel_iterate_reduction_morton32;
 class Kernel_iterate_reduction_morton64;
 
 template <class u_morton, class kername>
 void sycl_reduction_iteration(sycl::queue &queue, u32 morton_count, std::unique_ptr<sycl::buffer<u_morton>> & buf_morton,
                               std::unique_ptr<sycl::buffer<u8>> & buf_split_table_in, std::unique_ptr<sycl::buffer<u8>> & buf_split_table_out) {
+
+    using namespace shamrock::math::int_manip;
 
     sycl::range<1> range_morton_count{morton_count};
 
@@ -88,6 +65,10 @@ void sycl_reduction_iteration(sycl::queue &queue, u32 morton_count, std::unique_
 
         cgh.parallel_for<kername>(range_morton_count, [=](sycl::item<1> item) {
             int i = item.get_id(0);
+
+            auto DELTA = [=](i32 x, i32 y){
+                return karras_delta(x,y,_morton_cnt,m);
+            };
 
             // find index of preceding i-1 non duplicate morton code
             u32 before1 = i - 1;

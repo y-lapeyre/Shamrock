@@ -9,32 +9,7 @@
 
 #include "compute_ranges.hpp"
 
-#ifdef SYCL_COMP_DPCPP
-#define CLZ(x) sycl::clz(x)
-#endif
-
-#ifdef SYCL_COMP_HIPSYCL
-
-template<class T>
-int internal_clz(T a);
-
-template<>
-int internal_clz(u32 a){
-    return __builtin_clz(a);
-}
-
-template<>
-int internal_clz(u64 a){
-    return __builtin_clzl(a);
-}
-
-
-#define CLZ_host(x) __hipsycl_if_target_host(internal_clz(x))
-#define CLZ_cuda(x) __hipsycl_if_target_cuda(__clz(x))
-#define CLZ_hip(x) __hipsycl_if_target_hip(__clz(x))
-#define CLZ_spirv(x) __hipsycl_if_target_spirv(__clz(x))
-#define CLZ(x) CLZ_host(x) CLZ_cuda(x)
-#endif
+#include "shamrock/math/integerManip.hpp"
 
 
 
@@ -54,6 +29,8 @@ void sycl_compute_cell_ranges(
     
     std::unique_ptr<sycl::buffer<typename morton_3d::morton_types<u_morton>::int_vec_repr>> & buf_pos_min_cell,
     std::unique_ptr<sycl::buffer<typename morton_3d::morton_types<u_morton>::int_vec_repr>> & buf_pos_max_cell){
+
+    using namespace shamrock::math::int_manip;
 
     sycl::range<1> range_radix_tree{internal_cnt};
 
@@ -78,7 +55,7 @@ void sycl_compute_cell_ranges(
 
                 u32 gid =(u32) item.get_id(0);
 
-                uint clz_ = CLZ(morton_map[gid]^morton_map[end_range_map[gid]]);
+                uint clz_ = clz_xor(morton_map[gid],morton_map[end_range_map[gid]]);
 
                 if constexpr (std::is_same<u_morton,u64>::value){
                     pos_min_cell[gid] = morton_3d::morton_to_ipos<u64>(morton_map[gid]& (0xFFFFFFFFFFFFFFFF << (64-clz_)));
