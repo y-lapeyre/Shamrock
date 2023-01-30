@@ -50,7 +50,7 @@ std::vector<std::unique_ptr<PatchData>> InterfaceVolumeGenerator::append_interfa
         for (u32 i = 0; i < idxs.size(); i++) {
             pdat.append_subset_to(idxs[i], *pdat_vec[i]);
             u32 ixyz = pdat.pdl.get_field_idx<f32_3>("xyz");
-            pdat_vec[i]->fields_f32_3[ixyz].apply_offset(add_offset);
+            pdat_vec[i]->get_field<f32_3>(ixyz).apply_offset(add_offset);
         }
     }
 
@@ -84,7 +84,7 @@ std::vector<std::unique_ptr<PatchData>> InterfaceVolumeGenerator::append_interfa
         for (u32 i = 0; i < idxs.size(); i++) {
             pdat.append_subset_to(idxs[i], *pdat_vec[i]);
             u32 ixyz = pdat.pdl.get_field_idx<f64_3>("xyz");
-            pdat_vec[i]->fields_f64_3[ixyz].apply_offset(add_offset);
+            pdat_vec[i]->get_field<f64_3>(ixyz).apply_offset(add_offset);
         }
     }
 

@@ -49,7 +49,7 @@ namespace impl {
 
             u32 field_ipos = pdat.pdl.get_field_idx<f32_3>("xyz");
 
-            PatchDataField<f32_3> & pos_field = pdat.fields_f32_3[field_ipos];
+            PatchDataField<f32_3> & pos_field = pdat.get_field<f32_3>(field_ipos);
 
             auto & pos_s_buf = pos_field.get_buf();
 
@@ -108,7 +108,7 @@ namespace impl {
 
             u32 field_ipos = pdat.pdl.get_field_idx<f64_3>("xyz");
 
-            PatchDataField<f64_3> & pos_field = pdat.fields_f64_3[field_ipos];
+            PatchDataField<f64_3> & pos_field = pdat.get_field<f64_3>(field_ipos);
 
             auto & pos_d_buf = pos_field.get_buf();
 

@@ -54,7 +54,7 @@ namespace impl {
 
         queue.submit([&](sycl::handler &cgh) {
             
-            auto acc_hpart = pdat_merge.fields_f32[ihpart].get_buf()->get_access<sycl::access::mode::read>(cgh);
+            auto acc_hpart = pdat_merge.get_field<f32>(ihpart).get_buf()->get_access<sycl::access::mode::read>(cgh);
             auto eps = eps_h.get_access<sycl::access::mode::discard_write>(cgh);
             auto h    = hnew.get_access<sycl::access::mode::discard_write>(cgh);
 
@@ -214,8 +214,8 @@ namespace impl {
                 auto h_new = hnew.get_access<sycl::access::mode::read_write>(cgh);
                 auto eps = eps_h.get_access<sycl::access::mode::read_write>(cgh);
 
-                auto acc_hpart = pdat_merge.fields_f32.at(ihpart).get_buf()->get_access<sycl::access::mode::read>(cgh);
-                auto r = pdat_merge.fields_f32_3[ixyz].get_buf()->get_access<sycl::access::mode::read>(cgh);
+                auto acc_hpart = pdat_merge.get_field<f32>(ihpart).get_buf()->get_access<sycl::access::mode::read>(cgh);
+                auto r = pdat_merge.get_field<f32_3>(ixyz).get_buf()->get_access<sycl::access::mode::read>(cgh);
                 
                 
                 Rta tree_acc(radix_t, cgh);
@@ -369,7 +369,7 @@ namespace impl {
                 auto h_new = hnew.get_access<sycl::access::mode::read_write>(cgh);
                 auto omga = omega.get_access<sycl::access::mode::discard_write>(cgh);
 
-                auto r = pdat_merge.fields_f32_3.at(ixyz).get_buf()->get_access<sycl::access::mode::read>(cgh);
+                auto r = pdat_merge.get_field<f32_3>(ixyz).get_buf()->get_access<sycl::access::mode::read>(cgh);
                 
                 using Rta = walker::Radix_tree_accessor<u32, f32_3>;
                 Rta tree_acc(radix_t, cgh);

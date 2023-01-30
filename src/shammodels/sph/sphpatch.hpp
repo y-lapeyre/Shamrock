@@ -40,11 +40,11 @@ namespace patchdata {
             if constexpr (std::is_same<htype, f32>::value){
 
                 u32 ihpart = pdl.get_field_idx<f32>(::sph::field_names::field_hpart);
-                tmp = syclalg::get_max<f32>(queue, pdat.fields_f32[ihpart].get_buf(),nobj);
+                tmp = syclalg::get_max<f32>(queue, pdat.get_field<f32>(ihpart).get_buf(),nobj);
 
             } else if constexpr (std::is_same<htype, f64>::value){
                 u32 ihpart = pdl.get_field_idx<f64>(::sph::field_names::field_hpart);
-                tmp = syclalg::get_max<f64>(queue, pdat.fields_f64[ihpart].get_buf(),nobj);
+                tmp = syclalg::get_max<f64>(queue, pdat.get_field<f64>(ihpart).get_buf(),nobj);
                 
             }else{
                 throw shamrock_exc("get_h_max -> current htype not handled");

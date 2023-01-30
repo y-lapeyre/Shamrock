@@ -40,6 +40,8 @@ class PatchData {
 
     void init_fields();
 
+    
+
   public:
     PatchDataLayout & pdl;
 
@@ -212,6 +214,13 @@ class PatchData {
     #define X(_arg) template<> inline std::vector<PatchDataField<_arg>> & get_field_list(){return fields_##_arg;}
     XMAC_LIST_ENABLED_FIELD
     #undef X
+
+    template<class T, class Functor>
+    inline void for_each_field(Functor && func){
+        for(auto f : get_field_list<T>()){
+            func(f);
+        }
+    }
     
 };
 

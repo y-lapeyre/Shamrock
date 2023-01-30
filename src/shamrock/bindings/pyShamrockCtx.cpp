@@ -179,15 +179,20 @@ template<class T> void append_to_map(
 
     };
 
-    auto list_appender = [&](std::vector<PatchDataField<T>> & fields){
-        for(auto f : fields){
-            appender(f);
-        }
-    };
+    //auto list_appender = [&](std::vector<PatchDataField<T>> & fields){
+    //    for(auto f : fields){
+    //        appender(f);
+    //    }
+    //};
 
 
     for (auto & pdat : lst) {
-        list_appender(pdat->get_field_list<T>());
+
+        pdat->for_each_field<T>([&](auto & field){
+            appender(field);
+        });
+
+        //list_appender(pdat->get_field_list<T>());
     }
 
     if(!vec.empty()){

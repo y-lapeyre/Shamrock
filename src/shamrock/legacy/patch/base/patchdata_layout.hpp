@@ -30,8 +30,12 @@ class FieldDescriptor{public:
     }
 };
 
+
+
+#define __add_field_vec(T) \
+    std::vector<FieldDescriptor< T >> fields_##T;
+
 #define __add_field_type(T) \
-    std::vector<FieldDescriptor< T >> fields_##T;\
     template<> inline void add_field<T>(std::string field_name, u32 nvar){fields_##T.push_back(FieldDescriptor<T>(field_name,nvar));}\
     template<> [[nodiscard]] inline FieldDescriptor<T> get_field<T>(std::string field_name){    \
                                                                                       \
@@ -85,6 +89,8 @@ class PatchDataLayout {
 
     //TODO add MPI sync
 
+    
+
 public:
     template<class T>
     void add_field(std::string field_name, u32 nvar);
@@ -96,6 +102,10 @@ public:
     u32 get_field_idx(std::string field_name);
 
     PositionprecMode xyz_mode;
+
+    #define X(f) __add_field_vec(f)
+    XMAC_LIST_ENABLED_FIELD
+    #undef X
 
     #define X(f) __add_field_type(f);
     XMAC_LIST_ENABLED_FIELD
