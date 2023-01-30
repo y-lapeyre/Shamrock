@@ -1,6 +1,6 @@
 
 set(Sources
-    pyShamrockCtx.cpp
+    pySfc.cpp
 )
 set(SourcesTest
     

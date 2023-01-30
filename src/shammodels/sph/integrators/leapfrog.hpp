@@ -29,7 +29,7 @@
 #include "shammodels/sph/base/sphpart.hpp"
 #include "shammodels/sph/sphpatch.hpp"
 #include "shamsys/legacy/sycl_mpi_interop.hpp"
-#include "shamrock/legacy/tree/radix_tree.hpp"
+#include "shamrock/tree/RadixTree.hpp"
 #include <filesystem>
 #include <memory>
 #include <string>
@@ -295,7 +295,10 @@ namespace sph {
 
         //make trees
         auto tgen_trees = timings::start_timer("radix tree gen", timings::sycl);
-        std::unordered_map<u64, std::unique_ptr<Radix_Tree<u_morton, vec3>>> radix_trees;
+        std::unordered_map<u64, std::unique_ptr<RadixTree<u_morton, vec3,3>>> radix_trees;
+        std::unordered_map<u64, std::unique_ptr<RadixTreeField<flt> >> cell_int_rads;
+
+
 
         sched.for_each_patch([&](u64 id_patch, Patch  /*cur_p*/) {
             logger::debug_ln("SPHLeapfrog","patch : n°",id_patch,"->","making Radix Tree");
@@ -311,7 +314,7 @@ namespace sph {
             std::tuple<vec3, vec3> &box = merge_pdat.at(id_patch).box;
 
             // radix tree computation
-            radix_trees[id_patch] = std::make_unique<Radix_Tree<u_morton, vec3>>(shamsys::instance::get_compute_queue(), box,
+            radix_trees[id_patch] = std::make_unique<RadixTree<u_morton, vec3, 3>>(shamsys::instance::get_compute_queue(), box,
                                                                                     buf_xyz,mpdat.get_obj_cnt(),reduc_level);
         });
 
@@ -320,7 +323,8 @@ namespace sph {
             if (merge_pdat.at(id_patch).or_element_cnt == 0)
                 logger::debug_ln("SPHLeapfrog","patch : n°",id_patch,"->","is empty skipping tree volumes step");
 
-            radix_trees[id_patch]->compute_cellvolume(shamsys::instance::get_compute_queue());
+            radix_trees[id_patch]->compute_cell_ibounding_box(shamsys::instance::get_compute_queue());
+            radix_trees[id_patch]->convert_bounding_box(shamsys::instance::get_compute_queue());
         });
 
         sched.for_each_patch([&](u64 id_patch, Patch  /*cur_p*/) {
@@ -332,7 +336,9 @@ namespace sph {
 
             auto & buf_h = mpdat.get_field<flt>(ihpart).get_buf();
 
-            radix_trees[id_patch]->compute_int_boxes(shamsys::instance::get_compute_queue(), buf_h, htol_up_tol);
+            cell_int_rads[id_patch] = std::make_unique<RadixTreeField<flt>>(
+                radix_trees[id_patch]->compute_int_boxes(shamsys::instance::get_compute_queue(), buf_h, htol_up_tol)
+                );
         });
         shamsys::instance::get_compute_queue().wait();
         tgen_trees.stop();
@@ -370,8 +376,16 @@ namespace sph {
 
             models::sph::algs::SmoothingLenghtCompute<flt, u32, Kernel> h_iterator(sched.pdl, htol_up_tol, htol_up_iter);
 
-            h_iterator.iterate_smoothing_lenght(shamsys::instance::get_compute_queue(), merge_pdat.at(id_patch).or_element_cnt,
-                                                sph_gpart_mass, *radix_trees[id_patch], pdat_merge, *hnew, *omega, eps_h);
+            h_iterator.iterate_smoothing_lenght(
+                shamsys::instance::get_compute_queue(), 
+                merge_pdat.at(id_patch).or_element_cnt,
+                sph_gpart_mass,
+                *radix_trees[id_patch],
+                *cell_int_rads[id_patch], 
+                pdat_merge, 
+                *hnew, 
+                *omega, 
+                eps_h);
 
             // write back h test
             //*
@@ -432,7 +446,7 @@ namespace sph {
 
         //compute force
         if (do_force) {
-            lambda_compute_forces(sched,radix_trees,merge_pdat,hnew_field_merged,omega_field_merged,htol_up_tol);
+            lambda_compute_forces(sched,radix_trees,cell_int_rads,merge_pdat,hnew_field_merged,omega_field_merged,htol_up_tol);
         }
 
         time_force.stop();

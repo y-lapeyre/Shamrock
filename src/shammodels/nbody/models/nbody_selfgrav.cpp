@@ -11,7 +11,7 @@
 #include "shamrock/legacy/patch/interfaces/interface_handler.hpp"
 #include "shamrock/legacy/patch/utility/full_tree_field.hpp"
 #include "shamrock/legacy/patch/utility/serialpatchtree.hpp"
-#include "shamrock/legacy/tree/radix_tree.hpp"
+#include "shamrock/tree/RadixTree.hpp"
 #include "shammodels/generic/math/tensors/collections.hpp"
 #include "shamrock/legacy/ShamrockCtx.hpp"
 
@@ -459,7 +459,7 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(PatchScheduler &sched, f64 old_ti
 
         constexpr u32 reduc_level = 2;
 
-        using RadTree = Radix_Tree<u_morton, vec3>;
+        using RadTree = RadixTree<u_morton, vec3,3>;
 
         //make trees
         auto tgen_trees = timings::start_timer("radix tree gen", timings::sycl);
@@ -489,7 +489,8 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(PatchScheduler &sched, f64 old_ti
             if (pdat.is_empty()){
                 logger::debug_ln("SPHLeapfrog","patch : n°",id_patch,"->","is empty skipping tree build");
             }else{
-                radix_trees[id_patch]->compute_cellvolume(shamsys::instance::get_compute_queue());
+                radix_trees[id_patch]->compute_cell_ibounding_box(shamsys::instance::get_compute_queue());
+                radix_trees[id_patch]->convert_bounding_box(shamsys::instance::get_compute_queue());
             }
         });
 

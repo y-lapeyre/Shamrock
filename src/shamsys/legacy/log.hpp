@@ -129,20 +129,6 @@ namespace logger {
 
     inline void print(){}
 
-    template <typename... Types>
-    void print(std::string s, Types... var2);
-
-    template <typename T, typename... Types>
-    void print(sycl::vec<T, 2> s, Types... var2);
-    template <typename T, typename... Types>
-    void print(sycl::vec<T, 3> s, Types... var2);
-    template <typename T, typename... Types>
-    void print(sycl::vec<T, 4> s, Types... var2);
-    template <typename T, typename... Types>
-    void print(sycl::vec<T, 8> s, Types... var2);
-    template <typename T, typename... Types>
-    void print(sycl::vec<T, 16> s, Types... var2);
-
     template <typename T, typename... Types>
     void print(T var1, Types... var2);
 
@@ -193,6 +179,23 @@ namespace logger {
             "," << s.sC() << ","<< s.sD() << ","<< s.sE() << "," << s.sF() << ") ";
         print(var2...);
     }
+
+
+    template <class... Typestuple,typename... Types>
+    inline void print(std::tuple<Typestuple...> t , Types... var2)
+    {
+        std::apply
+        (
+            [](Typestuple ... tupleArgs)
+            {
+                std::cout << "[ ";
+                (print(std::forward<Typestuple>(tupleArgs)),...);
+                std::cout << "]";
+            }, t
+        );
+        print(var2...);
+    }
+
 
 
 

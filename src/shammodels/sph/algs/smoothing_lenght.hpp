@@ -23,7 +23,7 @@
 #include "shamrock/legacy/patch/utility/merged_patch.hpp"
 #include "shamrock/legacy/patch/utility/serialpatchtree.hpp"
 #include "shamsys/legacy/log.hpp"
-#include "shamrock/legacy/tree/radix_tree.hpp"
+#include "shamrock/tree/RadixTree.hpp"
 #include "shammodels/sph/algs/smoothing_lenght_impl.hpp"
 #include "shammodels/sph/base/kernels.hpp"
 #include "shammodels/sph/base/sphpart.hpp"
@@ -36,7 +36,7 @@ class SmoothingLenghtCompute{
 
     using vec = sycl::vec<flt, 3>;
 
-    using Rtree = Radix_Tree<morton_prec, vec>;
+    using Rtree = RadixTree<morton_prec, vec,3>;
     using Rta = walker::Radix_tree_accessor<morton_prec, vec>;
 
     flt htol_up_tol;
@@ -66,6 +66,7 @@ class SmoothingLenghtCompute{
         flt gpart_mass,
 
         Rtree & radix_t,
+        RadixTreeField<flt> & int_rad,
 
         PatchData & pdat_merge,
         sycl::buffer<flt> & hnew,
@@ -86,6 +87,7 @@ class SmoothingLenghtCompute{
                 htol_up_tol,
                 htol_up_iter,
                 radix_t,
+                int_rad,
                 pdat_merge, 
                 hnew, 
                 omega, 
@@ -110,6 +112,7 @@ class SmoothingLenghtCompute{
                 htol_up_tol,
                 htol_up_iter,
                 radix_t,
+                int_rad,
                 pdat_merge, 
                 hnew, 
                 omega, 
@@ -193,7 +196,7 @@ inline void compute_smoothing_lenght(PatchScheduler &sched,bool periodic_mode,fl
         flt htol_up_iter ,flt sph_gpart_mass){
 
         using vec = sycl::vec<flt, 3>;
-        using Rtree = Radix_Tree<u_morton, vec>;
+        using Rtree = RadixTree<u_morton, vec,3>;
         using Rta = walker::Radix_tree_accessor<u_morton, vec>;
 
         
@@ -232,7 +235,8 @@ inline void compute_smoothing_lenght(PatchScheduler &sched,bool periodic_mode,fl
 
 
         //make trees
-        std::unordered_map<u64, std::unique_ptr<Radix_Tree<u_morton, vec>>> radix_trees;
+        std::unordered_map<u64, std::unique_ptr<RadixTree<u_morton, vec,3>>> radix_trees;
+        std::unordered_map<u64, std::unique_ptr<RadixTreeField<flt> >> cell_int_rads;
 
 
         constexpr u32 reduc_level = 5;
@@ -251,7 +255,7 @@ inline void compute_smoothing_lenght(PatchScheduler &sched,bool periodic_mode,fl
             std::tuple<vec, vec> &box = merge_pdat.at(id_patch).box;
 
             // radix tree computation
-            radix_trees[id_patch] = std::make_unique<Radix_Tree<u_morton, vec>>(shamsys::instance::get_compute_queue(), box,
+            radix_trees[id_patch] = std::make_unique<RadixTree<u_morton, vec,3>>(shamsys::instance::get_compute_queue(), box,
                                                                                     buf_xyz,mpdat.get_obj_cnt(),reduc_level);
         });
 
@@ -260,7 +264,8 @@ inline void compute_smoothing_lenght(PatchScheduler &sched,bool periodic_mode,fl
             if (merge_pdat.at(id_patch).or_element_cnt == 0)
                 logger::debug_ln("SPHLeapfrog","patch : n°",id_patch,"->","is empty skipping tree volumes step");
 
-            radix_trees[id_patch]->compute_cellvolume(shamsys::instance::get_compute_queue());
+            radix_trees[id_patch]->compute_cell_ibounding_box(shamsys::instance::get_compute_queue());
+            radix_trees[id_patch]->convert_bounding_box(shamsys::instance::get_compute_queue());
         });
 
         sched.for_each_patch([&](u64 id_patch, Patch  /*cur_p*/) {
@@ -272,7 +277,9 @@ inline void compute_smoothing_lenght(PatchScheduler &sched,bool periodic_mode,fl
 
             auto & buf_h = mpdat.get_field<flt>(ihpart).get_buf();
 
-            radix_trees[id_patch]->compute_int_boxes(shamsys::instance::get_compute_queue(), buf_h, htol_up_tol);
+            cell_int_rads[id_patch] = std::make_unique<RadixTreeField<flt>>(
+                radix_trees[id_patch]->compute_int_boxes(shamsys::instance::get_compute_queue(), buf_h, htol_up_tol)
+                );
         });
 
 
@@ -305,9 +312,16 @@ inline void compute_smoothing_lenght(PatchScheduler &sched,bool periodic_mode,fl
 
             SmoothingLenghtCompute<flt, u32, Kernel> h_iterator(sched.pdl, htol_up_tol, htol_up_iter);
 
-            h_iterator.iterate_smoothing_lenght(shamsys::instance::get_compute_queue(), merge_pdat.at(id_patch).or_element_cnt,
-                                                sph_gpart_mass, *radix_trees[id_patch], pdat_merge, *hnew, *omega, eps_h);
-
+            h_iterator.iterate_smoothing_lenght(
+                shamsys::instance::get_compute_queue(), 
+                merge_pdat.at(id_patch).or_element_cnt,
+                sph_gpart_mass,
+                *radix_trees[id_patch],
+                *cell_int_rads[id_patch], 
+                pdat_merge, 
+                *hnew, 
+                *omega, 
+                eps_h);
             // write back h test
             //*
             shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {

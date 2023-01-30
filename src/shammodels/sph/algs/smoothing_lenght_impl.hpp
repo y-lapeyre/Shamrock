@@ -17,7 +17,7 @@
 #include "shamrock/legacy/patch/base/patchdata_layout.hpp"
 #include "shammodels/sph/base/kernels.hpp"
 #include "shammodels/sph/base/sphpart.hpp"
-#include "shamrock/legacy/tree/radix_tree.hpp"
+#include "shamrock/tree/RadixTree.hpp"
 
 namespace impl {
 
@@ -175,7 +175,8 @@ namespace impl {
             flt htol_up_tol,
             flt htol_up_iter,
 
-            Radix_Tree<morton_prec, sycl::vec<flt,3>> & radix_t,
+            RadixTree<morton_prec, sycl::vec<flt,3>,3> & radix_t,
+            RadixTreeField<flt> & int_rad,
 
             PatchData & pdat_merge,
             sycl::buffer<flt> & hnew,
@@ -195,7 +196,8 @@ namespace impl {
             f32 htol_up_tol,
             f32 htol_up_iter,
 
-            Radix_Tree<morton_prec, f32_3> & radix_t,
+            RadixTree<morton_prec, f32_3,3> & radix_t,
+            RadixTreeField<f32> & int_rad,
 
             PatchData & pdat_merge,
             sycl::buffer<f32> & hnew,
@@ -220,7 +222,7 @@ namespace impl {
 
 
 
-                auto cell_int_r = radix_t.buf_cell_interact_rad->template get_access<sycl::access::mode::read>(cgh);
+                auto cell_int_r = int_rad.radix_tree_field_buf->template get_access<sycl::access::mode::read>(cgh);
 
                 const f32 part_mass = gpart_mass;
 
@@ -327,7 +329,8 @@ namespace impl {
             flt htol_up_tol,
             flt htol_up_iter,
 
-            Radix_Tree<morton_prec, sycl::vec<flt,3>> & radix_t,
+            RadixTree<morton_prec, sycl::vec<flt,3>,3> & radix_t,
+            RadixTreeField<flt> & int_rad,
 
             PatchData & pdat_merge,
             sycl::buffer<flt> & hnew,
@@ -347,7 +350,8 @@ namespace impl {
             f32 htol_up_tol,
             f32 htol_up_iter,
 
-            Radix_Tree<morton_prec, f32_3> & radix_t,
+            RadixTree<morton_prec, f32_3,3> & radix_t,
+            RadixTreeField<f32> & int_rad,
 
             PatchData & pdat_merge,
             sycl::buffer<f32> & hnew,
@@ -372,7 +376,7 @@ namespace impl {
 
 
 
-                auto cell_int_r =radix_t.buf_cell_interact_rad->template get_access<sycl::access::mode::read>(cgh);
+                auto cell_int_r = int_rad.radix_tree_field_buf->template get_access<sycl::access::mode::read>(cgh);
 
                 const f32 part_mass = gpart_mass;
 

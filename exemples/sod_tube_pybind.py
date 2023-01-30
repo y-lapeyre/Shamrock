@@ -104,6 +104,7 @@ model.set_particle_mass(pmass)
 t_end = 0
 nstep = 15
 for i in range(nstep):
+    print(f"---{i}/{nstep-1}---")
     t_end = model.simulate_until(ctx, t_end,t_end+1e-2 ,1,1,"dump_")
 
 del model
