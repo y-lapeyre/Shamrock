@@ -132,7 +132,6 @@ BenchResult benchmark_comm(std::mt19937 & eng, u32 max_patch_per_node, u32 nb_pa
 
 TestStart(Benchmark, "core/comm/sparse_communicator_patchdata_field:", func_name, -1){
 
-    patch::create_MPI_patch_type();
     
     u32 nb_part_per_patch = 1e5;
 
@@ -183,6 +182,5 @@ TestStart(Benchmark, "core/comm/sparse_communicator_patchdata_field:", func_name
         bandwith_dataset.add_data("fetch_bandwith", fetch_bandwith  );
         bandwith_dataset.add_data("comm_bandwith", comm_bandwith   );
     }
-    patch::free_MPI_patch_type();
 
 }

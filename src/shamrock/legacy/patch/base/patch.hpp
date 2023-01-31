@@ -61,29 +61,7 @@ namespace patch {
     void merge_patch_obj(shamrock::patch::Patch & p0, shamrock::patch::Patch & p1,shamrock::patch::Patch & p2,shamrock::patch::Patch & p3,shamrock::patch::Patch & p4,shamrock::patch::Patch & p5,shamrock::patch::Patch & p6,shamrock::patch::Patch & p7);
 
 
-    /**
-     * @brief the mpi patch type (ok if is_mpi_patch_type_active() return true)
-     */
-    inline MPI_Datatype patch_MPI_type;
-
-    /**
-     * @brief is mpi type active
-     * 
-     * @return true patch_MPI_type can be used   
-     * @return false patch_MPI_type shouldnt be used
-     */
-    bool is_mpi_patch_type_active();
 
 
-    /**
-     * @brief Create the mpi type for the Patch struct
-     */
-    void create_MPI_patch_type();
-
-
-    /**
-     * @brief Destroy the mpi type for the Patch struct
-     */
-    void free_MPI_patch_type();
 
 }

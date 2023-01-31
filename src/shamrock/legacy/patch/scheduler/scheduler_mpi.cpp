@@ -157,7 +157,6 @@ void PatchScheduler::scheduler_step(bool do_split_merge, bool do_load_balancing)
     auto global_timer = timings::start_timer("SchedulerMPI::scheduler_step", timings::function);
 
     if(!is_mpi_sycl_interop_active()) throw shamrock_exc("sycl mpi interop not initialized");
-    if(!patch::is_mpi_patch_type_active()) throw shamrock_exc("mpi patch type not initialized");
 
     Timer timer;
 

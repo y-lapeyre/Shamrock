@@ -412,7 +412,7 @@ inline void dump_patch_list(std::string prefix, PatchScheduler & sched){
         }
 
         MPI_Status st;
-        mpi::file_write(patch_list_file, sched.patch_list.global.data(), sched.patch_list.global.size(), patch::patch_MPI_type,&st);
+        mpi::file_write(patch_list_file, sched.patch_list.global.data(), sched.patch_list.global.size(), shamrock::patch::patch_MPI_type,&st);
     }
 
 

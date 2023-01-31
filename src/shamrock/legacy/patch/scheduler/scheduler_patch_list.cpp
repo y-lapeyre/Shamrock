@@ -17,8 +17,11 @@
 
 
 void SchedulerPatchList::build_global(){
+
+    using namespace shamrock::patch;
+
     auto t = timings::start_timer("SchedulerPatchList::build_global()",timings::mpi);
-    mpi_handler::vector_allgatherv(local, patch::patch_MPI_type, global, patch::patch_MPI_type, MPI_COMM_WORLD);   
+    mpi_handler::vector_allgatherv(local, patch_MPI_type, global, patch_MPI_type, MPI_COMM_WORLD);   
     t.stop();
 }
 

@@ -21,10 +21,11 @@
 
 #include "aliases.hpp"
 
+#include "shamsys/MpiWrapper.hpp"
 
 namespace shamrock::patch {
 
-
+    inline MPI_Datatype patch_MPI_type;
 
 
     /**
