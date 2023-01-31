@@ -9,7 +9,7 @@
 #pragma once
 
 #include "aliases.hpp"
-#include "base/patch.hpp"
+#include "shamrock/patch/Patch.hpp"
 #include "base/patchdata.hpp"
 #include "shamrock/patch/PatchDataLayout.hpp"
 //#include "boundary_condition.hpp"

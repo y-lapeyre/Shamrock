@@ -25,7 +25,7 @@
 #include <unordered_map>
 #include <unordered_set>
 
-#include "shamrock/legacy/patch/base/patch.hpp"
+#include "shamrock/patch/Patch.hpp"
 
 /**
  * @brief Handle the patch list of the mpi scheduler

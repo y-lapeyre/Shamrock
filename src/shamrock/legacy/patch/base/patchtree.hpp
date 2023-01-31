@@ -28,7 +28,7 @@
 #include <cstdio>
 
 #include "aliases.hpp"
-#include "patch.hpp"
+#include "shamrock/patch/Patch.hpp"
 
 #include "shamrock/legacy/utils/geometry_utils.hpp"
 

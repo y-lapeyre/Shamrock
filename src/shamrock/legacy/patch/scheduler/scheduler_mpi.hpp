@@ -27,7 +27,7 @@
 #include <vector>
 
 #include "aliases.hpp"
-#include "shamrock/legacy/patch/base/patch.hpp"
+#include "shamrock/patch/Patch.hpp"
 #include "shamrock/legacy/patch/base/patchdata.hpp"
 //#include "shamrock/legacy/patch/patchdata_buffer.hpp"
 #include "shamrock/patch/PatchDataLayout.hpp"
@@ -167,7 +167,10 @@ class PatchScheduler{public:
 
                 shamrock::patch::Patch &cur_p = patch_list.global[patch_list.id_patch_to_global_idx[id]];
 
-                fct(id,cur_p,pdat);
+                if(!cur_p.is_err_mode()){
+                    fct(id,cur_p,pdat);
+                }
+
             }
         }
 
@@ -187,8 +190,9 @@ class PatchScheduler{public:
 
 
                 //TODO should feed the sycl queue to the lambda
-
-                fct(id,cur_p);
+                if(!cur_p.is_err_mode()){
+                    fct(id,cur_p);
+                }
             }
         }
 
@@ -227,8 +231,9 @@ class PatchScheduler{public:
 
             shamrock::patch::Patch &cur_p = patch_list.local[idx];
 
-            field.local_nodes_value[idx] = lambda(shamsys::instance::get_compute_queue(),cur_p,patch_data.owned_data.at(cur_p.id_patch));
-
+            if(!cur_p.is_err_mode()){
+                field.local_nodes_value[idx] = lambda(shamsys::instance::get_compute_queue(),cur_p,patch_data.owned_data.at(cur_p.id_patch));
+            }
         }
 
         field.build_global(dtype);

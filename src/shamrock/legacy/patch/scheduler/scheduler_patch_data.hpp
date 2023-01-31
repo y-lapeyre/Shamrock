@@ -22,7 +22,7 @@
 #include <cmath>
 #include <map>
 
-#include "shamrock/legacy/patch/base/patch.hpp"
+#include "shamrock/patch/Patch.hpp"
 #include "shamrock/legacy/patch/base/patchdata.hpp"
 
 #include "shamrock/patch/PatchDataLayout.hpp"

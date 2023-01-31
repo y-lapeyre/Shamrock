@@ -14,7 +14,7 @@
 #include "aliases.hpp"
 #include "shamrock/legacy/patch/scheduler/scheduler_mpi.hpp"
 
-#include "shamrock/legacy/patch/base/patch.hpp"
+#include "shamrock/patch/Patch.hpp"
 #include "shamrock/legacy/patch/utility/serialpatchtree.hpp"
 
 #include "shammodels/generic/setup/generators.hpp"

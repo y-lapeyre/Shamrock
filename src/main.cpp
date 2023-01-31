@@ -22,7 +22,7 @@
 #include "aliases.hpp"
 #include "shamrock/legacy/io/dump.hpp"
 #include "shamrock/legacy/io/logs.hpp"
-#include "shamrock/legacy/patch/base/patch.hpp"
+#include "shamrock/patch/Patch.hpp"
 #include "shamrock/legacy/patch/base/patchdata.hpp"
 #include "shamrock/patch/PatchDataLayout.hpp"
 #include "shamrock/legacy/patch/comm/patch_content_exchanger.hpp"

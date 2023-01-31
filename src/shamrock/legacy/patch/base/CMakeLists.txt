@@ -8,7 +8,6 @@ target_sources(shamrock
         
         
         
-        patch.cpp 
         patchdata.cpp 
         patchdata_field.cpp 
         patchtree.cpp 
@@ -30,7 +29,6 @@ if("${BUILD_TEST}")
     target_sources(shamrock_test
     PRIVATE
 
-    patch.cpp 
     patchdata.cpp 
     patchdata_field.cpp 
     patchtree.cpp 

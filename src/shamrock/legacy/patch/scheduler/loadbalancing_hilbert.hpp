@@ -23,7 +23,7 @@
 #include <tuple>
 
 #include "aliases.hpp"
-#include "shamrock/legacy/patch/base/patch.hpp"
+#include "shamrock/patch/Patch.hpp"
 #include "shamrock/sfc/hilbert.hpp"
 
 /**
