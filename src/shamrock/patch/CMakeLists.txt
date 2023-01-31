@@ -1,6 +1,7 @@
 
 set(Sources
-    Patch.cpp
+Patch.cpp
+PatchDataLayout.cpp
 )
 set(SourcesTest
     
