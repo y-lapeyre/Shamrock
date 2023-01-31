@@ -78,7 +78,7 @@ template <class T> void PatchDataField<T>::extract_element(u32 pidx, PatchDataFi
 
 template<class T> class PdatField_checkfieldmatch;
 
-template <class T> bool PatchDataField<T>::check_field_match(PatchDataField<T> &f2) {
+template <class T> bool PatchDataField<T>::check_field_match(const PatchDataField<T> &f2) const {
     bool match = true;
 
     match = match && (field_name == f2.field_name);
@@ -86,14 +86,14 @@ template <class T> bool PatchDataField<T>::check_field_match(PatchDataField<T> &
     match = match && (obj_cnt == f2.obj_cnt);
     match = match && (val_cnt == f2.val_cnt);
 
-    u32 & check_len = val_cnt;
+    const u32 & check_len = val_cnt;
 
     {
 
         using buf_t = std::unique_ptr<sycl::buffer<T>>;
 
-        buf_t & buf = get_buf();
-        buf_t & buf_f2 = f2.get_buf();
+        const buf_t & buf = get_buf();
+        const buf_t & buf_f2 = f2.get_buf();
         
         sycl::buffer<u8> res_buf(check_len);
 
@@ -138,7 +138,7 @@ template <class T> void PatchDataField<T>::append_subset_to(sycl::buffer<u32> &i
 
     using buf_t = std::unique_ptr<sycl::buffer<T>>;
 
-    buf_t & buf_other  = pfield.get_buf();
+    const buf_t & buf_other  = pfield.get_buf();
 
 
     #ifdef false
@@ -218,7 +218,7 @@ template <class T> void PatchDataField<T>::append_subset_to(const std::vector<u3
 
     using buf_t = std::unique_ptr<sycl::buffer<T>>;
 
-    buf_t & buf_other  = pfield.get_buf();
+    const buf_t & buf_other  = pfield.get_buf();
 
     u32 sz = idxs.size();
 
@@ -614,7 +614,7 @@ namespace patchdata_field {
 
         if (comm_mode == CopyToHost && comm_op == Send) {
 
-            comm_ptr = impl::copy_to_host::send::init<T>(pdat_field.get_buf(), comm_val_cnt);
+            comm_ptr = impl::copy_to_host::send::init<T>(pdat_field.get_buf_priviledge(), comm_val_cnt);
 
         } else if (comm_mode == CopyToHost && comm_op == Recv_Probe) {
 
@@ -622,7 +622,7 @@ namespace patchdata_field {
 
         } else if (comm_mode == DirectGPU && comm_op == Send) {
 
-            comm_ptr = impl::directgpu::send::init<T>(pdat_field.get_buf(), comm_val_cnt);
+            comm_ptr = impl::directgpu::send::init<T>(pdat_field.get_buf_priviledge(), comm_val_cnt);
 
         } else if (comm_mode == DirectGPU && comm_op == Recv_Probe) {
 
@@ -647,7 +647,7 @@ namespace patchdata_field {
             impl::copy_to_host::send::finalize<T>(comm_ptr);
 
         } else if (comm_mode == CopyToHost && comm_op == Recv_Probe) {
-            impl::copy_to_host::recv::finalize<T>(pdat_field.get_buf(), comm_ptr,comm_val_cnt);
+            impl::copy_to_host::recv::finalize<T>(pdat_field.get_buf_priviledge(), comm_ptr,comm_val_cnt);
 
         } else if (comm_mode == DirectGPU && comm_op == Send) {
 
@@ -655,7 +655,7 @@ namespace patchdata_field {
 
         } else if (comm_mode == DirectGPU && comm_op == Recv_Probe) {
 
-            impl::copy_to_host::recv::finalize<T>(pdat_field.get_buf(), comm_ptr,comm_val_cnt);
+            impl::copy_to_host::recv::finalize<T>(pdat_field.get_buf_priviledge(), comm_ptr,comm_val_cnt);
 
         } else {
             logger::err_ln("PatchDataField MPI Comm", "communication mode & op combination not implemented :", comm_mode,

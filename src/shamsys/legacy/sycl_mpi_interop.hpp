@@ -200,7 +200,7 @@ namespace mpi_sycl_interop {
 namespace impl::copy_to_host {
 
     namespace send {
-        template <class T> T *init(std::unique_ptr<sycl::buffer<T>> &buf, u32 comm_sz);
+        template <class T> T *init(const std::unique_ptr<sycl::buffer<T>> &buf, u32 comm_sz);
 
         template <class T> void finalize(T *comm_ptr);
     } // namespace send
@@ -208,7 +208,7 @@ namespace impl::copy_to_host {
     namespace recv {
         template <class T> T *init(u32 comm_sz);
 
-        template <class T> void finalize(std::unique_ptr<sycl::buffer<T>> &buf, T *comm_ptr, u32 comm_sz);
+        template <class T> void finalize(const std::unique_ptr<sycl::buffer<T>> &buf, T *comm_ptr, u32 comm_sz);
     } // namespace recv
 
 
@@ -218,7 +218,7 @@ namespace impl::copy_to_host {
 namespace impl::directgpu {
 
     namespace send {
-        template <class T> T *init(std::unique_ptr<sycl::buffer<T>> &buf, u32 comm_sz);
+        template <class T> T *init(const std::unique_ptr<sycl::buffer<T>> &buf, u32 comm_sz);
 
         template <class T> void finalize(T *comm_ptr);
     } // namespace send
@@ -226,7 +226,7 @@ namespace impl::directgpu {
     namespace recv {
         template <class T> T *init(u32 comm_sz);
 
-        template <class T> void finalize(std::unique_ptr<sycl::buffer<T>> &buf, T *comm_ptr, u32 comm_sz);
+        template <class T> void finalize(const std::unique_ptr<sycl::buffer<T>> &buf, T *comm_ptr, u32 comm_sz);
     } // namespace recv
 
 

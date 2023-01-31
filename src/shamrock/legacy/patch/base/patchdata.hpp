@@ -20,6 +20,7 @@
 #pragma once
 
 #include <random>
+#include <variant>
 #include <vector>
 
 #include "aliases.hpp"
@@ -40,27 +41,59 @@ class PatchData {
 
     void init_fields();
 
+
+    using var_t = std::variant<
+        PatchDataField<f32   >, 
+        PatchDataField<f32_2 >, 
+        PatchDataField<f32_3 >, 
+        PatchDataField<f32_4 >, 
+        PatchDataField<f32_8 >, 
+        PatchDataField<f32_16>, 
+        PatchDataField<f64   >, 
+        PatchDataField<f64_2 >, 
+        PatchDataField<f64_3 >, 
+        PatchDataField<f64_4 >, 
+        PatchDataField<f64_8 >, 
+        PatchDataField<f64_16>, 
+        PatchDataField<u32   >, 
+        PatchDataField<u64   >, 
+        PatchDataField<u32_3 >, 
+        PatchDataField<u64_3 >
+        >;
+
+    std::vector<var_t> fields;
+
     
 
   public:
     PatchDataLayout & pdl;
 
-    #define X(_arg) std::vector<PatchDataField<_arg>> fields_##_arg ;
-    XMAC_LIST_ENABLED_FIELD
-    #undef X
-
     inline PatchData(PatchDataLayout & pdl) : pdl(pdl){
         init_fields();
     }
 
+    template<class Functor>
+    inline void for_each_field_any(Functor && func){
+        for(auto & f : fields){
+            std::visit([&](auto & arg){
+                func(arg);
+            },f);
+        }
+    }
 
     inline PatchData(const PatchData & other) : pdl(other.pdl){
-        #define X(_arg)                                                     \
-        for(const auto & src : other.fields_##_arg){                           \
-            this->fields_##_arg.emplace_back(src);                    \
-        }
-        XMAC_LIST_ENABLED_FIELD
-        #undef X
+
+        for(auto & field_var : other.fields){
+
+            std::visit([&](auto & field){
+
+                using base_t = typename std::remove_reference<decltype(field)>::type::Field_type;
+                fields.emplace_back(PatchDataField<base_t>(field));
+
+            }, field_var);
+
+        };
+
     }
 
 
@@ -73,6 +106,9 @@ class PatchData {
         const PatchData& current = *this;
         return std::make_unique<PatchData>(current);
     }
+
+    PatchData &operator=(const PatchData &other) = delete;
+    
 
     /**
      * @brief extract particle at index pidx and insert it in the provided vectors
@@ -101,26 +137,28 @@ class PatchData {
     void append_subset_to(sycl::buffer<u32> & idxs, u32 sz, PatchData & pdat) const ;
 
     inline u32 get_obj_cnt(){
-        if(pdl.xyz_mode == xyz32){
-            u32 ixyz = pdl.get_field_idx<f32_3>("xyz");
-            return fields_f32_3[ixyz].get_obj_cnt();
+
+        bool is_empty = fields.empty();
+
+        if(!is_empty){
+            return std::visit([](auto & field){
+                return field.get_obj_cnt();
+            }, fields[0]);
         }
-        if(pdl.xyz_mode == xyz64){
-            u32 ixyz = pdl.get_field_idx<f64_3>("xyz");
-            return fields_f64_3[ixyz].get_obj_cnt();
-        }
-        throw shamrock_exc("patchdata layout is not xyz32 or xyz64");
+        
+        throw std::runtime_error("this patchdata does not contains any fields");
+        
     }
 
     inline u64 memsize(){
         u64 sum = 0; 
 
-        #define X(_arg)                                                     \
-        for(const auto & src : fields_##_arg){                           \
-            sum += src.memsize();                    \
+        for(auto & field_var : fields){
+
+            std::visit([&](auto & field){
+                sum += field.memsize();
+            },field_var);
         }
-        XMAC_LIST_ENABLED_FIELD
-        #undef X
 
         return sum;
     }
@@ -131,95 +169,82 @@ class PatchData {
 
     void overwrite(PatchData & pdat, u32 obj_cnt);
 
-    /*
-    inline void expand(u32 obj_to_add){
-        for (auto a : fields_f32) {
-            a.expand(obj_to_add);
+
+
+
+
+
+
+
+
+    template<class T> PatchDataField<T> & get_field(u32 idx){
+
+        var_t & tmp = fields[idx];
+
+        PatchDataField<T>* pval = std::get_if<PatchDataField<T>>(&tmp);
+
+        if(pval){
+            return *pval;
         }
 
-        for (auto a : fields_f32_2) {
-            a.expand(obj_to_add);
-        }
-
-        for (auto a : fields_f32_3) {
-            a.expand(obj_to_add);        
-        }
-
-        for (auto a : fields_f32_4) {
-            a.expand(obj_to_add);        
-        }
-
-        for (auto a : fields_f32_8) {
-            a.expand(obj_to_add);        
-        }
-
-        for (auto a : fields_f32_16) {
-            a.expand(obj_to_add);        
-        }
-
-
-        for (auto a : fields_f64) {
-            a.expand(obj_to_add);        
-        }
-
-        for (auto a : fields_f64_2) {
-            a.expand(obj_to_add);        
-        }
-
-        for (auto a : fields_f64_3) {
-            a.expand(obj_to_add);        
-        }
-
-        for (auto a : fields_f64_4) {
-            a.expand(obj_to_add);        
-        }
-
-        for (auto a : fields_f64_8) {
-            a.expand(obj_to_add);        
-        }
-
-        for (auto a : fields_f64_16) {
-            a.expand(obj_to_add);        
-        }
-
-
-        for (auto a : fields_u32) {
-            a.expand(obj_to_add);        
-        }
-
-        for (auto a : fields_u64) {
-            a.expand(obj_to_add);        
-        }
+        throw std::runtime_error(
+            "the request id is not of correct type\n"
+            "   current map is : \n" + pdl.get_description_str() + 
+            " this call : " + std::string(__PRETTY_FUNCTION__) + "\n"
+            "    arg : idx = " + std::to_string(idx) 
+        );
+        
     }
-    */
 
 
 
 
 
-
-
-
-
-
-
-    template<class T> PatchDataField<T> & get_field(u32 idx);
-
-    #define X(_arg) template<> inline PatchDataField<_arg> & get_field(u32 idx){return fields_##_arg.at(idx);}
-    XMAC_LIST_ENABLED_FIELD
-    #undef X
-
-
-    template<class T> std::vector<PatchDataField<T>> & get_field_list();
-    #define X(_arg) template<> inline std::vector<PatchDataField<_arg>> & get_field_list(){return fields_##_arg;}
-    XMAC_LIST_ENABLED_FIELD
-    #undef X
+    //template<class T> inline std::vector<PatchDataField<T> & > get_field_list(){
+    //    std::vector<PatchDataField<T> & > ret;
+//
+    //    
+    //}
 
     template<class T, class Functor>
     inline void for_each_field(Functor && func){
-        for(auto f : get_field_list<T>()){
-            func(f);
+        for(auto & f : fields){
+            PatchDataField<T>* pval = std::get_if<PatchDataField<T>>(&f);
+
+            if(pval){
+                func(*pval);
+            }
         }
+    }
+
+    inline friend bool operator==(const PatchData & p1, const PatchData & p2) { 
+        bool check = true;
+
+        if(p1.fields.size() != p2.fields.size()){
+            return false;
+        }
+
+        for(u32 idx = 0; idx < p1.fields.size(); idx++){
+
+            bool ret = std::visit([&](auto & pf1, auto & pf2) -> bool {
+
+                using t1 = typename std::remove_reference<decltype(pf1)>::type::Field_type;
+                using t2 = typename std::remove_reference<decltype(pf2)>::type::Field_type;
+
+                if constexpr (std::is_same<t1, t2>::value){
+                    return pf1.check_field_match(pf2);
+                }else{  
+                    return false;
+                }
+
+            }, p1.fields[idx], p2.fields[idx]);
+
+
+            check = check && ret;
+        }
+
+
+        return check;
     }
     
 };
@@ -261,6 +286,11 @@ struct PatchDataMpiRequest{
         for(auto b : mpi_rq_fields_u32_3   ){b.finalize();}
         for(auto b : mpi_rq_fields_u64_3   ){b.finalize();}
     }
+
+    template<class T> std::vector<patchdata_field::PatchDataFieldMpiRequest<T>> & get_field_list();
+    #define X(_arg) template<> inline std::vector<patchdata_field::PatchDataFieldMpiRequest<_arg>> & get_field_list(){return mpi_rq_fields_##_arg ;}
+    XMAC_LIST_ENABLED_FIELD
+    #undef X
 }; 
 
 inline void waitall_pdat_mpi_rq(std::vector<PatchDataMpiRequest> & rq_lst){

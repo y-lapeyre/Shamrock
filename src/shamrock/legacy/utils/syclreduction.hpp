@@ -16,7 +16,7 @@ namespace syclalg {
 
     //TODO to optimize
     template<class T>
-    inline T get_max(sycl::queue & queue, std::unique_ptr<sycl::buffer<T>> & buf, u32 len){
+    inline T get_max(sycl::queue & queue, const std::unique_ptr<sycl::buffer<T>> & buf, u32 len){
 
         T accum;
 
@@ -51,7 +51,7 @@ namespace syclalg {
 
     //TODO to optimize
     template<class T>
-    inline T get_min(sycl::queue & queue, std::unique_ptr<sycl::buffer<T>> & buf, u32 len){
+    inline T get_min(sycl::queue & queue, const std::unique_ptr<sycl::buffer<T>> & buf, u32 len){
 
         T accum;
 
@@ -89,7 +89,7 @@ namespace syclalg {
 
 
     template<class T> 
-    inline std::tuple<T,T> get_min_max(sycl::queue & queue, std::unique_ptr<sycl::buffer<T>> & buf, u32 len){
+    inline std::tuple<T,T> get_min_max(sycl::queue & queue, const std::unique_ptr<sycl::buffer<T>> & buf, u32 len){
         
         T accum_min, accum_max;
 

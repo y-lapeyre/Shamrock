@@ -70,7 +70,7 @@ namespace shamrock::sfc {
     void MortonKernels<morton_t, _pos_t, dim>::sycl_xyz_to_morton(
         sycl::queue &queue,
         u32 pos_count,
-        std::unique_ptr<sycl::buffer<pos_t>> &in_positions,
+        const std::unique_ptr<sycl::buffer<pos_t>> &in_positions,
         pos_t bounding_box_min,
         pos_t bounding_box_max,
         std::unique_ptr<sycl::buffer<morton_t>> &out_morton

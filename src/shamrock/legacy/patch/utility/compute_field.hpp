@@ -55,7 +55,7 @@ class PatchComputeField{public:
 
     public:
 
-    inline std::unique_ptr<sycl::buffer<T>> & get_buf(u64 id_patch){
+    inline const std::unique_ptr<sycl::buffer<T>> & get_buf(u64 id_patch) const {
         return field_data.at(id_patch).get_buf();
     }
 

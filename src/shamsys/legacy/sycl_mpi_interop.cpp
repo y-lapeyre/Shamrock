@@ -24,7 +24,7 @@ namespace impl::copy_to_host {
     using namespace mpi_sycl_interop;
 
     namespace send {
-        template <class T> T * init(std::unique_ptr<sycl::buffer<T>> &buf, u32 comm_sz) {
+        template <class T> T * init(const std::unique_ptr<sycl::buffer<T>> &buf, u32 comm_sz) {
 
 
             using namespace shamsys::instance;
@@ -75,7 +75,7 @@ namespace impl::copy_to_host {
             return comm_ptr;
         };
 
-        template <class T> void finalize(std::unique_ptr<sycl::buffer<T>> &buf, T *comm_ptr, u32 comm_sz) {
+        template <class T> void finalize(const std::unique_ptr<sycl::buffer<T>> &buf, T *comm_ptr, u32 comm_sz) {
             
 
             if (comm_sz > 0) {
@@ -114,7 +114,7 @@ namespace impl::directgpu {
     using namespace mpi_sycl_interop;
 
     namespace send {
-        template <class T> T *init(std::unique_ptr<sycl::buffer<T>> &buf, u32 comm_sz) {
+        template <class T> T *init(const std::unique_ptr<sycl::buffer<T>> &buf, u32 comm_sz) {
 
             T *comm_ptr = sycl::malloc_device<T>(comm_sz, shamsys::instance::get_compute_queue());
             logger::debug_sycl_ln("PatchDataField MPI Comm", "sycl::malloc_device", comm_sz, "->", comm_ptr);
@@ -159,7 +159,7 @@ namespace impl::directgpu {
             return comm_ptr;
         };
 
-        template <class T> void finalize(std::unique_ptr<sycl::buffer<T>> &buf, T *comm_ptr, u32 comm_sz) {
+        template <class T> void finalize(const std::unique_ptr<sycl::buffer<T>> &buf, T *comm_ptr, u32 comm_sz) {
             
             if (comm_sz > 0) {
                 logger::debug_sycl_ln("PatchDataField MPI Comm", "copy USM -> buffer");

@@ -37,6 +37,9 @@
 template<class T>
 class PatchDataField {
 
+    ///////////////////////////////////
+    // constexpr utilities (using & constexpr vals)
+    ///////////////////////////////////
     static constexpr bool isprimitive = 
         std::is_same<T, f32>::value ||
         std::is_same<T, f64>::value ||
@@ -62,8 +65,12 @@ class PatchDataField {
     using EnableIfVec = enable_if_t< is_in_type_list && (!isprimitive)>;
 
 
+    constexpr static u32 min_capa = 100;
+    constexpr static f32 safe_fact = 1.25;
 
-
+    ///////////////////////////////////
+    // member fields
+    ///////////////////////////////////
 
     std::unique_ptr<sycl::buffer<T>> buf;
 
@@ -76,9 +83,11 @@ class PatchDataField {
 
     u32 capacity;
 
-    constexpr static u32 min_capa = 100;
-    constexpr static f32 safe_fact = 1.25;
 
+    
+    ///////////////////////////////////
+    // internal functions
+    ///////////////////////////////////
 
     void _alloc(){
         buf = std::make_unique<sycl::buffer<T>>(capacity);
@@ -96,6 +105,26 @@ class PatchDataField {
     }
 
     public:
+
+    PatchDataField(PatchDataField &&other) noexcept : 
+        buf(std::move(other.buf)), 
+        field_name(std::move(other.field_name)),
+        nvar(std::move(other.nvar)),
+        obj_cnt(std::move(other.obj_cnt)),
+        val_cnt(std::move(other.val_cnt)),
+        capacity(std::move(other.capacity))
+        {} // move constructor
+
+    PatchDataField &operator=(PatchDataField &&other) noexcept{
+        buf = std::move(other.buf); 
+        field_name = std::move(other.field_name);
+        nvar = std::move(other.nvar);
+        obj_cnt = std::move(other.obj_cnt);
+        val_cnt = std::move(other.val_cnt);
+        capacity = std::move(other.capacity);
+
+        return *this;
+    } // move assignment
 
     //TODO find a way to add particles easily cf setup require public vector
     
@@ -143,14 +172,14 @@ class PatchDataField {
     }
 
 
-    PatchDataField(PatchDataField &&other) = delete;
+    
     /* : _data(other._data){ 
         other._data = nullptr; 
     }*/
 
     PatchDataField &operator=(const PatchDataField &other) = delete;
 
-    PatchDataField &operator=(PatchDataField &&other) =delete;
+    
     
     /*noexcept {
         if (&other != this) {
@@ -170,7 +199,12 @@ class PatchDataField {
 
 
 
-    inline std::unique_ptr<sycl::buffer<T>> & get_buf() {
+    inline const std::unique_ptr<sycl::buffer<T>> & get_buf() const {
+        return buf;
+    }
+
+    [[deprecated]]
+    inline std::unique_ptr<sycl::buffer<T>> & get_buf_priviledge() {
         return buf;
     }
 
@@ -297,7 +331,7 @@ class PatchDataField {
 
             {
                 sycl::host_accessor acc_cur {*buf};
-                auto acc = data.template get_access<sycl::access::mode::read>();
+                sycl::host_accessor acc {data, sycl::read_only};
 
                 for(u32 i = 0; i < val_cnt ; i++){
                     //field_data[i] = acc[i];
@@ -366,7 +400,7 @@ class PatchDataField {
 
     void extract_element(u32 pidx, PatchDataField<T> & to);
 
-    bool check_field_match(PatchDataField<T> &f2);
+    bool check_field_match(const PatchDataField<T> &f2) const;
 
     /**
      * @brief Copy all objects in idxs to pfield

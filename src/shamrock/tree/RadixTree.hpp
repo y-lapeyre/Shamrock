@@ -172,7 +172,7 @@ class RadixTree{
     
 
     
-    RadixTreeField<coord_t> compute_int_boxes(sycl::queue & queue,std::unique_ptr<sycl::buffer<coord_t>> & int_rad_buf, coord_t tolerance);
+    RadixTreeField<coord_t> compute_int_boxes(sycl::queue & queue,const std::unique_ptr<sycl::buffer<coord_t>> & int_rad_buf, coord_t tolerance);
     
     
     void compute_cell_ibounding_box(sycl::queue & queue);
@@ -188,7 +188,7 @@ class RadixTree{
     RadixTree(
         sycl::queue & queue,
         std::tuple<pos_t,pos_t> treebox,
-        std::unique_ptr<sycl::buffer<pos_t>> & pos_buf, 
+        const std::unique_ptr<sycl::buffer<pos_t>> & pos_buf, 
         u32 cnt_obj, 
         u32 reduc_level);
 

@@ -35,12 +35,13 @@
 
 void PatchData::init_fields(){
 
-    #define X(arg) \
-        for (auto a : pdl.fields_##arg) {\
-            fields_##arg.emplace_back(a.name,a.nvar);\
-        }
-    XMAC_LIST_ENABLED_FIELD
-    #undef X
+    pdl.for_each_field_any([&](auto & field){
+        using f_t = typename std::remove_reference<decltype(field)>::type;
+        using base_t = typename f_t::field_T;
+
+        fields.push_back(PatchDataField<base_t>(field.name,field.nvar));
+
+    });
 
 }
 
@@ -49,16 +50,15 @@ void PatchData::init_fields(){
 u64 patchdata_isend(PatchData &p, std::vector<PatchDataMpiRequest> &rq_lst, i32 rank_dest, i32 tag, MPI_Comm comm) {
 
     rq_lst.resize(rq_lst.size()+1);
-    auto & ref = rq_lst[rq_lst.size()-1];
+    PatchDataMpiRequest & ref = rq_lst[rq_lst.size()-1];
 
     u64 total_data_transf = 0;
 
-    #define X(arg) \
-        for (auto & a : p.fields_##arg) {\
-            total_data_transf += patchdata_field::isend(a,ref.mpi_rq_fields_##arg, rank_dest, tag, comm);\
-        }
-    XMAC_LIST_ENABLED_FIELD
-    #undef X
+
+    p.for_each_field_any([&](auto & field){
+        using base_t = typename std::remove_reference<decltype(field)>::type::Field_type;
+        total_data_transf += patchdata_field::isend(field,ref.get_field_list<base_t>(), rank_dest, tag, comm);
+    });
 
 
     return total_data_transf;
@@ -74,12 +74,10 @@ u64 patchdata_irecv_probe(PatchData & pdat, std::vector<PatchDataMpiRequest> &rq
 
     u64 total_data_transf = 0;
 
-    #define X(arg) \
-        for (auto & a : pdat.fields_##arg) {\
-            total_data_transf += patchdata_field::irecv_probe(a, ref.mpi_rq_fields_##arg, rank_source, tag, comm);\
-        }
-    XMAC_LIST_ENABLED_FIELD
-    #undef X
+    pdat.for_each_field_any([&](auto & field){
+        using base_t = typename std::remove_reference<decltype(field)>::type::Field_type;
+        total_data_transf += patchdata_field::irecv_probe(field, ref.get_field_list<base_t>(), rank_source, tag, comm);
+    });
 
     return total_data_transf;
 
@@ -94,97 +92,138 @@ PatchData patchdata_gen_dummy_data(PatchDataLayout & pdl, std::mt19937& eng){
 
     PatchData pdat(pdl);
 
-
-    #define X(arg) \
-        for (auto & a : pdat.fields_##arg) {\
-            a.gen_mock_data(num_part, eng);\
-        }
-    XMAC_LIST_ENABLED_FIELD
-    #undef X
-
+    pdat.for_each_field_any([&](auto & field){
+        field.gen_mock_data(num_part,eng);
+    });
 
     return pdat;
 }
 
 
 bool patch_data_check_match(PatchData& p1, PatchData& p2){
-    bool check = true;
 
-    #define X(arg) \
-        for(u32 idx = 0; idx < p1.pdl.fields_##arg.size(); idx++){\
-            check = p1.fields_##arg[idx].check_field_match(p2.fields_##arg[idx]);\
-        }
-    XMAC_LIST_ENABLED_FIELD
-    #undef X
+    return p1 == p2;
 
-    return check;
 }
 
 
 
 void PatchData::extract_element(u32 pidx, PatchData & out_pdat){
 
-    #define X(arg) \
-        for(u32 idx = 0; idx < pdl.fields_##arg.size(); idx++){\
-            fields_##arg[idx].extract_element(pidx, out_pdat.fields_##arg[idx]);\
-        }
-    XMAC_LIST_ENABLED_FIELD
-    #undef X
+    for(u32 idx = 0; idx < fields.size(); idx++){
+
+        std::visit([&](auto & field, auto & out_field) {
+
+            using t1 = typename std::remove_reference<decltype(field)>::type::Field_type;
+            using t2 = typename std::remove_reference<decltype(out_field)>::type::Field_type;
+
+            if constexpr (std::is_same<t1, t2>::value){
+                field.extract_element(pidx,out_field);
+            }else{  
+                throw std::invalid_argument("missmatch");
+            }
+
+        }, fields[idx], out_pdat.fields[idx]);
+
+    }
 
 }
 
 void PatchData::insert_elements(PatchData & pdat){
 
-    #define X(arg) \
-        for(u32 idx = 0; idx < pdl.fields_##arg.size(); idx++){\
-            fields_##arg[idx].insert(pdat.fields_##arg[idx]);\
-        }
-    XMAC_LIST_ENABLED_FIELD
-    #undef X
+
+    for(u32 idx = 0; idx < fields.size(); idx++){
+
+        std::visit([&](auto & field, auto & out_field) {
+
+            using t1 = typename std::remove_reference<decltype(field)>::type::Field_type;
+            using t2 = typename std::remove_reference<decltype(out_field)>::type::Field_type;
+
+            if constexpr (std::is_same<t1, t2>::value){
+                field.insert(out_field);
+            }else{  
+                throw std::invalid_argument("missmatch");
+            }
+
+        }, fields[idx], pdat.fields[idx]);
+
+    }
 
 }
 
 void PatchData::overwrite(PatchData &pdat, u32 obj_cnt){
-    #define X(arg) \
-        for(u32 idx = 0; idx < pdl.fields_##arg.size(); idx++){\
-            fields_##arg[idx].overwrite(pdat.fields_##arg[idx],obj_cnt);\
-        }
-    XMAC_LIST_ENABLED_FIELD
-    #undef X
+    
+    for(u32 idx = 0; idx < fields.size(); idx++){
+
+        std::visit([&](auto & field, auto & out_field) {
+
+            using t1 = typename std::remove_reference<decltype(field)>::type::Field_type;
+            using t2 = typename std::remove_reference<decltype(out_field)>::type::Field_type;
+
+            if constexpr (std::is_same<t1, t2>::value){
+                field.overwrite(out_field,obj_cnt);
+            }else{  
+                throw std::invalid_argument("missmatch");
+            }
+
+        }, fields[idx], pdat.fields[idx]);
+
+    }
 }
 
 
 
 void PatchData::resize(u32 new_obj_cnt){
 
-    #define X(arg) \
-        for(u32 idx = 0; idx < pdl.fields_##arg.size(); idx++){\
-            fields_##arg[idx].resize(new_obj_cnt);\
-        }
-    XMAC_LIST_ENABLED_FIELD
-    #undef X
+    for(auto & field_var : fields){
+        std::visit([&](auto & field){
+            field.resize(new_obj_cnt);
+        },field_var);
+    }
 
 }
 
 
 
 void PatchData::append_subset_to(sycl::buffer<u32> & idxs, u32 sz, PatchData & pdat) const {
-    #define X(arg) \
-        for(u32 idx = 0; idx < pdl.fields_##arg.size(); idx++){\
-            fields_##arg[idx].append_subset_to(idxs, sz, pdat.fields_##arg[idx]);\
-        }
-    XMAC_LIST_ENABLED_FIELD
-    #undef X
+
+
+    for(u32 idx = 0; idx < fields.size(); idx++){
+
+        std::visit([&](auto & field, auto & out_field) {
+
+            using t1 = typename std::remove_reference<decltype(field)>::type::Field_type;
+            using t2 = typename std::remove_reference<decltype(out_field)>::type::Field_type;
+
+            if constexpr (std::is_same<t1, t2>::value){
+                field.append_subset_to(idxs, sz, out_field);
+            }else{  
+                throw std::invalid_argument("missmatch");
+            }
+
+        }, fields[idx], pdat.fields[idx]);
+
+    }
 }
 
 void PatchData::append_subset_to(std::vector<u32> & idxs, PatchData &pdat) const {
 
-    #define X(arg) \
-        for(u32 idx = 0; idx < pdl.fields_##arg.size(); idx++){\
-            fields_##arg[idx].append_subset_to(idxs, pdat.fields_##arg[idx]);\
-        }
-    XMAC_LIST_ENABLED_FIELD
-    #undef X
+    for(u32 idx = 0; idx < fields.size(); idx++){
+
+        std::visit([&](auto & field, auto & out_field) {
+
+            using t1 = typename std::remove_reference<decltype(field)>::type::Field_type;
+            using t2 = typename std::remove_reference<decltype(out_field)>::type::Field_type;
+
+            if constexpr (std::is_same<t1, t2>::value){
+                field.append_subset_to(idxs, out_field);
+            }else{  
+                throw std::invalid_argument("missmatch");
+            }
+
+        }, fields[idx], pdat.fields[idx]);
+
+    }
 
 }
 
@@ -194,11 +233,17 @@ void PatchData::split_patchdata<f32_3>(
     f32_3 bmin_p0, f32_3 bmin_p1, f32_3 bmin_p2, f32_3 bmin_p3, f32_3 bmin_p4, f32_3 bmin_p5, f32_3 bmin_p6, f32_3 bmin_p7, 
     f32_3 bmax_p0, f32_3 bmax_p1, f32_3 bmax_p2, f32_3 bmax_p3, f32_3 bmax_p4, f32_3 bmax_p5, f32_3 bmax_p6, f32_3 bmax_p7){
 
-    u32 field_ipos = pdl.get_field_idx<f32_3>("xyz");
-    //TODO check that nvar on this field is 1 on creation
+    
+    PatchDataField<f32_3 >* pval = std::get_if<PatchDataField<f32_3 >>(&fields[0]);
+
+    if(!pval){
+        throw std::invalid_argument("the main field should be at id 0");
+    }
+
+    PatchDataField<f32_3> & xyz = * pval;
 
     auto get_vec_idx = [&](f32_3 vmin, f32_3 vmax) -> std::vector<u32> {
-        return fields_f32_3[field_ipos].get_elements_with_range(
+        return xyz.get_elements_with_range(
             [&](f32_3 val,f32_3 vmin, f32_3 vmax){
                 return BBAA::is_particle_in_patch<f32_3>(val, vmin,vmax);
             },
@@ -242,7 +287,7 @@ void PatchData::split_patchdata<f32_3>(
         vmax = sycl::fmax(vmax,bmax_p6);
         vmax = sycl::fmax(vmax,bmax_p7);
 
-        fields_f32_3[field_ipos].check_err_range(
+        xyz.check_err_range(
             [&](f32_3 val,f32_3 vmin, f32_3 vmax){
                 return BBAA::is_particle_in_patch<f32_3>(val, vmin,vmax);
             },
@@ -271,11 +316,16 @@ void PatchData::split_patchdata<f64_3>(
     f64_3 bmin_p0, f64_3 bmin_p1, f64_3 bmin_p2, f64_3 bmin_p3, f64_3 bmin_p4, f64_3 bmin_p5, f64_3 bmin_p6, f64_3 bmin_p7, 
     f64_3 bmax_p0, f64_3 bmax_p1, f64_3 bmax_p2, f64_3 bmax_p3, f64_3 bmax_p4, f64_3 bmax_p5, f64_3 bmax_p6, f64_3 bmax_p7){
 
-    u32 field_ipos = pdl.get_field_idx<f64_3>("xyz");
-    //TODO check that nvar on this field is 1 on creation
+    PatchDataField<f64_3 >* pval = std::get_if<PatchDataField<f64_3 >>(&fields[0]);
+
+    if(!pval){
+        throw std::invalid_argument("the main field should be at id 0");
+    }
+
+    PatchDataField<f64_3> & xyz = * pval;
 
     auto get_vec_idx = [&](f64_3 vmin, f64_3 vmax) -> std::vector<u32> {
-        return fields_f64_3[field_ipos].get_elements_with_range(
+        return xyz.get_elements_with_range(
             [&](f64_3 val,f64_3 vmin, f64_3 vmax){
                 return BBAA::is_particle_in_patch<f64_3>(val, vmin,vmax);
             },

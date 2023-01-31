@@ -51,7 +51,7 @@ namespace impl {
 
             PatchDataField<f32_3> & pos_field = pdat.get_field<f32_3>(field_ipos);
 
-            auto & pos_s_buf = pos_field.get_buf();
+            const auto & pos_s_buf = pos_field.get_buf();
 
             
 

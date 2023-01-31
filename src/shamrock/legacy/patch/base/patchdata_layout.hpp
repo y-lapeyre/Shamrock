@@ -10,7 +10,9 @@
 
 #include "aliases.hpp"
 #include "shamrock/legacy/patch/base/enabled_fields.hpp"
+#include "shamsys/legacy/log.hpp"
 #include <sstream>
+#include <variant>
 #include <vector>
 
 
@@ -32,51 +34,6 @@ class FieldDescriptor{public:
 
 
 
-#define __add_field_vec(T) \
-    std::vector<FieldDescriptor< T >> fields_##T;
-
-#define __add_field_type(T) \
-    template<> inline void add_field<T>(std::string field_name, u32 nvar){fields_##T.push_back(FieldDescriptor<T>(field_name,nvar));}\
-    template<> [[nodiscard]] inline FieldDescriptor<T> get_field<T>(std::string field_name){    \
-                                                                                      \
-        bool found = false;                                                           \
-        FieldDescriptor<T> ret;                                                       \
-                                                                                      \
-        for (auto a : fields_##T) {                                                     \
-            if(a.name == field_name){                                                  \
-                if(found) throw shamrock_exc("field ("+field_name+") exist multiple times");      \
-                ret = a; found = true;                                                 \
-            }                                                                          \
-        }                                                                               \
-                                                                                        \
-                                                                           \
-        if(!found) throw shamrock_exc("field ("+field_name+") not found");                                                               \
-                                                                                 \
-        return ret;                                                               \
-                                                                                       \
-                                                                                       \
-    }                                                               \
-    template<> [[nodiscard]] inline u32 get_field_idx<T>(std::string field_name){    \
-                                                                                      \
-        bool found = false;                                                           \
-        u32 ret;                                                       \
-                                                                                      \
-        for (u32 idx = 0; idx < fields_##T.size() ; idx++) {        \
-            auto a = fields_##T[idx];                                             \
-            if(a.name == field_name){                                                  \
-                if(found) throw shamrock_exc("field ("+field_name+") exist multiple times");      \
-                ret = idx; found = true;                                                 \
-            }                                                                          \
-        }                                                                               \
-                                                                                        \
-                                                                           \
-        if(!found) throw shamrock_exc("field ("+field_name+") not found");                                                               \
-                                                                                 \
-        return ret;                                                               \
-                                                                                       \
-                                                                                       \
-    }   
-
 
 
 
@@ -87,35 +44,96 @@ enum PositionprecMode{
 
 class PatchDataLayout {
 
-    //TODO add MPI sync
 
-    
+    using var_t = std::variant<
+        FieldDescriptor<f32   >, 
+        FieldDescriptor<f32_2 >, 
+        FieldDescriptor<f32_3 >, 
+        FieldDescriptor<f32_4 >, 
+        FieldDescriptor<f32_8 >, 
+        FieldDescriptor<f32_16>, 
+        FieldDescriptor<f64   >, 
+        FieldDescriptor<f64_2 >, 
+        FieldDescriptor<f64_3 >, 
+        FieldDescriptor<f64_4 >, 
+        FieldDescriptor<f64_8 >, 
+        FieldDescriptor<f64_16>, 
+        FieldDescriptor<u32   >, 
+        FieldDescriptor<u64   >, 
+        FieldDescriptor<u32_3 >, 
+        FieldDescriptor<u64_3 >
+        >;
+
+    std::vector<var_t> fields;
 
 public:
-    template<class T>
-    void add_field(std::string field_name, u32 nvar);
+
+
+
 
     template<class T>
-    FieldDescriptor<T> get_field(std::string field_name);
+    void add_field(std::string field_name, u32 nvar){
+        bool found = false;
+
+        for (var_t & fvar : fields) {
+            std::visit([&](auto & arg){
+                if(field_name == arg.name){
+                    found = true;
+                }
+            }, fvar);
+        }
+
+        if(found){
+            throw std::invalid_argument("add_field -> the name already exists");
+        }
+
+        logger::info_ln("PatchDataLayout", "adding field :",field_name,nvar);
+
+        fields.push_back(FieldDescriptor<T>(field_name,nvar));
+    }
 
     template<class T>
-    u32 get_field_idx(std::string field_name);
+    inline FieldDescriptor<T> get_field(std::string field_name){
+
+        for (var_t & fvar : fields) {
+            if(FieldDescriptor<T>* pval = std::get_if<FieldDescriptor<T>>(&fvar)){
+                if(pval->name == field_name){
+                    return *pval;
+                }
+            }
+        }
+
+        throw std::invalid_argument("the requested field does not exists\n    current table : " + get_description_str());
+    }
+
+    template<class T>
+    inline u32 get_field_idx(std::string field_name){
+        for (u32 i = 0; i < fields.size(); i++) {
+            if(FieldDescriptor<T>* pval = std::get_if<FieldDescriptor<T>>(&fields[i])){
+                if(pval->name == field_name){
+                    return i;
+                }
+            }
+        }
+
+        throw std::invalid_argument("the requested field does not exists\n    current table : " + get_description_str());
+    }
 
     PositionprecMode xyz_mode;
 
-    #define X(f) __add_field_vec(f)
-    XMAC_LIST_ENABLED_FIELD
-    #undef X
-
-    #define X(f) __add_field_type(f);
-    XMAC_LIST_ENABLED_FIELD
-    #undef X
 
 
     std::string get_description_str();
 
     std::vector<std::string> get_field_names();
 
-};
+    template<class Functor>
+    inline void for_each_field_any(Functor && func){
+        for(auto & f : fields){
+            std::visit([&](auto & arg){
+                func(arg);
+            },f);
+        }
+    }
 
-#undef __add_field_type
+};
