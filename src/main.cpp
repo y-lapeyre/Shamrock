@@ -24,7 +24,7 @@
 #include "shamrock/legacy/io/logs.hpp"
 #include "shamrock/legacy/patch/base/patch.hpp"
 #include "shamrock/legacy/patch/base/patchdata.hpp"
-#include "shamrock/legacy/patch/base/patchdata_layout.hpp"
+#include "shamrock/patch/PatchDataLayout.hpp"
 #include "shamrock/legacy/patch/comm/patch_content_exchanger.hpp"
 #include "shamrock/legacy/patch/comm/patch_object_mover.hpp"
 #include "shamrock/legacy/patch/comm/patchdata_exchanger.hpp"

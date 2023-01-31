@@ -6,7 +6,7 @@
 //
 // -------------------------------------------------------//
 
-#include "patchdata_layout.hpp"
+#include "PatchDataLayout.hpp"
 
 
 std::string PatchDataLayout::get_description_str(){

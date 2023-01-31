@@ -20,7 +20,7 @@
 #include "shamsys/legacy/mpi_handler.hpp"
 #include "loadbalancing_hilbert.hpp"
 
-#include "shamrock/legacy/patch/base/patchdata_layout.hpp"
+#include "shamrock/patch/PatchDataLayout.hpp"
 #include "shamsys/legacy/sycl_handler.hpp"
 #include "shamrock/legacy/utils/time_utils.hpp"
 

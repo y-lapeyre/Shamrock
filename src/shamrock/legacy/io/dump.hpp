@@ -14,7 +14,7 @@
 #include "shamrock/legacy/patch/utility/merged_patch.hpp"
 #include "shamrock/legacy/patch/base/patch.hpp"
 #include "shamrock/legacy/patch/base/patchdata.hpp"
-#include "shamrock/legacy/patch/base/patchdata_layout.hpp"
+#include "shamrock/patch/PatchDataLayout.hpp"
 #include "shamrock/legacy/patch/scheduler/scheduler_mpi.hpp"
 #include "shamsys/legacy/sycl_mpi_interop.hpp"
 #include <stdexcept>

@@ -25,7 +25,7 @@
 #include "shamrock/legacy/patch/base/patch.hpp"
 #include "shamrock/legacy/patch/base/patchdata.hpp"
 
-#include "shamrock/legacy/patch/base/patchdata_layout.hpp"
+#include "shamrock/patch/PatchDataLayout.hpp"
 #include "scheduler_patch_list.hpp"
 #include "shamrock/legacy/patch/sim_box.hpp"
 

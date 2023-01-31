@@ -6,7 +6,7 @@
 //
 // -------------------------------------------------------//
 
-#include "shamrock/legacy/patch/base/patchdata_layout.hpp"
+#include "shamrock/patch/PatchDataLayout.hpp"
 #include "shamtest/shamtest.hpp"
 
 #include <random>

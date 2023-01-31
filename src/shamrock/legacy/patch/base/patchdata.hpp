@@ -31,7 +31,7 @@
 #include "shamsys/legacy/sycl_mpi_interop.hpp"
 #include "shamrock/legacy/utils/sycl_vector_utils.hpp"
 
-#include "patchdata_layout.hpp"
+#include "shamrock/patch/PatchDataLayout.hpp"
 
 
 /**

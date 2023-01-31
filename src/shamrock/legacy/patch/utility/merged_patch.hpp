@@ -13,7 +13,7 @@
 #include "shamrock/legacy/patch/base/enabled_fields.hpp"
 #include "shamrock/legacy/patch/base/patchdata.hpp"
 #include "shamrock/legacy/patch/base/patchdata_field.hpp"
-#include "shamrock/legacy/patch/base/patchdata_layout.hpp"
+#include "shamrock/patch/PatchDataLayout.hpp"
 #include "shamrock/legacy/patch/interfaces/interface_handler.hpp"
 //#include "shamrock/legacy/patch/patchdata_buffer.hpp"
 #include "shamrock/legacy/patch/scheduler/scheduler_mpi.hpp"

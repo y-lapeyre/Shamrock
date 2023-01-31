@@ -14,7 +14,7 @@
 #include "aliases.hpp"
 #include "shamrock/legacy/patch/base/patchdata.hpp"
 //#include "shamrock/legacy/patch/patchdata_buffer.hpp"
-#include "shamrock/legacy/patch/base/patchdata_layout.hpp"
+#include "shamrock/patch/PatchDataLayout.hpp"
 #include "shammodels/sph/base/kernels.hpp"
 #include "shammodels/sph/base/sphpart.hpp"
 #include "shamrock/tree/RadixTree.hpp"

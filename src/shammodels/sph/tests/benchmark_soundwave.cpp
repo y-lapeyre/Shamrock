@@ -8,7 +8,7 @@
 
 #include "aliases.hpp"
 
-#include "shamrock/legacy/patch/base/patchdata_layout.hpp"
+#include "shamrock/patch/PatchDataLayout.hpp"
 #include "shamrock/legacy/patch/scheduler/scheduler_mpi.hpp"
 #include "shammodels/sph/models/basic_sph_gas.hpp"
 #include "shammodels/sph/setup/sph_setup.hpp"

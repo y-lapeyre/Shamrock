@@ -11,7 +11,7 @@
 #include "aliases.hpp"
 #include "base/patch.hpp"
 #include "base/patchdata.hpp"
-#include "base/patchdata_layout.hpp"
+#include "shamrock/patch/PatchDataLayout.hpp"
 //#include "boundary_condition.hpp"
 //#include "shamrock/legacy/patch/patchdata_buffer.hpp"
 #include "shamrock/legacy/patch/scheduler/loadbalancing_hilbert.hpp" //TODO remove dependancy from hilbert

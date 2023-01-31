@@ -10,7 +10,7 @@
 
 
 #include "shamrock/legacy/patch/base/patchdata_field.hpp"
-#include "shamrock/legacy/patch/base/patchdata_layout.hpp"
+#include "shamrock/patch/PatchDataLayout.hpp"
 #include "shamsys/legacy/mpi_handler.hpp"
 #include "shamrock/legacy/patch/base/patch.hpp"
 #include "shamrock/legacy/patch/base/patchdata.hpp"

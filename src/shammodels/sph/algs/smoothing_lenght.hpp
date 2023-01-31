@@ -15,7 +15,7 @@
 #include "aliases.hpp"
 #include "shamrock/legacy/io/logs.hpp"
 #include "shamrock/legacy/patch/base/patchdata.hpp"
-#include "shamrock/legacy/patch/base/patchdata_layout.hpp"
+#include "shamrock/patch/PatchDataLayout.hpp"
 #include "shamrock/legacy/patch/interfaces/interface_handler.hpp"
 #include "shamrock/legacy/patch/interfaces/interface_selector.hpp"
 //#include "shamrock/legacy/patch/patchdata_buffer.hpp"
