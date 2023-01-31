@@ -33,17 +33,17 @@
 void PatchScheduler::init_mpi_required_types(){
 
 
-    if(!patch::is_mpi_patch_type_active()){
-        patch::create_MPI_patch_type();
-    }
+    //if(!patch::is_mpi_patch_type_active()){
+    //    patch::create_MPI_patch_type();
+    //}
 }
 
 void PatchScheduler::free_mpi_required_types(){
 
 
-    if(patch::is_mpi_patch_type_active()){
-        patch::free_MPI_patch_type();
-    }
+    //if(patch::is_mpi_patch_type_active()){
+    //    patch::free_MPI_patch_type();
+    //}
 }
 
 PatchScheduler::PatchScheduler(shamrock::patch::PatchDataLayout & pdl, u64 crit_split,u64 crit_merge) : pdl(pdl), patch_data(pdl){

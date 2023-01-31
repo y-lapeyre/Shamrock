@@ -19,6 +19,11 @@
 
 #include "patch.hpp"
 
+#include "shamsys/MpiDataTypeHandler.hpp"
+
+
+
+
 namespace patch {
 
     //TODO move mpi patch in a separate file
@@ -50,6 +55,9 @@ namespace patch {
 
         __mpi_patch_type_active = false;
     }
+
+
+
 
     bool is_mpi_patch_type_active(){
         return __mpi_patch_type_active;
@@ -237,4 +245,14 @@ namespace patch {
 
     }
 
+}
+
+
+
+Register_MPIDtypeInit(init_patch_type,"mpi patch type"){
+    patch::create_MPI_patch_type();
+}
+
+Register_MPIDtypeFree(free_patch_type,"mpi patch type"){
+    patch::free_MPI_patch_type();
 }

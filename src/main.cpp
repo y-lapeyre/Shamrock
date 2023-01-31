@@ -655,13 +655,11 @@ int main(int argc, char *argv[]) {
         return 0;
     }
 
-    if(opts::has_option("--sycl-cfg")){
-        shamsys::instance::init(argc,argv);
-    }
-
     if(opts::has_option("--nocolor")){
         terminal_effects::disable_colors();
     }
+
+
 
     if(opts::has_option("--loglevel")){
         std::string level = std::string(opts::get_option("--loglevel"));
@@ -683,6 +681,16 @@ int main(int argc, char *argv[]) {
         logger::print_active_level();
         logger::raw_ln(terminal_effects::faint + "----------------------" + terminal_effects::reset);
     }
+
+
+
+
+    if(opts::has_option("--sycl-cfg")){
+        shamsys::instance::init(argc,argv);
+    }
+
+    
+
 
 
 
