@@ -44,14 +44,14 @@ protected:
 
 class ShamrockCtx{public:
 
-    std::unique_ptr<PatchDataLayout> pdl;
+    std::unique_ptr<shamrock::patch::PatchDataLayout> pdl;
     std::unique_ptr<PatchScheduler> sched;
 
     inline void pdata_layout_new(){
         if(sched){
             throw ShamAPIException("cannot modify patch data layout while the scheduler is on");
         }
-        pdl = std::make_unique<PatchDataLayout>();
+        pdl = std::make_unique<shamrock::patch::PatchDataLayout>();
     }
 
     inline void pdata_layout_do_double_prec_mode(){
@@ -149,13 +149,14 @@ class ShamrockCtx{public:
         //logfiles::close_log_files();
     }
 
-    inline std::vector<std::unique_ptr<PatchData>> gather_data(u32 rank){
+    inline std::vector<std::unique_ptr<shamrock::patch::PatchData>> gather_data(u32 rank){
         return sched->gather_data(rank);
     }
 
-    inline std::vector<std::unique_ptr<PatchData>> allgather_data(){
+    inline std::vector<std::unique_ptr<shamrock::patch::PatchData>> allgather_data(){
 
         using namespace shamsys::instance;
+        using namespace shamrock::patch;
 
         std::vector<std::unique_ptr<PatchData>> recv_data;
 

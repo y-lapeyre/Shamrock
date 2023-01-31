@@ -47,11 +47,11 @@ class InterfaceVolumeGenerator {
     
 
     template <class vectype>
-    static std::vector<std::unique_ptr<PatchData>> append_interface(sycl::queue &queue, PatchData & pdat_buf,
+    static std::vector<std::unique_ptr<shamrock::patch::PatchData>> append_interface(sycl::queue &queue, shamrock::patch::PatchData & pdat_buf,
                                                   std::vector<vectype> boxs_min, std::vector<vectype> boxs_max,vectype add_offset);
 
     template <class T, class vectype>
-    inline static std::vector<std::unique_ptr<PatchDataField<T>>> append_interface_field(sycl::queue &queue, PatchData & pdat_buf, PatchDataField<T> & pdat_cfield,
+    inline static std::vector<std::unique_ptr<PatchDataField<T>>> append_interface_field(sycl::queue &queue, shamrock::patch::PatchData & pdat_buf, PatchDataField<T> & pdat_cfield,
                                                   std::vector<vectype> boxs_min, std::vector<vectype> boxs_max){
         return impl::append_interface_field<T,vectype>(queue,pdat_buf,pdat_cfield,boxs_min,boxs_max);
     }
@@ -375,7 +375,7 @@ template <class vectype, class field_type, class InterfaceSelector> class Interf
     inline static void comm_interface(PatchScheduler &sched, std::vector<InterfaceComm<vectype>> & interface_comm_list){
 
         
-
+        using namespace shamrock::patch;
 
         std::unordered_map<u64,std::vector<std::tuple<u64,std::unique_ptr<PatchData>>>> Interface_map;
 

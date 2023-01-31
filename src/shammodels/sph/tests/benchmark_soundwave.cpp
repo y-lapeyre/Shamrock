@@ -23,6 +23,8 @@
 template<class flt> 
 std::tuple<f64,f64,f64> benchmark_periodic_box(f32 dr, u32 npatch){
 
+    using namespace shamrock::patch;
+
     using vec = sycl::vec<flt,3>;
 
     u64 Nesti = (2.F/dr)*(2.F/dr)*(2.F/dr);

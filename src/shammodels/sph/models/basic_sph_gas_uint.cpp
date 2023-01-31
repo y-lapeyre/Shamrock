@@ -49,6 +49,8 @@ void models::sph::BasicSPHGasUInterne<flt,Kernel>::init(){
 template<class flt, class Kernel> 
 f64 models::sph::BasicSPHGasUInterne<flt,Kernel>::evolve(PatchScheduler &sched, f64 old_time, f64 target_time){
 
+    using namespace shamrock::patch;
+
     check_valid();
 
     logger::info_ln("BasicSPHGasUInterne", "evolve t=",old_time);

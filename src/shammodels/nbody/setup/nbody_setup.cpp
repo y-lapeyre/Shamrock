@@ -18,6 +18,9 @@
 
 template<class flt>
 void models::nbody::NBodySetup<flt>::init(PatchScheduler & sched){
+
+    using namespace shamrock::patch;
+
     if (shamsys::instance::world_rank == 0) {
         Patch root;
 
@@ -62,6 +65,8 @@ void models::nbody::NBodySetup<flt>::init(PatchScheduler & sched){
 
 template<class flt>
 void models::nbody::NBodySetup<flt>::add_particules_fcc(PatchScheduler & sched, flt dr, std::tuple<vec,vec> box){
+
+    using namespace shamrock::patch;
 
     if(shamsys::instance::world_rank == 0){
         std::vector<vec> vec_acc;

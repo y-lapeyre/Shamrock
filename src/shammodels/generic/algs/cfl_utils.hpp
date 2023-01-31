@@ -47,7 +47,7 @@ class CflUtility{public:
     */
 
     template<class LambdaCFL>
-    inline static flt basic_cfl(PatchData & pdat,LambdaCFL && lambda_internal){
+    inline static flt basic_cfl(shamrock::patch::PatchData & pdat,LambdaCFL && lambda_internal){
 
         
 

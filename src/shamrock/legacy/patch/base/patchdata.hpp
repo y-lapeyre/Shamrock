@@ -33,7 +33,7 @@
 
 #include "shamrock/patch/PatchDataLayout.hpp"
 
-
+namespace shamrock::patch{
 /**
  * @brief PatchData container class, the layout is described in patchdata_layout
  */
@@ -249,6 +249,8 @@ class PatchData {
     
 };
 
+}
+
 
 struct PatchDataMpiRequest{
     std::vector<patchdata_field::PatchDataFieldMpiRequest<f32   >> mpi_rq_fields_f32;
@@ -338,7 +340,7 @@ inline void waitall_pdat_mpi_rq(std::vector<PatchDataMpiRequest> & rq_lst){
  * @param tag MPI communication tag
  * @param comm MPI communicator
  */
-u64 patchdata_isend(PatchData &p, std::vector<PatchDataMpiRequest> &rq_lst, i32 rank_dest, i32 tag, MPI_Comm comm);
+u64 patchdata_isend(shamrock::patch::PatchData &p, std::vector<PatchDataMpiRequest> &rq_lst, i32 rank_dest, i32 tag, MPI_Comm comm);
 
 /**
  * @brief perform a MPI irecv with a PatchData object
@@ -349,7 +351,7 @@ u64 patchdata_isend(PatchData &p, std::vector<PatchDataMpiRequest> &rq_lst, i32 
  * @param comm  MPI communicator
  * @return the received patchdata (it works but weird because asynchronous)
  */
-u64 patchdata_irecv_probe(PatchData &pdat, std::vector<PatchDataMpiRequest> &rq_lst, i32 rank_source, i32 tag, MPI_Comm comm);
+u64 patchdata_irecv_probe(shamrock::patch::PatchData &pdat, std::vector<PatchDataMpiRequest> &rq_lst, i32 rank_source, i32 tag, MPI_Comm comm);
 
 /**
  * @brief generate dummy patchdata from a mersen twister
@@ -357,7 +359,7 @@ u64 patchdata_irecv_probe(PatchData &pdat, std::vector<PatchDataMpiRequest> &rq_
  * @param eng the mersen twister
  * @return PatchData the generated PatchData
  */
-PatchData patchdata_gen_dummy_data(PatchDataLayout & pdl, std::mt19937 &eng);
+shamrock::patch::PatchData patchdata_gen_dummy_data(shamrock::patch::PatchDataLayout & pdl, std::mt19937 &eng);
 
 /**
  * @brief check if two PatchData content match
@@ -367,5 +369,5 @@ PatchData patchdata_gen_dummy_data(PatchDataLayout & pdl, std::mt19937 &eng);
  * @return true
  * @return false
  */
-bool patch_data_check_match(PatchData &p1, PatchData &p2);
+bool patch_data_check_match(shamrock::patch::PatchData &p1, shamrock::patch::PatchData &p2);
 

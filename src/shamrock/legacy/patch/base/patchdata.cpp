@@ -33,21 +33,8 @@
 
 
 
-void PatchData::init_fields(){
 
-    pdl.for_each_field_any([&](auto & field){
-        using f_t = typename std::remove_reference<decltype(field)>::type;
-        using base_t = typename f_t::field_T;
-
-        fields.push_back(PatchDataField<base_t>(field.name,field.nvar));
-
-    });
-
-}
-
-
-
-u64 patchdata_isend(PatchData &p, std::vector<PatchDataMpiRequest> &rq_lst, i32 rank_dest, i32 tag, MPI_Comm comm) {
+u64 patchdata_isend(shamrock::patch::PatchData &p, std::vector<PatchDataMpiRequest> &rq_lst, i32 rank_dest, i32 tag, MPI_Comm comm) {
 
     rq_lst.resize(rq_lst.size()+1);
     PatchDataMpiRequest & ref = rq_lst[rq_lst.size()-1];
@@ -67,7 +54,7 @@ u64 patchdata_isend(PatchData &p, std::vector<PatchDataMpiRequest> &rq_lst, i32 
 
 
 
-u64 patchdata_irecv_probe(PatchData & pdat, std::vector<PatchDataMpiRequest> &rq_lst, i32 rank_source, i32 tag, MPI_Comm comm){
+u64 patchdata_irecv_probe(shamrock::patch::PatchData & pdat, std::vector<PatchDataMpiRequest> &rq_lst, i32 rank_source, i32 tag, MPI_Comm comm){
 
     rq_lst.resize(rq_lst.size()+1);
     auto & ref = rq_lst[rq_lst.size()-1];
@@ -84,7 +71,9 @@ u64 patchdata_irecv_probe(PatchData & pdat, std::vector<PatchDataMpiRequest> &rq
 }
 
 
-PatchData patchdata_gen_dummy_data(PatchDataLayout & pdl, std::mt19937& eng){
+shamrock::patch::PatchData patchdata_gen_dummy_data(shamrock::patch::PatchDataLayout & pdl, std::mt19937& eng){
+
+    using namespace shamrock::patch;
 
     std::uniform_int_distribution<u64> distu64(1,6000);
 
@@ -100,12 +89,27 @@ PatchData patchdata_gen_dummy_data(PatchDataLayout & pdl, std::mt19937& eng){
 }
 
 
-bool patch_data_check_match(PatchData& p1, PatchData& p2){
+bool patch_data_check_match(shamrock::patch::PatchData& p1, shamrock::patch::PatchData& p2){
 
     return p1 == p2;
 
 }
 
+
+namespace shamrock::patch{
+
+
+    void PatchData::init_fields(){
+
+    pdl.for_each_field_any([&](auto & field){
+        using f_t = typename std::remove_reference<decltype(field)>::type;
+        using base_t = typename f_t::field_T;
+
+        fields.push_back(PatchDataField<base_t>(field.name,field.nvar));
+
+    });
+
+}
 
 
 void PatchData::extract_element(u32 pidx, PatchData & out_pdat){
@@ -352,5 +356,7 @@ void PatchData::split_patchdata<f64_3>(
     append_subset_to(idx_p5, pd5);
     append_subset_to(idx_p6, pd6);
     append_subset_to(idx_p7, pd7);
+
+}
 
 }

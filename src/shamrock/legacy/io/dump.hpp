@@ -55,7 +55,7 @@
 
 
 
-inline void file_write_patchdata(MPI_File & mfilepatch , PatchData & pdat){
+inline void file_write_patchdata(MPI_File & mfilepatch , shamrock::patch::PatchData & pdat){
 
     MPI_Status st;
 

@@ -96,10 +96,10 @@ void SchedulerPatchData::apply_change_list(std::vector<std::tuple<u64, i32, i32,
 
 template<class Vectype>
 void split_patchdata(
-    PatchData & original_pd,
+    shamrock::patch::PatchData & original_pd,
     const Vectype & min_box_sim,const Vectype & max_box_sim,
-    Patch & p0,Patch & p1,Patch & p2,Patch & p3,Patch & p4,Patch & p5,Patch & p6,Patch & p7,
-    PatchData & pd0,PatchData & pd1,PatchData & pd2,PatchData & pd3,PatchData & pd4,PatchData & pd5,PatchData & pd6,PatchData & pd7);
+    shamrock::patch::Patch & p0,shamrock::patch::Patch & p1,shamrock::patch::Patch & p2,shamrock::patch::Patch & p3,shamrock::patch::Patch & p4,shamrock::patch::Patch & p5,shamrock::patch::Patch & p6,shamrock::patch::Patch & p7,
+    shamrock::patch::PatchData & pd0,shamrock::patch::PatchData & pd1,shamrock::patch::PatchData & pd2,shamrock::patch::PatchData & pd3,shamrock::patch::PatchData & pd4,shamrock::patch::PatchData & pd5,shamrock::patch::PatchData & pd6,shamrock::patch::PatchData & pd7);
 
 
 
@@ -109,10 +109,10 @@ void split_patchdata(
 //TODO refactor the SchedulerMPI with templated space filling curve
 
 template<>
-void split_patchdata<f32_3>(PatchData & original_pd,
+void split_patchdata<f32_3>(shamrock::patch::PatchData & original_pd,
     const f32_3 & min_box_sim,const f32_3 & max_box_sim,
-    Patch & p0,Patch & p1,Patch & p2,Patch & p3,Patch & p4,Patch & p5,Patch & p6,Patch & p7,
-    PatchData & pd0,PatchData & pd1,PatchData & pd2,PatchData & pd3,PatchData & pd4,PatchData & pd5,PatchData & pd6,PatchData & pd7){
+    shamrock::patch::Patch & p0,shamrock::patch::Patch & p1,shamrock::patch::Patch & p2,shamrock::patch::Patch & p3,shamrock::patch::Patch & p4,shamrock::patch::Patch & p5,shamrock::patch::Patch & p6,shamrock::patch::Patch & p7,
+    shamrock::patch::PatchData & pd0,shamrock::patch::PatchData & pd1,shamrock::patch::PatchData & pd2,shamrock::patch::PatchData & pd3,shamrock::patch::PatchData & pd4,shamrock::patch::PatchData & pd5,shamrock::patch::PatchData & pd6,shamrock::patch::PatchData & pd7){
 
     f32_3 translate_factor = min_box_sim;
     f32_3 scale_factor = (max_box_sim - min_box_sim)/HilbertLB::max_box_sz;
@@ -142,10 +142,10 @@ void split_patchdata<f32_3>(PatchData & original_pd,
 }
 
 template<>
-void split_patchdata<f64_3>(PatchData & original_pd,
+void split_patchdata<f64_3>(shamrock::patch::PatchData & original_pd,
     const f64_3 & min_box_sim,const f64_3 & max_box_sim,
-    Patch & p0,Patch & p1,Patch & p2,Patch & p3,Patch & p4,Patch & p5,Patch & p6,Patch & p7,
-    PatchData & pd0,PatchData & pd1,PatchData & pd2,PatchData & pd3,PatchData & pd4,PatchData & pd5,PatchData & pd6,PatchData & pd7){
+    shamrock::patch::Patch & p0,shamrock::patch::Patch & p1,shamrock::patch::Patch & p2,shamrock::patch::Patch & p3,shamrock::patch::Patch & p4,shamrock::patch::Patch & p5,shamrock::patch::Patch & p6,shamrock::patch::Patch & p7,
+    shamrock::patch::PatchData & pd0,shamrock::patch::PatchData & pd1,shamrock::patch::PatchData & pd2,shamrock::patch::PatchData & pd3,shamrock::patch::PatchData & pd4,shamrock::patch::PatchData & pd5,shamrock::patch::PatchData & pd6,shamrock::patch::PatchData & pd7){
 
 
     f64_3 translate_factor = min_box_sim;
@@ -193,23 +193,23 @@ void split_patchdata<f64_3>(PatchData & original_pd,
 
 
 
-void SchedulerPatchData::split_patchdata(u64 key_orginal, Patch &p0, Patch &p1, Patch &p2, Patch &p3, Patch &p4, Patch &p5, Patch &p6, Patch &p7){
+void SchedulerPatchData::split_patchdata(u64 key_orginal, shamrock::patch::Patch &p0, shamrock::patch::Patch &p1, shamrock::patch::Patch &p2, shamrock::patch::Patch &p3, shamrock::patch::Patch &p4, shamrock::patch::Patch &p5, shamrock::patch::Patch &p6, shamrock::patch::Patch &p7){
 
     
     auto search = owned_data.find(key_orginal);
 
     if (search != owned_data.end()) {
 
-        PatchData & original_pd = search->second;
+        shamrock::patch::PatchData & original_pd = search->second;
 
-        PatchData pd0(pdl);
-        PatchData pd1(pdl);
-        PatchData pd2(pdl);
-        PatchData pd3(pdl);
-        PatchData pd4(pdl);
-        PatchData pd5(pdl);
-        PatchData pd6(pdl);
-        PatchData pd7(pdl);
+        shamrock::patch::PatchData pd0(pdl);
+        shamrock::patch::PatchData pd1(pdl);
+        shamrock::patch::PatchData pd2(pdl);
+        shamrock::patch::PatchData pd3(pdl);
+        shamrock::patch::PatchData pd4(pdl);
+        shamrock::patch::PatchData pd5(pdl);
+        shamrock::patch::PatchData pd6(pdl);
+        shamrock::patch::PatchData pd7(pdl);
 
         if (pdl.xyz_mode == xyz32) {
             ::split_patchdata<f32_3>(
@@ -278,7 +278,7 @@ void SchedulerPatchData::merge_patchdata(u64 new_key, u64 old_key0, u64 old_key1
     }
 
 
-    PatchData new_pdat(pdl);
+    shamrock::patch::PatchData new_pdat(pdl);
 
     new_pdat.insert_elements(search0->second);
     new_pdat.insert_elements(search1->second);

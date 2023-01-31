@@ -16,6 +16,8 @@ template <>
 struct SparseCommExchanger<PatchData>{
     static SparseCommResult<PatchData> sp_xchg(SparsePatchCommunicator & communicator, const SparseCommSource<PatchData> &send_comm_pdat){
 
+        
+
         SparseCommResult<PatchData> recv_obj;
 
         if(!send_comm_pdat.empty()){

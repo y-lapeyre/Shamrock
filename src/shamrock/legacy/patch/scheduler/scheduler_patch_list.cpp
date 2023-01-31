@@ -30,7 +30,7 @@ std::unordered_set<u64> SchedulerPatchList::build_local(){
     std::unordered_set<u64> out_ids;
 
     local.clear();
-    for(const Patch &p : global){
+    for(const shamrock::patch::Patch &p : global){
         //TODO add check node_owner_id valid 
         if(i32(p.node_owner_id) == shamsys::instance::world_rank){
             local.push_back(p);
@@ -48,7 +48,7 @@ void SchedulerPatchList::build_local_differantial(std::unordered_set<u64> &patch
     local.clear();
 
     for (u64 i = 0; i < global.size(); i++) {
-        const Patch & p = global[i];
+        const shamrock::patch::Patch & p = global[i];
 
         bool was_owned = (patch_id_lst.find(p.id_patch) != patch_id_lst.end());
 
@@ -80,7 +80,7 @@ void SchedulerPatchList::build_global_idx_map(){
     id_patch_to_global_idx.clear();
 
     u64 idx = 0;
-    for(Patch p : global){
+    for(shamrock::patch::Patch p : global){
         id_patch_to_global_idx[p.id_patch]  = idx;
         idx ++;
     }
@@ -92,7 +92,7 @@ void SchedulerPatchList::build_local_idx_map(){
     id_patch_to_local_idx.clear();
 
     u64 idx = 0;
-    for(Patch p : local){
+    for(shamrock::patch::Patch p : local){
         id_patch_to_local_idx[p.id_patch]  = idx;
         idx ++;
     }
@@ -101,7 +101,7 @@ void SchedulerPatchList::build_local_idx_map(){
 
 
 void SchedulerPatchList::reset_local_pack_index(){
-    for(Patch & p : local){
+    for(shamrock::patch::Patch & p : local){
         p.pack_node_index = u64_max;
     }
 }
@@ -113,9 +113,9 @@ void SchedulerPatchList::reset_local_pack_index(){
 
 std::tuple<u64,u64,u64,u64,u64,u64,u64,u64> SchedulerPatchList::split_patch(u64 id_patch){
 
-    Patch & p0 = global[id_patch_to_global_idx[id_patch]];
+    shamrock::patch::Patch & p0 = global[id_patch_to_global_idx[id_patch]];
 
-    Patch p1,p2,p3,p4,p5,p6,p7;
+    shamrock::patch::Patch p1,p2,p3,p4,p5,p6,p7;
 
     patch::split_patch_obj(p0, p1, p2, p3, p4, p5, p6, p7);
     
@@ -209,7 +209,10 @@ void SchedulerPatchList::merge_patch(
 
 
 // TODO move in a separate file
-std::vector<Patch> make_fake_patch_list(u32 total_dtcnt,u64 div_limit){
+std::vector<shamrock::patch::Patch> make_fake_patch_list(u32 total_dtcnt,u64 div_limit){
+
+    using namespace shamrock::patch;
+
     std::vector<Patch> plist;
 
     std::mt19937 eng(0x1111);        

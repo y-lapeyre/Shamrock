@@ -46,7 +46,7 @@ void PatchScheduler::free_mpi_required_types(){
     }
 }
 
-PatchScheduler::PatchScheduler(PatchDataLayout & pdl, u64 crit_split,u64 crit_merge) : pdl(pdl), patch_data(pdl){
+PatchScheduler::PatchScheduler(shamrock::patch::PatchDataLayout & pdl, u64 crit_split,u64 crit_merge) : pdl(pdl), patch_data(pdl){
 
     crit_patch_split = crit_split;
     crit_patch_merge = crit_merge;
@@ -370,6 +370,8 @@ void SchedulerMPI::scheduler_step(bool do_split_merge,bool do_load_balancing){
 
 std::string PatchScheduler::dump_status(){
 
+    using namespace shamrock::patch;
+
     std::stringstream ss;
 
     ss << "----- MPI Scheduler dump -----\n\n";
@@ -567,6 +569,9 @@ inline void PatchScheduler::set_patch_pack_values(std::unordered_set<u64> merge_
 
 
 void PatchScheduler::dump_local_patches(std::string filename){
+
+    using namespace shamrock::patch;
+
     std::ofstream fout(filename);
 
     if(pdl.xyz_mode == xyz32){
@@ -643,7 +648,9 @@ void PatchScheduler::dump_local_patches(std::string filename){
 
 
 
-std::vector<std::unique_ptr<PatchData>> PatchScheduler::gather_data(u32 rank){
+std::vector<std::unique_ptr<shamrock::patch::PatchData>> PatchScheduler::gather_data(u32 rank){
+
+    using namespace shamrock::patch;
 
     auto plist = this->patch_list.global;
     auto pdata = this->patch_data.owned_data;

@@ -15,6 +15,8 @@
 
 SchedulerPatchList make_plist(std::mt19937 & eng, u32 max_patch_per_node, u32 nb_part){
 
+    using namespace shamrock::patch;
+
     std::uniform_int_distribution<u32> dist_nb_patch (0,max_patch_per_node);
     u32 nb_patch_test = dist_nb_patch(eng);
 
@@ -48,6 +50,8 @@ struct BenchResult{
 };
 
 BenchResult benchmark_comm(std::mt19937 & eng, u32 max_patch_per_node, u32 nb_part){
+
+    using namespace shamrock::patch;
 
     SchedulerPatchList plist = make_plist(eng, max_patch_per_node, nb_part);
     

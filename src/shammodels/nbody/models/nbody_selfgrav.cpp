@@ -56,6 +56,8 @@ template<class flt,class vec3>
 void sycl_move_parts(sycl::queue &queue, u32 npart, flt dt, const std::unique_ptr<sycl::buffer<vec3>> &buf_xyz,
                                         const std::unique_ptr<sycl::buffer<vec3>> &buf_vxyz) {
 
+    using namespace shamrock::patch;
+
     sycl::range<1> range_npart{npart};
 
     auto ker_predict_step = [&](sycl::handler &cgh) {
@@ -315,6 +317,8 @@ void compute_multipoles(Tree & rtree, sycl::buffer<vec> & pos_part, sycl::buffer
 
 template<class flt> 
 f64 models::nbody::Nbody_SelfGrav<flt>::evolve(PatchScheduler &sched, f64 old_time, f64 target_time){
+
+    using namespace shamrock::patch;
 
     check_valid();
 

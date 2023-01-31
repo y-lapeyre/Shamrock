@@ -63,7 +63,7 @@ class SimulationVolume {
 class SimulationBoxInfo {
   public:
 
-    PatchDataLayout & pdl;
+    shamrock::patch::PatchDataLayout & pdl;
 
     f32_3 min_box_sim_s; ///< minimum coordinate of the box (if single precision)
     f32_3 max_box_sim_s; ///< maximum coordinate of the box (if single precision)
@@ -118,10 +118,10 @@ class SimulationBoxInfo {
     }
 
     template<class primtype>
-    inline std::tuple<sycl::vec<primtype,3>,sycl::vec<primtype,3>> get_box(Patch & p);
+    inline std::tuple<sycl::vec<primtype,3>,sycl::vec<primtype,3>> get_box(shamrock::patch::Patch & p);
 
     template<>
-    inline std::tuple<f32_3,f32_3> get_box<f32>(Patch & p){
+    inline std::tuple<f32_3,f32_3> get_box<f32>(shamrock::patch::Patch & p){
         using vec3 = sycl::vec<f32,3>;
         vec3 translate_factor = min_box_sim_s;
         vec3 scale_factor = (max_box_sim_s - min_box_sim_s)/HilbertLB::max_box_sz;
@@ -132,7 +132,7 @@ class SimulationBoxInfo {
     }
 
     template<>
-    inline std::tuple<f64_3,f64_3> get_box<f64>(Patch & p){
+    inline std::tuple<f64_3,f64_3> get_box<f64>(shamrock::patch::Patch & p){
         using vec3 = sycl::vec<f64,3>;
         vec3 translate_factor = min_box_sim_d;
         vec3 scale_factor = (max_box_sim_d - min_box_sim_d)/HilbertLB::max_box_sz;
@@ -143,5 +143,5 @@ class SimulationBoxInfo {
         
     }
 
-    inline SimulationBoxInfo(PatchDataLayout & pdl) : pdl(pdl){}
+    inline SimulationBoxInfo(shamrock::patch::PatchDataLayout & pdl) : pdl(pdl){}
 };

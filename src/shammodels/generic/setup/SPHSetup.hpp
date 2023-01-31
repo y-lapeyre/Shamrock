@@ -40,6 +40,9 @@ class SPHSetup{
 
     
     inline void init_setup(){
+
+        using namespace shamrock::patch;
+
         if (shamsys::instance::world_rank == 0) {
             Patch root;
 
@@ -83,6 +86,8 @@ class SPHSetup{
 
     template<class LambdaSelect>
     inline void add_particules_fcc(flt dr, std::tuple<vec3,vec3> box,LambdaSelect && selector){
+
+        using namespace shamrock::patch;
 
         if(shamsys::instance::world_rank == 0){
             std::vector<vec3> vec;

@@ -38,6 +38,8 @@ Test_start("patchdata::", sync_patchdata_layout, -1) {
 
 TestStart(Unittest,"patchdata::", send_recv_patchdata, 2){
 
+    using namespace shamrock::patch;
+
     std::mt19937 eng(0x1111);  
 
 

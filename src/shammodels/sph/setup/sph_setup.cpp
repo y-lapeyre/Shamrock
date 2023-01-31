@@ -18,6 +18,9 @@
 
 template<class flt, class Kernel>
 void models::sph::SetupSPH<flt,Kernel>::init(PatchScheduler & sched){
+
+    using namespace shamrock::patch;
+
     if (shamsys::instance::world_rank == 0) {
         Patch root;
 
@@ -62,6 +65,8 @@ void models::sph::SetupSPH<flt,Kernel>::init(PatchScheduler & sched){
 
 template<class flt, class Kernel>
 void models::sph::SetupSPH<flt,Kernel>::add_particules_fcc(PatchScheduler & sched, flt dr, std::tuple<vec,vec> box){
+
+    using namespace shamrock::patch;
 
     if(shamsys::instance::world_rank == 0){
         std::vector<vec> vec_acc;

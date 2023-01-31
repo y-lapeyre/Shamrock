@@ -39,12 +39,12 @@ class SchedulerPatchList{public:
     /**
      * @brief contain the list of all patches in the simulation
      */
-    std::vector<Patch> global;
+    std::vector<shamrock::patch::Patch> global;
 
     /**
      * @brief contain the list of patch owned by the current node
      */
-    std::vector<Patch> local;
+    std::vector<shamrock::patch::Patch> local;
 
 
 
@@ -134,4 +134,4 @@ class SchedulerPatchList{public:
  * @param div_limit data count limit to split
  * @return std::vector<Patch> the fake patch list
  */
-std::vector<Patch> make_fake_patch_list(u32 total_dtcnt,u64 div_limit);
+std::vector<shamrock::patch::Patch> make_fake_patch_list(u32 total_dtcnt,u64 div_limit);

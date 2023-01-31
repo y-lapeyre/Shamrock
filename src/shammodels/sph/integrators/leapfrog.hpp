@@ -164,6 +164,8 @@ namespace sph {
         LambdaForce && lambda_compute_forces,
         LambdaCorrector && lambda_correct){
 
+        using namespace shamrock::patch;
+
         auto time_step = timings::start_timer("SPHLeapfrog::step()", timings::timingtype::function);
 
         const flt loc_htol_up_tol  = htol_up_tol;

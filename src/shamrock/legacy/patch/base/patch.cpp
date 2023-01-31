@@ -36,8 +36,8 @@ namespace patch {
         patch_MPI_types_list[0] = MPI_LONG;
         patch_MPI_types_list[1] = MPI_INT;
 
-        patch_MPI_offset[0] = offsetof(Patch, id_patch);
-        patch_MPI_offset[1] = offsetof(Patch, data_count);
+        patch_MPI_offset[0] = offsetof(shamrock::patch::Patch, id_patch);
+        patch_MPI_offset[1] = offsetof(shamrock::patch::Patch, data_count);
 
         mpi::type_create_struct(2, patch_MPI_block_lens, patch_MPI_offset, patch_MPI_types_list, &patch_MPI_type);
         mpi::type_commit(&patch_MPI_type);
@@ -59,14 +59,14 @@ namespace patch {
 
 
     void split_patch_obj(
-            Patch & p0, 
-            Patch & p1,
-            Patch & p2,
-            Patch & p3,
-            Patch & p4,
-            Patch & p5,
-            Patch & p6,
-            Patch & p7
+            shamrock::patch::Patch & p0, 
+            shamrock::patch::Patch & p1,
+            shamrock::patch::Patch & p2,
+            shamrock::patch::Patch & p3,
+            shamrock::patch::Patch & p4,
+            shamrock::patch::Patch & p5,
+            shamrock::patch::Patch & p6,
+            shamrock::patch::Patch & p7
         ){
 
         u64 min_x = p0.x_min;
@@ -157,14 +157,14 @@ namespace patch {
 
 
     void merge_patch_obj(
-            Patch & p0, 
-            Patch & p1,
-            Patch & p2,
-            Patch & p3,
-            Patch & p4,
-            Patch & p5,
-            Patch & p6,
-            Patch & p7
+            shamrock::patch::Patch & p0, 
+            shamrock::patch::Patch & p1,
+            shamrock::patch::Patch & p2,
+            shamrock::patch::Patch & p3,
+            shamrock::patch::Patch & p4,
+            shamrock::patch::Patch & p5,
+            shamrock::patch::Patch & p6,
+            shamrock::patch::Patch & p7
         ){
 
 

@@ -23,7 +23,9 @@
 #include "shamsys/legacy/sycl_handler.hpp"
 
 
-std::vector<std::tuple<u64, i32, i32, i32>> HilbertLB::make_change_list(std::vector<Patch> &global_patch_list) {
+std::vector<std::tuple<u64, i32, i32, i32>> HilbertLB::make_change_list(std::vector<shamrock::patch::Patch> &global_patch_list) {
+
+    using namespace shamrock::patch;
 
     auto t = timings::start_timer("HilbertLB::make_change_list", timings::function);
 

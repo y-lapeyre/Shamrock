@@ -103,7 +103,7 @@ class PatchTree{public:
      * @param plist 
      * @param max_val_1axis 
      */
-    void build_from_patchtable(std::vector<Patch> & plist, u64 max_val_1axis);
+    void build_from_patchtable(std::vector<shamrock::patch::Patch> & plist, u64 max_val_1axis);
 
     /**
      * @brief update value in nodes (tree reduction) 
@@ -111,7 +111,7 @@ class PatchTree{public:
      * @param plist 
      * @param id_patch_to_global_idx 
      */
-    void update_values_node(std::vector<Patch> & plist,std::unordered_map<u64,u64> id_patch_to_global_idx);
+    void update_values_node(std::vector<shamrock::patch::Patch> & plist,std::unordered_map<u64,u64> id_patch_to_global_idx);
     
     /**
      * @brief update values in leafs and parent_of_only_leaf_key only
@@ -119,7 +119,7 @@ class PatchTree{public:
      * @param plist 
      * @param id_patch_to_global_idx 
      */
-    void partial_values_reduction(std::vector<Patch> & plist,std::unordered_map<u64,u64> id_patch_to_global_idx);
+    void partial_values_reduction(std::vector<shamrock::patch::Patch> & plist,std::unordered_map<u64,u64> id_patch_to_global_idx);
 
 
     
@@ -149,6 +149,6 @@ class PatchTree{public:
     u64 insert_node(PTNode n);
     void remove_node(u64 id);
 
-    void update_ptnode(PTNode & n,std::vector<Patch> & plist,std::unordered_map<u64,u64> id_patch_to_global_idx);
+    void update_ptnode(PTNode & n,std::vector<shamrock::patch::Patch> & plist,std::unordered_map<u64,u64> id_patch_to_global_idx);
 
 };

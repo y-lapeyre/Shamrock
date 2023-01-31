@@ -15,6 +15,8 @@ template <class T>
 struct SparseCommExchanger<PatchDataField<T>>{
     static SparseCommResult<PatchDataField<T>> sp_xchg(SparsePatchCommunicator & communicator, const SparseCommSource<PatchDataField<T>> &send_comm_pdat){
 
+        using namespace shamrock::patch;
+
         SparseCommResult<PatchDataField<T>> recv_obj;
 
         if(!send_comm_pdat.empty()){

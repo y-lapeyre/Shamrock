@@ -21,12 +21,12 @@ namespace impl {
 
     // TODO make box list reference
     template<class vectype>
-    std::vector<u8> get_flag_choice(sycl::queue &queue, PatchData & pdat,
+    std::vector<u8> get_flag_choice(sycl::queue &queue, shamrock::patch::PatchData & pdat,
                                                                             std::vector<vectype> boxs_min,
                                                                             std::vector<vectype> boxs_max);
 
     template<>
-    inline std::vector<u8> get_flag_choice<f32_3>(sycl::queue &queue, PatchData & pdat,
+    inline std::vector<u8> get_flag_choice<f32_3>(sycl::queue &queue, shamrock::patch::PatchData & pdat,
                                                                             std::vector<f32_3> boxs_min,
                                                                             std::vector<f32_3> boxs_max){
 
@@ -88,7 +88,7 @@ namespace impl {
     }
 
     template<>
-    inline std::vector<u8> get_flag_choice<f64_3>(sycl::queue &queue, PatchData & pdat,
+    inline std::vector<u8> get_flag_choice<f64_3>(sycl::queue &queue, shamrock::patch::PatchData & pdat,
                                                                             std::vector<f64_3> boxs_min,
                                                                             std::vector<f64_3> boxs_max){
 
@@ -150,7 +150,7 @@ namespace impl {
 
 
     template <class T, class vectype>
-    inline std::vector<std::unique_ptr<PatchDataField<T>>> append_interface_field(sycl::queue &queue, PatchData & pdat, PatchDataField<T> & pdat_cfield,
+    inline std::vector<std::unique_ptr<PatchDataField<T>>> append_interface_field(sycl::queue &queue, shamrock::patch::PatchData & pdat, PatchDataField<T> & pdat_cfield,
                                                                             std::vector<vectype> boxs_min,
                                                                             std::vector<vectype> boxs_max) {
 

@@ -24,11 +24,13 @@
 template<class flt> 
 std::tuple<f64,f64> benchmark_selfgrav(f32 dr, u32 npatch){
 
+    using namespace shamrock::patch;
+
     using vec = sycl::vec<flt,3>;
 
     u64 Nesti = (2.F/dr)*(2.F/dr)*(2.F/dr);
 
-    PatchDataLayout pdl;
+    shamrock::patch::PatchDataLayout pdl;
 
     pdl.xyz_mode = xyz32;
     pdl.add_field<f32_3>("xyz", 1);

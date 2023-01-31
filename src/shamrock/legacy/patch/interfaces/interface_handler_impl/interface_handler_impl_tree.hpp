@@ -129,7 +129,9 @@ class Interfacehandler<Tree_Send,pos_prec,RadixTree<u_morton, sycl::vec<pos_prec
         tree_recv_map = communicator->sparse_exchange(tree_send_map.list_rtree);
     }
 
-    SparseCommResult<PatchData> comm_pdat(PatchScheduler &sched){
+    SparseCommResult<shamrock::patch::PatchData> comm_pdat(PatchScheduler &sched){
+
+        using namespace shamrock::patch;
 
         SparseCommSource<PatchData> src;
 

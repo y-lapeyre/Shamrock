@@ -16,6 +16,8 @@ auto MergedPatchData<flt>::merge_patches(
     PatchScheduler & sched,
     LegacyInterfacehandler<vec, flt> & interface_hndl) -> std::unordered_map<u64,MergedPatchData<flt>> {
 
+    using namespace shamrock::patch;
+
     std::unordered_map<u64,MergedPatchData<flt>> merged_data;
     
     sched.for_each_patch_data([&](u64 id_patch, Patch & p, PatchData & pdat){
@@ -60,6 +62,8 @@ auto MergedPatchCompField<flt,T>::merge_patches_cfield(
     LegacyInterfacehandler<vec, flt> & interface_hndl,
     PatchComputeField<T> & comp_field,
     PatchComputeFieldInterfaces<T> & comp_field_interf) -> std::unordered_map<u64,MergedPatchCompField<flt,T>> {
+
+    using namespace shamrock::patch;
 
 
     std::unordered_map<u64,MergedPatchCompField<flt,T>> merged_data;

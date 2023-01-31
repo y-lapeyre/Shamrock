@@ -18,8 +18,9 @@ namespace impl {
     
     template <class vectype, class primtype>
     void comm_interfaces(PatchScheduler &sched, std::vector<InterfaceComm<vectype>> &interface_comm_list,
-                        std::unordered_map<u64, std::vector<std::tuple<u64, std::unique_ptr<PatchData>>>> &interface_map,bool periodic) {
+                        std::unordered_map<u64, std::vector<std::tuple<u64, std::unique_ptr<shamrock::patch::PatchData>>>> &interface_map,bool periodic) {
         
+                            using namespace shamrock::patch;
 
         interface_map.clear();
         for (const Patch &p : sched.patch_list.global) {
@@ -67,7 +68,7 @@ namespace impl {
                         std::unordered_map<u64, std::vector<std::tuple<u64, std::unique_ptr<PatchDataField<T>>>>> &interface_field_map,bool periodic) {
 
         
-
+                            using namespace shamrock::patch;
         using PCField = PatchDataField<T>;
 
         interface_field_map.clear();

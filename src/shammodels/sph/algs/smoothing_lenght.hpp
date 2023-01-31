@@ -48,7 +48,7 @@ class SmoothingLenghtCompute{
     public:
 
     SmoothingLenghtCompute (
-        PatchDataLayout &pdl,
+        shamrock::patch::PatchDataLayout &pdl,
         f32 htol_up_tol,
         f32 htol_up_iter){
 
@@ -68,7 +68,7 @@ class SmoothingLenghtCompute{
         Rtree & radix_t,
         RadixTreeField<flt> & int_rad,
 
-        PatchData & pdat_merge,
+        shamrock::patch::PatchData & pdat_merge,
         sycl::buffer<flt> & hnew,
         sycl::buffer<flt> & omega,
         sycl::buffer<flt> & eps_h){
@@ -194,6 +194,8 @@ class SmoothingLenghtCompute{
 template<class flt, class u_morton, class Kernel>
 inline void compute_smoothing_lenght(PatchScheduler &sched,bool periodic_mode,flt htol_up_tol,
         flt htol_up_iter ,flt sph_gpart_mass){
+
+            using namespace shamrock::patch;
 
         using vec = sycl::vec<flt, 3>;
         using Rtree = RadixTree<u_morton, vec,3>;

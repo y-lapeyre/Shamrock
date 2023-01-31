@@ -22,7 +22,7 @@
 #include "aliases.hpp"
 
 
-//namespace shamrock::patch {
+namespace shamrock::patch {
 
 
 
@@ -87,4 +87,4 @@
 
 
 
-//}
+} // namespace shamrock::patch

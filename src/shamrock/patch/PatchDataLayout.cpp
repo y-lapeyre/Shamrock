@@ -8,7 +8,7 @@
 
 #include "PatchDataLayout.hpp"
 
-
+namespace shamrock::patch{
 std::string PatchDataLayout::get_description_str(){
     std::stringstream ss;
 
@@ -70,3 +70,4 @@ std::vector<std::string> PatchDataLayout::get_field_names(){
 }
 
 
+}

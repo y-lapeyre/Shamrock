@@ -29,7 +29,7 @@ namespace patchdata {
 
 
         template<class htype>
-        inline htype get_h_max(PatchDataLayout & pdl,sycl::queue & queue, PatchData & pdat){
+        inline htype get_h_max(shamrock::patch::PatchDataLayout & pdl,sycl::queue & queue, shamrock::patch::PatchData & pdat){
 
             if(pdat.get_obj_cnt() == 0) return 0;
 

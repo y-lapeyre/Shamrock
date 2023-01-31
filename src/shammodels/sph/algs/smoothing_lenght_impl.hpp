@@ -30,7 +30,7 @@ namespace impl {
         u32 or_element_cnt,
         
         u32 ihpart,
-        PatchData & pdat_merge,
+        shamrock::patch::PatchData & pdat_merge,
         sycl::buffer<flt> & hnew,
         sycl::buffer<flt> & omega,
         sycl::buffer<flt> & eps_h
@@ -43,7 +43,7 @@ namespace impl {
         u32 or_element_cnt,
         
         u32 ihpart,
-        PatchData & pdat_merge,
+        shamrock::patch::PatchData & pdat_merge,
         sycl::buffer<f32> & hnew,
         sycl::buffer<f32> & omega,
         sycl::buffer<f32> & eps_h
@@ -178,7 +178,7 @@ namespace impl {
             RadixTree<morton_prec, sycl::vec<flt,3>,3> & radix_t,
             RadixTreeField<flt> & int_rad,
 
-            PatchData & pdat_merge,
+            shamrock::patch::PatchData & pdat_merge,
             sycl::buffer<flt> & hnew,
             sycl::buffer<flt> & omega,
             sycl::buffer<flt> & eps_h
@@ -199,7 +199,7 @@ namespace impl {
             RadixTree<morton_prec, f32_3,3> & radix_t,
             RadixTreeField<f32> & int_rad,
 
-            PatchData & pdat_merge,
+            shamrock::patch::PatchData & pdat_merge,
             sycl::buffer<f32> & hnew,
             sycl::buffer<f32> & omega,
             sycl::buffer<f32> & eps_h
@@ -332,7 +332,7 @@ namespace impl {
             RadixTree<morton_prec, sycl::vec<flt,3>,3> & radix_t,
             RadixTreeField<flt> & int_rad,
 
-            PatchData & pdat_merge,
+            shamrock::patch::PatchData & pdat_merge,
             sycl::buffer<flt> & hnew,
             sycl::buffer<flt> & omega,
             sycl::buffer<flt> & eps_h
@@ -353,7 +353,7 @@ namespace impl {
             RadixTree<morton_prec, f32_3,3> & radix_t,
             RadixTreeField<f32> & int_rad,
 
-            PatchData & pdat_merge,
+            shamrock::patch::PatchData & pdat_merge,
             sycl::buffer<f32> & hnew,
             sycl::buffer<f32> & omega,
             sycl::buffer<f32> & eps_h

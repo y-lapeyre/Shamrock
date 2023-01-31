@@ -100,7 +100,7 @@ inline void reatribute_particles(PatchScheduler & sched, SerialPatchTree<vecprec
 template<>
 inline void reatribute_particles<f32_3>(PatchScheduler & sched, SerialPatchTree<f32_3> & sptree,bool periodic){
 
-    
+    using namespace shamrock::patch;
 
     bool err_id_in_newid = false;
     std::unordered_map<u64, sycl::buffer<u64>> newid_buf_map;

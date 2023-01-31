@@ -36,13 +36,13 @@
 class SchedulerPatchData {
   public:
 
-    PatchDataLayout & pdl;
+    shamrock::patch::PatchDataLayout & pdl;
 
     /**
      * @brief map container for patchdata owned by the current node (layout : id_patch,data)
      * 
      */
-    std::map<u64, PatchData> owned_data;
+    std::map<u64, shamrock::patch::PatchData> owned_data;
 
     /**
      * @brief simulation box geometry info
@@ -73,8 +73,8 @@ class SchedulerPatchData {
      * @param p6 
      * @param p7 
      */
-    void split_patchdata(u64 key_orginal, Patch &p0, Patch &p1, Patch &p2, Patch &p3, Patch &p4, Patch &p5, Patch &p6,
-                         Patch &p7);
+    void split_patchdata(u64 key_orginal, shamrock::patch::Patch &p0, shamrock::patch::Patch &p1, shamrock::patch::Patch &p2, shamrock::patch::Patch &p3, shamrock::patch::Patch &p4, shamrock::patch::Patch &p5, shamrock::patch::Patch &p6,
+                         shamrock::patch::Patch &p7);
 
     /**
      * @brief merge 8 old patchdata into one
@@ -93,5 +93,5 @@ class SchedulerPatchData {
                          u64 old_key6, u64 old_key7);
 
 
-    inline SchedulerPatchData(PatchDataLayout & pdl) : pdl(pdl), sim_box(pdl){}
+    inline SchedulerPatchData(shamrock::patch::PatchDataLayout & pdl) : pdl(pdl), sim_box(pdl){}
 };

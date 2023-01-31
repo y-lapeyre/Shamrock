@@ -33,7 +33,7 @@ class GlobalVariable{
 
 
         //sched.for_each_patch_buf([&](u64 id_patch, Patch cur_p, PatchDataBuffer &pdat_buf) {
-        sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
+        sched.for_each_patch_data([&](u64 id_patch, shamrock::patch::Patch cur_p, shamrock::patch::PatchData &pdat) {
             static_assert(
                 std::is_same<
                     decltype(compute_fct(id_patch,pdat)),

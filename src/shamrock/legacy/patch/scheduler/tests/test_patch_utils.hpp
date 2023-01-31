@@ -14,7 +14,9 @@
 #include "shamrock/legacy/patch/scheduler/scheduler_mpi.hpp"
 
 
-inline void make_global_local_check_vec(std::vector<Patch> & global, std::vector<Patch> & local){
+inline void make_global_local_check_vec(std::vector<shamrock::patch::Patch> & global, std::vector<shamrock::patch::Patch> & local){
+
+    using namespace shamrock::patch;
     
     global.resize(shamsys::instance::world_size*6);
     {
