@@ -2,6 +2,7 @@
 set(Sources
 Patch.cpp
 PatchDataLayout.cpp
+PatchDataField.cpp
 )
 set(SourcesTest
     
