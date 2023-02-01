@@ -1,6 +1,7 @@
 
 set(Sources
 Patch.cpp
+PatchData.cpp
 PatchDataLayout.cpp
 PatchDataField.cpp
 )
