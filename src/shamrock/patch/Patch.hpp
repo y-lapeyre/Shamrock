@@ -21,10 +21,13 @@
 #include "aliases.hpp"
 
 #include "shamsys/MpiWrapper.hpp"
+#include "PatchCoord.hpp"
 
 namespace shamrock::patch {
 
     template <u32 dim> MPI_Datatype get_patch_mpi_type();
+
+    
 
     /**
      * @brief Patch object that contain generic patch information
@@ -90,7 +93,7 @@ namespace shamrock::patch {
             node_owner_id = u32_max;
         }
 
-        inline bool is_err_mode() { return node_owner_id == u32_max; }
+        [[nodiscard]] inline bool is_err_mode() const { return node_owner_id == u32_max; }
 
         [[nodiscard]] std::array<u64, dim> get_split_coord() const;
 
@@ -99,21 +102,21 @@ namespace shamrock::patch {
         [[nodiscard]] static Patch merge_patch(std::array<Patch, splts_count> patches);
 
         /**
-         * @brief return an open interval of the corresponding patch coordinates given the div & offset
-         * 
+         * @brief return an open interval of the corresponding patch coordinates given the div &
+         * offset
+         *
          * @tparam T type to convert coordinates to
-         * @param divfact 
-         * @param offset 
-         * @return std::tuple<sycl::vec<T,3>,sycl::vec<T,3>> 
+         * @param divfact
+         * @param offset
+         * @return std::tuple<sycl::vec<T,3>,sycl::vec<T,3>>
          */
-        template<class T> 
-        std::tuple<sycl::vec<T,3>,sycl::vec<T,3>> convert_coord(
-            sycl::vec<T,3> divfact, 
-            sycl::vec<T,3> offset);
+        template <class T>
+        std::tuple<sycl::vec<T, 3>, sycl::vec<T, 3>>
+        convert_coord(sycl::vec<T, 3> divfact, sycl::vec<T, 3> offset) const ;
 
         /**
          * @brief check if particle is in the asked range, given the ouput of @convert_coord
-         * 
+         *
          * @tparam T the type of coordinate
          * @param val the value to check against
          * @param min_val the min range given by convert_coord
@@ -121,65 +124,53 @@ namespace shamrock::patch {
          * @return true is in the patch
          * @return false is not in the patch
          */
-        template<class T>
-        inline static bool is_in_patch_converted(sycl::vec<T,3> val, sycl::vec<T,3> min_val, sycl::vec<T,3> max_val);
+        template <class T>
+        inline static bool is_in_patch_converted(
+            sycl::vec<T, 3> val, sycl::vec<T, 3> min_val, sycl::vec<T, 3> max_val
+        );
 
-        
+        inline void override_from_coord(PatchCoord pc) {
+            x_min = pc.x_min;
+            y_min = pc.y_min;
+            z_min = pc.z_min;
+            x_max = pc.x_max;
+            y_max = pc.y_max;
+            z_max = pc.z_max;
+        }
 
-        
+        [[nodiscard]] inline PatchCoord get_coords() const {
+            return PatchCoord(x_min, y_min, z_min, x_max, y_max, z_max);
+        }
     };
-
 
     ////////////////////////////////////////////
     // out of line implementation
     ////////////////////////////////////////////
 
-    template<class T> 
-    inline std::tuple<sycl::vec<T,3>,sycl::vec<T,3>> Patch::convert_coord(
-        sycl::vec<T,3> divfact, 
-        sycl::vec<T,3> offset){
-
-        using vec = sycl::vec<T,3>;
-
-        vec min_bound = vec{x_min,y_min,z_min}/divfact + offset;
-        vec max_bound = (vec{x_max,y_max,z_max}+ 1)/divfact + offset;
-
-        return {min_bound, max_bound};
+    template <class T>
+    inline std::tuple<sycl::vec<T, 3>, sycl::vec<T, 3>>
+    Patch::convert_coord(sycl::vec<T, 3> divfact, sycl::vec<T, 3> offset) const {
+        return PatchCoord::convert_coord( x_min,  y_min,  z_min,  x_max,  y_max,  z_max,  divfact,  offset);
     }
 
-    template<class T> 
-    inline bool Patch::is_in_patch_converted(sycl::vec<T,3> val, sycl::vec<T,3> min_val, sycl::vec<T,3> max_val){
+    template <class T>
+    inline bool Patch::is_in_patch_converted(
+        sycl::vec<T, 3> val, sycl::vec<T, 3> min_val, sycl::vec<T, 3> max_val
+    ) {
         return (
-            (min_val.x() <= val.x()) && (val.x() < max_val.x()) &&
-            (min_val.y() <= val.y()) && (val.y() < max_val.y()) &&
-            (min_val.z() <= val.z()) && (val.z() < max_val.z()) 
+            (min_val.x() <= val.x()) && (val.x() < max_val.x()) && (min_val.y() <= val.y()) &&
+            (val.y() < max_val.y()) && (min_val.z() <= val.z()) && (val.z() < max_val.z())
         );
     }
 
     [[nodiscard]] inline auto Patch::get_split_coord() const -> std::array<u64, dim> {
-        return {
-            (((x_max - x_min) + 1) / 2) - 1 + x_min,
-            (((y_max - y_min) + 1) / 2) - 1 + y_min,
-            (((z_max - z_min) + 1) / 2) - 1 + z_min};
+        return PatchCoord::get_split_coord(x_min, y_min, z_min, x_max, y_max, z_max);
     }
 
     [[nodiscard]] inline auto Patch::get_split() const -> std::array<Patch, splts_count> {
 
         // init vars
         Patch p0, p1, p2, p3, p4, p5, p6, p7;
-
-        // boundaries
-        u64 min_x = x_min;
-        u64 min_y = y_min;
-        u64 min_z = z_min;
-
-        u64 split_x = (((x_max - x_min) + 1) / 2) - 1 + min_x;
-        u64 split_y = (((y_max - y_min) + 1) / 2) - 1 + min_y;
-        u64 split_z = (((z_max - z_min) + 1) / 2) - 1 + min_z;
-
-        u64 max_x = x_max;
-        u64 max_y = y_max;
-        u64 max_z = z_max;
 
         // setup internal fields
         p0 = *this; // copy of the current state
@@ -194,134 +185,43 @@ namespace shamrock::patch {
         p6 = p0;
         p7 = p0;
 
-        // apply bounds
-        p0.x_min = min_x;
-        p0.y_min = min_y;
-        p0.z_min = min_z;
-        p0.x_max = split_x;
-        p0.y_max = split_y;
-        p0.z_max = split_z;
+        std::array<PatchCoord, splts_count> splts_c =
+            PatchCoord::get_split(x_min, y_min, z_min, x_max, y_max, z_max);
 
-        p1.x_min = min_x;
-        p1.y_min = min_y;
-        p1.z_min = split_z + 1;
-        p1.x_max = split_x;
-        p1.y_max = split_y;
-        p1.z_max = max_z;
-
-        p2.x_min = min_x;
-        p2.y_min = split_y + 1;
-        p2.z_min = min_z;
-        p2.x_max = split_x;
-        p2.y_max = max_y;
-        p2.z_max = split_z;
-
-        p3.x_min = min_x;
-        p3.y_min = split_y + 1;
-        p3.z_min = split_z + 1;
-        p3.x_max = split_x;
-        p3.y_max = max_y;
-        p3.z_max = max_z;
-
-        p4.x_min = split_x + 1;
-        p4.y_min = min_y;
-        p4.z_min = min_z;
-        p4.x_max = max_x;
-        p4.y_max = split_y;
-        p4.z_max = split_z;
-
-        p5.x_min = split_x + 1;
-        p5.y_min = min_y;
-        p5.z_min = split_z + 1;
-        p5.x_max = max_x;
-        p5.y_max = split_y;
-        p5.z_max = max_z;
-
-        p6.x_min = split_x + 1;
-        p6.y_min = split_y + 1;
-        p6.z_min = min_z;
-        p6.x_max = max_x;
-        p6.y_max = max_y;
-        p6.z_max = split_z;
-
-        p7.x_min = split_x + 1;
-        p7.y_min = split_y + 1;
-        p7.z_min = split_z + 1;
-        p7.x_max = max_x;
-        p7.y_max = max_y;
-        p7.z_max = max_z;
+        p0.override_from_coord(splts_c[0]);
+        p1.override_from_coord(splts_c[1]);
+        p2.override_from_coord(splts_c[2]);
+        p3.override_from_coord(splts_c[3]);
+        p4.override_from_coord(splts_c[4]);
+        p5.override_from_coord(splts_c[5]);
+        p6.override_from_coord(splts_c[6]);
+        p7.override_from_coord(splts_c[7]);
 
         return {p0, p1, p2, p3, p4, p5, p6, p7};
     }
 
     [[nodiscard]] inline Patch Patch::merge_patch(std::array<Patch, splts_count> patches) {
 
-        u64 min_x = patches[0].x_min;
-        u64 min_y = patches[0].y_min;
-        u64 min_z = patches[0].z_min;
-
-        u64 max_x = patches[0].x_max;
-        u64 max_y = patches[0].y_max;
-        u64 max_z = patches[0].z_max;
-
-        min_x = sycl::min(min_x, patches[1].x_min);
-        min_y = sycl::min(min_y, patches[1].y_min);
-        min_z = sycl::min(min_z, patches[1].z_min);
-        max_x = sycl::max(max_x, patches[1].x_max);
-        max_y = sycl::max(max_y, patches[1].y_max);
-        max_z = sycl::max(max_z, patches[1].z_max);
-
-        min_x = sycl::min(min_x, patches[2].x_min);
-        min_y = sycl::min(min_y, patches[2].y_min);
-        min_z = sycl::min(min_z, patches[2].z_min);
-        max_x = sycl::max(max_x, patches[2].x_max);
-        max_y = sycl::max(max_y, patches[2].y_max);
-        max_z = sycl::max(max_z, patches[2].z_max);
-
-        min_x = sycl::min(min_x, patches[3].x_min);
-        min_y = sycl::min(min_y, patches[3].y_min);
-        min_z = sycl::min(min_z, patches[3].z_min);
-        max_x = sycl::max(max_x, patches[3].x_max);
-        max_y = sycl::max(max_y, patches[3].y_max);
-        max_z = sycl::max(max_z, patches[3].z_max);
-
-        min_x = sycl::min(min_x, patches[4].x_min);
-        min_y = sycl::min(min_y, patches[4].y_min);
-        min_z = sycl::min(min_z, patches[4].z_min);
-        max_x = sycl::max(max_x, patches[4].x_max);
-        max_y = sycl::max(max_y, patches[4].y_max);
-        max_z = sycl::max(max_z, patches[4].z_max);
-
-        min_x = sycl::min(min_x, patches[5].x_min);
-        min_y = sycl::min(min_y, patches[5].y_min);
-        min_z = sycl::min(min_z, patches[5].z_min);
-        max_x = sycl::max(max_x, patches[5].x_max);
-        max_y = sycl::max(max_y, patches[5].y_max);
-        max_z = sycl::max(max_z, patches[5].z_max);
-
-        min_x = sycl::min(min_x, patches[6].x_min);
-        min_y = sycl::min(min_y, patches[6].y_min);
-        min_z = sycl::min(min_z, patches[6].z_min);
-        max_x = sycl::max(max_x, patches[6].x_max);
-        max_y = sycl::max(max_y, patches[6].y_max);
-        max_z = sycl::max(max_z, patches[6].z_max);
-
-        min_x = sycl::min(min_x, patches[7].x_min);
-        min_y = sycl::min(min_y, patches[7].y_min);
-        min_z = sycl::min(min_z, patches[7].z_min);
-        max_x = sycl::max(max_x, patches[7].x_max);
-        max_y = sycl::max(max_y, patches[7].y_max);
-        max_z = sycl::max(max_z, patches[7].z_max);
+        PatchCoord merged_c = PatchCoord::merge(
+            {patches[0].get_coords(),
+             patches[1].get_coords(),
+             patches[2].get_coords(),
+             patches[3].get_coords(),
+             patches[4].get_coords(),
+             patches[5].get_coords(),
+             patches[6].get_coords(),
+             patches[7].get_coords()}
+        );
 
         Patch ret{};
         ret = patches[0];
 
-        ret.x_min = min_x;
-        ret.y_min = min_y;
-        ret.z_min = min_z;
-        ret.x_max = max_x;
-        ret.y_max = max_y;
-        ret.z_max = max_z;
+        ret.x_min = merged_c.x_min;
+        ret.y_min = merged_c.y_min;
+        ret.z_min = merged_c.z_min;
+        ret.x_max = merged_c.x_max;
+        ret.y_max = merged_c.y_max;
+        ret.z_max = merged_c.z_max;
 
         ret.pack_node_index = u64_max;
 

@@ -31,7 +31,6 @@ std::tuple<f64,f64,f64> benchmark_periodic_box(f32 dr, u32 npatch){
 
     PatchDataLayout pdl;
 
-    pdl.xyz_mode = xyz32;
     pdl.add_field<f32_3>("xyz", 1);
     pdl.add_field<f32>("hpart", 1);
     pdl.add_field<f32_3>("vxyz",1);

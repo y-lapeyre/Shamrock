@@ -30,6 +30,8 @@
 #include "shamsys/legacy/mpi_handler.hpp"
 #include "shamrock/legacy/utils/geometry_utils.hpp"
 
+#include "shamrock/math/vectorManip.hpp"
+
 
 //TODO use range based loop and emplace_back instead 
 
@@ -98,109 +100,52 @@ template<class Vectype>
 void split_patchdata(
     shamrock::patch::PatchData & original_pd,
     const Vectype & min_box_sim,const Vectype & max_box_sim,
-    shamrock::patch::Patch & p0,shamrock::patch::Patch & p1,shamrock::patch::Patch & p2,shamrock::patch::Patch & p3,shamrock::patch::Patch & p4,shamrock::patch::Patch & p5,shamrock::patch::Patch & p6,shamrock::patch::Patch & p7,
-    shamrock::patch::PatchData & pd0,shamrock::patch::PatchData & pd1,shamrock::patch::PatchData & pd2,shamrock::patch::PatchData & pd3,shamrock::patch::PatchData & pd4,shamrock::patch::PatchData & pd5,shamrock::patch::PatchData & pd6,shamrock::patch::PatchData & pd7);
+    const std::array<shamrock::patch::Patch, 8> patches,
+    std::array<std::reference_wrapper<shamrock::patch::PatchData>,8> pdats){
 
+        using ptype = typename shamrock::math::vec_manip::VectorProperties<Vectype>::component_type;
 
+    Vectype translate_factor = min_box_sim;
+    Vectype div_factor = ptype(HilbertLB::max_box_sz)/(max_box_sim - min_box_sim);
 
+    auto [bmin_p0, bmax_p0] = patches[0].convert_coord(div_factor, translate_factor);
+    auto [bmin_p1, bmax_p1] = patches[1].convert_coord(div_factor, translate_factor);
+    auto [bmin_p2, bmax_p2] = patches[2].convert_coord(div_factor, translate_factor);
+    auto [bmin_p3, bmax_p3] = patches[3].convert_coord(div_factor, translate_factor);
+    auto [bmin_p4, bmax_p4] = patches[4].convert_coord(div_factor, translate_factor);
+    auto [bmin_p5, bmax_p5] = patches[5].convert_coord(div_factor, translate_factor);
+    auto [bmin_p6, bmax_p6] = patches[6].convert_coord(div_factor, translate_factor);
+    auto [bmin_p7, bmax_p7] = patches[7].convert_coord(div_factor, translate_factor);
 
+    original_pd.split_patchdata<Vectype>(pdats, 
+        {bmin_p0, bmin_p1, bmin_p2, bmin_p3, bmin_p4, bmin_p5, bmin_p6, bmin_p7}, 
+        {bmax_p0, bmax_p1, bmax_p2, bmax_p3, bmax_p4, bmax_p5, bmax_p6, bmax_p7});
 
-//TODO recode with better parralelism
-//TODO refactor the SchedulerMPI with templated space filling curve
+}
 
-template<>
-void split_patchdata<f32_3>(shamrock::patch::PatchData & original_pd,
+template void split_patchdata(
+    shamrock::patch::PatchData & original_pd,
     const f32_3 & min_box_sim,const f32_3 & max_box_sim,
-    shamrock::patch::Patch & p0,shamrock::patch::Patch & p1,shamrock::patch::Patch & p2,shamrock::patch::Patch & p3,shamrock::patch::Patch & p4,shamrock::patch::Patch & p5,shamrock::patch::Patch & p6,shamrock::patch::Patch & p7,
-    shamrock::patch::PatchData & pd0,shamrock::patch::PatchData & pd1,shamrock::patch::PatchData & pd2,shamrock::patch::PatchData & pd3,shamrock::patch::PatchData & pd4,shamrock::patch::PatchData & pd5,shamrock::patch::PatchData & pd6,shamrock::patch::PatchData & pd7){
+    const std::array<shamrock::patch::Patch, 8> patches,
+    std::array<std::reference_wrapper<shamrock::patch::PatchData>,8> pdats);
 
-    f32_3 translate_factor = min_box_sim;
-    f32_3 div_factor = f32(HilbertLB::max_box_sz)/(max_box_sim - min_box_sim);
-
-    auto [bmin_p0, bmax_p0] = p0.convert_coord(div_factor, translate_factor);
-    auto [bmin_p1, bmax_p1] = p1.convert_coord(div_factor, translate_factor);
-    auto [bmin_p2, bmax_p2] = p2.convert_coord(div_factor, translate_factor);
-    auto [bmin_p3, bmax_p3] = p3.convert_coord(div_factor, translate_factor);
-    auto [bmin_p4, bmax_p4] = p4.convert_coord(div_factor, translate_factor);
-    auto [bmin_p5, bmax_p5] = p5.convert_coord(div_factor, translate_factor);
-    auto [bmin_p6, bmax_p6] = p6.convert_coord(div_factor, translate_factor);
-    auto [bmin_p7, bmax_p7] = p7.convert_coord(div_factor, translate_factor);
-
-    original_pd.split_patchdata(pd0, pd1, pd2, pd3, pd4, pd5, pd6, pd7, 
-        bmin_p0, bmin_p1, bmin_p2, bmin_p3, bmin_p4, bmin_p5, bmin_p6, bmin_p7, 
-        bmax_p0, bmax_p1, bmax_p2, bmax_p3, bmax_p4, bmax_p5, bmax_p6, bmax_p7);
-
-}
-
-template<>
-void split_patchdata<f64_3>(shamrock::patch::PatchData & original_pd,
+template void split_patchdata(
+    shamrock::patch::PatchData & original_pd,
     const f64_3 & min_box_sim,const f64_3 & max_box_sim,
-    shamrock::patch::Patch & p0,shamrock::patch::Patch & p1,shamrock::patch::Patch & p2,shamrock::patch::Patch & p3,shamrock::patch::Patch & p4,shamrock::patch::Patch & p5,shamrock::patch::Patch & p6,shamrock::patch::Patch & p7,
-    shamrock::patch::PatchData & pd0,shamrock::patch::PatchData & pd1,shamrock::patch::PatchData & pd2,shamrock::patch::PatchData & pd3,shamrock::patch::PatchData & pd4,shamrock::patch::PatchData & pd5,shamrock::patch::PatchData & pd6,shamrock::patch::PatchData & pd7){
+    const std::array<shamrock::patch::Patch, 8> patches,
+    std::array<std::reference_wrapper<shamrock::patch::PatchData>,8> pdats);
 
+    template void split_patchdata(
+    shamrock::patch::PatchData & original_pd,
+    const u32_3 & min_box_sim,const u32_3 & max_box_sim,
+    const std::array<shamrock::patch::Patch, 8> patches,
+    std::array<std::reference_wrapper<shamrock::patch::PatchData>,8> pdats);
 
-    f64_3 translate_factor = min_box_sim;
-    f64_3 div_factor = f64(HilbertLB::max_box_sz)/(max_box_sim - min_box_sim);
-
-    auto [bmin_p0, bmax_p0] = p0.convert_coord(div_factor, translate_factor);
-    auto [bmin_p1, bmax_p1] = p1.convert_coord(div_factor, translate_factor);
-    auto [bmin_p2, bmax_p2] = p2.convert_coord(div_factor, translate_factor);
-    auto [bmin_p3, bmax_p3] = p3.convert_coord(div_factor, translate_factor);
-    auto [bmin_p4, bmax_p4] = p4.convert_coord(div_factor, translate_factor);
-    auto [bmin_p5, bmax_p5] = p5.convert_coord(div_factor, translate_factor);
-    auto [bmin_p6, bmax_p6] = p6.convert_coord(div_factor, translate_factor);
-    auto [bmin_p7, bmax_p7] = p7.convert_coord(div_factor, translate_factor);
-
-    
-    original_pd.split_patchdata(pd0, pd1, pd2, pd3, pd4, pd5, pd6, pd7, 
-        bmin_p0, bmin_p1, bmin_p2, bmin_p3, bmin_p4, bmin_p5, bmin_p6, bmin_p7, 
-        bmax_p0, bmax_p1, bmax_p2, bmax_p3, bmax_p4, bmax_p5, bmax_p6, bmax_p7);
-
-}
-
-#ifdef false
-template<>
-void split_patchdata<u64_3>(shamrock::patch::PatchData & original_pd,
+    template void split_patchdata(
+    shamrock::patch::PatchData & original_pd,
     const u64_3 & min_box_sim,const u64_3 & max_box_sim,
-    shamrock::patch::Patch & p0,shamrock::patch::Patch & p1,shamrock::patch::Patch & p2,shamrock::patch::Patch & p3,shamrock::patch::Patch & p4,shamrock::patch::Patch & p5,shamrock::patch::Patch & p6,shamrock::patch::Patch & p7,
-    shamrock::patch::PatchData & pd0,shamrock::patch::PatchData & pd1,shamrock::patch::PatchData & pd2,shamrock::patch::PatchData & pd3,shamrock::patch::PatchData & pd4,shamrock::patch::PatchData & pd5,shamrock::patch::PatchData & pd6,shamrock::patch::PatchData & pd7){
-
-
-    u64_3 translate_factor = min_box_sim;
-    u64_3 scale_factor = HilbertLB::max_box_sz/(max_box_sim - min_box_sim);
-
-    u64_3 bmin_p0 = u64_3{p0.x_min,p0.y_min,p0.z_min}/scale_factor + translate_factor;
-    u64_3 bmin_p1 = u64_3{p1.x_min,p1.y_min,p1.z_min}/scale_factor + translate_factor;
-    u64_3 bmin_p2 = u64_3{p2.x_min,p2.y_min,p2.z_min}/scale_factor + translate_factor;
-    u64_3 bmin_p3 = u64_3{p3.x_min,p3.y_min,p3.z_min}/scale_factor + translate_factor;
-    u64_3 bmin_p4 = u64_3{p4.x_min,p4.y_min,p4.z_min}/scale_factor + translate_factor;
-    u64_3 bmin_p5 = u64_3{p5.x_min,p5.y_min,p5.z_min}/scale_factor + translate_factor;
-    u64_3 bmin_p6 = u64_3{p6.x_min,p6.y_min,p6.z_min}/scale_factor + translate_factor;
-    u64_3 bmin_p7 = u64_3{p7.x_min,p7.y_min,p7.z_min}/scale_factor + translate_factor;
-
-    u64_3 bmax_p0 = (u64_3{p0.x_max,p0.y_max,p0.z_max}+ 1)/scale_factor + translate_factor;
-    u64_3 bmax_p1 = (u64_3{p1.x_max,p1.y_max,p1.z_max}+ 1)/scale_factor + translate_factor;
-    u64_3 bmax_p2 = (u64_3{p2.x_max,p2.y_max,p2.z_max}+ 1)/scale_factor + translate_factor;
-    u64_3 bmax_p3 = (u64_3{p3.x_max,p3.y_max,p3.z_max}+ 1)/scale_factor + translate_factor;
-    u64_3 bmax_p4 = (u64_3{p4.x_max,p4.y_max,p4.z_max}+ 1)/scale_factor + translate_factor;
-    u64_3 bmax_p5 = (u64_3{p5.x_max,p5.y_max,p5.z_max}+ 1)/scale_factor + translate_factor;
-    u64_3 bmax_p6 = (u64_3{p6.x_max,p6.y_max,p6.z_max}+ 1)/scale_factor + translate_factor;
-    u64_3 bmax_p7 = (u64_3{p7.x_max,p7.y_max,p7.z_max}+ 1)/scale_factor + translate_factor;
-
-    
-    original_pd.split_patchdata(pd0, pd1, pd2, pd3, pd4, pd5, pd6, pd7, 
-        bmin_p0, bmin_p1, bmin_p2, bmin_p3, bmin_p4, bmin_p5, bmin_p6, bmin_p7, 
-        bmax_p0, bmax_p1, bmax_p2, bmax_p3, bmax_p4, bmax_p5, bmax_p6, bmax_p7);
-
-}
-
-
-
-
-
-
-
-#endif
+    const std::array<shamrock::patch::Patch, 8> patches,
+    std::array<std::reference_wrapper<shamrock::patch::PatchData>,8> pdats);
 
 
 
@@ -211,7 +156,8 @@ void split_patchdata<u64_3>(shamrock::patch::PatchData & original_pd,
 
 
 
-void SchedulerPatchData::split_patchdata(u64 key_orginal, shamrock::patch::Patch &p0, shamrock::patch::Patch &p1, shamrock::patch::Patch &p2, shamrock::patch::Patch &p3, shamrock::patch::Patch &p4, shamrock::patch::Patch &p5, shamrock::patch::Patch &p6, shamrock::patch::Patch &p7){
+
+void SchedulerPatchData::split_patchdata(u64 key_orginal, const std::array<shamrock::patch::Patch, 8> patches){
 
     
     auto search = owned_data.find(key_orginal);
@@ -229,30 +175,32 @@ void SchedulerPatchData::split_patchdata(u64 key_orginal, shamrock::patch::Patch
         shamrock::patch::PatchData pd6(pdl);
         shamrock::patch::PatchData pd7(pdl);
 
-        if (pdl.xyz_mode == xyz32) {
+        if(pdl.check_main_field_type<f32_3>()){
             ::split_patchdata<f32_3>(
                     original_pd,
                     sim_box.min_box_sim_s,sim_box.max_box_sim_s,
-                    p0,p1,p2,p3,p4,p5,p6,p7,
-                    pd0,pd1,pd2,pd3,pd4,pd5,pd6,pd7);
-        }else if (pdl.xyz_mode == xyz64) {
+                    patches,
+                    {pd0,pd1,pd2,pd3,pd4,pd5,pd6,pd7});
+        }else if(pdl.check_main_field_type<f64_3>()){
             ::split_patchdata<f64_3>(
                     original_pd,
                     sim_box.min_box_sim_d,sim_box.max_box_sim_d,
-                    p0,p1,p2,p3,p4,p5,p6,p7,
-                    pd0,pd1,pd2,pd3,pd4,pd5,pd6,pd7);
+                    patches,
+                    {pd0,pd1,pd2,pd3,pd4,pd5,pd6,pd7});
+        }else{
+            throw std::runtime_error("the main field does not match any");
         }
 
         owned_data.erase(key_orginal);
 
-        owned_data.insert({p0.id_patch, pd0});
-        owned_data.insert({p1.id_patch, pd1});
-        owned_data.insert({p2.id_patch, pd2});
-        owned_data.insert({p3.id_patch, pd3});
-        owned_data.insert({p4.id_patch, pd4});
-        owned_data.insert({p5.id_patch, pd5});
-        owned_data.insert({p6.id_patch, pd6});
-        owned_data.insert({p7.id_patch, pd7});
+        owned_data.insert({patches[0].id_patch, pd0});
+        owned_data.insert({patches[1].id_patch, pd1});
+        owned_data.insert({patches[2].id_patch, pd2});
+        owned_data.insert({patches[3].id_patch, pd3});
+        owned_data.insert({patches[4].id_patch, pd4});
+        owned_data.insert({patches[5].id_patch, pd5});
+        owned_data.insert({patches[6].id_patch, pd6});
+        owned_data.insert({patches[7].id_patch, pd7});
     }
 
 }

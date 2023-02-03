@@ -106,7 +106,29 @@ namespace shamrock::patch {
             );
         }
 
-        PositionprecMode xyz_mode;
+        template<class T>
+        bool check_field_type(u32 idx){
+            var_t & tmp = fields[idx];
+
+            FieldDescriptor<T>* pval = std::get_if<FieldDescriptor<T>>(&tmp);
+
+            if(pval){
+                return true;
+            }else{
+                return false;
+            }
+        }
+
+        template<class T>
+        bool check_main_field_type(){
+            return check_field_type<T>(0);
+        }
+
+        var_t & get_main_field_any(){
+            return fields[0];
+        }
+
+        //PositionprecMode xyz_mode;
 
         std::string get_description_str();
 

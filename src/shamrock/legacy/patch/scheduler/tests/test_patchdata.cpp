@@ -46,7 +46,6 @@ TestStart(Unittest,"patchdata::", send_recv_patchdata, 2){
     PatchDataLayout pdl;
 
     pdl.add_field<f32_3>("xyz", 1);
-    pdl.xyz_mode = xyz32;
 
     pdl.add_field<f64_8>("test", 2);
     

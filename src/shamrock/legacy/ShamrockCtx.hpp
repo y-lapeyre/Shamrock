@@ -54,19 +54,19 @@ class ShamrockCtx{public:
         pdl = std::make_unique<shamrock::patch::PatchDataLayout>();
     }
 
-    inline void pdata_layout_do_double_prec_mode(){
-        if(sched){
-            throw ShamAPIException("cannot modify patch data layout while the scheduler is on");
-        }
-        pdl->xyz_mode = xyz64;
-    }
-
-    inline void pdata_layout_do_single_prec_mode(){
-        if(sched){
-            throw ShamAPIException("cannot modify patch data layout while the scheduler is on");
-        }
-        pdl->xyz_mode = xyz32;
-    }
+    //inline void pdata_layout_do_double_prec_mode(){
+    //    if(sched){
+    //        throw ShamAPIException("cannot modify patch data layout while the scheduler is on");
+    //    }
+    //    pdl->xyz_mode = xyz64;
+    //}
+//
+    //inline void pdata_layout_do_single_prec_mode(){
+    //    if(sched){
+    //        throw ShamAPIException("cannot modify patch data layout while the scheduler is on");
+    //    }
+    //    pdl->xyz_mode = xyz32;
+    //}
 
 
 
@@ -181,18 +181,21 @@ class ShamrockCtx{public:
             throw ShamAPIException("scheduler is not initialized");
         }
 
-        switch (pdl->xyz_mode) {
-        case xyz32: {
+        if(pdl->check_main_field_type<f32_3>()){
             auto conv_vec = [](f64_3 v) -> f32_3 { return {v.x(), v.y(), v.z()}; };
 
             f32_3 vec0 = conv_vec(std::get<0>(box));
             f32_3 vec1 = conv_vec(std::get<1>(box));
 
             sched->set_box_volume<f32_3>({vec0, vec1});
-        }; break;
-        case xyz64: {
+        }else if(pdl->check_main_field_type<f64_3>()){
+            
             sched->set_box_volume<f64_3>(box);
-        }; break;
+        }else{
+            throw std::runtime_error(
+                __LOC_PREFIX__ + "the chosen type for the main field is not handled"
+                );
         }
+
     }
 };

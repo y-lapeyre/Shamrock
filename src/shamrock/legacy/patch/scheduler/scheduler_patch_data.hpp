@@ -73,8 +73,7 @@ class SchedulerPatchData {
      * @param p6 
      * @param p7 
      */
-    void split_patchdata(u64 key_orginal, shamrock::patch::Patch &p0, shamrock::patch::Patch &p1, shamrock::patch::Patch &p2, shamrock::patch::Patch &p3, shamrock::patch::Patch &p4, shamrock::patch::Patch &p5, shamrock::patch::Patch &p6,
-                         shamrock::patch::Patch &p7);
+    void split_patchdata(u64 key_orginal, const std::array<shamrock::patch::Patch, 8> patches);
 
     /**
      * @brief merge 8 old patchdata into one

@@ -86,7 +86,7 @@ void PatchScheduler::sync_build_LB(bool global_patch_sync, bool balance_load){
 
 template<>
 std::tuple<f32_3,f32_3> PatchScheduler::get_box_tranform(){
-    if(pdl.xyz_mode == xyz64) throw shamrock_exc("cannot query single precision box, position is currently double precision");
+    if(!pdl.check_main_field_type<f32_3>()) throw shamrock_exc("cannot query single precision box the main field is not of f32_3 type");
 
     f32_3 translate_factor = patch_data.sim_box.min_box_sim_s;
     f32_3 scale_factor = (patch_data.sim_box.max_box_sim_s - patch_data.sim_box.min_box_sim_s)/HilbertLB::max_box_sz;
@@ -96,7 +96,7 @@ std::tuple<f32_3,f32_3> PatchScheduler::get_box_tranform(){
 
 template<>
 std::tuple<f64_3,f64_3> PatchScheduler::get_box_tranform(){
-    if(pdl.xyz_mode == xyz32) throw shamrock_exc("cannot query double precision box, position is currently single precision");
+    if(!pdl.check_main_field_type<f64_3>()) throw shamrock_exc("cannot query single precision box the main field is not of f64_3 type");
 
     f64_3 translate_factor = patch_data.sim_box.min_box_sim_d;
     f64_3 scale_factor = (patch_data.sim_box.max_box_sim_d - patch_data.sim_box.min_box_sim_d)/HilbertLB::max_box_sz;
@@ -107,21 +107,21 @@ std::tuple<f64_3,f64_3> PatchScheduler::get_box_tranform(){
 
 template<>
 std::tuple<f32_3,f32_3> PatchScheduler::get_box_volume(){
-   if(pdl.xyz_mode == xyz64) throw shamrock_exc("cannot query single precision box, position is currently double precision");
+    if(!pdl.check_main_field_type<f32_3>()) throw shamrock_exc("cannot query single precision box the main field is not of f32_3 type");
 
     return {patch_data.sim_box.min_box_sim_s,patch_data.sim_box.max_box_sim_s};
 }
 
 template<>
 std::tuple<f64_3,f64_3> PatchScheduler::get_box_volume(){
-    if(pdl.xyz_mode == xyz32) throw shamrock_exc("cannot query double precision box, position is currently single precision");
+    if(!pdl.check_main_field_type<f64_3>()) throw shamrock_exc("cannot query single precision box the main field is not of f64_3 type");
 
     return {patch_data.sim_box.min_box_sim_d,patch_data.sim_box.max_box_sim_d};
 }
 
 template<>
 void PatchScheduler::set_box_volume(std::tuple<f32_3,f32_3> box){
-    if(pdl.xyz_mode == xyz64) throw shamrock_exc("cannot query single precision box, position is currently double precision");
+    if(!pdl.check_main_field_type<f32_3>()) throw shamrock_exc("cannot query single precision box the main field is not of f32_3 type");
 
     patch_data.sim_box.min_box_sim_s = std::get<0>(box);
     patch_data.sim_box.max_box_sim_s = std::get<1>(box);
@@ -135,7 +135,7 @@ void PatchScheduler::set_box_volume(std::tuple<f32_3,f32_3> box){
 
 template<>
 void PatchScheduler::set_box_volume(std::tuple<f64_3,f64_3> box){
-    if(pdl.xyz_mode == xyz32) throw shamrock_exc("cannot query double precision box, position is currently single precision");
+    if(!pdl.check_main_field_type<f64_3>()) throw shamrock_exc("cannot query single precision box the main field is not of f64_3 type");
 
     patch_data.sim_box.min_box_sim_d = std::get<0>(box);
     patch_data.sim_box.max_box_sim_d = std::get<1>(box);
@@ -474,7 +474,7 @@ inline void PatchScheduler::split_patches(std::unordered_set<u64> split_rq){
         patch_tree.tree[splitted_node.childs_id[7]].linked_patchid = patch_list.global[idx_p7].id_patch;
 
         patch_data.split_patchdata(
-            old_patch_id,
+            old_patch_id,{
             patch_list.global[idx_p0], 
             patch_list.global[idx_p1],
             patch_list.global[idx_p2],
@@ -482,7 +482,7 @@ inline void PatchScheduler::split_patches(std::unordered_set<u64> split_rq){
             patch_list.global[idx_p4],
             patch_list.global[idx_p5],
             patch_list.global[idx_p6],
-            patch_list.global[idx_p7]);
+            patch_list.global[idx_p7]});
 
     }
     t.stop();
@@ -573,7 +573,7 @@ void PatchScheduler::dump_local_patches(std::string filename){
 
     std::ofstream fout(filename);
 
-    if(pdl.xyz_mode == xyz32){
+    if(pdl.check_main_field_type<f32_3>()){
 
         std::tuple<f32_3,f32_3> box_transform = get_box_tranform<f32_3>();
 
@@ -606,7 +606,7 @@ void PatchScheduler::dump_local_patches(std::string filename){
 
         fout.close();
 
-    }else if (pdl.xyz_mode == xyz64){
+    }else if(pdl.check_main_field_type<f64_3>()){
         
         std::tuple<f64_3,f64_3> box_transform = get_box_tranform<f64_3>();
 
@@ -640,7 +640,9 @@ void PatchScheduler::dump_local_patches(std::string filename){
         fout.close();
 
     }else{
-        throw shamrock_exc("position precision was not set");
+        throw std::runtime_error(
+            __LOC_PREFIX__ + "the chosen type for the main field is not handled"
+            );
     }
 }
 

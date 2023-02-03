@@ -78,15 +78,18 @@ class SimulationBoxInfo {
      */
     inline void reset_box_size() {
 
-        if (pdl.xyz_mode == xyz32) {
+        if(pdl.check_main_field_type<f32_3>()){
             min_box_sim_s = {HUGE_VALF};
             max_box_sim_s = {-HUGE_VALF};
-        }
-
-        if (pdl.xyz_mode == xyz64) {
+        }else if(pdl.check_main_field_type<f64_3>()){
             min_box_sim_s = {HUGE_VAL};
             max_box_sim_s = {-HUGE_VAL};
+        }else{
+            throw std::runtime_error(
+                __LOC_PREFIX__ + "the chosen type for the main field is not handled"
+                );
         }
+
     }
 
     //TODO replace vectype primtype in the code by primtype and sycl::vec<primtype,3> for the others

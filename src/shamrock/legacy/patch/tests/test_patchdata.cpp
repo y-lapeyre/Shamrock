@@ -22,7 +22,6 @@ TestStart(Unittest, "patchdata.cpp/patch_data_check_match",patch_data_check_matc
 
 
     PatchDataLayout pdl;
-    pdl.xyz_mode = xyz32;
     
     pdl.add_field<f32>("f32", 1);
     pdl.add_field<f32_2>("f32_2", 1);
@@ -59,7 +58,6 @@ TestStart(Unittest, "patchdata.cpp/isend_irecv",patch_data_isend_irecv, 2){
 
 
     PatchDataLayout pdl;
-    pdl.xyz_mode = xyz32;
 
     pdl.add_field<f32>("f32", 1);
     pdl.add_field<f32_2>("f32_2", 1);

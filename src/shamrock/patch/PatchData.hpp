@@ -109,11 +109,15 @@ class PatchData {
     void resize(u32 new_obj_cnt);
 
 
-    template<class Tvecbox>
-    void split_patchdata(PatchData & pd0,PatchData & pd1,PatchData & pd2,PatchData & pd3,PatchData & pd4,PatchData & pd5,PatchData & pd6,PatchData & pd7,
-        Tvecbox bmin_p0,Tvecbox bmin_p1,Tvecbox bmin_p2,Tvecbox bmin_p3,Tvecbox bmin_p4,Tvecbox bmin_p5,Tvecbox bmin_p6,Tvecbox bmin_p7,
-        Tvecbox bmax_p0,Tvecbox bmax_p1,Tvecbox bmax_p2,Tvecbox bmax_p3,Tvecbox bmax_p4,Tvecbox bmax_p5,Tvecbox bmax_p6,Tvecbox bmax_p7);
+    //template<class Tvecbox>
+    //void split_patchdata(PatchData & pd0,PatchData & pd1,PatchData & pd2,PatchData & pd3,PatchData & pd4,PatchData & pd5,PatchData & pd6,PatchData & pd7,
+    //    Tvecbox bmin_p0,Tvecbox bmin_p1,Tvecbox bmin_p2,Tvecbox bmin_p3,Tvecbox bmin_p4,Tvecbox bmin_p5,Tvecbox bmin_p6,Tvecbox bmin_p7,
+    //    Tvecbox bmax_p0,Tvecbox bmax_p1,Tvecbox bmax_p2,Tvecbox bmax_p3,Tvecbox bmax_p4,Tvecbox bmax_p5,Tvecbox bmax_p6,Tvecbox bmax_p7);
     
+    template<class Tvecbox>
+    void split_patchdata(std::array<std::reference_wrapper<PatchData>,8> pdats, std::array<Tvecbox, 8> min_box,  std::array<Tvecbox, 8> max_box);
+
+
     void append_subset_to(std::vector<u32> & idxs, PatchData & pdat) const ;
     void append_subset_to(sycl::buffer<u32> & idxs, u32 sz, PatchData & pdat) const ;
 
@@ -152,8 +156,18 @@ class PatchData {
 
 
 
+    template<class T>
+    bool check_field_type(u32 idx){
+        var_t & tmp = fields[idx];
 
+        PatchDataField<T>* pval = std::get_if<PatchDataField<T>>(&tmp);
 
+        if(pval){
+            return true;
+        }else{
+            return false;
+        }
+    }
 
 
 
