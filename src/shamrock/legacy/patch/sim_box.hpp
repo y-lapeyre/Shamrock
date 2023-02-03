@@ -9,6 +9,7 @@
 #pragma once
 
 #include "aliases.hpp"
+#include "shamrock/math/vectorManip.hpp"
 #include "shamrock/patch/Patch.hpp"
 #include "base/patchdata.hpp"
 #include "shamrock/patch/PatchDataLayout.hpp"
@@ -126,23 +127,20 @@ class SimulationBoxInfo {
     template<>
     inline std::tuple<f32_3,f32_3> get_box<f32>(shamrock::patch::Patch & p){
         using vec3 = sycl::vec<f32,3>;
-        vec3 translate_factor = min_box_sim_s;
-        vec3 scale_factor = (max_box_sim_s - min_box_sim_s)/HilbertLB::max_box_sz;
+        using ptype = typename shamrock::math::vec_manip::VectorProperties<vec3>::component_type;
 
-        vec3 bmin_p = vec3{p.x_min,p.y_min,p.z_min}*scale_factor + translate_factor;
-        vec3 bmax_p = (vec3{p.x_max,p.y_max,p.z_max}+ 1)*scale_factor + translate_factor;
-        return {bmin_p,bmax_p};
+        vec3 translate_factor = min_box_sim_s;
+        vec3 div_factor = ptype(HilbertLB::max_box_sz)/(max_box_sim_s - min_box_sim_s);
+        return p.convert_coord(div_factor, translate_factor);
     }
 
     template<>
     inline std::tuple<f64_3,f64_3> get_box<f64>(shamrock::patch::Patch & p){
         using vec3 = sycl::vec<f64,3>;
+        using ptype = typename shamrock::math::vec_manip::VectorProperties<vec3>::component_type;
         vec3 translate_factor = min_box_sim_d;
-        vec3 scale_factor = (max_box_sim_d - min_box_sim_d)/HilbertLB::max_box_sz;
-
-        vec3 bmin_p = vec3{p.x_min,p.y_min,p.z_min}*scale_factor + translate_factor;
-        vec3 bmax_p = (vec3{p.x_max,p.y_max,p.z_max}+ 1)*scale_factor + translate_factor;
-        return {bmin_p,bmax_p};
+        vec3 div_factor = ptype(HilbertLB::max_box_sz)/(max_box_sim_d - min_box_sim_d);
+        return p.convert_coord(div_factor, translate_factor);
         
     }
 
