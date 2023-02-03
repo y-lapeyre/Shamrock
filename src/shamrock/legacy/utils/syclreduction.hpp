@@ -24,7 +24,7 @@ namespace syclalg {
             accum = buf->get_host_access()[0];
 
             {
-                auto acc = buf->template get_access<sycl::access::mode::read>();
+                sycl::host_accessor acc {*buf, sycl::read_only};
 
                 // queue.submit([&](sycl::handler &cgh) {
                 //     auto acc = buf->get_access<sycl::access::mode::read>(cgh);
@@ -60,7 +60,7 @@ namespace syclalg {
             accum = buf->get_host_access()[0];
 
             {
-                auto acc = buf->template get_access<sycl::access::mode::read>();
+                sycl::host_accessor acc {*buf, sycl::read_only};
 
                 // queue.submit([&](sycl::handler &cgh) {
                 //     auto acc = buf->get_access<sycl::access::mode::read>(cgh);
@@ -99,7 +99,7 @@ namespace syclalg {
             accum_max = buf->get_host_access()[0];
 
             {
-                auto acc = buf->template get_access<sycl::access::mode::read>();
+                sycl::host_accessor acc {*buf, sycl::read_only};
 
                 // queue.submit([&](sycl::handler &cgh) {
                 //     auto acc = buf->get_access<sycl::access::mode::read>(cgh);

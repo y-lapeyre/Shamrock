@@ -10,6 +10,8 @@
 #include "PatchData.hpp"
 #include "shamrock/legacy/utils/geometry_utils.hpp"
 
+#include "Patch.hpp"
+
 namespace shamrock::patch{
 
 
@@ -171,7 +173,7 @@ namespace shamrock::patch{
         auto get_vec_idx = [&](f32_3 vmin, f32_3 vmax) -> std::vector<u32> {
             return xyz.get_elements_with_range(
                 [&](f32_3 val,f32_3 vmin, f32_3 vmax){
-                    return BBAA::is_particle_in_patch<f32_3>(val, vmin,vmax);
+                    return Patch::is_in_patch_converted(val, vmin,vmax);
                 },
                 vmin,vmax
             );
@@ -215,7 +217,7 @@ namespace shamrock::patch{
 
             xyz.check_err_range(
                 [&](f32_3 val,f32_3 vmin, f32_3 vmax){
-                    return BBAA::is_particle_in_patch<f32_3>(val, vmin,vmax);
+                    return Patch::is_in_patch_converted(val, vmin,vmax);
                 },
                 vmin,vmax);
 
@@ -253,7 +255,7 @@ namespace shamrock::patch{
         auto get_vec_idx = [&](f64_3 vmin, f64_3 vmax) -> std::vector<u32> {
             return xyz.get_elements_with_range(
                 [&](f64_3 val,f64_3 vmin, f64_3 vmax){
-                    return BBAA::is_particle_in_patch<f64_3>(val, vmin,vmax);
+                    return Patch::is_in_patch_converted(val, vmin,vmax);
                 },
                 vmin,vmax
             );

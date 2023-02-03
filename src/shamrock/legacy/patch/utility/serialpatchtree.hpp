@@ -130,7 +130,7 @@ class SerialPatchTree{public:
         
 
         {
-            auto lpid = linked_patch_ids_buf->get_access<sycl::access::mode::read>();
+            sycl::host_accessor lpid {*linked_patch_ids_buf, sycl::read_only};
 
             //init reduction
             std::unordered_map<u64,u64> & idp_to_gid = sched.patch_list.id_patch_to_global_idx;

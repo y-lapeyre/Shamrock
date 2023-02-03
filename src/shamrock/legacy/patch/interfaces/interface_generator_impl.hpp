@@ -11,6 +11,7 @@
 #include "aliases.hpp"
 #include "shamrock/legacy/patch/base/patchdata.hpp"
 #include "shamrock/legacy/patch/base/patchdata_field.hpp"
+#include "shamrock/patch/Patch.hpp"
 #include "shamrock/legacy/utils/geometry_utils.hpp"
 #include <vector>
 
@@ -33,6 +34,8 @@ namespace impl {
         if (boxs_min.size() > u8_max - 1) {
             throw shamrock_exc("this algo is not build to handle more than 2^8 - 2 boxes as input");
         }
+
+        using namespace shamrock::patch;
 
 
         //TODO change this func when implementing the USM patch without the pos_s_buf/pos_d_buf
@@ -75,7 +78,7 @@ namespace impl {
 
                     for (u8 idx = 0; idx < num_boxes; idx++) {
 
-                        if (BBAA::is_particle_in_patch<f32_3>(pos_i, bmin[idx], bmax[idx])) {
+                        if (Patch::is_in_patch_converted(pos_i, bmin[idx], bmax[idx])) {
                             index_box[i] = idx;
                         }
                     }
@@ -95,6 +98,8 @@ namespace impl {
         if (boxs_min.size() > u8_max - 1) {
             throw shamrock_exc("this algo is not build to handle more than 2^8 - 2 boxes as input");
         }
+
+        using namespace shamrock::patch;
 
         std::vector<u8> flag_choice(pdat.get_obj_cnt());
 
@@ -131,7 +136,7 @@ namespace impl {
                     index_box[i] = u8_max;
 
                     for (u8 idx = 0; idx < num_boxes; idx++) {
-                        if (BBAA::is_particle_in_patch(pos_i, bmin[idx], bmax[idx])) {
+                        if (Patch::is_in_patch_converted(pos_i, bmin[idx], bmax[idx])) {
                             index_box[i] = idx;
                         }
                     }

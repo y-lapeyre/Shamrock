@@ -97,12 +97,64 @@ namespace shamrock::patch {
         [[nodiscard]] std::array<Patch, splts_count> get_split() const;
 
         [[nodiscard]] static Patch merge_patch(std::array<Patch, splts_count> patches);
+
+        /**
+         * @brief return an open interval of the corresponding patch coordinates given the div & offset
+         * 
+         * @tparam T type to convert coordinates to
+         * @param divfact 
+         * @param offset 
+         * @return std::tuple<sycl::vec<T,3>,sycl::vec<T,3>> 
+         */
+        template<class T> 
+        std::tuple<sycl::vec<T,3>,sycl::vec<T,3>> convert_coord(
+            sycl::vec<T,3> divfact, 
+            sycl::vec<T,3> offset);
+
+        /**
+         * @brief check if particle is in the asked range, given the ouput of @convert_coord
+         * 
+         * @tparam T the type of coordinate
+         * @param val the value to check against
+         * @param min_val the min range given by convert_coord
+         * @param max_val the max range given by convert_coord
+         * @return true is in the patch
+         * @return false is not in the patch
+         */
+        template<class T>
+        inline static bool is_in_patch_converted(sycl::vec<T,3> val, sycl::vec<T,3> min_val, sycl::vec<T,3> max_val);
+
+        
+
+        
     };
 
 
     ////////////////////////////////////////////
     // out of line implementation
     ////////////////////////////////////////////
+
+    template<class T> 
+    inline std::tuple<sycl::vec<T,3>,sycl::vec<T,3>> Patch::convert_coord(
+        sycl::vec<T,3> divfact, 
+        sycl::vec<T,3> offset){
+
+        using vec = sycl::vec<T,3>;
+
+        vec min_bound = vec{x_min,y_min,z_min}/divfact + offset;
+        vec max_bound = (vec{x_max,y_max,z_max}+ 1)/divfact + offset;
+
+        return {min_bound, max_bound};
+    }
+
+    template<class T> 
+    inline bool Patch::is_in_patch_converted(sycl::vec<T,3> val, sycl::vec<T,3> min_val, sycl::vec<T,3> max_val){
+        return (
+            (min_val.x() <= val.x()) && (val.x() < max_val.x()) &&
+            (min_val.y() <= val.y()) && (val.y() < max_val.y()) &&
+            (min_val.z() <= val.z()) && (val.z() < max_val.z()) 
+        );
+    }
 
     [[nodiscard]] inline auto Patch::get_split_coord() const -> std::array<u64, dim> {
         return {

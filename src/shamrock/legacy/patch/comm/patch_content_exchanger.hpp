@@ -12,12 +12,15 @@
 #include "aliases.hpp"
 #include "shamrock/legacy/patch/utility/serialpatchtree.hpp"
 #include "shamrock/legacy/utils/geometry_utils.hpp"
+#include "shamrock/patch/Patch.hpp"
 
 template <class posvec, class kername>
 inline sycl::buffer<u64> __compute_object_patch_owner(sycl::queue &queue, sycl::buffer<posvec> &position_buffer, u32 len,
                                                       SerialPatchTree<posvec> &sptree) {
 
     sycl::buffer<u64> new_owned_id(len);
+
+    using namespace shamrock::patch;
 
     // std::cout << "linked id state :\n";
     // {
@@ -53,28 +56,28 @@ inline sycl::buffer<u64> __compute_object_patch_owner(sycl::queue &queue, sycl::
 
                 if (cur_node.childs_id0 != u64_max) {
 
-                    if (BBAA::is_particle_in_patch(xyz, tnode[cur_node.childs_id0].box_min,
+                    if (Patch::is_in_patch_converted(xyz, tnode[cur_node.childs_id0].box_min,
                                                    tnode[cur_node.childs_id0].box_max)) {
                         current_node = cur_node.childs_id0;
-                    } else if (BBAA::is_particle_in_patch(xyz, tnode[cur_node.childs_id1].box_min,
+                    } else if (Patch::is_in_patch_converted(xyz, tnode[cur_node.childs_id1].box_min,
                                                           tnode[cur_node.childs_id1].box_max)) {
                         current_node = cur_node.childs_id1;
-                    } else if (BBAA::is_particle_in_patch(xyz, tnode[cur_node.childs_id2].box_min,
+                    } else if (Patch::is_in_patch_converted(xyz, tnode[cur_node.childs_id2].box_min,
                                                           tnode[cur_node.childs_id2].box_max)) {
                         current_node = cur_node.childs_id2;
-                    } else if (BBAA::is_particle_in_patch(xyz, tnode[cur_node.childs_id3].box_min,
+                    } else if (Patch::is_in_patch_converted(xyz, tnode[cur_node.childs_id3].box_min,
                                                           tnode[cur_node.childs_id3].box_max)) {
                         current_node = cur_node.childs_id3;
-                    } else if (BBAA::is_particle_in_patch(xyz, tnode[cur_node.childs_id4].box_min,
+                    } else if (Patch::is_in_patch_converted(xyz, tnode[cur_node.childs_id4].box_min,
                                                           tnode[cur_node.childs_id4].box_max)) {
                         current_node = cur_node.childs_id4;
-                    } else if (BBAA::is_particle_in_patch(xyz, tnode[cur_node.childs_id5].box_min,
+                    } else if (Patch::is_in_patch_converted(xyz, tnode[cur_node.childs_id5].box_min,
                                                           tnode[cur_node.childs_id5].box_max)) {
                         current_node = cur_node.childs_id5;
-                    } else if (BBAA::is_particle_in_patch(xyz, tnode[cur_node.childs_id6].box_min,
+                    } else if (Patch::is_in_patch_converted(xyz, tnode[cur_node.childs_id6].box_min,
                                                           tnode[cur_node.childs_id6].box_max)) {
                         current_node = cur_node.childs_id6;
-                    } else if (BBAA::is_particle_in_patch(xyz, tnode[cur_node.childs_id7].box_min,
+                    } else if (Patch::is_in_patch_converted(xyz, tnode[cur_node.childs_id7].box_min,
                                                           tnode[cur_node.childs_id7].box_max)) {
                         current_node = cur_node.childs_id7;
                     }

@@ -115,25 +115,16 @@ void split_patchdata<f32_3>(shamrock::patch::PatchData & original_pd,
     shamrock::patch::PatchData & pd0,shamrock::patch::PatchData & pd1,shamrock::patch::PatchData & pd2,shamrock::patch::PatchData & pd3,shamrock::patch::PatchData & pd4,shamrock::patch::PatchData & pd5,shamrock::patch::PatchData & pd6,shamrock::patch::PatchData & pd7){
 
     f32_3 translate_factor = min_box_sim;
-    f32_3 scale_factor = (max_box_sim - min_box_sim)/HilbertLB::max_box_sz;
+    f32_3 div_factor = f32(HilbertLB::max_box_sz)/(max_box_sim - min_box_sim);
 
-    f32_3 bmin_p0 = f32_3{p0.x_min,p0.y_min,p0.z_min}*scale_factor + translate_factor;
-    f32_3 bmin_p1 = f32_3{p1.x_min,p1.y_min,p1.z_min}*scale_factor + translate_factor;
-    f32_3 bmin_p2 = f32_3{p2.x_min,p2.y_min,p2.z_min}*scale_factor + translate_factor;
-    f32_3 bmin_p3 = f32_3{p3.x_min,p3.y_min,p3.z_min}*scale_factor + translate_factor;
-    f32_3 bmin_p4 = f32_3{p4.x_min,p4.y_min,p4.z_min}*scale_factor + translate_factor;
-    f32_3 bmin_p5 = f32_3{p5.x_min,p5.y_min,p5.z_min}*scale_factor + translate_factor;
-    f32_3 bmin_p6 = f32_3{p6.x_min,p6.y_min,p6.z_min}*scale_factor + translate_factor;
-    f32_3 bmin_p7 = f32_3{p7.x_min,p7.y_min,p7.z_min}*scale_factor + translate_factor;
-
-    f32_3 bmax_p0 = (f32_3{p0.x_max,p0.y_max,p0.z_max}+ 1)*scale_factor + translate_factor;
-    f32_3 bmax_p1 = (f32_3{p1.x_max,p1.y_max,p1.z_max}+ 1)*scale_factor + translate_factor;
-    f32_3 bmax_p2 = (f32_3{p2.x_max,p2.y_max,p2.z_max}+ 1)*scale_factor + translate_factor;
-    f32_3 bmax_p3 = (f32_3{p3.x_max,p3.y_max,p3.z_max}+ 1)*scale_factor + translate_factor;
-    f32_3 bmax_p4 = (f32_3{p4.x_max,p4.y_max,p4.z_max}+ 1)*scale_factor + translate_factor;
-    f32_3 bmax_p5 = (f32_3{p5.x_max,p5.y_max,p5.z_max}+ 1)*scale_factor + translate_factor;
-    f32_3 bmax_p6 = (f32_3{p6.x_max,p6.y_max,p6.z_max}+ 1)*scale_factor + translate_factor;
-    f32_3 bmax_p7 = (f32_3{p7.x_max,p7.y_max,p7.z_max}+ 1)*scale_factor + translate_factor;
+    auto [bmin_p0, bmax_p0] = p0.convert_coord(div_factor, translate_factor);
+    auto [bmin_p1, bmax_p1] = p1.convert_coord(div_factor, translate_factor);
+    auto [bmin_p2, bmax_p2] = p2.convert_coord(div_factor, translate_factor);
+    auto [bmin_p3, bmax_p3] = p3.convert_coord(div_factor, translate_factor);
+    auto [bmin_p4, bmax_p4] = p4.convert_coord(div_factor, translate_factor);
+    auto [bmin_p5, bmax_p5] = p5.convert_coord(div_factor, translate_factor);
+    auto [bmin_p6, bmax_p6] = p6.convert_coord(div_factor, translate_factor);
+    auto [bmin_p7, bmax_p7] = p7.convert_coord(div_factor, translate_factor);
 
     original_pd.split_patchdata(pd0, pd1, pd2, pd3, pd4, pd5, pd6, pd7, 
         bmin_p0, bmin_p1, bmin_p2, bmin_p3, bmin_p4, bmin_p5, bmin_p6, bmin_p7, 
@@ -149,25 +140,16 @@ void split_patchdata<f64_3>(shamrock::patch::PatchData & original_pd,
 
 
     f64_3 translate_factor = min_box_sim;
-    f64_3 scale_factor = (max_box_sim - min_box_sim)/HilbertLB::max_box_sz;
+    f64_3 div_factor = f64(HilbertLB::max_box_sz)/(max_box_sim - min_box_sim);
 
-    f64_3 bmin_p0 = f64_3{p0.x_min,p0.y_min,p0.z_min}*scale_factor + translate_factor;
-    f64_3 bmin_p1 = f64_3{p1.x_min,p1.y_min,p1.z_min}*scale_factor + translate_factor;
-    f64_3 bmin_p2 = f64_3{p2.x_min,p2.y_min,p2.z_min}*scale_factor + translate_factor;
-    f64_3 bmin_p3 = f64_3{p3.x_min,p3.y_min,p3.z_min}*scale_factor + translate_factor;
-    f64_3 bmin_p4 = f64_3{p4.x_min,p4.y_min,p4.z_min}*scale_factor + translate_factor;
-    f64_3 bmin_p5 = f64_3{p5.x_min,p5.y_min,p5.z_min}*scale_factor + translate_factor;
-    f64_3 bmin_p6 = f64_3{p6.x_min,p6.y_min,p6.z_min}*scale_factor + translate_factor;
-    f64_3 bmin_p7 = f64_3{p7.x_min,p7.y_min,p7.z_min}*scale_factor + translate_factor;
-
-    f64_3 bmax_p0 = (f64_3{p0.x_max,p0.y_max,p0.z_max}+ 1)*scale_factor + translate_factor;
-    f64_3 bmax_p1 = (f64_3{p1.x_max,p1.y_max,p1.z_max}+ 1)*scale_factor + translate_factor;
-    f64_3 bmax_p2 = (f64_3{p2.x_max,p2.y_max,p2.z_max}+ 1)*scale_factor + translate_factor;
-    f64_3 bmax_p3 = (f64_3{p3.x_max,p3.y_max,p3.z_max}+ 1)*scale_factor + translate_factor;
-    f64_3 bmax_p4 = (f64_3{p4.x_max,p4.y_max,p4.z_max}+ 1)*scale_factor + translate_factor;
-    f64_3 bmax_p5 = (f64_3{p5.x_max,p5.y_max,p5.z_max}+ 1)*scale_factor + translate_factor;
-    f64_3 bmax_p6 = (f64_3{p6.x_max,p6.y_max,p6.z_max}+ 1)*scale_factor + translate_factor;
-    f64_3 bmax_p7 = (f64_3{p7.x_max,p7.y_max,p7.z_max}+ 1)*scale_factor + translate_factor;
+    auto [bmin_p0, bmax_p0] = p0.convert_coord(div_factor, translate_factor);
+    auto [bmin_p1, bmax_p1] = p1.convert_coord(div_factor, translate_factor);
+    auto [bmin_p2, bmax_p2] = p2.convert_coord(div_factor, translate_factor);
+    auto [bmin_p3, bmax_p3] = p3.convert_coord(div_factor, translate_factor);
+    auto [bmin_p4, bmax_p4] = p4.convert_coord(div_factor, translate_factor);
+    auto [bmin_p5, bmax_p5] = p5.convert_coord(div_factor, translate_factor);
+    auto [bmin_p6, bmax_p6] = p6.convert_coord(div_factor, translate_factor);
+    auto [bmin_p7, bmax_p7] = p7.convert_coord(div_factor, translate_factor);
 
     
     original_pd.split_patchdata(pd0, pd1, pd2, pd3, pd4, pd5, pd6, pd7, 

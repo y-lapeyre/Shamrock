@@ -40,7 +40,7 @@ inline void set_value_in_box(PatchScheduler &sched, T val, std::string name, std
             for (u32 i = 0; i < f.size(); i++) {
                 vec r = acc_xyz[i];
 
-                if (BBAA::is_particle_in_patch(r, std::get<0>(box), std::get<1>(box))) {
+                if (BBAA::is_coord_in_range(r, std::get<0>(box), std::get<1>(box))) {
                     acc[i] = val;
                 }
             }

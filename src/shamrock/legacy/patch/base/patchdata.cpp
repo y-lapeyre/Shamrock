@@ -20,9 +20,9 @@
 #include "patchdata.hpp"
 #include "aliases.hpp"
 #include "patchdata_field.hpp"
+#include "shamrock/legacy/utils/geometry_utils.hpp"
 #include "shamsys/legacy/mpi_handler.hpp"
 #include "shamsys/legacy/sycl_mpi_interop.hpp"
-#include "shamrock/legacy/utils/geometry_utils.hpp"
 
 #include <algorithm>
 #include <array>

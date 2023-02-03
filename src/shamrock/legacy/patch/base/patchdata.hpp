@@ -24,16 +24,14 @@
 #include <vector>
 
 #include "aliases.hpp"
-#include "shamrock/legacy/patch/base/enabled_fields.hpp"
 #include "flags.hpp"
 #include "patchdata_field.hpp"
+#include "shamrock/legacy/patch/base/enabled_fields.hpp"
+#include "shamrock/legacy/utils/sycl_vector_utils.hpp"
+#include "shamrock/patch/PatchData.hpp"
+#include "shamrock/patch/PatchDataLayout.hpp"
 #include "shamsys/legacy/mpi_handler.hpp"
 #include "shamsys/legacy/sycl_mpi_interop.hpp"
-#include "shamrock/legacy/utils/sycl_vector_utils.hpp"
-
-#include "shamrock/patch/PatchDataLayout.hpp"
-
-#include "shamrock/patch/PatchData.hpp"
 
 
 

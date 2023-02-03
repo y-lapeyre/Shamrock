@@ -107,12 +107,12 @@ template <class vectype, class field_type, class InterfaceSelector> class Interf
         sycl::buffer<u64> global_ids_buf(global_pcount);
 
         {
-            auto pid      = patch_ids_buf.get_access<sycl::access::mode::discard_write>();
-            auto lbox_min = local_box_min_buf.template get_access<sycl::access::mode::discard_write>();
-            auto lbox_max = local_box_max_buf.template get_access<sycl::access::mode::discard_write>();
+            sycl::host_accessor pid      { patch_ids_buf, sycl::write_only, sycl::no_init};
+            sycl::host_accessor lbox_min { local_box_min_buf, sycl::write_only, sycl::no_init};
+            sycl::host_accessor lbox_max { local_box_max_buf, sycl::write_only, sycl::no_init};
 
-            auto gbox_min = global_box_min_buf.template get_access<sycl::access::mode::discard_write>();
-            auto gbox_max = global_box_max_buf.template get_access<sycl::access::mode::discard_write>();
+            sycl::host_accessor gbox_min { global_box_min_buf, sycl::write_only, sycl::no_init};
+            sycl::host_accessor gbox_max { global_box_max_buf, sycl::write_only, sycl::no_init};
 
             std::tuple<vectype, vectype> box_transform = sched.get_box_tranform<vectype>();
 
@@ -130,7 +130,7 @@ template <class vectype, class field_type, class InterfaceSelector> class Interf
                               std::get<0>(box_transform);
             }
 
-            auto g_pid = global_ids_buf.get_access<sycl::access::mode::discard_write>();
+            sycl::host_accessor g_pid {global_ids_buf, sycl::write_only, sycl::no_init};
             for (u64 i = 0; i < global_pcount; i++) {
                 g_pid[i] = sched.patch_list.global[i].id_patch;
 
@@ -271,7 +271,7 @@ template <class vectype, class field_type, class InterfaceSelector> class Interf
             auto add_interfaces = [&](vectype offset){
                 sycl::buffer<InterfaceComInternal, 2> interface_list_buf = get_interface_list_v1(sched, sptree, pfield, offset);
                 {
-                    auto interface_list = interface_list_buf.template get_access<sycl::access::mode::read>();
+                    sycl::host_accessor interface_list {interface_list_buf, sycl::read_only};
 
                     for (u64 i = 0; i < local_pcount; i++) {
                         //std::cout << "- " << sched.patch_list.local[i].id_patch << " : ";
