@@ -130,14 +130,19 @@ namespace shamrock::patch {
             u64 x_max,
             u64 y_max,
             u64 z_max,
+
+            u64 offset_x,
+            u64 offset_y,
+            u64 offset_z,
+
             sycl::vec<T, 3> divfact,
             sycl::vec<T, 3> offset
         ) {
 
             using vec = sycl::vec<T, 3>;
 
-            vec min_bound = vec{x_min, y_min, z_min} / divfact + offset;
-            vec max_bound = (vec{x_max, y_max, z_max} + 1) / divfact + offset;
+            vec min_bound = vec{x_min - offset_x, y_min - offset_y, z_min - offset_z} / divfact + offset;
+            vec max_bound = (vec{x_max - offset_x, y_max - offset_y, z_max - offset_z} + 1) / divfact + offset;
 
             return {min_bound, max_bound};
         }

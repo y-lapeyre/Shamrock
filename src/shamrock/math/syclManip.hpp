@@ -46,5 +46,52 @@ namespace shamrock::math::sycl_manip {
 
     }
 
+    template<class A,class B>
+    struct VecConvert{
+        inline static B convert(A arg){
+            return arg;
+        }
+    };
+
+    template<class A, class B>
+    struct VecConvert<sycl::vec<A,2>, sycl::vec<B,2>>{
+        inline static sycl::vec<B,2> convert(sycl::vec<A,2> arg){
+            return {arg.x(),arg.y()};
+        }
+    };
+
+    template<class A, class B>
+    struct VecConvert<sycl::vec<A,3>, sycl::vec<B,3>>{
+        inline static sycl::vec<B,3> convert(sycl::vec<A,3> arg){
+            return {arg.x(),arg.y(),arg.z()};
+        }
+    };
+
+    template<class A, class B>
+    struct VecConvert<sycl::vec<A,4>, sycl::vec<B,4>>{
+        inline static sycl::vec<B,4> convert(sycl::vec<A,4> arg){
+            return {arg.x(),arg.y(),arg.z(),arg.w()};
+        }
+    };
+
+    template<class A, class B>
+    struct VecConvert<sycl::vec<A,8>, sycl::vec<B,8>>{
+        inline static sycl::vec<B,8> convert(sycl::vec<A,8> arg){
+            return {arg.s0(),arg.s1(),arg.s2(),arg.s3(),arg.s4(),arg.s5(),arg.s6(),arg.s7()};
+        }
+    };
+
+    template<class A, class B>
+    struct VecConvert<sycl::vec<A,16>, sycl::vec<B,16>>{
+        inline static sycl::vec<B,16> convert(sycl::vec<A,16> arg){
+            return {
+                arg.s0(),arg.s1(),arg.s2(),arg.s3(),arg.s4(),arg.s5(),arg.s6(),arg.s7(),
+                arg.s8(),arg.s9(),arg.sA(),arg.sB(),arg.sC(),arg.sD(),arg.sE(),arg.sF()
+                };
+        }
+    };
+
+    
+
 
 }

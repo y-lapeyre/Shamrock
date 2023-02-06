@@ -165,6 +165,8 @@ inline void reatribute_particles<f32_3>(PatchScheduler & sched, SerialPatchTree<
 
     if(synced_should_res_box){
         sched.patch_data.sim_box.reset_box_size();
+
+        auto [bmin,bmax] = sched.patch_data.sim_box.get_bounding_box<f32_3>();
         
         for(auto & [id,pdat] : sched.patch_data.owned_data ){
 
@@ -180,32 +182,29 @@ inline void reatribute_particles<f32_3>(PatchScheduler & sched, SerialPatchTree<
                 for(u32 i = 0 ; i < pdat.get_obj_cnt(); i++){
 
                     f32_3 r = acc[i];
-                    sched.patch_data.sim_box.min_box_sim_s = sycl::min(sched.patch_data.sim_box.min_box_sim_s,r);
-                    sched.patch_data.sim_box.max_box_sim_s = sycl::max(sched.patch_data.sim_box.max_box_sim_s,r);
+                    bmin = sycl::min(bmin,r);
+                    bmax = sycl::max(bmax,r);
 
                 }
             }
 
             
         }
-        f32_3 new_minbox = sched.patch_data.sim_box.min_box_sim_s;
-        f32_3 new_maxbox = sched.patch_data.sim_box.max_box_sim_s;
-        mpi::allreduce(&sched.patch_data.sim_box.min_box_sim_s.x(), &new_minbox.x(), 1 , mpi_type_f32,MPI_MIN, MPI_COMM_WORLD);
-        mpi::allreduce(&sched.patch_data.sim_box.min_box_sim_s.y(), &new_minbox.y(), 1 , mpi_type_f32,MPI_MIN, MPI_COMM_WORLD);
-        mpi::allreduce(&sched.patch_data.sim_box.min_box_sim_s.z(), &new_minbox.z(), 1 , mpi_type_f32,MPI_MIN, MPI_COMM_WORLD);
-        mpi::allreduce(&sched.patch_data.sim_box.max_box_sim_s.x(), &new_maxbox.x(), 1 , mpi_type_f32,MPI_MAX, MPI_COMM_WORLD);
-        mpi::allreduce(&sched.patch_data.sim_box.max_box_sim_s.y(), &new_maxbox.y(), 1 , mpi_type_f32,MPI_MAX, MPI_COMM_WORLD);
-        mpi::allreduce(&sched.patch_data.sim_box.max_box_sim_s.z(), &new_maxbox.z(), 1 , mpi_type_f32,MPI_MAX, MPI_COMM_WORLD);
+        f32_3 new_minbox = bmin;
+        f32_3 new_maxbox = bmax;
+        mpi::allreduce(&bmin.x(), &new_minbox.x(), 1 , mpi_type_f32,MPI_MIN, MPI_COMM_WORLD);
+        mpi::allreduce(&bmin.y(), &new_minbox.y(), 1 , mpi_type_f32,MPI_MIN, MPI_COMM_WORLD);
+        mpi::allreduce(&bmin.z(), &new_minbox.z(), 1 , mpi_type_f32,MPI_MIN, MPI_COMM_WORLD);
+        mpi::allreduce(&bmax.x(), &new_maxbox.x(), 1 , mpi_type_f32,MPI_MAX, MPI_COMM_WORLD);
+        mpi::allreduce(&bmax.y(), &new_maxbox.y(), 1 , mpi_type_f32,MPI_MAX, MPI_COMM_WORLD);
+        mpi::allreduce(&bmax.z(), &new_maxbox.z(), 1 , mpi_type_f32,MPI_MAX, MPI_COMM_WORLD);
 
-        sched.patch_data.sim_box.min_box_sim_s = new_minbox;
-        sched.patch_data.sim_box.max_box_sim_s = new_maxbox;
+        sched.patch_data.sim_box.set_bounding_box<f32_3>({new_minbox,new_maxbox});
 
         logger::debug_ln("Patch Object Mover", "resize box to  :",new_minbox,new_maxbox);
         sched.patch_data.sim_box.clean_box<f32>(1.2);
 
-        new_minbox = sched.patch_data.sim_box.min_box_sim_s;
-        new_maxbox = sched.patch_data.sim_box.max_box_sim_s;
-        logger::debug_ln("Patch Object Mover", "resize box to  :",new_minbox,new_maxbox);
+        logger::debug_ln("Patch Object Mover", "resize box to  :",sched.patch_data.sim_box.get_bounding_box<f32_3>());
         
 
 

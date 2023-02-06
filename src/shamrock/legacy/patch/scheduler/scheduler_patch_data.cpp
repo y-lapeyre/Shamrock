@@ -99,23 +99,20 @@ void SchedulerPatchData::apply_change_list(std::vector<std::tuple<u64, i32, i32,
 template<class Vectype>
 void split_patchdata(
     shamrock::patch::PatchData & original_pd,
-    const Vectype & min_box_sim,const Vectype & max_box_sim,
+    const SimulationBoxInfo & sim_box,
     const std::array<shamrock::patch::Patch, 8> patches,
     std::array<std::reference_wrapper<shamrock::patch::PatchData>,8> pdats){
 
-        using ptype = typename shamrock::math::vec_manip::VectorProperties<Vectype>::component_type;
+    using ptype = typename shamrock::math::vec_manip::VectorProperties<Vectype>::component_type;
 
-    Vectype translate_factor = min_box_sim;
-    Vectype div_factor = ptype(HilbertLB::max_box_sz)/(max_box_sim - min_box_sim);
-
-    auto [bmin_p0, bmax_p0] = patches[0].convert_coord(div_factor, translate_factor);
-    auto [bmin_p1, bmax_p1] = patches[1].convert_coord(div_factor, translate_factor);
-    auto [bmin_p2, bmax_p2] = patches[2].convert_coord(div_factor, translate_factor);
-    auto [bmin_p3, bmax_p3] = patches[3].convert_coord(div_factor, translate_factor);
-    auto [bmin_p4, bmax_p4] = patches[4].convert_coord(div_factor, translate_factor);
-    auto [bmin_p5, bmax_p5] = patches[5].convert_coord(div_factor, translate_factor);
-    auto [bmin_p6, bmax_p6] = patches[6].convert_coord(div_factor, translate_factor);
-    auto [bmin_p7, bmax_p7] = patches[7].convert_coord(div_factor, translate_factor);
+    auto [bmin_p0, bmax_p0] = sim_box.partch_coord_to_domain<Vectype>(patches[0]);
+    auto [bmin_p1, bmax_p1] = sim_box.partch_coord_to_domain<Vectype>(patches[1]);
+    auto [bmin_p2, bmax_p2] = sim_box.partch_coord_to_domain<Vectype>(patches[2]);
+    auto [bmin_p3, bmax_p3] = sim_box.partch_coord_to_domain<Vectype>(patches[3]);
+    auto [bmin_p4, bmax_p4] = sim_box.partch_coord_to_domain<Vectype>(patches[4]);
+    auto [bmin_p5, bmax_p5] = sim_box.partch_coord_to_domain<Vectype>(patches[5]);
+    auto [bmin_p6, bmax_p6] = sim_box.partch_coord_to_domain<Vectype>(patches[6]);
+    auto [bmin_p7, bmax_p7] = sim_box.partch_coord_to_domain<Vectype>(patches[7]);
 
     original_pd.split_patchdata<Vectype>(pdats, 
         {bmin_p0, bmin_p1, bmin_p2, bmin_p3, bmin_p4, bmin_p5, bmin_p6, bmin_p7}, 
@@ -123,27 +120,27 @@ void split_patchdata(
 
 }
 
-template void split_patchdata(
+template void split_patchdata<f32_3>(
     shamrock::patch::PatchData & original_pd,
-    const f32_3 & min_box_sim,const f32_3 & max_box_sim,
+    const SimulationBoxInfo & sim_box,
     const std::array<shamrock::patch::Patch, 8> patches,
     std::array<std::reference_wrapper<shamrock::patch::PatchData>,8> pdats);
 
-template void split_patchdata(
+template void split_patchdata<f64_3>(
     shamrock::patch::PatchData & original_pd,
-    const f64_3 & min_box_sim,const f64_3 & max_box_sim,
+    const SimulationBoxInfo & sim_box,
     const std::array<shamrock::patch::Patch, 8> patches,
     std::array<std::reference_wrapper<shamrock::patch::PatchData>,8> pdats);
 
-    template void split_patchdata(
+template void split_patchdata<u32_3>(
     shamrock::patch::PatchData & original_pd,
-    const u32_3 & min_box_sim,const u32_3 & max_box_sim,
+    const SimulationBoxInfo & sim_box,
     const std::array<shamrock::patch::Patch, 8> patches,
     std::array<std::reference_wrapper<shamrock::patch::PatchData>,8> pdats);
 
-    template void split_patchdata(
+template void split_patchdata<u64_3>(
     shamrock::patch::PatchData & original_pd,
-    const u64_3 & min_box_sim,const u64_3 & max_box_sim,
+    const SimulationBoxInfo & sim_box,
     const std::array<shamrock::patch::Patch, 8> patches,
     std::array<std::reference_wrapper<shamrock::patch::PatchData>,8> pdats);
 
@@ -176,15 +173,31 @@ void SchedulerPatchData::split_patchdata(u64 key_orginal, const std::array<shamr
         shamrock::patch::PatchData pd7(pdl);
 
         if(pdl.check_main_field_type<f32_3>()){
+
             ::split_patchdata<f32_3>(
                     original_pd,
-                    sim_box.min_box_sim_s,sim_box.max_box_sim_s,
+                    sim_box,
                     patches,
                     {pd0,pd1,pd2,pd3,pd4,pd5,pd6,pd7});
         }else if(pdl.check_main_field_type<f64_3>()){
+
             ::split_patchdata<f64_3>(
                     original_pd,
-                    sim_box.min_box_sim_d,sim_box.max_box_sim_d,
+                    sim_box,
+                    patches,
+                    {pd0,pd1,pd2,pd3,pd4,pd5,pd6,pd7});
+        }else if(pdl.check_main_field_type<u32_3>()){
+
+            ::split_patchdata<u32_3>(
+                    original_pd,
+                    sim_box,
+                    patches,
+                    {pd0,pd1,pd2,pd3,pd4,pd5,pd6,pd7});
+        }else if(pdl.check_main_field_type<u64_3>()){
+
+            ::split_patchdata<u64_3>(
+                    original_pd,
+                    sim_box,
                     patches,
                     {pd0,pd1,pd2,pd3,pd4,pd5,pd6,pd7});
         }else{

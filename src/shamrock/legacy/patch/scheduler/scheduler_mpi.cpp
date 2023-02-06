@@ -88,8 +88,10 @@ template<>
 std::tuple<f32_3,f32_3> PatchScheduler::get_box_tranform(){
     if(!pdl.check_main_field_type<f32_3>()) throw shamrock_exc("cannot query single precision box the main field is not of f32_3 type");
 
-    f32_3 translate_factor = patch_data.sim_box.min_box_sim_s;
-    f32_3 scale_factor = (patch_data.sim_box.max_box_sim_s - patch_data.sim_box.min_box_sim_s)/HilbertLB::max_box_sz;
+    auto [bmin,bmax] = patch_data.sim_box.get_bounding_box<f32_3>();
+
+    f32_3 translate_factor = bmin;
+    f32_3 scale_factor = (bmax - bmin)/HilbertLB::max_box_sz;
 
     return {translate_factor,scale_factor};
 }
@@ -98,8 +100,10 @@ template<>
 std::tuple<f64_3,f64_3> PatchScheduler::get_box_tranform(){
     if(!pdl.check_main_field_type<f64_3>()) throw shamrock_exc("cannot query single precision box the main field is not of f64_3 type");
 
-    f64_3 translate_factor = patch_data.sim_box.min_box_sim_d;
-    f64_3 scale_factor = (patch_data.sim_box.max_box_sim_d - patch_data.sim_box.min_box_sim_d)/HilbertLB::max_box_sz;
+    auto [bmin,bmax] = patch_data.sim_box.get_bounding_box<f64_3>();
+
+    f64_3 translate_factor = bmin;
+    f64_3 scale_factor = (bmax - bmin)/HilbertLB::max_box_sz;
 
     return {translate_factor,scale_factor};
 }
@@ -109,26 +113,24 @@ template<>
 std::tuple<f32_3,f32_3> PatchScheduler::get_box_volume(){
     if(!pdl.check_main_field_type<f32_3>()) throw shamrock_exc("cannot query single precision box the main field is not of f32_3 type");
 
-    return {patch_data.sim_box.min_box_sim_s,patch_data.sim_box.max_box_sim_s};
+    return patch_data.sim_box.get_bounding_box<f32_3>();
 }
 
 template<>
 std::tuple<f64_3,f64_3> PatchScheduler::get_box_volume(){
     if(!pdl.check_main_field_type<f64_3>()) throw shamrock_exc("cannot query single precision box the main field is not of f64_3 type");
 
-    return {patch_data.sim_box.min_box_sim_d,patch_data.sim_box.max_box_sim_d};
+    return patch_data.sim_box.get_bounding_box<f64_3>();
 }
 
 template<>
 void PatchScheduler::set_box_volume(std::tuple<f32_3,f32_3> box){
     if(!pdl.check_main_field_type<f32_3>()) throw shamrock_exc("cannot query single precision box the main field is not of f32_3 type");
 
-    patch_data.sim_box.min_box_sim_s = std::get<0>(box);
-    patch_data.sim_box.max_box_sim_s = std::get<1>(box);
+    patch_data.sim_box.set_bounding_box<f32_3>({std::get<0>(box), std::get<1>(box)});
 
     logger::debug_ln("PatchScheduler", "box resized to :",
-        patch_data.sim_box.min_box_sim_s,
-        patch_data.sim_box.max_box_sim_s 
+        box
     );
 
 }
@@ -137,12 +139,10 @@ template<>
 void PatchScheduler::set_box_volume(std::tuple<f64_3,f64_3> box){
     if(!pdl.check_main_field_type<f64_3>()) throw shamrock_exc("cannot query single precision box the main field is not of f64_3 type");
 
-    patch_data.sim_box.min_box_sim_d = std::get<0>(box);
-    patch_data.sim_box.max_box_sim_d = std::get<1>(box);
+    patch_data.sim_box.set_bounding_box<f64_3>({std::get<0>(box), std::get<1>(box)});
 
     logger::debug_ln("PatchScheduler", "box resized to :",
-        patch_data.sim_box.min_box_sim_d,
-        patch_data.sim_box.max_box_sim_d 
+        box
     );
 
 }

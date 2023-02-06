@@ -439,14 +439,16 @@ inline void dump_simbox(std::string prefix, PatchScheduler & sched){
 
         if(sched.pdl.check_main_field_type<f32_3>()){
             u8 f = 0;
+            auto [bmin, bmax] = sched.patch_data.sim_box.get_bounding_box<f32_3>();
             mpi::file_write(simbox_file, &f, 1,mpi_type_u8,&st);
-            mpi::file_write(simbox_file, &sched.patch_data.sim_box.min_box_sim_s, 1, mpi_type_f32_3,&st);
-            mpi::file_write(simbox_file, &sched.patch_data.sim_box.max_box_sim_s, 1, mpi_type_f32_3,&st);
+            mpi::file_write(simbox_file, &bmin, 1, mpi_type_f32_3,&st);
+            mpi::file_write(simbox_file, &bmax, 1, mpi_type_f32_3,&st);
         }else if(sched.pdl.check_main_field_type<f64_3>()){
             u8 f = 1;
+            auto [bmin, bmax] = sched.patch_data.sim_box.get_bounding_box<f64_3>();
             mpi::file_write(simbox_file, &f, 1,mpi_type_u8,&st);
-            mpi::file_write(simbox_file, &sched.patch_data.sim_box.min_box_sim_d, 1, mpi_type_f64_3,&st);    
-            mpi::file_write(simbox_file, &sched.patch_data.sim_box.max_box_sim_d, 1, mpi_type_f64_3,&st);       
+            mpi::file_write(simbox_file, &bmin, 1, mpi_type_f64_3,&st);    
+            mpi::file_write(simbox_file, &bmax, 1, mpi_type_f64_3,&st);       
         }
         
     }

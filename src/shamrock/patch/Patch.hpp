@@ -112,7 +112,7 @@ namespace shamrock::patch {
          */
         template <class T>
         std::tuple<sycl::vec<T, 3>, sycl::vec<T, 3>>
-        convert_coord(sycl::vec<T, 3> divfact, sycl::vec<T, 3> offset) const ;
+        convert_coord(sycl::vec<u64, 3> src_offset, sycl::vec<T, 3> divfact, sycl::vec<T, 3> offset) const ;
 
         /**
          * @brief check if particle is in the asked range, given the ouput of @convert_coord
@@ -149,8 +149,10 @@ namespace shamrock::patch {
 
     template <class T>
     inline std::tuple<sycl::vec<T, 3>, sycl::vec<T, 3>>
-    Patch::convert_coord(sycl::vec<T, 3> divfact, sycl::vec<T, 3> offset) const {
-        return PatchCoord::convert_coord( x_min,  y_min,  z_min,  x_max,  y_max,  z_max,  divfact,  offset);
+    Patch::convert_coord(sycl::vec<u64, 3> src_offset, sycl::vec<T, 3> divfact, sycl::vec<T, 3> offset) const {
+        return PatchCoord::convert_coord( x_min,  y_min,  z_min,  x_max,  y_max,  z_max,
+        src_offset.x(),src_offset.y(),src_offset.z()
+        ,  divfact,  offset);
     }
 
     template <class T>
