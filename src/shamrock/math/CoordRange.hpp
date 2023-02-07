@@ -19,7 +19,9 @@ template <class T> struct CoordRange {
         high_bound = center + cur_delt;
     }
 
-    inline static CoordRange max_range();
+    static CoordRange max_range();
+
+    //std::string get_str();
 };
 
 template <> inline CoordRange<f32_3> CoordRange<f32_3>::max_range() {
