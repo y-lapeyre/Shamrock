@@ -12,7 +12,7 @@
 
 namespace shamrock::patch {
 
-    struct PatchCoord {
+    class PatchCoord {public:
         static constexpr u32 dim         = 3U;
         static constexpr u32 splts_count = 1U << dim;
 

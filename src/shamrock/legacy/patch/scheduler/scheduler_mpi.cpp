@@ -46,7 +46,40 @@ void PatchScheduler::free_mpi_required_types(){
     //}
 }
 
-PatchScheduler::PatchScheduler(shamrock::patch::PatchDataLayout & pdl, u64 crit_split,u64 crit_merge) : pdl(pdl), patch_data(pdl){
+void PatchScheduler::add_root_patch(){
+    using namespace shamrock::patch;
+    
+    if (shamsys::instance::world_rank == 0) {
+        
+
+        Patch root;
+
+        root.node_owner_id = shamsys::instance::world_rank;
+
+        root.x_min = 0;
+        root.y_min = 0;
+        root.z_min = 0;
+
+        root.x_max = HilbertLB::max_box_sz;
+        root.y_max = HilbertLB::max_box_sz;
+        root.z_max = HilbertLB::max_box_sz;
+
+        root.pack_node_index = u64_max;
+
+        PatchData pdat(pdl);
+
+        root.data_count = pdat.get_obj_cnt();
+        root.load_value = pdat.get_obj_cnt();
+
+        add_patch(root,pdat);  
+    } else {
+        patch_list._next_patch_id++;
+    }  
+}
+
+PatchScheduler::PatchScheduler(shamrock::patch::PatchDataLayout & pdl, u64 crit_split,u64 crit_merge) : pdl(pdl), patch_data(pdl,{
+            u64_3{0, 0, 0},
+            u64_3{HilbertLB::max_box_sz, HilbertLB::max_box_sz, HilbertLB::max_box_sz}}){
 
     crit_patch_split = crit_split;
     crit_patch_merge = crit_merge;

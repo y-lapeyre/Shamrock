@@ -130,6 +130,8 @@ class PatchScheduler{public:
 
     }
 
+    void add_root_patch();
+
     [[deprecated]]
     void sync_build_LB(bool global_patch_sync, bool balance_load);
 

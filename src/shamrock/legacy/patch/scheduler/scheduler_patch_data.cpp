@@ -99,7 +99,7 @@ void SchedulerPatchData::apply_change_list(std::vector<std::tuple<u64, i32, i32,
 template<class Vectype>
 void split_patchdata(
     shamrock::patch::PatchData & original_pd,
-    const SimulationBoxInfo & sim_box,
+    const shamrock::patch::SimulationBoxInfo & sim_box,
     const std::array<shamrock::patch::Patch, 8> patches,
     std::array<std::reference_wrapper<shamrock::patch::PatchData>,8> pdats){
 
@@ -122,25 +122,25 @@ void split_patchdata(
 
 template void split_patchdata<f32_3>(
     shamrock::patch::PatchData & original_pd,
-    const SimulationBoxInfo & sim_box,
+    const shamrock::patch::SimulationBoxInfo & sim_box,
     const std::array<shamrock::patch::Patch, 8> patches,
     std::array<std::reference_wrapper<shamrock::patch::PatchData>,8> pdats);
 
 template void split_patchdata<f64_3>(
     shamrock::patch::PatchData & original_pd,
-    const SimulationBoxInfo & sim_box,
+    const shamrock::patch::SimulationBoxInfo & sim_box,
     const std::array<shamrock::patch::Patch, 8> patches,
     std::array<std::reference_wrapper<shamrock::patch::PatchData>,8> pdats);
 
 template void split_patchdata<u32_3>(
     shamrock::patch::PatchData & original_pd,
-    const SimulationBoxInfo & sim_box,
+    const shamrock::patch::SimulationBoxInfo & sim_box,
     const std::array<shamrock::patch::Patch, 8> patches,
     std::array<std::reference_wrapper<shamrock::patch::PatchData>,8> pdats);
 
 template void split_patchdata<u64_3>(
     shamrock::patch::PatchData & original_pd,
-    const SimulationBoxInfo & sim_box,
+    const shamrock::patch::SimulationBoxInfo & sim_box,
     const std::array<shamrock::patch::Patch, 8> patches,
     std::array<std::reference_wrapper<shamrock::patch::PatchData>,8> pdats);
 

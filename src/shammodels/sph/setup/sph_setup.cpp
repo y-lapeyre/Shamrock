@@ -15,37 +15,14 @@
 
 #include "shamsys/legacy/mpi_handler.hpp"
 
+#include "shamrock/legacy/patch/scheduler/loadbalancing_hilbert.hpp"
 
 template<class flt, class Kernel>
 void models::sph::SetupSPH<flt,Kernel>::init(PatchScheduler & sched){
 
     using namespace shamrock::patch;
 
-    if (shamsys::instance::world_rank == 0) {
-        Patch root;
-
-        root.node_owner_id = shamsys::instance::world_rank;
-
-        root.x_min = 0;
-        root.y_min = 0;
-        root.z_min = 0;
-
-        root.x_max = HilbertLB::max_box_sz;
-        root.y_max = HilbertLB::max_box_sz;
-        root.z_max = HilbertLB::max_box_sz;
-
-        root.pack_node_index = u64_max;
-
-        PatchData pdat(sched.pdl);
-
-        root.data_count = pdat.get_obj_cnt();
-        root.load_value = pdat.get_obj_cnt();
-
-        sched.add_patch(root,pdat);  
-
-    } else {
-        sched.patch_list._next_patch_id++;
-    }  
+    sched.add_root_patch();
 
     mpi::barrier(MPI_COMM_WORLD);
 

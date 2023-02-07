@@ -47,7 +47,7 @@ class SchedulerPatchData {
      * @brief simulation box geometry info
      *
      */
-    SimulationBoxInfo sim_box;
+    shamrock::patch::SimulationBoxInfo sim_box;
 
     /**
      * @brief apply a load balancing change list to shuffle patchdata arround the cluster
@@ -101,5 +101,7 @@ class SchedulerPatchData {
         u64 old_key7
     );
 
-    inline SchedulerPatchData(shamrock::patch::PatchDataLayout &pdl) : pdl(pdl), sim_box(pdl) {}
+    inline SchedulerPatchData(
+        shamrock::patch::PatchDataLayout &pdl, CoordRange<u64_3> patch_coord_range)
+         : pdl(pdl), sim_box(pdl,patch_coord_range) {}
 };
