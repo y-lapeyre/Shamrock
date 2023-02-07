@@ -54,8 +54,8 @@ namespace sph {
 
 
     
-    inline static void sycl_move_parts(sycl::queue &queue, u32 npart, flt dt, std::unique_ptr<sycl::buffer<vec3>> &buf_xyz,
-                                        std::unique_ptr<sycl::buffer<vec3>> &buf_vxyz) {
+    inline static void sycl_move_parts(sycl::queue &queue, u32 npart, flt dt, const std::unique_ptr<sycl::buffer<vec3>> &buf_xyz,
+                                        const std::unique_ptr<sycl::buffer<vec3>> &buf_vxyz) {
 
         sycl::range<1> range_npart{npart};
 
@@ -79,7 +79,7 @@ namespace sph {
 
 
 
-    inline static void sycl_position_modulo(sycl::queue &queue, u32 npart, std::unique_ptr<sycl::buffer<vec3>> &buf_xyz,
+    inline static void sycl_position_modulo(sycl::queue &queue, u32 npart, const std::unique_ptr<sycl::buffer<vec3>> &buf_xyz,
                                     std::tuple<vec3, vec3> box) {
 
         sycl::range<1> range_npart{npart};
@@ -163,6 +163,8 @@ namespace sph {
         LambdaPostSync && lambda_post_sync,
         LambdaForce && lambda_compute_forces,
         LambdaCorrector && lambda_correct){
+
+        using namespace shamrock::patch;
 
         auto time_step = timings::start_timer("SPHLeapfrog::step()", timings::timingtype::function);
 

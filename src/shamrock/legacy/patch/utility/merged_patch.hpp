@@ -13,7 +13,7 @@
 #include "shamrock/legacy/patch/base/enabled_fields.hpp"
 #include "shamrock/legacy/patch/base/patchdata.hpp"
 #include "shamrock/legacy/patch/base/patchdata_field.hpp"
-#include "shamrock/legacy/patch/base/patchdata_layout.hpp"
+#include "shamrock/patch/PatchDataLayout.hpp"
 #include "shamrock/legacy/patch/interfaces/interface_handler.hpp"
 //#include "shamrock/legacy/patch/patchdata_buffer.hpp"
 #include "shamrock/legacy/patch/scheduler/scheduler_mpi.hpp"
@@ -26,17 +26,17 @@ class MergedPatchData {public:
     using vec = sycl::vec<flt, 3>;
 
     u32 or_element_cnt = 0;
-    PatchData data;
+    shamrock::patch::PatchData data;
     std::tuple<vec,vec> box;
 
-    MergedPatchData(PatchDataLayout & pdl) : data(pdl){};
+    MergedPatchData(shamrock::patch::PatchDataLayout & pdl) : data(pdl){};
 
     [[nodiscard]]
     static std::unordered_map<u64,MergedPatchData<flt>> merge_patches(
         PatchScheduler & sched,
         LegacyInterfacehandler<vec, flt> & interface_hndl);
 
-    inline void write_back(PatchData & pdat){
+    inline void write_back(shamrock::patch::PatchData & pdat){
         pdat.overwrite(data, or_element_cnt);
     }
 
@@ -48,7 +48,7 @@ inline void write_back_merge_patches(
     PatchScheduler & sched,
     std::unordered_map<u64,MergedPatchData<flt>> & merge_pdat){
 
-
+        using namespace shamrock::patch;
     logger::debug_sycl_ln("Merged Patch","write back merged buffers");
 
     

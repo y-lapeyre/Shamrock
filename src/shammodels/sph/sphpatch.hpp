@@ -18,7 +18,7 @@
 #include "shamrock/legacy/patch/base/patchdata.hpp"
 //#include "shamrock/legacy/patch/patchdata_buffer.hpp"
 #include "shamrock/legacy/utils/syclreduction.hpp"
-#include "shamrock/legacy/patch/base/patchdata_layout.hpp"
+#include "shamrock/patch/PatchDataLayout.hpp"
 #include <stdexcept>
 #include <type_traits>
 
@@ -29,7 +29,7 @@ namespace patchdata {
 
 
         template<class htype>
-        inline htype get_h_max(PatchDataLayout & pdl,sycl::queue & queue, PatchData & pdat){
+        inline htype get_h_max(shamrock::patch::PatchDataLayout & pdl,sycl::queue & queue, shamrock::patch::PatchData & pdat){
 
             if(pdat.get_obj_cnt() == 0) return 0;
 
@@ -40,11 +40,11 @@ namespace patchdata {
             if constexpr (std::is_same<htype, f32>::value){
 
                 u32 ihpart = pdl.get_field_idx<f32>(::sph::field_names::field_hpart);
-                tmp = syclalg::get_max<f32>(queue, pdat.fields_f32[ihpart].get_buf(),nobj);
+                tmp = syclalg::get_max<f32>(queue, pdat.get_field<f32>(ihpart).get_buf(),nobj);
 
             } else if constexpr (std::is_same<htype, f64>::value){
                 u32 ihpart = pdl.get_field_idx<f64>(::sph::field_names::field_hpart);
-                tmp = syclalg::get_max<f64>(queue, pdat.fields_f64[ihpart].get_buf(),nobj);
+                tmp = syclalg::get_max<f64>(queue, pdat.get_field<f64>(ihpart).get_buf(),nobj);
                 
             }else{
                 throw shamrock_exc("get_h_max -> current htype not handled");

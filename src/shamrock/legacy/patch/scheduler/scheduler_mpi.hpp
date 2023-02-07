@@ -27,10 +27,10 @@
 #include <vector>
 
 #include "aliases.hpp"
-#include "shamrock/legacy/patch/base/patch.hpp"
+#include "shamrock/patch/Patch.hpp"
 #include "shamrock/legacy/patch/base/patchdata.hpp"
 //#include "shamrock/legacy/patch/patchdata_buffer.hpp"
-#include "shamrock/legacy/patch/base/patchdata_layout.hpp"
+#include "shamrock/patch/PatchDataLayout.hpp"
 #include "shamrock/legacy/patch/base/patchtree.hpp"
 #include "scheduler_patch_list.hpp"
 #include "scheduler_patch_data.hpp"
@@ -42,7 +42,7 @@
  */
 class PatchScheduler{public:
 
-    PatchDataLayout & pdl;
+    shamrock::patch::PatchDataLayout & pdl;
 
     u64 crit_patch_split; ///< splitting limit (if load value > crit_patch_split => patch split)
     u64 crit_patch_merge; ///< merging limit (if load value < crit_patch_merge => patch merge)
@@ -72,7 +72,7 @@ class PatchScheduler{public:
     
     void free_mpi_required_types();
 
-    PatchScheduler(PatchDataLayout & pdl, u64 crit_split,u64 crit_merge);
+    PatchScheduler(shamrock::patch::PatchDataLayout & pdl, u64 crit_split,u64 crit_merge);
 
     ~PatchScheduler();
 
@@ -108,7 +108,7 @@ class PatchScheduler{public:
     [[deprecated]]
     void dump_local_patches(std::string filename);
 
-    std::vector<std::unique_ptr<PatchData>> gather_data(u32 rank);
+    std::vector<std::unique_ptr<shamrock::patch::PatchData>> gather_data(u32 rank);
 
 
     /**
@@ -120,7 +120,7 @@ class PatchScheduler{public:
      * @param pdat 
      */
     //[[deprecated]]
-    inline void add_patch(Patch & p, PatchData & pdat){
+    inline void add_patch(shamrock::patch::Patch & p, shamrock::patch::PatchData & pdat){
         p.id_patch = patch_list._next_patch_id;
         patch_list._next_patch_id ++;
 
@@ -129,6 +129,8 @@ class PatchScheduler{public:
         patch_data.owned_data.insert({p.id_patch , pdat});
 
     }
+
+    void add_root_patch();
 
     [[deprecated]]
     void sync_build_LB(bool global_patch_sync, bool balance_load);
@@ -165,9 +167,12 @@ class PatchScheduler{public:
 
             if (! pdat.is_empty()) {
 
-                Patch &cur_p = patch_list.global[patch_list.id_patch_to_global_idx[id]];
+                shamrock::patch::Patch &cur_p = patch_list.global[patch_list.id_patch_to_global_idx[id]];
 
-                fct(id,cur_p,pdat);
+                if(!cur_p.is_err_mode()){
+                    fct(id,cur_p,pdat);
+                }
+
             }
         }
 
@@ -183,12 +188,13 @@ class PatchScheduler{public:
             if (! pdat.is_empty()) {
 
 
-                Patch &cur_p = patch_list.global[patch_list.id_patch_to_global_idx[id]];
+                shamrock::patch::Patch &cur_p = patch_list.global[patch_list.id_patch_to_global_idx[id]];
 
 
                 //TODO should feed the sycl queue to the lambda
-
-                fct(id,cur_p);
+                if(!cur_p.is_err_mode()){
+                    fct(id,cur_p);
+                }
             }
         }
 
@@ -225,10 +231,11 @@ class PatchScheduler{public:
 
         for (u64 idx = 0; idx < patch_list.local.size(); idx++) {
 
-            Patch &cur_p = patch_list.local[idx];
+            shamrock::patch::Patch &cur_p = patch_list.local[idx];
 
-            field.local_nodes_value[idx] = lambda(shamsys::instance::get_compute_queue(),cur_p,patch_data.owned_data.at(cur_p.id_patch));
-
+            if(!cur_p.is_err_mode()){
+                field.local_nodes_value[idx] = lambda(shamsys::instance::get_compute_queue(),cur_p,patch_data.owned_data.at(cur_p.id_patch));
+            }
         }
 
         field.build_global(dtype);

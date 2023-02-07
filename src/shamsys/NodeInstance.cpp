@@ -13,6 +13,8 @@
 #include "shamsys/MpiWrapper.hpp"
 #include "shamsys/legacy/sycl_mpi_interop.hpp"
 
+#include "MpiDataTypeHandler.hpp"
+
 namespace shamsys::instance {
 
 
@@ -351,9 +353,13 @@ namespace shamsys::instance {
 
         logger::raw_ln("------------ MPI / SYCL init ok ------------ \n");
 
+        mpidtypehandler::init_mpidtype();
+
     }
 
     void close(){
+
+        mpidtypehandler::free_mpidtype();
 
         logger::raw_ln("------------ MPI_Finalize ------------\n");
         mpi::finalize(); 

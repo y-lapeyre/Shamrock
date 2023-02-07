@@ -19,7 +19,7 @@
 
 #pragma once
 #include "aliases.hpp"
-#include "shamrock/legacy/patch/base/patch.hpp"
+#include "shamrock/patch/Patch.hpp"
 #include "shamrock/legacy/patch/base/patchdata.hpp"
 //#include "shamrock/legacy/patch/patchdata_buffer.hpp"
 #include "shamrock/legacy/patch/base/patchdata_field.hpp"
@@ -47,11 +47,11 @@ class InterfaceVolumeGenerator {
     
 
     template <class vectype>
-    static std::vector<std::unique_ptr<PatchData>> append_interface(sycl::queue &queue, PatchData & pdat_buf,
+    static std::vector<std::unique_ptr<shamrock::patch::PatchData>> append_interface(sycl::queue &queue, shamrock::patch::PatchData & pdat_buf,
                                                   std::vector<vectype> boxs_min, std::vector<vectype> boxs_max,vectype add_offset);
 
     template <class T, class vectype>
-    inline static std::vector<std::unique_ptr<PatchDataField<T>>> append_interface_field(sycl::queue &queue, PatchData & pdat_buf, PatchDataField<T> & pdat_cfield,
+    inline static std::vector<std::unique_ptr<PatchDataField<T>>> append_interface_field(sycl::queue &queue, shamrock::patch::PatchData & pdat_buf, PatchDataField<T> & pdat_cfield,
                                                   std::vector<vectype> boxs_min, std::vector<vectype> boxs_max){
         return impl::append_interface_field<T,vectype>(queue,pdat_buf,pdat_cfield,boxs_min,boxs_max);
     }
@@ -107,12 +107,12 @@ template <class vectype, class field_type, class InterfaceSelector> class Interf
         sycl::buffer<u64> global_ids_buf(global_pcount);
 
         {
-            auto pid      = patch_ids_buf.get_access<sycl::access::mode::discard_write>();
-            auto lbox_min = local_box_min_buf.template get_access<sycl::access::mode::discard_write>();
-            auto lbox_max = local_box_max_buf.template get_access<sycl::access::mode::discard_write>();
+            sycl::host_accessor pid      { patch_ids_buf, sycl::write_only, sycl::no_init};
+            sycl::host_accessor lbox_min { local_box_min_buf, sycl::write_only, sycl::no_init};
+            sycl::host_accessor lbox_max { local_box_max_buf, sycl::write_only, sycl::no_init};
 
-            auto gbox_min = global_box_min_buf.template get_access<sycl::access::mode::discard_write>();
-            auto gbox_max = global_box_max_buf.template get_access<sycl::access::mode::discard_write>();
+            sycl::host_accessor gbox_min { global_box_min_buf, sycl::write_only, sycl::no_init};
+            sycl::host_accessor gbox_max { global_box_max_buf, sycl::write_only, sycl::no_init};
 
             std::tuple<vectype, vectype> box_transform = sched.get_box_tranform<vectype>();
 
@@ -130,7 +130,7 @@ template <class vectype, class field_type, class InterfaceSelector> class Interf
                               std::get<0>(box_transform);
             }
 
-            auto g_pid = global_ids_buf.get_access<sycl::access::mode::discard_write>();
+            sycl::host_accessor g_pid {global_ids_buf, sycl::write_only, sycl::no_init};
             for (u64 i = 0; i < global_pcount; i++) {
                 g_pid[i] = sched.patch_list.global[i].id_patch;
 
@@ -271,7 +271,7 @@ template <class vectype, class field_type, class InterfaceSelector> class Interf
             auto add_interfaces = [&](vectype offset){
                 sycl::buffer<InterfaceComInternal, 2> interface_list_buf = get_interface_list_v1(sched, sptree, pfield, offset);
                 {
-                    auto interface_list = interface_list_buf.template get_access<sycl::access::mode::read>();
+                    sycl::host_accessor interface_list {interface_list_buf, sycl::read_only};
 
                     for (u64 i = 0; i < local_pcount; i++) {
                         //std::cout << "- " << sched.patch_list.local[i].id_patch << " : ";
@@ -375,7 +375,7 @@ template <class vectype, class field_type, class InterfaceSelector> class Interf
     inline static void comm_interface(PatchScheduler &sched, std::vector<InterfaceComm<vectype>> & interface_comm_list){
 
         
-
+        using namespace shamrock::patch;
 
         std::unordered_map<u64,std::vector<std::tuple<u64,std::unique_ptr<PatchData>>>> Interface_map;
 

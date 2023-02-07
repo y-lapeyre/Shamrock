@@ -23,7 +23,7 @@
 #include <tuple>
 
 #include "aliases.hpp"
-#include "shamrock/legacy/patch/base/patch.hpp"
+#include "shamrock/patch/Patch.hpp"
 #include "shamrock/sfc/hilbert.hpp"
 
 /**
@@ -45,7 +45,7 @@ class HilbertLB{public :
      * @return std::vector<std::tuple<u64, i32, i32, i32>> list of changes to apply
      *    format = (index of the patch in global list,old owner rank,new owner rank,mpi communication tag)
      */
-    static std::vector<std::tuple<u64, i32, i32, i32>> make_change_list(std::vector<Patch> &global_patch_list);
+    static std::vector<std::tuple<u64, i32, i32, i32>> make_change_list(std::vector<shamrock::patch::Patch> &global_patch_list);
 
 
 };

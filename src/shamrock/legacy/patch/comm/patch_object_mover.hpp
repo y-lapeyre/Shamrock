@@ -37,7 +37,7 @@ inline std::unordered_map<u64, sycl::buffer<u64>> get_new_id_map<f32_3>(PatchSch
 
 
             u32 ixyz = sched.pdl.get_field_idx<f32_3>("xyz");
-            PatchDataField<f32_3> & xyz_field =  pdat.fields_f32_3[ixyz];
+            PatchDataField<f32_3> & xyz_field =  pdat.get_field<f32_3>(ixyz);
 
             auto & pos = xyz_field.get_buf();
 
@@ -70,7 +70,7 @@ inline std::unordered_map<u64, sycl::buffer<u64>> get_new_id_map<f64_3>(PatchSch
 
 
             u32 ixyz = sched.pdl.get_field_idx<f64_3>("xyz");
-            PatchDataField<f64_3> & xyz_field =  pdat.fields_f64_3[ixyz];
+            PatchDataField<f64_3> & xyz_field =  pdat.get_field<f64_3>(ixyz);
 
             auto & pos = xyz_field.get_buf();
 
@@ -100,7 +100,7 @@ inline void reatribute_particles(PatchScheduler & sched, SerialPatchTree<vecprec
 template<>
 inline void reatribute_particles<f32_3>(PatchScheduler & sched, SerialPatchTree<f32_3> & sptree,bool periodic){
 
-    
+    using namespace shamrock::patch;
 
     bool err_id_in_newid = false;
     std::unordered_map<u64, sycl::buffer<u64>> newid_buf_map;
@@ -109,7 +109,7 @@ inline void reatribute_particles<f32_3>(PatchScheduler & sched, SerialPatchTree<
 
 
             u32 ixyz = sched.pdl.get_field_idx<f32_3>("xyz");
-            PatchDataField<f32_3> & xyz_field =  pdat.fields_f32_3[ixyz];
+            PatchDataField<f32_3> & xyz_field =  pdat.get_field<f32_3>(ixyz);
 
             auto & pos = xyz_field.get_buf();
 
@@ -122,7 +122,8 @@ inline void reatribute_particles<f32_3>(PatchScheduler & sched, SerialPatchTree<
 
             
             {
-                auto nid = newid_buf_map.at(id).get_access<sycl::access::mode::read>();
+                //auto nid = newid_buf_map.at(id).get_access<sycl::access::mode::read>();
+                sycl::host_accessor nid {newid_buf_map.at(id), sycl::read_only};
                 for(u32 i = 0 ; i < pdat.get_obj_cnt() ; i++){
                     bool err = nid[i] == u64_max;
                     err_id_in_newid = err_id_in_newid || (err);
@@ -130,7 +131,8 @@ inline void reatribute_particles<f32_3>(PatchScheduler & sched, SerialPatchTree<
             }
 
             if (periodic && err_id_in_newid) {
-                auto nid = newid_buf_map.at(id).get_access<sycl::access::mode::read>();
+                //auto nid = newid_buf_map.at(id).get_access<sycl::access::mode::read>();
+                sycl::host_accessor nid {newid_buf_map.at(id), sycl::read_only};
                 for(u32 i = 0 ; i < pdat.get_obj_cnt() ; i++){
                     bool err = nid[i] == u64_max;
 
@@ -163,11 +165,13 @@ inline void reatribute_particles<f32_3>(PatchScheduler & sched, SerialPatchTree<
 
     if(synced_should_res_box){
         sched.patch_data.sim_box.reset_box_size();
+
+        auto [bmin,bmax] = sched.patch_data.sim_box.get_bounding_box<f32_3>();
         
         for(auto & [id,pdat] : sched.patch_data.owned_data ){
 
             u32 ixyz = sched.pdl.get_field_idx<f32_3>("xyz");
-            PatchDataField<f32_3> & xyz_field =  pdat.fields_f32_3[ixyz];
+            PatchDataField<f32_3> & xyz_field =  pdat.get_field<f32_3>(ixyz);
 
             {
 
@@ -178,32 +182,29 @@ inline void reatribute_particles<f32_3>(PatchScheduler & sched, SerialPatchTree<
                 for(u32 i = 0 ; i < pdat.get_obj_cnt(); i++){
 
                     f32_3 r = acc[i];
-                    sched.patch_data.sim_box.min_box_sim_s = sycl::min(sched.patch_data.sim_box.min_box_sim_s,r);
-                    sched.patch_data.sim_box.max_box_sim_s = sycl::max(sched.patch_data.sim_box.max_box_sim_s,r);
+                    bmin = sycl::min(bmin,r);
+                    bmax = sycl::max(bmax,r);
 
                 }
             }
 
             
         }
-        f32_3 new_minbox = sched.patch_data.sim_box.min_box_sim_s;
-        f32_3 new_maxbox = sched.patch_data.sim_box.max_box_sim_s;
-        mpi::allreduce(&sched.patch_data.sim_box.min_box_sim_s.x(), &new_minbox.x(), 1 , mpi_type_f32,MPI_MIN, MPI_COMM_WORLD);
-        mpi::allreduce(&sched.patch_data.sim_box.min_box_sim_s.y(), &new_minbox.y(), 1 , mpi_type_f32,MPI_MIN, MPI_COMM_WORLD);
-        mpi::allreduce(&sched.patch_data.sim_box.min_box_sim_s.z(), &new_minbox.z(), 1 , mpi_type_f32,MPI_MIN, MPI_COMM_WORLD);
-        mpi::allreduce(&sched.patch_data.sim_box.max_box_sim_s.x(), &new_maxbox.x(), 1 , mpi_type_f32,MPI_MAX, MPI_COMM_WORLD);
-        mpi::allreduce(&sched.patch_data.sim_box.max_box_sim_s.y(), &new_maxbox.y(), 1 , mpi_type_f32,MPI_MAX, MPI_COMM_WORLD);
-        mpi::allreduce(&sched.patch_data.sim_box.max_box_sim_s.z(), &new_maxbox.z(), 1 , mpi_type_f32,MPI_MAX, MPI_COMM_WORLD);
+        f32_3 new_minbox = bmin;
+        f32_3 new_maxbox = bmax;
+        mpi::allreduce(&bmin.x(), &new_minbox.x(), 1 , mpi_type_f32,MPI_MIN, MPI_COMM_WORLD);
+        mpi::allreduce(&bmin.y(), &new_minbox.y(), 1 , mpi_type_f32,MPI_MIN, MPI_COMM_WORLD);
+        mpi::allreduce(&bmin.z(), &new_minbox.z(), 1 , mpi_type_f32,MPI_MIN, MPI_COMM_WORLD);
+        mpi::allreduce(&bmax.x(), &new_maxbox.x(), 1 , mpi_type_f32,MPI_MAX, MPI_COMM_WORLD);
+        mpi::allreduce(&bmax.y(), &new_maxbox.y(), 1 , mpi_type_f32,MPI_MAX, MPI_COMM_WORLD);
+        mpi::allreduce(&bmax.z(), &new_maxbox.z(), 1 , mpi_type_f32,MPI_MAX, MPI_COMM_WORLD);
 
-        sched.patch_data.sim_box.min_box_sim_s = new_minbox;
-        sched.patch_data.sim_box.max_box_sim_s = new_maxbox;
+        sched.patch_data.sim_box.set_bounding_box<f32_3>({new_minbox,new_maxbox});
 
         logger::debug_ln("Patch Object Mover", "resize box to  :",new_minbox,new_maxbox);
         sched.patch_data.sim_box.clean_box<f32>(1.2);
 
-        new_minbox = sched.patch_data.sim_box.min_box_sim_s;
-        new_maxbox = sched.patch_data.sim_box.max_box_sim_s;
-        logger::debug_ln("Patch Object Mover", "resize box to  :",new_minbox,new_maxbox);
+        logger::debug_ln("Patch Object Mover", "resize box to  :",sched.patch_data.sim_box.get_bounding_box<f32_3>());
         
 
 
@@ -214,7 +215,7 @@ inline void reatribute_particles<f32_3>(PatchScheduler & sched, SerialPatchTree<
         for(auto & [id,pdat] : sched.patch_data.owned_data ){
             if(! pdat.is_empty()){
                 u32 ixyz = sched.pdl.get_field_idx<f32_3>("xyz");
-                PatchDataField<f32_3> & xyz_field =  pdat.fields_f32_3[ixyz];
+                PatchDataField<f32_3> & xyz_field =  pdat.get_field<f32_3>(ixyz);
 
                 auto & pos = xyz_field.get_buf();
 
@@ -245,8 +246,8 @@ inline void reatribute_particles<f32_3>(PatchScheduler & sched, SerialPatchTree<
 
             if(true){
 
-                auto nid = newid.get_access<sycl::access::mode::read>();
-                
+                //auto nid = newid.get_access<sycl::access::mode::read>();
+                sycl::host_accessor nid {newid, sycl::read_only};
                 std::unordered_map<u64 , std::unique_ptr<PatchData>> send_map;
 
                 const u32 cnt = pdat.get_obj_cnt();

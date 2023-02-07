@@ -8,20 +8,20 @@
 
 #include "aliases.hpp"
 #include "shamrock/legacy/patch/base/patchdata.hpp"
-#include "shamrock/legacy/patch/base/patchdata_layout.hpp"
+#include "shamrock/patch/PatchDataLayout.hpp"
 #include "shamsys/legacy/mpi_handler.hpp"
 #include "shamsys/legacy/sycl_mpi_interop.hpp"
 #include "shamtest/shamtest.hpp"
 #include <random>
 
 
-
 TestStart(Unittest, "patchdata.cpp/patch_data_check_match",patch_data_check_match, 1){
     std::mt19937 eng(0x1111);  
 
+    using namespace shamrock::patch;
+
 
     PatchDataLayout pdl;
-    pdl.xyz_mode = xyz32;
     
     pdl.add_field<f32>("f32", 1);
     pdl.add_field<f32_2>("f32_2", 1);
@@ -54,9 +54,10 @@ TestStart(Unittest, "patchdata.cpp/patch_data_check_match",patch_data_check_matc
 TestStart(Unittest, "patchdata.cpp/isend_irecv",patch_data_isend_irecv, 2){
     std::mt19937 eng(0x1111);  
 
+    using namespace shamrock::patch;
+
 
     PatchDataLayout pdl;
-    pdl.xyz_mode = xyz32;
 
     pdl.add_field<f32>("f32", 1);
     pdl.add_field<f32_2>("f32_2", 1);

@@ -11,6 +11,7 @@
 #include "aliases.hpp"
 #include "shamrock/legacy/patch/base/patchdata.hpp"
 #include "shamrock/legacy/patch/base/patchdata_field.hpp"
+#include "shamrock/patch/Patch.hpp"
 #include "shamrock/legacy/utils/geometry_utils.hpp"
 #include <vector>
 
@@ -21,18 +22,20 @@ namespace impl {
 
     // TODO make box list reference
     template<class vectype>
-    std::vector<u8> get_flag_choice(sycl::queue &queue, PatchData & pdat,
+    std::vector<u8> get_flag_choice(sycl::queue &queue, shamrock::patch::PatchData & pdat,
                                                                             std::vector<vectype> boxs_min,
                                                                             std::vector<vectype> boxs_max);
 
     template<>
-    inline std::vector<u8> get_flag_choice<f32_3>(sycl::queue &queue, PatchData & pdat,
+    inline std::vector<u8> get_flag_choice<f32_3>(sycl::queue &queue, shamrock::patch::PatchData & pdat,
                                                                             std::vector<f32_3> boxs_min,
                                                                             std::vector<f32_3> boxs_max){
 
         if (boxs_min.size() > u8_max - 1) {
             throw shamrock_exc("this algo is not build to handle more than 2^8 - 2 boxes as input");
         }
+
+        using namespace shamrock::patch;
 
 
         //TODO change this func when implementing the USM patch without the pos_s_buf/pos_d_buf
@@ -49,9 +52,9 @@ namespace impl {
 
             u32 field_ipos = pdat.pdl.get_field_idx<f32_3>("xyz");
 
-            PatchDataField<f32_3> & pos_field = pdat.fields_f32_3[field_ipos];
+            PatchDataField<f32_3> & pos_field = pdat.get_field<f32_3>(field_ipos);
 
-            auto & pos_s_buf = pos_field.get_buf();
+            const auto & pos_s_buf = pos_field.get_buf();
 
             
 
@@ -75,7 +78,7 @@ namespace impl {
 
                     for (u8 idx = 0; idx < num_boxes; idx++) {
 
-                        if (BBAA::is_particle_in_patch<f32_3>(pos_i, bmin[idx], bmax[idx])) {
+                        if (Patch::is_in_patch_converted(pos_i, bmin[idx], bmax[idx])) {
                             index_box[i] = idx;
                         }
                     }
@@ -88,13 +91,15 @@ namespace impl {
     }
 
     template<>
-    inline std::vector<u8> get_flag_choice<f64_3>(sycl::queue &queue, PatchData & pdat,
+    inline std::vector<u8> get_flag_choice<f64_3>(sycl::queue &queue, shamrock::patch::PatchData & pdat,
                                                                             std::vector<f64_3> boxs_min,
                                                                             std::vector<f64_3> boxs_max){
 
         if (boxs_min.size() > u8_max - 1) {
             throw shamrock_exc("this algo is not build to handle more than 2^8 - 2 boxes as input");
         }
+
+        using namespace shamrock::patch;
 
         std::vector<u8> flag_choice(pdat.get_obj_cnt());
 
@@ -108,7 +113,7 @@ namespace impl {
 
             u32 field_ipos = pdat.pdl.get_field_idx<f64_3>("xyz");
 
-            PatchDataField<f64_3> & pos_field = pdat.fields_f64_3[field_ipos];
+            PatchDataField<f64_3> & pos_field = pdat.get_field<f64_3>(field_ipos);
 
             auto & pos_d_buf = pos_field.get_buf();
 
@@ -131,7 +136,7 @@ namespace impl {
                     index_box[i] = u8_max;
 
                     for (u8 idx = 0; idx < num_boxes; idx++) {
-                        if (BBAA::is_particle_in_patch(pos_i, bmin[idx], bmax[idx])) {
+                        if (Patch::is_in_patch_converted(pos_i, bmin[idx], bmax[idx])) {
                             index_box[i] = idx;
                         }
                     }
@@ -150,7 +155,7 @@ namespace impl {
 
 
     template <class T, class vectype>
-    inline std::vector<std::unique_ptr<PatchDataField<T>>> append_interface_field(sycl::queue &queue, PatchData & pdat, PatchDataField<T> & pdat_cfield,
+    inline std::vector<std::unique_ptr<PatchDataField<T>>> append_interface_field(sycl::queue &queue, shamrock::patch::PatchData & pdat, PatchDataField<T> & pdat_cfield,
                                                                             std::vector<vectype> boxs_min,
                                                                             std::vector<vectype> boxs_max) {
 

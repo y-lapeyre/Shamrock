@@ -53,8 +53,10 @@ void models::nbody::Nbody_SelfGrav<flt>::init(){
 
 
 template<class flt,class vec3>
-void sycl_move_parts(sycl::queue &queue, u32 npart, flt dt, std::unique_ptr<sycl::buffer<vec3>> &buf_xyz,
-                                        std::unique_ptr<sycl::buffer<vec3>> &buf_vxyz) {
+void sycl_move_parts(sycl::queue &queue, u32 npart, flt dt, const std::unique_ptr<sycl::buffer<vec3>> &buf_xyz,
+                                        const std::unique_ptr<sycl::buffer<vec3>> &buf_vxyz) {
+
+    using namespace shamrock::patch;
 
     sycl::range<1> range_npart{npart};
 
@@ -78,7 +80,7 @@ void sycl_move_parts(sycl::queue &queue, u32 npart, flt dt, std::unique_ptr<sycl
 
 
 template<class vec3>
-void sycl_position_modulo(sycl::queue &queue, u32 npart, std::unique_ptr<sycl::buffer<vec3>> &buf_xyz,
+void sycl_position_modulo(sycl::queue &queue, u32 npart, const std::unique_ptr<sycl::buffer<vec3>> &buf_xyz,
                                 std::tuple<vec3, vec3> box) {
 
     sycl::range<1> range_npart{npart};
@@ -315,6 +317,8 @@ void compute_multipoles(Tree & rtree, sycl::buffer<vec> & pos_part, sycl::buffer
 
 template<class flt> 
 f64 models::nbody::Nbody_SelfGrav<flt>::evolve(PatchScheduler &sched, f64 old_time, f64 target_time){
+
+    using namespace shamrock::patch;
 
     check_valid();
 

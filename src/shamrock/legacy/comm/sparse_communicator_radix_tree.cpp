@@ -15,6 +15,8 @@ struct SparseCommExchanger<RadixTree<u_morton, vec3, 3>>{
 
     static SparseCommResult<RadixTree<u_morton, vec3,3 >> sp_xchg(SparsePatchCommunicator & communicator, const SparseCommSource<RadixTree<u_morton, vec3,3>> &send_comm_pdat){
 
+        using namespace shamrock::patch;
+
         SparseCommResult<RadixTree<u_morton, vec3, 3>> recv_obj;
 
         if(!send_comm_pdat.empty()){

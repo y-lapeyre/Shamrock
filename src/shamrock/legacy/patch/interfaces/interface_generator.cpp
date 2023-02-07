@@ -13,7 +13,7 @@
 #include <vector>
 
 #include "aliases.hpp"
-#include "shamrock/legacy/patch/base/patch.hpp"
+#include "shamrock/patch/Patch.hpp"
 #include "shamrock/legacy/patch/base/patchdata.hpp"
 //#include "shamrock/legacy/patch/patchdata_buffer.hpp"
 #include "shamrock/legacy/patch/scheduler/scheduler_patch_data.hpp"
@@ -25,10 +25,12 @@
 //TODO can merge those 2 func
 
 template <>
-std::vector<std::unique_ptr<PatchData>> InterfaceVolumeGenerator::append_interface<f32_3>(sycl::queue &queue, PatchData & pdat,
+std::vector<std::unique_ptr<shamrock::patch::PatchData>> InterfaceVolumeGenerator::append_interface<f32_3>(sycl::queue &queue, shamrock::patch::PatchData & pdat,
                                                                         std::vector<f32_3> boxs_min,
                                                                         std::vector<f32_3> boxs_max,f32_3 add_offset) {
 
+
+    using namespace shamrock::patch;
 
     std::vector<u8> flag_choice = impl::get_flag_choice(queue, pdat, boxs_min, boxs_max);
 
@@ -50,7 +52,7 @@ std::vector<std::unique_ptr<PatchData>> InterfaceVolumeGenerator::append_interfa
         for (u32 i = 0; i < idxs.size(); i++) {
             pdat.append_subset_to(idxs[i], *pdat_vec[i]);
             u32 ixyz = pdat.pdl.get_field_idx<f32_3>("xyz");
-            pdat_vec[i]->fields_f32_3[ixyz].apply_offset(add_offset);
+            pdat_vec[i]->get_field<f32_3>(ixyz).apply_offset(add_offset);
         }
     }
 
@@ -61,9 +63,10 @@ std::vector<std::unique_ptr<PatchData>> InterfaceVolumeGenerator::append_interfa
 }
 
 template <>
-std::vector<std::unique_ptr<PatchData>> InterfaceVolumeGenerator::append_interface<f64_3>(sycl::queue &queue, PatchData & pdat,
+std::vector<std::unique_ptr<shamrock::patch::PatchData>> InterfaceVolumeGenerator::append_interface<f64_3>(sycl::queue &queue, shamrock::patch::PatchData & pdat,
                                                                         std::vector<f64_3> boxs_min,
                                                                         std::vector<f64_3> boxs_max,f64_3 add_offset) {
+using namespace shamrock::patch;
 
     std::vector<u8> flag_choice = impl::get_flag_choice(queue, pdat, boxs_min, boxs_max);
 
@@ -84,7 +87,7 @@ std::vector<std::unique_ptr<PatchData>> InterfaceVolumeGenerator::append_interfa
         for (u32 i = 0; i < idxs.size(); i++) {
             pdat.append_subset_to(idxs[i], *pdat_vec[i]);
             u32 ixyz = pdat.pdl.get_field_idx<f64_3>("xyz");
-            pdat_vec[i]->fields_f64_3[ixyz].apply_offset(add_offset);
+            pdat_vec[i]->get_field<f64_3>(ixyz).apply_offset(add_offset);
         }
     }
 

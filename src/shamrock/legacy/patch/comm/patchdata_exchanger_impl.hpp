@@ -10,9 +10,9 @@
 
 
 #include "shamrock/legacy/patch/base/patchdata_field.hpp"
-#include "shamrock/legacy/patch/base/patchdata_layout.hpp"
+#include "shamrock/patch/PatchDataLayout.hpp"
 #include "shamsys/legacy/mpi_handler.hpp"
-#include "shamrock/legacy/patch/base/patch.hpp"
+#include "shamrock/patch/Patch.hpp"
 #include "shamrock/legacy/patch/base/patchdata.hpp"
 #include "shamsys/legacy/sycl_mpi_interop.hpp"
 #include <vector>
@@ -45,11 +45,13 @@ inline void vector_irecv(std::vector<T> & pdat, std::vector<MPI_Request> &rq_lst
 
 
 inline void make_comm_table(
-    const std::vector<Patch> & in_global_patch_list,
+    const std::vector<shamrock::patch::Patch> & in_global_patch_list,
     const std::vector<u64_2> & in_send_comm_vec,
     std::vector<u64_2> & out_global_comm_vec,
     std::vector<i32> & out_global_comm_tag,
     std::vector<i32> & out_local_comm_tag){
+
+        using namespace shamrock::patch;
 
     out_local_comm_tag.resize(in_send_comm_vec.size());
     {
@@ -77,12 +79,14 @@ inline void make_comm_table(
 
 
 inline void patch_data_exchange_object(
-    PatchDataLayout & pdl,
-    std::vector<Patch> & global_patch_list,
-    std::vector<std::unique_ptr<PatchData>> &send_comm_pdat,
+    shamrock::patch::PatchDataLayout & pdl,
+    std::vector<shamrock::patch::Patch> & global_patch_list,
+    std::vector<std::unique_ptr<shamrock::patch::PatchData>> &send_comm_pdat,
     std::vector<u64_2> &send_comm_vec,
-    std::unordered_map<u64, std::vector<std::tuple<u64, std::unique_ptr<PatchData>>>> & recv_obj
+    std::unordered_map<u64, std::vector<std::tuple<u64, std::unique_ptr<shamrock::patch::PatchData>>>> & recv_obj
     ){
+
+        using namespace shamrock::patch;
 
     //TODO enable if ultra verbose
     // std::cout << "len comm_pdat : " << send_comm_pdat.size() << std::endl;
@@ -206,11 +210,13 @@ inline void patch_data_exchange_object(
 
 template<class T>
 inline void patch_data_field_exchange_object(
-    std::vector<Patch> & global_patch_list,
+    std::vector<shamrock::patch::Patch> & global_patch_list,
     std::vector<std::unique_ptr<PatchDataField<T>>> &send_comm_pdat,
     std::vector<u64_2> &send_comm_vec,
     std::unordered_map<u64, std::vector<std::tuple<u64, std::unique_ptr<PatchDataField<T>>>>> & recv_obj
     ){
+
+        using namespace shamrock::patch;
 
     //TODO enable if ultra verbose
     // std::cout << "len comm_pdat : " << send_comm_pdat.size() << std::endl;
@@ -336,11 +342,13 @@ inline void patch_data_field_exchange_object(
 
 template<class u_morton, class vec3>
 inline void radix_tree_exchange_object(
-    std::vector<Patch> & global_patch_list,
+    std::vector<shamrock::patch::Patch> & global_patch_list,
     std::vector<std::unique_ptr<RadixTree<u_morton, vec3,3>>> &send_comm_pdat,
     std::vector<u64_2> &send_comm_vec,
     std::unordered_map<u64, std::vector<std::tuple<u64, std::unique_ptr<RadixTree<u_morton, vec3,3>>>>> & recv_obj
     ){
+
+        using namespace shamrock::patch;
 
     //TODO enable if ultra verbose
     // std::cout << "len comm_pdat : " << send_comm_pdat.size() << std::endl;

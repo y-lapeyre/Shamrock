@@ -120,11 +120,11 @@ void unit_test_reduc(){
             return syclalgs::reduction::impl::manual_reduce_impl<32>::reduce_manual(q, buf1, start_id, end_id, sycl::plus<T>{});
         }
     );
-    unit_test_reduc<f64>("reduction : sycl2020", 
-        [](sycl::queue & q, sycl::buffer<T> & buf1, u32 start_id, u32 end_id) -> T {
-            return syclalgs::reduction::impl::reduce_sycl_2020(q, buf1, start_id, end_id, sycl::plus<T>{});
-        }
-    );
+    //unit_test_reduc<f64>("reduction : sycl2020", 
+    //    [](sycl::queue & q, sycl::buffer<T> & buf1, u32 start_id, u32 end_id) -> T {
+    //        return syclalgs::reduction::impl::reduce_sycl_2020(q, buf1, start_id, end_id, sycl::plus<T>{});
+    //    }
+    //);
     unit_test_reduc<f64>("reduction : main",
         [](sycl::queue & q, sycl::buffer<T> & buf1, u32 start_id, u32 end_id) -> T {
             return syclalgs::reduction::reduce(q, buf1, start_id, end_id, sycl::plus<T>{});
@@ -239,9 +239,9 @@ template<class T> void bench_type(std::string Tname){
         return syclalgs::reduction::impl::manual_reduce_impl<128>::reduce_manual(q, buf1, start_id, end_id, sycl::plus<T>{});
     });
 
-    bench_mark_indiv<T>(Tname + " sycl2020 reduction",vals,[](sycl::queue & q, sycl::buffer<T> & buf1, u32 start_id, u32 end_id){
-        return syclalgs::reduction::impl::reduce_sycl_2020(q, buf1, start_id, end_id, sycl::plus<T>{});
-    });
+    //bench_mark_indiv<T>(Tname + " sycl2020 reduction",vals,[](sycl::queue & q, sycl::buffer<T> & buf1, u32 start_id, u32 end_id){
+    //    return syclalgs::reduction::impl::reduce_sycl_2020(q, buf1, start_id, end_id, sycl::plus<T>{});
+    //});
     #endif
 }
 

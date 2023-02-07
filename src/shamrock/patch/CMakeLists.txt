@@ -1,6 +1,9 @@
 
 set(Sources
-    Patch.cpp
+Patch.cpp
+PatchData.cpp
+PatchDataLayout.cpp
+PatchDataField.cpp
 )
 set(SourcesTest
     
@@ -29,3 +32,5 @@ target_sources(shamrock_test
         ${Headers} ${HeadersTest}
     )
 endif()
+
+add_subdirectory(tests)

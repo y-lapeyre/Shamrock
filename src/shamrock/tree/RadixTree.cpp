@@ -25,7 +25,7 @@
 
 template <class u_morton, class vec3 ,u32 dim>
 RadixTree<u_morton, vec3, dim>::RadixTree(
-    sycl::queue &queue, std::tuple<vec3, vec3> treebox, std::unique_ptr<sycl::buffer<vec3>> &pos_buf, u32 cnt_obj, u32 reduc_level
+    sycl::queue &queue, std::tuple<vec3, vec3> treebox, const std::unique_ptr<sycl::buffer<vec3>> &pos_buf, u32 cnt_obj, u32 reduc_level
 ) {
     if (cnt_obj > i32_max - 1) {
         throw shamrock_exc("number of element in patch above i32_max-1");
@@ -100,11 +100,11 @@ RadixTree<u_morton, vec3, dim>::RadixTree(
         buf_endrange    = std::make_unique<sycl::buffer<u32>>(tree_internal_count);
 
         {
-            auto rchild_id   = (buf_rchild_id->get_access<sycl::access::mode::discard_write>());
-            auto lchild_id   = (buf_lchild_id->get_access<sycl::access::mode::discard_write>());
-            auto rchild_flag = (buf_rchild_flag->get_access<sycl::access::mode::discard_write>());
-            auto lchild_flag = (buf_lchild_flag->get_access<sycl::access::mode::discard_write>());
-            auto endrange    = (buf_endrange->get_access<sycl::access::mode::discard_write>());
+            sycl::host_accessor rchild_id   {*buf_rchild_id  , sycl::write_only, sycl::no_init};
+            sycl::host_accessor lchild_id   {*buf_lchild_id  , sycl::write_only, sycl::no_init};
+            sycl::host_accessor rchild_flag {*buf_rchild_flag, sycl::write_only, sycl::no_init};
+            sycl::host_accessor lchild_flag {*buf_lchild_flag, sycl::write_only, sycl::no_init};
+            sycl::host_accessor endrange    {*buf_endrange   , sycl::write_only, sycl::no_init};
 
             rchild_id[0]   = 0;
             lchild_id[0]   = 1;
@@ -181,7 +181,7 @@ template <class morton_t, class pos_t, u32 dim> void RadixTree<morton_t, pos_t, 
 
 template <class u_morton, class vec,u32 dim>
 auto RadixTree<u_morton, vec, dim>::compute_int_boxes(
-    sycl::queue &queue, std::unique_ptr<sycl::buffer<coord_t>> &int_rad_buf, coord_t tolerance
+    sycl::queue &queue, const std::unique_ptr<sycl::buffer<coord_t>> &int_rad_buf, coord_t tolerance
 ) -> RadixTreeField<coord_t>{
 
     logger::debug_sycl_ln("RadixTree", "compute int boxes");

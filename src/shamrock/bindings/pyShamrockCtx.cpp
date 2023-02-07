@@ -155,7 +155,7 @@ class VecToNumpy<sycl::vec<T, 16>>{
 
 template<class T> void append_to_map(
     std::string key, 
-    std::vector<std::unique_ptr<PatchData>> & lst, 
+    std::vector<std::unique_ptr<shamrock::patch::PatchData>> & lst, 
     py::dict & dic_out){
 
 
@@ -179,15 +179,20 @@ template<class T> void append_to_map(
 
     };
 
-    auto list_appender = [&](std::vector<PatchDataField<T>> & fields){
-        for(auto f : fields){
-            appender(f);
-        }
-    };
+    //auto list_appender = [&](std::vector<PatchDataField<T>> & fields){
+    //    for(auto f : fields){
+    //        appender(f);
+    //    }
+    //};
 
 
     for (auto & pdat : lst) {
-        list_appender(pdat->get_field_list<T>());
+
+        pdat->for_each_field<T>([&](auto & field){
+            appender(field);
+        });
+
+        //list_appender(pdat->get_field_list<T>());
     }
 
     if(!vec.empty()){
@@ -210,8 +215,8 @@ Register_pymod(pyshamrockctxinit){
     py::class_<ShamrockCtx>(m, "Context")
         .def(py::init<>())
         .def("pdata_layout_new", &ShamrockCtx::pdata_layout_new)
-        .def("pdata_layout_do_double_prec_mode", &ShamrockCtx::pdata_layout_do_double_prec_mode)
-        .def("pdata_layout_do_single_prec_mode", &ShamrockCtx::pdata_layout_do_single_prec_mode)
+        //.def("pdata_layout_do_double_prec_mode", &ShamrockCtx::pdata_layout_do_double_prec_mode)
+        //.def("pdata_layout_do_single_prec_mode", &ShamrockCtx::pdata_layout_do_single_prec_mode)
         .def("pdata_layout_add_field", &ShamrockCtx::pdata_layout_add_field_t)
         .def("pdata_layout_print", &ShamrockCtx::pdata_layout_print)
         .def("init_sched", &ShamrockCtx::init_sched)

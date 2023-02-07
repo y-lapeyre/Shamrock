@@ -9,7 +9,7 @@
 #pragma once
 
 #include "aliases.hpp"
-#include "shamrock/legacy/patch/base/patch.hpp"
+#include "shamrock/patch/Patch.hpp"
 #include <vector>
 
 #include "shamrock/legacy/io/logs.hpp"

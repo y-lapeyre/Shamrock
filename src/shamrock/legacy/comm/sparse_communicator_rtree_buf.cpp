@@ -18,6 +18,8 @@ struct SparseCommExchanger<RadixTreeField<T>>{
     //TODO emit warning that here the sycl buffer will be used with it's internal size
     static SparseCommResult<RadixTreeField<T>> sp_xchg(SparsePatchCommunicator & communicator, const SparseCommSource<RadixTreeField<T>> &send_comm_pdat){
 
+        using namespace shamrock::patch;
+
         SparseCommResult<RadixTreeField<T>> recv_obj;
 
         if(!send_comm_pdat.empty()){

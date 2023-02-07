@@ -22,9 +22,9 @@
 #include "aliases.hpp"
 #include "shamrock/legacy/io/dump.hpp"
 #include "shamrock/legacy/io/logs.hpp"
-#include "shamrock/legacy/patch/base/patch.hpp"
+#include "shamrock/patch/Patch.hpp"
 #include "shamrock/legacy/patch/base/patchdata.hpp"
-#include "shamrock/legacy/patch/base/patchdata_layout.hpp"
+#include "shamrock/patch/PatchDataLayout.hpp"
 #include "shamrock/legacy/patch/comm/patch_content_exchanger.hpp"
 #include "shamrock/legacy/patch/comm/patch_object_mover.hpp"
 #include "shamrock/legacy/patch/comm/patchdata_exchanger.hpp"
@@ -655,13 +655,11 @@ int main(int argc, char *argv[]) {
         return 0;
     }
 
-    if(opts::has_option("--sycl-cfg")){
-        shamsys::instance::init(argc,argv);
-    }
-
     if(opts::has_option("--nocolor")){
         terminal_effects::disable_colors();
     }
+
+
 
     if(opts::has_option("--loglevel")){
         std::string level = std::string(opts::get_option("--loglevel"));
@@ -683,6 +681,16 @@ int main(int argc, char *argv[]) {
         logger::print_active_level();
         logger::raw_ln(terminal_effects::faint + "----------------------" + terminal_effects::reset);
     }
+
+
+
+
+    if(opts::has_option("--sycl-cfg")){
+        shamsys::instance::init(argc,argv);
+    }
+
+    
+
 
 
 

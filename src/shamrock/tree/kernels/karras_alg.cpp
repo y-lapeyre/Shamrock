@@ -10,36 +10,10 @@
 #include "aliases.hpp"
 #include <stdexcept>
 
+#include "shamrock/math/integerManip.hpp"
+
 #define SGN(x) (x == 0) ? 0 : ((x > 0) ? 1 : -1)
 
-#ifdef SYCL_COMP_DPCPP
-#define DELTA(x, y) ((y > morton_lenght - 1 || y < 0) ? -1 : int(sycl::clz(m[x] ^ m[y])))
-#endif
-
-#ifdef SYCL_COMP_HIPSYCL
-
-
-template<class T>
-int internal_clz(T a);
-
-template<>
-inline int internal_clz(u32 a){
-    return __builtin_clz(a);
-}
-
-template<>
-inline int internal_clz(u64 a){
-    return __builtin_clzl(a);
-}
-
-
-
-#define DELTA_host(x, y) __hipsycl_if_target_host(((y > morton_lenght - 1 || y < 0) ? -1 : int(internal_clz(m[x] ^ m[y]))))
-#define DELTA_cuda(x, y) __hipsycl_if_target_cuda(((y > morton_lenght - 1 || y < 0) ? -1 : int(__clz(m[x] ^ m[y]))))
-#define DELTA_hip(x, y) __hipsycl_if_target_hip(((y > morton_lenght - 1 || y < 0) ? -1 : int(__clz(m[x] ^ m[y]))))
-#define DELTA_spirv(x, y) __hipsycl_if_target_spirv(((y > morton_lenght - 1 || y < 0) ? -1 : int(__clz(m[x] ^ m[y]))))
-#define DELTA(x, y) DELTA_host(x, y) DELTA_cuda(x, y)
-#endif
 
 template <class u_morton, class kername>
 void __sycl_karras_alg(sycl::queue &queue, u32 internal_cell_count, std::unique_ptr<sycl::buffer<u_morton>> &in_morton,
@@ -48,6 +22,8 @@ void __sycl_karras_alg(sycl::queue &queue, u32 internal_cell_count, std::unique_
                        std::unique_ptr<sycl::buffer<u8>> &out_buf_lchild_flag,
                        std::unique_ptr<sycl::buffer<u8>> &out_buf_rchild_flag,
                        std::unique_ptr<sycl::buffer<u32>> &out_buf_endrange) {
+
+    using namespace shamrock::math::int_manip;
 
     sycl::range<1> range_radix_tree{internal_cell_count};
 
@@ -78,6 +54,10 @@ void __sycl_karras_alg(sycl::queue &queue, u32 internal_cell_count, std::unique_
 
         cgh.parallel_for<kername>(range_radix_tree, [=](sycl::item<1> item) {
             int i = (int)item.get_id(0);
+
+            auto DELTA = [=](i32 x, i32 y){
+                return karras_delta(x,y,morton_lenght,m);
+            };
 
             int ddelta = DELTA(i, i + 1) - DELTA(i, i - 1);
 

@@ -51,9 +51,9 @@ namespace BBAA {
 
     
 
-    template<class VecType> bool is_particle_in_patch(VecType part_pos,VecType pos_min_patch,VecType pos_max_patch);
+    template<class VecType> bool is_coord_in_range(VecType part_pos,VecType pos_min_patch,VecType pos_max_patch);
 
-    template<> inline bool is_particle_in_patch<f32_3>(f32_3 part_pos,f32_3 pos_min_patch,f32_3 pos_max_patch) {
+    template<> inline bool is_coord_in_range<f32_3>(f32_3 part_pos,f32_3 pos_min_patch,f32_3 pos_max_patch) {
         return (
                 (pos_min_patch.x() <= part_pos.x()) && (part_pos.x() < pos_max_patch.x()) &&
                 (pos_min_patch.y() <= part_pos.y()) && (part_pos.y() < pos_max_patch.y()) &&
@@ -61,7 +61,7 @@ namespace BBAA {
             );
     }
 
-    template<> inline bool is_particle_in_patch<f64_3>(f64_3 part_pos,f64_3 pos_min_patch,f64_3 pos_max_patch) {
+    template<> inline bool is_coord_in_range<f64_3>(f64_3 part_pos,f64_3 pos_min_patch,f64_3 pos_max_patch) {
         return (
                 (pos_min_patch.x() <= part_pos.x()) && (part_pos.x() < pos_max_patch.x()) &&
                 (pos_min_patch.y() <= part_pos.y()) && (part_pos.y() < pos_max_patch.y()) &&

@@ -12,13 +12,16 @@
 #include <random>
 
 #include "shamrock/legacy/io/logs.hpp"
-#include "shamrock/legacy/patch/base/patch.hpp"
+#include "shamrock/patch/Patch.hpp"
 #include "loadbalancing_hilbert.hpp"
 
 
 void SchedulerPatchList::build_global(){
+
+    using namespace shamrock::patch;
+
     auto t = timings::start_timer("SchedulerPatchList::build_global()",timings::mpi);
-    mpi_handler::vector_allgatherv(local, patch::patch_MPI_type, global, patch::patch_MPI_type, MPI_COMM_WORLD);   
+    mpi_handler::vector_allgatherv(local, get_patch_mpi_type<3>(), global, get_patch_mpi_type<3>(), MPI_COMM_WORLD);   
     t.stop();
 }
 
@@ -30,7 +33,7 @@ std::unordered_set<u64> SchedulerPatchList::build_local(){
     std::unordered_set<u64> out_ids;
 
     local.clear();
-    for(const Patch &p : global){
+    for(const shamrock::patch::Patch &p : global){
         //TODO add check node_owner_id valid 
         if(i32(p.node_owner_id) == shamsys::instance::world_rank){
             local.push_back(p);
@@ -48,7 +51,7 @@ void SchedulerPatchList::build_local_differantial(std::unordered_set<u64> &patch
     local.clear();
 
     for (u64 i = 0; i < global.size(); i++) {
-        const Patch & p = global[i];
+        const shamrock::patch::Patch & p = global[i];
 
         bool was_owned = (patch_id_lst.find(p.id_patch) != patch_id_lst.end());
 
@@ -80,7 +83,7 @@ void SchedulerPatchList::build_global_idx_map(){
     id_patch_to_global_idx.clear();
 
     u64 idx = 0;
-    for(Patch p : global){
+    for(shamrock::patch::Patch p : global){
         id_patch_to_global_idx[p.id_patch]  = idx;
         idx ++;
     }
@@ -92,7 +95,7 @@ void SchedulerPatchList::build_local_idx_map(){
     id_patch_to_local_idx.clear();
 
     u64 idx = 0;
-    for(Patch p : local){
+    for(shamrock::patch::Patch p : local){
         id_patch_to_local_idx[p.id_patch]  = idx;
         idx ++;
     }
@@ -101,7 +104,7 @@ void SchedulerPatchList::build_local_idx_map(){
 
 
 void SchedulerPatchList::reset_local_pack_index(){
-    for(Patch & p : local){
+    for(shamrock::patch::Patch & p : local){
         p.pack_node_index = u64_max;
     }
 }
@@ -113,53 +116,43 @@ void SchedulerPatchList::reset_local_pack_index(){
 
 std::tuple<u64,u64,u64,u64,u64,u64,u64,u64> SchedulerPatchList::split_patch(u64 id_patch){
 
+    using namespace shamrock::patch;
+
     Patch & p0 = global[id_patch_to_global_idx[id_patch]];
 
-    Patch p1,p2,p3,p4,p5,p6,p7;
+    std::array<Patch, 8> splts = p0.get_split();
 
-    patch::split_patch_obj(p0, p1, p2, p3, p4, p5, p6, p7);
+    p0 = splts[0];//override existing patch
     
-    p1.id_patch = _next_patch_id;
-    _next_patch_id ++;
+    splts[1].id_patch = _next_patch_id; _next_patch_id ++;
+    splts[2].id_patch = _next_patch_id; _next_patch_id ++;
+    splts[3].id_patch = _next_patch_id; _next_patch_id ++;
+    splts[4].id_patch = _next_patch_id; _next_patch_id ++;
+    splts[5].id_patch = _next_patch_id; _next_patch_id ++;
+    splts[6].id_patch = _next_patch_id; _next_patch_id ++;
+    splts[7].id_patch = _next_patch_id; _next_patch_id ++;
 
-    p2.id_patch = _next_patch_id;
-    _next_patch_id ++;
-
-    p3.id_patch = _next_patch_id;
-    _next_patch_id ++;
-
-    p4.id_patch = _next_patch_id;
-    _next_patch_id ++;
-
-    p5.id_patch = _next_patch_id;
-    _next_patch_id ++;
-
-    p6.id_patch = _next_patch_id;
-    _next_patch_id ++;
-
-    p7.id_patch = _next_patch_id;
-    _next_patch_id ++;
     //TODO use emplace_back instead
     u64 idx_p1 = global.size();
-    global.push_back(p1);
+    global.push_back(splts[1]);
 
     u64 idx_p2 = idx_p1 +1 ;
-    global.push_back(p2);
+    global.push_back(splts[2]);
 
     u64 idx_p3 = idx_p2 +1 ;
-    global.push_back(p3);
+    global.push_back(splts[3]);
 
     u64 idx_p4 = idx_p3 +1 ;
-    global.push_back(p4);
+    global.push_back(splts[4]);
 
     u64 idx_p5 = idx_p4 +1 ;
-    global.push_back(p5);
+    global.push_back(splts[5]);
 
     u64 idx_p6 = idx_p5 +1 ;
-    global.push_back(p6);
+    global.push_back(splts[6]);
 
     u64 idx_p7 = idx_p6 +1 ;
-    global.push_back(p7);
+    global.push_back(splts[7]);
 
     return {id_patch_to_global_idx[id_patch],
             idx_p1,idx_p2,idx_p3,idx_p4,idx_p5,idx_p6,idx_p7
@@ -178,25 +171,27 @@ void SchedulerPatchList::merge_patch(
         u64 idx6,
         u64 idx7){
 
-    patch::merge_patch_obj(
-        global[idx0],
-        global[idx1],
-        global[idx2],
-        global[idx3],
-        global[idx4],
-        global[idx5],
-        global[idx6],
-        global[idx7]
-    );
+    using namespace shamrock::patch;
 
-    // TODO notify in the documentation that this mean the patch is dead because it will be flushed out when performing the sync
-    global[idx1].node_owner_id = u32_max;
-    global[idx2].node_owner_id = u32_max;
-    global[idx3].node_owner_id = u32_max;
-    global[idx4].node_owner_id = u32_max;
-    global[idx5].node_owner_id = u32_max;
-    global[idx6].node_owner_id = u32_max;
-    global[idx7].node_owner_id = u32_max;
+    Patch p = Patch::merge_patch({
+            global[idx0],
+            global[idx1],
+            global[idx2],
+            global[idx3],
+            global[idx4],
+            global[idx5],
+            global[idx6],
+            global[idx7]
+        });
+
+    global[idx0] = p;
+    global[idx1].set_err_mode();
+    global[idx2].set_err_mode();
+    global[idx3].set_err_mode();
+    global[idx4].set_err_mode();
+    global[idx5].set_err_mode();
+    global[idx6].set_err_mode();
+    global[idx7].set_err_mode();
 
 }
 
@@ -209,7 +204,10 @@ void SchedulerPatchList::merge_patch(
 
 
 // TODO move in a separate file
-std::vector<Patch> make_fake_patch_list(u32 total_dtcnt,u64 div_limit){
+std::vector<shamrock::patch::Patch> make_fake_patch_list(u32 total_dtcnt,u64 div_limit){
+
+    using namespace shamrock::patch;
+
     std::vector<Patch> plist;
 
     std::mt19937 eng(0x1111);        

@@ -20,7 +20,7 @@
 #include "shamsys/legacy/mpi_handler.hpp"
 #include "loadbalancing_hilbert.hpp"
 
-#include "shamrock/legacy/patch/base/patchdata_layout.hpp"
+#include "shamrock/patch/PatchDataLayout.hpp"
 #include "shamsys/legacy/sycl_handler.hpp"
 #include "shamrock/legacy/utils/time_utils.hpp"
 
@@ -33,20 +33,53 @@
 void PatchScheduler::init_mpi_required_types(){
 
 
-    if(!patch::is_mpi_patch_type_active()){
-        patch::create_MPI_patch_type();
-    }
+    //if(!patch::is_mpi_patch_type_active()){
+    //    patch::create_MPI_patch_type();
+    //}
 }
 
 void PatchScheduler::free_mpi_required_types(){
 
 
-    if(patch::is_mpi_patch_type_active()){
-        patch::free_MPI_patch_type();
-    }
+    //if(patch::is_mpi_patch_type_active()){
+    //    patch::free_MPI_patch_type();
+    //}
 }
 
-PatchScheduler::PatchScheduler(PatchDataLayout & pdl, u64 crit_split,u64 crit_merge) : pdl(pdl), patch_data(pdl){
+void PatchScheduler::add_root_patch(){
+    using namespace shamrock::patch;
+    
+    if (shamsys::instance::world_rank == 0) {
+        
+
+        Patch root;
+
+        root.node_owner_id = shamsys::instance::world_rank;
+
+        root.x_min = 0;
+        root.y_min = 0;
+        root.z_min = 0;
+
+        root.x_max = HilbertLB::max_box_sz;
+        root.y_max = HilbertLB::max_box_sz;
+        root.z_max = HilbertLB::max_box_sz;
+
+        root.pack_node_index = u64_max;
+
+        PatchData pdat(pdl);
+
+        root.data_count = pdat.get_obj_cnt();
+        root.load_value = pdat.get_obj_cnt();
+
+        add_patch(root,pdat);  
+    } else {
+        patch_list._next_patch_id++;
+    }  
+}
+
+PatchScheduler::PatchScheduler(shamrock::patch::PatchDataLayout & pdl, u64 crit_split,u64 crit_merge) : pdl(pdl), patch_data(pdl,{
+            u64_3{0, 0, 0},
+            u64_3{HilbertLB::max_box_sz, HilbertLB::max_box_sz, HilbertLB::max_box_sz}}){
 
     crit_patch_split = crit_split;
     crit_patch_merge = crit_merge;
@@ -86,20 +119,24 @@ void PatchScheduler::sync_build_LB(bool global_patch_sync, bool balance_load){
 
 template<>
 std::tuple<f32_3,f32_3> PatchScheduler::get_box_tranform(){
-    if(pdl.xyz_mode == xyz64) throw shamrock_exc("cannot query single precision box, position is currently double precision");
+    if(!pdl.check_main_field_type<f32_3>()) throw shamrock_exc("cannot query single precision box the main field is not of f32_3 type");
 
-    f32_3 translate_factor = patch_data.sim_box.min_box_sim_s;
-    f32_3 scale_factor = (patch_data.sim_box.max_box_sim_s - patch_data.sim_box.min_box_sim_s)/HilbertLB::max_box_sz;
+    auto [bmin,bmax] = patch_data.sim_box.get_bounding_box<f32_3>();
+
+    f32_3 translate_factor = bmin;
+    f32_3 scale_factor = (bmax - bmin)/HilbertLB::max_box_sz;
 
     return {translate_factor,scale_factor};
 }
 
 template<>
 std::tuple<f64_3,f64_3> PatchScheduler::get_box_tranform(){
-    if(pdl.xyz_mode == xyz32) throw shamrock_exc("cannot query double precision box, position is currently single precision");
+    if(!pdl.check_main_field_type<f64_3>()) throw shamrock_exc("cannot query single precision box the main field is not of f64_3 type");
 
-    f64_3 translate_factor = patch_data.sim_box.min_box_sim_d;
-    f64_3 scale_factor = (patch_data.sim_box.max_box_sim_d - patch_data.sim_box.min_box_sim_d)/HilbertLB::max_box_sz;
+    auto [bmin,bmax] = patch_data.sim_box.get_bounding_box<f64_3>();
+
+    f64_3 translate_factor = bmin;
+    f64_3 scale_factor = (bmax - bmin)/HilbertLB::max_box_sz;
 
     return {translate_factor,scale_factor};
 }
@@ -107,42 +144,38 @@ std::tuple<f64_3,f64_3> PatchScheduler::get_box_tranform(){
 
 template<>
 std::tuple<f32_3,f32_3> PatchScheduler::get_box_volume(){
-   if(pdl.xyz_mode == xyz64) throw shamrock_exc("cannot query single precision box, position is currently double precision");
+    if(!pdl.check_main_field_type<f32_3>()) throw shamrock_exc("cannot query single precision box the main field is not of f32_3 type");
 
-    return {patch_data.sim_box.min_box_sim_s,patch_data.sim_box.max_box_sim_s};
+    return patch_data.sim_box.get_bounding_box<f32_3>();
 }
 
 template<>
 std::tuple<f64_3,f64_3> PatchScheduler::get_box_volume(){
-    if(pdl.xyz_mode == xyz32) throw shamrock_exc("cannot query double precision box, position is currently single precision");
+    if(!pdl.check_main_field_type<f64_3>()) throw shamrock_exc("cannot query single precision box the main field is not of f64_3 type");
 
-    return {patch_data.sim_box.min_box_sim_d,patch_data.sim_box.max_box_sim_d};
+    return patch_data.sim_box.get_bounding_box<f64_3>();
 }
 
 template<>
 void PatchScheduler::set_box_volume(std::tuple<f32_3,f32_3> box){
-    if(pdl.xyz_mode == xyz64) throw shamrock_exc("cannot query single precision box, position is currently double precision");
+    if(!pdl.check_main_field_type<f32_3>()) throw shamrock_exc("cannot query single precision box the main field is not of f32_3 type");
 
-    patch_data.sim_box.min_box_sim_s = std::get<0>(box);
-    patch_data.sim_box.max_box_sim_s = std::get<1>(box);
+    patch_data.sim_box.set_bounding_box<f32_3>({std::get<0>(box), std::get<1>(box)});
 
     logger::debug_ln("PatchScheduler", "box resized to :",
-        patch_data.sim_box.min_box_sim_s,
-        patch_data.sim_box.max_box_sim_s 
+        box
     );
 
 }
 
 template<>
 void PatchScheduler::set_box_volume(std::tuple<f64_3,f64_3> box){
-    if(pdl.xyz_mode == xyz32) throw shamrock_exc("cannot query double precision box, position is currently single precision");
+    if(!pdl.check_main_field_type<f64_3>()) throw shamrock_exc("cannot query single precision box the main field is not of f64_3 type");
 
-    patch_data.sim_box.min_box_sim_d = std::get<0>(box);
-    patch_data.sim_box.max_box_sim_d = std::get<1>(box);
+    patch_data.sim_box.set_bounding_box<f64_3>({std::get<0>(box), std::get<1>(box)});
 
     logger::debug_ln("PatchScheduler", "box resized to :",
-        patch_data.sim_box.min_box_sim_d,
-        patch_data.sim_box.max_box_sim_d 
+        box
     );
 
 }
@@ -157,7 +190,6 @@ void PatchScheduler::scheduler_step(bool do_split_merge, bool do_load_balancing)
     auto global_timer = timings::start_timer("SchedulerMPI::scheduler_step", timings::function);
 
     if(!is_mpi_sycl_interop_active()) throw shamrock_exc("sycl mpi interop not initialized");
-    if(!patch::is_mpi_patch_type_active()) throw shamrock_exc("mpi patch type not initialized");
 
     Timer timer;
 
@@ -370,6 +402,8 @@ void SchedulerMPI::scheduler_step(bool do_split_merge,bool do_load_balancing){
 
 std::string PatchScheduler::dump_status(){
 
+    using namespace shamrock::patch;
+
     std::stringstream ss;
 
     ss << "----- MPI Scheduler dump -----\n\n";
@@ -473,7 +507,7 @@ inline void PatchScheduler::split_patches(std::unordered_set<u64> split_rq){
         patch_tree.tree[splitted_node.childs_id[7]].linked_patchid = patch_list.global[idx_p7].id_patch;
 
         patch_data.split_patchdata(
-            old_patch_id,
+            old_patch_id,{
             patch_list.global[idx_p0], 
             patch_list.global[idx_p1],
             patch_list.global[idx_p2],
@@ -481,7 +515,7 @@ inline void PatchScheduler::split_patches(std::unordered_set<u64> split_rq){
             patch_list.global[idx_p4],
             patch_list.global[idx_p5],
             patch_list.global[idx_p6],
-            patch_list.global[idx_p7]);
+            patch_list.global[idx_p7]});
 
     }
     t.stop();
@@ -567,9 +601,12 @@ inline void PatchScheduler::set_patch_pack_values(std::unordered_set<u64> merge_
 
 
 void PatchScheduler::dump_local_patches(std::string filename){
+
+    using namespace shamrock::patch;
+
     std::ofstream fout(filename);
 
-    if(pdl.xyz_mode == xyz32){
+    if(pdl.check_main_field_type<f32_3>()){
 
         std::tuple<f32_3,f32_3> box_transform = get_box_tranform<f32_3>();
 
@@ -602,7 +639,7 @@ void PatchScheduler::dump_local_patches(std::string filename){
 
         fout.close();
 
-    }else if (pdl.xyz_mode == xyz64){
+    }else if(pdl.check_main_field_type<f64_3>()){
         
         std::tuple<f64_3,f64_3> box_transform = get_box_tranform<f64_3>();
 
@@ -636,14 +673,18 @@ void PatchScheduler::dump_local_patches(std::string filename){
         fout.close();
 
     }else{
-        throw shamrock_exc("position precision was not set");
+        throw std::runtime_error(
+            __LOC_PREFIX__ + "the chosen type for the main field is not handled"
+            );
     }
 }
 
 
 
 
-std::vector<std::unique_ptr<PatchData>> PatchScheduler::gather_data(u32 rank){
+std::vector<std::unique_ptr<shamrock::patch::PatchData>> PatchScheduler::gather_data(u32 rank){
+
+    using namespace shamrock::patch;
 
     auto plist = this->patch_list.global;
     auto pdata = this->patch_data.owned_data;

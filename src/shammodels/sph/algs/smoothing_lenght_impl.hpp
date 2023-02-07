@@ -14,7 +14,7 @@
 #include "aliases.hpp"
 #include "shamrock/legacy/patch/base/patchdata.hpp"
 //#include "shamrock/legacy/patch/patchdata_buffer.hpp"
-#include "shamrock/legacy/patch/base/patchdata_layout.hpp"
+#include "shamrock/patch/PatchDataLayout.hpp"
 #include "shammodels/sph/base/kernels.hpp"
 #include "shammodels/sph/base/sphpart.hpp"
 #include "shamrock/tree/RadixTree.hpp"
@@ -30,7 +30,7 @@ namespace impl {
         u32 or_element_cnt,
         
         u32 ihpart,
-        PatchData & pdat_merge,
+        shamrock::patch::PatchData & pdat_merge,
         sycl::buffer<flt> & hnew,
         sycl::buffer<flt> & omega,
         sycl::buffer<flt> & eps_h
@@ -43,7 +43,7 @@ namespace impl {
         u32 or_element_cnt,
         
         u32 ihpart,
-        PatchData & pdat_merge,
+        shamrock::patch::PatchData & pdat_merge,
         sycl::buffer<f32> & hnew,
         sycl::buffer<f32> & omega,
         sycl::buffer<f32> & eps_h
@@ -54,7 +54,7 @@ namespace impl {
 
         queue.submit([&](sycl::handler &cgh) {
             
-            auto acc_hpart = pdat_merge.fields_f32[ihpart].get_buf()->get_access<sycl::access::mode::read>(cgh);
+            auto acc_hpart = pdat_merge.get_field<f32>(ihpart).get_buf()->get_access<sycl::access::mode::read>(cgh);
             auto eps = eps_h.get_access<sycl::access::mode::discard_write>(cgh);
             auto h    = hnew.get_access<sycl::access::mode::discard_write>(cgh);
 
@@ -178,7 +178,7 @@ namespace impl {
             RadixTree<morton_prec, sycl::vec<flt,3>,3> & radix_t,
             RadixTreeField<flt> & int_rad,
 
-            PatchData & pdat_merge,
+            shamrock::patch::PatchData & pdat_merge,
             sycl::buffer<flt> & hnew,
             sycl::buffer<flt> & omega,
             sycl::buffer<flt> & eps_h
@@ -199,7 +199,7 @@ namespace impl {
             RadixTree<morton_prec, f32_3,3> & radix_t,
             RadixTreeField<f32> & int_rad,
 
-            PatchData & pdat_merge,
+            shamrock::patch::PatchData & pdat_merge,
             sycl::buffer<f32> & hnew,
             sycl::buffer<f32> & omega,
             sycl::buffer<f32> & eps_h
@@ -214,8 +214,8 @@ namespace impl {
                 auto h_new = hnew.get_access<sycl::access::mode::read_write>(cgh);
                 auto eps = eps_h.get_access<sycl::access::mode::read_write>(cgh);
 
-                auto acc_hpart = pdat_merge.fields_f32.at(ihpart).get_buf()->get_access<sycl::access::mode::read>(cgh);
-                auto r = pdat_merge.fields_f32_3[ixyz].get_buf()->get_access<sycl::access::mode::read>(cgh);
+                auto acc_hpart = pdat_merge.get_field<f32>(ihpart).get_buf()->get_access<sycl::access::mode::read>(cgh);
+                auto r = pdat_merge.get_field<f32_3>(ixyz).get_buf()->get_access<sycl::access::mode::read>(cgh);
                 
                 
                 Rta tree_acc(radix_t, cgh);
@@ -332,7 +332,7 @@ namespace impl {
             RadixTree<morton_prec, sycl::vec<flt,3>,3> & radix_t,
             RadixTreeField<flt> & int_rad,
 
-            PatchData & pdat_merge,
+            shamrock::patch::PatchData & pdat_merge,
             sycl::buffer<flt> & hnew,
             sycl::buffer<flt> & omega,
             sycl::buffer<flt> & eps_h
@@ -353,7 +353,7 @@ namespace impl {
             RadixTree<morton_prec, f32_3,3> & radix_t,
             RadixTreeField<f32> & int_rad,
 
-            PatchData & pdat_merge,
+            shamrock::patch::PatchData & pdat_merge,
             sycl::buffer<f32> & hnew,
             sycl::buffer<f32> & omega,
             sycl::buffer<f32> & eps_h
@@ -369,7 +369,7 @@ namespace impl {
                 auto h_new = hnew.get_access<sycl::access::mode::read_write>(cgh);
                 auto omga = omega.get_access<sycl::access::mode::discard_write>(cgh);
 
-                auto r = pdat_merge.fields_f32_3.at(ixyz).get_buf()->get_access<sycl::access::mode::read>(cgh);
+                auto r = pdat_merge.get_field<f32_3>(ixyz).get_buf()->get_access<sycl::access::mode::read>(cgh);
                 
                 using Rta = walker::Radix_tree_accessor<u32, f32_3>;
                 Rta tree_acc(radix_t, cgh);

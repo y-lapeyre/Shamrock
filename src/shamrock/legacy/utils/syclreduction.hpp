@@ -16,7 +16,7 @@ namespace syclalg {
 
     //TODO to optimize
     template<class T>
-    inline T get_max(sycl::queue & queue, std::unique_ptr<sycl::buffer<T>> & buf, u32 len){
+    inline T get_max(sycl::queue & queue, const std::unique_ptr<sycl::buffer<T>> & buf, u32 len){
 
         T accum;
 
@@ -24,7 +24,7 @@ namespace syclalg {
             accum = buf->get_host_access()[0];
 
             {
-                auto acc = buf->template get_access<sycl::access::mode::read>();
+                sycl::host_accessor acc {*buf, sycl::read_only};
 
                 // queue.submit([&](sycl::handler &cgh) {
                 //     auto acc = buf->get_access<sycl::access::mode::read>(cgh);
@@ -51,7 +51,7 @@ namespace syclalg {
 
     //TODO to optimize
     template<class T>
-    inline T get_min(sycl::queue & queue, std::unique_ptr<sycl::buffer<T>> & buf, u32 len){
+    inline T get_min(sycl::queue & queue, const std::unique_ptr<sycl::buffer<T>> & buf, u32 len){
 
         T accum;
 
@@ -60,7 +60,7 @@ namespace syclalg {
             accum = buf->get_host_access()[0];
 
             {
-                auto acc = buf->template get_access<sycl::access::mode::read>();
+                sycl::host_accessor acc {*buf, sycl::read_only};
 
                 // queue.submit([&](sycl::handler &cgh) {
                 //     auto acc = buf->get_access<sycl::access::mode::read>(cgh);
@@ -89,7 +89,7 @@ namespace syclalg {
 
 
     template<class T> 
-    inline std::tuple<T,T> get_min_max(sycl::queue & queue, std::unique_ptr<sycl::buffer<T>> & buf, u32 len){
+    inline std::tuple<T,T> get_min_max(sycl::queue & queue, const std::unique_ptr<sycl::buffer<T>> & buf, u32 len){
         
         T accum_min, accum_max;
 
@@ -99,7 +99,7 @@ namespace syclalg {
             accum_max = buf->get_host_access()[0];
 
             {
-                auto acc = buf->template get_access<sycl::access::mode::read>();
+                sycl::host_accessor acc {*buf, sycl::read_only};
 
                 // queue.submit([&](sycl::handler &cgh) {
                 //     auto acc = buf->get_access<sycl::access::mode::read>(cgh);

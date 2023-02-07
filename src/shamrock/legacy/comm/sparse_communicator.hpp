@@ -9,7 +9,7 @@
 #pragma once
 
 #include "aliases.hpp"
-#include "shamrock/legacy/patch/base/patch.hpp"
+#include "shamrock/patch/Patch.hpp"
 #include <vector>
 
 #include "shamrock/legacy/io/logs.hpp"
@@ -42,10 +42,10 @@ class SparsePatchCommunicator {
 
 
   public:
-    std::vector<Patch> & global_patch_list;
+    std::vector<shamrock::patch::Patch> & global_patch_list;
     std::vector<u64_2> send_comm_vec;
 
-    SparsePatchCommunicator(std::vector<Patch> & global_patch_list, std::vector<u64_2> send_comm_vec)
+    SparsePatchCommunicator(std::vector<shamrock::patch::Patch> & global_patch_list, std::vector<u64_2> send_comm_vec)
         : global_patch_list(global_patch_list), send_comm_vec(std::move(send_comm_vec)),
           local_comm_tag(send_comm_vec.size()) {}
 
@@ -97,8 +97,10 @@ class SparsePatchCommunicator {
 #include "shamrock/legacy/patch/base/patchdata.hpp"
 
 template <> 
-struct SparseCommExchanger<PatchData>{
-    static SparseCommResult<PatchData> sp_xchg(SparsePatchCommunicator & communicator, const SparseCommSource<PatchData> &send_comm_pdat){
+struct SparseCommExchanger<shamrock::patch::PatchData>{
+    static SparseCommResult<shamrock::patch::PatchData> sp_xchg(SparsePatchCommunicator & communicator, const SparseCommSource<shamrock::patch::PatchData> &send_comm_pdat){
+
+        using namespace shamrock::patch;
 
         SparseCommResult<PatchData> recv_obj;
 

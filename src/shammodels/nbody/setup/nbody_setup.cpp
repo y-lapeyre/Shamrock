@@ -14,35 +14,15 @@
 #include "shamrock/legacy/patch/comm/patch_object_mover.hpp"
 
 #include "shamsys/legacy/mpi_handler.hpp"
+#include "shamrock/legacy/patch/scheduler/loadbalancing_hilbert.hpp"
 
 
 template<class flt>
 void models::nbody::NBodySetup<flt>::init(PatchScheduler & sched){
-    if (shamsys::instance::world_rank == 0) {
-        Patch root;
 
-        root.node_owner_id = shamsys::instance::world_rank;
+    using namespace shamrock::patch;
 
-        root.x_min = 0;
-        root.y_min = 0;
-        root.z_min = 0;
-
-        root.x_max = HilbertLB::max_box_sz;
-        root.y_max = HilbertLB::max_box_sz;
-        root.z_max = HilbertLB::max_box_sz;
-
-        root.pack_node_index = u64_max;
-
-        PatchData pdat(sched.pdl);
-
-        root.data_count = pdat.get_obj_cnt();
-        root.load_value = pdat.get_obj_cnt();
-
-        sched.add_patch(root,pdat);  
-
-    } else {
-        sched.patch_list._next_patch_id++;
-    }  
+    sched.add_root_patch();
 
     mpi::barrier(MPI_COMM_WORLD);
 
@@ -63,6 +43,8 @@ void models::nbody::NBodySetup<flt>::init(PatchScheduler & sched){
 template<class flt>
 void models::nbody::NBodySetup<flt>::add_particules_fcc(PatchScheduler & sched, flt dr, std::tuple<vec,vec> box){
 
+    using namespace shamrock::patch;
+
     if(shamsys::instance::world_rank == 0){
         std::vector<vec> vec_acc;
 
@@ -70,7 +52,7 @@ void models::nbody::NBodySetup<flt>::add_particules_fcc(PatchScheduler & sched, 
             dr, 
             box , 
             [&box](sycl::vec<flt,3> r){
-                return BBAA::is_particle_in_patch(r, std::get<0>(box), std::get<1>(box));
+                return BBAA::is_coord_in_range(r, std::get<0>(box), std::get<1>(box));
             }, 
             [&](sycl::vec<flt,3> r,flt h){
                 vec_acc.push_back(r); 

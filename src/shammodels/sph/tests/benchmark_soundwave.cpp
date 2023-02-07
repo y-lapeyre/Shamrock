@@ -8,7 +8,7 @@
 
 #include "aliases.hpp"
 
-#include "shamrock/legacy/patch/base/patchdata_layout.hpp"
+#include "shamrock/patch/PatchDataLayout.hpp"
 #include "shamrock/legacy/patch/scheduler/scheduler_mpi.hpp"
 #include "shammodels/sph/models/basic_sph_gas.hpp"
 #include "shammodels/sph/setup/sph_setup.hpp"
@@ -23,13 +23,14 @@
 template<class flt> 
 std::tuple<f64,f64,f64> benchmark_periodic_box(f32 dr, u32 npatch){
 
+    using namespace shamrock::patch;
+
     using vec = sycl::vec<flt,3>;
 
     u64 Nesti = (2.F/dr)*(2.F/dr)*(2.F/dr);
 
     PatchDataLayout pdl;
 
-    pdl.xyz_mode = xyz32;
     pdl.add_field<f32_3>("xyz", 1);
     pdl.add_field<f32>("hpart", 1);
     pdl.add_field<f32_3>("vxyz",1);

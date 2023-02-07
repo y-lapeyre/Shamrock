@@ -87,12 +87,12 @@ namespace impl{
                 }
 
 
-                auto pid      = patch_ids_buf.get_access<sycl::access::mode::discard_write>();
-                auto lbox_min = local_box_min_buf.template get_access<sycl::access::mode::discard_write>();
-                auto lbox_max = local_box_max_buf.template get_access<sycl::access::mode::discard_write>();
+                sycl::host_accessor pid      { patch_ids_buf, sycl::write_only, sycl::no_init};
+                sycl::host_accessor lbox_min { local_box_min_buf, sycl::write_only, sycl::no_init};
+                sycl::host_accessor lbox_max { local_box_max_buf, sycl::write_only, sycl::no_init};
 
-                auto gbox_min = global_box_min_buf.template get_access<sycl::access::mode::discard_write>();
-                auto gbox_max = global_box_max_buf.template get_access<sycl::access::mode::discard_write>();
+                sycl::host_accessor gbox_min { global_box_min_buf, sycl::write_only, sycl::no_init};
+                sycl::host_accessor gbox_max { global_box_max_buf, sycl::write_only, sycl::no_init};
 
                 std::tuple<vec, vec> box_transform = sched.get_box_tranform<vec>();
 
@@ -110,7 +110,8 @@ namespace impl{
                                 std::get<0>(box_transform);
                 }
 
-                auto g_pid = global_ids_buf.get_access<sycl::access::mode::discard_write>();
+                //auto g_pid = global_ids_buf.get_access<sycl::access::mode::discard_write>();
+                sycl::host_accessor g_pid { global_ids_buf, sycl::write_only, sycl::no_init};
                 for (u64 i = 0; i < global_pcount; i++) {
                     g_pid[i] = sched.patch_list.global[i].id_patch;
 

@@ -21,7 +21,7 @@
 
 #include <stdexcept>
 #include <vector>
-#include "patch.hpp"
+#include "shamrock/patch/Patch.hpp"
 
 
 u64 PatchTree::insert_node(PTNode n){
@@ -221,7 +221,7 @@ void PatchTree::merge_node_dm1(u64 idparent){
 
 
 
-void PatchTree::build_from_patchtable(std::vector<Patch> & plist, u64 max_val_1axis){
+void PatchTree::build_from_patchtable(std::vector<shamrock::patch::Patch> & plist, u64 max_val_1axis){
 
     if(plist.size() > 1){
         PTNode root;
@@ -267,7 +267,7 @@ void PatchTree::build_from_patchtable(std::vector<Patch> & plist, u64 max_val_1a
                     PTNode & curr = tree[ptnode_id];
 
                     for(u64 idxptch : idvec){
-                        Patch &p = plist[idxptch];
+                        shamrock::patch::Patch &p = plist[idxptch];
 
                         bool is_inside = BBAA::iscellb_inside_a<u32_3>({curr.x_min,curr.y_min,curr.z_min},{curr.x_max,curr.y_max,curr.z_max},
                             {p.x_min,p.y_min,p.z_min},{p.x_max,p.y_max,p.z_max});
@@ -328,7 +328,7 @@ void PatchTree::build_from_patchtable(std::vector<Patch> & plist, u64 max_val_1a
 
 }
 
-void PatchTree::update_ptnode(PTNode & n,std::vector<Patch> & plist,std::unordered_map<u64,u64> id_patch_to_global_idx){
+void PatchTree::update_ptnode(PTNode & n,std::vector<shamrock::patch::Patch> & plist,std::unordered_map<u64,u64> id_patch_to_global_idx){
 
     if(n.linked_patchid != u64_max){
         n.data_count = 0;
@@ -359,7 +359,7 @@ void PatchTree::update_ptnode(PTNode & n,std::vector<Patch> & plist,std::unorder
 }
 
 // TODO add test value on root = sum all leaf
-void PatchTree::update_values_node(std::vector<Patch> & plist,std::unordered_map<u64,u64> id_patch_to_global_idx){
+void PatchTree::update_values_node(std::vector<shamrock::patch::Patch> & plist,std::unordered_map<u64,u64> id_patch_to_global_idx){
 
 
     tree[0].data_count = u64_max;
@@ -372,7 +372,7 @@ void PatchTree::update_values_node(std::vector<Patch> & plist,std::unordered_map
 
 }
 
-void PatchTree::partial_values_reduction(std::vector<Patch> &plist, std::unordered_map<u64, u64> id_patch_to_global_idx){
+void PatchTree::partial_values_reduction(std::vector<shamrock::patch::Patch> &plist, std::unordered_map<u64, u64> id_patch_to_global_idx){
 
     for( u64 id_leaf : leaf_key){
         update_ptnode(tree[id_leaf],plist,id_patch_to_global_idx);

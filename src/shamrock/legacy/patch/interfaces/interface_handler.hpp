@@ -87,7 +87,7 @@ template <class vectype, class primtype> class LegacyInterfacehandler {
      * @brief 
      * 
      */
-    std::unordered_map<u64, std::vector<std::tuple<u64, std::unique_ptr<PatchData>>>> interface_map;
+    std::unordered_map<u64, std::vector<std::tuple<u64, std::unique_ptr<shamrock::patch::PatchData>>>> interface_map;
 
   public:
 
@@ -134,7 +134,7 @@ template <class vectype, class primtype> class LegacyInterfacehandler {
      * @param key 
      * @return const std::vector<std::tuple<u64, std::unique_ptr<PatchData>>>& 
      */
-    inline const std::vector<std::tuple<u64, std::unique_ptr<PatchData>>> &get_interface_list(u64 key) {
+    inline const std::vector<std::tuple<u64, std::unique_ptr<shamrock::patch::PatchData>>> &get_interface_list(u64 key) {
         return interface_map[key];
     }
 
@@ -179,6 +179,8 @@ template <class vectype, class primtype> class LegacyInterfacehandler {
 
     template<class Function>
     inline void for_each_interface(u64 patch_id, Function && fct){
+
+        using namespace shamrock::patch;
 
         const std::vector<std::tuple<u64, std::unique_ptr<PatchData>>> & p_interf_lst = get_interface_list(patch_id);
 

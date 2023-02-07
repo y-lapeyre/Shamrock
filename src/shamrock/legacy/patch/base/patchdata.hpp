@@ -20,200 +20,19 @@
 #pragma once
 
 #include <random>
+#include <variant>
 #include <vector>
 
 #include "aliases.hpp"
-#include "shamrock/legacy/patch/base/enabled_fields.hpp"
 #include "flags.hpp"
 #include "patchdata_field.hpp"
+#include "shamrock/legacy/patch/base/enabled_fields.hpp"
+#include "shamrock/legacy/utils/sycl_vector_utils.hpp"
+#include "shamrock/patch/PatchData.hpp"
+#include "shamrock/patch/PatchDataLayout.hpp"
 #include "shamsys/legacy/mpi_handler.hpp"
 #include "shamsys/legacy/sycl_mpi_interop.hpp"
-#include "shamrock/legacy/utils/sycl_vector_utils.hpp"
 
-#include "patchdata_layout.hpp"
-
-
-/**
- * @brief PatchData container class, the layout is described in patchdata_layout
- */
-class PatchData {
-
-    void init_fields();
-
-  public:
-    PatchDataLayout & pdl;
-
-    #define X(_arg) std::vector<PatchDataField<_arg>> fields_##_arg ;
-    XMAC_LIST_ENABLED_FIELD
-    #undef X
-
-    inline PatchData(PatchDataLayout & pdl) : pdl(pdl){
-        init_fields();
-    }
-
-
-    inline PatchData(const PatchData & other) : pdl(other.pdl){
-        #define X(_arg)                                                     \
-        for(const auto & src : other.fields_##_arg){                           \
-            this->fields_##_arg.emplace_back(src);                    \
-        }
-        XMAC_LIST_ENABLED_FIELD
-        #undef X
-    }
-
-
-    inline PatchData duplicate(){
-        const PatchData& current = *this;
-        return PatchData(current);
-    }
-
-    inline std::unique_ptr<PatchData> duplicate_to_ptr(){
-        const PatchData& current = *this;
-        return std::make_unique<PatchData>(current);
-    }
-
-    /**
-     * @brief extract particle at index pidx and insert it in the provided vectors
-     * 
-     * @param pidx 
-     * @param out_pos_s 
-     * @param out_pos_d 
-     * @param out_U1_s 
-     * @param out_U1_d 
-     * @param out_U3_s 
-     * @param out_U3_d 
-     */
-    void extract_element(u32 pidx, PatchData & out_pdat);
-
-    void insert_elements(PatchData & pdat);
-
-    void resize(u32 new_obj_cnt);
-
-
-    template<class Tvecbox>
-    void split_patchdata(PatchData & pd0,PatchData & pd1,PatchData & pd2,PatchData & pd3,PatchData & pd4,PatchData & pd5,PatchData & pd6,PatchData & pd7,
-        Tvecbox bmin_p0,Tvecbox bmin_p1,Tvecbox bmin_p2,Tvecbox bmin_p3,Tvecbox bmin_p4,Tvecbox bmin_p5,Tvecbox bmin_p6,Tvecbox bmin_p7,
-        Tvecbox bmax_p0,Tvecbox bmax_p1,Tvecbox bmax_p2,Tvecbox bmax_p3,Tvecbox bmax_p4,Tvecbox bmax_p5,Tvecbox bmax_p6,Tvecbox bmax_p7);
-    
-    void append_subset_to(std::vector<u32> & idxs, PatchData & pdat) const ;
-    void append_subset_to(sycl::buffer<u32> & idxs, u32 sz, PatchData & pdat) const ;
-
-    inline u32 get_obj_cnt(){
-        if(pdl.xyz_mode == xyz32){
-            u32 ixyz = pdl.get_field_idx<f32_3>("xyz");
-            return fields_f32_3[ixyz].get_obj_cnt();
-        }
-        if(pdl.xyz_mode == xyz64){
-            u32 ixyz = pdl.get_field_idx<f64_3>("xyz");
-            return fields_f64_3[ixyz].get_obj_cnt();
-        }
-        throw shamrock_exc("patchdata layout is not xyz32 or xyz64");
-    }
-
-    inline u64 memsize(){
-        u64 sum = 0; 
-
-        #define X(_arg)                                                     \
-        for(const auto & src : fields_##_arg){                           \
-            sum += src.memsize();                    \
-        }
-        XMAC_LIST_ENABLED_FIELD
-        #undef X
-
-        return sum;
-    }
-
-    inline bool is_empty(){
-        return get_obj_cnt() == 0;
-    }
-
-    void overwrite(PatchData & pdat, u32 obj_cnt);
-
-    /*
-    inline void expand(u32 obj_to_add){
-        for (auto a : fields_f32) {
-            a.expand(obj_to_add);
-        }
-
-        for (auto a : fields_f32_2) {
-            a.expand(obj_to_add);
-        }
-
-        for (auto a : fields_f32_3) {
-            a.expand(obj_to_add);        
-        }
-
-        for (auto a : fields_f32_4) {
-            a.expand(obj_to_add);        
-        }
-
-        for (auto a : fields_f32_8) {
-            a.expand(obj_to_add);        
-        }
-
-        for (auto a : fields_f32_16) {
-            a.expand(obj_to_add);        
-        }
-
-
-        for (auto a : fields_f64) {
-            a.expand(obj_to_add);        
-        }
-
-        for (auto a : fields_f64_2) {
-            a.expand(obj_to_add);        
-        }
-
-        for (auto a : fields_f64_3) {
-            a.expand(obj_to_add);        
-        }
-
-        for (auto a : fields_f64_4) {
-            a.expand(obj_to_add);        
-        }
-
-        for (auto a : fields_f64_8) {
-            a.expand(obj_to_add);        
-        }
-
-        for (auto a : fields_f64_16) {
-            a.expand(obj_to_add);        
-        }
-
-
-        for (auto a : fields_u32) {
-            a.expand(obj_to_add);        
-        }
-
-        for (auto a : fields_u64) {
-            a.expand(obj_to_add);        
-        }
-    }
-    */
-
-
-
-
-
-
-
-
-
-
-
-    template<class T> PatchDataField<T> & get_field(u32 idx);
-
-    #define X(_arg) template<> inline PatchDataField<_arg> & get_field(u32 idx){return fields_##_arg.at(idx);}
-    XMAC_LIST_ENABLED_FIELD
-    #undef X
-
-
-    template<class T> std::vector<PatchDataField<T>> & get_field_list();
-    #define X(_arg) template<> inline std::vector<PatchDataField<_arg>> & get_field_list(){return fields_##_arg;}
-    XMAC_LIST_ENABLED_FIELD
-    #undef X
-    
-};
 
 
 struct PatchDataMpiRequest{
@@ -252,6 +71,11 @@ struct PatchDataMpiRequest{
         for(auto b : mpi_rq_fields_u32_3   ){b.finalize();}
         for(auto b : mpi_rq_fields_u64_3   ){b.finalize();}
     }
+
+    template<class T> std::vector<patchdata_field::PatchDataFieldMpiRequest<T>> & get_field_list();
+    #define X(_arg) template<> inline std::vector<patchdata_field::PatchDataFieldMpiRequest<_arg>> & get_field_list(){return mpi_rq_fields_##_arg ;}
+    XMAC_LIST_ENABLED_FIELD
+    #undef X
 }; 
 
 inline void waitall_pdat_mpi_rq(std::vector<PatchDataMpiRequest> & rq_lst){
@@ -299,7 +123,7 @@ inline void waitall_pdat_mpi_rq(std::vector<PatchDataMpiRequest> & rq_lst){
  * @param tag MPI communication tag
  * @param comm MPI communicator
  */
-u64 patchdata_isend(PatchData &p, std::vector<PatchDataMpiRequest> &rq_lst, i32 rank_dest, i32 tag, MPI_Comm comm);
+u64 patchdata_isend(shamrock::patch::PatchData &p, std::vector<PatchDataMpiRequest> &rq_lst, i32 rank_dest, i32 tag, MPI_Comm comm);
 
 /**
  * @brief perform a MPI irecv with a PatchData object
@@ -310,7 +134,7 @@ u64 patchdata_isend(PatchData &p, std::vector<PatchDataMpiRequest> &rq_lst, i32 
  * @param comm  MPI communicator
  * @return the received patchdata (it works but weird because asynchronous)
  */
-u64 patchdata_irecv_probe(PatchData &pdat, std::vector<PatchDataMpiRequest> &rq_lst, i32 rank_source, i32 tag, MPI_Comm comm);
+u64 patchdata_irecv_probe(shamrock::patch::PatchData &pdat, std::vector<PatchDataMpiRequest> &rq_lst, i32 rank_source, i32 tag, MPI_Comm comm);
 
 /**
  * @brief generate dummy patchdata from a mersen twister
@@ -318,7 +142,7 @@ u64 patchdata_irecv_probe(PatchData &pdat, std::vector<PatchDataMpiRequest> &rq_
  * @param eng the mersen twister
  * @return PatchData the generated PatchData
  */
-PatchData patchdata_gen_dummy_data(PatchDataLayout & pdl, std::mt19937 &eng);
+shamrock::patch::PatchData patchdata_gen_dummy_data(shamrock::patch::PatchDataLayout & pdl, std::mt19937 &eng);
 
 /**
  * @brief check if two PatchData content match
@@ -328,5 +152,5 @@ PatchData patchdata_gen_dummy_data(PatchDataLayout & pdl, std::mt19937 &eng);
  * @return true
  * @return false
  */
-bool patch_data_check_match(PatchData &p1, PatchData &p2);
+bool patch_data_check_match(shamrock::patch::PatchData &p1, shamrock::patch::PatchData &p2);
 

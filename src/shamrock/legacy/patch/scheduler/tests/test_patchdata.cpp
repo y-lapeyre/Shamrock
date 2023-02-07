@@ -6,7 +6,7 @@
 //
 // -------------------------------------------------------//
 
-#include "shamrock/legacy/patch/base/patchdata_layout.hpp"
+#include "shamrock/patch/PatchDataLayout.hpp"
 #include "shamtest/shamtest.hpp"
 
 #include <random>
@@ -38,13 +38,14 @@ Test_start("patchdata::", sync_patchdata_layout, -1) {
 
 TestStart(Unittest,"patchdata::", send_recv_patchdata, 2){
 
+    using namespace shamrock::patch;
+
     std::mt19937 eng(0x1111);  
 
 
     PatchDataLayout pdl;
 
     pdl.add_field<f32_3>("xyz", 1);
-    pdl.xyz_mode = xyz32;
 
     pdl.add_field<f64_8>("test", 2);
     
