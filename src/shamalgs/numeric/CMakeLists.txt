@@ -1,6 +1,6 @@
 
 set(Sources
-
+numeric.cpp
 )
 set(SourcesTest
     
@@ -30,5 +30,5 @@ target_sources(shamrock_test
     )
 endif()
 
-add_subdirectory(reduction)
-add_subdirectory(numeric)
+add_subdirectory(tests)
+add_subdirectory(details)

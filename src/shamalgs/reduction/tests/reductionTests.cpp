@@ -115,7 +115,7 @@ void unit_test_reduc(){
 
 }
 
-TestStart(Unittest, "core/utils/sycl_algs:reduction", reduc_kernel_utest, 1){
+TestStart(Unittest, "shamalgs/reduction/sum", reduc_kernel_utest, 1){
     unit_test_reduc<f64>();
 }
 
@@ -225,7 +225,7 @@ template<class T> void bench_type(std::string Tname){
     #endif
 }
 
-TestStart(Benchmark, "core/utils/sycl_algs:reduction", reduc_kernel_bench, 1){
+TestStart(Benchmark, "shamalgs/reduction/sum", reduc_kernel_bench, 1){
 
     bench_type<f64>("f32");
     bench_type<f64>("f64");

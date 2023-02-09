@@ -149,7 +149,8 @@ hipsyclconfigfile = "--hipsycl-config-file="+abs_compiler_root_dir+"/etc/hipSYCL
 profile_map = {
     "dpcpp" : {
         "cuda" : "-fsycl -fsycl-targets=nvptx64-nvidia-cuda",
-        "cuda-no-rdc" : "-fsycl -fno-sycl-rdc -fsycl-targets=nvptx64-nvidia-cuda"
+        "cuda-no-rdc" : "-fsycl -fno-sycl-rdc -fsycl-targets=nvptx64-nvidia-cuda",
+        "cuda-index32bit" : "-fsycl -fsycl-targets=nvptx64-nvidia-cuda -fsycl-id-queries-fit-in-int"
     },
     "hipsycl" : {
         "omp" : "--hipsycl-cpu-cxx=g++ --hipsycl-targets='omp' " + hipsyclconfigfile,
