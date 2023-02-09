@@ -1,6 +1,7 @@
 
 <img src="doc/logosham_white.png" alt="logo" width="600"/>
-![example workflow](https://github.com/tdavidcl/Shamrock/actions/workflows/copyright.yml/badge.svg)
+
+![badge1](https://github.com/tdavidcl/Shamrock/actions/workflows/copyright.yml/badge.svg)
 
 # Getting started
 
