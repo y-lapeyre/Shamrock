@@ -6,6 +6,8 @@
 //
 // -------------------------------------------------------//
 
+#pragma once
+
 /**
  * @file mpi_wrapper.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
@@ -17,7 +19,6 @@
  * 
  */
 
-#pragma once
 
 #define OMPI_SKIP_MPICXX
 #include <mpi.h>

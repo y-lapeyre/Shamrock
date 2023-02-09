@@ -6,6 +6,9 @@
 //
 // -------------------------------------------------------//
 
+
+#pragma once
+
 /**
  * @file sycl_mpi_interop.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
@@ -16,8 +19,6 @@
  * @copyright Copyright (c) 2022
  * 
  */
-
-#pragma once
 
 #include "shamsys/SyclMpiTypes.hpp"
 #include "mpi_handler.hpp"

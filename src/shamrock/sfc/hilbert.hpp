@@ -6,6 +6,8 @@
 //
 // -------------------------------------------------------//
 
+#pragma once
+
 /**
  * @file hilbertsfc.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
@@ -22,7 +24,6 @@
  * 
  */
 
-#pragma once
 
 #include "aliases.hpp"
 #include "bmi.hpp"

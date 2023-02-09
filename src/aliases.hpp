@@ -6,7 +6,7 @@
 //
 // -------------------------------------------------------//
 
-
+#pragma once
 
 /**
  * @file aliases.hpp
@@ -21,7 +21,6 @@
 //%Impl status : Good
 
 
-#pragma once
 
 
 #include <string.h>

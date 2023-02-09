@@ -6,6 +6,8 @@
 //
 // -------------------------------------------------------//
 
+#pragma once
+
 /**
  * @file sycl_handler.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
@@ -15,7 +17,6 @@
  * @copyright Copyright (c) 2022
  */
 
-#pragma once
 
 #include "aliases.hpp"
 #include <sycl/sycl.hpp>

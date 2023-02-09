@@ -5,7 +5,7 @@
 // Licensed under CeCILL 2.1 License, see LICENSE for more information
 //
 // -------------------------------------------------------//
-
+#pragma once
 #include "aliases.hpp"
 #include "shamsys/legacy/sycl_handler.hpp"
 

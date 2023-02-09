@@ -6,6 +6,7 @@
 //
 // -------------------------------------------------------//
 
+#pragma once
 /**
  * @file patch_reduc_tree.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
@@ -17,7 +18,6 @@
  * 
  */
 
-#pragma once
 
 
 

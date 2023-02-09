@@ -6,14 +6,14 @@
 //
 // -------------------------------------------------------//
 
+#pragma once
+
 #include "aliases.hpp"
 
 #include "shamrock/legacy/patch/scheduler/scheduler_mpi.hpp"
 #include "shamrock/legacy/patch/simulation_domain.hpp"
 #include "shamrock/legacy/patch/utility/serialpatchtree.hpp"
 
-
-#pragma once
 
 
 

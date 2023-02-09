@@ -6,6 +6,8 @@
 //
 // -------------------------------------------------------//
 
+#pragma once
+
 #include "aliases.hpp"
 #include "shammodels/generic/math/tensors.hpp"
 

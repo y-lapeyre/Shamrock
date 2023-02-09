@@ -6,6 +6,7 @@
 //
 // -------------------------------------------------------//
 
+#pragma once
 /**
  * @file patchtree.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
@@ -18,7 +19,6 @@
  */
 
 
-#pragma once
 
 #include <array>
 #include <vector>

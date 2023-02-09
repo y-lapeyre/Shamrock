@@ -6,6 +6,10 @@
 //
 // -------------------------------------------------------//
 
+
+#pragma once
+
+
 /**
  * @file time_utils.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
@@ -19,8 +23,6 @@
 
 //%Impl status : Good
 
-
-#pragma once
 
 #include "string_utils.hpp"
 #include <chrono>

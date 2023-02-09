@@ -6,6 +6,8 @@
 //
 // -------------------------------------------------------//
 
+#pragma once
+
 /**
  * @file serialpatchtree.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
@@ -21,7 +23,6 @@
 
 //%Impl status : Should rewrite
 
-#pragma once
 
 
 #include "shamrock/legacy/io/logs.hpp"
