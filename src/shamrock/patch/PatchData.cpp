@@ -11,7 +11,7 @@
 #include "shamrock/legacy/utils/geometry_utils.hpp"
 
 #include "Patch.hpp"
-#include "shamrock/math/syclManip.hpp"
+#include "shamalgs/syclManip.hpp"
 namespace shamrock::patch{
 
 
@@ -195,7 +195,7 @@ namespace shamrock::patch{
 
         if(get_obj_cnt() != el_cnt_new){
 
-            using namespace shamrock::math::sycl_manip;
+            using namespace shamalgs::sycl_manip;
 
             T vmin = g_sycl_min(min_box[0],min_box[1]);
             vmin = g_sycl_min(vmin,min_box[2]);

@@ -12,7 +12,7 @@
 
 #include "vectorManip.hpp"
 
-namespace shamrock::math::sycl_manip {
+namespace shamalgs::sycl_manip {
 
 
 

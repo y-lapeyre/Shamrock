@@ -6,14 +6,17 @@
 //
 // -------------------------------------------------------//
 
-#include "shamrock/legacy/algs/sycl/reduction/generic.hpp"
+#include <random>
+#include "shamalgs/reduction/reduction.hpp"
+#include "shamalgs/reduction/details/sycl2020reduction.hpp"
 #include "shamrock/legacy/utils/time_utils.hpp"
+#include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamtest/shamtest.hpp"
+#include "shamalgs/random.hpp"
+#include "shamalgs/reduction/details/groupReduction.hpp"
 
-#include <random>
-#include "shamrock/legacy/algs/sycl/sycl_algs.hpp"
-#include "shamrock/legacy/utils/sycl_vector_utils.hpp"
+using namespace shamalgs::random;
 
 template<class T,class Fct> void unit_test_reduc(std::string name, Fct && red_fct){
     std::vector<T> vals;
@@ -94,44 +97,21 @@ template<class T,class Fct> f64 bench_reduction(Fct && red_fct, const u32 & size
 template<class T>
 void unit_test_reduc(){
 
-
-    #ifdef SYCL_COMP_DPCPP
     unit_test_reduc<f64>("reduction : manual wg=32",
         [](sycl::queue & q, sycl::buffer<T> & buf1, u32 start_id, u32 end_id) -> T {
-            return syclalgs::reduction::impl::manual_reduce_impl<32>::reduce_manual(q, buf1, start_id, end_id, sycl::plus<>{});
+            return shamalgs::reduction::details::GroupReduction<T, 32>::sum(q, buf1, start_id, end_id);
         }
     );
     unit_test_reduc<f64>("reduction : sycl2020", 
         [](sycl::queue & q, sycl::buffer<T> & buf1, u32 start_id, u32 end_id) -> T {
-            return syclalgs::reduction::impl::reduce_sycl_2020(q, buf1, start_id, end_id, sycl::plus<>{});
+            return shamalgs::reduction::details::SYCL2020<T>::sum(q, buf1, start_id, end_id);
         }
     );
     unit_test_reduc<f64>("reduction : main",
         [](sycl::queue & q, sycl::buffer<T> & buf1, u32 start_id, u32 end_id) -> T {
-            return syclalgs::reduction::reduce(q, buf1, start_id, end_id, sycl::plus<>{});
+            return shamalgs::reduction::sum(q, buf1, start_id, end_id);
         }
     );
-    #endif
-
-
-    #ifdef SYCL_COMP_HIPSYCL
-    unit_test_reduc<f64>("reduction : manual wg=32",
-        [](sycl::queue & q, sycl::buffer<T> & buf1, u32 start_id, u32 end_id) -> T {
-            return syclalgs::reduction::impl::manual_reduce_impl<32>::reduce_manual(q, buf1, start_id, end_id, sycl::plus<T>{});
-        }
-    );
-    //unit_test_reduc<f64>("reduction : sycl2020", 
-    //    [](sycl::queue & q, sycl::buffer<T> & buf1, u32 start_id, u32 end_id) -> T {
-    //        return syclalgs::reduction::impl::reduce_sycl_2020(q, buf1, start_id, end_id, sycl::plus<T>{});
-    //    }
-    //);
-    unit_test_reduc<f64>("reduction : main",
-        [](sycl::queue & q, sycl::buffer<T> & buf1, u32 start_id, u32 end_id) -> T {
-            return syclalgs::reduction::reduce(q, buf1, start_id, end_id, sycl::plus<T>{});
-        }
-    );
-    #endif
-
 
 }
 
@@ -189,58 +169,58 @@ template<class T> void bench_type(std::string Tname){
 
     #ifdef SYCL_COMP_DPCPP
     bench_mark_indiv<T>(Tname + " manual : wg=2",vals,[](sycl::queue & q, sycl::buffer<T> & buf1, u32 start_id, u32 end_id){
-        return syclalgs::reduction::impl::manual_reduce_impl<2>::reduce_manual(q, buf1, start_id, end_id, sycl::plus<>{});
+        return shamalgs::reduction::details::GroupReduction<T,2>::sum(q, buf1, start_id, end_id);
     });
     bench_mark_indiv<T>(Tname + " manual : wg=4",vals,[](sycl::queue & q, sycl::buffer<T> & buf1, u32 start_id, u32 end_id){
-        return syclalgs::reduction::impl::manual_reduce_impl<4>::reduce_manual(q, buf1, start_id, end_id, sycl::plus<>{});
+        return shamalgs::reduction::details::GroupReduction<T,4>::sum(q, buf1, start_id, end_id);
     });
     bench_mark_indiv<T>(Tname + " manual : wg=8",vals,[](sycl::queue & q, sycl::buffer<T> & buf1, u32 start_id, u32 end_id){
-        return syclalgs::reduction::impl::manual_reduce_impl<8>::reduce_manual(q, buf1, start_id, end_id, sycl::plus<>{});
+        return shamalgs::reduction::details::GroupReduction<T,8>::sum(q, buf1, start_id, end_id);
     });
     bench_mark_indiv<T>(Tname + " manual : wg=16",vals,[](sycl::queue & q, sycl::buffer<T> & buf1, u32 start_id, u32 end_id){
-        return syclalgs::reduction::impl::manual_reduce_impl<16>::reduce_manual(q, buf1, start_id, end_id, sycl::plus<>{});
+        return shamalgs::reduction::details::GroupReduction<T,16>::sum(q, buf1, start_id, end_id);
     });
     bench_mark_indiv<T>(Tname + " manual : wg=32",vals,[](sycl::queue & q, sycl::buffer<T> & buf1, u32 start_id, u32 end_id){
-        return syclalgs::reduction::impl::manual_reduce_impl<32>::reduce_manual(q, buf1, start_id, end_id, sycl::plus<>{});
+        return shamalgs::reduction::details::GroupReduction<T,32>::sum(q, buf1, start_id, end_id);
     });
     bench_mark_indiv<T>(Tname + " manual : wg=64",vals,[](sycl::queue & q, sycl::buffer<T> & buf1, u32 start_id, u32 end_id){
-        return syclalgs::reduction::impl::manual_reduce_impl<64>::reduce_manual(q, buf1, start_id, end_id, sycl::plus<>{});
+        return shamalgs::reduction::details::GroupReduction<T,64>::sum(q, buf1, start_id, end_id);
     });
     bench_mark_indiv<T>(Tname + " manual : wg=128",vals,[](sycl::queue & q, sycl::buffer<T> & buf1, u32 start_id, u32 end_id){
-        return syclalgs::reduction::impl::manual_reduce_impl<128>::reduce_manual(q, buf1, start_id, end_id, sycl::plus<>{});
+        return shamalgs::reduction::details::GroupReduction<T,128>::sum(q, buf1, start_id, end_id);
     });
 
     bench_mark_indiv<T>(Tname + " sycl2020 reduction",vals,[](sycl::queue & q, sycl::buffer<T> & buf1, u32 start_id, u32 end_id){
-        return syclalgs::reduction::impl::reduce_sycl_2020(q, buf1, start_id, end_id, sycl::plus<>{});
+        return shamalgs::reduction::details::SYCL2020<T>::sum(q, buf1, start_id, end_id);
     });
     #endif
 
 
     #ifdef SYCL_COMP_HIPSYCL
     bench_mark_indiv<T>(Tname + " manual : wg=2",vals,[](sycl::queue & q, sycl::buffer<T> & buf1, u32 start_id, u32 end_id){
-        return syclalgs::reduction::impl::manual_reduce_impl<2>::reduce_manual(q, buf1, start_id, end_id, sycl::plus<T>{});
+        return shamalgs::reduction::details::GroupReduction<T,2>::sum(q, buf1, start_id, end_id);
     });
     bench_mark_indiv<T>(Tname + " manual : wg=4",vals,[](sycl::queue & q, sycl::buffer<T> & buf1, u32 start_id, u32 end_id){
-        return syclalgs::reduction::impl::manual_reduce_impl<4>::reduce_manual(q, buf1, start_id, end_id, sycl::plus<T>{});
+        return shamalgs::reduction::details::GroupReduction<T,4>::sum(q, buf1, start_id, end_id);
     });
     bench_mark_indiv<T>(Tname + " manual : wg=8",vals,[](sycl::queue & q, sycl::buffer<T> & buf1, u32 start_id, u32 end_id){
-        return syclalgs::reduction::impl::manual_reduce_impl<8>::reduce_manual(q, buf1, start_id, end_id, sycl::plus<T>{});
+        return shamalgs::reduction::details::GroupReduction<T,8>::sum(q, buf1, start_id, end_id);
     });
     bench_mark_indiv<T>(Tname + " manual : wg=16",vals,[](sycl::queue & q, sycl::buffer<T> & buf1, u32 start_id, u32 end_id){
-        return syclalgs::reduction::impl::manual_reduce_impl<16>::reduce_manual(q, buf1, start_id, end_id, sycl::plus<T>{});
+        return shamalgs::reduction::details::GroupReduction<T,16>::sum(q, buf1, start_id, end_id);
     });
     bench_mark_indiv<T>(Tname + " manual : wg=32",vals,[](sycl::queue & q, sycl::buffer<T> & buf1, u32 start_id, u32 end_id){
-        return syclalgs::reduction::impl::manual_reduce_impl<32>::reduce_manual(q, buf1, start_id, end_id, sycl::plus<T>{});
+        return shamalgs::reduction::details::GroupReduction<T,32>::sum(q, buf1, start_id, end_id);
     });
     bench_mark_indiv<T>(Tname + " manual : wg=64",vals,[](sycl::queue & q, sycl::buffer<T> & buf1, u32 start_id, u32 end_id){
-        return syclalgs::reduction::impl::manual_reduce_impl<64>::reduce_manual(q, buf1, start_id, end_id, sycl::plus<T>{});
+        return shamalgs::reduction::details::GroupReduction<T,64>::sum(q, buf1, start_id, end_id);
     });
     bench_mark_indiv<T>(Tname + " manual : wg=128",vals,[](sycl::queue & q, sycl::buffer<T> & buf1, u32 start_id, u32 end_id){
-        return syclalgs::reduction::impl::manual_reduce_impl<128>::reduce_manual(q, buf1, start_id, end_id, sycl::plus<T>{});
+        return shamalgs::reduction::details::GroupReduction<T,128>::sum(q, buf1, start_id, end_id);
     });
 
     //bench_mark_indiv<T>(Tname + " sycl2020 reduction",vals,[](sycl::queue & q, sycl::buffer<T> & buf1, u32 start_id, u32 end_id){
-    //    return syclalgs::reduction::impl::reduce_sycl_2020(q, buf1, start_id, end_id, sycl::plus<T>{});
+    //    return shamalgs::reduction::details::SYCL2020<T>::sum(q, buf1, start_id, end_id);
     //});
     #endif
 }

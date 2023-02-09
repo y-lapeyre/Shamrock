@@ -12,4 +12,3 @@
 #include "shamsys/legacy/sycl_handler.hpp"
 #include "defs.hpp"
 #include "basic/basic.hpp"
-#include "reduction/generic.hpp"

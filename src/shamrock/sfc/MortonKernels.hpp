@@ -9,7 +9,7 @@
 #pragma once
 
 #include "aliases.hpp"
-#include "shamrock/math/vectorManip.hpp"
+#include "shamalgs/vectorManip.hpp"
 #include "shamrock/sfc/morton.hpp"
 
 
@@ -61,7 +61,7 @@ namespace shamrock::sfc{
         using Morton = MortonCodes<morton_t, dim>;
 
         using pos_t = _pos_t;
-        using coord_t = typename shamrock::math::vec_manip::VectorProperties<pos_t>::component_type;
+        using coord_t = typename shamalgs::vec_manip::VectorProperties<pos_t>::component_type;
         using ipos_t  = typename Morton::int_vec_repr;
         using int_t = typename Morton::int_vec_repr_base;
 
