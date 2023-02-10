@@ -1,7 +1,7 @@
 
 set(Sources
-fallbackNumeric.cpp
-StreamCompaction.cpp
+avoidCopyMemory.cpp
+fallbackMemory.cpp
 )
 set(SourcesTest
     

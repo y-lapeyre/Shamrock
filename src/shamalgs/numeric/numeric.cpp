@@ -8,6 +8,7 @@
 
 #include "numeric.hpp"
 #include "details/fallbackNumeric.hpp"
+#include "shamalgs/numeric/details/StreamCompaction.hpp"
 namespace shamalgs::numeric {
 
     template<class T>
@@ -15,7 +16,24 @@ namespace shamalgs::numeric {
         return details::FallbackNumeric<T>::exclusive_sum(q, buf1, len);
     }
 
-    template sycl::buffer<u32> exclusive_sum(sycl::queue &q, sycl::buffer<u32> &buf1, u32 len);
+    template<class T>
+    sycl::buffer<T> inclusive_sum(sycl::queue &q, sycl::buffer<T> &buf1, u32 len){
+        return details::FallbackNumeric<T>::inclusive_sum(q, buf1, len);
+    }
 
+
+
+
+
+    template sycl::buffer<u32> exclusive_sum(sycl::queue &q, sycl::buffer<u32> &buf1, u32 len);
+    template sycl::buffer<u32> inclusive_sum(sycl::queue &q, sycl::buffer<u32> &buf1, u32 len);
+
+
+
+
+
+    std::tuple<sycl::buffer<u32>, u32> stream_compact(sycl::queue &q, sycl::buffer<u32> &buf_flags, u32 len){
+        return details::stream_compact_excl_scan(q, buf_flags, len);
+    };
 
 } // namespace shamalgs::numeric

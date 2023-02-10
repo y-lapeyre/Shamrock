@@ -10,7 +10,7 @@
 
 #include "aliases.hpp"
 
-namespace shamrocl::amr {
+namespace shamrock::amr {
 
     template<class Tcoord, u32 dim>
     class AMRCellCoord {

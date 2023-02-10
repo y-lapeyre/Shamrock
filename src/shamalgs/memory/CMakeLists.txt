@@ -1,7 +1,6 @@
 
 set(Sources
-fallbackNumeric.cpp
-StreamCompaction.cpp
+memory.cpp
 )
 set(SourcesTest
     
@@ -30,3 +29,6 @@ target_sources(shamrock_test
         ${Headers} ${HeadersTest}
     )
 endif()
+
+
+add_subdirectory(details)

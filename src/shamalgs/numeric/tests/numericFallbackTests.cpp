@@ -8,37 +8,13 @@
 
 
 #include "shamalgs/memory/memory.hpp"
+#include "shamalgs/numeric/details/fallbackNumeric.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamtest/shamtest.hpp"
 
 
-#include "shamalgs/numeric/numeric.hpp"
-#include <numeric>
-
-TestStart(Unittest, "shamalgs/numeric/exclusive_sum", exclsumtest, 1){
-    
-    std::vector<u32> data {3, 1, 4, 1, 5, 9, 2, 6};
-    std::vector<u32> data_buf {3, 1, 4, 1, 5, 9, 2, 6};
-
-    std::exclusive_scan(data.begin(), data.end(),data.begin(), 0);
-
-    sycl::buffer<u32> buf {data_buf.data(), data_buf.size()};
-
-    sycl::buffer<u32> res = shamalgs::numeric::exclusive_sum(shamsys::instance::get_compute_queue(), buf, data_buf.size());
-
-    {
-        sycl::host_accessor acc {res, sycl::read_only};
-
-        for(u32 i = 0; i < data_buf.size(); i++){
-            shamtest::asserts().assert_equal("inclusive scan elem", acc[i], data[i]);
-        }
-    }
-}
-
-
-
-TestStart(Unittest, "shamalgs/numeric/stream_compact", streamcompactalg, 1){
+TestStart(Unittest, "shamalgs/numeric/details/stream_compact_fallback", streamcompactalg_fallback, 1){
     
     std::vector<u32> data {1,0,0,1,0,1,1,0,1,0,1,0,1};
 
@@ -46,7 +22,7 @@ TestStart(Unittest, "shamalgs/numeric/stream_compact", streamcompactalg, 1){
 
     auto buf = shamalgs::memory::vec_to_buf(data);
 
-    auto [res, res_len] = shamalgs::numeric::stream_compact(shamsys::instance::get_compute_queue(), buf, len);
+    auto [res, res_len] = shamalgs::numeric::details::stream_compact_fallback(shamsys::instance::get_compute_queue(), buf, len);
 
     auto res_check = shamalgs::memory::buf_to_vec(res, res_len);
 
@@ -59,6 +35,8 @@ TestStart(Unittest, "shamalgs/numeric/stream_compact", streamcompactalg, 1){
             }
         }
     }
+
+
 
     shamtest::asserts().assert_equal("same lenght", res_len, u32(idxs.size()));
 
