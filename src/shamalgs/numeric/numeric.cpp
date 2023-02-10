@@ -7,18 +7,19 @@
 // -------------------------------------------------------//
 
 #include "numeric.hpp"
-#include "details/fallbackNumeric.hpp"
-#include "shamalgs/numeric/details/StreamCompaction.hpp"
+#include "details/numericFallback.hpp"
+#include "shamalgs/numeric/details/streamCompactExclScan.hpp"
+
 namespace shamalgs::numeric {
 
     template<class T>
     sycl::buffer<T> exclusive_sum(sycl::queue &q, sycl::buffer<T> &buf1, u32 len){
-        return details::FallbackNumeric<T>::exclusive_sum(q, buf1, len);
+        return details::exclusive_sum_fallback(q, buf1, len);
     }
 
     template<class T>
     sycl::buffer<T> inclusive_sum(sycl::queue &q, sycl::buffer<T> &buf1, u32 len){
-        return details::FallbackNumeric<T>::inclusive_sum(q, buf1, len);
+        return details::inclusive_sum_fallback(q, buf1, len);
     }
 
 

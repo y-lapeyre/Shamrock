@@ -1,7 +1,7 @@
 
 set(Sources
-fallbackNumeric.cpp
-StreamCompaction.cpp
+numericFallback.cpp
+streamCompactExclScan.cpp
 )
 set(SourcesTest
     
