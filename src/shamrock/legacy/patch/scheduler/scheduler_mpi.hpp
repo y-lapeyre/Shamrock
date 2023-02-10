@@ -138,29 +138,22 @@ class PatchScheduler{public:
 
 
 
-    //template<class Function>
-    //[[deprecated]]
-    //inline void for_each_patch_buf(Function && fct){
-//
-    //    
-//
-    //    for (auto &[id, pdat] : patch_data.owned_data) {
-//
-    //        if (! pdat.is_empty()) {
-//
-//
-    //            Patch &cur_p = patch_list.global[patch_list.id_patch_to_global_idx[id]];
-//
-    //            PatchDataBuffer pdatbuf = attach_to_patchData(pdat);
-//
-    //            //TODO should feed the sycl queue to the lambda
-//
-    //            fct(id,cur_p,pdatbuf);
-    //        }
-    //    }
-//
-    //}
-
+    /**
+     * @brief for each macro for patchadata
+     * exemple usage
+     * ~~~~~{.cpp}
+     *
+     * sched.for_each_patch_data(
+     *     [&](u64 id_patch, Patch cur_p, PatchData &pdat) {
+     *          ....
+     *     }
+     * );
+     *
+     * ~~~~~
+     *
+     * @tparam Function The functor that will be used
+     * @param fct 
+     */
     template<class Function>
     inline void for_each_patch_data(Function && fct){
 
