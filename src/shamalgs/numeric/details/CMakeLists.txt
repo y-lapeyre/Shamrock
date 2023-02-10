@@ -1,6 +1,7 @@
 
 set(Sources
 numericFallback.cpp
+exclusiveScanGPUGems39.cpp
 streamCompactExclScan.cpp
 )
 set(SourcesTest

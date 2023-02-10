@@ -10,17 +10,9 @@
 
 #include "aliases.hpp"
 
-namespace shamalgs::memory::details {
+namespace shamalgs::numeric::details {
 
     template<class T>
-    struct AvoidCopy{
-
-        static T extract_element(sycl::queue &q, sycl::buffer<T> &buf, u32 idx);
-
-    };
+    sycl::buffer<T> exclusive_sum_gpugems39_1(sycl::queue &q, sycl::buffer<T> &buf1, u32 len);
     
-
-    
-
-
-}
+} // namespace shamalgs::numeric::details
