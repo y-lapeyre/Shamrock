@@ -114,3 +114,40 @@ struct TestStreamCompact {
         }
     }
 };
+
+
+template<class T>
+struct TestIndexRemap{
+using vFunctionCall = void (*)(sycl::queue &, std::unique_ptr<sycl::buffer<T>> &, sycl::buffer<u32> &, u32 );
+
+    vFunctionCall fct;
+
+    explicit TestIndexRemap(vFunctionCall arg) : fct(arg){};
+
+    void check() {
+
+        sycl::queue & q = shamsys::instance::get_compute_queue();
+
+        u32 len = 1U << 5U;
+        
+        std::unique_ptr<sycl::buffer<u32>> buf_key  = std::make_unique<sycl::buffer<u32>>(
+            shamalgs::random::mock_buffer<u32>(0x111, len, 0,1U << 7U)
+        );
+        std::vector<u32> key_before_sort = shamalgs::memory::buf_to_vec(*buf_key, len);
+
+        sycl::buffer<u32> buf_index_map = shamalgs::algorithm::gen_buffer_index(q, len);
+        shamalgs::algorithm::sort_by_key(q, *buf_key, buf_index_map, len);
+
+        fct(q, buf_key, buf_index_map, len);
+
+        std::vector<u32> sorted_keys = shamalgs::memory::buf_to_vec(*buf_key, len);
+
+        bool match = true;
+        for (u32 i = 0 ; i < len; i++) {
+            match = match && ( sorted_keys[i] == key_before_sort[i] );
+        }
+
+        shamtest::asserts().assert_bool("permutation is corect", match);
+
+    }
+};

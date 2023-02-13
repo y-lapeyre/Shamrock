@@ -32,7 +32,15 @@ namespace shamalgs::algorithm {
 
 
     
-
+    /**
+     * @brief generate a buffer from a lambda expression based on the indexes
+     * 
+     * @tparam Fct 
+     * @param q 
+     * @param len 
+     * @param func 
+     * @return sycl::buffer<typename std::invoke_result_t<Fct,u32>> 
+     */
     template<class Fct>
     inline sycl::buffer<typename std::invoke_result_t<Fct,u32>> gen_buffer_device(sycl::queue & q, u32 len, Fct && func){
 
@@ -54,6 +62,42 @@ namespace shamalgs::algorithm {
         return std::move(ret);
     }
 
+    /**
+     * @brief remap a buffer according to a given index map
+     * 
+     * 
+     * @tparam T type of the buffer
+     * @param q the sycl queue
+     * @param buf the buffer to apply the remapping on
+     * @param index_map the index map 
+     * @param len lenght of the index map
+     */
+    template<class T>
+    void index_remap(
+        sycl::queue &q, std::unique_ptr<sycl::buffer<T>> &buf, sycl::buffer<u32> &index_map, u32 len);
+    
+    /**
+     * @brief remap a buffer (with multiple variable per index) according to a given index map
+     * 
+     * 
+     * @tparam T type of the buffer
+     * @param q the sycl queue
+     * @param buf the buffer to apply the remapping on
+     * @param index_map the index map 
+     * @param len lenght of the index map
+     * @param nvar the number of variable per index
+     */
+    template<class T>
+    void index_remap_nvar(
+        sycl::queue &q, std::unique_ptr<sycl::buffer<T>> &buf, sycl::buffer<u32> &index_map, u32 len, u32 nvar);
+
+    /**
+     * @brief generate a buffer such that for i in [0,len[, buf[i] = i 
+     * 
+     * @param q the queue to run on
+     * @param len lenght of the buffer to generate
+     * @return sycl::buffer<u32> the returned buffer
+     */
     sycl::buffer<u32> gen_buffer_index(sycl::queue & q , u32 len);
 
 }

@@ -10,6 +10,7 @@
 
 #include "RadixTreeMortonBuilder.hpp"
 #include "kernels/key_morton_sort.hpp"
+#include "shamalgs/algorithm/algorithm.hpp"
 #include "shamrock/math/integerManip.hpp"
 #include "shamrock/sfc/MortonKernels.hpp"
 #include "shamrock/sfc/morton.hpp"
@@ -52,15 +53,10 @@ using namespace shamrock::sfc;
 
     MortonKernels<morton_t, pos_t, dim>::sycl_fill_trailling_buffer(queue, cnt_obj, morton_len, out_buf_morton);
 
-    out_buf_particle_index_map = std::make_unique<sycl::buffer<u32>>(morton_len);
+    out_buf_particle_index_map = std::make_unique<sycl::buffer<u32>>(
+        shamalgs::algorithm::gen_buffer_index(queue, morton_len)
+    );
 
-    queue.submit([&](sycl::handler &cgh) {
-        sycl::accessor pidm{*out_buf_particle_index_map, cgh, sycl::write_only, sycl::no_init};
-
-        cgh.parallel_for(sycl::range(morton_len), [=](sycl::item<1> item) {
-            pidm[item] = item.get_id(0);
-        });
-    });
 
     sycl_sort_morton_key_pair(queue, morton_len, out_buf_particle_index_map, out_buf_morton);
 }

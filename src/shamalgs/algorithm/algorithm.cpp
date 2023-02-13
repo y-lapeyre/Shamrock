@@ -26,4 +26,99 @@ namespace shamalgs::algorithm {
     sycl::buffer<u32> gen_buffer_index(sycl::queue &q, u32 len) {
         return gen_buffer_device(q, len, [](u32 i) -> u32 { return i; });
     }
+
+    template<class T>
+    void index_remap(
+        sycl::queue &q,
+        std::unique_ptr<sycl::buffer<T>> &buf,
+        sycl::buffer<u32> &permutation,
+        u32 len
+    ) {
+
+        sycl::buffer<T> ret(buf->size());
+
+        q.submit([&](sycl::handler &cgh) {
+            sycl::accessor in{*buf, cgh, sycl::read_only};
+            sycl::accessor out{ret, cgh, sycl::write_only, sycl::no_init};
+            sycl::accessor permut{permutation, cgh, sycl::read_only};
+
+            cgh.parallel_for(sycl::range<1>(len), [=](sycl::item<1> item) {
+                out[permut[item]] = in[item];
+            });
+        });
+
+        buf.reset();
+        buf = std::make_unique<sycl::buffer<T>>(std::move(ret));
+    }
+
+    template<class T>
+    void index_remap_nvar(
+        sycl::queue &q,
+        std::unique_ptr<sycl::buffer<T>> &buf,
+        sycl::buffer<u32> &permutation,
+        u32 len,
+        u32 nvar
+    ) {
+
+        sycl::buffer<T> ret(buf->size());
+
+        q.submit([&](sycl::handler &cgh) {
+            sycl::accessor in{*buf, cgh, sycl::read_only};
+            sycl::accessor out{ret, cgh, sycl::write_only, sycl::no_init};
+            sycl::accessor permut{permutation, cgh, sycl::read_only};
+
+            u32 nvar_loc = nvar;
+
+            cgh.parallel_for(sycl::range<1>(len), [=](sycl::item<1> item) {
+                u32 in_id  = item.get_linear_id() * nvar_loc;
+                u32 out_id = permut[item] * nvar_loc;
+
+                for (u32 a = 0; a < nvar_loc; a++) {
+                    out[out_id + a] = in[in_id + a];
+                }
+            });
+        });
+
+        buf.reset();
+        buf = std::make_unique<sycl::buffer<T>>(std::move(ret));
+    }
+
+#define XMAC_TYPES                                                                                 \
+    X(f32)                                                                                         \
+    X(f32_2)                                                                                       \
+    X(f32_3)                                                                                       \
+    X(f32_4)                                                                                       \
+    X(f32_8)                                                                                       \
+    X(f32_16)                                                                                      \
+    X(f64)                                                                                         \
+    X(f64_2)                                                                                       \
+    X(f64_3)                                                                                       \
+    X(f64_4)                                                                                       \
+    X(f64_8)                                                                                       \
+    X(f64_16)                                                                                      \
+    X(u32)                                                                                         \
+    X(u64)                                                                                         \
+    X(u32_3)                                                                                       \
+    X(u64_3)
+
+#define X(_arg_)                                                                                   \
+    template void index_remap(                                                                     \
+        sycl::queue &q,                                                                            \
+        std::unique_ptr<sycl::buffer<_arg_>> &buf,                                                 \
+        sycl::buffer<u32> &permutation,                                                            \
+        u32 len                                                                                    \
+    );                                                                                             \
+                                                                                                   \
+    template void index_remap_nvar(                                                                \
+        sycl::queue &q,                                                                            \
+        std::unique_ptr<sycl::buffer<_arg_>> &buf,                                                 \
+        sycl::buffer<u32> &permutation,                                                            \
+        u32 len,                                                                                   \
+        u32 nvar                                                                                   \
+    );
+
+    XMAC_TYPES
+
+    #undef X
+
 } // namespace shamalgs::algorithm

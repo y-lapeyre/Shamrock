@@ -30,3 +30,9 @@ TestStart(Benchmark, "shamalgs/algorithm/sort_by_key:benchmark",
 
     logger::raw_ln("rate =", rate);
 }
+
+TestStart(Unittest, "shamalgs/algorithm/index_remap", test_index_remap_func, 1){
+
+    TestIndexRemap<u32>(shamalgs::algorithm::index_remap<u32>).check();
+
+}
