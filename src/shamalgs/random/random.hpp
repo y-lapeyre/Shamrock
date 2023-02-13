@@ -11,6 +11,10 @@
 #include "aliases.hpp"
 #include <random>
 
+/**
+ * @brief namespace to contain utility related to random number generation in shamalgs
+ * 
+ */
 namespace shamalgs::random {
 
     template<class T> T mock_value(std::mt19937 & eng, T min_bound, T max_bound);

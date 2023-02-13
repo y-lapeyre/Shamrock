@@ -8,9 +8,25 @@
 
 #pragma once
 
+/**
+ * @file algorithm.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief main include file for the shamalgs algorithms
+ * @version 0.1
+ * @date 2023-02-13
+ * 
+ * @copyright Copyright (c) 2023
+ * 
+ */
+
 #include "aliases.hpp"
 
 
+
+/**
+ * @brief namespace to store algorithms implemented by shamalgs
+ * 
+ */
 namespace shamalgs::algorithm {
 
 

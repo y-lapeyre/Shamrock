@@ -10,6 +10,10 @@
 
 #include "aliases.hpp"
 
+/**
+ * @brief namespace containing the numeric algorithms of shamalgs
+ * 
+ */
 namespace shamalgs::numeric {
 
     template<class T>
