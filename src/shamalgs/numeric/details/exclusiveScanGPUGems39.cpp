@@ -65,16 +65,6 @@ namespace shamalgs::numeric::details {
         u32 step = 0;
 
 
-        auto print_state = [&](){
-            std::vector<T> state = shamalgs::memory::buf_to_vec(get_in_buf_ref(step), len);
-
-            logger::raw_ln("current state : ");
-
-            for(u32 a : state){
-                logger::raw_ln("  ",a);
-            }
-        };
-
         q.submit([&](sycl::handler &cgh) {
             sycl::accessor acc_in {buf1, cgh, sycl::read_only};
             sycl::accessor acc_out {get_in_buf_ref(step), cgh, sycl::write_only, sycl::no_init};
@@ -84,13 +74,9 @@ namespace shamalgs::numeric::details {
                 acc_out[id] = (thid > 0) ? acc_in[thid - 1] : 0;
             });
         });q.wait();
-
-
         
         for (int offset = 1; offset < len; offset *= 2) {
 
-
-            print_state();
 
             q.submit([&,offset](sycl::handler &cgh) {
                 sycl::accessor acc_in {get_in_buf_ref(step), cgh, sycl::read_only};
@@ -113,9 +99,6 @@ namespace shamalgs::numeric::details {
             step++;
             
         }
-
-
-        print_state();
 
 
         return std::move(get_in_buf_ref(step));

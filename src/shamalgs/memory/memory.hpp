@@ -27,4 +27,17 @@ namespace shamalgs::memory {
     template<class T> sycl::buffer<T> vec_to_buf(const std::vector<T> &buf);
     template<class T> std::vector<T> buf_to_vec(sycl::buffer<T> &buf, u32 len);
 
+
+    /**
+     * @brief enqueue a do nothing kernel to force the buffer to move
+     * 
+     * @tparam T 
+     * @param q 
+     * @param buf 
+     */
+    template<class T> inline void move_buffer_on_queue(sycl::queue & q, sycl::buffer<T> & buf){
+        q.submit([&](sycl::handler & cgh){
+            cgh.require(sycl::accessor{buf, cgh, sycl::read_write});
+        });
+    }
 }

@@ -17,3 +17,13 @@ TestStart(Unittest, "shamalgs/numeric/details/exclusive_sum_gpugems39", test_exc
     TestExclScan<u32> test ((TestExclScan<u32>::vFunctionCall)shamalgs::numeric::details::exclusive_sum_gpugems39_1);
     test.check();
 }
+
+
+
+TestStart(Benchmark, "shamalgs/numeric/details/exclusive_sum_gpugems39:benchmark", bench_exclusive_sum_gpugems39_1, 1){
+    
+    TestExclScan<u32> test ((TestExclScan<u32>::vFunctionCall)shamalgs::numeric::details::exclusive_sum_gpugems39_1);
+    f64 rate = test.benchmark_one(1e7);
+
+    logger::raw_ln("rate =", rate);
+}

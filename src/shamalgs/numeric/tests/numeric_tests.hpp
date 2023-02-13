@@ -10,8 +10,11 @@
 
 #include "aliases.hpp"
 #include "shamalgs/memory/memory.hpp"
+#include "shamrock/legacy/utils/time_utils.hpp"
 #include "shamsys/NodeInstance.hpp"
+#include "shamsys/legacy/log.hpp"
 #include "shamtest/shamtest.hpp"
+#include "shamalgs/random/random.hpp"
 #include <numeric>
 
 template<class T>
@@ -25,8 +28,11 @@ struct TestExclScan {
 
     void check() {
         if constexpr (std::is_same<u32, T>::value) {
-            std::vector<u32> data{3, 1, 4, 1, 5, 9, 2, 6};
-            std::vector<u32> data_buf{3, 1, 4, 1, 5, 9, 2, 6};
+
+
+            std::vector<u32> data = shamalgs::random::mock_vector<u32>(0x111, 4096, 0, 50);
+
+            std::vector<u32> data_buf(data);
 
             std::exclusive_scan(data.begin(), data.end(), data.begin(), 0);
 
@@ -43,6 +49,26 @@ struct TestExclScan {
                 }
             }
         }
+    }
+
+    f64 benchmark_one(u32 len){
+
+        sycl::buffer<u32> buf = shamalgs::random::mock_buffer<u32>(0x111, len, 0, 50);
+
+        sycl::queue & q = shamsys::instance::get_compute_queue();
+
+        shamalgs::memory::move_buffer_on_queue(q, buf);
+
+        q.wait();
+
+        Timer t;
+        t.start();
+        sycl::buffer<u32> res = fct(q, buf, len);
+
+        q.wait();t.end();
+
+        return len/(t.nanosec*1e-9);
+
     }
 };
 

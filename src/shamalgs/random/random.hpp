@@ -13,6 +13,10 @@
 
 namespace shamalgs::random {
 
+    template<class T> T mock_value(std::mt19937 & eng, T min_bound, T max_bound);
+    template<class T> std::vector<T> mock_vector(u64 seed,u32 len, T min_bound, T max_bound);
+    template<class T> sycl::buffer<T> mock_buffer(u64 seed,u32 len, T min_bound, T max_bound);
+
     template<class T>
     T next_obj(std::mt19937 &eng, std::uniform_real_distribution<f64> &distval);
 
