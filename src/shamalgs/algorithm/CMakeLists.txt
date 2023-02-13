@@ -1,6 +1,6 @@
 
 set(Sources
-
+algorithm.cpp
 )
 set(SourcesTest
     
@@ -30,8 +30,5 @@ target_sources(shamrock_test
     )
 endif()
 
-add_subdirectory(reduction)
-add_subdirectory(numeric)
-add_subdirectory(memory)
-add_subdirectory(random)
-add_subdirectory(algorithm)
+add_subdirectory(details)
+add_subdirectory(tests)

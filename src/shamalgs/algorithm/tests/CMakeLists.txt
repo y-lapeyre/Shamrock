@@ -3,7 +3,8 @@ set(Sources
 
 )
 set(SourcesTest
-    
+bitonicSortTests.cpp
+algorithmTests.cpp
 )
 set(Headers
 
@@ -29,9 +30,3 @@ target_sources(shamrock_test
         ${Headers} ${HeadersTest}
     )
 endif()
-
-add_subdirectory(reduction)
-add_subdirectory(numeric)
-add_subdirectory(memory)
-add_subdirectory(random)
-add_subdirectory(algorithm)
