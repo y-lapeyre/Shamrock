@@ -25,7 +25,7 @@
 #include "shamrock/patch/Patch.hpp"
 
 namespace shamrock::scheduler {
-u64 PatchTree::insert_node(PTNode n){
+u64 PatchTree::insert_node(Node n){
     tree[next_id] = n;
     next_id ++;
     return next_id-1;
@@ -39,179 +39,88 @@ void PatchTree::split_node(u64 id){
 
     leaf_key.erase(id);
 
-    if(tree[id].parent_id != u64_max){
-        parent_of_only_leaf_key.erase(tree[id].parent_id);
-        tree[tree[id].parent_id].child_are_all_leafs = false;
+    Node & curr = tree[id];
+
+    auto & tree_node = curr.tree_node;
+    if(tree_node.parent_nid != u64_max){
+        parent_of_only_leaf_key.erase(tree_node.parent_nid);
+        tree[tree_node.parent_nid].tree_node.child_are_all_leafs = false;
+    }
+    
+    tree_node.is_leaf = false;
+    tree_node.child_are_all_leafs = true;
+
+    std::array<Node, Node::split_count> splitted_node = curr.get_split_nodes();
+
+    #pragma unroll
+    for (u32 i = 0; i < Node::split_count; i++) {
+        curr.tree_node.childs_nid[i] = insert_node(splitted_node[i]);
     }
 
-    PTNode& curr = tree[id];
-    curr.is_leaf = false;
-    curr.child_are_all_leafs = true;
-
-    u64 min_x = curr.x_min;
-    u64 min_y = curr.y_min;
-    u64 min_z = curr.z_min;
-
-    u64 split_x = (((curr.x_max - curr.x_min) + 1)/2) - 1 + min_x;
-    u64 split_y = (((curr.y_max - curr.y_min) + 1)/2) - 1 + min_y;
-    u64 split_z = (((curr.z_max - curr.z_min) + 1)/2) - 1 + min_z;
-
-    u64 max_x = curr.x_max;
-    u64 max_y = curr.y_max;
-    u64 max_z = curr.z_max;
-
-    curr.childs_id[0] = insert_node(PTNode{
-        min_x,
-        min_y,
-        min_z,
-        split_x,
-        split_y,
-        split_z,
-        (curr.level +1),
-        id
-    });
-
-    curr.childs_id[1] = insert_node(PTNode{
-        min_x,
-        min_y,
-        split_z + 1,
-        split_x,
-        split_y,
-        max_z,
-        (curr.level +1),
-        id
-    });
-
-    curr.childs_id[2] = insert_node(PTNode{
-        min_x,
-        split_y+1,
-        min_z,
-        split_x,
-        max_y,
-        split_z,
-        (curr.level +1),
-        id
-    });
-
-    curr.childs_id[3] = insert_node(PTNode{
-        min_x,
-        split_y+1,
-        split_z+1,
-        split_x,
-        max_y,
-        max_z,
-        (curr.level +1),
-        id
-    });
-
-    curr.childs_id[4] = insert_node(PTNode{
-        split_x+1,
-        min_y,
-        min_z,
-        max_x,
-        split_y,
-        split_z,
-        (curr.level +1),
-        id
-    });
-
-    curr.childs_id[5] = insert_node(PTNode{
-        split_x+1,
-        min_y,
-        split_z+1,
-        max_x,
-        split_y,
-        max_z,
-        (curr.level +1),
-        id
-    });
-
-    curr.childs_id[6] = insert_node(PTNode{
-        split_x+1,
-        split_y+1,
-        min_z,
-        max_x,
-        max_y,
-        split_z,
-        (curr.level +1),
-        id
-    });
-
-    curr.childs_id[7] = insert_node(PTNode{
-        split_x+1,
-        split_y+1,
-        split_z+1,
-        max_x,
-        max_y,
-        max_z,
-        (curr.level +1),
-        id
-    });
-
     parent_of_only_leaf_key.insert(id);
-    leaf_key.insert(curr.childs_id[0]);
-    leaf_key.insert(curr.childs_id[1]);
-    leaf_key.insert(curr.childs_id[2]);
-    leaf_key.insert(curr.childs_id[3]);
-    leaf_key.insert(curr.childs_id[4]);
-    leaf_key.insert(curr.childs_id[5]);
-    leaf_key.insert(curr.childs_id[6]);
-    leaf_key.insert(curr.childs_id[7]);
+
+    #pragma unroll
+    for (u32 i = 0; i < Node::split_count; i++) {
+        leaf_key.insert(curr.tree_node.childs_nid[i]);
+    }
 
 }
 
 void PatchTree::merge_node_dm1(u64 idparent){
 
-    if(!tree[idparent].child_are_all_leafs ){
+    Node & parent_node = tree[idparent];
+    auto & parent_tnode = parent_node.tree_node;
+
+    if(!parent_tnode.child_are_all_leafs ){
         throw shamrock_exc("node should be parent of only leafs");
     }
     
-    leaf_key.erase(tree[idparent].childs_id[0]);
-    leaf_key.erase(tree[idparent].childs_id[1]);
-    leaf_key.erase(tree[idparent].childs_id[2]);
-    leaf_key.erase(tree[idparent].childs_id[3]);
-    leaf_key.erase(tree[idparent].childs_id[4]);
-    leaf_key.erase(tree[idparent].childs_id[5]);
-    leaf_key.erase(tree[idparent].childs_id[6]);
-    leaf_key.erase(tree[idparent].childs_id[7]);
+    leaf_key.erase(parent_tnode.childs_nid[0]);
+    leaf_key.erase(parent_tnode.childs_nid[1]);
+    leaf_key.erase(parent_tnode.childs_nid[2]);
+    leaf_key.erase(parent_tnode.childs_nid[3]);
+    leaf_key.erase(parent_tnode.childs_nid[4]);
+    leaf_key.erase(parent_tnode.childs_nid[5]);
+    leaf_key.erase(parent_tnode.childs_nid[6]);
+    leaf_key.erase(parent_tnode.childs_nid[7]);
 
-    remove_node(tree[idparent].childs_id[0]);
-    remove_node(tree[idparent].childs_id[1]);
-    remove_node(tree[idparent].childs_id[2]);
-    remove_node(tree[idparent].childs_id[3]);
-    remove_node(tree[idparent].childs_id[4]);
-    remove_node(tree[idparent].childs_id[5]);
-    remove_node(tree[idparent].childs_id[6]);
-    remove_node(tree[idparent].childs_id[7]);
+    remove_node(parent_tnode.childs_nid[0]);
+    remove_node(parent_tnode.childs_nid[1]);
+    remove_node(parent_tnode.childs_nid[2]);
+    remove_node(parent_tnode.childs_nid[3]);
+    remove_node(parent_tnode.childs_nid[4]);
+    remove_node(parent_tnode.childs_nid[5]);
+    remove_node(parent_tnode.childs_nid[6]);
+    remove_node(parent_tnode.childs_nid[7]);
 
-    tree[idparent].childs_id[0] = u64_max;
-    tree[idparent].childs_id[1] = u64_max;
-    tree[idparent].childs_id[2] = u64_max;
-    tree[idparent].childs_id[3] = u64_max;
-    tree[idparent].childs_id[4] = u64_max;
-    tree[idparent].childs_id[5] = u64_max;
-    tree[idparent].childs_id[6] = u64_max;
-    tree[idparent].childs_id[7] = u64_max;
+    parent_tnode.childs_nid[0] = u64_max;
+    parent_tnode.childs_nid[1] = u64_max;
+    parent_tnode.childs_nid[2] = u64_max;
+    parent_tnode.childs_nid[3] = u64_max;
+    parent_tnode.childs_nid[4] = u64_max;
+    parent_tnode.childs_nid[5] = u64_max;
+    parent_tnode.childs_nid[6] = u64_max;
+    parent_tnode.childs_nid[7] = u64_max;
 
     leaf_key.insert(idparent);
-    tree[idparent].is_leaf = true;
+    parent_tnode.is_leaf = true;
 
     parent_of_only_leaf_key.erase(idparent);
-    tree[idparent].child_are_all_leafs = false;
+    parent_tnode.child_are_all_leafs = false;
     
-    //check if parent of tree[idparent] is parent of only leafs
-    if(tree[idparent].parent_id != u64_max){
+    //check if parent of parent_tnode is parent of only leafs
+    if(parent_tnode.parent_nid != u64_max){
         bool only_leafs = true;
 
-        PTNode & parent_node = tree[tree[idparent].parent_id];
+        Node & parent_node = tree[parent_tnode.parent_nid];
 
         for(u8 idc = 0; idc < 8 ; idc ++){
-            only_leafs = only_leafs && tree[parent_node.childs_id[idc]].is_leaf;
+            only_leafs = only_leafs && tree[parent_node.get_child_nid(idc)].is_leaf();
         }
 
         if(only_leafs){
-            parent_node.child_are_all_leafs = true;
-            parent_of_only_leaf_key.insert(tree[idparent].parent_id);
+            parent_node.tree_node.child_are_all_leafs = true;
+            parent_of_only_leaf_key.insert(parent_tnode.parent_nid);
         }
     }
     
@@ -225,15 +134,15 @@ void PatchTree::merge_node_dm1(u64 idparent){
 void PatchTree::build_from_patchtable(std::vector<shamrock::patch::Patch> & plist, u64 max_val_1axis){
 
     if(plist.size() > 1){
-        PTNode root;
-        root.x_max = max_val_1axis;
-        root.y_max = max_val_1axis;
-        root.z_max = max_val_1axis;
-        root.x_min = 0;
-        root.y_min = 0;
-        root.z_min = 0;
-        root.level = 0;
-        root.parent_id = u64_max;
+        Node root;
+        root.patch_coord.x_max = max_val_1axis;
+        root.patch_coord.y_max = max_val_1axis;
+        root.patch_coord.z_max = max_val_1axis;
+        root.patch_coord.x_min = 0;
+        root.patch_coord.y_min = 0;
+        root.patch_coord.z_min = 0;
+        root.tree_node.level = 0;
+        root.tree_node.parent_nid = u64_max;
 
         u64 root_id = insert_node(root);
         leaf_key.insert(root_id);
@@ -254,7 +163,7 @@ void PatchTree::build_from_patchtable(std::vector<shamrock::patch::Patch> & plis
             std::vector< std::tuple<u64,std::vector<u64>> > next_tree_vec;
             for(auto & [idtree,idvec] : tree_vec){
 
-                PTNode & ptn = tree[idtree];
+                Node & ptn = tree[idtree];
 
                 split_node(idtree);
 
@@ -262,10 +171,10 @@ void PatchTree::build_from_patchtable(std::vector<shamrock::patch::Patch> & plis
 
                 for(u8 child_id = 0; child_id < 8; child_id ++){
 
-                    u64 ptnode_id = ptn.childs_id[child_id];
+                    u64 ptnode_id = ptn.tree_node.childs_nid[child_id];
                     std::vector<u64> buf;
 
-                    PTNode & curr = tree[ptnode_id];
+                    auto & curr = tree[ptnode_id].patch_coord;
 
                     for(u64 idxptch : idvec){
                         shamrock::patch::Patch &p = plist[idxptch];
@@ -307,17 +216,17 @@ void PatchTree::build_from_patchtable(std::vector<shamrock::patch::Patch> & plis
         }
     }else if(plist.size() == 1){
 
-        PTNode root;
-        root.x_max = max_val_1axis;
-        root.y_max = max_val_1axis;
-        root.z_max = max_val_1axis;
-        root.x_min = 0;
-        root.y_min = 0;
-        root.z_min = 0;
-        root.level = 0;
-        root.parent_id = u64_max;
-        root.is_leaf = true;
-        root.child_are_all_leafs = false;
+        Node root;
+        root.patch_coord.x_max = max_val_1axis;
+        root.patch_coord.y_max = max_val_1axis;
+        root.patch_coord.z_max = max_val_1axis;
+        root.patch_coord.x_min = 0;
+        root.patch_coord.y_min = 0;
+        root.patch_coord.z_min = 0;
+        root.tree_node.level = 0;
+        root.tree_node.parent_nid = u64_max;
+        root.tree_node.is_leaf = true;
+        root.tree_node.child_are_all_leafs = false;
         root.linked_patchid = plist[0].id_patch;
 
         u64 root_id = insert_node(root);
@@ -329,14 +238,16 @@ void PatchTree::build_from_patchtable(std::vector<shamrock::patch::Patch> & plis
 
 }
 
-void PatchTree::update_ptnode(PTNode & n,std::vector<shamrock::patch::Patch> & plist,std::unordered_map<u64,u64> id_patch_to_global_idx){
+void PatchTree::update_ptnode(Node & n,std::vector<shamrock::patch::Patch> & plist,std::unordered_map<u64,u64> id_patch_to_global_idx){
+
+    auto & tnode = n.tree_node;
 
     if(n.linked_patchid != u64_max){
         n.data_count = 0;
         n.load_value = 0;
         n.data_count += plist[id_patch_to_global_idx[n.linked_patchid]].data_count;
         n.load_value += plist[id_patch_to_global_idx[n.linked_patchid]].load_value;
-    }else if (n.childs_id[0] != u64_max) {
+    }else if (tnode.childs_nid[0] != u64_max) {
 
         bool has_err_val = false;
 
@@ -344,10 +255,10 @@ void PatchTree::update_ptnode(PTNode & n,std::vector<shamrock::patch::Patch> & p
         n.load_value = 0;
         for(u8 idc = 0; idc < 8 ; idc ++){
 
-            if(tree[n.childs_id[idc]].data_count == u64_max)has_err_val = true;
+            if(tree[tnode.childs_nid[idc]].data_count == u64_max)has_err_val = true;
 
-            n.data_count += tree[n.childs_id[idc]].data_count;
-            n.load_value += tree[n.childs_id[idc]].load_value;
+            n.data_count += tree[tnode.childs_nid[idc]].data_count;
+            n.load_value += tree[tnode.childs_nid[idc]].load_value;
         }
         
         if(has_err_val){

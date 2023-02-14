@@ -28,3 +28,4 @@ SpaceAfterTemplateKeyword: false
 AlwaysBreakTemplateDeclarations: true
 
 PenaltyReturnTypeOnItsOwnLine: 1
+IndentPPDirectives: BeforeHash

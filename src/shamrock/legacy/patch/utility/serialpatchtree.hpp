@@ -34,36 +34,25 @@
 #include "shamrock/legacy/patch/utility/patch_reduc_tree.hpp"
 #include <tuple>
 
-template<class fp_prec_vec>
-struct PtNode{
-    fp_prec_vec box_min;
-    fp_prec_vec box_max;
-    u64 childs_id0;
-    u64 childs_id1;
-    u64 childs_id2;
-    u64 childs_id3;
-    u64 childs_id4;
-    u64 childs_id5;
-    u64 childs_id6;
-    u64 childs_id7;
-};
 
 
 template<class fp_prec_vec>
 class SerialPatchTree{public:
 
+    using PtNode = shamrock::scheduler::SerialPatchNode<fp_prec_vec>;
+
     using PatchTree = shamrock::scheduler::PatchTree;
 
     
     //TODO use unique pointer instead
-    sycl::buffer<PtNode<fp_prec_vec>>* serial_tree_buf = nullptr;
+    sycl::buffer<PtNode>* serial_tree_buf = nullptr;
     sycl::buffer<u64>*    linked_patch_ids_buf = nullptr;
 
     inline void attach_buf(){
         if(serial_tree_buf != nullptr) throw shamrock_exc("serial_tree_buf is already allocated");
         if(linked_patch_ids_buf != nullptr) throw shamrock_exc("linked_patch_ids_buf is already allocated");
 
-        serial_tree_buf = new sycl::buffer<PtNode<fp_prec_vec>>(serial_tree.data(),serial_tree.size());
+        serial_tree_buf = new sycl::buffer<PtNode>(serial_tree.data(),serial_tree.size());
         linked_patch_ids_buf = new sycl::buffer<u64>(linked_patch_ids.data(),linked_patch_ids.size());
     }
 
@@ -89,7 +78,7 @@ class SerialPatchTree{public:
     
     u32 level_count = 0;
 
-    std::vector<PtNode<fp_prec_vec>> serial_tree;
+    std::vector<PtNode> serial_tree;
     std::vector<u64> linked_patch_ids;
 
     void build_from_patch_tree(PatchTree &ptree, fp_prec_vec translate_factor, fp_prec_vec scale_factor);
@@ -227,14 +216,14 @@ class SerialPatchTree{public:
     inline void dump_dat(){
         for (u64 idx = 0; idx < get_element_count() ; idx ++) {
             std::cout << idx << " (" << 
-            serial_tree[idx].childs_id0  << ", "<< 
-            serial_tree[idx].childs_id1  << ", "<< 
-            serial_tree[idx].childs_id2  << ", "<< 
-            serial_tree[idx].childs_id3  << ", "<< 
-            serial_tree[idx].childs_id4  << ", "<< 
-            serial_tree[idx].childs_id5  << ", "<< 
-            serial_tree[idx].childs_id6  << ", "<< 
-            serial_tree[idx].childs_id7 
+            serial_tree[idx].childs_id[0]  << ", "<< 
+            serial_tree[idx].childs_id[1]  << ", "<< 
+            serial_tree[idx].childs_id[2]  << ", "<< 
+            serial_tree[idx].childs_id[3]  << ", "<< 
+            serial_tree[idx].childs_id[4]  << ", "<< 
+            serial_tree[idx].childs_id[5]  << ", "<< 
+            serial_tree[idx].childs_id[6]  << ", "<< 
+            serial_tree[idx].childs_id[7] 
             << ")";
             
             std::cout << " (" << 

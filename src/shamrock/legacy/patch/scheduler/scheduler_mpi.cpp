@@ -465,14 +465,14 @@ std::string PatchScheduler::dump_status(){
     for(auto & [k,pnode] : patch_tree.tree){
         ss << format("      -> id : %d  -> (%d %d %d %d %d %d %d %d) <=> %d\n",
         k,
-        pnode.childs_id[0],
-        pnode.childs_id[1],
-        pnode.childs_id[2],
-        pnode.childs_id[3],
-        pnode.childs_id[4],
-        pnode.childs_id[5],
-        pnode.childs_id[6],
-        pnode.childs_id[7],
+        pnode.tree_node.childs_nid[0],
+        pnode.tree_node.childs_nid[1],
+        pnode.tree_node.childs_nid[2],
+        pnode.tree_node.childs_nid[3],
+        pnode.tree_node.childs_nid[4],
+        pnode.tree_node.childs_nid[5],
+        pnode.tree_node.childs_nid[6],
+        pnode.tree_node.childs_nid[7],
          pnode.linked_patchid);
     }
 
@@ -489,7 +489,7 @@ inline void PatchScheduler::split_patches(std::unordered_set<u64> split_rq){
     for(u64 tree_id : split_rq){
 
         patch_tree.split_node(tree_id);
-        PatchTree::PTNode & splitted_node = patch_tree.tree[tree_id];
+        PatchTree::Node & splitted_node = patch_tree.tree[tree_id];
 
         auto [idx_p0,idx_p1,idx_p2,idx_p3,idx_p4,idx_p5,idx_p6,idx_p7] 
             =  patch_list.split_patch(splitted_node.linked_patchid);
@@ -497,14 +497,14 @@ inline void PatchScheduler::split_patches(std::unordered_set<u64> split_rq){
         u64 old_patch_id = splitted_node.linked_patchid;
 
         splitted_node.linked_patchid = u64_max;
-        patch_tree.tree[splitted_node.childs_id[0]].linked_patchid = patch_list.global[idx_p0].id_patch;
-        patch_tree.tree[splitted_node.childs_id[1]].linked_patchid = patch_list.global[idx_p1].id_patch;
-        patch_tree.tree[splitted_node.childs_id[2]].linked_patchid = patch_list.global[idx_p2].id_patch;
-        patch_tree.tree[splitted_node.childs_id[3]].linked_patchid = patch_list.global[idx_p3].id_patch;
-        patch_tree.tree[splitted_node.childs_id[4]].linked_patchid = patch_list.global[idx_p4].id_patch;
-        patch_tree.tree[splitted_node.childs_id[5]].linked_patchid = patch_list.global[idx_p5].id_patch;
-        patch_tree.tree[splitted_node.childs_id[6]].linked_patchid = patch_list.global[idx_p6].id_patch;
-        patch_tree.tree[splitted_node.childs_id[7]].linked_patchid = patch_list.global[idx_p7].id_patch;
+        patch_tree.tree[splitted_node.tree_node.childs_nid[0]].linked_patchid = patch_list.global[idx_p0].id_patch;
+        patch_tree.tree[splitted_node.tree_node.childs_nid[1]].linked_patchid = patch_list.global[idx_p1].id_patch;
+        patch_tree.tree[splitted_node.tree_node.childs_nid[2]].linked_patchid = patch_list.global[idx_p2].id_patch;
+        patch_tree.tree[splitted_node.tree_node.childs_nid[3]].linked_patchid = patch_list.global[idx_p3].id_patch;
+        patch_tree.tree[splitted_node.tree_node.childs_nid[4]].linked_patchid = patch_list.global[idx_p4].id_patch;
+        patch_tree.tree[splitted_node.tree_node.childs_nid[5]].linked_patchid = patch_list.global[idx_p5].id_patch;
+        patch_tree.tree[splitted_node.tree_node.childs_nid[6]].linked_patchid = patch_list.global[idx_p6].id_patch;
+        patch_tree.tree[splitted_node.tree_node.childs_nid[7]].linked_patchid = patch_list.global[idx_p7].id_patch;
 
         patch_data.split_patchdata(
             old_patch_id,{
@@ -525,19 +525,19 @@ inline void PatchScheduler::merge_patches(std::unordered_set<u64> merge_rq){
     auto t = timings::start_timer("SchedulerMPI::merge_patches", timings::function);
     for(u64 tree_id : merge_rq){
 
-        PatchTree::PTNode & to_merge_node = patch_tree.tree[tree_id];
+        PatchTree::Node & to_merge_node = patch_tree.tree[tree_id];
 
         std::cout << "merging patch tree id : " << tree_id << "\n";
         
 
-        u64 patch_id0 = patch_tree.tree[to_merge_node.childs_id[0]].linked_patchid;
-        u64 patch_id1 = patch_tree.tree[to_merge_node.childs_id[1]].linked_patchid;
-        u64 patch_id2 = patch_tree.tree[to_merge_node.childs_id[2]].linked_patchid;
-        u64 patch_id3 = patch_tree.tree[to_merge_node.childs_id[3]].linked_patchid;
-        u64 patch_id4 = patch_tree.tree[to_merge_node.childs_id[4]].linked_patchid;
-        u64 patch_id5 = patch_tree.tree[to_merge_node.childs_id[5]].linked_patchid;
-        u64 patch_id6 = patch_tree.tree[to_merge_node.childs_id[6]].linked_patchid;
-        u64 patch_id7 = patch_tree.tree[to_merge_node.childs_id[7]].linked_patchid;
+        u64 patch_id0 = patch_tree.tree[to_merge_node.tree_node.childs_nid[0]].linked_patchid;
+        u64 patch_id1 = patch_tree.tree[to_merge_node.tree_node.childs_nid[1]].linked_patchid;
+        u64 patch_id2 = patch_tree.tree[to_merge_node.tree_node.childs_nid[2]].linked_patchid;
+        u64 patch_id3 = patch_tree.tree[to_merge_node.tree_node.childs_nid[3]].linked_patchid;
+        u64 patch_id4 = patch_tree.tree[to_merge_node.tree_node.childs_nid[4]].linked_patchid;
+        u64 patch_id5 = patch_tree.tree[to_merge_node.tree_node.childs_nid[5]].linked_patchid;
+        u64 patch_id6 = patch_tree.tree[to_merge_node.tree_node.childs_nid[6]].linked_patchid;
+        u64 patch_id7 = patch_tree.tree[to_merge_node.tree_node.childs_nid[7]].linked_patchid;
         
         //print list of patch that will merge
         //std::cout << format("  -> (%d %d %d %d %d %d %d %d)\n", patch_id0, patch_id1, patch_id2, patch_id3, patch_id4, patch_id5, patch_id6, patch_id7);
@@ -569,19 +569,19 @@ inline void PatchScheduler::set_patch_pack_values(std::unordered_set<u64> merge_
 
     for(u64 tree_id : merge_rq){
 
-        PatchTree::PTNode & to_merge_node = patch_tree.tree[tree_id];
+        PatchTree::Node & to_merge_node = patch_tree.tree[tree_id];
 
         u64 idx_pack = patch_list.id_patch_to_global_idx[
-            patch_tree.tree[to_merge_node.childs_id[0]].linked_patchid
+            patch_tree.tree[to_merge_node.get_child_nid(0)].linked_patchid
             ];
 
         //std::cout << "node id : " << patch_list.global[idx_pack].id_patch << " should merge with : ";
 
         for (u8 i = 1; i < 8; i++) {
-            //std::cout <<  patch_tree.tree[to_merge_node.childs_id[i]].linked_patchid << " ";
+            //std::cout <<  patch_tree.tree[to_merge_node.get_child_nid(i)].linked_patchid << " ";
             patch_list.global[
                 patch_list.id_patch_to_global_idx[
-                        patch_tree.tree[to_merge_node.childs_id[i]].linked_patchid
+                        patch_tree.tree[to_merge_node.get_child_nid(i)].linked_patchid
                     ]
                 ].pack_node_index = idx_pack;
         }//std::cout << std::endl;
