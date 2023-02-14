@@ -88,6 +88,20 @@ namespace shamrock::amr {
 
             return {p0, p1, p2, p3, p4, p5, p6, p7};
         }
+
+        inline static AMRCellCoord get_merge(AMRCellCoord c1, AMRCellCoord c2) {
+            return AMRCellCoord(
+                sycl::min(c1.bmin, c2.bmin),
+                sycl::max(c1.bmax, c2.bmax)
+            );
+        }
+
+        inline static AMRCellCoord get_merge(std::array<AMRCellCoord, splts_count> others) {
+            return merge(
+                merge(merge(others[0], others[1]), merge(others[2], others[3])),
+                merge(merge(others[4], others[5]), merge(others[6], others[7]))
+            );
+        }
     };
 
 } // namespace shamrocl::amr
