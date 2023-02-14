@@ -46,7 +46,6 @@
 #include "shamrock/legacy/utils/string_utils.hpp"
 #include "shamrock/legacy/utils/time_utils.hpp"
 #include "shammodels/generic/physics/units.hpp"
-#include "shammodels/generic/setup/SPHSetup.hpp"
 #include "shammodels/sph/base/kernels.hpp"
 #include "shammodels/sph/base/kernels.hpp"
 #include "shammodels/sph/base/sphpart.hpp"

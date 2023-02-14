@@ -24,12 +24,6 @@ void models::nbody::NBodySetup<flt>::init(PatchScheduler & sched){
 
     sched.add_root_patch();
 
-    mpi::barrier(MPI_COMM_WORLD);
-
-    sched.owned_patch_id = sched.patch_list.build_local();
-
-    sched.patch_list.build_global();
-
     sched.patch_tree.build_from_patchtable(sched.patch_list.global, HilbertLB::max_box_sz);
 
     std::cout << "build local" << std::endl;

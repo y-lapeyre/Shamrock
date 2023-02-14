@@ -127,7 +127,19 @@ void PatchTree::merge_node_dm1(u64 idparent){
 }
 
 
+void PatchTree::insert_root_node(u32 patch_id,patch::PatchCoord coords){
+    Node root;
+    root.patch_coord = coords;
+    root.tree_node.level = 0;
+    root.tree_node.parent_nid = u64_max;
+    root.tree_node.is_leaf = true;
+    root.tree_node.child_are_all_leafs = false;
+    root.linked_patchid = patch_id;
 
+    u64 root_id = insert_node(root);
+    leaf_key.insert(root_id);
+    roots_id.insert(root_id);
+}
 
 
 
@@ -216,22 +228,14 @@ void PatchTree::build_from_patchtable(std::vector<shamrock::patch::Patch> & plis
         }
     }else if(plist.size() == 1){
 
-        Node root;
-        root.patch_coord.x_max = max_val_1axis;
-        root.patch_coord.y_max = max_val_1axis;
-        root.patch_coord.z_max = max_val_1axis;
-        root.patch_coord.x_min = 0;
-        root.patch_coord.y_min = 0;
-        root.patch_coord.z_min = 0;
-        root.tree_node.level = 0;
-        root.tree_node.parent_nid = u64_max;
-        root.tree_node.is_leaf = true;
-        root.tree_node.child_are_all_leafs = false;
-        root.linked_patchid = plist[0].id_patch;
-
-        u64 root_id = insert_node(root);
-        leaf_key.insert(root_id);
-        roots_id.insert(root_id);
+        patch::PatchCoord patch_coord;
+        patch_coord.x_max = max_val_1axis;
+        patch_coord.y_max = max_val_1axis;
+        patch_coord.z_max = max_val_1axis;
+        patch_coord.x_min = 0;
+        patch_coord.y_min = 0;
+        patch_coord.z_min = 0;
+        insert_root_node(plist[0].id_patch, patch_coord);
 
     }
 

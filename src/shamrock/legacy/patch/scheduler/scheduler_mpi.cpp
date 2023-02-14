@@ -46,35 +46,64 @@ void PatchScheduler::free_mpi_required_types(){
     //}
 }
 
+
+std::vector<u64> PatchScheduler::add_root_patches(std::vector<shamrock::patch::PatchCoord> coords){
+
+    using namespace shamrock::patch;
+
+    std::vector<u64> ret;
+
+    for (auto coord : coords){
+        if (shamsys::instance::world_rank == 0) {
+            
+
+            Patch root;
+
+            root.node_owner_id = shamsys::instance::world_rank;
+
+            root.x_min = 0;
+            root.y_min = 0;
+            root.z_min = 0;
+
+            root.x_max = HilbertLB::max_box_sz;
+            root.y_max = HilbertLB::max_box_sz;
+            root.z_max = HilbertLB::max_box_sz;
+
+            root.pack_node_index = u64_max;
+
+            PatchData pdat(pdl);
+
+            root.data_count = pdat.get_obj_cnt();
+            root.load_value = pdat.get_obj_cnt();
+
+            u64 pid = add_patch(root,std::move(pdat));  
+            ret.push_back(pid);
+        } else {
+            patch_list._next_patch_id++;
+        }  
+    }
+
+    mpi::barrier(MPI_COMM_WORLD);
+    owned_patch_id = patch_list.build_local();
+    patch_list.build_global();
+
+    return std::move(ret);
+
+}
+
 void PatchScheduler::add_root_patch(){
     using namespace shamrock::patch;
+
+    PatchCoord coord;
+    coord.x_min = 0;
+    coord.y_min = 0;
+    coord.z_min = 0;
+    coord.x_max = HilbertLB::max_box_sz;
+    coord.y_max = HilbertLB::max_box_sz;
+    coord.z_max = HilbertLB::max_box_sz;
+
+    add_root_patches({coord});
     
-    if (shamsys::instance::world_rank == 0) {
-        
-
-        Patch root;
-
-        root.node_owner_id = shamsys::instance::world_rank;
-
-        root.x_min = 0;
-        root.y_min = 0;
-        root.z_min = 0;
-
-        root.x_max = HilbertLB::max_box_sz;
-        root.y_max = HilbertLB::max_box_sz;
-        root.z_max = HilbertLB::max_box_sz;
-
-        root.pack_node_index = u64_max;
-
-        PatchData pdat(pdl);
-
-        root.data_count = pdat.get_obj_cnt();
-        root.load_value = pdat.get_obj_cnt();
-
-        add_patch(root,pdat);  
-    } else {
-        patch_list._next_patch_id++;
-    }  
 }
 
 PatchScheduler::PatchScheduler(shamrock::patch::PatchDataLayout & pdl, u64 crit_split,u64 crit_merge) : pdl(pdl), patch_data(pdl,{

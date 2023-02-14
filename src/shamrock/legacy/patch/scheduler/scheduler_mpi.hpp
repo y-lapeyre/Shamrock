@@ -123,7 +123,7 @@ class PatchScheduler{public:
      * @param pdat 
      */
     //[[deprecated]]
-    inline void add_patch(shamrock::patch::Patch & p, shamrock::patch::PatchData & pdat){
+    inline u64 add_patch(shamrock::patch::Patch p, shamrock::patch::PatchData && pdat){
         p.id_patch = patch_list._next_patch_id;
         patch_list._next_patch_id ++;
 
@@ -131,6 +131,7 @@ class PatchScheduler{public:
 
         patch_data.owned_data.insert({p.id_patch , pdat});
 
+        return p.id_patch;
     }
 
     void add_root_patch();
@@ -237,6 +238,14 @@ class PatchScheduler{public:
         field.build_global(dtype);
 
     }
+
+    /**
+     * @brief add a root patch to the scheduler
+     * 
+     * @param coords coordinates of the patch
+     * @return u64 the id of the made patch
+     */
+    std::vector<u64> add_root_patches(std::vector<shamrock::patch::PatchCoord> coords);
 
 
 
