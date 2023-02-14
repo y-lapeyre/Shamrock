@@ -43,6 +43,8 @@
  */
 class PatchScheduler{public:
 
+    using PatchTree = shamrock::scheduler::PatchTree;
+
     shamrock::patch::PatchDataLayout & pdl;
 
     u64 crit_patch_split; ///< splitting limit (if load value > crit_patch_split => patch split)

@@ -9,9 +9,12 @@
 #include "serialpatchtree.hpp"
 #include "shamsys/legacy/log.hpp"
 
+using PatchTree = shamrock::scheduler::PatchTree;
+
 void get_serial_tree_fp32(u64 root_key, PatchTree &ptree, std::vector<PtNode<f32_3>> &result_tree,
                           std::vector<u64> &result_tree_linked_patch_id, u64 &counter, u32 &max_level,
                           const f32_3 &translate_factor, const f32_3 &scale_factor) {
+    
 
     PatchTree::PTNode ptn = ptree.tree[root_key];
 

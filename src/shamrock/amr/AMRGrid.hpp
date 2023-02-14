@@ -8,38 +8,35 @@
 
 #pragma once
 
-#include "aliases.hpp"
 #include "AMRCell.hpp"
+#include "aliases.hpp"
 #include "shamalgs/numeric/numeric.hpp"
 #include "shamrock/legacy/patch/scheduler/scheduler_mpi.hpp"
 #include "shamrock/scheduler/DistributedData.hpp"
 
-
-
-
-
 namespace shamrock::amr {
 
-    struct SplitList{
+    struct SplitList {
         sycl::buffer<u32> idx;
         u32 count;
     };
 
-    
-
-
-
+    /**
+     * @brief The AMR grid only sees the grid as an integer map
+     * 
+     * @tparam Tcoord 
+     * @tparam dim 
+     */
     template<class Tcoord, u32 dim>
-    class AMRGrid{
-
-        using CellCoord = AMRCellCoord<Tcoord, dim>;
-
-        static constexpr u32 dimension   = dim;
-        static constexpr u32 split_count = CellCoord::splts_count;
+    class AMRGrid {public:
 
         PatchScheduler & sched;
 
-        explicit AMRGrid(PatchScheduler & scheduler) : sched(scheduler){}
+        using CellCoord = AMRCellCoord<Tcoord, dim>;
+        static constexpr u32 dimension   = dim;
+        static constexpr u32 split_count = CellCoord::splts_count;
+
+        explicit AMRGrid(PatchScheduler &scheduler) : sched(scheduler) {}
 
         /**
          * @brief generate split lists for all patchdata owned by the node
@@ -52,41 +49,45 @@ namespace shamrock::amr {
          * );
          *
          * ~~~~~
-         * 
-         * @tparam Fct 
-         * @param f 
-         * @return scheduler::DistributedData<SplitList> 
+         *
+         * @tparam Fct
+         * @param f
+         * @return scheduler::DistributedData<SplitList>
          */
         template<class Fct>
-        scheduler::DistributedData<SplitList> gen_splitlists(Fct && f){
+        scheduler::DistributedData<SplitList> gen_splitlists(Fct &&f);
 
-            scheduler::DistributedData<SplitList> ret;
-
-            using namespace patch;
-
-            sched.for_each_patch_data(
-                [&](u64 id_patch, Patch cur_p, PatchData &pdat) {
-
-                    sycl::queue & q = shamsys::instance::get_compute_queue();
-                    
-                    u32 obj_cnt = pdat.get_obj_cnt();
-
-                    sycl::buffer<u32> split_flags = f(id_patch, cur_p,pdat);
-
-                    auto [buf,len] = shamalgs::numeric::stream_compact(q, split_flags, obj_cnt);
-
-                    ret.add_obj(id_patch,SplitList {
-                        std::move(buf),len  
-                    });
-
-                }
-            );
-
+        inline void make_base_grid(Tcoord bmin, Tcoord bmax, std::array<u32,dim> cell_count){
+            
         }
-
-        
-
     };
 
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // out of line implementation
+    ////////////////////////////////////////////////////////////////////////////////////////////////
 
-}
+    template<class Tcoord, u32 dim>
+    template<class Fct>
+    inline auto
+    AMRGrid<Tcoord, dim>::gen_splitlists(Fct &&f) -> scheduler::DistributedData<SplitList> {
+
+        scheduler::DistributedData<SplitList> ret;
+
+        using namespace patch;
+
+        sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
+            sycl::queue &q = shamsys::instance::get_compute_queue();
+
+            u32 obj_cnt = pdat.get_obj_cnt();
+
+            sycl::buffer<u32> split_flags = f(id_patch, cur_p, pdat);
+
+            auto [buf, len] = shamalgs::numeric::stream_compact(q, split_flags, obj_cnt);
+
+            ret.add_obj(id_patch, SplitList{std::move(buf), len});
+        });
+
+        return std::move(ret);
+    }
+
+} // namespace shamrock::amr

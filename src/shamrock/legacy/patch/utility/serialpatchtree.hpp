@@ -52,6 +52,8 @@ struct PtNode{
 template<class fp_prec_vec>
 class SerialPatchTree{public:
 
+    using PatchTree = shamrock::scheduler::PatchTree;
+
     
     //TODO use unique pointer instead
     sycl::buffer<PtNode<fp_prec_vec>>* serial_tree_buf = nullptr;
