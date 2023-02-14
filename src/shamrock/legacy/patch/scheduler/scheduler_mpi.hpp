@@ -123,16 +123,16 @@ class PatchScheduler{public:
      * @param pdat 
      */
     //[[deprecated]]
-    inline u64 add_patch(shamrock::patch::Patch p, shamrock::patch::PatchData && pdat){
-        p.id_patch = patch_list._next_patch_id;
-        patch_list._next_patch_id ++;
-
-        patch_list.global.push_back(p);
-
-        patch_data.owned_data.insert({p.id_patch , pdat});
-
-        return p.id_patch;
-    }
+    //inline u64 add_patch(shamrock::patch::Patch p, shamrock::patch::PatchData && pdat){
+    //    p.id_patch = patch_list._next_patch_id;
+    //    patch_list._next_patch_id ++;
+//
+    //    patch_list.global.push_back(p);
+//
+    //    patch_data.owned_data.insert({p.id_patch , pdat});
+//
+    //    return p.id_patch;
+    //}
 
     void add_root_patch();
 

@@ -54,38 +54,35 @@ std::vector<u64> PatchScheduler::add_root_patches(std::vector<shamrock::patch::P
     std::vector<u64> ret;
 
     for (auto coord : coords){
-        if (shamsys::instance::world_rank == 0) {
-            
 
-            Patch root;
+        u32 node_owner_id = 0;
 
-            root.node_owner_id = shamsys::instance::world_rank;
+        Patch root;
+        root.id_patch = patch_list._next_patch_id;
+        root.pack_node_index = u64_max;
+        root.load_value = 0;
+        root.x_min = coord.x_min;
+        root.y_min = coord.y_min;
+        root.z_min = coord.z_min;
+        root.x_max = coord.x_max;
+        root.y_max = coord.y_max;
+        root.z_max = coord.z_max;
+        root.data_count = 0;
+        root.node_owner_id = node_owner_id;
 
-            root.x_min = 0;
-            root.y_min = 0;
-            root.z_min = 0;
+        patch_list.global.push_back(root);
+        patch_list._next_patch_id++;
 
-            root.x_max = HilbertLB::max_box_sz;
-            root.y_max = HilbertLB::max_box_sz;
-            root.z_max = HilbertLB::max_box_sz;
 
-            root.pack_node_index = u64_max;
+        if (shamsys::instance::world_rank == node_owner_id) {
+            patch_data.owned_data.insert({root.id_patch , PatchData(pdl)});
+        } 
 
-            PatchData pdat(pdl);
+        patch_tree.insert_root_node(root.id_patch, coord);
 
-            root.data_count = pdat.get_obj_cnt();
-            root.load_value = pdat.get_obj_cnt();
-
-            u64 pid = add_patch(root,std::move(pdat));  
-            ret.push_back(pid);
-        } else {
-            patch_list._next_patch_id++;
-        }  
+        ret.push_back(root.id_patch);
     }
 
-    mpi::barrier(MPI_COMM_WORLD);
-    owned_patch_id = patch_list.build_local();
-    patch_list.build_global();
 
     return std::move(ret);
 
