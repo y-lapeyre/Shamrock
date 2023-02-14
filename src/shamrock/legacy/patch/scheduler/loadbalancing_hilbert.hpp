@@ -37,7 +37,33 @@ class HilbertLB{public :
      * @brief maximal value along an axis for the patch coordinate
      * 
      */
-    static constexpr u64 max_box_sz = hilbert_box21_sz;
+    static constexpr u64 max_box_sz = shamrock::sfc::HilbertCurve<u64, 3>::max_val;
+
+    /**
+     * @brief generate the change list from the list of patch to run the load balancing
+     * 
+     * @param global_patch_list the global patch list
+     * @return std::vector<std::tuple<u64, i32, i32, i32>> list of changes to apply
+     *    format = (index of the patch in global list,old owner rank,new owner rank,mpi communication tag)
+     */
+    static std::vector<std::tuple<u64, i32, i32, i32>> make_change_list(std::vector<shamrock::patch::Patch> &global_patch_list);
+
+
+};
+
+/**
+ * @brief hilbert load balancing
+ * 
+ */
+class HilbertLBQuad{public : 
+
+    using quad_hilbert_num = shamrock::sfc::quad_hilbert_num;
+
+    /**
+     * @brief maximal value along an axis for the patch coordinate
+     * 
+     */
+    static constexpr u64 max_box_sz = shamrock::sfc::HilbertCurve<quad_hilbert_num, 3>::max_val;
 
     /**
      * @brief generate the change list from the list of patch to run the load balancing
