@@ -190,29 +190,6 @@ std::tuple<f64_3,f64_3> PatchScheduler::get_box_volume(){
     return patch_data.sim_box.get_bounding_box<f64_3>();
 }
 
-template<>
-void PatchScheduler::set_box_volume(std::tuple<f32_3,f32_3> box){
-    if(!pdl.check_main_field_type<f32_3>()) throw shamrock_exc("cannot query single precision box the main field is not of f32_3 type");
-
-    patch_data.sim_box.set_bounding_box<f32_3>({std::get<0>(box), std::get<1>(box)});
-
-    logger::debug_ln("PatchScheduler", "box resized to :",
-        box
-    );
-
-}
-
-template<>
-void PatchScheduler::set_box_volume(std::tuple<f64_3,f64_3> box){
-    if(!pdl.check_main_field_type<f64_3>()) throw shamrock_exc("cannot query single precision box the main field is not of f64_3 type");
-
-    patch_data.sim_box.set_bounding_box<f64_3>({std::get<0>(box), std::get<1>(box)});
-
-    logger::debug_ln("PatchScheduler", "box resized to :",
-        box
-    );
-
-}
 
 
 

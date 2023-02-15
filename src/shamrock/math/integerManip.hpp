@@ -23,7 +23,7 @@ namespace shamrock::math::int_manip {
 
     #endif
 
-    #ifdef SYCL_COMP_HIPSYCL
+    #ifdef SYCL_COMP_OPENSYCL
 
     namespace details{
         template<class T>

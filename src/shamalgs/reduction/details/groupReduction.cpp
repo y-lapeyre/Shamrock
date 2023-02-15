@@ -21,13 +21,13 @@ namespace shamalgs::reduction::details {
 
             sycl::buffer<T> buf_int(len);
 
-#ifdef SYCL_COMP_HIPSYCL
+#ifdef SYCL_COMP_OPENSYCL
             q.wait();
 #endif
 
             ::syclalgs::basic::write_with_offset_into(buf_int, buf1, start_id, len);
 
-#ifdef SYCL_COMP_HIPSYCL
+#ifdef SYCL_COMP_OPENSYCL
             q.wait();
 #endif
 
@@ -72,7 +72,7 @@ namespace shamalgs::reduction::details {
                     );
                 });
 
-#ifdef SYCL_COMP_HIPSYCL
+#ifdef SYCL_COMP_OPENSYCL
                 q.wait();
 #endif
 
@@ -88,7 +88,7 @@ namespace shamalgs::reduction::details {
                 cgh.single_task([=]() { acc_rec[0] = global_mem[0]; });
             });
 
-#ifdef SYCL_COMP_HIPSYCL
+#ifdef SYCL_COMP_OPENSYCL
             q.wait();
 #endif
 
@@ -111,7 +111,7 @@ namespace shamalgs::reduction::details {
         #endif
 
 
-        #ifdef SYCL_COMP_HIPSYCL
+        #ifdef SYCL_COMP_OPENSYCL
         return manual_reduce_impl<work_group_size>::reduce_manual(q, buf1, start_id, end_id, sycl::plus<T>{});
         #endif
     }
@@ -123,7 +123,7 @@ namespace shamalgs::reduction::details {
         #endif
 
 
-        #ifdef SYCL_COMP_HIPSYCL
+        #ifdef SYCL_COMP_OPENSYCL
         return manual_reduce_impl<work_group_size>::reduce_manual(q, buf1, start_id, end_id, sycl::minimum<T>{});
         #endif
     }
@@ -135,7 +135,7 @@ namespace shamalgs::reduction::details {
         #endif
 
 
-        #ifdef SYCL_COMP_HIPSYCL
+        #ifdef SYCL_COMP_OPENSYCL
         return manual_reduce_impl<work_group_size>::reduce_manual(q, buf1, start_id, end_id, sycl::maximum<T>{});
         #endif
     }

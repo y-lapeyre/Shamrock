@@ -171,7 +171,7 @@ class ShamrockCtx{public:
         return recv_data;
     }
 
-    void set_box_size(std::tuple<f64_3, f64_3> box) {
+    void set_coord_domain_bound(std::tuple<f64_3, f64_3> box) {
 
         if (!pdl) {
             throw ShamAPIException("patch data layout is not initialized");
@@ -181,16 +181,18 @@ class ShamrockCtx{public:
             throw ShamAPIException("scheduler is not initialized");
         }
 
+        auto [a,b] = box;
+
         if(pdl->check_main_field_type<f32_3>()){
             auto conv_vec = [](f64_3 v) -> f32_3 { return {v.x(), v.y(), v.z()}; };
 
-            f32_3 vec0 = conv_vec(std::get<0>(box));
-            f32_3 vec1 = conv_vec(std::get<1>(box));
+            f32_3 vec0 = conv_vec(a);
+            f32_3 vec1 = conv_vec(b);
 
-            sched->set_box_volume<f32_3>({vec0, vec1});
+            sched->set_coord_domain_bound<f32_3>(vec0, vec1);
         }else if(pdl->check_main_field_type<f64_3>()){
             
-            sched->set_box_volume<f64_3>(box);
+            sched->set_coord_domain_bound<f64_3>(a,b);
         }else{
             throw std::runtime_error(
                 __LOC_PREFIX__ + "the chosen type for the main field is not handled"

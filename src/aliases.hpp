@@ -52,7 +52,7 @@ template <bool B, class T = void>
 using enable_if_t = typename std::enable_if<B, T>;
 
 
-#ifdef SYCL_COMP_HIPSYCL
+#ifdef SYCL_COMP_OPENSYCL
 typedef sycl::detail::s_long   i64;
 typedef sycl::detail::s_int    i32;
 typedef sycl::detail::s_short  i16;

@@ -125,6 +125,8 @@ namespace shamrock::patch {
         inline std::tuple<sycl::vec<primtype, 3>, sycl::vec<primtype, 3>> get_box(Patch &p) {
             return partch_coord_to_domain<sycl::vec<primtype, 3>>(p);
         }
+
+        
     };
 
     ////////////////////////////////////////////////////////////////////////////////////////////////

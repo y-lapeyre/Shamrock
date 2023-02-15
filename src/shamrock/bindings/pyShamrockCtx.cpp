@@ -225,9 +225,9 @@ Register_pymod(pyshamrockctxinit){
         .def("pdata_layout_print", &ShamrockCtx::pdata_layout_print)
         .def("pdata_layout_print", &ShamrockCtx::pdata_layout_print)
         .def("pdata_layout_print", &ShamrockCtx::pdata_layout_print)
-        .def("set_box_size",
+        .def("set_coord_domain_bound",
             [](ShamrockCtx & ctx, std::array<f64, 3> min_vals, std::array<f64, 3> max_vals){
-            ctx.set_box_size({
+            ctx.set_coord_domain_bound({
                 f64_3{min_vals[0],min_vals[1],min_vals[2]},
                 f64_3{max_vals[0],max_vals[1],max_vals[2]}
                 });

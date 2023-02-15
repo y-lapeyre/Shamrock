@@ -12,6 +12,7 @@
 #include "aliases.hpp"
 #include "shamalgs/numeric/numeric.hpp"
 #include "shamrock/legacy/patch/scheduler/scheduler_mpi.hpp"
+#include "shamrock/math/integerManip.hpp"
 #include "shamrock/scheduler/DistributedData.hpp"
 
 namespace shamrock::amr {
@@ -58,29 +59,38 @@ namespace shamrock::amr {
         scheduler::DistributedData<SplitList> gen_splitlists(Fct &&f);
 
         inline void make_base_grid(Tcoord bmin, Tcoord bmax, std::array<u32,dim> cell_count){
+
+            sched.set_coord_domain_bound(bmin,bmax);
+
             u32 max_lin_cell_count = 0;
             for(u32 i = 0 ; i < dim; i++){
                 max_lin_cell_count = sycl::max(max_lin_cell_count, cell_count[i]);
             }
 
-            //u32 max_cell_count_next2 = next pow 2(max_lin_cell_count)
-            //u32 sz_patch = HilbertLB::max_box_sz/max_cell_count_next2
-            /*
+            u64 coord_div_fact = math::int_manip::get_next_pow2_val(max_lin_cell_count);
+
+            u64 sz_root_patch = PatchScheduler::max_axis_patch_coord_lenght/coord_div_fact;
+
             
+            std::vector<patch::PatchCoord> coords;
             for(u32 x = 0; x < cell_count[0]; x++){
                 for(u32 y = 0; y < cell_count[1]; y++){
                     for(u32 z = 0; z < cell_count[2]; z++){
-                        coord.x_min = sz_patch*(x);
-                        coord.y_min = sz_patch*(y);
-                        coord.z_min = sz_patch*(z);
-                        coord.x_max = sz_patch*(x+1);
-                        coord.y_max = sz_patch*(y+1);
-                        coord.z_max = sz_patch*(z+1);
+                        patch::PatchCoord coord;
+
+                        coord.x_min = sz_root_patch*(x);
+                        coord.y_min = sz_root_patch*(y);
+                        coord.z_min = sz_root_patch*(z);
+                        coord.x_max = sz_root_patch*(x+1)-1;
+                        coord.y_max = sz_root_patch*(y+1)-1;
+                        coord.z_max = sz_root_patch*(z+1)-1;
+
+                        coords.push_back(coord);
                     }
                 }
             }
-            
-            */ 
+
+            sched.add_root_patches(coords);
 
             //check cells are squared
         }

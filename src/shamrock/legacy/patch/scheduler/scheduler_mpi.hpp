@@ -49,6 +49,7 @@ class PatchScheduler{
     public:
 
     static constexpr u64 max_axis_patch_coord = LoadBalancer::max_box_sz;
+    static constexpr u64 max_axis_patch_coord_lenght = LoadBalancer::max_box_sz+1;
 
     using PatchTree = shamrock::scheduler::PatchTree;
 
@@ -112,8 +113,46 @@ class PatchScheduler{
 
     bool should_resize_box(bool node_in);
 
+
+    /**
+     * @brief modify the bounding box of the patch domain
+     * 
+     * @tparam vectype 
+     * @param bmin 
+     * @param bmax 
+     */
     template<class vectype>
-    void set_box_volume(std::tuple<vectype,vectype> box);
+    void set_coord_domain_bound(vectype bmin, vectype bmax){
+
+        if(!pdl.check_main_field_type<vectype>()){
+            std::invalid_argument(
+                std::string("the main field is not of the correct type to call this function\n")+
+                "fct called : " + __PRETTY_FUNCTION__ +
+                "current patch data layout : "+
+                pdl.get_description_str()
+            );
+        } throw shamrock_exc("cannot query single precision box the main field is not of f32_3 type");
+
+        patch_data.sim_box.set_bounding_box<vectype>({bmin,bmax});
+
+        logger::debug_ln("PatchScheduler", "box resized to :",
+            bmin,bmax
+        );
+
+    }
+
+    /**
+     * @brief modify the bounding box of the patch domain
+     * 
+     * @tparam vectype 
+     * @param box 
+     */
+    template<class vectype>
+    void set_coord_domain_bound(std::tuple<vectype, vectype> box){
+        auto [a,b] = box;
+        set_coord_domain_bound(a,b);
+    }
+    
 
     [[deprecated]]
     void dump_local_patches(std::string filename);

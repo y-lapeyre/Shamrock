@@ -51,7 +51,7 @@ namespace shamalgs::reduction::details {
         return reduce_sycl_2020(q, buf1, start_id, end_id, sycl::plus<>{});
         #endif
 
-        #ifdef SYCL_COMP_HIPSYCL
+        #ifdef SYCL_COMP_OPENSYCL
         return reduce_sycl_2020(q, buf1, start_id, end_id, sycl::plus<T>{});
         #endif
     }
@@ -62,7 +62,7 @@ namespace shamalgs::reduction::details {
     //    return reduce_sycl_2020(q, buf1, start_id, end_id, sycl::minimum<>{});
     //    #endif
 //
-    //    #ifdef SYCL_COMP_HIPSYCL
+    //    #ifdef SYCL_COMP_OPENSYCL
     //    return reduce_sycl_2020(q, buf1, start_id, end_id, sycl::minimum<T>{});
     //    #endif
     //}
@@ -73,7 +73,7 @@ namespace shamalgs::reduction::details {
     //    return reduce_sycl_2020(q, buf1, start_id, end_id, sycl::maximum<>{});
     //    #endif
 //
-    //    #ifdef SYCL_COMP_HIPSYCL
+    //    #ifdef SYCL_COMP_OPENSYCL
     //    return reduce_sycl_2020(q, buf1, start_id, end_id, sycl::maximum<T>{});
     //    #endif
     //}

@@ -59,7 +59,7 @@ std::tuple<f64,f64> benchmark_selfgrav(f32 dr, u32 npatch){
         //std::get<1>(ebox).x() += 1e-5;
         //std::get<1>(ebox).y() += 1e-5;
         //std::get<1>(ebox).z() += 1e-5;
-        sched.set_box_volume<f32_3>(box);
+        sched.set_coord_domain_bound<f32_3>(box);
 
 
         setup.set_boundaries(true);

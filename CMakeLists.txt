@@ -44,9 +44,9 @@ if("${SyCL_Compiler}" STREQUAL "DPCPP")
 endif()
 
 
-if("${SyCL_Compiler}" STREQUAL "HIPSYCL")
+if("${SyCL_Compiler}" STREQUAL "OPENSYCL")
 
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSYCL_COMP_HIPSYCL")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSYCL_COMP_OPENSYCL")
 
 endif()
 

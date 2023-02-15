@@ -196,7 +196,7 @@ template<class T> void bench_type(std::string Tname){
     #endif
 
 
-    #ifdef SYCL_COMP_HIPSYCL
+    #ifdef SYCL_COMP_OPENSYCL
     bench_mark_indiv<T>(Tname + " manual : wg=2",vals,[](sycl::queue & q, sycl::buffer<T> & buf1, u32 start_id, u32 end_id){
         return shamalgs::reduction::details::GroupReduction<T,2>::sum(q, buf1, start_id, end_id);
     });

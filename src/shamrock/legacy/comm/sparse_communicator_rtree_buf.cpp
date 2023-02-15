@@ -45,7 +45,7 @@ struct SparseCommExchanger<RadixTreeField<T>>{
 
                     if (psend.node_owner_id == precv.node_owner_id) {
                         auto & vec = recv_obj[precv.id_patch];
-                        dtcnt += send_buf->get_size();
+                        dtcnt += send_buf->byte_size();
                         vec.push_back({psend.id_patch, std::make_unique<RadixTreeField<T>>(RadixTreeField<T>{nvar,syclalgs::basic::duplicate(send_buf)})});
                     } else {
                         //std::cout << "send : " << shamsys::instance::world_rank << " " << precv.node_owner_id << std::endl;
