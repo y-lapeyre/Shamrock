@@ -317,16 +317,16 @@ void PatchScheduler::scheduler_step(bool do_split_merge, bool do_load_balancing)
         std::vector<std::tuple<u64, i32, i32,i32>> change_list = 
             HilbertLB::make_change_list(patch_list.global);
         timer.end();
-        std::cout << " | load balancing gen op : " << timer.get_time_str() << std::endl;
 
-        std::cout <<        "   | ---- load balancing ---- \n";
-        std::cout << format("      move op : %-6d",change_list.size()) << std::endl;
+        logger::info_ln("Scheduler", "load balancing gen op",timer.get_time_str());
+        logger::debug_ln("Scheduler", " move operations",change_list.size());
 
         timer.start();
         // apply LB change list
         patch_data.apply_change_list(change_list, patch_list);
         timer.end();
-        std::cout << " | apply balancing : " << timer.get_time_str() << std::endl;
+
+        logger::info_ln("Scheduler", "apply balancing time",timer.get_time_str());
         t.stop();
     }
 
