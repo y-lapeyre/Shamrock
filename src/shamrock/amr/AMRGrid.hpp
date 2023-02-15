@@ -58,7 +58,31 @@ namespace shamrock::amr {
         scheduler::DistributedData<SplitList> gen_splitlists(Fct &&f);
 
         inline void make_base_grid(Tcoord bmin, Tcoord bmax, std::array<u32,dim> cell_count){
+            u32 max_lin_cell_count = 0;
+            for(u32 i = 0 ; i < dim; i++){
+                max_lin_cell_count = sycl::max(max_lin_cell_count, cell_count[i]);
+            }
+
+            //u32 max_cell_count_next2 = next pow 2(max_lin_cell_count)
+            //u32 sz_patch = HilbertLB::max_box_sz/max_cell_count_next2
+            /*
             
+            for(u32 x = 0; x < cell_count[0]; x++){
+                for(u32 y = 0; y < cell_count[1]; y++){
+                    for(u32 z = 0; z < cell_count[2]; z++){
+                        coord.x_min = sz_patch*(x);
+                        coord.y_min = sz_patch*(y);
+                        coord.z_min = sz_patch*(z);
+                        coord.x_max = sz_patch*(x+1);
+                        coord.y_max = sz_patch*(y+1);
+                        coord.z_max = sz_patch*(z+1);
+                    }
+                }
+            }
+            
+            */ 
+
+            //check cells are squared
         }
     };
 
