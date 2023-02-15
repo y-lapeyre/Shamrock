@@ -1,6 +1,7 @@
 
 set(Sources
 PatchTree.cpp
+HilbertLoadBalance.cpp
 )
 set(SourcesTest
     

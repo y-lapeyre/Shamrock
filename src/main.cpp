@@ -32,7 +32,6 @@
 #include "shamrock/legacy/patch/interfaces/interface_handler.hpp"
 #include "shamrock/legacy/patch/interfaces/interface_selector.hpp"
 //#include "shamrock/legacy/patch/patchdata_buffer.hpp"
-#include "shamrock/legacy/patch/scheduler/loadbalancing_hilbert.hpp"
 #include "shamrock/legacy/patch/scheduler/scheduler_mpi.hpp"
 #include "shamrock/legacy/patch/utility/patch_field.hpp"
 #include "shamrock/legacy/patch/utility/patch_reduc_tree.hpp"

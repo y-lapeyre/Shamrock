@@ -8,7 +8,6 @@ target_sources(shamrock
         
         
         
-        loadbalancing_hilbert.cpp 
         scheduler_mpi.cpp 
         scheduler_patch_data.cpp 
         scheduler_patch_list.cpp 
@@ -33,7 +32,6 @@ if("${BUILD_TEST}")
 
         
         
-    loadbalancing_hilbert.cpp 
     scheduler_mpi.cpp 
     scheduler_patch_data.cpp 
     scheduler_patch_list.cpp 

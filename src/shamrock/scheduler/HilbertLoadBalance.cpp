@@ -17,11 +17,12 @@
  * 
  */
 
-#include "loadbalancing_hilbert.hpp"
+#include "HilbertLoadBalance.hpp"
 
 #include "shamrock/legacy/io/logs.hpp"
 #include "shamsys/legacy/sycl_handler.hpp"
 
+namespace shamrock::scheduler {
 
 template<class T> class Compute_HilbLoad;
 template<class T> class Write_chosen_node;
@@ -185,3 +186,5 @@ std::vector<std::tuple<u64, i32, i32, i32>> HilbertLoadBalance<hilbert_num>::mak
 
 template class HilbertLoadBalance<u64>;
 template class HilbertLoadBalance<shamrock::sfc::quad_hilbert_num>;
+
+}

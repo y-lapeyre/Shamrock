@@ -18,7 +18,7 @@
 #include "shamrock/legacy/patch/base/patchdata.hpp"
 #include "shamrock/legacy/patch/base/patchdata_field.hpp"
 #include "shamsys/legacy/mpi_handler.hpp"
-#include "loadbalancing_hilbert.hpp"
+#include "shamrock/scheduler/HilbertLoadBalance.hpp"
 
 #include "shamrock/patch/PatchDataLayout.hpp"
 #include "shamsys/legacy/sycl_handler.hpp"
@@ -88,6 +88,7 @@ std::vector<u64> PatchScheduler::add_root_patches(std::vector<shamrock::patch::P
 
 }
 
+
 void PatchScheduler::add_root_patch(){
     using namespace shamrock::patch;
 
@@ -95,17 +96,24 @@ void PatchScheduler::add_root_patch(){
     coord.x_min = 0;
     coord.y_min = 0;
     coord.z_min = 0;
-    coord.x_max = HilbertLB::max_box_sz;
-    coord.y_max = HilbertLB::max_box_sz;
-    coord.z_max = HilbertLB::max_box_sz;
+    coord.x_max = max_axis_patch_coord;
+    coord.y_max = max_axis_patch_coord;
+    coord.z_max = max_axis_patch_coord;
 
     add_root_patches({coord});
     
 }
 
-PatchScheduler::PatchScheduler(shamrock::patch::PatchDataLayout & pdl, u64 crit_split,u64 crit_merge) : pdl(pdl), patch_data(pdl,{
+PatchScheduler::PatchScheduler(
+    shamrock::patch::PatchDataLayout & pdl, 
+    u64 crit_split,
+    u64 crit_merge) : 
+        pdl(pdl), 
+        patch_data(pdl,{
             u64_3{0, 0, 0},
-            u64_3{HilbertLB::max_box_sz, HilbertLB::max_box_sz, HilbertLB::max_box_sz}}){
+            u64_3{max_axis_patch_coord, max_axis_patch_coord, max_axis_patch_coord}}
+            )
+            {
 
     crit_patch_split = crit_split;
     crit_patch_merge = crit_merge;
@@ -133,7 +141,7 @@ void PatchScheduler::sync_build_LB(bool global_patch_sync, bool balance_load){
 
     if(balance_load){
         //real load balancing
-        std::vector<std::tuple<u64, i32, i32,i32>> change_list = HilbertLB::make_change_list(patch_list.global);
+        std::vector<std::tuple<u64, i32, i32,i32>> change_list = LoadBalancer::make_change_list(patch_list.global);
 
         //exchange data
         patch_data.apply_change_list(change_list, patch_list);
@@ -150,7 +158,7 @@ std::tuple<f32_3,f32_3> PatchScheduler::get_box_tranform(){
     auto [bmin,bmax] = patch_data.sim_box.get_bounding_box<f32_3>();
 
     f32_3 translate_factor = bmin;
-    f32_3 scale_factor = (bmax - bmin)/HilbertLB::max_box_sz;
+    f32_3 scale_factor = (bmax - bmin)/LoadBalancer::max_box_sz;
 
     return {translate_factor,scale_factor};
 }
@@ -162,7 +170,7 @@ std::tuple<f64_3,f64_3> PatchScheduler::get_box_tranform(){
     auto [bmin,bmax] = patch_data.sim_box.get_bounding_box<f64_3>();
 
     f64_3 translate_factor = bmin;
-    f64_3 scale_factor = (bmax - bmin)/HilbertLB::max_box_sz;
+    f64_3 scale_factor = (bmax - bmin)/LoadBalancer::max_box_sz;
 
     return {translate_factor,scale_factor};
 }
@@ -315,7 +323,7 @@ void PatchScheduler::scheduler_step(bool do_split_merge, bool do_load_balancing)
         timer.start();
         // generate LB change list 
         std::vector<std::tuple<u64, i32, i32,i32>> change_list = 
-            HilbertLB::make_change_list(patch_list.global);
+            LoadBalancer::make_change_list(patch_list.global);
         timer.end();
 
         logger::info_ln("Scheduler", "load balancing gen op",timer.get_time_str());

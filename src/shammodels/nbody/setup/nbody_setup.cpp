@@ -14,7 +14,6 @@
 #include "shamrock/legacy/patch/comm/patch_object_mover.hpp"
 
 #include "shamsys/legacy/mpi_handler.hpp"
-#include "shamrock/legacy/patch/scheduler/loadbalancing_hilbert.hpp"
 
 
 template<class flt>

@@ -14,7 +14,6 @@
 #include <vector>
 #include "shamrock/legacy/patch/scheduler/scheduler_patch_list.hpp"
 #include "shamrock/sfc/hilbert.hpp"
-#include "shamrock/legacy/patch/scheduler/loadbalancing_hilbert.hpp"
 
 
 #if false

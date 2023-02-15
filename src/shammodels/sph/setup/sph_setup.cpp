@@ -15,8 +15,6 @@
 
 #include "shamsys/legacy/mpi_handler.hpp"
 
-#include "shamrock/legacy/patch/scheduler/loadbalancing_hilbert.hpp"
-
 template<class flt, class Kernel>
 void models::sph::SetupSPH<flt,Kernel>::init(PatchScheduler & sched){
 

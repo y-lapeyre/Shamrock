@@ -24,7 +24,6 @@
 
 #include "shamrock/legacy/io/logs.hpp"
 #include "shamrock/legacy/patch/base/patchdata.hpp"
-#include "loadbalancing_hilbert.hpp"
 
 #include "shamrock/patch/PatchDataLayout.hpp"
 #include "shamsys/legacy/mpi_handler.hpp"
