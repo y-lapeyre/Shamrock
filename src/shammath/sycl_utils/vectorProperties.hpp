@@ -10,7 +10,7 @@
 
 #include "aliases.hpp"
 
-namespace shamalgs::vec_manip {
+namespace shammath::sycl_utils {
 
     template <class T> struct VectorProperties {
         using component_type           = T;

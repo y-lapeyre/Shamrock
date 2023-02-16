@@ -62,35 +62,25 @@ namespace shamrock::amr {
 
             sched.set_coord_domain_bound(bmin,bmax);
 
-            u32 max_lin_cell_count = 0;
-            for(u32 i = 0 ; i < dim; i++){
-                max_lin_cell_count = sycl::max(max_lin_cell_count, cell_count[i]);
+            static_assert(dim == 3, "this is not implemented for dim != 3");
+
+            std::array<u32, dim> patch_count;
+
+
+            u32 gcd_cell_count;
+            {
+                gcd_cell_count = std::gcd(cell_count[0], cell_count[1]);
+                gcd_cell_count = std::gcd(gcd_cell_count, cell_count[2]);
             }
 
-            u64 coord_div_fact = math::int_manip::get_next_pow2_val(max_lin_cell_count);
 
-            u64 sz_root_patch = PatchScheduler::max_axis_patch_coord_lenght/coord_div_fact;
-
-            
-            std::vector<patch::PatchCoord> coords;
-            for(u32 x = 0; x < cell_count[0]; x++){
-                for(u32 y = 0; y < cell_count[1]; y++){
-                    for(u32 z = 0; z < cell_count[2]; z++){
-                        patch::PatchCoord coord;
-
-                        coord.x_min = sz_root_patch*(x);
-                        coord.y_min = sz_root_patch*(y);
-                        coord.z_min = sz_root_patch*(z);
-                        coord.x_max = sz_root_patch*(x+1)-1;
-                        coord.y_max = sz_root_patch*(y+1)-1;
-                        coord.z_max = sz_root_patch*(z+1)-1;
-
-                        coords.push_back(coord);
-                    }
+            sched.make_patch_base_grid({
+                {
+                    cell_count[0]/gcd_cell_count,
+                    cell_count[1]/gcd_cell_count,
+                    cell_count[2]/gcd_cell_count
                 }
-            }
-
-            sched.add_root_patches(coords);
+            });
 
             //check cells are squared
         }

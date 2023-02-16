@@ -38,6 +38,8 @@
 #include "shamrock/scheduler/HilbertLoadBalance.hpp"
 #include "shamsys/legacy/sycl_handler.hpp"
 
+#include "shamrock/math/integerManip.hpp"
+
 /**
  * @brief The MPI scheduler
  * 
@@ -139,6 +141,50 @@ class PatchScheduler{
             bmin,bmax
         );
 
+    }
+
+    /**
+     * @brief push data in the scheduler
+     * The content of pdat as to be the same for each node
+     * 
+     * @param pdat the data to push
+     */
+    void allpush_data(shamrock::patch::PatchData & pdat);
+
+    template<u32 dim>
+    inline void make_patch_base_grid(std::array<u32,dim> patch_count){
+
+        static_assert(dim == 3, "this is not implemented for dim != 3");
+
+        u32 max_lin_patch_count = 0;
+        for(u32 i = 0 ; i < dim; i++){
+            max_lin_patch_count = sycl::max(max_lin_patch_count, patch_count[i]);
+        }
+
+        u64 coord_div_fact = shamrock::math::int_manip::get_next_pow2_val(max_lin_patch_count);
+
+        u64 sz_root_patch = PatchScheduler::max_axis_patch_coord_lenght/coord_div_fact;
+
+        
+        std::vector<shamrock::patch::PatchCoord> coords;
+        for(u32 x = 0; x < patch_count[0]; x++){
+            for(u32 y = 0; y < patch_count[1]; y++){
+                for(u32 z = 0; z < patch_count[2]; z++){
+                    shamrock::patch::PatchCoord coord;
+
+                    coord.x_min = sz_root_patch*(x);
+                    coord.y_min = sz_root_patch*(y);
+                    coord.z_min = sz_root_patch*(z);
+                    coord.x_max = sz_root_patch*(x+1)-1;
+                    coord.y_max = sz_root_patch*(y+1)-1;
+                    coord.z_max = sz_root_patch*(z+1)-1;
+
+                    coords.push_back(coord);
+                }
+            }
+        }
+
+        add_root_patches(coords);
     }
 
     /**
@@ -293,6 +339,9 @@ class PatchScheduler{
      */
     std::vector<u64> add_root_patches(std::vector<shamrock::patch::PatchCoord> coords);
 
+    shamrock::patch::SimulationBoxInfo & get_sim_box(){
+        return patch_data.sim_box;
+    }
 
 
     private:
@@ -305,3 +354,30 @@ class PatchScheduler{
     void set_patch_pack_values(std::unordered_set<u64> merge_rq);
 
 };
+
+inline void PatchScheduler::allpush_data(shamrock::patch::PatchData &pdat){
+
+    for_each_patch_data(
+        [&](u64 id_patch, shamrock::patch::Patch cur_p, shamrock::patch::PatchData &pdat_sched) {
+
+            auto variant_main = pdl.get_main_field_any();
+
+            std::visit([&](auto & arg){
+
+                using base_t =
+                            typename std::remove_reference<decltype(arg)>::type::field_T;
+
+                if constexpr (shammath::sycl_utils::VectorProperties<base_t>::dimension == 3){
+                    auto [bmin,bmax] = get_sim_box().partch_coord_to_domain<base_t>(cur_p)  ;
+
+                    pdat_sched.insert_elements_in_range(pdat, bmin, bmax);
+                }else{
+                    throw std::runtime_error("this does not yet work with dimension different from 3");
+                }
+
+            }, variant_main);
+
+        }
+    );
+
+}

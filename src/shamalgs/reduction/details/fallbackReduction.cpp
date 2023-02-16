@@ -7,7 +7,7 @@
 // -------------------------------------------------------//
 
 #include "fallbackReduction.hpp"
-#include "shamalgs/syclManip.hpp"
+#include "shammath/sycl_utilities.hpp"
 
 namespace shamalgs::reduction::details {
 
@@ -41,7 +41,7 @@ namespace shamalgs::reduction::details {
                 if(idx == start_id){
                     accum = acc[idx];
                 }else{
-                    accum = shamalgs::sycl_manip::g_sycl_min(acc[idx], accum);
+                    accum = shammath::sycl_utils::g_sycl_min(acc[idx], accum);
                 }
             }
         }
@@ -60,7 +60,7 @@ namespace shamalgs::reduction::details {
                 if(idx == start_id){
                     accum = acc[idx];
                 }else{
-                    accum = shamalgs::sycl_manip::g_sycl_max(acc[idx], accum);
+                    accum = shammath::sycl_utils::g_sycl_max(acc[idx], accum);
                 }
             }
         }

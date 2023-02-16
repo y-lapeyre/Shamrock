@@ -20,7 +20,6 @@
 
 
 #include "shamrock/legacy/patch/base/patchdata.hpp"
-#include "shamalgs/vectorManip.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamrock/legacy/utils/string_utils.hpp"
 #include "shamrock/sfc/morton.hpp"
@@ -120,7 +119,7 @@ class RadixTree{
     public:
 
     using ipos_t = typename shamrock::sfc::MortonCodes<morton_t, dim>::int_vec_repr;
-    using coord_t = typename shamalgs::vec_manip::VectorProperties<pos_t>::component_type;
+    using coord_t = typename shammath::sycl_utils::VectorProperties<pos_t>::component_type;
 
     static constexpr u32 tree_depth = get_tree_depth();
 

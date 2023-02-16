@@ -29,9 +29,6 @@
 #include "shamsys/legacy/mpi_handler.hpp"
 #include "shamrock/legacy/utils/geometry_utils.hpp"
 
-#include "shamalgs/vectorManip.hpp"
-
-
 //TODO use range based loop and emplace_back instead 
 
 void SchedulerPatchData::apply_change_list(std::vector<std::tuple<u64, i32, i32,i32>> change_list,SchedulerPatchList& patch_list){
@@ -102,7 +99,7 @@ void split_patchdata(
     const std::array<shamrock::patch::Patch, 8> patches,
     std::array<std::reference_wrapper<shamrock::patch::PatchData>,8> pdats){
 
-    using ptype = typename shamalgs::vec_manip::VectorProperties<Vectype>::component_type;
+    using ptype = typename shammath::sycl_utils::VectorProperties<Vectype>::component_type;
 
     auto [bmin_p0, bmax_p0] = sim_box.partch_coord_to_domain<Vectype>(patches[0]);
     auto [bmin_p1, bmax_p1] = sim_box.partch_coord_to_domain<Vectype>(patches[1]);
