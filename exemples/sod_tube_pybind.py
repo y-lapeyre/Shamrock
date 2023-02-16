@@ -57,7 +57,7 @@ setup.init(ctx)
 dr = 1/xs
 (xs,ys,zs) = setup.get_box_dim(dr,256,24,24)
 
-ctx.set_box_size((-xs,-ys/2,-zs/2),(xs,ys/2,zs/2))
+ctx.set_coord_domain_bound((-xs,-ys/2,-zs/2),(xs,ys/2,zs/2))
 
 setup.set_boundaries("periodic")
 

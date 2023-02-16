@@ -195,6 +195,10 @@ namespace shamrock::patch {
             bounding_box = CoordRange<f32_3>::max_range();
         } else if (pdl.check_main_field_type<f64_3>()) {
             bounding_box = CoordRange<f64_3>::max_range();
+        } else if (pdl.check_main_field_type<u32_3>()) {
+            bounding_box = CoordRange<u32_3>::max_range();
+        } else if (pdl.check_main_field_type<u64_3>()) {
+            bounding_box = CoordRange<u64_3>::max_range();
         } else {
             throw std::runtime_error(
                 __LOC_PREFIX__ + "the chosen type for the main field is not handled"

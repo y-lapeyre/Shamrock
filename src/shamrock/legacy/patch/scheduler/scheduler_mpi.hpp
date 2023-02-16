@@ -133,7 +133,7 @@ class PatchScheduler{
                 "current patch data layout : "+
                 pdl.get_description_str()
             );
-        } throw shamrock_exc("cannot query single precision box the main field is not of f32_3 type");
+        }
 
         patch_data.sim_box.set_bounding_box<vectype>({bmin,bmax});
 
@@ -254,15 +254,14 @@ class PatchScheduler{
 
         for (auto &[id, pdat] : patch_data.owned_data) {
 
-            if (! pdat.is_empty()) {
 
-                shamrock::patch::Patch &cur_p = patch_list.global[patch_list.id_patch_to_global_idx[id]];
+            shamrock::patch::Patch &cur_p = patch_list.global[patch_list.id_patch_to_global_idx[id]];
 
-                if(!cur_p.is_err_mode()){
-                    fct(id,cur_p,pdat);
-                }
-
+            if(!cur_p.is_err_mode()){
+                fct(id,cur_p,pdat);
             }
+
+            
         }
 
     }
@@ -274,17 +273,14 @@ class PatchScheduler{
 
         for (auto &[id, pdat] : patch_data.owned_data) {
 
-            if (! pdat.is_empty()) {
+            shamrock::patch::Patch &cur_p = patch_list.global[patch_list.id_patch_to_global_idx[id]];
 
 
-                shamrock::patch::Patch &cur_p = patch_list.global[patch_list.id_patch_to_global_idx[id]];
-
-
-                //TODO should feed the sycl queue to the lambda
-                if(!cur_p.is_err_mode()){
-                    fct(id,cur_p);
-                }
+            //TODO should feed the sycl queue to the lambda
+            if(!cur_p.is_err_mode()){
+                fct(id,cur_p);
             }
+            
         }
 
     }
@@ -354,30 +350,3 @@ class PatchScheduler{
     void set_patch_pack_values(std::unordered_set<u64> merge_rq);
 
 };
-
-inline void PatchScheduler::allpush_data(shamrock::patch::PatchData &pdat){
-
-    for_each_patch_data(
-        [&](u64 id_patch, shamrock::patch::Patch cur_p, shamrock::patch::PatchData &pdat_sched) {
-
-            auto variant_main = pdl.get_main_field_any();
-
-            std::visit([&](auto & arg){
-
-                using base_t =
-                            typename std::remove_reference<decltype(arg)>::type::field_T;
-
-                if constexpr (shammath::sycl_utils::VectorProperties<base_t>::dimension == 3){
-                    auto [bmin,bmax] = get_sim_box().partch_coord_to_domain<base_t>(cur_p)  ;
-
-                    pdat_sched.insert_elements_in_range(pdat, bmin, bmax);
-                }else{
-                    throw std::runtime_error("this does not yet work with dimension different from 3");
-                }
-
-            }, variant_main);
-
-        }
-    );
-
-}

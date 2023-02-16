@@ -49,4 +49,4 @@ namespace shammath::sycl_utils {
         static constexpr bool has_info = is_float_based || is_int_based || is_uint_based;
     };
 
-} // namespace shamrock::math::vec_manip
+} // namespace shammath::sycl_utils

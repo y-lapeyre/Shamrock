@@ -37,7 +37,30 @@ namespace shamrock::amr {
         static constexpr u32 dimension   = dim;
         static constexpr u32 split_count = CellCoord::splts_count;
 
-        explicit AMRGrid(PatchScheduler &scheduler) : sched(scheduler) {}
+        void check_amr_main_fields(){
+
+            bool correct_type = true;
+            correct_type &= sched.pdl.check_field_type<Tcoord>(0);
+            correct_type &= sched.pdl.check_field_type<Tcoord>(1);
+
+            bool correct_names = true;
+            correct_names &= sched.pdl.get_field<Tcoord>(0).name == "cell_min";
+            correct_names &= sched.pdl.get_field<Tcoord>(1).name == "cell_max";
+
+            if(!correct_type || !correct_names){
+                throw std::runtime_error(
+                    "the amr module require a layout in the form :\n"
+                    "    0 : cell_min : nvar=1 type : (Coordinate type)\n"
+                    "    1 : cell_max : nvar=1 type : (Coordinate type)\n\n"
+                    "the current layout is : \n" +
+                    sched.pdl.get_description_str()
+                );
+            }
+        }
+
+        explicit AMRGrid(PatchScheduler &scheduler) : sched(scheduler) {
+            check_amr_main_fields();
+        }
 
         /**
          * @brief generate split lists for all patchdata owned by the node
@@ -58,9 +81,19 @@ namespace shamrock::amr {
         template<class Fct>
         scheduler::DistributedData<SplitList> gen_splitlists(Fct &&f);
 
-        inline void make_base_grid(Tcoord bmin, Tcoord bmax, std::array<u32,dim> cell_count){
+        inline void make_base_grid(Tcoord bmin, Tcoord cell_size, std::array<u32,dim> cell_count){
+
+            Tcoord bmax{
+                bmin.x() + (cell_size.x()+1) * cell_count[0],
+                bmin.y() + (cell_size.y()+1) * cell_count[1],
+                bmin.z() + (cell_size.z()+1) * cell_count[2]
+            };
 
             sched.set_coord_domain_bound(bmin,bmax);
+
+            if((cell_size.x() != cell_size.y()) || (cell_size.y() != cell_size.z()) ){
+                logger::warn_ln("AMR Grid", "your cells aren't cube");
+            }
 
             static_assert(dim == 3, "this is not implemented for dim != 3");
 
@@ -74,7 +107,7 @@ namespace shamrock::amr {
             }
 
 
-            sched.make_patch_base_grid({
+            sched.make_patch_base_grid<3>({
                 {
                     cell_count[0]/gcd_cell_count,
                     cell_count[1]/gcd_cell_count,
@@ -82,7 +115,43 @@ namespace shamrock::amr {
                 }
             });
 
-            //check cells are squared
+            u32 cell_tot_count = cell_count[0]*cell_count[1]*cell_count[2];
+
+
+            
+            sycl::buffer<Tcoord> cell_coord_min (cell_tot_count);
+            sycl::buffer<Tcoord> cell_coord_max (cell_tot_count);
+
+            shamsys::instance::get_compute_queue().submit([&](sycl::handler & cgh){
+                
+                sycl::accessor acc_min {cell_coord_min, cgh, sycl::write_only, sycl::no_init};
+                sycl::accessor acc_max {cell_coord_max, cgh, sycl::write_only, sycl::no_init};
+
+                sycl::range<3> rnge {cell_count[0],cell_count[1],cell_count[2]};
+
+                Tcoord sz = cell_size;
+
+                cgh.parallel_for(rnge,[=](sycl::item<3> gid){
+                    acc_min[gid.get_linear_id()] = sz* Tcoord{
+                        gid.get_id(0),
+                        gid.get_id(1),
+                        gid.get_id(2)};
+                    acc_max[gid.get_linear_id()] = sz* Tcoord{
+                        gid.get_id(0)+1,
+                        gid.get_id(1)+1,
+                        gid.get_id(2)+1};
+                });
+
+            });
+
+
+
+            patch::PatchData pdat (sched.pdl);
+            pdat.resize(cell_tot_count);
+            pdat.get_field<Tcoord>(0).override(cell_coord_min,cell_tot_count);
+            pdat.get_field<Tcoord>(1).override(cell_coord_max,cell_tot_count);
+
+            sched.allpush_data(pdat);
         }
     };
 

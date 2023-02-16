@@ -225,6 +225,7 @@ Register_pymod(pyshamrockctxinit){
         .def("pdata_layout_print", &ShamrockCtx::pdata_layout_print)
         .def("pdata_layout_print", &ShamrockCtx::pdata_layout_print)
         .def("pdata_layout_print", &ShamrockCtx::pdata_layout_print)
+        .def("dump_status", &ShamrockCtx::dump_status)
         .def("set_coord_domain_bound",
             [](ShamrockCtx & ctx, std::array<f64, 3> min_vals, std::array<f64, 3> max_vals){
             ctx.set_coord_domain_bound({
@@ -257,6 +258,8 @@ Register_pymod(pyshamrockctxinit){
                 append_to_map<f64_16>(fname, data, dic_out);
                 append_to_map<u32   >(fname, data, dic_out);
                 append_to_map<u64   >(fname, data, dic_out);
+                append_to_map<u32_3 >(fname, data, dic_out);
+                append_to_map<u64_3 >(fname, data, dic_out);
             }
 
             return dic_out;

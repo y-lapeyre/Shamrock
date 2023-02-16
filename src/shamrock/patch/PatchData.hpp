@@ -269,6 +269,8 @@ namespace shamrock::patch {
 
         std::vector<u32> idx_lst = get_vec_idx(bmin,bmax);
 
+        logger::debug_sycl_ln("PatchData", "inserting element cnt =", idx_lst.size());
+
         pdat.append_subset_to(idx_lst,*this);
 
     }

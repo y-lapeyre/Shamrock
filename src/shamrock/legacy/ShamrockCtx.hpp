@@ -110,6 +110,10 @@ class ShamrockCtx{public:
             pdata_layout_add_field<u32>(fname, nvar);
         }else if (type == "u64"){
             pdata_layout_add_field<u64>(fname, nvar);
+        }else if (type == "u32_3"){
+            pdata_layout_add_field<u32_3>(fname, nvar);
+        }else if (type == "u64_3"){
+            pdata_layout_add_field<u64_3>(fname, nvar);
         }else{
             throw std::invalid_argument("the select type is not registered");
         }
@@ -122,7 +126,13 @@ class ShamrockCtx{public:
         std::cout << pdl->get_description_str() << std::endl;
     }
 
+    inline void dump_status(){
+        if (!sched) {
+            throw ShamAPIException("scheduler is not initialized");
+        }
 
+        logger::raw_ln(sched->dump_status());
+    }
 
    
 

@@ -76,15 +76,60 @@ std::vector<u64> PatchScheduler::add_root_patches(std::vector<shamrock::patch::P
 
         if (shamsys::instance::world_rank == node_owner_id) {
             patch_data.owned_data.insert({root.id_patch , PatchData(pdl)});
-        } 
+            logger::debug_sycl_ln("Scheduler", "adding patch data");
+        } else{
+            logger::debug_sycl_ln("Scheduler", "patch data wasn't added rank =",shamsys::instance::world_rank, " ower =",node_owner_id);
+        }
 
         patch_tree.insert_root_node(root.id_patch, coord);
 
         ret.push_back(root.id_patch);
+
+        logger::debug_ln("Scheduler", "adding patch : [ (",
+         coord.x_min, 
+         coord.y_min, 
+         coord.z_min,") ] [ (",
+         coord.x_max, 
+         coord.y_max, 
+         coord.z_max,") ]"
+        );
     }
 
 
     return std::move(ret);
+
+}
+
+
+void PatchScheduler::allpush_data(shamrock::patch::PatchData &pdat){
+
+    logger::debug_ln("Scheduler", "pushing data obj cnt =", pdat.get_obj_cnt());
+
+    for_each_patch_data(
+        [&](u64 id_patch, shamrock::patch::Patch cur_p, shamrock::patch::PatchData &pdat_sched) {
+
+            
+            logger::debug_sycl_ln("Scheduler", "pushing data in patch ", id_patch);
+
+            auto variant_main = pdl.get_main_field_any();
+
+            std::visit([&](auto & arg){
+
+                using base_t =
+                            typename std::remove_reference<decltype(arg)>::type::field_T;
+
+                if constexpr (shammath::sycl_utils::VectorProperties<base_t>::dimension == 3){
+                    auto [bmin,bmax] = get_sim_box().partch_coord_to_domain<base_t>(cur_p)  ;
+
+                    pdat_sched.insert_elements_in_range(pdat, bmin, bmax);
+                }else{
+                    throw std::runtime_error("this does not yet work with dimension different from 3");
+                }
+
+            }, variant_main);
+
+        }
+    );
 
 }
 
