@@ -20,3 +20,7 @@ grd.make_base_grid([0,0,0],[1,1,1],[5,5,5])
 #ctx.dump_status()
 
 print("recovered :",len(ctx.collect_data()["cell_min"][::]))
+
+model = shamrock.AMRTestModel(grd)
+
+model.step()

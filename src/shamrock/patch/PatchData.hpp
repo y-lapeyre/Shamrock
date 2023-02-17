@@ -112,6 +112,8 @@ namespace shamrock::patch {
 
         void resize(u32 new_obj_cnt);
 
+        void expand(u32 obj_cnt);
+
         // template<class Tvecbox>
         // void split_patchdata(PatchData & pd0,PatchData & pd1,PatchData & pd2,PatchData &
         // pd3,PatchData & pd4,PatchData & pd5,PatchData & pd6,PatchData & pd7,

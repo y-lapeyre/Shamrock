@@ -30,6 +30,10 @@ namespace shamrock::scheduler {
             }
         }
 
+        T& get(u64 id){
+            return data.at(id);
+        }
+
 
     };
 } // namespace shamrock::scheduler

@@ -78,8 +78,84 @@ namespace shamrock::amr {
          * @param f
          * @return scheduler::DistributedData<SplitList>
          */
-        template<class Fct>
-        scheduler::DistributedData<SplitList> gen_splitlists(Fct &&f);
+        scheduler::DistributedData<SplitList> gen_refinelists(
+            std::function< void(u64 , patch::Patch , patch::PatchData &, sycl::buffer<u32> &) > fct
+            ){
+
+            scheduler::DistributedData<SplitList> ret;
+
+            using namespace patch;
+
+            sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
+                sycl::queue &q = shamsys::instance::get_compute_queue();
+
+                u32 obj_cnt = pdat.get_obj_cnt();
+
+                sycl::buffer<u32> refine_flags(obj_cnt);
+
+                fct(id_patch, cur_p, pdat, refine_flags);
+
+                auto [buf, len] = shamalgs::numeric::stream_compact(q, refine_flags, obj_cnt);
+
+                ret.add_obj(id_patch, SplitList{std::move(buf), len});
+            });
+
+            return std::move(ret);
+        }
+
+
+
+        template<class UserAcc, class Fct>
+        void apply_splits(scheduler::DistributedData<SplitList> && splts , Fct && lambd){
+
+            using namespace patch;
+
+            
+
+            sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
+                sycl::queue &q = shamsys::instance::get_compute_queue();
+
+                u32 old_obj_cnt = pdat.get_obj_cnt();
+
+                SplitList & refine_flags = splts.get(id_patch);
+                pdat.expand(refine_flags.count*(split_count-1));
+
+                
+                shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
+
+                    sycl::accessor index_to_ref {refine_flags.idx, cgh, sycl::read_only};
+
+                    u32 start_index_push = old_obj_cnt;
+
+                    constexpr u32 new_splits = split_count-1;
+
+                    UserAcc uacc (cgh,pdat);
+
+                    cgh.parallel_for(sycl::range<1>(refine_flags.count), [=](sycl::item<1> gid) {
+
+                        u32 tid = gid.get_linear_id();
+                        
+                        u32 idx_to_refine = index_to_ref[gid];
+
+                        std::array<u32, split_count> cells_ids;
+
+                        cells_ids[0] = idx_to_refine;
+
+                        #pragma unroll
+                        for(u32 pid = 0; pid < new_splits; pid++){
+                            cells_ids[pid+1] = start_index_push + tid*new_splits + pid;
+                        }
+                        
+                        //lambd(idx_to_refine, cells_ids, uacc);
+
+                    });
+                });
+                
+
+
+            });
+
+        }
 
         inline void make_base_grid(Tcoord bmin, Tcoord cell_size, std::array<u32,dim> cell_count){
 
@@ -108,7 +184,7 @@ namespace shamrock::amr {
             }
 
 
-            logger::raw_ln(
+            logger::debug_ln("AMRGrid","patch grid :",
                 cell_count[0]/gcd_cell_count,
                 cell_count[1]/gcd_cell_count,
                 cell_count[2]/gcd_cell_count
@@ -167,28 +243,27 @@ namespace shamrock::amr {
     // out of line implementation
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
-    template<class Tcoord, u32 dim>
-    template<class Fct>
-    inline auto
-    AMRGrid<Tcoord, dim>::gen_splitlists(Fct &&f) -> scheduler::DistributedData<SplitList> {
-
-        scheduler::DistributedData<SplitList> ret;
-
-        using namespace patch;
-
-        sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
-            sycl::queue &q = shamsys::instance::get_compute_queue();
-
-            u32 obj_cnt = pdat.get_obj_cnt();
-
-            sycl::buffer<u32> split_flags = f(id_patch, cur_p, pdat);
-
-            auto [buf, len] = shamalgs::numeric::stream_compact(q, split_flags, obj_cnt);
-
-            ret.add_obj(id_patch, SplitList{std::move(buf), len});
-        });
-
-        return std::move(ret);
-    }
+    //template<class Tcoord, u32 dim>
+    //inline auto
+    //AMRGrid<Tcoord, dim>::gen_splitlists(std::function<sycl::buffer<u32>(u64 , patch::Patch , patch::PatchData &)> fct) -> scheduler::DistributedData<SplitList> {
+//
+    //    scheduler::DistributedData<SplitList> ret;
+//
+    //    using namespace patch;
+//
+    //    sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
+    //        sycl::queue &q = shamsys::instance::get_compute_queue();
+//
+    //        u32 obj_cnt = pdat.get_obj_cnt();
+//
+    //        sycl::buffer<u32> split_flags = fct(id_patch, cur_p, pdat);
+//
+    //        auto [buf, len] = shamalgs::numeric::stream_compact(q, split_flags, obj_cnt);
+//
+    //        ret.add_obj(id_patch, SplitList{std::move(buf), len});
+    //    });
+//
+    //    return std::move(ret);
+    //}
 
 } // namespace shamrock::amr

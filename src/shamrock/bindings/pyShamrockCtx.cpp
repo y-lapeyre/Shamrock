@@ -198,7 +198,7 @@ template<class T> void append_to_map(
     if(!vec.empty()){
         auto arr = VecToNumpy<T>::convert(vec);
 
-        py::print("adding -> ",key, arr);
+        py::print("adding -> ",key);
 
         dic_out[key.c_str()] = arr;
     }

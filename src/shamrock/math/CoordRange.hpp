@@ -9,6 +9,7 @@
 #pragma once
 
 #include "aliases.hpp"
+#include "shammath/intervals.hpp"
 
 #include <limits>
 
@@ -28,6 +29,7 @@ template <class T> struct CoordRange {
     }
 
     static CoordRange max_range();
+
 
     //std::string get_str();
 };

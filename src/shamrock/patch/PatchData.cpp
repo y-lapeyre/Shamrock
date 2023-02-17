@@ -111,6 +111,16 @@ namespace shamrock::patch{
 
     }
 
+    void PatchData::expand(u32 new_obj_cnt){
+
+        for(auto & field_var : fields){
+            std::visit([&](auto & field){
+                field.expand(new_obj_cnt);
+            },field_var);
+        }
+
+    }
+
 
 
     void PatchData::append_subset_to(sycl::buffer<u32> & idxs, u32 sz, PatchData & pdat) const {

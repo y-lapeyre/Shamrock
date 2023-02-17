@@ -193,10 +193,6 @@ namespace shamrock::patch {
 
         T div_factor = patch_b_size / (bmax - bmin);
 
-        logger::raw_ln("patch_b_size", patch_b_size);
-        logger::raw_ln("div_factor", div_factor);
-
-
         return p.convert_coord(patch_coord_bounding_box.low_bound, div_factor, translate_factor);
     }
 
