@@ -30,6 +30,6 @@ namespace shamalgs::numeric {
      * @param len the lenght of the buffer considered
      * @return std::tuple<sycl::buffer<u32>, u32> table of the index to extract and its size
      */
-    std::tuple<sycl::buffer<u32>, u32> stream_compact(sycl::queue &q, sycl::buffer<u32> &buf_flags, u32 len);
+    std::tuple<std::optional<sycl::buffer<u32>>, u32> stream_compact(sycl::queue &q, sycl::buffer<u32> &buf_flags, u32 len);
 
 } // namespace shamalgs::numeric

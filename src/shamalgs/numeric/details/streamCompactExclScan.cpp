@@ -9,6 +9,7 @@
 
 #include "streamCompactExclScan.hpp"
 #include "shamalgs/memory/memory.hpp"
+#include "shamalgs/numeric/details/numericFallback.hpp"
 #include "shamalgs/numeric/numeric.hpp"
 #include "shamsys/legacy/log.hpp"
 
@@ -16,8 +17,12 @@ class StreamCompactionAlg;
 
 namespace shamalgs::numeric::details {
 
-    std::tuple<sycl::buffer<u32>, u32>
+    std::tuple<std::optional<sycl::buffer<u32>>, u32>
     stream_compact_excl_scan(sycl::queue &q, sycl::buffer<u32> &buf_flags, u32 len) {
+
+        if (len < 2) {
+            return stream_compact_fallback(q,buf_flags,len);
+        }
 
         // perform the exclusive sum of the buf flag
         sycl::buffer<u32> excl_sum = exclusive_sum(q, buf_flags, len);
@@ -29,6 +34,12 @@ namespace shamalgs::numeric::details {
 
         if(end_flag){
             new_len ++;
+        }
+
+        logger::debug_sycl_ln("StreamCompact", "number of element : ", new_len);
+
+        if(new_len == 0){
+            return {{},0};
         }
 
         // create the index buffer that we will return

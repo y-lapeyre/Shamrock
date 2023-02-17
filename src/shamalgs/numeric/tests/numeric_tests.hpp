@@ -75,7 +75,7 @@ struct TestExclScan {
 
 struct TestStreamCompact {
 
-    using vFunctionCall = std::tuple<sycl::buffer<u32>, u32> (*)(sycl::queue&, sycl::buffer<u32> &, u32 );
+    using vFunctionCall = std::tuple<std::optional<sycl::buffer<u32>>, u32> (*)(sycl::queue&, sycl::buffer<u32> &, u32 );
 
     vFunctionCall fct;
 
@@ -90,7 +90,7 @@ struct TestStreamCompact {
 
         auto [res, res_len] = fct(shamsys::instance::get_compute_queue(), buf, len);
 
-        auto res_check = shamalgs::memory::buf_to_vec(res, res_len);
+        auto res_check = shamalgs::memory::buf_to_vec(*res, res_len);
 
         //make check
         std::vector<u32> idxs ;

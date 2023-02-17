@@ -33,7 +33,7 @@ namespace shamalgs::numeric {
 
 
 
-    std::tuple<sycl::buffer<u32>, u32> stream_compact(sycl::queue &q, sycl::buffer<u32> &buf_flags, u32 len){
+    std::tuple<std::optional<sycl::buffer<u32>>, u32> stream_compact(sycl::queue &q, sycl::buffer<u32> &buf_flags, u32 len){
         return details::stream_compact_excl_scan(q, buf_flags, len);
     };
 

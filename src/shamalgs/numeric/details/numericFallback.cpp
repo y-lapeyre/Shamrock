@@ -65,7 +65,7 @@ namespace shamalgs::numeric::details {
     sycl::buffer<u32> exclusive_sum_fallback(sycl::queue &q, sycl::buffer<u32> &buf1, u32 len);
 
 
-    std::tuple<sycl::buffer<u32>, u32> stream_compact_fallback(sycl::queue &q, sycl::buffer<u32> &buf_flags, u32 len){
+    std::tuple<std::optional<sycl::buffer<u32>>, u32> stream_compact_fallback(sycl::queue &q, sycl::buffer<u32> &buf_flags, u32 len){
 
         std::vector<u32> idxs ;
 
@@ -80,6 +80,10 @@ namespace shamalgs::numeric::details {
                 }
 
             }
+        }
+
+        if(idxs.empty()){
+            return {{},0};
         }
 
         return {memory::vec_to_buf(idxs), idxs.size()};
