@@ -84,9 +84,9 @@ namespace shamrock::amr {
         inline void make_base_grid(Tcoord bmin, Tcoord cell_size, std::array<u32,dim> cell_count){
 
             Tcoord bmax{
-                bmin.x() + (cell_size.x()+1) * cell_count[0],
-                bmin.y() + (cell_size.y()+1) * cell_count[1],
-                bmin.z() + (cell_size.z()+1) * cell_count[2]
+                bmin.x() + cell_size.x() * (cell_count[0]),
+                bmin.y() + cell_size.y() * (cell_count[1]),
+                bmin.z() + cell_size.z() * (cell_count[2])
             };
 
             sched.set_coord_domain_bound(bmin,bmax);
@@ -99,12 +99,20 @@ namespace shamrock::amr {
 
             std::array<u32, dim> patch_count;
 
-
+            constexpr u32 gcd_pow2 = 1U << 31U;
             u32 gcd_cell_count;
             {
                 gcd_cell_count = std::gcd(cell_count[0], cell_count[1]);
                 gcd_cell_count = std::gcd(gcd_cell_count, cell_count[2]);
+                gcd_cell_count = std::gcd(gcd_cell_count, gcd_pow2);
             }
+
+
+            logger::raw_ln(
+                cell_count[0]/gcd_cell_count,
+                cell_count[1]/gcd_cell_count,
+                cell_count[2]/gcd_cell_count
+            );
 
 
             sched.make_patch_base_grid<3>({

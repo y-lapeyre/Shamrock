@@ -47,6 +47,53 @@ void PatchScheduler::free_mpi_required_types(){
 }
 
 
+template<u32 dim>
+void PatchScheduler::make_patch_base_grid(std::array<u32,dim> patch_count){
+
+    static_assert(dim == 3, "this is not implemented for dim != 3");
+
+    u32 max_lin_patch_count = 0;
+    for(u32 i = 0 ; i < dim; i++){
+        max_lin_patch_count = sycl::max(max_lin_patch_count, patch_count[i]);
+    }
+
+    u64 coord_div_fact = shamrock::math::int_manip::get_next_pow2_val(max_lin_patch_count);
+
+    u64 sz_root_patch = PatchScheduler::max_axis_patch_coord_lenght/coord_div_fact;
+
+    
+    std::vector<shamrock::patch::PatchCoord> coords;
+    for(u32 x = 0; x < patch_count[0]; x++){
+        for(u32 y = 0; y < patch_count[1]; y++){
+            for(u32 z = 0; z < patch_count[2]; z++){
+                shamrock::patch::PatchCoord coord;
+
+                coord.x_min = sz_root_patch*(x);
+                coord.y_min = sz_root_patch*(y);
+                coord.z_min = sz_root_patch*(z);
+                coord.x_max = sz_root_patch*(x+1)-1;
+                coord.y_max = sz_root_patch*(y+1)-1;
+                coord.z_max = sz_root_patch*(z+1)-1;
+
+                coords.push_back(coord);
+            }
+        }
+    }
+
+    CoordRange<u64_3> bound {
+        {0,0,0},
+        {sz_root_patch*patch_count[0]-1,
+        sz_root_patch*patch_count[1]-1,
+        sz_root_patch*patch_count[2]-1}
+    };
+
+    get_sim_box().set_patch_coord_bounding_box(bound);
+
+    add_root_patches(coords);
+}
+
+template void PatchScheduler::make_patch_base_grid<3>(std::array<u32,3> patch_count);
+
 std::vector<u64> PatchScheduler::add_root_patches(std::vector<shamrock::patch::PatchCoord> coords){
 
     using namespace shamrock::patch;
@@ -85,15 +132,24 @@ std::vector<u64> PatchScheduler::add_root_patches(std::vector<shamrock::patch::P
 
         ret.push_back(root.id_patch);
 
+
+        
+        auto [bmin,bmax] = get_sim_box().partch_coord_to_domain<u64_3>(root);
+        
+
         logger::debug_ln("Scheduler", "adding patch : [ (",
          coord.x_min, 
          coord.y_min, 
          coord.z_min,") ] [ (",
          coord.x_max, 
          coord.y_max, 
-         coord.z_max,") ]"
+         coord.z_max,") ]", bmin,bmax
         );
     }
+
+    patch_list.reset_local_pack_index();
+    patch_list.build_local_idx_map();
+    patch_list.build_global_idx_map();
 
 
     return std::move(ret);
@@ -109,7 +165,7 @@ void PatchScheduler::allpush_data(shamrock::patch::PatchData &pdat){
         [&](u64 id_patch, shamrock::patch::Patch cur_p, shamrock::patch::PatchData &pdat_sched) {
 
             
-            logger::debug_sycl_ln("Scheduler", "pushing data in patch ", id_patch);
+            
 
             auto variant_main = pdl.get_main_field_any();
 
@@ -120,6 +176,8 @@ void PatchScheduler::allpush_data(shamrock::patch::PatchData &pdat){
 
                 if constexpr (shammath::sycl_utils::VectorProperties<base_t>::dimension == 3){
                     auto [bmin,bmax] = get_sim_box().partch_coord_to_domain<base_t>(cur_p)  ;
+
+                    logger::debug_sycl_ln("Scheduler", "pushing data in patch ", id_patch, "search range :",bmin, bmax);
 
                     pdat_sched.insert_elements_in_range(pdat, bmin, bmax);
                 }else{

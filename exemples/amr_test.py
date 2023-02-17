@@ -15,10 +15,8 @@ ctx.init_sched(100,400)
 
 grd = shamrock.AMRGrid(ctx)
 
-
-grd.make_base_grid([0,0,0],[1,1,1],[5,10,10])
+grd.make_base_grid([0,0,0],[1,1,1],[5,5,5])
 
 #ctx.dump_status()
 
-for vec in ctx.collect_data()["cell_min"]:
-    print(vec)
+print("recovered :",len(ctx.collect_data()["cell_min"][::]))

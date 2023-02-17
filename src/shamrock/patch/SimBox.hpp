@@ -53,6 +53,12 @@ namespace shamrock::patch {
             reset_box_size();
         }
 
+        void set_patch_coord_bounding_box(CoordRange<u64_3> new_patch_coord_box){
+            patch_coord_bounding_box = new_patch_coord_box;
+            logger::debug_ln("SimBox", "changed patch coord bounds :", 
+            patch_coord_bounding_box.low_bound, patch_coord_bounding_box.high_bound);
+        }
+
         /**
          * @brief Get the stored bounding box of the domain
          *
@@ -184,7 +190,12 @@ namespace shamrock::patch {
             typename VectorProperties<T>::component_type
             >();
 
+
         T div_factor = patch_b_size / (bmax - bmin);
+
+        logger::raw_ln("patch_b_size", patch_b_size);
+        logger::raw_ln("div_factor", div_factor);
+
 
         return p.convert_coord(patch_coord_bounding_box.low_bound, div_factor, translate_factor);
     }

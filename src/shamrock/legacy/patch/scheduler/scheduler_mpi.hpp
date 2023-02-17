@@ -152,40 +152,7 @@ class PatchScheduler{
     void allpush_data(shamrock::patch::PatchData & pdat);
 
     template<u32 dim>
-    inline void make_patch_base_grid(std::array<u32,dim> patch_count){
-
-        static_assert(dim == 3, "this is not implemented for dim != 3");
-
-        u32 max_lin_patch_count = 0;
-        for(u32 i = 0 ; i < dim; i++){
-            max_lin_patch_count = sycl::max(max_lin_patch_count, patch_count[i]);
-        }
-
-        u64 coord_div_fact = shamrock::math::int_manip::get_next_pow2_val(max_lin_patch_count);
-
-        u64 sz_root_patch = PatchScheduler::max_axis_patch_coord_lenght/coord_div_fact;
-
-        
-        std::vector<shamrock::patch::PatchCoord> coords;
-        for(u32 x = 0; x < patch_count[0]; x++){
-            for(u32 y = 0; y < patch_count[1]; y++){
-                for(u32 z = 0; z < patch_count[2]; z++){
-                    shamrock::patch::PatchCoord coord;
-
-                    coord.x_min = sz_root_patch*(x);
-                    coord.y_min = sz_root_patch*(y);
-                    coord.z_min = sz_root_patch*(z);
-                    coord.x_max = sz_root_patch*(x+1)-1;
-                    coord.y_max = sz_root_patch*(y+1)-1;
-                    coord.z_max = sz_root_patch*(z+1)-1;
-
-                    coords.push_back(coord);
-                }
-            }
-        }
-
-        add_root_patches(coords);
-    }
+    void make_patch_base_grid(std::array<u32,dim> patch_count);
 
     /**
      * @brief modify the bounding box of the patch domain
