@@ -10,12 +10,13 @@ ctx.pdata_layout_new()
 
 ctx.pdata_layout_add_field("cell_min",1,"u64_3")
 ctx.pdata_layout_add_field("cell_max",1,"u64_3")
+ctx.pdata_layout_add_field("sum_field",1,"u32")
 
 ctx.init_sched(100,400)
 
 grd = shamrock.AMRGrid(ctx)
 
-grd.make_base_grid([0,0,0],[1,1,1],[5,5,5])
+grd.make_base_grid([0,0,0],[1,1,1],[6,6,6])
 
 #ctx.dump_status()
 

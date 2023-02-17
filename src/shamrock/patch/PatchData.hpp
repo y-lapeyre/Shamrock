@@ -114,6 +114,16 @@ namespace shamrock::patch {
 
         void expand(u32 obj_cnt);
 
+        /**
+        * @brief this function remaps the patchdatafield like so
+        *   val[id] = val[index_map[id]]
+        *   index map describe : at index i, we will have the value that was at index_map[i]
+        * 
+        * @param index_map 
+        * @param len the lenght of the map (must match with the current count)
+        */
+        void index_remap(sycl::buffer<u32> index_map, u32 len);
+
         // template<class Tvecbox>
         // void split_patchdata(PatchData & pd0,PatchData & pd1,PatchData & pd2,PatchData &
         // pd3,PatchData & pd4,PatchData & pd5,PatchData & pd6,PatchData & pd7,

@@ -26,8 +26,6 @@
 #include <random> 
 
 
-template <class T> inline bool test_sycl_eq(const T & a, const T & b);
-
 template <class T> inline void print_vec(std::ostream & ostream, T a);
 
 template<class T> inline T next_obj(std::mt19937 &  eng, std::uniform_real_distribution<f64> & distval);
@@ -36,6 +34,8 @@ template<class T> inline T next_obj(std::mt19937 &  eng, std::uniform_real_distr
 
 
 
+
+template <class T> inline bool test_sycl_eq(const T & a, const T & b);
 
 template <class T> inline bool test_sycl_eq(const sycl::vec<T, 2> & a, const sycl::vec<T, 2> & b) {
     bool eqx = a.x() == b.x();

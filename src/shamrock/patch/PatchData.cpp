@@ -122,6 +122,17 @@ namespace shamrock::patch{
     }
 
 
+    void PatchData::index_remap(sycl::buffer<u32> index_map, u32 len){
+
+        for(auto & field_var : fields){
+            std::visit([&](auto & field){
+                field.index_remap(index_map, len);
+            },field_var);
+        }
+
+    }
+
+
 
     void PatchData::append_subset_to(sycl::buffer<u32> & idxs, u32 sz, PatchData & pdat) const {
 

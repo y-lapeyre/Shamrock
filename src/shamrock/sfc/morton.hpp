@@ -285,7 +285,7 @@ namespace shamrock::sfc {
             auto check_axis = [](coord_t len) -> bool {
                 bool is_pow2 = shamrock::math::int_manip::get_next_pow2_val(len) == len;
 
-                if (len > Morton::max_val && is_pow2) {
+                if (is_pow2 && (len <= Morton::val_count)) {
                     return true;
                 }
                 return false;
@@ -297,24 +297,24 @@ namespace shamrock::sfc {
 
             if (!check_x) {
                 throw std::invalid_argument(
-                    "The x axis bounding box is not a pow of 2 with lenght >= morton_max"
+                    "The x axis bounding box is not a pow of 2 and geq than Morton::val_count"
                 );
             }
 
             if (!check_y) {
                 throw std::invalid_argument(
-                    "The y axis bounding box is not a pow of 2 with lenght >= morton_max"
+                    "The y axis bounding box is not a pow of 2 and geq than Morton::val_count"
                 );
             }
 
             if (!check_z) {
                 throw std::invalid_argument(
-                    "The z axis bounding box is not a pow of 2 with lenght >= morton_max"
+                    "The z axis bounding box is not a pow of 2 and geq than Morton::val_count"
                 );
             }
 
             // we can only use dx since they must be equal to reach this call
-            coord_t scale = dx / (Morton::val_count);
+            coord_t scale = 1;
 
             return {bounding_box_min,pos_t{scale,scale,scale}};
         }

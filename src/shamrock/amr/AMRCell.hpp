@@ -9,6 +9,7 @@
 #pragma once
 
 #include "aliases.hpp"
+#include "shammath/sycl_utilities.hpp"
 
 namespace shamrock::amr {
 
@@ -23,8 +24,8 @@ namespace shamrock::amr {
             return (bmax - bmin) / 2 + bmin;
         }
 
-        inline static auto get_split(Tcoord bmin, Tcoord bmax)
-            -> std::array<AMRCellCoord, splts_count> {
+        inline static auto
+        get_split(Tcoord bmin, Tcoord bmax) -> std::array<AMRCellCoord, splts_count> {
 
             AMRCellCoord p0, p1, p2, p3, p4, p5, p6, p7;
 
@@ -89,19 +90,45 @@ namespace shamrock::amr {
             return {p0, p1, p2, p3, p4, p5, p6, p7};
         }
 
+        inline auto split() { return AMRCellCoord::get_split(bmin, bmax); }
+
         inline static AMRCellCoord get_merge(AMRCellCoord c1, AMRCellCoord c2) {
-            return AMRCellCoord(
-                sycl::min(c1.bmin, c2.bmin),
-                sycl::max(c1.bmax, c2.bmax)
-            );
+            return AMRCellCoord{sycl::min(c1.bmin, c2.bmin), sycl::max(c1.bmax, c2.bmax)};
         }
 
         inline static AMRCellCoord get_merge(std::array<AMRCellCoord, splts_count> others) {
-            return merge(
-                merge(merge(others[0], others[1]), merge(others[2], others[3])),
-                merge(merge(others[4], others[5]), merge(others[6], others[7]))
+            return AMRCellCoord::get_merge(
+                AMRCellCoord::get_merge(
+                    AMRCellCoord::get_merge(others[0], others[1]),
+                    AMRCellCoord::get_merge(others[2], others[3])
+                ),
+                AMRCellCoord::get_merge(
+                    AMRCellCoord::get_merge(others[4], others[5]),
+                    AMRCellCoord::get_merge(others[6], others[7])
+                )
             );
+        }
+
+        inline static bool are_mergeable(std::array<AMRCellCoord, splts_count> others) {
+
+            AMRCellCoord merged = AMRCellCoord::get_merge(others);
+
+            std::array<AMRCellCoord, splts_count> splitted = merged.split();
+
+            bool are_same = true;
+
+            static_assert(dim == 3, "only dim 3 is handled");
+
+            if constexpr (dim == 3) {
+                for (u32 i = 0; i < splts_count; i++) {
+                    are_same = are_same &&
+                               shammath::sycl_utils::test_sycl_eq(others[i].bmin, splitted[i].bmin) &&
+                               shammath::sycl_utils::test_sycl_eq(others[i].bmax, splitted[i].bmax);
+                }
+            }
+
+            return are_same;
         }
     };
 
-} // namespace shamrocl::amr
+} // namespace shamrock::amr

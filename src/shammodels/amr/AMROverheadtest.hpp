@@ -10,11 +10,6 @@
 
 #include "shamrock/amr/AMRGrid.hpp"
 
-
-
-
-
-
 class AMRTestModel {
     public:
     using Grid = shamrock::amr::AMRGrid<u64_3, 3>;
@@ -22,66 +17,98 @@ class AMRTestModel {
 
     explicit AMRTestModel(Grid &grd) : grid(grd) {}
 
-    inline void step() {
+    class RefineCritCellAccessor {
+        public:
+        sycl::accessor<u64_3, 1, sycl::access::mode::read, sycl::target::device> cell_low_bound;
+        sycl::accessor<u64_3, 1, sycl::access::mode::read, sycl::target::device> cell_high_bound;
 
-        using namespace shamrock::patch;
+        RefineCritCellAccessor(
+            sycl::handler &cgh,
+            u64 id_patch,
+            shamrock::patch::Patch p,
+            shamrock::patch::PatchData &pdat
+        )
+            : cell_low_bound{*pdat.get_field<u64_3>(0).get_buf(), cgh, sycl::read_only},
+              cell_high_bound{*pdat.get_field<u64_3>(1).get_buf(), cgh, sycl::read_only} {}
+    };
 
-        auto splits = grid.gen_refinelists(
-            [](u64 id_patch, Patch p, PatchData &pdat, sycl::buffer<u32> &refine_flags) {
-                shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-                    sycl::accessor refine_acc{refine_flags, cgh, sycl::write_only, sycl::no_init};
+    class RefineCellAccessor {
+        public:
+        sycl::accessor<u32, 1, sycl::access::mode::read_write, sycl::target::device> field;
 
-                    sycl::accessor cell_low_bound{
-                        *pdat.get_field<u64_3>(0).get_buf(), cgh, sycl::read_only};
-                    sycl::accessor cell_high_bound{
-                        *pdat.get_field<u64_3>(1).get_buf(), cgh, sycl::read_only};
+        RefineCellAccessor(sycl::handler &cgh, shamrock::patch::PatchData &pdat)
+            : field{*pdat.get_field<u32>(2).get_buf(), cgh, sycl::read_write} 
+            {}
+    };
 
-                    cgh.parallel_for(sycl::range<1>(pdat.get_obj_cnt()), [=](sycl::item<1> gid) {
-                        u64_3 low_bound  = cell_low_bound[gid];
-                        u64_3 high_bound = cell_high_bound[gid];
+    /**
+     * @brief does the refinment step of the AMR
+     * 
+     */
+    inline void refine() {
 
-                        using namespace shammath;
+        auto splits = grid.gen_refine_list<RefineCritCellAccessor>(
+            [](u32 cell_id, RefineCritCellAccessor acc) -> u32 {
+                u64_3 low_bound  = acc.cell_low_bound[cell_id];
+                u64_3 high_bound = acc.cell_high_bound[cell_id];
 
-                        bool should_refine =
-                            is_in_half_open(low_bound, u64_3{1, 1, 1}, u64_3{10, 10, 10}) &&
-                            is_in_half_open(high_bound, u64_3{1, 1, 1}, u64_3{10, 10, 10});
+                using namespace shammath;
 
-                        refine_acc[gid] = should_refine;
+                bool should_refine = is_in_half_open(low_bound, u64_3{1, 1, 1}, u64_3{4, 4, 4}) &&
+                                     is_in_half_open(high_bound, u64_3{1, 1, 1}, u64_3{4, 4, 4});
 
-                    });
-                });
+                return should_refine;
             }
         );
-
-
-
-
 
         
-        class RefineCellAccessor{public:
 
-            sycl::accessor<f32, 1, sycl::access::mode::read_write, sycl::target::device> field;
+        grid.apply_splits<RefineCellAccessor>(
+            std::move(splits),
 
-            RefineCellAccessor(sycl::handler &cgh, PatchData & pdat) :
-                field{*pdat.get_field<f32>(2).get_buf(), cgh, sycl::read_write} 
-                {}
+            [](u32 cur_idx,
+               Grid::CellCoord cur_coords,
+               std::array<u32, 8> new_cells,
+               std::array<Grid::CellCoord, 8> new_cells_coords,
+               RefineCellAccessor acc) {
+                
+                u32 val = acc.field[cur_idx];
 
-        };
-
-
-        grid.apply_splits<RefineCellAccessor>(std::move(splits),
-            [](u32 cur_idx, std::array<u32,8> new_cells, RefineCellAccessor acc){
-
-                f32 val = acc.field[cur_idx];
-
-                #pragma unroll
-                for(u32 pid = 0; pid < 8; pid++){
+#pragma unroll
+                for (u32 pid = 0; pid < 8; pid++) {
                     acc.field[new_cells[pid]] = val;
                 }
-                
             }
+
         );
 
 
+
+        auto merge = grid.gen_merge_list<RefineCritCellAccessor>(
+            [](u32 cell_id, RefineCritCellAccessor acc) -> u32 {
+                u64_3 low_bound  = acc.cell_low_bound[cell_id];
+                u64_3 high_bound = acc.cell_high_bound[cell_id];
+
+                using namespace shammath;
+
+                bool should_merge = is_in_half_open(low_bound, u64_3{1, 1, 1}, u64_3{4, 4, 4}) &&
+                                     is_in_half_open(high_bound, u64_3{1, 1, 1}, u64_3{4, 4, 4});
+
+                return should_merge;
+            }
+        );
+
+        
+
+
+
+
+
+
+    }
+
+    inline void step() {
+        using namespace shamrock::patch;
+        refine();
     }
 };

@@ -14,30 +14,31 @@
 #include "shamrock/legacy/patch/scheduler/scheduler_mpi.hpp"
 #include "shamrock/math/integerManip.hpp"
 #include "shamrock/scheduler/DistributedData.hpp"
+#include "shamrock/tree/RadixTreeMortonBuilder.hpp"
 
 namespace shamrock::amr {
 
-    struct SplitList {
-        sycl::buffer<u32> idx;
+    struct OptIndexList {
+        std::optional<sycl::buffer<u32>> idx;
         u32 count;
     };
 
     /**
      * @brief The AMR grid only sees the grid as an integer map
-     * 
-     * @tparam Tcoord 
-     * @tparam dim 
+     *
+     * @tparam Tcoord
+     * @tparam dim
      */
     template<class Tcoord, u32 dim>
-    class AMRGrid {public:
+    class AMRGrid {
+        public:
+        PatchScheduler &sched;
 
-        PatchScheduler & sched;
-
-        using CellCoord = AMRCellCoord<Tcoord, dim>;
+        using CellCoord                  = AMRCellCoord<Tcoord, dim>;
         static constexpr u32 dimension   = dim;
         static constexpr u32 split_count = CellCoord::splts_count;
 
-        void check_amr_main_fields(){
+        void check_amr_main_fields() {
 
             bool correct_type = true;
             correct_type &= sched.pdl.check_field_type<Tcoord>(0);
@@ -47,7 +48,7 @@ namespace shamrock::amr {
             correct_names &= sched.pdl.get_field<Tcoord>(0).name == "cell_min";
             correct_names &= sched.pdl.get_field<Tcoord>(1).name == "cell_max";
 
-            if(!correct_type || !correct_names){
+            if (!correct_type || !correct_names) {
                 throw std::runtime_error(
                     "the amr module require a layout in the form :\n"
                     "    0 : cell_min : nvar=1 type : (Coordinate type)\n"
@@ -58,9 +59,7 @@ namespace shamrock::amr {
             }
         }
 
-        explicit AMRGrid(PatchScheduler &scheduler) : sched(scheduler) {
-            check_amr_main_fields();
-        }
+        explicit AMRGrid(PatchScheduler &scheduler) : sched(scheduler) { check_amr_main_fields(); }
 
         /**
          * @brief generate split lists for all patchdata owned by the node
@@ -78,13 +77,15 @@ namespace shamrock::amr {
          * @param f
          * @return scheduler::DistributedData<SplitList>
          */
-        scheduler::DistributedData<SplitList> gen_refinelists(
-            std::function< void(u64 , patch::Patch , patch::PatchData &, sycl::buffer<u32> &) > fct
-            ){
+        scheduler::DistributedData<OptIndexList> gen_refinelists_native(
+            std::function<void(u64, patch::Patch, patch::PatchData &, sycl::buffer<u32> &)> fct
+        ) {
 
-            scheduler::DistributedData<SplitList> ret;
+            scheduler::DistributedData<OptIndexList> ret;
 
             using namespace patch;
+
+            u64 tot_refine = 0;
 
             sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
                 sycl::queue &q = shamsys::instance::get_compute_queue();
@@ -93,81 +94,243 @@ namespace shamrock::amr {
 
                 sycl::buffer<u32> refine_flags(obj_cnt);
 
+                // fill in the refinment flags
                 fct(id_patch, cur_p, pdat, refine_flags);
 
+                // perform stream compactions on the refinement flags
                 auto [buf, len] = shamalgs::numeric::stream_compact(q, refine_flags, obj_cnt);
 
-                ret.add_obj(id_patch, SplitList{std::move(buf), len});
+                logger::debug_ln("AMRGrid", "patch ", id_patch, "refine cell count = ", len);
+
+                tot_refine += len;
+
+                // add the results to the map
+                ret.add_obj(id_patch, OptIndexList{std::move(buf), len});
             });
+
+            logger::info_ln("AMRGrid", "on this process",tot_refine,"cells were refined");
+
+            return std::move(ret);
+        }
+
+        template<class UserAcc, class Fct>
+        inline scheduler::DistributedData<OptIndexList> gen_refine_list(Fct &&lambd) {
+            using namespace shamrock::patch;
+
+            return gen_refinelists_native([&](u64 id_patch,
+                                              Patch p,
+                                              PatchData &pdat,
+                                              sycl::buffer<u32> &refine_flags) {
+                shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
+                    sycl::accessor refine_acc{refine_flags, cgh, sycl::write_only, sycl::no_init};
+
+                    UserAcc uacc(cgh, id_patch, p, pdat);
+
+                    cgh.parallel_for(sycl::range<1>(pdat.get_obj_cnt()), [=](sycl::item<1> gid) {
+                        refine_acc[gid] = lambd(gid.get_linear_id(), uacc);
+                    });
+                });
+            });
+        }
+
+
+
+
+
+
+        template<class UserAcc, class Fct>
+        scheduler::DistributedData<OptIndexList> gen_merge_list(Fct &&lambd){
+
+            scheduler::DistributedData<OptIndexList> ret;
+            u64 tot_merge = 0;
+
+            using MortonBuilder = RadixTreeMortonBuilder<u64, Tcoord, 3>;
+            using namespace shamrock::patch;
+
+            sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
+
+                //return because no cell can be merged since 
+                if(pdat.get_obj_cnt() < split_count){
+                    return;
+                }
+
+                std::unique_ptr<sycl::buffer<u64>> out_buf_morton;
+                std::unique_ptr<sycl::buffer<u32>> out_buf_particle_index_map;
+
+                MortonBuilder::build(
+                    shamsys::instance::get_compute_queue(),
+                    sched.get_sim_box().partch_coord_to_domain<Tcoord>(cur_p),
+                    pdat.get_field<Tcoord>(0).get_buf(),
+                    pdat.get_obj_cnt(),
+                    out_buf_morton,
+                    out_buf_particle_index_map
+                );
+
+                // apply list permut on patch
+
+                u32 pre_merge_obj_cnt = pdat.get_obj_cnt();
+
+                pdat.index_remap(*out_buf_particle_index_map, pre_merge_obj_cnt);
+
+                u32 obj_to_check = pre_merge_obj_cnt-split_count+1;
+
+                logger::debug_sycl_ln("AMR Grid", "checking mergeable in",obj_to_check, "cells");
+
+                sycl::buffer<u32> mergeable_indexes (obj_to_check);
+
+                shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
+                    sycl::accessor acc_min{*pdat.get_field<Tcoord>(0).get_buf(), cgh, sycl::read_only};
+                    sycl::accessor acc_max{*pdat.get_field<Tcoord>(1).get_buf(), cgh, sycl::read_only};
+
+                    sycl::accessor acc_mergeable{mergeable_indexes, cgh, sycl::write_only, sycl::no_init};
+
+                    sycl::range<1> rnge{obj_to_check};
+
+                    cgh.parallel_for(rnge, [=](sycl::item<1> gid){
+
+                        u32 id = gid.get_linear_id();
+                        
+                        std::array<CellCoord, split_count> cells;
+
+                        for(u32 lid = 0; lid < split_count; lid++){
+                            cells[lid] = CellCoord{acc_min[gid+lid], acc_max[gid+lid]};
+                        }
+
+                        acc_mergeable[gid] = CellCoord::are_mergeable(cells);
+
+                    });
+                });
+
+
+                shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
+
+                    sycl::accessor acc_mergeable{mergeable_indexes, cgh, sycl::read_write};
+
+                    UserAcc uacc(cgh, id_patch, cur_p, pdat);
+
+                    cgh.parallel_for(sycl::range<1>(pdat.get_obj_cnt()), [=](sycl::item<1> gid) {
+                        if(acc_mergeable[gid]){
+                            acc_mergeable[gid] = lambd(gid.get_linear_id(), uacc);
+                        }
+                    });
+                });
+
+
+                auto [opt_buf,len] = shamalgs::numeric::stream_compact(shamsys::instance::get_compute_queue(), mergeable_indexes, pdat.get_obj_cnt()-split_count);
+                
+
+                logger::debug_ln("AMRGrid", "patch ", id_patch, "merge cell count = ", len);
+
+
+                tot_merge += len;
+
+                // add the results to the map
+                ret.add_obj(id_patch, OptIndexList{std::move(opt_buf), len});
+
+            });
+
+
+            logger::info_ln("AMRGrid", "on this process",tot_merge,"cells were refined");
 
             return std::move(ret);
         }
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+        /**
+         * @brief
+         *
+         * @tparam UserAcc
+         * @tparam Fct
+         * @param splts
+         * @param lambd
+         */
         template<class UserAcc, class Fct>
-        void apply_splits(scheduler::DistributedData<SplitList> && splts , Fct && lambd){
+        void apply_splits(scheduler::DistributedData<OptIndexList> &&splts, Fct &&lambd) {
 
             using namespace patch;
-
-            
 
             sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
                 sycl::queue &q = shamsys::instance::get_compute_queue();
 
                 u32 old_obj_cnt = pdat.get_obj_cnt();
 
-                SplitList & refine_flags = splts.get(id_patch);
-                pdat.expand(refine_flags.count*(split_count-1));
+                OptIndexList &refine_flags = splts.get(id_patch);
 
-                
-                shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
+                if (refine_flags.count > 0) {
 
-                    sycl::accessor index_to_ref {refine_flags.idx, cgh, sycl::read_only};
+                    pdat.expand(refine_flags.count * (split_count - 1));
 
-                    u32 start_index_push = old_obj_cnt;
+                    shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
+                        sycl::accessor index_to_ref{*refine_flags.idx, cgh, sycl::read_only};
 
-                    constexpr u32 new_splits = split_count-1;
+                        sycl::accessor cell_bound_low{
+                            *pdat.get_field<Tcoord>(0).get_buf(), cgh, sycl::read_write};
+                        sycl::accessor cell_bound_high{
+                            *pdat.get_field<Tcoord>(1).get_buf(), cgh, sycl::read_write};
 
-                    UserAcc uacc (cgh,pdat);
+                        u32 start_index_push = old_obj_cnt;
 
-                    cgh.parallel_for(sycl::range<1>(refine_flags.count), [=](sycl::item<1> gid) {
+                        constexpr u32 new_splits = split_count - 1;
 
-                        u32 tid = gid.get_linear_id();
-                        
-                        u32 idx_to_refine = index_to_ref[gid];
+                        UserAcc uacc(cgh, pdat);
 
-                        std::array<u32, split_count> cells_ids;
+                        cgh.parallel_for(
+                            sycl::range<1>(refine_flags.count),
+                            [=](sycl::item<1> gid) {
+                                u32 tid = gid.get_linear_id();
 
-                        cells_ids[0] = idx_to_refine;
+                                u32 idx_to_refine = index_to_ref[gid];
 
-                        #pragma unroll
-                        for(u32 pid = 0; pid < new_splits; pid++){
-                            cells_ids[pid+1] = start_index_push + tid*new_splits + pid;
-                        }
-                        
-                        //lambd(idx_to_refine, cells_ids, uacc);
+                                std::array<u32, split_count> cells_ids;
 
+                                CellCoord cur_cell{cell_bound_low[gid], cell_bound_high[gid]};
+
+                                std::array<CellCoord, split_count> cell_coords =
+                                    CellCoord::get_split(cur_cell.bmin, cur_cell.bmax);
+
+                                #pragma unroll
+                                for (u32 pid = 0; pid < split_count; pid++) {
+                                    cell_bound_low[gid]  = cell_coords[pid].bmin;
+                                    cell_bound_high[gid] = cell_coords[pid].bmax;
+                                }
+
+                                cells_ids[0] = idx_to_refine;
+
+                                #pragma unroll
+                                for (u32 pid = 0; pid < new_splits; pid++) {
+                                    cells_ids[pid + 1] = start_index_push + tid * new_splits + pid;
+                                }
+
+                                lambd(idx_to_refine, cur_cell, cells_ids, cell_coords, uacc);
+                            }
+                        );
                     });
-                });
-                
-
-
+                }
             });
-
         }
 
-        inline void make_base_grid(Tcoord bmin, Tcoord cell_size, std::array<u32,dim> cell_count){
+        inline void make_base_grid(Tcoord bmin, Tcoord cell_size, std::array<u32, dim> cell_count) {
 
             Tcoord bmax{
                 bmin.x() + cell_size.x() * (cell_count[0]),
                 bmin.y() + cell_size.y() * (cell_count[1]),
-                bmin.z() + cell_size.z() * (cell_count[2])
-            };
+                bmin.z() + cell_size.z() * (cell_count[2])};
 
-            sched.set_coord_domain_bound(bmin,bmax);
+            sched.set_coord_domain_bound(bmin, bmax);
 
-            if((cell_size.x() != cell_size.y()) || (cell_size.y() != cell_size.z()) ){
+            if ((cell_size.x() != cell_size.y()) || (cell_size.y() != cell_size.z())) {
                 logger::warn_ln("AMR Grid", "your cells aren't cube");
             }
 
@@ -183,86 +346,82 @@ namespace shamrock::amr {
                 gcd_cell_count = std::gcd(gcd_cell_count, gcd_pow2);
             }
 
-
-            logger::debug_ln("AMRGrid","patch grid :",
-                cell_count[0]/gcd_cell_count,
-                cell_count[1]/gcd_cell_count,
-                cell_count[2]/gcd_cell_count
+            logger::debug_ln(
+                "AMRGrid",
+                "patch grid :",
+                cell_count[0] / gcd_cell_count,
+                cell_count[1] / gcd_cell_count,
+                cell_count[2] / gcd_cell_count
             );
 
+            sched.make_patch_base_grid<3>(
+                {{cell_count[0] / gcd_cell_count,
+                  cell_count[1] / gcd_cell_count,
+                  cell_count[2] / gcd_cell_count}}
+            );
 
-            sched.make_patch_base_grid<3>({
-                {
-                    cell_count[0]/gcd_cell_count,
-                    cell_count[1]/gcd_cell_count,
-                    cell_count[2]/gcd_cell_count
-                }
+            sched.for_each_patch([](u64 id_patch, patch::Patch p){
+                // TODO implement check to verify that patch a cubes of size 2^n
             });
 
-            u32 cell_tot_count = cell_count[0]*cell_count[1]*cell_count[2];
+            u32 cell_tot_count = cell_count[0] * cell_count[1] * cell_count[2];
 
+            sycl::buffer<Tcoord> cell_coord_min(cell_tot_count);
+            sycl::buffer<Tcoord> cell_coord_max(cell_tot_count);
 
-            
-            sycl::buffer<Tcoord> cell_coord_min (cell_tot_count);
-            sycl::buffer<Tcoord> cell_coord_max (cell_tot_count);
+            shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
+                sycl::accessor acc_min{cell_coord_min, cgh, sycl::write_only, sycl::no_init};
+                sycl::accessor acc_max{cell_coord_max, cgh, sycl::write_only, sycl::no_init};
 
-            shamsys::instance::get_compute_queue().submit([&](sycl::handler & cgh){
-                
-                sycl::accessor acc_min {cell_coord_min, cgh, sycl::write_only, sycl::no_init};
-                sycl::accessor acc_max {cell_coord_max, cgh, sycl::write_only, sycl::no_init};
-
-                sycl::range<3> rnge {cell_count[0],cell_count[1],cell_count[2]};
+                sycl::range<3> rnge{cell_count[0], cell_count[1], cell_count[2]};
 
                 Tcoord sz = cell_size;
 
-                cgh.parallel_for(rnge,[=](sycl::item<3> gid){
-                    acc_min[gid.get_linear_id()] = sz* Tcoord{
-                        gid.get_id(0),
-                        gid.get_id(1),
-                        gid.get_id(2)};
-                    acc_max[gid.get_linear_id()] = sz* Tcoord{
-                        gid.get_id(0)+1,
-                        gid.get_id(1)+1,
-                        gid.get_id(2)+1};
+                cgh.parallel_for(rnge, [=](sycl::item<3> gid) {
+                    acc_min[gid.get_linear_id()] =
+                        sz * Tcoord{gid.get_id(0), gid.get_id(1), gid.get_id(2)};
+                    acc_max[gid.get_linear_id()] =
+                        sz * Tcoord{gid.get_id(0) + 1, gid.get_id(1) + 1, gid.get_id(2) + 1};
                 });
-
             });
 
-
-
-            patch::PatchData pdat (sched.pdl);
+            patch::PatchData pdat(sched.pdl);
             pdat.resize(cell_tot_count);
-            pdat.get_field<Tcoord>(0).override(cell_coord_min,cell_tot_count);
-            pdat.get_field<Tcoord>(1).override(cell_coord_max,cell_tot_count);
+            pdat.get_field<Tcoord>(0).override(cell_coord_min, cell_tot_count);
+            pdat.get_field<Tcoord>(1).override(cell_coord_max, cell_tot_count);
 
             sched.allpush_data(pdat);
         }
+
+
+
     };
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // out of line implementation
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
-    //template<class Tcoord, u32 dim>
-    //inline auto
-    //AMRGrid<Tcoord, dim>::gen_splitlists(std::function<sycl::buffer<u32>(u64 , patch::Patch , patch::PatchData &)> fct) -> scheduler::DistributedData<SplitList> {
-//
+    // template<class Tcoord, u32 dim>
+    // inline auto
+    // AMRGrid<Tcoord, dim>::gen_splitlists(std::function<sycl::buffer<u32>(u64 , patch::Patch ,
+    // patch::PatchData &)> fct) -> scheduler::DistributedData<SplitList> {
+    //
     //    scheduler::DistributedData<SplitList> ret;
-//
+    //
     //    using namespace patch;
-//
+    //
     //    sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
     //        sycl::queue &q = shamsys::instance::get_compute_queue();
-//
+    //
     //        u32 obj_cnt = pdat.get_obj_cnt();
-//
+    //
     //        sycl::buffer<u32> split_flags = fct(id_patch, cur_p, pdat);
-//
+    //
     //        auto [buf, len] = shamalgs::numeric::stream_compact(q, split_flags, obj_cnt);
-//
+    //
     //        ret.add_obj(id_patch, SplitList{std::move(buf), len});
     //    });
-//
+    //
     //    return std::move(ret);
     //}
 

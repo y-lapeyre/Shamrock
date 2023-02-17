@@ -203,6 +203,16 @@ template <class T> class PatchDataField {
     void append_subset_to(sycl::buffer<u32> &idxs_buf, u32 sz, PatchDataField &pfield) const;
 
     void gen_mock_data(u32 obj_cnt, std::mt19937 &eng);
+
+    /**
+     * @brief this function remaps the patchdatafield like so
+     *   val[id] = val[index_map[id]]
+     *   index map describe : at index i, we will have the value that was at index_map[i]
+     * 
+     * @param index_map 
+     * @param len the lenght of the map (must match with the current count)
+     */
+    void index_remap(sycl::buffer<u32> index_map, u32 len);
 };
 
 // TODO add overflow check

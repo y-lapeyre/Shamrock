@@ -7,6 +7,7 @@
 // -------------------------------------------------------//
 
 #include "PatchDataField.hpp"
+#include "shamalgs/algorithm/algorithm.hpp"
 #include "shamrock/legacy/utils/sycl_vector_utils.hpp"
 
 template<class T> class Kernel_Extract_element;
@@ -287,6 +288,28 @@ template<class T> void PatchDataField<T>::insert(PatchDataField<T> &f2){
 
 }
 
+
+template<class T> void PatchDataField<T>::index_remap(sycl::buffer<u32> index_map, u32 len){
+
+    if(len != get_obj_cnt()){
+        throw std::invalid_argument("the match of the new index map does not match with the patchdatafield obj count");
+    }
+
+    if(nvar == 1){
+        shamalgs::algorithm::index_remap(
+            shamsys::instance::get_compute_queue(), 
+            buf, 
+            index_map, 
+            len);
+    }else{
+        shamalgs::algorithm::index_remap_nvar(
+            shamsys::instance::get_compute_queue(), 
+            buf, 
+            index_map, 
+            len, nvar);
+    }
+    
+}
 
 
 

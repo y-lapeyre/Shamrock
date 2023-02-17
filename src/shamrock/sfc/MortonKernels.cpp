@@ -33,7 +33,7 @@ namespace shamrock::sfc {
         logger::debug_sycl_ln("MortonKernels", "submit : ", __PRETTY_FUNCTION__);
 
         if (fill_count - morton_count == 0) {
-            std::cout << "skipping" << std::endl;
+            logger::debug_sycl_ln("MortonKernels", "sycl_fill_trailling_buffer skipping pow len 2 is ok");
             return;
         }
 
