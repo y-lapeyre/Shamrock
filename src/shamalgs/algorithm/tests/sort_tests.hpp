@@ -118,7 +118,7 @@ struct TestStreamCompact {
 
 template<class T>
 struct TestIndexRemap{
-using vFunctionCall = void (*)(sycl::queue &, std::unique_ptr<sycl::buffer<T>> &, sycl::buffer<u32> &, u32 );
+using vFunctionCall = sycl::buffer<u32> (*)(sycl::queue &, sycl::buffer<T> &, sycl::buffer<u32> &, u32 );
 
     vFunctionCall fct;
 
@@ -142,10 +142,10 @@ using vFunctionCall = void (*)(sycl::queue &, std::unique_ptr<sycl::buffer<T>> &
         shamalgs::algorithm::sort_by_key(q, *buf_key, buf_index_map, len);
 
 
-        fct(q, buf_key_dup, buf_index_map, len);
+        sycl::buffer<u32> remaped_key = fct(q, *buf_key_dup, buf_index_map, len);
 
         std::vector<u32> sorted_keys = shamalgs::memory::buf_to_vec(*buf_key, len);
-        std::vector<u32> remaped_keys = shamalgs::memory::buf_to_vec(*buf_key_dup, len);
+        std::vector<u32> remaped_keys = shamalgs::memory::buf_to_vec(remaped_key, len);
 
         bool match = true;
         for (u32 i = 0 ; i < len; i++) {

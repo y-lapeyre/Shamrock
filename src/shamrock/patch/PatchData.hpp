@@ -124,6 +124,16 @@ namespace shamrock::patch {
         */
         void index_remap(sycl::buffer<u32> index_map, u32 len);
 
+        /**
+        * @brief this function remaps the patchdatafield like so
+        *   val[id] = val[index_map[id]]
+        * This function can be used to apply the result of a sort to the field
+        * 
+        * @param index_map 
+        * @param len the lenght of the map
+        */
+        void index_remap_resize(sycl::buffer<u32> index_map, u32 len);
+
         // template<class Tvecbox>
         // void split_patchdata(PatchData & pd0,PatchData & pd1,PatchData & pd2,PatchData &
         // pd3,PatchData & pd4,PatchData & pd5,PatchData & pd6,PatchData & pd7,

@@ -78,6 +78,7 @@ namespace shamalgs::algorithm {
         return std::move(ret);
     }
 
+
     /**
      * @brief remap a buffer according to a given index map
      * result[i] = result[index_map[i]]
@@ -91,8 +92,8 @@ namespace shamalgs::algorithm {
      * @param len lenght of the index map
      */
     template<class T>
-    void index_remap(
-        sycl::queue &q, std::unique_ptr<sycl::buffer<T>> &buf, sycl::buffer<u32> &index_map, u32 len);
+    sycl::buffer<T> index_remap(
+        sycl::queue &q, sycl::buffer<T> &source_buf, sycl::buffer<u32> &index_map, u32 len);
     
     /**
      * @brief remap a buffer (with multiple variable per index) according to a given index map
@@ -108,8 +109,10 @@ namespace shamalgs::algorithm {
      * @param nvar the number of variable per index
      */
     template<class T>
-    void index_remap_nvar(
-        sycl::queue &q, std::unique_ptr<sycl::buffer<T>> &buf, sycl::buffer<u32> &index_map, u32 len, u32 nvar);
+    sycl::buffer<T> index_remap_nvar(
+        sycl::queue &q, sycl::buffer<T> &source_buf, sycl::buffer<u32> &index_map, u32 len, u32 nvar);
+
+    
 
     /**
      * @brief generate a buffer such that for i in [0,len[, buf[i] = i 

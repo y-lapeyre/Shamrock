@@ -239,7 +239,7 @@ namespace shamrock::amr {
             });
 
 
-            logger::info_ln("AMRGrid", "on this process",tot_merge,"cells were refined");
+            logger::info_ln("AMRGrid", "on this process",tot_merge*split_count,"cells were derefined");
 
             return std::move(ret);
         }
@@ -332,6 +332,13 @@ namespace shamrock::amr {
                     });
                 }
             });
+        }
+
+
+        template<class UserAcc, class Fct>
+        void apply_merge(scheduler::DistributedData<OptIndexList> &&splts, Fct &&lambd) {
+
+            
         }
 
         inline void make_base_grid(Tcoord bmin, Tcoord cell_size, std::array<u32, dim> cell_count) {

@@ -214,7 +214,21 @@ template <class T> class PatchDataField {
      * @param index_map 
      * @param len the lenght of the map (must match with the current count)
      */
-    void index_remap(sycl::buffer<u32> index_map, u32 len);
+    void index_remap(sycl::buffer<u32> & index_map, u32 len);
+
+    /**
+     * @brief this function remaps the patchdatafield like so
+     *   val[id] = val[index_map[id]]
+     *   index map describe : at index i, we will have the value that was at index_map[i]
+     * This function will resize the current field to the specified lenght
+     * 
+     * This function can be used to apply the result of a sort to the field
+     * 
+     * @param index_map 
+     * @param len the lenght of the map
+     */
+    void index_remap_resize(sycl::buffer<u32> & index_map, u32 len);
+
 };
 
 // TODO add overflow check
