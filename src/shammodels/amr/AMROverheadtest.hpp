@@ -11,6 +11,7 @@
 #include "shamalgs/memory/memory.hpp"
 #include "shammath/sycl_utilities.hpp"
 #include "shamrock/amr/AMRGrid.hpp"
+#include "shamrock/patch/PatchData.hpp"
 #include "shamsys/legacy/log.hpp"
 #include <vector>
 
@@ -45,6 +46,24 @@ class AMRTestModel {
             {}
     };
 
+    inline void dump_patch(u64 id){
+        
+        using namespace shamrock::patch;
+        using namespace shamalgs::memory;
+
+        PatchData & pdat = grid.sched.patch_data.owned_data.at(id);
+
+        std::vector<u64_3> mins = buf_to_vec(*pdat.get_field<u64_3>(0).get_buf(), pdat.get_obj_cnt());
+        std::vector<u64_3> maxs = buf_to_vec(*pdat.get_field<u64_3>(1).get_buf(), pdat.get_obj_cnt());
+
+
+        logger::raw_ln("----- dump");
+        for(u32 i = 0; i < mins.size(); i++){
+            logger::raw_ln(mins[i],maxs[i]);
+        }
+        logger::raw_ln("-----");
+    } 
+
 
     /**
      * @brief does the refinment step of the AMR
@@ -52,7 +71,7 @@ class AMRTestModel {
      */
     inline void refine() {
 
-
+        dump_patch(4);
         auto splits = grid.gen_refine_list<RefineCritCellAccessor>(
             [](u32 cell_id, RefineCritCellAccessor acc) -> u32 {
                 u64_3 low_bound  = acc.cell_low_bound[cell_id];
@@ -95,6 +114,7 @@ class AMRTestModel {
 
 
 
+        dump_patch(4);
         
 
         
@@ -120,6 +140,31 @@ class AMRTestModel {
                 return should_merge;
             }
         );
+
+        grid.apply_merge<RefineCellAccessor>(
+            std::move(merge),
+
+            [](
+                 std::array<u32, 8> old_cells,
+                 std::array<Grid::CellCoord, 8> old_coords,
+                 u32 new_cell,
+                 Grid::CellCoord new_coord,
+                
+               RefineCellAccessor acc) {
+                
+                u32 accum = 0;
+
+                #pragma unroll
+                for (u32 pid = 0; pid < 8; pid++) {
+                    accum += acc.field[old_cells[pid]];
+                }
+
+                acc.field[new_cell] = accum / 8;
+
+            }
+
+        );
+        dump_patch(4);
     }
 
     inline void step() {

@@ -12,11 +12,15 @@
 #include "aliases.hpp"
 #include "shamalgs/numeric/numeric.hpp"
 #include "shamalgs/memory/memory.hpp"
+#include "shamalgs/algorithm/algorithm.hpp"
 #include "shamrock/legacy/patch/scheduler/scheduler_mpi.hpp"
 #include "shamrock/math/integerManip.hpp"
 #include "shamrock/scheduler/DistributedData.hpp"
 #include "shamrock/tree/RadixTreeMortonBuilder.hpp"
 #include "shamsys/legacy/log.hpp"
+#include <access/access.hpp>
+#include <array>
+#include <stdexcept>
 #include <vector>
 
 namespace shamrock::amr {
@@ -338,7 +342,94 @@ namespace shamrock::amr {
         template<class UserAcc, class Fct>
         void apply_merge(scheduler::DistributedData<OptIndexList> &&splts, Fct &&lambd) {
 
-            
+            using namespace patch;
+
+            sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
+                sycl::queue &q = shamsys::instance::get_compute_queue();
+
+                u32 old_obj_cnt = pdat.get_obj_cnt();
+
+                OptIndexList &derefine_flags = splts.get(id_patch);
+
+                if (derefine_flags.count > 0) {
+
+                    //init flag table
+                    sycl::buffer<u32> keep_cell_flag = shamalgs::algorithm::gen_buffer_device(q, old_obj_cnt, 
+                        [](u32 i) -> u32 { 
+                            return 1; 
+                        }
+                        );
+
+                    //edit cell content + make flag of cells to keep
+                    shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
+                        sycl::accessor index_to_deref{*derefine_flags.idx, cgh, sycl::read_only};
+
+                        sycl::accessor cell_bound_low{
+                            *pdat.get_field<Tcoord>(0).get_buf(), cgh, sycl::read_write};
+                        sycl::accessor cell_bound_high{
+                            *pdat.get_field<Tcoord>(1).get_buf(), cgh, sycl::read_write};
+
+                        sycl::accessor flag_keep {keep_cell_flag, cgh,sycl::read_write};
+
+                        UserAcc uacc(cgh, pdat);
+
+                        cgh.parallel_for(
+                            sycl::range<1>(derefine_flags.count),
+                            [=](sycl::item<1> gid) {
+
+                                u32 tid = gid.get_linear_id();
+
+                                u32 idx_to_derefine = index_to_deref[gid];
+
+                                //compute old cell indexes
+                                std::array<u32, split_count> old_indexes;
+                                #pragma unroll
+                                for (u32 pid = 0; pid < split_count; pid++) {
+                                    old_indexes[pid] = idx_to_derefine+pid;
+                                }
+
+                                //load cell coords
+                                std::array<CellCoord, split_count> cell_coords;
+                                #pragma unroll
+                                for (u32 pid = 0; pid < split_count; pid++) {
+                                    cell_coords[pid] = CellCoord{cell_bound_low[old_indexes[pid]], cell_bound_high[old_indexes[pid]]};
+                                }
+
+                                //make new cell coord
+                                CellCoord merged_cell_coord = CellCoord::get_merge(cell_coords);
+
+                                //write new coord
+                                cell_bound_low [idx_to_derefine] = merged_cell_coord.bmin;
+                                cell_bound_high[idx_to_derefine] = merged_cell_coord.bmax;
+
+                                //flag the old cells for removal
+                                #pragma unroll
+                                for (u32 pid = 1; pid < split_count; pid++) {
+                                    flag_keep[idx_to_derefine+pid] = 0;
+                                }
+
+                                //user lambda to fill the fields
+                                lambd(old_indexes, cell_coords, idx_to_derefine, merged_cell_coord, uacc);
+                            }
+                        );
+
+                    });
+
+                    //stream compact the flags 
+                    auto [opt_buf,len] = shamalgs::numeric::stream_compact(shamsys::instance::get_compute_queue(), keep_cell_flag, old_obj_cnt);
+
+                    logger::debug_ln("AMR Grid", "patch",id_patch,"derefine cell count ",old_obj_cnt,"->",len);
+
+                    if(!opt_buf){
+                        throw std::runtime_error("opt buf must contain something at this point");
+                    }
+
+                    //remap pdat according to stream compact
+                    pdat.index_remap_resize(*opt_buf, len);
+
+                }
+            });
+
         }
 
         inline void make_base_grid(Tcoord bmin, Tcoord cell_size, std::array<u32, dim> cell_count) {
