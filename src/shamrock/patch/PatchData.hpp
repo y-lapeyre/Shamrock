@@ -117,7 +117,7 @@ namespace shamrock::patch {
         /**
         * @brief this function remaps the patchdatafield like so
         *   val[id] = val[index_map[id]]
-        *   index map describe : at index i, we will have the value that was at index_map[i]
+        * This function can be used to apply the result of a sort to the field
         * 
         * @param index_map 
         * @param len the lenght of the map (must match with the current count)

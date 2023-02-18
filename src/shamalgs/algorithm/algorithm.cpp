@@ -43,7 +43,7 @@ namespace shamalgs::algorithm {
             sycl::accessor permut{permutation, cgh, sycl::read_only};
 
             cgh.parallel_for(sycl::range<1>(len), [=](sycl::item<1> item) {
-                out[permut[item]] = in[item];
+                out[item] = in[permut[item]];
             });
         });
 
@@ -70,8 +70,8 @@ namespace shamalgs::algorithm {
             u32 nvar_loc = nvar;
 
             cgh.parallel_for(sycl::range<1>(len), [=](sycl::item<1> item) {
-                u32 in_id  = item.get_linear_id() * nvar_loc;
-                u32 out_id = permut[item] * nvar_loc;
+                u32 in_id  = permut[item] * nvar_loc;
+                u32 out_id = item.get_linear_id() * nvar_loc;
 
                 for (u32 a = 0; a < nvar_loc; a++) {
                     out[out_id + a] = in[in_id + a];

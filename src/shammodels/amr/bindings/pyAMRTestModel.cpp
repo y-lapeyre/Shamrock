@@ -23,7 +23,13 @@ Register_pymod(pyamrtestmode){
         .def(py::init([](AMRTestModel::Grid & grd) {
                 return std::make_unique<AMRTestModel>(grd);
             }))
-        .def("step",
+        .def("refine",
+        [](AMRTestModel& obj){
+                obj.refine();
+        }).def("derefine",
+        [](AMRTestModel& obj){
+                obj.derefine();
+        }).def("step",
         [](AMRTestModel& obj){
                 obj.step();
         });

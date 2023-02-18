@@ -133,18 +133,23 @@ using vFunctionCall = void (*)(sycl::queue &, std::unique_ptr<sycl::buffer<T>> &
         std::unique_ptr<sycl::buffer<u32>> buf_key  = std::make_unique<sycl::buffer<u32>>(
             shamalgs::random::mock_buffer<u32>(0x111, len, 0,1U << 7U)
         );
-        std::vector<u32> key_before_sort = shamalgs::memory::buf_to_vec(*buf_key, len);
+
+        std::unique_ptr<sycl::buffer<u32>> buf_key_dup  = std::make_unique<sycl::buffer<u32>>(
+            shamalgs::random::mock_buffer<u32>(0x111, len, 0,1U << 7U)
+        );
 
         sycl::buffer<u32> buf_index_map = shamalgs::algorithm::gen_buffer_index(q, len);
         shamalgs::algorithm::sort_by_key(q, *buf_key, buf_index_map, len);
 
-        fct(q, buf_key, buf_index_map, len);
+
+        fct(q, buf_key_dup, buf_index_map, len);
 
         std::vector<u32> sorted_keys = shamalgs::memory::buf_to_vec(*buf_key, len);
+        std::vector<u32> remaped_keys = shamalgs::memory::buf_to_vec(*buf_key_dup, len);
 
         bool match = true;
         for (u32 i = 0 ; i < len; i++) {
-            match = match && ( sorted_keys[i] == key_before_sort[i] );
+            match = match && ( sorted_keys[i] == remaped_keys[i] );
         }
 
         shamtest::asserts().assert_bool("permutation is corect", match);

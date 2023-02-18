@@ -80,7 +80,9 @@ namespace shamalgs::algorithm {
 
     /**
      * @brief remap a buffer according to a given index map
+     * result[i] = result[index_map[i]]
      * 
+     * This function can be used to apply a sort to another object
      * 
      * @tparam T type of the buffer
      * @param q the sycl queue
@@ -94,7 +96,9 @@ namespace shamalgs::algorithm {
     
     /**
      * @brief remap a buffer (with multiple variable per index) according to a given index map
+     * result[i] = result[index_map[i]]
      * 
+     * This function can be used to apply a sort to another object
      * 
      * @tparam T type of the buffer
      * @param q the sycl queue

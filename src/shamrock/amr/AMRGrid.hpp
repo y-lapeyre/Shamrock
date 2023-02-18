@@ -11,10 +11,13 @@
 #include "AMRCell.hpp"
 #include "aliases.hpp"
 #include "shamalgs/numeric/numeric.hpp"
+#include "shamalgs/memory/memory.hpp"
 #include "shamrock/legacy/patch/scheduler/scheduler_mpi.hpp"
 #include "shamrock/math/integerManip.hpp"
 #include "shamrock/scheduler/DistributedData.hpp"
 #include "shamrock/tree/RadixTreeMortonBuilder.hpp"
+#include "shamsys/legacy/log.hpp"
+#include <vector>
 
 namespace shamrock::amr {
 
@@ -170,7 +173,11 @@ namespace shamrock::amr {
 
                 u32 pre_merge_obj_cnt = pdat.get_obj_cnt();
 
+                
+
                 pdat.index_remap(*out_buf_particle_index_map, pre_merge_obj_cnt);
+
+                
 
                 u32 obj_to_check = pre_merge_obj_cnt-split_count+1;
 
@@ -201,6 +208,8 @@ namespace shamrock::amr {
                     });
                 });
 
+                
+
 
                 shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
 
@@ -216,7 +225,7 @@ namespace shamrock::amr {
                 });
 
 
-                auto [opt_buf,len] = shamalgs::numeric::stream_compact(shamsys::instance::get_compute_queue(), mergeable_indexes, pdat.get_obj_cnt()-split_count);
+                auto [opt_buf,len] = shamalgs::numeric::stream_compact(shamsys::instance::get_compute_queue(), mergeable_indexes, obj_to_check);
                 
 
                 logger::debug_ln("AMRGrid", "patch ", id_patch, "merge cell count = ", len);
@@ -293,19 +302,14 @@ namespace shamrock::amr {
 
                                 u32 idx_to_refine = index_to_ref[gid];
 
-                                std::array<u32, split_count> cells_ids;
-
-                                CellCoord cur_cell{cell_bound_low[gid], cell_bound_high[gid]};
+                                //gen splits coordinates
+                                CellCoord cur_cell{cell_bound_low[idx_to_refine], cell_bound_high[idx_to_refine]};
 
                                 std::array<CellCoord, split_count> cell_coords =
                                     CellCoord::get_split(cur_cell.bmin, cur_cell.bmax);
 
-                                #pragma unroll
-                                for (u32 pid = 0; pid < split_count; pid++) {
-                                    cell_bound_low[gid]  = cell_coords[pid].bmin;
-                                    cell_bound_high[gid] = cell_coords[pid].bmax;
-                                }
-
+                                //generate index for the refined cells
+                                std::array<u32, split_count> cells_ids;
                                 cells_ids[0] = idx_to_refine;
 
                                 #pragma unroll
@@ -313,6 +317,15 @@ namespace shamrock::amr {
                                     cells_ids[pid + 1] = start_index_push + tid * new_splits + pid;
                                 }
 
+                                //write coordinates
+
+                                #pragma unroll
+                                for (u32 pid = 0; pid < split_count; pid++) {
+                                    cell_bound_low [cells_ids[pid]] = cell_coords[pid].bmin;
+                                    cell_bound_high[cells_ids[pid]] = cell_coords[pid].bmax;
+                                }
+
+                                //user lambda to fill the fields
                                 lambd(idx_to_refine, cur_cell, cells_ids, cell_coords, uacc);
                             }
                         );

@@ -8,7 +8,11 @@
 
 #pragma once
 
+#include "shamalgs/memory/memory.hpp"
+#include "shammath/sycl_utilities.hpp"
 #include "shamrock/amr/AMRGrid.hpp"
+#include "shamsys/legacy/log.hpp"
+#include <vector>
 
 class AMRTestModel {
     public:
@@ -41,11 +45,13 @@ class AMRTestModel {
             {}
     };
 
+
     /**
      * @brief does the refinment step of the AMR
      * 
      */
     inline void refine() {
+
 
         auto splits = grid.gen_refine_list<RefineCritCellAccessor>(
             [](u32 cell_id, RefineCritCellAccessor acc) -> u32 {
@@ -54,8 +60,12 @@ class AMRTestModel {
 
                 using namespace shammath;
 
-                bool should_refine = is_in_half_open(low_bound, u64_3{1, 1, 1}, u64_3{4, 4, 4}) &&
-                                     is_in_half_open(high_bound, u64_3{1, 1, 1}, u64_3{4, 4, 4});
+                bool should_refine = is_in_half_open(low_bound, u64_3{2, 2, 2}, u64_3{8, 8, 8}) &&
+                                     is_in_half_open(high_bound, u64_3{2, 2, 2}, u64_3{8, 8, 8});
+
+                should_refine = should_refine && (high_bound.x() - low_bound.x() > 1);
+                should_refine = should_refine && (high_bound.y() - low_bound.y() > 1);
+                should_refine = should_refine && (high_bound.z() - low_bound.z() > 1);
 
                 return should_refine;
             }
@@ -84,19 +94,8 @@ class AMRTestModel {
 
 
 
-        auto merge = grid.gen_merge_list<RefineCritCellAccessor>(
-            [](u32 cell_id, RefineCritCellAccessor acc) -> u32 {
-                u64_3 low_bound  = acc.cell_low_bound[cell_id];
-                u64_3 high_bound = acc.cell_high_bound[cell_id];
 
-                using namespace shammath;
-
-                bool should_merge = is_in_half_open(low_bound, u64_3{1, 1, 1}, u64_3{4, 4, 4}) &&
-                                     is_in_half_open(high_bound, u64_3{1, 1, 1}, u64_3{4, 4, 4});
-
-                return should_merge;
-            }
-        );
+        
 
         
 
@@ -107,8 +106,25 @@ class AMRTestModel {
 
     }
 
+    inline void derefine(){
+        auto merge = grid.gen_merge_list<RefineCritCellAccessor>(
+            [](u32 cell_id, RefineCritCellAccessor acc) -> u32 {
+                u64_3 low_bound  = acc.cell_low_bound[cell_id];
+                u64_3 high_bound = acc.cell_high_bound[cell_id];
+
+                using namespace shammath;
+
+                bool should_merge = is_in_half_open(low_bound, u64_3{2, 2, 2}, u64_3{8, 8, 8}) &&
+                                     is_in_half_open(high_bound, u64_3{2, 2, 2}, u64_3{8, 8, 8});
+
+                return should_merge;
+            }
+        );
+    }
+
     inline void step() {
         using namespace shamrock::patch;
         refine();
+        derefine();
     }
 };

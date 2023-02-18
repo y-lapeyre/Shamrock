@@ -16,7 +16,7 @@ ctx.init_sched(100,400)
 
 grd = shamrock.AMRGrid(ctx)
 
-grd.make_base_grid([0,0,0],[1,1,1],[6,6,6])
+grd.make_base_grid([0,0,0],[2,2,2],[6,6,6])
 
 #ctx.dump_status()
 
@@ -24,4 +24,8 @@ print("recovered :",len(ctx.collect_data()["cell_min"][::]))
 
 model = shamrock.AMRTestModel(grd)
 
-model.step()
+model.refine()
+print("recovered :",len(ctx.collect_data()["cell_min"][::]))
+
+model.derefine()
+print("recovered :",len(ctx.collect_data()["cell_min"][::]))
