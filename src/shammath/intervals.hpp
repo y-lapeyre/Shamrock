@@ -9,6 +9,7 @@
 #pragma once
 
 #include "aliases.hpp"
+#include "shammath/sycl_utilities.hpp"
 
 namespace shammath {
 
@@ -88,6 +89,20 @@ namespace shammath {
             is_in_half_open(val.sE(),min.sE(),max.sE()) &&
             is_in_half_open(val.sF(),min.sF(),max.sF())
         );
+    }
+
+
+
+    template<class T>
+    inline bool domain_are_connected(T bmin1, T bmax1,T bmin2, T bmax2);
+
+    template<class T>
+    inline bool domain_are_connected(sycl::vec<T,3> bmin1, sycl::vec<T,3> bmax1,sycl::vec<T,3> bmin2, sycl::vec<T,3> bmax2){
+        return (
+                (sycl_utils::g_sycl_max( bmin1.x(), bmin2.x()) <= sycl_utils::g_sycl_min(bmax1.x(),bmax2.x())) &&
+                (sycl_utils::g_sycl_max( bmin1.y(), bmin2.y()) <= sycl_utils::g_sycl_min(bmax1.y(),bmax2.y())) &&
+                (sycl_utils::g_sycl_max( bmin1.z(), bmin2.z()) <= sycl_utils::g_sycl_min(bmax1.z(),bmax2.z())) 
+            );
     }
 
 
