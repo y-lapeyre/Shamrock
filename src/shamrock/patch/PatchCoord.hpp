@@ -9,6 +9,7 @@
 #pragma once
 
 #include "aliases.hpp"
+#include "shamrock/math/CoordRange.hpp"
 
 namespace shamrock::patch {
 
@@ -125,6 +126,13 @@ namespace shamrock::patch {
                 merge(merge(others[0], others[1]), merge(others[2], others[3])),
                 merge(merge(others[4], others[5]), merge(others[6], others[7]))
             );
+        }
+
+        CoordRange<u64_3> get_patch_range(){
+            return {
+                u64_3{x_min,y_min,z_min},
+                u64_3{x_max,y_max,z_max} + 1 
+            };
         }
 
         template<class T>
