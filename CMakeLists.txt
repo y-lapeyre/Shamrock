@@ -39,7 +39,7 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native -DNDEBUG")#-DNDEBUG ")#-Wall -Wex
 ######################
 if("${SyCL_Compiler}" STREQUAL "DPCPP")
 
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSYCL_COMP_DPCPP")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSYCL_COMP_DPCPP -Wno-unknown-cuda-version")
 
 endif()
 
@@ -81,22 +81,33 @@ add_custom_command(
     COMMAND python3 ${CMAKE_CURRENT_SOURCE_DIR}/buildbot/make_version_file.py ${CMAKE_CURRENT_SOURCE_DIR}/src/version.cpp "${CMAKE_CXX_FLAGS}"
   )
 
+add_library(shamrock_lib src/version.cpp)
+target_include_directories(shamrock_lib AFTER PUBLIC "${CMAKE_SOURCE_DIR}/src")
+
+if("${BUILD_PYLIB}")
+target_compile_definitions(shamrock_lib PUBLIC LIB_BUILD)
+target_link_libraries(shamrock_lib PUBLIC pybind11::module)
+else()
+target_compile_definitions(shamrock_lib PUBLIC EXECUTABLE_BUILD)
+target_link_libraries(shamrock_lib PUBLIC pybind11::embed)
+endif()
+
 if("${BUILD_SIM}")
 
     message(">>> adding sph target <<<")
 
 
     if("${BUILD_PYLIB}")
-    pybind11_add_module(shamrock src/main.cpp src/version.cpp)
+    pybind11_add_module(shamrock src/main.cpp )
     target_compile_definitions(shamrock PUBLIC LIB_BUILD)
     target_link_libraries(shamrock PUBLIC pybind11::module)
     else()
-    add_executable(shamrock src/main.cpp src/version.cpp)
+    add_executable(shamrock src/main.cpp )
     target_compile_definitions(shamrock PUBLIC EXECUTABLE_BUILD)
     target_link_libraries(shamrock PUBLIC pybind11::embed)
     endif()
     
-
+    target_link_libraries(shamrock PUBLIC shamrock_lib)
     
     
     target_link_libraries(shamrock PUBLIC MPI::MPI_C)
@@ -118,10 +129,12 @@ if("${BUILD_TEST}")
     message(">>> adding test target <<<")
 
     #add_executable(shamrock_test main_test.cpp version.cpp)
-    add_executable(shamrock_test src/main_test.cpp  src/version.cpp)
+    add_executable(shamrock_test src/main_test.cpp  )
     target_link_libraries(shamrock_test PUBLIC MPI::MPI_C)
 
     target_link_libraries(shamrock_test PUBLIC pybind11::embed)
+
+    target_link_libraries(shamrock_test PUBLIC shamrock_lib)
 
     
     target_include_directories(shamrock_test AFTER PUBLIC "${CMAKE_SOURCE_DIR}/src")
