@@ -23,7 +23,7 @@
 
 
 
-#include <string.h>
+#include <cstring>
 
 //#include <type_traits>
 //#include <cstdint>
@@ -38,9 +38,14 @@
 
 #include <sycl/sycl.hpp>
 
+inline std::string __file_to_loc(const char* filename){
+    return std::string(std::strstr(filename, "/src/") ? std::strstr(filename, "/src/")+1  : filename);
+}
 
-#define __FILENAME__ std::string(strstr(__FILE__, "/src/") ? strstr(__FILE__, "/src/")+1  : __FILE__)
+#define __FILENAME__ __file_to_loc(__FILE__)
 #define __LOC_PREFIX__  __FILENAME__ +":" + std::to_string(__LINE__)
+
+#define __LOC_POSTFIX__  ("("+__LOC_PREFIX__+")")
 //#define throw_with_pos(...) throw std::runtime_error( __VA_ARGS__ " ("+ __FILENAME__ +":" + std::to_string(__LINE__) +")");
 
 #define shamrock_exc(...) std::runtime_error(__LOC_PREFIX__ + " " + std::string(__VA_ARGS__))
