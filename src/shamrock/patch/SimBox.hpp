@@ -9,8 +9,8 @@
 #pragma once
 
 #include "aliases.hpp"
-#include "shamrock/math/CoordRange.hpp"
-#include "shamutils/sycl_utilities.hpp"
+#include "shammath/CoordRange.hpp"
+#include "shamutils/sycl_utils.hpp"
 #include "shamrock/patch/Patch.hpp"
 #include "shamrock/patch/PatchCoordTransform.hpp"
 #include "shamrock/patch/PatchDataLayout.hpp"
@@ -18,6 +18,7 @@
 #include <tuple>
 
 namespace shamrock::patch {
+    
     /**
      * @brief Store the information related to the size of the simulation box to convert patch
      * integer coordinates to floating point ones.
@@ -25,36 +26,36 @@ namespace shamrock::patch {
     class SimulationBoxInfo {
 
         using var_t = std::variant<
-            CoordRange<f32>,
-            CoordRange<f32_2>,
-            CoordRange<f32_3>,
-            CoordRange<f32_4>,
-            CoordRange<f32_8>,
-            CoordRange<f32_16>,
-            CoordRange<f64>,
-            CoordRange<f64_2>,
-            CoordRange<f64_3>,
-            CoordRange<f64_4>,
-            CoordRange<f64_8>,
-            CoordRange<f64_16>,
-            CoordRange<u32>,
-            CoordRange<u64>,
-            CoordRange<u32_3>,
-            CoordRange<u64_3>>;
+            shammath::CoordRange<f32>,
+            shammath::CoordRange<f32_2>,
+            shammath::CoordRange<f32_3>,
+            shammath::CoordRange<f32_4>,
+            shammath::CoordRange<f32_8>,
+            shammath::CoordRange<f32_16>,
+            shammath::CoordRange<f64>,
+            shammath::CoordRange<f64_2>,
+            shammath::CoordRange<f64_3>,
+            shammath::CoordRange<f64_4>,
+            shammath::CoordRange<f64_8>,
+            shammath::CoordRange<f64_16>,
+            shammath::CoordRange<u32>,
+            shammath::CoordRange<u64>,
+            shammath::CoordRange<u32_3>,
+            shammath::CoordRange<u64_3>>;
 
         PatchDataLayout &pdl;
 
         var_t bounding_box;
-        CoordRange<u64_3> patch_coord_bounding_box;
+        shammath::CoordRange<u64_3> patch_coord_bounding_box;
 
         public:
-        inline SimulationBoxInfo(PatchDataLayout &pdl, CoordRange<u64_3> patch_coord_bounding_box)
+        inline SimulationBoxInfo(PatchDataLayout &pdl, shammath::CoordRange<u64_3> patch_coord_bounding_box)
             : pdl(pdl), patch_coord_bounding_box(std::move(patch_coord_bounding_box)) {
 
             reset_box_size();
         }
 
-        void set_patch_coord_bounding_box(CoordRange<u64_3> new_patch_coord_box){
+        void set_patch_coord_bounding_box(shammath::CoordRange<u64_3> new_patch_coord_box){
             patch_coord_bounding_box = new_patch_coord_box;
             logger::debug_ln("SimBox", "changed patch coord bounds :", 
             patch_coord_bounding_box.low_bound, patch_coord_bounding_box.high_bound);
@@ -74,7 +75,7 @@ namespace shamrock::patch {
          * @tparam T type of position vector
          * @param new_box the new bounding box
          */
-        template <class T> void set_bounding_box(CoordRange<T> new_box);
+        template <class T> void set_bounding_box(shammath::CoordRange<T> new_box);
 
         /**
          * @brief get the patch coordinates on the domain
@@ -134,7 +135,7 @@ namespace shamrock::patch {
 
         template<class T> inline PatchCoordTransform<T> get_transform(){
             auto [bmin, bmax] = get_bounding_box<T>();
-            return PatchCoordTransform<T>{ patch_coord_bounding_box , CoordRange<T>{bmin,bmax} };
+            return PatchCoordTransform<T>{ patch_coord_bounding_box , shammath::CoordRange<T>{bmin,bmax} };
         }
 
         
@@ -156,7 +157,7 @@ namespace shamrock::patch {
             );
         }
 
-        const CoordRange<T> *pval = std::get_if<CoordRange<T>>(&bounding_box);
+        const shammath::CoordRange<T> *pval = std::get_if<shammath::CoordRange<T>>(&bounding_box);
 
         if (!pval) {
 
@@ -170,7 +171,7 @@ namespace shamrock::patch {
         return {pval->low_bound, pval->high_bound};
     }
 
-    template <class T> inline void SimulationBoxInfo::set_bounding_box(CoordRange<T> new_box) {
+    template <class T> inline void SimulationBoxInfo::set_bounding_box(shammath::CoordRange<T> new_box) {
         if (pdl.check_main_field_type<T>()) {
             bounding_box = new_box;
         } else {
@@ -188,7 +189,7 @@ namespace shamrock::patch {
 
         auto [bmin, bmax] = get_bounding_box<T>();
 
-        PatchCoordTransform<T> transform{ patch_coord_bounding_box , CoordRange<T>{bmin,bmax} };
+        PatchCoordTransform<T> transform{ patch_coord_bounding_box , shammath::CoordRange<T>{bmin,bmax} };
 
         transform.print_transform();
 
@@ -200,13 +201,13 @@ namespace shamrock::patch {
     inline void SimulationBoxInfo::reset_box_size() {
 
         if (pdl.check_main_field_type<f32_3>()) {
-            bounding_box = CoordRange<f32_3>::max_range();
+            bounding_box = shammath::CoordRange<f32_3>::max_range();
         } else if (pdl.check_main_field_type<f64_3>()) {
-            bounding_box = CoordRange<f64_3>::max_range();
+            bounding_box = shammath::CoordRange<f64_3>::max_range();
         } else if (pdl.check_main_field_type<u32_3>()) {
-            bounding_box = CoordRange<u32_3>::max_range();
+            bounding_box = shammath::CoordRange<u32_3>::max_range();
         } else if (pdl.check_main_field_type<u64_3>()) {
-            bounding_box = CoordRange<u64_3>::max_range();
+            bounding_box = shammath::CoordRange<u64_3>::max_range();
         } else {
             throw std::runtime_error(
                 __LOC_PREFIX__ + "the chosen type for the main field is not handled"

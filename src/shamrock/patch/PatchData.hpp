@@ -13,8 +13,8 @@
 #include "aliases.hpp"
 
 #include "Patch.hpp"
-#include "shamutils/intervals.hpp"
-#include "shamutils/sycl_utilities.hpp"
+#include "shammath/intervals.hpp"
+#include "shamutils/sycl_utils.hpp"
 #include <variant>
 
 namespace shamrock::patch {
@@ -279,7 +279,7 @@ namespace shamrock::patch {
                 [&](T val,T vmin, T vmax){
 
                     if(shamutils::sycl_utils::VectorProperties<T>::dimension == 3){
-                        return shamutils::is_in_half_open(val, vmin,vmax);
+                        return shammath::is_in_half_open(val, vmin,vmax);
                     }else{
                         throw std::runtime_error("dimension != 3 is not handled");
                     }

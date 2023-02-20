@@ -103,6 +103,6 @@ class SchedulerPatchData {
     );
 
     inline SchedulerPatchData(
-        shamrock::patch::PatchDataLayout &pdl, CoordRange<u64_3> patch_coord_range)
+        shamrock::patch::PatchDataLayout &pdl, shammath::CoordRange<u64_3> patch_coord_range)
          : pdl(pdl), sim_box(pdl,patch_coord_range) {}
 };

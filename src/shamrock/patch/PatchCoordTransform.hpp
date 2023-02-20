@@ -10,7 +10,7 @@
 
 #include "aliases.hpp"
 #include "shamutils/sycl_utils/vectorProperties.hpp"
-#include "shamrock/math/CoordRange.hpp"
+#include "shammath/CoordRange.hpp"
 #include "shamrock/patch/Patch.hpp"
 #include "shamrock/patch/PatchCoord.hpp"
 #include "shamsys/legacy/log.hpp"
@@ -40,7 +40,7 @@ namespace shamrock::patch {
             u64_3 pcoord_min, u64_3 pcoord_max, Tcoord obj_coord_min, Tcoord obj_coord_max
         );
 
-        inline PatchCoordTransform(CoordRange<u64_3> patch_range, CoordRange<Tcoord> obj_range)
+        inline PatchCoordTransform(shammath::CoordRange<u64_3> patch_range, shammath::CoordRange<Tcoord> obj_range)
             : PatchCoordTransform(
                   patch_range.low_bound,
                   patch_range.high_bound,
@@ -49,10 +49,10 @@ namespace shamrock::patch {
               ) {}
 
         
-        CoordRange<Tcoord> to_obj_coord(CoordRange<u64_3> p);
-        PatchCoord to_patch_coord(CoordRange<Tcoord> obj);
+        shammath::CoordRange<Tcoord> to_obj_coord(shammath::CoordRange<u64_3> p);
+        PatchCoord to_patch_coord(shammath::CoordRange<Tcoord> obj);
 
-        inline CoordRange<Tcoord> to_obj_coord(Patch p){
+        inline shammath::CoordRange<Tcoord> to_obj_coord(Patch p){
             return to_obj_coord(p.get_patch_range());
         }
 
@@ -72,7 +72,7 @@ namespace shamrock::patch {
 
 
     template<class Tcoord>
-    inline CoordRange<Tcoord> PatchCoordTransform<Tcoord>::to_obj_coord(CoordRange<u64_3> p) {
+    inline shammath::CoordRange<Tcoord> PatchCoordTransform<Tcoord>::to_obj_coord(shammath::CoordRange<u64_3> p) {
 
         u64_3 pmin = p.low_bound;
         u64_3 pmax = p.high_bound;
@@ -93,7 +93,7 @@ namespace shamrock::patch {
     }
 
     template<class Tcoord>
-    inline PatchCoord PatchCoordTransform<Tcoord>::to_patch_coord(CoordRange<Tcoord> c) {
+    inline PatchCoord PatchCoordTransform<Tcoord>::to_patch_coord(shammath::CoordRange<Tcoord> c) {
 
         u64_3 pmin;
         u64_3 pmax;

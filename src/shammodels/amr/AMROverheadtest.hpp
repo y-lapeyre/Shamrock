@@ -9,8 +9,8 @@
 #pragma once
 
 #include "shamalgs/memory/memory.hpp"
-#include "shamutils/intervals.hpp"
-#include "shamutils/sycl_utilities.hpp"
+#include "shammath/intervals.hpp"
+#include "shamutils/sycl_utils.hpp"
 #include "shamrock/amr/AMRGrid.hpp"
 #include "shamrock/legacy/utils/time_utils.hpp"
 #include "shamrock/patch/PatchData.hpp"
@@ -60,7 +60,7 @@ class AMRTestModel {
 
 
 
-    
+
 
     inline void dump_patch(u64 id) {
 
@@ -95,7 +95,7 @@ class AMRTestModel {
                 u64_3 low_bound  = acc.cell_low_bound[cell_id];
                 u64_3 high_bound = acc.cell_high_bound[cell_id];
 
-                using namespace shamutils;
+                using namespace shammath;
 
                 bool should_refine = is_in_half_open(low_bound, fact_p_len*u64_3{1, 1, 1}, fact_p_len*u64_3{4, 4, 4}) &&
                                      is_in_half_open(high_bound, fact_p_len*u64_3{1, 1, 1}, fact_p_len*u64_3{4, 4, 4});
@@ -135,7 +135,7 @@ class AMRTestModel {
                 u64_3 low_bound  = acc.cell_low_bound[cell_id];
                 u64_3 high_bound = acc.cell_high_bound[cell_id];
 
-                using namespace shamutils;
+                using namespace shammath;
 
                 bool should_merge = is_in_half_open(low_bound, fact_p_len*u64_3{1, 1, 1}, fact_p_len*u64_3{4, 4, 4}) &&
                                     is_in_half_open(high_bound, fact_p_len*u64_3{1, 1, 1}, fact_p_len*u64_3{4, 4, 4});
@@ -235,7 +235,7 @@ class AMRTestModel {
                                 out << low_bound_a << " " << high_bound_a << " | " << cur_pos_min_cell_b << " " << cur_pos_max_cell_b<<"\n";
                             }
                             
-                            return shamutils::domain_are_connected(low_bound_a,high_bound_a,cur_pos_min_cell_b,cur_pos_max_cell_b);
+                            return shammath::domain_are_connected(low_bound_a,high_bound_a,cur_pos_min_cell_b,cur_pos_max_cell_b);
                         },
                         [&](u32 id_b) {
                             // compute only omega_a

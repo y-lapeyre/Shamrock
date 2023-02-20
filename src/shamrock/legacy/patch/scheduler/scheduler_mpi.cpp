@@ -80,7 +80,7 @@ void PatchScheduler::make_patch_base_grid(std::array<u32,dim> patch_count){
         }
     }
 
-    CoordRange<u64_3> bound {
+    shammath::CoordRange<u64_3> bound {
         {0,0,0},
         {sz_root_patch*patch_count[0]-1,
         sz_root_patch*patch_count[1]-1,
@@ -132,17 +132,17 @@ std::vector<u64> PatchScheduler::add_root_patches(std::vector<shamrock::patch::P
 
         ret.push_back(root.id_patch);
         
-        auto [bmin,bmax] = get_sim_box().partch_coord_to_domain<u64_3>(root);
-        
-
-        logger::debug_ln("Scheduler", "adding patch : [ (",
-         coord.x_min, 
-         coord.y_min, 
-         coord.z_min,") ] [ (",
-         coord.x_max, 
-         coord.y_max, 
-         coord.z_max,") ]", bmin,bmax
-        );
+        //auto [bmin,bmax] = get_sim_box().partch_coord_to_domain<u64_3>(root);
+        //
+//
+        //logger::debug_ln("Scheduler", "adding patch : [ (",
+        // coord.x_min, 
+        // coord.y_min, 
+        // coord.z_min,") ] [ (",
+        // coord.x_max, 
+        // coord.y_max, 
+        // coord.z_max,") ]", bmin,bmax
+        //);
     }
 
     patch_list.reset_local_pack_index();

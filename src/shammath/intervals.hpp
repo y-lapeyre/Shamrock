@@ -9,9 +9,9 @@
 #pragma once
 
 #include "aliases.hpp"
-#include "shamutils/sycl_utilities.hpp"
+#include "shamutils/sycl_utils/sycl_utilities.hpp"
 
-namespace shamutils {
+namespace shammath {
 
     /**
      * @brief return true if val is in [min,max[
@@ -96,12 +96,12 @@ namespace shamutils {
         sycl::vec<T, 3> bmin1, sycl::vec<T, 3> bmax1, sycl::vec<T, 3> bmin2, sycl::vec<T, 3> bmax2
     ) {
         return (
-            (sycl_utils::g_sycl_max(bmin1.x(), bmin2.x()) <=
-             sycl_utils::g_sycl_min(bmax1.x(), bmax2.x())) &&
-            (sycl_utils::g_sycl_max(bmin1.y(), bmin2.y()) <=
-             sycl_utils::g_sycl_min(bmax1.y(), bmax2.y())) &&
-            (sycl_utils::g_sycl_max(bmin1.z(), bmin2.z()) <=
-             sycl_utils::g_sycl_min(bmax1.z(), bmax2.z()))
+            (shamutils::sycl_utils::g_sycl_max(bmin1.x(), bmin2.x()) <=
+             shamutils::sycl_utils::g_sycl_min(bmax1.x(), bmax2.x())) &&
+            (shamutils::sycl_utils::g_sycl_max(bmin1.y(), bmin2.y()) <=
+             shamutils::sycl_utils::g_sycl_min(bmax1.y(), bmax2.y())) &&
+            (shamutils::sycl_utils::g_sycl_max(bmin1.z(), bmin2.z()) <=
+             shamutils::sycl_utils::g_sycl_min(bmax1.z(), bmax2.z()))
         );
     }
 

@@ -9,7 +9,7 @@
 #pragma once
 
 #include "aliases.hpp"
-#include "shamrock/math/CoordRange.hpp"
+#include "shammath/CoordRange.hpp"
 
 namespace shamrock::patch {
 
@@ -128,7 +128,7 @@ namespace shamrock::patch {
             );
         }
 
-        CoordRange<u64_3> get_patch_range(){
+        shammath::CoordRange<u64_3> get_patch_range(){
             return {
                 u64_3{x_min,y_min,z_min},
                 u64_3{x_max,y_max,z_max} + 1 

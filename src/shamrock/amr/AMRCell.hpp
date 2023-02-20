@@ -9,7 +9,7 @@
 #pragma once
 
 #include "aliases.hpp"
-#include "shamutils/sycl_utilities.hpp"
+#include "shamutils/sycl_utils.hpp"
 
 namespace shamrock::amr {
 

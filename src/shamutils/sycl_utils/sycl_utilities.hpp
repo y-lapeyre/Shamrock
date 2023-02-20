@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "sycl_utils/vectorProperties.hpp"
+#include "vectorProperties.hpp"
 
 namespace shamutils::sycl_utils {
 
