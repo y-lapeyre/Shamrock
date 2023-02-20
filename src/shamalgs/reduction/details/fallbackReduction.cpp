@@ -41,7 +41,7 @@ namespace shamalgs::reduction::details {
                 if(idx == start_id){
                     accum = acc[idx];
                 }else{
-                    accum = shammath::sycl_utils::g_sycl_min(acc[idx], accum);
+                    accum = shamutils::sycl_utils::g_sycl_min(acc[idx], accum);
                 }
             }
         }
@@ -60,7 +60,7 @@ namespace shamalgs::reduction::details {
                 if(idx == start_id){
                     accum = acc[idx];
                 }else{
-                    accum = shammath::sycl_utils::g_sycl_max(acc[idx], accum);
+                    accum = shamutils::sycl_utils::g_sycl_max(acc[idx], accum);
                 }
             }
         }

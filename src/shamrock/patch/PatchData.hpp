@@ -278,8 +278,8 @@ namespace shamrock::patch {
             return main_field.get_elements_with_range(
                 [&](T val,T vmin, T vmax){
 
-                    if(shammath::sycl_utils::VectorProperties<T>::dimension == 3){
-                        return shammath::is_in_half_open(val, vmin,vmax);
+                    if(shamutils::sycl_utils::VectorProperties<T>::dimension == 3){
+                        return shamutils::is_in_half_open(val, vmin,vmax);
                     }else{
                         throw std::runtime_error("dimension != 3 is not handled");
                     }

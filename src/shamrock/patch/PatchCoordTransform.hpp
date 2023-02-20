@@ -23,7 +23,7 @@ namespace shamrock::patch {
     template<class Tcoord>
     class PatchCoordTransform {
 
-        using CoordProp = shammath::sycl_utils::VectorProperties<Tcoord>;
+        using CoordProp = shamutils::sycl_utils::VectorProperties<Tcoord>;
 
         enum TransformFactMode { multiply, divide };
 

@@ -122,8 +122,8 @@ namespace shamrock::amr {
             if constexpr (dim == 3) {
                 for (u32 i = 0; i < splts_count; i++) {
                     are_same = are_same &&
-                               shammath::sycl_utils::test_sycl_eq(others[i].bmin, splitted[i].bmin) &&
-                               shammath::sycl_utils::test_sycl_eq(others[i].bmax, splitted[i].bmax);
+                               shamutils::sycl_utils::test_sycl_eq(others[i].bmin, splitted[i].bmin) &&
+                               shamutils::sycl_utils::test_sycl_eq(others[i].bmax, splitted[i].bmax);
                 }
             }
 

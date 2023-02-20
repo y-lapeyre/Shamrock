@@ -119,7 +119,7 @@ class RadixTree{
     public:
 
     using ipos_t = typename shamrock::sfc::MortonCodes<morton_t, dim>::int_vec_repr;
-    using coord_t = typename shammath::sycl_utils::VectorProperties<pos_t>::component_type;
+    using coord_t = typename shamutils::sycl_utils::VectorProperties<pos_t>::component_type;
 
     static constexpr u32 tree_depth = get_tree_depth();
 

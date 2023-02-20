@@ -226,7 +226,7 @@ namespace shamrock::patch{
 
         if(get_obj_cnt() != el_cnt_new){
 
-            using namespace shammath::sycl_utils;
+            using namespace shamutils::sycl_utils;
 
             T vmin = g_sycl_min(min_box[0],min_box[1]);
             vmin = g_sycl_min(vmin,min_box[2]);

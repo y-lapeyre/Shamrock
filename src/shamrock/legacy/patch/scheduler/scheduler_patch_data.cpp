@@ -99,7 +99,7 @@ void split_patchdata(
     const std::array<shamrock::patch::Patch, 8> patches,
     std::array<std::reference_wrapper<shamrock::patch::PatchData>,8> pdats){
 
-    using ptype = typename shammath::sycl_utils::VectorProperties<Vectype>::component_type;
+    using ptype = typename shamutils::sycl_utils::VectorProperties<Vectype>::component_type;
 
     auto [bmin_p0, bmax_p0] = sim_box.partch_coord_to_domain<Vectype>(patches[0]);
     auto [bmin_p1, bmax_p1] = sim_box.partch_coord_to_domain<Vectype>(patches[1]);

@@ -10,7 +10,7 @@
 
 #include "sycl_utils/vectorProperties.hpp"
 
-namespace shammath::sycl_utils {
+namespace shamutils::sycl_utils {
 
     template<class T>
     T g_sycl_min(T a, T b) {
@@ -110,4 +110,4 @@ namespace shammath::sycl_utils {
         return eqx;
     }
 
-} // namespace shammath::sycl_utils
+} // namespace shamutils::sycl_utils
