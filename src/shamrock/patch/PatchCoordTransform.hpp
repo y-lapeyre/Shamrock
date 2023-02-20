@@ -47,72 +47,25 @@ namespace shamrock::patch {
                   obj_range.high_bound
               ) {}
 
-        CoordRange<Tcoord> to_obj_coord(Patch p);
-        PatchCoord to_patch_coord(CoordRange<Tcoord> p);
+        
+        CoordRange<Tcoord> to_obj_coord(CoordRange<u64_3> p);
+        PatchCoord to_patch_coord(CoordRange<Tcoord> obj);
+
+        inline CoordRange<Tcoord> to_obj_coord(Patch p){
+            return to_obj_coord(p.get_patch_range());
+        }
     };
 
     //////////////////////////////////
     // out of line impl
     //////////////////////////////////
 
-    template<class Tcoord>
-    inline PatchCoordTransform<Tcoord>::PatchCoordTransform(
-        u64_3 pcoord_min, u64_3 pcoord_max, Tcoord obj_coord_min, Tcoord obj_coord_max
-    )
-        : obj_coord_min(obj_coord_min), patch_coord_min(pcoord_min) {
-
-        if constexpr (CoordProp::dimension == 3) {
-            if constexpr (CoordProp::is_float_based) {
-
-                mode = multiply;
-
-                u64_3 patch_delt = pcoord_max - pcoord_min;
-                Tcoord obj_delt  = obj_coord_max - obj_coord_min;
-
-                Tcoord patch_b_size = patch_delt.convert<typename CoordProp::component_type>();
-
-                fact = obj_delt / patch_b_size;
-            }
-
-            if constexpr (CoordProp::is_uint_based) {
-
-                u64_3 patch_delt = pcoord_max - pcoord_min;
-                Tcoord obj_delt  = obj_coord_max - obj_coord_min;
-
-                if constexpr (std::is_same<typename CoordProp::component_type, u64>::value) {
-                    Tcoord patch_b_size = patch_delt.convert<typename CoordProp::component_type>();
-
-                    bool cmp_x = obj_delt.x() >= patch_b_size.x();
-                    bool cmp_y = obj_delt.y() >= patch_b_size.y();
-                    bool cmp_z = obj_delt.z() >= patch_b_size.z();
-
-                    if ((cmp_x == cmp_y) && (cmp_z == cmp_y)) {
-
-                        bool obj_greater_than_patch = cmp_x;
-
-                        if (obj_greater_than_patch) {
-                            mode = multiply;
-                            fact = obj_delt / patch_b_size;
-                        } else {
-                            mode = divide;
-                            fact = patch_b_size / obj_delt;
-                        }
-
-                    } else {
-                        throw std::invalid_argument("the range comparaison are not the same");
-                    }
-                }
-            }
-        }
-
-        throw std::invalid_argument("the current case is not handled");
-    }
 
     template<class Tcoord>
-    inline CoordRange<Tcoord> PatchCoordTransform<Tcoord>::to_obj_coord(Patch p) {
+    inline CoordRange<Tcoord> PatchCoordTransform<Tcoord>::to_obj_coord(CoordRange<u64_3> p) {
 
-        u64_3 pmin{p.x_min, p.y_min, p.z_min};
-        u64_3 pmax{p.x_max, p.y_max, p.z_max};
+        u64_3 pmin = p.low_bound;
+        u64_3 pmax = p.high_bound;
 
         if (mode == multiply) {
             return {

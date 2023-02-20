@@ -12,6 +12,7 @@
 #include "shamrock/math/CoordRange.hpp"
 #include "shammath/sycl_utilities.hpp"
 #include "shamrock/patch/Patch.hpp"
+#include "shamrock/patch/PatchCoordTransform.hpp"
 #include "shamrock/patch/PatchDataLayout.hpp"
 
 #include <tuple>
@@ -182,18 +183,11 @@ namespace shamrock::patch {
 
         auto [bmin, bmax] = get_bounding_box<T>();
 
-        T translate_factor = bmin;
+        PatchCoordTransform<T> transform{ patch_coord_bounding_box , CoordRange<T>{bmin,bmax} };
 
-        using namespace shammath::sycl_utils;
+        auto [obj_min, obj_max] = transform.to_obj_coord(p);
 
-        T patch_b_size = patch_coord_bounding_box.delt().convert<
-            typename VectorProperties<T>::component_type
-            >();
-
-
-        T div_factor = patch_b_size / (bmax - bmin);
-
-        return p.convert_coord(patch_coord_bounding_box.low_bound, div_factor, translate_factor);
+        return {obj_min, obj_max};
     }
 
     inline void SimulationBoxInfo::reset_box_size() {

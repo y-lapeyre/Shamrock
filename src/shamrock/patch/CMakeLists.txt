@@ -4,6 +4,7 @@ Patch.cpp
 PatchData.cpp
 PatchDataLayout.cpp
 PatchDataField.cpp
+PatchCoordTransform.cpp
 )
 set(SourcesTest
     

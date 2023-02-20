@@ -21,6 +21,7 @@
 
 #include "aliases.hpp"
 
+#include "shamrock/math/CoordRange.hpp"
 #include "shamsys/MpiWrapper.hpp"
 #include "PatchCoord.hpp"
 
@@ -141,6 +142,10 @@ namespace shamrock::patch {
 
         [[nodiscard]] inline PatchCoord get_coords() const {
             return PatchCoord(x_min, y_min, z_min, x_max, y_max, z_max);
+        }
+
+        inline CoordRange<u64_3> get_patch_range(){
+            return get_coords().get_patch_range();
         }
     };
 

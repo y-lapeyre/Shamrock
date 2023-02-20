@@ -9,9 +9,13 @@
 #pragma once
 
 #include "shamalgs/memory/memory.hpp"
+#include "shammath/intervals.hpp"
 #include "shammath/sycl_utilities.hpp"
 #include "shamrock/amr/AMRGrid.hpp"
+#include "shamrock/legacy/utils/time_utils.hpp"
 #include "shamrock/patch/PatchData.hpp"
+#include "shamrock/tree/RadixTree.hpp"
+#include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
 #include <vector>
 
@@ -42,36 +46,35 @@ class AMRTestModel {
         sycl::accessor<u32, 1, sycl::access::mode::read_write, sycl::target::device> field;
 
         RefineCellAccessor(sycl::handler &cgh, shamrock::patch::PatchData &pdat)
-            : field{*pdat.get_field<u32>(2).get_buf(), cgh, sycl::read_write} 
-            {}
+            : field{*pdat.get_field<u32>(2).get_buf(), cgh, sycl::read_write} {}
     };
 
-    inline void dump_patch(u64 id){
-        
+    inline void dump_patch(u64 id) {
+
         using namespace shamrock::patch;
         using namespace shamalgs::memory;
 
-        PatchData & pdat = grid.sched.patch_data.owned_data.at(id);
+        PatchData &pdat = grid.sched.patch_data.owned_data.at(id);
 
-        std::vector<u64_3> mins = buf_to_vec(*pdat.get_field<u64_3>(0).get_buf(), pdat.get_obj_cnt());
-        std::vector<u64_3> maxs = buf_to_vec(*pdat.get_field<u64_3>(1).get_buf(), pdat.get_obj_cnt());
-
+        std::vector<u64_3> mins =
+            buf_to_vec(*pdat.get_field<u64_3>(0).get_buf(), pdat.get_obj_cnt());
+        std::vector<u64_3> maxs =
+            buf_to_vec(*pdat.get_field<u64_3>(1).get_buf(), pdat.get_obj_cnt());
 
         logger::raw_ln("----- dump");
-        for(u32 i = 0; i < mins.size(); i++){
-            logger::raw_ln(mins[i],maxs[i]);
+        for (u32 i = 0; i < mins.size(); i++) {
+            logger::raw_ln(mins[i], maxs[i]);
         }
         logger::raw_ln("-----");
-    } 
-
+    }
 
     /**
      * @brief does the refinment step of the AMR
-     * 
+     *
      */
     inline void refine() {
 
-        dump_patch(4);
+        //dump_patch(4);
         auto splits = grid.gen_refine_list<RefineCritCellAccessor>(
             [](u32 cell_id, RefineCritCellAccessor acc) -> u32 {
                 u64_3 low_bound  = acc.cell_low_bound[cell_id];
@@ -90,8 +93,6 @@ class AMRTestModel {
             }
         );
 
-        
-
         grid.apply_splits<RefineCellAccessor>(
             std::move(splits),
 
@@ -100,7 +101,6 @@ class AMRTestModel {
                std::array<u32, 8> new_cells,
                std::array<Grid::CellCoord, 8> new_cells_coords,
                RefineCellAccessor acc) {
-                
                 u32 val = acc.field[cur_idx];
 
 #pragma unroll
@@ -111,22 +111,10 @@ class AMRTestModel {
 
         );
 
-
-
-
-        dump_patch(4);
-        
-
-        
-
-
-
-
-
-
+        //dump_patch(4);
     }
 
-    inline void derefine(){
+    inline void derefine() {
         auto merge = grid.gen_merge_list<RefineCritCellAccessor>(
             [](u32 cell_id, RefineCritCellAccessor acc) -> u32 {
                 u64_3 low_bound  = acc.cell_low_bound[cell_id];
@@ -135,7 +123,7 @@ class AMRTestModel {
                 using namespace shammath;
 
                 bool should_merge = is_in_half_open(low_bound, u64_3{2, 2, 2}, u64_3{8, 8, 8}) &&
-                                     is_in_half_open(high_bound, u64_3{2, 2, 2}, u64_3{8, 8, 8});
+                                    is_in_half_open(high_bound, u64_3{2, 2, 2}, u64_3{8, 8, 8});
 
                 return should_merge;
             }
@@ -144,32 +132,116 @@ class AMRTestModel {
         grid.apply_merge<RefineCellAccessor>(
             std::move(merge),
 
-            [](
-                 std::array<u32, 8> old_cells,
-                 std::array<Grid::CellCoord, 8> old_coords,
-                 u32 new_cell,
-                 Grid::CellCoord new_coord,
-                
+            [](std::array<u32, 8> old_cells,
+               std::array<Grid::CellCoord, 8> old_coords,
+               u32 new_cell,
+               Grid::CellCoord new_coord,
+
                RefineCellAccessor acc) {
-                
                 u32 accum = 0;
 
-                #pragma unroll
+#pragma unroll
                 for (u32 pid = 0; pid < 8; pid++) {
                     accum += acc.field[old_cells[pid]];
                 }
 
                 acc.field[new_cell] = accum / 8;
-
             }
 
         );
-        dump_patch(4);
+        //dump_patch(4);
     }
 
     inline void step() {
+
         using namespace shamrock::patch;
+
         refine();
         derefine();
+
+
+        using namespace shamrock::patch;
+
+        sycl::queue & q = shamsys::instance::get_compute_queue();
+
+        grid.sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
+
+            RadixTree<u64, u64_3, 3> tree (
+                q,
+                grid.sched.get_sim_box().partch_coord_to_domain<u64_3>(cur_p),
+                pdat.get_field<u64_3>(0).get_buf(),
+                pdat.get_obj_cnt(),
+                4);
+
+            tree.compute_cell_ibounding_box(q);
+
+            tree.convert_bounding_box(q);
+
+            
+            class WalkAccessors {
+                public:
+                sycl::accessor<u32, 1, sycl::access::mode::read_write, sycl::target::device> field;
+
+                WalkAccessors(sycl::handler &cgh, shamrock::patch::PatchData &pdat)
+                    : field{*pdat.get_field<u32>(2).get_buf(), cgh, sycl::read_write} {}
+            };
+
+            q.wait();
+
+            Timer t; t.start();
+            q.submit([&](sycl::handler &cgh) {
+
+                using Rta = walker::Radix_tree_accessor<u64, u64_3>;
+                Rta tree_acc(tree, cgh);
+
+                WalkAccessors uacc (cgh,pdat);
+
+                sycl::range range_npart{pdat.get_obj_cnt()};
+
+                sycl::accessor cell_low_bound{*pdat.get_field<u64_3>(0).get_buf(), cgh, sycl::read_only};
+                sycl::accessor cell_high_bound{*pdat.get_field<u64_3>(1).get_buf(), cgh, sycl::read_only};
+
+                sycl::stream out(1024, 256, cgh);
+
+                cgh.parallel_for(range_npart, [=](sycl::item<1> item) {
+
+                    u64_3 low_bound_a = cell_low_bound[item];
+                    u64_3 high_bound_a = cell_high_bound[item];
+
+                    u32 sum = 0;
+
+                    walker::rtree_for(
+                        tree_acc,
+                        [&](u32 node_id) {
+                            u64_3 cur_pos_min_cell_b = tree_acc.pos_min_cell[node_id];
+                            u64_3 cur_pos_max_cell_b = tree_acc.pos_max_cell[node_id];
+
+                            if(sum < 2){
+                                out << low_bound_a << " " << high_bound_a << " | " << cur_pos_min_cell_b << " " << cur_pos_max_cell_b<<"\n";
+                            }
+                            
+                            return shammath::domain_are_connected(low_bound_a,high_bound_a,cur_pos_min_cell_b,cur_pos_max_cell_b);
+                        },
+                        [&](u32 id_b) {
+                            // compute only omega_a
+                            
+                            sum += 1;
+
+                        },
+                        [](u32 node_id) {}
+                    );
+
+                    uacc.field[item] = sum;
+
+                });
+
+            });
+            q.wait();
+            t.end();
+
+            logger::debug_ln("AMR Test", "walk time",t.get_time_str());
+
+            
+        });
     }
 };

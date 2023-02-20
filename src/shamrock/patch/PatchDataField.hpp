@@ -145,7 +145,7 @@ template <class T> class PatchDataField {
 
     inline const std::unique_ptr<sycl::buffer<T>> &get_buf() const { return buf; }
 
-    [[deprecated]] inline std::unique_ptr<sycl::buffer<T>> &get_buf_priviledge() { return buf; }
+    inline std::unique_ptr<sycl::buffer<T>> &get_buf_priviledge() { return buf; }
 
     //[[deprecated]]
     // inline std::unique_ptr<sycl::buffer<T>> get_sub_buf(){
