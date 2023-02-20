@@ -10,7 +10,7 @@
 
 #include "aliases.hpp"
 #include "shamrock/math/CoordRange.hpp"
-#include "shammath/sycl_utilities.hpp"
+#include "shamutils/sycl_utilities.hpp"
 #include "shamrock/patch/Patch.hpp"
 #include "shamrock/patch/PatchCoordTransform.hpp"
 #include "shamrock/patch/PatchDataLayout.hpp"
@@ -132,6 +132,11 @@ namespace shamrock::patch {
             return partch_coord_to_domain<sycl::vec<primtype, 3>>(p);
         }
 
+        template<class T> inline PatchCoordTransform<T> get_transform(){
+            auto [bmin, bmax] = get_bounding_box<T>();
+            return PatchCoordTransform<T>{ patch_coord_bounding_box , CoordRange<T>{bmin,bmax} };
+        }
+
         
     };
 
@@ -184,6 +189,8 @@ namespace shamrock::patch {
         auto [bmin, bmax] = get_bounding_box<T>();
 
         PatchCoordTransform<T> transform{ patch_coord_bounding_box , CoordRange<T>{bmin,bmax} };
+
+        transform.print_transform();
 
         auto [obj_min, obj_max] = transform.to_obj_coord(p);
 

@@ -7,7 +7,7 @@
 // -------------------------------------------------------//
 
 #include "fallbackReduction.hpp"
-#include "shammath/sycl_utilities.hpp"
+#include "shamutils/sycl_utilities.hpp"
 
 namespace shamalgs::reduction::details {
 

@@ -131,8 +131,6 @@ std::vector<u64> PatchScheduler::add_root_patches(std::vector<shamrock::patch::P
         patch_tree.insert_root_node(root.id_patch, coord);
 
         ret.push_back(root.id_patch);
-
-
         
         auto [bmin,bmax] = get_sim_box().partch_coord_to_domain<u64_3>(root);
         

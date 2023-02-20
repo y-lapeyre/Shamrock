@@ -12,7 +12,7 @@ namespace shamrock::patch {
     template<>
     PatchCoordTransform<f32_3>::PatchCoordTransform(
         u64_3 pcoord_min, u64_3 pcoord_max, f32_3 obj_coord_min, f32_3 obj_coord_max
-    ) {
+    ) : patch_coord_min(pcoord_min), obj_coord_min(obj_coord_min){
         mode = multiply;
 
         u64_3 patch_delt = pcoord_max - pcoord_min;
@@ -26,7 +26,7 @@ namespace shamrock::patch {
     template<>
     PatchCoordTransform<f64_3>::PatchCoordTransform(
         u64_3 pcoord_min, u64_3 pcoord_max, f64_3 obj_coord_min, f64_3 obj_coord_max
-    ) {
+    ) : patch_coord_min(pcoord_min), obj_coord_min(obj_coord_min) {
         mode = multiply;
 
         u64_3 patch_delt = pcoord_max - pcoord_min;
@@ -40,7 +40,7 @@ namespace shamrock::patch {
     template<>
     PatchCoordTransform<u64_3>::PatchCoordTransform(
         u64_3 pcoord_min, u64_3 pcoord_max, u64_3 obj_coord_min, u64_3 obj_coord_max
-    ) {
+    ) : patch_coord_min(pcoord_min), obj_coord_min(obj_coord_min) {
         u64_3 patch_delt = pcoord_max - pcoord_min;
         u64_3 obj_delt   = obj_coord_max - obj_coord_min;
 
@@ -72,7 +72,7 @@ namespace shamrock::patch {
     template<>
     PatchCoordTransform<u32_3>::PatchCoordTransform(
         u64_3 pcoord_min, u64_3 pcoord_max, u32_3 obj_coord_min, u32_3 obj_coord_max
-    ) {
+    ) : patch_coord_min(pcoord_min), obj_coord_min(obj_coord_min) {
         u64_3 patch_delt = pcoord_max - pcoord_min;
         u32_3 obj_delt   = obj_coord_max - obj_coord_min;
 

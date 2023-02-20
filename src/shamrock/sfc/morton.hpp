@@ -21,7 +21,7 @@
 
 #include "aliases.hpp"
 #include "bmi.hpp"
-#include "shammath/sycl_utils/vectorProperties.hpp"
+#include "shamutils/sycl_utils/vectorProperties.hpp"
 #include "shamrock/math/integerManip.hpp"
 #include <type_traits>
 
@@ -283,33 +283,31 @@ namespace shamrock::sfc {
 
             // validity condition
             auto check_axis = [](coord_t len) -> bool {
-                bool is_pow2 = shamrock::math::int_manip::get_next_pow2_val(len) == len;
 
-                if (len > Morton::max_val && is_pow2) {
+                if (len % Morton::val_count == 0) {
                     return true;
                 }
                 return false;
             };
 
-            bool check_x = check_axis(dx);
-            bool check_y = check_axis(dy);
-            bool check_z = check_axis(dz);
-
-            if (!check_x) {
+            if (!check_axis(dx)) {
                 throw std::invalid_argument(
-                    "The x axis bounding box is not a pow of 2 with lenght >= morton_max"
+                    "The x axis bounding box is not a pow of 2 with lenght >= morton_max\n"+
+                    std::to_string(dx) + " " + std::to_string(dx % Morton::val_count)
                 );
             }
 
-            if (!check_y) {
+            if (!check_axis(dy)) {
                 throw std::invalid_argument(
-                    "The y axis bounding box is not a pow of 2 with lenght >= morton_max"
+                    "The y axis bounding box is not a pow of 2 with lenght >= morton_max\n"+
+                    std::to_string(dy) + " " + std::to_string(dy % Morton::val_count)
                 );
             }
 
-            if (!check_z) {
+            if (!check_axis(dz)) {
                 throw std::invalid_argument(
-                    "The z axis bounding box is not a pow of 2 with lenght >= morton_max"
+                    "The z axis bounding box is not a pow of 2 with lenght >= morton_max\n"+
+                    std::to_string(dz) + " " + std::to_string(dz % Morton::val_count)
                 );
             }
 

@@ -9,10 +9,11 @@
 #pragma once
 
 #include "aliases.hpp"
-#include "shammath/sycl_utils/vectorProperties.hpp"
+#include "shamutils/sycl_utils/vectorProperties.hpp"
 #include "shamrock/math/CoordRange.hpp"
 #include "shamrock/patch/Patch.hpp"
 #include "shamrock/patch/PatchCoord.hpp"
+#include "shamsys/legacy/log.hpp"
 #include <stdexcept>
 #include <type_traits>
 #include <types.hpp>
@@ -53,6 +54,15 @@ namespace shamrock::patch {
 
         inline CoordRange<Tcoord> to_obj_coord(Patch p){
             return to_obj_coord(p.get_patch_range());
+        }
+
+        inline void print_transform(){
+            if(mode == multiply){
+                logger::debug_ln("PathCoordTransform","multiply:",fact ,obj_coord_min,patch_coord_min);
+            }else{
+                logger::debug_ln("PathCoordTransform","divide  :",fact ,obj_coord_min,patch_coord_min);
+            }
+            
         }
     };
 

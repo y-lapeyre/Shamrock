@@ -12,7 +12,7 @@ set(HeadersTest
 )
 
 if("${BUILD_SIM}")
-target_sources(shamrock_lib
+target_sources(shamrock
     PRIVATE
         ${Sources}
     PUBLIC
@@ -23,8 +23,8 @@ endif()
 if("${BUILD_TEST}")
 target_sources(shamrock_test
     PRIVATE
-        ${SourcesTest}
+    ${Sources} ${SourcesTest}
     PUBLIC
-        ${HeadersTest}
+    ${Headers}${HeadersTest}
     )
 endif()

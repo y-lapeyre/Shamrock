@@ -9,8 +9,8 @@
 #pragma once
 
 #include "shamalgs/memory/memory.hpp"
-#include "shammath/intervals.hpp"
-#include "shammath/sycl_utilities.hpp"
+#include "shamutils/intervals.hpp"
+#include "shamutils/sycl_utilities.hpp"
 #include "shamrock/amr/AMRGrid.hpp"
 #include "shamrock/legacy/utils/time_utils.hpp"
 #include "shamrock/patch/PatchData.hpp"
@@ -68,6 +68,8 @@ class AMRTestModel {
         logger::raw_ln("-----");
     }
 
+    static constexpr u64 fact_p_len = 2;
+
     /**
      * @brief does the refinment step of the AMR
      *
@@ -82,8 +84,8 @@ class AMRTestModel {
 
                 using namespace shammath;
 
-                bool should_refine = is_in_half_open(low_bound, u64_3{2, 2, 2}, u64_3{8, 8, 8}) &&
-                                     is_in_half_open(high_bound, u64_3{2, 2, 2}, u64_3{8, 8, 8});
+                bool should_refine = is_in_half_open(low_bound, fact_p_len*u64_3{1, 1, 1}, fact_p_len*u64_3{4, 4, 4}) &&
+                                     is_in_half_open(high_bound, fact_p_len*u64_3{1, 1, 1}, fact_p_len*u64_3{4, 4, 4});
 
                 should_refine = should_refine && (high_bound.x() - low_bound.x() > 1);
                 should_refine = should_refine && (high_bound.y() - low_bound.y() > 1);
@@ -103,7 +105,7 @@ class AMRTestModel {
                RefineCellAccessor acc) {
                 u32 val = acc.field[cur_idx];
 
-#pragma unroll
+                #pragma unroll
                 for (u32 pid = 0; pid < 8; pid++) {
                     acc.field[new_cells[pid]] = val;
                 }
@@ -122,8 +124,8 @@ class AMRTestModel {
 
                 using namespace shammath;
 
-                bool should_merge = is_in_half_open(low_bound, u64_3{2, 2, 2}, u64_3{8, 8, 8}) &&
-                                    is_in_half_open(high_bound, u64_3{2, 2, 2}, u64_3{8, 8, 8});
+                bool should_merge = is_in_half_open(low_bound, fact_p_len*u64_3{1, 1, 1}, fact_p_len*u64_3{4, 4, 4}) &&
+                                    is_in_half_open(high_bound, fact_p_len*u64_3{1, 1, 1}, fact_p_len*u64_3{4, 4, 4});
 
                 return should_merge;
             }
@@ -171,7 +173,7 @@ class AMRTestModel {
                 grid.sched.get_sim_box().partch_coord_to_domain<u64_3>(cur_p),
                 pdat.get_field<u64_3>(0).get_buf(),
                 pdat.get_obj_cnt(),
-                4);
+                0);
 
             tree.compute_cell_ibounding_box(q);
 

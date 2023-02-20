@@ -68,15 +68,29 @@ namespace shamrock::math::int_manip {
         return ((y > morton_lenght - 1 || y < 0) ? -1 : int(shamrock::math::int_manip::sycl_clz(m[x] ^ m[y])));
     }
 
+    template<class T>
+    constexpr T get_next_pow2_val (T val) noexcept;
 
-
-
+    template<>
     inline constexpr u32 get_next_pow2_val (u32 val) noexcept {
 
         u32 clz_val = sycl_clz(val);
 
         u32 val_rounded_pow = 1U << (32-clz_val);
         if(val == 1U << (32-clz_val-1)){
+            val_rounded_pow = val;
+        }
+
+        return val_rounded_pow; 
+    };
+
+    template<>
+    inline constexpr u64 get_next_pow2_val (u64 val) noexcept {
+
+        u64 clz_val = sycl_clz(val);
+
+        u64 val_rounded_pow = 1U << (64-clz_val);
+        if(val == 1U << (64-clz_val-1)){
             val_rounded_pow = val;
         }
 

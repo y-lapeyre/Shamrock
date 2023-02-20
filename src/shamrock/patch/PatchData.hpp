@@ -13,8 +13,8 @@
 #include "aliases.hpp"
 
 #include "Patch.hpp"
-#include "shammath/intervals.hpp"
-#include "shammath/sycl_utilities.hpp"
+#include "shamutils/intervals.hpp"
+#include "shamutils/sycl_utilities.hpp"
 #include <variant>
 
 namespace shamrock::patch {

@@ -9,7 +9,7 @@
 #pragma once
 
 #include "aliases.hpp"
-#include "shammath/intervals.hpp"
+#include "shamutils/intervals.hpp"
 
 #include <limits>
 
