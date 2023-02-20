@@ -6,6 +6,7 @@ add_subdirectory(shammodels)
 add_subdirectory(shamsys)
 add_subdirectory(shamtest)
 add_subdirectory(shamalgs)
+add_subdirectory(shammath)
 
 
 #add_subdirectory(runscript)

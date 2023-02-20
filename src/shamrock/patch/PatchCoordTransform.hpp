@@ -42,10 +42,10 @@ namespace shamrock::patch {
 
         inline PatchCoordTransform(shammath::CoordRange<u64_3> patch_range, shammath::CoordRange<Tcoord> obj_range)
             : PatchCoordTransform(
-                  patch_range.low_bound,
-                  patch_range.high_bound,
-                  obj_range.low_bound,
-                  obj_range.high_bound
+                  patch_range.lower,
+                  patch_range.upper,
+                  obj_range.lower,
+                  obj_range.upper
               ) {}
 
         
@@ -74,8 +74,8 @@ namespace shamrock::patch {
     template<class Tcoord>
     inline shammath::CoordRange<Tcoord> PatchCoordTransform<Tcoord>::to_obj_coord(shammath::CoordRange<u64_3> p) {
 
-        u64_3 pmin = p.low_bound;
-        u64_3 pmax = p.high_bound;
+        u64_3 pmin = p.lower;
+        u64_3 pmax = p.upper;
 
         if (mode == multiply) {
             return {
@@ -100,12 +100,12 @@ namespace shamrock::patch {
 
         if (mode == multiply) {
             return {
-                ((c.low_bound - obj_coord_min) / fact).template convert<u64>() + patch_coord_min,
-                ((c.high_bound - obj_coord_min) / fact).template convert<u64>() + patch_coord_min};
+                ((c.min - obj_coord_min) / fact).template convert<u64>() + patch_coord_min,
+                ((c.upper - obj_coord_min) / fact).template convert<u64>() + patch_coord_min};
         } else {
             return {
-                ((c.low_bound - obj_coord_min) * fact).template convert<u64>() + patch_coord_min,
-                ((c.high_bound - obj_coord_min) * fact).template convert<u64>() + patch_coord_min};
+                ((c.min - obj_coord_min) * fact).template convert<u64>() + patch_coord_min,
+                ((c.upper - obj_coord_min) * fact).template convert<u64>() + patch_coord_min};
         }
     }
 

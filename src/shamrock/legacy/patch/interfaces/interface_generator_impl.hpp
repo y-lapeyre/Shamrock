@@ -32,7 +32,7 @@ namespace impl {
                                                                             std::vector<f32_3> boxs_max){
 
         if (boxs_min.size() > u8_max - 1) {
-            throw shamrock_exc("this algo is not build to handle more than 2^8 - 2 boxes as input");
+            throw excep_with_pos(std::invalid_argument,"this algo is not build to handle more than 2^8 - 2 boxes as input");
         }
 
         using namespace shamrock::patch;
@@ -96,7 +96,7 @@ namespace impl {
                                                                             std::vector<f64_3> boxs_max){
 
         if (boxs_min.size() > u8_max - 1) {
-            throw shamrock_exc("this algo is not build to handle more than 2^8 - 2 boxes as input");
+            throw excep_with_pos(std::invalid_argument,"this algo is not build to handle more than 2^8 - 2 boxes as input");
         }
 
         using namespace shamrock::patch;

@@ -291,21 +291,21 @@ namespace shamrock::sfc {
             };
 
             if (!check_axis(dx)) {
-                throw std::invalid_argument(
+                throw excep_with_pos(std::invalid_argument,
                     "The x axis bounding box is not a pow of 2 with lenght >= morton_max\n"+
                     std::to_string(dx) + " " + std::to_string(dx % Morton::val_count)
                 );
             }
 
             if (!check_axis(dy)) {
-                throw std::invalid_argument(
+                throw excep_with_pos(std::invalid_argument,
                     "The y axis bounding box is not a pow of 2 with lenght >= morton_max\n"+
                     std::to_string(dy) + " " + std::to_string(dy % Morton::val_count)
                 );
             }
 
             if (!check_axis(dz)) {
-                throw std::invalid_argument(
+                throw excep_with_pos(std::invalid_argument,
                     "The z axis bounding box is not a pow of 2 with lenght >= morton_max\n"+
                     std::to_string(dz) + " " + std::to_string(dz % Morton::val_count)
                 );

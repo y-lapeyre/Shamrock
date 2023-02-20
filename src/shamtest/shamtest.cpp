@@ -175,7 +175,7 @@ namespace shamtest::details {
 
         if(node_count != -1){
             if(node_count != world_size){
-                throw shamrock_exc("trying to run a test with wrong number of nodes");
+                throw excep_with_pos(std::runtime_error,"trying to run a test with wrong number of nodes");
             }
         }
 

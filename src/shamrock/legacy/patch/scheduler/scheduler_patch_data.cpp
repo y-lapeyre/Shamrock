@@ -228,28 +228,28 @@ void SchedulerPatchData::merge_patchdata(u64 new_key, u64 old_key0, u64 old_key1
     auto search7 = owned_data.find(old_key7);
 
     if(search0 == owned_data.end()){
-        throw shamrock_exc(format("patchdata for key=%d was not owned by the node",old_key0));
+        throw excep_with_pos(std::runtime_error,format("patchdata for key=%d was not owned by the node",old_key0));
     }
     if(search1 == owned_data.end()){
-        throw shamrock_exc(format("patchdata for key=%d was not owned by the node",old_key1));
+        throw excep_with_pos(std::runtime_error,format("patchdata for key=%d was not owned by the node",old_key1));
     }
     if(search2 == owned_data.end()){
-        throw shamrock_exc(format("patchdata for key=%d was not owned by the node",old_key2));
+        throw excep_with_pos(std::runtime_error,format("patchdata for key=%d was not owned by the node",old_key2));
     }
     if(search3 == owned_data.end()){
-        throw shamrock_exc(format("patchdata for key=%d was not owned by the node",old_key3));
+        throw excep_with_pos(std::runtime_error,format("patchdata for key=%d was not owned by the node",old_key3));
     }
     if(search4 == owned_data.end()){
-        throw shamrock_exc(format("patchdata for key=%d was not owned by the node",old_key4));
+        throw excep_with_pos(std::runtime_error,format("patchdata for key=%d was not owned by the node",old_key4));
     }
     if(search5 == owned_data.end()){
-        throw shamrock_exc(format("patchdata for key=%d was not owned by the node",old_key5));
+        throw excep_with_pos(std::runtime_error,format("patchdata for key=%d was not owned by the node",old_key5));
     }
     if(search6 == owned_data.end()){
-        throw shamrock_exc(format("patchdata for key=%d was not owned by the node",old_key6));
+        throw excep_with_pos(std::runtime_error,format("patchdata for key=%d was not owned by the node",old_key6));
     }
     if(search7 == owned_data.end()){
-        throw shamrock_exc(format("patchdata for key=%d was not owned by the node",old_key7));
+        throw excep_with_pos(std::runtime_error,format("patchdata for key=%d was not owned by the node",old_key7));
     }
 
 

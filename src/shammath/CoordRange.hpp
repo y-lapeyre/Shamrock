@@ -16,18 +16,18 @@
 namespace shammath{
 
     template <class T> struct CoordRange {
-        T low_bound;
-        T high_bound;
+        T lower;
+        T upper;
 
-        inline T delt() const { return high_bound - low_bound; }
+        inline T delt() const { return upper - lower; }
 
         inline void expand_center(T tol){
-            T center = (low_bound + high_bound) / 2;
-            T cur_delt = high_bound - low_bound;
+            T center = (lower + upper) / 2;
+            T cur_delt = upper - lower;
             cur_delt /= 2;
             cur_delt *= tol;
-            low_bound = center - cur_delt;
-            high_bound = center + cur_delt;
+            lower = center - cur_delt;
+            upper = center + cur_delt;
         }
 
         static CoordRange max_range();
@@ -38,12 +38,12 @@ namespace shammath{
 
         CoordRange<f32_3> ret;
 
-        ret.low_bound = {
+        ret.lower = {
             std::numeric_limits<f32>::min(),
             std::numeric_limits<f32>::min(),
             std::numeric_limits<f32>::min()};
 
-        ret.high_bound = {
+        ret.upper = {
             std::numeric_limits<f32>::max(),
             std::numeric_limits<f32>::max(),
             std::numeric_limits<f32>::max()};
@@ -55,12 +55,12 @@ namespace shammath{
 
         CoordRange<f64_3> ret;
 
-        ret.low_bound = {
+        ret.lower = {
             std::numeric_limits<f64>::min(),
             std::numeric_limits<f64>::min(),
             std::numeric_limits<f64>::min()};
 
-        ret.high_bound = {
+        ret.upper = {
             std::numeric_limits<f64>::max(),
             std::numeric_limits<f64>::max(),
             std::numeric_limits<f64>::max()};
@@ -73,12 +73,12 @@ namespace shammath{
 
         CoordRange<u32_3> ret;
 
-        ret.low_bound = {
+        ret.lower = {
             std::numeric_limits<u32>::min(),
             std::numeric_limits<u32>::min(),
             std::numeric_limits<u32>::min()};
 
-        ret.high_bound = {
+        ret.upper = {
             std::numeric_limits<u32>::max(),
             std::numeric_limits<u32>::max(),
             std::numeric_limits<u32>::max()};
@@ -90,12 +90,12 @@ namespace shammath{
 
         CoordRange<u64_3> ret;
 
-        ret.low_bound = {
+        ret.lower = {
             std::numeric_limits<u64>::min(),
             std::numeric_limits<u64>::min(),
             std::numeric_limits<u64>::min()};
 
-        ret.high_bound = {
+        ret.upper = {
             std::numeric_limits<u64>::max(),
             std::numeric_limits<u64>::max(),
             std::numeric_limits<u64>::max()};

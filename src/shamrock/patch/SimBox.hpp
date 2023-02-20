@@ -58,7 +58,7 @@ namespace shamrock::patch {
         void set_patch_coord_bounding_box(shammath::CoordRange<u64_3> new_patch_coord_box){
             patch_coord_bounding_box = new_patch_coord_box;
             logger::debug_ln("SimBox", "changed patch coord bounds :", 
-            patch_coord_bounding_box.low_bound, patch_coord_bounding_box.high_bound);
+            patch_coord_bounding_box.lower, patch_coord_bounding_box.upper);
         }
 
         /**
@@ -168,7 +168,7 @@ namespace shamrock::patch {
             );
         }
 
-        return {pval->low_bound, pval->high_bound};
+        return {pval->lower, pval->upper};
     }
 
     template <class T> inline void SimulationBoxInfo::set_bounding_box(shammath::CoordRange<T> new_box) {
