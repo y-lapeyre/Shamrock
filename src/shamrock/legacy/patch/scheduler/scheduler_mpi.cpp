@@ -80,14 +80,15 @@ void PatchScheduler::make_patch_base_grid(std::array<u32,dim> patch_count){
         }
     }
 
-    shammath::CoordRange<u64_3> bound {
-        {0,0,0},
-        {sz_root_patch*patch_count[0]-1,
-        sz_root_patch*patch_count[1]-1,
-        sz_root_patch*patch_count[2]-1}
-    };
+    shamrock::patch::PatchCoord bounds;
+    bounds.x_min = 0;
+    bounds.y_min = 0;
+    bounds.z_min = 0;
+    bounds.x_max = sz_root_patch*patch_count[0]-1;
+    bounds.y_max = sz_root_patch*patch_count[1]-1;
+    bounds.z_max = sz_root_patch*patch_count[2]-1;
 
-    get_sim_box().set_patch_coord_bounding_box(bound);
+    get_sim_box().set_patch_coord_bounding_box(bounds);
 
     add_root_patches(coords);
 }
@@ -211,8 +212,8 @@ PatchScheduler::PatchScheduler(
     u64 crit_merge) : 
         pdl(pdl), 
         patch_data(pdl,{
-            u64_3{0, 0, 0},
-            u64_3{max_axis_patch_coord, max_axis_patch_coord, max_axis_patch_coord}}
+            0, 0, 0,
+            max_axis_patch_coord, max_axis_patch_coord, max_axis_patch_coord}
             )
             {
 

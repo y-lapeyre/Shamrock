@@ -35,6 +35,7 @@ namespace shamrock::patch {
                 (((z_max - z_min) + 1) / 2) - 1 + z_min};
         }
 
+
         inline static auto
         get_split(u64 x_min, u64 y_min, u64 z_min, u64 x_max, u64 y_max, u64 z_max)
             -> std::array<PatchCoord, splts_count> {
@@ -128,7 +129,7 @@ namespace shamrock::patch {
             );
         }
 
-        shammath::CoordRange<u64_3> get_patch_range(){
+        shammath::CoordRange<u64_3> get_patch_range() const {
             return {
                 u64_3{x_min,y_min,z_min},
                 u64_3{x_max,y_max,z_max} + 1 

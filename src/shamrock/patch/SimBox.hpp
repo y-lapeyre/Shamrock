@@ -46,19 +46,22 @@ namespace shamrock::patch {
         PatchDataLayout &pdl;
 
         var_t bounding_box;
-        shammath::CoordRange<u64_3> patch_coord_bounding_box;
+        PatchCoord patch_coord_bounding_box;
 
         public:
-        inline SimulationBoxInfo(PatchDataLayout &pdl, shammath::CoordRange<u64_3> patch_coord_bounding_box)
+        inline SimulationBoxInfo(PatchDataLayout &pdl, PatchCoord patch_coord_bounding_box)
             : pdl(pdl), patch_coord_bounding_box(std::move(patch_coord_bounding_box)) {
 
             reset_box_size();
         }
 
-        void set_patch_coord_bounding_box(shammath::CoordRange<u64_3> new_patch_coord_box){
+        void set_patch_coord_bounding_box(PatchCoord new_patch_coord_box){
             patch_coord_bounding_box = new_patch_coord_box;
             logger::debug_ln("SimBox", "changed patch coord bounds :", 
-            patch_coord_bounding_box.lower, patch_coord_bounding_box.upper);
+            std::pair{
+                u64_3{new_patch_coord_box.x_min,new_patch_coord_box.y_min,new_patch_coord_box.z_min},
+                u64_3{new_patch_coord_box.x_max,new_patch_coord_box.y_max,new_patch_coord_box.z_max}
+            });
         }
 
         /**
@@ -189,7 +192,7 @@ namespace shamrock::patch {
 
         auto [bmin, bmax] = get_bounding_box<T>();
 
-        PatchCoordTransform<T> transform{ patch_coord_bounding_box , shammath::CoordRange<T>{bmin,bmax} };
+        PatchCoordTransform<T> transform{ patch_coord_bounding_box.get_patch_range(), shammath::CoordRange<T>{bmin,bmax} };
 
         transform.print_transform();
 

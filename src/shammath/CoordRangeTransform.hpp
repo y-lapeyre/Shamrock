@@ -37,7 +37,7 @@ namespace shammath {
             "input and output dimensions should be the same"
         );
 
-        CoordRangeTransform(CoordRange<Tsource> source_range, CoordRange<Tdest> dest_range) {}
+        CoordRangeTransform(CoordRange<Tsource> source_range, CoordRange<Tdest> dest_range);
 
         CoordRange<Tdest> transform(CoordRange<Tsource> rnge);
         CoordRange<Tsource> reverse_transform(CoordRange<Tdest> rnge);

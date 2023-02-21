@@ -68,19 +68,37 @@ namespace shammath {
 
         if (!cmp_x) {
             throw excep_with_pos(
-                std::invalid_argument, "the divisor does not divide the value on component x"
+                std::invalid_argument,
+                "the divisor does not divide the value on component x\n"
+                "  val     = (" +
+                    std::to_string(val.x()) + ", " + std::to_string(val.y()) + ", " +
+                    std::to_string(val.z()) + ")\n" + "  divisor = (" +
+                    std::to_string(divisor.x()) + ", " + std::to_string(divisor.y()) + ", " +
+                    std::to_string(divisor.z()) + ")\n"
             );
         }
 
         if (!cmp_y) {
             throw excep_with_pos(
-                std::invalid_argument, "the divisor does not divide the value on component y"
+                std::invalid_argument,
+                "the divisor does not divide the value on component y\n"
+                "  val     = (" +
+                    std::to_string(val.x()) + ", " + std::to_string(val.y()) + ", " +
+                    std::to_string(val.z()) + ")\n" + "  divisor = (" +
+                    std::to_string(divisor.x()) + ", " + std::to_string(divisor.y()) + ", " +
+                    std::to_string(divisor.z()) + ")\n"
             );
         }
 
         if (!cmp_z) {
             throw excep_with_pos(
-                std::invalid_argument, "the divisor does not divide the value on component z"
+                std::invalid_argument,
+                "the divisor does not divide the value on component z\n"
+                "  val     = (" +
+                    std::to_string(val.x()) + ", " + std::to_string(val.y()) + ", " +
+                    std::to_string(val.z()) + ")\n" + "  divisor = (" +
+                    std::to_string(divisor.x()) + ", " + std::to_string(divisor.y()) + ", " +
+                    std::to_string(divisor.z()) + ")\n"
             );
         }
     }
@@ -115,6 +133,8 @@ namespace shammath {
         } else {
             throw excep_with_pos(std::invalid_argument, "the range comparaison are not the same");
         }
+
+        print_transform();
     }
 
     template<>
