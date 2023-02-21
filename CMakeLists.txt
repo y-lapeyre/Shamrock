@@ -81,7 +81,7 @@ add_custom_command(
     COMMAND python3 ${CMAKE_CURRENT_SOURCE_DIR}/buildbot/make_version_file.py ${CMAKE_CURRENT_SOURCE_DIR}/src/version.cpp "${CMAKE_CXX_FLAGS}"
   )
 
-add_library(shamrock_lib src/version.cpp)
+add_library(shamrock_lib OBJECT src/version.cpp)
 target_include_directories(shamrock_lib AFTER PUBLIC "${CMAKE_SOURCE_DIR}/src")
 
 if("${BUILD_PYLIB}")
