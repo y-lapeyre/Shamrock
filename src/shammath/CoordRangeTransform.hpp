@@ -21,6 +21,11 @@ namespace shammath {
         using component_source_t = typename SourceProp::component_type;
         using component_dest_t   = typename DestProp::component_type;
 
+        static constexpr bool source_is_int = SourceProp::is_uint_based;
+
+        static constexpr bool dest_is_int = SourceProp::is_uint_based;
+
+
         enum TransformFactMode { multiply, divide };
 
         TransformFactMode mode;
@@ -42,6 +47,9 @@ namespace shammath {
         CoordRange<Tdest> transform(CoordRange<Tsource> rnge);
         CoordRange<Tsource> reverse_transform(CoordRange<Tdest> rnge);
 
+        Tdest transform(Tsource coord);
+        Tsource reverse_transform(Tdest rnge);
+
         void print_transform();
     };
 
@@ -53,8 +61,8 @@ namespace shammath {
     inline CoordRange<Tdest>
     CoordRangeTransform<Tsource, Tdest>::transform(CoordRange<Tsource> rnge) {
 
-        u64_3 pmin = rnge.lower;
-        u64_3 pmax = rnge.upper;
+        Tsource pmin = rnge.lower;
+        Tsource pmax = rnge.upper;
 
         if (mode == multiply) {
             return {
@@ -75,8 +83,8 @@ namespace shammath {
     inline CoordRange<Tsource>
     CoordRangeTransform<Tsource, Tdest>::reverse_transform(CoordRange<Tdest> rnge) {
 
-        u64_3 pmin;
-        u64_3 pmax;
+        Tsource pmin;
+        Tsource pmax;
 
         if (mode == multiply) {
             return {
@@ -90,6 +98,37 @@ namespace shammath {
                     source_coord_min,
                 ((rnge.upper - dest_coord_min) * fact).template convert<component_source_t>() +
                     source_coord_min};
+        }
+    }
+
+    template<class Tsource, class Tdest>
+    inline Tdest
+    CoordRangeTransform<Tsource, Tdest>::transform(Tsource coord) {
+
+
+        if (mode == multiply) {
+            return 
+                ((coord - source_coord_min).template convert<component_dest_t>()) * fact +
+                    dest_coord_min;
+        } else {
+            return 
+                ((coord - source_coord_min).template convert<component_dest_t>()) / fact +
+                    dest_coord_min;
+        }
+    }
+
+    template<class Tsource, class Tdest>
+    inline Tsource
+    CoordRangeTransform<Tsource, Tdest>::reverse_transform(Tdest coord) {
+
+        if (mode == multiply) {
+            return 
+                ((coord - dest_coord_min) / fact).template convert<component_source_t>() +
+                    source_coord_min;
+        } else {
+            return 
+                ((coord - dest_coord_min) * fact).template convert<component_source_t>() +
+                    source_coord_min;
         }
     }
 

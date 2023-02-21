@@ -64,16 +64,18 @@ namespace shamrock::sfc{
         using ipos_t  = typename Morton::int_vec_repr;
         using int_t = typename Morton::int_vec_repr_base;
 
-        inline static std::tuple<pos_t,pos_t> get_transform(pos_t bounding_box_min,pos_t bounding_box_max){
+        using CoordTransform = shammath::CoordRangeTransform< typename Morton::int_vec_repr,_pos_t>;
+
+        inline static CoordTransform get_transform(pos_t bounding_box_min,pos_t bounding_box_max){
             return MortonConverter<morton_t, pos_t, dim>::get_transform(bounding_box_min, bounding_box_max);
         }
-        inline static ipos_t to_morton_grid(pos_t pos, pos_t origin, pos_t scale){
-            return MortonConverter<morton_t, pos_t, dim>::to_morton_grid(pos, origin, scale);
+        inline static ipos_t to_morton_grid(pos_t pos, CoordTransform transform){
+            return MortonConverter<morton_t, pos_t, dim>::to_morton_grid(pos, transform);
         }
 
 
-        inline static pos_t to_real_space(ipos_t pos, pos_t origin, pos_t scale){
-            return MortonConverter<morton_t, pos_t, dim>::to_real_space(pos, origin, scale);
+        inline static pos_t to_real_space(ipos_t pos, CoordTransform transform){
+            return MortonConverter<morton_t, pos_t, dim>::to_real_space(pos, transform);
         }
 
         /**

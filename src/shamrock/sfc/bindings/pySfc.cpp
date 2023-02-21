@@ -63,7 +63,7 @@ Register_pymod(sfclibinit){
         f32_3 bmin_ {bmin[0],bmin[1],bmin[2]};
         f32_3 bmax_ {bmax[0],bmax[1],bmax[2]};
         auto tmp = MortonConverter<u32, f32_3, 3>::get_transform(bmin_, bmax_);
-        auto ret = MortonConverter<u32, f32_3, 3>::to_morton_grid(pos_, std::get<0>(tmp), std::get<1>(tmp));
+        auto ret = MortonConverter<u32, f32_3, 3>::to_morton_grid(pos_, tmp);
         return {u16{ret.x()},u16{ret.y()},u16{ret.z()}};
     });
 
@@ -72,7 +72,7 @@ Register_pymod(sfclibinit){
         f64_3 bmin_ {bmin[0],bmin[1],bmin[2]};
         f64_3 bmax_ {bmax[0],bmax[1],bmax[2]};
         auto tmp = MortonConverter<u32, f64_3, 3>::get_transform(bmin_, bmax_);
-        auto ret = MortonConverter<u32, f64_3, 3>::to_morton_grid(pos_, std::get<0>(tmp), std::get<1>(tmp));
+        auto ret = MortonConverter<u32, f64_3, 3>::to_morton_grid(pos_, tmp);
         return {u16{ret.x()},u16{ret.y()},u16{ret.z()}};
     });
 
@@ -81,7 +81,7 @@ Register_pymod(sfclibinit){
         f32_3 bmin_ {bmin[0],bmin[1],bmin[2]};
         f32_3 bmax_ {bmax[0],bmax[1],bmax[2]};
         auto tmp = MortonConverter<u64, f32_3, 3>::get_transform(bmin_, bmax_);
-        auto ret = MortonConverter<u64, f32_3, 3>::to_morton_grid(pos_, std::get<0>(tmp), std::get<1>(tmp));
+        auto ret = MortonConverter<u64, f32_3, 3>::to_morton_grid(pos_, tmp);
         return {u32{ret.x()},u32{ret.y()},u32{ret.z()}};
     });
 
@@ -90,7 +90,7 @@ Register_pymod(sfclibinit){
         f64_3 bmin_ {bmin[0],bmin[1],bmin[2]};
         f64_3 bmax_ {bmax[0],bmax[1],bmax[2]};
         auto tmp = MortonConverter<u64, f64_3, 3>::get_transform(bmin_, bmax_);
-        auto ret = MortonConverter<u64, f64_3, 3>::to_morton_grid(pos_, std::get<0>(tmp), std::get<1>(tmp));
+        auto ret = MortonConverter<u64, f64_3, 3>::to_morton_grid(pos_, tmp);
         return {u32{ret.x()},u32{ret.y()},u32{ret.z()}};
     });
 
