@@ -13,12 +13,15 @@
 
 
 #include "aliases.hpp"
+#include <access/access.hpp>
+#include <properties/accessor_properties.hpp>
 #include <tuple>
 #include <vector>
 
 
 
 #include "RadixTreeMortonBuilder.hpp"
+#include "shamalgs/memory/memory.hpp"
 #include "shamrock/sfc/MortonKernels.hpp"
 
 
@@ -28,7 +31,7 @@ RadixTree<u_morton, vec3, dim>::RadixTree(
     sycl::queue &queue, std::tuple<vec3, vec3> treebox, const std::unique_ptr<sycl::buffer<vec3>> &pos_buf, u32 cnt_obj, u32 reduc_level
 ) {
     if (cnt_obj > i32_max - 1) {
-        throw shamrock_exc("number of element in patch above i32_max-1");
+        throw excep_with_pos(std::runtime_error,"number of element in patch above i32_max-1");
     }
 
     obj_cnt = cnt_obj;
@@ -114,7 +117,7 @@ RadixTree<u_morton, vec3, dim>::RadixTree(
         }
 
     } else {
-        throw shamrock_exc("empty patch should be skipped");
+        throw excep_with_pos(std::runtime_error,"empty patch should be skipped");
     }
 }
 
@@ -143,8 +146,9 @@ template <class u_morton, class vec3, u32 dim> void RadixTree<u_morton, vec3, di
         buf_pos_max_cell = std::make_unique<sycl::buffer<ipos_t>>(tree_internal_count + tree_leaf_count);
 
         {
-            auto pos_min_cell = buf_pos_min_cell->template get_access<sycl::access::mode::discard_write>();
-            auto pos_max_cell = buf_pos_max_cell->template get_access<sycl::access::mode::discard_write>();
+
+            sycl::host_accessor pos_min_cell {*buf_pos_min_cell, sycl::write_only, sycl::no_init};
+            sycl::host_accessor pos_max_cell {*buf_pos_max_cell, sycl::write_only, sycl::no_init};
 
             pos_min_cell[0] = {0};
             pos_max_cell[0] = {Morton::max_val};
@@ -156,6 +160,7 @@ template <class u_morton, class vec3, u32 dim> void RadixTree<u_morton, vec3, di
             pos_max_cell[2] = {0};
         }
     }
+
 
 }
 
@@ -172,6 +177,7 @@ template <class morton_t, class pos_t, u32 dim> void RadixTree<morton_t, pos_t, 
         buf_pos_max_cell, buf_pos_min_cell_flt, buf_pos_max_cell_flt);
 
     pos_t_range_built = true;
+
 }
 
 

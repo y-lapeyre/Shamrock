@@ -6,7 +6,7 @@
 //
 // -------------------------------------------------------//
 
-
+#pragma once
 
 /**
  * @file aliases.hpp
@@ -21,10 +21,9 @@
 //%Impl status : Good
 
 
-#pragma once
 
 
-#include <string.h>
+#include <cstring>
 
 //#include <type_traits>
 //#include <cstdint>
@@ -39,12 +38,22 @@
 
 #include <sycl/sycl.hpp>
 
+inline std::string __file_to_loc(const char* filename){
+    return std::string(std::strstr(filename, "/src/") ? std::strstr(filename, "/src/")+1  : filename);
+}
 
-#define __FILENAME__ std::string(strstr(__FILE__, "/src/") ? strstr(__FILE__, "/src/")+1  : __FILE__)
-#define __LOC_PREFIX__  __FILENAME__ +":" + std::to_string(__LINE__)
+inline std::string __loc_prefix(const char* filename, int line){
+    return __file_to_loc(filename)+":" + std::to_string(line);
+}
+
+#define __FILENAME__ __file_to_loc(__FILE__)
+#define __LOC_PREFIX__  __loc_prefix(__FILE__,__LINE__)
+
+#define __LOC_POSTFIX__  ("("+__LOC_PREFIX__+")")
 //#define throw_with_pos(...) throw std::runtime_error( __VA_ARGS__ " ("+ __FILENAME__ +":" + std::to_string(__LINE__) +")");
 
-#define shamrock_exc(...) std::runtime_error(__LOC_PREFIX__ + " " + std::string(__VA_ARGS__))
+
+#define excep_with_pos(a, ...) a ((std::string(__VA_ARGS__) + "\n-------------------\n - at:\n    "+__LOC_PREFIX__ +"\n - call:\n    "+std::string(__PRETTY_FUNCTION__)+"\n-------------------").c_str())
 
 //#define PTR_FREE(...)      {if(__VA_ARGS__ != NULL){ delete   __VA_ARGS__; __VA_ARGS__ = NULL; }else{ throw_with_pos("trying to free \"" #__VA_ARGS__ "\" but it was already free'd");}}
 //#define PTR_FREE_ARR(...)  {if(__VA_ARGS__ != NULL){ delete[] __VA_ARGS__; __VA_ARGS__ = NULL; }else{ throw_with_pos("trying to free array \"" #__VA_ARGS__ "\" but it was already free'd");}}
@@ -53,7 +62,7 @@ template <bool B, class T = void>
 using enable_if_t = typename std::enable_if<B, T>;
 
 
-#ifdef SYCL_COMP_HIPSYCL
+#ifdef SYCL_COMP_OPENSYCL
 typedef sycl::detail::s_long   i64;
 typedef sycl::detail::s_int    i32;
 typedef sycl::detail::s_short  i16;

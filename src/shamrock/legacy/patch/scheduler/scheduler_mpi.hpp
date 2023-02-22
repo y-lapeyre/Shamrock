@@ -6,6 +6,8 @@
 //
 // -------------------------------------------------------//
 
+#pragma once
+
 /**
  * @file scheduler_mpi.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
@@ -17,7 +19,6 @@
  * 
  */
 
-#pragma once
 
 #include <fstream>
 #include <memory>
@@ -34,13 +35,25 @@
 #include "shamrock/legacy/patch/base/patchtree.hpp"
 #include "scheduler_patch_list.hpp"
 #include "scheduler_patch_data.hpp"
+#include "shamrock/scheduler/HilbertLoadBalance.hpp"
 #include "shamsys/legacy/sycl_handler.hpp"
+
+#include "shamrock/math/integerManip.hpp"
 
 /**
  * @brief The MPI scheduler
  * 
  */
-class PatchScheduler{public:
+class PatchScheduler{
+    
+    using LoadBalancer = shamrock::scheduler::HilbertLoadBalance<u64>;
+    
+    public:
+
+    static constexpr u64 max_axis_patch_coord = LoadBalancer::max_box_sz;
+    static constexpr u64 max_axis_patch_coord_lenght = LoadBalancer::max_box_sz+1;
+
+    using PatchTree = shamrock::scheduler::PatchTree;
 
     shamrock::patch::PatchDataLayout & pdl;
 
@@ -102,8 +115,57 @@ class PatchScheduler{public:
 
     bool should_resize_box(bool node_in);
 
+
+    /**
+     * @brief modify the bounding box of the patch domain
+     * 
+     * @tparam vectype 
+     * @param bmin 
+     * @param bmax 
+     */
     template<class vectype>
-    void set_box_volume(std::tuple<vectype,vectype> box);
+    void set_coord_domain_bound(vectype bmin, vectype bmax){
+
+        if(!pdl.check_main_field_type<vectype>()){
+            std::invalid_argument(
+                std::string("the main field is not of the correct type to call this function\n")+
+                "fct called : " + __PRETTY_FUNCTION__ +
+                "current patch data layout : "+
+                pdl.get_description_str()
+            );
+        }
+
+        patch_data.sim_box.set_bounding_box<vectype>({bmin,bmax});
+
+        logger::debug_ln("PatchScheduler", "box resized to :",
+            bmin,bmax
+        );
+
+    }
+
+    /**
+     * @brief push data in the scheduler
+     * The content of pdat as to be the same for each node
+     * 
+     * @param pdat the data to push
+     */
+    void allpush_data(shamrock::patch::PatchData & pdat);
+
+    template<u32 dim>
+    void make_patch_base_grid(std::array<u32,dim> patch_count);
+
+    /**
+     * @brief modify the bounding box of the patch domain
+     * 
+     * @tparam vectype 
+     * @param box 
+     */
+    template<class vectype>
+    void set_coord_domain_bound(std::tuple<vectype, vectype> box){
+        auto [a,b] = box;
+        set_coord_domain_bound(a,b);
+    }
+    
 
     [[deprecated]]
     void dump_local_patches(std::string filename);
@@ -120,15 +182,16 @@ class PatchScheduler{public:
      * @param pdat 
      */
     //[[deprecated]]
-    inline void add_patch(shamrock::patch::Patch & p, shamrock::patch::PatchData & pdat){
-        p.id_patch = patch_list._next_patch_id;
-        patch_list._next_patch_id ++;
-
-        patch_list.global.push_back(p);
-
-        patch_data.owned_data.insert({p.id_patch , pdat});
-
-    }
+    //inline u64 add_patch(shamrock::patch::Patch p, shamrock::patch::PatchData && pdat){
+    //    p.id_patch = patch_list._next_patch_id;
+    //    patch_list._next_patch_id ++;
+//
+    //    patch_list.global.push_back(p);
+//
+    //    patch_data.owned_data.insert({p.id_patch , pdat});
+//
+    //    return p.id_patch;
+    //}
 
     void add_root_patch();
 
@@ -137,43 +200,35 @@ class PatchScheduler{public:
 
 
 
-    //template<class Function>
-    //[[deprecated]]
-    //inline void for_each_patch_buf(Function && fct){
-//
-    //    
-//
-    //    for (auto &[id, pdat] : patch_data.owned_data) {
-//
-    //        if (! pdat.is_empty()) {
-//
-//
-    //            Patch &cur_p = patch_list.global[patch_list.id_patch_to_global_idx[id]];
-//
-    //            PatchDataBuffer pdatbuf = attach_to_patchData(pdat);
-//
-    //            //TODO should feed the sycl queue to the lambda
-//
-    //            fct(id,cur_p,pdatbuf);
-    //        }
-    //    }
-//
-    //}
-
+    /**
+     * @brief for each macro for patchadata
+     * exemple usage
+     * ~~~~~{.cpp}
+     *
+     * sched.for_each_patch_data(
+     *     [&](u64 id_patch, Patch cur_p, PatchData &pdat) {
+     *          ....
+     *     }
+     * );
+     *
+     * ~~~~~
+     *
+     * @tparam Function The functor that will be used
+     * @param fct 
+     */
     template<class Function>
     inline void for_each_patch_data(Function && fct){
 
         for (auto &[id, pdat] : patch_data.owned_data) {
 
-            if (! pdat.is_empty()) {
 
-                shamrock::patch::Patch &cur_p = patch_list.global[patch_list.id_patch_to_global_idx[id]];
+            shamrock::patch::Patch &cur_p = patch_list.global[patch_list.id_patch_to_global_idx[id]];
 
-                if(!cur_p.is_err_mode()){
-                    fct(id,cur_p,pdat);
-                }
-
+            if(!cur_p.is_err_mode()){
+                fct(id,cur_p,pdat);
             }
+
+            
         }
 
     }
@@ -185,17 +240,14 @@ class PatchScheduler{public:
 
         for (auto &[id, pdat] : patch_data.owned_data) {
 
-            if (! pdat.is_empty()) {
+            shamrock::patch::Patch &cur_p = patch_list.global[patch_list.id_patch_to_global_idx[id]];
 
 
-                shamrock::patch::Patch &cur_p = patch_list.global[patch_list.id_patch_to_global_idx[id]];
-
-
-                //TODO should feed the sycl queue to the lambda
-                if(!cur_p.is_err_mode()){
-                    fct(id,cur_p);
-                }
+            //TODO should feed the sycl queue to the lambda
+            if(!cur_p.is_err_mode()){
+                fct(id,cur_p);
             }
+            
         }
 
     }
@@ -242,6 +294,17 @@ class PatchScheduler{public:
 
     }
 
+    /**
+     * @brief add a root patch to the scheduler
+     * 
+     * @param coords coordinates of the patch
+     * @return u64 the id of the made patch
+     */
+    std::vector<u64> add_root_patches(std::vector<shamrock::patch::PatchCoord> coords);
+
+    shamrock::patch::SimulationBoxInfo & get_sim_box(){
+        return patch_data.sim_box;
+    }
 
 
     private:

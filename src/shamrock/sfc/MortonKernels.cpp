@@ -33,7 +33,7 @@ namespace shamrock::sfc {
         logger::debug_sycl_ln("MortonKernels", "submit : ", __PRETTY_FUNCTION__);
 
         if (fill_count - morton_count == 0) {
-            std::cout << "skipping" << std::endl;
+            logger::debug_sycl_ln("MortonKernels", "sycl_fill_trailling_buffer skipping pow len 2 is ok");
             return;
         }
 
@@ -80,11 +80,9 @@ namespace shamrock::sfc {
 
         sycl::range<1> range_cnt{pos_count};
 
-        auto transf = get_transform(bounding_box_min, bounding_box_max);
-
         queue.submit([&](sycl::handler &cgh) {
-            pos_t orig  = std::get<0>(transf);
-            pos_t scale = std::get<1>(transf);
+            
+            auto transf = get_transform(bounding_box_min, bounding_box_max);
 
             sycl::accessor r{*in_positions, cgh, sycl::read_only};
             sycl::accessor m{*out_morton, cgh, sycl::write_only, sycl::no_init};
@@ -94,7 +92,7 @@ namespace shamrock::sfc {
                 [=](sycl::item<1> item) {
                     int i = (int)item.get_id(0);
 
-                    ipos_t mr = to_morton_grid(r[i], orig, scale);
+                    ipos_t mr = to_morton_grid(r[i], transf);
                     m[i]      = Morton::icoord_to_morton(mr.x(), mr.y(), mr.z());
                 }
             );
@@ -116,14 +114,13 @@ namespace shamrock::sfc {
     ) {
         sycl::range<1> range_cell{buf_len};
 
-        auto transf = get_transform(bounding_box_min, bounding_box_max);
 
 
         logger::debug_sycl_ln("MortonKernels", "submit : ", __PRETTY_FUNCTION__);
 
         auto ker_convert_cell_ranges = [&](sycl::handler &cgh) {
-            pos_t orig  = std::get<0>(transf);
-            pos_t scale = std::get<1>(transf);
+            
+            auto transf = get_transform(bounding_box_min, bounding_box_max);
 
             auto pos_min_cell = sycl::accessor{*buf_pos_min_cell, cgh, sycl::read_only};
             auto pos_max_cell = sycl::accessor{*buf_pos_max_cell, cgh, sycl::read_only};
@@ -138,8 +135,8 @@ namespace shamrock::sfc {
                 [=](sycl::item<1> item) {
                     u32 gid = (u32)item.get_id(0);
 
-                    pos_min_cell_flt[gid] = to_real_space(pos_min_cell[gid], orig, scale);
-                    pos_max_cell_flt[gid] = to_real_space(pos_max_cell[gid], orig, scale);
+                    pos_min_cell_flt[gid] = to_real_space(pos_min_cell[gid], transf);
+                    pos_max_cell_flt[gid] = to_real_space(pos_max_cell[gid], transf);
                 }
             );
         };

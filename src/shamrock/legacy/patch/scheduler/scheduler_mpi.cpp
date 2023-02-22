@@ -18,7 +18,7 @@
 #include "shamrock/legacy/patch/base/patchdata.hpp"
 #include "shamrock/legacy/patch/base/patchdata_field.hpp"
 #include "shamsys/legacy/mpi_handler.hpp"
-#include "loadbalancing_hilbert.hpp"
+#include "shamrock/scheduler/HilbertLoadBalance.hpp"
 
 #include "shamrock/patch/PatchDataLayout.hpp"
 #include "shamsys/legacy/sycl_handler.hpp"
@@ -46,40 +46,176 @@ void PatchScheduler::free_mpi_required_types(){
     //}
 }
 
-void PatchScheduler::add_root_patch(){
-    using namespace shamrock::patch;
+
+template<u32 dim>
+void PatchScheduler::make_patch_base_grid(std::array<u32,dim> patch_count){
+
+    static_assert(dim == 3, "this is not implemented for dim != 3");
+
+    u32 max_lin_patch_count = 0;
+    for(u32 i = 0 ; i < dim; i++){
+        max_lin_patch_count = sycl::max(max_lin_patch_count, patch_count[i]);
+    }
+
+    u64 coord_div_fact = shamrock::math::int_manip::get_next_pow2_val(max_lin_patch_count);
+
+    u64 sz_root_patch = PatchScheduler::max_axis_patch_coord_lenght/coord_div_fact;
+
     
-    if (shamsys::instance::world_rank == 0) {
-        
+    std::vector<shamrock::patch::PatchCoord> coords;
+    for(u32 x = 0; x < patch_count[0]; x++){
+        for(u32 y = 0; y < patch_count[1]; y++){
+            for(u32 z = 0; z < patch_count[2]; z++){
+                shamrock::patch::PatchCoord coord;
 
-        Patch root;
+                coord.x_min = sz_root_patch*(x);
+                coord.y_min = sz_root_patch*(y);
+                coord.z_min = sz_root_patch*(z);
+                coord.x_max = sz_root_patch*(x+1)-1;
+                coord.y_max = sz_root_patch*(y+1)-1;
+                coord.z_max = sz_root_patch*(z+1)-1;
 
-        root.node_owner_id = shamsys::instance::world_rank;
+                coords.push_back(coord);
+            }
+        }
+    }
 
-        root.x_min = 0;
-        root.y_min = 0;
-        root.z_min = 0;
+    shamrock::patch::PatchCoord bounds;
+    bounds.x_min = 0;
+    bounds.y_min = 0;
+    bounds.z_min = 0;
+    bounds.x_max = sz_root_patch*patch_count[0]-1;
+    bounds.y_max = sz_root_patch*patch_count[1]-1;
+    bounds.z_max = sz_root_patch*patch_count[2]-1;
 
-        root.x_max = HilbertLB::max_box_sz;
-        root.y_max = HilbertLB::max_box_sz;
-        root.z_max = HilbertLB::max_box_sz;
+    get_sim_box().set_patch_coord_bounding_box(bounds);
 
-        root.pack_node_index = u64_max;
-
-        PatchData pdat(pdl);
-
-        root.data_count = pdat.get_obj_cnt();
-        root.load_value = pdat.get_obj_cnt();
-
-        add_patch(root,pdat);  
-    } else {
-        patch_list._next_patch_id++;
-    }  
+    add_root_patches(coords);
 }
 
-PatchScheduler::PatchScheduler(shamrock::patch::PatchDataLayout & pdl, u64 crit_split,u64 crit_merge) : pdl(pdl), patch_data(pdl,{
-            u64_3{0, 0, 0},
-            u64_3{HilbertLB::max_box_sz, HilbertLB::max_box_sz, HilbertLB::max_box_sz}}){
+template void PatchScheduler::make_patch_base_grid<3>(std::array<u32,3> patch_count);
+
+std::vector<u64> PatchScheduler::add_root_patches(std::vector<shamrock::patch::PatchCoord> coords){
+
+    using namespace shamrock::patch;
+
+    std::vector<u64> ret;
+
+    for (auto coord : coords){
+
+        u32 node_owner_id = 0;
+
+        Patch root;
+        root.id_patch = patch_list._next_patch_id;
+        root.pack_node_index = u64_max;
+        root.load_value = 0;
+        root.x_min = coord.x_min;
+        root.y_min = coord.y_min;
+        root.z_min = coord.z_min;
+        root.x_max = coord.x_max;
+        root.y_max = coord.y_max;
+        root.z_max = coord.z_max;
+        root.data_count = 0;
+        root.node_owner_id = node_owner_id;
+
+        patch_list.global.push_back(root);
+        patch_list._next_patch_id++;
+
+
+        if (shamsys::instance::world_rank == node_owner_id) {
+            patch_data.owned_data.insert({root.id_patch , PatchData(pdl)});
+            logger::debug_sycl_ln("Scheduler", "adding patch data");
+        } else{
+            logger::debug_sycl_ln("Scheduler", "patch data wasn't added rank =",shamsys::instance::world_rank, " ower =",node_owner_id);
+        }
+
+        patch_tree.insert_root_node(root.id_patch, coord);
+
+        ret.push_back(root.id_patch);
+        
+        //auto [bmin,bmax] = get_sim_box().partch_coord_to_domain<u64_3>(root);
+        //
+//
+        //logger::debug_ln("Scheduler", "adding patch : [ (",
+        // coord.x_min, 
+        // coord.y_min, 
+        // coord.z_min,") ] [ (",
+        // coord.x_max, 
+        // coord.y_max, 
+        // coord.z_max,") ]", bmin,bmax
+        //);
+    }
+
+    patch_list.reset_local_pack_index();
+    patch_list.build_local_idx_map();
+    patch_list.build_global_idx_map();
+
+
+    return std::move(ret);
+
+}
+
+
+void PatchScheduler::allpush_data(shamrock::patch::PatchData &pdat){
+
+    logger::debug_ln("Scheduler", "pushing data obj cnt =", pdat.get_obj_cnt());
+
+    for_each_patch_data(
+        [&](u64 id_patch, shamrock::patch::Patch cur_p, shamrock::patch::PatchData &pdat_sched) {
+
+            
+            
+
+            auto variant_main = pdl.get_main_field_any();
+
+            std::visit([&](auto & arg){
+
+                using base_t =
+                            typename std::remove_reference<decltype(arg)>::type::field_T;
+
+                if constexpr (shamutils::sycl_utils::VectorProperties<base_t>::dimension == 3){
+                    auto [bmin,bmax] = get_sim_box().partch_coord_to_domain<base_t>(cur_p)  ;
+
+                    logger::debug_sycl_ln("Scheduler", "pushing data in patch ", id_patch, "search range :",bmin, bmax);
+
+                    pdat_sched.insert_elements_in_range(pdat, bmin, bmax);
+                }else{
+                    throw std::runtime_error("this does not yet work with dimension different from 3");
+                }
+
+            }, variant_main);
+
+        }
+    );
+
+}
+
+
+void PatchScheduler::add_root_patch(){
+    using namespace shamrock::patch;
+
+    PatchCoord coord;
+    coord.x_min = 0;
+    coord.y_min = 0;
+    coord.z_min = 0;
+    coord.x_max = max_axis_patch_coord;
+    coord.y_max = max_axis_patch_coord;
+    coord.z_max = max_axis_patch_coord;
+
+    add_root_patches({coord});
+    
+}
+
+PatchScheduler::PatchScheduler(
+    shamrock::patch::PatchDataLayout & pdl, 
+    u64 crit_split,
+    u64 crit_merge) : 
+        pdl(pdl), 
+        patch_data(pdl,{
+            0, 0, 0,
+            max_axis_patch_coord, max_axis_patch_coord, max_axis_patch_coord}
+            )
+            {
 
     crit_patch_split = crit_split;
     crit_patch_merge = crit_merge;
@@ -107,7 +243,7 @@ void PatchScheduler::sync_build_LB(bool global_patch_sync, bool balance_load){
 
     if(balance_load){
         //real load balancing
-        std::vector<std::tuple<u64, i32, i32,i32>> change_list = HilbertLB::make_change_list(patch_list.global);
+        std::vector<std::tuple<u64, i32, i32,i32>> change_list = LoadBalancer::make_change_list(patch_list.global);
 
         //exchange data
         patch_data.apply_change_list(change_list, patch_list);
@@ -119,24 +255,24 @@ void PatchScheduler::sync_build_LB(bool global_patch_sync, bool balance_load){
 
 template<>
 std::tuple<f32_3,f32_3> PatchScheduler::get_box_tranform(){
-    if(!pdl.check_main_field_type<f32_3>()) throw shamrock_exc("cannot query single precision box the main field is not of f32_3 type");
+    if(!pdl.check_main_field_type<f32_3>()) throw excep_with_pos(std::runtime_error,"cannot query single precision box the main field is not of f32_3 type");
 
     auto [bmin,bmax] = patch_data.sim_box.get_bounding_box<f32_3>();
 
     f32_3 translate_factor = bmin;
-    f32_3 scale_factor = (bmax - bmin)/HilbertLB::max_box_sz;
+    f32_3 scale_factor = (bmax - bmin)/LoadBalancer::max_box_sz;
 
     return {translate_factor,scale_factor};
 }
 
 template<>
 std::tuple<f64_3,f64_3> PatchScheduler::get_box_tranform(){
-    if(!pdl.check_main_field_type<f64_3>()) throw shamrock_exc("cannot query single precision box the main field is not of f64_3 type");
+    if(!pdl.check_main_field_type<f64_3>()) throw excep_with_pos(std::runtime_error,"cannot query single precision box the main field is not of f64_3 type");
 
     auto [bmin,bmax] = patch_data.sim_box.get_bounding_box<f64_3>();
 
     f64_3 translate_factor = bmin;
-    f64_3 scale_factor = (bmax - bmin)/HilbertLB::max_box_sz;
+    f64_3 scale_factor = (bmax - bmin)/LoadBalancer::max_box_sz;
 
     return {translate_factor,scale_factor};
 }
@@ -144,41 +280,18 @@ std::tuple<f64_3,f64_3> PatchScheduler::get_box_tranform(){
 
 template<>
 std::tuple<f32_3,f32_3> PatchScheduler::get_box_volume(){
-    if(!pdl.check_main_field_type<f32_3>()) throw shamrock_exc("cannot query single precision box the main field is not of f32_3 type");
+    if(!pdl.check_main_field_type<f32_3>()) throw excep_with_pos(std::runtime_error,"cannot query single precision box the main field is not of f32_3 type");
 
     return patch_data.sim_box.get_bounding_box<f32_3>();
 }
 
 template<>
 std::tuple<f64_3,f64_3> PatchScheduler::get_box_volume(){
-    if(!pdl.check_main_field_type<f64_3>()) throw shamrock_exc("cannot query single precision box the main field is not of f64_3 type");
+    if(!pdl.check_main_field_type<f64_3>()) throw excep_with_pos(std::runtime_error,"cannot query single precision box the main field is not of f64_3 type");
 
     return patch_data.sim_box.get_bounding_box<f64_3>();
 }
 
-template<>
-void PatchScheduler::set_box_volume(std::tuple<f32_3,f32_3> box){
-    if(!pdl.check_main_field_type<f32_3>()) throw shamrock_exc("cannot query single precision box the main field is not of f32_3 type");
-
-    patch_data.sim_box.set_bounding_box<f32_3>({std::get<0>(box), std::get<1>(box)});
-
-    logger::debug_ln("PatchScheduler", "box resized to :",
-        box
-    );
-
-}
-
-template<>
-void PatchScheduler::set_box_volume(std::tuple<f64_3,f64_3> box){
-    if(!pdl.check_main_field_type<f64_3>()) throw shamrock_exc("cannot query single precision box the main field is not of f64_3 type");
-
-    patch_data.sim_box.set_bounding_box<f64_3>({std::get<0>(box), std::get<1>(box)});
-
-    logger::debug_ln("PatchScheduler", "box resized to :",
-        box
-    );
-
-}
 
 
 
@@ -189,7 +302,7 @@ void PatchScheduler::scheduler_step(bool do_split_merge, bool do_load_balancing)
 
     auto global_timer = timings::start_timer("SchedulerMPI::scheduler_step", timings::function);
 
-    if(!is_mpi_sycl_interop_active()) throw shamrock_exc("sycl mpi interop not initialized");
+    if(!is_mpi_sycl_interop_active()) throw excep_with_pos(std::runtime_error,"sycl mpi interop not initialized");
 
     Timer timer;
 
@@ -289,18 +402,18 @@ void PatchScheduler::scheduler_step(bool do_split_merge, bool do_load_balancing)
         timer.start();
         // generate LB change list 
         std::vector<std::tuple<u64, i32, i32,i32>> change_list = 
-            HilbertLB::make_change_list(patch_list.global);
+            LoadBalancer::make_change_list(patch_list.global);
         timer.end();
-        std::cout << " | load balancing gen op : " << timer.get_time_str() << std::endl;
 
-        std::cout <<        "   | ---- load balancing ---- \n";
-        std::cout << format("      move op : %-6d",change_list.size()) << std::endl;
+        logger::info_ln("Scheduler", "load balancing gen op",timer.get_time_str());
+        logger::debug_ln("Scheduler", " move operations",change_list.size());
 
         timer.start();
         // apply LB change list
         patch_data.apply_change_list(change_list, patch_list);
         timer.end();
-        std::cout << " | apply balancing : " << timer.get_time_str() << std::endl;
+
+        logger::info_ln("Scheduler", "apply balancing time",timer.get_time_str());
         t.stop();
     }
 
@@ -465,14 +578,14 @@ std::string PatchScheduler::dump_status(){
     for(auto & [k,pnode] : patch_tree.tree){
         ss << format("      -> id : %d  -> (%d %d %d %d %d %d %d %d) <=> %d\n",
         k,
-        pnode.childs_id[0],
-        pnode.childs_id[1],
-        pnode.childs_id[2],
-        pnode.childs_id[3],
-        pnode.childs_id[4],
-        pnode.childs_id[5],
-        pnode.childs_id[6],
-        pnode.childs_id[7],
+        pnode.tree_node.childs_nid[0],
+        pnode.tree_node.childs_nid[1],
+        pnode.tree_node.childs_nid[2],
+        pnode.tree_node.childs_nid[3],
+        pnode.tree_node.childs_nid[4],
+        pnode.tree_node.childs_nid[5],
+        pnode.tree_node.childs_nid[6],
+        pnode.tree_node.childs_nid[7],
          pnode.linked_patchid);
     }
 
@@ -489,7 +602,7 @@ inline void PatchScheduler::split_patches(std::unordered_set<u64> split_rq){
     for(u64 tree_id : split_rq){
 
         patch_tree.split_node(tree_id);
-        PatchTree::PTNode & splitted_node = patch_tree.tree[tree_id];
+        PatchTree::Node & splitted_node = patch_tree.tree[tree_id];
 
         auto [idx_p0,idx_p1,idx_p2,idx_p3,idx_p4,idx_p5,idx_p6,idx_p7] 
             =  patch_list.split_patch(splitted_node.linked_patchid);
@@ -497,14 +610,14 @@ inline void PatchScheduler::split_patches(std::unordered_set<u64> split_rq){
         u64 old_patch_id = splitted_node.linked_patchid;
 
         splitted_node.linked_patchid = u64_max;
-        patch_tree.tree[splitted_node.childs_id[0]].linked_patchid = patch_list.global[idx_p0].id_patch;
-        patch_tree.tree[splitted_node.childs_id[1]].linked_patchid = patch_list.global[idx_p1].id_patch;
-        patch_tree.tree[splitted_node.childs_id[2]].linked_patchid = patch_list.global[idx_p2].id_patch;
-        patch_tree.tree[splitted_node.childs_id[3]].linked_patchid = patch_list.global[idx_p3].id_patch;
-        patch_tree.tree[splitted_node.childs_id[4]].linked_patchid = patch_list.global[idx_p4].id_patch;
-        patch_tree.tree[splitted_node.childs_id[5]].linked_patchid = patch_list.global[idx_p5].id_patch;
-        patch_tree.tree[splitted_node.childs_id[6]].linked_patchid = patch_list.global[idx_p6].id_patch;
-        patch_tree.tree[splitted_node.childs_id[7]].linked_patchid = patch_list.global[idx_p7].id_patch;
+        patch_tree.tree[splitted_node.tree_node.childs_nid[0]].linked_patchid = patch_list.global[idx_p0].id_patch;
+        patch_tree.tree[splitted_node.tree_node.childs_nid[1]].linked_patchid = patch_list.global[idx_p1].id_patch;
+        patch_tree.tree[splitted_node.tree_node.childs_nid[2]].linked_patchid = patch_list.global[idx_p2].id_patch;
+        patch_tree.tree[splitted_node.tree_node.childs_nid[3]].linked_patchid = patch_list.global[idx_p3].id_patch;
+        patch_tree.tree[splitted_node.tree_node.childs_nid[4]].linked_patchid = patch_list.global[idx_p4].id_patch;
+        patch_tree.tree[splitted_node.tree_node.childs_nid[5]].linked_patchid = patch_list.global[idx_p5].id_patch;
+        patch_tree.tree[splitted_node.tree_node.childs_nid[6]].linked_patchid = patch_list.global[idx_p6].id_patch;
+        patch_tree.tree[splitted_node.tree_node.childs_nid[7]].linked_patchid = patch_list.global[idx_p7].id_patch;
 
         patch_data.split_patchdata(
             old_patch_id,{
@@ -525,19 +638,19 @@ inline void PatchScheduler::merge_patches(std::unordered_set<u64> merge_rq){
     auto t = timings::start_timer("SchedulerMPI::merge_patches", timings::function);
     for(u64 tree_id : merge_rq){
 
-        PatchTree::PTNode & to_merge_node = patch_tree.tree[tree_id];
+        PatchTree::Node & to_merge_node = patch_tree.tree[tree_id];
 
         std::cout << "merging patch tree id : " << tree_id << "\n";
         
 
-        u64 patch_id0 = patch_tree.tree[to_merge_node.childs_id[0]].linked_patchid;
-        u64 patch_id1 = patch_tree.tree[to_merge_node.childs_id[1]].linked_patchid;
-        u64 patch_id2 = patch_tree.tree[to_merge_node.childs_id[2]].linked_patchid;
-        u64 patch_id3 = patch_tree.tree[to_merge_node.childs_id[3]].linked_patchid;
-        u64 patch_id4 = patch_tree.tree[to_merge_node.childs_id[4]].linked_patchid;
-        u64 patch_id5 = patch_tree.tree[to_merge_node.childs_id[5]].linked_patchid;
-        u64 patch_id6 = patch_tree.tree[to_merge_node.childs_id[6]].linked_patchid;
-        u64 patch_id7 = patch_tree.tree[to_merge_node.childs_id[7]].linked_patchid;
+        u64 patch_id0 = patch_tree.tree[to_merge_node.tree_node.childs_nid[0]].linked_patchid;
+        u64 patch_id1 = patch_tree.tree[to_merge_node.tree_node.childs_nid[1]].linked_patchid;
+        u64 patch_id2 = patch_tree.tree[to_merge_node.tree_node.childs_nid[2]].linked_patchid;
+        u64 patch_id3 = patch_tree.tree[to_merge_node.tree_node.childs_nid[3]].linked_patchid;
+        u64 patch_id4 = patch_tree.tree[to_merge_node.tree_node.childs_nid[4]].linked_patchid;
+        u64 patch_id5 = patch_tree.tree[to_merge_node.tree_node.childs_nid[5]].linked_patchid;
+        u64 patch_id6 = patch_tree.tree[to_merge_node.tree_node.childs_nid[6]].linked_patchid;
+        u64 patch_id7 = patch_tree.tree[to_merge_node.tree_node.childs_nid[7]].linked_patchid;
         
         //print list of patch that will merge
         //std::cout << format("  -> (%d %d %d %d %d %d %d %d)\n", patch_id0, patch_id1, patch_id2, patch_id3, patch_id4, patch_id5, patch_id6, patch_id7);
@@ -569,19 +682,19 @@ inline void PatchScheduler::set_patch_pack_values(std::unordered_set<u64> merge_
 
     for(u64 tree_id : merge_rq){
 
-        PatchTree::PTNode & to_merge_node = patch_tree.tree[tree_id];
+        PatchTree::Node & to_merge_node = patch_tree.tree[tree_id];
 
         u64 idx_pack = patch_list.id_patch_to_global_idx[
-            patch_tree.tree[to_merge_node.childs_id[0]].linked_patchid
+            patch_tree.tree[to_merge_node.get_child_nid(0)].linked_patchid
             ];
 
         //std::cout << "node id : " << patch_list.global[idx_pack].id_patch << " should merge with : ";
 
         for (u8 i = 1; i < 8; i++) {
-            //std::cout <<  patch_tree.tree[to_merge_node.childs_id[i]].linked_patchid << " ";
+            //std::cout <<  patch_tree.tree[to_merge_node.get_child_nid(i)].linked_patchid << " ";
             patch_list.global[
                 patch_list.id_patch_to_global_idx[
-                        patch_tree.tree[to_merge_node.childs_id[i]].linked_patchid
+                        patch_tree.tree[to_merge_node.get_child_nid(i)].linked_patchid
                     ]
                 ].pack_node_index = idx_pack;
         }//std::cout << std::endl;

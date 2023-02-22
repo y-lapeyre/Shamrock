@@ -20,7 +20,6 @@
 
 
 #include "shamrock/legacy/patch/base/patchdata.hpp"
-#include "shamrock/math/vectorManip.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamrock/legacy/utils/string_utils.hpp"
 #include "shamrock/sfc/morton.hpp"
@@ -31,7 +30,7 @@
 #include "kernels/reduction_alg.hpp"
 #include "shamrock/legacy/utils/geometry_utils.hpp"
 
-
+#include "shamalgs/reduction/reduction.hpp"
 
 template<class T>
 class RadixTreeField{
@@ -120,7 +119,7 @@ class RadixTree{
     public:
 
     using ipos_t = typename shamrock::sfc::MortonCodes<morton_t, dim>::int_vec_repr;
-    using coord_t = typename shamrock::math::vec_manip::VectorProperties<pos_t>::component_type;
+    using coord_t = typename shamutils::sycl_utils::VectorProperties<pos_t>::component_type;
 
     static constexpr u32 tree_depth = get_tree_depth();
 
@@ -645,8 +644,8 @@ inline auto RadixTree<u_morton, vec3, dim>::get_min_max_cell_side_lenght() -> st
 
     
 
-    coord_t min = syclalgs::reduction::reduce(q, min_side_lenght, 0,len,sycl::minimum<coord_t>{});
-    coord_t max = syclalgs::reduction::reduce(q, max_side_lenght, 0,len,sycl::maximum<coord_t>{});
+    coord_t min = shamalgs::reduction::min(q, min_side_lenght, 0,len);
+    coord_t max = shamalgs::reduction::max(q, max_side_lenght, 0,len);
 
     return {min,max};
 }

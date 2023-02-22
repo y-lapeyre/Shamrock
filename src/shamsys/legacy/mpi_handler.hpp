@@ -6,6 +6,8 @@
 //
 // -------------------------------------------------------//
 
+#pragma once
+
 /**
  * @file mpi_handler.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
@@ -15,7 +17,6 @@
  * 
  */
 
-#pragma once
 
 
 

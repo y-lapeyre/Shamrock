@@ -71,6 +71,16 @@ namespace shamrock::patch {
         FieldDescriptor<T> get_field(std::string field_name);
 
         /**
+         * @brief Get the field description at given index
+         *
+         * @tparam T
+         * @param idx
+         * @return FieldDescriptor<T>
+         */
+        template<class T>
+        FieldDescriptor<T> get_field(u32 idx);
+
+        /**
          * @brief Get the field id if matching name & type
          *
          * @tparam T
@@ -179,6 +189,18 @@ namespace shamrock::patch {
 
         throw std::invalid_argument(
             "the requested field does not exists\n    current table : " + get_description_str()
+        );
+    }
+
+    template<class T>
+    inline PatchDataLayout::FieldDescriptor<T> PatchDataLayout::get_field(u32 idx) {
+
+        if (FieldDescriptor<T> *pval = std::get_if<FieldDescriptor<T>>(&fields[idx])) {
+            return *pval;
+        }
+
+        throw std::invalid_argument(
+            "the required type does no match at index "+std::to_string(idx)+"\n    current table : " + get_description_str()
         );
     }
 

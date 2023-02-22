@@ -28,7 +28,6 @@
 #include "test_patch_utils.hpp"
 
 #include "shamrock/sfc/hilbert.hpp"
-#include "shamrock/legacy/patch/scheduler/loadbalancing_hilbert.hpp"
 
 
 

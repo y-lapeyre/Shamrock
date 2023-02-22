@@ -1,7 +1,7 @@
 
 if("${BUILD_SIM}")
 
-target_sources(shamrock
+target_sources(shamrock_lib
     PRIVATE
         sycl_algs.cpp
     PUBLIC
@@ -10,14 +10,3 @@ target_sources(shamrock
 endif()
 
 
-
-if("${BUILD_TEST}")
-
-    target_sources(shamrock_test
-    PRIVATE
-        sycl_algs.cpp
-    PUBLIC
-    )
-
-
-endif()

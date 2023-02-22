@@ -6,6 +6,8 @@
 //
 // -------------------------------------------------------//
 
+#pragma once
+
 /**
  * @file interface_handler.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
@@ -20,7 +22,6 @@
 //%Impl status : Clean unfinished
 // move to "good" when new handler implemented
 
-#pragma once
 
 #include <memory>
 #include <vector>

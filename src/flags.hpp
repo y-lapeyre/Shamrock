@@ -6,6 +6,8 @@
 //
 // -------------------------------------------------------//
 
+#pragma once
+
 /**
  * @file flags.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
@@ -17,7 +19,6 @@
 
 //%Impl status : Good
 
-#pragma once
 
 #include "aliases.hpp"
 

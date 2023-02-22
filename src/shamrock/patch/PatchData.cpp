@@ -11,7 +11,7 @@
 #include "shamrock/legacy/utils/geometry_utils.hpp"
 
 #include "Patch.hpp"
-#include "shamrock/math/syclManip.hpp"
+
 namespace shamrock::patch{
 
 
@@ -111,6 +111,37 @@ namespace shamrock::patch{
 
     }
 
+    void PatchData::expand(u32 new_obj_cnt){
+
+        for(auto & field_var : fields){
+            std::visit([&](auto & field){
+                field.expand(new_obj_cnt);
+            },field_var);
+        }
+
+    }
+
+
+    void PatchData::index_remap(sycl::buffer<u32> index_map, u32 len){
+
+        for(auto & field_var : fields){
+            std::visit([&](auto & field){
+                field.index_remap(index_map, len);
+            },field_var);
+        }
+
+    }
+
+    void PatchData::index_remap_resize(sycl::buffer<u32> index_map, u32 len){
+
+        for(auto & field_var : fields){
+            std::visit([&](auto & field){
+                field.index_remap_resize(index_map, len);
+            },field_var);
+        }
+
+    }
+
 
 
     void PatchData::append_subset_to(sycl::buffer<u32> & idxs, u32 sz, PatchData & pdat) const {
@@ -195,7 +226,7 @@ namespace shamrock::patch{
 
         if(get_obj_cnt() != el_cnt_new){
 
-            using namespace shamrock::math::sycl_manip;
+            using namespace shamutils::sycl_utils;
 
             T vmin = g_sycl_min(min_box[0],min_box[1]);
             vmin = g_sycl_min(vmin,min_box[2]);

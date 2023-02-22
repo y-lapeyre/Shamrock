@@ -5,7 +5,7 @@
 // Licensed under CeCILL 2.1 License, see LICENSE for more information
 //
 // -------------------------------------------------------//
-
+#pragma once
 /**
  * @file string_utils.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
@@ -17,7 +17,7 @@
  * 
  */
 
-#pragma once
+
 
 #include <fstream>
 #include <string>

@@ -7,6 +7,7 @@
 // -------------------------------------------------------//
 
 
+#pragma once 
 
 /**
 * \file logger.hpp
@@ -14,7 +15,6 @@
 */
 
 
-#pragma once 
 
 #include <cstdarg>
 #include <stdio.h>

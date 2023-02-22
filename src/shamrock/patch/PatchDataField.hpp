@@ -145,7 +145,7 @@ template <class T> class PatchDataField {
 
     inline const std::unique_ptr<sycl::buffer<T>> &get_buf() const { return buf; }
 
-    [[deprecated]] inline std::unique_ptr<sycl::buffer<T>> &get_buf_priviledge() { return buf; }
+    inline std::unique_ptr<sycl::buffer<T>> &get_buf_priviledge() { return buf; }
 
     //[[deprecated]]
     // inline std::unique_ptr<sycl::buffer<T>> get_sub_buf(){
@@ -203,6 +203,32 @@ template <class T> class PatchDataField {
     void append_subset_to(sycl::buffer<u32> &idxs_buf, u32 sz, PatchDataField &pfield) const;
 
     void gen_mock_data(u32 obj_cnt, std::mt19937 &eng);
+
+    /**
+     * @brief this function remaps the patchdatafield like so
+     *   val[id] = val[index_map[id]]
+     *   index map describe : at index i, we will have the value that was at index_map[i]
+     * 
+     * This function can be used to apply the result of a sort to the field
+     * 
+     * @param index_map 
+     * @param len the lenght of the map (must match with the current count)
+     */
+    void index_remap(sycl::buffer<u32> & index_map, u32 len);
+
+    /**
+     * @brief this function remaps the patchdatafield like so
+     *   val[id] = val[index_map[id]]
+     *   index map describe : at index i, we will have the value that was at index_map[i]
+     * This function will resize the current field to the specified length
+     * 
+     * This function can be used to apply the result of a sort to the field
+     * 
+     * @param index_map 
+     * @param len the length of the map
+     */
+    void index_remap_resize(sycl::buffer<u32> & index_map, u32 len);
+
 };
 
 // TODO add overflow check
@@ -245,7 +271,7 @@ template <class T> inline void PatchDataField<T>::expand(u32 obj_to_add) {
 template <class T> inline void PatchDataField<T>::shrink(u32 obj_to_rem) {
 
     if (obj_to_rem > obj_cnt) {
-        throw shamrock_exc("impossible to remove more object than there is in the patchdata field");
+        throw excep_with_pos(std::invalid_argument,"impossible to remove more object than there is in the patchdata field");
     }
 
     resize(obj_cnt - obj_to_rem);
@@ -253,7 +279,7 @@ template <class T> inline void PatchDataField<T>::shrink(u32 obj_to_rem) {
 
 template <class T> inline void PatchDataField<T>::overwrite(PatchDataField<T> &f2, u32 obj_cnt) {
     if (val_cnt < obj_cnt) {
-        throw shamrock_exc("to overwrite you need more element in the field");
+        throw excep_with_pos(std::invalid_argument,"to overwrite you need more element in the field");
     }
 
     {
@@ -270,7 +296,7 @@ template <class T> inline void PatchDataField<T>::overwrite(PatchDataField<T> &f
 template <class T> inline void PatchDataField<T>::override(sycl::buffer<T> &data, u32 cnt) {
 
     if (cnt != val_cnt)
-        throw shamrock_exc("buffer size doesn't match patchdata field size"
+        throw excep_with_pos(std::invalid_argument,"buffer size doesn't match patchdata field size"
         ); // TODO remove ref to size
 
     if (val_cnt > 0) {
@@ -347,5 +373,5 @@ inline void PatchDataField<T>::check_err_range(Lambdacd &&cd_true, T vmin, T vma
         }
     }
 
-    throw shamrock_exc("obj not in range");
+    throw excep_with_pos(std::invalid_argument,"obj not in range");
 }

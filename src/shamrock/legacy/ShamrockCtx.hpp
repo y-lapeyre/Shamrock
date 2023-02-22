@@ -110,6 +110,10 @@ class ShamrockCtx{public:
             pdata_layout_add_field<u32>(fname, nvar);
         }else if (type == "u64"){
             pdata_layout_add_field<u64>(fname, nvar);
+        }else if (type == "u32_3"){
+            pdata_layout_add_field<u32_3>(fname, nvar);
+        }else if (type == "u64_3"){
+            pdata_layout_add_field<u64_3>(fname, nvar);
         }else{
             throw std::invalid_argument("the select type is not registered");
         }
@@ -122,7 +126,13 @@ class ShamrockCtx{public:
         std::cout << pdl->get_description_str() << std::endl;
     }
 
+    inline void dump_status(){
+        if (!sched) {
+            throw ShamAPIException("scheduler is not initialized");
+        }
 
+        logger::raw_ln(sched->dump_status());
+    }
 
    
 
@@ -171,7 +181,7 @@ class ShamrockCtx{public:
         return recv_data;
     }
 
-    void set_box_size(std::tuple<f64_3, f64_3> box) {
+    void set_coord_domain_bound(std::tuple<f64_3, f64_3> box) {
 
         if (!pdl) {
             throw ShamAPIException("patch data layout is not initialized");
@@ -181,16 +191,18 @@ class ShamrockCtx{public:
             throw ShamAPIException("scheduler is not initialized");
         }
 
+        auto [a,b] = box;
+
         if(pdl->check_main_field_type<f32_3>()){
             auto conv_vec = [](f64_3 v) -> f32_3 { return {v.x(), v.y(), v.z()}; };
 
-            f32_3 vec0 = conv_vec(std::get<0>(box));
-            f32_3 vec1 = conv_vec(std::get<1>(box));
+            f32_3 vec0 = conv_vec(a);
+            f32_3 vec1 = conv_vec(b);
 
-            sched->set_box_volume<f32_3>({vec0, vec1});
+            sched->set_coord_domain_bound<f32_3>(vec0, vec1);
         }else if(pdl->check_main_field_type<f64_3>()){
             
-            sched->set_box_volume<f64_3>(box);
+            sched->set_coord_domain_bound<f64_3>(a,b);
         }else{
             throw std::runtime_error(
                 __LOC_PREFIX__ + "the chosen type for the main field is not handled"

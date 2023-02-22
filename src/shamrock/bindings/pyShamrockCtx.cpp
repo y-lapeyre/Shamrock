@@ -198,7 +198,7 @@ template<class T> void append_to_map(
     if(!vec.empty()){
         auto arr = VecToNumpy<T>::convert(vec);
 
-        py::print("adding -> ",key, arr);
+        py::print("adding -> ",key);
 
         dic_out[key.c_str()] = arr;
     }
@@ -225,9 +225,10 @@ Register_pymod(pyshamrockctxinit){
         .def("pdata_layout_print", &ShamrockCtx::pdata_layout_print)
         .def("pdata_layout_print", &ShamrockCtx::pdata_layout_print)
         .def("pdata_layout_print", &ShamrockCtx::pdata_layout_print)
-        .def("set_box_size",
+        .def("dump_status", &ShamrockCtx::dump_status)
+        .def("set_coord_domain_bound",
             [](ShamrockCtx & ctx, std::array<f64, 3> min_vals, std::array<f64, 3> max_vals){
-            ctx.set_box_size({
+            ctx.set_coord_domain_bound({
                 f64_3{min_vals[0],min_vals[1],min_vals[2]},
                 f64_3{max_vals[0],max_vals[1],max_vals[2]}
                 });
@@ -257,6 +258,8 @@ Register_pymod(pyshamrockctxinit){
                 append_to_map<f64_16>(fname, data, dic_out);
                 append_to_map<u32   >(fname, data, dic_out);
                 append_to_map<u64   >(fname, data, dic_out);
+                append_to_map<u32_3 >(fname, data, dic_out);
+                append_to_map<u64_3 >(fname, data, dic_out);
             }
 
             return dic_out;

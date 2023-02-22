@@ -6,6 +6,8 @@
 //
 // -------------------------------------------------------//
 
+#pragma once
+
 /**
  * @file interface_generator.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
@@ -17,7 +19,7 @@
  * 
  */
 
-#pragma once
+
 #include "aliases.hpp"
 #include "shamrock/patch/Patch.hpp"
 #include "shamrock/legacy/patch/base/patchdata.hpp"
@@ -94,7 +96,7 @@ template <class vectype, class field_type, class InterfaceSelector> class Interf
         const u64 global_pcount = sched.patch_list.global.size();
 
         if (local_pcount == 0)
-            throw shamrock_exc("local patch count is zero this function can not run");
+            throw excep_with_pos(std::invalid_argument,"local patch count is zero this function can not run");
 
         sycl::buffer<u64> patch_ids_buf(local_pcount);
         sycl::buffer<vectype> local_box_min_buf(local_pcount);

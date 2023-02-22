@@ -6,6 +6,8 @@
 //
 // -------------------------------------------------------//
 
+#pragma once
+
 /**
  * @file NodeInstance.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
@@ -16,7 +18,6 @@
  * Essentially it handle the MPI process and corresponding accelerators
  */
 
-#pragma once
 
 #include "aliases.hpp"
 

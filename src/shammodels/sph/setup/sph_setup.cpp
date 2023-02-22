@@ -15,22 +15,12 @@
 
 #include "shamsys/legacy/mpi_handler.hpp"
 
-#include "shamrock/legacy/patch/scheduler/loadbalancing_hilbert.hpp"
-
 template<class flt, class Kernel>
 void models::sph::SetupSPH<flt,Kernel>::init(PatchScheduler & sched){
 
     using namespace shamrock::patch;
 
     sched.add_root_patch();
-
-    mpi::barrier(MPI_COMM_WORLD);
-
-    sched.owned_patch_id = sched.patch_list.build_local();
-
-    sched.patch_list.build_global();
-
-    sched.patch_tree.build_from_patchtable(sched.patch_list.global, HilbertLB::max_box_sz);
 
     std::cout << "build local" << std::endl;
     sched.owned_patch_id = sched.patch_list.build_local();
@@ -77,7 +67,7 @@ void models::sph::SetupSPH<flt,Kernel>::add_particules_fcc(PatchScheduler & sche
             f.override(dr);
         }
 
-        if(sched.owned_patch_id.empty()) throw shamrock_exc("the scheduler does not have patch in that rank");
+        if(sched.owned_patch_id.empty()) throw excep_with_pos(std::runtime_error,"the scheduler does not have patch in that rank");
 
         u64 insert_id = *sched.owned_patch_id.begin();
 

@@ -6,6 +6,8 @@
 //
 // -------------------------------------------------------//
 
+#pragma once
+
 /**
  * @file Patch.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
@@ -16,10 +18,10 @@
  * @copyright Copyright (c) 2022
  *
  */
-#pragma once
 
 #include "aliases.hpp"
 
+#include "shammath/CoordRange.hpp"
 #include "shamsys/MpiWrapper.hpp"
 #include "PatchCoord.hpp"
 
@@ -140,6 +142,10 @@ namespace shamrock::patch {
 
         [[nodiscard]] inline PatchCoord get_coords() const {
             return PatchCoord(x_min, y_min, z_min, x_max, y_max, z_max);
+        }
+
+        inline shammath::CoordRange<u64_3> get_patch_range(){
+            return get_coords().get_patch_range();
         }
     };
 

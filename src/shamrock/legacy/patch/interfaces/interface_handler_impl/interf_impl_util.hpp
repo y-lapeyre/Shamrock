@@ -83,7 +83,7 @@ namespace impl{
 
 
                 if (local_pcount == 0){
-                    throw shamrock_exc("local patch count is zero this function can not run");
+                    throw excep_with_pos(std::runtime_error,"local patch count is zero this function can not run");
                 }
 
 

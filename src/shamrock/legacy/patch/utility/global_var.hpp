@@ -50,7 +50,7 @@ class GlobalVariable{
 
     inline T get_val(){
         if(!is_reduced){
-            shamrock_exc("Global value has not been reduced");
+            throw excep_with_pos(std::runtime_error,"Global value has not been reduced");
         }
         return final_val;
     }

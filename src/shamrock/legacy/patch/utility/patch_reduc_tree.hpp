@@ -6,6 +6,7 @@
 //
 // -------------------------------------------------------//
 
+#pragma once
 /**
  * @file patch_reduc_tree.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
@@ -17,7 +18,6 @@
  * 
  */
 
-#pragma once
 
 
 
@@ -39,12 +39,12 @@ class PatchFieldReduction{public:
 
 
     inline void attach_buf(){
-        if(tree_field_buf != nullptr) throw shamrock_exc("tree_field_buf is already allocated");
+        if(tree_field_buf != nullptr) throw excep_with_pos(std::runtime_error,"tree_field_buf is already allocated");
         tree_field_buf = new sycl::buffer<type>(tree_field.data(),tree_field.size());
     }
 
     inline void detach_buf(){
-        if(tree_field_buf == nullptr) throw shamrock_exc("tree_field_buf wasn't allocated");
+        if(tree_field_buf == nullptr) throw excep_with_pos(std::runtime_error,"tree_field_buf wasn't allocated");
         delete tree_field_buf;
         tree_field_buf = nullptr;
     }

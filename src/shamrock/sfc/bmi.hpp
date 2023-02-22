@@ -6,6 +6,8 @@
 //
 // -------------------------------------------------------//
 
+#pragma once
+
 /**
  * @file bmi.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
@@ -16,7 +18,6 @@
  * @copyright Copyright (c) 2022
  * 
  */
-#pragma once
 
 #include "aliases.hpp"
 

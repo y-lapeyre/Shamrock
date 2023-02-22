@@ -94,8 +94,8 @@ if args.compiler == "dpcpp":
     if comp_path == "":
         comp_path = abs_compiler_root_dir + "/bin/clang++"
 
-elif args.compiler == "hipsycl":
-    cmake_cmd += " -DSyCL_Compiler=HIPSYCL"
+elif args.compiler == "opensycl":
+    cmake_cmd += " -DSyCL_Compiler=OPENSYCL"
     if comp_path == "":
         comp_path = abs_compiler_root_dir + "/bin/syclcc"
 
@@ -149,9 +149,10 @@ hipsyclconfigfile = "--hipsycl-config-file="+abs_compiler_root_dir+"/etc/hipSYCL
 profile_map = {
     "dpcpp" : {
         "cuda" : "-fsycl -fsycl-targets=nvptx64-nvidia-cuda",
-        "cuda-no-rdc" : "-fsycl -fno-sycl-rdc -fsycl-targets=nvptx64-nvidia-cuda"
+        "cuda-no-rdc" : "-fsycl -fno-sycl-rdc -fsycl-targets=nvptx64-nvidia-cuda",
+        "cuda-index32bit" : "-fsycl -fsycl-targets=nvptx64-nvidia-cuda -fsycl-id-queries-fit-in-int"
     },
-    "hipsycl" : {
+    "opensycl" : {
         "omp" : "--hipsycl-cpu-cxx=g++ --hipsycl-targets='omp' " + hipsyclconfigfile,
         "omp_sanitizer" : "-fsanitize=address --hipsycl-cpu-cxx=g++ --hipsycl-targets='omp' " + hipsyclconfigfile,
         "generic" : "--hipsycl-targets=generic "+ hipsyclconfigfile

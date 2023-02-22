@@ -7,7 +7,10 @@
 // -------------------------------------------------------//
 
 #include "PatchDataField.hpp"
+#include "shamalgs/algorithm/algorithm.hpp"
 #include "shamrock/legacy/utils/sycl_vector_utils.hpp"
+#include <buffer.hpp>
+#include <memory>
 
 template<class T> class Kernel_Extract_element;
 
@@ -110,7 +113,7 @@ template<class T> class PdatField_append_subset_to;
 template <class T> void PatchDataField<T>::append_subset_to(sycl::buffer<u32> &idxs_buf,u32 sz, PatchDataField &pfield) const {
 
     if (pfield.nvar != nvar)
-        throw shamrock_exc("field must be similar for extraction");
+        throw excep_with_pos(std::invalid_argument,"field must be similar for extraction");
 
     const u32 start_enque = pfield.val_cnt;
 
@@ -190,7 +193,7 @@ template <class T> void PatchDataField<T>::append_subset_to(sycl::buffer<u32> &i
 template <class T> void PatchDataField<T>::append_subset_to(const std::vector<u32> &idxs, PatchDataField &pfield) const {
 
     if (pfield.nvar != nvar)
-        throw shamrock_exc("field must be similar for extraction");
+        throw excep_with_pos(std::invalid_argument,"field must be similar for extraction");
 
     const u32 start_enque = pfield.val_cnt;
 
@@ -289,6 +292,49 @@ template<class T> void PatchDataField<T>::insert(PatchDataField<T> &f2){
 
 
 
+
+
+template<class T> void PatchDataField<T>::index_remap_resize(sycl::buffer<u32> & index_map, u32 len){
+
+    if(buf){
+
+        auto get_new_buf = [&](){
+            if(nvar == 1){
+                return shamalgs::algorithm::index_remap(
+                    shamsys::instance::get_compute_queue(), 
+                    *buf, 
+                    index_map, 
+                    len);
+            }else{
+                return shamalgs::algorithm::index_remap_nvar(
+                    shamsys::instance::get_compute_queue(), 
+                    *buf, 
+                    index_map, 
+                    len, nvar);
+            }
+        };
+
+        sycl::buffer<T> new_buf = get_new_buf();
+
+        capacity = new_buf.size();
+        obj_cnt = len;
+        val_cnt = obj_cnt*nvar;
+
+        buf = std::make_unique<sycl::buffer<T>>(std::move(new_buf));
+    }
+    
+}
+
+
+template<class T> void PatchDataField<T>::index_remap(sycl::buffer<u32> & index_map, u32 len){
+
+    if(len != get_obj_cnt()){
+        throw std::invalid_argument("the match of the new index map does not match with the patchdatafield obj count");
+    }
+
+    index_remap_resize(index_map,len);
+    
+}
 
 
 

@@ -18,7 +18,7 @@ set(HeadersTest
 )
 
 if("${BUILD_SIM}")
-target_sources(shamrock
+target_sources(shamrock_lib
     PRIVATE
         ${Sources}
     PUBLIC
@@ -29,10 +29,11 @@ endif()
 if("${BUILD_TEST}")
 target_sources(shamrock_test
     PRIVATE
-        ${Sources} ${SourcesTest}
+     ${SourcesTest}
     PUBLIC
-        ${Headers} ${HeadersTest}
+     ${HeadersTest}
     )
 endif()
+
 
 add_subdirectory(tests)

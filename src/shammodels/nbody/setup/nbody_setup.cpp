@@ -14,7 +14,6 @@
 #include "shamrock/legacy/patch/comm/patch_object_mover.hpp"
 
 #include "shamsys/legacy/mpi_handler.hpp"
-#include "shamrock/legacy/patch/scheduler/loadbalancing_hilbert.hpp"
 
 
 template<class flt>
@@ -23,14 +22,6 @@ void models::nbody::NBodySetup<flt>::init(PatchScheduler & sched){
     using namespace shamrock::patch;
 
     sched.add_root_patch();
-
-    mpi::barrier(MPI_COMM_WORLD);
-
-    sched.owned_patch_id = sched.patch_list.build_local();
-
-    sched.patch_list.build_global();
-
-    sched.patch_tree.build_from_patchtable(sched.patch_list.global, HilbertLB::max_box_sz);
 
     std::cout << "build local" << std::endl;
     sched.owned_patch_id = sched.patch_list.build_local();
@@ -72,7 +63,7 @@ void models::nbody::NBodySetup<flt>::add_particules_fcc(PatchScheduler & sched, 
             f.override(buf,len);
         }
 
-        if(sched.owned_patch_id.empty()) throw shamrock_exc("the scheduler does not have patch in that rank");
+        if(sched.owned_patch_id.empty()) throw excep_with_pos(std::runtime_error,"the scheduler does not have patch in that rank");
 
         u64 insert_id = *sched.owned_patch_id.begin();
 

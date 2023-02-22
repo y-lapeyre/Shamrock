@@ -6,6 +6,8 @@
 //
 // -------------------------------------------------------//
 
+#pragma once
+
 /**
  * @file scheduler_patch_data.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
@@ -17,7 +19,6 @@
  *
  */
 
-#pragma once
 
 #include <cmath>
 #include <map>
@@ -102,6 +103,6 @@ class SchedulerPatchData {
     );
 
     inline SchedulerPatchData(
-        shamrock::patch::PatchDataLayout &pdl, CoordRange<u64_3> patch_coord_range)
+        shamrock::patch::PatchDataLayout &pdl, shamrock::patch::PatchCoord patch_coord_range)
          : pdl(pdl), sim_box(pdl,patch_coord_range) {}
 };

@@ -6,6 +6,8 @@
 //
 // -------------------------------------------------------//
 
+#pragma once
+
 /**
  * @file hilbertsfc.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
@@ -22,7 +24,6 @@
  * 
  */
 
-#pragma once
 
 #include "aliases.hpp"
 #include "bmi.hpp"
@@ -116,6 +117,37 @@ namespace shamrock::sfc {
                 return icoord_to_hilbert(x, y, z);
 
             }
+        }
+    
+    };
+
+    using quad_hilbert_num = std::pair<u64,u64>;
+
+    template<> class HilbertCurve<quad_hilbert_num,3>{
+        
+        static constexpr u64 divisor = HilbertCurve<u64,3>::max_val+1;
+
+        public:
+    
+        using int_vec_repr_base                    = u64;
+        using int_vec_repr                         = u64_3;
+        static constexpr int_vec_repr_base max_val = divisor*divisor - 1;
+
+
+        inline static quad_hilbert_num icoord_to_hilbert(u64 x, u64 y, u64 z){
+
+            u64 upper_val_x = x/divisor;
+            u64 upper_val_y = y/divisor;
+            u64 upper_val_z = z/divisor;
+
+            u64 lower_val_x = x % divisor;
+            u64 lower_val_y = y % divisor;
+            u64 lower_val_z = z % divisor;
+
+            return {
+                details::compute_hilbert_index_3d<21>(upper_val_x, upper_val_y, upper_val_z),
+                details::compute_hilbert_index_3d<21>(lower_val_x, lower_val_y, lower_val_z),
+            };
         }
     
     };

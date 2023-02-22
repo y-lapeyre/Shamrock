@@ -6,6 +6,7 @@
 //
 // -------------------------------------------------------//
 
+#pragma once
 /**
  * @file patch_field.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
@@ -16,7 +17,6 @@
  * @copyright Copyright (c) 2022
  * 
  */
-#pragma once
 
 #include <vector>
 

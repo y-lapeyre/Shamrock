@@ -12,8 +12,8 @@
 #include <random>
 
 #include "shamrock/legacy/io/logs.hpp"
+#include "shamrock/scheduler/HilbertLoadBalance.hpp"
 #include "shamrock/patch/Patch.hpp"
-#include "loadbalancing_hilbert.hpp"
 
 
 void SchedulerPatchList::build_global(){
@@ -214,6 +214,7 @@ std::vector<shamrock::patch::Patch> make_fake_patch_list(u32 total_dtcnt,u64 div
     std::uniform_real_distribution<f32> split_val(0,1);     
 
 
+    using namespace shamrock::scheduler;
 
     plist.push_back(Patch{
         0,
@@ -222,9 +223,9 @@ std::vector<shamrock::patch::Patch> make_fake_patch_list(u32 total_dtcnt,u64 div
         0,
         0,
         0,
-        HilbertLB::max_box_sz,
-        HilbertLB::max_box_sz,
-        HilbertLB::max_box_sz,
+        HilbertLoadBalance<u64>::max_box_sz,
+        HilbertLoadBalance<u64>::max_box_sz,
+        HilbertLoadBalance<u64>::max_box_sz,
         total_dtcnt,
         0,
     });

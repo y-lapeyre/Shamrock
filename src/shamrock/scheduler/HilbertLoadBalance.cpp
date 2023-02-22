@@ -17,17 +17,24 @@
  * 
  */
 
-#include "loadbalancing_hilbert.hpp"
+#include "HilbertLoadBalance.hpp"
 
 #include "shamrock/legacy/io/logs.hpp"
 #include "shamsys/legacy/sycl_handler.hpp"
 
+namespace shamrock::scheduler {
 
-std::vector<std::tuple<u64, i32, i32, i32>> HilbertLB::make_change_list(std::vector<shamrock::patch::Patch> &global_patch_list) {
+template<class T> class Compute_HilbLoad;
+template<class T> class Write_chosen_node;
+template<class T> class Edit_chosen_node;
+
+
+template<class hilbert_num>
+std::vector<std::tuple<u64, i32, i32, i32>> HilbertLoadBalance<hilbert_num>::make_change_list(std::vector<shamrock::patch::Patch> &global_patch_list) {
 
     using namespace shamrock::patch;
 
-    auto t = timings::start_timer("HilbertLB::make_change_list", timings::function);
+    auto t = timings::start_timer("HilbertLoadBalance::make_change_list", timings::function);
 
     std::vector<std::tuple<u64, i32, i32, i32>> change_list;
 
@@ -35,24 +42,24 @@ std::vector<std::tuple<u64, i32, i32, i32>> HilbertLB::make_change_list(std::vec
     //generate hilbert code, load value, and index before sort
 
     // std::tuple<hilbert code ,load value ,index in global_patch_list>
-    std::vector<std::tuple<u64, u64, u64>> patch_dt(global_patch_list.size());
+    std::vector<std::tuple<hilbert_num, u64, u64>> patch_dt(global_patch_list.size());
     {
 
-        sycl::buffer<std::tuple<u64, u64, u64>> dt_buf(patch_dt.data(),patch_dt.size());
+        sycl::buffer<std::tuple<hilbert_num, u64, u64>> dt_buf(patch_dt.data(),patch_dt.size());
         sycl::buffer<Patch>                     patch_buf(global_patch_list.data(),global_patch_list.size());
 
         sycl::range<1> range{global_patch_list.size()};
 
         shamsys::instance::get_alt_queue().submit([&](sycl::handler &cgh) {
             auto ptch = patch_buf.get_access<sycl::access::mode::read>(cgh);
-            auto pdt  = dt_buf.get_access<sycl::access::mode::discard_write>(cgh);
+            auto pdt  = dt_buf.template get_access<sycl::access::mode::discard_write>(cgh);
 
-            cgh.parallel_for<class Compute_HilbLoad>(range, [=](sycl::item<1> item) {
+            cgh.parallel_for<Compute_HilbLoad<hilbert_num>>(range, [=](sycl::item<1> item) {
                 u64 i = (u64)item.get_id(0);
 
                 Patch p = ptch[i];
 
-                pdt[i] = {compute_hilbert_index_3d<21>(p.x_min, p.y_min, p.z_min), p.load_value, i};
+                pdt[i] = {SFC::icoord_to_hilbert(p.x_min, p.y_min, p.z_min), p.load_value, i};
             });
         });
 
@@ -76,14 +83,13 @@ std::vector<std::tuple<u64, i32, i32, i32>> HilbertLB::make_change_list(std::vec
     {
         double target_datacnt = double(std::get<1>(patch_dt[global_patch_list.size()-1]))/shamsys::instance::world_size;
         for(auto t : patch_dt){
-            std::cout <<
-                std::get<0>(t) << " "<<
-                std::get<1>(t) << " "<<
-                std::get<2>(t) << " "<<
+            logger::debug_ln("HilbertLoadBalance", 
+                std::get<0>(t) ,
+                std::get<1>(t) ,
+                std::get<2>(t) ,
                 sycl::clamp(
                     i32(std::get<1>(t)/target_datacnt)
-                    ,0,i32(shamsys::instance::world_size)-1) << " " << (std::get<1>(t)/target_datacnt) << 
-                std::endl;
+                    ,0,i32(shamsys::instance::world_size)-1) , (std::get<1>(t)/target_datacnt) );
         }
     }
     //*/
@@ -93,14 +99,14 @@ std::vector<std::tuple<u64, i32, i32, i32>> HilbertLB::make_change_list(std::vec
     std::vector<i32> new_owner_table(global_patch_list.size());
     {
 
-        sycl::buffer<std::tuple<u64, u64, u64>> dt_buf(patch_dt.data(),patch_dt.size());
+        sycl::buffer<std::tuple<hilbert_num, u64, u64>> dt_buf(patch_dt.data(),patch_dt.size());
         sycl::buffer<i32> new_owner(new_owner_table.data(),new_owner_table.size());
         sycl::buffer<Patch>                     patch_buf(global_patch_list.data(),global_patch_list.size());
 
         sycl::range<1> range{global_patch_list.size()};
 
         shamsys::instance::get_alt_queue().submit([&](sycl::handler &cgh) {
-            auto pdt  = dt_buf.get_access<sycl::access::mode::read>(cgh);
+            auto pdt  = dt_buf.template get_access<sycl::access::mode::read>(cgh);
             auto chosen_node = new_owner.get_access<sycl::access::mode::discard_write>(cgh);
 
             //TODO [potential issue] here must check that the conversion to double doesn't mess up the target dt_cnt or find another way
@@ -109,7 +115,7 @@ std::vector<std::tuple<u64, i32, i32, i32>> HilbertLB::make_change_list(std::vec
             i32 wsize = shamsys::instance::world_size;
 
 
-            cgh.parallel_for<class Write_chosen_node>(range, [=](sycl::item<1> item) {
+            cgh.parallel_for<Write_chosen_node<hilbert_num>>(range, [=](sycl::item<1> item) {
                 u64 i = (u64)item.get_id(0);
 
                 u64 id_ptable = std::get<2>(pdt[i]);
@@ -128,7 +134,7 @@ std::vector<std::tuple<u64, i32, i32, i32>> HilbertLB::make_change_list(std::vec
             //auto pdt  = dt_buf.get_access<sycl::access::mode::read>(cgh);
             auto chosen_node = new_owner.get_access<sycl::access::mode::write>(cgh);
 
-            cgh.parallel_for<class Edit_chosen_node>(range, [=](sycl::item<1> item) {
+            cgh.parallel_for<Edit_chosen_node<hilbert_num>>(range, [=](sycl::item<1> item) {
                 u64 i = (u64)item.get_id(0);
 
 
@@ -166,9 +172,9 @@ std::vector<std::tuple<u64, i32, i32, i32>> HilbertLB::make_change_list(std::vec
             
         }
 
-        std::cout << "load after balancing" << std::endl;
+        logger::debug_ln("HilbertLoadBalance", "loads after balancing");
         for(i32 nid = 0 ; nid < shamsys::instance::world_size; nid ++){
-            std::cout << nid << " " << load_per_node[nid] << std::endl;
+            logger::debug_ln("HilbertLoadBalance", nid, load_per_node[nid]);
         }
         
     }
@@ -176,4 +182,9 @@ std::vector<std::tuple<u64, i32, i32, i32>> HilbertLB::make_change_list(std::vec
 
     t.stop();
     return change_list;
+}
+
+template class HilbertLoadBalance<u64>;
+template class HilbertLoadBalance<shamrock::sfc::quad_hilbert_num>;
+
 }

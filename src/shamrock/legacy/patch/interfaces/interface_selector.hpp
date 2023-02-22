@@ -6,6 +6,9 @@
 //
 // -------------------------------------------------------//
 
+
+#pragma once
+
 /**
  * @file interface_selector.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
@@ -16,8 +19,6 @@
  * @copyright Copyright (c) 2022
  * 
  */
-
-#pragma once
 
 #include "shamsys/legacy/sycl_handler.hpp"
 #include <tuple>

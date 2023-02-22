@@ -180,6 +180,17 @@ namespace logger {
         print(var2...);
     }
 
+    template <typename Ta, typename Tb,typename... Types>
+    inline void print(std::pair<Ta,Tb> s, Types... var2)
+    {
+        std::cout << "(" ;
+        print(s.first);
+        std::cout << ",";
+        print(s.second);
+        std::cout << ") ";
+        print(var2...);
+    }
+
 
     template <class... Typestuple,typename... Types>
     inline void print(std::tuple<Typestuple...> t , Types... var2)

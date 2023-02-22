@@ -9,10 +9,12 @@
 #pragma once
 
 #include "aliases.hpp"
+#include "shammath/CoordRange.hpp"
 
 namespace shamrock::patch {
 
-    class PatchCoord {public:
+    class PatchCoord {
+        public:
         static constexpr u32 dim         = 3U;
         static constexpr u32 splts_count = 1U << dim;
 
@@ -32,6 +34,7 @@ namespace shamrock::patch {
                 (((y_max - y_min) + 1) / 2) - 1 + y_min,
                 (((z_max - z_min) + 1) / 2) - 1 + z_min};
         }
+
 
         inline static auto
         get_split(u64 x_min, u64 y_min, u64 z_min, u64 x_max, u64 y_max, u64 z_max)
@@ -104,6 +107,10 @@ namespace shamrock::patch {
             return {p0, p1, p2, p3, p4, p5, p6, p7};
         }
 
+        inline auto split() -> std::array<PatchCoord, splts_count> {
+            return get_split(x_min, y_min, z_min, x_max, y_max, z_max);
+        }
+
         inline static PatchCoord merge(PatchCoord c1, PatchCoord c2) {
             return PatchCoord(
                 sycl::min(c1.x_min, c2.x_min),
@@ -122,7 +129,14 @@ namespace shamrock::patch {
             );
         }
 
-        template <class T>
+        shammath::CoordRange<u64_3> get_patch_range() const {
+            return {
+                u64_3{x_min,y_min,z_min},
+                u64_3{x_max,y_max,z_max} + 1 
+            };
+        }
+
+        template<class T>
         inline static std::tuple<sycl::vec<T, 3>, sycl::vec<T, 3>> convert_coord(
             u64 x_min,
             u64 y_min,
@@ -141,8 +155,10 @@ namespace shamrock::patch {
 
             using vec = sycl::vec<T, 3>;
 
-            vec min_bound = vec{x_min - offset_x, y_min - offset_y, z_min - offset_z} / divfact + offset;
-            vec max_bound = (vec{x_max - offset_x, y_max - offset_y, z_max - offset_z} + 1) / divfact + offset;
+            vec min_bound =
+                vec{x_min - offset_x, y_min - offset_y, z_min - offset_z} / divfact + offset;
+            vec max_bound =
+                (vec{x_max - offset_x, y_max - offset_y, z_max - offset_z} + 1) / divfact + offset;
 
             return {min_bound, max_bound};
         }

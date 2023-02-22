@@ -41,7 +41,7 @@ namespace syclalg {
                 }
             }
         }else{
-            throw shamrock_exc("syclalg::get_max : input buffer not allocated");
+            throw excep_with_pos(std::runtime_error,"syclalg::get_max : input buffer not allocated");
         } 
 
         return accum;
@@ -78,7 +78,7 @@ namespace syclalg {
             } 
 
         }else {
-            throw shamrock_exc("syclalg::get_min : input buffer not allocated");
+            throw excep_with_pos(std::runtime_error,"syclalg::get_min : input buffer not allocated");
         } 
 
         
@@ -118,7 +118,7 @@ namespace syclalg {
 
 
         } else {
-            throw shamrock_exc("syclalg::get_max : input buffer not allocated");
+            throw excep_with_pos(std::runtime_error,"syclalg::get_max : input buffer not allocated");
         } 
 
         return {accum_min,accum_max};

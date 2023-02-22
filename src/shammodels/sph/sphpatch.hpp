@@ -47,7 +47,7 @@ namespace patchdata {
                 tmp = syclalg::get_max<f64>(queue, pdat.get_field<f64>(ihpart).get_buf(),nobj);
                 
             }else{
-                throw shamrock_exc("get_h_max -> current htype not handled");
+                throw excep_with_pos(std::invalid_argument,"get_h_max -> current htype not handled");
             }
 
             return tmp;

@@ -23,15 +23,17 @@ for fname in file_list:
     f = open(fname,'r')
     res = f.readlines()
     
+    has_pragma = False
     has_line_before_guard = False
     for l in res:
         is_pragma = l.startswith(check_line)
         if is_pragma:
+            has_pragma = True
             break
         else:
-            if not (l.startswith(r"//") or l.startswith(r"/*") or l.startswith(r"/*")):
+            if not (l.startswith(r"//") or l.startswith(r"/*") or l.startswith(r"/*") or l.startswith("\n")):
 
-                print(l)
+                #print(l)
                 has_line_before_guard = True
 
 

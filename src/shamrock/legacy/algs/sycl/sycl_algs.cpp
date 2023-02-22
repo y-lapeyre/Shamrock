@@ -173,7 +173,7 @@ namespace syclalgs {
 
             //HIPSYCL segfault otherwise because looks like the destructor of the sycl buffer 
             //doesn't wait for the end of the queue resulting in out of bound access
-            #ifdef SYCL_COMP_HIPSYCL
+            #ifdef SYCL_COMP_OPENSYCL
             shamsys::instance::get_compute_queue().wait();
             #endif
 
@@ -193,7 +193,7 @@ namespace syclalgs {
 
             //HIPSYCL segfault otherwise because looks like the destructor of the sycl buffer 
             //doesn't wait for the end of the queue resulting in out of bound access
-            #ifdef SYCL_COMP_HIPSYCL
+            #ifdef SYCL_COMP_OPENSYCL
             shamsys::instance::get_compute_queue().wait();
             #endif
 
