@@ -63,6 +63,10 @@ namespace shamrock::math::int_manip {
         return (i32) sycl_clz(a^b);
     }
 
+    inline i64 clz_xor(u64 a, u64 b) noexcept {
+        return (i64) sycl_clz(a^b);
+    }
+
     template<class Acc>
     inline i32 karras_delta(i32 x, i32 y, u32 morton_lenght, Acc m) noexcept {
         return ((y > morton_lenght - 1 || y < 0) ? -1 : int(shamrock::math::int_manip::sycl_clz(m[x] ^ m[y])));
