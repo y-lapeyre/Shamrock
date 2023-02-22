@@ -21,6 +21,7 @@
 
 
 #include "RadixTreeMortonBuilder.hpp"
+#include "shamalgs/memory/memory.hpp"
 #include "shamrock/sfc/MortonKernels.hpp"
 
 
@@ -160,6 +161,7 @@ template <class u_morton, class vec3, u32 dim> void RadixTree<u_morton, vec3, di
         }
     }
 
+
 }
 
 template <class morton_t, class pos_t, u32 dim> void RadixTree<morton_t, pos_t, dim>::convert_bounding_box(sycl::queue &queue) {
@@ -175,6 +177,7 @@ template <class morton_t, class pos_t, u32 dim> void RadixTree<morton_t, pos_t, 
         buf_pos_max_cell, buf_pos_min_cell_flt, buf_pos_max_cell_flt);
 
     pos_t_range_built = true;
+
 }
 
 

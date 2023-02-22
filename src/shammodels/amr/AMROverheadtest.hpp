@@ -192,6 +192,7 @@ class AMRTestModel {
 
             tree.convert_bounding_box(q);
 
+
             
             class WalkAccessors {
                 public:
@@ -216,8 +217,6 @@ class AMRTestModel {
                 sycl::accessor cell_low_bound{*pdat.get_field<u64_3>(0).get_buf(), cgh, sycl::read_only};
                 sycl::accessor cell_high_bound{*pdat.get_field<u64_3>(1).get_buf(), cgh, sycl::read_only};
 
-                sycl::stream out(1024, 256, cgh);
-
                 cgh.parallel_for(range_npart, [=](sycl::item<1> item) {
 
                     u64_3 low_bound_a = cell_low_bound[item];
@@ -230,10 +229,6 @@ class AMRTestModel {
                         [&](u32 node_id) {
                             u64_3 cur_pos_min_cell_b = tree_acc.pos_min_cell[node_id];
                             u64_3 cur_pos_max_cell_b = tree_acc.pos_max_cell[node_id];
-
-                            if(sum < 2){
-                                out << low_bound_a << " " << high_bound_a << " | " << cur_pos_min_cell_b << " " << cur_pos_max_cell_b<<"\n";
-                            }
                             
                             return shammath::domain_are_connected(low_bound_a,high_bound_a,cur_pos_min_cell_b,cur_pos_max_cell_b);
                         },
