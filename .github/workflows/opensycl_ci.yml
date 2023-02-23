@@ -3,7 +3,7 @@ name: Build OpenSycl
 on: [push]
 
 jobs:
-  copyright_check:
+  build_opensycl:
 
     runs-on: ubuntu-latest
     
@@ -26,5 +26,5 @@ jobs:
       - name: configure OpenSycl
         run: |
           cd OpenSYCL
-          cmake -DCMAKE_INSTALL_PREFIX=../OpenSYCL_comp .
+          cmake -DCMAKE_CXX_COMPILER=/usr/bin/clang++-15 -DCLANG_EXECUTABLE_PATH=/usr/bin/clang++-15 -DLLVM_DIR=/usr/lib/llvm-15/cmake -DCMAKE_INSTALL_PREFIX=../OpenSYCL_comp .
           make -j install

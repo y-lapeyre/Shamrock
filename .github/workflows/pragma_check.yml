@@ -3,7 +3,7 @@ name: Code checks - Pragma once
 on: [push]
 
 jobs:
-  copyright_check:
+  pragma_check:
 
     runs-on: ubuntu-latest
     
