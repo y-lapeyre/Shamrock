@@ -63,10 +63,10 @@ jobs:
       - name: merge coverage reports
         run: |
           cd opensycl_omp_debug
-          llvm-profdata merge -sparse utests.profraw -o utests.profdata
+          llvm-profdata-16 merge -sparse utests.profraw -o utests.profdata
 
 
       - name: print coverage
         run: |
           cd opensycl_omp_debug
-          llvm-cov report shamrock_test -instr-profile=utests.profdata
+          llvm-cov-16 report shamrock_test -instr-profile=utests.profdata
