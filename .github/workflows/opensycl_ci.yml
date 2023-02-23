@@ -30,7 +30,7 @@ jobs:
           wget https://apt.llvm.org/llvm.sh
           chmod +x llvm.sh
           sudo ./llvm.sh 15
-          sudo apt install libclang-15-dev clang-tools-15 libomp-15-dev
+          sudo apt install libclang-15-dev clang-tools-15 libomp-15-dev llvm-15
 
       - name: install Ninja-build
         run: sudo apt install ninja-build
@@ -62,9 +62,11 @@ jobs:
 
       - name: merge coverage reports
         run: |
+          cd opensycl_omp_debug
           llvm-profdata merge -sparse utests.profraw -o utests.profdata
 
 
       - name: print coverage
         run: |
+          cd opensycl_omp_debug
           llvm-cov report shamrock_test -instr-profile=utests.profdata
