@@ -9,7 +9,9 @@ jobs:
     
     steps:
       - uses: actions/checkout@v3
-      
+        with:
+          submodules: recursive
+          
       - name: clone OpenSycl
         run: git clone --recurse-submodules https://github.com/OpenSYCL/OpenSYCL.git
 
