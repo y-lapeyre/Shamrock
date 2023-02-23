@@ -13,11 +13,10 @@ jobs:
       - name: clone OpenSycl
         run: git clone --recurse-submodules https://github.com/OpenSYCL/OpenSYCL.git
 
-      - name: cd OpenSycl
-        run: cd OpenSYCL
+      
 
       - name: configure OpenSycl
-        run: cmake -DCMAKE_INSTALL_PREFIX=../OpenSYCL_comp .
-
-      - name: build OpenSycl
-        run: make -j install
+        run: |
+          cd OpenSYCL
+          cmake -DCMAKE_INSTALL_PREFIX=../OpenSYCL_comp .
+          make -j install
