@@ -8,7 +8,7 @@
 
 
 
-#include "numeric_tests.hpp"
+#include "numericTests.hpp"
 #include "shamalgs/numeric/details/exclusiveScanGPUGems39.hpp"
 
 

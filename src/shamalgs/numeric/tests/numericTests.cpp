@@ -16,7 +16,7 @@
 #include "shamalgs/numeric/numeric.hpp"
 #include <numeric>
 
-#include "numeric_tests.hpp"
+#include "numericTests.hpp"
 
 TestStart(Unittest, "shamalgs/numeric/exclusive_sum", exclsumtest, 1){
     

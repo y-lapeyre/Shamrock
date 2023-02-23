@@ -24,5 +24,5 @@ llvm-cov report shamrock_test -instr-profile=utests.profdata
 
 to dump the report to an html file
 ```sh
-llvm-cov show shamrock_test -instr-profile=utests.profdata -format=html -output-dir=out_cov -Xdemangler c++filt -Xdemangler -n
+llvm-cov show shamrock_test -instr-profile=utests.profdata -format=html -output-dir=out_cov -Xdemangler c++filt -Xdemangler -n -ignore-filename-regex=".*\Tests.cpp$|.*\Tests.hpp$|.*\shamtest.cpp|.*\shamtest.hpp"
 ```

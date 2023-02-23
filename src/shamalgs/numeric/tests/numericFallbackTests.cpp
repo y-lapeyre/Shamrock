@@ -15,7 +15,7 @@
 #include <numeric>
 
 
-#include "numeric_tests.hpp"
+#include "numericTests.hpp"
 
 
 TestStart(Unittest, "shamalgs/numeric/details/exclusive_sum_fallback", exclsumtest_fallback, 1){

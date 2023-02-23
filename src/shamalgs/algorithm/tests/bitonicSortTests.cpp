@@ -6,7 +6,7 @@
 //
 // -------------------------------------------------------//
 
-#include "sort_tests.hpp"
+#include "sortTests.hpp"
 #include "shamalgs/algorithm/details/bitonicSort.hpp"
 
 TestStart(Unittest, "shamalgs/algorithm/details/bitonicSort_legacy", test_bitonic_sort_legacy, 1){
