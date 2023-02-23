@@ -30,14 +30,16 @@ jobs:
           wget https://apt.llvm.org/llvm.sh
           chmod +x llvm.sh
           sudo ./llvm.sh 15
-          sudo apt install libclang-15-dev clang-tools-15 libomp-15-dev llvm-15
+          sudo apt install libclang-15-dev clang-tools-15 libomp-15-dev libllvm-15-ocaml-dev libllvm15 llvm-15 llvm-15-dev llvm-15-doc llvm-15-examples llvm-15-runtime
 
       - name: install Ninja-build
         run: sudo apt install ninja-build
 
       - name: find mpi header
-        run: find /usr/include -iname "mpi.h"
+        run: find /usr/include -iname "*mpi.h"
         
+      - name: find llvm-profdata header
+        run: find /usr -iname "*llvm-profdata*"
 
       - name: configure & install OpenSycl
         run: |
@@ -63,10 +65,10 @@ jobs:
       - name: merge coverage reports
         run: |
           cd opensycl_omp_debug
-          llvm-profdata-16 merge -sparse utests.profraw -o utests.profdata
+          llvm-profdata-15 merge -sparse utests.profraw -o utests.profdata
 
 
       - name: print coverage
         run: |
           cd opensycl_omp_debug
-          llvm-cov-16 report shamrock_test -instr-profile=utests.profdata
+          llvm-cov-15 report shamrock_test -instr-profile=utests.profdata
