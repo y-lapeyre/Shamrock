@@ -1,0 +1,21 @@
+name: Build OpenSycl
+
+on: [push]
+
+jobs:
+  copyright_check:
+
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: clone OpenSycl
+        run: git clone --recurse-submodules https://github.com/OpenSYCL/OpenSYCL.git
+
+      - name: configure OpenSycl
+        run: cd OpenSYCL
+        run: cmake -DCMAKE_INSTALL_PREFIX=../OpenSYCL_comp .
+
+      - name: build OpenSycl
+        run: make -j install
