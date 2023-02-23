@@ -31,8 +31,8 @@ jobs:
       - name: install Ninja-build
         run: sudo apt install ninja-build
 
-      - name: install OpenMPI headers
-        run: sudo apt install libopenmpi-dev
+      - name: find mpi header
+        run: find /usr/include -iname "mpi.h"
         
 
       - name: configure & install OpenSycl
