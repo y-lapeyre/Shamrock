@@ -20,8 +20,13 @@
  */
 
 
-#define OMPI_SKIP_MPICXX
+#if __has_include(<mpi.h>)
 #include <mpi.h>
+#elif __has_include(<mpi/mpi.h>) // on the github CI pipeline 
+#include <mpi/mpi.h>
+#else
+#error "mpi headers cannot be found check the output of "
+#endif
 
 
 //#define MPI_LOGGER_ENABLED

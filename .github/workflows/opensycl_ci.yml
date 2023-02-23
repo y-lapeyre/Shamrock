@@ -35,7 +35,7 @@ jobs:
         run: sudo apt install libopenmpi-dev
         
 
-      - name: configure OpenSycl
+      - name: configure & install OpenSycl
         run: |
           cd OpenSYCL
           cmake -DCMAKE_CXX_COMPILER=/usr/bin/clang++-15 -DCLANG_EXECUTABLE_PATH=/usr/bin/clang++-15 -DLLVM_DIR=/usr/lib/llvm-15/cmake -DCMAKE_INSTALL_PREFIX=../OpenSYCL_comp .
@@ -44,7 +44,7 @@ jobs:
       - name: configure Shamrock
         run: |
           python3 buildbot/configure.py --gen ninja --tests --build debug \
-            --outdir opensycl_omp_debug --cxxpath OpenSYCL_comp --compiler opensycl --profile omp
+            --outdir opensycl_omp_debug --cxxpath OpenSYCL_comp --compiler opensycl --profile omp_coverage
 
       - name: compile Shamrock
         run: |
@@ -54,6 +54,6 @@ jobs:
       - name: run Shamrock Unittests
         run: |
           cd opensycl_omp_debug
-          ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --unittest
+          LLVM_PROFILE_FILE="utests.profraw" ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --unittest
 
       
