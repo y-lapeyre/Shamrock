@@ -1,6 +1,10 @@
 name: Build OpenSycl - Ubuntu
 
-on: [push]
+on:
+  pull_request:
+    # Sequence of patterns matched against refs/heads
+    branches:    
+      - main
 
 jobs:
   build_opensycl:
@@ -56,4 +60,11 @@ jobs:
           cd opensycl_omp_debug
           LLVM_PROFILE_FILE="utests.profraw" ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --unittest
 
-      
+      - name: merge coverage reports
+        run: |
+          llvm-profdata merge -sparse utests.profraw -o utests.profdata
+
+
+      - name: print coverage
+        run: |
+          llvm-cov report shamrock_test -instr-profile=utests.profdata
