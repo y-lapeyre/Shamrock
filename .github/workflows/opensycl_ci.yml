@@ -72,8 +72,8 @@ jobs:
         run: |
           cd opensycl_omp_debug
           llvm-cov-15 report shamrock_test -instr-profile=utests.profdata > coverage_list.txt
-          llvm-cov-15 show shamrock_test -instr-profile=utests.profdata -format=html -output-dir=out_cov -Xdemangler c++filt -Xdemangler -n -ignore-filename-regex=".*\Tests.cpp$|.*\Tests.hpp$|.*\shamtest.cpp|.*\shamtest.hpp"
-
+          llvm-cov-15 show shamrock_test -instr-profile=utests.profdata -format=html -output-dir=out_cov -Xdemangler c++filt -Xdemangler -n -ignore-filename-regex=".*\Tests.cpp$|.*\Tests.hpp$|.*\shamtest.cpp|.*\shamtest.hpp|.*\main_test.cpp|.*\aliases.hpp"
+          
       - name: Archive code coverage results 1
         uses: actions/upload-artifact@v3
         with:
