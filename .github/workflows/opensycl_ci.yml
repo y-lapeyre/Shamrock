@@ -71,4 +71,17 @@ jobs:
       - name: print coverage
         run: |
           cd opensycl_omp_debug
-          llvm-cov-15 report shamrock_test -instr-profile=utests.profdata
+          llvm-cov-15 report shamrock_test -instr-profile=utests.profdata > coverage_list.txt
+          llvm-cov-15 show shamrock_test -instr-profile=utests.profdata -format=html -output-dir=out_cov -Xdemangler c++filt -Xdemangler -n
+
+      - name: Archive code coverage results 1
+        uses: actions/upload-artifact@v3
+        with:
+          name: code-coverage-list
+          path: opensycl_omp_debug/coverage_list.txt
+
+      - name: Archive code coverage results 2
+        uses: actions/upload-artifact@v3
+        with:
+          name: code-coverage-report
+          path: opensycl_omp_debug/out_cov/
