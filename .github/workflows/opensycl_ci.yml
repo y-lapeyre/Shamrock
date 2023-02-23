@@ -23,8 +23,16 @@ jobs:
           sudo ./llvm.sh 15
           sudo apt install libclang-15-dev clang-tools-15 libomp-15-dev
 
+      - name: install Ninja-build
+        run: sudo apt install ninja-build
+
       - name: configure OpenSycl
         run: |
           cd OpenSYCL
           cmake -DCMAKE_CXX_COMPILER=/usr/bin/clang++-15 -DCLANG_EXECUTABLE_PATH=/usr/bin/clang++-15 -DLLVM_DIR=/usr/lib/llvm-15/cmake -DCMAKE_INSTALL_PREFIX=../OpenSYCL_comp .
           make -j install
+
+      - name: configure Shamrock
+        run: |
+          python3 Shamrock/buildbot/configure.py --gen ninja --tests --build debug \
+            --outdir Shamrock/build_config/opensycl_omp_debug --cxxpath OpenSYCL_comp --compiler opensycl --profile omp
