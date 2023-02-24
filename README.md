@@ -3,9 +3,9 @@
   <img alt="text" src="doc/logosham_white.png" width="600">
 </picture>
 
-![badge1](https://github.com/tdavidcl/Shamrock/actions/workflows/copyright.yml/badge.svg)
-![badge1](https://github.com/tdavidcl/Shamrock/actions/workflows/pragma_check.yml/badge.svg)
-![badge1](https://github.com/tdavidcl/Shamrock/actions/workflows/opensycl_ci.yml/badge.svg)
+![badge1](https://github.com/tdavidcl/Shamrock/actions/workflows/copyright.yml/badge.svg?branch=main)
+![badge1](https://github.com/tdavidcl/Shamrock/actions/workflows/pragma_check.yml/badge.svg?branch=main)
+![badge1](https://github.com/tdavidcl/Shamrock/actions/workflows/opensycl_ci.yml/badge.svg?branch=main)
 
 # Getting started
 

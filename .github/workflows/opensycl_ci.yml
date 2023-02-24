@@ -1,10 +1,11 @@
 name: Build OpenSycl - Ubuntu
 
-on:
-  pull_request:
-    # Sequence of patterns matched against refs/heads
-    branches:    
-      - main
+on: [push]
+#on:
+#  pull_request:
+#    # Sequence of patterns matched against refs/heads
+#    branches:    
+#      - main
 
 jobs:
   build_opensycl:
@@ -38,8 +39,8 @@ jobs:
       - name: find mpi header
         run: find /usr/include -iname "*mpi.h"
         
-      - name: find llvm-profdata header
-        run: find /usr -iname "*llvm-profdata*"
+      #- name: find llvm-profdata header
+      #  run: find /usr -iname "*llvm-profdata*"
 
       - name: configure & install OpenSycl
         run: |
@@ -73,7 +74,7 @@ jobs:
           cd opensycl_omp_debug
           llvm-cov-15 report shamrock_test -instr-profile=utests.profdata > coverage_list.txt
           llvm-cov-15 show shamrock_test -instr-profile=utests.profdata -format=html -output-dir=out_cov -Xdemangler c++filt -Xdemangler -n -ignore-filename-regex=".*\Tests.cpp$|.*\Tests.hpp$|.*\shamtest.cpp|.*\shamtest.hpp|.*\main_test.cpp|.*\aliases.hpp"
-          
+
       - name: Archive code coverage results 1
         uses: actions/upload-artifact@v3
         with:
