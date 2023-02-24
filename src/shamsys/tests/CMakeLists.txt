@@ -5,6 +5,7 @@ set(Sources
 set(SourcesTest
     BandwithTests.cpp
     CommBufferTests.cpp
+    LogTests.cpp
 )
 set(Headers
 
