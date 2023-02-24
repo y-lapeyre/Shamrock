@@ -61,12 +61,14 @@ endif()
 set(MPI_CXX_SKIP_MPICXX true)
 find_package(MPI REQUIRED COMPONENTS C)
 
+message(STATUS "MPI include dir : ${MPI_C_INCLUDE_DIRS}")
+
 set(PYBIND11_FINDPYTHON ON)
 add_subdirectory(external)
 
 
 #for some reason it doesn't work with target_include_directories
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -isystem ${COMP_ROOT_DIR}/include -isystem ${COMP_ROOT_DIR}/include/sycl")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -isystem ${COMP_ROOT_DIR}/include -isystem ${COMP_ROOT_DIR}/include/sycl -DOMPI_SKIP_MPICXX")
 
 
 ######################
@@ -91,6 +93,8 @@ else()
 target_compile_definitions(shamrock_lib PUBLIC EXECUTABLE_BUILD)
 target_link_libraries(shamrock_lib PUBLIC pybind11::embed)
 endif()
+
+target_link_libraries(shamrock_lib PUBLIC MPI::MPI_C)
 
 if("${BUILD_SIM}")
 

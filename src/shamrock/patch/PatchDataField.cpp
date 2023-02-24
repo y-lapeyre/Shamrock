@@ -9,7 +9,6 @@
 #include "PatchDataField.hpp"
 #include "shamalgs/algorithm/algorithm.hpp"
 #include "shamrock/legacy/utils/sycl_vector_utils.hpp"
-#include <buffer.hpp>
 #include <memory>
 
 template<class T> class Kernel_Extract_element;

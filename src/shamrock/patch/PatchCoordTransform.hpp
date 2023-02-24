@@ -15,9 +15,6 @@
 #include "shamrock/patch/PatchCoord.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamutils/sycl_utils/vectorProperties.hpp"
-#include <stdexcept>
-#include <type_traits>
-#include <types.hpp>
 
 namespace shamrock::patch {
 

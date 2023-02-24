@@ -15,6 +15,7 @@ parts:
     - file: user-manual/codebase_org
     - file: user-manual/communication_protocol
     - file: user-manual/coordinates_systems
+    - file: user-manual/code_coverage
     - file: programming_guide/kernel_macros
     - file: control_script/control_script
     - file: mpi_scheduler/mpi_scheduler

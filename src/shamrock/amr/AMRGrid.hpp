@@ -18,9 +18,6 @@
 #include "shamrock/scheduler/DistributedData.hpp"
 #include "shamrock/tree/RadixTreeMortonBuilder.hpp"
 #include "shamsys/legacy/log.hpp"
-#include <access/access.hpp>
-#include <array>
-#include <stdexcept>
 #include <vector>
 
 namespace shamrock::amr {

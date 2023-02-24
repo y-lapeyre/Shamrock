@@ -1,7 +1,11 @@
-
-<img src="doc/logosham_white.png" alt="logo" width="600"/>
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="doc/logosham.png"  width="600">
+  <img alt="text" src="doc/logosham_white.png" width="600">
+</picture>
 
 ![badge1](https://github.com/tdavidcl/Shamrock/actions/workflows/copyright.yml/badge.svg)
+![badge1](https://github.com/tdavidcl/Shamrock/actions/workflows/pragma_check.yml/badge.svg)
+![badge1](https://github.com/tdavidcl/Shamrock/actions/workflows/opensycl_ci.yml/badge.svg)
 
 # Getting started
 
