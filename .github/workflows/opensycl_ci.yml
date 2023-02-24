@@ -39,8 +39,8 @@ jobs:
       - name: find mpi header
         run: find /usr/include -iname "*mpi.h"
         
-      - name: find llvm-profdata header
-        run: find /usr -iname "*llvm-profdata*"
+      #- name: find llvm-profdata header
+      #  run: find /usr -iname "*llvm-profdata*"
 
       - name: configure & install OpenSycl
         run: |
