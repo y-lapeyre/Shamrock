@@ -11,6 +11,8 @@
 #include "aliases.hpp"
 #include <fmt/core.h>
 #include <fmt/format.h>
+#include <fmt/ranges.h>
+
 
 template<class T>
 struct fmt::formatter<sycl::vec<T, 2>> {
@@ -21,7 +23,7 @@ struct fmt::formatter<sycl::vec<T, 2>> {
     }
 
     template<typename FormatContext>
-    auto format(sycl::vec<f64, 3> c, FormatContext &ctx) const {
+    auto format(sycl::vec<T, 3> c, FormatContext &ctx) const {
         return fmt::format_to(ctx.out(), "({},{})", c.x(), c.y());
     }
 };
@@ -35,7 +37,7 @@ struct fmt::formatter<sycl::vec<T, 3>> {
     }
 
     template<typename FormatContext>
-    auto format(sycl::vec<f64, 3> c, FormatContext &ctx) const {
+    auto format(sycl::vec<T, 3> c, FormatContext &ctx) const {
         return fmt::format_to(ctx.out(), "({},{},{})", c.x(), c.y(), c.z());
     }
 };
@@ -49,7 +51,7 @@ struct fmt::formatter<sycl::vec<T, 4>> {
     }
 
     template<typename FormatContext>
-    auto format(sycl::vec<f64, 4> c, FormatContext &ctx) const {
+    auto format(sycl::vec<T, 4> c, FormatContext &ctx) const {
         return fmt::format_to(ctx.out(), "({},{},{},{})", c.x(), c.y(), c.z(), c.w());
     }
 };
@@ -63,7 +65,7 @@ struct fmt::formatter<sycl::vec<T, 8>> {
     }
 
     template<typename FormatContext>
-    auto format(sycl::vec<f64, 8> c, FormatContext &ctx) const {
+    auto format(sycl::vec<T, 8> c, FormatContext &ctx) const {
         return fmt::format_to(
             ctx.out(),
             "({},{},{},{},{},{},{},{})",
@@ -88,7 +90,7 @@ struct fmt::formatter<sycl::vec<T, 16>> {
     }
 
     template<typename FormatContext>
-    auto format(sycl::vec<f64, 16> c, FormatContext &ctx) const {
+    auto format(sycl::vec<T, 16> c, FormatContext &ctx) const {
         return fmt::format_to(
             ctx.out(),
             "(({},{},{},{}),({},{},{},{}),({},{},{},{}),({},{},{},{}))",

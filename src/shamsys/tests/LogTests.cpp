@@ -13,6 +13,6 @@
 TestStart(Unittest, "shamsys/Log", test_format, 1){
 
 
-    std::cout << shamsys::format("{}", f64_3{0,1,2}) << std::endl;
+    std::cout << shamsys::format("{} 1", f64_3{0,1,2}) << std::endl;
 
 }

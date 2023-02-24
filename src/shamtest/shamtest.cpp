@@ -399,7 +399,9 @@ namespace shamtest {
                 std::cout << "       Result : \033[1;31m Fail \033[0m";
             }
 
-            std::string s_assert = format(" [%d/%d] ",succes_cnt,res.asserts.asserts.size());
+
+
+            std::string s_assert = shamsys::format(" [{}/{}] ",succes_cnt,res.asserts.asserts.size());
             printf("%-15s",s_assert.c_str());
             std::cout << " (" << timer.get_time_str() << ")" <<std::endl;
 

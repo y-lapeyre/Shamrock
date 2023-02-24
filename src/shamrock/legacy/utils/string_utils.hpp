@@ -24,6 +24,7 @@
 #include "aliases.hpp"
 #include <cstdarg>
 
+[[deprecated]]
 inline std::string format(const char *fmt...) {
     std::string s{};
     va_list args, args2;

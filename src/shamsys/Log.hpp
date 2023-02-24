@@ -14,8 +14,10 @@
 namespace shamsys {
 
     template<typename... T>
-    std::string format(fmt::format_string<T...> fmt, T &&...args) {
+    inline std::string format(fmt::format_string<T...> fmt, T &&...args) {
         return fmt::format(fmt, args...);
     }
+
+
 
 } // namespace shamsys
