@@ -442,7 +442,7 @@ inline std::pair<std::set<u32>, std::set<u32>> RadixTree<u_morton, vec3, dim>::g
     auto rchild_flag    = sycl::host_accessor{*buf_rchild_flag};
     auto lchild_flag    = sycl::host_accessor{*buf_lchild_flag};
 
-    sycl::range<1> range_leaf = sycl::range<1>{tree_leaf_count};
+    //sycl::range<1> range_leaf = sycl::range<1>{tree_leaf_count};
 
     u32 leaf_offset = tree_internal_count;
 

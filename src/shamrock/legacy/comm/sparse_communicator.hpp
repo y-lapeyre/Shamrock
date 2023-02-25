@@ -80,7 +80,7 @@ class SparsePatchCommunicator {
     }
 
     template<typename T>
-    friend class SparseCommExchanger;
+    friend struct SparseCommExchanger;
 
     template<class T>
     inline SparseCommResult<T> sparse_exchange(const SparseCommSource<T> &send_comm_pdat){
@@ -164,7 +164,7 @@ struct SparseCommExchanger<shamrock::patch::PatchData>{
 
         }
 
-        return std::move(recv_obj);
+        return recv_obj;
     }
 };
 

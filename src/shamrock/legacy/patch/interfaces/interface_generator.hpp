@@ -424,8 +424,8 @@ template <class vectype, class field_type, class InterfaceSelector> class Interf
         {
             i32 iterator = 0; 
             for(u64 i = 0 ; i < comm_vec.size(); i++){
-                const Patch & psend = sched.patch_list.global[comm_vec[i].x()];
-                const Patch & precv = sched.patch_list.global[comm_vec[i].y()];
+                //const Patch & psend = sched.patch_list.global[comm_vec[i].x()];
+                //const Patch & precv = sched.patch_list.global[comm_vec[i].y()];
 
                 local_comm_tag[i] = iterator;
 

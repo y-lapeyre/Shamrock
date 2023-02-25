@@ -158,7 +158,7 @@ template <class T> class PatchDataField {
 
     [[nodiscard]] inline const u32 &size() const { return val_cnt; }
 
-    [[nodiscard]] inline const u64 memsize() const { return val_cnt * sizeof(T); }
+    [[nodiscard]] inline u64 memsize() const { return val_cnt * sizeof(T); }
 
     [[nodiscard]] inline const u32 &get_nvar() const { return nvar; }
 
@@ -375,5 +375,8 @@ inline void PatchDataField<T>::check_err_range(Lambdacd &&cd_true, T vmin, T vma
         }
     }
 
-    throw shamutils::throw_with_loc<std::invalid_argument>("obj not in range");
+    if(error){
+        throw shamutils::throw_with_loc<std::invalid_argument>("obj not in range");
+    }
+
 }

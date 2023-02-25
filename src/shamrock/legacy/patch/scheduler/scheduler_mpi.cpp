@@ -26,6 +26,7 @@
 
 #include "shamsys/legacy/sycl_mpi_interop.hpp"
 #include "shamutils/stringUtils.hpp"
+#include "shamutils/throwUtils.hpp"
 
 
 
@@ -152,7 +153,7 @@ std::vector<u64> PatchScheduler::add_root_patches(std::vector<shamrock::patch::P
     patch_list.build_global_idx_map();
 
 
-    return std::move(ret);
+    return ret;
 
 }
 
@@ -797,6 +798,10 @@ void PatchScheduler::dump_local_patches(std::string filename){
 
 
 std::vector<std::unique_ptr<shamrock::patch::PatchData>> PatchScheduler::gather_data(u32 rank){
+
+    if(rank != 0){
+        throw shamutils::throw_with_loc<std::invalid_argument>("this method is only implemented for rank=0");
+    }
 
     using namespace shamrock::patch;
 
