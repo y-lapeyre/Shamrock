@@ -16,11 +16,17 @@
 #include <vector>
 
 
-#include "CommProtocol.hpp"
+#include "CommRequests.hpp"
 //#include "CommImplBuffer.hpp"
 
 
 
+namespace shamsys::comm::details {
+
+    template<class T> class CommDetails;
+    template<class T, Protocol comm_mode> class CommBuffer;
+    
+} // namespace shamsys::comm::details
 
 
 namespace shamsys::comm {

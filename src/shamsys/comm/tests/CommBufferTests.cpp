@@ -12,7 +12,7 @@
 #include <hipSYCL/sycl/libkernel/accessor.hpp>
 #include <random>
 
-#include "shamsys/comm/Comm.hpp"
+#include "shamsys/comm/CommBuffer.hpp"
 #include "shamsys/comm/details/CommImplBuffer.hpp"
 #include "shamsys/SyclHelper.hpp"
 

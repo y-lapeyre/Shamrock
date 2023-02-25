@@ -8,7 +8,8 @@
 
 #pragma once
 
-#include "shamsys/comm/CommProtocol.hpp"
+#include "shamsys/comm/CommRequests.hpp"
+#include "shamsys/comm/CommBuffer.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/MpiWrapper.hpp"
 #include "shamsys/SyclHelper.hpp"
