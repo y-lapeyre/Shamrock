@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright(C) 2021-2022 Timothée David--Cléris <timothee.david--cleris@ens-lyon.fr>
+// Copyright(C) 2021-2023 Timothée David--Cléris <timothee.david--cleris@ens-lyon.fr>
 // Licensed under CeCILL 2.1 License, see LICENSE for more information
 //
 // -------------------------------------------------------//
@@ -52,15 +52,15 @@ namespace models::nbody {
             while(step_time < end_time && sycl::fabs(step_time - end_time) > 1e-8){
 
                 logger::normal_ln("NBodySelfGrav", "simulate until",
-                    format("%2.2f / %2.2f (%3.1f %)",step_time,end_time,100*(step_time-start_time)/(end_time-start_time))
+                    shamutils::format_printf("%2.2f / %2.2f (%3.1f %)",step_time,end_time,100*(step_time-start_time)/(end_time-start_time))
                 );
 
                 if(step_cnt % freq_dump){
-                    dump(prefix_dump + "dump_" + format("%06d",step_cnt));
+                    dump(prefix_dump + "dump_" + shamutils::format_printf("%06d",step_cnt));
                 }
 
                 if(step_cnt % freq_restart_dump){
-                    restart_dump(prefix_dump + "restart_dump_" + format("%06d",step_cnt));
+                    restart_dump(prefix_dump + "restart_dump_" + shamutils::format_printf("%06d",step_cnt));
                 }
 
                 step_time = evolve(sched, step_time, end_time);

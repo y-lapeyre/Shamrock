@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright(C) 2021-2022 Timothée David--Cléris <timothee.david--cleris@ens-lyon.fr>
+// Copyright(C) 2021-2023 Timothée David--Cléris <timothee.david--cleris@ens-lyon.fr>
 // Licensed under CeCILL 2.1 License, see LICENSE for more information
 //
 // -------------------------------------------------------//
@@ -217,7 +217,7 @@ template<class T> void make_bandwith_matrix(std::string dset_name,sycl::queue & 
     ptr1 = sycl::malloc_device<T>(comm_size, q1);
     ptr2 = sycl::malloc_device<T>(comm_size, q1);
     q1.wait();
-    test(dset_name + " device->device ("+readable_sizeof(comm_size*sizeof(T)) +")");
+    test(dset_name + " device->device ("+shamutils::readable_sizeof(comm_size*sizeof(T)) +")");
     sycl::free(ptr1,q1);
     sycl::free(ptr2,q1);
     
@@ -225,7 +225,7 @@ template<class T> void make_bandwith_matrix(std::string dset_name,sycl::queue & 
     ptr1 = sycl::malloc_host<T>(comm_size, q1);
     ptr2 = sycl::malloc_device<T>(comm_size, q1);
     q1.wait();
-    test(dset_name + " host->device ("+readable_sizeof(comm_size*sizeof(T)) +")");
+    test(dset_name + " host->device ("+shamutils::readable_sizeof(comm_size*sizeof(T)) +")");
     sycl::free(ptr1,q1);
     sycl::free(ptr2,q1);
     
@@ -233,7 +233,7 @@ template<class T> void make_bandwith_matrix(std::string dset_name,sycl::queue & 
     ptr1 = sycl::malloc_device<T>(comm_size, q1);
     ptr2 = sycl::malloc_host<T>(comm_size, q1);
     q1.wait();
-    test(dset_name + " device->host ("+readable_sizeof(comm_size*sizeof(T)) +")");
+    test(dset_name + " device->host ("+shamutils::readable_sizeof(comm_size*sizeof(T)) +")");
     sycl::free(ptr1,q1);
     sycl::free(ptr2,q1);
     
@@ -241,7 +241,7 @@ template<class T> void make_bandwith_matrix(std::string dset_name,sycl::queue & 
     ptr1 = sycl::malloc_host<T>(comm_size, q1);
     ptr2 = sycl::malloc_host<T>(comm_size, q1);
     q1.wait();
-    test(dset_name + " host->host ("+readable_sizeof(comm_size*sizeof(T)) +")");
+    test(dset_name + " host->host ("+shamutils::readable_sizeof(comm_size*sizeof(T)) +")");
     sycl::free(ptr1,q1);
     sycl::free(ptr2,q1);
     

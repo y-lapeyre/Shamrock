@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright(C) 2021-2022 Timothée David--Cléris <timothee.david--cleris@ens-lyon.fr>
+// Copyright(C) 2021-2023 Timothée David--Cléris <timothee.david--cleris@ens-lyon.fr>
 // Licensed under CeCILL 2.1 License, see LICENSE for more information
 //
 // -------------------------------------------------------//
@@ -65,7 +65,7 @@ inline std::string nanosec_to_time_str(double nanosec) {
         sec_int /= 1000;
     }
 
-    return format("%4.2f", sec_int) + " " + unit;
+    return shamutils::format_printf("%4.2f", sec_int) + " " + unit;
 } 
 
 

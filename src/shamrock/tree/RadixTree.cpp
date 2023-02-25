@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright(C) 2021-2022 Timothée David--Cléris <timothee.david--cleris@ens-lyon.fr>
+// Copyright(C) 2021-2023 Timothée David--Cléris <timothee.david--cleris@ens-lyon.fr>
 // Licensed under CeCILL 2.1 License, see LICENSE for more information
 //
 // -------------------------------------------------------//
@@ -29,7 +29,7 @@ RadixTree<u_morton, vec3, dim>::RadixTree(
     sycl::queue &queue, std::tuple<vec3, vec3> treebox, const std::unique_ptr<sycl::buffer<vec3>> &pos_buf, u32 cnt_obj, u32 reduc_level
 ) {
     if (cnt_obj > i32_max - 1) {
-        throw excep_with_pos(std::runtime_error,"number of element in patch above i32_max-1");
+        throw shamutils::throw_with_loc<std::runtime_error>("number of element in patch above i32_max-1");
     }
 
     obj_cnt = cnt_obj;
@@ -48,7 +48,7 @@ RadixTree<u_morton, vec3, dim>::RadixTree(
 
     logger::debug_sycl_ln(
         "RadixTree", "reduction results : (before :", cnt_obj, " | after :", tree_leaf_count,
-        ") ratio :", format("%2.2f", f32(cnt_obj) / f32(tree_leaf_count))
+        ") ratio :", shamutils::format_printf("%2.2f", f32(cnt_obj) / f32(tree_leaf_count))
     );
 
     if (tree_leaf_count > 1) {
@@ -115,7 +115,7 @@ RadixTree<u_morton, vec3, dim>::RadixTree(
         }
 
     } else {
-        throw excep_with_pos(std::runtime_error,"empty patch should be skipped");
+        throw shamutils::throw_with_loc<std::runtime_error>("empty patch should be skipped");
     }
 }
 
@@ -260,11 +260,11 @@ template<class T>
 std::string print_member(const T & a);
 
 template<> std::string print_member(const u8 & a){
-    return format("%d",u32(a));
+    return shamutils::format_printf("%d",u32(a));
 }
 
 template<> std::string print_member(const u32 & a){
-    return format("%d",a);
+    return shamutils::format_printf("%d",a);
 }
 
 

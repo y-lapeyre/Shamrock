@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright(C) 2021-2022 Timothée David--Cléris <timothee.david--cleris@ens-lyon.fr>
+// Copyright(C) 2021-2023 Timothée David--Cléris <timothee.david--cleris@ens-lyon.fr>
 // Licensed under CeCILL 2.1 License, see LICENSE for more information
 //
 // -------------------------------------------------------//
@@ -28,6 +28,7 @@
 #include "shamrock/patch/PatchDataLayout.hpp"
 #include "shamsys/legacy/mpi_handler.hpp"
 #include "shamrock/legacy/utils/geometry_utils.hpp"
+#include "shamutils/stringUtils.hpp"
 
 //TODO use range based loop and emplace_back instead 
 
@@ -228,28 +229,28 @@ void SchedulerPatchData::merge_patchdata(u64 new_key, u64 old_key0, u64 old_key1
     auto search7 = owned_data.find(old_key7);
 
     if(search0 == owned_data.end()){
-        throw excep_with_pos(std::runtime_error,format("patchdata for key=%d was not owned by the node",old_key0));
+        throw shamutils::throw_with_loc<std::runtime_error>(shamutils::format_printf("patchdata for key=%d was not owned by the node",old_key0));
     }
     if(search1 == owned_data.end()){
-        throw excep_with_pos(std::runtime_error,format("patchdata for key=%d was not owned by the node",old_key1));
+        throw shamutils::throw_with_loc<std::runtime_error>(shamutils::format_printf("patchdata for key=%d was not owned by the node",old_key1));
     }
     if(search2 == owned_data.end()){
-        throw excep_with_pos(std::runtime_error,format("patchdata for key=%d was not owned by the node",old_key2));
+        throw shamutils::throw_with_loc<std::runtime_error>(shamutils::format_printf("patchdata for key=%d was not owned by the node",old_key2));
     }
     if(search3 == owned_data.end()){
-        throw excep_with_pos(std::runtime_error,format("patchdata for key=%d was not owned by the node",old_key3));
+        throw shamutils::throw_with_loc<std::runtime_error>(shamutils::format_printf("patchdata for key=%d was not owned by the node",old_key3));
     }
     if(search4 == owned_data.end()){
-        throw excep_with_pos(std::runtime_error,format("patchdata for key=%d was not owned by the node",old_key4));
+        throw shamutils::throw_with_loc<std::runtime_error>(shamutils::format_printf("patchdata for key=%d was not owned by the node",old_key4));
     }
     if(search5 == owned_data.end()){
-        throw excep_with_pos(std::runtime_error,format("patchdata for key=%d was not owned by the node",old_key5));
+        throw shamutils::throw_with_loc<std::runtime_error>(shamutils::format_printf("patchdata for key=%d was not owned by the node",old_key5));
     }
     if(search6 == owned_data.end()){
-        throw excep_with_pos(std::runtime_error,format("patchdata for key=%d was not owned by the node",old_key6));
+        throw shamutils::throw_with_loc<std::runtime_error>(shamutils::format_printf("patchdata for key=%d was not owned by the node",old_key6));
     }
     if(search7 == owned_data.end()){
-        throw excep_with_pos(std::runtime_error,format("patchdata for key=%d was not owned by the node",old_key7));
+        throw shamutils::throw_with_loc<std::runtime_error>(shamutils::format_printf("patchdata for key=%d was not owned by the node",old_key7));
     }
 
 

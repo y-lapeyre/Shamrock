@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright(C) 2021-2022 Timothée David--Cléris <timothee.david--cleris@ens-lyon.fr>
+// Copyright(C) 2021-2023 Timothée David--Cléris <timothee.david--cleris@ens-lyon.fr>
 // Licensed under CeCILL 2.1 License, see LICENSE for more information
 //
 // -------------------------------------------------------//
@@ -84,7 +84,7 @@ namespace shamsys::instance {
             << "   - " 
             << Device.get_info<sycl::info::device::name>()
             << " " 
-            << readable_sizeof(Device.get_info<sycl::info::device::global_mem_size>()) << "\n";
+            << shamutils::readable_sizeof(Device.get_info<sycl::info::device::global_mem_size>()) << "\n";
     }
 
 
@@ -243,7 +243,7 @@ namespace shamsys::instance {
                 std::string platname = trunc_str(PlatformName,24);
                 std::string devtype = trunc_str(getDeviceTypeName(Device),6);
 
-                logger::raw_ln(format("| %-3s | %02d | %-29s | %-24s | %-6s |",
+                logger::raw_ln(format("| {:>3} | {:>2} | {:>29.29} | {:>24.24} | {:>6} |",
                     selected.c_str(),key_global,devname.c_str(),platname.c_str(),devtype.c_str()
                 ));
 
@@ -341,7 +341,7 @@ namespace shamsys::instance {
             throw ShamsysInstanceException("failed setting the MPI error mode");
         }
 
-        logger::raw_ln(format("[%03d]: \x1B[32mMPI_Init : node n°%03d | world size : %d | name = %s\033[0m\n",world_rank,world_rank,world_size,get_process_name().c_str()));
+        logger::raw_ln(format("[{:03}]: \x1B[32mMPI_Init : node n°{:03} | world size : {} | name = {}\033[0m\n",world_rank,world_rank,world_size,get_process_name().c_str()));
 
         mpi::barrier(MPI_COMM_WORLD);
         //if(world_rank == 0){

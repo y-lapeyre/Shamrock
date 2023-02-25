@@ -103,10 +103,10 @@ else:
     cmake_cmd += " -DSyCL_Compiler=UNKNOWN"
     print("WARNING : The compiler is unknown")
 
-    if not (args.profile == NONE):
+    if not (args.profile == None):
         raise "can not select a profile with a unknown compiler"
 
-    if (args.cxxcompiler == NONE):
+    if (args.cxxcompiler == None):
         raise "you must select the compiler path if unknown"
 
 
@@ -156,7 +156,10 @@ profile_map = {
         "omp" : "--hipsycl-cpu-cxx=g++ --hipsycl-targets='omp' " + hipsyclconfigfile,
         "omp_sanitizer" : "-fsanitize=address --hipsycl-cpu-cxx=g++ --hipsycl-targets='omp' " + hipsyclconfigfile,
         "omp_coverage" : "-fprofile-instr-generate -fcoverage-mapping --hipsycl-cpu-cxx=g++ --hipsycl-targets='omp' " + hipsyclconfigfile,
-        "generic" : "--hipsycl-targets=generic "+ hipsyclconfigfile
+        "generic" : "--hipsycl-targets=generic "+ hipsyclconfigfile,
+
+        #if you dare trying to develop with this profile
+        "omp_insanity" : "--hipsycl-cpu-cxx=g++ --hipsycl-targets='omp' -Wall -Wextra -Werror " + hipsyclconfigfile
     }
 }
 

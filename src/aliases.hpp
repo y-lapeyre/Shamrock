@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright(C) 2021-2022 Timothée David--Cléris <timothee.david--cleris@ens-lyon.fr>
+// Copyright(C) 2021-2023 Timothée David--Cléris <timothee.david--cleris@ens-lyon.fr>
 // Licensed under CeCILL 2.1 License, see LICENSE for more information
 //
 // -------------------------------------------------------//
@@ -53,7 +53,7 @@ inline std::string __loc_prefix(const char* filename, int line){
 //#define throw_with_pos(...) throw std::runtime_error( __VA_ARGS__ " ("+ __FILENAME__ +":" + std::to_string(__LINE__) +")");
 
 
-#define excep_with_pos(a, ...) a ((std::string(__VA_ARGS__) + "\n-------------------\n - at:\n    "+__LOC_PREFIX__ +"\n - call:\n    "+std::string(__PRETTY_FUNCTION__)+"\n-------------------").c_str())
+//#define excep_with_pos(a, ...) a ((std::string(__VA_ARGS__) + "\n-------------------\n - at:\n    "+__LOC_PREFIX__ +"\n - call:\n    "+std::string(__PRETTY_FUNCTION__)+"\n-------------------").c_str())
 
 //#define PTR_FREE(...)      {if(__VA_ARGS__ != NULL){ delete   __VA_ARGS__; __VA_ARGS__ = NULL; }else{ throw_with_pos("trying to free \"" #__VA_ARGS__ "\" but it was already free'd");}}
 //#define PTR_FREE_ARR(...)  {if(__VA_ARGS__ != NULL){ delete[] __VA_ARGS__; __VA_ARGS__ = NULL; }else{ throw_with_pos("trying to free array \"" #__VA_ARGS__ "\" but it was already free'd");}}
@@ -63,17 +63,17 @@ using enable_if_t = typename std::enable_if<B, T>;
 
 
 #ifdef SYCL_COMP_OPENSYCL
-typedef sycl::detail::s_long   i64;
-typedef sycl::detail::s_int    i32;
-typedef sycl::detail::s_short  i16;
-typedef sycl::detail::s_char   i8 ;
-typedef sycl::detail::u_long   u64;
-typedef sycl::detail::u_int    u32;
-typedef sycl::detail::u_short  u16;
-typedef sycl::detail::u_char   u8 ;
-typedef sycl::detail::hp_float f16;
-typedef sycl::detail::sp_float f32;
-typedef sycl::detail::dp_float f64;
+using i64 = sycl::detail::s_long  ;
+using i32 = sycl::detail::s_int   ;
+using i16 = sycl::detail::s_short ;
+using i8  = sycl::detail::s_char  ;
+using u64 = sycl::detail::u_long  ;
+using u32 = sycl::detail::u_int   ;
+using u16 = sycl::detail::u_short ;
+using u8  = sycl::detail::u_char  ;
+using f16 = u16; // issue with hipsycl not supporting half
+using f32 = sycl::detail::sp_float;
+using f64 = sycl::detail::dp_float;
 #endif
 
 #ifdef SYCL_COMP_DPCPP

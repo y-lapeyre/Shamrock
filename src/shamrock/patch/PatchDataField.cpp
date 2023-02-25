@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright(C) 2021-2022 Timothée David--Cléris <timothee.david--cleris@ens-lyon.fr>
+// Copyright(C) 2021-2023 Timothée David--Cléris <timothee.david--cleris@ens-lyon.fr>
 // Licensed under CeCILL 2.1 License, see LICENSE for more information
 //
 // -------------------------------------------------------//
@@ -112,7 +112,7 @@ template<class T> class PdatField_append_subset_to;
 template <class T> void PatchDataField<T>::append_subset_to(sycl::buffer<u32> &idxs_buf,u32 sz, PatchDataField &pfield) const {
 
     if (pfield.nvar != nvar)
-        throw excep_with_pos(std::invalid_argument,"field must be similar for extraction");
+        throw shamutils::throw_with_loc<std::invalid_argument>("field must be similar for extraction");
 
     const u32 start_enque = pfield.val_cnt;
 
@@ -192,7 +192,7 @@ template <class T> void PatchDataField<T>::append_subset_to(sycl::buffer<u32> &i
 template <class T> void PatchDataField<T>::append_subset_to(const std::vector<u32> &idxs, PatchDataField &pfield) const {
 
     if (pfield.nvar != nvar)
-        throw excep_with_pos(std::invalid_argument,"field must be similar for extraction");
+        throw shamutils::throw_with_loc<std::invalid_argument>("field must be similar for extraction");
 
     const u32 start_enque = pfield.val_cnt;
 

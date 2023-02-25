@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright(C) 2021-2022 Timothée David--Cléris <timothee.david--cleris@ens-lyon.fr>
+// Copyright(C) 2021-2023 Timothée David--Cléris <timothee.david--cleris@ens-lyon.fr>
 // Licensed under CeCILL 2.1 License, see LICENSE for more information
 //
 // -------------------------------------------------------//
@@ -23,6 +23,7 @@
 #include <vector>
 #include "shamrock/legacy/utils/geometry_utils.hpp"
 #include "shamrock/patch/Patch.hpp"
+#include "shamutils/throwUtils.hpp"
 
 namespace shamrock::scheduler {
 u64 PatchTree::insert_node(Node n){
@@ -72,7 +73,7 @@ void PatchTree::merge_node_dm1(u64 idparent){
     auto & parent_tnode = parent_node.tree_node;
 
     if(!parent_tnode.child_are_all_leafs ){
-        throw excep_with_pos(std::runtime_error,"node should be parent of only leafs");
+        throw shamutils::throw_with_loc<std::runtime_error>("node should be parent of only leafs");
     }
     
     leaf_key.erase(parent_tnode.childs_nid[0]);

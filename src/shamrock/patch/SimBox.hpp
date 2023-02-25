@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright(C) 2021-2022 Timothée David--Cléris <timothee.david--cleris@ens-lyon.fr>
+// Copyright(C) 2021-2023 Timothée David--Cléris <timothee.david--cleris@ens-lyon.fr>
 // Licensed under CeCILL 2.1 License, see LICENSE for more information
 //
 // -------------------------------------------------------//
@@ -188,7 +188,7 @@ namespace shamrock::patch {
     template <class T>
     inline std::tuple<T, T> SimulationBoxInfo::partch_coord_to_domain(const Patch &p) const {
 
-        using ptype = typename shamutils::sycl_utils::VectorProperties<T>::component_type;
+        //using ptype = typename shamutils::sycl_utils::VectorProperties<T>::component_type;
 
         auto [bmin, bmax] = get_bounding_box<T>();
 

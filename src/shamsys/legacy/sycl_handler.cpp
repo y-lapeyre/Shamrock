@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright(C) 2021-2022 Timothée David--Cléris <timothee.david--cleris@ens-lyon.fr>
+// Copyright(C) 2021-2023 Timothée David--Cléris <timothee.david--cleris@ens-lyon.fr>
 // Licensed under CeCILL 2.1 License, see LICENSE for more information
 //
 // -------------------------------------------------------//
@@ -22,6 +22,7 @@
 #include "cmdopt.hpp"
 
 #include "log.hpp"
+#include "shamutils/stringUtils.hpp"
 
 
 
@@ -89,7 +90,7 @@ void print_device_info(const sycl::device &Device){
         << "   - " 
         << Device.get_info<sycl::info::device::name>()
         << " " 
-        << readable_sizeof(Device.get_info<sycl::info::device::global_mem_size>()) << "\n";
+        << shamutils::readable_sizeof(Device.get_info<sycl::info::device::global_mem_size>()) << "\n";
 }
 
 
@@ -217,7 +218,7 @@ namespace sycl_handler {
                     std::string platname = trunc_str(PlatformName,24);
                     std::string devtype = trunc_str(getDeviceTypeName(Device),6);
 
-                    logger::raw_ln(format("| %-3s | %02d | %-29s | %-24s | %-6s |",
+                    logger::raw_ln(shamutils::format_printf("| %-3s | %02d | %-29s | %-24s | %-6s |",
                         selected.c_str(),key_global,devname.c_str(),platname.c_str(),devtype.c_str()
                     ));
 

@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright(C) 2021-2022 Timothée David--Cléris <timothee.david--cleris@ens-lyon.fr>
+// Copyright(C) 2021-2023 Timothée David--Cléris <timothee.david--cleris@ens-lyon.fr>
 // Licensed under CeCILL 2.1 License, see LICENSE for more information
 //
 // -------------------------------------------------------//
@@ -149,11 +149,11 @@ namespace timings {
 
                 
                 
-                std::string out = format("%-50s %2.9f %3.1f ",str.c_str(), a.time,100*a.time/total);
+                std::string out = shamutils::format_printf("%-50s %2.9f %3.1f ",str.c_str(), a.time,100*a.time/total);
 
                 if (a.is_bandwidth) {
-                    out += readable_sizeof(a.data_transfered);
-                    out += " Bandwith : " + readable_sizeof(a.bandwith) + ".s-1\n";
+                    out += shamutils::readable_sizeof(a.data_transfered);
+                    out += " Bandwith : " + shamutils::readable_sizeof(a.bandwith) + ".s-1\n";
                 }else {
                     out += "\n";
                 }

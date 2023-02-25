@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright(C) 2021-2022 Timothée David--Cléris <timothee.david--cleris@ens-lyon.fr>
+// Copyright(C) 2021-2023 Timothée David--Cléris <timothee.david--cleris@ens-lyon.fr>
 // Licensed under CeCILL 2.1 License, see LICENSE for more information
 //
 // -------------------------------------------------------//
@@ -163,7 +163,7 @@ namespace shamrock::amr {
 
                 MortonBuilder::build(
                     shamsys::instance::get_compute_queue(),
-                    sched.get_sim_box().partch_coord_to_domain<Tcoord>(cur_p),
+                    sched.get_sim_box().template partch_coord_to_domain<Tcoord>(cur_p),
                     pdat.get_field<Tcoord>(0).get_buf(),
                     pdat.get_obj_cnt(),
                     out_buf_morton,

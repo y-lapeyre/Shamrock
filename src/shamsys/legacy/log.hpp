@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright(C) 2021-2022 Timothée David--Cléris <timothee.david--cleris@ens-lyon.fr>
+// Copyright(C) 2021-2023 Timothée David--Cléris <timothee.david--cleris@ens-lyon.fr>
 // Licensed under CeCILL 2.1 License, see LICENSE for more information
 //
 // -------------------------------------------------------//
@@ -16,7 +16,7 @@
 #include <string>
 #include <iostream>
 
-
+#include "shamsys/Log.hpp"
 
 
 
@@ -143,21 +143,21 @@ namespace logger {
     template <typename T,typename... Types>
     inline void print(sycl::vec<T, 2> s, Types... var2)
     {
-        std::cout << "(" <<s.x() << ","<< s.y() << ") ";
+        std::cout << shamsys::format("{} ", s);
         print(var2...);
     }
 
     template <typename T,typename... Types>
     inline void print(sycl::vec<T, 3> s, Types... var2)
     {
-        std::cout << "(" <<s.x() << ","<< s.y() << ","<< s.z() << ") ";
+        std::cout << shamsys::format("{} ", s);
         print(var2...);
     }
 
     template <typename T,typename... Types>
     inline void print(sycl::vec<T, 4> s, Types... var2)
     {
-        std::cout << "(" <<s.x() << ","<< s.y() << ","<< s.z() << "," << s.w() << ") ";
+        std::cout << shamsys::format("{} ", s);
         print(var2...);
     }
 
@@ -165,18 +165,14 @@ namespace logger {
     template <typename T,typename... Types>
     inline void print(sycl::vec<T, 8> s, Types... var2)
     {
-        std::cout << "(" <<s.s0() << ","<< s.s1() << ","<< s.s2() << "," << s.s3()<<
-            "," << s.s4() << ","<< s.s5() << ","<< s.s6() << "," << s.s7() << ") ";
+        std::cout << shamsys::format("{} ", s);
         print(var2...);
     }
 
     template <typename T,typename... Types>
     inline void print(sycl::vec<T, 16> s, Types... var2)
     {
-        std::cout << "(" <<s.s0() << ","<< s.s1() << ","<< s.s2() << "," << s.s3()<<
-            "," << s.s4() << ","<< s.s5() << ","<< s.s6() << "," << s.s7()<<
-            "," << s.s8() << ","<< s.s9() << ","<< s.sA() << "," << s.sB()<<
-            "," << s.sC() << ","<< s.sD() << ","<< s.sE() << "," << s.sF() << ") ";
+        std::cout << shamsys::format("{} ", s);
         print(var2...);
     }
 

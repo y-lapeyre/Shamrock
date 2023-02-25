@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright(C) 2021-2022 Timothée David--Cléris <timothee.david--cleris@ens-lyon.fr>
+// Copyright(C) 2021-2023 Timothée David--Cléris <timothee.david--cleris@ens-lyon.fr>
 // Licensed under CeCILL 2.1 License, see LICENSE for more information
 //
 // -------------------------------------------------------//
@@ -63,7 +63,7 @@ void models::nbody::NBodySetup<flt>::add_particules_fcc(PatchScheduler & sched, 
             f.override(buf,len);
         }
 
-        if(sched.owned_patch_id.empty()) throw excep_with_pos(std::runtime_error,"the scheduler does not have patch in that rank");
+        if(sched.owned_patch_id.empty()) throw shamutils::throw_with_loc<std::runtime_error>("the scheduler does not have patch in that rank");
 
         u64 insert_id = *sched.owned_patch_id.begin();
 

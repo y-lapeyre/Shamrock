@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright(C) 2021-2022 Timothée David--Cléris <timothee.david--cleris@ens-lyon.fr>
+// Copyright(C) 2021-2023 Timothée David--Cléris <timothee.david--cleris@ens-lyon.fr>
 // Licensed under CeCILL 2.1 License, see LICENSE for more information
 //
 // -------------------------------------------------------//
@@ -67,7 +67,7 @@ namespace mpi_handler{
 
         node_displacments_data_table[0] = 0;
 
-        for(i32 i = 1 ; i < shamsys::instance::world_size; i++){
+        for(u32 i = 1 ; i < shamsys::instance::world_size; i++){
             node_displacments_data_table[i] = node_displacments_data_table[i-1] + table_data_count[i-1];
         }
         
@@ -133,7 +133,7 @@ namespace mpi_handler{
 
         node_displacments_data_table[0] = 0;
 
-        for(i32 i = 1 ; i < shamsys::instance::world_size; i++){
+        for(u32 i = 1 ; i < shamsys::instance::world_size; i++){
             node_displacments_data_table[i] = node_displacments_data_table[i-1] + table_data_count[i-1];
         }
         

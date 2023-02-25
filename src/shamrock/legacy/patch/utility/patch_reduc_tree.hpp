@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright(C) 2021-2022 Timothée David--Cléris <timothee.david--cleris@ens-lyon.fr>
+// Copyright(C) 2021-2023 Timothée David--Cléris <timothee.david--cleris@ens-lyon.fr>
 // Licensed under CeCILL 2.1 License, see LICENSE for more information
 //
 // -------------------------------------------------------//
@@ -39,12 +39,12 @@ class PatchFieldReduction{public:
 
 
     inline void attach_buf(){
-        if(tree_field_buf != nullptr) throw excep_with_pos(std::runtime_error,"tree_field_buf is already allocated");
+        if(tree_field_buf != nullptr) throw shamutils::throw_with_loc<std::runtime_error>("tree_field_buf is already allocated");
         tree_field_buf = new sycl::buffer<type>(tree_field.data(),tree_field.size());
     }
 
     inline void detach_buf(){
-        if(tree_field_buf == nullptr) throw excep_with_pos(std::runtime_error,"tree_field_buf wasn't allocated");
+        if(tree_field_buf == nullptr) throw shamutils::throw_with_loc<std::runtime_error>("tree_field_buf wasn't allocated");
         delete tree_field_buf;
         tree_field_buf = nullptr;
     }

@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright(C) 2021-2022 Timothée David--Cléris <timothee.david--cleris@ens-lyon.fr>
+// Copyright(C) 2021-2023 Timothée David--Cléris <timothee.david--cleris@ens-lyon.fr>
 // Licensed under CeCILL 2.1 License, see LICENSE for more information
 //
 // -------------------------------------------------------//
@@ -21,6 +21,7 @@
 #include "shamsys/legacy/sycl_handler.hpp"
 
 #include "shamsys/legacy/mpi_handler.hpp"
+#include "shamutils/throwUtils.hpp"
 
 
 bool has_option(
@@ -68,7 +69,7 @@ namespace shamtest::details {
         std::string acc = "\n[\n";
 
         for(u32 i = 0; i < vec.size(); i++){
-            acc += format( "%e" , vec[i]) ;
+            acc += shamutils::format_printf( "%e" , vec[i]) ;
             if(i < vec.size()-1){
                 acc += ", ";
             }
@@ -175,7 +176,7 @@ namespace shamtest::details {
 
         if(node_count != -1){
             if(node_count != world_size){
-                throw excep_with_pos(std::runtime_error,"trying to run a test with wrong number of nodes");
+                throw shamutils::throw_with_loc<std::runtime_error>("trying to run a test with wrong number of nodes");
             }
         }
 
@@ -399,7 +400,9 @@ namespace shamtest {
                 std::cout << "       Result : \033[1;31m Fail \033[0m";
             }
 
-            std::string s_assert = format(" [%d/%d] ",succes_cnt,res.asserts.asserts.size());
+
+
+            std::string s_assert = shamsys::format(" [{}/{}] ",succes_cnt,res.asserts.asserts.size());
             printf("%-15s",s_assert.c_str());
             std::cout << " (" << timer.get_time_str() << ")" <<std::endl;
 

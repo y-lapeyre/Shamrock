@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright(C) 2021-2022 Timothée David--Cléris <timothee.david--cleris@ens-lyon.fr>
+// Copyright(C) 2021-2023 Timothée David--Cléris <timothee.david--cleris@ens-lyon.fr>
 // Licensed under CeCILL 2.1 License, see LICENSE for more information
 //
 // -------------------------------------------------------//
@@ -41,7 +41,7 @@ namespace syclalg {
                 }
             }
         }else{
-            throw excep_with_pos(std::runtime_error,"syclalg::get_max : input buffer not allocated");
+            throw shamutils::throw_with_loc<std::runtime_error>("syclalg::get_max : input buffer not allocated");
         } 
 
         return accum;
@@ -78,7 +78,7 @@ namespace syclalg {
             } 
 
         }else {
-            throw excep_with_pos(std::runtime_error,"syclalg::get_min : input buffer not allocated");
+            throw shamutils::throw_with_loc<std::runtime_error>("syclalg::get_min : input buffer not allocated");
         } 
 
         
@@ -118,7 +118,7 @@ namespace syclalg {
 
 
         } else {
-            throw excep_with_pos(std::runtime_error,"syclalg::get_max : input buffer not allocated");
+            throw shamutils::throw_with_loc<std::runtime_error>("syclalg::get_max : input buffer not allocated");
         } 
 
         return {accum_min,accum_max};

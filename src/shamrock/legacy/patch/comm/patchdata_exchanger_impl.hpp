@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright(C) 2021-2022 Timothée David--Cléris <timothee.david--cleris@ens-lyon.fr>
+// Copyright(C) 2021-2023 Timothée David--Cléris <timothee.david--cleris@ens-lyon.fr>
 // Licensed under CeCILL 2.1 License, see LICENSE for more information
 //
 // -------------------------------------------------------//
@@ -57,8 +57,8 @@ inline void make_comm_table(
     {
         i32 iterator = 0;
         for (u64 i = 0; i < in_send_comm_vec.size(); i++) {
-            const Patch &psend = in_global_patch_list[in_send_comm_vec[i].x()];
-            const Patch &precv = in_global_patch_list[in_send_comm_vec[i].y()];
+            //const Patch &psend = in_global_patch_list[in_send_comm_vec[i].x()];
+            //const Patch &precv = in_global_patch_list[in_send_comm_vec[i].y()];
 
             out_local_comm_tag[i] = iterator;
 

@@ -95,6 +95,7 @@ target_link_libraries(shamrock_lib PUBLIC pybind11::embed)
 endif()
 
 target_link_libraries(shamrock_lib PUBLIC MPI::MPI_C)
+target_link_libraries(shamrock_lib PUBLIC fmt::fmt)
 
 if("${BUILD_SIM}")
 
@@ -115,6 +116,7 @@ if("${BUILD_SIM}")
     
     
     target_link_libraries(shamrock PUBLIC MPI::MPI_C)
+    target_link_libraries(shamrock PUBLIC fmt::fmt)
 
     
 
@@ -145,6 +147,7 @@ if("${BUILD_TEST}")
     #target_include_directories(shamrock_test AFTER PUBLIC "${CMAKE_SOURCE_DIR}/external")
 
     target_compile_definitions(shamrock_test PUBLIC EXECUTABLE_BUILD)
+    target_link_libraries(shamrock_test PUBLIC fmt::fmt)
 
     #find_package(nlohmann_json 3.2.0 REQUIRED)
     #target_link_libraries(shamrock_test PUBLIC nlohmann_json::nlohmann_json)

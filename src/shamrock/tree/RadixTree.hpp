@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright(C) 2021-2022 Timothée David--Cléris <timothee.david--cleris@ens-lyon.fr>
+// Copyright(C) 2021-2023 Timothée David--Cléris <timothee.david--cleris@ens-lyon.fr>
 // Licensed under CeCILL 2.1 License, see LICENSE for more information
 //
 // -------------------------------------------------------//
@@ -442,7 +442,7 @@ inline std::pair<std::set<u32>, std::set<u32>> RadixTree<u_morton, vec3, dim>::g
     auto rchild_flag    = sycl::host_accessor{*buf_rchild_flag};
     auto lchild_flag    = sycl::host_accessor{*buf_lchild_flag};
 
-    sycl::range<1> range_leaf = sycl::range<1>{tree_leaf_count};
+    //sycl::range<1> range_leaf = sycl::range<1>{tree_leaf_count};
 
     u32 leaf_offset = tree_internal_count;
 
