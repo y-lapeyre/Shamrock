@@ -8,7 +8,9 @@
 
 #include "CommImplBuffer.hpp"
 #include "shamsys/legacy/log.hpp"
+#include "shamutils/throwUtils.hpp"
 #include <hipSYCL/sycl/libkernel/accessor.hpp>
+#include <stdexcept>
 
 
 namespace shamsys::comm::details {
@@ -567,9 +569,13 @@ template<class T>
         MPI_Status st;
         i32 cnt;
         mpi::probe(rank_src, comm_flag,comm, & st);
-        mpi::get_count(&st, get_mpi_type<T>(), &cnt);
+        mpi::get_count(&st, get_mpi_type<ptr_t>(), &cnt);
 
-        u32 val_cnt = cnt;
+        if(cnt % int_len != 0){
+            throw shamutils::throw_with_loc<std::runtime_error>("for this protocol the lenght of the received message must be a multiple of the number of components");
+        }
+
+        u32 val_cnt = cnt/int_len;
 
         CommDetails<sycl::buffer<T>> det {val_cnt};
 

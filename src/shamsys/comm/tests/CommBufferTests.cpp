@@ -145,7 +145,7 @@ template<class T> void test_comm_syclbuf(std::string prefix, std::mt19937 & eng,
     sycl::buffer<T> buf_comp (npart);
 
     {
-        sycl::host_accessor acc {buf_comp};
+        sycl::host_accessor acc {buf_comp, sycl::write_only, sycl::no_init};
         for(u32 i = 0; i < npart; i++){
             acc[i] = shamsys::syclhelper::next_obj<T>(eng, distval);
         }
@@ -219,7 +219,7 @@ template<class T> void test_comm_probe_syclbuf(std::string prefix, std::mt19937 
     sycl::buffer<T> buf_comp (npart);
 
     {
-        sycl::host_accessor acc {buf_comp};
+        sycl::host_accessor acc {buf_comp, sycl::write_only, sycl::no_init};
         for(u32 i = 0; i < npart; i++){
             acc[i] = shamsys::syclhelper::next_obj<T>(eng, distval);
         }
