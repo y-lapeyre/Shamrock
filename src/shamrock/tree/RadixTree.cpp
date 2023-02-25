@@ -48,7 +48,7 @@ RadixTree<u_morton, vec3, dim>::RadixTree(
 
     logger::debug_sycl_ln(
         "RadixTree", "reduction results : (before :", cnt_obj, " | after :", tree_leaf_count,
-        ") ratio :", format("%2.2f", f32(cnt_obj) / f32(tree_leaf_count))
+        ") ratio :", shamutils::format_printf("%2.2f", f32(cnt_obj) / f32(tree_leaf_count))
     );
 
     if (tree_leaf_count > 1) {
@@ -260,11 +260,11 @@ template<class T>
 std::string print_member(const T & a);
 
 template<> std::string print_member(const u8 & a){
-    return format("%d",u32(a));
+    return shamutils::format_printf("%d",u32(a));
 }
 
 template<> std::string print_member(const u32 & a){
-    return format("%d",a);
+    return shamutils::format_printf("%d",a);
 }
 
 

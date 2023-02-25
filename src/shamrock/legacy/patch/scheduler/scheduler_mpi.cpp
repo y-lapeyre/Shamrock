@@ -577,7 +577,7 @@ std::string PatchScheduler::dump_status(){
     ss << " -> SchedulerPatchTree\n";
 
     for(auto & [k,pnode] : patch_tree.tree){
-        ss << format("      -> id : %d  -> (%d %d %d %d %d %d %d %d) <=> %d\n",
+        ss << shamutils::format_printf("      -> id : %d  -> (%d %d %d %d %d %d %d %d) <=> %d\n",
         k,
         pnode.tree_node.childs_nid[0],
         pnode.tree_node.childs_nid[1],
