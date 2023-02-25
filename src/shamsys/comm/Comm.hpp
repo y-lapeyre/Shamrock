@@ -9,8 +9,8 @@
 
 #pragma once
 
-#include "MpiWrapper.hpp"
-#include "legacy/log.hpp"
+#include "shamsys/MpiWrapper.hpp"
+#include "shamsys/legacy/log.hpp"
 
 #include <variant>
 #include <vector>

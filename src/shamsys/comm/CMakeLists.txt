@@ -1,16 +1,12 @@
 
 set(Sources
-    NodeInstance.cpp
-    SyclMpiTypes.cpp
-    SyclHelper.cpp
+    CommImplBuffer.cpp
 )
 set(SourcesTest
     
 )
 set(Headers
-    NodeInstance.hpp
-    SyclMpiTypes.hpp
-    SyclHelper.hpp
+
 )
 set(HeadersTest
 
@@ -35,8 +31,3 @@ target_sources(shamrock_test
 endif()
 
 add_subdirectory(tests)
-add_subdirectory(legacy)
-add_subdirectory(experimental)
-
-add_subdirectory(bindings)
-add_subdirectory(comm)

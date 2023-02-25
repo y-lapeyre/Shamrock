@@ -7,11 +7,13 @@
 // -------------------------------------------------------//
 
 
+#include "shamalgs/random/random.hpp"
 #include "shamtest/shamtest.hpp"
+#include <hipSYCL/sycl/libkernel/accessor.hpp>
 #include <random>
 
-#include "shamsys/Comm.hpp"
-#include "shamsys/CommImplBuffer.hpp"
+#include "shamsys/comm/Comm.hpp"
+#include "shamsys/comm/CommImplBuffer.hpp"
 #include "shamsys/SyclHelper.hpp"
 
 
@@ -24,7 +26,7 @@ template<class T> void test_constructor_syclbuf(std::string prefix, std::mt19937
     sycl::buffer<T> buf_comp (npart);
 
     {
-        sycl::host_accessor acc {buf_comp};
+        sycl::host_accessor acc {buf_comp, sycl::write_only, sycl::no_init};
         for(u32 i = 0; i < npart; i++){
             acc[i] = shamsys::syclhelper::next_obj<T>(eng, distval);
         }
