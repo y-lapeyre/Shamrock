@@ -22,6 +22,7 @@
 #include <fstream>
 #include <string>
 #include "aliases.hpp"
+#include "shamutils/stringUtils.hpp"
 #include <cstdarg>
 
 [[deprecated]]
@@ -80,26 +81,7 @@ inline std::string trunc_str(std::string s , u32 max_len){
  * @param size 
  * @return std::string 
  */
+ [[deprecated]]
 inline std::string readable_sizeof(double size) {
-    int i = 0;
-    char buf[10];
-    const char* units[] = {"B", "kB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"};
-
-    if(size >= 0){
-        while (size > 1024) {
-            size /= 1024;
-            i++;
-        }
-    }else{
-        i = 9;
-    }
-    
-
-    if(i > 8){
-        sprintf(buf, "%s", "err val");
-    }else{
-        sprintf(buf, "%.2f %s", size, units[i]);
-    }
-
-    return std::string(buf);
+    return shamutils::readable_sizeof(size);
 }

@@ -18,6 +18,7 @@
 
 #include "shamtest/shamtest.hpp"
 #include "shamtest/shamtest.hpp"
+#include "shamutils/stringUtils.hpp"
 #include <cstdio>
 #include <memory>
 #include <vector>
@@ -1041,7 +1042,7 @@ Result_nompi_fmm_testing<flt,morton_mode,fmm_order> nompi_fmm_testing(std::uniqu
             flt err = sycl::distance(force[i],sum_fi)/sycl::length(sum_fi);
 
             if(i<10){
-                logger::raw_ln("local relative error : ",format("%e (%e %e %e) (%e %e %e)",err, force[i].x(),force[i].y(),force[i].z(), sum_fi.x(),sum_fi.y(),sum_fi.z()));
+                logger::raw_ln("local relative error : ",shamutils::format_printf("%e (%e %e %e) (%e %e %e)",err, force[i].x(),force[i].y(),force[i].z(), sum_fi.x(),sum_fi.y(),sum_fi.z()));
             }
             err_sum += err;
 
@@ -1049,7 +1050,7 @@ Result_nompi_fmm_testing<flt,morton_mode,fmm_order> nompi_fmm_testing(std::uniqu
 
         }
 
-        logger::raw_ln("global relative error :",format("avg = %e max = %e",err_sum/npart,err_max));
+        logger::raw_ln("global relative error :",shamutils::format_printf("avg = %e max = %e",err_sum/npart,err_max));
 
         prec = err_sum/npart;
     }

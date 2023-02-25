@@ -9,13 +9,18 @@
 #pragma once
 
 #include "aliases.hpp"
-#include "log/fmt_defs.hpp"
+#include "shamutils/stringUtils.hpp"
 
 namespace shamsys {
 
     template<typename... T>
     inline std::string format(fmt::format_string<T...> fmt, T &&...args) {
-        return fmt::format(fmt, args...);
+        return shamutils::format(fmt, args...);
+    }
+
+    template<typename... T>
+    inline std::string format_printf(std::string format, T &&...args){
+        return shamutils::format_printf(format, args...);
     }
 
 

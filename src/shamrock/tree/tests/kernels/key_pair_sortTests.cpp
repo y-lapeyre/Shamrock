@@ -48,7 +48,7 @@ template<class u_morton, SortImplType impl> void unit_test_key_pair(){
 
 
     for(u32 i = 0; i < size_test; i++){
-        shamtest::asserts().assert_bool("index [" +format("%d",i)+ "]",  unsorted[i]  == morton_list[i]);
+        shamtest::asserts().assert_bool("index [" +shamutils::format_printf("%d",i)+ "]",  unsorted[i]  == morton_list[i]);
     }
 }
 

@@ -103,10 +103,10 @@ else:
     cmake_cmd += " -DSyCL_Compiler=UNKNOWN"
     print("WARNING : The compiler is unknown")
 
-    if not (args.profile == NONE):
+    if not (args.profile == None):
         raise "can not select a profile with a unknown compiler"
 
-    if (args.cxxcompiler == NONE):
+    if (args.cxxcompiler == None):
         raise "you must select the compiler path if unknown"
 
 

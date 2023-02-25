@@ -32,6 +32,7 @@
 #include "shamrock/legacy/io/logs.hpp"
 //#include "shamrock/legacy/patch/patchdata_buffer.hpp"
 #include "shamrock/legacy/patch/scheduler/scheduler_mpi.hpp"
+#include "shamsys/legacy/log.hpp"
 #include "shamsys/legacy/sycl_handler.hpp"
 #include "shammodels/sph/sphpatch.hpp" //TODO remove sph dependancy
 
@@ -104,7 +105,7 @@ template <class vectype, class primtype> class LegacyInterfacehandler {
     inline void compute_interface_list(PatchScheduler &sched, SerialPatchTree<vectype> sptree, PatchField<primtype> h_field,bool periodic) {
         auto t = timings::start_timer("compute_interface_list", timings::function);
         interface_comm_list = Interface_Generator<vectype, primtype, interface_selector>::get_interfaces_comm_list(
-            sched, sptree, h_field, format("interfaces_%d_node%d", 0, shamsys::instance::world_rank),periodic);
+            sched, sptree, h_field, shamutils::format_printf("interfaces_%d_node%d", 0, shamsys::instance::world_rank),periodic);
         t.stop();
     }
 
@@ -149,7 +150,7 @@ template <class vectype, class primtype> class LegacyInterfacehandler {
     inline void print_current_interf_map() {
 
         for (const auto &[pid, int_vec] : interface_map) {
-            printf(" pid : %lu :\n", pid);
+            logger::raw_ln(shamutils::format_printf(" pid : %lu :\n", pid));
             // for (auto &[a, b] : int_vec) {
             //     //printf("    -> %d : len %d\n", a, b->obj_cnt);
             // }

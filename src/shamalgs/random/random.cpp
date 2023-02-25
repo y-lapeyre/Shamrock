@@ -68,7 +68,7 @@ namespace shamalgs::random {
     std::vector<u32> mock_vector(u64 seed,u32 len, u32 min_bound, u32 max_bound){
         std::vector<u32> vec;
 
-        std::mt19937 eng{seed};
+        std::mt19937 eng(seed);
 
         for(u32 i = 0; i < len; i++){
             vec.push_back(mock_value(eng, min_bound, max_bound));
@@ -81,7 +81,7 @@ namespace shamalgs::random {
     std::vector<u64> mock_vector(u64 seed,u32 len, u64 min_bound, u64 max_bound){
         std::vector<u64> vec;
 
-        std::mt19937 eng{seed};
+        std::mt19937 eng(seed);
 
         for(u32 i = 0; i < len; i++){
             vec.push_back(mock_value(eng, min_bound, max_bound));
