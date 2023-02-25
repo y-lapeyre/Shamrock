@@ -49,16 +49,16 @@ class SerialPatchTree{public:
     sycl::buffer<u64>*    linked_patch_ids_buf = nullptr;
 
     inline void attach_buf(){
-        if(serial_tree_buf != nullptr) throw excep_with_pos(std::runtime_error,"serial_tree_buf is already allocated");
-        if(linked_patch_ids_buf != nullptr) throw excep_with_pos(std::runtime_error,"linked_patch_ids_buf is already allocated");
+        if(serial_tree_buf != nullptr) throw shamutils::throw_with_loc<std::runtime_error>("serial_tree_buf is already allocated");
+        if(linked_patch_ids_buf != nullptr) throw shamutils::throw_with_loc<std::runtime_error>("linked_patch_ids_buf is already allocated");
 
         serial_tree_buf = new sycl::buffer<PtNode>(serial_tree.data(),serial_tree.size());
         linked_patch_ids_buf = new sycl::buffer<u64>(linked_patch_ids.data(),linked_patch_ids.size());
     }
 
     inline void detach_buf(){
-        if(serial_tree_buf == nullptr) throw excep_with_pos(std::runtime_error,"serial_tree_buf wasn't allocated");
-        if(linked_patch_ids_buf == nullptr) throw excep_with_pos(std::runtime_error,"linked_patch_ids_buf wasn't allocated");
+        if(serial_tree_buf == nullptr) throw shamutils::throw_with_loc<std::runtime_error>("serial_tree_buf wasn't allocated");
+        if(linked_patch_ids_buf == nullptr) throw shamutils::throw_with_loc<std::runtime_error>("linked_patch_ids_buf wasn't allocated");
 
         delete serial_tree_buf;
         serial_tree_buf = nullptr;

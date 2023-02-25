@@ -53,7 +53,7 @@ inline std::string __loc_prefix(const char* filename, int line){
 //#define throw_with_pos(...) throw std::runtime_error( __VA_ARGS__ " ("+ __FILENAME__ +":" + std::to_string(__LINE__) +")");
 
 
-#define excep_with_pos(a, ...) a ((std::string(__VA_ARGS__) + "\n-------------------\n - at:\n    "+__LOC_PREFIX__ +"\n - call:\n    "+std::string(__PRETTY_FUNCTION__)+"\n-------------------").c_str())
+//#define excep_with_pos(a, ...) a ((std::string(__VA_ARGS__) + "\n-------------------\n - at:\n    "+__LOC_PREFIX__ +"\n - call:\n    "+std::string(__PRETTY_FUNCTION__)+"\n-------------------").c_str())
 
 //#define PTR_FREE(...)      {if(__VA_ARGS__ != NULL){ delete   __VA_ARGS__; __VA_ARGS__ = NULL; }else{ throw_with_pos("trying to free \"" #__VA_ARGS__ "\" but it was already free'd");}}
 //#define PTR_FREE_ARR(...)  {if(__VA_ARGS__ != NULL){ delete[] __VA_ARGS__; __VA_ARGS__ = NULL; }else{ throw_with_pos("trying to free array \"" #__VA_ARGS__ "\" but it was already free'd");}}

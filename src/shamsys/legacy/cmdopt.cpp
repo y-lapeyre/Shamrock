@@ -8,6 +8,7 @@
 
 #include "cmdopt.hpp"
 #include "shamsys/legacy/log.hpp"
+#include "shamutils/stringUtils.hpp"
 #include <optional>
 #include <string_view>
 #include <vector>
@@ -162,13 +163,13 @@ namespace opts {
         if(init_done){
             return argc;
         }
-        return NULL;
+        return 0;
     }
     char** get_argv(){
         if(init_done){
             return argv;
         }
-        return NULL;
+        return 0;
     }
 
 
@@ -181,7 +182,7 @@ namespace opts {
 
             std::string arg_print = arg.value_or("");
             
-            logger::raw_ln(format("%-15s %-15s",n.c_str(),arg_print.c_str())," :",desc);
+            logger::raw_ln(shamutils::format_printf("%-15s %-15s",n.c_str(),arg_print.c_str())," :",desc);
             
         }
 

@@ -14,6 +14,7 @@
 #include "shamrock/legacy/algs/sycl/sycl_algs.hpp"
 #include "shamrock/legacy/patch/base/enabled_fields.hpp"
 #include "shamsys/legacy/log.hpp"
+#include "shamutils/throwUtils.hpp"
 #include <random>
 
 template <class T> class PatchDataField {
@@ -271,7 +272,8 @@ template <class T> inline void PatchDataField<T>::expand(u32 obj_to_add) {
 template <class T> inline void PatchDataField<T>::shrink(u32 obj_to_rem) {
 
     if (obj_to_rem > obj_cnt) {
-        throw excep_with_pos(std::invalid_argument,"impossible to remove more object than there is in the patchdata field");
+        
+        throw shamutils::throw_with_loc<std::invalid_argument>("impossible to remove more object than there is in the patchdata field");
     }
 
     resize(obj_cnt - obj_to_rem);
@@ -279,7 +281,7 @@ template <class T> inline void PatchDataField<T>::shrink(u32 obj_to_rem) {
 
 template <class T> inline void PatchDataField<T>::overwrite(PatchDataField<T> &f2, u32 obj_cnt) {
     if (val_cnt < obj_cnt) {
-        throw excep_with_pos(std::invalid_argument,"to overwrite you need more element in the field");
+        throw shamutils::throw_with_loc<std::invalid_argument>("to overwrite you need more element in the field");
     }
 
     {
@@ -296,7 +298,7 @@ template <class T> inline void PatchDataField<T>::overwrite(PatchDataField<T> &f
 template <class T> inline void PatchDataField<T>::override(sycl::buffer<T> &data, u32 cnt) {
 
     if (cnt != val_cnt)
-        throw excep_with_pos(std::invalid_argument,"buffer size doesn't match patchdata field size"
+        throw shamutils::throw_with_loc<std::invalid_argument>("buffer size doesn't match patchdata field size"
         ); // TODO remove ref to size
 
     if (val_cnt > 0) {
@@ -373,5 +375,5 @@ inline void PatchDataField<T>::check_err_range(Lambdacd &&cd_true, T vmin, T vma
         }
     }
 
-    throw excep_with_pos(std::invalid_argument,"obj not in range");
+    throw shamutils::throw_with_loc<std::invalid_argument>("obj not in range");
 }

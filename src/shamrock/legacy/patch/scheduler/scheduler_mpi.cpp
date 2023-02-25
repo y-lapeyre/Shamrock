@@ -25,6 +25,7 @@
 #include "shamrock/legacy/utils/time_utils.hpp"
 
 #include "shamsys/legacy/sycl_mpi_interop.hpp"
+#include "shamutils/stringUtils.hpp"
 
 
 
@@ -255,7 +256,7 @@ void PatchScheduler::sync_build_LB(bool global_patch_sync, bool balance_load){
 
 template<>
 std::tuple<f32_3,f32_3> PatchScheduler::get_box_tranform(){
-    if(!pdl.check_main_field_type<f32_3>()) throw excep_with_pos(std::runtime_error,"cannot query single precision box the main field is not of f32_3 type");
+    if(!pdl.check_main_field_type<f32_3>()) throw shamutils::throw_with_loc<std::runtime_error>("cannot query single precision box the main field is not of f32_3 type");
 
     auto [bmin,bmax] = patch_data.sim_box.get_bounding_box<f32_3>();
 
@@ -267,7 +268,7 @@ std::tuple<f32_3,f32_3> PatchScheduler::get_box_tranform(){
 
 template<>
 std::tuple<f64_3,f64_3> PatchScheduler::get_box_tranform(){
-    if(!pdl.check_main_field_type<f64_3>()) throw excep_with_pos(std::runtime_error,"cannot query single precision box the main field is not of f64_3 type");
+    if(!pdl.check_main_field_type<f64_3>()) throw shamutils::throw_with_loc<std::runtime_error>("cannot query single precision box the main field is not of f64_3 type");
 
     auto [bmin,bmax] = patch_data.sim_box.get_bounding_box<f64_3>();
 
@@ -280,14 +281,14 @@ std::tuple<f64_3,f64_3> PatchScheduler::get_box_tranform(){
 
 template<>
 std::tuple<f32_3,f32_3> PatchScheduler::get_box_volume(){
-    if(!pdl.check_main_field_type<f32_3>()) throw excep_with_pos(std::runtime_error,"cannot query single precision box the main field is not of f32_3 type");
+    if(!pdl.check_main_field_type<f32_3>()) throw shamutils::throw_with_loc<std::runtime_error>("cannot query single precision box the main field is not of f32_3 type");
 
     return patch_data.sim_box.get_bounding_box<f32_3>();
 }
 
 template<>
 std::tuple<f64_3,f64_3> PatchScheduler::get_box_volume(){
-    if(!pdl.check_main_field_type<f64_3>()) throw excep_with_pos(std::runtime_error,"cannot query single precision box the main field is not of f64_3 type");
+    if(!pdl.check_main_field_type<f64_3>()) throw shamutils::throw_with_loc<std::runtime_error>("cannot query single precision box the main field is not of f64_3 type");
 
     return patch_data.sim_box.get_bounding_box<f64_3>();
 }
@@ -302,7 +303,7 @@ void PatchScheduler::scheduler_step(bool do_split_merge, bool do_load_balancing)
 
     auto global_timer = timings::start_timer("SchedulerMPI::scheduler_step", timings::function);
 
-    if(!is_mpi_sycl_interop_active()) throw excep_with_pos(std::runtime_error,"sycl mpi interop not initialized");
+    if(!is_mpi_sycl_interop_active()) throw shamutils::throw_with_loc<std::runtime_error>("sycl mpi interop not initialized");
 
     Timer timer;
 
@@ -356,7 +357,7 @@ void PatchScheduler::scheduler_step(bool do_split_merge, bool do_load_balancing)
 
 
         std::cout <<        "   | ---- patch operation requests ---- \n";
-        std::cout << format("      split : %-6d   | merge : %-6d",split_rq.size(), merge_rq.size()) << std::endl;
+        std::cout << shamutils::format_printf("      split : %-6d   | merge : %-6d",split_rq.size(), merge_rq.size()) << std::endl;
 
         /*
         std::cout << "     |-> split rq : ";

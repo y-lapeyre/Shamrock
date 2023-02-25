@@ -29,7 +29,7 @@ RadixTree<u_morton, vec3, dim>::RadixTree(
     sycl::queue &queue, std::tuple<vec3, vec3> treebox, const std::unique_ptr<sycl::buffer<vec3>> &pos_buf, u32 cnt_obj, u32 reduc_level
 ) {
     if (cnt_obj > i32_max - 1) {
-        throw excep_with_pos(std::runtime_error,"number of element in patch above i32_max-1");
+        throw shamutils::throw_with_loc<std::runtime_error>("number of element in patch above i32_max-1");
     }
 
     obj_cnt = cnt_obj;
@@ -115,7 +115,7 @@ RadixTree<u_morton, vec3, dim>::RadixTree(
         }
 
     } else {
-        throw excep_with_pos(std::runtime_error,"empty patch should be skipped");
+        throw shamutils::throw_with_loc<std::runtime_error>("empty patch should be skipped");
     }
 }
 

@@ -11,6 +11,7 @@
 #include <stdexcept>
 
 #include "shamrock/math/integerManip.hpp"
+#include "shamutils/throwUtils.hpp"
 
 #define SGN(x) (x == 0) ? 0 : ((x > 0) ? 1 : -1)
 
@@ -28,17 +29,17 @@ void __sycl_karras_alg(sycl::queue &queue, u32 internal_cell_count, std::unique_
     sycl::range<1> range_radix_tree{internal_cell_count};
 
     if (in_morton == NULL)
-        throw excep_with_pos(std::invalid_argument,"in_morton isn't allocated");
+        throw shamutils::throw_with_loc<std::invalid_argument>("in_morton isn't allocated");
     if (out_buf_lchild_id == NULL)
-        throw excep_with_pos(std::invalid_argument,"out_buf_lchild_id isn't allocated");
+        throw shamutils::throw_with_loc<std::invalid_argument>("out_buf_lchild_id isn't allocated");
     if (out_buf_rchild_id == NULL)
-        throw excep_with_pos(std::invalid_argument,"out_buf_rchild_id isn't allocated");
+        throw shamutils::throw_with_loc<std::invalid_argument>("out_buf_rchild_id isn't allocated");
     if (out_buf_lchild_flag == NULL)
-        throw excep_with_pos(std::invalid_argument,"out_buf_lchild_flag isn't allocated");
+        throw shamutils::throw_with_loc<std::invalid_argument>("out_buf_lchild_flag isn't allocated");
     if (out_buf_rchild_flag == NULL)
-        throw excep_with_pos(std::invalid_argument,"out_buf_rchild_flag isn't allocated");
+        throw shamutils::throw_with_loc<std::invalid_argument>("out_buf_rchild_flag isn't allocated");
     if (out_buf_endrange == NULL)
-        throw excep_with_pos(std::invalid_argument,"out_buf_endrange isn't allocated");
+        throw shamutils::throw_with_loc<std::invalid_argument>("out_buf_endrange isn't allocated");
 
     queue.submit([&](sycl::handler &cgh) {
         //@TODO add check if split count above 2G

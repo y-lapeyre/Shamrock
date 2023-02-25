@@ -11,7 +11,10 @@
 
 #include "shamutils/SourceLocation.hpp"
 
-template<class ExcptTypes, class ... T>
-void throw_with_loc(std::string message, SourceLocation loc = SourceLocation{}){
-    throw ExcptTypes(message + loc.format_multiline());
+namespace shamutils{
+    template<class ExcptTypes, class ... T>
+    inline ExcptTypes throw_with_loc(std::string message, SourceLocation loc = SourceLocation{}){
+        return ExcptTypes(message + loc.format_multiline());
+    }
 }
+

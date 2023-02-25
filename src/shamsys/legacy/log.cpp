@@ -7,6 +7,7 @@
 // -------------------------------------------------------//
 
 #include "log.hpp"
+#include "shamutils/stringUtils.hpp"
 #include <chrono>
 
 template<typename T>
@@ -43,7 +44,7 @@ R"({
     }
 },)";
 
-            timings_file << format(rstr,
+            timings_file << shamutils::format_printf(rstr,
                 name.c_str(),
                 shamsys::instance::world_rank,
                 shamsys::instance::world_rank,
@@ -66,7 +67,7 @@ R"({
     }
 },)";
 
-            timings_file << format(rstr,
+            timings_file << shamutils::format_printf(rstr,
                 name.c_str(),
                 shamsys::instance::world_rank,
                 shamsys::instance::world_rank,
@@ -89,7 +90,7 @@ R"({
     }
 })";
 
-            timings_file << format(rstr,
+            timings_file << shamutils::format_printf(rstr,
                 name.c_str(),
                 shamsys::instance::world_rank,
                 shamsys::instance::world_rank,

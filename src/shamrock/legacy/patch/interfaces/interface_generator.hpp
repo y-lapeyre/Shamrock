@@ -97,7 +97,7 @@ template <class vectype, class field_type, class InterfaceSelector> class Interf
         const u64 global_pcount = sched.patch_list.global.size();
 
         if (local_pcount == 0)
-            throw excep_with_pos(std::invalid_argument,"local patch count is zero this function can not run");
+            throw shamutils::throw_with_loc<std::invalid_argument>("local patch count is zero this function can not run");
 
         sycl::buffer<u64> patch_ids_buf(local_pcount);
         sycl::buffer<vectype> local_box_min_buf(local_pcount);

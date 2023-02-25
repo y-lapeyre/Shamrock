@@ -21,6 +21,7 @@
 #include "shamsys/legacy/sycl_handler.hpp"
 
 #include "shamsys/legacy/mpi_handler.hpp"
+#include "shamutils/throwUtils.hpp"
 
 
 bool has_option(
@@ -175,7 +176,7 @@ namespace shamtest::details {
 
         if(node_count != -1){
             if(node_count != world_size){
-                throw excep_with_pos(std::runtime_error,"trying to run a test with wrong number of nodes");
+                throw shamutils::throw_with_loc<std::runtime_error>("trying to run a test with wrong number of nodes");
             }
         }
 
