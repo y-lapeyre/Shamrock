@@ -8,6 +8,7 @@
 
 #include "CommImplBuffer.hpp"
 #include "shamsys/legacy/log.hpp"
+#include <hipSYCL/sycl/libkernel/accessor.hpp>
 
 
 namespace shamsys::comm::details {
@@ -24,7 +25,7 @@ namespace shamsys::comm::details {
     template<class T>
     void CommBuffer<sycl::buffer<T>,CopyToHost>::copy_to_usm(sycl::buffer<T> & obj_ref, u64 len, u64 offset){
             
-            sycl::host_accessor acc {obj_ref};
+            sycl::host_accessor acc {obj_ref, sycl::read_only};
             for(u64 sz = 0;sz < len; sz ++){
                 usm_ptr[sz] = acc[sz + offset];
             }
@@ -35,7 +36,7 @@ namespace shamsys::comm::details {
 
         sycl::buffer<T> buf_ret (len);
         {
-            sycl::host_accessor acc {buf_ret};
+            sycl::host_accessor acc {buf_ret, sycl::write_only, sycl::no_init};
             for(u64 sz = 0;sz < len; sz ++){
                 acc[sz + offset] = usm_ptr[sz];
             }
@@ -102,7 +103,7 @@ template<class T>
 
         auto ev = instance::get_compute_queue().submit([&](sycl::handler & cgh){
             
-            sycl::accessor acc_buf {buf_ret, cgh, sycl::write_only};
+            sycl::accessor acc_buf {buf_ret, cgh,sycl::write_only, sycl::no_init};
 
             u64 off = offset;
             T* ptr = usm_ptr;
@@ -188,7 +189,7 @@ template<class T>
 
         auto ev = instance::get_compute_queue().submit([&](sycl::handler & cgh){
             
-            sycl::accessor acc_buf {buf_ret, cgh, sycl::write_only};
+            sycl::accessor acc_buf {buf_ret, cgh, sycl::write_only, sycl::no_init};
 
             u64 off = offset;
             T* ptr = usm_ptr;
@@ -230,7 +231,7 @@ template<class T>
 
         auto ev = instance::get_compute_queue().submit([&](sycl::handler & cgh){
             
-            sycl::accessor acc_buf {buf_ret, cgh, sycl::write_only};
+            sycl::accessor acc_buf {buf_ret, cgh, sycl::write_only, sycl::no_init};
 
             u64 off = offset;
             T* ptr = usm_ptr;
@@ -277,7 +278,7 @@ template<class T>
 
         auto ev = instance::get_compute_queue().submit([&](sycl::handler & cgh){
             
-            sycl::accessor acc_buf {buf_ret, cgh, sycl::write_only};
+            sycl::accessor acc_buf {buf_ret, cgh, sycl::write_only, sycl::no_init};
 
             u64 off = offset;
             T* ptr = usm_ptr;
@@ -323,7 +324,7 @@ template<class T>
 
         auto ev = instance::get_compute_queue().submit([&](sycl::handler & cgh){
             
-            sycl::accessor acc_buf {buf_ret, cgh, sycl::write_only};
+            sycl::accessor acc_buf {buf_ret, cgh, sycl::write_only, sycl::no_init};
 
             u64 off = offset;
             T* ptr = usm_ptr;
@@ -376,7 +377,7 @@ template<class T>
 
         auto ev = instance::get_compute_queue().submit([&](sycl::handler & cgh){
             
-            sycl::accessor acc_buf {buf_ret, cgh, sycl::write_only};
+            sycl::accessor acc_buf {buf_ret, cgh, sycl::write_only, sycl::no_init};
 
             u64 off = offset;
             T* ptr = usm_ptr;
@@ -441,7 +442,7 @@ template<class T>
 
         auto ev = instance::get_compute_queue().submit([&](sycl::handler & cgh){
             
-            sycl::accessor acc_buf {buf_ret, cgh, sycl::write_only};
+            sycl::accessor acc_buf {buf_ret, cgh, sycl::write_only, sycl::no_init};
 
             u64 off = offset;
             T* ptr = usm_ptr;

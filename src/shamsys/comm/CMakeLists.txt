@@ -1,6 +1,6 @@
 
 set(Sources
-    CommImplBuffer.cpp
+
 )
 set(SourcesTest
     
@@ -31,3 +31,4 @@ target_sources(shamrock_test
 endif()
 
 add_subdirectory(tests)
+add_subdirectory(details)

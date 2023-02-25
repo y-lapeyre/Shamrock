@@ -13,7 +13,7 @@
 #include <random>
 
 #include "shamsys/comm/Comm.hpp"
-#include "shamsys/comm/CommImplBuffer.hpp"
+#include "shamsys/comm/details/CommImplBuffer.hpp"
 #include "shamsys/SyclHelper.hpp"
 
 

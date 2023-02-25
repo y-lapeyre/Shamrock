@@ -17,7 +17,7 @@
 
 
 #include "CommProtocol.hpp"
-#include "CommImplBuffer.hpp"
+//#include "CommImplBuffer.hpp"
 
 
 
@@ -208,8 +208,6 @@ namespace shamsys::comm {
         }
 
     };
-
-    template class CommBuffer<sycl::buffer<f32_3>>;
 
 } // namespace shamsys::comm
 
