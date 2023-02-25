@@ -65,6 +65,25 @@ template<class T>
             rqs.push(rq);
         }
 
+template<class T>
+    CommBuffer<sycl::buffer<T>,CopyToHost> CommBuffer<sycl::buffer<T>,CopyToHost>::irecv_probe(CommRequests & rqs, u32 rank_src, u32 comm_flag, MPI_Comm comm){
+        MPI_Status st;
+        i32 cnt;
+        mpi::probe(rank_src, comm_flag,comm, & st);
+        mpi::get_count(&st, get_mpi_type<T>(), &cnt);
+
+        u32 val_cnt = cnt;
+
+        CommDetails<sycl::buffer<T>> det {val_cnt};
+
+        CommBuffer<sycl::buffer<T>,CopyToHost> ret {det};
+
+        ret.irecv(rqs, rank_src, comm_flag, comm);
+
+        return ret;
+    }
+
+
 
     //////////////////////////////////////////
     //direct GPU impl
@@ -141,7 +160,23 @@ template<class T>
     }
 
 
+template<class T>
+    CommBuffer<sycl::buffer<T>,DirectGPU> CommBuffer<sycl::buffer<T>,DirectGPU>::irecv_probe(CommRequests & rqs, u32 rank_src, u32 comm_flag, MPI_Comm comm){
+        MPI_Status st;
+        i32 cnt;
+        mpi::probe(rank_src, comm_flag,comm, & st);
+        mpi::get_count(&st, get_mpi_type<T>(), &cnt);
 
+        u32 val_cnt = cnt;
+
+        CommDetails<sycl::buffer<T>> det {val_cnt};
+
+        CommBuffer<sycl::buffer<T>,DirectGPU> ret {det};
+
+        ret.irecv(rqs, rank_src, comm_flag, comm);
+
+        return ret;
+    }
 
 
 
@@ -527,7 +562,23 @@ template<class T>
     }
 
 
+template<class T>
+    CommBuffer<sycl::buffer<T>,DirectGPUFlatten> CommBuffer<sycl::buffer<T>,DirectGPUFlatten>::irecv_probe(CommRequests & rqs, u32 rank_src, u32 comm_flag, MPI_Comm comm){
+        MPI_Status st;
+        i32 cnt;
+        mpi::probe(rank_src, comm_flag,comm, & st);
+        mpi::get_count(&st, get_mpi_type<T>(), &cnt);
 
+        u32 val_cnt = cnt;
+
+        CommDetails<sycl::buffer<T>> det {val_cnt};
+
+        CommBuffer<sycl::buffer<T>,DirectGPUFlatten> ret {det};
+
+        ret.irecv(rqs, rank_src, comm_flag, comm);
+
+        return ret;
+    }
 
 
 

@@ -55,6 +55,8 @@ namespace shamsys::comm::details {
 
         void isend(CommRequests & rqs, u32 rank_dest, u32 comm_flag, MPI_Comm comm);
         void irecv(CommRequests & rqs, u32 rank_src, u32 comm_flag, MPI_Comm comm);
+
+        static CommBuffer irecv_probe(CommRequests & rqs, u32 rank_src, u32 comm_flag, MPI_Comm comm);
     };
 
 
@@ -186,6 +188,9 @@ namespace shamsys::comm::details {
 
         void irecv(CommRequests & rqs, u32 rank_src, u32 comm_tag, MPI_Comm comm);
 
+
+        static CommBuffer irecv_probe(CommRequests & rqs, u32 rank_src, u32 comm_flag, MPI_Comm comm);
+
     };
 
 
@@ -313,6 +318,8 @@ namespace shamsys::comm::details {
         void isend(CommRequests & rqs, u32 rank_dest, u32 comm_tag, MPI_Comm comm);
 
         void irecv(CommRequests & rqs, u32 rank_src, u32 comm_tag, MPI_Comm comm);
+
+        static CommBuffer irecv_probe(CommRequests & rqs, u32 rank_src, u32 comm_flag, MPI_Comm comm);
 
     };
 
@@ -471,6 +478,8 @@ namespace shamsys::comm::details {
         void isend(CommRequests & rqs, u32 rank_dest, u32 comm_tag, MPI_Comm comm);
 
         void irecv(CommRequests & rqs, u32 rank_src, u32 comm_tag, MPI_Comm comm);
+
+        static CommBuffer irecv_probe(CommRequests & rqs, u32 rank_src, u32 comm_flag, MPI_Comm comm);
 
     };
 

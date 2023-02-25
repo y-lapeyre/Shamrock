@@ -10,13 +10,16 @@
 #pragma once
 
 #include "shamsys/MpiWrapper.hpp"
+#include "shamsys/comm/ProtocolEnum.hpp"
 #include "shamsys/legacy/log.hpp"
 
+#include <stdexcept>
 #include <variant>
 #include <vector>
 
 
 #include "CommRequests.hpp"
+#include "shamutils/throwUtils.hpp"
 //#include "CommImplBuffer.hpp"
 
 
@@ -56,7 +59,7 @@ namespace shamsys::comm {
         var_t _int_type;
 
 
-
+        explicit CommBuffer (var_t && moved_int_var) : _int_type(std::move(moved_int_var)) {}
 
         public:
 
@@ -73,6 +76,8 @@ namespace shamsys::comm {
                 _int_type = details::CommBuffer<T, DirectGPU>(det);
             }else if(comm_mode == DirectGPUFlatten){
                 _int_type = details::CommBuffer<T, DirectGPUFlatten>(det);
+            }else {
+                throw shamutils::throw_with_loc<std::invalid_argument>("unknown mode");
             }
         }
 
@@ -89,6 +94,8 @@ namespace shamsys::comm {
                 _int_type = details::CommBuffer<T, DirectGPU>(obj_ref);
             }else if(comm_mode == DirectGPUFlatten){
                 _int_type = details::CommBuffer<T, DirectGPUFlatten>(obj_ref);
+            }else {
+                throw shamutils::throw_with_loc<std::invalid_argument>("unknown mode");
             }
         }
 
@@ -106,6 +113,8 @@ namespace shamsys::comm {
                 _int_type = details::CommBuffer<T, DirectGPU>(obj_ref,det);
             }else if(comm_mode == DirectGPUFlatten){
                 _int_type = details::CommBuffer<T, DirectGPUFlatten>(obj_ref,det);
+            }else {
+                throw shamutils::throw_with_loc<std::invalid_argument>("unknown mode");
             }
         }
 
@@ -122,6 +131,8 @@ namespace shamsys::comm {
                 _int_type = details::CommBuffer<T, DirectGPU>(moved_obj);
             }else if(comm_mode == DirectGPUFlatten){
                 _int_type = details::CommBuffer<T, DirectGPUFlatten>(moved_obj);
+            }else {
+                throw shamutils::throw_with_loc<std::invalid_argument>("unknown mode");
             }
         }
 
@@ -139,6 +150,8 @@ namespace shamsys::comm {
                 _int_type = details::CommBuffer<T, DirectGPU>(moved_obj,det);
             }else if(comm_mode == DirectGPUFlatten){
                 _int_type = details::CommBuffer<T, DirectGPUFlatten>(moved_obj,det);
+            }else {
+                throw shamutils::throw_with_loc<std::invalid_argument>("unknown mode");
             }
         }
 
@@ -211,6 +224,25 @@ namespace shamsys::comm {
             std::visit([&](auto&& arg) {
                 arg.irecv(rqs, rank_src, comm_tag, comm);
             }, *_int_type);
+        }
+
+
+        static CommBuffer irecv_probe(CommRequests & rqs,u32 rank_src, u32 comm_flag, MPI_Comm comm, Protocol comm_mode){
+
+            if(comm_mode == CopyToHost){
+                return CommBuffer(details::CommBuffer<T, CopyToHost>::irecv_probe(rqs, rank_src,comm_flag,comm));
+            }
+            
+            if(comm_mode == DirectGPU){
+                return CommBuffer(details::CommBuffer<T, DirectGPU>::irecv_probe(rqs, rank_src,comm_flag,comm));
+            }
+            
+            if(comm_mode == DirectGPUFlatten){
+                return CommBuffer(details::CommBuffer<T, DirectGPUFlatten>::irecv_probe(rqs, rank_src,comm_flag,comm));
+            }
+
+            throw shamutils::throw_with_loc<std::invalid_argument>("unknown mode");
+
         }
 
     };
