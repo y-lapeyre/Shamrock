@@ -156,7 +156,10 @@ profile_map = {
         "omp" : "--hipsycl-cpu-cxx=g++ --hipsycl-targets='omp' " + hipsyclconfigfile,
         "omp_sanitizer" : "-fsanitize=address --hipsycl-cpu-cxx=g++ --hipsycl-targets='omp' " + hipsyclconfigfile,
         "omp_coverage" : "-fprofile-instr-generate -fcoverage-mapping --hipsycl-cpu-cxx=g++ --hipsycl-targets='omp' " + hipsyclconfigfile,
-        "generic" : "--hipsycl-targets=generic "+ hipsyclconfigfile
+        "generic" : "--hipsycl-targets=generic "+ hipsyclconfigfile,
+
+        #if you dare trying to develop with this profile
+        "omp_insanity" : "--hipsycl-cpu-cxx=g++ --hipsycl-targets='omp' -Wall -Wextra -Werror " + hipsyclconfigfile
     }
 }
 
