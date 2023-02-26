@@ -33,6 +33,15 @@ namespace shamsys::comm::details {
         u32 nvar;
         std::optional<u64> start_index;
 
+        CommDetails(u32 obj_cnt,
+        std::string name,
+        u32 nvar,
+        std::optional<u64> start_index) :
+        obj_cnt(obj_cnt),
+        name(name),
+        nvar(nvar),
+        start_index(start_index) {}
+
         CommDetails (PatchDataField<T> & pdat) :
             obj_cnt(pdat.get_obj_cnt()),
             name(pdat.get_name()),
