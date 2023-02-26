@@ -144,10 +144,14 @@ template <class T> class PatchDataField {
 
     inline PatchDataField(sycl::buffer<T> && moved_buf, u32 obj_cnt, 
     std::string name, u32 nvar) : 
-        obj_cnt(obj_cnt), field_name(name),nvar(nvar),capacity(moved_buf.size())
+        obj_cnt(obj_cnt),val_cnt(obj_cnt*nvar), field_name(name),nvar(nvar),capacity(moved_buf.size())
     {
         buf = std::make_unique<sycl::buffer<T>>(std::move(moved_buf)); 
     }
+
+    static PatchDataField<T> mock_field(u64 seed, u32 obj_cnt, std::string name, u32 nvar);
+
+    
 
     inline PatchDataField duplicate() const {
         const PatchDataField &current = *this;
