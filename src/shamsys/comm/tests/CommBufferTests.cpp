@@ -17,20 +17,12 @@
 #include "shamsys/SyclHelper.hpp"
 
 
-template<class T> void test_constructor_syclbuf(std::string prefix, std::mt19937 & eng, shamsys::comm::Protocol prot){
+template<class T> void test_constructor_syclbuf(std::string prefix, u64 seed, shamsys::comm::Protocol prot){
 
-    std::uniform_real_distribution<f64> distval(-1.0F, 1.0F);
 
     u32 npart = 1e5;
 
-    sycl::buffer<T> buf_comp (npart);
-
-    {
-        sycl::host_accessor acc {buf_comp, sycl::write_only, sycl::no_init};
-        for(u32 i = 0; i < npart; i++){
-            acc[i] = shamsys::syclhelper::next_obj<T>(eng, distval);
-        }
-    }
+    sycl::buffer<T> buf_comp = shamalgs::random::mock_buffer<T>(seed, npart);
 
     using namespace shamsys::comm;
 
@@ -64,55 +56,55 @@ template<class T> void test_constructor_syclbuf(std::string prefix, std::mt19937
 
 TestStart(Unittest, "shamsys/comm/comm-buffer/syclbuffer-constructor", constructordestructor, 1){
 
-    std::mt19937 eng(0x1111);
+    u64 seed = 0x111;
 
     using namespace shamsys::comm;
  
-    test_constructor_syclbuf<f32   >("f32   : ",eng,CopyToHost);
-    test_constructor_syclbuf<f32_2 >("f32_2 : ",eng,CopyToHost);
-    test_constructor_syclbuf<f32_3 >("f32_3 : ",eng,CopyToHost);
-    test_constructor_syclbuf<f32_4 >("f32_4 : ",eng,CopyToHost);
-    test_constructor_syclbuf<f32_8 >("f32_8 : ",eng,CopyToHost);
-    test_constructor_syclbuf<f32_16>("f32_16: ",eng,CopyToHost);
-    test_constructor_syclbuf<f64   >("f64   : ",eng,CopyToHost);
-    test_constructor_syclbuf<f64_2 >("f64_2 : ",eng,CopyToHost);
-    test_constructor_syclbuf<f64_3 >("f64_3 : ",eng,CopyToHost);
-    test_constructor_syclbuf<f64_4 >("f64_4 : ",eng,CopyToHost);
-    test_constructor_syclbuf<f64_8 >("f64_8 : ",eng,CopyToHost);
-    test_constructor_syclbuf<f64_16>("f64_16: ",eng,CopyToHost);
-    test_constructor_syclbuf<u32   >("u32   : ",eng,CopyToHost);
-    test_constructor_syclbuf<u64   >("u64   : ",eng,CopyToHost);
+    test_constructor_syclbuf<f32   >("f32   : ",seed,CopyToHost);
+    test_constructor_syclbuf<f32_2 >("f32_2 : ",seed,CopyToHost);
+    test_constructor_syclbuf<f32_3 >("f32_3 : ",seed,CopyToHost);
+    test_constructor_syclbuf<f32_4 >("f32_4 : ",seed,CopyToHost);
+    test_constructor_syclbuf<f32_8 >("f32_8 : ",seed,CopyToHost);
+    test_constructor_syclbuf<f32_16>("f32_16: ",seed,CopyToHost);
+    test_constructor_syclbuf<f64   >("f64   : ",seed,CopyToHost);
+    test_constructor_syclbuf<f64_2 >("f64_2 : ",seed,CopyToHost);
+    test_constructor_syclbuf<f64_3 >("f64_3 : ",seed,CopyToHost);
+    test_constructor_syclbuf<f64_4 >("f64_4 : ",seed,CopyToHost);
+    test_constructor_syclbuf<f64_8 >("f64_8 : ",seed,CopyToHost);
+    test_constructor_syclbuf<f64_16>("f64_16: ",seed,CopyToHost);
+    test_constructor_syclbuf<u32   >("u32   : ",seed,CopyToHost);
+    test_constructor_syclbuf<u64   >("u64   : ",seed,CopyToHost);
 
 
-    test_constructor_syclbuf<f32   >("f32   : ",eng,DirectGPU);
-    test_constructor_syclbuf<f32_2 >("f32_2 : ",eng,DirectGPU);
-    test_constructor_syclbuf<f32_3 >("f32_3 : ",eng,DirectGPU);
-    test_constructor_syclbuf<f32_4 >("f32_4 : ",eng,DirectGPU);
-    test_constructor_syclbuf<f32_8 >("f32_8 : ",eng,DirectGPU);
-    test_constructor_syclbuf<f32_16>("f32_16: ",eng,DirectGPU);
-    test_constructor_syclbuf<f64   >("f64   : ",eng,DirectGPU);
-    test_constructor_syclbuf<f64_2 >("f64_2 : ",eng,DirectGPU);
-    test_constructor_syclbuf<f64_3 >("f64_3 : ",eng,DirectGPU);
-    test_constructor_syclbuf<f64_4 >("f64_4 : ",eng,DirectGPU);
-    test_constructor_syclbuf<f64_8 >("f64_8 : ",eng,DirectGPU);
-    test_constructor_syclbuf<f64_16>("f64_16: ",eng,DirectGPU);
-    test_constructor_syclbuf<u32   >("u32   : ",eng,DirectGPU);
-    test_constructor_syclbuf<u64   >("u64   : ",eng,DirectGPU);
+    test_constructor_syclbuf<f32   >("f32   : ",seed,DirectGPU);
+    test_constructor_syclbuf<f32_2 >("f32_2 : ",seed,DirectGPU);
+    test_constructor_syclbuf<f32_3 >("f32_3 : ",seed,DirectGPU);
+    test_constructor_syclbuf<f32_4 >("f32_4 : ",seed,DirectGPU);
+    test_constructor_syclbuf<f32_8 >("f32_8 : ",seed,DirectGPU);
+    test_constructor_syclbuf<f32_16>("f32_16: ",seed,DirectGPU);
+    test_constructor_syclbuf<f64   >("f64   : ",seed,DirectGPU);
+    test_constructor_syclbuf<f64_2 >("f64_2 : ",seed,DirectGPU);
+    test_constructor_syclbuf<f64_3 >("f64_3 : ",seed,DirectGPU);
+    test_constructor_syclbuf<f64_4 >("f64_4 : ",seed,DirectGPU);
+    test_constructor_syclbuf<f64_8 >("f64_8 : ",seed,DirectGPU);
+    test_constructor_syclbuf<f64_16>("f64_16: ",seed,DirectGPU);
+    test_constructor_syclbuf<u32   >("u32   : ",seed,DirectGPU);
+    test_constructor_syclbuf<u64   >("u64   : ",seed,DirectGPU);
 
-    test_constructor_syclbuf<f32   >("f32   : ",eng,DirectGPUFlatten);
-    test_constructor_syclbuf<f32_2 >("f32_2 : ",eng,DirectGPUFlatten);
-    test_constructor_syclbuf<f32_3 >("f32_3 : ",eng,DirectGPUFlatten);
-    test_constructor_syclbuf<f32_4 >("f32_4 : ",eng,DirectGPUFlatten);
-    test_constructor_syclbuf<f32_8 >("f32_8 : ",eng,DirectGPUFlatten);
-    test_constructor_syclbuf<f32_16>("f32_16: ",eng,DirectGPUFlatten);
-    test_constructor_syclbuf<f64   >("f64   : ",eng,DirectGPUFlatten);
-    test_constructor_syclbuf<f64_2 >("f64_2 : ",eng,DirectGPUFlatten);
-    test_constructor_syclbuf<f64_3 >("f64_3 : ",eng,DirectGPUFlatten);
-    test_constructor_syclbuf<f64_4 >("f64_4 : ",eng,DirectGPUFlatten);
-    test_constructor_syclbuf<f64_8 >("f64_8 : ",eng,DirectGPUFlatten);
-    test_constructor_syclbuf<f64_16>("f64_16: ",eng,DirectGPUFlatten);
-    test_constructor_syclbuf<u32   >("u32   : ",eng,DirectGPUFlatten);
-    test_constructor_syclbuf<u64   >("u64   : ",eng,DirectGPUFlatten);
+    test_constructor_syclbuf<f32   >("f32   : ",seed,DirectGPUFlatten);
+    test_constructor_syclbuf<f32_2 >("f32_2 : ",seed,DirectGPUFlatten);
+    test_constructor_syclbuf<f32_3 >("f32_3 : ",seed,DirectGPUFlatten);
+    test_constructor_syclbuf<f32_4 >("f32_4 : ",seed,DirectGPUFlatten);
+    test_constructor_syclbuf<f32_8 >("f32_8 : ",seed,DirectGPUFlatten);
+    test_constructor_syclbuf<f32_16>("f32_16: ",seed,DirectGPUFlatten);
+    test_constructor_syclbuf<f64   >("f64   : ",seed,DirectGPUFlatten);
+    test_constructor_syclbuf<f64_2 >("f64_2 : ",seed,DirectGPUFlatten);
+    test_constructor_syclbuf<f64_3 >("f64_3 : ",seed,DirectGPUFlatten);
+    test_constructor_syclbuf<f64_4 >("f64_4 : ",seed,DirectGPUFlatten);
+    test_constructor_syclbuf<f64_8 >("f64_8 : ",seed,DirectGPUFlatten);
+    test_constructor_syclbuf<f64_16>("f64_16: ",seed,DirectGPUFlatten);
+    test_constructor_syclbuf<u32   >("u32   : ",seed,DirectGPUFlatten);
+    test_constructor_syclbuf<u64   >("u64   : ",seed,DirectGPUFlatten);
     
 }
 
@@ -136,20 +128,12 @@ TestStart(Unittest, "shamsys/comm/comm-buffer/syclbuffer-constructor", construct
 
 
 
-template<class T> void test_comm_syclbuf(std::string prefix, std::mt19937 & eng, shamsys::comm::Protocol prot){
+template<class T> void test_comm_syclbuf(std::string prefix, u64 seed, shamsys::comm::Protocol prot){
 
-    std::uniform_real_distribution<f64> distval(-1.0F, 1.0F);
-
+    
     u32 npart = 1e4;
 
-    sycl::buffer<T> buf_comp (npart);
-
-    {
-        sycl::host_accessor acc {buf_comp, sycl::write_only, sycl::no_init};
-        for(u32 i = 0; i < npart; i++){
-            acc[i] = shamsys::syclhelper::next_obj<T>(eng, distval);
-        }
-    }
+    sycl::buffer<T> buf_comp = shamalgs::random::mock_buffer<T>(seed, npart);
 
     using namespace shamsys::comm;
 
@@ -210,20 +194,12 @@ template<class T> void test_comm_syclbuf(std::string prefix, std::mt19937 & eng,
 
 
 
-template<class T> void test_comm_probe_syclbuf(std::string prefix, std::mt19937 & eng, shamsys::comm::Protocol prot){
+template<class T> void test_comm_probe_syclbuf(std::string prefix, u64 seed, shamsys::comm::Protocol prot){
 
-    std::uniform_real_distribution<f64> distval(-1.0F, 1.0F);
-
+    
     u32 npart = 1e4;
 
-    sycl::buffer<T> buf_comp (npart);
-
-    {
-        sycl::host_accessor acc {buf_comp, sycl::write_only, sycl::no_init};
-        for(u32 i = 0; i < npart; i++){
-            acc[i] = shamsys::syclhelper::next_obj<T>(eng, distval);
-        }
-    }
+    sycl::buffer<T> buf_comp = shamalgs::random::mock_buffer<T>(seed, npart);
 
     using namespace shamsys::comm;
 
@@ -282,55 +258,55 @@ template<class T> void test_comm_probe_syclbuf(std::string prefix, std::mt19937 
 
 TestStart(Unittest, "shamsys/comm/comm-buffer/syclbuffer-isend-irecv", isend_irecv_syclbuf, 2){
 
-    std::mt19937 eng(0x1111);
+    u64 seed = 0x111;
 
     using namespace shamsys::comm;
  
-    test_comm_syclbuf<f32   >("f32   : ",eng,CopyToHost);
-    test_comm_syclbuf<f32_2 >("f32_2 : ",eng,CopyToHost);
-    test_comm_syclbuf<f32_3 >("f32_3 : ",eng,CopyToHost);
-    test_comm_syclbuf<f32_4 >("f32_4 : ",eng,CopyToHost);
-    test_comm_syclbuf<f32_8 >("f32_8 : ",eng,CopyToHost);
-    test_comm_syclbuf<f32_16>("f32_16: ",eng,CopyToHost);
-    test_comm_syclbuf<f64   >("f64   : ",eng,CopyToHost);
-    test_comm_syclbuf<f64_2 >("f64_2 : ",eng,CopyToHost);
-    test_comm_syclbuf<f64_3 >("f64_3 : ",eng,CopyToHost);
-    test_comm_syclbuf<f64_4 >("f64_4 : ",eng,CopyToHost);
-    test_comm_syclbuf<f64_8 >("f64_8 : ",eng,CopyToHost);
-    test_comm_syclbuf<f64_16>("f64_16: ",eng,CopyToHost);
-    test_comm_syclbuf<u32   >("u32   : ",eng,CopyToHost);
-    test_comm_syclbuf<u64   >("u64   : ",eng,CopyToHost);
+    test_comm_syclbuf<f32   >("f32   : ",seed,CopyToHost);
+    test_comm_syclbuf<f32_2 >("f32_2 : ",seed,CopyToHost);
+    test_comm_syclbuf<f32_3 >("f32_3 : ",seed,CopyToHost);
+    test_comm_syclbuf<f32_4 >("f32_4 : ",seed,CopyToHost);
+    test_comm_syclbuf<f32_8 >("f32_8 : ",seed,CopyToHost);
+    test_comm_syclbuf<f32_16>("f32_16: ",seed,CopyToHost);
+    test_comm_syclbuf<f64   >("f64   : ",seed,CopyToHost);
+    test_comm_syclbuf<f64_2 >("f64_2 : ",seed,CopyToHost);
+    test_comm_syclbuf<f64_3 >("f64_3 : ",seed,CopyToHost);
+    test_comm_syclbuf<f64_4 >("f64_4 : ",seed,CopyToHost);
+    test_comm_syclbuf<f64_8 >("f64_8 : ",seed,CopyToHost);
+    test_comm_syclbuf<f64_16>("f64_16: ",seed,CopyToHost);
+    test_comm_syclbuf<u32   >("u32   : ",seed,CopyToHost);
+    test_comm_syclbuf<u64   >("u64   : ",seed,CopyToHost);
 
 
-    test_comm_syclbuf<f32   >("f32   : ",eng,DirectGPU);
-    test_comm_syclbuf<f32_2 >("f32_2 : ",eng,DirectGPU);
-    test_comm_syclbuf<f32_3 >("f32_3 : ",eng,DirectGPU);
-    test_comm_syclbuf<f32_4 >("f32_4 : ",eng,DirectGPU);
-    test_comm_syclbuf<f32_8 >("f32_8 : ",eng,DirectGPU);
-    test_comm_syclbuf<f32_16>("f32_16: ",eng,DirectGPU);
-    test_comm_syclbuf<f64   >("f64   : ",eng,DirectGPU);
-    test_comm_syclbuf<f64_2 >("f64_2 : ",eng,DirectGPU);
-    test_comm_syclbuf<f64_3 >("f64_3 : ",eng,DirectGPU);
-    test_comm_syclbuf<f64_4 >("f64_4 : ",eng,DirectGPU);
-    test_comm_syclbuf<f64_8 >("f64_8 : ",eng,DirectGPU);
-    test_comm_syclbuf<f64_16>("f64_16: ",eng,DirectGPU);
-    test_comm_syclbuf<u32   >("u32   : ",eng,DirectGPU);
-    test_comm_syclbuf<u64   >("u64   : ",eng,DirectGPU);
+    test_comm_syclbuf<f32   >("f32   : ",seed,DirectGPU);
+    test_comm_syclbuf<f32_2 >("f32_2 : ",seed,DirectGPU);
+    test_comm_syclbuf<f32_3 >("f32_3 : ",seed,DirectGPU);
+    test_comm_syclbuf<f32_4 >("f32_4 : ",seed,DirectGPU);
+    test_comm_syclbuf<f32_8 >("f32_8 : ",seed,DirectGPU);
+    test_comm_syclbuf<f32_16>("f32_16: ",seed,DirectGPU);
+    test_comm_syclbuf<f64   >("f64   : ",seed,DirectGPU);
+    test_comm_syclbuf<f64_2 >("f64_2 : ",seed,DirectGPU);
+    test_comm_syclbuf<f64_3 >("f64_3 : ",seed,DirectGPU);
+    test_comm_syclbuf<f64_4 >("f64_4 : ",seed,DirectGPU);
+    test_comm_syclbuf<f64_8 >("f64_8 : ",seed,DirectGPU);
+    test_comm_syclbuf<f64_16>("f64_16: ",seed,DirectGPU);
+    test_comm_syclbuf<u32   >("u32   : ",seed,DirectGPU);
+    test_comm_syclbuf<u64   >("u64   : ",seed,DirectGPU);
 
-    test_comm_syclbuf<f32   >("f32   : ",eng,DirectGPUFlatten);
-    test_comm_syclbuf<f32_2 >("f32_2 : ",eng,DirectGPUFlatten);
-    test_comm_syclbuf<f32_3 >("f32_3 : ",eng,DirectGPUFlatten);
-    test_comm_syclbuf<f32_4 >("f32_4 : ",eng,DirectGPUFlatten);
-    test_comm_syclbuf<f32_8 >("f32_8 : ",eng,DirectGPUFlatten);
-    test_comm_syclbuf<f32_16>("f32_16: ",eng,DirectGPUFlatten);
-    test_comm_syclbuf<f64   >("f64   : ",eng,DirectGPUFlatten);
-    test_comm_syclbuf<f64_2 >("f64_2 : ",eng,DirectGPUFlatten);
-    test_comm_syclbuf<f64_3 >("f64_3 : ",eng,DirectGPUFlatten);
-    test_comm_syclbuf<f64_4 >("f64_4 : ",eng,DirectGPUFlatten);
-    test_comm_syclbuf<f64_8 >("f64_8 : ",eng,DirectGPUFlatten);
-    test_comm_syclbuf<f64_16>("f64_16: ",eng,DirectGPUFlatten);
-    test_comm_syclbuf<u32   >("u32   : ",eng,DirectGPUFlatten);
-    test_comm_syclbuf<u64   >("u64   : ",eng,DirectGPUFlatten);
+    test_comm_syclbuf<f32   >("f32   : ",seed,DirectGPUFlatten);
+    test_comm_syclbuf<f32_2 >("f32_2 : ",seed,DirectGPUFlatten);
+    test_comm_syclbuf<f32_3 >("f32_3 : ",seed,DirectGPUFlatten);
+    test_comm_syclbuf<f32_4 >("f32_4 : ",seed,DirectGPUFlatten);
+    test_comm_syclbuf<f32_8 >("f32_8 : ",seed,DirectGPUFlatten);
+    test_comm_syclbuf<f32_16>("f32_16: ",seed,DirectGPUFlatten);
+    test_comm_syclbuf<f64   >("f64   : ",seed,DirectGPUFlatten);
+    test_comm_syclbuf<f64_2 >("f64_2 : ",seed,DirectGPUFlatten);
+    test_comm_syclbuf<f64_3 >("f64_3 : ",seed,DirectGPUFlatten);
+    test_comm_syclbuf<f64_4 >("f64_4 : ",seed,DirectGPUFlatten);
+    test_comm_syclbuf<f64_8 >("f64_8 : ",seed,DirectGPUFlatten);
+    test_comm_syclbuf<f64_16>("f64_16: ",seed,DirectGPUFlatten);
+    test_comm_syclbuf<u32   >("u32   : ",seed,DirectGPUFlatten);
+    test_comm_syclbuf<u64   >("u64   : ",seed,DirectGPUFlatten);
     
 }
 
@@ -338,54 +314,54 @@ TestStart(Unittest, "shamsys/comm/comm-buffer/syclbuffer-isend-irecv", isend_ire
 
 TestStart(Unittest, "shamsys/comm/comm-buffer/syclbuffer-isend-irecv_probe", isend_irecv_probe_syclbuf, 2){
 
-    std::mt19937 eng(0x1111);
+    u64 seed = 0x111;
 
     using namespace shamsys::comm;
  
-    test_comm_probe_syclbuf<f32   >("f32   : ",eng,CopyToHost);
-    test_comm_probe_syclbuf<f32_2 >("f32_2 : ",eng,CopyToHost);
-    test_comm_probe_syclbuf<f32_3 >("f32_3 : ",eng,CopyToHost);
-    test_comm_probe_syclbuf<f32_4 >("f32_4 : ",eng,CopyToHost);
-    test_comm_probe_syclbuf<f32_8 >("f32_8 : ",eng,CopyToHost);
-    test_comm_probe_syclbuf<f32_16>("f32_16: ",eng,CopyToHost);
-    test_comm_probe_syclbuf<f64   >("f64   : ",eng,CopyToHost);
-    test_comm_probe_syclbuf<f64_2 >("f64_2 : ",eng,CopyToHost);
-    test_comm_probe_syclbuf<f64_3 >("f64_3 : ",eng,CopyToHost);
-    test_comm_probe_syclbuf<f64_4 >("f64_4 : ",eng,CopyToHost);
-    test_comm_probe_syclbuf<f64_8 >("f64_8 : ",eng,CopyToHost);
-    test_comm_probe_syclbuf<f64_16>("f64_16: ",eng,CopyToHost);
-    test_comm_probe_syclbuf<u32   >("u32   : ",eng,CopyToHost);
-    test_comm_probe_syclbuf<u64   >("u64   : ",eng,CopyToHost);
+    test_comm_probe_syclbuf<f32   >("f32   : ",seed,CopyToHost);
+    test_comm_probe_syclbuf<f32_2 >("f32_2 : ",seed,CopyToHost);
+    test_comm_probe_syclbuf<f32_3 >("f32_3 : ",seed,CopyToHost);
+    test_comm_probe_syclbuf<f32_4 >("f32_4 : ",seed,CopyToHost);
+    test_comm_probe_syclbuf<f32_8 >("f32_8 : ",seed,CopyToHost);
+    test_comm_probe_syclbuf<f32_16>("f32_16: ",seed,CopyToHost);
+    test_comm_probe_syclbuf<f64   >("f64   : ",seed,CopyToHost);
+    test_comm_probe_syclbuf<f64_2 >("f64_2 : ",seed,CopyToHost);
+    test_comm_probe_syclbuf<f64_3 >("f64_3 : ",seed,CopyToHost);
+    test_comm_probe_syclbuf<f64_4 >("f64_4 : ",seed,CopyToHost);
+    test_comm_probe_syclbuf<f64_8 >("f64_8 : ",seed,CopyToHost);
+    test_comm_probe_syclbuf<f64_16>("f64_16: ",seed,CopyToHost);
+    test_comm_probe_syclbuf<u32   >("u32   : ",seed,CopyToHost);
+    test_comm_probe_syclbuf<u64   >("u64   : ",seed,CopyToHost);
 
 
-    test_comm_probe_syclbuf<f32   >("f32   : ",eng,DirectGPU);
-    test_comm_probe_syclbuf<f32_2 >("f32_2 : ",eng,DirectGPU);
-    test_comm_probe_syclbuf<f32_3 >("f32_3 : ",eng,DirectGPU);
-    test_comm_probe_syclbuf<f32_4 >("f32_4 : ",eng,DirectGPU);
-    test_comm_probe_syclbuf<f32_8 >("f32_8 : ",eng,DirectGPU);
-    test_comm_probe_syclbuf<f32_16>("f32_16: ",eng,DirectGPU);
-    test_comm_probe_syclbuf<f64   >("f64   : ",eng,DirectGPU);
-    test_comm_probe_syclbuf<f64_2 >("f64_2 : ",eng,DirectGPU);
-    test_comm_probe_syclbuf<f64_3 >("f64_3 : ",eng,DirectGPU);
-    test_comm_probe_syclbuf<f64_4 >("f64_4 : ",eng,DirectGPU);
-    test_comm_probe_syclbuf<f64_8 >("f64_8 : ",eng,DirectGPU);
-    test_comm_probe_syclbuf<f64_16>("f64_16: ",eng,DirectGPU);
-    test_comm_probe_syclbuf<u32   >("u32   : ",eng,DirectGPU);
-    test_comm_probe_syclbuf<u64   >("u64   : ",eng,DirectGPU);
+    test_comm_probe_syclbuf<f32   >("f32   : ",seed,DirectGPU);
+    test_comm_probe_syclbuf<f32_2 >("f32_2 : ",seed,DirectGPU);
+    test_comm_probe_syclbuf<f32_3 >("f32_3 : ",seed,DirectGPU);
+    test_comm_probe_syclbuf<f32_4 >("f32_4 : ",seed,DirectGPU);
+    test_comm_probe_syclbuf<f32_8 >("f32_8 : ",seed,DirectGPU);
+    test_comm_probe_syclbuf<f32_16>("f32_16: ",seed,DirectGPU);
+    test_comm_probe_syclbuf<f64   >("f64   : ",seed,DirectGPU);
+    test_comm_probe_syclbuf<f64_2 >("f64_2 : ",seed,DirectGPU);
+    test_comm_probe_syclbuf<f64_3 >("f64_3 : ",seed,DirectGPU);
+    test_comm_probe_syclbuf<f64_4 >("f64_4 : ",seed,DirectGPU);
+    test_comm_probe_syclbuf<f64_8 >("f64_8 : ",seed,DirectGPU);
+    test_comm_probe_syclbuf<f64_16>("f64_16: ",seed,DirectGPU);
+    test_comm_probe_syclbuf<u32   >("u32   : ",seed,DirectGPU);
+    test_comm_probe_syclbuf<u64   >("u64   : ",seed,DirectGPU);
 
-    test_comm_probe_syclbuf<f32   >("f32   : ",eng,DirectGPUFlatten);
-    test_comm_probe_syclbuf<f32_2 >("f32_2 : ",eng,DirectGPUFlatten);
-    test_comm_probe_syclbuf<f32_3 >("f32_3 : ",eng,DirectGPUFlatten);
-    test_comm_probe_syclbuf<f32_4 >("f32_4 : ",eng,DirectGPUFlatten);
-    test_comm_probe_syclbuf<f32_8 >("f32_8 : ",eng,DirectGPUFlatten);
-    test_comm_probe_syclbuf<f32_16>("f32_16: ",eng,DirectGPUFlatten);
-    test_comm_probe_syclbuf<f64   >("f64   : ",eng,DirectGPUFlatten);
-    test_comm_probe_syclbuf<f64_2 >("f64_2 : ",eng,DirectGPUFlatten);
-    test_comm_probe_syclbuf<f64_3 >("f64_3 : ",eng,DirectGPUFlatten);
-    test_comm_probe_syclbuf<f64_4 >("f64_4 : ",eng,DirectGPUFlatten);
-    test_comm_probe_syclbuf<f64_8 >("f64_8 : ",eng,DirectGPUFlatten);
-    test_comm_probe_syclbuf<f64_16>("f64_16: ",eng,DirectGPUFlatten);
-    test_comm_probe_syclbuf<u32   >("u32   : ",eng,DirectGPUFlatten);
-    test_comm_probe_syclbuf<u64   >("u64   : ",eng,DirectGPUFlatten);
+    test_comm_probe_syclbuf<f32   >("f32   : ",seed,DirectGPUFlatten);
+    test_comm_probe_syclbuf<f32_2 >("f32_2 : ",seed,DirectGPUFlatten);
+    test_comm_probe_syclbuf<f32_3 >("f32_3 : ",seed,DirectGPUFlatten);
+    test_comm_probe_syclbuf<f32_4 >("f32_4 : ",seed,DirectGPUFlatten);
+    test_comm_probe_syclbuf<f32_8 >("f32_8 : ",seed,DirectGPUFlatten);
+    test_comm_probe_syclbuf<f32_16>("f32_16: ",seed,DirectGPUFlatten);
+    test_comm_probe_syclbuf<f64   >("f64   : ",seed,DirectGPUFlatten);
+    test_comm_probe_syclbuf<f64_2 >("f64_2 : ",seed,DirectGPUFlatten);
+    test_comm_probe_syclbuf<f64_3 >("f64_3 : ",seed,DirectGPUFlatten);
+    test_comm_probe_syclbuf<f64_4 >("f64_4 : ",seed,DirectGPUFlatten);
+    test_comm_probe_syclbuf<f64_8 >("f64_8 : ",seed,DirectGPUFlatten);
+    test_comm_probe_syclbuf<f64_16>("f64_16: ",seed,DirectGPUFlatten);
+    test_comm_probe_syclbuf<u32   >("u32   : ",seed,DirectGPUFlatten);
+    test_comm_probe_syclbuf<u64   >("u64   : ",seed,DirectGPUFlatten);
     
 }
