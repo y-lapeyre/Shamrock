@@ -22,11 +22,11 @@ namespace shamalgs::random {
     template<class T> std::vector<T> mock_vector(u64 seed,u32 len, T min_bound, T max_bound);
     template<class T> sycl::buffer<T> mock_buffer(u64 seed,u32 len, T min_bound, T max_bound);
 
-    template<class T> std::vector<T> mock_vector(u64 seed,u32 len){
+    template<class T> inline std::vector<T> mock_vector(u64 seed,u32 len){
         using Prop = shamutils::sycl_utils::VectorProperties<T>;
         return mock_vector(seed,len, Prop::get_min(),Prop::get_max());
     }
-    template<class T> sycl::buffer<T> mock_buffer(u64 seed,u32 len){
+    template<class T> inline sycl::buffer<T> mock_buffer(u64 seed,u32 len){
         using Prop = shamutils::sycl_utils::VectorProperties<T>;
         return mock_buffer(seed,len, Prop::get_min(),Prop::get_max());
     }
