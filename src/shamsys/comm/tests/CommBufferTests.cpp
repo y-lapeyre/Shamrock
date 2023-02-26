@@ -243,7 +243,7 @@ template<class T> void test_comm_probe_syclbuf(std::string prefix, std::mt19937 
         
 
         CommRequests rqs;
-        auto buf = CommBuffer<sycl::buffer<T>>::irecv_probe(rqs, 0,0,MPI_COMM_WORLD,prot);
+        auto buf = CommBuffer<sycl::buffer<T>>::irecv_probe(rqs, 0,0,MPI_COMM_WORLD,prot,{});
 
         rqs.wait_all();
 

@@ -227,18 +227,18 @@ namespace shamsys::comm {
         }
 
 
-        static CommBuffer irecv_probe(CommRequests & rqs,u32 rank_src, u32 comm_flag, MPI_Comm comm, Protocol comm_mode){
+        static CommBuffer irecv_probe(CommRequests & rqs,u32 rank_src, u32 comm_flag, MPI_Comm comm, Protocol comm_mode, CommDetails<T> details){
 
             if(comm_mode == CopyToHost){
-                return CommBuffer(details::CommBuffer<T, CopyToHost>::irecv_probe(rqs, rank_src,comm_flag,comm));
+                return CommBuffer(details::CommBuffer<T, CopyToHost>::irecv_probe(rqs, rank_src,comm_flag,comm,details));
             }
             
             if(comm_mode == DirectGPU){
-                return CommBuffer(details::CommBuffer<T, DirectGPU>::irecv_probe(rqs, rank_src,comm_flag,comm));
+                return CommBuffer(details::CommBuffer<T, DirectGPU>::irecv_probe(rqs, rank_src,comm_flag,comm,details));
             }
             
             if(comm_mode == DirectGPUFlatten){
-                return CommBuffer(details::CommBuffer<T, DirectGPUFlatten>::irecv_probe(rqs, rank_src,comm_flag,comm));
+                return CommBuffer(details::CommBuffer<T, DirectGPUFlatten>::irecv_probe(rqs, rank_src,comm_flag,comm,details));
             }
 
             throw shamutils::throw_with_loc<std::invalid_argument>("unknown mode");
