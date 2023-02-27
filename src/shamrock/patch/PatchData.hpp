@@ -30,10 +30,14 @@ namespace shamrock::patch {
 
         std::vector<var_t> fields;
 
+        
+
         public:
         PatchDataLayout &pdl;
 
         inline PatchData(PatchDataLayout &pdl) : pdl(pdl) { init_fields(); }
+
+        static PatchData mock_patchdata(u64 seed, u32 obj_cnt, PatchDataLayout &pdl);
 
         template<class Functor>
         inline void for_each_field_any(Functor &&func) {

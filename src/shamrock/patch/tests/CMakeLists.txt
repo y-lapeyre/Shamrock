@@ -5,6 +5,7 @@ if("${BUILD_TEST}")
     PRIVATE
     patchTests.cpp
     CommBufferPatchDataFieldTests.cpp
+    CommBufferPatchDataTests.cpp
     PUBLIC
          
     )

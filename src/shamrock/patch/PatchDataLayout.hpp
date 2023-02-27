@@ -77,6 +77,18 @@ namespace shamrock::patch {
         template<class T>
         u32 get_field_idx(std::string field_name);
 
+
+        /**
+         * @brief Get the field id if matching name & type & nvar
+         *
+         * @tparam T
+         * @param field_name
+         * @param nvar 
+         * @return u32
+         */
+        template<class T>
+        u32 get_field_idx(std::string field_name,u32 nvar);
+
         /**
          * @brief check that field of id @idx is of type T
          *
@@ -195,6 +207,21 @@ namespace shamrock::patch {
         for (u32 i = 0; i < fields.size(); i++) {
             if (FieldDescriptor<T> *pval = std::get_if<FieldDescriptor<T>>(&fields[i].value)) {
                 if (pval->name == field_name) {
+                    return i;
+                }
+            }
+        }
+
+        throw std::invalid_argument(
+            "the requested field does not exists\n    current table : " + get_description_str()
+        );
+    }
+
+    template<class T>
+    inline u32 PatchDataLayout::get_field_idx(std::string field_name,u32 nvar) {
+        for (u32 i = 0; i < fields.size(); i++) {
+            if (FieldDescriptor<T> *pval = std::get_if<FieldDescriptor<T>>(&fields[i].value)) {
+                if ((pval->name == field_name) && (pval->nvar == nvar)) {
                     return i;
                 }
             }

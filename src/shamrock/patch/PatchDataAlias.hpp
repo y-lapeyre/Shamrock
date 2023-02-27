@@ -39,7 +39,7 @@ namespace shamrock::patch {
         var_t_template value;
 
         template<class T>
-        explicit FieldVariant(Container<T> && val) : value(val){}
+        explicit FieldVariant(Container<T> && val) : value(std::move(val)) {}
 
         template<class T>
         Container<T> &get_if_ref_throw() {

@@ -16,7 +16,23 @@ namespace shamrock::patch{
 
 
 
+    PatchData PatchData::mock_patchdata(u64 seed, u32 obj_cnt, PatchDataLayout &pdl){
+        PatchData pdat{pdl};
 
+        pdat.fields.clear();
+
+        pdl.for_each_field_any([&](auto & field){
+            using f_t = typename std::remove_reference<decltype(field)>::type;
+            using base_t = typename f_t::field_T;
+
+            pdat.fields.push_back(var_t{
+                PatchDataField<base_t>::mock_field(seed,obj_cnt,field.name,field.nvar)
+                });
+
+        });
+
+        return pdat;
+    }
     
 
 
