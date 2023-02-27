@@ -26,7 +26,7 @@ namespace shamrock::patch{
             using f_t = typename std::remove_reference<decltype(field)>::type;
             using base_t = typename f_t::field_T;
 
-            fields.push_back(PatchDataField<base_t>(field.name,field.nvar));
+            fields.push_back(var_t{PatchDataField<base_t>(field.name,field.nvar)});
 
         });
 
@@ -51,7 +51,7 @@ namespace shamrock::patch{
                     throw std::invalid_argument("missmatch");
                 }
 
-            }, fields[idx], out_pdat.fields[idx]);
+            }, fields[idx].value, out_pdat.fields[idx].value);
 
         }
 
@@ -73,7 +73,7 @@ namespace shamrock::patch{
                     throw std::invalid_argument("missmatch");
                 }
 
-            }, fields[idx], pdat.fields[idx]);
+            }, fields[idx].value, pdat.fields[idx].value);
 
         }
 
@@ -94,7 +94,7 @@ namespace shamrock::patch{
                     throw std::invalid_argument("missmatch");
                 }
 
-            }, fields[idx], pdat.fields[idx]);
+            }, fields[idx].value, pdat.fields[idx].value);
 
         }
     }
@@ -104,9 +104,9 @@ namespace shamrock::patch{
     void PatchData::resize(u32 new_obj_cnt){
 
         for(auto & field_var : fields){
-            std::visit([&](auto & field){
+            field_var.visit([&](auto & field){
                 field.resize(new_obj_cnt);
-            },field_var);
+            });
         }
 
     }
@@ -114,9 +114,9 @@ namespace shamrock::patch{
     void PatchData::expand(u32 new_obj_cnt){
 
         for(auto & field_var : fields){
-            std::visit([&](auto & field){
+            field_var.visit([&](auto & field){
                 field.expand(new_obj_cnt);
-            },field_var);
+            });
         }
 
     }
@@ -125,9 +125,9 @@ namespace shamrock::patch{
     void PatchData::index_remap(sycl::buffer<u32> index_map, u32 len){
 
         for(auto & field_var : fields){
-            std::visit([&](auto & field){
+            field_var.visit([&](auto & field){
                 field.index_remap(index_map, len);
-            },field_var);
+            });
         }
 
     }
@@ -135,9 +135,9 @@ namespace shamrock::patch{
     void PatchData::index_remap_resize(sycl::buffer<u32> index_map, u32 len){
 
         for(auto & field_var : fields){
-            std::visit([&](auto & field){
+            field_var.visit([&](auto & field){
                 field.index_remap_resize(index_map, len);
-            },field_var);
+            });
         }
 
     }
@@ -160,7 +160,7 @@ namespace shamrock::patch{
                     throw std::invalid_argument("missmatch");
                 }
 
-            }, fields[idx], pdat.fields[idx]);
+            }, fields[idx].value, pdat.fields[idx].value);
 
         }
     }
@@ -180,7 +180,7 @@ namespace shamrock::patch{
                     throw std::invalid_argument("missmatch");
                 }
 
-            }, fields[idx], pdat.fields[idx]);
+            }, fields[idx].value, pdat.fields[idx].value);
 
         }
 
@@ -189,13 +189,8 @@ namespace shamrock::patch{
     template<class T>
     void PatchData::split_patchdata(std::array<std::reference_wrapper<PatchData>,8> pdats, std::array<T, 8> min_box,  std::array<T, 8> max_box){
 
-        PatchDataField<T>* pval = std::get_if<PatchDataField<T>>(&fields[0]);
+        PatchDataField<T> & main_field = fields[0].get_if_ref_throw<T>();
 
-        if(!pval){
-            throw std::invalid_argument("the main field should be at id 0");
-        }
-
-        PatchDataField<T> & main_field = * pval;
 
         auto get_vec_idx = [&](T vmin, T vmax) -> std::vector<u32> {
             return main_field.get_elements_with_range(

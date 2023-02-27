@@ -25,26 +25,7 @@ namespace shamrock::patch {
      */
     class SimulationBoxInfo {
 
-        //using var_t = std::variant<
-        //    shammath::CoordRange<f32>,
-        //    shammath::CoordRange<f32_2>,
-        //    shammath::CoordRange<f32_3>,
-        //    shammath::CoordRange<f32_4>,
-        //    shammath::CoordRange<f32_8>,
-        //    shammath::CoordRange<f32_16>,
-        //    shammath::CoordRange<f64>,
-        //    shammath::CoordRange<f64_2>,
-        //    shammath::CoordRange<f64_3>,
-        //    shammath::CoordRange<f64_4>,
-        //    shammath::CoordRange<f64_8>,
-        //    shammath::CoordRange<f64_16>,
-        //    shammath::CoordRange<u32>,
-        //    shammath::CoordRange<u64>,
-        //    shammath::CoordRange<u32_3>,
-        //    shammath::CoordRange<u64_3>>;
-
-
-        using var_t = var_t_template<shammath::CoordRange>;
+        using var_t = FieldVariant<shammath::CoordRange>;
 
         PatchDataLayout &pdl;
 
@@ -53,7 +34,7 @@ namespace shamrock::patch {
 
         public:
         inline SimulationBoxInfo(PatchDataLayout &pdl, PatchCoord patch_coord_bounding_box)
-            : pdl(pdl), patch_coord_bounding_box(std::move(patch_coord_bounding_box)) {
+            : pdl(pdl), patch_coord_bounding_box(std::move(patch_coord_bounding_box)), bounding_box(shammath::CoordRange<f32>{}) {
 
             reset_box_size();
         }
@@ -163,7 +144,7 @@ namespace shamrock::patch {
             );
         }
 
-        const shammath::CoordRange<T> *pval = std::get_if<shammath::CoordRange<T>>(&bounding_box);
+        const shammath::CoordRange<T> *pval = std::get_if<shammath::CoordRange<T>>(&bounding_box.value);
 
         if (!pval) {
 
@@ -179,7 +160,7 @@ namespace shamrock::patch {
 
     template <class T> inline void SimulationBoxInfo::set_bounding_box(shammath::CoordRange<T> new_box) {
         if (pdl.check_main_field_type<T>()) {
-            bounding_box = new_box;
+            bounding_box.value = new_box;
         } else {
             throw std::runtime_error(
                 __LOC_PREFIX__ + "The main field is not of the required type\n" +
@@ -207,13 +188,13 @@ namespace shamrock::patch {
     inline void SimulationBoxInfo::reset_box_size() {
 
         if (pdl.check_main_field_type<f32_3>()) {
-            bounding_box = shammath::CoordRange<f32_3>::max_range();
+            bounding_box.value = shammath::CoordRange<f32_3>::max_range();
         } else if (pdl.check_main_field_type<f64_3>()) {
-            bounding_box = shammath::CoordRange<f64_3>::max_range();
+            bounding_box.value = shammath::CoordRange<f64_3>::max_range();
         } else if (pdl.check_main_field_type<u32_3>()) {
-            bounding_box = shammath::CoordRange<u32_3>::max_range();
+            bounding_box.value = shammath::CoordRange<u32_3>::max_range();
         } else if (pdl.check_main_field_type<u64_3>()) {
-            bounding_box = shammath::CoordRange<u64_3>::max_range();
+            bounding_box.value = shammath::CoordRange<u64_3>::max_range();
         } else {
             throw std::runtime_error(
                 __LOC_PREFIX__ + "the chosen type for the main field is not handled"

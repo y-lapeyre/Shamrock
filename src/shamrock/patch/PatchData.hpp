@@ -25,25 +25,8 @@ namespace shamrock::patch {
 
         void init_fields();
 
-        //using var_t = std::variant<
-        //    PatchDataField<f32>,
-        //    PatchDataField<f32_2>,
-        //    PatchDataField<f32_3>,
-        //    PatchDataField<f32_4>,
-        //    PatchDataField<f32_8>,
-        //    PatchDataField<f32_16>,
-        //    PatchDataField<f64>,
-        //    PatchDataField<f64_2>,
-        //    PatchDataField<f64_3>,
-        //    PatchDataField<f64_4>,
-        //    PatchDataField<f64_8>,
-        //    PatchDataField<f64_16>,
-        //    PatchDataField<u32>,
-        //    PatchDataField<u64>,
-        //    PatchDataField<u32_3>,
-        //    PatchDataField<u64_3>>;
 
-        using var_t = var_t_template<PatchDataField>;
+        using var_t = FieldVariant<PatchDataField>;
 
         std::vector<var_t> fields;
 
@@ -55,7 +38,7 @@ namespace shamrock::patch {
         template<class Functor>
         inline void for_each_field_any(Functor &&func) {
             for (auto &f : fields) {
-                std::visit([&](auto &arg) { func(arg); }, f);
+                f.visit([&](auto &arg) { func(arg); });
             }
         }
 
@@ -63,13 +46,12 @@ namespace shamrock::patch {
 
             for (auto &field_var : other.fields) {
 
-                std::visit(
+                field_var.visit(
                     [&](auto &field) {
                         using base_t =
                             typename std::remove_reference<decltype(field)>::type::Field_type;
                         fields.emplace_back(PatchDataField<base_t>(field));
-                    },
-                    field_var
+                    }
                 );
             };
         }
@@ -159,7 +141,9 @@ namespace shamrock::patch {
             bool is_empty = fields.empty();
 
             if (!is_empty) {
-                return std::visit([](auto &field) { return field.get_obj_cnt(); }, fields[0]);
+                return fields[0].visit_return(
+                    [](auto &field) { return field.get_obj_cnt(); }
+                    );
             }
 
             throw std::runtime_error("this patchdata does not contains any fields");
@@ -170,7 +154,7 @@ namespace shamrock::patch {
 
             for (auto &field_var : fields) {
 
-                std::visit([&](auto &field) { sum += field.memsize(); }, field_var);
+                field_var.visit([&](auto &field) { sum += field.memsize(); });
             }
 
             return sum;
@@ -184,7 +168,7 @@ namespace shamrock::patch {
         bool check_field_type(u32 idx) {
             var_t &tmp = fields[idx];
 
-            PatchDataField<T> *pval = std::get_if<PatchDataField<T>>(&tmp);
+            PatchDataField<T> *pval = std::get_if<PatchDataField<T>>(&tmp.value);
 
             if (pval) {
                 return true;
@@ -198,7 +182,7 @@ namespace shamrock::patch {
 
             var_t &tmp = fields[idx];
 
-            PatchDataField<T> *pval = std::get_if<PatchDataField<T>>(&tmp);
+            PatchDataField<T> *pval = std::get_if<PatchDataField<T>>(&tmp.value);
 
             if (pval) {
                 return *pval;
@@ -223,7 +207,7 @@ namespace shamrock::patch {
         template<class T, class Functor>
         inline void for_each_field(Functor &&func) {
             for (auto &f : fields) {
-                PatchDataField<T> *pval = std::get_if<PatchDataField<T>>(&f);
+                PatchDataField<T> *pval = std::get_if<PatchDataField<T>>(&f.value);
 
                 if (pval) {
                     func(*pval);
@@ -251,8 +235,8 @@ namespace shamrock::patch {
                             return false;
                         }
                     },
-                    p1.fields[idx],
-                    p2.fields[idx]
+                    p1.fields[idx].value,
+                    p2.fields[idx].value
                 );
 
                 check = check && ret;
