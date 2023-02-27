@@ -25,23 +25,26 @@ namespace shamrock::patch {
      */
     class SimulationBoxInfo {
 
-        using var_t = std::variant<
-            shammath::CoordRange<f32>,
-            shammath::CoordRange<f32_2>,
-            shammath::CoordRange<f32_3>,
-            shammath::CoordRange<f32_4>,
-            shammath::CoordRange<f32_8>,
-            shammath::CoordRange<f32_16>,
-            shammath::CoordRange<f64>,
-            shammath::CoordRange<f64_2>,
-            shammath::CoordRange<f64_3>,
-            shammath::CoordRange<f64_4>,
-            shammath::CoordRange<f64_8>,
-            shammath::CoordRange<f64_16>,
-            shammath::CoordRange<u32>,
-            shammath::CoordRange<u64>,
-            shammath::CoordRange<u32_3>,
-            shammath::CoordRange<u64_3>>;
+        //using var_t = std::variant<
+        //    shammath::CoordRange<f32>,
+        //    shammath::CoordRange<f32_2>,
+        //    shammath::CoordRange<f32_3>,
+        //    shammath::CoordRange<f32_4>,
+        //    shammath::CoordRange<f32_8>,
+        //    shammath::CoordRange<f32_16>,
+        //    shammath::CoordRange<f64>,
+        //    shammath::CoordRange<f64_2>,
+        //    shammath::CoordRange<f64_3>,
+        //    shammath::CoordRange<f64_4>,
+        //    shammath::CoordRange<f64_8>,
+        //    shammath::CoordRange<f64_16>,
+        //    shammath::CoordRange<u32>,
+        //    shammath::CoordRange<u64>,
+        //    shammath::CoordRange<u32_3>,
+        //    shammath::CoordRange<u64_3>>;
+
+
+        using var_t = var_t_template<shammath::CoordRange>;
 
         PatchDataLayout &pdl;
 

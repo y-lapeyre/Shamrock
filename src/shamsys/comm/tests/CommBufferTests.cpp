@@ -9,7 +9,6 @@
 
 #include "shamalgs/random/random.hpp"
 #include "shamtest/shamtest.hpp"
-#include <hipSYCL/sycl/libkernel/accessor.hpp>
 #include <random>
 
 #include "shamsys/comm/CommBuffer.hpp"

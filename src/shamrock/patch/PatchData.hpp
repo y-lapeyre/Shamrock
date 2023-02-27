@@ -25,23 +25,25 @@ namespace shamrock::patch {
 
         void init_fields();
 
-        using var_t = std::variant<
-            PatchDataField<f32>,
-            PatchDataField<f32_2>,
-            PatchDataField<f32_3>,
-            PatchDataField<f32_4>,
-            PatchDataField<f32_8>,
-            PatchDataField<f32_16>,
-            PatchDataField<f64>,
-            PatchDataField<f64_2>,
-            PatchDataField<f64_3>,
-            PatchDataField<f64_4>,
-            PatchDataField<f64_8>,
-            PatchDataField<f64_16>,
-            PatchDataField<u32>,
-            PatchDataField<u64>,
-            PatchDataField<u32_3>,
-            PatchDataField<u64_3>>;
+        //using var_t = std::variant<
+        //    PatchDataField<f32>,
+        //    PatchDataField<f32_2>,
+        //    PatchDataField<f32_3>,
+        //    PatchDataField<f32_4>,
+        //    PatchDataField<f32_8>,
+        //    PatchDataField<f32_16>,
+        //    PatchDataField<f64>,
+        //    PatchDataField<f64_2>,
+        //    PatchDataField<f64_3>,
+        //    PatchDataField<f64_4>,
+        //    PatchDataField<f64_8>,
+        //    PatchDataField<f64_16>,
+        //    PatchDataField<u32>,
+        //    PatchDataField<u64>,
+        //    PatchDataField<u32_3>,
+        //    PatchDataField<u64_3>>;
+
+        using var_t = var_t_template<PatchDataField>;
 
         std::vector<var_t> fields;
 

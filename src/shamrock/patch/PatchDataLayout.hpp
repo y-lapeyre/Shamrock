@@ -9,6 +9,7 @@
 #pragma once
 
 #include "aliases.hpp"
+#include "shamrock/patch/PatchDataAlias.hpp"
 #include "shamsys/legacy/log.hpp"
 #include <sstream>
 #include <variant>
@@ -28,24 +29,10 @@ namespace shamrock::patch {
             inline FieldDescriptor() : name(""), nvar(1){};
             inline FieldDescriptor(std::string name, u32 nvar) : nvar(nvar), name(name) {}
         };
+        
 
-        using var_t = std::variant<
-            FieldDescriptor<f32>,
-            FieldDescriptor<f32_2>,
-            FieldDescriptor<f32_3>,
-            FieldDescriptor<f32_4>,
-            FieldDescriptor<f32_8>,
-            FieldDescriptor<f32_16>,
-            FieldDescriptor<f64>,
-            FieldDescriptor<f64_2>,
-            FieldDescriptor<f64_3>,
-            FieldDescriptor<f64_4>,
-            FieldDescriptor<f64_8>,
-            FieldDescriptor<f64_16>,
-            FieldDescriptor<u32>,
-            FieldDescriptor<u64>,
-            FieldDescriptor<u32_3>,
-            FieldDescriptor<u64_3>>;
+        //using var_t = var_t_template<FieldDescriptor>;
+        using var_t = FieldVariant<FieldDescriptor>;
 
         std::vector<var_t> fields;
 
@@ -143,7 +130,7 @@ namespace shamrock::patch {
         template<class Functor>
         inline void for_each_field_any(Functor &&func) {
             for (auto &f : fields) {
-                std::visit([&](auto &arg) { func(arg); }, f);
+                f.visit([&](auto &arg) { func(arg); });
             }
         }
     };
@@ -157,13 +144,12 @@ namespace shamrock::patch {
         bool found = false;
 
         for (var_t &fvar : fields) {
-            std::visit(
+            fvar.visit(
                 [&](auto &arg) {
                     if (field_name == arg.name) {
                         found = true;
                     }
-                },
-                fvar
+                }
             );
         }
 
@@ -173,14 +159,14 @@ namespace shamrock::patch {
 
         logger::info_ln("PatchDataLayout", "adding field :", field_name, nvar);
 
-        fields.push_back(FieldDescriptor<T>(field_name, nvar));
+        fields.push_back(var_t{FieldDescriptor<T>(field_name, nvar)});
     }
 
     template<class T>
     inline PatchDataLayout::FieldDescriptor<T> PatchDataLayout::get_field(std::string field_name) {
 
         for (var_t &fvar : fields) {
-            if (FieldDescriptor<T> *pval = std::get_if<FieldDescriptor<T>>(&fvar)) {
+            if (FieldDescriptor<T> *pval = std::get_if<FieldDescriptor<T>>(&fvar.value)) {
                 if (pval->name == field_name) {
                     return *pval;
                 }
@@ -195,7 +181,7 @@ namespace shamrock::patch {
     template<class T>
     inline PatchDataLayout::FieldDescriptor<T> PatchDataLayout::get_field(u32 idx) {
 
-        if (FieldDescriptor<T> *pval = std::get_if<FieldDescriptor<T>>(&fields[idx])) {
+        if (FieldDescriptor<T> *pval = std::get_if<FieldDescriptor<T>>(&fields[idx].value)) {
             return *pval;
         }
 
@@ -207,7 +193,7 @@ namespace shamrock::patch {
     template<class T>
     inline u32 PatchDataLayout::get_field_idx(std::string field_name) {
         for (u32 i = 0; i < fields.size(); i++) {
-            if (FieldDescriptor<T> *pval = std::get_if<FieldDescriptor<T>>(&fields[i])) {
+            if (FieldDescriptor<T> *pval = std::get_if<FieldDescriptor<T>>(&fields[i].value)) {
                 if (pval->name == field_name) {
                     return i;
                 }
@@ -223,7 +209,7 @@ namespace shamrock::patch {
     inline bool PatchDataLayout::check_field_type(u32 idx) {
         var_t &tmp = fields[idx];
 
-        FieldDescriptor<T> *pval = std::get_if<FieldDescriptor<T>>(&tmp);
+        FieldDescriptor<T> *pval = std::get_if<FieldDescriptor<T>>(&tmp.value);
 
         if (pval) {
             return true;

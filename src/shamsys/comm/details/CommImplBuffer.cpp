@@ -9,7 +9,6 @@
 #include "CommImplBuffer.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamutils/throwUtils.hpp"
-#include <hipSYCL/sycl/libkernel/accessor.hpp>
 #include <stdexcept>
 
 

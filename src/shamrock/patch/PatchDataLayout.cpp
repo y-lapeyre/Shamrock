@@ -20,7 +20,7 @@ std::string PatchDataLayout::get_description_str(){
 
     u32 index= 0;
     for(var_t & v : fields){
-        std::visit([&](auto & field){
+        v.visit([&](auto & field){
             using f_t = typename std::remove_reference<decltype(field)>::type;
             using base_t = typename f_t::field_T;
 
@@ -49,7 +49,7 @@ std::string PatchDataLayout::get_description_str(){
             ss << "\n";
 
             index ++;
-        }, v);
+        });
     }
 
     }
@@ -61,9 +61,11 @@ std::vector<std::string> PatchDataLayout::get_field_names(){
     std::vector<std::string> ret ;
 
     for(var_t & v : fields){
-        std::visit([&](auto & field){
-            ret.push_back(field.name);
-        },v);
+        v.visit(
+            [&](auto & field){
+                ret.push_back(field.name);
+            }
+        );
     }
 
     return ret;

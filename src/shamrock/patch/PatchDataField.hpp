@@ -16,7 +16,6 @@
 #include "shamsys/legacy/log.hpp"
 #include "shamutils/throwUtils.hpp"
 #include <array>
-#include <hipSYCL/sycl/buffer.hpp>
 #include <memory>
 #include <random>
 #include <utility>

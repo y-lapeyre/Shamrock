@@ -8,7 +8,7 @@
 
 
 #include "shamrock/patch/PatchDataField.hpp"
-#include "shamrock/patch/comm/CommImplPatchdataField.hpp"
+#include "shamrock/patch/comm/CommImplPatchDataField.hpp"
 #include "shamsys/comm/CommBuffer.hpp"
 #include "shamtest/shamtest.hpp"
 
