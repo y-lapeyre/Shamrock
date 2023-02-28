@@ -9,6 +9,7 @@
 #pragma once
 
 #include "aliases.hpp"
+#include <limits>
 
 namespace shamutils::sycl_utils {
 
@@ -28,6 +29,13 @@ namespace shamutils::sycl_utils {
             std::is_same<T, i32>::value || std::is_same<T, i64>::value;
 
         static constexpr bool has_info = is_float_based || is_int_based || is_uint_based;
+
+        static constexpr T get_min(){
+            return std::numeric_limits<T>::min();
+        }
+        static constexpr T get_max(){
+            return std::numeric_limits<T>::max();
+        }
     };
 
     template<class T, u32 dim>
@@ -45,6 +53,43 @@ namespace shamutils::sycl_utils {
             std::is_same<T, i8>::value || std::is_same<T, i16>::value ||
             std::is_same<T, i32>::value || std::is_same<T, i64>::value;
         static constexpr bool has_info = is_float_based || is_int_based || is_uint_based;
+
+        static constexpr sycl::vec<T, dim> get_min(){
+            constexpr T min = std::numeric_limits<T>::min();
+            if constexpr (dim == 2){
+                return {min,min};
+            }
+            if constexpr (dim == 3){
+                return {min,min,min};
+            }
+            if constexpr (dim == 4){
+                return {min,min,min,min};
+            }
+            if constexpr (dim == 8){
+                return {min,min,min,min,min,min,min,min};
+            }
+            if constexpr (dim == 16){
+                return {min,min,min,min,min,min,min,min,min,min,min,min,min,min,min,min};
+            }
+        }
+        static constexpr sycl::vec<T, dim> get_max(){
+            constexpr T max = std::numeric_limits<T>::max();
+            if constexpr (dim == 2){
+                return {max,max};
+            }
+            if constexpr (dim == 3){
+                return {max,max,max};
+            }
+            if constexpr (dim == 4){
+                return {max,max,max,max};
+            }
+            if constexpr (dim == 8){
+                return {max,max,max,max,max,max,max,max};
+            }
+            if constexpr (dim == 16){
+                return {max,max,max,max,max,max,max,max,max,max,max,max,max,max,max,max};
+            }
+        }
     };
 
 } // namespace shamutils::sycl_utils

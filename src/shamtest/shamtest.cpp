@@ -262,51 +262,55 @@ namespace shamtest {
 
         std::vector<u32> selected_tests = {};
 
-        for (u32 i = 0; i < static_init_vec_tests.size(); i++) {
 
+        auto can_run = [&](shamtest::details::Test & t) -> bool {
 
-            auto can_run = [&](shamtest::details::Test & t) -> bool {
+            bool any_node_cnt = (t.node_count == -1);
+            bool world_size_ok = t.node_count == instance::world_size;
 
-                bool any_node_cnt = (t.node_count == -1);
-                bool world_size_ok = t.node_count == instance::world_size;
+            bool can_run_type = false;
 
-                bool can_run_type = false;
+            auto test_type = t.type;
+            can_run_type = can_run_type || (run_unittest && (Unittest == test_type)) ;
+            can_run_type = can_run_type || (run_analysis && (Analysis == test_type)) ;
+            can_run_type = can_run_type || (run_bench && (Benchmark == test_type)) ;
 
-                auto test_type = t.type;
-                can_run_type = can_run_type || (run_unittest && (Unittest == test_type)) ;
-                can_run_type = can_run_type || (run_analysis && (Analysis == test_type)) ;
-                can_run_type = can_run_type || (run_bench && (Benchmark == test_type)) ;
+            return can_run_type && (any_node_cnt || world_size_ok );
+        };
 
-                return can_run_type && (any_node_cnt || world_size_ok );
-            };
+        auto print_test = [&](shamtest::details::Test & t, bool enabled){
+            bool any_node_cnt = (t.node_count == -1);
 
-            auto print_test = [&](shamtest::details::Test & t, bool enabled){
-                bool any_node_cnt = (t.node_count == -1);
-
-                if (enabled) {
-                
-                    if(any_node_cnt){
-                        printf(" - [\033[;32many\033[0m] ");
-                    }else{
-                        printf(" - [\033[;32m%03d\033[0m] ",static_init_vec_tests[i].node_count);
-                    }
-                    std::cout << "\033[;32m"<<static_init_vec_tests[i].name <<  "\033[0m " <<std::endl;
-
+            if (enabled) {
+            
+                if(any_node_cnt){
+                    printf(" - [\033[;32many\033[0m] ");
                 }else{
-                    if(any_node_cnt){
-                        printf(" - [\033[;31many\033[0m] ");
-                    }else{
-                        printf(" - [\033[;31m%03d\033[0m] ",static_init_vec_tests[i].node_count);
-                    }
-                    std::cout << "\033[;31m"<<static_init_vec_tests[i].name <<  "\033[0m " <<std::endl;
+                    printf(" - [\033[;32m%03d\033[0m] ",t.node_count);
                 }
+                std::cout << "\033[;32m"<<t.name <<  "\033[0m " <<std::endl;
+
+            }else{
+                if(any_node_cnt){
+                    printf(" - [\033[;31many\033[0m] ");
+                }else{
+                    printf(" - [\033[;31m%03d\033[0m] ",t.node_count);
+                }
+                std::cout << "\033[;31m"<<t.name <<  "\033[0m " <<std::endl;
+            }
 
 
-            };
+        };
 
-            bool run_test = can_run(static_init_vec_tests[i]);
+        
 
-            if(run_only){
+        
+
+        if(run_only){
+            
+            for (u32 i = 0; i < static_init_vec_tests.size(); i++) {
+
+                bool run_test = can_run(static_init_vec_tests[i]);
                 if(run_only_name.compare(static_init_vec_tests[i].name) ==0){
                     if(run_test) {
                         selected_tests.push_back(i);
@@ -314,11 +318,37 @@ namespace shamtest {
                         logger::err_ln("TEST", "test can not run under the following configuration");
                     }
                 }
-            }else{
-                print_test(static_init_vec_tests[i], run_test);
-                if(run_test) {selected_tests.push_back(i);}
             }
 
+        }else{
+
+            auto test_loop = [&](TestType t){
+                for (u32 i = 0; i < static_init_vec_tests.size(); i++) {
+
+                    if(static_init_vec_tests[i].type == t){
+                        bool run_test = can_run(static_init_vec_tests[i]);
+                        print_test(static_init_vec_tests[i], run_test);
+                        if(run_test) {selected_tests.push_back(i);}
+                    }
+                    
+                }
+            };
+
+            if(run_bench){
+                printf("--- Benchmark ---\n");
+                test_loop(Benchmark);
+            }
+
+            if(run_analysis){
+                printf("--- Analysis  ---\n");
+                test_loop(Analysis);
+            }
+
+            if(run_unittest){
+                printf("--- Unittest  ---\n");
+                test_loop(Unittest);
+            }
+            
         }
 
         if(!run_only){

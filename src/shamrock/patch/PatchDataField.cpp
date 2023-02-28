@@ -8,6 +8,7 @@
 
 #include "PatchDataField.hpp"
 #include "shamalgs/algorithm/algorithm.hpp"
+#include "shamalgs/random/random.hpp"
 #include "shamrock/legacy/utils/sycl_vector_utils.hpp"
 #include <memory>
 
@@ -60,6 +61,7 @@ template <class T> void PatchDataField<T>::extract_element(u32 pidx, PatchDataFi
 
     sub_extract(pidx, *this, to);
 }
+
 
 
 
@@ -343,8 +345,13 @@ template<class T> void PatchDataField<T>::index_remap(sycl::buffer<u32> & index_
 
 
 
-
-
+template<class T>
+PatchDataField<T> PatchDataField<T>::mock_field(u64 seed, u32 obj_cnt, std::string name, u32 nvar){
+    return PatchDataField<T>{
+        shamalgs::random::mock_buffer<T>(seed, obj_cnt*nvar),
+        obj_cnt, name, nvar
+    };
+}
 
 
 

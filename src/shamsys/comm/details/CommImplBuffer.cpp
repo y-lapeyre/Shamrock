@@ -8,6 +8,8 @@
 
 #include "CommImplBuffer.hpp"
 #include "shamsys/legacy/log.hpp"
+#include "shamutils/throwUtils.hpp"
+#include <stdexcept>
 
 
 namespace shamsys::comm::details {
@@ -24,7 +26,7 @@ namespace shamsys::comm::details {
     template<class T>
     void CommBuffer<sycl::buffer<T>,CopyToHost>::copy_to_usm(sycl::buffer<T> & obj_ref, u64 len, u64 offset){
             
-            sycl::host_accessor acc {obj_ref};
+            sycl::host_accessor acc {obj_ref, sycl::read_only};
             for(u64 sz = 0;sz < len; sz ++){
                 usm_ptr[sz] = acc[sz + offset];
             }
@@ -35,7 +37,7 @@ namespace shamsys::comm::details {
 
         sycl::buffer<T> buf_ret (len);
         {
-            sycl::host_accessor acc {buf_ret};
+            sycl::host_accessor acc {buf_ret, sycl::write_only, sycl::no_init};
             for(u64 sz = 0;sz < len; sz ++){
                 acc[sz + offset] = usm_ptr[sz];
             }
@@ -63,6 +65,25 @@ template<class T>
             mpi::irecv(usm_ptr, details.comm_len, get_mpi_type<T>(), rank_src, comm_tag, comm, &rq);
             rqs.push(rq);
         }
+
+template<class T>
+    CommBuffer<sycl::buffer<T>,CopyToHost> CommBuffer<sycl::buffer<T>,CopyToHost>::irecv_probe(CommRequests & rqs, u32 rank_src, u32 comm_flag, MPI_Comm comm, CommDetails<sycl::buffer<T>> details){
+        MPI_Status st;
+        i32 cnt;
+        mpi::probe(rank_src, comm_flag,comm, & st);
+        mpi::get_count(&st, get_mpi_type<T>(), &cnt);
+
+        u32 val_cnt = cnt;
+
+        CommDetails<sycl::buffer<T>> det {val_cnt};
+
+        CommBuffer<sycl::buffer<T>,CopyToHost> ret {det};
+
+        ret.irecv(rqs, rank_src, comm_flag, comm);
+
+        return ret;
+    }
+
 
 
     //////////////////////////////////////////
@@ -102,7 +123,7 @@ template<class T>
 
         auto ev = instance::get_compute_queue().submit([&](sycl::handler & cgh){
             
-            sycl::accessor acc_buf {buf_ret, cgh, sycl::write_only};
+            sycl::accessor acc_buf {buf_ret, cgh,sycl::write_only, sycl::no_init};
 
             u64 off = offset;
             T* ptr = usm_ptr;
@@ -140,7 +161,23 @@ template<class T>
     }
 
 
+template<class T>
+    CommBuffer<sycl::buffer<T>,DirectGPU> CommBuffer<sycl::buffer<T>,DirectGPU>::irecv_probe(CommRequests & rqs, u32 rank_src, u32 comm_flag, MPI_Comm comm, CommDetails<sycl::buffer<T>> details){
+        MPI_Status st;
+        i32 cnt;
+        mpi::probe(rank_src, comm_flag,comm, & st);
+        mpi::get_count(&st, get_mpi_type<T>(), &cnt);
 
+        u32 val_cnt = cnt;
+
+        CommDetails<sycl::buffer<T>> det {val_cnt};
+
+        CommBuffer<sycl::buffer<T>,DirectGPU> ret {det};
+
+        ret.irecv(rqs, rank_src, comm_flag, comm);
+
+        return ret;
+    }
 
 
 
@@ -188,7 +225,7 @@ template<class T>
 
         auto ev = instance::get_compute_queue().submit([&](sycl::handler & cgh){
             
-            sycl::accessor acc_buf {buf_ret, cgh, sycl::write_only};
+            sycl::accessor acc_buf {buf_ret, cgh, sycl::write_only, sycl::no_init};
 
             u64 off = offset;
             T* ptr = usm_ptr;
@@ -230,7 +267,7 @@ template<class T>
 
         auto ev = instance::get_compute_queue().submit([&](sycl::handler & cgh){
             
-            sycl::accessor acc_buf {buf_ret, cgh, sycl::write_only};
+            sycl::accessor acc_buf {buf_ret, cgh, sycl::write_only, sycl::no_init};
 
             u64 off = offset;
             T* ptr = usm_ptr;
@@ -277,7 +314,7 @@ template<class T>
 
         auto ev = instance::get_compute_queue().submit([&](sycl::handler & cgh){
             
-            sycl::accessor acc_buf {buf_ret, cgh, sycl::write_only};
+            sycl::accessor acc_buf {buf_ret, cgh, sycl::write_only, sycl::no_init};
 
             u64 off = offset;
             T* ptr = usm_ptr;
@@ -323,7 +360,7 @@ template<class T>
 
         auto ev = instance::get_compute_queue().submit([&](sycl::handler & cgh){
             
-            sycl::accessor acc_buf {buf_ret, cgh, sycl::write_only};
+            sycl::accessor acc_buf {buf_ret, cgh, sycl::write_only, sycl::no_init};
 
             u64 off = offset;
             T* ptr = usm_ptr;
@@ -376,7 +413,7 @@ template<class T>
 
         auto ev = instance::get_compute_queue().submit([&](sycl::handler & cgh){
             
-            sycl::accessor acc_buf {buf_ret, cgh, sycl::write_only};
+            sycl::accessor acc_buf {buf_ret, cgh, sycl::write_only, sycl::no_init};
 
             u64 off = offset;
             T* ptr = usm_ptr;
@@ -441,7 +478,7 @@ template<class T>
 
         auto ev = instance::get_compute_queue().submit([&](sycl::handler & cgh){
             
-            sycl::accessor acc_buf {buf_ret, cgh, sycl::write_only};
+            sycl::accessor acc_buf {buf_ret, cgh, sycl::write_only, sycl::no_init};
 
             u64 off = offset;
             T* ptr = usm_ptr;
@@ -526,7 +563,27 @@ template<class T>
     }
 
 
+template<class T>
+    CommBuffer<sycl::buffer<T>,DirectGPUFlatten> CommBuffer<sycl::buffer<T>,DirectGPUFlatten>::irecv_probe(CommRequests & rqs, u32 rank_src, u32 comm_flag, MPI_Comm comm, CommDetails<sycl::buffer<T>> details){
+        MPI_Status st;
+        i32 cnt;
+        mpi::probe(rank_src, comm_flag,comm, & st);
+        mpi::get_count(&st, get_mpi_type<ptr_t>(), &cnt);
 
+        if(cnt % int_len != 0){
+            throw shamutils::throw_with_loc<std::runtime_error>("for this protocol the lenght of the received message must be a multiple of the number of components");
+        }
+
+        u32 val_cnt = cnt/int_len;
+
+        CommDetails<sycl::buffer<T>> det {val_cnt};
+
+        CommBuffer<sycl::buffer<T>,DirectGPUFlatten> ret {det};
+
+        ret.irecv(rqs, rank_src, comm_flag, comm);
+
+        return ret;
+    }
 
 
 
@@ -578,6 +635,8 @@ template<class T>
     template class CommBuffer<sycl::buffer<f64_16>,CopyToHost>;
     template class CommBuffer<sycl::buffer<u32   >,CopyToHost>;
     template class CommBuffer<sycl::buffer<u64   >,CopyToHost>;
+    template class CommBuffer<sycl::buffer<u32_3 >,CopyToHost>;
+    template class CommBuffer<sycl::buffer<u64_3 >,CopyToHost>;
 
     template class CommBuffer<sycl::buffer<f32   >,DirectGPU>;
     template class CommBuffer<sycl::buffer<f32_2 >,DirectGPU>;
@@ -593,6 +652,8 @@ template<class T>
     template class CommBuffer<sycl::buffer<f64_16>,DirectGPU>;
     template class CommBuffer<sycl::buffer<u32   >,DirectGPU>;
     template class CommBuffer<sycl::buffer<u64   >,DirectGPU>;
+    template class CommBuffer<sycl::buffer<u32_3 >,DirectGPU>;
+    template class CommBuffer<sycl::buffer<u64_3 >,DirectGPU>;
 
     template class CommBuffer<sycl::buffer<f32   >,DirectGPUFlatten>;
     template class CommBuffer<sycl::buffer<f32_2 >,DirectGPUFlatten>;
@@ -608,5 +669,7 @@ template<class T>
     template class CommBuffer<sycl::buffer<f64_16>,DirectGPUFlatten>;
     template class CommBuffer<sycl::buffer<u32   >,DirectGPUFlatten>;
     template class CommBuffer<sycl::buffer<u64   >,DirectGPUFlatten>;
+    template class CommBuffer<sycl::buffer<u32_3 >,DirectGPUFlatten>;
+    template class CommBuffer<sycl::buffer<u64_3 >,DirectGPUFlatten>;
     
 } // namespace shamsys::comm::details

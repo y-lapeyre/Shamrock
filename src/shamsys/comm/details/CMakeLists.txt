@@ -1,10 +1,9 @@
 
 set(Sources
-    
+    CommImplBuffer.cpp
 )
 set(SourcesTest
-    BandwithTests.cpp
-    LogTests.cpp
+
 )
 set(Headers
 

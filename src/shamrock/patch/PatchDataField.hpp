@@ -15,7 +15,10 @@
 #include "shamrock/legacy/patch/base/enabled_fields.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamutils/throwUtils.hpp"
+#include <array>
+#include <memory>
 #include <random>
+#include <utility>
 
 template <class T> class PatchDataField {
 
@@ -84,6 +87,17 @@ template <class T> class PatchDataField {
     }
 
     public:
+
+    static sycl::buffer<T> convert_to_buf(PatchDataField<T> && pdatf){
+        std::unique_ptr<sycl::buffer<T>> buf_recov;
+        
+        std::swap(pdatf.buf, buf_recov);
+
+        sycl::buffer<T>* ptr = buf_recov.release();
+
+        return *ptr;
+    }
+
     PatchDataField(PatchDataField &&other) noexcept
         : buf(std::move(other.buf)), field_name(std::move(other.field_name)),
           nvar(std::move(other.nvar)), obj_cnt(std::move(other.obj_cnt)),
@@ -126,6 +140,17 @@ template <class T> class PatchDataField {
             syclalgs::basic::copybuf_discard(*other.buf, *buf, capacity);
         }
     }
+
+    inline PatchDataField(sycl::buffer<T> && moved_buf, u32 obj_cnt, 
+    std::string name, u32 nvar) : 
+        obj_cnt(obj_cnt),val_cnt(obj_cnt*nvar), field_name(name),nvar(nvar),capacity(moved_buf.size())
+    {
+        buf = std::make_unique<sycl::buffer<T>>(std::move(moved_buf)); 
+    }
+
+    static PatchDataField<T> mock_field(u64 seed, u32 obj_cnt, std::string name, u32 nvar);
+
+    
 
     inline PatchDataField duplicate() const {
         const PatchDataField &current = *this;
@@ -229,6 +254,8 @@ template <class T> class PatchDataField {
      * @param len the length of the map
      */
     void index_remap_resize(sycl::buffer<u32> & index_map, u32 len);
+
+    
 
 };
 

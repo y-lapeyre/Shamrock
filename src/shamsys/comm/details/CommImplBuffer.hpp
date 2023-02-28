@@ -8,7 +8,8 @@
 
 #pragma once
 
-#include "shamsys/CommProtocol.hpp"
+#include "shamsys/comm/CommRequests.hpp"
+#include "shamsys/comm/CommBuffer.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/MpiWrapper.hpp"
 #include "shamsys/SyclHelper.hpp"
@@ -54,6 +55,8 @@ namespace shamsys::comm::details {
 
         void isend(CommRequests & rqs, u32 rank_dest, u32 comm_flag, MPI_Comm comm);
         void irecv(CommRequests & rqs, u32 rank_src, u32 comm_flag, MPI_Comm comm);
+
+        static CommBuffer irecv_probe(CommRequests & rqs, u32 rank_src, u32 comm_flag, MPI_Comm comm, CommDetails<sycl::buffer<T>> details);
     };
 
 
@@ -173,6 +176,10 @@ namespace shamsys::comm::details {
             return build_from_usm(len,off);
         }
 
+        inline CommDetails<sycl::buffer<T>> get_details(){
+            return details;
+        }
+
         //void copy_back(sycl::buffer<T> & buf){
         //    
         //}
@@ -184,6 +191,9 @@ namespace shamsys::comm::details {
         void isend(CommRequests & rqs, u32 rank_dest, u32 comm_tag, MPI_Comm comm);
 
         void irecv(CommRequests & rqs, u32 rank_src, u32 comm_tag, MPI_Comm comm);
+
+
+        static CommBuffer irecv_probe(CommRequests & rqs, u32 rank_src, u32 comm_flag, MPI_Comm comm, CommDetails<sycl::buffer<T>> details);
 
     };
 
@@ -274,6 +284,10 @@ namespace shamsys::comm::details {
             sycl::free(usm_ptr,instance::get_compute_queue());
         }
 
+        inline CommDetails<sycl::buffer<T>> get_details(){
+            return details;
+        }
+
 
         CommBuffer(CommBuffer&& other) noexcept : 
             usm_ptr(std::exchange(other.usm_ptr, nullptr)), 
@@ -312,6 +326,8 @@ namespace shamsys::comm::details {
         void isend(CommRequests & rqs, u32 rank_dest, u32 comm_tag, MPI_Comm comm);
 
         void irecv(CommRequests & rqs, u32 rank_src, u32 comm_tag, MPI_Comm comm);
+
+        static CommBuffer irecv_probe(CommRequests & rqs, u32 rank_src, u32 comm_flag, MPI_Comm comm, CommDetails<sycl::buffer<T>> details);
 
     };
 
@@ -432,6 +448,10 @@ namespace shamsys::comm::details {
             sycl::free(usm_ptr,instance::get_compute_queue());
         }
 
+        inline CommDetails<sycl::buffer<T>> get_details(){
+            return details;
+        }
+
 
         CommBuffer(CommBuffer&& other) noexcept : 
             usm_ptr(std::exchange(other.usm_ptr, nullptr)), 
@@ -470,6 +490,8 @@ namespace shamsys::comm::details {
         void isend(CommRequests & rqs, u32 rank_dest, u32 comm_tag, MPI_Comm comm);
 
         void irecv(CommRequests & rqs, u32 rank_src, u32 comm_tag, MPI_Comm comm);
+
+        static CommBuffer irecv_probe(CommRequests & rqs, u32 rank_src, u32 comm_flag, MPI_Comm comm, CommDetails<sycl::buffer<T>> details);
 
     };
 

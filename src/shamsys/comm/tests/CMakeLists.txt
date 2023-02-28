@@ -3,8 +3,7 @@ set(Sources
     
 )
 set(SourcesTest
-    BandwithTests.cpp
-    LogTests.cpp
+    CommBufferTests.cpp
 )
 set(Headers
 

@@ -30,23 +30,30 @@ namespace shamalgs::memory {
     }
 
 #define XMAC_TYPES                                                                                 \
-    X(f32)                                                                                         \
-    X(f32_2)                                                                                       \
-    X(f32_3)                                                                                       \
-    X(f32_4)                                                                                       \
-    X(f32_8)                                                                                       \
-    X(f32_16)                                                                                      \
-    X(f64)                                                                                         \
-    X(f64_2)                                                                                       \
-    X(f64_3)                                                                                       \
-    X(f64_4)                                                                                       \
-    X(f64_8)                                                                                       \
-    X(f64_16)                                                                                      \
-    X(u32)                                                                                         \
-    X(u64)                                                                                         \
-    X(u32_3)                                                                                       \
-    X(u64_3)    \
-    X(u16_3)
+    X(f32   )\
+    X(f32_2 )\
+    X(f32_3 )\
+    X(f32_4 )\
+    X(f32_8 )\
+    X(f32_16)\
+    X(f64   )\
+    X(f64_2 )\
+    X(f64_3 )\
+    X(f64_4 )\
+    X(f64_8 )\
+    X(f64_16)\
+    X(u32   )\
+    X(u32_2 )\
+    X(u32_3 )\
+    X(u32_4 )\
+    X(u32_8 )\
+    X(u32_16)\
+    X(u64   )\
+    X(u64_2 )\
+    X(u64_3 )\
+    X(u64_4 )\
+    X(u64_8 )\
+    X(u64_16)
 
 #define X(_arg_)                                                                                   \
     template _arg_ extract_element(sycl::queue &q, sycl::buffer<_arg_> &buf, u32 idx);             \

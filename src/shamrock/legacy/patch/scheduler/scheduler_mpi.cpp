@@ -170,7 +170,7 @@ void PatchScheduler::allpush_data(shamrock::patch::PatchData &pdat){
 
             auto variant_main = pdl.get_main_field_any();
 
-            std::visit([&](auto & arg){
+            variant_main.visit([&](auto & arg){
 
                 using base_t =
                             typename std::remove_reference<decltype(arg)>::type::field_T;
@@ -185,7 +185,7 @@ void PatchScheduler::allpush_data(shamrock::patch::PatchData &pdat){
                     throw std::runtime_error("this does not yet work with dimension different from 3");
                 }
 
-            }, variant_main);
+            });
 
         }
     );
