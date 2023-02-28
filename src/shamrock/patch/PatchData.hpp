@@ -33,6 +33,10 @@ namespace shamrock::patch {
         
 
         public:
+
+        using field_variant_t = var_t;
+
+
         PatchDataLayout &pdl;
 
         inline PatchData(PatchDataLayout &pdl) : pdl(pdl) { init_fields(); }
@@ -58,6 +62,15 @@ namespace shamrock::patch {
                     }
                 );
             };
+        }
+
+        template<class Func>
+        inline PatchData(PatchDataLayout & pdl, Func && fct_init) : pdl(pdl){
+
+            u32 cnt = 0;
+
+            fct_init(fields);
+
         }
 
         inline PatchData duplicate() {

@@ -26,8 +26,8 @@ void test_constructor_pdat_comm_buf(u64 seed, shamsys::comm::Protocol prot){
 
     PatchData pdat = PatchData::mock_patchdata(seed, npart, pdl);
     CommBuffer buf {pdat, prot};
-    //PatchData pdat_comp2 = CommBuffer<PatchData>::convert(std::move(buf));
-    //shamtest::asserts().assert_bool("pdats matches", pdat == pdat_comp2);
+    PatchData pdat_comp2 = CommBuffer<PatchData>::convert(std::move(buf));
+    shamtest::asserts().assert_bool("pdats matches", pdat == pdat_comp2);
 
 
 }

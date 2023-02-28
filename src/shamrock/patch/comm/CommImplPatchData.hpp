@@ -76,6 +76,12 @@ namespace shamsys::comm::details {
 
         std::vector<var_t> fields_bufs;
 
+        CommBuffer(
+            std::vector<var_t> &&fields_bufs,
+            CommDetails<PatchData> &&details
+        )
+            : fields_bufs(std::move(fields_bufs)), details(details) {}
+
 
         public:
         inline CommBuffer(CommDetails<PatchData> det)
@@ -178,7 +184,92 @@ namespace shamsys::comm::details {
 
         }
 
-        
+        inline PatchData copy_back() {
+
+            return PatchData{details.pdl, 
+                [&](auto & pdat_fields){
+
+                    for(var_t & recov : fields_bufs){
+                        recov.visit([&](auto & buf){
+                            pdat_fields.push_back(
+                                PatchData::field_variant_t{
+                                    buf.copy_back()
+                                }
+                            );
+                        });
+                    }
+                }
+            };
+
+        }
+
+        inline static PatchData convert(CommBuffer &&buf) {
+
+            return PatchData{buf.details.pdl, 
+                [&](auto & pdat_fields){
+
+                    for(var_t & recov : buf.fields_bufs){
+                        recov.visit([&](auto & buf){
+                            pdat_fields.push_back(
+                                PatchData::field_variant_t{
+                                    buf.copy_back()
+                                }
+                            );
+                        });
+                    }
+                }
+            };
+
+        }
+
+
+
+        inline void isend(CommRequests &rqs, u32 rank_dest, u32 comm_flag, MPI_Comm comm) {
+            for(var_t & recov : fields_bufs){
+                recov.visit([&](auto & buf_comm){
+                    buf_comm.isend(rqs, rank_dest, comm_flag, comm);
+                });
+            }
+        }
+        inline void irecv(CommRequests &rqs, u32 rank_src, u32 comm_flag, MPI_Comm comm) {
+            for(var_t & recov : fields_bufs){
+                recov.visit([&](auto & buf_comm){
+                    buf_comm.irecv(rqs, rank_src, comm_flag, comm);
+                });
+            }
+        }
+
+        inline static CommBuffer irecv_probe(
+            CommRequests &rqs,
+            u32 rank_src,
+            u32 comm_flag,
+            MPI_Comm comm,
+            CommDetails<PatchData> details
+        ) {
+
+            std::vector<var_t> fields_bufs;
+
+            details.pdl.for_each_field_any([&](auto & field){
+                using f_t = typename std::remove_reference<decltype(field)>::type;
+                using base_t = typename f_t::field_T;
+
+                fields_bufs.push_back(
+                    PatchDataFieldCommBuf_t<f_t>::irecv_probe(
+                        rqs, rank_src,comm_flag,comm, 
+                            PatchDataFieldCommDet_t<f_t>{
+                                0, //because the obj count will be overwritten by the probe call
+                                field.name,
+                                field.nvar,
+                                details.start_index
+                            }
+                    )
+                );
+
+            });
+
+            return CommBuffer{std::move(fields_bufs), details};
+
+        }
 
 
 
