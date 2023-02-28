@@ -45,21 +45,95 @@ TestStart(Unittest, "shamrock/patch/comm:CommBuffer-PatchData-ctr-destr", test_c
 
 
 
-template<class T> void test_comm_pdat_comm_buf(std::string prefix, u64 seed, shamsys::comm::Protocol prot){
+void test_comm_pdat_comm_buf(u64 seed, shamsys::comm::Protocol prot){
 
-    
+    using namespace shamrock::patch;
+    using namespace shamsys::comm;
+
+    u32 npart = 1e5;
+    PatchDataLayout pdl;
+
+    pdl.add_field<u32_3>("field1", 1);
+
+    PatchData pdat_comp = PatchData::mock_patchdata(seed, npart, pdl);
+
+
+    if(shamsys::instance::world_rank == 0){
+
+        CommBuffer buf {pdat_comp, prot};
+
+
+        CommRequests rqs;
+        buf.isend(rqs, 1,0,MPI_COMM_WORLD);
+
+        rqs.wait_all();
+
+    }else if (shamsys::instance::world_rank == 1) {
+        CommDetails<PatchData> det{
+            npart, {}, pdl
+        };
+
+        CommBuffer buf {det,prot};
+
+        CommRequests rqs;
+        buf.irecv(rqs, 0,0,MPI_COMM_WORLD);
+        rqs.wait_all();
+
+
+
+        PatchData pdat_comp2 = CommBuffer<PatchData>::convert(std::move(buf));
+
+        shamtest::asserts().assert_bool("fields matches", pdat_comp == pdat_comp2);
+    }
 
 }
 
 
-template<class T> void test_comm_probe_pdat_comm_buf(std::string prefix, u64 seed, shamsys::comm::Protocol prot){
+void test_comm_probe_pdat_comm_buf(u64 seed, shamsys::comm::Protocol prot){
 
-    
+    using namespace shamrock::patch;
+    using namespace shamsys::comm;
+
+    u32 npart = 1e5;
+    PatchDataLayout pdl;
+
+    pdl.add_field<u32_3>("field1", 1);
+
+    PatchData pdat_comp = PatchData::mock_patchdata(seed, npart, pdl);
+
+
+    if(shamsys::instance::world_rank == 0){
+
+        CommBuffer buf {pdat_comp, prot};
+
+
+        CommRequests rqs;
+        buf.isend(rqs, 1,0,MPI_COMM_WORLD);
+
+        rqs.wait_all();
+
+    }else if (shamsys::instance::world_rank == 1) {
+        CommDetails<PatchData> det{
+            0, {}, pdl
+        };
+
+        
+        CommRequests rqs;
+        auto buf = CommBuffer<PatchData>::irecv_probe(rqs, 0,0,MPI_COMM_WORLD,prot,det);
+
+        rqs.wait_all();
+
+        PatchData pdat_comp2 = CommBuffer<PatchData>::convert(std::move(buf));
+
+        shamtest::asserts().assert_bool("fields matches", pdat_comp == pdat_comp2);
+    }
 
 }
 
 
 TestStart(Unittest, "shamrock/patch/comm:CommBuffer-PatchData-isend-irecv", isend_irecv_patchdata, 2){
+
+    test_comm_pdat_comm_buf(0x111, shamsys::comm::DirectGPU);
 
     
 }
@@ -67,6 +141,8 @@ TestStart(Unittest, "shamrock/patch/comm:CommBuffer-PatchData-isend-irecv", isen
 
 
 TestStart(Unittest, "shamrock/patch/comm:CommBuffer-PatchData-isend-irecv_probe", isend_irecv_probe_patchdata, 2){
+
+    test_comm_probe_pdat_comm_buf(0x111, shamsys::comm::DirectGPU);
 
     
 }
