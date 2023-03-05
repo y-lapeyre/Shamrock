@@ -314,6 +314,8 @@ The compiler even gives warnings if the input variable is not in the correct ran
 
 ## Bit fields with 0 len
 
+Source : https://stackoverflow.com/questions/132241/hidden-features-of-c
+
 I discoverd recently 0 bitfields.
 ```c++
 struct {
