@@ -16,10 +16,14 @@ parts:
     - file: user-manual/communication_protocol
     - file: user-manual/coordinates_systems
     - file: user-manual/code_coverage
-    - file: programming_guide/kernel_macros
     - file: control_script/control_script
     - file: mpi_scheduler/mpi_scheduler
       sections:
         - file: mpi_scheduler/patchlist
         - file: mpi_scheduler/patchdata
         - file: mpi_scheduler/patchtree
+
+ - caption: Programming Guide
+   chapters:
+    - file: programming_guide/sycl_tricks
+    - file: programming_guide/cpp_tricks

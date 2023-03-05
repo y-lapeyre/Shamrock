@@ -1,6 +1,8 @@
-# Dealing with sycl accessors in loop macros
+# Sycl tricks
 
-## SYCL parralel for
+## Dealing with sycl accessors in loop macros
+
+### SYCL parralel for
 
 ```c++
 shamsys::instance::get_compute_queue().submit([&](sycl::handler & cgh){
@@ -15,7 +17,7 @@ shamsys::instance::get_compute_queue().submit([&](sycl::handler & cgh){
 });
 ```
 
-## Accessor class design
+### Accessor class design
 
 ```c++
 
