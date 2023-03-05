@@ -27,3 +27,4 @@ parts:
    chapters:
     - file: programming_guide/sycl_tricks
     - file: programming_guide/cpp_tricks
+    - file: programming_guide/low_level_tricks
