@@ -19,7 +19,7 @@ jobs:
           python-version: '3.10' 
 
       - name: pip install packages
-        run: pip install jupyter-book sphinx_proof
+        run: pip install -U jupyter-book sphinx_proof matplotlib numpy
 
       - name : Install pck (doxygen)
         run: |
