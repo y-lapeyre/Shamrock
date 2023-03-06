@@ -453,3 +453,92 @@ Who said C++ was unintuitive!? */
 
 }
 ```
+
+## Switch with multiple variables
+
+```c++
+int func(int i, int j){
+    if(i == 0 && j ==0){
+        return fct0();
+    }else if(i == 1 && j ==0){
+        return fct1();
+    }else if(i == 0 && j ==1){
+        return fct2();
+    }else if(i == 1 && j ==1){
+        return fct3();
+    }
+
+    return -1;
+}
+```
+
+This may be slow looking at the assembly (O3) : 
+
+```nasm
+func(int, int):                              # @func(int, int)
+        mov     eax, edi
+        or      eax, esi
+        jne     .LBB0_1
+        jmp     fct0()                        # TAILCALL
+.LBB0_1:
+        cmp     edi, 1
+        jne     .LBB0_3
+        test    esi, esi
+        jne     .LBB0_3
+        jmp     fct1()                        # TAILCALL
+.LBB0_3:
+        test    edi, edi
+        jne     .LBB0_5
+        cmp     esi, 1
+        jne     .LBB0_5
+        jmp     fct2()                        # TAILCALL
+.LBB0_5:
+        cmp     edi, 1
+        jne     .LBB0_7
+        cmp     esi, 1
+        jne     .LBB0_7
+        jmp     fct3()                        # TAILCALL
+.LBB0_7:
+        mov     eax, -1
+        ret
+```
+
+we have multiple test and a lot of branching whereas the following case exibit no branching
+
+```c++
+int func(int i, int j){
+    switch(i | (j << 1)){
+        case 0: return fct0();break;
+        case 1: return fct1();break;
+        case 2: return fct2();break;
+        case 3: return fct3();break;
+    }
+    return -1;
+}
+```
+
+assembly (O3)
+```nasm
+func(int, int):                              # @func(int, int)
+        add     esi, esi
+        or      esi, edi
+        cmp     esi, 3
+        ja      .LBB0_6
+        jmp     qword ptr [8*rsi + .LJTI0_0]
+.LBB0_2:
+        jmp     fct0()                        # TAILCALL
+.LBB0_6:
+        mov     eax, -1
+        ret
+.LBB0_3:
+        jmp     fct1()                        # TAILCALL
+.LBB0_4:
+        jmp     fct2()                        # TAILCALL
+.LBB0_5:
+        jmp     fct3()                        # TAILCALL
+.LJTI0_0:
+        .quad   .LBB0_2
+        .quad   .LBB0_3
+        .quad   .LBB0_4
+        .quad   .LBB0_5
+```
