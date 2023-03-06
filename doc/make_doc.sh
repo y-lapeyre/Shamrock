@@ -19,10 +19,13 @@ mkdir shamrock_doc
 
 mkdir doxygen
 
-cp -r ../guide_cpp/_build/* guide_cpp
-cp -r ../guide_sycl/_build/* guide_sycl
-cp -r ../shamrock_dev_doc/_build/* shamrock_dev_doc
-cp -r ../shamrock_doc/_build/* shamrock_doc
+cp -r ../guide_cpp/_build/html/* guide_cpp
+cp -r ../guide_sycl/_build/html/* guide_sycl
+cp -r ../shamrock_dev_doc/_build/html/* shamrock_dev_doc
+cp -r ../shamrock_doc/_build/html/* shamrock_doc
 
 
-cp -r ../doxygen/html doxygen
+cp -r ../doxygen/html/* doxygen
+
+
+cp ../tmpindex.html index.html
