@@ -21,4 +21,18 @@ jobs:
       - name: pip install packages
         run: pip install jupyter-book
 
-      
+      - name : Install pck (doxygen)
+        run: |
+          sudo apt-get install -y -qq doxygen
+
+      - name: Gen doc
+        run: |
+          cd doc
+          sh make_doc.sh
+
+      - name: Archive generated doc
+        uses: actions/upload-artifact@v3
+        with:
+          name: shamrock_documentation
+          path: doc/_build/
+
