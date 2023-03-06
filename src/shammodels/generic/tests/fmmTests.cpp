@@ -554,10 +554,10 @@ Result_nompi_fmm_testing<flt,morton_mode,fmm_order> nompi_fmm_testing(std::uniqu
 
             sycl::range<1> range_internal_count{rtree.tree_internal_count};
 
-            auto rchild_id   = sycl::accessor{*rtree.buf_rchild_id  ,cgh,sycl::read_only};
-            auto lchild_id   = sycl::accessor{*rtree.buf_lchild_id  ,cgh,sycl::read_only};
-            auto rchild_flag = sycl::accessor{*rtree.buf_rchild_flag,cgh,sycl::read_only};
-            auto lchild_flag = sycl::accessor{*rtree.buf_lchild_flag,cgh,sycl::read_only};
+            auto rchild_id   = sycl::accessor{*rtree.tree_struct.buf_rchild_id  ,cgh,sycl::read_only};
+            auto lchild_id   = sycl::accessor{*rtree.tree_struct.buf_lchild_id  ,cgh,sycl::read_only};
+            auto rchild_flag = sycl::accessor{*rtree.tree_struct.buf_rchild_flag,cgh,sycl::read_only};
+            auto lchild_flag = sycl::accessor{*rtree.tree_struct.buf_lchild_flag,cgh,sycl::read_only};
 
             cgh.parallel_for(range_internal_count, [=](sycl::item<1> item) {
 
@@ -1165,15 +1165,15 @@ TestStart(Analysis,"models/generic/fmm/fmm_1_gpu_prec", fmm_1_gpu_prec , 1){
 
 
         if(false){
-            auto acc_u32_lid = sycl::host_accessor {*res_u32.rtree.buf_lchild_id};
-            auto acc_u32_rid = sycl::host_accessor {*res_u32.rtree.buf_rchild_id};
-            auto acc_u32_lflag = sycl::host_accessor {*res_u32.rtree.buf_lchild_flag};
-            auto acc_u32_rflag = sycl::host_accessor {*res_u32.rtree.buf_rchild_flag};
+            auto acc_u32_lid = sycl::host_accessor {*res_u32.rtree.tree_struct.buf_lchild_id};
+            auto acc_u32_rid = sycl::host_accessor {*res_u32.rtree.tree_struct.buf_rchild_id};
+            auto acc_u32_lflag = sycl::host_accessor {*res_u32.rtree.tree_struct.buf_lchild_flag};
+            auto acc_u32_rflag = sycl::host_accessor {*res_u32.rtree.tree_struct.buf_rchild_flag};
 
-            auto acc_u64_lid = sycl::host_accessor {*res_u64.rtree.buf_lchild_id};
-            auto acc_u64_rid = sycl::host_accessor {*res_u64.rtree.buf_rchild_id};
-            auto acc_u64_lflag = sycl::host_accessor {*res_u64.rtree.buf_lchild_flag};
-            auto acc_u64_rflag = sycl::host_accessor {*res_u64.rtree.buf_rchild_flag};
+            auto acc_u64_lid = sycl::host_accessor {*res_u64.rtree.tree_struct.buf_lchild_id};
+            auto acc_u64_rid = sycl::host_accessor {*res_u64.rtree.tree_struct.buf_rchild_id};
+            auto acc_u64_lflag = sycl::host_accessor {*res_u64.rtree.tree_struct.buf_lchild_flag};
+            auto acc_u64_rflag = sycl::host_accessor {*res_u64.rtree.tree_struct.buf_rchild_flag};
 
             for(u32 i = 0 ; i < res_u64.rtree.tree_internal_count ; i++){
                 bool same = true;

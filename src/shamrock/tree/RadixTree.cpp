@@ -71,15 +71,15 @@ RadixTree<u_morton, vec3, dim>::RadixTree(
 
         tree_internal_count = tree_leaf_count - 1;
 
-        buf_lchild_id   = std::make_unique<sycl::buffer<u32>>(tree_internal_count);
-        buf_rchild_id   = std::make_unique<sycl::buffer<u32>>(tree_internal_count);
-        buf_lchild_flag = std::make_unique<sycl::buffer<u8>>(tree_internal_count);
-        buf_rchild_flag = std::make_unique<sycl::buffer<u8>>(tree_internal_count);
-        buf_endrange    = std::make_unique<sycl::buffer<u32>>(tree_internal_count);
+        tree_struct.buf_lchild_id   = std::make_unique<sycl::buffer<u32>>(tree_internal_count);
+        tree_struct.buf_rchild_id   = std::make_unique<sycl::buffer<u32>>(tree_internal_count);
+        tree_struct.buf_lchild_flag = std::make_unique<sycl::buffer<u8>>(tree_internal_count);
+        tree_struct.buf_rchild_flag = std::make_unique<sycl::buffer<u8>>(tree_internal_count);
+        tree_struct.buf_endrange    = std::make_unique<sycl::buffer<u32>>(tree_internal_count);
 
         sycl_karras_alg(
-            queue, tree_internal_count, buf_tree_morton, buf_lchild_id, buf_rchild_id, buf_lchild_flag, buf_rchild_flag,
-            buf_endrange
+            queue, tree_internal_count, buf_tree_morton, tree_struct.buf_lchild_id, tree_struct.buf_rchild_id, tree_struct.buf_lchild_flag, tree_struct.buf_rchild_flag,
+            tree_struct.buf_endrange
         );
 
         one_cell_mode = false;
@@ -94,18 +94,18 @@ RadixTree<u_morton, vec3, dim>::RadixTree(
 
         buf_reduc_index_map = std::make_unique<sycl::buffer<u32>>(syclalgs::convert::vector_to_buf(reduc_index_map));
 
-        buf_lchild_id   = std::make_unique<sycl::buffer<u32>>(tree_internal_count);
-        buf_rchild_id   = std::make_unique<sycl::buffer<u32>>(tree_internal_count);
-        buf_lchild_flag = std::make_unique<sycl::buffer<u8>>(tree_internal_count);
-        buf_rchild_flag = std::make_unique<sycl::buffer<u8>>(tree_internal_count);
-        buf_endrange    = std::make_unique<sycl::buffer<u32>>(tree_internal_count);
+        tree_struct.buf_lchild_id   = std::make_unique<sycl::buffer<u32>>(tree_internal_count);
+        tree_struct.buf_rchild_id   = std::make_unique<sycl::buffer<u32>>(tree_internal_count);
+        tree_struct.buf_lchild_flag = std::make_unique<sycl::buffer<u8>>(tree_internal_count);
+        tree_struct.buf_rchild_flag = std::make_unique<sycl::buffer<u8>>(tree_internal_count);
+        tree_struct.buf_endrange    = std::make_unique<sycl::buffer<u32>>(tree_internal_count);
 
         {
-            sycl::host_accessor rchild_id   {*buf_rchild_id  , sycl::write_only, sycl::no_init};
-            sycl::host_accessor lchild_id   {*buf_lchild_id  , sycl::write_only, sycl::no_init};
-            sycl::host_accessor rchild_flag {*buf_rchild_flag, sycl::write_only, sycl::no_init};
-            sycl::host_accessor lchild_flag {*buf_lchild_flag, sycl::write_only, sycl::no_init};
-            sycl::host_accessor endrange    {*buf_endrange   , sycl::write_only, sycl::no_init};
+            sycl::host_accessor rchild_id   {*tree_struct.buf_rchild_id  , sycl::write_only, sycl::no_init};
+            sycl::host_accessor lchild_id   {*tree_struct.buf_lchild_id  , sycl::write_only, sycl::no_init};
+            sycl::host_accessor rchild_flag {*tree_struct.buf_rchild_flag, sycl::write_only, sycl::no_init};
+            sycl::host_accessor lchild_flag {*tree_struct.buf_lchild_flag, sycl::write_only, sycl::no_init};
+            sycl::host_accessor endrange    {*tree_struct.buf_endrange   , sycl::write_only, sycl::no_init};
 
             rchild_id[0]   = 0;
             lchild_id[0]   = 1;
@@ -132,8 +132,8 @@ template <class u_morton, class vec3, u32 dim> void RadixTree<u_morton, vec3, di
         buf_pos_max_cell = std::make_unique<sycl::buffer<ipos_t>>(tree_internal_count + tree_leaf_count);
 
         sycl_compute_cell_ranges(
-            queue, tree_leaf_count, tree_internal_count, buf_tree_morton, buf_lchild_id, buf_rchild_id, buf_lchild_flag,
-            buf_rchild_flag, buf_endrange, buf_pos_min_cell, buf_pos_max_cell
+            queue, tree_leaf_count, tree_internal_count, buf_tree_morton, tree_struct.buf_lchild_id, tree_struct.buf_rchild_id, tree_struct.buf_lchild_flag,
+            tree_struct.buf_rchild_flag, tree_struct.buf_endrange, buf_pos_min_cell, buf_pos_max_cell
         );
 
     } else {
@@ -229,10 +229,10 @@ auto RadixTree<u_morton, vec, dim>::compute_int_boxes(
 
         auto h_max_cell = buf_cell_int_rad_buf->template get_access<sycl::access::mode::read_write>(cgh);
 
-        auto rchild_id   = buf_rchild_id->get_access<sycl::access::mode::read>(cgh);
-        auto lchild_id   = buf_lchild_id->get_access<sycl::access::mode::read>(cgh);
-        auto rchild_flag = buf_rchild_flag->get_access<sycl::access::mode::read>(cgh);
-        auto lchild_flag = buf_lchild_flag->get_access<sycl::access::mode::read>(cgh);
+        auto rchild_id   = tree_struct.buf_rchild_id->get_access<sycl::access::mode::read>(cgh);
+        auto lchild_id   = tree_struct.buf_lchild_id->get_access<sycl::access::mode::read>(cgh);
+        auto rchild_flag = tree_struct.buf_rchild_flag->get_access<sycl::access::mode::read>(cgh);
+        auto lchild_flag = tree_struct.buf_lchild_flag->get_access<sycl::access::mode::read>(cgh);
 
         cgh.parallel_for(range_tree, [=](sycl::item<1> item) {
             u32 gid = (u32)item.get_id(0);
@@ -277,10 +277,10 @@ void RadixTree<u_morton, vec3, dim>::print_tree_field(sycl::buffer<T> & buf_fiel
 
     u32 offset_leaf = tree_internal_count;
 
-    sycl::host_accessor rchild_id   {*buf_rchild_id  };
-    sycl::host_accessor lchild_id   {*buf_lchild_id  };
-    sycl::host_accessor rchild_flag {*buf_rchild_flag};
-    sycl::host_accessor lchild_flag {*buf_lchild_flag};
+    sycl::host_accessor rchild_id   {*tree_struct.buf_rchild_id  };
+    sycl::host_accessor lchild_id   {*tree_struct.buf_lchild_id  };
+    sycl::host_accessor rchild_flag {*tree_struct.buf_rchild_flag};
+    sycl::host_accessor lchild_flag {*tree_struct.buf_lchild_flag};
 
 
     auto printer = [&](){
@@ -382,10 +382,10 @@ typename RadixTree<u_morton, vec3, dim>::CuttedTree RadixTree<u_morton, vec3, di
                     sycl::accessor acc_valid_node_old{valid_node, cgh, sycl::read_only};
                     sycl::accessor acc_valid_node_new{valid_node_new, cgh, sycl::write_only,sycl::no_init};
 
-                    sycl::accessor acc_lchild_id   {*buf_lchild_id  ,cgh,sycl::read_only};
-                    sycl::accessor acc_rchild_id   {*buf_rchild_id  ,cgh,sycl::read_only};
-                    sycl::accessor acc_lchild_flag {*buf_lchild_flag,cgh,sycl::read_only};
-                    sycl::accessor acc_rchild_flag {*buf_rchild_flag,cgh,sycl::read_only};
+                    sycl::accessor acc_lchild_id   {*tree_struct.buf_lchild_id  ,cgh,sycl::read_only};
+                    sycl::accessor acc_rchild_id   {*tree_struct.buf_rchild_id  ,cgh,sycl::read_only};
+                    sycl::accessor acc_lchild_flag {*tree_struct.buf_lchild_flag,cgh,sycl::read_only};
+                    sycl::accessor acc_rchild_flag {*tree_struct.buf_rchild_flag,cgh,sycl::read_only};
 
                     u32 leaf_offset = tree_internal_count;
 
@@ -623,15 +623,15 @@ typename RadixTree<u_morton, vec3, dim>::CuttedTree RadixTree<u_morton, vec3, di
                 }
 
             
-                ret.buf_lchild_id   = std::make_unique<sycl::buffer<u32>>(ret.tree_internal_count);
-                ret.buf_rchild_id   = std::make_unique<sycl::buffer<u32>>(ret.tree_internal_count);
-                ret.buf_lchild_flag = std::make_unique<sycl::buffer<u8>>(ret.tree_internal_count);
-                ret.buf_rchild_flag = std::make_unique<sycl::buffer<u8>>(ret.tree_internal_count);
-                ret.buf_endrange    = std::make_unique<sycl::buffer<u32>>(ret.tree_internal_count);
+                ret.tree_struct.buf_lchild_id   = std::make_unique<sycl::buffer<u32>>(ret.tree_internal_count);
+                ret.tree_struct.buf_rchild_id   = std::make_unique<sycl::buffer<u32>>(ret.tree_internal_count);
+                ret.tree_struct.buf_lchild_flag = std::make_unique<sycl::buffer<u8>>(ret.tree_internal_count);
+                ret.tree_struct.buf_rchild_flag = std::make_unique<sycl::buffer<u8>>(ret.tree_internal_count);
+                ret.tree_struct.buf_endrange    = std::make_unique<sycl::buffer<u32>>(ret.tree_internal_count);
 
                 sycl_karras_alg(
-                    queue, ret.tree_internal_count, ret.buf_tree_morton, ret.buf_lchild_id, ret.buf_rchild_id, ret.buf_lchild_flag, ret.buf_rchild_flag,
-                    ret.buf_endrange
+                    queue, ret.tree_internal_count, ret.buf_tree_morton, ret.tree_struct.buf_lchild_id, ret.tree_struct.buf_rchild_id, ret.tree_struct.buf_lchild_flag, ret.tree_struct.buf_rchild_flag,
+                    ret.tree_struct.buf_endrange
                 );
 
                 one_cell_mode = false;
@@ -869,10 +869,10 @@ typename RadixTree<u_morton, vec3, dim>::CuttedTree RadixTree<u_morton, vec3, di
                 sycl::accessor old_tree_acc_pos_min_cell{*buf_pos_min_cell,cgh,sycl::read_only};
                 sycl::accessor old_tree_acc_pos_max_cell{*buf_pos_max_cell,cgh,sycl::read_only};
 
-                sycl::accessor old_tree_lchild_id   {*buf_lchild_id  ,cgh,sycl::read_only};
-                sycl::accessor old_tree_rchild_id   {*buf_rchild_id  ,cgh,sycl::read_only};
-                sycl::accessor old_tree_lchild_flag {*buf_lchild_flag,cgh,sycl::read_only};
-                sycl::accessor old_tree_rchild_flag {*buf_rchild_flag,cgh,sycl::read_only};
+                sycl::accessor old_tree_lchild_id   {*tree_struct.buf_lchild_id  ,cgh,sycl::read_only};
+                sycl::accessor old_tree_rchild_id   {*tree_struct.buf_rchild_id  ,cgh,sycl::read_only};
+                sycl::accessor old_tree_lchild_flag {*tree_struct.buf_lchild_flag,cgh,sycl::read_only};
+                sycl::accessor old_tree_rchild_flag {*tree_struct.buf_rchild_flag,cgh,sycl::read_only};
 
                 u32 old_tree_leaf_offset = tree_internal_count;
 

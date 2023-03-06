@@ -20,6 +20,7 @@
 
 
 #include "shamrock/legacy/patch/base/patchdata.hpp"
+#include "shamrock/tree/KarrasStructure.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamrock/legacy/utils/string_utils.hpp"
 #include "shamrock/sfc/morton.hpp"
@@ -92,7 +93,6 @@ class RadixTreeField{
 
 
 
-
 template<class morton_t,class pos_t, u32 dim>
 class RadixTree{
 
@@ -140,11 +140,7 @@ class RadixTree{
     std::unique_ptr<sycl::buffer<morton_t>> buf_tree_morton; // size = leaf cnt
 
     //Karras alg
-    std::unique_ptr<sycl::buffer<u32>>      buf_lchild_id;   // size = internal
-    std::unique_ptr<sycl::buffer<u32>>      buf_rchild_id;   // size = internal
-    std::unique_ptr<sycl::buffer<u8>>       buf_lchild_flag; // size = internal
-    std::unique_ptr<sycl::buffer<u8>>       buf_rchild_flag; // size = internal
-    std::unique_ptr<sycl::buffer<u32>>      buf_endrange;    // size = internal
+    shamrock::tree::TreeStructure tree_struct;
 
 
     std::unique_ptr<sycl::buffer<ipos_t>>    buf_pos_min_cell;     // size = total count //rename to ipos
@@ -155,7 +151,7 @@ class RadixTree{
     std::unique_ptr<sycl::buffer<pos_t>>     buf_pos_max_cell_flt; // size = total count
 
     inline bool is_tree_built(){
-        return bool(buf_lchild_id) && bool(buf_rchild_id) && bool(buf_lchild_flag) && bool(buf_rchild_flag) && bool(buf_endrange);
+        return tree_struct.is_built();
     }
 
     inline bool are_range_int_built(){
@@ -202,11 +198,13 @@ class RadixTree{
         buf_particle_index_map  (syclalgs::basic::duplicate(other.buf_particle_index_map )),
         buf_reduc_index_map     (syclalgs::basic::duplicate(other.buf_reduc_index_map    )),
         buf_tree_morton         (syclalgs::basic::duplicate(other.buf_tree_morton        )), // size = leaf cnt
-        buf_lchild_id           (syclalgs::basic::duplicate(other.buf_lchild_id          )),   // size = internal
-        buf_rchild_id           (syclalgs::basic::duplicate(other.buf_rchild_id          )),   // size = internal
-        buf_lchild_flag         (syclalgs::basic::duplicate(other.buf_lchild_flag        )), // size = internal
-        buf_rchild_flag         (syclalgs::basic::duplicate(other.buf_rchild_flag        )), // size = internal
-        buf_endrange            (syclalgs::basic::duplicate(other.buf_endrange           )),    // size = internal
+        tree_struct{
+            syclalgs::basic::duplicate(other.tree_struct.buf_lchild_id          ),   // size = internal
+            syclalgs::basic::duplicate(other.tree_struct.buf_rchild_id          ),   // size = internal
+            syclalgs::basic::duplicate(other.tree_struct.buf_lchild_flag        ), // size = internal
+            syclalgs::basic::duplicate(other.tree_struct.buf_rchild_flag        ), // size = internal
+            syclalgs::basic::duplicate(other.tree_struct.buf_endrange           )// size = internal
+            },    
         buf_pos_min_cell        (syclalgs::basic::duplicate(other.buf_pos_min_cell       )),     // size = total count
         buf_pos_max_cell        (syclalgs::basic::duplicate(other.buf_pos_max_cell       )),     // size = total count
         buf_pos_min_cell_flt    (syclalgs::basic::duplicate(other.buf_pos_min_cell_flt   )), // size = total count
@@ -232,11 +230,11 @@ class RadixTree{
         add_ptr(buf_particle_index_map  );
         add_ptr(buf_reduc_index_map     );
         add_ptr(buf_tree_morton         );
-        add_ptr(buf_lchild_id           );
-        add_ptr(buf_rchild_id           );
-        add_ptr(buf_lchild_flag         );
-        add_ptr(buf_rchild_flag         );
-        add_ptr(buf_endrange            );
+        add_ptr(tree_struct.buf_lchild_id           );
+        add_ptr(tree_struct.buf_rchild_id           );
+        add_ptr(tree_struct.buf_lchild_flag         );
+        add_ptr(tree_struct.buf_rchild_flag         );
+        add_ptr(tree_struct.buf_endrange            );
         add_ptr(buf_pos_min_cell        );
         add_ptr(buf_pos_max_cell        );
         add_ptr(buf_pos_min_cell_flt    );
@@ -388,10 +386,10 @@ inline typename RadixTree<u_morton, vec3,dim>::template RadixTreeField<T> RadixT
 
         auto tree_field = ret.radix_tree_field_buf->template get_access<sycl::access::mode::read_write>(cgh);
 
-        auto rchild_id   = buf_rchild_id->get_access<sycl::access::mode::read>(cgh);
-        auto lchild_id   = buf_lchild_id->get_access<sycl::access::mode::read>(cgh);
-        auto rchild_flag = buf_rchild_flag->get_access<sycl::access::mode::read>(cgh);
-        auto lchild_flag = buf_lchild_flag->get_access<sycl::access::mode::read>(cgh);
+        auto rchild_id   = tree_struct.buf_rchild_id->get_access<sycl::access::mode::read>(cgh);
+        auto lchild_id   = tree_struct.buf_lchild_id->get_access<sycl::access::mode::read>(cgh);
+        auto rchild_flag = tree_struct.buf_rchild_flag->get_access<sycl::access::mode::read>(cgh);
+        auto lchild_flag = tree_struct.buf_lchild_flag->get_access<sycl::access::mode::read>(cgh);
 
         cgh.parallel_for(range_tree, [=](sycl::item<1> item) {
             u32 gid = (u32)item.get_id(0);
@@ -437,10 +435,10 @@ inline std::pair<std::set<u32>, std::set<u32>> RadixTree<u_morton, vec3, dim>::g
 
     auto particle_index_map = sycl::host_accessor{*buf_particle_index_map};
     auto cell_index_map = sycl::host_accessor{*buf_reduc_index_map};
-    auto rchild_id      = sycl::host_accessor{*buf_rchild_id  };
-    auto lchild_id      = sycl::host_accessor{*buf_lchild_id  };
-    auto rchild_flag    = sycl::host_accessor{*buf_rchild_flag};
-    auto lchild_flag    = sycl::host_accessor{*buf_lchild_flag};
+    auto rchild_id      = sycl::host_accessor{*tree_struct.buf_rchild_id  };
+    auto lchild_id      = sycl::host_accessor{*tree_struct.buf_lchild_id  };
+    auto rchild_flag    = sycl::host_accessor{*tree_struct.buf_rchild_flag};
+    auto lchild_flag    = sycl::host_accessor{*tree_struct.buf_lchild_flag};
 
     //sycl::range<1> range_leaf = sycl::range<1>{tree_leaf_count};
 
@@ -506,10 +504,10 @@ inline void RadixTree<u_morton, vec3, dim>::for_each_leaf(sycl::queue & queue, L
 
         auto particle_index_map = buf_particle_index_map-> template get_access<sycl::access::mode::read>(cgh);
         auto cell_index_map = buf_reduc_index_map-> template get_access<sycl::access::mode::read>(cgh);
-        auto rchild_id      = buf_rchild_id  -> template get_access<sycl::access::mode::read>(cgh);
-        auto lchild_id      = buf_lchild_id  -> template get_access<sycl::access::mode::read>(cgh);
-        auto rchild_flag    = buf_rchild_flag-> template get_access<sycl::access::mode::read>(cgh);
-        auto lchild_flag    = buf_lchild_flag-> template get_access<sycl::access::mode::read>(cgh);
+        auto rchild_id      = tree_struct.buf_rchild_id  -> template get_access<sycl::access::mode::read>(cgh);
+        auto lchild_id      = tree_struct.buf_lchild_id  -> template get_access<sycl::access::mode::read>(cgh);
+        auto rchild_flag    = tree_struct.buf_rchild_flag-> template get_access<sycl::access::mode::read>(cgh);
+        auto lchild_flag    = tree_struct.buf_lchild_flag-> template get_access<sycl::access::mode::read>(cgh);
 
         sycl::range<1> range_leaf = sycl::range<1>{tree_leaf_count};
 
@@ -691,7 +689,7 @@ namespace tree_comm {
             if(comm_op == mpi_sycl_interop::Recv_Probe){
                 rtree.obj_cnt = rtree.buf_morton->size();
                 rtree.tree_leaf_count = rtree.buf_tree_morton->size();
-                rtree.tree_internal_count = rtree.buf_lchild_id->size();
+                rtree.tree_internal_count = rtree.tree_struct.buf_lchild_id->size();
 
                 {
                     sycl::host_accessor bmin {*rtree.buf_pos_min_cell_flt};
@@ -745,11 +743,11 @@ namespace tree_comm {
         ret_len += mpi_sycl_interop::isend(rq.rtree.buf_reduc_index_map, rq.rtree.tree_leaf_count+1, rq.rq_u32, rank_dest, tag, comm);
 
         ret_len += mpi_sycl_interop::isend(rq.rtree.buf_tree_morton, rq.rtree.tree_leaf_count,rq.rq_u_morton, rank_dest, tag, comm);
-        ret_len += mpi_sycl_interop::isend(rq.rtree.buf_lchild_id,rq.rtree.tree_internal_count, rq.rq_u32, rank_dest, tag, comm);
-        ret_len += mpi_sycl_interop::isend(rq.rtree.buf_rchild_id,rq.rtree.tree_internal_count, rq.rq_u32, rank_dest, tag, comm);
-        ret_len += mpi_sycl_interop::isend(rq.rtree.buf_lchild_flag,rq.rtree.tree_internal_count, rq.rq_u8, rank_dest, tag, comm);
-        ret_len += mpi_sycl_interop::isend(rq.rtree.buf_rchild_flag,rq.rtree.tree_internal_count, rq.rq_u8, rank_dest, tag, comm);
-        ret_len += mpi_sycl_interop::isend(rq.rtree.buf_endrange,rq.rtree.tree_internal_count, rq.rq_u32, rank_dest, tag, comm);
+        ret_len += mpi_sycl_interop::isend(rq.rtree.tree_struct.buf_lchild_id,rq.rtree.tree_internal_count, rq.rq_u32, rank_dest, tag, comm);
+        ret_len += mpi_sycl_interop::isend(rq.rtree.tree_struct.buf_rchild_id,rq.rtree.tree_internal_count, rq.rq_u32, rank_dest, tag, comm);
+        ret_len += mpi_sycl_interop::isend(rq.rtree.tree_struct.buf_lchild_flag,rq.rtree.tree_internal_count, rq.rq_u8, rank_dest, tag, comm);
+        ret_len += mpi_sycl_interop::isend(rq.rtree.tree_struct.buf_rchild_flag,rq.rtree.tree_internal_count, rq.rq_u8, rank_dest, tag, comm);
+        ret_len += mpi_sycl_interop::isend(rq.rtree.tree_struct.buf_endrange,rq.rtree.tree_internal_count, rq.rq_u32, rank_dest, tag, comm);
 
         ret_len += mpi_sycl_interop::isend(rq.rtree.buf_pos_min_cell,rq.rtree.tree_internal_count + rq.rtree.tree_leaf_count, rq.rq_vec3i, rank_dest, tag, comm);
         ret_len += mpi_sycl_interop::isend(rq.rtree.buf_pos_max_cell,rq.rtree.tree_internal_count + rq.rtree.tree_leaf_count, rq.rq_vec3i, rank_dest, tag, comm);
@@ -782,11 +780,11 @@ namespace tree_comm {
         ret_len += mpi_sycl_interop::irecv_probe(rq.rtree.buf_reduc_index_map, rq.rq_u32, rank_source, tag, comm);
 
         ret_len += mpi_sycl_interop::irecv_probe(rq.rtree.buf_tree_morton,rq.rq_u_morton, rank_source, tag, comm);
-        ret_len += mpi_sycl_interop::irecv_probe(rq.rtree.buf_lchild_id, rq.rq_u32, rank_source, tag, comm);
-        ret_len += mpi_sycl_interop::irecv_probe(rq.rtree.buf_rchild_id, rq.rq_u32, rank_source, tag, comm);
-        ret_len += mpi_sycl_interop::irecv_probe(rq.rtree.buf_lchild_flag, rq.rq_u8, rank_source, tag, comm);
-        ret_len += mpi_sycl_interop::irecv_probe(rq.rtree.buf_rchild_flag, rq.rq_u8, rank_source, tag, comm);
-        ret_len += mpi_sycl_interop::irecv_probe(rq.rtree.buf_endrange, rq.rq_u32, rank_source, tag, comm);
+        ret_len += mpi_sycl_interop::irecv_probe(rq.rtree.tree_struct.buf_lchild_id, rq.rq_u32, rank_source, tag, comm);
+        ret_len += mpi_sycl_interop::irecv_probe(rq.rtree.tree_struct.buf_rchild_id, rq.rq_u32, rank_source, tag, comm);
+        ret_len += mpi_sycl_interop::irecv_probe(rq.rtree.tree_struct.buf_lchild_flag, rq.rq_u8, rank_source, tag, comm);
+        ret_len += mpi_sycl_interop::irecv_probe(rq.rtree.tree_struct.buf_rchild_flag, rq.rq_u8, rank_source, tag, comm);
+        ret_len += mpi_sycl_interop::irecv_probe(rq.rtree.tree_struct.buf_endrange, rq.rq_u32, rank_source, tag, comm);
 
         ret_len += mpi_sycl_interop::irecv_probe(rq.rtree.buf_pos_min_cell, rq.rq_vec3i, rank_source, tag, comm);
         ret_len += mpi_sycl_interop::irecv_probe(rq.rtree.buf_pos_max_cell, rq.rq_vec3i, rank_source, tag, comm);
@@ -863,10 +861,10 @@ namespace walker {
         Radix_tree_accessor(RadixTree< u_morton,  vec3,3> & rtree,sycl::handler & cgh):
             particle_index_map(rtree.buf_particle_index_map-> template get_access<sycl::access::mode::read>(cgh)),
             cell_index_map(rtree.buf_reduc_index_map-> template get_access<sycl::access::mode::read>(cgh)),
-            rchild_id     (rtree.buf_rchild_id  -> template get_access<sycl::access::mode::read>(cgh)),
-            lchild_id     (rtree.buf_lchild_id  -> template get_access<sycl::access::mode::read>(cgh)),
-            rchild_flag   (rtree.buf_rchild_flag-> template get_access<sycl::access::mode::read>(cgh)),
-            lchild_flag   (rtree.buf_lchild_flag-> template get_access<sycl::access::mode::read>(cgh)),
+            rchild_id     (rtree.tree_struct.buf_rchild_id  -> template get_access<sycl::access::mode::read>(cgh)),
+            lchild_id     (rtree.tree_struct.buf_lchild_id  -> template get_access<sycl::access::mode::read>(cgh)),
+            rchild_flag   (rtree.tree_struct.buf_rchild_flag-> template get_access<sycl::access::mode::read>(cgh)),
+            lchild_flag   (rtree.tree_struct.buf_lchild_flag-> template get_access<sycl::access::mode::read>(cgh)),
             pos_min_cell  (rtree.buf_pos_min_cell_flt-> template get_access<sycl::access::mode::read>(cgh)),
             pos_max_cell  (rtree.buf_pos_max_cell_flt-> template get_access<sycl::access::mode::read>(cgh)),
             leaf_offset   (rtree.tree_internal_count)

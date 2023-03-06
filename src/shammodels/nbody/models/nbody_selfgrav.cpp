@@ -249,10 +249,10 @@ void compute_multipoles(Tree & rtree, sycl::buffer<vec> & pos_part, sycl::buffer
 
             sycl::range<1> range_internal_count{rtree.tree_internal_count};
 
-            auto rchild_id   = sycl::accessor{*rtree.buf_rchild_id  ,cgh,sycl::read_only};
-            auto lchild_id   = sycl::accessor{*rtree.buf_lchild_id  ,cgh,sycl::read_only};
-            auto rchild_flag = sycl::accessor{*rtree.buf_rchild_flag,cgh,sycl::read_only};
-            auto lchild_flag = sycl::accessor{*rtree.buf_lchild_flag,cgh,sycl::read_only};
+            auto rchild_id   = sycl::accessor{*rtree.tree_struct.buf_rchild_id  ,cgh,sycl::read_only};
+            auto lchild_id   = sycl::accessor{*rtree.tree_struct.buf_lchild_id  ,cgh,sycl::read_only};
+            auto rchild_flag = sycl::accessor{*rtree.tree_struct.buf_rchild_flag,cgh,sycl::read_only};
+            auto lchild_flag = sycl::accessor{*rtree.tree_struct.buf_lchild_flag,cgh,sycl::read_only};
 
             cgh.parallel_for(range_internal_count, [=](sycl::item<1> item) {
 
