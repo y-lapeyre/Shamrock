@@ -1,5 +1,5 @@
-# C++ tricks
 
+# Dirty tricks
 
 ## Fixing constructor issues (The dirty way)
 

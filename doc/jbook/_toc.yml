@@ -11,11 +11,11 @@ parts:
 
  - caption: SHAMROCK documentation
    chapters:
-    - file: user-manual/compilation
-    - file: user-manual/codebase_org
-    - file: user-manual/communication_protocol
-    - file: user-manual/coordinates_systems
-    - file: user-manual/code_coverage
+    - file: sham_doc/compilation
+    - file: sham_doc/codebase_org
+    - file: sham_doc/communication_protocol
+    - file: sham_doc/coordinates_systems
+    - file: sham_doc/code_coverage
     - file: control_script/control_script
     - file: mpi_scheduler/mpi_scheduler
       sections:
@@ -26,5 +26,8 @@ parts:
  - caption: Programming Guide
    chapters:
     - file: programming_guide/sycl_tricks
-    - file: programming_guide/cpp_tricks
+    - file: programming_guide/cpp_guide  
+      sections:
+      - file: programming_guide/cpp_guide/replacing_preproc
+      - file: programming_guide/cpp_guide/dirty_tricks
     - file: programming_guide/low_level_tricks
