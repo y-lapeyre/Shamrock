@@ -13,6 +13,7 @@
 #include "kernels/karras_alg.hpp"
 #include "shamrock/legacy/algs/sycl/basic/basic.hpp"
 #include "shamrock/legacy/algs/sycl/defs.hpp"
+#include "shamutils/throwUtils.hpp"
 
 namespace shamrock::tree {
 
@@ -35,6 +36,11 @@ namespace shamrock::tree {
         template<class T>
         inline void
         build(sycl::queue &queue, u32 _internal_cell_count, sycl::buffer<T> &morton_buf) {
+
+            if(!(_internal_cell_count < morton_buf.size())){
+                throw shamutils::throw_with_loc<std::runtime_error>("morton buf must be at least with size() greater than internal_cell_count");
+            }
+
             internal_cell_count = _internal_cell_count;
 
             buf_lchild_id   = std::make_unique<sycl::buffer<u32>>(internal_cell_count);
@@ -53,6 +59,10 @@ namespace shamrock::tree {
                 *buf_rchild_flag,
                 *buf_endrange
             );
+        }
+
+        inline void build_one_cell_mode(){
+            //TODO also move one_cell_mode_flag in this container
         }
 
         [[nodiscard]] inline u64 memsize() const {
