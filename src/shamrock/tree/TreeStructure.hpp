@@ -17,6 +17,9 @@ namespace shamrock::tree {
     class TreeStructure {
 
         public:
+
+        u32 internal_cell_count;
+
         std::unique_ptr<sycl::buffer<u32>> buf_lchild_id;  // size = internal
         std::unique_ptr<sycl::buffer<u32>> buf_rchild_id;  // size = internal
         std::unique_ptr<sycl::buffer<u8>> buf_lchild_flag; // size = internal
@@ -30,7 +33,9 @@ namespace shamrock::tree {
 
         template<class T>
         inline void
-        build(sycl::queue &queue, u32 internal_cell_count, sycl::buffer<T> &morton_buf) {
+        build(sycl::queue &queue, u32 _internal_cell_count, sycl::buffer<T> &morton_buf) {
+            internal_cell_count = _internal_cell_count;
+
             buf_lchild_id   = std::make_unique<sycl::buffer<u32>>(internal_cell_count);
             buf_rchild_id   = std::make_unique<sycl::buffer<u32>>(internal_cell_count);
             buf_lchild_flag = std::make_unique<sycl::buffer<u8>>(internal_cell_count);
@@ -48,6 +53,8 @@ namespace shamrock::tree {
                 *buf_endrange
             );
         }
+
+
     };
 
 } // namespace shamrock::tree

@@ -164,7 +164,7 @@ namespace shamrock::amr {
                 MortonBuilder::build(
                     shamsys::instance::get_compute_queue(),
                     sched.get_sim_box().template partch_coord_to_domain<Tcoord>(cur_p),
-                    pdat.get_field<Tcoord>(0).get_buf(),
+                    *pdat.get_field<Tcoord>(0).get_buf(),
                     pdat.get_obj_cnt(),
                     out_buf_morton,
                     out_buf_particle_index_map

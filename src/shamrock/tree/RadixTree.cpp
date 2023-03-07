@@ -38,12 +38,14 @@ RadixTree<u_morton, vec3, dim>::RadixTree(
 
     bounding_box = treebox;
 
-    RadixTreeMortonBuilder<u_morton, vec3,dim>::build(queue, bounding_box, pos_buf, cnt_obj, buf_morton, buf_particle_index_map);
+    tree_morton_codes.build(queue, shammath::CoordRange<vec3>{treebox}, cnt_obj, *pos_buf);
+
+    //RadixTreeMortonBuilder<u_morton, vec3,dim>::build(queue, bounding_box, *pos_buf, cnt_obj, tree_morton_codes.buf_morton, tree_morton_codes.buf_particle_index_map);
 
     // return a sycl buffer from reduc index map instead
     logger::debug_sycl_ln("RadixTree", "reduction algorithm"); // TODO put reduction level in class member
     std::vector<u32> reduc_index_map;
-    reduction_alg(queue, cnt_obj, buf_morton, reduc_level, reduc_index_map, tree_leaf_count);
+    reduction_alg(queue, cnt_obj, tree_morton_codes.buf_morton, reduc_level, reduc_index_map, tree_leaf_count);
 
 
     logger::debug_sycl_ln(
@@ -67,7 +69,7 @@ RadixTree<u_morton, vec3, dim>::RadixTree(
         logger::debug_sycl_ln("RadixTree", "sycl_morton_remap_reduction");
         buf_tree_morton = std::make_unique<sycl::buffer<u_morton>>(tree_leaf_count);
 
-        sycl_morton_remap_reduction(queue, tree_leaf_count, buf_reduc_index_map, buf_morton, buf_tree_morton);
+        sycl_morton_remap_reduction(queue, tree_leaf_count, buf_reduc_index_map, tree_morton_codes.buf_morton, buf_tree_morton);
 
         tree_internal_count = tree_leaf_count - 1;
 
@@ -204,7 +206,7 @@ auto RadixTree<u_morton, vec, dim>::compute_int_boxes(
         auto h          = int_rad_buf->template get_access<sycl::access::mode::read>(cgh);
 
         auto cell_particle_ids  = buf_reduc_index_map->template get_access<sycl::access::mode::read>(cgh);
-        auto particle_index_map = buf_particle_index_map->template get_access<sycl::access::mode::read>(cgh);
+        auto particle_index_map = tree_morton_codes.buf_particle_index_map->template get_access<sycl::access::mode::read>(cgh);
 
         coord_t tol = tolerance;
 
@@ -516,11 +518,11 @@ typename RadixTree<u_morton, vec3, dim>::CuttedTree RadixTree<u_morton, vec3, di
             u32 leaf_offset = tree_internal_count;
 
             sycl::host_accessor cell_index_map{*buf_reduc_index_map,sycl::read_only};
-            sycl::host_accessor particle_index_map{*buf_particle_index_map,sycl::read_only};
+            sycl::host_accessor particle_index_map{*tree_morton_codes.buf_particle_index_map,sycl::read_only};
 
             sycl::host_accessor acc_valid_tree_morton {valid_tree_morton,sycl::read_only};
 
-            sycl::host_accessor acc_morton {*buf_morton, sycl::read_only};
+            sycl::host_accessor acc_morton {*tree_morton_codes.buf_morton, sycl::read_only};
 
             u32 cnt = 0;
 
@@ -587,18 +589,18 @@ typename RadixTree<u_morton, vec3, dim>::CuttedTree RadixTree<u_morton, vec3, di
             ret.tree_leaf_count = new_morton_tree.size();
             ret.tree_internal_count = ret.tree_leaf_count -1;
 
-            ret.buf_morton = std::make_unique<sycl::buffer<u_morton>>(new_buf_morton.size());
+            ret.tree_morton_codes.buf_morton = std::make_unique<sycl::buffer<u_morton>>(new_buf_morton.size());
             {
-                sycl::host_accessor acc{* ret.buf_morton, sycl::write_only, sycl::no_init};
+                sycl::host_accessor acc{* ret.tree_morton_codes.buf_morton, sycl::write_only, sycl::no_init};
                 for (u32 i = 0 ; i < new_buf_morton.size(); i++) {
                     acc[i] = new_buf_morton[i];
                 }
             }
 
 
-            ret.buf_particle_index_map = std::make_unique<sycl::buffer<u32>>(new_buf_particle_index_map.size());
+            ret.tree_morton_codes.buf_particle_index_map = std::make_unique<sycl::buffer<u32>>(new_buf_particle_index_map.size());
             {
-                sycl::host_accessor acc{* ret.buf_particle_index_map, sycl::write_only, sycl::no_init};
+                sycl::host_accessor acc{* ret.tree_morton_codes.buf_particle_index_map, sycl::write_only, sycl::no_init};
                 for (u32 i = 0 ; i < new_buf_particle_index_map.size(); i++) {
                     acc[i] = new_buf_particle_index_map[i];
                 }

@@ -177,7 +177,7 @@ void compute_multipoles(Tree & rtree, sycl::buffer<vec> & pos_part, sycl::buffer
 
         auto xyz = sycl::accessor {pos_part, cgh,sycl::read_only};
         auto cell_particle_ids =sycl::accessor {*rtree.buf_reduc_index_map, cgh,sycl::read_only};
-        auto particle_index_map = sycl::accessor {*rtree.buf_particle_index_map, cgh,sycl::read_only};
+        auto particle_index_map = sycl::accessor {*rtree.tree_morton_codes.buf_particle_index_map, cgh,sycl::read_only};
         auto cell_max = sycl::accessor{*rtree.buf_pos_max_cell_flt,cgh,sycl::read_only};
         auto cell_min = sycl::accessor{*rtree.buf_pos_min_cell_flt,cgh,sycl::read_only};
         auto multipoles = sycl::accessor {grav_multipoles, cgh,sycl::write_only,sycl::no_init};
