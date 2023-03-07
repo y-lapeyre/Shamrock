@@ -13,16 +13,27 @@
 
 #include <limits>
 
-namespace shammath{
+namespace shammath {
 
-    template <class T> struct CoordRange {
+    template<class T>
+    struct CoordRange {
         T lower;
         T upper;
 
+        inline CoordRange() = default;
+
+        inline CoordRange(T lower, T upper) : lower(lower), upper(upper){};
+
+        inline CoordRange(std::tuple<T, T> range)
+            : lower(std::get<0>(range)), upper(std::get<1>(range)) {}
+
+        inline CoordRange(std::pair<T, T> range)
+            : lower(std::get<0>(range)), upper(std::get<1>(range)) {}
+
         inline T delt() const { return upper - lower; }
 
-        inline void expand_center(T tol){
-            T center = (lower + upper) / 2;
+        inline void expand_center(T tol) {
+            T center   = (lower + upper) / 2;
             T cur_delt = upper - lower;
             cur_delt /= 2;
             cur_delt *= tol;
@@ -31,10 +42,10 @@ namespace shammath{
         }
 
         static CoordRange max_range();
-
     };
 
-    template <> inline CoordRange<f32_3> CoordRange<f32_3>::max_range() {
+    template<>
+    inline CoordRange<f32_3> CoordRange<f32_3>::max_range() {
 
         CoordRange<f32_3> ret;
 
@@ -51,7 +62,8 @@ namespace shammath{
         return ret;
     }
 
-    template <> inline CoordRange<f64_3> CoordRange<f64_3>::max_range() {
+    template<>
+    inline CoordRange<f64_3> CoordRange<f64_3>::max_range() {
 
         CoordRange<f64_3> ret;
 
@@ -68,8 +80,8 @@ namespace shammath{
         return ret;
     }
 
-
-    template <> inline CoordRange<u32_3> CoordRange<u32_3>::max_range() {
+    template<>
+    inline CoordRange<u32_3> CoordRange<u32_3>::max_range() {
 
         CoordRange<u32_3> ret;
 
@@ -86,7 +98,8 @@ namespace shammath{
         return ret;
     }
 
-    template <> inline CoordRange<u64_3> CoordRange<u64_3>::max_range() {
+    template<>
+    inline CoordRange<u64_3> CoordRange<u64_3>::max_range() {
 
         CoordRange<u64_3> ret;
 
@@ -103,4 +116,4 @@ namespace shammath{
         return ret;
     }
 
-}
+} // namespace shammath
