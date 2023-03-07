@@ -295,7 +295,7 @@ void Interfacehandler<Tree_Send,pos_prec,RadixTree<u_morton, sycl::vec<pos_prec,
 
         auto & rtree = rtrees[comm.sender_patch_id];
 
-        u32 total_count             = rtree->tree_internal_count + rtree->tree_leaf_count;
+        u32 total_count             = rtree->tree_struct.internal_cell_count + rtree->tree_leaf_count;
         sycl::range<1> range_tree{total_count};
 
         logger::debug_sycl_ln("Radixtree", "computing valid node buf");
