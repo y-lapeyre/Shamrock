@@ -20,7 +20,7 @@
 
 
 #include "shamrock/legacy/patch/base/patchdata.hpp"
-#include "shamrock/tree/KarrasStructure.hpp"
+#include "shamrock/tree/TreeStructure.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamrock/legacy/utils/string_utils.hpp"
 #include "shamrock/sfc/morton.hpp"

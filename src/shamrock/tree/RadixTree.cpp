@@ -71,16 +71,18 @@ RadixTree<u_morton, vec3, dim>::RadixTree(
 
         tree_internal_count = tree_leaf_count - 1;
 
-        tree_struct.buf_lchild_id   = std::make_unique<sycl::buffer<u32>>(tree_internal_count);
-        tree_struct.buf_rchild_id   = std::make_unique<sycl::buffer<u32>>(tree_internal_count);
-        tree_struct.buf_lchild_flag = std::make_unique<sycl::buffer<u8>>(tree_internal_count);
-        tree_struct.buf_rchild_flag = std::make_unique<sycl::buffer<u8>>(tree_internal_count);
-        tree_struct.buf_endrange    = std::make_unique<sycl::buffer<u32>>(tree_internal_count);
+        //tree_struct.buf_lchild_id   = std::make_unique<sycl::buffer<u32>>(tree_internal_count);
+        //tree_struct.buf_rchild_id   = std::make_unique<sycl::buffer<u32>>(tree_internal_count);
+        //tree_struct.buf_lchild_flag = std::make_unique<sycl::buffer<u8>>(tree_internal_count);
+        //tree_struct.buf_rchild_flag = std::make_unique<sycl::buffer<u8>>(tree_internal_count);
+        //tree_struct.buf_endrange    = std::make_unique<sycl::buffer<u32>>(tree_internal_count);
+//
+        //sycl_karras_alg(
+        //    queue, tree_internal_count, buf_tree_morton, tree_struct.buf_lchild_id, tree_struct.buf_rchild_id, tree_struct.buf_lchild_flag, tree_struct.buf_rchild_flag,
+        //    tree_struct.buf_endrange
+        //);
 
-        sycl_karras_alg(
-            queue, tree_internal_count, buf_tree_morton, tree_struct.buf_lchild_id, tree_struct.buf_rchild_id, tree_struct.buf_lchild_flag, tree_struct.buf_rchild_flag,
-            tree_struct.buf_endrange
-        );
+        tree_struct.build(queue, tree_internal_count, *buf_tree_morton);
 
         one_cell_mode = false;
     } else if (tree_leaf_count == 1) {
@@ -622,17 +624,7 @@ typename RadixTree<u_morton, vec3, dim>::CuttedTree RadixTree<u_morton, vec3, di
                     }
                 }
 
-            
-                ret.tree_struct.buf_lchild_id   = std::make_unique<sycl::buffer<u32>>(ret.tree_internal_count);
-                ret.tree_struct.buf_rchild_id   = std::make_unique<sycl::buffer<u32>>(ret.tree_internal_count);
-                ret.tree_struct.buf_lchild_flag = std::make_unique<sycl::buffer<u8>>(ret.tree_internal_count);
-                ret.tree_struct.buf_rchild_flag = std::make_unique<sycl::buffer<u8>>(ret.tree_internal_count);
-                ret.tree_struct.buf_endrange    = std::make_unique<sycl::buffer<u32>>(ret.tree_internal_count);
-
-                sycl_karras_alg(
-                    queue, ret.tree_internal_count, ret.buf_tree_morton, ret.tree_struct.buf_lchild_id, ret.tree_struct.buf_rchild_id, ret.tree_struct.buf_lchild_flag, ret.tree_struct.buf_rchild_flag,
-                    ret.tree_struct.buf_endrange
-                );
+                ret.tree_struct.build(queue, ret.tree_internal_count, *ret.buf_tree_morton);
 
                 one_cell_mode = false;
             }else{

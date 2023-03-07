@@ -17,41 +17,29 @@
 
 
 template <class u_morton, class kername>
-void __sycl_karras_alg(sycl::queue &queue, u32 internal_cell_count, std::unique_ptr<sycl::buffer<u_morton>> &in_morton,
-                       std::unique_ptr<sycl::buffer<u32>> &out_buf_lchild_id,
-                       std::unique_ptr<sycl::buffer<u32>> &out_buf_rchild_id,
-                       std::unique_ptr<sycl::buffer<u8>> &out_buf_lchild_flag,
-                       std::unique_ptr<sycl::buffer<u8>> &out_buf_rchild_flag,
-                       std::unique_ptr<sycl::buffer<u32>> &out_buf_endrange) {
+void __sycl_karras_alg(sycl::queue &queue, u32 internal_cell_count, 
+                       sycl::buffer<u_morton> &in_morton,
+                       sycl::buffer<u32> &out_buf_lchild_id,
+                       sycl::buffer<u32> &out_buf_rchild_id,
+                       sycl::buffer<u8> &out_buf_lchild_flag,
+                       sycl::buffer<u8> &out_buf_rchild_flag,
+                       sycl::buffer<u32> &out_buf_endrange) {
 
     using namespace shamrock::math::int_manip;
 
     sycl::range<1> range_radix_tree{internal_cell_count};
 
-    if (in_morton == NULL)
-        throw shamutils::throw_with_loc<std::invalid_argument>("in_morton isn't allocated");
-    if (out_buf_lchild_id == NULL)
-        throw shamutils::throw_with_loc<std::invalid_argument>("out_buf_lchild_id isn't allocated");
-    if (out_buf_rchild_id == NULL)
-        throw shamutils::throw_with_loc<std::invalid_argument>("out_buf_rchild_id isn't allocated");
-    if (out_buf_lchild_flag == NULL)
-        throw shamutils::throw_with_loc<std::invalid_argument>("out_buf_lchild_flag isn't allocated");
-    if (out_buf_rchild_flag == NULL)
-        throw shamutils::throw_with_loc<std::invalid_argument>("out_buf_rchild_flag isn't allocated");
-    if (out_buf_endrange == NULL)
-        throw shamutils::throw_with_loc<std::invalid_argument>("out_buf_endrange isn't allocated");
-
     queue.submit([&](sycl::handler &cgh) {
         //@TODO add check if split count above 2G
         i32 morton_lenght = (i32)internal_cell_count + 1;
 
-        auto m = in_morton->template get_access<sycl::access::mode::read>(cgh);
+        auto m = in_morton.template get_access<sycl::access::mode::read>(cgh);
 
-        auto lchild_id      = out_buf_lchild_id->get_access<sycl::access::mode::discard_write>(cgh);
-        auto rchild_id      = out_buf_rchild_id->get_access<sycl::access::mode::discard_write>(cgh);
-        auto lchild_flag    = out_buf_lchild_flag->get_access<sycl::access::mode::discard_write>(cgh);
-        auto rchild_flag    = out_buf_rchild_flag->get_access<sycl::access::mode::discard_write>(cgh);
-        auto end_range_cell = out_buf_endrange->get_access<sycl::access::mode::discard_write>(cgh);
+        auto lchild_id      = out_buf_lchild_id.get_access<sycl::access::mode::discard_write>(cgh);
+        auto rchild_id      = out_buf_rchild_id.get_access<sycl::access::mode::discard_write>(cgh);
+        auto lchild_flag    = out_buf_lchild_flag.get_access<sycl::access::mode::discard_write>(cgh);
+        auto rchild_flag    = out_buf_rchild_flag.get_access<sycl::access::mode::discard_write>(cgh);
+        auto end_range_cell = out_buf_endrange.get_access<sycl::access::mode::discard_write>(cgh);
 
         cgh.parallel_for<kername>(range_radix_tree, [=](sycl::item<1> item) {
             int i = (int)item.get_id(0);
@@ -128,24 +116,26 @@ class Kernel_Karras_alg_morton32;
 class Kernel_Karras_alg_morton64;
 
 template <>
-void sycl_karras_alg<u32>(sycl::queue &queue, u32 internal_cell_count, std::unique_ptr<sycl::buffer<u32>> &in_morton,
-                          std::unique_ptr<sycl::buffer<u32>> &out_buf_lchild_id,
-                          std::unique_ptr<sycl::buffer<u32>> &out_buf_rchild_id,
-                          std::unique_ptr<sycl::buffer<u8>> &out_buf_lchild_flag,
-                          std::unique_ptr<sycl::buffer<u8>> &out_buf_rchild_flag,
-                          std::unique_ptr<sycl::buffer<u32>> &out_buf_endrange) {
+void sycl_karras_alg<u32>(sycl::queue &queue, u32 internal_cell_count, 
+                          sycl::buffer<u32> &in_morton,
+                          sycl::buffer<u32> &out_buf_lchild_id,
+                          sycl::buffer<u32> &out_buf_rchild_id,
+                          sycl::buffer<u8> &out_buf_lchild_flag,
+                          sycl::buffer<u8> &out_buf_rchild_flag,
+                          sycl::buffer<u32> &out_buf_endrange) {
     __sycl_karras_alg<u32, Kernel_Karras_alg_morton32>(queue, internal_cell_count, in_morton, out_buf_lchild_id,
                                                        out_buf_rchild_id, out_buf_lchild_flag, out_buf_rchild_flag,
                                                        out_buf_endrange);
 }
 
 template <>
-void sycl_karras_alg<u64>(sycl::queue &queue, u32 internal_cell_count, std::unique_ptr<sycl::buffer<u64>> &in_morton,
-                          std::unique_ptr<sycl::buffer<u32>> &out_buf_lchild_id,
-                          std::unique_ptr<sycl::buffer<u32>> &out_buf_rchild_id,
-                          std::unique_ptr<sycl::buffer<u8>> &out_buf_lchild_flag,
-                          std::unique_ptr<sycl::buffer<u8>> &out_buf_rchild_flag,
-                          std::unique_ptr<sycl::buffer<u32>> &out_buf_endrange) {
+void sycl_karras_alg<u64>(sycl::queue &queue, u32 internal_cell_count, 
+                          sycl::buffer<u64> &in_morton,
+                          sycl::buffer<u32> &out_buf_lchild_id,
+                          sycl::buffer<u32> &out_buf_rchild_id,
+                          sycl::buffer<u8> &out_buf_lchild_flag,
+                          sycl::buffer<u8> &out_buf_rchild_flag,
+                          sycl::buffer<u32> &out_buf_endrange) {
     __sycl_karras_alg<u64, Kernel_Karras_alg_morton64>(queue, internal_cell_count, in_morton, out_buf_lchild_id,
                                                        out_buf_rchild_id, out_buf_lchild_flag, out_buf_rchild_flag,
                                                        out_buf_endrange);
