@@ -61,34 +61,17 @@ RadixTree<u_morton, vec3, dim>::RadixTree(
         buf_reduc_index_map = std::make_unique<sycl::buffer<u32>>(syclalgs::convert::vector_to_buf(reduc_index_map));
         
         
-        
-        
-
-        
 
         logger::debug_sycl_ln("RadixTree", "sycl_morton_remap_reduction");
         buf_tree_morton = std::make_unique<sycl::buffer<u_morton>>(tree_leaf_count);
 
         sycl_morton_remap_reduction(queue, tree_leaf_count, buf_reduc_index_map, tree_morton_codes.buf_morton, buf_tree_morton);
 
-        //tree_struct.buf_lchild_id   = std::make_unique<sycl::buffer<u32>>(tree_internal_count);
-        //tree_struct.buf_rchild_id   = std::make_unique<sycl::buffer<u32>>(tree_internal_count);
-        //tree_struct.buf_lchild_flag = std::make_unique<sycl::buffer<u8>>(tree_internal_count);
-        //tree_struct.buf_rchild_flag = std::make_unique<sycl::buffer<u8>>(tree_internal_count);
-        //tree_struct.buf_endrange    = std::make_unique<sycl::buffer<u32>>(tree_internal_count);
-//
-        //sycl_karras_alg(
-        //    queue, tree_internal_count, buf_tree_morton, tree_struct.buf_lchild_id, tree_struct.buf_rchild_id, tree_struct.buf_lchild_flag, tree_struct.buf_rchild_flag,
-        //    tree_struct.buf_endrange
-        //);
-
         tree_struct.build(queue, tree_leaf_count - 1, *buf_tree_morton);
 
-        one_cell_mode = false;
     } else if (tree_leaf_count == 1) {
         // throw shamrock_exc("one cell mode is not implemented");
         // TODO do some extensive test on one cell mode
-        one_cell_mode = true;
 
         
         tree_leaf_count     = 2;
@@ -96,26 +79,7 @@ RadixTree<u_morton, vec3, dim>::RadixTree(
 
         buf_reduc_index_map = std::make_unique<sycl::buffer<u32>>(syclalgs::convert::vector_to_buf(reduc_index_map));
         
-        tree_struct.internal_cell_count = 1;
-        tree_struct.buf_lchild_id   = std::make_unique<sycl::buffer<u32>>(tree_struct.internal_cell_count);
-        tree_struct.buf_rchild_id   = std::make_unique<sycl::buffer<u32>>(tree_struct.internal_cell_count);
-        tree_struct.buf_lchild_flag = std::make_unique<sycl::buffer<u8>>(tree_struct.internal_cell_count);
-        tree_struct.buf_rchild_flag = std::make_unique<sycl::buffer<u8>>(tree_struct.internal_cell_count);
-        tree_struct.buf_endrange    = std::make_unique<sycl::buffer<u32>>(tree_struct.internal_cell_count);
-
-        {
-            sycl::host_accessor rchild_id   {*tree_struct.buf_rchild_id  , sycl::write_only, sycl::no_init};
-            sycl::host_accessor lchild_id   {*tree_struct.buf_lchild_id  , sycl::write_only, sycl::no_init};
-            sycl::host_accessor rchild_flag {*tree_struct.buf_rchild_flag, sycl::write_only, sycl::no_init};
-            sycl::host_accessor lchild_flag {*tree_struct.buf_lchild_flag, sycl::write_only, sycl::no_init};
-            sycl::host_accessor endrange    {*tree_struct.buf_endrange   , sycl::write_only, sycl::no_init};
-
-            rchild_id[0]   = 0;
-            lchild_id[0]   = 1;
-            rchild_flag[0] = 1;
-            lchild_flag[0] = 1;
-            endrange[0]    = 1;
-        }
+        tree_struct.build_one_cell_mode();
 
     } else {
         throw shamutils::throw_with_loc<std::runtime_error>("empty patch should be skipped");
@@ -127,7 +91,7 @@ RadixTree<u_morton, vec3, dim>::RadixTree(
 
 
 template <class u_morton, class vec3, u32 dim> void RadixTree<u_morton, vec3, dim>::compute_cell_ibounding_box(sycl::queue &queue) {
-    if (!one_cell_mode) {
+    if (!tree_struct.one_cell_mode) {
 
         logger::debug_sycl_ln("RadixTree", "compute_cellvolume");
 
@@ -627,7 +591,6 @@ typename RadixTree<u_morton, vec3, dim>::CuttedTree RadixTree<u_morton, vec3, di
 
                 ret.tree_struct.build(queue, ret.tree_struct.internal_cell_count, *ret.buf_tree_morton);
 
-                one_cell_mode = false;
             }else{
                 throw ShamrockSyclException("not implemented");
             }

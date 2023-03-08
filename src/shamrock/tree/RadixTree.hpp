@@ -129,7 +129,6 @@ class RadixTree{
     u32 obj_cnt;
     u32 tree_leaf_count;
 
-    bool one_cell_mode = false;
     bool pos_t_range_built = false;
 
 
@@ -191,7 +190,6 @@ class RadixTree{
         bounding_box(other.bounding_box), 
         obj_cnt(other.obj_cnt), 
         tree_leaf_count(other.tree_leaf_count), 
-        one_cell_mode(other.one_cell_mode),
         tree_morton_codes{
             syclalgs::basic::duplicate(other.tree_morton_codes.buf_morton             ),
             syclalgs::basic::duplicate(other.tree_morton_codes.buf_particle_index_map )
@@ -211,7 +209,6 @@ class RadixTree{
         sum += sizeof(bounding_box);
         sum += sizeof(obj_cnt);
         sum += sizeof(tree_leaf_count);
-        sum += sizeof(one_cell_mode);
 
         auto add_ptr = [&](auto & a){
             if(a){
@@ -247,7 +244,6 @@ class RadixTree{
     bool is_same(RadixTree & other){
         bool cmp = true;
 
-        cmp = cmp && (one_cell_mode == other.one_cell_mode);
         cmp = cmp && (test_sycl_eq(std::get<0>(bounding_box) , std::get<0>(other.bounding_box)));
         cmp = cmp && (test_sycl_eq(std::get<1>(bounding_box) , std::get<1>(other.bounding_box)));
         cmp = cmp && (obj_cnt == other.obj_cnt);
@@ -691,7 +687,7 @@ namespace tree_comm {
 
                 {
                     sycl::host_accessor indmap {*rtree.buf_reduc_index_map};
-                    rtree.one_cell_mode = (indmap[rtree.buf_reduc_index_map->size()-1] == 0);
+                    rtree.tree_struct.one_cell_mode = (indmap[rtree.buf_reduc_index_map->size()-1] == 0);
                 }
 
             }
