@@ -60,7 +60,7 @@ namespace models::sph {
             while(step_time < end_time && sycl::fabs(step_time - end_time) > 1e-8){
 
                 logger::normal_ln("BasicSPHGas", "simulate until",
-                    shamutils::format_printf("%2.2f / %2.2f (%3.1f %)",step_time,end_time,100*(step_time-start_time)/(end_time-start_time))
+                    shamutils::format_printf("%2.2f / %2.2f (%3.1f %%)",step_time,end_time,100*(step_time-start_time)/(end_time-start_time))
                 );
 
                 if(step_cnt % freq_dump){

@@ -9,7 +9,7 @@
 #pragma once
 
 #include "aliases.hpp"
-#include "shamsys/Log.hpp"
+#include "fmt_bindings/fmt_defs.hpp"
 
 /**
  * @brief provide information abount the source location
@@ -59,10 +59,10 @@ struct SourceLocation {
             columnOffset(columnOffset) {}
 
     std::string format_multiline(){
-        return shamsys::format(
+        return fmt::format(
 R"=(
 ---- Source Location ----
-{} {}:{}
+{}:{}:{}
 call = {}
 -------------------------
 )="
@@ -70,6 +70,6 @@ call = {}
     }
 
     std::string format_one_line(){
-        return shamsys::format("{}:{}:{}", fileName, lineNumber, columnOffset);
+        return fmt::format("{}:{}:{}", fileName, lineNumber, columnOffset);
     }
 };

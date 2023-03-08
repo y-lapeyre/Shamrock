@@ -9,44 +9,53 @@
 #pragma once
 
 #include "aliases.hpp"
-
 #include "fmt_bindings/fmt_defs.hpp"
+#include "throwUtils.hpp"
 #include <vector>
 
 namespace shamutils {
 
     template<typename... T>
     inline std::string format(fmt::format_string<T...> fmt, T &&...args) {
-        return fmt::format(fmt, args...);
+        try {
+            return fmt::format(fmt, args...);
+        } catch (const std::exception &e) {
+            throw throw_with_loc<std::invalid_argument>("format failed : " + std::string(e.what()));
+        }
     }
 
     template<typename... T>
-    inline std::string format_printf(std::string format, T &&...args){
-        return fmt::sprintf(format, args...);
+    inline std::string format_printf(std::string format, const T & ...args) {
+        try {
+            return fmt::sprintf(format, args...);
+        } catch (const std::exception &e) {
+
+            throw throw_with_loc<std::invalid_argument>(
+                "format failed : " + std::string(e.what()) +
+                "\n fmt string : " + std::string(format)
+            );
+        }
     }
 
-    inline std::string readable_sizeof(double size){
+    inline std::string readable_sizeof(double size) {
 
         i32 i = 0;
         std::array units{"B", "kB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"};
 
-        if(size >= 0){
+        if (size >= 0) {
             while (size > 1024) {
                 size /= 1024;
                 i++;
             }
-        }else{
+        } else {
             i = 9;
         }
 
-        if(i > 8){
+        if (i > 8) {
             return format_printf("%s", "err val");
-        }else{
-            return format_printf( "%.2f %s", size, units[i]);
+        } else {
+            return format_printf("%.2f %s", size, units[i]);
         }
-
     }
 
-
-
-} // namespace shamsys
+} // namespace shamutils
