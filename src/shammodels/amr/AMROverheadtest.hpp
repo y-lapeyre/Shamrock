@@ -10,6 +10,7 @@
 
 #include "shamalgs/memory/memory.hpp"
 #include "shammath/intervals.hpp"
+#include "shamrock/tree/TreeStructureWalker.hpp"
 #include "shamutils/sycl_utils.hpp"
 #include "shamrock/amr/AMRGrid.hpp"
 #include "shamrock/legacy/utils/time_utils.hpp"
@@ -250,6 +251,46 @@ class AMRTestModel {
             t.end();
 
             logger::debug_ln("AMR Test", "walk time",t.get_time_str());
+
+            class InteractionCrit{
+
+                class InteractionAcc{
+                    sycl::accessor<u64_3,1,sycl::access::mode::read> tree_cell_coordrange_min;
+                    sycl::accessor<u64_3,1,sycl::access::mode::read> tree_cell_coordrange_max;
+
+                };
+
+                InteractionCrit() = default;
+            };
+
+            using namespace shamrock::tree;
+
+            TreeStructureWalker walk = generate_walk<Recompute>(
+                tree.tree_struct, 
+                pdat.get_obj_cnt(),
+                InteractionCrit{}
+            );
+
+            q.submit([&](sycl::handler &cgh) {
+
+                sycl::range range_npart{pdat.get_obj_cnt()};
+
+                sycl::accessor cell_low_bound{*pdat.get_field<u64_3>(0).get_buf(), cgh, sycl::read_only};
+                sycl::accessor cell_high_bound{*pdat.get_field<u64_3>(1).get_buf(), cgh, sycl::read_only};
+
+                auto walker = walk.get_access(cgh);
+
+                cgh.parallel_for(range_npart, [=](sycl::item<1> item) {
+
+                    u64_3 low_bound_a = cell_low_bound[item];
+                    u64_3 high_bound_a = cell_high_bound[item];
+
+                    u32 sum = 0;
+
+                    walker.for_each_node([](u32 node_id){},[](u32 node_id){});
+                });
+
+            });
 
             
         });

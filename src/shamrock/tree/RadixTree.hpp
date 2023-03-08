@@ -829,7 +829,7 @@ namespace walker {
     template<class u_morton,class vec3>
     class Radix_tree_accessor{public:
         sycl::accessor<u32 ,1,sycl::access::mode::read,sycl::target::device>  particle_index_map;
-        sycl::accessor<u32 ,1,sycl::access::mode::read,sycl::target::device> cell_index_map;
+        sycl::accessor<u32 ,1,sycl::access::mode::read,sycl::target::device>  cell_index_map;
         sycl::accessor<u32 ,1,sycl::access::mode::read,sycl::target::device>  rchild_id     ;
         sycl::accessor<u32 ,1,sycl::access::mode::read,sycl::target::device>  lchild_id     ;
         sycl::accessor<u8  ,1,sycl::access::mode::read,sycl::target::device>  rchild_flag   ;

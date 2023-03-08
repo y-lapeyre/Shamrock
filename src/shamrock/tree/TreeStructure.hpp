@@ -34,9 +34,9 @@ namespace shamrock::tree {
                    bool(buf_rchild_flag) && bool(buf_endrange);
         }
 
-        template<class T>
+        template<class u_morton>
         inline void
-        build(sycl::queue &queue, u32 _internal_cell_count, sycl::buffer<T> &morton_buf) {
+        build(sycl::queue &queue, u32 _internal_cell_count, sycl::buffer<u_morton> &morton_buf) {
 
             if (!(_internal_cell_count < morton_buf.size())) {
                 throw shamutils::throw_with_loc<std::runtime_error>(
@@ -68,24 +68,24 @@ namespace shamrock::tree {
 
         inline void build_one_cell_mode() {
             internal_cell_count = 1;
-            buf_lchild_id   = std::make_unique<sycl::buffer<u32>>(internal_cell_count);
-            buf_rchild_id   = std::make_unique<sycl::buffer<u32>>(internal_cell_count);
-            buf_lchild_flag = std::make_unique<sycl::buffer<u8>>(internal_cell_count);
-            buf_rchild_flag = std::make_unique<sycl::buffer<u8>>(internal_cell_count);
-            buf_endrange    = std::make_unique<sycl::buffer<u32>>(internal_cell_count);
+            buf_lchild_id       = std::make_unique<sycl::buffer<u32>>(internal_cell_count);
+            buf_rchild_id       = std::make_unique<sycl::buffer<u32>>(internal_cell_count);
+            buf_lchild_flag     = std::make_unique<sycl::buffer<u8>>(internal_cell_count);
+            buf_rchild_flag     = std::make_unique<sycl::buffer<u8>>(internal_cell_count);
+            buf_endrange        = std::make_unique<sycl::buffer<u32>>(internal_cell_count);
 
             {
-                sycl::host_accessor rchild_id   {*buf_rchild_id  , sycl::write_only, sycl::no_init};
-                sycl::host_accessor lchild_id   {*buf_lchild_id  , sycl::write_only, sycl::no_init};
-                sycl::host_accessor rchild_flag {*buf_rchild_flag, sycl::write_only, sycl::no_init};
-                sycl::host_accessor lchild_flag {*buf_lchild_flag, sycl::write_only, sycl::no_init};
-                sycl::host_accessor endrange    {*buf_endrange   , sycl::write_only, sycl::no_init};
+                sycl::host_accessor rchild_id{*buf_rchild_id, sycl::write_only, sycl::no_init};
+                sycl::host_accessor lchild_id{*buf_lchild_id, sycl::write_only, sycl::no_init};
+                sycl::host_accessor rchild_flag{*buf_rchild_flag, sycl::write_only, sycl::no_init};
+                sycl::host_accessor lchild_flag{*buf_lchild_flag, sycl::write_only, sycl::no_init};
+                sycl::host_accessor endrange{*buf_endrange, sycl::write_only, sycl::no_init};
 
                 rchild_id[0]   = 0;
-                lchild_id[0]   = 1;
+                lchild_id[0]   = -1;
                 rchild_flag[0] = 1;
-                lchild_flag[0] = 1;
-                endrange[0]    = 1;
+                lchild_flag[0] = -1;
+                endrange[0]    = 0;
             }
             one_cell_mode = true;
         }
@@ -93,7 +93,7 @@ namespace shamrock::tree {
         [[nodiscard]] inline u64 memsize() const {
             u64 sum = 0;
             sum += sizeof(internal_cell_count);
-        sum += sizeof(one_cell_mode);
+            sum += sizeof(one_cell_mode);
 
             auto add_ptr = [&](auto &a) {
                 if (a) {
@@ -130,7 +130,7 @@ namespace shamrock::tree {
             cmp = cmp && syclalgs::reduction::equals(
                              *t1.buf_endrange, *t2.buf_endrange, t1.internal_cell_count
                          );
-        cmp = cmp && (t1.one_cell_mode == t2.one_cell_mode);
+            cmp = cmp && (t1.one_cell_mode == t2.one_cell_mode);
 
             return cmp;
         }
@@ -138,8 +138,7 @@ namespace shamrock::tree {
         inline TreeStructure() = default;
 
         inline TreeStructure(const TreeStructure &other)
-            : internal_cell_count(other.internal_cell_count),
-                one_cell_mode(other.one_cell_mode),
+            : internal_cell_count(other.internal_cell_count), one_cell_mode(other.one_cell_mode),
               buf_lchild_id(syclalgs::basic::duplicate(other.buf_lchild_id)),     // size = internal
               buf_rchild_id(syclalgs::basic::duplicate(other.buf_rchild_id)),     // size = internal
               buf_lchild_flag(syclalgs::basic::duplicate(other.buf_lchild_flag)), // size = internal
