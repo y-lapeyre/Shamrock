@@ -139,7 +139,7 @@ class RadixTree{
     std::unique_ptr<sycl::buffer<morton_t>> buf_tree_morton; // size = leaf cnt
 
     //Karras alg
-    shamrock::tree::TreeStructure tree_struct;
+    shamrock::tree::TreeStructure<morton_t> tree_struct;
 
 
     std::unique_ptr<sycl::buffer<ipos_t>>    buf_pos_min_cell;     // size = total count //rename to ipos

@@ -17,6 +17,7 @@
 
 namespace shamrock::tree {
 
+    template<class u_morton>
     class TreeStructure {
 
         public:
@@ -34,7 +35,6 @@ namespace shamrock::tree {
                    bool(buf_rchild_flag) && bool(buf_endrange);
         }
 
-        template<class u_morton>
         inline void
         build(sycl::queue &queue, u32 _internal_cell_count, sycl::buffer<u_morton> &morton_buf) {
 

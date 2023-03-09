@@ -10,14 +10,14 @@
 
 #include "shamalgs/memory/memory.hpp"
 #include "shammath/intervals.hpp"
-#include "shamrock/tree/TreeStructureWalker.hpp"
-#include "shamutils/sycl_utils.hpp"
 #include "shamrock/amr/AMRGrid.hpp"
 #include "shamrock/legacy/utils/time_utils.hpp"
 #include "shamrock/patch/PatchData.hpp"
 #include "shamrock/tree/RadixTree.hpp"
+#include "shamrock/tree/TreeStructureWalker.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
+#include "shamutils/sycl_utils.hpp"
 #include <vector>
 
 class AMRTestModel {
@@ -42,14 +42,11 @@ class AMRTestModel {
               cell_high_bound{*pdat.get_field<u64_3>(1).get_buf(), cgh, sycl::read_only} {}
     };
 
-    
     template<class T>
     using buf_access_read = sycl::accessor<T, 1, sycl::access::mode::read, sycl::target::device>;
     template<class T>
-    using buf_access_read_write = sycl::accessor<T, 1, sycl::access::mode::read_write, sycl::target::device>;
-
-    
-
+    using buf_access_read_write =
+        sycl::accessor<T, 1, sycl::access::mode::read_write, sycl::target::device>;
 
     class RefineCellAccessor {
         public:
@@ -58,10 +55,6 @@ class AMRTestModel {
         RefineCellAccessor(sycl::handler &cgh, shamrock::patch::PatchData &pdat)
             : field{*pdat.get_field<u32>(2).get_buf(), cgh, sycl::read_write} {}
     };
-
-
-
-
 
     inline void dump_patch(u64 id) {
 
@@ -90,7 +83,7 @@ class AMRTestModel {
      */
     inline void refine() {
 
-        //dump_patch(4);
+        // dump_patch(4);
         auto splits = grid.gen_refine_list<RefineCritCellAccessor>(
             [](u32 cell_id, RefineCritCellAccessor acc) -> u32 {
                 u64_3 low_bound  = acc.cell_low_bound[cell_id];
@@ -98,8 +91,13 @@ class AMRTestModel {
 
                 using namespace shammath;
 
-                bool should_refine = is_in_half_open(low_bound, fact_p_len*u64_3{1, 1, 1}, fact_p_len*u64_3{4, 4, 4}) &&
-                                     is_in_half_open(high_bound, fact_p_len*u64_3{1, 1, 1}, fact_p_len*u64_3{4, 4, 4});
+                bool should_refine =
+                    is_in_half_open(
+                        low_bound, fact_p_len * u64_3{1, 1, 1}, fact_p_len * u64_3{4, 4, 4}
+                    ) &&
+                    is_in_half_open(
+                        high_bound, fact_p_len * u64_3{1, 1, 1}, fact_p_len * u64_3{4, 4, 4}
+                    );
 
                 should_refine = should_refine && (high_bound.x() - low_bound.x() > 1);
                 should_refine = should_refine && (high_bound.y() - low_bound.y() > 1);
@@ -119,7 +117,7 @@ class AMRTestModel {
                RefineCellAccessor acc) {
                 u32 val = acc.field[cur_idx];
 
-                #pragma unroll
+#pragma unroll
                 for (u32 pid = 0; pid < 8; pid++) {
                     acc.field[new_cells[pid]] = val;
                 }
@@ -127,7 +125,7 @@ class AMRTestModel {
 
         );
 
-        //dump_patch(4);
+        // dump_patch(4);
     }
 
     inline void derefine() {
@@ -138,8 +136,13 @@ class AMRTestModel {
 
                 using namespace shammath;
 
-                bool should_merge = is_in_half_open(low_bound, fact_p_len*u64_3{1, 1, 1}, fact_p_len*u64_3{4, 4, 4}) &&
-                                    is_in_half_open(high_bound, fact_p_len*u64_3{1, 1, 1}, fact_p_len*u64_3{4, 4, 4});
+                bool should_merge =
+                    is_in_half_open(
+                        low_bound, fact_p_len * u64_3{1, 1, 1}, fact_p_len * u64_3{4, 4, 4}
+                    ) &&
+                    is_in_half_open(
+                        high_bound, fact_p_len * u64_3{1, 1, 1}, fact_p_len * u64_3{4, 4, 4}
+                    );
 
                 return should_merge;
             }
@@ -165,7 +168,7 @@ class AMRTestModel {
             }
 
         );
-        //dump_patch(4);
+        // dump_patch(4);
     }
 
     inline void step() {
@@ -175,26 +178,23 @@ class AMRTestModel {
         refine();
         derefine();
 
-
         using namespace shamrock::patch;
 
-        sycl::queue & q = shamsys::instance::get_compute_queue();
+        sycl::queue &q = shamsys::instance::get_compute_queue();
 
         grid.sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
-
-            RadixTree<u64, u64_3, 3> tree (
+            RadixTree<u64, u64_3, 3> tree(
                 q,
                 grid.sched.get_sim_box().partch_coord_to_domain<u64_3>(cur_p),
                 pdat.get_field<u64_3>(0).get_buf(),
                 pdat.get_obj_cnt(),
-                0);
+                0
+            );
 
             tree.compute_cell_ibounding_box(q);
 
             tree.convert_bounding_box(q);
 
-
-            
             class WalkAccessors {
                 public:
                 sycl::accessor<u32, 1, sycl::access::mode::read_write, sycl::target::device> field;
@@ -205,22 +205,23 @@ class AMRTestModel {
 
             q.wait();
 
-            Timer t; t.start();
+            Timer t;
+            t.start();
             q.submit([&](sycl::handler &cgh) {
-
                 using Rta = walker::Radix_tree_accessor<u64, u64_3>;
                 Rta tree_acc(tree, cgh);
 
-                WalkAccessors uacc (cgh,pdat);
+                WalkAccessors uacc(cgh, pdat);
 
                 sycl::range range_npart{pdat.get_obj_cnt()};
 
-                sycl::accessor cell_low_bound{*pdat.get_field<u64_3>(0).get_buf(), cgh, sycl::read_only};
-                sycl::accessor cell_high_bound{*pdat.get_field<u64_3>(1).get_buf(), cgh, sycl::read_only};
+                sycl::accessor cell_low_bound{
+                    *pdat.get_field<u64_3>(0).get_buf(), cgh, sycl::read_only};
+                sycl::accessor cell_high_bound{
+                    *pdat.get_field<u64_3>(1).get_buf(), cgh, sycl::read_only};
 
                 cgh.parallel_for(range_npart, [=](sycl::item<1> item) {
-
-                    u64_3 low_bound_a = cell_low_bound[item];
+                    u64_3 low_bound_a  = cell_low_bound[item];
                     u64_3 high_bound_a = cell_high_bound[item];
 
                     u32 sum = 0;
@@ -230,69 +231,102 @@ class AMRTestModel {
                         [&](u32 node_id) {
                             u64_3 cur_pos_min_cell_b = tree_acc.pos_min_cell[node_id];
                             u64_3 cur_pos_max_cell_b = tree_acc.pos_max_cell[node_id];
-                            
-                            return shammath::domain_are_connected(low_bound_a,high_bound_a,cur_pos_min_cell_b,cur_pos_max_cell_b);
+
+                            return shammath::domain_are_connected(
+                                low_bound_a, high_bound_a, cur_pos_min_cell_b, cur_pos_max_cell_b
+                            );
                         },
                         [&](u32 id_b) {
                             // compute only omega_a
-                            
-                            sum += 1;
 
+                            sum += 1;
                         },
                         [](u32 node_id) {}
                     );
 
                     uacc.field[item] = sum;
-
                 });
-
             });
             q.wait();
             t.end();
 
-            logger::debug_ln("AMR Test", "walk time",t.get_time_str());
+            logger::debug_ln("AMR Test", "walk time", t.get_time_str());
 
-            class InteractionCrit{
 
-                class InteractionAcc{
-                    sycl::accessor<u64_3,1,sycl::access::mode::read> tree_cell_coordrange_min;
-                    sycl::accessor<u64_3,1,sycl::access::mode::read> tree_cell_coordrange_max;
 
+
+
+
+            class InteractionCrit {
+                public:
+                shammath::CoordRange<u64_3> bounds;
+
+                RadixTree<u64, u64_3, 3> &tree;
+                PatchData &pdat;
+
+                class Access {
+                    public:
+                    sycl::accessor<u64_3, 1, sycl::access::mode::read> cell_low_bound;
+                    sycl::accessor<u64_3, 1, sycl::access::mode::read> cell_high_bound;
+
+                    Access(InteractionCrit crit, sycl::handler &cgh)
+                        : cell_low_bound{*crit.pdat.get_field<u64_3>(0).get_buf(), cgh, sycl::read_only},
+                          cell_high_bound{
+                              *crit.pdat.get_field<u64_3>(1).get_buf(), cgh, sycl::read_only} {}
+
+                    class Values {
+                        public:
+                        u64_3 cell_low_bound;
+                        u64_3 cell_high_bound;
+                        Values(Access acc, u32 index)
+                            : cell_low_bound(acc.cell_low_bound[index]),
+                              cell_high_bound(acc.cell_high_bound[index]) {}
+                    };
                 };
 
-                InteractionCrit() = default;
+                class TreeFieldAccess {
+                    public:
+                    sycl::accessor<u64_3, 1, sycl::access::mode::read> tree_cell_coordrange_min;
+                    sycl::accessor<u64_3, 1, sycl::access::mode::read> tree_cell_coordrange_max;
+
+                    TreeFieldAccess(InteractionCrit crit, sycl::handler &cgh)
+                        : tree_cell_coordrange_min{*crit.tree.buf_pos_min_cell_flt, cgh, sycl::read_only},
+                          tree_cell_coordrange_max{
+                              *crit.tree.buf_pos_max_cell_flt, cgh, sycl::read_only} {}
+                };
+
+                static bool criterion(u32 node_index, TreeFieldAccess tree_acc, Access::Values current_values){
+                    u64_3 cur_pos_min_cell_b = tree_acc.tree_cell_coordrange_min[node_index];
+                    u64_3 cur_pos_max_cell_b = tree_acc.tree_cell_coordrange_max[node_index];
+
+                    return shammath::domain_are_connected(
+                        current_values.cell_low_bound, current_values.cell_high_bound, cur_pos_min_cell_b, cur_pos_max_cell_b
+                    );
+                };
             };
 
             using namespace shamrock::tree;
 
             TreeStructureWalker walk = generate_walk<Recompute>(
-                tree.tree_struct, 
-                pdat.get_obj_cnt(),
-                InteractionCrit{}
+                tree.tree_struct, pdat.get_obj_cnt(), InteractionCrit{{}, tree, pdat}
             );
 
             q.submit([&](sycl::handler &cgh) {
 
-                sycl::range range_npart{pdat.get_obj_cnt()};
-
-                sycl::accessor cell_low_bound{*pdat.get_field<u64_3>(0).get_buf(), cgh, sycl::read_only};
-                sycl::accessor cell_high_bound{*pdat.get_field<u64_3>(1).get_buf(), cgh, sycl::read_only};
-
                 auto walker = walk.get_access(cgh);
 
-                cgh.parallel_for(range_npart, [=](sycl::item<1> item) {
-
-                    u64_3 low_bound_a = cell_low_bound[item];
-                    u64_3 high_bound_a = cell_high_bound[item];
+                cgh.parallel_for(walker.get_sycl_range(), [=](sycl::item<1> item) {
 
                     u32 sum = 0;
 
-                    walker.for_each_node([](u32 node_id){},[](u32 node_id){});
+                    walker.for_each_node(
+                        item, [&](u32 node_id) {
+                            sum += 1;
+                        }, [&](u32 node_id) {}
+                    );
+
                 });
-
             });
-
-            
         });
     }
 };

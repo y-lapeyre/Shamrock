@@ -196,10 +196,10 @@ auto RadixTree<u_morton, vec, dim>::compute_int_boxes(
 
         auto h_max_cell = buf_cell_int_rad_buf->template get_access<sycl::access::mode::read_write>(cgh);
 
-        auto rchild_id   = tree_struct.buf_rchild_id->get_access<sycl::access::mode::read>(cgh);
-        auto lchild_id   = tree_struct.buf_lchild_id->get_access<sycl::access::mode::read>(cgh);
-        auto rchild_flag = tree_struct.buf_rchild_flag->get_access<sycl::access::mode::read>(cgh);
-        auto lchild_flag = tree_struct.buf_lchild_flag->get_access<sycl::access::mode::read>(cgh);
+        sycl::accessor rchild_id   {*tree_struct.buf_rchild_id  ,cgh,sycl::read_only};
+        sycl::accessor lchild_id   {*tree_struct.buf_lchild_id  ,cgh,sycl::read_only};
+        sycl::accessor rchild_flag {*tree_struct.buf_rchild_flag,cgh,sycl::read_only};
+        sycl::accessor lchild_flag {*tree_struct.buf_lchild_flag,cgh,sycl::read_only};
 
         cgh.parallel_for(range_tree, [=](sycl::item<1> item) {
             u32 gid = (u32)item.get_id(0);
