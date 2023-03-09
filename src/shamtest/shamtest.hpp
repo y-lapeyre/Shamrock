@@ -9,6 +9,7 @@
 #pragma once
 
 #include "aliases.hpp"
+#include "shamutils/SourceLocation.hpp"
 
 enum TestType{
     Benchmark,Analysis,Unittest
@@ -57,13 +58,18 @@ namespace shamtest::details {
         //define member function here
         //to register asserts
 
+        inline std::string gen_comment(std::string s, SourceLocation loc){
+            return s + "\n" + loc.format_multiline();
+        }
 
-        inline void assert_bool(std::string assert_name,bool v){
-            asserts.push_back(TestAssert{v,std::move(assert_name),""});
+
+        inline void assert_bool(std::string assert_name,bool v, SourceLocation loc = SourceLocation{}){
+
+            asserts.push_back(TestAssert{v,std::move(assert_name),gen_comment("", loc)});
         }
 
         template<class T>
-        inline void assert_equal(std::string assert_name,T a, T b){
+        inline void assert_equal(std::string assert_name,T a, T b, SourceLocation loc = SourceLocation{}){
 
             bool t = a==b;
             std::string comment = "";
@@ -72,12 +78,12 @@ namespace shamtest::details {
                 comment = "left="+std::to_string(a) + " right=" + std::to_string(b);
             }
 
-            asserts.push_back(TestAssert{t,std::move(assert_name),comment});
+            asserts.push_back(TestAssert{t,std::move(assert_name),gen_comment(comment, loc)});
         }
 
 
         
-        inline void assert_float_equal(std::string assert_name,f64 a, f64 b, f64 eps){
+        inline void assert_float_equal(std::string assert_name,f64 a, f64 b, f64 eps, SourceLocation loc = SourceLocation{}){
             f64 diff = sycl::fabs(a - b);
 
             bool t = diff < eps;
@@ -87,11 +93,11 @@ namespace shamtest::details {
                 comment = "left="+std::to_string(a) + " right=" + std::to_string(b) + " diff="+ std::to_string(diff);
             }
 
-            asserts.push_back(TestAssert{t,std::move(assert_name),comment});
+            asserts.push_back(TestAssert{t,std::move(assert_name),gen_comment(comment, loc)});
         }
 
-        inline void assert_add_comment(std::string assert_name,bool v,std::string comment){
-            asserts.push_back(TestAssert{v,std::move(assert_name),std::move(comment)});
+        inline void assert_add_comment(std::string assert_name,bool v,std::string comment, SourceLocation loc = SourceLocation{}){
+            asserts.push_back(TestAssert{v,std::move(assert_name),gen_comment(comment, loc)});
         }
 
         std::string serialize();
