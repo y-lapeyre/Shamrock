@@ -252,11 +252,6 @@ class AMRTestModel {
 
             logger::debug_ln("AMR Test", "walk time", t.get_time_str());
 
-
-
-
-
-
             class InteractionCrit {
                 public:
                 shammath::CoordRange<u64_3> bounds;
@@ -295,12 +290,16 @@ class AMRTestModel {
                               *crit.tree.buf_pos_max_cell_flt, cgh, sycl::read_only} {}
                 };
 
-                static bool criterion(u32 node_index, TreeFieldAccess tree_acc, Access::Values current_values){
+                static bool
+                criterion(u32 node_index, TreeFieldAccess tree_acc, Access::Values current_values) {
                     u64_3 cur_pos_min_cell_b = tree_acc.tree_cell_coordrange_min[node_index];
                     u64_3 cur_pos_max_cell_b = tree_acc.tree_cell_coordrange_max[node_index];
 
                     return shammath::domain_are_connected(
-                        current_values.cell_low_bound, current_values.cell_high_bound, cur_pos_min_cell_b, cur_pos_max_cell_b
+                        current_values.cell_low_bound,
+                        current_values.cell_high_bound,
+                        cur_pos_min_cell_b,
+                        cur_pos_max_cell_b
                     );
                 };
             };
@@ -312,19 +311,21 @@ class AMRTestModel {
             );
 
             q.submit([&](sycl::handler &cgh) {
-
-                auto walker = walk.get_access(cgh);
+                auto walker        = walk.get_access(cgh);
+                auto leaf_iterator = tree.get_leaf_access(cgh);
 
                 cgh.parallel_for(walker.get_sycl_range(), [=](sycl::item<1> item) {
-
                     u32 sum = 0;
 
                     walker.for_each_node(
-                        item, [&](u32 node_id) {
-                            sum += 1;
-                        }, [&](u32 node_id) {}
+                        item,
+                        [&](u32 /*node_id*/, u32 leaf_iterator_id) {
+                            leaf_iterator.iter_object_in_leaf(
+                                leaf_iterator_id, [&](u32 /*obj_id*/) { sum += 1; }
+                            );
+                        },
+                        [&](u32 node_id) {}
                     );
-
                 });
             });
         });

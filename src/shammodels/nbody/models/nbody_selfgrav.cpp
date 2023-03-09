@@ -170,20 +170,20 @@ class FMMInteract_cd{
 
 template<class Tree,class vec, class flt>
 void compute_multipoles(Tree & rtree, sycl::buffer<vec> & pos_part, sycl::buffer<flt> & grav_multipoles, flt gpart_mass){
-    logger::debug_sycl_ln("RTreeFMM", "computing leaf moments (",rtree.tree_leaf_count,")");
+    logger::debug_sycl_ln("RTreeFMM", "computing leaf moments (",rtree.tree_reduced_morton_codes.tree_leaf_count,")");
     shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
 
         u32 offset_leaf = rtree.tree_struct.internal_cell_count;
 
         auto xyz = sycl::accessor {pos_part, cgh,sycl::read_only};
-        auto cell_particle_ids =sycl::accessor {*rtree.buf_reduc_index_map, cgh,sycl::read_only};
+        auto cell_particle_ids =sycl::accessor {*rtree.tree_reduced_morton_codes.buf_reduc_index_map, cgh,sycl::read_only};
         auto particle_index_map = sycl::accessor {*rtree.tree_morton_codes.buf_particle_index_map, cgh,sycl::read_only};
         auto cell_max = sycl::accessor{*rtree.buf_pos_max_cell_flt,cgh,sycl::read_only};
         auto cell_min = sycl::accessor{*rtree.buf_pos_min_cell_flt,cgh,sycl::read_only};
         auto multipoles = sycl::accessor {grav_multipoles, cgh,sycl::write_only,sycl::no_init};
 
 
-        sycl::range<1> range_leaf_cell{rtree.tree_leaf_count};
+        sycl::range<1> range_leaf_cell{rtree.tree_reduced_morton_codes.tree_leaf_count};
 
         const flt m = gpart_mass;
 
@@ -221,11 +221,11 @@ void compute_multipoles(Tree & rtree, sycl::buffer<vec> & pos_part, sycl::buffer
 
 
 
-    auto buf_is_computed = std::make_unique< sycl::buffer<u8>>( (rtree.tree_struct.internal_cell_count + rtree.tree_leaf_count)  );
+    auto buf_is_computed = std::make_unique< sycl::buffer<u8>>( (rtree.tree_struct.internal_cell_count + rtree.tree_reduced_morton_codes.tree_leaf_count)  );
 
     shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
         auto is_computed = sycl::accessor {*buf_is_computed, cgh , sycl::write_only, sycl::no_init};
-        sycl::range<1> range_internal_count{rtree.tree_struct.internal_cell_count + rtree.tree_leaf_count};
+        sycl::range<1> range_internal_count{rtree.tree_struct.internal_cell_count + rtree.tree_reduced_morton_codes.tree_leaf_count};
 
         u32 int_cnt = rtree.tree_struct.internal_cell_count;
 
@@ -532,13 +532,13 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(PatchScheduler &sched, f64 old_ti
             auto & cell_lenght  = c_len->radix_tree_field_buf;
             auto & cell_centers = c_cen->radix_tree_field_buf;
 
-            cell_centers = std::make_unique<sycl::buffer<vec3>>(rtree.tree_struct.internal_cell_count + rtree.tree_leaf_count);
-            cell_lenght = std::make_unique<sycl::buffer<flt>>(rtree.tree_struct.internal_cell_count + rtree.tree_leaf_count);
+            cell_centers = std::make_unique<sycl::buffer<vec3>>(rtree.tree_struct.internal_cell_count + rtree.tree_reduced_morton_codes.tree_leaf_count);
+            cell_lenght = std::make_unique<sycl::buffer<flt>>(rtree.tree_struct.internal_cell_count + rtree.tree_reduced_morton_codes.tree_leaf_count);
 
             shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
 
 
-                sycl::range<1> range_tree = sycl::range<1>{rtree.tree_leaf_count + rtree.tree_struct.internal_cell_count};
+                sycl::range<1> range_tree = sycl::range<1>{rtree.tree_reduced_morton_codes.tree_leaf_count + rtree.tree_struct.internal_cell_count};
 
                 auto pos_min_cell = sycl::accessor{*rtree.buf_pos_min_cell_flt,cgh,sycl::read_only};
                 auto pos_max_cell = sycl::accessor{*rtree.buf_pos_max_cell_flt,cgh,sycl::read_only};
@@ -575,7 +575,7 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(PatchScheduler &sched, f64 old_ti
 
             auto & rtree = *radix_trees[id_patch];
             
-            u32 num_component_multipoles_fmm = (rtree.tree_struct.internal_cell_count + rtree.tree_leaf_count)*SymTensorCollection<flt,0,fmm_order>::num_component;
+            u32 num_component_multipoles_fmm = (rtree.tree_struct.internal_cell_count + rtree.tree_reduced_morton_codes.tree_leaf_count)*SymTensorCollection<flt,0,fmm_order>::num_component;
 
             auto & ref_field = multipoles[id_patch];
             ref_field = std::make_unique<RadixTreeField<flt> >(); 
@@ -626,7 +626,7 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(PatchScheduler &sched, f64 old_ti
             std::unique_ptr<RtreeField> & field_min = min_tree_slenght_map[k];
             std::unique_ptr<RtreeField> & field_max = max_tree_slenght_map[k];
 
-            u32 total_cell_bount = rtree_ptr->tree_struct.internal_cell_count + rtree_ptr->tree_leaf_count;
+            u32 total_cell_bount = rtree_ptr->tree_struct.internal_cell_count + rtree_ptr->tree_reduced_morton_codes.tree_leaf_count;
 
             field_min = std::make_unique<RtreeField>();
             field_min->nvar = 1;
@@ -721,7 +721,7 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(PatchScheduler &sched, f64 old_ti
                 auto c_centers = sycl::accessor{*cell_centers,cgh,sycl::read_only};
                 auto c_lenght = sycl::accessor{*cell_lenght,cgh,sycl::read_only};
 
-                sycl::range<1> range_leaf = sycl::range<1>{rtree.tree_leaf_count};
+                sycl::range<1> range_leaf = sycl::range<1>{rtree.tree_reduced_morton_codes.tree_leaf_count};
 
                 u32 leaf_offset = rtree.tree_struct.internal_cell_count;
 
@@ -889,13 +889,13 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(PatchScheduler &sched, f64 old_ti
 
 
                 //compute interface cell info
-                auto interf_cell_centers = std::make_unique<sycl::buffer<vec3>>(rtree_interf.tree_struct.internal_cell_count + rtree_interf.tree_leaf_count);
-                auto interf_cell_lenght = std::make_unique<sycl::buffer<flt>>(rtree_interf.tree_struct.internal_cell_count + rtree_interf.tree_leaf_count);
+                auto interf_cell_centers = std::make_unique<sycl::buffer<vec3>>(rtree_interf.tree_struct.internal_cell_count + rtree_interf.tree_reduced_morton_codes.tree_leaf_count);
+                auto interf_cell_lenght = std::make_unique<sycl::buffer<flt>>(rtree_interf.tree_struct.internal_cell_count + rtree_interf.tree_reduced_morton_codes.tree_leaf_count);
 
                 shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
 
 
-                    sycl::range<1> range_tree = sycl::range<1>{rtree_interf.tree_leaf_count + rtree_interf.tree_struct.internal_cell_count};
+                    sycl::range<1> range_tree = sycl::range<1>{rtree_interf.tree_reduced_morton_codes.tree_leaf_count + rtree_interf.tree_struct.internal_cell_count};
 
                     auto pos_min_cell = sycl::accessor{*rtree_interf.buf_pos_min_cell_flt,cgh,sycl::read_only};
                     auto pos_max_cell = sycl::accessor{*rtree_interf.buf_pos_max_cell_flt,cgh,sycl::read_only};
@@ -940,7 +940,7 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(PatchScheduler &sched, f64 old_ti
                     auto cur_c_lenght = sycl::accessor{*cur_cell_lenght,cgh,sycl::read_only};
 
 
-                    sycl::range<1> cur_range_leaf = sycl::range<1>{rtree_cur.tree_leaf_count};
+                    sycl::range<1> cur_range_leaf = sycl::range<1>{rtree_cur.tree_reduced_morton_codes.tree_leaf_count};
 
 
                     u32 cur_leaf_offset = rtree_cur.tree_struct.internal_cell_count;

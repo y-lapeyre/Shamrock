@@ -10,6 +10,7 @@
 
 #include "aliases.hpp"
 #include "shammath/CoordRange.hpp"
+#include "shamrock/legacy/algs/sycl/basic/basic.hpp"
 #include "shamrock/tree/RadixTreeMortonBuilder.hpp"
 
 namespace shamrock::tree {
@@ -40,6 +41,29 @@ namespace shamrock::tree {
                 buf_particle_index_map
             );
         }
+
+        [[nodiscard]] inline u64 memsize() const {
+            u64 sum = 0;
+
+            auto add_ptr = [&](auto &a) {
+                if (a) {
+                    sum += a->byte_size();
+                }
+            };
+
+            add_ptr(buf_morton);
+            add_ptr(buf_particle_index_map);
+
+            return sum;
+        }
+
+        inline TreeMortonCodes() = default;
+
+        inline TreeMortonCodes(const TreeMortonCodes &other)
+            : 
+              buf_morton(syclalgs::basic::duplicate(other.buf_morton)),
+              buf_particle_index_map(syclalgs::basic::duplicate(other.buf_particle_index_map)) 
+        {}
     };
 
 } // namespace shamrock::tree

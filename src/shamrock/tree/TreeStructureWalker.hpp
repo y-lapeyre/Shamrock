@@ -125,7 +125,7 @@ namespace shamrock::tree::details {
                         // leaf and cell can interact
                         if (current_node_id >= leaf_offset) {
 
-                            found_case(current_node_id);
+                            found_case(current_node_id, current_node_id - leaf_offset);
 
                             // can interact not leaf => stack
                         } else {
@@ -146,6 +146,10 @@ namespace shamrock::tree::details {
                 }
                 
 
+            }
+
+            inline u32 get_iterator_id(u32 leaf_id){
+                return leaf_id - leaf_offset;
             }
 
             
