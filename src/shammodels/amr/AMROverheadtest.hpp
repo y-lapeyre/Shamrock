@@ -252,6 +252,11 @@ class AMRTestModel {
 
             logger::debug_ln("AMR Test", "walk time", t.get_time_str());
 
+
+
+
+
+
             class InteractionCrit {
                 public:
                 shammath::CoordRange<u64_3> bounds;
@@ -304,6 +309,11 @@ class AMRTestModel {
                 };
             };
 
+
+
+
+
+
             using namespace shamrock::tree;
 
             TreeStructureWalker walk = generate_walk<Recompute>(
@@ -321,13 +331,21 @@ class AMRTestModel {
                         item,
                         [&](u32 /*node_id*/, u32 leaf_iterator_id) {
                             leaf_iterator.iter_object_in_leaf(
-                                leaf_iterator_id, [&](u32 /*obj_id*/) { sum += 1; }
+                                leaf_iterator_id, [&](u32 /*obj_id*/) { 
+                                    sum += 1; 
+                                }
                             );
                         },
                         [&](u32 node_id) {}
                     );
                 });
+                
             });
+
+
+
+
+
         });
     }
 };

@@ -87,7 +87,7 @@ namespace shamrock::tree {
                 // TODO do some extensive test on one cell mode
 
                 tree_leaf_count = 2;
-                reduc_index_map.push_back(0);
+                //reduc_index_map.push_back(-1);
 
                 buf_reduc_index_map = std::make_unique<sycl::buffer<u32>>(
                     syclalgs::convert::vector_to_buf(reduc_index_map)
