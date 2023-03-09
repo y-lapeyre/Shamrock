@@ -143,6 +143,7 @@ void __reduction_alg(
             }
         }
         reduc_index_map.push_back(morton_count);
+        reduc_index_map.push_back(0); //for one cell mode the last range is inverted to avoid iteration
     }
 
 }

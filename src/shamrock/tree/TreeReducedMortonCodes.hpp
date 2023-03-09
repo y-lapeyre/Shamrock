@@ -40,6 +40,11 @@ namespace shamrock::tree {
             logger::debug_sycl_ln(
                 "RadixTree", "reduction algorithm"
             ); // TODO put reduction level in class member
+
+
+            // TODO document that the layout of reduc_index_map is in the end {0 .. ,i .. ,N ,0} 
+            // with the trailling 0 to invert the range for the walk in one cell mode
+
             std::vector<u32> reduc_index_map;
             reduction_alg(
                 queue,
@@ -59,15 +64,12 @@ namespace shamrock::tree {
                 ") ratio :",
                 shamutils::format_printf("%2.2f", f32(obj_cnt) / f32(tree_leaf_count))
             );
+            
+            buf_reduc_index_map = std::make_unique<sycl::buffer<u32>>(
+                syclalgs::convert::vector_to_buf(reduc_index_map)
+            );
 
             if (tree_leaf_count > 1) {
-
-                // buf_reduc_index_map =
-                // std::make_unique<sycl::buffer<u32>>(reduc_index_map.data(),reduc_index_map.size());
-
-                buf_reduc_index_map = std::make_unique<sycl::buffer<u32>>(
-                    syclalgs::convert::vector_to_buf(reduc_index_map)
-                );
 
                 logger::debug_sycl_ln("RadixTree", "sycl_morton_remap_reduction");
                 buf_tree_morton = std::make_unique<sycl::buffer<u_morton>>(tree_leaf_count);
@@ -83,21 +85,17 @@ namespace shamrock::tree {
                 one_cell_mode = false;
 
             } else if (tree_leaf_count == 1) {
-                // throw shamrock_exc("one cell mode is not implemented");
-                // TODO do some extensive test on one cell mode
 
                 tree_leaf_count = 2;
-                //reduc_index_map.push_back(-1);
-
-                buf_reduc_index_map = std::make_unique<sycl::buffer<u32>>(
-                    syclalgs::convert::vector_to_buf(reduc_index_map)
-                );
-
                 one_cell_mode = true;
 
-            } else {
-                throw shamutils::throw_with_loc<std::runtime_error>("empty patch should be skipped"
+                buf_tree_morton = std::make_unique<sycl::buffer<u_morton>>(
+                    syclalgs::convert::vector_to_buf(std::vector<u_morton>{0,0}) 
+                    // tree morton = {0,0} is a flag for the one cell mode
                 );
+
+            } else {
+                throw shamutils::throw_with_loc<std::runtime_error>("0 leaf tree cannot exists");
             }
         }
 

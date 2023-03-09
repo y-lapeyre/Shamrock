@@ -82,11 +82,11 @@ namespace shamrock::tree {
                 sycl::host_accessor endrange{*buf_endrange, sycl::write_only, sycl::no_init};
 
                 lchild_id[0]   = 0;
-                rchild_id[0]   = -1;
+                rchild_id[0]   = 1;
                 lchild_flag[0] = 1;
-                rchild_flag[0] = -1;
-                
-                endrange[0]    = 0;
+                rchild_flag[0] = 1;
+
+                endrange[0]    = 1;
             }
             one_cell_mode = true;
         }

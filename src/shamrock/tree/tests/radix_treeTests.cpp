@@ -661,9 +661,10 @@ void test_inclusion(u32 Npart, u32 reduc_level) {
             u32 lid = tree_lchild_id[i] + tree_leaf_offset * tree_lchild_flag[i];
             u32 rid = tree_rchild_id[i] + tree_leaf_offset * tree_rchild_flag[i];
 
-            if(rtree.tree_struct.one_cell_mode){
-                rid = 2;
-            }
+            //because the rid is volontarly modified in one cell mode
+            //if(rtree.tree_struct.one_cell_mode){
+            //    rid = 2;
+            //}
 
             auto cur_pos_min_cell_bl = tree_acc_pos_min_cell[lid];
             auto cur_pos_max_cell_bl = tree_acc_pos_max_cell[lid];

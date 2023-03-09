@@ -142,18 +142,19 @@ inline void shamrock::tree::details::
     u32 stack_cursor = tree_depth - 1;
     std::array<u32, tree_depth> id_stack;
 
-    if (one_cell_mode) {
-
-        bool valid_root = InteractCrit::criterion(0, criterion_tree_f_acc, int_values);
-
-        if (valid_root) {
-            found_case(leaf_offset, 0);
-        } else {
-            reject_case(0);
-        }
-
-        return;
-    }
+    //Should be unrequired considering the change made to the tree building
+    //if (one_cell_mode) {
+    //
+    //    bool valid_root = InteractCrit::criterion(0, criterion_tree_f_acc, int_values);
+    //
+    //    if (valid_root) {
+    //        found_case(leaf_offset, 0);
+    //    } else {
+    //        reject_case(0);
+    //    }
+    //
+    //    return;
+    //}
 
     id_stack[stack_cursor] = 0;
 
