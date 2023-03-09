@@ -14,33 +14,9 @@
 
 #include "shamrock/tree/RadixTree.hpp"
 #include <vector>
+#include "shamalgs/random/random.hpp"
 
 
-
-template<class flt>
-std::unique_ptr<sycl::buffer<sycl::vec<flt,3>>> pos_partgen_distrib(u32 npart){
-
-    using vec = sycl::vec<flt,3>;
-
-    std::mt19937 eng(0x1111);
-    std::uniform_real_distribution<flt> distf(-1, 1);
-
-    auto pos_part = std::make_unique<sycl::buffer<vec>>(npart);
-
-    {
-        sycl::host_accessor<vec> pos {*pos_part};
-
-        for (u32 i = 0; i < npart; i ++) {
-
-
-            if(i%10000000 == 0) logger::raw_ln(i,"/",npart);
-            pos[i] = vec{distf(eng), distf(eng), distf(eng)};
-        }
-    }
-
-
-    return std::move(pos_part);
-}
 
 
 
@@ -631,30 +607,59 @@ Test_start("radix_tree", treeleveljump_cell_range_test, 1){
 #endif
 
 
+template<class vec>
+shammath::CoordRange<vec> get_test_coord_ranges(); 
+
+template<>
+shammath::CoordRange<f32_3> get_test_coord_ranges(){
+    return {f32_3{-1,-1,-1},f32_3{1,1,1}};
+}
+template<>
+shammath::CoordRange<f64_3> get_test_coord_ranges(){
+    return {f64_3{-1,-1,-1},f64_3{1,1,1}};
+}
+
+template<>
+shammath::CoordRange<u32_3> get_test_coord_ranges(){
+    using Prop = shamutils::sycl_utils::VectorProperties<u32_3>;
+    return {u32_3{0,0,0},Prop::get_max()/2 +1};
+}
+template<>
+shammath::CoordRange<u64_3> get_test_coord_ranges(){
+    using Prop = shamutils::sycl_utils::VectorProperties<u64_3>;
+    return {u64_3{0,0,0},Prop::get_max()/2 +1};
+}
+
+
 template<class u_morton, class flt>
-void test_inclusion(u32 Npart){
+void test_inclusion(u32 Npart, u32 reduc_level){
     using vec = sycl::vec<flt,3>;
 
-    auto pos = pos_partgen_distrib<flt>(Npart);
+    auto coord_range = get_test_coord_ranges<vec>();
+
+    auto pos = shamalgs::random::mock_buffer_ptr<vec>(0x111,Npart,coord_range.lower,coord_range.upper);
 
     RadixTree<u_morton, vec,3> rtree = RadixTree<u_morton, vec,3>(
                 shamsys::instance::get_compute_queue(), 
-                {vec{-1,-1,-1},vec{1,1,1}},
+                {coord_range.lower,coord_range.upper},
                 pos, 
-                Npart , 0
+                Npart , reduc_level
             );
 
     rtree.compute_cell_ibounding_box(shamsys::instance::get_compute_queue());
 
     bool inclusion_valid = true;
+
+    std::string comment;
+
     {
         sycl::host_accessor tree_acc_pos_min_cell{*rtree.buf_pos_min_cell,sycl::read_only};
         sycl::host_accessor tree_acc_pos_max_cell{*rtree.buf_pos_max_cell,sycl::read_only};
-        u32 tree_leaf_offset = rtree.tree_internal_count;
-        sycl::host_accessor tree_lchild_id   {*rtree.buf_lchild_id  ,sycl::read_only};
-        sycl::host_accessor tree_rchild_id   {*rtree.buf_rchild_id  ,sycl::read_only};
-        sycl::host_accessor tree_lchild_flag {*rtree.buf_lchild_flag,sycl::read_only};
-        sycl::host_accessor tree_rchild_flag {*rtree.buf_rchild_flag,sycl::read_only};
+        u32 tree_leaf_offset = rtree.tree_struct.internal_cell_count;
+        sycl::host_accessor tree_lchild_id   {*rtree.tree_struct.buf_lchild_id  ,sycl::read_only};
+        sycl::host_accessor tree_rchild_id   {*rtree.tree_struct.buf_rchild_id  ,sycl::read_only};
+        sycl::host_accessor tree_lchild_flag {*rtree.tree_struct.buf_lchild_flag,sycl::read_only};
+        sycl::host_accessor tree_rchild_flag {*rtree.tree_struct.buf_rchild_flag,sycl::read_only};
 
         for (u32 i = 0; i< tree_leaf_offset; i++) {
             auto cur_pos_min_cell_a = tree_acc_pos_min_cell[i];
@@ -683,16 +688,45 @@ void test_inclusion(u32 Npart){
             bool l_ok = inclusion_crit(cur_pos_min_cell_bl,cur_pos_max_cell_bl);
             bool r_ok = inclusion_crit(cur_pos_min_cell_br,cur_pos_max_cell_br);
 
-            inclusion_valid = inclusion_valid && (l_ok && r_ok);
+
+            if(!(l_ok && r_ok)){
+                inclusion_valid = false;
+                comment += shamsys::format("fail : current : ({} {}) r:({} {}) l:({} {})\n", cur_pos_min_cell_a , cur_pos_max_cell_a, cur_pos_min_cell_bl , cur_pos_max_cell_bl, cur_pos_min_cell_br , cur_pos_max_cell_br);
+            }
 
         }
     }
 
-    shamtest::asserts().assert_bool("inclusion ok", inclusion_valid);
+    if(inclusion_valid){
+        shamtest::asserts().assert_bool("inclusion ok", true);
+    }else{
+        shamtest::asserts().assert_add_comment("inclusion ok", false,comment);
+    }
+
+    
 
 }
 
 
+TestStart(Unittest, "shamrock/tree/RadixTree:bounding_volume_inclusion", bounding_volume_inclusion, 1){
+    test_inclusion<u32, f32>(1000,0);
+    test_inclusion<u64, f32>(1000,0);
+    test_inclusion<u32, f64>(1000,0);
+    test_inclusion<u64, f64>(1000,0);
+    test_inclusion<u32, u64>(1000,0);
+    test_inclusion<u64, u64>(1000,0);
+    test_inclusion<u32, u32>(1000,0);
+    //test_inclusion<u64, u32>(1000,0);
+
+    test_inclusion<u32, f32>(10,10);
+    test_inclusion<u64, f32>(10,10);
+    test_inclusion<u32, f64>(10,10);
+    test_inclusion<u64, f64>(10,10);
+    test_inclusion<u32, u64>(10,10);
+    test_inclusion<u64, u64>(10,10);
+    test_inclusion<u32, u32>(10,10);
+    //test_inclusion<u64, u32>(10,10);
+}
 
 
 
@@ -708,7 +742,7 @@ inline void test_tree(std::string dset_name){
 
     u32 Nmax = u32(sycl::fmin(Nmax_flt,2e9));
 
-    auto pos = pos_partgen_distrib<flt>(Nmax);
+    auto pos = shamalgs::random::mock_buffer_ptr<vec>(0x111,Nmax);
 
     std::vector<f64> times;
     std::vector<f64> Npart;

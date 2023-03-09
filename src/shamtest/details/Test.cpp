@@ -28,8 +28,13 @@ namespace shamtest::details {
         }
 
         current_test = TestResult{type, name, world_rank};
-
-        test_functor();
+        
+        try{
+            test_functor();
+        } catch (const std::exception &e) {
+            current_test.asserts.assert_add_comment("exception_thrown", false, e.what());
+        }
+        
 
         return std::move(current_test);
     }

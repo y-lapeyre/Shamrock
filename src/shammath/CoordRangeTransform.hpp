@@ -51,6 +51,7 @@ namespace shammath {
         Tsource reverse_transform(Tdest rnge);
 
         void print_transform();
+
     };
 
     //////////////////////////////////

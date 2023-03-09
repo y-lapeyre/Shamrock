@@ -1,0 +1,80 @@
+// -------------------------------------------------------//
+//
+// SHAMROCK code for hydrodynamics
+// Copyright(C) 2021-2023 Timothée David--Cléris <timothee.david--cleris@ens-lyon.fr>
+// Licensed under CeCILL 2.1 License, see LICENSE for more information
+//
+// -------------------------------------------------------//
+
+#include "CoordRange.hpp"
+#include "shamutils/throwUtils.hpp"
+
+
+namespace shammath {
+
+    template<>
+    void CoordRange<f32_3>::check_throw_ranges(SourceLocation loc){
+        if(lower.x() >= upper.x()){
+            throw shamutils::throw_with_loc<std::runtime_error>("this range is ill formed normally upper > lower");
+        }
+        if(lower.y() >= upper.y()){
+            throw shamutils::throw_with_loc<std::runtime_error>("this range is ill formed normally upper > lower");
+        }
+        if(lower.z() >= upper.z()){
+            throw shamutils::throw_with_loc<std::runtime_error>("this range is ill formed normally upper > lower");
+        }
+    }
+
+    template<>
+    void CoordRange<f64_3>::check_throw_ranges(SourceLocation loc){
+        if(lower.x() >= upper.x()){
+            throw shamutils::throw_with_loc<std::runtime_error>("this range is ill formed normally upper > lower");
+        }
+        if(lower.y() >= upper.y()){
+            throw shamutils::throw_with_loc<std::runtime_error>("this range is ill formed normally upper > lower");
+        }
+        if(lower.z() >= upper.z()){
+            throw shamutils::throw_with_loc<std::runtime_error>("this range is ill formed normally upper > lower");
+        }
+    }
+
+    template<>
+    void CoordRange<u16_3>::check_throw_ranges(SourceLocation loc){
+        if(lower.x() >= upper.x()){
+            throw shamutils::throw_with_loc<std::runtime_error>("this range is ill formed normally upper > lower");
+        }
+        if(lower.y() >= upper.y()){
+            throw shamutils::throw_with_loc<std::runtime_error>("this range is ill formed normally upper > lower");
+        }
+        if(lower.z() >= upper.z()){
+            throw shamutils::throw_with_loc<std::runtime_error>("this range is ill formed normally upper > lower");
+        }
+    }
+
+    template<>
+    void CoordRange<u32_3>::check_throw_ranges(SourceLocation loc){
+        if(lower.x() >= upper.x()){
+            throw shamutils::throw_with_loc<std::runtime_error>("this range is ill formed normally upper > lower");
+        }
+        if(lower.y() >= upper.y()){
+            throw shamutils::throw_with_loc<std::runtime_error>("this range is ill formed normally upper > lower");
+        }
+        if(lower.z() >= upper.z()){
+            throw shamutils::throw_with_loc<std::runtime_error>("this range is ill formed normally upper > lower");
+        }
+    }
+
+    template<>
+    void CoordRange<u64_3>::check_throw_ranges(SourceLocation loc){
+        if(lower.x() >= upper.x()){
+            throw shamutils::throw_with_loc<std::runtime_error>("this range is ill formed normally upper > lower");
+        }
+        if(lower.y() >= upper.y()){
+            throw shamutils::throw_with_loc<std::runtime_error>("this range is ill formed normally upper > lower");
+        }
+        if(lower.z() >= upper.z()){
+            throw shamutils::throw_with_loc<std::runtime_error>("this range is ill formed normally upper > lower");
+        }
+    }
+
+}

@@ -221,6 +221,8 @@ namespace shamtest {
 
         u32 test_loc_cnt = 0;
 
+        bool has_error = false;
+
         for (u32 i : selected_tests) {
 
             shamtest::details::Test & test = static_init_vec_tests[i];
@@ -263,6 +265,7 @@ namespace shamtest {
                     if(res.asserts.asserts[j].value){
                         std::cout << "  (\033[;32mSucces\033[0m)\n";
                     }else{
+                        has_error = true;
                         std::cout << "  (\033[1;31m Fail \033[0m)\n";
                         if(! res.asserts.asserts[j].comment.empty()){
                             std::cout << "----- logs : \n" << res.asserts.asserts[j].comment << "\n-----" << std::endl;
@@ -389,6 +392,10 @@ namespace shamtest {
         instance::close();
 
 
-        return 0;
+        if(has_error){
+            return -1;
+        }else{
+            return 0;
+        }
     }
 }

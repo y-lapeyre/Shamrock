@@ -10,6 +10,7 @@
 
 #include "aliases.hpp"
 #include "intervals.hpp"
+#include "shamutils/SourceLocation.hpp"
 
 #include <limits>
 
@@ -42,7 +43,11 @@ namespace shammath {
         }
 
         static CoordRange max_range();
+
+        void check_throw_ranges(SourceLocation loc = SourceLocation{});
     };
+
+    
 
     template<>
     inline CoordRange<f32_3> CoordRange<f32_3>::max_range() {

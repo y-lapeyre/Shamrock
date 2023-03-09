@@ -1,7 +1,7 @@
 
 set(Sources
     CoordRangeTransform.cpp
-
+    CoordRange.cpp
 )
 set(SourcesTest
     
