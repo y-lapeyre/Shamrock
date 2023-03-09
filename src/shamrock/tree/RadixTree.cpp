@@ -81,14 +81,25 @@ template <class u_morton, class vec3, u32 dim> void RadixTree<u_morton, vec3, di
             sycl::host_accessor pos_min_cell {*buf_pos_min_cell, sycl::write_only, sycl::no_init};
             sycl::host_accessor pos_max_cell {*buf_pos_max_cell, sycl::write_only, sycl::no_init};
 
-            pos_min_cell[0] = {0};
-            pos_max_cell[0] = {Morton::max_val};
+            pos_min_cell[0] = {0,0,0};
+            pos_max_cell[0] = {Morton::max_val,Morton::max_val,Morton::max_val};
 
-            pos_min_cell[1] = {0};
-            pos_max_cell[1] = {Morton::max_val};
+            pos_min_cell[1] = {0,0,0};
+            pos_max_cell[1] = {Morton::max_val,Morton::max_val,Morton::max_val};
 
-            pos_min_cell[2] = {0};
-            pos_max_cell[2] = {0};
+            pos_min_cell[2] = {0,0,0};
+            pos_max_cell[2] = {0,0,0};
+
+            logger::debug_sycl_ln("RadixTree", "compute_cellvolume one cell mode");
+            logger::debug_sycl_ln("RadixTree", " -> ",
+                pos_min_cell[0],
+                pos_max_cell[0],
+                pos_min_cell[1],
+                pos_max_cell[1],
+                pos_min_cell[2],
+                pos_max_cell[2],
+                "len =", 
+                tree_struct.internal_cell_count + tree_reduced_morton_codes.tree_leaf_count);
         }
     }
 

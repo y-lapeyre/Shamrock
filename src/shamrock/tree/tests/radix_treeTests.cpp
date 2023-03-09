@@ -7,25 +7,13 @@
 // -------------------------------------------------------//
 
 #include "shamrock/legacy/patch/base/patchdata.hpp"
+#include "shamrock/legacy/utils/time_utils.hpp"
 #include "shamrock/patch/PatchDataLayout.hpp"
 #include "shamtest/shamtest.hpp"
-#include "shamrock/legacy/utils/time_utils.hpp"
-#include "shamtest/shamtest.hpp"
 
+#include "shamalgs/random/random.hpp"
 #include "shamrock/tree/RadixTree.hpp"
 #include <vector>
-#include "shamalgs/random/random.hpp"
-
-
-
-
-
-
-
-
-
-
-
 
 #if false
 
@@ -600,51 +588,47 @@ Test_start("radix_tree", treeleveljump_cell_range_test, 1){
 
 }
 
-
-
-
-
 #endif
 
-
 template<class vec>
-shammath::CoordRange<vec> get_test_coord_ranges(); 
+shammath::CoordRange<vec> get_test_coord_ranges();
 
 template<>
-shammath::CoordRange<f32_3> get_test_coord_ranges(){
-    return {f32_3{-1,-1,-1},f32_3{1,1,1}};
+shammath::CoordRange<f32_3> get_test_coord_ranges() {
+    return {f32_3{-1, -1, -1}, f32_3{1, 1, 1}};
 }
 template<>
-shammath::CoordRange<f64_3> get_test_coord_ranges(){
-    return {f64_3{-1,-1,-1},f64_3{1,1,1}};
+shammath::CoordRange<f64_3> get_test_coord_ranges() {
+    return {f64_3{-1, -1, -1}, f64_3{1, 1, 1}};
 }
 
 template<>
-shammath::CoordRange<u32_3> get_test_coord_ranges(){
+shammath::CoordRange<u32_3> get_test_coord_ranges() {
     using Prop = shamutils::sycl_utils::VectorProperties<u32_3>;
-    return {u32_3{0,0,0},Prop::get_max()/2 +1};
+    return {u32_3{0, 0, 0}, Prop::get_max() / 2 + 1};
 }
 template<>
-shammath::CoordRange<u64_3> get_test_coord_ranges(){
+shammath::CoordRange<u64_3> get_test_coord_ranges() {
     using Prop = shamutils::sycl_utils::VectorProperties<u64_3>;
-    return {u64_3{0,0,0},Prop::get_max()/2 +1};
+    return {u64_3{0, 0, 0}, Prop::get_max() / 2 + 1};
 }
-
 
 template<class u_morton, class flt>
-void test_inclusion(u32 Npart, u32 reduc_level){
-    using vec = sycl::vec<flt,3>;
+void test_inclusion(u32 Npart, u32 reduc_level) {
+    using vec = sycl::vec<flt, 3>;
 
     auto coord_range = get_test_coord_ranges<vec>();
 
-    auto pos = shamalgs::random::mock_buffer_ptr<vec>(0x111,Npart,coord_range.lower,coord_range.upper);
+    auto pos =
+        shamalgs::random::mock_buffer_ptr<vec>(0x111, Npart, coord_range.lower, coord_range.upper);
 
-    RadixTree<u_morton, vec,3> rtree = RadixTree<u_morton, vec,3>(
-                shamsys::instance::get_compute_queue(), 
-                {coord_range.lower,coord_range.upper},
-                pos, 
-                Npart , reduc_level
-            );
+    RadixTree<u_morton, vec, 3> rtree = RadixTree<u_morton, vec, 3>(
+        shamsys::instance::get_compute_queue(),
+        {coord_range.lower, coord_range.upper},
+        pos,
+        Npart,
+        reduc_level
+    );
 
     rtree.compute_cell_ibounding_box(shamsys::instance::get_compute_queue());
 
@@ -653,31 +637,33 @@ void test_inclusion(u32 Npart, u32 reduc_level){
     std::string comment;
 
     {
-        sycl::host_accessor tree_acc_pos_min_cell{*rtree.buf_pos_min_cell,sycl::read_only};
-        sycl::host_accessor tree_acc_pos_max_cell{*rtree.buf_pos_max_cell,sycl::read_only};
+        sycl::host_accessor tree_acc_pos_min_cell{*rtree.buf_pos_min_cell, sycl::read_only};
+        sycl::host_accessor tree_acc_pos_max_cell{*rtree.buf_pos_max_cell, sycl::read_only};
         u32 tree_leaf_offset = rtree.tree_struct.internal_cell_count;
-        sycl::host_accessor tree_lchild_id   {*rtree.tree_struct.buf_lchild_id  ,sycl::read_only};
-        sycl::host_accessor tree_rchild_id   {*rtree.tree_struct.buf_rchild_id  ,sycl::read_only};
-        sycl::host_accessor tree_lchild_flag {*rtree.tree_struct.buf_lchild_flag,sycl::read_only};
-        sycl::host_accessor tree_rchild_flag {*rtree.tree_struct.buf_rchild_flag,sycl::read_only};
+        sycl::host_accessor tree_lchild_id{*rtree.tree_struct.buf_lchild_id, sycl::read_only};
+        sycl::host_accessor tree_rchild_id{*rtree.tree_struct.buf_rchild_id, sycl::read_only};
+        sycl::host_accessor tree_lchild_flag{*rtree.tree_struct.buf_lchild_flag, sycl::read_only};
+        sycl::host_accessor tree_rchild_flag{*rtree.tree_struct.buf_rchild_flag, sycl::read_only};
 
-        for (u32 i = 0; i< tree_leaf_offset; i++) {
+        for (u32 i = 0; i < tree_leaf_offset; i++) {
             auto cur_pos_min_cell_a = tree_acc_pos_min_cell[i];
             auto cur_pos_max_cell_a = tree_acc_pos_max_cell[i];
 
             auto inclusion_crit = [&](auto other_min, auto other_max) -> bool {
-                return 
-                    (cur_pos_min_cell_a.x() <= other_min.x()) && 
-                    (cur_pos_min_cell_a.y() <= other_min.y()) && 
-                    (cur_pos_min_cell_a.z() <= other_min.z()) && 
-                    (cur_pos_max_cell_a.x() >= other_max.x()) && 
-                    (cur_pos_max_cell_a.y() >= other_max.y()) && 
-                    (cur_pos_max_cell_a.z() >= other_max.z()) ; 
+                return (cur_pos_min_cell_a.x() <= other_min.x()) &&
+                       (cur_pos_min_cell_a.y() <= other_min.y()) &&
+                       (cur_pos_min_cell_a.z() <= other_min.z()) &&
+                       (cur_pos_max_cell_a.x() >= other_max.x()) &&
+                       (cur_pos_max_cell_a.y() >= other_max.y()) &&
+                       (cur_pos_max_cell_a.z() >= other_max.z());
             };
-
 
             u32 lid = tree_lchild_id[i] + tree_leaf_offset * tree_lchild_flag[i];
             u32 rid = tree_rchild_id[i] + tree_leaf_offset * tree_rchild_flag[i];
+
+            if(rtree.tree_struct.one_cell_mode){
+                rid = 2;
+            }
 
             auto cur_pos_min_cell_bl = tree_acc_pos_min_cell[lid];
             auto cur_pos_max_cell_bl = tree_acc_pos_max_cell[lid];
@@ -685,80 +671,88 @@ void test_inclusion(u32 Npart, u32 reduc_level){
             auto cur_pos_min_cell_br = tree_acc_pos_min_cell[rid];
             auto cur_pos_max_cell_br = tree_acc_pos_max_cell[rid];
 
-            bool l_ok = inclusion_crit(cur_pos_min_cell_bl,cur_pos_max_cell_bl);
-            bool r_ok = inclusion_crit(cur_pos_min_cell_br,cur_pos_max_cell_br);
+            bool l_ok = inclusion_crit(cur_pos_min_cell_bl, cur_pos_max_cell_bl);
+            bool r_ok = inclusion_crit(cur_pos_min_cell_br, cur_pos_max_cell_br);
 
-
-            if(!(l_ok && r_ok)){
+            if (!(l_ok && r_ok)) {
                 inclusion_valid = false;
-                comment += shamsys::format("fail : current : ({} {}) r:({} {}) l:({} {})\n", cur_pos_min_cell_a , cur_pos_max_cell_a, cur_pos_min_cell_bl , cur_pos_max_cell_bl, cur_pos_min_cell_br , cur_pos_max_cell_br);
+                comment += shamsys::format(
+                    "fail : current : ({} {}) r:({} {}) l:({} {}) lid:{} rid:{}\n",
+                    cur_pos_min_cell_a,
+                    cur_pos_max_cell_a,
+                    cur_pos_min_cell_bl,
+                    cur_pos_max_cell_bl,
+                    cur_pos_min_cell_br,
+                    cur_pos_max_cell_br,lid,rid
+                );
             }
-
         }
     }
 
-    if(inclusion_valid){
+    if (inclusion_valid) {
         shamtest::asserts().assert_bool("inclusion ok", true);
-    }else{
-        shamtest::asserts().assert_add_comment("inclusion ok", false,comment);
+    } else {
+        shamtest::asserts().assert_add_comment(
+            "inclusion ok",
+            false,
+            comment + shamsys::format(
+                          "\n leaf count : {}, internal count : {}",
+                          rtree.tree_reduced_morton_codes.tree_leaf_count,
+                          rtree.tree_struct.internal_cell_count
+                      )
+        );
     }
-
-    
-
 }
 
+TestStart(
+    Unittest, "shamrock/tree/RadixTree:bounding_volume_inclusion", bounding_volume_inclusion, 1
+) {
+    test_inclusion<u32, f32>(1000, 0);
+    test_inclusion<u64, f32>(1000, 0);
+    test_inclusion<u32, f64>(1000, 0);
+    test_inclusion<u64, f64>(1000, 0);
+    test_inclusion<u32, u64>(1000, 0);
+    test_inclusion<u64, u64>(1000, 0);
+    test_inclusion<u32, u32>(1000, 0);
+    // test_inclusion<u64, u32>(1000,0);
 
-TestStart(Unittest, "shamrock/tree/RadixTree:bounding_volume_inclusion", bounding_volume_inclusion, 1){
-    test_inclusion<u32, f32>(1000,0);
-    test_inclusion<u64, f32>(1000,0);
-    test_inclusion<u32, f64>(1000,0);
-    test_inclusion<u64, f64>(1000,0);
-    test_inclusion<u32, u64>(1000,0);
-    test_inclusion<u64, u64>(1000,0);
-    test_inclusion<u32, u32>(1000,0);
-    //test_inclusion<u64, u32>(1000,0);
-
-    test_inclusion<u32, f32>(10,10);
-    test_inclusion<u64, f32>(10,10);
-    test_inclusion<u32, f64>(10,10);
-    test_inclusion<u64, f64>(10,10);
-    test_inclusion<u32, u64>(10,10);
-    test_inclusion<u64, u64>(10,10);
-    test_inclusion<u32, u32>(10,10);
-    //test_inclusion<u64, u32>(10,10);
+    test_inclusion<u32, f32>(10, 10);
+    test_inclusion<u64, f32>(10, 10);
+    test_inclusion<u32, f64>(10, 10);
+    test_inclusion<u64, f64>(10, 10);
+    test_inclusion<u32, u64>(10, 10);
+    test_inclusion<u64, u64>(10, 10);
+    test_inclusion<u32, u32>(10, 10);
+    // test_inclusion<u64, u32>(10,10);
 }
 
+template<class morton_mode, class flt, u32 reduc_lev>
+inline void test_tree(std::string dset_name) {
 
+    using vec = sycl::vec<flt, 3>;
 
-template<class morton_mode,class flt, u32 reduc_lev>
-inline void test_tree(std::string dset_name){
+    f64 Nmax_flt = 1e7 * 1;
 
+    u32 Nmax = u32(sycl::fmin(Nmax_flt, 2e9));
 
-    using vec = sycl::vec<flt,3>;
-
-    f64 Nmax_flt = 
-        1e7 * 
-        1;
-
-    u32 Nmax = u32(sycl::fmin(Nmax_flt,2e9));
-
-    auto pos = shamalgs::random::mock_buffer_ptr<vec>(0x111,Nmax);
+    auto pos = shamalgs::random::mock_buffer_ptr<vec>(0x111, Nmax);
 
     std::vector<f64> times;
     std::vector<f64> Npart;
 
-    for(f64 cnt = 1000; cnt < Nmax; cnt *= 1.1){
+    for (f64 cnt = 1000; cnt < Nmax; cnt *= 1.1) {
         logger::debug_ln("TestTreePerf", cnt);
         shamsys::instance::get_compute_queue().wait();
-        Timer timer; timer.start();
+        Timer timer;
+        timer.start();
 
-
-        RadixTree<morton_mode, vec,3> rtree = RadixTree<morton_mode, vec,3>(
-                shamsys::instance::get_compute_queue(), 
-                {vec{-1,-1,-1},vec{1,1,1}},
-                pos, 
-                cnt , reduc_lev
-            );
+        RadixTree<morton_mode, vec, 3> rtree = RadixTree<morton_mode, vec, 3>(
+            shamsys::instance::get_compute_queue(),
+            {vec{-1, -1, -1}, vec{1, 1, 1}},
+            pos,
+            cnt,
+            reduc_lev
+        );
 
         rtree.compute_cell_ibounding_box(shamsys::instance::get_compute_queue());
         rtree.convert_bounding_box(shamsys::instance::get_compute_queue());
@@ -766,21 +760,17 @@ inline void test_tree(std::string dset_name){
         shamsys::instance::get_compute_queue().wait();
         timer.end();
 
-        times.push_back(timer.nanosec/1.e9);
+        times.push_back(timer.nanosec / 1.e9);
         Npart.push_back(u32(cnt));
-        
     }
 
-
-    auto & dset = shamtest::test_data().new_dataset(dset_name);
+    auto &dset = shamtest::test_data().new_dataset(dset_name);
 
     dset.add_data("Npart", Npart);
     dset.add_data("times", times);
-
 }
 
-
-TestStart(Benchmark, "tree build time", morton_tree_build, 1){
+TestStart(Benchmark, "tree build time", morton_tree_build, 1) {
     test_tree<u32, f32, 0>("u32, f32, 0");
     test_tree<u64, f32, 0>("u64, f32, 0");
     test_tree<u32, f64, 0>("u32, f64, 0");
