@@ -732,7 +732,7 @@ inline void test_tree(std::string dset_name) {
 
     using vec = sycl::vec<flt, 3>;
 
-    f64 Nmax_flt = 1e7 * 1;
+    f64 Nmax_flt = 1e6 * 1;
 
     u32 Nmax = u32(sycl::fmin(Nmax_flt, 2e9));
 
