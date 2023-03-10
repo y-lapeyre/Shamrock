@@ -15,33 +15,34 @@
 namespace shamalgs::algorithm::details {
 
     template<class Tkey, class Tval>
-    struct OrderingPrimitive {
+    struct OrderingPrimitiveXorSwap {
 
         using AccKey = sycl::accessor<Tkey, 1, sycl::access::mode::read_write, sycl::target::device>;
         using AccVal = sycl::accessor<Tval, 1, sycl::access::mode::read_write, sycl::target::device>;
 
         inline static void _order(Tkey &a, Tkey &b, Tval &va, Tval &vb, bool reverse) {
             bool swap   = reverse ^ (a < b);
-            Tkey auxa   = a;
-            Tkey auxb   = b;
-            Tval auxida = va;
-            Tval auxidb = vb;
-            a           = (swap) ? auxb : auxa;
-            b           = (swap) ? auxa : auxb;
-            va          = (swap) ? auxidb : auxida;
-            vb          = (swap) ? auxida : auxidb;
+            if(swap){
+                a ^= b;
+                b ^= a;
+                a ^= b;
+                va ^= vb;
+                vb ^= va;
+                va ^= vb;
+            }
         }
 
         inline static void _orderV(Tkey *x, Tval *vx, u32 a, u32 b, bool reverse) {
             bool swap   = reverse ^ (x[a] < x[b]);
-            auto auxa   = x[a];
-            auto auxb   = x[b];
-            auto auxida = vx[a];
-            auto auxidb = vx[b];
-            x[a]        = (swap) ? auxb : auxa;
-            x[b]        = (swap) ? auxa : auxb;
-            vx[a]       = (swap) ? auxidb : auxida;
-            vx[b]       = (swap) ? auxida : auxidb;
+
+            if(swap){
+                x[a] ^= x[b];
+                x[b] ^= x[a];
+                x[a] ^= x[b];
+                vx[a] ^= vx[b];
+                vx[b] ^= vx[a];
+                vx[a] ^= vx[b];
+            }
         }
 
         template<u32 stencil_size>
@@ -249,7 +250,7 @@ namespace shamalgs::algorithm::details {
     };
 
     template<class Tkey, class Tval, u32 MaxStencilSize>
-    void sort_by_key_bitonic_updated(
+    void sort_by_key_bitonic_updated_xor_swap(
         sycl::queue &q, sycl::buffer<Tkey> &buf_key, sycl::buffer<Tval> &buf_values, u32 len
     ) {
 
@@ -259,7 +260,7 @@ namespace shamalgs::algorithm::details {
             );
         }
 
-        using B = OrderingPrimitive<Tkey, Tval>;
+        using B = OrderingPrimitiveXorSwap<Tkey, Tval>;
 
         for (u32 length = 1; length < len; length <<= 1) {
             u32 inc = length;
@@ -390,27 +391,27 @@ namespace shamalgs::algorithm::details {
         }
     }
 
-    template void sort_by_key_bitonic_updated<u32, u32, 16>(
+    template void sort_by_key_bitonic_updated_xor_swap<u32, u32, 16>(
         sycl::queue &q, sycl::buffer<u32> &buf_key, sycl::buffer<u32> &buf_values, u32 len
     );
 
-    template void sort_by_key_bitonic_updated<u64, u32, 16>(
+    template void sort_by_key_bitonic_updated_xor_swap<u64, u32, 16>(
         sycl::queue &q, sycl::buffer<u64> &buf_key, sycl::buffer<u32> &buf_values, u32 len
     );
 
-    template void sort_by_key_bitonic_updated<u32, u32, 8>(
+    template void sort_by_key_bitonic_updated_xor_swap<u32, u32, 8>(
         sycl::queue &q, sycl::buffer<u32> &buf_key, sycl::buffer<u32> &buf_values, u32 len
     );
 
-    template void sort_by_key_bitonic_updated<u64, u32, 8>(
+    template void sort_by_key_bitonic_updated_xor_swap<u64, u32, 8>(
         sycl::queue &q, sycl::buffer<u64> &buf_key, sycl::buffer<u32> &buf_values, u32 len
     );
 
-    template void sort_by_key_bitonic_updated<u32, u32, 32>(
+    template void sort_by_key_bitonic_updated_xor_swap<u32, u32, 32>(
         sycl::queue &q, sycl::buffer<u32> &buf_key, sycl::buffer<u32> &buf_values, u32 len
     );
 
-    template void sort_by_key_bitonic_updated<u64, u32, 32>(
+    template void sort_by_key_bitonic_updated_xor_swap<u64, u32, 32>(
         sycl::queue &q, sycl::buffer<u64> &buf_key, sycl::buffer<u32> &buf_values, u32 len
     );
 
