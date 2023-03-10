@@ -8,7 +8,7 @@
 
 #include "CommImplBuffer.hpp"
 #include "shamsys/legacy/log.hpp"
-#include "shamutils/throwUtils.hpp"
+#include "shambase/throwUtils.hpp"
 #include <stdexcept>
 
 
@@ -571,7 +571,7 @@ template<class T>
         mpi::get_count(&st, get_mpi_type<ptr_t>(), &cnt);
 
         if(cnt % int_len != 0){
-            throw shamutils::throw_with_loc<std::runtime_error>("for this protocol the lenght of the received message must be a multiple of the number of components");
+            throw shambase::throw_with_loc<std::runtime_error>("for this protocol the lenght of the received message must be a multiple of the number of components");
         }
 
         u32 val_cnt = cnt/int_len;

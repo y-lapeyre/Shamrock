@@ -9,7 +9,7 @@
 #pragma once
 
 #include "aliases.hpp"
-#include "shamutils/sycl_utils.hpp"
+#include "shambase/sycl_utils.hpp"
 
 namespace shamrock::amr {
 
@@ -122,8 +122,8 @@ namespace shamrock::amr {
             if constexpr (dim == 3) {
                 for (u32 i = 0; i < splts_count; i++) {
                     are_same = are_same &&
-                               shamutils::sycl_utils::test_sycl_eq(others[i].bmin, splitted[i].bmin) &&
-                               shamutils::sycl_utils::test_sycl_eq(others[i].bmax, splitted[i].bmax);
+                               shambase::sycl_utils::test_sycl_eq(others[i].bmin, splitted[i].bmin) &&
+                               shambase::sycl_utils::test_sycl_eq(others[i].bmax, splitted[i].bmax);
                 }
             }
 

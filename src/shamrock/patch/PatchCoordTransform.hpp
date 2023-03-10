@@ -14,7 +14,7 @@
 #include "shamrock/patch/Patch.hpp"
 #include "shamrock/patch/PatchCoord.hpp"
 #include "shamsys/legacy/log.hpp"
-#include "shamutils/sycl_utils/vectorProperties.hpp"
+#include "shambase/sycl_utils/vectorProperties.hpp"
 
 namespace shamrock::patch {
 

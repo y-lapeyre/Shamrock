@@ -8,12 +8,8 @@
 
 #pragma once
 
-#include "shamutils/SourceLocation.hpp"
-
-namespace shamutils{
-    template<class ExcptTypes>
-    inline ExcptTypes throw_with_loc(std::string message, SourceLocation loc = SourceLocation{}){
-        return ExcptTypes(message + loc.format_multiline());
-    }
-}
-
+/**
+ * @brief namespace containing basic utilities for the shamrock code base
+ * 
+ */
+namespace shambase {}

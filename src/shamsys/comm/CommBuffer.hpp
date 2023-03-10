@@ -19,7 +19,7 @@
 
 
 #include "CommRequests.hpp"
-#include "shamutils/throwUtils.hpp"
+#include "shambase/throwUtils.hpp"
 //#include "CommImplBuffer.hpp"
 
 
@@ -87,7 +87,7 @@ namespace shamsys::comm {
             }else if(comm_mode == DirectGPUFlatten){
                 _int_type = std::make_unique<details::CommBuffer<T, DirectGPUFlatten>>(det);
             }else {
-                throw shamutils::throw_with_loc<std::invalid_argument>("unknown mode");
+                throw shambase::throw_with_loc<std::invalid_argument>("unknown mode");
             }
         }
 
@@ -105,7 +105,7 @@ namespace shamsys::comm {
             }else if(comm_mode == DirectGPUFlatten){
                 _int_type = std::make_unique<details::CommBuffer<T, DirectGPUFlatten>>(obj_ref);
             }else {
-                throw shamutils::throw_with_loc<std::invalid_argument>("unknown mode");
+                throw shambase::throw_with_loc<std::invalid_argument>("unknown mode");
             }
         }
 
@@ -124,7 +124,7 @@ namespace shamsys::comm {
             }else if(comm_mode == DirectGPUFlatten){
                 _int_type = std::make_unique<details::CommBuffer<T, DirectGPUFlatten>>(obj_ref,det);
             }else {
-                throw shamutils::throw_with_loc<std::invalid_argument>("unknown mode");
+                throw shambase::throw_with_loc<std::invalid_argument>("unknown mode");
             }
         }
 
@@ -142,7 +142,7 @@ namespace shamsys::comm {
             }else if(comm_mode == DirectGPUFlatten){
                 _int_type = std::make_unique<details::CommBuffer<T, DirectGPUFlatten>>(moved_obj);
             }else {
-                throw shamutils::throw_with_loc<std::invalid_argument>("unknown mode");
+                throw shambase::throw_with_loc<std::invalid_argument>("unknown mode");
             }
         }
 
@@ -161,7 +161,7 @@ namespace shamsys::comm {
             }else if(comm_mode == DirectGPUFlatten){
                 _int_type = std::make_unique<details::CommBuffer<T, DirectGPUFlatten>>(moved_obj,det);
             }else {
-                throw shamutils::throw_with_loc<std::invalid_argument>("unknown mode");
+                throw shambase::throw_with_loc<std::invalid_argument>("unknown mode");
             }
         }
 
@@ -257,7 +257,7 @@ namespace shamsys::comm {
                     );
             }
 
-            throw shamutils::throw_with_loc<std::invalid_argument>("unknown mode");
+            throw shambase::throw_with_loc<std::invalid_argument>("unknown mode");
 
         }
 

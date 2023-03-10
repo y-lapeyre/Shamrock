@@ -149,11 +149,11 @@ namespace timings {
 
                 
                 
-                std::string out = shamutils::format_printf("%-50s %2.9f %3.1f ",str.c_str(), a.time,100*a.time/total);
+                std::string out = shambase::format_printf("%-50s %2.9f %3.1f ",str.c_str(), a.time,100*a.time/total);
 
                 if (a.is_bandwidth) {
-                    out += shamutils::readable_sizeof(a.data_transfered);
-                    out += " Bandwith : " + shamutils::readable_sizeof(a.bandwith) + ".s-1\n";
+                    out += shambase::readable_sizeof(a.data_transfered);
+                    out += " Bandwith : " + shambase::readable_sizeof(a.bandwith) + ".s-1\n";
                 }else {
                     out += "\n";
                 }

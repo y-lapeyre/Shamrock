@@ -14,7 +14,7 @@
 
 #include "Patch.hpp"
 #include "shammath/intervals.hpp"
-#include "shamutils/sycl_utils.hpp"
+#include "shambase/sycl_utils.hpp"
 #include <variant>
 
 namespace shamrock::patch {
@@ -281,7 +281,7 @@ namespace shamrock::patch {
             return main_field.get_elements_with_range(
                 [&](T val,T vmin, T vmax){
 
-                    if(shamutils::sycl_utils::VectorProperties<T>::dimension == 3){
+                    if(shambase::sycl_utils::VectorProperties<T>::dimension == 3){
                         return shammath::is_in_half_open(val, vmin,vmax);
                     }else{
                         throw std::runtime_error("dimension != 3 is not handled");

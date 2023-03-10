@@ -17,7 +17,7 @@
 #include "shamrock/tree/TreeStructureWalker.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
-#include "shamutils/sycl_utils.hpp"
+#include "shambase/sycl_utils.hpp"
 #include <vector>
 
 class AMRTestModel {

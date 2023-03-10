@@ -9,7 +9,7 @@
 #pragma once
 
 #include "aliases.hpp"
-#include "shamutils/throwUtils.hpp"
+#include "shambase/throwUtils.hpp"
 #include <variant>
 
 namespace shamrock::patch {
@@ -46,7 +46,7 @@ namespace shamrock::patch {
             if (Container<T> *pval = std::get_if<Container<T>>(&value)) {
                 return *pval;
             }
-            throw shamutils::throw_with_loc<std::invalid_argument>("the type asked is not correct");
+            throw shambase::throw_with_loc<std::invalid_argument>("the type asked is not correct");
         }
 
         template<class Func>

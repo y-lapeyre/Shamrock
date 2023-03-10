@@ -9,7 +9,7 @@
 #pragma once
 
 #include "aliases.hpp"
-#include "shamutils/sycl_utils/vectorProperties.hpp"
+#include "shambase/sycl_utils/vectorProperties.hpp"
 #include <random>
 
 /**
@@ -24,11 +24,11 @@ namespace shamalgs::random {
     
 
     template<class T> inline std::vector<T> mock_vector(u64 seed,u32 len){
-        using Prop = shamutils::sycl_utils::VectorProperties<T>;
+        using Prop = shambase::sycl_utils::VectorProperties<T>;
         return mock_vector(seed,len, Prop::get_min(),Prop::get_max());
     }
     template<class T> inline sycl::buffer<T> mock_buffer(u64 seed,u32 len){
-        using Prop = shamutils::sycl_utils::VectorProperties<T>;
+        using Prop = shambase::sycl_utils::VectorProperties<T>;
         return mock_buffer(seed,len, Prop::get_min(),Prop::get_max());
     }
 
@@ -36,7 +36,7 @@ namespace shamalgs::random {
         return std::make_unique<sycl::buffer<T>>(mock_buffer(seed,len,min_bound,max_bound));
     }
     template<class T> inline std::unique_ptr<sycl::buffer<T>> mock_buffer_ptr(u64 seed,u32 len){
-        using Prop = shamutils::sycl_utils::VectorProperties<T>;
+        using Prop = shambase::sycl_utils::VectorProperties<T>;
         return mock_buffer_ptr(seed,len, Prop::get_min(),Prop::get_max());
     }
 

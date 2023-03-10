@@ -9,7 +9,7 @@
 #pragma once
 
 #include "aliases.hpp"
-#include "shamutils/SourceLocation.hpp"
+#include "shambase/SourceLocation.hpp"
 
 namespace shamtest::details {
 

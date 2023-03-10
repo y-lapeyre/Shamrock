@@ -29,7 +29,7 @@ RadixTree<u_morton, vec3, dim>::RadixTree(
     sycl::queue &queue, std::tuple<vec3, vec3> treebox, const std::unique_ptr<sycl::buffer<vec3>> &pos_buf, u32 cnt_obj, u32 reduc_level
 ) {
     if (cnt_obj > i32_max - 1) {
-        throw shamutils::throw_with_loc<std::runtime_error>("number of element in patch above i32_max-1");
+        throw shambase::throw_with_loc<std::runtime_error>("number of element in patch above i32_max-1");
     }
 
     obj_cnt = cnt_obj;
@@ -204,11 +204,11 @@ template<class T>
 std::string print_member(const T & a);
 
 template<> std::string print_member(const u8 & a){
-    return shamutils::format_printf("%d",u32(a));
+    return shambase::format_printf("%d",u32(a));
 }
 
 template<> std::string print_member(const u32 & a){
-    return shamutils::format_printf("%d",a);
+    return shambase::format_printf("%d",a);
 }
 
 

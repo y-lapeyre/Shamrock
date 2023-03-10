@@ -25,8 +25,8 @@
 #include "shamrock/legacy/utils/time_utils.hpp"
 
 #include "shamsys/legacy/sycl_mpi_interop.hpp"
-#include "shamutils/stringUtils.hpp"
-#include "shamutils/throwUtils.hpp"
+#include "shambase/stringUtils.hpp"
+#include "shambase/throwUtils.hpp"
 
 
 
@@ -175,7 +175,7 @@ void PatchScheduler::allpush_data(shamrock::patch::PatchData &pdat){
                 using base_t =
                             typename std::remove_reference<decltype(arg)>::type::field_T;
 
-                if constexpr (shamutils::sycl_utils::VectorProperties<base_t>::dimension == 3){
+                if constexpr (shambase::sycl_utils::VectorProperties<base_t>::dimension == 3){
                     auto [bmin,bmax] = get_sim_box().partch_coord_to_domain<base_t>(cur_p)  ;
 
                     logger::debug_sycl_ln("Scheduler", "pushing data in patch ", id_patch, "search range :",bmin, bmax);
@@ -257,7 +257,7 @@ void PatchScheduler::sync_build_LB(bool global_patch_sync, bool balance_load){
 
 template<>
 std::tuple<f32_3,f32_3> PatchScheduler::get_box_tranform(){
-    if(!pdl.check_main_field_type<f32_3>()) throw shamutils::throw_with_loc<std::runtime_error>("cannot query single precision box the main field is not of f32_3 type");
+    if(!pdl.check_main_field_type<f32_3>()) throw shambase::throw_with_loc<std::runtime_error>("cannot query single precision box the main field is not of f32_3 type");
 
     auto [bmin,bmax] = patch_data.sim_box.get_bounding_box<f32_3>();
 
@@ -269,7 +269,7 @@ std::tuple<f32_3,f32_3> PatchScheduler::get_box_tranform(){
 
 template<>
 std::tuple<f64_3,f64_3> PatchScheduler::get_box_tranform(){
-    if(!pdl.check_main_field_type<f64_3>()) throw shamutils::throw_with_loc<std::runtime_error>("cannot query single precision box the main field is not of f64_3 type");
+    if(!pdl.check_main_field_type<f64_3>()) throw shambase::throw_with_loc<std::runtime_error>("cannot query single precision box the main field is not of f64_3 type");
 
     auto [bmin,bmax] = patch_data.sim_box.get_bounding_box<f64_3>();
 
@@ -282,14 +282,14 @@ std::tuple<f64_3,f64_3> PatchScheduler::get_box_tranform(){
 
 template<>
 std::tuple<f32_3,f32_3> PatchScheduler::get_box_volume(){
-    if(!pdl.check_main_field_type<f32_3>()) throw shamutils::throw_with_loc<std::runtime_error>("cannot query single precision box the main field is not of f32_3 type");
+    if(!pdl.check_main_field_type<f32_3>()) throw shambase::throw_with_loc<std::runtime_error>("cannot query single precision box the main field is not of f32_3 type");
 
     return patch_data.sim_box.get_bounding_box<f32_3>();
 }
 
 template<>
 std::tuple<f64_3,f64_3> PatchScheduler::get_box_volume(){
-    if(!pdl.check_main_field_type<f64_3>()) throw shamutils::throw_with_loc<std::runtime_error>("cannot query single precision box the main field is not of f64_3 type");
+    if(!pdl.check_main_field_type<f64_3>()) throw shambase::throw_with_loc<std::runtime_error>("cannot query single precision box the main field is not of f64_3 type");
 
     return patch_data.sim_box.get_bounding_box<f64_3>();
 }
@@ -304,7 +304,7 @@ void PatchScheduler::scheduler_step(bool do_split_merge, bool do_load_balancing)
 
     auto global_timer = timings::start_timer("SchedulerMPI::scheduler_step", timings::function);
 
-    if(!is_mpi_sycl_interop_active()) throw shamutils::throw_with_loc<std::runtime_error>("sycl mpi interop not initialized");
+    if(!is_mpi_sycl_interop_active()) throw shambase::throw_with_loc<std::runtime_error>("sycl mpi interop not initialized");
 
     Timer timer;
 
@@ -358,7 +358,7 @@ void PatchScheduler::scheduler_step(bool do_split_merge, bool do_load_balancing)
 
 
         std::cout <<        "   | ---- patch operation requests ---- \n";
-        std::cout << shamutils::format_printf("      split : %-6d   | merge : %-6d",split_rq.size(), merge_rq.size()) << std::endl;
+        std::cout << shambase::format_printf("      split : %-6d   | merge : %-6d",split_rq.size(), merge_rq.size()) << std::endl;
 
         /*
         std::cout << "     |-> split rq : ";
@@ -578,7 +578,7 @@ std::string PatchScheduler::dump_status(){
     ss << " -> SchedulerPatchTree\n";
 
     for(auto & [k,pnode] : patch_tree.tree){
-        ss << shamutils::format_printf("      -> id : %d  -> (%d %d %d %d %d %d %d %d) <=> %d\n",
+        ss << shambase::format_printf("      -> id : %d  -> (%d %d %d %d %d %d %d %d) <=> %d\n",
         k,
         pnode.tree_node.childs_nid[0],
         pnode.tree_node.childs_nid[1],
@@ -800,7 +800,7 @@ void PatchScheduler::dump_local_patches(std::string filename){
 std::vector<std::unique_ptr<shamrock::patch::PatchData>> PatchScheduler::gather_data(u32 rank){
 
     if(rank != 0){
-        throw shamutils::throw_with_loc<std::invalid_argument>("this method is only implemented for rank=0");
+        throw shambase::throw_with_loc<std::invalid_argument>("this method is only implemented for rank=0");
     }
 
     using namespace shamrock::patch;

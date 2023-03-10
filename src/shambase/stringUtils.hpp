@@ -13,7 +13,7 @@
 #include "throwUtils.hpp"
 #include <vector>
 
-namespace shamutils {
+namespace shambase {
 
     template<typename... T>
     inline std::string format(fmt::format_string<T...> fmt, T &&...args) {
@@ -58,4 +58,4 @@ namespace shamutils {
         }
     }
 
-} // namespace shamutils
+} // namespace shambase

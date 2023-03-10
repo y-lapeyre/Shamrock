@@ -604,12 +604,12 @@ shammath::CoordRange<f64_3> get_test_coord_ranges() {
 
 template<>
 shammath::CoordRange<u32_3> get_test_coord_ranges() {
-    using Prop = shamutils::sycl_utils::VectorProperties<u32_3>;
+    using Prop = shambase::sycl_utils::VectorProperties<u32_3>;
     return {u32_3{0, 0, 0}, Prop::get_max() / 2 + 1};
 }
 template<>
 shammath::CoordRange<u64_3> get_test_coord_ranges() {
-    using Prop = shamutils::sycl_utils::VectorProperties<u64_3>;
+    using Prop = shambase::sycl_utils::VectorProperties<u64_3>;
     return {u64_3{0, 0, 0}, Prop::get_max() / 2 + 1};
 }
 

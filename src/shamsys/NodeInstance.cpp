@@ -84,7 +84,7 @@ namespace shamsys::instance {
             << "   - " 
             << Device.get_info<sycl::info::device::name>()
             << " " 
-            << shamutils::readable_sizeof(Device.get_info<sycl::info::device::global_mem_size>()) << "\n";
+            << shambase::readable_sizeof(Device.get_info<sycl::info::device::global_mem_size>()) << "\n";
     }
 
 

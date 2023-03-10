@@ -22,7 +22,7 @@
 #include <fstream>
 #include <string>
 #include "aliases.hpp"
-#include "shamutils/stringUtils.hpp"
+#include "shambase/stringUtils.hpp"
 #include <cstdarg>
 
 [[deprecated]]
@@ -83,5 +83,5 @@ inline std::string trunc_str(std::string s , u32 max_len){
  */
  [[deprecated]]
 inline std::string readable_sizeof(double size) {
-    return shamutils::readable_sizeof(size);
+    return shambase::readable_sizeof(size);
 }

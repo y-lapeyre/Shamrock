@@ -9,7 +9,7 @@
 #include "Test.hpp"
 
 #include "shamsys/NodeInstance.hpp"
-#include "shamutils/throwUtils.hpp"
+#include "shambase/throwUtils.hpp"
 
 namespace shamtest::details {
 
@@ -21,7 +21,7 @@ namespace shamtest::details {
 
         if (node_count != -1) {
             if (node_count != world_size) {
-                throw shamutils::throw_with_loc<std::runtime_error>(
+                throw shambase::throw_with_loc<std::runtime_error>(
                     "trying to run a test with wrong number of nodes"
                 );
             }

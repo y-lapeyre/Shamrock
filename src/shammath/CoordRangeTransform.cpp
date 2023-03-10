@@ -9,7 +9,7 @@
 #include "CoordRangeTransform.hpp"
 
 #include "shamsys/legacy/log.hpp"
-#include "shamutils/throwUtils.hpp"
+#include "shambase/throwUtils.hpp"
 #include <stdexcept>
 
 namespace shammath {
@@ -23,7 +23,7 @@ namespace shammath {
         bool cmp_z = val.z() % divisor.z() == 0;
 
         if (!cmp_x) {
-            throw shamutils::throw_with_loc<std::invalid_argument>(
+            throw shambase::throw_with_loc<std::invalid_argument>(
                 "the divisor does not divide the value on component x\n"
                 "  val     = (" +
                     std::to_string(val.x()) + ", " + std::to_string(val.y()) + ", " +
@@ -34,7 +34,7 @@ namespace shammath {
         }
 
         if (!cmp_y) {
-            throw shamutils::throw_with_loc<std::invalid_argument>(
+            throw shambase::throw_with_loc<std::invalid_argument>(
                 "the divisor does not divide the value on component y\n"
                 "  val     = (" +
                     std::to_string(val.x()) + ", " + std::to_string(val.y()) + ", " +
@@ -45,7 +45,7 @@ namespace shammath {
         }
 
         if (!cmp_z) {
-            throw shamutils::throw_with_loc<std::invalid_argument>(
+            throw shambase::throw_with_loc<std::invalid_argument>(
                 "the divisor does not divide the value on component z\n"
                 "  val     = (" +
                     std::to_string(val.x()) + ", " + std::to_string(val.y()) + ", " +
@@ -225,7 +225,7 @@ template<class Ta, class Tb>
             }
 
         } else {
-            throw shamutils::throw_with_loc<std::invalid_argument>( "the range comparaison are not the same");
+            throw shambase::throw_with_loc<std::invalid_argument>( "the range comparaison are not the same");
         }
     }
 
@@ -260,7 +260,7 @@ template<class Ta, class Tb>
             }
 
         } else {
-            throw shamutils::throw_with_loc<std::invalid_argument>( "the range comparaison are not the same");
+            throw shambase::throw_with_loc<std::invalid_argument>( "the range comparaison are not the same");
         }
     }
 
@@ -295,7 +295,7 @@ template<class Ta, class Tb>
             }
 
         } else {
-            throw shamutils::throw_with_loc<std::invalid_argument>( "the range comparaison are not the same");
+            throw shambase::throw_with_loc<std::invalid_argument>( "the range comparaison are not the same");
         }
     }
 
@@ -330,7 +330,7 @@ template<class Ta, class Tb>
             }
 
         } else {
-            throw shamutils::throw_with_loc<std::invalid_argument>( "the range comparaison are not the same");
+            throw shambase::throw_with_loc<std::invalid_argument>( "the range comparaison are not the same");
         }
     }
     
@@ -366,7 +366,7 @@ template<class Ta, class Tb>
             }
 
         } else {
-            throw shamutils::throw_with_loc<std::invalid_argument>( "the range comparaison are not the same");
+            throw shambase::throw_with_loc<std::invalid_argument>( "the range comparaison are not the same");
         }
     }
 
@@ -401,7 +401,7 @@ template<class Ta, class Tb>
             }
 
         } else {
-            throw shamutils::throw_with_loc<std::invalid_argument>( "the range comparaison are not the same");
+            throw shambase::throw_with_loc<std::invalid_argument>( "the range comparaison are not the same");
         }
     }
 
@@ -413,7 +413,7 @@ template<class Ta, class Tb>
     )
         : source_coord_min(source_range.lower), dest_coord_min(dest_range.lower) {
 
-        throw shamutils::throw_with_loc<std::invalid_argument>( "this coordinate conversion mode is not implemented"
+        throw shambase::throw_with_loc<std::invalid_argument>( "this coordinate conversion mode is not implemented"
         );
     }
 
@@ -423,7 +423,7 @@ template<class Ta, class Tb>
     )
         : source_coord_min(source_range.lower), dest_coord_min(dest_range.lower) {
 
-        throw shamutils::throw_with_loc<std::invalid_argument>( "this coordinate conversion mode is not implemented"
+        throw shambase::throw_with_loc<std::invalid_argument>( "this coordinate conversion mode is not implemented"
         );
     }
 

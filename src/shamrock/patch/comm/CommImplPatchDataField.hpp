@@ -18,7 +18,7 @@
 #include "shamsys/comm/CommRequests.hpp"
 #include "shamsys/comm/ProtocolEnum.hpp"
 #include "shamsys/comm/details/CommImplBuffer.hpp"
-#include "shamutils/throwUtils.hpp"
+#include "shambase/throwUtils.hpp"
 
 #include <optional>
 #include <stdexcept>
@@ -125,7 +125,7 @@ namespace shamsys::comm::details {
             u64 cnt_recv = recv.get_details().comm_len;
 
             if (cnt_recv % details.nvar != 0) {
-                throw shamutils::throw_with_loc<std::runtime_error>(
+                throw shambase::throw_with_loc<std::runtime_error>(
                     "the received message must be disible by nvar to be received as PatchDataField"
                 );
             }

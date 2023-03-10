@@ -10,7 +10,7 @@
 
 #include "aliases.hpp"
 #include "shammath/CoordRange.hpp"
-#include "shamutils/sycl_utils.hpp"
+#include "shambase/sycl_utils.hpp"
 #include "shamrock/patch/Patch.hpp"
 #include "shamrock/patch/PatchCoordTransform.hpp"
 #include "shamrock/patch/PatchDataLayout.hpp"
@@ -172,7 +172,7 @@ namespace shamrock::patch {
     template <class T>
     inline std::tuple<T, T> SimulationBoxInfo::partch_coord_to_domain(const Patch &p) const {
 
-        //using ptype = typename shamutils::sycl_utils::VectorProperties<T>::component_type;
+        //using ptype = typename shambase::sycl_utils::VectorProperties<T>::component_type;
 
         auto [bmin, bmax] = get_bounding_box<T>();
 

@@ -10,7 +10,7 @@
 
 #include "aliases.hpp"
 #include "intervals.hpp"
-#include "shamutils/SourceLocation.hpp"
+#include "shambase/SourceLocation.hpp"
 
 #include <limits>
 

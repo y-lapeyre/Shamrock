@@ -9,7 +9,7 @@
 #pragma once
 
 #include "aliases.hpp"
-#include "shamutils/sycl_utils/sycl_utilities.hpp"
+#include "shambase/sycl_utils/sycl_utilities.hpp"
 
 namespace shammath {
 
@@ -96,13 +96,13 @@ namespace shammath {
         sycl::vec<T, 3> bmin1, sycl::vec<T, 3> bmax1, sycl::vec<T, 3> bmin2, sycl::vec<T, 3> bmax2
     ) {
         return (
-            (shamutils::sycl_utils::g_sycl_max(bmin1.x(), bmin2.x()) <=
-             shamutils::sycl_utils::g_sycl_min(bmax1.x(), bmax2.x())) &&
-            (shamutils::sycl_utils::g_sycl_max(bmin1.y(), bmin2.y()) <=
-             shamutils::sycl_utils::g_sycl_min(bmax1.y(), bmax2.y())) &&
-            (shamutils::sycl_utils::g_sycl_max(bmin1.z(), bmin2.z()) <=
-             shamutils::sycl_utils::g_sycl_min(bmax1.z(), bmax2.z()))
+            (shambase::sycl_utils::g_sycl_max(bmin1.x(), bmin2.x()) <=
+             shambase::sycl_utils::g_sycl_min(bmax1.x(), bmax2.x())) &&
+            (shambase::sycl_utils::g_sycl_max(bmin1.y(), bmin2.y()) <=
+             shambase::sycl_utils::g_sycl_min(bmax1.y(), bmax2.y())) &&
+            (shambase::sycl_utils::g_sycl_max(bmin1.z(), bmin2.z()) <=
+             shambase::sycl_utils::g_sycl_min(bmax1.z(), bmax2.z()))
         );
     }
 
-} // namespace shamutils
+} // namespace shambase

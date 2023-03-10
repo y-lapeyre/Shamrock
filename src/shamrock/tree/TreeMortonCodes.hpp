@@ -30,7 +30,7 @@ namespace shamrock::tree {
             sycl::buffer<T> &pos_buf
         ) {
 
-            using TProp = shamutils::sycl_utils::VectorProperties<T>;
+            using TProp = shambase::sycl_utils::VectorProperties<T>;
 
             RadixTreeMortonBuilder<u_morton, T, TProp::dimension>::build(
                 queue,

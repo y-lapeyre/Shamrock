@@ -14,7 +14,7 @@
 #include "shamrock/tree/RadixTreeMortonBuilder.hpp"
 #include "shamrock/tree/TreeMortonCodes.hpp"
 #include "shamsys/legacy/log.hpp"
-#include "shamutils/stringUtils.hpp"
+#include "shambase/stringUtils.hpp"
 
 #include "kernels/reduction_alg.hpp"
 
@@ -62,7 +62,7 @@ namespace shamrock::tree {
                 " | after :",
                 tree_leaf_count,
                 ") ratio :",
-                shamutils::format_printf("%2.2f", f32(obj_cnt) / f32(tree_leaf_count))
+                shambase::format_printf("%2.2f", f32(obj_cnt) / f32(tree_leaf_count))
             );
             
             buf_reduc_index_map = std::make_unique<sycl::buffer<u32>>(
@@ -95,7 +95,7 @@ namespace shamrock::tree {
                 );
 
             } else {
-                throw shamutils::throw_with_loc<std::runtime_error>("0 leaf tree cannot exists");
+                throw shambase::throw_with_loc<std::runtime_error>("0 leaf tree cannot exists");
             }
         }
 

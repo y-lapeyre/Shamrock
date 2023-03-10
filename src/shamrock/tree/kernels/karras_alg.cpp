@@ -11,7 +11,7 @@
 #include <stdexcept>
 
 #include "shamrock/math/integerManip.hpp"
-#include "shamutils/throwUtils.hpp"
+#include "shambase/throwUtils.hpp"
 
 #define SGN(x) (x == 0) ? 0 : ((x > 0) ? 1 : -1)
 

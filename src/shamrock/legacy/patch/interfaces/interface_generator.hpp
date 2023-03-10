@@ -42,7 +42,7 @@
 #include <vector>
 
 #include "interface_generator_impl.hpp"
-#include "shamutils/stringUtils.hpp"
+#include "shambase/stringUtils.hpp"
 
 class InterfaceVolumeGenerator {
   public:
@@ -97,7 +97,7 @@ template <class vectype, class field_type, class InterfaceSelector> class Interf
         const u64 global_pcount = sched.patch_list.global.size();
 
         if (local_pcount == 0)
-            throw shamutils::throw_with_loc<std::invalid_argument>("local patch count is zero this function can not run");
+            throw shambase::throw_with_loc<std::invalid_argument>("local patch count is zero this function can not run");
 
         sycl::buffer<u64> patch_ids_buf(local_pcount);
         sycl::buffer<vectype> local_box_min_buf(local_pcount);
@@ -457,7 +457,7 @@ template <class vectype, class field_type, class InterfaceSelector> class Interf
                     Interface_map[precv.id_patch].push_back({psend.id_patch, std::move(comm_pdat[i])});
                     comm_pdat[i] = nullptr;
                 }else{
-                    std::cout << shamutils::format_printf("send : (%3d,%3d) : %d -> %d / %d\n",psend.id_patch,precv.id_patch,psend.node_owner_id,precv.node_owner_id,local_comm_tag[i]);
+                    std::cout << shambase::format_printf("send : (%3d,%3d) : %d -> %d / %d\n",psend.id_patch,precv.id_patch,psend.node_owner_id,precv.node_owner_id,local_comm_tag[i]);
                     patchdata_isend(* comm_pdat[i], rq_lst, precv.node_owner_id, local_comm_tag[i], MPI_COMM_WORLD);
                 }
 
@@ -484,7 +484,7 @@ template <class vectype, class field_type, class InterfaceSelector> class Interf
                 if(precv.node_owner_id == shamsys::instance::world_rank){
 
                     if(psend.node_owner_id != precv.node_owner_id){
-                        std::cout << shamutils::format_printf("recv (%3d,%3d) : %d -> %d / %d\n",global_comm_vec[i].x(),global_comm_vec[i].y(),psend.node_owner_id,precv.node_owner_id,global_comm_tag[i]);
+                        std::cout << shambase::format_printf("recv (%3d,%3d) : %d -> %d / %d\n",global_comm_vec[i].x(),global_comm_vec[i].y(),psend.node_owner_id,precv.node_owner_id,global_comm_tag[i]);
                         Interface_map[precv.id_patch].push_back({psend.id_patch, std::make_unique<PatchData>()});//patchdata_irecv(recv_rq, psend.node_owner_id, global_comm_tag[i], MPI_COMM_WORLD)}
                         patchdata_irecv_probe(*std::get<1>(Interface_map[precv.id_patch][Interface_map[precv.id_patch].size()-1]),rq_lst, psend.node_owner_id, global_comm_tag[i], MPI_COMM_WORLD);
                     }

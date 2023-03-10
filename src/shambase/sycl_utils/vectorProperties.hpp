@@ -11,7 +11,7 @@
 #include "aliases.hpp"
 #include <limits>
 
-namespace shamutils::sycl_utils {
+namespace shambase::sycl_utils {
 
     template<class T>
     struct VectorProperties {
@@ -92,4 +92,4 @@ namespace shamutils::sycl_utils {
         }
     };
 
-} // namespace shamutils::sycl_utils
+} // namespace shambase::sycl_utils

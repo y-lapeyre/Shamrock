@@ -60,15 +60,15 @@ namespace models::sph {
             while(step_time < end_time && sycl::fabs(step_time - end_time) > 1e-8){
 
                 logger::normal_ln("BasicSPHGas", "simulate until",
-                    shamutils::format_printf("%2.2f / %2.2f (%3.1f %%)",step_time,end_time,100*(step_time-start_time)/(end_time-start_time))
+                    shambase::format_printf("%2.2f / %2.2f (%3.1f %%)",step_time,end_time,100*(step_time-start_time)/(end_time-start_time))
                 );
 
                 if(step_cnt % freq_dump){
-                    dump(prefix_dump + "dump_" + shamutils::format_printf("%06d",step_cnt));
+                    dump(prefix_dump + "dump_" + shambase::format_printf("%06d",step_cnt));
                 }
 
                 if(step_cnt % freq_restart_dump){
-                    restart_dump(prefix_dump + "restart_dump_" + shamutils::format_printf("%06d",step_cnt));
+                    restart_dump(prefix_dump + "restart_dump_" + shambase::format_printf("%06d",step_cnt));
                 }
 
                 step_time = evolve(sched, step_time, end_time);
