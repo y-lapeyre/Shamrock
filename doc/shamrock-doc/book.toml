@@ -1,0 +1,16 @@
+[book]
+authors = ["tdavidcl"]
+language = "en"
+multilingual = false
+src = "src"
+title = "Shamrock Documentation"
+
+[output.html]
+additional-css = ["custom.css"]
+
+[output.html]
+mathjax-support = true
+
+[output.html.fold]
+enable = true
+level = 1
