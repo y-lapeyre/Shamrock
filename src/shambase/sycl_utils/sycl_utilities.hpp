@@ -13,7 +13,7 @@
 namespace shambase::sycl_utils {
 
     template<class T>
-    T g_sycl_min(T a, T b) {
+    inline T g_sycl_min(T a, T b) {
 
         static_assert(VectorProperties<T>::has_info, "no info about this type");
 
@@ -27,7 +27,7 @@ namespace shambase::sycl_utils {
     }
 
     template<class T>
-    T g_sycl_max(T a, T b) {
+    inline T g_sycl_max(T a, T b) {
 
         static_assert(VectorProperties<T>::has_info, "no info about this type");
 
