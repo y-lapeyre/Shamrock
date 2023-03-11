@@ -9,7 +9,7 @@
 #pragma once
 
 #include "aliases.hpp"
-#include "shambase/stringUtils.hpp"
+#include "shambase/string.hpp"
 
 namespace shamsys {
 

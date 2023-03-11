@@ -18,7 +18,7 @@
 
 #include "shamtest/shamtest.hpp"
 #include "shamtest/shamtest.hpp"
-#include "shambase/stringUtils.hpp"
+#include "shambase/string.hpp"
 #include <cstdio>
 #include <memory>
 #include <vector>

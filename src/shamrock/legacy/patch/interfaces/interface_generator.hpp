@@ -42,7 +42,7 @@
 #include <vector>
 
 #include "interface_generator_impl.hpp"
-#include "shambase/stringUtils.hpp"
+#include "shambase/string.hpp"
 
 class InterfaceVolumeGenerator {
   public:

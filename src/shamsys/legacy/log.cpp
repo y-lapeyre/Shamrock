@@ -7,7 +7,7 @@
 // -------------------------------------------------------//
 
 #include "log.hpp"
-#include "shambase/stringUtils.hpp"
+#include "shambase/string.hpp"
 #include "shamsys/legacy/mpi_handler.hpp"
 #include <chrono>
 

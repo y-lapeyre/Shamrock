@@ -8,7 +8,7 @@
 
 #include "cmdopt.hpp"
 #include "shamsys/legacy/log.hpp"
-#include "shambase/stringUtils.hpp"
+#include "shambase/string.hpp"
 #include <optional>
 #include <string_view>
 #include <vector>

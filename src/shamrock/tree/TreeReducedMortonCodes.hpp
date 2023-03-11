@@ -14,7 +14,7 @@
 #include "shamrock/tree/RadixTreeMortonBuilder.hpp"
 #include "shamrock/tree/TreeMortonCodes.hpp"
 #include "shamsys/legacy/log.hpp"
-#include "shambase/stringUtils.hpp"
+#include "shambase/string.hpp"
 
 #include "kernels/reduction_alg.hpp"
 

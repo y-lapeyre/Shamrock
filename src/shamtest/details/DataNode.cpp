@@ -7,7 +7,7 @@
 // -------------------------------------------------------//
 
 #include "DataNode.hpp"
-#include "shambase/stringUtils.hpp"
+#include "shambase/string.hpp"
 
 namespace shamtest::details {
     

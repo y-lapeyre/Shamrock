@@ -28,7 +28,7 @@
 #include "shamrock/patch/PatchDataLayout.hpp"
 #include "shamsys/legacy/mpi_handler.hpp"
 #include "shamrock/legacy/utils/geometry_utils.hpp"
-#include "shambase/stringUtils.hpp"
+#include "shambase/string.hpp"
 
 //TODO use range based loop and emplace_back instead 
 

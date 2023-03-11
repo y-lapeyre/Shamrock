@@ -22,7 +22,7 @@
 #include <fstream>
 #include <string>
 #include "aliases.hpp"
-#include "shambase/stringUtils.hpp"
+#include "shambase/string.hpp"
 #include <cstdarg>
 
 

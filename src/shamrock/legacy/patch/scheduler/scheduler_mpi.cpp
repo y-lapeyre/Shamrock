@@ -25,7 +25,7 @@
 #include "shamrock/legacy/utils/time_utils.hpp"
 
 #include "shamsys/legacy/sycl_mpi_interop.hpp"
-#include "shambase/stringUtils.hpp"
+#include "shambase/string.hpp"
 #include "shambase/exception.hpp"
 
 

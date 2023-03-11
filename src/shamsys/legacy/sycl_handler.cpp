@@ -22,7 +22,7 @@
 #include "cmdopt.hpp"
 
 #include "log.hpp"
-#include "shambase/stringUtils.hpp"
+#include "shambase/string.hpp"
 
 
 
