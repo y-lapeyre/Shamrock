@@ -13,7 +13,7 @@
 #include "kernels/karras_alg.hpp"
 #include "shamrock/legacy/algs/sycl/basic/basic.hpp"
 #include "shamrock/legacy/algs/sycl/defs.hpp"
-#include "shambase/throwUtils.hpp"
+#include "shambase/exception.hpp"
 
 namespace shamrock::tree {
 

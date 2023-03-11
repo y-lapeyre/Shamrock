@@ -18,7 +18,7 @@
 #include "shamsys/comm/CommRequests.hpp"
 #include "shamsys/comm/ProtocolEnum.hpp"
 #include "shamsys/comm/details/CommImplBuffer.hpp"
-#include "shambase/throwUtils.hpp"
+#include "shambase/exception.hpp"
 
 #include <optional>
 #include <stdexcept>

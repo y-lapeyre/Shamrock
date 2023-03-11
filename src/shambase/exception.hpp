@@ -30,4 +30,6 @@ namespace shambase {
         return ExcptTypes(message + loc.format_multiline());
     }
 
+    
+
 } // namespace shambase

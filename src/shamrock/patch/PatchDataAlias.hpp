@@ -9,7 +9,7 @@
 #pragma once
 
 #include "aliases.hpp"
-#include "shambase/throwUtils.hpp"
+#include "shambase/exception.hpp"
 #include <variant>
 
 namespace shamrock::patch {

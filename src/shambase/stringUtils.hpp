@@ -10,7 +10,7 @@
 
 #include "aliases.hpp"
 #include "fmt_bindings/fmt_defs.hpp"
-#include "throwUtils.hpp"
+#include "exception.hpp"
 #include <vector>
 
 namespace shambase {

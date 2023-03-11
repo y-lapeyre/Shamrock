@@ -8,7 +8,7 @@
 
 #include "CommImplBuffer.hpp"
 #include "shamsys/legacy/log.hpp"
-#include "shambase/throwUtils.hpp"
+#include "shambase/exception.hpp"
 #include <stdexcept>
 
 

@@ -7,7 +7,7 @@
 // -------------------------------------------------------//
 
 #include "CoordRange.hpp"
-#include "shambase/throwUtils.hpp"
+#include "shambase/exception.hpp"
 
 
 namespace shammath {

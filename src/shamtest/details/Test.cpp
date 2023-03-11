@@ -9,7 +9,7 @@
 #include "Test.hpp"
 
 #include "shamsys/NodeInstance.hpp"
-#include "shambase/throwUtils.hpp"
+#include "shambase/exception.hpp"
 
 namespace shamtest::details {
 

@@ -26,7 +26,7 @@
 
 #include "shamsys/legacy/sycl_mpi_interop.hpp"
 #include "shambase/stringUtils.hpp"
-#include "shambase/throwUtils.hpp"
+#include "shambase/exception.hpp"
 
 
 

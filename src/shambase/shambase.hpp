@@ -8,6 +8,8 @@
 
 #pragma once
 
+#include "exception.hpp"
+
 /**
  * @brief namespace containing basic utilities for the shamrock code base
  * 

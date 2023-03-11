@@ -21,7 +21,7 @@
 #include "shamsys/legacy/sycl_handler.hpp"
 
 #include "shamsys/legacy/mpi_handler.hpp"
-#include "shambase/throwUtils.hpp"
+#include "shambase/exception.hpp"
 
 
 bool has_option(

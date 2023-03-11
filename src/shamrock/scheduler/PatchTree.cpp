@@ -23,7 +23,7 @@
 #include <vector>
 #include "shamrock/legacy/utils/geometry_utils.hpp"
 #include "shamrock/patch/Patch.hpp"
-#include "shambase/throwUtils.hpp"
+#include "shambase/exception.hpp"
 
 namespace shamrock::scheduler {
 u64 PatchTree::insert_node(Node n){

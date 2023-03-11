@@ -19,7 +19,7 @@
 
 
 #include "CommRequests.hpp"
-#include "shambase/throwUtils.hpp"
+#include "shambase/exception.hpp"
 //#include "CommImplBuffer.hpp"
 
 

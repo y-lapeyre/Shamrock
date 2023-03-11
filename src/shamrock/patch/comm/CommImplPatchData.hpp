@@ -19,7 +19,7 @@
 #include "shamsys/comm/CommBuffer.hpp"
 #include "shamsys/comm/CommRequests.hpp"
 #include "shamsys/comm/ProtocolEnum.hpp"
-#include "shambase/throwUtils.hpp"
+#include "shambase/exception.hpp"
 
 #include <optional>
 #include <stdexcept>

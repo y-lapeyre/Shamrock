@@ -14,7 +14,7 @@
 #include "shamrock/legacy/algs/sycl/sycl_algs.hpp"
 #include "shamrock/legacy/patch/base/enabled_fields.hpp"
 #include "shamsys/legacy/log.hpp"
-#include "shambase/throwUtils.hpp"
+#include "shambase/exception.hpp"
 #include <array>
 #include <memory>
 #include <random>
