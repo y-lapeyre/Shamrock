@@ -10,15 +10,21 @@
 
 #include <climits>
 #include <type_traits>
+#include "shambase/type_aliases.hpp"
 
 namespace shambase {
 
+    template<class T>
+    inline constexpr u64 bitsizeof = sizeof(T) * CHAR_BIT;
+
     template<typename T, int num>
     struct has_bitlen {
-        static constexpr bool value = sizeof(T) * CHAR_BIT == num;
+        static constexpr bool value = bitsizeof<T> == num;
     };
 
     template<typename T, int num>
     inline constexpr bool has_bitlen_v = has_bitlen<T, num>::value;
+
+
 
 } // namespace shambase

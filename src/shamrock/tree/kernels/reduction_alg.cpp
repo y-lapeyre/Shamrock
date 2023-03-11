@@ -68,7 +68,7 @@ void sycl_reduction_iteration(sycl::queue &queue, u32 morton_count, std::unique_
             int i = item.get_id(0);
 
             auto DELTA = [=](i32 x, i32 y){
-                return karras_delta(x,y,_morton_cnt,m);
+                return shambase::karras_delta(x,y,_morton_cnt,m);
             };
 
             // find index of preceding i-1 non duplicate morton code

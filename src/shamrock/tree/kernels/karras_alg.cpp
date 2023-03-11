@@ -45,7 +45,7 @@ void __sycl_karras_alg(sycl::queue &queue, u32 internal_cell_count,
             int i = (int)item.get_id(0);
 
             auto DELTA = [=](i32 x, i32 y){
-                return karras_delta(x,y,morton_lenght,m);
+                return shambase::karras_delta(x,y,morton_lenght,m);
             };
 
             int ddelta = DELTA(i, i + 1) - DELTA(i, i - 1);

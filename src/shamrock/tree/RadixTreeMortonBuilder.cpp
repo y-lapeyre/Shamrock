@@ -11,6 +11,7 @@
 #include "RadixTreeMortonBuilder.hpp"
 #include "kernels/key_morton_sort.hpp"
 #include "shamalgs/algorithm/algorithm.hpp"
+#include "shambase/integer_sycl.hpp"
 #include "shamrock/math/integerManip.hpp"
 #include "shamrock/sfc/MortonKernels.hpp"
 #include "shamrock/sfc/morton.hpp"
@@ -37,7 +38,7 @@ using namespace shamrock::sfc;
 
     debug_sycl_ln("RadixTree", "box dim :", bounding_box);
 
-    u32 morton_len = get_next_pow2_val(cnt_obj);
+    u32 morton_len = shambase::roundup_pow2_clz(cnt_obj);
 
     debug_sycl_ln("RadixTree", "morton buffer lenght :", morton_len);
     out_buf_morton = std::make_unique<sycl::buffer<morton_t>>(morton_len);

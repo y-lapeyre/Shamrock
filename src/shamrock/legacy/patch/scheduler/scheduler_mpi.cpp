@@ -14,6 +14,7 @@
 #include <stdexcept>
 #include <vector>
 
+#include "shambase/integer_sycl.hpp"
 #include "shamrock/legacy/io/logs.hpp"
 #include "shamrock/legacy/patch/base/patchdata.hpp"
 #include "shamrock/legacy/patch/base/patchdata_field.hpp"
@@ -59,7 +60,7 @@ void PatchScheduler::make_patch_base_grid(std::array<u32,dim> patch_count){
         max_lin_patch_count = sycl::max(max_lin_patch_count, patch_count[i]);
     }
 
-    u64 coord_div_fact = shamrock::math::int_manip::get_next_pow2_val(max_lin_patch_count);
+    u64 coord_div_fact = shambase::roundup_pow2_clz(max_lin_patch_count);
 
     u64 sz_root_patch = PatchScheduler::max_axis_patch_coord_lenght/coord_div_fact;
 

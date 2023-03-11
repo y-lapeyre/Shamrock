@@ -56,7 +56,7 @@ void sycl_compute_cell_ranges(
         cgh.parallel_for(range_radix_tree, [=](sycl::item<1> item) {
             u32 gid = (u32)item.get_id(0);
 
-            uint clz_ = clz_xor(morton_map[gid], morton_map[end_range_map[gid]]);
+            uint clz_ = shambase::clz_xor(morton_map[gid], morton_map[end_range_map[gid]]);
 
             using Morton = shamrock::sfc::MortonCodes<u_morton, 3>;
 
