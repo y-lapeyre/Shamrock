@@ -8,6 +8,7 @@
 
 
 #include "shamalgs/random/random.hpp"
+#include "shambase/sycl_utils/vec_equals.hpp"
 #include "shamtest/shamtest.hpp"
 #include <random>
 
@@ -39,7 +40,7 @@ template<class T> void test_constructor_syclbuf(std::string prefix, u64 seed, sh
 
         bool eq = true;
         for(u32 i = 0; i < npart; i++){
-            if(!shamsys::syclhelper::test_sycl_eq(acc1[i] , acc2[i])){
+            if(!shambase::vec_equals(acc1[i] , acc2[i])){
                 eq = false;
                 //id_err_list += std::to_string(i) + " ";
             }
@@ -174,7 +175,7 @@ template<class T> void test_comm_syclbuf(std::string prefix, u64 seed, shamsys::
 
             bool eq = true;
             for(u32 i = 0; i < npart; i++){
-                if(!shamsys::syclhelper::test_sycl_eq(acc1[i] , acc2[i])){
+                if(!shambase::vec_equals(acc1[i] , acc2[i])){
                     eq = false;
                     //id_err_list += std::to_string(i) + " ";
                 }
@@ -236,7 +237,7 @@ template<class T> void test_comm_probe_syclbuf(std::string prefix, u64 seed, sha
 
             bool eq = true;
             for(u32 i = 0; i < npart; i++){
-                if(!shamsys::syclhelper::test_sycl_eq(acc1[i] , acc2[i])){
+                if(!shambase::vec_equals(acc1[i] , acc2[i])){
                     eq = false;
                     //id_err_list += std::to_string(i) + " ";
                 }

@@ -104,8 +104,6 @@ namespace shamrock::math::int_manip {
         return val_rounded_pow; 
     };
 
-    template<class T, std::enable_if_t<std::is_integral_v<T>,int> = 0>
-    bool is_pow_of_two(T);
 
 }
 

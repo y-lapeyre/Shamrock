@@ -25,7 +25,7 @@ namespace shambase {
      * @return false
      */
     template<class T, std::enable_if_t<std::is_integral_v<T>, int> = 0>
-    inline bool is_pow_of_two_fast(T v) {
+    inline constexpr bool is_pow_of_two_fast(T v) noexcept{
         return (v & (v - 1)) == 0;
     }
 
@@ -38,7 +38,7 @@ namespace shambase {
      * @return false
      */
     template<class T, std::enable_if_t<std::is_integral_v<T>, int> = 0>
-    inline bool is_pow_of_two(T v) {
+    inline constexpr bool is_pow_of_two(T v) noexcept{
         return v && !(v & (v - 1));
     }
 
@@ -53,7 +53,7 @@ namespace shambase {
      * @return false
      */
     template<class T, std::enable_if_t<std::is_integral_v<T> || std::is_signed_v<T>, int> = 0>
-    inline bool sign_differ(T a, T b) {
+    inline constexpr bool sign_differ(T a, T b) noexcept {
         return ((a ^ b) < 0);
     }
 
@@ -74,6 +74,7 @@ namespace shambase {
 
     /**
      * @brief round up to the next power of two
+     * Source : https://graphics.stanford.edu/~seander/bithacks.html
      * 
      * @tparam T 
      * @param v 
@@ -92,6 +93,7 @@ namespace shambase {
 
     /**
      * @brief round up to the next power of two
+     * Modified from the 32 bit version
      * 
      * @tparam T 
      * @param v 
@@ -108,5 +110,8 @@ namespace shambase {
         v |= v >> 32;
         v++;
     };
+
+
+
 
 } // namespace shambase
