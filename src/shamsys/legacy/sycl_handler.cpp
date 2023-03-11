@@ -214,9 +214,9 @@ namespace sycl_handler {
 
                     std::string selected = selected_k(key_global);
 
-                    std::string devname = trunc_str(DeviceName,29);
-                    std::string platname = trunc_str(PlatformName,24);
-                    std::string devtype = trunc_str(getDeviceTypeName(Device),6);
+                    std::string devname = shambase::trunc_str(DeviceName,29);
+                    std::string platname = shambase::trunc_str(PlatformName,24);
+                    std::string devtype = shambase::trunc_str(getDeviceTypeName(Device),6);
 
                     logger::raw_ln(shambase::format_printf("| %-3s | %02d | %-29s | %-24s | %-6s |",
                         selected.c_str(),key_global,devname.c_str(),platname.c_str(),devtype.c_str()

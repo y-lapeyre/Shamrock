@@ -377,13 +377,13 @@ namespace shamtest {
 
 
             s_out += R"(    "results" : )"   "[\n\n" ;
-            s_out += increase_indent(out_res_string);
+            s_out += shambase::increase_indent(out_res_string);
             s_out += "\n    ]\n}";
 
             //printf("%s\n",s_out.c_str());
 
             if(out_to_file){
-                write_string_to_file(std::string(opts::get_option("-o")), s_out);
+                shambase::write_string_to_file(std::string(opts::get_option("-o")), s_out);
             }
             
         }

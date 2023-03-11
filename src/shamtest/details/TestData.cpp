@@ -18,7 +18,7 @@ namespace shamtest::details {
         acc += R"(    "dataset" : )" "\n    [\n" ;
 
         for(u32 i = 0; i < dataset.size(); i++){
-            acc += increase_indent( dataset[i].serialize()) ;
+            acc += shambase::increase_indent( dataset[i].serialize()) ;
             if(i < dataset.size()-1){
                 acc += ",";
             }

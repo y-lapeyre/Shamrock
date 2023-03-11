@@ -9,7 +9,6 @@
 #pragma once
 
 #include "aliases.hpp"
-#include "intervals.hpp"
 #include "shambase/SourceLocation.hpp"
 
 #include <limits>

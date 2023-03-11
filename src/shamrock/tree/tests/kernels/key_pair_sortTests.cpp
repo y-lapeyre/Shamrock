@@ -7,6 +7,7 @@
 // -------------------------------------------------------//
 
 #include "shamrock/legacy/utils/time_utils.hpp"
+#include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamsys/legacy/sycl_handler.hpp"
 #include "shamtest/shamtest.hpp"

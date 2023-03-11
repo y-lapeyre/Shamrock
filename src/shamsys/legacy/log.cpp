@@ -8,6 +8,7 @@
 
 #include "log.hpp"
 #include "shambase/stringUtils.hpp"
+#include "shamsys/legacy/mpi_handler.hpp"
 #include <chrono>
 
 template<typename T>

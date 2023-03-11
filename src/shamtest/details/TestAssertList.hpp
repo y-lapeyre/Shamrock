@@ -13,6 +13,7 @@
 #include "shambase/SourceLocation.hpp"
 
 #include "TestAssert.hpp"
+#include "shambase/sycl.hpp"
 
 namespace shamtest::details {
     struct TestAssertList {

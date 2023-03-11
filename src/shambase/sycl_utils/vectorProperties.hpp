@@ -11,6 +11,7 @@
 #include "aliases.hpp"
 #include <limits>
 
+
 namespace shambase::sycl_utils {
 
     template<class T>

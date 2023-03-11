@@ -9,6 +9,7 @@
 #pragma once
 
 #include "vectorProperties.hpp"
+#include "shambase/sycl.hpp"
 
 namespace shambase::sycl_utils {
 

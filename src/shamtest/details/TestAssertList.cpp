@@ -16,7 +16,7 @@ namespace shamtest::details {
         std::string acc = "\n[\n";
 
         for(u32 i = 0; i < asserts.size(); i++){
-            acc += increase_indent( asserts[i].serialize()) ;
+            acc += shambase::increase_indent( asserts[i].serialize()) ;
             if(i < asserts.size()-1){
                 acc += ",";
             }

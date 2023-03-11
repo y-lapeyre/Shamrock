@@ -15,6 +15,7 @@
 #include <vector>
 
 #include "shamrock/math/integerManip.hpp"
+#include "shambase/sycl.hpp"
 
 class Kernel_generate_split_table_morton32;
 class Kernel_generate_split_table_morton64;

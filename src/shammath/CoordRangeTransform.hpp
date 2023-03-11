@@ -9,6 +9,7 @@
 #pragma once
 
 #include "CoordRange.hpp"
+#include "shambase/sycl_utils/vectorProperties.hpp"
 
 namespace shammath {
 

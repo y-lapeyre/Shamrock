@@ -8,10 +8,12 @@
 
 #pragma once
 
+//TODO remove this file
 
 #include "aliases.hpp"
 #include <ostream>
 #include <random> 
+#include "shambase/sycl.hpp"
 
 
 

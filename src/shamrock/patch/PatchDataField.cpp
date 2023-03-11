@@ -10,6 +10,7 @@
 #include "shamalgs/algorithm/algorithm.hpp"
 #include "shamalgs/random/random.hpp"
 #include "shamrock/legacy/utils/sycl_vector_utils.hpp"
+#include "shamsys/NodeInstance.hpp"
 #include <memory>
 
 template<class T> class Kernel_Extract_element;

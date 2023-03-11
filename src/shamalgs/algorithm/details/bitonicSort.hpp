@@ -9,6 +9,7 @@
 #pragma once
 
 #include "aliases.hpp"
+#include "shambase/sycl.hpp"
 
 
 namespace shamalgs::algorithm::details {

@@ -9,6 +9,7 @@
 #pragma once
 
 #include "aliases.hpp"
+#include "shambase/sycl.hpp"
 
 namespace shamrock::math::int_manip {
 
@@ -55,6 +56,8 @@ namespace shamrock::math::int_manip {
             return __clz(a);
         )
 
+        return 0; //weird fixes waiting for https://github.com/OpenSYCL/OpenSYCL/pull/965
+
     }
 
     #endif
@@ -100,6 +103,9 @@ namespace shamrock::math::int_manip {
 
         return val_rounded_pow; 
     };
+
+    template<class T, std::enable_if_t<std::is_integral_v<T>,int> = 0>
+    bool is_pow_of_two(T);
 
 }
 

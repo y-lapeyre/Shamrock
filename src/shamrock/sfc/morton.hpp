@@ -25,6 +25,7 @@
 #include "shamrock/math/integerManip.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"
 #include <type_traits>
+#include "shambase/sycl.hpp"
 
 namespace shamrock::sfc {
 

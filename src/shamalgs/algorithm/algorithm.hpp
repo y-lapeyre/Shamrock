@@ -21,7 +21,7 @@
 
 #include "aliases.hpp"
 
-
+#include "shambase/sycl.hpp"
 
 /**
  * @brief namespace to store algorithms implemented by shamalgs

@@ -11,6 +11,7 @@
 #include "aliases.hpp"
 #include "flags.hpp"
 #include <memory>
+#include "shambase/sycl.hpp"
 
 /**
  * @brief Karras 2012 algorithm with addition endrange buffer

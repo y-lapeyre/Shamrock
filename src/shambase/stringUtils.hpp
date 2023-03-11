@@ -11,10 +11,20 @@
 #include "aliases.hpp"
 #include "fmt_bindings/fmt_defs.hpp"
 #include "exception.hpp"
+#include <fstream>
 #include <vector>
 
 namespace shambase {
 
+    /**
+     * @brief format a string using fmtlib style 
+     * Cheat sheet : https://hackingcpp.com/cpp/libs/fmt.html
+     * 
+     * @tparam T 
+     * @param fmt the format string
+     * @param args the arguments to format agains
+     * @return std::string the formatted string
+     */
     template<typename... T>
     inline std::string format(fmt::format_string<T...> fmt, T &&...args) {
         try {
@@ -24,6 +34,15 @@ namespace shambase {
         }
     }
 
+    /**
+     * @brief format a string using C printf style 
+     * https://cplusplus.com/reference/cstdio/printf/
+     * 
+     * @tparam T 
+     * @param fmt the format string
+     * @param args the arguments to format agains
+     * @return std::string the formatted string
+     */
     template<typename... T>
     inline std::string format_printf(std::string format, const T & ...args) {
         try {
@@ -37,6 +56,13 @@ namespace shambase {
         }
     }
 
+    /**
+     * @brief given a sizeof value return a readble string 
+     * Exemple : readable_sizeof(1024*1024*1024) -> "1.00 GB"
+     * 
+     * @param size the size
+     * @return std::string the formated string
+     */
     inline std::string readable_sizeof(double size) {
 
         i32 i = 0;
@@ -56,6 +82,60 @@ namespace shambase {
         } else {
             return format_printf("%.2f %s", size, units[i]);
         }
+    }
+
+    /**
+     * @brief dump a string to a file
+     * 
+     * @param filename the filename
+     * @param s the string to dump
+     */
+    inline void write_string_to_file(std::string filename, std::string s) {
+        std::ofstream myfile(filename);
+        myfile << s;
+        myfile.close();
+    }
+    
+    /**
+     * @brief replace all occurence of a search string with another
+     * 
+     * taken from https://en.cppreference.com/w/cpp/string/basic_string/replace
+     *
+     * @param inout the string to modify
+     * @param what the search string
+     * @param with the replace string
+     */
+    inline void replace_all(std::string& inout, std::string_view what, std::string_view with)
+    {
+        for (std::string::size_type pos{};
+            inout.npos != (pos = inout.find(what.data(), pos, what.length()));
+            pos += with.length()) {
+            inout.replace(pos, what.length(), with.data(), with.length());
+        }
+    }
+
+    /**
+     * @brief Increase indentation of a string
+     * 
+     * @param in the input string
+     * @return std::string the output string
+     */
+    inline std::string increase_indent(std::string in){
+        std::string out = in;
+        replace_all(out, "\n", "\n    ");
+        return "    " + out;
+    }
+
+    inline std::string trunc_str(std::string s , u32 max_len){
+
+        if(max_len < 5) throw std::invalid_argument("max len should be above 4");
+
+        if (s.size() > max_len) {
+            return s.substr(0,max_len-5) + " ...";
+        }else{
+            return s;
+        }
+
     }
 
 } // namespace shambase

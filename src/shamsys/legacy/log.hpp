@@ -9,7 +9,6 @@
 #pragma once 
 
 #include "aliases.hpp"
-#include "shamsys/legacy/mpi_handler.hpp"
 #include "shamrock/legacy/utils/string_utils.hpp"
 #include <chrono>
 #include <fstream>

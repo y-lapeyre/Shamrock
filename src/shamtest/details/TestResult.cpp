@@ -37,8 +37,8 @@ namespace shamtest::details {
                    R"(    "alt_queue" : ")" +
                    get_alt_queue().get_device().get_info<sycl::info::device::name>() + "\",\n" +
                    R"(    "world_rank" : )" + std::to_string(world_rank) + ",\n" +
-                   R"(    "asserts" : )" + increase_indent(asserts.serialize()) + ",\n" +
-                   R"(    "test_data" : )" + increase_indent(test_data.serialize()) + "\n" + "}";
+                   R"(    "asserts" : )" + shambase::increase_indent(asserts.serialize()) + ",\n" +
+                   R"(    "test_data" : )" + shambase::increase_indent(test_data.serialize()) + "\n" + "}";
         };
 
         return get_str();
