@@ -13,16 +13,5 @@
 
 namespace shamsys {
 
-    template<typename... T>
-    inline std::string format(fmt::format_string<T...> fmt, T &&...args) {
-        return shambase::format(fmt, args...);
-    }
-
-    template<typename... T>
-    inline std::string format_printf(std::string format, T &&...args){
-        return shambase::format_printf(format, args...);
-    }
-
-
 
 } // namespace shamsys

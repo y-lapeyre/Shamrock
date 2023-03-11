@@ -292,7 +292,7 @@ namespace shamtest {
 
 
 
-            std::string s_assert = shamsys::format(" [{}/{}] ",succes_cnt,res.asserts.asserts.size());
+            std::string s_assert = shambase::format(" [{}/{}] ",succes_cnt,res.asserts.asserts.size());
             printf("%-15s",s_assert.c_str());
             std::cout << " (" << timer.get_time_str() << ")" <<std::endl;
 

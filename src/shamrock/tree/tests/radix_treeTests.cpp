@@ -677,7 +677,7 @@ void test_inclusion(u32 Npart, u32 reduc_level) {
 
             if (!(l_ok && r_ok)) {
                 inclusion_valid = false;
-                comment += shamsys::format(
+                comment += shambase::format(
                     "fail : current : ({} {}) r:({} {}) l:({} {}) lid:{} rid:{}\n",
                     cur_pos_min_cell_a,
                     cur_pos_max_cell_a,
@@ -696,7 +696,7 @@ void test_inclusion(u32 Npart, u32 reduc_level) {
         shamtest::asserts().assert_add_comment(
             "inclusion ok",
             false,
-            comment + shamsys::format(
+            comment + shambase::format(
                           "\n leaf count : {}, internal count : {}",
                           rtree.tree_reduced_morton_codes.tree_leaf_count,
                           rtree.tree_struct.internal_cell_count
