@@ -1,4 +1,4 @@
 
 ![The Rust Logo](images/no_background.png)
 
-# Documentation
+Welcome to the documentation of the Shamrock code !
