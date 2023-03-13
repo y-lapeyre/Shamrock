@@ -2,7 +2,7 @@
 
 ## X macros
 
-```c++
+```cpp
 template< template<class> class Container >
 class VariantContainer {
     std::variant<Container<f32>,Container<f64>> variant;
@@ -11,7 +11,7 @@ class VariantContainer {
 
 Such Variant container can be used as such 
 
-```c++
+```cpp
 template<class T>
 struct Field{
     std::vector<T> vec;
@@ -22,7 +22,7 @@ using VariantField = VariantContainer<Field>;
 
 here VariantField is equivalent to a type like this : 
 
-```c++
+```cpp
 class VariantField {
     std::variant<Field<f32>,Field<f64>> variant;
 }
@@ -32,7 +32,7 @@ class VariantField {
 
 Usually you may have a Compile flag to toogle some features in C or Fortran code, in order to do so we usually write something like this
 
-```c++
+```cpp
 void func(){
     #ifdef DOSTUFF
         do_stuff();
@@ -44,7 +44,7 @@ void func(){
 
 In c++ such patern can be replaced by constexpr bool's.
 
-```c++
+```cpp
 // somewhere in the code
 #ifdef DOSTUFF
     constexpr bool do_stuff_defined = true;
@@ -65,7 +65,7 @@ since this if is marked as `constexpr` it will be evaluated at compile time, eve
 
 For `clang 13.0.1` without any flags : 
 
-```nasm
+```x86asm
 func():                               # @func()
     push    rbp
     mov     rbp, rsp

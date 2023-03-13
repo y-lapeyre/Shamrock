@@ -1,0 +1,1 @@
+cp -r ../shamrock-doc/src .

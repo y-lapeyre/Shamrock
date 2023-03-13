@@ -4,7 +4,7 @@
 
 ### SYCL parralel for
 
-```c++
+```cpp
 shamsys::instance::get_compute_queue().submit([&](sycl::handler & cgh){
                 
     sycl::accessor ...
@@ -19,7 +19,7 @@ shamsys::instance::get_compute_queue().submit([&](sycl::handler & cgh){
 
 ### Accessor class design
 
-```c++
+```cpp
 
 struct CustomAcc{
     sycl::accessor ...

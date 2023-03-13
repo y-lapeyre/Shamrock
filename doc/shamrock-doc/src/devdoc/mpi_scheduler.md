@@ -31,7 +31,7 @@ The MPI Scheduler is the class that handle the distribution of Patches / Data on
 
 Implementation : 
 
-```c++
+```cpp
 
 void scheduler_step(bool do_split_merge,bool do_load_balancing){
 
@@ -111,7 +111,7 @@ for all patch to split :
     &ensp;&thinsp; Split patch in patchData
 ```
 
-```c++
+```cpp
 void split_patches(std::unordered_set<u64> split_rq){
     for(u64 tree_id : split_rq){
 
@@ -162,7 +162,7 @@ for all patch to split :
     &ensp;&thinsp; merge corresponding node in patchtree
 ```
 
-```c++
+```cpp
 void merge_patches(std::unordered_set<u64> merge_rq){
     for(u64 tree_id : merge_rq){
 
@@ -210,7 +210,7 @@ void merge_patches(std::unordered_set<u64> merge_rq){
 
 layout setting : 
 
-```c++
+```cpp
 patchdata_layout::reset_fields();
 
 patchdata_layout::add_field(FieldDescriptor<f32>("rho",1));

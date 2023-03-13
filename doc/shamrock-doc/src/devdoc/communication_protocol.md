@@ -21,25 +21,25 @@ The type of protocol is selected when building the object, by passing a value of
 To build a buffer you can either :
 
  - build it from size information you may have : 
-```c++
+```cpp
 CommDetails<...type...> det = ...;
 CommBuffer buf {det,DirectGPU};
 ```
  - build it from a copy of an object : 
-```c++
+```cpp
 CommBuffer buf {...obj...,DirectGPU};
 ```
  - build it from an object : 
-```c++
+```cpp
 CommBuffer buf {std::move(...obj...),DirectGPU};
 ```
  - build it from a copy of an object & specify infos: 
-```c++
+```cpp
 CommDetails<...type...> det = ...;
 CommBuffer buf {...obj...,det,DirectGPU};
 ```
  - build it from an object & specify infos: 
-```c++
+```cpp
 CommDetails<...type...> det = ...;
 CommBuffer buf {std::move(...obj...),det,DirectGPU};
 ```
@@ -48,12 +48,12 @@ CommBuffer buf {std::move(...obj...),det,DirectGPU};
 
 You can : 
 - copy data back from the buffer : 
-```c++
+```cpp
 CommBuffer buf;
 auto obj = buf.copy_back();
 ```
 - destruct the buffer and get the object : 
-```c++
+```cpp
 CommBuffer buf;
 auto obj = CommBuffer<..type...>::convert(std::move(buf));
 ```
@@ -61,7 +61,7 @@ auto obj = CommBuffer<..type...>::convert(std::move(buf));
 ## Exemple use of a buffer
 
 on the sender side : 
-```c++
+```cpp
 
 CommBuffer buf {...obj to send..., DirectGPU};
 
@@ -74,7 +74,7 @@ rqs.wait_all();
 
 on the receiver side : 
 
-```c++
+```cpp
 CommDetails<sycl::buffer<T>> details;
 
 details.comm_len = npart;

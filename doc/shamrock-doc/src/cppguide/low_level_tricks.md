@@ -6,7 +6,7 @@ The tricks described below must only be used in last resort.
 
 Let say that we have 4 checks and the following function
 
-```c++
+```cpp
 bool check1(int a);
 bool check2(int a);
 bool check3(int a);
@@ -29,7 +29,7 @@ int func(int i){
 In good old C multiple way to handle those checks in a cleaner manner.
 
  - Using gotos
-```c++
+```cpp
 int func_goto(int i){
     if(!check1(i)){
         goto finish;
@@ -50,7 +50,7 @@ finish:
 ```
 
  - Using do while
-```c++
+```cpp
 int func_do_while(int i){
     do{
         if(!check1(i)) break;
@@ -68,7 +68,7 @@ int func_do_while(int i){
 Note that the 3 function showed previously exibit exactly the same assembly code but the last one with a lambda exibit a slightly different assembly 
 
 
-```c++
+```cpp
 int func_lambda(int i){
     auto ret_case = [](){
         return 0;
@@ -93,7 +93,7 @@ int func_lambda(int i){
 <td valign="top">
 
 
-```nasm
+```x86asm
 func(int):
         push    rbx
         mov     ebx, edi
@@ -124,7 +124,7 @@ func(int):
 </td>
 <td valign="top">
 
-```nasm
+```x86asm
 func(int):
         push    rbp
         push    rbx
@@ -191,7 +191,7 @@ Bit-shifts are only defined up to a shift-amount of 31 (on a 32 bit integer)..
 
 What do you do if you want to have a computed shift that need to work with higher shift-values as well? Here is how the Theora vide-codec does it:
 
-```c++
+```cpp
 unsigned int shiftmystuff (unsigned int a, unsigned int v)
 {
   return (a>>(v>>1))>>((v+1)>>1);
@@ -199,7 +199,7 @@ unsigned int shiftmystuff (unsigned int a, unsigned int v)
 ```
 Or much more readable:
 
-```c++
+```cpp
 unsigned int shiftmystuff (unsigned int a, unsigned int v)
 {
   unsigned int halfshift = v>>1;
@@ -210,7 +210,7 @@ unsigned int shiftmystuff (unsigned int a, unsigned int v)
 ```
 Performing the task the way shown above is a good deal faster than using a branch like this:
 
-```c++
+```cpp
 unsigned int shiftmystuff (unsigned int a, unsigned int v)
 {
   if (v<=31)
@@ -224,7 +224,7 @@ unsigned int shiftmystuff (unsigned int a, unsigned int v)
 
 imagine you want to define multiple variables or function by only referencing a list in one place.
 
-```c++
+```cpp
 #define XMACRO \
    X(float)    \
    X(int)      \
@@ -238,7 +238,7 @@ XMACRO
 
 this code is equivalent to 
 
-```c++
+```cpp
 int varfloat;
 int varint;
 int vardouble;
@@ -250,7 +250,7 @@ It can be usefull to avoid copy-paste errors
 
 Jump to a function depending on an enum state
 
-```c++
+```cpp
 #include <functional>
 
 #define XMACRO         \
@@ -277,7 +277,7 @@ std::function<void()> jumptable [3] ={
 
 ## Hinting the compiler with branch info
 
-```c++
+```cpp
 #define likely(x)       __builtin_expect((x),1)
 #define unlikely(x)     __builtin_expect((x),0)
 
@@ -296,7 +296,7 @@ void foo(int arg)
 
 ## Bit fields
 
-```c++
+```cpp
 struct strc {
     int a:3; // 3 bits for a
     int b:4; // 4 bits for b
@@ -317,7 +317,7 @@ The compiler even gives warnings if the input variable is not in the correct ran
 Source : https://stackoverflow.com/questions/132241/hidden-features-of-c
 
 I discoverd recently 0 bitfields.
-```c++
+```cpp
 struct {
   int    a:3;
   int    b:2;
@@ -327,11 +327,11 @@ struct {
 };
 ```
 which will give a layout of
-```c++
+```cpp
 000aaabb 0ccccddd
 ```
 instead of without the :0;
-```c++
+```cpp
 0000aaab bccccddd
 ```
 The 0 width field tells that the following bitfields should be set on the next atomic entity (char)
@@ -343,7 +343,7 @@ https://en.wikipedia.org/wiki/Duff%27s_device
 
 ## Analog litterals
 source : http://web.archive.org/web/20111026205138/http://weegen.home.xs4all.nl/eelis/analogliterals.xhtml
-```c++
+```cpp
 // Note: The following is all standard-conforming C++, this is not a hypothetical language extension.
 
 #include "analogliterals.hpp"
@@ -456,7 +456,7 @@ Who said C++ was unintuitive!? */
 
 ## Switch with multiple variables
 
-```c++
+```cpp
 int func(int i, int j){
     if(i == 0 && j ==0){
         return fct0();
@@ -474,7 +474,7 @@ int func(int i, int j){
 
 This may be slow looking at the assembly (O3) : 
 
-```nasm
+```x86asm
 func(int, int):                              # @func(int, int)
         mov     eax, edi
         or      eax, esi
@@ -505,7 +505,7 @@ func(int, int):                              # @func(int, int)
 
 we have multiple test and a lot of branching whereas the following case exibit no branching
 
-```c++
+```cpp
 int func(int i, int j){
     switch(i | (j << 1)){
         case 0: return fct0();break;
@@ -518,7 +518,7 @@ int func(int i, int j){
 ```
 
 assembly (O3)
-```nasm
+```x86asm
 func(int, int):                              # @func(int, int)
         add     esi, esi
         or      esi, edi

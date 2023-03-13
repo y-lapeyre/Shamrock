@@ -7,7 +7,7 @@ if you have a class `MyClass` having some custom constructors or deleted constru
 
 Exemple : 
 
-```c++
+```cpp
 struct MyClass{
     int* ptr;
 
@@ -28,7 +28,7 @@ But if you wrap this type in a `std::unique_ptr` then it will behave correctly.
 
 ## Container template
 
-```c++
+```cpp
 template< template<class> class Container >
 class VariantContainer {
     std::variant<Container<f32>,Container<f64>> variant;
@@ -37,7 +37,7 @@ class VariantContainer {
 
 Such Variant container can be used as such 
 
-```c++
+```cpp
 template<class T>
 struct Field{
     std::vector<T> vec;
@@ -48,7 +48,7 @@ using VariantField = VariantContainer<Field>;
 
 here VariantField is equivalent to a type like this : 
 
-```c++
+```cpp
 class VariantField {
     std::variant<Field<f32>,Field<f64>> variant;
 }
@@ -59,7 +59,7 @@ class VariantField {
 
 ## Register function with static init
 
-```c++
+```cpp
 
 using fct_sig = std::function<void()>;
 
@@ -75,7 +75,7 @@ struct StaticInitClass{
 
 If in the code you write the following code block : 
 
-```c++
+```cpp
 void fct_to_register(){...}
 
 void (*fct_ptr)() =fct_to_register; 
@@ -88,7 +88,7 @@ The function `fct_to_register` will be in `static_init_fct_list` when the main f
 
 ## Defining a protocol with hiden implementation
 
-```c++
+```cpp
 
 enum ProtocolMode{
     Mode1, Mode2, Mode3
@@ -150,7 +150,7 @@ int main(void){
 }
 ```
 
-```c++
+```cpp
 namespace details{
     template<class T>
     class ProtocolImpl<T,Mode1>{

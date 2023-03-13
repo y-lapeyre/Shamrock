@@ -1,4 +1,8 @@
 # Summary
+[Shamrock code](intro.md)
+-----------
+
+
 
 # User Documentation
 
@@ -8,6 +12,12 @@
 
 - [Codebase Organisation](./devdoc/codebase_org.md)
 - [Code coverage](./devdoc/code_coverage.md)
+- [Communication protocols](./devdoc/communication_protocol.md)
+- [Coordinate systems](./devdoc/coordinates_systems.md)
+- [Scheduler](./devdoc/mpi_scheduler.md)
+    - [PatchData](./devdoc/scheduler/patchdata.md)
+    - [PatchList](./devdoc/scheduler/patchlist.md)
+    - [PatchTree](./devdoc/scheduler/patchtree.md)
 
 # Sycl guide
 
