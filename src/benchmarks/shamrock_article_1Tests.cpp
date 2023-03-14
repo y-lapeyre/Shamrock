@@ -70,6 +70,7 @@ inline void test_tree_build_steps(std::string dset_name) {
             timer.start();
 
             f();
+            shamsys::instance::get_compute_queue().wait();
 
             timer.end();
             return timer.nanosec / 1.e9;
@@ -173,32 +174,28 @@ inline void test_tree_build_steps(std::string dset_name) {
             }));
 
 
-
-            
-
         }
 
+        {
+            shamsys::instance::get_compute_queue().wait();
+            Timer timer2;
+            timer2.start();
+            
+            RadixTree<morton_mode, vec, 3> rtree = RadixTree<morton_mode, vec, 3>(
+                shamsys::instance::get_compute_queue(),
+                {coord_range.lower, coord_range.upper},
+                pos,
+                cnt,
+                reduc_lev
+            );
 
-        shamsys::instance::get_compute_queue().wait();
-        Timer timer2;
-        timer2.start();
-        
-        RadixTree<morton_mode, vec, 3> rtree = RadixTree<morton_mode, vec, 3>(
-            shamsys::instance::get_compute_queue(),
-            {coord_range.lower, coord_range.upper},
-            pos,
-            cnt,
-            reduc_lev
-        );
+            rtree.compute_cell_ibounding_box(shamsys::instance::get_compute_queue());
+            rtree.convert_bounding_box(shamsys::instance::get_compute_queue());
+            shamsys::instance::get_compute_queue().wait();
+            timer2.end();
+            times_full_tree.push_back( timer2.nanosec / 1.e9);
+        }
 
-        rtree.compute_cell_ibounding_box(shamsys::instance::get_compute_queue());
-        rtree.convert_bounding_box(shamsys::instance::get_compute_queue());
-        
-        timer2.end();
-        times_full_tree.push_back( timer2.nanosec / 1.e9);
-
-
-        
 
         Npart.push_back(u32(cnt));
     }
