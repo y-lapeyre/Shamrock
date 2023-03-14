@@ -1,8 +1,16 @@
+from _testlib import *
+
+
+
+
+
+import matplotlib.pyplot as plt
+plt.style.use('custom_style.mplstyle')
 
 import numpy as np
 
 
-def standalone(json_lst : list) -> str:
+def standalone(json_lst : list, figure_folder : str) -> str:
 
 
     buf = r"\section{Shamalgs key pair sort}" + "\n\n"
@@ -42,7 +50,7 @@ def standalone(json_lst : list) -> str:
         axs.legend()
         axs.grid()
         plt.tight_layout()
-        plt.savefig("figures/"+fileprefix+"sort_perf.pdf")
+        plt.savefig(figure_folder+fileprefix+"sort_perf.pdf")
 
 
 
@@ -73,7 +81,7 @@ def standalone(json_lst : list) -> str:
 
         plt.tight_layout()
 
-        plt.savefig("figures/"+fileprefix+"sort_perf_comp.pdf")
+        plt.savefig(figure_folder+fileprefix+"sort_perf_comp.pdf")
 
         
 
@@ -99,3 +107,18 @@ def standalone(json_lst : list) -> str:
         i += 1
 
     return buf
+
+
+def stacked(json_lst : list, figure_folder : str):
+
+    print(json_in)
+
+
+def compared(json_lst : list, figure_folder : str):
+
+    print(json_in)
+
+
+
+from _test_reader import *
+run(standalone, stacked,compared)
