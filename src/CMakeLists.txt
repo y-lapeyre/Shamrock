@@ -12,3 +12,4 @@ add_subdirectory(shammath)
 #add_subdirectory(runscript)
 
 add_subdirectory(shambindings)
+add_subdirectory(benchmarks)

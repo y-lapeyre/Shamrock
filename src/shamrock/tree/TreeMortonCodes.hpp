@@ -9,6 +9,7 @@
 #pragma once
 
 #include "aliases.hpp"
+#include "shambase/sycl_utils/vectorProperties.hpp"
 #include "shammath/CoordRange.hpp"
 #include "shamrock/legacy/algs/sycl/basic/basic.hpp"
 #include "shamrock/tree/RadixTreeMortonBuilder.hpp"

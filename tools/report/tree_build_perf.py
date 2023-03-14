@@ -19,7 +19,7 @@ def standalone(json_lst : list, figure_folder : str) -> str:
 
         res = TestResults(i,report)
 
-        build_perf = res.get_test_instances("Benchmark","tree build time")
+        build_perf = res.get_test_instances("Benchmark","shamrock/tree/RadixTree:build:benchmark")
 
         fileprefix = str(i)
 

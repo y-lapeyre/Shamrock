@@ -6,6 +6,7 @@
 //
 // -------------------------------------------------------//
 
+#include "shamalgs/memory/memory.hpp"
 #include "shamrock/legacy/patch/base/patchdata.hpp"
 #include "shamrock/legacy/utils/time_utils.hpp"
 #include "shamrock/patch/PatchDataLayout.hpp"
@@ -14,6 +15,7 @@
 #include "shamalgs/random/random.hpp"
 #include "shamrock/tree/RadixTree.hpp"
 #include <vector>
+#include "TreeTests.hpp"
 
 #if false
 
@@ -590,28 +592,6 @@ Test_start("radix_tree", treeleveljump_cell_range_test, 1){
 
 #endif
 
-template<class vec>
-shammath::CoordRange<vec> get_test_coord_ranges();
-
-template<>
-shammath::CoordRange<f32_3> get_test_coord_ranges() {
-    return {f32_3{-1, -1, -1}, f32_3{1, 1, 1}};
-}
-template<>
-shammath::CoordRange<f64_3> get_test_coord_ranges() {
-    return {f64_3{-1, -1, -1}, f64_3{1, 1, 1}};
-}
-
-template<>
-shammath::CoordRange<u32_3> get_test_coord_ranges() {
-    using Prop = shambase::sycl_utils::VectorProperties<u32_3>;
-    return {u32_3{0, 0, 0}, Prop::get_max() / 2 + 1};
-}
-template<>
-shammath::CoordRange<u64_3> get_test_coord_ranges() {
-    using Prop = shambase::sycl_utils::VectorProperties<u64_3>;
-    return {u64_3{0, 0, 0}, Prop::get_max() / 2 + 1};
-}
 
 template<class u_morton, class flt>
 void test_inclusion(u32 Npart, u32 reduc_level) {
@@ -727,16 +707,26 @@ TestStart(
     // test_inclusion<u64, u32>(10,10);
 }
 
+
+
 template<class morton_mode, class flt, u32 reduc_lev>
 inline void test_tree(std::string dset_name) {
 
     using vec = sycl::vec<flt, 3>;
 
-    f64 Nmax_flt = 1e6 * 1;
+    f64 Nmax_flt = 1e8 * 1;
 
     u32 Nmax = u32(sycl::fmin(Nmax_flt, 2e9));
 
-    auto pos = shamalgs::random::mock_buffer_ptr<vec>(0x111, Nmax);
+    auto coord_range = get_test_coord_ranges<vec>();
+
+    auto pos =
+        shamalgs::random::mock_buffer_ptr<vec>(0x111, Nmax, coord_range.lower, coord_range.upper);
+
+
+    shamalgs::memory::move_buffer_on_queue(
+        shamsys::instance::get_compute_queue(), 
+        *pos);
 
     std::vector<f64> times;
     std::vector<f64> Npart;
@@ -749,7 +739,7 @@ inline void test_tree(std::string dset_name) {
 
         RadixTree<morton_mode, vec, 3> rtree = RadixTree<morton_mode, vec, 3>(
             shamsys::instance::get_compute_queue(),
-            {vec{-1, -1, -1}, vec{1, 1, 1}},
+            {coord_range.lower, coord_range.upper},
             pos,
             cnt,
             reduc_lev
@@ -771,17 +761,28 @@ inline void test_tree(std::string dset_name) {
     dset.add_data("times", times);
 }
 
-TestStart(Benchmark, "tree build time", morton_tree_build, 1) {
+TestStart(Benchmark, "shamrock/tree/RadixTree:build:benchmark", morton_tree_build, 1) {
     test_tree<u32, f32, 0>("u32, f32, 0");
     test_tree<u64, f32, 0>("u64, f32, 0");
     test_tree<u32, f64, 0>("u32, f64, 0");
     test_tree<u64, f64, 0>("u64, f64, 0");
-    test_tree<u32, f32, 1>("u32, f32, 0");
-    test_tree<u64, f32, 1>("u64, f32, 0");
-    test_tree<u32, f64, 1>("u32, f64, 0");
-    test_tree<u64, f64, 1>("u64, f64, 0");
-    test_tree<u32, f32, 2>("u32, f32, 0");
-    test_tree<u64, f32, 2>("u64, f32, 0");
-    test_tree<u32, f64, 2>("u32, f64, 0");
-    test_tree<u64, f64, 2>("u64, f64, 0");
+    test_tree<u32, f32, 1>("u32, f32, 1");
+    test_tree<u64, f32, 1>("u64, f32, 1");
+    test_tree<u32, f64, 1>("u32, f64, 1");
+    test_tree<u64, f64, 1>("u64, f64, 1");
+    test_tree<u32, f32, 2>("u32, f32, 2");
+    test_tree<u64, f32, 2>("u64, f32, 2");
+    test_tree<u32, f64, 2>("u32, f64, 2");
+    test_tree<u64, f64, 2>("u64, f64, 2");
+}
+
+
+
+TestStart(Benchmark, "article_shamrock1:shamrock/tree/RadixTree:build:benchmark", morton_tree_build_article1, 1) {
+    test_tree<u32, f32, 0>("morton = u32, field type = f32");
+    test_tree<u64, f32, 0>("morton = u64, field type = f32");
+    test_tree<u32, f64, 0>("morton = u32, field type = f64");
+    test_tree<u64, f64, 0>("morton = u64, field type = f64");
+    test_tree<u32, u64, 0>("morton = u32, field type = u64");
+    test_tree<u64, u64, 0>("morton = u64, field type = u64");
 }

@@ -3,7 +3,7 @@ if("${BUILD_TEST}")
 
     target_sources(shamrock_test
     PRIVATE
-    tree_performance.cpp
+    shamrock_article_1Tests.cpp
     PUBLIC
          
     )
