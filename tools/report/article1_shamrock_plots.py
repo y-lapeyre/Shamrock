@@ -48,7 +48,7 @@ def standalone(json_lst : list, figure_folder : str) -> str:
                     
                     #the first point is wrong because a buffer of size 1e8 is moved
                     plt.plot(s.get_test_dataset(n,"Npart")[1::], s.get_test_dataset(n,"times_full_tree"          )[1::], label = "tree build time",color='black',linewidth = 2)
-                    plt.plot(s.get_test_dataset(n,"Npart")[1::], s.get_test_dataset(n,"times_morton"             )[1::], label = "morton list build",color='black',linestyle="--")
+                    #plt.plot(s.get_test_dataset(n,"Npart")[1::], s.get_test_dataset(n,"times_morton"             )[1::], label = "morton list build",color='black',linestyle="--")
                     plt.plot(s.get_test_dataset(n,"Npart")[1::], s.get_test_dataset(n,"times_reduc"              )[1::], label = "double morton removal")
                     plt.plot(s.get_test_dataset(n,"Npart")[1::], s.get_test_dataset(n,"times_karras"             )[1::], label = "karras alg")
                     plt.plot(s.get_test_dataset(n,"Npart")[1::], s.get_test_dataset(n,"times_compute_int_range"  )[1::], label = "compute int ranges")
@@ -56,7 +56,7 @@ def standalone(json_lst : list, figure_folder : str) -> str:
                     plt.plot(s.get_test_dataset(n,"Npart")[1::], s.get_test_dataset(n,"times_morton_build"       )[1::], label = "morton code compute")
                     plt.plot(s.get_test_dataset(n,"Npart")[1::], s.get_test_dataset(n,"times_trailling_fill"     )[1::], label = "tralling index fill")
                     plt.plot(s.get_test_dataset(n,"Npart")[1::], s.get_test_dataset(n,"times_index_gen"          )[1::], label = "index table gen")
-                    plt.plot(s.get_test_dataset(n,"Npart")[1::], s.get_test_dataset(n,"times_morton_sort"        )[1::], label = "bitonic sort",linestyle="--")
+                    plt.plot(s.get_test_dataset(n,"Npart")[1::], s.get_test_dataset(n,"times_morton_sort"        )[1::], label = "bitonic sort",color='black',linestyle="--")
 
 
         axs.set_xscale('log')

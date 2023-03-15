@@ -14,21 +14,28 @@
 #include <memory>
 #include <vector>
 
-#include "shamrock/math/integerManip.hpp"
+#include "shamalgs/numeric/numeric.hpp"
 #include "shambase/sycl.hpp"
+#include "shamrock/legacy/algs/sycl/defs.hpp"
+#include "shamrock/math/integerManip.hpp"
 
 class Kernel_generate_split_table_morton32;
 class Kernel_generate_split_table_morton64;
 
-template <class u_morton, class kername>
-void sycl_generate_split_table(sycl::queue &queue, u32 morton_count, std::unique_ptr<sycl::buffer<u_morton>> & buf_morton,
-                               std::unique_ptr<sycl::buffer<u8>> & buf_split_table) {
+template<class u_morton, class kername, class split_int>
+void sycl_generate_split_table(
+    sycl::queue &queue,
+    u32 morton_count,
+    std::unique_ptr<sycl::buffer<u_morton>> &buf_morton,
+    std::unique_ptr<sycl::buffer<split_int>> &buf_split_table
+) {
 
     sycl::range<1> range_morton_count{morton_count};
 
     queue.submit([&](sycl::handler &cgh) {
-        auto m         = buf_morton->template get_access<sycl::access::mode::read>(cgh);
-        auto split_out = buf_split_table->get_access<sycl::access::mode::discard_write>(cgh);
+
+        sycl::accessor m {*buf_morton, cgh, sycl::read_only};
+        sycl::accessor split_out {*buf_split_table,cgh,sycl::write_only,sycl::no_init};
 
         cgh.parallel_for<kername>(range_morton_count, [=](sycl::item<1> item) {
             u32 i = (u32)item.get_id(0);
@@ -49,9 +56,14 @@ void sycl_generate_split_table(sycl::queue &queue, u32 morton_count, std::unique
 class Kernel_iterate_reduction_morton32;
 class Kernel_iterate_reduction_morton64;
 
-template <class u_morton, class kername>
-void sycl_reduction_iteration(sycl::queue &queue, u32 morton_count, std::unique_ptr<sycl::buffer<u_morton>> & buf_morton,
-                              std::unique_ptr<sycl::buffer<u8>> & buf_split_table_in, std::unique_ptr<sycl::buffer<u8>> & buf_split_table_out) {
+template<class u_morton, class kername, class split_int>
+void sycl_reduction_iteration(
+    sycl::queue &queue,
+    u32 morton_count,
+    std::unique_ptr<sycl::buffer<u_morton>> &buf_morton,
+    std::unique_ptr<sycl::buffer<split_int>> &buf_split_table_in,
+    std::unique_ptr<sycl::buffer<split_int>> &buf_split_table_out
+) {
 
     using namespace shamrock::math::int_manip;
 
@@ -60,16 +72,14 @@ void sycl_reduction_iteration(sycl::queue &queue, u32 morton_count, std::unique_
     queue.submit([&](sycl::handler &cgh) {
         u32 _morton_cnt = morton_count;
 
-        auto m         = buf_morton->template get_access<sycl::access::mode::read>(cgh);
-        auto split_in  = buf_split_table_in->get_access<sycl::access::mode::read>(cgh);
-        auto split_out = buf_split_table_out->get_access<sycl::access::mode::discard_write>(cgh); // was only write before check if ok
+        sycl::accessor m{*buf_morton, cgh, sycl::read_only};
+        sycl::accessor split_in{*buf_split_table_in,cgh , sycl::read_only};
+        sycl::accessor split_out{*buf_split_table_in,cgh , sycl::write_only, sycl::no_init};
 
         cgh.parallel_for<kername>(range_morton_count, [=](sycl::item<1> item) {
             int i = item.get_id(0);
 
-            auto DELTA = [=](i32 x, i32 y){
-                return shambase::karras_delta(x,y,_morton_cnt,m);
-            };
+            auto DELTA = [=](i32 x, i32 y) { return shambase::karras_delta(x, y, _morton_cnt, m); };
 
             // find index of preceding i-1 non duplicate morton code
             u32 before1 = i - 1;
@@ -92,47 +102,31 @@ void sycl_reduction_iteration(sycl::queue &queue, u32 morton_count, std::unique_
             int delt_mm = DELTA(before1, before2);
 
             if (!(delt_0 < delt_m && delt_mm < delt_m) && split_in[i]) {
-                split_out[i] = true;
+                split_out[i] = 1;
             } else {
-                split_out[i] = false;
+                split_out[i] = 0;
             }
         });
     });
 }
 
-template <class u_morton, class kername_split, class kername_reduc_it>
-void __reduction_alg(
-    // in
-    sycl::queue &queue, u32 morton_count, std::unique_ptr<sycl::buffer<u_morton>> & buf_morton, u32 reduction_level,
-    // out
-    std::vector<u32> &reduc_index_map, u32 &morton_leaf_count) {
 
-    std::unique_ptr<sycl::buffer<u8>> buf_split_table1 = std::make_unique<sycl::buffer<u8>>(morton_count);
-    std::unique_ptr<sycl::buffer<u8>> buf_split_table2 = std::make_unique<sycl::buffer<u8>>(morton_count);
+template<class split_int>
+void make_indexmap(
+    sycl::queue &queue,
+    u32 morton_count,
+    u32 &morton_leaf_count,
+    std::unique_ptr<sycl::buffer<split_int>> & buf_split_table,
+    std::unique_ptr<sycl::buffer<u32>> & buf_reduc_index_map
+){
 
-    sycl_generate_split_table<u_morton, kername_split>(queue, morton_count, buf_morton, buf_split_table1);
+    //shamalgs::numeric::stream_compact(queue, buf_split_table, u32 len)
 
-    for (unsigned int iter = 1; iter <= reduction_level; iter++) {
 
-        if (iter % 2 == 0) {
-            sycl_reduction_iteration<u_morton, kername_reduc_it>(queue, morton_count, buf_morton, buf_split_table2,
-                                                             buf_split_table1);
-        } else {
-            sycl_reduction_iteration<u_morton, kername_reduc_it>(queue, morton_count, buf_morton, buf_split_table1,
-                                                             buf_split_table2);
-        }
-        
-    }
-
-    std::unique_ptr<sycl::buffer<u8>> buf_split_table;
-    if ((reduction_level) % 2 == 0) {
-        buf_split_table = std::move(buf_split_table1);
-    } else {
-        buf_split_table = std::move(buf_split_table2);
-    }
+    std::vector<u32> reduc_index_map;
 
     {
-        auto acc = buf_split_table->get_access<sycl::access::mode::read>();
+        sycl::host_accessor acc {*buf_split_table, sycl::read_only};
 
         morton_leaf_count = 0;
 
@@ -144,46 +138,116 @@ void __reduction_alg(
             }
         }
         reduc_index_map.push_back(morton_count);
-        reduc_index_map.push_back(0); //for one cell mode the last range is inverted to avoid iteration
+        // for one cell mode the last range is inverted to avoid iteration
+        reduc_index_map.push_back(0); 
     }
 
+    buf_reduc_index_map =
+        std::make_unique<sycl::buffer<u32>>(syclalgs::convert::vector_to_buf(reduc_index_map));
 }
 
-template <>
+
+template<class u_morton, class kername_split, class kername_reduc_it>
+void reduction_alg_impl(
+    // in
+    sycl::queue &queue,
+    u32 morton_count,
+    std::unique_ptr<sycl::buffer<u_morton>> &buf_morton,
+    u32 reduction_level,
+    // out
+    std::unique_ptr<sycl::buffer<u32>> &buf_reduc_index_map,
+    u32 &morton_leaf_count
+) {
+
+    auto buf_split_table1 = std::make_unique<sycl::buffer<u8>>(morton_count);
+    auto buf_split_table2 = std::make_unique<sycl::buffer<u8>>(morton_count);
+
+    sycl_generate_split_table<u_morton, kername_split>(
+        queue, morton_count, buf_morton, buf_split_table1
+    );
+
+    for (unsigned int iter = 1; iter <= reduction_level; iter++) {
+
+        if (iter % 2 == 0) {
+            sycl_reduction_iteration<u_morton, kername_reduc_it>(
+                queue, morton_count, buf_morton, buf_split_table2, buf_split_table1
+            );
+        } else {
+            sycl_reduction_iteration<u_morton, kername_reduc_it>(
+                queue, morton_count, buf_morton, buf_split_table1, buf_split_table2
+            );
+        }
+    }
+
+    std::unique_ptr<sycl::buffer<u8>> buf_split_table;
+    if ((reduction_level) % 2 == 0) {
+        buf_split_table = std::move(buf_split_table1);
+    } else {
+        buf_split_table = std::move(buf_split_table2);
+    }
+
+    make_indexmap(queue,morton_count, morton_leaf_count, buf_split_table,buf_reduc_index_map);
+
+}
+
+template<>
 void reduction_alg<u32>(
     // in
-    sycl::queue &queue, u32 morton_count, std::unique_ptr<sycl::buffer<u32>> & buf_morton, u32 reduction_level,
+    sycl::queue &queue,
+    u32 morton_count,
+    std::unique_ptr<sycl::buffer<u32>> &buf_morton,
+    u32 reduction_level,
     // out
-    std::vector<u32> &reduc_index_map, u32 &morton_leaf_count) {
-    __reduction_alg<u32, Kernel_generate_split_table_morton32, Kernel_iterate_reduction_morton32>(
-        queue, morton_count, buf_morton, reduction_level, reduc_index_map, morton_leaf_count);
+    std::unique_ptr<sycl::buffer<u32>> &buf_reduc_index_map,
+    u32 &morton_leaf_count
+) {
+    reduction_alg_impl<
+        u32,
+        Kernel_generate_split_table_morton32,
+        Kernel_iterate_reduction_morton32>(
+        queue, morton_count, buf_morton, reduction_level, buf_reduc_index_map, morton_leaf_count
+    );
 }
 
-template <>
+template<>
 void reduction_alg<u64>(
     // in
-    sycl::queue &queue, u32 morton_count, std::unique_ptr<sycl::buffer<u64>> & buf_morton, u32 reduction_level,
+    sycl::queue &queue,
+    u32 morton_count,
+    std::unique_ptr<sycl::buffer<u64>> &buf_morton,
+    u32 reduction_level,
     // out
-    std::vector<u32> &reduc_index_map, u32 &morton_leaf_count) {
-    __reduction_alg<u64, Kernel_generate_split_table_morton64, Kernel_iterate_reduction_morton64>(
-        queue, morton_count, buf_morton, reduction_level, reduc_index_map, morton_leaf_count);
+    std::unique_ptr<sycl::buffer<u32>> &buf_reduc_index_map,
+    u32 &morton_leaf_count
+) {
+    reduction_alg_impl<
+        u64,
+        Kernel_generate_split_table_morton64,
+        Kernel_iterate_reduction_morton64>(
+        queue, morton_count, buf_morton, reduction_level, buf_reduc_index_map, morton_leaf_count
+    );
 }
 
 class Kernel_remap_morton_code_morton32;
 class Kernel_remap_morton_code_morton64;
 
-template <class u_morton, class kername>
+template<class u_morton, class kername>
 void __sycl_morton_remap_reduction(
     // in
-    sycl::queue &queue, u32 morton_leaf_count, std::unique_ptr<sycl::buffer<u32>> & buf_reduc_index_map, std::unique_ptr<sycl::buffer<u_morton>> & buf_morton,
+    sycl::queue &queue,
+    u32 morton_leaf_count,
+    std::unique_ptr<sycl::buffer<u32>> &buf_reduc_index_map,
+    std::unique_ptr<sycl::buffer<u_morton>> &buf_morton,
     // out
-    std::unique_ptr<sycl::buffer<u_morton>> & buf_leaf_morton) {
+    std::unique_ptr<sycl::buffer<u_morton>> &buf_leaf_morton
+) {
     sycl::range<1> range_remap_morton{morton_leaf_count};
 
     queue.submit([&](sycl::handler &cgh) {
         auto id_remaped = buf_reduc_index_map->get_access<sycl::access::mode::read>(cgh);
         auto m          = buf_morton->template get_access<sycl::access::mode::read>(cgh);
-        auto m_remaped  = buf_leaf_morton->template get_access<sycl::access::mode::discard_write>(cgh);
+        auto m_remaped =
+            buf_leaf_morton->template get_access<sycl::access::mode::discard_write>(cgh);
 
         cgh.parallel_for<kername>(range_remap_morton, [=](sycl::item<1> item) {
             int i = item.get_id(0);
@@ -193,124 +257,32 @@ void __sycl_morton_remap_reduction(
     });
 }
 
-template <>
+template<>
 void sycl_morton_remap_reduction<u32>(
     // in
-    sycl::queue &queue, u32 morton_leaf_count, std::unique_ptr<sycl::buffer<u32>> & buf_reduc_index_map, std::unique_ptr<sycl::buffer<u32>> & buf_morton,
+    sycl::queue &queue,
+    u32 morton_leaf_count,
+    std::unique_ptr<sycl::buffer<u32>> &buf_reduc_index_map,
+    std::unique_ptr<sycl::buffer<u32>> &buf_morton,
     // out
-    std::unique_ptr<sycl::buffer<u32>> & buf_leaf_morton) {
-    __sycl_morton_remap_reduction<u32, Kernel_remap_morton_code_morton32>(queue, morton_leaf_count, buf_reduc_index_map,
-                                                                          buf_morton, buf_leaf_morton);
+    std::unique_ptr<sycl::buffer<u32>> &buf_leaf_morton
+) {
+    __sycl_morton_remap_reduction<u32, Kernel_remap_morton_code_morton32>(
+        queue, morton_leaf_count, buf_reduc_index_map, buf_morton, buf_leaf_morton
+    );
 }
 
-template <>
+template<>
 void sycl_morton_remap_reduction<u64>(
     // in
-    sycl::queue &queue, u32 morton_leaf_count, std::unique_ptr<sycl::buffer<u32>> & buf_reduc_index_map, std::unique_ptr<sycl::buffer<u64>> & buf_morton,
+    sycl::queue &queue,
+    u32 morton_leaf_count,
+    std::unique_ptr<sycl::buffer<u32>> &buf_reduc_index_map,
+    std::unique_ptr<sycl::buffer<u64>> &buf_morton,
     // out
-    std::unique_ptr<sycl::buffer<u64>> & buf_leaf_morton) {
-    __sycl_morton_remap_reduction<u64, Kernel_remap_morton_code_morton64>(queue, morton_leaf_count, buf_reduc_index_map,
-                                                                          buf_morton, buf_leaf_morton);
+    std::unique_ptr<sycl::buffer<u64>> &buf_leaf_morton
+) {
+    __sycl_morton_remap_reduction<u64, Kernel_remap_morton_code_morton64>(
+        queue, morton_leaf_count, buf_reduc_index_map, buf_morton, buf_leaf_morton
+    );
 }
-
-/*
-
-void sycl_reduction_alg2(
-    //in
-    sycl::queue* queue,
-    u32 morton_count,
-    sycl::buffer<u_morton>* buf_morton,
-    u32 reduction_level,
-    //out
-    std::vector<u32> & reduc_index_map,
-    u32 & morton_leaf_count,
-    sycl::buffer<u32>* & buf_reduc_index_map,
-    sycl::buffer<u_morton>* & buf_leaf_morton){
-
-
-
-    sycl::buffer<u8>* buf_split_table1 = new sycl::buffer<u8>(morton_count);
-    sycl::buffer<u8>* buf_split_table2 = new sycl::buffer<u8>(morton_count);
-
-    sycl_generate_split_table(queue,morton_count,buf_morton,buf_split_table1);
-
-    for(unsigned int iter = 1; iter <= reduction_level; iter ++){
-        sycl::buffer<u8>* buf_split_t_in;
-        sycl::buffer<u8>* buf_split_t_out;
-
-        if(iter%2 == 0){
-            buf_split_t_in  = buf_split_table2;
-            buf_split_t_out = buf_split_table1;
-        }else{
-            buf_split_t_in  = buf_split_table1;
-            buf_split_t_out = buf_split_table2;
-        }
-
-        sycl_reduction_iteration(queue, morton_count, buf_morton, buf_split_t_in, buf_split_t_out);
-    }
-
-    sycl::buffer<u8>* buf_split_table;
-    if((reduction_level)%2 == 0){
-        buf_split_table = buf_split_table1;
-    }else{
-        buf_split_table = buf_split_table2;
-    }
-
-
-    {
-        auto acc = buf_split_table->get_access<sycl::access::mode::read>();
-
-        morton_leaf_count = 0;
-
-        //reduc_index_map.reserve(split_count);
-        for(unsigned int i = 0;i < morton_count;i++){
-            if(acc[i]) {reduc_index_map.push_back(i); morton_leaf_count ++;}
-        }
-        reduc_index_map.push_back(morton_count);
-
-    }
-
-    delete buf_split_table1;
-    delete buf_split_table2;
-
-
-
-    buf_reduc_index_map = new sycl::buffer<u32     >( reduc_index_map );
-    buf_leaf_morton     = new sycl::buffer<u_morton>(morton_leaf_count);
-
-    sycl::range<1> range_remap_morton{morton_leaf_count};
-
-    auto ker_remap_morton = [&](sycl::handler &cgh) {
-
-        auto id_remaped = buf_reduction_index_map->get_access<sycl::access::mode::read>(cgh);
-        auto m = buf_morton->get_access<sycl::access::mode::read>(cgh);
-        auto m_remaped = buf_reduced_morton->get_access<sycl::access::mode::discard_write>(cgh);
-
-        cgh.parallel_for<Remap_morton>(range_remap_morton, [=](sycl::item<1> item) {
-
-            int i = item.get_id(0);
-
-            m_remaped[i] = m[id_remaped[i]];
-
-        });
-
-
-    };
-
-    queue->submit(ker_remap_morton);
-    log_debug("queue->submit(remap_morton);\n");
-
-
-    reduction_factor = float(particles::npart) / split_count;
-
-    log_debug("reduction factor : %f\n",reduction_factor);
-
-    if(split_count < 2){
-        log_warn("too few cells to use tree (%d) -> using one_cell_mode\n",split_count);
-        one_cell_mode = true;
-    }
-
-
-
-}
-*/

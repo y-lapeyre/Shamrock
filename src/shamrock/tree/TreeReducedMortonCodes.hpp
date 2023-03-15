@@ -45,13 +45,12 @@ namespace shamrock::tree {
             // TODO document that the layout of reduc_index_map is in the end {0 .. ,i .. ,N ,0} 
             // with the trailling 0 to invert the range for the walk in one cell mode
 
-            std::vector<u32> reduc_index_map;
             reduction_alg(
                 queue,
                 obj_cnt,
                 morton_codes.buf_morton,
                 reduc_level,
-                reduc_index_map,
+                buf_reduc_index_map,
                 tree_leaf_count
             );
 
@@ -65,9 +64,6 @@ namespace shamrock::tree {
                 shambase::format_printf("%2.2f", f32(obj_cnt) / f32(tree_leaf_count))
             );
             
-            buf_reduc_index_map = std::make_unique<sycl::buffer<u32>>(
-                syclalgs::convert::vector_to_buf(reduc_index_map)
-            );
 
             if (tree_leaf_count > 1) {
 
