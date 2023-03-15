@@ -13,22 +13,22 @@ import numpy as np
 def standalone(json_lst : list, figure_folder : str) -> str:
 
 
-    buf = r"\section{Shamalgs key pair sort}" + "\n\n"
+    buf = r"\section{Shamalgs exclusive sum}" + "\n\n"
 
     i = 0
     for report in json_lst:
 
         res = TestResults(i,report)
 
-        sort_perf = res.get_test_instances("Benchmark","shamalgs/algorithm/details/bitonicSorts:benchmark")
+        excl_sum_perf = res.get_test_instances("Benchmark","shamalgs/numeric/details/exclusive_sum:benchmark")
 
         fileprefix = str(i)
 
-        if len(sort_perf) == 1:
+        if len(excl_sum_perf) == 1:
 
             fig,axs = plt.subplots(nrows=1,ncols=1,figsize=(8,6))
 
-            for s in sort_perf:
+            for s in excl_sum_perf:
 
                 for dataset in s.test_data:
 
@@ -37,26 +37,26 @@ def standalone(json_lst : list, figure_folder : str) -> str:
                     vec_N = s.get_test_dataset(n,"Nobj")
                     vec_T = s.get_test_dataset(n,"t_sort")
 
-                    if n.startswith("bitonic public"):
+                    if n.startswith("public"):
                         plt.plot(np.array(vec_N),np.abs(vec_T), label = n,color='black',linewidth = 2)
                     else:
                         plt.plot(np.array(vec_N),np.abs(vec_T), label = n)
 
-            axs.set_title('Bitonic sort perf')
+            axs.set_title('Exclusive sum perf')
             axs.set_xscale('log')
             axs.set_yscale('log')
             axs.set_xlabel(r"$N$")
-            axs.set_ylabel(r"$t_{\rm sort} (s)$")
+            axs.set_ylabel(r"$t_{\rm exclsum} (s)$")
             axs.legend()
             axs.grid()
             plt.tight_layout()
-            plt.savefig(figure_folder+fileprefix+"sort_perf.pdf")
+            plt.savefig(figure_folder+fileprefix+"excl_sum_perf.pdf")
 
 
 
             fig,axs = plt.subplots(nrows=1,ncols=1,figsize=(8,6))
 
-            for s in sort_perf:
+            for s in excl_sum_perf:
 
                 for dataset in s.test_data:
 
@@ -65,12 +65,12 @@ def standalone(json_lst : list, figure_folder : str) -> str:
                     vec_N = np.array(s.get_test_dataset(n,"Nobj"));
                     vec_T = np.array(s.get_test_dataset(n,"t_sort"));
 
-                    if n.startswith("bitonic public"):
+                    if n.startswith("public"):
                         plt.plot(np.array(vec_N),(np.abs(vec_T)/vec_N), label = n,color='black',linewidth = 2)
                     else:
                         plt.plot(np.array(vec_N),(np.abs(vec_T)/vec_N), label = n)
 
-            axs.set_title('Bitonic sort perf')
+            axs.set_title('Exclusive sum perf')
 
             axs.set_xscale('log')
             axs.set_yscale('log')
@@ -84,7 +84,7 @@ def standalone(json_lst : list, figure_folder : str) -> str:
 
             plt.tight_layout()
 
-            plt.savefig(figure_folder+fileprefix+"sort_perf_comp.pdf")
+            plt.savefig(figure_folder+fileprefix+"excl_sum_perf_comp.pdf")
 
             
 
@@ -94,14 +94,14 @@ def standalone(json_lst : list, figure_folder : str) -> str:
 
             \begin{figure}[ht!]
             \center
-            \includegraphics[width=0.7\textwidth]{"""+ "figures/"+fileprefix+"sort_perf.pdf" + r"""}
+            \includegraphics[width=0.6\textwidth]{"""+ "figures/"+fileprefix+"excl_sum_perf.pdf" + r"""}
             \caption{TODO}
             \label{fig:fmm_prec}
             \end{figure}
 
             \begin{figure}[ht!]
             \center
-            \includegraphics[width=0.7\textwidth]{"""+ "figures/"+fileprefix+"sort_perf_comp.pdf" + r"""}
+            \includegraphics[width=0.6\textwidth]{"""+ "figures/"+fileprefix+"excl_sum_perf_comp.pdf" + r"""}
             \caption{TODO}
             \label{fig:fmm_prec}
             \end{figure}

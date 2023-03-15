@@ -8,13 +8,14 @@
 
 #include "numeric.hpp"
 #include "details/numericFallback.hpp"
+#include "shamalgs/numeric/details/exclusiveScanGPUGems39.hpp"
 #include "shamalgs/numeric/details/streamCompactExclScan.hpp"
 
 namespace shamalgs::numeric {
 
     template<class T>
     sycl::buffer<T> exclusive_sum(sycl::queue &q, sycl::buffer<T> &buf1, u32 len){
-        return details::exclusive_sum_fallback(q, buf1, len);
+        return details::exclusive_sum_gpugems39_1(q, buf1, len);
     }
 
     template<class T>

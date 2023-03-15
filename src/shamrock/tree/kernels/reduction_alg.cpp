@@ -15,7 +15,9 @@
 #include <vector>
 
 #include "shamalgs/numeric/numeric.hpp"
+#include "shambase/exception.hpp"
 #include "shambase/sycl.hpp"
+#include "shambase/string.hpp"
 #include "shamrock/legacy/algs/sycl/defs.hpp"
 #include "shamrock/math/integerManip.hpp"
 
@@ -42,12 +44,12 @@ void sycl_generate_split_table(
 
             if (i > 0) {
                 if (m[i - 1] != m[i]) {
-                    split_out[i] = true;
+                    split_out[i] = 1;
                 } else {
-                    split_out[i] = false;
+                    split_out[i] = 0;
                 }
             } else {
-                split_out[i] = true;
+                split_out[i] = 1;
             }
         });
     });
@@ -111,6 +113,39 @@ void sycl_reduction_iteration(
 }
 
 
+void update_morton_buf(
+    sycl::queue &queue,
+    u32 len,u32 val_ins,
+    sycl::buffer<u32>& buf_src, 
+    std::unique_ptr<sycl::buffer<u32>> & buf_reduc_index_map
+){
+
+    sycl::range<1> range_morton_count{len+2};
+
+    queue.submit([&](sycl::handler &cgh) {
+        u32 _len = len;
+        u32 val = val_ins;
+
+        sycl::accessor src{buf_src, cgh, sycl::read_only};
+        sycl::accessor dest{*buf_reduc_index_map,cgh , sycl::write_only, sycl::no_init};
+
+        cgh.parallel_for(range_morton_count, [=](sycl::item<1> item) {
+
+            if(item.get_linear_id() < _len){
+                dest[item] = src[item];
+            }else if (item.get_linear_id() == _len) {
+                dest[item] = val;
+            }else if (item.get_linear_id() == _len+1) {
+                dest[item] = 0;
+            }
+
+        });
+
+    });
+
+}
+
+
 template<class split_int>
 void make_indexmap(
     sycl::queue &queue,
@@ -120,30 +155,58 @@ void make_indexmap(
     std::unique_ptr<sycl::buffer<u32>> & buf_reduc_index_map
 ){
 
-    //shamalgs::numeric::stream_compact(queue, buf_split_table, u32 len)
+
+    auto [buf,len] = shamalgs::numeric::stream_compact(queue, *buf_split_table, morton_count);
+
+    morton_leaf_count = len;
+
+    buf_reduc_index_map = std::make_unique<sycl::buffer<u32>>(morton_leaf_count+2);
 
 
-    std::vector<u32> reduc_index_map;
-
-    {
-        sycl::host_accessor acc {*buf_split_table, sycl::read_only};
-
-        morton_leaf_count = 0;
-
-        // reduc_index_map.reserve(split_count);
-        for (unsigned int i = 0; i < morton_count; i++) {
-            if (acc[i]) {
-                reduc_index_map.push_back(i);
-                morton_leaf_count++;
-            }
-        }
-        reduc_index_map.push_back(morton_count);
-        // for one cell mode the last range is inverted to avoid iteration
-        reduc_index_map.push_back(0); 
+    if(buf){
+        update_morton_buf(queue, len,morton_count, *buf, buf_reduc_index_map);
+    }else{
+        throw shambase::throw_with_loc<std::runtime_error>("this result shouldn't be null");
     }
 
-    buf_reduc_index_map =
-        std::make_unique<sycl::buffer<u32>>(syclalgs::convert::vector_to_buf(reduc_index_map));
+    if constexpr (false){
+        std::vector<u32> reduc_index_map;
+
+        u32 leafs = 0;
+
+        {
+            sycl::host_accessor acc {*buf_split_table, sycl::read_only};
+
+            // reduc_index_map.reserve(split_count);
+            for (unsigned int i = 0; i < morton_count; i++) {
+                if (acc[i]) {
+                    reduc_index_map.push_back(i);
+                    leafs++;
+                }
+            }
+            reduc_index_map.push_back(morton_count);
+            // for one cell mode the last range is inverted to avoid iteration
+            reduc_index_map.push_back(0); 
+        }
+
+        {
+             if(leafs != morton_leaf_count){
+                throw shambase::throw_with_loc<std::runtime_error>("difference");
+            }
+        
+            sycl::host_accessor dest{*buf_reduc_index_map , sycl::read_only};
+        
+            for (unsigned int i = 0; i < morton_leaf_count+2; i++) {
+                if(dest[i] != reduc_index_map[i]){
+                    throw shambase::throw_with_loc<std::runtime_error>(shambase::format("difference i = {}, {} != {}",i, dest[i] , reduc_index_map[i]));
+                }
+            }
+        }
+
+        buf_reduc_index_map =
+            std::make_unique<sycl::buffer<u32>>(syclalgs::convert::vector_to_buf(reduc_index_map));
+
+    }
 }
 
 
@@ -159,8 +222,8 @@ void reduction_alg_impl(
     u32 &morton_leaf_count
 ) {
 
-    auto buf_split_table1 = std::make_unique<sycl::buffer<u8>>(morton_count);
-    auto buf_split_table2 = std::make_unique<sycl::buffer<u8>>(morton_count);
+    auto buf_split_table1 = std::make_unique<sycl::buffer<u32>>(morton_count);
+    auto buf_split_table2 = std::make_unique<sycl::buffer<u32>>(morton_count);
 
     sycl_generate_split_table<u_morton, kername_split>(
         queue, morton_count, buf_morton, buf_split_table1
@@ -179,7 +242,7 @@ void reduction_alg_impl(
         }
     }
 
-    std::unique_ptr<sycl::buffer<u8>> buf_split_table;
+    std::unique_ptr<sycl::buffer<u32>> buf_split_table;
     if ((reduction_level) % 2 == 0) {
         buf_split_table = std::move(buf_split_table1);
     } else {

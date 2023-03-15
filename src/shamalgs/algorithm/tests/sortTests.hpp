@@ -73,7 +73,7 @@ struct TestSortByKey {
         fct(q, buf_key, buf_vals, len);
         q.wait();t.end();
 
-        return len/(t.nanosec*1e-9);
+        return (t.nanosec*1e-9);
     }
 
     f64 bench_one_avg(u32 len){

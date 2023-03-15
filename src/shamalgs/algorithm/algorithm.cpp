@@ -14,7 +14,13 @@ namespace shamalgs::algorithm {
     void sort_by_key(
         sycl::queue &q, sycl::buffer<Tkey> &buf_key, sycl::buffer<Tval> &buf_values, u32 len
     ) {
-        details::sort_by_key_bitonic_updated<Tkey, Tval, 16>(q, buf_key, buf_values, len);
+
+        if(len < 5e3){
+            details::sort_by_key_bitonic_fallback(q, buf_key, buf_values, len);
+        }else{
+            details::sort_by_key_bitonic_updated<Tkey, Tval, 16>(q, buf_key, buf_values, len);
+        }
+
     }
 
     template void

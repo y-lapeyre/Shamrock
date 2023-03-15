@@ -44,25 +44,27 @@ def standalone(json_lst : list, figure_folder : str) -> str:
 
                 n = dataset["dataset_name"]    
 
-                if n == "morton = u64, field type = f64":
+                if n == "morton = u32, field type = f32":
+
+                    vecN = np.array(s.get_test_dataset(n,"Npart")[1::])
                     
                     #the first point is wrong because a buffer of size 1e8 is moved
-                    plt.plot(s.get_test_dataset(n,"Npart")[1::], s.get_test_dataset(n,"times_full_tree"          )[1::], label = "tree build time",color='black',linewidth = 2)
-                    #plt.plot(s.get_test_dataset(n,"Npart")[1::], s.get_test_dataset(n,"times_morton"             )[1::], label = "morton list build",color='black',linestyle="--")
-                    plt.plot(s.get_test_dataset(n,"Npart")[1::], s.get_test_dataset(n,"times_reduc"              )[1::], label = "double morton removal")
-                    plt.plot(s.get_test_dataset(n,"Npart")[1::], s.get_test_dataset(n,"times_karras"             )[1::], label = "karras alg")
-                    plt.plot(s.get_test_dataset(n,"Npart")[1::], s.get_test_dataset(n,"times_compute_int_range"  )[1::], label = "compute int ranges")
-                    plt.plot(s.get_test_dataset(n,"Npart")[1::], s.get_test_dataset(n,"times_compute_coord_range")[1::], label = "compute coord ranges")
-                    plt.plot(s.get_test_dataset(n,"Npart")[1::], s.get_test_dataset(n,"times_morton_build"       )[1::], label = "morton code compute")
-                    plt.plot(s.get_test_dataset(n,"Npart")[1::], s.get_test_dataset(n,"times_trailling_fill"     )[1::], label = "tralling index fill")
-                    plt.plot(s.get_test_dataset(n,"Npart")[1::], s.get_test_dataset(n,"times_index_gen"          )[1::], label = "index table gen")
-                    plt.plot(s.get_test_dataset(n,"Npart")[1::], s.get_test_dataset(n,"times_morton_sort"        )[1::], label = "bitonic sort",color='black',linestyle="--")
+                    plt.plot(vecN, np.array(s.get_test_dataset(n,"times_full_tree"          )[1::])/vecN, label = "tree build time",color='black',linewidth = 2)
+                    #plt.plot(vecN, np.array(s.get_test_dataset(n,"times_morton"             )[1::])/vecN, label = "morton list build",color='black',linestyle="--")
+                    plt.plot(vecN, np.array(s.get_test_dataset(n,"times_reduc"              )[1::])/vecN, label = "double morton removal")
+                    plt.plot(vecN, np.array(s.get_test_dataset(n,"times_karras"             )[1::])/vecN, label = "karras alg")
+                    plt.plot(vecN, np.array(s.get_test_dataset(n,"times_compute_int_range"  )[1::])/vecN, label = "compute int ranges")
+                    plt.plot(vecN, np.array(s.get_test_dataset(n,"times_compute_coord_range")[1::])/vecN, label = "compute coord ranges")
+                    plt.plot(vecN, np.array(s.get_test_dataset(n,"times_morton_build"       )[1::])/vecN, label = "morton code compute")
+                    plt.plot(vecN, np.array(s.get_test_dataset(n,"times_trailling_fill"     )[1::])/vecN, label = "tralling index fill")
+                    plt.plot(vecN, np.array(s.get_test_dataset(n,"times_index_gen"          )[1::])/vecN, label = "index table gen")
+                    plt.plot(vecN, np.array(s.get_test_dataset(n,"times_morton_sort"        )[1::])/vecN, label = "bitonic sort",color='black',linestyle="--")
 
 
         axs.set_xscale('log')
         axs.set_yscale('log')
         axs.set_xlabel(r"$N_{\rm part}$")
-        axs.set_ylabel(r"$t_{\rm build} (s)$")
+        axs.set_ylabel(r"$t_{\rm build} /N_{\rm part} (s)$")
         axs.legend()
         axs.grid()
         plt.tight_layout()

@@ -161,5 +161,19 @@ TestStart(Benchmark, "shamalgs/algorithm/details/bitonicSorts:benchmark",
         res.add_data("t_sort", result.times);
     }
 
+    {
+        TestSortByKey<u32, u32>test (
+        (TestSortByKey<u32, u32>::vFunctionCall)
+            shamalgs::algorithm::sort_by_key
+        );
+    
+        auto result = test.benchmark();
+
+        auto & res = shamtest::test_data().new_dataset("bitonic public (u32,u32)");
+
+        res.add_data("Nobj", result.sizes);
+        res.add_data("t_sort", result.times);
+    }
+
 
 }
