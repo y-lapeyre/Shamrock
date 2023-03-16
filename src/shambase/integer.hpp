@@ -112,6 +112,11 @@ namespace shambase {
     };
 
 
+    inline constexpr u32 group_count(u32 len, u32 group_size){
+        return (len+group_size-1)/group_size;
+    }
+
+
 
 
 } // namespace shambase
