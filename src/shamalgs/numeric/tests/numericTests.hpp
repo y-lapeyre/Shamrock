@@ -106,7 +106,7 @@ struct TestExclScan {
         
         logger::info_ln("TestExclScan","testing :",__PRETTY_FUNCTION__);
 
-        constexpr u32 lim_bench = 1.5e7;
+        constexpr u32 lim_bench = 1.5e8;
         for(f64 i = 1e5; i < lim_bench; i*=1.1){
             ret.sizes.push_back(i);
         }

@@ -290,9 +290,9 @@ namespace shamalgs::numeric::details {
         sycl::buffer<T>   tile_aggregates (group_cnt);
         sycl::buffer<T>   tile_incl_prefix(group_cnt);
 
-        constexpr i32 STATE_X = 1;
+        constexpr i32 STATE_X = 0;
         constexpr i32 STATE_A = 1;
-        constexpr i32 STATE_P = 1;
+        constexpr i32 STATE_P = 2;
 
         shamalgs::memory::buf_fill_discard(q, tile_state, STATE_X);
         shamalgs::memory::buf_fill_discard(q, tile_aggregates, T(0));
@@ -353,23 +353,16 @@ namespace shamalgs::numeric::details {
                     if (group_id.is_main_thread) {
 
                         //load group sum
-                        T group_sum = local_scan_buf[0];
+                        T local_group_sum = local_scan_buf[0];
+                        T accum = 0;
 
                         //global scan using atomic counter
 
-                        if (group_id.dyn_group_id == 0) {
+                        if (group_id.dyn_group_id != 0)  {
 
-                            local_sum[0] = 0;
-                            atomic_ref_T(acc_tile_incl_prefix[group_id.dyn_group_id]).store(group_sum);
-                            atomic_ref_state(acc_tile_state[group_id.dyn_group_id]).store(STATE_P);
-
-                        } else {
-
-                            atomic_ref_T(acc_tile_aggregates[group_id.dyn_group_id]).store(group_sum);
+                            atomic_ref_T(acc_tile_aggregates[group_id.dyn_group_id]).store(local_group_sum);
                             atomic_ref_state(acc_tile_state[group_id.dyn_group_id]).store(STATE_A);
                             
-                            T accum = 0;
-
                             u32 tile_ptr = group_id.dyn_group_id-1;
 
                             while (true){
@@ -389,11 +382,14 @@ namespace shamalgs::numeric::details {
                                 tile_ptr --;
                             }
 
-                            atomic_ref_T(acc_tile_incl_prefix[group_id.dyn_group_id]).store(accum + group_sum);
-                            atomic_ref_state(acc_tile_state[group_id.dyn_group_id]).store(STATE_P);
+                            
 
-                            local_sum[0] = accum;
                         }
+
+                        atomic_ref_T(acc_tile_incl_prefix[group_id.dyn_group_id]).store(accum + local_group_sum);
+                        atomic_ref_state(acc_tile_state[group_id.dyn_group_id]).store(STATE_P);
+
+                        local_sum[0] = accum;
                     }
 
                     //sync

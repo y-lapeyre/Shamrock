@@ -108,16 +108,6 @@ TestStart(Benchmark, "shamalgs/numeric/details/exclusive_sum:benchmark", bench_e
     }
 
     {
-        TestExclScan<u32> test ((TestExclScan<u32>::vFunctionCall)shamalgs::numeric::details::exclusive_sum_gpugems39_3);
-        auto result = test.benchmark();
-
-        auto & res = shamtest::test_data().new_dataset("gpugems39 v3 u32");
-
-        res.add_data("Nobj", result.sizes);
-        res.add_data("t_sort", result.times);
-    }
-
-    {
         TestExclScan<u32> test ((TestExclScan<u32>::vFunctionCall)shamalgs::numeric::details::exclusive_sum_fallback);
         auto result = test.benchmark();
 
@@ -129,42 +119,11 @@ TestStart(Benchmark, "shamalgs/numeric/details/exclusive_sum:benchmark", bench_e
 
     logger::raw_ln("pray !");
     
-
-    {
-        TestExclScan<u32> test ((TestExclScan<u32>::vFunctionCall)shamalgs::numeric::details::exclusive_sum_atomic2pass<u32,256>);
-        auto result = test.benchmark();
-
-        auto & res = shamtest::test_data().new_dataset("atomic scan u32 gsize = 256");
-
-        res.add_data("Nobj", result.sizes);
-        res.add_data("t_sort", result.times);
-    }
-
     {
         TestExclScan<u32> test ((TestExclScan<u32>::vFunctionCall)shamalgs::numeric::details::exclusive_sum_atomic2pass<u32,512>);
         auto result = test.benchmark();
 
         auto & res = shamtest::test_data().new_dataset("atomic scan u32 gsize = 512");
-
-        res.add_data("Nobj", result.sizes);
-        res.add_data("t_sort", result.times);
-    }
-
-    {
-        TestExclScan<u32> test ((TestExclScan<u32>::vFunctionCall)shamalgs::numeric::details::exclusive_sum_atomic2pass<u32,1024>);
-        auto result = test.benchmark();
-
-        auto & res = shamtest::test_data().new_dataset("atomic scan u32 gsize = 1024");
-
-        res.add_data("Nobj", result.sizes);
-        res.add_data("t_sort", result.times);
-    }
-
-    {
-        TestExclScan<u32> test ((TestExclScan<u32>::vFunctionCall)shamalgs::numeric::details::exclusive_sum_atomic2pass_v2<u32,256>);
-        auto result = test.benchmark();
-
-        auto & res = shamtest::test_data().new_dataset("atomic scan v2 u32 gsize = 256");
 
         res.add_data("Nobj", result.sizes);
         res.add_data("t_sort", result.times);
@@ -180,15 +139,6 @@ TestStart(Benchmark, "shamalgs/numeric/details/exclusive_sum:benchmark", bench_e
         res.add_data("t_sort", result.times);
     }
 
-    {
-        TestExclScan<u32> test ((TestExclScan<u32>::vFunctionCall)shamalgs::numeric::details::exclusive_sum_atomic2pass_v2<u32,1024>);
-        auto result = test.benchmark();
-
-        auto & res = shamtest::test_data().new_dataset("atomic scan v2 u32 gsize = 1024");
-
-        res.add_data("Nobj", result.sizes);
-        res.add_data("t_sort", result.times);
-    }
 
     {
         TestExclScan<u32> test ((TestExclScan<u32>::vFunctionCall)shamalgs::numeric::details::exclusive_sum_atomic_decoupled<u32,256>);
