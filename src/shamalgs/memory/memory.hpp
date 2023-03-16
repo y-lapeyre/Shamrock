@@ -61,7 +61,13 @@ namespace shamalgs::memory {
     }
 
 
-    template<class T> inline void print_buf(sycl::buffer<T> & buf,u32 len, u32 column_count){
+    template<class T,typename... Tformat> 
+    inline void print_buf(
+        sycl::buffer<T> & buf,
+        u32 len, 
+        u32 column_count,
+        fmt::format_string<Tformat...> fmt
+    ){
 
         sycl::host_accessor acc {buf, sycl::read_only};
 
@@ -77,7 +83,7 @@ namespace shamalgs::memory {
                 }
             }
 
-            accum += shambase::format("{} ", acc[i]);
+            accum += shambase::format(fmt, acc[i]);
 
         }
 

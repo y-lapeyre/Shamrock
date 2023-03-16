@@ -31,16 +31,13 @@ namespace shamalgs::atomic {
         public:
         sycl::accessor<int_t, 1, sycl::access::mode::read_write, sycl::access::target::device>
             group_id;
-        sycl::accessor<int_t, 1, sycl::access::mode::read_write, sycl::access::target::device>
-            counter;
 
         sycl::local_accessor<int_t, 1> local_group_id;
 
         inline AccessedDynamicIdGenerator(
             sycl::handler &cgh, DynamicIdGenerator<int_t, group_size> &gen
         )
-            : group_id{gen.group_id, cgh, sycl::read_write},
-              counter{gen.counter, cgh, sycl::read_write}, local_group_id(1, cgh) {}
+            : group_id{gen.group_id, cgh, sycl::read_write}, local_group_id(1, cgh) {}
 
         inline DynamicId<int_t> compute_id(sycl::nd_item<1> it) const {
             DynamicId<int_t> ret;
@@ -72,10 +69,8 @@ namespace shamalgs::atomic {
     class DynamicIdGenerator {
         public:
         sycl::buffer<int_t> group_id;
-        sycl::buffer<int_t> counter;
 
-        inline explicit DynamicIdGenerator(sycl::queue &q) : group_id(1), counter(1) {
-            memory::buf_fill_discard(q, group_id, 0);
+        inline explicit DynamicIdGenerator(sycl::queue &q) : group_id(1) {
             memory::buf_fill_discard(q, group_id, 0);
         }
 
