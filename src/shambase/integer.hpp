@@ -116,7 +116,19 @@ namespace shambase {
         return (len+group_size-1)/group_size;
     }
 
+    template<class T, std::enable_if_t<std::is_integral_v<T>, int> = 0>
+    inline T select_bit(T value, T bitnum){
+        return (value >> bitnum) & 1;
+    }
 
+
+    inline auto pack(u32 a, u32 b) -> u64 {
+        return (u64(a) << 32U) + b;
+    };
+
+    inline auto unpack (u64 v) -> sycl::vec<u32, 2> {
+        return {u32(v >> 32U), u32(v)};
+    };
 
 
 } // namespace shambase

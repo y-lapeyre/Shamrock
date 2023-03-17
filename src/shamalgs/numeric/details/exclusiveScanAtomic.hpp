@@ -410,13 +410,7 @@ namespace shamalgs::numeric::details {
 
 
 
-    inline auto pack(u32 a, u32 b) -> u64 {
-        return (u64(a) << 32U) + b;
-    };
-
-    inline auto unpack (u64 v) -> sycl::vec<u32, 2> {
-        return {u32(v >> 32U), u32(v)};
-    };
+    
 
 
     template<class T, u32 group_size>
@@ -452,7 +446,7 @@ namespace shamalgs::numeric::details {
         constexpr T STATE_P = 2;
 
 
-        shamalgs::memory::buf_fill_discard(q, tile_state, pack(STATE_X, T(0)));
+        shamalgs::memory::buf_fill_discard(q, tile_state, shambase::pack(STATE_X, T(0)));
 
         atomic::DynamicIdGenerator<i32, group_size> id_gen(q);
 
@@ -499,11 +493,11 @@ namespace shamalgs::numeric::details {
 
 
                     auto store = [=](u32 id, T state, T val) {
-                        atomic_ref_T(acc_tile_state[id]).store(pack(state,val));
+                        atomic_ref_T(acc_tile_state[id]).store(shambase::pack(state,val));
                     };
 
                     auto load = [=](u32 id) -> sycl::vec<T,2> {
-                        return unpack(atomic_ref_T(acc_tile_state[id]).load());
+                        return shambase::unpack(atomic_ref_T(acc_tile_state[id]).load());
                     };
 
                     //DATA PARALLEL C++: MASTERING DPC++ ... device wide synchro
@@ -602,7 +596,7 @@ namespace shamalgs::numeric::details {
         constexpr T STATE_P = 2;
 
 
-        shamalgs::memory::buf_fill_discard(q, tile_state, pack(STATE_X, T(0)));
+        shamalgs::memory::buf_fill_discard(q, tile_state, shambase::pack(STATE_X, T(0)));
 
         atomic::DynamicIdGenerator<i32, group_size> id_gen(q);
 
@@ -649,11 +643,11 @@ namespace shamalgs::numeric::details {
 
 
                     auto store = [=](u32 id, T state, T val) {
-                        atomic_ref_T(acc_tile_state[id]).store(pack(state,val));
+                        atomic_ref_T(acc_tile_state[id]).store(shambase::pack(state,val));
                     };
 
                     auto load = [=](u32 id) -> sycl::vec<T,2> {
-                        return unpack(atomic_ref_T(acc_tile_state[id]).load());
+                        return shambase::unpack(atomic_ref_T(acc_tile_state[id]).load());
                     };
 
                     //DATA PARALLEL C++: MASTERING DPC++ ... device wide synchro
@@ -752,7 +746,7 @@ namespace shamalgs::numeric::details {
         constexpr T STATE_P = 2;
 
 
-        shamalgs::memory::buf_fill_discard(q, tile_state, pack(STATE_X, T(0)));
+        shamalgs::memory::buf_fill_discard(q, tile_state, shambase::pack(STATE_X, T(0)));
 
         atomic::DynamicIdGenerator<i32, group_size> id_gen(q);
 
@@ -795,11 +789,11 @@ namespace shamalgs::numeric::details {
 
 
                     auto store = [=](u32 id, T state, T val) {
-                        atomic_ref_T(acc_tile_state[id]).store(pack(state,val));
+                        atomic_ref_T(acc_tile_state[id]).store(shambase::pack(state,val));
                     };
 
                     auto load = [=](u32 id) -> sycl::vec<T,2> {
-                        return unpack(atomic_ref_T(acc_tile_state[id]).load());
+                        return shambase::unpack(atomic_ref_T(acc_tile_state[id]).load());
                     };
 
                     //DATA PARALLEL C++: MASTERING DPC++ ... device wide synchro
@@ -823,7 +817,7 @@ namespace shamalgs::numeric::details {
                                 atomic_ref_T atomic_state (acc_tile_state[tile_ptr]);
 
                                 do{
-                                    tile_state = unpack(atomic_state.load());
+                                    tile_state = shambase::unpack(atomic_state.load());
                                 }while(tile_state.x() == STATE_X);
 
                                 accum += tile_state.y();
@@ -895,16 +889,12 @@ namespace shamalgs::numeric::details {
         constexpr T STATE_P = 2;
 
 
-        shamalgs::memory::buf_fill_discard(q, tile_state, pack(STATE_X, T(0)));
-
-        atomic::DynamicIdGenerator<i32, group_size> id_gen(q);
+        shamalgs::memory::buf_fill_discard(q, tile_state, shambase::pack(STATE_X, T(0)));
 
         q.submit([&, group_cnt, len](sycl::handler &cgh) {
 
             sycl::accessor acc_value {ret_buf, cgh, sycl::read_write};
             sycl::accessor acc_tile_state       {tile_state      , cgh, sycl::read_write};
-
-            auto dyn_id = id_gen.get_access(cgh);
 
             sycl::local_accessor<T,1> local_scan_buf {1,cgh};
             sycl::local_accessor<T,1> local_sum {1,cgh};
@@ -953,14 +943,14 @@ namespace shamalgs::numeric::details {
 
                         if (group_tile_id != 0)  {
 
-                            tile_atomic.store(pack(STATE_A,local_group_sum));
+                            tile_atomic.store(shambase::pack(STATE_A,local_group_sum));
                             
                             while (tile_state.x() != STATE_P){
 
                                 atomic_ref_T atomic_state (acc_tile_state[tile_ptr]);
 
                                 do{
-                                    tile_state = unpack(atomic_state.load());
+                                    tile_state = shambase::unpack(atomic_state.load());
                                 }while(tile_state.x() == STATE_X);
 
                                 accum += tile_state.y();
@@ -970,7 +960,7 @@ namespace shamalgs::numeric::details {
 
                         }
 
-                        tile_atomic.store(pack(STATE_P,accum + local_group_sum));
+                        tile_atomic.store(shambase::pack(STATE_P,accum + local_group_sum));
 
                         local_sum[0] = accum;
                     }

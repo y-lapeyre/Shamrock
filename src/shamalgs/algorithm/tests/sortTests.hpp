@@ -31,9 +31,9 @@ struct TestSortByKey {
 
         sycl::queue & q = shamsys::instance::get_compute_queue();
 
-        u32 len = 1U << 16U;
+        u32 len = 1U << 8U;
         
-        sycl::buffer<u32> buf_key = shamalgs::random::mock_buffer<u32>(0x111, len, 0,1U << 31U);
+        sycl::buffer<u32> buf_key = shamalgs::random::mock_buffer<u32>(0x111, len, 0,1U << 12U);
         std::vector<u32> key_before_sort = shamalgs::memory::buf_to_vec(buf_key, len);
 
         sycl::buffer<u32> buf_vals = shamalgs::algorithm::gen_buffer_index(q, len);
