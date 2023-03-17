@@ -98,6 +98,15 @@ TestStart(Unittest, "shamalgs/numeric/details/exclusive_sum_atomic_decoupled_v4"
 }
 
 
+TestStart(Unittest, "shamalgs/numeric/details/exclusive_sum_atomic_decoupled_v5", test_exclusive_sum_atomic_decoupled_v5, 1){
+    
+    TestExclScan<u32> test ((TestExclScan<u32>::vFunctionCall)shamalgs::numeric::details::exclusive_sum_atomic_decoupled_v5<u32,512>);
+    test.check();
+
+}
+
+
+
 
 TestStart(Benchmark, "shamalgs/numeric/details/exclusive_sum:benchmark", bench_exclusive_sum, 1){
 
@@ -249,6 +258,17 @@ TestStart(Benchmark, "shamalgs/numeric/details/exclusive_sum:benchmark", bench_e
         auto result = test.benchmark();
 
         auto & res = shamtest::test_data().new_dataset("atomic scan decoupled v4 u32 gsize = 512");
+
+        res.add_data("Nobj", result.sizes);
+        res.add_data("t_sort", result.times);
+    }
+
+
+    {
+        TestExclScan<u32> test ((TestExclScan<u32>::vFunctionCall)shamalgs::numeric::details::exclusive_sum_atomic_decoupled_v5<u32,512>);
+        auto result = test.benchmark();
+
+        auto & res = shamtest::test_data().new_dataset("atomic scan decoupled v5 u32 gsize = 512");
 
         res.add_data("Nobj", result.sizes);
         res.add_data("t_sort", result.times);
