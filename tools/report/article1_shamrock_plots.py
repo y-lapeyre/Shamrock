@@ -85,6 +85,51 @@ def standalone(json_lst : list, figure_folder : str) -> str:
 
         """
 
+
+
+
+        vec_Npart = 0
+        dic_ = {}
+
+        for s in build_perf:
+
+            for dataset in s.test_data:
+                n = dataset["dataset_name"]
+
+                vec_Npart = np.array(s.get_test_dataset(n,"Npart")[1::])
+
+                dic_[n] = np.array(s.get_test_dataset(n,"times_full_tree")[1::])
+
+
+        fig,axs = plt.subplots(nrows=1,ncols=1,figsize=(8,6))  
+
+        ref = dic_["morton = u32, field type = f32"]
+
+        for k in dic_.keys():
+            if (not (k == "morton = u32, field type = f32")):
+
+                plt.plot(vec_Npart, dic_[k]/ref,label = k)
+
+        axs.set_xscale('log')
+        axs.set_xlabel(r"$N_{\rm part}$")
+        axs.set_ylabel(r"$t_{\rm build} /t_{\text{ build (f32/u32)}} $")
+        axs.legend()
+        axs.grid()
+        plt.tight_layout()
+        plt.savefig(figure_folder+fileprefix+"article1_shamrock_build_perf_tree_random_comp_var.pdf")
+
+        buf +=  r"""
+
+        \begin{figure}[ht!]
+        \center
+        \includegraphics[width=0.8\textwidth]{"""+ "figures/"+fileprefix+"article1_shamrock_build_perf_tree_random_comp_var.pdf" + r"""}
+        \caption{TODO}
+        \label{fig:fmm_prec}
+        \end{figure}
+
+
+        """
+
         return buf
 
         i += 1

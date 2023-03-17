@@ -919,40 +919,39 @@ namespace shamalgs::numeric::details {
                 sycl::nd_range<1>{corrected_len, group_size},
                 [=](sycl::nd_item<1> id) {
 
-                    atomic::DynamicId<i32> group_id = dyn_id.compute_id(id);
+                    u32 local_id = id.get_local_id(0);
+                    u32 group_tile_id = id.get_group_linear_id();
+                    u32 global_id = group_tile_id * group_size + local_id;
 
                     //load from global buffer
-                    T local_val = acc_value[group_id.dyn_global_id];
+                    T local_val = acc_value[global_id];
                     
-
                     //local scan in the group 
                     //the local sum will be in local id `group_size - 1`
                     T local_scan = sycl::inclusive_scan_over_group(id.get_group(), local_val, sycl::plus<>());
 
-                    if(id.get_local_id(0) == group_size-1){
+                    if(local_id == group_size-1){
                         local_scan_buf[0] = local_scan;
                     }
 
                     //sync group
                     id.barrier(sycl::access::fence_space::local_space);
 
-
-
                     //DATA PARALLEL C++: MASTERING DPC++ ... device wide synchro
-                    if (group_id.is_main_thread) {
+                    if (local_id == 0) {
 
-                        atomic_ref_T tile_atomic (acc_tile_state[group_id.dyn_group_id]);
+                        atomic_ref_T tile_atomic (acc_tile_state[group_tile_id]);
 
                         //load group sum
                         T local_group_sum = local_scan_buf[0];
                         T accum = 0;
-                        u32 tile_ptr = group_id.dyn_group_id-1;
+                        u32 tile_ptr = group_tile_id-1;
                         sycl::vec<T, 2> tile_state = {STATE_X,0};
 
 
                         //global scan using atomic counter
 
-                        if (group_id.dyn_group_id != 0)  {
+                        if (group_tile_id != 0)  {
 
                             tile_atomic.store(pack(STATE_A,local_group_sum));
                             
@@ -969,8 +968,6 @@ namespace shamalgs::numeric::details {
                                 tile_ptr --;
                             }
 
-                            
-
                         }
 
                         tile_atomic.store(pack(STATE_P,accum + local_group_sum));
@@ -982,7 +979,7 @@ namespace shamalgs::numeric::details {
                     id.barrier(sycl::access::fence_space::local_space);
 
                     //store final result
-                    acc_value[group_id.dyn_global_id] = local_scan + local_sum[0] ;
+                    acc_value[global_id] = local_scan + local_sum[0] ;
                     
                 }
             );
