@@ -30,7 +30,7 @@ struct TestExclScan {
         if constexpr (std::is_same<u32, T>::value) {
 
 
-            std::vector<u32> data = shamalgs::random::mock_vector<u32>(0x111, 4096, 0, 10);
+            std::vector<u32> data = shamalgs::random::mock_vector<u32>(0x111, 1e8, 0, 10);
 
             std::vector<u32> data_buf(data);
 
@@ -44,14 +44,17 @@ struct TestExclScan {
                 fct(shamsys::instance::get_compute_queue(), buf, data_buf.size());
 
             //shamalgs::memory::print_buf(res, 4096, 16, "{:4} ");
-
+            
+            bool eq = true;
             {
                 sycl::host_accessor acc{res, sycl::read_only};
 
                 for (u32 i = 0; i < data_buf.size(); i++) {
-                    shamtest::asserts().assert_equal("inclusive scan elem", acc[i], data[i]);
+                    //shamtest::asserts().assert_equal("inclusive scan elem", acc[i], data[i]);
+                    eq = eq && (acc[i] == data[i]);
                 }
             }
+            shamtest::asserts().assert_bool("exclusive scan match std", eq);
         }
     }
 
@@ -106,8 +109,8 @@ struct TestExclScan {
         
         logger::info_ln("TestExclScan","testing :",__PRETTY_FUNCTION__);
 
-        constexpr u32 lim_bench = 1.5e8;
-        for(f64 i = 1e5; i < lim_bench; i*=1.1){
+        constexpr u32 lim_bench = 4e8;
+        for(f64 i = 1e3; i < lim_bench; i*=1.05){
             ret.sizes.push_back(i);
         }
 

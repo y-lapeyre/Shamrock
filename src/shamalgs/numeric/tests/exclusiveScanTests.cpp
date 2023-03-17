@@ -69,10 +69,34 @@ TestStart(Unittest, "shamalgs/numeric/details/exclusive_sum_atomic2pass_v2", tes
 
 TestStart(Unittest, "shamalgs/numeric/details/exclusive_sum_atomic_decoupled", test_exclusive_sum_atomic_decoupled, 1){
     
-    TestExclScan<u32> test ((TestExclScan<u32>::vFunctionCall)shamalgs::numeric::details::exclusive_sum_atomic_decoupled<u32,16>);
+    TestExclScan<u32> test ((TestExclScan<u32>::vFunctionCall)shamalgs::numeric::details::exclusive_sum_atomic_decoupled<u32,512>);
     test.check();
 
 }
+
+
+TestStart(Unittest, "shamalgs/numeric/details/exclusive_sum_atomic_decoupled_v2", test_exclusive_sum_atomic_decoupled_v2, 1){
+    
+    TestExclScan<u32> test ((TestExclScan<u32>::vFunctionCall)shamalgs::numeric::details::exclusive_sum_atomic_decoupled_v2<u32,16>);
+    test.check();
+
+}
+
+TestStart(Unittest, "shamalgs/numeric/details/exclusive_sum_atomic_decoupled_v3", test_exclusive_sum_atomic_decoupled_v3, 1){
+    
+    TestExclScan<u32> test ((TestExclScan<u32>::vFunctionCall)shamalgs::numeric::details::exclusive_sum_atomic_decoupled_v3<u32,512>);
+    test.check();
+
+}
+
+
+TestStart(Unittest, "shamalgs/numeric/details/exclusive_sum_atomic_decoupled_v4", test_exclusive_sum_atomic_decoupled_v4, 1){
+    
+    TestExclScan<u32> test ((TestExclScan<u32>::vFunctionCall)shamalgs::numeric::details::exclusive_sum_atomic_decoupled_v4<u32,512>);
+    test.check();
+
+}
+
 
 
 TestStart(Benchmark, "shamalgs/numeric/details/exclusive_sum:benchmark", bench_exclusive_sum, 1){
@@ -117,29 +141,7 @@ TestStart(Benchmark, "shamalgs/numeric/details/exclusive_sum:benchmark", bench_e
         res.add_data("t_sort", result.times);
     }
 
-    logger::raw_ln("pray !");
-    
-    {
-        TestExclScan<u32> test ((TestExclScan<u32>::vFunctionCall)shamalgs::numeric::details::exclusive_sum_atomic2pass<u32,512>);
-        auto result = test.benchmark();
-
-        auto & res = shamtest::test_data().new_dataset("atomic scan u32 gsize = 512");
-
-        res.add_data("Nobj", result.sizes);
-        res.add_data("t_sort", result.times);
-    }
-
-    {
-        TestExclScan<u32> test ((TestExclScan<u32>::vFunctionCall)shamalgs::numeric::details::exclusive_sum_atomic2pass_v2<u32,512>);
-        auto result = test.benchmark();
-
-        auto & res = shamtest::test_data().new_dataset("atomic scan v2 u32 gsize = 512");
-
-        res.add_data("Nobj", result.sizes);
-        res.add_data("t_sort", result.times);
-    }
-
-
+/* 
     {
         TestExclScan<u32> test ((TestExclScan<u32>::vFunctionCall)shamalgs::numeric::details::exclusive_sum_atomic_decoupled<u32,256>);
         auto result = test.benchmark();
@@ -165,6 +167,88 @@ TestStart(Benchmark, "shamalgs/numeric/details/exclusive_sum:benchmark", bench_e
         auto result = test.benchmark();
 
         auto & res = shamtest::test_data().new_dataset("atomic scan decoupled u32 gsize = 1024");
+
+        res.add_data("Nobj", result.sizes);
+        res.add_data("t_sort", result.times);
+    }
+
+    {
+        TestExclScan<u32> test ((TestExclScan<u32>::vFunctionCall)shamalgs::numeric::details::exclusive_sum_atomic_decoupled_v2<u32,64>);
+        auto result = test.benchmark();
+
+        auto & res = shamtest::test_data().new_dataset("atomic scan decoupled v2 u32 gsize = 64");
+
+        res.add_data("Nobj", result.sizes);
+        res.add_data("t_sort", result.times);
+    }
+
+    {
+        TestExclScan<u32> test ((TestExclScan<u32>::vFunctionCall)shamalgs::numeric::details::exclusive_sum_atomic_decoupled_v2<u32,128>);
+        auto result = test.benchmark();
+
+        auto & res = shamtest::test_data().new_dataset("atomic scan decoupled v2 u32 gsize = 128");
+
+        res.add_data("Nobj", result.sizes);
+        res.add_data("t_sort", result.times);
+    }
+
+    {
+        TestExclScan<u32> test ((TestExclScan<u32>::vFunctionCall)shamalgs::numeric::details::exclusive_sum_atomic_decoupled_v2<u32,256>);
+        auto result = test.benchmark();
+
+        auto & res = shamtest::test_data().new_dataset("atomic scan decoupled v2 u32 gsize = 256");
+
+        res.add_data("Nobj", result.sizes);
+        res.add_data("t_sort", result.times);
+    }
+
+    {
+        TestExclScan<u32> test ((TestExclScan<u32>::vFunctionCall)shamalgs::numeric::details::exclusive_sum_atomic_decoupled_v2<u32,512>);
+        auto result = test.benchmark();
+
+        auto & res = shamtest::test_data().new_dataset("atomic scan decoupled v2 u32 gsize = 512");
+
+        res.add_data("Nobj", result.sizes);
+        res.add_data("t_sort", result.times);
+    } */
+
+
+    {
+        TestExclScan<u32> test ((TestExclScan<u32>::vFunctionCall)shamalgs::numeric::details::exclusive_sum_atomic_decoupled_v3<u32,256>);
+        auto result = test.benchmark();
+
+        auto & res = shamtest::test_data().new_dataset("atomic scan decoupled v3 u32 gsize = 256");
+
+        res.add_data("Nobj", result.sizes);
+        res.add_data("t_sort", result.times);
+    }
+
+    {
+        TestExclScan<u32> test ((TestExclScan<u32>::vFunctionCall)shamalgs::numeric::details::exclusive_sum_atomic_decoupled_v3<u32,512>);
+        auto result = test.benchmark();
+
+        auto & res = shamtest::test_data().new_dataset("atomic scan decoupled v3 u32 gsize = 512");
+
+        res.add_data("Nobj", result.sizes);
+        res.add_data("t_sort", result.times);
+    }
+
+    {
+        TestExclScan<u32> test ((TestExclScan<u32>::vFunctionCall)shamalgs::numeric::details::exclusive_sum_atomic_decoupled_v3<u32,1024>);
+        auto result = test.benchmark();
+
+        auto & res = shamtest::test_data().new_dataset("atomic scan decoupled v3 u32 gsize = 1024");
+
+        res.add_data("Nobj", result.sizes);
+        res.add_data("t_sort", result.times);
+    }
+
+
+    {
+        TestExclScan<u32> test ((TestExclScan<u32>::vFunctionCall)shamalgs::numeric::details::exclusive_sum_atomic_decoupled_v4<u32,512>);
+        auto result = test.benchmark();
+
+        auto & res = shamtest::test_data().new_dataset("atomic scan decoupled v4 u32 gsize = 512");
 
         res.add_data("Nobj", result.sizes);
         res.add_data("t_sort", result.times);

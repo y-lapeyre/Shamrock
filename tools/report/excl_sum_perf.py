@@ -26,35 +26,9 @@ def standalone(json_lst : list, figure_folder : str) -> str:
 
         if len(excl_sum_perf) == 1:
 
-            fig,axs = plt.subplots(nrows=1,ncols=1,figsize=(8,6))
-
-            for s in excl_sum_perf:
-
-                for dataset in s.test_data:
-
-                    n = dataset["dataset_name"]
-
-                    vec_N = s.get_test_dataset(n,"Nobj")
-                    vec_T = s.get_test_dataset(n,"t_sort")
-
-                    if n.startswith("public"):
-                        plt.plot(np.array(vec_N),np.abs(vec_T), label = n,color='black',linewidth = 2)
-                    else:
-                        plt.plot(np.array(vec_N),np.abs(vec_T), label = n)
-
-            axs.set_title('Exclusive sum perf')
-            axs.set_xscale('log')
-            axs.set_yscale('log')
-            axs.set_xlabel(r"$N$")
-            axs.set_ylabel(r"$t_{\rm exclsum} (s)$")
-            axs.legend()
-            axs.grid()
-            plt.tight_layout()
-            plt.savefig(figure_folder+fileprefix+"excl_sum_perf.pdf")
 
 
-
-            fig,axs = plt.subplots(nrows=1,ncols=1,figsize=(8,6))
+            fig,axs = plt.subplots(nrows=1,ncols=1,figsize=(12,6))
 
             for s in excl_sum_perf:
 
@@ -67,6 +41,8 @@ def standalone(json_lst : list, figure_folder : str) -> str:
 
                     if n.startswith("public"):
                         plt.plot(np.array(vec_N),(np.abs(vec_T)/vec_N), label = n,color='black',linewidth = 2)
+                    elif n.startswith("fallback"):
+                        plt.plot(np.array(vec_N),(np.abs(vec_T)/vec_N), label = n,color='black',linewidth = 1.5,linestyle="--")
                     else:
                         plt.plot(np.array(vec_N),(np.abs(vec_T)/vec_N), label = n)
 
@@ -79,7 +55,7 @@ def standalone(json_lst : list, figure_folder : str) -> str:
 
             axs.set_ylabel(r"s per key")
 
-            axs.legend()
+            axs.legend(loc='center left', bbox_to_anchor=(1, 0.5))
             axs.grid()
 
             plt.tight_layout()
@@ -92,16 +68,10 @@ def standalone(json_lst : list, figure_folder : str) -> str:
             buf +=  r"""
 
 
-            \begin{figure}[ht!]
-            \center
-            \includegraphics[width=0.6\textwidth]{"""+ "figures/"+fileprefix+"excl_sum_perf.pdf" + r"""}
-            \caption{TODO}
-            \label{fig:fmm_prec}
-            \end{figure}
 
             \begin{figure}[ht!]
             \center
-            \includegraphics[width=0.6\textwidth]{"""+ "figures/"+fileprefix+"excl_sum_perf_comp.pdf" + r"""}
+            \includegraphics[width=0.9\textwidth]{"""+ "figures/"+fileprefix+"excl_sum_perf_comp.pdf" + r"""}
             \caption{TODO}
             \label{fig:fmm_prec}
             \end{figure}

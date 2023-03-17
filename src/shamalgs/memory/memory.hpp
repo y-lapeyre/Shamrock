@@ -39,8 +39,14 @@ namespace shamalgs::memory {
      * @param buf 
      */
     template<class T> inline void move_buffer_on_queue(sycl::queue & q, sycl::buffer<T> & buf){
+        sycl::buffer<T> tmp(1);
         q.submit([&](sycl::handler & cgh){
-            cgh.require(sycl::accessor{buf, cgh, sycl::read_write});
+            sycl::accessor a {buf, cgh, sycl::read_write};
+            sycl::accessor b {tmp, cgh, sycl::write_only, sycl::no_init};
+
+            cgh.single_task([=](){
+                b[0] = a[0];
+            });
         });
     }
 
