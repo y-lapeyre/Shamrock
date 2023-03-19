@@ -76,7 +76,7 @@ namespace shamalgs::numeric::details {
 
                     //local scan in the group 
                     //the local sum will be in local id `group_size - 1`
-                    T local_scan = sycl::inclusive_scan_over_group(id.get_group(), local_val, sycl::plus<>());
+                    T local_scan = sycl::inclusive_scan_over_group(id.get_group(), local_val, sycl::plus<T>{});
 
                     if(id.get_local_id(0) == group_size-1){
                         local_scan_buf[0] = local_scan;
@@ -193,7 +193,7 @@ namespace shamalgs::numeric::details {
 
                     //local scan in the group 
                     //the local sum will be in local id `group_size - 1`
-                    T local_scan = sycl::inclusive_scan_over_group(id.get_group(), local_val, sycl::plus<>());
+                    T local_scan = sycl::inclusive_scan_over_group(id.get_group(), local_val, sycl::plus<T>{});
 
                     if(id.get_local_id(0) == group_size-1){
                         local_scan_buf[0] = local_scan;
@@ -340,7 +340,7 @@ namespace shamalgs::numeric::details {
 
                     //local scan in the group 
                     //the local sum will be in local id `group_size - 1`
-                    T local_scan = sycl::inclusive_scan_over_group(id.get_group(), local_val, sycl::plus<>());
+                    T local_scan = sycl::inclusive_scan_over_group(id.get_group(), local_val, sycl::plus<T>{});
 
                     if(id.get_local_id(0) == group_size-1){
                         local_scan_buf[0] = local_scan;
@@ -482,7 +482,7 @@ namespace shamalgs::numeric::details {
 
                     //local scan in the group 
                     //the local sum will be in local id `group_size - 1`
-                    T local_scan = sycl::inclusive_scan_over_group(id.get_group(), local_val, sycl::plus<>());
+                    T local_scan = sycl::inclusive_scan_over_group(id.get_group(), local_val, sycl::plus<T>{});
 
                     if(id.get_local_id(0) == group_size-1){
                         local_scan_buf[0] = local_scan;
@@ -632,7 +632,7 @@ namespace shamalgs::numeric::details {
 
                     //local scan in the group 
                     //the local sum will be in local id `group_size - 1`
-                    T local_scan = sycl::inclusive_scan_over_group(id.get_group(), local_val, sycl::plus<>());
+                    T local_scan = sycl::inclusive_scan_over_group(id.get_group(), local_val, sycl::plus<T>{});
 
                     if(id.get_local_id(0) == group_size-1){
                         local_scan_buf[0] = local_scan;
@@ -778,7 +778,7 @@ namespace shamalgs::numeric::details {
 
                     //local scan in the group 
                     //the local sum will be in local id `group_size - 1`
-                    T local_scan = sycl::inclusive_scan_over_group(id.get_group(), local_val, sycl::plus<>());
+                    T local_scan = sycl::inclusive_scan_over_group(id.get_group(), local_val, sycl::plus<T>{});
 
                     if(id.get_local_id(0) == group_size-1){
                         local_scan_buf[0] = local_scan;
@@ -910,7 +910,7 @@ namespace shamalgs::numeric::details {
                     T* first_out = acc_out.get_pointer();
 
                     T excl_val;
-                    sycl::joint_inclusive_scan(id.get_group(), first, last, first_out, sycl::plus<>());
+                    sycl::joint_inclusive_scan(id.get_group(), first, last, first_out, sycl::plus<T>{});
 
                     
                 }

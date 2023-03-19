@@ -243,7 +243,7 @@ namespace shamalgs::algorithm::details {
                         
                         //local scan in the group 
                         //the local sum will be in local id `group_size - 1`
-                        u32 local_scan = sycl::inclusive_scan_over_group(id.get_group(), local_val, sycl::plus<>());
+                        u32 local_scan = sycl::inclusive_scan_over_group(id.get_group(), local_val, sycl::plus<u32>{});
 
                         if(local_id == group_size-1){
                             local_scan_buf[0] = local_scan;

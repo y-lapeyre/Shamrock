@@ -76,7 +76,7 @@ namespace shamalgs::numeric::details {
                     
                     //local scan in the group 
                     //the local sum will be in local id `group_size - 1`
-                    T local_scan = sycl::inclusive_scan_over_group(id.get_group(), local_val, sycl::plus<>());
+                    T local_scan = sycl::inclusive_scan_over_group(id.get_group(), local_val, sycl::plus<T>{});
 
                     //can be removed if i change the index in the look back ?
                     if(local_id == group_size-1){
@@ -200,7 +200,7 @@ namespace shamalgs::numeric::details {
                     
                     //local scan in the group 
                     //the local sum will be in local id `group_size - 1`
-                    T local_scan = sycl::inclusive_scan_over_group(local_group, local_val, sycl::plus<>());
+                    T local_scan = sycl::inclusive_scan_over_group(local_group, local_val, sycl::plus<T>{});
 
                     if(local_id == group_size-1){
                         local_scan_buf[0] = local_scan;
@@ -246,7 +246,7 @@ namespace shamalgs::numeric::details {
 
                             //if(group_tile_id == 25) dump << "ps : " << tile_state << "\n";
 
-                            sum_state = sycl::reduce_over_group(local_group, tile_state.x(), sycl::plus<>());
+                            sum_state = sycl::reduce_over_group(local_group, tile_state.x(), sycl::plus<T>{});
 
                             //if(group_tile_id == 25) dump << "ss : " << sum_state << "\n";
 
@@ -255,7 +255,7 @@ namespace shamalgs::numeric::details {
 
                                 continue_loop = false;
 
-                                last_p_index = sycl::reduce_over_group(local_group, (tile_state.x() == STATE_P) ? (local_id) : (group_size), sycl::minimum<>());
+                                last_p_index = sycl::reduce_over_group(local_group, (tile_state.x() == STATE_P) ? (local_id) : (group_size), sycl::minimum<T>{});
 
 
                                 //if(group_tile_id == 25) dump << "lp : " << last_p_index << "\n";
@@ -271,7 +271,7 @@ namespace shamalgs::numeric::details {
                                 group_tile_ptr -= thread_counts;
                             }
 
-                            accum += sycl::reduce_over_group(local_group, tile_state.y(), sycl::plus<>());
+                            accum += sycl::reduce_over_group(local_group, tile_state.y(), sycl::plus<T>{});
 
 
                             //if(group_tile_id == 25) dump << "as : " << accum << "\n";
