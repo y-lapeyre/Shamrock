@@ -60,7 +60,14 @@ TestStart(Unittest, "shamalgs/algorithm/details/sort_by_key_radix_onesweep_v2", 
     test.check();
 }
 
-
+TestStart(Unittest, "shamalgs/algorithm/details/sort_by_key_radix_onesweep_v3", test_sort_by_key_radix_onesweep_v3, 1){
+    
+    TestSortByKey<u32, u32>test (
+        (TestSortByKey<u32, u32>::vFunctionCall)
+            shamalgs::algorithm::details::sort_by_key_radix_onesweep_v3<u32,u32,16>
+        );
+    test.check();
+}
 
 TestStart(Benchmark, "shamalgs/algorithm/details/bitonicSorts:benchmark", 
     test_bitonic_sort_legacy_benchmark, 1){

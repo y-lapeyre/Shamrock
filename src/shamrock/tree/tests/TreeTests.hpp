@@ -6,11 +6,12 @@
 //
 // -------------------------------------------------------//
 
+#pragma once
 
 #include "shambase/sycl_utils/vectorProperties.hpp"
 #include "shammath/CoordRange.hpp"
 
-#pragma once
+
 
 template<class vec>
 shammath::CoordRange<vec> get_test_coord_ranges();

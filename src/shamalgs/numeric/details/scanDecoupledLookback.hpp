@@ -14,7 +14,6 @@
 #include "shamalgs/memory/memory.hpp"
 #include "shambase/integer.hpp"
 #include "shambase/sycl.hpp"
-#include <access/access.hpp>
 
 namespace shamalgs::numeric::details {
 

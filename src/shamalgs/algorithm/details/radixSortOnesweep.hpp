@@ -14,6 +14,7 @@
 #include "shambase/integer.hpp"
 #include "shambase/sycl.hpp"
 #include "shambase/type_traits.hpp"
+#include "shamsys/legacy/log.hpp"
 
 
 namespace shamalgs::algorithm::details {
@@ -342,6 +343,153 @@ namespace shamalgs::algorithm::details {
 
 
     }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    template<class T, u32 digit_bit_len>
+    class DigitBinner{public:
+        static constexpr T bitlen_T = shambase::bitsizeof<T>;
+        static constexpr T digit_bit_places = bitlen_T / digit_bit_len;
+        static constexpr T digit_count = (1U << digit_bit_len);
+        static constexpr T value_count = digit_bit_places * digit_count;
+
+        static_assert(digit_bit_places*digit_bit_len == bitlen_T, "the conversion should be correct");
+
+        template<class Acc>
+        static void fetch_add_bin(Acc accessor, T digit_val, T digit_place){
+            using atomic_ref_T = sycl::atomic_ref<
+                    u32, 
+                    sycl::memory_order_relaxed, 
+                    sycl::memory_scope_work_group,
+                    sycl::access::address_space::local_space>;
+
+            atomic_ref_T (accessor[digit_val + digit_place*digit_count]).fetch_add(1U);
+        }
+
+        template<class Acc>
+        static void add_bin_key(Acc accessor, T value_to_bin){
+
+            T digit_mask = digit_count-1;
+
+            for(T digit_place = 0; digit_place < digit_bit_places; digit_place ++){
+                T shifted = digit_mask & (value_to_bin >> (digit_place*digit_bit_len));
+
+                fetch_add_bin(accessor, shifted, digit_place);
+            }
+
+        }
+    };
+
+    /*
+    tile histogram : 
+
+    element a :
+
+    a = 2 + 1x4^3
+
+    |digit | digit places  |
+    |      | 0 | 1 | 2 | 3 |
+    ------------------------
+    |  0   | 0 | 1 | 1 | 0 |
+    |  1   | 0 | 0 | 0 | 1 |
+    |  2   | 1 | 0 | 0 | 0 |
+    |  3   | 0 | 0 | 0 | 0 |
+
+    sum array on the table
+
+    */
+    template<class Tkey, class Tval, u32 group_size>
+    void sort_by_key_radix_onesweep_v3(
+        sycl::queue &q, sycl::buffer<Tkey> &buf_key, sycl::buffer<Tval> &buf_values, u32 len
+    ){
+
+        u32 group_cnt = shambase::group_count(len, group_size);
+
+        group_cnt = group_cnt + (group_cnt % 4);
+        u32 corrected_len = group_cnt*group_size;
+
+        memory::print_buf(buf_key, len, 16, "{:4} ");
+
+        constexpr u32 digit_len = 1;
+        using Binner = DigitBinner<Tkey,digit_len>;
+
+        sycl::buffer<u32> digit_histogram(Binner::value_count);
+
+        shamalgs::memory::buf_fill_discard(q, digit_histogram, 0U);
+
+        logger::raw_ln("digit binning");
+        memory::print_buf(digit_histogram, Binner::value_count, Binner::digit_count, "{:4} ");
+
+        q.submit([&,len](sycl::handler &cgh) {
+            sycl::accessor keys{buf_key, cgh, sycl::read_only};
+            sycl::accessor histogram{digit_histogram, cgh, sycl::read_write};
+
+            sycl::local_accessor<u32,1> local_histogram{Binner::value_count,cgh};
+
+            cgh.parallel_for(sycl::nd_range<1>{corrected_len, group_size},
+                [=](sycl::nd_item<1> id) {
+                u32 local_id = id.get_local_id(0);
+                u32 group_tile_id = id.get_group_linear_id();
+                u32 global_id = group_tile_id * group_size + local_id;
+
+                //load from global buffer
+                if(global_id < len){
+                    Binner::add_bin_key(local_histogram, keys[global_id]);
+                }
+
+                
+                for(u32 i = local_id ; i < Binner::value_count; i+= group_size){
+                    u32 dcount = local_histogram[i];
+
+                    if(dcount != 0){
+
+                        using atomic_ref_t = sycl::atomic_ref<
+                            u32, 
+                            sycl::memory_order_relaxed, 
+                            sycl::memory_scope_device,
+                            sycl::access::address_space::global_space>;
+
+                        atomic_ref_t(histogram[i]).fetch_add(dcount);
+                    }
+                }
+            });
+        });
+
+        logger::raw_ln("digit histogram");
+        memory::print_buf(digit_histogram, Binner::value_count, Binner::digit_count, "{:4} ");
+
+
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 }
