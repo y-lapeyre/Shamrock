@@ -280,6 +280,13 @@ TestStart(Unittest, "shamalgs/numeric/details/exclusive_sum_in_place_fallback", 
 }
 
 
+TestStart(Unittest, "shamalgs/numeric/details/exclusive_sum_in_place_atomic_decoupled_v5", test_exclusive_sum_in_place_atomic_decoupled_v5, 1){
+    
+    TestExclScanInplace<u32> test ((TestExclScanInplace<u32>::vFunctionCall)shamalgs::numeric::details::exclusive_sum_in_place_atomic_decoupled_v5<u32, 256>);
+    test.check();
+}
+
+
 TestStart(Unittest, "shamalgs/numeric/details/exclusive_sum_fallback", exclsumtest_fallback, 1){
     
     TestExclScan<u32> test ((TestExclScan<u32>::vFunctionCall)shamalgs::numeric::details::exclusive_sum_fallback);
