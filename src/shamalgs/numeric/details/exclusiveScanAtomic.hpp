@@ -868,16 +868,6 @@ namespace shamalgs::numeric::details {
         // prepare the return buffer by shifting values for the exclusive sum
         sycl::buffer<T> ret_buf(corrected_len);
 
-        q.submit([&, len](sycl::handler &cgh) {
-            sycl::accessor acc_in{buf1, cgh, sycl::read_only};
-            sycl::accessor acc_out{ret_buf, cgh, sycl::write_only, sycl::no_init};
-
-            cgh.parallel_for(sycl::range<1>{corrected_len}, [=](sycl::item<1> id) {
-                u32 thid    = id.get_linear_id();
-                acc_out[id] = (thid > 0 && thid < len) ? acc_in[thid - 1] : 0;
-            });
-        });
-
         //logger::raw_ln("shifted : ");
         //shamalgs::memory::print_buf(ret_buf, len, 16,"{:4} ");
 
@@ -893,7 +883,8 @@ namespace shamalgs::numeric::details {
 
         q.submit([&, group_cnt, len](sycl::handler &cgh) {
 
-            sycl::accessor acc_value {ret_buf, cgh, sycl::read_write};
+            sycl::accessor acc_in {buf1, cgh, sycl::read_only};
+            sycl::accessor acc_out {ret_buf, cgh, sycl::write_only, sycl::no_init};
             sycl::accessor acc_tile_state       {tile_state      , cgh, sycl::read_write};
 
             sycl::local_accessor<T,1> local_scan_buf {1,cgh};
@@ -914,7 +905,7 @@ namespace shamalgs::numeric::details {
                     u32 global_id = group_tile_id * group_size + local_id;
 
                     //load from global buffer
-                    T local_val = acc_value[global_id];
+                    T local_val = (global_id > 0 && global_id < len) ? acc_in[global_id - 1] : 0;
                     
                     //local scan in the group 
                     //the local sum will be in local id `group_size - 1`
@@ -969,13 +960,83 @@ namespace shamalgs::numeric::details {
                     id.barrier(sycl::access::fence_space::local_space);
 
                     //store final result
-                    acc_value[global_id] = local_scan + local_sum[0] ;
+                    if(global_id < len){
+                        acc_out[global_id] = local_scan + local_sum[0] ;
+                    }
                     
                 }
             );
         });
 
         return ret_buf;
+
+    }
+
+
+    template<class T, u32 group_size>
+    class KernelExclusivesum_sycl_jointalg;
+
+    template<class T, u32 group_size>
+    sycl::buffer<T> exclusive_sum_sycl_jointalg(sycl::queue &q, sycl::buffer<T> &buf1, u32 len) {
+
+        u32 group_cnt = shambase::group_count(len, group_size);
+
+        group_cnt = group_cnt + (group_cnt % 4);
+        u32 corrected_len = group_cnt*group_size;
+
+        // prepare the return buffer by shifting values for the exclusive sum
+        sycl::buffer<T> ret_buf(corrected_len);
+        sycl::buffer<T> ret_buf2(corrected_len);
+
+        q.submit([&, len](sycl::handler &cgh) {
+            sycl::accessor acc_in{buf1, cgh, sycl::read_only};
+            sycl::accessor acc_out{ret_buf, cgh, sycl::write_only, sycl::no_init};
+
+            cgh.parallel_for(sycl::range<1>{corrected_len}, [=](sycl::item<1> id) {
+                u32 thid    = id.get_linear_id();
+                acc_out[id] = (thid > 0 && thid < len) ? acc_in[thid - 1] : 0;
+            });
+        });
+
+
+
+        //logger::raw_ln("shifted : ");
+        //shamalgs::memory::print_buf(ret_buf, len, 16,"{:4} ");
+
+        // group aggregates
+        sycl::buffer<u64> tile_state (group_cnt);
+
+        constexpr T STATE_X = 0;
+        constexpr T STATE_A = 1;
+        constexpr T STATE_P = 2;
+
+
+        shamalgs::memory::buf_fill_discard(q, tile_state, shambase::pack(STATE_X, T(0)));
+
+        q.submit([&, group_cnt, len](sycl::handler &cgh) {
+
+            sycl::accessor acc_in {ret_buf, cgh, sycl::read_write};
+            sycl::accessor acc_out {ret_buf2, cgh, sycl::read_write};
+
+            cgh.parallel_for<KernelExclusivesum_sycl_jointalg<T, group_size>>(
+                sycl::nd_range<1>{corrected_len, group_size},
+                [=](sycl::nd_item<1> id) {
+
+                    
+                    T* first = acc_in.get_pointer();
+                    T* last = first + acc_in.size();
+
+                    T* first_out = acc_out.get_pointer();
+
+                    T excl_val;
+                    sycl::joint_inclusive_scan(id.get_group(), first, last, first_out, sycl::plus<>());
+
+                    
+                }
+            );
+        });
+
+        return ret_buf2;
 
     }
 

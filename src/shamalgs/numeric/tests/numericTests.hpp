@@ -30,7 +30,7 @@ struct TestExclScan {
         if constexpr (std::is_same<u32, T>::value) {
 
 
-            std::vector<u32> data = shamalgs::random::mock_vector<u32>(0x111, 1e8, 0, 10);
+            std::vector<u32> data = shamalgs::random::mock_vector<u32>(0x111, 1e5, 0, 10);
 
             std::vector<u32> data_buf(data);
 
@@ -50,7 +50,7 @@ struct TestExclScan {
                 sycl::host_accessor acc{res, sycl::read_only};
 
                 for (u32 i = 0; i < data_buf.size(); i++) {
-                    //shamtest::asserts().assert_equal("inclusive scan elem", acc[i], data[i]);
+                    shamtest::asserts().assert_equal("inclusive scan elem", acc[i], data[i]);
                     eq = eq && (acc[i] == data[i]);
                 }
             }
@@ -104,18 +104,14 @@ struct TestExclScan {
         std::vector<f64> times;
     };
 
-    BenchRes benchmark(){
+    BenchRes benchmark(u32 lim_bench = 4e8){
         BenchRes ret;
         
         logger::info_ln("TestExclScan","testing :",__PRETTY_FUNCTION__);
 
-        constexpr u32 lim_bench = 4e8;
-        for(f64 i = 1e3; i < lim_bench; i*=1.05){
+        for(f64 i = 1e3; i < lim_bench; i*=1.1){
             ret.sizes.push_back(i);
         }
-
-
-
 
         for(const f64 & sz : ret.sizes){
             logger::debug_ln("ShamrockTest","N=",sz);

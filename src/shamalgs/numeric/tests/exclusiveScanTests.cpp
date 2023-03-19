@@ -12,6 +12,7 @@
 #include "shamalgs/numeric/details/exclusiveScanAtomic.hpp"
 #include "shamalgs/numeric/details/exclusiveScanGPUGems39.hpp"
 #include "shamalgs/numeric/details/numericFallback.hpp"
+#include "shamalgs/numeric/details/scanDecoupledLookback.hpp"
 #include "shamalgs/numeric/numeric.hpp"
 
 
@@ -106,10 +107,25 @@ TestStart(Unittest, "shamalgs/numeric/details/exclusive_sum_atomic_decoupled_v5"
 }
 
 
+TestStart(Unittest, "shamalgs/numeric/details/exclusive_sum_atomic_decoupled_v6", test_exclusive_sum_atomic_decoupled_v6, 1){
+    
+    TestExclScan<u32> test ((TestExclScan<u32>::vFunctionCall)shamalgs::numeric::details::exclusive_sum_atomic_decoupled_v6<u32,512>);
+    test.check();
+
+}
+
+
+TestStart(Unittest, "shamalgs/numeric/details/exclusive_sum_sycl_jointalg", test_exclusive_sum_sycl_jointalg, 1){
+    
+    TestExclScan<u32> test ((TestExclScan<u32>::vFunctionCall)shamalgs::numeric::details::exclusive_sum_sycl_jointalg<u32,32>);
+    test.check();
+
+}
+
 
 
 TestStart(Benchmark, "shamalgs/numeric/details/exclusive_sum:benchmark", bench_exclusive_sum, 1){
-
+/*
     {
         TestExclScan<u32> test ((TestExclScan<u32>::vFunctionCall)shamalgs::numeric::exclusive_sum);
         auto result = test.benchmark();
@@ -139,7 +155,7 @@ TestStart(Benchmark, "shamalgs/numeric/details/exclusive_sum:benchmark", bench_e
         res.add_data("Nobj", result.sizes);
         res.add_data("t_sort", result.times);
     }
-
+*/
     {
         TestExclScan<u32> test ((TestExclScan<u32>::vFunctionCall)shamalgs::numeric::details::exclusive_sum_fallback);
         auto result = test.benchmark();
@@ -221,7 +237,7 @@ TestStart(Benchmark, "shamalgs/numeric/details/exclusive_sum:benchmark", bench_e
         res.add_data("t_sort", result.times);
     } */
 
-
+/*
     {
         TestExclScan<u32> test ((TestExclScan<u32>::vFunctionCall)shamalgs::numeric::details::exclusive_sum_atomic_decoupled_v3<u32,256>);
         auto result = test.benchmark();
@@ -263,12 +279,32 @@ TestStart(Benchmark, "shamalgs/numeric/details/exclusive_sum:benchmark", bench_e
         res.add_data("t_sort", result.times);
     }
 
-
+*/
     {
         TestExclScan<u32> test ((TestExclScan<u32>::vFunctionCall)shamalgs::numeric::details::exclusive_sum_atomic_decoupled_v5<u32,512>);
         auto result = test.benchmark();
 
         auto & res = shamtest::test_data().new_dataset("atomic scan decoupled v5 u32 gsize = 512");
+
+        res.add_data("Nobj", result.sizes);
+        res.add_data("t_sort", result.times);
+    }
+
+    //{
+    //    TestExclScan<u32> test ((TestExclScan<u32>::vFunctionCall)shamalgs::numeric::details::exclusive_sum_atomic_decoupled_v6<u32,512>);
+    //    auto result = test.benchmark();
+//
+    //    auto & res = shamtest::test_data().new_dataset("atomic scan decoupled v6 u32 gsize = 512");
+//
+    //    res.add_data("Nobj", result.sizes);
+    //    res.add_data("t_sort", result.times);
+    //}
+
+    {
+        TestExclScan<u32> test ((TestExclScan<u32>::vFunctionCall)shamalgs::numeric::details::exclusive_sum_sycl_jointalg<u32,512>);
+        auto result = test.benchmark(1e7);
+
+        auto & res = shamtest::test_data().new_dataset("sycl joint excl sum u32 gsize = 512");
 
         res.add_data("Nobj", result.sizes);
         res.add_data("t_sort", result.times);
