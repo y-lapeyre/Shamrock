@@ -23,6 +23,12 @@ namespace shamalgs::numeric {
     template<class T>
     sycl::buffer<T> inclusive_sum(sycl::queue &q, sycl::buffer<T> &buf1, u32 len);
 
+    template<class T>
+    void exclusive_sum_in_place(sycl::queue &q, sycl::buffer<T> &buf, u32 len);
+
+    template<class T>
+    void inclusive_sum_in_place(sycl::queue &q, sycl::buffer<T> &buf, u32 len);
+
     /**
      * @brief Stream compaction algorithm
      * 

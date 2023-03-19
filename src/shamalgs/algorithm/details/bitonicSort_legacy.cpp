@@ -7,7 +7,7 @@
 // -------------------------------------------------------//
 
 #include "bitonicSort.hpp"
-#include "shamalgs/intManip.hpp"
+#include "shambase/integer.hpp"
 #include "shamsys/legacy/log.hpp"
 
 // modified from http://www.bealto.com/gpu-sorting.html
@@ -96,7 +96,7 @@ namespace shamalgs::algorithm::details {
     ) {
 
 
-        if(!is_pow_of_two(len)){
+        if(!shambase::is_pow_of_two(len)){
             throw std::invalid_argument("this algorithm can only be used with lenght that are powers of two");
         }
 
