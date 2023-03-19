@@ -29,8 +29,9 @@ struct TestExclScan {
     void check() {
         if constexpr (std::is_same<u32, T>::value) {
 
+            u32 len_test = 1e5;
 
-            std::vector<u32> data = shamalgs::random::mock_vector<u32>(0x111, 1e5, 0, 10);
+            std::vector<u32> data = shamalgs::random::mock_vector<u32>(0x111, len_test, 0, 10);
 
             std::vector<u32> data_buf(data);
 
@@ -43,17 +44,21 @@ struct TestExclScan {
             sycl::buffer<u32> res =
                 fct(shamsys::instance::get_compute_queue(), buf, data_buf.size());
 
-            //shamalgs::memory::print_buf(res, 4096, 16, "{:4} ");
+            //shamalgs::memory::print_buf(res, len_test, 16, "{:4} ");
             
             bool eq = true;
             {
                 sycl::host_accessor acc{res, sycl::read_only};
 
                 for (u32 i = 0; i < data_buf.size(); i++) {
-                    shamtest::asserts().assert_equal("inclusive scan elem", acc[i], data[i]);
+                    //shamtest::asserts().assert_equal("inclusive scan elem", acc[i], data[i]);
                     eq = eq && (acc[i] == data[i]);
                 }
             }
+
+            //sycl::buffer<u32> tmp (data.data(), data.size());
+            //shamalgs::memory::print_buf(tmp, len_test, 16, "{:4} ");
+
             shamtest::asserts().assert_bool("exclusive scan match std", eq);
         }
     }
@@ -81,14 +86,14 @@ struct TestExclScan {
     f64 bench_one_avg(u32 len){
         f64 sum = 0;
 
-        f64 cnt = 1;
+        f64 cnt = 4;
 
         if(len < 2e6){
-            cnt = 4;
-        }else if(len < 1e5){
             cnt = 10;
-        }else if(len < 1e4){
+        }else if(len < 1e5){
             cnt = 100;
+        }else if(len < 1e4){
+            cnt = 1000;
         }
 
 
@@ -104,7 +109,7 @@ struct TestExclScan {
         std::vector<f64> times;
     };
 
-    BenchRes benchmark(u32 lim_bench = 4e8){
+    BenchRes benchmark(u32 lim_bench = 1e8){
         BenchRes ret;
         
         logger::info_ln("TestExclScan","testing :",__PRETTY_FUNCTION__);

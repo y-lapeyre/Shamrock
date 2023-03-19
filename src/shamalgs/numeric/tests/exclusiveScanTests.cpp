@@ -109,7 +109,7 @@ TestStart(Unittest, "shamalgs/numeric/details/exclusive_sum_atomic_decoupled_v5"
 
 TestStart(Unittest, "shamalgs/numeric/details/exclusive_sum_atomic_decoupled_v6", test_exclusive_sum_atomic_decoupled_v6, 1){
     
-    TestExclScan<u32> test ((TestExclScan<u32>::vFunctionCall)shamalgs::numeric::details::exclusive_sum_atomic_decoupled_v6<u32,512>);
+    TestExclScan<u32> test ((TestExclScan<u32>::vFunctionCall)shamalgs::numeric::details::exclusive_sum_atomic_decoupled_v6<u32,64,8>);
     test.check();
 
 }
@@ -290,24 +290,79 @@ TestStart(Benchmark, "shamalgs/numeric/details/exclusive_sum:benchmark", bench_e
         res.add_data("t_sort", result.times);
     }
 
-    //{
-    //    TestExclScan<u32> test ((TestExclScan<u32>::vFunctionCall)shamalgs::numeric::details::exclusive_sum_atomic_decoupled_v6<u32,512>);
-    //    auto result = test.benchmark();
-//
-    //    auto & res = shamtest::test_data().new_dataset("atomic scan decoupled v6 u32 gsize = 512");
-//
-    //    res.add_data("Nobj", result.sizes);
-    //    res.add_data("t_sort", result.times);
-    //}
-
     {
         TestExclScan<u32> test ((TestExclScan<u32>::vFunctionCall)shamalgs::numeric::details::exclusive_sum_sycl_jointalg<u32,512>);
-        auto result = test.benchmark(1e7);
+        auto result = test.benchmark(4e6);
 
         auto & res = shamtest::test_data().new_dataset("sycl joint excl sum u32 gsize = 512");
 
         res.add_data("Nobj", result.sizes);
         res.add_data("t_sort", result.times);
     }
+
+
+
+    {
+        TestExclScan<u32> test ((TestExclScan<u32>::vFunctionCall)shamalgs::numeric::details::exclusive_sum_atomic_decoupled_v6<u32,1024,512>);
+        auto result = test.benchmark();
+
+        auto & res = shamtest::test_data().new_dataset("atomic scan decoupled v6 u32 gsize = 1024/512");
+
+        res.add_data("Nobj", result.sizes);
+        res.add_data("t_sort", result.times);
+    }
+    {
+        TestExclScan<u32> test ((TestExclScan<u32>::vFunctionCall)shamalgs::numeric::details::exclusive_sum_atomic_decoupled_v6<u32,1024,1024>);
+        auto result = test.benchmark();
+
+        auto & res = shamtest::test_data().new_dataset("atomic scan decoupled v6 u32 gsize = 1024/1024");
+
+        res.add_data("Nobj", result.sizes);
+        res.add_data("t_sort", result.times);
+    }
+
+
+    {
+        TestExclScan<u32> test ((TestExclScan<u32>::vFunctionCall)shamalgs::numeric::details::exclusive_sum_atomic_decoupled_v6<u32,512,256>);
+        auto result = test.benchmark();
+
+        auto & res = shamtest::test_data().new_dataset("atomic scan decoupled v6 u32 gsize = 512/256");
+
+        res.add_data("Nobj", result.sizes);
+        res.add_data("t_sort", result.times);
+    }
+    {
+        TestExclScan<u32> test ((TestExclScan<u32>::vFunctionCall)shamalgs::numeric::details::exclusive_sum_atomic_decoupled_v6<u32,512,512>);
+        auto result = test.benchmark();
+
+        auto & res = shamtest::test_data().new_dataset("atomic scan decoupled v6 u32 gsize = 512/512");
+
+        res.add_data("Nobj", result.sizes);
+        res.add_data("t_sort", result.times);
+    }
+
+
+
+
+    {
+        TestExclScan<u32> test ((TestExclScan<u32>::vFunctionCall)shamalgs::numeric::details::exclusive_sum_atomic_decoupled_v6<u32,256,128>);
+        auto result = test.benchmark();
+
+        auto & res = shamtest::test_data().new_dataset("atomic scan decoupled v6 u32 gsize = 256/128");
+
+        res.add_data("Nobj", result.sizes);
+        res.add_data("t_sort", result.times);
+    }
+    {
+        TestExclScan<u32> test ((TestExclScan<u32>::vFunctionCall)shamalgs::numeric::details::exclusive_sum_atomic_decoupled_v6<u32,256,256>);
+        auto result = test.benchmark();
+
+        auto & res = shamtest::test_data().new_dataset("atomic scan decoupled v6 u32 gsize = 256/256");
+
+        res.add_data("Nobj", result.sizes);
+        res.add_data("t_sort", result.times);
+    }
+
+
 
 }
