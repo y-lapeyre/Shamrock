@@ -911,6 +911,7 @@ namespace shamalgs::numeric::details {
                     //the local sum will be in local id `group_size - 1`
                     T local_scan = sycl::inclusive_scan_over_group(id.get_group(), local_val, sycl::plus<>());
 
+                    //can be removed if i change the index in the look back ?
                     if(local_id == group_size-1){
                         local_scan_buf[0] = local_scan;
                     }
