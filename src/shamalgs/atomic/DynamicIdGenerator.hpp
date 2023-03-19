@@ -15,6 +15,12 @@
 
 namespace shamalgs::atomic {
 
+    /**
+     * @brief Sycl utility to dynamically generate group ids
+     * 
+     * @tparam int_t 
+     * @tparam group_size 
+     */
     template<class int_t, u32 group_size>
     class DynamicIdGenerator;
 

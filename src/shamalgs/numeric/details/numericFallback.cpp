@@ -9,6 +9,7 @@
 
 #include "numericFallback.hpp"
 #include "shamalgs/memory/memory.hpp"
+#include <access/access.hpp>
 
 namespace shamalgs::numeric::details {
 
@@ -58,11 +59,57 @@ namespace shamalgs::numeric::details {
 
     }
 
+    template<class T>
+    void exclusive_sum_in_place_fallback(sycl::queue &q, sycl::buffer<T> &buf1, u32 len){
+
+        T accum {0};
+
+        {
+            sycl::host_accessor acc_src {buf1, sycl::read_write};
+
+            for(u32 idx = 0; idx < len; idx ++){
+
+                T val = accum;
+                
+                accum += acc_src[idx];
+
+                acc_src[idx] = val;
+
+            }
+        }
+
+    }
+
+    template<class T>
+    void inclusive_sum_in_place_fallback(sycl::queue &q, sycl::buffer<T> &buf1, u32 len){
+
+
+        T accum {0};
+
+        {
+            sycl::host_accessor acc_src {buf1, sycl::read_write};
+
+            for(u32 idx = 0; idx < len; idx ++){
+                
+                accum += acc_src[idx];
+                acc_src[idx] = accum;
+
+            }
+        }
+
+    }
+
     template
     sycl::buffer<u32> inclusive_sum_fallback(sycl::queue &q, sycl::buffer<u32> &buf1, u32 len);
 
     template
     sycl::buffer<u32> exclusive_sum_fallback(sycl::queue &q, sycl::buffer<u32> &buf1, u32 len);
+
+    template
+    void exclusive_sum_in_place_fallback(sycl::queue &q, sycl::buffer<u32> &buf1, u32 len);
+
+    template
+    void inclusive_sum_in_place_fallback(sycl::queue &q, sycl::buffer<u32> &buf1, u32 len);
 
 
     std::tuple<std::optional<sycl::buffer<u32>>, u32> stream_compact_fallback(sycl::queue &q, sycl::buffer<u32> &buf_flags, u32 len){
