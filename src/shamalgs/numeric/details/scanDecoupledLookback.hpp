@@ -17,6 +17,172 @@
 
 namespace shamalgs::numeric::details {
 
+    template<class T>
+    class ScanTile{public:
+
+        static constexpr T STATE_X = 0;
+        static constexpr T STATE_A = 1;
+        static constexpr T STATE_P = 2;
+
+        using PackStorage = u64;
+
+        sycl::vec<T, 2> state;
+        
+        inline static ScanTile invalid(){
+            return ScanTile{{STATE_X,0}};
+        }
+
+        inline bool has_prefix_available(){
+            return state.x() == STATE_P;
+        }
+
+        inline T get_prefix (){
+            return state.y();
+        }
+
+        inline static ScanTile unpack (PackStorage s){
+            return ScanTile{shambase::unpack(s)};
+        }
+
+        inline static PackStorage pack(T a, T b){
+            return shambase::pack(a,b);
+        }
+
+        inline bool has_no_prefix(){
+            return state.x() != STATE_P;
+        }
+
+        inline bool is_invalid(){
+            return state.x() == STATE_X;
+        }
+        
+
+    };
+
+
+    enum DecoupledLoockBackPolicy{
+        Standard, Parralelized
+    };
+
+    template<class T, u32 group_size, DecoupledLoockBackPolicy policy>
+    class ScanDecoupledLoockBack;
+
+    template<class T, u32 group_size, DecoupledLoockBackPolicy policy>
+    class ScanDecoupledLoockBackAccessed{public:
+
+
+        using Tile = ScanTile<T>;
+
+        sycl::accessor<typename Tile::PackStorage, 1, sycl::access::mode::read_write> acc_tile_state;
+
+        sycl::local_accessor<T,1> local_scan_buf;
+        sycl::local_accessor<T,1> local_sum;
+
+
+        using atomic_ref_T = sycl::atomic_ref<
+                typename Tile::PackStorage, 
+                sycl::memory_order_relaxed, 
+                sycl::memory_scope_work_group,
+                sycl::access::address_space::global_space>;
+
+        ScanDecoupledLoockBackAccessed(sycl::handler & cgh,ScanDecoupledLoockBack<T,group_size,policy> & scan) : 
+            acc_tile_state{scan.tile_state      , cgh, sycl::read_write},
+            local_scan_buf{1,cgh},
+            local_sum{1,cgh}
+        {}
+
+        inline T scan(sycl::nd_item<1> id, const u32 local_id, const u32 group_tile_id,const T input) const {
+
+            
+            //local scan in the group 
+            //the local sum will be in local id `group_size - 1`
+            T local_scan = sycl::inclusive_scan_over_group(id.get_group(), input, sycl::plus<T>{});
+
+            //can be removed if i change the index in the look back ?
+            if(local_id == group_size-1){
+                local_scan_buf[0] = local_scan;
+            }
+
+            //sync group
+            id.barrier(sycl::access::fence_space::local_space);
+            
+            
+            if (local_id == 0) {
+
+                atomic_ref_T tile_atomic (acc_tile_state[group_tile_id]);
+
+                //load group sum
+                T local_group_sum = local_scan_buf[0];
+                T accum = 0;
+                u32 tile_ptr = group_tile_id-1;
+                Tile tile_state = Tile::invalid();
+
+
+                //global scan using atomic counter
+
+                if (group_tile_id != 0)  {
+
+                    tile_atomic.store(Tile::pack(Tile::STATE_A,local_group_sum));
+                    
+                    while (tile_state.has_no_prefix()){
+
+                        atomic_ref_T atomic_state (acc_tile_state[tile_ptr]);
+
+                        do{
+                            tile_state = Tile::unpack(atomic_state.load());
+                        }while(tile_state.is_invalid());
+
+                        accum += tile_state.get_prefix();
+
+                        tile_ptr --;
+                    }
+
+                }
+
+                tile_atomic.store(Tile::pack(Tile::STATE_P,accum + local_group_sum));
+
+                local_sum[0] = accum;
+            }
+
+            //sync
+            id.barrier(sycl::access::fence_space::local_space);
+
+
+            return local_scan + local_sum[0];
+        }
+
+    };
+
+    template<class T, u32 group_size, DecoupledLoockBackPolicy policy>
+    class ScanDecoupledLoockBack{public:
+
+        using Tile = ScanTile<T>;
+
+
+        sycl::buffer<typename ScanTile<T>::PackStorage> tile_state;
+
+        ScanDecoupledLoockBack(sycl::queue &q, u32 group_count) : tile_state(group_count){
+
+            shamalgs::memory::buf_fill_discard(q, tile_state, shambase::pack(Tile::STATE_X, T(0)));
+
+        }
+
+        using atomic_ref_T = sycl::atomic_ref<
+                typename Tile::PackStorage, 
+                sycl::memory_order_relaxed, 
+                sycl::memory_scope_work_group,
+                sycl::access::address_space::global_space>;
+
+        inline ScanDecoupledLoockBackAccessed<T, group_size, policy> get_access(sycl::handler & cgh){
+            return ScanDecoupledLoockBackAccessed<T, group_size, policy>{cgh, *this};
+        }
+
+    };
+
+
+
+
+
     template<class T, u32 group_size>
     class InplaceExclusiveScanDecoupledLookBack;
 
@@ -28,28 +194,13 @@ namespace shamalgs::numeric::details {
         u32 corrected_len = group_cnt*group_size;
 
         // group aggregates
-        sycl::buffer<u64> tile_state (group_cnt);
-
-        constexpr T STATE_X = 0;
-        constexpr T STATE_A = 1;
-        constexpr T STATE_P = 2;
-
-
-        shamalgs::memory::buf_fill_discard(q, tile_state, shambase::pack(STATE_X, T(0)));
+        ScanDecoupledLoockBack<T, group_size, Standard> dlookbackscan(q, group_cnt);
 
         q.submit([&, group_cnt, len](sycl::handler &cgh) {
 
             sycl::accessor acc_value {buf1, cgh, sycl::read_write};
-            sycl::accessor acc_tile_state       {tile_state      , cgh, sycl::read_write};
-
-            sycl::local_accessor<T,1> local_scan_buf {1,cgh};
-            sycl::local_accessor<T,1> local_sum {1,cgh};
-
-            using atomic_ref_T = sycl::atomic_ref<
-                    u64, 
-                    sycl::memory_order_relaxed, 
-                    sycl::memory_scope_work_group,
-                    sycl::access::address_space::global_space>;
+            
+            auto scanop = dlookbackscan.get_access(cgh);
 
             cgh.parallel_for<InplaceExclusiveScanDecoupledLookBack<T, group_size>>(
                 sycl::nd_range<1>{corrected_len, group_size},
@@ -62,62 +213,11 @@ namespace shamalgs::numeric::details {
                     //load from global buffer
                     T local_val = (global_id > 0 && global_id < len) ? acc_value[global_id - 1] : 0;
                     
-                    //local scan in the group 
-                    //the local sum will be in local id `group_size - 1`
-                    T local_scan = sycl::inclusive_scan_over_group(id.get_group(), local_val, sycl::plus<T>{});
-
-                    //can be removed if i change the index in the look back ?
-                    if(local_id == group_size-1){
-                        local_scan_buf[0] = local_scan;
-                    }
-
-                    //sync group
-                    id.barrier(sycl::access::fence_space::local_space);
-
-                    //DATA PARALLEL C++: MASTERING DPC++ ... device wide synchro
-                    if (local_id == 0) {
-
-                        atomic_ref_T tile_atomic (acc_tile_state[group_tile_id]);
-
-                        //load group sum
-                        T local_group_sum = local_scan_buf[0];
-                        T accum = 0;
-                        u32 tile_ptr = group_tile_id-1;
-                        sycl::vec<T, 2> tile_state = {STATE_X,0};
-
-
-                        //global scan using atomic counter
-
-                        if (group_tile_id != 0)  {
-
-                            tile_atomic.store(shambase::pack(STATE_A,local_group_sum));
-                            
-                            while (tile_state.x() != STATE_P){
-
-                                atomic_ref_T atomic_state (acc_tile_state[tile_ptr]);
-
-                                do{
-                                    tile_state = shambase::unpack(atomic_state.load());
-                                }while(tile_state.x() == STATE_X);
-
-                                accum += tile_state.y();
-
-                                tile_ptr --;
-                            }
-
-                        }
-
-                        tile_atomic.store(shambase::pack(STATE_P,accum + local_group_sum));
-
-                        local_sum[0] = accum;
-                    }
-
-                    //sync
-                    id.barrier(sycl::access::fence_space::local_space);
+                    T scanned_value = scanop.scan(id,local_id,group_tile_id,local_val);
 
                     //store final result
                     if(global_id < len){
-                        acc_value[global_id] = local_scan + local_sum[0] ;
+                        acc_value[global_id] = scanned_value ;
                     }
                     
                 }
@@ -144,7 +244,7 @@ namespace shamalgs::numeric::details {
         //shamalgs::memory::print_buf(ret_buf, len, 16,"{:4} ");
 
         // group aggregates
-        sycl::buffer<u64> tile_state (group_cnt);
+        sycl::buffer<typename ScanTile<T>::PackStorage> tile_state (group_cnt);
 
         constexpr T STATE_X = 0;
         constexpr T STATE_A = 1;
@@ -264,7 +364,7 @@ namespace shamalgs::numeric::details {
         //shamalgs::memory::print_buf(ret_buf, len, 16,"{:4} ");
 
         // group aggregates
-        sycl::buffer<u64> tile_state (group_cnt);
+        sycl::buffer<typename ScanTile<T>::PackStorage> tile_state (group_cnt);
 
         constexpr T STATE_X = 0;
         constexpr T STATE_A = 1;
