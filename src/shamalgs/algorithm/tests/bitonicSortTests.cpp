@@ -157,6 +157,20 @@ TestStart(Benchmark, "shamalgs/algorithm/details/bitonicSorts:benchmark",
         res.add_data("t_sort", result.times);
     }
 
+    {
+        TestSortByKey<u32, u32>test (
+        (TestSortByKey<u32, u32>::vFunctionCall)
+            shamalgs::algorithm::details::sort_by_key_radix_onesweep_v3<u32,u32,512>
+        );
+    
+        auto result = test.benchmark();
+
+        auto & res = shamtest::test_data().new_dataset("radix onesweep v3");
+
+        res.add_data("Nobj", result.sizes);
+        res.add_data("t_sort", result.times);
+    }
+
     /* disabled
     {
         TestSortByKey<u32, u32>test (

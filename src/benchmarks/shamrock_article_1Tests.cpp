@@ -82,15 +82,19 @@ inline void test_tree_build_steps(std::string dset_name) {
             shamrock::tree::TreeStructure<morton_mode> tree_struct;
 
             
-            times_morton.push_back(time_func([&](){
-                tree_morton_codes.build(shamsys::instance::get_compute_queue(), coord_range, cnt_obj, *pos);
-            }));
+            times_morton.push_back(
+                time_func([&](){
+                    tree_morton_codes.build(shamsys::instance::get_compute_queue(), coord_range, cnt_obj, *pos);
+                })
+            );
 
 
             bool one_cell_mode;
             times_reduc.push_back(time_func([&](){
         
-                tree_reduced_morton_codes.build(shamsys::instance::get_compute_queue(),cnt_obj,reduc_lev,tree_morton_codes,one_cell_mode);
+                tree_reduced_morton_codes.build(
+                    shamsys::instance::get_compute_queue(),cnt_obj,reduc_lev,tree_morton_codes,one_cell_mode
+                );
 
             }));
 
