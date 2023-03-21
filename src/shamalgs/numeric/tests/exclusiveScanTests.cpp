@@ -28,7 +28,7 @@ struct TestExclScan {
     void check() {
         if constexpr (std::is_same<u32, T>::value) {
 
-            u32 len_test = 1e5;
+            u32 len_test = 1e7;
 
             std::vector<u32> data = shamalgs::random::mock_vector<u32>(0x111, len_test, 0, 10);
 

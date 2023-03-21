@@ -56,6 +56,34 @@ namespace shambase {
         }
     }
 
+    template<class It,typename... Tformat> 
+    inline std::string format_array(
+        It & iter,
+        u32 len, 
+        u32 column_count,
+        fmt::format_string<Tformat...> fmt
+    ){
+
+        std::string accum;
+
+        for(u32 i = 0; i < len; i++){
+
+            if(i%column_count == 0){
+                if(i == 0){
+                    accum += shambase::format("{:8} : ", i);
+                }else{
+                    accum += shambase::format("\n{:8} : ", i);
+                }
+            }
+
+            accum += shambase::format(fmt, iter[i]);
+
+        }
+
+        return accum;
+
+    }
+
     /**
      * @brief given a sizeof value return a readble string 
      * Exemple : readable_sizeof(1024*1024*1024) -> "1.00 GB"
