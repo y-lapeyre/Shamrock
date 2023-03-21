@@ -41,30 +41,11 @@ TestStart(Unittest, "shamalgs/algorithm/details/bitonicSort_fallback", test_bito
     test.check();
 }
 
-TestStart(Unittest, "shamalgs/algorithm/details/sort_by_key_radix_onesweep_v1", test_sort_by_key_radix_onesweep_v1, 1){
-    
-    TestSortByKey<u32, u32>test (
-        (TestSortByKey<u32, u32>::vFunctionCall)
-            shamalgs::algorithm::details::sort_by_key_radix_onesweep_v1
-        );
-    test.check();
-}
-
-
-TestStart(Unittest, "shamalgs/algorithm/details/sort_by_key_radix_onesweep_v2", test_sort_by_key_radix_onesweep_v2, 1){
-    
-    TestSortByKey<u32, u32>test (
-        (TestSortByKey<u32, u32>::vFunctionCall)
-            shamalgs::algorithm::details::sort_by_key_radix_onesweep_v2<u32,u32,512>
-        );
-    test.check();
-}
-
 TestStart(Unittest, "shamalgs/algorithm/details/sort_by_key_radix_onesweep_v3", test_sort_by_key_radix_onesweep_v3, 1){
     
     TestSortByKey<u32, u32>test (
         (TestSortByKey<u32, u32>::vFunctionCall)
-            shamalgs::algorithm::details::sort_by_key_radix_onesweep_v3<u32,u32,16,2>
+            shamalgs::algorithm::details::sort_by_key_radix_onesweep<u32,u32,16,2>
         );
     test.check();
 }
@@ -129,39 +110,12 @@ TestStart(Benchmark, "shamalgs/algorithm/details/bitonicSorts:benchmark",
         res.add_data("Nobj", result.sizes);
         res.add_data("t_sort", result.times);
     }
-/*
-    {
-        TestSortByKey<u32, u32>test (
-        (TestSortByKey<u32, u32>::vFunctionCall)
-            shamalgs::algorithm::details::sort_by_key_radix_onesweep_v1
-        );
-    
-        auto result = test.benchmark();
-
-        auto & res = shamtest::test_data().new_dataset("radix onesweep");
-
-        res.add_data("Nobj", result.sizes);
-        res.add_data("t_sort", result.times);
-    }
+    */
 
     {
         TestSortByKey<u32, u32>test (
         (TestSortByKey<u32, u32>::vFunctionCall)
-            shamalgs::algorithm::details::sort_by_key_radix_onesweep_v2<u32,u32,512>
-        );
-    
-        auto result = test.benchmark();
-
-        auto & res = shamtest::test_data().new_dataset("radix onesweep v2");
-
-        res.add_data("Nobj", result.sizes);
-        res.add_data("t_sort", result.times);
-    }
-*/
-    {
-        TestSortByKey<u32, u32>test (
-        (TestSortByKey<u32, u32>::vFunctionCall)
-            shamalgs::algorithm::details::sort_by_key_radix_onesweep_v3<u32,u32,512,1>
+            shamalgs::algorithm::details::sort_by_key_radix_onesweep<u32,u32,512,1>
         );
     
         auto result = test.benchmark();
@@ -174,7 +128,7 @@ TestStart(Benchmark, "shamalgs/algorithm/details/bitonicSorts:benchmark",
     {
         TestSortByKey<u32, u32>test (
         (TestSortByKey<u32, u32>::vFunctionCall)
-            shamalgs::algorithm::details::sort_by_key_radix_onesweep_v3<u32,u32,512,2>
+            shamalgs::algorithm::details::sort_by_key_radix_onesweep<u32,u32,512,2>
         );
     
         auto result = test.benchmark();
@@ -188,7 +142,7 @@ TestStart(Benchmark, "shamalgs/algorithm/details/bitonicSorts:benchmark",
     {
         TestSortByKey<u32, u32>test (
         (TestSortByKey<u32, u32>::vFunctionCall)
-            shamalgs::algorithm::details::sort_by_key_radix_onesweep_v3<u32,u32,512,4>
+            shamalgs::algorithm::details::sort_by_key_radix_onesweep<u32,u32,512,4>
         );
     
         auto result = test.benchmark();
@@ -202,7 +156,7 @@ TestStart(Benchmark, "shamalgs/algorithm/details/bitonicSorts:benchmark",
     {
         TestSortByKey<u32, u32>test (
         (TestSortByKey<u32, u32>::vFunctionCall)
-            shamalgs::algorithm::details::sort_by_key_radix_onesweep_v3<u32,u32,512,8>
+            shamalgs::algorithm::details::sort_by_key_radix_onesweep<u32,u32,512,8>
         );
     
         auto result = test.benchmark();

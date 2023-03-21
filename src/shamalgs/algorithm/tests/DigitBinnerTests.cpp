@@ -56,19 +56,19 @@ TestStart(
     Benchmark, "shamalgs/algorithm/details/DigitBinner:benchmark", benchmark_digit_binner, 1
 ) {
 
-    add_dset<128, 1, u32>("group size = 128, bits = 1");
-    add_dset<256, 1, u32>("group size = 256, bits = 1");
+    //add_dset<128, 1, u32>("group size = 128, bits = 1");
+    //add_dset<256, 1, u32>("group size = 256, bits = 1");
     add_dset<512, 1, u32>("group size = 512, bits = 1");
 
-    add_dset<128, 2, u32>("group size = 128, bits = 2");
-    add_dset<256, 2, u32>("group size = 256, bits = 2");
+    //add_dset<128, 2, u32>("group size = 128, bits = 2");
+    //add_dset<256, 2, u32>("group size = 256, bits = 2");
     add_dset<512, 2, u32>("group size = 512, bits = 2");
 
-    add_dset<128, 4, u32>("group size = 128, bits = 4");
-    add_dset<256, 4, u32>("group size = 256, bits = 4");
+    //add_dset<128, 4, u32>("group size = 128, bits = 4");
+    //add_dset<256, 4, u32>("group size = 256, bits = 4");
     add_dset<512, 4, u32>("group size = 512, bits = 4");
 
-    add_dset<128, 8, u32>("group size = 128, bits = 8");
-    add_dset<256, 8, u32>("group size = 256, bits = 8");
+    //add_dset<128, 8, u32>("group size = 128, bits = 8");
+    //add_dset<256, 8, u32>("group size = 256, bits = 8");
     add_dset<512, 8, u32>("group size = 512, bits = 8");
 }
