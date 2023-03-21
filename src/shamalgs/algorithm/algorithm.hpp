@@ -123,4 +123,7 @@ namespace shamalgs::algorithm {
      */
     sycl::buffer<u32> gen_buffer_index(sycl::queue & q , u32 len);
 
+
+    
+
 }

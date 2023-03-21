@@ -36,7 +36,7 @@ namespace shamalgs::algorithm::details {
         static_assert(digit_bit_places*digit_bit_len == bitlen_T, "the conversion should be correct");
 
         template<class Acc>
-        static void fetch_add_bin(Acc accessor, T digit_val, T digit_place){
+        inline static void fetch_add_bin(Acc accessor, T digit_val, T digit_place){
             using atomic_ref_T = sycl::atomic_ref<
                     u32, 
                     sycl::memory_order_relaxed, 
@@ -46,13 +46,14 @@ namespace shamalgs::algorithm::details {
             atomic_ref_T (accessor[digit_val + digit_place*digit_count]).fetch_add(1U);
         }
 
-        static T get_digit_value(T value, T digit_place){
+        inline static T get_digit_value(T value, T digit_place){
             return digit_mask & (value >> (digit_place*digit_bit_len));
         }
 
         template<class Acc>
-        static void add_bin_key(Acc accessor, T value_to_bin){
+        inline static void add_bin_key(Acc accessor, T value_to_bin){
 
+            #pragma unroll
             for(T digit_place = 0; digit_place < digit_bit_places; digit_place ++){
                 T shifted = get_digit_value(value_to_bin, digit_place);
 
@@ -62,7 +63,7 @@ namespace shamalgs::algorithm::details {
         }
 
         template<u32 group_size, class Tkey>
-        static sycl::buffer<u32> make_digit_histogram (sycl::queue & q, sycl::buffer<Tkey> &buf_key,u32 len){
+        inline static sycl::buffer<u32> make_digit_histogram (sycl::queue & q, sycl::buffer<Tkey> &buf_key,u32 len){
 
 
             u32 group_cnt = shambase::group_count(len, group_size);
@@ -102,23 +103,23 @@ namespace shamalgs::algorithm::details {
 
                     id.barrier(sycl::access::fence_space::local_space);
 
-                    //logger::raw_ln(shambase::format_array(local_histogram,value_count,digit_count,"{:4} "));
 
-                    
                     for(u32 i = local_id ; i < value_count; i+= group_size){
                         u32 dcount = local_histogram[i];
-
+                    
                         if(dcount != 0){
-
+                    
                             using atomic_ref_t = sycl::atomic_ref<
                                 u32, 
                                 sycl::memory_order_relaxed, 
                                 sycl::memory_scope_device,
                                 sycl::access::address_space::global_space>;
-
+                    
                             atomic_ref_t(histogram[i]).fetch_add(dcount);
                         }
                     }
+
+
                 });
             });
 
