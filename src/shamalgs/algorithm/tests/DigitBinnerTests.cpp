@@ -41,7 +41,7 @@ inline void add_dset(std::string sname) {
                 10
             );
         },
-        1e7,
+        10,
         1e8,
         1.1
     );

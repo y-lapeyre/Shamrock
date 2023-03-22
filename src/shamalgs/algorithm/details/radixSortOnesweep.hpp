@@ -43,6 +43,10 @@ namespace shamalgs::algorithm::details {
     sum array on the table
 
     */
+
+     template<class Tkey, class Tval, u32 group_size,u32 digit_len>
+    class SortByKeyRadixOnesweep;
+
     template<class Tkey, class Tval, u32 group_size,u32 digit_len>
     void sort_by_key_radix_onesweep(
         sycl::queue &q, sycl::buffer<Tkey> &buf_key, sycl::buffer<Tval> &buf_values, u32 len
@@ -121,7 +125,7 @@ namespace shamalgs::algorithm::details {
 
         using namespace shamalgs::numeric::details;
 
-        using DecoupledLookBack = ScanDecoupledLoockBack<u32, group_size, Standard>;
+        using DecoupledLookBack = ScanDecoupledLoockBack<u32, group_size, Standard, ScanTile30bitint>;
 
 
         u32 step = 0;
@@ -129,7 +133,7 @@ namespace shamalgs::algorithm::details {
 
             DecoupledLookBack dlookbackscan(q, group_cnt, Binner::digit_count);
             
-            //atomic::DynamicIdGenerator<i32, group_size> id_gen(q);
+            atomic::DynamicIdGenerator<i32, group_size> id_gen(q);
 
             q.submit([&,len,cur_digit_place,step](sycl::handler &cgh) {
                 
@@ -145,7 +149,7 @@ namespace shamalgs::algorithm::details {
                 sycl::local_accessor<u32,1> scanned_digit_counts{Binner::digit_count,cgh};
 
                 //sycl::stream dump (4096,1024,cgh);
-                //auto dyn_id = id_gen.get_access(cgh);
+                auto dyn_id = id_gen.get_access(cgh);
 
                 auto scanop = dlookbackscan.get_access(cgh);
 
@@ -157,21 +161,21 @@ namespace shamalgs::algorithm::details {
 
                 u32 histogram_ptr_offset = step*Binner::digit_count;
 
-                cgh.parallel_for(sycl::nd_range<1>{corrected_len, group_size},
+                cgh.parallel_for<SortByKeyRadixOnesweep<Tkey,Tval,group_size,digit_len>>(sycl::nd_range<1>{corrected_len, group_size},
                     [=](sycl::nd_item<1> id) {
 
                         
                     
 
 
-                    //atomic::DynamicId<i32> group_id = dyn_id.compute_id(id);
+                    atomic::DynamicId<i32> group_id = dyn_id.compute_id(id);
 
                     u32 local_id = id.get_local_id(0);
-                    //u32 group_tile_id = group_id.dyn_group_id;
-                    //u32 global_id = group_id.dyn_global_id;
+                    u32 group_tile_id = group_id.dyn_group_id;
+                    u32 global_id = group_id.dyn_global_id;
 
-                    u32 group_tile_id = id.get_group_linear_id();
-                    u32 global_id = group_tile_id * group_size + local_id;
+                    //u32 group_tile_id = id.get_group_linear_id();
+                    //u32 global_id = group_tile_id * group_size + local_id;
 
 
 
@@ -256,7 +260,7 @@ namespace shamalgs::algorithm::details {
                         //    dump << "wdelta="<<write_offset << "\n";
                         //}
 
-                        new_keys[write_offset] = keys[global_id];
+                        new_keys[write_offset] = keys[global_id]; //can be loaded initially and stored only here rather than reload
                         new_vals[write_offset] = vals[global_id];
                     }
 

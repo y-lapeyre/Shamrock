@@ -59,19 +59,63 @@ namespace shamalgs::numeric::details {
 
     };
 
+    class ScanTile30bitint{public:
+
+        static constexpr u32 STATE_X = 0;
+        static constexpr u32 STATE_A = 1;
+        static constexpr u32 STATE_P = 2;
+
+        using PackStorage = u32;
+
+        sycl::vec<u32, 2> state;
+        
+        inline static ScanTile30bitint invalid(){
+            return ScanTile30bitint{{STATE_X,0}};
+        }
+
+        inline bool has_prefix_available(){
+            return state.x() == STATE_P;
+        }
+
+        inline u32 get_prefix (){
+            return state.y();
+        }
+
+        inline static ScanTile30bitint unpack (PackStorage s){
+
+            constexpr u32 mask = (1U << 30U)-1U;
+
+            return ScanTile30bitint{
+                sycl::vec<u32,2>{s >> 30U, s & mask}
+            };
+        }
+
+        inline static PackStorage pack(u32 a, u32 b){
+            return (a << 30U) + b;
+        }
+
+        inline bool has_no_prefix(){
+            return state.x() != STATE_P;
+        }
+
+        inline bool is_invalid(){
+            return state.x() == STATE_X;
+        }
+        
+
+    };
+
 
     enum DecoupledLoockBackPolicy{
         Standard, Parralelized
     };
 
-    template<class T, u32 group_size, DecoupledLoockBackPolicy policy>
+    template<class T, u32 group_size, DecoupledLoockBackPolicy policy,class Tile>
     class ScanDecoupledLoockBack;
 
-    template<class T, u32 group_size, DecoupledLoockBackPolicy policy>
+    template<class T, u32 group_size, DecoupledLoockBackPolicy policy, class Tile>
     class ScanDecoupledLoockBackAccessed{public:
 
-
-        using Tile = ScanTile<T>;
 
         sycl::accessor<typename Tile::PackStorage, 1, sycl::access::mode::read_write> acc_tile_state;
 
@@ -87,7 +131,7 @@ namespace shamalgs::numeric::details {
                 sycl::memory_scope_work_group,
                 sycl::access::address_space::global_space>;
 
-        ScanDecoupledLoockBackAccessed(sycl::handler & cgh,ScanDecoupledLoockBack<T,group_size,policy> & scan, u32 group_count) : 
+        ScanDecoupledLoockBackAccessed(sycl::handler & cgh,ScanDecoupledLoockBack<T,group_size,policy,Tile> & scan, u32 group_count) : 
             acc_tile_state{scan.tile_state      , cgh, sycl::read_write},
             local_scan_buf{1,cgh},
             local_sum{1,cgh},
@@ -174,33 +218,31 @@ namespace shamalgs::numeric::details {
 
     };
 
-    template<class T, u32 group_size, DecoupledLoockBackPolicy policy>
+    template<class T, u32 group_size, DecoupledLoockBackPolicy policy, class Tile>
     class ScanDecoupledLoockBack{public:
-
-        using Tile = ScanTile<T>;
 
         u32 slice_count;
         u32 group_count;
 
-        sycl::buffer<typename ScanTile<T>::PackStorage> tile_state;
+        sycl::buffer<typename Tile::PackStorage> tile_state;
 
         ScanDecoupledLoockBack(sycl::queue &q, u32 group_count, u32 slice_count = 1) : 
         slice_count(slice_count),
         group_count(group_count),
         tile_state(group_count*slice_count){
 
-            shamalgs::memory::buf_fill_discard(q, tile_state, shambase::pack(Tile::STATE_X, T(0)));
+            shamalgs::memory::buf_fill_discard(q, tile_state, Tile::pack(Tile::STATE_X, T(0)));
 
         }
 
         using atomic_ref_T = sycl::atomic_ref<
                 typename Tile::PackStorage, 
                 sycl::memory_order_relaxed, 
-                sycl::memory_scope_work_group,
+                sycl::memory_scope_device,
                 sycl::access::address_space::global_space>;
 
-        inline ScanDecoupledLoockBackAccessed<T, group_size, policy> get_access(sycl::handler & cgh){
-            return ScanDecoupledLoockBackAccessed<T, group_size, policy>{cgh, *this, group_count};
+        inline ScanDecoupledLoockBackAccessed<T, group_size, policy, Tile> get_access(sycl::handler & cgh){
+            return ScanDecoupledLoockBackAccessed<T, group_size, policy,Tile>{cgh, *this, group_count};
         }
 
     };
@@ -220,7 +262,7 @@ namespace shamalgs::numeric::details {
         u32 corrected_len = group_cnt*group_size;
 
         // group aggregates
-        ScanDecoupledLoockBack<T, group_size, Standard> dlookbackscan(q, group_cnt);
+        ScanDecoupledLoockBack<T, group_size, Standard, ScanTile<T>> dlookbackscan(q, group_cnt);
 
         q.submit([&, group_cnt, len](sycl::handler &cgh) {
 
@@ -279,7 +321,11 @@ namespace shamalgs::numeric::details {
 
         shamalgs::memory::buf_fill_discard(q, tile_state, shambase::pack(STATE_X, T(0)));
 
+        atomic::DynamicIdGenerator<i32, group_size> id_gen(q);
+
         q.submit([&, group_cnt, len](sycl::handler &cgh) {
+
+            auto dyn_id = id_gen.get_access(cgh);
 
             sycl::accessor acc_in {buf1, cgh, sycl::read_only};
             sycl::accessor acc_out {ret_buf, cgh, sycl::write_only, sycl::no_init};
@@ -291,7 +337,7 @@ namespace shamalgs::numeric::details {
             using atomic_ref_T = sycl::atomic_ref<
                     u64, 
                     sycl::memory_order_relaxed, 
-                    sycl::memory_scope_work_group,
+                    sycl::memory_scope_device,
                     sycl::access::address_space::global_space>;
 
             cgh.parallel_for<KernelExclusiveSumAtomicSyncDecoupled_v5<T, group_size>>(
@@ -299,8 +345,14 @@ namespace shamalgs::numeric::details {
                 [=](sycl::nd_item<1> id) {
 
                     u32 local_id = id.get_local_id(0);
-                    u32 group_tile_id = id.get_group_linear_id();
-                    u32 global_id = group_tile_id * group_size + local_id;
+
+
+                    atomic::DynamicId<i32> group_id = dyn_id.compute_id(id);
+
+                    u32 group_tile_id = group_id.dyn_group_id;
+                    u32 global_id = group_id.dyn_global_id;
+                    //u32 group_tile_id = id.get_group_linear_id();
+                    //u32 global_id = group_tile_id * group_size + local_id;
 
                     //load from global buffer
                     T local_val = (global_id > 0 && global_id < len) ? acc_in[global_id - 1] : 0;
