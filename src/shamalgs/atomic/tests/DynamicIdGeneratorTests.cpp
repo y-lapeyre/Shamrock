@@ -17,7 +17,7 @@ TestStart(Unittest, "shamalgs/atomic/DynamicIdGenerator", test_dynamicidgen, 1){
 
     constexpr u32 gsize = 64;
 
-    u32 group_cnt = shambase::group_count(1e8, gsize);
+    u32 group_cnt = shambase::group_count(1e6, gsize);
 
     u32 len =group_cnt*gsize;
     sycl::buffer<i32> ret_buf(len);

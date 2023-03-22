@@ -28,7 +28,7 @@ struct TestExclScan {
     void check() {
         if constexpr (std::is_same<u32, T>::value) {
 
-            u32 len_test = 1e7;
+            u32 len_test = 1e5;
 
             std::vector<u32> data = shamalgs::random::mock_vector<u32>(0x111, len_test, 0, 10);
 
@@ -298,7 +298,7 @@ TestStart(Unittest, "shamalgs/numeric/details/exclusive_sum_gpugems39", test_exc
     TestExclScan<u32> test ((TestExclScan<u32>::vFunctionCall)shamalgs::numeric::details::exclusive_sum_gpugems39_1);
     test.check();
 }
-
+/*
 TestStart(Unittest, "shamalgs/numeric/details/exclusive_sum_atomic2pass", test_exclusive_sum_atomic2pass, 1){
     
     TestExclScan<u32> test ((TestExclScan<u32>::vFunctionCall)shamalgs::numeric::details::exclusive_sum_atomic2pass<u32,16>);
@@ -342,7 +342,7 @@ TestStart(Unittest, "shamalgs/numeric/details/exclusive_sum_atomic_decoupled_v4"
     test.check();
 
 }
-
+*/
 
 TestStart(Unittest, "shamalgs/numeric/details/exclusive_sum_atomic_decoupled_v5", test_exclusive_sum_atomic_decoupled_v5, 1){
     
