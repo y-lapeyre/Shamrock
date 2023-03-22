@@ -390,17 +390,17 @@ TestStart(Benchmark, "shamalgs/numeric/details/exclusive_sum:benchmark", bench_e
         res.add_data("Nobj", result.sizes);
         res.add_data("t_sort", result.times);
     }
-
+*/
     {
         TestExclScan<u32> test ((TestExclScan<u32>::vFunctionCall)shamalgs::numeric::details::exclusive_sum_gpugems39_2);
         auto result = test.benchmark();
 
-        auto & res = shamtest::test_data().new_dataset("gpugems39 v2 u32");
+        auto & res = shamtest::test_data().new_dataset("gpugems39 opt. u32");
 
         res.add_data("Nobj", result.sizes);
         res.add_data("t_sort", result.times);
     }
-*/
+
     {
         TestExclScan<u32> test ((TestExclScan<u32>::vFunctionCall)shamalgs::numeric::details::exclusive_sum_fallback);
         auto result = test.benchmark();

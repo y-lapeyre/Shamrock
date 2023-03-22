@@ -20,7 +20,7 @@
 
 
 
-auto get_Nmax = []() -> f64{
+auto get_Nmax = []() -> f64 {
     return  1e8 * 1;
 };
 
@@ -46,163 +46,213 @@ inline void test_tree_build_steps(std::string dset_name) {
         shamsys::instance::get_compute_queue(), 
         *pos);
 
-    std::vector<f64> times_morton;
-    std::vector<f64> times_reduc;
-    std::vector<f64> times_karras;
-    std::vector<f64> times_compute_int_range;
-    std::vector<f64> times_compute_coord_range;
-    std::vector<f64> times_morton_build;
-    std::vector<f64> times_trailling_fill;
-    std::vector<f64> times_index_gen;
-    std::vector<f64> times_morton_sort;
-    std::vector<f64> times_full_tree;
+    std::vector<f64> times_morton              ;
+    std::vector<f64> times_reduc               ;
+    std::vector<f64> times_karras              ;
+    std::vector<f64> times_compute_int_range   ;
+    std::vector<f64> times_compute_coord_range ;
+    std::vector<f64> times_morton_build        ;
+    std::vector<f64> times_trailling_fill      ;
+    std::vector<f64> times_index_gen           ;
+    std::vector<f64> times_morton_sort         ;
+    std::vector<f64> times_full_tree           ;
+
     std::vector<f64> Npart;
 
     for (f64 cnt = 1000; cnt < Nmax; cnt *= 1.1) {
-        logger::debug_ln("TestTreePerf", cnt);
-        
-        Timer timer;
-        u32 cnt_obj = cnt;
-
-        auto time_func = [](auto f){
-            shamsys::instance::get_compute_queue().wait();
-            Timer timer;
-            timer.start();
-
-            f();
-            shamsys::instance::get_compute_queue().wait();
-
-            timer.end();
-            return timer.nanosec / 1.e9;
-        };
-
-        {
-            shamrock::tree::TreeMortonCodes<morton_mode> tree_morton_codes;
-            shamrock::tree::TreeReducedMortonCodes<morton_mode> tree_reduced_morton_codes;
-            shamrock::tree::TreeStructure<morton_mode> tree_struct;
-
-            
-            times_morton.push_back(
-                time_func([&](){
-                    tree_morton_codes.build(shamsys::instance::get_compute_queue(), coord_range, cnt_obj, *pos);
-                })
-            );
-
-
-            bool one_cell_mode;
-            times_reduc.push_back(time_func([&](){
-        
-                tree_reduced_morton_codes.build(
-                    shamsys::instance::get_compute_queue(),cnt_obj,reduc_lev,tree_morton_codes,one_cell_mode
-                );
-
-            }));
-
-
-            times_karras.push_back(time_func([&](){
-
-                if (!one_cell_mode) {
-                    tree_struct.build(shamsys::instance::get_compute_queue(), tree_reduced_morton_codes.tree_leaf_count - 1, *tree_reduced_morton_codes.buf_tree_morton);
-                } else {
-                    tree_struct.build_one_cell_mode();
-                }
-
-            }));
-        }
-
-
-        {
-            RadixTree<morton_mode, vec, 3> rtree = RadixTree<morton_mode, vec, 3>(
-                shamsys::instance::get_compute_queue(),
-                {coord_range.lower, coord_range.upper},
-                pos,
-                cnt,
-                reduc_lev
-            );
-
-            times_compute_int_range.push_back(time_func([&](){
-
-                rtree.compute_cell_ibounding_box(shamsys::instance::get_compute_queue());
-            }));
-
-            times_compute_coord_range.push_back(time_func([&](){
-
-            
-                rtree.convert_bounding_box(shamsys::instance::get_compute_queue());
-                
-
-            }));
-        }
-
-        {
-
-            using namespace shamrock::sfc;
-
-             u32 morton_len = shambase::roundup_pow2_clz(cnt_obj);
-
-
-            auto out_buf_morton = std::make_unique<sycl::buffer<morton_mode>>(morton_len);
-
-
-            times_morton_build.push_back(time_func([&](){
-
-                MortonKernels<morton_mode, vec, 3>::sycl_xyz_to_morton(
-                    shamsys::instance::get_compute_queue(),
-                    cnt_obj,
-                    *pos,
-                    coord_range.lower,
-                    coord_range.upper,
-                    out_buf_morton
-                );
-            }));
-
-
-
-            times_trailling_fill.push_back(time_func([&](){
-            
-                MortonKernels<morton_mode, vec, 3>::sycl_fill_trailling_buffer(shamsys::instance::get_compute_queue(), cnt_obj, morton_len, out_buf_morton);
-            
-            }));
-
-            std::unique_ptr<sycl::buffer<u32>> out_buf_particle_index_map;
-            
-            times_index_gen.push_back(time_func([&](){
-            
-                out_buf_particle_index_map = std::make_unique<sycl::buffer<u32>>(
-                    shamalgs::algorithm::gen_buffer_index(shamsys::instance::get_compute_queue(), morton_len)
-                );
-            }));
-
-            times_morton_sort.push_back(time_func([&](){
-                sycl_sort_morton_key_pair(shamsys::instance::get_compute_queue(), morton_len, out_buf_particle_index_map, out_buf_morton);
-            }));
-
-
-        }
-
-        {
-            shamsys::instance::get_compute_queue().wait();
-            Timer timer2;
-            timer2.start();
-            
-            RadixTree<morton_mode, vec, 3> rtree = RadixTree<morton_mode, vec, 3>(
-                shamsys::instance::get_compute_queue(),
-                {coord_range.lower, coord_range.upper},
-                pos,
-                cnt,
-                reduc_lev
-            );
-
-            rtree.compute_cell_ibounding_box(shamsys::instance::get_compute_queue());
-            rtree.convert_bounding_box(shamsys::instance::get_compute_queue());
-            shamsys::instance::get_compute_queue().wait();
-            timer2.end();
-            times_full_tree.push_back( timer2.nanosec / 1.e9);
-        }
-
-
         Npart.push_back(u32(cnt));
     }
+
+    for (f64 cnt : Npart) {
+        times_morton             .push_back(0);
+        times_reduc              .push_back(0);
+        times_karras             .push_back(0);
+        times_compute_int_range  .push_back(0);
+        times_compute_coord_range.push_back(0);
+        times_morton_build       .push_back(0);
+        times_trailling_fill     .push_back(0);
+        times_index_gen          .push_back(0);
+        times_morton_sort        .push_back(0);
+        times_full_tree          .push_back(0);
+    }
+
+    auto get_repetition_count = [](f64 cnt){
+        if(cnt < 1e5) return 100;
+        return 20;
+    };
+
+    u32 index = 0;
+    for (f64 cnt : Npart) {
+        logger::debug_ln("TestTreePerf", cnt, dset_name);
+        for (u32 rep_count = 0; rep_count < get_repetition_count(cnt); rep_count++) {
+        
+            
+            
+            Timer timer;
+            u32 cnt_obj = cnt;
+
+            auto time_func = [](auto f){
+                shamsys::instance::get_compute_queue().wait();
+                Timer timer;
+                timer.start();
+
+                f();
+                shamsys::instance::get_compute_queue().wait();
+
+                timer.end();
+                return timer.nanosec / 1.e9;
+            };
+
+            {
+                shamrock::tree::TreeMortonCodes<morton_mode> tree_morton_codes;
+                shamrock::tree::TreeReducedMortonCodes<morton_mode> tree_reduced_morton_codes;
+                shamrock::tree::TreeStructure<morton_mode> tree_struct;
+
+                
+                times_morton[index]+=(
+                    time_func([&](){
+                        tree_morton_codes.build(shamsys::instance::get_compute_queue(), coord_range, cnt_obj, *pos);
+                    })
+                );
+
+
+                bool one_cell_mode;
+                times_reduc[index]+=(time_func([&](){
+            
+                    tree_reduced_morton_codes.build(
+                        shamsys::instance::get_compute_queue(),cnt_obj,reduc_lev,tree_morton_codes,one_cell_mode
+                    );
+
+                }));
+
+
+                times_karras[index]+=(time_func([&](){
+
+                    if (!one_cell_mode) {
+                        tree_struct.build(shamsys::instance::get_compute_queue(), tree_reduced_morton_codes.tree_leaf_count - 1, *tree_reduced_morton_codes.buf_tree_morton);
+                    } else {
+                        tree_struct.build_one_cell_mode();
+                    }
+
+                }));
+            }
+
+
+            {
+                RadixTree<morton_mode, vec, 3> rtree = RadixTree<morton_mode, vec, 3>(
+                    shamsys::instance::get_compute_queue(),
+                    {coord_range.lower, coord_range.upper},
+                    pos,
+                    cnt,
+                    reduc_lev
+                );
+
+                times_compute_int_range[index]+=(time_func([&](){
+
+                    rtree.compute_cell_ibounding_box(shamsys::instance::get_compute_queue());
+                }));
+
+                times_compute_coord_range[index]+=(time_func([&](){
+
+                
+                    rtree.convert_bounding_box(shamsys::instance::get_compute_queue());
+                    
+
+                }));
+            }
+
+            {
+
+                using namespace shamrock::sfc;
+
+                u32 morton_len = shambase::roundup_pow2_clz(cnt_obj);
+
+
+                auto out_buf_morton = std::make_unique<sycl::buffer<morton_mode>>(morton_len);
+
+
+                times_morton_build[index]+=(time_func([&](){
+
+                    MortonKernels<morton_mode, vec, 3>::sycl_xyz_to_morton(
+                        shamsys::instance::get_compute_queue(),
+                        cnt_obj,
+                        *pos,
+                        coord_range.lower,
+                        coord_range.upper,
+                        out_buf_morton
+                    );
+                }));
+
+
+
+                times_trailling_fill[index]+=(time_func([&](){
+                
+                    MortonKernels<morton_mode, vec, 3>::sycl_fill_trailling_buffer(shamsys::instance::get_compute_queue(), cnt_obj, morton_len, out_buf_morton);
+                
+                }));
+
+                std::unique_ptr<sycl::buffer<u32>> out_buf_particle_index_map;
+                
+                times_index_gen[index]+=(time_func([&](){
+                
+                    out_buf_particle_index_map = std::make_unique<sycl::buffer<u32>>(
+                        shamalgs::algorithm::gen_buffer_index(shamsys::instance::get_compute_queue(), morton_len)
+                    );
+                }));
+
+                times_morton_sort[index]+=(time_func([&](){
+                    sycl_sort_morton_key_pair(shamsys::instance::get_compute_queue(), morton_len, out_buf_particle_index_map, out_buf_morton);
+                }));
+
+
+            }
+
+            {
+                shamsys::instance::get_compute_queue().wait();
+                Timer timer2;
+                timer2.start();
+                
+                RadixTree<morton_mode, vec, 3> rtree = RadixTree<morton_mode, vec, 3>(
+                    shamsys::instance::get_compute_queue(),
+                    {coord_range.lower, coord_range.upper},
+                    pos,
+                    cnt,
+                    reduc_lev
+                );
+
+                rtree.compute_cell_ibounding_box(shamsys::instance::get_compute_queue());
+                rtree.convert_bounding_box(shamsys::instance::get_compute_queue());
+                shamsys::instance::get_compute_queue().wait();
+                timer2.end();
+                times_full_tree[index]+=( timer2.nanosec / 1.e9);
+            }
+
+        }
+
+        index ++;
+    }
+
+    
+
+
+    index = 0;
+    for (f64 cnt : Npart) {
+
+        times_morton             [index]/= get_repetition_count(cnt);
+        times_reduc              [index]/= get_repetition_count(cnt);
+        times_karras             [index]/= get_repetition_count(cnt);
+        times_compute_int_range  [index]/= get_repetition_count(cnt);
+        times_compute_coord_range[index]/= get_repetition_count(cnt);
+        times_morton_build       [index]/= get_repetition_count(cnt);
+        times_trailling_fill     [index]/= get_repetition_count(cnt);
+        times_index_gen          [index]/= get_repetition_count(cnt);
+        times_morton_sort        [index]/= get_repetition_count(cnt);
+        times_full_tree          [index]/= get_repetition_count(cnt);
+
+        index++;
+    }
+
+
 
     auto &dset = shamtest::test_data().new_dataset(dset_name);
 

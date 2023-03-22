@@ -5,7 +5,7 @@ from _testlib import *
 
 
 import matplotlib.pyplot as plt
-plt.style.use('custom_style.mplstyle')
+plt.style.use('custom_short_cycler.mplstyle')
 
 import numpy as np
 
@@ -40,17 +40,19 @@ def standalone(json_lst : list, figure_folder : str) -> str:
 
                     if n.startswith("bitonic public"):
                         plt.plot(np.array(vec_N),(np.abs(vec_T)/vec_N), label = n,color='black',linewidth = 2)
+                    elif n.startswith("bitonic updated"):
+                        plt.plot(np.array(vec_N),(np.abs(vec_T)/vec_N), label = n,linewidth = 2,linestyle="--")
                     else:
                         plt.plot(np.array(vec_N),(np.abs(vec_T)/vec_N), label = n)
 
-            axs.set_title('Bitonic sort perf')
+            #axs.set_title('Bitonic sort perf')
 
             axs.set_xscale('log')
             axs.set_yscale('log')
 
             axs.set_xlabel(r"$N$")
 
-            axs.set_ylabel(r"s per key")
+            axs.set_ylabel(r"$t_{\rm sort}/N$ (s)")
 
             axs.legend(loc='center left', bbox_to_anchor=(1, 0.5))
             axs.grid()

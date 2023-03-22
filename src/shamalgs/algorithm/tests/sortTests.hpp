@@ -108,7 +108,7 @@ struct TestSortByKey {
         logger::info_ln("TestSortByKey","testing :",__PRETTY_FUNCTION__);
 
         constexpr u32 lim_bench = 1.5e8;
-        for(f64 i = 2 << 24; i < lim_bench; i*=2){
+        for(f64 i = 16; i < lim_bench; i*=2){
             ret.sizes.push_back(i);
         }
 
