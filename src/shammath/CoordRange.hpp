@@ -10,6 +10,8 @@
 
 #include "aliases.hpp"
 #include "shambase/SourceLocation.hpp"
+#include "shambase/sycl_utils/vectorProperties.hpp"
+#include "shambase/vectors.hpp"
 
 #include <limits>
 
@@ -17,6 +19,10 @@ namespace shammath {
 
     template<class T>
     struct CoordRange {
+
+
+        using T_prop = shambase::sycl_utils::VectorProperties<T>;
+
         T lower;
         T upper;
 
@@ -41,12 +47,16 @@ namespace shammath {
             upper = center + cur_delt;
         }
 
+        inline typename T_prop::component_type get_volume(){
+            return shambase::product_accumulate(upper - lower);
+        }
+
         static CoordRange max_range();
 
         void check_throw_ranges(SourceLocation loc = SourceLocation{});
     };
 
-    
+
 
     template<>
     inline CoordRange<f32_3> CoordRange<f32_3>::max_range() {

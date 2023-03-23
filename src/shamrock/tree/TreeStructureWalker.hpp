@@ -62,6 +62,14 @@ namespace shamrock::tree::details {
 
         class Accessed {
 
+            public:
+
+            using IntCritAcc      = typename InteractCrit::Access;
+            using IntCritTreeFAcc = typename InteractCrit::TreeFieldAccess;
+            using IntCritVals     = typename IntCritAcc::Values;
+
+            private:
+
             sycl::range<1> walkers_range;
 
             u32 leaf_offset;
@@ -71,9 +79,7 @@ namespace shamrock::tree::details {
             sycl::accessor<u8, 1, sycl::access::mode::read, sycl::target::device> rchild_flag;
             sycl::accessor<u8, 1, sycl::access::mode::read, sycl::target::device> lchild_flag;
 
-            using IntCritAcc      = typename InteractCrit::Access;
-            using IntCritTreeFAcc = typename InteractCrit::TreeFieldAccess;
-            using IntCritVals     = typename IntCritAcc::Values;
+            
 
             IntCritAcc criterion_acc;
             IntCritTreeFAcc criterion_tree_f_acc;
@@ -111,9 +117,13 @@ namespace shamrock::tree::details {
 
             inline sycl::range<1> get_sycl_range() { return walkers_range; }
 
+            inline IntCritAcc criterion() const{
+                return criterion_acc;
+            }
+
             template<class FuncNodeFound, class FuncNodeReject>
             inline void for_each_node(
-                sycl::item<1> id, FuncNodeFound &&found_case, FuncNodeReject &&reject_case
+                sycl::item<1> id, IntCritVals int_values, FuncNodeFound &&found_case, FuncNodeReject &&reject_case
             ) const;
         };
 
@@ -134,10 +144,8 @@ template<class u_morton, class InteractCrit>
 template<class FuncNodeFound, class FuncNodeReject>
 inline void shamrock::tree::details::
     TreeStructureWalkerPolicy<shamrock::tree::Recompute, u_morton, InteractCrit>::Accessed::
-        for_each_node(sycl::item<1> id, FuncNodeFound &&found_case, FuncNodeReject &&reject_case)
+        for_each_node(sycl::item<1> id, IntCritVals int_values, FuncNodeFound &&found_case, FuncNodeReject &&reject_case)
             const {
-
-    IntCritVals int_values{criterion_acc, static_cast<u32>(id.get_linear_id())};
 
     u32 stack_cursor = tree_depth - 1;
     std::array<u32, tree_depth> id_stack;
@@ -165,7 +173,7 @@ inline void shamrock::tree::details::
         stack_cursor++;
 
         bool cur_id_valid =
-            InteractCrit::criterion(current_node_id, criterion_tree_f_acc, int_values);
+            InteractCrit::criterion(current_node_id, criterion_tree_f_acc, int_values, criterion_acc);
 
         if (cur_id_valid) {
 
