@@ -76,7 +76,7 @@ void sycl_reduction_iteration(
 
         sycl::accessor m{*buf_morton, cgh, sycl::read_only};
         sycl::accessor split_in{*buf_split_table_in,cgh , sycl::read_only};
-        sycl::accessor split_out{*buf_split_table_in,cgh , sycl::write_only, sycl::no_init};
+        sycl::accessor split_out{*buf_split_table_out,cgh , sycl::write_only, sycl::no_init};
 
         cgh.parallel_for<kername>(range_morton_count, [=](sycl::item<1> item) {
             int i = item.get_id(0);
@@ -240,6 +240,7 @@ void reduction_alg_impl(
                 queue, morton_count, buf_morton, buf_split_table1, buf_split_table2
             );
         }
+
     }
 
     std::unique_ptr<sycl::buffer<u32>> buf_split_table;
