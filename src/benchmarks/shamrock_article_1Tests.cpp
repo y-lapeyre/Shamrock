@@ -7,6 +7,8 @@
 // -------------------------------------------------------//
 
 #include "shamalgs/memory/memory.hpp"
+#include "shamrock/amr/AMRGrid.hpp"
+#include "shamrock/legacy/patch/scheduler/scheduler_mpi.hpp"
 #include "shamrock/tree/RadixTree.hpp"
 #include "shamrock/legacy/utils/time_utils.hpp"
 #include "shamrock/tree/TreeStructureWalker.hpp"
@@ -368,7 +370,7 @@ void test_sph_iter_overhead(std::string dset_name){
 
     f64 Nmax_flt = get_Nmax();
 
-    u32 Nmax = 2U<<27U;
+    u32 Nmax = 2U<<23U;
 
     auto coord_range = get_test_coord_ranges<vec>();
 
@@ -546,4 +548,156 @@ TestStart(Benchmark, "shamrock_article1:sph_walk_perf", tree_walk_sph_paper_resu
     test_sph_iter_overhead<u32, f32, 6>("uniform distrib reduction level 6");
     test_sph_iter_overhead<u32, f32, 3>("uniform distrib reduction level 3");
     test_sph_iter_overhead<u32, f32, 0>("uniform distrib no reduction");
+}
+
+
+
+template<class T>
+using buf_access_read = sycl::accessor<T, 1, sycl::access::mode::read, sycl::target::device>;
+template<class T>
+using buf_access_read_write =
+    sycl::accessor<T, 1, sycl::access::mode::read_write, sycl::target::device>;
+
+
+
+
+
+
+
+template<class morton_mode, u32 reduc_lev>
+f64 amr_walk_perf(){
+
+    using namespace shamrock::patch;
+    using namespace shamrock::scheduler;
+
+    PatchDataLayout layout;
+    layout.add_field<u64_3>("cell_min", 1);
+    layout.add_field<u64_3>("cell_max", 1);
+
+    PatchScheduler sched(layout, 1e9,1);
+
+    using Grid = shamrock::amr::AMRGrid<u64_3, 3>;
+
+    Grid grid(sched);
+
+    u64 base_cell_size = 1U << 20U;
+    u32 base_cell_count = 1U << 4U;
+    u64 int_box_len = base_cell_size*base_cell_count;
+
+    shammath::CoordRange<u64_3> base_range ({0,0,0},{int_box_len,int_box_len,int_box_len});
+    shammath::CoordRange<f32_3> real_coord_range ({-1,-1,-1,},{1,1,1});
+
+    grid.make_base_grid(
+        {0,0,0},
+        {base_cell_size,base_cell_size,base_cell_size},
+        {base_cell_count,base_cell_count,base_cell_count});
+
+
+
+    class RefineCritCellAccessor {
+        public:
+        sycl::accessor<u64_3, 1, sycl::access::mode::read, sycl::target::device> cell_low_bound;
+        sycl::accessor<u64_3, 1, sycl::access::mode::read, sycl::target::device> cell_high_bound;
+
+
+        shammath::CoordRangeTransform<u64_3, f32_3> transform;
+
+        RefineCritCellAccessor(
+            sycl::handler &cgh,
+            u64 id_patch,
+            shamrock::patch::Patch p,
+            shamrock::patch::PatchData &pdat,
+            shammath::CoordRange<u64_3> base_range,
+            shammath::CoordRange<f32_3> real_coord_range
+        )
+            : cell_low_bound{*pdat.get_field<u64_3>(0).get_buf(), cgh, sycl::read_only},
+              cell_high_bound{*pdat.get_field<u64_3>(1).get_buf(), cgh, sycl::read_only},
+              transform(base_range, real_coord_range) {}
+    };
+
+    
+
+    class RefineCellAccessor {
+        public:
+
+        RefineCellAccessor(sycl::handler &cgh, shamrock::patch::PatchData &pdat) {}
+    };
+
+    bool rerefine = false;
+
+    do{
+
+        auto splits = grid.gen_refine_list<RefineCritCellAccessor>(
+            [](u32 cell_id, RefineCritCellAccessor acc) -> u32 {
+                u64_3 low_bound  = acc.cell_low_bound[cell_id];
+                u64_3 high_bound = acc.cell_high_bound[cell_id];
+
+                using namespace shammath;
+
+                         
+
+                CoordRange<f32_3> cell_coords = acc.transform.transform({low_bound, high_bound});
+
+                f32_3 cell_center = (cell_coords.lower + cell_coords.upper)/2.F;
+
+                f32 Rpow2 = sycl::dot(cell_center,cell_center);
+
+                auto rho = [](f32 Rpow2) -> f32 {
+                    constexpr f32 R_int = 0.01;
+                    constexpr f32 R_int_pow2 = R_int*R_int;
+
+                    f32 div = (Rpow2 > R_int_pow2) ? Rpow2 : R_int_pow2;
+
+                    return 1/div;
+                };
+
+                f32 density = rho(Rpow2);
+                f32 lambda_tilde = 0.01;
+                f32 cell_len_side = cell_coords.delt().x();
+
+                //mocked jeans lenght
+                bool should_refine = cell_len_side > (lambda_tilde/sycl::sqrt(density));  
+
+                should_refine = should_refine && (high_bound.x() - low_bound.x() > 1);
+                should_refine = should_refine && (high_bound.y() - low_bound.y() > 1);
+                should_refine = should_refine && (high_bound.z() - low_bound.z() > 1);
+
+                return should_refine;
+            },base_range,real_coord_range
+        );
+
+        rerefine = grid.get_process_refine_count(splits) > 0;
+
+        grid.apply_splits<RefineCellAccessor>(
+            std::move(splits),
+
+            [](u32 cur_idx,
+                Grid::CellCoord cur_coords,
+                std::array<u32, 8> new_cells,
+                std::array<Grid::CellCoord, 8> new_cells_coords,
+                RefineCellAccessor acc) {}
+
+        );
+
+        if(rerefine){
+            logger::info_ln("TestAMRWalk", "rerefining ...");
+        }
+
+    }while(rerefine);
+
+
+
+    return 0;
+
+}
+
+
+template<class morton_mode, u32 reduc_lev>
+void test_amr_iter_overhead(std::string dset_name){
+
+    amr_walk_perf<morton_mode, reduc_lev>();
+}
+
+TestStart(Benchmark, "shamrock_article1:amr_walk_perf", tree_walk_amr_paper_results_tree_perf_steps, 1){
+    test_amr_iter_overhead<u32, 0>("uniform distrib no reduction");
 }
