@@ -26,5 +26,6 @@
 # C++ guide
 
 - [Replacing preprocessors](./cppguide/replacing_preproc.md)
+- [Policy design](./cppguide/design_by_policy.md)
 - [Low level tricks](./cppguide/low_level_tricks.md)
 - [Dirty tricks](./cppguide/dirty_tricks.md)
