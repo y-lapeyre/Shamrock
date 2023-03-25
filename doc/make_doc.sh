@@ -8,6 +8,7 @@ bin/mdbook build
 
 cd ..
 
+python3 make_jbook.py
 
 rm -rf _build
 mkdir _build
@@ -15,10 +16,12 @@ cd _build
 
 
 mkdir mdbook
+mkdir jbook
 mkdir doxygen
 
 cp -r ../shamrock-doc/book/* mdbook
 cp -r ../doxygen/html/* doxygen
+cp -r ../jbook/_build/html/* jbook
 
 
 cp ../tmpindex.html index.html
