@@ -1,33 +1,36 @@
+
+
 # Table of contents
 # Learn more at https://jupyterbook.org/customize/toc.html
 
 format: jb-book
-root: intro
+root: src/intro
 parts:
- - caption: Templates
-   chapters:
-    - file: markdown
-    - file: notebooks
 
- - caption: SHAMROCK documentation
-   chapters:
-    - file: sham_doc/compilation
-    - file: sham_doc/codebase_org
-    - file: sham_doc/communication_protocol
-    - file: sham_doc/coordinates_systems
-    - file: sham_doc/code_coverage
-    - file: control_script/control_script
-    - file: mpi_scheduler/mpi_scheduler
-      sections:
-        - file: mpi_scheduler/patchlist
-        - file: mpi_scheduler/patchdata
-        - file: mpi_scheduler/patchtree
 
- - caption: Programming Guide
+
+ - caption:  User Documentation
    chapters:
-    - file: programming_guide/sycl_tricks
-    - file: programming_guide/cpp_guide  
+    - file: src/usermanual/quickstart
+
+ - caption:  Develloper Doc
+   chapters:
+    - file: src/devdoc/codebase_org
+    - file: src/devdoc/code_coverage
+    - file: src/devdoc/communication_protocol
+    - file: src/devdoc/coordinates_systems
+    - file: src/devdoc/mpi_scheduler
       sections:
-      - file: programming_guide/cpp_guide/replacing_preproc
-      - file: programming_guide/cpp_guide/dirty_tricks
-    - file: programming_guide/low_level_tricks
+      - file: src/devdoc/scheduler/patchdata
+      - file: src/devdoc/scheduler/patchlist
+      - file: src/devdoc/scheduler/patchtree
+
+ - caption:  Sycl guide
+   chapters:
+    - file: src/syclguide/sycl_tricks
+
+ - caption:  C++ guide
+   chapters:
+    - file: src/cppguide/replacing_preproc
+    - file: src/cppguide/low_level_tricks
+    - file: src/cppguide/dirty_tricks

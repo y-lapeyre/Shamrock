@@ -3,7 +3,8 @@
 
 title: Documentation
 author: Timothée David--Cléris
-logo: logo_white_lowres.png
+logo: no_background_nocolor.png
+
 
 # Force re-execution of notebooks on each build.
 # See https://jupyterbook.org/content/execute.html
@@ -15,9 +16,6 @@ latex:
   latex_documents:
     targetname: book.tex
 
-# Add a bibtex file so that we can create citations
-bibtex_bibfiles:
-  - references.bib
 
 # Information about where the book exists on the web
 repository:
@@ -31,6 +29,8 @@ html:
   use_issues_button: true
   use_repository_button: true
 
+  
+
 
 parse:
   myst_enable_extensions:
@@ -39,5 +39,13 @@ parse:
     - amsmath
 
 sphinx:
+  config:
+    pygments_style: "bw"
+    html_theme: sphinx_book_theme
+    html_theme_options: 
+      pygment_light_style: "tango"
+      pygment_dark_style: "monokai"
+    
+    
   extra_extensions:
     - sphinx_proof
