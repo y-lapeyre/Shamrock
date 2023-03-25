@@ -17,7 +17,7 @@ They are manipulated using the class `PatchCoord`.
 Using the Scheduler with the class `SimBox` we can convert Patch coordinates to obj coordinates.
 Those are represented on a half open range `[a,b[`
 
-```c++
+```cpp
 // to change the bound of the obj coordinates
 sched.set_coord_domain_bound(bmin,bmax);
 

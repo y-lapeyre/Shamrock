@@ -1,5 +1,27 @@
 cd doxygen
 doxygen dox.conf
 
+cd ../shamrock-doc
+mkdir bin
+curl -sSL https://github.com/rust-lang/mdBook/releases/download/v0.4.28/mdbook-v0.4.28-x86_64-unknown-linux-gnu.tar.gz | tar -xz --directory=bin
+bin/mdbook build
+
 cd ..
-jupyter-book build jbook
+
+python3 make_jbook.py
+
+rm -rf _build
+mkdir _build
+cd _build
+
+
+mkdir mdbook
+mkdir jbook
+mkdir doxygen
+
+cp -r ../shamrock-doc/book/* mdbook
+cp -r ../doxygen/html/* doxygen
+cp -r ../jbook/_build/html/* jbook
+
+
+cp ../tmpindex.html index.html

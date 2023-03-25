@@ -70,7 +70,7 @@ CMakeLists.txt
 ```
 
 `src` is added to the include path to be able to do 
-```c++
+```cpp
 #include "shamrock/legacy/scheduler/scheduler.hpp"
 ```
 
@@ -87,7 +87,7 @@ in general the namespace should be `*component*/*module*/...`
 
 Should be implemented in the proper place but each line of codes of an experimental feature should have an include guard like :
 
-```c++
+```cpp
 #ifdef SHAMROCK_EXPERIMENTAL
 
 #include ....
