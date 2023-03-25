@@ -50,4 +50,4 @@ with open("./jbook/_toc.yml",'w') as f:
 
 
 os.chdir("jbook")
-os.system("sh copy_src.sh")
+os.system("sh make_jbook.sh")

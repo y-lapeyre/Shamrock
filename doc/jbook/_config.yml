@@ -3,7 +3,8 @@
 
 title: Documentation
 author: Timothée David--Cléris
-logo: ../logo_white_lowres.png
+logo: no_background_nocolor.png
+
 
 # Force re-execution of notebooks on each build.
 # See https://jupyterbook.org/content/execute.html
@@ -28,6 +29,8 @@ html:
   use_issues_button: true
   use_repository_button: true
 
+  
+
 
 parse:
   myst_enable_extensions:
@@ -36,5 +39,9 @@ parse:
     - amsmath
 
 sphinx:
+  config:
+    pygments_style: "bw"
+    html_theme: sphinx_book_theme
+    
   extra_extensions:
     - sphinx_proof
