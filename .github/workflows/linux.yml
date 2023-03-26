@@ -10,9 +10,47 @@ on: [push]
 
 jobs:
 
+
+
+
+
+
+
+  pragma_check:
+
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.10' 
+
+      - name: Pragma check
+        run: python buildbot/check_pragma_once.py
+
+
+  copyright_check:
+
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.10' 
+
+      - name: Licence check
+        run: python buildbot/check_licencing.py
+
+
+
   # download and cache dpcpp compiler
   cache_dpcpp:
     runs-on: ubuntu-latest
+
+    needs: [pragma_check, copyright_check]
+
     
     steps:
         
@@ -36,6 +74,9 @@ jobs:
   # download ,build and cache opensycl compiler
   cache_opensycl:
     runs-on: ubuntu-latest
+
+    needs: [pragma_check, copyright_check]
+
     steps:
 
       - name: clone OpenSycl
@@ -68,9 +109,12 @@ jobs:
           name: OpenSYCL_compiler
           path: OpenSYCL_comp
 
+  #make shamrock documentation
   make_documentation:
 
     runs-on: ubuntu-latest
+
+    needs: [pragma_check, copyright_check]
     
     steps:
       - uses: actions/checkout@v3
@@ -95,3 +139,5 @@ jobs:
         with:
           name: shamrock_documentation
           path: doc/_build/
+
+  
