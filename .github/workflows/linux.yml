@@ -194,7 +194,6 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: OpenSYCL_compiler
-          path: opensycl.tar  
 
       - name: 'unTar opensycl'
         run: tar -xvf opensycl.tar OpenSYCL_compiler
