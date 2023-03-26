@@ -102,12 +102,15 @@ jobs:
           cmake -DCMAKE_CXX_COMPILER=/usr/bin/clang++-15 -DCLANG_EXECUTABLE_PATH=/usr/bin/clang++-15 -DLLVM_DIR=/usr/lib/llvm-15/cmake -DCMAKE_INSTALL_PREFIX=../OpenSYCL_comp .
           make -j install
 
-      
-      - name: Upload opensycl artifact
+      - name: 'Tar opensycl'
+        run: tar -cvf opensycl.tar OpenSYCL_comp
+
+      - name: 'Upload Artifact'
         uses: actions/upload-artifact@v3
         with:
           name: OpenSYCL_compiler
-          path: OpenSYCL_comp
+          path: opensycl.tar  
+      
 
   #make shamrock documentation
   make_documentation:
@@ -186,12 +189,15 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Download opensycl artifact
+
+      - name: 'Download Artifact'
         uses: actions/download-artifact@v3
         with:
           name: OpenSYCL_compiler
-          path: OpenSYCL_compiler
+          path: opensycl.tar  
 
+      - name: 'unTar opensycl'
+        run: tar -xvf opensycl.tar OpenSYCL_compiler
 
       - name: ls local
         run : ls -la
