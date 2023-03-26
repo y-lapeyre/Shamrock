@@ -72,7 +72,7 @@ jobs:
           rm dpcpp-compiler.tar.gz
   
   # download ,build and cache opensycl compiler
-  cache_opensycl:
+  build_opensycl:
     runs-on: ubuntu-latest
 
     needs: [pragma_check, copyright_check]
@@ -178,7 +178,7 @@ jobs:
 
     runs-on: ubuntu-latest
     
-    needs: cache_opensycl
+    needs: build_opensycl
 
 
     steps:
@@ -189,6 +189,7 @@ jobs:
       - uses: actions/download-artifact@v3
         with:
           name: OpenSYCL_compiler
+          path: OpenSYCL_compiler
 
       - name: ls local
         run : ls -la
