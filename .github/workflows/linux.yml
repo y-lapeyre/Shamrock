@@ -140,4 +140,62 @@ jobs:
           name: shamrock_documentation
           path: doc/_build/
 
+
+
+
+
+  ### build jobs
+
+  build_dpcpp:
+
+    runs-on: ubuntu-latest
+    
+    needs: cache_dpcpp
+    
+    steps:
+    
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.10' 
+          
+      - name : Install pck (DPCPP)
+        run: |
+          sudo apt-get install -y -qq g++-10 clang libomp-dev libtinfo5
+          
+      - name: Cache DPCPP
+        id: cache-dpcpp
+        uses: actions/cache@v3
+        with:
+          path: dpcpp_compiler
+          key: sycl-nightly%2F20230112_dpcpp-compiler.tar.gz
+          
+      - name : Check binary
+        run: |
+          dpcpp_compiler/bin/clang++ --version
   
+  build_opensycl:
+
+    runs-on: ubuntu-latest
+    
+    needs: cache_opensycl
+
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - uses: actions/download-artifact@v2
+        with:
+          name: OpenSYCL_compiler
+
+      - name: configure Shamrock
+        run: |
+          python3 buildbot/configure.py --gen ninja --tests --build debug \
+            --outdir opensycl_omp_debug --cxxpath OpenSYCL_comp --compiler opensycl --profile omp_coverage
+
+      - name: compile Shamrock
+        run: |
+          cd opensycl_omp_debug
+          ninja
