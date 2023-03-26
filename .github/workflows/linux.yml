@@ -1,0 +1,69 @@
+name: Linux ci
+
+#on:
+#  push:
+#    branches: [ "main" ]
+#  pull_request:
+#    branches: [ "main" ]
+
+on: [push]
+
+jobs:
+
+  # download and cache dpcpp compiler
+  cache_dpcpp:
+    runs-on: ubuntu-latest
+    
+    steps:
+        
+      - name: Cache DPCPP
+        id: cache-dpcpp
+        uses: actions/cache@v3
+        with:
+          path: dpcpp_compiler
+          key: sycl-nightly%2F20230112_dpcpp-compiler.tar.gz
+      
+      - name : Download & Untar DPCPP
+        if: steps.cache-dpcpp.outputs.cache-hit != 'true'
+        run: |
+          export DPCPP_URL="https://github.com/intel/llvm/releases/download/sycl-nightly%2F20230112/dpcpp-compiler.tar.gz"
+          wget -q --show-progress --progress=bar:force:noscroll "$DPCPP_URL" -O dpcpp-compiler.tar.gz
+          echo "untar : "
+          tar -xf dpcpp-compiler.tar.gz
+          echo "rm archive"
+          rm dpcpp-compiler.tar.gz
+  
+  # download ,build and cache opensycl compiler
+  cache_opensycl:
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: Cache OPENSYCL
+        id: cache-opensycl
+        uses: actions/cache@v3
+        with:
+          path: OpenSYCL_comp
+          key: opensycl03262023.tar.gz
+
+      - name: clone OpenSycl
+        run: git clone --recurse-submodules https://github.com/OpenSYCL/OpenSYCL.git
+
+      - name: install boost
+        run: sudo apt install libboost-all-dev
+
+      - name: install LLVM
+        run: |
+          wget https://apt.llvm.org/llvm.sh
+          chmod +x llvm.sh
+          sudo ./llvm.sh 15
+          sudo apt install libclang-15-dev clang-tools-15 libomp-15-dev libllvm-15-ocaml-dev libllvm15 llvm-15 llvm-15-dev llvm-15-doc llvm-15-examples llvm-15-runtime
+
+      - name: install Ninja-build
+        run: sudo apt install ninja-build
+
+
+      - name: configure & install OpenSycl
+        run: |
+          cd OpenSYCL
+          cmake -DCMAKE_CXX_COMPILER=/usr/bin/clang++-15 -DCLANG_EXECUTABLE_PATH=/usr/bin/clang++-15 -DLLVM_DIR=/usr/lib/llvm-15/cmake -DCMAKE_INSTALL_PREFIX=../OpenSYCL_comp .
+          make -j install
