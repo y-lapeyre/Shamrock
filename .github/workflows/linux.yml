@@ -190,6 +190,9 @@ jobs:
         with:
           name: OpenSYCL_compiler
 
+      - name: ls local
+        run : ls -la
+
       - name: install boost
         run: sudo apt install libboost-all-dev
 
