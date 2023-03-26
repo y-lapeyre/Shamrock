@@ -196,7 +196,7 @@ jobs:
           name: OpenSYCL_compiler
 
       - name: 'unTar opensycl'
-        run: tar -xvf opensycl.tar OpenSYCL_compiler
+        run: tar -xvf opensycl.tar
 
       - name: ls local
         run : ls -la
