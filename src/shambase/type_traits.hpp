@@ -27,4 +27,24 @@ namespace shambase {
 
 
 
+    inline constexpr bool is_valid_sycl_vec_size(int N) {
+        return N == 2 || N == 3 || N == 4 || N == 8 || N == 16;
+    }
+
+    template<class T>
+    inline constexpr bool is_valid_sycl_base_type = 
+        std::is_same_v<T,i64> ||
+        std::is_same_v<T,i32> ||
+        std::is_same_v<T,i16> ||
+        std::is_same_v<T,i8 > ||
+        std::is_same_v<T,u64> ||
+        std::is_same_v<T,u32> ||
+        std::is_same_v<T,u16> ||
+        std::is_same_v<T,u8 > ||
+        std::is_same_v<T,f16> ||
+        std::is_same_v<T,f32> ||
+        std::is_same_v<T,f64>;
+
+
+    
 } // namespace shambase

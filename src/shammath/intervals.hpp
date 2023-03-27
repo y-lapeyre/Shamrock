@@ -10,6 +10,7 @@
 
 #include "aliases.hpp"
 #include "shambase/sycl_utils/sycl_utilities.hpp"
+#include "shambase/type_traits.hpp"
 
 namespace shammath {
 
@@ -23,7 +24,7 @@ namespace shammath {
      * @return true
      * @return false
      */
-    template<class T>
+    template<class T, std::enable_if_t<shambase::is_valid_sycl_base_type<T>, int> = 0>
     inline bool is_in_half_open(T val, T min, T max) {
         return (val >= min) && (val < max);
     }
@@ -88,21 +89,92 @@ namespace shammath {
         );
     }
 
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // domain_are_connected
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+
+    template<class T, std::enable_if_t<shambase::is_valid_sycl_base_type<T>, int> = 0>
+    inline bool domain_are_connected(T bmin1, T bmax1, T bmin2, T bmax2){
+        return shambase::sycl_utils::g_sycl_max(bmin1, bmin2) <= shambase::sycl_utils::g_sycl_min(bmax1, bmax2);
+    }
+
     template<class T>
-    inline bool domain_are_connected(T bmin1, T bmax1, T bmin2, T bmax2);
+    inline bool domain_are_connected(
+        sycl::vec<T, 2> bmin1, sycl::vec<T, 2> bmax1, sycl::vec<T, 2> bmin2, sycl::vec<T, 2> bmax2
+    ) {
+        
+        return (
+            domain_are_connected(bmin1.x(),bmax1.x(),bmin2.x(),bmax2.x()) &&
+            domain_are_connected(bmin1.y(),bmax1.y(),bmin2.y(),bmax2.y())
+        );
+    }
 
     template<class T>
     inline bool domain_are_connected(
         sycl::vec<T, 3> bmin1, sycl::vec<T, 3> bmax1, sycl::vec<T, 3> bmin2, sycl::vec<T, 3> bmax2
     ) {
+        
         return (
-            (shambase::sycl_utils::g_sycl_max(bmin1.x(), bmin2.x()) <=
-             shambase::sycl_utils::g_sycl_min(bmax1.x(), bmax2.x())) &&
-            (shambase::sycl_utils::g_sycl_max(bmin1.y(), bmin2.y()) <=
-             shambase::sycl_utils::g_sycl_min(bmax1.y(), bmax2.y())) &&
-            (shambase::sycl_utils::g_sycl_max(bmin1.z(), bmin2.z()) <=
-             shambase::sycl_utils::g_sycl_min(bmax1.z(), bmax2.z()))
+            domain_are_connected(bmin1.x(),bmax1.x(),bmin2.x(),bmax2.x()) &&
+            domain_are_connected(bmin1.y(),bmax1.y(),bmin2.y(),bmax2.y()) &&
+            domain_are_connected(bmin1.z(),bmax1.z(),bmin2.z(),bmax2.z())
         );
+    }
+
+
+
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // domain_have_intersect
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+
+    template<class T, std::enable_if_t<shambase::is_valid_sycl_base_type<T>, int> = 0>
+    inline bool domain_have_intersect(T bmin1, T bmax1, T bmin2, T bmax2){
+        return shambase::sycl_utils::g_sycl_max(bmin1, bmin2) < shambase::sycl_utils::g_sycl_min(bmax1, bmax2);
+    }
+
+    template<class T>
+    inline bool domain_have_intersect(
+        sycl::vec<T, 2> bmin1, sycl::vec<T, 2> bmax1, sycl::vec<T, 2> bmin2, sycl::vec<T, 2> bmax2
+    ) {
+        
+        return (
+            domain_have_intersect(bmin1.x(),bmax1.x(),bmin2.x(),bmax2.x()) &&
+            domain_have_intersect(bmin1.y(),bmax1.y(),bmin2.y(),bmax2.y())
+        );
+    }
+
+    template<class T>
+    inline bool domain_have_intersect(
+        sycl::vec<T, 3> bmin1, sycl::vec<T, 3> bmax1, sycl::vec<T, 3> bmin2, sycl::vec<T, 3> bmax2
+    ) {
+        
+        return (
+            domain_have_intersect(bmin1.x(),bmax1.x(),bmin2.x(),bmax2.x()) &&
+            domain_have_intersect(bmin1.y(),bmax1.y(),bmin2.y(),bmax2.y()) &&
+            domain_have_intersect(bmin1.z(),bmax1.z(),bmin2.z(),bmax2.z())
+        );
+    }
+
+
+    
+
+
+
+
+    template<class T, std::enable_if_t<shambase::is_valid_sycl_base_type<T>, int> = 0>
+    inline bool domain_have_common_face(T bmin1, T bmax1, T bmin2, T bmax2){
+        return shambase::sycl_utils::g_sycl_max(bmin1, bmin2) <= shambase::sycl_utils::g_sycl_min(bmax1, bmax2);
+    }
+
+    template<class T>
+    inline bool domain_have_common_face(sycl::vec<T, 3> bmin1, sycl::vec<T, 3> bmax1, sycl::vec<T, 3> bmin2, sycl::vec<T, 3> bmax2){
+        u32 cnt = 
+            ((domain_have_common_face(bmin1.x(),bmax1.x(),bmin2.x(),bmax2.x())) ? 1 : 0) + 
+            ((domain_have_common_face(bmin1.y(),bmax1.y(),bmin2.y(),bmax2.y())) ? 1 : 0) + 
+            ((domain_have_common_face(bmin1.z(),bmax1.z(),bmin2.z(),bmax2.z())) ? 1 : 0);
+
+        return cnt >1;
     }
 
 } // namespace shambase
