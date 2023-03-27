@@ -5,7 +5,7 @@
 
 ![badge1](https://github.com/tdavidcl/Shamrock/actions/workflows/copyright.yml/badge.svg?branch=main)
 ![badge1](https://github.com/tdavidcl/Shamrock/actions/workflows/pragma_check.yml/badge.svg?branch=main)
-![badge1](https://github.com/tdavidcl/Shamrock/actions/workflows/opensycl_ci.yml/badge.svg?branch=main)
+![badge1](https://github.com/tdavidcl/Shamrock/actions/workflows/linux.yml/badge.svg?branch=main)
 
 # Getting started
 
