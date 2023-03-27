@@ -49,16 +49,16 @@ namespace shammath {
                 };
         }
 
-        inline BBAA is_empty(){
-            return shambase::all_component_are_negative(upper - lower);
+        inline bool is_not_empty(){
+            return shambase::vec_compare_geq(upper , lower);
         }
 
-        inline BBAA is_surface(){
-            return shambase::component_have_only_one_zero(upper - lower);
+        inline bool is_surface(){
+            return shambase::component_have_only_one_zero(delt()) && (is_not_empty());
         }
 
-        inline BBAA is_surface_or_volume(){
-            return shambase::component_have_at_most_one_zero(upper - lower);
+        inline bool is_surface_or_volume(){
+            return shambase::component_have_at_most_one_zero(delt()) && (is_not_empty());
         }
     };
 

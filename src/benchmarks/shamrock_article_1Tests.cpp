@@ -7,6 +7,7 @@
 // -------------------------------------------------------//
 
 #include "shamalgs/memory/memory.hpp"
+#include "shammath/BBAA.hpp"
 #include "shamrock/amr/AMRGrid.hpp"
 #include "shamrock/legacy/patch/scheduler/scheduler_mpi.hpp"
 #include "shamrock/tree/RadixTree.hpp"
@@ -563,9 +564,18 @@ using buf_access_read_write =
 
 
 
-
 template<class morton_mode, u32 reduc_lev>
-f64 amr_walk_perf(){
+f64 amr_walk_perf(f64 lambda_tilde,
+    std::vector<f64> & Npart,
+    std::vector<f64> & avg_neigh,
+    std::vector<f64> & var_neigh,
+    std::vector<f64> & time_refine,
+    std::vector<f64> & time_tree,
+    std::vector<f64> & time_walk){
+
+
+
+
 
     using namespace shamrock::patch;
     using namespace shamrock::scheduler;
@@ -623,12 +633,20 @@ f64 amr_walk_perf(){
         RefineCellAccessor(sycl::handler &cgh, shamrock::patch::PatchData &pdat) {}
     };
 
+
+
+    sycl::queue &q = shamsys::instance::get_compute_queue();
+    q.wait();
+    Timer t_refine; t_refine.start();
+
     bool rerefine = false;
 
     do{
 
+        f32 lambda_tilde_f32 = lambda_tilde;
+
         auto splits = grid.gen_refine_list<RefineCritCellAccessor>(
-            [](u32 cell_id, RefineCritCellAccessor acc) -> u32 {
+            [lambda_tilde_f32](u32 cell_id, RefineCritCellAccessor acc) -> u32 {
                 u64_3 low_bound  = acc.cell_low_bound[cell_id];
                 u64_3 high_bound = acc.cell_high_bound[cell_id];
 
@@ -654,7 +672,7 @@ f64 amr_walk_perf(){
                 };
 
                 f32 density = rho(Rpow2);
-                f32 lambda_tilde = 0.011;
+                f32 lambda_tilde = lambda_tilde_f32;
                 f32 cell_len_side = cell_coords.delt().x();
 
                 //mocked jeans lenght
@@ -687,9 +705,191 @@ f64 amr_walk_perf(){
 
     }while(rerefine);
 
+    q.wait();
+    t_refine.end();
 
 
-    
+
+
+
+    PatchData & pdat = sched.patch_data.owned_data.at(0);
+    Patch p = sched.patch_list.global.at(0);
+
+    u32 len_pos = pdat.get_obj_cnt();
+
+    logger::info_ln("TestAmrWalk", "obj count :",len_pos);
+
+    class InteractionCrit {
+        public:
+        shammath::CoordRange<u64_3> bounds;
+
+        RadixTree<u64, u64_3, 3> &tree;
+        PatchData &pdat;
+
+        class Access {
+            public:
+            sycl::accessor<u64_3, 1, sycl::access::mode::read> cell_low_bound;
+            sycl::accessor<u64_3, 1, sycl::access::mode::read> cell_high_bound;
+
+            Access(InteractionCrit crit, sycl::handler &cgh)
+                : cell_low_bound{*crit.pdat.template get_field<u64_3>(0).get_buf(), cgh, sycl::read_only},
+                    cell_high_bound{
+                        *crit.pdat.template get_field<u64_3>(1).get_buf(), cgh, sycl::read_only} {}
+
+            class Values {
+                public:
+                shammath::BBAA<u64_3> cell_bound;
+                Values(Access acc, u32 index)
+                    : cell_bound(acc.cell_low_bound[index],
+                        acc.cell_high_bound[index]) {}
+            };
+        };
+
+        class TreeFieldAccess {
+            public:
+            sycl::accessor<u64_3, 1, sycl::access::mode::read> tree_cell_coordrange_min;
+            sycl::accessor<u64_3, 1, sycl::access::mode::read> tree_cell_coordrange_max;
+
+            TreeFieldAccess(InteractionCrit crit, sycl::handler &cgh)
+                : tree_cell_coordrange_min{*crit.tree.buf_pos_min_cell_flt, cgh, sycl::read_only},
+                    tree_cell_coordrange_max{
+                        *crit.tree.buf_pos_max_cell_flt, cgh, sycl::read_only} {}
+        };
+
+        static bool
+        criterion(u32 node_index, TreeFieldAccess tree_acc, typename Access::Values current_values, Access int_accessor) {
+
+            shammath::BBAA<u64_3> tree_cell_bound {
+                tree_acc.tree_cell_coordrange_min[node_index], 
+                tree_acc.tree_cell_coordrange_max[node_index]};
+
+            shammath::BBAA<u64_3> intersect = tree_cell_bound.get_intersect(current_values.cell_bound);
+
+            //logger::raw(
+            //    shambase::format("{} {} | {} {} -> {} {} -> {}\n",
+            //    tree_cell_bound.lower,
+            //    tree_cell_bound.upper,
+            //    current_values.cell_bound.lower,
+            //    current_values.cell_bound.upper,
+            //
+            //    intersect.lower,intersect.upper,
+            //
+            //    intersect.is_surface_or_volume())
+            //    );
+
+            return intersect.is_surface_or_volume();
+        };
+    };
+
+
+
+
+
+    using Criterion = InteractionCrit;
+    using CriterionAcc = typename Criterion::Access;
+    using CriterionVal = typename CriterionAcc::Values; 
+
+    using namespace shamrock::tree;
+
+
+    q.wait();
+    Timer t_tree; t_tree.start();
+    RadixTree<u64, u64_3, 3> tree(
+            q,
+            grid.sched.get_sim_box().partch_coord_to_domain<u64_3>(p),
+            pdat.get_field<u64_3>(0).get_buf(),
+            pdat.get_obj_cnt(),
+            0
+        );
+
+    tree.compute_cell_ibounding_box(q);
+
+    tree.convert_bounding_box(q);
+
+    q.wait();
+    t_tree.end();
+
+
+
+
+
+    TreeStructureWalker walk = generate_walk<Recompute>(
+        tree.tree_struct, pdat.get_obj_cnt(), InteractionCrit{{}, tree, pdat}
+    );
+
+
+
+    sycl::buffer<u32> neighbours(len_pos);
+
+    auto benchmark = [&]() -> f64 {
+        q.wait();
+        Timer t; t.start();
+        q.submit([&](sycl::handler &cgh) {
+            auto walker        = walk.get_access(cgh);
+            auto leaf_iterator = tree.get_leaf_access(cgh);
+            
+            sycl::accessor neigh_count {neighbours,cgh,sycl::write_only, sycl::no_init};
+
+            cgh.parallel_for(walker.get_sycl_range(), [=](sycl::item<1> item) {
+                u32 sum = 0;
+
+                CriterionVal int_values{walker.criterion(), static_cast<u32>(item.get_linear_id())};
+
+                walker.for_each_node(
+                    item,int_values,
+                    [&](u32 /*node_id*/, u32 leaf_iterator_id) {
+                        leaf_iterator.iter_object_in_leaf(
+                            leaf_iterator_id, [&](u32 /*obj_id*/) { 
+                                sum += 1; 
+                            }
+                        );
+                    },
+                    [&](u32 node_id) {}
+                );
+
+                neigh_count[item] = sum;
+            });
+            
+        });
+
+
+        q.wait();
+        t.end();
+        return t.nanosec * 1e-9;
+    };
+
+
+    f64 time = benchmark();
+
+    {
+        
+        f64 npart = len_pos;
+        f64 neigh_avg = 0;
+        f64 neigh_var = 0;
+
+        {
+            sycl::host_accessor acc{neighbours, sycl::read_only};
+            for(u32 i = 0; i < len_pos; i++){
+                neigh_avg += acc[i];
+            }
+            neigh_avg /= len_pos;
+            
+            for(u32 i = 0; i < len_pos; i++){
+                neigh_var += (acc[i]- neigh_avg)*(acc[i]- neigh_avg);
+            }
+            neigh_var /= len_pos;
+        }
+
+        Npart.push_back(npart);
+        avg_neigh.push_back(neigh_avg);
+        var_neigh.push_back(neigh_var);
+
+    }
+
+
+    time_walk.push_back(time);
+    time_tree.push_back(t_tree.nanosec * 1e-9);
+    time_refine.push_back(t_refine.nanosec * 1e-9);
 
 
 
@@ -701,7 +901,33 @@ f64 amr_walk_perf(){
 template<class morton_mode, u32 reduc_lev>
 void test_amr_iter_overhead(std::string dset_name){
 
-    amr_walk_perf<morton_mode, reduc_lev>();
+
+    std::vector<f64> Npart;
+    std::vector<f64> avg_neigh;
+    std::vector<f64> var_neigh;
+    std::vector<f64> lambda_tilde;
+    std::vector<f64> time_refine;
+    std::vector<f64> time_tree;
+    std::vector<f64> time_walk;
+
+    for(f32 ll = 1; ll > 0.017; ll /= 1.05){
+
+        lambda_tilde.push_back(ll);
+
+        amr_walk_perf<morton_mode, reduc_lev>(ll,  Npart,avg_neigh,var_neigh,time_refine,time_tree,time_walk);
+    }
+
+
+    auto & dat_test = shamtest::test_data().new_dataset(dset_name);
+
+    dat_test.add_data("Ncell", Npart);
+    dat_test.add_data("avg_neigh", avg_neigh);
+    dat_test.add_data("var_neigh", var_neigh);
+    dat_test.add_data("lambda_tilde", lambda_tilde);
+    dat_test.add_data("time_refine", time_refine);
+    dat_test.add_data("time_tree", time_tree);
+    dat_test.add_data("time_walk", time_walk);
+    
 }
 
 TestStart(Benchmark, "shamrock_article1:amr_walk_perf", tree_walk_amr_paper_results_tree_perf_steps, 1){
