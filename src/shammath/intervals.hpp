@@ -89,6 +89,11 @@ namespace shammath {
         );
     }
 
+
+    
+
+
+
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // domain_are_connected
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -162,10 +167,9 @@ namespace shammath {
 
 
 
-    template<class T, std::enable_if_t<shambase::is_valid_sycl_base_type<T>, int> = 0>
-    inline bool domain_have_common_face(T bmin1, T bmax1, T bmin2, T bmax2){
-        return shambase::sycl_utils::g_sycl_max(bmin1, bmin2) <= shambase::sycl_utils::g_sycl_min(bmax1, bmax2);
-    }
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // domain_have_common_face
+    ////////////////////////////////////////////////////////////////////////////////////////////////
 
     template<class T>
     inline bool domain_have_common_face(sycl::vec<T, 3> bmin1, sycl::vec<T, 3> bmax1, sycl::vec<T, 3> bmin2, sycl::vec<T, 3> bmax2){
@@ -177,4 +181,4 @@ namespace shammath {
         return cnt >1;
     }
 
-} // namespace shambase
+} // namespace shammath
