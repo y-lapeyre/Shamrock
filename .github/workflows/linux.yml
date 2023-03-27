@@ -257,7 +257,7 @@ jobs:
     
     needs: [shamrock_opensycl_omp_debug, shamrock_dpcpp, make_documentation]
 
-    #if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main'
 
     steps:
 
