@@ -13,6 +13,7 @@
 #include "shambase/SourceLocation.hpp"
 
 #include "TestAssert.hpp"
+#include "shambase/string.hpp"
 #include "shambase/sycl.hpp"
 
 namespace shamtest::details {
@@ -41,6 +42,27 @@ namespace shamtest::details {
 
             if (!t) {
                 comment = "left=" + std::to_string(a) + " right=" + std::to_string(b);
+            }
+
+            asserts.push_back(TestAssert{t, std::move(assert_name), gen_comment(comment, loc)});
+        }
+
+
+        template<class Acca,class Accb>
+        inline void
+        assert_equal_array(std::string assert_name, Acca & acc_a, Accb & acc_b, u32 len, SourceLocation loc = SourceLocation{}) {
+
+            bool t = true;std::string comment = "";
+
+            for(u32 i = 0; i < len; i++){
+                t = t && (acc_a[i] == acc_b[i]);
+            }
+
+            if (!t) {
+                comment += "left : \n";
+                comment += shambase::format_array(acc_a, len, 16, "{} ");
+                comment += "right : \n";
+                comment += shambase::format_array(acc_b, len, 16, "{} ");
             }
 
             asserts.push_back(TestAssert{t, std::move(assert_name), gen_comment(comment, loc)});
