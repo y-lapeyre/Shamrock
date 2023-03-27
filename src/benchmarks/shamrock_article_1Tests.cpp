@@ -636,14 +636,16 @@ f64 amr_walk_perf(){
 
                          
 
-                CoordRange<f32_3> cell_coords = acc.transform.transform({low_bound, high_bound});
+                CoordRange<f32_3> cell_coords = acc.transform.transform(
+                        CoordRange<u64_3>{low_bound, high_bound}
+                    );
 
                 f32_3 cell_center = (cell_coords.lower + cell_coords.upper)/2.F;
 
                 f32 Rpow2 = sycl::dot(cell_center,cell_center);
 
                 auto rho = [](f32 Rpow2) -> f32 {
-                    constexpr f32 R_int = 0.01;
+                    constexpr f32 R_int = 0.001;
                     constexpr f32 R_int_pow2 = R_int*R_int;
 
                     f32 div = (Rpow2 > R_int_pow2) ? Rpow2 : R_int_pow2;
@@ -652,7 +654,7 @@ f64 amr_walk_perf(){
                 };
 
                 f32 density = rho(Rpow2);
-                f32 lambda_tilde = 0.01;
+                f32 lambda_tilde = 0.011;
                 f32 cell_len_side = cell_coords.delt().x();
 
                 //mocked jeans lenght
