@@ -174,20 +174,12 @@ struct TestExclScanInplace {
 
             //shamalgs::memory::print_buf(res, len_test, 16, "{:4} ");
             
-            bool eq = true;
             {
                 sycl::host_accessor acc{buf, sycl::read_only};
 
-                for (u32 i = 0; i < data_buf.size(); i++) {
-                    //shamtest::asserts().assert_equal("inclusive scan elem", acc[i], data[i]);
-                    eq = eq && (acc[i] == data[i]);
-                }
+
+                shamtest::asserts().assert_equal_array("inclusive scan match", acc, data, data_buf.size());
             }
-
-            //sycl::buffer<u32> tmp (data.data(), data.size());
-            //shamalgs::memory::print_buf(tmp, len_test, 16, "{:4} ");
-
-            shamtest::asserts().assert_bool("exclusive scan match std", eq);
         }
     }
 
