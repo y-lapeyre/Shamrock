@@ -269,36 +269,31 @@ class AMRTestModel {
                     sycl::accessor<u64_3, 1, sycl::access::mode::read> cell_low_bound;
                     sycl::accessor<u64_3, 1, sycl::access::mode::read> cell_high_bound;
 
+                    sycl::accessor<u64_3, 1, sycl::access::mode::read> tree_cell_coordrange_min;
+                    sycl::accessor<u64_3, 1, sycl::access::mode::read> tree_cell_coordrange_max;
+
                     Access(InteractionCrit crit, sycl::handler &cgh)
                         : cell_low_bound{*crit.pdat.get_field<u64_3>(0).get_buf(), cgh, sycl::read_only},
                           cell_high_bound{
-                              *crit.pdat.get_field<u64_3>(1).get_buf(), cgh, sycl::read_only} {}
+                              *crit.pdat.get_field<u64_3>(1).get_buf(), cgh, sycl::read_only},
+                            tree_cell_coordrange_min{*crit.tree.buf_pos_min_cell_flt, cgh, sycl::read_only},
+                          tree_cell_coordrange_max{
+                              *crit.tree.buf_pos_max_cell_flt, cgh, sycl::read_only} {}
 
-                    class Values {
+                    class ObjectValues {
                         public:
                         u64_3 cell_low_bound;
                         u64_3 cell_high_bound;
-                        Values(Access acc, u32 index)
+                        ObjectValues(Access acc, u32 index)
                             : cell_low_bound(acc.cell_low_bound[index]),
                               cell_high_bound(acc.cell_high_bound[index]) {}
                     };
                 };
 
-                class TreeFieldAccess {
-                    public:
-                    sycl::accessor<u64_3, 1, sycl::access::mode::read> tree_cell_coordrange_min;
-                    sycl::accessor<u64_3, 1, sycl::access::mode::read> tree_cell_coordrange_max;
-
-                    TreeFieldAccess(InteractionCrit crit, sycl::handler &cgh)
-                        : tree_cell_coordrange_min{*crit.tree.buf_pos_min_cell_flt, cgh, sycl::read_only},
-                          tree_cell_coordrange_max{
-                              *crit.tree.buf_pos_max_cell_flt, cgh, sycl::read_only} {}
-                };
-
                 static bool
-                criterion(u32 node_index, TreeFieldAccess tree_acc, Access::Values current_values, Access int_accessor) {
-                    u64_3 cur_pos_min_cell_b = tree_acc.tree_cell_coordrange_min[node_index];
-                    u64_3 cur_pos_max_cell_b = tree_acc.tree_cell_coordrange_max[node_index];
+                criterion(u32 node_index, Access acc, Access::ObjectValues current_values) {
+                    u64_3 cur_pos_min_cell_b = acc.tree_cell_coordrange_min[node_index];
+                    u64_3 cur_pos_max_cell_b = acc.tree_cell_coordrange_max[node_index];
 
                     return shammath::domain_are_connected(
                         current_values.cell_low_bound,
@@ -315,7 +310,7 @@ class AMRTestModel {
 
             using Criterion = InteractionCrit;
             using CriterionAcc = typename Criterion::Access;
-            using CriterionVal = typename CriterionAcc::Values; 
+            using CriterionVal = typename CriterionAcc::ObjectValues; 
 
             using namespace shamrock::tree;
 

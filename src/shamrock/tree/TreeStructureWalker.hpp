@@ -65,8 +65,7 @@ namespace shamrock::tree::details {
             public:
 
             using IntCritAcc      = typename InteractCrit::Access;
-            using IntCritTreeFAcc = typename InteractCrit::TreeFieldAccess;
-            using IntCritVals     = typename IntCritAcc::Values;
+            using IntCritVals     = typename IntCritAcc::ObjectValues;
 
             private:
 
@@ -82,7 +81,6 @@ namespace shamrock::tree::details {
             
 
             IntCritAcc criterion_acc;
-            IntCritTreeFAcc criterion_tree_f_acc;
 
             static constexpr auto get_tree_depth = []() -> u32 {
                 if constexpr (std::is_same<u_morton, u32>::value) {
@@ -110,8 +108,7 @@ namespace shamrock::tree::details {
                   lchild_id{*tree_struct.buf_lchild_id, device_handle, sycl::read_only},
                   rchild_flag{*tree_struct.buf_rchild_flag, device_handle, sycl::read_only},
                   lchild_flag{*tree_struct.buf_lchild_flag, device_handle, sycl::read_only},
-                  criterion_acc(crit, device_handle),
-                  criterion_tree_f_acc(crit, device_handle), walkers_range{walker_count},
+                  criterion_acc(crit, device_handle), walkers_range{walker_count},
                   leaf_offset(tree_struct.internal_cell_count),
                   one_cell_mode(tree_struct.one_cell_mode) {}
 
@@ -173,7 +170,7 @@ inline void shamrock::tree::details::
         stack_cursor++;
 
         bool cur_id_valid =
-            InteractCrit::criterion(current_node_id, criterion_tree_f_acc, int_values, criterion_acc);
+            InteractCrit::criterion(current_node_id, criterion_acc, int_values);
 
         if (cur_id_valid) {
 

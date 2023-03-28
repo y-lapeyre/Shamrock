@@ -314,38 +314,34 @@ class SPHTestInteractionCrit {
 
     class Access {
         public:
+
         sycl::accessor<vec, 1, sycl::access::mode::read> part_pos;
+        sycl::accessor<vec, 1, sycl::access::mode::read> tree_cell_coordrange_min;
+        sycl::accessor<vec, 1, sycl::access::mode::read> tree_cell_coordrange_max;
+
         flt Rpart;
         flt Rpart_pow2;
 
         Access(SPHTestInteractionCrit crit, sycl::handler &cgh)
-            : part_pos{crit.positions, cgh, sycl::read_only}, Rpart(crit.Rpart),Rpart_pow2(crit.Rpart*crit.Rpart) {}
-
-        class Values {
-            public:
-            vec xyz_a;
-            Values(Access acc, u32 index)
-                : xyz_a(acc.part_pos[index]) {}
-        };
-    };
-
-    class TreeFieldAccess {
-        public:
-        sycl::accessor<vec, 1, sycl::access::mode::read> tree_cell_coordrange_min;
-        sycl::accessor<vec, 1, sycl::access::mode::read> tree_cell_coordrange_max;
-
-        TreeFieldAccess(SPHTestInteractionCrit crit, sycl::handler &cgh)
-            : tree_cell_coordrange_min{*crit.tree.buf_pos_min_cell_flt, cgh, sycl::read_only},
+            : part_pos{crit.positions, cgh, sycl::read_only}, Rpart(crit.Rpart),Rpart_pow2(crit.Rpart*crit.Rpart),tree_cell_coordrange_min{*crit.tree.buf_pos_min_cell_flt, cgh, sycl::read_only},
                 tree_cell_coordrange_max{
                     *crit.tree.buf_pos_max_cell_flt, cgh, sycl::read_only} {}
+
+        class ObjectValues {
+            public:
+            vec xyz_a;
+            ObjectValues(Access acc, u32 index)
+                : xyz_a(acc.part_pos[index]) {}
+        };
+
     };
 
-    static bool
-    criterion(u32 node_index, TreeFieldAccess tree_acc, typename Access::Values current_values, Access int_accessors) {
-        vec cur_pos_min_cell_b = tree_acc.tree_cell_coordrange_min[node_index];
-        vec cur_pos_max_cell_b = tree_acc.tree_cell_coordrange_max[node_index];
+    inline static bool
+    criterion(u32 node_index, Access acc, typename Access::ObjectValues current_values) {
+        vec cur_pos_min_cell_b = acc.tree_cell_coordrange_min[node_index];
+        vec cur_pos_max_cell_b = acc.tree_cell_coordrange_max[node_index];
 
-        vec box_int_sz = {int_accessors.Rpart,int_accessors.Rpart,int_accessors.Rpart};
+        vec box_int_sz = {acc.Rpart,acc.Rpart,acc.Rpart};
 
         return 
             BBAA::cella_neigh_b(
@@ -448,7 +444,7 @@ void test_sph_iter_overhead(std::string dset_name){
 
                     using Criterion = SPHTestInteractionCrit<morton_mode,flt>;
                     using CriterionAcc = typename Criterion::Access;
-                    using CriterionVal = typename CriterionAcc::Values; 
+                    using CriterionVal = typename CriterionAcc::ObjectValues; 
 
                     using namespace shamrock::tree;
                     TreeStructureWalker walk = generate_walk<Recompute>(
@@ -731,37 +727,31 @@ f64 amr_walk_perf(f64 lambda_tilde,
             sycl::accessor<u64_3, 1, sycl::access::mode::read> cell_low_bound;
             sycl::accessor<u64_3, 1, sycl::access::mode::read> cell_high_bound;
 
+            sycl::accessor<u64_3, 1, sycl::access::mode::read> tree_cell_coordrange_min;
+            sycl::accessor<u64_3, 1, sycl::access::mode::read> tree_cell_coordrange_max;
+
             Access(InteractionCrit crit, sycl::handler &cgh)
                 : cell_low_bound{*crit.pdat.template get_field<u64_3>(0).get_buf(), cgh, sycl::read_only},
                     cell_high_bound{
-                        *crit.pdat.template get_field<u64_3>(1).get_buf(), cgh, sycl::read_only} {}
+                        *crit.pdat.template get_field<u64_3>(1).get_buf(), cgh, sycl::read_only},tree_cell_coordrange_min{*crit.tree.buf_pos_min_cell_flt, cgh, sycl::read_only},
+                    tree_cell_coordrange_max{
+                        *crit.tree.buf_pos_max_cell_flt, cgh, sycl::read_only} {}
 
-            class Values {
+            class ObjectValues {
                 public:
                 shammath::BBAA<u64_3> cell_bound;
-                Values(Access acc, u32 index)
+                ObjectValues(Access acc, u32 index)
                     : cell_bound(acc.cell_low_bound[index],
                         acc.cell_high_bound[index]) {}
             };
         };
 
-        class TreeFieldAccess {
-            public:
-            sycl::accessor<u64_3, 1, sycl::access::mode::read> tree_cell_coordrange_min;
-            sycl::accessor<u64_3, 1, sycl::access::mode::read> tree_cell_coordrange_max;
-
-            TreeFieldAccess(InteractionCrit crit, sycl::handler &cgh)
-                : tree_cell_coordrange_min{*crit.tree.buf_pos_min_cell_flt, cgh, sycl::read_only},
-                    tree_cell_coordrange_max{
-                        *crit.tree.buf_pos_max_cell_flt, cgh, sycl::read_only} {}
-        };
-
         static bool
-        criterion(u32 node_index, TreeFieldAccess tree_acc, typename Access::Values current_values, Access int_accessor) {
+        criterion(u32 node_index, Access acc, typename Access::ObjectValues current_values) {
 
             shammath::BBAA<u64_3> tree_cell_bound {
-                tree_acc.tree_cell_coordrange_min[node_index], 
-                tree_acc.tree_cell_coordrange_max[node_index]};
+                acc.tree_cell_coordrange_min[node_index], 
+                acc.tree_cell_coordrange_max[node_index]};
 
             shammath::BBAA<u64_3> intersect = tree_cell_bound.get_intersect(current_values.cell_bound);
 
@@ -787,7 +777,7 @@ f64 amr_walk_perf(f64 lambda_tilde,
 
     using Criterion = InteractionCrit;
     using CriterionAcc = typename Criterion::Access;
-    using CriterionVal = typename CriterionAcc::Values; 
+    using CriterionVal = typename CriterionAcc::ObjectValues; 
 
     using namespace shamrock::tree;
 
@@ -898,6 +888,19 @@ f64 amr_walk_perf(f64 lambda_tilde,
 }
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 template<class morton_mode, u32 reduc_lev>
 void test_amr_iter_overhead(std::string dset_name){
 
@@ -932,4 +935,345 @@ void test_amr_iter_overhead(std::string dset_name){
 
 TestStart(Benchmark, "shamrock_article1:amr_walk_perf", tree_walk_amr_paper_results_tree_perf_steps, 1){
     test_amr_iter_overhead<u32, 0>("uniform distrib no reduction");
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+template<class u_morton, class flt>
+class FmmTestInteractCrit {
+    using vec = sycl::vec<flt, 3>;
+    public:
+
+    RadixTree<u_morton, vec, 3> &tree;
+    sycl::buffer<vec> &positions;
+    u32 leaf_count;
+    
+    RadixTreeField<flt> & cell_lenghts;
+    RadixTreeField<vec> & cell_centers;
+
+    flt open_crit_sq;
+
+    class Access {
+        public:
+        sycl::accessor<vec, 1, sycl::access::mode::read> part_pos;
+
+        sycl::accessor<vec, 1, sycl::access::mode::read> tree_cell_coordrange_min;
+        sycl::accessor<vec, 1, sycl::access::mode::read> tree_cell_coordrange_max;
+
+        sycl::accessor<flt, 1, sycl::access::mode::read> c_lenght;
+        sycl::accessor<vec, 1, sycl::access::mode::read> c_center;
+
+        flt open_crit_sq;
+
+        Access(FmmTestInteractCrit crit, sycl::handler &cgh)
+            : part_pos{crit.positions, cgh, sycl::read_only},
+            tree_cell_coordrange_min{*crit.tree.buf_pos_min_cell_flt, cgh, sycl::read_only},
+                tree_cell_coordrange_max{
+                    *crit.tree.buf_pos_max_cell_flt, cgh, sycl::read_only} ,
+              c_lenght{*crit.cell_lenghts.radix_tree_field_buf, cgh, sycl::read_only},
+              c_center{*crit.cell_centers.radix_tree_field_buf, cgh, sycl::read_only},
+              open_crit_sq(crit.open_crit_sq) {}
+
+        class ObjectValues {
+            public:
+            flt l_cell_a;
+            vec sa;
+            ObjectValues(Access acc, u32 index)
+                : l_cell_a(acc.c_lenght[index]),sa(acc.c_center[index]) {}
+        };
+
+    };
+
+    inline static bool
+    criterion(u32 node_index, Access acc, typename Access::ObjectValues current_values) {
+        vec cur_pos_min_cell_b = acc.tree_cell_coordrange_min[node_index];
+        vec cur_pos_max_cell_b = acc.tree_cell_coordrange_max[node_index];
+
+        vec sb = acc.c_center[node_index];
+        vec r_fmm = sb-current_values.sa;
+        flt l_cell_b = acc.c_lenght[node_index];
+
+        flt opening_angle_sq = (current_values.l_cell_a + l_cell_b)*(current_values.l_cell_a + l_cell_b)/sycl::dot(r_fmm,r_fmm);
+
+        return (opening_angle_sq > acc.open_crit_sq);
+    };
+
+
+};
+
+
+
+
+
+
+
+template<class morton_mode, class flt, u32 reduc_lev>
+void test_fmm_nbody_iter_overhead(std::string dset_name, flt crit_theta){
+
+    sycl::queue & q = shamsys::instance::get_compute_queue();
+
+    //setup the particle distribution
+
+    using vec = sycl::vec<flt, 3>;
+
+    f64 Nmax_flt = get_Nmax();
+
+    u32 Nmax = 2U<<19U;
+
+    auto coord_range = get_test_coord_ranges<vec>();
+
+    std::vector<f64> Npart;
+    std::vector<f64> Nleaf;
+
+    std::vector<f64> avg_neigh;
+    std::vector<f64> var_neigh;
+
+    std::vector<f64> avg_excl_cells;
+    std::vector<f64> var_excl_cells;
+
+    std::vector<f64> times;
+
+
+    auto mix_seed = [](f64 seed) -> u32 {
+        f64 a = 16807;
+        f64 m = 2147483647;
+        seed = std::fmod((a * seed) , m);
+        return u32_max*(seed / m);
+    };
+
+    u32 test_per_n = 10;
+    u32 seed = 0x111;
+    for (f64 cnt = 1000; cnt < Nmax; cnt *= 1.1) {
+        for(u32 i = 0; i < 15; i++){
+            seed = mix_seed(seed);
+            u32 len_pos = cnt;
+
+
+            logger::debug_ln("TestTreePerf", 
+                shambase::format("dataset : {}, len={:e} seed={:10}",
+                                    dset_name,f32(len_pos)  ,seed)
+                );
+
+
+            auto pos =
+            shamalgs::random::mock_buffer_ptr<vec>(seed, len_pos, coord_range.lower, coord_range.upper);
+
+            
+
+
+            sycl::buffer<u32> neighbours(len_pos);
+            sycl::buffer<u32> excl_cells(len_pos);
+
+            RadixTree<morton_mode, vec, 3> rtree = RadixTree<morton_mode, vec, 3>(
+                shamsys::instance::get_compute_queue(),
+                {coord_range.lower, coord_range.upper},
+                pos,
+                cnt,
+                reduc_lev
+            );
+
+            rtree.compute_cell_ibounding_box(shamsys::instance::get_compute_queue());
+            rtree.convert_bounding_box(shamsys::instance::get_compute_queue());
+
+            RadixTreeField<flt> cell_lenghts;
+            RadixTreeField<vec> cell_centers;
+
+            cell_lenghts.nvar = 1;
+            cell_centers.nvar = 1;
+
+            auto & buf_cell_lenght  = cell_lenghts.radix_tree_field_buf;
+            auto & buf_cell_centers = cell_centers.radix_tree_field_buf;
+
+            buf_cell_centers = std::make_unique<sycl::buffer<vec>>(rtree.tree_struct.internal_cell_count + rtree.tree_reduced_morton_codes.tree_leaf_count);
+            buf_cell_lenght = std::make_unique<sycl::buffer<flt>>(rtree.tree_struct.internal_cell_count + rtree.tree_reduced_morton_codes.tree_leaf_count);
+
+            q.submit([&](sycl::handler &cgh) {
+
+
+                sycl::range<1> range_tree = sycl::range<1>{rtree.tree_reduced_morton_codes.tree_leaf_count + rtree.tree_struct.internal_cell_count};
+
+                auto pos_min_cell = sycl::accessor{*rtree.buf_pos_min_cell_flt,cgh,sycl::read_only};
+                auto pos_max_cell = sycl::accessor{*rtree.buf_pos_max_cell_flt,cgh,sycl::read_only};
+
+                auto c_centers = sycl::accessor{*buf_cell_centers,cgh,sycl::write_only,sycl::no_init};
+                auto c_lenght = sycl::accessor{*buf_cell_lenght,cgh,sycl::write_only,sycl::no_init};
+
+                cgh.parallel_for(range_tree, [=](sycl::item<1> item) {
+                    vec cur_pos_min_cell_a = pos_min_cell[item];
+                    vec cur_pos_max_cell_a = pos_max_cell[item];
+
+                    vec sa = (cur_pos_min_cell_a + cur_pos_max_cell_a)/2;
+
+                    vec dc_a = (cur_pos_max_cell_a - cur_pos_min_cell_a);
+
+                    flt l_cell_a = sycl::max(sycl::max(dc_a.x(),dc_a.y()),dc_a.z());
+
+                    c_centers[item] = sa;
+                    c_lenght[item] = l_cell_a;
+                });
+
+            });
+
+
+
+            auto benchmark = [&]() -> f64 {
+                Timer t;
+                
+                q.wait();
+                t.start();
+
+                using Criterion = FmmTestInteractCrit<morton_mode,flt>;
+                using CriterionAcc = typename Criterion::Access;
+                using CriterionVal = typename CriterionAcc::ObjectValues; 
+
+                using namespace shamrock::tree;
+                TreeStructureWalker walk = generate_walk<Recompute>(
+                    rtree.tree_struct, rtree.tree_reduced_morton_codes.tree_leaf_count, FmmTestInteractCrit<morton_mode,flt>{
+                            rtree,
+                            *pos, 
+                            rtree.tree_reduced_morton_codes.tree_leaf_count, 
+                            cell_lenghts,
+                            cell_centers,
+                            crit_theta*crit_theta
+                        }
+                );
+
+
+                q.submit([&](sycl::handler &cgh) {
+                    auto walker        = walk.get_access(cgh);
+                    auto leaf_iterator = rtree.get_leaf_access(cgh);
+
+                    sycl::accessor neigh_count {neighbours,cgh,sycl::write_only, sycl::no_init};
+                    sycl::accessor excl_count_acc {excl_cells,cgh,sycl::write_only, sycl::no_init};
+                    
+
+                    cgh.parallel_for(walker.get_sycl_range(), [=](sycl::item<1> item) {
+                        u32 sum_found = 0;
+                        u32 sum_excl = 0;
+
+                        CriterionVal int_values{walker.criterion(), static_cast<u32>(item.get_linear_id())};
+
+                        walker.for_each_node(
+                            item,int_values,
+                            [&](u32 /*node_id*/, u32 leaf_iterator_id) {
+                                leaf_iterator.iter_object_in_leaf(
+                                    leaf_iterator_id, [&](u32 obj_id) { 
+
+                                        sum_found += 1; 
+                                        
+                                    }
+                                );
+                            },
+                            [&](u32 node_id) {
+                                sum_excl += 1; 
+                            }
+                        );
+
+                        leaf_iterator.iter_object_in_leaf(
+                            item.get_linear_id(), [&](u32 obj_id) { 
+
+                                neigh_count[obj_id] = sum_found;
+                                excl_count_acc[obj_id] = sum_excl;
+                                
+                            }
+                        );
+
+                    });
+                    
+                });
+
+                q.wait();
+                t.end();
+
+                return t.nanosec * 1e-9;
+            };
+
+            f64 time = benchmark();
+
+            {
+                
+                f64 npart = len_pos;
+                f64 neigh_avg = 0;
+                f64 neigh_var = 0;
+                f64 excl_avg = 0;
+                f64 excl_var = 0;
+
+                {
+                    sycl::host_accessor acc{neighbours, sycl::read_only};
+                    sycl::host_accessor acc2{excl_cells, sycl::read_only};
+
+                    for(u32 i = 0; i < len_pos; i++){
+                        neigh_avg += acc[i];
+                        excl_avg += acc2[i];
+                    }
+                    neigh_avg /= len_pos;
+                    excl_avg /= len_pos;
+                    
+                    for(u32 i = 0; i < len_pos; i++){
+                        neigh_var += (acc[i]- neigh_avg)*(acc[i]- neigh_avg);
+                        excl_var += (acc2[i]- excl_avg)*(acc2[i]- excl_avg);
+                    }
+                    neigh_var /= len_pos;
+                    excl_var /= len_pos;
+                }
+
+                Npart.push_back(npart);
+                Nleaf.push_back(rtree.tree_reduced_morton_codes.tree_leaf_count);
+                avg_neigh.push_back(neigh_avg);
+                var_neigh.push_back(neigh_var);
+                avg_excl_cells.push_back(excl_avg);
+                var_excl_cells.push_back(excl_var);
+                times.push_back(time);
+                //rpart_vec.push_back(rpart);
+
+            }
+        }
+
+    }
+
+
+    auto & dat_test = shamtest::test_data().new_dataset(dset_name);
+
+    dat_test.add_data("Nobj", Npart);
+    dat_test.add_data("Nleaf", Nleaf);
+    dat_test.add_data("avg_neigh", avg_neigh);
+    dat_test.add_data("var_neigh", var_neigh);
+    dat_test.add_data("avg_excl_cells", avg_excl_cells);
+    dat_test.add_data("var_excl_cells", var_excl_cells);
+    dat_test.add_data("time", times);
+    //dat_test.add_data("rpart", rpart_vec);
+
+}
+
+
+TestStart(Benchmark, "shamrock_article1:fmm_walk_perf", tree_walk_fmm_paper_results_tree_perf_steps, 1){
+
+    test_fmm_nbody_iter_overhead<u32, f32, 6>("uniform distrib reduction level = 6 thetac = 1",1);
+    test_fmm_nbody_iter_overhead<u32, f32, 6>("uniform distrib reduction level = 6 thetac = 0.75",0.75);
+    test_fmm_nbody_iter_overhead<u32, f32, 6>("uniform distrib reduction level = 6 thetac = 0.5",0.5);
+    test_fmm_nbody_iter_overhead<u32, f32, 6>("uniform distrib reduction level = 6 thetac = 0.4",0.4);
+    test_fmm_nbody_iter_overhead<u32, f32, 6>("uniform distrib reduction level = 6 thetac = 0.3",0.3);
+
+    //test_fmm_nbody_iter_overhead<u32, f32, 3>("uniform distrib reduction level 3 thetac = 3e-1",0.3);
+    test_fmm_nbody_iter_overhead<u32, f32, 0>("uniform distrib no reduction thetac = 1",1);
+    test_fmm_nbody_iter_overhead<u32, f32, 0>("uniform distrib no reduction thetac = 0.75",0.75);
+    test_fmm_nbody_iter_overhead<u32, f32, 0>("uniform distrib no reduction thetac = 0.5",0.5);
+    test_fmm_nbody_iter_overhead<u32, f32, 0>("uniform distrib no reduction thetac = 0.4",0.4);
+    test_fmm_nbody_iter_overhead<u32, f32, 0>("uniform distrib no reduction thetac = 0.3",0.3);
 }
