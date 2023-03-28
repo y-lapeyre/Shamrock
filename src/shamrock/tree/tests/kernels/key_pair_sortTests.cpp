@@ -7,6 +7,7 @@
 // -------------------------------------------------------//
 
 #include "shamrock/legacy/utils/time_utils.hpp"
+#include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamsys/legacy/sycl_handler.hpp"
 #include "shamtest/shamtest.hpp"
@@ -48,7 +49,7 @@ template<class u_morton, SortImplType impl> void unit_test_key_pair(){
 
 
     for(u32 i = 0; i < size_test; i++){
-        shamtest::asserts().assert_bool("index [" +shamutils::format_printf("%d",i)+ "]",  unsorted[i]  == morton_list[i]);
+        shamtest::asserts().assert_bool("index [" +shambase::format_printf("%d",i)+ "]",  unsorted[i]  == morton_list[i]);
     }
 }
 

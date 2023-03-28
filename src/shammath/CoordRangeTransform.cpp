@@ -9,7 +9,7 @@
 #include "CoordRangeTransform.hpp"
 
 #include "shamsys/legacy/log.hpp"
-#include "shamutils/throwUtils.hpp"
+#include "shambase/exception.hpp"
 #include <stdexcept>
 
 namespace shammath {
@@ -23,7 +23,7 @@ namespace shammath {
         bool cmp_z = val.z() % divisor.z() == 0;
 
         if (!cmp_x) {
-            throw shamutils::throw_with_loc<std::invalid_argument>(
+            throw shambase::throw_with_loc<std::invalid_argument>(
                 "the divisor does not divide the value on component x\n"
                 "  val     = (" +
                     std::to_string(val.x()) + ", " + std::to_string(val.y()) + ", " +
@@ -34,7 +34,7 @@ namespace shammath {
         }
 
         if (!cmp_y) {
-            throw shamutils::throw_with_loc<std::invalid_argument>(
+            throw shambase::throw_with_loc<std::invalid_argument>(
                 "the divisor does not divide the value on component y\n"
                 "  val     = (" +
                     std::to_string(val.x()) + ", " + std::to_string(val.y()) + ", " +
@@ -45,7 +45,7 @@ namespace shammath {
         }
 
         if (!cmp_z) {
-            throw shamutils::throw_with_loc<std::invalid_argument>(
+            throw shambase::throw_with_loc<std::invalid_argument>(
                 "the divisor does not divide the value on component z\n"
                 "  val     = (" +
                     std::to_string(val.x()) + ", " + std::to_string(val.y()) + ", " +
@@ -86,6 +86,9 @@ template<class Ta, class Tb>
     )
         : source_coord_min(source_range.lower), dest_coord_min(dest_range.lower) {
 
+        source_range.check_throw_ranges();
+        dest_range.check_throw_ranges();
+
         mode = multiply;
 
         u64_3 source_delt = source_range.delt();
@@ -101,6 +104,9 @@ template<class Ta, class Tb>
         CoordRange<u64_3> source_range, CoordRange<f64_3> dest_range
     )
         : source_coord_min(source_range.lower), dest_coord_min(dest_range.lower) {
+
+        source_range.check_throw_ranges();
+        dest_range.check_throw_ranges();
 
         mode = multiply;
 
@@ -118,6 +124,9 @@ template<class Ta, class Tb>
     )
         : source_coord_min(source_range.lower), dest_coord_min(dest_range.lower) {
 
+        source_range.check_throw_ranges();
+        dest_range.check_throw_ranges();
+
         mode = multiply;
 
         u32_3 source_delt = source_range.delt();
@@ -133,6 +142,9 @@ template<class Ta, class Tb>
         CoordRange<u32_3> source_range, CoordRange<f64_3> dest_range
     )
         : source_coord_min(source_range.lower), dest_coord_min(dest_range.lower) {
+
+        source_range.check_throw_ranges();
+        dest_range.check_throw_ranges();
 
         mode = multiply;
 
@@ -150,6 +162,9 @@ template<class Ta, class Tb>
     )
         : source_coord_min(source_range.lower), dest_coord_min(dest_range.lower) {
 
+        source_range.check_throw_ranges();
+        dest_range.check_throw_ranges();
+
         mode = multiply;
 
         u16_3 source_delt = source_range.delt();
@@ -166,6 +181,9 @@ template<class Ta, class Tb>
     )
         : source_coord_min(source_range.lower), dest_coord_min(dest_range.lower) {
 
+        source_range.check_throw_ranges();
+        dest_range.check_throw_ranges();
+
         mode = multiply;
 
         u16_3 source_delt = source_range.delt();
@@ -181,6 +199,9 @@ template<class Ta, class Tb>
         CoordRange<u64_3> source_range, CoordRange<u64_3> dest_range
     )
         : source_coord_min(source_range.lower), dest_coord_min(dest_range.lower) {
+
+        source_range.check_throw_ranges();
+        dest_range.check_throw_ranges();
 
         u64_3 source_delt = source_range.delt();
         u64_3 dest_delt   = dest_range.delt();
@@ -204,7 +225,7 @@ template<class Ta, class Tb>
             }
 
         } else {
-            throw shamutils::throw_with_loc<std::invalid_argument>( "the range comparaison are not the same");
+            throw shambase::throw_with_loc<std::invalid_argument>( "the range comparaison are not the same");
         }
     }
 
@@ -213,6 +234,9 @@ template<class Ta, class Tb>
         CoordRange<u64_3> source_range, CoordRange<u32_3> dest_range
     )
         : source_coord_min(source_range.lower), dest_coord_min(dest_range.lower) {
+
+        source_range.check_throw_ranges();
+        dest_range.check_throw_ranges();
 
         u64_3 source_delt = source_range.delt();
         u32_3 dest_delt   = dest_range.delt();
@@ -236,7 +260,7 @@ template<class Ta, class Tb>
             }
 
         } else {
-            throw shamutils::throw_with_loc<std::invalid_argument>( "the range comparaison are not the same");
+            throw shambase::throw_with_loc<std::invalid_argument>( "the range comparaison are not the same");
         }
     }
 
@@ -245,6 +269,9 @@ template<class Ta, class Tb>
         CoordRange<u32_3> source_range, CoordRange<u16_3> dest_range
     )
         : source_coord_min(source_range.lower), dest_coord_min(dest_range.lower) {
+
+        source_range.check_throw_ranges();
+        dest_range.check_throw_ranges();
 
         u32_3 source_delt = source_range.delt();
         u16_3 dest_delt   = dest_range.delt();
@@ -268,7 +295,7 @@ template<class Ta, class Tb>
             }
 
         } else {
-            throw shamutils::throw_with_loc<std::invalid_argument>( "the range comparaison are not the same");
+            throw shambase::throw_with_loc<std::invalid_argument>( "the range comparaison are not the same");
         }
     }
 
@@ -277,6 +304,9 @@ template<class Ta, class Tb>
         CoordRange<u32_3> source_range, CoordRange<u64_3> dest_range
     )
         : source_coord_min(source_range.lower), dest_coord_min(dest_range.lower) {
+
+        source_range.check_throw_ranges();
+        dest_range.check_throw_ranges();
 
         u32_3 source_delt = source_range.delt();
         u64_3 dest_delt   = dest_range.delt();
@@ -300,7 +330,7 @@ template<class Ta, class Tb>
             }
 
         } else {
-            throw shamutils::throw_with_loc<std::invalid_argument>( "the range comparaison are not the same");
+            throw shambase::throw_with_loc<std::invalid_argument>( "the range comparaison are not the same");
         }
     }
     
@@ -310,6 +340,9 @@ template<class Ta, class Tb>
         CoordRange<u16_3> source_range, CoordRange<u64_3> dest_range
     )
         : source_coord_min(source_range.lower), dest_coord_min(dest_range.lower) {
+
+        source_range.check_throw_ranges();
+        dest_range.check_throw_ranges();
 
         u16_3 source_delt = source_range.delt();
         u64_3 dest_delt   = dest_range.delt();
@@ -333,7 +366,7 @@ template<class Ta, class Tb>
             }
 
         } else {
-            throw shamutils::throw_with_loc<std::invalid_argument>( "the range comparaison are not the same");
+            throw shambase::throw_with_loc<std::invalid_argument>( "the range comparaison are not the same");
         }
     }
 
@@ -342,6 +375,9 @@ template<class Ta, class Tb>
         CoordRange<u16_3> source_range, CoordRange<u32_3> dest_range
     )
         : source_coord_min(source_range.lower), dest_coord_min(dest_range.lower) {
+            
+        source_range.check_throw_ranges();
+        dest_range.check_throw_ranges();
 
         u16_3 source_delt = source_range.delt();
         u32_3 dest_delt   = dest_range.delt();
@@ -365,7 +401,7 @@ template<class Ta, class Tb>
             }
 
         } else {
-            throw shamutils::throw_with_loc<std::invalid_argument>( "the range comparaison are not the same");
+            throw shambase::throw_with_loc<std::invalid_argument>( "the range comparaison are not the same");
         }
     }
 
@@ -377,7 +413,7 @@ template<class Ta, class Tb>
     )
         : source_coord_min(source_range.lower), dest_coord_min(dest_range.lower) {
 
-        throw shamutils::throw_with_loc<std::invalid_argument>( "this coordinate conversion mode is not implemented"
+        throw shambase::throw_with_loc<std::invalid_argument>( "this coordinate conversion mode is not implemented"
         );
     }
 
@@ -387,7 +423,7 @@ template<class Ta, class Tb>
     )
         : source_coord_min(source_range.lower), dest_coord_min(dest_range.lower) {
 
-        throw shamutils::throw_with_loc<std::invalid_argument>( "this coordinate conversion mode is not implemented"
+        throw shambase::throw_with_loc<std::invalid_argument>( "this coordinate conversion mode is not implemented"
         );
     }
 

@@ -22,6 +22,7 @@
 #include "aliases.hpp"
 
 #include <vector>
+#include <sycl/sycl.hpp>
 
 namespace shamsys::instance {
 

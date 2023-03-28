@@ -6,3 +6,15 @@
 //
 // -------------------------------------------------------//
 
+#pragma once
+
+#include "aliases.hpp"
+
+namespace shamtest::details {
+    struct DataNode {
+        std::string name;
+        std::vector<f64> data;
+
+        std::string serialize();
+    };
+} // namespace shamtest::details

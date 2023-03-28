@@ -68,23 +68,23 @@ class SimulationDomain {public:
 
     inline void check_boundary(){
         if (boundary_type == PeriodicShearing) {
-            throw shamutils::throw_with_loc<std::invalid_argument>("[SimulationDomain] Boundary CD : Shearing periodic mode not implemented");
+            throw shambase::throw_with_loc<std::invalid_argument>("[SimulationDomain] Boundary CD : Shearing periodic mode not implemented");
         }
 
         if (boundary_type == Fixed) {
-            throw shamutils::throw_with_loc<std::invalid_argument>("[SimulationDomain] Boundary CD : Dirichelt mode not implemented");
+            throw shambase::throw_with_loc<std::invalid_argument>("[SimulationDomain] Boundary CD : Dirichelt mode not implemented");
         }
 
         if (boundary_type == Ghost) {
-            throw shamutils::throw_with_loc<std::invalid_argument>("[SimulationDomain] Boundary CD : Ghost mode not implemented");
+            throw shambase::throw_with_loc<std::invalid_argument>("[SimulationDomain] Boundary CD : Ghost mode not implemented");
         }
 
         if (boundary_type == FixedGradient) {
-            throw shamutils::throw_with_loc<std::invalid_argument>("[SimulationDomain] Boundary CD : FixedGradient mode not implemented");
+            throw shambase::throw_with_loc<std::invalid_argument>("[SimulationDomain] Boundary CD : FixedGradient mode not implemented");
         }
 
         if (boundary_type == AntiPeriodic) {
-            throw shamutils::throw_with_loc<std::invalid_argument>("[SimulationDomain] Boundary CD : AntiPeriodic mode not implemented");
+            throw shambase::throw_with_loc<std::invalid_argument>("[SimulationDomain] Boundary CD : AntiPeriodic mode not implemented");
         }
     }
 
@@ -101,7 +101,7 @@ class SimulationDomain {public:
         }else if (boundary_type == Free){
             pvec = vec{0,0,0};
         }else{
-            throw shamutils::throw_with_loc<std::invalid_argument>("[SimulationDomain] Can not set box size with free boundary conditions");
+            throw shambase::throw_with_loc<std::invalid_argument>("[SimulationDomain] Can not set box size with free boundary conditions");
         }
 
         return pvec;
@@ -109,7 +109,7 @@ class SimulationDomain {public:
 
     inline void set_periodic_search_range(u32_3 min, u32_3 max){
         if(!(has_outdomain_object())){
-            throw shamutils::throw_with_loc<std::invalid_argument>("[SimulationDomain] Can not set periodic search range without periodic bc");
+            throw shambase::throw_with_loc<std::invalid_argument>("[SimulationDomain] Can not set periodic search range without periodic bc");
         }
         periodic_search_min_vec = min;
         periodic_search_max_vec = max;

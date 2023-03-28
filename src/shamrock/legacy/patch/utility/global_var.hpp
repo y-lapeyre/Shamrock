@@ -50,7 +50,7 @@ class GlobalVariable{
 
     inline T get_val(){
         if(!is_reduced){
-            throw shamutils::throw_with_loc<std::runtime_error>("Global value has not been reduced");
+            throw shambase::throw_with_loc<std::runtime_error>("Global value has not been reduced");
         }
         return final_val;
     }

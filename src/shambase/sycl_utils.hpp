@@ -8,12 +8,7 @@
 
 #pragma once
 
-#include "shamutils/SourceLocation.hpp"
-
-namespace shamutils{
-    template<class ExcptTypes>
-    inline ExcptTypes throw_with_loc(std::string message, SourceLocation loc = SourceLocation{}){
-        return ExcptTypes(message + loc.format_multiline());
-    }
-}
+#include "sycl_utils/sycl_utilities.hpp"
+#include "sycl_utils/vectorProperties.hpp"
+#include "sycl_utils/vec_equals.hpp"
 

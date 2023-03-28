@@ -28,7 +28,7 @@
 #include "shamrock/patch/PatchDataLayout.hpp"
 #include "shamsys/legacy/mpi_handler.hpp"
 #include "shamrock/legacy/utils/geometry_utils.hpp"
-#include "shamutils/stringUtils.hpp"
+#include "shambase/string.hpp"
 
 //TODO use range based loop and emplace_back instead 
 
@@ -100,7 +100,7 @@ void split_patchdata(
     const std::array<shamrock::patch::Patch, 8> patches,
     std::array<std::reference_wrapper<shamrock::patch::PatchData>,8> pdats){
 
-    using ptype = typename shamutils::sycl_utils::VectorProperties<Vectype>::component_type;
+    using ptype = typename shambase::sycl_utils::VectorProperties<Vectype>::component_type;
 
     auto [bmin_p0, bmax_p0] = sim_box.partch_coord_to_domain<Vectype>(patches[0]);
     auto [bmin_p1, bmax_p1] = sim_box.partch_coord_to_domain<Vectype>(patches[1]);
@@ -229,28 +229,28 @@ void SchedulerPatchData::merge_patchdata(u64 new_key, u64 old_key0, u64 old_key1
     auto search7 = owned_data.find(old_key7);
 
     if(search0 == owned_data.end()){
-        throw shamutils::throw_with_loc<std::runtime_error>(shamutils::format_printf("patchdata for key=%d was not owned by the node",old_key0));
+        throw shambase::throw_with_loc<std::runtime_error>(shambase::format_printf("patchdata for key=%d was not owned by the node",old_key0));
     }
     if(search1 == owned_data.end()){
-        throw shamutils::throw_with_loc<std::runtime_error>(shamutils::format_printf("patchdata for key=%d was not owned by the node",old_key1));
+        throw shambase::throw_with_loc<std::runtime_error>(shambase::format_printf("patchdata for key=%d was not owned by the node",old_key1));
     }
     if(search2 == owned_data.end()){
-        throw shamutils::throw_with_loc<std::runtime_error>(shamutils::format_printf("patchdata for key=%d was not owned by the node",old_key2));
+        throw shambase::throw_with_loc<std::runtime_error>(shambase::format_printf("patchdata for key=%d was not owned by the node",old_key2));
     }
     if(search3 == owned_data.end()){
-        throw shamutils::throw_with_loc<std::runtime_error>(shamutils::format_printf("patchdata for key=%d was not owned by the node",old_key3));
+        throw shambase::throw_with_loc<std::runtime_error>(shambase::format_printf("patchdata for key=%d was not owned by the node",old_key3));
     }
     if(search4 == owned_data.end()){
-        throw shamutils::throw_with_loc<std::runtime_error>(shamutils::format_printf("patchdata for key=%d was not owned by the node",old_key4));
+        throw shambase::throw_with_loc<std::runtime_error>(shambase::format_printf("patchdata for key=%d was not owned by the node",old_key4));
     }
     if(search5 == owned_data.end()){
-        throw shamutils::throw_with_loc<std::runtime_error>(shamutils::format_printf("patchdata for key=%d was not owned by the node",old_key5));
+        throw shambase::throw_with_loc<std::runtime_error>(shambase::format_printf("patchdata for key=%d was not owned by the node",old_key5));
     }
     if(search6 == owned_data.end()){
-        throw shamutils::throw_with_loc<std::runtime_error>(shamutils::format_printf("patchdata for key=%d was not owned by the node",old_key6));
+        throw shambase::throw_with_loc<std::runtime_error>(shambase::format_printf("patchdata for key=%d was not owned by the node",old_key6));
     }
     if(search7 == owned_data.end()){
-        throw shamutils::throw_with_loc<std::runtime_error>(shamutils::format_printf("patchdata for key=%d was not owned by the node",old_key7));
+        throw shambase::throw_with_loc<std::runtime_error>(shambase::format_printf("patchdata for key=%d was not owned by the node",old_key7));
     }
 
 

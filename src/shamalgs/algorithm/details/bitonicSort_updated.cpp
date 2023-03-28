@@ -8,7 +8,7 @@
 
 #include "bitonicSort.hpp"
 
-#include "shamalgs/intManip.hpp"
+#include "shambase/integer.hpp"
 
 // modified from http://www.bealto.com/gpu-sorting.html
 
@@ -253,7 +253,7 @@ namespace shamalgs::algorithm::details {
         sycl::queue &q, sycl::buffer<Tkey> &buf_key, sycl::buffer<Tval> &buf_values, u32 len
     ) {
 
-        if (!is_pow_of_two(len)) {
+        if (!shambase::is_pow_of_two(len)) {
             throw std::invalid_argument(
                 "this algorithm can only be used with lenght that are powers of two"
             );
@@ -395,6 +395,22 @@ namespace shamalgs::algorithm::details {
     );
 
     template void sort_by_key_bitonic_updated<u64, u32, 16>(
+        sycl::queue &q, sycl::buffer<u64> &buf_key, sycl::buffer<u32> &buf_values, u32 len
+    );
+
+    template void sort_by_key_bitonic_updated<u32, u32, 8>(
+        sycl::queue &q, sycl::buffer<u32> &buf_key, sycl::buffer<u32> &buf_values, u32 len
+    );
+
+    template void sort_by_key_bitonic_updated<u64, u32, 8>(
+        sycl::queue &q, sycl::buffer<u64> &buf_key, sycl::buffer<u32> &buf_values, u32 len
+    );
+
+    template void sort_by_key_bitonic_updated<u32, u32, 32>(
+        sycl::queue &q, sycl::buffer<u32> &buf_key, sycl::buffer<u32> &buf_values, u32 len
+    );
+
+    template void sort_by_key_bitonic_updated<u64, u32, 32>(
         sycl::queue &q, sycl::buffer<u64> &buf_key, sycl::buffer<u32> &buf_values, u32 len
     );
 

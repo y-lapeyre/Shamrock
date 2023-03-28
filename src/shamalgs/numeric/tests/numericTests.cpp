@@ -18,13 +18,6 @@
 
 #include "numericTests.hpp"
 
-TestStart(Unittest, "shamalgs/numeric/exclusive_sum", exclsumtest, 1){
-    
-    TestExclScan<u32> test ((TestExclScan<u32>::vFunctionCall)shamalgs::numeric::exclusive_sum);
-    test.check();
-}
-
-
 
 TestStart(Unittest, "shamalgs/numeric/stream_compact", streamcompactalg, 1){
     

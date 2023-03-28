@@ -8,13 +8,10 @@
 
 #pragma once
 
-#include "aliases.hpp"
+#include "exception.hpp"
 
-namespace shamalgs {
-
-    template<class T>
-    bool is_pow_of_two(T v){
-        return v && !(v & (v - 1));
-    }
-
-}
+/**
+ * @brief namespace containing basic utilities for the shamrock code base
+ * 
+ */
+namespace shambase {}

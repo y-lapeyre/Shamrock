@@ -31,9 +31,9 @@ struct TestSortByKey {
 
         sycl::queue & q = shamsys::instance::get_compute_queue();
 
-        u32 len = 1U << 16U;
+        u32 len = 1U << 8U;
         
-        sycl::buffer<u32> buf_key = shamalgs::random::mock_buffer<u32>(0x111, len, 0,1U << 31U);
+        sycl::buffer<u32> buf_key = shamalgs::random::mock_buffer<u32>(0x111, len, 0,1U << 12U);
         std::vector<u32> key_before_sort = shamalgs::memory::buf_to_vec(buf_key, len);
 
         sycl::buffer<u32> buf_vals = shamalgs::algorithm::gen_buffer_index(q, len);
@@ -73,7 +73,54 @@ struct TestSortByKey {
         fct(q, buf_key, buf_vals, len);
         q.wait();t.end();
 
-        return len/(t.nanosec*1e-9);
+        return (t.nanosec*1e-9);
+    }
+
+    f64 bench_one_avg(u32 len){
+        f64 sum = 0;
+
+        f64 cnt = 1;
+
+        if(len < 2e6){
+            cnt = 4;
+        }else if(len < 1e5){
+            cnt = 10;
+        }else if(len < 1e4){
+            cnt = 100;
+        }
+
+
+        for(u32 i = 0; i < cnt; i++){
+            sum += benchmark_one(len);
+        }
+
+        return sum / cnt;
+    }
+
+    struct BenchRes{
+        std::vector<f64> sizes;
+        std::vector<f64> times;
+    };
+
+    BenchRes benchmark(){
+        BenchRes ret;
+        
+        logger::info_ln("TestSortByKey","testing :",__PRETTY_FUNCTION__);
+
+        constexpr u32 lim_bench = 1.5e8;
+        for(f64 i = 16; i < lim_bench; i*=2){
+            ret.sizes.push_back(i);
+        }
+
+
+
+
+        for(const f64 & sz : ret.sizes){
+            logger::debug_ln("ShamrockTest","N=",sz);
+            ret.times.push_back(bench_one_avg(sz));
+        }
+
+        return ret;
     }
 };
 

@@ -25,7 +25,7 @@ parser.add_argument("--cxxcompiler", action='store', help="select the compiler")
 parser.add_argument("--compiler", help="id of the compiler")
 parser.add_argument("--profile", help="select the compilation profile")
 
-parser.add_argument("--cppflags", help="c++ compilation flags")
+parser.add_argument("--cxxflags", help="c++ compilation flags")
 parser.add_argument("--cmakeargs", help="cmake configuration flags")
 
 
@@ -146,9 +146,22 @@ cpp_flags = ""
 
 hipsyclconfigfile = "--hipsycl-config-file="+abs_compiler_root_dir+"/etc/hipSYCL/syclcc.json"
 
+
+#-Xsycl-target-backend --cuda-gpu-arch=sm_86
+
 profile_map = {
     "dpcpp" : {
         "cuda" : "-fsycl -fsycl-targets=nvptx64-nvidia-cuda",
+        "cuda_sm86" : "-fsycl -fsycl-targets=nvidia_gpu_sm_86",
+        "cuda_sm80" : "-fsycl -fsycl-targets=nvidia_gpu_sm_80",
+        "cuda_sm75" : "-fsycl -fsycl-targets=nvidia_gpu_sm_75",
+        "cuda_sm72" : "-fsycl -fsycl-targets=nvidia_gpu_sm_72",
+        "cuda_sm70" : "-fsycl -fsycl-targets=nvidia_gpu_sm_70",
+        "cuda_sm62" : "-fsycl -fsycl-targets=nvidia_gpu_sm_62",
+        "cuda_sm61" : "-fsycl -fsycl-targets=nvidia_gpu_sm_61",
+        "cuda_sm60" : "-fsycl -fsycl-targets=nvidia_gpu_sm_60",
+        "cuda_sm53" : "-fsycl -fsycl-targets=nvidia_gpu_sm_53",
+        "cuda-profiling" : "-fsycl -fsycl-targets=nvptx64-nvidia-cuda -g",
         "cuda-no-rdc" : "-fsycl -fno-sycl-rdc -fsycl-targets=nvptx64-nvidia-cuda",
         "cuda-index32bit" : "-fsycl -fsycl-targets=nvptx64-nvidia-cuda -fsycl-id-queries-fit-in-int"
     },
@@ -157,6 +170,8 @@ profile_map = {
         "omp_sanitizer" : "-fsanitize=address --hipsycl-cpu-cxx=g++ --hipsycl-targets='omp' " + hipsyclconfigfile,
         "omp_coverage" : "-fprofile-instr-generate -fcoverage-mapping --hipsycl-cpu-cxx=g++ --hipsycl-targets='omp' " + hipsyclconfigfile,
         "generic" : "--hipsycl-targets=generic "+ hipsyclconfigfile,
+        "cuda-nvcxx" : "--hipsycl-targets='cuda-nvcxx' "+ hipsyclconfigfile,
+        "cuda-sm70" : "--hipsycl-targets='cuda:sm_70' "+ hipsyclconfigfile,
 
         #if you dare trying to develop with this profile
         "omp_insanity" : "--hipsycl-cpu-cxx=g++ --hipsycl-targets='omp' -Wall -Wextra -Werror " + hipsyclconfigfile
@@ -175,10 +190,10 @@ else:
 
 
 
-if args.cppflags:
+if args.cxxflags:
     if not (cpp_flags == ""):
         cpp_flags += " "
-    cpp_flags += args.cppflags
+    cpp_flags += args.cxxflags
 
 if args.cmakeargs:
     cmake_cmd += " " + args.cmakeargs.replace("\"","")

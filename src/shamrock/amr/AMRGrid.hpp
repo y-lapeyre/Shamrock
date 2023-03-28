@@ -117,8 +117,8 @@ namespace shamrock::amr {
             return std::move(ret);
         }
 
-        template<class UserAcc, class Fct>
-        inline scheduler::DistributedData<OptIndexList> gen_refine_list(Fct &&lambd) {
+        template<class UserAcc, class Fct, class ... T>
+        inline scheduler::DistributedData<OptIndexList> gen_refine_list(Fct &&lambd, T &&...args) {
             using namespace shamrock::patch;
 
             return gen_refinelists_native([&](u64 id_patch,
@@ -128,7 +128,7 @@ namespace shamrock::amr {
                 shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
                     sycl::accessor refine_acc{refine_flags, cgh, sycl::write_only, sycl::no_init};
 
-                    UserAcc uacc(cgh, id_patch, p, pdat);
+                    UserAcc uacc(cgh, id_patch, p, pdat,args...);
 
                     cgh.parallel_for(sycl::range<1>(pdat.get_obj_cnt()), [=](sycl::item<1> gid) {
                         refine_acc[gid] = lambd(gid.get_linear_id(), uacc);
@@ -138,7 +138,15 @@ namespace shamrock::amr {
         }
 
 
+        inline u64 get_process_refine_count(scheduler::DistributedData<OptIndexList> & splits){
+            u64 acc = 0;
 
+            splits.for_each([&acc](u64 id, OptIndexList & idx_list){
+                acc += idx_list.count;
+            });
+
+            return acc;
+        }
 
 
 
@@ -164,7 +172,7 @@ namespace shamrock::amr {
                 MortonBuilder::build(
                     shamsys::instance::get_compute_queue(),
                     sched.get_sim_box().template partch_coord_to_domain<Tcoord>(cur_p),
-                    pdat.get_field<Tcoord>(0).get_buf(),
+                    *pdat.get_field<Tcoord>(0).get_buf(),
                     pdat.get_obj_cnt(),
                     out_buf_morton,
                     out_buf_particle_index_map
@@ -271,6 +279,8 @@ namespace shamrock::amr {
 
             using namespace patch;
 
+            u64 sum_cell_count = 0;
+
             sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
                 sycl::queue &q = shamsys::instance::get_compute_queue();
 
@@ -332,7 +342,13 @@ namespace shamrock::amr {
                         );
                     });
                 }
+
+                sum_cell_count += pdat.get_obj_cnt();
             });
+
+            logger::info_ln("AMRGrid", "process cell count =",sum_cell_count);
+
+
         }
 
 

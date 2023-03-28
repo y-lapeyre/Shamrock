@@ -21,7 +21,7 @@
 
 #include "aliases.hpp"
 
-
+#include "shambase/sycl.hpp"
 
 /**
  * @brief namespace to store algorithms implemented by shamalgs
@@ -122,5 +122,8 @@ namespace shamalgs::algorithm {
      * @return sycl::buffer<u32> the returned buffer
      */
     sycl::buffer<u32> gen_buffer_index(sycl::queue & q , u32 len);
+
+
+    
 
 }

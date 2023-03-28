@@ -65,7 +65,7 @@ inline std::string nanosec_to_time_str(double nanosec) {
         sec_int /= 1000;
     }
 
-    return shamutils::format_printf("%4.2f", sec_int) + " " + unit;
+    return shambase::format_printf("%4.2f", sec_int) + " " + unit;
 } 
 
 

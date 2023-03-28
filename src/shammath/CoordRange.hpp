@@ -9,20 +9,38 @@
 #pragma once
 
 #include "aliases.hpp"
-#include "intervals.hpp"
+#include "shambase/SourceLocation.hpp"
+#include "shambase/sycl_utils/sycl_utilities.hpp"
+#include "shambase/sycl_utils/vectorProperties.hpp"
+#include "shambase/vectors.hpp"
 
 #include <limits>
 
-namespace shammath{
+namespace shammath {
 
-    template <class T> struct CoordRange {
+    template<class T>
+    struct CoordRange {
+
+
+        using T_prop = shambase::sycl_utils::VectorProperties<T>;
+
         T lower;
         T upper;
 
+        inline CoordRange() = default;
+
+        inline CoordRange(T lower, T upper) : lower(lower), upper(upper){};
+
+        inline CoordRange(std::tuple<T, T> range)
+            : lower(std::get<0>(range)), upper(std::get<1>(range)) {}
+
+        inline CoordRange(std::pair<T, T> range)
+            : lower(std::get<0>(range)), upper(std::get<1>(range)) {}
+
         inline T delt() const { return upper - lower; }
 
-        inline void expand_center(T tol){
-            T center = (lower + upper) / 2;
+        inline void expand_center(T tol) {
+            T center   = (lower + upper) / 2;
             T cur_delt = upper - lower;
             cur_delt /= 2;
             cur_delt *= tol;
@@ -30,11 +48,19 @@ namespace shammath{
             upper = center + cur_delt;
         }
 
+        inline typename T_prop::component_type get_volume(){
+            return shambase::product_accumulate(upper - lower);
+        }
+
         static CoordRange max_range();
 
+        void check_throw_ranges(SourceLocation loc = SourceLocation{});
     };
 
-    template <> inline CoordRange<f32_3> CoordRange<f32_3>::max_range() {
+
+
+    template<>
+    inline CoordRange<f32_3> CoordRange<f32_3>::max_range() {
 
         CoordRange<f32_3> ret;
 
@@ -51,7 +77,8 @@ namespace shammath{
         return ret;
     }
 
-    template <> inline CoordRange<f64_3> CoordRange<f64_3>::max_range() {
+    template<>
+    inline CoordRange<f64_3> CoordRange<f64_3>::max_range() {
 
         CoordRange<f64_3> ret;
 
@@ -68,8 +95,8 @@ namespace shammath{
         return ret;
     }
 
-
-    template <> inline CoordRange<u32_3> CoordRange<u32_3>::max_range() {
+    template<>
+    inline CoordRange<u32_3> CoordRange<u32_3>::max_range() {
 
         CoordRange<u32_3> ret;
 
@@ -86,7 +113,8 @@ namespace shammath{
         return ret;
     }
 
-    template <> inline CoordRange<u64_3> CoordRange<u64_3>::max_range() {
+    template<>
+    inline CoordRange<u64_3> CoordRange<u64_3>::max_range() {
 
         CoordRange<u64_3> ret;
 
@@ -103,4 +131,4 @@ namespace shammath{
         return ret;
     }
 
-}
+} // namespace shammath

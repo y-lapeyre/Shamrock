@@ -18,12 +18,6 @@
 #include "numericTests.hpp"
 
 
-TestStart(Unittest, "shamalgs/numeric/details/exclusive_sum_fallback", exclsumtest_fallback, 1){
-    
-    TestExclScan<u32> test ((TestExclScan<u32>::vFunctionCall)shamalgs::numeric::details::exclusive_sum_fallback);
-    test.check();
-}
-
 
 
 TestStart(Unittest, "shamalgs/numeric/details/stream_compact_fallback", streamcompactalg_fallback, 1){

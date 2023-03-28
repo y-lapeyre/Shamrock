@@ -14,3 +14,5 @@ PUBLIC
     ${HeadersTest}
 )
 endif()
+
+add_subdirectory(details)

@@ -8,6 +8,9 @@
 
 #include "numeric.hpp"
 #include "details/numericFallback.hpp"
+#include "shamalgs/numeric/details/exclusiveScanAtomic.hpp"
+#include "shamalgs/numeric/details/exclusiveScanGPUGems39.hpp"
+#include "shamalgs/numeric/details/scanDecoupledLookback.hpp"
 #include "shamalgs/numeric/details/streamCompactExclScan.hpp"
 
 namespace shamalgs::numeric {
@@ -23,11 +26,30 @@ namespace shamalgs::numeric {
     }
 
 
+    
 
 
+
+
+
+    template<class T>
+    void exclusive_sum_in_place(sycl::queue &q, sycl::buffer<T> &buf1, u32 len){
+        buf1 = details::exclusive_sum_atomic_decoupled_v5<T, 256>(q, buf1, len);
+    }
+
+    template<class T>
+    void inclusive_sum_in_place(sycl::queue &q, sycl::buffer<T> &buf1, u32 len){
+        buf1 = details::inclusive_sum_fallback(q, buf1, len);
+    }
+
+
+    
 
     template sycl::buffer<u32> exclusive_sum(sycl::queue &q, sycl::buffer<u32> &buf1, u32 len);
     template sycl::buffer<u32> inclusive_sum(sycl::queue &q, sycl::buffer<u32> &buf1, u32 len);
+
+    template void exclusive_sum_in_place(sycl::queue &q, sycl::buffer<u32> &buf1, u32 len);
+    template void inclusive_sum_in_place(sycl::queue &q, sycl::buffer<u32> &buf1, u32 len);
 
 
 

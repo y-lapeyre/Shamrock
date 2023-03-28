@@ -9,6 +9,9 @@
 #pragma once
 
 #include "aliases.hpp"
+#include "shambase/string.hpp"
+#include "shambase/sycl.hpp"
+#include "shamsys/legacy/log.hpp"
 
 namespace shamalgs::memory {
 
@@ -36,8 +39,61 @@ namespace shamalgs::memory {
      * @param buf 
      */
     template<class T> inline void move_buffer_on_queue(sycl::queue & q, sycl::buffer<T> & buf){
+        sycl::buffer<T> tmp(1);
         q.submit([&](sycl::handler & cgh){
-            cgh.require(sycl::accessor{buf, cgh, sycl::read_write});
+            sycl::accessor a {buf, cgh, sycl::read_write};
+            sycl::accessor b {tmp, cgh, sycl::write_only, sycl::no_init};
+
+            cgh.single_task([=](){
+                b[0] = a[0];
+            });
         });
+    }
+
+
+
+    template<class T> inline void buf_fill(sycl::queue & q,sycl::buffer<T> & buf, T value){
+        q.submit([=, &buf](sycl::handler & cgh){
+            sycl::accessor acc {buf, cgh, sycl::write_only};
+            cgh.fill(acc, value);
+        });
+    }
+
+    template<class T> inline void buf_fill_discard(sycl::queue & q,sycl::buffer<T> & buf, T value){
+        q.submit([=, &buf](sycl::handler & cgh){
+            sycl::accessor acc {buf, cgh, sycl::write_only, sycl::no_init};
+            cgh.fill(acc, value);
+        });
+    }
+
+
+    template<class T,typename... Tformat> 
+    inline void print_buf(
+        sycl::buffer<T> & buf,
+        u32 len, 
+        u32 column_count,
+        fmt::format_string<Tformat...> fmt
+    ){
+
+        sycl::host_accessor acc {buf, sycl::read_only};
+
+        std::string accum;
+
+        for(u32 i = 0; i < len; i++){
+
+            if(i%column_count == 0){
+                if(i == 0){
+                    accum += shambase::format("{:8} : ", i);
+                }else{
+                    accum += shambase::format("\n{:8} : ", i);
+                }
+            }
+
+            accum += shambase::format(fmt, acc[i]);
+
+        }
+
+        logger::raw_ln(accum);
+
     }
 }

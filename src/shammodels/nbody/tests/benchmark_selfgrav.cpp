@@ -97,7 +97,7 @@ std::tuple<f64,f64> benchmark_selfgrav(f32 dr, u32 npatch){
 
 
     if(sched.patch_list.global.size() != npatch){
-        throw ShamrockSyclException("Wrong patch count" + shamutils::format_printf("%d, wanted %d",sched.patch_list.global.size(),npatch));
+        throw ShamrockSyclException("Wrong patch count" + shambase::format_printf("%d, wanted %d",sched.patch_list.global.size(),npatch));
     }
 
     

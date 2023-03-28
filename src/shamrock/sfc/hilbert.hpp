@@ -27,6 +27,7 @@
 
 #include "aliases.hpp"
 #include "bmi.hpp"
+#include "shambase/sycl.hpp"
 
 // modified from :
 // Programming the Hilbert curve

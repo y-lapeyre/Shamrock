@@ -13,6 +13,7 @@
 
 #include <memory>
 #include <vector>
+#include "shambase/sycl.hpp"
 
 
 template<class u_morton>
@@ -23,7 +24,7 @@ void reduction_alg(
     std::unique_ptr<sycl::buffer<u_morton>> & buf_morton,
     u32 reduction_level,
     //out
-    std::vector<u32> & reduc_index_map,
+    std::unique_ptr<sycl::buffer<u32>> &buf_reduc_index_map,
     u32 & morton_leaf_count);
 
 template<class u_morton>

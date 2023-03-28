@@ -10,6 +10,7 @@
 #include "shamalgs/algorithm/algorithm.hpp"
 #include "shamalgs/random/random.hpp"
 #include "shamrock/legacy/utils/sycl_vector_utils.hpp"
+#include "shamsys/NodeInstance.hpp"
 #include <memory>
 
 template<class T> class Kernel_Extract_element;
@@ -74,9 +75,9 @@ template <class T> bool PatchDataField<T>::check_field_match(const PatchDataFiel
     match = match && (field_name == f2.field_name);
     match = match && (nvar == f2.nvar);
     match = match && (obj_cnt == f2.obj_cnt);
-    match = match && (val_cnt == f2.val_cnt);
+    match = match && (buf.size() == f2.buf.size());
 
-    const u32 & check_len = val_cnt;
+    const u32 & check_len = buf.size();
 
     {
 
@@ -100,7 +101,7 @@ template <class T> bool PatchDataField<T>::check_field_match(const PatchDataFiel
 
         });
         
-        match = match && syclalgs::reduction::is_all_true(res_buf,val_cnt);
+        match = match && syclalgs::reduction::is_all_true(res_buf,f2.size());
 
     }
 
@@ -114,9 +115,9 @@ template<class T> class PdatField_append_subset_to;
 template <class T> void PatchDataField<T>::append_subset_to(sycl::buffer<u32> &idxs_buf,u32 sz, PatchDataField &pfield) const {
 
     if (pfield.nvar != nvar)
-        throw shamutils::throw_with_loc<std::invalid_argument>("field must be similar for extraction");
+        throw shambase::throw_with_loc<std::invalid_argument>("field must be similar for extraction");
 
-    const u32 start_enque = pfield.val_cnt;
+    const u32 start_enque = pfield.size();
 
     const u32 nvar = get_nvar();
 
@@ -165,7 +166,7 @@ template <class T> void PatchDataField<T>::append_subset_to(sycl::buffer<u32> &i
     
     shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
 
-        sycl::accessor acc_curr {*buf, cgh, sycl::read_only};
+        sycl::accessor acc_curr {*get_buf(), cgh, sycl::read_only};
         sycl::accessor acc_other {*buf_other, cgh, sycl::write_only, sycl::no_init};
         sycl::accessor acc_idxs {idxs_buf, cgh, sycl::read_only};
 
@@ -194,9 +195,9 @@ template <class T> void PatchDataField<T>::append_subset_to(sycl::buffer<u32> &i
 template <class T> void PatchDataField<T>::append_subset_to(const std::vector<u32> &idxs, PatchDataField &pfield) const {
 
     if (pfield.nvar != nvar)
-        throw shamutils::throw_with_loc<std::invalid_argument>("field must be similar for extraction");
+        throw shambase::throw_with_loc<std::invalid_argument>("field must be similar for extraction");
 
-    const u32 start_enque = pfield.val_cnt;
+    const u32 start_enque = pfield.size();
 
     const u32 nvar = get_nvar();
 
@@ -227,14 +228,14 @@ template <class T> void PatchDataField<T>::append_subset_to(const std::vector<u3
 template<class T> class PdatField_insert_element;
 
 template<class T> void PatchDataField<T>::insert_element(T v){
-    u32 ins_pos = val_cnt;
+    u32 ins_pos = size();
     expand(1);
 
     shamsys::instance::get_compute_queue().submit([&] (sycl::handler& cgh) {
 
         auto id_ins = ins_pos;
         auto val = v;
-        sycl::accessor acc {*buf, cgh, sycl::write_only};
+        sycl::accessor acc {*get_buf(), cgh, sycl::write_only};
 
 
         cgh.single_task<PdatField_insert_element<T>>([=] () {
@@ -258,9 +259,9 @@ template<class T> void PatchDataField<T>::apply_offset(T off){
     shamsys::instance::get_compute_queue().submit([&] (sycl::handler& cgh) {
         
         auto val = off;
-        sycl::accessor acc {*buf, cgh, sycl::read_write};
+        sycl::accessor acc {*get_buf(), cgh, sycl::read_write};
 
-        cgh.parallel_for<PdatField_apply_offset<T>>(sycl::range<1>{val_cnt}, [=](sycl::id<1> idx){
+        cgh.parallel_for<PdatField_apply_offset<T>>(sycl::range<1>{size()}, [=](sycl::id<1> idx){
             acc[idx] += val;
         });
     });
@@ -273,16 +274,16 @@ template<class T> class PdatField_insert;
 
 template<class T> void PatchDataField<T>::insert(PatchDataField<T> &f2){
 
-    const u32 old_val_cnt = val_cnt;//field_data.size();
+    const u32 old_val_cnt = size();//field_data.size();
     expand(f2.obj_cnt);
 
     shamsys::instance::get_compute_queue().submit([&] (sycl::handler& cgh) {
         
         const u32 idx_st = old_val_cnt;
-        sycl::accessor acc {*buf, cgh};
+        sycl::accessor acc {*get_buf(), cgh};
         sycl::accessor acc_f2 {*f2.get_buf(), cgh};
 
-        cgh.parallel_for<PdatField_insert<T>>(sycl::range<1>{f2.val_cnt}, [=](sycl::id<1> idx){
+        cgh.parallel_for<PdatField_insert<T>>(sycl::range<1>{f2.size()}, [=](sycl::id<1> idx){
             acc[idx_st + idx] = acc_f2[idx];
         });
     });
@@ -297,32 +298,8 @@ template<class T> void PatchDataField<T>::insert(PatchDataField<T> &f2){
 
 template<class T> void PatchDataField<T>::index_remap_resize(sycl::buffer<u32> & index_map, u32 len){
 
-    if(buf){
-
-        auto get_new_buf = [&](){
-            if(nvar == 1){
-                return shamalgs::algorithm::index_remap(
-                    shamsys::instance::get_compute_queue(), 
-                    *buf, 
-                    index_map, 
-                    len);
-            }else{
-                return shamalgs::algorithm::index_remap_nvar(
-                    shamsys::instance::get_compute_queue(), 
-                    *buf, 
-                    index_map, 
-                    len, nvar);
-            }
-        };
-
-        sycl::buffer<T> new_buf = get_new_buf();
-
-        capacity = new_buf.size();
-        obj_cnt = len;
-        val_cnt = obj_cnt*nvar;
-
-        buf = std::make_unique<sycl::buffer<T>>(std::move(new_buf));
-    }
+    buf.index_remap_resize(index_map, len,nvar);
+    obj_cnt = len;
     
 }
 
@@ -415,7 +392,7 @@ template <> void PatchDataField<f32>::gen_mock_data(u32 obj_cnt, std::mt19937 &e
         auto & buf = get_buf();
         sycl::host_accessor acc{*buf, sycl::write_only, sycl::no_init};
 
-        for (u32 i = 0; i < val_cnt; i++) {
+        for (u32 i = 0; i < size(); i++) {
             acc[i] = f32(distf64(eng));
         }
     }
@@ -433,7 +410,7 @@ template <> void PatchDataField<f32_2>::gen_mock_data(u32 obj_cnt, std::mt19937 
         auto & buf = get_buf();
         sycl::host_accessor acc{*buf, sycl::write_only, sycl::no_init};
 
-        for (u32 i = 0; i < val_cnt; i++) {
+        for (u32 i = 0; i < size(); i++) {
             acc[i] = f32_2{distf64(eng), distf64(eng)};
         }
     }
@@ -447,7 +424,7 @@ template <> void PatchDataField<f32_3>::gen_mock_data(u32 obj_cnt, std::mt19937 
         auto & buf = get_buf();
         sycl::host_accessor acc{*buf, sycl::write_only, sycl::no_init};
 
-        for (u32 i = 0; i < val_cnt; i++) {
+        for (u32 i = 0; i < size(); i++) {
             acc[i] = f32_3{distf64(eng), distf64(eng), distf64(eng)};
         }
     }
@@ -461,7 +438,7 @@ template <> void PatchDataField<f32_4>::gen_mock_data(u32 obj_cnt, std::mt19937 
         auto & buf = get_buf();
         sycl::host_accessor acc{*buf, sycl::write_only, sycl::no_init};
 
-        for (u32 i = 0; i < val_cnt; i++) {
+        for (u32 i = 0; i < size(); i++) {
             acc[i] = f32_4{distf64(eng), distf64(eng), distf64(eng), distf64(eng)};
         }
     }
@@ -475,7 +452,7 @@ template <> void PatchDataField<f32_8>::gen_mock_data(u32 obj_cnt, std::mt19937 
         auto & buf = get_buf();
         sycl::host_accessor acc{*buf, sycl::write_only, sycl::no_init};
 
-        for (u32 i = 0; i < val_cnt; i++) {
+        for (u32 i = 0; i < size(); i++) {
             acc[i] = f32_8{distf64(eng), distf64(eng), distf64(eng), distf64(eng),
                            distf64(eng), distf64(eng), distf64(eng), distf64(eng)};
         }
@@ -490,7 +467,7 @@ template <> void PatchDataField<f32_16>::gen_mock_data(u32 obj_cnt, std::mt19937
         auto & buf = get_buf();
         sycl::host_accessor acc{*buf, sycl::write_only, sycl::no_init};
 
-        for (u32 i = 0; i < val_cnt; i++) {
+        for (u32 i = 0; i < size(); i++) {
             acc[i] = f32_16{distf64(eng), distf64(eng), distf64(eng), distf64(eng), distf64(eng), distf64(eng),
                             distf64(eng), distf64(eng), distf64(eng), distf64(eng), distf64(eng), distf64(eng),
                             distf64(eng), distf64(eng), distf64(eng), distf64(eng)};
@@ -506,7 +483,7 @@ template <> void PatchDataField<f64>::gen_mock_data(u32 obj_cnt, std::mt19937 &e
         auto & buf = get_buf();
         sycl::host_accessor acc{*buf, sycl::write_only, sycl::no_init};
 
-        for (u32 i = 0; i < val_cnt; i++) {
+        for (u32 i = 0; i < size(); i++) {
             acc[i] = f64(distf64(eng));
         }
     }
@@ -520,7 +497,7 @@ template <> void PatchDataField<f64_2>::gen_mock_data(u32 obj_cnt, std::mt19937 
         auto & buf = get_buf();
         sycl::host_accessor acc{*buf, sycl::write_only, sycl::no_init};
 
-        for (u32 i = 0; i < val_cnt; i++) {
+        for (u32 i = 0; i < size(); i++) {
             acc[i] = f64_2{distf64(eng), distf64(eng)};
         }
     }
@@ -534,7 +511,7 @@ template <> void PatchDataField<f64_3>::gen_mock_data(u32 obj_cnt, std::mt19937 
         auto & buf = get_buf();
         sycl::host_accessor acc{*buf, sycl::write_only, sycl::no_init};
 
-        for (u32 i = 0; i < val_cnt; i++) {
+        for (u32 i = 0; i < size(); i++) {
             acc[i] = f64_3{distf64(eng), distf64(eng), distf64(eng)};
         }
     }
@@ -548,7 +525,7 @@ template <> void PatchDataField<f64_4>::gen_mock_data(u32 obj_cnt, std::mt19937 
         auto & buf = get_buf();
         sycl::host_accessor acc{*buf, sycl::write_only, sycl::no_init};
 
-        for (u32 i = 0; i < val_cnt; i++) {
+        for (u32 i = 0; i < size(); i++) {
             acc[i] = f64_4{distf64(eng), distf64(eng), distf64(eng), distf64(eng)};
         }
     }
@@ -562,7 +539,7 @@ template <> void PatchDataField<f64_8>::gen_mock_data(u32 obj_cnt, std::mt19937 
         auto & buf = get_buf();
         sycl::host_accessor acc{*buf, sycl::write_only, sycl::no_init};
 
-        for (u32 i = 0; i < val_cnt; i++) {
+        for (u32 i = 0; i < size(); i++) {
             acc[i] = f64_8{distf64(eng), distf64(eng), distf64(eng), distf64(eng),
                            distf64(eng), distf64(eng), distf64(eng), distf64(eng)};
         }
@@ -577,7 +554,7 @@ template <> void PatchDataField<f64_16>::gen_mock_data(u32 obj_cnt, std::mt19937
         auto & buf = get_buf();
         sycl::host_accessor acc{*buf, sycl::write_only, sycl::no_init};
 
-        for (u32 i = 0; i < val_cnt; i++) {
+        for (u32 i = 0; i < size(); i++) {
             acc[i] = f64_16{distf64(eng), distf64(eng), distf64(eng), distf64(eng), distf64(eng), distf64(eng),
                             distf64(eng), distf64(eng), distf64(eng), distf64(eng), distf64(eng), distf64(eng),
                             distf64(eng), distf64(eng), distf64(eng), distf64(eng)};
@@ -593,7 +570,7 @@ template <> void PatchDataField<u32>::gen_mock_data(u32 obj_cnt, std::mt19937 &e
         auto & buf = get_buf();
         sycl::host_accessor acc{*buf, sycl::write_only, sycl::no_init};
 
-        for (u32 i = 0; i < val_cnt; i++) {
+        for (u32 i = 0; i < size(); i++) {
             acc[i] = distu32(eng);
         }
     }
@@ -606,7 +583,7 @@ template <> void PatchDataField<u64>::gen_mock_data(u32 obj_cnt, std::mt19937 &e
         auto & buf = get_buf();
         sycl::host_accessor acc{*buf, sycl::write_only, sycl::no_init};
 
-        for (u32 i = 0; i < val_cnt; i++) {
+        for (u32 i = 0; i < size(); i++) {
             acc[i] = distu64(eng);
         }
     }
@@ -620,7 +597,7 @@ template <> void PatchDataField<u32_3>::gen_mock_data(u32 obj_cnt, std::mt19937 
         auto & buf = get_buf();
         sycl::host_accessor acc{*buf, sycl::write_only, sycl::no_init};
 
-        for (u32 i = 0; i < val_cnt; i++) {
+        for (u32 i = 0; i < size(); i++) {
             acc[i] = u32_3{distu32(eng),distu32(eng),distu32(eng)};
         }
     }
@@ -633,7 +610,7 @@ template <> void PatchDataField<u64_3>::gen_mock_data(u32 obj_cnt, std::mt19937 
         auto & buf = get_buf();
         sycl::host_accessor acc{*buf, sycl::write_only, sycl::no_init};
 
-        for (u32 i = 0; i < val_cnt; i++) {
+        for (u32 i = 0; i < size(); i++) {
             acc[i] = u64_3{distu64(eng),distu64(eng),distu64(eng)};
         }
     }

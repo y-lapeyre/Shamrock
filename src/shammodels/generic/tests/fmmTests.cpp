@@ -18,7 +18,7 @@
 
 #include "shamtest/shamtest.hpp"
 #include "shamtest/shamtest.hpp"
-#include "shamutils/stringUtils.hpp"
+#include "shambase/string.hpp"
 #include <cstdio>
 #include <memory>
 #include <vector>
@@ -470,24 +470,24 @@ Result_nompi_fmm_testing<flt,morton_mode,fmm_order> nompi_fmm_testing(std::uniqu
 
     
     
-    u32 num_component_multipoles_fmm = (rtree.tree_internal_count + rtree.tree_leaf_count)*SymTensorCollection<flt,0,fmm_order>::num_component;
+    u32 num_component_multipoles_fmm = (rtree.tree_struct.internal_cell_count + rtree.tree_reduced_morton_codes.tree_leaf_count)*SymTensorCollection<flt,0,fmm_order>::num_component;
     logger::debug_ln("RTreeFMM", "allocating",num_component_multipoles_fmm,"component for multipoles");
     auto grav_multipoles = std::make_unique< sycl::buffer<flt>>( num_component_multipoles_fmm  );
 
-    logger::debug_ln("RTreeFMM", "computing leaf moments (",rtree.tree_leaf_count,")");
+    logger::debug_ln("RTreeFMM", "computing leaf moments (",rtree.tree_reduced_morton_codes.tree_leaf_count,")");
     shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
 
-        u32 offset_leaf = rtree.tree_internal_count;
+        u32 offset_leaf = rtree.tree_struct.internal_cell_count;
 
         auto xyz = sycl::accessor {*pos_part, cgh,sycl::read_only};
-        auto cell_particle_ids =sycl::accessor {*rtree.buf_reduc_index_map, cgh,sycl::read_only};
-        auto particle_index_map = sycl::accessor {*rtree.buf_particle_index_map, cgh,sycl::read_only};
+        auto cell_particle_ids =sycl::accessor {*rtree.tree_reduced_morton_codes.buf_reduc_index_map, cgh,sycl::read_only};
+        auto particle_index_map = sycl::accessor {*rtree.tree_morton_codes.buf_particle_index_map, cgh,sycl::read_only};
         auto cell_max = sycl::accessor{*rtree.buf_pos_max_cell_flt,cgh,sycl::read_only};
         auto cell_min = sycl::accessor{*rtree.buf_pos_min_cell_flt,cgh,sycl::read_only};
         auto multipoles = sycl::accessor {*grav_multipoles, cgh,sycl::write_only,sycl::no_init};
 
 
-        sycl::range<1> range_leaf_cell{rtree.tree_leaf_count};
+        sycl::range<1> range_leaf_cell{rtree.tree_reduced_morton_codes.tree_leaf_count};
 
         cgh.parallel_for(range_leaf_cell, [=](sycl::item<1> item) {
                 u32 gid = (u32) item.get_id(0);
@@ -523,13 +523,13 @@ Result_nompi_fmm_testing<flt,morton_mode,fmm_order> nompi_fmm_testing(std::uniqu
 
 
 
-    auto buf_is_computed = std::make_unique< sycl::buffer<u8>>( (rtree.tree_internal_count + rtree.tree_leaf_count)  );
+    auto buf_is_computed = std::make_unique< sycl::buffer<u8>>( (rtree.tree_struct.internal_cell_count + rtree.tree_reduced_morton_codes.tree_leaf_count)  );
 
     shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
         auto is_computed = sycl::accessor {*buf_is_computed, cgh , sycl::write_only, sycl::no_init};
-        sycl::range<1> range_internal_count{rtree.tree_internal_count + rtree.tree_leaf_count};
+        sycl::range<1> range_internal_count{rtree.tree_struct.internal_cell_count + rtree.tree_reduced_morton_codes.tree_leaf_count};
 
-        u32 int_cnt = rtree.tree_internal_count;
+        u32 int_cnt = rtree.tree_struct.internal_cell_count;
 
         cgh.parallel_for(range_internal_count, [=](sycl::item<1> item) {
             is_computed[item] = item.get_linear_id() >= int_cnt;
@@ -545,19 +545,19 @@ Result_nompi_fmm_testing<flt,morton_mode,fmm_order> nompi_fmm_testing(std::uniqu
     
         shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
 
-            u32 leaf_offset = rtree.tree_internal_count;
+            u32 leaf_offset = rtree.tree_struct.internal_cell_count;
 
             auto cell_max = sycl::accessor{*rtree.buf_pos_max_cell_flt,cgh,sycl::read_only};
             auto cell_min = sycl::accessor{*rtree.buf_pos_min_cell_flt,cgh,sycl::read_only};
             auto multipoles = sycl::accessor {*grav_multipoles, cgh,sycl::read_write};
             auto is_computed = sycl::accessor {*buf_is_computed, cgh , sycl::read_write};
 
-            sycl::range<1> range_internal_count{rtree.tree_internal_count};
+            sycl::range<1> range_internal_count{rtree.tree_struct.internal_cell_count};
 
-            auto rchild_id   = sycl::accessor{*rtree.buf_rchild_id  ,cgh,sycl::read_only};
-            auto lchild_id   = sycl::accessor{*rtree.buf_lchild_id  ,cgh,sycl::read_only};
-            auto rchild_flag = sycl::accessor{*rtree.buf_rchild_flag,cgh,sycl::read_only};
-            auto lchild_flag = sycl::accessor{*rtree.buf_lchild_flag,cgh,sycl::read_only};
+            auto rchild_id   = sycl::accessor{*rtree.tree_struct.buf_rchild_id  ,cgh,sycl::read_only};
+            auto lchild_id   = sycl::accessor{*rtree.tree_struct.buf_lchild_id  ,cgh,sycl::read_only};
+            auto rchild_flag = sycl::accessor{*rtree.tree_struct.buf_rchild_flag,cgh,sycl::read_only};
+            auto lchild_flag = sycl::accessor{*rtree.tree_struct.buf_lchild_flag,cgh,sycl::read_only};
 
             cgh.parallel_for(range_internal_count, [=](sycl::item<1> item) {
 
@@ -613,13 +613,13 @@ Result_nompi_fmm_testing<flt,morton_mode,fmm_order> nompi_fmm_testing(std::uniqu
 
 
     logger::debug_ln("RTreeFMM", "computing cell infos");
-    std::unique_ptr<sycl::buffer<vec>> cell_centers = std::make_unique<sycl::buffer<vec>>(rtree.tree_internal_count + rtree.tree_leaf_count);
-    std::unique_ptr<sycl::buffer<flt>> cell_lenght = std::make_unique<sycl::buffer<flt>>(rtree.tree_internal_count + rtree.tree_leaf_count);
+    std::unique_ptr<sycl::buffer<vec>> cell_centers = std::make_unique<sycl::buffer<vec>>(rtree.tree_struct.internal_cell_count + rtree.tree_reduced_morton_codes.tree_leaf_count);
+    std::unique_ptr<sycl::buffer<flt>> cell_lenght = std::make_unique<sycl::buffer<flt>>(rtree.tree_struct.internal_cell_count + rtree.tree_reduced_morton_codes.tree_leaf_count);
 
     shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
 
 
-        sycl::range<1> range_tree = sycl::range<1>{rtree.tree_leaf_count + rtree.tree_internal_count};
+        sycl::range<1> range_tree = sycl::range<1>{rtree.tree_reduced_morton_codes.tree_leaf_count + rtree.tree_struct.internal_cell_count};
 
         auto pos_min_cell = sycl::accessor{*rtree.buf_pos_min_cell_flt,cgh,sycl::read_only};
         auto pos_max_cell = sycl::accessor{*rtree.buf_pos_max_cell_flt,cgh,sycl::read_only};
@@ -809,9 +809,9 @@ Result_nompi_fmm_testing<flt,morton_mode,fmm_order> nompi_fmm_testing(std::uniqu
         auto c_centers = sycl::accessor{*cell_centers,cgh,sycl::read_only};
         auto c_lenght = sycl::accessor{*cell_lenght,cgh,sycl::read_only};
 
-        sycl::range<1> range_leaf = sycl::range<1>{rtree.tree_leaf_count};
+        sycl::range<1> range_leaf = sycl::range<1>{rtree.tree_reduced_morton_codes.tree_leaf_count};
 
-        u32 leaf_offset = rtree.tree_internal_count;
+        u32 leaf_offset = rtree.tree_struct.internal_cell_count;
 
         auto xyz = sycl::accessor {*pos_part, cgh,sycl::read_only};
         auto fxyz = sycl::accessor {*buf_force, cgh,sycl::read_write};
@@ -964,7 +964,7 @@ Result_nompi_fmm_testing<flt,morton_mode,fmm_order> nompi_fmm_testing(std::uniqu
         auto sample = [&](u32 id){
 
             auto [found_leafs, rejected_nodes] = rtree.get_walk_res_set([&](u32 cell_b) -> bool {
-                u32 cell_a = rtree.tree_internal_count + id;
+                u32 cell_a = rtree.tree_struct.internal_cell_count + id;
 
                 vec cur_pos_min_cell_a = pos_min_cell[cell_a];
                 vec cur_pos_max_cell_a = pos_max_cell[cell_a];
@@ -1002,8 +1002,8 @@ Result_nompi_fmm_testing<flt,morton_mode,fmm_order> nompi_fmm_testing(std::uniqu
         };
 
         auto [r1_f,r1_r] = sample(0);
-        auto [re_f,re_r] = sample(rtree.tree_leaf_count-1);
-        auto [rm_f,rm_r] = sample(rtree.tree_leaf_count/2);
+        auto [re_f,re_r] = sample(rtree.tree_reduced_morton_codes.tree_leaf_count-1);
+        auto [rm_f,rm_r] = sample(rtree.tree_reduced_morton_codes.tree_leaf_count/2);
 
         r_f = (r1_f + re_f + rm_f)/3.;
         r_r = (r1_r + re_r + rm_r)/3.;
@@ -1042,7 +1042,7 @@ Result_nompi_fmm_testing<flt,morton_mode,fmm_order> nompi_fmm_testing(std::uniqu
             flt err = sycl::distance(force[i],sum_fi)/sycl::length(sum_fi);
 
             if(i<10){
-                logger::raw_ln("local relative error : ",shamutils::format_printf("%e (%e %e %e) (%e %e %e)",err, force[i].x(),force[i].y(),force[i].z(), sum_fi.x(),sum_fi.y(),sum_fi.z()));
+                logger::raw_ln("local relative error : ",shambase::format_printf("%e (%e %e %e) (%e %e %e)",err, force[i].x(),force[i].y(),force[i].z(), sum_fi.x(),sum_fi.y(),sum_fi.z()));
             }
             err_sum += err;
 
@@ -1050,7 +1050,7 @@ Result_nompi_fmm_testing<flt,morton_mode,fmm_order> nompi_fmm_testing(std::uniqu
 
         }
 
-        logger::raw_ln("global relative error :",shamutils::format_printf("avg = %e max = %e",err_sum/npart,err_max));
+        logger::raw_ln("global relative error :",shambase::format_printf("avg = %e max = %e",err_sum/npart,err_max));
 
         prec = err_sum/npart;
     }
@@ -1165,17 +1165,17 @@ TestStart(Analysis,"models/generic/fmm/fmm_1_gpu_prec", fmm_1_gpu_prec , 1){
 
 
         if(false){
-            auto acc_u32_lid = sycl::host_accessor {*res_u32.rtree.buf_lchild_id};
-            auto acc_u32_rid = sycl::host_accessor {*res_u32.rtree.buf_rchild_id};
-            auto acc_u32_lflag = sycl::host_accessor {*res_u32.rtree.buf_lchild_flag};
-            auto acc_u32_rflag = sycl::host_accessor {*res_u32.rtree.buf_rchild_flag};
+            auto acc_u32_lid = sycl::host_accessor {*res_u32.rtree.tree_struct.buf_lchild_id};
+            auto acc_u32_rid = sycl::host_accessor {*res_u32.rtree.tree_struct.buf_rchild_id};
+            auto acc_u32_lflag = sycl::host_accessor {*res_u32.rtree.tree_struct.buf_lchild_flag};
+            auto acc_u32_rflag = sycl::host_accessor {*res_u32.rtree.tree_struct.buf_rchild_flag};
 
-            auto acc_u64_lid = sycl::host_accessor {*res_u64.rtree.buf_lchild_id};
-            auto acc_u64_rid = sycl::host_accessor {*res_u64.rtree.buf_rchild_id};
-            auto acc_u64_lflag = sycl::host_accessor {*res_u64.rtree.buf_lchild_flag};
-            auto acc_u64_rflag = sycl::host_accessor {*res_u64.rtree.buf_rchild_flag};
+            auto acc_u64_lid = sycl::host_accessor {*res_u64.rtree.tree_struct.buf_lchild_id};
+            auto acc_u64_rid = sycl::host_accessor {*res_u64.rtree.tree_struct.buf_rchild_id};
+            auto acc_u64_lflag = sycl::host_accessor {*res_u64.rtree.tree_struct.buf_lchild_flag};
+            auto acc_u64_rflag = sycl::host_accessor {*res_u64.rtree.tree_struct.buf_rchild_flag};
 
-            for(u32 i = 0 ; i < res_u64.rtree.tree_internal_count ; i++){
+            for(u32 i = 0 ; i < res_u64.rtree.tree_struct.internal_cell_count ; i++){
                 bool same = true;
                 same = same && (acc_u32_lid[i] == acc_u64_lid[i]);
                 same = same && (acc_u32_rid[i] == acc_u64_rid[i]);
@@ -1203,7 +1203,7 @@ TestStart(Analysis,"models/generic/fmm/fmm_1_gpu_prec", fmm_1_gpu_prec , 1){
             auto acc_min_u64 = sycl::host_accessor {*res_u64.rtree.buf_pos_min_cell};
             auto acc_max_u64 = sycl::host_accessor {*res_u64.rtree.buf_pos_max_cell};
 
-            for(u32 i = 0 ; i < res_u64.rtree.tree_internal_count + res_u64.rtree.tree_leaf_count ; i++){
+            for(u32 i = 0 ; i < res_u64.rtree.tree_struct.internal_cell_count + res_u64.rtree.tree_reduced_morton_codes.tree_leaf_count ; i++){
                 bool same = true;
                 //same = same && test_sycl_eq(acc_min_u32[i] , acc_min_u64[i]);
                 //same = same && test_sycl_eq(acc_min_u64[i] , acc_max_u64[i]);

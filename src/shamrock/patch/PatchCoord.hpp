@@ -10,6 +10,7 @@
 
 #include "aliases.hpp"
 #include "shammath/CoordRange.hpp"
+#include "shambase/sycl.hpp"
 
 namespace shamrock::patch {
 

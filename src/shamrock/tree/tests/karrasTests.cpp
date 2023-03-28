@@ -58,12 +58,12 @@ inline void test_karras_alg(){
         sycl_karras_alg<u_morton>(
             shamsys::instance::get_compute_queue(),
             morton_list.size()-1, 
-            buf_morton, 
-            out_buf_lchild_id,
-            out_buf_rchild_id,
-            out_buf_lchild_flag,
-            out_buf_rchild_flag,
-            out_buf_endrange
+            *buf_morton, 
+            *out_buf_lchild_id,
+            *out_buf_rchild_id,
+            *out_buf_lchild_flag,
+            *out_buf_rchild_flag,
+            *out_buf_endrange
             );
 
     }

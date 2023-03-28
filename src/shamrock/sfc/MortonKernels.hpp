@@ -60,7 +60,7 @@ namespace shamrock::sfc{
         using Morton = MortonCodes<morton_t, dim>;
 
         using pos_t = _pos_t;
-        using coord_t = typename shamutils::sycl_utils::VectorProperties<pos_t>::component_type;
+        using coord_t = typename shambase::sycl_utils::VectorProperties<pos_t>::component_type;
         using ipos_t  = typename Morton::int_vec_repr;
         using int_t = typename Morton::int_vec_repr_base;
 
@@ -91,7 +91,7 @@ namespace shamrock::sfc{
         static void sycl_xyz_to_morton(
             sycl::queue & queue,
             u32 pos_count,
-            const std::unique_ptr<sycl::buffer<pos_t>> & in_positions,
+            sycl::buffer<pos_t> & in_positions,
             pos_t bounding_box_min,
             pos_t bounding_box_max,
             std::unique_ptr<sycl::buffer<morton_t>> & out_morton);

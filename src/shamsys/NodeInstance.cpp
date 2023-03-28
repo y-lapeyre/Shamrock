@@ -84,7 +84,7 @@ namespace shamsys::instance {
             << "   - " 
             << Device.get_info<sycl::info::device::name>()
             << " " 
-            << shamutils::readable_sizeof(Device.get_info<sycl::info::device::global_mem_size>()) << "\n";
+            << shambase::readable_sizeof(Device.get_info<sycl::info::device::global_mem_size>()) << "\n";
     }
 
 
@@ -239,11 +239,11 @@ namespace shamsys::instance {
 
                 std::string selected = selected_k(key_global);
 
-                std::string devname = trunc_str(DeviceName,29);
-                std::string platname = trunc_str(PlatformName,24);
-                std::string devtype = trunc_str(getDeviceTypeName(Device),6);
+                std::string devname = shambase::trunc_str(DeviceName,29);
+                std::string platname = shambase::trunc_str(PlatformName,24);
+                std::string devtype = shambase::trunc_str(getDeviceTypeName(Device),6);
 
-                logger::raw_ln(format("| {:>3} | {:>2} | {:>29.29} | {:>24.24} | {:>6} |",
+                logger::raw_ln(shambase::format("| {:>3} | {:>2} | {:>29.29} | {:>24.24} | {:>6} |",
                     selected.c_str(),key_global,devname.c_str(),platname.c_str(),devtype.c_str()
                 ));
 
@@ -341,7 +341,7 @@ namespace shamsys::instance {
             throw ShamsysInstanceException("failed setting the MPI error mode");
         }
 
-        logger::raw_ln(format("[{:03}]: \x1B[32mMPI_Init : node n°{:03} | world size : {} | name = {}\033[0m\n",world_rank,world_rank,world_size,get_process_name().c_str()));
+        logger::raw_ln(shambase::format("[{:03}]: \x1B[32mMPI_Init : node n°{:03} | world size : {} | name = {}\033[0m\n",world_rank,world_rank,world_size,get_process_name().c_str()));
 
         mpi::barrier(MPI_COMM_WORLD);
         //if(world_rank == 0){

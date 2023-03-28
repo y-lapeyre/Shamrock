@@ -56,7 +56,7 @@ void sycl_compute_cell_ranges(
         cgh.parallel_for(range_radix_tree, [=](sycl::item<1> item) {
             u32 gid = (u32)item.get_id(0);
 
-            uint clz_ = clz_xor(morton_map[gid], morton_map[end_range_map[gid]]);
+            uint clz_ = shambase::clz_xor(morton_map[gid], morton_map[end_range_map[gid]]);
 
             using Morton = shamrock::sfc::MortonCodes<u_morton, 3>;
 
@@ -72,23 +72,28 @@ void sycl_compute_cell_ranges(
                 }
             };
 
-            pos_min_cell[gid] = Morton::morton_to_icoord(morton_map[gid] & get_mask(clz_));
+            auto clz_offset = Morton::get_offset(clz_);
+            auto clz_offset_1 = Morton::get_offset(clz_ + 1);
 
-            pos_max_cell[gid] = Morton::get_offset(clz_) + pos_min_cell[gid];
+            auto min_cell = Morton::morton_to_icoord(morton_map[gid] & get_mask(clz_));
+
+            pos_min_cell[gid] = min_cell;
+
+            pos_max_cell[gid] = clz_offset + min_cell;
 
             if (rchild_flag[gid]) {
 
-                auto tmp = Morton::get_offset(clz_) - Morton::get_offset(clz_ + 1);
+                auto tmp = clz_offset - clz_offset_1;
 
-                pos_min_cell[rchild_id[gid] + internal_cell_cnt] = pos_min_cell[gid] + tmp;
+                pos_min_cell[rchild_id[gid] + internal_cell_cnt] = min_cell + tmp;
                 pos_max_cell[rchild_id[gid] + internal_cell_cnt] =
-                    Morton::get_offset(clz_ + 1) + pos_min_cell[gid] + tmp;
+                    clz_offset_1 + min_cell + tmp;
             }
 
             if (lchild_flag[gid]) {
-                pos_min_cell[lchild_id[gid] + internal_cell_cnt] = pos_min_cell[gid];
+                pos_min_cell[lchild_id[gid] + internal_cell_cnt] = min_cell;
                 pos_max_cell[lchild_id[gid] + internal_cell_cnt] =
-                    Morton::get_offset(clz_ + 1) + pos_min_cell[gid];
+                    clz_offset_1 + min_cell;
             }
         });
     };

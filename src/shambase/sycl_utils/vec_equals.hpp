@@ -8,50 +8,20 @@
 
 #pragma once
 
+#include "shambase/sycl.hpp"
 #include "vectorProperties.hpp"
 
-namespace shamutils::sycl_utils {
+namespace shambase {
 
     template<class T>
-    T g_sycl_min(T a, T b) {
-
-        static_assert(VectorProperties<T>::has_info, "no info about this type");
-
-        if constexpr (VectorProperties<T>::is_float_based) {
-            return sycl::fmin(a, b);
-        } else if constexpr (VectorProperties<T>::is_int_based) {
-            return sycl::min(a, b);
-        } else if constexpr (VectorProperties<T>::is_uint_based) {
-            return sycl::min(a, b);
-        }
-    }
-
-    template<class T>
-    T g_sycl_max(T a, T b) {
-
-        static_assert(VectorProperties<T>::has_info, "no info about this type");
-
-        if constexpr (VectorProperties<T>::is_float_based) {
-            return sycl::fmax(a, b);
-        } else if constexpr (VectorProperties<T>::is_int_based) {
-            return sycl::max(a, b);
-        } else if constexpr (VectorProperties<T>::is_uint_based) {
-            return sycl::max(a, b);
-        }
-    }
-
-    template<class T>
-    inline bool test_sycl_eq(const T &a, const T &b);
-
-    template<class T>
-    inline bool test_sycl_eq(const sycl::vec<T, 2> &a, const sycl::vec<T, 2> &b) {
+    inline constexpr bool vec_equals(sycl::vec<T, 2> a, sycl::vec<T, 2> b) noexcept {
         bool eqx = a.x() == b.x();
         bool eqy = a.y() == b.y();
         return eqx && eqy;
     }
 
     template<class T>
-    inline bool test_sycl_eq(const sycl::vec<T, 3> &a, const sycl::vec<T, 3> &b) {
+    inline constexpr bool vec_equals(sycl::vec<T, 3> a, sycl::vec<T, 3> b) noexcept {
         bool eqx = a.x() == b.x();
         bool eqy = a.y() == b.y();
         bool eqz = a.z() == b.z();
@@ -59,7 +29,7 @@ namespace shamutils::sycl_utils {
     }
 
     template<class T>
-    inline bool test_sycl_eq(const sycl::vec<T, 4> &a, const sycl::vec<T, 4> &b) {
+    inline constexpr bool vec_equals(sycl::vec<T, 4> a, sycl::vec<T, 4> b) noexcept {
         bool eqx = a.x() == b.x();
         bool eqy = a.y() == b.y();
         bool eqz = a.z() == b.z();
@@ -68,7 +38,7 @@ namespace shamutils::sycl_utils {
     }
 
     template<class T>
-    inline bool test_sycl_eq(const sycl::vec<T, 8> &a, const sycl::vec<T, 8> &b) {
+    inline constexpr bool vec_equals(sycl::vec<T, 8> a, sycl::vec<T, 8> b) noexcept {
         bool eqs0 = a.s0() == b.s0();
         bool eqs1 = a.s1() == b.s1();
         bool eqs2 = a.s2() == b.s2();
@@ -81,7 +51,7 @@ namespace shamutils::sycl_utils {
     }
 
     template<class T>
-    inline bool test_sycl_eq(const sycl::vec<T, 16> &a, const sycl::vec<T, 16> &b) {
+    inline constexpr bool vec_equals(sycl::vec<T, 16> a, sycl::vec<T, 16> b) noexcept {
         bool eqs0 = a.s0() == b.s0();
         bool eqs1 = a.s1() == b.s1();
         bool eqs2 = a.s2() == b.s2();
@@ -105,9 +75,9 @@ namespace shamutils::sycl_utils {
     }
 
     template<class T>
-    inline bool test_sycl_eq(const T &a, const T &b) {
+    inline constexpr bool vec_equals(T a, T b) noexcept {
         bool eqx = a == b;
         return eqx;
     }
 
-} // namespace shamutils::sycl_utils
+} // namespace shambase

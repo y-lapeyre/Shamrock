@@ -5,6 +5,7 @@ set(Sources
 set(SourcesTest
 bitonicSortTests.cpp
 algorithmTests.cpp
+DigitBinnerTests.cpp
 )
 set(Headers
 

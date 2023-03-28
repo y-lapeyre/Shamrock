@@ -8,5 +8,18 @@
 
 #pragma once
 
-#include "sycl_utils/sycl_utilities.hpp"
-#include "sycl_utils/vectorProperties.hpp"
+#include "aliases.hpp"
+#include "shambase/SourceLocation.hpp"
+
+namespace shamtest::details {
+
+    struct TestAssert {
+        bool value;
+        std::string name;
+        std::string comment;
+
+        std::string serialize();
+
+    };
+
+} // namespace shamtest::details

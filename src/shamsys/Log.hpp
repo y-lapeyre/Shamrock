@@ -9,20 +9,9 @@
 #pragma once
 
 #include "aliases.hpp"
-#include "shamutils/stringUtils.hpp"
+#include "shambase/string.hpp"
 
 namespace shamsys {
-
-    template<typename... T>
-    inline std::string format(fmt::format_string<T...> fmt, T &&...args) {
-        return shamutils::format(fmt, args...);
-    }
-
-    template<typename... T>
-    inline std::string format_printf(std::string format, T &&...args){
-        return shamutils::format_printf(format, args...);
-    }
-
 
 
 } // namespace shamsys

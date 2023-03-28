@@ -21,7 +21,7 @@
 #include "shamsys/legacy/sycl_handler.hpp"
 
 #include "shamsys/legacy/mpi_handler.hpp"
-#include "shamutils/throwUtils.hpp"
+#include "shambase/exception.hpp"
 
 
 bool has_option(
@@ -48,149 +48,6 @@ std::string_view get_option(
 }
 
 
-
-namespace shamtest::details {
-
-    std::string TestAssert::serialize(){
-        std::string acc = "\n{\n";
-
-        acc += R"(    "value" : )" + std::to_string(value) + ",\n" ;
-        acc += R"(    "name" : ")" + name + "\"" ;
-
-        if(! comment.empty()){
-            acc += ",\n" R"(    "comment" : ")" + comment + "\"" ;
-        }
-
-        acc += "\n}";
-        return acc;
-    }
-
-    std::string serialize_vec(const std::vector<f64> & vec){
-        std::string acc = "\n[\n";
-
-        for(u32 i = 0; i < vec.size(); i++){
-            acc += shamutils::format_printf( "%e" , vec[i]) ;
-            if(i < vec.size()-1){
-                acc += ", ";
-            }
-        }
-
-        acc += "\n]";
-        return acc;
-    }
-
-    std::string DataNode::serialize(){
-        std::string acc = "\n{\n";
-
-        acc += R"(    "name" : ")" + name + "\",\n" ;
-
-        acc += R"(    "data" : )" "\n"+ serialize_vec(data) + "\n" ;
-
-        acc += "\n}";
-        return acc;
-    }
-
-    std::string TestData::serialize(){
-        std::string acc = "\n{\n";
-
-        acc += R"(    "dataset_name" : ")" + dataset_name + "\",\n" ;
-        acc += R"(    "dataset" : )" "\n    [\n" ;
-
-        for(u32 i = 0; i < dataset.size(); i++){
-            acc += increase_indent( dataset[i].serialize()) ;
-            if(i < dataset.size()-1){
-                acc += ",";
-            }
-        }
-
-        acc += "]" ;
-
-        acc += "\n}";
-        return acc;
-    }
-
-    std::string TestAssertList::serialize(){
-        std::string acc = "\n[\n";
-
-        for(u32 i = 0; i < asserts.size(); i++){
-            acc += increase_indent( asserts[i].serialize()) ;
-            if(i < asserts.size()-1){
-                acc += ",";
-            }
-        }
-
-        acc += "\n]";
-        return acc;
-    }
-
-    std::string TestDataList::serialize(){
-        std::string acc = "\n[\n";
-
-        for(u32 i = 0; i < test_data.size(); i++){
-            acc += increase_indent( test_data[i].serialize()) ;
-            if(i < test_data.size()-1){
-                acc += ",";
-            }
-        }
-
-        acc += "\n]";
-        return acc;
-    }
-
-
-    std::string TestResult::serialize(){
-
-        using namespace shamsys::instance;
-
-        auto get_type_name = [](TestType t) -> std::string {
-            switch (t) {
-                case Benchmark: return "Benchmark";
-                case Analysis:  return "Analysis";
-                case Unittest:  return "Unittest";
-            }
-        };
-
-        auto get_str = [&]() -> std::string {
-            return 
-                "{\n"
-                R"(    "type" : ")" + get_type_name(type) + "\",\n" +
-                R"(    "name" : ")" + name + "\",\n" +
-                R"(    "compute_queue" : ")" + get_compute_queue().get_device().get_info<sycl::info::device::name>() + "\",\n" +
-                R"(    "alt_queue" : ")" + get_alt_queue().get_device().get_info<sycl::info::device::name>() + "\",\n" +
-                R"(    "world_rank" : )" + std::to_string(world_rank) + ",\n" +
-                R"(    "asserts" : )" + increase_indent( asserts.serialize())+ ",\n" +
-                R"(    "test_data" : )" + increase_indent( test_data.serialize()) + "\n" +
-                "}";
-        };
-
-
-        return get_str();
-    }
-
-    TestResult current_test{Unittest,"",-1};
-
-
-    TestResult Test::run(){
-
-        using namespace shamsys::instance;
-
-        if(node_count != -1){
-            if(node_count != world_size){
-                throw shamutils::throw_with_loc<std::runtime_error>("trying to run a test with wrong number of nodes");
-            }
-        }
-
-        current_test = TestResult{type, name,world_rank};
-
-        test_functor();
-
-
-        return std::move(current_test);
-    }
-
-
-
-}
 
 namespace shamtest {
     int run_all_tests(int argc, char *argv[], bool run_bench,bool run_analysis, bool run_unittest){
@@ -364,6 +221,8 @@ namespace shamtest {
 
         u32 test_loc_cnt = 0;
 
+        bool has_error = false;
+
         for (u32 i : selected_tests) {
 
             shamtest::details::Test & test = static_init_vec_tests[i];
@@ -406,6 +265,7 @@ namespace shamtest {
                     if(res.asserts.asserts[j].value){
                         std::cout << "  (\033[;32mSucces\033[0m)\n";
                     }else{
+                        has_error = true;
                         std::cout << "  (\033[1;31m Fail \033[0m)\n";
                         if(! res.asserts.asserts[j].comment.empty()){
                             std::cout << "----- logs : \n" << res.asserts.asserts[j].comment << "\n-----" << std::endl;
@@ -432,7 +292,7 @@ namespace shamtest {
 
 
 
-            std::string s_assert = shamsys::format(" [{}/{}] ",succes_cnt,res.asserts.asserts.size());
+            std::string s_assert = shambase::format(" [{}/{}] ",succes_cnt,res.asserts.asserts.size());
             printf("%-15s",s_assert.c_str());
             std::cout << " (" << timer.get_time_str() << ")" <<std::endl;
 
@@ -517,13 +377,13 @@ namespace shamtest {
 
 
             s_out += R"(    "results" : )"   "[\n\n" ;
-            s_out += increase_indent(out_res_string);
+            s_out += shambase::increase_indent(out_res_string);
             s_out += "\n    ]\n}";
 
             //printf("%s\n",s_out.c_str());
 
             if(out_to_file){
-                write_string_to_file(std::string(opts::get_option("-o")), s_out);
+                shambase::write_string_to_file(std::string(opts::get_option("-o")), s_out);
             }
             
         }
@@ -532,6 +392,10 @@ namespace shamtest {
         instance::close();
 
 
-        return 0;
+        if(has_error){
+            return -1;
+        }else{
+            return 0;
+        }
     }
 }

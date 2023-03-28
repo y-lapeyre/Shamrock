@@ -9,7 +9,6 @@
 #pragma once 
 
 #include "aliases.hpp"
-#include "shamsys/legacy/mpi_handler.hpp"
 #include "shamrock/legacy/utils/string_utils.hpp"
 #include <chrono>
 #include <fstream>
@@ -143,21 +142,21 @@ namespace logger {
     template <typename T,typename... Types>
     inline void print(sycl::vec<T, 2> s, Types... var2)
     {
-        std::cout << shamsys::format("{} ", s);
+        std::cout << shambase::format("{} ", s);
         print(var2...);
     }
 
     template <typename T,typename... Types>
     inline void print(sycl::vec<T, 3> s, Types... var2)
     {
-        std::cout << shamsys::format("{} ", s);
+        std::cout << shambase::format("{} ", s);
         print(var2...);
     }
 
     template <typename T,typename... Types>
     inline void print(sycl::vec<T, 4> s, Types... var2)
     {
-        std::cout << shamsys::format("{} ", s);
+        std::cout << shambase::format("{} ", s);
         print(var2...);
     }
 
@@ -165,14 +164,14 @@ namespace logger {
     template <typename T,typename... Types>
     inline void print(sycl::vec<T, 8> s, Types... var2)
     {
-        std::cout << shamsys::format("{} ", s);
+        std::cout << shambase::format("{} ", s);
         print(var2...);
     }
 
     template <typename T,typename... Types>
     inline void print(sycl::vec<T, 16> s, Types... var2)
     {
-        std::cout << shamsys::format("{} ", s);
+        std::cout << shambase::format("{} ", s);
         print(var2...);
     }
 

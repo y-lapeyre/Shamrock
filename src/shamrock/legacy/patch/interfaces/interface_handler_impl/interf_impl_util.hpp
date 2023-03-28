@@ -83,7 +83,7 @@ namespace impl{
 
 
                 if (local_pcount == 0){
-                    throw shamutils::throw_with_loc<std::runtime_error>("local patch count is zero this function can not run");
+                    throw shambase::throw_with_loc<std::runtime_error>("local patch count is zero this function can not run");
                 }
 
 

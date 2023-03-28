@@ -14,11 +14,13 @@
 #include "shamrock/legacy/algs/sycl/sycl_algs.hpp"
 #include "shamrock/legacy/patch/base/enabled_fields.hpp"
 #include "shamsys/legacy/log.hpp"
-#include "shamutils/throwUtils.hpp"
+#include "shambase/exception.hpp"
 #include <array>
 #include <memory>
 #include <random>
 #include <utility>
+#include "ResizableBuffer.hpp"
+
 
 template <class T> class PatchDataField {
 
@@ -56,52 +58,29 @@ template <class T> class PatchDataField {
     // member fields
     ///////////////////////////////////
 
-    std::unique_ptr<sycl::buffer<T>> buf;
+    ResizableBuffer<T> buf;
 
     std::string field_name;
 
     u32 nvar;    // number of variable per object
     u32 obj_cnt; // number of contained object
 
-    u32 val_cnt; // nvar*obj_cnt
 
-    u32 capacity;
 
     ///////////////////////////////////
     // internal functions
     ///////////////////////////////////
 
-    void _alloc() {
-        buf = std::make_unique<sycl::buffer<T>>(capacity);
-
-        logger::debug_alloc_ln("PatchDataField", "allocate field :", "len =", capacity);
-    }
-
-    void _free() {
-
-        if (buf) {
-            logger::debug_alloc_ln("PatchDataField", "free field :", "len =", capacity);
-
-            buf.reset();
-        }
-    }
 
     public:
 
     static sycl::buffer<T> convert_to_buf(PatchDataField<T> && pdatf){
-        std::unique_ptr<sycl::buffer<T>> buf_recov;
-        
-        std::swap(pdatf.buf, buf_recov);
-
-        sycl::buffer<T>* ptr = buf_recov.release();
-
-        return *ptr;
+        return ResizableBuffer<T>::convert_to_buf(std::move(pdatf.buf));
     }
 
     PatchDataField(PatchDataField &&other) noexcept
         : buf(std::move(other.buf)), field_name(std::move(other.field_name)),
-          nvar(std::move(other.nvar)), obj_cnt(std::move(other.obj_cnt)),
-          val_cnt(std::move(other.val_cnt)), capacity(std::move(other.capacity)) {
+          nvar(std::move(other.nvar)), obj_cnt(std::move(other.obj_cnt)) {
     } // move constructor
 
     PatchDataField &operator=(PatchDataField &&other) noexcept {
@@ -109,8 +88,6 @@ template <class T> class PatchDataField {
         field_name = std::move(other.field_name);
         nvar       = std::move(other.nvar);
         obj_cnt    = std::move(other.obj_cnt);
-        val_cnt    = std::move(other.val_cnt);
-        capacity   = std::move(other.capacity);
 
         return *this;
     } // move assignment
@@ -120,33 +97,16 @@ template <class T> class PatchDataField {
     using Field_type = T;
 
     inline PatchDataField(std::string name, u32 nvar)
-        : field_name(name), nvar(nvar), obj_cnt(0), val_cnt(0), capacity(0){
-
-                                                                    //_alloc();
-
-                                                                };
+        : field_name(name), nvar(nvar), obj_cnt(0), buf(0){};
 
     PatchDataField(const PatchDataField &other)
-        : field_name(other.field_name), nvar(other.nvar), obj_cnt(other.obj_cnt),
-          val_cnt(other.val_cnt), capacity(other.capacity) {
-
-        ;
-
-        // field_data = other.field_data;
-
-        if (capacity != 0) {
-            _alloc();
-            // copydata(other._data,_data, capacity);
-            syclalgs::basic::copybuf_discard(*other.buf, *buf, capacity);
-        }
+        : field_name(other.field_name), nvar(other.nvar), obj_cnt(other.obj_cnt), buf(other.buf) {
     }
 
     inline PatchDataField(sycl::buffer<T> && moved_buf, u32 obj_cnt, 
     std::string name, u32 nvar) : 
-        obj_cnt(obj_cnt),val_cnt(obj_cnt*nvar), field_name(name),nvar(nvar),capacity(moved_buf.size())
-    {
-        buf = std::make_unique<sycl::buffer<T>>(std::move(moved_buf)); 
-    }
+        obj_cnt(obj_cnt), field_name(name),nvar(nvar), buf(std::forward<sycl::buffer<T>>(moved_buf), obj_cnt*nvar)
+    {}
 
     static PatchDataField<T> mock_field(u64 seed, u32 obj_cnt, std::string name, u32 nvar);
 
@@ -164,14 +124,10 @@ template <class T> class PatchDataField {
 
     PatchDataField &operator=(const PatchDataField &other) = delete;
 
-    inline ~PatchDataField() {
-        logger::debug_alloc_ln("PatchDataField", "free field :", "len =", capacity);
-        _free();
-    }
 
-    inline const std::unique_ptr<sycl::buffer<T>> &get_buf() const { return buf; }
+    inline const std::unique_ptr<sycl::buffer<T>> &get_buf() const { return buf.get_buf(); }
 
-    inline std::unique_ptr<sycl::buffer<T>> &get_buf_priviledge() { return buf; }
+    inline std::unique_ptr<sycl::buffer<T>> &get_buf_priviledge() { return buf.get_buf_priviledge(); }
 
     //[[deprecated]]
     // inline std::unique_ptr<sycl::buffer<T>> get_sub_buf(){
@@ -181,9 +137,9 @@ template <class T> class PatchDataField {
     //    return std::unique_ptr<sycl::buffer<T>>();
     //}
 
-    [[nodiscard]] inline const u32 &size() const { return val_cnt; }
+    [[nodiscard]] inline const u32 &size() const { return buf.size(); }
 
-    [[nodiscard]] inline u64 memsize() const { return val_cnt * sizeof(T); }
+    [[nodiscard]] inline u64 memsize() const { return buf.memsize(); }
 
     [[nodiscard]] inline const u32 &get_nvar() const { return nvar; }
 
@@ -262,34 +218,12 @@ template <class T> class PatchDataField {
 // TODO add overflow check
 template <class T> inline void PatchDataField<T>::resize(u32 new_obj_cnt) {
 
-    logger::debug_alloc_ln("PatchDataField", "resize from : ", val_cnt, "to :", new_obj_cnt * nvar);
-
     u32 new_size = new_obj_cnt * nvar;
     // field_data.resize(new_size);
 
-    //*
-    if (capacity == 0) {
-        capacity = safe_fact * new_size;
-        _alloc();
-    } else if (new_size > capacity) {
-
-        // u32 old_capa = capacity;
-        capacity = safe_fact * new_size;
-
-        sycl::buffer<T> *old_buf = buf.release();
-
-        _alloc();
-
-        syclalgs::basic::copybuf_discard(*old_buf, *buf, val_cnt);
-
-        logger::debug_alloc_ln("PatchDataField", "delete old buf : ");
-        delete old_buf;
-    } else {
-    }
-    //*/
+    buf.resize(new_size);
 
     obj_cnt = new_obj_cnt;
-    val_cnt = new_obj_cnt * nvar;
 }
 
 template <class T> inline void PatchDataField<T>::expand(u32 obj_to_add) {
@@ -300,60 +234,22 @@ template <class T> inline void PatchDataField<T>::shrink(u32 obj_to_rem) {
 
     if (obj_to_rem > obj_cnt) {
         
-        throw shamutils::throw_with_loc<std::invalid_argument>("impossible to remove more object than there is in the patchdata field");
+        throw shambase::throw_with_loc<std::invalid_argument>("impossible to remove more object than there is in the patchdata field");
     }
 
     resize(obj_cnt - obj_to_rem);
 }
 
 template <class T> inline void PatchDataField<T>::overwrite(PatchDataField<T> &f2, u32 obj_cnt) {
-    if (val_cnt < obj_cnt) {
-        throw shamutils::throw_with_loc<std::invalid_argument>("to overwrite you need more element in the field");
-    }
-
-    {
-        sycl::host_accessor acc{*buf};
-        sycl::host_accessor acc_f2{*f2.get_buf()};
-
-        for (u32 i = 0; i < obj_cnt; i++) {
-            // field_data[idx_st + i] = f2.field_data[i];
-            acc[i] = acc_f2[i];
-        }
-    }
+    buf.overwrite(f2.buf, obj_cnt*f2.nvar);
 }
 
 template <class T> inline void PatchDataField<T>::override(sycl::buffer<T> &data, u32 cnt) {
-
-    if (cnt != val_cnt)
-        throw shamutils::throw_with_loc<std::invalid_argument>("buffer size doesn't match patchdata field size"
-        ); // TODO remove ref to size
-
-    if (val_cnt > 0) {
-
-        {
-            sycl::host_accessor acc_cur{*buf};
-            sycl::host_accessor acc{data, sycl::read_only};
-
-            for (u32 i = 0; i < val_cnt; i++) {
-                // field_data[i] = acc[i];
-                acc_cur[i] = acc[i];
-            }
-        }
-    }
+    buf.override(data, cnt);
 }
 
 template <class T> inline void PatchDataField<T>::override(const T val) {
-
-    if (val_cnt > 0) {
-
-        {
-            sycl::host_accessor acc{*buf};
-            for (u32 i = 0; i < val_cnt; i++) {
-                // field_data[i] = val;
-                acc[i] = val;
-            }
-        }
-    }
+    buf.override(val);
 }
 
 template <class T>
@@ -363,9 +259,9 @@ PatchDataField<T>::get_elements_with_range(Lambdacd &&cd_true, T vmin, T vmax) c
     std::vector<u32> idxs;
 
     {
-        sycl::host_accessor acc{*buf};
+        sycl::host_accessor acc{*get_buf()};
 
-        for (u32 i = 0; i < val_cnt; i++) {
+        for (u32 i = 0; i < size(); i++) {
             if (cd_true(acc[i], vmin, vmax)) {
                 idxs.push_back(i);
             }
@@ -381,9 +277,9 @@ inline void PatchDataField<T>::check_err_range(Lambdacd &&cd_true, T vmin, T vma
 
     bool error = false;
     {
-        sycl::host_accessor acc{*buf};
+        sycl::host_accessor acc{*get_buf()};
 
-        for (u32 i = 0; i < val_cnt; i++) {
+        for (u32 i = 0; i < size(); i++) {
             if (!cd_true(acc[i], vmin, vmax)) {
                 logger::err_ln(
                     "PatchDataField",
@@ -403,7 +299,7 @@ inline void PatchDataField<T>::check_err_range(Lambdacd &&cd_true, T vmin, T vma
     }
 
     if(error){
-        throw shamutils::throw_with_loc<std::invalid_argument>("obj not in range");
+        throw shambase::throw_with_loc<std::invalid_argument>("obj not in range");
     }
 
 }
