@@ -6,7 +6,8 @@
 //
 // -------------------------------------------------------//
 
-#include "shamrock/legacy/utils/time_utils.hpp"
+
+#include "shambase/time.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamtest/shamtest.hpp"
 #include "shamsys/NodeInstance.hpp"
@@ -33,7 +34,7 @@ template<class T> void bench_memcpy_sycl(std::string dset_name, sycl::queue & q1
         
         get_compute_queue().wait();
 
-        Timer t;
+        shambase::Timer t;
         t.start();
         get_compute_queue().memcpy(ptr1,ptr2,cnt * sizeof(T)).wait();
         t.end();
@@ -71,7 +72,7 @@ template<class T> void bench_memcpy_sycl_host_dev(std::string dset_name, sycl::q
         
         get_compute_queue().wait();
 
-        Timer t;
+        shambase::Timer t;
         t.start();
         get_compute_queue().memcpy(ptr1,ptr2,cnt * sizeof(T)).wait();
         t.end();
@@ -150,7 +151,7 @@ template<class T> void make_bandwith_matrix(std::string dset_name,sycl::queue & 
 
         mpi::barrier(MPI_COMM_WORLD);
 
-        Timer t; 
+        shambase::Timer t; 
         t.start();
 
         MPI_Request rq_send, rq_recv;

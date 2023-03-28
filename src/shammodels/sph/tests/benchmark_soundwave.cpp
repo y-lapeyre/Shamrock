@@ -121,7 +121,7 @@ std::tuple<f64,f64,f64> benchmark_periodic_box(f32 dr, u32 npatch){
 
     shamsys::instance::get_compute_queue().wait();
 
-    Timer t;
+    shambase::Timer t;
     t.start();
     
     f64 t2 = model.evolve(sched, 0, 100);

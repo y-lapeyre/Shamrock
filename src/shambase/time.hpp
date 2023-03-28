@@ -12,6 +12,8 @@
 #include "shambase/type_aliases.hpp"
 #include "shamsys/legacy/log.hpp"
 
+#include <plf_nanotimer.h>
+
 namespace shambase {
 
 
@@ -53,6 +55,8 @@ namespace shambase {
         return shambase::format_printf("%4.2f", sec_int) + " " + unit;
     } 
 
+
+    /*
     class Timer {
     public:
         std::chrono::steady_clock::time_point t_start, t_end;
@@ -65,6 +69,30 @@ namespace shambase {
         inline void end() {
             t_end = std::chrono::steady_clock::now();
             nanosec   = f64(std::chrono::duration_cast<std::chrono::nanoseconds>(t_end - t_start).count());
+        }
+
+        inline std::string get_time_str() {
+            return nanosec_to_time_str(nanosec);
+        }
+
+        inline f64 elasped_sec(){
+            return f64(nanosec) * 1e-9;
+        }
+
+    };
+    */
+
+    class Timer {
+    public:
+        plf::nanotimer timer;
+        f64 nanosec;
+
+        Timer(){};
+
+        inline void start() { timer.start(); }
+
+        inline void end() {
+            nanosec   = timer.get_elapsed_ns();
         }
 
         inline std::string get_time_str() {
