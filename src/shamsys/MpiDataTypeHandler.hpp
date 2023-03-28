@@ -73,13 +73,19 @@ namespace shamsys::mpidtypehandler {
 } // namespace shamsys::mpidtypehandler
 
 
-
+/**
+ * @brief register a static init function to initialize a mpi type
+ * 
+ */
 #define Register_MPIDtypeInit(placeholdername,name) void mpiinit_##placeholdername ();\
     void (*mpiinit_ptr_##placeholdername)() = mpiinit_##placeholdername;\
     shamsys::mpidtypehandler::MPIDTypeinit mpiinit_class_obj_##placeholdername (mpiinit_ptr_##placeholdername,name);\
     void mpiinit_##placeholdername ()
 
-
+/**
+ * @brief register a static init function to free a mpi type
+ * 
+ */
 #define Register_MPIDtypeFree(placeholdername,name) void mpifree_##placeholdername ();\
     void (*mpifree_ptr_##placeholdername)() = mpifree_##placeholdername;\
     shamsys::mpidtypehandler::MPIDTypefree mpifree_class_obj_##placeholdername (mpifree_ptr_##placeholdername,name);\
