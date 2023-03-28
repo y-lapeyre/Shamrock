@@ -38,7 +38,7 @@ def standalone(json_lst : list, figure_folder : str) -> str:
 
                     vec_N = np.array(s.get_test_dataset(n,"Ncell"));
                     vec_T = np.array(s.get_test_dataset(n,"time_walk"));
-                    vec_Navg = np.array(s.get_test_dataset(n,"avg_neigh"));
+                    vec_Navg = np.array(s.get_test_dataset(n,"avg_neigh"))-1;
                     vec_Nvar = np.array(s.get_test_dataset(n,"var_neigh"));
 
                     vec_stddev = np.sqrt(vec_Nvar)
@@ -96,7 +96,7 @@ def standalone(json_lst : list, figure_folder : str) -> str:
 
                     vec_N = np.array(s.get_test_dataset(n,"Ncell"));
                     vec_T = np.array(s.get_test_dataset(n,"time_refine"));
-                    vec_Navg = np.array(s.get_test_dataset(n,"avg_neigh"));
+                    vec_Navg = np.array(s.get_test_dataset(n,"avg_neigh"))-1;
                     vec_Nvar = np.array(s.get_test_dataset(n,"var_neigh"));
                     vec_lambda = np.array(s.get_test_dataset(n,"lambda_tilde"));
 
@@ -155,7 +155,7 @@ def standalone(json_lst : list, figure_folder : str) -> str:
 
                     vec_N = np.array(s.get_test_dataset(n,"Ncell"));
                     vec_T = np.array(s.get_test_dataset(n,"time_tree"));
-                    vec_Navg = np.array(s.get_test_dataset(n,"avg_neigh"));
+                    vec_Navg = np.array(s.get_test_dataset(n,"avg_neigh"))-1;
                     vec_Nvar = np.array(s.get_test_dataset(n,"var_neigh"));
                     vec_lambda = np.array(s.get_test_dataset(n,"lambda_tilde"));
 
