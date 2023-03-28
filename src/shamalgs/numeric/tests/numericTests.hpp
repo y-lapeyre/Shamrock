@@ -10,7 +10,6 @@
 
 #include "aliases.hpp"
 #include "shamalgs/memory/memory.hpp"
-#include "shamrock/legacy/utils/time_utils.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamtest/shamtest.hpp"

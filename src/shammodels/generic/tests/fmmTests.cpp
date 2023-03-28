@@ -8,7 +8,7 @@
 
 
 #include "aliases.hpp"
-#include "shamrock/legacy/utils/time_utils.hpp"
+#include "shambase/time.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamsys/legacy/sycl_handler.hpp"
 #include "shamrock/tree/RadixTree.hpp"
@@ -443,7 +443,7 @@ Result_nompi_fmm_testing<flt,morton_mode,fmm_order> nompi_fmm_testing(std::uniqu
 
 
     shamsys::instance::get_compute_queue().wait();
-    Timer timer; timer.start();
+    shambase::Timer timer; timer.start();
 
 
     RadixTree<morton_mode, vec,3> rtree = RadixTree<morton_mode, vec,3>(

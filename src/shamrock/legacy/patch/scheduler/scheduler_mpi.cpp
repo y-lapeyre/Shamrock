@@ -23,7 +23,6 @@
 
 #include "shamrock/patch/PatchDataLayout.hpp"
 #include "shamsys/legacy/sycl_handler.hpp"
-#include "shamrock/legacy/utils/time_utils.hpp"
 
 #include "shamsys/legacy/sycl_mpi_interop.hpp"
 #include "shambase/string.hpp"
@@ -307,7 +306,7 @@ void PatchScheduler::scheduler_step(bool do_split_merge, bool do_load_balancing)
 
     if(!is_mpi_sycl_interop_active()) throw shambase::throw_with_loc<std::runtime_error>("sycl mpi interop not initialized");
 
-    Timer timer;
+    shambase::Timer timer;
 
     std::cout << " -> running scheduler step\n";
 

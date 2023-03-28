@@ -6,7 +6,7 @@
 //
 // -------------------------------------------------------//
 
-#include "shamrock/legacy/utils/time_utils.hpp"
+#include "shambase/time.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamsys/legacy/sycl_handler.hpp"
@@ -64,7 +64,7 @@ template<class u_morton, SortImplType impl> f64 benchmark_key_pair_sort(const u3
 
     shuffle (morton_list.begin(), morton_list.end(), eng);
 
-    Timer t;
+    shambase::Timer t;
 
     {
         std::unique_ptr<sycl::buffer<u_morton>> buf_morton = std::make_unique<sycl::buffer<u_morton>>(morton_list.data(),morton_list.size());

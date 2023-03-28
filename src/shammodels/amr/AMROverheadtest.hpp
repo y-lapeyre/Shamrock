@@ -11,7 +11,7 @@
 #include "shamalgs/memory/memory.hpp"
 #include "shammath/intervals.hpp"
 #include "shamrock/amr/AMRGrid.hpp"
-#include "shamrock/legacy/utils/time_utils.hpp"
+#include "shambase/time.hpp"
 #include "shamrock/patch/PatchData.hpp"
 #include "shamrock/tree/RadixTree.hpp"
 #include "shamrock/tree/TreeStructureWalker.hpp"
@@ -205,7 +205,7 @@ class AMRTestModel {
 
             q.wait();
 
-            Timer t;
+            shambase::Timer t;
             t.start();
             q.submit([&](sycl::handler &cgh) {
                 using Rta = walker::Radix_tree_accessor<u64, u64_3>;

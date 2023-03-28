@@ -7,8 +7,9 @@
 // -------------------------------------------------------//
 
 #include "shamalgs/memory/memory.hpp"
+#include "shambase/time.hpp"
 #include "shamrock/legacy/patch/base/patchdata.hpp"
-#include "shamrock/legacy/utils/time_utils.hpp"
+
 #include "shamrock/patch/PatchDataLayout.hpp"
 #include "shamtest/shamtest.hpp"
 
@@ -734,7 +735,7 @@ inline void test_tree(std::string dset_name) {
     for (f64 cnt = 1000; cnt < Nmax; cnt *= 1.1) {
         logger::debug_ln("TestTreePerf", cnt);
         shamsys::instance::get_compute_queue().wait();
-        Timer timer;
+        shambase::Timer timer;
         timer.start();
 
         RadixTree<morton_mode, vec, 3> rtree = RadixTree<morton_mode, vec, 3>(
