@@ -17,7 +17,7 @@ namespace shamalgs::numeric {
 
     template<class T>
     sycl::buffer<T> exclusive_sum(sycl::queue &q, sycl::buffer<T> &buf1, u32 len){
-        return details::exclusive_sum_atomic_decoupled_v5<T, 512>(q, buf1, len);
+        return details::exclusive_sum_fallback(q, buf1, len);
     }
 
     template<class T>
