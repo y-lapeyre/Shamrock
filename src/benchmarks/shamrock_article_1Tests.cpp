@@ -7,7 +7,7 @@
 // -------------------------------------------------------//
 
 #include "shamalgs/memory/memory.hpp"
-#include "shammath/BBAA.hpp"
+#include "shammath/AABB.hpp"
 #include "shamrock/amr/AMRGrid.hpp"
 #include "shamrock/legacy/patch/scheduler/scheduler_mpi.hpp"
 #include "shamrock/tree/RadixTree.hpp"
@@ -710,7 +710,7 @@ f64 amr_walk_perf(f64 lambda_tilde,
 
             class ObjectValues {
                 public:
-                shammath::BBAA<u64_3> cell_bound;
+                shammath::AABB<u64_3> cell_bound;
                 ObjectValues(Access acc, u32 index)
                     : cell_bound(acc.cell_low_bound[index],
                         acc.cell_high_bound[index]) {}
@@ -720,11 +720,11 @@ f64 amr_walk_perf(f64 lambda_tilde,
         static bool
         criterion(u32 node_index, Access acc, typename Access::ObjectValues current_values) {
 
-            shammath::BBAA<u64_3> tree_cell_bound {
+            shammath::AABB<u64_3> tree_cell_bound {
                 acc.tree_cell_coordrange_min[node_index], 
                 acc.tree_cell_coordrange_max[node_index]};
 
-            shammath::BBAA<u64_3> intersect = tree_cell_bound.get_intersect(current_values.cell_bound);
+            shammath::AABB<u64_3> intersect = tree_cell_bound.get_intersect(current_values.cell_bound);
 
             //logger::raw(
             //    shambase::format("{} {} | {} {} -> {} {} -> {}\n",
@@ -805,7 +805,7 @@ f64 amr_walk_perf(f64 lambda_tilde,
                         leaf_iterator.iter_object_in_leaf(
                             leaf_iterator_id, [&](u32 obj_id) { 
 
-                                shammath::BBAA<u64_3> cell_bound {
+                                shammath::AABB<u64_3> cell_bound {
                                     cell_min[obj_id], 
                                     cell_max[obj_id]};
 
