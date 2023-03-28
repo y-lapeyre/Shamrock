@@ -286,20 +286,6 @@ inline void test_tree_build_steps(std::string dset_name) {
 
 
 
-TestStart(Benchmark, "shamrock_article1:tree_build_perf", tree_building_paper_results_tree_perf_steps, 1){
-
-    test_tree_build_steps<u32, f32, 0>("morton = u32, field type = f32");
-    test_tree_build_steps<u64, f32, 0>("morton = u64, field type = f32");
-    test_tree_build_steps<u32, f64, 0>("morton = u32, field type = f64");
-    test_tree_build_steps<u64, f64, 0>("morton = u64, field type = f64");
-    test_tree_build_steps<u32, u64, 0>("morton = u32, field type = u64");
-    test_tree_build_steps<u64, u64, 0>("morton = u64, field type = u64");
-
-}
-
-
-
-
 
 
 template<class u_morton, class flt>
@@ -540,12 +526,6 @@ void test_sph_iter_overhead(std::string dset_name){
 
 }
 
-TestStart(Benchmark, "shamrock_article1:sph_walk_perf", tree_walk_sph_paper_results_tree_perf_steps, 1){
-    test_sph_iter_overhead<u32, f32, 15>("uniform distrib reduction level 15");
-    test_sph_iter_overhead<u32, f32, 6>("uniform distrib reduction level 6");
-    test_sph_iter_overhead<u32, f32, 3>("uniform distrib reduction level 3");
-    test_sph_iter_overhead<u32, f32, 0>("uniform distrib no reduction");
-}
 
 
 
@@ -560,7 +540,7 @@ using buf_access_read_write =
 
 
 
-template<class morton_mode, u32 reduc_lev>
+template<class morton_mode, u32 reduc_lev, class FctRho>
 f64 amr_walk_perf(f64 lambda_tilde,
     std::vector<f64> & Npart,
     std::vector<f64> & avg_neigh,
@@ -658,16 +638,7 @@ f64 amr_walk_perf(f64 lambda_tilde,
 
                 f32 Rpow2 = sycl::dot(cell_center,cell_center);
 
-                auto rho = [](f32 Rpow2) -> f32 {
-                    constexpr f32 R_int = 0.001;
-                    constexpr f32 R_int_pow2 = R_int*R_int;
-
-                    f32 div = (Rpow2 > R_int_pow2) ? Rpow2 : R_int_pow2;
-
-                    return 1/div;
-                };
-
-                f32 density = rho(Rpow2);
+                f32 density = FctRho::rho(Rpow2);
                 f32 lambda_tilde = lambda_tilde_f32;
                 f32 cell_len_side = cell_coords.delt().x();
 
@@ -817,6 +788,9 @@ f64 amr_walk_perf(f64 lambda_tilde,
         q.submit([&](sycl::handler &cgh) {
             auto walker        = walk.get_access(cgh);
             auto leaf_iterator = tree.get_leaf_access(cgh);
+
+            sycl::accessor cell_min {*pdat.get_field<u64_3>(0).get_buf(),cgh, sycl::read_only};
+            sycl::accessor cell_max {*pdat.get_field<u64_3>(1).get_buf(),cgh, sycl::read_only};
             
             sycl::accessor neigh_count {neighbours,cgh,sycl::write_only, sycl::no_init};
 
@@ -829,8 +803,15 @@ f64 amr_walk_perf(f64 lambda_tilde,
                     item,int_values,
                     [&](u32 /*node_id*/, u32 leaf_iterator_id) {
                         leaf_iterator.iter_object_in_leaf(
-                            leaf_iterator_id, [&](u32 /*obj_id*/) { 
-                                sum += 1; 
+                            leaf_iterator_id, [&](u32 obj_id) { 
+
+                                shammath::BBAA<u64_3> cell_bound {
+                                    cell_min[obj_id], 
+                                    cell_max[obj_id]};
+
+                                sum += cell_bound
+                                    .get_intersect(int_values.cell_bound)
+                                    .is_surface_or_volume() ? 1 : 0; 
                             }
                         );
                     },
@@ -902,7 +883,7 @@ f64 amr_walk_perf(f64 lambda_tilde,
 
 
 template<class morton_mode, u32 reduc_lev>
-void test_amr_iter_overhead(std::string dset_name){
+void test_amr_iter_overhead_collapse(std::string dset_name){
 
 
     std::vector<f64> Npart;
@@ -913,11 +894,22 @@ void test_amr_iter_overhead(std::string dset_name){
     std::vector<f64> time_tree;
     std::vector<f64> time_walk;
 
+    struct FctCollapse{
+        static constexpr f32 rho (f32 Rpow2) noexcept{
+            constexpr f32 R_int = 0.001;
+            constexpr f32 R_int_pow2 = R_int*R_int;
+
+            f32 div = (Rpow2 > R_int_pow2) ? Rpow2 : R_int_pow2;
+
+            return 1/div;
+        };
+    };
+
     for(f32 ll = 1; ll > 0.017; ll /= 1.05){
 
         lambda_tilde.push_back(ll);
 
-        amr_walk_perf<morton_mode, reduc_lev>(ll,  Npart,avg_neigh,var_neigh,time_refine,time_tree,time_walk);
+        amr_walk_perf<morton_mode, reduc_lev,FctCollapse>(ll,  Npart,avg_neigh,var_neigh,time_refine,time_tree,time_walk);
     }
 
 
@@ -933,11 +925,45 @@ void test_amr_iter_overhead(std::string dset_name){
     
 }
 
-TestStart(Benchmark, "shamrock_article1:amr_walk_perf", tree_walk_amr_paper_results_tree_perf_steps, 1){
-    test_amr_iter_overhead<u32, 0>("uniform distrib no reduction");
+
+
+template<class morton_mode, u32 reduc_lev>
+void test_amr_iter_overhead_uniform(std::string dset_name){
+
+
+    std::vector<f64> Npart;
+    std::vector<f64> avg_neigh;
+    std::vector<f64> var_neigh;
+    std::vector<f64> lambda_tilde;
+    std::vector<f64> time_refine;
+    std::vector<f64> time_tree;
+    std::vector<f64> time_walk;
+
+    struct FctUniform{
+        static constexpr f32 rho (f32 /*Rpow2*/) noexcept{
+            return 1;
+        };
+    };
+
+    for(f32 ll = 1; ll > 0.008; ll /= 1.05){
+
+        lambda_tilde.push_back(ll);
+
+        amr_walk_perf<morton_mode, reduc_lev,FctUniform>(ll,  Npart,avg_neigh,var_neigh,time_refine,time_tree,time_walk);
+    }
+
+
+    auto & dat_test = shamtest::test_data().new_dataset(dset_name);
+
+    dat_test.add_data("Ncell", Npart);
+    dat_test.add_data("avg_neigh", avg_neigh);
+    dat_test.add_data("var_neigh", var_neigh);
+    dat_test.add_data("lambda_tilde", lambda_tilde);
+    dat_test.add_data("time_refine", time_refine);
+    dat_test.add_data("time_tree", time_tree);
+    dat_test.add_data("time_walk", time_walk);
+    
 }
-
-
 
 
 
@@ -1262,18 +1288,63 @@ void test_fmm_nbody_iter_overhead(std::string dset_name, flt crit_theta){
 }
 
 
+
+
+
+
+
+
+
+
+
+
+
+TestStart(Benchmark, "shamrock_article1:sph_walk_perf", tree_walk_sph_paper_results_tree_perf_steps, 1){
+    test_sph_iter_overhead<u32, f32, 15>("sph uniform distrib reduction level 15");
+    test_sph_iter_overhead<u32, f32, 6> ("sph uniform distrib reduction level 6");
+    test_sph_iter_overhead<u32, f32, 3> ("sph uniform distrib reduction level 3");
+    test_sph_iter_overhead<u32, f32, 0> ("sph uniform distrib no reduction");
+}
+
+
+
+TestStart(Benchmark, "shamrock_article1:amr_walk_perf", tree_walk_amr_paper_results_tree_perf_steps, 1){
+    test_amr_iter_overhead_collapse<u32, 0>("collapse distrib no reduction");
+    test_amr_iter_overhead_uniform<u32, 0>("uniform distrib no reduction");
+}
+
+
+
+
+
+
+TestStart(Benchmark, "shamrock_article1:tree_build_perf", tree_building_paper_results_tree_perf_steps, 1){
+
+    test_tree_build_steps<u32, f32, 0>("morton = u32, field type = f32");
+    test_tree_build_steps<u64, f32, 0>("morton = u64, field type = f32");
+    test_tree_build_steps<u32, f64, 0>("morton = u32, field type = f64");
+    test_tree_build_steps<u64, f64, 0>("morton = u64, field type = f64");
+    test_tree_build_steps<u32, u64, 0>("morton = u32, field type = u64");
+    test_tree_build_steps<u64, u64, 0>("morton = u64, field type = u64");
+
+}
+
+
+
+
+
 TestStart(Benchmark, "shamrock_article1:fmm_walk_perf", tree_walk_fmm_paper_results_tree_perf_steps, 1){
 
-    test_fmm_nbody_iter_overhead<u32, f32, 6>("uniform distrib reduction level = 6 thetac = 1",1);
-    test_fmm_nbody_iter_overhead<u32, f32, 6>("uniform distrib reduction level = 6 thetac = 0.75",0.75);
-    test_fmm_nbody_iter_overhead<u32, f32, 6>("uniform distrib reduction level = 6 thetac = 0.5",0.5);
-    test_fmm_nbody_iter_overhead<u32, f32, 6>("uniform distrib reduction level = 6 thetac = 0.4",0.4);
-    test_fmm_nbody_iter_overhead<u32, f32, 6>("uniform distrib reduction level = 6 thetac = 0.3",0.3);
+    test_fmm_nbody_iter_overhead<u32, f32, 6>("fmm uniform distrib reduction level = 6 thetac = 1",1);
+    test_fmm_nbody_iter_overhead<u32, f32, 6>("fmm uniform distrib reduction level = 6 thetac = 0.75",0.75);
+    test_fmm_nbody_iter_overhead<u32, f32, 6>("fmm uniform distrib reduction level = 6 thetac = 0.5",0.5);
+    test_fmm_nbody_iter_overhead<u32, f32, 6>("fmm uniform distrib reduction level = 6 thetac = 0.4",0.4);
+    test_fmm_nbody_iter_overhead<u32, f32, 6>("fmm uniform distrib reduction level = 6 thetac = 0.3",0.3);
 
-    //test_fmm_nbody_iter_overhead<u32, f32, 3>("uniform distrib reduction level 3 thetac = 3e-1",0.3);
-    test_fmm_nbody_iter_overhead<u32, f32, 0>("uniform distrib no reduction thetac = 1",1);
-    test_fmm_nbody_iter_overhead<u32, f32, 0>("uniform distrib no reduction thetac = 0.75",0.75);
-    test_fmm_nbody_iter_overhead<u32, f32, 0>("uniform distrib no reduction thetac = 0.5",0.5);
-    test_fmm_nbody_iter_overhead<u32, f32, 0>("uniform distrib no reduction thetac = 0.4",0.4);
-    test_fmm_nbody_iter_overhead<u32, f32, 0>("uniform distrib no reduction thetac = 0.3",0.3);
+    //test_fmm_nbody_iter_overhead<u32, f32, 3>("fmm uniform distrib reduction level 3 thetac = 3e-1",0.3);
+    test_fmm_nbody_iter_overhead<u32, f32, 0>("fmm uniform distrib no reduction thetac = 1",1);
+    test_fmm_nbody_iter_overhead<u32, f32, 0>("fmm uniform distrib no reduction thetac = 0.75",0.75);
+    test_fmm_nbody_iter_overhead<u32, f32, 0>("fmm uniform distrib no reduction thetac = 0.5",0.5);
+    test_fmm_nbody_iter_overhead<u32, f32, 0>("fmm uniform distrib no reduction thetac = 0.4",0.4);
+    test_fmm_nbody_iter_overhead<u32, f32, 0>("fmm uniform distrib no reduction thetac = 0.3",0.3);
 }
