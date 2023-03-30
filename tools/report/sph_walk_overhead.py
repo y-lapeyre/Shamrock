@@ -48,7 +48,7 @@ def standalone(json_lst : list, figure_folder : str) -> str:
                     vec_rpart = np.array(s.get_test_dataset(n,"rpart"));
 
                     Y_scat = (np.abs(vec_T)/vec_N)
-                    plt.scatter(np.array(vec_N),Y_scat,c=vec_Navg,norm=matplotlib.colors.LogNorm())
+                    plt.scatter(np.array(vec_N),Y_scat,c=vec_Navg)
 
                     #axs.set_title('Bitonic sort perf')
                     plt.colorbar(label='$<N_\mathcal{R}>$', location='top')
