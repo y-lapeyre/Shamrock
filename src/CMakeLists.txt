@@ -13,3 +13,4 @@ add_subdirectory(shammodels)
 #add_subdirectory(runscript)
 
 add_subdirectory(benchmarks)
+add_subdirectory(tests)

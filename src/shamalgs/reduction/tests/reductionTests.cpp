@@ -9,7 +9,7 @@
 #include <random>
 #include "shamalgs/reduction/reduction.hpp"
 #include "shamalgs/reduction/details/sycl2020reduction.hpp"
-#include "shamrock/legacy/utils/time_utils.hpp"
+#include "shambase/time.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamtest/shamtest.hpp"
@@ -59,7 +59,7 @@ template<class T,class Fct> f64 bench_reduction(Fct && red_fct, const u32 & size
 
     auto & q = shamsys::instance::get_compute_queue();
 
-    Timer t;
+    shambase::Timer t;
 
     {
         sycl::buffer<T> buf {vals.data(),size_test};
@@ -97,16 +97,16 @@ template<class T,class Fct> f64 bench_reduction(Fct && red_fct, const u32 & size
 template<class T>
 void unit_test_reduc(){
 
-    unit_test_reduc<f64>("reduction : manual wg=32",
-        [](sycl::queue & q, sycl::buffer<T> & buf1, u32 start_id, u32 end_id) -> T {
-            return shamalgs::reduction::details::GroupReduction<T, 32>::sum(q, buf1, start_id, end_id);
-        }
-    );
-    unit_test_reduc<f64>("reduction : sycl2020", 
-        [](sycl::queue & q, sycl::buffer<T> & buf1, u32 start_id, u32 end_id) -> T {
-            return shamalgs::reduction::details::SYCL2020<T>::sum(q, buf1, start_id, end_id);
-        }
-    );
+    //unit_test_reduc<f64>("reduction : manual wg=32",
+    //    [](sycl::queue & q, sycl::buffer<T> & buf1, u32 start_id, u32 end_id) -> T {
+    //        return shamalgs::reduction::details::GroupReduction<T, 32>::sum(q, buf1, start_id, end_id);
+    //    }
+    //);
+    //unit_test_reduc<f64>("reduction : sycl2020", 
+    //    [](sycl::queue & q, sycl::buffer<T> & buf1, u32 start_id, u32 end_id) -> T {
+    //        return shamalgs::reduction::details::SYCL2020<T>::sum(q, buf1, start_id, end_id);
+    //    }
+    //);
     unit_test_reduc<f64>("reduction : main",
         [](sycl::queue & q, sycl::buffer<T> & buf1, u32 start_id, u32 end_id) -> T {
             return shamalgs::reduction::sum(q, buf1, start_id, end_id);

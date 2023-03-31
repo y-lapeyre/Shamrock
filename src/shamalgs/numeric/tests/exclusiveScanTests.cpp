@@ -15,6 +15,7 @@
 #include "shamalgs/numeric/details/numericFallback.hpp"
 #include "shamalgs/numeric/details/scanDecoupledLookback.hpp"
 #include "shamalgs/numeric/numeric.hpp"
+#include "shambase/time.hpp"
 
 template<class T>
 struct TestExclScan {
@@ -72,7 +73,7 @@ struct TestExclScan {
 
         q.wait();
 
-        Timer t;
+        shambase::Timer t;
         t.start();
         sycl::buffer<u32> res = fct(q, buf, len);
 
@@ -193,7 +194,7 @@ struct TestExclScanInplace {
 
         q.wait();
 
-        Timer t;
+        shambase::Timer t;
         t.start();
         fct(q, buf, len);
 

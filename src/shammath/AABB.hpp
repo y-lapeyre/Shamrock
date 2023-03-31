@@ -18,22 +18,30 @@
 
 namespace shammath {
 
+    /**
+     * @brief Axis-Aligned bounding box
+     * This class describe a bounding box aligned on the axis
+     * This class describe a domain of coordinates defined by a cartesian product of 1d ranges
+     * For exemple : [ax,bx] x [ay,by] x [az,bz]
+     * 
+     * @tparam T 
+     */
     template<class T>
-    struct BBAA {
+    struct AABB {
 
         using T_prop = shambase::sycl_utils::VectorProperties<T>;
 
         T lower;
         T upper;
 
-        inline BBAA() = default;
+        inline AABB() = default;
 
-        inline BBAA(T lower, T upper) : lower(lower), upper(upper){};
+        inline AABB(T lower, T upper) : lower(lower), upper(upper){};
 
-        inline BBAA(std::tuple<T, T> range)
+        inline AABB(std::tuple<T, T> range)
             : lower(std::get<0>(range)), upper(std::get<1>(range)) {}
 
-        inline BBAA(std::pair<T, T> range)
+        inline AABB(std::pair<T, T> range)
             : lower(std::get<0>(range)), upper(std::get<1>(range)) {}
 
         inline T delt() const { return upper - lower; }
@@ -42,7 +50,7 @@ namespace shammath {
             return shambase::product_accumulate(upper - lower);
         }
 
-        inline BBAA get_intersect(BBAA other) const {
+        inline AABB get_intersect(AABB other) const {
             return {
                 shambase::sycl_utils::g_sycl_max(lower, other.lower),
                 shambase::sycl_utils::g_sycl_min(upper, other.upper)

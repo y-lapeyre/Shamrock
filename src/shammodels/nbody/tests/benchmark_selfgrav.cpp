@@ -117,7 +117,7 @@ std::tuple<f64,f64> benchmark_selfgrav(f32 dr, u32 npatch){
 
     shamsys::instance::get_compute_queue().wait();
 
-    Timer t;
+    shambase::Timer t;
     t.start();
     
     model.evolve(sched, 0, 1e-3);

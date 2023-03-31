@@ -14,7 +14,7 @@
 #include <cstdlib>
 #include <sstream>
 
-#include "shamrock/legacy/utils/time_utils.hpp"
+#include "shambase/time.hpp"
 #include "shamsys/legacy/cmdopt.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamrock/legacy/utils/string_utils.hpp"
@@ -247,7 +247,7 @@ namespace shamtest {
 
 
             mpi::barrier(MPI_COMM_WORLD);
-            Timer timer;
+            shambase::Timer timer;
             timer.start();
             auto res = test.run();
             timer.end();

@@ -7,11 +7,11 @@
 // -------------------------------------------------------//
 
 #include "shamalgs/memory/memory.hpp"
-#include "shammath/BBAA.hpp"
+#include "shammath/AABB.hpp"
 #include "shamrock/amr/AMRGrid.hpp"
 #include "shamrock/legacy/patch/scheduler/scheduler_mpi.hpp"
 #include "shamrock/tree/RadixTree.hpp"
-#include "shamrock/legacy/utils/time_utils.hpp"
+#include "shambase/time.hpp"
 #include "shamrock/tree/TreeStructureWalker.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
@@ -92,12 +92,12 @@ inline void test_tree_build_steps(std::string dset_name) {
         
             
             
-            Timer timer;
+            shambase::Timer timer;
             u32 cnt_obj = cnt;
 
             auto time_func = [](auto f){
                 shamsys::instance::get_compute_queue().wait();
-                Timer timer;
+                shambase::Timer timer;
                 timer.start();
 
                 f();
@@ -213,7 +213,7 @@ inline void test_tree_build_steps(std::string dset_name) {
 
             {
                 shamsys::instance::get_compute_queue().wait();
-                Timer timer2;
+                shambase::Timer timer2;
                 timer2.start();
                 
                 RadixTree<morton_mode, vec, 3> rtree = RadixTree<morton_mode, vec, 3>(
@@ -423,7 +423,7 @@ void test_sph_iter_overhead(std::string dset_name){
                 rtree.convert_bounding_box(shamsys::instance::get_compute_queue());
 
                 auto benchmark = [&]() -> f64 {
-                    Timer t;
+                    shambase::Timer t;
                     
                     q.wait();
                     t.start();
@@ -613,7 +613,7 @@ f64 amr_walk_perf(f64 lambda_tilde,
 
     sycl::queue &q = shamsys::instance::get_compute_queue();
     q.wait();
-    Timer t_refine; t_refine.start();
+    shambase::Timer t_refine; t_refine.start();
 
     bool rerefine = false;
 
@@ -710,7 +710,7 @@ f64 amr_walk_perf(f64 lambda_tilde,
 
             class ObjectValues {
                 public:
-                shammath::BBAA<u64_3> cell_bound;
+                shammath::AABB<u64_3> cell_bound;
                 ObjectValues(Access acc, u32 index)
                     : cell_bound(acc.cell_low_bound[index],
                         acc.cell_high_bound[index]) {}
@@ -720,11 +720,11 @@ f64 amr_walk_perf(f64 lambda_tilde,
         static bool
         criterion(u32 node_index, Access acc, typename Access::ObjectValues current_values) {
 
-            shammath::BBAA<u64_3> tree_cell_bound {
+            shammath::AABB<u64_3> tree_cell_bound {
                 acc.tree_cell_coordrange_min[node_index], 
                 acc.tree_cell_coordrange_max[node_index]};
 
-            shammath::BBAA<u64_3> intersect = tree_cell_bound.get_intersect(current_values.cell_bound);
+            shammath::AABB<u64_3> intersect = tree_cell_bound.get_intersect(current_values.cell_bound);
 
             //logger::raw(
             //    shambase::format("{} {} | {} {} -> {} {} -> {}\n",
@@ -754,7 +754,7 @@ f64 amr_walk_perf(f64 lambda_tilde,
 
 
     q.wait();
-    Timer t_tree; t_tree.start();
+    shambase::Timer t_tree; t_tree.start();
     RadixTree<u64, u64_3, 3> tree(
             q,
             grid.sched.get_sim_box().partch_coord_to_domain<u64_3>(p),
@@ -784,7 +784,7 @@ f64 amr_walk_perf(f64 lambda_tilde,
 
     auto benchmark = [&]() -> f64 {
         q.wait();
-        Timer t; t.start();
+        shambase::Timer t; t.start();
         q.submit([&](sycl::handler &cgh) {
             auto walker        = walk.get_access(cgh);
             auto leaf_iterator = tree.get_leaf_access(cgh);
@@ -805,7 +805,7 @@ f64 amr_walk_perf(f64 lambda_tilde,
                         leaf_iterator.iter_object_in_leaf(
                             leaf_iterator_id, [&](u32 obj_id) { 
 
-                                shammath::BBAA<u64_3> cell_bound {
+                                shammath::AABB<u64_3> cell_bound {
                                     cell_min[obj_id], 
                                     cell_max[obj_id]};
 
@@ -1159,7 +1159,7 @@ void test_fmm_nbody_iter_overhead(std::string dset_name, flt crit_theta){
 
 
             auto benchmark = [&]() -> f64 {
-                Timer t;
+                shambase::Timer t;
                 
                 q.wait();
                 t.start();

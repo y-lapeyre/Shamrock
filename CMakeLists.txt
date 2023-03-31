@@ -92,6 +92,7 @@ add_subdirectory(external)
 #for some reason it doesn't work with target_include_directories
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -isystem ${COMP_ROOT_DIR}/include -isystem ${COMP_ROOT_DIR}/include/sycl -DOMPI_SKIP_MPICXX")
 
+include_directories(Before System external/plf_nanotimer)
 
 ######################
 # Add subdirectories

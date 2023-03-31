@@ -43,7 +43,7 @@
 #include "shamsys/legacy/sycl_mpi_interop.hpp"
 #include "shamrock/tree/RadixTree.hpp"
 #include "shamrock/legacy/utils/string_utils.hpp"
-#include "shamrock/legacy/utils/time_utils.hpp"
+#include "shambase/time.hpp"
 #include "shammodels/generic/physics/units.hpp"
 #include "shammodels/sph/base/kernels.hpp"
 #include "shammodels/sph/base/kernels.hpp"

@@ -82,7 +82,7 @@ BenchResult benchmark_comm(std::mt19937 & eng, u32 max_patch_per_node, u32 nb_pa
 
     mpi::barrier(MPI_COMM_WORLD);
     
-    Timer fetch_timer;
+    shambase::Timer fetch_timer;
     fetch_timer.start();
     comm.fetch_comm_table();
     fetch_timer.end();
@@ -92,7 +92,7 @@ BenchResult benchmark_comm(std::mt19937 & eng, u32 max_patch_per_node, u32 nb_pa
 
     mpi::barrier(MPI_COMM_WORLD);
 
-    Timer comm_timer;
+    shambase::Timer comm_timer;
     comm_timer.start();
     SparseCommResult<PatchDataField<T>> out = comm.sparse_exchange(send_data);
     mpi::barrier(MPI_COMM_WORLD);

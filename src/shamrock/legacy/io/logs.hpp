@@ -19,7 +19,7 @@
 #include "shamsys/legacy/sycl_handler.hpp"
 #include "shamsys/legacy/sycl_mpi_interop.hpp"
 #include "shamrock/legacy/utils/string_utils.hpp"
-#include "shamrock/legacy/utils/time_utils.hpp"
+#include "shambase/time.hpp"
 
 namespace logfiles {
     inline bool dump_timings = true;
@@ -79,7 +79,7 @@ namespace timings {
         private:
         
 
-        Timer time;
+        shambase::Timer time;
         std::string name;
         timingtype kind;
 
