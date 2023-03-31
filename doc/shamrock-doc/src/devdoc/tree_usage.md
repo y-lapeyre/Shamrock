@@ -1,27 +1,42 @@
 # Shamrock Radix Tree usage
 
-## Information
+## The tree
 
-## Setup 
 
+The radix tree in shamrock can be imported by 
+```c++
+#include "shamrock/tree/RadixTree.hpp"
+```
+
+This define the class `RadixTree<...>`. This templated `RadixTree` can be instanciated like this : 
 
 ```c++
-
-RadixTree<morton_mode, vector_type, ..dimension..> rtree = 
-
-    RadixTree<morton_mode, vector_type, ..dimension..>(
-        shamsys::instance::get_compute_queue(),
-        {coord_range.lower, coord_range.upper},
-        pos,
-        cnt,
-        reduc_lev
-    );
-
-    rtree.compute_cell_ibounding_box(shamsys::instance::get_compute_queue());
-    rtree.convert_bounding_box(shamsys::instance::get_compute_queue());
-    
-
+RadixTree<
+        u32,   // The precision of the morton codes
+        f32_3, // The type of the position data
+        3      // The dimension 
+    >
 ```
+
+### Building the Tree
+
+```c++
+sycl::queue & q = shamsys::instance::get_compute_queue(); //select the queue to run on
+
+using Tree = RadixTree<u32,f32_3,3>;
+
+Tree rtree(
+    q, //the sycl queue to build the tree on
+    {coord_range.lower, coord_range.upper}, // The range of coordinates in the postions
+    pos, // the position buffer
+    cnt, //number of element in the position buffer
+    reduc_lev //level of reduction
+);
+
+rtree.compute_cell_ibounding_box(q);
+rtree.convert_bounding_box(q);
+```
+
 
 ## Tree traversal 
 
