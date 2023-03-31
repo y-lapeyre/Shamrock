@@ -11,6 +11,7 @@
 #include "shamalgs/memory/memory.hpp"
 #include "shamalgs/numeric/details/numericFallback.hpp"
 #include "shamalgs/numeric/numeric.hpp"
+#include "shambase/integer.hpp"
 #include "shamsys/legacy/log.hpp"
 
 class StreamCompactionAlg;
@@ -42,10 +43,16 @@ namespace shamalgs::numeric::details {
             return {{},0};
         }
 
+        constexpr u32 group_size = 256;
+        u32 max_len = new_len;
+        u32 group_cnt = shambase::group_count(new_len, group_size);
+        group_cnt = group_cnt + (group_cnt % 4);
+        u32 corrected_len = group_cnt*group_size;
+
         // create the index buffer that we will return
         sycl::buffer<u32> index_map{new_len};
 
-        q.submit([&](sycl::handler & cgh){
+        q.submit([&,max_len](sycl::handler & cgh){
 
             sycl::accessor sum_vals {excl_sum,cgh,sycl::read_only};
             sycl::accessor new_idx {index_map,cgh,sycl::write_only, sycl::no_init};
@@ -53,9 +60,14 @@ namespace shamalgs::numeric::details {
             u32 last_idx = len-1;
             u32 last_flag = end_flag;
 
-            cgh.parallel_for<StreamCompactionAlg>(sycl::range<1>{len},[=](sycl::item<1> i){
+            cgh.parallel_for<StreamCompactionAlg>(
 
-                const u32 idx = i.get_linear_id();
+                sycl::nd_range<1>{corrected_len, group_size}, [=](sycl::nd_item<1> id) {
+                u32 local_id = id.get_local_id(0);
+                u32 group_tile_id = id.get_group_linear_id();
+                u32 idx = group_tile_id * group_size + local_id;
+
+                if(idx >= max_len) return;
 
                 u32 current_val = sum_vals[idx];
                 
