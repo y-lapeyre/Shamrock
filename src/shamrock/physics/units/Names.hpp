@@ -32,47 +32,50 @@ namespace shamrock::units {
         cd  = candela,
 
         /*
-         * derived units
+         * si derived units
          */
-        Hz,
-        Hertz = Hz, ///< hertz : frequency (s−1)
-        N,
-        Newtown = N, ///< (kg⋅m⋅s−2)
-        Pa,
-        Pascal = Pa, ///< (kg⋅m−1⋅s−2) 	(N/m2)
-        J,
-        Joule = J, ///< (kg⋅m2⋅s−2) 	(N⋅m = Pa⋅m3)
-        W,
-        Watt = W, ///< (kg⋅m2⋅s−3) 	(J/s)
-        C,
-        Coulomb = C, ///< (s⋅A)
-        V,
-        Volt = V, ///< (kg⋅m2⋅s−3⋅A−1) 	(W/A) = (J/C)
-        F,
-        Farad = F, ///< (kg−1⋅m−2⋅s4⋅A2) 	(C/V) = (C2/J)
-        ohm,       ///< (kg⋅m2⋅s−3⋅A−2) 	(V/A) = (J⋅s/C2)
-        S,
-        Siemens = S, ///< (kg−1⋅m−2⋅s3⋅A2) 	(ohm−1)
-        Wb,
-        Weber = Wb, ///< (kg⋅m2⋅s−2⋅A−1) 	(V⋅s)
-        T,
-        Temperature = T, ///< (kg⋅s−2⋅A−1) 	(Wb/m2)
-        H,
-        Henry = H, ///< (kg⋅m2⋅s−2⋅A−2) 	(Wb/A)
-        degC,
-        degree_ceilsus = degC, ///< relative to 273.15 K 	(K)
-        lm,
-        lumens = lm, ///< (cd⋅sr) 	(cd⋅sr)
-        lx,
-        lux = lx, ///< (cd⋅sr⋅m−2) 	(lm/m2)
-        Bq,
-        Bequerel = Bq, ///< (s−1)
-        Gy,
-        Gray = Gy, ///< (m2⋅s−2) 	(J/kg)
-        Sv,
-        Sievert = Sv, ///< (m2⋅s−2) 	(J/kg)
-        kat,
-        katal = kat, ///< (mol⋅s−1)
+
+        mps, ///< meter per second (m.s-1)
+
+        Hertz,       ///< hertz : frequency (s−1)
+        Newtown,     ///< (kg⋅m⋅s−2)
+        Pascal,      ///< (kg⋅m−1⋅s−2) 	(N/m2)
+        Joule,       ///< (kg⋅m2⋅s−2) 	(N⋅m = Pa⋅m3)
+        Watt,        ///< (kg⋅m2⋅s−3) 	(J/s)
+        Coulomb,     ///< (s⋅A)
+        Volt,        ///< (kg⋅m2⋅s−3⋅A−1) 	(W/A) = (J/C)
+        Farad,       ///< (kg−1⋅m−2⋅s4⋅A2) 	(C/V) = (C2/J)
+        Ohm,         ///< (kg⋅m2⋅s−3⋅A−2) 	(V/A) = (J⋅s/C2)
+        Siemens,     ///< (kg−1⋅m−2⋅s3⋅A2) 	(ohm−1)
+        Weber,       ///< (kg⋅m2⋅s−2⋅A−1) 	(V⋅s)
+        Tesla, ///< (kg⋅s−2⋅A−1) 	(Wb/m2)
+        Henry,       ///< (kg⋅m2⋅s−2⋅A−2) 	(Wb/A)
+        lumens,      ///< (cd⋅sr) 	(cd⋅sr)
+        lux,         ///< (cd⋅sr⋅m−2) 	(lm/m2)
+        Bequerel,    ///< (s−1)
+        Gray,        ///< (m2⋅s−2) 	(J/kg)
+        Sievert,     ///< (m2⋅s−2) 	(J/kg)
+        katal,       ///< (mol⋅s−1)
+
+        Hz = Hertz,   
+        N = Newtown,    
+        Pa = Pascal,   
+        J = Joule,   
+        W = Watt,    
+        C = Coulomb,    
+        V = Volt,   
+        F = Farad,    
+        ohm = Ohm,  
+        S = Siemens,    
+        Wb = Weber,   
+        T = Tesla,    
+        H = Henry,  	
+        lm = lumens,   
+        lx = lux,   
+        Bq = Bequerel,   
+        Gy = Gray,   
+        Sv = Sievert,   
+        kat = katal,  
 
         /*
          * alternative base units
@@ -123,12 +126,12 @@ namespace shamrock::units {
     namespace si {
         enum ConstantsName {
             delta_nu_cs,
-            c          ,
-            h          ,
-            e          ,
-            k          ,
-            Na         ,
-            Kcd        ,
+            c,
+            h,
+            e,
+            k,
+            Na,
+            Kcd,
         };
     }
 

@@ -8,12 +8,10 @@
 
 #pragma once
 
-#include "shambase/type_traits.hpp"
 #include "Names.hpp"
+#include "shambase/type_traits.hpp"
 
 namespace shamrock {
-
-    
 
     template<class T>
     struct UnitSystem {
@@ -40,7 +38,7 @@ namespace shamrock {
 #define addget(uname)                                                                              \
     template<units::UnitName u, std::enable_if_t<u == units::uname, int> = 0>                      \
     inline constexpr T get() noexcept
-#define add_to(uname)                                                                               \
+#define add_to(uname)                                                                              \
     template<units::UnitName u, std::enable_if_t<u == units::uname, int> = 0>                      \
     inline constexpr T to() noexcept
 
@@ -64,6 +62,69 @@ namespace shamrock {
 
         addget(candela) { return cd; }
         add_to(candela) { return cd_inv; }
+
+        addget(Hertz){return s_inv;}
+        add_to(Hertz){return s;}
+
+        addget(mps){return m*s_inv;}
+        add_to(mps){return m_inv*s;}
+
+        addget(Newtown){return kg*m*s_inv*s_inv;}
+        add_to(Newtown){return kg_inv*m_inv*s*s;}
+
+        addget(Pascal){return kg*m_inv*s_inv*s_inv;}
+        add_to(Pascal){return kg_inv*m*s*s;}
+
+        addget(Joule){return get<units::Newtown>()*m;}
+        add_to(Joule){return to<units::Newtown>()*m_inv;}
+
+        addget(Watt){return get<units::Joule>()*s_inv;}
+        add_to(Watt){return to<units::Joule>()*s;}
+
+        addget(Coulomb){return s*A;}
+        add_to(Coulomb){return s_inv*A_inv;}
+
+        addget(Volt){return get<units::Watt>()*A_inv;}
+        add_to(Volt){return to<units::Watt>()*A;}
+
+        addget(Farad){return get<units::Coulomb>()*to<units::Volt>();}
+        add_to(Farad){return to<units::Coulomb>()*get<units::Volt>();}
+
+        addget(Ohm){return get<units::Volt>()*to<units::Ampere>();}
+        add_to(Ohm){return to<units::Volt>()*get<units::Ampere>();}
+
+        addget(Siemens){return to<units::Ohm>();}
+        add_to(Siemens){return get<units::Ohm>();}
+
+        addget(Weber){return get<units::Volt>()*get<units::second>();}
+        add_to(Weber){return to<units::Volt>()*to<units::second>();}
+
+        addget(Tesla){return get<units::Weber>()*m_inv*m_inv;}
+        add_to(Tesla){return to<units::Weber>()*m*m;}
+
+        addget(Henry){return get<units::Weber>()*to<units::Ampere>();}
+        add_to(Henry){return to<units::Weber>()*get<units::Ampere>();}
+
+        addget(lumens){return get<units::candela>();}
+        add_to(lumens){return to<units::candela>();}
+
+        addget(lux){return get<units::lumens>()*m_inv*m_inv;}
+        add_to(lux){return to<units::lumens>()*m*m;}
+
+        addget(Bequerel){return to<units::second>();}
+        add_to(Bequerel){return get<units::second>();}
+
+        addget(Gray){return m*m*s_inv*s_inv;}
+        add_to(Gray){return m_inv*m_inv*s*s;}
+
+        addget(Sievert){return m*m*s_inv*s_inv;}
+        add_to(Sievert){return m_inv*m_inv*s*s;}
+
+        addget(katal){return mol*s_inv;}
+        add_to(katal){return mol_inv*s;}
+
+
+
     };
 
 } // namespace shamrock
