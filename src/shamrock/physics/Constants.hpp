@@ -16,7 +16,8 @@ namespace shamrock {
     template<class T>
     struct Constants {
 
-        static constexpr T pi = shambase::Constants<T>::pi;
+        static constexpr T pi = shambase::Constants<T>::pi;        
+        static constexpr T pi_square = pi*pi;
 
         struct SiBase {
             static constexpr T delta_nu_cs = 9192631770;      // (s-1)
@@ -33,11 +34,15 @@ namespace shamrock {
         static constexpr T electron_proton_ratio = 1 / proton_electron_ratio;
 
         struct Si {
+
+
+            static constexpr T c_sq           = SiBase::c * SiBase::c;       // 
+
             static constexpr T G         = 6.6743015e-11;                      // (N.m2.kg-2)
             static constexpr T hbar      = 1.054571817e-34;                    // (J.s-1)
             static constexpr T mu_0      = 1.2566370621219e-6;                 //
             static constexpr T Z_0       = mu_0 * SiBase::c;                   //
-            static constexpr T epsilon_0 = 1 / (mu_0 * SiBase::c * SiBase::c); //
+            static constexpr T epsilon_0 = 1 / (Z_0 * SiBase::c); //
             static constexpr T ke        = 1 / (4 * pi * epsilon_0);           //
 
             static constexpr T proton_mass   = 1.67262192e-27;                      //(kg)
