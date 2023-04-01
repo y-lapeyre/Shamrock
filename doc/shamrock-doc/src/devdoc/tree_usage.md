@@ -33,8 +33,8 @@ Tree rtree(
     reduc_lev //level of reduction
 );
 
-rtree.compute_cell_ibounding_box(q);
-rtree.convert_bounding_box(q);
+rtree.compute_cell_ibounding_box(q); //compute the sizes of the tree cells
+rtree.convert_bounding_box(q); //convert the cell sizes to the original space of coordinates
 ```
 
 
@@ -42,6 +42,7 @@ rtree.convert_bounding_box(q);
 
 
 ### Interaction Criterion 
+ Here is an exemple of the definition of an interaction criterion
 
 ```c++
 template<class u_morton, class flt>
@@ -49,11 +50,13 @@ class SPHTestInteractionCrit {
     using vec = sycl::vec<flt, 3>;
     public:
 
+    // Information for the criterion
     RadixTree<u_morton, vec, 3> &tree;
     sycl::buffer<vec> &positions;
     u32 part_count;
     flt Rpart;
 
+    // Information for the criterion that will be accessed by the GPU
     class Access {
         public:
 
@@ -65,10 +68,12 @@ class SPHTestInteractionCrit {
         flt Rpart_pow2;
 
         Access(SPHTestInteractionCrit crit, sycl::handler &cgh)
-            : part_pos{crit.positions, cgh, sycl::read_only}, Rpart(crit.Rpart),Rpart_pow2(crit.Rpart*crit.Rpart),tree_cell_coordrange_min{*crit.tree.buf_pos_min_cell_flt, cgh, sycl::read_only},
-                tree_cell_coordrange_max{
-                    *crit.tree.buf_pos_max_cell_flt, cgh, sycl::read_only} {}
+              : part_pos{crit.positions, cgh, sycl::read_only}, 
+                Rpart(crit.Rpart),Rpart_pow2(crit.Rpart*crit.Rpart),
+                tree_cell_coordrange_min{*crit.tree.buf_pos_min_cell_flt, cgh, sycl::read_only},
+                tree_cell_coordrange_max{*crit.tree.buf_pos_max_cell_flt, cgh, sycl::read_only} {}
 
+        //The values necessary to compute the interaction criterion per objects
         class ObjectValues {
             public:
             vec xyz_a;
@@ -78,6 +83,7 @@ class SPHTestInteractionCrit {
 
     };
 
+    // the interaction criterion
     inline static bool
     criterion(u32 node_index, Access acc, typename Access::ObjectValues current_values) {
         vec cur_pos_min_cell_b = acc.tree_cell_coordrange_min[node_index];
