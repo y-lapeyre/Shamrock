@@ -10,6 +10,7 @@
 
 #include "Names.hpp"
 #include "shambase/type_traits.hpp"
+#include "shamrock/physics/Constants.hpp"
 
 namespace shamrock {
 
@@ -124,6 +125,53 @@ namespace shamrock {
         add_to(katal){return mol_inv*s;}
 
 
+        // alternative base units
+
+        addget(minute){return s*Constants<T>::mn_to_s;}
+        add_to(minute){return s_inv/Constants<T>::mn_to_s;}
+
+        addget(hours){return s*Constants<T>::hr_to_s;}
+        add_to(hours){return s_inv/Constants<T>::hr_to_s;}
+
+        addget(days){return s*Constants<T>::dy_to_s;}
+        add_to(days){return s_inv/Constants<T>::dy_to_s;}
+
+        addget(years){return s*Constants<T>::yr_to_s;}
+        add_to(years){return s_inv/Constants<T>::yr_to_s;}
+
+        addget(mega_years){return s*Constants<T>::Myr_to_s;}
+        add_to(mega_years){return s_inv/Constants<T>::Myr_to_s;}
+
+        addget(giga_years){return s*Constants<T>::Gyr_to_s;}
+        add_to(giga_years){return s_inv/Constants<T>::Gyr_to_s;}
+
+
+
+
+
+        addget(nanometer){return m*1e-9;}
+        add_to(nanometer){return m_inv*1e9;}
+        
+        addget(micrometer){return m*1e-6;}
+        add_to(micrometer){return m_inv*1e6;}
+        
+        addget(millimeter){return m*1e-3;}
+        add_to(millimeter){return m_inv*1e3;}
+        
+        addget(centimeter){return m*1e-2;}
+        add_to(centimeter){return m_inv*1e2;}
+        
+        addget(kilometer){return m*1e3;}
+        add_to(kilometer){return m_inv*1e-3;}
+        
+        addget(astronomical_unit){return m*Constants<T>::au_to_m;}
+        add_to(astronomical_unit){return m_inv/Constants<T>::au_to_m;}
+        
+        addget(light_year){return m*Constants<T>::ly_to_m;}
+        add_to(light_year){return m_inv/Constants<T>::ly_to_m;}
+        
+        addget(parsec){return m*Constants<T>::pc_to_m;}
+        add_to(parsec){return m_inv/Constants<T>::pc_to_m;}
 
     };
 

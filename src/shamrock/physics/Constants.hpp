@@ -17,7 +17,7 @@ namespace shamrock {
     struct Constants {
 
         static constexpr T pi = shambase::Constants<T>::pi;        
-        static constexpr T pi_square = pi*pi;
+        static constexpr T pi_square = shambase::Constants<T>::pi_square;
 
         struct SiBase {
             static constexpr T delta_nu_cs = 9192631770;      // (s-1)
@@ -63,6 +63,8 @@ namespace shamrock {
         static constexpr T hr_to_s = 3600;         //(s)
         static constexpr T dy_to_s = 24 * hr_to_s; //(s)
         static constexpr T yr_to_s = 31557600;     //(s)
+        static constexpr T Myr_to_s = 1e6*yr_to_s;     //(s)
+        static constexpr T Gyr_to_s = 1e9*yr_to_s;     //(s)
 
         static constexpr T eV_to_J  = 1.602176634e-19; // (J)
         static constexpr T erg_to_J = 1e-7;            // (J)
