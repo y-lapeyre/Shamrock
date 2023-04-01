@@ -82,7 +82,7 @@ inline void test_tree_build_steps(std::string dset_name) {
 
     auto get_repetition_count = [](f64 cnt){
         if(cnt < 1e5) return 100;
-        return 20;
+        return 30;
     };
 
     u32 index = 0;
@@ -156,6 +156,7 @@ inline void test_tree_build_steps(std::string dset_name) {
                     rtree.compute_cell_ibounding_box(shamsys::instance::get_compute_queue());
                 }));
 
+                shamsys::instance::get_compute_queue().wait();
                 times_compute_coord_range[index]+=(time_func([&](){
 
                 
