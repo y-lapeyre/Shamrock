@@ -70,12 +70,11 @@ namespace shamalgs::numeric::details {
                 if(idx >= max_len) return;
 
                 u32 current_val = sum_vals[idx];
+
+                bool _if1 = (idx < last_idx);
+                bool should_write = (_if1 && (current_val < sum_vals[idx+1])) || (bool(last_flag) && !_if1);
                 
-                if(idx < last_idx){
-                    if(current_val < sum_vals[idx+1]){
-                        new_idx[current_val] = idx;
-                    }
-                }else if(last_flag){
+                if(should_write){
                     new_idx[current_val] = idx;
                 }
 
