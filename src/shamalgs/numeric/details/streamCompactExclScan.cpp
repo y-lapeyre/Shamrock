@@ -44,8 +44,8 @@ namespace shamalgs::numeric::details {
         }
 
         constexpr u32 group_size = 256;
-        u32 max_len = new_len;
-        u32 group_cnt = shambase::group_count(new_len, group_size);
+        u32 max_len = len;
+        u32 group_cnt = shambase::group_count(len, group_size);
         group_cnt = group_cnt + (group_cnt % 4);
         u32 corrected_len = group_cnt*group_size;
 
