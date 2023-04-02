@@ -11,7 +11,7 @@
 #include "Names.hpp"
 #include "shambase/floats.hpp"
 #include "shambase/type_traits.hpp"
-#include "shamrock/physics/Constants.hpp"
+#include "shamrock/physics/units/ConvertionConstants.hpp"
 
 #define addget(uname)                                                                              \
     template<                                                                                      \
@@ -23,31 +23,10 @@
 
 #define PREF get_prefix_val<pref>()
 #define Uget(unitname, mult_pow) get<units::unitname, (mult_pow)*power>()
-#define Cget(constant_name, mult_pow) pow_div<(mult_pow)*power>(constant_name)
+#define Cget(constant_name, mult_pow) shambase::pow_constexpr_fast_inv<(mult_pow)*power>(constant_name,T(1) / constant_name)
 
 namespace shamrock {
 
-    enum UnitPrefix {
-        tera  = 12,  // e12
-        giga  = 9,   // e9
-        mega  = 6,   // e6
-        kilo  = 3,   // e3
-        hecto = 2,   // e2
-        deca  = 1,   // e1
-        None  = 0,   // 1
-        deci  = -1,  // e-1
-        centi = -2,  // e-2
-        milli = -3,  // e-3
-        micro = -6,  // e-6
-        nano  = -9,  // e-9
-        pico  = -12, // e-12
-        femto = -15, // e-15
-    };
-
-    template<class T>
-    inline constexpr T get_prefix_val(UnitPrefix p) {
-        return shambase::pow_constexpr_fast_inv<p, T>(10, 1e-1);
-    }
 
     template<class T>
     class UnitSystem {
@@ -57,10 +36,7 @@ namespace shamrock {
             return shambase::pow_constexpr_fast_inv<power>(a, a_inv);
         }
 
-        template<i32 power>
-        inline static constexpr T pow_div(T a) noexcept {
-            return shambase::pow_constexpr_fast_inv<power>(a, T(1) / a);
-        }
+        using Uconvert = ConvertionConstants<T>;
 
         public:
         const T s, m, kg, A, K, mol, cd;
@@ -113,16 +89,21 @@ namespace shamrock {
         
 
         // alternative base units
-        addget(minute) { return PREF* Uget(s, 1) * Cget(Constants<T>::mn_to_s, 1); }
-        addget(hours)  { return PREF* Uget(s, 1) * Cget(Constants<T>::hr_to_s, 1); }
-        addget(days)   { return PREF* Uget(s, 1) * Cget(Constants<T>::dy_to_s, 1); }
-        addget(years)  { return PREF* Uget(s, 1) * Cget(Constants<T>::yr_to_s, 1); }
+        addget(minute) { return PREF* Uget(s, 1) * Cget(Uconvert::mn_to_s, 1); }
+        addget(hours)  { return PREF* Uget(s, 1) * Cget(Uconvert::hr_to_s, 1); }
+        addget(days)   { return PREF* Uget(s, 1) * Cget(Uconvert::dy_to_s, 1); }
+        addget(years)  { return PREF* Uget(s, 1) * Cget(Uconvert::yr_to_s, 1); }
 
-        addget(astronomical_unit) { return PREF* Uget(m, 1) * Cget(Constants<T>::au_to_m, 1); }
-        addget(light_year)        { return PREF* Uget(m, 1) * Cget(Constants<T>::ly_to_m, 1); }
-        addget(parsec)            { return PREF* Uget(m, 1) * Cget(Constants<T>::pc_to_m, 1); }
+        addget(astronomical_unit) { return PREF* Uget(m, 1) * Cget(Uconvert::au_to_m, 1); }
+        addget(light_year)        { return PREF* Uget(m, 1) * Cget(Uconvert::ly_to_m, 1); }
+        addget(parsec)            { return PREF* Uget(m, 1) * Cget(Uconvert::pc_to_m, 1); }
+
+        addget(eV) {return PREF* Uget(Joule, 1) * Cget(Uconvert::eV_to_J,1);}
+        addget(erg) {return PREF* Uget(Joule, 1) * Cget(Uconvert::erg_to_J,1);}
 
         // clang-format on
+
+
         template<units::UnitName u, i32 power>
         inline constexpr T to() {
             return get<u, -power>();
