@@ -9,14 +9,63 @@
 #pragma once
 
 #include "Names.hpp"
+#include "shambase/floats.hpp"
 #include "shambase/type_traits.hpp"
 #include "shamrock/physics/Constants.hpp"
 
+#define addget(uname)                                                                              \
+    template<                                                                                      \
+        UnitPrefix pref = None,                                                                    \
+        units::UnitName u,                                                                         \
+        i32 power                                = 1,                                              \
+        std::enable_if_t<u == units::uname, int> = 0>                                              \
+    inline constexpr T get() noexcept
+
+#define PREF get_prefix_val<pref>()
+#define Uget(unitname, mult_pow) get<units::unitname, (mult_pow)*power>()
+#define Cget(constant_name, mult_pow) pow_div<(mult_pow)*power>(constant_name)
+
 namespace shamrock {
 
-    template<class T>
-    struct UnitSystem {
+    enum UnitPrefix {
 
+        tera  = 12, // e12
+        giga  = 9,  // e9
+        mega  = 6,  // e6
+        kilo  = 3,  // e3
+        hecto = 2,  // e2
+        deca  = 1,  // e1
+
+        None = 0,
+
+        deci  = -1,  // e-1
+        centi = -2,  // e-2
+        milli = -3,  // e-3
+        micro = -6,  // e-6
+        nano  = -9,  // e-9
+        pico  = -12, // e-12
+        femto = -15, // e-15
+
+    };
+    template<class T>
+    inline constexpr T get_prefix_val(UnitPrefix p) {
+        return shambase::pow_constexpr_fast_inv<p, T>(10, 1e-1);
+    }
+
+    template<class T>
+    class UnitSystem {
+
+        template<i32 power>
+        inline static constexpr T pow(T a, T a_inv) noexcept {
+            return shambase::pow_constexpr_fast_inv<power>(a, a_inv);
+        }
+
+        template<i32 power>
+        inline static constexpr T pow_div(T a) noexcept {
+            return shambase::pow_constexpr_fast_inv<power>(a, T(1) / a);
+        }
+
+        public:
         const T s, m, kg, A, K, mol, cd;
 
         const T s_inv, m_inv, kg_inv, A_inv, K_inv, mol_inv, cd_inv;
@@ -31,148 +80,61 @@ namespace shamrock {
             T unit_lumint
         )
             : s(1 / unit_time), m(1 / unit_lenght), kg(1 / unit_mass), A(1 / unit_current),
-              K(1 / unit_temperature), mol(1 / unit_qte), cd(1 / unit_lumint),
+              K(1 / unit_temperature), mol(1 / unit_qte), cd(1 / unit_lumint), s_inv(unit_time),
+              m_inv(unit_lenght), kg_inv(unit_mass), A_inv(unit_current), K_inv(unit_temperature),
+              mol_inv(unit_qte), cd_inv(unit_lumint) {}
 
-              s_inv(unit_time), m_inv(unit_lenght), kg_inv(unit_mass), A_inv(unit_current),
-              K_inv(unit_temperature), mol_inv(unit_qte), cd_inv(unit_lumint) {}
-
-#define addget(uname)                                                                              \
-    template<units::UnitName u, std::enable_if_t<u == units::uname, int> = 0>                      \
-    inline constexpr T get() noexcept
-#define add_to(uname)                                                                              \
-    template<units::UnitName u, std::enable_if_t<u == units::uname, int> = 0>                      \
-    inline constexpr T to() noexcept
-
-        addget(second) { return s; }
-        add_to(second) { return s_inv; }
-
-        addget(metre) { return m; }
-        add_to(metre) { return m_inv; }
-
-        addget(kilogramm) { return kg; }
-        add_to(kilogramm) { return kg_inv; }
-
-        addget(Ampere) { return A; }
-        add_to(Ampere) { return A_inv; }
-
-        addget(Kelvin) { return K; }
-        add_to(Kelvin) { return K_inv; }
-
-        addget(mole) { return mol; }
-        add_to(mole) { return mol_inv; }
-
-        addget(candela) { return cd; }
-        add_to(candela) { return cd_inv; }
-
-        addget(Hertz){return s_inv;}
-        add_to(Hertz){return s;}
-
-        addget(mps){return m*s_inv;}
-        add_to(mps){return m_inv*s;}
-
-        addget(Newtown){return kg*m*s_inv*s_inv;}
-        add_to(Newtown){return kg_inv*m_inv*s*s;}
-
-        addget(Pascal){return kg*m_inv*s_inv*s_inv;}
-        add_to(Pascal){return kg_inv*m*s*s;}
-
-        addget(Joule){return get<units::Newtown>()*m;}
-        add_to(Joule){return to<units::Newtown>()*m_inv;}
-
-        addget(Watt){return get<units::Joule>()*s_inv;}
-        add_to(Watt){return to<units::Joule>()*s;}
-
-        addget(Coulomb){return s*A;}
-        add_to(Coulomb){return s_inv*A_inv;}
-
-        addget(Volt){return get<units::Watt>()*A_inv;}
-        add_to(Volt){return to<units::Watt>()*A;}
-
-        addget(Farad){return get<units::Coulomb>()*to<units::Volt>();}
-        add_to(Farad){return to<units::Coulomb>()*get<units::Volt>();}
-
-        addget(Ohm){return get<units::Volt>()*to<units::Ampere>();}
-        add_to(Ohm){return to<units::Volt>()*get<units::Ampere>();}
-
-        addget(Siemens){return to<units::Ohm>();}
-        add_to(Siemens){return get<units::Ohm>();}
-
-        addget(Weber){return get<units::Volt>()*get<units::second>();}
-        add_to(Weber){return to<units::Volt>()*to<units::second>();}
-
-        addget(Tesla){return get<units::Weber>()*m_inv*m_inv;}
-        add_to(Tesla){return to<units::Weber>()*m*m;}
-
-        addget(Henry){return get<units::Weber>()*to<units::Ampere>();}
-        add_to(Henry){return to<units::Weber>()*get<units::Ampere>();}
-
-        addget(lumens){return get<units::candela>();}
-        add_to(lumens){return to<units::candela>();}
-
-        addget(lux){return get<units::lumens>()*m_inv*m_inv;}
-        add_to(lux){return to<units::lumens>()*m*m;}
-
-        addget(Bequerel){return to<units::second>();}
-        add_to(Bequerel){return get<units::second>();}
-
-        addget(Gray){return m*m*s_inv*s_inv;}
-        add_to(Gray){return m_inv*m_inv*s*s;}
-
-        addget(Sievert){return m*m*s_inv*s_inv;}
-        add_to(Sievert){return m_inv*m_inv*s*s;}
-
-        addget(katal){return mol*s_inv;}
-        add_to(katal){return mol_inv*s;}
-
+        // clang-format off
+        addget(second)    { return PREF* pow<power>(s  , s_inv);   }
+        addget(metre)     { return PREF* pow<power>(m  , m_inv);   }
+        addget(kilogramm) { return PREF* pow<power>(kg , kg_inv);  }
+        addget(Ampere)    { return PREF* pow<power>(A  , A_inv);   }
+        addget(Kelvin)    { return PREF* pow<power>(K  , K_inv);   }
+        addget(mole)      { return PREF* pow<power>(mol, mol_inv); }
+        addget(candela)   { return PREF* pow<power>(cd , cd_inv);  }
+        
+        addget(Hertz)   { return PREF* Uget(s, -1); }
+        addget(mps)     { return PREF* Uget(m, 1)  * Uget(s, -1); }
+        addget(Newtown) { return PREF* Uget(kg, 1) * Uget(m, 1)  * Uget(s, -2); }
+        addget(Pascal)  { return PREF* Uget(kg, 1) * Uget(m, -1) * Uget(s, -2); }
+        addget(Joule)   { return PREF* Uget(Newtown, 1)  * Uget(m, 1); }
+        addget(Watt)    { return PREF* Uget(Joule, 1)  * Uget(s, -1); }
+        addget(Coulomb) { return PREF* Uget(s, 1)  * Uget(A, 1); }
+        addget(Volt)    { return PREF* Uget(Watt, 1)  * Uget(A, -1); }
+        addget(Farad)   { return PREF* Uget(Coulomb, 1)  * Uget(Volt, -1); }
+        addget(Ohm)     { return PREF* Uget(Volt, 1)  * Uget(Ampere, -1); }
+        addget(Siemens) { return PREF* Uget(Ohm, -1); }
+        addget(Weber)   { return PREF* Uget(Volt, 1) * Uget(second, 1); }
+        addget(Tesla)   { return PREF* Uget(Weber, 1) * Uget(m, -2); }
+        addget(Henry)   { return PREF* Uget(Weber, 1) * Uget(A, -1); }
+        addget(lumens)  { return PREF* Uget(candela, 1) ; }
+        addget(lux)     { return PREF* Uget(lumens, 1) * Uget(m, -2) ; }
+        addget(Bequerel){ return PREF* Uget(s, -1)  ; }
+        addget(Gray)    { return PREF* Uget(m, 2)*Uget(s, -2)  ; }
+        addget(Sievert) { return PREF* Uget(m, 2)*Uget(s, -2)  ; }
+        addget(katal)   { return PREF* Uget(mol, 1)*Uget(s, -1)  ; }
+        
 
         // alternative base units
+        addget(minute) { return PREF* Uget(s, 1) * Cget(Constants<T>::mn_to_s, 1); }
+        addget(hours) { return PREF* Uget(s, 1) * Cget(Constants<T>::hr_to_s, 1); }
+        addget(days) { return PREF* Uget(s, 1) * Cget(Constants<T>::dy_to_s, 1); }
+        addget(years) { return PREF* Uget(s, 1) * Cget(Constants<T>::yr_to_s, 1); }
 
-        addget(minute){return s*Constants<T>::mn_to_s;}
-        add_to(minute){return s_inv/Constants<T>::mn_to_s;}
+        addget(astronomical_unit) { return PREF* Uget(m, 1) * Cget(Constants<T>::au_to_m, 1); }
+        addget(light_year) { return PREF* Uget(m, 1) * Cget(Constants<T>::ly_to_m, 1); }
+        addget(parsec) { return PREF* Uget(m, 1) * Cget(Constants<T>::pc_to_m, 1); }
 
-        addget(hours){return s*Constants<T>::hr_to_s;}
-        add_to(hours){return s_inv/Constants<T>::hr_to_s;}
-
-        addget(days){return s*Constants<T>::dy_to_s;}
-        add_to(days){return s_inv/Constants<T>::dy_to_s;}
-
-        addget(years){return s*Constants<T>::yr_to_s;}
-        add_to(years){return s_inv/Constants<T>::yr_to_s;}
-
-        addget(mega_years){return s*Constants<T>::Myr_to_s;}
-        add_to(mega_years){return s_inv/Constants<T>::Myr_to_s;}
-
-        addget(giga_years){return s*Constants<T>::Gyr_to_s;}
-        add_to(giga_years){return s_inv/Constants<T>::Gyr_to_s;}
-
-
-
-
-
-        addget(nanometer){return m*1e-9;}
-        add_to(nanometer){return m_inv*1e9;}
-        
-        addget(micrometer){return m*1e-6;}
-        add_to(micrometer){return m_inv*1e6;}
-        
-        addget(millimeter){return m*1e-3;}
-        add_to(millimeter){return m_inv*1e3;}
-        
-        addget(centimeter){return m*1e-2;}
-        add_to(centimeter){return m_inv*1e2;}
-        
-        addget(kilometer){return m*1e3;}
-        add_to(kilometer){return m_inv*1e-3;}
-        
-        addget(astronomical_unit){return m*Constants<T>::au_to_m;}
-        add_to(astronomical_unit){return m_inv/Constants<T>::au_to_m;}
-        
-        addget(light_year){return m*Constants<T>::ly_to_m;}
-        add_to(light_year){return m_inv/Constants<T>::ly_to_m;}
-        
-        addget(parsec){return m*Constants<T>::pc_to_m;}
-        add_to(parsec){return m_inv/Constants<T>::pc_to_m;}
-
+        // clang-format on
+        template<units::UnitName u, i32 power>
+        inline constexpr T to() {
+            return get<u, -power>();
+        }
     };
 
 } // namespace shamrock
+
+#undef addget
+#undef PREF
+#undef Uget
+#undef Cget

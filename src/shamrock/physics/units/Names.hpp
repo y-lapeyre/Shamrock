@@ -115,17 +115,7 @@ namespace shamrock::units {
         ly = light_year,
         pc = parsec,
 
-        // other mass units
-        g,
-        gramm = g,
 
-        // other e current units
-
-        // other temperature units
-
-        // other quantity units
-
-        // other luminous intensity units
 
         /*
          * alternative derived units
@@ -135,7 +125,7 @@ namespace shamrock::units {
         erg,                // (J)
     };
 
-    namespace si {
+    namespace constants {
         enum ConstantsName {
             delta_nu_cs,
             c,
@@ -144,6 +134,8 @@ namespace shamrock::units {
             k,
             Na,
             Kcd,
+
+            
         };
     }
 
