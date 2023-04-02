@@ -28,16 +28,13 @@
 namespace shamrock {
 
     enum UnitPrefix {
-
-        tera  = 12, // e12
-        giga  = 9,  // e9
-        mega  = 6,  // e6
-        kilo  = 3,  // e3
-        hecto = 2,  // e2
-        deca  = 1,  // e1
-
-        None = 0,
-
+        tera  = 12,  // e12
+        giga  = 9,   // e9
+        mega  = 6,   // e6
+        kilo  = 3,   // e3
+        hecto = 2,   // e2
+        deca  = 1,   // e1
+        None  = 0,   // 1
         deci  = -1,  // e-1
         centi = -2,  // e-2
         milli = -3,  // e-3
@@ -45,8 +42,8 @@ namespace shamrock {
         nano  = -9,  // e-9
         pico  = -12, // e-12
         femto = -15, // e-15
-
     };
+
     template<class T>
     inline constexpr T get_prefix_val(UnitPrefix p) {
         return shambase::pow_constexpr_fast_inv<p, T>(10, 1e-1);
@@ -94,36 +91,36 @@ namespace shamrock {
         addget(candela)   { return PREF* pow<power>(cd , cd_inv);  }
         
         addget(Hertz)   { return PREF* Uget(s, -1); }
-        addget(mps)     { return PREF* Uget(m, 1)  * Uget(s, -1); }
-        addget(Newtown) { return PREF* Uget(kg, 1) * Uget(m, 1)  * Uget(s, -2); }
-        addget(Pascal)  { return PREF* Uget(kg, 1) * Uget(m, -1) * Uget(s, -2); }
-        addget(Joule)   { return PREF* Uget(Newtown, 1)  * Uget(m, 1); }
-        addget(Watt)    { return PREF* Uget(Joule, 1)  * Uget(s, -1); }
-        addget(Coulomb) { return PREF* Uget(s, 1)  * Uget(A, 1); }
-        addget(Volt)    { return PREF* Uget(Watt, 1)  * Uget(A, -1); }
-        addget(Farad)   { return PREF* Uget(Coulomb, 1)  * Uget(Volt, -1); }
-        addget(Ohm)     { return PREF* Uget(Volt, 1)  * Uget(Ampere, -1); }
+        addget(mps)     { return PREF* Uget(m, 1)       * Uget(s, -1); }
+        addget(Newtown) { return PREF* Uget(kg, 1)      * Uget(m, 1)  * Uget(s, -2); }
+        addget(Pascal)  { return PREF* Uget(kg, 1)      * Uget(m, -1) * Uget(s, -2); }
+        addget(Joule)   { return PREF* Uget(Newtown, 1) * Uget(m, 1); }
+        addget(Watt)    { return PREF* Uget(Joule, 1)   * Uget(s, -1); }
+        addget(Coulomb) { return PREF* Uget(s, 1)       * Uget(A, 1); }
+        addget(Volt)    { return PREF* Uget(Watt, 1)    * Uget(A, -1); }
+        addget(Farad)   { return PREF* Uget(Coulomb, 1) * Uget(Volt, -1); }
+        addget(Ohm)     { return PREF* Uget(Volt, 1)    * Uget(Ampere, -1); }
         addget(Siemens) { return PREF* Uget(Ohm, -1); }
-        addget(Weber)   { return PREF* Uget(Volt, 1) * Uget(second, 1); }
-        addget(Tesla)   { return PREF* Uget(Weber, 1) * Uget(m, -2); }
-        addget(Henry)   { return PREF* Uget(Weber, 1) * Uget(A, -1); }
-        addget(lumens)  { return PREF* Uget(candela, 1) ; }
-        addget(lux)     { return PREF* Uget(lumens, 1) * Uget(m, -2) ; }
-        addget(Bequerel){ return PREF* Uget(s, -1)  ; }
-        addget(Gray)    { return PREF* Uget(m, 2)*Uget(s, -2)  ; }
-        addget(Sievert) { return PREF* Uget(m, 2)*Uget(s, -2)  ; }
-        addget(katal)   { return PREF* Uget(mol, 1)*Uget(s, -1)  ; }
+        addget(Weber)   { return PREF* Uget(Volt, 1)    * Uget(second, 1); }
+        addget(Tesla)   { return PREF* Uget(Weber, 1)   * Uget(m, -2); }
+        addget(Henry)   { return PREF* Uget(Weber, 1)   * Uget(A, -1); }
+        addget(lumens)  { return PREF* Uget(candela, 1); }
+        addget(lux)     { return PREF* Uget(lumens, 1)  * Uget(m, -2); }
+        addget(Bequerel){ return PREF* Uget(s, -1); }
+        addget(Gray)    { return PREF* Uget(m, 2)       *Uget(s, -2)  ; }
+        addget(Sievert) { return PREF* Uget(m, 2)       *Uget(s, -2)  ; }
+        addget(katal)   { return PREF* Uget(mol, 1)     *Uget(s, -1)  ; }
         
 
         // alternative base units
         addget(minute) { return PREF* Uget(s, 1) * Cget(Constants<T>::mn_to_s, 1); }
-        addget(hours) { return PREF* Uget(s, 1) * Cget(Constants<T>::hr_to_s, 1); }
-        addget(days) { return PREF* Uget(s, 1) * Cget(Constants<T>::dy_to_s, 1); }
-        addget(years) { return PREF* Uget(s, 1) * Cget(Constants<T>::yr_to_s, 1); }
+        addget(hours)  { return PREF* Uget(s, 1) * Cget(Constants<T>::hr_to_s, 1); }
+        addget(days)   { return PREF* Uget(s, 1) * Cget(Constants<T>::dy_to_s, 1); }
+        addget(years)  { return PREF* Uget(s, 1) * Cget(Constants<T>::yr_to_s, 1); }
 
         addget(astronomical_unit) { return PREF* Uget(m, 1) * Cget(Constants<T>::au_to_m, 1); }
-        addget(light_year) { return PREF* Uget(m, 1) * Cget(Constants<T>::ly_to_m, 1); }
-        addget(parsec) { return PREF* Uget(m, 1) * Cget(Constants<T>::pc_to_m, 1); }
+        addget(light_year)        { return PREF* Uget(m, 1) * Cget(Constants<T>::ly_to_m, 1); }
+        addget(parsec)            { return PREF* Uget(m, 1) * Cget(Constants<T>::pc_to_m, 1); }
 
         // clang-format on
         template<units::UnitName u, i32 power>

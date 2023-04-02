@@ -86,31 +86,17 @@ namespace shamrock::units {
         hours,
         days,
         years,
-        mega_years,
-        giga_years,
         
         mn = minute,
         hr = hours,
         dy = days,
         yr = years,
-        Myr = mega_years,
-        Gyr = giga_years,
 
         // other lenght units
-        nanometer,
-        micrometer,
-        millimeter,
-        centimeter,
-        kilometer,
         astronomical_unit,
         light_year,
         parsec,
 
-        nm = nanometer,
-        mu_m = micrometer,
-        mm = millimeter,
-        cm = centimeter,
-        km = kilometer,
         au = astronomical_unit,
         ly = light_year,
         pc = parsec,
@@ -135,7 +121,7 @@ namespace shamrock::units {
             Na,
             Kcd,
 
-            
+
         };
     }
 
