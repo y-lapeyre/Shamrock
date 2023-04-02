@@ -23,10 +23,10 @@
 
 #define PREF get_prefix_val<pref>()
 #define Uget(unitname, mult_pow) get<units::unitname, (mult_pow)*power>()
-#define Cget(constant_name, mult_pow) shambase::pow_constexpr_fast_inv<(mult_pow)*power>(constant_name,T(1) / constant_name)
+#define Cget(constant_name, mult_pow)                                                              \
+    shambase::pow_constexpr_fast_inv<(mult_pow)*power>(constant_name, T(1) / constant_name)
 
 namespace shamrock {
-
 
     template<class T>
     class UnitSystem {
@@ -102,7 +102,6 @@ namespace shamrock {
         addget(erg) {return PREF* Uget(Joule, 1) * Cget(Uconvert::erg_to_J,1);}
 
         // clang-format on
-
 
         template<units::UnitName u, i32 power>
         inline constexpr T to() {
