@@ -33,6 +33,26 @@ namespace shamrock {
         return shambase::pow_constexpr_fast_inv<p, T>(10, 1e-1);
     }
 
+    inline const std::string get_prefix_str(UnitPrefix p) {
+        switch (p) {
+        case tera: return "T"; break;
+        case giga: return "G"; break;
+        case mega: return "M"; break;
+        case kilo: return "k"; break;
+        case hecto: return "x100"; break;
+        case deca: return "x10"; break;
+        case None: return ""; break;
+        case deci: return "/10"; break;
+        case centi: return "c"; break;
+        case milli: return "m"; break;
+        case micro: return "mu"; break;
+        case nano: return "n"; break;
+        case pico: return "p"; break;
+        case femto: return "f"; break;
+        }
+        return "";
+    }
+
     namespace units {
 
         enum UnitName {

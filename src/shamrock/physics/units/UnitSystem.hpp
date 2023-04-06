@@ -14,18 +14,16 @@
 #include "shamrock/physics/units/ConvertionConstants.hpp"
 
 #define addget(uname)                                                                              \
-    template<                                                                                      \
-        UnitPrefix pref = None,                                                                    \
-        units::UnitName u,                                                                         \
-        i32 power                                = 1,                                              \
-        std::enable_if_t<u == units::uname, int> = 0>                                              \
+    template<UnitPrefix pref = None,                                                               \
+             units::UnitName u,                                                                    \
+             i32 power                                = 1,                                         \
+             std::enable_if_t<u == units::uname, int> = 0>                                         \
     inline constexpr T get() noexcept
-
 
 #define Uget(unitname, mult_pow) get<units::unitname, (mult_pow)*power>()
 #define Cget(constant_name, mult_pow)                                                              \
     shambase::pow_constexpr_fast_inv<(mult_pow)*power>(constant_name, T(1) / constant_name)
-#define PREF Cget(get_prefix_val<pref>(),1)
+#define PREF Cget(get_prefix_val<pref>(), 1)
 
 namespace shamrock {
 
@@ -44,15 +42,13 @@ namespace shamrock {
 
         const T s_inv, m_inv, kg_inv, A_inv, K_inv, mol_inv, cd_inv;
 
-        UnitSystem(
-            T unit_time,
-            T unit_lenght,
-            T unit_mass,
-            T unit_current,
-            T unit_temperature,
-            T unit_qte,
-            T unit_lumint
-        )
+        UnitSystem(T unit_time,
+                   T unit_lenght,
+                   T unit_mass,
+                   T unit_current,
+                   T unit_temperature,
+                   T unit_qte,
+                   T unit_lumint)
             : s(1 / unit_time), m(1 / unit_lenght), kg(1 / unit_mass), A(1 / unit_current),
               K(1 / unit_temperature), mol(1 / unit_qte), cd(1 / unit_lumint), s_inv(unit_time),
               m_inv(unit_lenght), kg_inv(unit_mass), A_inv(unit_current), K_inv(unit_temperature),
