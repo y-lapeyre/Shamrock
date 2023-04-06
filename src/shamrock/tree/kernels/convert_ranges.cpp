@@ -7,6 +7,7 @@
 // -------------------------------------------------------//
 
 #include "convert_ranges.hpp"
+#include "shambase/integer.hpp"
 
 
 template<>
@@ -26,7 +27,14 @@ void sycl_convert_cell_range<u32,f32_3>(sycl::queue & queue,
     sycl::range<1> range_cell{leaf_cnt + internal_cnt};
 
 
-    auto ker_convert_cell_ranges = [&](sycl::handler &cgh) {
+    constexpr u32 group_size = 256;
+    u32 max_len = leaf_cnt + internal_cnt;
+    u32 group_cnt = shambase::group_count(leaf_cnt + internal_cnt, group_size);
+    group_cnt = group_cnt + (group_cnt % 4);
+    u32 corrected_len = group_cnt*group_size;
+
+
+    auto ker_convert_cell_ranges = [&,max_len](sycl::handler &cgh) {
         f3_xyzh b_box_min = bounding_box_min;
         f3_xyzh b_box_max = bounding_box_max;
 
@@ -40,9 +48,13 @@ void sycl_convert_cell_range<u32,f32_3>(sycl::queue & queue,
         auto pos_max_cell_flt = sycl::accessor { *buf_pos_max_cell_flt, cgh, sycl::write_only, sycl::property::no_init{}};
 
         cgh.parallel_for<class Convert_cell_range_u32_f32>(
-            range_cell, [=](sycl::item<1> item) {
+            sycl::nd_range<1>{corrected_len, group_size}, [=](sycl::nd_item<1> id) {
+            u32 local_id = id.get_local_id(0);
+            u32 group_tile_id = id.get_group_linear_id();
+            u32 gid = group_tile_id * group_size + local_id;
 
-                u32 gid = (u32) item.get_id(0);
+            if(gid >= max_len) return;
+
 
                 
                     pos_min_cell_flt[gid].s0() = f32(pos_min_cell[gid].s0())*(1/1024.f);
@@ -86,7 +98,14 @@ void sycl_convert_cell_range<u64,f32_3>(sycl::queue & queue,
 
     sycl::range<1> range_cell{leaf_cnt + internal_cnt};
 
-    auto ker_convert_cell_ranges = [&](sycl::handler &cgh) {
+    constexpr u32 group_size = 256;
+    u32 max_len = leaf_cnt + internal_cnt;
+    u32 group_cnt = shambase::group_count(leaf_cnt + internal_cnt, group_size);
+    group_cnt = group_cnt + (group_cnt % 4);
+    u32 corrected_len = group_cnt*group_size;
+
+
+    auto ker_convert_cell_ranges = [&,max_len](sycl::handler &cgh) {
         f3_xyzh b_box_min = bounding_box_min;
         f3_xyzh b_box_max = bounding_box_max;
 
@@ -100,9 +119,13 @@ void sycl_convert_cell_range<u64,f32_3>(sycl::queue & queue,
         auto pos_max_cell_flt = sycl::accessor { *buf_pos_max_cell_flt, cgh, sycl::write_only, sycl::property::no_init{}};
 
         cgh.parallel_for<class Convert_cell_range_u64_f32>(
-            range_cell, [=](sycl::item<1> item) {
+            sycl::nd_range<1>{corrected_len, group_size}, [=](sycl::nd_item<1> id) {
+            u32 local_id = id.get_local_id(0);
+            u32 group_tile_id = id.get_group_linear_id();
+            u32 gid = group_tile_id * group_size + local_id;
 
-                u32 gid = (u32) item.get_id(0);
+            if(gid >= max_len) return;
+
 
                 
                 pos_min_cell_flt[gid].s0() = f32(pos_min_cell[gid].s0())*(1/2097152.f);
@@ -146,7 +169,14 @@ void sycl_convert_cell_range<u32,f64_3>(sycl::queue & queue,
 
     sycl::range<1> range_cell{leaf_cnt + internal_cnt};
 
-    auto ker_convert_cell_ranges = [&](sycl::handler &cgh) {
+    constexpr u32 group_size = 256;
+    u32 max_len = leaf_cnt + internal_cnt;
+    u32 group_cnt = shambase::group_count(leaf_cnt + internal_cnt, group_size);
+    group_cnt = group_cnt + (group_cnt % 4);
+    u32 corrected_len = group_cnt*group_size;
+
+
+    auto ker_convert_cell_ranges = [&,max_len](sycl::handler &cgh) {
         f3_xyzh b_box_min = bounding_box_min;
         f3_xyzh b_box_max = bounding_box_max;
 
@@ -160,9 +190,13 @@ void sycl_convert_cell_range<u32,f64_3>(sycl::queue & queue,
         auto pos_max_cell_flt = sycl::accessor { *buf_pos_max_cell_flt, cgh, sycl::write_only, sycl::property::no_init{}};
 
         cgh.parallel_for<class Convert_cell_range_u32_f64>(
-            range_cell, [=](sycl::item<1> item) {
+            sycl::nd_range<1>{corrected_len, group_size}, [=](sycl::nd_item<1> id) {
+            u32 local_id = id.get_local_id(0);
+            u32 group_tile_id = id.get_group_linear_id();
+            u32 gid = group_tile_id * group_size + local_id;
 
-                u32 gid = (u32) item.get_id(0);
+            if(gid >= max_len) return;
+
 
                 
                 pos_min_cell_flt[gid].s0() = f64(pos_min_cell[gid].s0())*(1/1024.);
@@ -206,7 +240,14 @@ void sycl_convert_cell_range<u64,f64_3>(sycl::queue & queue,
 
     sycl::range<1> range_cell{leaf_cnt + internal_cnt};
 
-    auto ker_convert_cell_ranges = [&](sycl::handler &cgh) {
+    constexpr u32 group_size = 256;
+    u32 max_len = leaf_cnt + internal_cnt;
+    u32 group_cnt = shambase::group_count(leaf_cnt + internal_cnt, group_size);
+    group_cnt = group_cnt + (group_cnt % 4);
+    u32 corrected_len = group_cnt*group_size;
+
+
+    auto ker_convert_cell_ranges = [&,max_len](sycl::handler &cgh) {
         f3_xyzh b_box_min = bounding_box_min;
         f3_xyzh b_box_max = bounding_box_max;
 
@@ -220,9 +261,13 @@ void sycl_convert_cell_range<u64,f64_3>(sycl::queue & queue,
         auto pos_max_cell_flt = sycl::accessor { *buf_pos_max_cell_flt, cgh, sycl::write_only, sycl::property::no_init{}};
 
         cgh.parallel_for<class Convert_cell_range_u64_f64>(
-            range_cell, [=](sycl::item<1> item) {
+            sycl::nd_range<1>{corrected_len, group_size}, [=](sycl::nd_item<1> id) {
+            u32 local_id = id.get_local_id(0);
+            u32 group_tile_id = id.get_group_linear_id();
+            u32 gid = group_tile_id * group_size + local_id;
 
-                u32 gid = (u32) item.get_id(0);
+            if(gid >= max_len) return;
+
 
                 
                 pos_min_cell_flt[gid].s0() = f64(pos_min_cell[gid].s0())*(1/2097152.);
