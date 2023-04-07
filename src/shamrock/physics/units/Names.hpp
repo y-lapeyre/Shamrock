@@ -154,6 +154,50 @@ namespace shamrock {
             erg,                // (J)
         };
 
+        inline const std::string get_prefix_str(UnitName p) {
+            switch (p) {
+            case second: return "s"; break;
+            case metre: return "m"; break;
+            case kilogramm: return "kg"; break;
+            case Ampere: return "A"; break;
+            case Kelvin: return "K"; break;
+            case mole: return "mol"; break;
+            case candela: return "cd"; break;
+            case mps: return "m.s^{-1}"; break;
+            case Hertz: return "Hz"; break;
+            case Newtown: return "N"; break;
+            case Pascal: return "P"; break;
+            case Joule: return "J"; break;
+            case Watt: return "W"; break;
+            case Coulomb: return "C"; break;
+            case Volt: return "V"; break;
+            case Farad: return "F"; break;
+            case Ohm: return "Ohm"; break;
+            case Siemens: return "S"; break;
+            case Weber: return "Wb"; break;
+            case Tesla: return "T"; break;
+            case Henry: return "H"; break;
+            case lumens: return "lm"; break;
+            case lux: return "lx"; break;
+            case Bequerel: return "Bq"; break;
+            case Gray: return "G"; break;
+            case Sievert: return "S"; break;
+            case katal: return "kat"; break;
+            case minute: return "m"; break;
+            case hours: return "h"; break;
+            case days: return "dy"; break;
+            case years: return "yr"; break;
+            case astronomical_unit: return "au"; break;
+            case light_year: return "ly"; break;
+            case parsec: return "pc"; break;
+            case eV: return "eV"; break;
+            case erg: return "erg"; break;
+
+            default: return ""; break;
+            }
+            return "";
+        }
+
     } // namespace units
 
 } // namespace shamrock
