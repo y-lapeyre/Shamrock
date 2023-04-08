@@ -12,51 +12,6 @@
 #include "shambase/floats.hpp"
 #include <stdexcept>
 #include <unordered_map>
-namespace shamrock {
-
-    enum UnitPrefix {
-        tera  = 12,  // e12
-        giga  = 9,   // e9
-        mega  = 6,   // e6
-        kilo  = 3,   // e3
-        hecto = 2,   // e2
-        deca  = 1,   // e1
-        None  = 0,   // 1
-        deci  = -1,  // e-1
-        centi = -2,  // e-2
-        milli = -3,  // e-3
-        micro = -6,  // e-6
-        nano  = -9,  // e-9
-        pico  = -12, // e-12
-        femto = -15, // e-15
-    };
-
-    template<class T>
-    inline constexpr T get_prefix_val(UnitPrefix p) {
-        return shambase::pow_constexpr_fast_inv<p, T>(10, 1e-1);
-    }
-
-    inline const std::string get_prefix_str(UnitPrefix p) {
-        switch (p) {
-        case tera: return "T"; break;
-        case giga: return "G"; break;
-        case mega: return "M"; break;
-        case kilo: return "k"; break;
-        case hecto: return "x100"; break;
-        case deca: return "x10"; break;
-        case None: return ""; break;
-        case deci: return "/10"; break;
-        case centi: return "c"; break;
-        case milli: return "m"; break;
-        case micro: return "mu"; break;
-        case nano: return "n"; break;
-        case pico: return "p"; break;
-        case femto: return "f"; break;
-        }
-        return "";
-    }
-
-    namespace units {
 
 #define XMAC_UNITS                                                                                 \
     /*base units*/                                                                                 \
@@ -86,35 +41,88 @@ namespace shamrock {
     X1(Bequerel, Bq) /* (s−1)*/                                                                  \
     X1(Gray, Gy)     /* (m2⋅s−2) 	(J/kg)*/                                                     \
     X1(Sievert, Sv)  /* (m2⋅s−2) 	(J/kg)*/                                                     \
-    X1(katal, kat)   /* (mol⋅s−1) */\
-    /*relative units*/ \
-    X1(minutes,mn)\
-    X1(hours,hr)\
-    X1(days,dy)\
-    X1(years,yr)\
-    X1(astronomical_unit,au)\
-    X1(light_year,ly)\
-    X1(parsec,pc)\
-    X1(electron_volt,eV)\
-    X1(ergs,erg)
+    X1(katal, kat)   /* (mol⋅s−1) */                                                           \
+    /*relative units*/                                                                             \
+    X1(minutes, mn)                                                                                \
+    X1(hours, hr)                                                                                  \
+    X1(days, dy)                                                                                   \
+    X1(years, yr)                                                                                  \
+    X1(astronomical_unit, au)                                                                      \
+    X1(light_year, ly)                                                                             \
+    X1(parsec, pc)                                                                                 \
+    X1(electron_volt, eV)                                                                          \
+    X1(ergs, erg)
 
+
+
+
+
+
+namespace shamrock {
+
+    enum UnitPrefix {
+        tera  = 12,  // e12
+        giga  = 9,   // e9
+        mega  = 6,   // e6
+        kilo  = 3,   // e3
+        hecto = 2,   // e2
+        deca  = 1,   // e1
+        None  = 0,   // 1
+        deci  = -1,  // e-1
+        centi = -2,  // e-2
+        milli = -3,  // e-3
+        micro = -6,  // e-6
+        nano  = -9,  // e-9
+        pico  = -12, // e-12
+        femto = -15, // e-15
+    };
+
+    template<class T,UnitPrefix p>
+    inline constexpr T get_prefix_val() {
+        return shambase::pow_constexpr_fast_inv<p, T>(10, 1e-1);
+    }
+
+    inline const std::string get_prefix_str(UnitPrefix p) {
+        switch (p) {
+        case tera: return "T"; break;
+        case giga: return "G"; break;
+        case mega: return "M"; break;
+        case kilo: return "k"; break;
+        case hecto: return "x100"; break;
+        case deca: return "x10"; break;
+        case None: return ""; break;
+        case deci: return "/10"; break;
+        case centi: return "c"; break;
+        case milli: return "m"; break;
+        case micro: return "mu"; break;
+        case nano: return "n"; break;
+        case pico: return "p"; break;
+        case femto: return "f"; break;
+        }
+        return "";
+    }
+
+    namespace units {
+
+        // clang-format off
         enum UnitName {
-#define X1(longname, shortname) longname, shortname = longname,
+            #define X1(longname, shortname) longname, shortname = longname,
             XMAC_UNITS
-#undef X1
+            #undef X1
         };
 
         static const std::unordered_map<std::string, UnitName> map_name_to_unit{
-#define X1(longname, shortname) {#longname, longname}, {#shortname, shortname},
+            #define X1(longname, shortname) {#longname, longname}, {#shortname, shortname},
             XMAC_UNITS
-#undef X1
+            #undef X1
         };
 
         static const std::unordered_map<UnitName, std::string> map_u_to_name = {
-#define X1(longname, shortname) {shortname, #shortname},
+            #define X1(longname, shortname) {shortname, #shortname},
             XMAC_UNITS
-#undef X1
+            #undef X1
         };
+        // clang-format on
 
         inline const std::string get_unit_name(UnitName p) {
 

@@ -21,10 +21,10 @@
              std::enable_if_t<u == units::uname, int> = 0>                                         \
     inline constexpr T get() noexcept
 
-#define Uget(unitname, mult_pow) get<units::unitname, (mult_pow)*power>()
+#define Uget(unitname, mult_pow) get<pref,units::unitname, (mult_pow)*power>()
 #define Cget(constant_name, mult_pow)                                                              \
     shambase::pow_constexpr_fast_inv<(mult_pow)*power>(constant_name, T(1) / constant_name)
-#define PREF Cget(get_prefix_val<pref>(), 1)
+#define PREF Cget((get_prefix_val<T,pref>()), 1)
 
 namespace shamrock {
 

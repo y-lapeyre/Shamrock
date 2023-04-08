@@ -32,8 +32,15 @@ Register_pymod(pyunits_init) {
                                                 unit_lumint);
         }))
         .def("get",
-            [](UnitSystem & self, std::string prefix, std::string name, i32 power){
+            [](UnitSystem & self, std::string name, i32 power){
             
+            return self.runtime_get(
+                 shamrock::None, shamrock::units::unit_from_name(name), power);
+        })
+        .def("to",
+            [](UnitSystem & self, std::string name, i32 power){
             
+            return self.runtime_to(
+                 shamrock::None, shamrock::units::unit_from_name(name), power);
         });
 }
