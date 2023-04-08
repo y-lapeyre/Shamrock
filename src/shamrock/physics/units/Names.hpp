@@ -8,7 +8,10 @@
 
 #pragma once
 
+#include "shambase/exception.hpp"
 #include "shambase/floats.hpp"
+#include <stdexcept>
+#include <unordered_map>
 namespace shamrock {
 
     enum UnitPrefix {
@@ -55,147 +58,85 @@ namespace shamrock {
 
     namespace units {
 
+#define XMAC_UNITS                                                                                 \
+    /*base units*/                                                                                 \
+    X1(second, s)                                                                                  \
+    X1(metre, m)                                                                                   \
+    X1(kilogramm, kg)                                                                              \
+    X1(Ampere, A)                                                                                  \
+    X1(Kelvin, K)                                                                                  \
+    X1(mole, mol)                                                                                  \
+    X1(candela, cd)                                                                                \
+    /*derived units*/                                                                              \
+    X1(Hertz, Hz)    /* hertz : frequency (s−1) */                                               \
+    X1(Newtown, N)   /* (kg⋅m⋅s−2)*/                                                         \
+    X1(Pascal, Pa)   /* (kg⋅m−1⋅s−2) 	(N/m2)*/                                             \
+    X1(Joule, J)     /* (kg⋅m2⋅s−2) 	(N⋅m = Pa⋅m3)*/                                     \
+    X1(Watt, W)      /* (kg⋅m2⋅s−3) 	(J/s)*/                                                 \
+    X1(Coulomb, C)   /* (s⋅A)*/                                                                  \
+    X1(Volt, V)      /* (kg⋅m2⋅s−3⋅A−1) 	(W/A) = (J/C)*/                                 \
+    X1(Farad, F)     /* (kg−1⋅m−2⋅s4⋅A2) 	(C/V) = (C2/J)*/                               \
+    X1(Ohm, ohm)     /* (kg⋅m2⋅s−3⋅A−2) 	(V/A) = (J⋅s/C2)*/                            \
+    X1(Siemens, S)   /* (kg−1⋅m−2⋅s3⋅A2) 	(ohm−1)*/                                    \
+    X1(Weber, Wb)    /* (kg⋅m2⋅s−2⋅A−1) 	(V⋅s)*/                                       \
+    X1(Tesla, T)     /* (kg⋅s−2⋅A−1) 	(Wb/m2)*/                                            \
+    X1(Henry, H)     /* (kg⋅m2⋅s−2⋅A−2) 	(Wb/A)*/                                        \
+    X1(lumens, lm)   /* (cd⋅sr) 	(cd⋅sr)*/                                                     \
+    X1(lux, lx)      /* (cd⋅sr⋅m−2) 	(lm/m2)*/                                               \
+    X1(Bequerel, Bq) /* (s−1)*/                                                                  \
+    X1(Gray, Gy)     /* (m2⋅s−2) 	(J/kg)*/                                                     \
+    X1(Sievert, Sv)  /* (m2⋅s−2) 	(J/kg)*/                                                     \
+    X1(katal, kat)   /* (mol⋅s−1) */\
+    /*relative units*/ \
+    X1(minutes,mn)\
+    X1(hours,hr)\
+    X1(days,dy)\
+    X1(years,yr)\
+    X1(astronomical_unit,au)\
+    X1(light_year,ly)\
+    X1(parsec,pc)\
+    X1(electron_volt,eV)\
+    X1(ergs,erg)
+
         enum UnitName {
-
-            /*
-             * Base si units
-             */
-            second,
-            metre,
-            kilogramm,
-            Ampere,
-            Kelvin,
-            mole,
-            candela,
-
-            s   = second,
-            m   = metre,
-            kg  = kilogramm,
-            A   = Ampere,
-            K   = Kelvin,
-            mol = mole,
-            cd  = candela,
-
-            /*
-             * si derived units
-             */
-
-            mps, ///< meter per second (m.s-1)
-
-            Hertz,    ///< hertz : frequency (s−1)
-            Newtown,  ///< (kg⋅m⋅s−2)
-            Pascal,   ///< (kg⋅m−1⋅s−2) 	(N/m2)
-            Joule,    ///< (kg⋅m2⋅s−2) 	(N⋅m = Pa⋅m3)
-            Watt,     ///< (kg⋅m2⋅s−3) 	(J/s)
-            Coulomb,  ///< (s⋅A)
-            Volt,     ///< (kg⋅m2⋅s−3⋅A−1) 	(W/A) = (J/C)
-            Farad,    ///< (kg−1⋅m−2⋅s4⋅A2) 	(C/V) = (C2/J)
-            Ohm,      ///< (kg⋅m2⋅s−3⋅A−2) 	(V/A) = (J⋅s/C2)
-            Siemens,  ///< (kg−1⋅m−2⋅s3⋅A2) 	(ohm−1)
-            Weber,    ///< (kg⋅m2⋅s−2⋅A−1) 	(V⋅s)
-            Tesla,    ///< (kg⋅s−2⋅A−1) 	(Wb/m2)
-            Henry,    ///< (kg⋅m2⋅s−2⋅A−2) 	(Wb/A)
-            lumens,   ///< (cd⋅sr) 	(cd⋅sr)
-            lux,      ///< (cd⋅sr⋅m−2) 	(lm/m2)
-            Bequerel, ///< (s−1)
-            Gray,     ///< (m2⋅s−2) 	(J/kg)
-            Sievert,  ///< (m2⋅s−2) 	(J/kg)
-            katal,    ///< (mol⋅s−1)
-
-            Hz  = Hertz,
-            N   = Newtown,
-            Pa  = Pascal,
-            J   = Joule,
-            W   = Watt,
-            C   = Coulomb,
-            V   = Volt,
-            F   = Farad,
-            ohm = Ohm,
-            S   = Siemens,
-            Wb  = Weber,
-            T   = Tesla,
-            H   = Henry,
-            lm  = lumens,
-            lx  = lux,
-            Bq  = Bequerel,
-            Gy  = Gray,
-            Sv  = Sievert,
-            kat = katal,
-
-            /*
-             * alternative base units
-             */
-
-            // other times units
-            minute,
-            hours,
-            days,
-            years,
-
-            mn = minute,
-            hr = hours,
-            dy = days,
-            yr = years,
-
-            // other lenght units
-            astronomical_unit,
-            light_year,
-            parsec,
-
-            au = astronomical_unit,
-            ly = light_year,
-            pc = parsec,
-
-            /*
-             * alternative derived units
-             */
-            eV,
-            electron_volt = eV, // (J)
-            erg,                // (J)
+#define X1(longname, shortname) longname, shortname = longname,
+            XMAC_UNITS
+#undef X1
         };
 
-        inline const std::string get_prefix_str(UnitName p) {
-            switch (p) {
-            case second: return "s"; break;
-            case metre: return "m"; break;
-            case kilogramm: return "kg"; break;
-            case Ampere: return "A"; break;
-            case Kelvin: return "K"; break;
-            case mole: return "mol"; break;
-            case candela: return "cd"; break;
-            case mps: return "m.s^{-1}"; break;
-            case Hertz: return "Hz"; break;
-            case Newtown: return "N"; break;
-            case Pascal: return "P"; break;
-            case Joule: return "J"; break;
-            case Watt: return "W"; break;
-            case Coulomb: return "C"; break;
-            case Volt: return "V"; break;
-            case Farad: return "F"; break;
-            case Ohm: return "Ohm"; break;
-            case Siemens: return "S"; break;
-            case Weber: return "Wb"; break;
-            case Tesla: return "T"; break;
-            case Henry: return "H"; break;
-            case lumens: return "lm"; break;
-            case lux: return "lx"; break;
-            case Bequerel: return "Bq"; break;
-            case Gray: return "G"; break;
-            case Sievert: return "S"; break;
-            case katal: return "kat"; break;
-            case minute: return "m"; break;
-            case hours: return "h"; break;
-            case days: return "dy"; break;
-            case years: return "yr"; break;
-            case astronomical_unit: return "au"; break;
-            case light_year: return "ly"; break;
-            case parsec: return "pc"; break;
-            case eV: return "eV"; break;
-            case erg: return "erg"; break;
+        static const std::unordered_map<std::string, UnitName> map_name_to_unit{
+#define X1(longname, shortname) {#longname, longname}, {#shortname, shortname},
+            XMAC_UNITS
+#undef X1
+        };
 
-            default: return ""; break;
+        static const std::unordered_map<UnitName, std::string> map_u_to_name = {
+#define X1(longname, shortname) {shortname, #shortname},
+            XMAC_UNITS
+#undef X1
+        };
+
+        inline const std::string get_unit_name(UnitName p) {
+
+            map_u_to_name.find(p);
+
+            if (auto search = map_u_to_name.find(p); search != map_u_to_name.end()) {
+                return search->second;
             }
-            return "";
+
+            return "[Unknown Unit name]";
+        }
+
+        inline const UnitName unit_from_name(std::string p) {
+
+            map_name_to_unit.find(p);
+
+            if (auto search = map_name_to_unit.find(p); search != map_name_to_unit.end()) {
+                return search->second;
+            }
+
+            shambase::throw_with_loc<std::invalid_argument>("this unit name is unknown");
+            return s; // to silence a warning
         }
 
     } // namespace units
