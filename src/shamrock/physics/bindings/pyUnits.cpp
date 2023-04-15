@@ -7,8 +7,10 @@
 // -------------------------------------------------------//
 
 #include "shambindings/pybindaliases.hpp"
+#include "shamrock/physics/Constants.hpp"
 #include "shamrock/physics/units/Names.hpp"
 #include "shamrock/physics/units/UnitSystem.hpp"
+#include <memory>
 
 
 Register_pymod(pyunits_init) {
@@ -64,4 +66,28 @@ Register_pymod(pyunits_init) {
             py::arg("pref") = "None"
             
         );
+
+
+
+    py::class_<shamrock::Constants<f64>>(m, "Constants")
+        .def(py::init([](UnitSystem s) {
+            return std::make_unique<shamrock::Constants<f64>>(s);
+        }))
+
+        
+
+        #define X(st) \
+        .def( #st ,[](shamrock::Constants<f64> & cte, i32 power){\
+            return sycl::pow(cte.st(),power);\
+        },py::arg("power") = 1)
+
+        X(delta_nu_cs)
+        X(c)
+        X(h)
+        X(e)
+        X(k)
+        X(Na)
+        X(Kcd)
+
+        ;
 }

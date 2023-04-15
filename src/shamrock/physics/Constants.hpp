@@ -9,14 +9,16 @@
 #pragma once
 
 #include "shambase/Constants.hpp"
+#include "shambase/exception.hpp"
 #include "shambase/type_aliases.hpp"
 #include "shamrock/physics/units/Names.hpp"
 #include "shamrock/physics/units/UnitSystem.hpp"
+#include <stdexcept>
 
 #define addconstant(name)                                                                          \
     template<i32 power = 1>                                                                        \
     inline constexpr T name()
-#define Uget(unitname, mult_pow) units.template get<units::unitname, (mult_pow)*power>()
+#define Uget(unitname, mult_pow) units.template get<None,units::unitname, (mult_pow)*power>()
 #define Cget(constant_name, mult_pow) shambase::pow_constexpr_fast_inv<(mult_pow)*power>(constant_name,1/constant_name)
 
 namespace shamrock {
@@ -72,7 +74,7 @@ namespace shamrock {
 
         // clang-format off
         addconstant(delta_nu_cs) { return Cget(Si::delta_nu_cs,1) * Uget(Hertz, 1); }
-        addconstant(c)           { return Cget(Si::c,1)   * Uget(mps, 1); }
+        addconstant(c)           { return Cget(Si::c,1)   * Uget(m, 1)* Uget(s, -1); }
         addconstant(h)           { return Cget(Si::h,1)   * Uget(Joule, 1) * Uget(s, -1); }
         addconstant(e)           { return Cget(Si::e,1)   * Uget(Coulomb, 1); }
         addconstant(k)           { return Cget(Si::k,1)   * Uget(Joule, 1) * Uget(Kelvin, -1); }
@@ -80,11 +82,9 @@ namespace shamrock {
         addconstant(Kcd)         { return Cget(Si::Kcd,1) * Uget(lm, 1)    * Uget(Watt, -1); }
 
         // clang-format on
-
     };
 
 } // namespace shamrock
-
 
 #undef Uget
 #undef addconstant
