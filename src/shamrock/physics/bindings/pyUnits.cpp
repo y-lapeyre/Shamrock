@@ -7,6 +7,7 @@
 // -------------------------------------------------------//
 
 #include "shambindings/pybindaliases.hpp"
+#include "shamrock/physics/units/Names.hpp"
 #include "shamrock/physics/units/UnitSystem.hpp"
 
 
@@ -32,15 +33,35 @@ Register_pymod(pyunits_init) {
                                                 unit_lumint);
         }))
         .def("get",
-            [](UnitSystem & self, std::string name, i32 power){
-            
-            return self.runtime_get(
-                 shamrock::None, shamrock::units::unit_from_name(name), power);
-        })
+            [](UnitSystem & self, std::string name, i32 power, std::string pref){
+
+                shamrock::UnitPrefix pref_ =  shamrock::unit_prefix_from_name(pref);
+
+                return self.runtime_get(
+                        pref_, 
+                        shamrock::units::unit_from_name(name), 
+                        power
+                    );
+
+            }, 
+            //py::arg("self"), 
+            py::arg("name"),
+            py::arg("power") = 1,
+            py::arg("pref") = "None"
+        )
         .def("to",
-            [](UnitSystem & self, std::string name, i32 power){
+            [](UnitSystem & self, std::string name, i32 power, std::string pref){
             
-            return self.runtime_to(
-                 shamrock::None, shamrock::units::unit_from_name(name), power);
-        });
+            
+                shamrock::UnitPrefix pref_ =  shamrock::unit_prefix_from_name(pref);
+
+                return self.runtime_to(
+                    pref_, shamrock::units::unit_from_name(name), power);
+            }, 
+            //py::arg("self"), 
+            py::arg("name"),
+            py::arg("power") = 1,
+            py::arg("pref") = "None"
+            
+        );
 }

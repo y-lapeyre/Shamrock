@@ -55,26 +55,28 @@
 
 
 
-
-
+#define XMAC_UNIT_PREFIX  \
+    X(tera  ,T, 12)\
+    X(giga  ,G, 9)\
+    X(mega  ,M, 6)\
+    X(kilo  ,k, 3)\
+    X(hecto ,hect, 2)\
+    X(deca  ,dec, 1) \
+    X(None  ,_, 0)\
+    /*X(deci  ,deci_, -1)*/ \
+    X(centi ,c, -2)\
+    X(milli ,m, -3)\
+    X(micro ,mu, -6)\
+    X(nano  ,n, -9)\
+    X(pico  ,p, -12)\
+    X(femto ,f, -15)                                                              
 
 namespace shamrock {
 
     enum UnitPrefix {
-        tera  = 12,  // e12
-        giga  = 9,   // e9
-        mega  = 6,   // e6
-        kilo  = 3,   // e3
-        hecto = 2,   // e2
-        deca  = 1,   // e1
-        None  = 0,   // 1
-        deci  = -1,  // e-1
-        centi = -2,  // e-2
-        milli = -3,  // e-3
-        micro = -6,  // e-6
-        nano  = -9,  // e-9
-        pico  = -12, // e-12
-        femto = -15, // e-15
+        #define X(longname, shortname, value) longname = value , shortname = value,
+        XMAC_UNIT_PREFIX
+        #undef X
     };
 
     template<class T,UnitPrefix p>
@@ -82,24 +84,39 @@ namespace shamrock {
         return shambase::pow_constexpr_fast_inv<p, T>(10, 1e-1);
     }
 
-    inline const std::string get_prefix_str(UnitPrefix p) {
-        switch (p) {
-        case tera: return "T"; break;
-        case giga: return "G"; break;
-        case mega: return "M"; break;
-        case kilo: return "k"; break;
-        case hecto: return "x100"; break;
-        case deca: return "x10"; break;
-        case None: return ""; break;
-        case deci: return "/10"; break;
-        case centi: return "c"; break;
-        case milli: return "m"; break;
-        case micro: return "mu"; break;
-        case nano: return "n"; break;
-        case pico: return "p"; break;
-        case femto: return "f"; break;
+    static const std::unordered_map<std::string, UnitPrefix> map_name_to_unit_prefix{
+        #define X(longname, shortname,value) {#longname, longname}, {#shortname, shortname},
+        XMAC_UNIT_PREFIX
+        #undef X
+    };
+
+    static const std::unordered_map<UnitPrefix, std::string> map_u_to_name_prefix = {
+        #define X(longname, shortname,value) {shortname, #shortname},
+        XMAC_UNIT_PREFIX
+        #undef X
+    };
+
+    inline const std::string get_unit_prefix_name(UnitPrefix p) {
+
+        map_u_to_name_prefix.find(p);
+
+        if (auto search = map_u_to_name_prefix.find(p); search != map_u_to_name_prefix.end()) {
+            return search->second;
         }
-        return "";
+
+        return "[Unknown Unit prefix name]";
+    }
+
+    inline const UnitPrefix unit_prefix_from_name(std::string p) {
+
+        map_name_to_unit_prefix.find(p);
+
+        if (auto search = map_name_to_unit_prefix.find(p); search != map_name_to_unit_prefix.end()) {
+            return search->second;
+        }
+
+        throw shambase::throw_with_loc<std::invalid_argument>("this unit prefix name is unknown");
+        return None; // to silence a warning
     }
 
     namespace units {
@@ -123,6 +140,9 @@ namespace shamrock {
             #undef X1
         };
         // clang-format on
+
+
+
 
         inline const std::string get_unit_name(UnitName p) {
 

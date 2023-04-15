@@ -163,7 +163,7 @@ namespace shamrock {
             case hecto: return getter_1<hecto>(name); break;
             case deca: return getter_1<deca>(name); break;
             case None: return getter_1<None>(name); break;
-            case deci: return getter_1<deci>(name); break;
+            //case deci: return getter_1<deci>(name); break;
             case centi: return getter_1<centi>(name); break;
             case milli: return getter_1<milli>(name); break;
             case micro: return getter_1<micro>(name); break;
