@@ -78,7 +78,7 @@ Register_pymod(pyunits_init) {
 
         #define X(st) \
         .def( #st ,[](shamrock::Constants<f64> & cte, i32 power){\
-            return sycl::pow(cte.st(),power);\
+            return sycl::pown(cte.st(),power);\
         },py::arg("power") = 1)
 
         X(delta_nu_cs)

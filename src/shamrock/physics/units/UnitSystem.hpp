@@ -12,7 +12,6 @@
 #include "shambase/floats.hpp"
 #include "shambase/type_traits.hpp"
 #include "shamrock/physics/units/ConvertionConstants.hpp"
-#include <hipSYCL/sycl/libkernel/builtins.hpp>
 
 #define addget(uname)                                                                              \
     template<UnitPrefix pref = None,                                                               \
@@ -176,11 +175,11 @@ namespace shamrock {
         public:
 
         inline T runtime_get(UnitPrefix pref ,units::UnitName name, i32 power){
-            return sycl::pow(getter_2(pref, name),power);
+            return sycl::pown(getter_2(pref, name),power);
         }
 
         inline T runtime_to(UnitPrefix pref ,units::UnitName name, i32 power){
-            return sycl::pow(getter_2(pref, name),-power);
+            return sycl::pown(getter_2(pref, name),-power);
         }
     };
 
