@@ -34,7 +34,7 @@ namespace shamrock {
         public:
 
 
-        VtkWritter(std::string fname, bool binary): fname(fname), binary(binary){
+        inline VtkWritter(std::string fname, bool binary): fname(fname), binary(binary){
             logger::debug_ln("VtkWritter", "opening :",fname);
             int rc = mpi::file_open(MPI_COMM_WORLD, fname.c_str(), MPI_MODE_CREATE | MPI_MODE_WRONLY , MPI_INFO_NULL, &mfile);
 
@@ -51,7 +51,7 @@ namespace shamrock {
         }
 
 
-        ~VtkWritter(){
+        inline ~VtkWritter(){
             mpi::file_close(&mfile);
         }
 
