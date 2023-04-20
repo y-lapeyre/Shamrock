@@ -12,6 +12,7 @@
 
 - [Codebase Organisation](./devdoc/codebase_org.md)
 - [Code coverage](./devdoc/code_coverage.md)
+- [Types](./devdoc/types.md)
 - [Communication protocols](./devdoc/communication_protocol.md)
 - [Coordinate systems](./devdoc/coordinates_systems.md)
 - [Scheduler](./devdoc/mpi_scheduler.md)

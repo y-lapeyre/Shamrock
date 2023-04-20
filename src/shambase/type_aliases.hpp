@@ -51,6 +51,21 @@ using f64 = double        ;
 
 #endif
 
+
+constexpr u8 operator""_u8(unsigned long long n){return u8(n);}
+constexpr u16 operator""_u16(unsigned long long n){return u16(n);}
+constexpr u32 operator""_u32(unsigned long long n){return u32(n);}
+constexpr u64 operator""_u64(unsigned long long n){return u64{n};}
+constexpr i8 operator""_i8(unsigned long long n){return i8(n);}
+constexpr i16 operator""_i16(unsigned long long n){return i16(n);}
+constexpr i32 operator""_i32(unsigned long long n){return i32(n);}
+constexpr i64 operator""_i64(unsigned long long n){return i64(n);}
+constexpr f16 operator""_f16(long double n){return f16(n);}
+constexpr f32 operator""_f32(long double n){return f32(n);}
+constexpr f64 operator""_f64(long double n){return f64(n);}
+
+
+
 #define TYPEDEFS_TYPES(...) \
 using i64_##__VA_ARGS__ = sycl::vec<i64,__VA_ARGS__>;\
 using i32_##__VA_ARGS__ = sycl::vec<i32,__VA_ARGS__>;\
