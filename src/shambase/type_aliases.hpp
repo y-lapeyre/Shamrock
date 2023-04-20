@@ -52,11 +52,11 @@ using f64 = double        ;
 #endif
 
 
-constexpr u8 operator""_u8(unsigned long long n){return u8(n);}
+constexpr u8  operator""_u8 (unsigned long long n){return u8(n);}
 constexpr u16 operator""_u16(unsigned long long n){return u16(n);}
 constexpr u32 operator""_u32(unsigned long long n){return u32(n);}
 constexpr u64 operator""_u64(unsigned long long n){return u64{n};}
-constexpr i8 operator""_i8(unsigned long long n){return i8(n);}
+constexpr i8  operator""_i8 (unsigned long long n){return i8(n);}
 constexpr i16 operator""_i16(unsigned long long n){return i16(n);}
 constexpr i32 operator""_i32(unsigned long long n){return i32(n);}
 constexpr i64 operator""_i64(unsigned long long n){return i64(n);}

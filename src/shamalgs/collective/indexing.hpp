@@ -19,6 +19,7 @@ namespace shamalgs::collective {
         u64 head_offset;
     };
 
+    
     inline ViewInfo fetch_view(u64 byte_count){
         u64 scan_val;
         mpi::exscan(&byte_count, &scan_val, 1, get_mpi_type<u64>(), MPI_SUM, MPI_COMM_WORLD);
