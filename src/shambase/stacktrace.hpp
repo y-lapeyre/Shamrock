@@ -48,7 +48,7 @@ namespace shambase {
         
         std::stringstream ss;
         for (u32 i = 0; i < lines.size(); i++) {
-            ss << i << " : " <<lines[i] << "\n";
+            ss <<shambase::format(" {:2} : {}\n", i,lines[i]);
         }
         
 
