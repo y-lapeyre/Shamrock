@@ -14,6 +14,7 @@
 - [Code coverage](./devdoc/code_coverage.md)
 - [Communication protocols](./devdoc/communication_protocol.md)
 - [Coordinate systems](./devdoc/coordinates_systems.md)
+- [Radix Tree](./devdoc/tree_usage.md)
 - [Scheduler](./devdoc/mpi_scheduler.md)
     - [PatchData](./devdoc/scheduler/patchdata.md)
     - [PatchList](./devdoc/scheduler/patchlist.md)
