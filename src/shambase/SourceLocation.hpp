@@ -69,7 +69,24 @@ call = {}
             , fileName, lineNumber, columnOffset, functionName);
     }
 
+    std::string format_multiline(std::string stacktrace){
+        return fmt::format(
+R"=(
+---- Source Location ----
+{}:{}:{}
+call = {}
+stacktrace : 
+{}
+-------------------------
+)="
+            , fileName, lineNumber, columnOffset, functionName,stacktrace);
+    }
+
     std::string format_one_line(){
         return fmt::format("{}:{}:{}", fileName, lineNumber, columnOffset);
+    }
+
+    std::string format_one_line_func(){
+        return fmt::format("{} ({}:{}:{})", functionName, fileName, lineNumber, columnOffset);
     }
 };
