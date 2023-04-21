@@ -30,7 +30,7 @@ def standalone(json_lst : list, figure_folder : str) -> str:
             for s in sort_perf:
 
                 for dataset in s.test_data:
-                    fig,axs = plt.subplots(nrows=1,ncols=1,figsize=(12,6))
+                    fig,axs = plt.subplots(nrows=1,ncols=1,figsize=(6,6))
 
                     fileprefix = str(i)
 
@@ -47,14 +47,23 @@ def standalone(json_lst : list, figure_folder : str) -> str:
 
                     vec_rpart = np.array(s.get_test_dataset(n,"rpart"));
 
-                    plt.scatter(np.array(vec_N),(np.abs(vec_T)/vec_N),c=vec_Navg,norm=matplotlib.colors.LogNorm())
+                    Y_scat = (np.abs(vec_T)/vec_N)
+                    plt.scatter(np.array(vec_N),Y_scat,c=vec_Navg,norm=matplotlib.colors.LogNorm())
 
                     #axs.set_title('Bitonic sort perf')
-                    plt.colorbar(label='neighbours count')
+                    plt.colorbar(label='$<N_\mathcal{R}>$', location='top')
                     axs.set_xscale('log')
                     axs.set_yscale('log')
 
-                    axs.set_ylim(1e-9,5e-6)
+                    def ceil_pow(n):
+                        return 10**np.ceil(np.log10(n)+0.1)
+
+                    def floor_pow(n):
+                        return 10**np.floor(np.log10(n)-0.1)
+
+                    y_min = floor_pow(np.min(Y_scat))
+                    y_max = ceil_pow(np.max(Y_scat))
+                    axs.set_ylim(y_min,y_max)
 
                     axs.set_xlabel(r"$N$")
 

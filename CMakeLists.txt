@@ -107,7 +107,7 @@ add_custom_command(
   )
 
 add_library(shamrock_lib OBJECT src/version.cpp)
-target_include_directories(shamrock_lib AFTER PUBLIC "${CMAKE_SOURCE_DIR}/src")
+target_include_directories(shamrock_lib PUBLIC "${CMAKE_SOURCE_DIR}/src")
 
 if("${BUILD_PYLIB}")
 target_compile_definitions(shamrock_lib PUBLIC LIB_BUILD)
@@ -144,8 +144,8 @@ if("${BUILD_SIM}")
     
 
 
-    target_include_directories(shamrock AFTER PUBLIC "${CMAKE_SOURCE_DIR}/src")
-    #target_include_directories(shamrock AFTER PUBLIC "${CMAKE_SOURCE_DIR}/external")
+    target_include_directories(shamrock PUBLIC "${CMAKE_SOURCE_DIR}/src")
+    #target_include_directories(shamrock PUBLIC "${CMAKE_SOURCE_DIR}/external")
 
     #do lib build instead if building the pylib
 
@@ -166,8 +166,8 @@ if("${BUILD_TEST}")
     target_link_libraries(shamrock_test PUBLIC shamrock_lib)
 
     
-    target_include_directories(shamrock_test AFTER PUBLIC "${CMAKE_SOURCE_DIR}/src")
-    #target_include_directories(shamrock_test AFTER PUBLIC "${CMAKE_SOURCE_DIR}/external")
+    target_include_directories(shamrock_test PUBLIC "${CMAKE_SOURCE_DIR}/src")
+    #target_include_directories(shamrock_test PUBLIC "${CMAKE_SOURCE_DIR}/external")
 
     target_compile_definitions(shamrock_test PUBLIC EXECUTABLE_BUILD)
     target_link_libraries(shamrock_test PUBLIC fmt::fmt)

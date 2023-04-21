@@ -8,6 +8,7 @@
 
 #include "compute_ranges.hpp"
 
+#include "shambase/integer.hpp"
 #include "shamrock/math/integerManip.hpp"
 
 template<class u_morton>
@@ -34,6 +35,11 @@ void sycl_compute_cell_ranges(
 
     sycl::range<1> range_radix_tree{internal_cnt};
 
+    constexpr u32 group_size = 256;
+    u32 group_cnt = shambase::group_count(internal_cnt, group_size);
+    group_cnt = group_cnt + (group_cnt % 4);
+    u32 corrected_len = group_cnt*group_size;
+
     auto ker_compute_cell_ranges = [&](sycl::handler &cgh) {
         auto morton_map    = buf_morton->template get_access<sycl::access::mode::read>(cgh);
         auto end_range_map = buf_endrange->get_access<sycl::access::mode::read>(cgh);
@@ -52,9 +58,16 @@ void sycl_compute_cell_ranges(
 
         u32 internal_cell_cnt = internal_cnt;
 
+
+        
+
         // Executing kernel
-        cgh.parallel_for(range_radix_tree, [=](sycl::item<1> item) {
-            u32 gid = (u32)item.get_id(0);
+        cgh.parallel_for(sycl::nd_range<1>{corrected_len, group_size}, [=](sycl::nd_item<1> id) {
+            u32 local_id = id.get_local_id(0);
+            u32 group_tile_id = id.get_group_linear_id();
+            u32 gid = group_tile_id * group_size + local_id;
+
+            if(gid >= internal_cell_cnt) return;
 
             uint clz_ = shambase::clz_xor(morton_map[gid], morton_map[end_range_map[gid]]);
 
