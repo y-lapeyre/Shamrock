@@ -14,6 +14,7 @@
 #include <cstdlib>
 #include <sstream>
 
+#include "shambase/stacktrace.hpp"
 #include "shambase/time.hpp"
 #include "shamsys/legacy/cmdopt.hpp"
 #include "shamsys/legacy/log.hpp"
@@ -51,7 +52,7 @@ std::string_view get_option(
 
 namespace shamtest {
     int run_all_tests(int argc, char *argv[], bool run_bench,bool run_analysis, bool run_unittest){
-        
+        StackEntry stack {};
         
         using namespace mpi_handler;
     
