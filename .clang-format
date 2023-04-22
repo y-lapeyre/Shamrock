@@ -8,7 +8,7 @@ ColumnLimit: 100
 AccessModifierOffset: 0
 EmptyLineBeforeAccessModifier : Always
 
-AlignAfterOpenBracket: BlockIndent
+#AlignAfterOpenBracket: BlockIndent
 AlignConsecutiveAssignments: true
 
 AlignEscapedNewlines: Right
@@ -20,10 +20,10 @@ BinPackArguments: false
 BinPackParameters: false
 
 AlwaysBreakTemplateDeclarations: MultiLine
-
+AllowShortCaseLabelsOnASingleLine : true
 BreakBeforeConceptDeclarations : true
 NamespaceIndentation: All
-SeparateDefinitionBlocks: Leave
+#SeparateDefinitionBlocks: Leave
 SpaceAfterTemplateKeyword: false
 AlwaysBreakTemplateDeclarations: true
 

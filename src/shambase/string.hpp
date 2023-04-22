@@ -13,6 +13,7 @@
 #include "exception.hpp"
 #include <fstream>
 #include <vector>
+#include <array>
 
 namespace shambase {
 
@@ -94,7 +95,11 @@ namespace shambase {
     inline std::string readable_sizeof(double size) {
 
         i32 i = 0;
-        std::array units{"B", "kB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"};
+
+        
+        using namespace std::string_literals;
+        const std::array units {
+            "B"s, "kB"s, "MB"s, "GB"s, "TB"s, "PB"s, "EB"s, "ZB"s, "YB"s};
 
         if (size >= 0) {
             while (size > 1024) {
