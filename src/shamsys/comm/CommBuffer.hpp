@@ -178,7 +178,7 @@ namespace shamsys::comm {
          */
         T copy_back(){
             return std::visit([=](auto && arg) {
-                return arg.copy_back();
+                return arg->copy_back();
             }, _int_type);
         }
 
@@ -187,10 +187,10 @@ namespace shamsys::comm {
          * 
          * @return CommBuffer 
          */
-        CommBuffer duplicate_to_ptr(){
-            return std::make_unique<CommBuffer<T>>(
+        CommBuffer<T> duplicate(){
+            return CommBuffer<T>(
                 std::visit([=](auto && arg) {
-                    return arg.duplicate_to_ptr();
+                    return var_t(arg->duplicate_to_ptr());
                 }, _int_type)
             );
         }
