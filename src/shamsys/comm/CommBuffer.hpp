@@ -13,6 +13,7 @@
 #include "shamsys/comm/ProtocolEnum.hpp"
 #include "shamsys/legacy/log.hpp"
 
+#include <memory>
 #include <stdexcept>
 #include <variant>
 #include <vector>
@@ -179,6 +180,19 @@ namespace shamsys::comm {
             return std::visit([=](auto && arg) {
                 return arg.copy_back();
             }, _int_type);
+        }
+
+        /**
+         * @brief duplicate the comm buffer and return a unique ptr to the copy
+         * 
+         * @return CommBuffer 
+         */
+        CommBuffer duplicate_to_ptr(){
+            return std::make_unique<CommBuffer<T>>(
+                std::visit([=](auto && arg) {
+                    return arg.duplicate_to_ptr();
+                }, _int_type)
+            );
         }
 
         ///**
