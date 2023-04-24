@@ -56,10 +56,10 @@ namespace shamsys::comm {
             mpi_handler::vector_allgatherv(local_comm_vec,
                                            get_mpi_type<u64_2>(),
                                            global_comm_vec,
-                                           mpi_type_u64_2,
+                                           get_mpi_type<u64_2>(),
                                            MPI_COMM_WORLD);
             mpi_handler::vector_allgatherv(
-                local_comm_tag, get_mpi_type<i32>(), global_comm_tag, mpi_type_i32, MPI_COMM_WORLD);
+                local_comm_tag, get_mpi_type<i32>(), global_comm_tag, get_mpi_type<i32>(), MPI_COMM_WORLD);
         }
 
         template<class T, class Func, class Func2>
@@ -80,16 +80,18 @@ namespace shamsys::comm {
 
                 {
                     for (u64 i = 0; i < local_comm_vec.size(); i++) {
+
                         const u32 rank_send = rank_id_getter(local_comm_vec[i].x());
                         const u32 rank_recv = rank_id_getter(local_comm_vec[i].y());
 
                         if (rank_send == rank_recv) {
 
+                            u64 id_obj_send = id_setter(local_comm_vec[i].x());
                             u64 id_obj_recv = id_setter(local_comm_vec[i].y());
 
                             auto &vec = recv_obj[id_obj_recv];
 
-                            vec.push_back({id_obj_recv, send_objs[i]->duplicate_to_ptr()});
+                            vec.push_back({id_obj_send, send_objs[i]->duplicate_to_ptr()});
                         } else {
                             send_objs[i]->isend(rqs, rank_recv, local_comm_tag[i], MPI_COMM_WORLD);
                         }
@@ -103,19 +105,24 @@ namespace shamsys::comm {
                         const u32 rank_send = rank_id_getter(global_comm_vec[i].x());
                         const u32 rank_recv = rank_id_getter(global_comm_vec[i].y());
 
+                        u64 id_obj_send = id_setter(global_comm_vec[i].x());
                         u64 id_obj_recv = id_setter(global_comm_vec[i].y());
 
                         if (rank_recv == shamsys::instance::world_rank) {
 
                             if (rank_send != rank_recv) {
+
+                                CommBuffer<T> recv_buf =
+                                    CommBuffer<T>::irecv_probe(rqs,
+                                                               rank_send,
+                                                               global_comm_tag[i],
+                                                               MPI_COMM_WORLD,
+                                                               comm_mode,
+                                                               details);
+
                                 recv_obj[id_obj_recv].push_back(
-                                    {id_obj_recv,
-                                     CommBuffer<T>::irecv_probe(rqs,
-                                                                rank_send,
-                                                                global_comm_tag[i],
-                                                                MPI_COMM_WORLD,
-                                                                comm_mode,
-                                                                details)});
+                                    {id_obj_send,
+                                     std::make_unique<CommBuffer<T>>(std::move(recv_buf))});
                             }
                         }
                     }

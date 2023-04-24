@@ -188,12 +188,28 @@ namespace shamsys::comm {
          * @return CommBuffer 
          */
         CommBuffer<T> duplicate(){
-            return CommBuffer<T>(
-                std::visit([=](auto && arg) {
+
+            var_t tmp = std::visit([=](auto && arg) {
                     return var_t(arg->duplicate_to_ptr());
-                }, _int_type)
+                }, _int_type);
+
+            return CommBuffer<T>(
+                std::move(tmp)
             );
         }
+
+        /**
+         * @brief duplicate the comm buffer and return a unique ptr to the copy
+         * 
+         * @return CommBuffer 
+         */
+        std::unique_ptr<CommBuffer<T>> duplicate_to_ptr(){
+            return std::make_unique<CommBuffer<T>>(
+                duplicate()
+            );
+        }
+
+        
 
         ///**
         // * @brief return a copy of the held object in the buffer
@@ -275,6 +291,20 @@ namespace shamsys::comm {
 
         }
 
+
+        CommBuffer(CommBuffer &&other) noexcept
+        : _int_type(std::move(other._int_type)) {} // move constructor
+
+
+        CommBuffer &operator=(CommBuffer &&other) noexcept {
+            _int_type      = std::move(other._int_type);
+
+            return *this;
+        } // move assignment
+
+        CommBuffer(const CommBuffer &other) = delete;
+        CommBuffer &operator=(const CommBuffer &other) // copy assignment
+            = delete;
     };
 
 } // namespace shamsys::comm
