@@ -15,6 +15,7 @@
 #include "shamsys/SyclHelper.hpp"
 #include "shamsys/SyclMpiTypes.hpp"
 
+#include <memory>
 #include <optional>
 
 namespace shamsys::comm::details {
@@ -47,7 +48,7 @@ namespace shamsys::comm::details {
         CommBuffer& operator=(const CommBuffer& other) = delete; // copy assignment
 
 
-
+        std::unique_ptr<CommBuffer> duplicate_to_ptr();
 
         sycl::buffer<T> copy_back();
         //void copy_back(sycl::buffer<T> & dest);
@@ -75,6 +76,8 @@ namespace shamsys::comm::details {
         void alloc_usm(u64 len);
         void copy_to_usm(sycl::buffer<T> & obj_ref, u64 len, u64 offset);
         sycl::buffer<T> build_from_usm(u64 len, u64 offset);
+
+        void copy_usm(u64 len, T* new_usm);
 
         public:
 
@@ -162,6 +165,13 @@ namespace shamsys::comm::details {
 
             return *this;
         } // move assignment
+
+
+        std::unique_ptr<CommBuffer> duplicate_to_ptr(){
+            std::unique_ptr<CommBuffer> ret = std::make_unique<CommBuffer>(details);
+            copy_usm(details.comm_len, ret->usm_ptr);
+            return ret;
+        }
 
         sycl::buffer<T> copy_back(){
             u64 len, off;
@@ -210,6 +220,7 @@ namespace shamsys::comm::details {
         void copy_to_usm(sycl::buffer<T> & obj_ref, u64 len, u64 offset);
 
         sycl::buffer<T> build_from_usm(u64 len, u64 offset);
+        void copy_usm(u64 len, T* new_usm);
 
         public:
 
@@ -301,6 +312,12 @@ namespace shamsys::comm::details {
 
             return *this;
         } // move assignment
+
+        std::unique_ptr<CommBuffer> duplicate_to_ptr(){
+            std::unique_ptr<CommBuffer> ret = std::make_unique<CommBuffer>(details);
+            copy_usm(details.comm_len, ret->usm_ptr);
+            return ret;
+        }
 
         sycl::buffer<T> copy_back(){
             u64 len, off;
@@ -374,6 +391,7 @@ namespace shamsys::comm::details {
         void alloc_usm(u64 len);
         void copy_to_usm(sycl::buffer<T> & obj_ref, u64 len, u64 offset);
         sycl::buffer<T> build_from_usm(u64 len, u64 offset);
+        void copy_usm(u64 len, ptr_t* new_usm);
 
         public:
 
@@ -465,6 +483,12 @@ namespace shamsys::comm::details {
 
             return *this;
         } // move assignment
+
+        std::unique_ptr<CommBuffer> duplicate_to_ptr(){
+            std::unique_ptr<CommBuffer> ret = std::make_unique<CommBuffer>(details);
+            copy_usm(details.comm_len, ret->usm_ptr);
+            return ret;
+        }
 
         sycl::buffer<T> copy_back(){
             u64 len, off;
