@@ -255,6 +255,50 @@ template<class T> void test_comm_probe_syclbuf(std::string prefix, u64 seed, sha
 
 
 
+template<class T> void test_duplicate(std::string prefix, u64 seed, shamsys::comm::Protocol prot){
+
+    
+    u32 npart = 1e4;
+
+    sycl::buffer<T> buf_comp = shamalgs::random::mock_buffer<T>(seed, npart);
+
+    using namespace shamsys::comm;
+
+
+
+
+    CommBuffer buf {buf_comp, prot};
+
+    CommBuffer buf2 = buf.duplicate();
+
+    sycl::buffer<T> buf_comp2 = CommBuffer<sycl::buffer<T>>::convert(std::move(buf2));
+
+    shamtest::asserts().assert_equal(prefix+std::string("same size"), buf_comp.size(), buf_comp2.size());
+
+    {
+        sycl::host_accessor acc1 {buf_comp};
+        sycl::host_accessor acc2 {buf_comp2};
+
+        std::string id_err_list = "errors in id : ";
+
+        bool eq = true;
+        for(u32 i = 0; i < npart; i++){
+            if(!shambase::vec_equals(acc1[i] , acc2[i])){
+                eq = false;
+                //id_err_list += std::to_string(i) + " ";
+            }
+        }
+
+        if (eq) {
+            shamtest::asserts().assert_bool("same content", eq);
+        }else{
+            shamtest::asserts().assert_add_comment("same content", eq, id_err_list);
+        }
+    }
+
+}
+
+
 
 TestStart(Unittest, "shamsys/comm/comm-buffer/syclbuffer-isend-irecv", isend_irecv_syclbuf, 2){
 
@@ -363,5 +407,62 @@ TestStart(Unittest, "shamsys/comm/comm-buffer/syclbuffer-isend-irecv_probe", ise
     test_comm_probe_syclbuf<f64_16>("f64_16: ",seed,DirectGPUFlatten);
     test_comm_probe_syclbuf<u32   >("u32   : ",seed,DirectGPUFlatten);
     test_comm_probe_syclbuf<u64   >("u64   : ",seed,DirectGPUFlatten);
+    
+}
+
+
+
+
+TestStart(Unittest, "shamsys/comm/comm-buffer/syclbuffer-duplicate", commbuffer_duplicate, 1){
+
+    u64 seed = 0x111;
+
+    using namespace shamsys::comm;
+ 
+    test_duplicate<f32   >("f32   : ",seed,CopyToHost);
+    test_duplicate<f32_2 >("f32_2 : ",seed,CopyToHost);
+    test_duplicate<f32_3 >("f32_3 : ",seed,CopyToHost);
+    test_duplicate<f32_4 >("f32_4 : ",seed,CopyToHost);
+    test_duplicate<f32_8 >("f32_8 : ",seed,CopyToHost);
+    test_duplicate<f32_16>("f32_16: ",seed,CopyToHost);
+    test_duplicate<f64   >("f64   : ",seed,CopyToHost);
+    test_duplicate<f64_2 >("f64_2 : ",seed,CopyToHost);
+    test_duplicate<f64_3 >("f64_3 : ",seed,CopyToHost);
+    test_duplicate<f64_4 >("f64_4 : ",seed,CopyToHost);
+    test_duplicate<f64_8 >("f64_8 : ",seed,CopyToHost);
+    test_duplicate<f64_16>("f64_16: ",seed,CopyToHost);
+    test_duplicate<u32   >("u32   : ",seed,CopyToHost);
+    test_duplicate<u64   >("u64   : ",seed,CopyToHost);
+
+
+    test_duplicate<f32   >("f32   : ",seed,DirectGPU);
+    test_duplicate<f32_2 >("f32_2 : ",seed,DirectGPU);
+    test_duplicate<f32_3 >("f32_3 : ",seed,DirectGPU);
+    test_duplicate<f32_4 >("f32_4 : ",seed,DirectGPU);
+    test_duplicate<f32_8 >("f32_8 : ",seed,DirectGPU);
+    test_duplicate<f32_16>("f32_16: ",seed,DirectGPU);
+    test_duplicate<f64   >("f64   : ",seed,DirectGPU);
+    test_duplicate<f64_2 >("f64_2 : ",seed,DirectGPU);
+    test_duplicate<f64_3 >("f64_3 : ",seed,DirectGPU);
+    test_duplicate<f64_4 >("f64_4 : ",seed,DirectGPU);
+    test_duplicate<f64_8 >("f64_8 : ",seed,DirectGPU);
+    test_duplicate<f64_16>("f64_16: ",seed,DirectGPU);
+    test_duplicate<u32   >("u32   : ",seed,DirectGPU);
+    test_duplicate<u64   >("u64   : ",seed,DirectGPU);
+
+    test_duplicate<f32   >("f32   : ",seed,DirectGPUFlatten);
+    test_duplicate<f32_2 >("f32_2 : ",seed,DirectGPUFlatten);
+    test_duplicate<f32_3 >("f32_3 : ",seed,DirectGPUFlatten);
+    test_duplicate<f32_4 >("f32_4 : ",seed,DirectGPUFlatten);
+    test_duplicate<f32_8 >("f32_8 : ",seed,DirectGPUFlatten);
+    test_duplicate<f32_16>("f32_16: ",seed,DirectGPUFlatten);
+    test_duplicate<f64   >("f64   : ",seed,DirectGPUFlatten);
+    test_duplicate<f64_2 >("f64_2 : ",seed,DirectGPUFlatten);
+    test_duplicate<f64_3 >("f64_3 : ",seed,DirectGPUFlatten);
+    test_duplicate<f64_4 >("f64_4 : ",seed,DirectGPUFlatten);
+    test_duplicate<f64_8 >("f64_8 : ",seed,DirectGPUFlatten);
+    test_duplicate<f64_16>("f64_16: ",seed,DirectGPUFlatten);
+    test_duplicate<u32   >("u32   : ",seed,DirectGPUFlatten);
+    test_duplicate<u64   >("u64   : ",seed,DirectGPUFlatten);
     
 }

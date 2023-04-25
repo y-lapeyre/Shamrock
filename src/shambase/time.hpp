@@ -95,11 +95,11 @@ namespace shambase {
             nanosec   = timer.get_elapsed_ns();
         }
 
-        inline std::string get_time_str() {
+        inline std::string get_time_str()  const  {
             return nanosec_to_time_str(nanosec);
         }
 
-        inline f64 elasped_sec(){
+        [[nodiscard]] inline f64 elasped_sec() const {
             return f64(nanosec) * 1e-9;
         }
 

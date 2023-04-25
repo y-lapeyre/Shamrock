@@ -33,5 +33,3 @@ target_sources(shamrock_test
         ${HeadersTest}
     )
 endif()
-
-add_subdirectory(tests)

@@ -1,3 +1,5 @@
+
+add_subdirectory(shambase)
 add_subdirectory(shamsys)
 add_subdirectory(shamtest)
 add_subdirectory(shambindings)

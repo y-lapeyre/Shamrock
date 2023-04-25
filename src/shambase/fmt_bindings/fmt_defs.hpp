@@ -24,7 +24,7 @@ struct fmt::formatter<sycl::vec<T, 2>> {
     }
 
     template<typename FormatContext>
-    auto format(sycl::vec<T, 3> c, FormatContext &ctx) const {
+    auto format(sycl::vec<T, 2> c, FormatContext &ctx) const {
         return fmt::format_to(ctx.out(), "({},{})", c.x(), c.y());
     }
 };

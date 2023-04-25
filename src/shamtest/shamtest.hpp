@@ -86,3 +86,12 @@ namespace shamtest {
     shamtest::details::TestStaticInit test_class_obj_##func_name(shamtest::details::Test{          \
         type, name, node_cnt, test_func_ptr_##func_name});                                         \
     void test_func_##func_name()
+
+#define _Assert(a,b,prec) \
+    shamtest::asserts().assert_bool(#a, a);
+
+#define _AssertEqual(a,b) \
+    shamtest::asserts().assert_equal(#a "==" #b, a, b);
+
+#define _AssertFloatEqual(a,b,prec) \
+    shamtest::asserts().assert_float_equal(#a  " ==("#prec") " #b, a, b, prec);

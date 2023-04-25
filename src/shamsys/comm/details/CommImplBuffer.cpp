@@ -45,6 +45,16 @@ namespace shamsys::comm::details {
         return buf_ret;
     }
 
+    template<class T>
+    void CommBuffer<sycl::buffer<T>,CopyToHost>::copy_usm(u64 len, T* new_usm){
+
+        {
+            for(u64 sz = 0;sz < len; sz ++){
+                new_usm[sz] = usm_ptr[sz];
+            }
+        }
+    }
+
 template<class T>
     void CommBuffer<sycl::buffer<T>,CopyToHost>::isend(CommRequests & rqs, u32 rank_dest, u32 comm_tag, MPI_Comm comm){
             MPI_Request rq;
@@ -137,6 +147,24 @@ template<class T>
         ev.wait();//TODO wait for the event only when doing MPI calls
 
         return buf_ret;
+    }
+
+    template<class T>
+    void CommBuffer<sycl::buffer<T>,DirectGPU>::copy_usm(u64 len, T* new_usm){
+
+        auto ev = instance::get_compute_queue().submit([&](sycl::handler & cgh){
+            
+            T* ptr = usm_ptr;
+
+            T* ptr_new = new_usm;
+
+            cgh.parallel_for(sycl::range<1>{len},[=](sycl::item<1> i){
+                ptr_new[i] = ptr[i];
+            });
+
+        });
+
+        ev.wait();//TODO wait for the event only when doing MPI calls
     }
 
     template<class T>
@@ -283,6 +311,8 @@ template<class T>
         ev.wait();//TODO wait for the event only when doing MPI calls
 
     }
+
+    
 
 
 
@@ -539,6 +569,24 @@ template<class T>
         flatten_build_from_usm(buf_ret,usm_ptr,len,offset);
 
         return buf_ret;
+    }
+
+    template<class T>
+    void CommBuffer<sycl::buffer<T>,DirectGPUFlatten>::copy_usm(u64 len, ptr_t* new_usm){
+
+        auto ev = instance::get_compute_queue().submit([&](sycl::handler & cgh){
+            
+            ptr_t* ptr = usm_ptr;
+
+            ptr_t* ptr_new = new_usm;
+
+            cgh.parallel_for(sycl::range<1>{int_len*len},[=](sycl::item<1> i){
+                ptr_new[i] = ptr[i];
+            });
+
+        });
+
+        ev.wait();//TODO wait for the event only when doing MPI calls
     }
 
     template<class T>

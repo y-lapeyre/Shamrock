@@ -12,6 +12,8 @@
 
 namespace shambase {
 
+    std::string exception_format(SourceLocation loc);
+
     /**
      * @brief Throw an exception and append the source location to it
      *
@@ -27,7 +29,7 @@ namespace shambase {
      */
     template<class ExcptTypes>
     inline ExcptTypes throw_with_loc(std::string message, SourceLocation loc = SourceLocation{}) {
-        return ExcptTypes(message + loc.format_multiline());
+        return ExcptTypes(message + exception_format(loc));
     }
 
     
