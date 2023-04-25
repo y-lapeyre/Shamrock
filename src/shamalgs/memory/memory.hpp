@@ -11,6 +11,7 @@
 #include "aliases.hpp"
 #include "shambase/string.hpp"
 #include "shambase/sycl.hpp"
+#include "shambase/sycl_utils/vectorProperties.hpp"
 #include "shamsys/legacy/log.hpp"
 
 namespace shamalgs::memory {
@@ -96,4 +97,9 @@ namespace shamalgs::memory {
         logger::raw_ln(accum);
 
     }
+
+
+
+
+
 }

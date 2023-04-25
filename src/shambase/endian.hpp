@@ -41,6 +41,13 @@ namespace shambase {
             xor_swap(bytes[i], bytes[sz - 1 - i]);
         }
     }
+
+    template<class T> 
+    inline T get_endian_swap(T a){
+        T ret = a;
+        endian_swap(ret);
+        return ret;
+    }
     
 
 } // namespace shambase
