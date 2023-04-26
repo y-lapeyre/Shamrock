@@ -10,6 +10,7 @@
 
 #include "shambase/type_aliases.hpp"
 #include "shamsys/MpiWrapper.hpp"
+#include "shamsys/NodeInstance.hpp"
 #include "shamsys/SyclMpiTypes.hpp"
 
 namespace shamalgs::collective {
@@ -21,8 +22,13 @@ namespace shamalgs::collective {
 
     
     inline ViewInfo fetch_view(u64 byte_count){
+
         u64 scan_val;
         mpi::exscan(&byte_count, &scan_val, 1, get_mpi_type<u64>(), MPI_SUM, MPI_COMM_WORLD);
+
+        if(shamsys::instance::world_rank == 0){
+            scan_val = 0;
+        }
 
         u64 sum_val;
         mpi::allreduce(&byte_count, &sum_val, 1, get_mpi_type<u64>(), MPI_SUM, MPI_COMM_WORLD);
@@ -31,5 +37,20 @@ namespace shamalgs::collective {
 
         return {sum_val,scan_val};
     }
+
+    inline ViewInfo fetch_view_known_total(u64 byte_count,u64 total_byte){
+
+        u64 scan_val;
+        mpi::exscan(&byte_count, &scan_val, 1, get_mpi_type<u64>(), MPI_SUM, MPI_COMM_WORLD);
+
+        if(shamsys::instance::world_rank == 0){
+            scan_val = 0;
+        }
+
+        logger::raw_ln(byte_count, "->",scan_val, "sum:",total_byte);
+
+        return {total_byte,scan_val};
+    }
+    
 
 } // namespace shamalgs::collective

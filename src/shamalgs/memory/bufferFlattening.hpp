@@ -30,9 +30,11 @@ namespace shamalgs::memory {
     flatten_buffer(sycl::queue &q, sycl::buffer<sycl::vec<T, n>> &buf_in, u64 len) {
         sycl::buffer<T> ret(len * n);
 
-        q.submit([=, &buf_in](sycl::handler &cgh) {
+        q.submit([=, &buf_in, &ret](sycl::handler &cgh) {
+            
             sycl::accessor acc_in{buf_in, cgh, sycl::read_only};
             sycl::accessor acc_out{ret, cgh, sycl::write_only, sycl::no_init};
+
             cgh.parallel_for(sycl::range<1>{len}, [=](sycl::item<1> id) {
                 u32 idx = id.get_linear_id() * n;
 
@@ -85,6 +87,8 @@ namespace shamalgs::memory {
                 }
             });
         });
+
+        return ret;
     }
 
 

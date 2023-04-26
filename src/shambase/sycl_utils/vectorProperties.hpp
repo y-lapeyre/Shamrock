@@ -17,7 +17,7 @@ namespace shambase::sycl_utils {
     template<class T>
     struct VectorProperties {
         using component_type           = T;
-        static constexpr u32 dimension = 0;
+        static constexpr u32 dimension = 1;
 
         static constexpr bool is_float_based = std::is_same<T, f16>::value ||
                                                std::is_same<T, f32>::value ||

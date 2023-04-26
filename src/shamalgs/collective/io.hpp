@@ -43,6 +43,37 @@ namespace shamalgs::collective {
         file_head_ptr = view.total_byte_count + file_head_ptr;
     }
 
+
+
+    /**
+     * @brief
+     *
+     * @tparam T
+     * @param ptr_data
+     * @param data_cnt
+     * @param file_head_ptr
+     * @return u64 the new file head ptr
+     */
+    template<class T>
+    void viewed_write_all_fetch_known_total_size(MPI_File fh, T *ptr_data, u64 data_cnt, u64 total_cnt, u64 & file_head_ptr) {
+        auto dtype = get_mpi_type<T>();
+
+        i32 sz;
+        mpi::type_size(dtype, &sz);
+
+        ViewInfo view = fetch_view_known_total(u64(sz) * data_cnt, u64(sz)*total_cnt);
+
+        u64 disp = file_head_ptr + view.head_offset;
+
+        mpi::file_set_view(fh, disp, dtype, dtype, "native", MPI_INFO_NULL);
+
+        mpi::file_write_all(fh, ptr_data, data_cnt, dtype, MPI_STATUS_IGNORE);
+
+        file_head_ptr = view.total_byte_count + file_head_ptr;
+    }
+
+
+
     inline void write_header(MPI_File fh, std::string s, u64 & file_head_ptr) {
 
         mpi::file_set_view(fh, file_head_ptr, MPI_BYTE, MPI_CHAR, "native", MPI_INFO_NULL);
