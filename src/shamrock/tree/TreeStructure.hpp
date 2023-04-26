@@ -28,7 +28,7 @@ namespace shamrock::tree {
         std::unique_ptr<sycl::buffer<u32>> buf_rchild_id;  // size = internal
         std::unique_ptr<sycl::buffer<u8>> buf_lchild_flag; // size = internal
         std::unique_ptr<sycl::buffer<u8>> buf_rchild_flag; // size = internal
-        std::unique_ptr<sycl::buffer<u32>> buf_endrange;   // size = internal
+        std::unique_ptr<sycl::buffer<u32>> buf_endrange;   // size = internal (+1 if one cell mode)
 
         bool is_built() {
             return bool(buf_lchild_id) && bool(buf_rchild_id) && bool(buf_lchild_flag) &&
@@ -72,7 +72,7 @@ namespace shamrock::tree {
             buf_rchild_id       = std::make_unique<sycl::buffer<u32>>(internal_cell_count);
             buf_lchild_flag     = std::make_unique<sycl::buffer<u8>>(internal_cell_count);
             buf_rchild_flag     = std::make_unique<sycl::buffer<u8>>(internal_cell_count);
-            buf_endrange        = std::make_unique<sycl::buffer<u32>>(internal_cell_count);
+            buf_endrange        = std::make_unique<sycl::buffer<u32>>(internal_cell_count+1); //this +1 is the signature of the one cell mode
 
             {
                 sycl::host_accessor rchild_id{*buf_rchild_id, sycl::write_only, sycl::no_init};
