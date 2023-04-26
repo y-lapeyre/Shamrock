@@ -11,6 +11,7 @@
 #include "shamalgs/collective/io.hpp"
 #include "shamalgs/collective/reduction.hpp"
 #include "shamalgs/memory/bufferFlattening.hpp"
+#include "shambase/stacktrace.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"
 #include "shamrock/io/details/bufToVtkBuf.hpp"
 #include "shamsys/MpiWrapper.hpp"
@@ -132,18 +133,14 @@ namespace shamrock {
 
         inline LegacyVtkWritter(std::string fname, bool binary,DataSetTypes type)
             : fname(fname), binary(binary), file_head_ptr(0_u64) {
-            logger::debug_ln("VtkWritter", "opening :", fname);
-            int rc = mpi::file_open(
-                MPI_COMM_WORLD,
-                fname.c_str(),
-                MPI_MODE_CREATE | MPI_MODE_WRONLY,
-                MPI_INFO_NULL,
-                &mfile
-            );
 
-            if (rc) {
-                logger::err_ln("VtkWritter", "Unable to open file :", fname);
-            }
+            StackEntry stack_loc{};
+            
+            logger::debug_ln("VtkWritter", "opening :", fname);
+
+            
+            shamalgs::collective::open_reset_file(mfile, fname);
+
 
             std::stringstream ss;
 
