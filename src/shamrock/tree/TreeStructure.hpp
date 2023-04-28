@@ -146,6 +146,24 @@ namespace shamrock::tree {
               buf_rchild_flag(syclalgs::basic::duplicate(other.buf_rchild_flag)), // size = internal
               buf_endrange(syclalgs::basic::duplicate(other.buf_endrange))        // size = internal
         {}
+
+        inline TreeStructure(
+            u32 internal_cell_count,
+            bool one_cell_mode,
+            std::unique_ptr<sycl::buffer<u32>> && buf_lchild_id,  
+            std::unique_ptr<sycl::buffer<u32>> && buf_rchild_id,  
+            std::unique_ptr<sycl::buffer<u8>> && buf_lchild_flag, 
+            std::unique_ptr<sycl::buffer<u8>> && buf_rchild_flag, 
+            std::unique_ptr<sycl::buffer<u32>> && buf_endrange
+        ):
+        internal_cell_count(internal_cell_count),
+        one_cell_mode(one_cell_mode),
+        buf_lchild_id(std::move(buf_lchild_id)),
+        buf_rchild_id(std::move(buf_rchild_id)),
+        buf_lchild_flag(std::move(buf_lchild_flag)),
+        buf_rchild_flag(std::move(buf_rchild_flag)),
+        buf_endrange(std::move(buf_endrange))
+        {}
     };
 
 } // namespace shamrock::tree

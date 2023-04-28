@@ -685,6 +685,7 @@ template<class T>
     template class CommBuffer<sycl::buffer<u64   >,CopyToHost>;
     template class CommBuffer<sycl::buffer<u32_3 >,CopyToHost>;
     template class CommBuffer<sycl::buffer<u64_3 >,CopyToHost>;
+    template class CommBuffer<sycl::buffer<u8    >,CopyToHost>;
 
     template class CommBuffer<sycl::buffer<f32   >,DirectGPU>;
     template class CommBuffer<sycl::buffer<f32_2 >,DirectGPU>;
@@ -702,6 +703,7 @@ template<class T>
     template class CommBuffer<sycl::buffer<u64   >,DirectGPU>;
     template class CommBuffer<sycl::buffer<u32_3 >,DirectGPU>;
     template class CommBuffer<sycl::buffer<u64_3 >,DirectGPU>;
+    template class CommBuffer<sycl::buffer<u8    >,DirectGPU>;
 
     template class CommBuffer<sycl::buffer<f32   >,DirectGPUFlatten>;
     template class CommBuffer<sycl::buffer<f32_2 >,DirectGPUFlatten>;
@@ -719,5 +721,6 @@ template<class T>
     template class CommBuffer<sycl::buffer<u64   >,DirectGPUFlatten>;
     template class CommBuffer<sycl::buffer<u32_3 >,DirectGPUFlatten>;
     template class CommBuffer<sycl::buffer<u64_3 >,DirectGPUFlatten>;
+    template class CommBuffer<sycl::buffer<u8    >,DirectGPUFlatten>;
     
 } // namespace shamsys::comm::details

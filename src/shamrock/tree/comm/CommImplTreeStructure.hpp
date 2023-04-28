@@ -33,6 +33,8 @@ namespace shamsys::comm::details {
         u32 internal_cell_count;
         bool one_cell_mode;
 
+        inline CommDetails() = default;
+
         inline CommDetails(
             u32 internal_cell_count, bool one_cell_mode
         )
@@ -51,11 +53,11 @@ namespace shamsys::comm::details {
 
         CDetails details;
 
-        CommBuffer<sycl::buffer<u32>,comm_mode> buf_lchild_id;  // size = internal
-        CommBuffer<sycl::buffer<u32>,comm_mode> buf_rchild_id;  // size = internal
-        CommBuffer<sycl::buffer<u8>,comm_mode> buf_lchild_flag; // size = internal
-        CommBuffer<sycl::buffer<u8>,comm_mode> buf_rchild_flag; // size = internal
-        CommBuffer<sycl::buffer<u32>,comm_mode> buf_endrange;   // size = internal (+1 if one cell mode)
+        CommBuffer<sycl::buffer<u32>,comm_mode> buf_lchild_id  ; // size = internal
+        CommBuffer<sycl::buffer<u32>,comm_mode> buf_rchild_id  ; // size = internal
+        CommBuffer<sycl::buffer<u8>,comm_mode>  buf_lchild_flag; // size = internal
+        CommBuffer<sycl::buffer<u8>,comm_mode>  buf_rchild_flag; // size = internal
+        CommBuffer<sycl::buffer<u32>,comm_mode> buf_endrange   ; // size = internal (+1 if one cell mode)
 
         CommBuffer(
             
@@ -94,49 +96,79 @@ namespace shamsys::comm::details {
               buf_endrange(*obj_ref.buf_endrange)
               {}
 
-        /*
-        
-        public:
+        inline CommBuffer(TreeStructure &obj_ref, CDetails details)
+            : details(details),
+              buf_lchild_id(*obj_ref.buf_lchild_id, details.internal_cell_count) ,
+              buf_rchild_id(*obj_ref.buf_rchild_id, details.internal_cell_count) ,
+              buf_lchild_flag(*obj_ref.buf_lchild_flag, details.internal_cell_count) ,
+              buf_rchild_flag(*obj_ref.buf_rchild_flag, details.internal_cell_count) ,
+              buf_endrange(*obj_ref.buf_endrange, details.internal_cell_count + (details.one_cell_mode ? 1 : 0))
+              {}
 
-        inline CommBuffer(PatchDataField<T> &obj_ref)
-            : details(obj_ref),
-              buf_comm(
-                  *obj_ref.get_buf(), CommDetails<PatchDataField<T>>{obj_ref}._get_buf_details()
-              ) {}
-
-        inline CommBuffer(PatchDataField<T> &obj_ref, CommDetails<PatchDataField<T>> det)
-            : details(obj_ref), buf_comm(*obj_ref.get_buf(), det._get_buf_details()) {}
-
-        inline CommBuffer(PatchDataField<T> &&moved_obj)
-            : details(moved_obj), buf_comm(
-                                      PatchDataField<T>::convert_to_buf(std::move(moved_obj)),
-                                      CommDetails<PatchDataField<T>>{moved_obj}._get_buf_details()
-                                  ) {}
-
-        inline CommBuffer(PatchDataField<T> &&moved_obj, CommDetails<PatchDataField<T>> det)
+        inline CommBuffer(TreeStructure && moved_obj) // TODO avoid using the copy constructor here
             : details(moved_obj),
-              buf_comm(
-                  PatchDataField<T>::convert_to_buf(std::move(moved_obj)), det._get_buf_details()
-              ) {}
+              buf_lchild_id(*moved_obj.buf_lchild_id) ,
+              buf_rchild_id(*moved_obj.buf_rchild_id) ,
+              buf_lchild_flag(*moved_obj.buf_lchild_flag) ,
+              buf_rchild_flag(*moved_obj.buf_rchild_flag) ,
+              buf_endrange(*moved_obj.buf_endrange)
+              {}
 
-        inline PatchDataField<T> copy_back() {
-            sycl::buffer<T> buf = buf_comm.copy_back();
+        inline CommBuffer(TreeStructure && moved_obj, CDetails details) // TODO avoid using the copy constructor here
+            : details(details),
+              buf_lchild_id(*moved_obj.buf_lchild_id, details.internal_cell_count) ,
+              buf_rchild_id(*moved_obj.buf_rchild_id, details.internal_cell_count) ,
+              buf_lchild_flag(*moved_obj.buf_lchild_flag, details.internal_cell_count) ,
+              buf_rchild_flag(*moved_obj.buf_rchild_flag, details.internal_cell_count) ,
+              buf_endrange(*moved_obj.buf_endrange, details.internal_cell_count + (details.one_cell_mode ? 1 : 0))
+              {}
 
-            return PatchDataField<T>{std::move(buf), details.obj_cnt, details.name, details.nvar};
+        inline TreeStructure copy_back(){
+            auto lchild_id   = std::make_unique<sycl::buffer<u32>>(buf_lchild_id.copy_back()  );  
+            auto rchild_id   = std::make_unique<sycl::buffer<u32>>(buf_rchild_id.copy_back()  );  
+            auto lchild_flag = std::make_unique<sycl::buffer<u8> >(buf_lchild_flag.copy_back()); 
+            auto rchild_flag = std::make_unique<sycl::buffer<u8> >(buf_rchild_flag.copy_back()); 
+            auto endrange    = std::make_unique<sycl::buffer<u32>>(buf_endrange.copy_back()   );   
+
+            return TreeStructure{details.internal_cell_count,details.one_cell_mode,
+                std::move(lchild_id  ),
+                std::move(rchild_id  ),
+                std::move(lchild_flag),
+                std::move(rchild_flag),
+                std::move(endrange   )
+            };
         }
-        // void copy_back(PatchDataField<T> & dest);
-        inline static PatchDataField<T> convert(CommBuffer &&buf) {
-            sycl::buffer<T> buf_recov = buf.buf_comm.copy_back();
 
-            return PatchDataField<T>{
-                std::move(buf_recov), buf.details.obj_cnt, buf.details.name, buf.details.nvar};
+        inline static TreeStructure convert(CommBuffer &&buf) {
+            auto lchild_id   = std::make_unique<sycl::buffer<u32>>(buf.buf_lchild_id.copy_back()  );  
+            auto rchild_id   = std::make_unique<sycl::buffer<u32>>(buf.buf_rchild_id.copy_back()  );  
+            auto lchild_flag = std::make_unique<sycl::buffer<u8> >(buf.buf_lchild_flag.copy_back()); 
+            auto rchild_flag = std::make_unique<sycl::buffer<u8> >(buf.buf_rchild_flag.copy_back()); 
+            auto endrange    = std::make_unique<sycl::buffer<u32>>(buf.buf_endrange.copy_back()   );   
+
+            return TreeStructure{buf.details.internal_cell_count,buf.details.one_cell_mode,
+                std::move(lchild_id  ),
+                std::move(rchild_id  ),
+                std::move(lchild_flag),
+                std::move(rchild_flag),
+                std::move(endrange   )
+            };
         }
 
         inline void isend(CommRequests &rqs, u32 rank_dest, u32 comm_flag, MPI_Comm comm) {
-            buf_comm.isend(rqs, rank_dest, comm_flag, comm);
+            buf_lchild_id  .isend(rqs, rank_dest, comm_flag, comm);
+            buf_rchild_id  .isend(rqs, rank_dest, comm_flag, comm);
+            buf_lchild_flag.isend(rqs, rank_dest, comm_flag, comm);
+            buf_rchild_flag.isend(rqs, rank_dest, comm_flag, comm);
+            buf_endrange   .isend(rqs, rank_dest, comm_flag, comm);
         }
+
         inline void irecv(CommRequests &rqs, u32 rank_src, u32 comm_flag, MPI_Comm comm) {
-            buf_comm.irecv(rqs, rank_src, comm_flag, comm);
+            buf_lchild_id  .irecv(rqs, rank_src, comm_flag, comm);
+            buf_rchild_id  .irecv(rqs, rank_src, comm_flag, comm);
+            buf_lchild_flag.irecv(rqs, rank_src, comm_flag, comm);
+            buf_rchild_flag.irecv(rqs, rank_src, comm_flag, comm);
+            buf_endrange   .irecv(rqs, rank_src, comm_flag, comm);
         }
 
         inline static CommBuffer irecv_probe(
@@ -144,27 +176,33 @@ namespace shamsys::comm::details {
             u32 rank_src,
             u32 comm_flag,
             MPI_Comm comm,
-            CommDetails<PatchDataField<T>> details
+            CDetails details
         ) {
 
-            auto recv = CommBuffer<sycl::buffer<T>, comm_mode>::irecv_probe(
-                rqs, rank_src, comm_flag, comm, {}
-            );
+            auto tbuf_lchild_id   = CommBuffer<sycl::buffer<u32>, comm_mode>::irecv_probe(rqs, rank_src, comm_flag, comm, {});
+            auto tbuf_rchild_id   = CommBuffer<sycl::buffer<u32>, comm_mode>::irecv_probe(rqs, rank_src, comm_flag, comm, {});
+            auto tbuf_lchild_flag = CommBuffer<sycl::buffer<u8>, comm_mode>::irecv_probe(rqs, rank_src, comm_flag, comm, {});
+            auto tbuf_rchild_flag = CommBuffer<sycl::buffer<u8>, comm_mode>::irecv_probe(rqs, rank_src, comm_flag, comm, {});
+            auto tbuf_endrange    = CommBuffer<sycl::buffer<u32>, comm_mode>::irecv_probe(rqs, rank_src, comm_flag, comm, {});
 
-            u64 cnt_recv = recv.get_details().comm_len;
+            u64 cnt_recv1 = tbuf_lchild_id.get_details().comm_len;
+            u64 cnt_recv2 = tbuf_endrange.get_details().comm_len;
 
-            if (cnt_recv % details.nvar != 0) {
-                throw shambase::throw_with_loc<std::runtime_error>(
-                    "the received message must be disible by nvar to be received as PatchDataField"
-                );
-            }
+            u32 internal_cell_count = cnt_recv1;
+            bool one_cell_mode = cnt_recv1+1 == cnt_recv2;
 
-            details.obj_cnt = cnt_recv / details.nvar;
+            details.internal_cell_count = internal_cell_count;
+            details.one_cell_mode = one_cell_mode;
 
-            return CommBuffer{std::move(recv), std::move(details)};
+            return CommBuffer{
+                std::move(tbuf_lchild_id  ),
+                std::move(tbuf_rchild_id  ),
+                std::move(tbuf_lchild_flag),
+                std::move(tbuf_rchild_flag),
+                std::move(tbuf_endrange   ),
+                std::move(details)
+                };
         }
-
-        */
 
     };
 

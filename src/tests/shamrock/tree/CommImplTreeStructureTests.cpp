@@ -11,6 +11,7 @@
 #include "shamsys/comm/ProtocolEnum.hpp"
 #include "shamtest/shamtest.hpp"
 #include "shamsys/comm/CommBuffer.hpp"
+#include "shamrock/tree/comm/CommImplTreeStructure.hpp"
 #include <vector>
 
 template<class u_morton>
