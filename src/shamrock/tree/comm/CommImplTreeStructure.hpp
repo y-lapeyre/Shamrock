@@ -46,6 +46,7 @@ namespace shamsys::comm::details {
     template<class u_morton, Protocol comm_mode>
     class CommBuffer<shamrock::tree::TreeStructure<u_morton>, comm_mode> {
 
+        using TreeStructure = shamrock::tree::TreeStructure<u_morton>;
         using CDetails = CommDetails<shamrock::tree::TreeStructure<u_morton>>;
 
         CDetails details;
@@ -56,26 +57,46 @@ namespace shamsys::comm::details {
         CommBuffer<sycl::buffer<u8>,comm_mode> buf_rchild_flag; // size = internal
         CommBuffer<sycl::buffer<u32>,comm_mode> buf_endrange;   // size = internal (+1 if one cell mode)
 
-        
+        CommBuffer(
+            
+            CommBuffer<sycl::buffer<u32>,comm_mode>&& buf_lchild_id,  // size = internal
+            CommBuffer<sycl::buffer<u32>,comm_mode> && buf_rchild_id,  // size = internal
+            CommBuffer<sycl::buffer<u8>,comm_mode> && buf_lchild_flag, // size = internal
+            CommBuffer<sycl::buffer<u8>,comm_mode> && buf_rchild_flag, // size = internal
+            CommBuffer<sycl::buffer<u32>,comm_mode> && buf_endrange,
+            CDetails && details
+        )
+            : 
+            buf_lchild_id(std::move(buf_lchild_id)), 
+            buf_rchild_id(std::move(buf_rchild_id)), 
+            buf_lchild_flag(std::move(buf_lchild_flag)), 
+            buf_rchild_flag(std::move(buf_rchild_flag)), 
+            buf_endrange(std::move(buf_endrange)), 
+            details(std::move(details)) {}
 
         public:
 
         inline CommBuffer(CDetails det) :
             details(det),
-            buf_lchild_id{CommDetails<sycl::buffer<u32>>{}}
+            buf_lchild_id{CommDetails<sycl::buffer<u32>>{}},
+            buf_rchild_id{CommDetails<sycl::buffer<u32>>{}},
+            buf_lchild_flag{CommDetails<sycl::buffer<u8>>{}},
+            buf_rchild_flag{CommDetails<sycl::buffer<u8>>{}},
+            buf_endrange{CommDetails<sycl::buffer<u32>>{}}
         {}
 
+        inline CommBuffer(TreeStructure &obj_ref)
+            : details(obj_ref),
+              buf_lchild_id(*obj_ref.buf_lchild_id) ,
+              buf_rchild_id(*obj_ref.buf_rchild_id) ,
+              buf_lchild_flag(*obj_ref.buf_lchild_flag) ,
+              buf_rchild_flag(*obj_ref.buf_rchild_flag) ,
+              buf_endrange(*obj_ref.buf_endrange)
+              {}
 
         /*
-        CommBuffer(
-            CommBuffer<sycl::buffer<T>, comm_mode> &&buf_comm,
-            CommDetails<PatchDataField<T>> &&details
-        )
-            : buf_comm(std::move(buf_comm)), details(std::move(details)) {}
-
+        
         public:
-        inline CommBuffer(CommDetails<PatchDataField<T>> det)
-            : details(det), buf_comm{det._get_buf_details()} {}
 
         inline CommBuffer(PatchDataField<T> &obj_ref)
             : details(obj_ref),
