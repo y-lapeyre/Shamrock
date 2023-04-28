@@ -76,7 +76,7 @@ namespace shamsys::comm::details {
               ) {}
 
         inline CommBuffer(PatchDataField<T> &obj_ref, CommDetails<PatchDataField<T>> det)
-            : details(obj_ref), buf_comm(*obj_ref.get_buf(), det._get_buf_details()) {}
+            : details(det), buf_comm(*obj_ref.get_buf(), det._get_buf_details()) {}
 
         inline CommBuffer(PatchDataField<T> &&moved_obj)
             : details(moved_obj), buf_comm(
@@ -85,7 +85,7 @@ namespace shamsys::comm::details {
                                   ) {}
 
         inline CommBuffer(PatchDataField<T> &&moved_obj, CommDetails<PatchDataField<T>> det)
-            : details(moved_obj),
+            : details(det),
               buf_comm(
                   PatchDataField<T>::convert_to_buf(std::move(moved_obj)), det._get_buf_details()
               ) {}
