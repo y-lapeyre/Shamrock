@@ -46,7 +46,7 @@ inline void test_tree_structure_comm_template(shamsys::comm::Protocol prot){
 
     tstruct.build(
         shamsys::instance::get_compute_queue(), 
-        morton_list.size(), 
+        morton_list.size()-1, 
         buf_morton
         );
     
