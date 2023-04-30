@@ -12,11 +12,17 @@
 #include "shambase/sycl.hpp"
 #include "shambase/type_aliases.hpp"
 #include "shamsys/NodeInstance.hpp"
+#include <hipSYCL/sycl/buffer.hpp>
 #include <hipSYCL/sycl/libkernel/accessor.hpp>
 #include <hipSYCL/sycl/libkernel/range.hpp>
+#include <memory>
 #include <type_traits>
 
 namespace shamalgs::serialize {
+
+    
+    
+
 
     /**
      * @brief store a value of type T in a byte buffer
@@ -81,6 +87,11 @@ namespace shamalgs::serialize {
             cgh.memcpy(
                 accbufbyte.get_pointer() + ptr_write, accbuf.get_pointer, lenbuf * sizeof(T));
         });
+    }
+
+    template<class T, int n>
+    inline void store(sycl::buffer<u8> &byte_buf, u64 ptr_write, sycl::buffer<sycl::vec<T, n>> &buf, u32 lenbuf) {
+
     }
 
     /**

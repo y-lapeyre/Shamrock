@@ -69,6 +69,7 @@ namespace shamalgs::memory::details {
     X(f64_4 )\
     X(f64_8 )\
     X(f64_16)\
+    X(u8   )\
     X(u32   )\
     X(u32_2 )\
     X(u32_3 )\
