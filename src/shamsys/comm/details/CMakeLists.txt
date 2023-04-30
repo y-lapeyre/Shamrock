@@ -1,6 +1,7 @@
 
 set(Sources
     CommImplBuffer.cpp
+    CommunicationBufferImpl.cpp
 )
 set(SourcesTest
 
