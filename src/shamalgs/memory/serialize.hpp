@@ -15,12 +15,20 @@
 #include "shamsys/NodeInstance.hpp"
 #include <memory>
 #include <type_traits>
+#include <utility>
 
 namespace shamalgs {
 
     class SerializeHelper {
         std::unique_ptr<sycl::buffer<u8>> storage;
         u64 head = 0;
+
+        public:
+
+        SerializeHelper() = default;
+
+        SerializeHelper(std::unique_ptr<sycl::buffer<u8>> && storage):
+        storage(std::forward<std::unique_ptr<sycl::buffer<u8>>>(storage)){}
 
         inline void allocate(u64 bytelen) {
             storage = std::make_unique<sycl::buffer<u8>>(bytelen);
@@ -46,7 +54,7 @@ namespace shamalgs {
                     cgh.single_task([=]() { Helper::store(&accbuf[current_head], val); });
                 });
 
-            current_head += Helper::szrepr;
+            head += Helper::szrepr;
         }
 
         template<class T>
@@ -62,7 +70,7 @@ namespace shamalgs {
                 sycl::accessor accbuf{*storage, cgh, sycl::read_only};
                 sycl::accessor retacc{retbuf, cgh, sycl::write_only, sycl::no_init};
                 cgh.single_task(
-                    [=]() { retacc[0] = Helper::template load<T>(&accbuf[current_head]); });
+                    [=]() { retacc[0] = Helper::load(&accbuf[current_head]); });
             });
 
             {
@@ -70,7 +78,7 @@ namespace shamalgs {
                 val = acc[0];
             }
 
-            current_head += Helper::szrepr;
+            head += Helper::szrepr;
         }
 
         template<class T>
@@ -89,7 +97,7 @@ namespace shamalgs {
                 });
             });
 
-            current_head += len * Helper::szrepr;
+            head += len * Helper::szrepr;
         }
 
         template<class T>
@@ -104,11 +112,11 @@ namespace shamalgs {
 
                 cgh.parallel_for(sycl::range<1>{len}, [=](sycl::item<1> id) {
                     u64 head   = current_head + id.get_linear_id() * Helper::szrepr;
-                    accbuf[id] = Helper::template load<T>(&accbufbyte[head]);
+                    accbuf[id] = Helper::load(&accbufbyte[head]);
                 });
             });
 
-            current_head += len * Helper::szrepr;
+            head += len * Helper::szrepr;
         }
     };
 
