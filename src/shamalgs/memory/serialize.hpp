@@ -8,112 +8,108 @@
 
 #pragma once
 
+#include "details/SerializeHelperMember.hpp"
 #include "shambase/memory.hpp"
 #include "shambase/sycl.hpp"
 #include "shambase/type_aliases.hpp"
 #include "shamsys/NodeInstance.hpp"
-#include <hipSYCL/sycl/buffer.hpp>
-#include <hipSYCL/sycl/libkernel/accessor.hpp>
-#include <hipSYCL/sycl/libkernel/range.hpp>
 #include <memory>
 #include <type_traits>
 
-namespace shamalgs::serialize {
+namespace shamalgs {
 
-    
-    
+    class SerializeHelper {
+        std::unique_ptr<sycl::buffer<u8>> storage;
+        u64 head = 0;
 
-
-    /**
-     * @brief store a value of type T in a byte buffer
-     *
-     * @tparam T
-     * @param buf
-     * @param ptr_write
-     * @param a
-     */
-    template<class T>
-    inline void store(sycl::buffer<u8> &byte_buf, u64 ptr_write, T a) {
-        shamsys::instance::get_compute_queue().submit([&, a, ptr_write](sycl::handler &cgh) {
-            sycl::accessor accbuf{byte_buf, cgh, sycl::write_only};
-            cgh.single_task([=]() { shambase::store_conv(&accbuf[ptr_write], a); });
-        });
-    }
-
-    /**
-     * @brief load a value of type T from a byte buffer
-     *
-     * @tparam T
-     * @param buf
-     * @param ptr_load
-     * @return T
-     */
-    template<class T>
-    inline T load(sycl::buffer<u8> &byte_buf, u64 ptr_load) {
-
-        sycl::buffer<T> retbuf(1);
-
-        shamsys::instance::get_compute_queue().submit([&, ptr_load](sycl::handler &cgh) {
-            sycl::accessor accbuf{byte_buf, cgh, sycl::read_only};
-            sycl::accessor retacc{retbuf, cgh, sycl::write_only, sycl::no_init};
-            cgh.single_task([=]() { retacc[0] = shambase::load_conv<T>(&accbuf[ptr_load]); });
-        });
-
-        T ret_val;
-        {
-            sycl::host_accessor acc{retbuf, sycl::read_only};
-            ret_val = acc[0];
+        inline void allocate(u64 bytelen) {
+            storage = std::make_unique<sycl::buffer<u8>>(bytelen);
+            head    = 0;
         }
 
-        return ret_val;
-    }
+        inline std::unique_ptr<sycl::buffer<u8>> finalize() {
+            std::unique_ptr<sycl::buffer<u8>> ret;
+            std::swap(ret, storage);
+            return ret;
+        }
 
-    /**
-     * @brief 
-     * 
-     * @tparam T 
-     * @param byte_buf 
-     * @param ptr_write 
-     * @param buf 
-     * @param lenbuf 
-     */
-    template<class T>
-    inline void store(sycl::buffer<u8> &byte_buf, u64 ptr_write, sycl::buffer<T> &buf, u32 lenbuf) {
+        template<class T>
+        inline void write(T val) {
 
-        shamsys::instance::get_compute_queue().submit([&, ptr_write](sycl::handler &cgh) {
-            sycl::accessor accbufbyte{byte_buf, cgh, sycl::write_only};
-            sycl::accessor accbuf{buf, cgh, sycl::read_only};
+            using Helper = details::SerializeHelperMember<T>;
 
-            cgh.memcpy(
-                accbufbyte.get_pointer() + ptr_write, accbuf.get_pointer, lenbuf * sizeof(T));
-        });
-    }
+            u64 current_head = head;
 
-    template<class T, int n>
-    inline void store(sycl::buffer<u8> &byte_buf, u64 ptr_write, sycl::buffer<sycl::vec<T, n>> &buf, u32 lenbuf) {
+            shamsys::instance::get_compute_queue().submit(
+                [&, val, current_head](sycl::handler &cgh) {
+                    sycl::accessor accbuf{*storage, cgh, sycl::write_only};
+                    cgh.single_task([=]() { Helper::store(&accbuf[current_head], val); });
+                });
 
-    }
+            current_head += Helper::szrepr;
+        }
 
-    /**
-     * @brief 
-     * 
-     * @tparam T 
-     * @param byte_buf 
-     * @param ptr_load 
-     * @param lenbuf 
-     * @return sycl::buffer<T> 
-     */
-    template<class T>
-    inline sycl::buffer<T> load(sycl::buffer<u8> &byte_buf, u64 ptr_load, u32 lenbuf) {
+        template<class T>
+        inline void load(T &val) {
 
-        sycl::buffer<T> buf(lenbuf);
+            using Helper = details::SerializeHelperMember<T>;
 
-        shamsys::instance::get_compute_queue().submit([&, ptr_load](sycl::handler &cgh) {
-            sycl::accessor accbufbyte{byte_buf, cgh, sycl::read_only};
-            sycl::accessor accbuf{buf, cgh, sycl::write_only, sycl::no_init};
+            u64 current_head = head;
 
-            cgh.memcpy(accbuf.get_pointer, accbufbyte.get_pointer() + ptr_load, lenbuf * sizeof(T));
-        });
-    }
+            sycl::buffer<T> retbuf(1);
 
-} // namespace shamalgs::serialize
+            shamsys::instance::get_compute_queue().submit([&, current_head](sycl::handler &cgh) {
+                sycl::accessor accbuf{*storage, cgh, sycl::read_only};
+                sycl::accessor retacc{retbuf, cgh, sycl::write_only, sycl::no_init};
+                cgh.single_task(
+                    [=]() { retacc[0] = Helper::template load<T>(&accbuf[current_head]); });
+            });
+
+            {
+                sycl::host_accessor acc{retbuf, sycl::read_only};
+                val = acc[0];
+            }
+
+            current_head += Helper::szrepr;
+        }
+
+        template<class T>
+        inline void write_buf(sycl::buffer<T> &buf, u64 len) {
+
+            using Helper     = details::SerializeHelperMember<T>;
+            u64 current_head = head;
+
+            shamsys::instance::get_compute_queue().submit([&, current_head](sycl::handler &cgh) {
+                sycl::accessor accbufbyte{*storage, cgh, sycl::write_only};
+                sycl::accessor accbuf{buf, cgh, sycl::read_only};
+
+                cgh.parallel_for(sycl::range<1>{len}, [=](sycl::item<1> id) {
+                    u64 head = current_head + id.get_linear_id() * Helper::szrepr;
+                    Helper::store(&accbufbyte[head], accbuf[id]);
+                });
+            });
+
+            current_head += len * Helper::szrepr;
+        }
+
+        template<class T>
+        inline void load_buf(sycl::buffer<T> &buf, u64 len) {
+
+            using Helper     = details::SerializeHelperMember<T>;
+            u64 current_head = head;
+
+            shamsys::instance::get_compute_queue().submit([&, current_head](sycl::handler &cgh) {
+                sycl::accessor accbufbyte{*storage, cgh, sycl::read_only};
+                sycl::accessor accbuf{buf, cgh, sycl::write_only, sycl::no_init};
+
+                cgh.parallel_for(sycl::range<1>{len}, [=](sycl::item<1> id) {
+                    u64 head   = current_head + id.get_linear_id() * Helper::szrepr;
+                    accbuf[id] = Helper::template load<T>(&accbufbyte[head]);
+                });
+            });
+
+            current_head += len * Helper::szrepr;
+        }
+    };
+
+} // namespace shamalgs
