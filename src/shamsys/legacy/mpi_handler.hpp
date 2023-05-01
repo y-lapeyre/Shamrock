@@ -17,4 +17,3 @@
 #include "shamrock/legacy/utils/string_utils.hpp"
 
 #include "aliases.hpp"
-#include "shamsys/NodeInstance.hpp"

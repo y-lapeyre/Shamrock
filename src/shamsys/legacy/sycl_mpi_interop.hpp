@@ -20,6 +20,7 @@
  * 
  */
 
+#include "shamsys/NodeInstance.hpp"
 #include "shamsys/SyclMpiTypes.hpp"
 #include "mpi_handler.hpp"
 #include "log.hpp"
