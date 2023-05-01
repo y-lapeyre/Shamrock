@@ -11,6 +11,7 @@
 #include <vector>
 #include <random>
 
+#include "shamalgs/collective/exchanges.hpp"
 #include "shamrock/legacy/io/logs.hpp"
 #include "shamrock/scheduler/HilbertLoadBalance.hpp"
 #include "shamrock/patch/Patch.hpp"
@@ -21,7 +22,7 @@ void SchedulerPatchList::build_global(){
     using namespace shamrock::patch;
 
     auto t = timings::start_timer("SchedulerPatchList::build_global()",timings::mpi);
-    mpi_handler::vector_allgatherv(local, get_patch_mpi_type<3>(), global, get_patch_mpi_type<3>(), MPI_COMM_WORLD);   
+    shamalgs::collective::vector_allgatherv(local, get_patch_mpi_type<3>(), global, get_patch_mpi_type<3>(), MPI_COMM_WORLD);   
     t.stop();
 }
 

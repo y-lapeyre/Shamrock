@@ -21,6 +21,7 @@
 
 
 #include "aliases.hpp"
+#include "shamalgs/collective/exchanges.hpp"
 #include "shamrock/patch/Patch.hpp"
 #include "shamrock/legacy/patch/base/patchdata.hpp"
 //#include "shamrock/legacy/patch/patchdata_buffer.hpp"
@@ -439,8 +440,8 @@ template <class vectype, class field_type, class InterfaceSelector> class Interf
         
         std::vector<u64_2> global_comm_vec;
         std::vector<i32> global_comm_tag;
-        mpi_handler::vector_allgatherv(comm_vec, mpi_type_u64_2, global_comm_vec, mpi_type_u64_2, MPI_COMM_WORLD);
-        mpi_handler::vector_allgatherv(local_comm_tag, mpi_type_i32, global_comm_tag, mpi_type_i32, MPI_COMM_WORLD);
+        shamalgs::collective::vector_allgatherv(comm_vec, mpi_type_u64_2, global_comm_vec, mpi_type_u64_2, MPI_COMM_WORLD);
+        shamalgs::collective::vector_allgatherv(local_comm_tag, mpi_type_i32, global_comm_tag, mpi_type_i32, MPI_COMM_WORLD);
 
         
 

@@ -54,7 +54,6 @@ namespace shamtest {
     int run_all_tests(int argc, char *argv[], bool run_bench,bool run_analysis, bool run_unittest){
         StackEntry stack {};
         
-        using namespace mpi_handler;
     
         using namespace shamtest::details;
 
