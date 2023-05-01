@@ -15,6 +15,7 @@
 #include "shamrock/legacy/utils/sycl_vector_utils.hpp"
 #include "shamrock/patch/ResizableBuffer.hpp"
 #include "shamsys/NodeInstance.hpp"
+#include "shamsys/legacy/log.hpp"
 #include <memory>
 
 template<class T> class Kernel_Extract_element;
@@ -346,8 +347,32 @@ u64 PatchDataField<T>::serialize_buf_byte_size(){
 
 
 
+template<class T>
+void PatchDataField<T>::serialize_full(shamalgs::SerializeHelper &serializer){
+    serializer.write(obj_cnt);
+    serializer.write(nvar);
+    serializer.write(field_name);
+    buf.serialize_buf(serializer);
+}
 
+template<class T>
+u64 PatchDataField<T>::serialize_full_byte_size(){
+    return shamalgs::details::SerializeHelperMember<u32>::szrepr*3 
+    + field_name.size()*sizeof(char) 
+    + buf.serialize_buf_byte_size();
+}
 
+template<class T>
+PatchDataField<T> PatchDataField<T>::deserialize_full(shamalgs::SerializeHelper &serializer){
+    u32 cnt,nvar;
+    serializer.load(cnt);
+    serializer.load(nvar);
+    std::string field_name;
+    serializer.load(field_name);
+
+    ResizableBuffer<T> rbuf = ResizableBuffer<T>::deserialize_buf(serializer, cnt*nvar);
+    return PatchDataField<T>(std::move(rbuf), cnt, field_name, nvar);
+}
 
 
 

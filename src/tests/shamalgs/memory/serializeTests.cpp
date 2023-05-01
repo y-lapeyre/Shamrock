@@ -47,16 +47,19 @@ TestStart(Unittest, "shamalgs/memory/SerializeHelper", test_serialize_helper, 1)
 
     f64_16 test_val = f64_16{0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15};
 
+    std::string test_str = "physics phd they said";
+
     u32 n2 = 100;
     sycl::buffer<u32_3> buf_comp2 = shamalgs::random::mock_buffer<u32_3>(0x121, n2);
 
     shamalgs::SerializeHelper ser;
 
-    u64 bytelen = n1*sizeof(u8) + 16*sizeof(f64) + n2*3*sizeof(u32);
+    u64 bytelen = n1*sizeof(u8) + 16*sizeof(f64) + n2*3*sizeof(u32) + test_str.size()*sizeof(char) + sizeof(u32);
 
     ser.allocate(bytelen);
     ser.write_buf(buf_comp1, n1);
     ser.write(test_val);
+    ser.write(test_str);
     ser.write_buf(buf_comp2, n2);
 
     
@@ -66,18 +69,21 @@ TestStart(Unittest, "shamalgs/memory/SerializeHelper", test_serialize_helper, 1)
     {
         sycl::buffer<u8> buf1 (n1);
         f64_16 val;
+        std::string recv_str;
         sycl::buffer<u32_3> buf2 (n2);
 
         shamalgs::SerializeHelper ser2(std::move(recov));
 
         ser2.load_buf(buf1, n1);
         ser2.load(val);
+        ser2.load(recv_str);
         ser2.load_buf(buf2, n2);
 
         //shamalgs::memory::print_buf(buf_comp1, n1, 16, "{} ");
         //shamalgs::memory::print_buf(buf1, n1, 16, "{} ");
 
         shamtest::asserts().assert_bool("same", shambase::vec_equals(val , test_val));
+        shamtest::asserts().assert_bool("same", test_str == recv_str);
         check_buf("buf 1", buf_comp1, buf1);
         check_buf("buf 2", buf_comp2, buf2);
 
