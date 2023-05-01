@@ -27,8 +27,6 @@ namespace syclalgs {
 
     namespace reduction {
 
-        bool is_all_true(sycl::buffer<u8> & buf, u32 cnt);
-
         template <class T> 
         bool equals(sycl::buffer<T> & buf1, sycl::buffer<T> & buf2, u32 cnt);
         

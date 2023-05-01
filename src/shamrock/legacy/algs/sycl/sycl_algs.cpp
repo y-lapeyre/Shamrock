@@ -7,6 +7,7 @@
 // -------------------------------------------------------//
 
 #include "sycl_algs.hpp"
+#include "shamalgs/reduction/reduction.hpp"
 #include "shamrock/legacy/utils/sycl_vector_utils.hpp"
 #include "shamsys/legacy/sycl_mpi_interop.hpp"
 
@@ -117,24 +118,6 @@ namespace syclalgs {
 
 
 
-
-        bool is_all_true(sycl::buffer<u8> & buf,u32 cnt){
-
-            //TODO do it on GPU pleeeaze
-
-            bool res = true;
-            {
-                sycl::host_accessor acc{buf, sycl::read_only};
-
-                for (u32 i = 0; i < cnt; i++) { //TODO remove ref to size
-                    res = res && (acc[i] != 0);
-                }
-            }
-
-            return res;
-
-        } 
-
         template<class T> bool equals(sycl::buffer<T> &buf1, sycl::buffer<T> &buf2, u32 cnt){
 
             sycl::buffer<u8> res (cnt);
@@ -150,7 +133,7 @@ namespace syclalgs {
             });
 
 
-            return is_all_true(res,cnt);
+            return shamalgs::reduction::is_all_true(res,cnt);
 
         }
 

@@ -12,6 +12,7 @@
 
 #include "aliases.hpp"
 #include "shamalgs/algorithm/algorithm.hpp"
+#include "shamalgs/memory/serialize.hpp"
 #include "shambase/exception.hpp"
 #include "shamrock/legacy/algs/sycl/sycl_algs.hpp"
 
@@ -89,6 +90,9 @@ class ResizableBuffer {
 
     void index_remap_resize(sycl::buffer<u32> &index_map, u32 len, u32 nvar = 1);
 
+    [[nodiscard]] bool check_buf_match(const ResizableBuffer<T> &f2) const;
+
+
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // constructors & destructors
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -123,6 +127,22 @@ class ResizableBuffer {
 
         return *this;
     } // move assignment
+
+    /**
+     * @brief serialize the content of the buffer
+     *  Note : no size information will be written
+     * @param serializer 
+     */
+    void serialize_buf(shamalgs::SerializeHelper & serializer);
+
+    /**
+     * @brief inverse operation of @serialize_buf
+     * 
+     * @param serializer 
+     * @param val_cnt 
+     * @return ResizableBuffer 
+     */
+    static ResizableBuffer deserialize_buf (shamalgs::SerializeHelper & serializer, u32 val_cnt);
 
     ResizableBuffer &operator=(const ResizableBuffer &other) // copy assignment
         = delete;

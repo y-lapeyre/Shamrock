@@ -11,6 +11,7 @@
 #pragma once
 
 #include "aliases.hpp"
+#include "shamalgs/memory/serialize.hpp"
 #include "shamrock/legacy/algs/sycl/sycl_algs.hpp"
 #include "shamrock/legacy/patch/base/enabled_fields.hpp"
 #include "shamsys/legacy/log.hpp"
@@ -212,7 +213,9 @@ template <class T> class PatchDataField {
     void index_remap_resize(sycl::buffer<u32> & index_map, u32 len);
 
     
-
+    inline void serialize(shamalgs::SerializeHelper & serializer){
+        
+    }
 };
 
 // TODO add overflow check

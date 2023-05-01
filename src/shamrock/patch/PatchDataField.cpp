@@ -9,6 +9,7 @@
 #include "PatchDataField.hpp"
 #include "shamalgs/algorithm/algorithm.hpp"
 #include "shamalgs/random/random.hpp"
+#include "shamalgs/reduction/reduction.hpp"
 #include "shamrock/legacy/utils/sycl_vector_utils.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include <memory>
@@ -101,7 +102,7 @@ template <class T> bool PatchDataField<T>::check_field_match(const PatchDataFiel
 
         });
         
-        match = match && syclalgs::reduction::is_all_true(res_buf,f2.size());
+        match = match && shamalgs::reduction::is_all_true(res_buf,f2.size());
 
     }
 
