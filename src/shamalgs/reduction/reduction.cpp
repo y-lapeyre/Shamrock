@@ -31,6 +31,23 @@ namespace shamalgs::reduction {
         return details::FallbackReduction<T>::min(q, buf1, start_id, end_id);
     }
 
+    bool is_all_true(sycl::buffer<u8> & buf,u32 cnt){
+
+        //TODO do it on GPU pleeeaze
+
+        bool res = true;
+        {
+            sycl::host_accessor acc{buf, sycl::read_only};
+
+            for (u32 i = 0; i < cnt; i++) { //TODO remove ref to size
+                res = res && (acc[i] != 0);
+            }
+        }
+
+        return res;
+
+    }
+
 
     #define XMAC_TYPES \
     X(f32   ) \

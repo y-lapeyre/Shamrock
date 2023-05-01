@@ -7,6 +7,9 @@
 // -------------------------------------------------------//
 
 #include "ResizableBuffer.hpp"
+#include "shamalgs/random/random.hpp"
+#include "shamalgs/reduction/reduction.hpp"
+#include "shambase/sycl_utils/vec_equals.hpp"
 #include "shamrock/legacy/patch/base/enabled_fields.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
@@ -152,6 +155,74 @@ void ResizableBuffer<T>::index_remap_resize(sycl::buffer<u32> &index_map, u32 le
         buf      = std::make_unique<sycl::buffer<T>>(std::move(new_buf));
     }
 }
+
+
+template<class T>
+void ResizableBuffer<T>::serialize_buf(shamalgs::SerializeHelper & serializer){
+    if(buf){
+        serializer.write_buf(*buf, val_cnt);
+    }
+}
+
+template<class T>
+ResizableBuffer<T> ResizableBuffer<T>::deserialize_buf (shamalgs::SerializeHelper & serializer, u32 val_cnt){
+    if(val_cnt == 0){
+        return ResizableBuffer();
+    }else{
+        ResizableBuffer rbuf (val_cnt);
+        serializer.load_buf(*(rbuf.buf), val_cnt);
+        return std::move(rbuf);
+    }
+}
+
+template<class T>
+bool ResizableBuffer<T>::check_buf_match(const ResizableBuffer<T> &f2) const {
+    bool match = true;
+
+    match = match && (val_cnt == f2.val_cnt);
+
+    {
+
+        using buf_t = std::unique_ptr<sycl::buffer<T>>;
+
+        const buf_t & buf = get_buf();
+        const buf_t & buf_f2 = f2.get_buf();
+        
+        sycl::buffer<u8> res_buf(val_cnt);
+
+        shamsys::instance::get_compute_queue().submit([&](sycl::handler & cgh){
+
+            sycl::accessor acc1 {*buf, cgh, sycl::read_only};
+            sycl::accessor acc2 {*buf_f2, cgh, sycl::read_only};
+
+            sycl::accessor acc_res {res_buf, cgh, sycl::write_only, sycl::no_init};
+
+            cgh.parallel_for(
+                sycl::range<1>{val_cnt}, [=](sycl::item<1> i){
+                acc_res[i] = shambase::vec_equals(acc1[i] , acc2[i]);
+            });
+
+        });
+        
+        match = match && shamalgs::reduction::is_all_true(res_buf,f2.size());
+
+    }
+
+    return match;
+
+}
+
+template<class T>
+u64 ResizableBuffer<T>::serialize_buf_byte_size(){
+    return val_cnt*shamalgs::details::SerializeHelperMember<T>::szrepr;
+}
+
+template<class T>
+ResizableBuffer<T> ResizableBuffer<T>::mock_buffer(u64 seed, u32 val_cnt, T min_bound, T max_bound){
+    sycl::buffer<T> buf_mocked = shamalgs::random::mock_buffer(seed, val_cnt, min_bound, max_bound);
+    return ResizableBuffer<T>(std::move(buf_mocked), val_cnt);
+}
+
 
 //////////////////////////////////////////////////////////////////////////
 // Define the patchdata field for all classes in XMAC_LIST_ENABLED_FIELD

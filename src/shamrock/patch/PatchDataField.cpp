@@ -8,9 +8,14 @@
 
 #include "PatchDataField.hpp"
 #include "shamalgs/algorithm/algorithm.hpp"
+#include "shamalgs/memory/details/SerializeHelperMember.hpp"
 #include "shamalgs/random/random.hpp"
+#include "shamalgs/reduction/reduction.hpp"
+#include "shambase/sycl_utils/vectorProperties.hpp"
 #include "shamrock/legacy/utils/sycl_vector_utils.hpp"
+#include "shamrock/patch/ResizableBuffer.hpp"
 #include "shamsys/NodeInstance.hpp"
+#include "shamsys/legacy/log.hpp"
 #include <memory>
 
 template<class T> class Kernel_Extract_element;
@@ -67,43 +72,13 @@ template <class T> void PatchDataField<T>::extract_element(u32 pidx, PatchDataFi
 
 
 
-template<class T> class PdatField_checkfieldmatch;
-
 template <class T> bool PatchDataField<T>::check_field_match(const PatchDataField<T> &f2) const {
     bool match = true;
 
     match = match && (field_name == f2.field_name);
     match = match && (nvar == f2.nvar);
     match = match && (obj_cnt == f2.obj_cnt);
-    match = match && (buf.size() == f2.buf.size());
-
-    const u32 & check_len = buf.size();
-
-    {
-
-        using buf_t = std::unique_ptr<sycl::buffer<T>>;
-
-        const buf_t & buf = get_buf();
-        const buf_t & buf_f2 = f2.get_buf();
-        
-        sycl::buffer<u8> res_buf(check_len);
-
-        shamsys::instance::get_compute_queue().submit([&](sycl::handler & cgh){
-
-            sycl::accessor acc1 {*buf, cgh, sycl::read_only};
-            sycl::accessor acc2 {*buf_f2, cgh, sycl::read_only};
-
-            sycl::accessor acc_res {res_buf, cgh, sycl::write_only, sycl::no_init};
-
-            cgh.parallel_for<PdatField_checkfieldmatch<T>>(sycl::range<1>{check_len}, [=](sycl::item<1> i){
-                acc_res[i] = test_sycl_eq(acc1[i] , acc2[i]);
-            });
-
-        });
-        
-        match = match && syclalgs::reduction::is_all_true(res_buf,f2.size());
-
-    }
+    match = match && buf.check_buf_match(f2.buf);
 
     return match;
 }
@@ -324,10 +299,12 @@ template<class T> void PatchDataField<T>::index_remap(sycl::buffer<u32> & index_
 
 template<class T>
 PatchDataField<T> PatchDataField<T>::mock_field(u64 seed, u32 obj_cnt, std::string name, u32 nvar){
-    return PatchDataField<T>{
-        shamalgs::random::mock_buffer<T>(seed, obj_cnt*nvar),
+    using Prop = shambase::sycl_utils::VectorProperties<T>;
+
+    return PatchDataField<T>(
+        ResizableBuffer<T>::mock_buffer(seed, obj_cnt*nvar, Prop::get_min(), Prop::get_max()),
         obj_cnt, name, nvar
-    };
+    );
 }
 
 
@@ -348,16 +325,54 @@ PatchDataField<T> PatchDataField<T>::mock_field(u64 seed, u32 obj_cnt, std::stri
 
 
 
+template<class T>
+void PatchDataField<T>::serialize_buf(shamalgs::SerializeHelper & serializer){
+    serializer.write(obj_cnt);
+    buf.serialize_buf(serializer);
+}
+
+template<class T>
+PatchDataField<T> PatchDataField<T>::deserialize_buf(shamalgs::SerializeHelper &serializer, std::string field_name, u32 nvar){
+    u32 cnt;
+    serializer.load(cnt);
+    ResizableBuffer<T> rbuf = ResizableBuffer<T>::deserialize_buf(serializer, cnt*nvar);
+    return PatchDataField<T>(std::move(rbuf), cnt, field_name, nvar);
+}
+
+template<class T>
+u64 PatchDataField<T>::serialize_buf_byte_size(){
+    return shamalgs::details::SerializeHelperMember<u32>::szrepr + buf.serialize_buf_byte_size();
+}
 
 
 
 
+template<class T>
+void PatchDataField<T>::serialize_full(shamalgs::SerializeHelper &serializer){
+    serializer.write(obj_cnt);
+    serializer.write(nvar);
+    serializer.write(field_name);
+    buf.serialize_buf(serializer);
+}
 
+template<class T>
+u64 PatchDataField<T>::serialize_full_byte_size(){
+    return shamalgs::details::SerializeHelperMember<u32>::szrepr*3 
+    + field_name.size()*sizeof(char) 
+    + buf.serialize_buf_byte_size();
+}
 
+template<class T>
+PatchDataField<T> PatchDataField<T>::deserialize_full(shamalgs::SerializeHelper &serializer){
+    u32 cnt,nvar;
+    serializer.load(cnt);
+    serializer.load(nvar);
+    std::string field_name;
+    serializer.load(field_name);
 
-
-
-
+    ResizableBuffer<T> rbuf = ResizableBuffer<T>::deserialize_buf(serializer, cnt*nvar);
+    return PatchDataField<T>(std::move(rbuf), cnt, field_name, nvar);
+}
 
 
 

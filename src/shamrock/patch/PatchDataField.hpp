@@ -11,6 +11,7 @@
 #pragma once
 
 #include "aliases.hpp"
+#include "shamalgs/memory/serialize.hpp"
 #include "shamrock/legacy/algs/sycl/sycl_algs.hpp"
 #include "shamrock/legacy/patch/base/enabled_fields.hpp"
 #include "shamsys/legacy/log.hpp"
@@ -102,6 +103,11 @@ template <class T> class PatchDataField {
     PatchDataField(const PatchDataField &other)
         : field_name(other.field_name), nvar(other.nvar), obj_cnt(other.obj_cnt), buf(other.buf) {
     }
+
+    inline PatchDataField(ResizableBuffer<T> && moved_buf, u32 obj_cnt, 
+    std::string name, u32 nvar) : 
+        obj_cnt(obj_cnt), field_name(name),nvar(nvar), buf(std::forward<ResizableBuffer<T>>(moved_buf))
+    {}
 
     inline PatchDataField(sycl::buffer<T> && moved_buf, u32 obj_cnt, 
     std::string name, u32 nvar) : 
@@ -211,8 +217,52 @@ template <class T> class PatchDataField {
      */
     void index_remap_resize(sycl::buffer<u32> & index_map, u32 len);
 
-    
+    /**
+     * @brief minimal serialization 
+     * assuming the user know the layout of the field
+     * 
+     * @param serializer 
+     */
+    void serialize_buf(shamalgs::SerializeHelper & serializer);
 
+    /**
+     * @brief deserialize a field inverse of serialize_buf
+     * 
+     * @param serializer 
+     * @param field_name 
+     * @param nvar 
+     * @return PatchDataField 
+     */
+    static PatchDataField deserialize_buf(shamalgs::SerializeHelper & serializer, std::string field_name, u32 nvar);
+    
+    /**
+     * @brief record the size usage of the serialization using serialize_buf
+     * 
+     * @return u64 
+     */
+    u64 serialize_buf_byte_size();
+
+    /**
+     * @brief serialize everything in the class
+     * 
+     * @param serializer 
+     */
+    void serialize_full(shamalgs::SerializeHelper & serializer);
+    
+    /**
+     * @brief deserialize a field inverse of serialize_full
+     * 
+     * @param serializer 
+     * @return PatchDataField 
+     */
+    static PatchDataField deserialize_full(shamalgs::SerializeHelper & serializer);
+    
+    /**
+     * @brief give the size usage of serialize_full
+     * 
+     * @return u64 
+     */
+    u64 serialize_full_byte_size();
 };
 
 // TODO add overflow check

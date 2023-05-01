@@ -202,6 +202,38 @@ namespace shamrock::patch{
 
     }
 
+    void PatchData::serialize_buf(shamalgs::SerializeHelper & serializer){
+        for_each_field_any([&](auto & f){
+            f.serialize_buf(serializer);
+        });        
+    }
+
+    u64 PatchData::serialize_buf_byte_size(){
+        u64 sum = 0;
+        for_each_field_any([&](auto & f){
+            sum += f.serialize_buf_byte_size();
+        }); 
+        return sum;
+    } 
+
+    PatchData PatchData::deserialize_buf(shamalgs::SerializeHelper & serializer, PatchDataLayout & pdl){
+        return PatchData{
+            pdl, [&](auto &pdat_fields) {
+                
+                pdl.for_each_field_any([&](auto & field){
+                    using f_t = typename std::remove_reference<decltype(field)>::type;
+                    using base_t = typename f_t::field_T;
+
+                    pdat_fields.push_back(var_t{
+                        PatchDataField<base_t>::deserialize_buf(serializer, field.name,field.nvar)
+                    });
+
+                });
+
+            }
+        };
+    }
+
     template<class T>
     void PatchData::split_patchdata(std::array<std::reference_wrapper<PatchData>,8> pdats, std::array<T, 8> min_box,  std::array<T, 8> max_box){
 

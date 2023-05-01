@@ -22,4 +22,5 @@ namespace shamalgs::reduction {
     template<class T>
     T min(sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id);
 
+    bool is_all_true(sycl::buffer<u8> & buf,u32 cnt);
 } // namespace shamalgs::reduction
