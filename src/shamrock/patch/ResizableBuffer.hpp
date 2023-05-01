@@ -12,6 +12,7 @@
 
 #include "aliases.hpp"
 #include "shamalgs/algorithm/algorithm.hpp"
+#include "shamalgs/memory/details/SerializeHelperMember.hpp"
 #include "shamalgs/memory/serialize.hpp"
 #include "shambase/exception.hpp"
 #include "shamrock/legacy/algs/sycl/sycl_algs.hpp"
@@ -143,6 +144,10 @@ class ResizableBuffer {
      * @return ResizableBuffer 
      */
     static ResizableBuffer deserialize_buf (shamalgs::SerializeHelper & serializer, u32 val_cnt);
+
+    u64 serialize_buf_byte_size();
+
+    static ResizableBuffer mock_buffer(u64 seed, u32 val_cnt, T min_bound, T max_bound);
 
     ResizableBuffer &operator=(const ResizableBuffer &other) // copy assignment
         = delete;

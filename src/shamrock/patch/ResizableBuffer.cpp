@@ -7,6 +7,7 @@
 // -------------------------------------------------------//
 
 #include "ResizableBuffer.hpp"
+#include "shamalgs/random/random.hpp"
 #include "shamalgs/reduction/reduction.hpp"
 #include "shambase/sycl_utils/vec_equals.hpp"
 #include "shamrock/legacy/patch/base/enabled_fields.hpp"
@@ -211,6 +212,16 @@ bool ResizableBuffer<T>::check_buf_match(const ResizableBuffer<T> &f2) const {
 
 }
 
+template<class T>
+u64 ResizableBuffer<T>::serialize_buf_byte_size(){
+    return val_cnt*shamalgs::details::SerializeHelperMember<T>::szrepr;
+}
+
+template<class T>
+ResizableBuffer<T> ResizableBuffer<T>::mock_buffer(u64 seed, u32 val_cnt, T min_bound, T max_bound){
+    sycl::buffer<T> buf_mocked = shamalgs::random::mock_buffer(seed, val_cnt, min_bound, max_bound);
+    return ResizableBuffer<T>(std::move(buf_mocked), val_cnt);
+}
 
 
 //////////////////////////////////////////////////////////////////////////

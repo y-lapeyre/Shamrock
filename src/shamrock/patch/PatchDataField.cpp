@@ -68,43 +68,13 @@ template <class T> void PatchDataField<T>::extract_element(u32 pidx, PatchDataFi
 
 
 
-template<class T> class PdatField_checkfieldmatch;
-
 template <class T> bool PatchDataField<T>::check_field_match(const PatchDataField<T> &f2) const {
     bool match = true;
 
     match = match && (field_name == f2.field_name);
     match = match && (nvar == f2.nvar);
     match = match && (obj_cnt == f2.obj_cnt);
-    match = match && (buf.size() == f2.buf.size());
-
-    const u32 & check_len = buf.size();
-
-    {
-
-        using buf_t = std::unique_ptr<sycl::buffer<T>>;
-
-        const buf_t & buf = get_buf();
-        const buf_t & buf_f2 = f2.get_buf();
-        
-        sycl::buffer<u8> res_buf(check_len);
-
-        shamsys::instance::get_compute_queue().submit([&](sycl::handler & cgh){
-
-            sycl::accessor acc1 {*buf, cgh, sycl::read_only};
-            sycl::accessor acc2 {*buf_f2, cgh, sycl::read_only};
-
-            sycl::accessor acc_res {res_buf, cgh, sycl::write_only, sycl::no_init};
-
-            cgh.parallel_for<PdatField_checkfieldmatch<T>>(sycl::range<1>{check_len}, [=](sycl::item<1> i){
-                acc_res[i] = test_sycl_eq(acc1[i] , acc2[i]);
-            });
-
-        });
-        
-        match = match && shamalgs::reduction::is_all_true(res_buf,f2.size());
-
-    }
+    match = match && buf.check_buf_match(f2.buf);
 
     return match;
 }
