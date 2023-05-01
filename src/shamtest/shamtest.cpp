@@ -21,6 +21,7 @@
 #include "shamrock/legacy/utils/string_utils.hpp"
 #include "shamsys/legacy/sycl_handler.hpp"
 #include "shamsys/NodeInstance.hpp"
+#include "shamsys/MpiWrapper.hpp"
 
 #include "shamsys/legacy/mpi_handler.hpp"
 #include "shambase/exception.hpp"
