@@ -28,7 +28,7 @@ inline void check_buf(std::string prefix, sycl::buffer<T> & b1, sycl::buffer<T> 
         for(u32 i = 0; i < b1.size(); i++){
             if(!shambase::vec_equals(acc1[i] , acc2[i])){
                 eq = false;
-                id_err_list += std::to_string(i) + " ";
+                //id_err_list += std::to_string(i) + " ";
             }
         }
 
@@ -74,8 +74,8 @@ TestStart(Unittest, "shamalgs/memory/SerializeHelper", test_serialize_helper, 1)
         ser2.load(val);
         ser2.load_buf(buf2, n2);
 
-        shamalgs::memory::print_buf(buf_comp1, n1, 16, "{} ");
-        shamalgs::memory::print_buf(buf1, n1, 16, "{} ");
+        //shamalgs::memory::print_buf(buf_comp1, n1, 16, "{} ");
+        //shamalgs::memory::print_buf(buf1, n1, 16, "{} ");
 
         shamtest::asserts().assert_bool("same", shambase::vec_equals(val , test_val));
         check_buf("buf 1", buf_comp1, buf1);
