@@ -13,6 +13,7 @@
 #include "shambase/sycl.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include <stdexcept>
+#include <variant>
 
 namespace shamsys {
 
