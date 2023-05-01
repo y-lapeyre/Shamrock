@@ -13,7 +13,6 @@
 #include "shammodels/sph/base/kernels.hpp"
 #include "shamrock/legacy/patch/comm/patch_object_mover.hpp"
 
-#include "shamsys/legacy/mpi_handler.hpp"
 
 
 template<class flt>

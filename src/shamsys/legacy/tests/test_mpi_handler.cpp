@@ -8,7 +8,6 @@
 
 #include "shamtest/shamtest.hpp"
 
-#include "shamsys/legacy/mpi_handler.hpp"
 #include <random>
 #include <vector>
 

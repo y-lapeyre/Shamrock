@@ -13,7 +13,6 @@
 #include "shamrock/legacy/patch/base/patchdata.hpp"
 #include "shamrock/patch/PatchDataLayout.hpp"
 #include "shamrock/legacy/patch/scheduler/scheduler_mpi.hpp"
-#include "shamsys/legacy/mpi_handler.hpp"
 #include <map>
 #include <memory>
 #include <tuple>

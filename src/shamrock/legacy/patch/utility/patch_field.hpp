@@ -21,7 +21,6 @@
 #include <vector>
 
 #include "shamalgs/collective/exchanges.hpp"
-#include "shamsys/legacy/mpi_handler.hpp"
 
 template<class type>
 class BufferedPField{public:

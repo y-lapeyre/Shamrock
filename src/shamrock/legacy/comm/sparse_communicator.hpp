@@ -15,7 +15,6 @@
 
 #include "shamrock/legacy/io/logs.hpp"
 #include "shamrock/legacy/patch/scheduler/scheduler_mpi.hpp"
-#include "shamsys/legacy/mpi_handler.hpp"
 
 
 

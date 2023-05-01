@@ -38,7 +38,6 @@
 #include "shamrock/legacy/patch/utility/serialpatchtree.hpp"
 #include "shamsys/legacy/cmdopt.hpp"
 #include "shamsys/legacy/log.hpp"
-#include "shamsys/legacy/mpi_handler.hpp"
 #include "shamsys/legacy/sycl_handler.hpp"
 #include "shamsys/legacy/sycl_mpi_interop.hpp"
 #include "shamrock/tree/RadixTree.hpp"

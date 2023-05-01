@@ -9,7 +9,6 @@
 #include "aliases.hpp"
 #include "shamrock/legacy/patch/utility/patch_field.hpp"
 #include "shamrock/legacy/patch/base/patchdata_field.hpp"
-#include "shamsys/legacy/mpi_handler.hpp"
 #include "shamsys/legacy/sycl_mpi_interop.hpp"
 #include "shamtest/shamtest.hpp"
 #include <random>

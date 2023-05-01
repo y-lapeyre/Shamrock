@@ -12,7 +12,6 @@
 #include "shamalgs/collective/exchanges.hpp"
 #include "shambase/stacktrace.hpp"
 #include "shamsys/SyclMpiTypes.hpp"
-#include "shamsys/legacy/mpi_handler.hpp"
 
 namespace shamsys::comm {
 
