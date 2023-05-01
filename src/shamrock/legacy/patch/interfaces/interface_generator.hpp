@@ -21,6 +21,7 @@
 
 
 #include "aliases.hpp"
+#include "shamalgs/collective/exchanges.hpp"
 #include "shamrock/patch/Patch.hpp"
 #include "shamrock/legacy/patch/base/patchdata.hpp"
 //#include "shamrock/legacy/patch/patchdata_buffer.hpp"
@@ -28,7 +29,6 @@
 #include "shamrock/legacy/patch/utility/serialpatchtree.hpp"
 #include "shamrock/legacy/patch/scheduler/scheduler_mpi.hpp"
 #include "shamrock/legacy/patch/scheduler/scheduler_patch_data.hpp"
-#include "shamsys/legacy/mpi_handler.hpp"
 #include "shamsys/legacy/sycl_mpi_interop.hpp"
 #include "shamrock/legacy/utils/geometry_utils.hpp"
 #include "shamrock/legacy/utils/string_utils.hpp"
@@ -439,8 +439,8 @@ template <class vectype, class field_type, class InterfaceSelector> class Interf
         
         std::vector<u64_2> global_comm_vec;
         std::vector<i32> global_comm_tag;
-        mpi_handler::vector_allgatherv(comm_vec, mpi_type_u64_2, global_comm_vec, mpi_type_u64_2, MPI_COMM_WORLD);
-        mpi_handler::vector_allgatherv(local_comm_tag, mpi_type_i32, global_comm_tag, mpi_type_i32, MPI_COMM_WORLD);
+        shamalgs::collective::vector_allgatherv(comm_vec, mpi_type_u64_2, global_comm_vec, mpi_type_u64_2, MPI_COMM_WORLD);
+        shamalgs::collective::vector_allgatherv(local_comm_tag, mpi_type_i32, global_comm_tag, mpi_type_i32, MPI_COMM_WORLD);
 
         
 

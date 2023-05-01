@@ -18,7 +18,6 @@
 #include "shamrock/legacy/io/logs.hpp"
 #include "shamrock/legacy/patch/base/patchdata.hpp"
 #include "shamrock/legacy/patch/base/patchdata_field.hpp"
-#include "shamsys/legacy/mpi_handler.hpp"
 #include "shamrock/scheduler/HilbertLoadBalance.hpp"
 
 #include "shamrock/patch/PatchDataLayout.hpp"

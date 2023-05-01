@@ -8,30 +8,12 @@
 
 #pragma once
 
-/**
- * @file mpi_handler.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @brief handle mpi routines
- * 
- * @copyright Copyright (c) 2021
- * 
- */
-
-
-
-
-#include <vector>
-//#define MPI_LOGGER_ENABLED
-
-#include <cstdio>
+#include "shambase/type_aliases.hpp"
 #include "shamsys/MpiWrapper.hpp"
-#include "shamrock/legacy/utils/string_utils.hpp"
-
-#include "aliases.hpp"
 #include "shamsys/NodeInstance.hpp"
+#include "shamsys/SyclMpiTypes.hpp"
 
-namespace mpi_handler{
-
+namespace shamalgs::collective {
 
     /**
      * @brief allgatherv with knowing total count of object
@@ -153,125 +135,4 @@ namespace mpi_handler{
         delete [] table_data_count;
         delete [] node_displacments_data_table;
     } 
-
-
-
-
-    /**
-     * @brief perform a alltoall with varying send and receive per node using a sparse methode
-     * //TODO add fault tolerance
-     * @tparam T 
-     * @param send_arr_node_id 
-     * @param send_arr_tag 
-     * @param send_arr_data 
-     * @param exchange_datatype MPI_Datatype to use
-     * @param recv_arr_node_id 
-     * @param recv_arr_tag 
-     * @param recv_arr_data 
-     * @param node_cnt Node count on the MPI communicator
-     * @param comm MPI communicator to use
-     */
-    template<class T>
-    inline void sparse_alltoall(
-        const std::vector<       u32       > & send_arr_node_id,
-        const std::vector<       u32       > & send_arr_tag,
-        const std::vector<  std::vector<T> > & send_arr_data,
-        
-        const MPI_Datatype exchange_datatype,
-
-        std::vector<       u32       > & recv_arr_node_id,
-        std::vector<       u32       > & recv_arr_tag,
-        std::vector<  std::vector<T> > & recv_arr_data,
-
-        const u32 node_cnt,
-        const MPI_Comm comm
-        ){
-
-
-        std::vector<u32> send_loc_cnt(node_cnt,0);
-        std::vector<MPI_Request> requests_send(send_arr_node_id.size());
-        
-        for(u32 i = 0; i < send_arr_node_id.size();i++){
-            //printf("async send rank = %d n°%d\n",mpi::world_rank,i);
-            mpi::isend(
-                send_arr_data[i].data(), 
-                send_arr_data[i].size(), 
-                exchange_datatype, 
-                send_arr_node_id[i], 
-                send_arr_tag[i], 
-                comm, 
-                &requests_send[i]);
-
-            send_loc_cnt[send_arr_node_id[i]] ++;
-        }
-
-        //wait for the end of ISend calls 
-        for(u32 i = 0; i < requests_send.size();i++){
-            MPI_Status st;
-            mpi::wait(&requests_send[i], &st);
-        }
-        
-
-        u32 recv_loc_cnt = -1;
-        {
-            const std::vector<int> recv_cnt(node_cnt,1);
-            mpi::reduce_scatter(send_loc_cnt.data(), &recv_loc_cnt, recv_cnt.data(), MPI_UINT32_T, MPI_SUM, MPI_COMM_WORLD);
-        }
-
-        printf("will receive : %d\n",recv_loc_cnt);
-
-
-        recv_arr_node_id.resize(recv_loc_cnt);
-        recv_arr_tag.resize(recv_loc_cnt);
-        recv_arr_data.resize(recv_loc_cnt);
-
-
-
-
-
-
-
-        std::vector<MPI_Request> requests_recv(recv_loc_cnt);
-
-
-        /*asynchronous probe seems unapropriate
-        * sticking with synchronous probe for now 
-        */
-        for(u32 i = 0; i < recv_loc_cnt;i++){
-            MPI_Status st;
-
-            //no race condition beacause this call is blocking
-            mpi::probe(MPI_ANY_SOURCE, MPI_ANY_TAG,MPI_COMM_WORLD, & st);
-
-            recv_arr_node_id[i] = st.MPI_SOURCE;
-            recv_arr_tag[i]     = st.MPI_TAG;
-
-            int sz_recv;
-            mpi::get_count(&st, exchange_datatype, &sz_recv);
-
-            recv_arr_data[i].resize(sz_recv);
-            
-            //MPI_Status st_recv;
-            //mpi::recv(recv_arr_data[i].data(), sz_recv, exchange_datatype, st.MPI_SOURCE, st.MPI_TAG, comm, &st_recv);
-            mpi::irecv(recv_arr_data[i].data(), sz_recv, exchange_datatype, st.MPI_SOURCE, st.MPI_TAG, comm, &requests_recv[i]);
-        }
-
-
-        //wait for the end of IRecv calls 
-        //*
-        for(u32 i = 0; i < requests_recv.size();i++){
-            MPI_Status st;
-            mpi::wait(&requests_recv[i], &st);
-        }
-        
-        //*/
-
-        
-
-    }
-
-
-
-
-
 }

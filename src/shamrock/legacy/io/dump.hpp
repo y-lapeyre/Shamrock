@@ -18,7 +18,6 @@
 #include "shamrock/legacy/patch/scheduler/scheduler_mpi.hpp"
 #include "shamsys/legacy/sycl_mpi_interop.hpp"
 #include <stdexcept>
-#include "shamsys/legacy/mpi_handler.hpp"
 #include <string>
 #include <type_traits>
 #include <unordered_map>

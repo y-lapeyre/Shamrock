@@ -15,7 +15,6 @@
 #include <vector>
 #include "aliases.hpp"
 #include "shamsys/legacy/log.hpp"
-#include "shamsys/legacy/mpi_handler.hpp"
 #include "shamsys/legacy/sycl_handler.hpp"
 #include "shamsys/legacy/sycl_mpi_interop.hpp"
 #include "shamrock/legacy/utils/string_utils.hpp"

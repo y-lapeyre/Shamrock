@@ -9,9 +9,9 @@
 #pragma once
 
 #include "CommBuffer.hpp"
+#include "shamalgs/collective/exchanges.hpp"
 #include "shambase/stacktrace.hpp"
 #include "shamsys/SyclMpiTypes.hpp"
-#include "shamsys/legacy/mpi_handler.hpp"
 
 namespace shamsys::comm {
 
@@ -53,12 +53,12 @@ namespace shamsys::comm {
                 }
             }
 
-            mpi_handler::vector_allgatherv(local_comm_vec,
+            shamalgs::collective::vector_allgatherv(local_comm_vec,
                                            get_mpi_type<u64_2>(),
                                            global_comm_vec,
                                            get_mpi_type<u64_2>(),
                                            MPI_COMM_WORLD);
-            mpi_handler::vector_allgatherv(
+            shamalgs::collective::vector_allgatherv(
                 local_comm_tag, get_mpi_type<i32>(), global_comm_tag, get_mpi_type<i32>(), MPI_COMM_WORLD);
         }
 

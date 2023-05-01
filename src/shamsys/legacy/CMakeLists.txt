@@ -1,6 +1,5 @@
 
 set(Sources
-    mpi_handler.cpp
     sycl_handler.cpp
     sycl_mpi_interop.cpp
     cmdopt.cpp
@@ -10,7 +9,6 @@ set(SourcesTest
     
 )
 set(Headers
-    mpi_handler.hpp
     sycl_handler.hpp
 )
 set(HeadersTest

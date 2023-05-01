@@ -9,12 +9,12 @@
 #pragma once
 
 #include "aliases.hpp"
+#include "shamalgs/collective/exchanges.hpp"
 #include "shamrock/patch/Patch.hpp"
 #include <vector>
 
 #include "shamrock/legacy/io/logs.hpp"
 #include "shamrock/legacy/patch/scheduler/scheduler_mpi.hpp"
-#include "shamsys/legacy/mpi_handler.hpp"
 
 
 
@@ -60,8 +60,8 @@ class SparsePatchCommunicator {
         }
 
         auto timer_allgatherv = timings::start_timer("allgatherv", timings::mpi);
-        mpi_handler::vector_allgatherv(send_comm_vec, mpi_type_u64_2, global_comm_vec, mpi_type_u64_2, MPI_COMM_WORLD);
-        mpi_handler::vector_allgatherv(local_comm_tag, mpi_type_i32, global_comm_tag, mpi_type_i32, MPI_COMM_WORLD);
+        shamalgs::collective::vector_allgatherv(send_comm_vec, mpi_type_u64_2, global_comm_vec, mpi_type_u64_2, MPI_COMM_WORLD);
+        shamalgs::collective::vector_allgatherv(local_comm_tag, mpi_type_i32, global_comm_tag, mpi_type_i32, MPI_COMM_WORLD);
         timer_allgatherv.stop();
 
         xcgh_byte_cnt += 

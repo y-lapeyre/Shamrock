@@ -9,9 +9,9 @@
 #pragma once
 
 
+#include "shamalgs/collective/exchanges.hpp"
 #include "shamrock/legacy/patch/base/patchdata_field.hpp"
 #include "shamrock/patch/PatchDataLayout.hpp"
-#include "shamsys/legacy/mpi_handler.hpp"
 #include "shamrock/patch/Patch.hpp"
 #include "shamrock/legacy/patch/base/patchdata.hpp"
 #include "shamsys/legacy/sycl_mpi_interop.hpp"
@@ -67,8 +67,8 @@ inline void make_comm_table(
     }
 
     auto timer_allgatherv = timings::start_timer("allgatherv", timings::mpi);
-    mpi_handler::vector_allgatherv(in_send_comm_vec, mpi_type_u64_2, out_global_comm_vec, mpi_type_u64_2, MPI_COMM_WORLD);
-    mpi_handler::vector_allgatherv(out_local_comm_tag, mpi_type_i32, out_global_comm_tag, mpi_type_i32, MPI_COMM_WORLD);
+    shamalgs::collective::vector_allgatherv(in_send_comm_vec, mpi_type_u64_2, out_global_comm_vec, mpi_type_u64_2, MPI_COMM_WORLD);
+    shamalgs::collective::vector_allgatherv(out_local_comm_tag, mpi_type_i32, out_global_comm_tag, mpi_type_i32, MPI_COMM_WORLD);
     timer_allgatherv.stop();
 }
 
@@ -110,8 +110,8 @@ inline void patch_data_exchange_object(
     auto timer_allgatherv = timings::start_timer("allgatherv", timings::mpi);
     std::vector<u64_2> global_comm_vec;
     std::vector<i32> global_comm_tag;
-    mpi_handler::vector_allgatherv(send_comm_vec, mpi_type_u64_2, global_comm_vec, mpi_type_u64_2, MPI_COMM_WORLD);
-    mpi_handler::vector_allgatherv(local_comm_tag, mpi_type_i32, global_comm_tag, mpi_type_i32, MPI_COMM_WORLD);
+    shamalgs::collective::vector_allgatherv(send_comm_vec, mpi_type_u64_2, global_comm_vec, mpi_type_u64_2, MPI_COMM_WORLD);
+    shamalgs::collective::vector_allgatherv(local_comm_tag, mpi_type_i32, global_comm_tag, mpi_type_i32, MPI_COMM_WORLD);
     timer_allgatherv.stop();
 
     std::vector<PatchDataMpiRequest> rq_lst;
@@ -241,8 +241,8 @@ inline void patch_data_field_exchange_object(
     auto timer_allgatherv = timings::start_timer("allgatherv", timings::mpi);
     std::vector<u64_2> global_comm_vec;
     std::vector<i32> global_comm_tag;
-    mpi_handler::vector_allgatherv(send_comm_vec, mpi_type_u64_2, global_comm_vec, mpi_type_u64_2, MPI_COMM_WORLD);
-    mpi_handler::vector_allgatherv(local_comm_tag, mpi_type_i32, global_comm_tag, mpi_type_i32, MPI_COMM_WORLD);
+    shamalgs::collective::vector_allgatherv(send_comm_vec, mpi_type_u64_2, global_comm_vec, mpi_type_u64_2, MPI_COMM_WORLD);
+    shamalgs::collective::vector_allgatherv(local_comm_tag, mpi_type_i32, global_comm_tag, mpi_type_i32, MPI_COMM_WORLD);
     timer_allgatherv.stop();
 
 
@@ -373,8 +373,8 @@ inline void radix_tree_exchange_object(
     auto timer_allgatherv = timings::start_timer("allgatherv", timings::mpi);
     std::vector<u64_2> global_comm_vec;
     std::vector<i32> global_comm_tag;
-    mpi_handler::vector_allgatherv(send_comm_vec, mpi_type_u64_2, global_comm_vec, mpi_type_u64_2, MPI_COMM_WORLD);
-    mpi_handler::vector_allgatherv(local_comm_tag, mpi_type_i32, global_comm_tag, mpi_type_i32, MPI_COMM_WORLD);
+    shamalgs::collective::vector_allgatherv(send_comm_vec, mpi_type_u64_2, global_comm_vec, mpi_type_u64_2, MPI_COMM_WORLD);
+    shamalgs::collective::vector_allgatherv(local_comm_tag, mpi_type_i32, global_comm_tag, mpi_type_i32, MPI_COMM_WORLD);
     timer_allgatherv.stop();
 
 

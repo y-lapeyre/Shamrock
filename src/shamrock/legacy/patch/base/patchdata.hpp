@@ -30,7 +30,6 @@
 #include "shamrock/legacy/utils/sycl_vector_utils.hpp"
 #include "shamrock/patch/PatchData.hpp"
 #include "shamrock/patch/PatchDataLayout.hpp"
-#include "shamsys/legacy/mpi_handler.hpp"
 #include "shamsys/legacy/sycl_mpi_interop.hpp"
 
 

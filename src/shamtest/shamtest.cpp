@@ -20,8 +20,9 @@
 #include "shamsys/legacy/log.hpp"
 #include "shamrock/legacy/utils/string_utils.hpp"
 #include "shamsys/legacy/sycl_handler.hpp"
+#include "shamsys/NodeInstance.hpp"
+#include "shamsys/MpiWrapper.hpp"
 
-#include "shamsys/legacy/mpi_handler.hpp"
 #include "shambase/exception.hpp"
 
 
@@ -54,7 +55,6 @@ namespace shamtest {
     int run_all_tests(int argc, char *argv[], bool run_bench,bool run_analysis, bool run_unittest){
         StackEntry stack {};
         
-        using namespace mpi_handler;
     
         using namespace shamtest::details;
 
