@@ -15,7 +15,6 @@
 #include "shambase/sycl.hpp"
 #include "shambase/type_aliases.hpp"
 #include "shamsys/NodeInstance.hpp"
-#include <hipSYCL/sycl/libkernel/accessor.hpp>
 #include <memory>
 #include <stdexcept>
 #include <string>

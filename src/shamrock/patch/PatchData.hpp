@@ -261,6 +261,14 @@ namespace shamrock::patch {
 
             return check;
         }
+
+        void serialize_buf(shamalgs::SerializeHelper & serializer);
+
+        u64 serialize_buf_byte_size();
+
+        static PatchData deserialize_buf(shamalgs::SerializeHelper & serializer, PatchDataLayout & pdl);
+
+
     };
 
     template<class T>
