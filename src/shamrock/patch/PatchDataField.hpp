@@ -104,6 +104,11 @@ template <class T> class PatchDataField {
         : field_name(other.field_name), nvar(other.nvar), obj_cnt(other.obj_cnt), buf(other.buf) {
     }
 
+    inline PatchDataField(ResizableBuffer<T> && moved_buf, u32 obj_cnt, 
+    std::string name, u32 nvar) : 
+        obj_cnt(obj_cnt), field_name(name),nvar(nvar), buf(std::forward<ResizableBuffer<T>>(moved_buf))
+    {}
+
     inline PatchDataField(sycl::buffer<T> && moved_buf, u32 obj_cnt, 
     std::string name, u32 nvar) : 
         obj_cnt(obj_cnt), field_name(name),nvar(nvar), buf(std::forward<sycl::buffer<T>>(moved_buf), obj_cnt*nvar)
@@ -212,10 +217,12 @@ template <class T> class PatchDataField {
      */
     void index_remap_resize(sycl::buffer<u32> & index_map, u32 len);
 
+    void serialize_buf(shamalgs::SerializeHelper & serializer);
+
+    static PatchDataField deserialize_buf(shamalgs::SerializeHelper & serializer, std::string field_name, u32 nvar);
     
-    inline void serialize(shamalgs::SerializeHelper & serializer){
-        
-    }
+    u64 serialize_buf_byte_size();
+
 };
 
 // TODO add overflow check

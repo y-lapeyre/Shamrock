@@ -8,9 +8,12 @@
 
 #include "PatchDataField.hpp"
 #include "shamalgs/algorithm/algorithm.hpp"
+#include "shamalgs/memory/details/SerializeHelperMember.hpp"
 #include "shamalgs/random/random.hpp"
 #include "shamalgs/reduction/reduction.hpp"
+#include "shambase/sycl_utils/vectorProperties.hpp"
 #include "shamrock/legacy/utils/sycl_vector_utils.hpp"
+#include "shamrock/patch/ResizableBuffer.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include <memory>
 
@@ -295,10 +298,12 @@ template<class T> void PatchDataField<T>::index_remap(sycl::buffer<u32> & index_
 
 template<class T>
 PatchDataField<T> PatchDataField<T>::mock_field(u64 seed, u32 obj_cnt, std::string name, u32 nvar){
-    return PatchDataField<T>{
-        shamalgs::random::mock_buffer<T>(seed, obj_cnt*nvar),
+    using Prop = shambase::sycl_utils::VectorProperties<T>;
+
+    return PatchDataField<T>(
+        ResizableBuffer<T>::mock_buffer(seed, obj_cnt*nvar, Prop::get_min(), Prop::get_max()),
         obj_cnt, name, nvar
-    };
+    );
 }
 
 
@@ -319,10 +324,24 @@ PatchDataField<T> PatchDataField<T>::mock_field(u64 seed, u32 obj_cnt, std::stri
 
 
 
+template<class T>
+void PatchDataField<T>::serialize_buf(shamalgs::SerializeHelper & serializer){
+    serializer.write(obj_cnt);
+    buf.serialize_buf(serializer);
+}
 
+template<class T>
+PatchDataField<T> PatchDataField<T>::deserialize_buf(shamalgs::SerializeHelper &serializer, std::string field_name, u32 nvar){
+    u32 cnt;
+    serializer.load(cnt);
+    ResizableBuffer<T> rbuf = ResizableBuffer<T>::deserialize_buf(serializer, cnt*nvar);
+    return PatchDataField<T>(std::move(rbuf), cnt, field_name, nvar);
+}
 
-
-
+template<class T>
+u64 PatchDataField<T>::serialize_buf_byte_size(){
+    return shamalgs::details::SerializeHelperMember<u32>::szrepr + buf.serialize_buf_byte_size();
+}
 
 
 
