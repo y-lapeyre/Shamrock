@@ -12,7 +12,6 @@
 #include "shambase/sycl.hpp"
 #include "shambase/type_aliases.hpp"
 #include "shamsys/NodeInstance.hpp"
-#include <hipSYCL/sycl/libkernel/vec.hpp>
 #include <memory>
 #include <type_traits>
 
