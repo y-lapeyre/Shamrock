@@ -482,8 +482,8 @@ Result_nompi_fmm_testing<flt,morton_mode,fmm_order> nompi_fmm_testing(std::uniqu
         auto xyz = sycl::accessor {*pos_part, cgh,sycl::read_only};
         auto cell_particle_ids =sycl::accessor {*rtree.tree_reduced_morton_codes.buf_reduc_index_map, cgh,sycl::read_only};
         auto particle_index_map = sycl::accessor {*rtree.tree_morton_codes.buf_particle_index_map, cgh,sycl::read_only};
-        auto cell_max = sycl::accessor{*rtree.buf_pos_max_cell_flt,cgh,sycl::read_only};
-        auto cell_min = sycl::accessor{*rtree.buf_pos_min_cell_flt,cgh,sycl::read_only};
+        auto cell_max = sycl::accessor{*rtree.tree_cell_ranges.buf_pos_max_cell_flt,cgh,sycl::read_only};
+        auto cell_min = sycl::accessor{*rtree.tree_cell_ranges.buf_pos_min_cell_flt,cgh,sycl::read_only};
         auto multipoles = sycl::accessor {*grav_multipoles, cgh,sycl::write_only,sycl::no_init};
 
 
@@ -547,8 +547,8 @@ Result_nompi_fmm_testing<flt,morton_mode,fmm_order> nompi_fmm_testing(std::uniqu
 
             u32 leaf_offset = rtree.tree_struct.internal_cell_count;
 
-            auto cell_max = sycl::accessor{*rtree.buf_pos_max_cell_flt,cgh,sycl::read_only};
-            auto cell_min = sycl::accessor{*rtree.buf_pos_min_cell_flt,cgh,sycl::read_only};
+            auto cell_max = sycl::accessor{*rtree.tree_cell_ranges.buf_pos_max_cell_flt,cgh,sycl::read_only};
+            auto cell_min = sycl::accessor{*rtree.tree_cell_ranges.buf_pos_min_cell_flt,cgh,sycl::read_only};
             auto multipoles = sycl::accessor {*grav_multipoles, cgh,sycl::read_write};
             auto is_computed = sycl::accessor {*buf_is_computed, cgh , sycl::read_write};
 
@@ -621,8 +621,8 @@ Result_nompi_fmm_testing<flt,morton_mode,fmm_order> nompi_fmm_testing(std::uniqu
 
         sycl::range<1> range_tree = sycl::range<1>{rtree.tree_reduced_morton_codes.tree_leaf_count + rtree.tree_struct.internal_cell_count};
 
-        auto pos_min_cell = sycl::accessor{*rtree.buf_pos_min_cell_flt,cgh,sycl::read_only};
-        auto pos_max_cell = sycl::accessor{*rtree.buf_pos_max_cell_flt,cgh,sycl::read_only};
+        auto pos_min_cell = sycl::accessor{*rtree.tree_cell_ranges.buf_pos_min_cell_flt,cgh,sycl::read_only};
+        auto pos_max_cell = sycl::accessor{*rtree.tree_cell_ranges.buf_pos_max_cell_flt,cgh,sycl::read_only};
 
 
         auto c_centers = sycl::accessor{*cell_centers,cgh,sycl::write_only,sycl::no_init};
@@ -958,8 +958,8 @@ Result_nompi_fmm_testing<flt,morton_mode,fmm_order> nompi_fmm_testing(std::uniqu
         auto c_lenght = sycl::host_accessor{*cell_lenght,sycl::read_only};
 
 
-        auto pos_min_cell = sycl::host_accessor{*rtree.buf_pos_min_cell_flt};
-        auto pos_max_cell = sycl::host_accessor{*rtree.buf_pos_max_cell_flt};
+        auto pos_min_cell = sycl::host_accessor{*rtree.tree_cell_ranges.buf_pos_min_cell_flt};
+        auto pos_max_cell = sycl::host_accessor{*rtree.tree_cell_ranges.buf_pos_max_cell_flt};
 
         auto sample = [&](u32 id){
 
@@ -1197,11 +1197,11 @@ TestStart(Analysis,"models/generic/fmm/fmm_1_gpu_prec", fmm_1_gpu_prec , 1){
             }
 
 
-            auto acc_min_u32 = sycl::host_accessor {*res_u32.rtree.buf_pos_min_cell};
-            auto acc_max_u32 = sycl::host_accessor {*res_u32.rtree.buf_pos_max_cell};
+            auto acc_min_u32 = sycl::host_accessor {*res_u32.rtree.tree_cell_ranges.buf_pos_min_cell};
+            auto acc_max_u32 = sycl::host_accessor {*res_u32.rtree.tree_cell_ranges.buf_pos_max_cell};
 
-            auto acc_min_u64 = sycl::host_accessor {*res_u64.rtree.buf_pos_min_cell};
-            auto acc_max_u64 = sycl::host_accessor {*res_u64.rtree.buf_pos_max_cell};
+            auto acc_min_u64 = sycl::host_accessor {*res_u64.rtree.tree_cell_ranges.buf_pos_min_cell};
+            auto acc_max_u64 = sycl::host_accessor {*res_u64.rtree.tree_cell_ranges.buf_pos_max_cell};
 
             for(u32 i = 0 ; i < res_u64.rtree.tree_struct.internal_cell_count + res_u64.rtree.tree_reduced_morton_codes.tree_leaf_count ; i++){
                 bool same = true;

@@ -276,9 +276,9 @@ class AMRTestModel {
                         : cell_low_bound{*crit.pdat.get_field<u64_3>(0).get_buf(), cgh, sycl::read_only},
                           cell_high_bound{
                               *crit.pdat.get_field<u64_3>(1).get_buf(), cgh, sycl::read_only},
-                            tree_cell_coordrange_min{*crit.tree.buf_pos_min_cell_flt, cgh, sycl::read_only},
+                            tree_cell_coordrange_min{*crit.tree.tree_cell_ranges.buf_pos_min_cell_flt, cgh, sycl::read_only},
                           tree_cell_coordrange_max{
-                              *crit.tree.buf_pos_max_cell_flt, cgh, sycl::read_only} {}
+                              *crit.tree.tree_cell_ranges.buf_pos_max_cell_flt, cgh, sycl::read_only} {}
 
                     class ObjectValues {
                         public:

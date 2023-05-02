@@ -310,9 +310,9 @@ class SPHTestInteractionCrit {
         flt Rpart_pow2;
 
         Access(SPHTestInteractionCrit crit, sycl::handler &cgh)
-            : part_pos{crit.positions, cgh, sycl::read_only}, Rpart(crit.Rpart),Rpart_pow2(crit.Rpart*crit.Rpart),tree_cell_coordrange_min{*crit.tree.buf_pos_min_cell_flt, cgh, sycl::read_only},
+            : part_pos{crit.positions, cgh, sycl::read_only}, Rpart(crit.Rpart),Rpart_pow2(crit.Rpart*crit.Rpart),tree_cell_coordrange_min{*crit.tree.tree_cell_ranges.buf_pos_min_cell_flt, cgh, sycl::read_only},
                 tree_cell_coordrange_max{
-                    *crit.tree.buf_pos_max_cell_flt, cgh, sycl::read_only} {}
+                    *crit.tree.tree_cell_ranges.buf_pos_max_cell_flt, cgh, sycl::read_only} {}
 
         class ObjectValues {
             public:
@@ -705,9 +705,9 @@ f64 amr_walk_perf(f64 lambda_tilde,
             Access(InteractionCrit crit, sycl::handler &cgh)
                 : cell_low_bound{*crit.pdat.template get_field<u64_3>(0).get_buf(), cgh, sycl::read_only},
                     cell_high_bound{
-                        *crit.pdat.template get_field<u64_3>(1).get_buf(), cgh, sycl::read_only},tree_cell_coordrange_min{*crit.tree.buf_pos_min_cell_flt, cgh, sycl::read_only},
+                        *crit.pdat.template get_field<u64_3>(1).get_buf(), cgh, sycl::read_only},tree_cell_coordrange_min{*crit.tree.tree_cell_ranges.buf_pos_min_cell_flt, cgh, sycl::read_only},
                     tree_cell_coordrange_max{
-                        *crit.tree.buf_pos_max_cell_flt, cgh, sycl::read_only} {}
+                        *crit.tree.tree_cell_ranges.buf_pos_max_cell_flt, cgh, sycl::read_only} {}
 
             class ObjectValues {
                 public:
@@ -1010,9 +1010,9 @@ class FmmTestInteractCrit {
 
         Access(FmmTestInteractCrit crit, sycl::handler &cgh)
             : part_pos{crit.positions, cgh, sycl::read_only},
-            tree_cell_coordrange_min{*crit.tree.buf_pos_min_cell_flt, cgh, sycl::read_only},
+            tree_cell_coordrange_min{*crit.tree.tree_cell_ranges.buf_pos_min_cell_flt, cgh, sycl::read_only},
                 tree_cell_coordrange_max{
-                    *crit.tree.buf_pos_max_cell_flt, cgh, sycl::read_only} ,
+                    *crit.tree.tree_cell_ranges.buf_pos_max_cell_flt, cgh, sycl::read_only} ,
               c_lenght{*crit.cell_lenghts.radix_tree_field_buf, cgh, sycl::read_only},
               c_center{*crit.cell_centers.radix_tree_field_buf, cgh, sycl::read_only},
               open_crit_sq(crit.open_crit_sq) {}
@@ -1135,8 +1135,8 @@ void test_fmm_nbody_iter_overhead(std::string dset_name, flt crit_theta){
 
                 sycl::range<1> range_tree = sycl::range<1>{rtree.tree_reduced_morton_codes.tree_leaf_count + rtree.tree_struct.internal_cell_count};
 
-                auto pos_min_cell = sycl::accessor{*rtree.buf_pos_min_cell_flt,cgh,sycl::read_only};
-                auto pos_max_cell = sycl::accessor{*rtree.buf_pos_max_cell_flt,cgh,sycl::read_only};
+                auto pos_min_cell = sycl::accessor{*rtree.tree_cell_ranges.buf_pos_min_cell_flt,cgh,sycl::read_only};
+                auto pos_max_cell = sycl::accessor{*rtree.tree_cell_ranges.buf_pos_max_cell_flt,cgh,sycl::read_only};
 
                 auto c_centers = sycl::accessor{*buf_cell_centers,cgh,sycl::write_only,sycl::no_init};
                 auto c_lenght = sycl::accessor{*buf_cell_lenght,cgh,sycl::write_only,sycl::no_init};

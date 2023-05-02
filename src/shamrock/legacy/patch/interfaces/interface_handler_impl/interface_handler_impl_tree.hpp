@@ -313,8 +313,8 @@ void Interfacehandler<Tree_Send,pos_prec,RadixTree<u_morton, sycl::vec<pos_prec,
 
                 sycl::accessor acc_valid_node{valid_node, cgh, sycl::write_only, sycl::no_init};
 
-                sycl::accessor acc_pos_cell_min{*rtree->buf_pos_min_cell_flt, cgh, sycl::read_only};
-                sycl::accessor acc_pos_cell_max{*rtree->buf_pos_max_cell_flt, cgh, sycl::read_only};
+                sycl::accessor acc_pos_cell_min{*rtree->tree_cell_ranges.buf_pos_min_cell_flt, cgh, sycl::read_only};
+                sycl::accessor acc_pos_cell_max{*rtree->tree_cell_ranges.buf_pos_max_cell_flt, cgh, sycl::read_only};
 
                 
                 InteractCrit cd = interact_crit;

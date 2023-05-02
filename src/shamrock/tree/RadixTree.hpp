@@ -22,6 +22,7 @@
 #include "shamalgs/memory/memory.hpp"
 #include "shambase/sycl_utils/vec_equals.hpp"
 #include "shamrock/legacy/patch/base/patchdata.hpp"
+#include "shamrock/tree/TreeCellRanges.hpp"
 #include "shamrock/tree/TreeReducedMortonCodes.hpp"
 #include "shamrock/tree/TreeStructure.hpp"
 #include "shamrock/tree/TreeMortonCodes.hpp"
@@ -89,24 +90,18 @@ class RadixTree{
     //Karras alg
     shamrock::tree::TreeStructure<morton_t> tree_struct;
 
-    //this one is not used, it should be removed
-    std::unique_ptr<sycl::buffer<ipos_t>>    buf_pos_min_cell;     // size = total count //rename to ipos
-    std::unique_ptr<sycl::buffer<ipos_t>>    buf_pos_max_cell;     // size = total count
-
-    //optional
-    std::unique_ptr<sycl::buffer<pos_t>>     buf_pos_min_cell_flt; // size = total count //drop the flt part
-    std::unique_ptr<sycl::buffer<pos_t>>     buf_pos_max_cell_flt; // size = total count
+    shamrock::tree::TreeCellRanges<ipos_t, pos_t> tree_cell_ranges;
 
     inline bool is_tree_built(){
         return tree_struct.is_built();
     }
 
     inline bool are_range_int_built(){
-        return bool(buf_pos_min_cell) && bool(buf_pos_max_cell);
+        return tree_cell_ranges.are_range_int_built();
     }
 
     inline bool are_range_float_built(){
-        return bool(buf_pos_min_cell_flt) && bool(buf_pos_max_cell_flt);
+        return tree_cell_ranges.are_range_float_built();    
     }
 
 
@@ -140,10 +135,7 @@ class RadixTree{
         tree_morton_codes{other.tree_morton_codes},
         tree_reduced_morton_codes(other.tree_reduced_morton_codes), // size = leaf cnt
         tree_struct{other.tree_struct},    
-        buf_pos_min_cell        (shamalgs::memory::duplicate(other.buf_pos_min_cell       )),     // size = total count
-        buf_pos_max_cell        (shamalgs::memory::duplicate(other.buf_pos_max_cell       )),     // size = total count
-        buf_pos_min_cell_flt    (shamalgs::memory::duplicate(other.buf_pos_min_cell_flt   )), // size = total count
-        buf_pos_max_cell_flt    (shamalgs::memory::duplicate(other.buf_pos_max_cell_flt   )) // size = total count
+        tree_cell_ranges(other.tree_cell_ranges) 
     {}
 
     [[nodiscard]] inline u64 memsize() const {
@@ -161,11 +153,7 @@ class RadixTree{
         sum += tree_morton_codes.memsize();
         sum += tree_reduced_morton_codes.memsize();
         sum += tree_struct.memsize();
-        add_ptr(buf_pos_min_cell        );
-        add_ptr(buf_pos_max_cell        );
-        add_ptr(buf_pos_min_cell_flt    );
-        add_ptr(buf_pos_max_cell_flt    );
-
+        sum += tree_cell_ranges.memsize();
 
         return sum;
     }
@@ -194,6 +182,8 @@ class RadixTree{
 
         return cmp;
     }
+
+    
 
 
 
@@ -573,8 +563,8 @@ inline auto RadixTree<u_morton, vec3, dim>::get_min_max_cell_side_lenght() -> st
     q.submit([&](sycl::handler &cgh) {
         u32 offset_leaf = tree_struct.internal_cell_count;
 
-        sycl::accessor pos_min_cell { *buf_pos_min_cell_flt,cgh,sycl::read_only};
-        sycl::accessor pos_max_cell { *buf_pos_max_cell_flt,cgh,sycl::read_only};
+        sycl::accessor pos_min_cell { *tree_cell_ranges.buf_pos_min_cell_flt,cgh,sycl::read_only};
+        sycl::accessor pos_max_cell { *tree_cell_ranges.buf_pos_max_cell_flt,cgh,sycl::read_only};
 
         sycl::accessor s_lengh_min { min_side_lenght,cgh,sycl::write_only,sycl::no_init};
         sycl::accessor s_lengh_max { max_side_lenght,cgh,sycl::write_only,sycl::no_init};
@@ -654,8 +644,8 @@ namespace tree_comm {
                 rtree.tree_struct.internal_cell_count = rtree.tree_struct.buf_lchild_id->size();
 
                 {
-                    sycl::host_accessor bmin {*rtree.buf_pos_min_cell_flt};
-                    sycl::host_accessor bmax {*rtree.buf_pos_max_cell_flt};
+                    sycl::host_accessor bmin {*rtree.tree_cell_ranges.buf_pos_min_cell_flt};
+                    sycl::host_accessor bmax {*rtree.tree_cell_ranges.buf_pos_max_cell_flt};
 
                     rtree.bounding_box = {bmin[0],bmax[0]};
                 }
@@ -711,11 +701,11 @@ namespace tree_comm {
         ret_len += mpi_sycl_interop::isend(rq.rtree.tree_struct.buf_rchild_flag,rq.rtree.tree_struct.internal_cell_count, rq.rq_u8, rank_dest, tag, comm);
         ret_len += mpi_sycl_interop::isend(rq.rtree.tree_struct.buf_endrange,rq.rtree.tree_struct.internal_cell_count, rq.rq_u32, rank_dest, tag, comm);
 
-        ret_len += mpi_sycl_interop::isend(rq.rtree.buf_pos_min_cell,rq.rtree.tree_struct.internal_cell_count + rq.rtree.tree_reduced_morton_codes.tree_leaf_count, rq.rq_vec3i, rank_dest, tag, comm);
-        ret_len += mpi_sycl_interop::isend(rq.rtree.buf_pos_max_cell,rq.rtree.tree_struct.internal_cell_count + rq.rtree.tree_reduced_morton_codes.tree_leaf_count, rq.rq_vec3i, rank_dest, tag, comm);
+        ret_len += mpi_sycl_interop::isend(rq.rtree.tree_cell_ranges.buf_pos_min_cell,rq.rtree.tree_struct.internal_cell_count + rq.rtree.tree_reduced_morton_codes.tree_leaf_count, rq.rq_vec3i, rank_dest, tag, comm);
+        ret_len += mpi_sycl_interop::isend(rq.rtree.tree_cell_ranges.buf_pos_max_cell,rq.rtree.tree_struct.internal_cell_count + rq.rtree.tree_reduced_morton_codes.tree_leaf_count, rq.rq_vec3i, rank_dest, tag, comm);
 
-        ret_len += mpi_sycl_interop::isend(rq.rtree.buf_pos_min_cell_flt,rq.rtree.tree_struct.internal_cell_count + rq.rtree.tree_reduced_morton_codes.tree_leaf_count, rq.rq_vec, rank_dest, tag, comm);
-        ret_len += mpi_sycl_interop::isend(rq.rtree.buf_pos_max_cell_flt,rq.rtree.tree_struct.internal_cell_count + rq.rtree.tree_reduced_morton_codes.tree_leaf_count, rq.rq_vec, rank_dest, tag, comm);
+        ret_len += mpi_sycl_interop::isend(rq.rtree.tree_cell_ranges.buf_pos_min_cell_flt,rq.rtree.tree_struct.internal_cell_count + rq.rtree.tree_reduced_morton_codes.tree_leaf_count, rq.rq_vec, rank_dest, tag, comm);
+        ret_len += mpi_sycl_interop::isend(rq.rtree.tree_cell_ranges.buf_pos_max_cell_flt,rq.rtree.tree_struct.internal_cell_count + rq.rtree.tree_reduced_morton_codes.tree_leaf_count, rq.rq_vec, rank_dest, tag, comm);
 
         return ret_len;
     }
@@ -748,12 +738,12 @@ namespace tree_comm {
         ret_len += mpi_sycl_interop::irecv_probe(rq.rtree.tree_struct.buf_rchild_flag, rq.rq_u8, rank_source, tag, comm);
         ret_len += mpi_sycl_interop::irecv_probe(rq.rtree.tree_struct.buf_endrange, rq.rq_u32, rank_source, tag, comm);
 
-        ret_len += mpi_sycl_interop::irecv_probe(rq.rtree.buf_pos_min_cell, rq.rq_vec3i, rank_source, tag, comm);
-        ret_len += mpi_sycl_interop::irecv_probe(rq.rtree.buf_pos_max_cell, rq.rq_vec3i, rank_source, tag, comm);
+        ret_len += mpi_sycl_interop::irecv_probe(rq.rtree.tree_cell_ranges.buf_pos_min_cell, rq.rq_vec3i, rank_source, tag, comm);
+        ret_len += mpi_sycl_interop::irecv_probe(rq.rtree.tree_cell_ranges.buf_pos_max_cell, rq.rq_vec3i, rank_source, tag, comm);
 
 
-        ret_len += mpi_sycl_interop::irecv_probe(rq.rtree.buf_pos_min_cell_flt, rq.rq_vec, rank_source, tag, comm);
-        ret_len += mpi_sycl_interop::irecv_probe(rq.rtree.buf_pos_max_cell_flt, rq.rq_vec, rank_source, tag, comm);
+        ret_len += mpi_sycl_interop::irecv_probe(rq.rtree.tree_cell_ranges.buf_pos_min_cell_flt, rq.rq_vec, rank_source, tag, comm);
+        ret_len += mpi_sycl_interop::irecv_probe(rq.rtree.tree_cell_ranges.buf_pos_max_cell_flt, rq.rq_vec, rank_source, tag, comm);
 
         return ret_len;
     }
@@ -827,8 +817,8 @@ namespace walker {
             lchild_id     (rtree.tree_struct.buf_lchild_id  -> template get_access<sycl::access::mode::read>(cgh)),
             rchild_flag   (rtree.tree_struct.buf_rchild_flag-> template get_access<sycl::access::mode::read>(cgh)),
             lchild_flag   (rtree.tree_struct.buf_lchild_flag-> template get_access<sycl::access::mode::read>(cgh)),
-            pos_min_cell  (rtree.buf_pos_min_cell_flt-> template get_access<sycl::access::mode::read>(cgh)),
-            pos_max_cell  (rtree.buf_pos_max_cell_flt-> template get_access<sycl::access::mode::read>(cgh)),
+            pos_min_cell  (rtree.tree_cell_ranges.buf_pos_min_cell_flt-> template get_access<sycl::access::mode::read>(cgh)),
+            pos_max_cell  (rtree.tree_cell_ranges.buf_pos_max_cell_flt-> template get_access<sycl::access::mode::read>(cgh)),
             leaf_offset   (rtree.tree_struct.internal_cell_count)
         {}
     };
