@@ -20,6 +20,7 @@ namespace shamrock::tree {
     class TreeMortonCodes {
         public:
         
+        
         std::unique_ptr<sycl::buffer<u_morton>> buf_morton;
         std::unique_ptr<sycl::buffer<u32>> buf_particle_index_map;
 

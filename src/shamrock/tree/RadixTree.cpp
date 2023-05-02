@@ -57,68 +57,13 @@ RadixTree<u_morton, vec3, dim>::RadixTree(
 
 
 template <class u_morton, class vec3, u32 dim> void RadixTree<u_morton, vec3, dim>::compute_cell_ibounding_box(sycl::queue &queue) {
-    if (!tree_struct.one_cell_mode) {
-
-        logger::debug_sycl_ln("RadixTree", "compute_cellvolume");
-
-        tree_cell_ranges.buf_pos_min_cell = std::make_unique<sycl::buffer<ipos_t>>(tree_struct.internal_cell_count + tree_reduced_morton_codes.tree_leaf_count);
-        tree_cell_ranges.buf_pos_max_cell = std::make_unique<sycl::buffer<ipos_t>>(tree_struct.internal_cell_count + tree_reduced_morton_codes.tree_leaf_count);
-
-        sycl_compute_cell_ranges(
-            queue, tree_reduced_morton_codes.tree_leaf_count, tree_struct.internal_cell_count, tree_reduced_morton_codes.buf_tree_morton, tree_struct.buf_lchild_id, tree_struct.buf_rchild_id, tree_struct.buf_lchild_flag,
-            tree_struct.buf_rchild_flag, tree_struct.buf_endrange, tree_cell_ranges.buf_pos_min_cell, tree_cell_ranges.buf_pos_max_cell
-        );
-
-    } else {
-        // throw shamrock_exc("one cell mode is not implemented");
-        // TODO do some extensive test on one cell mode
-
-        tree_cell_ranges.buf_pos_min_cell = std::make_unique<sycl::buffer<ipos_t>>(tree_struct.internal_cell_count + tree_reduced_morton_codes.tree_leaf_count);
-        tree_cell_ranges.buf_pos_max_cell = std::make_unique<sycl::buffer<ipos_t>>(tree_struct.internal_cell_count + tree_reduced_morton_codes.tree_leaf_count);
-
-        {
-
-            sycl::host_accessor pos_min_cell {*tree_cell_ranges.buf_pos_min_cell, sycl::write_only, sycl::no_init};
-            sycl::host_accessor pos_max_cell {*tree_cell_ranges.buf_pos_max_cell, sycl::write_only, sycl::no_init};
-
-            pos_min_cell[0] = {0,0,0};
-            pos_max_cell[0] = {Morton::max_val,Morton::max_val,Morton::max_val};
-
-            pos_min_cell[1] = {0,0,0};
-            pos_max_cell[1] = {Morton::max_val,Morton::max_val,Morton::max_val};
-
-            pos_min_cell[2] = {0,0,0};
-            pos_max_cell[2] = {0,0,0};
-
-            logger::debug_sycl_ln("RadixTree", "compute_cellvolume one cell mode");
-            logger::debug_sycl_ln("RadixTree", " -> ",
-                pos_min_cell[0],
-                pos_max_cell[0],
-                pos_min_cell[1],
-                pos_max_cell[1],
-                pos_min_cell[2],
-                pos_max_cell[2],
-                "len =", 
-                tree_struct.internal_cell_count + tree_reduced_morton_codes.tree_leaf_count);
-        }
-    }
-
-
+    tree_cell_ranges.build1(queue, tree_reduced_morton_codes, tree_struct);
 }
 
 template <class morton_t, class pos_t, u32 dim> void RadixTree<morton_t, pos_t, dim>::convert_bounding_box(sycl::queue &queue) {
 
-
-    tree_cell_ranges.buf_pos_min_cell_flt = std::make_unique<sycl::buffer<pos_t>>(tree_struct.internal_cell_count + tree_reduced_morton_codes.tree_leaf_count);
-    tree_cell_ranges.buf_pos_max_cell_flt = std::make_unique<sycl::buffer<pos_t>>(tree_struct.internal_cell_count + tree_reduced_morton_codes.tree_leaf_count);
-
-    logger::debug_sycl_ln("RadixTree", "sycl_convert_cell_range");
-
-    shamrock::sfc::MortonKernels<morton_t, pos_t, dim>::sycl_irange_to_range(
-        queue, tree_reduced_morton_codes.tree_leaf_count + tree_struct.internal_cell_count, std::get<0>(bounding_box), std::get<1>(bounding_box), tree_cell_ranges.buf_pos_min_cell,
-        tree_cell_ranges.buf_pos_max_cell, tree_cell_ranges.buf_pos_min_cell_flt, tree_cell_ranges.buf_pos_max_cell_flt);
-
-    pos_t_range_built = true;
+    u32 total_count = tree_struct.internal_cell_count + tree_reduced_morton_codes.tree_leaf_count;
+    tree_cell_ranges.build2(queue, total_count, bounding_box);
 
 }
 

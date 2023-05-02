@@ -90,7 +90,7 @@ class RadixTree{
     //Karras alg
     shamrock::tree::TreeStructure<morton_t> tree_struct;
 
-    shamrock::tree::TreeCellRanges<ipos_t, pos_t> tree_cell_ranges;
+    shamrock::tree::TreeCellRanges<morton_t, pos_t> tree_cell_ranges;
 
     inline bool is_tree_built(){
         return tree_struct.is_built();
