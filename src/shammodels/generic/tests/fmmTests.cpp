@@ -13,7 +13,7 @@
 #include "shamsys/legacy/sycl_handler.hpp"
 #include "shamrock/tree/RadixTree.hpp"
 #include "shamrock/math/tensors/collections.hpp"
-#include "shammodels/generic/physics/fmm.hpp"
+#include "shamrock/physics/fmm.hpp"
 
 
 #include "shamtest/shamtest.hpp"

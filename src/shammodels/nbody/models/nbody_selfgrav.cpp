@@ -18,7 +18,7 @@
 #include "shammodels/generic/algs/integrators_utils.hpp"
 
 #include "shamrock/legacy/patch/comm/patch_object_mover.hpp"
-#include "shammodels/generic/physics/fmm.hpp"
+#include "shamrock/physics/fmm.hpp"
 
 
 const std::string console_tag = "[NBodySelfGrav] ";
