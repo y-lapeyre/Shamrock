@@ -12,6 +12,7 @@
 #include "shambase/string.hpp"
 #include "shambase/sycl.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"
+#include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
 
 namespace shamalgs::memory {
@@ -96,6 +97,30 @@ namespace shamalgs::memory {
 
         logger::raw_ln(accum);
 
+    }
+
+    template<class T>
+    void copybuf_discard(sycl::buffer<T> & source, sycl::buffer<T> & dest, u32 cnt){
+        shamsys::instance::get_compute_queue().submit([&](sycl::handler & cgh){
+
+            sycl::accessor src {source,cgh,sycl::read_only};
+            sycl::accessor dst {dest,cgh,sycl::write_only,sycl::no_init};
+
+            cgh.parallel_for(sycl::range<1>{cnt},[=](sycl::item<1> i){
+                dst[i] = src[i];
+            });
+
+        });
+    }
+
+    template<class T> 
+    std::unique_ptr<sycl::buffer<T>> duplicate(const std::unique_ptr<sycl::buffer<T>> & buf_in){
+        if(buf_in){
+            auto buf = std::make_unique<sycl::buffer<T>>(buf_in->size());
+            copybuf_discard(*buf_in,*buf, buf_in->size());
+            return std::move(buf);
+        }
+        return {};
     }
 
 

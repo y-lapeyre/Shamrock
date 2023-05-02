@@ -7,6 +7,7 @@
 // -------------------------------------------------------//
 
 #include "sycl_algs.hpp"
+#include "shamalgs/memory/memory.hpp"
 #include "shamalgs/reduction/reduction.hpp"
 #include "shamrock/legacy/utils/sycl_vector_utils.hpp"
 #include "shamsys/legacy/sycl_mpi_interop.hpp"
@@ -50,19 +51,7 @@ namespace syclalgs {
 
         
         
-        template<class T>
-        void copybuf_discard(sycl::buffer<T> & source, sycl::buffer<T> & dest, u32 cnt){
-            shamsys::instance::get_compute_queue().submit([&](sycl::handler & cgh){
-
-                sycl::accessor src {source,cgh,sycl::read_only};
-                sycl::accessor dst {dest,cgh,sycl::write_only,sycl::no_init};
-
-                cgh.parallel_for<SyclAlg_CopyBufDiscard<T>>(sycl::range<1>{cnt},[=](sycl::item<1> i){
-                    dst[i] = src[i];
-                });
-
-            });
-        }
+        
 
 
         template<class T>
@@ -99,15 +88,7 @@ namespace syclalgs {
 
 
 
-        template<class T> 
-        std::unique_ptr<sycl::buffer<T>> duplicate(const std::unique_ptr<sycl::buffer<T>> & buf_in){
-            if(buf_in){
-                auto buf = std::make_unique<sycl::buffer<T>>(buf_in->size());
-                copybuf_discard(*buf_in,*buf, buf_in->size());
-                return std::move(buf);
-            }
-            return {};
-        }
+        
 
         
 
@@ -152,7 +133,7 @@ namespace syclalgs {
 
             sycl::buffer<T> alias(vec.data(),cnt);
 
-            basic::copybuf_discard(alias, ret, cnt);
+            shamalgs::memory::copybuf_discard(alias, ret, cnt);
 
             //HIPSYCL segfault otherwise because looks like the destructor of the sycl buffer 
             //doesn't wait for the end of the queue resulting in out of bound access
@@ -172,7 +153,7 @@ namespace syclalgs {
 
             sycl::buffer<T> alias(vec.data(),cnt);
 
-            basic::copybuf_discard(alias, ret, cnt);
+            shamalgs::memory::copybuf_discard(alias, ret, cnt);
 
             //HIPSYCL segfault otherwise because looks like the destructor of the sycl buffer 
             //doesn't wait for the end of the queue resulting in out of bound access
@@ -186,12 +167,6 @@ namespace syclalgs {
     } // namespace convert
 
 } // namespace syclalgs
-
-
-#define X(arg)\
-template void syclalgs::basic::copybuf_discard<arg>(sycl::buffer<arg> & source, sycl::buffer<arg> & dest, u32 cnt);
-XMAC_SYCLMPI_TYPE_ENABLED
-#undef X
 
 #define X(arg)\
 template void syclalgs::basic::copybuf<arg>(sycl::buffer<arg> & source, sycl::buffer<arg> & dest, u32 cnt);
@@ -208,10 +183,6 @@ template void syclalgs::basic::write_with_offset_into(sycl::buffer<arg> &buf_ctn
 XMAC_SYCLMPI_TYPE_ENABLED
 #undef X
 
-#define X(arg)\
-template std::unique_ptr<sycl::buffer<arg>> syclalgs::basic::duplicate(const std::unique_ptr<sycl::buffer<arg>> & vec);
-XMAC_SYCLMPI_TYPE_ENABLED
-#undef X
 
 #define X(arg)\
 template bool syclalgs::reduction::equals(sycl::buffer<arg> &buf1, sycl::buffer<arg> &buf2, u32 cnt);

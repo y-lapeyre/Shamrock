@@ -9,6 +9,7 @@
 #pragma once
 
 #include "aliases.hpp"
+#include "shamalgs/memory/memory.hpp"
 #include "shammath/CoordRange.hpp"
 #include "shamrock/legacy/algs/sycl/defs.hpp"
 #include "shamrock/tree/RadixTreeMortonBuilder.hpp"
@@ -116,8 +117,8 @@ namespace shamrock::tree {
 
         inline TreeReducedMortonCodes(const TreeReducedMortonCodes &other)
             : tree_leaf_count(other.tree_leaf_count),
-              buf_reduc_index_map(syclalgs::basic::duplicate(other.buf_reduc_index_map)),
-              buf_tree_morton(syclalgs::basic::duplicate(other.buf_tree_morton)) {}
+              buf_reduc_index_map(shamalgs::memory::duplicate(other.buf_reduc_index_map)),
+              buf_tree_morton(shamalgs::memory::duplicate(other.buf_tree_morton)) {}
 
 
     };

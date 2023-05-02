@@ -11,6 +11,7 @@
 #include "aliases.hpp"
 
 #include "kernels/karras_alg.hpp"
+#include "shamalgs/memory/memory.hpp"
 #include "shamrock/legacy/algs/sycl/basic/basic.hpp"
 #include "shamrock/legacy/algs/sycl/defs.hpp"
 #include "shambase/exception.hpp"
@@ -140,11 +141,11 @@ namespace shamrock::tree {
 
         inline TreeStructure(const TreeStructure &other)
             : internal_cell_count(other.internal_cell_count), one_cell_mode(other.one_cell_mode),
-              buf_lchild_id(syclalgs::basic::duplicate(other.buf_lchild_id)),     // size = internal
-              buf_rchild_id(syclalgs::basic::duplicate(other.buf_rchild_id)),     // size = internal
-              buf_lchild_flag(syclalgs::basic::duplicate(other.buf_lchild_flag)), // size = internal
-              buf_rchild_flag(syclalgs::basic::duplicate(other.buf_rchild_flag)), // size = internal
-              buf_endrange(syclalgs::basic::duplicate(other.buf_endrange))        // size = internal
+              buf_lchild_id(shamalgs::memory::duplicate(other.buf_lchild_id)),     // size = internal
+              buf_rchild_id(shamalgs::memory::duplicate(other.buf_rchild_id)),     // size = internal
+              buf_lchild_flag(shamalgs::memory::duplicate(other.buf_lchild_flag)), // size = internal
+              buf_rchild_flag(shamalgs::memory::duplicate(other.buf_rchild_flag)), // size = internal
+              buf_endrange(shamalgs::memory::duplicate(other.buf_endrange))        // size = internal
         {}
 
         inline TreeStructure(

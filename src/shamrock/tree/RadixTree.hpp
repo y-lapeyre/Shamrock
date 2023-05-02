@@ -19,6 +19,7 @@
 #include <set>
 
 
+#include "shamalgs/memory/memory.hpp"
 #include "shamrock/legacy/patch/base/patchdata.hpp"
 #include "shamrock/tree/TreeReducedMortonCodes.hpp"
 #include "shamrock/tree/TreeStructure.hpp"
@@ -138,10 +139,10 @@ class RadixTree{
         tree_morton_codes{other.tree_morton_codes},
         tree_reduced_morton_codes(other.tree_reduced_morton_codes), // size = leaf cnt
         tree_struct{other.tree_struct},    
-        buf_pos_min_cell        (syclalgs::basic::duplicate(other.buf_pos_min_cell       )),     // size = total count
-        buf_pos_max_cell        (syclalgs::basic::duplicate(other.buf_pos_max_cell       )),     // size = total count
-        buf_pos_min_cell_flt    (syclalgs::basic::duplicate(other.buf_pos_min_cell_flt   )), // size = total count
-        buf_pos_max_cell_flt    (syclalgs::basic::duplicate(other.buf_pos_max_cell_flt   )) // size = total count
+        buf_pos_min_cell        (shamalgs::memory::duplicate(other.buf_pos_min_cell       )),     // size = total count
+        buf_pos_max_cell        (shamalgs::memory::duplicate(other.buf_pos_max_cell       )),     // size = total count
+        buf_pos_min_cell_flt    (shamalgs::memory::duplicate(other.buf_pos_min_cell_flt   )), // size = total count
+        buf_pos_max_cell_flt    (shamalgs::memory::duplicate(other.buf_pos_max_cell_flt   )) // size = total count
     {}
 
     [[nodiscard]] inline u64 memsize() const {

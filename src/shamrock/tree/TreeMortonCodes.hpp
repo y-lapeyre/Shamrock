@@ -9,6 +9,7 @@
 #pragma once
 
 #include "aliases.hpp"
+#include "shamalgs/memory/memory.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"
 #include "shammath/CoordRange.hpp"
 #include "shamrock/legacy/algs/sycl/basic/basic.hpp"
@@ -62,8 +63,8 @@ namespace shamrock::tree {
 
         inline TreeMortonCodes(const TreeMortonCodes &other)
             : 
-              buf_morton(syclalgs::basic::duplicate(other.buf_morton)),
-              buf_particle_index_map(syclalgs::basic::duplicate(other.buf_particle_index_map)) 
+              buf_morton(shamalgs::memory::duplicate(other.buf_morton)),
+              buf_particle_index_map(shamalgs::memory::duplicate(other.buf_particle_index_map)) 
         {}
     };
 

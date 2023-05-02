@@ -13,6 +13,7 @@
 #include "aliases.hpp"
 #include "shamalgs/algorithm/algorithm.hpp"
 #include "shamalgs/memory/details/SerializeHelperMember.hpp"
+#include "shamalgs/memory/memory.hpp"
 #include "shamalgs/memory/serialize.hpp"
 #include "shambase/exception.hpp"
 #include "shamrock/legacy/algs/sycl/sycl_algs.hpp"
@@ -113,7 +114,7 @@ class ResizableBuffer {
         if (capacity != 0) {
             alloc();
             // copydata(other._data,_data, capacity);
-            syclalgs::basic::copybuf_discard(*other.buf, *buf, capacity);
+            shamalgs::memory::copybuf_discard(*other.buf, *buf, capacity);
         }
     }
 

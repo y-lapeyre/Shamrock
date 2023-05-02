@@ -51,7 +51,7 @@ void ResizableBuffer<T>::resize(u32 new_size) {
 
         alloc();
 
-        syclalgs::basic::copybuf_discard(*old_buf, *buf, val_cnt);
+        shamalgs::memory::copybuf_discard(*old_buf, *buf, val_cnt);
 
         logger::debug_alloc_ln("PatchDataField", "delete old buf : ");
         delete old_buf;
