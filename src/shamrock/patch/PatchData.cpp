@@ -11,6 +11,7 @@
 #include "shamrock/legacy/utils/geometry_utils.hpp"
 
 #include "Patch.hpp"
+#include "shamsys/legacy/sycl_handler.hpp"
 
 namespace shamrock::patch{
 

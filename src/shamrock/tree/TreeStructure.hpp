@@ -12,8 +12,6 @@
 
 #include "kernels/karras_alg.hpp"
 #include "shamalgs/memory/memory.hpp"
-#include "shamrock/legacy/algs/sycl/basic/basic.hpp"
-#include "shamrock/legacy/algs/sycl/defs.hpp"
 #include "shambase/exception.hpp"
 #include "shamalgs/reduction/reduction.hpp"
 

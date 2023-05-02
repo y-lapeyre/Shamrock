@@ -19,7 +19,6 @@
 #include "shambase/exception.hpp"
 #include "shambase/sycl.hpp"
 #include "shambase/string.hpp"
-#include "shamrock/legacy/algs/sycl/defs.hpp"
 #include "shamrock/math/integerManip.hpp"
 
 class Kernel_generate_split_table_morton32;

@@ -16,7 +16,6 @@
 #include "shamalgs/memory/memory.hpp"
 #include "shamalgs/memory/serialize.hpp"
 #include "shambase/exception.hpp"
-#include "shamrock/legacy/algs/sycl/sycl_algs.hpp"
 
 template<class T>
 class ResizableBuffer {

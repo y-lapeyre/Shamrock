@@ -7,7 +7,6 @@
 // -------------------------------------------------------//
 
 #include "shamalgs/memory/memory.hpp"
-#include "shamrock/legacy/algs/sycl/basic/basic.hpp"
 #include "groupReduction.hpp"
 
 namespace shamalgs::reduction::details {

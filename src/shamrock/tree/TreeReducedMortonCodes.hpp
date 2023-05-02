@@ -11,7 +11,6 @@
 #include "aliases.hpp"
 #include "shamalgs/memory/memory.hpp"
 #include "shammath/CoordRange.hpp"
-#include "shamrock/legacy/algs/sycl/defs.hpp"
 #include "shamrock/tree/RadixTreeMortonBuilder.hpp"
 #include "shamrock/tree/TreeMortonCodes.hpp"
 #include "shamsys/legacy/log.hpp"

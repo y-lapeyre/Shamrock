@@ -29,9 +29,6 @@
 #include "shamrock/legacy/utils/string_utils.hpp"
 #include "shamrock/legacy/utils/sycl_vector_utils.hpp"
 
-#include "shamrock/legacy/algs/sycl/sycl_algs.hpp"
-
-
 #include "shamrock/patch/PatchDataField.hpp"
 
 namespace patchdata_field {

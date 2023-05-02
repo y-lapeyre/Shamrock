@@ -12,7 +12,6 @@
 
 #include "aliases.hpp"
 #include "shamalgs/memory/serialize.hpp"
-#include "shamrock/legacy/algs/sycl/sycl_algs.hpp"
 #include "shamrock/legacy/patch/base/enabled_fields.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shambase/exception.hpp"
