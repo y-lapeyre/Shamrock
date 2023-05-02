@@ -81,15 +81,15 @@ class RadixTree{
     bool pos_t_range_built = false;
 
 
-    //build by the RadixTreeMortonBuilder 
-    shamrock::tree::TreeMortonCodes<morton_t> tree_morton_codes;
-
+    //build by the RadixTreeMortonBuilder
+    //those two classes can be groupped
+    shamrock::tree::TreeMortonCodes<morton_t> tree_morton_codes; // shouldn't be in a separate class
     shamrock::tree::TreeReducedMortonCodes<morton_t> tree_reduced_morton_codes;
 
     //Karras alg
     shamrock::tree::TreeStructure<morton_t> tree_struct;
 
-
+    //this one is not used, it should be removed
     std::unique_ptr<sycl::buffer<ipos_t>>    buf_pos_min_cell;     // size = total count //rename to ipos
     std::unique_ptr<sycl::buffer<ipos_t>>    buf_pos_max_cell;     // size = total count
 
