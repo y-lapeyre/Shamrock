@@ -10,10 +10,14 @@
 
 #include "aliases.hpp"
 #include "shamalgs/memory/memory.hpp"
+#include "shamalgs/memory/serialize.hpp"
 #include "shamalgs/reduction/reduction.hpp"
+#include "shambase/exception.hpp"
+#include "shambase/stacktrace.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"
 #include "shammath/CoordRange.hpp"
 #include "shamrock/tree/RadixTreeMortonBuilder.hpp"
+#include <stdexcept>
 
 namespace shamrock::tree {
 
@@ -87,6 +91,52 @@ namespace shamrock::tree {
                          );
 
             return cmp;
+        }
+
+        /**
+         * @brief serialize a TreeMortonCodes object
+         * 
+         * @param serializer 
+         */
+        inline void serialize(shamalgs::SerializeHelper & serializer){
+            StackEntry stack_loc{};
+            serializer.write(obj_cnt);
+            if(!buf_morton){
+                throw shambase::throw_with_loc<std::runtime_error>("missing buffer");
+            }
+            //serializer.write(buf_morton->size());
+            serializer.write_buf(*buf_morton,obj_cnt);
+            if(!buf_particle_index_map){
+                throw shambase::throw_with_loc<std::runtime_error>("missing buffer");
+            }
+            serializer.write(*buf_particle_index_map,obj_cnt);
+        }
+
+        /**
+         * @brief deserialize a TreeMortonCodes object
+         * Note : here since the initial buffer is a pow of 2 
+         * with trailling terms for the bitonic sort, when 
+         * deserializing we are not loading the last values
+         * the buffer size is obj_cnt here
+         * 
+         * @param serializer 
+         * @return TreeMortonCodes 
+         */
+        inline static TreeMortonCodes deserialize(shamalgs::SerializeHelper & serializer){
+            TreeMortonCodes ret;
+            serializer.load(ret.obj_cnt);
+
+            //u32 morton_len;
+            //serializer.load(morton_len);
+            ret.buf_morton = std::make_unique<sycl::buffer<u_morton>>(ret.obj_cnt);
+            ret.buf_particle_index_map = std::make_unique<sycl::buffer<u32>>(ret.obj_cnt);
+
+            serializer.load_buf(*ret.buf_morton, ret.obj_cnt);
+            serializer.load_buf(*ret.buf_particle_index_map, ret.obj_cnt);
+        }
+        
+        inline u64 serialize_byte_size(){
+            return sizeof(u32) + (sizeof(u_morton) + sizeof(u32))*obj_cnt;
         }
     };
 

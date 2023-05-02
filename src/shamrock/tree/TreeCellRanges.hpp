@@ -119,7 +119,7 @@ namespace shamrock::tree {
                 buf_pos_min_cell_flt,
                 buf_pos_max_cell_flt);
 
-            //remove old buf ?
+            // remove old buf ?
         }
 
         inline bool are_range_int_built() {
@@ -163,19 +163,18 @@ namespace shamrock::tree {
         inline friend bool operator==(const TreeCellRanges &t1, const TreeCellRanges &t2) {
             bool cmp = true;
 
-            cmp = cmp && shamalgs::reduction::equals(
-                *t1.buf_pos_min_cell, *t2.buf_pos_min_cell, t1.buf_pos_min_cell->size()
-            );
-            cmp = cmp && shamalgs::reduction::equals(
-                *t1.buf_pos_max_cell, *t2.buf_pos_max_cell, t1.buf_pos_max_cell->size()
-            );
-            cmp = cmp && shamalgs::reduction::equals(
-                *t1.buf_pos_min_cell_flt, *t2.buf_pos_min_cell_flt, t1.buf_pos_min_cell_flt->size()
-            );
-            cmp = cmp && shamalgs::reduction::equals(
-                *t1.buf_pos_max_cell_flt, *t2.buf_pos_max_cell_flt, t1.buf_pos_max_cell_flt->size()
-            );
-            
+            cmp = cmp && shamalgs::reduction::equals(*t1.buf_pos_min_cell,
+                                                     *t2.buf_pos_min_cell,
+                                                     t1.buf_pos_min_cell->size());
+            cmp = cmp && shamalgs::reduction::equals(*t1.buf_pos_max_cell,
+                                                     *t2.buf_pos_max_cell,
+                                                     t1.buf_pos_max_cell->size());
+            cmp = cmp && shamalgs::reduction::equals(*t1.buf_pos_min_cell_flt,
+                                                     *t2.buf_pos_min_cell_flt,
+                                                     t1.buf_pos_min_cell_flt->size());
+            cmp = cmp && shamalgs::reduction::equals(*t1.buf_pos_max_cell_flt,
+                                                     *t2.buf_pos_max_cell_flt,
+                                                     t1.buf_pos_max_cell_flt->size());
 
             return cmp;
         }
