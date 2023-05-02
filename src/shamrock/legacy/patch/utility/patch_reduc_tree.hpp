@@ -27,9 +27,10 @@
 
 
 
+#include "shambase/exception.hpp"
 #include "shamsys/legacy/sycl_handler.hpp"
 
-#include "shamrock/legacy/patch/base/patchtree.hpp"
+#include "shamrock/scheduler/PatchTree.hpp"
 
 template<class type>
 class PatchFieldReduction{public:
