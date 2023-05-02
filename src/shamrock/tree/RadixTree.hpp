@@ -189,7 +189,7 @@ class RadixTree{
         cmp = cmp && (tree_reduced_morton_codes.tree_leaf_count == other.tree_reduced_morton_codes.tree_leaf_count);
         cmp = cmp && (tree_struct == other.tree_struct);
 
-        cmp = cmp && syclalgs::reduction::equals(*tree_morton_codes.buf_morton, *other.tree_morton_codes.buf_morton, obj_cnt);
+        cmp = cmp && shamalgs::reduction::equals(*tree_morton_codes.buf_morton, *other.tree_morton_codes.buf_morton, obj_cnt);
 
         return cmp;
     }

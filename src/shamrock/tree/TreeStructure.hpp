@@ -15,6 +15,7 @@
 #include "shamrock/legacy/algs/sycl/basic/basic.hpp"
 #include "shamrock/legacy/algs/sycl/defs.hpp"
 #include "shambase/exception.hpp"
+#include "shamalgs/reduction/reduction.hpp"
 
 namespace shamrock::tree {
 
@@ -117,19 +118,19 @@ namespace shamrock::tree {
 
             cmp = cmp && (t1.internal_cell_count == t2.internal_cell_count);
 
-            cmp = cmp && syclalgs::reduction::equals(
+            cmp = cmp && shamalgs::reduction::equals(
                              *t1.buf_lchild_id, *t2.buf_lchild_id, t1.internal_cell_count
                          );
-            cmp = cmp && syclalgs::reduction::equals(
+            cmp = cmp && shamalgs::reduction::equals(
                              *t1.buf_rchild_id, *t2.buf_rchild_id, t1.internal_cell_count
                          );
-            cmp = cmp && syclalgs::reduction::equals(
+            cmp = cmp && shamalgs::reduction::equals(
                              *t1.buf_lchild_flag, *t2.buf_lchild_flag, t1.internal_cell_count
                          );
-            cmp = cmp && syclalgs::reduction::equals(
+            cmp = cmp && shamalgs::reduction::equals(
                              *t1.buf_rchild_flag, *t2.buf_rchild_flag, t1.internal_cell_count
                          );
-            cmp = cmp && syclalgs::reduction::equals(
+            cmp = cmp && shamalgs::reduction::equals(
                              *t1.buf_endrange, *t2.buf_endrange, t1.internal_cell_count
                          );
             cmp = cmp && (t1.one_cell_mode == t2.one_cell_mode);

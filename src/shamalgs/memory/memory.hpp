@@ -168,6 +168,47 @@ namespace shamalgs::memory {
     }
 
 
+    template<class T> 
+        sycl::buffer<T> vector_to_buf(std::vector<T> && vec){
+
+            u32 cnt = vec.size();
+            sycl::buffer<T> ret(cnt);
+
+            sycl::buffer<T> alias(vec.data(),cnt);
+
+            shamalgs::memory::copybuf_discard(alias, ret, cnt);
+
+            //HIPSYCL segfault otherwise because looks like the destructor of the sycl buffer 
+            //doesn't wait for the end of the queue resulting in out of bound access
+            #ifdef SYCL_COMP_OPENSYCL
+            shamsys::instance::get_compute_queue().wait();
+            #endif
+
+            return std::move(ret);
+
+        }
+
+        template<class T> 
+        sycl::buffer<T> vector_to_buf(std::vector<T> & vec){
+
+            u32 cnt = vec.size();
+            sycl::buffer<T> ret(cnt);
+
+            sycl::buffer<T> alias(vec.data(),cnt);
+
+            shamalgs::memory::copybuf_discard(alias, ret, cnt);
+
+            //HIPSYCL segfault otherwise because looks like the destructor of the sycl buffer 
+            //doesn't wait for the end of the queue resulting in out of bound access
+            #ifdef SYCL_COMP_OPENSYCL
+            shamsys::instance::get_compute_queue().wait();
+            #endif
+
+            return std::move(ret);
+
+        }
+
+
 
 
 

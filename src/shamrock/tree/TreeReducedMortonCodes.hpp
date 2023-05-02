@@ -87,7 +87,7 @@ namespace shamrock::tree {
                 one_cell_mode = true;
 
                 buf_tree_morton = std::make_unique<sycl::buffer<u_morton>>(
-                    syclalgs::convert::vector_to_buf(std::vector<u_morton>{0,0}) 
+                    shamalgs::memory::vector_to_buf(std::vector<u_morton>{0,0}) 
                     // tree morton = {0,0} is a flag for the one cell mode
                 );
 

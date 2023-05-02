@@ -14,6 +14,7 @@
 #include <memory>
 #include <vector>
 
+#include "shamalgs/memory/memory.hpp"
 #include "shamalgs/numeric/numeric.hpp"
 #include "shambase/exception.hpp"
 #include "shambase/sycl.hpp"
@@ -204,7 +205,7 @@ void make_indexmap(
         }
 
         buf_reduc_index_map =
-            std::make_unique<sycl::buffer<u32>>(syclalgs::convert::vector_to_buf(reduc_index_map));
+            std::make_unique<sycl::buffer<u32>>(shamalgs::memory::vector_to_buf(reduc_index_map));
 
     }
 }

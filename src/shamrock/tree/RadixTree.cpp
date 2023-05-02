@@ -989,7 +989,7 @@ typename RadixTree<u_morton, vec3, dim>::CuttedTree RadixTree<u_morton, vec3, di
             std::move(ret), 
             std::move(new_node_id_to_old_v2), 
             std::make_unique<sycl::buffer<u32>>(
-                syclalgs::convert::vector_to_buf(std::move(extract_id))
+                shamalgs::memory::vector_to_buf(std::move(extract_id))
                 )};
 
     }

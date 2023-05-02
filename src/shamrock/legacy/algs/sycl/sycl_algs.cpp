@@ -60,24 +60,7 @@ namespace syclalgs {
 
 
 
-        template<class T> bool equals(sycl::buffer<T> &buf1, sycl::buffer<T> &buf2, u32 cnt){
-
-            sycl::buffer<u8> res (cnt);
-            shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-
-                sycl::accessor acc1 {buf1, cgh, sycl::read_only};
-                sycl::accessor acc2 {buf2, cgh, sycl::read_only};
-
-                sycl::accessor out {res, cgh, sycl::write_only, sycl::no_init};
-                
-                cgh.parallel_for<SyclAlg_IsSame<T>>( sycl::range{cnt}, [=](sycl::item<1> item) { 
-                    out[item] = test_sycl_eq(acc1[item],acc2[item]); });
-            });
-
-
-            return shamalgs::reduction::is_all_true(res,cnt);
-
-        }
+        
 
 
 
@@ -86,62 +69,10 @@ namespace syclalgs {
 
 
     namespace convert {
-        template<class T> 
-        sycl::buffer<T> vector_to_buf(std::vector<T> && vec){
-
-            u32 cnt = vec.size();
-            sycl::buffer<T> ret(cnt);
-
-            sycl::buffer<T> alias(vec.data(),cnt);
-
-            shamalgs::memory::copybuf_discard(alias, ret, cnt);
-
-            //HIPSYCL segfault otherwise because looks like the destructor of the sycl buffer 
-            //doesn't wait for the end of the queue resulting in out of bound access
-            #ifdef SYCL_COMP_OPENSYCL
-            shamsys::instance::get_compute_queue().wait();
-            #endif
-
-            return std::move(ret);
-
-        }
-
-        template<class T> 
-        sycl::buffer<T> vector_to_buf(std::vector<T> & vec){
-
-            u32 cnt = vec.size();
-            sycl::buffer<T> ret(cnt);
-
-            sycl::buffer<T> alias(vec.data(),cnt);
-
-            shamalgs::memory::copybuf_discard(alias, ret, cnt);
-
-            //HIPSYCL segfault otherwise because looks like the destructor of the sycl buffer 
-            //doesn't wait for the end of the queue resulting in out of bound access
-            #ifdef SYCL_COMP_OPENSYCL
-            shamsys::instance::get_compute_queue().wait();
-            #endif
-
-            return std::move(ret);
-
-        }
+        
     } // namespace convert
 
 } // namespace syclalgs
 
 
-#define X(arg)\
-template bool syclalgs::reduction::equals(sycl::buffer<arg> &buf1, sycl::buffer<arg> &buf2, u32 cnt);
-XMAC_SYCLMPI_TYPE_ENABLED
-#undef X
 
-
-#define X(arg)\
-template sycl::buffer<arg> syclalgs::convert::vector_to_buf(std::vector<arg> && vec);
-XMAC_SYCLMPI_TYPE_ENABLED
-#undef X
-
-#define X(arg)\
-template sycl::buffer<arg> syclalgs::convert::vector_to_buf(std::vector<arg> & vec);
-XMAC_SYCLMPI_TYPE_ENABLED
-#undef X
