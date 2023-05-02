@@ -26,7 +26,7 @@
 #include "shamrock/tree/TreeStructure.hpp"
 #include "shamrock/tree/TreeMortonCodes.hpp"
 #include "shamsys/legacy/log.hpp"
-#include "shamrock/legacy/utils/string_utils.hpp"
+
 #include "shamrock/sfc/morton.hpp"
 #include "kernels/compute_ranges.hpp"
 #include "kernels/convert_ranges.hpp"

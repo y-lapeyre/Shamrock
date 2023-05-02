@@ -7,7 +7,7 @@
 // -------------------------------------------------------//
 
 #include "TestData.hpp"
-#include "shamrock/legacy/utils/string_utils.hpp"
+#include "shambase/string.hpp"
 
 namespace shamtest::details {
     

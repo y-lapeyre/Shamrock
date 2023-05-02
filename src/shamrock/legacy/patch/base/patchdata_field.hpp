@@ -26,7 +26,7 @@
 #include "shamsys/legacy/log.hpp"
 #include "shamsys/legacy/sycl_handler.hpp"
 #include "shamsys/legacy/sycl_mpi_interop.hpp"
-#include "shamrock/legacy/utils/string_utils.hpp"
+
 #include "shamrock/legacy/utils/sycl_vector_utils.hpp"
 
 #include "shamrock/patch/PatchDataField.hpp"

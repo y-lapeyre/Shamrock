@@ -11,7 +11,7 @@
 
 #include "shamrock/legacy/patch/scheduler/scheduler_mpi.hpp"
 #include "shamsys/legacy/log.hpp"
-#include "shamrock/legacy/utils/string_utils.hpp"
+
 #include "shammodels/sph/integrators/leapfrog.hpp"
 #include <string>
 

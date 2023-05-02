@@ -7,7 +7,7 @@
 // -------------------------------------------------------//
 
 #include "sysinfo.hpp"
-#include "shamrock/legacy/utils/string_utils.hpp"
+
 
 #include <cpuid.h>
 

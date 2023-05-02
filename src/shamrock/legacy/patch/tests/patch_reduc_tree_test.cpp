@@ -18,7 +18,7 @@
 #include "shamrock/legacy/patch/utility/patch_reduc_tree.hpp"
 #include "shamrock/legacy/patch/utility/serialpatchtree.hpp"
 #include "shamsys/legacy/sycl_mpi_interop.hpp"
-#include "shamrock/legacy/utils/string_utils.hpp"
+
 #include "shamtest/shamtest.hpp"
 #include <string>
 
