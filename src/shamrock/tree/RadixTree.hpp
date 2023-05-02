@@ -20,6 +20,7 @@
 
 
 #include "shamalgs/memory/memory.hpp"
+#include "shambase/sycl_utils/vec_equals.hpp"
 #include "shamrock/legacy/patch/base/patchdata.hpp"
 #include "shamrock/tree/TreeReducedMortonCodes.hpp"
 #include "shamrock/tree/TreeStructure.hpp"
@@ -183,8 +184,8 @@ class RadixTree{
     bool is_same(RadixTree & other){
         bool cmp = true;
 
-        cmp = cmp && (test_sycl_eq(std::get<0>(bounding_box) , std::get<0>(other.bounding_box)));
-        cmp = cmp && (test_sycl_eq(std::get<1>(bounding_box) , std::get<1>(other.bounding_box)));
+        cmp = cmp && (shambase::vec_equals(std::get<0>(bounding_box) , std::get<0>(other.bounding_box)));
+        cmp = cmp && (shambase::vec_equals(std::get<1>(bounding_box) , std::get<1>(other.bounding_box)));
         cmp = cmp && (obj_cnt == other.obj_cnt);
         cmp = cmp && (tree_reduced_morton_codes.tree_leaf_count == other.tree_reduced_morton_codes.tree_leaf_count);
         cmp = cmp && (tree_struct == other.tree_struct);
