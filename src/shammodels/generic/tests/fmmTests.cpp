@@ -12,7 +12,7 @@
 #include "shamsys/legacy/log.hpp"
 #include "shamsys/legacy/sycl_handler.hpp"
 #include "shamrock/tree/RadixTree.hpp"
-#include "shammodels/generic/math/tensors/collections.hpp"
+#include "shamrock/math/tensors/collections.hpp"
 #include "shammodels/generic/physics/fmm.hpp"
 
 

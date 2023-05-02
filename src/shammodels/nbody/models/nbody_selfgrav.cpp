@@ -12,7 +12,7 @@
 #include "shamrock/legacy/patch/utility/full_tree_field.hpp"
 #include "shamrock/legacy/patch/utility/serialpatchtree.hpp"
 #include "shamrock/tree/RadixTree.hpp"
-#include "shammodels/generic/math/tensors/collections.hpp"
+#include "shamrock/math/tensors/collections.hpp"
 #include "shamrock/legacy/ShamrockCtx.hpp"
 
 #include "shammodels/generic/algs/integrators_utils.hpp"
