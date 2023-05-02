@@ -159,8 +159,8 @@ namespace shamrock::tree {
             ret.buf_reduc_index_map = std::make_unique<sycl::buffer<u32>>(tmp);
             ret.buf_tree_morton     = std::make_unique<sycl::buffer<u_morton>>(ret.tree_leaf_count);
 
-            serializer.load_buf(*ret.buf_morton, tmp);
-            serializer.load_buf(*ret.buf_particle_index_map, ret.tree_leaf_count);
+            serializer.load_buf(*ret.buf_reduc_index_map, tmp);
+            serializer.load_buf(*ret.buf_tree_morton, ret.tree_leaf_count);
 
             return ret;
         }
