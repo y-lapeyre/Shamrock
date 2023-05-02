@@ -84,10 +84,10 @@ namespace shamrock::tree {
             cmp = cmp && (t1.obj_cnt == t2.obj_cnt);
 
             cmp = cmp && shamalgs::reduction::equals(
-                             *t1.buf_morton, *t2.buf_morton, t1.buf_morton->size()
+                             *t1.buf_morton, *t2.buf_morton, t1.obj_cnt
                          );
             cmp = cmp && shamalgs::reduction::equals(
-                             *t1.buf_particle_index_map, *t2.buf_particle_index_map, t1.buf_particle_index_map->size()
+                             *t1.buf_particle_index_map, *t2.buf_particle_index_map, t1.obj_cnt
                          );
 
             return cmp;
@@ -109,7 +109,7 @@ namespace shamrock::tree {
             if(!buf_particle_index_map){
                 throw shambase::throw_with_loc<std::runtime_error>("missing buffer");
             }
-            serializer.write(*buf_particle_index_map,obj_cnt);
+            serializer.write_buf(*buf_particle_index_map,obj_cnt);
         }
 
         /**
@@ -133,8 +133,15 @@ namespace shamrock::tree {
 
             serializer.load_buf(*ret.buf_morton, ret.obj_cnt);
             serializer.load_buf(*ret.buf_particle_index_map, ret.obj_cnt);
+
+            return ret;
         }
         
+        /**
+         * @brief give the size of the serialized object
+         * 
+         * @return u64 
+         */
         inline u64 serialize_byte_size(){
             return sizeof(u32) + (sizeof(u_morton) + sizeof(u32))*obj_cnt;
         }
