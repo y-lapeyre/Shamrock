@@ -34,19 +34,6 @@ namespace syclalgs {
 
     namespace basic {
 
-        template<class T>
-        void copybuf(sycl::buffer<T> & source, sycl::buffer<T> & dest, u32 cnt){
-            shamsys::instance::get_compute_queue().submit([&](sycl::handler & cgh){
-
-                sycl::accessor src {source,cgh,sycl::read_only};
-                sycl::accessor dst {dest,cgh,sycl::write_only};
-
-                cgh.parallel_for<SyclAlg_CopyBuf<T>>(sycl::range<1>{cnt},[=](sycl::item<1> i){
-                    dst[i] = src[i];
-                });
-
-            });
-        }
 
 
         
@@ -54,37 +41,11 @@ namespace syclalgs {
         
 
 
-        template<class T>
-        void add_with_factor_to(sycl::buffer<T> & buf, T factor, sycl::buffer<T> & op, u32 cnt){
-            shamsys::instance::get_compute_queue().submit([&](sycl::handler & cgh){
-
-                sycl::accessor acc {buf,cgh,sycl::read_write};
-                sycl::accessor dd {op,cgh,sycl::read_only};
-
-                T fac = factor;
-
-                cgh.parallel_for<SyclAlg_AddWithFactor<T>>(sycl::range<1>{cnt},[=](sycl::item<1> i){
-                    acc[i] += fac*dd[i];
-                });
-
-            });
-        }
-
 
 
 
         
 
-        template<class T>
-        void write_with_offset_into(sycl::buffer<T> & buf_ctn, sycl::buffer<T> & buf_in, u32 offset, u32 element_count){
-            shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-
-                sycl::accessor source {buf_in, cgh, sycl::read_only};
-                sycl::accessor dest {buf_ctn, cgh, sycl::write_only, sycl::no_init};
-                u32 off = offset;
-                cgh.parallel_for<SyclAlg_write_with_offset_into<T>>( sycl::range{element_count}, [=](sycl::item<1> item) { dest[item.get_id(0) + off] = source[item]; });
-            });
-        }
 
 
 
@@ -167,21 +128,6 @@ namespace syclalgs {
     } // namespace convert
 
 } // namespace syclalgs
-
-#define X(arg)\
-template void syclalgs::basic::copybuf<arg>(sycl::buffer<arg> & source, sycl::buffer<arg> & dest, u32 cnt);
-XMAC_SYCLMPI_TYPE_ENABLED
-#undef X
-
-#define X(arg)\
-template void syclalgs::basic::add_with_factor_to<arg>(sycl::buffer<arg> & buf, arg factor, sycl::buffer<arg> & op, u32 cnt);
-XMAC_SYCLMPI_TYPE_ENABLED
-#undef X
-
-#define X(arg)\
-template void syclalgs::basic::write_with_offset_into(sycl::buffer<arg> &buf_ctn, sycl::buffer<arg> &buf_in, u32 offset, u32 element_count);
-XMAC_SYCLMPI_TYPE_ENABLED
-#undef X
 
 
 #define X(arg)\

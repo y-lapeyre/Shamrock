@@ -6,6 +6,7 @@
 //
 // -------------------------------------------------------//
 
+#include "shamalgs/memory/memory.hpp"
 #include "shamrock/legacy/algs/sycl/basic/basic.hpp"
 #include "groupReduction.hpp"
 
@@ -25,7 +26,7 @@ namespace shamalgs::reduction::details {
             q.wait();
 #endif
 
-            ::syclalgs::basic::write_with_offset_into(buf_int, buf1, start_id, len);
+            shamalgs::memory::write_with_offset_into(buf_int, buf1, start_id, len);
 
 #ifdef SYCL_COMP_OPENSYCL
             q.wait();
