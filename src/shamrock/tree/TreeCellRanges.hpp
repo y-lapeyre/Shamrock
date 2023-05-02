@@ -159,6 +159,26 @@ namespace shamrock::tree {
 
             return sum;
         }
+
+        inline friend bool operator==(const TreeCellRanges &t1, const TreeCellRanges &t2) {
+            bool cmp = true;
+
+            cmp = cmp && shamalgs::reduction::equals(
+                *t1.buf_pos_min_cell, *t2.buf_pos_min_cell, t1.buf_pos_min_cell->size()
+            );
+            cmp = cmp && shamalgs::reduction::equals(
+                *t1.buf_pos_max_cell, *t2.buf_pos_max_cell, t1.buf_pos_max_cell->size()
+            );
+            cmp = cmp && shamalgs::reduction::equals(
+                *t1.buf_pos_min_cell_flt, *t2.buf_pos_min_cell_flt, t1.buf_pos_min_cell_flt->size()
+            );
+            cmp = cmp && shamalgs::reduction::equals(
+                *t1.buf_pos_max_cell_flt, *t2.buf_pos_max_cell_flt, t1.buf_pos_max_cell_flt->size()
+            );
+            
+
+            return cmp;
+        }
     };
 
 } // namespace shamrock::tree

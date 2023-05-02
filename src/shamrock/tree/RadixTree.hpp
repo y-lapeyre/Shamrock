@@ -77,8 +77,6 @@ class RadixTree{
 
     std::tuple<pos_t,pos_t> bounding_box;
 
-    u32 obj_cnt;
-
     bool pos_t_range_built = false;
 
 
@@ -131,7 +129,6 @@ class RadixTree{
 
     inline RadixTree(const RadixTree & other) : 
         bounding_box(other.bounding_box), 
-        obj_cnt(other.obj_cnt), 
         tree_morton_codes{other.tree_morton_codes},
         tree_reduced_morton_codes(other.tree_reduced_morton_codes), // size = leaf cnt
         tree_struct{other.tree_struct},    
@@ -142,7 +139,6 @@ class RadixTree{
         u64 sum = 0;
 
         sum += sizeof(bounding_box);
-        sum += sizeof(obj_cnt);
 
         auto add_ptr = [&](auto & a){
             if(a){
@@ -174,11 +170,9 @@ class RadixTree{
 
         cmp = cmp && (shambase::vec_equals(std::get<0>(bounding_box) , std::get<0>(other.bounding_box)));
         cmp = cmp && (shambase::vec_equals(std::get<1>(bounding_box) , std::get<1>(other.bounding_box)));
-        cmp = cmp && (obj_cnt == other.obj_cnt);
+        cmp = cmp && (tree_cell_ranges == other.tree_cell_ranges);
         cmp = cmp && (tree_reduced_morton_codes.tree_leaf_count == other.tree_reduced_morton_codes.tree_leaf_count);
         cmp = cmp && (tree_struct == other.tree_struct);
-
-        cmp = cmp && shamalgs::reduction::equals(*tree_morton_codes.buf_morton, *other.tree_morton_codes.buf_morton, obj_cnt);
 
         return cmp;
     }
@@ -639,7 +633,7 @@ namespace tree_comm {
             mpi_sycl_interop::waitall(rq_vec);
 
             if(comm_op == mpi_sycl_interop::Recv_Probe){
-                rtree.obj_cnt = rtree.tree_morton_codes.buf_morton->size();
+                rtree.tree_morton_codes.obj_cnt = rtree.tree_morton_codes.buf_morton->size();
                 rtree.tree_reduced_morton_codes.tree_leaf_count = rtree.tree_reduced_morton_codes.buf_tree_morton->size();
                 rtree.tree_struct.internal_cell_count = rtree.tree_struct.buf_lchild_id->size();
 
@@ -689,8 +683,8 @@ namespace tree_comm {
         
 
 
-        ret_len += mpi_sycl_interop::isend(rq.rtree.tree_morton_codes.buf_morton,rq.rtree.obj_cnt, rq.rq_u_morton, rank_dest, tag, comm);
-        ret_len += mpi_sycl_interop::isend(rq.rtree.tree_morton_codes.buf_particle_index_map,rq.rtree.obj_cnt, rq.rq_u32, rank_dest, tag, comm);
+        ret_len += mpi_sycl_interop::isend(rq.rtree.tree_morton_codes.buf_morton,rq.rtree.tree_morton_codes.obj_cnt, rq.rq_u_morton, rank_dest, tag, comm);
+        ret_len += mpi_sycl_interop::isend(rq.rtree.tree_morton_codes.buf_particle_index_map,rq.rtree.tree_morton_codes.obj_cnt, rq.rq_u32, rank_dest, tag, comm);
 
         ret_len += mpi_sycl_interop::isend(rq.rtree.tree_reduced_morton_codes.buf_reduc_index_map, rq.rtree.tree_reduced_morton_codes.tree_leaf_count+1, rq.rq_u32, rank_dest, tag, comm);
 

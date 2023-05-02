@@ -32,8 +32,6 @@ RadixTree<u_morton, vec3, dim>::RadixTree(
         throw shambase::throw_with_loc<std::runtime_error>("number of element in patch above i32_max-1");
     }
 
-    obj_cnt = cnt_obj;
-
     logger::debug_sycl_ln("RadixTree", "box dim :", std::get<0>(treebox), std::get<1>(treebox));
 
     bounding_box = treebox;
@@ -42,7 +40,7 @@ RadixTree<u_morton, vec3, dim>::RadixTree(
 
     bool one_cell_mode;
 
-    tree_reduced_morton_codes.build(queue,obj_cnt,reduc_level,tree_morton_codes,one_cell_mode);
+    tree_reduced_morton_codes.build(queue,tree_morton_codes.obj_cnt,reduc_level,tree_morton_codes,one_cell_mode);
 
     if (!one_cell_mode) {
         tree_struct.build(queue, tree_reduced_morton_codes.tree_leaf_count - 1, *tree_reduced_morton_codes.buf_tree_morton);
@@ -926,7 +924,7 @@ typename RadixTree<u_morton, vec3, dim>::CuttedTree RadixTree<u_morton, vec3, di
 
         logger::debug_ln("TreeCutter",
             "tree cut cells:",tree_struct.internal_cell_count,"->",ret.tree_struct.internal_cell_count,
-            "obj:",obj_cnt,"->",extract_id.size()
+            "obj:",tree_morton_codes.obj_cnt,"->",extract_id.size()
             );
 
 
