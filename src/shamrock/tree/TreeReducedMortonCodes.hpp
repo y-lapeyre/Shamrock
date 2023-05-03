@@ -166,8 +166,14 @@ namespace shamrock::tree {
         }
 
         inline u64 serialize_byte_size() {
-            return sizeof(u32) * 2 + sizeof(u32) * buf_reduc_index_map->size() +
-                   sizeof(u_morton) * tree_leaf_count;
+
+
+            using H = shamalgs::SerializeHelper;
+
+            return H::serialize_byte_size<u32>()*2 
+                + H::serialize_byte_size<u32>(buf_reduc_index_map->size()) 
+                + H::serialize_byte_size<u_morton>(tree_leaf_count);
+            
         }
     };
 

@@ -12,6 +12,7 @@
 
 #include "kernels/karras_alg.hpp"
 #include "shamalgs/memory/memory.hpp"
+#include "shamalgs/memory/serialize.hpp"
 #include "shambase/exception.hpp"
 #include "shamalgs/reduction/reduction.hpp"
 
@@ -164,6 +165,10 @@ namespace shamrock::tree {
         buf_rchild_flag(std::move(buf_rchild_flag)),
         buf_endrange(std::move(buf_endrange))
         {}
+
+        inline void serialize(shamalgs::SerializeHelper &serializer) {
+
+        }
     };
 
 } // namespace shamrock::tree

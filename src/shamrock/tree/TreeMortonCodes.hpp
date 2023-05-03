@@ -34,6 +34,7 @@ namespace shamrock::tree {
                           shammath::CoordRange<T> coord_range,
                           u32 obj_cnt,
                           sycl::buffer<T> &pos_buf) {
+            StackEntry stack_loc{};
 
             this->obj_cnt = obj_cnt;
 
@@ -91,6 +92,7 @@ namespace shamrock::tree {
          */
         inline void serialize(shamalgs::SerializeHelper &serializer) {
             StackEntry stack_loc{};
+
             serializer.write(obj_cnt);
             if (!buf_morton) {
                 throw shambase::throw_with_loc<std::runtime_error>("missing buffer");
@@ -114,6 +116,7 @@ namespace shamrock::tree {
          * @return TreeMortonCodes
          */
         inline static TreeMortonCodes deserialize(shamalgs::SerializeHelper &serializer) {
+            StackEntry stack_loc{};
             TreeMortonCodes ret;
             serializer.load(ret.obj_cnt);
 
@@ -134,7 +137,8 @@ namespace shamrock::tree {
          * @return u64
          */
         inline u64 serialize_byte_size() {
-            return sizeof(u32) + (sizeof(u_morton) + sizeof(u32)) * obj_cnt;
+            using H = shamalgs::SerializeHelper;
+            return H::serialize_byte_size<u32>() + H::serialize_byte_size<u32>(obj_cnt) + H::serialize_byte_size<u_morton>(obj_cnt);
         }
     };
 

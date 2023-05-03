@@ -214,7 +214,8 @@ bool ResizableBuffer<T>::check_buf_match(const ResizableBuffer<T> &f2) const {
 
 template<class T>
 u64 ResizableBuffer<T>::serialize_buf_byte_size(){
-    return val_cnt*shamalgs::details::SerializeHelperMember<T>::szrepr;
+    using H = shamalgs::SerializeHelper;
+    return H::serialize_byte_size<T>(val_cnt);
 }
 
 template<class T>

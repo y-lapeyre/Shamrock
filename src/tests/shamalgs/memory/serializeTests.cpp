@@ -54,7 +54,10 @@ TestStart(Unittest, "shamalgs/memory/SerializeHelper", test_serialize_helper, 1)
 
     shamalgs::SerializeHelper ser;
 
-    u64 bytelen = n1*sizeof(u8) + 16*sizeof(f64) + n2*3*sizeof(u32) + test_str.size()*sizeof(char) + sizeof(u32);
+    u64 bytelen = ser.serialize_byte_size<u8>(n1) 
+        + ser.serialize_byte_size<f64_16>() 
+        + ser.serialize_byte_size<u32_3>(n2)
+        + ser.serialize_byte_size(test_str);
 
     ser.allocate(bytelen);
     ser.write_buf(buf_comp1, n1);
@@ -62,7 +65,7 @@ TestStart(Unittest, "shamalgs/memory/SerializeHelper", test_serialize_helper, 1)
     ser.write(test_str);
     ser.write_buf(buf_comp2, n2);
 
-    
+    logger::raw_ln("writing done");
 
     auto recov = ser.finalize();
 
@@ -74,10 +77,11 @@ TestStart(Unittest, "shamalgs/memory/SerializeHelper", test_serialize_helper, 1)
 
         shamalgs::SerializeHelper ser2(std::move(recov));
 
-        ser2.load_buf(buf1, n1);
-        ser2.load(val);
-        ser2.load(recv_str);
-        ser2.load_buf(buf2, n2);
+        logger::raw_ln("load 1 ");
+        ser2.load_buf(buf1, n1);logger::raw_ln("load 1 done");
+        ser2.load(val);logger::raw_ln("load 2 done");
+        ser2.load(recv_str);logger::raw_ln("load 3 done");
+        ser2.load_buf(buf2, n2);logger::raw_ln("load 4 done");
 
         //shamalgs::memory::print_buf(buf_comp1, n1, 16, "{} ");
         //shamalgs::memory::print_buf(buf1, n1, 16, "{} ");
