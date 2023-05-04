@@ -29,7 +29,7 @@ namespace shamrock::tree {
         std::unique_ptr<sycl::buffer<u32>> buf_rchild_id;  // size = internal
         std::unique_ptr<sycl::buffer<u8>> buf_lchild_flag; // size = internal
         std::unique_ptr<sycl::buffer<u8>> buf_rchild_flag; // size = internal
-        std::unique_ptr<sycl::buffer<u32>> buf_endrange;   // size = internal (+1 if one cell mode)
+        std::unique_ptr<sycl::buffer<u32>> buf_endrange;   // size = internal
 
         bool is_built() {
             return bool(buf_lchild_id) && bool(buf_rchild_id) && bool(buf_lchild_flag) &&
@@ -73,7 +73,7 @@ namespace shamrock::tree {
             buf_rchild_id       = std::make_unique<sycl::buffer<u32>>(internal_cell_count);
             buf_lchild_flag     = std::make_unique<sycl::buffer<u8>>(internal_cell_count);
             buf_rchild_flag     = std::make_unique<sycl::buffer<u8>>(internal_cell_count);
-            buf_endrange        = std::make_unique<sycl::buffer<u32>>(internal_cell_count+1); //this +1 is the signature of the one cell mode
+            buf_endrange        = std::make_unique<sycl::buffer<u32>>(internal_cell_count);
 
             {
                 sycl::host_accessor rchild_id{*buf_rchild_id, sycl::write_only, sycl::no_init};
@@ -166,8 +166,51 @@ namespace shamrock::tree {
         buf_endrange(std::move(buf_endrange))
         {}
 
-        inline void serialize(shamalgs::SerializeHelper &serializer) {
+        inline void serialize(shamalgs::SerializeHelper &serializer) {StackEntry stack_loc{};
+            serializer.write(internal_cell_count);
+            serializer.write((one_cell_mode) ? 1_u32 : 0_u32);
+            serializer.write_buf(*buf_lchild_id, internal_cell_count);
+            serializer.write_buf(*buf_rchild_id, internal_cell_count);
+            serializer.write_buf(*buf_lchild_flag, internal_cell_count);
+            serializer.write_buf(*buf_rchild_flag, internal_cell_count);
+            serializer.write_buf(*buf_endrange, internal_cell_count);
+        }
 
+        inline u64 serialize_byte_size(){StackEntry stack_loc{};
+            
+            using H = shamalgs::SerializeHelper;
+
+            return H::serialize_byte_size<u32>() + H::serialize_byte_size<u32>()
+                + H::serialize_byte_size<u32>(internal_cell_count)
+                + H::serialize_byte_size<u32>(internal_cell_count)
+                + H::serialize_byte_size<u8>(internal_cell_count)
+                + H::serialize_byte_size<u8>(internal_cell_count)
+                + H::serialize_byte_size<u32>(internal_cell_count);
+        }
+
+        inline static TreeStructure deserialize(shamalgs::SerializeHelper &serializer) {StackEntry stack_loc{};
+            TreeStructure strc;
+
+            serializer.load(strc.internal_cell_count);
+            u32 one_cell;
+
+            serializer.load(one_cell);
+            strc.one_cell_mode = (one_cell == 1);
+
+
+            strc.buf_lchild_id       = std::make_unique<sycl::buffer<u32>>(strc.internal_cell_count);
+            strc.buf_rchild_id       = std::make_unique<sycl::buffer<u32>>(strc.internal_cell_count);
+            strc.buf_lchild_flag     = std::make_unique<sycl::buffer<u8>>(strc.internal_cell_count);
+            strc.buf_rchild_flag     = std::make_unique<sycl::buffer<u8>>(strc.internal_cell_count);
+            strc.buf_endrange        = std::make_unique<sycl::buffer<u32>>(strc.internal_cell_count);
+
+            serializer.load_buf(*strc.buf_lchild_id  , strc.internal_cell_count);
+            serializer.load_buf(*strc.buf_rchild_id  , strc.internal_cell_count);
+            serializer.load_buf(*strc.buf_lchild_flag, strc.internal_cell_count);
+            serializer.load_buf(*strc.buf_rchild_flag, strc.internal_cell_count);
+            serializer.load_buf(*strc.buf_endrange   , strc.internal_cell_count);
+
+            return strc;
         }
     };
 
