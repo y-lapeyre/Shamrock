@@ -178,6 +178,115 @@ namespace shamrock::tree {
 
             return cmp;
         }
+
+        inline u32 get_total_tree_cell_count(){
+            if(buf_pos_min_cell){
+                return buf_pos_min_cell->size();
+            }else if(buf_pos_min_cell_flt){
+                return buf_pos_min_cell_flt->size();
+            }else{
+                throw shambase::throw_with_loc<std::runtime_error>("no buffers are allocated");
+            }
+        }
+
+        inline void serialize(shamalgs::SerializeHelper &serializer) {
+            StackEntry stack_loc{};
+            u32 state = 
+                (bool(buf_pos_min_cell) ? 1 : 0) +
+                (bool(buf_pos_min_cell_flt) ? 1 : 0)*2;
+
+            serializer.write(state);
+
+            if(state == 1){
+                u32 sz = buf_pos_min_cell->size();
+                serializer.write(sz);
+                serializer.write_buf(*buf_pos_min_cell, sz);
+                serializer.write_buf(*buf_pos_max_cell, sz);
+            }else if(state == 2){
+                u32 sz = buf_pos_min_cell_flt->size();
+                serializer.write(sz);
+                serializer.write_buf(*buf_pos_min_cell_flt, sz);
+                serializer.write_buf(*buf_pos_max_cell_flt, sz);
+            }else if(state == 3){
+                u32 sz = buf_pos_min_cell->size();
+                serializer.write(sz);
+                serializer.write_buf(*buf_pos_min_cell, sz);
+                serializer.write_buf(*buf_pos_max_cell, sz);
+                serializer.write_buf(*buf_pos_min_cell_flt, sz);
+                serializer.write_buf(*buf_pos_max_cell_flt, sz);
+            }
+        } 
+
+        inline u64 serialize_byte_size(){
+
+            using H = shamalgs::SerializeHelper;
+
+            u64 sum = H::serialize_byte_size<u32>();
+
+            u32 state = 
+                (bool(buf_pos_min_cell) ? 1 : 0) +
+                (bool(buf_pos_min_cell_flt) ? 1 : 0)*2;
+
+            if(state == 1){
+                u32 sz = buf_pos_min_cell->size();
+                sum += H::serialize_byte_size<u32>();
+                sum += H::serialize_byte_size<ipos_t>(sz);
+                sum += H::serialize_byte_size<ipos_t>(sz);
+            }else if(state == 2){
+                u32 sz = buf_pos_min_cell_flt->size();
+                sum += H::serialize_byte_size<u32>();
+                sum += H::serialize_byte_size<pos_t>(sz);
+                sum += H::serialize_byte_size<pos_t>(sz);
+            }else if(state == 3){
+                u32 sz = buf_pos_min_cell->size();
+                sum += H::serialize_byte_size<u32>();
+                sum += H::serialize_byte_size<ipos_t>(sz);
+                sum += H::serialize_byte_size<ipos_t>(sz);
+                sum += H::serialize_byte_size<pos_t>(sz);
+                sum += H::serialize_byte_size<pos_t>(sz);
+            }
+
+            return sum;
+        }
+
+        inline static TreeCellRanges deserialize(shamalgs::SerializeHelper &serializer) {
+            StackEntry stack_loc{};
+
+            TreeCellRanges ret;
+
+            u32 state;
+            serializer.load(state);
+
+            if(state == 1){
+                u32 sz;
+                serializer.load(sz);
+                ret.buf_pos_min_cell = std::make_unique<sycl::buffer<ipos_t>>(sz);
+                ret.buf_pos_max_cell = std::make_unique<sycl::buffer<ipos_t>>(sz);
+                serializer.load_buf(*ret.buf_pos_min_cell, sz);
+                serializer.load_buf(*ret.buf_pos_max_cell, sz);
+            }else if(state == 2){
+                u32 sz;
+                serializer.load(sz);
+                ret.buf_pos_min_cell_flt = std::make_unique<sycl::buffer<pos_t>>(sz);
+                ret.buf_pos_max_cell_flt = std::make_unique<sycl::buffer<pos_t>>(sz);
+                serializer.load_buf(*ret.buf_pos_min_cell_flt, sz);
+                serializer.load_buf(*ret.buf_pos_max_cell_flt, sz);
+            }else if(state == 3){
+                u32 sz;
+                serializer.load(sz);
+                ret.buf_pos_min_cell = std::make_unique<sycl::buffer<ipos_t>>(sz);
+                ret.buf_pos_max_cell = std::make_unique<sycl::buffer<ipos_t>>(sz);
+                ret.buf_pos_min_cell_flt = std::make_unique<sycl::buffer<pos_t>>(sz);
+                ret.buf_pos_max_cell_flt = std::make_unique<sycl::buffer<pos_t>>(sz);
+                serializer.load_buf(*ret.buf_pos_min_cell, sz);
+                serializer.load_buf(*ret.buf_pos_max_cell, sz);
+                serializer.load_buf(*ret.buf_pos_min_cell_flt, sz);
+                serializer.load_buf(*ret.buf_pos_max_cell_flt, sz);
+            }
+
+            return ret;
+
+        }
     };
 
 } // namespace shamrock::tree
