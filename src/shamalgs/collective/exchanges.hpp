@@ -12,6 +12,7 @@
 #include "shamsys/MpiWrapper.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/SyclMpiTypes.hpp"
+#include "shambase/stacktrace.hpp"
 
 namespace shamalgs::collective {
 
@@ -86,7 +87,7 @@ namespace shamalgs::collective {
     template<class T>
     inline void vector_allgatherv(const std::vector<T> & send_vec ,const MPI_Datatype & send_type,std::vector<T> & recv_vec,const MPI_Datatype & recv_type,const MPI_Comm comm){
         StackEntry stack_loc{};
-        
+
         u32 local_count = send_vec.size();
 
 
