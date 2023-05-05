@@ -72,6 +72,14 @@ namespace shamrock::tree {
             : obj_cnt(other.obj_cnt), buf_morton(shamalgs::memory::duplicate(other.buf_morton)),
               buf_particle_index_map(shamalgs::memory::duplicate(other.buf_particle_index_map)) {}
 
+        inline TreeMortonCodes &operator=(TreeMortonCodes &&other) noexcept {
+            obj_cnt     = std::move(other.obj_cnt    );
+            buf_morton     = std::move(other.buf_morton    );
+            buf_particle_index_map = std::move(other.buf_particle_index_map);
+
+            return *this;
+        } // move assignment
+
         inline friend bool operator==(const TreeMortonCodes &t1, const TreeMortonCodes &t2) {
             bool cmp = true;
 

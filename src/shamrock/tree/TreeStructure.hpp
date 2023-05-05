@@ -100,11 +100,11 @@ namespace shamrock::tree {
                 }
             };
 
-            add_ptr(buf_lchild_id);
-            add_ptr(buf_rchild_id);
+            add_ptr(buf_lchild_id  );
+            add_ptr(buf_rchild_id  );
             add_ptr(buf_lchild_flag);
             add_ptr(buf_rchild_flag);
-            add_ptr(buf_endrange);
+            add_ptr(buf_endrange   );
 
             return sum;
         }
@@ -141,6 +141,18 @@ namespace shamrock::tree {
                   shamalgs::memory::duplicate(other.buf_rchild_flag)),      // size = internal
               buf_endrange(shamalgs::memory::duplicate(other.buf_endrange)) // size = internal
         {}
+
+        inline TreeStructure &operator=(TreeStructure &&other) noexcept {
+            internal_cell_count     = std::move(other.internal_cell_count    );
+            one_cell_mode     = std::move(other.one_cell_mode    );
+            buf_lchild_id   = std::move(other.buf_lchild_id  );
+            buf_rchild_id   = std::move(other.buf_rchild_id  );
+            buf_lchild_flag = std::move(other.buf_lchild_flag);
+            buf_rchild_flag = std::move(other.buf_rchild_flag);
+            buf_endrange    = std::move(other.buf_endrange   );
+
+            return *this;
+        } // move assignment
 
         inline TreeStructure(u32 internal_cell_count,
                              bool one_cell_mode,

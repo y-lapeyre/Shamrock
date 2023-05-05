@@ -79,8 +79,7 @@ class RadixTree{
 
 
     //build by the RadixTreeMortonBuilder
-    //those two classes can be groupped
-    shamrock::tree::TreeMortonCodes<morton_t> tree_morton_codes; // shouldn't be in a separate class
+    shamrock::tree::TreeMortonCodes<morton_t> tree_morton_codes; 
     shamrock::tree::TreeReducedMortonCodes<morton_t> tree_reduced_morton_codes;
 
     //Karras alg
@@ -102,7 +101,22 @@ class RadixTree{
 
 
 
-    
+    void serialize(shamalgs::SerializeHelper &serializer);
+
+    u64 serialize_byte_size();
+
+    static RadixTree deserialize(shamalgs::SerializeHelper &serializer);
+
+    inline friend bool operator==(const RadixTree &t1, const RadixTree &t2) {
+        bool cmp = true;
+        cmp = cmp && shambase::vec_equals( std::get<0>(t1.bounding_box) , std::get<0>(t2.bounding_box));
+        cmp = cmp && shambase::vec_equals(std::get<1>(t1.bounding_box) , std::get<1>(t2.bounding_box));
+        cmp = cmp && t1.tree_morton_codes == t2.tree_morton_codes;
+        cmp = cmp && t1.tree_reduced_morton_codes == t2.tree_reduced_morton_codes;
+        cmp = cmp && t1.tree_struct == t2.tree_struct;
+        cmp = cmp && t1.tree_cell_ranges == t2.tree_cell_ranges;
+        return cmp;
+    }
 
     
     RadixTreeField<coord_t> compute_int_boxes(sycl::queue & queue,const std::unique_ptr<sycl::buffer<coord_t>> & int_rad_buf, coord_t tolerance);
@@ -122,6 +136,13 @@ class RadixTree{
         sycl::queue & queue,
         std::tuple<pos_t,pos_t> treebox,
         const std::unique_ptr<sycl::buffer<pos_t>> & pos_buf, 
+        u32 cnt_obj, 
+        u32 reduc_level);
+
+    RadixTree(
+        sycl::queue & queue,
+        std::tuple<pos_t,pos_t> treebox,
+        sycl::buffer<pos_t> & pos_buf, 
         u32 cnt_obj, 
         u32 reduc_level);
 

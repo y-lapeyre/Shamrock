@@ -24,9 +24,10 @@
 
 
 
+
 template <class u_morton, class vec3 ,u32 dim>
 RadixTree<u_morton, vec3, dim>::RadixTree(
-    sycl::queue &queue, std::tuple<vec3, vec3> treebox, const std::unique_ptr<sycl::buffer<vec3>> &pos_buf, u32 cnt_obj, u32 reduc_level
+    sycl::queue &queue, std::tuple<vec3, vec3> treebox, sycl::buffer<vec3> & pos_buf, u32 cnt_obj, u32 reduc_level
 ) {
     if (cnt_obj > i32_max - 1) {
         throw shambase::throw_with_loc<std::runtime_error>("number of element in patch above i32_max-1");
@@ -36,7 +37,7 @@ RadixTree<u_morton, vec3, dim>::RadixTree(
 
     bounding_box = treebox;
 
-    tree_morton_codes.build(queue, shammath::CoordRange<vec3>{treebox}, cnt_obj, *pos_buf);
+    tree_morton_codes.build(queue, shammath::CoordRange<vec3>{treebox}, cnt_obj, pos_buf);
 
     bool one_cell_mode;
 
@@ -51,6 +52,54 @@ RadixTree<u_morton, vec3, dim>::RadixTree(
 }
 
 
+
+template <class u_morton, class vec3 ,u32 dim>
+RadixTree<u_morton, vec3, dim>::RadixTree(
+    sycl::queue &queue, std::tuple<vec3, vec3> treebox, const std::unique_ptr<sycl::buffer<vec3>> &pos_buf, u32 cnt_obj, u32 reduc_level
+) : RadixTree(queue,treebox,shambase::get_check_ref(pos_buf), cnt_obj, reduc_level){}
+
+
+
+template <class u_morton, class vec3 ,u32 dim>
+void RadixTree<u_morton, vec3, dim>::serialize(shamalgs::SerializeHelper &serializer) {
+    StackEntry stack_loc{};
+
+    serializer.write(std::get<0>(bounding_box));
+    serializer.write(std::get<1>(bounding_box));
+    tree_morton_codes.serialize(serializer);
+    tree_reduced_morton_codes.serialize(serializer);
+    tree_struct.serialize(serializer);
+    tree_cell_ranges.serialize(serializer);
+}
+
+template <class u_morton, class pos_t ,u32 dim>
+u64 RadixTree<u_morton, pos_t, dim>::serialize_byte_size(){
+    using H = shamalgs::SerializeHelper;
+    return H::serialize_byte_size<pos_t>()*2 
+        + tree_morton_codes.serialize_byte_size()
+        + tree_reduced_morton_codes.serialize_byte_size()
+        + tree_struct.serialize_byte_size()
+        + tree_cell_ranges.serialize_byte_size();
+}
+
+template <class u_morton, class pos_t ,u32 dim>
+RadixTree<u_morton, pos_t, dim> RadixTree<u_morton, pos_t, dim>::deserialize(shamalgs::SerializeHelper &serializer) {
+    StackEntry stack_loc{};
+
+    RadixTree ret;
+
+    serializer.load(std::get<0>(ret.bounding_box));
+    serializer.load(std::get<1>(ret.bounding_box));
+
+    using namespace shamrock::tree;
+
+    ret.tree_morton_codes = TreeMortonCodes<u_morton>::deserialize(serializer);
+    ret.tree_reduced_morton_codes = TreeReducedMortonCodes<u_morton>::deserialize(serializer);
+    ret.tree_struct = TreeStructure<u_morton>::deserialize(serializer);
+    ret.tree_cell_ranges = TreeCellRanges<u_morton, pos_t>::deserialize(serializer);
+
+    return ret;
+}
 
 
 

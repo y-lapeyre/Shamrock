@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include "shambase/exception.hpp"
 #include "shambase/type_aliases.hpp"
 
 namespace shambase {
@@ -45,6 +46,22 @@ namespace shambase {
     template<class T,class TAcc>
     inline T load_conv(TAcc* acc){
         T* ptr = (T*) acc;
+        return *ptr;
+    }
+
+    template<class T>
+    inline T & get_check_ref(std::unique_ptr<T> & ptr){
+        if(!ptr){
+            throw throw_with_loc<std::runtime_error>("the ptr does not hold anything");
+        }
+        return *ptr;
+    }
+
+    template<class T>
+    inline T & get_check_ref(const std::unique_ptr<T> & ptr){
+        if(!ptr){
+            throw throw_with_loc<std::runtime_error>("the ptr does not hold anything");
+        }
         return *ptr;
     }
 

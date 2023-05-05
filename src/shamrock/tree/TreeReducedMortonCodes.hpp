@@ -109,6 +109,14 @@ namespace shamrock::tree {
               buf_reduc_index_map(shamalgs::memory::duplicate(other.buf_reduc_index_map)),
               buf_tree_morton(shamalgs::memory::duplicate(other.buf_tree_morton)) {}
 
+        inline TreeReducedMortonCodes &operator=(TreeReducedMortonCodes &&other) noexcept {
+            tree_leaf_count     = std::move(other.tree_leaf_count    );
+            buf_reduc_index_map     = std::move(other.buf_reduc_index_map    );
+            buf_tree_morton = std::move(other.buf_tree_morton);
+
+            return *this;
+        } // move assignment
+
         inline friend bool
         operator==(const TreeReducedMortonCodes &t1, const TreeReducedMortonCodes &t2) {
             bool cmp = true;
