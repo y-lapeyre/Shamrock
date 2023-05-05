@@ -77,8 +77,6 @@ class RadixTree{
 
     std::tuple<pos_t,pos_t> bounding_box;
 
-    bool pos_t_range_built = false;
-
 
     //build by the RadixTreeMortonBuilder
     //those two classes can be groupped
