@@ -8,7 +8,7 @@
 
 #include "TestResult.hpp"
 
-#include "shamrock/legacy/utils/string_utils.hpp"
+
 #include "shamsys/NodeInstance.hpp"
 
 namespace shamtest::details {

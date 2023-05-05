@@ -17,7 +17,6 @@
 //#include "shamrock/legacy/patch/base/pdat_comm_impl/pdat_comm_directgpu.hpp"
 #include "shamsys/legacy/sycl_mpi_interop.hpp"
 #include "shamsys/legacy/sycl_handler.hpp"
-#include "shamrock/legacy/algs/sycl/sycl_algs.hpp"
 #include <cstdio>
 #include <memory>
 

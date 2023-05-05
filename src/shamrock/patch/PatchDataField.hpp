@@ -12,7 +12,6 @@
 
 #include "aliases.hpp"
 #include "shamalgs/memory/serialize.hpp"
-#include "shamrock/legacy/algs/sycl/sycl_algs.hpp"
 #include "shamrock/legacy/patch/base/enabled_fields.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shambase/exception.hpp"
@@ -75,16 +74,16 @@ template <class T> class PatchDataField {
 
     public:
 
-    static sycl::buffer<T> convert_to_buf(PatchDataField<T> && pdatf){
+    inline static sycl::buffer<T> convert_to_buf(PatchDataField<T> && pdatf){
         return ResizableBuffer<T>::convert_to_buf(std::move(pdatf.buf));
     }
 
-    PatchDataField(PatchDataField &&other) noexcept
+    inline PatchDataField(PatchDataField &&other) noexcept
         : buf(std::move(other.buf)), field_name(std::move(other.field_name)),
           nvar(std::move(other.nvar)), obj_cnt(std::move(other.obj_cnt)) {
     } // move constructor
 
-    PatchDataField &operator=(PatchDataField &&other) noexcept {
+    inline PatchDataField &operator=(PatchDataField &&other) noexcept {
         buf        = std::move(other.buf);
         field_name = std::move(other.field_name);
         nvar       = std::move(other.nvar);
@@ -100,7 +99,7 @@ template <class T> class PatchDataField {
     inline PatchDataField(std::string name, u32 nvar)
         : field_name(name), nvar(nvar), obj_cnt(0), buf(0){};
 
-    PatchDataField(const PatchDataField &other)
+    inline PatchDataField(const PatchDataField &other)
         : field_name(other.field_name), nvar(other.nvar), obj_cnt(other.obj_cnt), buf(other.buf) {
     }
 

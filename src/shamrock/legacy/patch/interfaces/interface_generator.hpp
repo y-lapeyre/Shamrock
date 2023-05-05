@@ -31,7 +31,7 @@
 #include "shamrock/legacy/patch/scheduler/scheduler_patch_data.hpp"
 #include "shamsys/legacy/sycl_mpi_interop.hpp"
 #include "shamrock/legacy/utils/geometry_utils.hpp"
-#include "shamrock/legacy/utils/string_utils.hpp"
+
 #include <cstddef>
 #include <fstream>
 #include <functional>

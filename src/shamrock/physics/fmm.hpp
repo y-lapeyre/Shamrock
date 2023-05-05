@@ -9,8 +9,8 @@
 #pragma once
 
 #include "aliases.hpp"
-#include "shammodels/generic/math/tensors.hpp"
-
+#include "shamrock/math/tensors.hpp"
+#include "shambase/sycl.hpp"
 
 //%Impl status : Good
 

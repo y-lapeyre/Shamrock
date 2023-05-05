@@ -9,27 +9,34 @@
 #pragma once
 
 #include "aliases.hpp"
+#include "shamalgs/memory/memory.hpp"
+#include "shamalgs/memory/serialize.hpp"
+#include "shamalgs/reduction/reduction.hpp"
+#include "shambase/exception.hpp"
+#include "shambase/stacktrace.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"
 #include "shammath/CoordRange.hpp"
-#include "shamrock/legacy/algs/sycl/basic/basic.hpp"
 #include "shamrock/tree/RadixTreeMortonBuilder.hpp"
+#include <stdexcept>
 
 namespace shamrock::tree {
 
     template<class u_morton>
     class TreeMortonCodes {
         public:
-        
+        u32 obj_cnt;
+
         std::unique_ptr<sycl::buffer<u_morton>> buf_morton;
         std::unique_ptr<sycl::buffer<u32>> buf_particle_index_map;
 
         template<class T>
-        inline void build(
-            sycl::queue &queue,
-            shammath::CoordRange<T> coord_range,
-            u32 obj_cnt,
-            sycl::buffer<T> &pos_buf
-        ) {
+        inline void build(sycl::queue &queue,
+                          shammath::CoordRange<T> coord_range,
+                          u32 obj_cnt,
+                          sycl::buffer<T> &pos_buf) {
+            StackEntry stack_loc{};
+
+            this->obj_cnt = obj_cnt;
 
             using TProp = shambase::sycl_utils::VectorProperties<T>;
 
@@ -39,8 +46,7 @@ namespace shamrock::tree {
                 pos_buf,
                 obj_cnt,
                 buf_morton,
-                buf_particle_index_map
-            );
+                buf_particle_index_map);
         }
 
         [[nodiscard]] inline u64 memsize() const {
@@ -52,6 +58,8 @@ namespace shamrock::tree {
                 }
             };
 
+            sum += sizeof(obj_cnt);
+
             add_ptr(buf_morton);
             add_ptr(buf_particle_index_map);
 
@@ -61,10 +69,85 @@ namespace shamrock::tree {
         inline TreeMortonCodes() = default;
 
         inline TreeMortonCodes(const TreeMortonCodes &other)
-            : 
-              buf_morton(syclalgs::basic::duplicate(other.buf_morton)),
-              buf_particle_index_map(syclalgs::basic::duplicate(other.buf_particle_index_map)) 
-        {}
+            : obj_cnt(other.obj_cnt), buf_morton(shamalgs::memory::duplicate(other.buf_morton)),
+              buf_particle_index_map(shamalgs::memory::duplicate(other.buf_particle_index_map)) {}
+
+        inline TreeMortonCodes &operator=(TreeMortonCodes &&other) noexcept {
+            obj_cnt     = std::move(other.obj_cnt    );
+            buf_morton     = std::move(other.buf_morton    );
+            buf_particle_index_map = std::move(other.buf_particle_index_map);
+
+            return *this;
+        } // move assignment
+
+        inline friend bool operator==(const TreeMortonCodes &t1, const TreeMortonCodes &t2) {
+            bool cmp = true;
+
+            cmp = cmp && (t1.obj_cnt == t2.obj_cnt);
+
+            using namespace shamalgs::reduction;
+
+            cmp = cmp && equals(*t1.buf_morton, *t2.buf_morton, t1.obj_cnt);
+            cmp = cmp && equals(*t1.buf_particle_index_map, *t2.buf_particle_index_map, t1.obj_cnt);
+
+            return cmp;
+        }
+
+        /**
+         * @brief serialize a TreeMortonCodes object
+         *
+         * @param serializer
+         */
+        inline void serialize(shamalgs::SerializeHelper &serializer) {
+            StackEntry stack_loc{};
+
+            serializer.write(obj_cnt);
+            if (!buf_morton) {
+                throw shambase::throw_with_loc<std::runtime_error>("missing buffer");
+            }
+            // serializer.write(buf_morton->size());
+            serializer.write_buf(*buf_morton, obj_cnt);
+            if (!buf_particle_index_map) {
+                throw shambase::throw_with_loc<std::runtime_error>("missing buffer");
+            }
+            serializer.write_buf(*buf_particle_index_map, obj_cnt);
+        }
+
+        /**
+         * @brief deserialize a TreeMortonCodes object
+         * Note : here since the initial buffer is a pow of 2
+         * with trailling terms for the bitonic sort, when
+         * deserializing we are not loading the last values
+         * the buffer size is obj_cnt here
+         *
+         * @param serializer
+         * @return TreeMortonCodes
+         */
+        inline static TreeMortonCodes deserialize(shamalgs::SerializeHelper &serializer) {
+            StackEntry stack_loc{};
+            TreeMortonCodes ret;
+            serializer.load(ret.obj_cnt);
+
+            // u32 morton_len;
+            // serializer.load(morton_len);
+            ret.buf_morton             = std::make_unique<sycl::buffer<u_morton>>(ret.obj_cnt);
+            ret.buf_particle_index_map = std::make_unique<sycl::buffer<u32>>(ret.obj_cnt);
+
+            serializer.load_buf(*ret.buf_morton, ret.obj_cnt);
+            serializer.load_buf(*ret.buf_particle_index_map, ret.obj_cnt);
+
+            return ret;
+        }
+
+        /**
+         * @brief give the size of the serialized object
+         *
+         * @return u64
+         */
+        inline u64 serialize_byte_size() {
+            using H = shamalgs::SerializeHelper;
+            return H::serialize_byte_size<u32>() + H::serialize_byte_size<u32>(obj_cnt) + H::serialize_byte_size<u_morton>(obj_cnt);
+        }
     };
 
 } // namespace shamrock::tree

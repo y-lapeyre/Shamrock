@@ -32,7 +32,7 @@
 #include "shamrock/legacy/patch/base/patchdata.hpp"
 //#include "shamrock/legacy/patch/patchdata_buffer.hpp"
 #include "shamrock/patch/PatchDataLayout.hpp"
-#include "shamrock/legacy/patch/base/patchtree.hpp"
+#include "shamrock/scheduler/PatchTree.hpp"
 #include "scheduler_patch_list.hpp"
 #include "scheduler_patch_data.hpp"
 #include "shamrock/scheduler/HilbertLoadBalance.hpp"

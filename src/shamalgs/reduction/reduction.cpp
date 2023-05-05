@@ -8,7 +8,6 @@
 
 #include "reduction.hpp"
 
-#include "shamrock/legacy/algs/sycl/basic/basic.hpp"
 #include "shamalgs/reduction/details/sycl2020reduction.hpp"
 #include "shamalgs/reduction/details/groupReduction.hpp"
 #include "shamalgs/reduction/details/fallbackReduction.hpp"

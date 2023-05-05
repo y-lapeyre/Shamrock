@@ -12,6 +12,7 @@
 #include "shambase/string.hpp"
 #include "shambase/sycl.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"
+#include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
 
 namespace shamalgs::memory {
@@ -97,6 +98,115 @@ namespace shamalgs::memory {
         logger::raw_ln(accum);
 
     }
+
+    template<class T>
+    void copybuf_discard(sycl::buffer<T> & source, sycl::buffer<T> & dest, u32 cnt){
+        shamsys::instance::get_compute_queue().submit([&](sycl::handler & cgh){
+
+            sycl::accessor src {source,cgh,sycl::read_only};
+            sycl::accessor dst {dest,cgh,sycl::write_only,sycl::no_init};
+
+            cgh.parallel_for(sycl::range<1>{cnt},[=](sycl::item<1> i){
+                dst[i] = src[i];
+            });
+
+        });
+    }
+
+    template<class T>
+    void copybuf(sycl::buffer<T> & source, sycl::buffer<T> & dest, u32 cnt){
+        shamsys::instance::get_compute_queue().submit([&](sycl::handler & cgh){
+
+            sycl::accessor src {source,cgh,sycl::read_only};
+            sycl::accessor dst {dest,cgh,sycl::write_only};
+
+            cgh.parallel_for(sycl::range<1>{cnt},[=](sycl::item<1> i){
+                dst[i] = src[i];
+            });
+
+        });
+    }
+
+
+
+    template<class T>
+    void add_with_factor_to(sycl::buffer<T> & buf, T factor, sycl::buffer<T> & op, u32 cnt){
+        shamsys::instance::get_compute_queue().submit([&](sycl::handler & cgh){
+
+            sycl::accessor acc {buf,cgh,sycl::read_write};
+            sycl::accessor dd {op,cgh,sycl::read_only};
+
+            T fac = factor;
+
+            cgh.parallel_for(sycl::range<1>{cnt},[=](sycl::item<1> i){
+                acc[i] += fac*dd[i];
+            });
+
+        });
+    }
+
+
+    template<class T>
+    void write_with_offset_into(sycl::buffer<T> & buf_ctn, sycl::buffer<T> & buf_in, u32 offset, u32 element_count){
+        shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
+
+            sycl::accessor source {buf_in, cgh, sycl::read_only};
+            sycl::accessor dest {buf_ctn, cgh, sycl::write_only, sycl::no_init};
+            u32 off = offset;
+            cgh.parallel_for( sycl::range{element_count}, [=](sycl::item<1> item) { dest[item.get_id(0) + off] = source[item]; });
+        });
+    }
+
+    template<class T> 
+    std::unique_ptr<sycl::buffer<T>> duplicate(const std::unique_ptr<sycl::buffer<T>> & buf_in){
+        if(buf_in){
+            auto buf = std::make_unique<sycl::buffer<T>>(buf_in->size());
+            copybuf_discard(*buf_in,*buf, buf_in->size());
+            return std::move(buf);
+        }
+        return {};
+    }
+
+
+    template<class T> 
+        sycl::buffer<T> vector_to_buf(std::vector<T> && vec){
+
+            u32 cnt = vec.size();
+            sycl::buffer<T> ret(cnt);
+
+            sycl::buffer<T> alias(vec.data(),cnt);
+
+            shamalgs::memory::copybuf_discard(alias, ret, cnt);
+
+            //HIPSYCL segfault otherwise because looks like the destructor of the sycl buffer 
+            //doesn't wait for the end of the queue resulting in out of bound access
+            #ifdef SYCL_COMP_OPENSYCL
+            shamsys::instance::get_compute_queue().wait();
+            #endif
+
+            return std::move(ret);
+
+        }
+
+        template<class T> 
+        sycl::buffer<T> vector_to_buf(std::vector<T> & vec){
+
+            u32 cnt = vec.size();
+            sycl::buffer<T> ret(cnt);
+
+            sycl::buffer<T> alias(vec.data(),cnt);
+
+            shamalgs::memory::copybuf_discard(alias, ret, cnt);
+
+            //HIPSYCL segfault otherwise because looks like the destructor of the sycl buffer 
+            //doesn't wait for the end of the queue resulting in out of bound access
+            #ifdef SYCL_COMP_OPENSYCL
+            shamsys::instance::get_compute_queue().wait();
+            #endif
+
+            return std::move(ret);
+
+        }
 
 
 

@@ -618,8 +618,8 @@ void test_inclusion(u32 Npart, u32 reduc_level) {
     std::string comment;
 
     {
-        sycl::host_accessor tree_acc_pos_min_cell{*rtree.buf_pos_min_cell, sycl::read_only};
-        sycl::host_accessor tree_acc_pos_max_cell{*rtree.buf_pos_max_cell, sycl::read_only};
+        sycl::host_accessor tree_acc_pos_min_cell{*rtree.tree_cell_ranges.buf_pos_min_cell, sycl::read_only};
+        sycl::host_accessor tree_acc_pos_max_cell{*rtree.tree_cell_ranges.buf_pos_max_cell, sycl::read_only};
         u32 tree_leaf_offset = rtree.tree_struct.internal_cell_count;
         sycl::host_accessor tree_lchild_id{*rtree.tree_struct.buf_lchild_id, sycl::read_only};
         sycl::host_accessor tree_rchild_id{*rtree.tree_struct.buf_rchild_id, sycl::read_only};

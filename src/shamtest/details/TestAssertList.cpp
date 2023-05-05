@@ -7,7 +7,7 @@
 // -------------------------------------------------------//
 
 #include "TestAssertList.hpp"
-#include "shamrock/legacy/utils/string_utils.hpp"
+
 
 namespace shamtest::details {
     

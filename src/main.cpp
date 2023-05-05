@@ -41,9 +41,8 @@
 #include "shamsys/legacy/sycl_handler.hpp"
 #include "shamsys/legacy/sycl_mpi_interop.hpp"
 #include "shamrock/tree/RadixTree.hpp"
-#include "shamrock/legacy/utils/string_utils.hpp"
+
 #include "shambase/time.hpp"
-#include "shammodels/generic/physics/units.hpp"
 #include "shammodels/sph/base/kernels.hpp"
 #include "shammodels/sph/base/kernels.hpp"
 #include "shammodels/sph/base/sphpart.hpp"
@@ -730,26 +729,6 @@ int main(int argc, char *argv[]) {
 
 
         }else{
-            using namespace units;
-
-            Units<f64> code_units(
-                yr_s,
-                au_m,
-                earth_mass_kg,
-                1,
-                1,
-                1,
-                1
-            );
-
-            //to init values in code
-            f64 planet_mass = 2*code_units.jupiter_mass;
-
-            std::cout << "planet mass : " << planet_mass << " code_unit mass" << std::endl;
-
-            std::cout << "planet mass : " << planet_mass/code_units.jupiter_mass << " " << get_symbol(jupiter_mass) << std::endl;
-
-
 
 
 

@@ -12,13 +12,13 @@
 #include "shamrock/legacy/patch/utility/full_tree_field.hpp"
 #include "shamrock/legacy/patch/utility/serialpatchtree.hpp"
 #include "shamrock/tree/RadixTree.hpp"
-#include "shammodels/generic/math/tensors/collections.hpp"
+#include "shamrock/math/tensors/collections.hpp"
 #include "shamrock/legacy/ShamrockCtx.hpp"
 
 #include "shammodels/generic/algs/integrators_utils.hpp"
 
 #include "shamrock/legacy/patch/comm/patch_object_mover.hpp"
-#include "shammodels/generic/physics/fmm.hpp"
+#include "shamrock/physics/fmm.hpp"
 
 
 const std::string console_tag = "[NBodySelfGrav] ";
@@ -178,8 +178,8 @@ void compute_multipoles(Tree & rtree, sycl::buffer<vec> & pos_part, sycl::buffer
         auto xyz = sycl::accessor {pos_part, cgh,sycl::read_only};
         auto cell_particle_ids =sycl::accessor {*rtree.tree_reduced_morton_codes.buf_reduc_index_map, cgh,sycl::read_only};
         auto particle_index_map = sycl::accessor {*rtree.tree_morton_codes.buf_particle_index_map, cgh,sycl::read_only};
-        auto cell_max = sycl::accessor{*rtree.buf_pos_max_cell_flt,cgh,sycl::read_only};
-        auto cell_min = sycl::accessor{*rtree.buf_pos_min_cell_flt,cgh,sycl::read_only};
+        auto cell_max = sycl::accessor{*rtree.tree_cell_ranges.buf_pos_max_cell_flt,cgh,sycl::read_only};
+        auto cell_min = sycl::accessor{*rtree.tree_cell_ranges.buf_pos_min_cell_flt,cgh,sycl::read_only};
         auto multipoles = sycl::accessor {grav_multipoles, cgh,sycl::write_only,sycl::no_init};
 
 
@@ -242,8 +242,8 @@ void compute_multipoles(Tree & rtree, sycl::buffer<vec> & pos_part, sycl::buffer
 
             u32 leaf_offset = rtree.tree_struct.internal_cell_count;
 
-            auto cell_max = sycl::accessor{*rtree.buf_pos_max_cell_flt,cgh,sycl::read_only};
-            auto cell_min = sycl::accessor{*rtree.buf_pos_min_cell_flt,cgh,sycl::read_only};
+            auto cell_max = sycl::accessor{*rtree.tree_cell_ranges.buf_pos_max_cell_flt,cgh,sycl::read_only};
+            auto cell_min = sycl::accessor{*rtree.tree_cell_ranges.buf_pos_min_cell_flt,cgh,sycl::read_only};
             auto multipoles = sycl::accessor {grav_multipoles, cgh,sycl::read_write};
             auto is_computed = sycl::accessor {*buf_is_computed, cgh , sycl::read_write};
 
@@ -540,8 +540,8 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(PatchScheduler &sched, f64 old_ti
 
                 sycl::range<1> range_tree = sycl::range<1>{rtree.tree_reduced_morton_codes.tree_leaf_count + rtree.tree_struct.internal_cell_count};
 
-                auto pos_min_cell = sycl::accessor{*rtree.buf_pos_min_cell_flt,cgh,sycl::read_only};
-                auto pos_max_cell = sycl::accessor{*rtree.buf_pos_max_cell_flt,cgh,sycl::read_only};
+                auto pos_min_cell = sycl::accessor{*rtree.tree_cell_ranges.buf_pos_min_cell_flt,cgh,sycl::read_only};
+                auto pos_max_cell = sycl::accessor{*rtree.tree_cell_ranges.buf_pos_max_cell_flt,cgh,sycl::read_only};
 
 
                 auto c_centers = sycl::accessor{*cell_centers,cgh,sycl::write_only,sycl::no_init};
@@ -636,8 +636,8 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(PatchScheduler &sched, f64 old_ti
             field_max->nvar = 1;
             field_max->radix_tree_field_buf = std::make_unique<sycl::buffer<flt>>(total_cell_bount);
 
-            auto & buf_pos_min_cell_flt = rtree_ptr->buf_pos_min_cell_flt;
-            auto & buf_pos_max_cell_flt = rtree_ptr->buf_pos_max_cell_flt;
+            auto & buf_pos_min_cell_flt = rtree_ptr->tree_cell_ranges.buf_pos_min_cell_flt;
+            auto & buf_pos_max_cell_flt = rtree_ptr->tree_cell_ranges.buf_pos_max_cell_flt;
 
             auto & rfield_buf_min = field_min->radix_tree_field_buf;
             auto & rfield_buf_max = field_max->radix_tree_field_buf;
@@ -897,8 +897,8 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(PatchScheduler &sched, f64 old_ti
 
                     sycl::range<1> range_tree = sycl::range<1>{rtree_interf.tree_reduced_morton_codes.tree_leaf_count + rtree_interf.tree_struct.internal_cell_count};
 
-                    auto pos_min_cell = sycl::accessor{*rtree_interf.buf_pos_min_cell_flt,cgh,sycl::read_only};
-                    auto pos_max_cell = sycl::accessor{*rtree_interf.buf_pos_max_cell_flt,cgh,sycl::read_only};
+                    auto pos_min_cell = sycl::accessor{*rtree_interf.tree_cell_ranges.buf_pos_min_cell_flt,cgh,sycl::read_only};
+                    auto pos_max_cell = sycl::accessor{*rtree_interf.tree_cell_ranges.buf_pos_max_cell_flt,cgh,sycl::read_only};
 
 
                     auto c_centers = sycl::accessor{*interf_cell_centers,cgh,sycl::write_only,sycl::no_init};

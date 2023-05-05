@@ -17,7 +17,6 @@
 
 #include "shamsys/legacy/log.hpp"
 #include "shamsys/legacy/sycl_mpi_interop.hpp"
-#include "shamrock/legacy/utils/string_utils.hpp"
 
 #include "cmdopt.hpp"
 

@@ -6,7 +6,7 @@
 //
 // -------------------------------------------------------//
 
-#include "shamrock/legacy/patch/base/patchtree.hpp"
+#include "shamrock/scheduler/PatchTree.hpp"
 
 #include "shamtest/shamtest.hpp"
 #include <map>

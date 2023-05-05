@@ -18,7 +18,7 @@
 #include "shambase/time.hpp"
 #include "shamsys/legacy/cmdopt.hpp"
 #include "shamsys/legacy/log.hpp"
-#include "shamrock/legacy/utils/string_utils.hpp"
+
 #include "shamsys/legacy/sycl_handler.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/MpiWrapper.hpp"

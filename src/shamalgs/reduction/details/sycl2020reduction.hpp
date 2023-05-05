@@ -8,9 +8,8 @@
 
 #pragma once
 
-#include "aliases.hpp"
+#include "shambase/sycl.hpp"
 
-#include "shamrock/legacy/algs/sycl/basic/basic.hpp"
 
 namespace shamalgs::reduction::details {
 

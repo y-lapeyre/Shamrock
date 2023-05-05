@@ -14,11 +14,11 @@
 #include <memory>
 #include <vector>
 
+#include "shamalgs/memory/memory.hpp"
 #include "shamalgs/numeric/numeric.hpp"
 #include "shambase/exception.hpp"
 #include "shambase/sycl.hpp"
 #include "shambase/string.hpp"
-#include "shamrock/legacy/algs/sycl/defs.hpp"
 #include "shamrock/math/integerManip.hpp"
 
 class Kernel_generate_split_table_morton32;
@@ -204,7 +204,7 @@ void make_indexmap(
         }
 
         buf_reduc_index_map =
-            std::make_unique<sycl::buffer<u32>>(syclalgs::convert::vector_to_buf(reduc_index_map));
+            std::make_unique<sycl::buffer<u32>>(shamalgs::memory::vector_to_buf(reduc_index_map));
 
     }
 }

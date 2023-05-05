@@ -24,25 +24,24 @@
 
 
 
+
 template <class u_morton, class vec3 ,u32 dim>
 RadixTree<u_morton, vec3, dim>::RadixTree(
-    sycl::queue &queue, std::tuple<vec3, vec3> treebox, const std::unique_ptr<sycl::buffer<vec3>> &pos_buf, u32 cnt_obj, u32 reduc_level
+    sycl::queue &queue, std::tuple<vec3, vec3> treebox, sycl::buffer<vec3> & pos_buf, u32 cnt_obj, u32 reduc_level
 ) {
     if (cnt_obj > i32_max - 1) {
         throw shambase::throw_with_loc<std::runtime_error>("number of element in patch above i32_max-1");
     }
 
-    obj_cnt = cnt_obj;
-
     logger::debug_sycl_ln("RadixTree", "box dim :", std::get<0>(treebox), std::get<1>(treebox));
 
     bounding_box = treebox;
 
-    tree_morton_codes.build(queue, shammath::CoordRange<vec3>{treebox}, cnt_obj, *pos_buf);
+    tree_morton_codes.build(queue, shammath::CoordRange<vec3>{treebox}, cnt_obj, pos_buf);
 
     bool one_cell_mode;
 
-    tree_reduced_morton_codes.build(queue,obj_cnt,reduc_level,tree_morton_codes,one_cell_mode);
+    tree_reduced_morton_codes.build(queue,tree_morton_codes.obj_cnt,reduc_level,tree_morton_codes,one_cell_mode);
 
     if (!one_cell_mode) {
         tree_struct.build(queue, tree_reduced_morton_codes.tree_leaf_count - 1, *tree_reduced_morton_codes.buf_tree_morton);
@@ -54,71 +53,64 @@ RadixTree<u_morton, vec3, dim>::RadixTree(
 
 
 
+template <class u_morton, class vec3 ,u32 dim>
+RadixTree<u_morton, vec3, dim>::RadixTree(
+    sycl::queue &queue, std::tuple<vec3, vec3> treebox, const std::unique_ptr<sycl::buffer<vec3>> &pos_buf, u32 cnt_obj, u32 reduc_level
+) : RadixTree(queue,treebox,shambase::get_check_ref(pos_buf), cnt_obj, reduc_level){}
+
+
+
+template <class u_morton, class vec3 ,u32 dim>
+void RadixTree<u_morton, vec3, dim>::serialize(shamalgs::SerializeHelper &serializer) {
+    StackEntry stack_loc{};
+
+    serializer.write(std::get<0>(bounding_box));
+    serializer.write(std::get<1>(bounding_box));
+    tree_morton_codes.serialize(serializer);
+    tree_reduced_morton_codes.serialize(serializer);
+    tree_struct.serialize(serializer);
+    tree_cell_ranges.serialize(serializer);
+}
+
+template <class u_morton, class pos_t ,u32 dim>
+u64 RadixTree<u_morton, pos_t, dim>::serialize_byte_size(){
+    using H = shamalgs::SerializeHelper;
+    return H::serialize_byte_size<pos_t>()*2 
+        + tree_morton_codes.serialize_byte_size()
+        + tree_reduced_morton_codes.serialize_byte_size()
+        + tree_struct.serialize_byte_size()
+        + tree_cell_ranges.serialize_byte_size();
+}
+
+template <class u_morton, class pos_t ,u32 dim>
+RadixTree<u_morton, pos_t, dim> RadixTree<u_morton, pos_t, dim>::deserialize(shamalgs::SerializeHelper &serializer) {
+    StackEntry stack_loc{};
+
+    RadixTree ret;
+
+    serializer.load(std::get<0>(ret.bounding_box));
+    serializer.load(std::get<1>(ret.bounding_box));
+
+    using namespace shamrock::tree;
+
+    ret.tree_morton_codes = TreeMortonCodes<u_morton>::deserialize(serializer);
+    ret.tree_reduced_morton_codes = TreeReducedMortonCodes<u_morton>::deserialize(serializer);
+    ret.tree_struct = TreeStructure<u_morton>::deserialize(serializer);
+    ret.tree_cell_ranges = TreeCellRanges<u_morton, pos_t>::deserialize(serializer);
+
+    return ret;
+}
+
 
 
 template <class u_morton, class vec3, u32 dim> void RadixTree<u_morton, vec3, dim>::compute_cell_ibounding_box(sycl::queue &queue) {
-    if (!tree_struct.one_cell_mode) {
-
-        logger::debug_sycl_ln("RadixTree", "compute_cellvolume");
-
-        buf_pos_min_cell = std::make_unique<sycl::buffer<ipos_t>>(tree_struct.internal_cell_count + tree_reduced_morton_codes.tree_leaf_count);
-        buf_pos_max_cell = std::make_unique<sycl::buffer<ipos_t>>(tree_struct.internal_cell_count + tree_reduced_morton_codes.tree_leaf_count);
-
-        sycl_compute_cell_ranges(
-            queue, tree_reduced_morton_codes.tree_leaf_count, tree_struct.internal_cell_count, tree_reduced_morton_codes.buf_tree_morton, tree_struct.buf_lchild_id, tree_struct.buf_rchild_id, tree_struct.buf_lchild_flag,
-            tree_struct.buf_rchild_flag, tree_struct.buf_endrange, buf_pos_min_cell, buf_pos_max_cell
-        );
-
-    } else {
-        // throw shamrock_exc("one cell mode is not implemented");
-        // TODO do some extensive test on one cell mode
-
-        buf_pos_min_cell = std::make_unique<sycl::buffer<ipos_t>>(tree_struct.internal_cell_count + tree_reduced_morton_codes.tree_leaf_count);
-        buf_pos_max_cell = std::make_unique<sycl::buffer<ipos_t>>(tree_struct.internal_cell_count + tree_reduced_morton_codes.tree_leaf_count);
-
-        {
-
-            sycl::host_accessor pos_min_cell {*buf_pos_min_cell, sycl::write_only, sycl::no_init};
-            sycl::host_accessor pos_max_cell {*buf_pos_max_cell, sycl::write_only, sycl::no_init};
-
-            pos_min_cell[0] = {0,0,0};
-            pos_max_cell[0] = {Morton::max_val,Morton::max_val,Morton::max_val};
-
-            pos_min_cell[1] = {0,0,0};
-            pos_max_cell[1] = {Morton::max_val,Morton::max_val,Morton::max_val};
-
-            pos_min_cell[2] = {0,0,0};
-            pos_max_cell[2] = {0,0,0};
-
-            logger::debug_sycl_ln("RadixTree", "compute_cellvolume one cell mode");
-            logger::debug_sycl_ln("RadixTree", " -> ",
-                pos_min_cell[0],
-                pos_max_cell[0],
-                pos_min_cell[1],
-                pos_max_cell[1],
-                pos_min_cell[2],
-                pos_max_cell[2],
-                "len =", 
-                tree_struct.internal_cell_count + tree_reduced_morton_codes.tree_leaf_count);
-        }
-    }
-
-
+    tree_cell_ranges.build1(queue, tree_reduced_morton_codes, tree_struct);
 }
 
 template <class morton_t, class pos_t, u32 dim> void RadixTree<morton_t, pos_t, dim>::convert_bounding_box(sycl::queue &queue) {
 
-
-    buf_pos_min_cell_flt = std::make_unique<sycl::buffer<pos_t>>(tree_struct.internal_cell_count + tree_reduced_morton_codes.tree_leaf_count);
-    buf_pos_max_cell_flt = std::make_unique<sycl::buffer<pos_t>>(tree_struct.internal_cell_count + tree_reduced_morton_codes.tree_leaf_count);
-
-    logger::debug_sycl_ln("RadixTree", "sycl_convert_cell_range");
-
-    shamrock::sfc::MortonKernels<morton_t, pos_t, dim>::sycl_irange_to_range(
-        queue, tree_reduced_morton_codes.tree_leaf_count + tree_struct.internal_cell_count, std::get<0>(bounding_box), std::get<1>(bounding_box), buf_pos_min_cell,
-        buf_pos_max_cell, buf_pos_min_cell_flt, buf_pos_max_cell_flt);
-
-    pos_t_range_built = true;
+    u32 total_count = tree_struct.internal_cell_count + tree_reduced_morton_codes.tree_leaf_count;
+    tree_cell_ranges.build2(queue, total_count, bounding_box);
 
 }
 
@@ -796,11 +788,11 @@ typename RadixTree<u_morton, vec3, dim>::CuttedTree RadixTree<u_morton, vec3, di
                 
                 sycl::accessor acc_new_node_id_to_old {*new_node_id_to_old,cgh,sycl::write_only, sycl::no_init};
                 
-                sycl::accessor new_tree_acc_pos_min_cell{*ret.buf_pos_min_cell,cgh,sycl::read_write};
-                sycl::accessor new_tree_acc_pos_max_cell{*ret.buf_pos_max_cell,cgh,sycl::read_write};
+                sycl::accessor new_tree_acc_pos_min_cell{*ret.tree_cell_ranges.buf_pos_min_cell,cgh,sycl::read_write};
+                sycl::accessor new_tree_acc_pos_max_cell{*ret.tree_cell_ranges.buf_pos_max_cell,cgh,sycl::read_write};
 
-                sycl::accessor old_tree_acc_pos_min_cell{*buf_pos_min_cell,cgh,sycl::read_only};
-                sycl::accessor old_tree_acc_pos_max_cell{*buf_pos_max_cell,cgh,sycl::read_only};
+                sycl::accessor old_tree_acc_pos_min_cell{*tree_cell_ranges.buf_pos_min_cell,cgh,sycl::read_only};
+                sycl::accessor old_tree_acc_pos_max_cell{*tree_cell_ranges.buf_pos_max_cell,cgh,sycl::read_only};
 
                 sycl::accessor old_tree_lchild_id   {*tree_struct.buf_lchild_id  ,cgh,sycl::read_only};
                 sycl::accessor old_tree_rchild_id   {*tree_struct.buf_rchild_id  ,cgh,sycl::read_only};
@@ -971,17 +963,17 @@ typename RadixTree<u_morton, vec3, dim>::CuttedTree RadixTree<u_morton, vec3, di
             ret.tree_reduced_morton_codes.tree_leaf_count + ret.tree_struct.internal_cell_count, 
             std::get<0>(ret.bounding_box), 
             std::get<1>(ret.bounding_box), 
-            ret.buf_pos_min_cell,
-            ret.buf_pos_max_cell, 
-            ret.buf_pos_min_cell_flt, 
-            ret.buf_pos_max_cell_flt
+            ret.tree_cell_ranges.buf_pos_min_cell,
+            ret.tree_cell_ranges.buf_pos_max_cell, 
+            ret.tree_cell_ranges.buf_pos_min_cell_flt, 
+            ret.tree_cell_ranges.buf_pos_max_cell_flt
         );
 
         //ret.print_tree_field(*new_node_id_to_old_v2);
 
         logger::debug_ln("TreeCutter",
             "tree cut cells:",tree_struct.internal_cell_count,"->",ret.tree_struct.internal_cell_count,
-            "obj:",obj_cnt,"->",extract_id.size()
+            "obj:",tree_morton_codes.obj_cnt,"->",extract_id.size()
             );
 
 
@@ -989,7 +981,7 @@ typename RadixTree<u_morton, vec3, dim>::CuttedTree RadixTree<u_morton, vec3, di
             std::move(ret), 
             std::move(new_node_id_to_old_v2), 
             std::make_unique<sycl::buffer<u32>>(
-                syclalgs::convert::vector_to_buf(std::move(extract_id))
+                shamalgs::memory::vector_to_buf(std::move(extract_id))
                 )};
 
     }

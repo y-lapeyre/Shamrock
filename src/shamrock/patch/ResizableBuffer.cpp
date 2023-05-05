@@ -51,7 +51,7 @@ void ResizableBuffer<T>::resize(u32 new_size) {
 
         alloc();
 
-        syclalgs::basic::copybuf_discard(*old_buf, *buf, val_cnt);
+        shamalgs::memory::copybuf_discard(*old_buf, *buf, val_cnt);
 
         logger::debug_alloc_ln("PatchDataField", "delete old buf : ");
         delete old_buf;
@@ -214,7 +214,8 @@ bool ResizableBuffer<T>::check_buf_match(const ResizableBuffer<T> &f2) const {
 
 template<class T>
 u64 ResizableBuffer<T>::serialize_buf_byte_size(){
-    return val_cnt*shamalgs::details::SerializeHelperMember<T>::szrepr;
+    using H = shamalgs::SerializeHelper;
+    return H::serialize_byte_size<T>(val_cnt);
 }
 
 template<class T>
