@@ -85,7 +85,8 @@ namespace shamalgs::collective {
      */
     template<class T>
     inline void vector_allgatherv(const std::vector<T> & send_vec ,const MPI_Datatype & send_type,std::vector<T> & recv_vec,const MPI_Datatype & recv_type,const MPI_Comm comm){
-
+        StackEntry stack_loc{};
+        
         u32 local_count = send_vec.size();
 
 
@@ -135,4 +136,16 @@ namespace shamalgs::collective {
         delete [] table_data_count;
         delete [] node_displacments_data_table;
     } 
+
+
+
+    template<class T>
+    inline void vector_allgatherv(const std::vector<T> & send_vec ,std::vector<T> & recv_vec,const MPI_Comm comm){
+        vector_allgatherv(send_vec, get_mpi_type<T>(), recv_vec, get_mpi_type<T>(), comm);
+    } 
+
+
+
+
+
 }
