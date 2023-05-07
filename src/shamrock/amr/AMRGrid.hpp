@@ -15,7 +15,7 @@
 #include "shamalgs/algorithm/algorithm.hpp"
 #include "shamrock/legacy/patch/scheduler/scheduler_mpi.hpp"
 #include "shamrock/math/integerManip.hpp"
-#include "shamrock/scheduler/DistributedData.hpp"
+#include "shambase/DistributedData.hpp"
 #include "shamrock/tree/RadixTreeMortonBuilder.hpp"
 #include "shamsys/legacy/log.hpp"
 #include <vector>
@@ -79,13 +79,13 @@ namespace shamrock::amr {
          *
          * @tparam Fct
          * @param f
-         * @return scheduler::DistributedData<SplitList>
+         * @return shambase::DistributedData<SplitList>
          */
-        scheduler::DistributedData<OptIndexList> gen_refinelists_native(
+        shambase::DistributedData<OptIndexList> gen_refinelists_native(
             std::function<void(u64, patch::Patch, patch::PatchData &, sycl::buffer<u32> &)> fct
         ) {
 
-            scheduler::DistributedData<OptIndexList> ret;
+            shambase::DistributedData<OptIndexList> ret;
 
             using namespace patch;
 
@@ -118,7 +118,7 @@ namespace shamrock::amr {
         }
 
         template<class UserAcc, class Fct, class ... T>
-        inline scheduler::DistributedData<OptIndexList> gen_refine_list(Fct &&lambd, T &&...args) {
+        inline shambase::DistributedData<OptIndexList> gen_refine_list(Fct &&lambd, T &&...args) {
             using namespace shamrock::patch;
 
             return gen_refinelists_native([&](u64 id_patch,
@@ -138,7 +138,7 @@ namespace shamrock::amr {
         }
 
 
-        inline u64 get_process_refine_count(scheduler::DistributedData<OptIndexList> & splits){
+        inline u64 get_process_refine_count(shambase::DistributedData<OptIndexList> & splits){
             u64 acc = 0;
 
             splits.for_each([&acc](u64 id, OptIndexList & idx_list){
@@ -151,9 +151,9 @@ namespace shamrock::amr {
 
 
         template<class UserAcc, class Fct>
-        scheduler::DistributedData<OptIndexList> gen_merge_list(Fct &&lambd){
+        shambase::DistributedData<OptIndexList> gen_merge_list(Fct &&lambd){
 
-            scheduler::DistributedData<OptIndexList> ret;
+            shambase::DistributedData<OptIndexList> ret;
             u64 tot_merge = 0;
 
             using MortonBuilder = RadixTreeMortonBuilder<u64, Tcoord, 3>;
@@ -275,7 +275,7 @@ namespace shamrock::amr {
          * @param lambd
          */
         template<class UserAcc, class Fct>
-        void apply_splits(scheduler::DistributedData<OptIndexList> &&splts, Fct &&lambd) {
+        void apply_splits(shambase::DistributedData<OptIndexList> &&splts, Fct &&lambd) {
 
             using namespace patch;
 
@@ -353,7 +353,7 @@ namespace shamrock::amr {
 
 
         template<class UserAcc, class Fct>
-        void apply_merge(scheduler::DistributedData<OptIndexList> &&splts, Fct &&lambd) {
+        void apply_merge(shambase::DistributedData<OptIndexList> &&splts, Fct &&lambd) {
 
             using namespace patch;
 
@@ -528,9 +528,9 @@ namespace shamrock::amr {
     // template<class Tcoord, u32 dim>
     // inline auto
     // AMRGrid<Tcoord, dim>::gen_splitlists(std::function<sycl::buffer<u32>(u64 , patch::Patch ,
-    // patch::PatchData &)> fct) -> scheduler::DistributedData<SplitList> {
+    // patch::PatchData &)> fct) -> shambase::DistributedData<SplitList> {
     //
-    //    scheduler::DistributedData<SplitList> ret;
+    //    shambase::DistributedData<SplitList> ret;
     //
     //    using namespace patch;
     //
