@@ -19,6 +19,7 @@
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/SyclMpiTypes.hpp"
 #include "shamsys/comm/details/CommunicationBufferImpl.hpp"
+#include <optional>
 #include <stdexcept>
 #include <vector>
 
@@ -36,8 +37,6 @@ namespace shamalgs::collective {
                        SerializeHelper::serialize_byte_size<u8>(lenght);
             }
         };
-
-        
 
         inline auto
         serialize_group_data(std::map<std::pair<i32, i32>, std::vector<DataTmp>> &send_data)
@@ -66,21 +65,22 @@ namespace shamalgs::collective {
 
             return serializers;
         }
- 
+
     } // namespace details
 
     using SerializedDDataComm = shambase::DistributedDataShared<std::unique_ptr<sycl::buffer<u8>>>;
 
     inline void distributed_data_sparse_comm(SerializedDDataComm &send_distrib_data,
-                                            SerializedDDataComm & recv_distrib_data,
+                                             SerializedDDataComm &recv_distrib_data,
                                              shamsys::CommunicationProtocol prot,
-                                             std::function<i32(u64)> rank_getter) {
+                                             std::function<i32(u64)> rank_getter,
+                                             std::optional<SparseCommTable> comm_table = {}) {
 
         using namespace shambase;
         using namespace shamsys;
         using DataTmp = details::DataTmp;
 
-        //prepare map
+        // prepare map
         std::map<std::pair<i32, i32>, std::vector<DataTmp>> send_data;
         send_distrib_data.for_each(
             [&](u64 sender, u64 receiver, std::unique_ptr<sycl::buffer<u8>> &buf) {
@@ -89,69 +89,72 @@ namespace shamalgs::collective {
                 send_data[key].push_back(DataTmp{sender, receiver, get_check_ref(buf).size(), buf});
             });
 
-        //serialize together similar communications
+        // serialize together similar communications
         std::map<std::pair<i32, i32>, SerializeHelper> serializers =
             details::serialize_group_data(send_data);
 
-        //recover bufs from serializers
+        // recover bufs from serializers
         std::map<std::pair<i32, i32>, std::unique_ptr<sycl::buffer<u8>>> send_bufs;
         for (auto &[key, ser] : serializers) {
             send_bufs[key] = ser.finalize();
         }
 
-        //prepare payload
+        // prepare payload
         std::vector<SendPayload> send_payoad;
         for (auto &[key, buf] : send_bufs) {
             send_payoad.push_back(
                 {key.second, std::make_unique<CommunicationBuffer>(get_check_ref(buf), prot)});
         }
 
-        //sparse comm
+        // sparse comm
         std::vector<RecvPayload> recv_payload;
-        base_sparse_comm(send_payoad, recv_payload, prot);
 
-        //make serializers from recv buffs
-        struct RecvPayloadSer{
+        if (comm_table) {
+            sparse_comm_c(send_payoad, recv_payload, prot, *comm_table);
+        } else {
+            base_sparse_comm(send_payoad, recv_payload, prot);
+        }
+
+        // make serializers from recv buffs
+        struct RecvPayloadSer {
             i32 sender_ranks;
             SerializeHelper ser;
         };
 
         std::vector<RecvPayloadSer> recv_payload_bufs;
 
-        for(RecvPayload & payload : recv_payload){
-            recv_payload_bufs.push_back(RecvPayloadSer{
-                payload.sender_ranks,
-                SerializeHelper(std::make_unique<sycl::buffer<u8>>(get_check_ref(payload.payload).copy_back()))
-            });
+        for (RecvPayload &payload : recv_payload) {
+            recv_payload_bufs.push_back(
+                RecvPayloadSer{payload.sender_ranks,
+                               SerializeHelper(std::make_unique<sycl::buffer<u8>>(
+                                   get_check_ref(payload.payload).copy_back()))});
         }
 
-        //deserialize into the shared distributed data
-        for(RecvPayloadSer & recv: recv_payload_bufs){
+        // deserialize into the shared distributed data
+        for (RecvPayloadSer &recv : recv_payload_bufs) {
             u64 cnt_obj;
             recv.ser.load(cnt_obj);
-            for(u32 i = 0; i < cnt_obj; i++){
-                u64 sender,receiver,lenght;
+            for (u32 i = 0; i < cnt_obj; i++) {
+                u64 sender, receiver, lenght;
 
                 recv.ser.load(sender);
                 recv.ser.load(receiver);
                 recv.ser.load(lenght);
 
-                {//check correctness ranks
-                    i32 supposed_sender_rank = rank_getter(sender) ;
-                    i32 real_sender_rank = recv.sender_ranks;
-                    if(supposed_sender_rank != real_sender_rank){
+                { // check correctness ranks
+                    i32 supposed_sender_rank = rank_getter(sender);
+                    i32 real_sender_rank     = recv.sender_ranks;
+                    if (supposed_sender_rank != real_sender_rank) {
                         throw throw_with_loc<std::runtime_error>("the rank do not matches");
                     }
                 }
 
-                recv_distrib_data.add_obj(sender, receiver, 
-                    std::make_unique<sycl::buffer<u8>>(lenght)
-                );
+                recv_distrib_data.add_obj(
+                    sender, receiver, std::make_unique<sycl::buffer<u8>>(lenght));
 
                 recv.ser.load_buf(*recv_distrib_data.get(sender, receiver), lenght);
             }
         }
-
     }
 
 } // namespace shamalgs::collective

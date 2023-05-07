@@ -14,6 +14,11 @@
 
 namespace shambase {
 
+    /**
+     * @brief Describe an object distributed accros patches (id = u64)
+     * 
+     * @tparam T 
+     */
     template<class T>
     class DistributedData {
 
@@ -37,6 +42,11 @@ namespace shambase {
         u64 get_element_count() { return data.size(); }
     };
 
+    /**
+     * @brief Describe an object common to two patches, typically interface (sender,receiver)
+     * 
+     * @tparam T 
+     */
     template<class T>
     class DistributedDataShared {
 
