@@ -17,7 +17,8 @@
 #include <map>
 #include <memory>
 
-TestStart(Unittest, "shamalgs/collective/distributedDataComm", testdistributeddatacomm, -1) {
+
+void distribdata_sparse_comm_test(std::string prefix, shamsys::CommunicationProtocol prot){
 
     using namespace shamalgs::collective;
     using namespace shamsys::instance;
@@ -28,7 +29,7 @@ TestStart(Unittest, "shamalgs/collective/distributedDataComm", testdistributedda
 
     u32 npatch       = wsize * 5;
     u32 nbuf_p_patch = 2;
-    u64 max_msg_len  = 1e5;
+    u64 max_msg_len  = 1e4;
 
     u64 seed = 0x123;
 
@@ -65,7 +66,7 @@ TestStart(Unittest, "shamalgs/collective/distributedDataComm", testdistributedda
 
     shamalgs::collective::SerializedDDataComm recv_data;
     distributed_data_sparse_comm(
-        send_data, recv_data, shamsys::DirectGPU, [&](u64 id) { return rank_owner[id]; });
+        send_data, recv_data, prot, [&](u64 id) { return rank_owner[id]; });
 
     shamalgs::collective::SerializedDDataComm recv_data_ref;
     dat_ref.for_each([&](u64 sender, u64 receiver, std::unique_ptr<sycl::buffer<u8>> &buf) {
@@ -85,4 +86,10 @@ TestStart(Unittest, "shamalgs/collective/distributedDataComm", testdistributedda
             "correct buffer",
             shamalgs::reduction::equals_ptr(buf, recv_data.get(sender, receiver)));
     });
+}
+
+TestStart(Unittest, "shamalgs/collective/distributedDataComm", testdistributeddatacomm, -1) {
+
+    distribdata_sparse_comm_test("CopyToHost mode : ",shamsys::CopyToHost);
+    distribdata_sparse_comm_test("DirectGPU  mode : ",shamsys::DirectGPU);
 }
