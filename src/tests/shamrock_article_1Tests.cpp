@@ -758,7 +758,7 @@ f64 amr_walk_perf(f64 lambda_tilde,
     shambase::Timer t_tree; t_tree.start();
     RadixTree<u64, u64_3, 3> tree(
             q,
-            grid.sched.get_sim_box().partch_coord_to_domain<u64_3>(p),
+            grid.sched.get_sim_box().patch_coord_to_domain<u64_3>(p),
             pdat.get_field<u64_3>(0).get_buf(),
             pdat.get_obj_cnt(),
             0

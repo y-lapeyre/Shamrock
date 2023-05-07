@@ -185,7 +185,7 @@ class AMRTestModel {
         grid.sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
             RadixTree<u64, u64_3, 3> tree(
                 q,
-                grid.sched.get_sim_box().partch_coord_to_domain<u64_3>(cur_p),
+                grid.sched.get_sim_box().patch_coord_to_domain<u64_3>(cur_p),
                 pdat.get_field<u64_3>(0).get_buf(),
                 pdat.get_obj_cnt(),
                 0

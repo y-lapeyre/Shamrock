@@ -134,7 +134,7 @@ std::vector<u64> PatchScheduler::add_root_patches(std::vector<shamrock::patch::P
 
         ret.push_back(root.id_patch);
         
-        //auto [bmin,bmax] = get_sim_box().partch_coord_to_domain<u64_3>(root);
+        //auto [bmin,bmax] = get_sim_box().patch_coord_to_domain<u64_3>(root);
         //
 //
         //logger::debug_ln("Scheduler", "adding patch : [ (",
@@ -175,7 +175,7 @@ void PatchScheduler::allpush_data(shamrock::patch::PatchData &pdat){
                             typename std::remove_reference<decltype(arg)>::type::field_T;
 
                 if constexpr (shambase::sycl_utils::VectorProperties<base_t>::dimension == 3){
-                    auto [bmin,bmax] = get_sim_box().partch_coord_to_domain<base_t>(cur_p)  ;
+                    auto [bmin,bmax] = get_sim_box().patch_coord_to_domain<base_t>(cur_p)  ;
 
                     logger::debug_sycl_ln("Scheduler", "pushing data in patch ", id_patch, "search range :",bmin, bmax);
 
