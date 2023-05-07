@@ -153,7 +153,7 @@ profile_map = {
     "dpcpp" : {
         "cuda" : "-fsycl -fsycl-targets=nvptx64-nvidia-cuda",
         "cuda_sm86" : "-fsycl -fsycl-targets=nvidia_gpu_sm_86",
-        "cuda_sm80" : "-fsycl -fsycl-targets=nvidia_gpu_sm_80",
+        "cuda_sm80" : "-fsycl -fsycl-targets=nvptx64-nvidia-cuda -Xsycl-target-backend --cuda-gpu-arch=sm_80",
         "cuda_sm75" : "-fsycl -fsycl-targets=nvidia_gpu_sm_75",
         "cuda_sm72" : "-fsycl -fsycl-targets=nvidia_gpu_sm_72",
         "cuda_sm70" : "-fsycl -fsycl-targets=nvidia_gpu_sm_70",

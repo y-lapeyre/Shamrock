@@ -8,12 +8,14 @@
 
 #include "NodeInstance.hpp"
 
+#include "shambase/exception.hpp"
 #include "shamsys/legacy/cmdopt.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamsys/MpiWrapper.hpp"
 #include "shamsys/legacy/sycl_mpi_interop.hpp"
 
 #include "MpiDataTypeHandler.hpp"
+#include <stdexcept>
 
 namespace shamsys::instance {
 
@@ -262,8 +264,17 @@ namespace shamsys::instance {
             }
 
         }
-
+        
         logger::raw_ln("--------------------------------------------------------------------------------");
+
+        if(sycl_info.alt_queue_id >= key_global){
+            throw shambase::throw_with_loc<std::invalid_argument>("the alt queue id is larger than the number of queue");
+        }
+
+        if(sycl_info.compute_queue_id >= key_global){
+            throw shambase::throw_with_loc<std::invalid_argument>("the compute queue id is larger than the number of queue");
+        }
+
 
         key_global = 0;
         for (const auto &Platform : Platforms) {

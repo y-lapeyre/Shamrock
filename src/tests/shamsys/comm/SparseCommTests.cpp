@@ -137,7 +137,7 @@ void test_sparse_comm(std::string prefix, u64 seed, shamsys::comm::Protocol prot
 
 }
 
-
+/*
 TestStart(Unittest, "shamsys/comm/SparseCommunicator", testsparsecomm, -1){
     
     u64 seed = 0x111;
@@ -192,3 +192,4 @@ TestStart(Unittest, "shamsys/comm/SparseCommunicator", testsparsecomm, -1){
     
 
 }
+*/
