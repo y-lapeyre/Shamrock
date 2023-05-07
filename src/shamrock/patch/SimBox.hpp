@@ -71,7 +71,7 @@ namespace shamrock::patch {
          * @param p the patch
          * @return std::tuple<T,T> the [low bound, high bound[ coordinate of the patch in the domain
          */
-        template <class T> std::tuple<T, T> partch_coord_to_domain(const Patch &p) const;
+        template <class T> std::tuple<T, T> patch_coord_to_domain(const Patch &p) const;
 
         // TODO implement box size reduction here
 
@@ -117,7 +117,7 @@ namespace shamrock::patch {
 
         template <class primtype>
         inline std::tuple<sycl::vec<primtype, 3>, sycl::vec<primtype, 3>> get_box(Patch &p) {
-            return partch_coord_to_domain<sycl::vec<primtype, 3>>(p);
+            return patch_coord_to_domain<sycl::vec<primtype, 3>>(p);
         }
 
         template<class T> inline PatchCoordTransform<T> get_transform(){
@@ -170,7 +170,7 @@ namespace shamrock::patch {
     }
 
     template <class T>
-    inline std::tuple<T, T> SimulationBoxInfo::partch_coord_to_domain(const Patch &p) const {
+    inline std::tuple<T, T> SimulationBoxInfo::patch_coord_to_domain(const Patch &p) const {
 
         //using ptype = typename shambase::sycl_utils::VectorProperties<T>::component_type;
 
