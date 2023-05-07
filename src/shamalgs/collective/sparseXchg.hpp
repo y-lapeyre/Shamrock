@@ -27,7 +27,7 @@ namespace shamalgs::collective {
     };
 
     struct RecvPayload{
-        i32 sender_ranks;
+        i32 sender_ranks; //should not be plural
         std::unique_ptr<shamsys::CommunicationBuffer> payload;
     };
 
