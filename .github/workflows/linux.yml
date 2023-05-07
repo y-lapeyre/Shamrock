@@ -183,6 +183,7 @@ jobs:
   shamrock_opensycl_omp_debug:
 
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     
     needs: cache_opensycl
 
@@ -240,7 +241,7 @@ jobs:
       - name: run Shamrock Unittests world_size = 3
         run: |
           cd opensycl_omp_debug
-          mpirun \
+          mpirun --oversubscribe \
             -n 1 -x LLVM_PROFILE_FILE=utests_3_0.profraw ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --unittest : \
             -n 1 -x LLVM_PROFILE_FILE=utests_3_1.profraw ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --unittest : \
             -n 1 -x LLVM_PROFILE_FILE=utests_3_2.profraw ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --unittest
@@ -248,7 +249,7 @@ jobs:
       - name: run Shamrock Unittests world_size = 4
         run: |
           cd opensycl_omp_debug
-          mpirun \
+          mpirun --oversubscribe \
             -n 1 -x LLVM_PROFILE_FILE=utests_4_0.profraw ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --unittest : \
             -n 1 -x LLVM_PROFILE_FILE=utests_4_1.profraw ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --unittest : \
             -n 1 -x LLVM_PROFILE_FILE=utests_4_2.profraw ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --unittest : \
