@@ -17,43 +17,9 @@
 #include "shamsys/SyclMpiTypes.hpp"
 #include "shamsys/comm/CommunicationBuffer.hpp"
 #include "shambase/integer.hpp"
+#include "shamsys/legacy/log.hpp"
 
 namespace shamalgs::collective {
-
-    struct SparseCommTable {
-        std::vector<u64_2> send_vec_comm_index;
-        std::vector<i32> send_vec_comm_tag;
-
-        std::vector<u64_2> global_comm_index;
-        std::vector<i32> global_comm_tag;
-
-        inline void build_send_vec_tags() {
-            StackEntry stack_loc{};
-            send_vec_comm_tag.resize(send_vec_comm_index.size());
-            i32 iterator = 0;
-            for (u64 i = 0; i < send_vec_comm_index.size(); i++) {
-                send_vec_comm_tag[i] = iterator;
-                iterator++;
-            }
-        }
-    };
-
-    inline SparseCommTable build_comm_table(std::vector<u64_2> &&send_vec_comm_index) {
-
-        StackEntry stack_loc{};
-
-        SparseCommTable comm_table;
-
-        comm_table.send_vec_comm_index = std::forward<std::vector<u64_2>>(send_vec_comm_index);
-
-        comm_table.build_send_vec_tags();
-
-        vector_allgatherv(
-            comm_table.send_vec_comm_index, comm_table.global_comm_index, MPI_COMM_WORLD);
-        vector_allgatherv(comm_table.send_vec_comm_tag, comm_table.global_comm_tag, MPI_COMM_WORLD);
-
-        return comm_table;
-    }
 
     struct SendPayload{
         i32 receiver_rank;
@@ -65,18 +31,20 @@ namespace shamalgs::collective {
         std::unique_ptr<shamsys::CommunicationBuffer> payload;
     };
 
-    template<class Func>
+
     inline void base_sparse_comm(
         const std::vector<SendPayload> & message_send,
         std::vector<RecvPayload> & message_recv,
         shamsys::CommunicationProtocol protocol
         ) 
     {
+        StackEntry stack_loc{};
+
         using namespace shamsys::instance;
 
 
         //share comm list accros nodes
-        std::vector<u64> send_vec_comm_ranks;
+        std::vector<u64> send_vec_comm_ranks(message_send.size());
 
         i32 iterator = 0;
         for (u64 i = 0; i < message_send.size(); i++) {
@@ -125,6 +93,7 @@ namespace shamalgs::collective {
             if(comm_ranks.y() == world_rank){
 
                 RecvPayload payload;
+                payload.sender_ranks = comm_ranks.x();
 
                 rqs.push_back(MPI_Request{});
                 u32 rq_index = rqs.size() - 1;
@@ -133,7 +102,7 @@ namespace shamalgs::collective {
                 MPI_Status st;
                 i32 cnt;
                 mpi::probe(comm_ranks.x(), i,MPI_COMM_WORLD, & st);
-                mpi::get_count(&st, get_mpi_type<u32>(), &cnt);
+                mpi::get_count(&st, MPI_BYTE, &cnt);
 
                 payload.payload = std::make_unique<shamsys::CommunicationBuffer>(cnt, protocol);
 
