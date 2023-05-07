@@ -31,28 +31,36 @@ namespace shamalgs::collective {
         std::unique_ptr<shamsys::CommunicationBuffer> payload;
     };
 
+    struct SparseCommTable{
+        std::vector<u64> local_send_vec_comm_ranks;
+        std::vector<u64> global_comm_ranks;
 
-    inline void base_sparse_comm(
-        const std::vector<SendPayload> & message_send,
+        void build(const std::vector<SendPayload> & message_send){
+            StackEntry stack_loc{};
+            using namespace shamsys::instance;
+
+            local_send_vec_comm_ranks.resize(message_send.size());
+
+            i32 iterator = 0;
+            for (u64 i = 0; i < message_send.size(); i++) {
+                local_send_vec_comm_ranks[i] = shambase::pack(world_rank, message_send[i].receiver_rank);
+            }
+
+            vector_allgatherv(local_send_vec_comm_ranks, global_comm_ranks, MPI_COMM_WORLD);
+        }
+    };
+
+    inline void sparse_comm_c(const std::vector<SendPayload> & message_send,
         std::vector<RecvPayload> & message_recv,
-        shamsys::CommunicationProtocol protocol
-        ) 
-    {
+        shamsys::CommunicationProtocol protocol,
+        const SparseCommTable & comm_table){
         StackEntry stack_loc{};
 
         using namespace shamsys::instance;
 
-
         //share comm list accros nodes
-        std::vector<u64> send_vec_comm_ranks(message_send.size());
-
-        i32 iterator = 0;
-        for (u64 i = 0; i < message_send.size(); i++) {
-            send_vec_comm_ranks[i] = shambase::pack(world_rank, message_send[i].receiver_rank);
-        }
-
-        std::vector<u64> global_comm_ranks;
-        vector_allgatherv(send_vec_comm_ranks, global_comm_ranks, MPI_COMM_WORLD);
+        const std::vector<u64> & send_vec_comm_ranks= comm_table.local_send_vec_comm_ranks;
+        const std::vector<u64> & global_comm_ranks = comm_table.global_comm_ranks;
 
 
         //note the tag cannot be bigger than max_i32 because of the allgatherv
@@ -122,6 +130,24 @@ namespace shamalgs::collective {
 
         std::vector<MPI_Status> st_lst(rqs.size());
         mpi::waitall(rqs.size(), rqs.data(), st_lst.data());
+    }
+
+
+    inline void base_sparse_comm(
+        const std::vector<SendPayload> & message_send,
+        std::vector<RecvPayload> & message_recv,
+        shamsys::CommunicationProtocol protocol
+        ) 
+    {
+        StackEntry stack_loc{};
+
+        using namespace shamsys::instance;
+
+        SparseCommTable comm_table;
+
+        comm_table.build(message_send);
+        
+        sparse_comm_c(message_send, message_recv, protocol, comm_table);
     }
 
 } // namespace shamalgs::collective
