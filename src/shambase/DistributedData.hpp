@@ -11,17 +11,14 @@
 #include "aliases.hpp"
 #include <map>
 
-namespace shamrock::scheduler {
+namespace shambase {
     template<class T>
     class DistributedData {
 
         std::map<u64, T> data;
 
         public:
-
-        void add_obj(u64 id , T && obj){
-            data.emplace(id,obj);
-        }
+        void add_obj(u64 id, T &&obj) { data.emplace(id, obj); }
 
         template<class Fct>
         void for_each(Fct &&f) {
@@ -30,10 +27,6 @@ namespace shamrock::scheduler {
             }
         }
 
-        T& get(u64 id){
-            return data.at(id);
-        }
-
-
+        T &get(u64 id) { return data.at(id); }
     };
-} // namespace shamrock::scheduler
+} // namespace shambase
