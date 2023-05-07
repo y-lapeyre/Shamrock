@@ -225,15 +225,22 @@ jobs:
           cd opensycl_omp_debug
           ninja
 
-      - name: run Shamrock Unittests
+      - name: run Shamrock Unittests world_size = 1
         run: |
           cd opensycl_omp_debug
           LLVM_PROFILE_FILE="utests.profraw" ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --unittest
 
+      - name: run Shamrock Unittests world_size = 2
+        run: |
+          cd opensycl_omp_debug
+          mpirun \
+            -n 1 -x LLVM_PROFILE_FILE=utests_2_0.profraw ./shamrock_test --sycl-cfg 1:1 --loglevel 0 --unittest : \
+            -n 1 -x LLVM_PROFILE_FILE=utests_2_1.profraw ./shamrock_test --sycl-cfg 1:1 --loglevel 0 --unittest
+
       - name: merge coverage reports
         run: |
           cd opensycl_omp_debug
-          llvm-profdata-15 merge -sparse utests.profraw -o utests.profdata
+          llvm-profdata-15 merge -sparse utests.profraw utests_2_0.profraw utests_2_1.profraw -o utests.profdata
 
 
       - name: print coverage
