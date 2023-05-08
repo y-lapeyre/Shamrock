@@ -16,7 +16,7 @@
 #include "shamrock/patch/Patch.hpp"
 #include "shamrock/legacy/patch/base/patchdata.hpp"
 //#include "shamrock/legacy/patch/patchdata_buffer.hpp"
-#include "shamrock/legacy/patch/scheduler/scheduler_patch_data.hpp"
+#include "shamrock/scheduler/SchedulerPatchData.hpp"
 #include "shamrock/legacy/utils/geometry_utils.hpp"
 
 #include "interface_generator_impl.hpp"

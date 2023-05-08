@@ -31,6 +31,19 @@
 
 
 namespace shamrock::scheduler {
+
+    struct LoadBalancingChangeList{
+        struct ChangeOp{
+            //u64 patch_id;
+            u64 patch_idx;
+            i32 rank_owner_old;
+            i32 rank_owner_new;
+            i32 tag_comm;
+        };
+
+        std::vector<ChangeOp> change_ops;
+    };
+
     /**
     * @brief hilbert load balancing
     * 
@@ -52,10 +65,10 @@ namespace shamrock::scheduler {
         * @brief generate the change list from the list of patch to run the load balancing
         * 
         * @param global_patch_list the global patch list
-        * @return std::vector<std::tuple<u64, i32, i32, i32>> list of changes to apply
+        * @return LoadBalancingChangeList list of changes to apply
         *    format = (index of the patch in global list,old owner rank,new owner rank,mpi communication tag)
         */
-        static std::vector<std::tuple<u64, i32, i32, i32>> make_change_list(std::vector<shamrock::patch::Patch> &global_patch_list);
+        static LoadBalancingChangeList make_change_list(std::vector<shamrock::patch::Patch> &global_patch_list);
 
     };
 

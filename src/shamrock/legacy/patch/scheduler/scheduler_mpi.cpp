@@ -244,7 +244,7 @@ void PatchScheduler::sync_build_LB(bool global_patch_sync, bool balance_load){
 
     if(balance_load){
         //real load balancing
-        std::vector<std::tuple<u64, i32, i32,i32>> change_list = LoadBalancer::make_change_list(patch_list.global);
+        shamrock::scheduler::LoadBalancingChangeList change_list = LoadBalancer::make_change_list(patch_list.global);
 
         //exchange data
         patch_data.apply_change_list(change_list, patch_list);
@@ -402,12 +402,12 @@ void PatchScheduler::scheduler_step(bool do_split_merge, bool do_load_balancing)
         auto t = timings::start_timer("load balancing", timings::function);
         timer.start();
         // generate LB change list 
-        std::vector<std::tuple<u64, i32, i32,i32>> change_list = 
+        shamrock::scheduler::LoadBalancingChangeList change_list = 
             LoadBalancer::make_change_list(patch_list.global);
         timer.end();
 
         logger::info_ln("Scheduler", "load balancing gen op",timer.get_time_str());
-        logger::debug_ln("Scheduler", " move operations",change_list.size());
+        logger::debug_ln("Scheduler", " move operations",change_list.change_ops.size());
 
         timer.start();
         // apply LB change list

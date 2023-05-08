@@ -34,7 +34,7 @@
 #include "shamrock/patch/PatchDataLayout.hpp"
 #include "shamrock/scheduler/PatchTree.hpp"
 #include "scheduler_patch_list.hpp"
-#include "scheduler_patch_data.hpp"
+#include "shamrock/scheduler/SchedulerPatchData.hpp"
 #include "shamrock/scheduler/HilbertLoadBalance.hpp"
 #include "shamsys/legacy/sycl_handler.hpp"
 

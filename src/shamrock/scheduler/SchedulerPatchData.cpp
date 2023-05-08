@@ -17,7 +17,7 @@
  * 
  */
 
-#include "scheduler_patch_data.hpp"
+#include "SchedulerPatchData.hpp"
 
 #include <stdexcept>
 #include <vector>
@@ -28,59 +28,48 @@
 #include "shamrock/patch/PatchDataLayout.hpp"
 #include "shamrock/legacy/utils/geometry_utils.hpp"
 #include "shambase/string.hpp"
+#include "shamrock/scheduler/HilbertLoadBalance.hpp"
 
 //TODO use range based loop and emplace_back instead 
 
-void SchedulerPatchData::apply_change_list(std::vector<std::tuple<u64, i32, i32,i32>> change_list,SchedulerPatchList& patch_list){
+void SchedulerPatchData::apply_change_list(const shamrock::scheduler::LoadBalancingChangeList & change_list,SchedulerPatchList& patch_list){
 
     auto t = timings::start_timer("SchedulerPatchData::apply_change_list", timings::mpi);
 
     std::vector<PatchDataMpiRequest> rq_lst;
 
-    //send
-    for(u32 i = 0 ; i < change_list.size(); i++){ // switch to range based
-        auto & [idx,old_owner,new_owner,tag_comm] = change_list[i];
+    using ChangeOp = shamrock::scheduler::LoadBalancingChangeList::ChangeOp;
 
-        //if i'm sender
-        if(old_owner == shamsys::instance::world_rank){
-            auto & patchdata = owned_data.at(patch_list.global[idx].id_patch);
-            patchdata_isend(patchdata, rq_lst, new_owner, tag_comm, MPI_COMM_WORLD);
+    //send
+    for(const ChangeOp op : change_list.change_ops){ // switch to range based
+         //if i'm sender
+        if(op.rank_owner_old == shamsys::instance::world_rank){
+            auto & patchdata = owned_data.at(patch_list.global[op.patch_idx].id_patch);
+            patchdata_isend(patchdata, rq_lst, op.rank_owner_new, op.tag_comm, MPI_COMM_WORLD);
         }
     }
 
     //receive
-    for(u32 i = 0 ; i < change_list.size(); i++){
-        auto & [idx,old_owner,new_owner,tag_comm] = change_list[i];
-        auto & id_patch = patch_list.global[idx].id_patch;
+    for(const ChangeOp op : change_list.change_ops){
+        auto & id_patch = patch_list.global[op.patch_idx].id_patch;
         
         //if i'm receiver
-        if(new_owner == shamsys::instance::world_rank){
+        if(op.rank_owner_new == shamsys::instance::world_rank){
             owned_data.emplace(id_patch,pdl);
-            patchdata_irecv_probe(owned_data.at(id_patch), rq_lst, old_owner, tag_comm, MPI_COMM_WORLD);
+            patchdata_irecv_probe(owned_data.at(id_patch), rq_lst, op.rank_owner_old , op.tag_comm, MPI_COMM_WORLD);
         }
     }
 
-    /*
-    for (MPI_Request a  : rq_lst) {
-        std::cout << shamsys::instance::world_rank << " " << a << std::endl;
-    }
-    */
-
-    //wait
-    //std::vector<MPI_Status> st_lst(rq_lst.size());
-    //mpi::waitall(rq_lst.size(), rq_lst.data(), st_lst.data());
     waitall_pdat_mpi_rq(rq_lst);
 
-
     //erase old patchdata
-    for(u32 i = 0 ; i < change_list.size(); i++){
-        auto & [idx,old_owner,new_owner,tag_comm] = change_list[i];
-        auto & id_patch = patch_list.global[idx].id_patch;
+    for(const ChangeOp op : change_list.change_ops){
+        auto & id_patch = patch_list.global[op.patch_idx].id_patch;
         
-        patch_list.global[idx].node_owner_id = new_owner;
+        patch_list.global[op.patch_idx].node_owner_id = op.rank_owner_new;
 
         //if i'm sender delete old data
-        if(old_owner == shamsys::instance::world_rank){
+        if(op.rank_owner_new == shamsys::instance::world_rank){
             owned_data.erase(id_patch);
         }
 

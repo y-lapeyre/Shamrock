@@ -26,9 +26,10 @@
 #include "shamrock/legacy/patch/base/patchdata.hpp"
 #include "shamrock/patch/Patch.hpp"
 
-#include "scheduler_patch_list.hpp"
+#include "shamrock/legacy/patch/scheduler/scheduler_patch_list.hpp"
 #include "shamrock/legacy/patch/sim_box.hpp"
 #include "shamrock/patch/PatchDataLayout.hpp"
+#include "shamrock/scheduler/HilbertLoadBalance.hpp"
 
 /**
  * @brief Class to handle PatchData owned by the node
@@ -59,7 +60,7 @@ class SchedulerPatchData {
      * @param patch_list
      */
     void apply_change_list(
-        std::vector<std::tuple<u64, i32, i32, i32>> change_list, SchedulerPatchList &patch_list
+        const shamrock::scheduler::LoadBalancingChangeList & change_list, SchedulerPatchList &patch_list
     );
 
     /**

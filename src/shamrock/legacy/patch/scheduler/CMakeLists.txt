@@ -9,7 +9,6 @@ target_sources(shamrock_lib
         
         
         scheduler_mpi.cpp 
-        scheduler_patch_data.cpp 
         scheduler_patch_list.cpp 
 
 
