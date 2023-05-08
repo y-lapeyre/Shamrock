@@ -70,21 +70,21 @@ void models::sph::SetupSPH<flt,Kernel>::add_particules_fcc(PatchScheduler & sche
 
         u64 insert_id = *sched.owned_patch_id.begin();
 
-        sched.patch_data.owned_data.at(insert_id).insert_elements(tmp);
+        sched.patch_data.get_pdat(insert_id).insert_elements(tmp);
     }
 
 
     //TODO apply position modulo here
 
-    for (auto & [pid,pdat] : sched.patch_data.owned_data) {
+    sched.patch_data.for_each_patchdata([&](u64 pid, shamrock::patch::PatchData & pdat){
         std::cout << "patch id : " << pid << " len = " << pdat.get_obj_cnt() << std::endl;
-    }
+    });
 
     sched.scheduler_step(false, false);
 
-    for (auto & [pid,pdat] : sched.patch_data.owned_data) {
+    sched.patch_data.for_each_patchdata([&](u64 pid, shamrock::patch::PatchData & pdat){
         std::cout << "patch id : " << pid << " len = " << pdat.get_obj_cnt() << std::endl;
-    }
+    });
 
     {
         auto [m,M] = sched.get_box_tranform<vec>();
@@ -100,15 +100,15 @@ void models::sph::SetupSPH<flt,Kernel>::add_particules_fcc(PatchScheduler & sche
         reatribute_particles(sched, sptree, periodic_mode);
     }
 
-    for (auto & [pid,pdat] : sched.patch_data.owned_data) {
+    sched.patch_data.for_each_patchdata([&](u64 pid, shamrock::patch::PatchData & pdat){
         std::cout << "patch id : " << pid << " len = " << pdat.get_obj_cnt() << std::endl;
-    }
+    });
 
     sched.scheduler_step(true, true);
 
-    for (auto & [pid,pdat] : sched.patch_data.owned_data) {
+    sched.patch_data.for_each_patchdata([&](u64 pid, shamrock::patch::PatchData & pdat){
         std::cout << "patch id : " << pid << " len = " << pdat.get_obj_cnt() << std::endl;
-    }
+    });
 }
 
 template class models::sph::SetupSPH<f32,models::sph::kernels::M4<f32>>;

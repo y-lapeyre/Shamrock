@@ -61,7 +61,7 @@ class AMRTestModel {
         using namespace shamrock::patch;
         using namespace shamalgs::memory;
 
-        PatchData &pdat = grid.sched.patch_data.owned_data.at(id);
+        PatchData &pdat = grid.sched.patch_data.get_pdat(id);
 
         std::vector<u64_3> mins =
             buf_to_vec(*pdat.get_field<u64_3>(0).get_buf(), pdat.get_obj_cnt());

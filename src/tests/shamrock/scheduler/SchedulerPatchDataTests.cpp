@@ -78,7 +78,7 @@ TestStart(Unittest, "shamrock/scheduler/SchedulerPatchData::apply_change_list", 
     SchedulerPatchData spdat(pdl,pcoord);
     for(u32 i = 0; i < npatch; i++){
         if(plist.global[i].node_owner_id == wrank){
-            spdat.owned_data.emplace(u64(i), ref_pdat[i].duplicate());
+            spdat.owned_data.add_obj(u64(i), ref_pdat[i].duplicate());
         }
     }
 

@@ -22,36 +22,47 @@
 
 #include <cmath>
 #include <map>
+#include <utility>
 
+#include "shambase/DistributedData.hpp"
 #include "shamrock/legacy/patch/base/patchdata.hpp"
 #include "shamrock/patch/Patch.hpp"
-
 #include "shamrock/legacy/patch/scheduler/scheduler_patch_list.hpp"
 #include "shamrock/legacy/patch/sim_box.hpp"
 #include "shamrock/patch/PatchDataLayout.hpp"
 #include "shamrock/scheduler/HilbertLoadBalance.hpp"
 
 namespace shamrock::scheduler {
+
+    using Patch             = shamrock::patch::Patch;
+    using PatchData         = shamrock::patch::PatchData;
+    using PatchDataLayout   = shamrock::patch::PatchDataLayout;
+    using SimulationBoxInfo = shamrock::patch::SimulationBoxInfo;
+
     /**
     * @brief Class to handle PatchData owned by the node
     *
     */
     class SchedulerPatchData {
         public:
-        shamrock::patch::PatchDataLayout &pdl;
+        PatchDataLayout &pdl;
 
         /**
         * @brief map container for patchdata owned by the current node (layout : id_patch,data)
         *
         */
-        std::map<u64, shamrock::patch::PatchData> owned_data;
+        shambase::DistributedData<PatchData> owned_data;
 
         inline bool has_patch(u64 id){
-            return owned_data.find(id) != owned_data.end();
+            return owned_data.has_key(id);
         }
 
-        inline shamrock::patch::PatchData & get_pdat(u64 id){
-            return owned_data.at(id);
+        inline PatchData & get_pdat(u64 id){
+            return owned_data.get(id);
+        }
+
+        inline void for_each_patchdata(std::function<void(u64, PatchData &)> &&f) {
+            owned_data.for_each(std::forward<std::function<void(u64, PatchData &)>>(f));
         }
 
         /**

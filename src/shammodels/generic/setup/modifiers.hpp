@@ -23,7 +23,7 @@ namespace generic::setup::modifiers {
 template <class T, class vec>
 inline void set_value_in_box(PatchScheduler &sched, T val, std::string name, std::tuple<vec, vec> box) {
 
-    for (auto &[pid, pdat] : sched.patch_data.owned_data) {
+    sched.patch_data.for_each_patchdata([&](u64 patch_id, shamrock::patch::PatchData & pdat){
 
         PatchDataField<vec> &xyz = pdat.template get_field<vec>(sched.pdl.get_field_idx<vec>("xyz"));
 
@@ -47,7 +47,7 @@ inline void set_value_in_box(PatchScheduler &sched, T val, std::string name, std
 
         }
         
-    }
+    });
 }
 
 template <class flt>
@@ -59,7 +59,7 @@ inline void pertub_eigenmode_wave(PatchScheduler &sched, std::tuple<flt, flt> am
         throw std::runtime_error("density perturbation not implemented");
     }
 
-    for (auto &[pid, pdat] : sched.patch_data.owned_data) {
+    sched.patch_data.for_each_patchdata([&](u64 patch_id, shamrock::patch::PatchData & pdat){
 
         PatchDataField<vec> &xyz  = pdat.template get_field<vec>(sched.pdl.get_field_idx<vec>("xyz"));
         PatchDataField<vec> &vxyz = pdat.template get_field<vec>(sched.pdl.get_field_idx<vec>("vxyz"));
@@ -85,7 +85,7 @@ inline void pertub_eigenmode_wave(PatchScheduler &sched, std::tuple<flt, flt> am
         }
 
         
-    }
+    });
 }
 
 } // namespace generic::setup::modifiers

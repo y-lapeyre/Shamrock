@@ -124,7 +124,7 @@ std::vector<u64> PatchScheduler::add_root_patches(std::vector<shamrock::patch::P
 
 
         if (shamsys::instance::world_rank == node_owner_id) {
-            patch_data.owned_data.insert({root.id_patch , PatchData(pdl)});
+            patch_data.owned_data.add_obj(root.id_patch , PatchData(pdl));
             logger::debug_sycl_ln("Scheduler", "adding patch data");
         } else{
             logger::debug_sycl_ln("Scheduler", "patch data wasn't added rank =",shamsys::instance::world_rank, " ower =",node_owner_id);
@@ -559,9 +559,9 @@ std::string PatchScheduler::dump_status(){
     ss << " -> SchedulerPatchData\n";
     ss << "    owned data : \n";
 
-    for (auto & [pid,pdat] : patch_data.owned_data) {
-        ss << "patch id : " << pid << " len = " << pdat.get_obj_cnt() << "\n";
-    }
+    patch_data.for_each_patchdata([&](u64 patch_id, shamrock::patch::PatchData & pdat){
+        ss << "patch id : " << patch_id << " len = " << pdat.get_obj_cnt() << "\n";
+    });
 
     /*
     for(auto & [k,pdat] : patch_data.owned_data){
@@ -821,7 +821,7 @@ std::vector<std::unique_ptr<shamrock::patch::PatchData>> PatchScheduler::gather_
     for (u32 i = 0; i < plist.size(); i++) {
         auto & cpatch = plist[i];
         if(cpatch.node_owner_id == shamsys::instance::world_rank){
-            patchdata_isend(pdata.at(cpatch.id_patch), rq_lst, 0, i, MPI_COMM_WORLD);
+            patchdata_isend(pdata.get(cpatch.id_patch), rq_lst, 0, i, MPI_COMM_WORLD);
         }
     }
 

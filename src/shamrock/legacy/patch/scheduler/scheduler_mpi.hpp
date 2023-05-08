@@ -31,6 +31,7 @@
 #include "shamrock/patch/Patch.hpp"
 #include "shamrock/legacy/patch/base/patchdata.hpp"
 //#include "shamrock/legacy/patch/patchdata_buffer.hpp"
+#include "shamrock/patch/PatchData.hpp"
 #include "shamrock/patch/PatchDataLayout.hpp"
 #include "shamrock/scheduler/PatchTree.hpp"
 #include "scheduler_patch_list.hpp"
@@ -97,13 +98,13 @@ class PatchScheduler{
 
     inline void update_local_dtcnt_value(){
         for(u64 id : owned_patch_id){
-            patch_list.local[patch_list.id_patch_to_local_idx[id]].data_count = patch_data.owned_data.at(id).get_obj_cnt();
+            patch_list.local[patch_list.id_patch_to_local_idx[id]].data_count = patch_data.owned_data.get(id).get_obj_cnt();
         }
     }
 
     inline void update_local_load_value(){
         for(u64 id : owned_patch_id){
-            patch_list.local[patch_list.id_patch_to_local_idx[id]].load_value = patch_data.owned_data.at(id).get_obj_cnt();
+            patch_list.local[patch_list.id_patch_to_local_idx[id]].load_value = patch_data.owned_data.get(id).get_obj_cnt();
         }
     }
 
@@ -220,17 +221,13 @@ class PatchScheduler{
     template<class Function>
     inline void for_each_patch_data(Function && fct){
 
-        for (auto &[id, pdat] : patch_data.owned_data) {
-
-
-            shamrock::patch::Patch &cur_p = patch_list.global[patch_list.id_patch_to_global_idx[id]];
+        patch_data.for_each_patchdata([&](u64 patch_id, shamrock::patch::PatchData & pdat){
+            shamrock::patch::Patch &cur_p = patch_list.global[patch_list.id_patch_to_global_idx[patch_id]];
 
             if(!cur_p.is_err_mode()){
-                fct(id,cur_p,pdat);
+                fct(patch_id,cur_p,pdat);
             }
-
-            
-        }
+        });
 
     }
 
@@ -239,17 +236,17 @@ class PatchScheduler{
 
         
 
-        for (auto &[id, pdat] : patch_data.owned_data) {
+        patch_data.for_each_patchdata([&](u64 patch_id, shamrock::patch::PatchData & pdat){
 
-            shamrock::patch::Patch &cur_p = patch_list.global[patch_list.id_patch_to_global_idx[id]];
+            shamrock::patch::Patch &cur_p = patch_list.global[patch_list.id_patch_to_global_idx[patch_id]];
 
 
             //TODO should feed the sycl queue to the lambda
             if(!cur_p.is_err_mode()){
-                fct(id,cur_p);
+                fct(patch_id,cur_p);
             }
             
-        }
+        });
 
     }
 
@@ -287,7 +284,7 @@ class PatchScheduler{
             shamrock::patch::Patch &cur_p = patch_list.local[idx];
 
             if(!cur_p.is_err_mode()){
-                field.local_nodes_value[idx] = lambda(shamsys::instance::get_compute_queue(),cur_p,patch_data.owned_data.at(cur_p.id_patch));
+                field.local_nodes_value[idx] = lambda(shamsys::instance::get_compute_queue(),cur_p,patch_data.owned_data.get(cur_p.id_patch));
             }
         }
 
