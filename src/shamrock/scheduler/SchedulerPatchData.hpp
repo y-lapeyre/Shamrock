@@ -75,14 +75,7 @@ class SchedulerPatchData {
      * @brief split a patchdata into 8 childs according to the 8 patches in arguments
      *
      * @param key_orginal key of the original patchdata
-     * @param p0
-     * @param p1
-     * @param p2
-     * @param p3
-     * @param p4
-     * @param p5
-     * @param p6
-     * @param p7
+     * @param patches the patches 
      */
     void split_patchdata(u64 key_orginal, const std::array<shamrock::patch::Patch, 8> patches);
 
@@ -90,14 +83,7 @@ class SchedulerPatchData {
      * @brief merge 8 old patchdata into one
      *
      * @param new_key new key to store the merge data in the map
-     * @param old_key0
-     * @param old_key1
-     * @param old_key2
-     * @param old_key3
-     * @param old_key4
-     * @param old_key5
-     * @param old_key6
-     * @param old_key7
+     * @param old_keys old patch ids
      */
     void merge_patchdata(
         u64 new_key,
