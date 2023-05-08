@@ -45,6 +45,14 @@ class SchedulerPatchData {
      */
     std::map<u64, shamrock::patch::PatchData> owned_data;
 
+    inline bool has_patch(u64 id){
+        return owned_data.find(id) != owned_data.end();
+    }
+
+    inline shamrock::patch::PatchData & get_pdat(u64 id){
+        return owned_data.at(id);
+    }
+
     /**
      * @brief simulation box geometry info
      *

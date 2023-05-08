@@ -166,6 +166,7 @@ LoadBalancingChangeList HilbertLoadBalance<hilbert_num>::make_change_list(std::v
             using ChangeOp = LoadBalancingChangeList::ChangeOp;
 
             ChangeOp op;
+            op.patch_idx = i;
             op.patch_id = global_patch_list[i].id_patch;
             op.rank_owner_new = new_owner;
             op.rank_owner_old = old_owner;
