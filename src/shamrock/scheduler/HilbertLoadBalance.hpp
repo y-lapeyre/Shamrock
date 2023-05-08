@@ -34,7 +34,7 @@ namespace shamrock::scheduler {
 
     struct LoadBalancingChangeList{
         struct ChangeOp{
-            //u64 patch_id;
+            u64 patch_id;
             u64 patch_idx;
             i32 rank_owner_old;
             i32 rank_owner_new;

@@ -44,14 +44,14 @@ void SchedulerPatchData::apply_change_list(const shamrock::scheduler::LoadBalanc
     for(const ChangeOp op : change_list.change_ops){ // switch to range based
          //if i'm sender
         if(op.rank_owner_old == shamsys::instance::world_rank){
-            auto & patchdata = owned_data.at(patch_list.global[op.patch_idx].id_patch);
+            auto & patchdata = owned_data.at(op.patch_id);
             patchdata_isend(patchdata, rq_lst, op.rank_owner_new, op.tag_comm, MPI_COMM_WORLD);
         }
     }
 
     //receive
     for(const ChangeOp op : change_list.change_ops){
-        auto & id_patch = patch_list.global[op.patch_idx].id_patch;
+        auto & id_patch = op.patch_id;
         
         //if i'm receiver
         if(op.rank_owner_new == shamsys::instance::world_rank){
@@ -64,12 +64,12 @@ void SchedulerPatchData::apply_change_list(const shamrock::scheduler::LoadBalanc
 
     //erase old patchdata
     for(const ChangeOp op : change_list.change_ops){
-        auto & id_patch = patch_list.global[op.patch_idx].id_patch;
+        auto & id_patch = op.patch_id;
         
         patch_list.global[op.patch_idx].node_owner_id = op.rank_owner_new;
 
         //if i'm sender delete old data
-        if(op.rank_owner_new == shamsys::instance::world_rank){
+        if(op.rank_owner_old == shamsys::instance::world_rank){
             owned_data.erase(id_patch);
         }
 
