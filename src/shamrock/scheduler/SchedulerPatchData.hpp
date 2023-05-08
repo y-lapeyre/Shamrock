@@ -101,14 +101,7 @@ class SchedulerPatchData {
      */
     void merge_patchdata(
         u64 new_key,
-        u64 old_key0,
-        u64 old_key1,
-        u64 old_key2,
-        u64 old_key3,
-        u64 old_key4,
-        u64 old_key5,
-        u64 old_key6,
-        u64 old_key7
+        const std::array<u64,8> old_keys
     );
 
     inline SchedulerPatchData(

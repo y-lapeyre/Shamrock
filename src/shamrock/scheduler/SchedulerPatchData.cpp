@@ -205,40 +205,40 @@ void SchedulerPatchData::split_patchdata(u64 key_orginal, const std::array<shamr
 
 
 
-void SchedulerPatchData::merge_patchdata(u64 new_key, u64 old_key0, u64 old_key1, u64 old_key2, u64 old_key3, u64 old_key4, u64 old_key5, u64 old_key6, u64 old_key7){
+void SchedulerPatchData::merge_patchdata(u64 new_key, const std::array<u64,8> old_keys){
 
-    auto search0 = owned_data.find(old_key0);
-    auto search1 = owned_data.find(old_key1);
-    auto search2 = owned_data.find(old_key2);
-    auto search3 = owned_data.find(old_key3);
-    auto search4 = owned_data.find(old_key4);
-    auto search5 = owned_data.find(old_key5);
-    auto search6 = owned_data.find(old_key6);
-    auto search7 = owned_data.find(old_key7);
+    auto search0 = owned_data.find(old_keys[0]);
+    auto search1 = owned_data.find(old_keys[1]);
+    auto search2 = owned_data.find(old_keys[2]);
+    auto search3 = owned_data.find(old_keys[3]);
+    auto search4 = owned_data.find(old_keys[4]);
+    auto search5 = owned_data.find(old_keys[5]);
+    auto search6 = owned_data.find(old_keys[6]);
+    auto search7 = owned_data.find(old_keys[7]);
 
     if(search0 == owned_data.end()){
-        throw shambase::throw_with_loc<std::runtime_error>(shambase::format_printf("patchdata for key=%d was not owned by the node",old_key0));
+        throw shambase::throw_with_loc<std::runtime_error>(shambase::format_printf("patchdata for key=%d was not owned by the node",old_keys[0]));
     }
     if(search1 == owned_data.end()){
-        throw shambase::throw_with_loc<std::runtime_error>(shambase::format_printf("patchdata for key=%d was not owned by the node",old_key1));
+        throw shambase::throw_with_loc<std::runtime_error>(shambase::format_printf("patchdata for key=%d was not owned by the node",old_keys[1]));
     }
     if(search2 == owned_data.end()){
-        throw shambase::throw_with_loc<std::runtime_error>(shambase::format_printf("patchdata for key=%d was not owned by the node",old_key2));
+        throw shambase::throw_with_loc<std::runtime_error>(shambase::format_printf("patchdata for key=%d was not owned by the node",old_keys[2]));
     }
     if(search3 == owned_data.end()){
-        throw shambase::throw_with_loc<std::runtime_error>(shambase::format_printf("patchdata for key=%d was not owned by the node",old_key3));
+        throw shambase::throw_with_loc<std::runtime_error>(shambase::format_printf("patchdata for key=%d was not owned by the node",old_keys[3]));
     }
     if(search4 == owned_data.end()){
-        throw shambase::throw_with_loc<std::runtime_error>(shambase::format_printf("patchdata for key=%d was not owned by the node",old_key4));
+        throw shambase::throw_with_loc<std::runtime_error>(shambase::format_printf("patchdata for key=%d was not owned by the node",old_keys[4]));
     }
     if(search5 == owned_data.end()){
-        throw shambase::throw_with_loc<std::runtime_error>(shambase::format_printf("patchdata for key=%d was not owned by the node",old_key5));
+        throw shambase::throw_with_loc<std::runtime_error>(shambase::format_printf("patchdata for key=%d was not owned by the node",old_keys[5]));
     }
     if(search6 == owned_data.end()){
-        throw shambase::throw_with_loc<std::runtime_error>(shambase::format_printf("patchdata for key=%d was not owned by the node",old_key6));
+        throw shambase::throw_with_loc<std::runtime_error>(shambase::format_printf("patchdata for key=%d was not owned by the node",old_keys[6]));
     }
     if(search7 == owned_data.end()){
-        throw shambase::throw_with_loc<std::runtime_error>(shambase::format_printf("patchdata for key=%d was not owned by the node",old_key7));
+        throw shambase::throw_with_loc<std::runtime_error>(shambase::format_printf("patchdata for key=%d was not owned by the node",old_keys[7]));
     }
 
 
@@ -253,14 +253,14 @@ void SchedulerPatchData::merge_patchdata(u64 new_key, u64 old_key0, u64 old_key1
     new_pdat.insert_elements(search6->second);
     new_pdat.insert_elements(search7->second);
 
-    owned_data.erase(old_key0);
-    owned_data.erase(old_key1);
-    owned_data.erase(old_key2);
-    owned_data.erase(old_key3);
-    owned_data.erase(old_key4);
-    owned_data.erase(old_key5);
-    owned_data.erase(old_key6);
-    owned_data.erase(old_key7);
+    owned_data.erase(old_keys[0]);
+    owned_data.erase(old_keys[1]);
+    owned_data.erase(old_keys[2]);
+    owned_data.erase(old_keys[3]);
+    owned_data.erase(old_keys[4]);
+    owned_data.erase(old_keys[5]);
+    owned_data.erase(old_keys[6]);
+    owned_data.erase(old_keys[7]);
 
 
     owned_data.insert({new_key ,new_pdat});
