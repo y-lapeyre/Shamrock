@@ -54,6 +54,7 @@ class PatchScheduler{
     static constexpr u64 max_axis_patch_coord_lenght = LoadBalancer::max_box_sz+1;
 
     using PatchTree = shamrock::scheduler::PatchTree;
+    using SchedulerPatchData = shamrock::scheduler::SchedulerPatchData;
 
     shamrock::patch::PatchDataLayout & pdl;
 

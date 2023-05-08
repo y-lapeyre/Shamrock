@@ -29,7 +29,7 @@
 #include "shamrock/legacy/utils/geometry_utils.hpp"
 #include "shambase/string.hpp"
 #include "shamrock/scheduler/HilbertLoadBalance.hpp"
-
+namespace shamrock::scheduler {
 //TODO use range based loop and emplace_back instead 
 
 void SchedulerPatchData::apply_change_list(const shamrock::scheduler::LoadBalancingChangeList & change_list,SchedulerPatchList& patch_list){
@@ -159,28 +159,28 @@ void SchedulerPatchData::split_patchdata(u64 key_orginal, const std::array<shamr
 
         if(pdl.check_main_field_type<f32_3>()){
 
-            ::split_patchdata<f32_3>(
+            shamrock::scheduler::split_patchdata<f32_3>(
                     original_pd,
                     sim_box,
                     patches,
                     {pd0,pd1,pd2,pd3,pd4,pd5,pd6,pd7});
         }else if(pdl.check_main_field_type<f64_3>()){
 
-            ::split_patchdata<f64_3>(
+            shamrock::scheduler::split_patchdata<f64_3>(
                     original_pd,
                     sim_box,
                     patches,
                     {pd0,pd1,pd2,pd3,pd4,pd5,pd6,pd7});
         }else if(pdl.check_main_field_type<u32_3>()){
 
-            ::split_patchdata<u32_3>(
+            shamrock::scheduler::split_patchdata<u32_3>(
                     original_pd,
                     sim_box,
                     patches,
                     {pd0,pd1,pd2,pd3,pd4,pd5,pd6,pd7});
         }else if(pdl.check_main_field_type<u64_3>()){
 
-            ::split_patchdata<u64_3>(
+            shamrock::scheduler::split_patchdata<u64_3>(
                     original_pd,
                     sim_box,
                     patches,
@@ -265,4 +265,5 @@ void SchedulerPatchData::merge_patchdata(u64 new_key, const std::array<u64,8> ol
 
     owned_data.insert({new_key ,new_pdat});
 
+}
 }
