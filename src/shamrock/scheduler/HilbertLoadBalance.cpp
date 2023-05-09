@@ -30,13 +30,13 @@ template<class T> class Edit_chosen_node;
 
 
 template<class hilbert_num>
-std::vector<std::tuple<u64, i32, i32, i32>> HilbertLoadBalance<hilbert_num>::make_change_list(std::vector<shamrock::patch::Patch> &global_patch_list) {
+LoadBalancingChangeList HilbertLoadBalance<hilbert_num>::make_change_list(std::vector<shamrock::patch::Patch> &global_patch_list) {
 
     using namespace shamrock::patch;
 
     auto t = timings::start_timer("HilbertLoadBalance::make_change_list", timings::function);
 
-    std::vector<std::tuple<u64, i32, i32, i32>> change_list;
+    LoadBalancingChangeList change_list;
 
 
     //generate hilbert code, load value, and index before sort
@@ -163,8 +163,17 @@ std::vector<std::tuple<u64, i32, i32, i32>> HilbertLoadBalance<hilbert_num>::mak
             // TODO add bool for optional print verbosity
             //std::cout << i << " : " << old_owner << " -> " << new_owner << std::endl;
 
+            using ChangeOp = LoadBalancingChangeList::ChangeOp;
+
+            ChangeOp op;
+            op.patch_idx = i;
+            op.patch_id = global_patch_list[i].id_patch;
+            op.rank_owner_new = new_owner;
+            op.rank_owner_old = old_owner;
+            op.tag_comm = tags_it_node[old_owner];
+
             if(new_owner != old_owner){
-                change_list.push_back({i,old_owner,new_owner,tags_it_node[old_owner]});
+                change_list.change_ops.push_back(op);
                 tags_it_node[old_owner] ++;
             }
 

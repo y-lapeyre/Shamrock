@@ -369,7 +369,7 @@ inline void dump_patch_data(std::string prefix, PatchScheduler & sched){
 
     {
 
-        for(auto & [pid,pdat] : sched.patch_data.owned_data){
+        sched.patch_data.for_each_patchdata([&](u64 pid, shamrock::patch::PatchData & pdat){
 
             std::cout << "[" << shamsys::instance::world_rank << "] writing pdat : " << pid << std::endl;
             
@@ -379,7 +379,7 @@ inline void dump_patch_data(std::string prefix, PatchScheduler & sched){
 
             file_write_patchdata(mfilepatch, pdat);
 
-        }
+        });
 
 
         

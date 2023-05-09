@@ -139,7 +139,7 @@ class Interfacehandler<Tree_Send,pos_prec,RadixTree<u_morton, sycl::vec<pos_prec
             auto & comm = interf_send_map[i];
             UnrolledCutTree & ctree = tree_send_map;
 
-            PatchData & pdat_to_cut = sched.patch_data.owned_data.at(comm.sender_patch_id);
+            PatchData & pdat_to_cut = sched.patch_data.get_pdat(comm.sender_patch_id);
 
             src.push_back(std::make_unique<PatchData>(sched.pdl));
             

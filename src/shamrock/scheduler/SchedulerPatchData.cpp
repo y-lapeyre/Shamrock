@@ -17,7 +17,7 @@
  * 
  */
 
-#include "scheduler_patch_data.hpp"
+#include "SchedulerPatchData.hpp"
 
 #include <stdexcept>
 #include <vector>
@@ -28,59 +28,48 @@
 #include "shamrock/patch/PatchDataLayout.hpp"
 #include "shamrock/legacy/utils/geometry_utils.hpp"
 #include "shambase/string.hpp"
-
+#include "shamrock/scheduler/HilbertLoadBalance.hpp"
+namespace shamrock::scheduler {
 //TODO use range based loop and emplace_back instead 
 
-void SchedulerPatchData::apply_change_list(std::vector<std::tuple<u64, i32, i32,i32>> change_list,SchedulerPatchList& patch_list){
+void SchedulerPatchData::apply_change_list(const shamrock::scheduler::LoadBalancingChangeList & change_list,SchedulerPatchList& patch_list){
 
     auto t = timings::start_timer("SchedulerPatchData::apply_change_list", timings::mpi);
 
     std::vector<PatchDataMpiRequest> rq_lst;
 
-    //send
-    for(u32 i = 0 ; i < change_list.size(); i++){ // switch to range based
-        auto & [idx,old_owner,new_owner,tag_comm] = change_list[i];
+    using ChangeOp = shamrock::scheduler::LoadBalancingChangeList::ChangeOp;
 
-        //if i'm sender
-        if(old_owner == shamsys::instance::world_rank){
-            auto & patchdata = owned_data.at(patch_list.global[idx].id_patch);
-            patchdata_isend(patchdata, rq_lst, new_owner, tag_comm, MPI_COMM_WORLD);
+    //send
+    for(const ChangeOp op : change_list.change_ops){ // switch to range based
+         //if i'm sender
+        if(op.rank_owner_old == shamsys::instance::world_rank){
+            auto & patchdata = owned_data.get(op.patch_id);
+            patchdata_isend(patchdata, rq_lst, op.rank_owner_new, op.tag_comm, MPI_COMM_WORLD);
         }
     }
 
     //receive
-    for(u32 i = 0 ; i < change_list.size(); i++){
-        auto & [idx,old_owner,new_owner,tag_comm] = change_list[i];
-        auto & id_patch = patch_list.global[idx].id_patch;
+    for(const ChangeOp op : change_list.change_ops){
+        auto & id_patch = op.patch_id;
         
         //if i'm receiver
-        if(new_owner == shamsys::instance::world_rank){
-            owned_data.emplace(id_patch,pdl);
-            patchdata_irecv_probe(owned_data.at(id_patch), rq_lst, old_owner, tag_comm, MPI_COMM_WORLD);
+        if(op.rank_owner_new == shamsys::instance::world_rank){
+            owned_data.add_obj(id_patch,pdl);
+            patchdata_irecv_probe(owned_data.get(id_patch), rq_lst, op.rank_owner_old , op.tag_comm, MPI_COMM_WORLD);
         }
     }
 
-    /*
-    for (MPI_Request a  : rq_lst) {
-        std::cout << shamsys::instance::world_rank << " " << a << std::endl;
-    }
-    */
-
-    //wait
-    //std::vector<MPI_Status> st_lst(rq_lst.size());
-    //mpi::waitall(rq_lst.size(), rq_lst.data(), st_lst.data());
     waitall_pdat_mpi_rq(rq_lst);
 
-
     //erase old patchdata
-    for(u32 i = 0 ; i < change_list.size(); i++){
-        auto & [idx,old_owner,new_owner,tag_comm] = change_list[i];
-        auto & id_patch = patch_list.global[idx].id_patch;
+    for(const ChangeOp op : change_list.change_ops){
+        auto & id_patch = op.patch_id;
         
-        patch_list.global[idx].node_owner_id = new_owner;
+        patch_list.global[op.patch_idx].node_owner_id = op.rank_owner_new;
 
         //if i'm sender delete old data
-        if(old_owner == shamsys::instance::world_rank){
+        if(op.rank_owner_old == shamsys::instance::world_rank){
             owned_data.erase(id_patch);
         }
 
@@ -155,7 +144,7 @@ void SchedulerPatchData::split_patchdata(u64 key_orginal, const std::array<shamr
     
     auto search = owned_data.find(key_orginal);
 
-    if (search != owned_data.end()) {
+    if (search != owned_data.not_found()) {
 
         shamrock::patch::PatchData & original_pd = search->second;
 
@@ -170,28 +159,28 @@ void SchedulerPatchData::split_patchdata(u64 key_orginal, const std::array<shamr
 
         if(pdl.check_main_field_type<f32_3>()){
 
-            ::split_patchdata<f32_3>(
+            shamrock::scheduler::split_patchdata<f32_3>(
                     original_pd,
                     sim_box,
                     patches,
                     {pd0,pd1,pd2,pd3,pd4,pd5,pd6,pd7});
         }else if(pdl.check_main_field_type<f64_3>()){
 
-            ::split_patchdata<f64_3>(
+            shamrock::scheduler::split_patchdata<f64_3>(
                     original_pd,
                     sim_box,
                     patches,
                     {pd0,pd1,pd2,pd3,pd4,pd5,pd6,pd7});
         }else if(pdl.check_main_field_type<u32_3>()){
 
-            ::split_patchdata<u32_3>(
+            shamrock::scheduler::split_patchdata<u32_3>(
                     original_pd,
                     sim_box,
                     patches,
                     {pd0,pd1,pd2,pd3,pd4,pd5,pd6,pd7});
         }else if(pdl.check_main_field_type<u64_3>()){
 
-            ::split_patchdata<u64_3>(
+            shamrock::scheduler::split_patchdata<u64_3>(
                     original_pd,
                     sim_box,
                     patches,
@@ -202,54 +191,54 @@ void SchedulerPatchData::split_patchdata(u64 key_orginal, const std::array<shamr
 
         owned_data.erase(key_orginal);
 
-        owned_data.insert({patches[0].id_patch, pd0});
-        owned_data.insert({patches[1].id_patch, pd1});
-        owned_data.insert({patches[2].id_patch, pd2});
-        owned_data.insert({patches[3].id_patch, pd3});
-        owned_data.insert({patches[4].id_patch, pd4});
-        owned_data.insert({patches[5].id_patch, pd5});
-        owned_data.insert({patches[6].id_patch, pd6});
-        owned_data.insert({patches[7].id_patch, pd7});
+        owned_data.add_obj(patches[0].id_patch, std::move(pd0));
+        owned_data.add_obj(patches[1].id_patch, std::move(pd1));
+        owned_data.add_obj(patches[2].id_patch, std::move(pd2));
+        owned_data.add_obj(patches[3].id_patch, std::move(pd3));
+        owned_data.add_obj(patches[4].id_patch, std::move(pd4));
+        owned_data.add_obj(patches[5].id_patch, std::move(pd5));
+        owned_data.add_obj(patches[6].id_patch, std::move(pd6));
+        owned_data.add_obj(patches[7].id_patch, std::move(pd7));
     }
 
 }
 
 
 
-void SchedulerPatchData::merge_patchdata(u64 new_key, u64 old_key0, u64 old_key1, u64 old_key2, u64 old_key3, u64 old_key4, u64 old_key5, u64 old_key6, u64 old_key7){
+void SchedulerPatchData::merge_patchdata(u64 new_key, const std::array<u64,8> old_keys){
 
-    auto search0 = owned_data.find(old_key0);
-    auto search1 = owned_data.find(old_key1);
-    auto search2 = owned_data.find(old_key2);
-    auto search3 = owned_data.find(old_key3);
-    auto search4 = owned_data.find(old_key4);
-    auto search5 = owned_data.find(old_key5);
-    auto search6 = owned_data.find(old_key6);
-    auto search7 = owned_data.find(old_key7);
+    auto search0 = owned_data.find(old_keys[0]);
+    auto search1 = owned_data.find(old_keys[1]);
+    auto search2 = owned_data.find(old_keys[2]);
+    auto search3 = owned_data.find(old_keys[3]);
+    auto search4 = owned_data.find(old_keys[4]);
+    auto search5 = owned_data.find(old_keys[5]);
+    auto search6 = owned_data.find(old_keys[6]);
+    auto search7 = owned_data.find(old_keys[7]);
 
-    if(search0 == owned_data.end()){
-        throw shambase::throw_with_loc<std::runtime_error>(shambase::format_printf("patchdata for key=%d was not owned by the node",old_key0));
+    if(search0 == owned_data.not_found()){
+        throw shambase::throw_with_loc<std::runtime_error>(shambase::format_printf("patchdata for key=%d was not owned by the node",old_keys[0]));
     }
-    if(search1 == owned_data.end()){
-        throw shambase::throw_with_loc<std::runtime_error>(shambase::format_printf("patchdata for key=%d was not owned by the node",old_key1));
+    if(search1 == owned_data.not_found()){
+        throw shambase::throw_with_loc<std::runtime_error>(shambase::format_printf("patchdata for key=%d was not owned by the node",old_keys[1]));
     }
-    if(search2 == owned_data.end()){
-        throw shambase::throw_with_loc<std::runtime_error>(shambase::format_printf("patchdata for key=%d was not owned by the node",old_key2));
+    if(search2 == owned_data.not_found()){
+        throw shambase::throw_with_loc<std::runtime_error>(shambase::format_printf("patchdata for key=%d was not owned by the node",old_keys[2]));
     }
-    if(search3 == owned_data.end()){
-        throw shambase::throw_with_loc<std::runtime_error>(shambase::format_printf("patchdata for key=%d was not owned by the node",old_key3));
+    if(search3 == owned_data.not_found()){
+        throw shambase::throw_with_loc<std::runtime_error>(shambase::format_printf("patchdata for key=%d was not owned by the node",old_keys[3]));
     }
-    if(search4 == owned_data.end()){
-        throw shambase::throw_with_loc<std::runtime_error>(shambase::format_printf("patchdata for key=%d was not owned by the node",old_key4));
+    if(search4 == owned_data.not_found()){
+        throw shambase::throw_with_loc<std::runtime_error>(shambase::format_printf("patchdata for key=%d was not owned by the node",old_keys[4]));
     }
-    if(search5 == owned_data.end()){
-        throw shambase::throw_with_loc<std::runtime_error>(shambase::format_printf("patchdata for key=%d was not owned by the node",old_key5));
+    if(search5 == owned_data.not_found()){
+        throw shambase::throw_with_loc<std::runtime_error>(shambase::format_printf("patchdata for key=%d was not owned by the node",old_keys[5]));
     }
-    if(search6 == owned_data.end()){
-        throw shambase::throw_with_loc<std::runtime_error>(shambase::format_printf("patchdata for key=%d was not owned by the node",old_key6));
+    if(search6 == owned_data.not_found()){
+        throw shambase::throw_with_loc<std::runtime_error>(shambase::format_printf("patchdata for key=%d was not owned by the node",old_keys[6]));
     }
-    if(search7 == owned_data.end()){
-        throw shambase::throw_with_loc<std::runtime_error>(shambase::format_printf("patchdata for key=%d was not owned by the node",old_key7));
+    if(search7 == owned_data.not_found()){
+        throw shambase::throw_with_loc<std::runtime_error>(shambase::format_printf("patchdata for key=%d was not owned by the node",old_keys[7]));
     }
 
 
@@ -264,16 +253,17 @@ void SchedulerPatchData::merge_patchdata(u64 new_key, u64 old_key0, u64 old_key1
     new_pdat.insert_elements(search6->second);
     new_pdat.insert_elements(search7->second);
 
-    owned_data.erase(old_key0);
-    owned_data.erase(old_key1);
-    owned_data.erase(old_key2);
-    owned_data.erase(old_key3);
-    owned_data.erase(old_key4);
-    owned_data.erase(old_key5);
-    owned_data.erase(old_key6);
-    owned_data.erase(old_key7);
+    owned_data.erase(old_keys[0]);
+    owned_data.erase(old_keys[1]);
+    owned_data.erase(old_keys[2]);
+    owned_data.erase(old_keys[3]);
+    owned_data.erase(old_keys[4]);
+    owned_data.erase(old_keys[5]);
+    owned_data.erase(old_keys[6]);
+    owned_data.erase(old_keys[7]);
 
 
-    owned_data.insert({new_key ,new_pdat});
+    owned_data.add_obj(new_key ,std::move(new_pdat));
 
+}
 }

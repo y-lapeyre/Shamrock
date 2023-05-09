@@ -680,7 +680,7 @@ f64 amr_walk_perf(f64 lambda_tilde,
 
 
 
-    PatchData & pdat = sched.patch_data.owned_data.at(0);
+    PatchData & pdat = sched.patch_data.get_pdat(0);
     Patch p = sched.patch_list.global.at(0);
 
     u32 len_pos = pdat.get_obj_cnt();

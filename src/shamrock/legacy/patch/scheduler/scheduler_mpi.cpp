@@ -124,7 +124,7 @@ std::vector<u64> PatchScheduler::add_root_patches(std::vector<shamrock::patch::P
 
 
         if (shamsys::instance::world_rank == node_owner_id) {
-            patch_data.owned_data.insert({root.id_patch , PatchData(pdl)});
+            patch_data.owned_data.add_obj(root.id_patch , PatchData(pdl));
             logger::debug_sycl_ln("Scheduler", "adding patch data");
         } else{
             logger::debug_sycl_ln("Scheduler", "patch data wasn't added rank =",shamsys::instance::world_rank, " ower =",node_owner_id);
@@ -244,7 +244,7 @@ void PatchScheduler::sync_build_LB(bool global_patch_sync, bool balance_load){
 
     if(balance_load){
         //real load balancing
-        std::vector<std::tuple<u64, i32, i32,i32>> change_list = LoadBalancer::make_change_list(patch_list.global);
+        shamrock::scheduler::LoadBalancingChangeList change_list = LoadBalancer::make_change_list(patch_list.global);
 
         //exchange data
         patch_data.apply_change_list(change_list, patch_list);
@@ -402,12 +402,12 @@ void PatchScheduler::scheduler_step(bool do_split_merge, bool do_load_balancing)
         auto t = timings::start_timer("load balancing", timings::function);
         timer.start();
         // generate LB change list 
-        std::vector<std::tuple<u64, i32, i32,i32>> change_list = 
+        shamrock::scheduler::LoadBalancingChangeList change_list = 
             LoadBalancer::make_change_list(patch_list.global);
         timer.end();
 
         logger::info_ln("Scheduler", "load balancing gen op",timer.get_time_str());
-        logger::debug_ln("Scheduler", " move operations",change_list.size());
+        logger::debug_ln("Scheduler", " move operations",change_list.change_ops.size());
 
         timer.start();
         // apply LB change list
@@ -559,9 +559,9 @@ std::string PatchScheduler::dump_status(){
     ss << " -> SchedulerPatchData\n";
     ss << "    owned data : \n";
 
-    for (auto & [pid,pdat] : patch_data.owned_data) {
-        ss << "patch id : " << pid << " len = " << pdat.get_obj_cnt() << "\n";
-    }
+    patch_data.for_each_patchdata([&](u64 patch_id, shamrock::patch::PatchData & pdat){
+        ss << "patch id : " << patch_id << " len = " << pdat.get_obj_cnt() << "\n";
+    });
 
     /*
     for(auto & [k,pdat] : patch_data.owned_data){
@@ -657,7 +657,7 @@ inline void PatchScheduler::merge_patches(std::unordered_set<u64> merge_rq){
         //std::cout << format("  -> (%d %d %d %d %d %d %d %d)\n", patch_id0, patch_id1, patch_id2, patch_id3, patch_id4, patch_id5, patch_id6, patch_id7);
         
         if(patch_list.global[patch_list.id_patch_to_global_idx[ patch_id0 ]].node_owner_id == shamsys::instance::world_rank){
-            patch_data.merge_patchdata(patch_id0, patch_id0, patch_id1, patch_id2, patch_id3, patch_id4, patch_id5, patch_id6, patch_id7);
+            patch_data.merge_patchdata(patch_id0, {patch_id0, patch_id1, patch_id2, patch_id3, patch_id4, patch_id5, patch_id6, patch_id7});
         }
 
         patch_list.merge_patch(
@@ -821,7 +821,7 @@ std::vector<std::unique_ptr<shamrock::patch::PatchData>> PatchScheduler::gather_
     for (u32 i = 0; i < plist.size(); i++) {
         auto & cpatch = plist[i];
         if(cpatch.node_owner_id == shamsys::instance::world_rank){
-            patchdata_isend(pdata.at(cpatch.id_patch), rq_lst, 0, i, MPI_COMM_WORLD);
+            patchdata_isend(pdata.get(cpatch.id_patch), rq_lst, 0, i, MPI_COMM_WORLD);
         }
     }
 

@@ -32,7 +32,7 @@ inline std::unordered_map<u64, sycl::buffer<u64>> get_new_id_map<f32_3>(PatchSch
 
     std::unordered_map<u64, sycl::buffer<u64>> newid_buf_map;
 
-    for(auto & [id,pdat] : sched.patch_data.owned_data ){
+    sched.patch_data.for_each_patchdata([&](u64 id, shamrock::patch::PatchData & pdat){
         if(! pdat.is_empty()){
 
 
@@ -50,7 +50,7 @@ inline std::unordered_map<u64, sycl::buffer<u64>> get_new_id_map<f32_3>(PatchSch
 
         }
         
-    }
+    });
 
     return newid_buf_map;
 
@@ -65,7 +65,7 @@ inline std::unordered_map<u64, sycl::buffer<u64>> get_new_id_map<f64_3>(PatchSch
 
     std::unordered_map<u64, sycl::buffer<u64>> newid_buf_map;
 
-    for(auto & [id,pdat] : sched.patch_data.owned_data ){
+    sched.patch_data.for_each_patchdata([&](u64 id, shamrock::patch::PatchData & pdat){
         if(! pdat.is_empty()){
 
 
@@ -83,7 +83,7 @@ inline std::unordered_map<u64, sycl::buffer<u64>> get_new_id_map<f64_3>(PatchSch
 
         }
         
-    }
+    });
 
     return newid_buf_map;
 
@@ -104,7 +104,7 @@ inline void reatribute_particles<f32_3>(PatchScheduler & sched, SerialPatchTree<
 
     bool err_id_in_newid = false;
     std::unordered_map<u64, sycl::buffer<u64>> newid_buf_map;
-    for(auto & [id,pdat] : sched.patch_data.owned_data ){
+    sched.patch_data.for_each_patchdata([&](u64 id, shamrock::patch::PatchData & pdat){
         if(! pdat.is_empty()){
 
 
@@ -145,7 +145,7 @@ inline void reatribute_particles<f32_3>(PatchScheduler & sched, SerialPatchTree<
 
         }
         
-    }
+    });
 
     
 
@@ -166,9 +166,12 @@ inline void reatribute_particles<f32_3>(PatchScheduler & sched, SerialPatchTree<
     if(synced_should_res_box){
         sched.patch_data.sim_box.reset_box_size();
 
-        auto [bmin,bmax] = sched.patch_data.sim_box.get_bounding_box<f32_3>();
+        auto [bmin_,bmax_] = sched.patch_data.sim_box.get_bounding_box<f32_3>();
+
+        f32_3 bmin = bmin_;
+        f32_3 bmax = bmax_;
         
-        for(auto & [id,pdat] : sched.patch_data.owned_data ){
+        sched.patch_data.for_each_patchdata([&](u64 id, shamrock::patch::PatchData & pdat){
 
             u32 ixyz = sched.pdl.get_field_idx<f32_3>("xyz");
             PatchDataField<f32_3> & xyz_field =  pdat.get_field<f32_3>(ixyz);
@@ -189,7 +192,8 @@ inline void reatribute_particles<f32_3>(PatchScheduler & sched, SerialPatchTree<
             }
 
             
-        }
+        });
+
         f32_3 new_minbox = bmin;
         f32_3 new_maxbox = bmax;
         mpi::allreduce(&bmin.x(), &new_minbox.x(), 1 , mpi_type_f32,MPI_MIN, MPI_COMM_WORLD);
@@ -212,7 +216,7 @@ inline void reatribute_particles<f32_3>(PatchScheduler & sched, SerialPatchTree<
         sptree = SerialPatchTree<f32_3>(sched.patch_tree, sched.get_box_tranform<f32_3>());
         sptree.attach_buf();
 
-        for(auto & [id,pdat] : sched.patch_data.owned_data ){
+        sched.patch_data.for_each_patchdata([&](u64 id, shamrock::patch::PatchData & pdat){
             if(! pdat.is_empty()){
                 u32 ixyz = sched.pdl.get_field_idx<f32_3>("xyz");
                 PatchDataField<f32_3> & xyz_field =  pdat.get_field<f32_3>(ixyz);
@@ -228,7 +232,7 @@ inline void reatribute_particles<f32_3>(PatchScheduler & sched, SerialPatchTree<
 
             }
             
-        }
+        });
         
     }
 
@@ -239,7 +243,7 @@ inline void reatribute_particles<f32_3>(PatchScheduler & sched, SerialPatchTree<
     std::vector<std::unique_ptr<PatchData>> comm_pdat;
     std::vector<u64_2> comm_vec;
 
-    for(auto & [id,pdat] : sched.patch_data.owned_data){
+    sched.patch_data.for_each_patchdata([&](u64 id, shamrock::patch::PatchData & pdat){
         if(! pdat.is_empty()){
 
             sycl::buffer<u64> & newid = newid_buf_map.at(id);
@@ -276,7 +280,7 @@ inline void reatribute_particles<f32_3>(PatchScheduler & sched, SerialPatchTree<
                 }
             }
         }
-    }
+    });
 
     
     std::unordered_map<u64, std::vector<std::tuple<u64, std::unique_ptr<PatchData>>>> part_xchg_map;
@@ -309,7 +313,7 @@ inline void reatribute_particles<f32_3>(PatchScheduler & sched, SerialPatchTree<
             //std::cout << "    " << send_id << " len : " << pdat->pos_s.size() << "\n"; 
 
             //TODO if crash here it means that this was implicit init => bad
-            PatchData & pdat_recv = sched.patch_data.owned_data.at(recv_id);
+            PatchData & pdat_recv = sched.patch_data.owned_data.get(recv_id);
 
 
             //std::cout << send_id << " -> " << recv_id << " recv data : " << std::endl; 

@@ -56,6 +56,7 @@ namespace shamrock::patch {
         u64 y_max; ///< box coordinate of the corresponding patch
         u64 z_max; ///< box coordinate of the corresponding patch
 
+        //[[deprecated("should be removed at some point to allow variable size pdat")]] 
         u32 data_count; ///< number of element in the corresponding patchdata
 
         u32 node_owner_id; ///< node rank owner of this patch

@@ -28,7 +28,7 @@
 #include "shamrock/legacy/patch/base/patchdata_field.hpp"
 #include "shamrock/legacy/patch/utility/serialpatchtree.hpp"
 #include "shamrock/legacy/patch/scheduler/scheduler_mpi.hpp"
-#include "shamrock/legacy/patch/scheduler/scheduler_patch_data.hpp"
+#include "shamrock/scheduler/SchedulerPatchData.hpp"
 #include "shamsys/legacy/sycl_mpi_interop.hpp"
 #include "shamrock/legacy/utils/geometry_utils.hpp"
 
