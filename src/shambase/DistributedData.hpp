@@ -72,7 +72,7 @@ namespace shambase {
         using iterator = typename std::multimap<std::pair<u64, u64>, T>::iterator;
 
         public:
-        inline std::map<std::pair<u64, u64>, T> &get_native() { return data; }
+        inline std::multimap<std::pair<u64, u64>, T> &get_native() { return data; }
 
         inline iterator add_obj(u64 left_id, u64 right_id, T &&obj) {
             std::pair<u64, u64> tmp = {left_id, right_id};
