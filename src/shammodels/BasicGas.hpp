@@ -11,7 +11,7 @@
 #include "shambase/exception.hpp"
 #include "shambase/type_aliases.hpp"
 #include "shamrock/io/LegacyVtkWritter.hpp"
-#include "shamrock/legacy/patch/scheduler/scheduler_mpi.hpp"
+#include "shamrock/scheduler/ShamrockCtx.hpp"
 
 namespace shammodels::sph {
 
@@ -28,9 +28,12 @@ namespace shammodels::sph {
         flt cfl_force = -1;
         flt gpart_mass = -1;
 
-        PatchScheduler & sched;
+        ShamrockCtx & context;
+        inline PatchScheduler & scheduler(){
+            return shambase::get_check_ref(context.sched);
+        }
 
-        BasicGas(PatchScheduler & sched) : sched(sched){};
+        BasicGas(ShamrockCtx & context) : context(context){};
 
         inline void check_valid(){
             if (cfl_cour < 0) {
@@ -53,7 +56,7 @@ namespace shammodels::sph {
             using namespace shamrock::patch;
 
             u64 num_obj = 0; // TODO get_rank_count() in scheduler
-            sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
+            scheduler().for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
                 num_obj += pdat.get_obj_cnt();
             });
 
@@ -61,7 +64,7 @@ namespace shammodels::sph {
             sycl::buffer<vec> pos(num_obj);
 
             u64 ptr = 0; // TODO accumulate_field() in scheduler ?
-            sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
+            scheduler().for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
 
                 using namespace shamalgs::memory;
                 using namespace shambase;
