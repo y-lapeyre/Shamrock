@@ -11,7 +11,7 @@
 #include <pybind11/stl.h>
 #include <pybind11/numpy.h>
 
-#include "shamrock/legacy/ShamrockCtx.hpp"
+#include "shamrock/scheduler/ShamrockCtx.hpp"
 #include <variant>
 
 template<class T>

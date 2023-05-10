@@ -9,7 +9,7 @@
 #include "aliases.hpp"
 #include "shambindings/pybindaliases.hpp"
 #include "shamrock/amr/AMRGrid.hpp"
-#include "shamrock/legacy/ShamrockCtx.hpp"
+#include "shamrock/scheduler/ShamrockCtx.hpp"
 
 #include <pybind11/stl.h>
 #include <pybind11/numpy.h>

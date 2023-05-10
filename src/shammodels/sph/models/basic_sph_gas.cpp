@@ -12,7 +12,7 @@
 #include "shamsys/legacy/log.hpp"
 #include "shamsys/legacy/sycl_handler.hpp"
 #include "shammodels/generic/algs/cfl_utils.hpp"
-#include "shamrock/legacy/ShamrockCtx.hpp"
+#include "shamrock/scheduler/ShamrockCtx.hpp"
 #include "shammodels/generic/algs/integrators_utils.hpp"
 #include "shamrock/sph/forces.hpp"
 

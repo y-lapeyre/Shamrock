@@ -9,7 +9,7 @@
 #pragma once
 
 #include "shammodels/sph/setup/sph_setup.hpp"
-#include "shamrock/legacy/ShamrockCtx.hpp"
+#include "shamrock/scheduler/ShamrockCtx.hpp"
 #include <variant>
 
 

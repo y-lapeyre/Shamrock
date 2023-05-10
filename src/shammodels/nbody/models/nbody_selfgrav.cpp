@@ -13,7 +13,7 @@
 #include "shamrock/legacy/patch/utility/serialpatchtree.hpp"
 #include "shamrock/tree/RadixTree.hpp"
 #include "shamrock/math/tensors/collections.hpp"
-#include "shamrock/legacy/ShamrockCtx.hpp"
+#include "shamrock/scheduler/ShamrockCtx.hpp"
 
 #include "shammodels/generic/algs/integrators_utils.hpp"
 

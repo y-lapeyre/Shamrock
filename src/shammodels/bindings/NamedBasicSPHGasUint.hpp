@@ -10,7 +10,7 @@
 
 #include "aliases.hpp"
 #include "shammodels/sph/models/basic_sph_gas_uint.hpp"
-#include "shamrock/legacy/ShamrockCtx.hpp"
+#include "shamrock/scheduler/ShamrockCtx.hpp"
 #include <variant>
 
 
