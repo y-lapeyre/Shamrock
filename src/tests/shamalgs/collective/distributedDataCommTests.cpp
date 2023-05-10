@@ -82,9 +82,11 @@ void distribdata_sparse_comm_test(std::string prefix, shamsys::CommunicationProt
     recv_data_ref.for_each([&](u64 sender, u64 receiver, std::unique_ptr<sycl::buffer<u8>> &buf) {
         shamtest::asserts().assert_bool("has expected key", recv_data.has_key(sender, receiver));
 
+        auto it = recv_data.get_native().find({sender, receiver});
+
         shamtest::asserts().assert_bool(
             "correct buffer",
-            shamalgs::reduction::equals_ptr(buf, recv_data.get(sender, receiver)));
+            shamalgs::reduction::equals_ptr(buf, it->second));
     });
 }
 
