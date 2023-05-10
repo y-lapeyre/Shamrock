@@ -34,8 +34,8 @@ class NamedSetupSPH{
     
     
     using var_t = std::variant<
-        models::sph::SetupSPH<f32, models::sph::kernels::M4<f32>>,
-        models::sph::SetupSPH<f32, models::sph::kernels::M6<f32>>
+        models::sph::SetupSPH<f32, shamrock::sph::kernels::M4<f32>>,
+        models::sph::SetupSPH<f32, shamrock::sph::kernels::M6<f32>>
     >;
 
     var_t setup;
@@ -46,9 +46,9 @@ class NamedSetupSPH{
 
     NamedSetupSPH(std::string kernel_name, std::string precision){
         if(kernel_name == "M4" && precision == "single"){
-            setup = models::sph::SetupSPH<f32, models::sph::kernels::M4<f32>>{};
+            setup = models::sph::SetupSPH<f32, shamrock::sph::kernels::M4<f32>>{};
         }else if(kernel_name == "M6" && precision == "single"){
-            setup = models::sph::SetupSPH<f32, models::sph::kernels::M6<f32>>{};
+            setup = models::sph::SetupSPH<f32, shamrock::sph::kernels::M6<f32>>{};
         }else{
             std::invalid_argument("unknown configuration");
         }

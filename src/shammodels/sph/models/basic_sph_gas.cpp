@@ -14,7 +14,7 @@
 #include "shammodels/generic/algs/cfl_utils.hpp"
 #include "shamrock/legacy/ShamrockCtx.hpp"
 #include "shammodels/generic/algs/integrators_utils.hpp"
-#include "shammodels/sph/forces.hpp"
+#include "shamrock/sph/forces.hpp"
 
 #include <array>
 #include <memory>
@@ -172,6 +172,8 @@ f64 models::sph::BasicSPHGas<flt,Kernel>::evolve(PatchScheduler &sched, f64 old_
 
                         cgh.parallel_for(range_npart,
                                 [=](sycl::item<1> item) { 
+
+                                    using namespace shamrock::sph;
                                     
                                     p[item] =   cs*cs*rho_h(part_mass, h[item])  ; 
                                     
@@ -231,7 +233,7 @@ f64 models::sph::BasicSPHGas<flt,Kernel>::evolve(PatchScheduler &sched, f64 old_
                     //const f32 cs        = eos_cs;
 
                     const f32 htol = htol_up_tol;
-
+                    using namespace shamrock::sph;
                     // sycl::stream out(65000,65000,cgh);
 
                     cgh.parallel_for(range_npart, [=](sycl::item<1> item) {
@@ -279,13 +281,14 @@ f64 models::sph::BasicSPHGas<flt,Kernel>::evolve(PatchScheduler &sched, f64 old_
                                     r_ab_unit = {0, 0, 0};
                                 }
 
+                                
                                 f32 rho_b   = rho_h(part_mass, h_b);
                                 f32 P_b     = pres[id_b];
                                 //f32 P_b     = cs * cs * rho_b;
                                 f32 omega_b = omga[id_b];
 
-                                f32_3 tmp = sph_pressure<f32_3, f32>(part_mass, rho_a_sq, rho_b * rho_b, P_a, P_b, omega_a,
-                                                                    omega_b, 0, 0, r_ab_unit * Kernel::dW(rab, h_a),
+                                f32_3 tmp = sph_pressure_symetric<f32_3, f32>(part_mass, rho_a_sq, rho_b * rho_b, P_a, P_b, omega_a,
+                                                                    omega_b, r_ab_unit * Kernel::dW(rab, h_a),
                                                                     r_ab_unit * Kernel::dW(rab, h_b));
 
                                 sum_axyz += tmp;
@@ -347,6 +350,6 @@ void models::sph::BasicSPHGas<flt,Kernel>::close(){
 
 
 
-template class models::sph::BasicSPHGas<f32,models::sph::kernels::M4<f32>>;
-template class models::sph::BasicSPHGas<f32,models::sph::kernels::M6<f32>>;
+template class models::sph::BasicSPHGas<f32,shamrock::sph::kernels::M4<f32>>;
+template class models::sph::BasicSPHGas<f32,shamrock::sph::kernels::M6<f32>>;
 

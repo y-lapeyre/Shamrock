@@ -15,8 +15,8 @@
 #include "shamrock/legacy/patch/base/patchdata.hpp"
 //#include "shamrock/legacy/patch/patchdata_buffer.hpp"
 #include "shamrock/patch/PatchDataLayout.hpp"
-#include "shammodels/sph/base/kernels.hpp"
-#include "shammodels/sph/base/sphpart.hpp"
+#include "shamrock/sph/kernels.hpp"
+#include "shamrock/sph/sphpart.hpp"
 #include "shamrock/tree/RadixTree.hpp"
 
 namespace impl {
@@ -276,7 +276,8 @@ namespace impl {
                             [](u32 node_id) {});
                         
 
-                        
+                        using namespace shamrock::sph;
+
                         f32 rho_ha = rho_h(part_mass, h_a);
 
                         f32 f_iter = rho_sum - rho_ha;
@@ -425,7 +426,7 @@ namespace impl {
                         [](u32 node_id) {});
                     
 
-                    
+                    using namespace shamrock::sph;
                     f32 rho_ha = rho_h(part_mass, h_a);
                     omga[id_a] = 1 + (h_a/(3*rho_ha))*part_omega_sum;
                     

@@ -14,7 +14,8 @@
 #include "shammodels/generic/algs/cfl_utils.hpp"
 #include "shamrock/legacy/ShamrockCtx.hpp"
 #include "shammodels/generic/algs/integrators_utils.hpp"
-#include "shammodels/sph/forces.hpp"
+#include "shamrock/sph/forces.hpp"
+
 
 #include <array>
 #include <memory>
@@ -195,7 +196,7 @@ f64 models::sph::BasicSPHGasUInterne<flt,Kernel>::evolve(PatchScheduler &sched, 
 
                         cgh.parallel_for(range_npart,
                                 [=](sycl::item<1> item) { 
-                                    
+                                    using namespace shamrock::sph;
                                     p[item] =  (gamma-1) * rho_h(part_mass, h[item]) *acc_u[item]  ; 
                                     
                                     
@@ -269,6 +270,8 @@ f64 models::sph::BasicSPHGasUInterne<flt,Kernel>::evolve(PatchScheduler &sched, 
                     constexpr flt gamma = 5./3.;
 
                     const f32 alpha_u = 1.0;
+
+                    using namespace shamrock::sph;
 
                     //sycl::stream out(65000,65000,cgh);
 
@@ -362,9 +365,9 @@ f64 models::sph::BasicSPHGasUInterne<flt,Kernel>::evolve(PatchScheduler &sched, 
                                 f32 qa_ab = sycl::max(- 0.5f*rho_a*vsig_a*v_ab_r_ab,0.f); 
                                 f32 qb_ab = sycl::max(- 0.5f*rho_b*vsig_b*v_ab_r_ab,0.f);
 
-                                
+                                using namespace shamrock::sph;
 
-                                f32_3 tmp = sph_pressure<f32_3, f32>(part_mass, rho_a_sq, rho_b * rho_b, P_a, P_b, omega_a,
+                                f32_3 tmp = sph_pressure_symetric_av<f32_3, f32>(part_mass, rho_a_sq, rho_b * rho_b, P_a, P_b, omega_a,
                                                                     omega_b, qa_ab, qb_ab, r_ab_unit * Kernel::dW(rab, h_a),
                                                                     r_ab_unit * Kernel::dW(rab, h_b));
 
@@ -440,6 +443,6 @@ void models::sph::BasicSPHGasUInterne<flt,Kernel>::close(){
 
 
 
-template class models::sph::BasicSPHGasUInterne<f32,models::sph::kernels::M4<f32>>;
-template class models::sph::BasicSPHGasUInterne<f32,models::sph::kernels::M6<f32>>;
+template class models::sph::BasicSPHGasUInterne<f32,shamrock::sph::kernels::M4<f32>>;
+template class models::sph::BasicSPHGasUInterne<f32,shamrock::sph::kernels::M6<f32>>;
 
