@@ -139,10 +139,10 @@ namespace shamalgs::collective {
                     }
                 }
 
-                recv_distrib_data.add_obj(
+                auto it = recv_distrib_data.add_obj(
                     sender, receiver, std::make_unique<sycl::buffer<u8>>(lenght));
 
-                recv.ser.load_buf(*recv_distrib_data.get(sender, receiver), lenght);
+                recv.ser.load_buf(*it->second, lenght);
             }
         }
     }

@@ -9,6 +9,7 @@
 #pragma once
 
 #include "aliases.hpp"
+#include "shambase/exception.hpp"
 #include <map>
 #include <utility>
 
@@ -24,24 +25,38 @@ namespace shambase {
 
         std::map<u64, T> data;
 
+        using iterator = typename std::map<u64, T>::iterator;
+
         public:
         inline std::map<u64, T> &get_native() { return data; }
 
-        inline void add_obj(u64 id, T &&obj) { data.emplace(id, std::forward<T>(obj)); }
+        inline iterator add_obj(u64 id, T &&obj) {
+
+            std::pair<iterator, bool> ret = data.emplace(id, std::forward<T>(obj));
+
+            if (!ret.second) {
+                throw throw_with_loc<std::runtime_error>("the key already exist");
+            }
+
+            return ret.first;
+        }
+
         inline void erase(u64 id) { data.erase(id); }
+
         inline void for_each(std::function<void(u64, T &)> &&f) {
             for (auto &[id, obj] : data) {
                 f(id, obj);
             }
         }
-        inline auto find(u64 id){return data.find(id);}
-        inline auto not_found(){return data.end();}
+        inline auto find(u64 id) { return data.find(id); }
 
-        T &get(u64 id) { return data.at(id); }
+        inline auto not_found() { return data.end(); }
 
-        bool has_key(u64 id) { return (data.find(id) != data.end()); }
+        inline T &get(u64 id) { return data.at(id); }
 
-        u64 get_element_count() { return data.size(); }
+        inline bool has_key(u64 id) { return (data.find(id) != data.end()); }
+
+        inline u64 get_element_count() { return data.size(); }
     };
 
     /**
@@ -52,14 +67,16 @@ namespace shambase {
     template<class T>
     class DistributedDataShared {
 
-        std::map<std::pair<u64, u64>, T> data;
+        std::multimap<std::pair<u64, u64>, T> data;
+
+        using iterator = typename std::multimap<std::pair<u64, u64>, T>::iterator;
 
         public:
         inline std::map<std::pair<u64, u64>, T> &get_native() { return data; }
 
-        inline void add_obj(u64 left_id, u64 right_id, T &&obj) {
+        inline iterator add_obj(u64 left_id, u64 right_id, T &&obj) {
             std::pair<u64, u64> tmp = {left_id, right_id};
-            data.emplace(std::move(tmp), std::forward<T>(obj));
+            return data.emplace(std::move(tmp), std::forward<T>(obj));
         }
 
         inline void for_each(std::function<void(u64, u64, T &)> &&f) {
@@ -68,12 +85,10 @@ namespace shambase {
             }
         }
 
-        T &get(u64 left_id, u64 right_id) { return data.at({left_id, right_id}); }
-
-        bool has_key(u64 left_id, u64 right_id) {
+        inline bool has_key(u64 left_id, u64 right_id) {
             return (data.find({left_id, right_id}) != data.end());
         }
 
-        u64 get_element_count() { return data.size(); }
+        inline u64 get_element_count() { return data.size(); }
     };
 } // namespace shambase
