@@ -194,18 +194,7 @@ inline void reatribute_particles<f32_3>(PatchScheduler & sched, SerialPatchTree<
             
         });
 
-        f32_3 new_minbox = bmin;
-        f32_3 new_maxbox = bmax;
-        mpi::allreduce(&bmin.x(), &new_minbox.x(), 1 , mpi_type_f32,MPI_MIN, MPI_COMM_WORLD);
-        mpi::allreduce(&bmin.y(), &new_minbox.y(), 1 , mpi_type_f32,MPI_MIN, MPI_COMM_WORLD);
-        mpi::allreduce(&bmin.z(), &new_minbox.z(), 1 , mpi_type_f32,MPI_MIN, MPI_COMM_WORLD);
-        mpi::allreduce(&bmax.x(), &new_maxbox.x(), 1 , mpi_type_f32,MPI_MAX, MPI_COMM_WORLD);
-        mpi::allreduce(&bmax.y(), &new_maxbox.y(), 1 , mpi_type_f32,MPI_MAX, MPI_COMM_WORLD);
-        mpi::allreduce(&bmax.z(), &new_maxbox.z(), 1 , mpi_type_f32,MPI_MAX, MPI_COMM_WORLD);
-
-        sched.patch_data.sim_box.set_bounding_box<f32_3>({new_minbox,new_maxbox});
-
-        logger::debug_ln("Patch Object Mover", "resize box to  :",new_minbox,new_maxbox);
+        sched.patch_data.sim_box.allreduce_set_bounding_box<f32_3>({bmin,bmax});
         sched.patch_data.sim_box.clean_box<f32>(1.2);
 
         logger::debug_ln("Patch Object Mover", "resize box to  :",sched.patch_data.sim_box.get_bounding_box<f32_3>());
@@ -454,18 +443,8 @@ inline void reatribute_particles<f64_3>(PatchScheduler & sched, SerialPatchTree<
             
         });
 
-        f64_3 new_minbox = bmin;
-        f64_3 new_maxbox = bmax;
-        mpi::allreduce(&bmin.x(), &new_minbox.x(), 1 , mpi_type_f64,MPI_MIN, MPI_COMM_WORLD);
-        mpi::allreduce(&bmin.y(), &new_minbox.y(), 1 , mpi_type_f64,MPI_MIN, MPI_COMM_WORLD);
-        mpi::allreduce(&bmin.z(), &new_minbox.z(), 1 , mpi_type_f64,MPI_MIN, MPI_COMM_WORLD);
-        mpi::allreduce(&bmax.x(), &new_maxbox.x(), 1 , mpi_type_f64,MPI_MAX, MPI_COMM_WORLD);
-        mpi::allreduce(&bmax.y(), &new_maxbox.y(), 1 , mpi_type_f64,MPI_MAX, MPI_COMM_WORLD);
-        mpi::allreduce(&bmax.z(), &new_maxbox.z(), 1 , mpi_type_f64,MPI_MAX, MPI_COMM_WORLD);
-
-        sched.patch_data.sim_box.set_bounding_box<f64_3>({new_minbox,new_maxbox});
-
-        logger::debug_ln("Patch Object Mover", "resize box to  :",new_minbox,new_maxbox);
+        
+        sched.patch_data.sim_box.allreduce_set_bounding_box<f64_3>({bmin,bmax});
         sched.patch_data.sim_box.clean_box<f64>(1.2);
 
         logger::debug_ln("Patch Object Mover", "resize box to  :",sched.patch_data.sim_box.get_bounding_box<f64_3>());

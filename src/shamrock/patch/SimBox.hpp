@@ -9,13 +9,17 @@
 #pragma once
 
 #include "aliases.hpp"
+#include "shamalgs/collective/reduction.hpp"
+#include "shambase/exception.hpp"
 #include "shammath/CoordRange.hpp"
 #include "shambase/sycl_utils.hpp"
 #include "shamrock/patch/Patch.hpp"
 #include "shamrock/patch/PatchCoordTransform.hpp"
 #include "shamrock/patch/PatchDataLayout.hpp"
 
+#include <stdexcept>
 #include <tuple>
+#include <type_traits>
 
 namespace shamrock::patch {
     
@@ -64,6 +68,11 @@ namespace shamrock::patch {
          */
         template <class T> void set_bounding_box(shammath::CoordRange<T> new_box);
 
+        template<class T> inline void allreduce_set_bounding_box(shammath::CoordRange<T> new_box){
+            std::pair<T,T> reduced = shamalgs::collective::allreduce_bounds(std::pair<T,T>{new_box.lower,new_box.upper});
+            set_bounding_box<>(shammath::CoordRange<T>(reduced));
+        }
+        
         /**
          * @brief get the patch coordinates on the domain
          *
