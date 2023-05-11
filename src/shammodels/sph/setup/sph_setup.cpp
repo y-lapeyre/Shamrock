@@ -10,7 +10,7 @@
 //%Impl status : Good
 
 #include "sph_setup.hpp"
-#include "shammodels/sph/base/kernels.hpp"
+#include "shamrock/sph/kernels.hpp"
 #include "shamrock/legacy/patch/comm/patch_object_mover.hpp"
 
 
@@ -111,5 +111,7 @@ void models::sph::SetupSPH<flt,Kernel>::add_particules_fcc(PatchScheduler & sche
     });
 }
 
-template class models::sph::SetupSPH<f32,models::sph::kernels::M4<f32>>;
-template class models::sph::SetupSPH<f32,models::sph::kernels::M6<f32>>;
+template class models::sph::SetupSPH<f32,shamrock::sph::kernels::M4<f32>>;
+template class models::sph::SetupSPH<f32,shamrock::sph::kernels::M6<f32>>;
+template class models::sph::SetupSPH<f64,shamrock::sph::kernels::M4<f64>>;
+template class models::sph::SetupSPH<f64,shamrock::sph::kernels::M6<f64>>;

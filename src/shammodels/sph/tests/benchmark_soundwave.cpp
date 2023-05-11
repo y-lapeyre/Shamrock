@@ -44,7 +44,7 @@ std::tuple<f64,f64,f64> benchmark_periodic_box(f32 dr, u32 npatch){
     sched.init_mpi_required_types();
 
     auto setup = [&]() -> std::tuple<flt,f64>{
-        using Setup = models::sph::SetupSPH<f32, models::sph::kernels::M4<f32>>;
+        using Setup = models::sph::SetupSPH<f32, shamrock::sph::kernels::M4<f32>>;
 
         Setup setup;
         setup.init(sched);
@@ -105,7 +105,7 @@ std::tuple<f64,f64,f64> benchmark_periodic_box(f32 dr, u32 npatch){
 
     
 
-    using Model = models::sph::BasicSPHGas<f32, models::sph::kernels::M4<f32>>;
+    using Model = models::sph::BasicSPHGas<f32, shamrock::sph::kernels::M4<f32>>;
 
     Model model ;
 

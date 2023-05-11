@@ -10,7 +10,6 @@
 //%Impl status : Good
 
 #include "nbody_setup.hpp"
-#include "shammodels/sph/base/kernels.hpp"
 #include "shamrock/legacy/patch/comm/patch_object_mover.hpp"
 
 

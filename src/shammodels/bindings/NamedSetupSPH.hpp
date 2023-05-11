@@ -8,8 +8,9 @@
 
 #pragma once
 
+#include "shambase/exception.hpp"
 #include "shammodels/sph/setup/sph_setup.hpp"
-#include "shamrock/legacy/ShamrockCtx.hpp"
+#include "shamrock/scheduler/ShamrockCtx.hpp"
 #include <variant>
 
 
@@ -34,8 +35,9 @@ class NamedSetupSPH{
     
     
     using var_t = std::variant<
-        models::sph::SetupSPH<f32, models::sph::kernels::M4<f32>>,
-        models::sph::SetupSPH<f32, models::sph::kernels::M6<f32>>
+        models::sph::SetupSPH<f32, shamrock::sph::kernels::M4<f32>>,
+        models::sph::SetupSPH<f32, shamrock::sph::kernels::M6<f32>>,
+        models::sph::SetupSPH<f64, shamrock::sph::kernels::M4<f64>>
     >;
 
     var_t setup;
@@ -46,11 +48,13 @@ class NamedSetupSPH{
 
     NamedSetupSPH(std::string kernel_name, std::string precision){
         if(kernel_name == "M4" && precision == "single"){
-            setup = models::sph::SetupSPH<f32, models::sph::kernels::M4<f32>>{};
+            setup = models::sph::SetupSPH<f32, shamrock::sph::kernels::M4<f32>>{};
         }else if(kernel_name == "M6" && precision == "single"){
-            setup = models::sph::SetupSPH<f32, models::sph::kernels::M6<f32>>{};
+            setup = models::sph::SetupSPH<f32, shamrock::sph::kernels::M6<f32>>{};
+        }else if(kernel_name == "M4" && precision == "double"){
+            setup = models::sph::SetupSPH<f64, shamrock::sph::kernels::M4<f64>>{};
         }else{
-            std::invalid_argument("unknown configuration");
+            throw shambase::throw_with_loc<std::invalid_argument>("unknown configuration");
         }
     }
 
@@ -146,7 +150,7 @@ class NamedSetupSPH{
 
     inline f64 get_part_mass(){
         return std::visit([&](auto && arg) {
-            return arg.get_part_mass();
+            return f64(arg.get_part_mass());
         }, setup);
     }
 

@@ -61,14 +61,14 @@ namespace shamalgs::reduction {
         return equals(buf1, buf2, buf1.size());
     }
 
-    template<class T> bool equals_ptr(const std::unique_ptr<sycl::buffer<T>> &buf1, const std::unique_ptr<sycl::buffer<T>> &buf2, u32 cnt){
+    template<class T> bool equals_ptr_s(const std::unique_ptr<sycl::buffer<T>> &buf1, const std::unique_ptr<sycl::buffer<T>> &buf2, u32 cnt){
         bool same_alloc = bool(buf1) == bool(buf2);
 
         if(!same_alloc){
             return false;
         }
 
-        if(!buf1){
+        if(!bool(buf1)){
             return true;
         }
         
@@ -82,7 +82,7 @@ namespace shamalgs::reduction {
             return false;
         }
 
-        if(!buf1){
+        if(!bool(buf1)){
             return true;
         }
         

@@ -25,8 +25,8 @@
 #include "shamsys/legacy/log.hpp"
 #include "shamrock/tree/RadixTree.hpp"
 #include "shammodels/sph/algs/smoothing_lenght_impl.hpp"
-#include "shammodels/sph/base/kernels.hpp"
-#include "shammodels/sph/base/sphpart.hpp"
+#include "shamrock/sph/kernels.hpp"
+#include "shamrock/sph/sphpart.hpp"
 
 namespace models::sph {
 namespace algs {

@@ -10,7 +10,7 @@
 
 #include "aliases.hpp"
 #include "shammodels/sph/models/basic_sph_gas_uint.hpp"
-#include "shamrock/legacy/ShamrockCtx.hpp"
+#include "shamrock/scheduler/ShamrockCtx.hpp"
 #include <variant>
 
 
@@ -18,8 +18,8 @@ class NamedBasicSPHUinterne{
     
     
     using var_t = std::variant<
-        models::sph::BasicSPHGasUInterne<f32, models::sph::kernels::M4<f32>>,
-        models::sph::BasicSPHGasUInterne<f32, models::sph::kernels::M6<f32>>
+        models::sph::BasicSPHGasUInterne<f32, shamrock::sph::kernels::M4<f32>>,
+        models::sph::BasicSPHGasUInterne<f32, shamrock::sph::kernels::M6<f32>>
     >;
 
     var_t model;
@@ -28,9 +28,9 @@ class NamedBasicSPHUinterne{
 
     NamedBasicSPHUinterne(std::string kernel_name, std::string precision){
         if(kernel_name == "M4" && precision == "single"){
-            model = models::sph::BasicSPHGasUInterne<f32, models::sph::kernels::M4<f32>>{};
+            model = models::sph::BasicSPHGasUInterne<f32, shamrock::sph::kernels::M4<f32>>{};
         }else if(kernel_name == "M6" && precision == "single"){
-            model = models::sph::BasicSPHGasUInterne<f32, models::sph::kernels::M6<f32>>{};
+            model = models::sph::BasicSPHGasUInterne<f32, shamrock::sph::kernels::M6<f32>>{};
         }else{
             std::invalid_argument("unknown configuration");
         }

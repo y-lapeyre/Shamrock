@@ -9,6 +9,8 @@
 #pragma once
 
 #include "aliases.hpp"
+#include "shambase/exception.hpp"
+#include "shambase/string.hpp"
 #include "shamrock/patch/PatchDataAlias.hpp"
 #include "shamsys/legacy/log.hpp"
 #include <sstream>
@@ -185,7 +187,7 @@ namespace shamrock::patch {
             }
         }
 
-        throw std::invalid_argument(
+        throw shambase::throw_with_loc<std::invalid_argument>(
             "the requested field does not exists\n    current table : " + get_description_str()
         );
     }
@@ -197,7 +199,7 @@ namespace shamrock::patch {
             return *pval;
         }
 
-        throw std::invalid_argument(
+        throw shambase::throw_with_loc<std::invalid_argument>(
             "the required type does no match at index "+std::to_string(idx)+"\n    current table : " + get_description_str()
         );
     }
@@ -212,8 +214,8 @@ namespace shamrock::patch {
             }
         }
 
-        throw std::invalid_argument(
-            "the requested field does not exists\n    current table : " + get_description_str()
+        throw shambase::throw_with_loc<std::invalid_argument>(
+            shambase::format("the requested field does not exists\n    the function : {}\n    the field name : {}\n    current table : \n{}", __PRETTY_FUNCTION__, field_name, get_description_str())
         );
     }
 
@@ -227,7 +229,7 @@ namespace shamrock::patch {
             }
         }
 
-        throw std::invalid_argument(
+        throw shambase::throw_with_loc<std::invalid_argument>(
             "the requested field does not exists\n    current table : " + get_description_str()
         );
     }

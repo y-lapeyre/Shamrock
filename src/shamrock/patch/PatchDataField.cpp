@@ -169,33 +169,19 @@ template <class T> void PatchDataField<T>::append_subset_to(sycl::buffer<u32> &i
 
 template <class T> void PatchDataField<T>::append_subset_to(const std::vector<u32> &idxs, PatchDataField &pfield) const {
 
-    if (pfield.nvar != nvar)
+    if (pfield.nvar != nvar){
         throw shambase::throw_with_loc<std::invalid_argument>("field must be similar for extraction");
-
-    const u32 start_enque = pfield.size();
-
-    const u32 nvar = get_nvar();
-
-    //pfield.expand(idxs.size());
-
+    }
     
-
-
-
     using buf_t = std::unique_ptr<sycl::buffer<T>>;
-
     const buf_t & buf_other  = pfield.get_buf();
 
     u32 sz = idxs.size();
 
-
-    
-
-    sycl::buffer<u32> idxs_buf(idxs.data(), sz);
-
-    append_subset_to(idxs_buf,sz,pfield);
-    
-
+    if(sz > 0){
+        sycl::buffer<u32> idxs_buf(idxs.data(), sz);
+        append_subset_to(idxs_buf,sz,pfield);
+    }
 }
 
 
