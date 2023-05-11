@@ -20,6 +20,13 @@
 namespace shamalgs::random {
 
     template<class T> T mock_value(std::mt19937 & eng, T min_bound, T max_bound);
+    
+    template<class T> inline T mock_value(std::mt19937 & eng){
+        using Prop = shambase::sycl_utils::VectorProperties<T>;
+        return mock_value<T>(eng,Prop::get_min(),Prop::get_max());
+    }
+
+
     template<class T> std::vector<T> mock_vector(u64 seed,u32 len, T min_bound, T max_bound);
     template<class T> sycl::buffer<T> mock_buffer(u64 seed,u32 len, T min_bound, T max_bound);
     
