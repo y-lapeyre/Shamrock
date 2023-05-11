@@ -36,6 +36,8 @@ namespace shammodels::sph {
 
         inline void setup_fields(){
             context.pdata_layout_add_field<vec>("xyz", 1);
+            context.pdata_layout_add_field<vec>("vxyz", 1);
+            context.pdata_layout_add_field<vec>("axyz", 1);
             context.pdata_layout_add_field<flt>("hpart", 1);
             context.pdata_layout_add_field<flt>("uint", 1);
         }

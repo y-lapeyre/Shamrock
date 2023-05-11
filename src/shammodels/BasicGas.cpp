@@ -7,6 +7,7 @@
 // -------------------------------------------------------//
 
 #include "BasicGas.hpp"
+#include "shamrock/math/integratorUtilities.hpp"
 namespace shammodels::sph {
 
 
@@ -39,15 +40,34 @@ namespace shammodels::sph {
 
     void BasicGas::evolve(f64 dt){
 
+        using namespace shamrock::patch;
+
+        const u32 ixyz      = scheduler().pdl.get_field_idx<vec>("xyz");
+        const u32 ivxyz     = scheduler().pdl.get_field_idx<vec>("vxyz");
+        const u32 iaxyz     = scheduler().pdl.get_field_idx<vec>("axyz");
+        const u32 iaxyz_old     = scheduler().pdl.get_field_idx<vec>("axyz_old");
+        const u32 iuint      = scheduler().pdl.get_field_idx<flt>("uint");
+        const u32 iduint      = scheduler().pdl.get_field_idx<flt>("duint");
+        const u32 ihpart     = scheduler().pdl.get_field_idx<flt>("hpart");
+
         //forward euler step f dt/2
+        shamrock::fields_forward_euler<vec>(scheduler(), ivxyz, iaxyz, dt/2);
+        shamrock::fields_forward_euler<vec>(scheduler(), iuint, iduint, dt/2);
 
         //forward euler step positions dt
+        shamrock::fields_forward_euler<vec>(scheduler(), ixyz, ivxyz, dt);
 
         //forward euler step f dt/2
+        shamrock::fields_forward_euler<vec>(scheduler(), ivxyz, iaxyz, dt/2);
+        shamrock::fields_forward_euler<vec>(scheduler(), iuint, iduint, dt/2);
 
         // swap der
+        shamrock::fields_swap<vec>(scheduler(), iaxyz, iaxyz_old);
 
-        // periodic box
+        // periodic box (This one should be in a apply boundary function or something like this)
+        // apply_position boundary ?
+        auto [bmin,bmax] = scheduler().get_box_volume<vec>();
+        shamrock::fields_apply_periodicity(scheduler(), ixyz, std::pair{bmin, bmax});
 
         // update h
 
