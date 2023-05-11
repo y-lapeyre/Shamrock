@@ -7,7 +7,7 @@ ctx = shamrock.Context()
 ctx.pdata_layout_new()
 
 ctx.pdata_layout_add_field("xyz",1,"f64_3")
-ctx.pdata_layout_add_field("hpart",1,"f32")
+ctx.pdata_layout_add_field("hpart",1,"f64")
 
 #field for leapfrog integrator
 ctx.pdata_layout_add_field("vxyz",1,"f32_3")
