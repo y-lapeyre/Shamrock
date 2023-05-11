@@ -33,6 +33,8 @@ namespace shammodels::sph {
             return shambase::get_check_ref(context.sched);
         }
 
+        public:
+
         BasicGas(ShamrockCtx & context) : context(context){};
 
         inline void check_valid(){

@@ -2,6 +2,7 @@
 set(Sources
 pySetupSPH.cpp
 pyModelsSPH.cpp
+pyBasicGas.cpp
 )
 set(SourcesTest
     

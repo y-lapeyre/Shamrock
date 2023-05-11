@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 ctx = shamrock.Context()
 ctx.pdata_layout_new()
 
-ctx.pdata_layout_add_field("xyz",1,"f32_3")
+ctx.pdata_layout_add_field("xyz",1,"f64_3")
 ctx.pdata_layout_add_field("hpart",1,"f32")
 
 #field for leapfrog integrator
@@ -46,7 +46,7 @@ pmass = -1
 
 
 
-setup = shamrock.SetupSPH(kernel = "M4", precision = "single")
+setup = shamrock.SetupSPH(kernel = "M4", precision = "double")
 setup.init(ctx)
 
 (xs,ys,zs) = setup.get_box_dim(1,256,24,24)
@@ -80,9 +80,11 @@ pmass = setup.get_part_mass()
 
 print("Current part mass :", pmass)
 
-for it in range(5):
-    setup.update_smoothing_lenght(ctx)
+#for it in range(5):
+#    setup.update_smoothing_lenght(ctx)
 
 del setup
 
 
+sim = shamrock.BasicGasSPH(ctx)
+sim.dump_vtk("setup.vtu")
