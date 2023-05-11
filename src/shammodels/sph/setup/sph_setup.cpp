@@ -16,7 +16,7 @@
 
 template<class flt, class Kernel>
 void models::sph::SetupSPH<flt,Kernel>::init(PatchScheduler & sched){
-
+StackEntry stack_loc{};
     using namespace shamrock::patch;
 
     sched.add_root_patch();
@@ -31,6 +31,7 @@ void models::sph::SetupSPH<flt,Kernel>::init(PatchScheduler & sched){
 
 template<class flt, class Kernel>
 void models::sph::SetupSPH<flt,Kernel>::add_particules_fcc(PatchScheduler & sched, flt dr, std::tuple<vec,vec> box){
+    StackEntry stack_loc{};
 
     using namespace shamrock::patch;
 

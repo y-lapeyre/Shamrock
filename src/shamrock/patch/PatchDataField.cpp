@@ -11,6 +11,7 @@
 #include "shamalgs/memory/details/SerializeHelperMember.hpp"
 #include "shamalgs/random/random.hpp"
 #include "shamalgs/reduction/reduction.hpp"
+#include "shambase/exception.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"
 #include "shamrock/legacy/utils/sycl_vector_utils.hpp"
 #include "shamrock/patch/ResizableBuffer.hpp"
@@ -268,7 +269,7 @@ template<class T> void PatchDataField<T>::index_remap_resize(sycl::buffer<u32> &
 template<class T> void PatchDataField<T>::index_remap(sycl::buffer<u32> & index_map, u32 len){
 
     if(len != get_obj_cnt()){
-        throw std::invalid_argument("the match of the new index map does not match with the patchdatafield obj count");
+        throw shambase::throw_with_loc<std::invalid_argument>("the match of the new index map does not match with the patchdatafield obj count");
     }
 
     index_remap_resize(index_map,len);

@@ -34,6 +34,12 @@ namespace shammodels::sph {
         public:
         BasicGas(ShamrockCtx &context) : context(context){};
 
+        inline void setup_fields(){
+            context.pdata_layout_add_field<vec>("xyz", 1);
+            context.pdata_layout_add_field<flt>("hpart", 1);
+            context.pdata_layout_add_field<flt>("uint", 1);
+        }
+
         inline void check_valid() {
             if (cfl_cour < 0) {
                 throw shambase::throw_with_loc<std::invalid_argument>("cfl courant not set");

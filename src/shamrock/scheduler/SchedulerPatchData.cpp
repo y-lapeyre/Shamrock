@@ -22,6 +22,7 @@
 #include <stdexcept>
 #include <vector>
 
+#include "shambase/exception.hpp"
 #include "shamrock/legacy/io/logs.hpp"
 #include "shamrock/legacy/patch/base/patchdata.hpp"
 
@@ -186,7 +187,7 @@ void SchedulerPatchData::split_patchdata(u64 key_orginal, const std::array<shamr
                     patches,
                     {pd0,pd1,pd2,pd3,pd4,pd5,pd6,pd7});
         }else{
-            throw std::runtime_error("the main field does not match any");
+            throw shambase::throw_with_loc<std::runtime_error>("the main field does not match any");
         }
 
         owned_data.erase(key_orginal);

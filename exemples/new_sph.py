@@ -6,18 +6,9 @@ import matplotlib.pyplot as plt
 ctx = shamrock.Context()
 ctx.pdata_layout_new()
 
-ctx.pdata_layout_add_field("xyz",1,"f64_3")
-ctx.pdata_layout_add_field("hpart",1,"f64")
 
-#field for leapfrog integrator
-ctx.pdata_layout_add_field("vxyz",1,"f32_3")
-ctx.pdata_layout_add_field("axyz",1,"f32_3")
-ctx.pdata_layout_add_field("axyz_old",1,"f32_3")
-
-
-ctx.pdata_layout_add_field("uint",1,"f32")
-ctx.pdata_layout_add_field("duint",1,"f32")
-ctx.pdata_layout_add_field("duint_old",1,"f32")
+sim = shamrock.BasicGasSPH(ctx)
+sim.setup_fields()
 
 
 #start the scheduler
@@ -63,8 +54,8 @@ fact = (rho_g/rho_d)**(1./3.)
 setup.add_particules_fcc(ctx,dr, (-xs,-ys/2,-zs/2),(0,ys/2,zs/2))
 setup.add_particules_fcc(ctx,dr*fact, (0,-ys/2,-zs/2),(xs,ys/2,zs/2))
 
-setup.set_value_in_box(ctx, "f32", u_g, "uint",(-xs,-ys/2,-zs/2),(0,ys/2,zs/2))
-setup.set_value_in_box(ctx, "f32", u_d, "uint",(0,-ys/2,-zs/2),(xs,ys/2,zs/2))
+setup.set_value_in_box(ctx, "f64", u_g, "uint",(-xs,-ys/2,-zs/2),(0,ys/2,zs/2))
+setup.set_value_in_box(ctx, "f64", u_d, "uint",(0,-ys/2,-zs/2),(xs,ys/2,zs/2))
 
 
 
@@ -86,5 +77,4 @@ print("Current part mass :", pmass)
 del setup
 
 
-sim = shamrock.BasicGasSPH(ctx)
 sim.dump_vtk("setup.vtu")
