@@ -1,16 +1,14 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright(C) 2021-2023 Timothée David--Cléris
-// <timothee.david--cleris@ens-lyon.fr> Licensed under CeCILL 2.1 License, see
-// LICENSE for more information
+// Copyright(C) 2021-2023 Timothée David--Cléris <timothee.david--cleris@ens-lyon.fr>
+// Licensed under CeCILL 2.1 License, see LICENSE for more information
 //
 // -------------------------------------------------------//
 
 #include "shamrock/math/integrators.hpp"
-
-using namespace shamrock::integrators;
-using namespace shamrock::utilities;
+#include <hipSYCL/sycl/libkernel/accessor.hpp>
+#include <hipSYCL/sycl/libkernel/builtins.hpp>
 
 namespace integ = shamrock::integrators;
 namespace util  = shamrock::utilities;
@@ -37,17 +35,29 @@ void integ::forward_euler(sycl::queue &queue,
     });
 }
 
-template void integ::forward_euler<f32, f32_3>(sycl::queue &queue,
-                                               sycl::buffer<f32_3> &buf_val,
-                                               sycl::buffer<f32_3> &buf_der,
-                                               sycl::range<1> elem_range,
-                                               f32 dt);
+template void integ::forward_euler(sycl::queue &queue,
+                                   sycl::buffer<f32_3> &buf_val,
+                                   sycl::buffer<f32_3> &buf_der,
+                                   sycl::range<1> elem_range,
+                                   f32 dt);
 
-template void integ::forward_euler<f64, f64_3>(sycl::queue &queue,
-                                               sycl::buffer<f64_3> &buf_val,
-                                               sycl::buffer<f64_3> &buf_der,
-                                               sycl::range<1> elem_range,
-                                               f64 dt);
+template void integ::forward_euler(sycl::queue &queue,
+                                   sycl::buffer<f32> &buf_val,
+                                   sycl::buffer<f32> &buf_der,
+                                   sycl::range<1> elem_range,
+                                   f32 dt);
+
+template void integ::forward_euler(sycl::queue &queue,
+                                   sycl::buffer<f64_3> &buf_val,
+                                   sycl::buffer<f64_3> &buf_der,
+                                   sycl::range<1> elem_range,
+                                   f64 dt);
+
+template void integ::forward_euler(sycl::queue &queue,
+                                   sycl::buffer<f64> &buf_val,
+                                   sycl::buffer<f64> &buf_der,
+                                   sycl::range<1> elem_range,
+                                   f64 dt);
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -58,6 +68,7 @@ void integ::leapfrog_corrector(sycl::queue &queue,
                                sycl::buffer<T> &buf_val,
                                sycl::buffer<T> &buf_der,
                                sycl::buffer<T> &buf_der_old,
+                               sycl::buffer<flt> &buf_eps_sq,
                                sycl::range<1> elem_range,
                                flt hdt) {
 
@@ -65,10 +76,15 @@ void integ::leapfrog_corrector(sycl::queue &queue,
         sycl::accessor acc_u{buf_val, cgh, sycl::read_write};
         sycl::accessor acc_du{buf_der, cgh, sycl::read_only};
         sycl::accessor acc_du_old{buf_der_old, cgh, sycl::read_only};
+        sycl::accessor acc_epsilon_sq{buf_eps_sq, sycl::write_only, sycl::no_init};
 
         cgh.parallel_for(elem_range, [=](sycl::item<1> item) {
-            u32 gid     = (u32)item.get_id();
-            acc_u[item] = acc_u[item] + (hdt) * (acc_du[item] - acc_du_old[item]);
+            u32 gid = (u32)item.get_id();
+
+            T incr = (hdt) * (acc_du[item] - acc_du_old[item]);
+
+            acc_u[item]          = acc_u[item] + incr;
+            acc_epsilon_sq[item] = sycl::dot(incr, incr);
         });
     });
 }
@@ -77,6 +93,7 @@ template void integ::leapfrog_corrector(sycl::queue &queue,
                                         sycl::buffer<f32_3> &buf_val,
                                         sycl::buffer<f32_3> &buf_der,
                                         sycl::buffer<f32_3> &buf_der_old,
+                                        sycl::buffer<f32> &buf_eps_sq,
                                         sycl::range<1> elem_range,
                                         f32 hdt);
 
@@ -84,6 +101,7 @@ template void integ::leapfrog_corrector(sycl::queue &queue,
                                         sycl::buffer<f32> &buf_val,
                                         sycl::buffer<f32> &buf_der,
                                         sycl::buffer<f32> &buf_der_old,
+                                        sycl::buffer<f32> &buf_eps_sq,
                                         sycl::range<1> elem_range,
                                         f32 hdt);
 
@@ -91,6 +109,7 @@ template void integ::leapfrog_corrector(sycl::queue &queue,
                                         sycl::buffer<f64_3> &buf_val,
                                         sycl::buffer<f64_3> &buf_der,
                                         sycl::buffer<f64_3> &buf_der_old,
+                                        sycl::buffer<f64> &buf_eps_sq,
                                         sycl::range<1> elem_range,
                                         f64 hdt);
 
@@ -98,6 +117,7 @@ template void integ::leapfrog_corrector(sycl::queue &queue,
                                         sycl::buffer<f64> &buf_val,
                                         sycl::buffer<f64> &buf_der,
                                         sycl::buffer<f64> &buf_der_old,
+                                        sycl::buffer<f64> &buf_eps_sq,
                                         sycl::range<1> elem_range,
                                         f64 hdt);
 
@@ -107,8 +127,8 @@ template void integ::leapfrog_corrector(sycl::queue &queue,
 
 template<class T>
 void util::sycl_position_modulo(sycl::queue &queue,
-                                u32 npart,
                                 sycl::buffer<T> &buf_xyz,
+                                sycl::range<1> elem_range,
                                 std::pair<T, T> box) {
 
     queue.submit([&](sycl::handler &cgh) {
@@ -118,7 +138,7 @@ void util::sycl_position_modulo(sycl::queue &queue,
         T box_max = std::get<1>(box);
         T delt    = box_max - box_min;
 
-        cgh.parallel_for(sycl::range<1>{npart}, [=](sycl::item<1> item) {
+        cgh.parallel_for(elem_range, [=](sycl::item<1> item) {
             u32 gid = (u32)item.get_id();
 
             T r = xyz[gid] - box_min;
@@ -134,13 +154,13 @@ void util::sycl_position_modulo(sycl::queue &queue,
 }
 
 template void util::sycl_position_modulo(sycl::queue &queue,
-                                         u32 npart,
                                          sycl::buffer<f32_3> &buf_xyz,
+                                         sycl::range<1> elem_range,
                                          std::pair<f32_3, f32_3> box);
 
 template void util::sycl_position_modulo(sycl::queue &queue,
-                                         u32 npart,
                                          sycl::buffer<f64_3> &buf_xyz,
+                                         sycl::range<1> elem_range,
                                          std::pair<f64_3, f64_3> box);
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -168,7 +188,13 @@ template void
 util::swap_fields(sycl::queue &queue, sycl::buffer<f32_3> &b1, sycl::buffer<f32_3> &b2, u32 cnt);
 
 template void
+util::swap_fields(sycl::queue &queue, sycl::buffer<f32> &b1, sycl::buffer<f32> &b2, u32 cnt);
+
+template void
 util::swap_fields(sycl::queue &queue, sycl::buffer<f64_3> &b1, sycl::buffer<f64_3> &b2, u32 cnt);
+
+template void
+util::swap_fields(sycl::queue &queue, sycl::buffer<f64> &b1, sycl::buffer<f64> &b2, u32 cnt);
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////

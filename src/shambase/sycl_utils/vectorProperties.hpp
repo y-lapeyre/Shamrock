@@ -11,8 +11,7 @@
 #include "aliases.hpp"
 #include <limits>
 
-
-namespace shambase::sycl_utils {
+namespace shambase {
 
     template<class T>
     struct VectorProperties {
@@ -31,12 +30,9 @@ namespace shambase::sycl_utils {
 
         static constexpr bool has_info = is_float_based || is_int_based || is_uint_based;
 
-        static constexpr T get_min(){
-            return std::numeric_limits<T>::min();
-        }
-        static constexpr T get_max(){
-            return std::numeric_limits<T>::max();
-        }
+        static constexpr T get_min() { return std::numeric_limits<T>::min(); }
+        static constexpr T get_max() { return std::numeric_limits<T>::max(); }
+        static constexpr T get_zero(){return 0;}
     };
 
     template<class T, u32 dim>
@@ -55,42 +51,66 @@ namespace shambase::sycl_utils {
             std::is_same<T, i32>::value || std::is_same<T, i64>::value;
         static constexpr bool has_info = is_float_based || is_int_based || is_uint_based;
 
-        static constexpr sycl::vec<T, dim> get_min(){
+        static constexpr sycl::vec<T, dim> get_min() {
             constexpr T min = std::numeric_limits<T>::min();
-            if constexpr (dim == 2){
-                return {min,min};
+            if constexpr (dim == 2) {
+                return {min, min};
             }
-            if constexpr (dim == 3){
-                return {min,min,min};
+            if constexpr (dim == 3) {
+                return {min, min, min};
             }
-            if constexpr (dim == 4){
-                return {min,min,min,min};
+            if constexpr (dim == 4) {
+                return {min, min, min, min};
             }
-            if constexpr (dim == 8){
-                return {min,min,min,min,min,min,min,min};
+            if constexpr (dim == 8) {
+                return {min, min, min, min, min, min, min, min};
             }
-            if constexpr (dim == 16){
-                return {min,min,min,min,min,min,min,min,min,min,min,min,min,min,min,min};
+            if constexpr (dim == 16) {
+                return {
+                    min, min, min, min, min, min, min, min, min, min, min, min, min, min, min, min};
             }
         }
-        static constexpr sycl::vec<T, dim> get_max(){
+        static constexpr sycl::vec<T, dim> get_max() {
             constexpr T max = std::numeric_limits<T>::max();
-            if constexpr (dim == 2){
-                return {max,max};
+            if constexpr (dim == 2) {
+                return {max, max};
             }
-            if constexpr (dim == 3){
-                return {max,max,max};
+            if constexpr (dim == 3) {
+                return {max, max, max};
             }
-            if constexpr (dim == 4){
-                return {max,max,max,max};
+            if constexpr (dim == 4) {
+                return {max, max, max, max};
             }
-            if constexpr (dim == 8){
-                return {max,max,max,max,max,max,max,max};
+            if constexpr (dim == 8) {
+                return {max, max, max, max, max, max, max, max};
             }
-            if constexpr (dim == 16){
-                return {max,max,max,max,max,max,max,max,max,max,max,max,max,max,max,max};
+            if constexpr (dim == 16) {
+                return {
+                    max, max, max, max, max, max, max, max, max, max, max, max, max, max, max, max};
+            }
+        }
+        static constexpr sycl::vec<T, dim> get_zero() {
+            constexpr T zero = 0;
+            if constexpr (dim == 2) {
+                return {zero, zero};
+            }
+            if constexpr (dim == 3) {
+                return {zero, zero, zero};
+            }
+            if constexpr (dim == 4) {
+                return {zero, zero, zero, zero};
+            }
+            if constexpr (dim == 8) {
+                return {zero, zero, zero, zero, zero, zero, zero, zero};
+            }
+            if constexpr (dim == 16) {
+                return {
+                    zero, zero, zero, zero, zero, zero, zero, zero, zero, zero, zero, zero, zero, zero, zero, zero};
             }
         }
     };
 
-} // namespace shambase::sycl_utils
+    template<class T>
+    using VecComponent = typename VectorProperties<T>::component_type;
+
+} // namespace shambase

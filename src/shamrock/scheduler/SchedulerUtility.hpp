@@ -8,19 +8,20 @@
 
 #pragma once
 
+#include "shambase/DistributedData.hpp"
 #include "shambase/memory.hpp"
 #include "shambase/sycl.hpp"
+#include "shambase/sycl_utils/vectorProperties.hpp"
 #include "shamrock/legacy/patch/scheduler/scheduler_mpi.hpp"
 #include "shamrock/math/integrators.hpp"
 #include "shamsys/NodeInstance.hpp"
-
+#include "ComputeField.hpp"
 namespace shamrock {
 
     class SchedulerUtility {
         PatchScheduler &sched;
 
         public:
-
         SchedulerUtility(PatchScheduler &sched) : sched(sched) {}
 
         template<class T, class flt>
@@ -51,14 +52,30 @@ namespace shamrock {
             });
         }
 
+        template<class T, class flt>
+        inline void
+        fields_leapfrog_corrector(u32 field_idx, u32 derfield_idx, ComputeField<T> & derfield_old, ComputeField<flt> & field_epsilon, flt hdt) {
+            using namespace shamrock::patch;
+            sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
+                integrators::leapfrog_corrector(
+                    shamsys::instance::get_compute_queue(),
+                    shambase::get_check_ref(pdat.get_field<T>(field_idx).get_buf()),
+                    shambase::get_check_ref(pdat.get_field<T>(derfield_idx).get_buf()),
+                    shambase::get_check_ref(derfield_old.get_field(id_patch).get_buf()),
+                    shambase::get_check_ref(field_epsilon.get_field(id_patch).get_buf()),
+                    pdat.get_obj_cnt(),
+                    hdt);
+            });
+        }
+
         template<class T>
         inline void fields_apply_periodicity(u32 field_idx, std::pair<T, T> box) {
             using namespace shamrock::patch;
             sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
                 utilities::sycl_position_modulo(
                     shamsys::instance::get_compute_queue(),
-                    pdat.get_obj_cnt(),
                     shambase::get_check_ref(pdat.get_field<T>(field_idx).get_buf()),
+                    pdat.get_obj_cnt(),
                     box);
             });
         }
@@ -74,6 +91,76 @@ namespace shamrock {
                     pdat.get_obj_cnt());
             });
         }
+
+        template<class T>
+        inline T compute_rank_max(u32 field_idx){
+        using namespace shamrock::patch;
+            T ret = shambase::VectorProperties<T>::get_min();
+            sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
+                ret = shambase::sycl_utils::g_sycl_max(ret, pdat.get_field<T>(field_idx).compute_max());
+            });
+
+            return ret;
+        }
+        template<class T>
+        inline T compute_rank_min(u32 field_idx){
+        using namespace shamrock::patch;
+            T ret = shambase::VectorProperties<T>::get_max();
+            sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
+                ret = shambase::sycl_utils::g_sycl_min(ret, pdat.get_field<T>(field_idx).compute_min());
+            });
+
+            return ret;
+        }
+        template<class T>
+        inline T compute_rank_sum(u32 field_idx){
+        using namespace shamrock::patch;
+            T ret = shambase::VectorProperties<T>::get_zero();
+            sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
+                ret = shambase::sycl_utils::g_sycl_min(ret, pdat.get_field<T>(field_idx).compute_sum());
+            });
+
+            return ret;
+        }
+        template<class T>
+        inline shambase::VecComponent<T> compute_rank_dot_sum(u32 field_idx){
+        using namespace shamrock::patch;
+            shambase::VecComponent<T> ret = 0;
+            sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
+                ret = shambase::sycl_utils::g_sycl_min(ret, pdat.get_field<T>(field_idx).compute_dot_sum());
+            });
+
+            return ret;
+        }
+
+        template<class T>
+        inline ComputeField<T> save_field(u32 field_idx, std::string new_name){
+            ComputeField<T> cfield;
+            using namespace shamrock::patch;
+            sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
+                
+                PatchDataField<T> & pdat_field = pdat.get_field<T>(field_idx);
+                cfield.field_data.add_obj(id_patch, pdat_field.duplicate(new_name));
+
+            });
+            return cfield;
+        }
+
+        template<class T>
+        inline ComputeField<T> make_compute_field(std::string new_name, u32 nvar){
+            ComputeField<T> cfield;
+            using namespace shamrock::patch;
+            sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
+                cfield.field_data.add_obj(id_patch, PatchDataField<T>(new_name,nvar,pdat.get_obj_cnt()));
+            });
+            return cfield;
+        } 
+
+
+
     };
+
+
+
 
 } // namespace shamrock

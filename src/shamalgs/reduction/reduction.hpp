@@ -12,12 +12,16 @@
 #include "shambase/exception.hpp"
 #include "shambase/sycl.hpp"
 #include "shambase/sycl_utils/vec_equals.hpp"
+#include "shambase/sycl_utils/vectorProperties.hpp"
 #include "shamsys/NodeInstance.hpp"
 
 namespace shamalgs::reduction {
 
     template<class T>
     T sum(sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id);
+
+    template<class T>
+    shambase::VecComponent<T> dot_sum(sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id);
 
     template<class T>
     T max(sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id);

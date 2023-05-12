@@ -18,6 +18,7 @@
 #include <array>
 #include <memory>
 #include <random>
+#include <string>
 #include <utility>
 #include "ResizableBuffer.hpp"
 
@@ -99,6 +100,9 @@ template <class T> class PatchDataField {
     inline PatchDataField(std::string name, u32 nvar)
         : field_name(name), nvar(nvar), obj_cnt(0), buf(0){};
 
+    inline PatchDataField(std::string name, u32 nvar, u32 obj_cnt)
+        : field_name(name), nvar(nvar), obj_cnt(obj_cnt), buf(obj_cnt*nvar){};
+
     inline PatchDataField(const PatchDataField &other)
         : field_name(other.field_name), nvar(other.nvar), obj_cnt(other.obj_cnt), buf(other.buf) {
     }
@@ -120,6 +124,13 @@ template <class T> class PatchDataField {
     inline PatchDataField duplicate() const {
         const PatchDataField &current = *this;
         return PatchDataField(current);
+    }
+
+    inline PatchDataField duplicate(std::string new_name) const {
+        const PatchDataField &current = *this;
+        PatchDataField ret = PatchDataField(current);
+        ret.field_name = new_name;
+        return ret;
     }
 
     inline std::unique_ptr<PatchDataField> duplicate_to_ptr() const {
@@ -262,6 +273,12 @@ template <class T> class PatchDataField {
      * @return u64 
      */
     u64 serialize_full_byte_size();
+
+    T compute_max();
+    T compute_min();
+    T compute_sum();
+
+    shambase::VecComponent<T> compute_dot_sum();
 };
 
 // TODO add overflow check

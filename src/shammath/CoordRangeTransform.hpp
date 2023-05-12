@@ -16,8 +16,8 @@ namespace shammath {
     template<class Tsource, class Tdest>
     class CoordRangeTransform {
 
-        using SourceProp = shambase::sycl_utils::VectorProperties<Tsource>;
-        using DestProp   = shambase::sycl_utils::VectorProperties<Tdest>;
+        using SourceProp = shambase::VectorProperties<Tsource>;
+        using DestProp   = shambase::VectorProperties<Tdest>;
 
         using component_source_t = typename SourceProp::component_type;
         using component_dest_t   = typename DestProp::component_type;

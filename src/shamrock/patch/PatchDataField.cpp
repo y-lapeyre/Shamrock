@@ -12,11 +12,13 @@
 #include "shamalgs/random/random.hpp"
 #include "shamalgs/reduction/reduction.hpp"
 #include "shambase/exception.hpp"
+#include "shambase/memory.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"
 #include "shamrock/legacy/utils/sycl_vector_utils.hpp"
 #include "shamrock/patch/ResizableBuffer.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
+#include <hipSYCL/sycl/buffer.hpp>
 #include <memory>
 
 template<class T> class Kernel_Extract_element;
@@ -286,7 +288,7 @@ template<class T> void PatchDataField<T>::index_remap(sycl::buffer<u32> & index_
 
 template<class T>
 PatchDataField<T> PatchDataField<T>::mock_field(u64 seed, u32 obj_cnt, std::string name, u32 nvar){
-    using Prop = shambase::sycl_utils::VectorProperties<T>;
+    using Prop = shambase::VectorProperties<T>;
 
     return PatchDataField<T>(
         ResizableBuffer<T>::mock_buffer(seed, obj_cnt*nvar, Prop::get_min(), Prop::get_max()),
@@ -366,6 +368,41 @@ PatchDataField<T> PatchDataField<T>::deserialize_full(shamalgs::SerializeHelper 
 
 
 
+
+
+
+template<class T>    T PatchDataField<T>::compute_max(){
+    return shamalgs::reduction::max(
+        shamsys::instance::get_compute_queue(), 
+        shambase::get_check_ref(buf.get_buf()), 
+        0, 
+        obj_cnt*nvar);
+}
+
+template<class T>    T PatchDataField<T>::compute_min(){
+    return shamalgs::reduction::min(
+        shamsys::instance::get_compute_queue(), 
+        shambase::get_check_ref(buf.get_buf()), 
+        0, 
+        obj_cnt*nvar);
+}
+
+template<class T> T PatchDataField<T>::compute_sum(){
+    return shamalgs::reduction::sum(
+        shamsys::instance::get_compute_queue(), 
+        shambase::get_check_ref(buf.get_buf()), 
+        0, 
+        obj_cnt*nvar);
+}
+
+template<class T> shambase::VecComponent<T> PatchDataField<T>::compute_dot_sum(){
+    return shamalgs::reduction::dot_sum(
+        shamsys::instance::get_compute_queue(), 
+        shambase::get_check_ref(buf.get_buf()), 
+        0, 
+        obj_cnt*nvar);
+
+}
 
 //////////////////////////////////////////////////////////////////////////
 // Define the patchdata field for all classes in XMAC_LIST_ENABLED_FIELD
@@ -619,3 +656,6 @@ template <> void PatchDataField<u64_3>::gen_mock_data(u32 obj_cnt, std::mt19937 
         }
     }
 }
+
+
+

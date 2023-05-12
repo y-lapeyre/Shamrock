@@ -174,7 +174,7 @@ void PatchScheduler::allpush_data(shamrock::patch::PatchData &pdat){
                 using base_t =
                             typename std::remove_reference<decltype(arg)>::type::field_T;
 
-                if constexpr (shambase::sycl_utils::VectorProperties<base_t>::dimension == 3){
+                if constexpr (shambase::VectorProperties<base_t>::dimension == 3){
                     auto [bmin,bmax] = get_sim_box().patch_coord_to_domain<base_t>(cur_p)  ;
 
                     logger::debug_sycl_ln("Scheduler", "pushing data in patch ", id_patch, "search range :",bmin, bmax);

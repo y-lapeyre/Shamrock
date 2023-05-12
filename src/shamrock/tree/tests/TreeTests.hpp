@@ -27,11 +27,11 @@ inline shammath::CoordRange<f64_3> get_test_coord_ranges() {
 
 template<>
 inline shammath::CoordRange<u32_3> get_test_coord_ranges() {
-    using Prop = shambase::sycl_utils::VectorProperties<u32_3>;
+    using Prop = shambase::VectorProperties<u32_3>;
     return {u32_3{0, 0, 0}, Prop::get_max() / 2 + 1};
 }
 template<>
 inline shammath::CoordRange<u64_3> get_test_coord_ranges() {
-    using Prop = shambase::sycl_utils::VectorProperties<u64_3>;
+    using Prop = shambase::VectorProperties<u64_3>;
     return {u64_3{0, 0, 0}, Prop::get_max() / 2 + 1};
 }

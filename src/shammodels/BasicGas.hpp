@@ -69,6 +69,8 @@ namespace shammodels::sph {
          */
         void evolve(f64 dt);
 
+        u64 count_particles();
+
     };
 
 } // namespace shammodels::sph
