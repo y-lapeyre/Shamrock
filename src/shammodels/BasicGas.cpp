@@ -7,9 +7,8 @@
 // -------------------------------------------------------//
 
 #include "BasicGas.hpp"
-#include "shamrock/math/integratorUtilities.hpp"
+#include "shamrock/scheduler/SchedulerUtility.hpp"
 namespace shammodels::sph {
-
 
     void BasicGas::dump_vtk(std::string dump_name) {
 
@@ -38,36 +37,49 @@ namespace shammodels::sph {
         writer.write_points(pos, num_obj);
     }
 
-    void BasicGas::evolve(f64 dt){
+    void BasicGas::apply_position_boundary(){
+
+        shamrock::SchedulerUtility integrators(scheduler());
+
+        const u32 ixyz       = scheduler().pdl.get_field_idx<vec>("xyz");
+        auto [bmin, bmax] = scheduler().get_box_volume<vec>();
+        integrators.fields_apply_periodicity(ixyz, std::pair{bmin, bmax});
+
+
+    }
+
+    void BasicGas::evolve(f64 dt) {
 
         using namespace shamrock::patch;
 
-        const u32 ixyz      = scheduler().pdl.get_field_idx<vec>("xyz");
-        const u32 ivxyz     = scheduler().pdl.get_field_idx<vec>("vxyz");
-        const u32 iaxyz     = scheduler().pdl.get_field_idx<vec>("axyz");
-        const u32 iaxyz_old     = scheduler().pdl.get_field_idx<vec>("axyz_old");
+        const u32 ixyz       = scheduler().pdl.get_field_idx<vec>("xyz");
+        const u32 ivxyz      = scheduler().pdl.get_field_idx<vec>("vxyz");
+        const u32 iaxyz      = scheduler().pdl.get_field_idx<vec>("axyz");
+        const u32 iaxyz_old  = scheduler().pdl.get_field_idx<vec>("axyz_old");
         const u32 iuint      = scheduler().pdl.get_field_idx<flt>("uint");
-        const u32 iduint      = scheduler().pdl.get_field_idx<flt>("duint");
+        const u32 iduint     = scheduler().pdl.get_field_idx<flt>("duint");
+        const u32 iduint_loc = scheduler().pdl.get_field_idx<flt>("duint_loc");
         const u32 ihpart     = scheduler().pdl.get_field_idx<flt>("hpart");
 
-        //forward euler step f dt/2
-        shamrock::fields_forward_euler<vec>(scheduler(), ivxyz, iaxyz, dt/2);
-        shamrock::fields_forward_euler<vec>(scheduler(), iuint, iduint, dt/2);
+        shamrock::SchedulerUtility integrators(scheduler());
 
-        //forward euler step positions dt
-        shamrock::fields_forward_euler<vec>(scheduler(), ixyz, ivxyz, dt);
+        // forward euler step f dt/2
+        integrators.fields_forward_euler<vec>(ivxyz, iaxyz, dt / 2);
+        integrators.fields_forward_euler<vec>(iuint, iduint, dt / 2);
 
-        //forward euler step f dt/2
-        shamrock::fields_forward_euler<vec>(scheduler(), ivxyz, iaxyz, dt/2);
-        shamrock::fields_forward_euler<vec>(scheduler(), iuint, iduint, dt/2);
+        // forward euler step positions dt
+        integrators.fields_forward_euler<vec>(ixyz, ivxyz, dt);
+
+        // forward euler step f dt/2
+        integrators.fields_forward_euler<vec>(ivxyz, iaxyz, dt / 2);
+        integrators.fields_forward_euler<vec>(iuint, iduint, dt / 2);
 
         // swap der
-        shamrock::fields_swap<vec>(scheduler(), iaxyz, iaxyz_old);
+        integrators.fields_swap<vec>(iaxyz, iaxyz_old);
 
         // periodic box (This one should be in a apply boundary function or something like this)
         // apply_position boundary ?
-        auto [bmin,bmax] = scheduler().get_box_volume<vec>();
-        shamrock::fields_apply_periodicity(scheduler(), ixyz, std::pair{bmin, bmax});
+        apply_position_boundary();
 
         // update h
 
@@ -75,9 +87,11 @@ namespace shammodels::sph {
 
         // compute force
 
-        // corrector 
+        // corrector
+        integrators.fields_leapfrog_corrector<vec>(ivxyz, iaxyz, iaxyz_old, dt / 2);
+        integrators.fields_leapfrog_corrector<flt>(iuint, iduint, iduint_loc, dt / 2);
 
         // if delta too big jump to compute force
     }
 
-}
+} // namespace shammodels::sph

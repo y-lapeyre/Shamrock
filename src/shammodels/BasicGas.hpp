@@ -60,6 +60,8 @@ namespace shammodels::sph {
 
         f64 get_cfl_dt();
 
+        void apply_position_boundary();
+
         /**
          * @brief 
          * 

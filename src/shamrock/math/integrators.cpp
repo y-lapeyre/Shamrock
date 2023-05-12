@@ -81,9 +81,23 @@ template void integ::leapfrog_corrector(sycl::queue &queue,
                                         f32 hdt);
 
 template void integ::leapfrog_corrector(sycl::queue &queue,
+                                        sycl::buffer<f32> &buf_val,
+                                        sycl::buffer<f32> &buf_der,
+                                        sycl::buffer<f32> &buf_der_old,
+                                        sycl::range<1> elem_range,
+                                        f32 hdt);
+
+template void integ::leapfrog_corrector(sycl::queue &queue,
                                         sycl::buffer<f64_3> &buf_val,
                                         sycl::buffer<f64_3> &buf_der,
                                         sycl::buffer<f64_3> &buf_der_old,
+                                        sycl::range<1> elem_range,
+                                        f64 hdt);
+
+template void integ::leapfrog_corrector(sycl::queue &queue,
+                                        sycl::buffer<f64> &buf_val,
+                                        sycl::buffer<f64> &buf_der,
+                                        sycl::buffer<f64> &buf_der_old,
                                         sycl::range<1> elem_range,
                                         f64 hdt);
 
@@ -148,11 +162,11 @@ void util::swap_fields(sycl::queue &queue, sycl::buffer<T> &b1, sycl::buffer<T> 
             acc2[item] = v1;
         });
     });
-
 }
 
 template void
 util::swap_fields(sycl::queue &queue, sycl::buffer<f32_3> &b1, sycl::buffer<f32_3> &b2, u32 cnt);
+
 template void
 util::swap_fields(sycl::queue &queue, sycl::buffer<f64_3> &b1, sycl::buffer<f64_3> &b2, u32 cnt);
 
