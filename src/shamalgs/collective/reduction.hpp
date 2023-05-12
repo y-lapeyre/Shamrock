@@ -13,7 +13,6 @@
 #include "shamsys/MpiWrapper.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/SyclMpiTypes.hpp"
-#include <mpi.h>
 #include <stdexcept>
 #include <type_traits>
 #include <utility>
