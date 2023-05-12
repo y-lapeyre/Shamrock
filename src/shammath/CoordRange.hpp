@@ -22,7 +22,7 @@ namespace shammath {
     struct CoordRange {
 
 
-        using T_prop = shambase::sycl_utils::VectorProperties<T>;
+        using T_prop = shambase::VectorProperties<T>;
 
         T lower;
         T upper;

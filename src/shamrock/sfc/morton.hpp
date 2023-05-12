@@ -169,7 +169,7 @@ namespace shamrock::sfc {
         using Morton = MortonCodes<morton_t, dim>;
 
         using pos_t   = _pos_t;
-        using coord_t = typename shambase::sycl_utils::VectorProperties<pos_t>::component_type;
+        using coord_t = typename shambase::VectorProperties<pos_t>::component_type;
         using ipos_t  = typename Morton::int_vec_repr;
         using int_t   = typename Morton::int_vec_repr_base;
 

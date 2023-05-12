@@ -9,6 +9,7 @@
 #pragma once
 
 
+#include "shambase/exception.hpp"
 #include "shamrock/legacy/patch/scheduler/scheduler_mpi.hpp"
 #include "shamrock/legacy/utils/geometry_utils.hpp"
 #include <stdexcept>
@@ -22,7 +23,7 @@ namespace generic::setup::modifiers {
 
 template <class T, class vec>
 inline void set_value_in_box(PatchScheduler &sched, T val, std::string name, std::tuple<vec, vec> box) {
-
+    StackEntry stack_loc{};
     sched.patch_data.for_each_patchdata([&](u64 patch_id, shamrock::patch::PatchData & pdat){
 
         PatchDataField<vec> &xyz = pdat.template get_field<vec>(sched.pdl.get_field_idx<vec>("xyz"));
@@ -56,7 +57,7 @@ inline void pertub_eigenmode_wave(PatchScheduler &sched, std::tuple<flt, flt> am
     using vec = sycl::vec<flt, 3>;
 
     if (std::get<0>(ampls) != 0) {
-        throw std::runtime_error("density perturbation not implemented");
+        throw shambase::throw_with_loc<std::runtime_error>("density perturbation not implemented");
     }
 
     sched.patch_data.for_each_patchdata([&](u64 patch_id, shamrock::patch::PatchData & pdat){

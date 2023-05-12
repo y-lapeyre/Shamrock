@@ -8,9 +8,10 @@
 
 #pragma once
 
-#include "shambase/type_traits.hpp"
-#include "vectorProperties.hpp"
 #include "shambase/sycl.hpp"
+#include "shambase/type_traits.hpp"
+#include "shambase/vectors.hpp"
+#include "vectorProperties.hpp"
 
 namespace shambase::sycl_utils {
 
@@ -42,6 +43,19 @@ namespace shambase::sycl_utils {
         }
     }
 
+    template<class T>
+    inline VecComponent<T> g_sycl_dot(T a, T b) {
 
+        static_assert(VectorProperties<T>::has_info, "no info about this type");
+
+        if constexpr (VectorProperties<T>::is_float_based && VectorProperties<T>::dimension <=4) {
+
+            return sycl::dot(a, b);
+
+        } else {
+
+            return sum_accumulate(a * b);
+        }
+    }
 
 } // namespace shambase::sycl_utils

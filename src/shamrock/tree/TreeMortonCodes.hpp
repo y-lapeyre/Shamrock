@@ -38,7 +38,7 @@ namespace shamrock::tree {
 
             this->obj_cnt = obj_cnt;
 
-            using TProp = shambase::sycl_utils::VectorProperties<T>;
+            using TProp = shambase::VectorProperties<T>;
 
             RadixTreeMortonBuilder<u_morton, T, TProp::dimension>::build(
                 queue,

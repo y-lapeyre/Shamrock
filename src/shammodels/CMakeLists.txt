@@ -1,3 +1,10 @@
+target_sources(shamrock_lib
+    PRIVATE
+        BasicGas.cpp 
+    PUBLIC
+    )
+
+
 
 #add_subdirectory(algs)
 #add_subdirectory(physics)

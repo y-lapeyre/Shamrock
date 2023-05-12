@@ -11,6 +11,11 @@
 #include "shamalgs/reduction/details/sycl2020reduction.hpp"
 #include "shamalgs/reduction/details/groupReduction.hpp"
 #include "shamalgs/reduction/details/fallbackReduction.hpp"
+#include "shambase/sycl_utils/sycl_utilities.hpp"
+#include "shambase/sycl_utils/vectorProperties.hpp"
+#include <hipSYCL/sycl/buffer.hpp>
+#include <hipSYCL/sycl/handler.hpp>
+#include <hipSYCL/sycl/libkernel/accessor.hpp>
 
 namespace shamalgs::reduction {
 
@@ -30,6 +35,23 @@ namespace shamalgs::reduction {
         return details::FallbackReduction<T>::min(q, buf1, start_id, end_id);
     }
 
+    template<class T>
+    shambase::VecComponent<T> dot_sum(sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id){
+        sycl::buffer<shambase::VecComponent<T>> ret_data_base(end_id - start_id);
+
+        q.submit([&](sycl::handler & cgh){
+            sycl::accessor acc_dot {ret_data_base, cgh, sycl::write_only, sycl::no_init};
+            sycl::accessor acc{buf1, cgh, sycl::read_only};
+
+            cgh.parallel_for(sycl::range<1>{end_id - start_id}, [=](sycl::item<1> it){
+                const T tmp = acc[it];
+                acc_dot[it] = shambase::sycl_utils::g_sycl_dot(tmp,tmp);
+            });
+        });
+
+        return sum(q, ret_data_base, 0, end_id - start_id);
+    }
+
     bool is_all_true(sycl::buffer<u8> & buf,u32 cnt){
 
         //TODO do it on GPU pleeeaze
@@ -38,7 +60,7 @@ namespace shamalgs::reduction {
         {
             sycl::host_accessor acc{buf, sycl::read_only};
 
-            for (u32 i = 0; i < cnt; i++) { //TODO remove ref to size
+            for (u32 i = 0; i < cnt; i++) {
                 res = res && (acc[i] != 0);
             }
         }
@@ -68,6 +90,7 @@ namespace shamalgs::reduction {
 
     #define X(_arg_) \
     template _arg_ sum(sycl::queue &q, sycl::buffer<_arg_> &buf1, u32 start_id, u32 end_id);\
+    template shambase::VecComponent<_arg_> dot_sum(sycl::queue &q, sycl::buffer<_arg_> &buf1, u32 start_id, u32 end_id);\
     template _arg_ max(sycl::queue &q, sycl::buffer<_arg_> &buf1, u32 start_id, u32 end_id);\
     template _arg_ min(sycl::queue &q, sycl::buffer<_arg_> &buf1, u32 start_id, u32 end_id);
 

@@ -25,5 +25,6 @@ Register_pymod(pybasicgassph){
             })
         )
         .def("dump_vtk",&BasicGas::dump_vtk)  
+        .def("setup_fields",&BasicGas::setup_fields)
     ;
 }

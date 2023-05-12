@@ -7,6 +7,8 @@
 // -------------------------------------------------------//
 
 
+#include "shambase/exception.hpp"
+#include "shambase/stacktrace.hpp"
 #include "shambindings/pybindaliases.hpp"
 
 #include <pybind11/stl.h>
@@ -42,15 +44,18 @@ Register_pymod(pynamedsphsetup){
             return std::tuple{std::tuple{b1.x(), b1.y(), b1.z()},std::tuple{b2.x(), b2.y(), b2.z()}};
         })
         .def("set_value_in_box", [](NamedSetupSPH & self, ShamrockCtx & ctx, std::string type ,py::object val, std::string name, std::tuple<f64,f64,f64> box_min, std::tuple<f64,f64,f64> box_max){
-            
+            StackEntry stack_loc{};
             auto [xm,ym,zm] = box_min;
             auto [xM,yM,zM] = box_max;
 
             if(type == "f32"){
                 f32 tmp = val.cast<f32>();
                 self.set_value_in_box(ctx, tmp, name, {f64_3{xm,ym,zm},f64_3{xM,yM,zM}});
+            }else if(type == "f64"){
+                f64 tmp = val.cast<f64>();
+                self.set_value_in_box(ctx, tmp, name, {f64_3{xm,ym,zm},f64_3{xM,yM,zM}});
             }else{
-                throw std::invalid_argument("unknown type");
+                throw shambase::throw_with_loc<std::invalid_argument>("unknown type");
             }
 
 

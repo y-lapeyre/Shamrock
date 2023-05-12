@@ -6,6 +6,7 @@
 //
 // -------------------------------------------------------//
 
+#include "shambase/exception.hpp"
 #include "shambindings/pybindaliases.hpp"
 
 
@@ -19,7 +20,7 @@ Register_pymod(pysyslibinit){
     m.def("change_loglevel",[](u32 loglevel){
 
         if (loglevel > 127) {
-            throw std::invalid_argument("loglevel must be below 128");
+            throw shambase::throw_with_loc<std::invalid_argument>("loglevel must be below 128");
         }
 
         if(loglevel == i8_max){

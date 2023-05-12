@@ -9,6 +9,7 @@
 #pragma once
 
 #include "shambase/exception.hpp"
+#include "shambase/stacktrace.hpp"
 #include "shammodels/sph/setup/sph_setup.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
 #include <variant>
@@ -155,6 +156,7 @@ class NamedSetupSPH{
     }
 
     void update_smoothing_lenght(ShamrockCtx & ctx){
+        StackEntry stack_loc{};
         if(!ctx.sched){
             throw std::runtime_error("cannot initialize a setup with an uninitialized scheduler");
         }

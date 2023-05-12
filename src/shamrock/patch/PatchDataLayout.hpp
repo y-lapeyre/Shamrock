@@ -168,7 +168,7 @@ namespace shamrock::patch {
         }
 
         if (found) {
-            throw std::invalid_argument("add_field -> the name already exists");
+            throw shambase::throw_with_loc<std::invalid_argument>("add_field -> the name already exists");
         }
 
         logger::info_ln("PatchDataLayout", "adding field :", field_name, nvar);

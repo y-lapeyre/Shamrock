@@ -58,18 +58,18 @@ namespace models::sph {
         }
 
         template<class T> 
-        inline void set_value_in_box(PatchScheduler & sched, T val, std::string name, std::tuple<vec,vec> box){
+        inline void set_value_in_box(PatchScheduler & sched, T val, std::string name, std::tuple<vec,vec> box){StackEntry stack_loc{};
             generic::setup::modifiers::set_value_in_box(sched, val,  name, box);
         }
 
-        inline void pertub_eigenmode_wave(PatchScheduler &sched, std::tuple<flt,flt> ampls, vec k, flt phase){
+        inline void pertub_eigenmode_wave(PatchScheduler &sched, std::tuple<flt,flt> ampls, vec k, flt phase){StackEntry stack_loc{};
             generic::setup::modifiers::pertub_eigenmode_wave(sched, ampls, k, phase);
         }
         
 
         void add_particules_fcc(PatchScheduler & sched, flt dr, std::tuple<vec,vec> box);
 
-        inline void set_total_mass(flt tot_mass){
+        inline void set_total_mass(flt tot_mass){StackEntry stack_loc{};
             u64 part = 0;
             mpi::allreduce(&part_cnt, &part, 1, mpi_type_u64, MPI_SUM, MPI_COMM_WORLD);
             part_mass = tot_mass/part;
@@ -79,7 +79,7 @@ namespace models::sph {
             return part_mass;
         }
 
-        inline void update_smoothing_lenght(PatchScheduler & sched){
+        inline void update_smoothing_lenght(PatchScheduler & sched){StackEntry stack_loc{};
             using Updater = algs::SmoothingLenghtCompute<flt,u32,Kernel>;
 
             algs::compute_smoothing_lenght<flt, u32, Kernel>(

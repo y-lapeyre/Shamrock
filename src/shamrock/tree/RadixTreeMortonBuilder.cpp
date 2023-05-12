@@ -11,6 +11,7 @@
 #include "RadixTreeMortonBuilder.hpp"
 #include "kernels/key_morton_sort.hpp"
 #include "shamalgs/algorithm/algorithm.hpp"
+#include "shambase/exception.hpp"
 #include "shambase/integer_sycl.hpp"
 #include "shamrock/math/integerManip.hpp"
 #include "shamrock/sfc/MortonKernels.hpp"
@@ -33,7 +34,7 @@ using namespace shamrock::math::int_manip;
 using namespace shamrock::sfc;
 
     if (cnt_obj > i32_max - 1) {
-        throw std::invalid_argument("number of element in patch above i32_max-1");
+        throw shambase::throw_with_loc<std::invalid_argument>("number of element in patch above i32_max-1");
     }
 
     debug_sycl_ln("RadixTree", "box dim :", bounding_box);

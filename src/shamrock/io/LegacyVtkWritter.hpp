@@ -29,10 +29,10 @@ namespace shamrock {
     namespace details {
 
         template<class T>
-        using repr_t = typename shambase::sycl_utils::VectorProperties<T>::component_type;
+        using repr_t = typename shambase::VectorProperties<T>::component_type;
 
         template<class T>
-        static constexpr u32 repr_count = shambase::sycl_utils::VectorProperties<T>::dimension; 
+        static constexpr u32 repr_count = shambase::VectorProperties<T>::dimension; 
         
         template<class RT, class T>
         inline void write_buffer_vtktype(MPI_File fh,sycl::buffer<T> & buf,u32 len,u32 sum_len, bool device_alloc ,  u64 & file_head_ptr){
@@ -100,22 +100,22 @@ namespace shamrock {
 
         template<class T>
         inline void write_buf(sycl::buffer<T> & buf, u32 len, u32 sum_len){
-            if constexpr (shambase::sycl_utils::VectorProperties<T>::is_float_based){
+            if constexpr (shambase::VectorProperties<T>::is_float_based){
                 details::write_buffer_vtktype<f32>(mfile, buf, len, sum_len, false, file_head_ptr);
-            }else if constexpr (shambase::sycl_utils::VectorProperties<T>::is_int_based){
+            }else if constexpr (shambase::VectorProperties<T>::is_int_based){
                 details::write_buffer_vtktype<i32>(mfile, buf, len, sum_len, false, file_head_ptr);
-            }else if constexpr (shambase::sycl_utils::VectorProperties<T>::is_uint_based){
+            }else if constexpr (shambase::VectorProperties<T>::is_uint_based){
                 details::write_buffer_vtktype<i32>(mfile, buf, len, sum_len, false, file_head_ptr);
             }
         }
 
         template<class T>
         inline std::string get_buf_type_name(){
-            if constexpr (shambase::sycl_utils::VectorProperties<T>::is_float_based){
+            if constexpr (shambase::VectorProperties<T>::is_float_based){
                 return "float";
-            }else if constexpr (shambase::sycl_utils::VectorProperties<T>::is_int_based){
+            }else if constexpr (shambase::VectorProperties<T>::is_int_based){
                 return "int";
-            }else if constexpr (shambase::sycl_utils::VectorProperties<T>::is_uint_based){
+            }else if constexpr (shambase::VectorProperties<T>::is_uint_based){
                 return "int";
             }else{
                 return "unknown";

@@ -22,6 +22,7 @@
 #include <stdexcept>
 #include <vector>
 
+#include "shambase/exception.hpp"
 #include "shamrock/legacy/io/logs.hpp"
 #include "shamrock/legacy/patch/base/patchdata.hpp"
 
@@ -88,7 +89,7 @@ void split_patchdata(
     const std::array<shamrock::patch::Patch, 8> patches,
     std::array<std::reference_wrapper<shamrock::patch::PatchData>,8> pdats){
 
-    using ptype = typename shambase::sycl_utils::VectorProperties<Vectype>::component_type;
+    using ptype = typename shambase::VectorProperties<Vectype>::component_type;
 
     auto [bmin_p0, bmax_p0] = sim_box.patch_coord_to_domain<Vectype>(patches[0]);
     auto [bmin_p1, bmax_p1] = sim_box.patch_coord_to_domain<Vectype>(patches[1]);
@@ -186,7 +187,7 @@ void SchedulerPatchData::split_patchdata(u64 key_orginal, const std::array<shamr
                     patches,
                     {pd0,pd1,pd2,pd3,pd4,pd5,pd6,pd7});
         }else{
-            throw std::runtime_error("the main field does not match any");
+            throw shambase::throw_with_loc<std::runtime_error>("the main field does not match any");
         }
 
         owned_data.erase(key_orginal);

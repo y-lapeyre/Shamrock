@@ -181,7 +181,7 @@ namespace shamrock::patch {
     template <class T>
     inline std::tuple<T, T> SimulationBoxInfo::patch_coord_to_domain(const Patch &p) const {
 
-        //using ptype = typename shambase::sycl_utils::VectorProperties<T>::component_type;
+        //using ptype = typename shambase::VectorProperties<T>::component_type;
 
         auto [bmin, bmax] = get_bounding_box<T>();
 
