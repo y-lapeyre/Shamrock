@@ -187,7 +187,7 @@ namespace shamrock::patch {
 
         PatchCoordTransform<T> transform{ patch_coord_bounding_box.get_patch_range(), shammath::CoordRange<T>{bmin,bmax} };
 
-        transform.print_transform();
+        //transform.print_transform();
 
         auto [obj_min, obj_max] = transform.to_obj_coord(p);
 

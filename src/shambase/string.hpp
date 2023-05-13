@@ -153,9 +153,9 @@ namespace shambase {
      * @param in the input string
      * @return std::string the output string
      */
-    inline std::string increase_indent(std::string in){
+    inline std::string increase_indent(std::string in, std::string delim = "\n    "){
         std::string out = in;
-        replace_all(out, "\n", "\n    ");
+        replace_all(out, "\n", delim);
         return "    " + out;
     }
 

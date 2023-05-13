@@ -167,6 +167,8 @@ class PatchScheduler{
         auto [a,b] = box;
         set_coord_domain_bound(a,b);
     }
+
+    std::string format_patch_coord(shamrock::patch::Patch p);
     
 
     [[deprecated]]
