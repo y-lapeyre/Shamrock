@@ -155,6 +155,8 @@ template <class T> class PatchDataField {
 
     [[nodiscard]] inline const u32 &size() const { return buf.size(); }
 
+    [[nodiscard]] inline bool is_empty() const {return size() == 0;}
+
     [[nodiscard]] inline u64 memsize() const { return buf.memsize(); }
 
     [[nodiscard]] inline const u32 &get_nvar() const { return nvar; }
@@ -356,6 +358,8 @@ class PatchDataRangeCheckError : public std::exception {
 template <class T>
 template <class Lambdacd>
 inline void PatchDataField<T>::check_err_range(Lambdacd &&cd_true, T vmin, T vmax) const {
+
+    if(is_empty()){return;}
 
     bool error = false;
     {
