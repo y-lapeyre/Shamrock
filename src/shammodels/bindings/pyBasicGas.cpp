@@ -23,8 +23,14 @@ Register_pymod(pybasicgassph){
             py::init([](ShamrockCtx & ctx) {
                 return std::make_unique<BasicGas>(ctx);
             })
-        )
-        .def("dump_vtk",&BasicGas::dump_vtk)  
+        ) 
         .def("setup_fields",&BasicGas::setup_fields)
+        .def("evolve",[](BasicGas & self, f64 dt, bool do_dump, std::string dump_name, bool debug_dump){
+            self.evolve(dt, BasicGas::DumpOption{
+                do_dump,
+                dump_name,
+                debug_dump
+            });
+        })
     ;
 }

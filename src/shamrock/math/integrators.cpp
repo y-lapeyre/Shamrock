@@ -7,6 +7,9 @@
 // -------------------------------------------------------//
 
 #include "shamrock/math/integrators.hpp"
+#include "shambase/exception.hpp"
+#include "shambase/sycl_utils.hpp"
+#include <algorithm>
 #include <hipSYCL/sycl/libkernel/accessor.hpp>
 #include <hipSYCL/sycl/libkernel/builtins.hpp>
 
@@ -72,11 +75,16 @@ void integ::leapfrog_corrector(sycl::queue &queue,
                                sycl::range<1> elem_range,
                                flt hdt) {
 
+    shambase::check_buffer_size(buf_val, elem_range.size());
+    shambase::check_buffer_size(buf_der, elem_range.size());
+    shambase::check_buffer_size(buf_der_old, elem_range.size());
+    shambase::check_buffer_size(buf_eps_sq, elem_range.size());
+
     queue.submit([&](sycl::handler &cgh) {
         sycl::accessor acc_u{buf_val, cgh, sycl::read_write};
         sycl::accessor acc_du{buf_der, cgh, sycl::read_only};
         sycl::accessor acc_du_old{buf_der_old, cgh, sycl::read_only};
-        sycl::accessor acc_epsilon_sq{buf_eps_sq, sycl::write_only, sycl::no_init};
+        sycl::accessor acc_epsilon_sq{buf_eps_sq, cgh,sycl::write_only, sycl::no_init};
 
         cgh.parallel_for(elem_range, [=](sycl::item<1> item) {
             u32 gid = (u32)item.get_id();

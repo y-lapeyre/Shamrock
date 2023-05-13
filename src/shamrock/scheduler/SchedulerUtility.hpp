@@ -25,7 +25,7 @@ namespace shamrock {
         SchedulerUtility(PatchScheduler &sched) : sched(sched) {}
 
         template<class T, class flt>
-        inline void fields_forward_euler(u32 field_idx, u32 derfield_idx, flt dt) {
+        inline void fields_forward_euler(u32 field_idx, u32 derfield_idx, flt dt) {StackEntry stack_loc{};
             using namespace shamrock::patch;
             sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
                 integrators::forward_euler(
@@ -39,7 +39,7 @@ namespace shamrock {
 
         template<class T, class flt>
         inline void
-        fields_leapfrog_corrector(u32 field_idx, u32 derfield_idx, u32 derfield_old_idx, flt hdt) {
+        fields_leapfrog_corrector(u32 field_idx, u32 derfield_idx, u32 derfield_old_idx, flt hdt) {StackEntry stack_loc{};
             using namespace shamrock::patch;
             sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
                 integrators::leapfrog_corrector(
@@ -54,7 +54,7 @@ namespace shamrock {
 
         template<class T, class flt>
         inline void
-        fields_leapfrog_corrector(u32 field_idx, u32 derfield_idx, ComputeField<T> & derfield_old, ComputeField<flt> & field_epsilon, flt hdt) {
+        fields_leapfrog_corrector(u32 field_idx, u32 derfield_idx, ComputeField<T> & derfield_old, ComputeField<flt> & field_epsilon, flt hdt) {StackEntry stack_loc{};
             using namespace shamrock::patch;
             sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
                 integrators::leapfrog_corrector(
@@ -69,7 +69,7 @@ namespace shamrock {
         }
 
         template<class T>
-        inline void fields_apply_periodicity(u32 field_idx, std::pair<T, T> box) {
+        inline void fields_apply_periodicity(u32 field_idx, std::pair<T, T> box) {StackEntry stack_loc{};
             using namespace shamrock::patch;
             sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
                 utilities::sycl_position_modulo(
@@ -81,7 +81,7 @@ namespace shamrock {
         }
 
         template<class T>
-        inline void fields_swap(u32 field_idx1, u32 field_idx2) {
+        inline void fields_swap(u32 field_idx1, u32 field_idx2) {StackEntry stack_loc{};
             using namespace shamrock::patch;
             sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
                 utilities::swap_fields(
@@ -93,7 +93,7 @@ namespace shamrock {
         }
 
         template<class T>
-        inline T compute_rank_max(u32 field_idx){
+        inline T compute_rank_max(u32 field_idx){StackEntry stack_loc{};
         using namespace shamrock::patch;
             T ret = shambase::VectorProperties<T>::get_min();
             sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
@@ -102,8 +102,9 @@ namespace shamrock {
 
             return ret;
         }
+
         template<class T>
-        inline T compute_rank_min(u32 field_idx){
+        inline T compute_rank_min(u32 field_idx){StackEntry stack_loc{};
         using namespace shamrock::patch;
             T ret = shambase::VectorProperties<T>::get_max();
             sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
@@ -112,8 +113,9 @@ namespace shamrock {
 
             return ret;
         }
+
         template<class T>
-        inline T compute_rank_sum(u32 field_idx){
+        inline T compute_rank_sum(u32 field_idx){StackEntry stack_loc{};
         using namespace shamrock::patch;
             T ret = shambase::VectorProperties<T>::get_zero();
             sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
@@ -122,8 +124,9 @@ namespace shamrock {
 
             return ret;
         }
+        
         template<class T>
-        inline shambase::VecComponent<T> compute_rank_dot_sum(u32 field_idx){
+        inline shambase::VecComponent<T> compute_rank_dot_sum(u32 field_idx){StackEntry stack_loc{};
         using namespace shamrock::patch;
             shambase::VecComponent<T> ret = 0;
             sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
@@ -134,7 +137,7 @@ namespace shamrock {
         }
 
         template<class T>
-        inline ComputeField<T> save_field(u32 field_idx, std::string new_name){
+        inline ComputeField<T> save_field(u32 field_idx, std::string new_name){StackEntry stack_loc{};
             ComputeField<T> cfield;
             using namespace shamrock::patch;
             sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
@@ -147,7 +150,7 @@ namespace shamrock {
         }
 
         template<class T>
-        inline ComputeField<T> make_compute_field(std::string new_name, u32 nvar){
+        inline ComputeField<T> make_compute_field(std::string new_name, u32 nvar){StackEntry stack_loc{};
             ComputeField<T> cfield;
             using namespace shamrock::patch;
             sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {

@@ -9,26 +9,29 @@
 #include "BasicGas.hpp"
 #include "shamalgs/collective/reduction.hpp"
 #include "shambase/memory.hpp"
+#include "shambase/stacktrace.hpp"
+#include "shamrock/legacy/patch/scheduler/scheduler_mpi.hpp"
 #include "shamrock/scheduler/ComputeField.hpp"
 #include "shamrock/scheduler/SchedulerUtility.hpp"
+#include "shamsys/legacy/log.hpp"
 
 namespace shammodels::sph {
 
-    void BasicGas::dump_vtk(std::string dump_name) {
-
+    template<class vec>
+    shamrock::LegacyVtkWritter start_dump(PatchScheduler & sched, std::string dump_name){
         shamrock::LegacyVtkWritter writer(dump_name, true, shamrock::UnstructuredGrid);
 
         using namespace shamrock::patch;
 
         u64 num_obj = 0; // TODO get_rank_count() in scheduler
-        scheduler().for_each_patch_data(
+        sched.for_each_patch_data(
             [&](u64 id_patch, Patch cur_p, PatchData &pdat) { num_obj += pdat.get_obj_cnt(); });
 
         // TODO aggregate field ?
         sycl::buffer<vec> pos(num_obj);
 
         u64 ptr = 0; // TODO accumulate_field() in scheduler ?
-        scheduler().for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
+        sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
             using namespace shamalgs::memory;
             using namespace shambase;
 
@@ -39,6 +42,30 @@ namespace shammodels::sph {
         });
 
         writer.write_points(pos, num_obj);
+
+        return writer;
+    }
+
+    void vtk_dump_add_patch_id(PatchScheduler & sched, shamrock::LegacyVtkWritter & writter){
+        u64 num_obj = 0; // TODO get_rank_count() in scheduler
+        using namespace shamrock::patch;
+        sched.for_each_patch_data(
+            [&](u64 id_patch, Patch cur_p, PatchData &pdat) { num_obj += pdat.get_obj_cnt(); });
+
+        // TODO aggregate field ?
+        sycl::buffer<u64> idp(num_obj);
+
+        u64 ptr = 0; // TODO accumulate_field() in scheduler ?
+        sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
+            using namespace shamalgs::memory;
+            using namespace shambase;
+
+            write_with_offset_into(idp,id_patch,ptr,pdat.get_obj_cnt());
+
+            ptr += pdat.get_obj_cnt();
+        });
+
+        writter.write_field("patchid", idp, num_obj);
     }
 
     u64 BasicGas::count_particles(){
@@ -61,7 +88,11 @@ namespace shammodels::sph {
 
     }
 
-    void BasicGas::evolve(f64 dt) {
+    void BasicGas::evolve(f64 dt, DumpOption dump_opt) {
+
+        logger::info_ln("sph::BasicGas",">>> Step :",dt);
+
+        StackEntry stack_loc{};
 
         using namespace shamrock;
         using namespace shamrock::patch;
@@ -76,21 +107,27 @@ namespace shammodels::sph {
         shamrock::SchedulerUtility utility(scheduler());
 
         // forward euler step f dt/2
+        logger::info_ln("sph::BasicGas","forward euler step f dt/2");
         utility.fields_forward_euler<vec>(ivxyz, iaxyz, dt / 2);
         utility.fields_forward_euler<flt>(iuint, iduint, dt / 2);
 
+
         // forward euler step positions dt
+        logger::info_ln("sph::BasicGas","forward euler step positions dt");
         utility.fields_forward_euler<vec>(ixyz, ivxyz, dt);
 
         // forward euler step f dt/2
+        logger::info_ln("sph::BasicGas","forward euler step f dt/2");
         utility.fields_forward_euler<vec>(ivxyz, iaxyz, dt / 2);
         utility.fields_forward_euler<flt>(iuint, iduint, dt / 2);
 
         // save old acceleration
+        logger::info_ln("sph::BasicGas","save old fields");
         ComputeField<vec> old_axyz = utility.save_field<vec>(iaxyz, "axyz_old");
-        ComputeField<flt> old_duint = utility.save_field<flt>(iaxyz, "duint_old");
+        ComputeField<flt> old_duint = utility.save_field<flt>(iduint, "duint_old");
 
         
+        logger::info_ln("sph::BasicGas","apply_position_boundary()");
         apply_position_boundary();
 
         u64 Npart_all = count_particles(); 
@@ -100,6 +137,7 @@ namespace shammodels::sph {
         // compute pressure
 
         // compute force
+        logger::info_ln("sph::BasicGas","compute force");
         scheduler().for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
             shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
 
@@ -119,6 +157,7 @@ namespace shammodels::sph {
         ComputeField<flt> uepsilon_u_sq = utility.make_compute_field<flt>("umean epsilon_u^2", 1);
 
         // corrector
+        logger::info_ln("sph::BasicGas","leapfrog corrector");
         utility.fields_leapfrog_corrector<vec>(ivxyz, iaxyz, old_axyz,vepsilon_v_sq, dt / 2);
         utility.fields_leapfrog_corrector<flt>(iuint, iduint, old_duint,uepsilon_u_sq, dt / 2);
 
@@ -148,6 +187,22 @@ namespace shammodels::sph {
         flt eps_u = shamalgs::collective::allreduce_max(rank_eps_u);
 
         // if delta too big jump to compute force
+
+        if(dump_opt.vtk_do_dump){
+            shamrock::LegacyVtkWritter writter = start_dump<vec>(scheduler(), dump_opt.vtk_dump_fname);
+            writter.add_point_data_section();
+
+            u32 fnum = 0;
+            if (dump_opt.vtk_dump_patch_id) {fnum ++;}
+
+            writter.add_field_data_section(fnum);
+
+            if(dump_opt.vtk_dump_patch_id){
+                vtk_dump_add_patch_id(scheduler(), writter);
+            }
+        }
+
+        
     }
 
 } // namespace shammodels::sph

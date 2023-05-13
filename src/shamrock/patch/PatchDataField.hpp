@@ -337,6 +337,22 @@ PatchDataField<T>::get_elements_with_range(Lambdacd &&cd_true, T vmin, T vmax) c
     return idxs;
 }
 
+
+class PatchDataRangeCheckError : public std::exception {
+  public:
+    explicit PatchDataRangeCheckError(const char *message) : msg_(message) {}
+
+    explicit PatchDataRangeCheckError(const std::string &message) : msg_(message) {}
+
+     ~PatchDataRangeCheckError() noexcept override = default;
+
+    [[nodiscard]] 
+     const char *what() const noexcept override { return msg_.c_str(); }
+
+  protected:
+    std::string msg_;
+};
+
 template <class T>
 template <class Lambdacd>
 inline void PatchDataField<T>::check_err_range(Lambdacd &&cd_true, T vmin, T vmax) const {
@@ -344,6 +360,7 @@ inline void PatchDataField<T>::check_err_range(Lambdacd &&cd_true, T vmin, T vma
     bool error = false;
     {
         sycl::host_accessor acc{*get_buf()};
+        u32 err_cnt = 0;
 
         for (u32 i = 0; i < size(); i++) {
             if (!cd_true(acc[i], vmin, vmax)) {
@@ -360,12 +377,20 @@ inline void PatchDataField<T>::check_err_range(Lambdacd &&cd_true, T vmin, T vma
                     "]"
                 );
                 error = true;
+                err_cnt ++;
+                if(err_cnt > 50){
+                    logger::err_ln(
+                        "PatchDataField",
+                        "..."
+                    );
+                    break;
+                }
             }
         }
     }
 
     if(error){
-        throw shambase::throw_with_loc<std::invalid_argument>("obj not in range");
+        throw shambase::throw_with_loc<PatchDataRangeCheckError>("obj not in range");
     }
 
 }

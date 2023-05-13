@@ -8,9 +8,12 @@
 
 
 #include "PatchData.hpp"
+#include "shambase/exception.hpp"
+#include "shambase/stacktrace.hpp"
 #include "shamrock/legacy/utils/geometry_utils.hpp"
 
 #include "Patch.hpp"
+#include "shamsys/legacy/log.hpp"
 #include "shamsys/legacy/sycl_handler.hpp"
 
 namespace shamrock::patch{
@@ -54,6 +57,7 @@ namespace shamrock::patch{
 
 
     void PatchData::extract_element(u32 pidx, PatchData & out_pdat){
+        StackEntry stack_loc{};
 
         for(u32 idx = 0; idx < fields.size(); idx++){
 
@@ -65,7 +69,7 @@ namespace shamrock::patch{
                 if constexpr (std::is_same<t1, t2>::value){
                     field.extract_element(pidx,out_field);
                 }else{  
-                    throw std::invalid_argument("missmatch");
+                    throw shambase::throw_with_loc<std::invalid_argument>("missmatch");
                 }
 
             }, fields[idx].value, out_pdat.fields[idx].value);
@@ -75,7 +79,8 @@ namespace shamrock::patch{
     }
 
     void PatchData::insert_elements(PatchData & pdat){
-
+        
+        StackEntry stack_loc{};
 
         for(u32 idx = 0; idx < fields.size(); idx++){
 
@@ -87,7 +92,7 @@ namespace shamrock::patch{
                 if constexpr (std::is_same<t1, t2>::value){
                     field.insert(out_field);
                 }else{  
-                    throw std::invalid_argument("missmatch");
+                    throw shambase::throw_with_loc<std::invalid_argument>("missmatch");
                 }
 
             }, fields[idx].value, pdat.fields[idx].value);
@@ -97,6 +102,7 @@ namespace shamrock::patch{
     }
 
     void PatchData::overwrite(PatchData &pdat, u32 obj_cnt){
+        StackEntry stack_loc{};
         
         for(u32 idx = 0; idx < fields.size(); idx++){
 
@@ -108,7 +114,7 @@ namespace shamrock::patch{
                 if constexpr (std::is_same<t1, t2>::value){
                     field.overwrite(out_field,obj_cnt);
                 }else{  
-                    throw std::invalid_argument("missmatch");
+                    throw shambase::throw_with_loc<std::invalid_argument>("missmatch");
                 }
 
             }, fields[idx].value, pdat.fields[idx].value);
@@ -162,7 +168,7 @@ namespace shamrock::patch{
 
 
     void PatchData::append_subset_to(sycl::buffer<u32> & idxs, u32 sz, PatchData & pdat) const {
-
+        StackEntry stack_loc{};
 
         for(u32 idx = 0; idx < fields.size(); idx++){
 
@@ -174,7 +180,7 @@ namespace shamrock::patch{
                 if constexpr (std::is_same<t1, t2>::value){
                     field.append_subset_to(idxs, sz, out_field);
                 }else{  
-                    throw std::invalid_argument("missmatch");
+                    throw shambase::throw_with_loc<std::invalid_argument>("missmatch");
                 }
 
             }, fields[idx].value, pdat.fields[idx].value);
@@ -183,6 +189,7 @@ namespace shamrock::patch{
     }
 
     void PatchData::append_subset_to(std::vector<u32> & idxs, PatchData &pdat) const {
+        StackEntry stack_loc{};
 
         for(u32 idx = 0; idx < fields.size(); idx++){
 
@@ -194,7 +201,7 @@ namespace shamrock::patch{
                 if constexpr (std::is_same<t1, t2>::value){
                     field.append_subset_to(idxs, out_field);
                 }else{  
-                    throw std::invalid_argument("missmatch");
+                    throw shambase::throw_with_loc<std::invalid_argument>("missmatch");
                 }
 
             }, fields[idx].value, pdat.fields[idx].value);
@@ -204,6 +211,7 @@ namespace shamrock::patch{
     }
 
     void PatchData::serialize_buf(shamalgs::SerializeHelper & serializer){
+        StackEntry stack_loc{};
         for_each_field_any([&](auto & f){
             f.serialize_buf(serializer);
         });        
@@ -218,6 +226,8 @@ namespace shamrock::patch{
     } 
 
     PatchData PatchData::deserialize_buf(shamalgs::SerializeHelper & serializer, PatchDataLayout & pdl){
+        StackEntry stack_loc{};
+
         return PatchData{
             pdl, [&](auto &pdat_fields) {
                 
@@ -237,6 +247,8 @@ namespace shamrock::patch{
 
     template<class T>
     void PatchData::split_patchdata(std::array<std::reference_wrapper<PatchData>,8> pdats, std::array<T, 8> min_box,  std::array<T, 8> max_box){
+
+        StackEntry stack_loc{};
 
         PatchDataField<T> & main_field = fields[0].get_if_ref_throw<T>();
 
@@ -272,6 +284,17 @@ namespace shamrock::patch{
 
             using namespace shambase::sycl_utils;
 
+            logger::err_ln("PatchData", "error in patchdata split, the new element count doesn't match the old one");
+            
+            logger::err_ln("PatchData", min_box[0],max_box[0]);
+            logger::err_ln("PatchData", min_box[1],max_box[1]);
+            logger::err_ln("PatchData", min_box[2],max_box[2]);
+            logger::err_ln("PatchData", min_box[3],max_box[3]);
+            logger::err_ln("PatchData", min_box[4],max_box[4]);
+            logger::err_ln("PatchData", min_box[5],max_box[5]);
+            logger::err_ln("PatchData", min_box[6],max_box[6]);
+            logger::err_ln("PatchData", min_box[7],max_box[7]);
+
             T vmin = g_sycl_min(min_box[0],min_box[1]);
             vmin = g_sycl_min(vmin,min_box[2]);
             vmin = g_sycl_min(vmin,min_box[3]);
@@ -294,7 +317,6 @@ namespace shamrock::patch{
                 },
                 vmin,vmax);
 
-            throw ShamrockSyclException("issue in the patch split : new element count doesn't match the old one");
         }
 
         //TODO create a extract subpatch function

@@ -12,7 +12,7 @@ sim.setup_fields()
 
 
 #start the scheduler
-ctx.init_sched(int(1e5),1)
+ctx.init_sched(int(1e4),1)
 
 
 
@@ -40,9 +40,9 @@ pmass = -1
 setup = shamrock.SetupSPH(kernel = "M4", precision = "double")
 setup.init(ctx)
 
-(xs,ys,zs) = setup.get_box_dim(1,256,24,24)
+(xs,ys,zs) = setup.get_box_dim(1,128,48,48)
 dr = 1/xs
-(xs,ys,zs) = setup.get_box_dim(dr,256,24,24)
+(xs,ys,zs) = setup.get_box_dim(dr,128,48,48)
 
 ctx.set_coord_domain_bound((-xs,-ys/2,-zs/2),(xs,ys/2,zs/2))
 
@@ -76,5 +76,5 @@ print("Current part mass :", pmass)
 
 del setup
 
-
-sim.dump_vtk("setup.vtu")
+for i in range(100):
+    sim.evolve(1e-2, True, "dump_"+str(i)+".vtu", True)

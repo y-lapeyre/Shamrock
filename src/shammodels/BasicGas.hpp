@@ -40,6 +40,7 @@ namespace shammodels::sph {
             context.pdata_layout_add_field<vec>("axyz", 1);
             context.pdata_layout_add_field<flt>("hpart", 1);
             context.pdata_layout_add_field<flt>("uint", 1);
+            context.pdata_layout_add_field<flt>("duint", 1);
         }
 
         inline void check_valid() {
@@ -56,18 +57,23 @@ namespace shammodels::sph {
             }
         }
 
-        void dump_vtk(std::string dump_name);
 
         f64 get_cfl_dt();
 
         void apply_position_boundary();
+
+        struct DumpOption{
+            bool vtk_do_dump;
+            std::string vtk_dump_fname;
+            bool vtk_dump_patch_id;
+        };
 
         /**
          * @brief 
          * 
          * @param dt 
          */
-        void evolve(f64 dt);
+        void evolve(f64 dt, DumpOption dump_opt);
 
         u64 count_particles();
 

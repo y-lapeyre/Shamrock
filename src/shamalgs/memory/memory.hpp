@@ -157,6 +157,15 @@ namespace shamalgs::memory {
         });
     }
 
+    template<class T>
+    void write_with_offset_into(sycl::buffer<T> & buf_ctn, T val, u32 offset, u32 element_count){
+        shamsys::instance::get_compute_queue().submit([&, val](sycl::handler &cgh) {
+            sycl::accessor dest {buf_ctn, cgh, sycl::write_only, sycl::no_init};
+            u32 off = offset;
+            cgh.parallel_for( sycl::range{element_count}, [=](sycl::item<1> item) { dest[item.get_id(0) + off] = val; });
+        });
+    }
+
     template<class T> 
     std::unique_ptr<sycl::buffer<T>> duplicate(const std::unique_ptr<sycl::buffer<T>> & buf_in){
         if(buf_in){
