@@ -10,6 +10,7 @@
 
 #include "shambase/exception.hpp"
 #include "shambase/type_aliases.hpp"
+#include "shammath/CoordRange.hpp"
 #include "shamrock/io/LegacyVtkWritter.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
 
@@ -67,6 +68,7 @@ namespace shammodels::sph {
             std::string vtk_dump_fname;
             bool vtk_dump_patch_id;
         };
+
 
         /**
          * @brief 

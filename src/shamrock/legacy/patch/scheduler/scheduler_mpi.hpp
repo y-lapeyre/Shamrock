@@ -21,6 +21,7 @@
 
 
 #include <fstream>
+#include <functional>
 #include <memory>
 #include <stdexcept>
 #include <tuple>
@@ -28,6 +29,7 @@
 #include <vector>
 
 #include "aliases.hpp"
+#include "shambase/DistributedData.hpp"
 #include "shamrock/patch/Patch.hpp"
 #include "shamrock/legacy/patch/base/patchdata.hpp"
 //#include "shamrock/legacy/patch/patchdata_buffer.hpp"
@@ -252,6 +254,26 @@ class PatchScheduler{
             
         });
 
+    }
+
+    inline void for_each_global_patch(std::function<void(const shamrock::patch::Patch)> fct){
+        for(shamrock::patch::Patch p : patch_list.global){
+            if(!p.is_err_mode()){
+                fct(p);
+            }
+        }
+    }
+
+    template<class T>
+    inline shambase::DistributedData<T> map_owned_patchdata(std::function<T(const shamrock::patch::Patch, shamrock::patch::PatchData & pdat)> fct){
+        shambase::DistributedData<T> ret;
+
+        using namespace shamrock::patch;
+        for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
+            ret.add_obj(id_patch, fct(cur_p,pdat));
+        });
+
+        return ret;
     }
 
     //template<class Function, class Pfield>

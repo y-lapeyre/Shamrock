@@ -8,9 +8,13 @@
 
 #include "BasicGas.hpp"
 #include "shamalgs/collective/reduction.hpp"
+#include "shambase/DistributedData.hpp"
 #include "shambase/memory.hpp"
 #include "shambase/stacktrace.hpp"
+#include "shammath/CoordRange.hpp"
 #include "shamrock/legacy/patch/scheduler/scheduler_mpi.hpp"
+#include "shamrock/patch/Patch.hpp"
+#include "shamrock/patch/PatchData.hpp"
 #include "shamrock/scheduler/ComputeField.hpp"
 #include "shamrock/scheduler/SchedulerUtility.hpp"
 #include "shamsys/legacy/log.hpp"
@@ -88,6 +92,9 @@ namespace shammodels::sph {
 
     }
 
+
+    
+
     void BasicGas::evolve(f64 dt, DumpOption dump_opt) {
 
         logger::info_ln("sph::BasicGas",">>> Step :",dt);
@@ -131,6 +138,25 @@ namespace shammodels::sph {
         apply_position_boundary();
 
         u64 Npart_all = count_particles(); 
+
+        
+
+
+        shambase::DistributedData<flt> h_max_patch = scheduler().map_owned_patchdata<flt>(
+            [&](const Patch p , PatchData& pdat) -> flt{
+                return pdat.get_field<flt>(ihpart).compute_max();
+            }
+        );
+
+
+
+
+
+
+
+
+
+
 
         // update h
 
