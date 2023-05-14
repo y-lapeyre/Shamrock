@@ -216,7 +216,7 @@ inline void compute_smoothing_lenght(PatchScheduler &sched,bool periodic_mode,fl
 
 
         //compute hmax
-        PatchField<flt> h_field;
+        legacy::PatchField<flt> h_field;
         sched.compute_patch_field(
             h_field, get_mpi_type<flt>(), [loc_htol_up_tol](sycl::queue &queue, Patch &p, PatchData &pdat) {
                 return patchdata::sph::get_h_max<flt>(pdat.pdl, queue, pdat) * loc_htol_up_tol * Kernel::Rkern;

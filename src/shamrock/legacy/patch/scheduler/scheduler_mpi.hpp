@@ -29,7 +29,9 @@
 #include <vector>
 
 #include "aliases.hpp"
+#include "shamalgs/collective/distributedDataComm.hpp"
 #include "shambase/DistributedData.hpp"
+#include "shamrock/legacy/patch/utility/patch_field.hpp"
 #include "shamrock/patch/Patch.hpp"
 #include "shamrock/legacy/patch/base/patchdata.hpp"
 //#include "shamrock/legacy/patch/patchdata_buffer.hpp"
@@ -40,7 +42,7 @@
 #include "shamrock/scheduler/SchedulerPatchData.hpp"
 #include "shamrock/scheduler/HilbertLoadBalance.hpp"
 #include "shamsys/legacy/sycl_handler.hpp"
-
+#include "shamrock/patch/PatchField.hpp"
 #include "shamrock/math/integerManip.hpp"
 
 /**
@@ -275,6 +277,61 @@ class PatchScheduler{
 
         return ret;
     }
+
+    template<class T>
+    inline shambase::DistributedData<T> distrib_data_local_to_all_simple(shambase::DistributedData<T> & src){
+        using namespace shamrock::patch;
+        
+        return shamalgs::collective::fetch_all_simple<T, Patch>(
+            src, patch_list.local, patch_list.global, [](Patch p){return p.id_patch;}
+            );
+
+    }
+
+    template<class T>
+    inline shambase::DistributedData<T> distrib_data_local_to_all_load_store(shambase::DistributedData<T> & src){
+        using namespace shamrock::patch;
+        
+        return shamalgs::collective::fetch_all_storeload<T, Patch>(
+            src, patch_list.local, patch_list.global, [](Patch p){return p.id_patch;}
+            );
+
+    }
+
+    template<class T>
+    inline shambase::DistributedData<T> map_owned_patchdata_fetch_simple(std::function<T(const shamrock::patch::Patch, shamrock::patch::PatchData & pdat)> fct){
+        shambase::DistributedData<T> ret;
+
+        using namespace shamrock::patch;
+        for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
+            ret.add_obj(id_patch, fct(cur_p,pdat));
+        });
+
+        return distrib_data_local_to_all_simple(ret);
+    }
+
+    template<class T>
+    inline shambase::DistributedData<T> map_owned_patchdata_fetch_load_store(std::function<T(const shamrock::patch::Patch, shamrock::patch::PatchData & pdat)> fct){
+        shambase::DistributedData<T> ret;
+
+        using namespace shamrock::patch;
+        for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
+            ret.add_obj(id_patch, fct(cur_p,pdat));
+        });
+
+        return distrib_data_local_to_all_load_store(ret);
+    }
+
+    template<class T>
+    inline shamrock::patch::PatchField<T> map_owned_to_patch_field_simple(std::function<T(const shamrock::patch::Patch, shamrock::patch::PatchData & pdat)> fct){
+        return shamrock::patch::PatchField<T>(map_owned_patchdata_fetch_simple(fct));
+    }
+
+    template<class T>
+    inline shamrock::patch::PatchField<T> map_owned_to_patch_field_load_store(std::function<T(const shamrock::patch::Patch, shamrock::patch::PatchData & pdat)> fct){
+        return shamrock::patch::PatchField<T>(map_owned_patchdata_fetch_load_store(fct));
+    }
+
 
     //template<class Function, class Pfield>
     //inline void compute_patch_field(Pfield & field, MPI_Datatype & dtype , Function && lambda){

@@ -28,6 +28,9 @@ class BufferedPField{public:
     sycl::buffer<type> buf_global;
 };
 
+namespace legacy {
+
+
 /**
  * @brief Define a field attached to a patch (exemple: FMM multipoles, hmax in SPH)
  * 
@@ -57,3 +60,5 @@ class PatchField{public:
     }
 
 };
+
+}

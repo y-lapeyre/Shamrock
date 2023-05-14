@@ -102,7 +102,7 @@ template <class vectype, class primtype> class LegacyInterfacehandler {
      * @param h_field 
      */
     template <class interface_selector>
-    inline void compute_interface_list(PatchScheduler &sched, SerialPatchTree<vectype> &sptree, PatchField<primtype> h_field,bool periodic) {
+    inline void compute_interface_list(PatchScheduler &sched, SerialPatchTree<vectype> &sptree, legacy::PatchField<primtype> h_field,bool periodic) {
         auto t = timings::start_timer("compute_interface_list", timings::function);
         interface_comm_list = Interface_Generator<vectype, primtype, interface_selector>::get_interfaces_comm_list(
             sched, sptree, h_field, shambase::format_printf("interfaces_%d_node%d", 0, shamsys::instance::world_rank),periodic);

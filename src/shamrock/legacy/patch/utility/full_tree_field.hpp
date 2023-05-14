@@ -18,7 +18,7 @@ class FullTreeField{public:
 
     using TreeField_t = typename DeviceTree::template RadixTreeField<T>;
 
-    PatchField<T> patch_field;
+    legacy::PatchField<T> patch_field;
     std::unordered_map<u64, std::unique_ptr<TreeField_t>> patch_tree_fields;
 
     //inline FullTreeField(

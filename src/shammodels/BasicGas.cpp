@@ -7,6 +7,7 @@
 // -------------------------------------------------------//
 
 #include "BasicGas.hpp"
+#include "shamalgs/collective/distributedDataComm.hpp"
 #include "shamalgs/collective/reduction.hpp"
 #include "shambase/DistributedData.hpp"
 #include "shambase/memory.hpp"
@@ -15,8 +16,10 @@
 #include "shamrock/legacy/patch/scheduler/scheduler_mpi.hpp"
 #include "shamrock/patch/Patch.hpp"
 #include "shamrock/patch/PatchData.hpp"
+#include "shamrock/patch/PatchField.hpp"
 #include "shamrock/scheduler/ComputeField.hpp"
 #include "shamrock/scheduler/SchedulerUtility.hpp"
+#include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
 
 namespace shammodels::sph {
@@ -70,6 +73,28 @@ namespace shammodels::sph {
         });
 
         writter.write_field("patchid", idp, num_obj);
+    }
+
+    void vtk_dump_add_worldrank(PatchScheduler & sched, shamrock::LegacyVtkWritter & writter){
+        u64 num_obj = 0; // TODO get_rank_count() in scheduler
+        using namespace shamrock::patch;
+        sched.for_each_patch_data(
+            [&](u64 id_patch, Patch cur_p, PatchData &pdat) { num_obj += pdat.get_obj_cnt(); });
+
+        // TODO aggregate field ?
+        sycl::buffer<u32> idp(num_obj);
+
+        u64 ptr = 0; // TODO accumulate_field() in scheduler ?
+        sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
+            using namespace shamalgs::memory;
+            using namespace shambase;
+
+            write_with_offset_into(idp,shamsys::instance::world_rank,ptr,pdat.get_obj_cnt());
+
+            ptr += pdat.get_obj_cnt();
+        });
+
+        writter.write_field("world_rank", idp, num_obj);
     }
 
     template<class T> void vtk_dump_add_field(PatchScheduler & sched, shamrock::LegacyVtkWritter & writter, u32 field_idx, std::string field_dump_name){
@@ -165,11 +190,14 @@ namespace shammodels::sph {
         
 
 
-        shambase::DistributedData<flt> h_max_patch = scheduler().map_owned_patchdata<flt>(
+
+        shamrock::patch::PatchField<flt> h_max_patch = scheduler().map_owned_to_patch_field_simple<flt>(
             [&](const Patch p , PatchData& pdat) -> flt{
                 return pdat.get_field<flt>(ihpart).compute_max();
             }
         );
+
+        
 
 
 
@@ -242,7 +270,7 @@ namespace shammodels::sph {
             writter.add_point_data_section();
 
             u32 fnum = 0;
-            if (dump_opt.vtk_dump_patch_id) {fnum ++;}
+            if (dump_opt.vtk_dump_patch_id) {fnum += 2;}
             fnum ++;
             fnum ++;
 
@@ -250,6 +278,7 @@ namespace shammodels::sph {
 
             if(dump_opt.vtk_dump_patch_id){
                 vtk_dump_add_patch_id(scheduler(), writter);
+                vtk_dump_add_worldrank(scheduler(), writter);
             }
 
             vtk_dump_add_field<vec>(scheduler(), writter, ivxyz, "v");

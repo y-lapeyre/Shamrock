@@ -25,6 +25,7 @@
 
 
 
+#include "shambase/stacktrace.hpp"
 #include "shamrock/legacy/io/logs.hpp"
 #include "patch_field.hpp"
 #include "shamrock/scheduler/PatchTree.hpp"
@@ -92,9 +93,9 @@ class SerialPatchTree{public:
     }
 
     inline SerialPatchTree(PatchTree &ptree, const shamrock::patch::PatchCoordTransform<fp_prec_vec> box_transform){
-        auto t = timings::start_timer("build serial ptree", timings::function);
+        StackEntry stack_loc{};
         build_from_patch_tree(ptree, box_transform);
-        t.stop();
+        
     }
 
     /**
@@ -118,7 +119,7 @@ class SerialPatchTree{public:
 
 
     template<class type, class reduc_func>
-    inline PatchFieldReduction<type> reduce_field(sycl::queue & queue,PatchScheduler & sched, PatchField<type> & pfield){
+    inline PatchFieldReduction<type> reduce_field(sycl::queue & queue,PatchScheduler & sched, legacy::PatchField<type> & pfield){
 
         PatchFieldReduction<type> predfield;
 
