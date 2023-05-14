@@ -46,26 +46,23 @@ class SerialPatchTree{public:
 
     
     //TODO use unique pointer instead
-    sycl::buffer<PtNode>* serial_tree_buf = nullptr;
-    sycl::buffer<u64>*    linked_patch_ids_buf = nullptr;
+    std::unique_ptr<sycl::buffer<PtNode>> serial_tree_buf;
+    std::unique_ptr<sycl::buffer<u64>>    linked_patch_ids_buf;
 
     inline void attach_buf(){
-        if(serial_tree_buf != nullptr) throw shambase::throw_with_loc<std::runtime_error>("serial_tree_buf is already allocated");
-        if(linked_patch_ids_buf != nullptr) throw shambase::throw_with_loc<std::runtime_error>("linked_patch_ids_buf is already allocated");
+        if(bool(serial_tree_buf)) throw shambase::throw_with_loc<std::runtime_error>("serial_tree_buf is already allocated");
+        if(bool(linked_patch_ids_buf)) throw shambase::throw_with_loc<std::runtime_error>("linked_patch_ids_buf is already allocated");
 
-        serial_tree_buf = new sycl::buffer<PtNode>(serial_tree.data(),serial_tree.size());
-        linked_patch_ids_buf = new sycl::buffer<u64>(linked_patch_ids.data(),linked_patch_ids.size());
+        serial_tree_buf = std::make_unique<sycl::buffer<PtNode>>(serial_tree.data(),serial_tree.size());
+        linked_patch_ids_buf = std::make_unique<sycl::buffer<u64>>(linked_patch_ids.data(),linked_patch_ids.size());
     }
 
     inline void detach_buf(){
-        if(serial_tree_buf == nullptr) throw shambase::throw_with_loc<std::runtime_error>("serial_tree_buf wasn't allocated");
-        if(linked_patch_ids_buf == nullptr) throw shambase::throw_with_loc<std::runtime_error>("linked_patch_ids_buf wasn't allocated");
+        if(!bool(serial_tree_buf)) throw shambase::throw_with_loc<std::runtime_error>("serial_tree_buf wasn't allocated");
+        if(!bool(linked_patch_ids_buf)) throw shambase::throw_with_loc<std::runtime_error>("linked_patch_ids_buf wasn't allocated");
 
-        delete serial_tree_buf;
-        serial_tree_buf = nullptr;
-        
-        delete linked_patch_ids_buf;
-        linked_patch_ids_buf = nullptr;
+        serial_tree_buf.reset();
+        linked_patch_ids_buf.reset();
     }
 
 

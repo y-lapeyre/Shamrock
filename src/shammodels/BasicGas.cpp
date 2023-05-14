@@ -72,6 +72,29 @@ namespace shammodels::sph {
         writter.write_field("patchid", idp, num_obj);
     }
 
+    template<class T> void vtk_dump_add_field(PatchScheduler & sched, shamrock::LegacyVtkWritter & writter, u32 field_idx, std::string field_dump_name){
+        u64 num_obj = 0; // TODO get_rank_count() in scheduler
+        using namespace shamrock::patch;
+        sched.for_each_patch_data(
+            [&](u64 id_patch, Patch cur_p, PatchData &pdat) { num_obj += pdat.get_obj_cnt(); });
+
+        // TODO aggregate field ?
+        sycl::buffer<T> field_vals(num_obj);
+
+        u64 ptr = 0; // TODO accumulate_field() in scheduler ?
+        sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
+            using namespace shamalgs::memory;
+            using namespace shambase;
+
+            write_with_offset_into(
+                field_vals, get_check_ref(pdat.get_field<T>(field_idx).get_buf()), ptr, pdat.get_obj_cnt());
+
+            ptr += pdat.get_obj_cnt();
+        });
+
+        writter.write_field(field_dump_name, field_vals, num_obj);
+    }
+
     u64 BasicGas::count_particles(){
         u64 part_cnt = 0;
         using namespace shamrock::patch;
@@ -220,12 +243,17 @@ namespace shammodels::sph {
 
             u32 fnum = 0;
             if (dump_opt.vtk_dump_patch_id) {fnum ++;}
+            fnum ++;
+            fnum ++;
 
             writter.add_field_data_section(fnum);
 
             if(dump_opt.vtk_dump_patch_id){
                 vtk_dump_add_patch_id(scheduler(), writter);
             }
+
+            vtk_dump_add_field<vec>(scheduler(), writter, ivxyz, "v");
+            vtk_dump_add_field<vec>(scheduler(), writter, iaxyz, "a");
         }
 
         
