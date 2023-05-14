@@ -280,7 +280,7 @@ namespace shamrock::patch{
                         idx_p6.size()+
                         idx_p7.size();
 
-        if(get_obj_cnt() != el_cnt_new || true){
+        if(get_obj_cnt() != el_cnt_new){
 
             using namespace shambase::sycl_utils;
 

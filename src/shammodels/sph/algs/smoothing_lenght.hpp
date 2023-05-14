@@ -211,7 +211,7 @@ inline void compute_smoothing_lenght(PatchScheduler &sched,bool periodic_mode,fl
 
 
         //Init serial patch tree
-        SerialPatchTree<vec> sptree(sched.patch_tree, sched.get_box_tranform<vec>());
+        SerialPatchTree<vec> sptree(sched.patch_tree, sched.get_sim_box().get_patch_transform<vec>());
         sptree.attach_buf();
 
 

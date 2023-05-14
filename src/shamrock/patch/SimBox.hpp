@@ -72,6 +72,8 @@ namespace shamrock::patch {
             std::pair<T,T> reduced = shamalgs::collective::allreduce_bounds(std::pair<T,T>{new_box.lower,new_box.upper});
             set_bounding_box<>(shammath::CoordRange<T>(reduced));
         }
+
+        template<class T> PatchCoordTransform<T> get_patch_transform() const;
         
         /**
          * @brief get the patch coordinates on the domain
@@ -178,21 +180,25 @@ namespace shamrock::patch {
         }
     }
 
+    template<class T> PatchCoordTransform<T> SimulationBoxInfo::get_patch_transform() const{
+        
+        auto [bmin, bmax] = get_bounding_box<T>();
+
+        return PatchCoordTransform<T>{ patch_coord_bounding_box.get_patch_range(), shammath::CoordRange<T>{bmin,bmax} };
+
+    }
+
     template <class T>
     inline std::tuple<T, T> SimulationBoxInfo::patch_coord_to_domain(const Patch &p) const {
 
-        //using ptype = typename shambase::VectorProperties<T>::component_type;
-
-        auto [bmin, bmax] = get_bounding_box<T>();
-
-        PatchCoordTransform<T> transform{ patch_coord_bounding_box.get_patch_range(), shammath::CoordRange<T>{bmin,bmax} };
-
-        //transform.print_transform();
+        PatchCoordTransform<T> transform = get_patch_transform<T>();
 
         auto [obj_min, obj_max] = transform.to_obj_coord(p);
 
         return {obj_min, obj_max};
     }
+
+    
 
     inline void SimulationBoxInfo::reset_box_size() {
 

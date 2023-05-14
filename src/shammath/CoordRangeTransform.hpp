@@ -45,13 +45,13 @@ namespace shammath {
 
         CoordRangeTransform(CoordRange<Tsource> source_range, CoordRange<Tdest> dest_range);
 
-        CoordRange<Tdest> transform(CoordRange<Tsource> rnge);
-        CoordRange<Tsource> reverse_transform(CoordRange<Tdest> rnge);
+        CoordRange<Tdest> transform(CoordRange<Tsource> rnge) const;
+        CoordRange<Tsource> reverse_transform(CoordRange<Tdest> rnge) const;
 
-        Tdest transform(Tsource coord);
-        Tsource reverse_transform(Tdest rnge);
+        Tdest transform(Tsource coord) const;
+        Tsource reverse_transform(Tdest rnge) const;
 
-        void print_transform();
+        void print_transform() const;
 
     };
 
@@ -61,7 +61,7 @@ namespace shammath {
 
     template<class Tsource, class Tdest>
     inline CoordRange<Tdest>
-    CoordRangeTransform<Tsource, Tdest>::transform(CoordRange<Tsource> rnge) {
+    CoordRangeTransform<Tsource, Tdest>::transform(CoordRange<Tsource> rnge)  const {
 
         Tsource pmin = rnge.lower;
         Tsource pmax = rnge.upper;
@@ -83,7 +83,7 @@ namespace shammath {
 
     template<class Tsource, class Tdest>
     inline CoordRange<Tsource>
-    CoordRangeTransform<Tsource, Tdest>::reverse_transform(CoordRange<Tdest> rnge) {
+    CoordRangeTransform<Tsource, Tdest>::reverse_transform(CoordRange<Tdest> rnge)  const{
 
         Tsource pmin;
         Tsource pmax;
@@ -105,7 +105,7 @@ namespace shammath {
 
     template<class Tsource, class Tdest>
     inline Tdest
-    CoordRangeTransform<Tsource, Tdest>::transform(Tsource coord) {
+    CoordRangeTransform<Tsource, Tdest>::transform(Tsource coord)  const{
 
 
         if (mode == multiply) {
@@ -121,7 +121,7 @@ namespace shammath {
 
     template<class Tsource, class Tdest>
     inline Tsource
-    CoordRangeTransform<Tsource, Tdest>::reverse_transform(Tdest coord) {
+    CoordRangeTransform<Tsource, Tdest>::reverse_transform(Tdest coord)  const{
 
         if (mode == multiply) {
             return 

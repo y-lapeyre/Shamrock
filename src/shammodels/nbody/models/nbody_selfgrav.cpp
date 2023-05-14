@@ -406,7 +406,7 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(PatchScheduler &sched, f64 old_ti
 
 
         //Init serial patch tree
-        SerialPatchTree<vec3> sptree(sched.patch_tree, sched.get_box_tranform<vec3>());
+        SerialPatchTree<vec3> sptree(sched.patch_tree, sched.get_sim_box().get_patch_transform<vec3>());
         sptree.dump_dat();
         sptree.attach_buf();
 

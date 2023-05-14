@@ -64,7 +64,7 @@ template<class Ta, class Tb>
     }
 
     template<class Tsource, class Tdest>
-    void CoordRangeTransform<Tsource, Tdest>::print_transform() {
+    void CoordRangeTransform<Tsource, Tdest>::print_transform()  const{
         if (mode == multiply) {
             logger::debug_ln(
                 "CoordRangeTransform", "multiply:", fact, source_coord_min, dest_coord_min

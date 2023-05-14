@@ -29,6 +29,7 @@
 #include "patch_field.hpp"
 #include "shamrock/scheduler/PatchTree.hpp"
 #include "shamrock/legacy/patch/scheduler/scheduler_mpi.hpp"
+#include "shamsys/legacy/log.hpp"
 #include "shamsys/legacy/sycl_handler.hpp"
 #include "aliases.hpp"
 #include "shamrock/legacy/patch/utility/patch_reduc_tree.hpp"
@@ -81,14 +82,21 @@ class SerialPatchTree{public:
     std::vector<PtNode> serial_tree;
     std::vector<u64> linked_patch_ids;
 
-    void build_from_patch_tree(PatchTree &ptree, fp_prec_vec translate_factor, fp_prec_vec scale_factor);
+    void build_from_patch_tree(PatchTree &ptree, const shamrock::patch::PatchCoordTransform<fp_prec_vec> box_transform);
 
+    
 
     public: 
 
-    inline SerialPatchTree(PatchTree &ptree, std::tuple<fp_prec_vec,fp_prec_vec> box_tranform){
+    inline void print_status(){
+        for(PtNode n : serial_tree){
+            logger::raw_ln(n.box_min, n.box_max);
+        }
+    }
+
+    inline SerialPatchTree(PatchTree &ptree, const shamrock::patch::PatchCoordTransform<fp_prec_vec> box_transform){
         auto t = timings::start_timer("build serial ptree", timings::function);
-        build_from_patch_tree(ptree, std::get<0>(box_tranform), std::get<1>(box_tranform));
+        build_from_patch_tree(ptree, box_transform);
         t.stop();
     }
 

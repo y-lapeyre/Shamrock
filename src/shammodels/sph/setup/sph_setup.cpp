@@ -10,6 +10,7 @@
 
 #include "sph_setup.hpp"
 #include "shamrock/legacy/patch/comm/patch_object_mover.hpp"
+#include "shamrock/legacy/patch/utility/serialpatchtree.hpp"
 #include "shamrock/sph/kernels.hpp"
 
 template<class flt, class Kernel>
@@ -91,7 +92,10 @@ void models::sph::SetupSPH<flt, Kernel>::add_particules_fcc(PatchScheduler &sche
         std::cout << "box transf" << m.x() << " " << m.y() << " " << m.z() << " | " << M.x() << " "
                   << M.y() << " " << M.z() << std::endl;
 
-        SerialPatchTree<vec> sptree(sched.patch_tree, sched.get_box_tranform<vec>());
+        SerialPatchTree<vec> sptree(sched.patch_tree, sched.get_sim_box().get_patch_transform<vec>());
+
+        //sptree.print_status();
+
         sptree.attach_buf();
         reatribute_particles(sched, sptree, periodic_mode);
     }

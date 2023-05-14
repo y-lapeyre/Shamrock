@@ -202,7 +202,7 @@ inline void reatribute_particles<f32_3>(PatchScheduler & sched, SerialPatchTree<
 
 
         sptree.detach_buf();
-        sptree = SerialPatchTree<f32_3>(sched.patch_tree, sched.get_box_tranform<f32_3>());
+        sptree = SerialPatchTree<f32_3>(sched.patch_tree, sched.get_sim_box().get_patch_transform<f32_3>());
         sptree.attach_buf();
 
         sched.patch_data.for_each_patchdata([&](u64 id, shamrock::patch::PatchData & pdat){
@@ -452,7 +452,7 @@ inline void reatribute_particles<f64_3>(PatchScheduler & sched, SerialPatchTree<
 
 
         sptree.detach_buf();
-        sptree = SerialPatchTree<f64_3>(sched.patch_tree, sched.get_box_tranform<f64_3>());
+        sptree = SerialPatchTree<f64_3>(sched.patch_tree, sched.get_sim_box().get_patch_transform<f64_3>());
         sptree.attach_buf();
 
         sched.patch_data.for_each_patchdata([&](u64 id, shamrock::patch::PatchData & pdat){

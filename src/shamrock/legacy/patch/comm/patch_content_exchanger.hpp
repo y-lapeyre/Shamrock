@@ -10,9 +10,11 @@
 
 
 #include "aliases.hpp"
+#include "shambase/string.hpp"
 #include "shamrock/legacy/patch/utility/serialpatchtree.hpp"
 #include "shamrock/legacy/utils/geometry_utils.hpp"
 #include "shamrock/patch/Patch.hpp"
+#include "shamsys/legacy/log.hpp"
 
 template <class posvec, class kername>
 inline sycl::buffer<u64> __compute_object_patch_owner(sycl::queue &queue, sycl::buffer<posvec> &position_buffer, u32 len,
@@ -86,16 +88,29 @@ inline sycl::buffer<u64> __compute_object_patch_owner(sycl::queue &queue, sycl::
                     //out << current_node << " " << linked_node_id[current_node] << "\n";
                 } else {
                     // out << "-> result\n";
-                    //out << cur_node.box_min << " " << cur_node.box_max << "\n";
+                    
+                    
                     result_node = linked_node_id[current_node];
                     break;
                 }
 
                 
             }
-            //if(current_node != linked_node_id[current_node]){
-            //    out << "-> " << current_node << " " << linked_node_id[current_node] << "\n";
-            //}
+            
+            if constexpr(false){
+                PtNode cur_node = tnode[current_node];
+                if(xyz.z()==0){
+                    logger::raw(
+                        shambase::format("{:5} ({}) -> {} [{} {}]\n", 
+                            i,
+                            Patch::is_in_patch_converted(xyz, cur_node.box_min , cur_node.box_max),
+                            xyz.z(),
+                            cur_node.box_min.z() , 
+                            cur_node.box_max.z()
+                        )
+                    );
+                }
+            }
 
             new_id[i] = result_node;
         });

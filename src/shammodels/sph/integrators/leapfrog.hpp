@@ -183,7 +183,7 @@ namespace sph {
         logger::info_ln("SPHLeapfrog", "step t=",old_time, "do_force =",do_force, "do_corrector =",do_corrector);
 
         //Init serial patch tree
-        SerialPatchTree<vec3> sptree(sched.patch_tree, sched.get_box_tranform<vec3>());
+        SerialPatchTree<vec3> sptree(sched.patch_tree, sched.get_sim_box().template get_patch_transform<vec3>());
         sptree.attach_buf();
 
 

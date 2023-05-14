@@ -31,18 +31,18 @@ namespace shamrock::patch {
         )
             : transform(patch_range, obj_range) {}
 
-        inline shammath::CoordRange<Tcoord> to_obj_coord(shammath::CoordRange<u64_3> p) {
+        inline shammath::CoordRange<Tcoord> to_obj_coord(shammath::CoordRange<u64_3> p) const {
             return transform.transform(p);
         }
 
-        PatchCoord to_patch_coord(shammath::CoordRange<Tcoord> obj) {
+        PatchCoord to_patch_coord(shammath::CoordRange<Tcoord> obj) const {
             return transform.reverse_transform(obj);
         }
 
-        inline shammath::CoordRange<Tcoord> to_obj_coord(Patch p) {
+        inline shammath::CoordRange<Tcoord> to_obj_coord(Patch p) const {
             return to_obj_coord(p.get_patch_range());
         }
 
-        inline void print_transform() { transform.print_transform(); }
+        inline void print_transform() const { transform.print_transform(); }
     };
 } // namespace shamrock::patch
