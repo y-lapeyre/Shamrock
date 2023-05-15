@@ -25,15 +25,19 @@
 
 
 
+#include "shambase/memory.hpp"
 #include "shambase/stacktrace.hpp"
 #include "shamrock/legacy/io/logs.hpp"
 #include "patch_field.hpp"
+#include "shamrock/patch/PatchField.hpp"
 #include "shamrock/scheduler/PatchTree.hpp"
 #include "shamrock/legacy/patch/scheduler/scheduler_mpi.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamsys/legacy/sycl_handler.hpp"
 #include "aliases.hpp"
 #include "shamrock/legacy/patch/utility/patch_reduc_tree.hpp"
+#include <array>
+#include <hipSYCL/sycl/libkernel/accessor.hpp>
 #include <tuple>
 
 
@@ -114,6 +118,10 @@ class SerialPatchTree{public:
      */
     inline u32 get_element_count(){
         return serial_tree.size();
+    }
+
+    inline static SerialPatchTree<fp_prec_vec> build(PatchScheduler & sched){
+        return SerialPatchTree<fp_prec_vec>(sched.patch_tree, sched.get_patch_transform<fp_prec_vec>());
     }
 
 
@@ -216,6 +224,63 @@ class SerialPatchTree{public:
 
         return predfield;
 
+    }
+
+    template<class T, class Func>
+    inline shamrock::patch::PatchtreeField<T> make_patch_tree_field(PatchScheduler & sched, sycl::queue & queue,shamrock::patch::PatchField<T> pfield, Func && reducer){
+        shamrock::patch::PatchtreeField<T> ptfield;
+        ptfield.allocate(get_element_count());
+
+        {
+            sycl::host_accessor lpid {shambase::get_check_ref(linked_patch_ids_buf), sycl::read_only};
+            sycl::host_accessor tree_field{shambase::get_check_ref(ptfield.internal_buf), sycl::write_only, sycl::no_init};
+
+            //init reduction
+            std::unordered_map<u64,u64> & idp_to_gid = sched.patch_list.id_patch_to_global_idx;
+            for (u64 idx = 0; idx < get_element_count() ; idx ++) {
+                tree_field[idx] = 
+                    (lpid[idx] != u64_max) ? 
+                    pfield.get(lpid[idx])
+                        : 
+                    T()
+                        ;
+
+            }
+        }
+
+
+
+        sycl::range<1> range{get_element_count()};
+        u32 end_loop = get_level_count();
+
+        for (u32 level = 0; level < end_loop; level ++) {
+            queue.submit([&](sycl::handler &cgh) {
+
+                sycl::accessor tree{shambase::get_check_ref(serial_tree_buf), cgh, sycl::read_only};
+                sycl::accessor f {shambase::get_check_ref(ptfield.internal_buf), cgh, sycl::read_write};
+                
+                cgh.parallel_for(range, [=](sycl::item<1> item) {
+                    u64 i = (u64)item.get_id(0);
+
+                    std::array<u64,8> n = tree[i].childs_id;
+
+                    if(n[0] != u64_max){
+                        f[i] = reducer(
+                                f[n[0]],
+                                f[n[1]],
+                                f[n[2]],
+                                f[n[3]],
+                                f[n[4]],
+                                f[n[5]],
+                                f[n[6]],
+                                f[n[7]]
+                            );
+                    }
+                    
+                });
+            });
+        }
+        return ptfield;
     }
 
 

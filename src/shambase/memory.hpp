@@ -51,7 +51,7 @@ namespace shambase {
 
     template<class T>
     inline T & get_check_ref(std::unique_ptr<T> & ptr){
-        if(!ptr){
+        if(!bool(ptr)){
             throw throw_with_loc<std::runtime_error>("the ptr does not hold anything");
         }
         return *ptr;

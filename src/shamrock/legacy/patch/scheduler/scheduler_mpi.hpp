@@ -32,6 +32,7 @@
 #include "shamalgs/collective/distributedDataComm.hpp"
 #include "shambase/DistributedData.hpp"
 #include "shamrock/legacy/patch/utility/patch_field.hpp"
+//#include "shamrock/legacy/patch/utility/serialpatchtree.hpp"
 #include "shamrock/patch/Patch.hpp"
 #include "shamrock/legacy/patch/base/patchdata.hpp"
 //#include "shamrock/legacy/patch/patchdata_buffer.hpp"
@@ -208,7 +209,15 @@ class PatchScheduler{
     [[deprecated]]
     void sync_build_LB(bool global_patch_sync, bool balance_load);
 
+    template<class vec>
+    inline shamrock::patch::PatchCoordTransform<vec> get_patch_transform(){
+        return get_sim_box().template get_patch_transform<vec>();
+    }
 
+    //template<class vec>
+    //inline SerialPatchTree<vec> make_serial_ptree(){
+    //    return SerialPatchTree<vec>(patch_tree, get_patch_transform<vec>());
+    //}
 
     /**
      * @brief for each macro for patchadata

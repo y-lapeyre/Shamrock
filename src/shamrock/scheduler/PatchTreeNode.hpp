@@ -14,10 +14,10 @@
 
 namespace shamrock::scheduler {
 
-    template<class fp_prec_vec>
+    template<class vec>
     struct SerialPatchNode{
-        fp_prec_vec box_min;
-        fp_prec_vec box_max;
+        vec box_min;
+        vec box_max;
         std::array<u64,8> childs_id;
     };
 

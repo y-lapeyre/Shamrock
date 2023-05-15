@@ -14,6 +14,7 @@
 #include "shambase/stacktrace.hpp"
 #include "shammath/CoordRange.hpp"
 #include "shamrock/legacy/patch/scheduler/scheduler_mpi.hpp"
+#include "shamrock/legacy/patch/utility/serialpatchtree.hpp"
 #include "shamrock/patch/Patch.hpp"
 #include "shamrock/patch/PatchData.hpp"
 #include "shamrock/patch/PatchField.hpp"
@@ -188,7 +189,7 @@ namespace shammodels::sph {
         u64 Npart_all = count_particles(); 
 
         
-
+        
 
 
         shamrock::patch::PatchField<flt> h_max_patch = scheduler().map_owned_to_patch_field_simple<flt>(
@@ -196,6 +197,20 @@ namespace shammodels::sph {
                 return pdat.get_field<flt>(ihpart).compute_max();
             }
         );
+
+
+        SerialPatchTree<vec> sptree = SerialPatchTree<vec>::build(scheduler());
+        sptree.attach_buf();
+
+        PatchtreeField<flt> h_max_mpi_tree = sptree.make_patch_tree_field(
+            scheduler(), 
+            shamsys::instance::get_compute_queue(), 
+            h_max_patch, 
+            [](flt h0, flt h1, flt h2, flt h3, flt h4, flt h5, flt h6, flt h7){
+                return shambase::sycl_utils::max_8points(h0, h1, h2, h3, h4, h5, h6, h7);
+            });
+
+        
 
         
 
