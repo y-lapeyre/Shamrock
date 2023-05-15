@@ -10,8 +10,6 @@
 #include "shambase/exception.hpp"
 #include "shambase/sycl_utils.hpp"
 #include <algorithm>
-#include <hipSYCL/sycl/libkernel/accessor.hpp>
-#include <hipSYCL/sycl/libkernel/builtins.hpp>
 
 namespace integ = shamrock::integrators;
 namespace util  = shamrock::utilities;

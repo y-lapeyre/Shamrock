@@ -67,4 +67,14 @@ namespace shambase::sycl_utils {
             );
     }
 
+
+    template<class T>
+    inline T min_8points(T v0,T v1,T v2,T v3,T v4,T v5,T v6,T v7){
+        return g_sycl_min(
+                g_sycl_min( g_sycl_min(v0, v1), g_sycl_min(v2, v3))
+            , 
+                g_sycl_min( g_sycl_min(v4, v5), g_sycl_min(v6, v7))
+            );
+    }
+
 } // namespace shambase::sycl_utils

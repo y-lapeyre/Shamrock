@@ -18,7 +18,6 @@
 #include "shamrock/patch/ResizableBuffer.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
-#include <hipSYCL/sycl/buffer.hpp>
 #include <memory>
 
 template<class T> class Kernel_Extract_element;

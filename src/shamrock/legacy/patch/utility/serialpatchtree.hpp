@@ -37,7 +37,6 @@
 #include "aliases.hpp"
 #include "shamrock/legacy/patch/utility/patch_reduc_tree.hpp"
 #include <array>
-#include <hipSYCL/sycl/libkernel/accessor.hpp>
 #include <tuple>
 
 

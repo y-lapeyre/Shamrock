@@ -192,15 +192,14 @@ namespace shammodels::sph {
         
 
 
+        SerialPatchTree<vec> sptree = SerialPatchTree<vec>::build(scheduler());
+        sptree.attach_buf();
+
         shamrock::patch::PatchField<flt> h_max_patch = scheduler().map_owned_to_patch_field_simple<flt>(
             [&](const Patch p , PatchData& pdat) -> flt{
                 return pdat.get_field<flt>(ihpart).compute_max();
             }
         );
-
-
-        SerialPatchTree<vec> sptree = SerialPatchTree<vec>::build(scheduler());
-        sptree.attach_buf();
 
         PatchtreeField<flt> h_max_mpi_tree = sptree.make_patch_tree_field(
             scheduler(), 
@@ -210,7 +209,7 @@ namespace shammodels::sph {
                 return shambase::sycl_utils::max_8points(h0, h1, h2, h3, h4, h5, h6, h7);
             });
 
-        
+
 
         
 
