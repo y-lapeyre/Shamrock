@@ -37,6 +37,7 @@
 #include "aliases.hpp"
 #include "shamrock/legacy/patch/utility/patch_reduc_tree.hpp"
 #include <array>
+#include <hipSYCL/sycl/libkernel/accessor.hpp>
 #include <tuple>
 
 
@@ -315,5 +316,93 @@ class SerialPatchTree{public:
     }
 
 
+    sycl::buffer<u64> compute_patch_owner(sycl::queue & queue,sycl::buffer<fp_prec_vec> &position_buffer, u32 len);
 
 };
+
+template<class vec>
+sycl::buffer<u64> SerialPatchTree<vec>::compute_patch_owner(sycl::queue & queue,sycl::buffer<vec> &position_buffer, u32 len){
+    sycl::buffer<u64> new_owned_id(len);
+
+    using namespace shamrock::patch;
+
+    queue.submit([&](sycl::handler &cgh) {
+        sycl::accessor pos {position_buffer, cgh, sycl::read_only};
+        sycl::accessor tnode {shambase::get_check_ref(serial_tree_buf), cgh, sycl::read_only};
+        sycl::accessor linked_node_id {shambase::get_check_ref(linked_patch_ids_buf), cgh, sycl::read_only};
+        sycl::accessor new_id {new_owned_id, cgh, sycl::write_only, sycl::no_init};
+
+        auto max_lev = get_level_count();
+
+        cgh.parallel_for(sycl::range(len), [=](sycl::item<1> item) {
+            u32 i = (u32)item.get_id(0);
+
+            // TODO implement the version with multiple roots
+            u64 current_node = 0;
+            u64 result_node  = u64_max;
+
+            auto xyz = pos[i];
+
+            using PtNode = shamrock::scheduler::SerialPatchNode<vec>;
+
+            for (u32 step = 0; step < max_lev+1; step++) {
+                PtNode cur_node = tnode[current_node];
+
+                if (cur_node.childs_id[0] != u64_max) {
+
+                    if (Patch::is_in_patch_converted(xyz, tnode[cur_node.childs_id[0]].box_min,
+                                                   tnode[cur_node.childs_id[0]].box_max)) {
+                        current_node = cur_node.childs_id[0];
+                    } else if (Patch::is_in_patch_converted(xyz, tnode[cur_node.childs_id[1]].box_min,
+                                                          tnode[cur_node.childs_id[1]].box_max)) {
+                        current_node = cur_node.childs_id[1];
+                    } else if (Patch::is_in_patch_converted(xyz, tnode[cur_node.childs_id[2]].box_min,
+                                                          tnode[cur_node.childs_id[2]].box_max)) {
+                        current_node = cur_node.childs_id[2];
+                    } else if (Patch::is_in_patch_converted(xyz, tnode[cur_node.childs_id[3]].box_min,
+                                                          tnode[cur_node.childs_id[3]].box_max)) {
+                        current_node = cur_node.childs_id[3];
+                    } else if (Patch::is_in_patch_converted(xyz, tnode[cur_node.childs_id[4]].box_min,
+                                                          tnode[cur_node.childs_id[4]].box_max)) {
+                        current_node = cur_node.childs_id[4];
+                    } else if (Patch::is_in_patch_converted(xyz, tnode[cur_node.childs_id[5]].box_min,
+                                                          tnode[cur_node.childs_id[5]].box_max)) {
+                        current_node = cur_node.childs_id[5];
+                    } else if (Patch::is_in_patch_converted(xyz, tnode[cur_node.childs_id[6]].box_min,
+                                                          tnode[cur_node.childs_id[6]].box_max)) {
+                        current_node = cur_node.childs_id[6];
+                    } else if (Patch::is_in_patch_converted(xyz, tnode[cur_node.childs_id[7]].box_min,
+                                                          tnode[cur_node.childs_id[7]].box_max)) {
+                        current_node = cur_node.childs_id[7];
+                    }
+
+                } else {
+
+                    result_node = linked_node_id[current_node];
+                    break;
+                }
+
+                
+            }
+            
+            if constexpr(false){
+                PtNode cur_node = tnode[current_node];
+                if(xyz.z()==0){
+                    logger::raw(
+                        shambase::format("{:5} ({}) -> {} [{} {}]\n", 
+                            i,
+                            Patch::is_in_patch_converted(xyz, cur_node.box_min , cur_node.box_max),
+                            xyz.z(),
+                            cur_node.box_min.z() , 
+                            cur_node.box_max.z()
+                        )
+                    );
+                }
+            }
+
+            new_id[i] = result_node;
+        });
+    });
+
+    return new_owned_id;
+}

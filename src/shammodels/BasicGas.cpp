@@ -139,6 +139,8 @@ namespace shammodels::sph {
         integrators.fields_apply_periodicity(ixyz, std::pair{bmin, bmax});
 
 
+        
+
     }
 
 
