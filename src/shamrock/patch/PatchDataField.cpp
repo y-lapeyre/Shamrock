@@ -370,7 +370,10 @@ PatchDataField<T> PatchDataField<T>::deserialize_full(shamalgs::SerializeHelper 
 
 
 
-template<class T>    T PatchDataField<T>::compute_max(){
+template<class T>    T PatchDataField<T>::compute_max(){StackEntry stack_loc{};
+    if(is_empty()){
+        throw shambase::throw_with_loc<std::invalid_argument>("the field is empty");
+    }
     return shamalgs::reduction::max(
         shamsys::instance::get_compute_queue(), 
         shambase::get_check_ref(buf.get_buf()), 
@@ -378,7 +381,10 @@ template<class T>    T PatchDataField<T>::compute_max(){
         obj_cnt*nvar);
 }
 
-template<class T>    T PatchDataField<T>::compute_min(){
+template<class T>    T PatchDataField<T>::compute_min(){StackEntry stack_loc{};
+    if(is_empty()){
+        throw shambase::throw_with_loc<std::invalid_argument>("the field is empty");
+    }
     return shamalgs::reduction::min(
         shamsys::instance::get_compute_queue(), 
         shambase::get_check_ref(buf.get_buf()), 
@@ -386,7 +392,10 @@ template<class T>    T PatchDataField<T>::compute_min(){
         obj_cnt*nvar);
 }
 
-template<class T> T PatchDataField<T>::compute_sum(){
+template<class T> T PatchDataField<T>::compute_sum(){StackEntry stack_loc{};
+    if(is_empty()){
+        throw shambase::throw_with_loc<std::invalid_argument>("the field is empty");
+    }
     return shamalgs::reduction::sum(
         shamsys::instance::get_compute_queue(), 
         shambase::get_check_ref(buf.get_buf()), 
@@ -394,7 +403,10 @@ template<class T> T PatchDataField<T>::compute_sum(){
         obj_cnt*nvar);
 }
 
-template<class T> shambase::VecComponent<T> PatchDataField<T>::compute_dot_sum(){
+template<class T> shambase::VecComponent<T> PatchDataField<T>::compute_dot_sum(){StackEntry stack_loc{};
+    if(is_empty()){
+        throw shambase::throw_with_loc<std::invalid_argument>("the field is empty");
+    }
     return shamalgs::reduction::dot_sum(
         shamsys::instance::get_compute_queue(), 
         shambase::get_check_ref(buf.get_buf()), 

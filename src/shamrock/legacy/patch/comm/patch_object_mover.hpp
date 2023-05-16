@@ -237,7 +237,7 @@ inline void reatribute_particles<f32_3>(PatchScheduler & sched, SerialPatchTree<
                 //auto nid = newid.get_access<sycl::access::mode::read>();
                 sycl::host_accessor nid {newid, sycl::read_only};
                 std::unordered_map<u64 , std::unique_ptr<PatchData>> send_map;
-
+                
                 const u32 cnt = pdat.get_obj_cnt();
 
                 for(u32 i = cnt-1 ; i < cnt ; i--){

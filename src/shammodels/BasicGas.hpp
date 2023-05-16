@@ -12,6 +12,7 @@
 #include "shambase/type_aliases.hpp"
 #include "shammath/CoordRange.hpp"
 #include "shamrock/io/LegacyVtkWritter.hpp"
+#include "shamrock/legacy/patch/utility/serialpatchtree.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
 
 namespace shammodels::sph {
@@ -61,7 +62,7 @@ namespace shammodels::sph {
 
         f64 get_cfl_dt();
 
-        void apply_position_boundary();
+        void apply_position_boundary(SerialPatchTree<vec> & sptree);
 
         struct DumpOption{
             bool vtk_do_dump;

@@ -99,5 +99,14 @@ namespace shambase {
         }
 
         inline u64 get_element_count() { return data.size(); }
+
+        template<class Tmap>
+        inline DistributedDataShared<Tmap> map(std::function<Tmap(u64, u64, T&)> map_func){
+            DistributedDataShared<Tmap> ret;
+            for_each([&](u64 left,u64 right, T& ref){
+                ret.add_obj(left, right, map_func(left,right,ref));
+            });
+            return ret;
+        }
     };
 } // namespace shambase
