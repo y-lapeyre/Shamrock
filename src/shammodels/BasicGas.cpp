@@ -33,35 +33,23 @@ namespace shammodels::sph {
 
         using namespace shamrock::patch;
 
-        u64 num_obj = 0; // TODO get_rank_count() in scheduler
-        sched.for_each_patch_data(
-            [&](u64 id_patch, Patch cur_p, PatchData &pdat) { num_obj += pdat.get_obj_cnt(); });
+        u64 num_obj = sched.get_rank_count();
 
-        // TODO aggregate field ?
-        sycl::buffer<vec> pos(num_obj);
+        logger::debug_mpi_ln("sph::BasicGas", "rank count =",num_obj);
 
-        u64 ptr = 0; // TODO accumulate_field() in scheduler ?
-        sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
-            using namespace shamalgs::memory;
-            using namespace shambase;
-
-            write_with_offset_into(
-                pos, get_check_ref(pdat.get_field<vec>(0).get_buf()), ptr, pdat.get_obj_cnt());
-
-            ptr += pdat.get_obj_cnt();
-        });
+        std::unique_ptr<sycl::buffer<vec>> pos = sched.rankgather_field<vec>(0);
 
         writer.write_points(pos, num_obj);
-
+        
         return writer;
     }
 
     void vtk_dump_add_patch_id(PatchScheduler &sched, shamrock::LegacyVtkWritter &writter) {
         StackEntry stack_loc{};
-        u64 num_obj = 0; // TODO get_rank_count() in scheduler
+        
+        u64 num_obj = sched.get_rank_count();
+
         using namespace shamrock::patch;
-        sched.for_each_patch_data(
-            [&](u64 id_patch, Patch cur_p, PatchData &pdat) { num_obj += pdat.get_obj_cnt(); });
 
         // TODO aggregate field ?
         sycl::buffer<u64> idp(num_obj);
@@ -81,10 +69,9 @@ namespace shammodels::sph {
 
     void vtk_dump_add_worldrank(PatchScheduler &sched, shamrock::LegacyVtkWritter &writter) {
         StackEntry stack_loc{};
-        u64 num_obj = 0; // TODO get_rank_count() in scheduler
+        
         using namespace shamrock::patch;
-        sched.for_each_patch_data(
-            [&](u64 id_patch, Patch cur_p, PatchData &pdat) { num_obj += pdat.get_obj_cnt(); });
+        u64 num_obj = sched.get_rank_count();
 
         // TODO aggregate field ?
         sycl::buffer<u32> idp(num_obj);
@@ -108,10 +95,9 @@ namespace shammodels::sph {
                             u32 field_idx,
                             std::string field_dump_name) {
         StackEntry stack_loc{};
-        u64 num_obj = 0; // TODO get_rank_count() in scheduler
+        
         using namespace shamrock::patch;
-        sched.for_each_patch_data(
-            [&](u64 id_patch, Patch cur_p, PatchData &pdat) { num_obj += pdat.get_obj_cnt(); });
+        u64 num_obj = sched.get_rank_count();
 
         // TODO aggregate field ?
         sycl::buffer<T> field_vals(num_obj);
@@ -134,10 +120,8 @@ namespace shammodels::sph {
 
     u64 BasicGas::count_particles() {
         StackEntry stack_loc{};
-        u64 part_cnt = 0;
-        using namespace shamrock::patch;
-        scheduler().for_each_patch_data(
-            [&](u64 id_patch, Patch cur_p, PatchData &pdat) { part_cnt += pdat.get_obj_cnt(); });
+        
+        u64 part_cnt = scheduler().get_rank_count();
         return shamalgs::collective::allreduce_sum(part_cnt);
     }
 

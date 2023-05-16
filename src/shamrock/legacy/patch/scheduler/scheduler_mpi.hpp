@@ -341,6 +341,47 @@ class PatchScheduler{
         return shamrock::patch::PatchField<T>(map_owned_patchdata_fetch_load_store(fct));
     }
 
+    inline u64 get_rank_count(){StackEntry stack_loc{};
+        using namespace shamrock::patch;
+        u64 num_obj = 0; // TODO get_rank_count() in scheduler
+        for_each_patch_data(
+            [&](u64 id_patch, Patch cur_p, PatchData &pdat) { num_obj += pdat.get_obj_cnt(); });
+
+        return num_obj;
+    }
+
+    template<class T>
+    inline std::unique_ptr<sycl::buffer<T>> rankgather_field(u32 field_idx){StackEntry stack_loc{};
+        std::unique_ptr<sycl::buffer<T>> ret;
+
+        auto fd = pdl.get_field<T>(field_idx);
+        u64 nvar = fd.nvar;
+
+        u64 num_obj = get_rank_count();
+
+        if(num_obj > 0){
+            ret = std::make_unique<sycl::buffer<T>>(num_obj*nvar);
+
+            using namespace shamrock::patch;
+
+            u64 ptr = 0; // TODO accumulate_field() in scheduler ?
+            for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
+                using namespace shamalgs::memory;
+                using namespace shambase;
+
+                write_with_offset_into(
+                    get_check_ref(ret), 
+                    get_check_ref(pdat.get_field<T>(field_idx).get_buf()), 
+                    ptr, 
+                    pdat.get_obj_cnt()*nvar);
+
+                ptr += pdat.get_obj_cnt()*nvar;
+            });
+        }
+
+        return ret;
+    }
+
 
     //template<class Function, class Pfield>
     //inline void compute_patch_field(Pfield & field, MPI_Datatype & dtype , Function && lambda){

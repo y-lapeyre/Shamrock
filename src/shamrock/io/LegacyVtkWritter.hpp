@@ -11,6 +11,7 @@
 #include "shamalgs/collective/io.hpp"
 #include "shamalgs/collective/reduction.hpp"
 #include "shamalgs/memory/bufferFlattening.hpp"
+#include "shambase/memory.hpp"
 #include "shambase/stacktrace.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"
 #include "shamrock/io/details/bufToVtkBuf.hpp"
@@ -35,10 +36,12 @@ namespace shamrock {
         static constexpr u32 repr_count = shambase::VectorProperties<T>::dimension; 
         
         template<class RT, class T>
-        inline void write_buffer_vtktype(MPI_File fh,sycl::buffer<T> & buf,u32 len,u32 sum_len, bool device_alloc ,  u64 & file_head_ptr){
+        inline void write_buffer_vtktype(MPI_File fh,sycl::buffer<T> & buf,u32 len,u32 sum_len, bool device_alloc ,  u64 & file_head_ptr){StackEntry stack_loc{};
 
             const u32 new_cnt = len*repr_count<T>;
             const u32 new_cnt_sum = sum_len*repr_count<T>;
+
+            logger::debug_mpi_ln("VTK write", new_cnt, new_cnt_sum);
 
             sycl::queue & q = shamsys::instance::get_compute_queue();
 
@@ -70,9 +73,26 @@ namespace shamrock {
 
             }
 
-            logger::raw_ln(new_cnt);
+            logger::debug_mpi_ln("VTK write",new_cnt);
 
             shamalgs::collective::viewed_write_all_fetch_known_total_size(fh, usm_buf, new_cnt,new_cnt_sum, file_head_ptr);
+
+            sycl::free(usm_buf, q);
+            
+        }
+
+        template<class RT, class T>
+        inline void write_buffer_vtktype_no_buf(MPI_File fh,u32 sum_len, bool device_alloc ,  u64 & file_head_ptr){StackEntry stack_loc{};
+
+            const u32 new_cnt_sum = sum_len*repr_count<T>;
+
+            logger::debug_mpi_ln("VTK write", new_cnt_sum);
+
+            sycl::queue & q = shamsys::instance::get_compute_queue();
+
+            RT* usm_buf = nullptr;
+
+            shamalgs::collective::viewed_write_all_fetch_known_total_size(fh, usm_buf, 0,new_cnt_sum, file_head_ptr);
 
             sycl::free(usm_buf, q);
             
@@ -106,6 +126,17 @@ namespace shamrock {
                 details::write_buffer_vtktype<i32>(mfile, buf, len, sum_len, false, file_head_ptr);
             }else if constexpr (shambase::VectorProperties<T>::is_uint_based){
                 details::write_buffer_vtktype<i32>(mfile, buf, len, sum_len, false, file_head_ptr);
+            }
+        }
+
+        template<class T>
+        inline void write_buf_no_buf(u32 sum_len){
+            if constexpr (shambase::VectorProperties<T>::is_float_based){
+                details::write_buffer_vtktype_no_buf<f32,T>(mfile, sum_len, false, file_head_ptr);
+            }else if constexpr (shambase::VectorProperties<T>::is_int_based){
+                details::write_buffer_vtktype_no_buf<i32,T>(mfile, sum_len, false, file_head_ptr);
+            }else if constexpr (shambase::VectorProperties<T>::is_uint_based){
+                details::write_buffer_vtktype_no_buf<i32,T>(mfile, sum_len, false, file_head_ptr);
             }
         }
 
@@ -170,7 +201,9 @@ namespace shamrock {
         
         
         template<class T>
-        void write_points(sycl::buffer<sycl::vec<T,3>> & buf, u32 len){
+        void write_points(sycl::buffer<sycl::vec<T,3>> & buf, u32 len){StackEntry stack_loc{};
+
+            logger::debug_mpi_ln("VTK write", "write_points");
 
             u32 sum_len = shamalgs::collective::allreduce_sum(len);
 
@@ -186,6 +219,36 @@ namespace shamrock {
 
             has_written_points = true;
             points_count = sum_len;
+        }
+
+        template<class T>
+        void write_points_no_buf(){StackEntry stack_loc{};
+
+            logger::debug_mpi_ln("VTK write", "write_points no buf");
+
+            u32 sum_len = shamalgs::collective::allreduce_sum(0);
+
+            std::stringstream ss;
+            ss << "\n\nPOINTS ";
+            ss << sum_len;
+            ss << " " << get_buf_type_name<sycl::vec<T,3>>();
+            ss << "\n";
+
+            head_write(ss.str());
+
+            write_buf_no_buf<T>(sum_len);
+
+            has_written_points = true;
+            points_count = sum_len;
+        }
+
+        template<class T> 
+        void write_points(std::unique_ptr<sycl::buffer<sycl::vec<T,3>>> & buf, u32 len){
+            if(len > 0){
+                write_points(shambase::get_check_ref(buf),len);
+            }else{
+                write_points_no_buf<T>();
+            }
         }
 
 
@@ -347,9 +410,37 @@ namespace shamrock {
 
             write_buf(buf, len,sum_len);
         }
+
+        template<class T>
+        void write_field_no_buf(std::string name){
+
+            u32 sum_len = shamalgs::collective::allreduce_sum(0);
+
+            std::stringstream ss;
+            ss << "\n"<<name;
+            ss << " "<< details::repr_count<T> ;
+            ss << " "<< sum_len;
+            ss << " " << get_buf_type_name<T>();
+            ss << "\n";
+            head_write(ss.str());
+
+
+            write_buf_no_buf<T>(sum_len);
+        }
+
+        template<class T> 
+        void write_field(std::string name, std::unique_ptr<sycl::buffer<T>> & buf, u32 len){
+            if(len > 0){
+                write_field(name,shambase::get_check_ref(buf),len);
+            }else{
+                write_field_no_buf<T>(name);
+            }
+        }
         
 
-        inline ~LegacyVtkWritter() { mpi::file_close(&mfile); }
+        inline ~LegacyVtkWritter() { 
+            logger::debug_mpi_ln("LegacyVtkWritter", "calling : mpi::file_close");
+            mpi::file_close(&mfile); }
 
         LegacyVtkWritter(const LegacyVtkWritter&) = delete;
         LegacyVtkWritter& operator=(const LegacyVtkWritter&) = delete;

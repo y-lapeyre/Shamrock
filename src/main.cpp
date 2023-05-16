@@ -26,6 +26,7 @@
 #include "shamsys/legacy/log.hpp"
 #include "shamsys/legacy/sycl_handler.hpp"
 #include "shamsys/legacy/sycl_mpi_interop.hpp"
+#include "shamsys/SignalCatch.hpp"
 #include "shambase/time.hpp"
 #include "shamtest/shamtest.hpp"
 #include <array>
@@ -64,7 +65,7 @@ start_ipython(config=c)
 )";
 
 
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[]) {StackEntry stack_loc{};
 
 
 
@@ -126,13 +127,14 @@ int main(int argc, char *argv[]) {
 
     logfiles::open_files();
 
-
+    shamsys::register_signals();
     //*
     {
         namespace py = pybind11;
         //RunScriptHandler rscript;
         
         if(opts::has_option("--ipython")){
+            StackEntry stack_loc{};
 
             py::scoped_interpreter guard{};
             
@@ -147,6 +149,7 @@ int main(int argc, char *argv[]) {
 
             //rscript.run_ipython();
         }else if(opts::has_option("--rscript")){
+            StackEntry stack_loc{};
             std::string fname = std::string(opts::get_option("--rscript"));
             //RunScriptHandler rscript;
             //rscript.run_file(fname);
