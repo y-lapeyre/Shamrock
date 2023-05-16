@@ -15,7 +15,6 @@
 #include "patchdata_exchanger.hpp"
 #include "shamrock/legacy/patch/base/patchdata_field.hpp"
 #include "shamrock/legacy/patch/utility/serialpatchtree.hpp"
-#include "patch_content_exchanger.hpp"
 #include "shamrock/legacy/patch/scheduler/scheduler_mpi.hpp"
 #include "shamsys/legacy/sycl_handler.hpp"
 #include "shamrock/legacy/utils/sycl_vector_utils.hpp"
@@ -43,10 +42,9 @@ inline std::unordered_map<u64, sycl::buffer<u64>> get_new_id_map<f32_3>(PatchSch
 
             newid_buf_map.insert({
                 id,
-                __compute_object_patch_owner<f32_3, class ComputeObejctPatchOwners_f32>(
+                sptree.compute_patch_owner(
                     shamsys::instance::get_compute_queue(), 
-                    *pos, xyz_field.size(),
-                    sptree)});
+                    *pos, xyz_field.size())});
 
         }
         
@@ -76,10 +74,9 @@ inline std::unordered_map<u64, sycl::buffer<u64>> get_new_id_map<f64_3>(PatchSch
 
             newid_buf_map.insert({
                 id,
-                __compute_object_patch_owner<f64_3, class ComputeObejctPatchOwners_f64>(
+                sptree.compute_patch_owner(
                     shamsys::instance::get_compute_queue(), 
-                    *pos, xyz_field.size(),
-                    sptree)});
+                    *pos, xyz_field.size())});
 
         }
         
@@ -115,10 +112,9 @@ inline void reatribute_particles<f32_3>(PatchScheduler & sched, SerialPatchTree<
 
             newid_buf_map.insert({
                 id,
-                __compute_object_patch_owner<f32_3, class ComputeObjectPatchOwners_f32_old>(
+                sptree.compute_patch_owner(
                     shamsys::instance::get_compute_queue(), 
-                    *pos, xyz_field.size(),
-                    sptree)});
+                    *pos, xyz_field.size())});
 
             
             {
@@ -214,10 +210,9 @@ inline void reatribute_particles<f32_3>(PatchScheduler & sched, SerialPatchTree<
 
                 newid_buf_map.insert({
                     id,
-                    __compute_object_patch_owner<f32_3, class ComputeObjectPatchOwners2_f32_old>(
+                    sptree.compute_patch_owner(
                         shamsys::instance::get_compute_queue(), 
-                        *pos,  xyz_field.size(),
-                        sptree)});
+                        *pos,  xyz_field.size())});
 
             }
             
@@ -364,10 +359,9 @@ inline void reatribute_particles<f64_3>(PatchScheduler & sched, SerialPatchTree<
 
             newid_buf_map.insert({
                 id,
-                __compute_object_patch_owner<f64_3, class ComputeObjectPatchOwners_f64_old>(
+                sptree.compute_patch_owner(
                     shamsys::instance::get_compute_queue(), 
-                    *pos, xyz_field.size(),
-                    sptree)});
+                    *pos, xyz_field.size())});
 
             
             {
@@ -464,10 +458,9 @@ inline void reatribute_particles<f64_3>(PatchScheduler & sched, SerialPatchTree<
 
                 newid_buf_map.insert({
                     id,
-                    __compute_object_patch_owner<f64_3, class ComputeObjectPatchOwners2_f64_old>(
+                    sptree.compute_patch_owner(
                         shamsys::instance::get_compute_queue(), 
-                        *pos,  xyz_field.size(),
-                        sptree)});
+                        *pos,  xyz_field.size())});
 
             }
             

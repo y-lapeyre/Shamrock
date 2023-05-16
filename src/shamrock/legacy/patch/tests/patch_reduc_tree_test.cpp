@@ -12,7 +12,6 @@
 #include "shamrock/legacy/patch/interfaces/interface_generator.hpp"
 #include "shamrock/legacy/patch/interfaces/interface_handler.hpp"
 #include "shamrock/legacy/patch/interfaces/interface_selector.hpp"
-#include "shamrock/legacy/patch/comm/patch_content_exchanger.hpp"
 #include "shamrock/legacy/patch/scheduler/scheduler_mpi.hpp"
 #include "shamrock/legacy/patch/utility/patch_field.hpp"
 #include "shamrock/legacy/patch/utility/patch_reduc_tree.hpp"
