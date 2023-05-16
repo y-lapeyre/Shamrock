@@ -11,7 +11,7 @@
 
 TestStart(Unittest, "vtk-write-parts", vtk_write_test_particles, -1){
 
-    shamrock::LegacyVtkWritter writter("out.vtk",true,shamrock::UnstructuredGrid);
+    shamrock::LegacyVtkWritter writter("out-parts.vtk",true,shamrock::UnstructuredGrid);
 
     f32 offset =shamsys::instance::world_rank*shamsys::instance::world_size;
 
@@ -44,7 +44,7 @@ TestStart(Unittest, "vtk-write-parts", vtk_write_test_particles, -1){
 
 TestStart(Unittest, "vtk-write-cells", vtk_write_test_cells, -1){
 
-    shamrock::LegacyVtkWritter writter("out.vtk",true,shamrock::UnstructuredGrid);
+    shamrock::LegacyVtkWritter writter("out-cell.vtk",true,shamrock::UnstructuredGrid);
 
     f32 offset =shamsys::instance::world_rank*shamsys::instance::world_size;
 
