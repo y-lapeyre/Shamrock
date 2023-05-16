@@ -198,7 +198,7 @@ namespace shammodels::sph {
         sptree.attach_buf();
 
         shamrock::patch::PatchField<flt> h_max_patch = scheduler().map_owned_to_patch_field_simple<flt>(
-            [&](const Patch p , PatchData& pdat) -> flt{
+            [&](const Patch p , PatchData& pdat) -> flt {
                 return pdat.get_field<flt>(ihpart).compute_max();
             }
         );

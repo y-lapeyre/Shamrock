@@ -138,6 +138,10 @@ namespace shamrock {
             
             logger::debug_ln("VtkWritter", "opening :", fname);
 
+            if(fname.find(".vtk") == std::string::npos){
+                throw shambase::throw_with_loc<std::invalid_argument>("the extension should be .vtk");
+            }
+
             
             shamalgs::collective::open_reset_file(mfile, fname);
 

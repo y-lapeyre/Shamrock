@@ -50,6 +50,7 @@ void models::sph::SetupSPH<flt, Kernel>::add_particules_fcc(PatchScheduler &sche
 
         PatchData tmp(sched.pdl);
         tmp.resize(vec_acc.size());
+        tmp.fields_raz();
 
         part_cnt += vec_acc.size();
 
@@ -112,6 +113,8 @@ void models::sph::SetupSPH<flt, Kernel>::add_particules_fcc(PatchScheduler &sche
         std::cout << "patch id : " << pid << " len = " << pdat.get_obj_cnt() << std::endl;
     });
 }
+
+
 
 template class models::sph::SetupSPH<f32, shamrock::sph::kernels::M4<f32>>;
 template class models::sph::SetupSPH<f32, shamrock::sph::kernels::M6<f32>>;

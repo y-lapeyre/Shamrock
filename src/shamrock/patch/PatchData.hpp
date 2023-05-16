@@ -270,7 +270,7 @@ namespace shamrock::patch {
 
         static PatchData deserialize_buf(shamalgs::SerializeHelper & serializer, PatchDataLayout & pdl);
 
-
+        void fields_raz();
     };
 
     template<class T>
