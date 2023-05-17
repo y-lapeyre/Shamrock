@@ -13,7 +13,7 @@
 #include "shamalgs/algorithm/algorithm.hpp"
 #include "shambase/exception.hpp"
 #include "shambase/integer_sycl.hpp"
-#include "shamrock/math/integerManip.hpp"
+#include "shambase/integer_sycl.hpp"
 #include "shamrock/sfc/MortonKernels.hpp"
 #include "shamrock/sfc/morton.hpp"
 #include "shamsys/legacy/log.hpp"
@@ -30,7 +30,6 @@ void RadixTreeMortonBuilder<morton_t, pos_t, dim>::build(
 ) {
 
     using namespace logger;
-using namespace shamrock::math::int_manip;
 using namespace shamrock::sfc;
 
     if (cnt_obj > i32_max - 1) {

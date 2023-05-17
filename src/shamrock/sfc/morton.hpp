@@ -22,7 +22,7 @@
 #include "aliases.hpp"
 #include "bmi.hpp"
 #include "shammath/CoordRangeTransform.hpp"
-#include "shamrock/math/integerManip.hpp"
+#include "shambase/integer_sycl.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"
 #include <type_traits>
 #include "shambase/sycl.hpp"

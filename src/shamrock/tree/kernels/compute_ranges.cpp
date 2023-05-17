@@ -9,7 +9,7 @@
 #include "compute_ranges.hpp"
 
 #include "shambase/integer.hpp"
-#include "shamrock/math/integerManip.hpp"
+#include "shambase/integer_sycl.hpp"
 
 template<class u_morton>
 void sycl_compute_cell_ranges(
@@ -30,8 +30,6 @@ void sycl_compute_cell_ranges(
     std::unique_ptr<sycl::buffer<typename shamrock::sfc::MortonCodes<u_morton, 3>::int_vec_repr>>
         &buf_pos_max_cell
 ) {
-
-    using namespace shamrock::math::int_manip;
 
     sycl::range<1> range_radix_tree{internal_cnt};
 
