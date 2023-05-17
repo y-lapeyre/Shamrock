@@ -180,32 +180,35 @@ namespace shammodels::sph {
 
         u64 Npart_all = count_particles();
 
-        shamrock::patch::PatchField<flt> h_max_patch =
+        constexpr flt h_fac_evol_max = 1.2;
+
+
+        shamrock::patch::PatchField<flt> interactR_patch =
             scheduler().map_owned_to_patch_field_simple<flt>(
                 [&](const Patch p, PatchData &pdat) -> flt {
                     if (!pdat.is_empty()) {
-                        return pdat.get_field<flt>(ihpart).compute_max();
+                        return pdat.get_field<flt>(ihpart).compute_max()*h_fac_evol_max*Rkern;
                     }else{
                         return shambase::VectorProperties<flt>::get_min();
                     }
                 });
 
-        PatchtreeField<flt> h_max_mpi_tree = sptree.make_patch_tree_field(
+        PatchtreeField<flt> interactR_mpi_tree = sptree.make_patch_tree_field(
             scheduler(),
             shamsys::instance::get_compute_queue(),
-            h_max_patch,
+            interactR_patch,
             [](flt h0, flt h1, flt h2, flt h3, flt h4, flt h5, flt h6, flt h7) {
                 return shambase::sycl_utils::max_8points(h0, h1, h2, h3, h4, h5, h6, h7);
             });
 
         BasicGasPeriodicGhostHandler<vec> interf_handle (scheduler());
 
-        auto interf_build_info = interf_handle.find_interfaces(sptree, h_max_mpi_tree,h_max_patch);
+        auto interf_build_info = interf_handle.find_interfaces(sptree, interactR_mpi_tree,interactR_patch);
 
         auto interf_build_cache = interf_handle.gen_id_table_interfaces(std::move(interf_build_info));
 
 
-        
+
         // update h
 
         // compute pressure
