@@ -183,7 +183,7 @@ namespace sph {
         logger::info_ln("SPHLeapfrog", "step t=",old_time, "do_force =",do_force, "do_corrector =",do_corrector);
 
         //Init serial patch tree
-        SerialPatchTree<vec3> sptree(sched.patch_tree, sched.get_box_tranform<vec3>());
+        SerialPatchTree<vec3> sptree(sched.patch_tree, sched.get_sim_box().template get_patch_transform<vec3>());
         sptree.attach_buf();
 
 
@@ -244,7 +244,7 @@ namespace sph {
 
 
         //compute hmax
-        PatchField<flt> h_field;
+        legacy::PatchField<flt> h_field;
         //sched.compute_patch_field(
         //    h_field, get_mpi_type<flt>(), [loc_htol_up_tol](sycl::queue &queue, Patch &p, PatchDataBuffer &pdat_buf) {
         //        return patchdata::sph::get_h_max<flt>(pdat_buf.pdl, queue, pdat_buf) * loc_htol_up_tol * Kernel::Rkern;

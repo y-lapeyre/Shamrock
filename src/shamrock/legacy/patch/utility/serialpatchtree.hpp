@@ -25,13 +25,18 @@
 
 
 
+#include "shambase/memory.hpp"
+#include "shambase/stacktrace.hpp"
 #include "shamrock/legacy/io/logs.hpp"
 #include "patch_field.hpp"
+#include "shamrock/patch/PatchField.hpp"
 #include "shamrock/scheduler/PatchTree.hpp"
 #include "shamrock/legacy/patch/scheduler/scheduler_mpi.hpp"
+#include "shamsys/legacy/log.hpp"
 #include "shamsys/legacy/sycl_handler.hpp"
 #include "aliases.hpp"
 #include "shamrock/legacy/patch/utility/patch_reduc_tree.hpp"
+#include <array>
 #include <tuple>
 
 
@@ -45,26 +50,23 @@ class SerialPatchTree{public:
 
     
     //TODO use unique pointer instead
-    sycl::buffer<PtNode>* serial_tree_buf = nullptr;
-    sycl::buffer<u64>*    linked_patch_ids_buf = nullptr;
+    std::unique_ptr<sycl::buffer<PtNode>> serial_tree_buf;
+    std::unique_ptr<sycl::buffer<u64>>    linked_patch_ids_buf;
 
     inline void attach_buf(){
-        if(serial_tree_buf != nullptr) throw shambase::throw_with_loc<std::runtime_error>("serial_tree_buf is already allocated");
-        if(linked_patch_ids_buf != nullptr) throw shambase::throw_with_loc<std::runtime_error>("linked_patch_ids_buf is already allocated");
+        if(bool(serial_tree_buf)) throw shambase::throw_with_loc<std::runtime_error>("serial_tree_buf is already allocated");
+        if(bool(linked_patch_ids_buf)) throw shambase::throw_with_loc<std::runtime_error>("linked_patch_ids_buf is already allocated");
 
-        serial_tree_buf = new sycl::buffer<PtNode>(serial_tree.data(),serial_tree.size());
-        linked_patch_ids_buf = new sycl::buffer<u64>(linked_patch_ids.data(),linked_patch_ids.size());
+        serial_tree_buf = std::make_unique<sycl::buffer<PtNode>>(serial_tree.data(),serial_tree.size());
+        linked_patch_ids_buf = std::make_unique<sycl::buffer<u64>>(linked_patch_ids.data(),linked_patch_ids.size());
     }
 
     inline void detach_buf(){
-        if(serial_tree_buf == nullptr) throw shambase::throw_with_loc<std::runtime_error>("serial_tree_buf wasn't allocated");
-        if(linked_patch_ids_buf == nullptr) throw shambase::throw_with_loc<std::runtime_error>("linked_patch_ids_buf wasn't allocated");
+        if(!bool(serial_tree_buf)) throw shambase::throw_with_loc<std::runtime_error>("serial_tree_buf wasn't allocated");
+        if(!bool(linked_patch_ids_buf)) throw shambase::throw_with_loc<std::runtime_error>("linked_patch_ids_buf wasn't allocated");
 
-        delete serial_tree_buf;
-        serial_tree_buf = nullptr;
-        
-        delete linked_patch_ids_buf;
-        linked_patch_ids_buf = nullptr;
+        serial_tree_buf.reset();
+        linked_patch_ids_buf.reset();
     }
 
 
@@ -81,15 +83,22 @@ class SerialPatchTree{public:
     std::vector<PtNode> serial_tree;
     std::vector<u64> linked_patch_ids;
 
-    void build_from_patch_tree(PatchTree &ptree, fp_prec_vec translate_factor, fp_prec_vec scale_factor);
+    void build_from_patch_tree(PatchTree &ptree, const shamrock::patch::PatchCoordTransform<fp_prec_vec> box_transform);
 
+    
 
     public: 
 
-    inline SerialPatchTree(PatchTree &ptree, std::tuple<fp_prec_vec,fp_prec_vec> box_tranform){
-        auto t = timings::start_timer("build serial ptree", timings::function);
-        build_from_patch_tree(ptree, std::get<0>(box_tranform), std::get<1>(box_tranform));
-        t.stop();
+    inline void print_status(){
+        for(PtNode n : serial_tree){
+            logger::raw_ln(n.box_min, n.box_max);
+        }
+    }
+
+    inline SerialPatchTree(PatchTree &ptree, const shamrock::patch::PatchCoordTransform<fp_prec_vec> box_transform){
+        StackEntry stack_loc{};
+        build_from_patch_tree(ptree, box_transform);
+        
     }
 
     /**
@@ -110,10 +119,14 @@ class SerialPatchTree{public:
         return serial_tree.size();
     }
 
+    inline static SerialPatchTree<fp_prec_vec> build(PatchScheduler & sched){
+        return SerialPatchTree<fp_prec_vec>(sched.patch_tree, sched.get_patch_transform<fp_prec_vec>());
+    }
+
 
 
     template<class type, class reduc_func>
-    inline PatchFieldReduction<type> reduce_field(sycl::queue & queue,PatchScheduler & sched, PatchField<type> & pfield){
+    inline PatchFieldReduction<type> reduce_field(sycl::queue & queue,PatchScheduler & sched, legacy::PatchField<type> & pfield){
 
         PatchFieldReduction<type> predfield;
 
@@ -212,6 +225,63 @@ class SerialPatchTree{public:
 
     }
 
+    template<class T, class Func>
+    inline shamrock::patch::PatchtreeField<T> make_patch_tree_field(PatchScheduler & sched, sycl::queue & queue,shamrock::patch::PatchField<T> pfield, Func && reducer){
+        shamrock::patch::PatchtreeField<T> ptfield;
+        ptfield.allocate(get_element_count());
+
+        {
+            sycl::host_accessor lpid {shambase::get_check_ref(linked_patch_ids_buf), sycl::read_only};
+            sycl::host_accessor tree_field{shambase::get_check_ref(ptfield.internal_buf), sycl::write_only, sycl::no_init};
+
+            //init reduction
+            std::unordered_map<u64,u64> & idp_to_gid = sched.patch_list.id_patch_to_global_idx;
+            for (u64 idx = 0; idx < get_element_count() ; idx ++) {
+                tree_field[idx] = 
+                    (lpid[idx] != u64_max) ? 
+                    pfield.get(lpid[idx])
+                        : 
+                    T()
+                        ;
+
+            }
+        }
+
+
+
+        sycl::range<1> range{get_element_count()};
+        u32 end_loop = get_level_count();
+
+        for (u32 level = 0; level < end_loop; level ++) {
+            queue.submit([&](sycl::handler &cgh) {
+
+                sycl::accessor tree{shambase::get_check_ref(serial_tree_buf), cgh, sycl::read_only};
+                sycl::accessor f {shambase::get_check_ref(ptfield.internal_buf), cgh, sycl::read_write};
+                
+                cgh.parallel_for(range, [=](sycl::item<1> item) {
+                    u64 i = (u64)item.get_id(0);
+
+                    std::array<u64,8> n = tree[i].childs_id;
+
+                    if(n[0] != u64_max){
+                        f[i] = reducer(
+                                f[n[0]],
+                                f[n[1]],
+                                f[n[2]],
+                                f[n[3]],
+                                f[n[4]],
+                                f[n[5]],
+                                f[n[6]],
+                                f[n[7]]
+                            );
+                    }
+                    
+                });
+            });
+        }
+        return ptfield;
+    }
+
 
     inline void dump_dat(){
         for (u64 idx = 0; idx < get_element_count() ; idx ++) {
@@ -245,5 +315,93 @@ class SerialPatchTree{public:
     }
 
 
+    sycl::buffer<u64> compute_patch_owner(sycl::queue & queue,sycl::buffer<fp_prec_vec> &position_buffer, u32 len);
 
 };
+
+template<class vec>
+sycl::buffer<u64> SerialPatchTree<vec>::compute_patch_owner(sycl::queue & queue,sycl::buffer<vec> &position_buffer, u32 len){
+    sycl::buffer<u64> new_owned_id(len);
+
+    using namespace shamrock::patch;
+
+    queue.submit([&](sycl::handler &cgh) {
+        sycl::accessor pos {position_buffer, cgh, sycl::read_only};
+        sycl::accessor tnode {shambase::get_check_ref(serial_tree_buf), cgh, sycl::read_only};
+        sycl::accessor linked_node_id {shambase::get_check_ref(linked_patch_ids_buf), cgh, sycl::read_only};
+        sycl::accessor new_id {new_owned_id, cgh, sycl::write_only, sycl::no_init};
+
+        auto max_lev = get_level_count();
+
+        cgh.parallel_for(sycl::range(len), [=](sycl::item<1> item) {
+            u32 i = (u32)item.get_id(0);
+
+            // TODO implement the version with multiple roots
+            u64 current_node = 0;
+            u64 result_node  = u64_max;
+
+            auto xyz = pos[i];
+
+            using PtNode = shamrock::scheduler::SerialPatchNode<vec>;
+
+            for (u32 step = 0; step < max_lev+1; step++) {
+                PtNode cur_node = tnode[current_node];
+
+                if (cur_node.childs_id[0] != u64_max) {
+
+                    if (Patch::is_in_patch_converted(xyz, tnode[cur_node.childs_id[0]].box_min,
+                                                   tnode[cur_node.childs_id[0]].box_max)) {
+                        current_node = cur_node.childs_id[0];
+                    } else if (Patch::is_in_patch_converted(xyz, tnode[cur_node.childs_id[1]].box_min,
+                                                          tnode[cur_node.childs_id[1]].box_max)) {
+                        current_node = cur_node.childs_id[1];
+                    } else if (Patch::is_in_patch_converted(xyz, tnode[cur_node.childs_id[2]].box_min,
+                                                          tnode[cur_node.childs_id[2]].box_max)) {
+                        current_node = cur_node.childs_id[2];
+                    } else if (Patch::is_in_patch_converted(xyz, tnode[cur_node.childs_id[3]].box_min,
+                                                          tnode[cur_node.childs_id[3]].box_max)) {
+                        current_node = cur_node.childs_id[3];
+                    } else if (Patch::is_in_patch_converted(xyz, tnode[cur_node.childs_id[4]].box_min,
+                                                          tnode[cur_node.childs_id[4]].box_max)) {
+                        current_node = cur_node.childs_id[4];
+                    } else if (Patch::is_in_patch_converted(xyz, tnode[cur_node.childs_id[5]].box_min,
+                                                          tnode[cur_node.childs_id[5]].box_max)) {
+                        current_node = cur_node.childs_id[5];
+                    } else if (Patch::is_in_patch_converted(xyz, tnode[cur_node.childs_id[6]].box_min,
+                                                          tnode[cur_node.childs_id[6]].box_max)) {
+                        current_node = cur_node.childs_id[6];
+                    } else if (Patch::is_in_patch_converted(xyz, tnode[cur_node.childs_id[7]].box_min,
+                                                          tnode[cur_node.childs_id[7]].box_max)) {
+                        current_node = cur_node.childs_id[7];
+                    }
+
+                } else {
+
+                    result_node = linked_node_id[current_node];
+                    break;
+                }
+
+                
+            }
+            
+            if constexpr(false){
+                PtNode cur_node = tnode[current_node];
+                if(xyz.z()==0){
+                    logger::raw(
+                        shambase::format("{:5} ({}) -> {} [{} {}]\n", 
+                            i,
+                            Patch::is_in_patch_converted(xyz, cur_node.box_min , cur_node.box_max),
+                            xyz.z(),
+                            cur_node.box_min.z() , 
+                            cur_node.box_max.z()
+                        )
+                    );
+                }
+            }
+
+            new_id[i] = result_node;
+        });
+    });
+
+    return new_owned_id;
+}

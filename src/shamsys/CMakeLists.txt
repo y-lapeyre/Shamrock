@@ -3,6 +3,7 @@ set(Sources
     NodeInstance.cpp
     SyclMpiTypes.cpp
     SyclHelper.cpp
+    SignalCatch.cpp
 )
 set(SourcesTest
     

@@ -22,28 +22,12 @@
 #include "aliases.hpp"
 #include "shamrock/legacy/io/dump.hpp"
 #include "shamrock/legacy/io/logs.hpp"
-#include "shamrock/patch/Patch.hpp"
-#include "shamrock/legacy/patch/base/patchdata.hpp"
-#include "shamrock/patch/PatchDataLayout.hpp"
-#include "shamrock/legacy/patch/comm/patch_content_exchanger.hpp"
-#include "shamrock/legacy/patch/comm/patch_object_mover.hpp"
-#include "shamrock/legacy/patch/comm/patchdata_exchanger.hpp"
-#include "shamrock/legacy/patch/interfaces/interface_generator.hpp"
-#include "shamrock/legacy/patch/interfaces/interface_handler.hpp"
-#include "shamrock/legacy/patch/interfaces/interface_selector.hpp"
-//#include "shamrock/legacy/patch/patchdata_buffer.hpp"
-#include "shamrock/legacy/patch/scheduler/scheduler_mpi.hpp"
-#include "shamrock/legacy/patch/utility/patch_field.hpp"
-#include "shamrock/legacy/patch/utility/patch_reduc_tree.hpp"
-#include "shamrock/legacy/patch/utility/serialpatchtree.hpp"
 #include "shamsys/legacy/cmdopt.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamsys/legacy/sycl_handler.hpp"
 #include "shamsys/legacy/sycl_mpi_interop.hpp"
-#include "shamrock/tree/RadixTree.hpp"
-
+#include "shamsys/SignalCatch.hpp"
 #include "shambase/time.hpp"
-#include "shammodels/sph/sphpatch.hpp"
 #include "shamtest/shamtest.hpp"
 #include <array>
 #include <cstdlib>
@@ -81,7 +65,7 @@ start_ipython(config=c)
 )";
 
 
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[]) {StackEntry stack_loc{};
 
 
 
@@ -143,13 +127,14 @@ int main(int argc, char *argv[]) {
 
     logfiles::open_files();
 
-
+    shamsys::register_signals();
     //*
     {
         namespace py = pybind11;
         //RunScriptHandler rscript;
         
         if(opts::has_option("--ipython")){
+            StackEntry stack_loc{};
 
             py::scoped_interpreter guard{};
             
@@ -164,6 +149,7 @@ int main(int argc, char *argv[]) {
 
             //rscript.run_ipython();
         }else if(opts::has_option("--rscript")){
+            StackEntry stack_loc{};
             std::string fname = std::string(opts::get_option("--rscript"));
             //RunScriptHandler rscript;
             //rscript.run_file(fname);

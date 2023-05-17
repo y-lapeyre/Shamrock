@@ -6,17 +6,16 @@
 //
 // -------------------------------------------------------//
 
-
 //%Impl status : Good
 
 #include "sph_setup.hpp"
-#include "shamrock/sph/kernels.hpp"
 #include "shamrock/legacy/patch/comm/patch_object_mover.hpp"
-
+#include "shamrock/legacy/patch/utility/serialpatchtree.hpp"
+#include "shamrock/sph/kernels.hpp"
 
 template<class flt, class Kernel>
-void models::sph::SetupSPH<flt,Kernel>::init(PatchScheduler & sched){
-StackEntry stack_loc{};
+void models::sph::SetupSPH<flt, Kernel>::init(PatchScheduler &sched) {
+    StackEntry stack_loc{};
     using namespace shamrock::patch;
 
     sched.add_root_patch();
@@ -28,91 +27,96 @@ StackEntry stack_loc{};
     sched.update_local_load_value();
 }
 
-
 template<class flt, class Kernel>
-void models::sph::SetupSPH<flt,Kernel>::add_particules_fcc(PatchScheduler & sched, flt dr, std::tuple<vec,vec> box){
+void models::sph::SetupSPH<flt, Kernel>::add_particules_fcc(PatchScheduler &sched,
+                                                            flt dr,
+                                                            std::tuple<vec, vec> box) {
     StackEntry stack_loc{};
 
     using namespace shamrock::patch;
 
-    if(shamsys::instance::world_rank == 0){
+    if (shamsys::instance::world_rank == 0) {
         std::vector<vec> vec_acc;
 
         generic::setup::generators::add_particles_fcc(
-            dr, 
-            box , 
-            [&box](sycl::vec<flt,3> r){
+            dr,
+            box,
+            [&box](sycl::vec<flt, 3> r) {
                 return BBAA::is_coord_in_range(r, std::get<0>(box), std::get<1>(box));
-            }, 
-            [&](sycl::vec<flt,3> r,flt h){
-                vec_acc.push_back(r); 
-            });
+            },
+            [&](sycl::vec<flt, 3> r, flt h) { vec_acc.push_back(r); });
 
         std::cout << ">>> adding : " << vec_acc.size() << " objects" << std::endl;
 
         PatchData tmp(sched.pdl);
         tmp.resize(vec_acc.size());
+        tmp.fields_raz();
 
         part_cnt += vec_acc.size();
 
-        {      
-            u32 len = vec_acc.size();
-            PatchDataField<vec> & f = tmp.get_field<vec>(sched.pdl.get_field_idx<vec>("xyz"));
-            sycl::buffer<vec> buf (vec_acc.data(),len);
-            f.override(buf,len);
+        {
+            u32 len                = vec_acc.size();
+            PatchDataField<vec> &f = tmp.get_field<vec>(sched.pdl.get_field_idx<vec>("xyz"));
+            sycl::buffer<vec> buf(vec_acc.data(), len);
+            f.override(buf, len);
         }
 
         {
-            PatchDataField<flt> & f = tmp.get_field<flt>(sched.pdl.get_field_idx<flt>("hpart"));
+            PatchDataField<flt> &f = tmp.get_field<flt>(sched.pdl.get_field_idx<flt>("hpart"));
             f.override(dr);
         }
 
-        if(sched.owned_patch_id.empty()) throw shambase::throw_with_loc<std::runtime_error>("the scheduler does not have patch in that rank");
+        if (sched.owned_patch_id.empty())
+            throw shambase::throw_with_loc<std::runtime_error>(
+                "the scheduler does not have patch in that rank");
 
         u64 insert_id = *sched.owned_patch_id.begin();
 
         sched.patch_data.get_pdat(insert_id).insert_elements(tmp);
     }
 
+    // TODO apply position modulo here
 
-    //TODO apply position modulo here
-
-    sched.patch_data.for_each_patchdata([&](u64 pid, shamrock::patch::PatchData & pdat){
+    sched.patch_data.for_each_patchdata([&](u64 pid, shamrock::patch::PatchData &pdat) {
         std::cout << "patch id : " << pid << " len = " << pdat.get_obj_cnt() << std::endl;
     });
 
     sched.scheduler_step(false, false);
 
-    sched.patch_data.for_each_patchdata([&](u64 pid, shamrock::patch::PatchData & pdat){
+    sched.patch_data.for_each_patchdata([&](u64 pid, shamrock::patch::PatchData &pdat) {
         std::cout << "patch id : " << pid << " len = " << pdat.get_obj_cnt() << std::endl;
     });
 
     {
-        auto [m,M] = sched.get_box_tranform<vec>();
+        auto [m, M] = sched.get_box_tranform<vec>();
 
-        std::cout << "box transf" 
-            << m.x() << " " << m.y() << " " << m.z() 
-            << " | "
-            << M.x() << " " << M.y() << " " << M.z() 
-            << std::endl;
+        std::cout << "box transf" << m.x() << " " << m.y() << " " << m.z() << " | " << M.x() << " "
+                  << M.y() << " " << M.z() << std::endl;
 
-        SerialPatchTree<vec> sptree(sched.patch_tree, sched.get_box_tranform<vec>());
+        SerialPatchTree<vec> sptree(sched.patch_tree, sched.get_sim_box().get_patch_transform<vec>());
+
+        //sptree.print_status();
+
         sptree.attach_buf();
         reatribute_particles(sched, sptree, periodic_mode);
     }
 
-    sched.patch_data.for_each_patchdata([&](u64 pid, shamrock::patch::PatchData & pdat){
+    sched.check_patchdata_locality_corectness();
+
+    sched.patch_data.for_each_patchdata([&](u64 pid, shamrock::patch::PatchData &pdat) {
         std::cout << "patch id : " << pid << " len = " << pdat.get_obj_cnt() << std::endl;
     });
 
     sched.scheduler_step(true, true);
 
-    sched.patch_data.for_each_patchdata([&](u64 pid, shamrock::patch::PatchData & pdat){
+    sched.patch_data.for_each_patchdata([&](u64 pid, shamrock::patch::PatchData &pdat) {
         std::cout << "patch id : " << pid << " len = " << pdat.get_obj_cnt() << std::endl;
     });
 }
 
-template class models::sph::SetupSPH<f32,shamrock::sph::kernels::M4<f32>>;
-template class models::sph::SetupSPH<f32,shamrock::sph::kernels::M6<f32>>;
-template class models::sph::SetupSPH<f64,shamrock::sph::kernels::M4<f64>>;
-template class models::sph::SetupSPH<f64,shamrock::sph::kernels::M6<f64>>;
+
+
+template class models::sph::SetupSPH<f32, shamrock::sph::kernels::M4<f32>>;
+template class models::sph::SetupSPH<f32, shamrock::sph::kernels::M6<f32>>;
+template class models::sph::SetupSPH<f64, shamrock::sph::kernels::M4<f64>>;
+template class models::sph::SetupSPH<f64, shamrock::sph::kernels::M6<f64>>;

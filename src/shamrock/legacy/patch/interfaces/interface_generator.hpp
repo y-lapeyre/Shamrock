@@ -89,7 +89,7 @@ template <class vectype, class field_type, class InterfaceSelector> class Interf
     };
 
     inline static sycl::buffer<InterfaceComInternal, 2> get_interface_list_v1(PatchScheduler &sched, SerialPatchTree<vectype> &sptree,
-                                             PatchField<typename vectype::element_type> pfield,vectype interf_offset) {
+                                             legacy::PatchField<typename vectype::element_type> pfield,vectype interf_offset) {
 
         
 
@@ -258,7 +258,7 @@ template <class vectype, class field_type, class InterfaceSelector> class Interf
      * @param pfield the interaction radius field
      */
     inline static std::vector<InterfaceComm<vectype>> get_interfaces_comm_list(PatchScheduler &sched, SerialPatchTree<vectype> &sptree,
-                                           PatchField<typename vectype::element_type> pfield,std::string fout,bool periodic) {
+                                           legacy::PatchField<typename vectype::element_type> pfield,std::string fout,bool periodic) {
 
         
 

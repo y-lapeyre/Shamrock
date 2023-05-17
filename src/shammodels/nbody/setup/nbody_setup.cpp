@@ -94,7 +94,7 @@ void models::nbody::NBodySetup<flt>::add_particules_fcc(PatchScheduler & sched, 
             << M.x() << " " << M.y() << " " << M.z() 
             << std::endl;
 
-        SerialPatchTree<vec> sptree(sched.patch_tree, sched.get_box_tranform<vec>());
+        SerialPatchTree<vec> sptree(sched.patch_tree, sched.get_sim_box().get_patch_transform<vec>());
         sptree.attach_buf();
         reatribute_particles(sched, sptree, periodic_mode);
     }

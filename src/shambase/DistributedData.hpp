@@ -10,6 +10,8 @@
 
 #include "aliases.hpp"
 #include "shambase/exception.hpp"
+#include "shambase/string.hpp"
+#include "shamsys/legacy/log.hpp"
 #include <map>
 #include <utility>
 
@@ -57,6 +59,13 @@ namespace shambase {
         inline bool has_key(u64 id) { return (data.find(id) != data.end()); }
 
         inline u64 get_element_count() { return data.size(); }
+
+        template<typename... Tf>
+        inline void print_data(fmt::format_string<Tf...> fmt){
+            for_each([&](u64 id_patch, T & ref){
+                logger::raw_ln(id_patch ,"->" ,shambase::format(fmt, ref));
+            });
+        }
     };
 
     /**
@@ -90,5 +99,14 @@ namespace shambase {
         }
 
         inline u64 get_element_count() { return data.size(); }
+
+        template<class Tmap>
+        inline DistributedDataShared<Tmap> map(std::function<Tmap(u64, u64, T&)> map_func){
+            DistributedDataShared<Tmap> ret;
+            for_each([&](u64 left,u64 right, T& ref){
+                ret.add_obj(left, right, map_func(left,right,ref));
+            });
+            return ret;
+        }
     };
 } // namespace shambase

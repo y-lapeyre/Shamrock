@@ -54,6 +54,10 @@ Register_pymod(pynamedsphsetup){
             }else if(type == "f64"){
                 f64 tmp = val.cast<f64>();
                 self.set_value_in_box(ctx, tmp, name, {f64_3{xm,ym,zm},f64_3{xM,yM,zM}});
+            }else if(type == "f64_3"){
+                auto tmp_ = val.cast<std::tuple<f64,f64,f64>>();
+                f64_3 tmp {std::get<0>(tmp_), std::get<1>(tmp_), std::get<2>(tmp_)};
+                self.set_value_in_box(ctx, tmp, name, {f64_3{xm,ym,zm},f64_3{xM,yM,zM}});
             }else{
                 throw shambase::throw_with_loc<std::invalid_argument>("unknown type");
             }

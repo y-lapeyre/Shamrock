@@ -406,7 +406,7 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(PatchScheduler &sched, f64 old_ti
 
 
         //Init serial patch tree
-        SerialPatchTree<vec3> sptree(sched.patch_tree, sched.get_box_tranform<vec3>());
+        SerialPatchTree<vec3> sptree(sched.patch_tree, sched.get_sim_box().get_patch_transform<vec3>());
         sptree.dump_dat();
         sptree.attach_buf();
 
@@ -595,8 +595,8 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(PatchScheduler &sched, f64 old_ti
         FullTreeField<flt, RadTree> min_slenght;
         FullTreeField<flt, RadTree> max_slenght;
 
-        PatchField<flt> & max_slenght_cells = max_slenght.patch_field;
-        PatchField<flt> & min_slenght_cells = min_slenght.patch_field;
+        legacy::PatchField<flt> & max_slenght_cells = max_slenght.patch_field;
+        legacy::PatchField<flt> & min_slenght_cells = min_slenght.patch_field;
 
         std::unordered_map<u64, flt> min_slenght_map;
         std::unordered_map<u64, flt> max_slenght_map;

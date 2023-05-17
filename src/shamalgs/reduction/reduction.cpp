@@ -13,9 +13,6 @@
 #include "shamalgs/reduction/details/fallbackReduction.hpp"
 #include "shambase/sycl_utils/sycl_utilities.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"
-#include <hipSYCL/sycl/buffer.hpp>
-#include <hipSYCL/sycl/handler.hpp>
-#include <hipSYCL/sycl/libkernel/accessor.hpp>
 
 namespace shamalgs::reduction {
 

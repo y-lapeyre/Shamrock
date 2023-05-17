@@ -10,13 +10,14 @@
 #pragma once
 
 #include "shamrock/patch/PatchCoord.hpp"
+#include "shamrock/patch/PatchCoordTransform.hpp"
 
 namespace shamrock::scheduler {
 
-    template<class fp_prec_vec>
+    template<class vec>
     struct SerialPatchNode{
-        fp_prec_vec box_min;
-        fp_prec_vec box_max;
+        vec box_min;
+        vec box_max;
         std::array<u64,8> childs_id;
     };
 
@@ -63,10 +64,13 @@ namespace shamrock::scheduler {
         }
 
         template<class vec>
-        inline SerialPatchNode<vec> convert(const vec translate_factor, const vec scale_factor){
+        inline SerialPatchNode<vec> convert(const shamrock::patch::PatchCoordTransform<vec> box_transform){
             SerialPatchNode<vec> n;
-            n.box_min    = vec{patch_coord.x_min, patch_coord.y_min, patch_coord.z_min} * scale_factor + translate_factor;
-            n.box_max    = (vec{patch_coord.x_max, patch_coord.y_max, patch_coord.z_max} + 1) * scale_factor + translate_factor;
+
+            auto [bmin,bmax] = box_transform.to_obj_coord(patch_coord.get_patch_range());
+
+            n.box_min    = bmin;
+            n.box_max    = bmax;
             n.childs_id[0] = tree_node.childs_nid[0];
             n.childs_id[1] = tree_node.childs_nid[1];
             n.childs_id[2] = tree_node.childs_nid[2];

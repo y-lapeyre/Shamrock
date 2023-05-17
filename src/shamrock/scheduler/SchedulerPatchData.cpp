@@ -26,10 +26,12 @@
 #include "shamrock/legacy/io/logs.hpp"
 #include "shamrock/legacy/patch/base/patchdata.hpp"
 
+#include "shamrock/patch/PatchDataField.hpp"
 #include "shamrock/patch/PatchDataLayout.hpp"
 #include "shamrock/legacy/utils/geometry_utils.hpp"
 #include "shambase/string.hpp"
 #include "shamrock/scheduler/HilbertLoadBalance.hpp"
+#include "shamsys/legacy/log.hpp"
 namespace shamrock::scheduler {
 //TODO use range based loop and emplace_back instead 
 
@@ -99,11 +101,11 @@ void split_patchdata(
     auto [bmin_p5, bmax_p5] = sim_box.patch_coord_to_domain<Vectype>(patches[5]);
     auto [bmin_p6, bmax_p6] = sim_box.patch_coord_to_domain<Vectype>(patches[6]);
     auto [bmin_p7, bmax_p7] = sim_box.patch_coord_to_domain<Vectype>(patches[7]);
-
+    
     original_pd.split_patchdata<Vectype>(pdats, 
         {bmin_p0, bmin_p1, bmin_p2, bmin_p3, bmin_p4, bmin_p5, bmin_p6, bmin_p7}, 
         {bmax_p0, bmax_p1, bmax_p2, bmax_p3, bmax_p4, bmax_p5, bmax_p6, bmax_p7});
-
+    
 }
 
 template void split_patchdata<f32_3>(

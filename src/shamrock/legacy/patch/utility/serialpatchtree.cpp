@@ -14,14 +14,14 @@ using PatchTree = shamrock::scheduler::PatchTree;
 template<class vec>
 void get_serial_tree(u64 root_key, PatchTree &ptree, std::vector<shamrock::scheduler::SerialPatchNode<vec>> &result_tree,
                           std::vector<u64> &result_tree_linked_patch_id, u64 &counter, u32 &max_level,
-                          const vec &translate_factor, const vec &scale_factor) {
+                          const shamrock::patch::PatchCoordTransform<vec> box_transform) {
     
 
     PatchTree::Node ptn = ptree.tree[root_key];
 
     
     using PtNode = shamrock::scheduler::SerialPatchNode<vec>;
-    PtNode n = ptn.convert(translate_factor, scale_factor);
+    PtNode n = ptn.convert(box_transform);
 
     max_level = sycl::max((u32)ptn.tree_node.level, max_level);
 
@@ -46,58 +46,49 @@ void get_serial_tree(u64 root_key, PatchTree &ptree, std::vector<shamrock::sched
         u64 old_id7 = ptn.get_child_nid(7);
 
         result_tree.at(id_nvec).childs_id[0] = counter;
-        get_serial_tree<vec>(old_id0, ptree, result_tree, result_tree_linked_patch_id, counter, max_level, translate_factor,
-                             scale_factor);
+        get_serial_tree<vec>(old_id0, ptree, result_tree, result_tree_linked_patch_id, counter, max_level, box_transform);
 
         result_tree.at(id_nvec).childs_id[1] = counter;
-        get_serial_tree<vec>(old_id1, ptree, result_tree, result_tree_linked_patch_id, counter, max_level, translate_factor,
-                             scale_factor);
+        get_serial_tree<vec>(old_id1, ptree, result_tree, result_tree_linked_patch_id, counter, max_level, box_transform);
 
         result_tree.at(id_nvec).childs_id[2] = counter;
-        get_serial_tree<vec>(old_id2, ptree, result_tree, result_tree_linked_patch_id, counter, max_level, translate_factor,
-                             scale_factor);
+        get_serial_tree<vec>(old_id2, ptree, result_tree, result_tree_linked_patch_id, counter, max_level, box_transform);
 
         result_tree.at(id_nvec).childs_id[3] = counter;
-        get_serial_tree<vec>(old_id3, ptree, result_tree, result_tree_linked_patch_id, counter, max_level, translate_factor,
-                             scale_factor);
+        get_serial_tree<vec>(old_id3, ptree, result_tree, result_tree_linked_patch_id, counter, max_level, box_transform);
 
         result_tree.at(id_nvec).childs_id[4] = counter;
-        get_serial_tree<vec>(old_id4, ptree, result_tree, result_tree_linked_patch_id, counter, max_level, translate_factor,
-                             scale_factor);
+        get_serial_tree<vec>(old_id4, ptree, result_tree, result_tree_linked_patch_id, counter, max_level, box_transform);
 
         result_tree.at(id_nvec).childs_id[5] = counter;
-        get_serial_tree<vec>(old_id5, ptree, result_tree, result_tree_linked_patch_id, counter, max_level, translate_factor,
-                             scale_factor);
+        get_serial_tree<vec>(old_id5, ptree, result_tree, result_tree_linked_patch_id, counter, max_level, box_transform);
 
         result_tree.at(id_nvec).childs_id[6] = counter;
-        get_serial_tree<vec>(old_id6, ptree, result_tree, result_tree_linked_patch_id, counter, max_level, translate_factor,
-                             scale_factor);
+        get_serial_tree<vec>(old_id6, ptree, result_tree, result_tree_linked_patch_id, counter, max_level, box_transform);
 
         result_tree.at(id_nvec).childs_id[7] = counter;
-        get_serial_tree<vec>(old_id7, ptree, result_tree, result_tree_linked_patch_id, counter, max_level, translate_factor,
-                             scale_factor);
+        get_serial_tree<vec>(old_id7, ptree, result_tree, result_tree_linked_patch_id, counter, max_level, box_transform);
     }
 
 }
 
 template void get_serial_tree(u64 root_key, PatchTree &ptree, std::vector<shamrock::scheduler::SerialPatchNode<f32_3>> &result_tree,
                           std::vector<u64> &result_tree_linked_patch_id, u64 &counter, u32 &max_level,
-                          const f32_3 &translate_factor, const f32_3 &scale_factor);
+                          const shamrock::patch::PatchCoordTransform<f32_3> box_transform);
 template void get_serial_tree(u64 root_key, PatchTree &ptree, std::vector<shamrock::scheduler::SerialPatchNode<f64_3>> &result_tree,
                           std::vector<u64> &result_tree_linked_patch_id, u64 &counter, u32 &max_level,
-                          const f64_3 &translate_factor, const f64_3 &scale_factor);
+                          const shamrock::patch::PatchCoordTransform<f64_3> box_transform);
 
 
 
 template <>
-void SerialPatchTree<f32_3>::build_from_patch_tree(PatchTree &ptree, f32_3 translate_factor, f32_3 scale_factor) {
+void SerialPatchTree<f32_3>::build_from_patch_tree(PatchTree &ptree, const shamrock::patch::PatchCoordTransform<f32_3> box_transform) {
 
     u64 cnt     = 0;
     level_count = 0;//TODO add root_id set
     for (u64 root_id : ptree.roots_id) {
         logger::debug_ln("Serial Patch Tree","get serial tree fp32 root id :" , root_id);
-        get_serial_tree<f32_3>(root_id, ptree, serial_tree, linked_patch_ids, cnt, level_count, translate_factor,
-                             scale_factor);
+        get_serial_tree<f32_3>(root_id, ptree, serial_tree, linked_patch_ids, cnt, level_count, box_transform);
     }
 
     logger::debug_ln("Serial Patch Tree","tree internal cell count = " , serial_tree.size());
@@ -105,12 +96,11 @@ void SerialPatchTree<f32_3>::build_from_patch_tree(PatchTree &ptree, f32_3 trans
 }
 
 template <>
-void SerialPatchTree<f64_3>::build_from_patch_tree(PatchTree &ptree, f64_3 translate_factor, f64_3 scale_factor) {
+void SerialPatchTree<f64_3>::build_from_patch_tree(PatchTree &ptree, const shamrock::patch::PatchCoordTransform<f64_3> box_transform) {
 
     u64 cnt     = 0;
     level_count = 0;
     for (u64 root_id : ptree.roots_id) {
-        get_serial_tree<f64_3>(root_id, ptree, serial_tree, linked_patch_ids, cnt, level_count, translate_factor,
-                             scale_factor);
+        get_serial_tree<f64_3>(root_id, ptree, serial_tree, linked_patch_ids, cnt, level_count, box_transform);
     }
 }

@@ -13,6 +13,8 @@
 #include "aliases.hpp"
 
 #include "Patch.hpp"
+#include "shambase/exception.hpp"
+#include "shambase/stacktrace.hpp"
 #include "shammath/intervals.hpp"
 #include "shambase/sycl_utils.hpp"
 #include <variant>
@@ -163,7 +165,7 @@ namespace shamrock::patch {
                     );
             }
 
-            throw std::runtime_error("this patchdata does not contains any fields");
+            throw shambase::throw_with_loc<std::runtime_error>("this patchdata does not contains any fields");
         }
 
         inline u64 memsize() {
@@ -205,10 +207,10 @@ namespace shamrock::patch {
                 return *pval;
             }
 
-            throw std::runtime_error(
+            throw shambase::throw_with_loc<std::runtime_error>(
                 "the request id is not of correct type\n"
                 "   current map is : \n" +
-                pdl.get_description_str() + " this call : " + std::string(__PRETTY_FUNCTION__) +
+                pdl.get_description_str() +
                 "\n"
                 "    arg : idx = " +
                 std::to_string(idx)
@@ -268,18 +270,18 @@ namespace shamrock::patch {
 
         static PatchData deserialize_buf(shamalgs::SerializeHelper & serializer, PatchDataLayout & pdl);
 
-
+        void fields_raz();
     };
 
     template<class T>
     inline void PatchData::insert_elements_in_range(PatchData &pdat, T bmin, T bmax) {
 
+        StackEntry stack_loc{};
+
         if (!pdl.check_main_field_type<T>()) {
 
-            throw std::invalid_argument(
-                __LOC_PREFIX__ +
-                "the chosen type for the main field does not match the required template type\n" +
-                "call : " + __PRETTY_FUNCTION__
+            throw shambase::throw_with_loc<std::invalid_argument>(
+                "the chosen type for the main field does not match the required template type"
             );
         }
 
@@ -292,7 +294,7 @@ namespace shamrock::patch {
                     if(shambase::VectorProperties<T>::dimension == 3){
                         return shammath::is_in_half_open(val, vmin,vmax);
                     }else{
-                        throw std::runtime_error("dimension != 3 is not handled");
+                        throw shambase::throw_with_loc<std::runtime_error>("dimension != 3 is not handled");
                     }
 
                 },

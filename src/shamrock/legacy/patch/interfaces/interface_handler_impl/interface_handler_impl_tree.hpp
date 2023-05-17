@@ -75,7 +75,7 @@ class Interfacehandler<Tree_Send,pos_prec,RadixTree<u_morton, sycl::vec<pos_prec
     template<class T> struct field_extract_type{
         using type = void;
     };
-    template<class T> struct field_extract_type<PatchField<T>>{
+    template<class T> struct field_extract_type<legacy::PatchField<T>>{
         using type = T;
     };
 

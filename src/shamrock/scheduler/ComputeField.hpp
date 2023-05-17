@@ -25,7 +25,7 @@ namespace shamrock {
         public:
         shambase::DistributedData<PatchDataField<T>> field_data;
 
-        inline void generate(PatchScheduler &sched, std::string name) {
+        inline void generate(PatchScheduler &sched, std::string name) {StackEntry stack_loc{};
 
             using namespace shamrock::patch;
 
@@ -41,28 +41,34 @@ namespace shamrock {
 
         inline PatchDataField<T> &get_field(u64 id_patch) { return field_data.get(id_patch); }
 
-        inline T compute_rank_max(){
+        inline T compute_rank_max(){StackEntry stack_loc{};
             T ret = shambase::VectorProperties<T>::get_min();
             field_data.for_each([&](u64 id, PatchDataField<T> & cfield){
-                ret = shambase::sycl_utils::g_sycl_max(ret, cfield.compute_max());
+                if(!cfield.is_empty()){
+                    ret = shambase::sycl_utils::g_sycl_max(ret, cfield.compute_max());
+                }
             });
 
             return ret;
         }
 
-        inline T compute_rank_min(){
+        inline T compute_rank_min(){StackEntry stack_loc{};
             T ret = shambase::VectorProperties<T>::get_max();
             field_data.for_each([&](u64 id, PatchDataField<T> & cfield){
-                ret = shambase::sycl_utils::g_sycl_min(ret, cfield.compute_min());
+                if(!cfield.is_empty()){
+                    ret = shambase::sycl_utils::g_sycl_min(ret, cfield.compute_min());
+                }
             });
 
             return ret;
         }
 
-        inline T compute_rank_sum(){
+        inline T compute_rank_sum(){StackEntry stack_loc{};
             T ret = shambase::VectorProperties<T>::get_zero();
             field_data.for_each([&](u64 id, PatchDataField<T> & cfield){
-                ret = shambase::sycl_utils::g_sycl_min(ret, cfield.compute_min());
+                if(!cfield.is_empty()){
+                    ret = shambase::sycl_utils::g_sycl_min(ret, cfield.compute_min());
+                }
             });
 
             return ret;

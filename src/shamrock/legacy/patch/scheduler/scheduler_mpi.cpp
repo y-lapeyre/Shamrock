@@ -15,12 +15,14 @@
 #include <vector>
 
 #include "shambase/integer_sycl.hpp"
+#include "shambase/type_aliases.hpp"
 #include "shamrock/legacy/io/logs.hpp"
 #include "shamrock/legacy/patch/base/patchdata.hpp"
 #include "shamrock/legacy/patch/base/patchdata_field.hpp"
 #include "shamrock/scheduler/HilbertLoadBalance.hpp"
 
 #include "shamrock/patch/PatchDataLayout.hpp"
+#include "shamsys/legacy/log.hpp"
 #include "shamsys/legacy/sycl_handler.hpp"
 
 #include "shamsys/legacy/sycl_mpi_interop.hpp"
@@ -597,13 +599,65 @@ std::string PatchScheduler::dump_status(){
 }
 
 
+std::string  PatchScheduler::format_patch_coord(shamrock::patch::Patch p){
+    std::string ret;
+    if(pdl.check_main_field_type<f32_3>()){
+        auto [bmin,bmax] = patch_data.sim_box.patch_coord_to_domain<f32_3>(p);
+        ret = shambase::format("coord = {} {}",bmin,bmax);
+    }else if(pdl.check_main_field_type<f64_3>()){
+        auto [bmin,bmax] = patch_data.sim_box.patch_coord_to_domain<f64_3>(p);
+        ret = shambase::format("coord = {} {}",bmin,bmax);
+    }else if(pdl.check_main_field_type<u32_3>()){
+        auto [bmin,bmax] = patch_data.sim_box.patch_coord_to_domain<u32_3>(p);
+        ret = shambase::format("coord = {} {}",bmin,bmax);
+    }else if(pdl.check_main_field_type<u64_3>()){
+        auto [bmin,bmax] = patch_data.sim_box.patch_coord_to_domain<u64_3>(p);
+        ret = shambase::format("coord = {} {}",bmin,bmax);
+    }else{
+        throw shambase::throw_with_loc<std::runtime_error>("the main field does not match any");
+    }
+    return ret;
+}
 
-inline void PatchScheduler::split_patches(std::unordered_set<u64> split_rq){
+template<class vec>
+void check_locality_t(PatchScheduler & sched){
+    using namespace shamrock::patch;
+    sched.for_each_patch_data([&](u64 pid, Patch p, shamrock::patch::PatchData &pdat) {
+        PatchDataField<vec> &main_field = pdat.get_field<vec>(0);
+        auto [bmin_p0, bmax_p0]         = sched.patch_data.sim_box.patch_coord_to_domain<vec>(p);
+        main_field.check_err_range(
+            [&](vec val, vec vmin, vec vmax) {
+                return Patch::is_in_patch_converted(val, vmin, vmax);
+            },
+            bmin_p0,
+            bmax_p0);
+    });
+}
+
+void PatchScheduler::check_patchdata_locality_corectness(){
+    if(pdl.check_main_field_type<f32_3>()){
+        check_locality_t<f32_3>(*this);
+    }else if(pdl.check_main_field_type<f64_3>()){
+        check_locality_t<f64_3>(*this);
+    }else if(pdl.check_main_field_type<u32_3>()){
+        check_locality_t<u32_3>(*this);
+    }else if(pdl.check_main_field_type<u64_3>()){
+        check_locality_t<u64_3>(*this);
+    }else{
+        throw shambase::throw_with_loc<std::runtime_error>("the main field does not match any");
+    }
+}
+
+void PatchScheduler::split_patches(std::unordered_set<u64> split_rq){
     auto t = timings::start_timer("SchedulerMPI::split_patches", timings::function);
     for(u64 tree_id : split_rq){
 
+
+
         patch_tree.split_node(tree_id);
         PatchTree::Node & splitted_node = patch_tree.tree[tree_id];
+
+        shamrock::patch::Patch old_patch = patch_list.global[patch_list.id_patch_to_global_idx[splitted_node.linked_patchid]];
 
         auto [idx_p0,idx_p1,idx_p2,idx_p3,idx_p4,idx_p5,idx_p6,idx_p7] 
             =  patch_list.split_patch(splitted_node.linked_patchid);
@@ -620,16 +674,32 @@ inline void PatchScheduler::split_patches(std::unordered_set<u64> split_rq){
         patch_tree.tree[splitted_node.tree_node.childs_nid[6]].linked_patchid = patch_list.global[idx_p6].id_patch;
         patch_tree.tree[splitted_node.tree_node.childs_nid[7]].linked_patchid = patch_list.global[idx_p7].id_patch;
 
-        patch_data.split_patchdata(
-            old_patch_id,{
-            patch_list.global[idx_p0], 
-            patch_list.global[idx_p1],
-            patch_list.global[idx_p2],
-            patch_list.global[idx_p3],
-            patch_list.global[idx_p4],
-            patch_list.global[idx_p5],
-            patch_list.global[idx_p6],
-            patch_list.global[idx_p7]});
+
+        try{
+            patch_data.split_patchdata(
+                old_patch_id,{
+                patch_list.global[idx_p0], 
+                patch_list.global[idx_p1],
+                patch_list.global[idx_p2],
+                patch_list.global[idx_p3],
+                patch_list.global[idx_p4],
+                patch_list.global[idx_p5],
+                patch_list.global[idx_p6],
+                patch_list.global[idx_p7]});
+        }catch(const PatchDataRangeCheckError & e){
+            logger::err_ln("SchedulerPatchData", "catched range issue with patchdata split");
+
+            logger::raw_ln("   old patch",old_patch.id_patch, format_patch_coord(old_patch));
+
+            logger::err_ln("Scheduler", "global patch list :");
+            for(shamrock::patch::Patch & p : patch_list.global){
+                logger::raw_ln("   patch",p.id_patch, format_patch_coord(p));
+            }
+
+            throw shambase::throw_with_loc<std::runtime_error>(
+                "\n Initial error : "+ shambase::increase_indent(std::string("\n") + e.what(), "\n   |")
+            );
+        }
 
     }
     t.stop();
