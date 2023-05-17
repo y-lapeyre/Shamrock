@@ -275,6 +275,14 @@ class PatchScheduler{
         }
     }
 
+    inline void for_each_local_patch(std::function<void(const shamrock::patch::Patch)> fct){
+        for(shamrock::patch::Patch p : patch_list.local){
+            if(!p.is_err_mode()){
+                fct(p);
+            }
+        }
+    }
+
     inline u32 get_patch_rank_owner(u64 patch_id){
         shamrock::patch::Patch &cur_p = patch_list.global[patch_list.id_patch_to_global_idx[patch_id]];
         return cur_p.node_owner_id;

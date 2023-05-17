@@ -101,6 +101,41 @@ class SerialPatchTree{public:
         
     }
 
+    inline void host_for_each_leafs(std::function<bool(u64,PtNode pnode)> interact_cd, std::function<void(u64, PtNode)> found_case){
+        StackEntry stack_loc{};
+
+        sycl::host_accessor tree{shambase::get_check_ref(serial_tree_buf), sycl::read_only};
+        sycl::host_accessor lpid {shambase::get_check_ref(linked_patch_ids_buf), sycl::read_only};
+
+        std::stack<u64> id_stack;
+        id_stack.push(0);
+
+        while(!id_stack.empty()){
+            u64 cur_id = id_stack.top();id_stack.pop();
+            PtNode cur_p = tree[cur_id];
+
+            bool interact = interact_cd(cur_id,cur_p);
+
+            if(interact){
+                u64 linked_id = lpid[cur_id];
+                if(linked_id != u64_max){
+                    found_case(linked_id, cur_p);
+                }else{
+                    id_stack.push( cur_p.childs_id[0]);
+                    id_stack.push( cur_p.childs_id[1]);
+                    id_stack.push( cur_p.childs_id[2]);
+                    id_stack.push( cur_p.childs_id[3]);
+                    id_stack.push( cur_p.childs_id[4]);
+                    id_stack.push( cur_p.childs_id[5]);
+                    id_stack.push( cur_p.childs_id[6]);
+                    id_stack.push( cur_p.childs_id[7]);
+                }
+            }
+            
+        }
+
+    }
+
     /**
      * @brief accesor to the number of level in the tree
      * 

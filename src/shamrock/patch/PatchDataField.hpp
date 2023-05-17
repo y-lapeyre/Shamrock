@@ -187,6 +187,16 @@ template <class T> class PatchDataField {
     template <class Lambdacd>
     std::vector<u32> get_elements_with_range(Lambdacd &&cd_true, T vmin, T vmax) const;
 
+    template <class Lambdacd>
+    inline std::unique_ptr<sycl::buffer<u32>> get_elements_with_range_buf(Lambdacd &&cd_true, T vmin, T vmax) const{
+        std::vector<u32> idxs = get_elements_with_range(std::forward<Lambdacd>(cd_true), vmin,vmax);
+        if(idxs.empty()){
+            return {};
+        }else{
+            return std::make_unique<sycl::buffer<u32>>(shamalgs::memory::vec_to_buf(idxs));
+        }
+    }
+
     template <class Lambdacd> void check_err_range(Lambdacd &&cd_true, T vmin, T vmax) const;
 
     void extract_element(u32 pidx, PatchDataField<T> &to);

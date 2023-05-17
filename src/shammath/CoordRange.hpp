@@ -39,6 +39,10 @@ namespace shammath {
 
         inline T delt() const { return upper - lower; }
 
+        inline CoordRange expand_all(typename T_prop::component_type value){
+            return CoordRange{lower - value, upper + value};
+        }
+
         inline void expand_center(T tol) {
             T center   = (lower + upper) / 2;
             T cur_delt = upper - lower;
@@ -55,6 +59,28 @@ namespace shammath {
         static CoordRange max_range();
 
         void check_throw_ranges(SourceLocation loc = SourceLocation{});
+
+        inline CoordRange get_intersect(CoordRange other) const {
+            return {
+                shambase::sycl_utils::g_sycl_max(lower, other.lower),
+                shambase::sycl_utils::g_sycl_min(upper, other.upper)
+                };
+        }
+
+        inline CoordRange get_union(CoordRange other) const {
+            return {
+                shambase::sycl_utils::g_sycl_min(lower, other.lower),
+                shambase::sycl_utils::g_sycl_max(upper, other.upper)
+                };
+        }
+
+        inline bool is_not_empty(){
+            return shambase::vec_compare_geq(upper , lower);
+        }
+
+        inline CoordRange add_offset(T off){
+            return CoordRange{lower + off, upper + off};
+        }
     };
 
 

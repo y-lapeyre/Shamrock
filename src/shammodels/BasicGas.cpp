@@ -13,6 +13,7 @@
 #include "shambase/memory.hpp"
 #include "shambase/stacktrace.hpp"
 #include "shammath/CoordRange.hpp"
+#include "shammodels/BasicSPHGhosts.hpp"
 #include "shamrock/legacy/patch/scheduler/scheduler_mpi.hpp"
 #include "shamrock/legacy/patch/utility/serialpatchtree.hpp"
 #include "shamrock/patch/Patch.hpp"
@@ -197,6 +198,14 @@ namespace shammodels::sph {
                 return shambase::sycl_utils::max_8points(h0, h1, h2, h3, h4, h5, h6, h7);
             });
 
+        BasicGasPeriodicGhostHandler<vec> interf_handle (scheduler());
+
+        auto interf_build_info = interf_handle.find_interfaces(sptree, h_max_mpi_tree,h_max_patch);
+
+        auto interf_build_cache = interf_handle.gen_id_table_interfaces(std::move(interf_build_info));
+
+
+        
         // update h
 
         // compute pressure
