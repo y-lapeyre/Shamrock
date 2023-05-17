@@ -14,6 +14,7 @@
 #include "shamrock/io/LegacyVtkWritter.hpp"
 #include "shamrock/legacy/patch/utility/serialpatchtree.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
+#include "shamrock/sph/kernels.hpp"
 
 namespace shammodels::sph {
 
@@ -21,9 +22,9 @@ namespace shammodels::sph {
         using flt      = f64;
         using vec      = f64_3;
         using u_morton = u32;
-        // using Kernel = models::sph::kernels::M4<flt>;
+        using Kernel = shamrock::sph::kernels::M4<flt>;
 
-        static constexpr flt htol_up_tol  = 1.4;
+        static constexpr flt Rkern = Kernel::Rkern;
         static constexpr flt htol_up_iter = 1.2;
 
         flt cfl_cour   = -1;
