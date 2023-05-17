@@ -51,20 +51,24 @@ namespace shammodels::sph {
 
         using namespace shamrock::patch;
 
-        // TODO aggregate field ?
-        sycl::buffer<u64> idp(num_obj);
+        if(num_obj > 0){
+            // TODO aggregate field ?
+            sycl::buffer<u64> idp(num_obj);
 
-        u64 ptr = 0; // TODO accumulate_field() in scheduler ?
-        sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
-            using namespace shamalgs::memory;
-            using namespace shambase;
+            u64 ptr = 0; // TODO accumulate_field() in scheduler ?
+            sched.for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+                using namespace shamalgs::memory;
+                using namespace shambase;
 
-            write_with_offset_into(idp, id_patch, ptr, pdat.get_obj_cnt());
+                write_with_offset_into(idp, cur_p.id_patch, ptr, pdat.get_obj_cnt());
 
-            ptr += pdat.get_obj_cnt();
-        });
+                ptr += pdat.get_obj_cnt();
+            });
 
-        writter.write_field("patchid", idp, num_obj);
+            writter.write_field("patchid", idp, num_obj);
+        }else{
+            writter.write_field_no_buf<u64>("patchid");
+        }
     }
 
     void vtk_dump_add_worldrank(PatchScheduler &sched, shamrock::LegacyVtkWritter &writter) {
@@ -73,20 +77,26 @@ namespace shammodels::sph {
         using namespace shamrock::patch;
         u64 num_obj = sched.get_rank_count();
 
-        // TODO aggregate field ?
-        sycl::buffer<u32> idp(num_obj);
+        if(num_obj > 0){
 
-        u64 ptr = 0; // TODO accumulate_field() in scheduler ?
-        sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
-            using namespace shamalgs::memory;
-            using namespace shambase;
+            // TODO aggregate field ?
+            sycl::buffer<u32> idp(num_obj);
 
-            write_with_offset_into(idp, shamsys::instance::world_rank, ptr, pdat.get_obj_cnt());
+            u64 ptr = 0; // TODO accumulate_field() in scheduler ?
+            sched.for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+                using namespace shamalgs::memory;
+                using namespace shambase;
 
-            ptr += pdat.get_obj_cnt();
-        });
+                write_with_offset_into(idp, shamsys::instance::world_rank, ptr, pdat.get_obj_cnt());
 
-        writter.write_field("world_rank", idp, num_obj);
+                ptr += pdat.get_obj_cnt();
+            });
+
+            writter.write_field("world_rank", idp, num_obj);
+
+        }else{
+            writter.write_field_no_buf<u32>("world_rank");
+        }
     }
 
     template<class T>
@@ -99,21 +109,7 @@ namespace shammodels::sph {
         using namespace shamrock::patch;
         u64 num_obj = sched.get_rank_count();
 
-        // TODO aggregate field ?
-        sycl::buffer<T> field_vals(num_obj);
-
-        u64 ptr = 0; // TODO accumulate_field() in scheduler ?
-        sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
-            using namespace shamalgs::memory;
-            using namespace shambase;
-
-            write_with_offset_into(field_vals,
-                                   get_check_ref(pdat.get_field<T>(field_idx).get_buf()),
-                                   ptr,
-                                   pdat.get_obj_cnt());
-
-            ptr += pdat.get_obj_cnt();
-        });
+        std::unique_ptr<sycl::buffer<T>> field_vals = sched.rankgather_field<T>(field_idx);
 
         writter.write_field(field_dump_name, field_vals, num_obj);
     }
@@ -170,16 +166,16 @@ namespace shammodels::sph {
         utility.fields_forward_euler<vec>(ivxyz, iaxyz, dt / 2);
         utility.fields_forward_euler<flt>(iuint, iduint, dt / 2);
 
-        // save old acceleration
-        logger::info_ln("sph::BasicGas", "save old fields");
-        ComputeField<vec> old_axyz  = utility.save_field<vec>(iaxyz, "axyz_old");
-        ComputeField<flt> old_duint = utility.save_field<flt>(iduint, "duint_old");
-
         SerialPatchTree<vec> sptree = SerialPatchTree<vec>::build(scheduler());
         sptree.attach_buf();
 
         logger::info_ln("sph::BasicGas", "apply_position_boundary()");
         apply_position_boundary(sptree);
+
+        // save old acceleration
+        logger::info_ln("sph::BasicGas", "save old fields");
+        ComputeField<vec> old_axyz  = utility.save_field<vec>(iaxyz, "axyz_old");
+        ComputeField<flt> old_duint = utility.save_field<flt>(iduint, "duint_old");
 
         u64 Npart_all = count_particles();
 
@@ -207,20 +203,18 @@ namespace shammodels::sph {
 
         // compute force
         logger::info_ln("sph::BasicGas", "compute force");
-        scheduler().for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
-            if (!pdat.is_empty()) {
-                shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-                    sycl::accessor acc_f{
-                        shambase::get_check_ref(pdat.get_field<vec>(iaxyz).get_buf()),
-                        cgh,
-                        sycl::write_only};
+        scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+            shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
+                sycl::accessor acc_f{
+                    shambase::get_check_ref(pdat.get_field<vec>(iaxyz).get_buf()),
+                    cgh,
+                    sycl::write_only};
 
-                    cgh.parallel_for(sycl::range<1>{pdat.get_obj_cnt()}, [=](sycl::item<1> item) {
-                        u32 gid     = (u32)item.get_id();
-                        acc_f[item] = vec{1, 1, 1};
-                    });
+                cgh.parallel_for(sycl::range<1>{pdat.get_obj_cnt()}, [=](sycl::item<1> item) {
+                    u32 gid     = (u32)item.get_id();
+                    acc_f[item] = vec{1, 1, 1};
                 });
-            }
+            });
         });
 
         ComputeField<flt> vepsilon_v_sq = utility.make_compute_field<flt>("vmean epsilon_v^2", 1);

@@ -275,6 +275,21 @@ class PatchScheduler{
         }
     }
 
+    inline u32 get_patch_rank_owner(u64 patch_id){
+        shamrock::patch::Patch &cur_p = patch_list.global[patch_list.id_patch_to_global_idx[patch_id]];
+        return cur_p.node_owner_id;
+    }
+
+    inline void for_each_patchdata_nonempty(std::function<void(const shamrock::patch::Patch, shamrock::patch::PatchData &)> fct){
+        patch_data.for_each_patchdata([&](u64 patch_id, shamrock::patch::PatchData & pdat){
+            shamrock::patch::Patch &cur_p = patch_list.global[patch_list.id_patch_to_global_idx[patch_id]];
+
+            if((!cur_p.is_err_mode()) && (!pdat.is_empty())){
+                fct(cur_p,pdat);
+            }
+        });
+    }
+
     template<class T>
     inline shambase::DistributedData<T> map_owned_patchdata(std::function<T(const shamrock::patch::Patch, shamrock::patch::PatchData & pdat)> fct){
         shambase::DistributedData<T> ret;

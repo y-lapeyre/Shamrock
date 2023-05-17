@@ -28,15 +28,13 @@ namespace shamrock {
         inline void fields_forward_euler(u32 field_idx, u32 derfield_idx, flt dt) {
             StackEntry stack_loc{};
             using namespace shamrock::patch;
-            sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
-                if (!pdat.is_empty()) {
-                    integrators::forward_euler(
-                        shamsys::instance::get_compute_queue(),
-                        shambase::get_check_ref(pdat.get_field<T>(field_idx).get_buf()),
-                        shambase::get_check_ref(pdat.get_field<T>(derfield_idx).get_buf()),
-                        pdat.get_obj_cnt(),
-                        dt);
-                }
+            sched.for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+                integrators::forward_euler(
+                    shamsys::instance::get_compute_queue(),
+                    shambase::get_check_ref(pdat.get_field<T>(field_idx).get_buf()),
+                    shambase::get_check_ref(pdat.get_field<T>(derfield_idx).get_buf()),
+                    pdat.get_obj_cnt(),
+                    dt);
             });
         }
 
@@ -45,16 +43,14 @@ namespace shamrock {
         fields_leapfrog_corrector(u32 field_idx, u32 derfield_idx, u32 derfield_old_idx, flt hdt) {
             StackEntry stack_loc{};
             using namespace shamrock::patch;
-            sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
-                if (!pdat.is_empty()) {
-                    integrators::leapfrog_corrector(
-                        shamsys::instance::get_compute_queue(),
-                        shambase::get_check_ref(pdat.get_field<T>(field_idx).get_buf()),
-                        shambase::get_check_ref(pdat.get_field<T>(derfield_idx).get_buf()),
-                        shambase::get_check_ref(pdat.get_field<T>(derfield_old_idx).get_buf()),
-                        pdat.get_obj_cnt(),
-                        hdt);
-                }
+            sched.for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+                integrators::leapfrog_corrector(
+                    shamsys::instance::get_compute_queue(),
+                    shambase::get_check_ref(pdat.get_field<T>(field_idx).get_buf()),
+                    shambase::get_check_ref(pdat.get_field<T>(derfield_idx).get_buf()),
+                    shambase::get_check_ref(pdat.get_field<T>(derfield_old_idx).get_buf()),
+                    pdat.get_obj_cnt(),
+                    hdt);
             });
         }
 
@@ -66,17 +62,15 @@ namespace shamrock {
                                               flt hdt) {
             StackEntry stack_loc{};
             using namespace shamrock::patch;
-            sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
-                if (!pdat.is_empty()) {
-                    integrators::leapfrog_corrector(
-                        shamsys::instance::get_compute_queue(),
-                        shambase::get_check_ref(pdat.get_field<T>(field_idx).get_buf()),
-                        shambase::get_check_ref(pdat.get_field<T>(derfield_idx).get_buf()),
-                        shambase::get_check_ref(derfield_old.get_field(id_patch).get_buf()),
-                        shambase::get_check_ref(field_epsilon.get_field(id_patch).get_buf()),
-                        pdat.get_obj_cnt(),
-                        hdt);
-                }
+            sched.for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+                integrators::leapfrog_corrector(
+                    shamsys::instance::get_compute_queue(),
+                    shambase::get_check_ref(pdat.get_field<T>(field_idx).get_buf()),
+                    shambase::get_check_ref(pdat.get_field<T>(derfield_idx).get_buf()),
+                    shambase::get_check_ref(derfield_old.get_field(cur_p.id_patch).get_buf()),
+                    shambase::get_check_ref(field_epsilon.get_field(cur_p.id_patch).get_buf()),
+                    pdat.get_obj_cnt(),
+                    hdt);
             });
         }
 
@@ -84,14 +78,12 @@ namespace shamrock {
         inline void fields_apply_periodicity(u32 field_idx, std::pair<T, T> box) {
             StackEntry stack_loc{};
             using namespace shamrock::patch;
-            sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
-                if (!pdat.is_empty()) {
-                    utilities::sycl_position_modulo(
-                        shamsys::instance::get_compute_queue(),
-                        shambase::get_check_ref(pdat.get_field<T>(field_idx).get_buf()),
-                        pdat.get_obj_cnt(),
-                        box);
-                }
+            sched.for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+                utilities::sycl_position_modulo(
+                    shamsys::instance::get_compute_queue(),
+                    shambase::get_check_ref(pdat.get_field<T>(field_idx).get_buf()),
+                    pdat.get_obj_cnt(),
+                    box);
             });
         }
 
@@ -99,14 +91,12 @@ namespace shamrock {
         inline void fields_swap(u32 field_idx1, u32 field_idx2) {
             StackEntry stack_loc{};
             using namespace shamrock::patch;
-            sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
-                if (!pdat.is_empty()) {
-                    utilities::swap_fields(
-                        shamsys::instance::get_compute_queue(),
-                        shambase::get_check_ref(pdat.get_field<T>(field_idx1).get_buf()),
-                        shambase::get_check_ref(pdat.get_field<T>(field_idx2).get_buf()),
-                        pdat.get_obj_cnt());
-                }
+            sched.for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+                utilities::swap_fields(
+                    shamsys::instance::get_compute_queue(),
+                    shambase::get_check_ref(pdat.get_field<T>(field_idx1).get_buf()),
+                    shambase::get_check_ref(pdat.get_field<T>(field_idx2).get_buf()),
+                    pdat.get_obj_cnt());
             });
         }
 
@@ -115,11 +105,9 @@ namespace shamrock {
             StackEntry stack_loc{};
             using namespace shamrock::patch;
             T ret = shambase::VectorProperties<T>::get_min();
-            sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
-                if (!pdat.is_empty()) {
-                    ret = shambase::sycl_utils::g_sycl_max(
-                        ret, pdat.get_field<T>(field_idx).compute_max());
-                }
+            sched.for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+                ret = shambase::sycl_utils::g_sycl_max(ret,
+                                                       pdat.get_field<T>(field_idx).compute_max());
             });
 
             return ret;
@@ -130,11 +118,9 @@ namespace shamrock {
             StackEntry stack_loc{};
             using namespace shamrock::patch;
             T ret = shambase::VectorProperties<T>::get_max();
-            sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
-                if (!pdat.is_empty()) {
-                    ret = shambase::sycl_utils::g_sycl_min(
-                        ret, pdat.get_field<T>(field_idx).compute_min());
-                }
+            sched.for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+                ret = shambase::sycl_utils::g_sycl_min(ret,
+                                                       pdat.get_field<T>(field_idx).compute_min());
             });
 
             return ret;
@@ -145,11 +131,9 @@ namespace shamrock {
             StackEntry stack_loc{};
             using namespace shamrock::patch;
             T ret = shambase::VectorProperties<T>::get_zero();
-            sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
-                if (!pdat.is_empty()) {
-                    ret = shambase::sycl_utils::g_sycl_min(
-                        ret, pdat.get_field<T>(field_idx).compute_sum());
-                }
+            sched.for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+                ret = shambase::sycl_utils::g_sycl_min(ret,
+                                                       pdat.get_field<T>(field_idx).compute_sum());
             });
 
             return ret;
@@ -160,11 +144,9 @@ namespace shamrock {
             StackEntry stack_loc{};
             using namespace shamrock::patch;
             shambase::VecComponent<T> ret = 0;
-            sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
-                if (!pdat.is_empty()) {
-                    ret = shambase::sycl_utils::g_sycl_min(
-                        ret, pdat.get_field<T>(field_idx).compute_dot_sum());
-                }
+            sched.for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+                ret = shambase::sycl_utils::g_sycl_min(
+                    ret, pdat.get_field<T>(field_idx).compute_dot_sum());
             });
 
             return ret;
