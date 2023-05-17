@@ -203,9 +203,7 @@ namespace shammodels::sph {
 
         BasicGasPeriodicGhostHandler<vec> interf_handle (scheduler());
 
-        auto interf_build_info = interf_handle.find_interfaces(sptree, interactR_mpi_tree,interactR_patch);
-
-        auto interf_build_cache = interf_handle.gen_id_table_interfaces(std::move(interf_build_info));
+        auto interf_build_cache = interf_handle.make_interface_cache(sptree, interactR_mpi_tree,interactR_patch);
 
 
 
