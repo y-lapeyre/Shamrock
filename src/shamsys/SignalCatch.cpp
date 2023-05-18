@@ -33,6 +33,13 @@ namespace shamsys::details {
                          shambase::fmt_callstack()
                   << std::endl;
 
+        std::cout << "dump profiling : " << std::endl;
+
+
+        shambase::details::dump_profiling(shamsys::instance::world_rank);
+
+
+        std::cout << "exiting ... " << std::endl;
         // Terminate program
         exit(signum);
     }

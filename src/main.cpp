@@ -20,8 +20,8 @@
 
 
 #include "aliases.hpp"
-#include "shamrock/legacy/io/dump.hpp"
-#include "shamrock/legacy/io/logs.hpp"
+#include "shambase/stacktrace.hpp"
+#include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/cmdopt.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamsys/legacy/sycl_handler.hpp"
@@ -65,7 +65,12 @@ start_ipython(config=c)
 )";
 
 
-int main(int argc, char *argv[]) {StackEntry stack_loc{};
+int main(int argc, char *argv[]) {
+    
+    {
+
+    
+    StackEntry stack_loc{};
 
 
 
@@ -125,7 +130,6 @@ int main(int argc, char *argv[]) {StackEntry stack_loc{};
 
 
 
-    logfiles::open_files();
 
     shamsys::register_signals();
     //*
@@ -184,10 +188,13 @@ int main(int argc, char *argv[]) {StackEntry stack_loc{};
 
 
 
-    logfiles::close_files();
 
 
+    }
 
+    shambase::details::dump_profiling(shamsys::instance::world_rank);
 
     shamsys::instance::close();
+
+    
 }

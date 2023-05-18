@@ -27,7 +27,6 @@
 
 #include "shambase/memory.hpp"
 #include "shambase/stacktrace.hpp"
-#include "shamrock/legacy/io/logs.hpp"
 #include "patch_field.hpp"
 #include "shamrock/patch/PatchField.hpp"
 #include "shamrock/scheduler/PatchTree.hpp"
@@ -102,7 +101,7 @@ class SerialPatchTree{public:
     }
 
     inline void host_for_each_leafs(std::function<bool(u64,PtNode pnode)> interact_cd, std::function<void(u64, PtNode)> found_case){
-        StackEntry stack_loc{};
+        StackEntry stack_loc{false};
 
         sycl::host_accessor tree{shambase::get_check_ref(serial_tree_buf), sycl::read_only};
         sycl::host_accessor lpid {shambase::get_check_ref(linked_patch_ids_buf), sycl::read_only};

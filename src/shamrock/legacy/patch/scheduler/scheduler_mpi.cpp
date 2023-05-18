@@ -16,7 +16,6 @@
 
 #include "shambase/integer_sycl.hpp"
 #include "shambase/type_aliases.hpp"
-#include "shamrock/legacy/io/logs.hpp"
 #include "shamrock/legacy/patch/base/patchdata.hpp"
 #include "shamrock/legacy/patch/base/patchdata_field.hpp"
 #include "shamrock/scheduler/HilbertLoadBalance.hpp"
@@ -299,11 +298,10 @@ std::tuple<f64_3,f64_3> PatchScheduler::get_box_volume(){
 
 
 //TODO clean the output of this function
-void PatchScheduler::scheduler_step(bool do_split_merge, bool do_load_balancing){
+void PatchScheduler::scheduler_step(bool do_split_merge, bool do_load_balancing){StackEntry stack_loc{};
 
     //std::cout << dump_status();
 
-    auto global_timer = timings::start_timer("SchedulerMPI::scheduler_step", timings::function);
 
     if(!is_mpi_sycl_interop_active()) throw shambase::throw_with_loc<std::runtime_error>("sycl mpi interop not initialized");
 
@@ -400,8 +398,7 @@ void PatchScheduler::scheduler_step(bool do_split_merge, bool do_load_balancing)
     }
 
 
-    if(do_load_balancing){
-        auto t = timings::start_timer("load balancing", timings::function);
+    if(do_load_balancing){StackEntry stack_loc{};
         timer.start();
         // generate LB change list 
         shamrock::scheduler::LoadBalancingChangeList change_list = 
@@ -417,7 +414,7 @@ void PatchScheduler::scheduler_step(bool do_split_merge, bool do_load_balancing)
         timer.end();
 
         logger::info_ln("Scheduler", "apply balancing time",timer.get_time_str());
-        t.stop();
+        
     }
 
     //std::cout << dump_status();
@@ -438,7 +435,6 @@ void PatchScheduler::scheduler_step(bool do_split_merge, bool do_load_balancing)
     update_local_dtcnt_value();
     update_local_load_value();
 
-    global_timer.stop();
 
     //std::cout << dump_status();
 
@@ -649,7 +645,7 @@ void PatchScheduler::check_patchdata_locality_corectness(){
 }
 
 void PatchScheduler::split_patches(std::unordered_set<u64> split_rq){
-    auto t = timings::start_timer("SchedulerMPI::split_patches", timings::function);
+    StackEntry stack_loc{};
     for(u64 tree_id : split_rq){
 
 
@@ -702,11 +698,10 @@ void PatchScheduler::split_patches(std::unordered_set<u64> split_rq){
         }
 
     }
-    t.stop();
 }
 
 inline void PatchScheduler::merge_patches(std::unordered_set<u64> merge_rq){
-    auto t = timings::start_timer("SchedulerMPI::merge_patches", timings::function);
+    StackEntry stack_loc{};
     for(u64 tree_id : merge_rq){
 
         PatchTree::Node & to_merge_node = patch_tree.tree[tree_id];
@@ -745,7 +740,6 @@ inline void PatchScheduler::merge_patches(std::unordered_set<u64> merge_rq){
         to_merge_node.linked_patchid = patch_id0;
 
     }
-    t.stop();
 }
 
 

@@ -14,7 +14,7 @@
 template <class T> 
 struct SparseCommExchanger<PatchDataField<T>>{
     static SparseCommResult<PatchDataField<T>> sp_xchg(SparsePatchCommunicator & communicator, const SparseCommSource<PatchDataField<T>> &send_comm_pdat){
-
+StackEntry stack_loc{};
         using namespace shamrock::patch;
 
         SparseCommResult<PatchDataField<T>> recv_obj;
@@ -22,8 +22,6 @@ struct SparseCommExchanger<PatchDataField<T>>{
         if(!send_comm_pdat.empty()){
         
             std::vector<patchdata_field::PatchDataFieldMpiRequest<T>> rq_lst;
-
-            auto timer_transfmpi = timings::start_timer("patchdata_exchanger", timings::mpi);
 
             u64 dtcnt = 0;
 
@@ -74,7 +72,6 @@ struct SparseCommExchanger<PatchDataField<T>>{
 
             patchdata_field::waitall(rq_lst);
 
-            timer_transfmpi.stop(dtcnt);
 
             communicator.xcgh_byte_cnt += dtcnt;
 

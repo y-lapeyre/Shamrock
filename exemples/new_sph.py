@@ -76,5 +76,5 @@ print("Current part mass :", pmass)
 
 del setup
 
-for i in range(100):
+for i in range(4):
     sim.evolve(1e-2, True, "dump_"+str(i)+".vtk", True)

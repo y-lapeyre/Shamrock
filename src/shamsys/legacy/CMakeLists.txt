@@ -3,7 +3,6 @@ set(Sources
     sycl_handler.cpp
     sycl_mpi_interop.cpp
     cmdopt.cpp
-    log.cpp
 )
 set(SourcesTest
     

@@ -22,6 +22,9 @@ for f in flist:
     if(str_f.endswith(",")):
         str_f = str_f[:-1] + "]"
 
+    if(str_f.endswith("}")):
+        str_f = str_f + "]"
+
     str_lst.append(str_f)
 
 

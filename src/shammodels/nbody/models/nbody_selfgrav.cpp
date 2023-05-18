@@ -316,7 +316,7 @@ void compute_multipoles(Tree & rtree, sycl::buffer<vec> & pos_part, sycl::buffer
 
 
 template<class flt> 
-f64 models::nbody::Nbody_SelfGrav<flt>::evolve(PatchScheduler &sched, f64 old_time, f64 target_time){
+f64 models::nbody::Nbody_SelfGrav<flt>::evolve(PatchScheduler &sched, f64 old_time, f64 target_time){StackEntry stack_loc{};
 
     using namespace shamrock::patch;
 
@@ -466,7 +466,6 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(PatchScheduler &sched, f64 old_ti
         using RadTree = RadixTree<u_morton, vec3,3>;
 
         //make trees
-        auto tgen_trees = timings::start_timer("radix tree gen", timings::sycl);
         std::unordered_map<u64, std::unique_ptr<RadTree>> radix_trees;
 
         sched.for_each_patch_data([&](u64 id_patch, Patch & cur_p, PatchData & pdat) {
@@ -501,7 +500,6 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(PatchScheduler &sched, f64 old_ti
 
 
         shamsys::instance::get_compute_queue().wait();
-        tgen_trees.stop();
 
 
 

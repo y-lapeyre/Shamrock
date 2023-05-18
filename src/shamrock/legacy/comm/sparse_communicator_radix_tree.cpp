@@ -14,7 +14,7 @@ template <class u_morton, class vec3>
 struct SparseCommExchanger<RadixTree<u_morton, vec3, 3>>{
 
     static SparseCommResult<RadixTree<u_morton, vec3,3 >> sp_xchg(SparsePatchCommunicator & communicator, const SparseCommSource<RadixTree<u_morton, vec3,3>> &send_comm_pdat){
-
+StackEntry stack_loc{};
         using namespace shamrock::patch;
 
         SparseCommResult<RadixTree<u_morton, vec3, 3>> recv_obj;
@@ -24,7 +24,6 @@ struct SparseCommExchanger<RadixTree<u_morton, vec3, 3>>{
             std::vector<tree_comm::RadixTreeMPIRequest<u_morton, vec3>> rq_lst;
 
 
-            auto timer_transfmpi = timings::start_timer("patchdata_exchanger", timings::mpi);
 
             u64 dtcnt = 0;
 
@@ -71,7 +70,6 @@ struct SparseCommExchanger<RadixTree<u_morton, vec3, 3>>{
 
             tree_comm::wait_all(rq_lst);
 
-            timer_transfmpi.stop(dtcnt);
         communicator.xcgh_byte_cnt += dtcnt;
 
             //TODO check that this sort is valid

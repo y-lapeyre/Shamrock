@@ -19,7 +19,7 @@ namespace impl {
     template <class vectype, class primtype>
     void comm_interfaces(PatchScheduler &sched, std::vector<InterfaceComm<vectype>> &interface_comm_list,
                         std::unordered_map<u64, std::vector<std::tuple<u64, std::unique_ptr<shamrock::patch::PatchData>>>> &interface_map,bool periodic) {
-        
+        StackEntry stack_loc{};
                             using namespace shamrock::patch;
 
         interface_map.clear();
@@ -27,7 +27,6 @@ namespace impl {
             interface_map[p.id_patch] = std::vector<std::tuple<u64, std::unique_ptr<PatchData>>>();
         }
 
-        auto t1 = timings::start_timer("generate interfaces", timings::timingtype::function);
         std::vector<std::unique_ptr<PatchData>> comm_pdat;
         std::vector<u64_2> comm_vec;
         if (interface_comm_list.size() > 0) {
@@ -53,11 +52,9 @@ namespace impl {
 
             //std::cout << "\n split \n";
         }
-        t1.stop();
 
-        auto t2 = timings::start_timer("patch_data_exchange_object", timings::timingtype::mpi);
         patch_data_exchange_object(sched.pdl,sched.patch_list.global, comm_pdat,comm_vec,interface_map);
-        t2.stop();
+
     }
 
 
@@ -67,7 +64,7 @@ namespace impl {
     void comm_interfaces_field(PatchScheduler &sched, PatchComputeField<T> &pcomp_field, std::vector<InterfaceComm<vectype>> &interface_comm_list,
                         std::unordered_map<u64, std::vector<std::tuple<u64, std::unique_ptr<PatchDataField<T>>>>> &interface_field_map,bool periodic) {
 
-        
+        StackEntry stack_loc{};
                             using namespace shamrock::patch;
         using PCField = PatchDataField<T>;
 
@@ -76,7 +73,6 @@ namespace impl {
             interface_field_map[p.id_patch] = std::vector<std::tuple<u64, std::unique_ptr<PCField>>>();
         }
 
-        auto t1 = timings::start_timer("generate interfaces", timings::timingtype::function);
         std::vector<std::unique_ptr<PCField>> comm_pdat;
         std::vector<u64_2> comm_vec;
         if (interface_comm_list.size() > 0) {
@@ -105,11 +101,9 @@ namespace impl {
 
             //std::cout << "\n split \n";
         }
-        t1.stop();
 
-        auto t2 = timings::start_timer("patch_data_exchange_object", timings::timingtype::mpi);
         patch_data_field_exchange_object<T>(sched.patch_list.global, comm_pdat,comm_vec,interface_field_map);
-        t2.stop();
+        
     }
 
 } // namespace impl

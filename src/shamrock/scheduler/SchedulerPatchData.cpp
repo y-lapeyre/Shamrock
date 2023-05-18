@@ -23,7 +23,6 @@
 #include <vector>
 
 #include "shambase/exception.hpp"
-#include "shamrock/legacy/io/logs.hpp"
 #include "shamrock/legacy/patch/base/patchdata.hpp"
 
 #include "shamrock/patch/PatchDataField.hpp"
@@ -37,7 +36,7 @@ namespace shamrock::scheduler {
 
 void SchedulerPatchData::apply_change_list(const shamrock::scheduler::LoadBalancingChangeList & change_list,SchedulerPatchList& patch_list){
 
-    auto t = timings::start_timer("SchedulerPatchData::apply_change_list", timings::mpi);
+    StackEntry stack_loc{};
 
     std::vector<PatchDataMpiRequest> rq_lst;
 
@@ -78,7 +77,7 @@ void SchedulerPatchData::apply_change_list(const shamrock::scheduler::LoadBalanc
 
     }
 
-    t.stop();
+
 }
 
 

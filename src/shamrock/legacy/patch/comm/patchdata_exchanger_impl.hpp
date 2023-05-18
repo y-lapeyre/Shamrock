@@ -17,7 +17,6 @@
 #include "shamsys/legacy/sycl_mpi_interop.hpp"
 #include <vector>
 
-#include "shamrock/legacy/io/logs.hpp"
 #include "shamrock/tree/RadixTree.hpp"
 namespace patchdata_exchanger {
 
@@ -51,6 +50,8 @@ inline void make_comm_table(
     std::vector<i32> & out_global_comm_tag,
     std::vector<i32> & out_local_comm_tag){
 
+        StackEntry stack_loc{};
+
         using namespace shamrock::patch;
 
     out_local_comm_tag.resize(in_send_comm_vec.size());
@@ -66,10 +67,9 @@ inline void make_comm_table(
         }
     }
 
-    auto timer_allgatherv = timings::start_timer("allgatherv", timings::mpi);
     shamalgs::collective::vector_allgatherv(in_send_comm_vec, mpi_type_u64_2, out_global_comm_vec, mpi_type_u64_2, MPI_COMM_WORLD);
     shamalgs::collective::vector_allgatherv(out_local_comm_tag, mpi_type_i32, out_global_comm_tag, mpi_type_i32, MPI_COMM_WORLD);
-    timer_allgatherv.stop();
+   
 }
 
 
@@ -84,15 +84,13 @@ inline void patch_data_exchange_object(
     std::vector<std::unique_ptr<shamrock::patch::PatchData>> &send_comm_pdat,
     std::vector<u64_2> &send_comm_vec,
     std::unordered_map<u64, std::vector<std::tuple<u64, std::unique_ptr<shamrock::patch::PatchData>>>> & recv_obj
-    ){
+    ){StackEntry stack_loc{};
 
         using namespace shamrock::patch;
 
     //TODO enable if ultra verbose
     // std::cout << "len comm_pdat : " << send_comm_pdat.size() << std::endl;
     // std::cout << "len comm_vec : " << send_comm_vec.size() << std::endl;
-
-    auto timer_transf = timings::start_timer("patch_data_exchange_object", timings::function);
 
     std::vector<i32> local_comm_tag(send_comm_vec.size());
     {
@@ -107,16 +105,13 @@ inline void patch_data_exchange_object(
         }
     }
 
-    auto timer_allgatherv = timings::start_timer("allgatherv", timings::mpi);
     std::vector<u64_2> global_comm_vec;
     std::vector<i32> global_comm_tag;
     shamalgs::collective::vector_allgatherv(send_comm_vec, mpi_type_u64_2, global_comm_vec, mpi_type_u64_2, MPI_COMM_WORLD);
     shamalgs::collective::vector_allgatherv(local_comm_tag, mpi_type_i32, global_comm_tag, mpi_type_i32, MPI_COMM_WORLD);
-    timer_allgatherv.stop();
+    
 
     std::vector<PatchDataMpiRequest> rq_lst;
-
-    auto timer_transfmpi = timings::start_timer("patchdata_exchanger", timings::mpi);
 
     u64 dtcnt = 0;
 
@@ -178,7 +173,6 @@ inline void patch_data_exchange_object(
 
     waitall_pdat_mpi_rq(rq_lst);
 
-    timer_transfmpi.stop(dtcnt);
 
     /*
     for(auto & [id_ps, pdat] : (recv_obj[0])){
@@ -199,7 +193,6 @@ inline void patch_data_exchange_object(
     }std::cout << std::endl;
     */
 
-    timer_transf.stop();
 
 }
 
@@ -214,15 +207,13 @@ inline void patch_data_field_exchange_object(
     std::vector<std::unique_ptr<PatchDataField<T>>> &send_comm_pdat,
     std::vector<u64_2> &send_comm_vec,
     std::unordered_map<u64, std::vector<std::tuple<u64, std::unique_ptr<PatchDataField<T>>>>> & recv_obj
-    ){
+    ){StackEntry stack_loc{};
 
         using namespace shamrock::patch;
 
     //TODO enable if ultra verbose
     // std::cout << "len comm_pdat : " << send_comm_pdat.size() << std::endl;
     // std::cout << "len comm_vec : " << send_comm_vec.size() << std::endl;
-
-    auto timer_transf = timings::start_timer("patch_data_field_exchange_object", timings::function);
 
 
     std::vector<i32> local_comm_tag(send_comm_vec.size());
@@ -238,17 +229,14 @@ inline void patch_data_field_exchange_object(
         }
     }
 
-    auto timer_allgatherv = timings::start_timer("allgatherv", timings::mpi);
     std::vector<u64_2> global_comm_vec;
     std::vector<i32> global_comm_tag;
     shamalgs::collective::vector_allgatherv(send_comm_vec, mpi_type_u64_2, global_comm_vec, mpi_type_u64_2, MPI_COMM_WORLD);
     shamalgs::collective::vector_allgatherv(local_comm_tag, mpi_type_i32, global_comm_tag, mpi_type_i32, MPI_COMM_WORLD);
-    timer_allgatherv.stop();
+    
 
 
     std::vector<patchdata_field::PatchDataFieldMpiRequest<T>> rq_lst;
-
-    auto timer_transfmpi = timings::start_timer("patchdata_exchanger", timings::mpi);
 
     u64 dtcnt = 0;
 
@@ -310,7 +298,6 @@ inline void patch_data_field_exchange_object(
 
     patchdata_field::waitall(rq_lst);
 
-    timer_transfmpi.stop(dtcnt);
 
     /*
     for(auto & [id_ps, pdat] : (recv_obj[0])){
@@ -331,7 +318,6 @@ inline void patch_data_field_exchange_object(
     }std::cout << std::endl;
     */
 
-    timer_transf.stop();
 
 }
 
@@ -346,16 +332,13 @@ inline void radix_tree_exchange_object(
     std::vector<std::unique_ptr<RadixTree<u_morton, vec3,3>>> &send_comm_pdat,
     std::vector<u64_2> &send_comm_vec,
     std::unordered_map<u64, std::vector<std::tuple<u64, std::unique_ptr<RadixTree<u_morton, vec3,3>>>>> & recv_obj
-    ){
+    ){StackEntry stack_loc{};
 
         using namespace shamrock::patch;
 
     //TODO enable if ultra verbose
     // std::cout << "len comm_pdat : " << send_comm_pdat.size() << std::endl;
     // std::cout << "len comm_vec : " << send_comm_vec.size() << std::endl;
-
-    auto timer_transf = timings::start_timer("patch_data_field_exchange_object", timings::function);
-
 
     std::vector<i32> local_comm_tag(send_comm_vec.size());
     {
@@ -370,17 +353,14 @@ inline void radix_tree_exchange_object(
         }
     }
 
-    auto timer_allgatherv = timings::start_timer("allgatherv", timings::mpi);
     std::vector<u64_2> global_comm_vec;
     std::vector<i32> global_comm_tag;
     shamalgs::collective::vector_allgatherv(send_comm_vec, mpi_type_u64_2, global_comm_vec, mpi_type_u64_2, MPI_COMM_WORLD);
     shamalgs::collective::vector_allgatherv(local_comm_tag, mpi_type_i32, global_comm_tag, mpi_type_i32, MPI_COMM_WORLD);
-    timer_allgatherv.stop();
+    
 
 
     std::vector<tree_comm::RadixTreeMPIRequest<u_morton, vec3>> rq_lst;
-
-    auto timer_transfmpi = timings::start_timer("radix_tree_exchanger", timings::mpi);
 
     {
         for (u64 i = 0; i < send_comm_vec.size(); i++) {
@@ -440,7 +420,6 @@ inline void radix_tree_exchange_object(
 
     tree_comm::wait_all(rq_lst);
 
-    timer_transfmpi.stop();
 
     /*
     for(auto & [id_ps, pdat] : (recv_obj[0])){
@@ -461,7 +440,6 @@ inline void radix_tree_exchange_object(
     }std::cout << std::endl;
     */
 
-    timer_transf.stop();
 
 }
 
