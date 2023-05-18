@@ -40,6 +40,8 @@ namespace shammodels::sph {
             shamrock::patch::PatchtreeField<flt> & int_range_max_tree,
             shamrock::patch::PatchField<flt> & int_range_max){
 
+            StackEntry stack_loc{};
+
             using namespace shamrock::patch;
             using namespace shammath;
 
@@ -126,6 +128,7 @@ namespace shammodels::sph {
         };
 
         shambase::DistributedDataShared<InterfaceIdTable> gen_id_table_interfaces(GeneratorMap && gen){
+            StackEntry stack_loc{};
             using namespace shamrock::patch;
 
 
@@ -186,6 +189,7 @@ namespace shammodels::sph {
             SerialPatchTree<vec> & sptree,
             shamrock::patch::PatchtreeField<flt> & int_range_max_tree,
             shamrock::patch::PatchField<flt> & int_range_max){
+            StackEntry stack_loc{};
 
             return gen_id_table_interfaces(find_interfaces(sptree, int_range_max_tree, int_range_max));
         }

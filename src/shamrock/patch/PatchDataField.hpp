@@ -339,6 +339,7 @@ template <class T>
 template <class Lambdacd>
 inline std::vector<u32>
 PatchDataField<T>::get_elements_with_range(Lambdacd &&cd_true, T vmin, T vmax) const {
+    StackEntry stack_loc{};
     std::vector<u32> idxs;
 
     {

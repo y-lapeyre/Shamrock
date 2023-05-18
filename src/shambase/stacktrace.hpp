@@ -73,7 +73,7 @@ namespace shambase::details {
     inline void add_prof_entry(std::string n,bool is_start){
         global_timer.end();
         chome_prof.push_back(
-            ChomeProfileEntry{n,static_cast<u64>(global_timer.elasped_sec()*1e9),is_start}
+            ChomeProfileEntry{n,static_cast<u64>(global_timer.elasped_sec()*1e6),is_start}
         );
     }
 
@@ -108,12 +108,12 @@ namespace shambase::details {
         bool do_timer;
 
         inline BasicStackEntry(bool do_timer = true, SourceLocation &&loc = SourceLocation{}) : loc(loc), do_timer(do_timer) {
-            add_prof_entry(loc.functionName,true);
+            if(do_timer) add_prof_entry(loc.functionName,true);
             call_stack.emplace(loc);
         }
 
         inline ~BasicStackEntry() { 
-            add_prof_entry(call_stack.top().functionName,false);
+            if(do_timer) add_prof_entry(call_stack.top().functionName,false);
             call_stack.pop(); 
         }
     };

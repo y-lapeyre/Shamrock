@@ -95,6 +95,8 @@ namespace shamrock::patch {
          */
         void extract_element(u32 pidx, PatchData &out_pdat);
 
+        void keep_ids(sycl::buffer<u32> & index_map, u32 len);
+
         void insert_elements(PatchData &pdat);
 
         /**
