@@ -11,9 +11,10 @@
 
 #include "shamalgs/memory/memory.hpp"
 #include "shamrock/legacy/patch/scheduler/scheduler_mpi.hpp"
-#include "shamrock/legacy/patch/utility/serialpatchtree.hpp"
+#include "shamrock/scheduler/serialpatchtree.hpp"
 #include "shamrock/patch/PatchData.hpp"
 #include <vector>
+
 namespace shamrock {
     class ReattributeDataUtility{
         PatchScheduler &sched;

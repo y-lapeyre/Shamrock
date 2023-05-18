@@ -27,7 +27,7 @@
 
 #include "shambase/memory.hpp"
 #include "shambase/stacktrace.hpp"
-#include "patch_field.hpp"
+#include "shamrock/legacy/patch/utility/patch_field.hpp"
 #include "shamrock/patch/PatchField.hpp"
 #include "shamrock/scheduler/PatchTree.hpp"
 #include "shamrock/legacy/patch/scheduler/scheduler_mpi.hpp"

@@ -9,7 +9,6 @@ target_sources(shamrock_lib
         
         
         global_var.cpp
-        serialpatchtree.cpp
         merged_patch.cpp
 
 

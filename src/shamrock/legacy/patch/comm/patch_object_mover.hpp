@@ -14,7 +14,7 @@
 #include "shamsys/legacy/log.hpp"
 #include "patchdata_exchanger.hpp"
 #include "shamrock/legacy/patch/base/patchdata_field.hpp"
-#include "shamrock/legacy/patch/utility/serialpatchtree.hpp"
+#include "shamrock/scheduler/serialpatchtree.hpp"
 #include "shamrock/legacy/patch/scheduler/scheduler_mpi.hpp"
 #include "shamsys/legacy/sycl_handler.hpp"
 #include "shamrock/legacy/utils/sycl_vector_utils.hpp"
