@@ -91,12 +91,7 @@ namespace shamrock::patch {
          * @brief extract particle at index pidx and insert it in the provided vectors
          *
          * @param pidx
-         * @param out_pos_s
-         * @param out_pos_d
-         * @param out_U1_s
-         * @param out_U1_d
-         * @param out_U3_s
-         * @param out_U3_d
+         * @param out_pdat
          */
         void extract_element(u32 pidx, PatchData &out_pdat);
 
@@ -125,7 +120,7 @@ namespace shamrock::patch {
         * @param index_map 
         * @param len the lenght of the map (must match with the current count)
         */
-        void index_remap(sycl::buffer<u32> index_map, u32 len);
+        void index_remap(sycl::buffer<u32> & index_map, u32 len);
 
         /**
         * @brief this function remaps the patchdatafield like so
@@ -135,7 +130,7 @@ namespace shamrock::patch {
         * @param index_map 
         * @param len the lenght of the map
         */
-        void index_remap_resize(sycl::buffer<u32> index_map, u32 len);
+        void index_remap_resize(sycl::buffer<u32> & index_map, u32 len);
 
         // template<class Tvecbox>
         // void split_patchdata(PatchData & pd0,PatchData & pd1,PatchData & pd2,PatchData &
