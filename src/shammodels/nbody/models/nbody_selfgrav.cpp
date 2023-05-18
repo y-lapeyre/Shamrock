@@ -10,7 +10,7 @@
 #include "nbody_selfgrav.hpp"
 #include "shamrock/legacy/patch/interfaces/interface_handler.hpp"
 #include "shamrock/legacy/patch/utility/full_tree_field.hpp"
-#include "shamrock/scheduler/serialpatchtree.hpp"
+#include "shamrock/scheduler/SerialPatchTree.hpp"
 #include "shamrock/tree/RadixTree.hpp"
 #include "shamrock/math/tensors/collections.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"

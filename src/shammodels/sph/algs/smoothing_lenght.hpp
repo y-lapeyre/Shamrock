@@ -20,7 +20,7 @@
 //#include "shamrock/legacy/patch/patchdata_buffer.hpp"
 #include "shamrock/legacy/patch/scheduler/scheduler_mpi.hpp"
 #include "shamrock/legacy/patch/utility/merged_patch.hpp"
-#include "shamrock/scheduler/serialpatchtree.hpp"
+#include "shamrock/scheduler/SerialPatchTree.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamrock/tree/RadixTree.hpp"
 #include "shammodels/sph/algs/smoothing_lenght_impl.hpp"

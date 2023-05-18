@@ -12,7 +12,7 @@
 #include "shambase/type_aliases.hpp"
 #include "shammath/CoordRange.hpp"
 #include "shamrock/io/LegacyVtkWritter.hpp"
-#include "shamrock/scheduler/serialpatchtree.hpp"
+#include "shamrock/scheduler/SerialPatchTree.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
 #include "shamrock/sph/kernels.hpp"
 

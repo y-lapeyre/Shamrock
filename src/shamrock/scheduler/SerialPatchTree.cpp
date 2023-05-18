@@ -6,7 +6,7 @@
 //
 // -------------------------------------------------------//
 
-#include "serialpatchtree.hpp"
+#include "SerialPatchTree.hpp"
 #include "shamsys/legacy/log.hpp"
 
 using PatchTree = shamrock::scheduler::PatchTree;

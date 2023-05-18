@@ -3,7 +3,7 @@ set(Sources
 PatchTree.cpp
 HilbertLoadBalance.cpp
 SchedulerPatchData.cpp
-serialpatchtree.cpp
+SerialPatchTree.cpp
 )
 set(SourcesTest
     

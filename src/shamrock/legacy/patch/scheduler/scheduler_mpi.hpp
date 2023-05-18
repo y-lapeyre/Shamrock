@@ -32,7 +32,7 @@
 #include "shamalgs/collective/distributedDataComm.hpp"
 #include "shambase/DistributedData.hpp"
 #include "shamrock/legacy/patch/utility/patch_field.hpp"
-//#include "shamrock/scheduler/serialpatchtree.hpp"
+//#include "shamrock/scheduler/SerialPatchTree.hpp"
 #include "shamrock/patch/Patch.hpp"
 #include "shamrock/legacy/patch/base/patchdata.hpp"
 //#include "shamrock/legacy/patch/patchdata_buffer.hpp"
