@@ -13,7 +13,7 @@
 #include "shambase/memory.hpp"
 #include "shambase/sycl.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"
-#include "shamrock/legacy/patch/scheduler/scheduler_mpi.hpp"
+#include "shamrock/scheduler/scheduler_mpi.hpp"
 #include "shamrock/math/integrators.hpp"
 #include "shamsys/NodeInstance.hpp"
 namespace shamrock {

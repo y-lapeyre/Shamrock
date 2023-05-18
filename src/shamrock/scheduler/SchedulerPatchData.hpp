@@ -27,7 +27,7 @@
 #include "shambase/DistributedData.hpp"
 #include "shamrock/legacy/patch/base/patchdata.hpp"
 #include "shamrock/patch/Patch.hpp"
-#include "shamrock/legacy/patch/scheduler/scheduler_patch_list.hpp"
+#include "shamrock/scheduler/scheduler_patch_list.hpp"
 #include "shamrock/patch/SimBox.hpp"
 #include "shamrock/patch/PatchDataLayout.hpp"
 #include "shamrock/scheduler/HilbertLoadBalance.hpp"

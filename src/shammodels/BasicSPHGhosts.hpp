@@ -12,7 +12,7 @@
 #include "shambase/DistributedData.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"
 #include "shammodels/BasicGas.hpp"
-#include "shamrock/legacy/patch/scheduler/scheduler_mpi.hpp"
+#include "shamrock/scheduler/scheduler_mpi.hpp"
 
 namespace shammodels::sph {
 

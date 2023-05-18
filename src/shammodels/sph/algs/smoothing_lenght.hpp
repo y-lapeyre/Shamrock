@@ -18,7 +18,7 @@
 #include "shamrock/legacy/patch/interfaces/interface_handler.hpp"
 #include "shamrock/legacy/patch/interfaces/interface_selector.hpp"
 //#include "shamrock/legacy/patch/patchdata_buffer.hpp"
-#include "shamrock/legacy/patch/scheduler/scheduler_mpi.hpp"
+#include "shamrock/scheduler/scheduler_mpi.hpp"
 #include "shamrock/legacy/patch/utility/merged_patch.hpp"
 #include "shamrock/scheduler/SerialPatchTree.hpp"
 #include "shamsys/legacy/log.hpp"

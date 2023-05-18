@@ -13,7 +13,7 @@
 #include "shamalgs/numeric/numeric.hpp"
 #include "shamalgs/memory/memory.hpp"
 #include "shamalgs/algorithm/algorithm.hpp"
-#include "shamrock/legacy/patch/scheduler/scheduler_mpi.hpp"
+#include "shamrock/scheduler/scheduler_mpi.hpp"
 #include "shambase/DistributedData.hpp"
 #include "shamrock/tree/RadixTreeMortonBuilder.hpp"
 #include "shamsys/legacy/log.hpp"

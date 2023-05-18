@@ -14,7 +14,7 @@
 #include "shambase/stacktrace.hpp"
 #include "shammath/CoordRange.hpp"
 #include "shammodels/BasicSPHGhosts.hpp"
-#include "shamrock/legacy/patch/scheduler/scheduler_mpi.hpp"
+#include "shamrock/scheduler/scheduler_mpi.hpp"
 #include "shamrock/scheduler/SerialPatchTree.hpp"
 #include "shamrock/patch/Patch.hpp"
 #include "shamrock/patch/PatchData.hpp"

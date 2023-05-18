@@ -8,7 +8,7 @@
 
 #include "shamtest/shamtest.hpp"
 
-#include "shamrock/legacy/patch/scheduler/scheduler_patch_list.hpp"
+#include "shamrock/scheduler/scheduler_patch_list.hpp"
 #include "test_patch_utils.hpp"
 #include "shamrock/legacy/utils/geometry_utils.hpp"
 
