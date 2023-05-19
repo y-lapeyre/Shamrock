@@ -149,17 +149,9 @@ namespace shamalgs {
             u64 offset       = align_repr(Helper::szrepr);
             check_head_move(offset);
 
-            sycl::buffer<T> retbuf(1);
-
-            shamsys::instance::get_compute_queue().submit([&, current_head](sycl::handler &cgh) {
-                sycl::accessor accbuf{*storage, cgh, sycl::read_only};
-                sycl::accessor retacc{retbuf, cgh, sycl::write_only, sycl::no_init};
-                cgh.single_task([=]() { retacc[0] = Helper::load(&accbuf[current_head]); });
-            });
-
-            {
-                sycl::host_accessor acc{retbuf, sycl::read_only};
-                val = acc[0];
+            {//using host_acc rather than anything else since other options causes addition latency
+                sycl::host_accessor accbuf{*storage, sycl::read_only};
+                val = Helper::load(&accbuf[current_head]);
             }
 
             head += offset;
