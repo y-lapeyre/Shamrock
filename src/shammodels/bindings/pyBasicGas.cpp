@@ -32,5 +32,8 @@ Register_pymod(pybasicgassph){
                 debug_dump
             });
         })
+        .def("set_cfl_cour",&BasicGas::set_cfl_cour)   
+        .def("set_cfl_force",&BasicGas::set_cfl_force)   
+        .def("set_particle_mass",&BasicGas::set_particle_mass)   
     ;
 }

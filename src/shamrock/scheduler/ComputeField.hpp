@@ -35,7 +35,7 @@ namespace shamrock {
             });
         }
 
-        inline const std::unique_ptr<sycl::buffer<T>> &get_buf(u64 id_patch) const {
+        inline const std::unique_ptr<sycl::buffer<T>> &get_buf(u64 id_patch) {
             return field_data.get(id_patch).get_buf();
         }
 
@@ -72,6 +72,10 @@ namespace shamrock {
             });
 
             return ret;
+        }
+
+        inline void reset(){
+            field_data.reset();
         }
     };
 }

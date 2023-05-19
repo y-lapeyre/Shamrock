@@ -76,5 +76,16 @@ print("Current part mass :", pmass)
 
 del setup
 
+
+
+sim.set_cfl_cour(1e-1)
+sim.set_cfl_force(0.3)
+
+
+print("Current part mass :", pmass)
+
+
+sim.set_particle_mass(pmass)
+
 for i in range(100):
     sim.evolve(1e-2, True, "dump_"+str(i)+".vtk", True)

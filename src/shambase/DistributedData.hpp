@@ -75,6 +75,10 @@ namespace shambase {
             });
             return ret;
         }
+
+        inline void reset(){
+            data.clear();
+        }
     };
 
     /**
@@ -116,6 +120,10 @@ namespace shambase {
                 ret.add_obj(left, right, map_func(left,right,ref));
             });
             return ret;
+        }
+        
+        inline void reset(){
+            data.clear();
         }
     };
 } // namespace shambase

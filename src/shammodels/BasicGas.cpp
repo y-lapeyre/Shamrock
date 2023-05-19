@@ -23,9 +23,22 @@
 #include "shamrock/scheduler/ComputeField.hpp"
 #include "shamrock/scheduler/ReattributeDataUtility.hpp"
 #include "shamrock/scheduler/SchedulerUtility.hpp"
+#include "shamrock/sph/sphpart.hpp"
+#include "shamrock/sph/sphpart.hpp"
 #include "shamrock/tree/RadixTree.hpp"
+#include "shamrock/tree/TreeTraversal.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
+
+
+
+
+
+
+
+
+
+
 
 namespace shammodels::sph {
 
@@ -100,6 +113,13 @@ namespace shammodels::sph {
         }else{
             writter.write_field_no_buf<u32>("world_rank");
         }
+    }
+
+    template<class T>
+    void vtk_dump_add_compute_field(PatchScheduler &sched, shamrock::LegacyVtkWritter &writter, shamrock::ComputeField<T> & field, std::string name) {
+        StackEntry stack_loc{};
+        
+        
     }
 
     template<class T>
@@ -182,14 +202,12 @@ namespace shammodels::sph {
 
         u64 Npart_all = count_particles();
 
-        constexpr flt h_fac_evol_max = 1.2;
-
 
         shamrock::patch::PatchField<flt> interactR_patch =
             scheduler().map_owned_to_patch_field_simple<flt>(
                 [&](const Patch p, PatchData &pdat) -> flt {
                     if (!pdat.is_empty()) {
-                        return pdat.get_field<flt>(ihpart).compute_max()*h_fac_evol_max*Rkern;
+                        return pdat.get_field<flt>(ihpart).compute_max()*htol_up_tol*Rkern;
                     }else{
                         return shambase::VectorProperties<flt>::get_min();
                     }
@@ -237,7 +255,98 @@ namespace shammodels::sph {
             tree.convert_bounding_box(shamsys::instance::get_compute_queue());
         });
 
-        
+        ComputeField<flt> _epsilon_h = utility.make_compute_field<flt>("epsilon_h", 1,flt(100));
+        ComputeField<flt> _h_old = utility.save_field<flt>(ihpart, "h_old");
+        ComputeField<flt> omega = utility.make_compute_field<flt>("omega", 1);
+
+        for(u32 iter_h = 0; iter_h < 5; iter_h ++){
+            //iterate smoothing lenght
+            scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchData & pdat){
+                logger::debug_ln("SPHLeapfrog","patch : n°",p.id_patch,"->","h iteration");
+
+                sycl::buffer<flt> & eps_h = shambase::get_check_ref(_epsilon_h.get_buf(p.id_patch));
+                sycl::buffer<flt> & hold = shambase::get_check_ref(_h_old.get_buf(p.id_patch));
+                sycl::buffer<flt> & omega_h = shambase::get_check_ref(omega.get_buf(p.id_patch));
+
+                sycl::buffer<flt> & hnew = shambase::get_check_ref(pdat.get_field<flt>(ihpart).get_buf());
+                sycl::buffer<vec> & merged_r = shambase::get_check_ref(merged_xyz.get(p.id_patch).field.get_buf());
+
+                sycl::range range_npart{pdat.get_obj_cnt()};
+
+                RTree tree = trees.get(p.id_patch);
+
+                shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
+
+                    tree::ObjectIterator particle_looper(tree,cgh);
+
+                    sycl::accessor eps {eps_h, cgh,sycl::read_write};
+                    sycl::accessor r {merged_r, cgh,sycl::read_only};
+                    sycl::accessor h_new {hnew, cgh,sycl::read_write};
+                    sycl::accessor h_old {hold, cgh,sycl::read_only};
+
+                    const flt part_mass = gpart_mass;
+                    const flt h_max_tot_max_evol = htol_up_tol;
+                    const flt h_max_evol_p = htol_up_iter;
+                    const flt h_max_evol_m = 1/htol_up_iter;
+
+                    cgh.parallel_for(range_npart, [=](sycl::item<1> item) {
+                        u32 id_a = (u32)item.get_id(0);
+
+
+                        if(eps[id_a] > 1e-6){
+
+                            vec xyz_a = r[id_a]; // could be recovered from lambda
+
+                            flt h_a = h_new[id_a];
+
+                            vec inter_box_a_min = xyz_a - h_a * Kernel::Rkern;
+                            vec inter_box_a_max = xyz_a + h_a * Kernel::Rkern;
+
+                            flt rho_sum = 0;
+                            flt sumdWdh = 0;
+
+                            particle_looper.rtree_for([&](u32, vec bmin,vec bmax) -> bool {
+                                return shammath::domain_are_connected(bmin,bmax,inter_box_a_min,inter_box_a_max);
+                            },[&](u32 id_b){
+                                flt rab = sycl::distance( xyz_a , r[id_b]);
+
+                                if(rab > h_a*Kernel::Rkern) { 
+                                    return;
+                                }
+
+                                rho_sum += part_mass*Kernel::W(rab,h_a);
+                                sumdWdh += part_mass*Kernel::dhW(rab,h_a);
+                            });
+
+                            using namespace shamrock::sph;
+
+                            flt rho_ha = rho_h(part_mass, h_a);
+                            flt new_h = newtown_iterate_new_h(rho_ha, rho_sum, sumdWdh, h_a);
+
+                            if(new_h < h_a*h_max_evol_m) new_h = h_max_evol_m*h_a;
+                            if(new_h > h_a*h_max_evol_p) new_h = h_max_evol_p*h_a;
+                            
+                            flt ha_0 = h_old[id_a];
+                            
+                            if (new_h < ha_0*h_max_tot_max_evol) {
+                                h_new[id_a] = new_h;
+                                eps[id_a] = sycl::fabs(new_h - h_a)/ha_0;
+                            }else{
+                                h_new[id_a] = ha_0*h_max_tot_max_evol;
+                                eps[id_a] = -1;
+                            }
+
+                        }
+                    });
+
+
+                });
+                
+            });
+        }
+
+        _epsilon_h.reset();
+        _h_old.reset();
 
         // update h
 
@@ -295,6 +404,30 @@ namespace shammodels::sph {
         // if delta too big jump to compute force
 
 
+        ComputeField<flt> density = utility.make_compute_field<flt>("rho",1);
+
+        scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchData & pdat){
+            shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
+                sycl::accessor acc_h{
+                    shambase::get_check_ref(pdat.get_field<flt>(ihpart).get_buf()),
+                    cgh,
+                    sycl::read_only};
+
+                sycl::accessor acc_rho{
+                    shambase::get_check_ref(density.get_buf(p.id_patch)),
+                    cgh,
+                    sycl::write_only, sycl::no_init};
+                const flt part_mass = gpart_mass;
+
+                cgh.parallel_for(sycl::range<1>{pdat.get_obj_cnt()}, [=](sycl::item<1> item) {
+                    u32 gid     = (u32)item.get_id();
+                    using namespace shamrock::sph;
+                    flt rho_ha = rho_h(part_mass, acc_h[gid]);
+                    acc_rho[gid] = rho_ha;
+                });
+            });
+        });
+
         if (dump_opt.vtk_do_dump) {
             shamrock::LegacyVtkWritter writter =
                 start_dump<vec>(scheduler(), dump_opt.vtk_dump_fname);
@@ -306,6 +439,7 @@ namespace shammodels::sph {
             }
             fnum++;
             fnum++;
+            fnum++;
 
             writter.add_field_data_section(fnum);
 
@@ -314,8 +448,12 @@ namespace shammodels::sph {
                 vtk_dump_add_worldrank(scheduler(), writter);
             }
 
+
+            vtk_dump_add_field<flt>(scheduler(), writter, ihpart, "h");
             vtk_dump_add_field<vec>(scheduler(), writter, ivxyz, "v");
             vtk_dump_add_field<vec>(scheduler(), writter, iaxyz, "a");
+
+            vtk_dump_add_compute_field(scheduler(), writter, density, "rho");
         }
     }
 

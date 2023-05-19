@@ -152,6 +152,14 @@ namespace shamrock {
             return ret;
         }
 
+        /**
+         * @brief save a field in patchdata to a compute field
+         * 
+         * @tparam T 
+         * @param field_idx 
+         * @param new_name 
+         * @return ComputeField<T> 
+         */
         template<class T>
         inline ComputeField<T> save_field(u32 field_idx, std::string new_name) {
             StackEntry stack_loc{};
@@ -164,14 +172,49 @@ namespace shamrock {
             return cfield;
         }
 
+        /**
+         * @brief create a compute field and init it to zeros
+         * 
+         * @tparam T 
+         * @param new_name 
+         * @param nvar 
+         * @return ComputeField<T> 
+         */
         template<class T>
         inline ComputeField<T> make_compute_field(std::string new_name, u32 nvar) {
             StackEntry stack_loc{};
             ComputeField<T> cfield;
             using namespace shamrock::patch;
             sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
-                cfield.field_data.add_obj(id_patch,
+                auto it = cfield.field_data.add_obj(id_patch,
                                           PatchDataField<T>(new_name, nvar, pdat.get_obj_cnt()));
+
+                PatchDataField<T> & ins = it->second;
+                ins.field_raz();
+            });
+            return cfield;
+        }
+
+        /**
+         * @brief create a compute field and init it to the set value
+         * 
+         * @tparam T 
+         * @param new_name 
+         * @param nvar 
+         * @param value_init 
+         * @return ComputeField<T> 
+         */
+        template<class T>
+        inline ComputeField<T> make_compute_field(std::string new_name, u32 nvar, T value_init) {
+            StackEntry stack_loc{};
+            ComputeField<T> cfield;
+            using namespace shamrock::patch;
+            sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
+                auto it = cfield.field_data.add_obj(id_patch,
+                                          PatchDataField<T>(new_name, nvar, pdat.get_obj_cnt()));
+
+                PatchDataField<T> & ins = it->second;
+                ins.override(value_init);
             });
             return cfield;
         }

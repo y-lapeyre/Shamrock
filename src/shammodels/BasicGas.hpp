@@ -25,6 +25,8 @@ namespace shammodels::sph {
         using Kernel = shamrock::sph::kernels::M4<flt>;
 
         static constexpr flt Rkern = Kernel::Rkern;
+        
+        static constexpr flt htol_up_tol  = 1.2;
         static constexpr flt htol_up_iter = 1.2;
 
         flt cfl_cour   = -1;
@@ -80,6 +82,10 @@ namespace shammodels::sph {
         void evolve(f64 dt, DumpOption dump_opt);
 
         u64 count_particles();
+
+        inline void set_cfl_cour(flt Ccour){cfl_cour = Ccour;}
+        inline void set_cfl_force(flt Cforce){cfl_force = Cforce;}
+        inline void set_particle_mass(flt pmass){gpart_mass = pmass;}
 
     };
 
