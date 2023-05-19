@@ -116,10 +116,15 @@ namespace shammodels::sph {
     }
 
     template<class T>
-    void vtk_dump_add_compute_field(PatchScheduler &sched, shamrock::LegacyVtkWritter &writter, shamrock::ComputeField<T> & field, std::string name) {
+    void vtk_dump_add_compute_field(PatchScheduler &sched, shamrock::LegacyVtkWritter &writter, shamrock::ComputeField<T> & field, std::string field_dump_name) {
         StackEntry stack_loc{};
         
-        
+        using namespace shamrock::patch;
+        u64 num_obj = sched.get_rank_count();
+
+        std::unique_ptr<sycl::buffer<T>> field_vals = field.rankgather_computefield(sched);
+
+        writter.write_field(field_dump_name, field_vals, num_obj);
     }
 
     template<class T>
@@ -437,6 +442,7 @@ namespace shammodels::sph {
             if (dump_opt.vtk_dump_patch_id) {
                 fnum += 2;
             }
+            fnum++;
             fnum++;
             fnum++;
             fnum++;
