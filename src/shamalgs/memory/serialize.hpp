@@ -83,14 +83,14 @@ namespace shamalgs {
             : storage(std::forward<std::unique_ptr<sycl::buffer<u8>>>(storage)) {}
 
         inline void allocate(u64 bytelen) {
-            StackEntry stack_loc{};
+            StackEntry stack_loc{false};
             storage  = std::make_unique<sycl::buffer<u8>>(bytelen);
             head     = 0;
             first_op = true;
         }
 
         inline std::unique_ptr<sycl::buffer<u8>> finalize() {
-            StackEntry stack_loc{};
+            StackEntry stack_loc{false};
             std::unique_ptr<sycl::buffer<u8>> ret;
             std::swap(ret, storage);
             return ret;
@@ -112,7 +112,7 @@ namespace shamalgs {
 
         template<class T>
         inline void write(T val) {
-            StackEntry stack_loc{};
+            StackEntry stack_loc{false};
 
             using Helper = details::SerializeHelperMember<T>;
 
@@ -141,7 +141,7 @@ namespace shamalgs {
 
         template<class T>
         inline void load(T &val) {
-            StackEntry stack_loc{};
+            StackEntry stack_loc{false};
 
             using Helper = details::SerializeHelperMember<T>;
 
@@ -167,7 +167,7 @@ namespace shamalgs {
 
         template<class T>
         inline void write_buf(sycl::buffer<T> &buf, u64 len) {
-            StackEntry stack_loc{};
+            StackEntry stack_loc{false};
 
             using Helper     = details::SerializeHelperMember<T>;
             u64 current_head = head;
@@ -205,7 +205,7 @@ namespace shamalgs {
 
         template<class T>
         inline void load_buf(sycl::buffer<T> &buf, u64 len) {
-            StackEntry stack_loc{};
+            StackEntry stack_loc{false};
 
             using Helper     = details::SerializeHelperMember<T>;
             u64 current_head = head;
@@ -227,7 +227,7 @@ namespace shamalgs {
         }
 
         inline void write(std::string s) {
-            StackEntry stack_loc{};
+            StackEntry stack_loc{false};
             write(u32(s.size()));
 
             sycl::buffer<char> buf(s.size());
@@ -241,7 +241,7 @@ namespace shamalgs {
         }
 
         inline void load(std::string &s) {
-            StackEntry stack_loc{};
+            StackEntry stack_loc{false};
             u32 len;
             load(len);
             s.resize(len);

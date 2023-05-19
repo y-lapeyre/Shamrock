@@ -5,6 +5,10 @@ In the code many function starts with
 ```c++
 StackEntry stack_loc{};
 ```
+the profiling can be disabled for a function by using :
+```c++
+StackEntry stack_loc{false};
+```
 
 This is used to trace the location in the code, allowing more precise error message, but also profiling !
 
