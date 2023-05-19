@@ -66,6 +66,15 @@ namespace shambase {
                 logger::raw_ln(id_patch ,"->" ,shambase::format(fmt, ref));
             });
         }
+
+        template<class Tmap>
+        inline DistributedData<Tmap> map(std::function<Tmap(u64, T&)> map_func){
+            DistributedData<Tmap> ret;
+            for_each([&](u64 id, T& ref){
+                ret.add_obj(id, map_func(id,ref));
+            });
+            return ret;
+        }
     };
 
     /**

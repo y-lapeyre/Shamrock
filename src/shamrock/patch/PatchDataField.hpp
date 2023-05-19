@@ -217,6 +217,12 @@ template <class T> class PatchDataField {
     void append_subset_to(const std::vector<u32> &idxs, PatchDataField &pfield) const;
     void append_subset_to(sycl::buffer<u32> &idxs_buf, u32 sz, PatchDataField &pfield) const;
 
+    inline PatchDataField make_new_from_subset(sycl::buffer<u32> &idxs_buf, u32 sz) const {
+        PatchDataField pfield(field_name, nvar);
+        append_subset_to(idxs_buf,sz,pfield);
+        return pfield;
+    }
+
     void gen_mock_data(u32 obj_cnt, std::mt19937 &eng);
 
     /**

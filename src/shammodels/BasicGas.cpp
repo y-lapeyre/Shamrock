@@ -14,6 +14,7 @@
 #include "shambase/stacktrace.hpp"
 #include "shammath/CoordRange.hpp"
 #include "shammodels/BasicSPHGhosts.hpp"
+#include "shamrock/scheduler/InterfacesUtility.hpp"
 #include "shamrock/scheduler/scheduler_mpi.hpp"
 #include "shamrock/scheduler/SerialPatchTree.hpp"
 #include "shamrock/patch/Patch.hpp"
@@ -22,6 +23,7 @@
 #include "shamrock/scheduler/ComputeField.hpp"
 #include "shamrock/scheduler/ReattributeDataUtility.hpp"
 #include "shamrock/scheduler/SchedulerUtility.hpp"
+#include "shamrock/tree/RadixTree.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
 
@@ -205,7 +207,37 @@ namespace shammodels::sph {
 
         auto interf_build_cache = interf_handle.make_interface_cache(sptree, interactR_mpi_tree,interactR_patch);
 
+        InterfacesUtility interf_utils(scheduler());
 
+        auto interf_xyz = interf_handle.build_communicate_positions(interf_build_cache);
+        auto merged_xyz = interf_handle.merge_position_buf(std::move(interf_xyz));
+
+        constexpr u32 reduc_level = 5;
+
+        using RTree = RadixTree<u_morton, vec, 3>;
+
+        shambase::DistributedData<RTree> trees = 
+        merged_xyz.map<RTree>([&](u64 id, shamrock::MergedPatchDataField<vec> & merged){
+
+            vec bmin = merged.bounds->lower;
+            vec bmax = merged.bounds->upper; 
+
+            RTree tree(
+                shamsys::instance::get_compute_queue(), 
+                {bmin,bmax},
+                merged.field.get_buf(),
+                merged.field.get_obj_cnt(),
+                reduc_level);
+
+            return tree;
+        });
+
+        trees.for_each([&](u64 id,RTree & tree ){
+            tree.compute_cell_ibounding_box(shamsys::instance::get_compute_queue());
+            tree.convert_bounding_box(shamsys::instance::get_compute_queue());
+        });
+
+        
 
         // update h
 

@@ -118,6 +118,22 @@ namespace shambase::details {
         }
     };
 
+    struct NamedBasicStackEntry {
+        SourceLocation loc;
+        bool do_timer;
+        std::string name;
+
+        inline NamedBasicStackEntry(std::string name, bool do_timer = true, SourceLocation &&loc = SourceLocation{}) : name(name), loc(loc), do_timer(do_timer) {
+            if(do_timer) add_prof_entry(name,true);
+            call_stack.emplace(loc);
+        }
+
+        inline ~NamedBasicStackEntry() { 
+            if(do_timer) add_prof_entry(name,false);
+            call_stack.pop(); 
+        }
+    };
+
     
 
 } // namespace shambase::details
@@ -151,3 +167,4 @@ namespace shambase {
 }
 
 using StackEntry = shambase::details::BasicStackEntry;
+using NamedStackEntry = shambase::details::NamedBasicStackEntry;

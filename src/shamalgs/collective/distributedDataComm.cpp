@@ -32,6 +32,9 @@ namespace shamalgs::collective {
         auto serialize_group_data(std::map<std::pair<i32, i32>, std::vector<DataTmp>> &send_data)
             -> std::map<std::pair<i32, i32>, SerializeHelper> {
 
+            
+            StackEntry stack_loc{};
+
             std::map<std::pair<i32, i32>, SerializeHelper> serializers;
 
             for (auto &[key, vect] : send_data) {
@@ -65,6 +68,8 @@ namespace shamalgs::collective {
                                       shamsys::CommunicationProtocol prot,
                                       std::function<i32(u64)> rank_getter,
                                       std::optional<SparseCommTable> comm_table) {
+
+        StackEntry stack_loc{};
 
         using namespace shambase;
         using namespace shamsys;
@@ -113,36 +118,41 @@ namespace shamalgs::collective {
 
         std::vector<RecvPayloadSer> recv_payload_bufs;
 
-        for (RecvPayload &payload : recv_payload) {
-            recv_payload_bufs.push_back(
-                RecvPayloadSer{payload.sender_ranks,
-                               SerializeHelper(std::make_unique<sycl::buffer<u8>>(
-                                   get_check_ref(payload.payload).copy_back()))});
+        {NamedStackEntry stack_loc2{"move payloads"};
+            for (RecvPayload & payload : recv_payload) {
+                recv_payload_bufs.push_back(
+                    RecvPayloadSer{payload.sender_ranks,
+                                SerializeHelper(std::make_unique<sycl::buffer<u8>>(
+                                    get_check_ref(payload.payload).copy_back()))});
+            }
         }
 
-        // deserialize into the shared distributed data
-        for (RecvPayloadSer &recv : recv_payload_bufs) {
-            u64 cnt_obj;
-            recv.ser.load(cnt_obj);
-            for (u32 i = 0; i < cnt_obj; i++) {
-                u64 sender, receiver, lenght;
 
-                recv.ser.load(sender);
-                recv.ser.load(receiver);
-                recv.ser.load(lenght);
+        {NamedStackEntry stack_loc2{"split recv comms"};
+            // deserialize into the shared distributed data
+            for (RecvPayloadSer &recv : recv_payload_bufs) {
+                u64 cnt_obj;
+                recv.ser.load(cnt_obj);
+                for (u32 i = 0; i < cnt_obj; i++) {
+                    u64 sender, receiver, lenght;
 
-                { // check correctness ranks
-                    i32 supposed_sender_rank = rank_getter(sender);
-                    i32 real_sender_rank     = recv.sender_ranks;
-                    if (supposed_sender_rank != real_sender_rank) {
-                        throw throw_with_loc<std::runtime_error>("the rank do not matches");
+                    recv.ser.load(sender);
+                    recv.ser.load(receiver);
+                    recv.ser.load(lenght);
+
+                    { // check correctness ranks
+                        i32 supposed_sender_rank = rank_getter(sender);
+                        i32 real_sender_rank     = recv.sender_ranks;
+                        if (supposed_sender_rank != real_sender_rank) {
+                            throw throw_with_loc<std::runtime_error>("the rank do not matches");
+                        }
                     }
+
+                    auto it = recv_distrib_data.add_obj(
+                        sender, receiver, std::make_unique<sycl::buffer<u8>>(lenght));
+
+                    recv.ser.load_buf(*it->second, lenght);
                 }
-
-                auto it = recv_distrib_data.add_obj(
-                    sender, receiver, std::make_unique<sycl::buffer<u8>>(lenght));
-
-                recv.ser.load_buf(*it->second, lenght);
             }
         }
     }

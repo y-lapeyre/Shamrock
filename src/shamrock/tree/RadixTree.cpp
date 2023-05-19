@@ -104,11 +104,12 @@ RadixTree<u_morton, pos_t, dim> RadixTree<u_morton, pos_t, dim>::deserialize(sha
 
 
 template <class u_morton, class vec3, u32 dim> void RadixTree<u_morton, vec3, dim>::compute_cell_ibounding_box(sycl::queue &queue) {
+    StackEntry stack_loc{};
     tree_cell_ranges.build1(queue, tree_reduced_morton_codes, tree_struct);
 }
 
 template <class morton_t, class pos_t, u32 dim> void RadixTree<morton_t, pos_t, dim>::convert_bounding_box(sycl::queue &queue) {
-
+    StackEntry stack_loc{};
     u32 total_count = tree_struct.internal_cell_count + tree_reduced_morton_codes.tree_leaf_count;
     tree_cell_ranges.build2(queue, total_count, bounding_box);
 

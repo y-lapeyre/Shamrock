@@ -359,7 +359,6 @@ f64 models::sph::BasicSPHGasUInterne<flt,Kernel>::evolve(PatchScheduler &sched, 
                                 sum_du_a += part_mass * sycl::dot(v_ab , r_ab_unit) * Kernel::dW(rab, h_a);
 
                                 //out << sum_du_a << "\n";
-
                                 /////////////////
 
                                 f32 qa_ab = sycl::max(- 0.5f*rho_a*vsig_a*v_ab_r_ab,0.f); 

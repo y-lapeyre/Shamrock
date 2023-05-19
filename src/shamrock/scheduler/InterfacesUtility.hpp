@@ -1,0 +1,41 @@
+// -------------------------------------------------------//
+//
+// SHAMROCK code for hydrodynamics
+// Copyright(C) 2021-2023 Timothée David--Cléris <timothee.david--cleris@ens-lyon.fr>
+// Licensed under CeCILL 2.1 License, see LICENSE for more information
+//
+// -------------------------------------------------------//
+
+#pragma once
+
+#include "shamalgs/memory/memory.hpp"
+#include "shamrock/patch/PatchData.hpp"
+#include "shamrock/scheduler/SerialPatchTree.hpp"
+#include "shamrock/scheduler/scheduler_mpi.hpp"
+#include <vector>
+
+namespace shamrock {
+
+    template<class T>
+    class MergedPatchDataField{public:
+        std::optional<shammath::CoordRange<T>> bounds;
+        u32 original_elements;
+        u32 total_elements;
+        PatchDataField<T> field;
+
+        bool has_bound_info(){
+            return bounds.has_value();
+        }
+    };
+
+
+
+    class InterfacesUtility {
+        PatchScheduler &sched;
+
+        public:
+        InterfacesUtility(PatchScheduler &sched) : sched(sched) {}
+
+        
+    };
+} // namespace shamrock
