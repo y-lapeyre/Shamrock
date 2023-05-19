@@ -353,9 +353,15 @@ namespace shammodels::sph {
         _epsilon_h.reset();
         _h_old.reset();
 
-        // update h
 
-        // compute pressure
+        //communicate fields
+        
+
+
+        // compute pressure        
+        ComputeField<flt> pressure = utility.make_compute_field<flt>("pressure",1);
+
+
 
         // compute force
         logger::info_ln("sph::BasicGas", "compute force");

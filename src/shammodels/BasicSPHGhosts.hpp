@@ -11,6 +11,7 @@
 #include "shambase/DistributedData.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"
 #include "shammodels/BasicGas.hpp"
+#include "shamrock/scheduler/ComputeField.hpp"
 #include "shamrock/scheduler/InterfacesUtility.hpp"
 #include "shamrock/scheduler/scheduler_mpi.hpp"
 
@@ -22,10 +23,13 @@ namespace shammodels::sph {
         PatchScheduler &sched;
 
         public:
-        using flt = shambase::VecComponent<vec>;
+        using flt                = shambase::VecComponent<vec>;
+        static constexpr u32 dim = shambase::VectorProperties<vec>::dimension;
+        using per_index          = sycl::vec<i32, dim>;
 
         struct InterfaceBuildInfos {
             vec offset;
+            per_index periodicity_index;
             shammath::CoordRange<vec> cut_volume;
             flt volume_ratio;
         };
@@ -37,9 +41,6 @@ namespace shammodels::sph {
         GeneratorMap find_interfaces(SerialPatchTree<vec> &sptree,
                                      shamrock::patch::PatchtreeField<flt> &int_range_max_tree,
                                      shamrock::patch::PatchField<flt> &int_range_max);
-
-
-
 
         struct InterfaceIdTable {
             InterfaceBuildInfos build_infos;
@@ -157,6 +158,65 @@ namespace shammodels::sph {
             // clang-format on
         }
 
+        template<class T>
+        inline shambase::DistributedDataShared<PatchDataField<T>>
+        build_interf_field(shambase::DistributedDataShared<InterfaceIdTable> &builder,
+                           u32 field_id,
+                           std::function<T(per_index)> offset_getter) {
+            StackEntry stack_loc{};
+
+            // clang-format off
+            return builder.template map<PositionInterface>([&](u64 sender, u64 receiver, InterfaceIdTable &build_table) {
+                if (!bool(build_table.ids_interf)) {
+                    throw shambase::throw_with_loc<std::runtime_error>(
+                        "their is an empty id table in the interface, it should have been removed");
+                }
+
+                PatchDataField<vec> pfield = sched
+                    .patch_data
+                    .get_pdat(sender)
+                    .get_field<T>(field_id)
+                    .make_new_from_subset(*build_table.ids_interf, build_table.ids_interf->size());
+
+                T off_val = offset_getter(build_table.build_infos.periodicity_index);
+
+                if (!shambase::vec_equals(off_val,shambase::VectorProperties<T>::zeros())) {
+                    pfield.apply_offset(off_val);
+                }
+
+                return pfield;
+            });
+            // clang-format on
+        }
+
+        template<class T>
+        inline shambase::DistributedDataShared<PatchDataField<T>>
+        build_interf_compute_field(shambase::DistributedDataShared<InterfaceIdTable> &builder,
+                                   shamrock::ComputeField<T> &cfield,
+                                   std::function<T(per_index)> offset_getter) {
+            StackEntry stack_loc{};
+
+            // clang-format off
+            return builder.template map<PositionInterface>([&](u64 sender, u64 receiver, InterfaceIdTable &build_table) {
+                if (!bool(build_table.ids_interf)) {
+                    throw shambase::throw_with_loc<std::runtime_error>(
+                        "their is an empty id table in the interface, it should have been removed");
+                }
+
+                PatchDataField<vec> pfield = cfield.get_field(sender)
+                    .make_new_from_subset(*build_table.ids_interf, build_table.ids_interf->size());
+
+                T off_val = offset_getter(build_table.build_infos.periodicity_index);
+
+                if (!shambase::vec_equals(off_val,shambase::VectorProperties<T>::zeros())) {
+                    pfield.apply_offset(off_val);
+                }
+
+                return pfield;
+            });
+            // clang-format on
+        }
+
         inline shambase::DistributedDataShared<PositionInterface>
         communicate_positions(shambase::DistributedDataShared<PositionInterface> &interf) {
             StackEntry stack_loc{};
@@ -187,22 +247,22 @@ namespace shammodels::sph {
                 });
 
             shambase::DistributedDataShared<PositionInterface> recv_dat;
-            {StackEntry stack_loc{};
-                recv_dat =
-                    dcomm_recv.map<PositionInterface>(
-                        [&](u64, u64, std::unique_ptr<sycl::buffer<u8>> &buf) {
-                            // exchange the buffer held by the distrib data and give it to the
-                            // serializer
-                            shamalgs::SerializeHelper ser(
-                                std::exchange(buf, std::unique_ptr<sycl::buffer<u8>>{}));
+            {
+                StackEntry stack_loc{};
+                recv_dat = dcomm_recv.map<PositionInterface>(
+                    [&](u64, u64, std::unique_ptr<sycl::buffer<u8>> &buf) {
+                        // exchange the buffer held by the distrib data and give it to the
+                        // serializer
+                        shamalgs::SerializeHelper ser(
+                            std::exchange(buf, std::unique_ptr<sycl::buffer<u8>>{}));
 
-                            PatchDataField<vec> f = PatchDataField<vec>::deserialize_buf(ser, "xyz", 1);
-                            vec bmin, bmax;
-                            ser.load(bmin);
-                            ser.load(bmax);
+                        PatchDataField<vec> f = PatchDataField<vec>::deserialize_buf(ser, "xyz", 1);
+                        vec bmin, bmax;
+                        ser.load(bmin);
+                        ser.load(bmax);
 
-                            return PositionInterface{std::move(f), bmin, bmax};
-                        });
+                        return PositionInterface{std::move(f), bmin, bmax};
+                    });
             }
             return recv_dat;
         }
@@ -213,23 +273,24 @@ namespace shammodels::sph {
             return communicate_positions(pos_interf);
         }
 
-        inline shambase::DistributedData<shamrock::MergedPatchDataField<vec>> merge_position_buf(shambase::DistributedDataShared<PositionInterface> && positioninterfs){
+        inline shambase::DistributedData<shamrock::MergedPatchDataField<vec>>
+        merge_position_buf(shambase::DistributedDataShared<PositionInterface> &&positioninterfs) {
             StackEntry stack_loc{};
 
             shambase::DistributedData<shamrock::MergedPatchDataField<vec>> pos_fields;
 
-            sched.for_each_patchdata_nonempty([&] (const shamrock::patch::Patch p, shamrock::patch::PatchData & pdat){
-                PatchDataField<vec> & pos = pdat.get_field<vec>(0);
-                vec bmax = pos.compute_max();
-                vec bmin = pos.compute_min();
-                u32 or_elem = pos.get_obj_cnt();
+            sched.for_each_patchdata_nonempty([&](const shamrock::patch::Patch p,
+                                                  shamrock::patch::PatchData &pdat) {
+                PatchDataField<vec> &pos    = pdat.get_field<vec>(0);
+                vec bmax                    = pos.compute_max();
+                vec bmin                    = pos.compute_min();
+                u32 or_elem                 = pos.get_obj_cnt();
                 PatchDataField<vec> new_pos = pos.duplicate();
-
 
                 u32 total_elements = or_elem;
 
-                positioninterfs.for_each([&](u64 sender, u64 receiver, PositionInterface & pint){
-                    if(receiver == p.id_patch){
+                positioninterfs.for_each([&](u64 sender, u64 receiver, PositionInterface &pint) {
+                    if (receiver == p.id_patch) {
                         total_elements += pint.position_field.get_obj_cnt();
                         new_pos.insert(pint.position_field);
                         bmax = shambase::sycl_utils::g_sycl_max(bmax, pint.bmax);
@@ -237,20 +298,17 @@ namespace shammodels::sph {
                     }
                 });
 
-                logger::debug_ln("sph::Interface", "merging :",or_elem,"->",total_elements);
+                logger::debug_ln("sph::Interface", "merging :", or_elem, "->", total_elements);
 
-
-                pos_fields.add_obj(p.id_patch, shamrock::MergedPatchDataField<vec>{
-                    shammath::CoordRange<vec>{bmin,bmax},
-                    or_elem,
-                    total_elements,
-                    std::move(new_pos)
-                });
-
+                pos_fields.add_obj(
+                    p.id_patch,
+                    shamrock::MergedPatchDataField<vec>{shammath::CoordRange<vec>{bmin, bmax},
+                                                        or_elem,
+                                                        total_elements,
+                                                        std::move(new_pos)});
             });
 
             return pos_fields;
-
         }
     };
 

@@ -79,6 +79,7 @@ auto BasicGasPeriodicGhostHandler<vec>::find_interfaces(
                                 interf_map.add_obj(psender.id_patch,
                                                    id_found,
                                                    {periodic_offset,
+                                                   {xoff,yoff,zoff},
                                                     interf_volume,
                                                     interf_volume.get_volume() / sender_volume});
                             });
