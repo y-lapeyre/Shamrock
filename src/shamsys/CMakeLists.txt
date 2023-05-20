@@ -4,6 +4,7 @@ set(Sources
     SyclMpiTypes.cpp
     SyclHelper.cpp
     SignalCatch.cpp
+    EnvVariables.cpp
 )
 set(SourcesTest
     

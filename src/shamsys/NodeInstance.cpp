@@ -9,9 +9,11 @@
 #include "NodeInstance.hpp"
 
 #include "shambase/exception.hpp"
+#include "shamsys/EnvVariables.hpp"
 #include "shamsys/legacy/cmdopt.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamsys/MpiWrapper.hpp"
+#include <mpi-ext.h>
 #include "shamsys/legacy/sycl_mpi_interop.hpp"
 
 #include "MpiDataTypeHandler.hpp"
@@ -302,23 +304,30 @@ namespace shamsys::instance {
 
         logger::info_ln("NodeInstance", "init done");
 
+    }
 
-        
-
-        
-
+    void check_mpi_gpu_aware(){
+        #if defined(MPIX_CUDA_AWARE_SUPPORT)
+        if (1 == MPIX_Query_cuda_support()) {
+            logger::raw_ln("MPI CUDA-aware support : Yes");
+        } else {
+            logger::raw_ln("MPI CUDA-aware support : No");
+        }
+        #else  /* !defined(MPIX_CUDA_AWARE_SUPPORT) */
+        logger::raw_ln("MPI CUDA-aware support : Unknown");
+        #endif /* MPIX_CUDA_AWARE_SUPPORT */
     }
 
     void init(SyclInitInfo sycl_info, MPIInitInfo mpi_info){
 
+
         start_sycl(sycl_info);
-
-
 
         #ifdef MPI_LOGGER_ENABLED
         std::cout << "%MPI_DEFINE:MPI_COMM_WORLD="<<MPI_COMM_WORLD<<"\n";
         #endif
 
+        check_mpi_gpu_aware();
         
         mpi::init(&mpi_info.argc, &mpi_info.argv);
 
