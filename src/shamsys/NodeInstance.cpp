@@ -9,6 +9,7 @@
 #include "NodeInstance.hpp"
 
 #include "shambase/exception.hpp"
+#include "shambase/sycl_utils.hpp"
 #include "shamsys/EnvVariables.hpp"
 #include "shamsys/legacy/cmdopt.hpp"
 #include "shamsys/legacy/log.hpp"
@@ -22,55 +23,66 @@
 namespace shamsys::instance::details {
 
 
-
-    void check_mpi_cuda_aware(){
+    /**
+     * @brief detect mpi cuda aware support
+     * 
+     * @return true 
+     * @return false 
+     */
+    bool check_mpi_cuda_aware(){
         #if defined(MPIX_CUDA_AWARE_SUPPORT)
         if (1 == MPIX_Query_cuda_support()) {
-            logger::raw_ln("MPI CUDA-aware support : Yes");
-        } else {
-            logger::raw_ln("MPI CUDA-aware support : No");
-        }
+            logger::raw_ln("MPI CUDA-aware support : Yes");return true;
+        } 
+        logger::raw_ln("MPI CUDA-aware support : No");return false;
         #else  /* !defined(MPIX_CUDA_AWARE_SUPPORT) */
         logger::raw_ln("MPI CUDA-aware support : Unknown");
         #endif /* MPIX_CUDA_AWARE_SUPPORT */ 
     }
 
-    void check_mpi_rocm_aware(){
+    /**
+     * @brief detect mpi rocm aware support
+     * 
+     * @return true 
+     * @return false 
+     */
+    bool check_mpi_rocm_aware(){
         #if defined(MPIX_ROCM_AWARE_SUPPORT)
         if (1 == MPIX_Query_rocm_support()) {
-            logger::raw_ln("MPI ROCM-aware support : Yes");
-        } else {
-            logger::raw_ln("MPI ROCM-aware support : No");
+            logger::raw_ln("MPI ROCM-aware support : Yes");return true;
         }
+        logger::raw_ln("MPI ROCM-aware support : No");return false;
         #else  /* !defined(MPIX_ROCM_AWARE_SUPPORT) */
-        logger::raw_ln("MPI ROCM-aware support : Unknown");
+        logger::raw_ln("MPI ROCM-aware support : Unknown");return false;
         #endif /* MPIX_ROCM_AWARE_SUPPORT */ 
     }
 
-    
-
-}
-
-
-namespace shamsys::instance {
-
-
-
-
-    auto check_queue_is_valid(sycl::queue & q){
+    /**
+     * @brief validate a sycl queue
+     * 
+     * @param q 
+     */
+    void check_queue_is_valid(sycl::queue & q){
 
         auto test_kernel = [](sycl::queue & q){
-            sycl::buffer<u32> b{10};
+            sycl::buffer<u32> b(10);
 
             q.submit([&](sycl::handler & cgh){
                 sycl::accessor acc {b, cgh,sycl::write_only,sycl::no_init};
 
-                cgh.parallel_for(sycl::range<1>{1},[=](sycl::item<1> i){
+                cgh.parallel_for(sycl::range<1>{10},[=](sycl::item<1> i){
                     acc[i] = i.get_linear_id();
                 });
             });
 
             q.wait();
+
+            {
+                sycl::host_accessor acc {b, sycl::read_only};
+                if(acc[9] != 9){
+                    throw shambase::throw_with_loc<std::runtime_error>("The chosen SYCL queue cannot execute a basic kernel");
+                }
+            }
         };
 
 
@@ -90,6 +102,12 @@ namespace shamsys::instance {
 
     }
 
+
+} // namespace shamsys::instance::details
+
+
+namespace shamsys::instance {
+
     auto exception_handler = [] (sycl::exception_list exceptions) {
         for (std::exception_ptr const& e : exceptions) {
             try {
@@ -100,22 +118,7 @@ namespace shamsys::instance {
         }
     };
 
-    std::string getDeviceTypeName(const sycl::device &Device) {
-        auto DeviceType = Device.get_info<sycl::info::device::device_type>();
-        switch (DeviceType) {
-        case sycl::info::device_type::cpu:
-            return "CPU";
-        case sycl::info::device_type::gpu:
-            return "GPU";
-        case sycl::info::device_type::host:
-            return "HOST";
-        case sycl::info::device_type::accelerator:
-            return "ACCELERATOR";
-        default:
-            return "UNKNOWN";
-        }
-    }
-
+    
     void print_device_info(const sycl::device &Device){
         std::cout 
             << "   - " 
@@ -278,7 +281,7 @@ namespace shamsys::instance {
 
                 std::string devname = shambase::trunc_str(DeviceName,29);
                 std::string platname = shambase::trunc_str(PlatformName,24);
-                std::string devtype = shambase::trunc_str(getDeviceTypeName(Device),6);
+                std::string devtype = shambase::trunc_str(shambase::getDevice_type(Device),6);
 
                 logger::raw_ln(shambase::format("| {:>3} | {:>2} | {:>29.29} | {:>24.24} | {:>6} |",
                     selected.c_str(),key_global,devname.c_str(),platname.c_str(),devtype.c_str()
@@ -318,12 +321,12 @@ namespace shamsys::instance {
                 auto DeviceName = Device.get_info<sycl::info::device::name>();
 
                 if(key_global == sycl_info.alt_queue_id){
-                    logger::info_ln("NodeInstance", "init alt queue  : ", "|",DeviceName, "|", PlatformName, "|" , getDeviceTypeName(Device), "|");
+                    logger::info_ln("NodeInstance", "init alt queue  : ", "|",DeviceName, "|", PlatformName, "|" , shambase::getDevice_type(Device), "|");
                     alt_queue = std::make_unique<sycl::queue>(Device,exception_handler);
                 }
 
                 if(key_global == sycl_info.compute_queue_id){
-                    logger::info_ln("NodeInstance", "init comp queue : ", "|",DeviceName, "|", PlatformName, "|" , getDeviceTypeName(Device), "|");
+                    logger::info_ln("NodeInstance", "init comp queue : ", "|",DeviceName, "|", PlatformName, "|" , shambase::getDevice_type(Device), "|");
                     compute_queue = std::make_unique<sycl::queue>(Device,exception_handler);
                 }
 
@@ -331,8 +334,8 @@ namespace shamsys::instance {
             }
         }
 
-        check_queue_is_valid(*compute_queue);
-        check_queue_is_valid(*alt_queue);
+        details::check_queue_is_valid(*compute_queue);
+        details::check_queue_is_valid(*alt_queue);
 
 
         logger::info_ln("NodeInstance", "init done");
