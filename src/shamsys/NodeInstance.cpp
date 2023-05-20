@@ -19,6 +19,39 @@
 #include "MpiDataTypeHandler.hpp"
 #include <stdexcept>
 
+namespace shamsys::instance::details {
+
+
+
+    void check_mpi_cuda_aware(){
+        #if defined(MPIX_CUDA_AWARE_SUPPORT)
+        if (1 == MPIX_Query_cuda_support()) {
+            logger::raw_ln("MPI CUDA-aware support : Yes");
+        } else {
+            logger::raw_ln("MPI CUDA-aware support : No");
+        }
+        #else  /* !defined(MPIX_CUDA_AWARE_SUPPORT) */
+        logger::raw_ln("MPI CUDA-aware support : Unknown");
+        #endif /* MPIX_CUDA_AWARE_SUPPORT */ 
+    }
+
+    void check_mpi_rocm_aware(){
+        #if defined(MPIX_ROCM_AWARE_SUPPORT)
+        if (1 == MPIX_Query_rocm_support()) {
+            logger::raw_ln("MPI ROCM-aware support : Yes");
+        } else {
+            logger::raw_ln("MPI ROCM-aware support : No");
+        }
+        #else  /* !defined(MPIX_ROCM_AWARE_SUPPORT) */
+        logger::raw_ln("MPI ROCM-aware support : Unknown");
+        #endif /* MPIX_ROCM_AWARE_SUPPORT */ 
+    }
+
+    
+
+}
+
+
 namespace shamsys::instance {
 
 
@@ -306,18 +339,6 @@ namespace shamsys::instance {
 
     }
 
-    void check_mpi_gpu_aware(){
-        #if defined(MPIX_CUDA_AWARE_SUPPORT)
-        if (1 == MPIX_Query_cuda_support()) {
-            logger::raw_ln("MPI CUDA-aware support : Yes");
-        } else {
-            logger::raw_ln("MPI CUDA-aware support : No");
-        }
-        #else  /* !defined(MPIX_CUDA_AWARE_SUPPORT) */
-        logger::raw_ln("MPI CUDA-aware support : Unknown");
-        #endif /* MPIX_CUDA_AWARE_SUPPORT */
-    }
-
     void init(SyclInitInfo sycl_info, MPIInitInfo mpi_info){
 
 
@@ -327,7 +348,8 @@ namespace shamsys::instance {
         std::cout << "%MPI_DEFINE:MPI_COMM_WORLD="<<MPI_COMM_WORLD<<"\n";
         #endif
 
-        check_mpi_gpu_aware();
+        details::check_mpi_cuda_aware();
+        details::check_mpi_rocm_aware();
         
         mpi::init(&mpi_info.argc, &mpi_info.argv);
 
