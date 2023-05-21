@@ -355,6 +355,12 @@ namespace shammodels::sph {
 
 
         //communicate fields
+
+        auto interf_h = interf_handle.build_interf_field<flt>(interf_build_cache, ihpart, [](i32_3){return flt(0);});
+        auto interf_omega = interf_handle.build_interf_compute_field<flt>(interf_build_cache, omega, [](i32_3){return flt(0);});
+
+
+
         
 
 

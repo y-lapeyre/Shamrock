@@ -166,13 +166,13 @@ namespace shammodels::sph {
             StackEntry stack_loc{};
 
             // clang-format off
-            return builder.template map<PositionInterface>([&](u64 sender, u64 receiver, InterfaceIdTable &build_table) {
+            return builder.template map<PatchDataField<T>>([&](u64 sender, u64 receiver, InterfaceIdTable &build_table) {
                 if (!bool(build_table.ids_interf)) {
                     throw shambase::throw_with_loc<std::runtime_error>(
                         "their is an empty id table in the interface, it should have been removed");
                 }
 
-                PatchDataField<vec> pfield = sched
+                PatchDataField<T> pfield = sched
                     .patch_data
                     .get_pdat(sender)
                     .get_field<T>(field_id)
@@ -180,7 +180,7 @@ namespace shammodels::sph {
 
                 T off_val = offset_getter(build_table.build_infos.periodicity_index);
 
-                if (!shambase::vec_equals(off_val,shambase::VectorProperties<T>::zeros())) {
+                if (!shambase::vec_equals(off_val,shambase::VectorProperties<T>::get_zero())) {
                     pfield.apply_offset(off_val);
                 }
 
@@ -197,18 +197,18 @@ namespace shammodels::sph {
             StackEntry stack_loc{};
 
             // clang-format off
-            return builder.template map<PositionInterface>([&](u64 sender, u64 receiver, InterfaceIdTable &build_table) {
+            return builder.template map<PatchDataField<T>>([&](u64 sender, u64 receiver, InterfaceIdTable &build_table) {
                 if (!bool(build_table.ids_interf)) {
                     throw shambase::throw_with_loc<std::runtime_error>(
                         "their is an empty id table in the interface, it should have been removed");
                 }
 
-                PatchDataField<vec> pfield = cfield.get_field(sender)
+                PatchDataField<T> pfield = cfield.get_field(sender)
                     .make_new_from_subset(*build_table.ids_interf, build_table.ids_interf->size());
 
                 T off_val = offset_getter(build_table.build_infos.periodicity_index);
 
-                if (!shambase::vec_equals(off_val,shambase::VectorProperties<T>::zeros())) {
+                if (!shambase::vec_equals(off_val,shambase::VectorProperties<T>::get_zero())) {
                     pfield.apply_offset(off_val);
                 }
 
@@ -218,7 +218,7 @@ namespace shammodels::sph {
         }
 
         inline shambase::DistributedDataShared<PositionInterface>
-        communicate_positions(shambase::DistributedDataShared<PositionInterface> &interf) {
+        communicate_positions(shambase::DistributedDataShared<PositionInterface> && interf) {
             StackEntry stack_loc{};
 
             shamalgs::collective::SerializedDDataComm dcomm_send =
@@ -267,10 +267,57 @@ namespace shammodels::sph {
             return recv_dat;
         }
 
+        template<class T>
+        inline shambase::DistributedDataShared<PatchDataField<T>>
+        communicate_field(shambase::DistributedDataShared<PatchDataField<T>> && interf) {
+            StackEntry stack_loc{};
+
+            std::string name;
+            u32 nvar;
+
+            shamalgs::collective::SerializedDDataComm dcomm_send =
+                interf.template map<std::unique_ptr<sycl::buffer<u8>>>(
+                    [&](u64, u64, PatchDataField<T> &field) {
+                        name = field.get_name();
+                        nvar = field.get_nvar();
+
+                        shamalgs::SerializeHelper ser;
+                        u64 size = field.serialize_buf_byte_size();
+                        ser.allocate(size);
+                        field.serialize_buf(ser);
+                        return ser.finalize();
+                    });
+
+            shamalgs::collective::SerializedDDataComm dcomm_recv;
+
+            // ISSUE : to much comm to itself
+            shamalgs::collective::distributed_data_sparse_comm(
+                dcomm_send, dcomm_recv, shamsys::DirectGPU, [&](u64 id) {
+                    return sched.get_patch_rank_owner(id);
+                });
+
+            shambase::DistributedDataShared<PatchDataField<T>> recv_dat;
+            {
+                StackEntry stack_loc{};
+                recv_dat = dcomm_recv.map<PatchDataField<T>>(
+                    [&](u64, u64, std::unique_ptr<sycl::buffer<u8>> &buf) {
+                        // exchange the buffer held by the distrib data and give it to the
+                        // serializer
+                        shamalgs::SerializeHelper ser(
+                            std::exchange(buf, std::unique_ptr<sycl::buffer<u8>>{}));
+
+                        PatchDataField<T> f = PatchDataField<T>::deserialize_buf(ser, name, nvar);
+
+                        return f;
+                    });
+            }
+            return recv_dat;
+        }
+
         inline shambase::DistributedDataShared<PositionInterface>
         build_communicate_positions(shambase::DistributedDataShared<InterfaceIdTable> &builder) {
             auto pos_interf = build_position_interf_field(builder);
-            return communicate_positions(pos_interf);
+            return communicate_positions(std::move(pos_interf));
         }
 
         inline shambase::DistributedData<shamrock::MergedPatchDataField<vec>>
