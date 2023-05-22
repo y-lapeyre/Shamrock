@@ -168,49 +168,45 @@ namespace shammodels::sph {
         communicate_positions(shambase::DistributedDataShared<PositionInterface> && interf) {
             StackEntry stack_loc{};
 
-            shamalgs::collective::SerializedDDataComm dcomm_send =
-                interf.template map<std::unique_ptr<sycl::buffer<u8>>>(
-                    [](u64, u64, PositionInterface &pos_interf) {
-                        shamalgs::SerializeHelper ser;
-
-                        u64 size = pos_interf.position_field.serialize_buf_byte_size();
-                        size += 2 * shamalgs::SerializeHelper::serialize_byte_size<vec>();
-
-                        ser.allocate(size);
-
-                        pos_interf.position_field.serialize_buf(ser);
-                        ser.write(pos_interf.bmin);
-                        ser.write(pos_interf.bmax);
-
-                        return ser.finalize();
-                    });
-
-            shamalgs::collective::SerializedDDataComm dcomm_recv;
-
-            // ISSUE : to much comm to itself
-            shamalgs::collective::distributed_data_sparse_comm(
-                dcomm_send, dcomm_recv, shamsys::DirectGPU, [&](u64 id) {
-                    return sched.get_patch_rank_owner(id);
-                });
 
             shambase::DistributedDataShared<PositionInterface> recv_dat;
-            {
-                StackEntry stack_loc{};
-                recv_dat = dcomm_recv.map<PositionInterface>(
-                    [&](u64, u64, std::unique_ptr<sycl::buffer<u8>> &buf) {
-                        // exchange the buffer held by the distrib data and give it to the
-                        // serializer
-                        shamalgs::SerializeHelper ser(
-                            std::exchange(buf, std::unique_ptr<sycl::buffer<u8>>{}));
 
-                        PatchDataField<vec> f = PatchDataField<vec>::deserialize_buf(ser, "xyz", 1);
-                        vec bmin, bmax;
-                        ser.load(bmin);
-                        ser.load(bmax);
 
-                        return PositionInterface{std::move(f), bmin, bmax};
-                    });
-            }
+            shamalgs::collective::serialize_sparse_comm<PositionInterface>(
+                std::forward<shambase::DistributedDataShared<PositionInterface>>(interf),
+                recv_dat,
+                shamsys::DirectGPU, 
+                [&](u64 id){
+                    return sched.get_patch_rank_owner(id);
+                }, 
+                [](PositionInterface &pos_interf) {
+                    shamalgs::SerializeHelper ser;
+
+                    u64 size = pos_interf.position_field.serialize_buf_byte_size();
+                    size += 2 * shamalgs::SerializeHelper::serialize_byte_size<vec>();
+
+                    ser.allocate(size);
+
+                    pos_interf.position_field.serialize_buf(ser);
+                    ser.write(pos_interf.bmin);
+                    ser.write(pos_interf.bmax);
+
+                    return ser.finalize();
+                },
+                [&](std::unique_ptr<sycl::buffer<u8>> && buf) {
+                    // exchange the buffer held by the distrib data and give it to the
+                    // serializer
+                    shamalgs::SerializeHelper ser(std::forward<std::unique_ptr<sycl::buffer<u8>>>(buf));
+
+                    PatchDataField<vec> f = PatchDataField<vec>::deserialize_buf(ser, "xyz", 1);
+                    vec bmin, bmax;
+                    ser.load(bmin);
+                    ser.load(bmax);
+
+                    return PositionInterface{std::move(f), bmin, bmax};
+                }
+            );
+
             return recv_dat;
         }
 
