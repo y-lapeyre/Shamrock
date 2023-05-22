@@ -24,11 +24,59 @@ namespace shamalgs::collective {
 
     using SerializedDDataComm = shambase::DistributedDataShared<std::unique_ptr<sycl::buffer<u8>>>;
 
-    void distributed_data_sparse_comm(SerializedDDataComm &send_distrib_data,
+    void distributed_data_sparse_comm(SerializedDDataComm &send_ddistrib_data,
                                              SerializedDDataComm &recv_distrib_data,
                                              shamsys::CommunicationProtocol prot,
                                              std::function<i32(u64)> rank_getter,
                                              std::optional<SparseCommTable> comm_table = {});
+
+    template<class T>
+    inline void serialize_sparse_comm(
+        shambase::DistributedDataShared<T> && send_distrib_data,
+        shambase::DistributedDataShared<T> &recv_distrib_data,
+        shamsys::CommunicationProtocol prot,
+        std::function<i32(u64)> rank_getter,
+        std::function<std::unique_ptr<sycl::buffer<u8>>(T &)> serialize,
+        std::function<T(std::unique_ptr<sycl::buffer<u8>> &&)> deserialize,
+        std::optional<SparseCommTable> comm_table = {}
+        ){
+            
+        shambase::DistributedDataShared<T> same_rank_tmp;
+        // allow move op for same rank
+        send_distrib_data.tranfer_all([&](u64 l, u64 r){
+            return rank_getter(l) == rank_getter(r);
+        }, same_rank_tmp);
+
+        SerializedDDataComm dcomm_send = 
+            send_distrib_data.template map<std::unique_ptr<sycl::buffer<u8>>>(
+                [&](u64 ,u64,T & obj){
+                    return serialize(obj);
+                }
+            );
+
+        SerializedDDataComm dcomm_recv;
+
+        distributed_data_sparse_comm(
+            dcomm_send, 
+            dcomm_recv, 
+            prot, 
+            rank_getter);
+
+        recv_distrib_data = 
+            dcomm_recv.map<T>(
+                [&](u64, u64, std::unique_ptr<sycl::buffer<u8>> & buf){
+                    //exchange the buffer held by the distrib data and give it to the deserializer
+                    return deserialize(std::exchange(buf, std::unique_ptr<sycl::buffer<u8>>{}));
+                }
+            );
+
+        logger::debug_ln("SparseComm","skipped",same_rank_tmp.get_native().size(),"communications");
+
+        same_rank_tmp.tranfer_all([&](u64 l, u64 r){
+            return true;
+        }, recv_distrib_data);
+
+    }
 
     /**
      * @brief global ids = allgatherv(local_ids)

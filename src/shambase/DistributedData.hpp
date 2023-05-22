@@ -107,6 +107,22 @@ namespace shambase {
             }
         }
 
+        inline void tranfer_all(std::function<bool(u64, u64)> cd, DistributedDataShared & other){
+            
+            std::vector<std::pair<u64, u64>> occurences;
+
+            for(auto [k,v] : data){
+                if(cd(k.first,k.second)){
+                    occurences.push_back(k);
+                }
+            }
+
+            for(auto p : occurences){
+                other.data.insert(data.extract(p));
+            }
+
+        }
+
         inline bool has_key(u64 left_id, u64 right_id) {
             return (data.find({left_id, right_id}) != data.end());
         }

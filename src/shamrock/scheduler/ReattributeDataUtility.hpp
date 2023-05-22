@@ -154,35 +154,26 @@ namespace shamrock {
             DistributedData<sycl::buffer<u64>> new_pid = compute_new_pid(sptree,ipos);
 
             DistributedDataShared<patch::PatchData> part_exchange = extract_elements(new_pid);
+            DistributedDataShared<patch::PatchData> recv_dat;
 
-            shamalgs::collective::SerializedDDataComm dcomm_send = 
-                part_exchange.map<std::unique_ptr<sycl::buffer<u8>>>(
-                    [](u64 ,u64,PatchData & pdat){
-                        shamalgs::SerializeHelper ser;
-                        ser.allocate(pdat.serialize_buf_byte_size());
-                        pdat.serialize_buf(ser);
-                        return ser.finalize();
-                    }
-                );
-
-            shamalgs::collective::SerializedDDataComm dcomm_recv;
-
-            shamalgs::collective::distributed_data_sparse_comm(
-                dcomm_send, 
-                dcomm_recv, 
+            shamalgs::collective::serialize_sparse_comm<PatchData>(
+                std::move(part_exchange), 
+                recv_dat, 
                 shamsys::DirectGPU, 
                 [&](u64 id){
                     return sched.get_patch_rank_owner(id);
+                }, 
+                [](PatchData & pdat){
+                    shamalgs::SerializeHelper ser;
+                    ser.allocate(pdat.serialize_buf_byte_size());
+                    pdat.serialize_buf(ser);
+                    return ser.finalize();
+                }, 
+                [&](std::unique_ptr<sycl::buffer<u8>> && buf){
+                    //exchange the buffer held by the distrib data and give it to the serializer
+                    shamalgs::SerializeHelper ser(std::forward<std::unique_ptr<sycl::buffer<u8>>>(buf));
+                    return PatchData::deserialize_buf(ser, sched.pdl);
                 });
-
-            DistributedDataShared<patch::PatchData> recv_dat = 
-                dcomm_recv.map<patch::PatchData>(
-                    [&](u64, u64, std::unique_ptr<sycl::buffer<u8>> & buf){
-                        //exchange the buffer held by the distrib data and give it to the serializer
-                        shamalgs::SerializeHelper ser(std::exchange(buf, std::unique_ptr<sycl::buffer<u8>>{}));
-                        return PatchData::deserialize_buf(ser, sched.pdl);
-                    }
-                );
 
             recv_dat.for_each([&](u64 sender, u64 receiver, PatchData & pdat){
                 sched.patch_data.get_pdat(receiver).insert_elements(pdat);
