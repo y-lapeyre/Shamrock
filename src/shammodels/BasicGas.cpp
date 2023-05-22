@@ -355,13 +355,21 @@ namespace shammodels::sph {
 
 
         //communicate fields
+        /*
+        PatchDataLayout interf_layout;
+        interf_layout.add_field<flt>("hpart", 1);
+        interf_layout.add_field<flt>("omega", 1);
+        interf_layout.add_field<flt>("uint", 1);
+        interf_layout.add_field<vec>("vxyz", 1);
+
+
 
         auto interf_h = interf_handle.build_interf_field<flt>(interf_build_cache, ihpart, [](i32_3){return flt(0);});
         auto interf_omega = interf_handle.build_interf_compute_field<flt>(interf_build_cache, omega, [](i32_3){return flt(0);});
+        */
 
 
 
-        
 
 
         // compute pressure        

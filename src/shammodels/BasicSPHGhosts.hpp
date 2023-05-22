@@ -33,6 +33,12 @@ namespace shammodels::sph {
             shammath::CoordRange<vec> cut_volume;
             flt volume_ratio;
         };
+        
+        struct InterfaceIdTable {
+            InterfaceBuildInfos build_infos;
+            std::unique_ptr<sycl::buffer<u32>> ids_interf;
+            f64 part_cnt_ratio;
+        };
 
         using GeneratorMap = shambase::DistributedDataShared<InterfaceBuildInfos>;
 
@@ -42,75 +48,34 @@ namespace shammodels::sph {
                                      shamrock::patch::PatchtreeField<flt> &int_range_max_tree,
                                      shamrock::patch::PatchField<flt> &int_range_max);
 
-        struct InterfaceIdTable {
-            InterfaceBuildInfos build_infos;
-            std::unique_ptr<sycl::buffer<u32>> ids_interf;
-            f64 part_cnt_ratio;
-        };
+        
 
         shambase::DistributedDataShared<InterfaceIdTable>
-        gen_id_table_interfaces(GeneratorMap &&gen) {
+        gen_id_table_interfaces(GeneratorMap &&gen);
+
+        template<class T>
+        shambase::DistributedDataShared<T> build_interface_native(
+            shambase::DistributedDataShared<InterfaceIdTable> &builder,
+            std::function<T(u32,u32,per_index,sycl::buffer<u32>&,u32)> fct
+            ){
             StackEntry stack_loc{};
-            using namespace shamrock::patch;
 
-            shambase::DistributedDataShared<InterfaceIdTable> res;
-
-            std::map<u64, f64> send_count_stats;
-
-            gen.for_each([&](u64 sender, u64 receiver, InterfaceBuildInfos &build) {
-                shamrock::patch::PatchData &src = sched.patch_data.get_pdat(sender);
-                PatchDataField<vec> &xyz        = src.get_field<vec>(0);
-
-                std::unique_ptr<sycl::buffer<u32>> idxs = xyz.get_elements_with_range_buf(
-                    [&](vec val, vec vmin, vec vmax) {
-                        return Patch::is_in_patch_converted(val, vmin, vmax);
-                    },
-                    build.cut_volume.lower,
-                    build.cut_volume.upper);
-
-                u32 pcnt = 0;
-                if (bool(idxs)) {
-                    pcnt = idxs->size();
+            // clang-format off
+            return builder.template map<PositionInterface>([&](u64 sender, u64 receiver, InterfaceIdTable &build_table) {
+                if (!bool(build_table.ids_interf)) {
+                    throw shambase::throw_with_loc<std::runtime_error>(
+                        "their is an empty id table in the interface, it should have been removed");
                 }
 
-                // prevent sending empty patches
-                if (pcnt == 0) {
-                    return;
-                }
-
-                f64 ratio = f64(pcnt) / f64(src.get_obj_cnt());
-
-                logger::debug_sycl_ln("InterfaceGen",
-                                      "gen interface :",
-                                      sender,
-                                      "->",
-                                      receiver,
-                                      "volume ratio:",
-                                      build.volume_ratio,
-                                      "part_ratio:",
-                                      ratio);
-
-                res.add_obj(sender, receiver, InterfaceIdTable{build, std::move(idxs), ratio});
-
-                send_count_stats[sender] += ratio;
+                return fct(
+                    sender,
+                    receiver, 
+                    build_table.build_infos.periodicity_index, 
+                    *build_table.ids_interf, 
+                    build_table.ids_interf->size());
+                    
             });
-
-            bool has_warn = false;
-
-            for (auto &[k, v] : send_count_stats) {
-                if (v > 0.2) {
-                    logger::warn_ln("InterfaceGen", "patch", k, " high ratio volume/interf:", v);
-                    has_warn = true;
-                }
-            }
-
-            if (has_warn) {
-                logger::warn_ln("InterfaceGen",
-                                "the ratio patch/interface is high, which can lead to high mpi "
-                                "overhead, try incresing the patch split crit");
-            }
-
-            return res;
+            // clang-format on
         }
 
         shambase::DistributedDataShared<InterfaceIdTable>
@@ -357,6 +322,11 @@ namespace shammodels::sph {
 
             return pos_fields;
         }
+
+
+
+        
+ 
     };
 
 } // namespace shammodels::sph

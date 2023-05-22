@@ -10,10 +10,6 @@
 
 using namespace shammodels::sph;
 
-
-
-
-
 template<class vec>
 auto BasicGasPeriodicGhostHandler<vec>::find_interfaces(
     SerialPatchTree<vec> &sptree,
@@ -79,7 +75,7 @@ auto BasicGasPeriodicGhostHandler<vec>::find_interfaces(
                                 interf_map.add_obj(psender.id_patch,
                                                    id_found,
                                                    {periodic_offset,
-                                                   {xoff,yoff,zoff},
+                                                    {xoff, yoff, zoff},
                                                     interf_volume,
                                                     interf_volume.get_volume() / sender_volume});
                             });
@@ -98,9 +94,70 @@ auto BasicGasPeriodicGhostHandler<vec>::find_interfaces(
     return interf_map;
 }
 
+template<class vec>
+auto BasicGasPeriodicGhostHandler<vec>::gen_id_table_interfaces(GeneratorMap &&gen)
+    -> shambase::DistributedDataShared<InterfaceIdTable> {
+    StackEntry stack_loc{};
+    using namespace shamrock::patch;
 
+    shambase::DistributedDataShared<InterfaceIdTable> res;
 
+    std::map<u64, f64> send_count_stats;
 
+    gen.for_each([&](u64 sender, u64 receiver, InterfaceBuildInfos &build) {
+        shamrock::patch::PatchData &src = sched.patch_data.get_pdat(sender);
+        PatchDataField<vec> &xyz        = src.get_field<vec>(0);
 
+        std::unique_ptr<sycl::buffer<u32>> idxs = xyz.get_elements_with_range_buf(
+            [&](vec val, vec vmin, vec vmax) {
+                return Patch::is_in_patch_converted(val, vmin, vmax);
+            },
+            build.cut_volume.lower,
+            build.cut_volume.upper);
+
+        u32 pcnt = 0;
+        if (bool(idxs)) {
+            pcnt = idxs->size();
+        }
+
+        // prevent sending empty patches
+        if (pcnt == 0) {
+            return;
+        }
+
+        f64 ratio = f64(pcnt) / f64(src.get_obj_cnt());
+
+        logger::debug_sycl_ln("InterfaceGen",
+                              "gen interface :",
+                              sender,
+                              "->",
+                              receiver,
+                              "volume ratio:",
+                              build.volume_ratio,
+                              "part_ratio:",
+                              ratio);
+
+        res.add_obj(sender, receiver, InterfaceIdTable{build, std::move(idxs), ratio});
+
+        send_count_stats[sender] += ratio;
+    });
+
+    bool has_warn = false;
+
+    for (auto &[k, v] : send_count_stats) {
+        if (v > 0.2) {
+            logger::warn_ln("InterfaceGen", "patch", k, " high ratio volume/interf:", v);
+            has_warn = true;
+        }
+    }
+
+    if (has_warn) {
+        logger::warn_ln("InterfaceGen",
+                        "the ratio patch/interface is high, which can lead to high mpi "
+                        "overhead, try incresing the patch split crit");
+    }
+
+    return res;
+}
 
 template class shammodels::sph::BasicGasPeriodicGhostHandler<f64_3>;
