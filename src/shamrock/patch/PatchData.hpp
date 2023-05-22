@@ -214,6 +214,21 @@ namespace shamrock::patch {
             );
         }
 
+        /**
+         * @brief check that all contained field have the same obj cnt
+         * 
+         */
+        inline void check_field_obj_cnt_match(){
+            u32 cnt = get_obj_cnt();
+            for (auto &field_var : fields) {
+                field_var.visit([&](auto &field) { 
+                    if(field.get_obj_cnt() != cnt){
+                        throw shambase::throw_with_loc<std::runtime_error>("mismatch in obj cnt");
+                    }
+                });
+            }
+        }
+
         // template<class T> inline std::vector<PatchDataField<T> & > get_field_list(){
         //     std::vector<PatchDataField<T> & > ret;
         //

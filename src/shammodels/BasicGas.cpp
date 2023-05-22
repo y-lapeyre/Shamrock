@@ -355,18 +355,34 @@ namespace shammodels::sph {
 
 
         //communicate fields
-        /*
+        
         PatchDataLayout interf_layout;
         interf_layout.add_field<flt>("hpart", 1);
-        interf_layout.add_field<flt>("omega", 1);
         interf_layout.add_field<flt>("uint", 1);
         interf_layout.add_field<vec>("vxyz", 1);
+        interf_layout.add_field<flt>("omega", 1);
 
+        using InterfaceBuildInfos = BasicGasPeriodicGhostHandler<vec>::InterfaceBuildInfos;
 
+        auto pdat_interf = interf_handle.build_interface_native<PatchData>(interf_build_cache, 
+            [&](u64 sender,u64 /*receiver*/,InterfaceBuildInfos binfo, sycl::buffer<u32> & buf_idx, u32 cnt){
 
-        auto interf_h = interf_handle.build_interf_field<flt>(interf_build_cache, ihpart, [](i32_3){return flt(0);});
-        auto interf_omega = interf_handle.build_interf_compute_field<flt>(interf_build_cache, omega, [](i32_3){return flt(0);});
-        */
+                PatchData pdat(interf_layout);
+
+                PatchData & sender_patch = scheduler().patch_data.get_pdat(sender);
+                PatchDataField<flt> & sender_omega = omega.get_field(sender);
+
+                sender_patch.get_field<flt>(ihpart).append_subset_to(buf_idx,cnt,pdat.get_field<flt>(0));
+                sender_patch.get_field<flt>(iuint) .append_subset_to(buf_idx,cnt,pdat.get_field<flt>(1));
+                sender_patch.get_field<vec>(ivxyz) .append_subset_to(buf_idx,cnt,pdat.get_field<vec>(2));
+                sender_omega.append_subset_to(buf_idx,cnt,pdat.get_field<flt>(3));
+                
+                pdat.check_field_obj_cnt_match();
+
+                return pdat;
+            }
+        );
+
 
 
 

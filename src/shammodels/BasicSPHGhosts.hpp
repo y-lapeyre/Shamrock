@@ -66,6 +66,25 @@ namespace shammodels::sph {
         gen_id_table_interfaces(GeneratorMap &&gen);
 
         /**
+         * @brief utility to generate both the metadata and index tables
+         * 
+         * @param sptree 
+         * @param int_range_max_tree 
+         * @param int_range_max 
+         * @return shambase::DistributedDataShared<InterfaceIdTable> 
+         */
+        shambase::DistributedDataShared<InterfaceIdTable>
+        make_interface_cache(SerialPatchTree<vec> &sptree,
+                             shamrock::patch::PatchtreeField<flt> &int_range_max_tree,
+                             shamrock::patch::PatchField<flt> &int_range_max) {
+            StackEntry stack_loc{};
+
+            return gen_id_table_interfaces(
+                find_interfaces(sptree, int_range_max_tree, int_range_max));
+        }
+
+
+        /**
          * @brief native handle to generate interfaces
          * generate interfaces of type T (template arg) based on the provided function
          * ~~~~~{.cpp}
@@ -91,7 +110,7 @@ namespace shammodels::sph {
             StackEntry stack_loc{};
 
             // clang-format off
-            return builder.template map<PositionInterface>([&](u64 sender, u64 receiver, InterfaceIdTable &build_table) {
+            return builder.template map<T>([&](u64 sender, u64 receiver, InterfaceIdTable &build_table) {
                 if (!bool(build_table.ids_interf)) {
                     throw shambase::throw_with_loc<std::runtime_error>(
                         "their is an empty id table in the interface, it should have been removed");
@@ -108,15 +127,10 @@ namespace shammodels::sph {
             // clang-format on
         }
 
-        shambase::DistributedDataShared<InterfaceIdTable>
-        make_interface_cache(SerialPatchTree<vec> &sptree,
-                             shamrock::patch::PatchtreeField<flt> &int_range_max_tree,
-                             shamrock::patch::PatchField<flt> &int_range_max) {
-            StackEntry stack_loc{};
 
-            return gen_id_table_interfaces(
-                find_interfaces(sptree, int_range_max_tree, int_range_max));
-        }
+        ////////////////////////////////////////////////////////////////////////////////////////////
+        // interface generation/communication utility //////////////////////////////////////////////
+        ////////////////////////////////////////////////////////////////////////////////////////////
 
         struct PositionInterface {
             PatchDataField<vec> position_field;
@@ -148,65 +162,6 @@ namespace shammodels::sph {
                     return PositionInterface{std::move(pfield), bmin, bmax};
                 }
             );
-        }
-
-        template<class T>
-        inline shambase::DistributedDataShared<PatchDataField<T>>
-        build_interf_field(shambase::DistributedDataShared<InterfaceIdTable> &builder,
-                           u32 field_id,
-                           std::function<T(per_index)> offset_getter) {
-            StackEntry stack_loc{};
-
-            // clang-format off
-            return builder.template map<PatchDataField<T>>([&](u64 sender, u64 receiver, InterfaceIdTable &build_table) {
-                if (!bool(build_table.ids_interf)) {
-                    throw shambase::throw_with_loc<std::runtime_error>(
-                        "their is an empty id table in the interface, it should have been removed");
-                }
-
-                PatchDataField<T> pfield = sched
-                    .patch_data
-                    .get_pdat(sender)
-                    .get_field<T>(field_id)
-                    .make_new_from_subset(*build_table.ids_interf, build_table.ids_interf->size());
-
-                T off_val = offset_getter(build_table.build_infos.periodicity_index);
-
-                if (!shambase::vec_equals(off_val,shambase::VectorProperties<T>::get_zero())) {
-                    pfield.apply_offset(off_val);
-                }
-
-                return pfield;
-            });
-            // clang-format on
-        }
-
-        template<class T>
-        inline shambase::DistributedDataShared<PatchDataField<T>>
-        build_interf_compute_field(shambase::DistributedDataShared<InterfaceIdTable> &builder,
-                                   shamrock::ComputeField<T> &cfield,
-                                   std::function<T(per_index)> offset_getter) {
-            StackEntry stack_loc{};
-
-            // clang-format off
-            return builder.template map<PatchDataField<T>>([&](u64 sender, u64 receiver, InterfaceIdTable &build_table) {
-                if (!bool(build_table.ids_interf)) {
-                    throw shambase::throw_with_loc<std::runtime_error>(
-                        "their is an empty id table in the interface, it should have been removed");
-                }
-
-                PatchDataField<T> pfield = cfield.get_field(sender)
-                    .make_new_from_subset(*build_table.ids_interf, build_table.ids_interf->size());
-
-                T off_val = offset_getter(build_table.build_infos.periodicity_index);
-
-                if (!shambase::vec_equals(off_val,shambase::VectorProperties<T>::get_zero())) {
-                    pfield.apply_offset(off_val);
-                }
-
-                return pfield;
-            });
-            // clang-format on
         }
 
         inline shambase::DistributedDataShared<PositionInterface>
