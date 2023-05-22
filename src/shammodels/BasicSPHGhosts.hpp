@@ -44,19 +44,49 @@ namespace shammodels::sph {
 
         BasicGasPeriodicGhostHandler(PatchScheduler &sched) : sched(sched) {}
 
+        /**
+         * @brief Find interfaces and their metadata
+         * 
+         * @param sptree the serial patch tree
+         * @param int_range_max_tree the smoothing lenght maximas hierachy
+         * @param int_range_max the smoothing lenght maximas hierachy
+         * @return GeneratorMap the generator map containing the metadata to build interfaces
+         */
         GeneratorMap find_interfaces(SerialPatchTree<vec> &sptree,
                                      shamrock::patch::PatchtreeField<flt> &int_range_max_tree,
                                      shamrock::patch::PatchField<flt> &int_range_max);
 
-        
-
+        /**
+         * @brief precompute interfaces members and cache result in the return
+         * 
+         * @param gen 
+         * @return shambase::DistributedDataShared<InterfaceIdTable> 
+         */
         shambase::DistributedDataShared<InterfaceIdTable>
         gen_id_table_interfaces(GeneratorMap &&gen);
 
+        /**
+         * @brief native handle to generate interfaces
+         * generate interfaces of type T (template arg) based on the provided function
+         * ~~~~~{.cpp}
+         *
+         * auto split_lists = grid.gen_splitlists(
+         *     [&](u64 id_patch, Patch cur_p, PatchData &pdat) -> sycl::buffer<u32> {
+         *          generate the buffer saying which cells should split
+         *     }
+         * );
+         *
+         * ~~~~~
+         * 
+         * @tparam T 
+         * @param builder 
+         * @param fct 
+         * @return shambase::DistributedDataShared<T> 
+         */
         template<class T>
         shambase::DistributedDataShared<T> build_interface_native(
             shambase::DistributedDataShared<InterfaceIdTable> &builder,
-            std::function<T(u32,u32,per_index,sycl::buffer<u32>&,u32)> fct
+            std::function<T(u64,u64,InterfaceBuildInfos,sycl::buffer<u32>&,u32)> fct
             ){
             StackEntry stack_loc{};
 
@@ -70,7 +100,7 @@ namespace shammodels::sph {
                 return fct(
                     sender,
                     receiver, 
-                    build_table.build_infos.periodicity_index, 
+                    build_table.build_infos, 
                     *build_table.ids_interf, 
                     build_table.ids_interf->size());
                     
@@ -98,29 +128,26 @@ namespace shammodels::sph {
         build_position_interf_field(shambase::DistributedDataShared<InterfaceIdTable> &builder) {
             StackEntry stack_loc{};
 
-            // clang-format off
-            return builder.template map<PositionInterface>([&](u64 sender, u64 receiver, InterfaceIdTable &build_table) {
-                if (!bool(build_table.ids_interf)) {
-                    throw shambase::throw_with_loc<std::runtime_error>(
-                        "their is an empty id table in the interface, it should have been removed");
+            return build_interface_native<PositionInterface>(
+                builder, 
+                [&](u64 sender,u64 /*receiver*/,InterfaceBuildInfos binfo, sycl::buffer<u32> & buf_idx, u32 cnt){
+                    
+                    // clang-format off
+                    PatchDataField<vec> pfield = sched
+                        .patch_data
+                        .get_pdat(sender)
+                        .get_field<vec>(0)
+                        .make_new_from_subset(buf_idx, cnt);
+                    // clang-format on
+
+                    pfield.apply_offset(binfo.offset);
+
+                    vec bmin = binfo.cut_volume.lower + binfo.offset;
+                    vec bmax = binfo.cut_volume.upper + binfo.offset;
+
+                    return PositionInterface{std::move(pfield), bmin, bmax};
                 }
-
-                PatchDataField<vec> pfield = sched
-                    .patch_data
-                    .get_pdat(sender)
-                    .get_field<vec>(0)
-                    .make_new_from_subset(*build_table.ids_interf, build_table.ids_interf->size());
-
-                auto &binfo = build_table.build_infos;
-
-                pfield.apply_offset(binfo.offset);
-
-                vec bmin = binfo.cut_volume.lower + binfo.offset;
-                vec bmax = binfo.cut_volume.upper + binfo.offset;
-
-                return PositionInterface{std::move(pfield), bmin, bmax};
-            });
-            // clang-format on
+            );
         }
 
         template<class T>
