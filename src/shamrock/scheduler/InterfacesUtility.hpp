@@ -28,6 +28,15 @@ namespace shamrock {
         }
     };
 
+    class MergedPatchData{public:
+    
+        u32 original_elements;
+        u32 total_elements;
+        patch::PatchData pdat;
+        patch::PatchDataLayout & pdl;
+
+    };
+
 
 
     class InterfacesUtility {

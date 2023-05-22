@@ -210,52 +210,37 @@ namespace shammodels::sph {
             return recv_dat;
         }
 
-        template<class T>
-        inline shambase::DistributedDataShared<PatchDataField<T>>
-        communicate_field(shambase::DistributedDataShared<PatchDataField<T>> && interf) {
+        inline shambase::DistributedDataShared<shamrock::patch::PatchData>
+        communicate_pdat(shamrock::patch::PatchDataLayout & pdl,
+        shambase::DistributedDataShared<shamrock::patch::PatchData> && interf) {
             StackEntry stack_loc{};
 
-            std::string name;
-            u32 nvar;
+            shambase::DistributedDataShared<shamrock::patch::PatchData> recv_dat;
 
-            shamalgs::collective::SerializedDDataComm dcomm_send =
-                interf.template map<std::unique_ptr<sycl::buffer<u8>>>(
-                    [&](u64, u64, PatchDataField<T> &field) {
-                        name = field.get_name();
-                        nvar = field.get_nvar();
-
-                        shamalgs::SerializeHelper ser;
-                        u64 size = field.serialize_buf_byte_size();
-                        ser.allocate(size);
-                        field.serialize_buf(ser);
-                        return ser.finalize();
-                    });
-
-            shamalgs::collective::SerializedDDataComm dcomm_recv;
-
-            // ISSUE : to much comm to itself
-            shamalgs::collective::distributed_data_sparse_comm(
-                dcomm_send, dcomm_recv, shamsys::DirectGPU, [&](u64 id) {
+            shamalgs::collective::serialize_sparse_comm<shamrock::patch::PatchData>(
+                std::forward<shambase::DistributedDataShared<shamrock::patch::PatchData>>(interf),
+                recv_dat,
+                shamsys::DirectGPU, 
+                [&](u64 id){
                     return sched.get_patch_rank_owner(id);
-                });
+                }, 
+                [](shamrock::patch::PatchData & pdat){
+                    shamalgs::SerializeHelper ser;
+                    ser.allocate(pdat.serialize_buf_byte_size());
+                    pdat.serialize_buf(ser);
+                    return ser.finalize();
+                }, 
+                [&](std::unique_ptr<sycl::buffer<u8>> && buf){
+                    //exchange the buffer held by the distrib data and give it to the serializer
+                    shamalgs::SerializeHelper ser(std::forward<std::unique_ptr<sycl::buffer<u8>>>(buf));
+                    return shamrock::patch::PatchData::deserialize_buf(ser, pdl);
+                }
+            );
 
-            shambase::DistributedDataShared<PatchDataField<T>> recv_dat;
-            {
-                StackEntry stack_loc{};
-                recv_dat = dcomm_recv.map<PatchDataField<T>>(
-                    [&](u64, u64, std::unique_ptr<sycl::buffer<u8>> &buf) {
-                        // exchange the buffer held by the distrib data and give it to the
-                        // serializer
-                        shamalgs::SerializeHelper ser(
-                            std::exchange(buf, std::unique_ptr<sycl::buffer<u8>>{}));
-
-                        PatchDataField<T> f = PatchDataField<T>::deserialize_buf(ser, name, nvar);
-
-                        return f;
-                    });
-            }
             return recv_dat;
         }
+
+
 
         inline shambase::DistributedDataShared<PositionInterface>
         build_communicate_positions(shambase::DistributedDataShared<InterfaceIdTable> &builder) {
@@ -263,43 +248,73 @@ namespace shammodels::sph {
             return communicate_positions(std::move(pos_interf));
         }
 
+
+
+
+
+        template<class T, class Tmerged>
+        inline shambase::DistributedData<Tmerged> merge_native(
+            shambase::DistributedDataShared<T> &&interfs,
+            std::function<Tmerged(const shamrock::patch::Patch, shamrock::patch::PatchData &pdat)> init,
+            std::function<void(Tmerged&, T&)> appender
+            ){
+
+            StackEntry stack_loc{};
+
+            shambase::DistributedData<Tmerged> merge_f;
+
+            sched.for_each_patchdata_nonempty([&](const shamrock::patch::Patch p,
+                                                  shamrock::patch::PatchData &pdat) {
+
+                Tmerged tmp_merge = init(p,pdat);
+
+                interfs.for_each([&](u64 sender, u64 receiver, T & interface) {
+                    if (receiver == p.id_patch) {
+                        appender(tmp_merge,interface);
+                    }
+                });
+
+                merge_f.add_obj(
+                    p.id_patch,
+                    std::move(tmp_merge));
+            });
+
+            return merge_f;
+        }
+
+
         inline shambase::DistributedData<shamrock::MergedPatchDataField<vec>>
         merge_position_buf(shambase::DistributedDataShared<PositionInterface> &&positioninterfs) {
             StackEntry stack_loc{};
 
-            shambase::DistributedData<shamrock::MergedPatchDataField<vec>> pos_fields;
+            return merge_native<PositionInterface,shamrock::MergedPatchDataField<vec>>(
+                std::forward<shambase::DistributedDataShared<PositionInterface>>(positioninterfs), 
+                [](const shamrock::patch::Patch p, shamrock::patch::PatchData & pdat){
+                    PatchDataField<vec> &pos    = pdat.get_field<vec>(0);
+                    vec bmax                    = pos.compute_max();
+                    vec bmin                    = pos.compute_min();
+                    u32 or_elem                 = pos.get_obj_cnt();
+                    PatchDataField<vec> new_pos = pos.duplicate();
 
-            sched.for_each_patchdata_nonempty([&](const shamrock::patch::Patch p,
-                                                  shamrock::patch::PatchData &pdat) {
-                PatchDataField<vec> &pos    = pdat.get_field<vec>(0);
-                vec bmax                    = pos.compute_max();
-                vec bmin                    = pos.compute_min();
-                u32 or_elem                 = pos.get_obj_cnt();
-                PatchDataField<vec> new_pos = pos.duplicate();
+                    u32 total_elements = or_elem;
 
-                u32 total_elements = or_elem;
-
-                positioninterfs.for_each([&](u64 sender, u64 receiver, PositionInterface &pint) {
-                    if (receiver == p.id_patch) {
-                        total_elements += pint.position_field.get_obj_cnt();
-                        new_pos.insert(pint.position_field);
-                        bmax = shambase::sycl_utils::g_sycl_max(bmax, pint.bmax);
-                        bmin = shambase::sycl_utils::g_sycl_min(bmin, pint.bmin);
-                    }
-                });
-
-                logger::debug_ln("sph::Interface", "merging :", or_elem, "->", total_elements);
-
-                pos_fields.add_obj(
-                    p.id_patch,
-                    shamrock::MergedPatchDataField<vec>{shammath::CoordRange<vec>{bmin, bmax},
+                    return shamrock::MergedPatchDataField<vec>{shammath::CoordRange<vec>{bmin, bmax},
                                                         or_elem,
                                                         total_elements,
-                                                        std::move(new_pos)});
-            });
+                                                        std::move(new_pos)};
+                },
+                [](shamrock::MergedPatchDataField<vec> & merged,PositionInterface &pint){
+                    merged.total_elements += pint.position_field.get_obj_cnt();
+                    merged.field.insert(pint.position_field);
+                    merged.bounds->upper = shambase::sycl_utils::g_sycl_max(merged.bounds->upper, pint.bmax);
+                    merged.bounds->lower = shambase::sycl_utils::g_sycl_min(merged.bounds->lower, pint.bmin);
+                });
 
-            return pos_fields;
         }
+
+
+
+
 
 
 

@@ -383,6 +383,9 @@ namespace shammodels::sph {
             }
         );
 
+        shambase::DistributedDataShared<PatchData> interf_pdat = 
+            interf_handle.communicate_pdat(interf_layout, std::move(pdat_interf));
+
 
 
 
