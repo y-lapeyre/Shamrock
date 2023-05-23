@@ -111,6 +111,8 @@ jobs:
   
   # download ,build and cache opensycl compiler
   cache_opensycl:
+
+    needs: [pragma_check, copyright_check]
     uses: ./.github/workflows/cache-opensycl.yml
       
 

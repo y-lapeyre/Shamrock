@@ -1,7 +1,10 @@
 name: Cache OpenSYCL
 
-on: [workflow_call]
 
+on:
+  workflow_call:
+    outputs:
+    
 jobs:
   cache_opensycl:
     name: cache opensycl - clang ${{ matrix.clang }}, ${{ matrix.os }}, CUDA ${{matrix.cuda}}, ROCm ${{matrix.rocm}}
@@ -12,8 +15,6 @@ jobs:
         os: [ubuntu-22.04]
         cuda: [11.0.2]
         rocm: [5.4.3]
-
-    needs: [pragma_check, copyright_check]
 
     steps:
 
