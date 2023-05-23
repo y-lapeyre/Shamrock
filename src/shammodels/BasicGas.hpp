@@ -32,6 +32,7 @@ namespace shammodels::sph {
         flt cfl_cour   = -1;
         flt cfl_force  = -1;
         flt gpart_mass = -1;
+        flt gamma = 5./3.;
 
         ShamrockCtx &context;
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }
@@ -79,13 +80,14 @@ namespace shammodels::sph {
          * 
          * @param dt 
          */
-        void evolve(f64 dt, DumpOption dump_opt);
+        void evolve(f64 dt, bool enable_physics, DumpOption dump_opt);
 
         u64 count_particles();
 
         inline void set_cfl_cour(flt Ccour){cfl_cour = Ccour;}
         inline void set_cfl_force(flt Cforce){cfl_force = Cforce;}
         inline void set_particle_mass(flt pmass){gpart_mass = pmass;}
+        inline void set_gamma(flt gam){gamma = gam;}
 
     };
 

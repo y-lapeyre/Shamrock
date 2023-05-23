@@ -87,5 +87,8 @@ print("Current part mass :", pmass)
 
 sim.set_particle_mass(pmass)
 
+for i in range(5):
+    sim.evolve(1e-3, False, False, "", False)
+
 for i in range(100):
-    sim.evolve(1e-2, True, "dump_"+str(i)+".vtk", True)
+    sim.evolve(1e-3, True, True, "dump_"+str(i)+".vtk", True)

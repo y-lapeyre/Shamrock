@@ -196,6 +196,29 @@ namespace shamrock {
         }
 
         /**
+         * @brief create a compute field and init it to zeros, and specify size for each cases
+         * 
+         * @tparam T 
+         * @param new_name 
+         * @param nvar 
+         * @return ComputeField<T> 
+         */
+        template<class T>
+        inline ComputeField<T> make_compute_field(std::string new_name, u32 nvar, std::function<u32(u64)> size_getter) {
+            StackEntry stack_loc{};
+            ComputeField<T> cfield;
+            using namespace shamrock::patch;
+            sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
+                auto it = cfield.field_data.add_obj(id_patch,
+                                          PatchDataField<T>(new_name, nvar, size_getter(id_patch)));
+
+                PatchDataField<T> & ins = it->second;
+                ins.field_raz();
+            });
+            return cfield;
+        }
+
+        /**
          * @brief create a compute field and init it to the set value
          * 
          * @tparam T 

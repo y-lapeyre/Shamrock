@@ -41,6 +41,10 @@ namespace shamrock {
 
         inline PatchDataField<T> &get_field(u64 id_patch) { return field_data.get(id_patch); }
 
+        inline sycl::buffer<T> & get_buf_check(u64 id){
+            return shambase::get_check_ref(get_buf(id));
+        }
+
         inline T compute_rank_max(){StackEntry stack_loc{};
             T ret = shambase::VectorProperties<T>::get_min();
             field_data.for_each([&](u64 id, PatchDataField<T> & cfield){
