@@ -111,7 +111,14 @@ jobs:
   
   # download ,build and cache opensycl compiler
   cache_opensycl:
-    runs-on: ubuntu-latest
+    name: cache opensycl - clang ${{ matrix.clang }}, ${{ matrix.os }}, CUDA ${{matrix.cuda}}, ROCm ${{matrix.rocm}}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        clang: [15, 16]
+        os: [ubuntu-22.04]
+        cuda: [11.0.2]
+        rocm: [5.4.3]
 
     needs: [pragma_check, copyright_check]
 
@@ -122,14 +129,39 @@ jobs:
 
       - name: install boost
         run: sudo apt install libboost-all-dev
+        
+      # cp from opensycl ci 
+      - name: install Level Zero
+        run : |
+          wget https://github.com/oneapi-src/level-zero/releases/download/v1.2.3/level-zero-devel_1.2.3+u18.04_amd64.deb
+          wget https://github.com/oneapi-src/level-zero/releases/download/v1.2.3/level-zero_1.2.3+u18.04_amd64.deb
+          sudo dpkg -i ./level-zero*
+          
+      - name: install CUDA
+        run: |
+          mkdir -p /opt/OpenSYCL/cuda
+          wget -q -O cuda.sh http://developer.download.nvidia.com/compute/cuda/11.0.2/local_installers/cuda_11.0.2_450.51.05_linux.run
+          sudo sh ./cuda.sh --override --silent --toolkit --no-man-page --no-drm --no-opengl-libs --installpath=/opt/OpenSYCL/cuda || true
+          echo "CUDA Version ${{matrix.cuda}}" | sudo tee /opt/OpenSYCL/cuda/version.txt
+      
+      - name: install ROCm
+        run: |
+          [[ ${{matrix.rocm}} == 4.0.1 ]] && CODENAME=xenial
+          [[ ${{matrix.rocm}} == 5.4.3 ]] && CODENAME=focal
+          sudo apt install libnuma-dev cmake unzip
+          wget -q -O - https://repo.radeon.com/rocm/rocm.gpg.key | sudo apt-key add -
+          echo "deb [arch=amd64] https://repo.radeon.com/rocm/apt/${{matrix.rocm}} $CODENAME main" | sudo tee /etc/apt/sources.list.d/rocm.list
+          printf 'Package: *\nPin: release o=repo.radeon.com\nPin-Priority: 600' | sudo tee /etc/apt/preferences.d/rocm-pin-600
+          sudo apt update
+          sudo apt install rocm-dev
 
       - name: install LLVM
         run: |
           wget https://apt.llvm.org/llvm.sh
           chmod +x llvm.sh
-          sudo ./llvm.sh 15
-          sudo apt install libclang-15-dev clang-tools-15 libomp-15-dev libllvm-15-ocaml-dev libllvm15 llvm-15 llvm-15-dev llvm-15-doc llvm-15-examples llvm-15-runtime
-
+          sudo ./llvm.sh ${{matrix.clang}}
+          sudo apt install libclang-${{matrix.clang}}-dev clang-tools-${{matrix.clang}} libomp-${{matrix.clang}}-dev
+      
       - name: install Ninja-build
         run: sudo apt install ninja-build
 
