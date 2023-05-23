@@ -62,7 +62,7 @@ jobs:
       - name: configure & install OpenSycl
         run: |
           cd OpenSYCL
-          cmake -DCMAKE_CXX_COMPILER=/usr/bin/clang++-15 -DCLANG_EXECUTABLE_PATH=/usr/bin/clang++-15 -DLLVM_DIR=/usr/lib/llvm-15/cmake -DCMAKE_INSTALL_PREFIX=../OpenSYCL_comp .
+          cmake -DCMAKE_CXX_COMPILER=/usr/bin/clang++-${{matrix.clang}} -DCLANG_EXECUTABLE_PATH=/usr/bin/clang++-${{matrix.clang}} -DLLVM_DIR=/usr/lib/llvm-${{matrix.clang}}/cmake -DCMAKE_INSTALL_PREFIX=../OpenSYCL_comp .
           make -j install
 
       - name: 'Tar opensycl'
@@ -71,5 +71,5 @@ jobs:
       - name: 'Upload Artifact'
         uses: actions/upload-artifact@v3
         with:
-          name: OpenSYCL_compiler
+          name: OpenSYCL_compiler-${{ matrix.clang }}-${{ matrix.os }}-${{matrix.cuda}}-${{matrix.rocm}}
           path: opensycl.tar  
