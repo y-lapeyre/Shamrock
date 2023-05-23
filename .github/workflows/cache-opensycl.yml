@@ -3,7 +3,6 @@ name: Cache OpenSYCL
 
 on:
   workflow_call:
-    outputs:
     
 jobs:
   cache_opensycl:
