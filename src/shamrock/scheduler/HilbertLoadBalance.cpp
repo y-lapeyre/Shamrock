@@ -19,7 +19,8 @@
 
 #include "HilbertLoadBalance.hpp"
 
-#include "shamrock/legacy/io/logs.hpp"
+#include "shambase/stacktrace.hpp"
+#include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/sycl_handler.hpp"
 
 namespace shamrock::scheduler {
@@ -31,10 +32,8 @@ template<class T> class Edit_chosen_node;
 
 template<class hilbert_num>
 LoadBalancingChangeList HilbertLoadBalance<hilbert_num>::make_change_list(std::vector<shamrock::patch::Patch> &global_patch_list) {
-
+StackEntry stack_loc{};
     using namespace shamrock::patch;
-
-    auto t = timings::start_timer("HilbertLoadBalance::make_change_list", timings::function);
 
     LoadBalancingChangeList change_list;
 
@@ -189,7 +188,6 @@ LoadBalancingChangeList HilbertLoadBalance<hilbert_num>::make_change_list(std::v
     }
 
 
-    t.stop();
     return change_list;
 }
 

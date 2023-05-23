@@ -10,7 +10,7 @@
 
 #include "sph_setup.hpp"
 #include "shamrock/legacy/patch/comm/patch_object_mover.hpp"
-#include "shamrock/legacy/patch/utility/serialpatchtree.hpp"
+#include "shamrock/scheduler/SerialPatchTree.hpp"
 #include "shamrock/sph/kernels.hpp"
 
 template<class flt, class Kernel>

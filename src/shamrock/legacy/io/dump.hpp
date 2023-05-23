@@ -8,14 +8,13 @@
 
 #pragma once
 #include "aliases.hpp"
-#include "shamrock/legacy/io/logs.hpp"
 #include "shamrock/legacy/patch/base/enabled_fields.hpp"
 #include "shamrock/legacy/patch/base/patchdata_field.hpp"
 #include "shamrock/legacy/patch/utility/merged_patch.hpp"
 #include "shamrock/patch/Patch.hpp"
 #include "shamrock/legacy/patch/base/patchdata.hpp"
 #include "shamrock/patch/PatchDataLayout.hpp"
-#include "shamrock/legacy/patch/scheduler/scheduler_mpi.hpp"
+#include "shamrock/scheduler/scheduler_mpi.hpp"
 #include "shamsys/legacy/sycl_mpi_interop.hpp"
 #include <stdexcept>
 #include <string>
@@ -483,9 +482,7 @@ inline void dump_siminfo(std::string prefix, f64 time){
     mpi::file_close(&timeval_file);
 }
 
-inline void dump_state(std::string prefix, PatchScheduler & sched, f64 time){
-
-    auto t = timings::start_timer("dump_state", timings::timingtype::function);
+inline void dump_state(std::string prefix, PatchScheduler & sched, f64 time){StackEntry stack_loc{};
 
     dump_patch_data(prefix, sched);
 
@@ -493,7 +490,6 @@ inline void dump_state(std::string prefix, PatchScheduler & sched, f64 time){
     dump_simbox(prefix, sched);
     dump_siminfo(prefix,time);
 
-    t.stop();
 
 }
 

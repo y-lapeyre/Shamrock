@@ -12,24 +12,22 @@
 #include <random>
 
 #include "shamalgs/collective/exchanges.hpp"
-#include "shamrock/legacy/io/logs.hpp"
+#include "shambase/stacktrace.hpp"
 #include "shamrock/scheduler/HilbertLoadBalance.hpp"
 #include "shamrock/patch/Patch.hpp"
 
 
-void SchedulerPatchList::build_global(){
+void SchedulerPatchList::build_global(){StackEntry stack_loc{};
 
     using namespace shamrock::patch;
 
-    auto t = timings::start_timer("SchedulerPatchList::build_global()",timings::mpi);
     shamalgs::collective::vector_allgatherv(local, get_patch_mpi_type<3>(), global, get_patch_mpi_type<3>(), MPI_COMM_WORLD);   
-    t.stop();
+    
 }
 
 
-std::unordered_set<u64> SchedulerPatchList::build_local(){
+std::unordered_set<u64> SchedulerPatchList::build_local(){StackEntry stack_loc{};
 
-    auto t = timings::start_timer("SchedulerPatchList::build_local",timings::function);
 
     std::unordered_set<u64> out_ids;
 
@@ -41,7 +39,6 @@ std::unordered_set<u64> SchedulerPatchList::build_local(){
             out_ids.insert(p.id_patch);
         }
     }
-    t.stop();
 
     return out_ids;
     

@@ -1,6 +1,7 @@
 target_sources(shamrock_lib
     PRIVATE
         BasicGas.cpp 
+        BasicSPHGhosts.cpp
     PUBLIC
     )
 

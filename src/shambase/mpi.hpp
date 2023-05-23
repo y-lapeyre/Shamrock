@@ -8,20 +8,11 @@
 
 #pragma once
 
-//%Impl status : Deprecated
+#if __has_include(<mpi.h>)
+#include <mpi.h>
+#elif __has_include(<mpi/mpi.h>) // on the github CI pipeline 
+#include <mpi/mpi.h>
+#else
+#error "mpi headers cannot be found check the output of "
+#endif
 
-
-
-#include "aliases.hpp"
-#include "shamrock/scheduler/scheduler_mpi.hpp"
-
-
-class SimulationSPH{
-
-    f64 current_time;
-
-    
-
-    template<class Stepper> void evolve(PatchScheduler &sched, Stepper & stepper);
-
-};

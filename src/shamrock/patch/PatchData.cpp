@@ -145,7 +145,7 @@ namespace shamrock::patch{
     }
 
 
-    void PatchData::index_remap(sycl::buffer<u32> index_map, u32 len){
+    void PatchData::index_remap(sycl::buffer<u32> & index_map, u32 len){
 
         for(auto & field_var : fields){
             field_var.visit([&](auto & field){
@@ -155,7 +155,7 @@ namespace shamrock::patch{
 
     }
 
-    void PatchData::index_remap_resize(sycl::buffer<u32> index_map, u32 len){
+    void PatchData::index_remap_resize(sycl::buffer<u32> & index_map, u32 len){
 
         for(auto & field_var : fields){
             field_var.visit([&](auto & field){
@@ -163,6 +163,10 @@ namespace shamrock::patch{
             });
         }
 
+    }
+
+    void PatchData::keep_ids(sycl::buffer<u32> & index_map, u32 len){
+        index_remap_resize(index_map, len);
     }
 
 

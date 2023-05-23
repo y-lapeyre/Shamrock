@@ -60,6 +60,11 @@ namespace shamrock::patch {
          */
         template <class T> [[nodiscard]] std::tuple<T, T> get_bounding_box() const;
 
+        template<class T> inline T get_bounding_box_size() const{
+            auto [bmin,bmax] = get_bounding_box<T>();
+            return bmax-bmin;
+        }
+
         /**
          * @brief Override the stored bounding box by the one given in new_box
          *

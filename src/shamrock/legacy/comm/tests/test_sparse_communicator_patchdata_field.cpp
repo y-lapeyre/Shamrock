@@ -7,7 +7,7 @@
 // -------------------------------------------------------//
 
 #include "shamrock/legacy/comm/sparse_communicator.hpp"
-#include "shamrock/legacy/patch/scheduler/scheduler_patch_list.hpp"
+#include "shamrock/scheduler/scheduler_patch_list.hpp"
 #include "shamtest/shamtest.hpp"
 
 #include "shamrock/legacy/patch/base/patchdata_field.hpp"

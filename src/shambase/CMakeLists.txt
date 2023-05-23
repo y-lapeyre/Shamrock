@@ -1,6 +1,7 @@
 
 set(Sources
     exception.cpp
+    stacktrace.cpp
 )
 
 set(Headers

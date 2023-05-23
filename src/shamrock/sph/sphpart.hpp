@@ -20,8 +20,19 @@ namespace shamrock::sph {
         return m * (hfact / h) * (hfact / h) * (hfact / h);
     }
 
-    template<class flt>
+    template<class flt, i32 dim = 3>
     inline flt h_rho(flt m, flt rho, flt hfact = default_hfact) {
-        return hfact / sycl::rootn(rho / m, 3);
+        return hfact / sycl::rootn(rho / m, dim);
+    }
+
+    template<class flt, i32 dim = 3>
+    inline flt newtown_iterate_new_h(flt rho_ha,flt rho_sum, flt sumdWdh, flt h_a){
+        flt f_iter = rho_sum - rho_ha;
+        flt df_iter = sumdWdh + dim*rho_ha/h_a;
+
+        //flt omega_a = 1 + (h_a/(3*rho_ha))*sumdWdh;
+        //flt new_h = h_a - (rho_ha - rho_sum)/((-3*rho_ha/h_a)*omega_a);
+
+        return h_a - f_iter/df_iter;
     }
 } // namespace shamrock::sph

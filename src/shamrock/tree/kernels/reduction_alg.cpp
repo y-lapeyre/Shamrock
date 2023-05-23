@@ -19,7 +19,7 @@
 #include "shambase/exception.hpp"
 #include "shambase/sycl.hpp"
 #include "shambase/string.hpp"
-#include "shamrock/math/integerManip.hpp"
+#include "shambase/integer_sycl.hpp"
 
 class Kernel_generate_split_table_morton32;
 class Kernel_generate_split_table_morton64;
@@ -67,7 +67,6 @@ void sycl_reduction_iteration(
     std::unique_ptr<sycl::buffer<split_int>> &buf_split_table_out
 ) {
 
-    using namespace shamrock::math::int_manip;
 
     sycl::range<1> range_morton_count{morton_count};
 

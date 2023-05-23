@@ -9,7 +9,7 @@
 #include "aliases.hpp"
 
 #include "shamrock/patch/PatchDataLayout.hpp"
-#include "shamrock/legacy/patch/scheduler/scheduler_mpi.hpp"
+#include "shamrock/scheduler/scheduler_mpi.hpp"
 
 #include "shammodels/nbody/models/nbody_selfgrav.hpp"
 #include "shammodels/nbody/setup/nbody_setup.hpp"

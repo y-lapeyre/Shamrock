@@ -15,7 +15,6 @@
 #include "shamrock/legacy/patch/interfaces/interface_handler.hpp"
 #include "shamrock/legacy/patch/interfaces/interface_selector.hpp"
 #include "shamrock/legacy/io/dump.hpp"
-#include "shamrock/legacy/io/logs.hpp"
 #include "shamrock/legacy/patch/comm/patch_object_mover.hpp"
 #include "shamrock/legacy/patch/utility/compute_field.hpp"
 #include "shamrock/legacy/patch/utility/global_var.hpp"
@@ -23,8 +22,8 @@
 #include "shamrock/legacy/patch/base/patchdata.hpp"
 //#include "shamrock/legacy/patch/patchdata_buffer.hpp"
 #include "shamrock/legacy/patch/base/patchdata_field.hpp"
-#include "shamrock/legacy/patch/utility/serialpatchtree.hpp"
-#include "shamrock/legacy/patch/scheduler/scheduler_mpi.hpp"
+#include "shamrock/scheduler/SerialPatchTree.hpp"
+#include "shamrock/scheduler/scheduler_mpi.hpp"
 #include "shamrock/sph/kernels.hpp"
 #include "shammodels/sph/algs/smoothing_lenght.hpp"
 #include "shamrock/sph/sphpart.hpp"
@@ -167,7 +166,6 @@ namespace sph {
 
         using namespace shamrock::patch;
 
-        auto time_step = timings::start_timer("SPHLeapfrog::step()", timings::timingtype::function);
 
         const flt loc_htol_up_tol  = htol_up_tol;
         const flt loc_htol_up_iter = htol_up_iter;
@@ -240,7 +238,6 @@ namespace sph {
         
 
         logger::debug_ln("SPHLeapfrog", "compute hmax of each patches");
-        auto timer_h_max = timings::start_timer("compute_hmax", timings::timingtype::function);
 
 
         //compute hmax
@@ -255,7 +252,6 @@ namespace sph {
                 return patchdata::sph::get_h_max<flt>(pdat.pdl, queue, pdat) * loc_htol_up_tol * Kernel::Rkern;
             });
 
-        timer_h_max.stop();
 
         logger::debug_ln("SPHLeapfrog", "compute interface list");
         //make interfaces
@@ -270,7 +266,6 @@ namespace sph {
         
         logger::debug_ln("SPHLeapfrog", "merging interfaces with data");
         // merging strategy
-        auto tmerge_buf = timings::start_timer("buffer merging", timings::sycl);
         
         
         //old
@@ -290,14 +285,12 @@ namespace sph {
 
 
         shamsys::instance::get_compute_queue().wait();
-        tmerge_buf.stop();
         
 
 
         constexpr u32 reduc_level = 5;
 
         //make trees
-        auto tgen_trees = timings::start_timer("radix tree gen", timings::sycl);
         std::unordered_map<u64, std::unique_ptr<RadixTree<u_morton, vec3,3>>> radix_trees;
         std::unordered_map<u64, std::unique_ptr<RadixTreeField<flt> >> cell_int_rads;
 
@@ -344,7 +337,6 @@ namespace sph {
                 );
         });
         shamsys::instance::get_compute_queue().wait();
-        tgen_trees.stop();
 
 
         //create compute field for new h and omega
@@ -357,7 +349,6 @@ namespace sph {
         omega_field.generate(sched);
 
 
-        auto time_hiter = timings::start_timer("h iter", timings::sycl);
 
         //iterate smoothing lenght
         sched.for_each_patch([&](u64 id_patch, Patch  /*cur_p*/) {
@@ -402,13 +393,11 @@ namespace sph {
             });
             //*/
         });
-        time_hiter.stop();
 
 
 
 
         
-        auto time_xchg_new_f = timings::start_timer("comm_interfaces_field (s)", timings::sycl);
 
         logger::debug_ln("SPHLeapfrog","exchange interface hnew");
         PatchComputeFieldInterfaces<flt> hnew_field_interfaces =
@@ -417,10 +406,8 @@ namespace sph {
         PatchComputeFieldInterfaces<flt> omega_field_interfaces =
             interface_hndl.template comm_interfaces_field<flt>(sched, omega_field, periodic_mode);
 
-        time_xchg_new_f.stop();
 
 
-        auto time_merge_cfield = timings::start_timer("merge compute fields", timings::sycl);
 
         //merge compute fields
         //std::unordered_map<u64, MergedPatchCompFieldBuffer<flt>> hnew_field_merged;
@@ -434,27 +421,18 @@ namespace sph {
         std::unordered_map<u64, MergedPatchCompField<flt, flt>> omega_field_merged = MergedPatchCompField<flt,flt>::
             merge_patches_cfield(sched,interface_hndl,omega_field,omega_field_interfaces);
 
-        time_merge_cfield.stop();
 
         //TODO add looping on corrector step
 
-        auto time_lambda_post_sync = timings::start_timer("post sync", timings::sycl);
 
         lambda_post_sync(sched, merge_pdat,hnew_field_merged,omega_field_merged);
 
-        time_lambda_post_sync.stop();
-
-
-        auto time_force = timings::start_timer("force compute", timings::sycl);
 
         //compute force
         if (do_force) {
             lambda_compute_forces(sched,radix_trees,cell_int_rads,merge_pdat,hnew_field_merged,omega_field_merged,htol_up_tol);
         }
 
-        time_force.stop();
-
-        auto time_corrector = timings::start_timer("corrector", timings::sycl);
 
 
         //leapfrog corrector
@@ -475,16 +453,11 @@ namespace sph {
             }
         });
 
-        time_corrector.stop();
 
-        auto twrite_back = timings::start_timer("corrector", timings::sycl);
 
         //write_back_merge_patches(sched, interface_hndl, merge_pdat);
         write_back_merge_patches(sched, merge_pdat);
 
-        twrite_back.stop();
-
-        time_step.stop();
 
         return step_time;
     }

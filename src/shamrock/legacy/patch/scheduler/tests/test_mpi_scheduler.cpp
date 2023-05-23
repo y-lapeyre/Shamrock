@@ -17,7 +17,7 @@
 
 
 
-#include "shamrock/legacy/patch/scheduler/scheduler_mpi.hpp"
+#include "shamrock/scheduler/scheduler_mpi.hpp"
 
 #include "shamsys/legacy/sycl_mpi_interop.hpp"
 

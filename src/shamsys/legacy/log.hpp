@@ -306,26 +306,3 @@ namespace logger {
 
 
 
-
-
-namespace logfiles {
-
-
-
-    namespace timings {
-
-        void register_begin(std::string name);
-
-        void register_end(std::string name);
-
-        void register_end_nocoma(std::string name);
-    
-    }
-
-    void open_files();
-
-    void close_files();
-
-
-    
-}

@@ -12,10 +12,10 @@
 #pragma once
 
 #include "aliases.hpp"
-#include "shamrock/legacy/patch/scheduler/scheduler_mpi.hpp"
+#include "shamrock/scheduler/scheduler_mpi.hpp"
 
 #include "shamrock/patch/Patch.hpp"
-#include "shamrock/legacy/patch/utility/serialpatchtree.hpp"
+#include "shamrock/scheduler/SerialPatchTree.hpp"
 
 #include "shammodels/generic/setup/generators.hpp"
 #include "shammodels/generic/setup/modifiers.hpp"

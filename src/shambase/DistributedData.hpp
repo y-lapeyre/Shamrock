@@ -66,6 +66,19 @@ namespace shambase {
                 logger::raw_ln(id_patch ,"->" ,shambase::format(fmt, ref));
             });
         }
+
+        template<class Tmap>
+        inline DistributedData<Tmap> map(std::function<Tmap(u64, T&)> map_func){
+            DistributedData<Tmap> ret;
+            for_each([&](u64 id, T& ref){
+                ret.add_obj(id, map_func(id,ref));
+            });
+            return ret;
+        }
+
+        inline void reset(){
+            data.clear();
+        }
     };
 
     /**
@@ -94,6 +107,22 @@ namespace shambase {
             }
         }
 
+        inline void tranfer_all(std::function<bool(u64, u64)> cd, DistributedDataShared & other){
+            
+            std::vector<std::pair<u64, u64>> occurences;
+
+            for(auto [k,v] : data){
+                if(cd(k.first,k.second)){
+                    occurences.push_back(k);
+                }
+            }
+
+            for(auto p : occurences){
+                other.data.insert(data.extract(p));
+            }
+
+        }
+
         inline bool has_key(u64 left_id, u64 right_id) {
             return (data.find({left_id, right_id}) != data.end());
         }
@@ -107,6 +136,10 @@ namespace shambase {
                 ret.add_obj(left, right, map_func(left,right,ref));
             });
             return ret;
+        }
+        
+        inline void reset(){
+            data.clear();
         }
     };
 } // namespace shambase

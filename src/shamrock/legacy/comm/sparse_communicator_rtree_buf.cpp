@@ -17,7 +17,7 @@ struct SparseCommExchanger<RadixTreeField<T>>{
 
     //TODO emit warning that here the sycl buffer will be used with it's internal size
     static SparseCommResult<RadixTreeField<T>> sp_xchg(SparsePatchCommunicator & communicator, const SparseCommSource<RadixTreeField<T>> &send_comm_pdat){
-
+StackEntry stack_loc{};
         using namespace shamrock::patch;
 
         SparseCommResult<RadixTreeField<T>> recv_obj;
@@ -28,7 +28,6 @@ struct SparseCommExchanger<RadixTreeField<T>>{
         
             std::vector<mpi_sycl_interop::BufferMpiRequest<T>> rq_lst;
 
-            auto timer_transfmpi = timings::start_timer("patchdata_exchanger", timings::mpi);
 
             u64 dtcnt = 0;
 
@@ -83,7 +82,6 @@ struct SparseCommExchanger<RadixTreeField<T>>{
 
             mpi_sycl_interop::waitall(rq_lst);
 
-            timer_transfmpi.stop(dtcnt);
 
             communicator.xcgh_byte_cnt += dtcnt;
 

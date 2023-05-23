@@ -91,14 +91,11 @@ namespace shamrock::patch {
          * @brief extract particle at index pidx and insert it in the provided vectors
          *
          * @param pidx
-         * @param out_pos_s
-         * @param out_pos_d
-         * @param out_U1_s
-         * @param out_U1_d
-         * @param out_U3_s
-         * @param out_U3_d
+         * @param out_pdat
          */
         void extract_element(u32 pidx, PatchData &out_pdat);
+
+        void keep_ids(sycl::buffer<u32> & index_map, u32 len);
 
         void insert_elements(PatchData &pdat);
 
@@ -125,7 +122,7 @@ namespace shamrock::patch {
         * @param index_map 
         * @param len the lenght of the map (must match with the current count)
         */
-        void index_remap(sycl::buffer<u32> index_map, u32 len);
+        void index_remap(sycl::buffer<u32> & index_map, u32 len);
 
         /**
         * @brief this function remaps the patchdatafield like so
@@ -135,7 +132,7 @@ namespace shamrock::patch {
         * @param index_map 
         * @param len the lenght of the map
         */
-        void index_remap_resize(sycl::buffer<u32> index_map, u32 len);
+        void index_remap_resize(sycl::buffer<u32> & index_map, u32 len);
 
         // template<class Tvecbox>
         // void split_patchdata(PatchData & pd0,PatchData & pd1,PatchData & pd2,PatchData &
@@ -215,6 +212,21 @@ namespace shamrock::patch {
                 "    arg : idx = " +
                 std::to_string(idx)
             );
+        }
+
+        /**
+         * @brief check that all contained field have the same obj cnt
+         * 
+         */
+        inline void check_field_obj_cnt_match(){
+            u32 cnt = get_obj_cnt();
+            for (auto &field_var : fields) {
+                field_var.visit([&](auto &field) { 
+                    if(field.get_obj_cnt() != cnt){
+                        throw shambase::throw_with_loc<std::runtime_error>("mismatch in obj cnt");
+                    }
+                });
+            }
         }
 
         // template<class T> inline std::vector<PatchDataField<T> & > get_field_list(){

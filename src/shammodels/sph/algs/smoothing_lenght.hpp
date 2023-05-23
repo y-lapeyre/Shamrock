@@ -13,15 +13,14 @@
 
 
 #include "aliases.hpp"
-#include "shamrock/legacy/io/logs.hpp"
 #include "shamrock/legacy/patch/base/patchdata.hpp"
 #include "shamrock/patch/PatchDataLayout.hpp"
 #include "shamrock/legacy/patch/interfaces/interface_handler.hpp"
 #include "shamrock/legacy/patch/interfaces/interface_selector.hpp"
 //#include "shamrock/legacy/patch/patchdata_buffer.hpp"
-#include "shamrock/legacy/patch/scheduler/scheduler_mpi.hpp"
+#include "shamrock/scheduler/scheduler_mpi.hpp"
 #include "shamrock/legacy/patch/utility/merged_patch.hpp"
-#include "shamrock/legacy/patch/utility/serialpatchtree.hpp"
+#include "shamrock/scheduler/SerialPatchTree.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamrock/tree/RadixTree.hpp"
 #include "shammodels/sph/algs/smoothing_lenght_impl.hpp"
@@ -73,7 +72,7 @@ class SmoothingLenghtCompute{
         sycl::buffer<flt> & omega,
         sycl::buffer<flt> & eps_h){
 
-        auto timer = timings::start_timer("iterate_smoothing_lenght",timings::function);
+            StackEntry stack_loc{};
 
         impl::sycl_init_h_iter_bufs(queue, or_element_cnt,ihpart, pdat_merge, hnew, omega, eps_h);
 
@@ -118,7 +117,6 @@ class SmoothingLenghtCompute{
                 omega, 
                 eps_h);
 
-        timer.stop();
 
     }
 

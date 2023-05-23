@@ -12,7 +12,7 @@
 #include <map>
 #include <random>
 #include <vector>
-#include "shamrock/legacy/patch/scheduler/scheduler_patch_list.hpp"
+#include "shamrock/scheduler/scheduler_patch_list.hpp"
 #include "shamrock/sfc/hilbert.hpp"
 
 

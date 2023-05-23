@@ -6,16 +6,5 @@
 //
 // -------------------------------------------------------//
 
-#pragma once
-
-#include "aliases.hpp"
-#include "shambase/integer_sycl.hpp"
-#include "shambase/sycl.hpp"
-
-namespace shamrock::math::int_manip {
-
-
-    
-
-}
+#include "stacktrace.hpp"
 

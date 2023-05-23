@@ -10,7 +10,7 @@
 
 #include "aliases.hpp"
 #include "shamrock/legacy/patch/base/patchdata.hpp"
-#include "shamrock/legacy/patch/scheduler/scheduler_mpi.hpp"
+#include "shamrock/scheduler/scheduler_mpi.hpp"
 
 enum GlobalVariableType{
     min,max,sum

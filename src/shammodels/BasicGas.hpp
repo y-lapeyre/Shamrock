@@ -12,8 +12,9 @@
 #include "shambase/type_aliases.hpp"
 #include "shammath/CoordRange.hpp"
 #include "shamrock/io/LegacyVtkWritter.hpp"
-#include "shamrock/legacy/patch/utility/serialpatchtree.hpp"
+#include "shamrock/scheduler/SerialPatchTree.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
+#include "shamrock/sph/kernels.hpp"
 
 namespace shammodels::sph {
 
@@ -21,14 +22,17 @@ namespace shammodels::sph {
         using flt      = f64;
         using vec      = f64_3;
         using u_morton = u32;
-        // using Kernel = models::sph::kernels::M4<flt>;
+        using Kernel = shamrock::sph::kernels::M4<flt>;
 
-        static constexpr flt htol_up_tol  = 1.4;
+        static constexpr flt Rkern = Kernel::Rkern;
+        
+        static constexpr flt htol_up_tol  = 1.2;
         static constexpr flt htol_up_iter = 1.2;
 
         flt cfl_cour   = -1;
         flt cfl_force  = -1;
         flt gpart_mass = -1;
+        flt gamma = 5./3.;
 
         ShamrockCtx &context;
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }
@@ -76,9 +80,14 @@ namespace shammodels::sph {
          * 
          * @param dt 
          */
-        void evolve(f64 dt, DumpOption dump_opt);
+        void evolve(f64 dt, bool enable_physics, DumpOption dump_opt);
 
         u64 count_particles();
+
+        inline void set_cfl_cour(flt Ccour){cfl_cour = Ccour;}
+        inline void set_cfl_force(flt Cforce){cfl_force = Cforce;}
+        inline void set_particle_mass(flt pmass){gpart_mass = pmass;}
+        inline void set_gamma(flt gam){gamma = gam;}
 
     };
 

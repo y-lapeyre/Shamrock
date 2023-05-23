@@ -29,9 +29,8 @@
 #include "aliases.hpp"
 #include "shamrock/legacy/patch/base/patchdata.hpp"
 #include "shamrock/legacy/patch/interfaces/interface_generator.hpp"
-#include "shamrock/legacy/io/logs.hpp"
 //#include "shamrock/legacy/patch/patchdata_buffer.hpp"
-#include "shamrock/legacy/patch/scheduler/scheduler_mpi.hpp"
+#include "shamrock/scheduler/scheduler_mpi.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamsys/legacy/sycl_handler.hpp"
 #include "shammodels/sph/sphpatch.hpp" //TODO remove sph dependancy
@@ -103,10 +102,10 @@ template <class vectype, class primtype> class LegacyInterfacehandler {
      */
     template <class interface_selector>
     inline void compute_interface_list(PatchScheduler &sched, SerialPatchTree<vectype> &sptree, legacy::PatchField<primtype> h_field,bool periodic) {
-        auto t = timings::start_timer("compute_interface_list", timings::function);
+        StackEntry stack_loc{};
         interface_comm_list = Interface_Generator<vectype, primtype, interface_selector>::get_interfaces_comm_list(
             sched, sptree, h_field, shambase::format_printf("interfaces_%d_node%d", 0, shamsys::instance::world_rank),periodic);
-        t.stop();
+        
     }
 
     /**
@@ -118,12 +117,11 @@ template <class vectype, class primtype> class LegacyInterfacehandler {
 
 
     template <class T> PatchComputeFieldInterfaces<T> comm_interfaces_field(PatchScheduler &sched,PatchComputeField<T> &pcomp_field,bool periodic) {
-
+StackEntry stack_loc{};
         PatchComputeFieldInterfaces<T> interface_field_map;
 
-        auto t = timings::start_timer("comm interfaces", timings::timingtype::function);
         impl::comm_interfaces_field<T,vectype>(sched, pcomp_field, interface_comm_list, interface_field_map.interface_map, periodic);
-        t.stop();
+        
 
         return interface_field_map;
     }

@@ -7,7 +7,7 @@
 // -------------------------------------------------------//
 
 #include "shamalgs/random/random.hpp"
-#include "shamrock/legacy/patch/scheduler/scheduler_patch_list.hpp"
+#include "shamrock/scheduler/scheduler_patch_list.hpp"
 #include "shamrock/patch/Patch.hpp"
 #include "shamrock/patch/PatchData.hpp"
 #include "shamrock/scheduler/HilbertLoadBalance.hpp"

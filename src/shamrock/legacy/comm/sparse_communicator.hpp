@@ -13,8 +13,7 @@
 #include "shamrock/patch/Patch.hpp"
 #include <vector>
 
-#include "shamrock/legacy/io/logs.hpp"
-#include "shamrock/legacy/patch/scheduler/scheduler_mpi.hpp"
+#include "shamrock/scheduler/scheduler_mpi.hpp"
 
 
 
@@ -49,7 +48,7 @@ class SparsePatchCommunicator {
         : global_patch_list(global_patch_list), send_comm_vec(std::move(send_comm_vec)),
           local_comm_tag(send_comm_vec.size()) {}
 
-    inline void fetch_comm_table() {
+    inline void fetch_comm_table() {StackEntry stack_loc{};
 
         {
             i32 iterator = 0;
@@ -59,10 +58,9 @@ class SparsePatchCommunicator {
             }
         }
 
-        auto timer_allgatherv = timings::start_timer("allgatherv", timings::mpi);
         shamalgs::collective::vector_allgatherv(send_comm_vec, mpi_type_u64_2, global_comm_vec, mpi_type_u64_2, MPI_COMM_WORLD);
         shamalgs::collective::vector_allgatherv(local_comm_tag, mpi_type_i32, global_comm_tag, mpi_type_i32, MPI_COMM_WORLD);
-        timer_allgatherv.stop();
+        
 
         xcgh_byte_cnt += 
             (send_comm_vec.size() * sizeof(u64) * 2)  + 
@@ -99,7 +97,7 @@ class SparsePatchCommunicator {
 template <> 
 struct SparseCommExchanger<shamrock::patch::PatchData>{
     static SparseCommResult<shamrock::patch::PatchData> sp_xchg(SparsePatchCommunicator & communicator, const SparseCommSource<shamrock::patch::PatchData> &send_comm_pdat){
-
+StackEntry stack_loc{};
         using namespace shamrock::patch;
 
         SparseCommResult<PatchData> recv_obj;
@@ -110,7 +108,6 @@ struct SparseCommExchanger<shamrock::patch::PatchData>{
 
             std::vector<PatchDataMpiRequest> rq_lst;
 
-            auto timer_transfmpi = timings::start_timer("patchdata_exchanger", timings::mpi);
 
             u64 dtcnt = 0;
 
@@ -151,7 +148,6 @@ struct SparseCommExchanger<shamrock::patch::PatchData>{
 
             waitall_pdat_mpi_rq(rq_lst);
 
-            timer_transfmpi.stop(dtcnt);
 
             communicator.xcgh_byte_cnt += dtcnt;
 

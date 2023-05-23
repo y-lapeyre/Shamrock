@@ -187,6 +187,16 @@ template <class T> class PatchDataField {
     template <class Lambdacd>
     std::vector<u32> get_elements_with_range(Lambdacd &&cd_true, T vmin, T vmax) const;
 
+    template <class Lambdacd>
+    inline std::unique_ptr<sycl::buffer<u32>> get_elements_with_range_buf(Lambdacd &&cd_true, T vmin, T vmax) const{
+        std::vector<u32> idxs = get_elements_with_range(std::forward<Lambdacd>(cd_true), vmin,vmax);
+        if(idxs.empty()){
+            return {};
+        }else{
+            return std::make_unique<sycl::buffer<u32>>(shamalgs::memory::vec_to_buf(idxs));
+        }
+    }
+
     template <class Lambdacd> void check_err_range(Lambdacd &&cd_true, T vmin, T vmax) const;
 
     void extract_element(u32 pidx, PatchDataField<T> &to);
@@ -194,7 +204,7 @@ template <class T> class PatchDataField {
     bool check_field_match(const PatchDataField<T> &f2) const;
 
     inline void field_raz(){
-        logger::raw_ln("raz : ",field_name);
+        logger::debug_ln("PatchDataField","raz : ",field_name);
         override(shambase::VectorProperties<T>::get_zero());
     }
 
@@ -206,6 +216,12 @@ template <class T> class PatchDataField {
      */
     void append_subset_to(const std::vector<u32> &idxs, PatchDataField &pfield) const;
     void append_subset_to(sycl::buffer<u32> &idxs_buf, u32 sz, PatchDataField &pfield) const;
+
+    inline PatchDataField make_new_from_subset(sycl::buffer<u32> &idxs_buf, u32 sz) const {
+        PatchDataField pfield(field_name, nvar);
+        append_subset_to(idxs_buf,sz,pfield);
+        return pfield;
+    }
 
     void gen_mock_data(u32 obj_cnt, std::mt19937 &eng);
 
@@ -329,6 +345,7 @@ template <class T>
 template <class Lambdacd>
 inline std::vector<u32>
 PatchDataField<T>::get_elements_with_range(Lambdacd &&cd_true, T vmin, T vmax) const {
+    StackEntry stack_loc{};
     std::vector<u32> idxs;
 
     {

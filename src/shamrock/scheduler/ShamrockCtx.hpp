@@ -10,10 +10,9 @@
 
 #include "aliases.hpp"
 #include "shambase/exception.hpp"
-#include "shamrock/legacy/io/logs.hpp"
 #include "shamrock/legacy/patch/base/patchdata.hpp"
 #include "shamrock/patch/PatchDataLayout.hpp"
-#include "shamrock/legacy/patch/scheduler/scheduler_mpi.hpp"
+#include "shamrock/scheduler/scheduler_mpi.hpp"
 #include <map>
 #include <memory>
 #include <tuple>

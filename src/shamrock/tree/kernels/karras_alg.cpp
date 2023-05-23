@@ -10,7 +10,7 @@
 #include "aliases.hpp"
 #include <stdexcept>
 
-#include "shamrock/math/integerManip.hpp"
+#include "shambase/integer_sycl.hpp"
 #include "shambase/exception.hpp"
 
 #define SGN(x) (x == 0) ? 0 : ((x > 0) ? 1 : -1)
@@ -25,7 +25,7 @@ void __sycl_karras_alg(sycl::queue &queue, u32 internal_cell_count,
                        sycl::buffer<u8> &out_buf_rchild_flag,
                        sycl::buffer<u32> &out_buf_endrange) {
 
-    using namespace shamrock::math::int_manip;
+
 
     sycl::range<1> range_radix_tree{internal_cell_count};
 

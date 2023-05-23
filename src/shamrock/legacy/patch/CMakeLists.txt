@@ -7,7 +7,6 @@ target_sources(shamrock
         
         
         
-        sim_box.cpp
         #patchdata_buffer.cpp 
 
 
@@ -29,7 +28,6 @@ if("${BUILD_TEST}")
     PRIVATE
 
         
-    sim_box.cpp
     #patchdata_buffer.cpp 
 
 

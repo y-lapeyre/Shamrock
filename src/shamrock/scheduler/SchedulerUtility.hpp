@@ -13,7 +13,7 @@
 #include "shambase/memory.hpp"
 #include "shambase/sycl.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"
-#include "shamrock/legacy/patch/scheduler/scheduler_mpi.hpp"
+#include "shamrock/scheduler/scheduler_mpi.hpp"
 #include "shamrock/math/integrators.hpp"
 #include "shamsys/NodeInstance.hpp"
 namespace shamrock {
@@ -145,13 +145,21 @@ namespace shamrock {
             using namespace shamrock::patch;
             shambase::VecComponent<T> ret = 0;
             sched.for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
-                ret = shambase::sycl_utils::g_sycl_min(
-                    ret, pdat.get_field<T>(field_idx).compute_dot_sum());
+                ret += 
+                    pdat.get_field<T>(field_idx).compute_dot_sum();
             });
 
             return ret;
         }
 
+        /**
+         * @brief save a field in patchdata to a compute field
+         * 
+         * @tparam T 
+         * @param field_idx 
+         * @param new_name 
+         * @return ComputeField<T> 
+         */
         template<class T>
         inline ComputeField<T> save_field(u32 field_idx, std::string new_name) {
             StackEntry stack_loc{};
@@ -164,14 +172,72 @@ namespace shamrock {
             return cfield;
         }
 
+        /**
+         * @brief create a compute field and init it to zeros
+         * 
+         * @tparam T 
+         * @param new_name 
+         * @param nvar 
+         * @return ComputeField<T> 
+         */
         template<class T>
         inline ComputeField<T> make_compute_field(std::string new_name, u32 nvar) {
             StackEntry stack_loc{};
             ComputeField<T> cfield;
             using namespace shamrock::patch;
             sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
-                cfield.field_data.add_obj(id_patch,
+                auto it = cfield.field_data.add_obj(id_patch,
                                           PatchDataField<T>(new_name, nvar, pdat.get_obj_cnt()));
+
+                PatchDataField<T> & ins = it->second;
+                ins.field_raz();
+            });
+            return cfield;
+        }
+
+        /**
+         * @brief create a compute field and init it to zeros, and specify size for each cases
+         * 
+         * @tparam T 
+         * @param new_name 
+         * @param nvar 
+         * @return ComputeField<T> 
+         */
+        template<class T>
+        inline ComputeField<T> make_compute_field(std::string new_name, u32 nvar, std::function<u32(u64)> size_getter) {
+            StackEntry stack_loc{};
+            ComputeField<T> cfield;
+            using namespace shamrock::patch;
+            sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
+                auto it = cfield.field_data.add_obj(id_patch,
+                                          PatchDataField<T>(new_name, nvar, size_getter(id_patch)));
+
+                PatchDataField<T> & ins = it->second;
+                ins.field_raz();
+            });
+            return cfield;
+        }
+
+        /**
+         * @brief create a compute field and init it to the set value
+         * 
+         * @tparam T 
+         * @param new_name 
+         * @param nvar 
+         * @param value_init 
+         * @return ComputeField<T> 
+         */
+        template<class T>
+        inline ComputeField<T> make_compute_field(std::string new_name, u32 nvar, T value_init) {
+            StackEntry stack_loc{};
+            ComputeField<T> cfield;
+            using namespace shamrock::patch;
+            sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
+                auto it = cfield.field_data.add_obj(id_patch,
+                                          PatchDataField<T>(new_name, nvar, pdat.get_obj_cnt()));
+
+                PatchDataField<T> & ins = it->second;
+                ins.override(value_init);
             });
             return cfield;
         }
