@@ -145,8 +145,8 @@ namespace shamrock {
             using namespace shamrock::patch;
             shambase::VecComponent<T> ret = 0;
             sched.for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
-                ret = shambase::sycl_utils::g_sycl_min(
-                    ret, pdat.get_field<T>(field_idx).compute_dot_sum());
+                ret += 
+                    pdat.get_field<T>(field_idx).compute_dot_sum();
             });
 
             return ret;

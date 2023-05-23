@@ -204,7 +204,7 @@ template <class T> class PatchDataField {
     bool check_field_match(const PatchDataField<T> &f2) const;
 
     inline void field_raz(){
-        logger::raw_ln("raz : ",field_name);
+        logger::debug_ln("PatchDataField","raz : ",field_name);
         override(shambase::VectorProperties<T>::get_zero());
     }
 
