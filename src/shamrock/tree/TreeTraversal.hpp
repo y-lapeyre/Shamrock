@@ -206,7 +206,182 @@ namespace shamrock::tree {
     };
 
 
+
+
+    template<class u_morton, class vec>
+    class LeafRadixFinder {
+
+        sycl::accessor<u32, 1, sycl::access::mode::read, sycl::target::device> rchild_id;
+        sycl::accessor<u32, 1, sycl::access::mode::read, sycl::target::device> lchild_id;
+        sycl::accessor<u8, 1, sycl::access::mode::read, sycl::target::device> rchild_flag;
+        sycl::accessor<u8, 1, sycl::access::mode::read, sycl::target::device> lchild_flag;
+
+        sycl::accessor<u_morton, 1, sycl::access::mode::read, sycl::target::device> tree_morton;
+        private:
+
+        static constexpr u32 tree_depth = RadixTree<u_morton, vec, 3>::tree_depth;
+        static constexpr u32 _nindex    = 4294967295;
+
+        u32 leaf_offset;
+
+        public:
+
+        // clang-format off
+        LeafRadixFinder(RadixTree< u_morton,  vec,3> & rtree,sycl::handler & cgh):
+            rchild_id     {shambase::get_check_ref(rtree.tree_struct.buf_rchild_id)  , cgh,sycl::read_only},
+            lchild_id     {shambase::get_check_ref(rtree.tree_struct.buf_lchild_id)  , cgh,sycl::read_only},
+            rchild_flag   {shambase::get_check_ref(rtree.tree_struct.buf_rchild_flag), cgh,sycl::read_only},
+            lchild_flag   {shambase::get_check_ref(rtree.tree_struct.buf_lchild_flag), cgh,sycl::read_only},
+            tree_morton  {shambase::get_check_ref(rtree.tree_reduced_morton_codes.buf_tree_morton), cgh,sycl::read_only},
+            leaf_offset   (rtree.tree_struct.internal_cell_count)
+        {}
+        // clang-format on
+
+        /**
+         * @brief identify leaf owning the asked code
+         * 
+         * @param morton_code
+         * @return u32 the leaf id owning the code in the range [0,leaf_cnt[
+         */
+        inline u32 identify_cell(u_morton morton_code) const {
+            u32 current_node_id = 0;
+
+            for(u32 level = 0 ; level < tree_depth; level ++) {
+
+                u32 lid = lchild_id[current_node_id];
+                u32 rid = rchild_id[current_node_id];
+                u32 lflag = lchild_flag[current_node_id];
+                u32 rflag = rchild_flag[current_node_id];
+
+                u_morton m_l = tree_morton[lid];
+                u_morton m_r = tree_morton[rid];
+
+                u32 affinity_l = shambase::clz_xor(morton_code, m_l);
+                u32 affinity_r = shambase::clz_xor(morton_code, m_r);
+
+                u32 next_id = (affinity_l > affinity_r) ? lid : rid;
+                u32 next_flag = (affinity_l > affinity_r) ? lflag : rflag;
+
+                if(next_flag == 1){
+                    return next_id;
+                }
+
+                current_node_id = next_id;
+            }
+
+            return u32_max;
+        }
+
+    };
+
+
+    class LeafCache{public:
+        sycl::buffer<u32> cnt_neigh;
+        sycl::buffer<u32> scanned_cnt;
+        u32 sum_neigh_cnt;
+        sycl::buffer<u32> index_neigh_map;
+    };
+
+    class LeafCacheObjectIterator{
+
+        sycl::accessor<u32, 1, sycl::access::mode::read, sycl::target::device> neigh_cnt;
+        sycl::accessor<u32, 1, sycl::access::mode::read, sycl::target::device> table_neigh_offset;
+        sycl::accessor<u32, 1, sycl::access::mode::read, sycl::target::device> table_neigh;
+
+        sycl::accessor<u32, 1, sycl::access::mode::read, sycl::target::device> cell_owner;
+
+
+        sycl::accessor<u32, 1, sycl::access::mode::read, sycl::target::device> particle_index_map;
+        sycl::accessor<u32, 1, sycl::access::mode::read, sycl::target::device> cell_index_map;
+
+        
+        u32 leaf_offset;
+        public:
+
+        // clang-format off
+        template<class u_morton, class vec>
+        LeafCacheObjectIterator(RadixTree< u_morton,  vec,3> & rtree,sycl::buffer<u32> & ownerships, LeafCache & cache,sycl::handler & cgh):
+            particle_index_map{shambase::get_check_ref(rtree.tree_morton_codes.buf_particle_index_map), cgh,sycl::read_only},
+            cell_index_map{shambase::get_check_ref(rtree.tree_reduced_morton_codes.buf_reduc_index_map), cgh,sycl::read_only},
+            neigh_cnt          {cache.cnt_neigh       ,cgh,sycl::read_only},
+            table_neigh_offset {cache.scanned_cnt     ,cgh,sycl::read_only},
+            table_neigh        {cache.index_neigh_map ,cgh,sycl::read_only},
+            cell_owner         {ownerships            ,cgh,sycl::read_only},
+            leaf_offset   (rtree.tree_struct.internal_cell_count)
+        {}
+        // clang-format on
+
+        template<class Functor_iter>
+        inline void iter_object_in_cell(const u32 & cell_id, Functor_iter &&func_it) const {
+            // loop on particle indexes
+            uint min_ids = cell_index_map[cell_id    ];
+            uint max_ids = cell_index_map[cell_id + 1];
+
+            for (unsigned int id_s = min_ids; id_s < max_ids; id_s++) {
+
+                //recover old index before morton sort
+                uint id_b = particle_index_map[id_s];
+
+                //iteration function
+                func_it(id_b);
+
+            }
+            
+        }
+
+        template<class Functor_iter>
+        inline void for_each_object(u32 idx, Functor_iter &&func_it) const {
+
+            u32 leaf_cell_owner = cell_owner[idx];
+            u32 cnt = neigh_cnt[leaf_cell_owner];
+            u32 offset_start = table_neigh_offset[leaf_cell_owner];
+            u32 last_idx = offset_start + cnt;
+
+            for(u32 i = offset_start; i < last_idx; i++){
+                iter_object_in_cell(table_neigh[i] - leaf_offset, func_it);
+            }
+
+        }
+    };
+
+
+
+    struct ObjectCache{
+        sycl::buffer<u32> cnt_neigh;
+        sycl::buffer<u32> scanned_cnt;
+        u32 sum_neigh_cnt;
+        sycl::buffer<u32> index_neigh_map;
+    };
     
+    class ObjectCacheIterator{
+
+        sycl::accessor<u32, 1, sycl::access::mode::read, sycl::target::device> neigh_cnt;
+        sycl::accessor<u32, 1, sycl::access::mode::read, sycl::target::device> table_neigh_offset;
+        sycl::accessor<u32, 1, sycl::access::mode::read, sycl::target::device> table_neigh;
+
+        public:
+
+        // clang-format off
+        ObjectCacheIterator(ObjectCache & cache,sycl::handler & cgh):
+            neigh_cnt          {cache.cnt_neigh       ,cgh,sycl::read_only},
+            table_neigh_offset {cache.scanned_cnt     ,cgh,sycl::read_only},
+            table_neigh        {cache.index_neigh_map ,cgh,sycl::read_only}
+        {}
+        // clang-format on
+
+        template<class Functor_iter>
+        inline void for_each_object(u32 idx, Functor_iter &&func_it) const {
+
+            u32 cnt = neigh_cnt[idx];
+            u32 offset_start = table_neigh_offset[idx];
+            u32 last_idx = offset_start + cnt;
+
+            for(u32 i = offset_start; i < last_idx; i++){
+                func_it(table_neigh[i]);
+            }
+
+        }
+    };
 
 
 } // namespace shamrock::tree

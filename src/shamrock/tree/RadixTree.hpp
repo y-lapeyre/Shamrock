@@ -128,7 +128,14 @@ class RadixTree{
 
     
 
-    
+    inline std::unique_ptr<sycl::buffer<morton_t>> build_new_morton_buf(sycl::buffer<pos_t> & pos_buf, u32 obj_cnt){
+
+        return tree_morton_codes.build_raw(
+            shamsys::instance::get_compute_queue(), 
+            shammath::CoordRange<pos_t>{bounding_box}, 
+            obj_cnt, 
+            pos_buf);
+    }
 
 
 
