@@ -12,7 +12,7 @@ sim.setup_fields()
 
 
 #start the scheduler
-ctx.init_sched(int(1e6),1)
+ctx.init_sched(int(1e7),1)
 
 
 
@@ -87,8 +87,8 @@ print("Current part mass :", pmass)
 
 sim.set_particle_mass(pmass)
 
-for i in range(5):
+for i in range(7):
     sim.evolve(1e-3, False, False, "", False)
 
-for i in range(10000):
+for i in range(200):
     sim.evolve(1e-3, True, True, "dump_"+str(i)+".vtk", True)

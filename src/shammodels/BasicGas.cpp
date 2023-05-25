@@ -302,9 +302,124 @@ namespace shammodels::sph {
         return pcache;
     }
 
+
+    inline shamrock::tree::ObjectCache BasicGas::build_hiter_neigh_cache(
+        u32 start_offset,
+        u32 obj_cnt, 
+        sycl::buffer<vec> & buf_xyz,
+        sycl::buffer<flt> & buf_hpart,
+        RadixTree<u_morton, vec, 3>&tree,
+        flt h_tolerance 
+        ){
+
+        StackEntry stack_loc{};
+
+        using namespace shamrock;
+
+        sycl::buffer<u32> neigh_count (obj_cnt);
+
+        shamsys::instance::get_compute_queue().submit([&,start_offset, h_tolerance](sycl::handler &cgh) {
+
+            tree::ObjectIterator particle_looper(tree,cgh);
+
+            //tree::LeafCacheObjectIterator particle_looper(tree,*xyz_cell_id,leaf_cache,cgh);
+
+            sycl::accessor xyz      {buf_xyz     , cgh, sycl::read_only}; 
+            sycl::accessor hpart    {buf_hpart   , cgh, sycl::read_only}; 
+
+            sycl::accessor neigh_cnt {neigh_count,cgh,sycl::write_only, sycl::no_init};
+
+            constexpr flt Rker2 = Kernel::Rkern*Kernel::Rkern;
+
+            cgh.parallel_for(sycl::range<1>{obj_cnt}, [=](sycl::item<1> item) {
+
+                u32 id_a = start_offset + (u32)item.get_id(0);
+//increase smoothing lenght to include possible future neigh in the cache
+                flt h_a        = hpart[id_a]*h_tolerance;
+                flt dint  = h_a*h_a*Rker2;
+
+                vec xyz_a = xyz[id_a];
+            
+                vec inter_box_a_min = xyz_a - h_a * Kernel::Rkern;
+                vec inter_box_a_max = xyz_a + h_a * Kernel::Rkern;
+
+                u32 cnt = 0;
+
+                particle_looper.rtree_for([&](u32, vec bmin,vec bmax) -> bool {
+                    return shammath::domain_are_connected(bmin,bmax,inter_box_a_min,inter_box_a_max);
+                },[&](u32 id_b){
+                    vec dr = xyz_a - xyz[id_b];
+                    flt rab2 = sycl::dot(dr,dr);
+
+                    if(rab2 > dint) { 
+                        return;
+                    }
+
+                    cnt ++;
+                });
+                        
+                neigh_cnt[id_a] = cnt ; 
+
+            });
+        });
+
+        tree::ObjectCache pcache = tree::prepare_object_cache(std::move(neigh_count), obj_cnt);
+
+        shamsys::instance::get_compute_queue().submit([&,start_offset, h_tolerance](sycl::handler &cgh) {
+
+            tree::ObjectIterator particle_looper(tree,cgh);
+
+            //tree::LeafCacheObjectIterator particle_looper(tree,*xyz_cell_id,leaf_cache,cgh);
+
+            sycl::accessor xyz      {buf_xyz     , cgh, sycl::read_only}; 
+            sycl::accessor hpart    {buf_hpart   , cgh, sycl::read_only}; 
+
+            sycl::accessor scanned_neigh_cnt {pcache.scanned_cnt,cgh,sycl::read_only};
+            sycl::accessor neigh {pcache.index_neigh_map, cgh,sycl::write_only,sycl::no_init};
+
+            constexpr flt Rker2 = Kernel::Rkern*Kernel::Rkern;
+
+            cgh.parallel_for(sycl::range<1>{obj_cnt}, [=](sycl::item<1> item) {
+
+                u32 id_a = start_offset + (u32)item.get_id(0);
+
+                //increase smoothing lenght to include possible future neigh in the cache
+                flt h_a        = hpart[id_a]*h_tolerance;
+                flt dint  = h_a*h_a*Rker2;
+
+                vec xyz_a = xyz[id_a];
+            
+                vec inter_box_a_min = xyz_a - h_a * Kernel::Rkern;
+                vec inter_box_a_max = xyz_a + h_a * Kernel::Rkern;
+
+                u32 cnt = scanned_neigh_cnt[id_a];
+
+                particle_looper.rtree_for([&](u32, vec bmin,vec bmax) -> bool {
+                    return shammath::domain_are_connected(bmin,bmax,inter_box_a_min,inter_box_a_max);
+                },[&](u32 id_b){
+                    vec dr = xyz_a - xyz[id_b];
+                    flt rab2 = sycl::dot(dr,dr);
+
+                    if(rab2 > dint) { 
+                        return;
+                    }
+                    neigh[cnt] = id_b;
+                    cnt ++;
+                });
+                            
+
+            });
+        });
+
+        return pcache;
+    }
+
     void BasicGas::evolve(f64 dt, bool enable_physics, DumpOption dump_opt) {
 
         logger::info_ln("sph::BasicGas", ">>> Step :", dt);
+
+        shambase::Timer tstep;
+        tstep.start();
 
         StackEntry stack_loc{};
 
@@ -371,7 +486,7 @@ namespace shammodels::sph {
         auto interf_xyz = interf_handle.build_communicate_positions(interf_build_cache);
         auto merged_xyz = interf_handle.merge_position_buf(std::move(interf_xyz));
 
-        constexpr u32 reduc_level = 5;
+        constexpr u32 reduc_level = 3;
 
         using RTree = RadixTree<u_morton, vec, 3>;
 
@@ -401,6 +516,32 @@ namespace shammodels::sph {
         ComputeField<flt> omega = utility.make_compute_field<flt>("omega", 1);
 
 
+        
+        shambase::DistributedData<tree::ObjectCache> hiter_neigh_caches;
+
+
+
+        scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchData & pdat){
+            logger::debug_ln("SPHLeapfrog","patch : n°",p.id_patch,"->","gen cache");
+
+            
+            sycl::buffer<vec> & merged_r = shambase::get_check_ref(merged_xyz.get(p.id_patch).field.get_buf());
+            sycl::buffer<flt> & hold = shambase::get_check_ref(_h_old.get_buf(p.id_patch));
+
+            RTree & tree = trees.get(p.id_patch);
+
+            tree::ObjectCache pcache = build_hiter_neigh_cache(
+                0, 
+                pdat.get_obj_cnt(),
+                merged_r, 
+                hold, 
+                tree,
+                htol_up_tol);
+
+            hiter_neigh_caches.add_obj(p.id_patch, std::move(pcache));
+
+        });
+
 
         for(u32 iter_h = 0; iter_h < 5; iter_h ++){
             NamedStackEntry stack_loc2 {"iterate smoothing lenght"};
@@ -419,9 +560,13 @@ namespace shammodels::sph {
 
                 RTree & tree = trees.get(p.id_patch);
 
+                tree::ObjectCache & neigh_cache = hiter_neigh_caches.get(p.id_patch);
+
                 shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
 
-                    tree::ObjectIterator particle_looper(tree,cgh);
+                    //tree::ObjectIterator particle_looper(tree,cgh);
+
+                    tree::ObjectCacheIterator particle_looper(neigh_cache,cgh);
 
                     sycl::accessor eps {eps_h, cgh,sycl::read_write};
                     sycl::accessor r {merged_r, cgh,sycl::read_only};
@@ -443,6 +588,7 @@ namespace shammodels::sph {
                             vec xyz_a = r[id_a]; // could be recovered from lambda
 
                             flt h_a = h_new[id_a];
+                            flt dint = h_a*h_a* Kernel::Rkern* Kernel::Rkern;
 
                             vec inter_box_a_min = xyz_a - h_a * Kernel::Rkern;
                             vec inter_box_a_max = xyz_a + h_a * Kernel::Rkern;
@@ -450,14 +596,18 @@ namespace shammodels::sph {
                             flt rho_sum = 0;
                             flt sumdWdh = 0;
 
-                            particle_looper.rtree_for([&](u32, vec bmin,vec bmax) -> bool {
-                                return shammath::domain_are_connected(bmin,bmax,inter_box_a_min,inter_box_a_max);
-                            },[&](u32 id_b){
-                                flt rab = sycl::distance( xyz_a , r[id_b]);
+                            //particle_looper.rtree_for([&](u32, vec bmin,vec bmax) -> bool {
+                            //    return shammath::domain_are_connected(bmin,bmax,inter_box_a_min,inter_box_a_max);
+                            //},[&](u32 id_b){
+                            particle_looper.for_each_object(id_a,[&](u32 id_b){
+                                vec dr = xyz_a - r[id_b];
+                                flt rab2 = sycl::dot(dr,dr);
 
-                                if(rab > h_a*Kernel::Rkern) { 
+                                if(rab2 > dint) { 
                                     return;
                                 }
+
+                                flt rab = sycl::sqrt(rab2);
 
                                 rho_sum += part_mass*Kernel::W(rab,h_a);
                                 sumdWdh += part_mass*Kernel::dhW(rab,h_a);
@@ -506,9 +656,13 @@ namespace shammodels::sph {
 
                 RTree & tree = trees.get(p.id_patch);
 
+                tree::ObjectCache & neigh_cache = hiter_neigh_caches.get(p.id_patch);
+
                 shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
 
-                    tree::ObjectIterator particle_looper(tree,cgh);
+                    //tree::ObjectIterator particle_looper(tree,cgh);
+
+                    tree::ObjectCacheIterator particle_looper(neigh_cache,cgh);
 
                     sycl::accessor r {merged_r, cgh,sycl::read_only};
                     sycl::accessor hpart {hnew, cgh,sycl::read_only};
@@ -525,6 +679,7 @@ namespace shammodels::sph {
                         vec xyz_a = r[id_a]; // could be recovered from lambda
 
                         flt h_a = hpart[id_a];
+                        flt dint = h_a*h_a* Kernel::Rkern* Kernel::Rkern;
 
                         vec inter_box_a_min = xyz_a - h_a * Kernel::Rkern;
                         vec inter_box_a_max = xyz_a + h_a * Kernel::Rkern;
@@ -532,14 +687,18 @@ namespace shammodels::sph {
                         flt rho_sum = 0;
                         flt part_omega_sum = 0;
 
-                        particle_looper.rtree_for([&](u32, vec bmin,vec bmax) -> bool {
-                            return shammath::domain_are_connected(bmin,bmax,inter_box_a_min,inter_box_a_max);
-                        },[&](u32 id_b){
-                            flt rab = sycl::distance( xyz_a , r[id_b]);
+                        //particle_looper.rtree_for([&](u32, vec bmin,vec bmax) -> bool {
+                        //    return shammath::domain_are_connected(bmin,bmax,inter_box_a_min,inter_box_a_max);
+                        //},[&](u32 id_b){
+                        particle_looper.for_each_object(id_a,[&](u32 id_b){
+                            vec dr = xyz_a - r[id_b];
+                            flt rab2 = sycl::dot(dr,dr);
 
-                            if(rab > h_a*Kernel::Rkern) { 
+                            if(rab2 > dint) { 
                                 return;
                             }
+
+                            flt rab = sycl::sqrt(rab2);
 
                             rho_sum += part_mass*Kernel::W(rab,h_a);
                             part_omega_sum += part_mass * Kernel::dhW(rab,h_a);
@@ -562,6 +721,7 @@ namespace shammodels::sph {
         }
         _epsilon_h.reset();
         _h_old.reset();
+        hiter_neigh_caches.reset();
 
         using RTreeField = RadixTreeField<flt>;
         shambase::DistributedData<RTreeField> rtree_field_h;
@@ -1016,6 +1176,13 @@ corrector_iter_cnt ++;
             vtk_dump_add_compute_field(scheduler(), writter, density, "rho");
             vtk_dump_add_compute_field(scheduler(), writter, omega, "omega");
         }
+
+
+        tstep.end();
+
+        f64 rate = f64(scheduler().get_rank_count()) / tstep.elasped_sec();
+
+        logger::info_ln("BasicSPH", "process rate : ",rate,"particle.s-1");
     }
 
 } // namespace shammodels::sph

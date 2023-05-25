@@ -85,6 +85,15 @@ namespace shammodels::sph {
             sycl::buffer<flt> & tree_field_hmax
         );
 
+        shamrock::tree::ObjectCache build_hiter_neigh_cache(
+            u32 start_offset,
+            u32 obj_cnt, 
+            sycl::buffer<vec> & buf_xyz,
+            sycl::buffer<flt> & buf_hpart,
+            RadixTree<u_morton, vec, 3>&tree,
+            flt h_tolerance 
+        );
+
 
         /**
          * @brief 
