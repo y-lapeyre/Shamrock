@@ -561,8 +561,16 @@ namespace shammodels::sph {
         _epsilon_h.reset();
         _h_old.reset();
 
+        using RTreeField = RadixTreeField<flt>;
+        shambase::DistributedData<RTreeField> rtree_field_h;
+        shambase::DistributedData<tree::ObjectCache> neigh_caches;
+
+        
+        u32 corrector_iter_cnt = 0;
         bool need_rerun_corrector = false;
         do{
+
+            
 
         //communicate fields
         
@@ -663,12 +671,9 @@ namespace shammodels::sph {
             });
         }
 
-        using RTreeField = RadixTreeField<flt>;
-        shambase::DistributedData<RTreeField> rtree_field_h;
-
         //compute tree hmax
-        {
-            NamedStackEntry stack_loc{"compute tree hmax"};
+        //the smoothing won't change between steps so we can compute this only once
+        if(corrector_iter_cnt == 0){
 
             rtree_field_h = trees.map<RTreeField>(
                 [&](u64 id, RTree & rtree){
@@ -677,25 +682,43 @@ namespace shammodels::sph {
                         mpdat.get(id).pdat.get_field<flt>(ihpart_interf).get_buf(), 
                         1);
                 });
+    
+            
+            scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+
+                logger::debug_ln("BasicSPH", "build particle cache");
+
+                NamedStackEntry cache_build_stack_loc{"build cache"};
+
+                MergedPatchData & merged_patch = mpdat.get(cur_p.id_patch);
+
+                sycl::buffer<vec> & buf_xyz      = shambase::get_check_ref(merged_xyz.get(cur_p.id_patch).field.get_buf());
+                sycl::buffer<flt> & buf_hpart    = shambase::get_check_ref(merged_patch.pdat.get_field<flt>(ihpart_interf).get_buf());
+                sycl::buffer<flt> & tree_field_hmax = shambase::get_check_ref(rtree_field_h.get(cur_p.id_patch).radix_tree_field_buf);
+
+                sycl::range range_npart{pdat.get_obj_cnt()};
+
+                RTree & tree = trees.get(cur_p.id_patch);
+
+                tree::ObjectCache pcache = build_neigh_cache(
+                    0, 
+                    pdat.get_obj_cnt(),
+                    buf_xyz, 
+                    buf_hpart, 
+                    tree, 
+                    tree_field_hmax);
+
+                neigh_caches.add_obj(cur_p.id_patch, std::move(pcache));
+
+            });
+            
         }
+
+
         
 
 
         // compute force
-        //logger::info_ln("sph::BasicGas", "compute force");
-        //scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
-        //    shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-        //        sycl::accessor acc_f{
-        //            shambase::get_check_ref(pdat.get_field<vec>(iaxyz).get_buf()),
-        //            cgh,
-        //            sycl::write_only};
-        //
-        //        cgh.parallel_for(sycl::range<1>{pdat.get_obj_cnt()}, [=](sycl::item<1> item) {
-        //            u32 gid     = (u32)item.get_id();
-        //            acc_f[item] = vec{1, 1, 1};
-        //        });
-        //    });
-        //});
 
 
         logger::info_ln("sph::BasicGas", "compute force");
@@ -730,13 +753,7 @@ namespace shammodels::sph {
                 RTree & tree = trees.get(cur_p.id_patch);
 
 
-                tree::ObjectCache pcache = build_neigh_cache(
-                    0, 
-                    pdat.get_obj_cnt(),
-                    buf_xyz, 
-                    buf_hpart, 
-                    tree, 
-                    tree_field_hmax);
+                tree::ObjectCache & pcache = neigh_caches.get(cur_p.id_patch);
 
 
                 /////////////////////////////////////////////
@@ -934,6 +951,8 @@ namespace shammodels::sph {
                 need_rerun_corrector = false;
             }
 
+
+corrector_iter_cnt ++;
         }while(need_rerun_corrector);
 
         // if delta too big jump to compute force
