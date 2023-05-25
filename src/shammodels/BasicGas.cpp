@@ -237,7 +237,7 @@ namespace shammodels::sph {
                 neigh_cnt[id_a] = cnt ; 
 
             });
-        }).wait();
+        });
 
         tree::ObjectCache pcache = tree::prepare_object_cache(std::move(neigh_count), obj_cnt);
 
@@ -297,7 +297,7 @@ namespace shammodels::sph {
                             
 
             });
-        }).wait();
+        });
 
         return pcache;
     }
@@ -399,6 +399,8 @@ namespace shammodels::sph {
         ComputeField<flt> _epsilon_h = utility.make_compute_field<flt>("epsilon_h", 1,flt(100));
         ComputeField<flt> _h_old = utility.save_field<flt>(ihpart, "h_old");
         ComputeField<flt> omega = utility.make_compute_field<flt>("omega", 1);
+
+
 
         for(u32 iter_h = 0; iter_h < 5; iter_h ++){
             NamedStackEntry stack_loc2 {"iterate smoothing lenght"};

@@ -367,8 +367,6 @@ namespace shamrock::tree {
             counts, 
             obj_cnt);
 
-        shamsys::instance::get_compute_queue().wait();
-
         u32 neigh_sum = neigh_last_val + shamalgs::memory::extract_element(shamsys::instance::get_compute_queue(), neigh_scanned_vals, obj_cnt-1);
 
         logger::raw_ln("chache buf size : ",neigh_sum);
