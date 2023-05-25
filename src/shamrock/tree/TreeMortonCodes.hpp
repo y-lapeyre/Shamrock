@@ -49,6 +49,25 @@ namespace shamrock::tree {
                 buf_particle_index_map);
         }
 
+        template<class T>
+        inline static std::unique_ptr<sycl::buffer<u_morton>>
+        build_raw(sycl::queue &queue,
+                  shammath::CoordRange<T> coord_range,
+                  u32 obj_cnt,
+                  sycl::buffer<T> &pos_buf) {
+
+            std::unique_ptr<sycl::buffer<u_morton>> buf_morton;
+
+            StackEntry stack_loc{};
+
+            using TProp = shambase::VectorProperties<T>;
+
+            RadixTreeMortonBuilder<u_morton, T, TProp::dimension>::build_raw(
+                queue, {coord_range.lower, coord_range.upper}, pos_buf, obj_cnt, buf_morton);
+
+            return buf_morton;
+        }
+
         [[nodiscard]] inline u64 memsize() const {
             u64 sum = 0;
 
@@ -73,8 +92,8 @@ namespace shamrock::tree {
               buf_particle_index_map(shamalgs::memory::duplicate(other.buf_particle_index_map)) {}
 
         inline TreeMortonCodes &operator=(TreeMortonCodes &&other) noexcept {
-            obj_cnt     = std::move(other.obj_cnt    );
-            buf_morton     = std::move(other.buf_morton    );
+            obj_cnt                = std::move(other.obj_cnt);
+            buf_morton             = std::move(other.buf_morton);
             buf_particle_index_map = std::move(other.buf_particle_index_map);
 
             return *this;
@@ -146,7 +165,8 @@ namespace shamrock::tree {
          */
         inline u64 serialize_byte_size() {
             using H = shamalgs::SerializeHelper;
-            return H::serialize_byte_size<u32>() + H::serialize_byte_size<u32>(obj_cnt) + H::serialize_byte_size<u_morton>(obj_cnt);
+            return H::serialize_byte_size<u32>() + H::serialize_byte_size<u32>(obj_cnt) +
+                   H::serialize_byte_size<u_morton>(obj_cnt);
         }
     };
 
