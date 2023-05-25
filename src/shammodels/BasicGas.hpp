@@ -15,6 +15,8 @@
 #include "shamrock/scheduler/SerialPatchTree.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
 #include "shamrock/sph/kernels.hpp"
+#include "shamrock/tree/RadixTree.hpp"
+#include "shamrock/tree/TreeTraversal.hpp"
 
 namespace shammodels::sph {
 
@@ -73,6 +75,15 @@ namespace shammodels::sph {
             std::string vtk_dump_fname;
             bool vtk_dump_patch_id;
         };
+
+        shamrock::tree::ObjectCache build_neigh_cache(
+            u32 start_offset,
+            u32 obj_cnt, 
+            sycl::buffer<vec> & buf_xyz,
+            sycl::buffer<flt> & buf_hpart,
+            RadixTree<u_morton, vec, 3>&tree,
+            sycl::buffer<flt> & tree_field_hmax
+        );
 
 
         /**

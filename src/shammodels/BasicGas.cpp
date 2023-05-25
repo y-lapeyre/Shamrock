@@ -165,6 +165,143 @@ namespace shammodels::sph {
         reatrib.reatribute_patch_objects(sptree, "xyz");
     }
 
+
+    inline shamrock::tree::ObjectCache BasicGas::build_neigh_cache(
+        u32 start_offset,
+        u32 obj_cnt, 
+        sycl::buffer<vec> & buf_xyz,
+        sycl::buffer<flt> & buf_hpart,
+        RadixTree<u_morton, vec, 3>&tree,
+        sycl::buffer<flt> & tree_field_hmax
+        ){
+
+        StackEntry stack_loc{};
+
+        using namespace shamrock;
+
+        sycl::buffer<u32> neigh_count (obj_cnt);
+
+        shamsys::instance::get_compute_queue().submit([&,start_offset](sycl::handler &cgh) {
+
+            tree::ObjectIterator particle_looper(tree,cgh);
+
+            //tree::LeafCacheObjectIterator particle_looper(tree,*xyz_cell_id,leaf_cache,cgh);
+
+            sycl::accessor xyz      {buf_xyz     , cgh, sycl::read_only}; 
+            sycl::accessor hpart    {buf_hpart   , cgh, sycl::read_only}; 
+
+            sycl::accessor hmax_tree {tree_field_hmax, cgh, sycl::read_only};
+
+            sycl::accessor neigh_cnt {neigh_count,cgh,sycl::write_only, sycl::no_init};
+
+                //sycl::stream out {4096,1024,cgh};
+
+            constexpr flt Rker2 = Kernel::Rkern*Kernel::Rkern;
+
+            cgh.parallel_for(sycl::range<1>{obj_cnt}, [=](sycl::item<1> item) {
+
+                u32 id_a = start_offset + (u32)item.get_id(0);
+
+                flt h_a        = hpart[id_a];
+
+
+                vec xyz_a = xyz[id_a];
+            
+                vec inter_box_a_min = xyz_a - h_a * Kernel::Rkern;
+                vec inter_box_a_max = xyz_a + h_a * Kernel::Rkern;
+
+                u32 cnt = 0;
+
+                particle_looper.rtree_for([&](u32 node_id, vec bmin,vec bmax) -> bool {
+                    flt int_r_max_cell     = hmax_tree[node_id] * Kernel::Rkern;
+                
+                    using namespace walker::interaction_crit;
+                
+                    return sph_radix_cell_crit(xyz_a, inter_box_a_min, inter_box_a_max, bmin,
+                                            bmax, int_r_max_cell);
+                },[&](u32 id_b){
+                
+                //particle_looper.for_each_object(id_a,[&](u32 id_b){
+                    // compute only omega_a
+                    vec dr = xyz_a - xyz[id_b];
+                    flt rab2 = sycl::dot(dr,dr);
+                    flt h_b  = hpart[id_b];
+
+                    if (rab2 > h_a*h_a * Rker2 && rab2 > h_b*h_b * Rker2){
+                        return;
+                    }
+
+                    cnt ++;
+                });
+                        
+                neigh_cnt[id_a] = cnt ; 
+
+            });
+        }).wait();
+
+        tree::ObjectCache pcache = tree::prepare_object_cache(std::move(neigh_count), obj_cnt);
+
+        shamsys::instance::get_compute_queue().submit([&,start_offset](sycl::handler &cgh) {
+
+            tree::ObjectIterator particle_looper(tree,cgh);
+
+            //tree::LeafCacheObjectIterator particle_looper(tree,*xyz_cell_id,leaf_cache,cgh);
+
+            sycl::accessor xyz      {buf_xyz     , cgh, sycl::read_only}; 
+            sycl::accessor hpart    {buf_hpart   , cgh, sycl::read_only}; 
+
+            sycl::accessor hmax_tree {tree_field_hmax, cgh, sycl::read_only};
+
+            sycl::accessor scanned_neigh_cnt {pcache.scanned_cnt,cgh,sycl::read_only};
+            sycl::accessor neigh {pcache.index_neigh_map, cgh,sycl::write_only,sycl::no_init};
+
+                //sycl::stream out {4096,1024,cgh};
+
+            constexpr flt Rker2 = Kernel::Rkern*Kernel::Rkern;
+
+            cgh.parallel_for(sycl::range<1>{obj_cnt}, [=](sycl::item<1> item) {
+
+                u32 id_a = start_offset + (u32)item.get_id(0);
+
+                flt h_a        = hpart[id_a];
+
+
+                vec xyz_a = xyz[id_a];
+            
+                vec inter_box_a_min = xyz_a - h_a * Kernel::Rkern;
+                vec inter_box_a_max = xyz_a + h_a * Kernel::Rkern;
+
+                u32 cnt = scanned_neigh_cnt[id_a];
+
+                particle_looper.rtree_for([&](u32 node_id, vec bmin,vec bmax) -> bool {
+                    flt int_r_max_cell     = hmax_tree[node_id] * Kernel::Rkern;
+                
+                    using namespace walker::interaction_crit;
+                
+                    return sph_radix_cell_crit(xyz_a, inter_box_a_min, inter_box_a_max, bmin,
+                                            bmax, int_r_max_cell);
+                },[&](u32 id_b){
+                
+                //particle_looper.for_each_object(id_a,[&](u32 id_b){
+                    // compute only omega_a
+                    vec dr = xyz_a - xyz[id_b];
+                    flt rab2 = sycl::dot(dr,dr);
+                    flt h_b  = hpart[id_b];
+
+                    if (rab2 > h_a*h_a * Rker2 && rab2 > h_b*h_b * Rker2){
+                        return;
+                    }
+                    neigh[cnt] = id_b;
+                    cnt ++;
+                });
+                            
+
+            });
+        }).wait();
+
+        return pcache;
+    }
+
     void BasicGas::evolve(f64 dt, bool enable_physics, DumpOption dump_opt) {
 
         logger::info_ln("sph::BasicGas", ">>> Step :", dt);
@@ -593,298 +730,13 @@ namespace shammodels::sph {
                 RTree & tree = trees.get(cur_p.id_patch);
 
 
-                shamsys::instance::get_compute_queue().wait();
-                #ifdef false
-                /////////////////////////////////////////////
-                //experimental leaf cache
-                u32 tree_leaf_cnt = tree.tree_reduced_morton_codes.tree_leaf_count;
-                sycl::buffer<u32> cnt_neigh(tree_leaf_cnt);
-                {   NamedStackEntry stack_tmp{"leaf cache 1"};
-
-                    
-                    shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-
-                        tree::LeafIterator leaf_looper(tree,cgh);
-
-                        sycl::accessor hmax_tree {tree_field_hmax, cgh, sycl::read_only};
-                        sycl::accessor ncnt {cnt_neigh,cgh,sycl::write_only,sycl::no_init};
-
-                        cgh.parallel_for(sycl::range<1>{tree_leaf_cnt}, [=](sycl::item<1> item){
-
-                            flt rint_a = hmax_tree[item]* Kernel::Rkern;
-                            
-                            vec b_a_min = leaf_looper.pos_min_cell[item];
-                            vec b_a_max = leaf_looper.pos_max_cell[item];
-
-                            vec b_a_min_int = leaf_looper.pos_min_cell[item] - rint_a;
-                            vec b_a_max_int = leaf_looper.pos_max_cell[item] + rint_a;
-
-                            u32 cnt = 0;
-
-                            leaf_looper.rtree_for([&](u32 node_id, vec bmin,vec bmax) -> bool {
-                                flt int_r_max_cell     = hmax_tree[node_id] * Kernel::Rkern;
-
-                                vec inter_box_b_min = bmin - int_r_max_cell;
-                                vec inter_box_b_max = bmax + int_r_max_cell;
-
-                                return BBAA::cella_neigh_b(b_a_min_int, b_a_max_int, bmin, bmax) ||
-                                    BBAA::cella_neigh_b(b_a_min, b_a_max, inter_box_b_min, inter_box_b_max);  
-                            },[&](u32 id_b){
-                                cnt ++;
-                            });
-
-                            ncnt[item] = cnt;
-                        });
-
-                    }).wait();
-                
-                }
-
-                u32 last_val = shamalgs::memory::extract_element(shamsys::instance::get_compute_queue(), cnt_neigh, tree_leaf_cnt-1);
-
-
-                logger::raw_ln("last_val : ",last_val);
-
-                sycl::buffer<u32> scanned_vals = shamalgs::numeric::exclusive_sum(
-                    shamsys::instance::get_compute_queue(), 
-                    cnt_neigh, 
-                    tree_leaf_cnt);
-
-                shamsys::instance::get_compute_queue().wait();
-
-                u32 sum = last_val + shamalgs::memory::extract_element(shamsys::instance::get_compute_queue(), scanned_vals, tree_leaf_cnt-1);
-
-                logger::raw_ln("chache buf size : ",sum);
-
-                sycl::buffer<u32> index_neigh_map (sum);
-
-                {   
-                    NamedStackEntry stack_tmp{"fill cache"};
-
-                    
-                    shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-
-                        tree::LeafIterator leaf_looper(tree,cgh);
-
-                        sycl::accessor hmax_tree {tree_field_hmax, cgh, sycl::read_only};
-                        sycl::accessor start_id {scanned_vals, cgh, sycl::read_only};
-                        sycl::accessor neigh_map{index_neigh_map,cgh,sycl::write_only,sycl::no_init};
-
-                        cgh.parallel_for(sycl::range<1>{tree_leaf_cnt}, [=](sycl::item<1> item){
-
-                            flt rint_a = hmax_tree[item]* Kernel::Rkern;
-
-                            vec b_a_min = leaf_looper.pos_min_cell[item];
-                            vec b_a_max = leaf_looper.pos_max_cell[item];
-
-                            vec b_a_min_int = leaf_looper.pos_min_cell[item] - rint_a;
-                            vec b_a_max_int = leaf_looper.pos_max_cell[item] + rint_a;
-
-                            u32 idx = start_id[item];
-
-                            leaf_looper.rtree_for([&](u32 node_id, vec bmin,vec bmax) -> bool {
-                                flt int_r_max_cell     = hmax_tree[node_id] * Kernel::Rkern;
-
-                                vec inter_box_b_min = bmin - int_r_max_cell;
-                                vec inter_box_b_max = bmax + int_r_max_cell;
-
-                                return BBAA::cella_neigh_b(b_a_min_int, b_a_max_int, bmin, bmax) ||
-                                    BBAA::cella_neigh_b(b_a_min, b_a_max, inter_box_b_min, inter_box_b_max);  
-                            },[&](u32 id_b){
-                                neigh_map[idx] = id_b;
-                                idx ++;
-                            });
-
-                        });
-
-                    }).wait();
-                
-                }
-
-                tree::LeafCache leaf_cache {
-                    std::move(cnt_neigh),
-                    std::move(scanned_vals),
-                    sum,
-                    std::move(index_neigh_map)
-                };
-
-
-
-
-
-                std::unique_ptr<sycl::buffer<u_morton>> buf_morton_pos;
-                std::unique_ptr<sycl::buffer<u32>> xyz_cell_id;
-
-                {NamedStackEntry stack_tmp{"tag particles"};
-                //find which particle belongs to which cell
-                buf_morton_pos = tree.build_new_morton_buf(buf_xyz, merged_patch.total_elements);
-
-                xyz_cell_id  = std::make_unique<sycl::buffer<u32>>(merged_patch.total_elements);
-                shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-
-                    sycl::accessor cell_ids {*xyz_cell_id, cgh, sycl::write_only, sycl::no_init};
-                    sycl::accessor mortons {shambase::get_check_ref(buf_morton_pos), cgh, sycl::read_only};
-
-                    tree::LeafRadixFinder finder {tree,cgh};
-
-                    cgh.parallel_for(sycl::range<1>{merged_patch.total_elements}, [=](sycl::item<1> item){
-                        cell_ids[item] = finder.identify_cell(mortons[item]);
-                    });
-
-                }).wait();
-
-                //shamalgs::memory::print_buf(
-                //    *xyz_cell_id, 
-                //    merged_patch.total_elements, 16, "{:6} ");
-                }
-
-                #endif
-
-
-                sycl::buffer<u32> neigh_count (pdat.get_obj_cnt());
-
-                shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-
-                    tree::ObjectIterator particle_looper(tree,cgh);
-
-                    //tree::LeafCacheObjectIterator particle_looper(tree,*xyz_cell_id,leaf_cache,cgh);
-
-                    sycl::accessor xyz      {buf_xyz     , cgh, sycl::read_only}; 
-                    sycl::accessor hpart    {buf_hpart   , cgh, sycl::read_only}; 
-
-                    sycl::accessor hmax_tree {tree_field_hmax, cgh, sycl::read_only};
-
-                    sycl::accessor neigh_cnt {neigh_count,cgh,sycl::write_only, sycl::no_init};
-
-                        //sycl::stream out {4096,1024,cgh};
-
-                    constexpr flt Rker2 = Kernel::Rkern*Kernel::Rkern;
-
-                    cgh.parallel_for(sycl::range<1>{pdat.get_obj_cnt()}, [=](sycl::item<1> item) {
-
-                        u32 id_a = (u32)item.get_id(0);
-
-                        flt h_a        = hpart[id_a];
-
-
-                        vec xyz_a = xyz[id_a];
-                    
-                        vec inter_box_a_min = xyz_a - h_a * Kernel::Rkern;
-                        vec inter_box_a_max = xyz_a + h_a * Kernel::Rkern;
-
-                        u32 cnt = 0;
-
-                        particle_looper.rtree_for([&](u32 node_id, vec bmin,vec bmax) -> bool {
-                            flt int_r_max_cell     = hmax_tree[node_id] * Kernel::Rkern;
-                        
-                            using namespace walker::interaction_crit;
-                        
-                            return sph_radix_cell_crit(xyz_a, inter_box_a_min, inter_box_a_max, bmin,
-                                                    bmax, int_r_max_cell);
-                        },[&](u32 id_b){
-                        
-                        //particle_looper.for_each_object(id_a,[&](u32 id_b){
-                            // compute only omega_a
-                            vec dr = xyz_a - xyz[id_b];
-                            flt rab2 = sycl::dot(dr,dr);
-                            flt h_b  = hpart[id_b];
-
-                            if (rab2 > h_a*h_a * Rker2 && rab2 > h_b*h_b * Rker2){
-                                return;
-                            }
-
-                            cnt ++;
-                        });
-                                
-                        neigh_cnt[id_a] = cnt ; 
-
-                    });
-                }).wait();
-
-                u32 neigh_last_val = shamalgs::memory::extract_element(shamsys::instance::get_compute_queue(), neigh_count, pdat.get_obj_cnt()-1);
-
-                logger::raw_ln("last_val : ",neigh_last_val);
-
-                sycl::buffer<u32> neigh_scanned_vals = shamalgs::numeric::exclusive_sum(
-                    shamsys::instance::get_compute_queue(), 
-                    neigh_count, 
-                    pdat.get_obj_cnt());
-
-                shamsys::instance::get_compute_queue().wait();
-
-                u32 neigh_sum = neigh_last_val + shamalgs::memory::extract_element(shamsys::instance::get_compute_queue(), neigh_scanned_vals, pdat.get_obj_cnt()-1);
-
-                logger::raw_ln("chache buf size : ",neigh_sum);
-
-                sycl::buffer<u32> particle_neigh_map (neigh_sum);
-
-                shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-
-                    tree::ObjectIterator particle_looper(tree,cgh);
-
-                    //tree::LeafCacheObjectIterator particle_looper(tree,*xyz_cell_id,leaf_cache,cgh);
-
-                    sycl::accessor xyz      {buf_xyz     , cgh, sycl::read_only}; 
-                    sycl::accessor hpart    {buf_hpart   , cgh, sycl::read_only}; 
-
-                    sycl::accessor hmax_tree {tree_field_hmax, cgh, sycl::read_only};
-
-                    sycl::accessor scanned_neigh_cnt {neigh_scanned_vals,cgh,sycl::read_only};
-                    sycl::accessor neigh {particle_neigh_map, cgh,sycl::write_only,sycl::no_init};
-
-                        //sycl::stream out {4096,1024,cgh};
-
-                    constexpr flt Rker2 = Kernel::Rkern*Kernel::Rkern;
-
-                    cgh.parallel_for(sycl::range<1>{pdat.get_obj_cnt()}, [=](sycl::item<1> item) {
-
-                        u32 id_a = (u32)item.get_id(0);
-
-                        flt h_a        = hpart[id_a];
-
-
-                        vec xyz_a = xyz[id_a];
-                    
-                        vec inter_box_a_min = xyz_a - h_a * Kernel::Rkern;
-                        vec inter_box_a_max = xyz_a + h_a * Kernel::Rkern;
-
-                        u32 cnt = scanned_neigh_cnt[id_a];
-
-                        particle_looper.rtree_for([&](u32 node_id, vec bmin,vec bmax) -> bool {
-                            flt int_r_max_cell     = hmax_tree[node_id] * Kernel::Rkern;
-                        
-                            using namespace walker::interaction_crit;
-                        
-                            return sph_radix_cell_crit(xyz_a, inter_box_a_min, inter_box_a_max, bmin,
-                                                    bmax, int_r_max_cell);
-                        },[&](u32 id_b){
-                        
-                        //particle_looper.for_each_object(id_a,[&](u32 id_b){
-                            // compute only omega_a
-                            vec dr = xyz_a - xyz[id_b];
-                            flt rab2 = sycl::dot(dr,dr);
-                            flt h_b  = hpart[id_b];
-
-                            if (rab2 > h_a*h_a * Rker2 && rab2 > h_b*h_b * Rker2){
-                                return;
-                            }
-                            neigh[cnt] = id_b;
-                            cnt ++;
-                        });
-                                 
-
-                    });
-                }).wait();
-
-                tree::ObjectCache pcache {
-                    std::move(neigh_count),
-                    std::move(neigh_scanned_vals),
-                    neigh_sum,
-                    std::move(particle_neigh_map)
-                };
-
-
-
+                tree::ObjectCache pcache = build_neigh_cache(
+                    0, 
+                    pdat.get_obj_cnt(),
+                    buf_xyz, 
+                    buf_hpart, 
+                    tree, 
+                    tree_field_hmax);
 
 
                 /////////////////////////////////////////////

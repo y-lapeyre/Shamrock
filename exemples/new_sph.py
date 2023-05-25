@@ -12,7 +12,7 @@ sim.setup_fields()
 
 
 #start the scheduler
-ctx.init_sched(int(1e4),1)
+ctx.init_sched(int(1e6),1)
 
 
 
@@ -40,9 +40,9 @@ pmass = -1
 setup = shamrock.SetupSPH(kernel = "M4", precision = "double")
 setup.init(ctx)
 
-(xs,ys,zs) = setup.get_box_dim(1,128,48,48)
+(xs,ys,zs) = setup.get_box_dim(1,256,24,24)
 dr = 1/xs
-(xs,ys,zs) = setup.get_box_dim(dr,128,48,48)
+(xs,ys,zs) = setup.get_box_dim(dr,256,24,24)
 
 ctx.set_coord_domain_bound((-xs,-ys/2,-zs/2),(xs,ys/2,zs/2))
 
@@ -90,5 +90,5 @@ sim.set_particle_mass(pmass)
 for i in range(5):
     sim.evolve(1e-3, False, False, "", False)
 
-for i in range(100):
+for i in range(10000):
     sim.evolve(1e-3, True, True, "dump_"+str(i)+".vtk", True)

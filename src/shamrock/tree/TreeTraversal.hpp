@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include "shamalgs/numeric/numeric.hpp"
 #include "shambase/sycl.hpp"
 #include "shamrock/tree/RadixTree.hpp"
 
@@ -345,6 +346,9 @@ namespace shamrock::tree {
     };
 
 
+    
+
+
 
     struct ObjectCache{
         sycl::buffer<u32> cnt_neigh;
@@ -352,6 +356,35 @@ namespace shamrock::tree {
         u32 sum_neigh_cnt;
         sycl::buffer<u32> index_neigh_map;
     };
+
+    inline ObjectCache prepare_object_cache(sycl::buffer<u32> && counts, u32 obj_cnt){
+        u32 neigh_last_val = shamalgs::memory::extract_element(shamsys::instance::get_compute_queue(), counts, obj_cnt-1);
+
+        logger::raw_ln("last_val : ",neigh_last_val);
+
+        sycl::buffer<u32> neigh_scanned_vals = shamalgs::numeric::exclusive_sum(
+            shamsys::instance::get_compute_queue(), 
+            counts, 
+            obj_cnt);
+
+        shamsys::instance::get_compute_queue().wait();
+
+        u32 neigh_sum = neigh_last_val + shamalgs::memory::extract_element(shamsys::instance::get_compute_queue(), neigh_scanned_vals, obj_cnt-1);
+
+        logger::raw_ln("chache buf size : ",neigh_sum);
+
+        sycl::buffer<u32> particle_neigh_map (neigh_sum);
+
+        tree::ObjectCache pcache {
+            std::move(counts),
+            std::move(neigh_scanned_vals),
+            neigh_sum,
+            std::move(particle_neigh_map)
+        };
+
+        return pcache;
+    }
+    
     
     class ObjectCacheIterator{
 
