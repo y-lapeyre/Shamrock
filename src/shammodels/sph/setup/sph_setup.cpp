@@ -10,6 +10,7 @@
 
 #include "sph_setup.hpp"
 #include "shamrock/legacy/patch/comm/patch_object_mover.hpp"
+#include "shamrock/scheduler/ReattributeDataUtility.hpp"
 #include "shamrock/scheduler/SerialPatchTree.hpp"
 #include "shamrock/sph/kernels.hpp"
 
@@ -97,8 +98,13 @@ void models::sph::SetupSPH<flt, Kernel>::add_particules_fcc(PatchScheduler &sche
 
         //sptree.print_status();
 
+
+        shamrock::ReattributeDataUtility reatrib(sched);
+
         sptree.attach_buf();
-        reatribute_particles(sched, sptree, periodic_mode);
+        //reatribute_particles(sched, sptree, periodic_mode);
+
+        reatrib.reatribute_patch_objects(sptree, "xyz");
     }
 
     sched.check_patchdata_locality_corectness();
@@ -113,6 +119,52 @@ void models::sph::SetupSPH<flt, Kernel>::add_particules_fcc(PatchScheduler &sche
         std::cout << "patch id : " << pid << " len = " << pdat.get_obj_cnt() << std::endl;
     });
 }
+
+
+template<class flt, class Kernel>
+auto models::sph::SetupSPH<flt, Kernel>::get_closest_part_to(PatchScheduler &sched,vec pos) -> vec{
+
+    using namespace shamrock::patch;
+
+    vec best_dr = shambase::VectorProperties<vec>::get_max();
+    flt best_dist2 = shambase::VectorProperties<flt>::get_max();
+
+    sched.for_each_patchdata_nonempty([&](const Patch, PatchData & pdat){
+        sycl::buffer<vec> & xyz = shambase::get_check_ref(pdat.get_field<vec>(0).get_buf());
+
+        sycl::host_accessor acc {xyz, sycl::read_only};
+
+        u32 cnt = pdat.get_obj_cnt();
+
+        for(u32 i = 0; i < cnt; i++){
+            vec tmp = acc[i];
+            vec dr = tmp - pos;
+            flt dist2 = sycl::dot(dr,dr);
+            if(dist2 < best_dist2){
+                best_dr = dr;
+                best_dist2 = dist2;
+            }
+        }
+    });
+
+
+    std::vector<vec> list_dr {};
+    shamalgs::collective::vector_allgatherv(std::vector<vec>{best_dr},list_dr,MPI_COMM_WORLD);
+
+
+    for(vec tmp : list_dr){
+        vec dr = tmp - pos;
+        flt dist2 = sycl::dot(dr,dr);
+        if(dist2 < best_dist2){
+            best_dr = dr;
+            best_dist2 = dist2;
+        }
+    }
+
+    return pos + best_dr;
+
+}
+
 
 
 
