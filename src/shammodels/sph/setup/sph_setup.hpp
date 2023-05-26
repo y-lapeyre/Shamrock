@@ -62,6 +62,11 @@ namespace models::sph {
             generic::setup::modifiers::set_value_in_box(sched, val,  name, box);
         }
 
+        template<class T> 
+        inline void set_value_in_sphere(PatchScheduler & sched, T val, std::string name, vec center, flt radius){StackEntry stack_loc{};
+            generic::setup::modifiers::set_value_in_sphere(sched, val, name,center, radius);
+        }
+
         inline void pertub_eigenmode_wave(PatchScheduler &sched, std::tuple<flt,flt> ampls, vec k, flt phase){StackEntry stack_loc{};
             generic::setup::modifiers::pertub_eigenmode_wave(sched, ampls, k, phase);
         }
@@ -90,6 +95,8 @@ namespace models::sph {
                 part_mass);
                 
         }
+
+        vec get_closest_part_to(PatchScheduler &sched,vec pos);
 
     };
 

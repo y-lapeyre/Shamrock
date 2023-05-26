@@ -64,6 +64,26 @@ Register_pymod(pynamedsphsetup){
 
 
         })
+        .def("set_value_in_sphere", [](NamedSetupSPH & self, ShamrockCtx & ctx, std::string type ,py::object val, std::string name, std::tuple<f64,f64,f64> center, f64 radius){
+            StackEntry stack_loc{};
+            auto [xm,ym,zm] = center;
+
+            if(type == "f32"){
+                f32 tmp = val.cast<f32>();
+                self.set_value_in_sphere(ctx, tmp, name, f64_3{xm,ym,zm},radius);
+            }else if(type == "f64"){
+                f64 tmp = val.cast<f64>();
+                self.set_value_in_sphere(ctx, tmp, name, f64_3{xm,ym,zm},radius);
+            }else if(type == "f64_3"){
+                auto tmp_ = val.cast<std::tuple<f64,f64,f64>>();
+                f64_3 tmp {std::get<0>(tmp_), std::get<1>(tmp_), std::get<2>(tmp_)};
+                self.set_value_in_sphere(ctx, tmp, name, f64_3{xm,ym,zm},radius);
+            }else{
+                throw shambase::throw_with_loc<std::invalid_argument>("unknown type");
+            }
+
+
+        })
         .def("pertub_eigenmode_wave", [](NamedSetupSPH & self, ShamrockCtx & ctx, std::tuple<f64,f64> ampls, std::tuple<f64,f64,f64> k, f64 phase){
             auto [kx,ky,kz] = k;
             self.pertub_eigenmode_wave(ctx, ampls, {kx,ky,kz}, phase);
@@ -76,6 +96,11 @@ Register_pymod(pynamedsphsetup){
         .def("set_total_mass", &NamedSetupSPH::set_total_mass)
         .def("get_part_mass", &NamedSetupSPH::get_part_mass)
         .def("update_smoothing_lenght", &NamedSetupSPH::update_smoothing_lenght)
+        .def("get_closest_part_to", [](NamedSetupSPH & self, ShamrockCtx & ctx, std::tuple<f64,f64,f64> pos) -> std::tuple<f64,f64,f64> {
+            auto [x,y,z] = pos;
+            auto tmp = self.get_closest_part_to(ctx, {x,y,z});
+            return {tmp.x(),tmp.y(),tmp.z()};
+        })
         
         
         ;

@@ -116,6 +116,18 @@ class NamedSetupSPH{
         }, setup);
     }
 
+    template<class T> 
+    inline void set_value_in_sphere(ShamrockCtx & ctx, T val, std::string name, vec center, f64 radius){
+        
+        if(!ctx.sched){
+            throw std::runtime_error("cannot initialize a setup with an uninitialized scheduler");
+        }
+
+        std::visit([&](auto && arg) {
+            arg.set_value_in_sphere(*ctx.sched, val, name, {center.x(), center.y(), center.z()},radius);
+        }, setup);
+    }
+
     inline void pertub_eigenmode_wave(ShamrockCtx & ctx, std::tuple<f64,f64> ampls, vec k, f64 phase){
 
         if(!ctx.sched){
@@ -141,6 +153,23 @@ class NamedSetupSPH{
             arg.add_particules_fcc(*ctx.sched, dr, {{b1.x(), b1.y(), b1.z()},{b2.x(), b2.y(), b2.z()}});
         }, setup);
 
+    }        
+    
+    inline vec get_closest_part_to(ShamrockCtx & ctx,vec pos){
+        if(!ctx.sched){
+            throw std::runtime_error("cannot initialize a setup with an uninitialized scheduler");
+        }
+
+        vec ret;
+
+        std::visit([&](auto && arg) {
+            auto tmp = arg.get_closest_part_to(*ctx.sched, {pos.x(),pos.y(),pos.z()});
+            ret.x() = tmp.x();
+            ret.y() = tmp.y();
+            ret.z() = tmp.z();
+        }, setup);
+
+        return ret;
     }
 
     inline void set_total_mass(f64 tot_mass){

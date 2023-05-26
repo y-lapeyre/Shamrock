@@ -51,6 +51,39 @@ inline void set_value_in_box(PatchScheduler &sched, T val, std::string name, std
     });
 }
 
+template <class T, class vec>
+inline void set_value_in_sphere(PatchScheduler &sched, T val, std::string name, vec center, shambase::VecComponent<vec> radius) {
+
+    using flt = shambase::VecComponent<vec>;
+
+    StackEntry stack_loc{};
+    sched.patch_data.for_each_patchdata([&](u64 patch_id, shamrock::patch::PatchData & pdat){
+
+        PatchDataField<vec> &xyz = pdat.template get_field<vec>(sched.pdl.get_field_idx<vec>("xyz"));
+
+        PatchDataField<T> &f = pdat.template get_field<T>(sched.pdl.get_field_idx<T>(name));
+
+        flt r2 = radius*radius;
+        {
+            auto & buf = f.get_buf();
+            sycl::host_accessor acc {*buf};
+
+            auto & buf_xyz = xyz.get_buf();
+            sycl::host_accessor acc_xyz {*buf_xyz};
+
+            for (u32 i = 0; i < f.size(); i++) {
+                vec dr = acc_xyz[i]-center;
+
+                if(sycl::dot(dr, dr) < r2){
+                    acc[i] = val;
+                }
+            }
+
+        }
+        
+    });
+}
+
 template <class flt>
 inline void pertub_eigenmode_wave(PatchScheduler &sched, std::tuple<flt, flt> ampls, sycl::vec<flt, 3> k, flt phase) {
 
