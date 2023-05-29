@@ -11,6 +11,7 @@
 #include "shamtest/shamtest.hpp"
 
 #include "shamrock/legacy/patch/base/patchdata_field.hpp"
+#include "shambase/time.hpp"
 
 
 SchedulerPatchList make_plist(std::mt19937 & eng, u32 max_patch_per_node, u32 nb_part){

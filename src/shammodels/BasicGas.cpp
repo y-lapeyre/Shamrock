@@ -32,6 +32,7 @@
 #include "shamrock/tree/TreeTraversal.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
+#include "shambase/time.hpp"
 
 
 

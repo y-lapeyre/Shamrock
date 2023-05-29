@@ -6,6 +6,7 @@
 //
 // -------------------------------------------------------//
 
+#include "shamsys/legacy/log.hpp"
 #include "shamtest/shamtest.hpp"
 
 #include "shambase/stacktrace.hpp"
