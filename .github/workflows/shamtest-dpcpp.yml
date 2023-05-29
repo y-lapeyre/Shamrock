@@ -20,6 +20,9 @@ jobs:
         run: |
           sudo apt-get install -y -qq g++-10 clang libomp-dev libtinfo5
           
+      - name: install Ninja-build
+        run: sudo apt install ninja-build
+        
       - name: Cache DPCPP
         id: cache-dpcpp
         uses: actions/cache@v3
