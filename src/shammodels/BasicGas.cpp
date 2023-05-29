@@ -936,8 +936,8 @@ namespace shammodels::sph {
                     tree::ObjectCacheIterator particle_looper(pcache,cgh);
 
                     sycl::accessor xyz      {buf_xyz     , cgh, sycl::read_only}; 
-                    sycl::accessor axyz     {buf_axyz    , cgh, sycl::write_only,sycl::no_init}; 
-                    sycl::accessor du       {buf_duint   , cgh, sycl::write_only,sycl::no_init}; 
+                    sycl::accessor axyz     {buf_axyz    , cgh, sycl::write_only}; 
+                    sycl::accessor du       {buf_duint   , cgh, sycl::write_only}; 
                     sycl::accessor vxyz     {buf_vxyz    , cgh, sycl::read_only}; 
                     sycl::accessor hpart    {buf_hpart   , cgh, sycl::read_only}; 
                     sycl::accessor omega    {buf_omega   , cgh, sycl::read_only}; 
@@ -1070,8 +1070,9 @@ namespace shammodels::sph {
                     });
                 }).wait();
                 }
+            
             });
-            }
+            
 
 
 
@@ -1115,6 +1116,8 @@ namespace shammodels::sph {
 
 
 corrector_iter_cnt ++;
+
+}
         }while(need_rerun_corrector);
 
         // if delta too big jump to compute force
