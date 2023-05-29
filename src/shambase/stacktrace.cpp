@@ -9,6 +9,7 @@
 #include "stacktrace.hpp"
 #include "shambase/time.hpp"
 #include <sstream>
+#include <vector>
 
 namespace shambase::details {
 
@@ -85,3 +86,33 @@ namespace shambase::details {
     }
 
 } // namespace shambase::details
+
+namespace shambase {
+
+    /**
+     * @brief get the formatted callstack
+     *
+     * @return std::string
+     */
+    std::string fmt_callstack() {
+        std::stack<SourceLocation> cpy = details::call_stack;
+
+        std::vector<std::string> lines;
+
+        while (!cpy.empty()) {
+            SourceLocation l = cpy.top();
+            lines.push_back(l.format_one_line_func());
+            cpy.pop();
+        }
+
+        std::reverse(lines.begin(), lines.end());
+
+        std::stringstream ss;
+        for (u32 i = 0; i < lines.size(); i++) {
+            ss << shambase::format(" {:2} : {}\n", i, lines[i]);
+        }
+
+        return ss.str();
+    }
+
+} // namespace shambase

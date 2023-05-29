@@ -11,7 +11,6 @@
 #include "SourceLocation.hpp"
 #include "shambase/string.hpp"
 #include <stack>
-#include <vector>
 
 namespace shambase::details {
 
@@ -68,26 +67,7 @@ namespace shambase {
      *
      * @return std::string
      */
-    inline std::string fmt_callstack() {
-        std::stack<SourceLocation> cpy = details::call_stack;
-
-        std::vector<std::string> lines;
-
-        while (!cpy.empty()) {
-            SourceLocation l = cpy.top();
-            lines.push_back(l.format_one_line_func());
-            cpy.pop();
-        }
-
-        std::reverse(lines.begin(), lines.end());
-
-        std::stringstream ss;
-        for (u32 i = 0; i < lines.size(); i++) {
-            ss << shambase::format(" {:2} : {}\n", i, lines[i]);
-        }
-
-        return ss.str();
-    }
+    std::string fmt_callstack();
 
 } // namespace shambase
 
