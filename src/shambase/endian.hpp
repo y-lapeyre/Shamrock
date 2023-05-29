@@ -13,13 +13,26 @@
 
 namespace shambase {
 
-    // p. 45 of Pointers in C:
-    inline bool little_endian() {
+
+    /**
+     * @brief check if the cpu is in little endian
+     * p. 45 of Pointers in C
+     * 
+     * @return true 
+     * @return false 
+     */
+    inline bool is_little_endian() {
         short int word = 0x0001;
         char *byte     = (char *)&word;
         return (byte[0] ? 1 : 0);
     }
 
+    /**
+     * @brief swap the endiannes of the value a
+     * 
+     * @tparam T 
+     * @param a 
+     */
     template<class T>
     inline void endian_swap(T &a) {
 
@@ -42,6 +55,13 @@ namespace shambase {
         }
     }
 
+    /**
+     * @brief return the input value with swapped endiannes
+     * 
+     * @tparam T 
+     * @param a 
+     * @return T 
+     */
     template<class T> 
     inline T get_endian_swap(T a){
         T ret = a;
