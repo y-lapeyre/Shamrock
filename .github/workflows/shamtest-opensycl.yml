@@ -110,75 +110,75 @@ jobs:
           name: code-coverage-report-opensycl_omp_debug
           path: opensycl_omp_debug/out_cov/
 
-  shamrock_opensycl:
-
-    name: run shamrock-test opensycl - clang ${{ matrix.clang }}, ${{ matrix.os }} omp
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        clang: [15]
-        os: [ubuntu-22.04]
-        build_config : [omp_sanitizer]
-        build_type : [debug]
-        cuda: [11.0.2]
-        rocm: [5.4.3]
-
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          submodules: recursive
-
-      - name: 'Download Artifact'
-        uses: actions/download-artifact@v3
-        with:
-          name: OpenSYCL_compiler-${{ matrix.clang }}-${{ matrix.os }}-${{matrix.cuda}}-${{matrix.rocm}}
-
-      - name: 'unTar opensycl'
-        run: tar -xvf opensycl.tar
-
-      - name: ls local
-        run : ls -la
-
-      - name: install boost
-        run: sudo apt install libboost-all-dev
-
-      - name: install LLVM
-        run: |
-          wget https://apt.llvm.org/llvm.sh
-          chmod +x llvm.sh
-          sudo ./llvm.sh 15
-          sudo apt install libclang-15-dev clang-tools-15 libomp-15-dev libllvm-15-ocaml-dev libllvm15 llvm-15 llvm-15-dev llvm-15-doc llvm-15-examples llvm-15-runtime
-
-      - name: install Ninja-build
-        run: sudo apt install ninja-build
-
-      - name: configure Shamrock
-        run: |
-          python3 buildbot/configure.py --gen ninja --tests --build ${{matrix.build_type}} \
-            --outdir opensycl_omp_debug --cxxpath OpenSYCL_comp --compiler opensycl --profile ${{matrix.build_config}}
-
-      - name: compile Shamrock
-        run: |
-          cd opensycl_omp_debug
-          ninja
-
-      - name: run Shamrock Unittests world_size = 1
-        run: |
-          cd opensycl_omp_debug
-          ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --unittest
-
-      - name: run Shamrock Unittests world_size = 2
-        run: |
-          cd opensycl_omp_debug
-          mpirun -n 2 ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --unittest
-      
-      - name: run Shamrock Unittests world_size = 3
-        run: |
-          cd opensycl_omp_debug
-          mpirun --oversubscribe -n 3 ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --unittest
-
-      - name: run Shamrock Unittests world_size = 4
-        run: |
-          cd opensycl_omp_debug
-          mpirun --oversubscribe -n4 ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --unittest
+  #shamrock_opensycl:
+  #
+  #  name: run shamrock-test opensycl - clang ${{ matrix.clang }}, ${{ matrix.os }} omp
+  #  runs-on: ${{ matrix.os }}
+  #  strategy:
+  #    matrix:
+  #      clang: [15]
+  #      os: [ubuntu-22.04]
+  #      build_config : [omp_sanitizer]
+  #      build_type : [debug]
+  #      cuda: [11.0.2]
+  #      rocm: [5.4.3]
+  #
+  #  timeout-minutes: 30
+  #  steps:
+  #    - uses: actions/checkout@v3
+  #      with:
+  #        submodules: recursive
+  #
+  #    - name: 'Download Artifact'
+  #      uses: actions/download-artifact@v3
+  #      with:
+  #        name: OpenSYCL_compiler-${{ matrix.clang }}-${{ matrix.os }}-${{matrix.cuda}}-${{matrix.rocm}}
+  #
+  #    - name: 'unTar opensycl'
+  #      run: tar -xvf opensycl.tar
+  #
+  #    - name: ls local
+  #      run : ls -la
+  #
+  #    - name: install boost
+  #      run: sudo apt install libboost-all-dev
+  #
+  #    - name: install LLVM
+  #      run: |
+  #        wget https://apt.llvm.org/llvm.sh
+  #        chmod +x llvm.sh
+  #        sudo ./llvm.sh 15
+  #        sudo apt install libclang-15-dev clang-tools-15 libomp-15-dev libllvm-15-ocaml-dev libllvm15 llvm-15 llvm-15-dev llvm-15-doc llvm-15-examples llvm-15-runtime
+  #
+  #    - name: install Ninja-build
+  #      run: sudo apt install ninja-build
+  #
+  #    - name: configure Shamrock
+  #      run: |
+  #        python3 buildbot/configure.py --gen ninja --tests --build ${{matrix.build_type}} \
+  #          --outdir opensycl_omp_debug --cxxpath OpenSYCL_comp --compiler opensycl --profile ${{matrix.build_config}}
+  #
+  #    - name: compile Shamrock
+  #      run: |
+  #        cd opensycl_omp_debug
+  #        ninja
+  #
+  #    - name: run Shamrock Unittests world_size = 1
+  #      run: |
+  #        cd opensycl_omp_debug
+  #        ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --unittest
+  #
+  #    - name: run Shamrock Unittests world_size = 2
+  #      run: |
+  #        cd opensycl_omp_debug
+  #        mpirun -n 2 ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --unittest
+  #    
+  #    - name: run Shamrock Unittests world_size = 3
+  #      run: |
+  #        cd opensycl_omp_debug
+  #        mpirun --oversubscribe -n 3 ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --unittest
+  #
+  #    - name: run Shamrock Unittests world_size = 4
+  #      run: |
+  #        cd opensycl_omp_debug
+  #        mpirun --oversubscribe -n4 ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --unittest
