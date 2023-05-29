@@ -22,6 +22,7 @@
 #include "shambase/stacktrace.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/sycl_handler.hpp"
+#include "shamsys/legacy/log.hpp"
 
 namespace shamrock::scheduler {
 

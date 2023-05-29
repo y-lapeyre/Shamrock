@@ -19,7 +19,7 @@
 #include "shamrock/legacy/patch/base/patchdata.hpp"
 #include "shamrock/legacy/patch/base/patchdata_field.hpp"
 #include "shamrock/scheduler/HilbertLoadBalance.hpp"
-
+#include "shambase/time.hpp"
 #include "shamrock/patch/PatchDataLayout.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamsys/legacy/sycl_handler.hpp"

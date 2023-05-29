@@ -8,6 +8,7 @@
 
 #include "aliases.hpp"
 
+#include "shambase/time.hpp"
 #include "shamrock/patch/PatchDataLayout.hpp"
 #include "shamrock/scheduler/scheduler_mpi.hpp"
 #include "shammodels/sph/models/basic_sph_gas.hpp"
