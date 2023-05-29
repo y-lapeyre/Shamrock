@@ -9,8 +9,6 @@ jobs:
 
     runs-on: ubuntu-latest
     
-    needs: cache_dpcpp
-    
     steps:
     
       - uses: actions/checkout@v3
