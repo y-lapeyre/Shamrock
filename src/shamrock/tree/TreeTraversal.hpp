@@ -354,6 +354,10 @@ namespace shamrock::tree {
         std::vector<u32> scanned_cnt;
         u32 sum_neigh_cnt;
         std::vector<u32> index_neigh_map;
+
+        inline u64 get_memsize(){
+            return (cnt_neigh.size() + scanned_cnt.size() + index_neigh_map.size() + 1)*sizeof(u32);
+        }
     };
 
     struct ObjectCache{
