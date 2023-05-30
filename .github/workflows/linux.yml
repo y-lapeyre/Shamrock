@@ -104,7 +104,7 @@ jobs:
   ### build jobs
 
   shamrock_dpcpp:
-    needs: cache_dpcpp
+    needs: [pragma_check, copyright_check]
     uses: ./.github/workflows/shamtest-dpcpp.yml
   
   shamrock_test_opensycl:
