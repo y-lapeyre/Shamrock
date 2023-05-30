@@ -15,7 +15,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: dpcpp_compiler
-          key: sycl-nightly%2F20230112_dpcpp-compiler.tar.gz
+          key: dpcpp-compiler.tar.gz
       
       - name : Download & Untar DPCPP
         if: steps.cache-dpcpp.outputs.cache-hit != 'true'

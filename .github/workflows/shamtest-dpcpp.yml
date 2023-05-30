@@ -30,8 +30,9 @@ jobs:
         id: cache-dpcpp
         uses: actions/cache@v3
         with:
+          fail-on-cache-miss: true
           path: dpcpp_compiler
-          key: sycl-nightly%2F20230112_dpcpp-compiler.tar.gz
+          key: dpcpp-compiler.tar.gz
           
       - name : Check binary
         run: |
