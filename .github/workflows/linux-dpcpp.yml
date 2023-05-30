@@ -1,0 +1,13 @@
+name: DPCPP linux pipeline
+
+on:
+    workflow_call:
+      
+jobs:
+    # download and cache dpcpp compiler
+    cache_dpcpp:
+        uses: ./.github/workflows/cache-dpcpp.yml
+  
+    shamrock_dpcpp:
+        needs: cache_dpcpp
+        uses: ./.github/workflows/shamtest-dpcpp.yml

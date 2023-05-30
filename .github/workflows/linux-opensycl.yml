@@ -1,0 +1,13 @@
+name: OpenSYCL linux pipeline
+
+on:
+    workflow_call:
+      
+jobs:
+    
+    cache_opensycl:
+        uses: ./.github/workflows/cache-opensycl.yml
+
+    shamrock_test_opensycl:
+        needs: cache_opensycl
+        uses: ./.github/workflows/shamtest-opensycl.yml
