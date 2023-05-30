@@ -732,9 +732,64 @@ namespace shammodels::sph {
         _h_old.reset();
         hiter_caches.reset();
 
+
+
+
+
+
+
+
+
+
+
+
+        PatchDataLayout interf_layout;
+        interf_layout.add_field<flt>("hpart", 1);
+        interf_layout.add_field<flt>("uint", 1);
+        interf_layout.add_field<vec>("vxyz", 1);
+        interf_layout.add_field<flt>("omega", 1);
+
+        u32 ihpart_interf = 0;
+        u32 iuint_interf  = 1;
+        u32 ivxyz_interf  = 2;
+        u32 iomega_interf = 3;
+
+        
+
         using RTreeField = RadixTreeField<flt>;
         shambase::DistributedData<RTreeField> rtree_field_h;
-        shambase::DistributedData<tree::ObjectCache> neigh_caches;
+
+        shambase::DistributedData<MergedPatchData> mpdat;
+
+        tree::ObjectCacheHandler neigh_caches(u64(1e9),[&](u64 patch_id){
+
+            logger::debug_ln("BasicSPH", "build particle cache id =",patch_id);
+
+            NamedStackEntry cache_build_stack_loc{"build cache"};
+
+            MergedPatchData & merged_patch = mpdat.get(patch_id);
+
+            PatchData & pdat = scheduler().patch_data.get_pdat(patch_id);
+
+            sycl::buffer<vec> & buf_xyz      = shambase::get_check_ref(merged_xyz.get(patch_id).field.get_buf());
+            sycl::buffer<flt> & buf_hpart    = shambase::get_check_ref(merged_patch.pdat.get_field<flt>(ihpart_interf).get_buf());
+            sycl::buffer<flt> & tree_field_hmax = shambase::get_check_ref(rtree_field_h.get(patch_id).radix_tree_field_buf);
+
+            sycl::range range_npart{pdat.get_obj_cnt()};
+
+            RTree & tree = trees.get(patch_id);
+
+            tree::ObjectCache pcache = build_neigh_cache(
+                0, 
+                pdat.get_obj_cnt(),
+                buf_xyz, 
+                buf_hpart, 
+                tree, 
+                tree_field_hmax);
+
+            return pcache;
+
+        });
 
         
         u32 corrector_iter_cnt = 0;
@@ -745,16 +800,6 @@ namespace shammodels::sph {
 
             //communicate fields
             
-            PatchDataLayout interf_layout;
-            interf_layout.add_field<flt>("hpart", 1);
-            interf_layout.add_field<flt>("uint", 1);
-            interf_layout.add_field<vec>("vxyz", 1);
-            interf_layout.add_field<flt>("omega", 1);
-
-            u32 ihpart_interf = 0;
-            u32 iuint_interf  = 1;
-            u32 ivxyz_interf  = 2;
-            u32 iomega_interf = 3;
 
             using InterfaceBuildInfos = BasicSPHGhostHandler<vec>::InterfaceBuildInfos;
 
@@ -781,7 +826,7 @@ namespace shammodels::sph {
                 interf_handle.communicate_pdat(interf_layout, std::move(pdat_interf));
 
 
-            shambase::DistributedData<MergedPatchData> mpdat = 
+            mpdat = 
                 interf_handle.merge_native<PatchData,MergedPatchData>(std::move(interf_pdat), [&](const shamrock::patch::Patch p, shamrock::patch::PatchData & pdat){
                     
                     PatchData pdat_new(interf_layout);
@@ -856,31 +901,7 @@ namespace shammodels::sph {
         
                 
                 scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
-
-                    logger::debug_ln("BasicSPH", "build particle cache");
-
-                    NamedStackEntry cache_build_stack_loc{"build cache"};
-
-                    MergedPatchData & merged_patch = mpdat.get(cur_p.id_patch);
-
-                    sycl::buffer<vec> & buf_xyz      = shambase::get_check_ref(merged_xyz.get(cur_p.id_patch).field.get_buf());
-                    sycl::buffer<flt> & buf_hpart    = shambase::get_check_ref(merged_patch.pdat.get_field<flt>(ihpart_interf).get_buf());
-                    sycl::buffer<flt> & tree_field_hmax = shambase::get_check_ref(rtree_field_h.get(cur_p.id_patch).radix_tree_field_buf);
-
-                    sycl::range range_npart{pdat.get_obj_cnt()};
-
-                    RTree & tree = trees.get(cur_p.id_patch);
-
-                    tree::ObjectCache pcache = build_neigh_cache(
-                        0, 
-                        pdat.get_obj_cnt(),
-                        buf_xyz, 
-                        buf_hpart, 
-                        tree, 
-                        tree_field_hmax);
-
-                    neigh_caches.add_obj(cur_p.id_patch, std::move(pcache));
-
+                    neigh_caches.preload(cur_p.id_patch);
                 });
                 
             }
@@ -927,7 +948,7 @@ namespace shammodels::sph {
                     RTree & tree = trees.get(cur_p.id_patch);
 
 
-                    tree::ObjectCache & pcache = neigh_caches.get(cur_p.id_patch);
+                    tree::ObjectCache & pcache = neigh_caches.get_cache(cur_p.id_patch);
 
 
                     /////////////////////////////////////////////

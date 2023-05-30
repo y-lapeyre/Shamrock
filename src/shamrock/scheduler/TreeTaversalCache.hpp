@@ -200,6 +200,10 @@ namespace shamrock::tree {
             }
         }
 
+        inline void preload(u64 id){
+            get_cache(id);
+        }
+
         inline void reset() {
             last_device_builds.clear();
             cache.reset();
