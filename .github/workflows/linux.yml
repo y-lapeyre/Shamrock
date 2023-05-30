@@ -47,6 +47,8 @@ jobs:
         run: python buildbot/check_licencing.py
 
   
+
+  
   #make shamrock documentation
   make_documentation:
 
@@ -96,7 +98,18 @@ jobs:
   #  uses: ./.github/workflows/cache-opensycl.yml
       
 
+  check_cache:
+    needs: [pragma_check, copyright_check]
 
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cache DPCPP
+        id: cache-dpcpp
+        uses: actions/cache@v3
+        with:
+          lookup-only: true
+          path: dpcpp_compiler
+          key: dpcpp-compiler.tar.gz
 
 
 
@@ -104,11 +117,14 @@ jobs:
   ### build jobs
 
   shamrock_dpcpp:
-    needs: [pragma_check, copyright_check]
+  
+    needs: [pragma_check, copyright_check,check_cache]
+    if: check_cache.cache-dpcpp.outputs.cache-hit != 'true'
+
     uses: ./.github/workflows/shamtest-dpcpp.yml
   
   shamrock_test_opensycl:
-    needs: [pragma_check, copyright_check]
+    needs: [pragma_check, copyright_check,check_cache]
     uses: ./.github/workflows/shamtest-opensycl.yml
 
   publish_release:
