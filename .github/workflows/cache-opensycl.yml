@@ -2,7 +2,7 @@ name: Cache OpenSYCL
 
 
 on:
-  workflow_call:
+  workflow_dispatch:
     
 jobs:
   cache_opensycl:
@@ -16,6 +16,18 @@ jobs:
         rocm: [5.4.3]
 
     steps:
+
+
+      
+      - name: Cache Opensycl
+        id: cache-opensycl
+        uses: actions/cache@v3
+        with:
+          path: OpenSYCL_comp
+          key: OpenSYCL_compiler-${{ matrix.clang }}-${{ matrix.os }}-${{matrix.cuda}}-${{matrix.rocm}}.tar.gz
+
+      - name: rm old version
+        run: rm -rf OpenSYCL_comp
 
       - name: clone OpenSycl
         run: git clone --recurse-submodules https://github.com/OpenSYCL/OpenSYCL.git
@@ -64,14 +76,5 @@ jobs:
           cd OpenSYCL
           cmake -DCMAKE_CXX_COMPILER=/usr/bin/clang++-${{matrix.clang}} -DCLANG_EXECUTABLE_PATH=/usr/bin/clang++-${{matrix.clang}} -DLLVM_DIR=/usr/lib/llvm-${{matrix.clang}}/cmake -DCMAKE_INSTALL_PREFIX=../OpenSYCL_comp .
           make -j install
-
-      - name: 'Tar opensycl'
-        run: tar -cvf opensycl.tar OpenSYCL_comp
-
-      - name: 'Upload Artifact'
-        uses: actions/upload-artifact@v3
-        with:
-          name: OpenSYCL_compiler-${{ matrix.clang }}-${{ matrix.os }}-${{matrix.cuda}}-${{matrix.rocm}}
-          path: opensycl.tar  
 
       
