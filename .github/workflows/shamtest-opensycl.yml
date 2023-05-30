@@ -23,13 +23,13 @@ jobs:
         with:
           submodules: recursive
 
-      - name: 'Download Artifact'
-        uses: actions/download-artifact@v3
+      - name: Cache Opensycl
+        id: cache-opensycl
+        uses: actions/cache@v3
         with:
-          name: OpenSYCL_compiler-${{ matrix.clang }}-${{ matrix.os }}-${{matrix.cuda}}-${{matrix.rocm}}
-
-      - name: 'unTar opensycl'
-        run: tar -xvf opensycl.tar
+          fail-on-cache-miss: true
+          path: OpenSYCL_comp
+          key: OpenSYCL_compiler-${{ matrix.clang }}-${{ matrix.os }}-${{matrix.cuda}}-${{matrix.rocm}}.tar.gz
 
       - name: ls local
         run : ls -la

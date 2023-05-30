@@ -90,10 +90,10 @@ jobs:
   
 
   # download ,build and cache opensycl compiler
-  cache_opensycl:
-
-    needs: [pragma_check, copyright_check]
-    uses: ./.github/workflows/cache-opensycl.yml
+  #cache_opensycl:
+  #
+  #  needs: [pragma_check, copyright_check]
+  #  uses: ./.github/workflows/cache-opensycl.yml
       
 
 
@@ -108,14 +108,14 @@ jobs:
     uses: ./.github/workflows/shamtest-dpcpp.yml
   
   shamrock_test_opensycl:
-    needs: cache_opensycl
+    needs: [pragma_check, copyright_check]
     uses: ./.github/workflows/shamtest-opensycl.yml
 
   publish_release:
 
     runs-on: ubuntu-latest
     
-    needs: [cache_opensycl, shamrock_test_opensycl, shamrock_dpcpp, make_documentation]
+    needs: [shamrock_test_opensycl, shamrock_dpcpp, make_documentation]
 
     if: github.ref == 'refs/heads/main'
 
