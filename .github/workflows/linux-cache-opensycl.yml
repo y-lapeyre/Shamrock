@@ -3,17 +3,24 @@ name: Cache OpenSYCL
 
 on:
   workflow_call:
+    inputs:
+      clang:
+        required: true
+        type: string
+      os:
+        required: true
+        type: string
+      cuda:
+        required: true
+        type: string
+      rocm:
+        required: true
+        type: string
     
 jobs:
   cache_opensycl:
-    name: cache opensycl - clang ${{ matrix.clang }}, ${{ matrix.os }}, CUDA ${{matrix.cuda}}, ROCm ${{matrix.rocm}}
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        clang: [15]
-        os: [ubuntu-22.04]
-        cuda: [11.0.2]
-        rocm: [5.4.3]
+    name: cache opensycl - clang ${{ inputs.clang }}, ${{ inputs.os }}, CUDA ${{inputs.cuda}}, ROCm ${{inputs.rocm}}
+    runs-on: ${{ inputs.os }}
 
     steps:
 
@@ -35,15 +42,15 @@ jobs:
           mkdir -p /opt/OpenSYCL/cuda
           wget -q -O cuda.sh http://developer.download.nvidia.com/compute/cuda/11.0.2/local_installers/cuda_11.0.2_450.51.05_linux.run
           sudo sh ./cuda.sh --override --silent --toolkit --no-man-page --no-drm --no-opengl-libs --installpath=/opt/OpenSYCL/cuda || true
-          echo "CUDA Version ${{matrix.cuda}}" | sudo tee /opt/OpenSYCL/cuda/version.txt
+          echo "CUDA Version ${{inputs.cuda}}" | sudo tee /opt/OpenSYCL/cuda/version.txt
       
       - name: install ROCm
         run: |
-          [[ ${{matrix.rocm}} == 4.0.1 ]] && CODENAME=xenial
-          [[ ${{matrix.rocm}} == 5.4.3 ]] && CODENAME=focal
+          [[ ${{inputs.rocm}} == 4.0.1 ]] && CODENAME=xenial
+          [[ ${{inputs.rocm}} == 5.4.3 ]] && CODENAME=focal
           sudo apt install libnuma-dev cmake unzip
           wget -q -O - https://repo.radeon.com/rocm/rocm.gpg.key | sudo apt-key add -
-          echo "deb [arch=amd64] https://repo.radeon.com/rocm/apt/${{matrix.rocm}} $CODENAME main" | sudo tee /etc/apt/sources.list.d/rocm.list
+          echo "deb [arch=amd64] https://repo.radeon.com/rocm/apt/${{inputs.rocm}} $CODENAME main" | sudo tee /etc/apt/sources.list.d/rocm.list
           printf 'Package: *\nPin: release o=repo.radeon.com\nPin-Priority: 600' | sudo tee /etc/apt/preferences.d/rocm-pin-600
           sudo apt update
           sudo apt install rocm-dev
@@ -52,8 +59,8 @@ jobs:
         run: |
           wget https://apt.llvm.org/llvm.sh
           chmod +x llvm.sh
-          sudo ./llvm.sh ${{matrix.clang}}
-          sudo apt install libclang-${{matrix.clang}}-dev clang-tools-${{matrix.clang}} libomp-${{matrix.clang}}-dev
+          sudo ./llvm.sh ${{inputs.clang}}
+          sudo apt install libclang-${{inputs.clang}}-dev clang-tools-${{inputs.clang}} libomp-${{inputs.clang}}-dev
       
       - name: install Ninja-build
         run: sudo apt install ninja-build
@@ -62,7 +69,7 @@ jobs:
       - name: configure & install OpenSycl
         run: |
           cd OpenSYCL
-          cmake -DCMAKE_CXX_COMPILER=/usr/bin/clang++-${{matrix.clang}} -DCLANG_EXECUTABLE_PATH=/usr/bin/clang++-${{matrix.clang}} -DLLVM_DIR=/usr/lib/llvm-${{matrix.clang}}/cmake -DCMAKE_INSTALL_PREFIX=../OpenSYCL_comp .
+          cmake -DCMAKE_CXX_COMPILER=/usr/bin/clang++-${{inputs.clang}} -DCLANG_EXECUTABLE_PATH=/usr/bin/clang++-${{inputs.clang}} -DLLVM_DIR=/usr/lib/llvm-${{inputs.clang}}/cmake -DCMAKE_INSTALL_PREFIX=../OpenSYCL_comp .
           make -j install
 
       - name: 'Tar opensycl'
@@ -71,7 +78,7 @@ jobs:
       - name: 'Upload Artifact'
         uses: actions/upload-artifact@v3
         with:
-          name: OpenSYCL_compiler-${{ matrix.clang }}-${{ matrix.os }}-${{matrix.cuda}}-${{matrix.rocm}}
+          name: OpenSYCL_compiler-${{ inputs.clang }}-${{ inputs.os }}-${{inputs.cuda}}-${{inputs.rocm}}
           path: opensycl.tar  
 
       

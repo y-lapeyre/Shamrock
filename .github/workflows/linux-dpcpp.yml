@@ -6,7 +6,7 @@ on:
 jobs:
     # download and cache dpcpp compiler
     cache_dpcpp:
-        uses: ./.github/workflows/cache-dpcpp.yml
+        uses: ./.github/workflows/linux-cache-dpcpp.yml
   
     shamrock_dpcpp:
         needs: cache_dpcpp
