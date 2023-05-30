@@ -2,7 +2,7 @@ name: shamtest DPCPP
 
 
 on:
-  workflow_dispatch:
+  workflow_call:
     
 jobs:
   cache_dpcpp:
