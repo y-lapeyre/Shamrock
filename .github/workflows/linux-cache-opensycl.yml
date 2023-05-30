@@ -19,7 +19,7 @@ on:
     
 jobs:
   cache_opensycl:
-    name: cache opensycl - clang ${{ inputs.clang }}, ${{ inputs.os }}, CUDA ${{inputs.cuda}}, ROCm ${{inputs.rocm}}
+    name: cache opensycl
     runs-on: ${{ inputs.os }}
 
     steps:

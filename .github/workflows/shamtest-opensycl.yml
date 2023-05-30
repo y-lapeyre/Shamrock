@@ -20,7 +20,7 @@ on:
 jobs:
   shamrock_opensycl_omp_debug_coverage:
 
-    name: run shamrock-test opensycl - clang ${{ inputs.clang }}, ${{ inputs.os }} omp
+    name: shamrock-test opensycl coverage
     runs-on: ${{ inputs.os }}
 
     timeout-minutes: 30

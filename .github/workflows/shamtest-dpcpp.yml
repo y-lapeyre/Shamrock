@@ -6,6 +6,7 @@ on:
     
 jobs:
   shamrock_dpcpp:
+    name: shamrock-test dpcpp
 
     runs-on: ubuntu-latest
     
