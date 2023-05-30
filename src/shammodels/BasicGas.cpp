@@ -16,7 +16,9 @@
 #include "shambase/stacktrace.hpp"
 #include "shammath/CoordRange.hpp"
 #include "shammodels/BasicSPHGhosts.hpp"
+#include "shammodels/SPHHandler.hpp"
 #include "shamrock/scheduler/InterfacesUtility.hpp"
+#include "shamrock/scheduler/TreeTaversalCache.hpp"
 #include "shamrock/scheduler/scheduler_mpi.hpp"
 #include "shamrock/scheduler/SerialPatchTree.hpp"
 #include "shamrock/patch/Patch.hpp"
@@ -166,8 +168,10 @@ namespace shammodels::sph {
         reatrib.reatribute_patch_objects(sptree, "xyz");
     }
 
+    
 
-    inline shamrock::tree::ObjectCache BasicGas::build_neigh_cache(
+
+    shamrock::tree::ObjectCache BasicGas::build_neigh_cache(
         u32 start_offset,
         u32 obj_cnt, 
         sycl::buffer<vec> & buf_xyz,
@@ -304,7 +308,9 @@ namespace shammodels::sph {
     }
 
 
-    inline shamrock::tree::ObjectCache BasicGas::build_hiter_neigh_cache(
+
+
+    shamrock::tree::ObjectCache BasicGas::build_hiter_neigh_cache(
         u32 start_offset,
         u32 obj_cnt, 
         sycl::buffer<vec> & buf_xyz,
@@ -459,33 +465,13 @@ namespace shammodels::sph {
 
         u64 Npart_all = count_particles();
 
-
-        shamrock::patch::PatchField<flt> interactR_patch =
-            scheduler().map_owned_to_patch_field_simple<flt>(
-                [&](const Patch p, PatchData &pdat) -> flt {
-                    if (!pdat.is_empty()) {
-                        return pdat.get_field<flt>(ihpart).compute_max()*htol_up_tol*Rkern;
-                    }else{
-                        return shambase::VectorProperties<flt>::get_min();
-                    }
-                });
-
-        PatchtreeField<flt> interactR_mpi_tree = sptree.make_patch_tree_field(
-            scheduler(),
-            shamsys::instance::get_compute_queue(),
-            interactR_patch,
-            [](flt h0, flt h1, flt h2, flt h3, flt h4, flt h5, flt h6, flt h7) {
-                return shambase::sycl_utils::max_8points(h0, h1, h2, h3, h4, h5, h6, h7);
-            });
-
-        BasicGasPeriodicGhostHandler<vec> interf_handle (scheduler());
-
-        auto interf_build_cache = interf_handle.make_interface_cache(sptree, interactR_mpi_tree,interactR_patch);
-
+        BasicSPHGhostHandler<vec> interf_handle (scheduler());
+        SPHHandler<vec, Kernel> hndl(scheduler(),interf_handle, htol_up_tol);
         InterfacesUtility interf_utils(scheduler());
+        
 
-        auto interf_xyz = interf_handle.build_communicate_positions(interf_build_cache);
-        auto merged_xyz = interf_handle.merge_position_buf(std::move(interf_xyz));
+        auto interf_build_cache = hndl.build_interf_cache(sptree);
+        auto merged_xyz = interf_handle.build_comm_merge_positions(interf_build_cache);
 
         constexpr u32 reduc_level = 3;
 
@@ -518,18 +504,16 @@ namespace shammodels::sph {
 
 
         
-        shambase::DistributedData<tree::ObjectCache> hiter_neigh_caches;
-
-
-
-        scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchData & pdat){
-            logger::debug_ln("SPHLeapfrog","patch : n°",p.id_patch,"->","gen cache");
+        tree::ObjectCacheHandler hiter_caches(u64(1e9),[&](u64 patch_id){
+            logger::debug_ln("SPHLeapfrog","patch : n°",patch_id,"->","gen cache");
 
             
-            sycl::buffer<vec> & merged_r = shambase::get_check_ref(merged_xyz.get(p.id_patch).field.get_buf());
-            sycl::buffer<flt> & hold = shambase::get_check_ref(_h_old.get_buf(p.id_patch));
+            sycl::buffer<vec> & merged_r = shambase::get_check_ref(merged_xyz.get(patch_id).field.get_buf());
+            sycl::buffer<flt> & hold = shambase::get_check_ref(_h_old.get_buf(patch_id));
 
-            RTree & tree = trees.get(p.id_patch);
+            PatchData & pdat = scheduler().patch_data.get_pdat(patch_id);
+
+            RTree & tree = trees.get(patch_id);
 
             tree::ObjectCache pcache = build_hiter_neigh_cache(
                 0, 
@@ -539,9 +523,33 @@ namespace shammodels::sph {
                 tree,
                 htol_up_tol);
 
-            hiter_neigh_caches.add_obj(p.id_patch, std::move(pcache));
-
+            return pcache;
         });
+
+        //shambase::DistributedData<tree::ObjectCache> hiter_neigh_caches;
+
+
+
+        //scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchData & pdat){
+        //    logger::debug_ln("SPHLeapfrog","patch : n°",p.id_patch,"->","gen cache");
+        //
+        //    
+        //    sycl::buffer<vec> & merged_r = shambase::get_check_ref(merged_xyz.get(p.id_patch).field.get_buf());
+        //    sycl::buffer<flt> & hold = shambase::get_check_ref(_h_old.get_buf(p.id_patch));
+        //
+        //    RTree & tree = trees.get(p.id_patch);
+        //
+        //    tree::ObjectCache pcache = build_hiter_neigh_cache(
+        //        0, 
+        //        pdat.get_obj_cnt(),
+        //        merged_r, 
+        //        hold, 
+        //        tree,
+        //        htol_up_tol);
+        //
+        //    hiter_neigh_caches.add_obj(p.id_patch, std::move(pcache));
+        //
+        //});
 
 
         for(u32 iter_h = 0; iter_h < 5; iter_h ++){
@@ -561,7 +569,7 @@ namespace shammodels::sph {
 
                 RTree & tree = trees.get(p.id_patch);
 
-                tree::ObjectCache & neigh_cache = hiter_neigh_caches.get(p.id_patch);
+                tree::ObjectCache & neigh_cache = hiter_caches.get_cache(p.id_patch);
 
                 shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
 
@@ -657,7 +665,7 @@ namespace shammodels::sph {
 
                 RTree & tree = trees.get(p.id_patch);
 
-                tree::ObjectCache & neigh_cache = hiter_neigh_caches.get(p.id_patch);
+                tree::ObjectCache & neigh_cache = hiter_caches.get_cache(p.id_patch);
 
                 shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
 
@@ -722,7 +730,7 @@ namespace shammodels::sph {
         }
         _epsilon_h.reset();
         _h_old.reset();
-        hiter_neigh_caches.reset();
+        hiter_caches.reset();
 
         using RTreeField = RadixTreeField<flt>;
         shambase::DistributedData<RTreeField> rtree_field_h;
@@ -733,159 +741,159 @@ namespace shammodels::sph {
         bool need_rerun_corrector = false;
         do{
 
+                
+
+            //communicate fields
             
+            PatchDataLayout interf_layout;
+            interf_layout.add_field<flt>("hpart", 1);
+            interf_layout.add_field<flt>("uint", 1);
+            interf_layout.add_field<vec>("vxyz", 1);
+            interf_layout.add_field<flt>("omega", 1);
 
-        //communicate fields
-        
-        PatchDataLayout interf_layout;
-        interf_layout.add_field<flt>("hpart", 1);
-        interf_layout.add_field<flt>("uint", 1);
-        interf_layout.add_field<vec>("vxyz", 1);
-        interf_layout.add_field<flt>("omega", 1);
+            u32 ihpart_interf = 0;
+            u32 iuint_interf  = 1;
+            u32 ivxyz_interf  = 2;
+            u32 iomega_interf = 3;
 
-        u32 ihpart_interf = 0;
-        u32 iuint_interf  = 1;
-        u32 ivxyz_interf  = 2;
-        u32 iomega_interf = 3;
+            using InterfaceBuildInfos = BasicSPHGhostHandler<vec>::InterfaceBuildInfos;
 
-        using InterfaceBuildInfos = BasicGasPeriodicGhostHandler<vec>::InterfaceBuildInfos;
+            auto pdat_interf = interf_handle.build_interface_native<PatchData>(interf_build_cache, 
+                [&](u64 sender,u64 /*receiver*/,InterfaceBuildInfos binfo, sycl::buffer<u32> & buf_idx, u32 cnt){
 
-        auto pdat_interf = interf_handle.build_interface_native<PatchData>(interf_build_cache, 
-            [&](u64 sender,u64 /*receiver*/,InterfaceBuildInfos binfo, sycl::buffer<u32> & buf_idx, u32 cnt){
+                    PatchData pdat(interf_layout);
 
-                PatchData pdat(interf_layout);
+                    PatchData & sender_patch = scheduler().patch_data.get_pdat(sender);
+                    PatchDataField<flt> & sender_omega = omega.get_field(sender);
 
-                PatchData & sender_patch = scheduler().patch_data.get_pdat(sender);
-                PatchDataField<flt> & sender_omega = omega.get_field(sender);
+                    sender_patch.get_field<flt>(ihpart).append_subset_to(buf_idx,cnt,pdat.get_field<flt>(ihpart_interf));
+                    sender_patch.get_field<flt>(iuint) .append_subset_to(buf_idx,cnt,pdat.get_field<flt>(iuint_interf));
+                    sender_patch.get_field<vec>(ivxyz) .append_subset_to(buf_idx,cnt,pdat.get_field<vec>(ivxyz_interf));
+                    sender_omega.append_subset_to(buf_idx,cnt,pdat.get_field<flt>(iomega_interf));
+                    
+                    pdat.check_field_obj_cnt_match();
 
-                sender_patch.get_field<flt>(ihpart).append_subset_to(buf_idx,cnt,pdat.get_field<flt>(ihpart_interf));
-                sender_patch.get_field<flt>(iuint) .append_subset_to(buf_idx,cnt,pdat.get_field<flt>(iuint_interf));
-                sender_patch.get_field<vec>(ivxyz) .append_subset_to(buf_idx,cnt,pdat.get_field<vec>(ivxyz_interf));
-                sender_omega.append_subset_to(buf_idx,cnt,pdat.get_field<flt>(iomega_interf));
-                
-                pdat.check_field_obj_cnt_match();
+                    return pdat;
+                }
+            );
 
-                return pdat;
-            }
-        );
-
-        shambase::DistributedDataShared<PatchData> interf_pdat = 
-            interf_handle.communicate_pdat(interf_layout, std::move(pdat_interf));
+            shambase::DistributedDataShared<PatchData> interf_pdat = 
+                interf_handle.communicate_pdat(interf_layout, std::move(pdat_interf));
 
 
-        shambase::DistributedData<MergedPatchData> mpdat = 
-            interf_handle.merge_native<PatchData,MergedPatchData>(std::move(interf_pdat), [&](const shamrock::patch::Patch p, shamrock::patch::PatchData & pdat){
-                
-                PatchData pdat_new(interf_layout);
+            shambase::DistributedData<MergedPatchData> mpdat = 
+                interf_handle.merge_native<PatchData,MergedPatchData>(std::move(interf_pdat), [&](const shamrock::patch::Patch p, shamrock::patch::PatchData & pdat){
+                    
+                    PatchData pdat_new(interf_layout);
 
-                u32 or_elem        = pdat.get_obj_cnt();
-                u32 total_elements = or_elem;
+                    u32 or_elem        = pdat.get_obj_cnt();
+                    u32 total_elements = or_elem;
 
-                PatchDataField<flt> & cur_omega = omega.get_field(p.id_patch);
+                    PatchDataField<flt> & cur_omega = omega.get_field(p.id_patch);
 
-                pdat_new.get_field<flt>(ihpart_interf).insert(pdat.get_field<flt>(ihpart));
-                pdat_new.get_field<flt>(iuint_interf ).insert(pdat.get_field<flt>(iuint));
-                pdat_new.get_field<vec>(ivxyz_interf ).insert(pdat.get_field<vec>(ivxyz));
-                pdat_new.get_field<flt>(iomega_interf).insert(cur_omega);
-                
-                pdat_new.check_field_obj_cnt_match();
+                    pdat_new.get_field<flt>(ihpart_interf).insert(pdat.get_field<flt>(ihpart));
+                    pdat_new.get_field<flt>(iuint_interf ).insert(pdat.get_field<flt>(iuint));
+                    pdat_new.get_field<vec>(ivxyz_interf ).insert(pdat.get_field<vec>(ivxyz));
+                    pdat_new.get_field<flt>(iomega_interf).insert(cur_omega);
+                    
+                    pdat_new.check_field_obj_cnt_match();
 
-                return MergedPatchData{
-                    or_elem,
-                    total_elements,
-                    std::move(pdat_new),
-                    interf_layout
-                };
+                    return MergedPatchData{
+                        or_elem,
+                        total_elements,
+                        std::move(pdat_new),
+                        interf_layout
+                    };
 
-            }, [](MergedPatchData &mpdat, PatchData &pdat_interf){
-                mpdat.total_elements += pdat_interf.get_obj_cnt();
-                mpdat.pdat.insert_elements(pdat_interf);
+                }, [](MergedPatchData &mpdat, PatchData &pdat_interf){
+                    mpdat.total_elements += pdat_interf.get_obj_cnt();
+                    mpdat.pdat.insert_elements(pdat_interf);
+                });
+
+
+
+            // compute pressure        
+            ComputeField<flt> pressure = utility.make_compute_field<flt>("pressure",1, [&](u64 id){
+                return mpdat.get(id).total_elements;
             });
 
+            {
+                NamedStackEntry stack_loc{"compute eos"};
+                
+                mpdat.for_each([&](u64 id, MergedPatchData & mpdat){
 
+                    shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
+                        sycl::accessor P {pressure.get_buf_check(id),cgh,sycl::write_only, sycl::no_init};
+                        sycl::accessor U {shambase::get_check_ref(mpdat.pdat.get_field<flt>(iuint_interf).get_buf()),cgh,sycl::read_only};
+                        sycl::accessor h {shambase::get_check_ref(mpdat.pdat.get_field<flt>(ihpart_interf).get_buf()),cgh,sycl::read_only};
 
-        // compute pressure        
-        ComputeField<flt> pressure = utility.make_compute_field<flt>("pressure",1, [&](u64 id){
-            return mpdat.get(id).total_elements;
-        });
+                        flt pmass = gpart_mass;
+                        flt gamma = this->gamma;
 
-        {
-            NamedStackEntry stack_loc{"compute eos"};
-            
-            mpdat.for_each([&](u64 id, MergedPatchData & mpdat){
+                        cgh.parallel_for(sycl::range<1>{mpdat.total_elements},[=](sycl::item<1> item) {
 
-                shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-                    sycl::accessor P {pressure.get_buf_check(id),cgh,sycl::write_only, sycl::no_init};
-                    sycl::accessor U {shambase::get_check_ref(mpdat.pdat.get_field<flt>(iuint_interf).get_buf()),cgh,sycl::read_only};
-                    sycl::accessor h {shambase::get_check_ref(mpdat.pdat.get_field<flt>(ihpart_interf).get_buf()),cgh,sycl::read_only};
+                            using namespace shamrock::sph;
+                            P[item] =  (gamma-1) * rho_h(pmass, h[item]) *U[item]  ; 
 
-                    flt pmass = gpart_mass;
-                    flt gamma = this->gamma;
-
-                    cgh.parallel_for(sycl::range<1>{mpdat.total_elements},[=](sycl::item<1> item) {
-
-                        using namespace shamrock::sph;
-                        P[item] =  (gamma-1) * rho_h(pmass, h[item]) *U[item]  ; 
+                        });
 
                     });
 
                 });
+            }
 
-            });
-        }
+            //compute tree hmax
+            //the smoothing won't change between steps so we can compute this only once
+            if(corrector_iter_cnt == 0){
 
-        //compute tree hmax
-        //the smoothing won't change between steps so we can compute this only once
-        if(corrector_iter_cnt == 0){
+                rtree_field_h = trees.map<RTreeField>(
+                    [&](u64 id, RTree & rtree){
+                        return rtree.compute_int_boxes(
+                            shamsys::instance::get_compute_queue(), 
+                            mpdat.get(id).pdat.get_field<flt>(ihpart_interf).get_buf(), 
+                            1);
+                    });
+        
+                
+                scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
 
-            rtree_field_h = trees.map<RTreeField>(
-                [&](u64 id, RTree & rtree){
-                    return rtree.compute_int_boxes(
-                        shamsys::instance::get_compute_queue(), 
-                        mpdat.get(id).pdat.get_field<flt>(ihpart_interf).get_buf(), 
-                        1);
+                    logger::debug_ln("BasicSPH", "build particle cache");
+
+                    NamedStackEntry cache_build_stack_loc{"build cache"};
+
+                    MergedPatchData & merged_patch = mpdat.get(cur_p.id_patch);
+
+                    sycl::buffer<vec> & buf_xyz      = shambase::get_check_ref(merged_xyz.get(cur_p.id_patch).field.get_buf());
+                    sycl::buffer<flt> & buf_hpart    = shambase::get_check_ref(merged_patch.pdat.get_field<flt>(ihpart_interf).get_buf());
+                    sycl::buffer<flt> & tree_field_hmax = shambase::get_check_ref(rtree_field_h.get(cur_p.id_patch).radix_tree_field_buf);
+
+                    sycl::range range_npart{pdat.get_obj_cnt()};
+
+                    RTree & tree = trees.get(cur_p.id_patch);
+
+                    tree::ObjectCache pcache = build_neigh_cache(
+                        0, 
+                        pdat.get_obj_cnt(),
+                        buf_xyz, 
+                        buf_hpart, 
+                        tree, 
+                        tree_field_hmax);
+
+                    neigh_caches.add_obj(cur_p.id_patch, std::move(pcache));
+
                 });
-    
+                
+            }
+
+
             
-            scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
 
-                logger::debug_ln("BasicSPH", "build particle cache");
 
-                NamedStackEntry cache_build_stack_loc{"build cache"};
+            // compute force
 
-                MergedPatchData & merged_patch = mpdat.get(cur_p.id_patch);
 
-                sycl::buffer<vec> & buf_xyz      = shambase::get_check_ref(merged_xyz.get(cur_p.id_patch).field.get_buf());
-                sycl::buffer<flt> & buf_hpart    = shambase::get_check_ref(merged_patch.pdat.get_field<flt>(ihpart_interf).get_buf());
-                sycl::buffer<flt> & tree_field_hmax = shambase::get_check_ref(rtree_field_h.get(cur_p.id_patch).radix_tree_field_buf);
-
-                sycl::range range_npart{pdat.get_obj_cnt()};
-
-                RTree & tree = trees.get(cur_p.id_patch);
-
-                tree::ObjectCache pcache = build_neigh_cache(
-                    0, 
-                    pdat.get_obj_cnt(),
-                    buf_xyz, 
-                    buf_hpart, 
-                    tree, 
-                    tree_field_hmax);
-
-                neigh_caches.add_obj(cur_p.id_patch, std::move(pcache));
-
-            });
+            logger::info_ln("sph::BasicGas", "compute force");
             
-        }
-
-
-        
-
-
-        // compute force
-
-
-        logger::info_ln("sph::BasicGas", "compute force");
-        
 
 
             // save old acceleration
@@ -896,229 +904,236 @@ namespace shammodels::sph {
 
 
             if(enable_physics){
-            scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
-
-                MergedPatchData & merged_patch = mpdat.get(cur_p.id_patch);
-
-                sycl::buffer<vec> & buf_xyz      = shambase::get_check_ref(merged_xyz.get(cur_p.id_patch).field.get_buf());
-                sycl::buffer<vec> & buf_axyz     = shambase::get_check_ref(pdat.get_field<vec>(iaxyz).get_buf());
-                sycl::buffer<flt> & buf_duint    = shambase::get_check_ref(pdat.get_field<flt>(iduint).get_buf());
-                sycl::buffer<vec> & buf_vxyz     = shambase::get_check_ref(merged_patch.pdat.get_field<vec>(ivxyz_interf).get_buf());
-                sycl::buffer<flt> & buf_hpart    = shambase::get_check_ref(merged_patch.pdat.get_field<flt>(ihpart_interf).get_buf());
-                sycl::buffer<flt> & buf_omega    = shambase::get_check_ref(merged_patch.pdat.get_field<flt>(iomega_interf).get_buf());
-                sycl::buffer<flt> & buf_uint     = shambase::get_check_ref(merged_patch.pdat.get_field<flt>(iuint_interf).get_buf());
-                sycl::buffer<flt> & buf_pressure = pressure.get_buf_check(cur_p.id_patch);
-
-                sycl::buffer<flt> & tree_field_hmax = shambase::get_check_ref(rtree_field_h.get(cur_p.id_patch).radix_tree_field_buf);
-
-                sycl::range range_npart{pdat.get_obj_cnt()};
-
-                RTree & tree = trees.get(cur_p.id_patch);
 
 
-                tree::ObjectCache & pcache = neigh_caches.get(cur_p.id_patch);
+
+                scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+
+                    MergedPatchData & merged_patch = mpdat.get(cur_p.id_patch);
+
+                    sycl::buffer<vec> & buf_xyz      = shambase::get_check_ref(merged_xyz.get(cur_p.id_patch).field.get_buf());
+                    sycl::buffer<vec> & buf_axyz     = shambase::get_check_ref(pdat.get_field<vec>(iaxyz).get_buf());
+                    sycl::buffer<flt> & buf_duint    = shambase::get_check_ref(pdat.get_field<flt>(iduint).get_buf());
+                    sycl::buffer<vec> & buf_vxyz     = shambase::get_check_ref(merged_patch.pdat.get_field<vec>(ivxyz_interf).get_buf());
+                    sycl::buffer<flt> & buf_hpart    = shambase::get_check_ref(merged_patch.pdat.get_field<flt>(ihpart_interf).get_buf());
+                    sycl::buffer<flt> & buf_omega    = shambase::get_check_ref(merged_patch.pdat.get_field<flt>(iomega_interf).get_buf());
+                    sycl::buffer<flt> & buf_uint     = shambase::get_check_ref(merged_patch.pdat.get_field<flt>(iuint_interf).get_buf());
+                    sycl::buffer<flt> & buf_pressure = pressure.get_buf_check(cur_p.id_patch);
+
+                    sycl::buffer<flt> & tree_field_hmax = shambase::get_check_ref(rtree_field_h.get(cur_p.id_patch).radix_tree_field_buf);
+
+                    sycl::range range_npart{pdat.get_obj_cnt()};
+
+                    RTree & tree = trees.get(cur_p.id_patch);
 
 
-                /////////////////////////////////////////////
-
-                {NamedStackEntry tmppp{"force compute"};
-                shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-
-                    const flt pmass = gpart_mass;
-                    const flt gamma = this->gamma;
-                    const flt alpha_u = 1.0;
-                    const flt alpha_AV = 1.0;
-                    const flt beta_AV = 2.0;
-
-                    //tree::ObjectIterator particle_looper(tree,cgh);
-
-                    //tree::LeafCacheObjectIterator particle_looper(tree,*xyz_cell_id,leaf_cache,cgh);
-
-                    tree::ObjectCacheIterator particle_looper(pcache,cgh);
-
-                    sycl::accessor xyz      {buf_xyz     , cgh, sycl::read_only}; 
-                    sycl::accessor axyz     {buf_axyz    , cgh, sycl::write_only}; 
-                    sycl::accessor du       {buf_duint   , cgh, sycl::write_only}; 
-                    sycl::accessor vxyz     {buf_vxyz    , cgh, sycl::read_only}; 
-                    sycl::accessor hpart    {buf_hpart   , cgh, sycl::read_only}; 
-                    sycl::accessor omega    {buf_omega   , cgh, sycl::read_only}; 
-                    sycl::accessor u        {buf_uint    , cgh, sycl::read_only}; 
-                    sycl::accessor pressure {buf_pressure, cgh, sycl::read_only}; 
-
-                    sycl::accessor hmax_tree {tree_field_hmax, cgh, sycl::read_only};
-
-                        //sycl::stream out {4096,1024,cgh};
-
-                    constexpr flt Rker2 = Kernel::Rkern*Kernel::Rkern;
-
-                    cgh.parallel_for(sycl::range<1>{pdat.get_obj_cnt()}, [=](sycl::item<1> item) {
-
-                        u32 id_a = (u32)item.get_id(0);
-
-                        using namespace shamrock::sph;
-
-                        vec sum_axyz = {0, 0, 0};
-                        flt sum_du_a = 0;
-                        flt h_a        = hpart[id_a];
+                    tree::ObjectCache & pcache = neigh_caches.get(cur_p.id_patch);
 
 
-                        vec xyz_a = xyz[id_a];
-                        vec vxyz_a = vxyz[id_a];
+                    /////////////////////////////////////////////
 
-                        flt rho_a    = rho_h(pmass, h_a);
-                        flt rho_a_sq = rho_a * rho_a;
-                        flt rho_a_inv = 1./rho_a;
+                    {
+                        NamedStackEntry tmppp{"force compute"};
+                    shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
 
-                        flt P_a     = pressure[id_a];
-                        //f32 P_a     = cs * cs * rho_a;
-                        flt omega_a = omega[id_a];
+                        const flt pmass = gpart_mass;
+                        const flt gamma = this->gamma;
+                        const flt alpha_u = 1.0;
+                        const flt alpha_AV = 1.0;
+                        const flt beta_AV = 2.0;
 
-                        flt omega_a_rho_a_inv = 1 / (omega_a * rho_a);
+                        //tree::ObjectIterator particle_looper(tree,cgh);
 
-                        const flt u_a = u[id_a];
+                        //tree::LeafCacheObjectIterator particle_looper(tree,*xyz_cell_id,leaf_cache,cgh);
 
-                        flt lambda_viscous_heating = 0.0;
-                        flt lambda_conductivity = 0.0;
-                        flt lambda_shock = 0.0;
+                        tree::ObjectCacheIterator particle_looper(pcache,cgh);
 
-                        flt cs_a = sycl::sqrt(gamma*P_a/rho_a);
-                    
-                        vec inter_box_a_min = xyz_a - h_a * Kernel::Rkern;
-                        vec inter_box_a_max = xyz_a + h_a * Kernel::Rkern;
+                        sycl::accessor xyz      {buf_xyz     , cgh, sycl::read_only}; 
+                        sycl::accessor axyz     {buf_axyz    , cgh, sycl::write_only}; 
+                        sycl::accessor du       {buf_duint   , cgh, sycl::write_only}; 
+                        sycl::accessor vxyz     {buf_vxyz    , cgh, sycl::read_only}; 
+                        sycl::accessor hpart    {buf_hpart   , cgh, sycl::read_only}; 
+                        sycl::accessor omega    {buf_omega   , cgh, sycl::read_only}; 
+                        sycl::accessor u        {buf_uint    , cgh, sycl::read_only}; 
+                        sycl::accessor pressure {buf_pressure, cgh, sycl::read_only}; 
 
-                        //particle_looper.rtree_for([&](u32 node_id, vec bmin,vec bmax) -> bool {
-                        //    flt int_r_max_cell     = hmax_tree[node_id] * Kernel::Rkern;
-                        //
-                        //    using namespace walker::interaction_crit;
-                        //
-                        //    return sph_radix_cell_crit(xyz_a, inter_box_a_min, inter_box_a_max, bmin,
-                        //                            bmax, int_r_max_cell);
-                        //},[&](u32 id_b){
+                        sycl::accessor hmax_tree {tree_field_hmax, cgh, sycl::read_only};
+
+                            //sycl::stream out {4096,1024,cgh};
+
+                        constexpr flt Rker2 = Kernel::Rkern*Kernel::Rkern;
+
+                        cgh.parallel_for(sycl::range<1>{pdat.get_obj_cnt()}, [=](sycl::item<1> item) {
+
+                            u32 id_a = (u32)item.get_id(0);
+
+                            using namespace shamrock::sph;
+
+                            vec sum_axyz = {0, 0, 0};
+                            flt sum_du_a = 0;
+                            flt h_a        = hpart[id_a];
+
+
+                            vec xyz_a = xyz[id_a];
+                            vec vxyz_a = vxyz[id_a];
+
+                            flt rho_a    = rho_h(pmass, h_a);
+                            flt rho_a_sq = rho_a * rho_a;
+                            flt rho_a_inv = 1./rho_a;
+
+                            flt P_a     = pressure[id_a];
+                            //f32 P_a     = cs * cs * rho_a;
+                            flt omega_a = omega[id_a];
+
+                            flt omega_a_rho_a_inv = 1 / (omega_a * rho_a);
+
+                            const flt u_a = u[id_a];
+
+                            flt lambda_viscous_heating = 0.0;
+                            flt lambda_conductivity = 0.0;
+                            flt lambda_shock = 0.0;
+
+                            flt cs_a = sycl::sqrt(gamma*P_a/rho_a);
                         
-                        particle_looper.for_each_object(id_a,[&](u32 id_b){
-                            // compute only omega_a
-                            vec dr = xyz_a - xyz[id_b];
-                            flt rab2 = sycl::dot(dr,dr);
-                            flt h_b  = hpart[id_b];
+                            vec inter_box_a_min = xyz_a - h_a * Kernel::Rkern;
+                            vec inter_box_a_max = xyz_a + h_a * Kernel::Rkern;
 
-                            if (rab2 > h_a*h_a * Rker2 && rab2 > h_b*h_b * Rker2){
-                                return;
-                            }
-
-                            flt rab  = sycl::sqrt(rab2);
-                            vec vxyz_b = vxyz[id_b]; 
-                            vec v_ab = vxyz_a - vxyz_b;
-                            const flt u_b = u[id_b];
-
-                            vec r_ab_unit = dr / rab;
-
-                            if (rab < 1e-9) {
-                                r_ab_unit = {0, 0, 0};
-                            }
-
-                            flt rho_b   = rho_h(pmass, h_b);
-                            flt P_b     = pressure[id_b];
-                            //f32 P_b     = cs * cs * rho_b;
-                            flt omega_b = omega[id_b];
-                            flt cs_b = sycl::sqrt(gamma*P_b/rho_b); 
-                            flt v_ab_r_ab = sycl::dot(v_ab,r_ab_unit);
-                            flt abs_v_ab_r_ab = sycl::fabs(v_ab_r_ab);
-
-                            /////////////////
-                            //internal energy update
-                            // scalar : f32  | vector : f32_3
-                            const flt alpha_a = alpha_AV; 
-                            const flt alpha_b = alpha_AV;
-                            flt vsig_a = alpha_a*cs_a + beta_AV*abs_v_ab_r_ab; 
-                            flt vsig_b = alpha_b*cs_b + beta_AV*abs_v_ab_r_ab;
-                            flt vsig_u =  abs_v_ab_r_ab;
-
-                            flt dWab_a = Kernel::dW(rab, h_a);
-                            flt dWab_b = Kernel::dW(rab, h_b);
-
-                            //auto v_sig_a = alpha_AV * cs_a + beta_AV * sycl::distance(v_ab, dr);
-                            lambda_viscous_heating +=  pmass * vsig_a * flt(0.5) * (sycl::pown(sycl::dot(v_ab, dr), 2) * dWab_a);
-                            lambda_conductivity += pmass * alpha_u * vsig_u * (u_a - u_b)* flt(0.5) * (dWab_a * omega_a_rho_a_inv + dWab_b / (rho_b * omega_b));
-                            sum_du_a += pmass * v_ab_r_ab * dWab_a;
-
-                            //out << sum_du_a << "\n";
-                            /////////////////
-
-                            flt qa_ab = shambase::sycl_utils::g_sycl_max(- flt(0.5)*rho_a*vsig_a*v_ab_r_ab,flt(0)); 
-                            flt qb_ab = shambase::sycl_utils::g_sycl_max(- flt(0.5)*rho_b*vsig_b*v_ab_r_ab,flt(0));
-
-                            vec tmp = sph_pressure_symetric_av<vec, flt>(pmass, rho_a_sq, rho_b * rho_b, P_a, P_b, omega_a,
-                                                                omega_b, qa_ab, qb_ab, r_ab_unit * dWab_a,
-                                                                r_ab_unit * dWab_b);
-
-                            //logger::raw(shambase::format("pmass {}, rho_a {}, P_a {}, omega_a {}\n", pmass,rho_a, P_a, omega_a));
+                            //particle_looper.rtree_for([&](u32 node_id, vec bmin,vec bmax) -> bool {
+                            //    flt int_r_max_cell     = hmax_tree[node_id] * Kernel::Rkern;
+                            //
+                            //    using namespace walker::interaction_crit;
+                            //
+                            //    return sph_radix_cell_crit(xyz_a, inter_box_a_min, inter_box_a_max, bmin,
+                            //                            bmax, int_r_max_cell);
+                            //},[&](u32 id_b){
                             
-                            //out << "add : " << tmp << "\n";
+                            particle_looper.for_each_object(id_a,[&](u32 id_b){
+                                // compute only omega_a
+                                vec dr = xyz_a - xyz[id_b];
+                                flt rab2 = sycl::dot(dr,dr);
+                                flt h_b  = hpart[id_b];
 
-                            sum_axyz += tmp;
-                        });
+                                if (rab2 > h_a*h_a * Rker2 && rab2 > h_b*h_b * Rker2){
+                                    return;
+                                }
+
+                                flt rab  = sycl::sqrt(rab2);
+                                vec vxyz_b = vxyz[id_b]; 
+                                vec v_ab = vxyz_a - vxyz_b;
+                                const flt u_b = u[id_b];
+
+                                vec r_ab_unit = dr / rab;
+
+                                if (rab < 1e-9) {
+                                    r_ab_unit = {0, 0, 0};
+                                }
+
+                                flt rho_b   = rho_h(pmass, h_b);
+                                flt P_b     = pressure[id_b];
+                                //f32 P_b     = cs * cs * rho_b;
+                                flt omega_b = omega[id_b];
+                                flt cs_b = sycl::sqrt(gamma*P_b/rho_b); 
+                                flt v_ab_r_ab = sycl::dot(v_ab,r_ab_unit);
+                                flt abs_v_ab_r_ab = sycl::fabs(v_ab_r_ab);
+
+                                /////////////////
+                                //internal energy update
+                                // scalar : f32  | vector : f32_3
+                                const flt alpha_a = alpha_AV; 
+                                const flt alpha_b = alpha_AV;
+                                flt vsig_a = alpha_a*cs_a + beta_AV*abs_v_ab_r_ab; 
+                                flt vsig_b = alpha_b*cs_b + beta_AV*abs_v_ab_r_ab;
+                                flt vsig_u =  abs_v_ab_r_ab;
+
+                                flt dWab_a = Kernel::dW(rab, h_a);
+                                flt dWab_b = Kernel::dW(rab, h_b);
+
+                                //auto v_sig_a = alpha_AV * cs_a + beta_AV * sycl::distance(v_ab, dr);
+                                lambda_viscous_heating +=  pmass * vsig_a * flt(0.5) * (sycl::pown(sycl::dot(v_ab, dr), 2) * dWab_a);
+                                lambda_conductivity += pmass * alpha_u * vsig_u * (u_a - u_b)* flt(0.5) * (dWab_a * omega_a_rho_a_inv + dWab_b / (rho_b * omega_b));
+                                sum_du_a += pmass * v_ab_r_ab * dWab_a;
+
+                                //out << sum_du_a << "\n";
+                                /////////////////
+
+                                flt qa_ab = shambase::sycl_utils::g_sycl_max(- flt(0.5)*rho_a*vsig_a*v_ab_r_ab,flt(0)); 
+                                flt qb_ab = shambase::sycl_utils::g_sycl_max(- flt(0.5)*rho_b*vsig_b*v_ab_r_ab,flt(0));
+
+                                vec tmp = sph_pressure_symetric_av<vec, flt>(pmass, rho_a_sq, rho_b * rho_b, P_a, P_b, omega_a,
+                                                                    omega_b, qa_ab, qb_ab, r_ab_unit * dWab_a,
+                                                                    r_ab_unit * dWab_b);
+
+                                //logger::raw(shambase::format("pmass {}, rho_a {}, P_a {}, omega_a {}\n", pmass,rho_a, P_a, omega_a));
                                 
-                        sum_du_a = P_a *rho_a_inv*omega_a_rho_a_inv * sum_du_a;
-                        lambda_viscous_heating = - omega_a_rho_a_inv * lambda_viscous_heating;
-                        lambda_shock = lambda_viscous_heating + lambda_conductivity;
-                        sum_du_a = sum_du_a + lambda_shock;
+                                //out << "add : " << tmp << "\n";
 
-                        // out << "sum : " << sum_axyz << "\n";
+                                sum_axyz += tmp;
+                            });
+                                    
+                            sum_du_a = P_a *rho_a_inv*omega_a_rho_a_inv * sum_du_a;
+                            lambda_viscous_heating = - omega_a_rho_a_inv * lambda_viscous_heating;
+                            lambda_shock = lambda_viscous_heating + lambda_conductivity;
+                            sum_du_a = sum_du_a + lambda_shock;
 
-                        axyz[id_a] = sum_axyz;
-                        du[id_a] = sum_du_a;
+                            // out << "sum : " << sum_axyz << "\n";
 
+                            axyz[id_a] = sum_axyz;
+                            du[id_a] = sum_du_a;
+
+                        });
                     });
-                }).wait();
+                    }
+                
+                });
+                
+
+
+
+                ComputeField<flt> vepsilon_v_sq = utility.make_compute_field<flt>("vmean epsilon_v^2", 1);
+                ComputeField<flt> uepsilon_u_sq = utility.make_compute_field<flt>("umean epsilon_u^2", 1);
+
+                // corrector
+                logger::info_ln("sph::BasicGas", "leapfrog corrector");
+                utility.fields_leapfrog_corrector<vec>(ivxyz, iaxyz, old_axyz, vepsilon_v_sq, dt / 2);
+                utility.fields_leapfrog_corrector<flt>(iuint, iduint, old_duint, uepsilon_u_sq, dt / 2);
+                
+                flt rank_veps_v = sycl::sqrt(vepsilon_v_sq.compute_rank_max());
+                ///////////////////////////////////////////
+                // compute means //////////////////////////
+                ///////////////////////////////////////////
+
+                flt sum_vsq = utility.compute_rank_dot_sum<vec>(ivxyz);
+
+                flt vmean_sq = shamalgs::collective::allreduce_sum(sum_vsq) / flt(Npart_all);
+
+                flt vmean = sycl::sqrt(vmean_sq);
+                
+
+                flt rank_eps_v = rank_veps_v / vmean;
+
+
+                flt eps_v = shamalgs::collective::allreduce_max(rank_eps_v);
+
+                logger::info_ln("BasicGas", "epsilon v :",eps_v);
+
+                if(eps_v > 1e-2){
+                    logger::warn_ln("BasicGasSPH", 
+                        shambase::format("the corrector tolerance are broken the step will be re rerunned\n    eps_v = {}",
+                        eps_v));
+                    need_rerun_corrector = true;
+
+                    logger::info_ln("rerun corrector ...");
+                }else{
+                    need_rerun_corrector = false;
                 }
-            
-            });
-            
 
 
+                corrector_iter_cnt ++;
 
-            ComputeField<flt> vepsilon_v_sq = utility.make_compute_field<flt>("vmean epsilon_v^2", 1);
-            ComputeField<flt> uepsilon_u_sq = utility.make_compute_field<flt>("umean epsilon_u^2", 1);
-
-            // corrector
-            logger::info_ln("sph::BasicGas", "leapfrog corrector");
-            utility.fields_leapfrog_corrector<vec>(ivxyz, iaxyz, old_axyz, vepsilon_v_sq, dt / 2);
-            utility.fields_leapfrog_corrector<flt>(iuint, iduint, old_duint, uepsilon_u_sq, dt / 2);
-            
-            flt rank_veps_v = sycl::sqrt(vepsilon_v_sq.compute_rank_max());
-            ///////////////////////////////////////////
-            // compute means //////////////////////////
-            ///////////////////////////////////////////
-
-            flt sum_vsq = utility.compute_rank_dot_sum<vec>(ivxyz);
-
-            flt vmean_sq = shamalgs::collective::allreduce_sum(sum_vsq) / flt(Npart_all);
-
-            flt vmean = sycl::sqrt(vmean_sq);
-            
-
-            flt rank_eps_v = rank_veps_v / vmean;
-
-
-            flt eps_v = shamalgs::collective::allreduce_max(rank_eps_v);
-
-            logger::info_ln("BasicGas", "epsilon v :",eps_v);
-
-            if(eps_v > 1e-2){
-                logger::warn_ln("BasicGasSPH", 
-                    shambase::format("the corrector tolerance are broken the step will be re rerunned\n    eps_v = {}",
-                    eps_v));
-                need_rerun_corrector = true;
-
-                logger::info_ln("rerun corrector ...");
-            }else{
-                need_rerun_corrector = false;
             }
 
 
-corrector_iter_cnt ++;
 
-}
         }while(need_rerun_corrector);
 
         // if delta too big jump to compute force

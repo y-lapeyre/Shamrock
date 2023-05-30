@@ -11,7 +11,7 @@
 using namespace shammodels::sph;
 
 template<class vec>
-auto BasicGasPeriodicGhostHandler<vec>::find_interfaces(
+auto BasicSPHGhostHandler<vec>::find_interfaces(
     SerialPatchTree<vec> &sptree,
     shamrock::patch::PatchtreeField<flt> &int_range_max_tree,
     shamrock::patch::PatchField<flt> &int_range_max) -> GeneratorMap {
@@ -95,7 +95,7 @@ auto BasicGasPeriodicGhostHandler<vec>::find_interfaces(
 }
 
 template<class vec>
-auto BasicGasPeriodicGhostHandler<vec>::gen_id_table_interfaces(GeneratorMap &&gen)
+auto BasicSPHGhostHandler<vec>::gen_id_table_interfaces(GeneratorMap &&gen)
     -> shambase::DistributedDataShared<InterfaceIdTable> {
     StackEntry stack_loc{};
     using namespace shamrock::patch;
@@ -160,4 +160,4 @@ auto BasicGasPeriodicGhostHandler<vec>::gen_id_table_interfaces(GeneratorMap &&g
     return res;
 }
 
-template class shammodels::sph::BasicGasPeriodicGhostHandler<f64_3>;
+template class shammodels::sph::BasicSPHGhostHandler<f64_3>;

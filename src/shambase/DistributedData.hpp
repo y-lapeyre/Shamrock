@@ -60,6 +60,10 @@ namespace shambase {
 
         inline u64 get_element_count() { return data.size(); }
 
+        inline bool is_empty(){
+            return data.empty();
+        }
+
         template<typename... Tf>
         inline void print_data(fmt::format_string<Tf...> fmt){
             for_each([&](u64 id_patch, T & ref){

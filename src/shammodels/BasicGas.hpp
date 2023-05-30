@@ -109,6 +109,7 @@ namespace shammodels::sph {
         inline void set_particle_mass(flt pmass){gpart_mass = pmass;}
         inline void set_gamma(flt gam){gamma = gam;}
 
+
     };
 
 } // namespace shammodels::sph
