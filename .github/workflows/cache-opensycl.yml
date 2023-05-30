@@ -2,7 +2,7 @@ name: Cache OpenSYCL
 
 
 on:
-  workflow_call:
+  workflow_dispatch:
     
 jobs:
   cache_opensycl:
