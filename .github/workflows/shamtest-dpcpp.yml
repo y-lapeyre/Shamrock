@@ -14,7 +14,15 @@ jobs:
       - uses: actions/checkout@v3
         with:
           submodules: recursive
-          
+
+      - name: Cache DPCPP
+        id: cache-dpcpp
+        uses: actions/cache@v3
+        with:
+          fail-on-cache-miss: true
+          path: dpcpp_compiler
+          key: dpcpp-compiler.tar.gz  
+
       - uses: actions/setup-python@v4
         with:
           python-version: '3.10' 
@@ -26,14 +34,6 @@ jobs:
       - name: install Ninja-build
         run: sudo apt install ninja-build
 
-      - name: Cache DPCPP
-        id: cache-dpcpp
-        uses: actions/cache@v3
-        with:
-          fail-on-cache-miss: true
-          path: dpcpp_compiler
-          key: dpcpp-compiler.tar.gz
-          
       - name : Check binary
         run: |
           dpcpp_compiler/bin/clang++ --version
