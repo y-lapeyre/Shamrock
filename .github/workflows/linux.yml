@@ -82,6 +82,17 @@ jobs:
   shamrock_linux_dpcpp:
     needs: [pragma_check, copyright_check]
     uses: ./.github/workflows/linux-dpcpp.yml
+    with:
+      clang: ${{ matrix.clang }}
+      os: ${{ matrix.os }}
+      cuda: ${{ matrix.cuda }}
+      rocm: ${{ matrix.rocm }}
+    strategy:
+      matrix:
+        clang: [15]
+        os: [ubuntu-22.04]
+        cuda: [11.0.2]
+        rocm: [5.4.3]
   
   shamrock_linux_opensycl:
     needs: [pragma_check, copyright_check]
