@@ -47,3 +47,8 @@ jobs:
         run: |
           cd dpcpp_bare_debug
           ninja
+
+      - name: run Shamrock
+        run: |
+          cd dpcpp_bare_debug
+          ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --unittest
