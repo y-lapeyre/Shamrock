@@ -572,64 +572,7 @@ namespace shammodels::sph {
 
                 tree::ObjectCache & neigh_cache = hiter_caches.get_cache(p.id_patch);
 
-                shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-
-                    //tree::ObjectIterator particle_looper(tree,cgh);
-
-                    tree::ObjectCacheIterator particle_looper(neigh_cache,cgh);
-
-                    sycl::accessor r {merged_r, cgh,sycl::read_only};
-                    sycl::accessor hpart {hnew, cgh,sycl::read_only};
-                    sycl::accessor omega {omega_h, cgh, sycl::write_only, sycl::no_init};
-
-                    const flt part_mass = gpart_mass;
-                    const flt h_max_tot_max_evol = htol_up_tol;
-                    const flt h_max_evol_p = htol_up_iter;
-                    const flt h_max_evol_m = 1/htol_up_iter;
-
-                    cgh.parallel_for(range_npart, [=](sycl::item<1> item) {
-                        u32 id_a = (u32)item.get_id(0);
-
-                        vec xyz_a = r[id_a]; // could be recovered from lambda
-
-                        flt h_a = hpart[id_a];
-                        flt dint = h_a*h_a* Kernel::Rkern* Kernel::Rkern;
-
-                        vec inter_box_a_min = xyz_a - h_a * Kernel::Rkern;
-                        vec inter_box_a_max = xyz_a + h_a * Kernel::Rkern;
-
-                        flt rho_sum = 0;
-                        flt part_omega_sum = 0;
-
-                        //particle_looper.rtree_for([&](u32, vec bmin,vec bmax) -> bool {
-                        //    return shammath::domain_are_connected(bmin,bmax,inter_box_a_min,inter_box_a_max);
-                        //},[&](u32 id_b){
-                        particle_looper.for_each_object(id_a,[&](u32 id_b){
-                            vec dr = xyz_a - r[id_b];
-                            flt rab2 = sycl::dot(dr,dr);
-
-                            if(rab2 > dint) { 
-                                return;
-                            }
-
-                            flt rab = sycl::sqrt(rab2);
-
-                            rho_sum += part_mass*Kernel::W(rab,h_a);
-                            part_omega_sum += part_mass * Kernel::dhW(rab,h_a);
-                        });
-
-                        using namespace shamrock::sph;
-
-                        flt rho_ha = rho_h(part_mass, h_a);
-                        flt omega_a = 1 + (h_a/(3*rho_ha))*part_omega_sum;
-                        omega[id_a] = omega_a;
-
-                        //logger::raw(shambase::format("pmass {}, rho_a {}, omega_a {}\n", part_mass,rho_ha, omega_a));
-                        
-                    });
-
-
-                });
+                sph_utils.compute_omega(merged_r, hnew, omega_h, range_npart, neigh_cache, gpart_mass);
                 
             });
         }

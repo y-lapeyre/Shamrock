@@ -189,6 +189,70 @@ namespace shammodels::sph {
         });
     }
 
+    template<class vec, class SPHKernel>
+    void SPHUtilities<vec, SPHKernel>::compute_omega(sycl::buffer<vec> &merged_r,
+                                                     sycl::buffer<flt> &h_part,
+                                                     sycl::buffer<flt> &omega_h,
+                                                     sycl::range<1> part_range,
+                                                     shamrock::tree::ObjectCache &neigh_cache,
+                                                     flt gpart_mass) {
+        using namespace shamrock::tree;
+
+        shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
+            // tree::ObjectIterator particle_looper(tree,cgh);
+
+            ObjectCacheIterator particle_looper(neigh_cache, cgh);
+
+            sycl::accessor r{merged_r, cgh, sycl::read_only};
+            sycl::accessor hpart{h_part, cgh, sycl::read_only};
+            sycl::accessor omega{omega_h, cgh, sycl::write_only, sycl::no_init};
+
+            const flt part_mass = gpart_mass;
+
+            cgh.parallel_for(part_range, [=](sycl::item<1> item) {
+                u32 id_a = (u32)item.get_id(0);
+
+                vec xyz_a = r[id_a]; // could be recovered from lambda
+
+                flt h_a  = hpart[id_a];
+                flt dint = h_a * h_a * Rkern * Rkern;
+
+                vec inter_box_a_min = xyz_a - h_a * Rkern;
+                vec inter_box_a_max = xyz_a + h_a * Rkern;
+
+                flt rho_sum        = 0;
+                flt part_omega_sum = 0;
+
+                // particle_looper.rtree_for([&](u32, vec bmin,vec bmax) -> bool {
+                //     return
+                //     shammath::domain_are_connected(bmin,bmax,inter_box_a_min,inter_box_a_max);
+                // },[&](u32 id_b){
+                particle_looper.for_each_object(id_a, [&](u32 id_b) {
+                    vec dr   = xyz_a - r[id_b];
+                    flt rab2 = sycl::dot(dr, dr);
+
+                    if (rab2 > dint) {
+                        return;
+                    }
+
+                    flt rab = sycl::sqrt(rab2);
+
+                    rho_sum += part_mass * SPHKernel::W(rab, h_a);
+                    part_omega_sum += part_mass * SPHKernel::dhW(rab, h_a);
+                });
+
+                using namespace shamrock::sph;
+
+                flt rho_ha  = rho_h(part_mass, h_a);
+                flt omega_a = 1 + (h_a / (3 * rho_ha)) * part_omega_sum;
+                omega[id_a] = omega_a;
+
+                // logger::raw(shambase::format("pmass {}, rho_a {}, omega_a {}\n",
+                // part_mass,rho_ha, omega_a));
+            });
+        });
+    }
+
     template class SPHUtilities<f64_3, kernels::M4<f64>>;
     template class SPHUtilities<f64_3, kernels::M6<f64>>;
 

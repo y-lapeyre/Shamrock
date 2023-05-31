@@ -134,6 +134,13 @@ namespace shammodels::sph {
                 h_evol_max,
                 h_evol_iter_max);
         }
+
+        static void compute_omega(sycl::buffer<vec> &merged_r,
+                                  sycl::buffer<flt> &h_part,
+                                  sycl::buffer<flt> &omega_h,
+                                  sycl::range<1> part_range,
+                                  shamrock::tree::ObjectCache &neigh_cache,
+                                  flt gpart_mass);
     };
 
 } // namespace shammodels::sph
