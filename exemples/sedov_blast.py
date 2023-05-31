@@ -73,23 +73,36 @@ setup.set_boundaries("periodic")
 
 setup.add_particules_fcc(ctx,dr, bmin,bmax)
 
-rinj = 0.01
-u_inj = 100
-
-setup.set_value_in_box(ctx, "f64", 0.005, "uint", bmin,bmax)
-setup.set_value_in_sphere(ctx, "f64", u_inj, "uint",(0,0,0),rinj)
-
-
-
 vol_b = xs*ys*zs
 
 totmass = (rho_g*vol_b)
-
 print("Total mass :", totmass)
 
 setup.set_total_mass(totmass)
 
 pmass = setup.get_part_mass()
+
+
+
+setup.set_value_in_box(ctx, "f64", 0.005, "uint", bmin,bmax)
+
+print(">>> iterating toward tot u = 1")
+rinj = 0.01
+
+u_inj = 1000
+while 1:
+    
+    setup.set_value_in_sphere(ctx, "f64", u_inj, "uint",(0,0,0),rinj)
+
+    tot_u = pmass*setup.get_sum_float(ctx, "f64","uint")
+
+    u_inj *= 1/tot_u
+    print("total u :",tot_u)
+
+    if abs(tot_u - 1) < 1e-5:
+        break
+
+
 
 print("Current part mass :", pmass)
 
@@ -102,7 +115,7 @@ del setup
 
 
 
-sim.set_cfl_cour(1e-1)
+sim.set_cfl_cour(0.25)
 sim.set_cfl_force(0.3)
 
 
@@ -117,5 +130,20 @@ sim.set_particle_mass(pmass)
 for i in range(9):
     sim.evolve(5e-4, False, False, "", False)
 
-for i in range(200):
-    sim.evolve(5e-4, True, True, "dump_"+str(i)+".vtk", True)
+
+t_sum = 0
+t_target = 0.1
+current_dt = 1e-6
+i = 0
+while t_sum < t_target:
+
+    print("step : t=",t_sum)
+    
+    next_dt = sim.evolve(current_dt, True, True, "dump_"+str(i)+".vtk", True)
+    t_sum += current_dt
+    current_dt = next_dt
+
+    if (t_target - t_sum) < next_dt:
+        current_dt = t_target - t_sum
+
+    i+= 1

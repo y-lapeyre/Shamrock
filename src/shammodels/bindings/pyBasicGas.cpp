@@ -26,7 +26,7 @@ Register_pymod(pybasicgassph){
         ) 
         .def("setup_fields",&BasicGas::setup_fields)
         .def("evolve",[](BasicGas & self, f64 dt,bool physics_on, bool do_dump, std::string dump_name, bool debug_dump){
-            self.evolve(dt,physics_on, BasicGas::DumpOption{
+            return self.evolve(dt,physics_on, BasicGas::DumpOption{
                 do_dump,
                 dump_name,
                 debug_dump

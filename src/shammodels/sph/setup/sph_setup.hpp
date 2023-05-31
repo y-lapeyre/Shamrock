@@ -67,6 +67,11 @@ namespace models::sph {
             generic::setup::modifiers::set_value_in_sphere(sched, val, name,center, radius);
         }
 
+        template<class T>
+        inline T get_sum(PatchScheduler & sched, std::string name){
+            return generic::setup::modifiers::get_sum<T>(sched, name);
+        }
+
         inline void pertub_eigenmode_wave(PatchScheduler &sched, std::tuple<flt,flt> ampls, vec k, flt phase){StackEntry stack_loc{};
             generic::setup::modifiers::pertub_eigenmode_wave(sched, ampls, k, phase);
         }

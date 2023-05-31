@@ -128,6 +128,18 @@ class NamedSetupSPH{
         }, setup);
     }
 
+    template<class T> 
+    inline T get_sum(ShamrockCtx & ctx, std::string name){
+        
+        if(!ctx.sched){
+            throw std::runtime_error("cannot initialize a setup with an uninitialized scheduler");
+        }
+
+        return std::visit([&](auto && arg) {
+            return arg.template get_sum<T>(*ctx.sched, name);
+        }, setup);
+    }
+
     inline void pertub_eigenmode_wave(ShamrockCtx & ctx, std::tuple<f64,f64> ampls, vec k, f64 phase){
 
         if(!ctx.sched){

@@ -11,6 +11,7 @@
 #include "shambase/exception.hpp"
 #include "shambase/type_aliases.hpp"
 #include "shammath/CoordRange.hpp"
+#include "shammodels/SPHSolverImpl.hpp"
 #include "shamrock/io/LegacyVtkWritter.hpp"
 #include "shamrock/scheduler/SerialPatchTree.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
@@ -20,9 +21,15 @@
 
 namespace shammodels::sph {
 
+
+    
+
+    //split this class into BasicGasUtilities & BasicGas(The actual way to communicate with the integrator)
+
     class BasicGas {
         using flt      = f64;
         using vec      = f64_3;
+        static constexpr u32 dim = 3;
         using u_morton = u32;
         using Kernel = shamrock::sph::kernels::M4<flt>;
 
@@ -39,8 +46,10 @@ namespace shammodels::sph {
         ShamrockCtx &context;
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }
 
+        SPHSolverImpl solver;
+
         public:
-        BasicGas(ShamrockCtx &context) : context(context){};
+        BasicGas(ShamrockCtx &context) : context(context), solver(context){};
 
         inline void setup_fields(){
             context.pdata_layout_add_field<vec>("xyz", 1);
@@ -76,31 +85,17 @@ namespace shammodels::sph {
             bool vtk_dump_patch_id;
         };
 
-        shamrock::tree::ObjectCache build_neigh_cache(
-            u32 start_offset,
-            u32 obj_cnt, 
-            sycl::buffer<vec> & buf_xyz,
-            sycl::buffer<flt> & buf_hpart,
-            RadixTree<u_morton, vec, 3>&tree,
-            sycl::buffer<flt> & tree_field_hmax
-        );
-
-        shamrock::tree::ObjectCache build_hiter_neigh_cache(
-            u32 start_offset,
-            u32 obj_cnt, 
-            sycl::buffer<vec> & buf_xyz,
-            sycl::buffer<flt> & buf_hpart,
-            RadixTree<u_morton, vec, 3>&tree,
-            flt h_tolerance 
-        );
 
 
         /**
-         * @brief 
+         * @brief evolve one step
          * 
          * @param dt 
+         * @param enable_physics 
+         * @param dump_opt 
+         * @return f64 the next cfl
          */
-        void evolve(f64 dt, bool enable_physics, DumpOption dump_opt);
+        f64 evolve(f64 dt, bool enable_physics, DumpOption dump_opt);
 
         u64 count_particles();
 
