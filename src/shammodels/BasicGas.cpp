@@ -16,9 +16,9 @@
 #include "shambase/stacktrace.hpp"
 #include "shammath/CoordRange.hpp"
 #include "shammodels/BasicSPHGhosts.hpp"
-#include "shammodels/SPHHandler.hpp"
+#include "shamrock/sph/SPHUtilities.hpp"
 #include "shamrock/scheduler/InterfacesUtility.hpp"
-#include "shamrock/scheduler/TreeTaversalCache.hpp"
+#include "shamrock/tree/TreeTaversalCache.hpp"
 #include "shamrock/scheduler/scheduler_mpi.hpp"
 #include "shamrock/scheduler/SerialPatchTree.hpp"
 #include "shamrock/patch/Patch.hpp"
@@ -465,12 +465,13 @@ namespace shammodels::sph {
 
         u64 Npart_all = count_particles();
 
+        using SPHUtils = SPHUtilities<vec, Kernel>;
+        SPHUtils sph_utils(scheduler());
+
         BasicSPHGhostHandler<vec> interf_handle (scheduler());
-        SPHHandler<vec, Kernel> hndl(scheduler(),interf_handle, htol_up_tol);
         InterfacesUtility interf_utils(scheduler());
         
-
-        auto interf_build_cache = hndl.build_interf_cache(sptree);
+        auto interf_build_cache = sph_utils.build_interf_cache(interf_handle,sptree,htol_up_tol);
         auto merged_xyz = interf_handle.build_comm_merge_positions(interf_build_cache);
 
         constexpr u32 reduc_level = 3;
@@ -504,52 +505,29 @@ namespace shammodels::sph {
 
 
         
-        tree::ObjectCacheHandler hiter_caches(u64(1e9),[&](u64 patch_id){
-            logger::debug_ln("SPHLeapfrog","patch : n°",patch_id,"->","gen cache");
+        tree::ObjectCacheHandler hiter_caches{
+            u64(1e9),
+            [&](u64 patch_id){
+                logger::debug_ln("SPHLeapfrog","patch : n°",patch_id,"->","gen cache");
 
-            
-            sycl::buffer<vec> & merged_r = shambase::get_check_ref(merged_xyz.get(patch_id).field.get_buf());
-            sycl::buffer<flt> & hold = shambase::get_check_ref(_h_old.get_buf(patch_id));
+                sycl::buffer<vec> & merged_r = shambase::get_check_ref(merged_xyz.get(patch_id).field.get_buf());
+                sycl::buffer<flt> & hold = shambase::get_check_ref(_h_old.get_buf(patch_id));
 
-            PatchData & pdat = scheduler().patch_data.get_pdat(patch_id);
+                PatchData & pdat = scheduler().patch_data.get_pdat(patch_id);
 
-            RTree & tree = trees.get(patch_id);
+                RTree & tree = trees.get(patch_id);
 
-            tree::ObjectCache pcache = build_hiter_neigh_cache(
-                0, 
-                pdat.get_obj_cnt(),
-                merged_r, 
-                hold, 
-                tree,
-                htol_up_tol);
+                tree::ObjectCache pcache = build_hiter_neigh_cache(
+                    0, 
+                    pdat.get_obj_cnt(),
+                    merged_r, 
+                    hold, 
+                    tree,
+                    htol_up_tol);
 
-            return pcache;
-        });
-
-        //shambase::DistributedData<tree::ObjectCache> hiter_neigh_caches;
-
-
-
-        //scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchData & pdat){
-        //    logger::debug_ln("SPHLeapfrog","patch : n°",p.id_patch,"->","gen cache");
-        //
-        //    
-        //    sycl::buffer<vec> & merged_r = shambase::get_check_ref(merged_xyz.get(p.id_patch).field.get_buf());
-        //    sycl::buffer<flt> & hold = shambase::get_check_ref(_h_old.get_buf(p.id_patch));
-        //
-        //    RTree & tree = trees.get(p.id_patch);
-        //
-        //    tree::ObjectCache pcache = build_hiter_neigh_cache(
-        //        0, 
-        //        pdat.get_obj_cnt(),
-        //        merged_r, 
-        //        hold, 
-        //        tree,
-        //        htol_up_tol);
-        //
-        //    hiter_neigh_caches.add_obj(p.id_patch, std::move(pcache));
-        //
-        //});
+                return pcache;
+            }
+        };
 
 
         for(u32 iter_h = 0; iter_h < 5; iter_h ++){
@@ -560,7 +538,6 @@ namespace shammodels::sph {
 
                 sycl::buffer<flt> & eps_h = shambase::get_check_ref(_epsilon_h.get_buf(p.id_patch));
                 sycl::buffer<flt> & hold = shambase::get_check_ref(_h_old.get_buf(p.id_patch));
-                sycl::buffer<flt> & omega_h = shambase::get_check_ref(omega.get_buf(p.id_patch));
 
                 sycl::buffer<flt> & hnew = shambase::get_check_ref(pdat.get_field<flt>(ihpart).get_buf());
                 sycl::buffer<vec> & merged_r = shambase::get_check_ref(merged_xyz.get(p.id_patch).field.get_buf());
@@ -571,80 +548,8 @@ namespace shammodels::sph {
 
                 tree::ObjectCache & neigh_cache = hiter_caches.get_cache(p.id_patch);
 
-                shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-
-                    //tree::ObjectIterator particle_looper(tree,cgh);
-
-                    tree::ObjectCacheIterator particle_looper(neigh_cache,cgh);
-
-                    sycl::accessor eps {eps_h, cgh,sycl::read_write};
-                    sycl::accessor r {merged_r, cgh,sycl::read_only};
-                    sycl::accessor h_new {hnew, cgh,sycl::read_write};
-                    sycl::accessor h_old {hold, cgh,sycl::read_only};
-                    //sycl::accessor omega {omega_h, cgh, sycl::write_only, sycl::no_init};
-
-                    const flt part_mass = gpart_mass;
-                    const flt h_max_tot_max_evol = htol_up_tol;
-                    const flt h_max_evol_p = htol_up_iter;
-                    const flt h_max_evol_m = 1/htol_up_iter;
-
-                    cgh.parallel_for(range_npart, [=](sycl::item<1> item) {
-                        u32 id_a = (u32)item.get_id(0);
-
-
-                        if(eps[id_a] > 1e-6){
-
-                            vec xyz_a = r[id_a]; // could be recovered from lambda
-
-                            flt h_a = h_new[id_a];
-                            flt dint = h_a*h_a* Kernel::Rkern* Kernel::Rkern;
-
-                            vec inter_box_a_min = xyz_a - h_a * Kernel::Rkern;
-                            vec inter_box_a_max = xyz_a + h_a * Kernel::Rkern;
-
-                            flt rho_sum = 0;
-                            flt sumdWdh = 0;
-
-                            //particle_looper.rtree_for([&](u32, vec bmin,vec bmax) -> bool {
-                            //    return shammath::domain_are_connected(bmin,bmax,inter_box_a_min,inter_box_a_max);
-                            //},[&](u32 id_b){
-                            particle_looper.for_each_object(id_a,[&](u32 id_b){
-                                vec dr = xyz_a - r[id_b];
-                                flt rab2 = sycl::dot(dr,dr);
-
-                                if(rab2 > dint) { 
-                                    return;
-                                }
-
-                                flt rab = sycl::sqrt(rab2);
-
-                                rho_sum += part_mass*Kernel::W(rab,h_a);
-                                sumdWdh += part_mass*Kernel::dhW(rab,h_a);
-                            });
-
-                            using namespace shamrock::sph;
-
-                            flt rho_ha = rho_h(part_mass, h_a);
-                            flt new_h = newtown_iterate_new_h(rho_ha, rho_sum, sumdWdh, h_a);
-
-                            if(new_h < h_a*h_max_evol_m) new_h = h_max_evol_m*h_a;
-                            if(new_h > h_a*h_max_evol_p) new_h = h_max_evol_p*h_a;
-                            
-                            flt ha_0 = h_old[id_a];
-                            
-                            if (new_h < ha_0*h_max_tot_max_evol) {
-                                h_new[id_a] = new_h;
-                                eps[id_a] = sycl::fabs(new_h - h_a)/ha_0;
-                            }else{
-                                h_new[id_a] = ha_0*h_max_tot_max_evol;
-                                eps[id_a] = -1;
-                            }
-
-                        }
-                    });
-
-
-                });
+                sph_utils.iterate_smoothing_lenght_cache(merged_r, hnew, hold, eps_h, range_npart, neigh_cache, gpart_mass, htol_up_tol, htol_up_iter);
+                //sph_utils.iterate_smoothing_lenght_tree(merged_r, hnew, hold, eps_h, range_npart, tree, gpart_mass, htol_up_tol, htol_up_iter);
                 
             });
         }
@@ -826,8 +731,9 @@ namespace shammodels::sph {
                 interf_handle.communicate_pdat(interf_layout, std::move(pdat_interf));
 
 
-            mpdat = 
-                interf_handle.merge_native<PatchData,MergedPatchData>(std::move(interf_pdat), [&](const shamrock::patch::Patch p, shamrock::patch::PatchData & pdat){
+            mpdat = interf_handle.merge_native<PatchData,MergedPatchData>(
+                std::move(interf_pdat), 
+                [&](const shamrock::patch::Patch p, shamrock::patch::PatchData & pdat){
                     
                     PatchData pdat_new(interf_layout);
 
