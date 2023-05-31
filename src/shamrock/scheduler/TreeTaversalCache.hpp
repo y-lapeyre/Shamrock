@@ -32,9 +32,7 @@ namespace shamrock::tree {
         ObjectCacheHandler(u64 max_memsize, std::function<ObjectCache(u64)> &&generator)
             : max_device_memsize(max_memsize), generator(generator) {}
 
-
-
-
+        private:
         inline bool offload_exist(u64 id){
             return cache_offload.has_key(id);
         }
@@ -86,12 +84,6 @@ namespace shamrock::tree {
                 return generator(id);
             }
         }
-
-
-
-
-
-
 
 
         /**
@@ -146,6 +138,8 @@ namespace shamrock::tree {
             push_cache(id, std::forward<ObjectCache>(c));
             last_device_builds.push_back(id);
         }
+
+        public:
 
         /**
          * @brief build a new entry in the cache and free enough
