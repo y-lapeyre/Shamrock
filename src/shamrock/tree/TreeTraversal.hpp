@@ -347,14 +347,46 @@ namespace shamrock::tree {
 
 
     
+    struct ObjectCache;
 
+    struct HostObjectCache{
+        std::vector<u32> cnt_neigh;
+        std::vector<u32> scanned_cnt;
+        u32 sum_neigh_cnt;
+        std::vector<u32> index_neigh_map;
 
+        inline u64 get_memsize(){
+            return (cnt_neigh.size() + scanned_cnt.size() + index_neigh_map.size() + 1)*sizeof(u32);
+        }
+    };
 
     struct ObjectCache{
         sycl::buffer<u32> cnt_neigh;
         sycl::buffer<u32> scanned_cnt;
         u32 sum_neigh_cnt;
         sycl::buffer<u32> index_neigh_map;
+
+        inline u64 get_memsize(){
+            return cnt_neigh.byte_size() + scanned_cnt.byte_size() + index_neigh_map.byte_size() + sizeof(u32);
+        }
+
+        inline HostObjectCache copy_to_host(){
+            return HostObjectCache{
+                shamalgs::memory::buf_to_vec(cnt_neigh, cnt_neigh.size()),
+                shamalgs::memory::buf_to_vec(scanned_cnt, scanned_cnt.size()),
+                sum_neigh_cnt,
+                shamalgs::memory::buf_to_vec(index_neigh_map, index_neigh_map.size()),
+            };
+        }
+
+        inline static ObjectCache build_from_host(HostObjectCache & cache){
+            return ObjectCache{
+                shamalgs::memory::vec_to_buf(cache.cnt_neigh),
+                shamalgs::memory::vec_to_buf(cache.scanned_cnt),
+                cache.sum_neigh_cnt,
+                shamalgs::memory::vec_to_buf(cache.index_neigh_map),
+            };
+        }
     };
 
     inline ObjectCache prepare_object_cache(sycl::buffer<u32> && counts, u32 obj_cnt){
@@ -413,6 +445,8 @@ namespace shamrock::tree {
 
         }
     };
+
+
 
 
 } // namespace shamrock::tree

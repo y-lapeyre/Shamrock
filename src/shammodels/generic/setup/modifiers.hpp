@@ -122,4 +122,20 @@ inline void pertub_eigenmode_wave(PatchScheduler &sched, std::tuple<flt, flt> am
     });
 }
 
+template<class T>
+inline T get_sum(PatchScheduler &sched, std::string name){
+
+    T sum = shambase::VectorProperties<T>::get_zero();
+
+    StackEntry stack_loc{};
+    sched.patch_data.for_each_patchdata([&](u64 patch_id, shamrock::patch::PatchData & pdat){
+
+        PatchDataField<T> &xyz = pdat.template get_field<T>(sched.pdl.get_field_idx<T>(name));
+
+        sum += xyz.compute_sum();
+    });
+
+    return shamalgs::collective::allreduce_sum(sum);
+}
+
 } // namespace generic::setup::modifiers

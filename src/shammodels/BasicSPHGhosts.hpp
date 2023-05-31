@@ -18,7 +18,7 @@
 namespace shammodels::sph {
 
     template<class vec>
-    class BasicGasPeriodicGhostHandler {
+    class BasicSPHGhostHandler {
 
         PatchScheduler &sched;
 
@@ -42,7 +42,7 @@ namespace shammodels::sph {
 
         using GeneratorMap = shambase::DistributedDataShared<InterfaceBuildInfos>;
 
-        BasicGasPeriodicGhostHandler(PatchScheduler &sched) : sched(sched) {}
+        BasicSPHGhostHandler(PatchScheduler &sched) : sched(sched) {}
 
         /**
          * @brief Find interfaces and their metadata
@@ -310,6 +310,11 @@ namespace shammodels::sph {
                     merged.bounds->lower = shambase::sycl_utils::g_sycl_min(merged.bounds->lower, pint.bmin);
                 });
 
+        }
+
+        inline shambase::DistributedData<shamrock::MergedPatchDataField<vec>> build_comm_merge_positions(shambase::DistributedDataShared<InterfaceIdTable> &builder){
+            auto pos_interf = build_position_interf_field(builder);
+            return merge_position_buf(communicate_positions(std::move(pos_interf)));
         }
 
         

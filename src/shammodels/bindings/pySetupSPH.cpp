@@ -84,6 +84,37 @@ Register_pymod(pynamedsphsetup){
 
 
         })
+        .def("get_sum_float", [](NamedSetupSPH & self, ShamrockCtx & ctx, std::string type, std::string name){
+            StackEntry stack_loc{};
+
+            f64 ret_val;
+
+            if(type == "f32"){
+                ret_val = self.get_sum<f32>(ctx, name);
+            }else if(type == "f64"){
+                ret_val = self.get_sum<f64>(ctx, name);
+            }else{
+                throw shambase::throw_with_loc<std::invalid_argument>("unknown type");
+            }
+
+            return ret_val;
+        })
+        .def("get_sum_vec", [](NamedSetupSPH & self, ShamrockCtx & ctx, std::string type, std::string name){
+            StackEntry stack_loc{};
+
+            std::tuple<f64,f64,f64> ret_val;
+
+            if(type == "f64_3"){
+                f64_3 tmp = self.get_sum<f64_3>(ctx, name);
+                std::get<0>(ret_val) = tmp.x();
+                std::get<1>(ret_val) = tmp.y();
+                std::get<2>(ret_val) = tmp.z();
+            }else{
+                throw shambase::throw_with_loc<std::invalid_argument>("unknown type");
+            }
+
+            return ret_val;
+        })
         .def("pertub_eigenmode_wave", [](NamedSetupSPH & self, ShamrockCtx & ctx, std::tuple<f64,f64> ampls, std::tuple<f64,f64,f64> k, f64 phase){
             auto [kx,ky,kz] = k;
             self.pertub_eigenmode_wave(ctx, ampls, {kx,ky,kz}, phase);
