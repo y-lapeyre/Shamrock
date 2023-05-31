@@ -35,7 +35,7 @@ namespace shamrock::patch {
             return transform.transform(p);
         }
 
-        PatchCoord to_patch_coord(shammath::CoordRange<Tcoord> obj) const {
+        PatchCoord<3> to_patch_coord(shammath::CoordRange<Tcoord> obj) const {
             return transform.reverse_transform(obj);
         }
 

@@ -101,7 +101,7 @@ namespace shamrock::scheduler {
         );
 
         inline SchedulerPatchData(
-            shamrock::patch::PatchDataLayout &pdl, shamrock::patch::PatchCoord patch_coord_range)
+            shamrock::patch::PatchDataLayout &pdl, shamrock::patch::PatchCoord<3> patch_coord_range)
             : pdl(pdl), sim_box(pdl,patch_coord_range) {}
     };
 

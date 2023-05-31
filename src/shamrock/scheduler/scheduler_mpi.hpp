@@ -465,7 +465,7 @@ class PatchScheduler{
      * @param coords coordinates of the patch
      * @return u64 the id of the made patch
      */
-    std::vector<u64> add_root_patches(std::vector<shamrock::patch::PatchCoord> coords);
+    std::vector<u64> add_root_patches(std::vector<shamrock::patch::PatchCoord<3>> coords);
 
     shamrock::patch::SimulationBoxInfo & get_sim_box(){
         return patch_data.sim_box;

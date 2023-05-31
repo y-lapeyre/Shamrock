@@ -21,12 +21,12 @@ TestStart(Unittest, "shamrock/patch/Patch.cpp:MpiType", patch_mpi_type, 2){
     check_patch.id_patch = 156;
     check_patch.pack_node_index = 48414;
     check_patch.load_value = 4951956;
-    check_patch.x_min = 0;
-    check_patch.y_min = 1;
-    check_patch.z_min = 2;
-    check_patch.x_max = 3;
-    check_patch.y_max = 8;
-    check_patch.z_max = 6;
+    check_patch.coord_min[0] = 0;
+    check_patch.coord_min[1] = 1;
+    check_patch.coord_min[2] = 2;
+    check_patch.coord_max[0] = 3;
+    check_patch.coord_max[1] = 8;
+    check_patch.coord_max[2] = 6;
     check_patch.data_count = 7444444;
     check_patch.node_owner_id = 44444;
 
@@ -54,12 +54,12 @@ TestStart(Unittest, "shamrock/patch/Patch.cpp:SplitMerge", splitmergepatch, 1){
     check_patch.id_patch = 0;
     check_patch.pack_node_index = u64_max;
     check_patch.load_value = 8;
-    check_patch.x_min = 0;
-    check_patch.y_min = 0;
-    check_patch.z_min = 0;
-    check_patch.x_max = 256;
-    check_patch.y_max = 128;
-    check_patch.z_max = 1024;
+    check_patch.coord_min[0] = 0;
+    check_patch.coord_min[1] = 0;
+    check_patch.coord_min[2] = 0;
+    check_patch.coord_max[0] = 256;
+    check_patch.coord_max[1] = 128;
+    check_patch.coord_max[2] = 1024;
     check_patch.data_count = 8;
     check_patch.node_owner_id = 0;
 
@@ -99,26 +99,26 @@ TestStart(Unittest, "shamrock/patch/Patch.cpp:SplitCoord", splitcoord, 1){
     p0.id_patch = 0;
     p0.pack_node_index = u64_max;
     p0.load_value = 8;
-    p0.x_min = 0;
-    p0.y_min = 0;
-    p0.z_min = 0;
-    p0.x_max = 256;
-    p0.y_max = 128;
-    p0.z_max = 1024;
+    p0.coord_min[0] = 0;
+    p0.coord_min[1] = 0;
+    p0.coord_min[2] = 0;
+    p0.coord_max[0] = 256;
+    p0.coord_max[1] = 128;
+    p0.coord_max[2] = 1024;
     p0.data_count = 8;
     p0.node_owner_id = 0;
 
-    u64 min_x = p0.x_min;
-    u64 min_y = p0.y_min;
-    u64 min_z = p0.z_min;
+    u64 min_x = p0.coord_min[0];
+    u64 min_y = p0.coord_min[1];
+    u64 min_z = p0.coord_min[2];
 
-    u64 split_x = (((p0.x_max - p0.x_min) + 1)/2) - 1 + min_x;
-    u64 split_y = (((p0.y_max - p0.y_min) + 1)/2) - 1 + min_y;
-    u64 split_z = (((p0.z_max - p0.z_min) + 1)/2) - 1 + min_z;
+    u64 split_x = (((p0.coord_max[0] - p0.coord_min[0]) + 1)/2) - 1 + min_x;
+    u64 split_y = (((p0.coord_max[1] - p0.coord_min[1]) + 1)/2) - 1 + min_y;
+    u64 split_z = (((p0.coord_max[2] - p0.coord_min[2]) + 1)/2) - 1 + min_z;
 
-    u64 max_x = p0.x_max;
-    u64 max_y = p0.y_max;
-    u64 max_z = p0.z_max;
+    u64 max_x = p0.coord_max[0];
+    u64 max_y = p0.coord_max[1];
+    u64 max_z = p0.coord_max[2];
 
     std::array<u64, 3> split_out = p0.get_split_coord();
 

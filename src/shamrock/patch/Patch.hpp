@@ -29,15 +29,16 @@ namespace shamrock::patch {
 
     template <u32 dim> MPI_Datatype get_patch_mpi_type();
 
-    
-
     /**
      * @brief Patch object that contain generic patch information
      *
      */
     struct Patch {
 
-        static constexpr u32 dim         = 3U;
+        static constexpr u32 dim = 3U;
+
+        static_assert(dim <4, "the patch object is implemented only up to dim 3");
+
         static constexpr u32 splts_count = 1U << dim;
 
         u64 id_patch; // unique key that identify the patch
@@ -49,12 +50,8 @@ namespace shamrock::patch {
         u64 load_value;      ///< if synchronized contain the load value of the patch
 
         // Data
-        u64 x_min; ///< box coordinate of the corresponding patch
-        u64 y_min; ///< box coordinate of the corresponding patch
-        u64 z_min; ///< box coordinate of the corresponding patch
-        u64 x_max; ///< box coordinate of the corresponding patch
-        u64 y_max; ///< box coordinate of the corresponding patch
-        u64 z_max; ///< box coordinate of the corresponding patch
+        std::array<u64,dim> coord_min;
+        std::array<u64,dim> coord_max;
 
         //[[deprecated("should be removed at some point to allow variable size pdat")]] 
         u32 data_count; ///< number of element in the corresponding patchdata
@@ -77,12 +74,12 @@ namespace shamrock::patch {
             ret_val = ret_val && (pack_node_index == rhs.pack_node_index);
             ret_val = ret_val && (load_value == rhs.load_value);
 
-            ret_val = ret_val && (x_min == rhs.x_min);
-            ret_val = ret_val && (y_min == rhs.y_min);
-            ret_val = ret_val && (z_min == rhs.z_min);
-            ret_val = ret_val && (x_max == rhs.x_max);
-            ret_val = ret_val && (y_max == rhs.y_max);
-            ret_val = ret_val && (z_max == rhs.z_max);
+            ret_val = ret_val && (coord_min[0] == rhs.coord_min[0]);
+            ret_val = ret_val && (coord_min[1] == rhs.coord_min[1]);
+            ret_val = ret_val && (coord_min[2] == rhs.coord_min[2]);
+            ret_val = ret_val && (coord_max[0] == rhs.coord_max[0]);
+            ret_val = ret_val && (coord_max[1] == rhs.coord_max[1]);
+            ret_val = ret_val && (coord_max[2] == rhs.coord_max[2]);
             ret_val = ret_val && (data_count == rhs.data_count);
 
             ret_val = ret_val && (node_owner_id == rhs.node_owner_id);
@@ -132,17 +129,17 @@ namespace shamrock::patch {
             sycl::vec<T, 3> val, sycl::vec<T, 3> min_val, sycl::vec<T, 3> max_val
         );
 
-        inline void override_from_coord(PatchCoord pc) {
-            x_min = pc.x_min;
-            y_min = pc.y_min;
-            z_min = pc.z_min;
-            x_max = pc.x_max;
-            y_max = pc.y_max;
-            z_max = pc.z_max;
+        inline void override_from_coord(PatchCoord<dim> pc) {
+            coord_min[0] = pc.coord_min[0];
+            coord_min[1] = pc.coord_min[1];
+            coord_min[2] = pc.coord_min[2];
+            coord_max[0] = pc.coord_max[0];
+            coord_max[1] = pc.coord_max[1];
+            coord_max[2] = pc.coord_max[2];
         }
 
-        [[nodiscard]] inline PatchCoord get_coords() const {
-            return PatchCoord(x_min, y_min, z_min, x_max, y_max, z_max);
+        [[nodiscard]] inline PatchCoord<dim> get_coords() const {
+            return {coord_min, coord_max};
         }
 
         inline shammath::CoordRange<u64_3> get_patch_range(){
@@ -157,8 +154,8 @@ namespace shamrock::patch {
     template <class T>
     inline std::tuple<sycl::vec<T, 3>, sycl::vec<T, 3>>
     Patch::convert_coord(sycl::vec<u64, 3> src_offset, sycl::vec<T, 3> divfact, sycl::vec<T, 3> offset) const {
-        return PatchCoord::convert_coord( x_min,  y_min,  z_min,  x_max,  y_max,  z_max,
-        src_offset.x(),src_offset.y(),src_offset.z()
+        return PatchCoord<dim>::convert_coord(coord_min, coord_max,
+        {src_offset.x(),src_offset.y(),src_offset.z()}
         ,  divfact,  offset);
     }
 
@@ -173,7 +170,7 @@ namespace shamrock::patch {
     }
 
     [[nodiscard]] inline auto Patch::get_split_coord() const -> std::array<u64, dim> {
-        return PatchCoord::get_split_coord(x_min, y_min, z_min, x_max, y_max, z_max);
+        return PatchCoord<dim>::get_split_coord(coord_min, coord_max);
     }
 
     [[nodiscard]] inline auto Patch::get_split() const -> std::array<Patch, splts_count> {
@@ -194,8 +191,8 @@ namespace shamrock::patch {
         p6 = p0;
         p7 = p0;
 
-        std::array<PatchCoord, splts_count> splts_c =
-            PatchCoord::get_split(x_min, y_min, z_min, x_max, y_max, z_max);
+        std::array<PatchCoord<dim>, splts_count> splts_c =
+            PatchCoord<dim>::get_split(coord_min, coord_max);
 
         p0.override_from_coord(splts_c[0]);
         p1.override_from_coord(splts_c[1]);
@@ -211,7 +208,7 @@ namespace shamrock::patch {
 
     [[nodiscard]] inline Patch Patch::merge_patch(std::array<Patch, splts_count> patches) {
 
-        PatchCoord merged_c = PatchCoord::merge(
+        PatchCoord merged_c = PatchCoord<dim>::merge(
             {patches[0].get_coords(),
              patches[1].get_coords(),
              patches[2].get_coords(),
@@ -225,12 +222,12 @@ namespace shamrock::patch {
         Patch ret{};
         ret = patches[0];
 
-        ret.x_min = merged_c.x_min;
-        ret.y_min = merged_c.y_min;
-        ret.z_min = merged_c.z_min;
-        ret.x_max = merged_c.x_max;
-        ret.y_max = merged_c.y_max;
-        ret.z_max = merged_c.z_max;
+        ret.coord_min[0] = merged_c.coord_min[0];
+        ret.coord_min[1] = merged_c.coord_min[1];
+        ret.coord_min[2] = merged_c.coord_min[2];
+        ret.coord_max[0] = merged_c.coord_max[0];
+        ret.coord_max[1] = merged_c.coord_max[1];
+        ret.coord_max[2] = merged_c.coord_max[2];
 
         ret.pack_node_index = u64_max;
 

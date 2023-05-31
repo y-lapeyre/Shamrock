@@ -32,12 +32,12 @@ inline void make_global_local_check_vec(std::vector<shamrock::patch::Patch> & gl
             element.id_patch      = id_patch;
             element.pack_node_index     = u64_max;
             element.load_value    = distdtcnt(eng);
-            element.x_min         = distu64(eng);
-            element.y_min         = distu64(eng);
-            element.z_min         = distu64(eng);
-            element.x_max         = distu64(eng);
-            element.y_max         = distu64(eng);
-            element.z_max         = distu64(eng);
+            element.coord_min[0]         = distu64(eng);
+            element.coord_min[1]         = distu64(eng);
+            element.coord_min[2]         = distu64(eng);
+            element.coord_max[0]         = distu64(eng);
+            element.coord_max[1]         = distu64(eng);
+            element.coord_max[2]         = distu64(eng);
             element.data_count    = element.load_value;
             element.node_owner_id = distu32(eng);
 

@@ -122,12 +122,12 @@ template <class vectype, class field_type, class InterfaceSelector> class Interf
             for (u64 i = 0; i < local_pcount; i++) {
                 pid[i] = sched.patch_list.local[i].id_patch;
 
-                lbox_min[i] = vectype{sched.patch_list.local[i].x_min, sched.patch_list.local[i].y_min,
-                                      sched.patch_list.local[i].z_min} *
+                lbox_min[i] = vectype{sched.patch_list.local[i].coord_min[0], sched.patch_list.local[i].coord_min[1],
+                                      sched.patch_list.local[i].coord_min[2]} *
                                   std::get<1>(box_transform) +
                               std::get<0>(box_transform);
-                lbox_max[i] = (vectype{sched.patch_list.local[i].x_max, sched.patch_list.local[i].y_max,
-                                       sched.patch_list.local[i].z_max} +
+                lbox_max[i] = (vectype{sched.patch_list.local[i].coord_max[0], sched.patch_list.local[i].coord_max[1],
+                                       sched.patch_list.local[i].coord_max[2]} +
                                1) *
                                   std::get<1>(box_transform) +
                               std::get<0>(box_transform);
@@ -137,13 +137,13 @@ template <class vectype, class field_type, class InterfaceSelector> class Interf
             for (u64 i = 0; i < global_pcount; i++) {
                 g_pid[i] = sched.patch_list.global[i].id_patch;
 
-                gbox_min[i] = vectype{sched.patch_list.global[i].x_min, sched.patch_list.global[i].y_min,
-                                      sched.patch_list.global[i].z_min} *
+                gbox_min[i] = vectype{sched.patch_list.global[i].coord_min[0], sched.patch_list.global[i].coord_min[1],
+                                      sched.patch_list.global[i].coord_min[2]} *
                                   std::get<1>(box_transform) +
                               std::get<0>(box_transform)
                               + interf_offset; //to handle offset on interfaces
-                gbox_max[i] = (vectype{sched.patch_list.global[i].x_max, sched.patch_list.global[i].y_max,
-                                       sched.patch_list.global[i].z_max} +
+                gbox_max[i] = (vectype{sched.patch_list.global[i].coord_max[0], sched.patch_list.global[i].coord_max[1],
+                                       sched.patch_list.global[i].coord_max[2]} +
                                1) *
                                   std::get<1>(box_transform) +
                               std::get<0>(box_transform)
