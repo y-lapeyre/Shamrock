@@ -52,12 +52,7 @@ class RadixTree{
 
     static constexpr u32 dim = shambase::VectorProperties<Tvec>::dimension;
 
-    //utility lambda to get the tree depth
-    static constexpr auto get_tree_depth = []() -> u32 {
-        if constexpr (std::is_same<Umorton,u32>::value){return 32;}
-        if constexpr (std::is_same<Umorton,u64>::value){return 64;}
-        return 0;
-    };
+    using Morton = shamrock::sfc::MortonCodes<Umorton, 3>;
 
     static constexpr bool pos_is_int = 
         std::is_same<Tvec, u16_3>::value ||
@@ -73,14 +68,13 @@ class RadixTree{
 
     RadixTree() = default;
 
-    using Morton = shamrock::sfc::MortonCodes<Umorton, 3>;
 
     public:
 
     using ipos_t = typename shamrock::sfc::MortonCodes<Umorton, dim>::int_vec_repr;
     using coord_t = typename shambase::VectorProperties<Tvec>::component_type;
 
-    static constexpr u32 tree_depth = get_tree_depth();
+    static constexpr u32 tree_depth = Morton::significant_bits +1;
 
     std::tuple<Tvec,Tvec> bounding_box;
 
