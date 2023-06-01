@@ -13,7 +13,7 @@ shammodels::SPHSolverImpl::build_neigh_cache(u32 start_offset,
                                              u32 obj_cnt,
                                              sycl::buffer<vec> &buf_xyz,
                                              sycl::buffer<flt> &buf_hpart,
-                                             RadixTree<u_morton, vec, 3> &tree,
+                                             RadixTree<u_morton, vec> &tree,
                                              sycl::buffer<flt> &tree_field_hmax) {
 
     StackEntry stack_loc{};
@@ -141,7 +141,7 @@ shammodels::SPHSolverImpl::build_hiter_neigh_cache(u32 start_offset,
                                                    u32 obj_cnt,
                                                    sycl::buffer<vec> &buf_xyz,
                                                    sycl::buffer<flt> &buf_hpart,
-                                                   RadixTree<u_morton, vec, 3> &tree,
+                                                   RadixTree<u_morton, vec> &tree,
                                                    flt h_tolerance) {
 
     StackEntry stack_loc{};

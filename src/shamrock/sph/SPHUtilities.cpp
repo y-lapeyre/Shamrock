@@ -108,7 +108,7 @@ namespace shammodels::sph {
         sycl::buffer<flt> &hold,
         sycl::buffer<flt> &eps_h,
         sycl::range<1> update_range,
-        RadixTree<u_morton, vec, 3> &tree,
+        RadixTree<u_morton, vec> &tree,
 
         flt gpart_mass,
         flt h_evol_max,

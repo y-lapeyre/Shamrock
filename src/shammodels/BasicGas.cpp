@@ -234,7 +234,7 @@ namespace shammodels::sph {
 
         constexpr u32 reduc_level = 3;
 
-        using RTree = RadixTree<u_morton, vec, dim>;
+        using RTree = RadixTree<u_morton, vec>;
 
         shambase::DistributedData<RTree> trees = solver.make_merge_patch_trees(merged_xyz,reduc_level);
 
@@ -244,7 +244,7 @@ namespace shammodels::sph {
 
         
         tree::ObjectCacheHandler hiter_caches{
-            u64(1e9),
+            u64(10e9),
             [&](u64 patch_id){
                 logger::debug_ln("SPHLeapfrog","patch : n°",patch_id,"->","gen cache");
 
@@ -348,7 +348,7 @@ namespace shammodels::sph {
 
         shambase::DistributedData<MergedPatchData> mpdat;
 
-        tree::ObjectCacheHandler neigh_caches(u64(1e9),[&](u64 patch_id){
+        tree::ObjectCacheHandler neigh_caches(u64(10e9),[&](u64 patch_id){
 
             logger::debug_ln("BasicSPH", "build particle cache id =",patch_id);
 
