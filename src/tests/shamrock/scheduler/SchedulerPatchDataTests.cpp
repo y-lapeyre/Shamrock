@@ -73,7 +73,7 @@ TestStart(Unittest, "shamrock/scheduler/SchedulerPatchData::apply_change_list", 
             );
     }
 
-    PatchCoord pcoord (0,0,0,0,0,0);
+    PatchCoord pcoord ({0,0,0},{0,0,0});
 
     SchedulerPatchData spdat(pdl,pcoord);
     for(u32 i = 0; i < npatch; i++){

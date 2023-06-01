@@ -64,18 +64,18 @@ void PatchScheduler::make_patch_base_grid(std::array<u32,dim> patch_count){
     u64 sz_root_patch = PatchScheduler::max_axis_patch_coord_lenght/coord_div_fact;
 
     
-    std::vector<shamrock::patch::PatchCoord> coords;
+    std::vector<shamrock::patch::PatchCoord<3>> coords;
     for(u32 x = 0; x < patch_count[0]; x++){
         for(u32 y = 0; y < patch_count[1]; y++){
             for(u32 z = 0; z < patch_count[2]; z++){
                 shamrock::patch::PatchCoord coord;
 
-                coord.x_min = sz_root_patch*(x);
-                coord.y_min = sz_root_patch*(y);
-                coord.z_min = sz_root_patch*(z);
-                coord.x_max = sz_root_patch*(x+1)-1;
-                coord.y_max = sz_root_patch*(y+1)-1;
-                coord.z_max = sz_root_patch*(z+1)-1;
+                coord.coord_min[0] = sz_root_patch*(x);
+                coord.coord_min[1] = sz_root_patch*(y);
+                coord.coord_min[2] = sz_root_patch*(z);
+                coord.coord_max[0] = sz_root_patch*(x+1)-1;
+                coord.coord_max[1] = sz_root_patch*(y+1)-1;
+                coord.coord_max[2] = sz_root_patch*(z+1)-1;
 
                 coords.push_back(coord);
             }
@@ -83,12 +83,12 @@ void PatchScheduler::make_patch_base_grid(std::array<u32,dim> patch_count){
     }
 
     shamrock::patch::PatchCoord bounds;
-    bounds.x_min = 0;
-    bounds.y_min = 0;
-    bounds.z_min = 0;
-    bounds.x_max = sz_root_patch*patch_count[0]-1;
-    bounds.y_max = sz_root_patch*patch_count[1]-1;
-    bounds.z_max = sz_root_patch*patch_count[2]-1;
+    bounds.coord_min[0] = 0;
+    bounds.coord_min[1] = 0;
+    bounds.coord_min[2] = 0;
+    bounds.coord_max[0] = sz_root_patch*patch_count[0]-1;
+    bounds.coord_max[1] = sz_root_patch*patch_count[1]-1;
+    bounds.coord_max[2] = sz_root_patch*patch_count[2]-1;
 
     get_sim_box().set_patch_coord_bounding_box(bounds);
 
@@ -97,7 +97,7 @@ void PatchScheduler::make_patch_base_grid(std::array<u32,dim> patch_count){
 
 template void PatchScheduler::make_patch_base_grid<3>(std::array<u32,3> patch_count);
 
-std::vector<u64> PatchScheduler::add_root_patches(std::vector<shamrock::patch::PatchCoord> coords){
+std::vector<u64> PatchScheduler::add_root_patches(std::vector<shamrock::patch::PatchCoord<3>> coords){
 
     using namespace shamrock::patch;
 
@@ -111,12 +111,12 @@ std::vector<u64> PatchScheduler::add_root_patches(std::vector<shamrock::patch::P
         root.id_patch = patch_list._next_patch_id;
         root.pack_node_index = u64_max;
         root.load_value = 0;
-        root.x_min = coord.x_min;
-        root.y_min = coord.y_min;
-        root.z_min = coord.z_min;
-        root.x_max = coord.x_max;
-        root.y_max = coord.y_max;
-        root.z_max = coord.z_max;
+        root.coord_min[0] = coord.coord_min[0];
+        root.coord_min[1] = coord.coord_min[1];
+        root.coord_min[2] = coord.coord_min[2];
+        root.coord_max[0] = coord.coord_max[0];
+        root.coord_max[1] = coord.coord_max[1];
+        root.coord_max[2] = coord.coord_max[2];
         root.data_count = 0;
         root.node_owner_id = node_owner_id;
 
@@ -197,12 +197,12 @@ void PatchScheduler::add_root_patch(){
     using namespace shamrock::patch;
 
     PatchCoord coord;
-    coord.x_min = 0;
-    coord.y_min = 0;
-    coord.z_min = 0;
-    coord.x_max = max_axis_patch_coord;
-    coord.y_max = max_axis_patch_coord;
-    coord.z_max = max_axis_patch_coord;
+    coord.coord_min[0] = 0;
+    coord.coord_min[1] = 0;
+    coord.coord_min[2] = 0;
+    coord.coord_max[0] = max_axis_patch_coord;
+    coord.coord_max[1] = max_axis_patch_coord;
+    coord.coord_max[2] = max_axis_patch_coord;
 
     add_root_patches({coord});
     
@@ -214,8 +214,8 @@ PatchScheduler::PatchScheduler(
     u64 crit_merge) : 
         pdl(pdl), 
         patch_data(pdl,{
-            0, 0, 0,
-            max_axis_patch_coord, max_axis_patch_coord, max_axis_patch_coord}
+            {0, 0, 0},
+            {max_axis_patch_coord, max_axis_patch_coord, max_axis_patch_coord}}
             )
             {
 
@@ -533,9 +533,9 @@ std::string PatchScheduler::dump_status(){
             << p.load_value << " "
             << p.node_owner_id << " "
             << p.pack_node_index << " "
-            << "( ["<< p.x_min << "," << p.x_max << "] "
-            << " ["<< p.y_min << "," << p.y_max << "] "
-            << " ["<< p.z_min << "," << p.z_max << "] )\n";
+            << "( ["<< p.coord_min[0] << "," << p.coord_max[0] << "] "
+            << " ["<< p.coord_min[1] << "," << p.coord_max[1] << "] "
+            << " ["<< p.coord_min[2] << "," << p.coord_max[2] << "] )\n";
 
     }
     ss << "    local content : \n";
@@ -547,9 +547,9 @@ std::string PatchScheduler::dump_status(){
             << p.load_value << " "
             << p.node_owner_id << " "
             << p.pack_node_index << " "
-            << "( ["<< p.x_min << "," << p.x_max << "] "
-            << " ["<< p.y_min << "," << p.y_max << "] "
-            << " ["<< p.z_min << "," << p.z_max << "] )\n";
+            << "( ["<< p.coord_min[0] << "," << p.coord_max[0] << "] "
+            << " ["<< p.coord_min[1] << "," << p.coord_max[1] << "] "
+            << " ["<< p.coord_min[2] << "," << p.coord_max[2] << "] )\n";
             
     }
 
@@ -790,12 +790,12 @@ void PatchScheduler::dump_local_patches(std::string filename){
 
         for(const Patch & p : patch_list.local){
             
-            f32_3 box_min = f32_3{p.x_min, p.y_min,
-                                    p.z_min} *
+            f32_3 box_min = f32_3{p.coord_min[0], p.coord_min[1],
+                                    p.coord_min[2]} *
                                 std::get<1>(box_transform) +
                             std::get<0>(box_transform);
-            f32_3 box_max = (f32_3{p.x_max, p.y_max,
-                                    p.z_max} +
+            f32_3 box_max = (f32_3{p.coord_max[0], p.coord_max[1],
+                                    p.coord_max[2]} +
                             1) *
                                 std::get<1>(box_transform) +
                             std::get<0>(box_transform);
@@ -823,12 +823,12 @@ void PatchScheduler::dump_local_patches(std::string filename){
 
         for(const Patch & p : patch_list.local){
             
-            f64_3 box_min = f64_3{p.x_min, p.y_min,
-                                    p.z_min} *
+            f64_3 box_min = f64_3{p.coord_min[0], p.coord_min[1],
+                                    p.coord_min[2]} *
                                 std::get<1>(box_transform) +
                             std::get<0>(box_transform);
-            f64_3 box_max = (f64_3{p.x_max, p.y_max,
-                                    p.z_max} +
+            f64_3 box_max = (f64_3{p.coord_max[0], p.coord_max[1],
+                                    p.coord_max[3]} +
                             1) *
                                 std::get<1>(box_transform) +
                             std::get<0>(box_transform);

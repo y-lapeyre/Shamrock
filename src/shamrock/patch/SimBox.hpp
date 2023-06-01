@@ -29,26 +29,28 @@ namespace shamrock::patch {
      */
     class SimulationBoxInfo {
 
+        static constexpr u32 dim = 3;
+
         using var_t = FieldVariant<shammath::CoordRange>;
 
         PatchDataLayout &pdl;
 
         var_t bounding_box;
-        PatchCoord patch_coord_bounding_box;
+        PatchCoord<> patch_coord_bounding_box;
 
         public:
-        inline SimulationBoxInfo(PatchDataLayout &pdl, PatchCoord patch_coord_bounding_box)
+        inline SimulationBoxInfo(PatchDataLayout &pdl, PatchCoord<dim> patch_coord_bounding_box)
             : pdl(pdl), patch_coord_bounding_box(std::move(patch_coord_bounding_box)), bounding_box(shammath::CoordRange<f32>{}) {
 
             reset_box_size();
         }
 
-        void set_patch_coord_bounding_box(PatchCoord new_patch_coord_box){
+        void set_patch_coord_bounding_box(PatchCoord<dim> new_patch_coord_box){
             patch_coord_bounding_box = new_patch_coord_box;
             logger::debug_ln("SimBox", "changed patch coord bounds :", 
             std::pair{
-                u64_3{new_patch_coord_box.x_min,new_patch_coord_box.y_min,new_patch_coord_box.z_min},
-                u64_3{new_patch_coord_box.x_max,new_patch_coord_box.y_max,new_patch_coord_box.z_max}
+                u64_3{new_patch_coord_box.coord_min[0],new_patch_coord_box.coord_min[1],new_patch_coord_box.coord_min[2]},
+                u64_3{new_patch_coord_box.coord_max[0],new_patch_coord_box.coord_max[1],new_patch_coord_box.coord_max[2]}
             });
         }
 

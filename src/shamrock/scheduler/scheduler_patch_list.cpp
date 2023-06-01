@@ -248,17 +248,17 @@ std::vector<shamrock::patch::Patch> make_fake_patch_list(u32 total_dtcnt,u64 div
                     " ) " << p.data_count <<  std::endl;
                     */
                 
-                u64 min_x = p.x_min;
-                u64 min_y = p.y_min;
-                u64 min_z = p.z_min;
+                u64 min_x = p.coord_min[0];
+                u64 min_y = p.coord_min[1];
+                u64 min_z = p.coord_min[2];
 
-                u64 split_x = (((p.x_max - p.x_min) + 1)/2) - 1 +min_x;
-                u64 split_y = (((p.y_max - p.y_min) + 1)/2) - 1 +min_y;
-                u64 split_z = (((p.z_max - p.z_min) + 1)/2) - 1 +min_z;
+                u64 split_x = (((p.coord_max[0] - p.coord_min[0]) + 1)/2) - 1 +min_x;
+                u64 split_y = (((p.coord_max[1] - p.coord_min[1]) + 1)/2) - 1 +min_y;
+                u64 split_z = (((p.coord_max[2] - p.coord_min[2]) + 1)/2) - 1 +min_z;
 
-                u64 max_x = p.x_max;
-                u64 max_y = p.y_max;
-                u64 max_z = p.z_max;
+                u64 max_x = p.coord_max[0];
+                u64 max_y = p.coord_max[1];
+                u64 max_z = p.coord_max[2];
 
 
 

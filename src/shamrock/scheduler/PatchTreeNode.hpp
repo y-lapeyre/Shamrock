@@ -41,8 +41,8 @@ namespace shamrock::scheduler {
      */
     class PatchTreeNode {
         public:
-        static constexpr u32 split_count = patch::PatchCoord::splts_count;
-        using PatchCoord                 = patch::PatchCoord;
+        static constexpr u32 split_count = patch::PatchCoord<3>::splts_count;
+        using PatchCoord                 = patch::PatchCoord<3>;
 
         PatchCoord patch_coord;
 

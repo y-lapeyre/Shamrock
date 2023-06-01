@@ -128,7 +128,7 @@ void PatchTree::merge_node_dm1(u64 idparent){
 }
 
 
-void PatchTree::insert_root_node(u32 patch_id,patch::PatchCoord coords){
+void PatchTree::insert_root_node(u32 patch_id,patch::PatchCoord<3> coords){
     Node root;
     root.patch_coord = coords;
     root.tree_node.level = 0;
@@ -148,12 +148,12 @@ void PatchTree::build_from_patchtable(std::vector<shamrock::patch::Patch> & plis
 
     if(plist.size() > 1){
         Node root;
-        root.patch_coord.x_max = max_val_1axis;
-        root.patch_coord.y_max = max_val_1axis;
-        root.patch_coord.z_max = max_val_1axis;
-        root.patch_coord.x_min = 0;
-        root.patch_coord.y_min = 0;
-        root.patch_coord.z_min = 0;
+        root.patch_coord.coord_max[0] = max_val_1axis;
+        root.patch_coord.coord_max[1] = max_val_1axis;
+        root.patch_coord.coord_max[2] = max_val_1axis;
+        root.patch_coord.coord_min[0] = 0;
+        root.patch_coord.coord_min[1] = 0;
+        root.patch_coord.coord_min[2] = 0;
         root.tree_node.level = 0;
         root.tree_node.parent_nid = u64_max;
 
@@ -192,8 +192,8 @@ void PatchTree::build_from_patchtable(std::vector<shamrock::patch::Patch> & plis
                     for(u64 idxptch : idvec){
                         shamrock::patch::Patch &p = plist[idxptch];
 
-                        bool is_inside = BBAA::iscellb_inside_a<u32_3>({curr.x_min,curr.y_min,curr.z_min},{curr.x_max,curr.y_max,curr.z_max},
-                            {p.x_min,p.y_min,p.z_min},{p.x_max,p.y_max,p.z_max});
+                        bool is_inside = BBAA::iscellb_inside_a<u32_3>({curr.coord_min[0],curr.coord_min[1],curr.coord_min[2]},{curr.coord_max[0],curr.coord_max[1],curr.coord_max[2]},
+                            {p.coord_min[0],p.coord_min[1],p.coord_min[2]},{p.coord_max[0],p.coord_max[1],p.coord_max[2]});
 
                         if(is_inside){buf.push_back(idxptch); }
 
@@ -230,12 +230,12 @@ void PatchTree::build_from_patchtable(std::vector<shamrock::patch::Patch> & plis
     }else if(plist.size() == 1){
 
         patch::PatchCoord patch_coord;
-        patch_coord.x_max = max_val_1axis;
-        patch_coord.y_max = max_val_1axis;
-        patch_coord.z_max = max_val_1axis;
-        patch_coord.x_min = 0;
-        patch_coord.y_min = 0;
-        patch_coord.z_min = 0;
+        patch_coord.coord_max[0] = max_val_1axis;
+        patch_coord.coord_max[1] = max_val_1axis;
+        patch_coord.coord_max[2] = max_val_1axis;
+        patch_coord.coord_min[0] = 0;
+        patch_coord.coord_min[1] = 0;
+        patch_coord.coord_min[2] = 0;
         insert_root_node(plist[0].id_patch, patch_coord);
 
     }

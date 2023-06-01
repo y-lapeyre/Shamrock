@@ -59,7 +59,7 @@ StackEntry stack_loc{};
 
                 Patch p = ptch[i];
 
-                pdt[i] = {SFC::icoord_to_hilbert(p.x_min, p.y_min, p.z_min), p.load_value, i};
+                pdt[i] = {SFC::icoord_to_hilbert(p.coord_min[0], p.coord_min[1], p.coord_min[2]), p.load_value, i};
             });
         });
 
