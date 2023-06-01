@@ -210,7 +210,7 @@ f64 models::sph::BasicSPHGasUInterne<flt,Kernel>::evolve(PatchScheduler &sched, 
 
 
             PatchScheduler & sched, 
-            std::unordered_map<u64, std::unique_ptr<RadixTree<u_morton, vec3,3>>>& radix_trees,
+            std::unordered_map<u64, std::unique_ptr<RadixTree<u_morton, vec3>>>& radix_trees,
             std::unordered_map<u64, std::unique_ptr<RadixTreeField<flt> >> & cell_int_rads,
             std::unordered_map<u64, MergedPatchData<flt>>& merge_pdat, 
             std::unordered_map<u64, MergedPatchCompField<flt,flt>>& hnew_field_merged,

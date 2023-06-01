@@ -35,7 +35,7 @@ namespace shammodels {
                                                              u32 obj_cnt,
                                                              sycl::buffer<vec> &buf_xyz,
                                                              sycl::buffer<flt> &buf_hpart,
-                                                             RadixTree<u_morton, vec, dim> &tree,
+                                                             RadixTree<u_morton, vec> &tree,
                                                              sycl::buffer<flt> &tree_field_hmax);
 
         static shamrock::tree::ObjectCache
@@ -43,11 +43,11 @@ namespace shammodels {
                                 u32 obj_cnt,
                                 sycl::buffer<vec> &buf_xyz,
                                 sycl::buffer<flt> &buf_hpart,
-                                RadixTree<u_morton, vec, dim> &tree,
+                                RadixTree<u_morton, vec> &tree,
                                 flt h_tolerance);
 
         using MergedPositions = shambase::DistributedData<shamrock::MergedPatchDataField<vec>>;
-        using RTree           = RadixTree<u_morton, vec, dim>;
+        using RTree           = RadixTree<u_morton, vec>;
 
         static shambase::DistributedData<RTree>
         make_merge_patch_trees(MergedPositions &merged_xyz, u32 reduction_level) {

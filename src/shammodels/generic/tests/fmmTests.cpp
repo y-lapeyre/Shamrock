@@ -416,7 +416,7 @@ struct Result_nompi_fmm_testing{
     std::unique_ptr<sycl::buffer<vec>> & pos_buf;
     std::unique_ptr<sycl::buffer<vec>> force_buf;
 
-    RadixTree<morton_mode, vec,3> rtree;
+    RadixTree<morton_mode, vec> rtree;
 
     std::unique_ptr< sycl::buffer<flt>> grav_multipoles;
 };
@@ -446,7 +446,7 @@ Result_nompi_fmm_testing<flt,morton_mode,fmm_order> nompi_fmm_testing(std::uniqu
     shambase::Timer timer; timer.start();
 
 
-    RadixTree<morton_mode, vec,3> rtree = RadixTree<morton_mode, vec,3>(
+    RadixTree<morton_mode, vec> rtree = RadixTree<morton_mode, vec>(
             shamsys::instance::get_compute_queue(), 
             {vec{-1,-1,-1},vec{1,1,1}},
             pos_part, 

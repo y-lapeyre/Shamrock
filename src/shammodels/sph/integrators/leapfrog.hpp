@@ -291,7 +291,7 @@ namespace sph {
         constexpr u32 reduc_level = 5;
 
         //make trees
-        std::unordered_map<u64, std::unique_ptr<RadixTree<u_morton, vec3,3>>> radix_trees;
+        std::unordered_map<u64, std::unique_ptr<RadixTree<u_morton, vec3>>> radix_trees;
         std::unordered_map<u64, std::unique_ptr<RadixTreeField<flt> >> cell_int_rads;
 
 
@@ -310,7 +310,7 @@ namespace sph {
             std::tuple<vec3, vec3> &box = merge_pdat.at(id_patch).box;
 
             // radix tree computation
-            radix_trees[id_patch] = std::make_unique<RadixTree<u_morton, vec3, 3>>(shamsys::instance::get_compute_queue(), box,
+            radix_trees[id_patch] = std::make_unique<RadixTree<u_morton, vec3>>(shamsys::instance::get_compute_queue(), box,
                                                                                     buf_xyz,mpdat.get_obj_cnt(),reduc_level);
         });
 

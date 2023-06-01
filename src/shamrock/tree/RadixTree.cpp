@@ -25,8 +25,8 @@
 
 
 
-template <class u_morton, class vec3 ,u32 dim>
-RadixTree<u_morton, vec3, dim>::RadixTree(
+template <class u_morton, class vec3 >
+RadixTree<u_morton, vec3>::RadixTree(
     sycl::queue &queue, std::tuple<vec3, vec3> treebox, sycl::buffer<vec3> & pos_buf, u32 cnt_obj, u32 reduc_level
 ) {
     if (cnt_obj > i32_max - 1) {
@@ -53,15 +53,15 @@ RadixTree<u_morton, vec3, dim>::RadixTree(
 
 
 
-template <class u_morton, class vec3 ,u32 dim>
-RadixTree<u_morton, vec3, dim>::RadixTree(
+template <class u_morton, class vec3 >
+RadixTree<u_morton, vec3>::RadixTree(
     sycl::queue &queue, std::tuple<vec3, vec3> treebox, const std::unique_ptr<sycl::buffer<vec3>> &pos_buf, u32 cnt_obj, u32 reduc_level
 ) : RadixTree(queue,treebox,shambase::get_check_ref(pos_buf), cnt_obj, reduc_level){}
 
 
 
-template <class u_morton, class vec3 ,u32 dim>
-void RadixTree<u_morton, vec3, dim>::serialize(shamalgs::SerializeHelper &serializer) {
+template <class u_morton, class vec3 >
+void RadixTree<u_morton, vec3>::serialize(shamalgs::SerializeHelper &serializer) {
     StackEntry stack_loc{};
 
     serializer.write(std::get<0>(bounding_box));
@@ -72,8 +72,8 @@ void RadixTree<u_morton, vec3, dim>::serialize(shamalgs::SerializeHelper &serial
     tree_cell_ranges.serialize(serializer);
 }
 
-template <class u_morton, class pos_t ,u32 dim>
-u64 RadixTree<u_morton, pos_t, dim>::serialize_byte_size(){
+template <class u_morton, class pos_t >
+u64 RadixTree<u_morton, pos_t>::serialize_byte_size(){
     using H = shamalgs::SerializeHelper;
     return H::serialize_byte_size<pos_t>()*2 
         + tree_morton_codes.serialize_byte_size()
@@ -82,8 +82,8 @@ u64 RadixTree<u_morton, pos_t, dim>::serialize_byte_size(){
         + tree_cell_ranges.serialize_byte_size();
 }
 
-template <class u_morton, class pos_t ,u32 dim>
-RadixTree<u_morton, pos_t, dim> RadixTree<u_morton, pos_t, dim>::deserialize(shamalgs::SerializeHelper &serializer) {
+template <class u_morton, class pos_t >
+RadixTree<u_morton, pos_t> RadixTree<u_morton, pos_t>::deserialize(shamalgs::SerializeHelper &serializer) {
     StackEntry stack_loc{};
 
     RadixTree ret;
@@ -103,12 +103,12 @@ RadixTree<u_morton, pos_t, dim> RadixTree<u_morton, pos_t, dim>::deserialize(sha
 
 
 
-template <class u_morton, class vec3, u32 dim> void RadixTree<u_morton, vec3, dim>::compute_cell_ibounding_box(sycl::queue &queue) {
+template <class u_morton, class vec3> void RadixTree<u_morton, vec3>::compute_cell_ibounding_box(sycl::queue &queue) {
     StackEntry stack_loc{};
     tree_cell_ranges.build1(queue, tree_reduced_morton_codes, tree_struct);
 }
 
-template <class morton_t, class pos_t, u32 dim> void RadixTree<morton_t, pos_t, dim>::convert_bounding_box(sycl::queue &queue) {
+template <class morton_t, class pos_t> void RadixTree<morton_t, pos_t>::convert_bounding_box(sycl::queue &queue) {
     StackEntry stack_loc{};
     u32 total_count = tree_struct.internal_cell_count + tree_reduced_morton_codes.tree_leaf_count;
     tree_cell_ranges.build2(queue, total_count, bounding_box);
@@ -120,8 +120,8 @@ template <class morton_t, class pos_t, u32 dim> void RadixTree<morton_t, pos_t, 
 
 
 
-template <class u_morton, class vec,u32 dim>
-auto RadixTree<u_morton, vec, dim>::compute_int_boxes(
+template <class u_morton, class vec>
+auto RadixTree<u_morton, vec>::compute_int_boxes(
     sycl::queue &queue, const std::unique_ptr<sycl::buffer<coord_t>> &int_rad_buf, coord_t tolerance
 ) -> RadixTreeField<coord_t>{
 
@@ -205,8 +205,8 @@ template<> std::string print_member(const u32 & a){
 }
 
 
-template <class u_morton, class vec3, u32 dim> template<class T>
-void RadixTree<u_morton, vec3, dim>::print_tree_field(sycl::buffer<T> & buf_field){
+template <class u_morton, class vec3> template<class T>
+void RadixTree<u_morton, vec3>::print_tree_field(sycl::buffer<T> & buf_field){
 
     sycl::host_accessor acc{buf_field, sycl::read_only};
 
@@ -262,29 +262,29 @@ void RadixTree<u_morton, vec3, dim>::print_tree_field(sycl::buffer<T> & buf_fiel
 }
 
 
-template void RadixTree<u32, f64_3,3>::print_tree_field(sycl::buffer<u32> &buf_field);
-template void RadixTree<u32, f32_3,3>::print_tree_field(sycl::buffer<u32> &buf_field);
-template void RadixTree<u64, f64_3,3>::print_tree_field(sycl::buffer<u32> &buf_field);
-template void RadixTree<u64, f32_3,3>::print_tree_field(sycl::buffer<u32> &buf_field);
+template void RadixTree<u32, f64_3>::print_tree_field(sycl::buffer<u32> &buf_field);
+template void RadixTree<u32, f32_3>::print_tree_field(sycl::buffer<u32> &buf_field);
+template void RadixTree<u64, f64_3>::print_tree_field(sycl::buffer<u32> &buf_field);
+template void RadixTree<u64, f32_3>::print_tree_field(sycl::buffer<u32> &buf_field);
 
 
 
-template void RadixTree<u32, u32_3, 3>::print_tree_field(sycl::buffer<u32> &buf_field);
-template void RadixTree<u32, u64_3, 3>::print_tree_field(sycl::buffer<u32> &buf_field);
-template void RadixTree<u64, u32_3, 3>::print_tree_field(sycl::buffer<u32> &buf_field);
-template void RadixTree<u64, u64_3, 3>::print_tree_field(sycl::buffer<u32> &buf_field);
-
-
-
-
+template void RadixTree<u32, u32_3>::print_tree_field(sycl::buffer<u32> &buf_field);
+template void RadixTree<u32, u64_3>::print_tree_field(sycl::buffer<u32> &buf_field);
+template void RadixTree<u64, u32_3>::print_tree_field(sycl::buffer<u32> &buf_field);
+template void RadixTree<u64, u64_3>::print_tree_field(sycl::buffer<u32> &buf_field);
 
 
 
 
 
 
-template <class u_morton, class vec3, u32 dim>
-typename RadixTree<u_morton, vec3, dim>::CuttedTree RadixTree<u_morton, vec3, dim>::cut_tree(
+
+
+
+
+template <class u_morton, class vec3>
+typename RadixTree<u_morton, vec3>::CuttedTree RadixTree<u_morton, vec3>::cut_tree(
     sycl::queue &queue, sycl::buffer<u8> & valid_node
 ) {
 
@@ -1002,15 +1002,15 @@ typename RadixTree<u_morton, vec3, dim>::CuttedTree RadixTree<u_morton, vec3, di
 
 
 
-template class RadixTree<u32, f32_3,3>;
-template class RadixTree<u64, f32_3,3>;
+template class RadixTree<u32, f32_3>;
+template class RadixTree<u64, f32_3>;
 
-template class RadixTree<u32, f64_3,3>;
-template class RadixTree<u64, f64_3,3>;
+template class RadixTree<u32, f64_3>;
+template class RadixTree<u64, f64_3>;
 
-template class RadixTree<u32, u32_3, 3>;
-template class RadixTree<u64, u32_3, 3>;
+template class RadixTree<u32, u32_3>;
+template class RadixTree<u64, u32_3>;
 
-template class RadixTree<u32, u64_3, 3>;
-template class RadixTree<u64, u64_3, 3>;
+template class RadixTree<u32, u64_3>;
+template class RadixTree<u64, u64_3>;
 

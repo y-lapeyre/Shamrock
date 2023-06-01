@@ -26,7 +26,7 @@ namespace shamrock::tree {
         sycl::accessor<vec, 1, sycl::access::mode::read, sycl::target::device> pos_min_cell;
         sycl::accessor<vec, 1, sycl::access::mode::read, sycl::target::device> pos_max_cell;
 
-        static constexpr u32 tree_depth = RadixTree<u_morton, vec, 3>::tree_depth;
+        static constexpr u32 tree_depth = RadixTree<u_morton, vec>::tree_depth;
         static constexpr u32 _nindex    = 4294967295;
 
         u32 leaf_offset;
@@ -34,7 +34,7 @@ namespace shamrock::tree {
         public:
 
         // clang-format off
-        ObjectIterator(RadixTree< u_morton,  vec,3> & rtree,sycl::handler & cgh):
+        ObjectIterator(RadixTree< u_morton,  vec> & rtree,sycl::handler & cgh):
             particle_index_map{shambase::get_check_ref(rtree.tree_morton_codes.buf_particle_index_map), cgh,sycl::read_only},
             cell_index_map{shambase::get_check_ref(rtree.tree_reduced_morton_codes.buf_reduc_index_map), cgh,sycl::read_only},
             rchild_id     {shambase::get_check_ref(rtree.tree_struct.buf_rchild_id)  , cgh,sycl::read_only},
@@ -134,7 +134,7 @@ namespace shamrock::tree {
         sycl::accessor<vec, 1, sycl::access::mode::read, sycl::target::device> pos_max_cell;
         private:
 
-        static constexpr u32 tree_depth = RadixTree<u_morton, vec, 3>::tree_depth;
+        static constexpr u32 tree_depth = RadixTree<u_morton, vec>::tree_depth;
         static constexpr u32 _nindex    = 4294967295;
 
         u32 leaf_offset;
@@ -142,7 +142,7 @@ namespace shamrock::tree {
         public:
 
         // clang-format off
-        LeafIterator(RadixTree< u_morton,  vec,3> & rtree,sycl::handler & cgh):
+        LeafIterator(RadixTree< u_morton,  vec> & rtree,sycl::handler & cgh):
             rchild_id     {shambase::get_check_ref(rtree.tree_struct.buf_rchild_id)  , cgh,sycl::read_only},
             lchild_id     {shambase::get_check_ref(rtree.tree_struct.buf_lchild_id)  , cgh,sycl::read_only},
             rchild_flag   {shambase::get_check_ref(rtree.tree_struct.buf_rchild_flag), cgh,sycl::read_only},
@@ -220,7 +220,7 @@ namespace shamrock::tree {
         sycl::accessor<u_morton, 1, sycl::access::mode::read, sycl::target::device> tree_morton;
         private:
 
-        static constexpr u32 tree_depth = RadixTree<u_morton, vec, 3>::tree_depth;
+        static constexpr u32 tree_depth = RadixTree<u_morton, vec>::tree_depth;
         static constexpr u32 _nindex    = 4294967295;
 
         u32 leaf_offset;
@@ -228,7 +228,7 @@ namespace shamrock::tree {
         public:
 
         // clang-format off
-        LeafRadixFinder(RadixTree< u_morton,  vec,3> & rtree,sycl::handler & cgh):
+        LeafRadixFinder(RadixTree< u_morton,  vec> & rtree,sycl::handler & cgh):
             rchild_id     {shambase::get_check_ref(rtree.tree_struct.buf_rchild_id)  , cgh,sycl::read_only},
             lchild_id     {shambase::get_check_ref(rtree.tree_struct.buf_lchild_id)  , cgh,sycl::read_only},
             rchild_flag   {shambase::get_check_ref(rtree.tree_struct.buf_rchild_flag), cgh,sycl::read_only},
@@ -301,7 +301,7 @@ namespace shamrock::tree {
 
         // clang-format off
         template<class u_morton, class vec>
-        LeafCacheObjectIterator(RadixTree< u_morton,  vec,3> & rtree,sycl::buffer<u32> & ownerships, LeafCache & cache,sycl::handler & cgh):
+        LeafCacheObjectIterator(RadixTree< u_morton,  vec> & rtree,sycl::buffer<u32> & ownerships, LeafCache & cache,sycl::handler & cgh):
             particle_index_map{shambase::get_check_ref(rtree.tree_morton_codes.buf_particle_index_map), cgh,sycl::read_only},
             cell_index_map{shambase::get_check_ref(rtree.tree_reduced_morton_codes.buf_reduc_index_map), cgh,sycl::read_only},
             neigh_cnt          {cache.cnt_neigh       ,cgh,sycl::read_only},
