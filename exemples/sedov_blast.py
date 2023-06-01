@@ -51,11 +51,9 @@ del ctx
 ctx = shamrock.Context()
 ctx.pdata_layout_new()
 
-sim = shamrock.BasicGasSPH(ctx)
-sim.setup_fields()
+model = shamrock.SPHModel(context = ctx, vector_type = "f64_3", sph_kernel = "M4")
+model.init_scheduler(int(1e7),1)
 
-#start the scheduler
-ctx.init_sched(int(1e7),1)
 
 setup = shamrock.SetupSPH(kernel = "M4", precision = "double")
 setup.init(ctx)
@@ -115,8 +113,8 @@ del setup
 
 
 
-sim.set_cfl_cour(0.25)
-sim.set_cfl_force(0.3)
+model.set_cfl_cour(0.25)
+model.set_cfl_force(0.3)
 
 
 
@@ -125,21 +123,26 @@ sim.set_cfl_force(0.3)
 print("Current part mass :", pmass)
 
 
-sim.set_particle_mass(pmass)
+model.set_particle_mass(pmass)
 
 for i in range(9):
-    sim.evolve(5e-4, False, False, "", False)
+    model.evolve(5e-4, False, False, "", False)
 
 
 t_sum = 0
 t_target = 0.1
 current_dt = 1e-6
 i = 0
+i_dump = 0
 while t_sum < t_target:
 
     print("step : t=",t_sum)
     
-    next_dt = sim.evolve(current_dt, True, True, "dump_"+str(i)+".vtk", True)
+    next_dt = model.evolve(current_dt, True, True, "dump_"+str(i_dump)+".vtk", True)
+
+    if i % 1 == 0:
+        i_dump += 1
+
     t_sum += current_dt
     current_dt = next_dt
 

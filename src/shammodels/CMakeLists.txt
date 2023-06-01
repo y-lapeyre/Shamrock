@@ -3,6 +3,7 @@ target_sources(shamrock_lib
         BasicGas.cpp 
         BasicSPHGhosts.cpp
         SPHSolverImpl.cpp
+        SPHModel.cpp
     PUBLIC
     )
 
