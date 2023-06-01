@@ -41,7 +41,12 @@
 
 
 
-
+/**
+ * @brief The radix tree
+ * 
+ * @tparam Umorton the morton representation
+ * @tparam Tvec The position representation
+ */
 template<class Umorton,class Tvec>
 class RadixTree{
 
