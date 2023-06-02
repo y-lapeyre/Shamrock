@@ -51,16 +51,16 @@ del ctx
 ctx = shamrock.Context()
 ctx.pdata_layout_new()
 
-model = shamrock.SPHModel(context = ctx, vector_type = "f64_3", sph_kernel = "M4")
+model = shamrock.get_SPHModel(context = ctx, vector_type = "f64_3",sph_kernel = "M4")
 model.init_scheduler(int(1e7),1)
 
 
 setup = shamrock.SetupSPH(kernel = "M4", precision = "double")
 setup.init(ctx)
 
-(xs,ys,zs) = setup.get_box_dim(1,Nx,Ny,Nz)
+(xs,ys,zs) = model.get_box_dim_fcc_3d(1,Nx,Ny,Nz)
 dr = 1/xs
-(xs,ys,zs) = setup.get_box_dim(dr,Nx,Ny,Nz)
+(xs,ys,zs) = model.get_box_dim_fcc_3d(dr,Nx,Ny,Nz)
 
 bmin = (-xs/2-xc,-ys/2-yc,-zs/2-zc)
 bmax = (xs/2-xc,ys/2-yc,zs/2-zc)
