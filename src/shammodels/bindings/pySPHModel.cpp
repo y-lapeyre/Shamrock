@@ -38,6 +38,45 @@ Register_pymod(pysphmodel) {
         .def("resize_simulation_box", [](T &self, f64_3 box_min, f64_3 box_max) {
             return self.resize_simulation_box({box_min,box_max});
         })
+        .def("add_cube_fcc_3d", [](T &self, f64 dr, f64_3 box_min, f64_3 box_max) {
+            return self.add_cube_fcc_3d(dr, {box_min,box_max});
+        })
+        .def("get_total_part_count", &T::get_total_part_count)
+        .def("total_mass_to_part_mass", &T::total_mass_to_part_mass)
+        .def("set_value_in_a_box", [](T & self, std::string field_name, std::string field_type, pybind11::object value, f64_3 box_min, f64_3 box_max){
+            if(field_type == "f64"){
+                f64 val = value.cast<f64>();
+                self.set_value_in_a_box(field_name, val, {box_min,box_max});
+            }else if(field_type == "f64_3"){
+                f64_3 val = value.cast<f64_3>();
+                self.set_value_in_a_box(field_name, val, {box_min,box_max});
+            }else{
+                throw shambase::throw_with_loc<std::invalid_argument>(
+                    "unknown field type");
+            }
+        })
+        .def("set_value_in_sphere", [](T & self, std::string field_name, std::string field_type, pybind11::object value, f64_3 center, f64 radius){
+            if(field_type == "f64"){
+                f64 val = value.cast<f64>();
+                self.set_value_in_sphere(field_name, val, center,radius);
+            }else if(field_type == "f64_3"){
+                f64_3 val = value.cast<f64_3>();
+                self.set_value_in_sphere(field_name, val, center,radius);
+            }else{
+                throw shambase::throw_with_loc<std::invalid_argument>(
+                    "unknown field type");
+            }
+        })
+        .def("get_sum", [](T & self, std::string field_name, std::string field_type){
+            if(field_type == "f64"){
+                return py::cast(self.get_sum<f64>(field_name));
+            }else if(field_type == "f64_3"){
+                return py::cast(self.get_sum<f64_3>(field_name));
+            }else{
+                throw shambase::throw_with_loc<std::invalid_argument>(
+                    "unknown field type");
+            }
+        })
         ;
 
 

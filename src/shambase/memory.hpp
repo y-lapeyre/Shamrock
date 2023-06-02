@@ -91,9 +91,9 @@ namespace shambase {
      * @return T& 
      */
     template<class T>
-    inline T & get_check_ref(const std::unique_ptr<T> & ptr){
+    inline T & get_check_ref(const std::unique_ptr<T> & ptr,SourceLocation loc = SourceLocation()){
         if(! bool(ptr)){
-            throw throw_with_loc<std::runtime_error>("the ptr does not hold anything");
+            throw throw_with_loc<std::runtime_error>("the ptr does not hold anything",loc);
         }
         return *ptr;
     }

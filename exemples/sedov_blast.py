@@ -63,25 +63,16 @@ bmax = (xs/2-xc,ys/2-yc,zs/2-zc)
 
 model.resize_simulation_box(bmin,bmax)
 
-
-setup = shamrock.SetupSPH(kernel = "M4", precision = "double")
-setup.init(ctx)
-setup.set_boundaries("periodic")
-
-setup.add_particules_fcc(ctx,dr, bmin,bmax)
+model.add_cube_fcc_3d(dr, bmin,bmax)
 
 vol_b = xs*ys*zs
 
 totmass = (rho_g*vol_b)
 print("Total mass :", totmass)
 
-setup.set_total_mass(totmass)
+pmass = model.total_mass_to_part_mass(totmass)
 
-pmass = setup.get_part_mass()
-
-
-
-setup.set_value_in_box(ctx, "f64", 0.005, "uint", bmin,bmax)
+model.set_value_in_a_box("uint","f64", 0.005 , bmin,bmax)
 
 print(">>> iterating toward tot u = 1")
 rinj = 0.01
@@ -89,9 +80,9 @@ rinj = 0.01
 u_inj = 1000
 while 1:
     
-    setup.set_value_in_sphere(ctx, "f64", u_inj, "uint",(0,0,0),rinj)
+    model.set_value_in_sphere("uint","f64", u_inj,(0,0,0),rinj)
 
-    tot_u = pmass*setup.get_sum_float(ctx, "f64","uint")
+    tot_u = pmass*model.get_sum("uint","f64")
 
     u_inj *= 1/tot_u
     print("total u :",tot_u)

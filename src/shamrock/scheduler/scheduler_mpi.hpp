@@ -283,6 +283,14 @@ class PatchScheduler{
         }
     }
 
+    inline void for_each_local_patchdata(std::function<void(const shamrock::patch::Patch,shamrock::patch::PatchData &)> fct){
+        for(shamrock::patch::Patch p : patch_list.local){
+            if(!p.is_err_mode()){
+                fct(p, patch_data.get_pdat(p.id_patch));
+            }
+        }
+    }
+
 
     inline void for_each_local_patch_nonempty(std::function<void(const shamrock::patch::Patch&)> fct){
         patch_data.for_each_patchdata([&](u64 patch_id, shamrock::patch::PatchData & pdat){
