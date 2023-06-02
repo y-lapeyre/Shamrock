@@ -73,6 +73,10 @@ namespace shammodels {
             return {a,b};
         }
 
+        inline void resize_simulation_box(std::pair<Tvec,Tvec> box){
+            ctx.set_coord_domain_bound({box.first, box.second});
+        }
+
 
         //inline void enable_barotropic_mode(){
         //    sconfig.enable_barotropic();
@@ -97,7 +101,7 @@ namespace shammodels {
 
         f64 evolve_once(f64 dt_input, bool enable_physics, bool do_dump, std::string vtk_dump_name, bool vtk_dump_patch_id);
     
-        
+
     
     
     

@@ -35,6 +35,9 @@ Register_pymod(pysphmodel) {
         .def("get_ideal_fcc_box", [](T &self, f64 dr, f64_3 box_min, f64_3 box_max) {
             return self.get_ideal_fcc_box(dr, {box_min,box_max});
         })
+        .def("resize_simulation_box", [](T &self, f64_3 box_min, f64_3 box_max) {
+            return self.resize_simulation_box({box_min,box_max});
+        })
         ;
 
 

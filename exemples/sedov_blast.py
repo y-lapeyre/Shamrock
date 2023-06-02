@@ -54,10 +54,6 @@ ctx.pdata_layout_new()
 model = shamrock.get_SPHModel(context = ctx, vector_type = "f64_3",sph_kernel = "M4")
 model.init_scheduler(int(1e7),1)
 
-
-setup = shamrock.SetupSPH(kernel = "M4", precision = "double")
-setup.init(ctx)
-
 (xs,ys,zs) = model.get_box_dim_fcc_3d(1,Nx,Ny,Nz)
 dr = 1/xs
 (xs,ys,zs) = model.get_box_dim_fcc_3d(dr,Nx,Ny,Nz)
@@ -65,8 +61,11 @@ dr = 1/xs
 bmin = (-xs/2-xc,-ys/2-yc,-zs/2-zc)
 bmax = (xs/2-xc,ys/2-yc,zs/2-zc)
 
-ctx.set_coord_domain_bound(bmin,bmax)
+model.resize_simulation_box(bmin,bmax)
 
+
+setup = shamrock.SetupSPH(kernel = "M4", precision = "double")
+setup.init(ctx)
 setup.set_boundaries("periodic")
 
 setup.add_particules_fcc(ctx,dr, bmin,bmax)
