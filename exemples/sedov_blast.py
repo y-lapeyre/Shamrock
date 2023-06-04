@@ -99,7 +99,6 @@ print("Current part mass :", pmass)
 
 
 
-del setup
 
 
 

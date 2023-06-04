@@ -104,6 +104,11 @@ namespace shammodels {
         }
 
         inline Tscal evolve_once(Tscal dt_input, bool enable_physics, bool do_dump, std::string vtk_dump_name, bool vtk_dump_patch_id){
+            tmp_solver.set_cfl_cour(cfl_cour);
+            tmp_solver.set_cfl_force(cfl_force);
+            tmp_solver.set_particle_mass(gpart_mass);
+            //tmp_solver.set_gamma(eos_gamma);
+            
             return tmp_solver.evolve(dt_input, enable_physics, {do_dump,vtk_dump_name,vtk_dump_patch_id});
         }
 

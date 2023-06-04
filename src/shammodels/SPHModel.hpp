@@ -51,11 +51,9 @@ namespace shammodels {
             return generic::setup::generators::get_box_dim(dr, xcnt, ycnt, zcnt);
         }
 
-        inline void set_cfl_cour(Tscal cfl_cour) { solver.tmp_solver.set_cfl_cour(cfl_cour); }
-        inline void set_cfl_force(Tscal cfl_force) { solver.tmp_solver.set_cfl_force(cfl_force); }
-        inline void set_particle_mass(Tscal gpart_mass) {
-            solver.tmp_solver.set_particle_mass(gpart_mass);
-        }
+        inline void set_cfl_cour(Tscal cfl_cour) { solver.cfl_cour = cfl_cour; }
+        inline void set_cfl_force(Tscal cfl_force) { solver.cfl_force = cfl_force; }
+        inline void set_particle_mass(Tscal gpart_mass) { solver.gpart_mass = gpart_mass; }
 
         inline void resize_simulation_box(std::pair<Tvec, Tvec> box) {
             ctx.set_coord_domain_bound({box.first, box.second});
