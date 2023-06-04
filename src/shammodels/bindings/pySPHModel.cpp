@@ -7,11 +7,12 @@
 // -------------------------------------------------------//
 
 
-#include "shammodels/VariantSPHModel.hpp"
 #include <memory>
 
 #include "shambindings/pybindaliases.hpp"
 #include "shambindings/pytypealias.hpp"
+#include "shamrock/sph/kernels.hpp"
+#include "shammodels/SPHModel.hpp"
 
 
 
