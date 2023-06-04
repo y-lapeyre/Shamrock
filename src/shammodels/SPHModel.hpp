@@ -44,23 +44,7 @@ namespace shammodels {
         /////// setup function
         ////////////////////////////////////////////////////////////////////////////////////////////
 
-        inline void init_scheduler(u32 crit_split, u32 crit_merge) {
-            solver.init_required_fields();
-            ctx.init_sched(crit_split, crit_merge);
-
-            using namespace shamrock::patch;
-
-
-            PatchScheduler &sched = shambase::get_check_ref(ctx.sched);
-
-            sched.add_root_patch();
-
-            std::cout << "build local" << std::endl;
-            sched.owned_patch_id = sched.patch_list.build_local();
-            sched.patch_list.build_local_idx_map();
-            sched.update_local_dtcnt_value();
-            sched.update_local_load_value();
-        }
+        void init_scheduler(u32 crit_split, u32 crit_merge);
 
         template<std::enable_if_t<dim == 3, int> = 0>
         inline Tvec get_box_dim_fcc_3d(Tscal dr, u32 xcnt, u32 ycnt, u32 zcnt) {
@@ -73,14 +57,18 @@ namespace shammodels {
             solver.tmp_solver.set_particle_mass(gpart_mass);
         }
 
+        inline void resize_simulation_box(std::pair<Tvec, Tvec> box) {
+            ctx.set_coord_domain_bound({box.first, box.second});
+        }
+
+        u64 get_total_part_count();
+
+        f64 total_mass_to_part_mass(f64 totmass);
+
         template<std::enable_if_t<dim == 3, int> = 0>
         inline std::pair<Tvec, Tvec> get_ideal_fcc_box(Tscal dr, std::pair<Tvec, Tvec> box) {
             auto [a, b] = generic::setup::generators::get_ideal_fcc_box<Tscal>(dr, box);
             return {a, b};
-        }
-
-        inline void resize_simulation_box(std::pair<Tvec, Tvec> box) {
-            ctx.set_coord_domain_bound({box.first, box.second});
         }
 
         template<std::enable_if_t<dim == 3, int> = 0>
@@ -169,23 +157,15 @@ namespace shammodels {
             });
         }
 
-        inline u64 get_total_part_count() {
-            PatchScheduler &sched = shambase::get_check_ref(ctx.sched);
-            return shamalgs::collective::allreduce_sum(sched.get_rank_count());
-        }
-
-        inline f64 total_mass_to_part_mass(f64 totmass) { return totmass / get_total_part_count(); }
-
         template<class T>
         inline void set_value_in_a_box(std::string field_name, T val, std::pair<Tvec, Tvec> box) {
             StackEntry stack_loc{};
             PatchScheduler &sched = shambase::get_check_ref(ctx.sched);
             sched.patch_data.for_each_patchdata(
                 [&](u64 patch_id, shamrock::patch::PatchData &pdat) {
+                    std::cout << "patch id : " << patch_id << " len = " << pdat.get_obj_cnt()
+                              << std::endl;
 
-
-                    std::cout << "patch id : " << patch_id << " len = " << pdat.get_obj_cnt() << std::endl;
-            
                     PatchDataField<Tvec> &xyz =
                         pdat.template get_field<Tvec>(sched.pdl.get_field_idx<Tvec>("xyz"));
 
@@ -242,17 +222,18 @@ namespace shammodels {
         }
 
         template<class T>
-        inline T get_sum(std::string name){
+        inline T get_sum(std::string name) {
             PatchScheduler &sched = shambase::get_check_ref(ctx.sched);
-            T sum = shambase::VectorProperties<T>::get_zero();
+            T sum                 = shambase::VectorProperties<T>::get_zero();
 
             StackEntry stack_loc{};
-            sched.patch_data.for_each_patchdata([&](u64 patch_id, shamrock::patch::PatchData & pdat){
+            sched.patch_data.for_each_patchdata(
+                [&](u64 patch_id, shamrock::patch::PatchData &pdat) {
+                    PatchDataField<T> &xyz =
+                        pdat.template get_field<T>(sched.pdl.get_field_idx<T>(name));
 
-                PatchDataField<T> &xyz = pdat.template get_field<T>(sched.pdl.get_field_idx<T>(name));
-
-                sum += xyz.compute_sum();
-            });
+                    sum += xyz.compute_sum();
+                });
 
             return shamalgs::collective::allreduce_sum(sum);
         }
