@@ -25,8 +25,10 @@ auto BasicSPHGhostHandler<vec>::find_interfaces(
     i32 repetition_y = 1;
     i32 repetition_z = 1;
 
-    PatchCoordTransform<vec> patch_coord_transf = sched.get_sim_box().get_patch_transform<vec>();
-    vec bsize                                   = sched.get_sim_box().get_bounding_box_size<vec>();
+    shamrock::patch::SimulationBoxInfo & sim_box = sched.get_sim_box();
+
+    PatchCoordTransform<vec> patch_coord_transf = sim_box.get_patch_transform<vec>();
+    vec bsize                                   = sim_box.get_bounding_box_size<vec>();
 
     GeneratorMap interf_map;
 

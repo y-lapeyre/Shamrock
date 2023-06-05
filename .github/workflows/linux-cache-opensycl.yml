@@ -70,7 +70,7 @@ jobs:
         run: |
           cd OpenSYCL
           cmake -DCMAKE_CXX_COMPILER=/usr/bin/clang++-${{inputs.clang}} -DCLANG_EXECUTABLE_PATH=/usr/bin/clang++-${{inputs.clang}} -DLLVM_DIR=/usr/lib/llvm-${{inputs.clang}}/cmake -DCMAKE_INSTALL_PREFIX=../OpenSYCL_comp .
-          make -j install
+          make -j 2 install
 
       - name: 'Tar opensycl'
         run: tar -cvf opensycl.tar OpenSYCL_comp
