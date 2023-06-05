@@ -50,12 +50,16 @@ jobs:
           OMP_ROOT=`brew list libomp | grep libomp.a | sed -E "s/\/lib\/.*//"`
           echo "OMP_ROOT=${OMP_ROOT}" >> $GITHUB_ENV
 
+          #export LDFLAGS="-L${OMP_ROOT}/lib"
+          #export CPPFLAGS="-I${OMP_ROOT}/include"
+
           python3 buildbot/configure.py --gen ninja --tests --build debug \
-            --outdir opensycl_omp_debug --cxxpath OpenSYCL_comp --compiler opensycl --profile omp --cxxflags "-Xclang -fopenmp"
+            --outdir opensycl_omp_debug --cxxpath OpenSYCL_comp --compiler opensycl --profile omp --cxxflags "-I${OMP_ROOT}/include"
 
       - name: compile Shamrock
         run: |
           cd opensycl_omp_debug
+          
           ninja
 
       - name: run Shamrock Unittests world_size = 1

@@ -145,11 +145,13 @@ namespace shammodels::sph {
             return build_interface_native<PositionInterface>(
                 builder, 
                 [&](u64 sender,u64 /*receiver*/,InterfaceBuildInfos binfo, sycl::buffer<u32> & buf_idx, u32 cnt){
-                    
+                    using namespace shamrock::patch;
                     // clang-format off
-                    PatchDataField<vec> pfield = sched
+                    PatchData & sender_pdat = sched
                         .patch_data
-                        .get_pdat(sender)
+                        .get_pdat(sender);
+
+                    PatchDataField<vec> pfield = sender_pdat
                         .get_field<vec>(0)
                         .make_new_from_subset(buf_idx, cnt);
                     // clang-format on
