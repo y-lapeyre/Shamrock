@@ -31,7 +31,7 @@ jobs:
 
       - name: configure & install OpenSycl
         run: |
-          cd sycl_compiler_gits/opensycl
+          cd OpenSYCL
 
           OMP_ROOT=`brew list libomp | grep libomp.a | sed -E "s/\/lib\/.*//"`
           echo "OMP_ROOT=${OMP_ROOT}" >> $GITHUB_ENV
