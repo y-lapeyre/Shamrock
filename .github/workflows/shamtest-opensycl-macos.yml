@@ -36,7 +36,8 @@ jobs:
       - name: install dependencies
         run: |
           set +e
-          brew update
+          export HOMEBREW_NO_AUTO_UPDATE=1
+          
           brew install cmake
           brew install libomp
           brew install boost
@@ -54,7 +55,7 @@ jobs:
           #export CPPFLAGS="-I${OMP_ROOT}/include"
 
           python3 buildbot/configure.py --gen ninja --tests --build debug \
-            --outdir opensycl_omp_debug --cxxpath OpenSYCL_comp --compiler opensycl --profile omp --cxxflags "-I${OMP_ROOT}/include"
+            --outdir opensycl_omp_debug --cxxpath OpenSYCL_comp --compiler opensycl --profile omp --cxxflags="-I${OMP_ROOT}/include"
 
       - name: compile Shamrock
         run: |
