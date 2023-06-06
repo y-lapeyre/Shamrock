@@ -109,11 +109,20 @@ jobs:
         cuda: [11.0.2]
         rocm: [5.4.3]
 
+  shamrock_linux_opensycl_macos:
+    needs: [pragma_check, copyright_check]
+    uses: ./.github/workflows/macos-opensycl.yml
+    with:
+      os: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [macos-latest]
+
   publish_release:
 
     runs-on: ubuntu-latest
     
-    needs: [shamrock_linux_opensycl, shamrock_linux_dpcpp, make_documentation]
+    needs: [shamrock_linux_opensycl,shamrock_linux_opensycl_macos, shamrock_linux_dpcpp, make_documentation]
 
     if: github.ref == 'refs/heads/main'
 
