@@ -272,6 +272,8 @@ auto SPHSolve<Tvec, Kern>::evolve_once(
 
                 tree::ObjectCache & neigh_cache = hiter_caches.get_cache(p.id_patch);
 
+                
+
                 sph_utils.iterate_smoothing_lenght_cache(merged_r, hnew, hold, eps_h, range_npart, neigh_cache, gpart_mass, htol_up_tol, htol_up_iter);
                 //sph_utils.iterate_smoothing_lenght_tree(merged_r, hnew, hold, eps_h, range_npart, tree, gpart_mass, htol_up_tol, htol_up_iter);
                 

@@ -104,6 +104,7 @@ print("Current part mass :", pmass)
 
 model.set_cfl_cour(0.25)
 model.set_cfl_force(0.3)
+model.set_eos_gamma(5/3)
 
 
 
