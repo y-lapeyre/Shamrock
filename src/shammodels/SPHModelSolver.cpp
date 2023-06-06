@@ -152,9 +152,9 @@ template<class Tvec, template<class> class Kern>
 auto SPHSolve<Tvec, Kern>::evolve_once(
     Tscal dt, bool enable_physics, bool do_dump, std::string vtk_dump_name, bool vtk_dump_patch_id)
     -> Tscal {
-    tmp_solver.set_cfl_cour(cfl_cour);
-    tmp_solver.set_cfl_force(cfl_force);
-    tmp_solver.set_particle_mass(gpart_mass);
+    //tmp_solver.set_cfl_cour(cfl_cour);
+    //tmp_solver.set_cfl_force(cfl_force);
+    //tmp_solver.set_particle_mass(gpart_mass);
     // tmp_solver.set_gamma(eos_gamma);
 
     struct DumpOption {
@@ -272,7 +272,7 @@ auto SPHSolve<Tvec, Kern>::evolve_once(
 
                 tree::ObjectCache & neigh_cache = hiter_caches.get_cache(p.id_patch);
 
-                
+
 
                 sph_utils.iterate_smoothing_lenght_cache(merged_r, hnew, hold, eps_h, range_npart, neigh_cache, gpart_mass, htol_up_tol, htol_up_iter);
                 //sph_utils.iterate_smoothing_lenght_tree(merged_r, hnew, hold, eps_h, range_npart, tree, gpart_mass, htol_up_tol, htol_up_iter);
