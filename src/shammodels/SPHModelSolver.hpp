@@ -93,6 +93,9 @@ namespace shammodels {
 
         
         ShamrockCtx &context;
+                inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }
+
+
         sph::BasicGas tmp_solver; // temporary all of this should be in the solver in fine
 
         SPHModelSolver(ShamrockCtx &context) : tmp_solver(context),context(context){}
