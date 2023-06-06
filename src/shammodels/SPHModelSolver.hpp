@@ -14,26 +14,10 @@
 #include "shamrock/scheduler/SerialPatchTree.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
 #include "shamrock/sph/SPHUtilities.hpp"
+#include <memory>
 #include <variant>
 
 namespace shammodels {
-
-    template<class Tscal>
-    struct InternalEnergyConfig {
-        struct None {};
-        struct NoAV {};
-        struct ConstantAv {
-            Tscal alpha_u  = 1.0;
-            Tscal alpha_AV = 1.0;
-            Tscal beta_AV  = 2.0;
-        };
-        struct VaryingAv {
-            Tscal sigma_decay = 0.1;
-            Tscal alpha_u     = 1.0;
-        };
-
-        using Variant = std::variant<None, NoAV, ConstantAv, VaryingAv>;
-    };
 
     template<class Tvec, template<class> class SPHKernel>
     struct SPHModelSolverConfig {
@@ -45,7 +29,39 @@ namespace shammodels {
 
         static constexpr Tscal Rkern = Kernel::Rkern;
 
-        typename InternalEnergyConfig<Tscal>::Variant internal_energy_config;
+        struct InternalEnergyConfig {
+            struct None {};
+            struct NoAV {};
+            struct ConstantAv {
+                Tscal alpha_u  = 1.0;
+                Tscal alpha_AV = 1.0;
+                Tscal beta_AV  = 2.0;
+            };
+            struct VaryingAv {
+                Tscal sigma_decay = 0.1;
+                Tscal alpha_u     = 1.0;
+            };
+
+            using Variant = std::variant<None, NoAV, ConstantAv, VaryingAv>;
+
+            inline static bool has_uint_field(Variant &v) {
+                bool is_none = std::get_if<None>(&v);
+                return !is_none;
+            }
+
+            inline static bool has_alphaAV_field(Variant &v) {
+                bool is_varying_alpha = std::get_if<VaryingAv>(&v);
+            }
+        };
+
+        typename InternalEnergyConfig::Variant internal_energy_config;
+
+        inline bool has_uint_field() {
+            return InternalEnergyConfig::has_uint_field(internal_energy_config);
+        }
+        inline bool has_alphaAV_field() {
+            return InternalEnergyConfig::has_alphaAV_field(internal_energy_config);
+        }
     };
 
     /**
@@ -71,10 +87,6 @@ namespace shammodels {
 
         // sph::BasicGas tmp_solver; // temporary all of this should be in the solver in fine
 
-        SPHModelSolver(ShamrockCtx &context)
-            : // tmp_solver(context),
-              context(context) {}
-
         Config solver_config;
 
         static constexpr Tscal htol_up_tol  = 1.2;
@@ -94,9 +106,37 @@ namespace shammodels {
             context.pdata_layout_add_field<Tscal>("duint", 1);
         }
 
-        SerialPatchTree<Tvec> gen_serial_patch_tree();
+        // serial patch tree control
+        std::unique_ptr<SerialPatchTree<Tvec>> sptree;
+        void gen_serial_patch_tree();
+        inline void reset_serial_patch_tree() { sptree.reset(); }
 
-        void apply_position_boundary(SerialPatchTree<Tvec> &sptree);
+        // interface_control
+        std::unique_ptr<sph::BasicSPHGhostHandler<Tvec>> ghost_handler;
+        inline void gen_ghost_handler() {
+            ghost_handler = std::make_unique<sph::BasicSPHGhostHandler<Tvec>>(scheduler());
+        }
+        inline void reset_ghost_handler() {
+
+            if (ghost_handler) {
+                throw shambase::throw_with_loc<std::runtime_error>(
+                    "please reset the ghost_handler before");
+            }
+            ghost_handler.reset();
+        }
+
+
+        
+
+
+
+
+
+
+
+        SPHModelSolver(ShamrockCtx &context) : context(context) {}
+
+        void apply_position_boundary();
 
         Tscal evolve_once(Tscal dt_input,
                           bool enable_physics,

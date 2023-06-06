@@ -7,6 +7,8 @@
 // -------------------------------------------------------//
 
 #include "SPHModelSolver.hpp"
+#include "shambase/exception.hpp"
+#include "shambase/memory.hpp"
 #include "shambase/time.hpp"
 #include "shammodels/BasicSPHGhosts.hpp"
 #include "shammodels/SPHSolverImpl.hpp"
@@ -23,6 +25,8 @@
 #include "shamrock/sph/kernels.hpp"
 #include "shamrock/sph/sphpart.hpp"
 #include "shamrock/tree/TreeTaversalCache.hpp"
+#include <memory>
+#include <stdexcept>
 
 template<class Tvec, template<class> class Kern>
 using SPHSolve = shammodels::SPHModelSolver<Tvec, Kern>;
@@ -131,14 +135,19 @@ void vtk_dump_add_field(PatchScheduler &sched,
 }
 
 template<class Tvec, template<class> class Kern>
-SerialPatchTree<Tvec> SPHSolve<Tvec, Kern>::gen_serial_patch_tree() {
-    SerialPatchTree<Tvec> sptree = SerialPatchTree<Tvec>::build(scheduler());
-    sptree.attach_buf();
-    return sptree;
+void SPHSolve<Tvec, Kern>::gen_serial_patch_tree() {
+
+    if(sptree){
+        throw shambase::throw_with_loc<std::runtime_error>("please reset the serial patch tree before");
+    }
+
+    SerialPatchTree<Tvec> _sptree = SerialPatchTree<Tvec>::build(scheduler());
+    _sptree.attach_buf();
+    sptree = std::make_unique<SerialPatchTree<Tvec>>(std::move(_sptree));
 }
 
 template<class Tvec, template<class> class Kern>
-void SPHSolve<Tvec, Kern>::apply_position_boundary(SerialPatchTree<Tvec> &sptree) {
+void SPHSolve<Tvec, Kern>::apply_position_boundary() {
     StackEntry stack_loc{};
 
     logger::info_ln("SphSolver", "apply position boundary");
@@ -152,17 +161,13 @@ void SPHSolve<Tvec, Kern>::apply_position_boundary(SerialPatchTree<Tvec> &sptree
     auto [bmin, bmax] = sched.get_box_volume<Tvec>();
     integrators.fields_apply_periodicity(ixyz, std::pair{bmin, bmax});
 
-    reatrib.reatribute_patch_objects(sptree, "xyz");
+    reatrib.reatribute_patch_objects(shambase::get_check_ref(sptree), "xyz");
 }
 
 template<class Tvec, template<class> class Kern>
 auto SPHSolve<Tvec, Kern>::evolve_once(
     Tscal dt, bool enable_physics, bool do_dump, std::string vtk_dump_name, bool vtk_dump_patch_id)
     -> Tscal {
-    // tmp_solver.set_cfl_cour(cfl_cour);
-    // tmp_solver.set_cfl_force(cfl_force);
-    // tmp_solver.set_particle_mass(gpart_mass);
-    //  tmp_solver.set_gamma(eos_gamma);
 
     struct DumpOption {
         bool vtk_do_dump;
@@ -205,19 +210,20 @@ auto SPHSolve<Tvec, Kern>::evolve_once(
     utility.fields_forward_euler<Tvec>(ivxyz, iaxyz, dt / 2);
     utility.fields_forward_euler<Tscal>(iuint, iduint, dt / 2);
 
-    SerialPatchTree<Tvec> sptree = gen_serial_patch_tree();
+    gen_serial_patch_tree();
 
-    apply_position_boundary(sptree);
+    apply_position_boundary();
 
     u64 Npart_all = scheduler().get_total_obj_count();
 
-    sph::BasicSPHGhostHandler<Tvec> interf_handle(scheduler());
+    gen_ghost_handler();
+    sph::BasicSPHGhostHandler<Tvec> & ghost_handle = shambase::get_check_ref(ghost_handler);
 
     using SPHUtils = sph::SPHUtilities<Tvec, Kernel>;
     SPHUtils sph_utils(scheduler());
 
-    auto interf_build_cache = sph_utils.build_interf_cache(interf_handle, sptree, htol_up_tol);
-    auto merged_xyz         = interf_handle.build_comm_merge_positions(interf_build_cache);
+    auto interf_build_cache = sph_utils.build_interf_cache(ghost_handle, shambase::get_check_ref(sptree), htol_up_tol);
+    auto merged_xyz         = ghost_handle.build_comm_merge_positions(interf_build_cache);
 
     constexpr u32 reduc_level = 3;
 
@@ -367,7 +373,7 @@ auto SPHSolve<Tvec, Kern>::evolve_once(
 
         using InterfaceBuildInfos = typename sph::BasicSPHGhostHandler<Tvec>::InterfaceBuildInfos;
 
-        auto pdat_interf = interf_handle.template build_interface_native<PatchData>(
+        auto pdat_interf = ghost_handle.template build_interface_native<PatchData>(
             interf_build_cache,
             [&](u64 sender,
                 u64 /*receiver*/,
@@ -390,9 +396,9 @@ auto SPHSolve<Tvec, Kern>::evolve_once(
             });
 
         shambase::DistributedDataShared<PatchData> interf_pdat =
-            interf_handle.communicate_pdat(interf_layout, std::move(pdat_interf));
+            ghost_handle.communicate_pdat(interf_layout, std::move(pdat_interf));
 
-        mpdat = interf_handle.template merge_native<PatchData, MergedPatchData>(
+        mpdat = ghost_handle.template merge_native<PatchData, MergedPatchData>(
             std::move(interf_pdat),
             [&](const shamrock::patch::Patch p, shamrock::patch::PatchData &pdat) {
                 PatchData pdat_new(interf_layout);
@@ -931,6 +937,8 @@ auto SPHSolve<Tvec, Kern>::evolve_once(
     f64 rate = f64(scheduler().get_rank_count()) / tstep.elasped_sec();
 
     logger::info_ln("SPHSolver", "process rate : ", rate, "particle.s-1");
+
+    reset_serial_patch_tree();
 
     return next_cfl;
 }
