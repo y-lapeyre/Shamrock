@@ -89,10 +89,10 @@ namespace shammodels {
         using Kernel = SPHKernel<Tscal>;
 
         
-
+        ShamrockCtx &context;
         sph::BasicGas tmp_solver; // temporary all of this should be in the solver in fine
 
-        SPHModelSolver(ShamrockCtx &context) : tmp_solver(context){}
+        SPHModelSolver(ShamrockCtx &context) : tmp_solver(context),context(context){}
 
         Tscal eos_gamma;
         Tscal gpart_mass;
@@ -100,7 +100,12 @@ namespace shammodels {
         Tscal cfl_force;
 
         inline void init_required_fields(){
-            tmp_solver.setup_fields();
+            context.pdata_layout_add_field<Tvec>("xyz", 1);
+            context.pdata_layout_add_field<Tvec>("vxyz", 1);
+            context.pdata_layout_add_field<Tvec>("axyz", 1);
+            context.pdata_layout_add_field<Tscal>("hpart", 1);
+            context.pdata_layout_add_field<Tscal>("uint", 1);
+            context.pdata_layout_add_field<Tscal>("duint", 1);
         }
 
         inline Tscal evolve_once(Tscal dt_input, bool enable_physics, bool do_dump, std::string vtk_dump_name, bool vtk_dump_patch_id){
