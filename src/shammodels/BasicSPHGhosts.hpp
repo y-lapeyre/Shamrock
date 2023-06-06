@@ -64,6 +64,10 @@ namespace shammodels::sph {
         shambase::DistributedDataShared<InterfaceIdTable>
         gen_id_table_interfaces(GeneratorMap &&gen);
 
+
+
+        using CacheMap = shambase::DistributedDataShared<InterfaceIdTable>;
+
         /**
          * @brief utility to generate both the metadata and index tables
          * 
@@ -72,7 +76,7 @@ namespace shammodels::sph {
          * @param int_range_max 
          * @return shambase::DistributedDataShared<InterfaceIdTable> 
          */
-        shambase::DistributedDataShared<InterfaceIdTable>
+        CacheMap
         make_interface_cache(SerialPatchTree<vec> &sptree,
                              shamrock::patch::PatchtreeField<flt> &int_range_max_tree,
                              shamrock::patch::PatchField<flt> &int_range_max) {
@@ -81,6 +85,8 @@ namespace shammodels::sph {
             return gen_id_table_interfaces(
                 find_interfaces(sptree, int_range_max_tree, int_range_max));
         }
+
+        
 
 
         /**

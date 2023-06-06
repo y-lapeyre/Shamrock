@@ -100,7 +100,7 @@ namespace shammodels::sph {
                     }
                 }
             });
-        });
+        }).wait();
     }
 
     template<class vec, class SPHKernel, class u_morton>
@@ -188,7 +188,7 @@ namespace shammodels::sph {
                     }
                 }
             });
-        });
+        }).wait();
     }
 
     template<class vec, class SPHKernel>
@@ -252,7 +252,7 @@ namespace shammodels::sph {
                 // logger::raw(shambase::format("pmass {}, rho_a {}, omega_a {}\n",
                 // part_mass,rho_ha, omega_a));
             });
-        });
+        }).wait();
     }
 
     template class SPHUtilities<f64_3, kernels::M4<f64>>;

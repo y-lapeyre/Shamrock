@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include "SPHModelSolverConfig.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"
 #include "shammodels/BasicSPHGhosts.hpp"
 #include "shamrock/scheduler/ComputeField.hpp"
@@ -16,53 +17,7 @@
 #include "shamrock/sph/SPHUtilities.hpp"
 #include <memory>
 #include <variant>
-
 namespace shammodels {
-
-    template<class Tvec, template<class> class SPHKernel>
-    struct SPHModelSolverConfig {
-
-        using Tscal              = shambase::VecComponent<Tvec>;
-        static constexpr u32 dim = shambase::VectorProperties<Tvec>::dimension;
-        using Kernel             = SPHKernel<Tscal>;
-        using u_morton           = u32;
-
-        static constexpr Tscal Rkern = Kernel::Rkern;
-
-        struct InternalEnergyConfig {
-            struct None {};
-            struct NoAV {};
-            struct ConstantAv {
-                Tscal alpha_u  = 1.0;
-                Tscal alpha_AV = 1.0;
-                Tscal beta_AV  = 2.0;
-            };
-            struct VaryingAv {
-                Tscal sigma_decay = 0.1;
-                Tscal alpha_u     = 1.0;
-            };
-
-            using Variant = std::variant<None, NoAV, ConstantAv, VaryingAv>;
-
-            inline static bool has_uint_field(Variant &v) {
-                bool is_none = std::get_if<None>(&v);
-                return !is_none;
-            }
-
-            inline static bool has_alphaAV_field(Variant &v) {
-                bool is_varying_alpha = std::get_if<VaryingAv>(&v);
-            }
-        };
-
-        typename InternalEnergyConfig::Variant internal_energy_config;
-
-        inline bool has_uint_field() {
-            return InternalEnergyConfig::has_uint_field(internal_energy_config);
-        }
-        inline bool has_alphaAV_field() {
-            return InternalEnergyConfig::has_alphaAV_field(internal_energy_config);
-        }
-    };
 
     /**
      * @brief The shamrock SPH model
@@ -85,12 +40,10 @@ namespace shammodels {
         ShamrockCtx &context;
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }
 
-        // sph::BasicGas tmp_solver; // temporary all of this should be in the solver in fine
-
         Config solver_config;
 
-        static constexpr Tscal htol_up_tol  = 1.2;
-        static constexpr Tscal htol_up_iter = 1.2;
+        static constexpr Tscal htol_up_tol  = 1.1;
+        static constexpr Tscal htol_up_iter = 1.1;
 
         Tscal eos_gamma;
         Tscal gpart_mass;
@@ -112,21 +65,51 @@ namespace shammodels {
         inline void reset_serial_patch_tree() { sptree.reset(); }
 
         // interface_control
-        std::unique_ptr<sph::BasicSPHGhostHandler<Tvec>> ghost_handler;
+        using GhostHandle = sph::BasicSPHGhostHandler<Tvec>;
+        using GhostHandleCache = typename GhostHandle::CacheMap;
+        
+        std::unique_ptr<GhostHandle> ghost_handler;
         inline void gen_ghost_handler() {
-            ghost_handler = std::make_unique<sph::BasicSPHGhostHandler<Tvec>>(scheduler());
-        }
-        inline void reset_ghost_handler() {
-
             if (ghost_handler) {
                 throw shambase::throw_with_loc<std::runtime_error>(
                     "please reset the ghost_handler before");
             }
-            ghost_handler.reset();
+            ghost_handler = std::make_unique<GhostHandle>(scheduler());
         }
-
+        inline void reset_ghost_handler() { ghost_handler.reset(); }
 
         
+        GhostHandleCache ghost_handle_cache;
+        void build_ghost_cache();
+        void clear_ghost_cache();
+
+        struct TempFields{
+            shambase::DistributedData<shamrock::MergedPatchDataField<Tvec>> merged_xyz;
+            shamrock::ComputeField<Tscal> omega;
+
+
+            void clear(){
+                merged_xyz.reset();
+                omega.reset();
+            }
+            
+        } temp_fields;
+
+        void merge_position_ghost();
+
+        //trees
+        using RTree = RadixTree<u_morton, Tvec>;
+        shambase::DistributedData<RTree> merged_pos_trees;
+        void build_merged_pos_trees();
+        void clear_merged_pos_trees();
+
+
+        void sph_prestep(); 
+
+        void apply_position_boundary();
+
+        void do_predictor_leapfrog(Tscal dt);
+
 
 
 
@@ -135,8 +118,6 @@ namespace shammodels {
 
 
         SPHModelSolver(ShamrockCtx &context) : context(context) {}
-
-        void apply_position_boundary();
 
         Tscal evolve_once(Tscal dt_input,
                           bool enable_physics,

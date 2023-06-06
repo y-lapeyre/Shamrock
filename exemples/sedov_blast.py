@@ -115,8 +115,8 @@ print("Current part mass :", pmass)
 
 model.set_particle_mass(pmass)
 
-for i in range(9):
-    model.evolve(5e-4, False, False, "", False)
+#for i in range(9):
+#    model.evolve(5e-4, False, False, "", False)
 
 
 t_sum = 0
