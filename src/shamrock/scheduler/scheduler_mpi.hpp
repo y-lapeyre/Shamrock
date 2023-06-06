@@ -31,6 +31,7 @@
 #include "aliases.hpp"
 #include "shamalgs/collective/distributedDataComm.hpp"
 #include "shambase/DistributedData.hpp"
+#include "shambase/stacktrace.hpp"
 #include "shamrock/legacy/patch/utility/patch_field.hpp"
 //#include "shamrock/scheduler/SerialPatchTree.hpp"
 #include "shamrock/patch/Patch.hpp"
@@ -390,6 +391,12 @@ class PatchScheduler{
             [&](u64 id_patch, Patch cur_p, PatchData &pdat) { num_obj += pdat.get_obj_cnt(); });
 
         return num_obj;
+    }
+
+    inline u64 get_total_obj_count(){
+        StackEntry stack_loc{};
+        u64 part_cnt = get_rank_count();
+        return shamalgs::collective::allreduce_sum(part_cnt);
     }
 
     template<class T>

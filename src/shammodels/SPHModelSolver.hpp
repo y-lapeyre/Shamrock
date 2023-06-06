@@ -9,6 +9,7 @@
 #pragma once
 
 #include "shambase/sycl_utils/vectorProperties.hpp"
+#include "shamrock/scheduler/SerialPatchTree.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
 
 namespace shammodels {
@@ -118,6 +119,10 @@ namespace shammodels {
             context.pdata_layout_add_field<Tscal>("uint", 1);
             context.pdata_layout_add_field<Tscal>("duint", 1);
         }
+
+        SerialPatchTree<Tvec> gen_serial_patch_tree();
+
+        void apply_position_boundary(SerialPatchTree<Tvec> & sptree);
 
         Tscal evolve_once(Tscal dt_input, bool enable_physics, bool do_dump, std::string vtk_dump_name, bool vtk_dump_patch_id);
 
