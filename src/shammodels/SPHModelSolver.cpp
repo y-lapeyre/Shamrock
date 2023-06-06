@@ -266,29 +266,21 @@ void SPHSolve<Tvec, Kern>::sph_prestep() {
     shambase::DistributedData<RTree> &trees = merged_pos_trees;
     ComputeField<Tscal> &omega              = temp_fields.omega;
 
-    
-
     PatchDataLayout &pdl = scheduler().pdl;
     const u32 ihpart     = pdl.get_field_idx<Tscal>("hpart");
 
-
-    ComputeField<Tscal> _epsilon_h,_h_old;
+    ComputeField<Tscal> _epsilon_h, _h_old;
 
     u32 hstep_cnt = 0;
-    for (; hstep_cnt < 50; hstep_cnt ++) {
-    
-        
+    for (; hstep_cnt < 50; hstep_cnt++) {
 
         gen_ghost_handler();
         build_ghost_cache();
         merge_position_ghost();
         build_merged_pos_trees();
 
-
         _epsilon_h = utility.make_compute_field<Tscal>("epsilon_h", 1, Tscal(100));
         _h_old     = utility.save_field<Tscal>(ihpart, "h_old");
-
-
 
         tree::ObjectCacheHandler hiter_caches{
             u64(10e9), [&](u64 patch_id) {
@@ -309,10 +301,8 @@ void SPHSolve<Tvec, Kern>::sph_prestep() {
             }};
 
         scheduler().for_each_patchdata_nonempty(
-                [&](Patch cur_p, PatchData &pdat) { hiter_caches.preload(cur_p.id_patch); });
+            [&](Patch cur_p, PatchData &pdat) { hiter_caches.preload(cur_p.id_patch); });
 
-
-        
         Tscal max_eps_h;
 
         for (u32 iter_h = 0; iter_h < 50; iter_h++) {
@@ -321,8 +311,9 @@ void SPHSolve<Tvec, Kern>::sph_prestep() {
             scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchData &pdat) {
                 logger::debug_ln("SPHLeapfrog", "patch : n°", p.id_patch, "->", "h iteration");
 
-                sycl::buffer<Tscal> &eps_h = shambase::get_check_ref(_epsilon_h.get_buf(p.id_patch));
-                sycl::buffer<Tscal> &hold  = shambase::get_check_ref(_h_old.get_buf(p.id_patch));
+                sycl::buffer<Tscal> &eps_h =
+                    shambase::get_check_ref(_epsilon_h.get_buf(p.id_patch));
+                sycl::buffer<Tscal> &hold = shambase::get_check_ref(_h_old.get_buf(p.id_patch));
 
                 sycl::buffer<Tscal> &hnew =
                     shambase::get_check_ref(pdat.get_field<Tscal>(ihpart).get_buf());
@@ -336,28 +327,29 @@ void SPHSolve<Tvec, Kern>::sph_prestep() {
                 tree::ObjectCache &neigh_cache = hiter_caches.get_cache(p.id_patch);
 
                 sph_utils.iterate_smoothing_lenght_cache(merged_r,
-                                                        hnew,
-                                                        hold,
-                                                        eps_h,
-                                                        range_npart,
-                                                        neigh_cache,
-                                                        gpart_mass,
-                                                        htol_up_tol,
-                                                        htol_up_iter);
+                                                         hnew,
+                                                         hold,
+                                                         eps_h,
+                                                         range_npart,
+                                                         neigh_cache,
+                                                         gpart_mass,
+                                                         htol_up_tol,
+                                                         htol_up_iter);
                 // sph_utils.iterate_smoothing_lenght_tree(merged_r, hnew, hold, eps_h, range_npart,
                 // tree, gpart_mass, htol_up_tol, htol_up_iter);
             });
             max_eps_h = _epsilon_h.compute_rank_max();
-            if(max_eps_h < 1e-6){
+            if (max_eps_h < 1e-6) {
                 break;
             }
         }
 
-        logger::info_ln("Smoothinglenght", "eps max =",max_eps_h);
+        logger::info_ln("Smoothinglenght", "eps max =", max_eps_h);
 
         Tscal min_eps_h = shamalgs::collective::allreduce_min(_epsilon_h.compute_rank_min());
-        if(min_eps_h == -1){
-            logger::warn_ln("Smoothinglenght", "smoothing lenght is not converged, rerunning the iterator ...");
+        if (min_eps_h == -1) {
+            logger::warn_ln("Smoothinglenght",
+                            "smoothing lenght is not converged, rerunning the iterator ...");
 
             reset_ghost_handler();
             clear_ghost_cache();
@@ -366,7 +358,6 @@ void SPHSolve<Tvec, Kern>::sph_prestep() {
 
             continue;
         }
-
 
         if (!omega.field_data.is_empty()) {
             throw shambase::throw_with_loc<std::runtime_error>(
@@ -393,7 +384,8 @@ void SPHSolve<Tvec, Kern>::sph_prestep() {
 
                 tree::ObjectCache &neigh_cache = hiter_caches.get_cache(p.id_patch);
 
-                sph_utils.compute_omega(merged_r, hnew, omega_h, range_npart, neigh_cache, gpart_mass);
+                sph_utils.compute_omega(
+                    merged_r, hnew, omega_h, range_npart, neigh_cache, gpart_mass);
             });
         }
         _epsilon_h.reset();
@@ -401,10 +393,6 @@ void SPHSolve<Tvec, Kern>::sph_prestep() {
         hiter_caches.reset();
         break;
     }
-
-
-
-    
 }
 
 template<class Tvec, template<class> class Kern>
@@ -448,19 +436,16 @@ auto SPHSolve<Tvec, Kern>::evolve_once(
 
     u64 Npart_all = scheduler().get_total_obj_count();
 
-    
-
     sph_prestep();
 
     using RTree = RadixTree<u_morton, Tvec>;
 
     SPHSolverImpl solver(context);
 
-
     sph::BasicSPHGhostHandler<Tvec> &ghost_handle = shambase::get_check_ref(ghost_handler);
-    auto &merged_xyz = temp_fields.merged_xyz;
-    shambase::DistributedData<RTree> &trees = merged_pos_trees;
-    ComputeField<Tscal> &omega = temp_fields.omega;
+    auto &merged_xyz                              = temp_fields.merged_xyz;
+    shambase::DistributedData<RTree> &trees       = merged_pos_trees;
+    ComputeField<Tscal> &omega                    = temp_fields.omega;
 
     PatchDataLayout interf_layout;
     interf_layout.add_field<Tscal>("hpart", 1);
