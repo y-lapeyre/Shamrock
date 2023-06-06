@@ -9,7 +9,6 @@
 #pragma once
 
 #include "shambase/sycl_utils/vectorProperties.hpp"
-#include "shammodels/BasicGas.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
 
 namespace shammodels {

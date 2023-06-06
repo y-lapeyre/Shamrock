@@ -7,6 +7,7 @@
 // -------------------------------------------------------//
 
 #include "SPHModel.hpp"
+#include "shamrock/sph/kernels.hpp"
 
 template<class Tvec, template<class> class SPHKernel>
 f64 shammodels::SPHModel<Tvec, SPHKernel>::evolve_once(f64 dt_input,

@@ -1,6 +1,5 @@
 target_sources(shamrock_lib
     PRIVATE
-        BasicGas.cpp 
         BasicSPHGhosts.cpp
         SPHSolverImpl.cpp
         SPHModel.cpp

@@ -8,12 +8,14 @@
 
 #include "SPHModelSolver.hpp"
 #include "shambase/time.hpp"
+#include "shamrock/io/LegacyVtkWritter.hpp"
 #include "shamrock/patch/PatchDataLayout.hpp"
 #include "shamrock/scheduler/ReattributeDataUtility.hpp"
 #include "shamrock/scheduler/SchedulerUtility.hpp"
 #include "shamrock/scheduler/scheduler_mpi.hpp"
-
+#include "shamrock/sph/kernels.hpp"
 #include "shammodels/BasicSPHGhosts.hpp"
+#include "shammodels/SPHSolverImpl.hpp"
 #include "shamrock/sph/SPHUtilities.hpp"
 #include "shamrock/scheduler/InterfacesUtility.hpp"
 #include "shammodels/BasicSPHGhosts.hpp"
@@ -27,105 +29,105 @@ using SPHSolve = shammodels::SPHModelSolver<Tvec, Kern>;
 
 
 
-    template<class vec>
-    shamrock::LegacyVtkWritter start_dump(PatchScheduler &sched, std::string dump_name) {
-        StackEntry stack_loc{};
-        shamrock::LegacyVtkWritter writer(dump_name, true, shamrock::UnstructuredGrid);
+template<class vec>
+shamrock::LegacyVtkWritter start_dump(PatchScheduler &sched, std::string dump_name) {
+    StackEntry stack_loc{};
+    shamrock::LegacyVtkWritter writer(dump_name, true, shamrock::UnstructuredGrid);
 
-        using namespace shamrock::patch;
+    using namespace shamrock::patch;
 
-        u64 num_obj = sched.get_rank_count();
+    u64 num_obj = sched.get_rank_count();
 
-        logger::debug_mpi_ln("sph::BasicGas", "rank count =",num_obj);
+    logger::debug_mpi_ln("sph::BasicGas", "rank count =",num_obj);
 
-        std::unique_ptr<sycl::buffer<vec>> pos = sched.rankgather_field<vec>(0);
+    std::unique_ptr<sycl::buffer<vec>> pos = sched.rankgather_field<vec>(0);
 
-        writer.write_points(pos, num_obj);
-        
-        return writer;
+    writer.write_points(pos, num_obj);
+    
+    return writer;
+}
+
+void vtk_dump_add_patch_id(PatchScheduler &sched, shamrock::LegacyVtkWritter &writter) {
+    StackEntry stack_loc{};
+    
+    u64 num_obj = sched.get_rank_count();
+
+    using namespace shamrock::patch;
+
+    if(num_obj > 0){
+        // TODO aggregate field ?
+        sycl::buffer<u64> idp(num_obj);
+
+        u64 ptr = 0; // TODO accumulate_field() in scheduler ?
+        sched.for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+            using namespace shamalgs::memory;
+            using namespace shambase;
+
+            write_with_offset_into(idp, cur_p.id_patch, ptr, pdat.get_obj_cnt());
+
+            ptr += pdat.get_obj_cnt();
+        });
+
+        writter.write_field("patchid", idp, num_obj);
+    }else{
+        writter.write_field_no_buf<u64>("patchid");
     }
+}
 
-    void vtk_dump_add_patch_id(PatchScheduler &sched, shamrock::LegacyVtkWritter &writter) {
-        StackEntry stack_loc{};
-        
-        u64 num_obj = sched.get_rank_count();
+void vtk_dump_add_worldrank(PatchScheduler &sched, shamrock::LegacyVtkWritter &writter) {
+    StackEntry stack_loc{};
+    
+    using namespace shamrock::patch;
+    u64 num_obj = sched.get_rank_count();
 
-        using namespace shamrock::patch;
+    if(num_obj > 0){
 
-        if(num_obj > 0){
-            // TODO aggregate field ?
-            sycl::buffer<u64> idp(num_obj);
+        // TODO aggregate field ?
+        sycl::buffer<u32> idp(num_obj);
 
-            u64 ptr = 0; // TODO accumulate_field() in scheduler ?
-            sched.for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
-                using namespace shamalgs::memory;
-                using namespace shambase;
+        u64 ptr = 0; // TODO accumulate_field() in scheduler ?
+        sched.for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+            using namespace shamalgs::memory;
+            using namespace shambase;
 
-                write_with_offset_into(idp, cur_p.id_patch, ptr, pdat.get_obj_cnt());
+            write_with_offset_into(idp, shamsys::instance::world_rank, ptr, pdat.get_obj_cnt());
 
-                ptr += pdat.get_obj_cnt();
-            });
+            ptr += pdat.get_obj_cnt();
+        });
 
-            writter.write_field("patchid", idp, num_obj);
-        }else{
-            writter.write_field_no_buf<u64>("patchid");
-        }
+        writter.write_field("world_rank", idp, num_obj);
+
+    }else{
+        writter.write_field_no_buf<u32>("world_rank");
     }
+}
 
-    void vtk_dump_add_worldrank(PatchScheduler &sched, shamrock::LegacyVtkWritter &writter) {
-        StackEntry stack_loc{};
-        
-        using namespace shamrock::patch;
-        u64 num_obj = sched.get_rank_count();
+template<class T>
+void vtk_dump_add_compute_field(PatchScheduler &sched, shamrock::LegacyVtkWritter &writter, shamrock::ComputeField<T> & field, std::string field_dump_name) {
+    StackEntry stack_loc{};
+    
+    using namespace shamrock::patch;
+    u64 num_obj = sched.get_rank_count();
 
-        if(num_obj > 0){
+    std::unique_ptr<sycl::buffer<T>> field_vals = field.rankgather_computefield(sched);
 
-            // TODO aggregate field ?
-            sycl::buffer<u32> idp(num_obj);
+    writter.write_field(field_dump_name, field_vals, num_obj);
+}
 
-            u64 ptr = 0; // TODO accumulate_field() in scheduler ?
-            sched.for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
-                using namespace shamalgs::memory;
-                using namespace shambase;
+template<class T>
+void vtk_dump_add_field(PatchScheduler &sched,
+                        shamrock::LegacyVtkWritter &writter,
+                        u32 field_idx,
+                        std::string field_dump_name) {
+    StackEntry stack_loc{};
+    
+    using namespace shamrock::patch;
+    u64 num_obj = sched.get_rank_count();
 
-                write_with_offset_into(idp, shamsys::instance::world_rank, ptr, pdat.get_obj_cnt());
+    std::unique_ptr<sycl::buffer<T>> field_vals = sched.rankgather_field<T>(field_idx);
 
-                ptr += pdat.get_obj_cnt();
-            });
-
-            writter.write_field("world_rank", idp, num_obj);
-
-        }else{
-            writter.write_field_no_buf<u32>("world_rank");
-        }
-    }
-
-    template<class T>
-    void vtk_dump_add_compute_field(PatchScheduler &sched, shamrock::LegacyVtkWritter &writter, shamrock::ComputeField<T> & field, std::string field_dump_name) {
-        StackEntry stack_loc{};
-        
-        using namespace shamrock::patch;
-        u64 num_obj = sched.get_rank_count();
-
-        std::unique_ptr<sycl::buffer<T>> field_vals = field.rankgather_computefield(sched);
-
-        writter.write_field(field_dump_name, field_vals, num_obj);
-    }
-
-    template<class T>
-    void vtk_dump_add_field(PatchScheduler &sched,
-                            shamrock::LegacyVtkWritter &writter,
-                            u32 field_idx,
-                            std::string field_dump_name) {
-        StackEntry stack_loc{};
-        
-        using namespace shamrock::patch;
-        u64 num_obj = sched.get_rank_count();
-
-        std::unique_ptr<sycl::buffer<T>> field_vals = sched.rankgather_field<T>(field_idx);
-
-        writter.write_field(field_dump_name, field_vals, num_obj);
-    }
+    writter.write_field(field_dump_name, field_vals, num_obj);
+}
 
 u64 count_particles(PatchScheduler & sched){
     StackEntry stack_loc{};

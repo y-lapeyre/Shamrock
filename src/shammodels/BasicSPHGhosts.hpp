@@ -10,7 +10,6 @@
 
 #include "shambase/DistributedData.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"
-#include "shammodels/BasicGas.hpp"
 #include "shamrock/scheduler/ComputeField.hpp"
 #include "shamrock/scheduler/InterfacesUtility.hpp"
 #include "shamrock/scheduler/scheduler_mpi.hpp"
