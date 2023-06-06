@@ -85,14 +85,22 @@ namespace shammodels {
     class SPHModelSolver {public:
 
         using Tscal                    = shambase::VecComponent<Tvec>;
-        static constexpr u32 dimension = shambase::VectorProperties<Tvec>::dimension;
+        static constexpr u32 dim = shambase::VectorProperties<Tvec>::dimension;
         using Kernel = SPHKernel<Tscal>;
+        using u_morton = u32;
+
+        static constexpr Tscal Rkern = Kernel::Rkern;
 
         
         ShamrockCtx &context;
         sph::BasicGas tmp_solver; // temporary all of this should be in the solver in fine
 
         SPHModelSolver(ShamrockCtx &context) : tmp_solver(context),context(context){}
+
+
+
+        static constexpr Tscal htol_up_tol  = 1.2;
+        static constexpr Tscal htol_up_iter = 1.2;
 
         Tscal eos_gamma;
         Tscal gpart_mass;
@@ -108,22 +116,7 @@ namespace shammodels {
             context.pdata_layout_add_field<Tscal>("duint", 1);
         }
 
-        inline Tscal evolve_once(Tscal dt_input, bool enable_physics, bool do_dump, std::string vtk_dump_name, bool vtk_dump_patch_id){
-            tmp_solver.set_cfl_cour(cfl_cour);
-            tmp_solver.set_cfl_force(cfl_force);
-            tmp_solver.set_particle_mass(gpart_mass);
-            //tmp_solver.set_gamma(eos_gamma);
-            
-            return tmp_solver.evolve(dt_input, enable_physics, {do_dump,vtk_dump_name,vtk_dump_patch_id});
-        }
-
-
-
-        
-
-
-
-
+        Tscal evolve_once(Tscal dt_input, bool enable_physics, bool do_dump, std::string vtk_dump_name, bool vtk_dump_patch_id);
 
     };
 
