@@ -259,7 +259,6 @@ namespace shammodels {
         ////////////////////////////////////////////////////////////////////////////////////////////
 
         f64 evolve_once(f64 dt_input,
-                        bool enable_physics,
                         bool do_dump,
                         std::string vtk_dump_name,
                         bool vtk_dump_patch_id);

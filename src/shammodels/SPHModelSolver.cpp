@@ -397,7 +397,7 @@ void SPHSolve<Tvec, Kern>::sph_prestep() {
 
 template<class Tvec, template<class> class Kern>
 auto SPHSolve<Tvec, Kern>::evolve_once(
-    Tscal dt, bool enable_physics, bool do_dump, std::string vtk_dump_name, bool vtk_dump_patch_id)
+    Tscal dt, bool do_dump, std::string vtk_dump_name, bool vtk_dump_patch_id)
     -> Tscal {
     StackEntry stack_loc{};
 
@@ -608,7 +608,7 @@ auto SPHSolve<Tvec, Kern>::evolve_once(
         ComputeField<Tvec> old_axyz   = utility.save_field<Tvec>(iaxyz, "axyz_old");
         ComputeField<Tscal> old_duint = utility.save_field<Tscal>(iduint, "duint_old");
 
-        if (enable_physics) {
+        
 
             scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
                 MergedPatchData &merged_patch = mpdat.get(cur_p.id_patch);
@@ -1003,7 +1003,7 @@ auto SPHSolve<Tvec, Kern>::evolve_once(
             }
 
             corrector_iter_cnt++;
-        }
+        
 
     } while (need_rerun_corrector);
 
