@@ -340,6 +340,7 @@ void SPHSolve<Tvec, Kern>::sph_prestep() {
             });
             max_eps_h = _epsilon_h.compute_rank_max();
             if (max_eps_h < 1e-6) {
+                logger::info_ln("SmoothingLenght", "converged at i =",iter_h);
                 break;
             }
         }
