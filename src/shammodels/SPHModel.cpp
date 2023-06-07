@@ -20,6 +20,7 @@ f64 shammodels::SPHModel<Tvec, SPHKernel>::evolve_once(f64 dt_input,
 template<class Tvec, template<class> class SPHKernel>
 void shammodels::SPHModel<Tvec, SPHKernel>::init_scheduler(u32 crit_split, u32 crit_merge) {
     solver.init_required_fields();
+    solver.init_ghost_layout();
     ctx.init_sched(crit_split, crit_merge);
 
     using namespace shamrock::patch;

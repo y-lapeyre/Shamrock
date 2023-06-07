@@ -11,6 +11,7 @@
 #include "SPHModelSolverConfig.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"
 #include "shammodels/BasicSPHGhosts.hpp"
+#include "shamrock/patch/PatchDataLayout.hpp"
 #include "shamrock/scheduler/ComputeField.hpp"
 #include "shamrock/scheduler/SerialPatchTree.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
@@ -112,7 +113,9 @@ namespace shammodels {
 
 
 
+        shamrock::patch::PatchDataLayout ghost_layout;
 
+        void init_ghost_layout();
 
 
 

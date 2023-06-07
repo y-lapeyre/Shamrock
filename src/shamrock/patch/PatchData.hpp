@@ -14,6 +14,7 @@
 
 #include "Patch.hpp"
 #include "shambase/exception.hpp"
+#include "shambase/memory.hpp"
 #include "shambase/stacktrace.hpp"
 #include "shammath/intervals.hpp"
 #include "shambase/sycl_utils.hpp"
@@ -202,6 +203,27 @@ namespace shamrock::patch {
 
             if (pval) {
                 return *pval;
+            }
+
+            throw shambase::throw_with_loc<std::runtime_error>(
+                "the request id is not of correct type\n"
+                "   current map is : \n" +
+                pdl.get_description_str() +
+                "\n"
+                "    arg : idx = " +
+                std::to_string(idx)
+            );
+        }
+
+        template<class T>
+        sycl::buffer<T> &get_field_buf_ref(u32 idx) {
+
+            var_t &tmp = fields[idx];
+
+            PatchDataField<T> *pval = std::get_if<PatchDataField<T>>(&tmp.value);
+
+            if (pval) {
+                return shambase::get_check_ref(pval->get_buf());
             }
 
             throw shambase::throw_with_loc<std::runtime_error>(
