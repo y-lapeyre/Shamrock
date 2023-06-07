@@ -105,7 +105,7 @@ namespace shammodels {
         void build_merged_pos_trees();
         void clear_merged_pos_trees();
 
-        std::unique_ptr<tree::ObjectCacheHandler> neighbors_cache;
+        std::unique_ptr<shamrock::tree::ObjectCacheHandler> neighbors_cache;
 
 
         void sph_prestep(); 
