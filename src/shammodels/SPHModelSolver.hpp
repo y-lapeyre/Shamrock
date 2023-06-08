@@ -69,6 +69,7 @@ namespace shammodels {
         // interface_control
         using GhostHandle = sph::BasicSPHGhostHandler<Tvec>;
         using GhostHandleCache = typename GhostHandle::CacheMap;
+        using PreStepMergedField = typename GhostHandle::PreStepMergedField;
         
         std::unique_ptr<GhostHandle> ghost_handler;
         inline void gen_ghost_handler() {
@@ -86,12 +87,12 @@ namespace shammodels {
         void clear_ghost_cache();
 
         struct TempFields{
-            shambase::DistributedData<shamrock::MergedPatchDataField<Tvec>> merged_xyz;
+            shambase::DistributedData<PreStepMergedField> merged_xyzh;
             shamrock::ComputeField<Tscal> omega;
 
 
             void clear(){
-                merged_xyz.reset();
+                merged_xyzh.reset();
                 omega.reset();
             }
             
@@ -105,7 +106,14 @@ namespace shammodels {
         void build_merged_pos_trees();
         void clear_merged_pos_trees();
 
+
+        shambase::DistributedData<RadixTreeField<Tscal>> rtree_rint_field;
+        void compute_presteps_rint();
+        void reset_presteps_rint();
+
         std::unique_ptr<shamrock::tree::ObjectCacheHandler> neighbors_cache;
+        void start_neighbors_cache();
+        void reset_neighbors_cache();
 
 
         void sph_prestep(); 
@@ -117,7 +125,6 @@ namespace shammodels {
 
 
         shamrock::patch::PatchDataLayout ghost_layout;
-
         void init_ghost_layout();
 
 

@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include "shammodels/BasicSPHGhosts.hpp"
 #include "shamrock/scheduler/InterfacesUtility.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
 #include "shamrock/scheduler/scheduler_mpi.hpp"
@@ -46,20 +47,26 @@ namespace shammodels {
                                 RadixTree<u_morton, vec> &tree,
                                 flt h_tolerance);
 
-        using MergedPositions = shambase::DistributedData<shamrock::MergedPatchDataField<vec>>;
+
+        using GhostHandle = sph::BasicSPHGhostHandler<vec>;
+        using GhostHandleCache = typename GhostHandle::CacheMap;
+        using PreStepMergedField = typename GhostHandle::PreStepMergedField;
+        
+
+        using MergedPositions = shambase::DistributedData<PreStepMergedField>;
         using RTree           = RadixTree<u_morton, vec>;
 
         static shambase::DistributedData<RTree>
-        make_merge_patch_trees(MergedPositions &merged_xyz, u32 reduction_level) {
+        make_merge_patch_trees(MergedPositions &merged_xyzh, u32 reduction_level) {
             shambase::DistributedData<RTree> trees =
-                merged_xyz.map<RTree>([&](u64 id, shamrock::MergedPatchDataField<vec> &merged) {
-                    vec bmin = merged.bounds->lower;
-                    vec bmax = merged.bounds->upper;
+                merged_xyzh.map<RTree>([&](u64 id, PreStepMergedField &merged) {
+                    vec bmin = merged.bounds.lower;
+                    vec bmax = merged.bounds.upper;
 
                     RTree tree(shamsys::instance::get_compute_queue(),
                                {bmin, bmax},
-                               merged.field.get_buf(),
-                               merged.field.get_obj_cnt(),
+                               merged.field_pos.get_buf(),
+                               merged.field_pos.get_obj_cnt(),
                                reduction_level);
 
                     return tree;
