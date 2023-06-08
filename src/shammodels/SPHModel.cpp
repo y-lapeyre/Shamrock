@@ -7,19 +7,20 @@
 // -------------------------------------------------------//
 
 #include "SPHModel.hpp"
+#include "shamrock/sph/kernels.hpp"
 
 template<class Tvec, template<class> class SPHKernel>
 f64 shammodels::SPHModel<Tvec, SPHKernel>::evolve_once(f64 dt_input,
-                                                       bool enable_physics,
                                                        bool do_dump,
                                                        std::string vtk_dump_name,
                                                        bool vtk_dump_patch_id) {
-    return solver.evolve_once(dt_input, enable_physics, do_dump, vtk_dump_name, vtk_dump_patch_id);
+    return solver.evolve_once(dt_input, do_dump, vtk_dump_name, vtk_dump_patch_id);
 }
 
 template<class Tvec, template<class> class SPHKernel>
 void shammodels::SPHModel<Tvec, SPHKernel>::init_scheduler(u32 crit_split, u32 crit_merge) {
     solver.init_required_fields();
+    solver.init_ghost_layout();
     ctx.init_sched(crit_split, crit_merge);
 
     using namespace shamrock::patch;

@@ -11,6 +11,7 @@
 #include "shambase/sycl_utils/vectorProperties.hpp"
 #include "shammodels/SPHModelSolver.hpp"
 #include "shammodels/generic/setup/generators.hpp"
+#include "shamrock/legacy/utils/geometry_utils.hpp"
 #include "shamrock/scheduler/ReattributeDataUtility.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
 
@@ -54,6 +55,7 @@ namespace shammodels {
         inline void set_cfl_cour(Tscal cfl_cour) { solver.cfl_cour = cfl_cour; }
         inline void set_cfl_force(Tscal cfl_force) { solver.cfl_force = cfl_force; }
         inline void set_particle_mass(Tscal gpart_mass) { solver.gpart_mass = gpart_mass; }
+        inline void set_eos_gamma(Tscal eos_gamma) { solver.eos_gamma = eos_gamma; }
 
         inline void resize_simulation_box(std::pair<Tvec, Tvec> box) {
             ctx.set_coord_domain_bound({box.first, box.second});
@@ -257,7 +259,6 @@ namespace shammodels {
         ////////////////////////////////////////////////////////////////////////////////////////////
 
         f64 evolve_once(f64 dt_input,
-                        bool enable_physics,
                         bool do_dump,
                         std::string vtk_dump_name,
                         bool vtk_dump_patch_id);
