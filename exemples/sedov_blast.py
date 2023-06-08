@@ -5,13 +5,13 @@ gamma = 5./3.
 rho_g = 1
 pmass = -1
 
-Nx = 200
-Ny = 230
-Nz = 245
+#Nx = 200
+#Ny = 230
+#Nz = 245
 
-#Nx = 100
-#Ny = 130
-#Nz = 145
+Nx = 100
+Ny = 130
+Nz = 145
 
 
 
@@ -130,7 +130,7 @@ while t_sum < t_target:
     
     next_dt = model.evolve(current_dt, True, "dump_"+str(i_dump)+".vtk", True)
 
-    if i % 10 == 0:
+    if i % 1 == 0:
         i_dump += 1
 
     t_sum += current_dt
