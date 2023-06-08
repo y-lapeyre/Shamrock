@@ -69,6 +69,7 @@ namespace shammodels {
         // interface_control
         using GhostHandle = sph::BasicSPHGhostHandler<Tvec>;
         using GhostHandleCache = typename GhostHandle::CacheMap;
+        using PreStepMergedField = typename GhostHandle::PreStepMergedField;
         
         std::unique_ptr<GhostHandle> ghost_handler;
         inline void gen_ghost_handler() {
@@ -86,12 +87,12 @@ namespace shammodels {
         void clear_ghost_cache();
 
         struct TempFields{
-            shambase::DistributedData<shamrock::MergedPatchDataField<Tvec>> merged_xyz;
+            shambase::DistributedData<PreStepMergedField> merged_xyzh;
             shamrock::ComputeField<Tscal> omega;
 
 
             void clear(){
-                merged_xyz.reset();
+                merged_xyzh.reset();
                 omega.reset();
             }
             
