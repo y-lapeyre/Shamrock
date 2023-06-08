@@ -106,7 +106,14 @@ namespace shammodels {
         void build_merged_pos_trees();
         void clear_merged_pos_trees();
 
+
+        shambase::DistributedData<RadixTreeField<Tscal>> rtree_rint_field;
+        void compute_presteps_rint();
+        void reset_presteps_rint();
+
         std::unique_ptr<shamrock::tree::ObjectCacheHandler> neighbors_cache;
+        void start_neighbors_cache();
+        void reset_neighbors_cache();
 
 
         void sph_prestep(); 
@@ -118,7 +125,6 @@ namespace shammodels {
 
 
         shamrock::patch::PatchDataLayout ghost_layout;
-
         void init_ghost_layout();
 
 
