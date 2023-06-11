@@ -16,7 +16,7 @@ jobs:
 
   pragma_check:
 
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     
     steps:
       - uses: actions/checkout@v3
@@ -30,7 +30,7 @@ jobs:
 
   copyright_check:
 
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     
     steps:
       - uses: actions/checkout@v3
@@ -45,7 +45,7 @@ jobs:
   #make shamrock documentation
   make_documentation:
 
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
 
     needs: [pragma_check, copyright_check]
     
@@ -90,7 +90,7 @@ jobs:
     strategy:
       matrix:
         clang: [15]
-        os: [ubuntu-22.04]
+        os: [self-hosted]
         cuda: [11.0.2]
         rocm: [5.4.3]
   
@@ -105,24 +105,24 @@ jobs:
     strategy:
       matrix:
         clang: [15]
-        os: [ubuntu-22.04]
+        os: [self-hosted]
         cuda: [11.0.2]
         rocm: [5.4.3]
 
-  shamrock_linux_opensycl_macos:
-    needs: [pragma_check, copyright_check]
-    uses: ./.github/workflows/macos-opensycl.yml
-    with:
-      os: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [macos-latest]
+  #shamrock_linux_opensycl_macos:
+  #  needs: [pragma_check, copyright_check]
+  #  uses: ./.github/workflows/macos-opensycl.yml
+  #  with:
+  #    os: ${{ matrix.os }}
+  #  strategy:
+  #    matrix:
+  #      os: [macos-latest]
 
   publish_release:
 
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted]
     
-    needs: [shamrock_linux_opensycl,shamrock_linux_opensycl_macos, shamrock_linux_dpcpp, make_documentation]
+    needs: [shamrock_linux_opensycl, shamrock_linux_dpcpp, make_documentation]
 
     if: github.ref == 'refs/heads/main'
 
