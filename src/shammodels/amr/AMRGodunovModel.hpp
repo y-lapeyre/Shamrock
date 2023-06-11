@@ -9,7 +9,7 @@
 #pragma once
 
 #include "shambase/sycl_utils/vectorProperties.hpp"
-#include "shammodels/AMRGodunovSolver.hpp"
+#include "shammodels/amr/AMRGodunovSolver.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
 namespace shammodels {
 
