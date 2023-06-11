@@ -28,7 +28,7 @@ jobs:
         run: git clone --recurse-submodules https://github.com/OpenSYCL/OpenSYCL.git
 
       - name: install boost
-        run: sudo apt install libboost-all-dev
+        run: sudo apt install -y libboost-all-dev
         
       # cp from opensycl ci 
       - name: install Level Zero
@@ -48,7 +48,7 @@ jobs:
         run: |
           [[ ${{inputs.rocm}} == 4.0.1 ]] && CODENAME=xenial
           [[ ${{inputs.rocm}} == 5.4.3 ]] && CODENAME=focal
-          sudo apt install libnuma-dev cmake unzip
+          sudo apt install -y libnuma-dev cmake unzip
           wget -q -O - https://repo.radeon.com/rocm/rocm.gpg.key | sudo apt-key add -
           echo "deb [arch=amd64] https://repo.radeon.com/rocm/apt/${{inputs.rocm}} $CODENAME main" | sudo tee /etc/apt/sources.list.d/rocm.list
           printf 'Package: *\nPin: release o=repo.radeon.com\nPin-Priority: 600' | sudo tee /etc/apt/preferences.d/rocm-pin-600
@@ -60,10 +60,10 @@ jobs:
           wget https://apt.llvm.org/llvm.sh
           chmod +x llvm.sh
           sudo ./llvm.sh ${{inputs.clang}}
-          sudo apt install libclang-${{inputs.clang}}-dev clang-tools-${{inputs.clang}} libomp-${{inputs.clang}}-dev
+          sudo apt install -y libclang-${{inputs.clang}}-dev clang-tools-${{inputs.clang}} libomp-${{inputs.clang}}-dev
       
       - name: install Ninja-build
-        run: sudo apt install ninja-build
+        run: sudo apt install -y ninja-build
 
 
       - name: configure & install OpenSycl
