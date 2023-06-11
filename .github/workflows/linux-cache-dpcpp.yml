@@ -20,7 +20,7 @@ on:
 jobs:
   cache_dpcpp:
     name: cache dpcpp
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.os }}
     
     steps:
         
