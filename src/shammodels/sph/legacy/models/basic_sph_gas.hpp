@@ -12,7 +12,7 @@
 #include "shamrock/scheduler/scheduler_mpi.hpp"
 #include "shamsys/legacy/log.hpp"
 
-#include "shammodels/sph/integrators/leapfrog.hpp"
+#include "shammodels/sph/legacy/integrators/leapfrog.hpp"
 #include <string>
 
 //%Impl status : Good

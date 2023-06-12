@@ -23,7 +23,7 @@
 #include "shamrock/scheduler/SerialPatchTree.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamrock/tree/RadixTree.hpp"
-#include "shammodels/sph/algs/smoothing_lenght_impl.hpp"
+#include "shammodels/sph/legacy/algs/smoothing_lenght_impl.hpp"
 #include "shamrock/sph/kernels.hpp"
 #include "shamrock/sph/sphpart.hpp"
 
