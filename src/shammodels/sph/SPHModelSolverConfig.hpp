@@ -75,7 +75,10 @@ struct shammodels::SPHModelSolverConfig {
                 logger::raw_ln("alpha_AV =", v->alpha_AV);
                 logger::raw_ln("beta_AV  =", v->beta_AV);
             } else if (VaryingAv *v = std::get_if<VaryingAv>(&config)) {
-                shambase::throw_unimplemented();
+                logger::raw_ln("Config Type : VaryingAv (Varying artificial viscosity)");
+                logger::raw_ln("sigma_decay =", v->sigma_decay);
+                logger::raw_ln("alpha_u     =", v->alpha_u);
+                logger::raw_ln("beta_AV     =", v->beta_AV);
             }
 
             logger::raw_ln("--- internal energy config (deduced)");
@@ -104,12 +107,13 @@ struct shammodels::SPHModelSolverConfig {
         internal_energy_config.set(v);
     }
 
-    inline bool has_uint_field() {
-        return internal_energy_config.has_uint_field();
-    }
+    inline bool has_uint_field() { return internal_energy_config.has_uint_field(); }
 
-    inline bool has_alphaAV_field() {
-        return internal_energy_config.has_alphaAV_field();
+    inline bool has_alphaAV_field() { return internal_energy_config.has_alphaAV_field(); }
+
+    inline bool has_divv_field() { return internal_energy_config.has_alphaAV_field(); }
+    inline bool has_curlv_field() {
+        return internal_energy_config.has_alphaAV_field() && (dim == 3);
     }
 
     inline void print_status() { internal_energy_config.print_status(); }

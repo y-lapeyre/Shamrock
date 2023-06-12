@@ -58,13 +58,21 @@ namespace shammodels {
             context.pdata_layout_add_field<Tvec>("axyz", 1);
             context.pdata_layout_add_field<Tscal>("hpart", 1);
 
-            if(solver_config.has_uint_field()){
-            context.pdata_layout_add_field<Tscal>("uint", 1);
-            context.pdata_layout_add_field<Tscal>("duint", 1);
+            if (solver_config.has_uint_field()) {
+                context.pdata_layout_add_field<Tscal>("uint", 1);
+                context.pdata_layout_add_field<Tscal>("duint", 1);
             }
 
-            if(solver_config.has_alphaAV_field()){
-                context.pdata_layout_add_field<Tscal>("alpha_part", 1);
+            if (solver_config.has_alphaAV_field()) {
+                context.pdata_layout_add_field<Tscal>("alpha_AV", 1);
+            }
+
+            if (solver_config.has_divv_field()) {
+                context.pdata_layout_add_field<Tscal>("divv", 1);
+            }
+
+            if (solver_config.has_curlv_field()) {
+                context.pdata_layout_add_field<Tscal>("curlv", 1);
             }
         }
 
@@ -74,10 +82,10 @@ namespace shammodels {
         inline void reset_serial_patch_tree() { sptree.reset(); }
 
         // interface_control
-        using GhostHandle = sph::BasicSPHGhostHandler<Tvec>;
-        using GhostHandleCache = typename GhostHandle::CacheMap;
+        using GhostHandle        = sph::BasicSPHGhostHandler<Tvec>;
+        using GhostHandleCache   = typename GhostHandle::CacheMap;
         using PreStepMergedField = typename GhostHandle::PreStepMergedField;
-        
+
         std::unique_ptr<GhostHandle> ghost_handler;
         inline void gen_ghost_handler() {
             if (ghost_handler) {
@@ -88,31 +96,28 @@ namespace shammodels {
         }
         inline void reset_ghost_handler() { ghost_handler.reset(); }
 
-        
         GhostHandleCache ghost_handle_cache;
         void build_ghost_cache();
         void clear_ghost_cache();
 
-        struct TempFields{
+        struct TempFields {
             shambase::DistributedData<PreStepMergedField> merged_xyzh;
             shamrock::ComputeField<Tscal> omega;
 
-
-            void clear(){
+            void clear() {
                 merged_xyzh.reset();
                 omega.reset();
             }
-            
+
         } temp_fields;
 
         void merge_position_ghost();
 
-        //trees
+        // trees
         using RTree = RadixTree<u_morton, Tvec>;
         shambase::DistributedData<RTree> merged_pos_trees;
         void build_merged_pos_trees();
         void clear_merged_pos_trees();
-
 
         shambase::DistributedData<RadixTreeField<Tscal>> rtree_rint_field;
         void compute_presteps_rint();
@@ -122,20 +127,14 @@ namespace shammodels {
         void start_neighbors_cache();
         void reset_neighbors_cache();
 
-
-        void sph_prestep(); 
+        void sph_prestep();
 
         void apply_position_boundary();
 
         void do_predictor_leapfrog(Tscal dt);
 
-
-
         shamrock::patch::PatchDataLayout ghost_layout;
         void init_ghost_layout();
-
-
-
 
         SPHModelSolver(ShamrockCtx &context) : context(context) {}
 

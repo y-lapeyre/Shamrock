@@ -54,7 +54,8 @@ ctx.pdata_layout_new()
 model = shamrock.get_SPHModel(context = ctx, vector_type = "f64_3",sph_kernel = "M4")
 
 cfg = model.gen_default_config()
-cfg.set_internal_energy_config_ConstantAv(alpha_u = 1, alpha_AV = 1, beta_AV = 2)
+#cfg.set_internal_energy_config_ConstantAv(alpha_u = 1, alpha_AV = 1, beta_AV = 2)
+cfg.set_internal_energy_config_VaryingAv(sigma_decay = 0.1, alpha_u = 1, beta_AV = 2)
 cfg.print_status()
 model.set_solver_config(cfg)
 
