@@ -10,7 +10,7 @@
 
 #include "SPHModelSolverConfig.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"
-#include "shammodels/BasicSPHGhosts.hpp"
+#include "shammodels/sph/BasicSPHGhosts.hpp"
 #include "shamrock/patch/PatchDataLayout.hpp"
 #include "shamrock/scheduler/ComputeField.hpp"
 #include "shamrock/scheduler/SerialPatchTree.hpp"

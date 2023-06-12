@@ -9,7 +9,7 @@
 #pragma once
 
 #include "shambase/sycl_utils/vectorProperties.hpp"
-#include "shammodels/SPHModelSolver.hpp"
+#include "shammodels/sph/SPHModelSolver.hpp"
 #include "shammodels/generic/setup/generators.hpp"
 #include "shamrock/legacy/utils/geometry_utils.hpp"
 #include "shamrock/scheduler/ReattributeDataUtility.hpp"

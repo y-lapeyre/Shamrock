@@ -25,9 +25,9 @@
 #include "shamrock/scheduler/SerialPatchTree.hpp"
 #include "shamrock/scheduler/scheduler_mpi.hpp"
 #include "shamrock/sph/kernels.hpp"
-#include "shammodels/sph/algs/smoothing_lenght.hpp"
+#include "shammodels/sph/legacy/algs/smoothing_lenght.hpp"
 #include "shamrock/sph/sphpart.hpp"
-#include "shammodels/sph/sphpatch.hpp"
+#include "shammodels/sph/legacy/sphpatch.hpp"
 #include "shamsys/legacy/sycl_mpi_interop.hpp"
 #include "shamrock/tree/RadixTree.hpp"
 #include <filesystem>

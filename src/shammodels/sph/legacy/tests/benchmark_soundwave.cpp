@@ -11,8 +11,8 @@
 #include "shambase/time.hpp"
 #include "shamrock/patch/PatchDataLayout.hpp"
 #include "shamrock/scheduler/scheduler_mpi.hpp"
-#include "shammodels/sph/models/basic_sph_gas.hpp"
-#include "shammodels/sph/setup/sph_setup.hpp"
+#include "shammodels/sph/legacy/models/basic_sph_gas.hpp"
+#include "shammodels/sph/legacy/setup/sph_setup.hpp"
 #include "shamtest/shamtest.hpp"
 
 
@@ -44,7 +44,7 @@ std::tuple<f64,f64,f64> benchmark_periodic_box(f32 dr, u32 npatch){
     PatchScheduler sched = PatchScheduler(pdl,Nesti/npatch, 1);
     sched.init_mpi_required_types();
 
-    auto setup = [&]() -> std::tuple<flt,f64>{
+    auto setup = [&]() -> std::tuple<flt,f64> {
         using Setup = models::sph::SetupSPH<f32, shamrock::sph::kernels::M4<f32>>;
 
         Setup setup;
