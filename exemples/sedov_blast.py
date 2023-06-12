@@ -9,9 +9,9 @@ pmass = -1
 #Ny = 230
 #Nz = 245
 
-Nx = 100
-Ny = 130
-Nz = 145
+Nx = int(100/2)
+Ny = int(130/2)
+Nz = int(145/2)
 
 
 
@@ -52,6 +52,12 @@ ctx = shamrock.Context()
 ctx.pdata_layout_new()
 
 model = shamrock.get_SPHModel(context = ctx, vector_type = "f64_3",sph_kernel = "M4")
+
+cfg = model.gen_default_config()
+cfg.set_internal_energy_config_ConstantAv(alpha_u = 1, alpha_AV = 1, beta_AV = 2)
+cfg.print_status()
+model.set_solver_config(cfg)
+
 model.init_scheduler(int(1e7),1)
 
 (xs,ys,zs) = model.get_box_dim_fcc_3d(1,Nx,Ny,Nz)

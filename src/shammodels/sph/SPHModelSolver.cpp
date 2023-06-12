@@ -25,6 +25,7 @@
 #include "shamrock/sph/kernels.hpp"
 #include "shamrock/sph/sphpart.hpp"
 #include "shamrock/tree/TreeTaversalCache.hpp"
+#include "shamsys/legacy/log.hpp"
 #include <memory>
 #include <stdexcept>
 
@@ -810,13 +811,27 @@ auto SPHSolve<Tvec, Kern>::evolve_once(Tscal dt,
             /////////////////////////////////////////////
 
             {
+
+                using ConfigCstAv = typename Config::InternalEnergyConfig::ConstantAv;
+                ConfigCstAv * constant_av_config = 
+                    std::get_if<ConfigCstAv>  (&solver_config.internal_energy_config.config)
+                ;
+
+                if(!constant_av_config){
+                    throw shambase::throw_with_loc<std::invalid_argument>("cannot execute the constant viscosity kernel without constant AV config");
+                }
+
                 NamedStackEntry tmppp{"force compute"};
                 shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
                     const Tscal pmass    = gpart_mass;
                     const Tscal gamma    = this->eos_gamma;
-                    const Tscal alpha_u  = 1.0;
-                    const Tscal alpha_AV = 1.0;
-                    const Tscal beta_AV  = 2.0;
+                    const Tscal alpha_u  = constant_av_config->alpha_u;
+                    const Tscal alpha_AV = constant_av_config->alpha_AV;
+                    const Tscal beta_AV  = constant_av_config->beta_AV;
+
+                    logger::raw_ln("alpha_u  :",alpha_u);
+                    logger::raw_ln("alpha_AV :",alpha_AV);
+                    logger::raw_ln("beta_AV  :",beta_AV);
 
                     // tree::ObjectIterator particle_looper(tree,cgh);
 

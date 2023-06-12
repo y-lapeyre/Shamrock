@@ -57,8 +57,15 @@ namespace shammodels {
             context.pdata_layout_add_field<Tvec>("vxyz", 1);
             context.pdata_layout_add_field<Tvec>("axyz", 1);
             context.pdata_layout_add_field<Tscal>("hpart", 1);
+
+            if(solver_config.has_uint_field()){
             context.pdata_layout_add_field<Tscal>("uint", 1);
             context.pdata_layout_add_field<Tscal>("duint", 1);
+            }
+
+            if(solver_config.has_alphaAV_field()){
+                context.pdata_layout_add_field<Tscal>("alpha_part", 1);
+            }
         }
 
         // serial patch tree control

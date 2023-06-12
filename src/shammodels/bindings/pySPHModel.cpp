@@ -6,22 +6,45 @@
 //
 // -------------------------------------------------------//
 
-
 #include <memory>
 
 #include "shambindings/pybindaliases.hpp"
 #include "shambindings/pytypealias.hpp"
-#include "shamrock/sph/kernels.hpp"
 #include "shammodels/sph/SPHModel.hpp"
-
-
-
+#include "shamrock/sph/kernels.hpp"
 
 Register_pymod(pysphmodel) {
 
     using namespace shammodels;
 
-    using T = SPHModel<f64_3, shamrock::sph::kernels::M4>;
+    using Tvec  = f64_3;
+    using Tscal = f64;
+
+    using T       = SPHModel<f64_3, shamrock::sph::kernels::M4>;
+    using TConfig = T::Solver::Config;
+
+    py::class_<TConfig>(m, "SPHModel_f64_3_M4_SolverConfig")
+        .def("print_status", &TConfig::print_status)
+        .def("set_internal_energy_config_none", &TConfig::set_internal_energy_config_none)
+        .def("set_internal_energy_config_NoAV", &TConfig::set_internal_energy_config_NoAV)
+        .def(
+            "set_internal_energy_config_ConstantAv",
+            [](TConfig &self, Tscal alpha_u, Tscal alpha_AV, Tscal beta_AV) {
+                self.set_internal_energy_config_ConstantAv({alpha_u, alpha_AV, beta_AV});
+            },
+            py::kw_only(),
+            py::arg("alpha_u"),
+            py::arg("alpha_AV"),
+            py::arg("beta_AV"))
+        .def(
+            "set_internal_energy_config_VaryingAv",
+            [](TConfig &self, Tscal sigma_decay, Tscal alpha_u, Tscal beta_AV) {
+                self.set_internal_energy_config_VaryingAv({sigma_decay, alpha_u, beta_AV});
+            },
+            py::kw_only(),
+            py::arg("sigma_decay"),
+            py::arg("alpha_u"),
+            py::arg("beta_AV"));
 
     py::class_<T>(m, "SPHModel_f64_3_M4")
         .def(py::init([](ShamrockCtx &ctx) { return std::make_unique<T>(ctx); }))
@@ -31,59 +54,71 @@ Register_pymod(pysphmodel) {
         .def("set_cfl_force", &T::set_cfl_force)
         .def("set_particle_mass", &T::set_particle_mass)
         .def("set_eos_gamma", &T::set_eos_gamma)
-        .def("get_box_dim_fcc_3d", [](T &self, f64 dr, u32 xcnt, u32 ycnt, u32 zcnt) {
-            return self.get_box_dim_fcc_3d(dr, xcnt, ycnt, zcnt);
-        })
-        .def("get_ideal_fcc_box", [](T &self, f64 dr, f64_3 box_min, f64_3 box_max) {
-            return self.get_ideal_fcc_box(dr, {box_min,box_max});
-        })
-        .def("resize_simulation_box", [](T &self, f64_3 box_min, f64_3 box_max) {
-            return self.resize_simulation_box({box_min,box_max});
-        })
-        .def("add_cube_fcc_3d", [](T &self, f64 dr, f64_3 box_min, f64_3 box_max) {
-            return self.add_cube_fcc_3d(dr, {box_min,box_max});
-        })
+        .def("get_box_dim_fcc_3d",
+             [](T &self, f64 dr, u32 xcnt, u32 ycnt, u32 zcnt) {
+                 return self.get_box_dim_fcc_3d(dr, xcnt, ycnt, zcnt);
+             })
+        .def("get_ideal_fcc_box",
+             [](T &self, f64 dr, f64_3 box_min, f64_3 box_max) {
+                 return self.get_ideal_fcc_box(dr, {box_min, box_max});
+             })
+        .def("resize_simulation_box",
+             [](T &self, f64_3 box_min, f64_3 box_max) {
+                 return self.resize_simulation_box({box_min, box_max});
+             })
+        .def("add_cube_fcc_3d",
+             [](T &self, f64 dr, f64_3 box_min, f64_3 box_max) {
+                 return self.add_cube_fcc_3d(dr, {box_min, box_max});
+             })
         .def("get_total_part_count", &T::get_total_part_count)
         .def("total_mass_to_part_mass", &T::total_mass_to_part_mass)
-        .def("set_value_in_a_box", [](T & self, std::string field_name, std::string field_type, pybind11::object value, f64_3 box_min, f64_3 box_max){
-            if(field_type == "f64"){
-                f64 val = value.cast<f64>();
-                self.set_value_in_a_box(field_name, val, {box_min,box_max});
-            }else if(field_type == "f64_3"){
-                f64_3 val = value.cast<f64_3>();
-                self.set_value_in_a_box(field_name, val, {box_min,box_max});
-            }else{
-                throw shambase::throw_with_loc<std::invalid_argument>(
-                    "unknown field type");
-            }
-        })
-        .def("set_value_in_sphere", [](T & self, std::string field_name, std::string field_type, pybind11::object value, f64_3 center, f64 radius){
-            if(field_type == "f64"){
-                f64 val = value.cast<f64>();
-                self.set_value_in_sphere(field_name, val, center,radius);
-            }else if(field_type == "f64_3"){
-                f64_3 val = value.cast<f64_3>();
-                self.set_value_in_sphere(field_name, val, center,radius);
-            }else{
-                throw shambase::throw_with_loc<std::invalid_argument>(
-                    "unknown field type");
-            }
-        })
-        .def("get_sum", [](T & self, std::string field_name, std::string field_type){
-            if(field_type == "f64"){
-                return py::cast(self.get_sum<f64>(field_name));
-            }else if(field_type == "f64_3"){
-                return py::cast(self.get_sum<f64_3>(field_name));
-            }else{
-                throw shambase::throw_with_loc<std::invalid_argument>(
-                    "unknown field type");
-            }
-        })
-        ;
-
-
-
-
+        .def("set_value_in_a_box",
+             [](T &self,
+                std::string field_name,
+                std::string field_type,
+                pybind11::object value,
+                f64_3 box_min,
+                f64_3 box_max) {
+                 if (field_type == "f64") {
+                     f64 val = value.cast<f64>();
+                     self.set_value_in_a_box(field_name, val, {box_min, box_max});
+                 } else if (field_type == "f64_3") {
+                     f64_3 val = value.cast<f64_3>();
+                     self.set_value_in_a_box(field_name, val, {box_min, box_max});
+                 } else {
+                     throw shambase::throw_with_loc<std::invalid_argument>("unknown field type");
+                 }
+             })
+        .def("set_value_in_sphere",
+             [](T &self,
+                std::string field_name,
+                std::string field_type,
+                pybind11::object value,
+                f64_3 center,
+                f64 radius) {
+                 if (field_type == "f64") {
+                     f64 val = value.cast<f64>();
+                     self.set_value_in_sphere(field_name, val, center, radius);
+                 } else if (field_type == "f64_3") {
+                     f64_3 val = value.cast<f64_3>();
+                     self.set_value_in_sphere(field_name, val, center, radius);
+                 } else {
+                     throw shambase::throw_with_loc<std::invalid_argument>("unknown field type");
+                 }
+             })
+        .def("get_sum",
+             [](T &self, std::string field_name, std::string field_type) {
+                 if (field_type == "f64") {
+                     return py::cast(self.get_sum<f64>(field_name));
+                 } else if (field_type == "f64_3") {
+                     return py::cast(self.get_sum<f64_3>(field_name));
+                 } else {
+                     throw shambase::throw_with_loc<std::invalid_argument>("unknown field type");
+                 }
+             })
+        .def("gen_default_config", [](T &self) { return T::Solver::Config{}; })
+        .def("set_solver_config", &T::set_solver_config);
+    ;
 
     using VariantSPHModelBind =
         std::variant<std::unique_ptr<SPHModel<f64_3, shamrock::sph::kernels::M4>>>;
