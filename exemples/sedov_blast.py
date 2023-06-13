@@ -3,15 +3,18 @@ import matplotlib.pyplot as plt
 
 gamma = 5./3.
 rho_g = 1
+target_tot_u = 1
+
+
 pmass = -1
 
 #Nx = 200
 #Ny = 230
 #Nz = 245
 
-Nx = int(100/2)
-Ny = int(130/2)
-Nz = int(145/2)
+Nx = int(100)
+Ny = int(130)
+Nz = int(145)
 
 
 
@@ -37,9 +40,6 @@ setup.set_boundaries("periodic")
 
 setup.add_particules_fcc(ctx,dr, (-xs/2,-ys/2,-zs/2),(xs/2,ys/2,zs/2))
 
-rinj = 0.01
-u_inj = 100
-
 xc,yc,zc = setup.get_closest_part_to(ctx,(0,0,0))
 
 del model
@@ -54,8 +54,8 @@ ctx.pdata_layout_new()
 model = shamrock.get_SPHModel(context = ctx, vector_type = "f64_3",sph_kernel = "M4")
 
 cfg = model.gen_default_config()
-#cfg.set_internal_energy_config_ConstantAv(alpha_u = 1, alpha_AV = 1, beta_AV = 2)
-cfg.set_internal_energy_config_VaryingAv(sigma_decay = 0.1, alpha_u = 1, beta_AV = 2)
+cfg.set_artif_viscosity_Constant(alpha_u = 1, alpha_AV = 1, beta_AV = 2)
+#cfg.set_artif_viscosity_VaryingMM97(alpha_min = 0.1,alpha_max = 1,sigma_decay = 0.1, alpha_u = 1, beta_AV = 2)
 cfg.print_status()
 model.set_solver_config(cfg)
 
@@ -91,10 +91,10 @@ while 1:
 
     tot_u = pmass*model.get_sum("uint","f64")
 
-    u_inj *= 1/tot_u
+    u_inj *= target_tot_u/tot_u
     print("total u :",tot_u)
 
-    if abs(tot_u - 1) < 1e-5:
+    if abs(tot_u - target_tot_u) < 1e-5:
         break
 
 

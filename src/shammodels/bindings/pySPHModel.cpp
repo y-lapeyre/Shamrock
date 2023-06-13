@@ -25,23 +25,47 @@ Register_pymod(pysphmodel) {
 
     py::class_<TConfig>(m, "SPHModel_f64_3_M4_SolverConfig")
         .def("print_status", &TConfig::print_status)
-        .def("set_internal_energy_config_none", &TConfig::set_internal_energy_config_none)
-        .def("set_internal_energy_config_NoAV", &TConfig::set_internal_energy_config_NoAV)
+        .def("set_artif_viscosity_None", &TConfig::set_artif_viscosity_None)
         .def(
-            "set_internal_energy_config_ConstantAv",
+            "set_artif_viscosity_Constant",
             [](TConfig &self, Tscal alpha_u, Tscal alpha_AV, Tscal beta_AV) {
-                self.set_internal_energy_config_ConstantAv({alpha_u, alpha_AV, beta_AV});
+                self.set_artif_viscosity_Constant({alpha_u, alpha_AV, beta_AV});
             },
             py::kw_only(),
             py::arg("alpha_u"),
             py::arg("alpha_AV"),
             py::arg("beta_AV"))
         .def(
-            "set_internal_energy_config_VaryingAv",
-            [](TConfig &self, Tscal sigma_decay, Tscal alpha_u, Tscal beta_AV) {
-                self.set_internal_energy_config_VaryingAv({sigma_decay, alpha_u, beta_AV});
+            "set_artif_viscosity_VaryingMM97",
+            [](TConfig &self,
+               Tscal alpha_min,
+               Tscal alpha_max,
+               Tscal sigma_decay,
+               Tscal alpha_u,
+               Tscal beta_AV) {
+                self.set_artif_viscosity_VaryingMM97(
+                    {alpha_min, alpha_max, sigma_decay, alpha_u, beta_AV});
             },
             py::kw_only(),
+            py::arg("alpha_min"),
+            py::arg("alpha_max"),
+            py::arg("sigma_decay"),
+            py::arg("alpha_u"),
+            py::arg("beta_AV"))
+        .def(
+            "set_artif_viscosity_VaryingCD10",
+            [](TConfig &self,
+               Tscal alpha_min,
+               Tscal alpha_max,
+               Tscal sigma_decay,
+               Tscal alpha_u,
+               Tscal beta_AV) {
+                self.set_artif_viscosity_VaryingCD10(
+                    {alpha_min, alpha_max, sigma_decay, alpha_u, beta_AV});
+            },
+            py::kw_only(),
+            py::arg("alpha_min"),
+            py::arg("alpha_max"),
             py::arg("sigma_decay"),
             py::arg("alpha_u"),
             py::arg("beta_AV"));
