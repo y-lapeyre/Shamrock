@@ -312,6 +312,36 @@ namespace shammodels {
         }
 
         template<class T>
+        inline void add_kernel_value(std::string field_name, T val, Tvec center, Tscal h_ker) {
+            StackEntry stack_loc{};
+            PatchScheduler &sched = shambase::get_check_ref(ctx.sched);
+            sched.patch_data.for_each_patchdata(
+                [&](u64 patch_id, shamrock::patch::PatchData &pdat) {
+                    PatchDataField<Tvec> &xyz =
+                        pdat.template get_field<Tvec>(sched.pdl.get_field_idx<Tvec>("xyz"));
+
+                    PatchDataField<T> &f =
+                        pdat.template get_field<T>(sched.pdl.get_field_idx<T>(field_name));
+
+                    {
+                        auto &buf = shambase::get_check_ref(f.get_buf());
+                        sycl::host_accessor acc{buf};
+
+                        auto &buf_xyz = shambase::get_check_ref(xyz.get_buf());
+                        sycl::host_accessor acc_xyz{buf_xyz};
+
+                        for (u32 i = 0; i < f.size(); i++) {
+                            Tvec dr = acc_xyz[i] - center;
+
+                            Tscal r = sycl::length(dr);
+
+                            acc[i] += val*Kernel::W(r,h_ker);
+                        }
+                    }
+                });
+        }
+
+        template<class T>
         inline T get_sum(std::string name) {
             PatchScheduler &sched = shambase::get_check_ref(ctx.sched);
             T sum                 = shambase::VectorProperties<T>::get_zero();
@@ -327,6 +357,8 @@ namespace shammodels {
 
             return shamalgs::collective::allreduce_sum(sum);
         }
+
+        Tvec get_closest_part_to(Tvec pos);
 
         // inline void enable_barotropic_mode(){
         //     sconfig.enable_barotropic();
