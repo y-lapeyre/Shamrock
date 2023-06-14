@@ -50,3 +50,4 @@ f64 shammodels::SPHModel<Tvec, SPHKernel>::total_mass_to_part_mass(f64 totmass) 
 using namespace shamrock::sph::kernels;
 
 template class shammodels::SPHModel<f64_3, M4>;
+template class shammodels::SPHModel<f64_3, M6>;

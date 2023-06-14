@@ -13,17 +13,18 @@
 #include "shammodels/sph/SPHModel.hpp"
 #include "shamrock/sph/kernels.hpp"
 
-Register_pymod(pysphmodel) {
 
+
+template<class Tvec, template<class> class SPHKernel>
+void add_instance(py::module & m, std::string name_config,std::string name_model){
     using namespace shammodels;
 
-    using Tvec  = f64_3;
-    using Tscal = f64;
+    using Tscal = shambase::VecComponent<Tvec>;
 
-    using T       = SPHModel<f64_3, shamrock::sph::kernels::M4>;
-    using TConfig = T::Solver::Config;
+    using T       = SPHModel<Tvec, SPHKernel>;
+    using TConfig = typename T::Solver::Config;
 
-    py::class_<TConfig>(m, "SPHModel_f64_3_M4_SolverConfig")
+    py::class_<TConfig>(m, name_config.c_str())
         .def("print_status", &TConfig::print_status)
         .def("set_artif_viscosity_None", &TConfig::set_artif_viscosity_None)
         .def(
@@ -70,7 +71,7 @@ Register_pymod(pysphmodel) {
             py::arg("alpha_u"),
             py::arg("beta_AV"));
 
-    py::class_<T>(m, "SPHModel_f64_3_M4")
+    py::class_<T>(m, name_model.c_str())
         .def(py::init([](ShamrockCtx &ctx) { return std::make_unique<T>(ctx); }))
         .def("init_scheduler", &T::init_scheduler)
         .def("evolve", &T::evolve_once)
@@ -133,19 +134,30 @@ Register_pymod(pysphmodel) {
         .def("get_sum",
              [](T &self, std::string field_name, std::string field_type) {
                  if (field_type == "f64") {
-                     return py::cast(self.get_sum<f64>(field_name));
+                     return py::cast(self.template get_sum<f64>(field_name));
                  } else if (field_type == "f64_3") {
-                     return py::cast(self.get_sum<f64_3>(field_name));
+                     return py::cast(self.template get_sum<f64_3>(field_name));
                  } else {
                      throw shambase::throw_with_loc<std::invalid_argument>("unknown field type");
                  }
              })
-        .def("gen_default_config", [](T &self) { return T::Solver::Config{}; })
+        .def("gen_default_config", [](T &self) { return typename T::Solver::Config{}; })
         .def("set_solver_config", &T::set_solver_config);
     ;
+}
+
+Register_pymod(pysphmodel) {
+
+    using namespace shammodels;
+
+    add_instance<f64_3,shamrock::sph::kernels::M4>(m,"SPHModel_f64_3_M4_SolverConfig","SPHModel_f64_3_M4");
+    add_instance<f64_3,shamrock::sph::kernels::M6>(m,"SPHModel_f64_3_M6_SolverConfig","SPHModel_f64_3_M6");
 
     using VariantSPHModelBind =
-        std::variant<std::unique_ptr<SPHModel<f64_3, shamrock::sph::kernels::M4>>>;
+        std::variant<
+        std::unique_ptr<SPHModel<f64_3, shamrock::sph::kernels::M4>>,
+        std::unique_ptr<SPHModel<f64_3, shamrock::sph::kernels::M6>>
+        >;
 
     m.def(
         "get_SPHModel",
@@ -154,6 +166,8 @@ Register_pymod(pysphmodel) {
 
             if (vector_type == "f64_3" && kernel == "M4") {
                 ret = std::make_unique<SPHModel<f64_3, shamrock::sph::kernels::M4>>(ctx);
+            } else if (vector_type == "f64_3" && kernel == "M6") {
+                ret = std::make_unique<SPHModel<f64_3, shamrock::sph::kernels::M6>>(ctx);
             } else {
                 throw shambase::throw_with_loc<std::invalid_argument>(
                     "unknown combination of representation and kernel");

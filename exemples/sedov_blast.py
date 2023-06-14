@@ -21,7 +21,7 @@ Nz = int(145)
 ctx = shamrock.Context()
 ctx.pdata_layout_new()
 
-model = shamrock.get_SPHModel(context = ctx, vector_type = "f64_3",sph_kernel = "M4")
+model = shamrock.get_SPHModel(context = ctx, vector_type = "f64_3",sph_kernel = "M6")
 model.init_scheduler(int(1e7),1)
 
 #start the scheduler
@@ -51,11 +51,11 @@ del ctx
 ctx = shamrock.Context()
 ctx.pdata_layout_new()
 
-model = shamrock.get_SPHModel(context = ctx, vector_type = "f64_3",sph_kernel = "M4")
+model = shamrock.get_SPHModel(context = ctx, vector_type = "f64_3",sph_kernel = "M6")
 
 cfg = model.gen_default_config()
-cfg.set_artif_viscosity_Constant(alpha_u = 1, alpha_AV = 1, beta_AV = 2)
-#cfg.set_artif_viscosity_VaryingMM97(alpha_min = 0.1,alpha_max = 1,sigma_decay = 0.1, alpha_u = 1, beta_AV = 2)
+#cfg.set_artif_viscosity_Constant(alpha_u = 1, alpha_AV = 1, beta_AV = 2)
+cfg.set_artif_viscosity_VaryingMM97(alpha_min = 0.1,alpha_max = 1,sigma_decay = 0.1, alpha_u = 1, beta_AV = 2)
 cfg.print_status()
 model.set_solver_config(cfg)
 
@@ -109,8 +109,8 @@ print("Current part mass :", pmass)
 
 
 
-model.set_cfl_cour(0.25)
-model.set_cfl_force(0.3)
+model.set_cfl_cour(0.3)
+model.set_cfl_force(0.25)
 model.set_eos_gamma(5/3)
 
 
@@ -128,7 +128,7 @@ model.set_particle_mass(pmass)
 
 t_sum = 0
 t_target = 0.1
-current_dt = 1e-6
+current_dt = 1e-7
 i = 0
 i_dump = 0
 while t_sum < t_target:

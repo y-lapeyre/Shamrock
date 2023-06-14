@@ -311,7 +311,7 @@ namespace impl {
 
                         using namespace shamrock::sph;
 
-                        f32 rho_ha = rho_h(part_mass, h_a);
+                        f32 rho_ha = rho_h(part_mass, h_a,Kernel::hfactd);
                         f32 new_h = newtown_iterate_new_h(rho_ha, rho_sum, sumdWdh, h_a);
 
                         if(new_h < h_a*h_max_evol_m) new_h = h_max_evol_m*h_a;
@@ -437,7 +437,7 @@ namespace impl {
 
                         using namespace shamrock::sph;
 
-                        f64 rho_ha = rho_h(part_mass, h_a);
+                        f64 rho_ha = rho_h(part_mass, h_a,Kernel::hfactd);
 
                         f64 f_iter = rho_sum - rho_ha;
                         f64 df_iter = sumdWdh + 3*rho_ha/h_a;
@@ -586,7 +586,7 @@ namespace impl {
                     
 
                     using namespace shamrock::sph;
-                    f32 rho_ha = rho_h(part_mass, h_a);
+                    f32 rho_ha = rho_h(part_mass, h_a,Kernel::hfactd);
                     omga[id_a] = 1 + (h_a/(3*rho_ha))*part_omega_sum;
                     
 
@@ -685,7 +685,7 @@ namespace impl {
                     
 
                     using namespace shamrock::sph;
-                    f64 rho_ha = rho_h(part_mass, h_a);
+                    f64 rho_ha = rho_h(part_mass, h_a,Kernel::hfactd);
                     omga[id_a] = 1 + (h_a/(3*rho_ha))*part_omega_sum;
                     
 
