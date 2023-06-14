@@ -11,6 +11,7 @@
 #include "SPHModelSolverConfig.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"
 #include "shammodels/sph/BasicSPHGhosts.hpp"
+#include "shamrock/scheduler/InterfacesUtility.hpp"
 #include "shamrock/patch/PatchDataLayout.hpp"
 #include "shamrock/scheduler/ComputeField.hpp"
 #include "shamrock/scheduler/SerialPatchTree.hpp"
@@ -57,8 +58,27 @@ namespace shammodels {
             context.pdata_layout_add_field<Tvec>("vxyz", 1);
             context.pdata_layout_add_field<Tvec>("axyz", 1);
             context.pdata_layout_add_field<Tscal>("hpart", 1);
-            context.pdata_layout_add_field<Tscal>("uint", 1);
-            context.pdata_layout_add_field<Tscal>("duint", 1);
+
+            if (solver_config.has_field_uint()) {
+                context.pdata_layout_add_field<Tscal>("uint", 1);
+                context.pdata_layout_add_field<Tscal>("duint", 1);
+            }
+
+            if (solver_config.has_field_alphaAV()) {
+                context.pdata_layout_add_field<Tscal>("alpha_AV", 1);
+            }
+
+            if (solver_config.has_field_divv()) {
+                context.pdata_layout_add_field<Tscal>("divv", 1);
+            }
+
+            if (solver_config.has_field_curlv()) {
+                context.pdata_layout_add_field<Tvec>("curlv", 1);
+            }
+
+            if(solver_config.has_field_soundspeed()){
+                context.pdata_layout_add_field<Tscal>("soundspeed", 1);
+            }
         }
 
         // serial patch tree control
@@ -67,10 +87,10 @@ namespace shammodels {
         inline void reset_serial_patch_tree() { sptree.reset(); }
 
         // interface_control
-        using GhostHandle = sph::BasicSPHGhostHandler<Tvec>;
-        using GhostHandleCache = typename GhostHandle::CacheMap;
+        using GhostHandle        = sph::BasicSPHGhostHandler<Tvec>;
+        using GhostHandleCache   = typename GhostHandle::CacheMap;
         using PreStepMergedField = typename GhostHandle::PreStepMergedField;
-        
+
         std::unique_ptr<GhostHandle> ghost_handler;
         inline void gen_ghost_handler() {
             if (ghost_handler) {
@@ -81,31 +101,28 @@ namespace shammodels {
         }
         inline void reset_ghost_handler() { ghost_handler.reset(); }
 
-        
         GhostHandleCache ghost_handle_cache;
         void build_ghost_cache();
         void clear_ghost_cache();
 
-        struct TempFields{
+        struct TempFields {
             shambase::DistributedData<PreStepMergedField> merged_xyzh;
             shamrock::ComputeField<Tscal> omega;
 
-
-            void clear(){
+            void clear() {
                 merged_xyzh.reset();
                 omega.reset();
             }
-            
+
         } temp_fields;
 
         void merge_position_ghost();
 
-        //trees
+        // trees
         using RTree = RadixTree<u_morton, Tvec>;
         shambase::DistributedData<RTree> merged_pos_trees;
         void build_merged_pos_trees();
         void clear_merged_pos_trees();
-
 
         shambase::DistributedData<RadixTreeField<Tscal>> rtree_rint_field;
         void compute_presteps_rint();
@@ -116,7 +133,11 @@ namespace shammodels {
         void reset_neighbors_cache();
 
 
-        void sph_prestep(); 
+
+        
+
+
+        void sph_prestep();
 
         void apply_position_boundary();
 
@@ -124,9 +145,35 @@ namespace shammodels {
 
 
 
+        void update_artificial_viscosity_mm97(Tscal dt);
+        void update_artificial_viscosity_cd10(Tscal dt);
+        void update_artificial_viscosity(Tscal dt);
+
         shamrock::patch::PatchDataLayout ghost_layout;
         void init_ghost_layout();
 
+        shambase::DistributedData<shamrock::MergedPatchData> merged_patchdata_ghost;
+        void communicate_merge_ghosts_fields();
+        void reset_merge_ghosts_fields();
+
+        shamrock::ComputeField<Tscal> pressure;
+        void compute_eos_fields();
+        void reset_eos_fields();
+
+
+        shamrock::ComputeField<Tvec> old_axyz;
+        shamrock::ComputeField<Tscal> old_duint;
+        void prepare_corrector();
+        void update_derivs();
+        void update_derivs_mm97();
+        void update_derivs_constantAV();
+        /**
+         * @brief 
+         * 
+         * @return true corrector is converged
+         * @return false corrector is not converged
+         */
+        bool apply_corrector(Tscal dt, u64 Npart_all);
 
 
 

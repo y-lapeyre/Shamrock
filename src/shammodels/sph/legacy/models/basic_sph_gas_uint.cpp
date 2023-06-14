@@ -197,7 +197,7 @@ f64 models::sph::BasicSPHGasUInterne<flt,Kernel>::evolve(PatchScheduler &sched, 
                         cgh.parallel_for(range_npart,
                                 [=](sycl::item<1> item) { 
                                     using namespace shamrock::sph;
-                                    p[item] =  (gamma-1) * rho_h(part_mass, h[item]) *acc_u[item]  ; 
+                                    p[item] =  (gamma-1) * rho_h(part_mass, h[item],Kernel::hfactd) *acc_u[item]  ; 
                                     
                                     
                                     });
@@ -285,7 +285,7 @@ f64 models::sph::BasicSPHGasUInterne<flt,Kernel>::evolve(PatchScheduler &sched, 
                         f32_3 xyz_a = r[id_a];
                         f32_3 vxyz_a = v[id_a];
 
-                        f32 rho_a    = rho_h(part_mass, h_a);
+                        f32 rho_a    = rho_h(part_mass, h_a,Kernel::hfactd);
                         f32 rho_a_sq = rho_a * rho_a;
 
                         f32 P_a     = pres[id_a];
@@ -337,7 +337,7 @@ f64 models::sph::BasicSPHGasUInterne<flt,Kernel>::evolve(PatchScheduler &sched, 
                                     r_ab_unit = {0, 0, 0};
                                 }
 
-                                f32 rho_b   = rho_h(part_mass, h_b);
+                                f32 rho_b   = rho_h(part_mass, h_b,Kernel::hfactd);
                                 f32 P_b     = pres[id_b];
                                 //f32 P_b     = cs * cs * rho_b;
                                 f32 omega_b = omga[id_b];
