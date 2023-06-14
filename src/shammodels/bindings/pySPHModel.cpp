@@ -13,10 +13,8 @@
 #include "shammodels/sph/SPHModel.hpp"
 #include "shamrock/sph/kernels.hpp"
 
-
-
 template<class Tvec, template<class> class SPHKernel>
-void add_instance(py::module & m, std::string name_config,std::string name_model){
+void add_instance(py::module &m, std::string name_config, std::string name_model) {
     using namespace shammodels;
 
     using Tscal = shambase::VecComponent<Tvec>;
@@ -95,6 +93,18 @@ void add_instance(py::module & m, std::string name_config,std::string name_model
              [](T &self, f64 dr, f64_3 box_min, f64_3 box_max) {
                  return self.add_cube_fcc_3d(dr, {box_min, box_max});
              })
+        .def("add_cube_disc_3d",
+             [](T &self,
+                Tvec center,
+                u32 Npart,
+                Tscal p,
+                Tscal rho_0,
+                Tscal m,
+                Tscal r_in,
+                Tscal r_out,
+                Tscal q) {
+                 return self.add_cube_disc_3d(center, Npart, p, rho_0, m, r_in, r_out, q);
+             })
         .def("get_total_part_count", &T::get_total_part_count)
         .def("total_mass_to_part_mass", &T::total_mass_to_part_mass)
         .def("set_value_in_a_box",
@@ -150,14 +160,14 @@ Register_pymod(pysphmodel) {
 
     using namespace shammodels;
 
-    add_instance<f64_3,shamrock::sph::kernels::M4>(m,"SPHModel_f64_3_M4_SolverConfig","SPHModel_f64_3_M4");
-    add_instance<f64_3,shamrock::sph::kernels::M6>(m,"SPHModel_f64_3_M6_SolverConfig","SPHModel_f64_3_M6");
+    add_instance<f64_3, shamrock::sph::kernels::M4>(
+        m, "SPHModel_f64_3_M4_SolverConfig", "SPHModel_f64_3_M4");
+    add_instance<f64_3, shamrock::sph::kernels::M6>(
+        m, "SPHModel_f64_3_M6_SolverConfig", "SPHModel_f64_3_M6");
 
     using VariantSPHModelBind =
-        std::variant<
-        std::unique_ptr<SPHModel<f64_3, shamrock::sph::kernels::M4>>,
-        std::unique_ptr<SPHModel<f64_3, shamrock::sph::kernels::M6>>
-        >;
+        std::variant<std::unique_ptr<SPHModel<f64_3, shamrock::sph::kernels::M4>>,
+                     std::unique_ptr<SPHModel<f64_3, shamrock::sph::kernels::M6>>>;
 
     m.def(
         "get_SPHModel",
