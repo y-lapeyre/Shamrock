@@ -9,8 +9,8 @@
 #pragma once
 
 #include "shambase/sycl_utils/vectorProperties.hpp"
-#include "shammodels/sph/SPHModelSolver.hpp"
 #include "shammodels/generic/setup/generators.hpp"
+#include "shammodels/sph/SPHModelSolver.hpp"
 #include "shamrock/legacy/utils/geometry_utils.hpp"
 #include "shamrock/scheduler/ReattributeDataUtility.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
@@ -157,6 +157,96 @@ namespace shammodels {
             });
         }
 
+        template<std::enable_if_t<dim == 3, int> = 0>
+        inline void add_cube_disc_3d(Tvec center,
+                                     u32 Npart,
+                                     Tscal p,
+                                     Tscal rho_0,
+                                     Tscal m,
+                                     Tscal r_in,
+                                     Tscal r_out,
+                                     Tscal q) {
+
+            using namespace shamrock::patch;
+
+            PatchScheduler &sched = shambase::get_check_ref(ctx.sched);
+
+            sched.for_each_local_patchdata([&](const Patch ptch, PatchData &pdat) {
+                PatchCoordTransform<Tvec> ptransf = sched.get_sim_box().get_patch_transform<Tvec>();
+
+                shammath::CoordRange<Tvec> patch_coord = ptransf.to_obj_coord(ptch);
+
+                std::vector<Tvec> vec_acc;
+                generic::setup::generators::add_disc(
+                    Npart, p, rho_0, m, r_in, r_out, q, [&](Tvec r, Tscal h) {
+                        vec_acc.push_back(r + center);
+                    });
+
+                std::cout << ">>> adding : " << vec_acc.size() << " objects" << std::endl;
+
+                PatchData tmp(sched.pdl);
+                tmp.resize(vec_acc.size());
+                tmp.fields_raz();
+
+                {
+                    u32 len = vec_acc.size();
+                    PatchDataField<Tvec> &f =
+                        tmp.get_field<Tvec>(sched.pdl.get_field_idx<Tvec>("xyz"));
+                    sycl::buffer<Tvec> buf(vec_acc.data(), len);
+                    f.override(buf, len);
+                }
+
+                {
+                    PatchDataField<Tscal> &f =
+                        tmp.get_field<Tscal>(sched.pdl.get_field_idx<Tscal>("hpart"));
+                    f.override(0.01);
+                }
+
+                pdat.insert_elements(tmp);
+            });
+
+            sched.patch_data.for_each_patchdata([&](u64 pid, shamrock::patch::PatchData &pdat) {
+                std::cout << "patch id : " << pid << " len = " << pdat.get_obj_cnt() << std::endl;
+            });
+
+            sched.scheduler_step(false, false);
+
+            sched.patch_data.for_each_patchdata([&](u64 pid, shamrock::patch::PatchData &pdat) {
+                std::cout << "patch id : " << pid << " len = " << pdat.get_obj_cnt() << std::endl;
+            });
+
+            {
+                auto [m, M] = sched.get_box_tranform<Tvec>();
+
+                std::cout << "box transf" << m.x() << " " << m.y() << " " << m.z() << " | " << M.x()
+                          << " " << M.y() << " " << M.z() << std::endl;
+
+                SerialPatchTree<Tvec> sptree(sched.patch_tree,
+                                             sched.get_sim_box().get_patch_transform<Tvec>());
+
+                // sptree.print_status();
+
+                shamrock::ReattributeDataUtility reatrib(sched);
+
+                sptree.attach_buf();
+                // reatribute_particles(sched, sptree, periodic_mode);
+
+                reatrib.reatribute_patch_objects(sptree, "xyz");
+            }
+
+            sched.check_patchdata_locality_corectness();
+
+            sched.patch_data.for_each_patchdata([&](u64 pid, shamrock::patch::PatchData &pdat) {
+                std::cout << "patch id : " << pid << " len = " << pdat.get_obj_cnt() << std::endl;
+            });
+
+            sched.scheduler_step(true, true);
+
+            sched.patch_data.for_each_patchdata([&](u64 pid, shamrock::patch::PatchData &pdat) {
+                std::cout << "patch id : " << pid << " len = " << pdat.get_obj_cnt() << std::endl;
+            });
+        }
+
         template<class T>
         inline void set_value_in_a_box(std::string field_name, T val, std::pair<Tvec, Tvec> box) {
             StackEntry stack_loc{};
@@ -246,9 +336,7 @@ namespace shammodels {
         //     sconfig.switch_internal_energy_mode(name);
         // }
 
-        inline void set_solver_config(typename Solver::Config cfg){
-            solver.solver_config = cfg;
-        }
+        inline void set_solver_config(typename Solver::Config cfg) { solver.solver_config = cfg; }
 
         ////////////////////////////////////////////////////////////////////////////////////////////
         /////// analysis utilities
@@ -262,10 +350,8 @@ namespace shammodels {
         /////// Simulation control
         ////////////////////////////////////////////////////////////////////////////////////////////
 
-        f64 evolve_once(f64 dt_input,
-                        bool do_dump,
-                        std::string vtk_dump_name,
-                        bool vtk_dump_patch_id);
+        f64
+        evolve_once(f64 dt_input, bool do_dump, std::string vtk_dump_name, bool vtk_dump_patch_id);
     };
 
 } // namespace shammodels
