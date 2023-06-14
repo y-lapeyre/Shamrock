@@ -141,12 +141,12 @@ namespace generic::setup::generators {
      * @tparam flt 
      * @tparam Tpred_pusher 
      * @param Npart number of particles
-     * @param p 
-     * @param rho_0 rho_0
-     * @param m 
+     * @param p randial power law surface density (default = 1)  sigma prop r^-p
+     * @param rho_0 rho_0 volumic density (at r = 1)
+     * @param m mass part
      * @param r_in inner cuttof
      * @param r_out outer cuttof
-     * @param q 
+     * @param q T prop r^-q
      */
     template<class flt,class Tpred_pusher>
     inline void add_disc(
