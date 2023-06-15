@@ -828,7 +828,7 @@ void SPHSolve<Tvec, Kern>::compute_eos_fields() {
 
             cgh.parallel_for(sycl::range<1>{mpdat.total_elements}, [=](sycl::item<1> item) {
                 using namespace shamrock::sph;
-                P[item] = (gamma - 1) * rho_h(pmass, h[item],Kernel::hfactd) * U[item];
+                P[item] = (gamma - 1) * rho_h(pmass, h[item], Kernel::hfactd) * U[item];
             });
         });
     });
@@ -985,7 +985,7 @@ void SPHSolve<Tvec, Kern>::update_derivs_constantAV() {
                 Tscal omega_a   = omega[id_a];
                 const Tscal u_a = u[id_a];
 
-                Tscal rho_a     = rho_h(pmass, h_a,Kernel::hfactd);
+                Tscal rho_a     = rho_h(pmass, h_a, Kernel::hfactd);
                 Tscal rho_a_sq  = rho_a * rho_a;
                 Tscal rho_a_inv = 1. / rho_a;
 
@@ -1023,7 +1023,7 @@ void SPHSolve<Tvec, Kern>::update_derivs_constantAV() {
                         r_ab_unit = {0, 0, 0};
                     }
 
-                    Tscal rho_b = rho_h(pmass, h_b,Kernel::hfactd);
+                    Tscal rho_b = rho_h(pmass, h_b, Kernel::hfactd);
                     Tscal P_b   = pressure[id_b];
                     // f32 P_b     = cs * cs * rho_b;
                     Tscal omega_b       = omega[id_b];
@@ -1198,7 +1198,7 @@ void SPHSolve<Tvec, Kern>::update_derivs_mm97() {
                 Tscal omega_a   = omega[id_a];
                 const Tscal u_a = u[id_a];
 
-                Tscal rho_a     = rho_h(pmass, h_a,Kernel::hfactd);
+                Tscal rho_a     = rho_h(pmass, h_a, Kernel::hfactd);
                 Tscal rho_a_sq  = rho_a * rho_a;
                 Tscal rho_a_inv = 1. / rho_a;
 
@@ -1238,7 +1238,7 @@ void SPHSolve<Tvec, Kern>::update_derivs_mm97() {
                         r_ab_unit = {0, 0, 0};
                     }
 
-                    Tscal rho_b = rho_h(pmass, h_b,Kernel::hfactd);
+                    Tscal rho_b = rho_h(pmass, h_b, Kernel::hfactd);
                     Tscal P_b   = pressure[id_b];
                     // f32 P_b     = cs * cs * rho_b;
                     Tscal omega_b       = omega[id_b];
@@ -1503,7 +1503,7 @@ auto SPHSolve<Tvec, Kern>::evolve_once(Tscal dt,
                                 Tvec xyz_a  = xyz[id_a];
                                 Tvec vxyz_a = vxyz[id_a];
 
-                                Tscal rho_a     = rho_h(pmass, h_a,Kernel::hfactd);
+                                Tscal rho_a     = rho_h(pmass, h_a, Kernel::hfactd);
                                 Tscal rho_a_sq  = rho_a * rho_a;
                                 Tscal rho_a_inv = 1. / rho_a;
 
@@ -1536,7 +1536,7 @@ auto SPHSolve<Tvec, Kern>::evolve_once(Tscal dt,
                                         r_ab_unit = {0, 0, 0};
                                     }
 
-                                    Tscal rho_b         = rho_h(pmass, h_b,Kernel::hfactd);
+                                    Tscal rho_b         = rho_h(pmass, h_b, Kernel::hfactd);
                                     Tscal P_b           = pressure[id_b];
                                     Tscal cs_b          = sycl::sqrt(gamma * P_b / rho_b);
                                     Tscal v_ab_r_ab     = sycl::dot(v_ab, r_ab_unit);
@@ -1648,7 +1648,7 @@ auto SPHSolve<Tvec, Kern>::evolve_once(Tscal dt,
                                     Tvec vxyz_a    = vxyz[id_a];
                                     Tscal omega_a  = omega[id_a];
 
-                                    Tscal rho_a = rho_h(pmass, h_a,Kernel::hfactd);
+                                    Tscal rho_a = rho_h(pmass, h_a, Kernel::hfactd);
                                     // Tscal rho_a_sq  = rho_a * rho_a;
                                     // Tscal rho_a_inv = 1. / rho_a;
                                     Tscal inv_rho_omega_a = 1. / (omega_a * rho_a);
@@ -1736,7 +1736,7 @@ auto SPHSolve<Tvec, Kern>::evolve_once(Tscal dt,
                                 Tvec vxyz_a    = vxyz[id_a];
                                 Tscal omega_a  = omega[id_a];
 
-                                Tscal rho_a = rho_h(pmass, h_a,Kernel::hfactd);
+                                Tscal rho_a = rho_h(pmass, h_a, Kernel::hfactd);
                                 // Tscal rho_a_sq  = rho_a * rho_a;
                                 // Tscal rho_a_inv = 1. / rho_a;
                                 Tscal inv_rho_omega_a = 1. / (omega_a * rho_a);
@@ -1775,6 +1775,37 @@ auto SPHSolve<Tvec, Kern>::evolve_once(Tscal dt,
             });
         }
 
+        if (solver_config.has_field_soundspeed()) {
+            const u32 isoundspeed = pdl.get_field_idx<Tscal>("soundspeed");
+            scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+                sycl::buffer<Tscal> &buf_hpart = pdat.get_field_buf_ref<Tscal>(ihpart);
+                sycl::buffer<Tscal> &buf_uint  = pdat.get_field_buf_ref<Tscal>(iuint);
+                sycl::buffer<Tscal> &buf_cs    = pdat.get_field_buf_ref<Tscal>(isoundspeed);
+
+                sycl::range range_npart{pdat.get_obj_cnt()};
+
+                /////////////////////////////////////////////
+
+                shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
+                    const Tscal pmass = gpart_mass;
+
+                    sycl::accessor hpart{buf_hpart, cgh, sycl::read_only};
+                    sycl::accessor u{buf_uint, cgh, sycl::read_only};
+                    sycl::accessor cs{buf_cs, cgh, sycl::write_only, sycl::no_init};
+
+                    Tscal gamma = this->eos_gamma;
+                    cgh.parallel_for(sycl::range<1>{pdat.get_obj_cnt()}, [=](sycl::item<1> item) {
+                        using namespace shamrock::sph;
+                        Tscal rho_a = rho_h(pmass, hpart[item], Kernel::hfactd);
+
+                        Tscal P_a  = (gamma - 1) * rho_a * u[item];
+                        Tscal cs_a = sycl::sqrt(gamma * P_a / rho_a);
+                        cs[item]   = cs_a;
+                    });
+                });
+            });
+        }
+
         corrector_iter_cnt++;
 
     } while (need_rerun_corrector);
@@ -1801,7 +1832,7 @@ auto SPHSolve<Tvec, Kern>::evolve_once(Tscal dt,
             cgh.parallel_for(sycl::range<1>{pdat.get_obj_cnt()}, [=](sycl::item<1> item) {
                 u32 gid = (u32)item.get_id();
                 using namespace shamrock::sph;
-                Tscal rho_ha = rho_h(part_mass, acc_h[gid],Kernel::hfactd);
+                Tscal rho_ha = rho_h(part_mass, acc_h[gid], Kernel::hfactd);
                 acc_rho[gid] = rho_ha;
             });
         });
