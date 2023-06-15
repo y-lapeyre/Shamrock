@@ -47,6 +47,52 @@ f64 shammodels::SPHModel<Tvec, SPHKernel>::total_mass_to_part_mass(f64 totmass) 
     return totmass / get_total_part_count();
 }
 
+template<class Tvec, template<class> class SPHKernel>
+auto shammodels::SPHModel<Tvec, SPHKernel>::get_closest_part_to(Tvec pos) -> Tvec{
+
+    using namespace shamrock::patch;
+
+    Tvec best_dr = shambase::VectorProperties<Tvec>::get_max();
+    Tscal best_dist2 = shambase::VectorProperties<Tscal>::get_max();
+
+    PatchScheduler &sched = shambase::get_check_ref(ctx.sched);
+
+    sched.for_each_patchdata_nonempty([&](const Patch, PatchData & pdat){
+        sycl::buffer<Tvec> & xyz = shambase::get_check_ref(pdat.get_field<Tvec>(0).get_buf());
+
+        sycl::host_accessor acc {xyz, sycl::read_only};
+
+        u32 cnt = pdat.get_obj_cnt();
+
+        for(u32 i = 0; i < cnt; i++){
+            Tvec tmp = acc[i];
+            Tvec dr = tmp - pos;
+            Tscal dist2 = sycl::dot(dr,dr);
+            if(dist2 < best_dist2){
+                best_dr = dr;
+                best_dist2 = dist2;
+            }
+        }
+    });
+
+
+    std::vector<Tvec> list_dr {};
+    shamalgs::collective::vector_allgatherv(std::vector<Tvec>{best_dr},list_dr,MPI_COMM_WORLD);
+
+
+    for(Tvec tmp : list_dr){
+        Tvec dr = tmp - pos;
+        Tscal dist2 = sycl::dot(dr,dr);
+        if(dist2 < best_dist2){
+            best_dr = dr;
+            best_dist2 = dist2;
+        }
+    }
+
+    return pos + best_dr;
+
+}
+
 using namespace shamrock::sph::kernels;
 
 template class shammodels::SPHModel<f64_3, M4>;

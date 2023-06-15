@@ -140,6 +140,22 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                  } else {
                      throw shambase::throw_with_loc<std::invalid_argument>("unknown field type");
                  }
+             }).def("add_kernel_value",
+             [](T &self,
+                std::string field_name,
+                std::string field_type,
+                pybind11::object value,
+                f64_3 center,
+                f64 h_ker) {
+                 if (field_type == "f64") {
+                     f64 val = value.cast<f64>();
+                     self.add_kernel_value(field_name, val, center, h_ker);
+                 } else if (field_type == "f64_3") {
+                     f64_3 val = value.cast<f64_3>();
+                     self.add_kernel_value(field_name, val, center, h_ker);
+                 } else {
+                     throw shambase::throw_with_loc<std::invalid_argument>("unknown field type");
+                 }
              })
         .def("get_sum",
              [](T &self, std::string field_name, std::string field_type) {
@@ -151,6 +167,9 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                      throw shambase::throw_with_loc<std::invalid_argument>("unknown field type");
                  }
              })
+        .def("get_closest_part_to", [](T & self,f64_3 pos) -> f64_3 {
+            return self.get_closest_part_to(pos);
+        })
         .def("gen_default_config", [](T &self) { return typename T::Solver::Config{}; })
         .def("set_solver_config", &T::set_solver_config);
     ;
