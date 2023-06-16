@@ -29,7 +29,6 @@
 #include "shamrock/tree/TreeTaversalCache.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
-#include <hipSYCL/sycl/libkernel/accessor.hpp>
 #include <memory>
 #include <stdexcept>
 
