@@ -1005,6 +1005,10 @@ void SPHSolve<Tvec, Kern>::update_derivs_constantAV() {
                 Tvec inter_box_a_min = xyz_a - h_a * Kernel::Rkern;
                 Tvec inter_box_a_max = xyz_a + h_a * Kernel::Rkern;
 
+
+                Tvec force_pressure{0, 0, 0};
+                Tscal tmpdU_pressure = 0;
+
                 particle_looper.for_each_object(id_a, [&](u32 id_b) {
                     // compute only omega_a
                     Tvec dr    = xyz_a - xyz[id_b];
@@ -1046,52 +1050,34 @@ void SPHSolve<Tvec, Kern>::update_derivs_constantAV() {
                     Tscal dWab_a = Kernel::dW(rab, h_a);
                     Tscal dWab_b = Kernel::dW(rab, h_b);
 
-                    // auto v_sig_a = alpha_AV * cs_a + beta_AV *
-                    // sycl::distance(v_ab, dr);
-                    lambda_viscous_heating +=
-                        pmass * vsig_a * Tscal(0.5) * (sycl::pown(sycl::dot(v_ab, dr), 2) * dWab_a);
-                    lambda_conductivity +=
-                        pmass * alpha_u * vsig_u * (u_a - u_b) * Tscal(0.5) *
-                        (dWab_a * omega_a_rho_a_inv + dWab_b / (rho_b * omega_b));
-                    sum_du_a += pmass * v_ab_r_ab * dWab_a;
-
-                    // out << sum_du_a << "\n";
-                    /////////////////
-
                     Tscal qa_ab = shambase::sycl_utils::g_sycl_max(
                         -Tscal(0.5) * rho_a * vsig_a * v_ab_r_ab, Tscal(0));
                     Tscal qb_ab = shambase::sycl_utils::g_sycl_max(
                         -Tscal(0.5) * rho_b * vsig_b * v_ab_r_ab, Tscal(0));
 
-                    Tvec tmp = sph_pressure_symetric_av<Tvec, Tscal>(pmass,
-                                                                     rho_a_sq,
-                                                                     rho_b * rho_b,
-                                                                     P_a,
-                                                                     P_b,
-                                                                     omega_a,
-                                                                     omega_b,
-                                                                     qa_ab,
-                                                                     qb_ab,
-                                                                     r_ab_unit * dWab_a,
-                                                                     r_ab_unit * dWab_b);
+                    Tscal AV_P_a = P_a + qa_ab;
+                    Tscal AV_P_b = P_b + qb_ab;
 
-                    // logger::raw(shambase::format("pmass {}, rho_a {}, P_a {},
-                    // omega_a {}\n", pmass,rho_a, P_a, omega_a));
+                    force_pressure += sph_pressure_symetric(pmass,
+                                                            rho_a_sq,
+                                                            rho_b * rho_b,
+                                                            AV_P_a,
+                                                            AV_P_b,
+                                                            omega_a,
+                                                            omega_b,
+                                                            r_ab_unit * dWab_a,
+                                                            r_ab_unit * dWab_b);
 
-                    // out << "add : " << tmp << "\n";
+                    // by seeing the AV as changed presure
+                    tmpdU_pressure += AV_P_a * omega_a_rho_a_inv * rho_a_inv * pmass *
+                                      sycl::dot(v_ab, r_ab_unit * dWab_a);
 
-                    sum_axyz += tmp;
+                    lambda_conductivity +=
+                        pmass * alpha_u * vsig_u * (u_a - u_b) * Tscal(0.5) *
+                        (dWab_a * omega_a_rho_a_inv + dWab_b / (rho_b * omega_b));
                 });
-
-                sum_du_a               = P_a * rho_a_inv * omega_a_rho_a_inv * sum_du_a;
-                lambda_viscous_heating = -omega_a_rho_a_inv * lambda_viscous_heating;
-                lambda_shock           = lambda_viscous_heating + lambda_conductivity;
-                sum_du_a               = sum_du_a + lambda_shock;
-
-                // out << "sum : " << sum_axyz << "\n";
-
-                axyz[id_a] = sum_axyz;
-                du[id_a]   = sum_du_a;
+                axyz[id_a] = force_pressure;
+                du[id_a]   = tmpdU_pressure + lambda_conductivity;
             });
         });
     });
