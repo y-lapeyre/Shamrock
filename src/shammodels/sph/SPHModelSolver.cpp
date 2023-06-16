@@ -7,6 +7,8 @@
 // -------------------------------------------------------//
 
 #include "SPHModelSolver.hpp"
+#include "shamalgs/collective/reduction.hpp"
+#include "shamalgs/reduction/reduction.hpp"
 #include "shambase/exception.hpp"
 #include "shambase/memory.hpp"
 #include "shambase/time.hpp"
@@ -25,7 +27,9 @@
 #include "shamrock/sph/kernels.hpp"
 #include "shamrock/sph/sphpart.hpp"
 #include "shamrock/tree/TreeTaversalCache.hpp"
+#include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
+#include <hipSYCL/sycl/libkernel/accessor.hpp>
 #include <memory>
 #include <stdexcept>
 
@@ -1600,6 +1604,79 @@ auto SPHSolve<Tvec, Kern>::evolve_once(Tscal dt,
 
             next_cfl = shamalgs::collective::allreduce_min(rank_dt);
 
+            ///////////////////////////////////
+            //momentum check : 
+            ///////////////////////////////////
+            Tvec tmpp {0,0,0};
+            scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+                PatchDataField<Tvec> & field = pdat.get_field<Tvec>(ivxyz);
+                tmpp += field.compute_sum();
+            });
+            Tvec sum_v = shamalgs::collective::allreduce_sum(tmpp);
+            logger::raw_ln("sum v = ",gpart_mass*sum_v);
+
+            ///////////////////////////////////
+            //force sum check : 
+            ///////////////////////////////////
+            Tvec tmpa {0,0,0};
+            scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+                PatchDataField<Tvec> & field = pdat.get_field<Tvec>(iaxyz);
+                tmpa += field.compute_sum();
+            });
+            Tvec sum_a = shamalgs::collective::allreduce_sum(tmpa);
+            logger::raw_ln("sum a = ",gpart_mass*sum_a);
+
+            ///////////////////////////////////
+            //energy check : 
+            ///////////////////////////////////
+            Tscal tmpe {0};
+            scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+                PatchDataField<Tscal> & field_u = pdat.get_field<Tscal>(iuint);
+                PatchDataField<Tvec> & field_v = pdat.get_field<Tvec>(ivxyz);
+                tmpe += field_u.compute_sum() + 0.5*field_v.compute_dot_sum();
+            });
+            Tscal sum_e = shamalgs::collective::allreduce_sum(tmpe);
+            logger::raw_ln("sum e = ",gpart_mass*sum_e);
+
+            if(sum_e > 1e-17){
+                logger::err_ln("SPHModule", "The sph sum is non conservative");
+                throw "";
+            }
+
+
+            Tscal pmass = gpart_mass;
+            Tscal tmp_de = 0;
+            scheduler().for_each_patchdata_nonempty([&,pmass](Patch cur_p, PatchData &pdat) {
+                PatchDataField<Tscal> & field_u = pdat.get_field<Tscal>(iuint);
+                PatchDataField<Tvec> & field_v = pdat.get_field<Tvec>(ivxyz);
+                PatchDataField<Tscal> & field_du = pdat.get_field<Tscal>(iduint);
+                PatchDataField<Tvec> & field_a = pdat.get_field<Tvec>(iaxyz);
+
+                sycl::buffer<Tscal> temp_de(pdat.get_obj_cnt());
+
+                shamsys::instance::get_compute_queue().submit([&,pmass](sycl::handler &cgh) {
+
+                    sycl::accessor u {*field_u.get_buf(), cgh ,sycl::read_only};
+                    sycl::accessor du {*field_du.get_buf(), cgh ,sycl::read_only};
+                    sycl::accessor v {*field_v.get_buf(), cgh ,sycl::read_only};
+                    sycl::accessor a {*field_a.get_buf(), cgh ,sycl::read_only};
+                    sycl::accessor de {temp_de, cgh, sycl::write_only, sycl::no_init};
+
+                    cgh.parallel_for(sycl::range<1>{pdat.get_obj_cnt()}, [=](sycl::item<1> item) {
+                        de[item] = pmass*(sycl::dot(v[item],a[item]) + du[item]);
+                    });
+                });
+
+                
+                Tscal de_p = shamalgs::reduction::sum(shamsys::instance::get_compute_queue(), temp_de, 0, pdat.get_obj_cnt());
+                tmp_de += de_p;
+            });
+
+            Tscal de = shamalgs::collective::allreduce_sum(tmp_de);
+            logger::raw_ln("de = ",de);
+
+
+
             if (solver_config.has_field_divv()) {
                 const u32 idivv = pdl.get_field_idx<Tscal>("divv");
                 scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
@@ -1686,7 +1763,7 @@ auto SPHSolve<Tvec, Kern>::evolve_once(Tscal dt,
                     }
                 });
             }
-        }
+
 
         if (solver_config.has_field_curlv()) {
             const u32 icurlv = pdl.get_field_idx<Tvec>("curlv");
@@ -1805,6 +1882,9 @@ auto SPHSolve<Tvec, Kern>::evolve_once(Tscal dt,
                 });
             });
         }
+
+        }//if (!need_rerun_corrector) {
+
 
         corrector_iter_cnt++;
 
