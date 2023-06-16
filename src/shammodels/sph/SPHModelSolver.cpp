@@ -1221,6 +1221,9 @@ void SPHSolve<Tvec, Kern>::update_derivs_mm97() {
 
                 const Tscal alpha_a = alpha_AV[id_a];
 
+                Tvec force_pressure{0, 0, 0};
+                Tscal tmpdU_pressure = 0;
+
                 particle_looper.for_each_object(id_a, [&](u32 id_b) {
                     // compute only omega_a
                     Tvec dr    = xyz_a - xyz[id_b];
@@ -1261,52 +1264,42 @@ void SPHSolve<Tvec, Kern>::update_derivs_mm97() {
                     Tscal dWab_a = Kernel::dW(rab, h_a);
                     Tscal dWab_b = Kernel::dW(rab, h_b);
 
-                    // auto v_sig_a = alpha_AV * cs_a + beta_AV *
-                    // sycl::distance(v_ab, dr);
-                    lambda_viscous_heating +=
-                        pmass * vsig_a * Tscal(0.5) * (sycl::pown(sycl::dot(v_ab, dr), 2) * dWab_a);
-                    lambda_conductivity +=
-                        pmass * alpha_u * vsig_u * (u_a - u_b) * Tscal(0.5) *
-                        (dWab_a * omega_a_rho_a_inv + dWab_b / (rho_b * omega_b));
-                    sum_du_a += pmass * v_ab_r_ab * dWab_a;
-
-                    // out << sum_du_a << "\n";
-                    /////////////////
-
                     Tscal qa_ab = shambase::sycl_utils::g_sycl_max(
                         -Tscal(0.5) * rho_a * vsig_a * v_ab_r_ab, Tscal(0));
                     Tscal qb_ab = shambase::sycl_utils::g_sycl_max(
                         -Tscal(0.5) * rho_b * vsig_b * v_ab_r_ab, Tscal(0));
 
-                    Tvec tmp = sph_pressure_symetric_av<Tvec, Tscal>(pmass,
-                                                                     rho_a_sq,
-                                                                     rho_b * rho_b,
-                                                                     P_a,
-                                                                     P_b,
-                                                                     omega_a,
-                                                                     omega_b,
-                                                                     qa_ab,
-                                                                     qb_ab,
-                                                                     r_ab_unit * dWab_a,
-                                                                     r_ab_unit * dWab_b);
+                    Tscal AV_P_a = P_a + qa_ab;
+                    Tscal AV_P_b = P_b + qb_ab;
 
-                    // logger::raw(shambase::format("pmass {}, rho_a {}, P_a {},
-                    // omega_a {}\n", pmass,rho_a, P_a, omega_a));
+                    force_pressure += sph_pressure_symetric(pmass,
+                                                            rho_a_sq,
+                                                            rho_b * rho_b,
+                                                            AV_P_a,
+                                                            AV_P_b,
+                                                            omega_a,
+                                                            omega_b,
+                                                            r_ab_unit * dWab_a,
+                                                            r_ab_unit * dWab_b);
 
-                    // out << "add : " << tmp << "\n";
+                    // by seeing the AV as changed presure
+                    tmpdU_pressure += AV_P_a * omega_a_rho_a_inv * rho_a_inv * pmass *
+                                      sycl::dot(v_ab, r_ab_unit * dWab_a);
 
-                    sum_axyz += tmp;
+                    lambda_conductivity +=
+                        pmass * alpha_u * vsig_u * (u_a - u_b) * Tscal(0.5) *
+                        (dWab_a * omega_a_rho_a_inv + dWab_b / (rho_b * omega_b));
                 });
 
-                sum_du_a               = P_a * rho_a_inv * omega_a_rho_a_inv * sum_du_a;
-                lambda_viscous_heating = -omega_a_rho_a_inv * lambda_viscous_heating;
-                lambda_shock           = lambda_viscous_heating + lambda_conductivity;
-                sum_du_a               = sum_du_a + lambda_shock;
+                // sum_du_a               = P_a * rho_a_inv * omega_a_rho_a_inv * sum_du_a;
+                // lambda_viscous_heating = -omega_a_rho_a_inv * lambda_viscous_heating;
+                // lambda_shock           = lambda_viscous_heating + lambda_conductivity;
+                // sum_du_a               = sum_du_a + lambda_shock;
 
                 // out << "sum : " << sum_axyz << "\n";
 
-                axyz[id_a] = sum_axyz;
-                du[id_a]   = sum_du_a;
+                axyz[id_a] = force_pressure;
+                du[id_a]   = tmpdU_pressure + lambda_conductivity;
             });
         });
     });
@@ -1410,6 +1403,70 @@ auto SPHSolve<Tvec, Kern>::evolve_once(Tscal dt,
         prepare_corrector();
 
         update_derivs();
+
+        ///////////////////////////////////
+        // momentum check :
+        ///////////////////////////////////
+        Tvec tmpp{0, 0, 0};
+        scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+            PatchDataField<Tvec> &field = pdat.get_field<Tvec>(ivxyz);
+            tmpp += field.compute_sum();
+        });
+        Tvec sum_v = shamalgs::collective::allreduce_sum(tmpp);
+        logger::raw_ln("sum v = ", gpart_mass * sum_v);
+
+        ///////////////////////////////////
+        // force sum check :
+        ///////////////////////////////////
+        Tvec tmpa{0, 0, 0};
+        scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+            PatchDataField<Tvec> &field = pdat.get_field<Tvec>(iaxyz);
+            tmpa += field.compute_sum();
+        });
+        Tvec sum_a = shamalgs::collective::allreduce_sum(tmpa);
+        logger::raw_ln("sum a = ", gpart_mass * sum_a);
+
+        ///////////////////////////////////
+        // energy check :
+        ///////////////////////////////////
+        Tscal tmpe{0};
+        scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+            PatchDataField<Tscal> &field_u = pdat.get_field<Tscal>(iuint);
+            PatchDataField<Tvec> &field_v  = pdat.get_field<Tvec>(ivxyz);
+            tmpe += field_u.compute_sum() + 0.5 * field_v.compute_dot_sum();
+        });
+        Tscal sum_e = shamalgs::collective::allreduce_sum(tmpe);
+        logger::raw_ln("sum e = ", gpart_mass * sum_e);
+
+        Tscal pmass  = gpart_mass;
+        Tscal tmp_de = 0;
+        scheduler().for_each_patchdata_nonempty([&, pmass](Patch cur_p, PatchData &pdat) {
+            PatchDataField<Tscal> &field_u  = pdat.get_field<Tscal>(iuint);
+            PatchDataField<Tvec> &field_v   = pdat.get_field<Tvec>(ivxyz);
+            PatchDataField<Tscal> &field_du = pdat.get_field<Tscal>(iduint);
+            PatchDataField<Tvec> &field_a   = pdat.get_field<Tvec>(iaxyz);
+
+            sycl::buffer<Tscal> temp_de(pdat.get_obj_cnt());
+
+            shamsys::instance::get_compute_queue().submit([&, pmass](sycl::handler &cgh) {
+                sycl::accessor u{*field_u.get_buf(), cgh, sycl::read_only};
+                sycl::accessor du{*field_du.get_buf(), cgh, sycl::read_only};
+                sycl::accessor v{*field_v.get_buf(), cgh, sycl::read_only};
+                sycl::accessor a{*field_a.get_buf(), cgh, sycl::read_only};
+                sycl::accessor de{temp_de, cgh, sycl::write_only, sycl::no_init};
+
+                cgh.parallel_for(sycl::range<1>{pdat.get_obj_cnt()}, [=](sycl::item<1> item) {
+                    de[item] = pmass * (sycl::dot(v[item], a[item]) + du[item]);
+                });
+            });
+
+            Tscal de_p = shamalgs::reduction::sum(
+                shamsys::instance::get_compute_queue(), temp_de, 0, pdat.get_obj_cnt());
+            tmp_de += de_p;
+        });
+
+        Tscal de = shamalgs::collective::allreduce_sum(tmp_de);
+        logger::raw_ln("de = ", de);
 
         ComputeField<Tscal> vepsilon_v_sq =
             utility.make_compute_field<Tscal>("vmean epsilon_v^2", 1);
@@ -1604,79 +1661,6 @@ auto SPHSolve<Tvec, Kern>::evolve_once(Tscal dt,
 
             next_cfl = shamalgs::collective::allreduce_min(rank_dt);
 
-            ///////////////////////////////////
-            //momentum check : 
-            ///////////////////////////////////
-            Tvec tmpp {0,0,0};
-            scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
-                PatchDataField<Tvec> & field = pdat.get_field<Tvec>(ivxyz);
-                tmpp += field.compute_sum();
-            });
-            Tvec sum_v = shamalgs::collective::allreduce_sum(tmpp);
-            logger::raw_ln("sum v = ",gpart_mass*sum_v);
-
-            ///////////////////////////////////
-            //force sum check : 
-            ///////////////////////////////////
-            Tvec tmpa {0,0,0};
-            scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
-                PatchDataField<Tvec> & field = pdat.get_field<Tvec>(iaxyz);
-                tmpa += field.compute_sum();
-            });
-            Tvec sum_a = shamalgs::collective::allreduce_sum(tmpa);
-            logger::raw_ln("sum a = ",gpart_mass*sum_a);
-
-            ///////////////////////////////////
-            //energy check : 
-            ///////////////////////////////////
-            Tscal tmpe {0};
-            scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
-                PatchDataField<Tscal> & field_u = pdat.get_field<Tscal>(iuint);
-                PatchDataField<Tvec> & field_v = pdat.get_field<Tvec>(ivxyz);
-                tmpe += field_u.compute_sum() + 0.5*field_v.compute_dot_sum();
-            });
-            Tscal sum_e = shamalgs::collective::allreduce_sum(tmpe);
-            logger::raw_ln("sum e = ",gpart_mass*sum_e);
-
-            if(sum_e > 1e-17){
-                logger::err_ln("SPHModule", "The sph sum is non conservative");
-                throw "";
-            }
-
-
-            Tscal pmass = gpart_mass;
-            Tscal tmp_de = 0;
-            scheduler().for_each_patchdata_nonempty([&,pmass](Patch cur_p, PatchData &pdat) {
-                PatchDataField<Tscal> & field_u = pdat.get_field<Tscal>(iuint);
-                PatchDataField<Tvec> & field_v = pdat.get_field<Tvec>(ivxyz);
-                PatchDataField<Tscal> & field_du = pdat.get_field<Tscal>(iduint);
-                PatchDataField<Tvec> & field_a = pdat.get_field<Tvec>(iaxyz);
-
-                sycl::buffer<Tscal> temp_de(pdat.get_obj_cnt());
-
-                shamsys::instance::get_compute_queue().submit([&,pmass](sycl::handler &cgh) {
-
-                    sycl::accessor u {*field_u.get_buf(), cgh ,sycl::read_only};
-                    sycl::accessor du {*field_du.get_buf(), cgh ,sycl::read_only};
-                    sycl::accessor v {*field_v.get_buf(), cgh ,sycl::read_only};
-                    sycl::accessor a {*field_a.get_buf(), cgh ,sycl::read_only};
-                    sycl::accessor de {temp_de, cgh, sycl::write_only, sycl::no_init};
-
-                    cgh.parallel_for(sycl::range<1>{pdat.get_obj_cnt()}, [=](sycl::item<1> item) {
-                        de[item] = pmass*(sycl::dot(v[item],a[item]) + du[item]);
-                    });
-                });
-
-                
-                Tscal de_p = shamalgs::reduction::sum(shamsys::instance::get_compute_queue(), temp_de, 0, pdat.get_obj_cnt());
-                tmp_de += de_p;
-            });
-
-            Tscal de = shamalgs::collective::allreduce_sum(tmp_de);
-            logger::raw_ln("de = ",de);
-
-
-
             if (solver_config.has_field_divv()) {
                 const u32 idivv = pdl.get_field_idx<Tscal>("divv");
                 scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
@@ -1764,127 +1748,126 @@ auto SPHSolve<Tvec, Kern>::evolve_once(Tscal dt,
                 });
             }
 
+            if (solver_config.has_field_curlv()) {
+                const u32 icurlv = pdl.get_field_idx<Tvec>("curlv");
+                scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+                    MergedPatchData &merged_patch = mpdat.get(cur_p.id_patch);
+                    PatchData &mpdat              = merged_patch.pdat;
 
-        if (solver_config.has_field_curlv()) {
-            const u32 icurlv = pdl.get_field_idx<Tvec>("curlv");
-            scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
-                MergedPatchData &merged_patch = mpdat.get(cur_p.id_patch);
-                PatchData &mpdat              = merged_patch.pdat;
+                    sycl::buffer<Tvec> &buf_xyz = shambase::get_check_ref(
+                        merged_xyzh.get(cur_p.id_patch).field_pos.get_buf());
+                    sycl::buffer<Tvec> &buf_vxyz   = mpdat.get_field_buf_ref<Tvec>(ivxyz_interf);
+                    sycl::buffer<Tscal> &buf_hpart = mpdat.get_field_buf_ref<Tscal>(ihpart_interf);
+                    sycl::buffer<Tscal> &buf_omega = mpdat.get_field_buf_ref<Tscal>(iomega_interf);
+                    sycl::buffer<Tscal> &buf_uint  = mpdat.get_field_buf_ref<Tscal>(iuint_interf);
+                    sycl::buffer<Tvec> &buf_curlv  = pdat.get_field_buf_ref<Tvec>(icurlv);
 
-                sycl::buffer<Tvec> &buf_xyz =
-                    shambase::get_check_ref(merged_xyzh.get(cur_p.id_patch).field_pos.get_buf());
-                sycl::buffer<Tvec> &buf_vxyz   = mpdat.get_field_buf_ref<Tvec>(ivxyz_interf);
-                sycl::buffer<Tscal> &buf_hpart = mpdat.get_field_buf_ref<Tscal>(ihpart_interf);
-                sycl::buffer<Tscal> &buf_omega = mpdat.get_field_buf_ref<Tscal>(iomega_interf);
-                sycl::buffer<Tscal> &buf_uint  = mpdat.get_field_buf_ref<Tscal>(iuint_interf);
-                sycl::buffer<Tvec> &buf_curlv  = pdat.get_field_buf_ref<Tvec>(icurlv);
+                    sycl::range range_npart{pdat.get_obj_cnt()};
 
-                sycl::range range_npart{pdat.get_obj_cnt()};
+                    tree::ObjectCache &pcache = neighbors_cache->get_cache(cur_p.id_patch);
 
-                tree::ObjectCache &pcache = neighbors_cache->get_cache(cur_p.id_patch);
+                    /////////////////////////////////////////////
 
-                /////////////////////////////////////////////
+                    {
+                        NamedStackEntry tmppp{"compute curlv"};
+                        shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
+                            const Tscal pmass = gpart_mass;
 
-                {
-                    NamedStackEntry tmppp{"compute curlv"};
+                            tree::ObjectCacheIterator particle_looper(pcache, cgh);
+
+                            sycl::accessor xyz{buf_xyz, cgh, sycl::read_only};
+                            sycl::accessor vxyz{buf_vxyz, cgh, sycl::read_only};
+                            sycl::accessor hpart{buf_hpart, cgh, sycl::read_only};
+                            sycl::accessor omega{buf_omega, cgh, sycl::read_only};
+                            sycl::accessor curlv{buf_curlv, cgh, sycl::write_only, sycl::no_init};
+
+                            constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
+
+                            cgh.parallel_for(
+                                sycl::range<1>{pdat.get_obj_cnt()}, [=](sycl::item<1> item) {
+                                    u32 id_a = (u32)item.get_id(0);
+
+                                    using namespace shamrock::sph;
+
+                                    Tvec sum_axyz  = {0, 0, 0};
+                                    Tscal sum_du_a = 0;
+                                    Tscal h_a      = hpart[id_a];
+                                    Tvec xyz_a     = xyz[id_a];
+                                    Tvec vxyz_a    = vxyz[id_a];
+                                    Tscal omega_a  = omega[id_a];
+
+                                    Tscal rho_a = rho_h(pmass, h_a, Kernel::hfactd);
+                                    // Tscal rho_a_sq  = rho_a * rho_a;
+                                    // Tscal rho_a_inv = 1. / rho_a;
+                                    Tscal inv_rho_omega_a = 1. / (omega_a * rho_a);
+
+                                    Tvec sum_nabla_cross_v{};
+
+                                    particle_looper.for_each_object(id_a, [&](u32 id_b) {
+                                        // compute only omega_a
+                                        Tvec dr    = xyz_a - xyz[id_b];
+                                        Tscal rab2 = sycl::dot(dr, dr);
+                                        Tscal h_b  = hpart[id_b];
+
+                                        if (rab2 > h_a * h_a * Rker2 && rab2 > h_b * h_b * Rker2) {
+                                            return;
+                                        }
+
+                                        Tscal rab   = sycl::sqrt(rab2);
+                                        Tvec vxyz_b = vxyz[id_b];
+                                        Tvec v_ab   = vxyz_a - vxyz_b;
+
+                                        Tvec r_ab_unit = dr / rab;
+
+                                        if (rab < 1e-9) {
+                                            r_ab_unit = {0, 0, 0};
+                                        }
+
+                                        Tvec dWab_a = Kernel::dW(rab, h_a) * r_ab_unit;
+
+                                        sum_nabla_cross_v += pmass * sycl::cross(v_ab, dWab_a);
+                                    });
+
+                                    curlv[id_a] = -inv_rho_omega_a * sum_nabla_cross_v;
+                                });
+                        });
+                    }
+                });
+            }
+
+            if (solver_config.has_field_soundspeed()) {
+                const u32 isoundspeed = pdl.get_field_idx<Tscal>("soundspeed");
+                scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+                    sycl::buffer<Tscal> &buf_hpart = pdat.get_field_buf_ref<Tscal>(ihpart);
+                    sycl::buffer<Tscal> &buf_uint  = pdat.get_field_buf_ref<Tscal>(iuint);
+                    sycl::buffer<Tscal> &buf_cs    = pdat.get_field_buf_ref<Tscal>(isoundspeed);
+
+                    sycl::range range_npart{pdat.get_obj_cnt()};
+
+                    /////////////////////////////////////////////
+
                     shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
                         const Tscal pmass = gpart_mass;
 
-                        tree::ObjectCacheIterator particle_looper(pcache, cgh);
-
-                        sycl::accessor xyz{buf_xyz, cgh, sycl::read_only};
-                        sycl::accessor vxyz{buf_vxyz, cgh, sycl::read_only};
                         sycl::accessor hpart{buf_hpart, cgh, sycl::read_only};
-                        sycl::accessor omega{buf_omega, cgh, sycl::read_only};
-                        sycl::accessor curlv{buf_curlv, cgh, sycl::write_only, sycl::no_init};
+                        sycl::accessor u{buf_uint, cgh, sycl::read_only};
+                        sycl::accessor cs{buf_cs, cgh, sycl::write_only, sycl::no_init};
 
-                        constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
-
+                        Tscal gamma = this->eos_gamma;
                         cgh.parallel_for(
                             sycl::range<1>{pdat.get_obj_cnt()}, [=](sycl::item<1> item) {
-                                u32 id_a = (u32)item.get_id(0);
-
                                 using namespace shamrock::sph;
+                                Tscal rho_a = rho_h(pmass, hpart[item], Kernel::hfactd);
 
-                                Tvec sum_axyz  = {0, 0, 0};
-                                Tscal sum_du_a = 0;
-                                Tscal h_a      = hpart[id_a];
-                                Tvec xyz_a     = xyz[id_a];
-                                Tvec vxyz_a    = vxyz[id_a];
-                                Tscal omega_a  = omega[id_a];
-
-                                Tscal rho_a = rho_h(pmass, h_a, Kernel::hfactd);
-                                // Tscal rho_a_sq  = rho_a * rho_a;
-                                // Tscal rho_a_inv = 1. / rho_a;
-                                Tscal inv_rho_omega_a = 1. / (omega_a * rho_a);
-
-                                Tvec sum_nabla_cross_v{};
-
-                                particle_looper.for_each_object(id_a, [&](u32 id_b) {
-                                    // compute only omega_a
-                                    Tvec dr    = xyz_a - xyz[id_b];
-                                    Tscal rab2 = sycl::dot(dr, dr);
-                                    Tscal h_b  = hpart[id_b];
-
-                                    if (rab2 > h_a * h_a * Rker2 && rab2 > h_b * h_b * Rker2) {
-                                        return;
-                                    }
-
-                                    Tscal rab   = sycl::sqrt(rab2);
-                                    Tvec vxyz_b = vxyz[id_b];
-                                    Tvec v_ab   = vxyz_a - vxyz_b;
-
-                                    Tvec r_ab_unit = dr / rab;
-
-                                    if (rab < 1e-9) {
-                                        r_ab_unit = {0, 0, 0};
-                                    }
-
-                                    Tvec dWab_a = Kernel::dW(rab, h_a) * r_ab_unit;
-
-                                    sum_nabla_cross_v += pmass * sycl::cross(v_ab, dWab_a);
-                                });
-
-                                curlv[id_a] = -inv_rho_omega_a * sum_nabla_cross_v;
+                                Tscal P_a  = (gamma - 1) * rho_a * u[item];
+                                Tscal cs_a = sycl::sqrt(gamma * P_a / rho_a);
+                                cs[item]   = cs_a;
                             });
                     });
-                }
-            });
-        }
-
-        if (solver_config.has_field_soundspeed()) {
-            const u32 isoundspeed = pdl.get_field_idx<Tscal>("soundspeed");
-            scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
-                sycl::buffer<Tscal> &buf_hpart = pdat.get_field_buf_ref<Tscal>(ihpart);
-                sycl::buffer<Tscal> &buf_uint  = pdat.get_field_buf_ref<Tscal>(iuint);
-                sycl::buffer<Tscal> &buf_cs    = pdat.get_field_buf_ref<Tscal>(isoundspeed);
-
-                sycl::range range_npart{pdat.get_obj_cnt()};
-
-                /////////////////////////////////////////////
-
-                shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-                    const Tscal pmass = gpart_mass;
-
-                    sycl::accessor hpart{buf_hpart, cgh, sycl::read_only};
-                    sycl::accessor u{buf_uint, cgh, sycl::read_only};
-                    sycl::accessor cs{buf_cs, cgh, sycl::write_only, sycl::no_init};
-
-                    Tscal gamma = this->eos_gamma;
-                    cgh.parallel_for(sycl::range<1>{pdat.get_obj_cnt()}, [=](sycl::item<1> item) {
-                        using namespace shamrock::sph;
-                        Tscal rho_a = rho_h(pmass, hpart[item], Kernel::hfactd);
-
-                        Tscal P_a  = (gamma - 1) * rho_a * u[item];
-                        Tscal cs_a = sycl::sqrt(gamma * P_a / rho_a);
-                        cs[item]   = cs_a;
-                    });
                 });
-            });
-        }
+            }
 
-        }//if (!need_rerun_corrector) {
-
+        } // if (!need_rerun_corrector) {
 
         corrector_iter_cnt++;
 
