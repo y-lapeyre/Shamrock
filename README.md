@@ -3,7 +3,15 @@
    <img alt="text" src="doc/logosham_white.png" width="600">
  </picture>
 
+CI status:
 ![badge1](https://github.com/tdavidcl/Shamrock/actions/workflows/main.yml/badge.svg?branch=main)
+
+DPC++ status :
+![badge2](https://badgen.net/static/DPC++%2FCUDA/yes/green)
+![badge2](https://badgen.net/static/DPC++%2FHIP:ROCM/yes/green)
+
+OpenSycl status :
+![badge2](https://badgen.net/static/OpenSYCL%2FOpenMP/yes/green)
 
 # Getting started
 

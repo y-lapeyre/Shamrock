@@ -164,7 +164,8 @@ profile_map = {
         "cuda_sm53" : "-fsycl -fsycl-targets=nvidia_gpu_sm_53",
         "cuda-profiling" : "-fsycl -fsycl-targets=nvptx64-nvidia-cuda -g",
         "cuda-no-rdc" : "-fsycl -fno-sycl-rdc -fsycl-targets=nvptx64-nvidia-cuda",
-        "cuda-index32bit" : "-fsycl -fsycl-targets=nvptx64-nvidia-cuda -fsycl-id-queries-fit-in-int"
+        "cuda-index32bit" : "-fsycl -fsycl-targets=nvptx64-nvidia-cuda -fsycl-id-queries-fit-in-int",
+        "hip-gfx906" : "-fsycl -fsycl-targets=amdgcn-amd-amdhsa -Xsycl-target-backend --offload-arch=gfx906",
     },
     "opensycl" : {
         "omp" : "--hipsycl-cpu-cxx=g++ --hipsycl-targets='omp' " + hipsyclconfigfile,
@@ -173,6 +174,7 @@ profile_map = {
         "generic" : "--hipsycl-targets=generic "+ hipsyclconfigfile,
         "cuda-nvcxx" : "--hipsycl-targets='cuda-nvcxx' "+ hipsyclconfigfile,
         "cuda-sm70" : "--hipsycl-targets='cuda:sm_70' "+ hipsyclconfigfile,
+        "hip-gfx906" : "--hipsycl-targets='hip:gfx906' "+ hipsyclconfigfile,
 
         #if you dare trying to develop with this profile
         "omp_insanity" : "--hipsycl-cpu-cxx=g++ --hipsycl-targets='omp' -Wall -Wextra -Werror " + hipsyclconfigfile
