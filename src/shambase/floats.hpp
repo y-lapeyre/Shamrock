@@ -49,18 +49,46 @@ namespace shambase {
         auto tmp = ! (sycl::isnan(v) || sycl::isinf(v));
         return !(tmp);
     }
+
+    /**
+     * @brief return true if vector has a nan
+     * 
+     * @tparam T 
+     * @tparam n 
+     * @param v 
+     * @return true 
+     * @return false 
+     */
     template<class T, int n>
     inline bool has_nan(sycl::vec<T,n> v){
         auto tmp = ! sycl::isnan(v);
         return component_have_a_zero(tmp);
     }
 
+    /**
+     * @brief return true if vector has a inf
+     * 
+     * @tparam T 
+     * @tparam n 
+     * @param v 
+     * @return true 
+     * @return false 
+     */
     template<class T, int n>
     inline bool has_inf(sycl::vec<T,n> v){
         auto tmp = ! sycl::isinf(v);
         return component_have_a_zero(tmp);
     }
 
+    /**
+     * @brief return true if vector has a nan or a inf
+     * 
+     * @tparam T 
+     * @tparam n 
+     * @param v 
+     * @return true 
+     * @return false 
+     */
     template<class T, int n>
     inline bool has_nan_or_inf(sycl::vec<T,n> v){
         auto tmp = ! (sycl::isnan(v) || sycl::isinf(v));
