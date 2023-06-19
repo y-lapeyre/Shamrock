@@ -120,7 +120,7 @@ T int_reduce( std::unordered_map<u64, T> & val_map){
 template<>
 void GlobalVariable<GlobalVariableType::min, f32>::reduce_val(){
 
-    final_val = int_reduce<f32,min>(val_map);
+    final_val = int_reduce<f32,GlobalVariableType::min>(val_map);
 
     is_reduced = true;
 }
@@ -128,7 +128,7 @@ void GlobalVariable<GlobalVariableType::min, f32>::reduce_val(){
 template<>
 void GlobalVariable<GlobalVariableType::max, f32>::reduce_val(){
 
-    final_val = int_reduce<f32,max>(val_map);
+    final_val = int_reduce<f32,GlobalVariableType::max>(val_map);
 
     is_reduced = true;
 }
@@ -136,7 +136,7 @@ void GlobalVariable<GlobalVariableType::max, f32>::reduce_val(){
 template<>
 void GlobalVariable<GlobalVariableType::sum, f32>::reduce_val(){
 
-    final_val = int_reduce<f32,sum>(val_map);
+    final_val = int_reduce<f32,GlobalVariableType::sum>(val_map);
 
     is_reduced = true;
 }
