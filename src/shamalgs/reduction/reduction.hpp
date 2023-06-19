@@ -59,68 +59,13 @@ namespace shamalgs::reduction {
     }
 
     template<class T>
-    bool has_nan(sycl::buffer<T> &buf, u64 cnt) {
-        if constexpr (shambase::VectorProperties<T>::is_float_based) {
-            // res is filled with 1 if no nan 0 otherwise
-            sycl::buffer<u8> res(cnt);
-            shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-                sycl::accessor acc1{buf, cgh, sycl::read_only};
-
-                sycl::accessor out{res, cgh, sycl::write_only, sycl::no_init};
-
-                cgh.parallel_for(sycl::range{cnt}, [=](sycl::item<1> item) {
-                    out[item] = !sycl::any(sycl::isnan(acc1[item]));
-                });
-            });
-
-            return !is_all_true(res, cnt);
-        } else {
-            return false;
-        }
-    }
+    bool has_nan(sycl::queue & q,sycl::buffer<T> &buf, u64 cnt);
 
     template<class T>
-    bool has_inf(sycl::buffer<T> &buf, u64 cnt) {
-        if constexpr (shambase::VectorProperties<T>::is_float_based) {
-            // res is filled with 1 if no inf 0 otherwise
-            sycl::buffer<u8> res(cnt);
-            shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-                sycl::accessor acc1{buf, cgh, sycl::read_only};
-
-                sycl::accessor out{res, cgh, sycl::write_only, sycl::no_init};
-
-                cgh.parallel_for(sycl::range{cnt}, [=](sycl::item<1> item) {
-                    out[item] = !sycl::any(sycl::isinf(acc1[item]));
-                });
-            });
-
-            return !is_all_true(res, cnt);
-        } else {
-            return false;
-        }
-    }
+    bool has_inf(sycl::queue & q,sycl::buffer<T> &buf, u64 cnt);
 
     template<class T>
-    bool has_nan_or_inf(sycl::buffer<T> &buf, u64 cnt) {
-        if constexpr (shambase::VectorProperties<T>::is_float_based) {
-            // res is filled with 1 if no nan or inf 0 otherwise
-            sycl::buffer<u8> res(cnt);
-            shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-                sycl::accessor acc1{buf, cgh, sycl::read_only};
-
-                sycl::accessor out{res, cgh, sycl::write_only, sycl::no_init};
-
-                cgh.parallel_for(sycl::range{cnt}, [=](sycl::item<1> item) {
-                    T val = acc1[item];
-                    out[item] = !sycl::any(sycl::isinf(val) || sycl::isnan(val));
-                });
-            });
-
-            return !is_all_true(res, cnt);
-        } else {
-            return false;
-        }
-    }
+    bool has_nan_or_inf(sycl::queue & q,sycl::buffer<T> &buf, u64 cnt);
 
     template<class T>
     bool equals(sycl::buffer<T> &buf1, sycl::buffer<T> &buf2) {

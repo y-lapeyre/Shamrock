@@ -67,6 +67,89 @@ namespace shamalgs::reduction {
     }
 
 
+
+
+    template<class T>
+    bool has_nan(sycl::queue & q,sycl::buffer<T> &buf, u64 cnt) {
+        if constexpr (shambase::VectorProperties<T>::is_float_based) {
+            // res is filled with 1 if no nan 0 otherwise
+            sycl::buffer<u8> res(cnt);
+            q.submit([&](sycl::handler &cgh) {
+                sycl::accessor acc1{buf, cgh, sycl::read_only};
+
+                sycl::accessor out{res, cgh, sycl::write_only, sycl::no_init};
+
+                cgh.parallel_for(sycl::range{cnt}, [=](sycl::item<1> item) {
+                    auto tmp = sycl::isnan(acc1[item]);
+                    if constexpr (shambase::VectorProperties<T>::dimension > 1){
+                        out[item] = !sycl::any(tmp);
+                    }else{
+                        out[item] = tmp;
+                    }
+                });
+            });
+
+            return !is_all_true(res, cnt);
+        } else {
+            return false;
+        }
+    }
+
+    template<class T>
+    bool has_inf(sycl::queue & q,sycl::buffer<T> &buf, u64 cnt) {
+        if constexpr (shambase::VectorProperties<T>::is_float_based) {
+            // res is filled with 1 if no inf 0 otherwise
+            sycl::buffer<u8> res(cnt);
+            q.submit([&](sycl::handler &cgh) {
+                sycl::accessor acc1{buf, cgh, sycl::read_only};
+
+                sycl::accessor out{res, cgh, sycl::write_only, sycl::no_init};
+
+                cgh.parallel_for(sycl::range{cnt}, [=](sycl::item<1> item) {
+                    auto tmp = sycl::isinf(acc1[item]);
+                    if constexpr (shambase::VectorProperties<T>::dimension > 1){
+                        out[item] = !sycl::any(tmp);
+                    }else{
+                        out[item] = tmp;
+                    }
+                });
+            });
+
+            return !is_all_true(res, cnt);
+        } else {
+            return false;
+        }
+    }
+
+    template<class T>
+    bool has_nan_or_inf(sycl::queue & q,sycl::buffer<T> &buf, u64 cnt) {
+        if constexpr (shambase::VectorProperties<T>::is_float_based) {
+            // res is filled with 1 if no nan or inf 0 otherwise
+            sycl::buffer<u8> res(cnt);
+            q.submit([&](sycl::handler &cgh) {
+                sycl::accessor acc1{buf, cgh, sycl::read_only};
+
+                sycl::accessor out{res, cgh, sycl::write_only, sycl::no_init};
+
+                cgh.parallel_for(sycl::range{cnt}, [=](sycl::item<1> item) {
+                    T val = acc1[item];
+
+                    auto tmp = sycl::isinf(val) || sycl::isnan(val);
+                    if constexpr (shambase::VectorProperties<T>::dimension > 1){
+                        out[item] = !sycl::any(tmp);
+                    }else{
+                        out[item] = tmp;
+                    }
+                });
+            });
+
+            return !is_all_true(res, cnt);
+        } else {
+            return false;
+        }
+    }
+
+
     #define XMAC_TYPES \
     X(f32   ) \
     X(f32_2 ) \
@@ -89,7 +172,10 @@ namespace shamalgs::reduction {
     template _arg_ sum(sycl::queue &q, sycl::buffer<_arg_> &buf1, u32 start_id, u32 end_id);\
     template shambase::VecComponent<_arg_> dot_sum(sycl::queue &q, sycl::buffer<_arg_> &buf1, u32 start_id, u32 end_id);\
     template _arg_ max(sycl::queue &q, sycl::buffer<_arg_> &buf1, u32 start_id, u32 end_id);\
-    template _arg_ min(sycl::queue &q, sycl::buffer<_arg_> &buf1, u32 start_id, u32 end_id);
+    template _arg_ min(sycl::queue &q, sycl::buffer<_arg_> &buf1, u32 start_id, u32 end_id);\
+    template bool has_nan(sycl::queue & q,sycl::buffer<_arg_> &buf1, u64 cnt);\
+    template bool has_inf(sycl::queue & q,sycl::buffer<_arg_> &buf1, u64 cnt);\
+    template bool has_nan_or_inf(sycl::queue & q,sycl::buffer<_arg_> &buf1, u64 cnt);
 
     XMAC_TYPES
     #undef X

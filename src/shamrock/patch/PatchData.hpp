@@ -296,38 +296,44 @@ namespace shamrock::patch {
         bool has_nan() {
             StackEntry stack_loc{};
 
+            bool ret = false;
+
             for (auto &field_var : fields) {
                 field_var.visit([&](auto &field) {
                     if (field.has_nan()) {
-                        return true;
+                        ret = true;
                     }
                 });
             }
-            return false;
+            return ret;
         }
         bool has_inf() {
             StackEntry stack_loc{};
 
+            bool ret = false;
+
             for (auto &field_var : fields) {
                 field_var.visit([&](auto &field) {
                     if (field.has_inf()) {
-                        return true;
+                        ret = true;
                     }
                 });
             }
-            return false;
+            return ret;
         }
         bool has_nan_or_inf() {
             StackEntry stack_loc{};
 
+            bool ret = false;
+
             for (auto &field_var : fields) {
                 field_var.visit([&](auto &field) {
                     if (field.has_nan_or_inf()) {
-                        return true;
+                        ret = true;
                     }
                 });
             }
-            return false;
+            return ret;
         }
     };
 

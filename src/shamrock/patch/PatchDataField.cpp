@@ -417,17 +417,17 @@ template<class T> shambase::VecComponent<T> PatchDataField<T>::compute_dot_sum()
 
 template<class T> bool PatchDataField<T>::has_nan(){StackEntry stack_loc{};
 
-    return shamalgs::reduction::has_nan(shambase::get_check_ref(get_buf()), size());
+    return shamalgs::reduction::has_nan(shamsys::instance::get_compute_queue(),shambase::get_check_ref(get_buf()), size());
 
 }
 template<class T> bool PatchDataField<T>::has_inf(){StackEntry stack_loc{};
 
-    return shamalgs::reduction::has_inf(shambase::get_check_ref(get_buf()), size());
+    return shamalgs::reduction::has_inf(shamsys::instance::get_compute_queue(),shambase::get_check_ref(get_buf()), size());
 
 }
 template<class T> bool PatchDataField<T>::has_nan_or_inf(){StackEntry stack_loc{};
 
-    return shamalgs::reduction::has_nan_or_inf(shambase::get_check_ref(get_buf()), size());
+    return shamalgs::reduction::has_nan_or_inf(shamsys::instance::get_compute_queue(),shambase::get_check_ref(get_buf()), size());
 
 }
 
