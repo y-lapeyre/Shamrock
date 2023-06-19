@@ -13,6 +13,7 @@
 #include "shamalgs/reduction/details/fallbackReduction.hpp"
 #include "shambase/sycl_utils/sycl_utilities.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"
+#include "shambase/sycl_builtins.hpp"
 
 namespace shamalgs::reduction {
 
@@ -82,7 +83,7 @@ namespace shamalgs::reduction {
                 cgh.parallel_for(sycl::range{cnt}, [=](sycl::item<1> item) {
                     auto tmp = sycl::isnan(acc1[item]);
                     if constexpr (shambase::VectorProperties<T>::dimension > 1){
-                        out[item] = !sycl::any(tmp);
+                        out[item] = !shambase::any(tmp);
                     }else{
                         out[item] = tmp;
                     }
@@ -108,7 +109,7 @@ namespace shamalgs::reduction {
                 cgh.parallel_for(sycl::range{cnt}, [=](sycl::item<1> item) {
                     auto tmp = sycl::isinf(acc1[item]);
                     if constexpr (shambase::VectorProperties<T>::dimension > 1){
-                        out[item] = !sycl::any(tmp);
+                        out[item] = !shambase::any(tmp);
                     }else{
                         out[item] = tmp;
                     }
@@ -136,7 +137,7 @@ namespace shamalgs::reduction {
 
                     auto tmp = sycl::isinf(val) || sycl::isnan(val);
                     if constexpr (shambase::VectorProperties<T>::dimension > 1){
-                        out[item] = !sycl::any(tmp);
+                        out[item] = !shambase::any(tmp);
                     }else{
                         out[item] = tmp;
                     }
