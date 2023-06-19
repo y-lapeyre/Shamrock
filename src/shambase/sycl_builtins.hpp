@@ -11,11 +11,14 @@
 #include "shambase/sycl.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"
 #include "shambase/vectors.hpp"
+#include "shambase/integer.hpp"
 
 namespace shambase {
 
     /**
      * @brief Fallback function for sycl::any
+     * SYCL std : Returns 1 if the most significant bit in any component of x is set; otherwise returns 0.
+     * if it is something else than the most significant bit it is UB
      *
      * @tparam T
      * @tparam n
@@ -31,7 +34,9 @@ namespace shambase {
         #ifdef SYCL_COMP_DPCPP
             return sycl::any(v);
         #else
-            return shambase::sum_accumulate(sycl::abs(v)) > 0;
+            return shambase::sum_accumulate(
+                (v & sycl::vec<T, n>{most_sig_bit_mask<T>()}) >> sycl::vec<T, n>{4}
+            );
         #endif
     }
 

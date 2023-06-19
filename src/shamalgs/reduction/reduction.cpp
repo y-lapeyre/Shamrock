@@ -14,6 +14,7 @@
 #include "shambase/sycl_utils/sycl_utilities.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"
 #include "shambase/sycl_builtins.hpp"
+#include "shambase/floats.hpp"
 
 namespace shamalgs::reduction {
 
@@ -81,12 +82,7 @@ namespace shamalgs::reduction {
                 sycl::accessor out{res, cgh, sycl::write_only, sycl::no_init};
 
                 cgh.parallel_for(sycl::range{cnt}, [=](sycl::item<1> item) {
-                    auto tmp = sycl::isnan(acc1[item]);
-                    if constexpr (shambase::VectorProperties<T>::dimension > 1){
-                        out[item] = !shambase::any(tmp);
-                    }else{
-                        out[item] = tmp;
-                    }
+                    out[item] = shambase::has_nan(acc1[item]);
                 });
             });
 
@@ -107,12 +103,7 @@ namespace shamalgs::reduction {
                 sycl::accessor out{res, cgh, sycl::write_only, sycl::no_init};
 
                 cgh.parallel_for(sycl::range{cnt}, [=](sycl::item<1> item) {
-                    auto tmp = sycl::isinf(acc1[item]);
-                    if constexpr (shambase::VectorProperties<T>::dimension > 1){
-                        out[item] = !shambase::any(tmp);
-                    }else{
-                        out[item] = tmp;
-                    }
+                    out[item] = shambase::has_inf(acc1[item]);
                 });
             });
 
@@ -133,14 +124,7 @@ namespace shamalgs::reduction {
                 sycl::accessor out{res, cgh, sycl::write_only, sycl::no_init};
 
                 cgh.parallel_for(sycl::range{cnt}, [=](sycl::item<1> item) {
-                    T val = acc1[item];
-
-                    auto tmp = sycl::isinf(val) || sycl::isnan(val);
-                    if constexpr (shambase::VectorProperties<T>::dimension > 1){
-                        out[item] = !shambase::any(tmp);
-                    }else{
-                        out[item] = tmp;
-                    }
+                    out[item] = shambase::has_nan_or_inf(acc1[item]);
                 });
             });
 
