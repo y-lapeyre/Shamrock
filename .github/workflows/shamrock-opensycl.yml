@@ -116,7 +116,7 @@ jobs:
         clang: [15,16]
         cuda: [11.0.2]
         rocm: [5.4.3]
-    if: false
+    #if: false
   
     timeout-minutes: 60
     steps:
@@ -180,7 +180,7 @@ jobs:
       - name: run Shamrock Unittests world_size = 4
         run: |
           cd build
-          mpirun --oversubscribe -n4 ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --unittest
+          mpirun --oversubscribe -n 4 ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --unittest
 
 
   shamrock_opensycl_cuda:
@@ -192,7 +192,7 @@ jobs:
         clang: [15,16]
         cuda: [11.0.2]
         rocm: [5.4.3]
-    if: false
+    #if: false
   
     timeout-minutes: 60
     steps:
@@ -266,7 +266,7 @@ jobs:
       - name: run Shamrock Unittests world_size = 4
         run: |
           cd build
-          mpirun --oversubscribe -n4 ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --unittest
+          mpirun --oversubscribe -n 4 ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --unittest
 
 
 
@@ -279,7 +279,7 @@ jobs:
         clang: [15,16]
         cuda: [11.0.2]
         rocm: [5.4.3]
-    if: false
+    #if: false
   
     timeout-minutes: 60
     steps:
@@ -356,7 +356,7 @@ jobs:
       - name: run Shamrock Unittests world_size = 4
         run: |
           cd build
-          mpirun --oversubscribe -n4 ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --unittest
+          mpirun --oversubscribe -n 4 ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --unittest
 
   shamrock_opensycl_cuda_nvcxx:
     name: OpenSYCL nvcxx ${{matrix.nvhpc}}, CUDA ${{matrix.cuda}}
@@ -429,4 +429,4 @@ jobs:
       - name: run Shamrock Unittests world_size = 4
         run: |
           cd build
-          mpirun --oversubscribe -n4 ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --unittest
+          mpirun --oversubscribe -n 4 ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --unittest
