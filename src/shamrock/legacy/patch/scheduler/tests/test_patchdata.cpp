@@ -35,7 +35,7 @@ Test_start("patchdata::", sync_patchdata_layout, -1) {
 }
 */
 
-/*
+
 TestStart(Unittest,"patchdata::", send_recv_patchdata, 2){
 
     using namespace shamrock::patch;
@@ -85,4 +85,3 @@ TestStart(Unittest,"patchdata::", send_recv_patchdata, 2){
 
 
 }
-*/
