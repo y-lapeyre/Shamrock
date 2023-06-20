@@ -180,7 +180,7 @@ jobs:
       - name: run Shamrock Unittests world_size = 4
         run: |
           cd build
-          mpirun --oversubscribe -n4 ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --unittest
+          mpirun --oversubscribe -n 4 ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --unittest
 
 
   shamrock_opensycl_cuda:
@@ -266,7 +266,7 @@ jobs:
       - name: run Shamrock Unittests world_size = 4
         run: |
           cd build
-          mpirun --oversubscribe -n4 ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --unittest
+          mpirun --oversubscribe -n 4 ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --unittest
 
 
 
@@ -356,7 +356,7 @@ jobs:
       - name: run Shamrock Unittests world_size = 4
         run: |
           cd build
-          mpirun --oversubscribe -n4 ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --unittest
+          mpirun --oversubscribe -n 4 ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --unittest
 
   shamrock_opensycl_cuda_nvcxx:
     name: OpenSYCL nvcxx ${{matrix.nvhpc}}, CUDA ${{matrix.cuda}}
@@ -429,4 +429,4 @@ jobs:
       - name: run Shamrock Unittests world_size = 4
         run: |
           cd build
-          mpirun --oversubscribe -n4 ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --unittest
+          mpirun --oversubscribe -n 4 ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --unittest
