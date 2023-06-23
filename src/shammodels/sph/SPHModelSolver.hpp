@@ -11,6 +11,7 @@
 #include "SPHModelSolverConfig.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"
 #include "shammodels/sph/BasicSPHGhosts.hpp"
+#include "shammodels/sph/modules/SPHSolverStorage.hpp"
 #include "shamrock/scheduler/InterfacesUtility.hpp"
 #include "shamrock/patch/PatchDataLayout.hpp"
 #include "shamrock/scheduler/ComputeField.hpp"
@@ -21,6 +22,8 @@
 #include <memory>
 #include <variant>
 namespace shammodels {
+
+    
 
     /**
      * @brief The shamrock SPH model
@@ -42,6 +45,8 @@ namespace shammodels {
 
         ShamrockCtx &context;
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }
+
+        SPHSolverStorage<Tvec, u_morton> storage {};
 
         Config solver_config;
 
@@ -82,53 +87,33 @@ namespace shammodels {
         }
 
         // serial patch tree control
-        std::unique_ptr<SerialPatchTree<Tvec>> sptree;
         void gen_serial_patch_tree();
-        inline void reset_serial_patch_tree() { sptree.reset(); }
+        inline void reset_serial_patch_tree() { storage.serial_patch_tree.reset(); }
 
         // interface_control
         using GhostHandle        = sph::BasicSPHGhostHandler<Tvec>;
         using GhostHandleCache   = typename GhostHandle::CacheMap;
         using PreStepMergedField = typename GhostHandle::PreStepMergedField;
 
-        std::unique_ptr<GhostHandle> ghost_handler;
         inline void gen_ghost_handler() {
-            if (ghost_handler) {
-                throw shambase::throw_with_loc<std::runtime_error>(
-                    "please reset the ghost_handler before");
-            }
-            ghost_handler = std::make_unique<GhostHandle>(scheduler());
+            storage.ghost_handler.set(GhostHandle{scheduler()});
         }
-        inline void reset_ghost_handler() { ghost_handler.reset(); }
+        inline void reset_ghost_handler() { storage.ghost_handler.reset(); }
 
-        GhostHandleCache ghost_handle_cache;
         void build_ghost_cache();
         void clear_ghost_cache();
 
-        struct TempFields {
-            shambase::DistributedData<PreStepMergedField> merged_xyzh;
-            shamrock::ComputeField<Tscal> omega;
-
-            void clear() {
-                merged_xyzh.reset();
-                omega.reset();
-            }
-
-        } temp_fields;
 
         void merge_position_ghost();
 
         // trees
         using RTree = RadixTree<u_morton, Tvec>;
-        shambase::DistributedData<RTree> merged_pos_trees;
         void build_merged_pos_trees();
         void clear_merged_pos_trees();
 
-        shambase::DistributedData<RadixTreeField<Tscal>> rtree_rint_field;
         void compute_presteps_rint();
         void reset_presteps_rint();
 
-        std::unique_ptr<shamrock::tree::ObjectCacheHandler> neighbors_cache;
         void start_neighbors_cache();
         void reset_neighbors_cache();
 
@@ -143,26 +128,16 @@ namespace shammodels {
 
         void do_predictor_leapfrog(Tscal dt);
 
-
-
-        void update_artificial_viscosity_mm97(Tscal dt);
-        void update_artificial_viscosity_cd10(Tscal dt);
         void update_artificial_viscosity(Tscal dt);
 
-        shamrock::patch::PatchDataLayout ghost_layout;
         void init_ghost_layout();
 
-        shambase::DistributedData<shamrock::MergedPatchData> merged_patchdata_ghost;
         void communicate_merge_ghosts_fields();
         void reset_merge_ghosts_fields();
 
-        shamrock::ComputeField<Tscal> pressure;
         void compute_eos_fields();
         void reset_eos_fields();
 
-
-        shamrock::ComputeField<Tvec> old_axyz;
-        shamrock::ComputeField<Tscal> old_duint;
         void prepare_corrector();
         void update_derivs();
         void update_derivs_mm97();
