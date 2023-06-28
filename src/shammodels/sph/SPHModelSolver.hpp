@@ -77,6 +77,10 @@ namespace shammodels {
                 context.pdata_layout_add_field<Tscal>("divv", 1);
             }
 
+            if (solver_config.has_field_dtdivv()) {
+                context.pdata_layout_add_field<Tscal>("dtdivv", 1);
+            }
+
             if (solver_config.has_field_curlv()) {
                 context.pdata_layout_add_field<Tvec>("curlv", 1);
             }
@@ -141,6 +145,7 @@ namespace shammodels {
         void prepare_corrector();
         void update_derivs();
         void update_derivs_mm97();
+        void update_derivs_cd10();
         void update_derivs_constantAV();
         /**
          * @brief 
