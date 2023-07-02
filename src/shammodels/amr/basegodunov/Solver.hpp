@@ -11,13 +11,13 @@
 #include "shambase/sycl_utils/vectorProperties.hpp"
 #include "shamrock/scheduler/SerialPatchTree.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
-namespace shammodels {
+namespace shammodels::basegodunov {
 
     template<class Tvec>
-    struct AMRGodunovSolverConfig {};
+    struct SolverConfig {};
 
     template<class Tvec, class TgridVec>
-    class AMRGodunovSolver {
+    class Solver {public:
 
         using Tscal              = shambase::VecComponent<Tvec>;
         using Tgridscal          = shambase::VecComponent<TgridVec>;
@@ -25,7 +25,7 @@ namespace shammodels {
 
         using u_morton = u32;
 
-        using Config = AMRGodunovSolverConfig<Tvec>;
+        using Config = SolverConfig<Tvec>;
 
         ShamrockCtx &context;
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }
@@ -37,12 +37,7 @@ namespace shammodels {
             context.pdata_layout_add_field<TgridVec>("cell_max", 1);
         }
 
-        // serial patch tree control
-        std::unique_ptr<SerialPatchTree<TgridVec>> sptree;
-        void gen_serial_patch_tree();
-        inline void reset_serial_patch_tree() { sptree.reset(); }
-
-        AMRGodunovSolver(ShamrockCtx &context) : context(context) {}
+        Solver(ShamrockCtx &context) : context(context) {}
     };
 
-} // namespace shammodels
+} // namespace shammodels::basegodunov

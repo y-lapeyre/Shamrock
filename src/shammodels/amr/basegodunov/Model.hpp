@@ -9,20 +9,23 @@
 #pragma once
 
 #include "shambase/sycl_utils/vectorProperties.hpp"
-#include "shammodels/amr/AMRGodunovSolver.hpp"
+#include "shammodels/amr/basegodunov/Solver.hpp"
+#include "shamrock/legacy/utils/geometry_utils.hpp"
+#include "shamrock/scheduler/ReattributeDataUtility.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
-namespace shammodels {
+
+namespace shammodels::basegodunov {
 
     template<class Tvec, class TgridVec>
-    class AMRGodunovModel {
+    class Model {public:
         using Tscal              = shambase::VecComponent<Tvec>;
         static constexpr u32 dim = shambase::VectorProperties<Tvec>::dimension;
         ShamrockCtx &ctx;
 
-        using Solver = AMRGodunovSolver<Tvec, TgridVec>;
+        using Solver = Solver<Tvec, TgridVec>;
         Solver solver;
 
-        AMRGodunovModel(ShamrockCtx &ctx) : ctx(ctx), solver(ctx){};
+        Model(ShamrockCtx &ctx) : ctx(ctx), solver(ctx){};
     };
 
-} // namespace shammodels
+} // namespace shammodels::basegodunov
