@@ -16,33 +16,11 @@
 #include "shamrock/tree/RadixTree.hpp"
 #include "shamrock/tree/TreeTaversalCache.hpp"
 #include "shamsys/legacy/log.hpp"
-
+#include "shamrock/utils/SolverStorageComponent.hpp"
 namespace shammodels::basegodunov {
 
     template<class T>
-    class StorageComponent {
-        private:
-        std::unique_ptr<T> hndl;
-
-        public:
-        void set(T &&arg) {
-            StackEntry stack_loc{};
-            if (hndl) {
-                throw shambase::throw_with_loc<std::runtime_error>(
-                    "please reset the serial patch tree before");
-            }
-            hndl = std::make_unique<T>(std::forward<T>(arg));
-        }
-
-        T &get() {
-            StackEntry stack_loc{};
-            return shambase::get_check_ref(hndl);
-        }
-        void reset() {
-            StackEntry stack_loc{};
-            hndl.reset();
-        }
-    };
+    using Component = shamrock::StorageComponent<T>;
 
     template<class Tvec, class TgridVec, class Tmorton>
     class SolverStorage {
@@ -53,7 +31,7 @@ namespace shammodels::basegodunov {
 
         using RTree = RadixTree<Tmorton, Tvec>;
 
-        StorageComponent<SerialPatchTree<Tvec>> serial_patch_tree;
+        Component<SerialPatchTree<Tvec>> serial_patch_tree;
     };
 
 } // namespace shammodels::basegodunov

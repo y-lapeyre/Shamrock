@@ -18,6 +18,19 @@ const std::string base_name = "AMRGodunov";
 template<class Tvec, class TgridVec>
 void add_instance(py::module &m, std::string name_config, std::string name_model){
 
+    using namespace shammodels::basegodunov;
+
+    using Tscal              = shambase::VecComponent<Tvec>;
+    using Tgridscal          = shambase::VecComponent<TgridVec>;
+
+    using T       = Model<Tvec, TgridVec>;
+    using TConfig = typename T::Solver::Config;
+
+
+    py::class_<TConfig>(m, name_config.c_str());
+
+    py::class_<T>(m, name_model.c_str());
+
 }
 
 Register_pymod(pybasegodunovmodel) {
