@@ -229,6 +229,80 @@ template<class Ta, class Tb>
         }
     }
 
+
+
+    template<>
+    CoordRangeTransform<i64_3, u64_3>::CoordRangeTransform(
+        CoordRange<i64_3> source_range, CoordRange<u64_3> dest_range
+    )
+        : source_coord_min(source_range.lower), dest_coord_min(dest_range.lower) {
+
+        source_range.check_throw_ranges();
+        dest_range.check_throw_ranges();
+
+        u64_3 source_delt = source_range.delt().convert<u64>();
+        u64_3 dest_delt   = dest_range.delt();
+
+        bool cmp_x = dest_delt.x() >= source_delt.x();
+        bool cmp_y = dest_delt.y() >= source_delt.y();
+        bool cmp_z = dest_delt.z() >= source_delt.z();
+
+        if ((cmp_x == cmp_y) && (cmp_z == cmp_y)) {
+
+            bool obj_greater_than_patch = cmp_x;
+
+            if (obj_greater_than_patch) {
+                check_divisor_throw(dest_delt, source_delt);
+                mode = multiply;
+                fact = dest_delt / source_delt;
+            } else {
+                check_divisor_throw(source_delt, dest_delt);
+                mode = divide;
+                fact = source_delt / dest_delt;
+            }
+
+        } else {
+            throw shambase::throw_with_loc<std::invalid_argument>( "the range comparaison are not the same");
+        }
+    }
+
+
+
+    template<>
+    CoordRangeTransform<u64_3, i64_3>::CoordRangeTransform(
+        CoordRange<u64_3> source_range, CoordRange<i64_3> dest_range
+    )
+        : source_coord_min(source_range.lower), dest_coord_min(dest_range.lower) {
+
+        source_range.check_throw_ranges();
+        dest_range.check_throw_ranges();
+
+        i64_3 source_delt = source_range.delt().convert<i64>();
+        i64_3 dest_delt   = dest_range.delt();
+
+        bool cmp_x = dest_delt.x() >= source_delt.x();
+        bool cmp_y = dest_delt.y() >= source_delt.y();
+        bool cmp_z = dest_delt.z() >= source_delt.z();
+
+        if ((cmp_x == cmp_y) && (cmp_z == cmp_y)) {
+
+            bool obj_greater_than_patch = cmp_x;
+
+            if (obj_greater_than_patch) {
+                check_divisor_throw(dest_delt, source_delt);
+                mode = multiply;
+                fact = dest_delt / source_delt;
+            } else {
+                check_divisor_throw(source_delt, dest_delt);
+                mode = divide;
+                fact = source_delt / dest_delt;
+            }
+
+        } else {
+            throw shambase::throw_with_loc<std::invalid_argument>( "the range comparaison are not the same");
+        }
+    }
+
     template<>
     CoordRangeTransform<u64_3, u32_3>::CoordRangeTransform(
         CoordRange<u64_3> source_range, CoordRange<u32_3> dest_range

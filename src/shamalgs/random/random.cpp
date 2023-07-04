@@ -146,6 +146,7 @@ namespace shamalgs::random {
     X(f64   );
     X(u32   );
     X(u64   );
+    X(i64   );
 
     #undef X
     #undef X2
@@ -208,5 +209,6 @@ namespace shamalgs::random {
     X(u64_4 );
     X(u64_8 );
     X(u64_16);
+    X(i64_3);
 
 }

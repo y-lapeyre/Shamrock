@@ -26,6 +26,12 @@ namespace shammodels::basegodunov {
         Solver solver;
 
         Model(ShamrockCtx &ctx) : ctx(ctx), solver(ctx){};
+
+        ////////////////////////////////////////////////////////////////////////////////////////////
+        /////// setup function
+        ////////////////////////////////////////////////////////////////////////////////////////////
+
+        void init_scheduler(u32 crit_split, u32 crit_merge);
     };
 
 } // namespace shammodels::basegodunov

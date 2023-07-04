@@ -106,7 +106,8 @@ namespace shamalgs::algorithm {
     X(u32)                                                                                         \
     X(u64)                                                                                         \
     X(u32_3)                                                                                       \
-    X(u64_3)
+    X(u64_3)                                                                                       \
+    X(i64_3)
 
 #define X(_arg_)                                                                                   \
     template sycl::buffer<_arg_> index_remap(\
