@@ -16,6 +16,7 @@
 #include <vector>
 
 #include "shambase/integer_sycl.hpp"
+#include "shambase/stacktrace.hpp"
 #include "shambase/type_aliases.hpp"
 #include "shamrock/legacy/patch/base/patchdata.hpp"
 #include "shamrock/legacy/patch/base/patchdata_field.hpp"
@@ -655,20 +656,27 @@ std::string  PatchScheduler::format_patch_coord(shamrock::patch::Patch p){
 
 template<class vec>
 void check_locality_t(PatchScheduler & sched){
+
+    StackEntry stack_loc{};
+    
     using namespace shamrock::patch;
     sched.for_each_patch_data([&](u64 pid, Patch p, shamrock::patch::PatchData &pdat) {
         PatchDataField<vec> &main_field = pdat.get_field<vec>(0);
         auto [bmin_p0, bmax_p0]         = sched.patch_data.sim_box.patch_coord_to_domain<vec>(p);
+        
         main_field.check_err_range(
             [&](vec val, vec vmin, vec vmax) {
                 return Patch::is_in_patch_converted(val, vmin, vmax);
             },
             bmin_p0,
-            bmax_p0);
+            bmax_p0, shambase::format("patch id = {}", pid));
     });
 }
 
 void PatchScheduler::check_patchdata_locality_corectness(){
+
+    StackEntry stack_loc{};
+
     if(pdl.check_main_field_type<f32_3>()){
         check_locality_t<f32_3>(*this);
     }else if(pdl.check_main_field_type<f64_3>()){

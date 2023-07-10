@@ -6,7 +6,7 @@ rho_g = 1
 target_tot_u = 1
 
 
-dr = 0.01
+dr = 0.002
 bmin = (-0.6,-0.6,-0.6)
 bmax = ( 0.6, 0.6, 0.6)
 pmass = -1
@@ -17,13 +17,14 @@ pmass = -1
 ctx = shamrock.Context()
 ctx.pdata_layout_new()
 model = shamrock.get_SPHModel(context = ctx, vector_type = "f64_3",sph_kernel = "M6")
-model.init_scheduler(int(1e7),1)
+model.init_scheduler(int(1e6),1)
 bmin,bmax = model.get_ideal_fcc_box(dr,bmin,bmax)
 xm,ym,zm = bmin
 xM,yM,zM = bmax
 model.resize_simulation_box(bmin,bmax)
 model.add_cube_fcc_3d(dr, bmin,bmax)
 xc,yc,zc = model.get_closest_part_to((0,0,0))
+ctx.close_sched()
 del model
 del ctx
 
@@ -41,7 +42,7 @@ cfg.set_boundary_periodic()
 cfg.print_status()
 model.set_solver_config(cfg)
 
-model.init_scheduler(int(1e7),1)
+model.init_scheduler(int(1e6),1)
 
 
 bmin = (xm - xc,ym - yc, zm - zc)
