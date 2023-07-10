@@ -85,6 +85,10 @@ auto Model<Tvec, SPHKernel>::get_closest_part_to(Tvec pos) -> Tvec {
     std::vector<Tvec> list_dr{};
     shamalgs::collective::vector_allgatherv(std::vector<Tvec>{best_dr}, list_dr, MPI_COMM_WORLD);
 
+    //reset distances because if two rank find the same distance the return value won't be the same
+    //this bug took me a whole day to fix, aaaaaaaaaaaaah !!!!!
+    //maybe this should be moved somewhere else to prevent similar issues
+    //TODO (in a year maybe XD )
     best_dr     = shambase::VectorProperties<Tvec>::get_max();
     best_dist2 = shambase::VectorProperties<Tscal>::get_max();
 
