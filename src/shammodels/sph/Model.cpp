@@ -97,6 +97,27 @@ auto Model<Tvec, SPHKernel>::get_closest_part_to(Tvec pos) -> Tvec{
 
 }
 
+
+
+
+template<class Tvec, template<class> class SPHKernel>
+auto Model<Tvec, SPHKernel>::get_ideal_fcc_box(Tscal dr, std::pair<Tvec, Tvec> box) -> std::pair<Tvec, Tvec> {
+    auto [a, b] = generic::setup::generators::get_ideal_fcc_box<Tscal>(dr, box);
+            return {a, b};
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
 using namespace shamrock::sph::kernels;
 
 template class shammodels::sph::Model<f64_3, M4>;

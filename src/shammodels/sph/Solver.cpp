@@ -1986,7 +1986,7 @@ auto SPHSolve<Tvec, Kern>::evolve_once(Tscal t_current,Tscal dt,
         print+=("--------------------------------------------------------");
         print+=(gathered) + "\n";
         print+=("--------------------------------------------------------");
-        logger::info_ln("sph::Model","%s\n",print.data());
+        logger::info_ln("sph::Model",print);
     }
 
     reset_serial_patch_tree();

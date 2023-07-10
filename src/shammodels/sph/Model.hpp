@@ -69,11 +69,9 @@ namespace shammodels::sph {
 
         f64 total_mass_to_part_mass(f64 totmass);
 
-        template<std::enable_if_t<dim == 3, int> = 0>
-        inline std::pair<Tvec, Tvec> get_ideal_fcc_box(Tscal dr, std::pair<Tvec, Tvec> box) {
-            auto [a, b] = generic::setup::generators::get_ideal_fcc_box<Tscal>(dr, box);
-            return {a, b};
-        }
+
+        std::pair<Tvec, Tvec> get_ideal_fcc_box(Tscal dr, std::pair<Tvec, Tvec> box);
+
 
         template<std::enable_if_t<dim == 3, int> = 0>
         inline void add_cube_fcc_3d(Tscal dr, std::pair<Tvec, Tvec> _box) {
