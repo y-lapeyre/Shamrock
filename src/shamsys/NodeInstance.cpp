@@ -565,9 +565,11 @@ print_buf = shambase::format("| {:>4} | {:>8} | {:>12} | {:>16} |\n", rank,"???"
                         auto DeviceName = dev.get_info<sycl::info::device::name>();
                         logger::debug_sycl_ln("NodeInstance", "init alt queue  : ", "|",DeviceName, "|", PlatformName, "|" , shambase::getDevice_type(dev), "|");
                         alt_queue = std::make_unique<sycl::queue>(dev,exception_handler);
-                    
+                        alt_queue_id = key_global;
+
                         logger::debug_sycl_ln("NodeInstance", "init comp queue : ", "|",DeviceName, "|", PlatformName, "|" , shambase::getDevice_type(dev), "|");
                         compute_queue = std::make_unique<sycl::queue>(dev,exception_handler);
+                        compute_queue_id = key_global;
             
                     }
 
@@ -603,11 +605,13 @@ print_buf = shambase::format("| {:>4} | {:>8} | {:>12} | {:>16} |\n", rank,"???"
             if(key_global == alt_id){
                 logger::debug_sycl_ln("NodeInstance", "init alt queue  : ", "|",DeviceName, "|", PlatformName, "|" , shambase::getDevice_type(dev), "|");
                 alt_queue = std::make_unique<sycl::queue>(dev,exception_handler);
+                alt_queue_id = key_global;
             }
 
             if(key_global == compute_id){
                 logger::debug_sycl_ln("NodeInstance", "init comp queue : ", "|",DeviceName, "|", PlatformName, "|" , shambase::getDevice_type(dev), "|");
                 compute_queue = std::make_unique<sycl::queue>(dev,exception_handler);
+                compute_queue_id = key_global;
             }
 
         });
