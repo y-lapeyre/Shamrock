@@ -818,6 +818,7 @@ void SPHSolve<Tvec, Kern>::update_derivs() {
 template<class Tvec, template<class> class Kern>
 void SPHSolve<Tvec, Kern>::update_derivs_constantAV() {
 
+    shamsys::instance::get_compute_queue().wait();
     StackEntry stack_loc{};
 
     using namespace shamrock;
@@ -1014,11 +1015,14 @@ void SPHSolve<Tvec, Kern>::update_derivs_constantAV() {
             });
         });
     });
+
+    shamsys::instance::get_compute_queue().wait();
 }
 
 template<class Tvec, template<class> class Kern>
 void SPHSolve<Tvec, Kern>::update_derivs_mm97() {
 
+    shamsys::instance::get_compute_queue().wait();
     StackEntry stack_loc{};
 
     using namespace shamrock;
@@ -1222,12 +1226,15 @@ void SPHSolve<Tvec, Kern>::update_derivs_mm97() {
             });
         });
     });
+
+    shamsys::instance::get_compute_queue().wait();
 }
 
 
 template<class Tvec, template<class> class Kern>
 void SPHSolve<Tvec, Kern>::update_derivs_cd10() {
 
+    shamsys::instance::get_compute_queue().wait();
     StackEntry stack_loc{};
 
     using namespace shamrock;
@@ -1431,6 +1438,8 @@ void SPHSolve<Tvec, Kern>::update_derivs_cd10() {
             });
         });
     });
+
+    shamsys::instance::get_compute_queue().wait();
 }
 
 template<class Tvec, template<class> class Kern>
