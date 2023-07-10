@@ -55,7 +55,7 @@ model.add_cube_fcc_3d(dr, bmin,bmax)
 vol_b = (xM - xm)*(yM - ym)*(zM - zm)
 
 totmass = (rho_g*vol_b)
-print("Total mass :", totmass)
+#print("Total mass :", totmass)
 
 pmass = model.total_mass_to_part_mass(totmass)
 
@@ -68,21 +68,21 @@ model.add_kernel_value("uint","f64", u_inj,(0,0,0),rinj)
 
 
 
-print("Current part mass :", pmass)
+#print("Current part mass :", pmass)
 
 #for it in range(5):
 #    setup.update_smoothing_lenght(ctx)
 
 
 
-print("Current part mass :", pmass)
+#print("Current part mass :", pmass)
 model.set_particle_mass(pmass)
 
 
 tot_u = pmass*model.get_sum("uint","f64")
-print("total u :",tot_u)
+#print("total u :",tot_u)
 
-a = input("continue ?")
+#a = input("continue ?")
 
 
 
@@ -105,7 +105,7 @@ i = 0
 i_dump = 0
 while t_sum < t_target:
 
-    print("step : t=",t_sum)
+    #print("step : t=",t_sum)
     
     next_dt = model.evolve(t_sum,current_dt, True, "dump_"+str(i_dump)+".vtk", True)
 
