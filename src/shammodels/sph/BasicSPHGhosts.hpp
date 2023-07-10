@@ -222,7 +222,7 @@ namespace shammodels::sph {
             shamalgs::collective::serialize_sparse_comm<PositionInterface>(
                 std::forward<shambase::DistributedDataShared<PositionInterface>>(interf),
                 recv_dat,
-                shamsys::DirectGPU, 
+                shamsys::get_protocol(), 
                 [&](u64 id){
                     return sched.get_patch_rank_owner(id);
                 }, 
@@ -271,7 +271,7 @@ namespace shammodels::sph {
             shamalgs::collective::serialize_sparse_comm<shamrock::patch::PatchData>(
                 std::forward<shambase::DistributedDataShared<shamrock::patch::PatchData>>(interf),
                 recv_dat,
-                shamsys::DirectGPU, 
+                shamsys::get_protocol(), 
                 [&](u64 id){
                     return sched.get_patch_rank_owner(id);
                 }, 
@@ -303,7 +303,7 @@ namespace shammodels::sph {
             shamalgs::collective::serialize_sparse_comm<PatchDataField<T>>(
                 std::forward<shambase::DistributedDataShared<PatchDataField<T>>>(interf),
                 recv_dat,
-                shamsys::DirectGPU, 
+                shamsys::get_protocol(), 
                 [&](u64 id){
                     return sched.get_patch_rank_owner(id);
                 }, 

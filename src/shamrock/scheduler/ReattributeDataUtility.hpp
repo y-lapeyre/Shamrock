@@ -15,6 +15,7 @@
 #include "shamrock/scheduler/SerialPatchTree.hpp"
 #include "shamrock/patch/PatchData.hpp"
 #include "shamsys/NodeInstance.hpp"
+#include "shamsys/comm/details/CommunicationBufferImpl.hpp"
 #include "shamsys/legacy/log.hpp"
 #include <vector>
 
@@ -164,7 +165,7 @@ namespace shamrock {
             shamalgs::collective::serialize_sparse_comm<PatchData>(
                 std::move(part_exchange), 
                 recv_dat, 
-                shamsys::DirectGPU, 
+                shamsys::get_protocol(), 
                 [&](u64 id){
                     return sched.get_patch_rank_owner(id);
                 }, 
