@@ -309,7 +309,7 @@ namespace shammodels::sph {
                 }, 
                 [](PatchDataField<T> & pdat){
                     shamalgs::SerializeHelper ser;
-                    ser.allocate(pdat.serialize_buf_byte_size());
+                    ser.allocate(pdat.serialize_full_byte_size());
                     pdat.serialize_full(ser);
                     return ser.finalize();
                 }, 
