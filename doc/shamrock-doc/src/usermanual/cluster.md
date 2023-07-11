@@ -3,6 +3,37 @@
 ## Neowise
 10 nodes, 10 cpus, 480 cores, 8 gpu per nodes
 
+
+### Compiling OpenSYCL
+
+Seem's to be broken due to gcc headers  
+```
+module purge
+module load llvm-amdgpu/5.2.0_gcc-10.4.0 rocm-cmake/5.2.0_gcc-10.4.0 rocm-opencl/5.2.0_gcc-10.4.0 rocm-openmp-extras/5.2.0_gcc-10.4.0 rocm-smi-lib/5.2.3_gcc-10.4.0 rocminfo/5.2.0_gcc-10.4.0 llvm
+```
+
+```
+cd OpenSYCL
+
+cmake \
+  -DWITH_ROCM_BACKEND=ON \
+  -DWITH_SSCP_COMPILER=OFF \
+  -DROCM_PATH=/opt/rocm \
+  -DCMAKE_INSTALL_PREFIX=../OpenSYCL_comp .
+
+make -j install
+```
+
+```
+cd Shamrock
+python3 buildbot/configure.py --gen make --tests --build release --outdir build --cxxpath ../OpenSYCL_comp --compiler opensycl --profile hip-gfx906
+```
+### Compiling dpcpp
+
+```
+python3 buildbot/configure.py --hip --cmake-opt="-DCMAKE_INSTALL_PREFIX=../../dpcpp_compiler" --cmake-opt="-DSYCL_BUILD_PI_HIP_ROCM_DIR=/opt/rocm" --cmake-gen "Unix Makefiles"
+```
+
 ```bash
 export DPCPP_HOME=$(pwd)/dpcpp_compiler
 export PATH=$DPCPP_HOME/bin:$PATH
