@@ -7,10 +7,12 @@
 // -------------------------------------------------------//
 
 #include "Solver.hpp"
+#include "shamalgs/collective/exchanges.hpp"
 #include "shamalgs/collective/reduction.hpp"
 #include "shamalgs/reduction/reduction.hpp"
 #include "shambase/exception.hpp"
 #include "shambase/memory.hpp"
+#include "shambase/string.hpp"
 #include "shambase/time.hpp"
 #include "shammodels/sph/BasicSPHGhosts.hpp"
 #include "shammodels/sph/SPHSolverImpl.hpp"
@@ -152,9 +154,10 @@ void SPHSolve<Tvec, Kern>::gen_serial_patch_tree() {
 
 template<class Tvec, template<class> class Kern>
 void SPHSolve<Tvec, Kern>::apply_position_boundary(Tscal time_val) {
+    shamsys::instance::get_compute_queue().wait();
     StackEntry stack_loc{};
 
-    logger::info_ln("SphSolver", "apply position boundary");
+    logger::debug_ln("SphSolver", "apply position boundary");
 
     PatchScheduler &sched = scheduler();
 
@@ -180,14 +183,13 @@ void SPHSolve<Tvec, Kern>::apply_position_boundary(Tscal time_val) {
         );
     }
 
-
-    
-
     reatrib.reatribute_patch_objects(storage.serial_patch_tree.get(), "xyz");
+    shamsys::instance::get_compute_queue().wait();
 }
 
 template<class Tvec, template<class> class Kern>
 void SPHSolve<Tvec, Kern>::build_ghost_cache() {
+    shamsys::instance::get_compute_queue().wait();
     StackEntry stack_loc{};
 
     using SPHUtils = sph::SPHUtilities<Tvec, Kernel>;
@@ -195,6 +197,7 @@ void SPHSolve<Tvec, Kern>::build_ghost_cache() {
 
     storage.ghost_patch_cache.set(sph_utils.build_interf_cache(
         storage.ghost_handler.get(), storage.serial_patch_tree.get(), htol_up_tol));
+    shamsys::instance::get_compute_queue().wait();
 }
 
 template<class Tvec, template<class> class Kern>
@@ -205,14 +208,17 @@ void SPHSolve<Tvec, Kern>::clear_ghost_cache() {
 
 template<class Tvec, template<class> class Kern>
 void SPHSolve<Tvec, Kern>::merge_position_ghost() {
+    shamsys::instance::get_compute_queue().wait();
     StackEntry stack_loc{};
 
     storage.merged_xyzh.set(
         storage.ghost_handler.get().build_comm_merge_positions(storage.ghost_patch_cache.get()));
+    shamsys::instance::get_compute_queue().wait();
 }
 
 template<class Tvec, template<class> class Kern>
 void SPHSolve<Tvec, Kern>::build_merged_pos_trees() {
+    shamsys::instance::get_compute_queue().wait();
     StackEntry stack_loc{};
 
     SPHSolverImpl solver(context);
@@ -220,6 +226,7 @@ void SPHSolve<Tvec, Kern>::build_merged_pos_trees() {
     constexpr u32 reduc_level = 3;
     auto &merged_xyzh         = storage.merged_xyzh.get();
     storage.merged_pos_trees.set(solver.make_merge_patch_trees(merged_xyzh, reduc_level));
+    shamsys::instance::get_compute_queue().wait();
 }
 
 template<class Tvec, template<class> class Kern>
@@ -230,6 +237,7 @@ void SPHSolve<Tvec, Kern>::clear_merged_pos_trees() {
 
 template<class Tvec, template<class> class Kern>
 void SPHSolve<Tvec, Kern>::do_predictor_leapfrog(Tscal dt) {
+    shamsys::instance::get_compute_queue().wait();
     StackEntry stack_loc{};
     using namespace shamrock::patch;
     PatchDataLayout &pdl = scheduler().pdl;
@@ -242,18 +250,19 @@ void SPHSolve<Tvec, Kern>::do_predictor_leapfrog(Tscal dt) {
     shamrock::SchedulerUtility utility(scheduler());
 
     // forward euler step f dt/2
-    logger::info_ln("sph::BasicGas", "forward euler step f dt/2");
+    logger::debug_ln("sph::BasicGas", "forward euler step f dt/2");
     utility.fields_forward_euler<Tvec>(ivxyz, iaxyz, dt / 2);
     utility.fields_forward_euler<Tscal>(iuint, iduint, dt / 2);
 
     // forward euler step positions dt
-    logger::info_ln("sph::BasicGas", "forward euler step positions dt");
+    logger::debug_ln("sph::BasicGas", "forward euler step positions dt");
     utility.fields_forward_euler<Tvec>(ixyz, ivxyz, dt);
 
     // forward euler step f dt/2
-    logger::info_ln("sph::BasicGas", "forward euler step f dt/2");
+    logger::debug_ln("sph::BasicGas", "forward euler step f dt/2");
     utility.fields_forward_euler<Tvec>(ivxyz, iaxyz, dt / 2);
     utility.fields_forward_euler<Tscal>(iuint, iduint, dt / 2);
+    shamsys::instance::get_compute_queue().wait();
 }
 
 template<class Tvec, template<class> class Kern>
@@ -290,7 +299,8 @@ void SPHSolve<Tvec, Kern>::sph_prestep(Tscal time_val) {
 
         Tscal max_eps_h;
 
-        for (u32 iter_h = 0; iter_h < 50; iter_h++) {
+        u32 iter_h = 0;
+        for (; iter_h < 50; iter_h++) {
             NamedStackEntry stack_loc2{"iterate smoothing lenght"};
             // iterate smoothing lenght
             scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchData &pdat) {
@@ -326,17 +336,19 @@ void SPHSolve<Tvec, Kern>::sph_prestep(Tscal time_val) {
             });
             max_eps_h = _epsilon_h.compute_rank_max();
             if (max_eps_h < 1e-6) {
-                logger::info_ln("SmoothingLenght", "converged at i =", iter_h);
+                logger::debug_sycl("SmoothingLenght", "converged at i =", iter_h);
                 break;
             }
         }
 
-        logger::info_ln("Smoothinglenght", "eps max =", max_eps_h);
+        //logger::info_ln("Smoothinglenght", "eps max =", max_eps_h);
 
         Tscal min_eps_h = shamalgs::collective::allreduce_min(_epsilon_h.compute_rank_min());
         if (min_eps_h == -1) {
-            logger::warn_ln("Smoothinglenght",
+            if(shamsys::instance::world_rank == 0){ 
+                logger::warn_ln("Smoothinglenght",
                             "smoothing lenght is not converged, rerunning the iterator ...");
+            }
 
             reset_ghost_handler();
             clear_ghost_cache();
@@ -346,6 +358,16 @@ void SPHSolve<Tvec, Kern>::sph_prestep(Tscal time_val) {
             reset_neighbors_cache();
 
             continue;
+        }else{
+            if(shamsys::instance::world_rank == 0){ 
+
+                std::string log = "";
+                log += "smoothing lenght iteration converged\n";
+                log += shambase::format("  eps min = {}, max = {}\n  iterations = {}", 
+                    min_eps_h,max_eps_h,iter_h);
+
+                logger::info_ln("Smoothinglenght", log);
+            }
         }
 
         //// compute omega
@@ -402,7 +424,7 @@ void SPHSolve<Tvec, Kern>::init_ghost_layout() {
 
 template<class Tvec, template<class> class Kern>
 void SPHSolve<Tvec, Kern>::compute_presteps_rint() {
-
+shamsys::instance::get_compute_queue().wait();
     StackEntry stack_loc{};
 
     auto &xyzh_merged = storage.merged_xyzh.get();
@@ -414,6 +436,7 @@ void SPHSolve<Tvec, Kern>::compute_presteps_rint() {
             return rtree.compute_int_boxes(
                 shamsys::instance::get_compute_queue(), tmp.field_hpart.get_buf(), htol_up_tol);
         }));
+        shamsys::instance::get_compute_queue().wait();
 }
 
 template<class Tvec, template<class> class Kern>
@@ -423,6 +446,7 @@ void SPHSolve<Tvec, Kern>::reset_presteps_rint() {
 
 template<class Tvec, template<class> class Kern>
 void SPHSolve<Tvec, Kern>::start_neighbors_cache() {
+    shamsys::instance::get_compute_queue().wait();
     StackEntry stack_loc{};
 
     // do cache
@@ -576,6 +600,7 @@ void SPHSolve<Tvec, Kern>::start_neighbors_cache() {
     scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
         storage.neighbors_cache.get().preload(cur_p.id_patch);
     });
+    shamsys::instance::get_compute_queue().wait();
 }
 
 template<class Tvec, template<class> class Kern>
@@ -585,6 +610,7 @@ void SPHSolve<Tvec, Kern>::reset_neighbors_cache() {
 
 template<class Tvec, template<class> class Kern>
 void SPHSolve<Tvec, Kern>::communicate_merge_ghosts_fields() {
+    shamsys::instance::get_compute_queue().wait();
     StackEntry stack_loc{};
 
     using namespace shamrock;
@@ -682,6 +708,7 @@ void SPHSolve<Tvec, Kern>::communicate_merge_ghosts_fields() {
                 mpdat.total_elements += pdat_interf.get_obj_cnt();
                 mpdat.pdat.insert_elements(pdat_interf);
             }));
+            shamsys::instance::get_compute_queue().wait();
 }
 
 template<class Tvec, template<class> class Kern>
@@ -695,9 +722,10 @@ void SPHSolve<Tvec, Kern>::reset_merge_ghosts_fields() {
 
 template<class Tvec, template<class> class Kern>
 void SPHSolve<Tvec, Kern>::update_artificial_viscosity(Tscal dt) {
-
+shamsys::instance::get_compute_queue().wait();
     sph::modules::UpdateViscosity<Tvec, Kern>(context, solver_config, storage)
         .update_artificial_viscosity(dt);
+        shamsys::instance::get_compute_queue().wait();
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -706,6 +734,7 @@ void SPHSolve<Tvec, Kern>::update_artificial_viscosity(Tscal dt) {
 
 template<class Tvec, template<class> class Kern>
 void SPHSolve<Tvec, Kern>::compute_eos_fields() {
+    shamsys::instance::get_compute_queue().wait();
     NamedStackEntry stack_loc{"compute eos"};
 
     using namespace shamrock;
@@ -738,6 +767,7 @@ void SPHSolve<Tvec, Kern>::compute_eos_fields() {
             });
         });
     });
+    shamsys::instance::get_compute_queue().wait();
 }
 
 template<class Tvec, template<class> class Kern>
@@ -756,7 +786,7 @@ void SPHSolve<Tvec, Kern>::prepare_corrector() {
     PatchDataLayout &pdl = scheduler().pdl;
     const u32 iduint     = pdl.get_field_idx<Tscal>("duint");
     const u32 iaxyz      = pdl.get_field_idx<Tvec>("axyz");
-    logger::info_ln("sph::BasicGas", "save old fields");
+    logger::debug_ln("sph::BasicGas", "save old fields");
     storage.old_axyz.set(utility.save_field<Tvec>(iaxyz, "axyz_old"));
     storage.old_duint.set(utility.save_field<Tscal>(iduint, "duint_old"));
 }
@@ -788,6 +818,7 @@ void SPHSolve<Tvec, Kern>::update_derivs() {
 template<class Tvec, template<class> class Kern>
 void SPHSolve<Tvec, Kern>::update_derivs_constantAV() {
 
+    shamsys::instance::get_compute_queue().wait();
     StackEntry stack_loc{};
 
     using namespace shamrock;
@@ -851,9 +882,9 @@ void SPHSolve<Tvec, Kern>::update_derivs_constantAV() {
             const Tscal alpha_AV = constant_av_config->alpha_AV;
             const Tscal beta_AV  = constant_av_config->beta_AV;
 
-            logger::raw_ln("alpha_u  :", alpha_u);
-            logger::raw_ln("alpha_AV :", alpha_AV);
-            logger::raw_ln("beta_AV  :", beta_AV);
+            logger::debug_sycl_ln("deriv kernel","alpha_u  :", alpha_u);
+            logger::debug_sycl_ln("deriv kernel","alpha_AV :", alpha_AV);
+            logger::debug_sycl_ln("deriv kernel","beta_AV  :", beta_AV);
 
             // tree::ObjectIterator particle_looper(tree,cgh);
 
@@ -984,11 +1015,14 @@ void SPHSolve<Tvec, Kern>::update_derivs_constantAV() {
             });
         });
     });
+
+    shamsys::instance::get_compute_queue().wait();
 }
 
 template<class Tvec, template<class> class Kern>
 void SPHSolve<Tvec, Kern>::update_derivs_mm97() {
 
+    shamsys::instance::get_compute_queue().wait();
     StackEntry stack_loc{};
 
     using namespace shamrock;
@@ -1050,8 +1084,8 @@ void SPHSolve<Tvec, Kern>::update_derivs_mm97() {
             const Tscal alpha_u = constant_av_config->alpha_u;
             const Tscal beta_AV = constant_av_config->beta_AV;
 
-            logger::raw_ln("alpha_u  :", alpha_u);
-            logger::raw_ln("beta_AV  :", beta_AV);
+            logger::debug_sycl_ln("deriv kernel","alpha_u  :", alpha_u);
+            logger::debug_sycl_ln("deriv kernel","beta_AV  :", beta_AV);
 
             // tree::ObjectIterator particle_looper(tree,cgh);
 
@@ -1192,12 +1226,15 @@ void SPHSolve<Tvec, Kern>::update_derivs_mm97() {
             });
         });
     });
+
+    shamsys::instance::get_compute_queue().wait();
 }
 
 
 template<class Tvec, template<class> class Kern>
 void SPHSolve<Tvec, Kern>::update_derivs_cd10() {
 
+    shamsys::instance::get_compute_queue().wait();
     StackEntry stack_loc{};
 
     using namespace shamrock;
@@ -1259,8 +1296,8 @@ void SPHSolve<Tvec, Kern>::update_derivs_cd10() {
             const Tscal alpha_u = constant_av_config->alpha_u;
             const Tscal beta_AV = constant_av_config->beta_AV;
 
-            logger::raw_ln("alpha_u  :", alpha_u);
-            logger::raw_ln("beta_AV  :", beta_AV);
+            logger::debug_sycl_ln("deriv kernel","alpha_u  :", alpha_u);
+            logger::debug_sycl_ln("deriv kernel","beta_AV  :", beta_AV);
 
             // tree::ObjectIterator particle_looper(tree,cgh);
 
@@ -1401,6 +1438,8 @@ void SPHSolve<Tvec, Kern>::update_derivs_cd10() {
             });
         });
     });
+
+    shamsys::instance::get_compute_queue().wait();
 }
 
 template<class Tvec, template<class> class Kern>
@@ -1423,7 +1462,9 @@ auto SPHSolve<Tvec, Kern>::evolve_once(Tscal t_current,Tscal dt,
 
     DumpOption dump_opt{do_dump, vtk_dump_name, vtk_dump_patch_id};
 
-    logger::info_ln("sph::BasicGas", ">>> Step :", dt);
+    if(shamsys::instance::world_rank == 0){ 
+        logger::normal_ln("sph::Model", shambase::format("t = {}, dt = {}", t_current, dt));
+    }
 
     shambase::Timer tstep;
     tstep.start();
@@ -1494,12 +1535,14 @@ auto SPHSolve<Tvec, Kern>::evolve_once(Tscal t_current,Tscal dt,
         compute_eos_fields();
 
         // compute force
-        logger::info_ln("sph::BasicGas", "compute force");
+        logger::debug_ln("sph::BasicGas", "compute force");
 
         // save old acceleration
         prepare_corrector();
 
         update_derivs();
+
+        std::string cv_checks = "convervation infos :\n";
 
         ///////////////////////////////////
         // momentum check :
@@ -1510,7 +1553,9 @@ auto SPHSolve<Tvec, Kern>::evolve_once(Tscal t_current,Tscal dt,
             tmpp += field.compute_sum();
         });
         Tvec sum_v = shamalgs::collective::allreduce_sum(tmpp);
-        logger::raw_ln("sum v = ", gpart_mass * sum_v);
+        if(shamsys::instance::world_rank == 0){
+            cv_checks += shambase::format("    sum v = {}\n", gpart_mass * sum_v);
+        }
 
         ///////////////////////////////////
         // force sum check :
@@ -1521,7 +1566,9 @@ auto SPHSolve<Tvec, Kern>::evolve_once(Tscal t_current,Tscal dt,
             tmpa += field.compute_sum();
         });
         Tvec sum_a = shamalgs::collective::allreduce_sum(tmpa);
-        logger::raw_ln("sum a = ", gpart_mass * sum_a);
+        if(shamsys::instance::world_rank == 0){
+            cv_checks += shambase::format("    sum a = {}\n", gpart_mass * sum_a);
+        }
 
         ///////////////////////////////////
         // energy check :
@@ -1533,7 +1580,9 @@ auto SPHSolve<Tvec, Kern>::evolve_once(Tscal t_current,Tscal dt,
             tmpe += field_u.compute_sum() + 0.5 * field_v.compute_dot_sum();
         });
         Tscal sum_e = shamalgs::collective::allreduce_sum(tmpe);
-        logger::raw_ln("sum e = ", gpart_mass * sum_e);
+        if(shamsys::instance::world_rank == 0){
+            cv_checks += shambase::format("    sum e = {}\n", gpart_mass * sum_e);
+        }
 
         Tscal pmass  = gpart_mass;
         Tscal tmp_de = 0;
@@ -1563,7 +1612,14 @@ auto SPHSolve<Tvec, Kern>::evolve_once(Tscal t_current,Tscal dt,
         });
 
         Tscal de = shamalgs::collective::allreduce_sum(tmp_de);
-        logger::raw_ln("de = ", de);
+
+        if(shamsys::instance::world_rank == 0){
+            cv_checks += shambase::format("    sum de = {}", de);
+        }
+
+        if(shamsys::instance::world_rank == 0){
+            logger::info_ln("sph::Model", cv_checks);
+        }
 
         ComputeField<Tscal> vepsilon_v_sq =
             utility.make_compute_field<Tscal>("vmean epsilon_v^2", 1);
@@ -1571,7 +1627,7 @@ auto SPHSolve<Tvec, Kern>::evolve_once(Tscal t_current,Tscal dt,
             utility.make_compute_field<Tscal>("umean epsilon_u^2", 1);
 
         // corrector
-        logger::info_ln("sph::BasicGas", "leapfrog corrector");
+        logger::debug_ln("sph::BasicGas", "leapfrog corrector");
         utility.fields_leapfrog_corrector<Tvec>(
             ivxyz, iaxyz, storage.old_axyz.get(), vepsilon_v_sq, dt / 2);
         utility.fields_leapfrog_corrector<Tscal>(
@@ -1599,23 +1655,25 @@ auto SPHSolve<Tvec, Kern>::evolve_once(Tscal t_current,Tscal dt,
 
         Tscal eps_v = shamalgs::collective::allreduce_max(rank_eps_v);
 
-        logger::info_ln("BasicGas", "epsilon v :", eps_v);
+        logger::debug_ln("BasicGas", "epsilon v :", eps_v);
 
         if (eps_v > 1e-2) {
-            logger::warn_ln("BasicGasSPH",
-                            shambase::format("the corrector tolerance are broken the step will "
-                                             "be re rerunned\n    eps_v = {}",
-                                             eps_v));
+            if(shamsys::instance::world_rank == 0){
+                logger::warn_ln("BasicGasSPH",
+                                shambase::format("the corrector tolerance are broken the step will "
+                                                "be re rerunned\n    eps_v = {}",
+                                                eps_v));
+            }
             need_rerun_corrector = true;
 
-            logger::info_ln("rerun corrector ...");
+            //logger::info_ln("rerun corrector ...");
         } else {
             need_rerun_corrector = false;
         }
 
         if (!need_rerun_corrector) {
 
-            logger::info_ln("BasicGas", "computing next CFL");
+            logger::debug_ln("BasicGas", "computing next CFL");
 
             ComputeField<Tscal> vsig_max_dt = utility.make_compute_field<Tscal>("vsig_a", 1);
 
@@ -1766,10 +1824,13 @@ auto SPHSolve<Tvec, Kern>::evolve_once(Tscal t_current,Tscal dt,
 
             Tscal rank_dt = cfl_dt.compute_rank_min();
 
-            logger::info_ln(
-                "BasigGas", "rank", shamsys::instance::world_rank, "found cfl dt =", rank_dt);
+            logger::debug_ln("BasigGas", "rank", shamsys::instance::world_rank, "found cfl dt =", rank_dt);
 
             next_cfl = shamalgs::collective::allreduce_min(rank_dt);
+
+            if(shamsys::instance::world_rank == 0){
+                logger::info_ln("sph::Model", "cfl dt =",next_cfl);
+            }
 
             if (solver_config.has_field_divv()) {
                 sph::modules::DiffOperators<Tvec, Kern>(context, solver_config, storage)
@@ -1932,9 +1993,25 @@ auto SPHSolve<Tvec, Kern>::evolve_once(Tscal t_current,Tscal dt,
 
     tstep.end();
 
-    f64 rate = f64(scheduler().get_rank_count()) / tstep.elasped_sec();
+    u64 rank_count = scheduler().get_rank_count();
+    f64 rate = f64(rank_count) / tstep.elasped_sec();
 
-    logger::info_ln("SPHSolver", "process rate : ", rate, "particle.s-1");
+    //logger::info_ln("SPHSolver", "process rate : ", rate, "particle.s-1");
+
+    std::string log_rank_rate = shambase::format("\n| {:<4} |    {:.4e}    | {:11} |   {:.3e}   |", shamsys::instance::world_rank,rate,  rank_count,  tstep.elasped_sec());
+
+    std::string gathered = "";
+    shamalgs::collective::gather_str(log_rank_rate, gathered);
+
+    if(shamsys::instance::world_rank == 0){
+        std::string print = "processing rate infos : \n";
+        print+=("--------------------------------------------------------\n");
+        print+=("| rank |  rate  (N.s^-1)  |      N      | t compute (s) |\n");
+        print+=("--------------------------------------------------------");
+        print+=(gathered) + "\n";
+        print+=("--------------------------------------------------------");
+        logger::info_ln("sph::Model",print);
+    }
 
     reset_serial_patch_tree();
     reset_ghost_handler();

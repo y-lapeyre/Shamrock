@@ -9,6 +9,7 @@
 #include "UpdateViscosity.hpp"
 #include "shambase/sycl_utils/sycl_utilities.hpp"
 #include "shamrock/sph/kernels.hpp"
+#include "shamsys/legacy/log.hpp"
 #include <variant>
 
 template<class Tvec, template<class> class SPHKernel>
@@ -38,7 +39,7 @@ template<class Tvec, template<class> class SPHKernel>
 void shammodels::sph::modules::UpdateViscosity<Tvec, SPHKernel>::update_artificial_viscosity_mm97(
     Tscal dt, typename Config::AVConfig::VaryingMM97 cfg) {
     StackEntry stack_loc{};
-    logger::info_ln("UpdateViscosity", "Updating alpha viscosity (Morris & Monaghan 1997)");
+    logger::debug_ln("UpdateViscosity", "Updating alpha viscosity (Morris & Monaghan 1997)");
 
     using namespace shamrock::patch;
     PatchDataLayout &pdl  = scheduler().pdl;
@@ -93,7 +94,7 @@ void shammodels::sph::modules::UpdateViscosity<Tvec, SPHKernel>::update_artifici
     Tscal dt, typename Config::AVConfig::VaryingCD10 cfg) {
 
     StackEntry stack_loc{};
-    logger::info_ln("UpdateViscosity", "Updating alpha viscosity (Cullen & Dehnen 2010)");
+    logger::debug_ln("UpdateViscosity", "Updating alpha viscosity (Cullen & Dehnen 2010)");
 
     using namespace shamrock::patch;
     PatchDataLayout &pdl  = scheduler().pdl;

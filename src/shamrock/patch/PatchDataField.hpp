@@ -12,6 +12,7 @@
 
 #include "aliases.hpp"
 #include "shamalgs/memory/serialize.hpp"
+#include "shambase/stacktrace.hpp"
 #include "shamrock/legacy/patch/base/enabled_fields.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shambase/exception.hpp"
@@ -197,7 +198,7 @@ template <class T> class PatchDataField {
         }
     }
 
-    template <class Lambdacd> void check_err_range(Lambdacd &&cd_true, T vmin, T vmax) const;
+    template <class Lambdacd> void check_err_range(Lambdacd &&cd_true, T vmin, T vmax, std::string add_log = "") const;
 
     void extract_element(u32 pidx, PatchDataField<T> &to);
 
@@ -383,7 +384,8 @@ class PatchDataRangeCheckError : public std::exception {
 
 template <class T>
 template <class Lambdacd>
-inline void PatchDataField<T>::check_err_range(Lambdacd &&cd_true, T vmin, T vmax) const {
+inline void PatchDataField<T>::check_err_range(Lambdacd &&cd_true, T vmin, T vmax, std::string add_log) const {
+    StackEntry stack_loc{};
 
     if(is_empty()){return;}
 
@@ -420,6 +422,7 @@ inline void PatchDataField<T>::check_err_range(Lambdacd &&cd_true, T vmin, T vma
     }
 
     if(error){
+        logger::err_ln("PatchDataField", "additional infos :",add_log);
         throw shambase::throw_with_loc<PatchDataRangeCheckError>("obj not in range");
     }
 

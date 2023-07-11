@@ -30,6 +30,14 @@ namespace shamsys {
         
     };
 
+    inline CommunicationProtocol get_protocol(){
+        if(shamsys::instance::is_direct_gpu_selected()){
+            return DirectGPU;
+        }else{
+            return CopyToHost;
+        }
+    }
+
     namespace details {
 
         template<CommunicationProtocol comm_mode> 

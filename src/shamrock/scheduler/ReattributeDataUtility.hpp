@@ -10,9 +10,13 @@
 
 
 #include "shamalgs/memory/memory.hpp"
+#include "shambase/string.hpp"
 #include "shamrock/scheduler/scheduler_mpi.hpp"
 #include "shamrock/scheduler/SerialPatchTree.hpp"
 #include "shamrock/patch/PatchData.hpp"
+#include "shamsys/NodeInstance.hpp"
+#include "shamsys/comm/details/CommunicationBufferImpl.hpp"
+#include "shamsys/legacy/log.hpp"
 #include <vector>
 
 namespace shamrock {
@@ -38,6 +42,8 @@ namespace shamrock {
                         sptree.compute_patch_owner(
                             shamsys::instance::get_compute_queue(), 
                             shambase::get_check_ref(pos_field.get_buf()), pos_field.size()));
+
+                    
 
                     bool err_id_in_newid = false;
                     {
@@ -137,7 +143,7 @@ namespace shamrock {
             });
 
             for (auto & [k,v] : histogram_extract) {
-                logger::debug_sycl_ln("ReattributeDataUtility","patch",k,"extract=",v);
+                logger::debug_ln("ReattributeDataUtility","patch",k,"extract=",v);
             }
 
             return part_exchange;
@@ -159,7 +165,7 @@ namespace shamrock {
             shamalgs::collective::serialize_sparse_comm<PatchData>(
                 std::move(part_exchange), 
                 recv_dat, 
-                shamsys::DirectGPU, 
+                shamsys::get_protocol(), 
                 [&](u64 id){
                     return sched.get_patch_rank_owner(id);
                 }, 
@@ -176,6 +182,7 @@ namespace shamrock {
                 });
 
             recv_dat.for_each([&](u64 sender, u64 receiver, PatchData & pdat){
+                logger::debug_ln("Part Exchanges", format("send = {} recv = {}", sender,receiver));
                 sched.patch_data.get_pdat(receiver).insert_elements(pdat);
             });
 
