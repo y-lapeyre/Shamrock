@@ -1,5 +1,19 @@
 # Running on cluster
 
+# CBP (AMD GPU)
+
+`git clone https://github.com/intel/llvm.git`
+
+```
+python3 buildbot/configure.py --hip --cmake-opt="-DCMAKE_INSTALL_PREFIX=../../dpcpp_compiler" --cmake-opt="-DSYCL_BUILD_PI_HIP_ROCM_DIR=/opt/rocm" --cmake-gen "Unix Makefiles"
+```
+
+```
+cd build
+make -j all
+```
+
+
 ## Neowise
 10 nodes, 10 cpus, 480 cores, 8 gpu per nodes
 
