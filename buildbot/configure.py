@@ -111,7 +111,7 @@ else:
 
 
 
-cmake_cmd += " -DCXX_COMPILER="+comp_path
+cmake_cmd += " -DCMAKE_CXX_COMPILER="+comp_path
 
 
 ### pass if release or debug to cmake
@@ -210,6 +210,6 @@ if args.cmakeargs:
 # TODO need a way to pass the configuration down aka is cuda or something else
 
 if not (cpp_flags == ""):
-    cmake_cmd += " -DCXX_FLAGS=\"" +cpp_flags+ "\""
+    cmake_cmd += " -DCMAKE_CXX_FLAGS=\"" +cpp_flags+ "\""
 
 run_cmd(cmake_cmd)

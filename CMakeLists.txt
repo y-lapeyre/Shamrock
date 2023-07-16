@@ -4,11 +4,6 @@
 
 cmake_minimum_required(VERSION 3.9)
 
-set(CXX_FLAGS "-fsycl" CACHE STRING "Compile flags")
-set(CXX_COMPILER "" CACHE STRING "Compile flags")
-
-set(CMAKE_CXX_FLAGS "${SHAMROCK_COMP_FLAGS} -Werror=return-type") 
-set(CMAKE_CXX_COMPILER "${CXX_COMPILER}")
 
 project(Shamrock CXX C)
 
@@ -41,8 +36,8 @@ message("     SHAMROCK_LOOP_GSIZE : ${SHAMROCK_LOOP_GSIZE}")
 message("     SHAMROCK_USE_PROFILING : ${SHAMROCK_USE_PROFILING}")
 message("     SHAMROCK_USE_NVTX : ${SHAMROCK_USE_NVTX}")
 message("     SYCL_COMPILER : ${SYCL_COMPILER}")
-message("     CXX_FLAGS : ${CXX_FLAGS}")
-message("     CXX_COMPILER : ${CXX_COMPILER}")
+message("     CXX_FLAGS : ${CMAKE_CXX_FLAGS}")
+message("     CXX_COMPILER : ${CMAKE_CXX_COMPILER}")
 
 
 
@@ -77,6 +72,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)  # optional, keep compiler extensions off
 
 
 
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror=return-type") 
 set(CMAKE_CXX_FLAGS_DEBUG "-g")# -fsanitize=address")# -Wall -Wextra") #
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")#-DNDEBUG ")#-Wall -Wextra -Wunknown-cuda-version -Wno-linker-warnings")
 
