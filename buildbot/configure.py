@@ -111,7 +111,7 @@ else:
 
 
 
-cmake_cmd += " -DCMAKE_CXX_COMPILER="+comp_path
+cmake_cmd += " -DCXX_COMPILER="+comp_path
 
 
 ### pass if release or debug to cmake
