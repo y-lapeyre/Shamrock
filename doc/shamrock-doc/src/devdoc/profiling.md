@@ -39,3 +39,9 @@ for a timeline view, with GPU metrics:
 ```
 nsys profile --gpu-metrics-device=0 ./shamrock --sycl-cfg 1:1 --loglevel 1 --rscript ../../exemples/spherical_wave.py
 ```
+
+### NCU
+
+```
+ncu --set full --call-stack --nvtx --section=SpeedOfLight_HierarchicalDoubleRooflineChart --section=SpeedOfLight_HierarchicalSingleRooflineChart --section=SpeedOfLight_HierarchicalTensorRooflineChart --open-in-ui ./shamrock --sycl-cfg 1:1 --loglevel 10 --rscript ../../exemples/spherical_wave.py
+```

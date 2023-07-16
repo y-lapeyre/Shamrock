@@ -10,7 +10,7 @@ python3 buildbot/configure.py --hip --cmake-opt="-DCMAKE_INSTALL_PREFIX=../../dp
 
 ```
 cd build
-make -j all
+make -j all libsycldevice install
 ```
 
 

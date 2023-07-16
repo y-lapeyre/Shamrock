@@ -23,6 +23,7 @@ set(SHAMROCK_LOOP_DEFAULT "PARRALEL_FOR_ROUND" CACHE STRING "Default loop mode i
 set_property(CACHE SHAMROCK_LOOP_DEFAULT PROPERTY STRINGS PARRALEL_FOR PARRALEL_FOR_ROUND ND_RANGE)
 
 set(SHAMROCK_LOOP_GSIZE 256 CACHE STRING "Default group size in shamrock")
+set(CXX_FLAGS "-fsycl" CACHE STRING "Compile flags")
 
 option(EXPORT_COMPILE_COMMANDS "export the compile_commands.json" ON)
 option(SHAMROCK_USE_NVTX "use nvtx tooling" On)
@@ -34,6 +35,7 @@ message("     SHAMROCK_LOOP_GSIZE : ${SHAMROCK_LOOP_GSIZE}")
 message("     SHAMROCK_USE_PROFILING : ${SHAMROCK_USE_PROFILING}")
 message("     SHAMROCK_USE_NVTX : ${SHAMROCK_USE_NVTX}")
 message("     SYCL_COMPILER : ${SYCL_COMPILER}")
+message("     CXX_FLAGS : ${CXX_FLAGS}")
 
 
 # Necessary for clangd to work properly
@@ -67,7 +69,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)  # optional, keep compiler extensions off
 
 
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror=return-type") 
+set(CMAKE_CXX_FLAGS "${SHAMROCK_COMP_FLAGS} -Werror=return-type") 
 set(CMAKE_CXX_FLAGS_DEBUG "-g")# -fsanitize=address")# -Wall -Wextra") #
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")#-DNDEBUG ")#-Wall -Wextra -Wunknown-cuda-version -Wno-linker-warnings")
 
