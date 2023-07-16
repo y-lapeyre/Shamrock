@@ -13,6 +13,19 @@ cd build
 make -j all libsycldevice install
 ```
 
+# CBP (Nvidia GPU)
+
+`git clone https://github.com/intel/llvm.git`
+
+```
+python3 buildbot/configure.py --cuda --cmake-opt="-DCMAKE_INSTALL_PREFIX=../../dpcpp_compiler" --cmake-gen "Unix Makefiles"
+```
+
+```
+cd build
+make -j all libsycldevice install
+```
+
 
 ## Neowise
 10 nodes, 10 cpus, 480 cores, 8 gpu per nodes
