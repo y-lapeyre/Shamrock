@@ -10,21 +10,42 @@ project(Shamrock CXX C)
 cmake_policy(SET CMP0079 NEW)
 cmake_policy(SET CMP0076 NEW)
 
+
+
+######################
+#Project config
+######################
+
+set(SYCL_COMPILER "OTHER" CACHE STRING "Sycl compiler used")
+set_property(CACHE SYCL_COMPILER PROPERTY STRINGS DPCPP OPENSYCL OTHER)
+
+set(SHAMROCK_LOOP_DEFAULT "PARRALEL_FOR_ROUND" CACHE STRING "Default loop mode in shamrock")
+set_property(CACHE SHAMROCK_LOOP_DEFAULT PROPERTY STRINGS PARRALEL_FOR PARRALEL_FOR_ROUND ND_RANGE)
+
+set(SHAMROCK_LOOP_GSIZE 256 CACHE STRING "Default group size in shamrock")
+
+option(EXPORT_COMPILE_COMMANDS "export the compile_commands.json" ON)
+option(SHAMROCK_USE_NVTX "use nvtx tooling" On)
+option(SHAMROCK_USE_PROFILING "use custom profiling tooling" On)
+
+message("-- Shamrock config : ")
+message("     SHAMROCK_LOOP_DEFAULT : ${SHAMROCK_LOOP_DEFAULT}")
+message("     SHAMROCK_LOOP_GSIZE : ${SHAMROCK_LOOP_GSIZE}")
+message("     SHAMROCK_USE_PROFILING : ${SHAMROCK_USE_PROFILING}")
+message("     SHAMROCK_USE_NVTX : ${SHAMROCK_USE_NVTX}")
+message("     SYCL_COMPILER : ${SYCL_COMPILER}")
+
+
 # Necessary for clangd to work properly
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+if(EXPORT_COMPILE_COMMANDS)
+    set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+endif()
 
 set(Default_comp "${CMAKE_CXX_COMPILER}")
-
-message(STATUS "chosen compiler : ${SyCL_Compiler}")
 
 LIST(APPEND CMAKE_SYSTEM_PROGRAM_PATH  "${COMP_ROOT_DIR}/bin")
 LIST(APPEND CMAKE_SYSTEM_LIBRARY_PATH  "${COMP_ROOT_DIR}/bin/lib")
 
-
-option(SHAMROCK_USE_NVTX "use nvtx tooling" On)
-option(SHAMROCK_USE_PROFILING "use custom profiling tooling" On)
-
-message("-- SHAMROCK_USE_PROFILING : ${SHAMROCK_USE_PROFILING}")
 
 
 
@@ -67,21 +88,27 @@ endif()
 ######################
 # Compiler selection
 ######################
-if("${SyCL_Compiler}" STREQUAL "DPCPP")
-
+if(${SYCL_COMPILER} STREQUAL "DPCPP")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSYCL_COMP_DPCPP -Wno-unknown-cuda-version")
-
-endif()
-
-
-if("${SyCL_Compiler}" STREQUAL "OPENSYCL")
-
+elseif(${SYCL_COMPILER} STREQUAL "OPENSYCL")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSYCL_COMP_OPENSYCL")
-
+elseif(${SYCL_COMPILER} STREQUAL "OTHER")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSYCL_COMP_SYCLUNKNOWN")
 endif()
 
 
+######################
+#shamrock impl control
+######################
+if(${SHAMROCK_LOOP_DEFAULT} STREQUAL "PARRALEL_FOR")
+  add_compile_definitions("SHAMROCK_LOOP_DEFAULT_PARRALEL_FOR")
+elseif(${SHAMROCK_LOOP_DEFAULT} STREQUAL "PARRALEL_FOR_ROUND")
+  add_compile_definitions("SHAMROCK_LOOP_DEFAULT_PARRALEL_FOR_ROUND")
+elseif(${SHAMROCK_LOOP_DEFAULT} STREQUAL "ND_RANGE")
+  add_compile_definitions("SHAMROCK_LOOP_DEFAULT_ND_RANGE")
+endif()
 
+add_compile_definitions("SHAMROCK_LOOP_GSIZE=${SHAMROCK_LOOP_GSIZE}")
 
 
 
