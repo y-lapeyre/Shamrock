@@ -37,7 +37,12 @@ Shamrock can also use NVTX based tooling, enabled by `SHAMROCK_USE_NVTX=On` in C
 for a timeline view, with GPU metrics:
 
 ```
-nsys profile --gpu-metrics-device=0 ./shamrock --sycl-cfg 1:1 --loglevel 1 --rscript ../../exemples/spherical_wave.py
+nsys profile -t cuda,nvtx --gpu-metrics-device=0 ./shamrock --sycl-cfg 1:1 --loglevel 1 --rscript ../../exemples/spherical_wave.py
+```
+
+On the CBP (ENSL) the qstrm importer fails, bu it can be ran a posteriori :
+```
+/usr/lib/nsight-systems/host-linux-x64/QdstrmImporter -i report5.qdstrm  -o output.qdrep
 ```
 
 ### NCU
