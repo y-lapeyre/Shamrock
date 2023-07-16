@@ -7,8 +7,8 @@ cmake_minimum_required(VERSION 3.9)
 set(CXX_FLAGS "-fsycl" CACHE STRING "Compile flags")
 set(CXX_COMPILER "" CACHE STRING "Compile flags")
 
-set(CMAKE_CXX_COMPILER "${CXX_COMPILER}")
 set(CMAKE_CXX_FLAGS "${SHAMROCK_COMP_FLAGS} -Werror=return-type") 
+set(CMAKE_CXX_COMPILER "${CXX_COMPILER}")
 
 project(Shamrock CXX C)
 
