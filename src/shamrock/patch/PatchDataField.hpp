@@ -20,10 +20,8 @@
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shambase/exception.hpp"
-#include <access/access.hpp>
 #include <array>
 #include <memory>
-#include <properties/accessor_properties.hpp>
 #include <random>
 #include <string>
 #include <utility>
