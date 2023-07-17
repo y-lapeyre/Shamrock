@@ -11,13 +11,19 @@
 #pragma once
 
 #include "aliases.hpp"
+#include "shamalgs/memory/memory.hpp"
 #include "shamalgs/memory/serialize.hpp"
+#include "shamalgs/numeric/numeric.hpp"
 #include "shambase/stacktrace.hpp"
+#include "shambase/sycl_utils.hpp"
 #include "shamrock/legacy/patch/base/enabled_fields.hpp"
+#include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shambase/exception.hpp"
+#include <access/access.hpp>
 #include <array>
 #include <memory>
+#include <properties/accessor_properties.hpp>
 #include <random>
 #include <string>
 #include <utility>
@@ -184,6 +190,17 @@ template <class T> class PatchDataField {
     void override(sycl::buffer<T> &data, u32 cnt);
 
     void override(const T val);
+
+    /**
+     * @brief Get the indicies of the elements in half open interval
+     * 
+     * @tparam LambdaCd 
+     * @param vmin 
+     * @param vmax 
+     * @return std::tuple<std::optional<sycl::buffer<u32>>, u32> 
+     */
+    template<class LambdaCd>
+    std::tuple<std::optional<sycl::buffer<u32>>, u32> get_elements_in_half_open(T vmin, T vmax) const;
 
     template <class Lambdacd>
     std::vector<u32> get_elements_with_range(Lambdacd &&cd_true, T vmin, T vmax) const;
@@ -352,6 +369,31 @@ inline std::vector<u32>
 PatchDataField<T>::get_elements_with_range(Lambdacd &&cd_true, T vmin, T vmax) const {
     StackEntry stack_loc{};
     std::vector<u32> idxs;
+
+    /* Possible GPU version
+    sycl::buffer<u32> valid {size()};
+
+    shamsys::instance::get_compute_queue().submit([&](sycl::handler & cgh){
+        sycl::accessor acc {*get_buf(), cgh, sycl::read_only};
+        sycl::accessor bools {valid, cgh,sycl::write_only,sycl::no_init};
+
+        shambase::parralel_for(cgh,size(),"get_element_with_range",[=](u32 i){
+            bools[i] = (cd_true(acc[i], vmin, vmax)) ? 1 : 0;
+        });
+
+    });
+
+    std::tuple<std::optional<sycl::buffer<u32>>, u32> ret = 
+        shamalgs::numeric::stream_compact(shamsys::instance::get_compute_queue(), valid, size());
+
+    std::vector<u32> idxs;
+
+    {
+        if(std::get<0>(ret).has_value()){
+            idxs = shamalgs::memory::buf_to_vec(*std::get<0>(ret), std::get<1>(ret));
+        }
+    }
+    */
 
     {
         sycl::host_accessor acc{*get_buf()};
