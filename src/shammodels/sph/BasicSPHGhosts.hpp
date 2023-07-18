@@ -165,6 +165,70 @@ namespace shammodels::sph {
             // clang-format on
         }
 
+        /**
+         * @brief native handle to generate interfaces
+         * generate interfaces of type T (template arg) based on the provided function
+         * ~~~~~{.cpp}
+         *
+         * auto split_lists = grid.gen_splitlists(
+         *     [&](u64 id_patch, Patch cur_p, PatchData &pdat) -> sycl::buffer<u32> {
+         *          generate the buffer saying which cells should split
+         *     }
+         * );
+         *
+         * ~~~~~
+         * 
+         * @tparam T 
+         * @param builder 
+         * @param fct 
+         * @return shambase::DistributedDataShared<T> 
+         */
+        template<class T>
+        shambase::DistributedDataShared<T> build_interface_native_stagged(
+            shambase::DistributedDataShared<InterfaceIdTable> &builder,
+            std::function<T(u64,u64,InterfaceBuildInfos,sycl::buffer<u32>&,u32)> fct1,
+            std::function<void(u64,u64,InterfaceBuildInfos,sycl::buffer<u32>&,u32, T &)> fct2
+            ){
+
+            StackEntry stack_loc{};
+
+            struct Args {
+                u64 sender; u64 receiver; InterfaceIdTable &build_table;
+            };
+
+            std::vector<Args> vecarg;
+
+            shambase::DistributedDataShared<T> ret = 
+                builder.template map<T>([&](u64 sender, u64 receiver, InterfaceIdTable &build_table) {
+                if (!bool(build_table.ids_interf)) {
+                    throw shambase::throw_with_loc<std::runtime_error>(
+                        "their is an empty id table in the interface, it should have been removed");
+                }
+
+                vecarg.emplace_back(sender,receiver,build_table);
+
+                return fct1(
+                    sender,
+                    receiver, 
+                    build_table.build_infos, 
+                    *build_table.ids_interf, 
+                    build_table.ids_interf->size());
+                    
+            });
+
+
+            u32 i = 0;
+            ret.for_each([&](u64 left,u64 right, T& ref){
+
+                fct2(vecarg[i].sender, vecarg[i].receiver, vecarg[i].build_table, ref);
+
+                i ++;
+            });
+            
+
+            return ret;
+        }
+
 
         ////////////////////////////////////////////////////////////////////////////////////////////
         // interface generation/communication utility //////////////////////////////////////////////
