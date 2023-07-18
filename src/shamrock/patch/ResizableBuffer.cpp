@@ -37,6 +37,8 @@ void ResizableBuffer<T>::free() {
 
 template<class T>
 void ResizableBuffer<T>::resize(u32 new_size) {
+    StackEntry stack_loc{false};
+
     logger::debug_alloc_ln("ResizableBuffer", "resize from : ", val_cnt, "to :", new_size);
 
     if (capacity == 0) {
