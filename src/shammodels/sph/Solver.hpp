@@ -144,9 +144,6 @@ namespace shammodels::sph {
 
         void start_neighbors_cache();
         void reset_neighbors_cache();
-
-
-
         
 
 
