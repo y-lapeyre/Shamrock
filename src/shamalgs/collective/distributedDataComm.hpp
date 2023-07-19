@@ -11,6 +11,7 @@
 #include "shamalgs/collective/exchanges.hpp"
 #include "shamalgs/collective/sparseXchg.hpp"
 #include "shambase/DistributedData.hpp"
+#include "shambase/stacktrace.hpp"
 #include "shambase/type_aliases.hpp"
 #include "shamsys/SyclMpiTypes.hpp"
 #include <functional>
@@ -40,6 +41,8 @@ namespace shamalgs::collective {
         std::function<T(std::unique_ptr<sycl::buffer<u8>> &&)> deserialize,
         std::optional<SparseCommTable> comm_table = {}
         ){
+
+        StackEntry stack_loc{};
             
         shambase::DistributedDataShared<T> same_rank_tmp;
         // allow move op for same rank

@@ -3,6 +3,8 @@
 ######################################
 
 cmake_minimum_required(VERSION 3.9)
+
+
 project(Shamrock CXX C)
 
 
@@ -34,6 +36,9 @@ message("     SHAMROCK_LOOP_GSIZE : ${SHAMROCK_LOOP_GSIZE}")
 message("     SHAMROCK_USE_PROFILING : ${SHAMROCK_USE_PROFILING}")
 message("     SHAMROCK_USE_NVTX : ${SHAMROCK_USE_NVTX}")
 message("     SYCL_COMPILER : ${SYCL_COMPILER}")
+message("     CMAKE_CXX_FLAGS : ${CMAKE_CXX_FLAGS}")
+message("     CMAKE_CXX_COMPILER : ${CMAKE_CXX_COMPILER}")
+
 
 
 # Necessary for clangd to work properly

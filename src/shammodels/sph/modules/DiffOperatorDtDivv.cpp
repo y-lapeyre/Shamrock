@@ -28,6 +28,9 @@ void shammodels::sph::modules::DiffOperatorDtDivv<Tvec, SPHKernel>::update_dtdiv
 
     using InterfaceBuildInfos = typename sph::BasicSPHGhostHandler<Tvec>::InterfaceBuildInfos;
 
+    shambase::Timer time_interf;
+    time_interf.start();
+
     //exchange the actual state of the acceleration
     //this should be ran only after acceleration update
     //ideally i wouldn't want to do this but due to the formulation 
@@ -61,6 +64,9 @@ void shammodels::sph::modules::DiffOperatorDtDivv<Tvec, SPHKernel>::update_dtdiv
             [](PatchDataField<Tvec> &mpdat, PatchDataField<Tvec> &pdat_interf) {
                 mpdat.insert(pdat_interf);
             });
+
+    time_interf.end();
+    storage.timings_details.interface += time_interf.elasped_sec();
     
 
     shambase::DistributedData<MergedPatchData> &mpdat = storage.merged_patchdata_ghost.get();

@@ -10,6 +10,7 @@
 
 #include "aliases.hpp"
 #include "shambase/exception.hpp"
+#include "shambase/stacktrace.hpp"
 #include "shambase/string.hpp"
 #include "shamsys/legacy/log.hpp"
 #include <map>
@@ -112,17 +113,21 @@ namespace shambase {
         }
 
         inline void tranfer_all(std::function<bool(u64, u64)> cd, DistributedDataShared & other){
-            
+
             std::vector<std::pair<u64, u64>> occurences;
 
-            for(auto [k,v] : data){
+            // whoa i forgot the & here and triggered the copy constructor of every patch
+            // like do not forget it or it will be a disaster waiting to come
+            // i did throw up a 64 GPUs run because of that
+            for(auto & [k,v] : data){
                 if(cd(k.first,k.second)){
                     occurences.push_back(k);
                 }
             }
 
             for(auto p : occurences){
-                other.data.insert(data.extract(p));
+                auto ext = data.extract(p);
+                other.data.insert(std::move(ext));
             }
 
         }

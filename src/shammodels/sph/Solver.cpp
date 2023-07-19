@@ -20,6 +20,7 @@
 #include "shammodels/sph/modules/DiffOperatorDtDivv.hpp"
 #include "shammodels/sph/modules/UpdateViscosity.hpp"
 #include "shamrock/io/LegacyVtkWritter.hpp"
+#include "shamrock/patch/PatchData.hpp"
 #include "shamrock/patch/PatchDataLayout.hpp"
 #include "shamrock/scheduler/ComputeField.hpp"
 #include "shamrock/scheduler/InterfacesUtility.hpp"
@@ -36,6 +37,7 @@
 #include "shamsys/legacy/log.hpp"
 #include <memory>
 #include <stdexcept>
+#include <vector>
 
 template<class Tvec, template<class> class Kern>
 using SPHSolve = shammodels::sph::Solver<Tvec, Kern>;
@@ -446,6 +448,9 @@ void SPHSolve<Tvec, Kern>::reset_presteps_rint() {
 
 template<class Tvec, template<class> class Kern>
 void SPHSolve<Tvec, Kern>::start_neighbors_cache() {
+
+    shambase::Timer time_neigh;
+    time_neigh.start();
     
     StackEntry stack_loc{};
 
@@ -600,6 +605,9 @@ void SPHSolve<Tvec, Kern>::start_neighbors_cache() {
     scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
         storage.neighbors_cache.get().preload(cur_p.id_patch);
     });
+
+    time_neigh.end();
+    storage.timings_details.neighbors += time_neigh.elasped_sec();
     
 }
 
@@ -612,6 +620,9 @@ template<class Tvec, template<class> class Kern>
 void SPHSolve<Tvec, Kern>::communicate_merge_ghosts_fields() {
     
     StackEntry stack_loc{};
+    
+    shambase::Timer timer_interf;
+    timer_interf.start();
 
     using namespace shamrock;
     using namespace shamrock::patch;
@@ -642,14 +653,29 @@ void SPHSolve<Tvec, Kern>::communicate_merge_ghosts_fields() {
     sph::BasicSPHGhostHandler<Tvec> &ghost_handle = storage.ghost_handler.get();
     ComputeField<Tscal> &omega                    = storage.omega.get();
 
+    
     auto pdat_interf = ghost_handle.template build_interface_native<PatchData>(
         storage.ghost_patch_cache.get(),
         [&](u64 sender,
-            u64 /*receiver*/,
+            u64 ,
             InterfaceBuildInfos binfo,
             sycl::buffer<u32> &buf_idx,
             u32 cnt) {
+
             PatchData pdat(ghost_layout);
+
+            pdat.reserve(cnt);
+
+            return pdat;
+        });
+
+    ghost_handle.template modify_interface_native<PatchData>(storage.ghost_patch_cache.get(), 
+        pdat_interf, [&](u64 sender,
+            u64 ,
+            InterfaceBuildInfos binfo,
+            sycl::buffer<u32> &buf_idx,
+            u32 cnt,
+            PatchData & pdat) {
 
             PatchData &sender_patch             = scheduler().patch_data.get_pdat(sender);
             PatchDataField<Tscal> &sender_omega = omega.get_field(sender);
@@ -661,23 +687,39 @@ void SPHSolve<Tvec, Kern>::communicate_merge_ghosts_fields() {
             sender_patch.get_field<Tvec>(ivxyz).append_subset_to(
                 buf_idx, cnt, pdat.get_field<Tvec>(ivxyz_interf));
 
-            if(sycl::length(binfo.offset_speed) > 0){
-                pdat.get_field<Tvec>(ivxyz_interf).apply_offset(binfo.offset_speed);
-            }
-
             sender_omega.append_subset_to(buf_idx, cnt, pdat.get_field<Tscal>(iomega_interf));
 
             if (has_alphaAV_field) {
                 sender_patch.get_field<Tscal>(ialpha_AV).append_subset_to(
                     buf_idx, cnt, pdat.get_field<Tscal>(ialpha_AV_interf));
             }
-            pdat.check_field_obj_cnt_match();
 
-            return pdat;
         });
+
+
+    ghost_handle.template modify_interface_native<PatchData>(storage.ghost_patch_cache.get(), 
+        pdat_interf, [&](u64 sender,
+            u64 ,
+            InterfaceBuildInfos binfo,
+            sycl::buffer<u32> &buf_idx,
+            u32 cnt,
+            PatchData & pdat) {
+
+            if(sycl::length(binfo.offset_speed) > 0){
+                pdat.get_field<Tvec>(ivxyz_interf).apply_offset(binfo.offset_speed);
+            }
+
+        });
+    
+
 
     shambase::DistributedDataShared<PatchData> interf_pdat =
         ghost_handle.communicate_pdat(ghost_layout, std::move(pdat_interf));
+
+    std::map<u64,u64> sz_interf_map;
+    interf_pdat.for_each([&](u64 s, u64 r, PatchData &pdat_interf){
+        sz_interf_map[r] += pdat_interf.get_obj_cnt();
+    });
 
     storage.merged_patchdata_ghost.set(
         ghost_handle.template merge_native<PatchData, MergedPatchData>(
@@ -686,6 +728,7 @@ void SPHSolve<Tvec, Kern>::communicate_merge_ghosts_fields() {
                 PatchData pdat_new(ghost_layout);
 
                 u32 or_elem        = pdat.get_obj_cnt();
+                pdat_new.reserve(or_elem + sz_interf_map[p.id_patch]);
                 u32 total_elements = or_elem;
 
                 PatchDataField<Tscal> &cur_omega = omega.get_field(p.id_patch);
@@ -708,7 +751,11 @@ void SPHSolve<Tvec, Kern>::communicate_merge_ghosts_fields() {
                 mpdat.total_elements += pdat_interf.get_obj_cnt();
                 mpdat.pdat.insert_elements(pdat_interf);
             }));
-            
+
+
+    timer_interf.end();
+    storage.timings_details.interface += timer_interf.elasped_sec();
+
 }
 
 template<class Tvec, template<class> class Kern>
@@ -793,6 +840,8 @@ void SPHSolve<Tvec, Kern>::prepare_corrector() {
 
 template<class Tvec, template<class> class Kern>
 void SPHSolve<Tvec, Kern>::update_derivs() {
+
+
     using Cfg_AV = typename Config::AVConfig;
 
     using None        = typename Cfg_AV::None;
@@ -813,6 +862,7 @@ void SPHSolve<Tvec, Kern>::update_derivs() {
     } else {
         shambase::throw_unimplemented();
     }
+
 }
 
 template<class Tvec, template<class> class Kern>
@@ -908,7 +958,7 @@ void SPHSolve<Tvec, Kern>::update_derivs_constantAV() {
 
             constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
 
-            shambase::parralel_for(cgh, pdat.get_obj_cnt(),shamsys::instance::get_compute_queue_eu_count(),"compute force cte AV", [=](u64 gid){
+            shambase::parralel_for(cgh, pdat.get_obj_cnt(),"compute force cte AV", [=](u64 gid){
                 u32 id_a = (u32)gid;
 
                 using namespace shamrock::sph;
@@ -1110,7 +1160,7 @@ void SPHSolve<Tvec, Kern>::update_derivs_mm97() {
 
             constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
 
-            shambase::parralel_for(cgh, pdat.get_obj_cnt(),shamsys::instance::get_compute_queue_eu_count(),"compute force MM97 AV", [=](u64 gid){
+            shambase::parralel_for(cgh, pdat.get_obj_cnt(),"compute force MM97 AV", [=](u64 gid){
                 u32 id_a = (u32)gid;
 
                 using namespace shamrock::sph;
@@ -1322,7 +1372,7 @@ void SPHSolve<Tvec, Kern>::update_derivs_cd10() {
 
             constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
 
-            shambase::parralel_for(cgh, pdat.get_obj_cnt(),shamsys::instance::get_compute_queue_eu_count(),"compute force CD10 AV", [=](u64 gid){
+            shambase::parralel_for(cgh, pdat.get_obj_cnt(),"compute force CD10 AV", [=](u64 gid){
                 u32 id_a = (u32)gid;
 
                 using namespace shamrock::sph;
@@ -1719,9 +1769,7 @@ auto SPHSolve<Tvec, Kern>::evolve_once(Tscal t_current,Tscal dt,
 
                         constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
 
-                        cgh.parallel_for(
-                            sycl::range<1>{pdat.get_obj_cnt()}, [=](sycl::item<1> item) {
-                                u32 id_a = (u32)item.get_id(0);
+                        shambase::parralel_for(cgh, pdat.get_obj_cnt(),"compute vsig", [=](i32 id_a){
 
                                 using namespace shamrock::sph;
 
@@ -1890,30 +1938,37 @@ auto SPHSolve<Tvec, Kern>::evolve_once(Tscal t_current,Tscal dt,
 
     // if delta too big jump to compute force
 
-    ComputeField<Tscal> density = utility.make_compute_field<Tscal>("rho", 1);
-
-    scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchData &pdat) {
-        shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-            sycl::accessor acc_h{shambase::get_check_ref(pdat.get_field<Tscal>(ihpart).get_buf()),
-                                 cgh,
-                                 sycl::read_only};
-
-            sycl::accessor acc_rho{shambase::get_check_ref(density.get_buf(p.id_patch)),
-                                   cgh,
-                                   sycl::write_only,
-                                   sycl::no_init};
-            const Tscal part_mass = gpart_mass;
-
-            cgh.parallel_for(sycl::range<1>{pdat.get_obj_cnt()}, [=](sycl::item<1> item) {
-                u32 gid = (u32)item.get_id();
-                using namespace shamrock::sph;
-                Tscal rho_ha = rho_h(part_mass, acc_h[gid], Kernel::hfactd);
-                acc_rho[gid] = rho_ha;
-            });
-        });
-    });
+    
 
     if (dump_opt.vtk_do_dump) {
+
+        shambase::Timer timer_io;
+        timer_io.start();
+
+
+        ComputeField<Tscal> density = utility.make_compute_field<Tscal>("rho", 1);
+
+        scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchData &pdat) {
+            shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
+                sycl::accessor acc_h{shambase::get_check_ref(pdat.get_field<Tscal>(ihpart).get_buf()),
+                                    cgh,
+                                    sycl::read_only};
+
+                sycl::accessor acc_rho{shambase::get_check_ref(density.get_buf(p.id_patch)),
+                                    cgh,
+                                    sycl::write_only,
+                                    sycl::no_init};
+                const Tscal part_mass = gpart_mass;
+
+                cgh.parallel_for(sycl::range<1>{pdat.get_obj_cnt()}, [=](sycl::item<1> item) {
+                    u32 gid = (u32)item.get_id();
+                    using namespace shamrock::sph;
+                    Tscal rho_ha = rho_h(part_mass, acc_h[gid], Kernel::hfactd);
+                    acc_rho[gid] = rho_ha;
+                });
+            });
+        });
+
         shamrock::LegacyVtkWritter writter = start_dump<Tvec>(scheduler(), dump_opt.vtk_dump_fname);
         writter.add_point_data_section();
 
@@ -1989,6 +2044,10 @@ auto SPHSolve<Tvec, Kern>::evolve_once(Tscal t_current,Tscal dt,
 
         vtk_dump_add_compute_field(scheduler(), writter, density, "rho");
         vtk_dump_add_compute_field(scheduler(), writter, omega, "omega");
+
+
+        timer_io.end();
+        storage.timings_details.io += timer_io.elasped_sec();
     }
 
     tstep.end();
@@ -1998,20 +2057,28 @@ auto SPHSolve<Tvec, Kern>::evolve_once(Tscal t_current,Tscal dt,
 
     //logger::info_ln("SPHSolver", "process rate : ", rate, "particle.s-1");
 
-    std::string log_rank_rate = shambase::format("\n| {:<4} |    {:.4e}    | {:11} |   {:.3e}   |", shamsys::instance::world_rank,rate,  rank_count,  tstep.elasped_sec());
+    std::string log_rank_rate = shambase::format(
+        "\n| {:<4} |    {:.4e}    | {:11} |   {:.3e}   |  {:3.0f} % | {:3.0f} % | {:3.0f} % |", 
+        shamsys::instance::world_rank,rate,  rank_count,  tstep.elasped_sec(),
+        100*(storage.timings_details.interface / tstep.elasped_sec()),
+        100*(storage.timings_details.neighbors / tstep.elasped_sec()),
+        100*(storage.timings_details.io / tstep.elasped_sec())
+        );
 
     std::string gathered = "";
     shamalgs::collective::gather_str(log_rank_rate, gathered);
 
     if(shamsys::instance::world_rank == 0){
         std::string print = "processing rate infos : \n";
-        print+=("--------------------------------------------------------\n");
-        print+=("| rank |  rate  (N.s^-1)  |      N      | t compute (s) |\n");
-        print+=("--------------------------------------------------------");
+        print+=("---------------------------------------------------------------------------------\n");
+        print+=("| rank |  rate  (N.s^-1)  |      N      | t compute (s) | interf | neigh |   io  |\n");
+        print+=("---------------------------------------------------------------------------------");
         print+=(gathered) + "\n";
-        print+=("--------------------------------------------------------");
+        print+=("---------------------------------------------------------------------------------");
         logger::info_ln("sph::Model",print);
     }
+
+    storage.timings_details.reset();
 
     reset_serial_patch_tree();
     reset_ghost_handler();
