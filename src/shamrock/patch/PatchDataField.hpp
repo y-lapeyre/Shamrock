@@ -80,10 +80,6 @@ template <class T> class PatchDataField {
 
     public:
 
-    inline static sycl::buffer<T> convert_to_buf(PatchDataField<T> && pdatf){
-        return ResizableBuffer<T>::convert_to_buf(std::move(pdatf.buf));
-    }
-
     inline PatchDataField(PatchDataField &&other) noexcept
         : buf(std::move(other.buf)), field_name(std::move(other.field_name)),
           nvar(std::move(other.nvar)), obj_cnt(std::move(other.obj_cnt)) {
@@ -172,6 +168,8 @@ template <class T> class PatchDataField {
 
     // TODO add overflow check
     void resize(u32 new_obj_cnt);
+
+    void reserve(u32 new_obj_cnt);
 
     void expand(u32 obj_to_add);
 
@@ -333,6 +331,13 @@ template <class T> inline void PatchDataField<T>::resize(u32 new_obj_cnt) {
     buf.resize(new_size);
 
     obj_cnt = new_obj_cnt;
+}
+
+template <class T> inline void PatchDataField<T>::reserve(u32 new_obj_cnt) {
+
+    u32 add_cnt = new_obj_cnt * nvar;
+    buf.reserve(add_cnt);
+
 }
 
 template <class T> inline void PatchDataField<T>::expand(u32 obj_to_add) {
