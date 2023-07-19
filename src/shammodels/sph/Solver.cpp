@@ -20,6 +20,7 @@
 #include "shammodels/sph/modules/DiffOperatorDtDivv.hpp"
 #include "shammodels/sph/modules/UpdateViscosity.hpp"
 #include "shamrock/io/LegacyVtkWritter.hpp"
+#include "shamrock/patch/PatchData.hpp"
 #include "shamrock/patch/PatchDataLayout.hpp"
 #include "shamrock/scheduler/ComputeField.hpp"
 #include "shamrock/scheduler/InterfacesUtility.hpp"
@@ -36,6 +37,7 @@
 #include "shamsys/legacy/log.hpp"
 #include <memory>
 #include <stdexcept>
+#include <vector>
 
 template<class Tvec, template<class> class Kern>
 using SPHSolve = shammodels::sph::Solver<Tvec, Kern>;
@@ -651,14 +653,29 @@ void SPHSolve<Tvec, Kern>::communicate_merge_ghosts_fields() {
     sph::BasicSPHGhostHandler<Tvec> &ghost_handle = storage.ghost_handler.get();
     ComputeField<Tscal> &omega                    = storage.omega.get();
 
+    
     auto pdat_interf = ghost_handle.template build_interface_native<PatchData>(
         storage.ghost_patch_cache.get(),
         [&](u64 sender,
-            u64 /*receiver*/,
+            u64 ,
             InterfaceBuildInfos binfo,
             sycl::buffer<u32> &buf_idx,
             u32 cnt) {
+
             PatchData pdat(ghost_layout);
+
+            pdat.reserve(cnt);
+
+            return pdat;
+        });
+
+    ghost_handle.template modify_interface_native<PatchData>(storage.ghost_patch_cache.get(), 
+        pdat_interf, [&](u64 sender,
+            u64 ,
+            InterfaceBuildInfos binfo,
+            sycl::buffer<u32> &buf_idx,
+            u32 cnt,
+            PatchData & pdat) {
 
             PatchData &sender_patch             = scheduler().patch_data.get_pdat(sender);
             PatchDataField<Tscal> &sender_omega = omega.get_field(sender);
@@ -670,23 +687,39 @@ void SPHSolve<Tvec, Kern>::communicate_merge_ghosts_fields() {
             sender_patch.get_field<Tvec>(ivxyz).append_subset_to(
                 buf_idx, cnt, pdat.get_field<Tvec>(ivxyz_interf));
 
-            if(sycl::length(binfo.offset_speed) > 0){
-                pdat.get_field<Tvec>(ivxyz_interf).apply_offset(binfo.offset_speed);
-            }
-
             sender_omega.append_subset_to(buf_idx, cnt, pdat.get_field<Tscal>(iomega_interf));
 
             if (has_alphaAV_field) {
                 sender_patch.get_field<Tscal>(ialpha_AV).append_subset_to(
                     buf_idx, cnt, pdat.get_field<Tscal>(ialpha_AV_interf));
             }
-            pdat.check_field_obj_cnt_match();
 
-            return pdat;
         });
+
+
+    ghost_handle.template modify_interface_native<PatchData>(storage.ghost_patch_cache.get(), 
+        pdat_interf, [&](u64 sender,
+            u64 ,
+            InterfaceBuildInfos binfo,
+            sycl::buffer<u32> &buf_idx,
+            u32 cnt,
+            PatchData & pdat) {
+
+            if(sycl::length(binfo.offset_speed) > 0){
+                pdat.get_field<Tvec>(ivxyz_interf).apply_offset(binfo.offset_speed);
+            }
+
+        });
+    
+
 
     shambase::DistributedDataShared<PatchData> interf_pdat =
         ghost_handle.communicate_pdat(ghost_layout, std::move(pdat_interf));
+
+    std::map<u64,u64> sz_interf_map;
+    interf_pdat.for_each([&](u64 s, u64 r, PatchData &pdat_interf){
+        sz_interf_map[r] += pdat_interf.get_obj_cnt();
+    });
 
     storage.merged_patchdata_ghost.set(
         ghost_handle.template merge_native<PatchData, MergedPatchData>(
@@ -695,6 +728,7 @@ void SPHSolve<Tvec, Kern>::communicate_merge_ghosts_fields() {
                 PatchData pdat_new(ghost_layout);
 
                 u32 or_elem        = pdat.get_obj_cnt();
+                pdat_new.reserve(or_elem + sz_interf_map[p.id_patch]);
                 u32 total_elements = or_elem;
 
                 PatchDataField<Tscal> &cur_omega = omega.get_field(p.id_patch);
