@@ -9,6 +9,7 @@
 #pragma once
 
 #include "shambase/DistributedData.hpp"
+#include "shambase/stacktrace.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"
 #include "shamrock/patch/PatchDataField.hpp"
 #include "shamrock/scheduler/ComputeField.hpp"
@@ -166,6 +167,122 @@ namespace shammodels::sph {
         }
 
 
+        template<class T>
+        void modify_interface_native(
+            shambase::DistributedDataShared<InterfaceIdTable> & builder,
+            shambase::DistributedDataShared<T> & mod,
+            std::function<void(u64,u64,InterfaceBuildInfos,sycl::buffer<u32>&,u32,T&)> fct
+            ){
+            StackEntry stack_loc{};
+
+            struct Args {
+                u64 sender; u64 receiver; InterfaceIdTable &build_table;
+            };
+
+            std::vector<Args> vecarg;
+
+            // clang-format off
+            builder.for_each([&](u64 sender, u64 receiver, InterfaceIdTable &build_table) {
+                if (!bool(build_table.ids_interf)) {
+                    throw shambase::throw_with_loc<std::runtime_error>(
+                        "their is an empty id table in the interface, it should have been removed");
+                }
+
+                vecarg.push_back({sender,receiver,build_table});                    
+            });
+            // clang-format on
+
+            u32 i = 0;
+            mod.for_each([&](u64 sender,u64 receiver, T& ref){
+
+                InterfaceIdTable &build_table = vecarg[i].build_table;
+
+                fct(
+                    sender,
+                    receiver, 
+                    build_table.build_infos, 
+                    *build_table.ids_interf, 
+                    build_table.ids_interf->size(), 
+                    ref);
+
+                i ++;
+            });
+        }
+
+        
+
+        /**
+         * @brief native handle to generate interfaces
+         * generate interfaces of type T (template arg) based on the provided function
+         * ~~~~~{.cpp}
+         *
+         *
+         *
+         * ~~~~~
+         * 
+         * @tparam T 
+         * @param builder 
+         * @param fct 
+         * @return shambase::DistributedDataShared<T> 
+         */
+        template<class T>
+        shambase::DistributedDataShared<T> build_interface_native_stagged(
+            shambase::DistributedDataShared<InterfaceIdTable> &builder,
+            std::function<T(u64,u64,InterfaceBuildInfos,sycl::buffer<u32>&,u32)> gen_1,
+            std::function<void(u64,u64,InterfaceBuildInfos,sycl::buffer<u32>&,u32, T &)> modif
+            ){
+
+            StackEntry stack_loc{};
+
+            struct Args {
+                u64 sender; u64 receiver; InterfaceIdTable &build_table;
+            };
+
+            std::vector<Args> vecarg;
+
+            
+
+            shambase::DistributedDataShared<T> ret = 
+                builder.template map<T>([&](u64 sender, u64 receiver, InterfaceIdTable &build_table) {
+                if (!bool(build_table.ids_interf)) {
+                    throw shambase::throw_with_loc<std::runtime_error>(
+                        "their is an empty id table in the interface, it should have been removed");
+                }
+
+                vecarg.push_back({sender,receiver,build_table});
+
+                return gen_1(
+                    sender,
+                    receiver, 
+                    build_table.build_infos, 
+                    *build_table.ids_interf, 
+                    build_table.ids_interf->size());
+                    
+            });
+            
+
+
+            u32 i = 0;
+            ret.for_each([&](u64 sender,u64 receiver, T& ref){
+
+                InterfaceIdTable &build_table = vecarg[i].build_table;
+
+                modif(
+                    sender,
+                    receiver, 
+                    build_table.build_infos, 
+                    *build_table.ids_interf, 
+                    build_table.ids_interf->size(), 
+                    ref);
+
+                i ++;
+            });
+            
+
+            return ret;
+        }
+
+
         ////////////////////////////////////////////////////////////////////////////////////////////
         // interface generation/communication utility //////////////////////////////////////////////
         ////////////////////////////////////////////////////////////////////////////////////////////
@@ -222,7 +339,7 @@ namespace shammodels::sph {
             shamalgs::collective::serialize_sparse_comm<PositionInterface>(
                 std::forward<shambase::DistributedDataShared<PositionInterface>>(interf),
                 recv_dat,
-                shamsys::DirectGPU, 
+                shamsys::get_protocol(), 
                 [&](u64 id){
                     return sched.get_patch_rank_owner(id);
                 }, 
@@ -271,7 +388,7 @@ namespace shammodels::sph {
             shamalgs::collective::serialize_sparse_comm<shamrock::patch::PatchData>(
                 std::forward<shambase::DistributedDataShared<shamrock::patch::PatchData>>(interf),
                 recv_dat,
-                shamsys::DirectGPU, 
+                shamsys::get_protocol(), 
                 [&](u64 id){
                     return sched.get_patch_rank_owner(id);
                 }, 
@@ -303,13 +420,13 @@ namespace shammodels::sph {
             shamalgs::collective::serialize_sparse_comm<PatchDataField<T>>(
                 std::forward<shambase::DistributedDataShared<PatchDataField<T>>>(interf),
                 recv_dat,
-                shamsys::DirectGPU, 
+                shamsys::get_protocol(), 
                 [&](u64 id){
                     return sched.get_patch_rank_owner(id);
                 }, 
                 [](PatchDataField<T> & pdat){
                     shamalgs::SerializeHelper ser;
-                    ser.allocate(pdat.serialize_buf_byte_size());
+                    ser.allocate(pdat.serialize_full_byte_size());
                     pdat.serialize_full(ser);
                     return ser.finalize();
                 }, 

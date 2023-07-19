@@ -60,3 +60,17 @@ TestStart(Unittest, "shamrock/patch/PatchDataField::serialize_full", testpatchda
     }
 
 }
+
+/*
+TestStart(Unittest, "shamrock/patch/PatchDataField::get_element_with_range", testgetelemwithrange, 1){
+
+    u32 len = 1000;
+    u32 nvar = 2;
+    std::string name = "testfield";
+    PatchDataField<f64> field = PatchDataField<f64>::mock_field(0x111, len, name, nvar);
+
+
+
+
+}
+*/

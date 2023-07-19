@@ -60,6 +60,16 @@ namespace shammodels::sph {
 
         Component<shamrock::ComputeField<Tvec>> old_axyz;
         Component<shamrock::ComputeField<Tscal>> old_duint;
+
+        struct {
+            f64 interface = 0;
+            f64 neighbors = 0;
+            f64 io = 0;
+
+            void reset(){
+                *this = {};
+            }
+        } timings_details;
     };
 
 } // namespace shammodels::sph

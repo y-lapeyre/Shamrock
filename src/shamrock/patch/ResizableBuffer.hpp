@@ -30,6 +30,7 @@ class ResizableBuffer {
 
     void alloc();
     void free();
+    void change_capacity(u32 new_capa);
 
     public:
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -72,12 +73,12 @@ class ResizableBuffer {
     void resize(u32 new_size);
 
     /**
-     * @brief convert a buffer back to a sycl buffer
+     * @brief reserve slots for the buffer the buffer size
      *
-     * @param rbuf
-     * @return sycl::buffer<T>
+     * @param add_size
      */
-    static sycl::buffer<T> convert_to_buf(ResizableBuffer<T> &&rbuf);
+    void reserve(u32 add_size);
+
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // value manipulation

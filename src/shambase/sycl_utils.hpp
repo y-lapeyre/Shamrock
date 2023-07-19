@@ -9,10 +9,12 @@
 #pragma once
 
 #include "shambase/exception.hpp"
+#include "shambase/integer.hpp"
 #include "sycl_utils/sycl_utilities.hpp"
 #include "sycl_utils/vec_equals.hpp"
 #include "sycl_utils/vectorProperties.hpp"
 #include <stdexcept>
+#include "shambase/stacktrace.hpp"
 
 namespace shambase {
 
@@ -49,6 +51,126 @@ namespace shambase {
         case sycl::info::device_type::accelerator: return "ACCELERATOR";
         default: return "UNKNOWN";
         }
+    }
+
+    /**
+     * @brief Generate a sycl nd range out of a group size and lenght
+     * 
+     * @param lenght max index value
+     * @param group_size group size
+     * @return sycl::nd_range<1> the sycl nd range
+     */
+    inline sycl::nd_range<1> make_range(u32 lenght, const u32 group_size = 32){
+        u32 group_cnt = shambase::group_count(lenght, group_size);
+        u32 len =group_cnt*group_size;
+        return sycl::nd_range<1>{len, group_size};
+    }
+
+    enum ParralelForWrapMode {
+        PARRALEL_FOR,PARRALEL_FOR_ROUND, ND_RANGE
+    };
+
+    #ifdef SHAMROCK_LOOP_DEFAULT_PARRALEL_FOR
+    constexpr ParralelForWrapMode default_loop_mode = PARRALEL_FOR;
+    #endif
+
+    #ifdef SHAMROCK_LOOP_DEFAULT_PARRALEL_FOR_ROUND
+    constexpr ParralelForWrapMode default_loop_mode = PARRALEL_FOR_ROUND;
+    #endif
+    
+    #ifdef SHAMROCK_LOOP_DEFAULT_ND_RANGE
+    constexpr ParralelForWrapMode default_loop_mode = ND_RANGE;
+    #endif
+
+    constexpr u32 default_gsize = SHAMROCK_LOOP_GSIZE;
+
+
+    template<u32 group_size = default_gsize, ParralelForWrapMode mode = default_loop_mode,class LambdaKernel>
+    inline void parralel_for(sycl::handler & cgh, u32 lenght, const char* name, LambdaKernel && ker){
+
+        #ifdef SHAMROCK_USE_NVTX
+        nvtxRangePush(name);
+        #endif
+        
+        if constexpr(mode == PARRALEL_FOR){
+
+            cgh.parallel_for(sycl::range<1>{lenght}, [=](sycl::item<1> id){
+                ker(id.get_linear_id());
+            });
+
+        }else if constexpr(mode == PARRALEL_FOR_ROUND){
+
+            u32 len = shambase::group_count(lenght, group_size)*group_size;
+
+            cgh.parallel_for(sycl::range<1>{len}, [=](sycl::item<1> id){
+
+                u64 gid = id.get_linear_id();
+                if(gid >= lenght) return;
+
+                ker(gid);
+            });
+
+        }else if constexpr(mode==ND_RANGE){
+
+            cgh.parallel_for(make_range(lenght,group_size), [=](sycl::nd_item<1> id){
+
+                u64 gid = id.get_global_linear_id();
+                if(gid >= lenght) return;
+
+                ker(gid);
+            });
+
+        }else{
+            throw_unimplemented();
+        }
+
+        #ifdef SHAMROCK_USE_NVTX
+        nvtxRangePop();
+        #endif
+    }
+
+    template<ParralelForWrapMode mode = default_loop_mode,class LambdaKernel>
+    inline void parralel_for(sycl::handler & cgh, u32 lenght, u32 group_size, const char* name, LambdaKernel && ker){
+
+        #ifdef SHAMROCK_USE_NVTX
+        nvtxRangePush(name);
+        #endif
+        
+        if constexpr(mode == PARRALEL_FOR){
+
+            cgh.parallel_for(sycl::range<1>{lenght}, [=](sycl::item<1> id){
+                ker(id.get_linear_id());
+            });
+
+        }else if constexpr(mode == PARRALEL_FOR_ROUND){
+
+            u32 len = shambase::group_count(lenght, group_size)*group_size;
+
+            cgh.parallel_for(sycl::range<1>{len}, [=](sycl::item<1> id){
+
+                u64 gid = id.get_linear_id();
+                if(gid >= lenght) return;
+
+                ker(gid);
+            });
+
+        }else if constexpr(mode==ND_RANGE){
+
+            cgh.parallel_for(make_range(lenght,group_size), [=](sycl::nd_item<1> id){
+
+                u64 gid = id.get_global_linear_id();
+                if(gid >= lenght) return;
+
+                ker(gid);
+            });
+
+        }else{
+            throw_unimplemented();
+        }
+
+        #ifdef SHAMROCK_USE_NVTX
+        nvtxRangePop();
+        #endif
     }
 
 } // namespace shambase

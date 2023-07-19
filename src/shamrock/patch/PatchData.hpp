@@ -39,16 +39,9 @@ namespace shamrock::patch {
 
         inline PatchData(PatchDataLayout &pdl) : pdl(pdl) { init_fields(); }
 
-        static PatchData mock_patchdata(u64 seed, u32 obj_cnt, PatchDataLayout &pdl);
-
-        template<class Functor>
-        inline void for_each_field_any(Functor &&func) {
-            for (auto &f : fields) {
-                f.visit([&](auto &arg) { func(arg); });
-            }
-        }
-
         inline PatchData(const PatchData &other) : pdl(other.pdl) {
+
+            NamedStackEntry stack_loc{"PatchData::copy_constructor",true};
 
             for (auto &field_var : other.fields) {
 
@@ -59,6 +52,43 @@ namespace shamrock::patch {
                 });
             };
         }
+
+        /**
+         * @brief PatchData move constructor
+         * 
+         * @param other 
+         */
+        inline PatchData(PatchData &&other) noexcept
+            : fields(std::move(other.fields)), pdl(other.pdl) {
+        }
+
+        /**
+         * @brief PatchData move assignment
+         * 
+         * @param other 
+         */
+        inline PatchData &operator=(PatchData &&other) noexcept {
+            fields        = std::move(other.fields);
+            pdl = std::move(other.pdl);
+
+            return *this;
+        }
+
+        PatchData &operator=(const PatchData &other) = delete;
+
+
+        
+
+        static PatchData mock_patchdata(u64 seed, u32 obj_cnt, PatchDataLayout &pdl);
+
+        template<class Functor>
+        inline void for_each_field_any(Functor &&func) {
+            for (auto &f : fields) {
+                f.visit([&](auto &arg) { func(arg); });
+            }
+        }
+
+        
 
         template<class Func>
         inline PatchData(PatchDataLayout &pdl, Func &&fct_init) : pdl(pdl) {
@@ -78,7 +108,7 @@ namespace shamrock::patch {
             return std::make_unique<PatchData>(current);
         }
 
-        PatchData &operator=(const PatchData &other) = delete;
+        
 
         /**
          * @brief extract particle at index pidx and insert it in the provided vectors
@@ -104,6 +134,8 @@ namespace shamrock::patch {
         void insert_elements_in_range(PatchData &pdat, T bmin, T bmax);
 
         void resize(u32 new_obj_cnt);
+
+        void reserve(u32 new_obj_cnt);
 
         void expand(u32 obj_cnt);
 

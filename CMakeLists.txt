@@ -3,6 +3,8 @@
 ######################################
 
 cmake_minimum_required(VERSION 3.9)
+
+
 project(Shamrock CXX C)
 
 
@@ -10,15 +12,47 @@ project(Shamrock CXX C)
 cmake_policy(SET CMP0079 NEW)
 cmake_policy(SET CMP0076 NEW)
 
+
+
+######################
+#Project config
+######################
+
+set(SYCL_COMPILER "OTHER" CACHE STRING "Sycl compiler used")
+set_property(CACHE SYCL_COMPILER PROPERTY STRINGS DPCPP OPENSYCL OTHER)
+
+set(SHAMROCK_LOOP_DEFAULT "PARRALEL_FOR_ROUND" CACHE STRING "Default loop mode in shamrock")
+set_property(CACHE SHAMROCK_LOOP_DEFAULT PROPERTY STRINGS PARRALEL_FOR PARRALEL_FOR_ROUND ND_RANGE)
+
+set(SHAMROCK_LOOP_GSIZE 256 CACHE STRING "Default group size in shamrock")
+
+option(EXPORT_COMPILE_COMMANDS "export the compile_commands.json" ON)
+option(SHAMROCK_USE_NVTX "use nvtx tooling" On)
+option(SHAMROCK_USE_PROFILING "use custom profiling tooling" On)
+
+message("-- Shamrock config : ")
+message("     SHAMROCK_LOOP_DEFAULT : ${SHAMROCK_LOOP_DEFAULT}")
+message("     SHAMROCK_LOOP_GSIZE : ${SHAMROCK_LOOP_GSIZE}")
+message("     SHAMROCK_USE_PROFILING : ${SHAMROCK_USE_PROFILING}")
+message("     SHAMROCK_USE_NVTX : ${SHAMROCK_USE_NVTX}")
+message("     SYCL_COMPILER : ${SYCL_COMPILER}")
+message("     CMAKE_CXX_FLAGS : ${CMAKE_CXX_FLAGS}")
+message("     CMAKE_CXX_COMPILER : ${CMAKE_CXX_COMPILER}")
+
+
+
 # Necessary for clangd to work properly
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+if(EXPORT_COMPILE_COMMANDS)
+    set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+endif()
 
 set(Default_comp "${CMAKE_CXX_COMPILER}")
 
-message(STATUS "chosen compiler : ${SyCL_Compiler}")
-
 LIST(APPEND CMAKE_SYSTEM_PROGRAM_PATH  "${COMP_ROOT_DIR}/bin")
 LIST(APPEND CMAKE_SYSTEM_LIBRARY_PATH  "${COMP_ROOT_DIR}/bin/lib")
+
+
+
 
 ######################
 #checking compiler flag support 
@@ -59,21 +93,27 @@ endif()
 ######################
 # Compiler selection
 ######################
-if("${SyCL_Compiler}" STREQUAL "DPCPP")
-
+if(${SYCL_COMPILER} STREQUAL "DPCPP")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSYCL_COMP_DPCPP -Wno-unknown-cuda-version")
-
-endif()
-
-
-if("${SyCL_Compiler}" STREQUAL "OPENSYCL")
-
+elseif(${SYCL_COMPILER} STREQUAL "OPENSYCL")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSYCL_COMP_OPENSYCL")
-
+elseif(${SYCL_COMPILER} STREQUAL "OTHER")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSYCL_COMP_SYCLUNKNOWN")
 endif()
 
 
+######################
+#shamrock impl control
+######################
+if(${SHAMROCK_LOOP_DEFAULT} STREQUAL "PARRALEL_FOR")
+  add_compile_definitions("SHAMROCK_LOOP_DEFAULT_PARRALEL_FOR")
+elseif(${SHAMROCK_LOOP_DEFAULT} STREQUAL "PARRALEL_FOR_ROUND")
+  add_compile_definitions("SHAMROCK_LOOP_DEFAULT_PARRALEL_FOR_ROUND")
+elseif(${SHAMROCK_LOOP_DEFAULT} STREQUAL "ND_RANGE")
+  add_compile_definitions("SHAMROCK_LOOP_DEFAULT_ND_RANGE")
+endif()
 
+add_compile_definitions("SHAMROCK_LOOP_GSIZE=${SHAMROCK_LOOP_GSIZE}")
 
 
 
@@ -120,6 +160,16 @@ endif()
 target_link_libraries(shamrock_lib PUBLIC MPI::MPI_C)
 target_link_libraries(shamrock_lib PUBLIC fmt::fmt)
 
+
+if(SHAMROCK_USE_NVTX)
+    target_link_libraries(shamrock_lib PUBLIC nvtx3-cpp)
+    target_compile_definitions(shamrock_lib PUBLIC SHAMROCK_USE_NVTX)
+endif()
+
+if(SHAMROCK_USE_PROFILING)
+    target_compile_definitions(shamrock_lib PUBLIC SHAMROCK_USE_PROFILING)
+endif()
+
 if("${BUILD_SIM}")
 
     message(">>> adding sph target <<<")
@@ -140,6 +190,16 @@ if("${BUILD_SIM}")
     
     target_link_libraries(shamrock PUBLIC MPI::MPI_C)
     target_link_libraries(shamrock PUBLIC fmt::fmt)
+
+    if(SHAMROCK_USE_NVTX)
+        target_link_libraries(shamrock PUBLIC nvtx3-cpp)
+        target_compile_definitions(shamrock PUBLIC SHAMROCK_USE_NVTX)
+    endif()
+
+
+    if(SHAMROCK_USE_PROFILING)
+    target_compile_definitions(shamrock PUBLIC SHAMROCK_USE_PROFILING)
+    endif()
 
     
 
@@ -171,6 +231,16 @@ if("${BUILD_TEST}")
 
     target_compile_definitions(shamrock_test PUBLIC EXECUTABLE_BUILD)
     target_link_libraries(shamrock_test PUBLIC fmt::fmt)
+
+    if(SHAMROCK_USE_NVTX)
+        target_link_libraries(shamrock_test PUBLIC nvtx3-cpp)
+        target_compile_definitions(shamrock_test PUBLIC SHAMROCK_USE_NVTX)
+    endif()
+
+
+    if(SHAMROCK_USE_PROFILING)
+    target_compile_definitions(shamrock_test PUBLIC SHAMROCK_USE_PROFILING)
+    endif()
 
     #find_package(nlohmann_json 3.2.0 REQUIRED)
     #target_link_libraries(shamrock_test PUBLIC nlohmann_json::nlohmann_json)

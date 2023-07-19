@@ -134,6 +134,16 @@ namespace shamrock::patch{
 
     }
 
+    void PatchData::reserve(u32 new_obj_cnt){
+
+        for(auto & field_var : fields){
+            field_var.visit([&](auto & field){
+                field.reserve(new_obj_cnt);
+            });
+        }
+
+    }
+
     void PatchData::expand(u32 new_obj_cnt){
 
         for(auto & field_var : fields){
