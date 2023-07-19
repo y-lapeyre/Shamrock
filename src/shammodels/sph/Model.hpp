@@ -18,6 +18,7 @@
 #include "shamrock/scheduler/ShamrockCtx.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
+#include <vector>
 
 namespace shammodels::sph {
 
@@ -75,6 +76,16 @@ namespace shammodels::sph {
 
         void add_cube_fcc_3d(Tscal dr, std::pair<Tvec, Tvec> _box);
 
+        inline void add_sink(Tscal mass, Tvec pos, Tvec velocity){
+            if(solver.storage.sinks.is_empty()){
+                solver.storage.sinks.set({});
+            }
+
+            solver.storage.sinks.get().push_back({
+                pos,velocity,{},{},mass,{}
+            });
+        }
+
         template<std::enable_if_t<dim == 3, int> = 0>
         inline void add_cube_disc_3d(Tvec center,
                                      u32 Npart,
@@ -83,7 +94,8 @@ namespace shammodels::sph {
                                      Tscal m,
                                      Tscal r_in,
                                      Tscal r_out,
-                                     Tscal q) {
+                                     Tscal q,
+                                     Tscal cmass) {
 
             using namespace shamrock::patch;
 
@@ -97,9 +109,22 @@ namespace shammodels::sph {
                 shammath::CoordRange<Tvec> patch_coord = ptransf.to_obj_coord(ptch);
 
                 std::vector<Tvec> vec_acc;
+                std::vector<Tvec> vec_vel;
+
+                Tscal G = solver.solver_config.get_constant_G();
+
                 generic::setup::generators::add_disc(
                     Npart, p, rho_0, m, r_in, r_out, q, [&](Tvec r, Tscal h) {
                         vec_acc.push_back(r + center);
+
+                        Tscal R = sycl::length(r);
+
+                        Tscal V = sycl::sqrt(G * cmass/R);
+
+                        Tvec etheta= {-r.z(),0, r.x()};
+                        etheta /= sycl::length(etheta);
+
+                        vec_vel.push_back(V*etheta);
                     });
 
                 log += shambase::format("\n    patch id={}, add N={} particles", ptch.id_patch, vec_acc.size());
@@ -120,6 +145,14 @@ namespace shammodels::sph {
                     PatchDataField<Tscal> &f =
                         tmp.get_field<Tscal>(sched.pdl.get_field_idx<Tscal>("hpart"));
                     f.override(0.01);
+                }
+
+                {
+                    u32 len = vec_acc.size();
+                    PatchDataField<Tvec> &f =
+                        tmp.get_field<Tvec>(sched.pdl.get_field_idx<Tvec>("vxyz"));
+                    sycl::buffer<Tvec> buf(vec_vel.data(), len);
+                    f.override(buf, len);
                 }
 
                 pdat.insert_elements(tmp);
