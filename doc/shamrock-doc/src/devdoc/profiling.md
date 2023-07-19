@@ -40,8 +40,14 @@ for a timeline view, with GPU metrics:
 nsys profile -t cuda,nvtx --gpu-metrics-device=0 ./shamrock --sycl-cfg 1:1 --loglevel 1 --rscript ../../exemples/spherical_wave.py
 ```
 
+MPI version : 
+```
+nsys profile -t cuda,nvtx,mpi --cuda-memory-usage=true --mpi-impl=openmpi ./shamrock --sycl-cfg 1:1 --loglevel 1 --rscript ../../exemples/spherical_wave.py
+```
+
 On the CBP (ENSL) the qstrm importer fails, bu it can be ran a posteriori :
 ```
+nsys profile -t cuda,nvtx,mpi --cuda-memory-usage=true --mpi-impl=openmpi ./shamrock --sycl-cfg auto:CUDA --loglevel 1 --rscript ../../exemples/spherical_wave.py
 /usr/lib/nsight-systems/host-linux-x64/QdstrmImporter -i <input> -o output.qdrep
 ```
 
