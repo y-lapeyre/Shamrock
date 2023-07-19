@@ -958,7 +958,7 @@ void SPHSolve<Tvec, Kern>::update_derivs_constantAV() {
 
             constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
 
-            shambase::parralel_for(cgh, pdat.get_obj_cnt(),shamsys::instance::get_compute_queue_eu_count(),"compute force cte AV", [=](u64 gid){
+            shambase::parralel_for(cgh, pdat.get_obj_cnt(),"compute force cte AV", [=](u64 gid){
                 u32 id_a = (u32)gid;
 
                 using namespace shamrock::sph;
@@ -1160,7 +1160,7 @@ void SPHSolve<Tvec, Kern>::update_derivs_mm97() {
 
             constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
 
-            shambase::parralel_for(cgh, pdat.get_obj_cnt(),shamsys::instance::get_compute_queue_eu_count(),"compute force MM97 AV", [=](u64 gid){
+            shambase::parralel_for(cgh, pdat.get_obj_cnt(),"compute force MM97 AV", [=](u64 gid){
                 u32 id_a = (u32)gid;
 
                 using namespace shamrock::sph;
@@ -1372,7 +1372,7 @@ void SPHSolve<Tvec, Kern>::update_derivs_cd10() {
 
             constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
 
-            shambase::parralel_for(cgh, pdat.get_obj_cnt(),shamsys::instance::get_compute_queue_eu_count(),"compute force CD10 AV", [=](u64 gid){
+            shambase::parralel_for(cgh, pdat.get_obj_cnt(),"compute force CD10 AV", [=](u64 gid){
                 u32 id_a = (u32)gid;
 
                 using namespace shamrock::sph;
