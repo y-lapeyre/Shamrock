@@ -47,8 +47,13 @@ nsys profile -t cuda,nvtx,mpi --cuda-memory-usage=true --mpi-impl=openmpi ./sham
 
 On the CBP (ENSL) the qstrm importer fails, bu it can be ran a posteriori :
 ```
-nsys profile -t cuda,nvtx,mpi --cuda-memory-usage=true --mpi-impl=openmpi ./shamrock --sycl-cfg auto:CUDA --loglevel 1 --rscript ../../exemples/spherical_wave.py
 /usr/lib/nsight-systems/host-linux-x64/QdstrmImporter -i <input> -o output.qdrep
+```
+
+ MPI trace : 
+
+```
+nsys profile -t cuda,nvtx,mpi --cuda-memory-usage=true --mpi-impl=openmpi /usr/bin/mpirun -n 2 ./shamrock --sycl-cfg auto:CUDA --loglevel 1 --rscript ../../exemples/spherical_wave.py
 ```
 
 ### NCU
