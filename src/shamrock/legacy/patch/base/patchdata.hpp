@@ -51,6 +51,7 @@ struct PatchDataMpiRequest{
     std::vector<patchdata_field::PatchDataFieldMpiRequest<u64   >> mpi_rq_fields_u64;
     std::vector<patchdata_field::PatchDataFieldMpiRequest<u32_3   >> mpi_rq_fields_u32_3;
     std::vector<patchdata_field::PatchDataFieldMpiRequest<u64_3   >> mpi_rq_fields_u64_3;
+    std::vector<patchdata_field::PatchDataFieldMpiRequest<i64_3   >> mpi_rq_fields_i64_3;
 
     inline void finalize(){
         for(auto b : mpi_rq_fields_f32   ){b.finalize();}
@@ -69,6 +70,7 @@ struct PatchDataMpiRequest{
         for(auto b : mpi_rq_fields_u64   ){b.finalize();}
         for(auto b : mpi_rq_fields_u32_3   ){b.finalize();}
         for(auto b : mpi_rq_fields_u64_3   ){b.finalize();}
+        for(auto b : mpi_rq_fields_i64_3   ){b.finalize();}
     }
 
     template<class T> std::vector<patchdata_field::PatchDataFieldMpiRequest<T>> & get_field_list();
@@ -102,7 +104,8 @@ inline void waitall_pdat_mpi_rq(std::vector<PatchDataMpiRequest> & rq_lst){
         insertor(a.mpi_rq_fields_u32   );
         insertor(a.mpi_rq_fields_u64   ); 
         insertor(a.mpi_rq_fields_u32_3   );
-        insertor(a.mpi_rq_fields_u64_3   );        
+        insertor(a.mpi_rq_fields_u64_3   );   
+        insertor(a.mpi_rq_fields_i64_3   );        
     }
 
     std::vector<MPI_Status> st_lst(rqst.size());

@@ -691,4 +691,19 @@ template <> void PatchDataField<u64_3>::gen_mock_data(u32 obj_cnt, std::mt19937 
 }
 
 
+template <> void PatchDataField<i64_3>::gen_mock_data(u32 obj_cnt, std::mt19937 &eng) {
+    resize(obj_cnt);
+    std::uniform_int_distribution<i64> distu64(1, obj_mock_cnt);
+
+    {
+        auto & buf = get_buf();
+        sycl::host_accessor acc{*buf, sycl::write_only, sycl::no_init};
+
+        for (u32 i = 0; i < size(); i++) {
+            acc[i] = i64_3{distu64(eng),distu64(eng),distu64(eng)};
+        }
+    }
+}
+
+
 

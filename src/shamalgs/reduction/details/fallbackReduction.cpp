@@ -113,7 +113,9 @@ namespace shamalgs::reduction::details {
     X(u32   ) \
     X(u64   ) \
     X(u32_3 ) \
-    X(u64_3 )
+    X(u64_3 ) \
+    X(i64_3 ) \
+    X(i64 )
 
     #define X(_arg_)\
     template struct FallbackReduction<_arg_>;

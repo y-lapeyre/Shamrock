@@ -12,6 +12,10 @@
 #include "shambase/exception.hpp"
 #include <variant>
 
+
+
+
+
 namespace shamrock::patch {
 
     template<template<class> class Container>
@@ -34,7 +38,9 @@ namespace shamrock::patch {
             Container<u32>,
             Container<u64>,
             Container<u32_3>,
-            Container<u64_3>>;
+            Container<u64_3>,
+            Container<i64_3>
+            >;
 
         var_t_template value;
 

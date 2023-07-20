@@ -217,10 +217,10 @@ namespace shamrock::patch {
             bounding_box.value = shammath::CoordRange<u32_3>::max_range();
         } else if (pdl.check_main_field_type<u64_3>()) {
             bounding_box.value = shammath::CoordRange<u64_3>::max_range();
+        } else if (pdl.check_main_field_type<i64_3>()) {
+            bounding_box.value = shammath::CoordRange<i64_3>::max_range();
         } else {
-            throw std::runtime_error(
-                __LOC_PREFIX__ + "the chosen type for the main field is not handled"
-            );
+            throw shambase::throw_with_loc<std::runtime_error>("the chosen type for the main field is not handled");
         }
     }
 } // namespace shamrock::patch

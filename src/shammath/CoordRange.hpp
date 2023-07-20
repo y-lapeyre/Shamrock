@@ -162,4 +162,22 @@ namespace shammath {
         return ret;
     }
 
+    template<>
+    inline CoordRange<i64_3> CoordRange<i64_3>::max_range() {
+
+        CoordRange<i64_3> ret;
+
+        ret.lower = {
+            std::numeric_limits<i64>::min(),
+            std::numeric_limits<i64>::min(),
+            std::numeric_limits<i64>::min()};
+
+        ret.upper = {
+            std::numeric_limits<i64>::max(),
+            std::numeric_limits<i64>::max(),
+            std::numeric_limits<i64>::max()};
+
+        return ret;
+    }
+
 } // namespace shammath
