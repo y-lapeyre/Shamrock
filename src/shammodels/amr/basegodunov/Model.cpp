@@ -12,8 +12,6 @@
 #include "shamrock/io/LegacyVtkWritter.hpp"
 #include "shamrock/scheduler/scheduler_mpi.hpp"
 #include "shamsys/NodeInstance.hpp"
-#include <hipSYCL/sycl/handler.hpp>
-#include <hipSYCL/sycl/libkernel/accessor.hpp>
 
 template<class Tvec, class TgridVec>
 using Model = shammodels::basegodunov::Model<Tvec, TgridVec>;
@@ -40,7 +38,7 @@ void Model<Tvec, TgridVec>::init_scheduler(u32 crit_split, u32 crit_merge){
 
 template<class Tvec, class TgridVec>
 void Model<Tvec, TgridVec>::dump_vtk(std::string filename){
-    
+
     StackEntry stack_loc{};
     shamrock::LegacyVtkWritter writer(filename, true, shamrock::UnstructuredGrid);
 
