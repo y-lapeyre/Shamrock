@@ -29,7 +29,10 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
 
     py::class_<TConfig>(m, name_config.c_str());
 
-    py::class_<T>(m, name_model.c_str());
+    py::class_<T>(m, name_model.c_str())
+    .def("init_scheduler",&T::init_scheduler)
+    .def("make_base_grid",&T::make_base_grid)
+    .def("dump_vtk",&T::dump_vtk);
 
 }
 

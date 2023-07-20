@@ -35,9 +35,12 @@ namespace shammodels::basegodunov {
         inline void init_required_fields() {
             context.pdata_layout_add_field<TgridVec>("cell_min", 1);
             context.pdata_layout_add_field<TgridVec>("cell_max", 1);
+            context.pdata_layout_add_field<Tscal>("rho", 1);
         }
 
         Solver(ShamrockCtx &context) : context(context) {}
+
+        Tscal evolve_once(Tscal t_current,Tscal dt_input);
     };
 
 } // namespace shammodels::basegodunov

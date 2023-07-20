@@ -7,6 +7,13 @@
 // -------------------------------------------------------//
 
 #include "Model.hpp"
+#include "shambase/memory.hpp"
+#include "shambase/sycl_utils.hpp"
+#include "shamrock/io/LegacyVtkWritter.hpp"
+#include "shamrock/scheduler/scheduler_mpi.hpp"
+#include "shamsys/NodeInstance.hpp"
+#include <hipSYCL/sycl/handler.hpp>
+#include <hipSYCL/sycl/libkernel/accessor.hpp>
 
 template<class Tvec, class TgridVec>
 using Model = shammodels::basegodunov::Model<Tvec, TgridVec>;
@@ -29,6 +36,44 @@ void Model<Tvec, TgridVec>::init_scheduler(u32 crit_split, u32 crit_merge){
     //sched.patch_list.build_local_idx_map();
     //sched.update_local_dtcnt_value();
     //sched.update_local_load_value();
+}
+
+template<class Tvec, class TgridVec>
+void Model<Tvec, TgridVec>::dump_vtk(std::string filename){
+    
+    StackEntry stack_loc{};
+    shamrock::LegacyVtkWritter writer(filename, true, shamrock::UnstructuredGrid);
+
+    PatchScheduler & sched = shambase::get_check_ref(ctx.sched);
+
+    u64 num_obj = sched.get_rank_count();
+
+    std::unique_ptr<sycl::buffer<TgridVec>> pos1 = sched.rankgather_field<TgridVec>(0);
+    std::unique_ptr<sycl::buffer<TgridVec>> pos2 = sched.rankgather_field<TgridVec>(1);
+
+    sycl::buffer<Tvec> pos_min_cell(num_obj);
+    sycl::buffer<Tvec> pos_max_cell(num_obj);
+
+    shamsys::instance::get_compute_queue().submit([&](sycl::handler & cgh){
+        sycl::accessor acc_p1 {shambase::get_check_ref(pos1), cgh, sycl::read_only};
+        sycl::accessor acc_p2 {shambase::get_check_ref(pos2), cgh, sycl::read_only};
+        sycl::accessor cell_min {pos_min_cell, cgh, sycl::write_only, sycl::no_init};
+        sycl::accessor cell_max {pos_max_cell, cgh, sycl::write_only, sycl::no_init};
+
+        shambase::parralel_for(cgh, num_obj,"rescale cells", [=](u64 id_a){
+            cell_min[id_a] = acc_p1[id_a].template convert<Tscal>();
+            cell_max[id_a] = acc_p2[id_a].template convert<Tscal>();
+        });
+    });
+    
+    writer.write_voxel_cells(pos_min_cell,pos_max_cell, num_obj);
+
+    writer.add_cell_data_section();
+    writer.add_field_data_section(1);
+
+    std::unique_ptr<sycl::buffer<Tscal>> field_vals = sched.rankgather_field<Tscal>(2);
+    writer.write_field("rho", field_vals, num_obj);
+
 }
 
 

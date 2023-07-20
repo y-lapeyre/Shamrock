@@ -8,8 +8,10 @@
 
 #pragma once
 
+#include "shambase/memory.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"
 #include "shammodels/amr/basegodunov/Solver.hpp"
+#include "shamrock/amr/AMRGrid.hpp"
 #include "shamrock/legacy/utils/geometry_utils.hpp"
 #include "shamrock/scheduler/ReattributeDataUtility.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
@@ -32,6 +34,15 @@ namespace shammodels::basegodunov {
         ////////////////////////////////////////////////////////////////////////////////////////////
 
         void init_scheduler(u32 crit_split, u32 crit_merge);
+
+        void make_base_grid(TgridVec bmin, TgridVec cell_size, u32_3 cell_count){
+            shamrock::amr::AMRGrid<TgridVec, 3> grid (shambase::get_check_ref(ctx.sched));
+            grid.make_base_grid(bmin, cell_size, {cell_count.x(), cell_count.y(), cell_count.z()});
+        }
+
+        void dump_vtk(std::string filename);
+
+        
     };
 
 } // namespace shammodels::basegodunov
