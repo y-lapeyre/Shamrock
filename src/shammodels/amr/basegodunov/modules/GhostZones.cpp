@@ -6,15 +6,12 @@
 //
 // -------------------------------------------------------//
 
-#include "shammodels/amr/basegodunov/Solver.hpp"
+#include "shammodels/amr/basegodunov/modules/GhostZones.hpp"
 
 template<class Tvec, class TgridVec>
-using Solver = shammodels::basegodunov::Solver<Tvec, TgridVec>;
+using Module = shammodels::basegodunov::modules::GhostZones<Tvec, TgridVec>;
 
 template<class Tvec, class TgridVec>
-auto Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tscal dt_input) -> Tscal{
-
-    //ghost zone exchange
+void Module<Tvec,TgridVec>::build_ghost_cache(){
     
-
 }
