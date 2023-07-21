@@ -76,13 +76,13 @@ namespace shammodels::sph {
 
         void add_cube_fcc_3d(Tscal dr, std::pair<Tvec, Tvec> _box);
 
-        inline void add_sink(Tscal mass, Tvec pos, Tvec velocity){
+        inline void add_sink(Tscal mass, Tvec pos, Tvec velocity, Tscal accretion_radius){
             if(solver.storage.sinks.is_empty()){
                 solver.storage.sinks.set({});
             }
 
             solver.storage.sinks.get().push_back({
-                pos,velocity,{},{},mass,{}
+                pos,velocity,{},{},mass,{},accretion_radius
             });
         }
 
@@ -127,7 +127,7 @@ namespace shammodels::sph {
 
                         vec_vel.push_back(V*etheta);
 
-                        Tscal cs0 = 0.001;
+                        Tscal cs0 = 0.05;
                         Tscal cs = cs0*sycl::pow(R,-q);
                         vec_u.push_back(cs*cs/(solver.eos_gamma - 1.)/solver.eos_gamma);
                     });

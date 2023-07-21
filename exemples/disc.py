@@ -50,7 +50,8 @@ print("Current part mass :", pmass)
 #    setup.update_smoothing_lenght(ctx)
 
 
-model.add_sink(1,(0,0,0),(0,0,0))
+model.add_sink(1,(0,0,0),(0,0,0),0.05)
+model.add_sink(0.01,(1,0,0),(0,0,6.5),0.01)
 #model.add_sink(100,(0,2,0),(0,0,1))
 
 

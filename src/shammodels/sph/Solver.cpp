@@ -1569,6 +1569,7 @@ auto SPHSolve<Tvec, Kern>::evolve_once(Tscal t_current,Tscal dt,
     modules::SinkParticlesUpdate<Tvec, Kern> sink_update(context,solver_config,storage);
 
 
+    sink_update.accrete_particles();
 
     do_predictor_leapfrog(dt);
 

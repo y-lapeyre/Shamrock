@@ -7,10 +7,78 @@
 // -------------------------------------------------------//
 
 #include "shammodels/sph/modules/SinkParticlesUpdate.hpp"
+#include "shamalgs/numeric/numeric.hpp"
 #include "shamrock/sph/kernels.hpp"
+#include "shamsys/legacy/log.hpp"
+#include <hipSYCL/sycl/buffer.hpp>
+#include <hipSYCL/sycl/libkernel/accessor.hpp>
 
 template<class Tvec, template<class> class SPHKernel>
 using SinkUpdate = shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>;
+
+template<class Tvec, template<class> class SPHKernel>
+void SinkUpdate<Tvec, SPHKernel>::accrete_particles(){
+    StackEntry stack_loc{};
+
+    if(storage.sinks.is_empty()){
+        return;
+    }
+
+    using namespace shamrock;
+    using namespace shamrock::patch;
+
+    PatchDataLayout &pdl = scheduler().pdl;
+    const u32 ixyz      = pdl.get_field_idx<Tvec>("xyz");
+
+    sycl::queue & q = shamsys::instance::get_compute_queue();
+
+    std::vector<Sink> & sink_parts = storage.sinks.get();
+
+    for (Sink & s : sink_parts) {
+
+        scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+            u32 Nobj = pdat.get_obj_cnt();
+
+            sycl::buffer<Tvec> &buf_xyz = pdat.get_field_buf_ref<Tvec>(ixyz);
+
+            sycl::buffer<u32> not_accreted (Nobj);
+            sycl::buffer<u32> accreted (Nobj);
+
+            q.submit([&](sycl::handler &cgh) {
+                sycl::accessor xyz{buf_xyz, cgh, sycl::read_only};
+                sycl::accessor not_acc {not_accreted, cgh, sycl::write_only, sycl::no_init};
+                sycl::accessor acc {accreted, cgh, sycl::write_only, sycl::no_init};
+
+                Tvec r_sink = s.pos;
+                Tscal acc_rad2 = s.accretion_radius*s.accretion_radius;
+
+                shambase::parralel_for(cgh, Nobj,"check accretion", [=](i32 id_a){
+                    Tvec r = xyz[id_a] - r_sink;
+                    bool not_accreted = sycl::dot(r,r) > acc_rad2;
+                    not_acc[id_a] = (not_accreted) ? 1 : 0;
+                    acc[id_a] = (!not_accreted) ? 1 : 0;
+                });
+            });
+
+            std::tuple<std::optional<sycl::buffer<u32>>, u32> id_list_keep = shamalgs::numeric::stream_compact(
+                q, not_accreted, Nobj);
+
+            std::tuple<std::optional<sycl::buffer<u32>>, u32> id_list_accrete = shamalgs::numeric::stream_compact(
+                q, accreted, Nobj);
+
+
+            if(std::get<1>(id_list_accrete) > 0){
+                pdat.keep_ids(*std::get<0>(id_list_keep), std::get<1>(id_list_keep));
+            }
+
+            
+                
+        });
+
+        
+    }
+
+}
 
 template<class Tvec, template<class> class SPHKernel>
 void SinkUpdate<Tvec, SPHKernel>::predictor_step(Tscal dt){
@@ -24,6 +92,11 @@ void SinkUpdate<Tvec, SPHKernel>::predictor_step(Tscal dt){
     compute_ext_forces();
     
     std::vector<Sink> & sink_parts = storage.sinks.get();
+
+    for (Sink & s : sink_parts) {
+        s.sph_acceleration = {};
+        s.ext_acceleration = {};
+    }
 
     for (Sink & s : sink_parts) {
         s.velocity += (dt/2)*s.sph_acceleration;
@@ -116,7 +189,7 @@ void SinkUpdate<Tvec, SPHKernel>::compute_sph_forces(Tscal gpart_mass){
 
                     Tvec force = G * delta/(d*d*d);
                     axyz_sync[id_a] = force*gpart_mass;
-                    axyz_ext[id_a] = -force*sink_mass;
+                    axyz_ext[id_a] += -force*sink_mass;
                     
                 });
 
