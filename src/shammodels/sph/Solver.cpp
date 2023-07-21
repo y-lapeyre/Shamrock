@@ -288,7 +288,7 @@ void SPHSolve<Tvec, Kern>::sph_prestep(Tscal time_val) {
     ComputeField<Tscal> _epsilon_h, _h_old;
 
     u32 hstep_cnt = 0;
-    for (; hstep_cnt < 50; hstep_cnt++) {
+    for (; hstep_cnt < 100; hstep_cnt++) {
 
         gen_ghost_handler(time_val);
         build_ghost_cache();
@@ -405,6 +405,10 @@ void SPHSolve<Tvec, Kern>::sph_prestep(Tscal time_val) {
         _epsilon_h.reset();
         _h_old.reset();
         break;
+    }
+
+    if(hstep_cnt == 100){
+        logger::err_ln("SPH", "the h iterator is not converged after",hstep_cnt, "iterations");
     }
 }
 

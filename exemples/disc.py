@@ -36,8 +36,9 @@ bmin = (-10,-10,-10)
 bmax = (10,10,10)
 model.resize_simulation_box(bmin,bmax)
 
-model.add_disc_3d_keplerian((0,0,0),1000000,0.5,1,1,0.3,3,0.05,1)
-model.set_value_in_a_box("uint", "f64", 1, bmin,bmax)
+model.set_eos_gamma(5/3)
+
+model.add_disc_3d_keplerian((0,0,0),100000,0.5,1,1,0.1,5,0.05,1)
 
 
 
@@ -56,7 +57,6 @@ model.add_sink(1,(0,0,0),(0,0,0))
 
 model.set_cfl_cour(0.3)
 model.set_cfl_force(0.25)
-model.set_eos_gamma(5/3)
 
 
 
@@ -72,7 +72,7 @@ model.set_particle_mass(pmass)
 
 
 t_sum = 0
-t_target = 0.1
+t_target = 1
 current_dt = 1e-7
 i = 0
 i_dump = 0

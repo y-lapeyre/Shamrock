@@ -110,6 +110,7 @@ namespace shammodels::sph {
 
                 std::vector<Tvec> vec_acc;
                 std::vector<Tvec> vec_vel;
+                std::vector<Tscal> vec_u;
 
                 Tscal G = solver.solver_config.get_constant_G();
 
@@ -125,6 +126,10 @@ namespace shammodels::sph {
                         etheta /= sycl::length(etheta);
 
                         vec_vel.push_back(V*etheta);
+
+                        Tscal cs0 = 1;
+                        Tscal cs = cs0*sycl::pow(R,-q);
+                        vec_u.push_back(cs*cs/(solver.eos_gamma - 1.)/solver.eos_gamma);
                     });
 
                 log += shambase::format("\n    patch id={}, add N={} particles", ptch.id_patch, vec_acc.size());
@@ -145,6 +150,14 @@ namespace shammodels::sph {
                     PatchDataField<Tscal> &f =
                         tmp.get_field<Tscal>(sched.pdl.get_field_idx<Tscal>("hpart"));
                     f.override(0.01);
+                }
+
+                {
+                    u32 len = vec_acc.size();
+                    PatchDataField<Tscal> &f =
+                        tmp.get_field<Tscal>(sched.pdl.get_field_idx<Tscal>("uint"));
+                    sycl::buffer<Tscal> buf(vec_u.data(), len);
+                    f.override(buf, len);
                 }
 
                 {
