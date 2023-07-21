@@ -127,7 +127,7 @@ namespace shammodels::sph {
 
                         vec_vel.push_back(V*etheta);
 
-                        Tscal cs0 = 1;
+                        Tscal cs0 = 0.001;
                         Tscal cs = cs0*sycl::pow(R,-q);
                         vec_u.push_back(cs*cs/(solver.eos_gamma - 1.)/solver.eos_gamma);
                     });
