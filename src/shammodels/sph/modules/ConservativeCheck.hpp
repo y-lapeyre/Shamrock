@@ -8,7 +8,6 @@
 
 #pragma once
 
-
 #include "shambase/sycl_utils/vectorProperties.hpp"
 #include "shambase/type_aliases.hpp"
 #include "shammodels/sph/SolverConfig.hpp"
@@ -35,9 +34,9 @@ namespace shammodels::sph::modules {
             : context(context), solver_config(solver_config), storage(storage) {}
 
         void check_conservation(Tscal gpart_mass);
-        
+
         private:
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }
-
     };
-}
+
+} // namespace shammodels::sph::modules
