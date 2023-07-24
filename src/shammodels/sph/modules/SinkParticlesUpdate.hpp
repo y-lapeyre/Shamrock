@@ -36,7 +36,7 @@ namespace shammodels::sph::modules {
         SinkParticlesUpdate(ShamrockCtx &context, Config &solver_config, Storage &storage)
             : context(context), solver_config(solver_config), storage(storage) {}
 
-        void accrete_particles();
+        void accrete_particles(Tscal gpart_mass);
         void predictor_step(Tscal dt);
         void compute_sph_forces(Tscal gpart_mass);
         void compute_ext_forces();

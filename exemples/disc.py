@@ -38,11 +38,11 @@ model.resize_simulation_box(bmin,bmax)
 
 model.set_eos_gamma(5/3)
 
-model.add_disc_3d_keplerian((0,0,0),100000,0.5,1,1,0.1,5,0.05,1)
+model.add_disc_3d_keplerian((0,0,0),100000,0.5,1,1,0.2,3,0.05,1)
 
 
 
-pmass = model.total_mass_to_part_mass(0.1)
+pmass = model.total_mass_to_part_mass(0.001)
 
 print("Current part mass :", pmass)
 

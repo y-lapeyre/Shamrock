@@ -8,16 +8,17 @@
 
 #include "shammodels/sph/modules/SinkParticlesUpdate.hpp"
 #include "shamalgs/numeric/numeric.hpp"
+#include "shamalgs/reduction/reduction.hpp"
 #include "shamrock/sph/kernels.hpp"
 #include "shamsys/legacy/log.hpp"
 #include <hipSYCL/sycl/buffer.hpp>
 #include <hipSYCL/sycl/libkernel/accessor.hpp>
 
 template<class Tvec, template<class> class SPHKernel>
-using SinkUpdate = shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>;
+using SinkUpdate = shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>; 
 
 template<class Tvec, template<class> class SPHKernel>
-void SinkUpdate<Tvec, SPHKernel>::accrete_particles(){
+void SinkUpdate<Tvec, SPHKernel>::accrete_particles(Tscal gpart_mass){
     StackEntry stack_loc{};
 
     if(storage.sinks.is_empty()){
@@ -29,6 +30,7 @@ void SinkUpdate<Tvec, SPHKernel>::accrete_particles(){
 
     PatchDataLayout &pdl = scheduler().pdl;
     const u32 ixyz      = pdl.get_field_idx<Tvec>("xyz");
+    const u32 ivxyz      = pdl.get_field_idx<Tvec>("xyz");
 
     sycl::queue & q = shamsys::instance::get_compute_queue();
 
@@ -40,6 +42,7 @@ void SinkUpdate<Tvec, SPHKernel>::accrete_particles(){
             u32 Nobj = pdat.get_obj_cnt();
 
             sycl::buffer<Tvec> &buf_xyz = pdat.get_field_buf_ref<Tvec>(ixyz);
+            sycl::buffer<Tvec> &buf_vxyz = pdat.get_field_buf_ref<Tvec>(ivxyz);
 
             sycl::buffer<u32> not_accreted (Nobj);
             sycl::buffer<u32> accreted (Nobj);
@@ -66,14 +69,40 @@ void SinkUpdate<Tvec, SPHKernel>::accrete_particles(){
             std::tuple<std::optional<sycl::buffer<u32>>, u32> id_list_accrete = shamalgs::numeric::stream_compact(
                 q, accreted, Nobj);
 
+            //sum accreted values onto sink
 
             if(std::get<1>(id_list_accrete) > 0){
+
+                u32 Naccrete = std::get<1>(id_list_accrete);
+
+                Tscal acc_mass = gpart_mass*Naccrete;
+
+                sycl::buffer<Tvec> pxyz_acc (Naccrete);
+                q.submit([&,gpart_mass](sycl::handler &cgh) {
+                    sycl::accessor id_acc {*std::get<0>(id_list_accrete), cgh, sycl::read_only};
+                    sycl::accessor vxyz{buf_vxyz, cgh, sycl::read_only};
+
+                    sycl::accessor accretion_p {pxyz_acc, cgh, sycl::write_only};
+
+                    shambase::parralel_for(cgh, Naccrete,"compute sum momentum accretion", [=](i32 id_a){
+                        accretion_p[id_a] = gpart_mass * vxyz[id_acc[id_a]];
+                    });
+                });
+
+                Tvec acc_pxyz = shamalgs::reduction::sum(q, pxyz_acc, 0, Naccrete);
+
+                s.mass += acc_mass;
+                s.velocity += acc_pxyz/s.mass;
+
+                logger::raw_ln("accretion : += ",acc_mass, acc_pxyz/s.mass);
+
                 pdat.keep_ids(*std::get<0>(id_list_keep), std::get<1>(id_list_keep));
             }
 
-            
-                
+
+  
         });
+
 
         
     }
