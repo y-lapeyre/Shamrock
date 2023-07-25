@@ -11,8 +11,6 @@
 #include "shamalgs/reduction/reduction.hpp"
 #include "shamrock/sph/kernels.hpp"
 #include "shamsys/legacy/log.hpp"
-#include <hipSYCL/sycl/buffer.hpp>
-#include <hipSYCL/sycl/libkernel/accessor.hpp>
 
 template<class Tvec, template<class> class SPHKernel>
 using SinkUpdate = shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>; 
