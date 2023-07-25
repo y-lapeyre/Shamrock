@@ -113,6 +113,23 @@ namespace shambase {
         return std::exchange(o, std::nullopt).value();
     }
 
+    /**
+     * @brief extract content out of unique_ptr
+     *
+     * @tparam T
+     * @param o
+     * @return T
+     */
+    template<typename T>
+    auto extract_value(std::unique_ptr<T> &o, SourceLocation loc = SourceLocation()) -> T {
+        if (!bool(o)) {
+            throw throw_with_loc<std::runtime_error>(
+                "the value cannot be extracted, as the unique_ptr is empty", loc);
+        }
+        std::unique_ptr<T> tmp = std::exchange(o, {});
+        return T(std::move(*tmp));
+    }
+
     template<int n, class T>
     inline std::array<T, n> convert_to_array(std::vector<T> &in) {
         if (in.size() != n) {
