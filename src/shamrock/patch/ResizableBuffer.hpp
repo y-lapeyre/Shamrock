@@ -11,10 +11,9 @@
 #pragma once
 
 #include "aliases.hpp"
-#include "shamalgs/algorithm/algorithm.hpp"
-#include "shamalgs/memory/details/SerializeHelperMember.hpp"
-#include "shamalgs/memory/memory.hpp"
-#include "shamalgs/memory/serialize.hpp"
+#include "shamalgs/algorithm.hpp"
+#include "shamalgs/memory.hpp"
+#include "shamalgs/serialize.hpp"
 #include "shambase/exception.hpp"
 
 template<class T>

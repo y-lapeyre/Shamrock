@@ -6,14 +6,14 @@
 //
 // -------------------------------------------------------//
 
-#include "shamalgs/memory/memory.hpp"
+#include "shamalgs/memory.hpp"
 #include "shambase/time.hpp"
 #include "shamrock/legacy/patch/base/patchdata.hpp"
 
 #include "shamrock/patch/PatchDataLayout.hpp"
 #include "shamtest/shamtest.hpp"
 
-#include "shamalgs/random/random.hpp"
+#include "shamalgs/random.hpp"
 #include "shamrock/tree/RadixTree.hpp"
 #include <vector>
 #include "TreeTests.hpp"

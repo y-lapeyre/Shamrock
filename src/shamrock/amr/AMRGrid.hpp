@@ -10,9 +10,9 @@
 
 #include "AMRCell.hpp"
 #include "aliases.hpp"
-#include "shamalgs/numeric/numeric.hpp"
-#include "shamalgs/memory/memory.hpp"
-#include "shamalgs/algorithm/algorithm.hpp"
+#include "shamalgs/numeric.hpp"
+#include "shamalgs/memory.hpp"
+#include "shamalgs/algorithm.hpp"
 #include "shamrock/scheduler/scheduler_mpi.hpp"
 #include "shambase/DistributedData.hpp"
 #include "shamrock/tree/RadixTreeMortonBuilder.hpp"

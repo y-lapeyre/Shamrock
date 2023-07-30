@@ -11,9 +11,9 @@
 #pragma once
 
 #include "aliases.hpp"
-#include "shamalgs/memory/memory.hpp"
-#include "shamalgs/memory/serialize.hpp"
-#include "shamalgs/numeric/numeric.hpp"
+#include "shamalgs/memory.hpp"
+#include "shamalgs/serialize.hpp"
+#include "shamalgs/numeric.hpp"
 #include "shambase/stacktrace.hpp"
 #include "shambase/sycl_utils.hpp"
 #include "shamrock/legacy/patch/base/enabled_fields.hpp"

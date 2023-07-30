@@ -9,13 +9,17 @@
 #pragma once
 
 #include "aliases.hpp"
-#include "shamalgs/memory/memory.hpp"
+#include "shamalgs/memory.hpp"
 #include "shambase/integer.hpp"
 #include "shambase/sycl.hpp"
 
 namespace shamalgs::atomic {
 
-
+    /**
+     * @brief Utility to count group id on device
+     * 
+     * @tparam int_t 
+     */
     template<class int_t>
     class DeviceCounter;
 
@@ -25,25 +29,21 @@ namespace shamalgs::atomic {
         sycl::accessor<int_t, 1, sycl::access::mode::read_write, sycl::access::target::device>
             counter;
 
-        inline AccessedDeviceCounter(
-            sycl::handler &cgh, DeviceCounter<int_t> &gen
-        )
+        inline AccessedDeviceCounter(sycl::handler &cgh, DeviceCounter<int_t> &gen)
             : counter{gen.counter, cgh, sycl::read_write} {}
 
         template<sycl::memory_order order>
-        inline sycl::atomic_ref<
-                int_t, 
-                order, 
-                sycl::memory_scope_device,
-                sycl::access::address_space::global_space> attach_atomic() const {
-            return sycl::atomic_ref<
-                int_t, 
-                order, 
-                sycl::memory_scope_device,
-                sycl::access::address_space::global_space>(counter[0]);
+        inline sycl::atomic_ref<int_t,
+                                order,
+                                sycl::memory_scope_device,
+                                sycl::access::address_space::global_space>
+        attach_atomic() const {
+            return sycl::atomic_ref<int_t,
+                                    order,
+                                    sycl::memory_scope_device,
+                                    sycl::access::address_space::global_space>(counter[0]);
         }
     };
-
 
     template<class int_t>
     class DeviceCounter {
@@ -54,9 +54,7 @@ namespace shamalgs::atomic {
             memory::buf_fill_discard(q, counter, int_t(0));
         }
 
-        inline AccessedDeviceCounter<int_t> get_access(sycl::handler &cgh) {
-            return {cgh, *this};
-        }
+        inline AccessedDeviceCounter<int_t> get_access(sycl::handler &cgh) { return {cgh, *this}; }
     };
 
 } // namespace shamalgs::atomic

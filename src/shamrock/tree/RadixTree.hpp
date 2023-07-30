@@ -19,7 +19,7 @@
 #include <set>
 
 
-#include "shamalgs/memory/memory.hpp"
+#include "shamalgs/memory.hpp"
 #include "shambase/sycl_utils/vec_equals.hpp"
 #include "shamrock/legacy/patch/base/patchdata.hpp"
 #include "shamrock/tree/TreeCellRanges.hpp"
@@ -36,7 +36,7 @@
 #include "kernels/reduction_alg.hpp"
 #include "shamrock/legacy/utils/geometry_utils.hpp"
 
-#include "shamalgs/reduction/reduction.hpp"
+#include "shamalgs/reduction.hpp"
 #include "shamrock/tree/RadixTreeField.hpp"
 
 

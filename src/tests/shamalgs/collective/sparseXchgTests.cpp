@@ -6,8 +6,8 @@
 //
 // -------------------------------------------------------//
 
-#include "shamalgs/memory/memory.hpp"
-#include "shamalgs/reduction/reduction.hpp"
+#include "shamalgs/memory.hpp"
+#include "shamalgs/reduction.hpp"
 #include "shambase/exception.hpp"
 #include "shambase/string.hpp"
 #include "shamsys/NodeInstance.hpp"
@@ -17,7 +17,7 @@
 #include "shamtest/details/TestResult.hpp"
 #include "shamtest/shamtest.hpp"
 #include "shamalgs/collective/sparseXchg.hpp"
-#include "shamalgs/random/random.hpp"
+#include "shamalgs/random.hpp"
 #include <algorithm>
 #include <memory>
 #include <stdexcept>

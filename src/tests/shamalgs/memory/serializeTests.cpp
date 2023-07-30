@@ -6,9 +6,9 @@
 //
 // -------------------------------------------------------//
 
-#include "shamalgs/memory/memory.hpp"
-#include "shamalgs/memory/serialize.hpp"
-#include "shamalgs/random/random.hpp"
+#include "shamalgs/memory.hpp"
+#include "shamalgs/serialize.hpp"
+#include "shamalgs/random.hpp"
 #include "shambase/sycl_utils/vec_equals.hpp"
 #include "shamtest/details/TestResult.hpp"
 #include "shamtest/shamtest.hpp"
