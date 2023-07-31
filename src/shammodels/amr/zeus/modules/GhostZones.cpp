@@ -17,6 +17,7 @@
 #include "shammodels/amr/zeus/GhostZoneData.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
+#include "shamrock/scheduler/InterfacesUtility.hpp"
 
 template<class Tvec, class TgridVec>
 using Module = shammodels::zeus::modules::GhostZones<Tvec, TgridVec>;
@@ -178,6 +179,177 @@ void Module<Tvec, TgridVec>::build_ghost_cache() {
         gen_ghost.ghost_id_build_map.add_obj(
             sender, receiver, InterfaceIdTable{build, std::move(ids), ratio});
     });
+}
+
+template<class Tvec, class TgridVec>
+shambase::DistributedDataShared<shamrock::patch::PatchData>
+Module<Tvec, TgridVec>::communicate_pdat(
+    shamrock::patch::PatchDataLayout &pdl,
+    shambase::DistributedDataShared<shamrock::patch::PatchData> &&interf) {
+    StackEntry stack_loc{};
+
+    shambase::DistributedDataShared<shamrock::patch::PatchData> recv_dat;
+
+    shamalgs::collective::serialize_sparse_comm<shamrock::patch::PatchData>(
+        std::forward<shambase::DistributedDataShared<shamrock::patch::PatchData>>(interf),
+        recv_dat,
+        shamsys::get_protocol(),
+        [&](u64 id) {
+            return scheduler().get_patch_rank_owner(id);
+        },
+        [](shamrock::patch::PatchData &pdat) {
+            shamalgs::SerializeHelper ser;
+            ser.allocate(pdat.serialize_buf_byte_size());
+            pdat.serialize_buf(ser);
+            return ser.finalize();
+        },
+        [&](std::unique_ptr<sycl::buffer<u8>> &&buf) {
+            // exchange the buffer held by the distrib data and give it to the serializer
+            shamalgs::SerializeHelper ser(std::forward<std::unique_ptr<sycl::buffer<u8>>>(buf));
+            return shamrock::patch::PatchData::deserialize_buf(ser, pdl);
+        });
+
+    return recv_dat;
+}
+
+template<class Tvec, class TgridVec>
+template<class T, class Tmerged>
+shambase::DistributedData<Tmerged> Module<Tvec, TgridVec>::merge_native(
+    shambase::DistributedDataShared<T> &&interfs,
+    std::function<Tmerged(const shamrock::patch::Patch, shamrock::patch::PatchData &pdat)> init,
+    std::function<void(Tmerged &, T &)> appender) {
+
+    StackEntry stack_loc{};
+
+    shambase::DistributedData<Tmerged> merge_f;
+
+    scheduler().for_each_patchdata_nonempty(
+        [&](const shamrock::patch::Patch p, shamrock::patch::PatchData &pdat) {
+            Tmerged tmp_merge = init(p, pdat);
+
+            interfs.for_each([&](u64 sender, u64 receiver, T &interface) {
+                if (receiver == p.id_patch) {
+                    appender(tmp_merge, interface);
+                }
+            });
+
+            merge_f.add_obj(p.id_patch, std::move(tmp_merge));
+        });
+
+    return merge_f;
+}
+
+template<class Tvec, class TgridVec>
+void Module<Tvec, TgridVec>::exchange_ghost1() {
+
+    StackEntry stack_loc{};
+
+    shambase::Timer timer_interf;
+    timer_interf.start();
+
+    using namespace shamrock::patch;
+    using namespace shamrock;
+    using namespace shammath;
+
+    using GZData              = GhostZonesData<Tvec, TgridVec>;
+    using InterfaceBuildInfos = typename GZData::InterfaceBuildInfos;
+    using InterfaceIdTable    = typename GZData::InterfaceIdTable;
+
+    // setup ghost layout
+    storage.ghost_layout.set(shamrock::patch::PatchDataLayout{});
+    shamrock::patch::PatchDataLayout &ghost_layout = storage.ghost_layout.get();
+
+    ghost_layout.add_field<TgridVec>("cell_min", 1);
+    ghost_layout.add_field<TgridVec>("cell_max", 1);
+    ghost_layout.add_field<Tscal>("eint", 1);
+    ghost_layout.add_field<Tvec>("vel", 1);
+
+    u32 icell_min_interf = ghost_layout.get_field_idx<TgridVec>("cell_min");
+    u32 icell_max_interf = ghost_layout.get_field_idx<TgridVec>("cell_max");
+    u32 ieint_interf     = ghost_layout.get_field_idx<Tscal>("eint");
+    u32 ivel_interf      = ghost_layout.get_field_idx<Tvec>("vel");
+
+    // load layout info
+    PatchDataLayout &pdl = scheduler().pdl;
+
+    const u32 icell_min = pdl.get_field_idx<TgridVec>("cell_min");
+    const u32 icell_max = pdl.get_field_idx<TgridVec>("cell_max");
+    const u32 ieint     = pdl.get_field_idx<Tvec>("eint");
+    const u32 ivel      = pdl.get_field_idx<Tvec>("vel");
+
+    // generate send buffers
+    GZData &gen_ghost = storage.ghost_zone_infos.get();
+    auto pdat_interf  = gen_ghost.template build_interface_native<PatchData>(
+        [&](u64 sender, u64, InterfaceBuildInfos binfo, sycl::buffer<u32> &buf_idx, u32 cnt) {
+            PatchData &sender_patch = scheduler().patch_data.get_pdat(sender);
+
+            PatchData pdat(ghost_layout);
+
+            pdat.reserve(cnt);
+
+            sender_patch.get_field<TgridVec>(icell_min).append_subset_to(
+                buf_idx, cnt, pdat.get_field<TgridVec>(icell_min_interf));
+
+            sender_patch.get_field<TgridVec>(icell_max).append_subset_to(
+                buf_idx, cnt, pdat.get_field<TgridVec>(icell_max_interf));
+
+            sender_patch.get_field<Tscal>(ieint).append_subset_to(
+                buf_idx, cnt, pdat.get_field<Tscal>(ieint_interf));
+
+            sender_patch.get_field<Tvec>(ivel).append_subset_to(
+                buf_idx, cnt, pdat.get_field<Tvec>(ivel_interf));
+
+            pdat.check_field_obj_cnt_match();
+
+            pdat.get_field<TgridVec>(icell_min_interf).apply_offset(binfo.offset);
+            pdat.get_field<TgridVec>(icell_max_interf).apply_offset(binfo.offset);
+
+            return pdat;
+        });
+
+    // communicate buffers
+    shambase::DistributedDataShared<PatchData> interf_pdat =
+        communicate_pdat(ghost_layout, std::move(pdat_interf));
+
+    std::map<u64, u64> sz_interf_map;
+    interf_pdat.for_each([&](u64 s, u64 r, PatchData &pdat_interf) {
+        sz_interf_map[r] += pdat_interf.get_obj_cnt();
+    });
+
+
+    storage.merged_patchdata_ghost.set(
+        merge_native<PatchData, MergedPatchData>(
+            std::move(interf_pdat),
+            [&](const shamrock::patch::Patch p, shamrock::patch::PatchData &pdat) {
+                PatchData pdat_new(ghost_layout);
+
+                u32 or_elem        = pdat.get_obj_cnt();
+                pdat_new.reserve(or_elem + sz_interf_map[p.id_patch]);
+                u32 total_elements = or_elem;
+
+                //PatchDataField<Tscal> &cur_omega = omega.get_field(p.id_patch);
+                //
+                //pdat_new.get_field<Tscal>(ihpart_interf).insert(pdat.get_field<Tscal>(ihpart));
+                //pdat_new.get_field<Tscal>(iuint_interf).insert(pdat.get_field<Tscal>(iuint));
+                //pdat_new.get_field<Tvec>(ivxyz_interf).insert(pdat.get_field<Tvec>(ivxyz));
+                //pdat_new.get_field<Tscal>(iomega_interf).insert(cur_omega);
+                //
+                //if (has_alphaAV_field) {
+                //    pdat_new.get_field<Tscal>(ialpha_AV_interf)
+                //        .insert(pdat.get_field<Tscal>(ialpha_AV));
+                //}
+
+                pdat_new.check_field_obj_cnt_match();
+
+                return MergedPatchData{or_elem, total_elements, std::move(pdat_new), ghost_layout};
+            },
+            [](MergedPatchData &mpdat, PatchData &pdat_interf) {
+                mpdat.total_elements += pdat_interf.get_obj_cnt();
+                mpdat.pdat.insert_elements(pdat_interf);
+            }));
+
+    timer_interf.end();
+    storage.timings_details.interface += timer_interf.elasped_sec();
 }
 
 template class shammodels::zeus::modules::GhostZones<f64_3, i64_3>;

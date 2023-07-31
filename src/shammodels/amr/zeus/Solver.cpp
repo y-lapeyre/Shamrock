@@ -25,6 +25,10 @@ auto Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tscal dt_input) -> Tsc
     modules::GhostZones gz(context,solver_config,storage);
     gz.build_ghost_cache();
 
+    gz.exchange_ghost1();
+
+    
+
     
     //compute bound received
 

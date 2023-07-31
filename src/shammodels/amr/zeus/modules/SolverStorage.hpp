@@ -17,6 +17,7 @@
 #include "shamrock/tree/TreeTaversalCache.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamrock/utils/SolverStorageComponent.hpp"
+#include "shamrock/scheduler/InterfacesUtility.hpp"
 namespace shammodels::zeus {
 
     template<class T>
@@ -34,6 +35,22 @@ namespace shammodels::zeus {
         Component<SerialPatchTree<TgridVec>> serial_patch_tree;
 
         Component<GhostZonesData<Tvec, TgridVec>> ghost_zone_infos;
+
+        Component<shamrock::patch::PatchDataLayout> ghost_layout;
+
+
+        Component<shambase::DistributedData<shamrock::MergedPatchData>> merged_patchdata_ghost;
+
+
+        struct {
+            f64 interface = 0;
+            f64 neighbors = 0;
+            f64 io = 0;
+
+            void reset(){
+                *this = {};
+            }
+        } timings_details;
     };
 
 } // namespace shammodels::zeus

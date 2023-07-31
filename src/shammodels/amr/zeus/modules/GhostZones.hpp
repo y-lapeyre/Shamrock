@@ -15,7 +15,7 @@
 namespace shammodels::zeus::modules {
 
     template<class Tvec, class TgridVec>
-    class GhostZones{
+    class GhostZones {
         public:
         using Tscal              = shambase::VecComponent<Tvec>;
         using Tgridscal          = shambase::VecComponent<TgridVec>;
@@ -32,9 +32,21 @@ namespace shammodels::zeus::modules {
             : context(context), solver_config(solver_config), storage(storage) {}
 
         void build_ghost_cache();
-        
+
+        shambase::DistributedDataShared<shamrock::patch::PatchData>
+        communicate_pdat(shamrock::patch::PatchDataLayout &pdl,
+                         shambase::DistributedDataShared<shamrock::patch::PatchData> &&interf);
+
+        template<class T, class Tmerged>
+        shambase::DistributedData<Tmerged> merge_native(
+            shambase::DistributedDataShared<T> &&interfs,
+            std::function<Tmerged(const shamrock::patch::Patch, shamrock::patch::PatchData &pdat)> init,
+            std::function<void(Tmerged&, T&)> appender
+            );
+
+        void exchange_ghost1();
+
         private:
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }
-
     };
-}
+} // namespace shammodels::zeus::modules
