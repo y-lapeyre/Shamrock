@@ -18,6 +18,14 @@
 
 namespace shammodels::zeus {
 
+    /**
+     * @brief Zeus scheme \cite Zeus2d_main implementation in Shamrock (WIP)
+     *
+     * The dimension is computed from the input vector types
+     *
+     * @tparam Tvec vector type used in physical space
+     * @tparam TgridVec grid vector type (integer vector)
+     */
     template<class Tvec, class TgridVec>
     class Model {public:
         using Tscal              = shambase::VecComponent<Tvec>;
