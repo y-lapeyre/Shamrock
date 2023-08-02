@@ -15,9 +15,9 @@
 #include "shammath/AABB.hpp"
 #include "shammath/CoordRange.hpp"
 #include "shammodels/amr/zeus/GhostZoneData.hpp"
+#include "shamrock/scheduler/InterfacesUtility.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
-#include "shamrock/scheduler/InterfacesUtility.hpp"
 
 template<class Tvec, class TgridVec>
 using Module = shammodels::zeus::modules::GhostZones<Tvec, TgridVec>;
@@ -261,11 +261,13 @@ void Module<Tvec, TgridVec>::exchange_ghost1() {
 
     ghost_layout.add_field<TgridVec>("cell_min", 1);
     ghost_layout.add_field<TgridVec>("cell_max", 1);
+    ghost_layout.add_field<Tscal>("rho", 1);
     ghost_layout.add_field<Tscal>("eint", 1);
     ghost_layout.add_field<Tvec>("vel", 1);
 
     u32 icell_min_interf = ghost_layout.get_field_idx<TgridVec>("cell_min");
     u32 icell_max_interf = ghost_layout.get_field_idx<TgridVec>("cell_max");
+    u32 irho_interf      = ghost_layout.get_field_idx<Tscal>("rho");
     u32 ieint_interf     = ghost_layout.get_field_idx<Tscal>("eint");
     u32 ivel_interf      = ghost_layout.get_field_idx<Tvec>("vel");
 
@@ -274,6 +276,7 @@ void Module<Tvec, TgridVec>::exchange_ghost1() {
 
     const u32 icell_min = pdl.get_field_idx<TgridVec>("cell_min");
     const u32 icell_max = pdl.get_field_idx<TgridVec>("cell_max");
+    const u32 irho      = pdl.get_field_idx<Tvec>("rho");
     const u32 ieint     = pdl.get_field_idx<Tvec>("eint");
     const u32 ivel      = pdl.get_field_idx<Tvec>("vel");
 
@@ -292,6 +295,9 @@ void Module<Tvec, TgridVec>::exchange_ghost1() {
 
             sender_patch.get_field<TgridVec>(icell_max).append_subset_to(
                 buf_idx, cnt, pdat.get_field<TgridVec>(icell_max_interf));
+
+            sender_patch.get_field<Tscal>(irho).append_subset_to(
+                buf_idx, cnt, pdat.get_field<Tscal>(irho_interf));
 
             sender_patch.get_field<Tscal>(ieint).append_subset_to(
                 buf_idx, cnt, pdat.get_field<Tscal>(ieint_interf));
@@ -316,37 +322,29 @@ void Module<Tvec, TgridVec>::exchange_ghost1() {
         sz_interf_map[r] += pdat_interf.get_obj_cnt();
     });
 
+    storage.merged_patchdata_ghost.set(merge_native<PatchData, MergedPatchData>(
+        std::move(interf_pdat),
+        [&](const shamrock::patch::Patch p, shamrock::patch::PatchData &pdat) {
+            PatchData pdat_new(ghost_layout);
 
-    storage.merged_patchdata_ghost.set(
-        merge_native<PatchData, MergedPatchData>(
-            std::move(interf_pdat),
-            [&](const shamrock::patch::Patch p, shamrock::patch::PatchData &pdat) {
-                PatchData pdat_new(ghost_layout);
+            u32 or_elem = pdat.get_obj_cnt();
+            pdat_new.reserve(or_elem + sz_interf_map[p.id_patch]);
+            u32 total_elements = or_elem;
 
-                u32 or_elem        = pdat.get_obj_cnt();
-                pdat_new.reserve(or_elem + sz_interf_map[p.id_patch]);
-                u32 total_elements = or_elem;
+            pdat_new.get_field<Tscal>(icell_min_interf).insert(pdat.get_field<Tscal>(icell_min));
+            pdat_new.get_field<Tscal>(icell_max_interf).insert(pdat.get_field<Tscal>(icell_max));
+            pdat_new.get_field<Tscal>(irho_interf).insert(pdat.get_field<Tscal>(irho));
+            pdat_new.get_field<Tscal>(ieint_interf).insert(pdat.get_field<Tscal>(ieint));
+            pdat_new.get_field<Tvec>(ivel_interf).insert(pdat.get_field<Tvec>(ivel));
 
-                //PatchDataField<Tscal> &cur_omega = omega.get_field(p.id_patch);
-                //
-                //pdat_new.get_field<Tscal>(ihpart_interf).insert(pdat.get_field<Tscal>(ihpart));
-                //pdat_new.get_field<Tscal>(iuint_interf).insert(pdat.get_field<Tscal>(iuint));
-                //pdat_new.get_field<Tvec>(ivxyz_interf).insert(pdat.get_field<Tvec>(ivxyz));
-                //pdat_new.get_field<Tscal>(iomega_interf).insert(cur_omega);
-                //
-                //if (has_alphaAV_field) {
-                //    pdat_new.get_field<Tscal>(ialpha_AV_interf)
-                //        .insert(pdat.get_field<Tscal>(ialpha_AV));
-                //}
+            pdat_new.check_field_obj_cnt_match();
 
-                pdat_new.check_field_obj_cnt_match();
-
-                return MergedPatchData{or_elem, total_elements, std::move(pdat_new), ghost_layout};
-            },
-            [](MergedPatchData &mpdat, PatchData &pdat_interf) {
-                mpdat.total_elements += pdat_interf.get_obj_cnt();
-                mpdat.pdat.insert_elements(pdat_interf);
-            }));
+            return MergedPatchData{or_elem, total_elements, std::move(pdat_new), ghost_layout};
+        },
+        [](MergedPatchData &mpdat, PatchData &pdat_interf) {
+            mpdat.total_elements += pdat_interf.get_obj_cnt();
+            mpdat.pdat.insert_elements(pdat_interf);
+        }));
 
     timer_interf.end();
     storage.timings_details.interface += timer_interf.elasped_sec();
