@@ -41,6 +41,8 @@ namespace shammodels::zeus {
         Component<shambase::DistributedData<shamrock::MergedPatchData>> merged_patchdata_ghost;
         Component<shambase::DistributedData<shammath::AABB<TgridVec>>> merge_patch_bounds;
         Component<shambase::DistributedData<RTree>> trees;
+
+        Component<shamrock::tree::ObjectCacheHandler> neighbors_cache;
         
         struct {
             f64 interface = 0;

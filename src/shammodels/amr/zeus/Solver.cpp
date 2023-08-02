@@ -36,6 +36,7 @@ auto Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tscal dt_input) -> Tsc
     amrtree.build_trees();
 
     //build neigh table
+    amrtree.build_neigh_cache();
 
     storage.serial_patch_tree.reset();
 

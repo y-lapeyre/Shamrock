@@ -32,6 +32,7 @@ namespace shammodels::zeus::modules {
             : context(context), solver_config(solver_config), storage(storage) {}
 
         void build_trees();
+        void build_neigh_cache();
 
         private:
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }
