@@ -717,15 +717,15 @@ void SPHSolve<Tvec, Kern>::communicate_merge_ghosts_fields() {
 
         });
     
-    std::map<u64,u64> sz_interf_map;
-    interf_pdat.for_each([&](u64 s, u64 r, PatchData &pdat_interf){
-        sz_interf_map[r] += pdat_interf.get_obj_cnt();
-    });
+
 
     shambase::DistributedDataShared<PatchData> interf_pdat =
         ghost_handle.communicate_pdat(ghost_layout, std::move(pdat_interf));
 
-    
+    std::map<u64,u64> sz_interf_map;
+    interf_pdat.for_each([&](u64 s, u64 r, PatchData &pdat_interf){
+        sz_interf_map[r] += pdat_interf.get_obj_cnt();
+    });
 
     storage.merged_patchdata_ghost.set(
         ghost_handle.template merge_native<PatchData, MergedPatchData>(
