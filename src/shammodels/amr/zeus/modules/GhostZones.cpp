@@ -136,7 +136,7 @@ void Module<Tvec, TgridVec>::build_ghost_cache() {
                                build.volume_target.lower,
                                build.volume_target.upper);
 
-        logger::debug_ln("AMRGodunov", log);
+        logger::debug_ln("AMRZeus", log);
     });
 
     sycl::queue &q = shamsys::instance::get_compute_queue();
@@ -276,14 +276,15 @@ void Module<Tvec, TgridVec>::exchange_ghost1() {
 
     const u32 icell_min = pdl.get_field_idx<TgridVec>("cell_min");
     const u32 icell_max = pdl.get_field_idx<TgridVec>("cell_max");
-    const u32 irho      = pdl.get_field_idx<Tvec>("rho");
-    const u32 ieint     = pdl.get_field_idx<Tvec>("eint");
+    const u32 irho      = pdl.get_field_idx<Tscal>("rho");
+    const u32 ieint     = pdl.get_field_idx<Tscal>("eint");
     const u32 ivel      = pdl.get_field_idx<Tvec>("vel");
 
     // generate send buffers
     GZData &gen_ghost = storage.ghost_zone_infos.get();
     auto pdat_interf  = gen_ghost.template build_interface_native<PatchData>(
         [&](u64 sender, u64, InterfaceBuildInfos binfo, sycl::buffer<u32> &buf_idx, u32 cnt) {
+
             PatchData &sender_patch = scheduler().patch_data.get_pdat(sender);
 
             PatchData pdat(ghost_layout);
@@ -325,14 +326,17 @@ void Module<Tvec, TgridVec>::exchange_ghost1() {
     storage.merged_patchdata_ghost.set(merge_native<PatchData, MergedPatchData>(
         std::move(interf_pdat),
         [&](const shamrock::patch::Patch p, shamrock::patch::PatchData &pdat) {
+
+            logger::debug_ln("Merged patch init", p.id_patch);
+
             PatchData pdat_new(ghost_layout);
 
             u32 or_elem = pdat.get_obj_cnt();
             pdat_new.reserve(or_elem + sz_interf_map[p.id_patch]);
             u32 total_elements = or_elem;
 
-            pdat_new.get_field<Tscal>(icell_min_interf).insert(pdat.get_field<Tscal>(icell_min));
-            pdat_new.get_field<Tscal>(icell_max_interf).insert(pdat.get_field<Tscal>(icell_max));
+            pdat_new.get_field<TgridVec>(icell_min_interf).insert(pdat.get_field<TgridVec>(icell_min));
+            pdat_new.get_field<TgridVec>(icell_max_interf).insert(pdat.get_field<TgridVec>(icell_max));
             pdat_new.get_field<Tscal>(irho_interf).insert(pdat.get_field<Tscal>(irho));
             pdat_new.get_field<Tscal>(ieint_interf).insert(pdat.get_field<Tscal>(ieint));
             pdat_new.get_field<Tvec>(ivel_interf).insert(pdat.get_field<Tvec>(ivel));
@@ -345,6 +349,10 @@ void Module<Tvec, TgridVec>::exchange_ghost1() {
             mpdat.total_elements += pdat_interf.get_obj_cnt();
             mpdat.pdat.insert_elements(pdat_interf);
         }));
+
+    storage.merged_patchdata_ghost.get().for_each([](u64 id, shamrock::MergedPatchData & mpdat){
+        logger::debug_ln("Merged patch", id, ",",mpdat.original_elements,"->",mpdat.total_elements);
+    });
 
     timer_interf.end();
     storage.timings_details.interface += timer_interf.elasped_sec();

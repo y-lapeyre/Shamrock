@@ -25,7 +25,7 @@ namespace shammodels::zeus {
         using Tgridscal          = shambase::VecComponent<TgridVec>;
         static constexpr u32 dim = shambase::VectorProperties<Tvec>::dimension;
 
-        using u_morton = u32;
+        using u_morton = u64;
 
         using Config = SolverConfig<Tvec>;
 
@@ -40,6 +40,8 @@ namespace shammodels::zeus {
             context.pdata_layout_add_field<TgridVec>("cell_min", 1);
             context.pdata_layout_add_field<TgridVec>("cell_max", 1);
             context.pdata_layout_add_field<Tscal>("rho", 1);
+            context.pdata_layout_add_field<Tscal>("eint", 1);
+            context.pdata_layout_add_field<Tvec>("vel", 1);
         }
 
         Solver(ShamrockCtx &context) : context(context) {}

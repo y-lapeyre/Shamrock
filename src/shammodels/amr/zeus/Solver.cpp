@@ -7,6 +7,7 @@
 // -------------------------------------------------------//
 
 #include "shammodels/amr/zeus/Solver.hpp"
+#include "shammodels/amr/zeus/modules/AMRTree.hpp"
 #include "shammodels/amr/zeus/modules/GhostZones.hpp"
 
 template<class Tvec, class TgridVec>
@@ -27,14 +28,12 @@ auto Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tscal dt_input) -> Tsc
 
     gz.exchange_ghost1();
 
-    
 
-    
     //compute bound received
-
     //round to next pow of 2
-
     //build radix trees
+    modules::AMRTree amrtree(context,solver_config,storage);
+    amrtree.build_trees();
 
     //build neigh table
 

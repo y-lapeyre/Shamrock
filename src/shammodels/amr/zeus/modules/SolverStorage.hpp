@@ -30,7 +30,7 @@ namespace shammodels::zeus {
         using Tgridscal          = shambase::VecComponent<TgridVec>;
         static constexpr u32 dim = shambase::VectorProperties<Tvec>::dimension;
 
-        using RTree = RadixTree<Tmorton, Tvec>;
+        using RTree = RadixTree<Tmorton, TgridVec>;
 
         Component<SerialPatchTree<TgridVec>> serial_patch_tree;
 
@@ -38,10 +38,10 @@ namespace shammodels::zeus {
 
         Component<shamrock::patch::PatchDataLayout> ghost_layout;
 
-
         Component<shambase::DistributedData<shamrock::MergedPatchData>> merged_patchdata_ghost;
-
-
+        Component<shambase::DistributedData<shammath::AABB<TgridVec>>> merge_patch_bounds;
+        Component<shambase::DistributedData<RTree>> trees;
+        
         struct {
             f64 interface = 0;
             f64 neighbors = 0;
