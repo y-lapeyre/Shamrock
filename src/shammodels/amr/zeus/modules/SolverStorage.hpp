@@ -18,6 +18,7 @@
 #include "shamsys/legacy/log.hpp"
 #include "shamrock/utils/SolverStorageComponent.hpp"
 #include "shamrock/scheduler/InterfacesUtility.hpp"
+#include "shamrock/scheduler/ComputeField.hpp"
 namespace shammodels::zeus {
 
     template<class T>
@@ -43,6 +44,20 @@ namespace shammodels::zeus {
         Component<shambase::DistributedData<RTree>> trees;
 
         Component<shamrock::tree::ObjectCacheHandler> neighbors_cache;
+
+        Component<shamrock::ComputeField<Tscal>> pressure;
+
+        /**
+         * @brief for each face give a lookup table for the normal orientation
+         * 0 = x-
+         * 1 = x+
+         * 2 = y-
+         * 3 = y+
+         * 4 = z-
+         * 5 = z+
+         * 
+         */
+        Component<shambase::DistributedData<sycl::buffer<u8>>> face_normals_lookup;
         
         struct {
             f64 interface = 0;

@@ -8,6 +8,7 @@
 
 #include "shammodels/amr/zeus/Solver.hpp"
 #include "shammodels/amr/zeus/modules/AMRTree.hpp"
+#include "shammodels/amr/zeus/modules/FaceFlagger.hpp"
 #include "shammodels/amr/zeus/modules/GhostZones.hpp"
 
 template<class Tvec, class TgridVec>
@@ -39,6 +40,14 @@ auto Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tscal dt_input) -> Tsc
 
     //build neigh table
     amrtree.build_neigh_cache();
+
+
+    
+    modules::FaceFlagger compute_face_flag(context,solver_config,storage);
+    compute_face_flag.flag_faces();
+
+
+
 
     tstep.end();
 

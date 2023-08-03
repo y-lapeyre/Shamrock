@@ -2,6 +2,8 @@
 set(Sources
 GhostZones.cpp
 AMRTree.cpp
+ComputePressure.cpp
+FaceFlagger.cpp
 )
 set(Headers
 )
