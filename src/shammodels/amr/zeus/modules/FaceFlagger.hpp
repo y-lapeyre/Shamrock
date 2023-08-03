@@ -43,6 +43,10 @@ namespace shammodels::zeus::modules {
         FaceFlagger(ShamrockCtx &context, Config &solver_config, Storage &storage)
             : context(context), solver_config(solver_config), storage(storage) {}
 
+        /**
+         * @brief flag faces with a lookup index 
+         * performs at around 2G cell per seconds on a RTX A5000
+         */
         void flag_faces();
 
         private:
