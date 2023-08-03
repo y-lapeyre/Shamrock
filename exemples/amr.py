@@ -19,9 +19,10 @@ multy = 3
 multz = 1
 
 sz = 1 << 1
-model.make_base_grid((0,0,0),(sz,sz,sz),(64*multx,64*multy,64*multz))
+base = 128 
+model.make_base_grid((0,0,0),(sz,sz,sz),(base*multx,base*multy,base*multz))
 
 model.dump_vtk("test.vtk")
 
 model.evolve_once(0,0.1)
-model.evolve_once(0,0.1)
+#model.evolve_once(0,0.1)

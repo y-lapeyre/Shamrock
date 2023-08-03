@@ -17,6 +17,8 @@ template<class Tvec, class TgridVec>
 auto Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tscal dt_input) -> Tscal{
 
     StackEntry stack_loc{};
+    shambase::Timer tstep;
+    tstep.start();
 
     SerialPatchTree<TgridVec> _sptree = SerialPatchTree<TgridVec>::build(scheduler());
     _sptree.attach_buf();
@@ -38,7 +40,33 @@ auto Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tscal dt_input) -> Tsc
     //build neigh table
     amrtree.build_neigh_cache();
 
-    storage.serial_patch_tree.reset();
+    tstep.end();
+
+    u64 rank_count = scheduler().get_rank_count();
+    f64 rate = f64(rank_count) / tstep.elasped_sec();
+
+    std::string log_rank_rate = shambase::format(
+        "\n| {:<4} |    {:.4e}    | {:11} |   {:.3e}   |  {:3.0f} % | {:3.0f} % | {:3.0f} % |", 
+        shamsys::instance::world_rank,rate,  rank_count,  tstep.elasped_sec(),
+        100*(storage.timings_details.interface / tstep.elasped_sec()),
+        100*(storage.timings_details.neighbors / tstep.elasped_sec()),
+        100*(storage.timings_details.io / tstep.elasped_sec())
+        );
+
+    std::string gathered = "";
+    shamalgs::collective::gather_str(log_rank_rate, gathered);
+
+    if(shamsys::instance::world_rank == 0){
+        std::string print = "processing rate infos : \n";
+        print+=("---------------------------------------------------------------------------------\n");
+        print+=("| rank |  rate  (N.s^-1)  |      N      | t compute (s) | interf | neigh |   io  |\n");
+        print+=("---------------------------------------------------------------------------------");
+        print+=(gathered) + "\n";
+        print+=("---------------------------------------------------------------------------------");
+        logger::info_ln("amr::Zeus",print);
+    }
+
+    storage.timings_details.reset();
 
     return 0;
 }
