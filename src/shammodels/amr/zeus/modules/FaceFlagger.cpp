@@ -31,10 +31,6 @@ void Module<Tvec, TgridVec>::flag_faces() {
         sycl::buffer<TgridVec> &buf_cell_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);
         sycl::buffer<TgridVec> &buf_cell_max = mpdat.pdat.get_field_buf_ref<TgridVec>(1);
 
-        Tscal coord_conv_fact = solver_config.grid_coord_to_pos_fact;
-
-        sycl::range range_npart{mpdat.original_elements};
-
         tree::ObjectCache &pcache = storage.neighbors_cache.get().get_cache(p.id_patch);
 
         sycl::buffer<u8> face_normals_lookup(pcache.sum_neigh_cnt);

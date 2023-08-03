@@ -10,6 +10,7 @@
 #include "shammodels/amr/zeus/modules/AMRTree.hpp"
 #include "shammodels/amr/zeus/modules/FaceFlagger.hpp"
 #include "shammodels/amr/zeus/modules/GhostZones.hpp"
+#include "shammodels/amr/zeus/modules/SourceStep.hpp"
 
 template<class Tvec, class TgridVec>
 using Solver = shammodels::zeus::Solver<Tvec, TgridVec>;
@@ -47,7 +48,8 @@ auto Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tscal dt_input) -> Tsc
     compute_face_flag.flag_faces();
 
 
-
+    modules::SourceStep src_step(context,solver_config,storage);
+    src_step.substep_1();
 
     tstep.end();
 

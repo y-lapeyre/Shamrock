@@ -4,6 +4,7 @@ GhostZones.cpp
 AMRTree.cpp
 ComputePressure.cpp
 FaceFlagger.cpp
+SourceStep.cpp
 )
 set(Headers
 )

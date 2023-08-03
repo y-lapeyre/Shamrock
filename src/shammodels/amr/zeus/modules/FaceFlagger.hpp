@@ -14,6 +14,7 @@
 
 namespace shammodels::zeus::modules {
 
+
     /**
      * @brief flag faces with a lookup index for the orientation 
      * 
@@ -48,6 +49,17 @@ namespace shammodels::zeus::modules {
          * performs at around 2G cell per seconds on a RTX A5000
          */
         void flag_faces();
+
+        inline static Tvec lookup_to_normal(u8 lookup){
+            return std::array<Tvec, 6>{
+                Tvec{-1,0,0},
+                Tvec{ 1,0,0},
+                Tvec{0,-1,0},
+                Tvec{0, 1,0},
+                Tvec{0,0,-1},
+                Tvec{0,0, 1},
+            }[lookup];
+        }
 
         private:
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }
