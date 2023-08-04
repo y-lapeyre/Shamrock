@@ -114,7 +114,7 @@ namespace shamalgs::memory {
             sycl::accessor src {source,cgh,sycl::read_only};
             sycl::accessor dst {dest,cgh,sycl::write_only,sycl::no_init};
 
-            cgh.parallel_for(sycl::range<1>{cnt},[=](sycl::item<1> i){
+            shambase::parralel_for(cgh, cnt, "copybuf_discard", [=](u64 i) {
                 dst[i] = src[i];
             });
 
@@ -128,7 +128,7 @@ namespace shamalgs::memory {
             sycl::accessor src {source,cgh,sycl::read_only};
             sycl::accessor dst {dest,cgh,sycl::write_only};
 
-            cgh.parallel_for(sycl::range<1>{cnt},[=](sycl::item<1> i){
+            shambase::parralel_for(cgh, cnt, "copybuf", [=](u64 i) {
                 dst[i] = src[i];
             });
 
@@ -146,7 +146,7 @@ namespace shamalgs::memory {
 
             T fac = factor;
 
-            cgh.parallel_for(sycl::range<1>{cnt},[=](sycl::item<1> i){
+            shambase::parralel_for(cgh, cnt, "add_with_factor_to", [=](u64 i) {
                 acc[i] += fac*dd[i];
             });
 
