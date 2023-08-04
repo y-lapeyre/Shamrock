@@ -11,6 +11,7 @@
 #include "aliases.hpp"
 #include "shambase/string.hpp"
 #include "shambase/sycl.hpp"
+#include "shambase/sycl_utils.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
@@ -55,16 +56,23 @@ namespace shamalgs::memory {
 
 
     template<class T> inline void buf_fill(sycl::queue & q,sycl::buffer<T> & buf, T value){
-        q.submit([=, &buf](sycl::handler & cgh){
+        StackEntry stack_loc{};
+        q.submit([&,value](sycl::handler & cgh){
             sycl::accessor acc {buf, cgh, sycl::write_only};
-            cgh.fill(acc, value);
+            shambase::parralel_for(cgh, buf.size(), "buf_fill", [=](u64 id_a) {
+                acc[id_a] = value;
+            });
         });
     }
 
     template<class T> inline void buf_fill_discard(sycl::queue & q,sycl::buffer<T> & buf, T value){
-        q.submit([=, &buf](sycl::handler & cgh){
+        StackEntry stack_loc{};
+        q.submit([&,value](sycl::handler & cgh){
             sycl::accessor acc {buf, cgh, sycl::write_only, sycl::no_init};
-            cgh.fill(acc, value);
+        
+            shambase::parralel_for(cgh, buf.size(), "buff_fill_discard", [=](u64 id_a) {
+                acc[id_a] = value;
+            });
         });
     }
 

@@ -31,6 +31,15 @@ namespace shammodels::zeus::modules {
         SourceStep(ShamrockCtx &context, Config &solver_config, Storage &storage)
             : context(context), solver_config(solver_config), storage(storage) {}
 
+        /**
+         * @brief compute general forces (pressure + external and store them into `SolverStorage::forces`)
+         * \f[
+         *   \frac{u_i^{n+1} - u_i^{n}}{\Delta t} = \underbrace{-\frac{\partial_i p^n}{\rho^n} 
+         *     + f_{\text{ext},i}}_{ f_{\rm gen} }
+         * \f]
+         */
+        void compute_forces();
+
         void substep_1();
         void substep_2();
         void substep_3();

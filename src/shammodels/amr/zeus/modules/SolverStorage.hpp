@@ -58,6 +58,8 @@ namespace shammodels::zeus {
          * 
          */
         Component<shambase::DistributedData<sycl::buffer<u8>>> face_normals_lookup;
+
+        Component<shamrock::ComputeField<Tvec>> forces;
         
         struct {
             f64 interface = 0;
