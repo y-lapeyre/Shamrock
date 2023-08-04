@@ -50,7 +50,7 @@ void Module<Tvec, TgridVec>::flag_faces() {
                     TgridVec cell2_b = (cell_min[id_b] + cell_max[id_b]);
                     TgridVec cell2_d = cell2_b - cell2_a;
 
-                    TgridVec d_norm = sycl::abs(cell2_d);
+                    TgridVec d_norm = sycl::abs(cell2_d).template convert<Tgridscal>();
 
                     // I mean if you are up to such
                     Tgridscal max_compo = sycl::max(sycl::max(d_norm.x(), d_norm.y()), d_norm.z());

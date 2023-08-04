@@ -19,7 +19,7 @@
 namespace shammodels::zeus {
 
     /**
-     * @brief Zeus scheme \cite Zeus2d_main implementation in Shamrock (WIP)
+     * @brief Zeus scheme \cite Zeus2d_main \cite Fargo3D_1 implementation in Shamrock (WIP)
      *
      * The dimension is computed from the input vector types
      *
