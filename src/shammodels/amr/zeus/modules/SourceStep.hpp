@@ -40,7 +40,14 @@ namespace shammodels::zeus::modules {
          */
         void compute_forces();
 
-        void substep_1();
+        /**
+         * @brief apply the generalized forces
+         * \f[
+         *   \frac{u_i^{n+1} - u_i^{n}}{\Delta t} = \underbrace{-\frac{\partial_i p^n}{\rho^n} 
+         *     + f_{\text{ext},i}}_{ f_{\rm gen} }
+         * \f]
+         */
+        void apply_force(Tscal dt);
         void substep_2();
         void substep_3();
 

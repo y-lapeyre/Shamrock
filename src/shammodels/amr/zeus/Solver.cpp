@@ -50,6 +50,7 @@ auto Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tscal dt_input) -> Tsc
 
     modules::SourceStep src_step(context,solver_config,storage);
     src_step.compute_forces();
+    src_step.apply_force(dt_input);
 
     tstep.end();
 
