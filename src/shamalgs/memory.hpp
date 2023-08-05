@@ -10,8 +10,11 @@
 
 #include <shamalgs/details/memory/memory.hpp>
 
+/**
+ * @brief memory manipulation algorithms
+ */
+namespace shamalgs::memory {};
+
 namespace shamalgs {
-
     using namespace shamalgs::memory;
-
 } // namespace shamalgs
