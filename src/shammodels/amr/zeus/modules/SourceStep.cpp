@@ -126,4 +126,11 @@ void Module<Tvec, TgridVec>::compute_forces() {
 
 }
 
+
+
+template<class Tvec, class TgridVec>
+void Module<Tvec, TgridVec>::compute_AV() {
+
+}
+
 template class shammodels::zeus::modules::SourceStep<f64_3, i64_3>;
