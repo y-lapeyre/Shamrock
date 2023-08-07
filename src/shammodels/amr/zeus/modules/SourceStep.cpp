@@ -146,4 +146,11 @@ void Module<Tvec, TgridVec>::apply_force(Tscal dt) {
     storage.forces.reset();
 }
 
+
+
+template<class Tvec, class TgridVec>
+void Module<Tvec, TgridVec>::compute_AV() {
+
+}
+
 template class shammodels::zeus::modules::SourceStep<f64_3, i64_3>;

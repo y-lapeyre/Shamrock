@@ -41,6 +41,17 @@ namespace shammodels::zeus::modules {
         void compute_forces();
 
         /**
+         * @brief Compute the values of the artificial viscosity terms
+         * (\cite Zeus2d_main equations 33,34)
+         * 
+         * \f{eqnarray*}{
+         *     q^x_{i,j} &=& C^{\rm AV} \rho_{i,j} (v^x_{i+1,j} - v^x_{i,j}) \\ 
+         *     q^y_{i,j} &=& C^{\rm AV} \rho_{i,j} (v^y_{i,j+1} - v^y_{i,j})
+         * \f}
+         */
+        void compute_AV();
+
+        /**
          * @brief apply the generalized forces
          * \f[
          *   \frac{u_i^{n+1} - u_i^{n}}{\Delta t} = \underbrace{-\frac{\partial_i p^n}{\rho^n} 
