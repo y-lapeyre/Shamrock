@@ -141,4 +141,20 @@ namespace shambase {
     }
 
 
+    template<i32 power,class T>
+    inline constexpr T pow_constexpr(T a) noexcept {
+
+        if constexpr (power == 0){
+            return T{1};
+        }else if constexpr (power % 2 == 0){
+            T tmp = pow_constexpr<power/2>(a);
+            return tmp*tmp;
+        }else if constexpr (power % 2 == 1){
+            T tmp = pow_constexpr<(power-1)/2>(a);
+            return tmp*tmp*a;
+        }
+
+    }
+
+
 } // namespace shambase

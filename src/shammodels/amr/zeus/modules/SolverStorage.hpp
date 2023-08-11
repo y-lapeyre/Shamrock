@@ -60,6 +60,12 @@ namespace shammodels::zeus {
         Component<shambase::DistributedData<sycl::buffer<u8>>> face_normals_lookup;
 
         Component<shamrock::ComputeField<Tvec>> forces;
+
+        /**
+         * @brief derivatives of the velocity
+         * layout : \f$ [\partial_i u_x, \partial_i u_y, \partial_i u_z] \f$
+         */
+        Component<shamrock::ComputeField<Tvec>> gradu;
         
         struct {
             f64 interface = 0;

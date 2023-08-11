@@ -14,8 +14,8 @@ model = shamrock.get_AMRZeus(
 
 model.init_scheduler(int(1e7),1)
 
-multx = 2
-multy = 3
+multx = 1
+multy = 1
 multz = 1
 
 sz = 1 << 1

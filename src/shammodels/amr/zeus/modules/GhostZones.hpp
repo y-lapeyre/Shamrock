@@ -44,7 +44,7 @@ namespace shammodels::zeus::modules {
             std::function<void(Tmerged&, T&)> appender
             );
 
-        void exchange_ghost1();
+        void exchange_ghost();
 
         private:
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }

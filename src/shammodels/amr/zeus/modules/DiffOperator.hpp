@@ -31,7 +31,17 @@ namespace shammodels::zeus::modules {
         DiffOperator(ShamrockCtx &context, Config &solver_config, Storage &storage)
             : context(context), solver_config(solver_config), storage(storage) {}
 
-        void compute_divv();
+        /**
+         * @brief compute gradient tensor of the velocity from existing data
+         * 
+         */
+        void compute_gradu();
+
+        /**
+         * @brief exchange ghost gradu
+         * 
+         */
+        void exchange_gradu();
 
         private:
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }

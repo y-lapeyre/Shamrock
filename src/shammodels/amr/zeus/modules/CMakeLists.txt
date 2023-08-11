@@ -5,6 +5,7 @@ AMRTree.cpp
 ComputePressure.cpp
 FaceFlagger.cpp
 SourceStep.cpp
+DiffOperator.cpp
 )
 set(Headers
 )

@@ -492,28 +492,57 @@ namespace shamrock::amr {
             sycl::buffer<Tcoord> cell_coord_min(cell_tot_count);
             sycl::buffer<Tcoord> cell_coord_max(cell_tot_count);
 
+            logger::debug_sycl_ln("AMRGrid", "building bounds ",cell_count[0] , cell_count[1] , cell_count[2]);
+
             shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
                 sycl::accessor acc_min{cell_coord_min, cgh, sycl::write_only, sycl::no_init};
                 sycl::accessor acc_max{cell_coord_max, cgh, sycl::write_only, sycl::no_init};
 
                 sycl::range<3> rnge{cell_count[0], cell_count[1], cell_count[2]};
 
+                u32 cnt_x = cell_count[0];
+                u32 cnt_y = cell_count[1];
+                u32 cnt_z = cell_count[2];
+
+                u32 cnt_xy = cnt_x*cnt_y;
+
                 Tcoord sz = cell_size;
 
-                cgh.parallel_for(rnge, [=](sycl::item<3> gid) {
-                    acc_min[gid.get_linear_id()] =
-                        sz * Tcoord{gid.get_id(0), gid.get_id(1), gid.get_id(2)};
-                    acc_max[gid.get_linear_id()] =
-                        sz * Tcoord{gid.get_id(0) + 1, gid.get_id(1) + 1, gid.get_id(2) + 1};
+                shambase::parralel_for(cgh, cell_tot_count, "subsetp1", [=](u64 id_a) {
+
+                    u32 idx = id_a % cnt_x;
+                    u32 idy = (id_a / cnt_x) % cnt_y;
+                    u32 idz = (id_a / cnt_x) / cnt_y;
+
+                    acc_min[id_a] =
+                        sz * Tcoord{idx, idy, idz};
+                    acc_max[id_a] =
+                        sz * Tcoord{idx + 1, idy + 1, idz + 1};
                 });
+
+                    
+
             });
+
+            shambase::check_queue_state(shamsys::instance::get_compute_queue());
 
             patch::PatchData pdat(sched.pdl);
             pdat.resize(cell_tot_count);
+
+            shambase::check_queue_state(shamsys::instance::get_compute_queue());
             pdat.get_field<Tcoord>(0).override(cell_coord_min, cell_tot_count);
+
+            shambase::check_queue_state(shamsys::instance::get_compute_queue());
             pdat.get_field<Tcoord>(1).override(cell_coord_max, cell_tot_count);
 
+            shambase::check_queue_state(shamsys::instance::get_compute_queue());
+
             sched.allpush_data(pdat);
+
+            shambase::check_queue_state(shamsys::instance::get_compute_queue());
+
+            logger::debug_sycl_ln("AMRGrid", "grid init done");
+
         }
 
 

@@ -240,7 +240,7 @@ shambase::DistributedData<Tmerged> Module<Tvec, TgridVec>::merge_native(
 }
 
 template<class Tvec, class TgridVec>
-void Module<Tvec, TgridVec>::exchange_ghost1() {
+void Module<Tvec, TgridVec>::exchange_ghost() {
 
     StackEntry stack_loc{};
 
@@ -254,6 +254,8 @@ void Module<Tvec, TgridVec>::exchange_ghost1() {
     using GZData              = GhostZonesData<Tvec, TgridVec>;
     using InterfaceBuildInfos = typename GZData::InterfaceBuildInfos;
     using InterfaceIdTable    = typename GZData::InterfaceIdTable;
+    
+    using AMRBlock = typename Config::AMRBlock; 
 
     // setup ghost layout
     storage.ghost_layout.set(shamrock::patch::PatchDataLayout{});
@@ -261,9 +263,9 @@ void Module<Tvec, TgridVec>::exchange_ghost1() {
 
     ghost_layout.add_field<TgridVec>("cell_min", 1);
     ghost_layout.add_field<TgridVec>("cell_max", 1);
-    ghost_layout.add_field<Tscal>("rho", 1);
-    ghost_layout.add_field<Tscal>("eint", 1);
-    ghost_layout.add_field<Tvec>("vel", 1);
+    ghost_layout.add_field<Tscal>("rho", AMRBlock::block_size);
+    ghost_layout.add_field<Tscal>("eint", AMRBlock::block_size);
+    ghost_layout.add_field<Tvec>("vel", AMRBlock::block_size);
 
     u32 icell_min_interf = ghost_layout.get_field_idx<TgridVec>("cell_min");
     u32 icell_max_interf = ghost_layout.get_field_idx<TgridVec>("cell_max");

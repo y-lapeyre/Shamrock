@@ -10,6 +10,7 @@
 
 #include "shambase/exception.hpp"
 #include "shambase/integer.hpp"
+#include "shamsys/legacy/log.hpp"
 #include "sycl_utils/sycl_utilities.hpp"
 #include "sycl_utils/vec_equals.hpp"
 #include "sycl_utils/vectorProperties.hpp"
@@ -30,7 +31,7 @@ namespace shambase {
     template<class T>
     void check_buffer_size(sycl::buffer<T> &buf,
                            u64 max_range,
-                           struct SourceLocation loc = SourceLocation()) {
+                           const SourceLocation loc = SourceLocation()) {
         if (buf.size() < max_range) {
             throw throw_with_loc<std::invalid_argument>("buffer is too small", loc);
         }
@@ -171,6 +172,13 @@ namespace shambase {
         #ifdef SHAMROCK_USE_NVTX
         nvtxRangePop();
         #endif
+    }
+
+    inline void check_queue_state(sycl::queue & q
+                           , SourceLocation loc = SourceLocation()){
+        logger::debug_sycl_ln("SYCL", "checking queue state", loc.format_one_line());
+        q.wait_and_throw();
+        logger::debug_sycl_ln("SYCL", "checking queue state : OK !");
     }
 
 } // namespace shambase

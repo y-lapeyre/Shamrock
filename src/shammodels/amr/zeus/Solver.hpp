@@ -9,6 +9,7 @@
 #pragma once
 
 #include "shambase/sycl_utils/vectorProperties.hpp"
+#include "shammodels/amr/AMRBlock.hpp"
 #include "shammodels/amr/zeus/modules/SolverStorage.hpp"
 #include "shamrock/scheduler/SerialPatchTree.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
@@ -23,6 +24,9 @@ namespace shammodels::zeus {
         Tscal eos_gamma = 5/3;
 
         Tscal grid_coord_to_pos_fact = 1;
+
+        static constexpr u32 NsideBlock = 2;
+        using AMRBlock = amr::AMRBlock<Tvec, NsideBlock>; 
     };
 
     template<class Tvec, class TgridVec>
@@ -32,9 +36,12 @@ namespace shammodels::zeus {
         using Tgridscal          = shambase::VecComponent<TgridVec>;
         static constexpr u32 dim = shambase::VectorProperties<Tvec>::dimension;
 
+
         using u_morton = u64;
 
         using Config = SolverConfig<Tvec>;
+
+        using AMRBlock = typename Config::AMRBlock;
 
         ShamrockCtx &context;
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }
@@ -46,9 +53,9 @@ namespace shammodels::zeus {
         inline void init_required_fields() {
             context.pdata_layout_add_field<TgridVec>("cell_min", 1);
             context.pdata_layout_add_field<TgridVec>("cell_max", 1);
-            context.pdata_layout_add_field<Tscal>("rho", 1);
-            context.pdata_layout_add_field<Tscal>("eint", 1);
-            context.pdata_layout_add_field<Tvec>("vel", 1);
+            context.pdata_layout_add_field<Tscal>("rho", AMRBlock::block_size);
+            context.pdata_layout_add_field<Tscal>("eint", AMRBlock::block_size);
+            context.pdata_layout_add_field<Tvec>("vel", AMRBlock::block_size);
         }
 
         Solver(ShamrockCtx &context) : context(context) {}
