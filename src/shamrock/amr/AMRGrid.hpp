@@ -13,6 +13,7 @@
 #include "shamalgs/numeric.hpp"
 #include "shamalgs/memory.hpp"
 #include "shamalgs/algorithm.hpp"
+#include "shambase/sycl_utils.hpp"
 #include "shamrock/scheduler/scheduler_mpi.hpp"
 #include "shambase/DistributedData.hpp"
 #include "shamrock/tree/RadixTreeMortonBuilder.hpp"
@@ -508,17 +509,17 @@ namespace shamrock::amr {
 
                 Tcoord sz = cell_size;
 
-                shambase::parralel_for(cgh, cell_tot_count, "subsetp1", [=](u64 id_a) {
+                shambase::parralel_for_3d(cgh, cell_count[0],cell_count[1],cell_count[2], "subsetp1", 
+                    [=](u64 idx, u64 idy, u64 idz) {
 
-                    u32 idx = id_a % cnt_x;
-                    u32 idy = (id_a / cnt_x) % cnt_y;
-                    u32 idz = (id_a / cnt_x) / cnt_y;
+                        u64 id_a = idx + cnt_x*idy + cnt_xy*idz;
 
-                    acc_min[id_a] =
-                        sz * Tcoord{idx, idy, idz};
-                    acc_max[id_a] =
-                        sz * Tcoord{idx + 1, idy + 1, idz + 1};
-                });
+                        acc_min[id_a] =
+                            sz * Tcoord{idx, idy, idz};
+                        acc_max[id_a] =
+                            sz * Tcoord{idx + 1, idy + 1, idz + 1};
+                    }
+                );
 
                     
 

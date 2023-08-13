@@ -163,10 +163,10 @@ namespace shambase {
             sycl::nd_range<1> rx = make_range(lenght_x,group_size);
             sycl::nd_range<1> ry = make_range(lenght_y,group_size);
 
-            sycl::range<2> tmp_g {rx.get_group_range().size(),ry.get_group_range().size()};
             sycl::range<2> tmp_s {rx.get_global_range().size(),ry.get_global_range().size()};
+            sycl::range<2> tmp_g {rx.get_group_range().size(),ry.get_group_range().size()};
 
-            cgh.parallel_for(sycl::nd_range<2>{tmp_g,tmp_s}, [=](sycl::nd_item<2> id){
+            cgh.parallel_for(sycl::nd_range<2>{tmp_s,tmp_g}, [=](sycl::nd_item<2> id){
 
                 if(id.get_global_id(0) >= lenght_x || id.get_global_id(1) >= lenght_y) return;
 
@@ -214,10 +214,10 @@ namespace shambase {
             sycl::nd_range<1> ry = make_range(lenght_y,group_size);
             sycl::nd_range<1> rz = make_range(lenght_z,group_size);
 
-            sycl::range<3> tmp_g {rx.get_group_range().size(),ry.get_group_range().size(),rz.get_group_range().size()};
             sycl::range<3> tmp_s {rx.get_global_range().size(),ry.get_global_range().size(),rz.get_global_range().size()};
+            sycl::range<3> tmp_g {rx.get_group_range().size(),ry.get_group_range().size(),rz.get_group_range().size()};
 
-            cgh.parallel_for(sycl::nd_range<3>{tmp_g,tmp_s}, [=](sycl::nd_item<3> id){
+            cgh.parallel_for(sycl::nd_range<3>{tmp_s,tmp_g}, [=](sycl::nd_item<3> id){
 
                 if(id.get_global_id(0) >= lenght_x || id.get_global_id(1) >= lenght_y|| id.get_global_id(2) >= lenght_z) return;
 
