@@ -9,6 +9,7 @@
 
 #include "shambase/sycl_utils.hpp"
 #include "shamsys/NodeInstance.hpp"
+#include "shamsys/legacy/log.hpp"
 #include "shamtest/details/TestResult.hpp"
 #include "shamtest/shamtest.hpp"
 
@@ -41,7 +42,7 @@ TestStart(Unittest, "shambase::parralel_for", test_par_for_2d, 1){
     shamsys::instance::get_compute_queue().submit([&](sycl::handler & cgh){
         sycl::accessor acc {buf, cgh, sycl::write_only, sycl::no_init};
         shambase::parralel_for_2d(cgh, len_x,len_y, "test 2d par for",[=](u64 id_x, u64 id_y){
-            acc[{len_x,len_y}] = id_x + len_x*id_y;
+            acc[{id_x,id_y}] = id_x + len_x*id_y;
         });
     });
 
@@ -50,7 +51,11 @@ TestStart(Unittest, "shambase::parralel_for", test_par_for_2d, 1){
         sycl::host_accessor acc {buf,sycl::read_only};
         for(u32 x = 0; x < len_x; x++){
             for(u32 y = 0; y < len_y; y++){
-                if(acc[{x,y}] != x + len_x*y){correct = false;}
+                if(acc[{x,y}] != x + len_x*y){
+                    correct = false;
+                    logger::err_ln("Test", "fail : ",x,y,":", acc[{x,y}] ,"!=", x + len_x*y);
+                    break;
+                }
             }
         }
     }
@@ -66,7 +71,7 @@ TestStart(Unittest, "shambase::parralel_for", test_par_for_3d, 1){
     shamsys::instance::get_compute_queue().submit([&](sycl::handler & cgh){
         sycl::accessor acc {buf, cgh, sycl::write_only, sycl::no_init};
         shambase::parralel_for_3d(cgh, len_x,len_y,len_z, "test 2d par for",[=](u64 id_x, u64 id_y,u64 id_z){
-            acc[{len_x,len_y,len_z}] = id_x + len_x*id_y+ len_x*len_y*id_z;
+            acc[{id_x,id_y,id_z}] = id_x + len_x*id_y+ len_x*len_y*id_z;
         });
     });
 
@@ -76,7 +81,11 @@ TestStart(Unittest, "shambase::parralel_for", test_par_for_3d, 1){
         for(u32 x = 0; x < len_x; x++){
             for(u32 y = 0; y < len_y; y++){
                 for(u32 z = 0; z < len_z; z++){
-                    if(acc[{x,y,z}] != x + len_x*y+ len_x*len_y*z){correct = false;}
+                    if(acc[{x,y,z}] != x + len_x*y+ len_x*len_y*z){
+                        correct = false;
+                        logger::err_ln("Test", "fail : ",x,y,z,":", acc[{x,y,z}] ,"!=", x + len_x*y+ len_x*len_y*z);
+                    break;
+                    }
                 }
             }
         }
