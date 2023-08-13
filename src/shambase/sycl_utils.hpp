@@ -129,9 +129,41 @@ namespace shambase {
         nvtxRangePop();
         #endif
     }
+    
+    template<u32 group_size = default_gsize, ParralelForWrapMode mode = default_loop_mode,class LambdaKernel>
+    inline void parralel_for_2d(sycl::handler & cgh, u32 lenght_x, u32 lenght_y, const char* name, LambdaKernel && ker){
+
+        u32 len_sq = lenght_x*lenght_y;
+
+        parralel_for(cgh, len_sq, name, [ker,lenght_x](u64 id){
+            // id = x + y*lenght_x
+            ker(id % lenght_x, id/lenght_x);
+        });
+
+        #ifdef SHAMROCK_USE_NVTX
+        nvtxRangePop();
+        #endif
+    }
+
+    template<u32 group_size = default_gsize, ParralelForWrapMode mode = default_loop_mode,class LambdaKernel>
+    inline void parralel_for_3d(sycl::handler & cgh, u32 lenght_x, u32 lenght_y, u32 lenght_z, const char* name, LambdaKernel && ker){
+
+        u32 len_sq = lenght_x*lenght_y*lenght_z;
+        u32 len2 = lenght_x*lenght_y;
+
+        parralel_for(cgh, len_sq, name, [ker,lenght_x,lenght_y,len2](u64 id){
+            // id = x + y*lenght_x
+            ker(id % lenght_x, (id/lenght_x) % lenght_y, id / (len2));
+        });
+
+        #ifdef SHAMROCK_USE_NVTX
+        nvtxRangePop();
+        #endif
+    }
+    
 
     template<ParralelForWrapMode mode = default_loop_mode,class LambdaKernel>
-    inline void parralel_for(sycl::handler & cgh, u32 lenght, u32 group_size, const char* name, LambdaKernel && ker){
+    inline void parralel_for_gsize(sycl::handler & cgh, u32 lenght, u32 group_size, const char* name, LambdaKernel && ker){
 
         #ifdef SHAMROCK_USE_NVTX
         nvtxRangePush(name);
