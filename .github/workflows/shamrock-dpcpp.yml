@@ -5,9 +5,12 @@ on:
   workflow_call:
     
 jobs:
-  shamrock_dpcpp_nightly:
-    name: DPCPP Nighly
+  shamrock_dpcpp_nativecpu:
+    name: DPCPP Native CPU
     runs-on: [self-hosted, raw]
+
+    #for now this is quite buggy
+    if: false
     
     steps:
       - uses: actions/checkout@v3
@@ -22,21 +25,21 @@ jobs:
         with:
           fail-on-cache-miss: true
           path: dpcpp_compiler
-          key: dpcpp-nighly20230112.tar.gz
+          key: dpcpp-nativecpu.tar.gz
 
       - uses: actions/setup-python@v4
         with:
           python-version: '3.10' 
-          
+      
       - name : Install pck (DPCPP)
         run: |
           sudo apt update
-          sudo apt-get install -y -qq g++-10 clang libomp-dev libtinfo5 libopenmpi-dev openmpi-bin openmpi-common
+          sudo apt-get install -y -qq g++-10 clang libomp-dev libtinfo5 libopenmpi-dev openmpi-bin openmpi-common libva-dev
           
       - name : Install pck (DPCPP esimd)
         run: |
           sudo apt install -y libva-dev libffi-dev libtool
-
+          
       - name: install Ninja-build
         run: sudo apt install ninja-build
 
@@ -47,22 +50,20 @@ jobs:
       - name: configure Shamrock
         run: |
           python3 buildbot/configure.py --gen ninja --tests --build debug \
-            --outdir dpcpp_bare_debug --cxxpath dpcpp_compiler --compiler dpcpp --profile bare
+            --outdir dpcpp_bare_debug --cxxpath dpcpp_compiler --compiler dpcpp --profile native_cpu
 
       - name: compile Shamrock
         run: |
           cd dpcpp_bare_debug
           ninja
 
-      # no device to run on
-      #- name: run Shamrock
-      #  run: |
-      #    cd dpcpp_bare_debug
-      #    export DPCPP_HOME=../dpcpp_compiler
-      #    export PATH=$DPCPP_HOME/bin:$PATH
-      #    export LD_LIBRARY_PATH=$DPCPP_HOME/lib:$LD_LIBRARY_PATH
-      #    export ONEAPI_DEVICE_SELECTOR=ext_intel_esimd_emulator:gpu
-      #    ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --unittest
+      - name: run Shamrock
+        run: |
+          cd dpcpp_bare_debug
+          export DPCPP_HOME=../dpcpp_compiler
+          export PATH=$DPCPP_HOME/bin:$PATH
+          export LD_LIBRARY_PATH=$DPCPP_HOME/lib:$LD_LIBRARY_PATH
+          ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --unittest
 
 
   shamrock_dpcpp_cuda:
