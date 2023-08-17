@@ -8,6 +8,12 @@
 
 #pragma once
 
+/**
+ * @file AMRBlock.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief utility to manipulate AMR blocks
+ */
+
 #include "shambase/integer.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"
 #include "shambase/type_aliases.hpp"
@@ -27,8 +33,14 @@ namespace shammodels::amr {
 
         static constexpr u32 block_size = shambase::pow_constexpr<dim>(Nside);
 
-        inline constexpr u32 get_index(std::array<u32, dim> coord) noexcept {
-            static_assert(dim < 4, "not implemented above dim 3");
+        /**
+         * @brief Get the local index within the AMR block
+         * 
+         * @param coord wanted integer coordinates
+         * @return constexpr u32 the index
+         */
+        inline static constexpr u32 get_index(std::array<u32, dim> coord) noexcept {
+            static_assert(dim < 5, "not implemented above dim 4");
 
             if constexpr (dim == 1){
                 return coord[0];
@@ -40,6 +52,11 @@ namespace shammodels::amr {
 
             if constexpr (dim == 3){
                 return coord[0] + Nside * coord[1] + Nside * Nside * coord[2];
+            }
+
+            if constexpr (dim == 4){
+                return coord[0] + Nside * coord[1] + Nside * Nside * coord[2] 
+                    + Nside * Nside *  Nside * coord[3];
             }
 
             return {};
