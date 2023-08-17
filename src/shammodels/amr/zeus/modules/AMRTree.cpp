@@ -77,7 +77,6 @@ void Module<Tvec, TgridVec>::build_trees(){
 template<class Tvec, class TgridVec>
 void Module<Tvec, TgridVec>::build_neigh_cache(){
 
-    
     using MergedPDat = shamrock::MergedPatchData;
     using RTree = typename Storage::RTree;
 

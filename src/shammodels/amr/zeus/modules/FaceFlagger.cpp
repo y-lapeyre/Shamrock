@@ -106,4 +106,76 @@ void Module<Tvec, TgridVec>::flag_faces() {
     storage.face_normals_lookup.set(std::move(face_normals_dat_lookup));
 }
 
+template<class Tvec, class TgridVec>
+void Module<Tvec, TgridVec>::split_face_list() {
+
+    using namespace shamrock::patch;
+    using namespace shamrock;
+    using namespace shammath;
+    using MergedPDat = shamrock::MergedPatchData;
+
+    scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
+        // Tvec normal = lookup_to_normal(u8 lookup)
+    });
+}
+
+template<class Tvec, class TgridVec>
+shamrock::tree::ObjectCache
+Module<Tvec, TgridVec>::isolate_lookups(shamrock::tree::ObjectCache &cache,
+                                        sycl::buffer<u8> &face_normals_lookup,
+                                        u8 lookup_value) {
+
+    u32 obj_cnt = cache.cnt_neigh.size();
+
+    sycl::buffer<u32> face_count(obj_cnt);
+
+    shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
+        shamrock::tree::ObjectCacheIterator cell_looper(cache, cgh);
+
+        sycl::accessor normals_lookup{face_normals_lookup, cgh, sycl::read_only};
+
+        sycl::accessor face_cnts{face_count, cgh, sycl::write_only, sycl::no_init};
+
+        u8 wanted_lookup = lookup_value;
+
+        shambase::parralel_for(cgh, obj_cnt, "compute neigh cache 1", [=](u64 gid) {
+            u32 id_a = (u32)gid;
+
+            u32 cnt = 0;
+            cell_looper.for_each_object_with_id(id_a, [&](u32 id_b, u32 id_list) {
+                cnt += (normals_lookup[id_list] == wanted_lookup) ? 1 : 0;
+            });
+
+            face_cnts[id_a] = cnt;
+        });
+    });
+
+    shamrock::tree::ObjectCache pcache =
+        shamrock::tree::prepare_object_cache(std::move(face_count), obj_cnt);
+
+    NamedStackEntry stack_loc2{"fill cache"};
+
+    shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
+        shamrock::tree::ObjectCacheIterator cell_looper(cache, cgh);
+        sycl::accessor scanned_neigh_cnt{pcache.scanned_cnt, cgh, sycl::read_only};
+        sycl::accessor neigh{pcache.index_neigh_map, cgh, sycl::write_only, sycl::no_init};
+        sycl::accessor normals_lookup{face_normals_lookup, cgh, sycl::read_only};
+
+        shambase::parralel_for(cgh, obj_cnt, "compute neigh cache 2", [=](u64 gid) {
+            u32 id_a = (u32)gid;
+            u32 cnt  = scanned_neigh_cnt[id_a];
+
+            cell_looper.for_each_object_with_id(id_a, [&](u32 id_b, u32 id_list) {
+                bool wanted_lookup = normals_lookup[id_list] == wanted_lookup;
+                if (wanted_lookup) {
+                    neigh[cnt] = id_b;
+                }
+                cnt += (wanted_lookup) ? 1 : 0;
+            });
+        });
+    });
+
+    return pcache;
+}
+
 template class shammodels::zeus::modules::FaceFlagger<f64_3, i64_3>;
