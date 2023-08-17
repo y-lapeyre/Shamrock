@@ -96,11 +96,10 @@ void Module<Tvec, TgridVec>::build_neigh_cache(){
 
         sycl::buffer<TgridVec> &buf_cell_min    = mfield.pdat.get_field_buf_ref<TgridVec>(0);
         sycl::buffer<TgridVec> &buf_cell_max    = mfield.pdat.get_field_buf_ref<TgridVec>(1);
-        sycl::range range_npart{mfield.original_elements};
 
         RTree &tree = storage.trees.get().get(patch_id);
 
-        u32 obj_cnt       = mfield.original_elements;
+        u32 obj_cnt       = mfield.total_elements;
 
         NamedStackEntry stack_loc1{"init cache"};
 

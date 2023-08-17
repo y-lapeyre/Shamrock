@@ -22,9 +22,9 @@ namespace shammodels::amr {
 
     /**
      * @brief utility class to handle AMR blocks
-     * 
-     * @tparam Tvec 
-     * @tparam Nside 
+     *
+     * @tparam Tvec
+     * @tparam Nside
      */
     template<class Tvec, u32 Nside>
     struct AMRBlock {
@@ -35,34 +35,32 @@ namespace shammodels::amr {
 
         /**
          * @brief Get the local index within the AMR block
-         * 
+         *
          * @param coord wanted integer coordinates
          * @return constexpr u32 the index
          */
         inline static constexpr u32 get_index(std::array<u32, dim> coord) noexcept {
             static_assert(dim < 5, "not implemented above dim 4");
 
-            if constexpr (dim == 1){
+            if constexpr (dim == 1) {
                 return coord[0];
             }
 
-            if constexpr (dim == 2){
+            if constexpr (dim == 2) {
                 return coord[0] + Nside * coord[1];
             }
 
-            if constexpr (dim == 3){
+            if constexpr (dim == 3) {
                 return coord[0] + Nside * coord[1] + Nside * Nside * coord[2];
             }
 
-            if constexpr (dim == 4){
-                return coord[0] + Nside * coord[1] + Nside * Nside * coord[2] 
-                    + Nside * Nside *  Nside * coord[3];
+            if constexpr (dim == 4) {
+                return coord[0] + Nside * coord[1] + Nside * Nside * coord[2] +
+                       Nside * Nside * Nside * coord[3];
             }
 
             return {};
         }
-
-        
     };
 
 } // namespace shammodels::amr
