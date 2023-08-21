@@ -31,6 +31,7 @@ namespace shammodels::zeus  {
         static constexpr u32 i_yp = 3 ;
         static constexpr u32 i_zm = 4 ;
         static constexpr u32 i_zp = 5 ;
+        
     };
 
 } // namespace shammodels::zeus

@@ -112,6 +112,8 @@ namespace shammodels::zeus::modules{
 template<class Tvec, class TgridVec>
 void Module<Tvec, TgridVec>::build_ghost_cache() {
 
+    StackEntry stack_loc{};
+
     using GZData = GhostZonesData<Tvec, TgridVec>;
 
     storage.ghost_zone_infos.set(GZData{});

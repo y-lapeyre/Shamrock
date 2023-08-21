@@ -49,6 +49,7 @@ auto Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tscal dt_input) -> Tsc
     
     modules::FaceFlagger compute_face_flag(context,solver_config,storage);
     compute_face_flag.flag_faces();
+    compute_face_flag.split_face_list();
 
     /*
     modules::DiffOperator diff_op(context,solver_config,storage);

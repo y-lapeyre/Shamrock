@@ -7,8 +7,11 @@
 // -------------------------------------------------------//
 
 #include "shammodels/amr/zeus/modules/FaceFlagger.hpp"
+#include "shambase/DistributedData.hpp"
+#include "shammodels/amr/zeus/NeighFaceList.hpp"
 #include "shamrock/scheduler/InterfacesUtility.hpp"
 #include "shamrock/scheduler/SchedulerUtility.hpp"
+#include "shamsys/legacy/log.hpp"
 
 template<class Tvec, class TgridVec>
 using Module = shammodels::zeus::modules::FaceFlagger<Tvec, TgridVec>;
@@ -114,9 +117,37 @@ void Module<Tvec, TgridVec>::split_face_list() {
     using namespace shammath;
     using MergedPDat = shamrock::MergedPatchData;
 
+    shambase::DistributedData<NeighFaceList<Tvec>> neigh_lst;
+
     scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
-        // Tvec normal = lookup_to_normal(u8 lookup)
+        shamrock::tree::ObjectCache &cache = storage.neighbors_cache.get().get_cache(p.id_patch);
+
+        sycl::buffer<u8> &face_normals_lookup = storage.face_normals_lookup.get().get(p.id_patch);
+
+        auto build_flist = [&](u8 lookup) -> OrientedNeighFaceList<Tvec> {
+            return{
+                isolate_lookups(cache, face_normals_lookup, lookup),
+                lookup_to_normal(lookup)
+            };
+        };
+
+        auto build_neigh_list = [&]() -> NeighFaceList<Tvec> {
+            return {
+                build_flist(0),
+                build_flist(1),
+                build_flist(2),
+                build_flist(3),
+                build_flist(4),
+                build_flist(5)
+            };
+        };
+
+        neigh_lst.add_obj(p.id_patch, build_neigh_list());
     });
+
+    storage.neighbors_cache.reset();
+    storage.face_normals_lookup.reset();
+
 }
 
 template<class Tvec, class TgridVec>
@@ -174,6 +205,8 @@ Module<Tvec, TgridVec>::isolate_lookups(shamrock::tree::ObjectCache &cache,
             });
         });
     });
+
+    logger::debug_sycl_ln("AMR::FaceFlagger", "lookup :",lookup_value, "found N =",pcache.sum_neigh_cnt);
 
     return pcache;
 }
