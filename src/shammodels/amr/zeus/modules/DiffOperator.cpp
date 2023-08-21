@@ -8,8 +8,10 @@
 
 
 #include "shammodels/amr/zeus/modules/DiffOperator.hpp"
+#include "shammodels/amr/zeus/NeighFaceList.hpp"
 #include "shammodels/amr/zeus/modules/FaceFlagger.hpp"
 #include "shamrock/scheduler/SchedulerUtility.hpp"
+#include "shamrock/tree/TreeTraversal.hpp"
 
 template<class Tvec, class TgridVec>
 using Module = shammodels::zeus::modules::DiffOperator<Tvec, TgridVec>;
@@ -38,9 +40,11 @@ void Module<Tvec, TgridVec>::compute_gradu() {
         sycl::buffer<TgridVec> &buf_cell_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);
         sycl::buffer<TgridVec> &buf_cell_max = mpdat.pdat.get_field_buf_ref<TgridVec>(1);
 
-        tree::ObjectCache &pcache = storage.neighbors_cache.get().get_cache(p.id_patch);
-
-        sycl::buffer<u8> &face_normals_lookup = storage.face_normals_lookup.get().get(p.id_patch);
+        shammodels::zeus::NeighFaceList<Tvec> & face_lists = storage.face_lists.get().get(p.id_patch);
+        
+        OrientedNeighFaceList<Tvec> & face_xm = face_lists.xm();
+        OrientedNeighFaceList<Tvec> & face_ym = face_lists.ym();
+        OrientedNeighFaceList<Tvec> & face_zm = face_lists.zm();
 
         Tscal coord_conv_fact = solver_config.grid_coord_to_pos_fact;
 
@@ -48,9 +52,9 @@ void Module<Tvec, TgridVec>::compute_gradu() {
         sycl::buffer<Tvec> &buf_grad_u = storage.gradu.get().get_buf_check(p.id_patch);
 
         shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-            tree::ObjectCacheIterator cell_looper(pcache, cgh);
+            
+            tree::ObjectCacheIterator faces_xm(face_xm.neigh_info, cgh);
 
-            sycl::accessor normals_lookup{face_normals_lookup, cgh, sycl::read_only};
             sycl::accessor cell_min{buf_cell_min, cgh, sycl::read_only};
             sycl::accessor cell_max{buf_cell_max, cgh, sycl::read_only};
 

@@ -8,12 +8,12 @@
 
 #pragma once
 
-#include "shambase/type_aliases.hpp"
 #include "shambase/sycl.hpp"
+#include "shambase/type_aliases.hpp"
 #include "shamrock/tree/TreeTraversal.hpp"
 #include <array>
 
-namespace shammodels::zeus  {
+namespace shammodels::zeus {
 
     template<class Tvec>
     struct OrientedNeighFaceList {
@@ -22,16 +22,22 @@ namespace shammodels::zeus  {
     };
 
     template<class Tvec>
-    struct NeighFaceList{
+    struct NeighFaceList {
         std::array<OrientedNeighFaceList<Tvec>, 6> faces_lists;
 
-        static constexpr u32 i_xm = 0 ;
-        static constexpr u32 i_xp = 1 ;
-        static constexpr u32 i_ym = 2 ;
-        static constexpr u32 i_yp = 3 ;
-        static constexpr u32 i_zm = 4 ;
-        static constexpr u32 i_zp = 5 ;
-        
+        static constexpr u32 i_xm = 0;
+        static constexpr u32 i_xp = 1;
+        static constexpr u32 i_ym = 2;
+        static constexpr u32 i_yp = 3;
+        static constexpr u32 i_zm = 4;
+        static constexpr u32 i_zp = 5;
+
+        OrientedNeighFaceList<Tvec> &xm() { return faces_lists[i_xm]; }
+        OrientedNeighFaceList<Tvec> &xp() { return faces_lists[i_xp]; }
+        OrientedNeighFaceList<Tvec> &ym() { return faces_lists[i_ym]; }
+        OrientedNeighFaceList<Tvec> &yp() { return faces_lists[i_yp]; }
+        OrientedNeighFaceList<Tvec> &zm() { return faces_lists[i_zm]; }
+        OrientedNeighFaceList<Tvec> &zp() { return faces_lists[i_zp]; }
     };
 
 } // namespace shammodels::zeus

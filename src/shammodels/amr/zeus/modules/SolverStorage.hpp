@@ -11,6 +11,7 @@
 #include "shambase/stacktrace.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"
 #include "shammodels/amr/zeus/GhostZoneData.hpp"
+#include "shammodels/amr/zeus/NeighFaceList.hpp"
 #include "shamrock/scheduler/SerialPatchTree.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
 #include "shamrock/tree/RadixTree.hpp"
@@ -58,6 +59,8 @@ namespace shammodels::zeus {
          * 
          */
         Component<shambase::DistributedData<sycl::buffer<u8>>> face_normals_lookup;
+
+        Component<shambase::DistributedData<NeighFaceList<Tvec>>> face_lists;
 
         Component<shamrock::ComputeField<Tvec>> forces;
 

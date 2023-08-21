@@ -148,6 +148,8 @@ void Module<Tvec, TgridVec>::split_face_list() {
     storage.neighbors_cache.reset();
     storage.face_normals_lookup.reset();
 
+    storage.face_lists.set(std::move(neigh_lst));
+
 }
 
 template<class Tvec, class TgridVec>
