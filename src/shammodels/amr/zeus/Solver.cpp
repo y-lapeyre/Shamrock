@@ -51,14 +51,14 @@ auto Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tscal dt_input) -> Tsc
     compute_face_flag.flag_faces();
     compute_face_flag.split_face_list();
 
-    /*
-    modules::DiffOperator diff_op(context,solver_config,storage);
-    diff_op.compute_gradu();
+    
+    //modules::DiffOperator diff_op(context,solver_config,storage);
+    //diff_op.compute_gradu();
 
     modules::SourceStep src_step(context,solver_config,storage);
     src_step.compute_forces();
     src_step.apply_force(dt_input);
-    */
+    
 
     tstep.end();
 

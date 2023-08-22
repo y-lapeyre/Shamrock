@@ -65,24 +65,23 @@ void Module<Tvec, TgridVec>::compute_gradu() {
                 Tvec cell2_a = (cell_min[id_a] + cell_max[id_a]).template convert<Tscal>() *
                                coord_conv_fact * 0.5f;
 
-               // Tvec sum_grad_ux = {};
-               // Tvec sum_grad_ux = {};
-//
-               // // looks like it's on the double preicision roofline there is
-               // // nothing to optimize here turn around
-               // cell_looper.for_each_object_with_id(id_a, [&](u32 id_b, u32 id_list) {
-               //     Tvec cell2_b = (cell_min[id_b] + cell_max[id_b]).template convert<Tscal>() *
-               //                    coord_conv_fact * 0.5f;
-//
-               //     Tvec n        = Flagger::lookup_to_normal(normals_lookup[id_list]);
-               //     Tscal dr_proj = sycl::dot(cell2_b - cell2_a, n);
-//
-               //     Tvec drm1_n = n / dr_proj;
-//
-               //     sum_grad_p += drm1_n * rho[id_b];
-               // });
-//
-               // grad_p[id_a] = -sum_grad_p;
+               Tvec sum_grad_ux = {};
+
+               // looks like it's on the double preicision roofline there is
+               // nothing to optimize here turn around
+               faces_xm.for_each_object(id_a, [&](u32 id_b) {
+                 Tvec cell2_b = (cell_min[id_b] + cell_max[id_b]).template convert<Tscal>() *
+                                   coord_conv_fact * 0.5f;
+
+                    Tvec n        = {-1,0,0};
+                    Tscal dr_proj = sycl::dot(cell2_b - cell2_a, n);
+
+                    Tvec drm1_n = n / dr_proj;
+
+                    //buf_grad_u += drm1_n * rho[id_b];
+                });
+
+                //grad_p[id_a] = -buf_grad_u;
             });
         });
     });
