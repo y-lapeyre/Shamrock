@@ -8,6 +8,7 @@
 
 #include "shammodels/amr/zeus/modules/FaceFlagger.hpp"
 #include "shambase/DistributedData.hpp"
+#include "shambase/SourceLocation.hpp"
 #include "shammodels/amr/zeus/NeighFaceList.hpp"
 #include "shamrock/scheduler/InterfacesUtility.hpp"
 #include "shamrock/scheduler/SchedulerUtility.hpp"
@@ -152,6 +153,9 @@ void Module<Tvec, TgridVec>::split_face_list() {
 
 }
 
+
+
+
 template<class Tvec, class TgridVec>
 shamrock::tree::ObjectCache
 Module<Tvec, TgridVec>::isolate_lookups(shamrock::tree::ObjectCache &cache,
@@ -181,32 +185,45 @@ Module<Tvec, TgridVec>::isolate_lookups(shamrock::tree::ObjectCache &cache,
 
             face_cnts[id_a] = cnt;
         });
-    });
+    }).wait();
+
 
     shamrock::tree::ObjectCache pcache =
         shamrock::tree::prepare_object_cache(std::move(face_count), obj_cnt);
 
+        shamsys::instance::get_compute_queue().wait();
+
     NamedStackEntry stack_loc2{"fill cache"};
+
+    logger::raw_ln(obj_cnt, pcache.cnt_neigh.size(),pcache.scanned_cnt.size(), pcache.index_neigh_map.size());
+
 
     shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
         shamrock::tree::ObjectCacheIterator cell_looper(cache, cgh);
+        
+        sycl::accessor normals_lookup{face_normals_lookup, cgh, sycl::read_only};
+
         sycl::accessor scanned_neigh_cnt{pcache.scanned_cnt, cgh, sycl::read_only};
         sycl::accessor neigh{pcache.index_neigh_map, cgh, sycl::write_only, sycl::no_init};
-        sycl::accessor normals_lookup{face_normals_lookup, cgh, sycl::read_only};
+
+        u8 wanted_lookup = lookup_value;
 
         shambase::parralel_for(cgh, obj_cnt, "compute neigh cache 2", [=](u64 gid) {
             u32 id_a = (u32)gid;
             u32 cnt  = scanned_neigh_cnt[id_a];
 
+            //sycl::ext::oneapi::experimental::printf("%d %d\n", id_a,cnt);
+
             cell_looper.for_each_object_with_id(id_a, [&](u32 id_b, u32 id_list) {
-                bool wanted_lookup = normals_lookup[id_list] == wanted_lookup;
-                if (wanted_lookup) {
+                bool lookup_match = normals_lookup[id_list] == wanted_lookup;
+                if (lookup_match) {
+                    //sycl::ext::oneapi::experimental::printf("%d %d %d %d\n", id_a,cnt,id_b,id_list);
                     neigh[cnt] = id_b;
+                    cnt ++;
                 }
-                cnt += (wanted_lookup) ? 1 : 0;
             });
         });
-    });
+    }).wait();
 
     logger::debug_sycl_ln("AMR::FaceFlagger", "lookup :",lookup_value, "found N =",pcache.sum_neigh_cnt);
 
