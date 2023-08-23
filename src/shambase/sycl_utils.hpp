@@ -94,6 +94,8 @@ namespace shambase {
         #ifdef SHAMROCK_USE_NVTX
         nvtxRangePush(name);
         #endif
+
+        logger::debug_sycl_ln("SYCL", shambase::format("parralel_for {} N={}",name,lenght));
         
         if constexpr(mode == PARRALEL_FOR){
 
@@ -138,6 +140,8 @@ namespace shambase {
         #ifdef SHAMROCK_USE_NVTX
         nvtxRangePush(name);
         #endif
+
+        logger::debug_sycl_ln("SYCL", shambase::format("parralel_for {} N={} {}",name,lenght_x,lenght_y));
         
         if constexpr(mode == PARRALEL_FOR){
 
@@ -187,6 +191,8 @@ namespace shambase {
         #ifdef SHAMROCK_USE_NVTX
         nvtxRangePush(name);
         #endif
+
+        logger::debug_sycl_ln("SYCL", shambase::format("parralel_for {} N={} {} {}",name,lenght_x,lenght_y,lenght_z));
         
         if constexpr(mode == PARRALEL_FOR){
 

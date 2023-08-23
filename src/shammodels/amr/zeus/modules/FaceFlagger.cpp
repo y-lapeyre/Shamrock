@@ -195,7 +195,7 @@ Module<Tvec, TgridVec>::isolate_lookups(shamrock::tree::ObjectCache &cache,
 
     NamedStackEntry stack_loc2{"fill cache"};
 
-    logger::raw_ln(obj_cnt, pcache.cnt_neigh.size(),pcache.scanned_cnt.size(), pcache.index_neigh_map.size());
+    //logger::raw_ln(obj_cnt, pcache.cnt_neigh.size(),pcache.scanned_cnt.size(), pcache.index_neigh_map.size());
 
 
     shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
