@@ -26,3 +26,7 @@ model.dump_vtk("test.vtk")
 
 model.evolve_once(0,0.1)
 #model.evolve_once(0,0.1)
+
+for i in range(10):
+    model.evolve_once(0,0.1)
+    model.dump_vtk("test"+str(i)+".vtk")

@@ -46,41 +46,68 @@ void Module<Tvec, TgridVec>::compute_forces() {
 
         Tscal coord_conv_fact = solver_config.grid_coord_to_pos_fact;
 
+        sycl::buffer<Tscal> & buf_p = storage.pressure.get().get_buf_check(p.id_patch);
         sycl::buffer<Tscal> &buf_rho   = mpdat.pdat.get_field_buf_ref<Tscal>(irho_interf);
         sycl::buffer<Tvec> &forces_buf = storage.forces.get().get_buf_check(p.id_patch);
 
         shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
             
             tree::ObjectCacheIterator faces_xm(face_xm.neigh_info, cgh);
+            tree::ObjectCacheIterator faces_ym(face_ym.neigh_info, cgh);
+            tree::ObjectCacheIterator faces_zm(face_zm.neigh_info, cgh);
 
             sycl::accessor cell_min{buf_cell_min, cgh, sycl::read_only};
             sycl::accessor cell_max{buf_cell_max, cgh, sycl::read_only};
 
             sycl::accessor grad_p{forces_buf, cgh, sycl::write_only, sycl::no_init};
             sycl::accessor rho{buf_rho, cgh, sycl::read_only};
+            sycl::accessor p{buf_p, cgh, sycl::read_only};
 
-            shambase::parralel_for(cgh, pdat.get_obj_cnt(), "subsetp1", [=](u64 id_a) {
+            shambase::parralel_for(cgh, pdat.get_obj_cnt(), "compute grad p", [=](u64 id_a) {
                 Tvec cell2_a = (cell_min[id_a] + cell_max[id_a]).template convert<Tscal>() *
                                coord_conv_fact * 0.5f;
 
-                Tvec sum_grad_p = {};
+                Tscal rho_i_j_k = rho[id_a];
+                Tscal p_i_j_k = p[id_a];
 
+                Tvec sum_grad_p = {};
                 // looks like it's on the double preicision roofline there is
                 // nothing to optimize here turn around
                 //or it was the case before i touched to it '^^
-                faces_xm.for_each_object_with_id(id_a, [&](u32 id_b, u32 id_list) {
+                faces_xm.for_each_object(id_a, [&](u32 id_b) {
                     Tvec cell2_b = (cell_min[id_b] + cell_max[id_b]).template convert<Tscal>() *
                                    coord_conv_fact * 0.5f;
+                    Tscal rho_im1_j_k = rho[id_b];
+                    Tscal p_im1_j_k = p[id_b];
 
-                    Tvec n        = Tvec{-1, 0, 0};
-                    Tscal dr_proj = sycl::dot(cell2_b - cell2_a, n);
-
-                    Tvec drm1_n = n / dr_proj;
-
-                    sum_grad_p += drm1_n * rho[id_b];
+                    Tscal dxmubi = sycl::dot(cell2_b - cell2_a, Tvec{-1, 0, 0});
+                    Tscal div = dxmubi*(rho_i_j_k - rho_im1_j_k)/2;
+                    sum_grad_p.x() -= (p_i_j_k - p_im1_j_k)/div;
                 });
 
-                grad_p[id_a] = -sum_grad_p;
+                faces_ym.for_each_object(id_a, [&](u32 id_b) {
+                    Tvec cell2_b = (cell_min[id_b] + cell_max[id_b]).template convert<Tscal>() *
+                                   coord_conv_fact * 0.5f;
+                    Tscal rho_im1_j_k = rho[id_b];
+                    Tscal p_im1_j_k = p[id_b];
+
+                    Tscal dxmubi = sycl::dot(cell2_b - cell2_a, Tvec{0, -1, 0});
+                    Tscal div = dxmubi*(rho_i_j_k - rho_im1_j_k)/2;
+                    sum_grad_p.y() -= (p_i_j_k - p_im1_j_k)/div;
+                });
+
+                faces_zm.for_each_object(id_a, [&](u32 id_b) {
+                    Tvec cell2_b = (cell_min[id_b] + cell_max[id_b]).template convert<Tscal>() *
+                                   coord_conv_fact * 0.5f;
+                    Tscal rho_im1_j_k = rho[id_b];
+                    Tscal p_im1_j_k = p[id_b];
+
+                    Tscal dxmubi = sycl::dot(cell2_b - cell2_a, Tvec{0, 0, -1});
+                    Tscal div = dxmubi*(rho_i_j_k - rho_im1_j_k)/2;
+                    sum_grad_p.z() -= (p_i_j_k - p_im1_j_k)/div;
+                });
+
+                grad_p[id_a] = sum_grad_p;
             });
         });
     });
@@ -113,7 +140,7 @@ void Module<Tvec, TgridVec>::compute_forces() {
                     return r / (d * d * d);
                 };
 
-                forces[id_a] += (forces[id_a] / rho[id_a]) + get_ext_force(cell2_a);
+                forces[id_a] +=  get_ext_force(cell2_a);
             });
         });
     });

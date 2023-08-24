@@ -8,6 +8,7 @@
 
 #include "shammodels/amr/zeus/Solver.hpp"
 #include "shammodels/amr/zeus/modules/AMRTree.hpp"
+#include "shammodels/amr/zeus/modules/ComputePressure.hpp"
 #include "shammodels/amr/zeus/modules/DiffOperator.hpp"
 #include "shammodels/amr/zeus/modules/FaceFlagger.hpp"
 #include "shammodels/amr/zeus/modules/GhostZones.hpp"
@@ -44,8 +45,8 @@ auto Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tscal dt_input) -> Tsc
     amrtree.build_neigh_cache();
 
 
-
-
+    modules::ComputePressure comp_eos(context, solver_config, storage);
+    comp_eos.compute_p();
     
     modules::FaceFlagger compute_face_flag(context,solver_config,storage);
     compute_face_flag.flag_faces();
@@ -58,6 +59,11 @@ auto Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tscal dt_input) -> Tsc
     modules::SourceStep src_step(context,solver_config,storage);
     src_step.compute_forces();
     src_step.apply_force(dt_input);
+
+
+
+
+    storage.serial_patch_tree.reset();
     
 
     tstep.end();
