@@ -10,6 +10,7 @@
 #include "shammodels/amr/zeus/modules/FaceFlagger.hpp"
 #include "shamrock/scheduler/InterfacesUtility.hpp"
 #include "shamrock/scheduler/SchedulerUtility.hpp"
+#include "shamsys/legacy/log.hpp"
 
 template<class Tvec, class TgridVec>
 using Module = shammodels::zeus::modules::SourceStep<Tvec, TgridVec>;
@@ -24,8 +25,10 @@ void Module<Tvec, TgridVec>::compute_forces() {
 
     using Flagger = FaceFlagger<Tvec, TgridVec>;
 
+    using Block = typename Config::AMRBlock;
+
     shamrock::SchedulerUtility utility(scheduler());
-    storage.forces.set(utility.make_compute_field<Tvec>("forces", 1, [&](u64 id) {
+    storage.forces.set(utility.make_compute_field<Tvec>("forces", Block::block_size, [&](u64 id) {
         return storage.merged_patchdata_ghost.get().get(id).total_elements;
     }));
 
@@ -143,7 +146,11 @@ void Module<Tvec, TgridVec>::compute_forces() {
                 forces[id_a] +=  get_ext_force(cell2_a);
             });
         });
+
+        logger::raw_ln(storage.forces.get().get_field(p.id_patch).compute_max());
     });
+
+    
 }
 
 template<class Tvec, class TgridVec>
@@ -156,6 +163,8 @@ void Module<Tvec, TgridVec>::apply_force(Tscal dt) {
 
     using Flagger = FaceFlagger<Tvec, TgridVec>;
 
+    using Block = typename Config::AMRBlock;
+
     PatchDataLayout &pdl = scheduler().pdl;
     const u32 ivel       = pdl.get_field_idx<Tvec>("vel");
 
@@ -167,7 +176,7 @@ void Module<Tvec, TgridVec>::apply_force(Tscal dt) {
             sycl::accessor forces{forces_buf, cgh, sycl::read_only};
             sycl::accessor vel{vel_buf, cgh, sycl::read_write};
 
-            shambase::parralel_for(cgh, pdat.get_obj_cnt(), "add ext force", [=](u64 id_a) {
+            shambase::parralel_for(cgh, pdat.get_obj_cnt()*Block::block_size, "add ext force", [=](u64 id_a) {
                 vel[id_a] += dt * forces[id_a];
             });
         });
