@@ -17,6 +17,7 @@
 #include "shambase/integer.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"
 #include "shambase/type_aliases.hpp"
+#include <array>
 
 namespace shammodels::amr {
 
@@ -30,6 +31,8 @@ namespace shammodels::amr {
     struct AMRBlock {
 
         static constexpr u32 dim = shambase::VectorProperties<Tvec>::dimension;
+
+        static constexpr u32 side_size = Nside;
 
         static constexpr u32 block_size = shambase::pow_constexpr<dim>(Nside);
 
@@ -61,6 +64,8 @@ namespace shammodels::amr {
 
             return {};
         }
+
+
     };
 
 } // namespace shammodels::amr

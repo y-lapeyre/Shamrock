@@ -60,10 +60,15 @@ auto Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tscal dt_input) -> Tsc
     src_step.compute_forces();
     src_step.apply_force(dt_input);
 
-
-
-
+    storage.face_lists.reset();
+    storage.pressure.reset();
+    storage.trees.reset();
+    storage.merge_patch_bounds.reset();
+    storage.merged_patchdata_ghost.reset();
+    storage.ghost_layout.reset();
+    storage.ghost_zone_infos.reset();
     storage.serial_patch_tree.reset();
+    
     
 
     tstep.end();
