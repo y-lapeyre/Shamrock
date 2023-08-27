@@ -15,6 +15,7 @@
  */
 
 #include "shambase/integer.hpp"
+#include "shambase/sycl_utils.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"
 #include "shambase/type_aliases.hpp"
 #include <array>
@@ -27,10 +28,10 @@ namespace shammodels::amr {
      * @tparam Tvec
      * @tparam Nside
      */
-    template<class Tvec, u32 Nside>
+    template<class Tvec, class TgridVec, u32 Nside>
     struct AMRBlock {
 
-        static constexpr u32 dim = shambase::VectorProperties<Tvec>::dimension;
+        static constexpr u32 dim = shambase::VectorProperties<TgridVec>::dimension;
 
         static constexpr u32 side_size = Nside;
 
@@ -65,7 +66,32 @@ namespace shammodels::amr {
             return {};
         }
 
+        inline static void
+        for_each_cell_in_block(Tvec delta_cell, std::function<void(u32, Tvec)> functor) noexcept {
+            static_assert(dim == 3, "implemented only in dim 3");
+            for (u32 ix = 0; ix < side_size; ix++) {
+                for (u32 iy = 0; iy < side_size; iy++) {
+                    for (u32 iz = 0; iz < side_size; iz++) {
+                        u32 i          = get_index({ix, iy, iz});
+                        Tvec delta_val = delta_cell * Tvec{ix, iy, iz};
+                        functor(i, delta_val);
+                    }
+                }
+            }
+        }
 
+        inline static void parralel_for_block(sycl::buffer<TgridVec> &buf_cell_min,
+                                              sycl::buffer<TgridVec> &buf_cell_max,
+                                              sycl::handler &cgh,
+                                              std::string name,
+                                              u32 block_cnt) {
+            // we use one thread per subcell because :
+            // double load are avoided because of contiguous L2 cache hit
+            // and CF perf opti for GPU, finer threading lead to better latency hidding
+            shambase::parralel_for(cgh, block_cnt * block_size, name, [=](u64 id_g) {
+
+            });
+        }
     };
 
 } // namespace shammodels::amr

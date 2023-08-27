@@ -21,7 +21,7 @@ namespace shammodels::zeus::modules {
         using Tgridscal          = shambase::VecComponent<TgridVec>;
         static constexpr u32 dim = shambase::VectorProperties<Tvec>::dimension;
 
-        using Config  = SolverConfig<Tvec>;
+        using Config  = SolverConfig<Tvec,TgridVec>;
         using Storage = SolverStorage<Tvec, TgridVec, u64>;
 
         ShamrockCtx &context;

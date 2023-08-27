@@ -16,7 +16,7 @@
 
 namespace shammodels::zeus {
 
-    template<class Tvec>
+    template<class Tvec, class TgridVec>
     struct SolverConfig {
         
         using Tscal              = shambase::VecComponent<Tvec>;
@@ -26,7 +26,7 @@ namespace shammodels::zeus {
         Tscal grid_coord_to_pos_fact = 1;
 
         static constexpr u32 NsideBlock = 2;
-        using AMRBlock = amr::AMRBlock<Tvec, NsideBlock>; 
+        using AMRBlock = amr::AMRBlock<Tvec, TgridVec, NsideBlock>; 
     };
 
     template<class Tvec, class TgridVec>
@@ -39,7 +39,7 @@ namespace shammodels::zeus {
 
         using u_morton = u64;
 
-        using Config = SolverConfig<Tvec>;
+        using Config = SolverConfig<Tvec,TgridVec>;
 
         using AMRBlock = typename Config::AMRBlock;
 

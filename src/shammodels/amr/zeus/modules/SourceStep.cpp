@@ -135,15 +135,22 @@ void Module<Tvec, TgridVec>::compute_forces() {
             sycl::accessor rho{buf_rho, cgh, sycl::read_only};
 
             shambase::parralel_for(cgh, pdat.get_obj_cnt(), "add ext force", [=](u64 id_a) {
-                Tvec cell2_a = (cell_min[id_a] + cell_max[id_a]).template convert<Tscal>() *
-                               coord_conv_fact * 0.5f;
 
-                auto get_ext_force = [](Tvec r) {
-                    Tscal d = sycl::length(r);
-                    return r / (d * d * d);
-                };
+                Tvec block_min = cell_min[id_a].template convert<Tscal>();
+                Tvec block_max = cell_max[id_a].template convert<Tscal>();
+                Tvec delta_cell = (block_max - block_min)/Block::side_size;
+                Tvec delta_cell_h = delta_cell * Tscal(0.5);
 
-                forces[id_a] +=  get_ext_force(cell2_a);
+                Block::for_each_cell_in_block(delta_cell, [=](u32 lid, Tvec delta){
+
+                    auto get_ext_force = [](Tvec r) {
+                        Tscal d = sycl::length(r);
+                        return r / (d * d * d);
+                    };
+                    
+                    forces[id_a*Block::block_size + lid] +=  get_ext_force(block_min + delta + delta_cell_h);
+                });
+
             });
         });
 

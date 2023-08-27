@@ -83,8 +83,6 @@ void Model<Tvec, TgridVec>::dump_vtk(std::string filename){
 
             Tvec delta_cell = (block_max - block_min)/Block::side_size;
 
-
-
             for (u32 ix = 0; ix < Block::side_size; ix ++) {
                 for (u32 iy = 0; iy < Block::side_size; iy ++) {
                     for (u32 iz = 0; iz < Block::side_size; iz ++) {
@@ -96,7 +94,6 @@ void Model<Tvec, TgridVec>::dump_vtk(std::string filename){
                 }
             }
 
-            
         });
     });
     
