@@ -187,7 +187,11 @@ void Module<Tvec, TgridVec>::apply_force(Tscal dt) {
                 vel[id_a] += dt * forces[id_a];
             });
         });
+
+        logger::raw_ln(storage.forces.get().get_field(p.id_patch).compute_max());
     });
+
+    
 
     storage.forces.reset();
 }

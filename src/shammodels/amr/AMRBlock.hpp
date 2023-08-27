@@ -66,8 +66,9 @@ namespace shammodels::amr {
             return {};
         }
 
+        template<class Func>
         inline static void
-        for_each_cell_in_block(Tvec delta_cell, std::function<void(u32, Tvec)> functor) noexcept {
+        for_each_cell_in_block(Tvec delta_cell, Func && functor) noexcept {
             static_assert(dim == 3, "implemented only in dim 3");
             for (u32 ix = 0; ix < side_size; ix++) {
                 for (u32 iy = 0; iy < side_size; iy++) {
