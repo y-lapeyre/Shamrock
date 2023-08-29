@@ -73,7 +73,13 @@ void Module<Tvec, TgridVec>::compute_forces() {
                 Tscal rho_i_j_k = rho[id_a];
                 Tscal p_i_j_k = p[id_a];
 
+                Tscal rho_im1_j_k ;
+                Tscal p_im1_j_k ;
+
                 Tvec sum_grad_p = {};
+
+
+
                 // looks like it's on the double preicision roofline there is
                 // nothing to optimize here turn around
                 //or it was the case before i touched to it '^^

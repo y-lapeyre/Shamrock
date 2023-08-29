@@ -18,6 +18,8 @@
 #include "shambase/sycl_utils.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"
 #include "shambase/type_aliases.hpp"
+#include "shammath/AABB.hpp"
+#include "shamrock/tree/TreeTraversal.hpp"
 #include <array>
 
 namespace shammodels::amr {
@@ -26,13 +28,14 @@ namespace shammodels::amr {
      * @brief utility class to handle AMR blocks
      *
      * @tparam Tvec
-     * @tparam Nside
+     * @tparam NsideBlockPow
      */
-    template<class Tvec, class TgridVec, u32 Nside>
+    template<class Tvec, class TgridVec, u32 NsideBlockPow>
     struct AMRBlock {
 
         static constexpr u32 dim = shambase::VectorProperties<TgridVec>::dimension;
 
+        static constexpr u32 Nside = 1U << NsideBlockPow;
         static constexpr u32 side_size = Nside;
 
         static constexpr u32 block_size = shambase::pow_constexpr<dim>(Nside);
@@ -66,6 +69,17 @@ namespace shammodels::amr {
             return {};
         }
 
+        std::array<u32,dim> get_coord(u32 i){
+            static_assert(dim == 3, "only in dim 3 for now");
+
+            if constexpr (dim == 3) {
+                const u32 tmp  = i >> NsideBlockPow;
+                return {(tmp) >> NsideBlockPow, (tmp)%Nside,i % Nside};
+            }
+
+            return {};
+        }
+
         template<class Func>
         inline static void
         for_each_cell_in_block(Tvec delta_cell, Func && functor) noexcept {
@@ -93,6 +107,28 @@ namespace shammodels::amr {
 
             });
         }
+
+        template<class Acccellcoord>
+        inline void for_each_neigh_faces(
+            shamrock::tree::ObjectCacheIterator & block_faces_iter, 
+            Acccellcoord acc_block_min,
+            Acccellcoord acc_block_max,
+            const u32 id_a,
+            const shammath::AABB<TgridVec> aabb_cell){
+
+            block_faces_iter.for_each_object(id_a, [&](u32 id_b) {
+                
+                const Tvec block_b_min = acc_block_min[id_a];
+                Tvec block_b_max = acc_block_max[id_a];
+                Tvec delta_cell = (block_b_max - block_b_min)/side_size;
+
+
+
+            });
+
+        }
     };
+    
+    
 
 } // namespace shammodels::amr

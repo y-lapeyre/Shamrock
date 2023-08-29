@@ -25,8 +25,8 @@ namespace shammodels::zeus {
 
         Tscal grid_coord_to_pos_fact = 1;
 
-        static constexpr u32 NsideBlock = 2;
-        using AMRBlock = amr::AMRBlock<Tvec, TgridVec, NsideBlock>; 
+        static constexpr u32 NsideBlockPow = 1;
+        using AMRBlock = amr::AMRBlock<Tvec, TgridVec, NsideBlockPow>; 
     };
 
     template<class Tvec, class TgridVec>

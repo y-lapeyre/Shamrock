@@ -66,6 +66,8 @@ namespace shammodels::zeus::modules {
         using FaceList = NeighFaceList<Tvec>;
         void split_face_list();
 
+        void compute_neigh_ids();
+
         private:
         shamrock::tree::ObjectCache isolate_lookups(shamrock::tree::ObjectCache & cache,
                                                     sycl::buffer<u8> &face_normals_lookup,

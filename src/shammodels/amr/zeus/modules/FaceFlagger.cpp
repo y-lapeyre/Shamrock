@@ -155,6 +155,22 @@ void Module<Tvec, TgridVec>::split_face_list() {
 
 
 
+struct AMRNeighIds {
+    // since it's AMR with only delta = 1 in level 
+    // only cases are :
+    //  - same level : block_id <-> block_id map
+    //  - increase level :  block_id <-> block_id map
+    //  - decrease level : block_id <-> block_id + divcoord map
+    //          divcoord are to see in which suboct of 
+    //          the block the neigh is in. 
+};
+
+template<class Tvec, class TgridVec>
+void 
+Module<Tvec, TgridVec>::compute_neigh_ids(){
+
+}
+
 
 template<class Tvec, class TgridVec>
 shamrock::tree::ObjectCache
