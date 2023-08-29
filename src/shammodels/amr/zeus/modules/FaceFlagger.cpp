@@ -163,6 +163,9 @@ struct AMRNeighIds {
     //  - decrease level : block_id <-> block_id + divcoord map
     //          divcoord are to see in which suboct of 
     //          the block the neigh is in. 
+
+    u64 id_patch;
+    
 };
 
 template<class Tvec, class TgridVec>
@@ -170,6 +173,9 @@ void
 Module<Tvec, TgridVec>::compute_neigh_ids(){
 
 }
+
+
+
 
 
 template<class Tvec, class TgridVec>

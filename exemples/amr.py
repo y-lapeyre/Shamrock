@@ -19,7 +19,7 @@ multy = 1
 multz = 1
 
 sz = 1 << 1
-base = 64 
+base = 128 
 model.make_base_grid((0,0,0),(sz,sz,sz),(base*multx,base*multy,base*multz))
 
 #model.evolve_once(0,0.1)

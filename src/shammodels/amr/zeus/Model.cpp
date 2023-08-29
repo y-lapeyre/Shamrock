@@ -82,9 +82,11 @@ void Model<Tvec, TgridVec>::dump_vtk(std::string filename){
             Tvec block_max = acc_p2[id_a].template convert<Tscal>();
 
             Tvec delta_cell = (block_max - block_min)/Block::side_size;
-
+            #pragma unroll
             for (u32 ix = 0; ix < Block::side_size; ix ++) {
+                #pragma unroll
                 for (u32 iy = 0; iy < Block::side_size; iy ++) {
+                    #pragma unroll
                     for (u32 iz = 0; iz < Block::side_size; iz ++) {
                         u32 i = Block::get_index({ix,iy,iz});
                         Tvec delta_val = delta_cell*Tvec{ix,iy,iz};
