@@ -80,6 +80,41 @@ void Module<Tvec, TgridVec>::compute_forces() {
 
 
 
+
+
+
+                auto tmp = cell_max[id_a] - cell_min[id_a];
+                auto Va = tmp.x()*tmp.y()*tmp.z(); 
+
+                auto get_xm_val = [=](auto acc, u32 block_id, std::array<u32,3> cell_id){
+
+                    if(cell_id[0] > 0){
+                        return acc[block_id*Block::block_size +Block::get_index({cell_id[0]-1,cell_id[1],cell_id[2]})];
+                    }
+
+                    faces_xm.for_each_object(id_a, [&](u32 id_b) {
+                        auto tmp = cell_max[id_b] - cell_min[id_b];
+                        auto nV = tmp.x()*tmp.y()*tmp.z();
+
+                        if(nV == Va){ //same level
+
+                        }else if(nV == Va*8){ // l-1 case
+
+                        }else if(nV == Va/8){ // l+1 case
+
+                        }
+                    });
+
+
+
+                };
+
+
+
+
+
+
+
                 // looks like it's on the double preicision roofline there is
                 // nothing to optimize here turn around
                 //or it was the case before i touched to it '^^

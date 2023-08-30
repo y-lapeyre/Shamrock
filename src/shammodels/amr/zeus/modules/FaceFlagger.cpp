@@ -165,12 +165,51 @@ struct AMRNeighIds {
     //          the block the neigh is in. 
 
     u64 id_patch;
-    
+
+    struct {
+
+        sycl::buffer<u32> block_ids;
+
+
+    } level_p1;
+
+    struct {
+
+        sycl::buffer<u32> block_ids;
+
+        sycl::buffer<u32> cell_xm;
+        sycl::buffer<u32> cell_xp;
+        sycl::buffer<u32> cell_ym;
+        sycl::buffer<u32> cell_yp;
+        sycl::buffer<u32> cell_zm;
+        sycl::buffer<u32> cell_zp;
+
+    } level_m1;
+
+    struct {
+
+        //ids of the blocks having
+        sycl::buffer<u32> block_ids;
+
+        // neigh[block_id*block_size + cell_id] 
+        //     -> neighbourgh cell (block_id*block_size + cell_id)
+        sycl::buffer<u32> cell_xm;
+        sycl::buffer<u32> cell_xp;
+        sycl::buffer<u32> cell_ym;
+        sycl::buffer<u32> cell_yp;
+        sycl::buffer<u32> cell_zm;
+        sycl::buffer<u32> cell_zp;
+
+    } level_same;
+
 };
 
+
+
 template<class Tvec, class TgridVec>
-void 
-Module<Tvec, TgridVec>::compute_neigh_ids(){
+void Module<Tvec, TgridVec>::compute_neigh_ids(){
+
+
 
 }
 
