@@ -69,7 +69,7 @@ namespace shammodels::amr {
             return {};
         }
 
-        std::array<u32,dim> get_coord(u32 i){
+        static constexpr std::array<u32,dim> get_coord(u32 i) noexcept{
             static_assert(dim == 3, "only in dim 3 for now");
 
             if constexpr (dim == 3) {

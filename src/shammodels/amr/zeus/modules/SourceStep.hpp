@@ -64,5 +64,7 @@ namespace shammodels::zeus::modules {
 
         private:
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }
+
+        void load_grid_val_xm();
     };
 } // namespace shammodels::zeus::modules
