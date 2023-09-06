@@ -45,7 +45,16 @@ namespace shammodels::zeus::modules {
             sycl::buffer<T> &src,
             sycl::buffer<T> &dest);
 
-        void load_patch_neigh_same_level(std::array<Tgridscal, dim> offset);
+        void load_patch_neigh_same_level(
+            std::array<Tgridscal, dim> offset,
+            sycl::buffer<TgridVec> &buf_cell_min,
+            sycl::buffer<TgridVec> &buf_cell_max,
+            shammodels::zeus::NeighFaceList<Tvec> & face_lists,
+            u32 nobj,
+            u32 nvar,
+            sycl::buffer<T> &src,
+            sycl::buffer<T> &dest
+        );
     };
 
 } // namespace shammodels::zeus::modules

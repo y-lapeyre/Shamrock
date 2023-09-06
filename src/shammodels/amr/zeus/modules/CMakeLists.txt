@@ -6,6 +6,7 @@ ComputePressure.cpp
 FaceFlagger.cpp
 SourceStep.cpp
 DiffOperator.cpp
+ValueLoader.cpp
 )
 set(Headers
 )

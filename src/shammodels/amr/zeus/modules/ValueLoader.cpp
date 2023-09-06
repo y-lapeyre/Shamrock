@@ -53,12 +53,76 @@ void Module<Tvec, TgridVec, T>::load_patch_internal_block(
     } else {
         shambase::throw_unimplemented();
     }
-
 }
 
 template<class Tvec, class TgridVec, class T>
-void Module<Tvec, TgridVec, T>::load_patch_neigh_same_level(std::array<Tgridscal, dim> offset){
-    
+void Module<Tvec, TgridVec, T>::load_patch_neigh_same_level(
+
+    std::array<Tgridscal, dim> offset,
+    sycl::buffer<TgridVec> &buf_cell_min,
+    sycl::buffer<TgridVec> &buf_cell_max,
+    shammodels::zeus::NeighFaceList<Tvec> &face_lists,
+    u32 nobj,
+    u32 nvar,
+    sycl::buffer<T> &buf_src,
+    sycl::buffer<T> &buf_dest
+
+) {
+    using Block = typename Config::AMRBlock;
+
+    using namespace shamrock::patch;
+    using namespace shamrock;
+    using namespace shammath;
+    using MergedPDat = shamrock::MergedPatchData;
+
+    if constexpr (dim == 3) {
+        if (offset[0] == -1 && offset[1] == 0 && offset[2] == 0) {
+
+            OrientedNeighFaceList<Tvec> &face_xm = face_lists.xm();
+
+            shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
+                sycl::accessor val_out{buf_dest, cgh, sycl::write_only, sycl::no_init};
+                sycl::accessor src{buf_src, cgh, sycl::read_only};
+
+                sycl::accessor cell_min{buf_cell_min, cgh, sycl::read_only};
+                sycl::accessor cell_max{buf_cell_max, cgh, sycl::read_only};
+                tree::ObjectCacheIterator faces_xm(face_xm.neigh_info, cgh);
+
+                shambase::parralel_for(
+                    cgh, nobj * Block::block_size, "compute xm val (2)", [=](u64 id_a) {
+                        const u32 base_idx = id_a;
+                        const u32 block_id = id_a / Block::block_size;
+                        const u32 lid      = id_a % Block::block_size;
+
+                        std::array<u32, 3> lid_coord = Block::get_coord(lid);
+
+                        if (lid_coord[0] == 0) {
+                            auto tmp = cell_max[block_id] - cell_min[block_id];
+                            i32 Va   = tmp.x() * tmp.y() * tmp.z();
+
+                            static_assert(dim == 3, "implemented only in dim 3");
+                            faces_xm.for_each_object(block_id, [&](u32 block_id_b) {
+                                auto tmp = cell_max[block_id_b] - cell_min[block_id_b];
+                                i32 nV   = tmp.x() * tmp.y() * tmp.z();
+
+                                if (nV == Va) { // same level
+                                    val_out[base_idx] =
+                                        src[block_id_b * Block::block_size +
+                                            Block::get_index(
+                                                {Block::Nside - 1, lid_coord[1], lid_coord[2]})];
+                                }
+                            });
+                        }
+                    });
+            });
+
+        } else {
+            throw shambase::throw_with_loc<std::invalid_argument>(shambase::format(
+                "offset : ({},{},{}) is invalid", offset[0], offset[1], offset[2]));
+        }
+    } else {
+        shambase::throw_unimplemented();
+    }
 }
 
 template<class Tvec, class TgridVec, class T>
@@ -90,6 +154,24 @@ shamrock::ComputeField<T> Module<Tvec, TgridVec, T>::load_value(
         sycl::buffer<T> &buf_dest = tmp.get_buf_check(p.id_patch);
 
         load_patch_internal_block(offset, pdat.get_obj_cnt(), nvar, buf_src, buf_dest);
+
+    });
+
+    scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
+        MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);
+
+        sycl::buffer<TgridVec> &buf_cell_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);
+        sycl::buffer<TgridVec> &buf_cell_max = mpdat.pdat.get_field_buf_ref<TgridVec>(1);
+
+        sycl::buffer<T> &buf_src  = mpdat.pdat.get_field_buf_ref<T>(ifield);
+        sycl::buffer<T> &buf_dest = tmp.get_buf_check(p.id_patch);
+
+        shammodels::zeus::NeighFaceList<Tvec> & face_lists = storage.face_lists.get().get(p.id_patch);
+
+        load_patch_neigh_same_level(
+            offset, buf_cell_min, buf_cell_max, face_lists, 
+            pdat.get_obj_cnt(), nvar, 
+            buf_src, buf_dest);
     });
 
     return tmp;
