@@ -16,7 +16,7 @@ template<class Tvec, class TgridVec>
 using Module = shammodels::zeus::modules::SourceStep<Tvec, TgridVec>;
 
 
-
+/*
 template<class Tvec, class TgridVec>
 void Module<Tvec, TgridVec>::load_grid_val_xm(){
 
@@ -138,6 +138,7 @@ void Module<Tvec, TgridVec>::load_grid_val_xm(){
     
 
 }
+*/
 
 
 
@@ -159,7 +160,7 @@ void Module<Tvec, TgridVec>::compute_forces() {
 
 
 
-    load_grid_val_xm();
+    //load_grid_val_xm();
 
 
 

@@ -1,0 +1,98 @@
+// -------------------------------------------------------//
+//
+// SHAMROCK code for hydrodynamics
+// Copyright(C) 2021-2023 Timothée David--Cléris <timothee.david--cleris@ens-lyon.fr>
+// Licensed under CeCILL 2.1 License, see LICENSE for more information
+//
+// -------------------------------------------------------//
+
+#include "ValueLoader.hpp"
+
+#include "shammodels/amr/zeus/modules/FaceFlagger.hpp"
+#include "shamrock/scheduler/SchedulerUtility.hpp"
+
+template<class Tvec, class TgridVec, class T>
+using Module = shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>;
+
+template<class Tvec, class TgridVec, class T>
+void Module<Tvec, TgridVec, T>::load_patch_internal_block(
+    std::array<Tgridscal, dim> offset,
+    u32 nobj,
+    u32 nvar,
+    sycl::buffer<T> &buf_src,
+    sycl::buffer<T> &buf_dest) {
+
+    using Block = typename Config::AMRBlock;
+
+    if constexpr (dim == 3) {
+        if (offset[0] == -1 && offset[1] == 0 && offset[2] == 0) {
+
+            shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
+                sycl::accessor val_out{buf_dest, cgh, sycl::write_only, sycl::no_init};
+                sycl::accessor src{buf_src, cgh, sycl::read_only};
+
+                shambase::parralel_for(
+                    cgh, nobj * Block::block_size, "compute xm val (1)", [=](u64 id_a) {
+                        const u32 base_idx = id_a;
+                        const u32 lid      = id_a % Block::block_size;
+
+                        static_assert(dim == 3, "implemented only in dim 3");
+                        std::array<u32, 3> lid_coord = Block::get_coord(lid);
+
+                        if (lid_coord[0] > 0) {
+                            lid_coord[0] -= 1;
+                            val_out[base_idx] = src[base_idx - lid + Block::get_index(lid_coord)];
+                        }
+                    });
+            });
+
+        } else {
+            throw shambase::throw_with_loc<std::invalid_argument>(shambase::format(
+                "offset : ({},{},{}) is invalid", offset[0], offset[1], offset[2]));
+        }
+    } else {
+        shambase::throw_unimplemented();
+    }
+
+}
+
+template<class Tvec, class TgridVec, class T>
+void Module<Tvec, TgridVec, T>::load_patch_neigh_same_level(std::array<Tgridscal, dim> offset){
+    
+}
+
+template<class Tvec, class TgridVec, class T>
+shamrock::ComputeField<T> Module<Tvec, TgridVec, T>::load_value(
+    std::string field_name, std::array<Tgridscal, dim> offset, std::string result_name) {
+
+    StackEntry stack_loc{};
+
+    using namespace shamrock::patch;
+    using namespace shamrock;
+    using namespace shammath;
+    using MergedPDat = shamrock::MergedPatchData;
+    using Flagger    = FaceFlagger<Tvec, TgridVec>;
+    using Block      = typename Config::AMRBlock;
+
+    shamrock::SchedulerUtility utility(scheduler());
+    ComputeField<T> tmp = utility.make_compute_field<T>("load_xm", Block::block_size, [&](u64 id) {
+        return storage.merged_patchdata_ghost.get().get(id).total_elements;
+    });
+
+    shamrock::patch::PatchDataLayout &ghost_layout = storage.ghost_layout.get();
+    u32 ifield                                     = ghost_layout.get_field_idx<T>(field_name);
+    u32 nvar                                       = ghost_layout.get_field<T>(ifield).nvar;
+
+    scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
+        MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);
+
+        sycl::buffer<T> &buf_src  = mpdat.pdat.get_field_buf_ref<T>(ifield);
+        sycl::buffer<T> &buf_dest = tmp.get_buf_check(p.id_patch);
+
+        load_patch_internal_block(offset, pdat.get_obj_cnt(), nvar, buf_src, buf_dest);
+    });
+
+    return tmp;
+}
+
+template class shammodels::zeus::modules::ValueLoader<f64_3, i64_3, f64>;
