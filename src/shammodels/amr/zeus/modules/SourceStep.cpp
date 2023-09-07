@@ -39,6 +39,8 @@ void Module<Tvec, TgridVec>::compute_forces() {
 
     ValueLoader<Tvec, TgridVec, Tscal> val_load (context, solver_config, storage);
     val_load.load_value("rho", {-1,0,0}, "rho_xm");
+    val_load.load_value("rho", {0,-1,0}, "rho_ym");
+    val_load.load_value("rho", {0,0,-1}, "rho_zm");
 
 
 
