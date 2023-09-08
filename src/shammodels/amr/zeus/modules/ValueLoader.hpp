@@ -40,12 +40,12 @@ namespace shammodels::zeus::modules {
 
         /**
          * @brief load value in its own block
-         * 
-         * @param offset 
-         * @param nobj 
-         * @param nvar 
-         * @param src 
-         * @param dest 
+         *
+         * @param offset
+         * @param nobj
+         * @param nvar
+         * @param src
+         * @param dest
          */
         void load_patch_internal_block(
             std::array<Tgridscal, dim> offset,
@@ -56,88 +56,104 @@ namespace shammodels::zeus::modules {
 
         /**
          * @brief load value of neighbour blocks having same level
-         * 
-         * @param offset 
-         * @param buf_cell_min 
-         * @param buf_cell_max 
-         * @param face_lists 
-         * @param nobj 
-         * @param nvar 
-         * @param src 
-         * @param dest 
+         *
+         * @param offset
+         * @param buf_cell_min
+         * @param buf_cell_max
+         * @param face_lists
+         * @param nobj
+         * @param nvar
+         * @param src
+         * @param dest
          */
         void load_patch_neigh_same_level(
             std::array<Tgridscal, dim> offset,
             sycl::buffer<TgridVec> &buf_cell_min,
             sycl::buffer<TgridVec> &buf_cell_max,
-            shammodels::zeus::NeighFaceList<Tvec> & face_lists,
+            shammodels::zeus::NeighFaceList<Tvec> &face_lists,
             u32 nobj,
             u32 nvar,
             sycl::buffer<T> &src,
-            sycl::buffer<T> &dest
-        );
+            sycl::buffer<T> &dest);
 
         /**
          * @brief load value of neighbour block with level = +1
-         * 
-         * @param offset 
-         * @param buf_cell_min 
-         * @param buf_cell_max 
-         * @param face_lists 
-         * @param nobj 
-         * @param nvar 
-         * @param src 
-         * @param dest 
+         *
+         * @param offset
+         * @param buf_cell_min
+         * @param buf_cell_max
+         * @param face_lists
+         * @param nobj
+         * @param nvar
+         * @param src
+         * @param dest
          */
         void load_patch_neigh_level_up(
             std::array<Tgridscal, dim> offset,
             sycl::buffer<TgridVec> &buf_cell_min,
             sycl::buffer<TgridVec> &buf_cell_max,
-            shammodels::zeus::NeighFaceList<Tvec> & face_lists,
+            shammodels::zeus::NeighFaceList<Tvec> &face_lists,
             u32 nobj,
             u32 nvar,
             sycl::buffer<T> &src,
-            sycl::buffer<T> &dest
-        );
+            sycl::buffer<T> &dest);
 
         /**
          * @brief load value of neighbour block with level = -1
-         * 
-         * @param offset 
-         * @param buf_cell_min 
-         * @param buf_cell_max 
-         * @param face_lists 
-         * @param nobj 
-         * @param nvar 
-         * @param src 
-         * @param dest 
+         *
+         * @param offset
+         * @param buf_cell_min
+         * @param buf_cell_max
+         * @param face_lists
+         * @param nobj
+         * @param nvar
+         * @param src
+         * @param dest
          */
         void load_patch_neigh_level_down(
             std::array<Tgridscal, dim> offset,
             sycl::buffer<TgridVec> &buf_cell_min,
             sycl::buffer<TgridVec> &buf_cell_max,
-            shammodels::zeus::NeighFaceList<Tvec> & face_lists,
+            shammodels::zeus::NeighFaceList<Tvec> &face_lists,
             u32 nobj,
             u32 nvar,
             sycl::buffer<T> &src,
-            sycl::buffer<T> &dest
-        );
-
-
+            sycl::buffer<T> &dest);
 
         void load_patch_internal_block_xm(
+            u32 nobj, u32 nvar, sycl::buffer<T> &src, sycl::buffer<T> &dest);
+
+        void load_patch_internal_block_ym(
+            u32 nobj, u32 nvar, sycl::buffer<T> &src, sycl::buffer<T> &dest);
+
+        void load_patch_internal_block_zm(
+            u32 nobj, u32 nvar, sycl::buffer<T> &src, sycl::buffer<T> &dest);
+
+        void load_patch_neigh_same_level_xm(
+            std::array<Tgridscal, dim> offset,
+            sycl::buffer<TgridVec> &buf_cell_min,
+            sycl::buffer<TgridVec> &buf_cell_max,
+            shammodels::zeus::NeighFaceList<Tvec> &face_lists,
             u32 nobj,
             u32 nvar,
             sycl::buffer<T> &src,
             sycl::buffer<T> &dest);
 
-            void load_patch_internal_block_ym(
+        void load_patch_neigh_same_level_ym(
+            std::array<Tgridscal, dim> offset,
+            sycl::buffer<TgridVec> &buf_cell_min,
+            sycl::buffer<TgridVec> &buf_cell_max,
+            shammodels::zeus::NeighFaceList<Tvec> &face_lists,
             u32 nobj,
             u32 nvar,
             sycl::buffer<T> &src,
             sycl::buffer<T> &dest);
 
-            void load_patch_internal_block_zm(
+        void load_patch_neigh_same_level_zm(
+            std::array<Tgridscal, dim> offset,
+            sycl::buffer<TgridVec> &buf_cell_min,
+            sycl::buffer<TgridVec> &buf_cell_max,
+            shammodels::zeus::NeighFaceList<Tvec> &face_lists,
             u32 nobj,
             u32 nvar,
             sycl::buffer<T> &src,
