@@ -38,11 +38,13 @@ void Module<Tvec, TgridVec>::compute_forces() {
 
 
     ValueLoader<Tvec, TgridVec, Tscal> val_load (context, solver_config, storage);
-    val_load.load_value("rho", {-1,0,0}, "rho_xm");
-    val_load.load_value("rho", {0,-1,0}, "rho_ym");
-    val_load.load_value("rho", {0,0,-1}, "rho_zm");
+    ComputeField<Tscal> rho_xm = val_load.load_value_with_gz("rho", {-1,0,0}, "rho_xm");
+    ComputeField<Tscal> rho_ym = val_load.load_value_with_gz("rho", {0,-1,0}, "rho_ym");
+    ComputeField<Tscal> rho_zm = val_load.load_value_with_gz("rho", {0,0,-1}, "rho_zm");
 
-
+    ComputeField<Tscal> p_xm = val_load.load_value_with_gz(storage.pressure.get(), {-1,0,0}, "p_xm");
+    ComputeField<Tscal> p_ym = val_load.load_value_with_gz(storage.pressure.get(), {0,-1,0}, "p_ym");
+    ComputeField<Tscal> p_zm = val_load.load_value_with_gz(storage.pressure.get(), {0,0,-1}, "p_zm");
 
     shamrock::SchedulerUtility utility(scheduler());
     storage.forces.set(utility.make_compute_field<Tvec>("forces", Block::block_size, [&](u64 id) {
@@ -58,139 +60,65 @@ void Module<Tvec, TgridVec>::compute_forces() {
         sycl::buffer<TgridVec> &buf_cell_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);
         sycl::buffer<TgridVec> &buf_cell_max = mpdat.pdat.get_field_buf_ref<TgridVec>(1);
 
-        shammodels::zeus::NeighFaceList<Tvec> & face_lists = storage.face_lists.get().get(p.id_patch);
-        
-        OrientedNeighFaceList<Tvec> & face_xm = face_lists.xm();
-        OrientedNeighFaceList<Tvec> & face_ym = face_lists.ym();
-        OrientedNeighFaceList<Tvec> & face_zm = face_lists.zm();
-
         Tscal coord_conv_fact = solver_config.grid_coord_to_pos_fact;
 
         sycl::buffer<Tscal> & buf_p = storage.pressure.get().get_buf_check(p.id_patch);
         sycl::buffer<Tscal> &buf_rho   = mpdat.pdat.get_field_buf_ref<Tscal>(irho_interf);
+
+        sycl::buffer<Tscal> & buf_rho_xm = rho_xm.get_buf_check(p.id_patch);
+        sycl::buffer<Tscal> & buf_rho_ym = rho_ym.get_buf_check(p.id_patch);
+        sycl::buffer<Tscal> & buf_rho_zm = rho_zm.get_buf_check(p.id_patch);
+        sycl::buffer<Tscal> & buf_p_xm = p_xm.get_buf_check(p.id_patch);
+        sycl::buffer<Tscal> & buf_p_ym = p_ym.get_buf_check(p.id_patch);
+        sycl::buffer<Tscal> & buf_p_zm = p_zm.get_buf_check(p.id_patch);
+
         sycl::buffer<Tvec> &forces_buf = storage.forces.get().get_buf_check(p.id_patch);
 
         shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-            
-            tree::ObjectCacheIterator faces_xm(face_xm.neigh_info, cgh);
-            tree::ObjectCacheIterator faces_ym(face_ym.neigh_info, cgh);
-            tree::ObjectCacheIterator faces_zm(face_zm.neigh_info, cgh);
 
             sycl::accessor cell_min{buf_cell_min, cgh, sycl::read_only};
             sycl::accessor cell_max{buf_cell_max, cgh, sycl::read_only};
 
             sycl::accessor grad_p{forces_buf, cgh, sycl::write_only, sycl::no_init};
             sycl::accessor rho{buf_rho, cgh, sycl::read_only};
+            sycl::accessor rho_xm{buf_rho_xm, cgh, sycl::read_only};
+            sycl::accessor rho_ym{buf_rho_ym, cgh, sycl::read_only};
+            sycl::accessor rho_zm{buf_rho_zm, cgh, sycl::read_only};
             sycl::accessor p{buf_p, cgh, sycl::read_only};
+            sycl::accessor p_xm{buf_p_xm, cgh, sycl::read_only};
+            sycl::accessor p_ym{buf_p_ym, cgh, sycl::read_only};
+            sycl::accessor p_zm{buf_p_zm, cgh, sycl::read_only};
 
             shambase::parralel_for(cgh, pdat.get_obj_cnt(), "compute grad p", [=](u64 id_a) {
-                Tvec cell2_a = (cell_min[id_a] + cell_max[id_a]).template convert<Tscal>() *
-                               coord_conv_fact * 0.5f;
+
+                Tvec d_cell = (cell_max[id_a] - cell_min[id_a]).template convert<Tscal>() *
+                               coord_conv_fact;
 
                 Tscal rho_i_j_k = rho[id_a];
-                Tscal p_i_j_k = p[id_a];
+                Tscal rho_im1_j_k = rho_xm[id_a];
+                Tscal rho_i_jm1_k = rho_ym[id_a];
+                Tscal rho_i_j_km1 = rho_zm[id_a];
 
-                Tscal rho_im1_j_k ;
-                Tscal p_im1_j_k ;
+                Tscal p_i_j_k = p[id_a]; 
+                Tscal p_im1_j_k = p_xm[id_a];
+                Tscal p_i_jm1_k = p_ym[id_a];
+                Tscal p_i_j_km1 = p_zm[id_a];
 
-                Tvec sum_grad_p = {};
-
-
-
-
-
-
-                auto tmp = cell_max[id_a] - cell_min[id_a];
-                i32 Va = tmp.x()*tmp.y()*tmp.z(); 
-
-                auto get_xm_val = [=](auto acc, u32 block_id, std::array<u32,3> cell_id){
-
-                    // within block
-                    if(cell_id[0] > 0){
-                        return acc[block_id*Block::block_size +Block::get_index({cell_id[0]-1,cell_id[1],cell_id[2]})];
-                    }
-
-                    faces_xm.for_each_object(id_a, [&](u32 id_b) {
-
-                        auto tmp = cell_max[id_b] - cell_min[id_b];
-                        i32 nV = tmp.x()*tmp.y()*tmp.z();
-
-                        if(nV == Va){ //same level
-                            return acc[id_b*Block::block_size +Block::get_index({Block::Nside-1,cell_id[1],cell_id[2]})];
-                        }else if(nV == Va*8){ // l-1 case (interpolate)
-
-                            bool test1 = cell_max[id_a].z() == cell_max[id_b].z();
-                            bool test2 = cell_max[id_a].y() == cell_max[id_b].y();
-
-                            if((!test1) && (!test2)){
-                                // low z + low y
-
-                            }else if(test1 && (!test2)){
-                                // high z + low y
-
-                            }else if((!test1) && test2){
-                                // low z + high y
-
-                            }else if(test1 && test2){
-                                // high z + high y
-
-                            }
-
-                        }else if(nV == Va/8){ // l+1 case (average)
-
-                        }else{
-                            Tvec{}/0;
-                        }
-
-                    });
-
-
-
+                Tvec dp = {
+                    p_i_j_k - p_im1_j_k,
+                    p_i_j_k - p_i_jm1_k,
+                    p_i_j_k - p_i_j_km1
                 };
 
+                Tvec avg_rho = Tvec{
+                    rho_i_j_k - rho_im1_j_k,
+                    rho_i_j_k - rho_i_jm1_k,
+                    rho_i_j_k - rho_i_j_km1
+                }*Tscal{0.5};
 
-
-
-
-
-
-                // looks like it's on the double preicision roofline there is
-                // nothing to optimize here turn around
-                //or it was the case before i touched to it '^^
-                faces_xm.for_each_object(id_a, [&](u32 id_b) {
-                    Tvec cell2_b = (cell_min[id_b] + cell_max[id_b]).template convert<Tscal>() *
-                                   coord_conv_fact * 0.5f;
-                    Tscal rho_im1_j_k = rho[id_b];
-                    Tscal p_im1_j_k = p[id_b];
-
-                    Tscal dxmubi = sycl::dot(cell2_b - cell2_a, Tvec{-1, 0, 0});
-                    Tscal div = dxmubi*(rho_i_j_k - rho_im1_j_k)/2;
-                    sum_grad_p.x() -= (p_i_j_k - p_im1_j_k)/div;
-                });
-
-                faces_ym.for_each_object(id_a, [&](u32 id_b) {
-                    Tvec cell2_b = (cell_min[id_b] + cell_max[id_b]).template convert<Tscal>() *
-                                   coord_conv_fact * 0.5f;
-                    Tscal rho_im1_j_k = rho[id_b];
-                    Tscal p_im1_j_k = p[id_b];
-
-                    Tscal dxmubi = sycl::dot(cell2_b - cell2_a, Tvec{0, -1, 0});
-                    Tscal div = dxmubi*(rho_i_j_k - rho_im1_j_k)/2;
-                    sum_grad_p.y() -= (p_i_j_k - p_im1_j_k)/div;
-                });
-
-                faces_zm.for_each_object(id_a, [&](u32 id_b) {
-                    Tvec cell2_b = (cell_min[id_b] + cell_max[id_b]).template convert<Tscal>() *
-                                   coord_conv_fact * 0.5f;
-                    Tscal rho_im1_j_k = rho[id_b];
-                    Tscal p_im1_j_k = p[id_b];
-
-                    Tscal dxmubi = sycl::dot(cell2_b - cell2_a, Tvec{0, 0, -1});
-                    Tscal div = dxmubi*(rho_i_j_k - rho_im1_j_k)/2;
-                    sum_grad_p.z() -= (p_i_j_k - p_im1_j_k)/div;
-                });
-
-                grad_p[id_a] = sum_grad_p;
+                Tvec grad_p_source_term = dp/(avg_rho*d_cell);
+                
+                grad_p[id_a] = grad_p_source_term;
             });
         });
     });

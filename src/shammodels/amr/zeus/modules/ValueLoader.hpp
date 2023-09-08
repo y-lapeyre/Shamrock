@@ -32,8 +32,20 @@ namespace shammodels::zeus::modules {
         ValueLoader(ShamrockCtx &context, Config &solver_config, Storage &storage)
             : context(context), solver_config(solver_config), storage(storage) {}
 
-        shamrock::ComputeField<T> load_value(
+        /**
+         * @brief
+         * @todo specify multiple function if ghost or no ghost, if source is compute field or
+         * something else
+         * @param field_name
+         * @param offset
+         * @param result_name
+         * @return shamrock::ComputeField<T>
+         */
+        shamrock::ComputeField<T> load_value_with_gz(
             std::string field_name, std::array<Tgridscal, dim> offset, std::string result_name);
+
+        shamrock::ComputeField<T> load_value_with_gz(
+            shamrock::ComputeField<T> & compute_field, std::array<Tgridscal, dim> offset, std::string result_name);
 
         private:
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }

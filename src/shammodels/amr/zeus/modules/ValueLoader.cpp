@@ -432,7 +432,7 @@ void Module<Tvec, TgridVec, T>::load_patch_neigh_level_down(
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 template<class Tvec, class TgridVec, class T>
-shamrock::ComputeField<T> Module<Tvec, TgridVec, T>::load_value(
+shamrock::ComputeField<T> Module<Tvec, TgridVec, T>::load_value_with_gz(
     std::string field_name, std::array<Tgridscal, dim> offset, std::string result_name) {
 
     StackEntry stack_loc{};
@@ -445,9 +445,10 @@ shamrock::ComputeField<T> Module<Tvec, TgridVec, T>::load_value(
     using Block      = typename Config::AMRBlock;
 
     shamrock::SchedulerUtility utility(scheduler());
-    ComputeField<T> tmp = utility.make_compute_field<T>("load_xm", Block::block_size, [&](u64 id) {
-        return storage.merged_patchdata_ghost.get().get(id).total_elements;
-    });
+    ComputeField<T> tmp =
+        utility.make_compute_field<T>(result_name, Block::block_size, [&](u64 id) {
+            return storage.merged_patchdata_ghost.get().get(id).total_elements;
+        });
 
     shamrock::patch::PatchDataLayout &ghost_layout = storage.ghost_layout.get();
     u32 ifield                                     = ghost_layout.get_field_idx<T>(field_name);
@@ -527,6 +528,113 @@ shamrock::ComputeField<T> Module<Tvec, TgridVec, T>::load_value(
             face_lists,
             pdat.get_obj_cnt(),
             nvar,
+            buf_src,
+            buf_dest);
+    });
+
+    return tmp;
+}
+
+template<class Tvec, class TgridVec, class T>
+shamrock::ComputeField<T> Module<Tvec, TgridVec, T>::load_value_with_gz(
+    shamrock::ComputeField<T> &compute_field,
+    std::array<Tgridscal, dim> offset,
+    std::string result_name) {
+
+    StackEntry stack_loc{};
+
+    using namespace shamrock::patch;
+    using namespace shamrock;
+    using namespace shammath;
+    using MergedPDat = shamrock::MergedPatchData;
+    using Flagger    = FaceFlagger<Tvec, TgridVec>;
+    using Block      = typename Config::AMRBlock;
+
+    shamrock::SchedulerUtility utility(scheduler());
+    ComputeField<T> tmp =
+        utility.make_compute_field<T>(result_name, Block::block_size, [&](u64 id) {
+            return storage.merged_patchdata_ghost.get().get(id).total_elements;
+        });
+
+    scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
+        MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);
+
+        sycl::buffer<T> &buf_src  = compute_field.get_buf_check(p.id_patch);
+        sycl::buffer<T> &buf_dest = tmp.get_buf_check(p.id_patch);
+
+        load_patch_internal_block(
+            offset,
+            pdat.get_obj_cnt(),
+            compute_field.get_field(p.id_patch).get_nvar(),
+            buf_src,
+            buf_dest);
+    });
+
+    scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
+        MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);
+
+        sycl::buffer<TgridVec> &buf_cell_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);
+        sycl::buffer<TgridVec> &buf_cell_max = mpdat.pdat.get_field_buf_ref<TgridVec>(1);
+
+        sycl::buffer<T> &buf_src  = compute_field.get_buf_check(p.id_patch);
+        sycl::buffer<T> &buf_dest = tmp.get_buf_check(p.id_patch);
+
+        shammodels::zeus::NeighFaceList<Tvec> &face_lists =
+            storage.face_lists.get().get(p.id_patch);
+
+        load_patch_neigh_same_level(
+            offset,
+            buf_cell_min,
+            buf_cell_max,
+            face_lists,
+            pdat.get_obj_cnt(),
+            compute_field.get_field(p.id_patch).get_nvar(),
+            buf_src,
+            buf_dest);
+    });
+
+    scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
+        MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);
+
+        sycl::buffer<TgridVec> &buf_cell_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);
+        sycl::buffer<TgridVec> &buf_cell_max = mpdat.pdat.get_field_buf_ref<TgridVec>(1);
+
+        sycl::buffer<T> &buf_src  = compute_field.get_buf_check(p.id_patch);
+        sycl::buffer<T> &buf_dest = tmp.get_buf_check(p.id_patch);
+
+        shammodels::zeus::NeighFaceList<Tvec> &face_lists =
+            storage.face_lists.get().get(p.id_patch);
+
+        load_patch_neigh_level_up(
+            offset,
+            buf_cell_min,
+            buf_cell_max,
+            face_lists,
+            pdat.get_obj_cnt(),
+            compute_field.get_field(p.id_patch).get_nvar(),
+            buf_src,
+            buf_dest);
+    });
+
+    scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
+        MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);
+
+        sycl::buffer<TgridVec> &buf_cell_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);
+        sycl::buffer<TgridVec> &buf_cell_max = mpdat.pdat.get_field_buf_ref<TgridVec>(1);
+
+        sycl::buffer<T> &buf_src  = compute_field.get_buf_check(p.id_patch);
+        sycl::buffer<T> &buf_dest = tmp.get_buf_check(p.id_patch);
+
+        shammodels::zeus::NeighFaceList<Tvec> &face_lists =
+            storage.face_lists.get().get(p.id_patch);
+
+        load_patch_neigh_level_down(
+            offset,
+            buf_cell_min,
+            buf_cell_max,
+            face_lists,
+            pdat.get_obj_cnt(),
+            compute_field.get_field(p.id_patch).get_nvar(),
             buf_src,
             buf_dest);
     });
