@@ -71,6 +71,51 @@ auto Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tscal dt_input) -> Tsc
     
     
 
+
+using namespace shamrock::patch;
+    using namespace shamrock;
+
+    PatchDataLayout &ghost_layout = storage.ghost_layout.get();
+    u32 irho_interf                                = ghost_layout.get_field_idx<Tscal>("rho");
+    u32 ieint_interf                                = ghost_layout.get_field_idx<Tscal>("eint");
+    u32 ivel_interf                                = ghost_layout.get_field_idx<Tvec>("vel");
+
+    scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
+
+        using MergedPDat = shamrock::MergedPatchData;
+        MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);
+
+        sycl::buffer<Tscal> &rho_merged = mpdat.pdat.get_field_buf_ref<Tscal>(irho_interf);
+        sycl::buffer<Tscal> &eint_merged = mpdat.pdat.get_field_buf_ref<Tscal>(ieint_interf);
+        sycl::buffer<Tvec> &vel_merged = mpdat.pdat.get_field_buf_ref<Tvec>(ivel_interf);
+
+        PatchData &patch_dest = scheduler().patch_data.get_pdat(p.id_patch);
+        sycl::buffer<Tscal> &rho_dest = patch_dest.get_field_buf_ref<Tscal>(irho_interf);
+        sycl::buffer<Tscal> &eint_dest = patch_dest.get_field_buf_ref<Tscal>(ieint_interf);
+        sycl::buffer<Tvec> &vel_dest = patch_dest.get_field_buf_ref<Tvec>(ivel_interf);
+
+        shamsys::instance::get_compute_queue().submit([&](sycl::handler & cgh){
+
+            sycl::accessor acc_rho_src{rho_merged, cgh, sycl::read_only};
+            sycl::accessor acc_eint_src{eint_merged, cgh, sycl::read_only};
+            sycl::accessor acc_vel_src{vel_merged, cgh, sycl::read_only};
+
+            sycl::accessor acc_rho_dest{rho_dest, cgh, sycl::write_only};
+            sycl::accessor acc_eint_dest{eint_dest, cgh, sycl::write_only};
+            sycl::accessor acc_vel_dest{vel_dest, cgh, sycl::write_only};
+
+            shambase::parralel_for(cgh, mpdat.original_elements, "copy_back", [=](u32 id){
+                acc_rho_dest[id] = acc_rho_src[id];
+                acc_eint_dest[id] = acc_eint_src[id];
+                acc_vel_dest[id] = acc_vel_src[id];
+            });
+        });
+        
+    });
+
+
+
+
     tstep.end();
 
     u64 rank_count = scheduler().get_rank_count()*AMRBlock::block_size;
