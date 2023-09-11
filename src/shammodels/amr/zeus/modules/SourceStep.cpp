@@ -28,15 +28,14 @@ void Module<Tvec, TgridVec>::compute_forces() {
 
     using Block = typename Config::AMRBlock;
 
-    ValueLoader<Tvec, TgridVec, Tscal> val_load(context, solver_config, storage);
-    ComputeField<Tscal> rho_xm = val_load.load_value_with_gz("rho", {-1, 0, 0}, "rho_xm");
-    ComputeField<Tscal> rho_ym = val_load.load_value_with_gz("rho", {0, -1, 0}, "rho_ym");
-    ComputeField<Tscal> rho_zm = val_load.load_value_with_gz("rho", {0, 0, -1}, "rho_zm");
+    ComputeField<Tscal> &rho_xm = storage.rho_n_xm.get();
+    ComputeField<Tscal> &rho_ym = storage.rho_n_ym.get();
+    ComputeField<Tscal> &rho_zm = storage.rho_n_zm.get();
 
     ComputeField<Tscal> &pressure_field = storage.pressure.get();
-    ComputeField<Tscal> p_xm = val_load.load_value_with_gz(pressure_field, {-1, 0, 0}, "p_xm");
-    ComputeField<Tscal> p_ym = val_load.load_value_with_gz(pressure_field, {0, -1, 0}, "p_ym");
-    ComputeField<Tscal> p_zm = val_load.load_value_with_gz(pressure_field, {0, 0, -1}, "p_zm");
+    ComputeField<Tscal> &p_xm = storage.pres_n_xm.get();
+    ComputeField<Tscal> &p_ym = storage.pres_n_ym.get();
+    ComputeField<Tscal> &p_zm = storage.pres_n_zm.get();
 
     shamrock::SchedulerUtility utility(scheduler());
     storage.forces.set(utility.make_compute_field<Tvec>("forces", Block::block_size, [&](u64 id) {
@@ -202,6 +201,88 @@ void Module<Tvec, TgridVec>::apply_force(Tscal dt) {
 }
 
 template<class Tvec, class TgridVec>
-void Module<Tvec, TgridVec>::compute_AV() {}
+void Module<Tvec, TgridVec>::compute_AV() {
+
+    using namespace shamrock::patch;
+    using namespace shamrock;
+    using namespace shammath;
+    using MergedPDat = shamrock::MergedPatchData;
+
+    using Block = typename Config::AMRBlock;
+
+    ComputeField<Tvec> & vel_n = storage.vel_n.get();
+    ComputeField<Tvec> & vel_n_xp = storage.vel_n_xp.get();
+    ComputeField<Tvec> & vel_n_yp = storage.vel_n_yp.get();
+    ComputeField<Tvec> & vel_n_zp = storage.vel_n_zp.get();
+
+    shamrock::SchedulerUtility utility(scheduler());
+    storage.q_AV.set(utility.make_compute_field<Tvec>("q_AV", Block::block_size, [&](u64 id) {
+        return storage.merged_patchdata_ghost.get().get(id).total_elements;
+    }));
+
+    shamrock::patch::PatchDataLayout &ghost_layout = storage.ghost_layout.get();
+    u32 irho_interf                                = ghost_layout.get_field_idx<Tscal>("rho");
+    u32 ivel_interf                                = ghost_layout.get_field_idx<Tvec>("vel");
+
+    scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
+        MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);
+
+        sycl::buffer<TgridVec> &buf_cell_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);
+        sycl::buffer<TgridVec> &buf_cell_max = mpdat.pdat.get_field_buf_ref<TgridVec>(1);
+
+        Tscal coord_conv_fact = solver_config.grid_coord_to_pos_fact;
+
+        sycl::buffer<Tscal> &buf_rho = mpdat.pdat.get_field_buf_ref<Tscal>(irho_interf);
+
+        sycl::buffer<Tvec> &buf_vel = vel_n.get_buf_check(p.id_patch);
+        sycl::buffer<Tvec> &buf_vel_xp = vel_n_xp.get_buf_check(p.id_patch);
+        sycl::buffer<Tvec> &buf_vel_yp = vel_n_yp.get_buf_check(p.id_patch);
+        sycl::buffer<Tvec> &buf_vel_zp = vel_n_zp.get_buf_check(p.id_patch);
+
+        sycl::buffer<Tvec> &q_AV_buf = storage.q_AV.get().get_buf_check(p.id_patch);
+
+        shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
+            sycl::accessor cell_min{buf_cell_min, cgh, sycl::read_only};
+            sycl::accessor cell_max{buf_cell_max, cgh, sycl::read_only};
+
+            sycl::accessor rho{buf_rho, cgh, sycl::read_only};            
+            sycl::accessor vel{buf_vel, cgh, sycl::read_only};
+            sycl::accessor vel_xp{buf_vel_xp, cgh, sycl::read_only};
+            sycl::accessor vel_yp{buf_vel_yp, cgh, sycl::read_only};
+            sycl::accessor vel_zp{buf_vel_zp, cgh, sycl::read_only};
+
+            sycl::accessor q_AV{q_AV_buf, cgh, sycl::write_only, sycl::no_init};
+
+            shambase::parralel_for(cgh, pdat.get_obj_cnt() * Block::block_size, "compute grad p", [=](u64 id_a) {
+                u32 block_id = id_a / Block::block_size;
+                Tvec d_cell =
+                    (cell_max[block_id] - cell_min[block_id]).template convert<Tscal>() *
+                    coord_conv_fact;
+
+                // clang-format off
+                Tscal rho_i_j_k   = rho[id_a];
+
+                Tvec vel_i_j_k = vel[id_a];
+                Tvec vel_ip1_j_k = vel_xp[id_a];
+                Tvec vel_i_jp1_k = vel_yp[id_a];
+                Tvec vel_i_j_kp1 = vel_zp[id_a];
+
+                Tvec dv = {
+                    vel_ip1_j_k.x() - vel_i_j_k.x(),
+                    vel_i_jp1_k.y() - vel_i_j_k.y(),
+                    vel_i_j_kp1.z() - vel_i_j_k.z()
+                };
+
+                dv = (sycl::abs(dv) + dv)/2;
+
+                constexpr Tscal C2 = 3;
+
+                q_AV[id_a] = C2*rho_i_j_k*dv;
+                // clang-format on
+            });
+        });
+    });
+
+}
 
 template class shammodels::zeus::modules::SourceStep<f64_3, i64_3>;

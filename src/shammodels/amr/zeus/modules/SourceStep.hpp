@@ -45,8 +45,9 @@ namespace shammodels::zeus::modules {
          * (\cite Zeus2d_main equations 33,34)
          * 
          * \f{eqnarray*}{
-         *     q^x_{i,j} &=& C^{\rm AV} \rho_{i,j} (v^x_{i+1,j} - v^x_{i,j}) \\ 
-         *     q^y_{i,j} &=& C^{\rm AV} \rho_{i,j} (v^y_{i,j+1} - v^y_{i,j})
+         *     q^x_{i,j,k} &=& C^{\rm AV} \rho_{i,j} (v^x_{i+1,j,k} - v^x_{i,j,k}) \\ 
+         *     q^y_{i,j,k} &=& C^{\rm AV} \rho_{i,j} (v^y_{i,j+1,k} - v^y_{i,j,k}) \\ 
+         *     q^z_{i,j,k} &=& C^{\rm AV} \rho_{i,j} (v^z_{i,j,k+1} - v^z_{i,j,k})
          * \f}
          */
         void compute_AV();

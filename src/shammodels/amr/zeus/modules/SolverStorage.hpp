@@ -62,7 +62,33 @@ namespace shammodels::zeus {
 
         Component<shambase::DistributedData<NeighFaceList<Tvec>>> face_lists;
 
+
+
+
+
+        Component<shamrock::ComputeField<Tvec>> vel_n;
+        Component<shamrock::ComputeField<Tvec>> vel_n_xp;
+        Component<shamrock::ComputeField<Tvec>> vel_n_yp;
+        Component<shamrock::ComputeField<Tvec>> vel_n_zp;
+
+        Component<shamrock::ComputeField<Tscal>> rho_n_xm;
+        Component<shamrock::ComputeField<Tscal>> rho_n_ym;
+        Component<shamrock::ComputeField<Tscal>> rho_n_zm;
+
+        Component<shamrock::ComputeField<Tscal>> pres_n_xm;
+        Component<shamrock::ComputeField<Tscal>> pres_n_ym;
+        Component<shamrock::ComputeField<Tscal>> pres_n_zm;
+
+
+        Component<shamrock::ComputeField<Tvec>> q_AV_n_xm;
+        Component<shamrock::ComputeField<Tvec>> q_AV_n_ym;
+        Component<shamrock::ComputeField<Tvec>> q_AV_n_zm;
+
+
+
         Component<shamrock::ComputeField<Tvec>> forces;
+
+        Component<shamrock::ComputeField<Tvec>> q_AV;
 
         /**
          * @brief derivatives of the velocity

@@ -13,6 +13,8 @@
 #include "shammodels/amr/zeus/modules/FaceFlagger.hpp"
 #include "shammodels/amr/zeus/modules/GhostZones.hpp"
 #include "shammodels/amr/zeus/modules/SourceStep.hpp"
+#include "shammodels/amr/zeus/modules/ValueLoader.hpp"
+#include "shamrock/scheduler/SchedulerUtility.hpp"
 
 template<class Tvec, class TgridVec>
 using Solver = shammodels::zeus::Solver<Tvec, TgridVec>;
@@ -56,11 +58,49 @@ auto Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tscal dt_input) -> Tsc
     //modules::DiffOperator diff_op(context,solver_config,storage);
     //diff_op.compute_gradu();
 
+
+
+
+
+    //save velocity field
+    shamrock::patch::PatchDataLayout &ghost_layout = storage.ghost_layout.get();
+    u32 irho_interf                                = ghost_layout.get_field_idx<Tscal>("rho");
+    u32 ieint_interf                                = ghost_layout.get_field_idx<Tscal>("eint");
+    u32 ivel_interf                                = ghost_layout.get_field_idx<Tvec>("vel");
+
+    shamrock::SchedulerUtility utility(scheduler());
+    storage.vel_n.set(
+        utility.save_field_custom<Tvec>("vel_n", [&](u64 id_patch)-> PatchDataField<Tvec> & {
+            using MergedPDat = shamrock::MergedPatchData;
+            MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(id_patch);
+            return mpdat.pdat.get_field<Tvec>(ivel_interf);
+        })
+    );
+
+    //prepare velocity gradients
+    modules::ValueLoader<Tvec, TgridVec, Tvec> val_load_vec(context, solver_config, storage);
+    storage.vel_n_xp.set( val_load_vec.load_value_with_gz("vel", {1, 0, 0}, "vel_n_xp"));
+    storage.vel_n_yp.set( val_load_vec.load_value_with_gz("vel", {0, 1, 0}, "vel_n_yp"));
+    storage.vel_n_zp.set( val_load_vec.load_value_with_gz("vel", {0, 0, 1}, "vel_n_zp"));
+
+    modules::ValueLoader<Tvec, TgridVec, Tscal> val_load_scal(context, solver_config, storage);
+    storage.rho_n_xm.set( val_load_scal.load_value_with_gz("rho", {-1, 0, 0}, "rho_n_xm"));
+    storage.rho_n_ym.set( val_load_scal.load_value_with_gz("rho", {0, -1, 0}, "rho_n_ym"));
+    storage.rho_n_zm.set( val_load_scal.load_value_with_gz("rho", {0, 0, -1}, "rho_n_zm"));
+
+    shamrock::ComputeField<Tscal> &pressure_field = storage.pressure.get();
+    storage.pres_n_xm.set( val_load_scal.load_value_with_gz(pressure_field, {-1, 0, 0}, "pres_n_xm"));
+    storage.pres_n_ym.set( val_load_scal.load_value_with_gz(pressure_field, {0, -1, 0}, "pres_n_ym"));
+    storage.pres_n_zm.set( val_load_scal.load_value_with_gz(pressure_field, {0, 0, -1}, "pres_n_zm"));
+
     modules::SourceStep src_step(context,solver_config,storage);
     src_step.compute_forces();
     src_step.apply_force(dt_input);
 
-    
+    shamrock::ComputeField<Tvec> &q_AV = storage.q_AV.get();
+    storage.q_AV_n_xm.set( val_load_vec.load_value_with_gz(q_AV, {-1, 0, 0}, "q_AV_n_xm"));
+    storage.q_AV_n_ym.set( val_load_vec.load_value_with_gz(q_AV, {0, -1, 0}, "q_AV_n_ym"));
+    storage.q_AV_n_zm.set( val_load_vec.load_value_with_gz(q_AV, {0, 0, -1}, "q_AV_n_zm"));
     
 
 
@@ -69,10 +109,7 @@ using namespace shamrock::patch;
 
     using Block = typename Config::AMRBlock;
 
-    PatchDataLayout &ghost_layout = storage.ghost_layout.get();
-    u32 irho_interf                                = ghost_layout.get_field_idx<Tscal>("rho");
-    u32 ieint_interf                                = ghost_layout.get_field_idx<Tscal>("eint");
-    u32 ivel_interf                                = ghost_layout.get_field_idx<Tvec>("vel");
+    
 
     scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
 
