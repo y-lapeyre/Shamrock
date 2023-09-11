@@ -80,7 +80,7 @@ namespace shambase {
      * @param v 
      * @return constexpr T 
      */
-    template<class T, std::enable_if_t<std::is_integral_v<T> || has_bitlen_v<T, 32> || (!std::is_signed_v<T>), int> = 0>
+    template<class T, std::enable_if_t<std::is_integral_v<T> || (!std::is_signed_v<T>), int> = 0>
     inline constexpr T roundup_pow2 (T v) noexcept {
         
         if constexpr (has_bitlen_v<T, 32>){
