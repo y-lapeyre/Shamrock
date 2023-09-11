@@ -11,6 +11,7 @@
 #include "shambindings/pybindaliases.hpp"
 #include "shambindings/pytypealias.hpp"
 #include "shammodels/amr/zeus/Model.hpp"
+#include <pybind11/functional.h>
 namespace shammodels::zeus{
     template<class Tvec, class TgridVec>
     void add_instance(py::module &m, std::string name_config, std::string name_model) {
@@ -30,7 +31,9 @@ namespace shammodels::zeus{
             .def("init_scheduler", &T::init_scheduler)
             .def("make_base_grid", &T::make_base_grid)
             .def("dump_vtk", &T::dump_vtk)
-            .def("evolve_once", &T::evolve_once);
+            .def("evolve_once", &T::evolve_once)
+            .def("set_field_value_lambda_f64",&T::template set_field_value_lambda<f64>)
+            .def("set_field_value_lambda_f64_3",&T::template set_field_value_lambda<f64_3>);
     }
 }
 

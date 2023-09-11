@@ -23,7 +23,9 @@ void Module<Tvec, TgridVec>::compute_p(){
 
     shamrock::SchedulerUtility utility(scheduler());
 
-    storage.pressure.set(utility.make_compute_field<Tscal>("pressure", 1, [&](u64 id) {
+    using Block = typename Config::AMRBlock;
+
+    storage.pressure.set(utility.make_compute_field<Tscal>("pressure", Block::block_size, [&](u64 id) {
         return storage.merged_patchdata_ghost.get().get(id).total_elements;
     }));
 
@@ -42,7 +44,7 @@ void Module<Tvec, TgridVec>::compute_p(){
 
             Tscal gamma = solver_config.eos_gamma;
 
-            cgh.parallel_for(sycl::range<1>{mpdat.total_elements}, [=](sycl::item<1> item) {
+            cgh.parallel_for(sycl::range<1>{mpdat.total_elements*Block::block_size}, [=](sycl::item<1> item) {
                 P[item] = (gamma - 1) * rho[item] * eint[item];
             });
         });

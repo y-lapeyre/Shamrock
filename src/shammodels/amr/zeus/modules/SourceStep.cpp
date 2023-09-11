@@ -81,9 +81,11 @@ void Module<Tvec, TgridVec>::compute_forces() {
             sycl::accessor p_ym{buf_p_ym, cgh, sycl::read_only};
             sycl::accessor p_zm{buf_p_zm, cgh, sycl::read_only};
 
-            shambase::parralel_for(cgh, pdat.get_obj_cnt(), "compute grad p", [=](u64 id_a) {
+            shambase::parralel_for(cgh, pdat.get_obj_cnt() * Block::block_size, "compute grad p", [=](u64 id_a) {
+                u32 block_id = id_a / Block::block_size;
                 Tvec d_cell =
-                    (cell_max[id_a] - cell_min[id_a]).template convert<Tscal>() * coord_conv_fact;
+                    (cell_max[block_id] - cell_min[block_id]).template convert<Tscal>() *
+                    coord_conv_fact;
 
                 // clang-format off
                 Tscal rho_i_j_k   = rho[id_a];
@@ -104,9 +106,9 @@ void Module<Tvec, TgridVec>::compute_forces() {
 
                 Tvec avg_rho =
                     Tvec{
-                        rho_i_j_k - rho_im1_j_k, 
-                        rho_i_j_k - rho_i_jm1_k, 
-                        rho_i_j_k - rho_i_j_km1
+                        rho_i_j_k + rho_im1_j_k, 
+                        rho_i_j_k + rho_i_jm1_k, 
+                        rho_i_j_k + rho_i_j_km1
                         } * Tscal{0.5};
 
                 Tvec grad_p_source_term = dp / (avg_rho * d_cell);
@@ -145,15 +147,19 @@ void Module<Tvec, TgridVec>::compute_forces() {
                 Block::for_each_cell_in_block(delta_cell, [=](u32 lid, Tvec delta) {
                     auto get_ext_force = [](Tvec r) {
                         Tscal d = sycl::length(r);
-                        return r / (d * d * d);
+                        return r / (d * d * d + 1e-5);
                     };
 
                     forces[id_a * Block::block_size + lid] +=
                         get_ext_force(block_min + delta + delta_cell_h);
+
                 });
             });
         });
-
+        if(storage.forces.get().get_field(p.id_patch).has_nan()){
+            logger::err_ln("[Zeus]", "nan detected in forces");
+            throw shambase::throw_with_loc<std::runtime_error>("detected nan");
+        }
         logger::raw_ln(storage.forces.get().get_field(p.id_patch).compute_max());
     });
 }
@@ -170,12 +176,14 @@ void Module<Tvec, TgridVec>::apply_force(Tscal dt) {
 
     using Block = typename Config::AMRBlock;
 
-    PatchDataLayout &pdl = scheduler().pdl;
-    const u32 ivel       = pdl.get_field_idx<Tvec>("vel");
+    
+    shamrock::patch::PatchDataLayout &ghost_layout = storage.ghost_layout.get();
+    u32 ivel_interf                                = ghost_layout.get_field_idx<Tvec>("vel");
 
     scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
+        MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);
         sycl::buffer<Tvec> &forces_buf = storage.forces.get().get_buf_check(p.id_patch);
-        sycl::buffer<Tvec> &vel_buf    = storage.forces.get().get_buf_check(p.id_patch);
+        sycl::buffer<Tvec> &vel_buf    = mpdat.pdat.get_field_buf_ref<Tvec>(ivel_interf);
 
         shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
             sycl::accessor forces{forces_buf, cgh, sycl::read_only};

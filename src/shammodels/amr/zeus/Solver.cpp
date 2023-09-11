@@ -60,20 +60,14 @@ auto Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tscal dt_input) -> Tsc
     src_step.compute_forces();
     src_step.apply_force(dt_input);
 
-    storage.face_lists.reset();
-    storage.pressure.reset();
-    storage.trees.reset();
-    storage.merge_patch_bounds.reset();
-    storage.merged_patchdata_ghost.reset();
-    storage.ghost_layout.reset();
-    storage.ghost_zone_infos.reset();
-    storage.serial_patch_tree.reset();
     
     
 
 
 using namespace shamrock::patch;
     using namespace shamrock;
+
+    using Block = typename Config::AMRBlock;
 
     PatchDataLayout &ghost_layout = storage.ghost_layout.get();
     u32 irho_interf                                = ghost_layout.get_field_idx<Tscal>("rho");
@@ -104,7 +98,7 @@ using namespace shamrock::patch;
             sycl::accessor acc_eint_dest{eint_dest, cgh, sycl::write_only};
             sycl::accessor acc_vel_dest{vel_dest, cgh, sycl::write_only};
 
-            shambase::parralel_for(cgh, mpdat.original_elements, "copy_back", [=](u32 id){
+            shambase::parralel_for(cgh, mpdat.original_elements*Block::block_size, "copy_back", [=](u32 id){
                 acc_rho_dest[id] = acc_rho_src[id];
                 acc_eint_dest[id] = acc_eint_src[id];
                 acc_vel_dest[id] = acc_vel_src[id];
@@ -114,6 +108,17 @@ using namespace shamrock::patch;
     });
 
 
+
+
+
+    storage.face_lists.reset();
+    storage.pressure.reset();
+    storage.trees.reset();
+    storage.merge_patch_bounds.reset();
+    storage.merged_patchdata_ghost.reset();
+    storage.ghost_layout.reset();
+    storage.ghost_zone_infos.reset();
+    storage.serial_patch_tree.reset();
 
 
     tstep.end();
