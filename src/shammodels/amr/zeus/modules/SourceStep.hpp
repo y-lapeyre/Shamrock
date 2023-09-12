@@ -52,6 +52,8 @@ namespace shammodels::zeus::modules {
          */
         void compute_AV();
 
+        void apply_AV(Tscal dt);
+
         /**
          * @brief apply the generalized forces
          * \f[
