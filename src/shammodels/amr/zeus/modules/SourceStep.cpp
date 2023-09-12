@@ -18,6 +18,7 @@ using Module = shammodels::zeus::modules::SourceStep<Tvec, TgridVec>;
 
 template<class Tvec, class TgridVec>
 void Module<Tvec, TgridVec>::compute_forces() {
+    StackEntry stack_loc{};
 
     using namespace shamrock::patch;
     using namespace shamrock;
@@ -159,12 +160,13 @@ void Module<Tvec, TgridVec>::compute_forces() {
             logger::err_ln("[Zeus]", "nan detected in forces");
             throw shambase::throw_with_loc<std::runtime_error>("detected nan");
         }
-        logger::raw_ln(storage.forces.get().get_field(p.id_patch).compute_max());
+        //logger::raw_ln(storage.forces.get().get_field(p.id_patch).compute_max());
     });
 }
 
 template<class Tvec, class TgridVec>
 void Module<Tvec, TgridVec>::apply_force(Tscal dt) {
+    StackEntry stack_loc{};
 
     using namespace shamrock::patch;
     using namespace shamrock;
@@ -193,7 +195,7 @@ void Module<Tvec, TgridVec>::apply_force(Tscal dt) {
                 });
         });
 
-        logger::raw_ln(storage.forces.get().get_field(p.id_patch).compute_max());
+        //logger::raw_ln(storage.forces.get().get_field(p.id_patch).compute_max());
     });
 
     storage.forces.reset();
@@ -201,6 +203,7 @@ void Module<Tvec, TgridVec>::apply_force(Tscal dt) {
 
 template<class Tvec, class TgridVec>
 void Module<Tvec, TgridVec>::compute_AV() {
+    StackEntry stack_loc{};
 
     using namespace shamrock::patch;
     using namespace shamrock;
@@ -286,6 +289,7 @@ void Module<Tvec, TgridVec>::compute_AV() {
 
 template<class Tvec, class TgridVec>
 void Module<Tvec, TgridVec>::apply_AV(Tscal dt) {
+    StackEntry stack_loc{};
 
     using namespace shamrock::patch;
     using namespace shamrock;
@@ -456,6 +460,7 @@ void Module<Tvec, TgridVec>::apply_AV(Tscal dt) {
 
 template<class Tvec, class TgridVec>
 void Module<Tvec, TgridVec>::compute_div_v(){
+    StackEntry stack_loc{};
     using namespace shamrock::patch;
     using namespace shamrock;
     using namespace shammath;
@@ -534,6 +539,7 @@ void Module<Tvec, TgridVec>::compute_div_v(){
 
 template<class Tvec, class TgridVec>
 void Module<Tvec, TgridVec>::update_eint_eos(Tscal dt){
+    StackEntry stack_loc{};
 
     using namespace shamrock::patch;
     using namespace shamrock;
@@ -579,11 +585,9 @@ void Module<Tvec, TgridVec>::update_eint_eos(Tscal dt){
                     (cell_max[block_id] - cell_min[block_id]).template convert<Tscal>() *
                     coord_conv_fact;
 
-                // clang-format off
                 Tscal factdivv = divv[id_a]*fact;
 
                 eint[id_a] *= (1-factdivv)/(1+factdivv);
-                // clang-format on
             });
         });
     });

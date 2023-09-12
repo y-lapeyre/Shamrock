@@ -7,6 +7,8 @@ FaceFlagger.cpp
 SourceStep.cpp
 DiffOperator.cpp
 ValueLoader.cpp
+WriteBack.cpp
+TransportStep.cpp
 )
 set(Headers
 )

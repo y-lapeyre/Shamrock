@@ -14,6 +14,7 @@
 #include "shammodels/amr/zeus/modules/GhostZones.hpp"
 #include "shammodels/amr/zeus/modules/SourceStep.hpp"
 #include "shammodels/amr/zeus/modules/ValueLoader.hpp"
+#include "shammodels/amr/zeus/modules/WriteBack.hpp"
 #include "shamrock/scheduler/SchedulerUtility.hpp"
 
 template<class Tvec, class TgridVec>
@@ -97,6 +98,8 @@ auto Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tscal dt_input) -> Tsc
     src_step.compute_forces();
     src_step.apply_force(dt_input);
 
+    src_step.compute_AV();
+
     shamrock::ComputeField<Tvec> &q_AV = storage.q_AV.get();
     storage.q_AV_n_xm.set( val_load_vec.load_value_with_gz(q_AV, {-1, 0, 0}, "q_AV_n_xm"));
     storage.q_AV_n_ym.set( val_load_vec.load_value_with_gz(q_AV, {0, -1, 0}, "q_AV_n_ym"));
@@ -104,49 +107,36 @@ auto Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tscal dt_input) -> Tsc
     
     src_step.apply_AV(dt_input);
 
-    using namespace shamrock::patch;
-    using namespace shamrock;
+    modules::WriteBack wb (context, solver_config,storage);
+    wb.write_back_merged_data();
 
-    using Block = typename Config::AMRBlock;
 
-    
+    storage.merged_patchdata_ghost.reset();
+    storage.ghost_layout.reset();
 
-    scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
+    storage.vel_n.reset();
+    storage.vel_n_xp.reset();
+    storage.vel_n_yp.reset();
+    storage.vel_n_zp.reset();
 
-        using MergedPDat = shamrock::MergedPatchData;
-        MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);
+    storage.rho_n_xm.reset();
+    storage.rho_n_ym.reset();
+    storage.rho_n_zm.reset();
 
-        sycl::buffer<Tscal> &rho_merged = mpdat.pdat.get_field_buf_ref<Tscal>(irho_interf);
-        sycl::buffer<Tscal> &eint_merged = mpdat.pdat.get_field_buf_ref<Tscal>(ieint_interf);
-        sycl::buffer<Tvec> &vel_merged = mpdat.pdat.get_field_buf_ref<Tvec>(ivel_interf);
+    storage.pres_n_xm.reset();
+    storage.pres_n_ym.reset();
+    storage.pres_n_zm.reset();
 
-        PatchData &patch_dest = scheduler().patch_data.get_pdat(p.id_patch);
-        sycl::buffer<Tscal> &rho_dest = patch_dest.get_field_buf_ref<Tscal>(irho_interf);
-        sycl::buffer<Tscal> &eint_dest = patch_dest.get_field_buf_ref<Tscal>(ieint_interf);
-        sycl::buffer<Tvec> &vel_dest = patch_dest.get_field_buf_ref<Tvec>(ivel_interf);
+    storage.q_AV.reset();
+    storage.q_AV_n_xm.reset();
+    storage.q_AV_n_ym.reset();
+    storage.q_AV_n_zm.reset();
 
-        shamsys::instance::get_compute_queue().submit([&](sycl::handler & cgh){
-
-            sycl::accessor acc_rho_src{rho_merged, cgh, sycl::read_only};
-            sycl::accessor acc_eint_src{eint_merged, cgh, sycl::read_only};
-            sycl::accessor acc_vel_src{vel_merged, cgh, sycl::read_only};
-
-            sycl::accessor acc_rho_dest{rho_dest, cgh, sycl::write_only};
-            sycl::accessor acc_eint_dest{eint_dest, cgh, sycl::write_only};
-            sycl::accessor acc_vel_dest{vel_dest, cgh, sycl::write_only};
-
-            shambase::parralel_for(cgh, mpdat.original_elements*Block::block_size, "copy_back", [=](u32 id){
-                acc_rho_dest[id] = acc_rho_src[id];
-                acc_eint_dest[id] = acc_eint_src[id];
-                acc_vel_dest[id] = acc_vel_src[id];
-            });
-        });
-        
-    });
+    gz.exchange_ghost();
 
 
 
-
+    //transport step
 
     storage.face_lists.reset();
     storage.pressure.reset();

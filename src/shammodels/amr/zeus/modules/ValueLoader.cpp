@@ -21,6 +21,7 @@ template<class Tvec, class TgridVec, class T>
 void Module<Tvec, TgridVec, T>::load_patch_internal_block_xm(
     u32 nobj, u32 nvar, sycl::buffer<T> &buf_src, sycl::buffer<T> &buf_dest) {
 
+    StackEntry stack_loc{};
     using Block = typename Config::AMRBlock;
 
     shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
@@ -46,6 +47,7 @@ template<class Tvec, class TgridVec, class T>
 void Module<Tvec, TgridVec, T>::load_patch_internal_block_xp(
     u32 nobj, u32 nvar, sycl::buffer<T> &buf_src, sycl::buffer<T> &buf_dest) {
 
+    StackEntry stack_loc{};
     using Block = typename Config::AMRBlock;
 
     shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
@@ -71,6 +73,7 @@ template<class Tvec, class TgridVec, class T>
 void Module<Tvec, TgridVec, T>::load_patch_internal_block_ym(
     u32 nobj, u32 nvar, sycl::buffer<T> &buf_src, sycl::buffer<T> &buf_dest) {
 
+    StackEntry stack_loc{};
     using Block = typename Config::AMRBlock;
 
     shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
@@ -96,6 +99,7 @@ template<class Tvec, class TgridVec, class T>
 void Module<Tvec, TgridVec, T>::load_patch_internal_block_yp(
     u32 nobj, u32 nvar, sycl::buffer<T> &buf_src, sycl::buffer<T> &buf_dest) {
 
+    StackEntry stack_loc{};
     using Block = typename Config::AMRBlock;
 
     shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
@@ -121,6 +125,7 @@ template<class Tvec, class TgridVec, class T>
 void Module<Tvec, TgridVec, T>::load_patch_internal_block_zm(
     u32 nobj, u32 nvar, sycl::buffer<T> &buf_src, sycl::buffer<T> &buf_dest) {
 
+    StackEntry stack_loc{};
     using Block = typename Config::AMRBlock;
 
     shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
@@ -146,6 +151,7 @@ template<class Tvec, class TgridVec, class T>
 void Module<Tvec, TgridVec, T>::load_patch_internal_block_zp(
     u32 nobj, u32 nvar, sycl::buffer<T> &buf_src, sycl::buffer<T> &buf_dest) {
 
+    StackEntry stack_loc{};
     using Block = typename Config::AMRBlock;
 
     shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
@@ -175,6 +181,7 @@ void Module<Tvec, TgridVec, T>::load_patch_internal_block(
     sycl::buffer<T> &buf_src,
     sycl::buffer<T> &buf_dest) {
 
+    StackEntry stack_loc{};
     using Block = typename Config::AMRBlock;
 
     if constexpr (dim == 3) {
@@ -228,6 +235,7 @@ void Module<Tvec, TgridVec, T>::load_patch_neigh_same_level_xm(
     sycl::buffer<T> &buf_dest
 
 ) {
+    StackEntry stack_loc{};
 
     using Block = typename Config::AMRBlock;
     using namespace shamrock;
@@ -283,6 +291,7 @@ void Module<Tvec, TgridVec, T>::load_patch_neigh_same_level_xp(
     sycl::buffer<T> &buf_dest
 
 ) {
+    StackEntry stack_loc{};
 
     using Block = typename Config::AMRBlock;
     using namespace shamrock;
@@ -337,6 +346,7 @@ void Module<Tvec, TgridVec, T>::load_patch_neigh_same_level_ym(
     sycl::buffer<T> &buf_dest
 
 ) {
+    StackEntry stack_loc{};
 
     using Block = typename Config::AMRBlock;
     using namespace shamrock;
@@ -392,6 +402,7 @@ void Module<Tvec, TgridVec, T>::load_patch_neigh_same_level_yp(
     sycl::buffer<T> &buf_dest
 
 ) {
+    StackEntry stack_loc{};
 
     using Block = typename Config::AMRBlock;
     using namespace shamrock;
@@ -446,6 +457,7 @@ void Module<Tvec, TgridVec, T>::load_patch_neigh_same_level_zm(
     sycl::buffer<T> &buf_dest
 
 ) {
+    StackEntry stack_loc{};
 
     using Block = typename Config::AMRBlock;
     using namespace shamrock;
@@ -501,6 +513,7 @@ void Module<Tvec, TgridVec, T>::load_patch_neigh_same_level_zp(
     sycl::buffer<T> &buf_dest
 
 ) {
+    StackEntry stack_loc{};
 
     using Block = typename Config::AMRBlock;
     using namespace shamrock;
@@ -555,6 +568,7 @@ void Module<Tvec, TgridVec, T>::load_patch_neigh_same_level(
     sycl::buffer<T> &buf_dest
 
 ) {
+    StackEntry stack_loc{};
     using Block = typename Config::AMRBlock;
 
     using namespace shamrock::patch;
@@ -619,6 +633,8 @@ void Module<Tvec, TgridVec, T>::load_patch_neigh_level_up(
     sycl::buffer<T> &buf_dest
 
 ) {
+
+    StackEntry stack_loc{};
     using Block = typename Config::AMRBlock;
 
     using namespace shamrock::patch;
@@ -677,6 +693,7 @@ void Module<Tvec, TgridVec, T>::load_patch_neigh_level_down(
     sycl::buffer<T> &buf_dest
 
 ) {
+    StackEntry stack_loc{};
     using Block = typename Config::AMRBlock;
 
     using namespace shamrock::patch;
