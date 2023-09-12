@@ -104,7 +104,7 @@ auto Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tscal dt_input) -> Tsc
     
     src_step.apply_AV(dt_input);
 
-using namespace shamrock::patch;
+    using namespace shamrock::patch;
     using namespace shamrock;
 
     using Block = typename Config::AMRBlock;

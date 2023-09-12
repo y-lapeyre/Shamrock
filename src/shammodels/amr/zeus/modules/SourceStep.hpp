@@ -40,7 +40,18 @@ namespace shammodels::zeus::modules {
          */
         void compute_forces();
 
+        
+
         /**
+         * @brief apply the generalized forces
+         * \f[
+         *   \frac{u_i^{n+1} - u_i^{n}}{\Delta t} = \underbrace{-\frac{\partial_i p^n}{\rho^n} 
+         *     + f_{\text{ext},i}}_{ f_{\rm gen} }
+         * \f]
+         */
+        void apply_force(Tscal dt);
+        
+/**
          * @brief Compute the values of the artificial viscosity terms
          * (\cite Zeus2d_main equations 33,34)
          * 
@@ -54,17 +65,9 @@ namespace shammodels::zeus::modules {
 
         void apply_AV(Tscal dt);
 
-        /**
-         * @brief apply the generalized forces
-         * \f[
-         *   \frac{u_i^{n+1} - u_i^{n}}{\Delta t} = \underbrace{-\frac{\partial_i p^n}{\rho^n} 
-         *     + f_{\text{ext},i}}_{ f_{\rm gen} }
-         * \f]
-         */
-        void apply_force(Tscal dt);
-        void substep_2();
-        void substep_3();
+        void compute_div_v();
 
+        void update_eint_eos(Tscal dt);
         private:
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }
 

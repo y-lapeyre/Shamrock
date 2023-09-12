@@ -454,4 +454,140 @@ void Module<Tvec, TgridVec>::apply_AV(Tscal dt) {
     });
 }
 
+template<class Tvec, class TgridVec>
+void Module<Tvec, TgridVec>::compute_div_v(){
+    using namespace shamrock::patch;
+    using namespace shamrock;
+    using namespace shammath;
+    using MergedPDat = shamrock::MergedPatchData;
+
+    using Flagger = FaceFlagger<Tvec, TgridVec>;
+
+    using Block = typename Config::AMRBlock;
+
+    shamrock::SchedulerUtility utility(scheduler());
+    storage.div_v_n.set(utility.make_compute_field<Tscal>("div_v_n", Block::block_size, [&](u64 id) {
+        return storage.merged_patchdata_ghost.get().get(id).total_elements;
+    }));
+
+
+    ComputeField<Tvec> &vel_n    = storage.vel_n.get();
+    ComputeField<Tvec> &vel_n_xp = storage.vel_n_xp.get();
+    ComputeField<Tvec> &vel_n_yp = storage.vel_n_yp.get();
+    ComputeField<Tvec> &vel_n_zp = storage.vel_n_zp.get();
+
+    ComputeField<Tscal> & div_v = storage.div_v_n.get();
+
+    scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
+        MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);
+
+        sycl::buffer<TgridVec> &buf_cell_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);
+        sycl::buffer<TgridVec> &buf_cell_max = mpdat.pdat.get_field_buf_ref<TgridVec>(1);
+
+        Tscal coord_conv_fact = solver_config.grid_coord_to_pos_fact/Block::block_size;
+
+        sycl::buffer<Tvec> &buf_vel    = vel_n.get_buf_check(p.id_patch);
+        sycl::buffer<Tvec> &buf_vel_xp = vel_n_xp.get_buf_check(p.id_patch);
+        sycl::buffer<Tvec> &buf_vel_yp = vel_n_yp.get_buf_check(p.id_patch);
+        sycl::buffer<Tvec> &buf_vel_zp = vel_n_zp.get_buf_check(p.id_patch);
+
+        sycl::buffer<Tscal> &buf_div_v      = div_v.get_buf_check(p.id_patch);
+
+        shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
+            sycl::accessor cell_min{buf_cell_min, cgh, sycl::read_only};
+            sycl::accessor cell_max{buf_cell_max, cgh, sycl::read_only};
+
+            sycl::accessor vel{buf_vel, cgh, sycl::read_only};
+            sycl::accessor vel_xp{buf_vel_xp, cgh, sycl::read_only};
+            sycl::accessor vel_yp{buf_vel_yp, cgh, sycl::read_only};
+            sycl::accessor vel_zp{buf_vel_zp, cgh, sycl::read_only};
+
+            sycl::accessor divv{buf_div_v, cgh, sycl::write_only, sycl::no_init};
+
+            shambase::parralel_for(cgh, pdat.get_obj_cnt() * Block::block_size, "add eint AV", [=](u64 id_a) {
+                u32 block_id = id_a / Block::block_size;
+                Tvec d_cell =
+                    (cell_max[block_id] - cell_min[block_id]).template convert<Tscal>() *
+                    coord_conv_fact;
+
+                // clang-format off
+                Tvec vel_i_j_k = vel[id_a];
+                Tvec vel_ip1_j_k = vel_xp[id_a];
+                Tvec vel_i_jp1_k = vel_yp[id_a];
+                Tvec vel_i_j_kp1 = vel_zp[id_a];
+
+                Tvec dv = {
+                    vel_ip1_j_k.x() - vel_i_j_k.x(),
+                    vel_i_jp1_k.y() - vel_i_j_k.y(),
+                    vel_i_j_kp1.z() - vel_i_j_k.z()
+                };
+
+                divv[id_a] += sycl::dot(dv,Tvec{1,1,1}/ d_cell);
+                // clang-format on
+            });
+        });
+    });
+
+
+} 
+
+
+template<class Tvec, class TgridVec>
+void Module<Tvec, TgridVec>::update_eint_eos(Tscal dt){
+
+    using namespace shamrock::patch;
+    using namespace shamrock;
+    using namespace shammath;
+    using MergedPDat = shamrock::MergedPatchData;
+
+    using Flagger = FaceFlagger<Tvec, TgridVec>;
+
+    using Block = typename Config::AMRBlock;
+
+    ComputeField<Tscal> & div_v = storage.div_v_n.get();
+
+
+    shamrock::patch::PatchDataLayout &ghost_layout = storage.ghost_layout.get();
+    u32 irho_interf                                = ghost_layout.get_field_idx<Tscal>("rho");
+    u32 ieint_interf                               = ghost_layout.get_field_idx<Tscal>("eint");
+    u32 ivel_interf                                = ghost_layout.get_field_idx<Tvec>("vel");
+
+    scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
+        MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);
+
+        sycl::buffer<TgridVec> &buf_cell_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);
+        sycl::buffer<TgridVec> &buf_cell_max = mpdat.pdat.get_field_buf_ref<TgridVec>(1);
+
+        Tscal coord_conv_fact = solver_config.grid_coord_to_pos_fact/Block::block_size;
+
+        sycl::buffer<Tscal> &buf_eint = mpdat.pdat.get_field_buf_ref<Tscal>(ieint_interf);
+
+        sycl::buffer<Tscal> &buf_divv    = div_v.get_buf_check(p.id_patch);
+
+        shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
+            sycl::accessor cell_min{buf_cell_min, cgh, sycl::read_only};
+            sycl::accessor cell_max{buf_cell_max, cgh, sycl::read_only};
+
+            sycl::accessor divv{buf_divv, cgh, sycl::read_only};
+            sycl::accessor eint{buf_eint, cgh, sycl::read_write};
+
+            Tscal fact = (dt/2)*(solver_config.eos_gamma -1);
+
+            shambase::parralel_for(cgh, pdat.get_obj_cnt() * Block::block_size, "add eint AV", [=](u64 id_a) {
+                u32 block_id = id_a / Block::block_size;
+                Tvec d_cell =
+                    (cell_max[block_id] - cell_min[block_id]).template convert<Tscal>() *
+                    coord_conv_fact;
+
+                // clang-format off
+                Tscal factdivv = divv[id_a]*fact;
+
+                eint[id_a] *= (1-factdivv)/(1+factdivv);
+                // clang-format on
+            });
+        });
+    });
+
+}
+
 template class shammodels::zeus::modules::SourceStep<f64_3, i64_3>;

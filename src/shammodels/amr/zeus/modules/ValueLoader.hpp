@@ -141,6 +141,15 @@ namespace shammodels::zeus::modules {
         void load_patch_internal_block_zm(
             u32 nobj, u32 nvar, sycl::buffer<T> &src, sycl::buffer<T> &dest);
 
+        void load_patch_internal_block_xp(
+            u32 nobj, u32 nvar, sycl::buffer<T> &src, sycl::buffer<T> &dest);
+
+        void load_patch_internal_block_yp(
+            u32 nobj, u32 nvar, sycl::buffer<T> &src, sycl::buffer<T> &dest);
+
+        void load_patch_internal_block_zp(
+            u32 nobj, u32 nvar, sycl::buffer<T> &src, sycl::buffer<T> &dest);
+
         void load_patch_neigh_same_level_xm(
             std::array<Tgridscal, dim> offset,
             sycl::buffer<TgridVec> &buf_cell_min,
@@ -170,6 +179,38 @@ namespace shammodels::zeus::modules {
             u32 nvar,
             sycl::buffer<T> &src,
             sycl::buffer<T> &dest);
+
+        void load_patch_neigh_same_level_xp(
+            std::array<Tgridscal, dim> offset,
+            sycl::buffer<TgridVec> &buf_cell_min,
+            sycl::buffer<TgridVec> &buf_cell_max,
+            shammodels::zeus::NeighFaceList<Tvec> &face_lists,
+            u32 nobj,
+            u32 nvar,
+            sycl::buffer<T> &src,
+            sycl::buffer<T> &dest);
+
+        void load_patch_neigh_same_level_yp(
+            std::array<Tgridscal, dim> offset,
+            sycl::buffer<TgridVec> &buf_cell_min,
+            sycl::buffer<TgridVec> &buf_cell_max,
+            shammodels::zeus::NeighFaceList<Tvec> &face_lists,
+            u32 nobj,
+            u32 nvar,
+            sycl::buffer<T> &src,
+            sycl::buffer<T> &dest);
+
+        void load_patch_neigh_same_level_zp(
+            std::array<Tgridscal, dim> offset,
+            sycl::buffer<TgridVec> &buf_cell_min,
+            sycl::buffer<TgridVec> &buf_cell_max,
+            shammodels::zeus::NeighFaceList<Tvec> &face_lists,
+            u32 nobj,
+            u32 nvar,
+            sycl::buffer<T> &src,
+            sycl::buffer<T> &dest);
     };
+
+    
 
 } // namespace shammodels::zeus::modules

@@ -43,6 +43,31 @@ void Module<Tvec, TgridVec, T>::load_patch_internal_block_xm(
 }
 
 template<class Tvec, class TgridVec, class T>
+void Module<Tvec, TgridVec, T>::load_patch_internal_block_xp(
+    u32 nobj, u32 nvar, sycl::buffer<T> &buf_src, sycl::buffer<T> &buf_dest) {
+
+    using Block = typename Config::AMRBlock;
+
+    shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
+        sycl::accessor val_out{buf_dest, cgh, sycl::write_only, sycl::no_init};
+        sycl::accessor src{buf_src, cgh, sycl::read_only};
+
+        shambase::parralel_for(cgh, nobj * Block::block_size, "compute xp val (1)", [=](u64 id_a) {
+            const u32 base_idx = id_a;
+            const u32 lid      = id_a % Block::block_size;
+
+            static_assert(dim == 3, "implemented only in dim 3");
+            std::array<u32, 3> lid_coord = Block::get_coord(lid);
+
+            if (lid_coord[0] < Block::Nside-1) {
+                lid_coord[0] += 1;
+                val_out[base_idx] = src[base_idx - lid + Block::get_index(lid_coord)];
+            }
+        });
+    });
+}
+
+template<class Tvec, class TgridVec, class T>
 void Module<Tvec, TgridVec, T>::load_patch_internal_block_ym(
     u32 nobj, u32 nvar, sycl::buffer<T> &buf_src, sycl::buffer<T> &buf_dest) {
 
@@ -61,6 +86,31 @@ void Module<Tvec, TgridVec, T>::load_patch_internal_block_ym(
 
             if (lid_coord[1] > 0) {
                 lid_coord[1] -= 1;
+                val_out[base_idx] = src[base_idx - lid + Block::get_index(lid_coord)];
+            }
+        });
+    });
+}
+
+template<class Tvec, class TgridVec, class T>
+void Module<Tvec, TgridVec, T>::load_patch_internal_block_yp(
+    u32 nobj, u32 nvar, sycl::buffer<T> &buf_src, sycl::buffer<T> &buf_dest) {
+
+    using Block = typename Config::AMRBlock;
+
+    shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
+        sycl::accessor val_out{buf_dest, cgh, sycl::write_only, sycl::no_init};
+        sycl::accessor src{buf_src, cgh, sycl::read_only};
+
+        shambase::parralel_for(cgh, nobj * Block::block_size, "compute yp val (1)", [=](u64 id_a) {
+            const u32 base_idx = id_a;
+            const u32 lid      = id_a % Block::block_size;
+
+            static_assert(dim == 3, "implemented only in dim 3");
+            std::array<u32, 3> lid_coord = Block::get_coord(lid);
+
+            if (lid_coord[1] < Block::Nside-1) {
+                lid_coord[1] += 1;
                 val_out[base_idx] = src[base_idx - lid + Block::get_index(lid_coord)];
             }
         });
@@ -93,6 +143,31 @@ void Module<Tvec, TgridVec, T>::load_patch_internal_block_zm(
 }
 
 template<class Tvec, class TgridVec, class T>
+void Module<Tvec, TgridVec, T>::load_patch_internal_block_zp(
+    u32 nobj, u32 nvar, sycl::buffer<T> &buf_src, sycl::buffer<T> &buf_dest) {
+
+    using Block = typename Config::AMRBlock;
+
+    shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
+        sycl::accessor val_out{buf_dest, cgh, sycl::write_only, sycl::no_init};
+        sycl::accessor src{buf_src, cgh, sycl::read_only};
+
+        shambase::parralel_for(cgh, nobj * Block::block_size, "compute ym val (1)", [=](u64 id_a) {
+            const u32 base_idx = id_a;
+            const u32 lid      = id_a % Block::block_size;
+
+            static_assert(dim == 3, "implemented only in dim 3");
+            std::array<u32, 3> lid_coord = Block::get_coord(lid);
+
+            if (lid_coord[2] < Block::Nside-1) {
+                lid_coord[2] += 1;
+                val_out[base_idx] = src[base_idx - lid + Block::get_index(lid_coord)];
+            }
+        });
+    });
+}
+
+template<class Tvec, class TgridVec, class T>
 void Module<Tvec, TgridVec, T>::load_patch_internal_block(
     std::array<Tgridscal, dim> offset,
     u32 nobj,
@@ -114,6 +189,18 @@ void Module<Tvec, TgridVec, T>::load_patch_internal_block(
         } else if (offset[0] == 0 && offset[1] == 0 && offset[2] == -1) {
 
             load_patch_internal_block_zm(nobj, nvar, buf_src, buf_dest);
+
+        } else if (offset[0] == 1 && offset[1] == 0 && offset[2] == 0) {
+
+            load_patch_internal_block_xp(nobj, nvar, buf_src, buf_dest);
+
+        } else if (offset[0] == 0 && offset[1] == 1 && offset[2] == 0) {
+
+            load_patch_internal_block_yp(nobj, nvar, buf_src, buf_dest);
+
+        } else if (offset[0] == 0 && offset[1] == 0 && offset[2] == 1) {
+
+            load_patch_internal_block_zp(nobj, nvar, buf_src, buf_dest);
 
         } else {
             throw shambase::throw_with_loc<std::invalid_argument>(shambase::format(
@@ -182,6 +269,61 @@ void Module<Tvec, TgridVec, T>::load_patch_neigh_same_level_xm(
     });
 }
 
+
+template<class Tvec, class TgridVec, class T>
+void Module<Tvec, TgridVec, T>::load_patch_neigh_same_level_xp(
+
+    std::array<Tgridscal, dim> offset,
+    sycl::buffer<TgridVec> &buf_cell_min,
+    sycl::buffer<TgridVec> &buf_cell_max,
+    shammodels::zeus::NeighFaceList<Tvec> &face_lists,
+    u32 nobj,
+    u32 nvar,
+    sycl::buffer<T> &buf_src,
+    sycl::buffer<T> &buf_dest
+
+) {
+
+    using Block = typename Config::AMRBlock;
+    using namespace shamrock;
+
+    OrientedNeighFaceList<Tvec> &face_xp = face_lists.xp();
+
+    shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
+        sycl::accessor val_out{buf_dest, cgh, sycl::write_only, sycl::no_init};
+        sycl::accessor src{buf_src, cgh, sycl::read_only};
+
+        sycl::accessor cell_min{buf_cell_min, cgh, sycl::read_only};
+        sycl::accessor cell_max{buf_cell_max, cgh, sycl::read_only};
+        tree::ObjectCacheIterator faces_xp(face_xp.neigh_info, cgh);
+
+        shambase::parralel_for(cgh, nobj * Block::block_size, "compute xm val (2)", [=](u64 id_a) {
+            const u32 base_idx = id_a;
+            const u32 block_id = id_a / Block::block_size;
+            const u32 lid      = id_a % Block::block_size;
+
+            std::array<u32, 3> lid_coord = Block::get_coord(lid);
+
+            if (lid_coord[0] == 0) {
+                auto tmp = cell_max[block_id] - cell_min[block_id];
+                i32 Va   = tmp.x() * tmp.y() * tmp.z();
+
+                static_assert(dim == 3, "implemented only in dim 3");
+                faces_xp.for_each_object(block_id, [&](u32 block_id_b) {
+                    auto tmp = cell_max[block_id_b] - cell_min[block_id_b];
+                    i32 nV   = tmp.x() * tmp.y() * tmp.z();
+
+                    if (nV == Va) { // same level
+                        val_out[base_idx] =
+                            src[block_id_b * Block::block_size +
+                                Block::get_index({0, lid_coord[1], lid_coord[2]})];
+                    }
+                });
+            }
+        });
+    });
+}
+
 template<class Tvec, class TgridVec, class T>
 void Module<Tvec, TgridVec, T>::load_patch_neigh_same_level_ym(
 
@@ -229,6 +371,61 @@ void Module<Tvec, TgridVec, T>::load_patch_neigh_same_level_ym(
                         val_out[base_idx] =
                             src[block_id_b * Block::block_size +
                                 Block::get_index({lid_coord[0], Block::Nside - 1, lid_coord[2]})];
+                    }
+                });
+            }
+        });
+    });
+}
+
+
+template<class Tvec, class TgridVec, class T>
+void Module<Tvec, TgridVec, T>::load_patch_neigh_same_level_yp(
+
+    std::array<Tgridscal, dim> offset,
+    sycl::buffer<TgridVec> &buf_cell_min,
+    sycl::buffer<TgridVec> &buf_cell_max,
+    shammodels::zeus::NeighFaceList<Tvec> &face_lists,
+    u32 nobj,
+    u32 nvar,
+    sycl::buffer<T> &buf_src,
+    sycl::buffer<T> &buf_dest
+
+) {
+
+    using Block = typename Config::AMRBlock;
+    using namespace shamrock;
+
+    OrientedNeighFaceList<Tvec> &face_yp = face_lists.yp();
+
+    shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
+        sycl::accessor val_out{buf_dest, cgh, sycl::write_only, sycl::no_init};
+        sycl::accessor src{buf_src, cgh, sycl::read_only};
+
+        sycl::accessor cell_min{buf_cell_min, cgh, sycl::read_only};
+        sycl::accessor cell_max{buf_cell_max, cgh, sycl::read_only};
+        tree::ObjectCacheIterator faces_yp(face_yp.neigh_info, cgh);
+
+        shambase::parralel_for(cgh, nobj * Block::block_size, "compute ym val (2)", [=](u64 id_a) {
+            const u32 base_idx = id_a;
+            const u32 block_id = id_a / Block::block_size;
+            const u32 lid      = id_a % Block::block_size;
+
+            std::array<u32, 3> lid_coord = Block::get_coord(lid);
+
+            if (lid_coord[1] == 0) {
+                auto tmp = cell_max[block_id] - cell_min[block_id];
+                i32 Va   = tmp.x() * tmp.y() * tmp.z();
+
+                static_assert(dim == 3, "implemented only in dim 3");
+                faces_yp.for_each_object(block_id, [&](u32 block_id_b) {
+                    auto tmp = cell_max[block_id_b] - cell_min[block_id_b];
+                    i32 nV   = tmp.x() * tmp.y() * tmp.z();
+
+                    if (nV == Va) { // same level
+                        val_out[base_idx] =
+                            src[block_id_b * Block::block_size +
+                                Block::get_index({lid_coord[0], 0, lid_coord[2]})];
                     }
                 });
             }
@@ -290,6 +487,61 @@ void Module<Tvec, TgridVec, T>::load_patch_neigh_same_level_zm(
     });
 }
 
+
+template<class Tvec, class TgridVec, class T>
+void Module<Tvec, TgridVec, T>::load_patch_neigh_same_level_zp(
+
+    std::array<Tgridscal, dim> offset,
+    sycl::buffer<TgridVec> &buf_cell_min,
+    sycl::buffer<TgridVec> &buf_cell_max,
+    shammodels::zeus::NeighFaceList<Tvec> &face_lists,
+    u32 nobj,
+    u32 nvar,
+    sycl::buffer<T> &buf_src,
+    sycl::buffer<T> &buf_dest
+
+) {
+
+    using Block = typename Config::AMRBlock;
+    using namespace shamrock;
+
+    OrientedNeighFaceList<Tvec> &face_zp = face_lists.zp();
+
+    shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
+        sycl::accessor val_out{buf_dest, cgh, sycl::write_only, sycl::no_init};
+        sycl::accessor src{buf_src, cgh, sycl::read_only};
+
+        sycl::accessor cell_min{buf_cell_min, cgh, sycl::read_only};
+        sycl::accessor cell_max{buf_cell_max, cgh, sycl::read_only};
+        tree::ObjectCacheIterator faces_zp(face_zp.neigh_info, cgh);
+
+        shambase::parralel_for(cgh, nobj * Block::block_size, "compute zm val (2)", [=](u64 id_a) {
+            const u32 base_idx = id_a;
+            const u32 block_id = id_a / Block::block_size;
+            const u32 lid      = id_a % Block::block_size;
+
+            std::array<u32, 3> lid_coord = Block::get_coord(lid);
+
+            if (lid_coord[2] == 0) {
+                auto tmp = cell_max[block_id] - cell_min[block_id];
+                i32 Va   = tmp.x() * tmp.y() * tmp.z();
+
+                static_assert(dim == 3, "implemented only in dim 3");
+                faces_zp.for_each_object(block_id, [&](u32 block_id_b) {
+                    auto tmp = cell_max[block_id_b] - cell_min[block_id_b];
+                    i32 nV   = tmp.x() * tmp.y() * tmp.z();
+
+                    if (nV == Va) { // same level
+                        val_out[base_idx] =
+                            src[block_id_b * Block::block_size +
+                                Block::get_index({lid_coord[0], lid_coord[1], 0})];
+                    }
+                });
+            }
+        });
+    });
+}
+
 template<class Tvec, class TgridVec, class T>
 void Module<Tvec, TgridVec, T>::load_patch_neigh_same_level(
 
@@ -324,6 +576,21 @@ void Module<Tvec, TgridVec, T>::load_patch_neigh_same_level(
         } else if (offset[0] == 0 && offset[1] == 0 && offset[2] == -1) {
 
             load_patch_neigh_same_level_zm(
+                offset, buf_cell_min, buf_cell_max, face_lists, nobj, nvar, buf_src, buf_dest);
+
+        } else if (offset[0] == 1 && offset[1] == 0 && offset[2] == 0) {
+
+            load_patch_neigh_same_level_xp(
+                offset, buf_cell_min, buf_cell_max, face_lists, nobj, nvar, buf_src, buf_dest);
+
+        } else if (offset[0] == 0 && offset[1] == 1 && offset[2] == 0) {
+
+            load_patch_neigh_same_level_yp(
+                offset, buf_cell_min, buf_cell_max, face_lists, nobj, nvar, buf_src, buf_dest);
+
+        } else if (offset[0] == 0 && offset[1] == 0 && offset[2] == 1) {
+
+            load_patch_neigh_same_level_zp(
                 offset, buf_cell_min, buf_cell_max, face_lists, nobj, nvar, buf_src, buf_dest);
 
         } else {
@@ -372,6 +639,18 @@ void Module<Tvec, TgridVec, T>::load_patch_neigh_level_up(
 
             OrientedNeighFaceList<Tvec> &face_zm = face_lists.zm();
 
+        } else if (offset[0] == 1 && offset[1] == 0 && offset[2] == 0) {
+
+            OrientedNeighFaceList<Tvec> &face_xp = face_lists.xp();
+
+        } else if (offset[0] == 0 && offset[1] == 1 && offset[2] == 0) {
+
+            OrientedNeighFaceList<Tvec> &face_yp = face_lists.yp();
+
+        } else if (offset[0] == 0 && offset[1] == 0 && offset[2] == 1) {
+
+            OrientedNeighFaceList<Tvec> &face_zp = face_lists.zp();
+
         } else {
             throw shambase::throw_with_loc<std::invalid_argument>(shambase::format(
                 "offset : ({},{},{}) is invalid", offset[0], offset[1], offset[2]));
@@ -417,6 +696,18 @@ void Module<Tvec, TgridVec, T>::load_patch_neigh_level_down(
         } else if (offset[0] == 0 && offset[1] == 0 && offset[2] == -1) {
 
             OrientedNeighFaceList<Tvec> &face_zm = face_lists.zm();
+
+        } else if (offset[0] == 1 && offset[1] == 0 && offset[2] == 0) {
+
+            OrientedNeighFaceList<Tvec> &face_xp = face_lists.xp();
+
+        } else if (offset[0] == 0 && offset[1] == 1 && offset[2] == 0) {
+
+            OrientedNeighFaceList<Tvec> &face_yp = face_lists.yp();
+
+        } else if (offset[0] == 0 && offset[1] == 0 && offset[2] == 1) {
+
+            OrientedNeighFaceList<Tvec> &face_zp = face_lists.zp();
 
         } else {
             throw shambase::throw_with_loc<std::invalid_argument>(shambase::format(
