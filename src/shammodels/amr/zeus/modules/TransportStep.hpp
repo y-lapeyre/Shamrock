@@ -31,7 +31,17 @@ namespace shammodels::zeus::modules {
         TransportStep(ShamrockCtx &context, Config &solver_config, Storage &storage)
             : context(context), solver_config(solver_config), storage(storage) {}
 
-        
+        /**
+         * @brief Compute face momentas
+         * (\cite Fargo3D_1 eq 48 49)
+         * 
+         * \f{eqnarray*}{
+         *     \Pi^{-x}_{i,j,k} &=& \rho_i v_{i,j,k}\\ 
+         *     \Pi^{+x}_{i,j,k} &=& \rho_i v_{i+1,j,k}
+         * \f}
+         * same goes for y,z
+         */
+        void compute_face_momentas();
 
         private:
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }
