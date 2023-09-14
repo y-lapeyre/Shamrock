@@ -43,8 +43,11 @@ namespace shammodels::zeus::modules {
          */
         void compute_face_momentas();
 
+        void compute_dq();
+
         private:
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }
 
     };
+    
 } // namespace shammodels::zeus::modules

@@ -13,6 +13,7 @@
 #include "shammodels/amr/zeus/modules/FaceFlagger.hpp"
 #include "shammodels/amr/zeus/modules/GhostZones.hpp"
 #include "shammodels/amr/zeus/modules/SourceStep.hpp"
+#include "shammodels/amr/zeus/modules/TransportStep.hpp"
 #include "shammodels/amr/zeus/modules/ValueLoader.hpp"
 #include "shammodels/amr/zeus/modules/WriteBack.hpp"
 #include "shamrock/scheduler/SchedulerUtility.hpp"
@@ -143,7 +144,8 @@ auto Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tscal dt_input) -> Tsc
     storage.vel_n_yp.set( val_load_vec.load_value_with_gz("vel", {0, 1, 0}, "vel_n_yp"));
     storage.vel_n_zp.set( val_load_vec.load_value_with_gz("vel", {0, 0, 1}, "vel_n_zp"));
 
-    
+    modules::TransportStep transport (context, solver_config,storage);
+    transport.compute_face_momentas();
 
 
 

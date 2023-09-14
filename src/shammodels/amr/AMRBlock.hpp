@@ -95,10 +95,34 @@ namespace shammodels::amr {
             }
         }
 
+
+
+        /**
+         * @brief for each cell routine for amr block.
+         * This handle a loop over all the cells in blocks.
+         *
+         * \code{.cpp}
+         *    Block::for_each_cells(cgh,  mpdat.total_elements,"compite Pis", 
+         *        [=](u32 block_id, u32 cell_gid){
+         *            vec d_cell =
+         *                (cell_max[block_id] - cell_min[block_id]).template convert<Tscal>() *
+         *                coord_conv_fact;
+         *
+         *            Tscal rho_i_j_k   = rho[cell_gid];
+         *        }
+         *    );
+         * \endcode
+         * 
+         * @tparam Func 
+         * @param cgh 
+         * @param name 
+         * @param block_cnt 
+         * @param f 
+         */
         template<class Func>
         inline static void for_each_cells( sycl::handler &cgh,
-                                            std::string name,
-                                            u32 block_cnt, Func && f) {
+                                            u32 block_cnt,
+                                            const char * name, Func && f) {
             // we use one thread per subcell because :
             // double load are avoided because of contiguous L2 cache hit
             // and CF perf opti for GPU, finer threading lead to better latency hidding
@@ -107,6 +131,26 @@ namespace shammodels::amr {
                 f(block_id, id_cell);
             });
         }
+
+        template<class Func>
+        inline static void for_each_cells_lid( sycl::handler &cgh,
+                                            u32 block_cnt,
+                                            const char * name,
+                                             Func && f) {
+            // we use one thread per subcell because :
+            // double load are avoided because of contiguous L2 cache hit
+            // and CF perf opti for GPU, finer threading lead to better latency hidding
+            shambase::parralel_for(cgh, block_cnt * block_size, name, [=](u64 id_cell) {
+                u32 block_id = id_cell / block_size;
+                u32 lid = id_cell % block_size;
+                f(block_id, lid);
+            });
+        }
+
+
+
+
+
 
         template<class Acccellcoord>
         inline void for_each_neigh_faces(
