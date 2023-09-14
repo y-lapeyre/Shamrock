@@ -41,13 +41,15 @@ namespace shammodels::zeus::modules {
          * \f}
          * same goes for y,z
          */
-        void compute_face_momentas();
+        void compute_cell_centered_momentas();
 
-        void compute_dq();
+        void compute_limiter();
+
+        void compute_face_centered_moments(Tscal dt);
 
         private:
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }
 
     };
-    
+
 } // namespace shammodels::zeus::modules

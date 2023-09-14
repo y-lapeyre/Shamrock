@@ -952,3 +952,4 @@ shamrock::ComputeField<T> Module<Tvec, TgridVec, T>::load_value_with_gz(
 
 template class shammodels::zeus::modules::ValueLoader<f64_3, i64_3, f64>;
 template class shammodels::zeus::modules::ValueLoader<f64_3, i64_3, f64_3>;
+template class shammodels::zeus::modules::ValueLoader<f64_3, i64_3, f64_8>;
