@@ -104,7 +104,7 @@ void Module<Tvec, TgridVec>::compute_dq() {
     using Block = typename Config::AMRBlock;
 
     using Tscal8 = sycl::vec<Tscal,8>;
-    shamrock::ComputeField<Tscal8> &Q = storage.Q.get();
+    ComputeField<Tscal8> &Q = storage.Q.get();
 
     modules::ValueLoader<Tvec, TgridVec, Tscal8> val_load_vec8(context, solver_config, storage);
     
@@ -116,6 +116,8 @@ void Module<Tvec, TgridVec>::compute_dq() {
     ComputeField<Tscal8> &dQ_x = storage.dQ_x.get();
     ComputeField<Tscal8> &dQ_y = storage.dQ_y.get();
     ComputeField<Tscal8> &dQ_z = storage.dQ_z.get();
+
+
 }
 
 
