@@ -39,8 +39,10 @@ namespace shammodels::zeus {
         Component<GhostZonesData<Tvec, TgridVec>> ghost_zone_infos;
 
         Component<shamrock::patch::PatchDataLayout> ghost_layout;
+        Component<shamrock::patch::PatchDataLayout> ghost_layout_Q;
 
         Component<shambase::DistributedData<shamrock::MergedPatchData>> merged_patchdata_ghost;
+        Component<shambase::DistributedData<shamrock::MergedPatchData>> merged_patchdata_ghost_Q;
         Component<shambase::DistributedData<shammath::AABB<TgridVec>>> merge_patch_bounds;
         Component<shambase::DistributedData<RTree>> trees;
 

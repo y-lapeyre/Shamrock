@@ -134,7 +134,7 @@ auto Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tscal dt_input) -> Tsc
     storage.q_AV_n_zm.reset();
 
     
-
+    
 
 
     //transport step
@@ -151,7 +151,14 @@ auto Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tscal dt_input) -> Tsc
 
     transport.compute_face_centered_moments(dt_input);
 
-    //storage.Q.
+    storage.a_x.reset();
+    storage.a_y.reset();
+    storage.a_z.reset();
+    storage.Q_xm.reset();
+    storage.Q_ym.reset();
+    storage.Q_zm.reset();
+
+    transport.exchange_face_centered_gz();
 
 
 

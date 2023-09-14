@@ -37,6 +37,11 @@ namespace shammodels::zeus::modules {
         communicate_pdat(shamrock::patch::PatchDataLayout &pdl,
                          shambase::DistributedDataShared<shamrock::patch::PatchData> &&interf);
 
+        template<class T>
+        shambase::DistributedDataShared<PatchDataField<T>>
+        communicate_pdat_field(
+                         shambase::DistributedDataShared<PatchDataField<T>> &&interf);
+
         template<class T, class Tmerged>
         shambase::DistributedData<Tmerged> merge_native(
             shambase::DistributedDataShared<T> &&interfs,
@@ -45,6 +50,9 @@ namespace shammodels::zeus::modules {
             );
 
         void exchange_ghost();
+
+        template<class T>
+        shamrock::ComputeField<T> exchange_compute_field(shamrock::ComputeField<T> & in);
 
         private:
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }

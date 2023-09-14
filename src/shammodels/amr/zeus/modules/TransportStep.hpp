@@ -47,6 +47,8 @@ namespace shammodels::zeus::modules {
 
         void compute_face_centered_moments(Tscal dt);
 
+        void exchange_face_centered_gz();
+
         private:
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }
 

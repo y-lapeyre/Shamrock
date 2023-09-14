@@ -7,6 +7,7 @@
 // -------------------------------------------------------//
 
 #include "shammodels/amr/zeus/modules/TransportStep.hpp"
+#include "shammodels/amr/zeus/modules/GhostZones.hpp"
 #include "shammodels/amr/zeus/modules/ValueLoader.hpp"
 #include "shamrock/scheduler/SchedulerUtility.hpp"
 
@@ -280,8 +281,8 @@ void Module<Tvec, TgridVec>::compute_face_centered_moments(Tscal dt_in){
     ComputeField<Tscal8> & a_z =storage.a_z.get();
 
     ComputeField<Tscal8> a_xm = val_load_vec8.load_value_with_gz(a_x, {1, 0, 0}, "a_xm");
-    ComputeField<Tscal8> a_ym = val_load_vec8.load_value_with_gz(a_y, {1, 0, 0}, "a_ym");
-    ComputeField<Tscal8> a_zm = val_load_vec8.load_value_with_gz(a_z, {1, 0, 0}, "a_zm");
+    ComputeField<Tscal8> a_ym = val_load_vec8.load_value_with_gz(a_y, {0, 1, 0}, "a_ym");
+    ComputeField<Tscal8> a_zm = val_load_vec8.load_value_with_gz(a_z, {0, 0, 1}, "a_zm");
 
 
     ComputeField<Tscal8> & Q_xm = storage.Q_xm.get();
@@ -458,6 +459,33 @@ void Module<Tvec, TgridVec>::compute_face_centered_moments(Tscal dt_in){
 
     });
 
+}
+
+
+template<class Tvec, class TgridVec>
+void Module<Tvec, TgridVec>::exchange_face_centered_gz(){
+
+    using namespace shamrock;
+    using Tscal8            = sycl::vec<Tscal, 8>;
+
+    ComputeField<Tscal8> & Qstar_x_in = storage.Qstar_x.get();
+    ComputeField<Tscal8> & Qstar_y_in = storage.Qstar_y.get();
+    ComputeField<Tscal8> & Qstar_z_in = storage.Qstar_z.get();
+
+
+    modules::GhostZones gz(context,solver_config,storage);
+
+    auto Qstar_x_out = gz.exchange_compute_field(Qstar_x_in);
+    auto Qstar_y_out = gz.exchange_compute_field(Qstar_y_in);
+    auto Qstar_z_out = gz.exchange_compute_field(Qstar_z_in);
+
+    storage.Qstar_x.reset();
+    storage.Qstar_y.reset();
+    storage.Qstar_z.reset();
+
+    storage.Qstar_x.set(std::move(Qstar_x_out));
+    storage.Qstar_y.set(std::move(Qstar_y_out));
+    storage.Qstar_z.set(std::move(Qstar_z_out));
 }
 
 template class shammodels::zeus::modules::TransportStep<f64_3, i64_3>;
