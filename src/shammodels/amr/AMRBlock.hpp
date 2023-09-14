@@ -96,11 +96,9 @@ namespace shammodels::amr {
         }
 
         template<class Func>
-        inline static void for_each_cells(sycl::buffer<TgridVec> &buf_cell_min,
-                                              sycl::buffer<TgridVec> &buf_cell_max,
-                                              sycl::handler &cgh,
-                                              std::string name,
-                                              u32 block_cnt, Func && f) {
+        inline static void for_each_cells( sycl::handler &cgh,
+                                            std::string name,
+                                            u32 block_cnt, Func && f) {
             // we use one thread per subcell because :
             // double load are avoided because of contiguous L2 cache hit
             // and CF perf opti for GPU, finer threading lead to better latency hidding
