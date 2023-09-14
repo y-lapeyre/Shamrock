@@ -256,7 +256,7 @@ void Module<Tvec, TgridVec>::compute_AV() {
             sycl::accessor q_AV{q_AV_buf, cgh, sycl::write_only, sycl::no_init};
 
             shambase::parralel_for(
-                cgh, pdat.get_obj_cnt() * Block::block_size, "compute AV", [=](u64 id_a) {
+                cgh, mpdat.total_elements * Block::block_size, "compute AV", [=](u64 id_a) {
                     u32 block_id = id_a / Block::block_size;
                     Tvec d_cell =
                         (cell_max[block_id] - cell_min[block_id]).template convert<Tscal>() *
@@ -359,7 +359,7 @@ void Module<Tvec, TgridVec>::apply_AV(Tscal dt) {
             sycl::accessor vel{buf_vel, cgh, sycl::read_write};
 
             shambase::parralel_for(
-                cgh, pdat.get_obj_cnt() * Block::block_size, "add vel AV", [=](u64 id_a) {
+                cgh, mpdat.total_elements * Block::block_size, "add vel AV", [=](u64 id_a) {
                     u32 block_id = id_a / Block::block_size;
                     Tvec d_cell =
                         (cell_max[block_id] - cell_min[block_id]).template convert<Tscal>() *
@@ -545,8 +545,6 @@ void Module<Tvec, TgridVec>::update_eint_eos(Tscal dt){
     using namespace shamrock;
     using namespace shammath;
     using MergedPDat = shamrock::MergedPatchData;
-
-    using Flagger = FaceFlagger<Tvec, TgridVec>;
 
     using Block = typename Config::AMRBlock;
 

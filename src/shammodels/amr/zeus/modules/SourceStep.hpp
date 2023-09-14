@@ -51,7 +51,7 @@ namespace shammodels::zeus::modules {
          */
         void apply_force(Tscal dt);
         
-/**
+        /**
          * @brief Compute the values of the artificial viscosity terms
          * (\cite Zeus2d_main equations 33,34)
          * 

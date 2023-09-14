@@ -89,6 +89,13 @@ namespace shammodels::zeus {
         Component<shamrock::ComputeField<Tvec>> q_AV;
         Component<shamrock::ComputeField<Tscal>> div_v_n;
 
+        Component<shamrock::ComputeField<Tscal>> pi_xm;
+        Component<shamrock::ComputeField<Tscal>> pi_xp;
+        Component<shamrock::ComputeField<Tscal>> pi_ym;
+        Component<shamrock::ComputeField<Tscal>> pi_yp;
+        Component<shamrock::ComputeField<Tscal>> pi_zm;
+        Component<shamrock::ComputeField<Tscal>> pi_zp;
+
         /**
          * @brief derivatives of the velocity
          * layout : \f$ [\partial_i u_x, \partial_i u_y, \partial_i u_z] \f$

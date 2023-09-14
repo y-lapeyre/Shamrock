@@ -95,16 +95,18 @@ namespace shammodels::amr {
             }
         }
 
-        inline static void parralel_for_block(sycl::buffer<TgridVec> &buf_cell_min,
+        template<class Func>
+        inline static void for_each_cells(sycl::buffer<TgridVec> &buf_cell_min,
                                               sycl::buffer<TgridVec> &buf_cell_max,
                                               sycl::handler &cgh,
                                               std::string name,
-                                              u32 block_cnt) {
+                                              u32 block_cnt, Func && f) {
             // we use one thread per subcell because :
             // double load are avoided because of contiguous L2 cache hit
             // and CF perf opti for GPU, finer threading lead to better latency hidding
-            shambase::parralel_for(cgh, block_cnt * block_size, name, [=](u64 id_g) {
-
+            shambase::parralel_for(cgh, block_cnt * block_size, name, [=](u64 id_cell) {
+                u32 block_id = id_cell / block_size;
+                f(block_id, id_cell);
             });
         }
 

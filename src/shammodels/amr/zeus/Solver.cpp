@@ -132,11 +132,21 @@ auto Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tscal dt_input) -> Tsc
     storage.q_AV_n_ym.reset();
     storage.q_AV_n_zm.reset();
 
-    gz.exchange_ghost();
+    
 
 
 
     //transport step
+    gz.exchange_ghost();
+
+    storage.vel_n_xp.set( val_load_vec.load_value_with_gz("vel", {1, 0, 0}, "vel_n_xp"));
+    storage.vel_n_yp.set( val_load_vec.load_value_with_gz("vel", {0, 1, 0}, "vel_n_yp"));
+    storage.vel_n_zp.set( val_load_vec.load_value_with_gz("vel", {0, 0, 1}, "vel_n_zp"));
+
+    
+
+
+
 
     storage.face_lists.reset();
     storage.pressure.reset();
