@@ -14,6 +14,8 @@ using Module = shammodels::zeus::modules::WriteBack<Tvec, TgridVec>;
 template<class Tvec, class TgridVec>
 void Module<Tvec, TgridVec>::write_back_merged_data(){
 
+    StackEntry stack_loc{};
+
 
     using namespace shamrock::patch;
     using namespace shamrock;
@@ -55,9 +57,15 @@ void Module<Tvec, TgridVec>::write_back_merged_data(){
                 acc_vel_dest[id] = acc_vel_src[id];
             });
         });
+
+        if (mpdat.pdat.has_nan()) {
+            logger::err_ln("[Zeus]", "nan detected in write back");
+            throw shambase::throw_with_loc<std::runtime_error>("detected nan");
+        }
         
     });
 
+    
 }
 
 
