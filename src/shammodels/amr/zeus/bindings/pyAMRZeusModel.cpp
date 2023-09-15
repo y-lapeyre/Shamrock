@@ -10,8 +10,9 @@
 
 #include "shambindings/pybindaliases.hpp"
 #include "shambindings/pytypealias.hpp"
-#include "shammodels/amr/basegodunov/Model.hpp"
-namespace shammodels::basegodunov {
+#include "shammodels/amr/zeus/Model.hpp"
+#include <pybind11/functional.h>
+namespace shammodels::zeus{
     template<class Tvec, class TgridVec>
     void add_instance(py::module &m, std::string name_config, std::string name_model) {
 
@@ -30,25 +31,25 @@ namespace shammodels::basegodunov {
             .def("init_scheduler", &T::init_scheduler)
             .def("make_base_grid", &T::make_base_grid)
             .def("dump_vtk", &T::dump_vtk)
-            .def("evolve_once", &T::evolve_once);
+            .def("evolve_once", &T::evolve_once)
+            .def("set_field_value_lambda_f64",&T::template set_field_value_lambda<f64>)
+            .def("set_field_value_lambda_f64_3",&T::template set_field_value_lambda<f64_3>);
     }
 }
 
-Register_pymod(pybasegodunovmodel) {
-    std::string base_name = "AMRGodunov";
-    using namespace shammodels::basegodunov;
+Register_pymod(pyamrzeusmodel) {
+    std::string base_name = "AMRZeus";
+    using namespace shammodels::zeus;
 
     add_instance<f64_3, i64_3>(
         m, base_name + "_f64_3_i64_3_SolverConfig", base_name + "_f64_3_i64_3_Model");
 
-    using VariantAMRGodunovBind = std::variant<std::unique_ptr<Model<f64_3, i64_3>>>;
+    using VariantAMRZeusBind = std::variant<std::unique_ptr<Model<f64_3, i64_3>>>;
 
     m.def(
-        "get_AMRGodunov",
-        [](ShamrockCtx &ctx,
-           std::string vector_type,
-           std::string grid_repr) -> VariantAMRGodunovBind {
-            VariantAMRGodunovBind ret;
+        "get_AMRZeus",
+        [](ShamrockCtx &ctx, std::string vector_type, std::string grid_repr) -> VariantAMRZeusBind {
+            VariantAMRZeusBind ret;
 
             if (vector_type == "f64_3" && grid_repr == "i64_3") {
                 ret = std::make_unique<Model<f64_3, i64_3>>(ctx);
