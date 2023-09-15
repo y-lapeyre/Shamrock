@@ -21,7 +21,7 @@ namespace shammodels::zeus::modules {
         using Tgridscal          = shambase::VecComponent<TgridVec>;
         static constexpr u32 dim = shambase::VectorProperties<Tvec>::dimension;
 
-        using Config  = SolverConfig<Tvec,TgridVec>;
+        using Config  = SolverConfig<Tvec, TgridVec>;
         using Storage = SolverStorage<Tvec, TgridVec, u64>;
 
         ShamrockCtx &context;
@@ -34,9 +34,9 @@ namespace shammodels::zeus::modules {
         /**
          * @brief Compute face momentas
          * (\cite Fargo3D_1 eq 48 49)
-         * 
+         *
          * \f{eqnarray*}{
-         *     \Pi^{-x}_{i,j,k} &=& \rho_i v_{i,j,k}\\ 
+         *     \Pi^{-x}_{i,j,k} &=& \rho_i v_{i,j,k}\\
          *     \Pi^{+x}_{i,j,k} &=& \rho_i v_{i+1,j,k}
          * \f}
          * same goes for y,z
@@ -49,9 +49,16 @@ namespace shammodels::zeus::modules {
 
         void exchange_face_centered_gz();
 
+        void compute_flux();
+
+        void compute_stencil_flux();
+
+        void update_Q(Tscal dt);
+
+        void compute_new_qte();
+
         private:
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }
-
     };
 
 } // namespace shammodels::zeus::modules

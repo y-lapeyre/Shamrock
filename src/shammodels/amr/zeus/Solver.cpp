@@ -147,6 +147,11 @@ auto Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tscal dt_input) -> Tsc
     modules::TransportStep transport (context, solver_config,storage);
     transport.compute_cell_centered_momentas();
 
+
+    storage.vel_n_xp.reset();
+    storage.vel_n_yp.reset();
+    storage.vel_n_zp.reset();
+
     transport.compute_limiter();
 
     transport.compute_face_centered_moments(dt_input);
@@ -160,6 +165,25 @@ auto Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tscal dt_input) -> Tsc
 
     transport.exchange_face_centered_gz();
 
+    transport.compute_flux();
+
+    transport.compute_stencil_flux();
+
+    transport.update_Q(dt_input);
+
+    transport.compute_new_qte();
+
+
+
+
+    wb.write_back_merged_data();
+
+
+
+    storage.Q.reset();
+    storage.Q_xm.reset();
+    storage.Q_ym.reset();
+    storage.Q_zm.reset();
 
 
     storage.face_lists.reset();
