@@ -22,17 +22,33 @@ sz = 1 << 1
 base = 64 
 model.make_base_grid((0,0,0),(sz,sz,sz),(base*multx,base*multy,base*multz))
 
+cfg = model.gen_default_config()
+scale_fact = 1/(sz*base*multx)
+cfg.set_scale_factor(scale_fact)
+model.set_config(cfg)
 
+
+kx,ky,kz = 2*np.pi,0,0
+delta_rho = 1e-4
 
 def rho_map(rmin,rmax):
 
-    
+    x,y,z = rmin
+
+    return 1. + delta_rho*np.sin(kx*x + ky*y + kz*z)
+
+def eint_map(rmin,rmax):
 
     return 1.
 
+def vel_map(rmin,rmax):
+
+    return (0,0,0)
 
 
 model.set_field_value_lambda_f64("rho", rho_map)
+model.set_field_value_lambda_f64("eint", eint_map)
+model.set_field_value_lambda_f64_3("vel", vel_map)
 
 #model.evolve_once(0,0.1)
 

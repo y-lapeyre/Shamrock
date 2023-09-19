@@ -25,7 +25,10 @@ namespace shammodels::zeus{
         logger::debug_ln("[Py]", "registering class :",name_config,typeid(T).name());
         logger::debug_ln("[Py]", "registering class :",name_model,typeid(T).name());
 
-        py::class_<TConfig>(m, name_config.c_str());
+        py::class_<TConfig>(m, name_config.c_str())
+            .def("set_scale_factor",[](TConfig & self, Tscal scale_factor){
+                self.grid_coord_to_pos_fact = scale_factor;
+            });
 
         py::class_<T>(m, name_model.c_str())
             .def("init_scheduler", &T::init_scheduler)
@@ -33,7 +36,13 @@ namespace shammodels::zeus{
             .def("dump_vtk", &T::dump_vtk)
             .def("evolve_once", &T::evolve_once)
             .def("set_field_value_lambda_f64",&T::template set_field_value_lambda<f64>)
-            .def("set_field_value_lambda_f64_3",&T::template set_field_value_lambda<f64_3>);
+            .def("set_field_value_lambda_f64_3",&T::template set_field_value_lambda<f64_3>)
+            .def("gen_default_config",[](T & self) -> TConfig {
+                return TConfig();
+            })
+            .def("set_config",[](T& self, TConfig cfg){
+                self.solver.solver_config = cfg;
+            });
     }
 }
 

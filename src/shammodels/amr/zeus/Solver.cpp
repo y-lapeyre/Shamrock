@@ -25,6 +25,11 @@ template<class Tvec, class TgridVec>
 auto Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tscal dt_input) -> Tscal{
 
     StackEntry stack_loc{};
+
+    if(shamsys::instance::world_rank == 0){ 
+        logger::normal_ln("amr::Zeus", shambase::format("t = {}, dt = {}", t_current, dt_input));
+    }
+
     shambase::Timer tstep;
     tstep.start();
 
@@ -97,6 +102,55 @@ auto Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tscal dt_input) -> Tsc
 
     modules::SourceStep src_step(context,solver_config,storage);
     src_step.compute_forces();
+
+
+    using namespace shamrock::patch;
+    using namespace shamrock;
+    using Block = typename Config::AMRBlock;
+    scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
+
+        using MergedPDat = shamrock::MergedPatchData;
+        MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);
+
+        sycl::buffer<Tscal> &rho_merged = mpdat.pdat.get_field_buf_ref<Tscal>(irho_interf);
+        sycl::buffer<Tscal> &eint_merged = mpdat.pdat.get_field_buf_ref<Tscal>(ieint_interf);
+        sycl::buffer<Tvec> &vel_merged = mpdat.pdat.get_field_buf_ref<Tvec>(ivel_interf);
+
+        PatchData &patch_dest = scheduler().patch_data.get_pdat(p.id_patch);
+        sycl::buffer<Tscal> &rho_dest = patch_dest.get_field_buf_ref<Tscal>(irho_interf);
+        sycl::buffer<Tscal> &eint_dest = patch_dest.get_field_buf_ref<Tscal>(ieint_interf);
+        sycl::buffer<Tvec> &vel_dest = patch_dest.get_field_buf_ref<Tvec>(ivel_interf);
+
+
+        sycl::buffer<Tvec> &forces_buf = storage.forces.get().get_buf_check(p.id_patch);
+        sycl::buffer<Tscal> & tmp = storage.pres_n_ym.get().get_buf_check(p.id_patch);
+
+        shamsys::instance::get_compute_queue().submit([&](sycl::handler & cgh){
+
+            sycl::accessor acc_rho_src{rho_merged, cgh, sycl::read_only};
+            sycl::accessor acc_eint_src{tmp, cgh, sycl::read_only};
+            sycl::accessor acc_vel_src{forces_buf, cgh, sycl::read_only};
+
+            sycl::accessor acc_rho_dest{rho_dest, cgh, sycl::write_only};
+            sycl::accessor acc_eint_dest{eint_dest, cgh, sycl::write_only};
+            sycl::accessor acc_vel_dest{vel_dest, cgh, sycl::write_only};
+
+            shambase::parralel_for(cgh, mpdat.original_elements*Block::block_size, "copy_back", [=](u32 id){
+                acc_rho_dest[id] = acc_rho_src[id];
+                acc_eint_dest[id] = acc_eint_src[id];
+                acc_vel_dest[id] = acc_vel_src[id];
+            });
+        });
+
+        if (mpdat.pdat.has_nan()) {
+            logger::err_ln("[Zeus]", "nan detected in write back");
+            throw shambase::throw_with_loc<std::runtime_error>("detected nan");
+        }
+        
+    });
+
+    return 0;
+
     src_step.apply_force(dt_input);
 
     src_step.compute_AV();
@@ -111,6 +165,7 @@ auto Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tscal dt_input) -> Tsc
     modules::WriteBack wb (context, solver_config,storage);
     wb.write_back_merged_data();
 
+    
 
     storage.merged_patchdata_ghost.reset();
     storage.ghost_layout.reset();

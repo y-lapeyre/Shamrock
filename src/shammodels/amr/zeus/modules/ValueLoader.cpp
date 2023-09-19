@@ -89,7 +89,7 @@ void Module<Tvec, TgridVec, T>::load_patch_internal_block_ym(
 
             if (lid_coord[1] > 0) {
                 lid_coord[1] -= 1;
-                val_out[base_idx] = src[base_idx - lid + Block::get_index(lid_coord)];
+                val_out[base_idx] = Block::get_index(lid_coord);//src[base_idx - lid + Block::get_index(lid_coord)];
             }
         });
     });
@@ -758,10 +758,12 @@ shamrock::ComputeField<T> Module<Tvec, TgridVec, T>::load_value_with_gz(
             return storage.merged_patchdata_ghost.get().get(id).total_elements;
         });
 
+
     shamrock::patch::PatchDataLayout &ghost_layout = storage.ghost_layout.get();
     u32 ifield                                     = ghost_layout.get_field_idx<T>(field_name);
     u32 nvar                                       = ghost_layout.get_field<T>(ifield).nvar;
 
+    
     scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
         MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);
 
@@ -770,6 +772,7 @@ shamrock::ComputeField<T> Module<Tvec, TgridVec, T>::load_value_with_gz(
 
         load_patch_internal_block(offset, pdat.get_obj_cnt(), nvar, buf_src, buf_dest);
     });
+
 
     scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
         MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);
@@ -877,7 +880,7 @@ shamrock::ComputeField<T> Module<Tvec, TgridVec, T>::load_value_with_gz(
             buf_src,
             buf_dest);
     });
-
+if(false){
     scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
         MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);
 
@@ -900,6 +903,7 @@ shamrock::ComputeField<T> Module<Tvec, TgridVec, T>::load_value_with_gz(
             buf_src,
             buf_dest);
     });
+}
 
     scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
         MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);

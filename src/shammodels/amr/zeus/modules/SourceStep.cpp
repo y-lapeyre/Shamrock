@@ -82,7 +82,7 @@ void Module<Tvec, TgridVec>::compute_forces() {
             sycl::accessor p_zm{buf_p_zm, cgh, sycl::read_only};
 
             shambase::parralel_for(
-                cgh, pdat.get_obj_cnt() * Block::block_size, "compute grad p", [=](u64 id_a) {
+                cgh, mpdat.total_elements * Block::block_size, "compute grad p", [=](u64 id_a) {
                     u32 block_id = id_a / Block::block_size;
                     Tvec d_cell =
                         (cell_max[block_id] - cell_min[block_id]).template convert<Tscal>() *
@@ -104,6 +104,8 @@ void Module<Tvec, TgridVec>::compute_forces() {
                     p_i_j_k - p_i_jm1_k, 
                     p_i_j_k - p_i_j_km1
                 };
+
+                //sycl::ext::oneapi::experimental::printf("%f %f %f\n", dp.x(),dp.y(),dp.z());
 
                 Tvec avg_rho =
                     Tvec{
@@ -151,8 +153,8 @@ void Module<Tvec, TgridVec>::compute_forces() {
                         return r / (d * d * d + 1e-5);
                     };
 
-                    forces[id_a * Block::block_size + lid] +=
-                        get_ext_force(block_min + delta + delta_cell_h);
+                    //forces[id_a * Block::block_size + lid] +=
+                    //    get_ext_force(block_min + delta + delta_cell_h);
                 });
             });
         });
@@ -190,7 +192,7 @@ void Module<Tvec, TgridVec>::apply_force(Tscal dt) {
             sycl::accessor vel{vel_buf, cgh, sycl::read_write};
 
             shambase::parralel_for(
-                cgh, pdat.get_obj_cnt() * Block::block_size, "add ext force", [=](u64 id_a) {
+                cgh, mpdat.total_elements * Block::block_size, "add ext force", [=](u64 id_a) {
                     vel[id_a] += dt * forces[id_a];
                 });
         });
