@@ -39,7 +39,7 @@ namespace shammath {
         T tmp = f * g;
         tmp   = tmp + shambase::sycl_utils::g_sycl_abs(tmp);
         T sm = f + g;
-        return tmp / (f + g + 1.e-9*sycl::sign(f));
+        return tmp / (f + g + 1.e-9);
     }
 
 } // namespace shammath
