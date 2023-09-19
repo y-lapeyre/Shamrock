@@ -89,7 +89,7 @@ void Module<Tvec, TgridVec, T>::load_patch_internal_block_ym(
 
             if (lid_coord[1] > 0) {
                 lid_coord[1] -= 1;
-                val_out[base_idx] = Block::get_index(lid_coord);//src[base_idx - lid + Block::get_index(lid_coord)];
+                val_out[base_idx] = src[base_idx - lid + Block::get_index(lid_coord)];
             }
         });
     });
@@ -880,7 +880,7 @@ shamrock::ComputeField<T> Module<Tvec, TgridVec, T>::load_value_with_gz(
             buf_src,
             buf_dest);
     });
-if(false){
+
     scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
         MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);
 
@@ -903,7 +903,7 @@ if(false){
             buf_src,
             buf_dest);
     });
-}
+
 
     scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
         MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);

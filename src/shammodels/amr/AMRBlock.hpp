@@ -69,12 +69,12 @@ namespace shammodels::amr {
             return {};
         }
 
-        static constexpr std::array<u32,dim> get_coord(u32 i) noexcept{
+        inline static constexpr std::array<u32,dim> get_coord(u32 i) noexcept{
             static_assert(dim == 3, "only in dim 3 for now");
 
             if constexpr (dim == 3) {
                 const u32 tmp  = i >> NsideBlockPow;
-                return {(tmp) >> NsideBlockPow, (tmp)%Nside,i % Nside};
+                return {i % Nside, (tmp)%Nside,(tmp) >> NsideBlockPow};
             }
 
             return {};
