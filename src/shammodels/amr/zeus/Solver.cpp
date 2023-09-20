@@ -107,6 +107,8 @@ auto Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tscal dt_input) -> Tsc
 
     src_step.apply_force(dt_input);
 
+
+
     src_step.compute_AV();
 
     shamrock::ComputeField<Tvec> &q_AV = storage.q_AV.get();
@@ -119,7 +121,6 @@ auto Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tscal dt_input) -> Tsc
     modules::WriteBack wb (context, solver_config,storage);
     wb.write_back_merged_data();
 
-    
 
     storage.merged_patchdata_ghost.reset();
     storage.ghost_layout.reset();

@@ -61,12 +61,12 @@ void Module<Tvec, TgridVec>::flag_faces() {
 
                     // what a readable piece of code
                     // there can be only ONE that is the true answers
-                    const u8 lookup = ((cell2_d.x() == max_compo) ? 0 : 0) +
-                                      ((cell2_d.x() == -max_compo) ? 1 : 0) +
-                                      ((cell2_d.y() == max_compo) ? 2 : 0) +
-                                      ((cell2_d.y() == -max_compo) ? 3 : 0) +
-                                      ((cell2_d.z() == max_compo) ? 4 : 0) +
-                                      ((cell2_d.z() == -max_compo) ? 5 : 0);
+                    const u8 lookup = ((cell2_d.x() == -max_compo) ? 0 : 0) +
+                                      ((cell2_d.x() == max_compo) ? 1 : 0) +
+                                      ((cell2_d.y() == -max_compo) ? 2 : 0) +
+                                      ((cell2_d.y() == max_compo) ? 3 : 0) +
+                                      ((cell2_d.z() == -max_compo) ? 4 : 0) +
+                                      ((cell2_d.z() == max_compo) ? 5 : 0);
 
                     // F this bit bit of code
                     // i'm so done with this crap
