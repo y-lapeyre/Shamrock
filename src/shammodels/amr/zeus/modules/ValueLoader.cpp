@@ -312,7 +312,7 @@ void Module<Tvec, TgridVec, T>::load_patch_neigh_same_level_xp(
 
             std::array<u32, 3> lid_coord = Block::get_coord(lid);
 
-            if (lid_coord[0] == 0) {
+            if (lid_coord[0] == Block::Nside -1 ) {
                 auto tmp = cell_max[block_id] - cell_min[block_id];
                 i32 Va   = tmp.x() * tmp.y() * tmp.z();
 
@@ -322,9 +322,16 @@ void Module<Tvec, TgridVec, T>::load_patch_neigh_same_level_xp(
                     i32 nV   = tmp.x() * tmp.y() * tmp.z();
 
                     if (nV == Va) { // same level
-                        val_out[base_idx] =
-                            src[block_id_b * Block::block_size +
+                        auto val = src[block_id_b * Block::block_size +
                                 Block::get_index({0, lid_coord[1], lid_coord[2]})];
+
+                        //if constexpr (std::is_same_v<T, Tvec>){
+                        //sycl::ext::oneapi::experimental::printf("%d %f %f %f\n",block_id_b * Block::block_size +
+                        //        Block::get_index({0, lid_coord[1], lid_coord[2]}),val.x(),val.y(),val.z());
+                        //}
+                        
+                        val_out[base_idx] = val;
+                            
                     }
                 });
             }
@@ -422,7 +429,7 @@ void Module<Tvec, TgridVec, T>::load_patch_neigh_same_level_yp(
 
             std::array<u32, 3> lid_coord = Block::get_coord(lid);
 
-            if (lid_coord[1] == 0) {
+            if (lid_coord[1] == Block::Nside -1 ) {
                 auto tmp = cell_max[block_id] - cell_min[block_id];
                 i32 Va   = tmp.x() * tmp.y() * tmp.z();
 
@@ -532,7 +539,7 @@ void Module<Tvec, TgridVec, T>::load_patch_neigh_same_level_zp(
 
             std::array<u32, 3> lid_coord = Block::get_coord(lid);
 
-            if (lid_coord[2] == 0) {
+            if (lid_coord[2] == Block::Nside -1 ) {
                 auto tmp = cell_max[block_id] - cell_min[block_id];
                 i32 Va   = tmp.x() * tmp.y() * tmp.z();
 

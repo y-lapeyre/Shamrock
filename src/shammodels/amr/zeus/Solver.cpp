@@ -120,7 +120,6 @@ auto Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tscal dt_input) -> Tsc
     modules::WriteBack wb (context, solver_config,storage);
     wb.write_back_merged_data();
 
-return 0;
     storage.merged_patchdata_ghost.reset();
     storage.ghost_layout.reset();
 
@@ -143,18 +142,18 @@ return 0;
     storage.q_AV_n_zm.reset();
 
     
-    
-
 
     //transport step
     gz.exchange_ghost();
 
-    storage.vel_n_xp.set( val_load_vec.load_value_with_gz("vel", {1, 0, 0}, "vel_n_xp"));
-    storage.vel_n_yp.set( val_load_vec.load_value_with_gz("vel", {0, 1, 0}, "vel_n_yp"));
-    storage.vel_n_zp.set( val_load_vec.load_value_with_gz("vel", {0, 0, 1}, "vel_n_zp"));
+
+    modules::ValueLoader<Tvec, TgridVec, Tvec> val_load_vec_v2(context, solver_config, storage);
+    storage.vel_n_xp.set( val_load_vec_v2.load_value_with_gz("vel", {1, 0, 0}, "vel_n_xp"));
+    storage.vel_n_yp.set( val_load_vec_v2.load_value_with_gz("vel", {0, 1, 0}, "vel_n_yp"));
+    storage.vel_n_zp.set( val_load_vec_v2.load_value_with_gz("vel", {0, 0, 1}, "vel_n_zp"));
 
 
-
+    /*
     using namespace shamrock::patch;
     using namespace shamrock;
     using Block = typename Config::AMRBlock;
@@ -174,22 +173,25 @@ return 0;
 
 
         sycl::buffer<Tvec> &forces_buf = storage.vel_n_xp.get().get_buf_check(p.id_patch);
-        sycl::buffer<Tscal> & tmp = storage.pres_n_xm.get().get_buf_check(p.id_patch);
+        //sycl::buffer<Tscal> & tmp = storage.pres_n_xm.get().get_buf_check(p.id_patch);
+        //sycl::buffer<sycl::vec<Tscal, 8>> & Q_tmp = storage.Q.get().get_buf_check(p.id_patch);
         sycl::buffer<Tscal> &buf_p   = pressure_field.get_buf_check(p.id_patch);
 
         shamsys::instance::get_compute_queue().submit([&](sycl::handler & cgh){
 
             sycl::accessor acc_rho_src{buf_p, cgh, sycl::read_only};
-            sycl::accessor acc_eint_src{tmp, cgh, sycl::read_only};
-            sycl::accessor acc_vel_src{forces_buf, cgh, sycl::read_only};
+            sycl::accessor acc_eint_src{eint_merged, cgh, sycl::read_only};
+            sycl::accessor acc_vel_src{vel_merged, cgh, sycl::read_only};
+            sycl::accessor acc_vel_src_xp{forces_buf, cgh, sycl::read_only};
+            //sycl::accessor Q{Q_tmp, cgh, sycl::read_only};
 
             sycl::accessor acc_rho_dest{rho_dest, cgh, sycl::write_only};
             sycl::accessor acc_eint_dest{eint_dest, cgh, sycl::write_only};
             sycl::accessor acc_vel_dest{vel_dest, cgh, sycl::write_only};
 
-            shambase::parralel_for(cgh, mpdat.original_elements*Block::block_size, "copy_back", [=](u32 id){
-                acc_rho_dest[id] = acc_rho_src[id];
-                acc_eint_dest[id] = acc_eint_src[id];
+            shambase::parralel_for(cgh, mpdat.original_elements*Block::block_size, "tmp copy_ack", [=](u32 id){
+                //acc_rho_dest[id] = acc_rho_src[id];
+                acc_eint_dest[id] = acc_vel_src_xp[id].x();
                 acc_vel_dest[id] = acc_vel_src[id];
             });
         });
@@ -202,12 +204,12 @@ return 0;
     });
 
     return 0;
-
-
-
+    */
 
     modules::TransportStep transport (context, solver_config,storage);
     transport.compute_cell_centered_momentas();
+
+
 
 
     storage.vel_n_xp.reset();
