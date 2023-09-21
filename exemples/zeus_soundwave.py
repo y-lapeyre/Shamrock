@@ -29,7 +29,7 @@ model.set_config(cfg)
 
 
 kx,ky,kz = 2*np.pi,0,0
-delta_rho = 1e-4
+delta_rho = 1e-3
 
 def rho_map(rmin,rmax):
 
@@ -54,4 +54,4 @@ model.set_field_value_lambda_f64_3("vel", vel_map)
 
 for i in range(10):
     model.dump_vtk("test"+str(i)+".vtk")
-    model.evolve_once(0,0.1)
+    model.evolve_once(0,0.001)
