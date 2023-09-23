@@ -11,8 +11,8 @@
 #include "shammath/matrix.hpp"
 #include "shamrock/patch/PatchDataField.hpp"
 #include "shamrock/scheduler/InterfacesUtility.hpp"
-#include "shamrock/sph/kernels.hpp"
-#include "shamrock/sph/sphpart.hpp"
+#include "shammath/sphkernels.hpp"
+#include "shammodels/sph/sphpart.hpp"
 
 template<class Tvec, template<class> class SPHKernel>
 void shammodels::sph::modules::DiffOperatorDtDivv<Tvec, SPHKernel>::update_dtdivv(
@@ -206,6 +206,6 @@ void shammodels::sph::modules::DiffOperatorDtDivv<Tvec, SPHKernel>::update_dtdiv
     });
 }
 
-using namespace shamrock::sph::kernels;
+using namespace shammath;
 template class shammodels::sph::modules::DiffOperatorDtDivv<f64_3, M4>;
 template class shammodels::sph::modules::DiffOperatorDtDivv<f64_3, M6>;
