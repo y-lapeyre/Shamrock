@@ -20,40 +20,23 @@
 #include "aliases.hpp"
 #include "shambase/Constants.hpp"
 
-namespace shammath {
+namespace shammath::details {
 
-    // 3d kernels only
-    /**
-     * @brief The M4 SPH kernel
-     * \todo add graph
-     *
-     * @tparam flt_type the flating point representation to use
-     */
-    template<class flt_type>
-    class M4 {
+    template<class Tscal>
+    class KernelDefM4 {
         public:
-        inline static constexpr flt_type Rkern  = 2;   /*!< Radius of the support */
-        inline static constexpr flt_type hfactd = 1.2; /*!< default $h_{\rm fact}$ for this kernel*/
+        inline static constexpr Tscal Rkern  = 2;   
+        inline static constexpr Tscal hfactd = 1.2; 
 
-        /**
-         * @brief norm of the kernel
-         * 
-         */
-        inline static constexpr flt_type norm = 1 / shambase::Constants<flt_type>::pi;
+        inline static constexpr Tscal norm_1d = 2./3.;
+        inline static constexpr Tscal norm_2d = 10./(7.*shambase::Constants<Tscal>::pi);
+        inline static constexpr Tscal norm_3d = 1 / shambase::Constants<Tscal>::pi;
 
-        /**
-         * @brief the base function for this SPH kernel
-         * 
-         * Such that : \f$\int f(\vert\vert q\vert\vert) {\rm d}^n \mathbf{q} = 1\f$
-         * Also : \f$ f(q > Rkern) = 0\f$
-         * @param q parameter of the function
-         * @return flt_type the value of \f$ f(q) \f$
-         */
-        inline static flt_type f(flt_type q) {
+        inline static Tscal f(Tscal q) {
 
-            constexpr flt_type div3_4 = (3. / 4.);
-            constexpr flt_type div3_2 = (3. / 2.);
-            constexpr flt_type div1_4 = (1. / 4.);
+            constexpr Tscal div3_4 = (3. / 4.);
+            constexpr Tscal div3_2 = (3. / 2.);
+            constexpr Tscal div1_4 = (1. / 4.);
 
             if (q < 1) {
                 return 1 + q * q * (div3_4 * q - div3_2);
@@ -63,16 +46,10 @@ namespace shammath {
                 return 0;
         }
 
-        /**
-         * @brief derivative of \ref M4.f
-         * 
-         * @param q parameter of the function
-         * @return flt_type the value of \f$ f'(q) \f$
-         */
-        inline static flt_type df(flt_type q) {
+        inline static Tscal df(Tscal q) {
 
-            constexpr flt_type div9_4 = (9. / 4.);
-            constexpr flt_type div3_4 = (3. / 4.);
+            constexpr Tscal div9_4 = (9. / 4.);
+            constexpr Tscal div3_4 = (3. / 4.);
 
             if (q < 1) {
                 return -3 * q + div9_4 * q * q;
@@ -81,55 +58,19 @@ namespace shammath {
             } else
                 return 0;
         }
-
-        /**
-         * @brief compute the normed & resized version of the kernel :
-         * \f[
-         *  W(r,h) = C_{\rm norm} \frac{1}{h^3} f(\frac{r}{h})
-         * \f]
-         * @param r 
-         * @param h 
-         * @return flt_type 
-         */
-        inline static flt_type W(flt_type r, flt_type h) { return norm * f(r / h) / (h * h * h); }
-
-        inline static flt_type dW(flt_type r, flt_type h) {
-            return norm * df(r / h) / (h * h * h * h);
-        }
-
-        inline static flt_type dhW(flt_type r, flt_type h) {
-            return -(norm) * (3 * f(r / h) + (r / h) * df(r / h)) / (h * h * h * h);
-        }
     };
 
-    /**
-     * @brief The M6 SPH kernel
-     * \todo add graph
-     *
-     * @tparam flt_type the flating point representation to use
-     */
-    template<class flt_type>
-    class M6 {
+    template<class Tscal>
+    class KernelDefM6 {
         public:
-        using flt                               = flt_type;
-        inline static constexpr flt_type Rkern  = 3;/*!< Radius of the support */
-        inline static constexpr flt_type hfactd = 1.0;/*!< default $h_{\rm fact}$ for this kernel*/
+        inline static constexpr Tscal Rkern  = 3;  
+        inline static constexpr Tscal hfactd = 1.0; 
 
-        /**
-         * @brief norm of the kernel
-         * 
-         */
-        inline static constexpr flt_type norm = 1 / (120 * shambase::Constants<flt_type>::pi);
+        inline static constexpr Tscal norm_1d = 1./120.;
+        inline static constexpr Tscal norm_2d = 7./(478*shambase::Constants<Tscal>::pi);
+        inline static constexpr Tscal norm_3d = 1 / (120 * shambase::Constants<Tscal>::pi);
 
-        /**
-         * @brief the base function for this SPH kernel
-         * 
-         * Such that : \f$\int f(\vert\vert q\vert\vert) {\rm d}^n \mathbf{q} = 1\f$
-         * Also : \f$ f(q > Rkern) = 0\f$
-         * @param q parameter of the function
-         * @return flt_type the value of \f$ f(q) \f$
-         */
-        inline static flt_type f(flt_type q) {
+        inline static Tscal f(Tscal q) {
 
             if (q < 1.) {
                 return -10. * q * q * q * q * q + 30. * q * q * q * q - 60. * q * q + 66.;
@@ -142,13 +83,7 @@ namespace shammath {
                 return 0;
         }
 
-        /**
-         * @brief derivative of \ref M6.f
-         * 
-         * @param q parameter of the function
-         * @return flt_type the value of \f$ f'(q) \f$
-         */
-        inline static flt_type df(flt_type q) {
+        inline static Tscal df(Tscal q) {
 
             if (q < 1.) {
                 return q * (-50. * q * q * q + 120. * q * q - 120.);
@@ -160,25 +95,88 @@ namespace shammath {
             } else
                 return 0.;
         }
+    };
+} // namespace shammath::details
+
+namespace shammath {
+
+    template<class Tscal_, class BaseKernel>
+    class SPHKernelGen {
+        public:
+        using Generator = BaseKernel;
+        using Tscal = Tscal_;
+        inline static constexpr Tscal Rkern = BaseKernel::Rkern; /*!< Radius of the support */
+        inline static constexpr Tscal hfactd =
+            BaseKernel::hfactd; /*!< default $h_{\rm fact}$ for this kernel*/
+
+        /**
+         * @brief the base function for this SPH kernel
+         *
+         * Such that : \f$\int f(\vert\vert q\vert\vert) {\rm d}^n \mathbf{q} = 1\f$
+         * Also : \f$ f(q > Rkern) = 0\f$
+         * @param q parameter of the function
+         * @return Tscal the value of \f$ f(q) \f$
+         */
+        inline static Tscal f(Tscal q) { return BaseKernel::f(q); }
+
+        /**
+         * @brief derivative of \ref M4.f
+         *
+         * @param q parameter of the function
+         * @return Tscal the value of \f$ f'(q) \f$
+         */
+        inline static Tscal df(Tscal q) { return BaseKernel::df(q); }
+
+        
+        inline static Tscal W_1d(Tscal r, Tscal h) {
+            return BaseKernel::norm_1d * f(r / h) / (h );
+        }
+
+        inline static Tscal W_2d(Tscal r, Tscal h) {
+            return BaseKernel::norm_2d * f(r / h) / (h * h );
+        }
 
         /**
          * @brief compute the normed & resized version of the kernel :
          * \f[
          *  W(r,h) = C_{\rm norm} \frac{1}{h^3} f(\frac{r}{h})
          * \f]
-         * @param r 
-         * @param h 
-         * @return flt_type 
+         * @param r
+         * @param h
+         * @return Tscal
          */
-        inline static flt_type W(flt_type r, flt_type h) { return norm * f(r / h) / (h * h * h); }
-
-        inline static flt_type dW(flt_type r, flt_type h) {
-            return norm * df(r / h) / (h * h * h * h);
+        inline static Tscal W_3d(Tscal r, Tscal h) {
+            return BaseKernel::norm_3d * f(r / h) / (h * h * h);
         }
 
-        inline static flt_type dhW(flt_type r, flt_type h) {
-            return -(norm) * (3 * f(r / h) + (r / h) * df(r / h)) / (h * h * h * h);
+
+        inline static Tscal dW_3d(Tscal r, Tscal h) {
+            return BaseKernel::norm_3d * df(r / h) / (h * h * h * h);
+        }
+
+        inline static Tscal dhW_3d(Tscal r, Tscal h) {
+            return -(BaseKernel::norm_3d) * (3 * f(r / h) + (r / h) * df(r / h)) / (h * h * h * h);
         }
     };
+
+    /**
+     * @brief The M4 SPH kernel
+     * \todo add graph
+     *
+     * @tparam flt_type the flating point representation to use
+     */
+    template<class flt_type>
+    using M4 = SPHKernelGen<flt_type, details::KernelDefM4<flt_type>>;
+
+    
+
+    /**
+     * @brief The M6 SPH kernel
+     * \todo add graph
+     *
+     * @tparam flt_type the flating point representation to use
+     */
+    template<class flt_type>
+    using M6 = SPHKernelGen<flt_type, details::KernelDefM6<flt_type>>;
 
 } // namespace shammath
