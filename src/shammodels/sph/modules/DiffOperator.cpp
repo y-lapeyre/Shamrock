@@ -8,8 +8,8 @@
 
 #include "shammodels/sph/modules/DiffOperator.hpp"
 #include "shamrock/scheduler/InterfacesUtility.hpp"
-#include "shamrock/sph/kernels.hpp"
-#include "shamrock/sph/sphpart.hpp"
+#include "shammath/sphkernels.hpp"
+#include "shammodels/sph/sphpart.hpp"
 
 template<class Tvec, template<class> class SPHKernel>
 void shammodels::sph::modules::DiffOperators<Tvec, SPHKernel>::update_divv(Tscal gpart_mass) {
@@ -101,7 +101,7 @@ void shammodels::sph::modules::DiffOperators<Tvec, SPHKernel>::update_divv(Tscal
                             r_ab_unit = {0, 0, 0};
                         }
 
-                        Tvec dWab_a = Kernel::dW(rab, h_a) * r_ab_unit;
+                        Tvec dWab_a = Kernel::dW_3d(rab, h_a) * r_ab_unit;
 
                         sum_nabla_v += pmass * sycl::dot(v_ab, dWab_a);
                     });
@@ -203,7 +203,7 @@ void shammodels::sph::modules::DiffOperators<Tvec, SPHKernel>::update_curlv(Tsca
                             r_ab_unit = {0, 0, 0};
                         }
 
-                        Tvec dWab_a = Kernel::dW(rab, h_a) * r_ab_unit;
+                        Tvec dWab_a = Kernel::dW_3d(rab, h_a) * r_ab_unit;
 
                         sum_nabla_cross_v += pmass * sycl::cross(v_ab, dWab_a);
                     });
@@ -215,6 +215,6 @@ void shammodels::sph::modules::DiffOperators<Tvec, SPHKernel>::update_curlv(Tsca
     });
 }
 
-using namespace shamrock::sph::kernels;
+using namespace shammath;
 template class shammodels::sph::modules::DiffOperators<f64_3, M4>;
 template class shammodels::sph::modules::DiffOperators<f64_3, M6>;
