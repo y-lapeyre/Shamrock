@@ -16,7 +16,7 @@
 #include "shamrock/legacy/utils/geometry_utils.hpp"
 #include "shamrock/scheduler/ReattributeDataUtility.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
-#include "shamrock/sph/sphpart.hpp"
+#include "shammodels/sph/sphpart.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
 #include <vector>
@@ -76,6 +76,10 @@ namespace shammodels::sph {
 
         std::pair<Tvec, Tvec> get_ideal_fcc_box(Tscal dr, std::pair<Tvec, Tvec> box);
 
+        Tscal get_hfact(){
+            return Kernel::hfactd;
+        }
+        
         Tscal rho_h(Tscal h){
             return shamrock::sph::rho_h(solver.gpart_mass, h, Kernel::hfactd);
         }
@@ -449,6 +453,8 @@ namespace shammodels::sph {
             if(shamsys::instance::world_rank == 0) logger::info_ln("Model", "current particle counts : ", log_gathered);
         }
 
+        void push_particle(std::vector<Tvec> & part_pos_insert, std::vector<Tscal> & part_hpart_insert);
+
         template<class T>
         inline void set_value_in_a_box(std::string field_name, T val, std::pair<Tvec, Tvec> box) {
             StackEntry stack_loc{};
@@ -535,7 +541,7 @@ namespace shammodels::sph {
 
                             Tscal r = sycl::length(dr);
 
-                            acc[i] += val*Kernel::W(r,h_ker);
+                            acc[i] += val*Kernel::W_3d(r,h_ker);
                         }
                     }
                 });

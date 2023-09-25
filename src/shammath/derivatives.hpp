@@ -6,9 +6,15 @@
 //
 // -------------------------------------------------------//
 
-//%Impl status : Deprecated
-
-
 #pragma once
 
-#include "shammodels/gas_only.hpp"
+#include <functional>
+
+namespace shammath {
+
+    template<class T>
+    inline T derivative_upwind(T x, T dx, std::function<T(T)> &&fct) {
+        return (fct(x +dx)-fct(x))/dx ;
+    }
+
+} // namespace shammath

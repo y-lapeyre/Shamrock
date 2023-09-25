@@ -6,21 +6,20 @@
 //
 // -------------------------------------------------------//
 
-//%Impl status : Deprecated
-
-
 #pragma once
 
-#include <string>
+#include <functional>
 
-namespace sph {
-    
-namespace field_names {
+namespace shammath {
 
+    template<class T>
+    inline T integ_riemann_sum(T start, T end, T step, std::function<T(T)> &&fct) {
+        T acc = {};
 
-    const std::string field_hpart = "hpart";
+        for (T x = start; x < end; x += step) {
+            acc += fct(x) * step;
+        }
+        return acc;
+    }
 
-
-} // namespace field_names
-
-} // namespace sph
+} // namespace shammath

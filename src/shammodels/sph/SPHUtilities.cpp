@@ -8,7 +8,7 @@
 
 #include "SPHUtilities.hpp"
 #include "shamrock/tree/TreeTraversal.hpp"
-#include "shamrock/sph/kernels.hpp"
+#include "shammath/sphkernels.hpp"
 
 using namespace shamrock::sph;
 
@@ -74,8 +74,8 @@ namespace shammodels::sph {
 
                         flt rab = sycl::sqrt(rab2);
 
-                        rho_sum += part_mass * SPHKernel::W(rab, h_a);
-                        sumdWdh += part_mass * SPHKernel::dhW(rab, h_a);
+                        rho_sum += part_mass * SPHKernel::W_3d(rab, h_a);
+                        sumdWdh += part_mass * SPHKernel::dhW_3d(rab, h_a);
                     });
 
                     using namespace shamrock::sph;
@@ -161,8 +161,8 @@ namespace shammodels::sph {
 
                             flt rab = sycl::sqrt(rab2);
 
-                            rho_sum += part_mass * SPHKernel::W(rab, h_a);
-                            sumdWdh += part_mass * SPHKernel::dhW(rab, h_a);
+                            rho_sum += part_mass * SPHKernel::W_3d(rab, h_a);
+                            sumdWdh += part_mass * SPHKernel::dhW_3d(rab, h_a);
                         });
 
                     using namespace shamrock::sph;
@@ -236,8 +236,8 @@ namespace shammodels::sph {
 
                     flt rab = sycl::sqrt(rab2);
 
-                    rho_sum += part_mass * SPHKernel::W(rab, h_a);
-                    part_omega_sum += part_mass * SPHKernel::dhW(rab, h_a);
+                    rho_sum += part_mass * SPHKernel::W_3d(rab, h_a);
+                    part_omega_sum += part_mass * SPHKernel::dhW_3d(rab, h_a);
                 });
 
                 using namespace shamrock::sph;
@@ -252,10 +252,10 @@ namespace shammodels::sph {
         }).wait();
     }
 
-    template class SPHUtilities<f64_3, kernels::M4<f64>>;
-    template class SPHUtilities<f64_3, kernels::M6<f64>>;
+    template class SPHUtilities<f64_3, shammath::M4<f64>>;
+    template class SPHUtilities<f64_3, shammath::M6<f64>>;
 
-    template class SPHTreeUtilities<f64_3, kernels::M4<f64>, u32>;
-    template class SPHTreeUtilities<f64_3, kernels::M6<f64>, u64>;
+    template class SPHTreeUtilities<f64_3, shammath::M4<f64>, u32>;
+    template class SPHTreeUtilities<f64_3, shammath::M6<f64>, u64>;
 
 } // namespace shammodels::sph
