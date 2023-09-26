@@ -68,10 +68,71 @@ void Module<Tvec, TgridVec>::build_trees(){
     trees.for_each([](u64 id, RTree & tree){
         tree.compute_cell_ibounding_box(shamsys::instance::get_compute_queue());
         tree.convert_bounding_box(shamsys::instance::get_compute_queue());
+
     });
+
+
+
 
     storage.trees.set(std::move(trees));
 
+}
+
+template<class Tvec, class TgridVec>
+void Module<Tvec, TgridVec>::correct_bounding_box(){
+
+    StackEntry stack_loc{};
+
+    using MergedPDat = shamrock::MergedPatchData;
+    using RTree = typename Storage::RTree;
+
+    storage.trees.get().for_each([&](u64 id, RTree & tree){
+        
+        u32 leaf_count = tree.tree_reduced_morton_codes.tree_leaf_count;
+        u32 internal_cell_count = tree.tree_struct.internal_cell_count;
+        u32 tot_count = leaf_count + internal_cell_count;
+
+        sycl::buffer<TgridVec> tmp_min_cell(tot_count);
+        sycl::buffer<TgridVec> tmp_max_cell(tot_count);
+
+
+        MergedPDat &mpdat                    = storage.merged_patchdata_ghost.get().get(id);
+        sycl::buffer<TgridVec> &buf_cell_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);
+        sycl::buffer<TgridVec> &buf_cell_max = mpdat.pdat.get_field_buf_ref<TgridVec>(1);
+
+        shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
+            shamrock::tree::ObjectIterator cell_looper(tree, cgh);
+
+            u32 leaf_offset = tree.tree_struct.internal_cell_count;
+
+            sycl::accessor acc_bmin {buf_cell_min, cgh, sycl::read_only};
+            sycl::accessor acc_bmax {buf_cell_max, cgh, sycl::read_only};
+
+            sycl::accessor comp_min {tmp_min_cell, cgh, sycl::write_only, sycl::no_init};
+            sycl::accessor comp_max {tmp_max_cell, cgh, sycl::write_only, sycl::no_init};
+
+            shambase::parralel_for(cgh, leaf_count,"compute leaf boxes", [=](u64 leaf_id){
+
+                TgridVec min = shambase::VectorProperties<TgridVec>::get_max();
+                TgridVec max = shambase::VectorProperties<TgridVec>::get_min();
+
+                cell_looper.iter_object_in_cell(leaf_id + leaf_offset, [&](u32 block_id){
+                    TgridVec bmin = acc_bmin[block_id];
+                    TgridVec bmax = acc_bmax[block_id];
+
+                    min = shambase::sycl_utils::g_sycl_min(min, bmin);
+                    max = shambase::sycl_utils::g_sycl_max(max, bmax);
+                });
+
+                comp_min[leaf_offset + leaf_id] = min;
+                comp_max[leaf_offset + leaf_id] = max;
+
+            });
+
+        });
+
+        
+    });
 }
 
 template<class Tvec, class TgridVec>

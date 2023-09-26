@@ -772,7 +772,7 @@ shamrock::ComputeField<T> Module<Tvec, TgridVec, T>::load_value_with_gz(
         sycl::buffer<T> &buf_src  = mpdat.pdat.get_field_buf_ref<T>(ifield);
         sycl::buffer<T> &buf_dest = tmp.get_buf_check(p.id_patch);
 
-        load_patch_internal_block(offset, pdat.get_obj_cnt(), nvar, buf_src, buf_dest);
+        load_patch_internal_block(offset, mpdat.total_elements, nvar, buf_src, buf_dest);
     });
 
     scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
@@ -792,7 +792,7 @@ shamrock::ComputeField<T> Module<Tvec, TgridVec, T>::load_value_with_gz(
             buf_cell_min,
             buf_cell_max,
             face_lists,
-            pdat.get_obj_cnt(),
+            mpdat.total_elements,
             nvar,
             buf_src,
             buf_dest);
@@ -815,7 +815,7 @@ shamrock::ComputeField<T> Module<Tvec, TgridVec, T>::load_value_with_gz(
             buf_cell_min,
             buf_cell_max,
             face_lists,
-            pdat.get_obj_cnt(),
+            mpdat.total_elements,
             nvar,
             buf_src,
             buf_dest);
@@ -838,7 +838,7 @@ shamrock::ComputeField<T> Module<Tvec, TgridVec, T>::load_value_with_gz(
             buf_cell_min,
             buf_cell_max,
             face_lists,
-            pdat.get_obj_cnt(),
+            mpdat.total_elements,
             nvar,
             buf_src,
             buf_dest);
@@ -876,7 +876,7 @@ shamrock::ComputeField<T> Module<Tvec, TgridVec, T>::load_value_with_gz(
 
         load_patch_internal_block(
             offset,
-            pdat.get_obj_cnt(),
+            mpdat.total_elements,
             compute_field.get_field(p.id_patch).get_nvar(),
             buf_src,
             buf_dest);
@@ -899,7 +899,7 @@ shamrock::ComputeField<T> Module<Tvec, TgridVec, T>::load_value_with_gz(
             buf_cell_min,
             buf_cell_max,
             face_lists,
-            pdat.get_obj_cnt(),
+            mpdat.total_elements,
             compute_field.get_field(p.id_patch).get_nvar(),
             buf_src,
             buf_dest);
@@ -922,7 +922,7 @@ shamrock::ComputeField<T> Module<Tvec, TgridVec, T>::load_value_with_gz(
             buf_cell_min,
             buf_cell_max,
             face_lists,
-            pdat.get_obj_cnt(),
+            mpdat.total_elements,
             compute_field.get_field(p.id_patch).get_nvar(),
             buf_src,
             buf_dest);
@@ -945,7 +945,7 @@ shamrock::ComputeField<T> Module<Tvec, TgridVec, T>::load_value_with_gz(
             buf_cell_min,
             buf_cell_max,
             face_lists,
-            pdat.get_obj_cnt(),
+            mpdat.total_elements,
             compute_field.get_field(p.id_patch).get_nvar(),
             buf_src,
             buf_dest);

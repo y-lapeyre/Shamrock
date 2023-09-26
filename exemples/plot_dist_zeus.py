@@ -45,6 +45,8 @@ cell_rho_end_transp = []
 cell_eint_end_transp = []
 cell_vel_end_transp = []
 
+cell_vel_n_xp = []
+
 cell_Q = []
 cell_ax = []
 cell_ay = []
@@ -85,6 +87,9 @@ for line in lines:
             active_field = "eint_end_transp"
         elif line == "--> vel_end_transp type=f64_3\n":
             active_field = "vel_end_transp"
+
+        elif line == "--> vel_n_xp type=f64_3\n":
+            active_field = "vel_n_xp"
 
         elif line == "--> Q type=f64_8\n":
             active_field = "Q"
@@ -161,6 +166,13 @@ for line in lines:
             y = float(splt[1])
             z = float(splt[2])
             cell_vel_end_transp.append((x,y,z))
+
+        elif active_field == "vel_n_xp":
+            splt = (line[:-1].split())
+            x = float(splt[0])
+            y = float(splt[1])
+            z = float(splt[2])
+            cell_vel_n_xp.append((x,y,z))
 
         elif active_field == "Q":
             splt = (line[:-1].split())
@@ -249,6 +261,10 @@ select_cell_velx_end_transp  = []
 select_cell_vely_end_transp  = []
 select_cell_velz_end_transp  = []
 
+select_cell_velx_n_xp  = []
+select_cell_vely_n_xp  = []
+select_cell_velz_n_xp  = []
+
 select_cell_Q = [[],[],[],[],[],[],[],[]]
 select_cell_ax = [[],[],[],[],[],[],[],[]]
 select_cell_ay = [[],[],[],[],[],[],[],[]]
@@ -292,6 +308,11 @@ for i in range(len(cell_rho)):
         select_cell_velx_end_transp .append(vx )
         select_cell_vely_end_transp .append(vy )
         select_cell_velz_end_transp .append(vz )
+
+        vx,vy,vz = cell_vel_n_xp[i]
+        select_cell_velx_n_xp .append(vx )
+        select_cell_vely_n_xp .append(vy )
+        select_cell_velz_n_xp .append(vz )
 
         select_cell_x .append(x )
         select_cell_y .append(y )
@@ -361,8 +382,9 @@ axs[0,0].legend()
 
 axs[0,1].scatter(select_cell_x,select_cell_velx, s = 1, label = "initial")
 axs[0,1].scatter(select_cell_x,select_cell_velx_post_source, s = 1, label = "end source")
-axs[0,1].scatter(select_cell_x,select_cell_velx_start_transp, s = 1, label = "begin transp")
+axs[0,1].scatter(select_cell_x,select_cell_velx_start_transp,marker = "+", s = 20, label = "begin transp")
 axs[0,1].scatter(select_cell_x,select_cell_velx_end_transp, s = 1, label = "end transp")
+axs[0,1].scatter(select_cell_x,select_cell_velx_n_xp,marker = "x", s = 20, label = "begin transp x+1")
 axs[0,1].set_title("velx")
 axs[0,1].legend()
 

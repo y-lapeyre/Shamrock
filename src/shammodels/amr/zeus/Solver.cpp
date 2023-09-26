@@ -249,6 +249,16 @@ auto Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tscal dt_input) -> Tsc
     storage.vel_n_yp.set( val_load_vec_v2.load_value_with_gz("vel", {0, 1, 0}, "vel_n_yp"));
     storage.vel_n_zp.set( val_load_vec_v2.load_value_with_gz("vel", {0, 0, 1}, "vel_n_zp"));
 
+    scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
+        using MergedPDat = shamrock::MergedPatchData;
+        MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);
+
+        sycl::buffer<Tvec> &vel_n_xp = storage.vel_n_xp.get().get_buf_check(p.id_patch);
+
+        debug_dump.get_file(p.id_patch).change_table_name("vel_n_xp", "f64_3");
+        debug_dump.get_file(p.id_patch).write_table(vel_n_xp, mpdat.total_elements*AMRBlock::block_size);
+
+    });
 
     /*
     using namespace shamrock::patch;
