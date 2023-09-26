@@ -42,6 +42,9 @@ namespace shammodels::zeus{
             })
             .def("set_config",[](T& self, TConfig cfg){
                 self.solver.solver_config = cfg;
+            })
+            .def("get_cell_coords",[](T & self, std::pair<TgridVec,TgridVec> block_coord, u32 cell_local_id){
+                return self.get_cell_coords(block_coord, cell_local_id);
             });
     }
 }

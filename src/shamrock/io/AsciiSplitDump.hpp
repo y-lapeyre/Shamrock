@@ -8,24 +8,31 @@
 
 #pragma once
 
-#include "shambase/string.hpp"
-#include "shambase/type_aliases.hpp"
 #include "shambase/DistributedData.hpp"
+#include "shambase/string.hpp"
 #include "shambase/sycl.hpp"
-#include <iostream>
+#include "shambase/type_aliases.hpp"
+#include <filesystem>
 #include <fstream>
+#include <iostream>
 #include <utility>
 
-class AsciiSplitDump{
+class AsciiSplitDump {
 
-    struct PatchDump{
+    struct PatchDump {
         std::ofstream file;
 
         void open(u64 id_patch, std::string fileprefix) {
-            file.open(fileprefix+ "patch_"+shambase::format("{:04d}", id_patch) + ".txt");
+            const std::filesystem::path path{
+                fileprefix + "patch_" + shambase::format("{:04d}", id_patch) + ".txt"};
+            if (std::filesystem::exists(path)) {
+                std::filesystem::remove(path);
+            }
+
+            file.open(path);
         }
 
-        void change_table_name(std::string table_name, std::string type){
+        void change_table_name(std::string table_name, std::string type) {
             file << "--> " + table_name + " " + "type=" + type + "\n";
         }
 
@@ -38,24 +45,16 @@ class AsciiSplitDump{
         template<class T>
         void write_table(sycl::buffer<T> buf, u32 len);
 
-        void close(){
-            file.close();
-        }
+        void close() { file.close(); }
     };
 
     shambase::DistributedData<PatchDump> dump_dist;
     std::string fileprefix;
 
     public:
-    
-    inline PatchDump & get_file(u64 id){
-        return dump_dist.get(id);
-    }
-   
-    explicit AsciiSplitDump(std::string fileprefix): fileprefix(std::move(fileprefix)){}
+    inline PatchDump &get_file(u64 id) { return dump_dist.get(id); }
 
-    inline void create_id(u64 id){
-        dump_dist.add_obj(id, {})->second.open(id,fileprefix);
-    }
+    explicit AsciiSplitDump(std::string fileprefix) : fileprefix(std::move(fileprefix)) {}
 
+    inline void create_id(u64 id) { dump_dist.add_obj(id, {})->second.open(id, fileprefix); }
 };

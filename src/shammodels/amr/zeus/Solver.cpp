@@ -109,11 +109,11 @@ auto Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tscal dt_input) -> Tsc
         debug_dump.get_file(p.id_patch).write_table(cell_max, mpdat.total_elements);
 
         debug_dump.get_file(p.id_patch).change_table_name("rho", "f64");
-        debug_dump.get_file(p.id_patch).write_table(rho_merged, mpdat.total_elements);
+        debug_dump.get_file(p.id_patch).write_table(rho_merged, mpdat.total_elements*AMRBlock::block_size);
         debug_dump.get_file(p.id_patch).change_table_name("eint", "f64");
-        debug_dump.get_file(p.id_patch).write_table(eint_merged, mpdat.total_elements);
+        debug_dump.get_file(p.id_patch).write_table(eint_merged, mpdat.total_elements*AMRBlock::block_size);
         debug_dump.get_file(p.id_patch).change_table_name("vel", "f64_3");
-        debug_dump.get_file(p.id_patch).write_table(vel_merged, mpdat.total_elements);
+        debug_dump.get_file(p.id_patch).write_table(vel_merged, mpdat.total_elements*AMRBlock::block_size);
 
     });
 
@@ -166,6 +166,30 @@ auto Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tscal dt_input) -> Tsc
     
     src_step.apply_AV(dt_input);
 
+    scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
+        using MergedPDat = shamrock::MergedPatchData;
+        MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);
+
+
+        shamrock::patch::PatchDataLayout &ghost_layout = storage.ghost_layout.get();
+        u32 irho_interf                                = ghost_layout.get_field_idx<Tscal>("rho");
+        u32 ieint_interf                                = ghost_layout.get_field_idx<Tscal>("eint");
+        u32 ivel_interf                                = ghost_layout.get_field_idx<Tvec>("vel");
+
+        sycl::buffer<TgridVec> &cell_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);
+        sycl::buffer<TgridVec> &cell_max = mpdat.pdat.get_field_buf_ref<TgridVec>(1);
+
+        sycl::buffer<Tscal> &rho_merged = mpdat.pdat.get_field_buf_ref<Tscal>(irho_interf);
+        sycl::buffer<Tscal> &eint_merged = mpdat.pdat.get_field_buf_ref<Tscal>(ieint_interf);
+        sycl::buffer<Tvec> &vel_merged = mpdat.pdat.get_field_buf_ref<Tvec>(ivel_interf);
+
+        debug_dump.get_file(p.id_patch).change_table_name("eint_post_source", "f64");
+        debug_dump.get_file(p.id_patch).write_table(eint_merged, mpdat.total_elements*AMRBlock::block_size);
+        debug_dump.get_file(p.id_patch).change_table_name("vel_post_source", "f64_3");
+        debug_dump.get_file(p.id_patch).write_table(vel_merged, mpdat.total_elements*AMRBlock::block_size);
+
+    });
+
     modules::WriteBack wb (context, solver_config,storage);
     wb.write_back_merged_data();
 
@@ -194,6 +218,30 @@ auto Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tscal dt_input) -> Tsc
 
     //transport step
     gz.exchange_ghost();
+
+    scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
+        using MergedPDat = shamrock::MergedPatchData;
+        MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);
+
+
+        shamrock::patch::PatchDataLayout &ghost_layout = storage.ghost_layout.get();
+        u32 irho_interf                                = ghost_layout.get_field_idx<Tscal>("rho");
+        u32 ieint_interf                                = ghost_layout.get_field_idx<Tscal>("eint");
+        u32 ivel_interf                                = ghost_layout.get_field_idx<Tvec>("vel");
+
+        sycl::buffer<TgridVec> &cell_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);
+        sycl::buffer<TgridVec> &cell_max = mpdat.pdat.get_field_buf_ref<TgridVec>(1);
+
+        sycl::buffer<Tscal> &rho_merged = mpdat.pdat.get_field_buf_ref<Tscal>(irho_interf);
+        sycl::buffer<Tscal> &eint_merged = mpdat.pdat.get_field_buf_ref<Tscal>(ieint_interf);
+        sycl::buffer<Tvec> &vel_merged = mpdat.pdat.get_field_buf_ref<Tvec>(ivel_interf);
+
+        debug_dump.get_file(p.id_patch).change_table_name("eint_start_transp", "f64");
+        debug_dump.get_file(p.id_patch).write_table(eint_merged, mpdat.total_elements*AMRBlock::block_size);
+        debug_dump.get_file(p.id_patch).change_table_name("vel_start_transp", "f64_3");
+        debug_dump.get_file(p.id_patch).write_table(vel_merged, mpdat.total_elements*AMRBlock::block_size);
+
+    });
 
 
     modules::ValueLoader<Tvec, TgridVec, Tvec> val_load_vec_v2(context, solver_config, storage);
@@ -258,7 +306,17 @@ auto Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tscal dt_input) -> Tsc
     modules::TransportStep transport (context, solver_config,storage);
     transport.compute_cell_centered_momentas();
 
+    using Tscal8 = sycl::vec<Tscal, 8>;
+    scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
+        using MergedPDat = shamrock::MergedPatchData;
+        MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);
 
+        sycl::buffer<Tscal8> &Q_buf = storage.Q.get().get_buf_check(p.id_patch);
+
+        debug_dump.get_file(p.id_patch).change_table_name("Q", "f64_8");
+        debug_dump.get_file(p.id_patch).write_table(Q_buf, mpdat.total_elements*AMRBlock::block_size);
+
+    });
 
 
     storage.vel_n_xp.reset();
@@ -266,6 +324,24 @@ auto Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tscal dt_input) -> Tsc
     storage.vel_n_zp.reset();
 
     transport.compute_limiter();
+
+    using Tscal8 = sycl::vec<Tscal, 8>;
+    scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
+        using MergedPDat = shamrock::MergedPatchData;
+        MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);
+
+        sycl::buffer<Tscal8> &ax_buf = storage.a_x.get().get_buf_check(p.id_patch);
+        sycl::buffer<Tscal8> &ay_buf = storage.a_y.get().get_buf_check(p.id_patch);
+        sycl::buffer<Tscal8> &az_buf = storage.a_z.get().get_buf_check(p.id_patch);
+
+        debug_dump.get_file(p.id_patch).change_table_name("ax", "f64_8");
+        debug_dump.get_file(p.id_patch).write_table(ax_buf, mpdat.total_elements*AMRBlock::block_size);
+        debug_dump.get_file(p.id_patch).change_table_name("ay", "f64_8");
+        debug_dump.get_file(p.id_patch).write_table(ay_buf, mpdat.total_elements*AMRBlock::block_size);
+        debug_dump.get_file(p.id_patch).change_table_name("az", "f64_8");
+        debug_dump.get_file(p.id_patch).write_table(az_buf, mpdat.total_elements*AMRBlock::block_size);
+
+    });
 
     transport.compute_face_centered_moments(dt_input);
 
@@ -288,6 +364,27 @@ auto Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tscal dt_input) -> Tsc
 
 
 
+    scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
+        using MergedPDat = shamrock::MergedPatchData;
+        MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);
+
+        shamrock::patch::PatchDataLayout &ghost_layout = storage.ghost_layout.get();
+        u32 irho_interf                                = ghost_layout.get_field_idx<Tscal>("rho");
+        u32 ieint_interf                                = ghost_layout.get_field_idx<Tscal>("eint");
+        u32 ivel_interf                                = ghost_layout.get_field_idx<Tvec>("vel");
+
+        sycl::buffer<Tscal> &rho_merged = mpdat.pdat.get_field_buf_ref<Tscal>(irho_interf);
+        sycl::buffer<Tscal> &eint_merged = mpdat.pdat.get_field_buf_ref<Tscal>(ieint_interf);
+        sycl::buffer<Tvec> &vel_merged = mpdat.pdat.get_field_buf_ref<Tvec>(ivel_interf);
+
+        debug_dump.get_file(p.id_patch).change_table_name("rho_end_transp", "f64");
+        debug_dump.get_file(p.id_patch).write_table(rho_merged, mpdat.total_elements*AMRBlock::block_size);
+        debug_dump.get_file(p.id_patch).change_table_name("eint_end_transp", "f64");
+        debug_dump.get_file(p.id_patch).write_table(eint_merged, mpdat.total_elements*AMRBlock::block_size);
+        debug_dump.get_file(p.id_patch).change_table_name("vel_end_transp", "f64_3");
+        debug_dump.get_file(p.id_patch).write_table(vel_merged, mpdat.total_elements*AMRBlock::block_size);
+
+    });
 
     wb.write_back_merged_data();
 
@@ -307,6 +404,8 @@ auto Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tscal dt_input) -> Tsc
     storage.ghost_layout.reset();
     storage.ghost_zone_infos.reset();
     storage.serial_patch_tree.reset();
+
+
 
 
     scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {

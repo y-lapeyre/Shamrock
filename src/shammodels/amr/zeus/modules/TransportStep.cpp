@@ -129,8 +129,8 @@ void Module<Tvec, TgridVec>::compute_limiter() {
         return storage.merged_patchdata_ghost.get().get(id).total_elements;
     }));
 
-    ComputeField<Tscal8> &a_x = storage.a_z.get();
-    ComputeField<Tscal8> &a_y = storage.a_z.get();
+    ComputeField<Tscal8> &a_x = storage.a_x.get();
+    ComputeField<Tscal8> &a_y = storage.a_y.get();
     ComputeField<Tscal8> &a_z = storage.a_z.get();
 
     scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {

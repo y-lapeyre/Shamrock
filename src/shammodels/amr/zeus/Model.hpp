@@ -89,6 +89,12 @@ namespace shammodels::zeus {
             });
         }
 
+        inline std::pair<Tvec,Tvec> get_cell_coords(std::pair<TgridVec,TgridVec> block_coords, u32 lid){
+            using Block = typename Solver::Config::AMRBlock;
+            return Block::utils_get_cell_coords(block_coords,lid);
+        }
+
     };
 
 } // namespace shammodels::zeus
+
