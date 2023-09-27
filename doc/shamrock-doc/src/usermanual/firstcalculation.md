@@ -30,6 +30,7 @@ the --loglevel argument specifies the degree of verbosity of SHAMROCK.
 10 good for basic use
 100 specifies instructions in the kernel
 
+Note that the python distribution used is the global one present on your machine. If you want to use modules that need to me installed (eg sarracen), you need to sudo pip install them.
 ## importing a setup from phantom
 
 
