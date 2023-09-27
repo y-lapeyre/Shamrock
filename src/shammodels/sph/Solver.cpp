@@ -30,10 +30,10 @@
 #include "shamrock/scheduler/SchedulerUtility.hpp"
 #include "shamrock/scheduler/SerialPatchTree.hpp"
 #include "shamrock/scheduler/scheduler_mpi.hpp"
-#include "shamrock/sph/SPHUtilities.hpp"
-#include "shamrock/sph/forces.hpp"
-#include "shamrock/sph/kernels.hpp"
-#include "shamrock/sph/sphpart.hpp"
+#include "shammodels/sph/SPHUtilities.hpp"
+#include "shammodels/sph/forces.hpp"
+#include "shammath/sphkernels.hpp"
+#include "shammodels/sph/sphpart.hpp"
 #include "shamrock/tree/TreeTaversalCache.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
@@ -1061,8 +1061,8 @@ void SPHSolve<Tvec, Kern>::update_derivs_constantAV() {
                     Tscal vsig_b        = alpha_b * cs_b + beta_AV * abs_v_ab_r_ab;
                     Tscal vsig_u        = abs_v_ab_r_ab;
 
-                    Tscal dWab_a = Kernel::dW(rab, h_a);
-                    Tscal dWab_b = Kernel::dW(rab, h_b);
+                    Tscal dWab_a = Kernel::dW_3d(rab, h_a);
+                    Tscal dWab_b = Kernel::dW_3d(rab, h_b);
 
                     Tscal qa_ab = shambase::sycl_utils::g_sycl_max(
                         -Tscal(0.5) * rho_a * vsig_a * v_ab_r_ab, Tscal(0));
@@ -1264,8 +1264,8 @@ void SPHSolve<Tvec, Kern>::update_derivs_mm97() {
                     Tscal vsig_b        = alpha_b * cs_b + beta_AV * abs_v_ab_r_ab;
                     Tscal vsig_u        = abs_v_ab_r_ab;
 
-                    Tscal dWab_a = Kernel::dW(rab, h_a);
-                    Tscal dWab_b = Kernel::dW(rab, h_b);
+                    Tscal dWab_a = Kernel::dW_3d(rab, h_a);
+                    Tscal dWab_b = Kernel::dW_3d(rab, h_b);
 
                     Tscal qa_ab = shambase::sycl_utils::g_sycl_max(
                         -Tscal(0.5) * rho_a * vsig_a * v_ab_r_ab, Tscal(0));
@@ -1476,8 +1476,8 @@ void SPHSolve<Tvec, Kern>::update_derivs_cd10() {
                     Tscal vsig_b        = alpha_b * cs_b + beta_AV * abs_v_ab_r_ab;
                     Tscal vsig_u        = abs_v_ab_r_ab;
 
-                    Tscal dWab_a = Kernel::dW(rab, h_a);
-                    Tscal dWab_b = Kernel::dW(rab, h_b);
+                    Tscal dWab_a = Kernel::dW_3d(rab, h_a);
+                    Tscal dWab_b = Kernel::dW_3d(rab, h_b);
 
                     Tscal qa_ab = shambase::sycl_utils::g_sycl_max(
                         -Tscal(0.5) * rho_a * vsig_a * v_ab_r_ab, Tscal(0));
@@ -2073,7 +2073,7 @@ auto SPHSolve<Tvec, Kern>::evolve_once(Tscal t_current,Tscal dt,
     return next_cfl;
 }
 
-using namespace shamrock::sph::kernels;
+using namespace shammath;
 
 template class shammodels::sph::Solver<f64_3, M4>;
 template class shammodels::sph::Solver<f64_3, M6>;
