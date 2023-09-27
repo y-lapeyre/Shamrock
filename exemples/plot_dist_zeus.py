@@ -51,6 +51,9 @@ cell_Q = []
 cell_ax = []
 cell_ay = []
 cell_az = []
+cell_Qstar_x = []
+cell_Qstar_y = []
+cell_Qstar_z = []
 
 f = open(file_data,"r")
 lines = f.readlines()
@@ -99,6 +102,13 @@ for line in lines:
             active_field = "ay"
         elif line == "--> az type=f64_8\n":
             active_field = "az"
+
+        elif line == "--> Qstar_x type=f64_8\n":
+            active_field = "Qstar_x"
+        elif line == "--> Qstar_y type=f64_8\n":
+            active_field = "Qstar_y"
+        elif line == "--> Qstar_z type=f64_8\n":
+            active_field = "Qstar_z"
 
         elif line == "--> Nobj_original type=u32\n":
             active_field = "nobj_or"
@@ -218,6 +228,39 @@ for line in lines:
             s6 = float(splt[6])
             s7 = float(splt[7])
             cell_az.append((s0,s1,s2,s3,s4,s5,s6,s7))
+        elif active_field == "Qstar_x":
+            splt = (line[:-1].split())
+            s0 = float(splt[0])
+            s1 = float(splt[1])
+            s2 = float(splt[2])
+            s3 = float(splt[3])
+            s4 = float(splt[4])
+            s5 = float(splt[5])
+            s6 = float(splt[6])
+            s7 = float(splt[7])
+            cell_Qstar_x.append((s0,s1,s2,s3,s4,s5,s6,s7))
+        elif active_field == "Qstar_y":
+            splt = (line[:-1].split())
+            s0 = float(splt[0])
+            s1 = float(splt[1])
+            s2 = float(splt[2])
+            s3 = float(splt[3])
+            s4 = float(splt[4])
+            s5 = float(splt[5])
+            s6 = float(splt[6])
+            s7 = float(splt[7])
+            cell_Qstar_y.append((s0,s1,s2,s3,s4,s5,s6,s7))
+        elif active_field == "Qstar_z":
+            splt = (line[:-1].split())
+            s0 = float(splt[0])
+            s1 = float(splt[1])
+            s2 = float(splt[2])
+            s3 = float(splt[3])
+            s4 = float(splt[4])
+            s5 = float(splt[5])
+            s6 = float(splt[6])
+            s7 = float(splt[7])
+            cell_Qstar_z.append((s0,s1,s2,s3,s4,s5,s6,s7))
 
 
 cell_min = []
@@ -269,6 +312,10 @@ select_cell_Q = [[],[],[],[],[],[],[],[]]
 select_cell_ax = [[],[],[],[],[],[],[],[]]
 select_cell_ay = [[],[],[],[],[],[],[],[]]
 select_cell_az = [[],[],[],[],[],[],[],[]]
+
+select_cell_Qstar_x = [[],[],[],[],[],[],[],[]]
+select_cell_Qstar_y = [[],[],[],[],[],[],[],[]]
+select_cell_Qstar_z = [[],[],[],[],[],[],[],[]]
 
 
 for i in range(len(cell_rho)):
@@ -358,6 +405,36 @@ for i in range(len(cell_rho)):
         select_cell_az[6].append(s6)
         select_cell_az[7].append(s7)
 
+        s0,s1,s2,s3,s4,s5,s6,s7 = cell_Qstar_x[i]
+        select_cell_Qstar_x[0].append(s0)
+        select_cell_Qstar_x[1].append(s1)
+        select_cell_Qstar_x[2].append(s2)
+        select_cell_Qstar_x[3].append(s3)
+        select_cell_Qstar_x[4].append(s4)
+        select_cell_Qstar_x[5].append(s5)
+        select_cell_Qstar_x[6].append(s6)
+        select_cell_Qstar_x[7].append(s7)
+
+        s0,s1,s2,s3,s4,s5,s6,s7 = cell_Qstar_y[i]
+        select_cell_Qstar_y[0].append(s0)
+        select_cell_Qstar_y[1].append(s1)
+        select_cell_Qstar_y[2].append(s2)
+        select_cell_Qstar_y[3].append(s3)
+        select_cell_Qstar_y[4].append(s4)
+        select_cell_Qstar_y[5].append(s5)
+        select_cell_Qstar_y[6].append(s6)
+        select_cell_Qstar_y[7].append(s7)
+
+        s0,s1,s2,s3,s4,s5,s6,s7 = cell_Qstar_z[i]
+        select_cell_Qstar_z[0].append(s0)
+        select_cell_Qstar_z[1].append(s1)
+        select_cell_Qstar_z[2].append(s2)
+        select_cell_Qstar_z[3].append(s3)
+        select_cell_Qstar_z[4].append(s4)
+        select_cell_Qstar_z[5].append(s5)
+        select_cell_Qstar_z[6].append(s6)
+        select_cell_Qstar_z[7].append(s7)
+
 
 print(len(select_cell_rho ))
 print(len(select_cell_eint))
@@ -402,6 +479,9 @@ axs[1,0].scatter(select_cell_x,select_cell_Q[0], s = 1, label = "Q")
 axs[1,0].scatter(select_cell_x,select_cell_ax[0], s = 1, label = "ax")
 axs[1,0].scatter(select_cell_x,select_cell_ay[0], s = 1, label = "ay")
 axs[1,0].scatter(select_cell_x,select_cell_az[0], s = 1, label = "az")
+axs[1,0].scatter(select_cell_x,select_cell_Qstar_x[0], s = 1, label = "Qstar_x")
+axs[1,0].scatter(select_cell_x,select_cell_Qstar_y[0], s = 1, label = "Qstar_y")
+axs[1,0].scatter(select_cell_x,select_cell_Qstar_z[0], s = 1, label = "Qstar_z")
 axs[1,0].set_title("Q rho")
 axs[1,0].legend()
 
@@ -409,6 +489,9 @@ axs[2,0].scatter(select_cell_x,select_cell_Q[1], s = 1, label = "Q")
 axs[2,0].scatter(select_cell_x,select_cell_ax[1], s = 1, label = "ax")
 axs[2,0].scatter(select_cell_x,select_cell_ay[1], s = 1, label = "ay")
 axs[2,0].scatter(select_cell_x,select_cell_az[1], s = 1, label = "az")
+axs[2,0].scatter(select_cell_x,select_cell_Qstar_x[1], s = 1, label = "Qstar_x")
+axs[2,0].scatter(select_cell_x,select_cell_Qstar_y[1], s = 1, label = "Qstar_y")
+axs[2,0].scatter(select_cell_x,select_cell_Qstar_z[1], s = 1, label = "Qstar_z")
 axs[2,0].set_title("Q pi-x")
 axs[2,0].legend()
 
@@ -416,6 +499,9 @@ axs[2,1].scatter(select_cell_x,select_cell_Q[4], s = 1, label = "Q")
 axs[2,1].scatter(select_cell_x,select_cell_ax[4], s = 1, label = "ax")
 axs[2,1].scatter(select_cell_x,select_cell_ay[4], s = 1, label = "ay")
 axs[2,1].scatter(select_cell_x,select_cell_az[4], s = 1, label = "az")
+axs[2,1].scatter(select_cell_x,select_cell_Qstar_x[4], s = 1, label = "Qstar_x")
+axs[2,1].scatter(select_cell_x,select_cell_Qstar_y[4], s = 1, label = "Qstar_y")
+axs[2,1].scatter(select_cell_x,select_cell_Qstar_z[4], s = 1, label = "Qstar_z")
 axs[2,1].set_title("Q pi+x")
 axs[2,1].legend()
 
@@ -423,6 +509,9 @@ axs[2,2].scatter(select_cell_x,select_cell_Q[7], s = 1, label = "Q")
 axs[2,2].scatter(select_cell_x,select_cell_ax[7], s = 1, label = "ax")
 axs[2,2].scatter(select_cell_x,select_cell_ay[7], s = 1, label = "ay")
 axs[2,2].scatter(select_cell_x,select_cell_az[7], s = 1, label = "az")
+axs[2,2].scatter(select_cell_x,select_cell_Qstar_x[7], s = 1, label = "Qstar_x")
+axs[2,2].scatter(select_cell_x,select_cell_Qstar_y[7], s = 1, label = "Qstar_y")
+axs[2,2].scatter(select_cell_x,select_cell_Qstar_z[7], s = 1, label = "Qstar_z")
 axs[2,2].set_title("Q e")
 axs[2,2].legend()
 

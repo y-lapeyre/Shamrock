@@ -53,10 +53,10 @@ model.set_field_value_lambda_f64("eint", eint_map)
 model.set_field_value_lambda_f64_3("vel", vel_map)
 
 #model.evolve_once(0,0.1)
-freq = 1
+freq = 10
 for i in range(1000):
     
     if i % freq == 0:
         model.dump_vtk("test"+str(i//freq)+".vtk")
 
-    model.evolve_once(0,0.01)
+    model.evolve_once(0,0.001)
