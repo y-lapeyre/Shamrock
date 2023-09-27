@@ -1,20 +1,21 @@
 import shamrock
 import matplotlib.pyplot as plt
+import numpy as np
 
 gamma = 5./3.
 rho_g = 1
 target_tot_u = 1
 
 
-dr = 0.004
-bmin = (-0.6,-0.6,-0.6)
-bmax = ( 0.6, 0.6, 0.6)
+dr = 0.01 # number of part
+bmin = (-0.5,-0.5,-0.5)
+bmax = ( 0.5, 0.5, 0.5)
 pmass = -1
 
 
 
 
-ctx = shamrock.Context()
+""" ctx = shamrock.Context()
 ctx.pdata_layout_new()
 model = shamrock.get_SPHModel(context = ctx, vector_type = "f64_3",sph_kernel = "M6")
 model.init_scheduler(int(1e7),1)
@@ -26,7 +27,7 @@ model.add_cube_fcc_3d(dr, bmin,bmax)
 xc,yc,zc = model.get_closest_part_to((0,0,0))
 ctx.close_sched()
 del model
-del ctx
+del ctx """
 
 
 ctx = shamrock.Context()
@@ -45,8 +46,8 @@ model.set_solver_config(cfg)
 model.init_scheduler(int(1e6),1)
 
 
-bmin = (xm - xc,ym - yc, zm - zc)
-bmax = (xM - xc,yM - yc, zM - zc)
+""" bmin = (xm - xc,ym - yc, zm - zc)
+bmax = (xM - xc,yM - yc, zM - zc) """
 xm,ym,zm = bmin
 xM,yM,zM = bmax
 
@@ -63,7 +64,8 @@ pmass = model.total_mass_to_part_mass(totmass)
 model.set_value_in_a_box("uint","f64", 0 , bmin,bmax)
 
 #rinj = 0.008909042924642563*2
-rinj = 0.008909042924642563*2*2
+#rinj = 0.008909042924642563*2*2
+rinj = 0.01781818
 u_inj = 1
 model.add_kernel_value("uint","f64", u_inj,(0,0,0),rinj)
 
@@ -99,16 +101,55 @@ model.set_eos_gamma(5/3)
 #    model.evolve(5e-4, False, False, "", False)
 
 
+
+ev_f = "/home/ylapeyre/phantom_tests/sedov3/sedov_indno01.ev"
+output_dir = "/home/ylapeyre/Shamrock_tests/sedov3/"
+ev_dic = {}
+with open(ev_f, 'r') as phantom_ev:
+    # read the col names
+    #columns = phantom_ev.readline().strip().split()
+    #print(columns)
+
+    columns = ['time', 
+               'ekin',
+               'etherm',
+               'emag',
+               'epot',
+               'etot',
+               'erad',
+               'totmom',
+               'angtot',
+               'rho_max',
+               'rho_avg',
+               'dt',
+               'totentrop',
+               'rmdmzch',
+               'vrms',
+               'xcom',
+               'ycom',
+               'zcom'
+               'alpha_max']
+    ev_data = np.genfromtxt(ev_f, skip_header=1)
+    ev_data = ev_data.T
+
+    i_dic = 0
+    for column in columns:
+        ev_dic[column] = ev_data[i_dic]
+        i_dic +=1
+
 t_sum = 0
-t_target = 0.1
-current_dt = 1e-7
+#t_target = 0.1
+
+current_dt = ev_dic['dt'][0]
+
 i = 0
 i_dump = 0
-while t_sum < t_target:
+#while t_sum < t_target:
+for next_dt in ev_dic['dt'][1:2]:
 
-    #print("step : t=",t_sum)
+    print("step : t=",t_sum)
     
-    next_dt = model.evolve(t_sum,current_dt, True, "dump_"+str(i_dump)+".vtk", True)
+    next_sh_dt = model.evolve(t_sum, current_dt, True, output_dir + "dump_"+str(i_dump)+".vtk", True)
 
     if i % 1 == 0:
         i_dump += 1
@@ -116,13 +157,12 @@ while t_sum < t_target:
     t_sum += current_dt
     current_dt = next_dt
 
-    if (t_target - t_sum) < next_dt:
-        current_dt = t_target - t_sum
+    #if (t_target - t_sum) < next_dt:
+    #    current_dt = t_target - t_sum
 
-    i+= 1
+    #i+= 1
 
 
-import numpy as np
 dic = ctx.collect_data()
 
 r = np.sqrt(dic['xyz'][:,0]**2 + dic['xyz'][:,1]**2 +dic['xyz'][:,2]**2)
