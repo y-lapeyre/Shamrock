@@ -47,7 +47,7 @@ void Module<Tvec, TgridVec>::flag_faces() {
             sycl::accessor cell_min{buf_cell_min, cgh, sycl::read_only};
             sycl::accessor cell_max{buf_cell_max, cgh, sycl::read_only};
 
-            shambase::parralel_for(cgh, pdat.get_obj_cnt(), "flag_neigh", [=](u64 id_a) {
+            shambase::parralel_for(cgh, mpdat.total_elements, "flag_neigh", [=](u64 id_a) {
                 TgridVec cell2_a = (cell_min[id_a] + cell_max[id_a]);
 
                 cell_looper.for_each_object_with_id(id_a, [&](u32 id_b, u64 id_list) {
@@ -67,6 +67,13 @@ void Module<Tvec, TgridVec>::flag_faces() {
                                       ((cell2_d.y() == max_compo) ? 3 : 0) +
                                       ((cell2_d.z() == -max_compo) ? 4 : 0) +
                                       ((cell2_d.z() == max_compo) ? 5 : 0);
+
+                    //if(cell_min[id_a].x() < 0 && cell_min[id_a].y() == 10){
+                    //    sycl::ext::oneapi::experimental::printf("%d (%ld %ld %ld) : %d\n", id_a,
+                    //    cell_min[id_a].x(),cell_min[id_a].y(),cell_min[id_a].z()
+                    //    ,u32(lookup));
+                    //}
+
 
                     // F this bit bit of code
                     // i'm so done with this crap

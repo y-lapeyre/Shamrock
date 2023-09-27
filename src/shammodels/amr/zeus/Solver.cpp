@@ -51,6 +51,8 @@ auto Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tscal dt_input) -> Tsc
     modules::AMRTree amrtree(context,solver_config,storage);
     amrtree.build_trees();
 
+    amrtree.correct_bounding_box();
+
     //build neigh table
     amrtree.build_neigh_cache();
 
@@ -66,10 +68,10 @@ auto Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tscal dt_input) -> Tsc
     //modules::DiffOperator diff_op(context,solver_config,storage);
     //diff_op.compute_gradu();
 
-
+    /*
     AsciiSplitDump debug_dump("ghost_dump_debug");
 
-
+    
     using namespace shamrock::patch;
     using namespace shamrock;
     using Block = typename Config::AMRBlock;
@@ -116,6 +118,7 @@ auto Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tscal dt_input) -> Tsc
         debug_dump.get_file(p.id_patch).write_table(vel_merged, mpdat.total_elements*AMRBlock::block_size);
 
     });
+    */
 
 
     //save velocity field
@@ -165,7 +168,7 @@ auto Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tscal dt_input) -> Tsc
     storage.q_AV_n_zm.set( val_load_vec.load_value_with_gz(q_AV, {0, 0, -1}, "q_AV_n_zm"));
     
     src_step.apply_AV(dt_input);
-
+    /*
     scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
         using MergedPDat = shamrock::MergedPatchData;
         MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);
@@ -189,6 +192,7 @@ auto Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tscal dt_input) -> Tsc
         debug_dump.get_file(p.id_patch).write_table(vel_merged, mpdat.total_elements*AMRBlock::block_size);
 
     });
+    */
 
     modules::WriteBack wb (context, solver_config,storage);
     wb.write_back_merged_data();
@@ -219,6 +223,7 @@ auto Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tscal dt_input) -> Tsc
     //transport step
     gz.exchange_ghost();
 
+    /*
     scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
         using MergedPDat = shamrock::MergedPatchData;
         MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);
@@ -242,6 +247,7 @@ auto Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tscal dt_input) -> Tsc
         debug_dump.get_file(p.id_patch).write_table(vel_merged, mpdat.total_elements*AMRBlock::block_size);
 
     });
+    */
 
 
     modules::ValueLoader<Tvec, TgridVec, Tvec> val_load_vec_v2(context, solver_config, storage);
@@ -249,6 +255,7 @@ auto Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tscal dt_input) -> Tsc
     storage.vel_n_yp.set( val_load_vec_v2.load_value_with_gz("vel", {0, 1, 0}, "vel_n_yp"));
     storage.vel_n_zp.set( val_load_vec_v2.load_value_with_gz("vel", {0, 0, 1}, "vel_n_zp"));
 
+    /*
     scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
         using MergedPDat = shamrock::MergedPatchData;
         MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);
@@ -259,6 +266,7 @@ auto Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tscal dt_input) -> Tsc
         debug_dump.get_file(p.id_patch).write_table(vel_n_xp, mpdat.total_elements*AMRBlock::block_size);
 
     });
+    */
 
     /*
     using namespace shamrock::patch;
@@ -316,6 +324,7 @@ auto Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tscal dt_input) -> Tsc
     modules::TransportStep transport (context, solver_config,storage);
     transport.compute_cell_centered_momentas();
 
+    /*
     using Tscal8 = sycl::vec<Tscal, 8>;
     scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
         using MergedPDat = shamrock::MergedPatchData;
@@ -327,6 +336,7 @@ auto Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tscal dt_input) -> Tsc
         debug_dump.get_file(p.id_patch).write_table(Q_buf, mpdat.total_elements*AMRBlock::block_size);
 
     });
+    */
 
 
     storage.vel_n_xp.reset();
@@ -335,6 +345,7 @@ auto Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tscal dt_input) -> Tsc
 
     transport.compute_limiter();
 
+    /*
     using Tscal8 = sycl::vec<Tscal, 8>;
     scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
         using MergedPDat = shamrock::MergedPatchData;
@@ -352,6 +363,7 @@ auto Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tscal dt_input) -> Tsc
         debug_dump.get_file(p.id_patch).write_table(az_buf, mpdat.total_elements*AMRBlock::block_size);
 
     });
+    */
 
     transport.compute_face_centered_moments(dt_input);
 
@@ -373,7 +385,7 @@ auto Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tscal dt_input) -> Tsc
     transport.compute_new_qte();
 
 
-
+    /*
     scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
         using MergedPDat = shamrock::MergedPatchData;
         MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);
@@ -395,6 +407,7 @@ auto Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tscal dt_input) -> Tsc
         debug_dump.get_file(p.id_patch).write_table(vel_merged, mpdat.total_elements*AMRBlock::block_size);
 
     });
+    */
 
     wb.write_back_merged_data();
 
@@ -417,10 +430,11 @@ auto Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tscal dt_input) -> Tsc
 
 
 
-
+    /*
     scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
         debug_dump.get_file(p.id_patch).close();
     });
+    */
 
     tstep.end();
 

@@ -52,7 +52,9 @@ model.set_field_value_lambda_f64_3("vel", vel_map)
 
 #model.evolve_once(0,0.1)
 
-for i in range(1):
+for i in range(1000):
     
+    if i % 10 == 0:
+        model.dump_vtk("test"+str(i//10)+".vtk")
+
     model.evolve_once(0,0.01)
-    model.dump_vtk("test"+str(i)+".vtk")

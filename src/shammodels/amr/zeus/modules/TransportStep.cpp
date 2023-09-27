@@ -176,7 +176,18 @@ void Module<Tvec, TgridVec>::compute_limiter() {
                     Tscal8 dqm = (Qi - Qim) / d_cell;
                     Tscal8 dqp = (Qip - Qi) / d_cell;
 
-                    a_x[cell_gid] = shammath::van_leer_slope(dqm, dqp);
+                     
+
+                    a_x[cell_gid] = Tscal8 {
+                        shammath::van_leer_slope(dqm.s0(), dqp.s0()),
+                        shammath::van_leer_slope(dqm.s1(), dqp.s1()),
+                        shammath::van_leer_slope(dqm.s2(), dqp.s2()),
+                        shammath::van_leer_slope(dqm.s3(), dqp.s3()),
+                        shammath::van_leer_slope(dqm.s4(), dqp.s4()),
+                        shammath::van_leer_slope(dqm.s5(), dqp.s5()),
+                        shammath::van_leer_slope(dqm.s6(), dqp.s6()),
+                        shammath::van_leer_slope(dqm.s7(), dqp.s7())
+                    };
                 });
         });
 
@@ -204,7 +215,16 @@ void Module<Tvec, TgridVec>::compute_limiter() {
                     Tscal8 dqm = (Qi - Qim) / d_cell;
                     Tscal8 dqp = (Qip - Qi) / d_cell;
 
-                    a_y[cell_gid] = shammath::van_leer_slope(dqm, dqp);
+                    a_y[cell_gid] = Tscal8 {
+                        shammath::van_leer_slope(dqm.s0(), dqp.s0()),
+                        shammath::van_leer_slope(dqm.s1(), dqp.s1()),
+                        shammath::van_leer_slope(dqm.s2(), dqp.s2()),
+                        shammath::van_leer_slope(dqm.s3(), dqp.s3()),
+                        shammath::van_leer_slope(dqm.s4(), dqp.s4()),
+                        shammath::van_leer_slope(dqm.s5(), dqp.s5()),
+                        shammath::van_leer_slope(dqm.s6(), dqp.s6()),
+                        shammath::van_leer_slope(dqm.s7(), dqp.s7())
+                    };
                 });
         });
 
@@ -232,7 +252,16 @@ void Module<Tvec, TgridVec>::compute_limiter() {
                     Tscal8 dqm = (Qi - Qim) / d_cell;
                     Tscal8 dqp = (Qip - Qi) / d_cell;
 
-                    a_z[cell_gid] = shammath::van_leer_slope(dqm, dqp);
+                    a_z[cell_gid] = Tscal8 {
+                        shammath::van_leer_slope(dqm.s0(), dqp.s0()),
+                        shammath::van_leer_slope(dqm.s1(), dqp.s1()),
+                        shammath::van_leer_slope(dqm.s2(), dqp.s2()),
+                        shammath::van_leer_slope(dqm.s3(), dqp.s3()),
+                        shammath::van_leer_slope(dqm.s4(), dqp.s4()),
+                        shammath::van_leer_slope(dqm.s5(), dqp.s5()),
+                        shammath::van_leer_slope(dqm.s6(), dqp.s6()),
+                        shammath::van_leer_slope(dqm.s7(), dqp.s7())
+                    };
                 });
         });
 
