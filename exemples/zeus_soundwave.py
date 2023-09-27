@@ -29,7 +29,8 @@ model.set_config(cfg)
 
 
 kx,ky,kz = 2*np.pi,0,0
-delta_rho = 1e-2
+delta_rho = 0
+delta_v = 1e-2
 
 def rho_map(rmin,rmax):
 
@@ -43,7 +44,8 @@ def eint_map(rmin,rmax):
 
 def vel_map(rmin,rmax):
 
-    return (0,0,0)
+    x,y,z = rmin
+    return (0+ delta_v*np.cos(kx*x + ky*y + kz*z) ,0,0)
 
 
 model.set_field_value_lambda_f64("rho", rho_map)
@@ -51,10 +53,10 @@ model.set_field_value_lambda_f64("eint", eint_map)
 model.set_field_value_lambda_f64_3("vel", vel_map)
 
 #model.evolve_once(0,0.1)
-
+freq = 1
 for i in range(1000):
     
-    if i % 10 == 0:
-        model.dump_vtk("test"+str(i//10)+".vtk")
+    if i % freq == 0:
+        model.dump_vtk("test"+str(i//freq)+".vtk")
 
     model.evolve_once(0,0.01)
