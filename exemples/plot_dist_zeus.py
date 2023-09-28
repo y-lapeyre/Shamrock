@@ -27,7 +27,7 @@ scale_fact = 1/(sz*base*multx)
 cfg.set_scale_factor(scale_fact)
 model.set_config(cfg)
 
-file_data = "ghost_dump_debugpatch_0000.txt"
+file_data = "ghost_dump_debug5.000000patch_0000.txt"
 block_size = 8
 
 block_min = []
@@ -35,6 +35,9 @@ block_max = []
 cell_rho = []
 cell_eint = []
 cell_vel = []
+
+cell_force_press = []
+
 cell_eint_post_source = []
 cell_vel_post_source = []
 
@@ -54,6 +57,9 @@ cell_az = []
 cell_Qstar_x = []
 cell_Qstar_y = []
 cell_Qstar_z = []
+cell_Flux_x = []
+cell_Flux_y = []
+cell_Flux_z = []
 
 f = open(file_data,"r")
 lines = f.readlines()
@@ -110,6 +116,16 @@ for line in lines:
         elif line == "--> Qstar_z type=f64_8\n":
             active_field = "Qstar_z"
 
+        elif line == "--> Flux_x type=f64_8\n":
+            active_field = "Flux_x"
+        elif line == "--> Flux_y type=f64_8\n":
+            active_field = "Flux_y"
+        elif line == "--> Flux_z type=f64_8\n":
+            active_field = "Flux_z"
+
+        elif line == "--> force_press type=f64_3\n":
+            active_field = "force_press"
+
         elif line == "--> Nobj_original type=u32\n":
             active_field = "nobj_or"
         elif line == "--> Nobj_total type=u32\n":
@@ -143,6 +159,13 @@ for line in lines:
             y = float(splt[1])
             z = float(splt[2])
             cell_vel.append((x,y,z))
+
+        elif active_field == "force_press":
+            splt = (line[:-1].split())
+            x = float(splt[0])
+            y = float(splt[1])
+            z = float(splt[2])
+            cell_force_press.append((x,y,z))
 
         elif active_field == "eint_post_source":
             val = float(line[:-1])
@@ -228,6 +251,7 @@ for line in lines:
             s6 = float(splt[6])
             s7 = float(splt[7])
             cell_az.append((s0,s1,s2,s3,s4,s5,s6,s7))
+
         elif active_field == "Qstar_x":
             splt = (line[:-1].split())
             s0 = float(splt[0])
@@ -262,6 +286,40 @@ for line in lines:
             s7 = float(splt[7])
             cell_Qstar_z.append((s0,s1,s2,s3,s4,s5,s6,s7))
 
+        elif active_field == "Flux_x":
+            splt = (line[:-1].split())
+            s0 = float(splt[0])
+            s1 = float(splt[1])
+            s2 = float(splt[2])
+            s3 = float(splt[3])
+            s4 = float(splt[4])
+            s5 = float(splt[5])
+            s6 = float(splt[6])
+            s7 = float(splt[7])
+            cell_Flux_x.append((s0,s1,s2,s3,s4,s5,s6,s7))
+        elif active_field == "Flux_y":
+            splt = (line[:-1].split())
+            s0 = float(splt[0])
+            s1 = float(splt[1])
+            s2 = float(splt[2])
+            s3 = float(splt[3])
+            s4 = float(splt[4])
+            s5 = float(splt[5])
+            s6 = float(splt[6])
+            s7 = float(splt[7])
+            cell_Flux_y.append((s0,s1,s2,s3,s4,s5,s6,s7))
+        elif active_field == "Flux_z":
+            splt = (line[:-1].split())
+            s0 = float(splt[0])
+            s1 = float(splt[1])
+            s2 = float(splt[2])
+            s3 = float(splt[3])
+            s4 = float(splt[4])
+            s5 = float(splt[5])
+            s6 = float(splt[6])
+            s7 = float(splt[7])
+            cell_Flux_z.append((s0,s1,s2,s3,s4,s5,s6,s7))
+
 
 cell_min = []
 cell_max = []
@@ -280,8 +338,15 @@ print(len(cell_vel ))
 print(len(cell_min ))
 print(len(cell_max ))
 
+print(len(cell_Qstar_x ))
+print(len(cell_Qstar_y ))
+print(len(cell_Qstar_z ))
+
 select_cell_rho  = []
 select_cell_eint = []
+select_cell_force_x  = []
+select_cell_force_y  = []
+select_cell_force_z  = []
 select_cell_velx  = []
 select_cell_vely  = []
 select_cell_velz  = []
@@ -317,6 +382,10 @@ select_cell_Qstar_x = [[],[],[],[],[],[],[],[]]
 select_cell_Qstar_y = [[],[],[],[],[],[],[],[]]
 select_cell_Qstar_z = [[],[],[],[],[],[],[],[]]
 
+select_cell_Flux_x = [[],[],[],[],[],[],[],[]]
+select_cell_Flux_y = [[],[],[],[],[],[],[],[]]
+select_cell_Flux_z = [[],[],[],[],[],[],[],[]]
+
 
 for i in range(len(cell_rho)):
     rho,eint,vel,cmin,cmax = cell_rho [i],cell_eint[i],cell_vel[i],cell_min[i],cell_max[i]
@@ -348,6 +417,12 @@ for i in range(len(cell_rho)):
         select_cell_velx_start_transp .append(vx )
         select_cell_vely_start_transp .append(vy )
         select_cell_velz_start_transp .append(vz )
+
+
+        fx,fy,fz = cell_force_press[i]
+        select_cell_force_x .append(fx )
+        select_cell_force_y .append(fy )
+        select_cell_force_z .append(fz )
 
         select_cell_rho_end_transp.append(rho_etrsp)
         select_cell_eint_end_transp.append(eint_etrsp)
@@ -435,6 +510,36 @@ for i in range(len(cell_rho)):
         select_cell_Qstar_z[6].append(s6)
         select_cell_Qstar_z[7].append(s7)
 
+        s0,s1,s2,s3,s4,s5,s6,s7 = cell_Flux_x[i]
+        select_cell_Flux_x[0].append(s0)
+        select_cell_Flux_x[1].append(s1)
+        select_cell_Flux_x[2].append(s2)
+        select_cell_Flux_x[3].append(s3)
+        select_cell_Flux_x[4].append(s4)
+        select_cell_Flux_x[5].append(s5)
+        select_cell_Flux_x[6].append(s6)
+        select_cell_Flux_x[7].append(s7)
+
+        s0,s1,s2,s3,s4,s5,s6,s7 = cell_Flux_y[i]
+        select_cell_Flux_y[0].append(s0)
+        select_cell_Flux_y[1].append(s1)
+        select_cell_Flux_y[2].append(s2)
+        select_cell_Flux_y[3].append(s3)
+        select_cell_Flux_y[4].append(s4)
+        select_cell_Flux_y[5].append(s5)
+        select_cell_Flux_y[6].append(s6)
+        select_cell_Flux_y[7].append(s7)
+
+        s0,s1,s2,s3,s4,s5,s6,s7 = cell_Flux_z[i]
+        select_cell_Flux_z[0].append(s0)
+        select_cell_Flux_z[1].append(s1)
+        select_cell_Flux_z[2].append(s2)
+        select_cell_Flux_z[3].append(s3)
+        select_cell_Flux_z[4].append(s4)
+        select_cell_Flux_z[5].append(s5)
+        select_cell_Flux_z[6].append(s6)
+        select_cell_Flux_z[7].append(s7)
+
 
 print(len(select_cell_rho ))
 print(len(select_cell_eint))
@@ -445,6 +550,9 @@ print(len(select_cell_x   ))
 print(len(select_cell_y   ))
 print(len(select_cell_z   ))
 
+print(len(select_cell_Qstar_x ))
+print(len(select_cell_Qstar_y ))
+print(len(select_cell_Qstar_z ))
 
 import matplotlib.pyplot as plt
 
@@ -472,16 +580,20 @@ axs[0,2].scatter(select_cell_x,select_cell_eint_end_transp, s = 1, label = "end 
 axs[0,2].set_title("eint")
 axs[0,2].legend()
 
-
-
+axs[1,1].scatter(select_cell_x,select_cell_force_x, s = 1, label = "fx")
+axs[1,1].set_title("fx")
+axs[1,1].legend()
 
 axs[1,0].scatter(select_cell_x,select_cell_Q[0], s = 1, label = "Q")
 axs[1,0].scatter(select_cell_x,select_cell_ax[0], s = 1, label = "ax")
 axs[1,0].scatter(select_cell_x,select_cell_ay[0], s = 1, label = "ay")
 axs[1,0].scatter(select_cell_x,select_cell_az[0], s = 1, label = "az")
 axs[1,0].scatter(select_cell_x,select_cell_Qstar_x[0], s = 1, label = "Qstar_x")
-axs[1,0].scatter(select_cell_x,select_cell_Qstar_y[0], s = 1, label = "Qstar_y")
-axs[1,0].scatter(select_cell_x,select_cell_Qstar_z[0], s = 1, label = "Qstar_z")
+#axs[1,0].scatter(select_cell_x,select_cell_Qstar_y[0], s = 1, label = "Qstar_y")
+#axs[1,0].scatter(select_cell_x,select_cell_Qstar_z[0], s = 1, label = "Qstar_z")
+axs[1,0].scatter(select_cell_x,select_cell_Flux_x[0], s = 1, label = "Flux_x")
+#axs[1,0].scatter(select_cell_x,select_cell_Flux_y[0], s = 1, label = "Flux_y")
+#axs[1,0].scatter(select_cell_x,select_cell_Flux_z[0], s = 1, label = "Flux_z")
 axs[1,0].set_title("Q rho")
 axs[1,0].legend()
 
@@ -490,8 +602,11 @@ axs[2,0].scatter(select_cell_x,select_cell_ax[1], s = 1, label = "ax")
 axs[2,0].scatter(select_cell_x,select_cell_ay[1], s = 1, label = "ay")
 axs[2,0].scatter(select_cell_x,select_cell_az[1], s = 1, label = "az")
 axs[2,0].scatter(select_cell_x,select_cell_Qstar_x[1], s = 1, label = "Qstar_x")
-axs[2,0].scatter(select_cell_x,select_cell_Qstar_y[1], s = 1, label = "Qstar_y")
-axs[2,0].scatter(select_cell_x,select_cell_Qstar_z[1], s = 1, label = "Qstar_z")
+#axs[2,0].scatter(select_cell_x,select_cell_Qstar_y[1], s = 1, label = "Qstar_y")
+#axs[2,0].scatter(select_cell_x,select_cell_Qstar_z[1], s = 1, label = "Qstar_z")
+axs[2,0].scatter(select_cell_x,select_cell_Flux_x[1], s = 1, label = "Flux_x")
+#axs[2,0].scatter(select_cell_x,select_cell_Flux_y[1], s = 1, label = "Flux_y")
+#axs[2,0].scatter(select_cell_x,select_cell_Flux_z[1], s = 1, label = "Flux_z")
 axs[2,0].set_title("Q pi-x")
 axs[2,0].legend()
 
@@ -500,8 +615,11 @@ axs[2,1].scatter(select_cell_x,select_cell_ax[4], s = 1, label = "ax")
 axs[2,1].scatter(select_cell_x,select_cell_ay[4], s = 1, label = "ay")
 axs[2,1].scatter(select_cell_x,select_cell_az[4], s = 1, label = "az")
 axs[2,1].scatter(select_cell_x,select_cell_Qstar_x[4], s = 1, label = "Qstar_x")
-axs[2,1].scatter(select_cell_x,select_cell_Qstar_y[4], s = 1, label = "Qstar_y")
-axs[2,1].scatter(select_cell_x,select_cell_Qstar_z[4], s = 1, label = "Qstar_z")
+#axs[2,1].scatter(select_cell_x,select_cell_Qstar_y[4], s = 1, label = "Qstar_y")
+#axs[2,1].scatter(select_cell_x,select_cell_Qstar_z[4], s = 1, label = "Qstar_z")
+axs[2,1].scatter(select_cell_x,select_cell_Flux_x[4], s = 1, label = "Flux_x")
+#axs[2,1].scatter(select_cell_x,select_cell_Flux_y[4], s = 1, label = "Flux_y")
+#axs[2,1].scatter(select_cell_x,select_cell_Flux_z[4], s = 1, label = "Flux_z")
 axs[2,1].set_title("Q pi+x")
 axs[2,1].legend()
 
@@ -510,8 +628,11 @@ axs[2,2].scatter(select_cell_x,select_cell_ax[7], s = 1, label = "ax")
 axs[2,2].scatter(select_cell_x,select_cell_ay[7], s = 1, label = "ay")
 axs[2,2].scatter(select_cell_x,select_cell_az[7], s = 1, label = "az")
 axs[2,2].scatter(select_cell_x,select_cell_Qstar_x[7], s = 1, label = "Qstar_x")
-axs[2,2].scatter(select_cell_x,select_cell_Qstar_y[7], s = 1, label = "Qstar_y")
-axs[2,2].scatter(select_cell_x,select_cell_Qstar_z[7], s = 1, label = "Qstar_z")
+#axs[2,2].scatter(select_cell_x,select_cell_Qstar_y[7], s = 1, label = "Qstar_y")
+#axs[2,2].scatter(select_cell_x,select_cell_Qstar_z[7], s = 1, label = "Qstar_z")
+axs[2,2].scatter(select_cell_x,select_cell_Flux_x[7], s = 1, label = "Flux_x")
+#axs[2,2].scatter(select_cell_x,select_cell_Flux_y[7], s = 1, label = "Flux_y")
+#axs[2,2].scatter(select_cell_x,select_cell_Flux_z[7], s = 1, label = "Flux_z")
 axs[2,2].set_title("Q e")
 axs[2,2].legend()
 

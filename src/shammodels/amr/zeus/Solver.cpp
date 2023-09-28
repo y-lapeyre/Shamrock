@@ -72,9 +72,9 @@ auto Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tscal dt_input) -> Tsc
     using namespace shamrock::patch;
     using namespace shamrock;
     using Block = typename Config::AMRBlock;
-    AsciiSplitDump debug_dump("ghost_dump_debug");
+    AsciiSplitDump debug_dump("ghost_dump_debug"+std::to_string(t_current));
 
-    bool do_debug_dump = false;
+    bool do_debug_dump = true;
 
     if(do_debug_dump){
     scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
@@ -156,6 +156,19 @@ auto Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tscal dt_input) -> Tsc
 
     modules::SourceStep src_step(context,solver_config,storage);
     src_step.compute_forces();
+
+    if(do_debug_dump){
+        scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
+            using MergedPDat = shamrock::MergedPatchData;
+            MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);
+
+            sycl::buffer<Tvec> &forces_buf = storage.forces.get().get_buf_check(p.id_patch);
+
+            debug_dump.get_file(p.id_patch).change_table_name("force_press", "f64_3");
+            debug_dump.get_file(p.id_patch).write_table(forces_buf, mpdat.total_elements*AMRBlock::block_size);
+
+        });
+    }
 
 
     src_step.apply_force(dt_input);
@@ -399,6 +412,26 @@ auto Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tscal dt_input) -> Tsc
     }
 
     transport.compute_flux();
+
+    if(do_debug_dump){
+    using Tscal8 = sycl::vec<Tscal, 8>;
+    scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
+        using MergedPDat = shamrock::MergedPatchData;
+        MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);
+
+        sycl::buffer<Tscal8> &Fluxx_buf = storage.Flux_x.get().get_buf_check(p.id_patch);
+        sycl::buffer<Tscal8> &Fluxy_buf = storage.Flux_y.get().get_buf_check(p.id_patch);
+        sycl::buffer<Tscal8> &Fluxz_buf = storage.Flux_z.get().get_buf_check(p.id_patch);
+
+        debug_dump.get_file(p.id_patch).change_table_name("Flux_x", "f64_8");
+        debug_dump.get_file(p.id_patch).write_table(Fluxx_buf, mpdat.total_elements*AMRBlock::block_size);
+        debug_dump.get_file(p.id_patch).change_table_name("Flux_y", "f64_8");
+        debug_dump.get_file(p.id_patch).write_table(Fluxy_buf, mpdat.total_elements*AMRBlock::block_size);
+        debug_dump.get_file(p.id_patch).change_table_name("Flux_z", "f64_8");
+        debug_dump.get_file(p.id_patch).write_table(Fluxz_buf, mpdat.total_elements*AMRBlock::block_size);
+
+    });
+    }
 
     transport.compute_stencil_flux();
 

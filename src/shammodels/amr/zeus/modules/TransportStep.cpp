@@ -724,12 +724,12 @@ void Module<Tvec, TgridVec>::update_Q(Tscal dt) {
 
                     Tscal8 fsum = {};
 
-                    fsum += Flux_xp[cell_gid];
-                    fsum += Flux_yp[cell_gid];
-                    fsum += Flux_zp[cell_gid];
-                    fsum -= Flux_x[cell_gid];
-                    fsum -= Flux_y[cell_gid];
-                    fsum -= Flux_z[cell_gid];
+                    fsum -= Flux_xp[cell_gid];
+                    fsum -= Flux_yp[cell_gid];
+                    fsum -= Flux_zp[cell_gid];
+                    fsum += Flux_x[cell_gid];
+                    fsum += Flux_y[cell_gid];
+                    fsum += Flux_z[cell_gid];
 
                     fsum /= V;
                     fsum *= _dt;
