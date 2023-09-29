@@ -74,7 +74,7 @@ auto Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tscal dt_input) -> Tsc
     using Block = typename Config::AMRBlock;
     AsciiSplitDump debug_dump("ghost_dump_debug"+std::to_string(t_current));
 
-    bool do_debug_dump = true;
+    bool do_debug_dump = false;
 
     if(do_debug_dump){
     scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {

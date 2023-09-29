@@ -117,7 +117,7 @@ void Module<Tvec, TgridVec>::compute_forces() {
                 Tvec grad_p_source_term = dp / (avg_rho * d_cell);
 
                 //grad_p[id_a] = grad_p_source_term;
-                grad_p[id_a] = dp;
+                grad_p[id_a] = -dp;
                     // clang-format on
                 });
         });

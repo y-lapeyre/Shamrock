@@ -64,4 +64,4 @@ for i in range(1000):
     if i % freq == 0:
         model.dump_vtk("test"+str(i//freq)+".vtk")
 
-    model.evolve_once(0,0.01)
+    model.evolve_once(0,0.001)
