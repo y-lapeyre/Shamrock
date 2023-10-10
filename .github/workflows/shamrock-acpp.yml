@@ -7,7 +7,7 @@ on:
 jobs:
   shamrock_acpp_omp_debug_coverage:
     name: AdaptiveCpp coverage omp clang-${{ matrix.clang }}
-    runs-on: [self-hosted, cuda1102rocm543]
+    runs-on: [self-hosted, ubuntu20]
 
     strategy:
       matrix:
@@ -119,7 +119,7 @@ jobs:
 
   shamrock_acpp_omp:
     name: AdaptiveCpp omp clang-${{ matrix.clang }}
-    runs-on: [self-hosted, cuda1102rocm543]
+    runs-on: [self-hosted, ubuntu20]
 
     strategy:
       matrix:
@@ -198,7 +198,7 @@ jobs:
 
   shamrock_acpp_omp_asan:
     name: AdaptiveCpp omp asan clang-${{ matrix.clang }}
-    runs-on: [self-hosted, cuda1102rocm543]
+    runs-on: [self-hosted, ubuntu20]
 
     strategy:
       matrix:
@@ -278,7 +278,7 @@ jobs:
   shamrock_acpp_SSCP:
     name: AdaptiveCpp sscp clang-${{ matrix.clang }}
 
-    runs-on: [self-hosted, cuda1102rocm543]
+    runs-on: [self-hosted, ubuntu20]
 
     strategy:
       matrix:
@@ -371,7 +371,7 @@ jobs:
 
   shamrock_acpp_cuda:
     name: AdaptiveCpp cuda clang-${{ matrix.clang }}
-    runs-on: [self-hosted, cuda1102rocm543]
+    runs-on: [self-hosted, ubuntu20]
 
     strategy:
       matrix:
@@ -458,7 +458,7 @@ jobs:
 
   shamrock_acpp_rocm:
     name: AdaptiveCpp rocm clang-${{ matrix.clang }}
-    runs-on: [self-hosted, cuda1102rocm543]
+    runs-on: [self-hosted, ubuntu20]
 
     strategy:
       matrix:
@@ -546,7 +546,7 @@ jobs:
 
   shamrock_acpp_cuda_nvcxx:
     name: AdaptiveCpp nvcxx ${{matrix.nvhpc}}, CUDA ${{matrix.cuda}}
-    runs-on: [self-hosted, raw]
+    runs-on: [self-hosted, ubuntu20]
 
     strategy:
       matrix:

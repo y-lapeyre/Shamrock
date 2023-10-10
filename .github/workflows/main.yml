@@ -82,28 +82,14 @@ jobs:
 
 
 
-  linux_acpp:
-    name: Build AdaptiveCpp
-    needs: [pragma_check, copyright_check]
-    uses: ./.github/workflows/linux-build-acpp.yml
-
   shamrock_linux_acpp:
     name: Shamrock Test
-    needs: [pragma_check, copyright_check,linux_acpp]
+    needs: [pragma_check, copyright_check]
     uses: ./.github/workflows/shamrock-acpp.yml
     
-
-
-  ### build jobs
-
-  linux_dpcpp:
-    name: Build DPCPP
-    needs: [pragma_check, copyright_check]
-    uses: ./.github/workflows/linux-build-dpcpp.yml
-
   shamrock_linux_dpcpp:
     name: Shamrock Test
-    needs: [pragma_check, copyright_check,linux_dpcpp]
+    needs: [pragma_check, copyright_check]
     uses: ./.github/workflows/shamrock-dpcpp.yml
   
 
