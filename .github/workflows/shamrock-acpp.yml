@@ -20,29 +20,8 @@ jobs:
         with:
           submodules: recursive
 
-      - name: 'Download Artifact'
-        uses: actions/download-artifact@v3
-        with:
-          name: AdaptiveCpp_compiler-clang-${{ matrix.clang }}-${{matrix.cuda}}-${{matrix.rocm}}
-
-      - name: 'unTar acpp'
-        run: tar -xvf acpp.tar
-
       - name: ls local
         run : ls -la
-
-      - name: install boost
-        run: sudo apt install -y libboost-all-dev
-
-      - name: install LLVM
-        run: |
-          wget https://apt.llvm.org/llvm.sh
-          chmod +x llvm.sh
-          sudo ./llvm.sh 15
-          sudo apt install -y libclang-15-dev clang-tools-15 libomp-15-dev libllvm-15-ocaml-dev libllvm15 llvm-15 llvm-15-dev llvm-15-doc llvm-15-examples llvm-15-runtime
-
-      - name: install Ninja-build
-        run: sudo apt install ninja-build
 
       - name: configure Shamrock
         run: |
