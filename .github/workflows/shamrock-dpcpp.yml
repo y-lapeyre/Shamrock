@@ -19,12 +19,12 @@ jobs:
 
       - name : Check binary
         run: |
-          dpcpp_compiler/bin/clang++ --version
+          /home/docker/compilers/DPCPP/bin/clang++ --version
       
       - name: configure Shamrock
         run: |
           python3 buildbot/configure.py --gen ninja --tests --build debug \
-            --builddir dpcpp_bare_debug --cxxpath dpcpp_compiler --compiler intel_llvm --profile native_cpu
+            --builddir dpcpp_bare_debug --cxxpath /home/docker/compilers/DPCPP --compiler intel_llvm --profile native_cpu
 
       - name: compile Shamrock
         run: |
@@ -34,7 +34,7 @@ jobs:
       - name: run Shamrock
         run: |
           cd dpcpp_bare_debug
-          export DPCPP_HOME=../dpcpp_compiler
+          export DPCPP_HOME=/home/docker/compilers/DPCPP
           export PATH=$DPCPP_HOME/bin:$PATH
           export LD_LIBRARY_PATH=$DPCPP_HOME/lib:$LD_LIBRARY_PATH
           ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --unittest
@@ -56,12 +56,12 @@ jobs:
 
       - name : Check binary
         run: |
-          dpcpp_compiler/bin/clang++ --version
+          /home/docker/compilers/DPCPP/bin/clang++ --version
 
       - name: configure Shamrock
         run: |
           python3 buildbot/configure.py --gen ninja --tests --build debug \
-            --builddir dpcpp_bare_debug --cxxpath dpcpp_compiler --compiler intel_llvm --profile cuda \
+            --builddir dpcpp_bare_debug --cxxpath /home/docker/compilers/DPCPP --compiler intel_llvm --profile cuda \
             --cxxflags="--cuda-path=/home/docker/opt/cuda"
 
       - name: compile Shamrock
@@ -73,7 +73,7 @@ jobs:
       #- name: run Shamrock
       #  run: |
       #    cd dpcpp_bare_debug
-      #    export DPCPP_HOME=../dpcpp_compiler
+      #    export DPCPP_HOME=/home/docker/compilers/DPCPP
       #    export PATH=$DPCPP_HOME/bin:$PATH
       #    export LD_LIBRARY_PATH=$DPCPP_HOME/lib:$LD_LIBRARY_PATH
       #    export ONEAPI_DEVICE_SELECTOR=ext_intel_esimd_emulator:gpu
@@ -95,13 +95,13 @@ jobs:
 
       - name : Check binary
         run: |
-          dpcpp_compiler/bin/clang++ --version
+          /home/docker/compilers/DPCPP/bin/clang++ --version
 
       
       - name: configure Shamrock
         run: |
           python3 buildbot/configure.py --gen ninja --tests --build debug \
-            --builddir dpcpp_bare_debug --cxxpath dpcpp_compiler --compiler intel_llvm --profile hip-gfx906 \
+            --builddir dpcpp_bare_debug --cxxpath /home/docker/compilers/DPCPP --compiler intel_llvm --profile hip-gfx906 \
             --cxxflags="--rocm-path=/opt/rocm"
 
       - name: compile Shamrock
@@ -113,7 +113,7 @@ jobs:
       #- name: run Shamrock
       #  run: |
       #    cd dpcpp_bare_debug
-      #    export DPCPP_HOME=../dpcpp_compiler
+      #    export DPCPP_HOME=/home/docker/compilers/DPCPP
       #    export PATH=$DPCPP_HOME/bin:$PATH
       #    export LD_LIBRARY_PATH=$DPCPP_HOME/lib:$LD_LIBRARY_PATH
       #    export ONEAPI_DEVICE_SELECTOR=ext_intel_esimd_emulator:gpu
