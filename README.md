@@ -15,6 +15,10 @@ AdaptiveCPP status :
 ![badge2](https://badgen.net/static/ACPP%2FROCM/yes/green)
 ![badge2](https://badgen.net/static/ACPP%2FCUDA/yes/green)
 
+# Getting in touch
+
+![Discord server](https://discord.gg/Q69s5buyr5)
+
 # Getting started
 
 ```bash
