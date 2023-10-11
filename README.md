@@ -17,7 +17,14 @@ AdaptiveCPP status :
 
 # Getting in touch
 
-![Discord server](https://discord.gg/Q69s5buyr5)
+[Discord server](https://discord.gg/Q69s5buyr5)
+
+# Contributing
+
+Shamrock accept contributions through github pull request :
+1. Code contributions via [Pull request](https://github.com/tdavidcl/Shamrock/compare)
+1. Documentation contributions via [Pull request](https://github.com/tdavidcl/Shamrock/compare)
+3. Issue report via [Github issues](https://github.com/tdavidcl/Shamrock/issues/new/choose)
 
 # Getting started
 
