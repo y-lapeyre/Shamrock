@@ -26,6 +26,12 @@ Shamrock accept contributions through github pull request :
 1. Documentation contributions via [Pull request](https://github.com/tdavidcl/Shamrock/compare)
 3. Issue report via [Github issues](https://github.com/tdavidcl/Shamrock/issues/new/choose)
 
+# Documentation
+
+The documentation is available here : [mdbook doc](https://tdavidcl.github.io/Shamrock/mdbook/index.html)
+
+The doxygen doc is available here : [doxygen](https://tdavidcl.github.io/Shamrock/doxygen/index.html)
+
 # Getting started
 
 ```bash
