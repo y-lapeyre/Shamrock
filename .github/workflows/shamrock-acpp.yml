@@ -113,33 +113,8 @@ jobs:
         with:
           submodules: recursive
   
-      - name: 'Download Artifact'
-        uses: actions/download-artifact@v3
-        with:
-          name: AdaptiveCpp_compiler-clang-${{ matrix.clang }}-${{matrix.cuda}}-${{matrix.rocm}}
-  
-      - name: 'unTar acpp'
-        run: tar -xvf acpp.tar
-  
       - name: ls local
         run : ls -la
-  
-      - name: install boost
-        run: sudo apt install libboost-all-dev
-  
-      - name: install LLVM
-        run: |
-          wget https://apt.llvm.org/llvm.sh
-          chmod +x llvm.sh
-          sudo ./llvm.sh ${{matrix.clang}}
-          sudo apt install -y libclang-${{matrix.clang}}-dev clang-tools-${{matrix.clang}} libomp-${{matrix.clang}}-dev
-          if [[ "${{matrix.clang}}" == "16" ]]; then
-            sudo rm -r /usr/lib/clang/16*
-            sudo ln -s /usr/lib/llvm-16/lib/clang/16 /usr/lib/clang/16
-          fi
-
-      - name: install Ninja-build
-        run: sudo apt install ninja-build
   
       - name: configure Shamrock
         run: |
@@ -192,34 +167,9 @@ jobs:
         with:
           submodules: recursive
   
-      - name: 'Download Artifact'
-        uses: actions/download-artifact@v3
-        with:
-          name: AdaptiveCpp_compiler-clang-${{ matrix.clang }}-${{matrix.cuda}}-${{matrix.rocm}}
-  
-      - name: 'unTar acpp'
-        run: tar -xvf acpp.tar
-  
       - name: ls local
         run : ls -la
-  
-      - name: install boost
-        run: sudo apt install libboost-all-dev
-  
-      - name: install LLVM
-        run: |
-          wget https://apt.llvm.org/llvm.sh
-          chmod +x llvm.sh
-          sudo ./llvm.sh ${{matrix.clang}}
-          sudo apt install -y libclang-${{matrix.clang}}-dev clang-tools-${{matrix.clang}} libomp-${{matrix.clang}}-dev
-          if [[ "${{matrix.clang}}" == "16" ]]; then
-            sudo rm -r /usr/lib/clang/16*
-            sudo ln -s /usr/lib/llvm-16/lib/clang/16 /usr/lib/clang/16
-          fi
 
-      - name: install Ninja-build
-        run: sudo apt install ninja-build
-  
       - name: configure Shamrock
         run: |
           python3 buildbot/configure.py --gen ninja --tests --build debug \
@@ -272,33 +222,8 @@ jobs:
         with:
           submodules: recursive
   
-      - name: 'Download Artifact'
-        uses: actions/download-artifact@v3
-        with:
-          name: AdaptiveCpp_compiler-clang-${{ matrix.clang }}-${{matrix.cuda}}-${{matrix.rocm}}
-  
-      - name: 'unTar acpp'
-        run: tar -xvf acpp.tar
-  
       - name: ls local
         run : ls -la
-  
-      - name: install boost
-        run: sudo apt install libboost-all-dev
-  
-      - name: install LLVM
-        run: |
-          wget https://apt.llvm.org/llvm.sh
-          chmod +x llvm.sh
-          sudo ./llvm.sh ${{matrix.clang}}
-          sudo apt install -y libclang-${{matrix.clang}}-dev clang-tools-${{matrix.clang}} libomp-${{matrix.clang}}-dev
-          if [[ "${{matrix.clang}}" == "16" ]]; then
-            sudo rm -r /usr/lib/clang/16*
-            sudo ln -s /usr/lib/llvm-16/lib/clang/16 /usr/lib/clang/16
-          fi
-
-      - name: install Ninja-build
-        run: sudo apt install ninja-build
   
       - name: configure Shamrock
         run: |
@@ -365,42 +290,8 @@ jobs:
         with:
           submodules: recursive
   
-      - name: 'Download Artifact'
-        uses: actions/download-artifact@v3
-        with:
-          name: AdaptiveCpp_compiler-clang-${{ matrix.clang }}-${{matrix.cuda}}-${{matrix.rocm}}
-  
-      - name: 'unTar acpp'
-        run: tar -xvf acpp.tar
-  
       - name: ls local
         run : ls -la
-  
-      - name: install boost
-        run: sudo apt install libboost-all-dev
-  
-
-      #- name: install CUDA
-      #  run: |
-      #    mkdir -p ~/opt/cuda
-      #    wget -q -O cuda.sh http://developer.download.nvidia.com/compute/cuda/11.0.2/local_installers/cuda_11.0.2_450.51.05_linux.run
-      #    sudo sh ./cuda.sh --override --silent --toolkit --no-man-page --no-drm --no-opengl-libs --installpath=~/opt/cuda || true
-      #    echo "CUDA Version ${{matrix.cuda}}" | sudo tee ~/opt/cuda/version.txt
-      
-
-      - name: install LLVM
-        run: |
-          wget https://apt.llvm.org/llvm.sh
-          chmod +x llvm.sh
-          sudo ./llvm.sh ${{matrix.clang}}
-          sudo apt install -y libclang-${{matrix.clang}}-dev clang-tools-${{matrix.clang}} libomp-${{matrix.clang}}-dev
-          if [[ "${{matrix.clang}}" == "16" ]]; then
-            sudo rm -r /usr/lib/clang/16*
-            sudo ln -s /usr/lib/llvm-16/lib/clang/16 /usr/lib/clang/16
-          fi
-
-      - name: install Ninja-build
-        run: sudo apt install ninja-build
   
       - name: configure Shamrock
         run: |
@@ -452,46 +343,8 @@ jobs:
         with:
           submodules: recursive
   
-      - name: 'Download Artifact'
-        uses: actions/download-artifact@v3
-        with:
-          name: AdaptiveCpp_compiler-clang-${{ matrix.clang }}-${{matrix.cuda}}-${{matrix.rocm}}
-  
-      - name: 'unTar acpp'
-        run: tar -xvf acpp.tar
-  
       - name: ls local
         run : ls -la
-  
-      - name: install boost
-        run: sudo apt install libboost-all-dev
-  
-
-      - name: install ROCm
-        run: |
-          [[ ${{matrix.rocm}} == 4.0.1 ]] && CODENAME=xenial
-          [[ ${{matrix.rocm}} == 5.4.3 ]] && CODENAME=focal
-          sudo apt install -y libnuma-dev cmake unzip
-          wget -q -O - https://repo.radeon.com/rocm/rocm.gpg.key | sudo apt-key add -
-          echo "deb [arch=amd64] https://repo.radeon.com/rocm/apt/${{matrix.rocm}} $CODENAME main" | sudo tee /etc/apt/sources.list.d/rocm.list
-          printf 'Package: *\nPin: release o=repo.radeon.com\nPin-Priority: 600' | sudo tee /etc/apt/preferences.d/rocm-pin-600
-          sudo apt update -y
-          sudo apt install -y rocm-dev
-      
-
-      - name: install LLVM
-        run: |
-          wget https://apt.llvm.org/llvm.sh
-          chmod +x llvm.sh
-          sudo ./llvm.sh ${{matrix.clang}}
-          sudo apt install -y libclang-${{matrix.clang}}-dev clang-tools-${{matrix.clang}} libomp-${{matrix.clang}}-dev
-          if [[ "${{matrix.clang}}" == "16" ]]; then
-            sudo rm -r /usr/lib/clang/16*
-            sudo ln -s /usr/lib/llvm-16/lib/clang/16 /usr/lib/clang/16
-          fi
-
-      - name: install Ninja-build
-        run: sudo apt install ninja-build
   
       - name: configure Shamrock
         run: |
@@ -540,31 +393,8 @@ jobs:
         with:
           submodules: recursive
   
-      - name: 'Download Artifact'
-        uses: actions/download-artifact@v3
-        with:
-          name: AdaptiveCpp_compiler-nvcxx--${{matrix.cuda}}-${{matrix.nvhpc}}
-  
-      - name: 'unTar acpp'
-        run: tar -xvf acpp.tar
-  
       - name: ls local
         run : ls -la
-  
-      - name: install boost
-        run: sudo apt install libboost-all-dev
-  
-
-      - name: install nvcxx
-        run: |
-          MAJOR_VERSION=$(echo ${{matrix.nvhpc}} | sed 's/\..*//')
-          MINOR_VERSION=$(echo ${{matrix.nvhpc}} | sed 's/.*\.//')
-          wget -q https://developer.download.nvidia.com/hpc-sdk/ubuntu/amd64/nvhpc-${MAJOR_VERSION}-${MINOR_VERSION}_${{matrix.nvhpc}}_amd64.deb
-          wget -q https://developer.download.nvidia.com/hpc-sdk/ubuntu/amd64/nvhpc-20${MAJOR_VERSION}_${{matrix.nvhpc}}_amd64.deb
-          sudo apt install -y ./nvhpc-*
-
-      - name: install Ninja-build
-        run: sudo apt install ninja-build
   
       - name: configure Shamrock
         run: |
