@@ -16,7 +16,7 @@
 #include "shamrock/legacy/utils/geometry_utils.hpp"
 #include "shamrock/scheduler/ReattributeDataUtility.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
-#include "shammodels/sph/sphpart.hpp"
+#include "shammodels/sph/math/density.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
 #include <vector>
@@ -453,7 +453,7 @@ namespace shammodels::sph {
             if(shamsys::instance::world_rank == 0) logger::info_ln("Model", "current particle counts : ", log_gathered);
         }
 
-        void push_particle(std::vector<Tvec> & part_pos_insert, std::vector<Tscal> & part_hpart_insert);
+        void push_particle(std::vector<Tvec> & part_pos_insert, std::vector<Tscal> & part_hpart_insert, std::vector<Tscal> &part_u_insert);
 
         template<class T>
         inline void set_value_in_a_box(std::string field_name, T val, std::pair<Tvec, Tvec> box) {
