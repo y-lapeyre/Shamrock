@@ -10,8 +10,13 @@ CI status: ![badge1](https://github.com/tdavidcl/Shamrock/actions/workflows/main
 Shamrock is a general purpose HPC hydrodynamics simulation code focused on astrophysical contexts.  
 The whole code is **C++17** by default, and all accelerated parts are done using **SYCL**, 
 which can be directly compiled directly to native **CUDA**, **ROCM**, **OpenMP** and much more.
-Shamrock also supports multiple GPUs and Heterogeneous cluster using **MPI**.
-
+Shamrock also supports multiple GPUs and Heterogeneous cluster using **MPI**.  
+The main ideas behind the code are : 
+- Modern
+- Modular  
+- Fast 
+- Portable
+  
 ## Getting in touch
 
 Join us on [Discord](https://discord.gg/Q69s5buyr5)! Alternatively, open a discussion or issue in this repository.
