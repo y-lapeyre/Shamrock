@@ -17,7 +17,7 @@ AdaptiveCPP status :
 
 # Getting in touch
 
-[Discord server](https://discord.gg/Q69s5buyr5)
+Join us on [Discord](https://discord.gg/Q69s5buyr5)! Alternatively, open a discussion or issue in this repository.
 
 # Contributing
 
@@ -28,9 +28,9 @@ Shamrock accept contributions through github pull request :
 
 # Documentation
 
-The documentation is available here : [mdbook doc](https://tdavidcl.github.io/Shamrock/mdbook/index.html)
-
-The doxygen doc is available here : [doxygen](https://tdavidcl.github.io/Shamrock/doxygen/index.html)
+We provide both a book like documentation and the more classic doxygen style for more details about the sources
+ - The documentation is available here : [mdbook doc](https://tdavidcl.github.io/Shamrock/mdbook/index.html)
+ - The doxygen doc is available here : [doxygen](https://tdavidcl.github.io/Shamrock/doxygen/index.html)
 
 # Getting started
 
