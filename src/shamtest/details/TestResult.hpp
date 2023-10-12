@@ -19,6 +19,7 @@
 #include "aliases.hpp"
 #include "shamtest/details/TestAssertList.hpp"
 #include "shamtest/details/TestDataList.hpp"
+#include <vector>
 
 /**
  * @brief Describe the type of the performed test
@@ -60,6 +61,8 @@ namespace shamtest::details {
          * @return std::string the serialized results
          */
         std::string serialize_json();
+
+        std::vector<u8> serialize();
     };
 
 } // namespace shamtest::details
