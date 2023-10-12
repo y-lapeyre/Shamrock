@@ -10,8 +10,8 @@ CI status: ![badge1](https://github.com/tdavidcl/Shamrock/actions/workflows/main
 Shamrock is a general purpose HPC hydrodynamics simulation code focused on astrophysical contexts.  
 The whole code is **C++17** by default, and all accelerated parts are done using **SYCL**, 
 which can be directly compiled directly to native **CUDA**, **ROCM**, **OpenMP** and much more.
-Shamrock also supports multiple GPUs and Heterogeneous cluster using **MPI**.  
-The main ideas behind the code are : 
+Shamrock also supports multiple GPUs and Heterogeneous clusters using **MPI**.  
+The main ideas behind the code are: 
 - Modern
 - Modular  
 - Fast 
@@ -51,14 +51,14 @@ AdaptiveCPP SSCP | ![badge2](https://badgen.net/static/ACPP%2FSSCP/yes/green)
 # Documentation
 
 We provide both a book like documentation and the more classic doxygen style for more details about the sources
- - The documentation is available here : [mdbook doc](https://tdavidcl.github.io/Shamrock/mdbook/index.html)
- - The doxygen doc is available here : [doxygen](https://tdavidcl.github.io/Shamrock/doxygen/index.html)
+ - The documentation is available here: [mdbook doc](https://tdavidcl.github.io/Shamrock/mdbook/index.html)
+ - The doxygen doc is available here: [doxygen](https://tdavidcl.github.io/Shamrock/doxygen/index.html)
 
 # Getting started
 
-The whole getting started guide can be found here : [Getting started](https://tdavidcl.github.io/Shamrock/mdbook/usermanual/quickstart.html)
+The whole getting started guide can be found here: [Getting started](https://tdavidcl.github.io/Shamrock/mdbook/usermanual/quickstart.html)
 
-Note that a convenient way to pull the Shamrock repo is the following command to also pull the submodules :
+Note that a convenient way to pull the Shamrock repo is the following command to also pull the submodules:
 ```bash
 git clone --recurse-submodules git@github.com:tdavidcl/Shamrock.git
 ```
