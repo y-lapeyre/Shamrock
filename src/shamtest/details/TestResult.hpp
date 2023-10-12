@@ -23,7 +23,11 @@
 /**
  * @brief Describe the type of the performed test
  */
-enum TestType { Benchmark, Analysis, Unittest };
+enum TestType { 
+    Benchmark, 
+    Analysis, 
+    Unittest 
+};
 
 namespace shamtest::details {
 
@@ -35,6 +39,9 @@ namespace shamtest::details {
         std::string name;       /*!< The name of the test */
         u32 world_rank;         /*!< MPI rank that performed the test */
         TestAssertList asserts; /*!< List of the asserts performed withing the test */
+        std::string tex_output; /*!< Tex output of the test */
+
+        [[deprecated]]
         TestDataList test_data; /*!< Data returned by the test */
 
         /**
@@ -52,7 +59,7 @@ namespace shamtest::details {
          *
          * @return std::string the serialized results
          */
-        std::string serialize();
+        std::string serialize_json();
     };
 
 } // namespace shamtest::details

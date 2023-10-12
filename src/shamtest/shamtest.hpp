@@ -86,9 +86,15 @@ namespace shamtest {
      *
      * @return shamtest::details::TestAssertList& reference to the test datas
      */
+    [[deprecated("")]]
     inline shamtest::details::TestDataList &test_data() {
         return shamtest::details::current_test.test_data;
     };
+
+    inline std::string & test_tex_out(){
+        return shamtest::details::current_test.tex_output;
+    }
+    
 } // namespace shamtest
 
 /**

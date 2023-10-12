@@ -13,7 +13,7 @@
 
 namespace shamtest::details {
 
-    std::string TestResult::serialize() {
+    std::string TestResult::serialize_json() {
 
         using namespace shamsys::instance;
 

@@ -30,29 +30,6 @@
 #include "shambindings/pybindaliases.hpp"
 
 
-bool has_option(
-    const std::vector<std::string_view>& args, 
-    const std::string_view& option_name) {
-    for (auto it = args.begin(), end = args.end(); it != end; ++it) {
-        if (*it == option_name)
-            return true;
-    }
-    
-    return false;
-}
-
-std::string_view get_option(
-    const std::vector<std::string_view>& args, 
-    const std::string_view& option_name) {
-    for (auto it = args.begin(), end = args.end(); it != end; ++it) {
-        if (*it == option_name)
-            if (it + 1 != end)
-                return *(it + 1);
-    }
-    
-    return "";
-}
-
 
 
 namespace shamtest {
@@ -308,7 +285,7 @@ namespace shamtest {
             
             std::cout << std::endl;
 
-            rank_test_res_out << res.serialize() << ",";
+            rank_test_res_out << res.serialize_json() << ",";
 
 
             test_loc_cnt++;
@@ -360,6 +337,9 @@ namespace shamtest {
             if(instance::world_rank == 0){
                 out_res_string = std::string(gather_data,disps[instance::world_size-1]+counts[instance::world_size-1]);
             }
+
+            delete [] counts;
+            delete [] disps;
 
         }
         
