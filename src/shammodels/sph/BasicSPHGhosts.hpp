@@ -81,8 +81,8 @@ namespace shammodels::sph {
          * @brief Find interfaces and their metadata
          * 
          * @param sptree the serial patch tree
-         * @param int_range_max_tree the smoothing lenght maximas hierachy
-         * @param int_range_max the smoothing lenght maximas hierachy
+         * @param int_range_max_tree the smoothing length maximas hierachy
+         * @param int_range_max the smoothing length maximas hierachy
          * @return GeneratorMap the generator map containing the metadata to build interfaces
          */
         GeneratorMap find_interfaces(SerialPatchTree<vec> &sptree,

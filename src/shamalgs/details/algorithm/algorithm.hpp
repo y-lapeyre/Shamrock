@@ -91,7 +91,7 @@ namespace shamalgs::algorithm {
      * @param q the sycl queue
      * @param buf the buffer to apply the remapping on
      * @param index_map the index map 
-     * @param len lenght of the index map
+     * @param len length of the index map
      */
     template<class T>
     sycl::buffer<T> index_remap(
@@ -107,7 +107,7 @@ namespace shamalgs::algorithm {
      * @param q the sycl queue
      * @param buf the buffer to apply the remapping on
      * @param index_map the index map 
-     * @param len lenght of the index map
+     * @param len length of the index map
      * @param nvar the number of variable per index
      */
     template<class T>
@@ -120,7 +120,7 @@ namespace shamalgs::algorithm {
      * @brief generate a buffer such that for i in [0,len[, buf[i] = i 
      * 
      * @param q the queue to run on
-     * @param len lenght of the buffer to generate
+     * @param len length of the buffer to generate
      * @return sycl::buffer<u32> the returned buffer
      */
     sycl::buffer<u32> gen_buffer_index(sycl::queue & q , u32 len);

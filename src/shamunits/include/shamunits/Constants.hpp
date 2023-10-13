@@ -63,7 +63,7 @@ namespace shamunits {
             static constexpr T astronomical_unit = Conv::au_to_m;  //(m)
             static constexpr T light_year        = Conv::ly_to_m;  //(m)
             static constexpr T parsec            = Conv::pc_to_m;  //(m)
-            static constexpr T planck_lenght     = 1.61625518e-35; //(m)
+            static constexpr T planck_length     = 1.61625518e-35; //(m)
 
             static constexpr T proton_mass   = 1.67262192e-27;                         //(kg)
             static constexpr T electron_mass = proton_mass * electron_proton_ratio<T>; //(kg)

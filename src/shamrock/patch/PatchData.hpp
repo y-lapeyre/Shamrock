@@ -145,7 +145,7 @@ namespace shamrock::patch {
          * This function can be used to apply the result of a sort to the field
          *
          * @param index_map
-         * @param len the lenght of the map (must match with the current count)
+         * @param len the length of the map (must match with the current count)
          */
         void index_remap(sycl::buffer<u32> &index_map, u32 len);
 
@@ -155,7 +155,7 @@ namespace shamrock::patch {
          * This function can be used to apply the result of a sort to the field
          *
          * @param index_map
-         * @param len the lenght of the map
+         * @param len the length of the map
          */
         void index_remap_resize(sycl::buffer<u32> &index_map, u32 len);
 

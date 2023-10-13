@@ -187,7 +187,7 @@ namespace impl {
     template<class A,class B,class C> class Kernel_Finalize_omega;
 
     template<class morton_prec, class Kernel>
-    class IntSmoothingLenghtCompute{public:
+    class IntSmoothinglengthCompute{public:
 
 
 

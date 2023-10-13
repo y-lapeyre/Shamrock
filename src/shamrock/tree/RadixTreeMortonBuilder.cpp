@@ -36,7 +36,7 @@ void RadixTreeMortonBuilder<morton_t, pos_t, dim>::build(
 
     u32 morton_len = shambase::roundup_pow2_clz(cnt_obj);
 
-    debug_sycl_ln("RadixTree", "morton buffer lenght :", morton_len);
+    debug_sycl_ln("RadixTree", "morton buffer length :", morton_len);
     out_buf_morton = std::make_unique<sycl::buffer<morton_t>>(morton_len);
 
     MortonKernels<morton_t, pos_t, dim>::sycl_xyz_to_morton(queue,
@@ -73,7 +73,7 @@ void RadixTreeMortonBuilder<morton_t, pos_t, dim>::build_raw(
 
     debug_sycl_ln("RadixTree", "box dim :", bounding_box);
 
-    debug_sycl_ln("RadixTree", "morton buffer lenght :", cnt_obj);
+    debug_sycl_ln("RadixTree", "morton buffer length :", cnt_obj);
     out_buf_morton = std::make_unique<sycl::buffer<morton_t>>(cnt_obj);
 
     MortonKernels<morton_t, pos_t, dim>::sycl_xyz_to_morton(queue,
