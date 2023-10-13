@@ -310,8 +310,8 @@ void SPHSolve<Tvec, Kern>::sph_prestep(Tscal time_val) {
 
         u32 iter_h = 0;
         for (; iter_h < 50; iter_h++) {
-            NamedStackEntry stack_loc2{"iterate smoothing lenght"};
-            // iterate smoothing lenght
+            NamedStackEntry stack_loc2{"iterate smoothing length"};
+            // iterate smoothing length
             scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchData &pdat) {
                 logger::debug_ln("SPHLeapfrog", "patch : n°", p.id_patch, "->", "h iteration");
 
@@ -331,7 +331,7 @@ void SPHSolve<Tvec, Kern>::sph_prestep(Tscal time_val) {
                 tree::ObjectCache &neigh_cache =
                     storage.neighbors_cache.get().get_cache(p.id_patch);
 
-                sph_utils.iterate_smoothing_lenght_cache(
+                sph_utils.iterate_smoothing_length_cache(
                     merged_r,
                     hnew,
                     hold,
@@ -341,24 +341,24 @@ void SPHSolve<Tvec, Kern>::sph_prestep(Tscal time_val) {
                     gpart_mass,
                     htol_up_tol,
                     htol_up_iter);
-                // sph_utils.iterate_smoothing_lenght_tree(merged_r, hnew, hold, eps_h, range_npart,
+                // sph_utils.iterate_smoothing_length_tree(merged_r, hnew, hold, eps_h, range_npart,
                 // tree, gpart_mass, htol_up_tol, htol_up_iter);
             });
             max_eps_h = _epsilon_h.compute_rank_max();
             if (max_eps_h < 1e-6) {
-                logger::debug_sycl("SmoothingLenght", "converged at i =", iter_h);
+                logger::debug_sycl("Smoothinglength", "converged at i =", iter_h);
                 break;
             }
         }
 
-        // logger::info_ln("Smoothinglenght", "eps max =", max_eps_h);
+        // logger::info_ln("Smoothinglength", "eps max =", max_eps_h);
 
         Tscal min_eps_h = shamalgs::collective::allreduce_min(_epsilon_h.compute_rank_min());
         if (min_eps_h == -1) {
             if (shamsys::instance::world_rank == 0) {
                 logger::warn_ln(
-                    "Smoothinglenght",
-                    "smoothing lenght is not converged, rerunning the iterator ...");
+                    "Smoothinglength",
+                    "smoothing length is not converged, rerunning the iterator ...");
             }
 
             reset_ghost_handler();
@@ -373,11 +373,11 @@ void SPHSolve<Tvec, Kern>::sph_prestep(Tscal time_val) {
             if (shamsys::instance::world_rank == 0) {
 
                 std::string log = "";
-                log += "smoothing lenght iteration converged\n";
+                log += "smoothing length iteration converged\n";
                 log += shambase::format(
                     "  eps min = {}, max = {}\n  iterations = {}", min_eps_h, max_eps_h, iter_h);
 
-                logger::info_ln("Smoothinglenght", log);
+                logger::info_ln("Smoothinglength", log);
             }
         }
 

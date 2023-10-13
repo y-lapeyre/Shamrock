@@ -40,7 +40,7 @@ class ALignedAxisBoundingBox{
         return max_coord - min_coord;
     }
 
-    inline flt get_max_side_lenght() const {
+    inline flt get_max_side_length() const {
         const vec sz = get_size();
         return sycl::fmax(sycl::fmax(sz.x(),sz.y()),sz.z());
     }
