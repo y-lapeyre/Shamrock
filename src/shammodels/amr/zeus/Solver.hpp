@@ -21,12 +21,16 @@ namespace shammodels::zeus {
         
         using Tscal              = shambase::VecComponent<Tvec>;
 
-        Tscal eos_gamma = 5/3;
+        Tscal eos_gamma = 5./3.;
 
         Tscal grid_coord_to_pos_fact = 1;
 
         static constexpr u32 NsideBlockPow = 1;
         using AMRBlock = amr::AMRBlock<Tvec, TgridVec, NsideBlockPow>; 
+
+        inline void set_eos_gamma(Tscal gamma){
+            eos_gamma = gamma;
+        }
     };
 
     template<class Tvec, class TgridVec>
