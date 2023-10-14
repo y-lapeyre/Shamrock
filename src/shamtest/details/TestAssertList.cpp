@@ -7,12 +7,13 @@
 // -------------------------------------------------------//
 
 #include "TestAssertList.hpp"
+#include <sstream>
 
 
 namespace shamtest::details {
     
     
-    std::string TestAssertList::serialize(){
+    std::string TestAssertList::serialize_json(){
         std::string acc = "\n[\n";
 
         for(u32 i = 0; i < asserts.size(); i++){
@@ -24,6 +25,18 @@ namespace shamtest::details {
 
         acc += "\n]";
         return acc;
+    }
+
+
+    std::basic_string<u8> TestAssertList::serialize() {
+
+        std::basic_stringstream<u8> out;
+
+
+        u64 asserts_len = asserts.size();
+        out.write(reinterpret_cast<u8 const*>(&asserts_len), sizeof(asserts_len));
+
+        return out.str();
     }
 
 }

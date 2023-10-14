@@ -10,6 +10,9 @@
 
 
 #include "shamsys/NodeInstance.hpp"
+#include <ostream>
+#include <sstream>
+#include <string>
 #include <vector>
 
 namespace shamtest::details {
@@ -38,47 +41,44 @@ namespace shamtest::details {
                    R"(    "alt_queue" : ")" +
                    get_alt_queue().get_device().get_info<sycl::info::device::name>() + "\",\n" +
                    R"(    "world_rank" : )" + std::to_string(world_rank) + ",\n" +
-                   R"(    "asserts" : )" + shambase::increase_indent(asserts.serialize()) + ",\n" +
-                   R"(    "test_data" : )" + shambase::increase_indent(test_data.serialize()) + "\n" + "}";
+                   R"(    "asserts" : )" + shambase::increase_indent(asserts.serialize_json()) + ",\n" +
+                   R"(    "test_data" : )" + shambase::increase_indent(test_data.serialize_json()) + "\n" + "}";
         };
 
         return get_str();
     }
 
 
-template<typename POD>
-std::ostream& serialize(std::ostream& os, std::vector<POD> const& v)
-{
-    // this only works on built in data types (PODs)
-    static_assert(std::is_trivial<POD>::value && std::is_standard_layout<POD>::value,
-        "Can only serialize POD types with this function");
 
-    auto size = v.size();
-    os.write(reinterpret_cast<char const*>(&size), sizeof(size));
-    os.write(reinterpret_cast<char const*>(v.data()), v.size() * sizeof(POD));
-    return os;
-}
+    std::basic_string<u8> TestResult::serialize() {
 
-template<typename POD>
-std::istream& deserialize(std::istream& is, std::vector<POD>& v)
-{
-    static_assert(std::is_trivial<POD>::value && std::is_standard_layout<POD>::value,
-        "Can only deserialize POD types with this function");
+        std::basic_stringstream<u8> out;
 
-    decltype(v.size()) size;
-    is.read(reinterpret_cast<char*>(&size), sizeof(size));
-    v.resize(size);
-    is.read(reinterpret_cast<char*>(v.data()), v.size() * sizeof(POD));
-    return is;
-}
+        out.write(reinterpret_cast<u8 const*>(&type), sizeof(type));
 
-    std::vector<u8> TestResult::serialize() {
+        u64 name_len = name.size();
+        out.write(reinterpret_cast<u8 const*>(&name_len), sizeof(name_len));
+        out.write(reinterpret_cast<u8 const*>(name.data()), name_len * sizeof(char));
 
-        std::vector<u8> res;
+        out.write(reinterpret_cast<u8 const*>(&world_rank), sizeof(world_rank));
 
-        //TODO
+        std::basic_string<u8> res_assert = asserts.serialize();
+        std::basic_string<u8> res_test_data = test_data.serialize();
 
-        return res;
+        u64 res_assert_len = res_assert.size();
+        out.write(reinterpret_cast<u8 const*>(&res_assert_len), sizeof(res_assert_len));
+        out.write(reinterpret_cast<u8 const*>(res_assert.data()), res_assert_len * sizeof(char));
+
+        u64 res_test_data_len = res_test_data.size();
+        out.write(reinterpret_cast<u8 const*>(&res_test_data_len), sizeof(res_test_data_len));
+        out.write(reinterpret_cast<u8 const*>(res_test_data.data()), res_test_data_len * sizeof(char));
+
+
+        u64 tex_out_len = name.size();
+        out.write(reinterpret_cast<u8 const*>(&tex_out_len), sizeof(tex_out_len));
+        out.write(reinterpret_cast<u8 const*>(tex_output.data()), tex_out_len * sizeof(char));
+
+        return out.str();
     }
 
 } // namespace shamtest::details

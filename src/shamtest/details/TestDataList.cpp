@@ -8,10 +8,11 @@
 
 #include "TestDataList.hpp"
 #include "shambase/string.hpp"
+#include <sstream>
 
 namespace shamtest::details {
     
-    std::string TestDataList::serialize(){
+    std::string TestDataList::serialize_json(){
         std::string acc = "\n[\n";
 
         for(u32 i = 0; i < test_data.size(); i++){
@@ -23,6 +24,16 @@ namespace shamtest::details {
 
         acc += "\n]";
         return acc;
+    }
+
+    std::basic_string<u8> TestDataList::serialize() {
+
+        std::basic_stringstream<u8> out;
+
+        u64 test_data_len = test_data.size();
+        out.write(reinterpret_cast<u8 const*>(&test_data_len), sizeof(test_data_len));
+
+        return out.str();
     }
 
 }

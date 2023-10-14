@@ -40,10 +40,8 @@ namespace shamtest::details {
         std::string name;       /*!< The name of the test */
         u32 world_rank;         /*!< MPI rank that performed the test */
         TestAssertList asserts; /*!< List of the asserts performed withing the test */
-        std::string tex_output; /*!< Tex output of the test */
-
-        [[deprecated]]
         TestDataList test_data; /*!< Data returned by the test */
+        std::string tex_output; /*!< Tex output of the test */
 
         /**
          * @brief Constructructor
@@ -62,7 +60,7 @@ namespace shamtest::details {
          */
         std::string serialize_json();
 
-        std::vector<u8> serialize();
+        std::basic_string<u8> serialize();
     };
 
 } // namespace shamtest::details

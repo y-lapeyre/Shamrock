@@ -11,6 +11,7 @@
 #include "aliases.hpp"
 
 #include "TestData.hpp"
+#include <vector>
 
 namespace shamtest::details {
 
@@ -25,7 +26,8 @@ namespace shamtest::details {
             return test_data.back();
         }
 
-        std::string serialize();
+        std::string serialize_json();
+        std::basic_string<u8> serialize();
     };
 
 }

@@ -86,7 +86,6 @@ namespace shamtest {
      *
      * @return shamtest::details::TestAssertList& reference to the test datas
      */
-    [[deprecated("")]]
     inline shamtest::details::TestDataList &test_data() {
         return shamtest::details::current_test.test_data;
     };
@@ -130,7 +129,7 @@ namespace shamtest {
  * _Assert(a == 0)
  * \endcode
  */
-#define _Assert(a) shamtest::asserts().assert_bool(#a, a);
+#define _Assert(a) shamtest::asserts().assert_bool("_Assert(" #a ")", a);
 
 /**
  * @brief Assert macro for test, testing equality between two variables
