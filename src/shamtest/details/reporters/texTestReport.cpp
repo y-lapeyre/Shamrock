@@ -14,13 +14,11 @@
 #include <string>
 #include <vector>
 
-
 std::string tex_template = R"==(
 
-\documentclass{article}
+\documentclass[10pt]{article}
 
 \usepackage[a4paper,total={170mm,260mm},left=20mm,top=20mm,]{geometry}
-
 
 
 \usepackage{fancyhdr} % entêtes et pieds de pages personnalisés
@@ -80,13 +78,12 @@ std::string tex_template_end = R"(
     \end{document}
 )";
 
-
-
 namespace shamtest::details {
 
     void add_unittest_section(std::stringstream &output, std::vector<TestResult> &results) {
 
-        output << R"(\section{Unittests})" << "\n\n";
+        output << R"(\section{Unittests})"
+               << "\n\n";
 
         using namespace details;
 
@@ -107,10 +104,10 @@ namespace shamtest::details {
         }
 
         std::vector<std::string> strings;
-        for (auto & [key,value] : assert_test_count) {
+        for (auto &[key, value] : assert_test_count) {
             strings.push_back(key);
         }
-        std::sort(strings.begin(),strings.end());
+        std::sort(strings.begin(), strings.end());
 
         std::string table_header = R"==(
             \begin{center}
@@ -127,8 +124,8 @@ namespace shamtest::details {
         output << table_header;
 
         u32 table_cnt = 0;
-        for (std::string key: strings) {
-            u32 cnt = assert_test_count[key];
+        for (std::string key : strings) {
+            u32 cnt     = assert_test_count[key];
             u32 cnt_suc = assert_test_count_success[key];
 
             if (table_cnt > 40) {
@@ -136,15 +133,15 @@ namespace shamtest::details {
                 table_cnt = 0;
             }
 
-            output << R"(\verb|)"<< key << "| & ";
+            output << R"(\verb|)" << key << "| & ";
 
-            if (cnt == cnt_suc){
+            if (cnt == cnt_suc) {
                 output << R"(\OK & )";
-            }else{
+            } else {
                 output << R"(\FAIL & )";
             }
 
-            output << shambase::format(R"({}/{} \\)", cnt_suc,cnt);
+            output << shambase::format(R"({}/{} \\)", cnt_suc, cnt);
             output << "\n";
 
             table_cnt++;
@@ -152,6 +149,36 @@ namespace shamtest::details {
 
         output << table_footer;
 
+        output << "\n";
+
+        for (TestResult &res : results) {
+            if(res.asserts.get_assert_success_count() != res.asserts.get_assert_count()){
+                output << "Test : " << res.name << "\n\n";
+
+                for (unsigned int j = 0; j < res.asserts.asserts.size(); j++) {
+
+                    output << shambase::format_printf("     - Assert [%d/%zu] \n\n", j + 1, res.asserts.asserts.size());
+
+
+                    output << R"(\verb|)" << res.asserts.asserts[j].name << "| : ";
+
+                    if (res.asserts.asserts[j].value) {
+                        output << R"(\OK)";
+                    } else {
+                        output << R"(\FAIL)";
+                    }
+
+                    if ((!res.asserts.asserts[j].value) && !res.asserts.asserts[j].comment.empty()) {
+                        output << "\n\n $\\rightarrow$ failed assert logs :\n\n" ;
+                        output << R"(\begin{verbatim})" << res.asserts.asserts[j].comment << R"(\end{verbatim})";
+                        output <<  "\n";
+                    }
+
+                    output <<  "\n\n";
+                }
+
+            }
+        }
 
     }
 
@@ -163,12 +190,12 @@ namespace shamtest::details {
 
         output << "Global status : ";
 
-        if(mark_fail){
+        if (mark_fail) {
             output << R"(\FAIL)";
-        }else{
+        } else {
             output << R"(\OK)";
         }
-        
+
         output << "\n\n";
         output << R"(\tableofcontents)";
         output << "\n\n";
