@@ -19,16 +19,13 @@
 #include "aliases.hpp"
 #include "shamtest/details/TestAssertList.hpp"
 #include "shamtest/details/TestDataList.hpp"
+#include <utility>
 #include <vector>
 
 /**
  * @brief Describe the type of the performed test
  */
-enum TestType { 
-    Benchmark, 
-    Analysis, 
-    Unittest 
-};
+enum TestType { Benchmark, Analysis, Unittest };
 
 namespace shamtest::details {
 
@@ -53,6 +50,16 @@ namespace shamtest::details {
         inline TestResult(const TestType &type, std::string name, const u32 &world_rank)
             : type(type), name(std::move(name)), world_rank(world_rank), asserts{}, test_data() {}
 
+        inline TestResult(
+            TestType type,
+            std::string name,
+            u32 world_rank,
+            TestAssertList && asserts,
+            TestDataList && test_data,
+            std::string tex_output)
+            : type(type), name(std::move(name)), world_rank(world_rank),
+              asserts(std::forward<TestAssertList>(asserts)), test_data(std::forward<TestDataList>(test_data)),
+              tex_output(std::move(tex_output)) {}
         /**
          * @brief serialize the result of the test
          *
@@ -61,6 +68,7 @@ namespace shamtest::details {
         std::string serialize_json();
 
         std::basic_string<u8> serialize();
+        static TestResult deserialize(std::basic_stringstream<u8> &reader);
     };
 
 } // namespace shamtest::details

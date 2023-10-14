@@ -10,6 +10,7 @@
 
 
 #include "shamsys/NodeInstance.hpp"
+#include "shamsys/legacy/log.hpp"
 #include <ostream>
 #include <sstream>
 #include <string>
@@ -79,6 +80,33 @@ namespace shamtest::details {
         out.write(reinterpret_cast<u8 const*>(tex_output.data()), tex_out_len * sizeof(char));
 
         return out.str();
+    }
+
+
+    TestResult TestResult::deserialize(std::basic_stringstream<u8> & reader){
+        TestType type;          
+        std::string name;       
+        u32 world_rank;         
+        TestAssertList asserts; 
+        TestDataList test_data; 
+        std::string tex_output;
+
+
+        reader.read(reinterpret_cast<u8*>(&type), sizeof(type));
+
+
+        u64 name_len = name.size();
+        reader.read(reinterpret_cast<u8*>(&name_len), sizeof(name_len));
+
+        logger::raw_ln(name_len);
+        name.resize(name_len);
+        reader.read(reinterpret_cast<u8*>(name.data()), name_len * sizeof(char));
+
+        
+        reader.write(reinterpret_cast<u8*>(&world_rank), sizeof(world_rank));
+
+
+        return TestResult{type,name,world_rank,std::move(asserts),std::move(test_data),std::move(tex_output)};
     }
 
 } // namespace shamtest::details

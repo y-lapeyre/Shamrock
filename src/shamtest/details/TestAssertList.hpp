@@ -95,5 +95,19 @@ namespace shamtest::details {
 
         std::string serialize_json();
         std::basic_string<u8> serialize();
+
+        inline u32 get_assert_count(){
+            return asserts.size();
+        }
+
+        inline u32 get_assert_success_count(){
+            u32 cnt = 0;
+            for(TestAssert & a : asserts){
+                if(a.value){
+                    cnt ++;
+                }
+            }
+            return cnt;
+        }
     };
 } // namespace shamtest::details

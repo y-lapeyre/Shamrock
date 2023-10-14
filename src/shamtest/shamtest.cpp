@@ -9,11 +9,13 @@
 //%Impl status : Good
 
 #include "shamtest.hpp"
+#include <cmath>
 #include <cstdlib>
 #include <filesystem>
 #include <pybind11/embed.h>
 #include <sstream>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "shambase/stacktrace.hpp"
@@ -30,6 +32,7 @@
 
 #include "shambindings/pybindaliases.hpp"
 #include "shamtest/details/TestResult.hpp"
+#include "shamtest/details/reporters/texTestReport.hpp"
 
 namespace shamtest {
 
@@ -45,22 +48,20 @@ namespace shamtest {
      */
     void _start_test_print(details::Test &test, u32 test_num, u32 test_count) {
 
+        if (is_run_only) {
+            printf("- : ");
+        } else {
+            printf("- [%d/%d] :", test_num + 1, test_count);
+        }
 
-            if (is_run_only) {
-                printf("- : ");
-            } else {
-                printf("- [%d/%d] :", test_num + 1, test_count);
-            }
+        bool any_node_cnt = test.node_count == -1;
+        if (any_node_cnt) {
+            printf(" [any] ");
+        } else {
+            printf(" [%03d] ", test.node_count);
+        }
 
-            bool any_node_cnt = test.node_count == -1;
-            if (any_node_cnt) {
-                printf(" [any] ");
-            } else {
-                printf(" [%03d] ", test.node_count);
-            }
-
-            std::cout << "\033[;34m" << test.name << "\033[0m " << std::endl;
-        
+        std::cout << "\033[;34m" << test.name << "\033[0m " << std::endl;
     }
 
     /**
@@ -70,44 +71,44 @@ namespace shamtest {
      * @param timer
      */
     void _end_test_print(details::TestResult &res, shambase::Timer &timer) {
-        
-            for (unsigned int j = 0; j < res.asserts.asserts.size(); j++) {
 
-                if (is_full_output_mode || (!res.asserts.asserts[j].value)) {
-                    printf("        [%d/%zu] : ", j + 1, res.asserts.asserts.size());
-                    printf("%-20s", res.asserts.asserts[j].name.c_str());
+        for (unsigned int j = 0; j < res.asserts.asserts.size(); j++) {
 
-                    if (res.asserts.asserts[j].value) {
-                        std::cout << "  (\033[;32mSucces\033[0m)\n";
-                    } else {
-                        std::cout << "  (\033[1;31m Fail \033[0m)\n";
-                        if (!res.asserts.asserts[j].comment.empty()) {
-                            std::cout << "----- logs : \n"
-                                      << res.asserts.asserts[j].comment << "\n-----" << std::endl;
-                        }
+            if (is_full_output_mode || (!res.asserts.asserts[j].value)) {
+                printf("        [%d/%zu] : ", j + 1, res.asserts.asserts.size());
+                printf("%-20s", res.asserts.asserts[j].name.c_str());
+
+                if (res.asserts.asserts[j].value) {
+                    std::cout << "  (\033[;32mSucces\033[0m)\n";
+                } else {
+                    std::cout << "  (\033[1;31m Fail \033[0m)\n";
+                    if (!res.asserts.asserts[j].comment.empty()) {
+                        std::cout << "----- logs : \n"
+                                  << res.asserts.asserts[j].comment << "\n-----" << std::endl;
                     }
                 }
             }
+        }
 
-            u32 succes_cnt = 0;
-            for (unsigned int j = 0; j < res.asserts.asserts.size(); j++) {
-                if (res.asserts.asserts[j].value) {
-                    succes_cnt++;
-                }
+        u32 succes_cnt = 0;
+        for (unsigned int j = 0; j < res.asserts.asserts.size(); j++) {
+            if (res.asserts.asserts[j].value) {
+                succes_cnt++;
             }
+        }
 
-            if (succes_cnt == res.asserts.asserts.size()) {
-                std::cout << "   -> Result : \033[;32mSucces\033[0m";
-            } else {
-                std::cout << "   -> Result : \033[1;31m Fail \033[0m";
-            }
+        if (succes_cnt == res.asserts.asserts.size()) {
+            std::cout << "   -> Result : \033[;32mSucces\033[0m";
+        } else {
+            std::cout << "   -> Result : \033[1;31m Fail \033[0m";
+        }
 
-            std::string s_assert =
-                shambase::format(" [{}/{}] ", succes_cnt, res.asserts.asserts.size());
-            printf("%-15s", s_assert.c_str());
-            std::cout << " (" << timer.get_time_str() << ")" << std::endl;
+        std::string s_assert =
+            shambase::format(" [{}/{}] ", succes_cnt, res.asserts.asserts.size());
+        printf("%-15s", s_assert.c_str());
+        std::cout << " (" << timer.get_time_str() << ")" << std::endl;
 
-            std::cout << std::endl;
+        std::cout << std::endl;
     }
 
     /**
@@ -149,8 +150,7 @@ namespace shamtest {
             }
 
             if ((!res.asserts.asserts[j].value) && !res.asserts.asserts[j].comment.empty()) {
-                out += " -> failed assert logs : "+sep +
-                       res.asserts.asserts[j].comment + sep;
+                out += " -> failed assert logs : " + sep + res.asserts.asserts[j].comment + sep;
             }
         }
 
@@ -160,6 +160,10 @@ namespace shamtest {
     }
 
     void _print_summary(std::vector<details::TestResult> &results) {
+        if (shamsys::instance::world_rank > 0) {
+            return;
+        }
+
         logger::print_faint_row();
         logger::print_faint_row();
         logger::print_faint_row();
@@ -188,11 +192,120 @@ namespace shamtest {
             printf(" [%d/%d] \n", succ_count, test_count);
             std::cout << "\nFailed tests : \n\n" << log;
         }
-        
 
         logger::print_faint_row();
         logger::print_faint_row();
         logger::print_faint_row();
+    }
+
+    std::basic_string<u8> gather_basic_string(std::basic_string<u8> in) {
+        using namespace shamsys;
+
+        std::basic_string<u8> out_res_string;
+
+        if (instance::world_size == 1) {
+            out_res_string = in;
+        } else {
+            std::basic_string<u8> loc_string = in;
+
+            int *counts   = new int[instance::world_size];
+            int nelements = (int)loc_string.size();
+            // Each process tells the root how many elements it holds
+            mpi::gather(&nelements, 1, MPI_INT, counts, 1, MPI_INT, 0, MPI_COMM_WORLD);
+
+            // Displacements in the receive buffer for MPI_GATHERV
+            int *disps = new int[instance::world_size];
+            // Displacement for the first chunk of data - 0
+            for (int i = 0; i < instance::world_size; i++)
+                disps[i] = (i > 0) ? (disps[i - 1] + counts[i - 1]) : 0;
+
+            // Place to hold the gathered data
+            // Allocate at root only
+            u8 *gather_data = NULL;
+            if (instance::world_rank == 0)
+                // disps[size-1]+counts[size-1] == total number of elements
+                gather_data =
+                    new u8[disps[instance::world_size - 1] + counts[instance::world_size - 1]];
+
+            // Collect everything into the root
+            mpi::gatherv(
+                loc_string.c_str(),
+                nelements,
+                MPI_CHAR,
+                gather_data,
+                counts,
+                disps,
+                MPI_CHAR,
+                0,
+                MPI_COMM_WORLD);
+
+            if (instance::world_rank == 0) {
+                out_res_string = std::basic_string<u8>(
+                    gather_data,
+                    disps[instance::world_size - 1] + counts[instance::world_size - 1]);
+            }
+
+            delete[] counts;
+            delete[] disps;
+        }
+
+        return out_res_string;
+    }
+
+    std::vector<details::TestResult> gather_tests(std::vector<details::TestResult> rank_result) {
+        if (shamsys::instance::world_size == 1) {
+            return rank_result;
+        }
+
+        // generate payload
+        std::basic_stringstream<u8> outrank;
+
+        u64 rank_result_len = rank_result.size();
+        outrank.write(reinterpret_cast<u8 const *>(&rank_result_len), sizeof(rank_result_len));
+        for (details::TestResult &res : rank_result) {
+            std::basic_string<u8> tmp = res.serialize();
+            u64 tmp_len               = tmp.size();
+            outrank.write(reinterpret_cast<u8 const *>(&tmp_len), sizeof(tmp_len));
+            outrank.write(reinterpret_cast<u8 const *>(tmp.data()), tmp_len * sizeof(u8));
+        }
+
+        std::basic_string<u8> gathered = gather_basic_string(outrank.str());
+
+        if (shamsys::instance::world_rank != 0) {
+            return {};
+        }
+
+        logger::print_faint_row();
+
+        logger::raw_ln("Test result gathered :", gathered.size(), "bytes");
+
+        std::basic_stringstream<u8> reader(gathered);
+
+        std::vector<details::TestResult> out;
+
+        for (u32 i = 0; i < shamsys::instance::world_size; i++) {
+
+            u64 out_cnt;
+            reader.read(reinterpret_cast<u8 *>(&out_cnt), sizeof(out_cnt));
+
+            logger::raw_ln("Test gathered from rank", i, " :", out_cnt);
+
+            for (u32 j = 0; j < out_cnt; j++) {
+                std::basic_string<u8> tmp;
+                u64 tmp_len;
+                reader.read(reinterpret_cast<u8 *>(&tmp_len), sizeof(tmp_len));
+                tmp.resize(tmp_len);
+                reader.read(reinterpret_cast<u8 *>(tmp.data()), tmp_len * sizeof(u8));
+
+                std::basic_stringstream<u8> readersub(tmp);
+
+                details::TestResult tmpres = details::TestResult::deserialize(readersub);
+
+                out.push_back(std::move(tmpres));
+            }
+        }
+
+        return out;
     }
 
     /**
@@ -200,6 +313,11 @@ namespace shamtest {
      *
      */
     void print_test_list() {
+
+        if (shamsys::instance::world_rank > 0) {
+            return;
+        }
+
         using namespace shamtest::details;
 
         auto print_list = [&](TestType t) {
@@ -225,6 +343,67 @@ namespace shamtest {
         printf("--- Unittest  ---\n");
 
         print_list(Unittest);
+    }
+
+    void write_json_report(std::vector<details::TestResult> &results) {
+        if (shamsys::instance::world_rank > 0) {
+            return;
+        }
+
+        std::stringstream rank_test_res_out;
+        for (details::TestResult &res : results) {
+            rank_test_res_out << res.serialize_json() << ",";
+        }
+
+        std::string out_res_string = rank_test_res_out.str();
+
+        // generate json output and write it into the specified file
+
+        if (out_res_string.back() == ',') {
+            out_res_string = out_res_string.substr(0, out_res_string.size() - 1);
+        }
+
+        std::string s_out;
+
+        s_out = "{\n";
+
+        s_out += R"(    "commit_hash" : ")" + git_commit_hash + "\",\n";
+        s_out +=
+            R"(    "world_size" : ")" + std::to_string(shamsys::instance::world_size) + "\",\n";
+
+#if defined(SYCL_COMP_INTEL_LLVM)
+        s_out += R"(    "compiler" : "DPCPP",)"
+                 "\n";
+#elif defined(SYCL_COMP_HIPSYCL)
+        s_out += R"(    "compiler" : "HipSYCL",)"
+                 "\n";
+#else
+        s_out += R"(    "compiler" : "Unknown",)"
+                 "\n";
+#endif
+
+        s_out += R"(    "comp_args" : ")" + compile_arg + "\",\n";
+
+        s_out += R"(    "results" : )"
+                 "[\n\n";
+        s_out += shambase::increase_indent(out_res_string);
+        s_out += "\n    ]\n}";
+
+        // printf("%s\n",s_out.c_str());
+
+        shambase::write_string_to_file(std::string(opts::get_option("-o")), s_out);
+    }
+
+    void write_tex_report(std::vector<details::TestResult> &results, bool mark_fail) {
+        if (shamsys::instance::world_rank > 0) {
+            return;
+        }
+
+        logger::raw("write report Tex : ");
+
+        shambase::write_string_to_file("tests/report.tex", details::make_test_report_tex(results,mark_fail));
+
+        logger::raw_ln("Done (tests/report.tex)");
     }
 
     int
@@ -348,8 +527,6 @@ namespace shamtest {
             printf("--------------------------------------\n\n");
         }
 
-        std::stringstream rank_test_res_out;
-
         u32 test_loc_cnt = 0;
 
         bool has_error = false;
@@ -360,7 +537,6 @@ namespace shamtest {
         std::filesystem::create_directories("tests/figures");
 
         std::vector<TestResult> results;
-
         for (u32 i : selected_tests) {
 
             shamtest::details::Test &test = static_init_vec_tests[i];
@@ -375,7 +551,6 @@ namespace shamtest {
             mpi::barrier(MPI_COMM_WORLD);
 
             _end_test_print(res, timer);
-            has_error = has_error || is_test_failed(res);
 
             results.push_back(std::move(res));
 
@@ -385,101 +560,19 @@ namespace shamtest {
         logger::info_ln("Test", "close python interpreter");
         py::finalize_interpreter();
 
-        _print_summary(results);
+        results = gather_tests(std::move(results));
 
         for (TestResult &res : results) {
-            rank_test_res_out << res.serialize_json() << ",";
+            has_error = has_error || is_test_failed(res);
         }
 
-        // recover result on node 0 and write to file if -o <outfile> specified
-        std::string out_res_string;
+        _print_summary(results);
 
-        if (instance::world_size == 1) {
-            out_res_string = rank_test_res_out.str();
-        } else {
-            std::string loc_string = rank_test_res_out.str();
-
-            // printf("sending : \n%s\n",loc_string.c_str());
-
-            int *counts   = new int[instance::world_size];
-            int nelements = (int)loc_string.size();
-            // Each process tells the root how many elements it holds
-            mpi::gather(&nelements, 1, MPI_INT, counts, 1, MPI_INT, 0, MPI_COMM_WORLD);
-
-            // Displacements in the receive buffer for MPI_GATHERV
-            int *disps = new int[instance::world_size];
-            // Displacement for the first chunk of data - 0
-            for (int i = 0; i < instance::world_size; i++)
-                disps[i] = (i > 0) ? (disps[i - 1] + counts[i - 1]) : 0;
-
-            // Place to hold the gathered data
-            // Allocate at root only
-            char *gather_data = NULL;
-            if (instance::world_rank == 0)
-                // disps[size-1]+counts[size-1] == total number of elements
-                gather_data =
-                    new char[disps[instance::world_size - 1] + counts[instance::world_size - 1]];
-
-            // Collect everything into the root
-            mpi::gatherv(
-                loc_string.c_str(),
-                nelements,
-                MPI_CHAR,
-                gather_data,
-                counts,
-                disps,
-                MPI_CHAR,
-                0,
-                MPI_COMM_WORLD);
-
-            if (instance::world_rank == 0) {
-                out_res_string = std::string(
-                    gather_data,
-                    disps[instance::world_size - 1] + counts[instance::world_size - 1]);
-            }
-
-            delete[] counts;
-            delete[] disps;
+        if (out_to_file) {
+            write_json_report(results);
         }
 
-        // generate json output and write it into the specified file
-        if (instance::world_rank == 0) {
-
-            if (out_res_string.back() == ',') {
-                out_res_string = out_res_string.substr(0, out_res_string.size() - 1);
-            }
-
-            std::string s_out;
-
-            s_out = "{\n";
-
-            s_out += R"(    "commit_hash" : ")" + git_commit_hash + "\",\n";
-            s_out += R"(    "world_size" : ")" + std::to_string(instance::world_size) + "\",\n";
-
-#if defined(SYCL_COMP_INTEL_LLVM)
-            s_out += R"(    "compiler" : "DPCPP",)"
-                     "\n";
-#elif defined(SYCL_COMP_HIPSYCL)
-            s_out += R"(    "compiler" : "HipSYCL",)"
-                     "\n";
-#else
-            s_out += R"(    "compiler" : "Unknown",)"
-                     "\n";
-#endif
-
-            s_out += R"(    "comp_args" : ")" + compile_arg + "\",\n";
-
-            s_out += R"(    "results" : )"
-                     "[\n\n";
-            s_out += shambase::increase_indent(out_res_string);
-            s_out += "\n    ]\n}";
-
-            // printf("%s\n",s_out.c_str());
-
-            if (out_to_file) {
-                shambase::write_string_to_file(std::string(opts::get_option("-o")), s_out);
-            }
-        }
+        write_tex_report(results,has_error);
 
         i32 errcode;
         if (has_error) {
@@ -487,8 +580,13 @@ namespace shamtest {
         } else {
             errcode = 0;
         }
-        logger::raw_ln("Tests done exiting ... exitcode =",errcode);
 
+        mpi::barrier(MPI_COMM_WORLD);
+
+        if (instance::world_rank == 0) {
+            logger::raw_ln("Tests done exiting ... exitcode =", errcode);
+        }
+        mpi::barrier(MPI_COMM_WORLD);
         instance::close();
 
         return errcode;
