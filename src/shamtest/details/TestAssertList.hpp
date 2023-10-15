@@ -94,7 +94,8 @@ namespace shamtest::details {
         }
 
         std::string serialize_json();
-        std::basic_string<u8> serialize();
+        void serialize(std::basic_stringstream<u8> &stream);
+        static TestAssertList deserialize(std::basic_stringstream<u8> &reader);
 
         inline u32 get_assert_count(){
             return asserts.size();

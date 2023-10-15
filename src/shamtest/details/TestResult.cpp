@@ -9,8 +9,10 @@
 #include "TestResult.hpp"
 
 
+#include "shambase/bytestream.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
+#include "shamtest/details/TestAssertList.hpp"
 #include <ostream>
 #include <sstream>
 #include <string>
@@ -51,35 +53,21 @@ namespace shamtest::details {
 
 
 
-    std::basic_string<u8> TestResult::serialize() {
+    void TestResult::serialize(std::basic_stringstream<u8> &stream) {
 
-        std::basic_stringstream<u8> out;
+        logger::debug_mpi_ln("TEST", "serialize :",name);
 
-        out.write(reinterpret_cast<u8 const*>(&type), sizeof(type));
+        shambase::stream_write(stream, type);
 
-        u64 name_len = name.size();
-        out.write(reinterpret_cast<u8 const*>(&name_len), sizeof(name_len));
-        out.write(reinterpret_cast<u8 const*>(name.data()), name_len * sizeof(char));
+        shambase::stream_write_string(stream, name);
 
-        out.write(reinterpret_cast<u8 const*>(&world_rank), sizeof(world_rank));
+        shambase::stream_write(stream, world_rank);
 
-        std::basic_string<u8> res_assert = asserts.serialize();
-        std::basic_string<u8> res_test_data = test_data.serialize();
+        asserts.serialize(stream);
+        test_data.serialize(stream);
 
-        u64 res_assert_len = res_assert.size();
-        out.write(reinterpret_cast<u8 const*>(&res_assert_len), sizeof(res_assert_len));
-        out.write(reinterpret_cast<u8 const*>(res_assert.data()), res_assert_len * sizeof(char));
+        shambase::stream_write_string(stream, tex_output);
 
-        u64 res_test_data_len = res_test_data.size();
-        out.write(reinterpret_cast<u8 const*>(&res_test_data_len), sizeof(res_test_data_len));
-        out.write(reinterpret_cast<u8 const*>(res_test_data.data()), res_test_data_len * sizeof(char));
-
-
-        u64 tex_out_len = name.size();
-        out.write(reinterpret_cast<u8 const*>(&tex_out_len), sizeof(tex_out_len));
-        out.write(reinterpret_cast<u8 const*>(tex_output.data()), tex_out_len * sizeof(char));
-
-        return out.str();
     }
 
 
@@ -87,24 +75,20 @@ namespace shamtest::details {
         TestType type;          
         std::string name;       
         u32 world_rank;         
-        TestAssertList asserts; 
-        TestDataList test_data; 
         std::string tex_output;
 
 
-        reader.read(reinterpret_cast<u8*>(&type), sizeof(type));
+        shambase::stream_read(reader, type);
 
+        shambase::stream_read_string(reader, name);
+        logger::debug_mpi_ln("TEST", "deserialize :",name);
 
-        u64 name_len = name.size();
-        reader.read(reinterpret_cast<u8*>(&name_len), sizeof(name_len));
+        shambase::stream_read(reader, world_rank);
 
-        logger::raw_ln(name_len);
-        name.resize(name_len);
-        reader.read(reinterpret_cast<u8*>(name.data()), name_len * sizeof(char));
+        TestAssertList asserts = TestAssertList::deserialize(reader);
+        TestDataList test_data = TestDataList::deserialize(reader);
 
-        
-        reader.write(reinterpret_cast<u8*>(&world_rank), sizeof(world_rank));
-
+        shambase::stream_read_string(reader, tex_output);
 
         return TestResult{type,name,world_rank,std::move(asserts),std::move(test_data),std::move(tex_output)};
     }

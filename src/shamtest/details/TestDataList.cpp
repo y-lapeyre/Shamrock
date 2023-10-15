@@ -11,13 +11,13 @@
 #include <sstream>
 
 namespace shamtest::details {
-    
-    std::string TestDataList::serialize_json(){
+
+    std::string TestDataList::serialize_json() {
         std::string acc = "\n[\n";
 
-        for(u32 i = 0; i < test_data.size(); i++){
-            acc += shambase::increase_indent( test_data[i].serialize()) ;
-            if(i < test_data.size()-1){
+        for (u32 i = 0; i < test_data.size(); i++) {
+            acc += shambase::increase_indent(test_data[i].serialize_json());
+            if (i < test_data.size() - 1) {
                 acc += ",";
             }
         }
@@ -26,14 +26,7 @@ namespace shamtest::details {
         return acc;
     }
 
-    std::basic_string<u8> TestDataList::serialize() {
+    void TestDataList::serialize(std::basic_stringstream<u8> &stream) {}
+    TestDataList TestDataList::deserialize(std::basic_stringstream<u8> &reader) { return {}; }
 
-        std::basic_stringstream<u8> out;
-
-        u64 test_data_len = test_data.size();
-        out.write(reinterpret_cast<u8 const*>(&test_data_len), sizeof(test_data_len));
-
-        return out.str();
-    }
-
-}
+} // namespace shamtest::details

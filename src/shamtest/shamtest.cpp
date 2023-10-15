@@ -18,6 +18,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "shambase/bytestream.hpp"
 #include "shambase/stacktrace.hpp"
 #include "shambase/string.hpp"
 #include "shambase/time.hpp"
@@ -260,14 +261,7 @@ namespace shamtest {
         // generate payload
         std::basic_stringstream<u8> outrank;
 
-        u64 rank_result_len = rank_result.size();
-        outrank.write(reinterpret_cast<u8 const *>(&rank_result_len), sizeof(rank_result_len));
-        for (details::TestResult &res : rank_result) {
-            std::basic_string<u8> tmp = res.serialize();
-            u64 tmp_len               = tmp.size();
-            outrank.write(reinterpret_cast<u8 const *>(&tmp_len), sizeof(tmp_len));
-            outrank.write(reinterpret_cast<u8 const *>(tmp.data()), tmp_len * sizeof(u8));
-        }
+        shambase::stream_write_vector(outrank, rank_result);
 
         std::basic_string<u8> gathered = gather_basic_string(outrank.str());
 
@@ -284,25 +278,7 @@ namespace shamtest {
         std::vector<details::TestResult> out;
 
         for (u32 i = 0; i < shamsys::instance::world_size; i++) {
-
-            u64 out_cnt;
-            reader.read(reinterpret_cast<u8 *>(&out_cnt), sizeof(out_cnt));
-
-            logger::raw_ln("Test gathered from rank", i, " :", out_cnt);
-
-            for (u32 j = 0; j < out_cnt; j++) {
-                std::basic_string<u8> tmp;
-                u64 tmp_len;
-                reader.read(reinterpret_cast<u8 *>(&tmp_len), sizeof(tmp_len));
-                tmp.resize(tmp_len);
-                reader.read(reinterpret_cast<u8 *>(tmp.data()), tmp_len * sizeof(u8));
-
-                std::basic_stringstream<u8> readersub(tmp);
-
-                details::TestResult tmpres = details::TestResult::deserialize(readersub);
-
-                out.push_back(std::move(tmpres));
-            }
+            shambase::stream_read_vector(reader, out);
         }
 
         return out;

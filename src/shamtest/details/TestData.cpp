@@ -11,14 +11,14 @@
 
 namespace shamtest::details {
     
-    std::string TestData::serialize(){
+    std::string TestData::serialize_json(){
         std::string acc = "\n{\n";
 
         acc += R"(    "dataset_name" : ")" + dataset_name + "\",\n" ;
         acc += R"(    "dataset" : )" "\n    [\n" ;
 
         for(u32 i = 0; i < dataset.size(); i++){
-            acc += shambase::increase_indent( dataset[i].serialize()) ;
+            acc += shambase::increase_indent( dataset[i].serialize_json()) ;
             if(i < dataset.size()-1){
                 acc += ",";
             }

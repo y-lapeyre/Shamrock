@@ -25,7 +25,7 @@ namespace shamtest::details {
         return acc;
     }
 
-    std::string DataNode::serialize() {
+    std::string DataNode::serialize_json() {
         std::string acc = "\n{\n";
 
         acc += R"(    "name" : ")" + name + "\",\n";

@@ -15,6 +15,6 @@ namespace shamtest::details {
         std::string name;
         std::vector<f64> data;
 
-        std::string serialize();
+        std::string serialize_json();
     };
 } // namespace shamtest::details
