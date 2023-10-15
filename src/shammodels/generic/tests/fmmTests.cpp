@@ -185,7 +185,7 @@ class FMM_prec_eval{public:
 
 
 
-TestStart(Analysis,"models/generic/fmm/precision", fmm_prec, 1){
+TestStart(ValidationTest,"models/generic/fmm/precision", fmm_prec, 1){
 
     std::mt19937 eng(0x1111);
 
@@ -356,9 +356,21 @@ TestStart(Analysis,"models/generic/fmm/precision", fmm_prec, 1){
 
         plt.tight_layout()
 
-        plt.savefig("fmm_precision.pdf")
+        plt.savefig("tests/figures/fmm_precision.pdf")
 
     )");
+
+
+
+    TEX_REPORT(R"==(
+
+        \begin{figure}[ht!]
+        \center
+        \includegraphics[width=0.95\linewidth]{figures/fmm_precision.pdf}
+        \caption{FMM precision}
+        \end{figure}
+
+    )==")
 }
 
 
@@ -1158,7 +1170,7 @@ std::unique_ptr<sycl::buffer<sycl::vec<flt,3>>> pos_partgen_distrib(u32 npart){
 }
 
 
-TestStart(Analysis,"models/generic/fmm/fmm_1_gpu_prec", fmm_1_gpu_prec , 1){
+TestStart(ValidationTest,"models/generic/fmm/fmm_1_gpu_prec", fmm_1_gpu_prec , 1){
 
     
     constexpr u32 reduc_level = 5;

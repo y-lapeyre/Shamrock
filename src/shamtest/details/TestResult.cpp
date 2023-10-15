@@ -28,11 +28,16 @@ namespace shamtest::details {
             switch (t) {
             case Benchmark:
                 return "Benchmark";
-            case Analysis:
-                return "Analysis";
+            case LongBenchmark:
+                return "LongBenchmark";
+            case ValidationTest:
+                return "ValidationTest";
+            case LongValidationTest:
+                return "LongValidationTest";
             case Unittest:
                 return "Unittest";
             }
+
         };
 
         auto get_str = [&]() -> std::string {

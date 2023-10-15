@@ -25,7 +25,7 @@
 /**
  * @brief Describe the type of the performed test
  */
-enum TestType { Benchmark, Analysis, Unittest };
+enum TestType { Benchmark, LongBenchmark, ValidationTest, LongValidationTest, Unittest };
 
 namespace shamtest::details {
 
@@ -54,12 +54,12 @@ namespace shamtest::details {
             TestType type,
             std::string name,
             u32 world_rank,
-            TestAssertList && asserts,
-            TestDataList && test_data,
+            TestAssertList &&asserts,
+            TestDataList &&test_data,
             std::string tex_output)
             : type(type), name(std::move(name)), world_rank(world_rank),
-              asserts(std::forward<TestAssertList>(asserts)), test_data(std::forward<TestDataList>(test_data)),
-              tex_output(std::move(tex_output)) {}
+              asserts(std::forward<TestAssertList>(asserts)),
+              test_data(std::forward<TestDataList>(test_data)), tex_output(std::move(tex_output)) {}
         /**
          * @brief serialize the result of the test
          *

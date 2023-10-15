@@ -60,6 +60,24 @@ namespace shamtest {
 
     } // namespace details
 
+
+    struct TestConfig{
+
+        bool print_test_list_exit = false;
+
+        bool full_output = false;
+
+        bool output_tex = true;
+        std::optional<std::string> json_output = {};
+
+        bool run_long_tests = false;
+        bool run_unittest = true;
+        bool run_validation = true;
+        bool run_benchmark = false;
+
+        std::optional<std::string> run_only = {};
+    };
+
     /**
      * @brief run all the tests
      *
@@ -70,7 +88,7 @@ namespace shamtest {
      * @param run_unittest run unittests ?
      * @return int
      */
-    int run_all_tests(int argc, char *argv[], bool run_bench, bool run_analysis, bool run_unittest);
+    int run_all_tests(int argc, char *argv[],TestConfig cfg);
 
     /**
      * @brief current test asserts

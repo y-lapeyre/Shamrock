@@ -22,7 +22,6 @@
 #include "shambase/stacktrace.hpp"
 #include "shambase/string.hpp"
 #include "shambase/time.hpp"
-#include "shamsys/legacy/cmdopt.hpp"
 #include "shamsys/legacy/log.hpp"
 
 #include "shamsys/MpiWrapper.hpp"
@@ -312,16 +311,24 @@ namespace shamtest {
 
         print_list(Benchmark);
 
-        printf("--- Analysis  ---\n");
+        printf("--- LongBenchmark ---\n");
 
-        print_list(Analysis);
+        print_list(LongBenchmark);
+
+        printf("--- ValidationTest  ---\n");
+
+        print_list(ValidationTest);
+
+        printf("--- LongValidationTest  ---\n");
+
+        print_list(LongValidationTest);
 
         printf("--- Unittest  ---\n");
 
         print_list(Unittest);
     }
 
-    void write_json_report(std::vector<details::TestResult> &results) {
+    void write_json_report(std::vector<details::TestResult> &results, std::string outfile) {
         if (shamsys::instance::world_rank > 0) {
             return;
         }
@@ -367,7 +374,7 @@ namespace shamtest {
 
         // printf("%s\n",s_out.c_str());
 
-        shambase::write_string_to_file(std::string(opts::get_option("-o")), s_out);
+        shambase::write_string_to_file(outfile, s_out);
     }
 
     void write_tex_report(std::vector<details::TestResult> &results, bool mark_fail) {
@@ -377,37 +384,36 @@ namespace shamtest {
 
         logger::raw("write report Tex : ");
 
-        shambase::write_string_to_file("tests/report.tex", details::make_test_report_tex(results,mark_fail));
+        shambase::write_string_to_file(
+            "tests/report.tex", details::make_test_report_tex(results, mark_fail));
 
         logger::raw_ln("Done (tests/report.tex)");
     }
 
-    int
-    run_all_tests(int argc, char *argv[], bool run_bench, bool run_analysis, bool run_unittest) {
+    int run_all_tests(int argc, char *argv[], TestConfig cfg) {
         StackEntry stack{};
 
         using namespace shamtest::details;
 
-        if (opts::has_option("--test-list")) {
+        if (cfg.print_test_list_exit) {
             print_test_list();
             return 0;
         }
 
         std::string run_only_name = "";
-        if (opts::has_option("--run-only")) {
-            run_only_name = opts::get_option("--run-only");
+        if (cfg.run_only) {
+            run_only_name = *cfg.run_only;
             is_run_only   = true;
         }
 
-        is_full_output_mode = opts::has_option("--full-output");
+        is_full_output_mode = cfg.full_output;
 
-        bool out_to_file = opts::has_option("-o");
+        bool run_unit_test = cfg.run_unittest;
+        bool run_validation_test = cfg.run_validation;
+        bool run_longvalidation_test = cfg.run_validation && cfg.run_long_tests;
+        bool run_benchmark_test = cfg.run_benchmark;
+        bool run_longbenchmark_test = cfg.run_benchmark && cfg.run_long_tests;
 
-        if (out_to_file) {
-            if (opts::get_option("-o").size() == 0) {
-                opts::print_help();
-            }
-        }
 
         using namespace shamsys;
 
@@ -424,9 +430,11 @@ namespace shamtest {
             bool can_run_type = false;
 
             auto test_type = t.type;
-            can_run_type   = can_run_type || (run_unittest && (Unittest == test_type));
-            can_run_type   = can_run_type || (run_analysis && (Analysis == test_type));
-            can_run_type   = can_run_type || (run_bench && (Benchmark == test_type));
+            can_run_type   = can_run_type || (run_unit_test && (Unittest == test_type));
+            can_run_type   = can_run_type || (run_validation_test && (ValidationTest == test_type));
+            can_run_type   = can_run_type || (run_longvalidation_test && (LongValidationTest == test_type));
+            can_run_type   = can_run_type || (run_benchmark_test && (Benchmark == test_type));
+            can_run_type   = can_run_type || (run_longvalidation_test && (LongBenchmark == test_type));
 
             return can_run_type && (any_node_cnt || world_size_ok);
         };
@@ -483,17 +491,27 @@ namespace shamtest {
                 }
             };
 
-            if (run_bench) {
+            if (run_benchmark_test) {
                 printf("--- Benchmark ---\n");
                 test_loop(Benchmark);
             }
 
-            if (run_analysis) {
-                printf("--- Analysis  ---\n");
-                test_loop(Analysis);
+            if (run_benchmark_test) {
+                printf("--- LongBenchmark ---\n");
+                test_loop(LongBenchmark);
             }
 
-            if (run_unittest) {
+            if (run_validation_test) {
+                printf("--- ValidationTest ---\n");
+                test_loop(ValidationTest);
+            }
+
+            if (run_longvalidation_test) {
+                printf("--- LongValidationTest ---\n");
+                test_loop(LongValidationTest);
+            }
+
+            if (run_unit_test) {
                 printf("--- Unittest  ---\n");
                 test_loop(Unittest);
             }
@@ -544,11 +562,11 @@ namespace shamtest {
 
         _print_summary(results);
 
-        if (out_to_file) {
-            write_json_report(results);
+        if (cfg.json_output) {
+            write_json_report(results, *cfg.json_output);
         }
 
-        write_tex_report(results,has_error);
+        write_tex_report(results, has_error);
 
         i32 errcode;
         if (has_error) {
