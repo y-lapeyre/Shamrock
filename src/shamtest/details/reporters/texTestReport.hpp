@@ -13,6 +13,13 @@
 
 namespace shamtest::details {
 
+    /**
+     * @brief Make a tex report from the list of test results
+     * 
+     * @param results 
+     * @param mark_fail 
+     * @return std::string 
+     */
     std::string make_test_report_tex(std::vector<TestResult> &results, bool mark_fail);
 
 }

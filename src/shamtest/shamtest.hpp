@@ -152,4 +152,14 @@ namespace shamtest {
 #define _AssertFloatEqual(a, b, prec)                                                              \
     shamtest::asserts().assert_float_equal(#a " ==(" #prec ") " #b, a, b, prec);
 
+/**
+ * @brief Macro to write stuff to the tex test report
+ *
+ * Usage :
+ * \code{.cpp}
+ * TEX_REPORT(R"==(
+ *   here i'm writing tex
+ * )==")
+ * \endcode
+ */
 #define TEX_REPORT(src) shamtest::details::current_test.tex_output += src;

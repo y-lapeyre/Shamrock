@@ -6,6 +6,12 @@
 //
 // -------------------------------------------------------//
 
+/**
+ * @file texTestReport.cpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief implementation of the Tex test report generation
+ */
+
 #include "texTestReport.hpp"
 #include "shambase/string.hpp"
 #include "shamtest/details/TestResult.hpp"
@@ -13,6 +19,7 @@
 #include <sstream>
 #include <string>
 #include <vector>
+
 
 std::string tex_template = R"==(
 
@@ -135,7 +142,7 @@ namespace shamtest::details {
                 table_cnt = 0;
             }
 
-            output << R"(\verb|)" << key << "| & ";
+            output << R"(\verb|)" << shambase::trunc_str_start(key,40) << "| & ";
 
             if (cnt == cnt_suc) {
                 output << R"(\OK & )";

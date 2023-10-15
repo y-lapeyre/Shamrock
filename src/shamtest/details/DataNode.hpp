@@ -8,6 +8,12 @@
 
 #pragma once
 
+/**
+ * @file DataNode.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief This file hold the definitions for a test DataNode
+ */
+
 #include "aliases.hpp"
 
 namespace shamtest::details {
