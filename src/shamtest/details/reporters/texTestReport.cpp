@@ -15,13 +15,13 @@
 #include "texTestReport.hpp"
 #include "aliases.hpp"
 #include "shambase/string.hpp"
+#include "shambase/sycl.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamtest/details/TestResult.hpp"
 #include <algorithm>
 #include <sstream>
 #include <string>
 #include <vector>
-#include "shambase/sycl.hpp"
 
 std::string tex_template = R"==(
 
@@ -139,7 +139,7 @@ namespace shamtest::details {
             u32 cnt     = assert_test_count[key];
             u32 cnt_suc = assert_test_count_success[key];
 
-            if (table_cnt > 40) {
+            if (table_cnt > 50) {
                 output << table_footer << "\n\n" << table_header;
                 table_cnt = 0;
             }
@@ -212,12 +212,31 @@ namespace shamtest::details {
         }
     }
 
-    void add_queue_section(std::stringstream &output, sycl::queue & q){
+    void add_queue_section(std::stringstream &output, sycl::queue &q) {
 
         sycl::device d = q.get_device();
-        output << "device name : " <<d.get_info<sycl::info::device::name>()<< "\n";
-        output << "platform name : " <<d.get_platform().get_info<sycl::info::platform::name>()<< "\n";
-        output << "device memsize : " <<shambase::readable_sizeof(d.get_info<sycl::info::device::global_mem_size>())<< "\n";
+        output << "device name : " << d.get_info<sycl::info::device::name>() << "\n";
+        output << "platform name : " << d.get_platform().get_info<sycl::info::platform::name>()
+               << "\n";
+        output << "device property : \n";
+        output << "global_mem_size : "
+               << shambase::readable_sizeof(d.get_info<sycl::info::device::global_mem_size>())
+               << "\n";
+        output << "global_mem_cache_size : "
+               << shambase::readable_sizeof(d.get_info<sycl::info::device::global_mem_cache_size>())
+               << "\n";
+        output << "global_mem_cache_line_size : "
+               << shambase::readable_sizeof(
+                      d.get_info<sycl::info::device::global_mem_cache_line_size>())
+               << "\n";
+        output << "local_mem_size : "
+               << shambase::readable_sizeof(
+                      d.get_info<sycl::info::device::local_mem_size>())
+               << "\n";
+        output << "is_endian_little : "
+                     << d.get_info<sycl::info::device::is_endian_little>()
+               << "\n";
+
     }
 
     void add_config_section(std::stringstream &output) {
@@ -242,7 +261,6 @@ namespace shamtest::details {
         output << R"(\end{verbatim})"
                << "\n";
 
-
         output << R"(\subsection{MPI status})"
                << "\n";
         output << R"(\begin{verbatim})"
@@ -253,13 +271,15 @@ namespace shamtest::details {
 
         output << R"(\subsection{NodeInstance Status})"
                << "\n";
-        output << "compute queue : "<< "\n";
+        output << "compute queue : "
+               << "\n";
         output << R"(\begin{verbatim})"
                << "\n";
         add_queue_section(output, shamsys::instance::get_compute_queue());
         output << R"(\end{verbatim})"
                << "\n";
-        output << "alt queue : "<< "\n";
+        output << "alt queue : "
+               << "\n";
         output << R"(\begin{verbatim})"
                << "\n";
         add_queue_section(output, shamsys::instance::get_alt_queue());
