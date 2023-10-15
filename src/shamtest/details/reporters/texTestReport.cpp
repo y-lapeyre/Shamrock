@@ -45,6 +45,8 @@ std::string tex_template = R"==(
 \usepackage{xcolor}
 \definecolor{linkcolor}{rgb}{0,0,0.6}
 
+\usepackage{graphicx}
+\usepackage{cprotect}
 
 \usepackage[ pdftex,colorlinks=true,
 pdfstartview=ajustementV,
@@ -182,6 +184,27 @@ namespace shamtest::details {
 
     }
 
+    
+    void add_tex_output_section(std::stringstream &output, std::vector<TestResult> &results) {
+
+        output << R"(\section{Tex report})";
+
+        for (TestResult &res : results) {
+            std::string & tex_out = res.tex_output;
+
+            if(!tex_out.empty()){
+
+                output << R"==(
+                \cprotect\subsection{ \verb+)==" +res.name+ R"==(+}
+                )==";
+
+                output << tex_out;
+            }
+        }
+
+    }
+
+
     std::string make_test_report_tex(std::vector<TestResult> &results, bool mark_fail) {
 
         std::stringstream output;
@@ -201,6 +224,8 @@ namespace shamtest::details {
         output << "\n\n";
 
         add_unittest_section(output, results);
+
+        add_tex_output_section(output,results);
 
         output << tex_template_end;
 

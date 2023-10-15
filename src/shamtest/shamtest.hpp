@@ -151,3 +151,5 @@ namespace shamtest {
  */
 #define _AssertFloatEqual(a, b, prec)                                                              \
     shamtest::asserts().assert_float_equal(#a " ==(" #prec ") " #b, a, b, prec);
+
+#define TEX_REPORT(src) shamtest::details::current_test.tex_output += src;
