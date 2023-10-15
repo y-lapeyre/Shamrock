@@ -13,13 +13,15 @@
  */
 
 #include "texTestReport.hpp"
+#include "aliases.hpp"
 #include "shambase/string.hpp"
+#include "shamsys/NodeInstance.hpp"
 #include "shamtest/details/TestResult.hpp"
 #include <algorithm>
 #include <sstream>
 #include <string>
 #include <vector>
-
+#include "shambase/sycl.hpp"
 
 std::string tex_template = R"==(
 
@@ -142,7 +144,7 @@ namespace shamtest::details {
                 table_cnt = 0;
             }
 
-            output << R"(\verb|)" << shambase::trunc_str_start(key,40) << "| & ";
+            output << R"(\verb|)" << shambase::trunc_str_start(key, 64) << "| & ";
 
             if (cnt == cnt_suc) {
                 output << R"(\OK & )";
@@ -161,13 +163,13 @@ namespace shamtest::details {
         output << "\n";
 
         for (TestResult &res : results) {
-            if(res.asserts.get_assert_success_count() != res.asserts.get_assert_count()){
+            if (res.asserts.get_assert_success_count() != res.asserts.get_assert_count()) {
                 output << "Test : " << res.name << "\n\n";
 
                 for (unsigned int j = 0; j < res.asserts.asserts.size(); j++) {
 
-                    output << shambase::format_printf("     - Assert [%d/%zu] \n\n", j + 1, res.asserts.asserts.size());
-
+                    output << shambase::format_printf(
+                        "     - Assert [%d/%zu] \n\n", j + 1, res.asserts.asserts.size());
 
                     output << R"(\verb|)" << res.asserts.asserts[j].name << "| : ";
 
@@ -177,40 +179,95 @@ namespace shamtest::details {
                         output << R"(\FAIL)";
                     }
 
-                    if ((!res.asserts.asserts[j].value) && !res.asserts.asserts[j].comment.empty()) {
-                        output << "\n\n $\\rightarrow$ failed assert logs :\n\n" ;
-                        output << R"(\begin{verbatim})" << res.asserts.asserts[j].comment << R"(\end{verbatim})";
-                        output <<  "\n";
+                    if ((!res.asserts.asserts[j].value) &&
+                        !res.asserts.asserts[j].comment.empty()) {
+                        output << "\n\n $\\rightarrow$ failed assert logs :\n\n";
+                        output << R"(\begin{verbatim})" << res.asserts.asserts[j].comment
+                               << R"(\end{verbatim})";
+                        output << "\n";
                     }
 
-                    output <<  "\n\n";
+                    output << "\n\n";
                 }
-
             }
         }
-
     }
 
-    
     void add_tex_output_section(std::stringstream &output, std::vector<TestResult> &results) {
 
         output << R"(\section{Tex report})";
 
         for (TestResult &res : results) {
-            std::string & tex_out = res.tex_output;
+            std::string &tex_out = res.tex_output;
 
-            if(!tex_out.empty()){
+            if (!tex_out.empty()) {
 
                 output << R"==(
-                \cprotect\subsection{ \verb+)==" +res.name+ R"==(+}
+                \cprotect\subsection{ \verb+)==" +
+                              res.name + R"==(+}
                 )==";
 
                 output << tex_out;
             }
         }
-
     }
 
+    void add_queue_section(std::stringstream &output, sycl::queue & q){
+
+        sycl::device d = q.get_device();
+        output << "device name : " <<d.get_info<sycl::info::device::name>()<< "\n";
+        output << "platform name : " <<d.get_platform().get_info<sycl::info::platform::name>()<< "\n";
+        output << "device memsize : " <<shambase::readable_sizeof(d.get_info<sycl::info::device::global_mem_size>())<< "\n";
+    }
+
+    void add_config_section(std::stringstream &output) {
+
+        std::string cxxflags = compile_arg;
+        shambase::replace_all(cxxflags, " ", "\n");
+
+        output << R"(\section{Shamrock config})";
+        output << "\n\n";
+        output << R"(\subsection{Git info})"
+               << "\n";
+        output << R"(\begin{verbatim})"
+               << "\n";
+        output << git_info_str;
+        output << R"(\end{verbatim})"
+               << "\n";
+        output << R"(\subsection{c++ flags})"
+               << "\n";
+        output << R"(\begin{verbatim})"
+               << "\n";
+        output << cxxflags;
+        output << R"(\end{verbatim})"
+               << "\n";
+
+
+        output << R"(\subsection{MPI status})"
+               << "\n";
+        output << R"(\begin{verbatim})"
+               << "\n";
+        output << "world size = " << shamsys::instance::world_size;
+        output << R"(\end{verbatim})"
+               << "\n";
+
+        output << R"(\subsection{NodeInstance Status})"
+               << "\n";
+        output << "compute queue : "<< "\n";
+        output << R"(\begin{verbatim})"
+               << "\n";
+        add_queue_section(output, shamsys::instance::get_compute_queue());
+        output << R"(\end{verbatim})"
+               << "\n";
+        output << "alt queue : "<< "\n";
+        output << R"(\begin{verbatim})"
+               << "\n";
+        add_queue_section(output, shamsys::instance::get_alt_queue());
+        output << R"(\end{verbatim})"
+               << "\n";
+
+        output << "\n\n";
+    }
 
     std::string make_test_report_tex(std::vector<TestResult> &results, bool mark_fail) {
 
@@ -230,9 +287,11 @@ namespace shamtest::details {
         output << R"(\tableofcontents)";
         output << "\n\n";
 
+        add_config_section(output);
+
         add_unittest_section(output, results);
 
-        add_tex_output_section(output,results);
+        add_tex_output_section(output, results);
 
         output << tex_template_end;
 
