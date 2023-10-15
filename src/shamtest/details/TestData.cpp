@@ -7,6 +7,7 @@
 // -------------------------------------------------------//
 
 #include "TestData.hpp"
+#include "shambase/bytestream.hpp"
 #include "shambase/string.hpp"
 
 namespace shamtest::details {
@@ -29,5 +30,20 @@ namespace shamtest::details {
         acc += "\n}";
         return acc;
     }
+
+
+        void TestData::serialize(std::basic_stringstream<u8> &stream){
+            shambase::stream_write_string(stream, dataset_name);
+            shambase::stream_write_vector(stream, dataset);
+        }
+        TestData TestData::deserialize(std::basic_stringstream<u8> &stream){
+
+            TestData out;
+
+            shambase::stream_read_string(stream, out.dataset_name);
+            shambase::stream_read_vector(stream, out.dataset);
+
+            return out;
+        }
 
 }

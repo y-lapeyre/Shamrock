@@ -26,6 +26,10 @@ namespace shamtest::details {
         }
 
         std::string serialize_json();
+
+
+        void serialize(std::basic_stringstream<u8> &stream);
+        static TestData deserialize(std::basic_stringstream<u8> &stream);
     };
 
 } // namespace shamtest::details

@@ -148,4 +148,41 @@ namespace shambase {
         }
     }
 
+
+    template<class T>
+    inline void stream_write_vector_trivial(std::basic_stringstream<u8> &stream, std::vector<T> &vec) {
+
+        u32 flag = details::VALIDATION_FLAGS::VECTOR;
+        stream_write(stream, flag);
+
+        u64 len = vec.size();
+        stream_write(stream, len);
+        
+        stream.write(reinterpret_cast<u8 const *>(vec.data()), len * sizeof(T));
+    }
+
+    /**
+     * @brief read a vector from the bytestream
+     * Note : this appends read objects to the vector without resetting it
+     * 
+     * @tparam T 
+     * @param stream 
+     * @param vec 
+     */
+    template<class T>
+    inline void stream_read_vector_trivial(std::basic_stringstream<u8> &stream, std::vector<T> &vec) {
+
+        u32 flag;
+        stream_read(stream, flag);
+        if (flag != details::VALIDATION_FLAGS::VECTOR) {
+            throw details::bytestreamException("the validation flags don't match");
+        }
+
+        u64 len;
+        stream_read(stream, len);
+        vec.resize(len);
+        
+        stream.read(reinterpret_cast<u8 *>(vec.data()),  len * sizeof(T));
+    }
+
 } // namespace shambase

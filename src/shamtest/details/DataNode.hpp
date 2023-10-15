@@ -22,5 +22,8 @@ namespace shamtest::details {
         std::vector<f64> data;
 
         std::string serialize_json();
+
+        void serialize(std::basic_stringstream<u8> &stream);
+        static DataNode deserialize(std::basic_stringstream<u8> &reader);
     };
 } // namespace shamtest::details
