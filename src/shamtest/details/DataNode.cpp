@@ -7,10 +7,11 @@
 // -------------------------------------------------------//
 
 #include "DataNode.hpp"
+#include "shambase/bytestream.hpp"
 #include "shambase/string.hpp"
 
 namespace shamtest::details {
-    
+
     std::string serialize_vec(const std::vector<f64> &vec) {
         std::string acc = "\n[\n";
 
@@ -25,7 +26,7 @@ namespace shamtest::details {
         return acc;
     }
 
-    std::string DataNode::serialize() {
+    std::string DataNode::serialize_json() {
         std::string acc = "\n{\n";
 
         acc += R"(    "name" : ")" + name + "\",\n";
@@ -36,5 +37,18 @@ namespace shamtest::details {
 
         acc += "\n}";
         return acc;
+    }
+
+    void DataNode::serialize(std::basic_stringstream<u8> &stream) {
+        shambase::stream_write_string(stream, name);
+        shambase::stream_write_vector_trivial(stream, data);
+    }
+    DataNode DataNode::deserialize(std::basic_stringstream<u8> &stream) {
+
+        DataNode out{};
+
+        shambase::stream_read_string(stream, out.name);
+        shambase::stream_read_vector_trivial(stream, out.data);
+        return out;
     }
 } // namespace shamtest::details

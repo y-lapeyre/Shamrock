@@ -25,7 +25,11 @@ namespace shamtest::details {
             dataset.push_back(DataNode{std::move(name), std::move(new_vec)});
         }
 
-        std::string serialize();
+        std::string serialize_json();
+
+
+        void serialize(std::basic_stringstream<u8> &stream);
+        static TestData deserialize(std::basic_stringstream<u8> &stream);
     };
 
 } // namespace shamtest::details

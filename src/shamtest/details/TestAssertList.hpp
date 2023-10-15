@@ -30,7 +30,7 @@ namespace shamtest::details {
         inline void
         assert_bool(std::string assert_name, bool v, SourceLocation loc = SourceLocation{}) {
 
-            asserts.push_back(TestAssert{v, std::move(assert_name), gen_comment("", loc)});
+            asserts.push_back(TestAssert{v, std::move(assert_name), "failed assert location : "+loc.format_one_line()});
         }
 
         template<class T1, class T2>
@@ -93,6 +93,22 @@ namespace shamtest::details {
             asserts.push_back(TestAssert{v, std::move(assert_name), gen_comment(comment, loc)});
         }
 
-        std::string serialize();
+        std::string serialize_json();
+        void serialize(std::basic_stringstream<u8> &stream);
+        static TestAssertList deserialize(std::basic_stringstream<u8> &reader);
+
+        inline u32 get_assert_count(){
+            return asserts.size();
+        }
+
+        inline u32 get_assert_success_count(){
+            u32 cnt = 0;
+            for(TestAssert & a : asserts){
+                if(a.value){
+                    cnt ++;
+                }
+            }
+            return cnt;
+        }
     };
 } // namespace shamtest::details
