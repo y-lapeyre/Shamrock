@@ -9,16 +9,14 @@
 #pragma once
 
 /**
- * @file sycl_vec_aliases.hpp
+ * @file typeAliasBase.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @brief 
- * 
+ * @brief
+ *
  */
 
+using f32 = float;
+using f64 = double;
 
-
- #pragma message("Header `shambase/sycl_vec_aliases.hpp` is deprecated! Please use `shambackends/typeAliasVec.hpp`")
-
-
- 
-#include "shambackends/typeAliasVec.hpp"
+constexpr f32 operator""_f32(long double n) { return f32(n); }
+constexpr f64 operator""_f64(long double n) { return f64(n); }

@@ -15,7 +15,6 @@
  * 
  */
  
-#include "shambase/sycl.hpp"
 
 namespace shambase {
 

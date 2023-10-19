@@ -16,6 +16,7 @@
  */
  
 #include "aliases.hpp"
+#include "shambackends/math.hpp"
 #include "shambase/sycl.hpp"
 #include "shambase/sycl_utils/sycl_utilities.hpp"
 
@@ -62,7 +63,7 @@ namespace shamalgs::reduction::details {
                 if(idx == start_id){
                     accum = acc[idx];
                 }else{
-                    accum = shambase::sycl_utils::g_sycl_min(acc[idx], accum);
+                    accum = sham::min(acc[idx], accum);
                 }
             }
         }
@@ -81,7 +82,7 @@ namespace shamalgs::reduction::details {
                 if(idx == start_id){
                     accum = acc[idx];
                 }else{
-                    accum = shambase::sycl_utils::g_sycl_max(acc[idx], accum);
+                    accum = sham::max(acc[idx], accum);
                 }
             }
         }
