@@ -9,7 +9,7 @@
 #pragma once
 
 /**
- * @file typeAliasBase.hpp
+ * @file aliases_float.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @brief
  *
