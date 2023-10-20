@@ -16,6 +16,7 @@
 
 #include "aliases.hpp"
 #include "shambase/string.hpp"
+#include "shambackends/fmt_bindings/fmt_defs.hpp"
 
 namespace shamsys {
 
