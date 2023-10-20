@@ -16,7 +16,7 @@
  */
  
 #include "shambase/exception.hpp"
-#include "shambase/type_aliases.hpp"
+#include "shambackends/typeAliasVec.hpp"
 #include "shamsys/MpiWrapper.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/SyclMpiTypes.hpp"

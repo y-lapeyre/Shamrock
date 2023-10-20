@@ -10,8 +10,8 @@
 #include "shamsys/Log.hpp"
 #include "shamtest/shamtest.hpp"
 
-#include "shambase/type_aliases.hpp"
-#include "shambase/sycl_vec_aliases.hpp"
+#include "shambackends/typeAliasVec.hpp"
+#include "shambackends/typeAliasVec.hpp"
 
 TestStart(Unittest, "shamsys/Log", test_format, 1){
 

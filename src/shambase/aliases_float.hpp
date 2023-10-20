@@ -9,16 +9,14 @@
 #pragma once
 
 /**
- * @file Log.hpp
+ * @file aliases_float.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @brief 
+ * @brief
+ *
  */
 
-#include "aliases.hpp"
-#include "shambase/string.hpp"
-#include "shambackends/fmt_bindings/fmt_defs.hpp"
+using f32 = float;
+using f64 = double;
 
-namespace shamsys {
-
-
-} // namespace shamsys
+constexpr f32 operator""_f32(long double n) { return f32(n); }
+constexpr f64 operator""_f64(long double n) { return f64(n); }

@@ -12,7 +12,7 @@
 #include "shamtest/PyScriptHandle.hpp"
 #include "shamtest/details/TestResult.hpp"
 #include "shamtest/shamtest.hpp"
-#include "shambase/sycl.hpp"
+#include "shambackends/sycl.hpp"
 #include "shambase/sycl_utils.hpp"
 #include "shambase/stacktrace.hpp"
 #include <vector>

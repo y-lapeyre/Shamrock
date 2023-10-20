@@ -23,7 +23,7 @@
 
 #include "shambase/integer_sycl.hpp"
 #include "shambase/stacktrace.hpp"
-#include "shambase/type_aliases.hpp"
+#include "shambackends/typeAliasVec.hpp"
 #include "shamrock/legacy/patch/base/patchdata.hpp"
 #include "shamrock/legacy/patch/base/patchdata_field.hpp"
 #include "shamrock/scheduler/HilbertLoadBalance.hpp"

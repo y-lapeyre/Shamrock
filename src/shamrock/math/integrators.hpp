@@ -14,11 +14,11 @@
  * @brief
  */
 
-#include "shambase/sycl.hpp"
+#include "shambackends/sycl.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"
 #include "shamsys/NodeInstance.hpp"
 
-#include "shambase/sycl_vec_aliases.hpp"
+#include "shambackends/typeAliasVec.hpp"
 
 namespace shamrock {
     namespace integrators {

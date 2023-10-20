@@ -16,7 +16,7 @@
 
 #include "shamalgs/numeric.hpp"
 #include "shambase/DistributedData.hpp"
-#include "shambase/sycl.hpp"
+#include "shambackends/sycl.hpp"
 #include "shamrock/tree/RadixTree.hpp"
 #include "shamrock/tree/TreeTraversal.hpp"
 

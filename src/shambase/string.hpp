@@ -16,7 +16,10 @@
  */
  
 #include "aliases.hpp"
-#include "fmt_bindings/fmt_defs.hpp"
+#include <fmt/core.h>
+#include <fmt/format.h>
+#include <fmt/ranges.h>
+#include <fmt/printf.h>
 #include "exception.hpp"
 #include <fstream>
 #include <vector>

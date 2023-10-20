@@ -15,8 +15,8 @@
  
 #include "fallbackMemory.hpp"
 
-#include "shambase/type_aliases.hpp"
-#include "shambase/sycl_vec_aliases.hpp"
+#include "shambackends/typeAliasVec.hpp"
+#include "shambackends/typeAliasVec.hpp"
 
 namespace shamalgs::memory::details {
 

@@ -19,8 +19,9 @@
 #include "shamalgs/atomic/DeviceCounter.hpp"
 #include "shamalgs/atomic/DynamicIdGenerator.hpp"
 #include "shamalgs/memory.hpp"
+#include "shambackends/math.hpp"
 #include "shambase/integer.hpp"
-#include "shambase/sycl.hpp"
+#include "shambackends/sycl.hpp"
 
 namespace shamalgs::numeric::details {
 
@@ -48,11 +49,11 @@ namespace shamalgs::numeric::details {
         }
 
         inline static ScanTile unpack (PackStorage s){
-            return ScanTile{shambase::unpack(s)};
+            return ScanTile{sham::unpack32(s)};
         }
 
         inline static PackStorage pack(T a, T b){
-            return shambase::pack(a,b);
+            return sham::pack32(a,b);
         }
 
         inline bool has_no_prefix(){
@@ -326,7 +327,7 @@ namespace shamalgs::numeric::details {
         constexpr T STATE_P = 2;
 
 
-        shamalgs::memory::buf_fill_discard(q, tile_state, shambase::pack(STATE_X, T(0)));
+        shamalgs::memory::buf_fill_discard(q, tile_state, sham::pack32(STATE_X, T(0)));
 
         atomic::DynamicIdGenerator<i32, group_size> id_gen(q);
 
@@ -392,14 +393,14 @@ namespace shamalgs::numeric::details {
 
                         if (group_tile_id != 0)  {
 
-                            tile_atomic.store(shambase::pack(STATE_A,local_group_sum));
+                            tile_atomic.store(sham::pack32(STATE_A,local_group_sum));
                             
                             while (tile_state.x() != STATE_P){
 
                                 atomic_ref_T atomic_state (acc_tile_state[tile_ptr]);
 
                                 do{
-                                    tile_state = shambase::unpack(atomic_state.load());
+                                    tile_state = sham::unpack32(atomic_state.load());
                                 }while(tile_state.x() == STATE_X);
 
                                 accum += tile_state.y();
@@ -409,7 +410,7 @@ namespace shamalgs::numeric::details {
 
                         }
 
-                        tile_atomic.store(shambase::pack(STATE_P,accum + local_group_sum));
+                        tile_atomic.store(sham::pack32(STATE_P,accum + local_group_sum));
 
                         local_sum[0] = accum;
                     }
@@ -456,7 +457,7 @@ namespace shamalgs::numeric::details {
         constexpr T STATE_P = 2;
 
 
-        shamalgs::memory::buf_fill_discard(q, tile_state, shambase::pack(STATE_X, T(0)));
+        shamalgs::memory::buf_fill_discard(q, tile_state, sham::pack32(STATE_X, T(0)));
 
         q.submit([&, group_cnt, len](sycl::handler &cgh) {
 
@@ -513,7 +514,7 @@ namespace shamalgs::numeric::details {
 
                     if (group_tile_id != 0)  {
                         if (local_id == 0) {
-                            atomic_ref_T(acc_tile_state[group_tile_id]).store(shambase::pack(STATE_A,local_group_sum));
+                            atomic_ref_T(acc_tile_state[group_tile_id]).store(sham::pack32(STATE_A,local_group_sum));
                         }
 
                         sycl::vec<T, 2> tile_state;
@@ -527,7 +528,7 @@ namespace shamalgs::numeric::details {
                                 atomic_ref_T atomic_state (acc_tile_state[group_tile_ptr - local_id]);
 
                                 do{
-                                    tile_state = shambase::unpack(atomic_state.load());
+                                    tile_state = sham::unpack32(atomic_state.load());
                                 }while(tile_state.x() == STATE_X);
 
                             }else{
@@ -570,7 +571,7 @@ namespace shamalgs::numeric::details {
                     }
 
                     if (local_id == 0) {
-                        atomic_ref_T(acc_tile_state[group_tile_id]).store(shambase::pack(STATE_P,accum + local_group_sum));
+                        atomic_ref_T(acc_tile_state[group_tile_id]).store(sham::pack32(STATE_P,accum + local_group_sum));
                     }
                     
                     //store final result

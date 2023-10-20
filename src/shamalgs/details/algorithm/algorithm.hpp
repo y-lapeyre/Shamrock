@@ -16,10 +16,10 @@
  */
 
 
-#include "shambase/type_aliases.hpp"
-#include "shambase/sycl_vec_aliases.hpp"
+#include "shambackends/typeAliasVec.hpp"
+#include "shambackends/typeAliasVec.hpp"
 
-#include "shambase/sycl.hpp"
+#include "shambackends/sycl.hpp"
 
 /**
  * @brief namespace to store algorithms implemented by shamalgs

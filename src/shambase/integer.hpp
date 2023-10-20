@@ -15,7 +15,7 @@
  * 
  */
  
-#include "shambase/type_aliases.hpp"
+#include "shambase/aliases_int.hpp"
 #include <climits>
 #include "shambase/type_traits.hpp"
 
@@ -126,13 +126,6 @@ namespace shambase {
     }
 
 
-    inline auto pack(u32 a, u32 b) -> u64 {
-        return (u64(a) << 32U) + b;
-    };
-
-    inline auto unpack (u64 v) -> sycl::vec<u32, 2> {
-        return {u32(v >> 32U), u32(v)};
-    };
 
 
     

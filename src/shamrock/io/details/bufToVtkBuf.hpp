@@ -17,8 +17,8 @@
 
 #include "shambase/endian.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"
-#include "shambase/type_aliases.hpp"
-#include "shambase/sycl.hpp"
+#include "shambackends/typeAliasVec.hpp"
+#include "shambackends/sycl.hpp"
 
 namespace shamrock::details {
 

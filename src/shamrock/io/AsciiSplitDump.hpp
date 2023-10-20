@@ -17,9 +17,9 @@
 
 #include "shambase/DistributedData.hpp"
 #include "shambase/string.hpp"
-#include "shambase/sycl.hpp"
-#include "shambase/type_aliases.hpp"
-#include "shambase/sycl_vec_aliases.hpp"
+#include "shambackends/sycl.hpp"
+#include "shambackends/typeAliasVec.hpp"
+#include "shambackends/typeAliasVec.hpp"
 #include <filesystem>
 #include <fstream>
 #include <iostream>

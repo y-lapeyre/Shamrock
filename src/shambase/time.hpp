@@ -16,7 +16,7 @@
  */
  
 #include "shambase/string.hpp"
-#include "shambase/type_aliases.hpp"
+#include "shambackends/typeAliasVec.hpp"
 #include "shamsys/legacy/log.hpp"
 
 #include <plf_nanotimer.h>

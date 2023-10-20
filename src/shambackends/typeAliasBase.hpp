@@ -9,16 +9,11 @@
 #pragma once
 
 /**
- * @file Log.hpp
+ * @file typeAliasBase.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @brief 
+ * @brief
+ *
  */
 
-#include "aliases.hpp"
-#include "shambase/string.hpp"
-#include "shambackends/fmt_bindings/fmt_defs.hpp"
-
-namespace shamsys {
-
-
-} // namespace shamsys
+#include "shambase/aliases_int.hpp"
+#include "shambase/aliases_float.hpp"

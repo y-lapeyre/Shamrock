@@ -19,7 +19,7 @@
 #include "shambase/stacktrace.hpp"
 #include "shambase/string.hpp"
 #include "shambase/sycl_utils.hpp"
-#include "shambase/type_aliases.hpp"
+#include "shambackends/typeAliasVec.hpp"
 #include "shamsys/EnvVariables.hpp"
 #include "shamsys/comm/CommunicationBuffer.hpp"
 #include "shamsys/comm/details/CommunicationBufferImpl.hpp"

@@ -16,7 +16,7 @@
  */
  
 #include "aliases.hpp"
-#include "shambase/sycl.hpp"
+#include "shambackends/sycl.hpp"
 
 namespace shamalgs::numeric::details {
 

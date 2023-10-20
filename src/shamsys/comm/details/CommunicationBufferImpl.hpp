@@ -15,8 +15,8 @@
  */
 
 #include "shambase/exception.hpp"
-#include "shambase/type_aliases.hpp"
-#include "shambase/sycl.hpp"
+#include "shambackends/typeAliasVec.hpp"
+#include "shambackends/sycl.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include <stdexcept>
 #include <variant>

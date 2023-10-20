@@ -23,7 +23,7 @@
 #include "shamalgs/memory.hpp"
 #include "shamalgs/numeric.hpp"
 #include "shambase/exception.hpp"
-#include "shambase/sycl.hpp"
+#include "shambackends/sycl.hpp"
 #include "shambase/string.hpp"
 #include "shambase/integer_sycl.hpp"
 

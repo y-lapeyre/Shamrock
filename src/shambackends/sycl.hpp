@@ -15,7 +15,9 @@
  * 
  */
  
-#include "type_aliases.hpp"
+#include "typeAliasBase.hpp"
+#include "typeAliasFp16.hpp"
+#include "typeAliasVec.hpp"
 #include <sycl/sycl.hpp>
 
 enum SYCLImplementation { OPENSYCL, DPCPP, UNKNOWN };

@@ -15,7 +15,7 @@
  * 
  */
  
-#include "shambase/sycl.hpp"
+#include "shambackends/sycl.hpp"
 #include "vectorProperties.hpp"
 
 namespace shambase {

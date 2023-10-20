@@ -15,7 +15,7 @@
  */
 
 #include "shambase/DistributedData.hpp"
-#include "shambase/sycl.hpp"
+#include "shambackends/sycl.hpp"
 #include <memory>
 namespace shamrock::patch {
 

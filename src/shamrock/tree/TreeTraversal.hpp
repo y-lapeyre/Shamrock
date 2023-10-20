@@ -15,7 +15,7 @@
  */
 
 #include "shamalgs/numeric.hpp"
-#include "shambase/sycl.hpp"
+#include "shambackends/sycl.hpp"
 #include "shamrock/tree/RadixTree.hpp"
 
 namespace shamrock::tree {
