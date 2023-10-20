@@ -16,7 +16,7 @@
  */
  
 #include "shambase/memory.hpp"
-#include "shambase/sycl.hpp"
+#include "shambackends/sycl.hpp"
 #include "shambase/type_aliases.hpp"
 #include <memory>
 #include <type_traits>

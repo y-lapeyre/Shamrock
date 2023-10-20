@@ -19,8 +19,8 @@
 #include "shamalgs/container/BufferEventHandler.hpp"
 #include "shambase/exception.hpp"
 #include "shambase/stacktrace.hpp"
-#include "shambase/sycl.hpp"
-#include "shambase/sycl_vec_aliases.hpp"
+#include "shambackends/sycl.hpp"
+#include "shambackends/typeAliasVec.hpp"
 #include "shambase/type_aliases.hpp"
 #include "shamsys/legacy/log.hpp"
 #include <cstddef>

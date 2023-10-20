@@ -15,7 +15,7 @@
  */
 
 #include "shambase/type_aliases.hpp"
-#include "shambase/sycl.hpp"
+#include "shambackends/sycl.hpp"
 #include "shamsys/NodeInstance.hpp"
 
 template<class T>

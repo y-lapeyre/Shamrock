@@ -16,9 +16,6 @@
  */
 
 
+#pragma message("Header `shambase/sycl_vec_aliases.hpp` is deprecated! Please use `shambackends/typeAliasVec.hpp`")
 
- #pragma message("Header `shambase/sycl_vec_aliases.hpp` is deprecated! Please use `shambackends/typeAliasVec.hpp`")
-
-
- 
 #include "shambackends/typeAliasVec.hpp"

@@ -15,7 +15,7 @@
  * 
  */
  
-#include "shambase/sycl.hpp"
+#include "shambackends/sycl.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"
 
 namespace shamalgs::memory {

@@ -18,7 +18,7 @@
 #include "aliases.hpp"
 #include "shamalgs/memory.hpp"
 #include "shambase/integer.hpp"
-#include "shambase/sycl.hpp"
+#include "shambackends/sycl.hpp"
 
 namespace shamalgs::atomic {
 

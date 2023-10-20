@@ -16,7 +16,7 @@
  */
  
 #include "shambase/DistributedData.hpp"
-#include "shambase/sycl.hpp"
+#include "shambackends/sycl.hpp"
 #include "shammath/AABB.hpp"
 
 namespace shammodels::zeus {

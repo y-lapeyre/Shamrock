@@ -15,7 +15,7 @@
 #include "texTestReport.hpp"
 #include "aliases.hpp"
 #include "shambase/string.hpp"
-#include "shambase/sycl.hpp"
+#include "shambackends/sycl.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamtest/details/TestResult.hpp"
 #include <algorithm>

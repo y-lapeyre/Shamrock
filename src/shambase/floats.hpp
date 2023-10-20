@@ -17,7 +17,7 @@
  
 #include "shambase/type_aliases.hpp"
 #include "shambase/type_traits.hpp"
-#include "shambase/sycl.hpp"
+#include "shambackends/sycl.hpp"
 #include "shambase/vectors.hpp"
 
 namespace shambase {

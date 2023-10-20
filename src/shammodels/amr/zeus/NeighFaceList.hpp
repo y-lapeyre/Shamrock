@@ -15,7 +15,7 @@
  * 
  */
  
-#include "shambase/sycl.hpp"
+#include "shambackends/sycl.hpp"
 #include "shambase/type_aliases.hpp"
 #include "shamrock/tree/TreeTraversal.hpp"
 #include <array>

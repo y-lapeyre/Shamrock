@@ -23,10 +23,10 @@
 
 #include "aliases.hpp"
 #include "bmi.hpp"
-#include "shambase/sycl.hpp"
+#include "shambackends/sycl.hpp"
 
 #include "shambase/type_aliases.hpp"
-#include "shambase/sycl_vec_aliases.hpp"
+#include "shambackends/typeAliasVec.hpp"
 
 // modified from :
 // Programming the Hilbert curve

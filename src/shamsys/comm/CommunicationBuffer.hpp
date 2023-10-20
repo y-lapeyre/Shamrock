@@ -15,7 +15,7 @@
  */
 
 #include "shambase/exception.hpp"
-#include "shambase/sycl.hpp"
+#include "shambackends/sycl.hpp"
 #include "shambase/type_aliases.hpp"
 #include "shamsys/comm/details/CommunicationBufferImpl.hpp"
 

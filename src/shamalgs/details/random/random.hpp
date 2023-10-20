@@ -19,7 +19,7 @@
 #include "shambase/Constants.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"
 #include <random>
-#include "shambase/sycl.hpp"
+#include "shambackends/sycl.hpp"
 
 /**
  * @brief namespace to contain utility related to random number generation in shamalgs

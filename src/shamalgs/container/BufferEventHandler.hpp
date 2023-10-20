@@ -19,7 +19,7 @@
 
 #include "shambase/string.hpp"
 #include "shambase/type_aliases.hpp"
-#include "shambase/sycl.hpp"
+#include "shambackends/sycl.hpp"
 #include "shamsys/legacy/log.hpp"
 
 namespace shamalgs {

@@ -17,7 +17,7 @@
 
 #include "aliases.hpp"
 #include "shamrock/math/tensors.hpp"
-#include "shambase/sycl.hpp"
+#include "shambackends/sycl.hpp"
 
 //%Impl status : Good
 

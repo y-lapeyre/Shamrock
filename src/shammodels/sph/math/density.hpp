@@ -17,7 +17,7 @@
  */
  
 
-#include "shambase/sycl.hpp"
+#include "shambackends/sycl.hpp"
 namespace shamrock::sph {
 
     template<class flt>

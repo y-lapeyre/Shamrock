@@ -16,10 +16,10 @@
 
 
 #include "shambase/type_aliases.hpp"
-#include "shambase/sycl_vec_aliases.hpp"
+#include "shambackends/typeAliasVec.hpp"
 #include <ostream>
 #include <random> 
-#include "shambase/sycl.hpp"
+#include "shambackends/sycl.hpp"
 
 
 
