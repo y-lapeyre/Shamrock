@@ -17,7 +17,7 @@
  
 #include "shambase/memory.hpp"
 #include "shambackends/sycl.hpp"
-#include "shambase/type_aliases.hpp"
+#include "shambackends/typeAliasVec.hpp"
 #include <memory>
 #include <type_traits>
 

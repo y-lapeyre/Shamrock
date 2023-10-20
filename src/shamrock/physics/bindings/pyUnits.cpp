@@ -13,7 +13,7 @@
  * \todo move to bindings
  */
 
-#include "shambase/type_aliases.hpp"
+#include "shambackends/typeAliasVec.hpp"
 #include "shambindings/pybindaliases.hpp"
 #include <shamunits/Constants.hpp>
 #include <shamunits/Names.hpp>

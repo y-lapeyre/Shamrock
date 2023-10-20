@@ -15,7 +15,7 @@
  
 #include "avoidCopyMemory.hpp"
 
-#include "shambase/type_aliases.hpp"
+#include "shambackends/typeAliasVec.hpp"
 #include "shambackends/typeAliasVec.hpp"
 #include "shambase/exception.hpp"
 

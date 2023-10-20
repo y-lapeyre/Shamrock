@@ -17,7 +17,7 @@
  
 #include "shambase/exception.hpp"
 #include "shambase/string.hpp"
-#include "shambase/type_aliases.hpp"
+#include "shambase/aliases_int.hpp"
 #include <optional>
 
 namespace shambase {

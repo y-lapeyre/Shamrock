@@ -18,7 +18,7 @@
  
 
 #include "shambase/string.hpp"
-#include "shambase/type_aliases.hpp"
+#include "shambackends/typeAliasVec.hpp"
 #include "shambackends/sycl.hpp"
 #include "shamsys/legacy/log.hpp"
 

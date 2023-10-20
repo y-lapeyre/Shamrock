@@ -15,7 +15,7 @@
  * @date 2023-08-02
  */
 
-#include "shambase/type_aliases.hpp"
+#include "shambackends/typeAliasVec.hpp"
 #include "shambackends/sycl.hpp"
 
 /**

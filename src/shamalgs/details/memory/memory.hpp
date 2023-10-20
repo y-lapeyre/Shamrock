@@ -16,7 +16,6 @@
  */
  
 
-#include "shambase/type_aliases.hpp"
 #include "shambackends/typeAliasVec.hpp"
 #include "shambase/string.hpp"
 #include "shambackends/sycl.hpp"

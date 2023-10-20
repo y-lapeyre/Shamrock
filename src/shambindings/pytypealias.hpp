@@ -16,7 +16,7 @@
  * 
  */
  
-#include "shambase/type_aliases.hpp"
+#include "shambackends/typeAliasVec.hpp"
 #include "shambindings/pybindaliases.hpp"
 #include <pybind11/stl.h>
 #include "shambackends/typeAliasVec.hpp"

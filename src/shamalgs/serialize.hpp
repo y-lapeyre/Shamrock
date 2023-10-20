@@ -20,7 +20,7 @@
 #include "shambase/memory.hpp"
 #include "shambase/stacktrace.hpp"
 #include "shambackends/sycl.hpp"
-#include "shambase/type_aliases.hpp"
+#include "shambackends/typeAliasVec.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include <memory>
 #include <stdexcept>

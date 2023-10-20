@@ -25,7 +25,7 @@
 #include "bmi.hpp"
 #include "shambackends/sycl.hpp"
 
-#include "shambase/type_aliases.hpp"
+#include "shambackends/typeAliasVec.hpp"
 #include "shambackends/typeAliasVec.hpp"
 
 // modified from :

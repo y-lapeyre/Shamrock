@@ -16,7 +16,7 @@
 
 #include "shambase/exception.hpp"
 #include "shambackends/sycl.hpp"
-#include "shambase/type_aliases.hpp"
+#include "shambackends/typeAliasVec.hpp"
 #include "shamsys/comm/details/CommunicationBufferImpl.hpp"
 
 namespace shamsys {

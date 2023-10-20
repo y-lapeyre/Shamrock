@@ -14,7 +14,7 @@
  * @brief
  */
 
-#include "shambase/type_aliases.hpp"
+#include "shambackends/typeAliasVec.hpp"
 #include "shambackends/sycl.hpp"
 #include "shamsys/NodeInstance.hpp"
 

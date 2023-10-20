@@ -21,7 +21,7 @@
 #include "shambase/stacktrace.hpp"
 #include "shambackends/sycl.hpp"
 #include "shambackends/typeAliasVec.hpp"
-#include "shambase/type_aliases.hpp"
+#include "shambackends/typeAliasVec.hpp"
 #include "shamsys/legacy/log.hpp"
 #include <cstddef>
 #include <random>
