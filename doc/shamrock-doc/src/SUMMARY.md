@@ -11,6 +11,7 @@
 - [Usage](./usermanual/usage.md)
 - [Utilities](./usermanual/utilities.md)
 - [Running on cluster](./usermanual/cluster.md)
+- [OpenMPI CUDA Aware](./usermanual/openmpi_setup.md)
 
 # Develloper Doc
 
