@@ -15,7 +15,7 @@
  * @date 2023-02-24
  */
 
-#include "aliases.hpp"
+#include "shambase/aliases_int.hpp"
 
 #include <fmt/core.h>
 #include <fmt/format.h>
