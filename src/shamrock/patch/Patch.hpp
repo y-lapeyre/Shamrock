@@ -15,8 +15,6 @@
  *
  */
 
-#include "aliases.hpp"
-
 #include "shammath/CoordRange.hpp"
 #include "shamsys/MpiWrapper.hpp"
 #include "PatchCoord.hpp"

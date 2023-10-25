@@ -15,7 +15,6 @@
  * 
  */
  
-#include "aliases.hpp"
 #include "shambase/SourceLocation.hpp"
 #include "shambase/sycl_utils/sycl_utilities.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"

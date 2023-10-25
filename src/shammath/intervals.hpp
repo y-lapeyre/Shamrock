@@ -15,7 +15,6 @@
  * 
  */
  
-#include "aliases.hpp"
 #include "shambase/sycl_utils/sycl_utilities.hpp"
 #include "shambase/type_traits.hpp"
 
