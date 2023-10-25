@@ -9,7 +9,7 @@
 #pragma once
 
 /**
- * @file mpi.hpp
+ * @file worldInfo.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @brief Use this header to include MPI properly
  *
