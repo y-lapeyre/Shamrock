@@ -37,6 +37,7 @@
 #include "shambindings/pybindaliases.hpp"
 #include "shamtest/details/TestResult.hpp"
 #include "shamtest/details/reporters/texTestReport.hpp"
+#include "version.hpp"
 
 namespace shamtest {
 

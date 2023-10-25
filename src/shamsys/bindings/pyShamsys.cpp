@@ -16,6 +16,7 @@
 #include "shambase/exception.hpp"
 #include "shambindings/pybindaliases.hpp"
 #include "shamsys/legacy/log.hpp"
+#include "version.hpp"
 
 Register_pymod(pysyslibinit) {
 

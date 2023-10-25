@@ -19,6 +19,7 @@
 #include "shambase/string.hpp"
 #include "shambase/aliases_int.hpp"
 #include <optional>
+#include <utility>
 
 namespace shambase {
 

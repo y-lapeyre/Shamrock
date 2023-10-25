@@ -17,6 +17,7 @@
 #include <random>
 
 u32 shamalgs::gen_buf_hash() {
+    constexpr u32 u32_max = 0xFFFFFFFF;
     static std::mt19937 gengine{0};
     return std::uniform_int_distribution<u32>(0, u32_max)(gengine);
 }
