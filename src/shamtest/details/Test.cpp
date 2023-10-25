@@ -26,14 +26,14 @@ namespace shamtest::details {
         using namespace shamsys::instance;
 
         if (node_count != -1) {
-            if (node_count != world_size) {
+            if (node_count != shammpi::world_size()) {
                 throw shambase::throw_with_loc<std::runtime_error>(
                     "trying to run a test with wrong number of nodes"
                 );
             }
         }
 
-        current_test = TestResult{type, name, world_rank};
+        current_test = TestResult{type, name, shammpi::world_rank()};
         
         try{
             test_functor();

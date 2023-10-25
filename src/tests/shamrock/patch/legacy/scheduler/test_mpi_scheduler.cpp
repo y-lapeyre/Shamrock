@@ -92,8 +92,8 @@ Test_start("SchedulerPatchData::", apply_change_list, -1){
     std::vector<std::tuple<u64, i32, i32,i32>> change_list;
 
     {   
-        std::uniform_int_distribution<u32> distrank(0,shamsys::instance::world_size-1);
-        std::vector<i32> tags_it_node(shamsys::instance::world_size);
+        std::uniform_int_distribution<u32> distrank(0,shammpi::world_size()-1);
+        std::vector<i32> tags_it_node(shammpi::world_size());
         for(u64 i = 0 ; i < sche.patch_list.global.size(); i++){
 
             i32 old_owner = sche.patch_list.global[i].node_owner_id;
@@ -232,12 +232,12 @@ Test_start("mpi_scheduler::", test_split, -1){
     patchdata_layout::set(1, 0, 0, 0, 0, 0);
     patchdata_layout::sync(MPI_COMM_WORLD);
 
-    if(shamsys::instance::world_rank == 0){
+    if(shammpi::world_rank() == 0){
         Patch p;
 
         p.data_count = 200;
         p.load_value = 200;
-        p.node_owner_id = shamsys::instance::world_rank;
+        p.node_owner_id = shammpi::world_rank();
         
         p.x_min = 0;
         p.y_min = 0;

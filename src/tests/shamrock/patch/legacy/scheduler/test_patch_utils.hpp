@@ -18,7 +18,7 @@ inline void make_global_local_check_vec(std::vector<shamrock::patch::Patch> & gl
 
     using namespace shamrock::patch;
     
-    global.resize(shamsys::instance::world_size*6);
+    global.resize(shammpi::world_size()*6);
     {
         //fill the check vector with a pseudo random int generator (seed:0x1111)
         std::mt19937 eng(0x1111);        
@@ -51,21 +51,21 @@ inline void make_global_local_check_vec(std::vector<shamrock::patch::Patch> & gl
 
 
     {
-        std::vector<u32> pointer_start_node(shamsys::instance::world_size);
+        std::vector<u32> pointer_start_node(shammpi::world_size());
         pointer_start_node[0] = 0;
-        for(i32 i = 1; i < shamsys::instance::world_size; i ++){
+        for(i32 i = 1; i < shammpi::world_size(); i ++){
             pointer_start_node[i] = pointer_start_node[i-1] + ((i-1)%5)*((i-1)%5);
         }
-        pointer_start_node.push_back(shamsys::instance::world_size*6);
+        pointer_start_node.push_back(shammpi::world_size()*6);
 
 
-        for(i32 irank = 0; irank < shamsys::instance::world_size; irank ++){
+        for(i32 irank = 0; irank < shammpi::world_size(); irank ++){
             for(u32 id = pointer_start_node[irank]; id < pointer_start_node[irank+1]; id ++){
                 global[id].node_owner_id = irank;
             }
         }
 
-        for(u32 id = pointer_start_node[shamsys::instance::world_rank]; id < pointer_start_node[shamsys::instance::world_rank+1]; id ++){
+        for(u32 id = pointer_start_node[shammpi::world_rank()]; id < pointer_start_node[shammpi::world_rank()+1]; id ++){
             local.push_back(global[id]);
         }
     }

@@ -16,7 +16,7 @@
  */
 
 
-#include "shambase/mpi.hpp"
+#include "shammpi/mpi.hpp"
 
 
 //#define MPI_LOGGER_ENABLED

@@ -165,7 +165,7 @@ namespace shamtest {
     }
 
     void _print_summary(std::vector<details::TestResult> &results) {
-        if (shamsys::instance::world_rank > 0) {
+        if (shammpi::world_rank() > 0) {
             return;
         }
 
@@ -208,29 +208,29 @@ namespace shamtest {
 
         std::basic_string<u8> out_res_string;
 
-        if (instance::world_size == 1) {
+        if (shammpi::world_size() == 1) {
             out_res_string = in;
         } else {
             std::basic_string<u8> loc_string = in;
 
-            int *counts   = new int[instance::world_size];
+            int *counts   = new int[shammpi::world_size()];
             int nelements = (int)loc_string.size();
             // Each process tells the root how many elements it holds
             mpi::gather(&nelements, 1, MPI_INT, counts, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
             // Displacements in the receive buffer for MPI_GATHERV
-            int *disps = new int[instance::world_size];
+            int *disps = new int[shammpi::world_size()];
             // Displacement for the first chunk of data - 0
-            for (int i = 0; i < instance::world_size; i++)
+            for (int i = 0; i < shammpi::world_size(); i++)
                 disps[i] = (i > 0) ? (disps[i - 1] + counts[i - 1]) : 0;
 
             // Place to hold the gathered data
             // Allocate at root only
             u8 *gather_data = NULL;
-            if (instance::world_rank == 0)
+            if (shammpi::world_rank() == 0)
                 // disps[size-1]+counts[size-1] == total number of elements
                 gather_data =
-                    new u8[disps[instance::world_size - 1] + counts[instance::world_size - 1]];
+                    new u8[disps[shammpi::world_size() - 1] + counts[shammpi::world_size() - 1]];
 
             // Collect everything into the root
             mpi::gatherv(
@@ -244,10 +244,10 @@ namespace shamtest {
                 0,
                 MPI_COMM_WORLD);
 
-            if (instance::world_rank == 0) {
+            if (shammpi::world_rank() == 0) {
                 out_res_string = std::basic_string<u8>(
                     gather_data,
-                    disps[instance::world_size - 1] + counts[instance::world_size - 1]);
+                    disps[shammpi::world_size() - 1] + counts[shammpi::world_size() - 1]);
             }
 
             delete[] counts;
@@ -258,7 +258,7 @@ namespace shamtest {
     }
 
     std::vector<details::TestResult> gather_tests(std::vector<details::TestResult> rank_result) {
-        if (shamsys::instance::world_size == 1) {
+        if (shammpi::world_size() == 1) {
             return rank_result;
         }
 
@@ -269,7 +269,7 @@ namespace shamtest {
 
         std::basic_string<u8> gathered = gather_basic_string(outrank.str());
 
-        if (shamsys::instance::world_rank != 0) {
+        if (shammpi::world_rank() != 0) {
             return {};
         }
 
@@ -281,7 +281,7 @@ namespace shamtest {
 
         std::vector<details::TestResult> out;
 
-        for (u32 i = 0; i < shamsys::instance::world_size; i++) {
+        for (u32 i = 0; i < shammpi::world_size(); i++) {
             shambase::stream_read_vector(reader, out);
         }
 
@@ -294,7 +294,7 @@ namespace shamtest {
      */
     void print_test_list() {
 
-        if (shamsys::instance::world_rank > 0) {
+        if (shammpi::world_rank() > 0) {
             return;
         }
 
@@ -334,7 +334,7 @@ namespace shamtest {
     }
 
     void write_json_report(std::vector<details::TestResult> &results, std::string outfile) {
-        if (shamsys::instance::world_rank > 0) {
+        if (shammpi::world_rank() > 0) {
             return;
         }
 
@@ -357,7 +357,7 @@ namespace shamtest {
 
         s_out += R"(    "commit_hash" : ")" + git_commit_hash + "\",\n";
         s_out +=
-            R"(    "world_size" : ")" + std::to_string(shamsys::instance::world_size) + "\",\n";
+            R"(    "world_size" : ")" + std::to_string(shammpi::world_size()) + "\",\n";
 
 #if defined(SYCL_COMP_INTEL_LLVM)
         s_out += R"(    "compiler" : "DPCPP",)"
@@ -383,7 +383,7 @@ namespace shamtest {
     }
 
     void write_tex_report(std::vector<details::TestResult> &results, bool mark_fail) {
-        if (shamsys::instance::world_rank > 0) {
+        if (shammpi::world_rank() > 0) {
             return;
         }
 
@@ -430,7 +430,7 @@ namespace shamtest {
 
         auto can_run = [&](shamtest::details::Test &t) -> bool {
             bool any_node_cnt  = (t.node_count == -1);
-            bool world_size_ok = t.node_count == instance::world_size;
+            bool world_size_ok = t.node_count == shammpi::world_size();
 
             bool can_run_type = false;
 
@@ -582,7 +582,7 @@ namespace shamtest {
 
         mpi::barrier(MPI_COMM_WORLD);
 
-        if (instance::world_rank == 0) {
+        if (shammpi::world_rank() == 0) {
             logger::raw_ln("Tests done exiting ... exitcode =", errcode);
         }
         mpi::barrier(MPI_COMM_WORLD);

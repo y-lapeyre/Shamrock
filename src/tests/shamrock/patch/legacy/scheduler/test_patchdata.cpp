@@ -19,7 +19,7 @@
 /*
 Test_start("patchdata::", sync_patchdata_layout, -1) {
 
-    if (shamsys::instance::world_rank == 0) {
+    if (shammpi::world_rank() == 0) {
         patchdata_layout::set(1, 0, 4, 6, 2, 1);
     }
 
@@ -60,12 +60,12 @@ TestStart(Unittest,"patchdata::", send_recv_patchdata, 2){
     std::vector<PatchDataMpiRequest> rq_lst;
     PatchData recv_d(pdl);
 
-    if(shamsys::instance::world_rank == 0){
+    if(shammpi::world_rank() == 0){
         patchdata_isend(d1_check, rq_lst, 1, 0, MPI_COMM_WORLD);
         patchdata_irecv_probe(recv_d,rq_lst, 1, 0, MPI_COMM_WORLD);
     }
 
-    if(shamsys::instance::world_rank == 1){
+    if(shammpi::world_rank() == 1){
         patchdata_isend(d2_check, rq_lst, 0, 0, MPI_COMM_WORLD);
         patchdata_irecv_probe(recv_d,rq_lst, 0, 0, MPI_COMM_WORLD);
     }
@@ -75,11 +75,11 @@ TestStart(Unittest,"patchdata::", send_recv_patchdata, 2){
     
 
 
-    if(shamsys::instance::world_rank == 0){
+    if(shammpi::world_rank() == 0){
         shamtest::asserts().assert_bool("recv_d == d2_check", patch_data_check_match(recv_d, d2_check));
     }
 
-    if(shamsys::instance::world_rank == 1){
+    if(shammpi::world_rank() == 1){
         shamtest::asserts().assert_bool("recv_d == d1_check", patch_data_check_match(recv_d, d1_check));
     }
 

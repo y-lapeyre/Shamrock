@@ -163,7 +163,7 @@ void benchmark_selfgrav_main(u32 npatch, std::string name){
 
         f64 Nesti = (1.F/dr)*(1.F/dr)*(1.F/dr);
 
-        f64 multiplier = shamsys::instance::world_size;
+        f64 multiplier = shammpi::world_size();
 
         if(npatch < multiplier){
             multiplier = 1;
@@ -190,7 +190,7 @@ void benchmark_selfgrav_main(u32 npatch, std::string name){
         times.push_back(t);
     }
 
-    if(shamsys::instance::world_rank == 0){
+    if(shammpi::world_rank() == 0){
         auto & dset = shamtest::test_data().new_dataset(name);
         dset.add_data("Npart", npart);
         dset.add_data("times", times);

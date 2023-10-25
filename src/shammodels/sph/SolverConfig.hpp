@@ -229,7 +229,7 @@ struct shammodels::sph::SolverConfig {
     inline bool has_field_soundspeed() { return artif_viscosity.has_field_soundspeed(); }
 
     inline void print_status() { 
-        if(shamsys::instance::world_rank != 0){return;}
+        if(shammpi::world_rank() != 0){return;}
         logger::raw_ln("----- SPH Solver configuration -----");
         
         artif_viscosity.print_status(); 

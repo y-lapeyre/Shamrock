@@ -85,7 +85,7 @@ namespace shamalgs::collective {
 
         mpi::file_set_view(fh, file_head_ptr, MPI_BYTE, MPI_CHAR, "native", MPI_INFO_NULL);
 
-        if (shamsys::instance::world_rank == 0) {
+        if (shammpi::world_rank() == 0) {
             mpi::file_write(fh, s.c_str(), s.size(), MPI_CHAR, MPI_STATUS_IGNORE);
         }
 
@@ -108,7 +108,7 @@ namespace shamalgs::collective {
 
         if(rc != MPI_SUCCESS){ 
 
-            if(shamsys::instance::world_rank == 0){
+            if(shammpi::world_rank() == 0){
                 mpi::file_delete(fname.c_str(), MPI_INFO_NULL);
             }
 

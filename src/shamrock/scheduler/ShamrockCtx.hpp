@@ -175,8 +175,8 @@ class ShamrockCtx{public:
 
         std::vector<std::unique_ptr<PatchData>> recv_data;
 
-        for(u32 i = 0; i < world_size; i++){
-            if (i == world_rank) {
+        for(u32 i = 0; i < shammpi::world_size(); i++){
+            if (i == shammpi::world_rank()) {
                 recv_data = sched->gather_data(i);
             }else{
                 sched->gather_data(i);

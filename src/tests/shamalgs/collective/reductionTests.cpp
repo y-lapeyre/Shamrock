@@ -16,8 +16,8 @@
 
 template<class T>
 inline void test(){
-    u32 wsize = shamsys::instance::world_size;
-    u32 wrank = shamsys::instance::world_rank;
+    u32 wsize = shammpi::world_size();
+    u32 wrank = shammpi::world_rank();
     std::vector<T> vectest = shamalgs::random::mock_vector<T>(0x1111,wsize);
 
     T sum = shamalgs::collective::allreduce_sum(vectest[wrank]);

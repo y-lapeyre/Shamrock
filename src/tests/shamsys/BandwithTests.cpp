@@ -156,20 +156,20 @@ template<class T> void make_bandwith_matrix(std::string dset_name,sycl::queue & 
 
         MPI_Request rq_send, rq_recv;
 
-        if(world_rank == rank_send){
+        if(shammpi::world_rank() == rank_send){
             mpi::isend(ptr1, comm_size, get_mpi_type<T>(), rank_recv, 0, MPI_COMM_WORLD, &rq_send);
         }
 
-        if(world_rank == rank_recv){
+        if(shammpi::world_rank() == rank_recv){
             mpi::irecv(ptr2, comm_size, get_mpi_type<T>(), rank_send, 0, MPI_COMM_WORLD, &rq_recv);
         }
 
-        if(world_rank == rank_send){
+        if(shammpi::world_rank() == rank_send){
             MPI_Status st;
             mpi::wait(&rq_send, &st);
         }
 
-        if(world_rank == rank_recv){
+        if(shammpi::world_rank() == rank_recv){
             MPI_Status st;
             mpi::wait(&rq_recv, &st);
         }
@@ -188,8 +188,8 @@ template<class T> void make_bandwith_matrix(std::string dset_name,sycl::queue & 
         std::vector<f64> rank_recv;
         std::vector<f64> bw;
 
-        for(u32 i = 0; i < world_size; i++){
-            for(u32 j = 0; j < world_size; j++){
+        for(u32 i = 0; i < shammpi::world_size(); i++){
+            for(u32 j = 0; j < shammpi::world_size(); j++){
 
                 logger::debug_ln("make_bandwith_matrix",i,"->",j, dset_name);
 
