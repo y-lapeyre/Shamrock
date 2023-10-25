@@ -15,7 +15,7 @@
  * 
  */
  
-#include "shambackends/typeAliasVec.hpp"
+#include "shambase/aliases_int.hpp"
 #include <sstream>
 #include <string>
 #include <vector>

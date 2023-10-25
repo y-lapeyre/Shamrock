@@ -18,8 +18,8 @@
  */
 
 
-#include "aliases.hpp"
 
+#include "shambase/aliases_int.hpp"
 #include <vector>
 #include <sycl/sycl.hpp>
 

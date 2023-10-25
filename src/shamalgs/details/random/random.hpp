@@ -15,7 +15,7 @@
  * 
  */
  
-#include "aliases.hpp"
+#include "shambackends/typeAliasVec.hpp"
 #include "shambase/Constants.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"
 #include <random>
