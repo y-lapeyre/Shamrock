@@ -27,7 +27,6 @@
 #include <string>
 #include <type_traits>
 #include "shambackends/typeAliasVec.hpp"
-#include "version.hpp"
 
 inline std::string __file_to_loc(const char* filename){
     return std::string(std::strstr(filename, "/src/") ? std::strstr(filename, "/src/")+1  : filename);

@@ -17,6 +17,7 @@
 #include "shamsys/legacy/cmdopt.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamtest/shamtest.hpp"
+#include "version.hpp"
 
 int main(int argc, char *argv[]) {
 
