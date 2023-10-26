@@ -28,7 +28,7 @@ void sparse_comm_test(std::string prefix, shamsys::CommunicationProtocol prot){
     using namespace shamalgs::collective;
     using namespace shamsys::instance;
     using namespace shamsys;
-    using namespace shammpi;
+    using namespace shamcomm;
 
     const i32 wsize = world_size();
     const i32 wrank = world_rank();

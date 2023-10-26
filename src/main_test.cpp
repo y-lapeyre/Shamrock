@@ -61,7 +61,7 @@ int main(int argc, char *argv[]) {
         shamsys::instance::init(argc, argv);
     }
 
-    if (shammpi::world_rank() == 0) {
+    if (shamcomm::world_rank() == 0) {
         std::cout << shamrock_title_bar_big << std::endl;
         logger::print_faint_row();
 
@@ -89,7 +89,7 @@ int main(int argc, char *argv[]) {
         shamsys::run_micro_benchmark();
     }
 
-    if (shammpi::world_rank() == 0) {
+    if (shamcomm::world_rank() == 0) {
         logger::print_faint_row();
         logger::raw_ln("log status : ");
         if (logger::loglevel == i8_max) {
@@ -102,7 +102,7 @@ int main(int argc, char *argv[]) {
 
     if (opts::has_option("--sycl-ls")) {
 
-        if (shammpi::world_rank() == 0) {
+        if (shamcomm::world_rank() == 0) {
             logger::print_faint_row();
         }
         shamsys::instance::print_device_list();
@@ -110,14 +110,14 @@ int main(int argc, char *argv[]) {
 
     if (opts::has_option("--sycl-ls-map")) {
 
-        if (shammpi::world_rank() == 0) {
+        if (shamcomm::world_rank() == 0) {
             logger::print_faint_row();
         }
         shamsys::instance::print_device_list();
         shamsys::instance::print_queue_map();
     }
 
-    if (shammpi::world_rank() == 0) {
+    if (shamcomm::world_rank() == 0) {
         logger::print_faint_row();
         logger::raw_ln(
             " - Code init",

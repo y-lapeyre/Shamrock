@@ -15,7 +15,7 @@
 #include "shamcomm/worldInfo.hpp"
 #include "shamsys/MpiWrapper.hpp"
 
-namespace shammpi {
+namespace shamcomm {
 
     i32 _world_rank;
 
@@ -36,4 +36,4 @@ namespace shammpi {
 
     }
 
-} // namespace shammpi
+} // namespace shamcomm

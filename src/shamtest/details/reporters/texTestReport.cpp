@@ -266,7 +266,7 @@ namespace shamtest::details {
                << "\n";
         output << R"(\begin{verbatim})"
                << "\n";
-        output << "world size = " << shammpi::world_size();
+        output << "world size = " << shamcomm::world_size();
         output << R"(\end{verbatim})"
                << "\n";
 

@@ -34,7 +34,7 @@ auto Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tscal dt_input) -> Tsc
 
     StackEntry stack_loc{};
 
-    if(shammpi::world_rank() == 0){ 
+    if(shamcomm::world_rank() == 0){ 
         logger::normal_ln("amr::Zeus", shambase::format("t = {}, dt = {}", t_current, dt_input));
     }
 
@@ -524,7 +524,7 @@ auto Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tscal dt_input) -> Tsc
 
     std::string log_rank_rate = shambase::format(
         "\n| {:<4} |    {:.4e}    | {:11} |   {:.3e}   |  {:3.0f} % | {:3.0f} % | {:3.0f} % |", 
-        shammpi::world_rank(),rate,  rank_count,  tstep.elasped_sec(),
+        shamcomm::world_rank(),rate,  rank_count,  tstep.elasped_sec(),
         100*(storage.timings_details.interface / tstep.elasped_sec()),
         100*(storage.timings_details.neighbors / tstep.elasped_sec()),
         100*(storage.timings_details.io / tstep.elasped_sec())
@@ -533,7 +533,7 @@ auto Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tscal dt_input) -> Tsc
     std::string gathered = "";
     shamalgs::collective::gather_str(log_rank_rate, gathered);
 
-    if(shammpi::world_rank() == 0){
+    if(shamcomm::world_rank() == 0){
         std::string print = "processing rate infos : \n";
         print+=("---------------------------------------------------------------------------------\n");
         print+=("| rank |  rate  (N.s^-1)  |      N      | t compute (s) | interf | neigh |   io  |\n");

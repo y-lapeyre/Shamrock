@@ -117,7 +117,7 @@ namespace generic::setup::generators {
         u32 iy = std::ceil(iboc_dim.y());
         u32 iz = std::ceil(iboc_dim.z());
 
-        if(shammpi::world_rank() == 0) logger::info_ln("SPH", "Add fcc lattice size : (",ix,iy,iz,")");
+        if(shamcomm::world_rank() == 0) logger::info_ln("SPH", "Add fcc lattice size : (",ix,iy,iz,")");
         //std::cout << "part box size : (" << ix << ", " << iy << ", " << iz << ")" << std::endl;
 
         if((iy % 2) != 0 && (iz % 2) != 0){

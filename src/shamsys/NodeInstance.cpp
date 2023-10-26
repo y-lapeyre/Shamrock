@@ -56,7 +56,7 @@ namespace shamsys::instance::tmpmpi{
         mpi::allreduce(&local_count, &global_len, 1, MPI_INT , MPI_SUM, MPI_COMM_WORLD);
         recv_vec.resize(global_len);
 
-        int* table_data_count = new int[shammpi::world_size()];
+        int* table_data_count = new int[shamcomm::world_size()];
 
         mpi::allgather(
             &local_count, 
@@ -71,11 +71,11 @@ namespace shamsys::instance::tmpmpi{
 
 
 
-        int* node_displacments_data_table = new int[shammpi::world_size()];
+        int* node_displacments_data_table = new int[shamcomm::world_size()];
 
         node_displacments_data_table[0] = 0;
 
-        for(u32 i = 1 ; i < shammpi::world_size(); i++){
+        for(u32 i = 1 ; i < shamcomm::world_size(); i++){
             node_displacments_data_table[i] = node_displacments_data_table[i-1] + table_data_count[i-1];
         }
         
@@ -226,7 +226,7 @@ namespace shamsys::instance::details {
     }
 
     void print_device_list(){
-        u32 rank = shammpi::world_rank();
+        u32 rank = shamcomm::world_rank();
 
         std::string print_buf = "";
 
@@ -297,7 +297,7 @@ namespace shamsys::instance {
     };
 
     void print_queue_map(){
-        u32 rank = shammpi::world_rank();
+        u32 rank = shamcomm::world_rank();
 
         std::string print_buf = "";
 
@@ -433,18 +433,18 @@ print_buf = shambase::format("| {:>4} | {:>8} | {:>12} | {:>16} |\n", rank,"???"
         
         mpi::init(&mpi_info.argc, &mpi_info.argv);
 
-        shammpi::fetch_world_info();
+        shamcomm::fetch_world_info();
 
         #ifdef MPI_LOGGER_ENABLED
         std::cout << "%MPI_VALUE:world_size="<<world_size<<"\n";
         std::cout << "%MPI_VALUE:world_rank="<<world_rank<<"\n";
         #endif
 
-        if(shammpi::world_size() < 1){
+        if(shamcomm::world_size() < 1){
             throw ShamsysInstanceException("world size is < 1");
         }
 
-        if(shammpi::world_rank() < 0){
+        if(shamcomm::world_rank() < 0){
             throw ShamsysInstanceException("world size is above i32_max");
         }
 
@@ -459,17 +459,17 @@ print_buf = shambase::format("| {:>4} | {:>8} | {:>12} | {:>16} |\n", rank,"???"
 
         logger::debug_ln("Sys",
             shambase::format("[{:03}]: \x1B[32mMPI_Init : node n°{:03} | world size : {} | name = {}\033[0m",
-            shammpi::world_rank(),shammpi::world_rank(),shammpi::world_size()
+            shamcomm::world_rank(),shamcomm::world_rank(),shamcomm::world_size()
             ,get_process_name()));
 
         mpi::barrier(MPI_COMM_WORLD);
         //if(world_rank == 0){
-        if(shammpi::world_rank() == 0){
+        if(shamcomm::world_rank() == 0){
             logger::debug_ln("NodeInstance","------------ MPI init ok ------------");
             logger::debug_ln("NodeInstance", "creating MPI type for interop");
         }
         create_sycl_mpi_types();
-        if(shammpi::world_rank() == 0){
+        if(shamcomm::world_rank() == 0){
             logger::debug_ln("NodeInstance", "MPI type for interop created");
             logger::debug_ln("NodeInstance","------------ MPI / SYCL init ok ------------");
         }
@@ -497,7 +497,7 @@ print_buf = shambase::format("| {:>4} | {:>8} | {:>12} | {:>16} |\n", rank,"???"
 
         mpidtypehandler::free_mpidtype();
 
-        if(shammpi::world_rank() == 0){
+        if(shamcomm::world_rank() == 0){
             logger::print_faint_row();
             logger::raw_ln(" - MPI finalize \nExiting ...\n");
             logger::raw_ln(" Hopefully it was quick :')\n");
@@ -651,7 +651,7 @@ print_buf = shambase::format("| {:>4} | {:>8} | {:>12} | {:>16} |\n", rank,"???"
             throw ShamsysInstanceException("Sycl is already initialized");
         }
 
-        if(shammpi::world_rank() == 0){
+        if(shamcomm::world_rank() == 0){
             logger::debug_ln("Sys", "start sycl queues ...");
         }
 
@@ -742,7 +742,7 @@ print_buf = shambase::format("| {:>4} | {:>8} | {:>12} | {:>16} |\n", rank,"???"
 
     void force_direct_gpu_mode(bool force){
         if(force != dgpu_capable){
-            if(shammpi::world_rank() == 0){
+            if(shamcomm::world_rank() == 0){
                 logger::warn_ln("Sys", "you are forcing the Direct comm mode to :", force, "it might no work");
             }
             dgpu_mode = dgpu_capable;
@@ -771,19 +771,19 @@ print_buf = shambase::format("| {:>4} | {:>8} | {:>12} | {:>16} |\n", rank,"???"
         shamsys::CommunicationBuffer cbuf_recv {nbytes, prot};
 
         MPI_Request rq1, rq2;
-        if(shammpi::world_rank() == shammpi::world_size() -1){
+        if(shamcomm::world_rank() == shamcomm::world_size() -1){
             MPI_Isend(cbuf.get_ptr(), nbytes, MPI_BYTE, 0, 0, MPI_COMM_WORLD, &rq1);
         }
 
-        if(shammpi::world_rank() == 0){
-            MPI_Irecv(cbuf_recv.get_ptr(), nbytes, MPI_BYTE, shammpi::world_size() -1, 0, MPI_COMM_WORLD, &rq2);
+        if(shamcomm::world_rank() == 0){
+            MPI_Irecv(cbuf_recv.get_ptr(), nbytes, MPI_BYTE, shamcomm::world_size() -1, 0, MPI_COMM_WORLD, &rq2);
         }
 
-        if(shammpi::world_rank() == shammpi::world_size() -1){
+        if(shamcomm::world_rank() == shamcomm::world_size() -1){
             MPI_Wait(&rq1, MPI_STATUS_IGNORE);
         }
 
-        if(shammpi::world_rank() == 0){
+        if(shamcomm::world_rank() == 0){
             MPI_Wait(&rq2, MPI_STATUS_IGNORE);
         }
 
@@ -792,7 +792,7 @@ print_buf = shambase::format("| {:>4} | {:>8} | {:>12} | {:>16} |\n", rank,"???"
 
         bool valid = true;
 
-        if(shammpi::world_rank() == 0){
+        if(shamcomm::world_rank() == 0){
             sycl::host_accessor acc1 {buf_comp};
             sycl::host_accessor acc2 {recv};
 
@@ -822,17 +822,17 @@ print_buf = shambase::format("| {:>4} | {:>8} | {:>12} | {:>16} |\n", rank,"???"
         using namespace terminal_effects::colors_foreground_8b;
         if(dgpu_mode){
             if(validate_comm(shamsys::DirectGPU)){
-                if(shammpi::world_rank() == 0) logger::raw_ln(" - MPI use Direct Comm :",green + "Working"+ terminal_effects::reset);
+                if(shamcomm::world_rank() == 0) logger::raw_ln(" - MPI use Direct Comm :",green + "Working"+ terminal_effects::reset);
             }else{
-                if(shammpi::world_rank() == 0)logger::raw_ln(" - MPI use Direct Comm :",red + "Fail"+ terminal_effects::reset);
-                if(shammpi::world_rank() == 0)logger::err_ln("Sys", "the select comm mode failed, try forcing dgpu mode off");
+                if(shamcomm::world_rank() == 0)logger::raw_ln(" - MPI use Direct Comm :",red + "Fail"+ terminal_effects::reset);
+                if(shamcomm::world_rank() == 0)logger::err_ln("Sys", "the select comm mode failed, try forcing dgpu mode off");
                 call_abort = true;
             }
         }else{
             if(validate_comm(shamsys::CopyToHost)){
-                if(shammpi::world_rank() == 0)logger::raw_ln(" - MPI use Copy to Host :",green + "Working"+ terminal_effects::reset);
+                if(shamcomm::world_rank() == 0)logger::raw_ln(" - MPI use Copy to Host :",green + "Working"+ terminal_effects::reset);
             }else{
-                if(shammpi::world_rank() == 0)logger::raw_ln(" - MPI use Copy to Host :",red + "Fail"+ terminal_effects::reset);
+                if(shamcomm::world_rank() == 0)logger::raw_ln(" - MPI use Copy to Host :",red + "Fail"+ terminal_effects::reset);
                 call_abort = true;
             }
         }

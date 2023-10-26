@@ -34,7 +34,7 @@ namespace shamsys::details {
             return std::to_string(signum);
         };
 
-        std::cout << "... received signal world rank=" + std::to_string(shammpi::world_rank()) +
+        std::cout << "... received signal world rank=" + std::to_string(shamcomm::world_rank()) +
                          " : " + get_signame() + "\ncurrent stacktrace : \n" +
                          shambase::fmt_callstack()
                   << std::endl;
@@ -43,7 +43,7 @@ namespace shamsys::details {
 
         
         #ifdef SHAMROCK_USE_PROFILING
-        shambase::details::dump_profiling(shammpi::world_rank());
+        shambase::details::dump_profiling(shamcomm::world_rank());
         #endif
 
 

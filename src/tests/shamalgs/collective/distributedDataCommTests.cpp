@@ -25,8 +25,8 @@ void distribdata_sparse_comm_test(std::string prefix, shamsys::CommunicationProt
     using namespace shamsys::instance;
     using namespace shamsys;
 
-    const i32 wsize = shammpi::world_size();
-    const i32 wrank = shammpi::world_rank();
+    const i32 wsize = shamcomm::world_size();
+    const i32 wrank = shamcomm::world_rank();
 
     u32 npatch       = wsize * 5;
     u32 nbuf_p_patch = 2;

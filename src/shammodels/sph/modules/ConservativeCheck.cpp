@@ -49,7 +49,7 @@ void shammodels::sph::modules::ConservativeCheck<Tvec, SPHKernel>::check_conserv
     });
     Tvec sum_p = gpart_mass * shamalgs::collective::allreduce_sum(tmpp);
 
-    if (shammpi::world_rank() == 0) {
+    if (shamcomm::world_rank() == 0) {
         if (!storage.sinks.is_empty()) {
             std::vector<Sink> &sink_parts = storage.sinks.get();
             for (Sink &s : sink_parts) {
@@ -69,7 +69,7 @@ void shammodels::sph::modules::ConservativeCheck<Tvec, SPHKernel>::check_conserv
     });
     Tvec sum_a = gpart_mass * shamalgs::collective::allreduce_sum(tmpa);
 
-    if (shammpi::world_rank() == 0) {
+    if (shamcomm::world_rank() == 0) {
         if (!storage.sinks.is_empty()) {
             std::vector<Sink> &sink_parts = storage.sinks.get();
             for (Sink &s : sink_parts) {
@@ -90,7 +90,7 @@ void shammodels::sph::modules::ConservativeCheck<Tvec, SPHKernel>::check_conserv
     });
     Tscal sum_e = gpart_mass * shamalgs::collective::allreduce_sum(tmpe);
 
-    if (shammpi::world_rank() == 0) {
+    if (shamcomm::world_rank() == 0) {
         cv_checks += shambase::format("    sum e = {}\n", sum_e);
     }
 
@@ -123,11 +123,11 @@ void shammodels::sph::modules::ConservativeCheck<Tvec, SPHKernel>::check_conserv
 
     Tscal de = shamalgs::collective::allreduce_sum(tmp_de);
 
-    if (shammpi::world_rank() == 0) {
+    if (shamcomm::world_rank() == 0) {
         cv_checks += shambase::format("    sum de = {}", de);
     }
 
-    if (shammpi::world_rank() == 0) {
+    if (shamcomm::world_rank() == 0) {
         logger::info_ln("sph::Model", cv_checks);
     }
 }

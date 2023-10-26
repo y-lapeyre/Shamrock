@@ -51,7 +51,7 @@ namespace shamalgs::collective {
 
             i32 iterator = 0;
             for (u64 i = 0; i < message_send.size(); i++) {
-                local_send_vec_comm_ranks[i] = sham::pack32(shammpi::world_rank(), message_send[i].receiver_rank);
+                local_send_vec_comm_ranks[i] = sham::pack32(shamcomm::world_rank(), message_send[i].receiver_rank);
             }
 
             vector_allgatherv(local_send_vec_comm_ranks, global_comm_ranks, MPI_COMM_WORLD);
@@ -80,7 +80,7 @@ namespace shamalgs::collective {
         for(u32 i = 0; i < global_comm_ranks.size(); i++){
             u32_2 comm_ranks = sham::unpack32(global_comm_ranks[i]);
 
-            if(comm_ranks.x() == shammpi::world_rank()){
+            if(comm_ranks.x() == shamcomm::world_rank()){
 
                 auto & payload = message_send[send_idx].payload;
 
@@ -106,7 +106,7 @@ namespace shamalgs::collective {
         for(u32 i = 0; i < global_comm_ranks.size(); i++){
             u32_2 comm_ranks = sham::unpack32(global_comm_ranks[i]);
 
-            if(comm_ranks.y() == shammpi::world_rank()){
+            if(comm_ranks.y() == shamcomm::world_rank()){
 
                 RecvPayload payload;
                 payload.sender_ranks = comm_ranks.x();

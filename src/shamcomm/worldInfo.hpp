@@ -17,7 +17,7 @@
 
 #include "shambase/aliases_int.hpp"
 
-namespace shammpi {
+namespace shamcomm {
 
     /**
      * @brief the MPI world rank
@@ -31,4 +31,4 @@ namespace shammpi {
 
     void fetch_world_info();
 
-} // namespace shammpi
+} // namespace shamcomm

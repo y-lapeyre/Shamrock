@@ -133,11 +133,11 @@ std::vector<u64> PatchScheduler::add_root_patches(std::vector<shamrock::patch::P
         patch_list._next_patch_id++;
 
 
-        if (shammpi::world_rank() == node_owner_id) {
+        if (shamcomm::world_rank() == node_owner_id) {
             patch_data.owned_data.add_obj(root.id_patch , PatchData(pdl));
             logger::debug_sycl_ln("Scheduler", "adding patch data");
         } else{
-            logger::debug_sycl_ln("Scheduler", "patch data wasn't added rank =",shammpi::world_rank(), " ower =",node_owner_id);
+            logger::debug_sycl_ln("Scheduler", "patch data wasn't added rank =",shamcomm::world_rank(), " ower =",node_owner_id);
         }
 
         patch_tree.insert_root_node(root.id_patch, coord);
@@ -330,7 +330,7 @@ void PatchScheduler::scheduler_step(bool do_split_merge, bool do_load_balancing)
         std::optional<shambase::Timer> load_balance_apply = {};
 
         void print_stats(){
-            if(shammpi::world_rank() == 0){
+            if(shamcomm::world_rank() == 0){
                 f64 total = global_timer.nanosec;
                 std::string str = "";
                 str += "Scheduler step timings : ";
@@ -773,7 +773,7 @@ inline void PatchScheduler::merge_patches(std::unordered_set<u64> merge_rq){
         //print list of patch that will merge
         //std::cout << format("  -> (%d %d %d %d %d %d %d %d)\n", patch_id0, patch_id1, patch_id2, patch_id3, patch_id4, patch_id5, patch_id6, patch_id7);
         
-        if(patch_list.global[patch_list.id_patch_to_global_idx[ patch_id0 ]].node_owner_id == shammpi::world_rank()){
+        if(patch_list.global[patch_list.id_patch_to_global_idx[ patch_id0 ]].node_owner_id == shamcomm::world_rank()){
             patch_data.merge_patchdata(patch_id0, {patch_id0, patch_id1, patch_id2, patch_id3, patch_id4, patch_id5, patch_id6, patch_id7});
         }
 
@@ -926,7 +926,7 @@ std::vector<std::unique_ptr<shamrock::patch::PatchData>> PatchScheduler::gather_
     std::vector<std::unique_ptr<PatchData>> ret;
 
 
-    if (shammpi::world_rank() == 0) {
+    if (shamcomm::world_rank() == 0) {
          ret.resize(plist.size());
     }
 
@@ -936,12 +936,12 @@ std::vector<std::unique_ptr<shamrock::patch::PatchData>> PatchScheduler::gather_
 
     for (u32 i = 0; i < plist.size(); i++) {
         auto & cpatch = plist[i];
-        if(cpatch.node_owner_id == shammpi::world_rank()){
+        if(cpatch.node_owner_id == shamcomm::world_rank()){
             patchdata_isend(pdata.get(cpatch.id_patch), rq_lst, 0, i, MPI_COMM_WORLD);
         }
     }
 
-    if(shammpi::world_rank() == 0){
+    if(shamcomm::world_rank() == 0){
         for (u32 i = 0; i < plist.size(); i++) {
             ret.at(i) = std::make_unique<PatchData>(pdl);
             patchdata_irecv_probe(*ret.at(i),rq_lst, plist[i].node_owner_id, i, MPI_COMM_WORLD);

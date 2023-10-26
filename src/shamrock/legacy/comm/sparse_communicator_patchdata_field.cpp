@@ -37,7 +37,7 @@ StackEntry stack_loc{};
                     const Patch &psend = communicator.global_patch_list[communicator.send_comm_vec[i].x()];
                     const Patch &precv = communicator.global_patch_list[communicator.send_comm_vec[i].y()];
 
-                    //if(precv.node_owner_id >= shammpi::world_size()){
+                    //if(precv.node_owner_id >= shamcomm::world_size()){
                     //    throw "";
                     //}
 
@@ -46,7 +46,7 @@ StackEntry stack_loc{};
                         dtcnt += send_comm_pdat[i]->memsize();
                         vec.push_back({psend.id_patch, send_comm_pdat[i]->duplicate_to_ptr()});
                     } else {
-                        //std::cout << "send : " << shammpi::world_rank() << " " << precv.node_owner_id << std::endl;
+                        //std::cout << "send : " << shamcomm::world_rank() << " " << precv.node_owner_id << std::endl;
                         dtcnt += patchdata_field::isend<T>(*send_comm_pdat[i], rq_lst, precv.node_owner_id, communicator.local_comm_tag[i], MPI_COMM_WORLD);
                     }
                     
@@ -61,7 +61,7 @@ StackEntry stack_loc{};
                     const Patch &psend = communicator.global_patch_list[communicator.global_comm_vec[i].x()];
                     const Patch &precv = communicator.global_patch_list[communicator.global_comm_vec[i].y()];
 
-                    if (precv.node_owner_id == shammpi::world_rank()) {
+                    if (precv.node_owner_id == shamcomm::world_rank()) {
 
                         if (psend.node_owner_id != precv.node_owner_id) {
                             

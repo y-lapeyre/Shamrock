@@ -39,12 +39,12 @@ Test_start("patch::patch_reduc_tree::", generation, -1) {
     patchdata_layout::set(1, 0, 0, 0, 0, 0);
     patchdata_layout::sync(MPI_COMM_WORLD);
 
-    if (shammpi::world_rank() == 0) {
+    if (shamcomm::world_rank() == 0) {
         Patch p;
 
         p.data_count    = 1e4;
         p.load_value    = 1e4;
-        p.node_owner_id = shammpi::world_rank();
+        p.node_owner_id = shamcomm::world_rank();
 
         p.x_min = 0;
         p.y_min = 0;
@@ -133,7 +133,7 @@ Test_start("patch::patch_reduc_tree::", generation, -1) {
 
         
 
-        sched.dump_local_patches(format("patches_%d_node%d", 0, shammpi::world_rank()));
+        sched.dump_local_patches(format("patches_%d_node%d", 0, shamcomm::world_rank()));
     }
 
     for (u32 stepi = 1; stepi < 6; stepi++) {
@@ -186,7 +186,7 @@ Test_start("patch::patch_reduc_tree::", generation, -1) {
             interface_hndl.comm_interfaces(sched,false);
             interface_hndl.print_current_interf_map();
 
-            sched.dump_local_patches(format("patches_%d_node%d", stepi, shammpi::world_rank()));
+            sched.dump_local_patches(format("patches_%d_node%d", stepi, shamcomm::world_rank()));
 
 
             for(auto & [id,pdat] : sched.patch_data.owned_data){

@@ -91,12 +91,12 @@ TestStart(Unittest, "patchdata.cpp/isend_irecv",patch_data_isend_irecv, 2){
     PatchData recv_d(pdl);
 
     
-    if(shammpi::world_rank() == 0){
+    if(shamcomm::world_rank() == 0){
         patchdata_isend(d1_check, rq_lst, 1, 0, MPI_COMM_WORLD);
         patchdata_irecv_probe(recv_d,rq_lst, 1, 0, MPI_COMM_WORLD);
     }
 
-    if(shammpi::world_rank() == 1){
+    if(shamcomm::world_rank() == 1){
         patchdata_isend(d2_check, rq_lst, 0, 0, MPI_COMM_WORLD);
         patchdata_irecv_probe(recv_d,rq_lst, 0, 0, MPI_COMM_WORLD);
     }
@@ -104,16 +104,16 @@ TestStart(Unittest, "patchdata.cpp/isend_irecv",patch_data_isend_irecv, 2){
 
 
 
-    //std::cout << "request len : [" << shammpi::world_rank() << "] " << rq_lst.size() << std::endl;
+    //std::cout << "request len : [" << shamcomm::world_rank() << "] " << rq_lst.size() << std::endl;
 
     waitall_pdat_mpi_rq(rq_lst);
 
     
-    if(shammpi::world_rank() == 0){
+    if(shamcomm::world_rank() == 0){
         shamtest::asserts().assert_bool("recv_d == d2_check", patch_data_check_match(recv_d, d2_check));
     }
 
-    if(shammpi::world_rank() == 1){
+    if(shamcomm::world_rank() == 1){
         shamtest::asserts().assert_bool("recv_d == d1_check", patch_data_check_match(recv_d, d1_check));
     }
     

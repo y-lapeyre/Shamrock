@@ -33,7 +33,7 @@ namespace shamalgs::collective {
         u64 scan_val;
         mpi::exscan(&byte_count, &scan_val, 1, get_mpi_type<u64>(), MPI_SUM, MPI_COMM_WORLD);
 
-        if(shammpi::world_rank() == 0){
+        if(shamcomm::world_rank() == 0){
             scan_val = 0;
         }
 
@@ -50,7 +50,7 @@ namespace shamalgs::collective {
         u64 scan_val;
         mpi::exscan(&byte_count, &scan_val, 1, get_mpi_type<u64>(), MPI_SUM, MPI_COMM_WORLD);
 
-        if(shammpi::world_rank() == 0){
+        if(shamcomm::world_rank() == 0){
             scan_val = 0;
         }
 
