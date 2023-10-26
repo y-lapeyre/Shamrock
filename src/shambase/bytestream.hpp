@@ -23,46 +23,32 @@
 namespace shambase {
 
     template<class T>
-    inline void stream_write(std::basic_stringstream<u8> &stream, T &obj) {
-        stream.write(reinterpret_cast<u8 const *>(&obj), sizeof(obj));
+    inline void stream_write(std::basic_stringstream<byte> &stream, T &obj) {
+        stream.write(reinterpret_cast<byte const *>(&obj), sizeof(obj));
     }
 
     template<class T>
-    inline void stream_read(std::basic_stringstream<u8> &stream, T &obj) {
-        stream.read(reinterpret_cast<u8 *>(&obj), sizeof(obj));
+    inline void stream_read(std::basic_stringstream<byte> &stream, T &obj) {
+        stream.read(reinterpret_cast<byte *>(&obj), sizeof(obj));
     }
 
-    inline void stream_write_string(std::basic_stringstream<u8> &stream, std::string &s) {
+    inline void stream_write_string(std::basic_stringstream<byte> &stream, std::string &s) {
         u64 strlen = s.size();
         stream_write(stream, strlen);
-        stream.write(reinterpret_cast<u8 const *>(s.data()), strlen * sizeof(char));
+        stream.write(reinterpret_cast<byte const *>(s.data()), strlen * sizeof(char));
     }
 
-    inline void stream_read_string(std::basic_stringstream<u8> &stream, std::string &s) {
+    inline void stream_read_string(std::basic_stringstream<byte> &stream, std::string &s) {
         u64 strlen;
         stream_read<u64>(stream, strlen);
         s.resize(strlen);
-        stream.read(reinterpret_cast<u8 *>(s.data()), strlen * sizeof(char));
-    }
-
-    inline void
-    stream_write_bytebuf(std::basic_stringstream<u8> &stream, std::basic_string<u8> &s) {
-        u64 strlen = s.size();
-        stream_write(stream, strlen);
-        stream.write(reinterpret_cast<u8 const *>(s.data()), strlen * sizeof(u8));
-    }
-
-    inline void stream_read_bytebuf(std::basic_stringstream<u8> &stream, std::basic_string<u8> &s) {
-        u64 strlen;
-        stream_read<u64>(stream, strlen);
-        s.resize(strlen);
-        stream.read(reinterpret_cast<u8 *>(s.data()), strlen * sizeof(u8));
+        stream.read(reinterpret_cast<byte *>(s.data()), strlen * sizeof(char));
     }
 
     namespace details {
         template<typename T>
         using serialize_t =
-            decltype(std::declval<T>().serialize(std::declval<std::basic_stringstream<u8> &>()));
+            decltype(std::declval<T>().serialize(std::declval<std::basic_stringstream<byte> &>()));
 
         template<typename Container, typename = std::void_t<>>
         struct has_serialize : std::false_type {};
@@ -75,7 +61,7 @@ namespace shambase {
 
         template<typename T>
         using deserialize_t =
-            decltype(T::deserialize(std::declval<std::basic_stringstream<u8> &>()));
+            decltype(T::deserialize(std::declval<std::basic_stringstream<byte> &>()));
 
         template<typename Container, typename = std::void_t<>>
         struct has_deserialize : std::false_type {};
@@ -114,7 +100,7 @@ namespace shambase {
      * @param vec 
      */
     template<class T>
-    inline void stream_write_vector(std::basic_stringstream<u8> &stream, std::vector<T> &vec) {
+    inline void stream_write_vector(std::basic_stringstream<byte> &stream, std::vector<T> &vec) {
 
         static_assert(
             details::has_serialize_v<T>, "the template class must have serialize implemented");
@@ -138,7 +124,7 @@ namespace shambase {
      * @param vec 
      */
     template<class T>
-    inline void stream_read_vector(std::basic_stringstream<u8> &stream, std::vector<T> &vec) {
+    inline void stream_read_vector(std::basic_stringstream<byte> &stream, std::vector<T> &vec) {
         static_assert(
             details::has_serialize_v<T>, "the template class must have deserialize implemented");
 
@@ -157,7 +143,7 @@ namespace shambase {
 
 
     template<class T>
-    inline void stream_write_vector_trivial(std::basic_stringstream<u8> &stream, std::vector<T> &vec) {
+    inline void stream_write_vector_trivial(std::basic_stringstream<byte> &stream, std::vector<T> &vec) {
 
         u32 flag = details::VALIDATION_FLAGS::VECTOR;
         stream_write(stream, flag);
@@ -165,7 +151,7 @@ namespace shambase {
         u64 len = vec.size();
         stream_write(stream, len);
         
-        stream.write(reinterpret_cast<u8 const *>(vec.data()), len * sizeof(T));
+        stream.write(reinterpret_cast<byte const *>(vec.data()), len * sizeof(T));
     }
 
     /**
@@ -177,7 +163,7 @@ namespace shambase {
      * @param vec 
      */
     template<class T>
-    inline void stream_read_vector_trivial(std::basic_stringstream<u8> &stream, std::vector<T> &vec) {
+    inline void stream_read_vector_trivial(std::basic_stringstream<byte> &stream, std::vector<T> &vec) {
 
         u32 flag;
         stream_read(stream, flag);
@@ -189,7 +175,7 @@ namespace shambase {
         stream_read(stream, len);
         vec.resize(len);
         
-        stream.read(reinterpret_cast<u8 *>(vec.data()),  len * sizeof(T));
+        stream.read(reinterpret_cast<byte *>(vec.data()),  len * sizeof(T));
     }
 
 } // namespace shambase

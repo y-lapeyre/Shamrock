@@ -33,10 +33,10 @@ namespace shamtest::details {
         return acc;
     }
 
-    void TestDataList::serialize(std::basic_stringstream<u8> &stream) {
+    void TestDataList::serialize(std::basic_stringstream<byte> &stream) {
         shambase::stream_write_vector(stream, test_data);
     }
-    TestDataList TestDataList::deserialize(std::basic_stringstream<u8> &stream) {
+    TestDataList TestDataList::deserialize(std::basic_stringstream<byte> &stream) {
         TestDataList out;
 
         shambase::stream_read_vector(stream, out.test_data);

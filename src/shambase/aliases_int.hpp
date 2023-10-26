@@ -26,6 +26,8 @@ using u32 = std::uint32_t;
 using u16 = std::uint16_t;
 using u8  = std::uint8_t;
 
+using byte = char;
+
 
 constexpr u8 operator""_u8(unsigned long long n) { return u8(n); }
 constexpr u16 operator""_u16(unsigned long long n) { return u16(n); }

@@ -12,7 +12,7 @@
  * @brief 
  */
 
-#include "shammpi/worldInfo.hpp"
+#include "shamcomm/worldInfo.hpp"
 #include "shamsys/MicroBenchmark.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/cmdopt.hpp"

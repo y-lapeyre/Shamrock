@@ -64,7 +64,7 @@ namespace shamtest::details {
 
 
 
-    void TestResult::serialize(std::basic_stringstream<u8> &stream) {
+    void TestResult::serialize(std::basic_stringstream<byte> &stream) {
 
         logger::debug_mpi_ln("TEST", "serialize :",name);
 
@@ -82,7 +82,7 @@ namespace shamtest::details {
     }
 
 
-    TestResult TestResult::deserialize(std::basic_stringstream<u8> & reader){
+    TestResult TestResult::deserialize(std::basic_stringstream<byte> & reader){
         TestType type;          
         std::string name;       
         u32 world_rank;         

@@ -12,7 +12,7 @@
  * @brief 
  */
 
-#include "shammpi/worldInfo.hpp"
+#include "shamcomm/worldInfo.hpp"
 #include "shamsys/MpiWrapper.hpp"
 
 namespace shammpi {

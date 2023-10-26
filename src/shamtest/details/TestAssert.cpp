@@ -33,15 +33,15 @@ namespace shamtest::details {
         return acc;
     }
 
-    void TestAssert::serialize(std::basic_stringstream<u8> &stream) {
-        u8 bl = value;
+    void TestAssert::serialize(std::basic_stringstream<byte> &stream) {
+        byte bl = value;
         shambase::stream_write(stream, bl);
         shambase::stream_write_string(stream, name);
         shambase::stream_write_string(stream, comment);
     }
 
-    TestAssert TestAssert::deserialize(std::basic_stringstream<u8> &stream) {
-        u8 bl;
+    TestAssert TestAssert::deserialize(std::basic_stringstream<byte> &stream) {
+        byte bl;
         std::string name;
         std::string comment;
         shambase::stream_read(stream, bl);

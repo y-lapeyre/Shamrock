@@ -203,15 +203,15 @@ namespace shamtest {
         logger::print_faint_row();
     }
 
-    std::basic_string<u8> gather_basic_string(std::basic_string<u8> in) {
+    std::basic_string<byte> gather_basic_string(std::basic_string<byte> in) {
         using namespace shamsys;
 
-        std::basic_string<u8> out_res_string;
+        std::basic_string<byte> out_res_string;
 
         if (shammpi::world_size() == 1) {
             out_res_string = in;
         } else {
-            std::basic_string<u8> loc_string = in;
+            std::basic_string<byte> loc_string = in;
 
             int *counts   = new int[shammpi::world_size()];
             int nelements = (int)loc_string.size();
@@ -226,11 +226,11 @@ namespace shamtest {
 
             // Place to hold the gathered data
             // Allocate at root only
-            u8 *gather_data = NULL;
+            byte *gather_data = NULL;
             if (shammpi::world_rank() == 0)
                 // disps[size-1]+counts[size-1] == total number of elements
                 gather_data =
-                    new u8[disps[shammpi::world_size() - 1] + counts[shammpi::world_size() - 1]];
+                    new byte[disps[shammpi::world_size() - 1] + counts[shammpi::world_size() - 1]];
 
             // Collect everything into the root
             mpi::gatherv(
@@ -245,7 +245,7 @@ namespace shamtest {
                 MPI_COMM_WORLD);
 
             if (shammpi::world_rank() == 0) {
-                out_res_string = std::basic_string<u8>(
+                out_res_string = std::basic_string<byte>(
                     gather_data,
                     disps[shammpi::world_size() - 1] + counts[shammpi::world_size() - 1]);
             }
@@ -263,11 +263,11 @@ namespace shamtest {
         }
 
         // generate payload
-        std::basic_stringstream<u8> outrank;
+        std::basic_stringstream<byte> outrank;
 
         shambase::stream_write_vector(outrank, rank_result);
 
-        std::basic_string<u8> gathered = gather_basic_string(outrank.str());
+        std::basic_string<byte> gathered = gather_basic_string(outrank.str());
 
         if (shammpi::world_rank() != 0) {
             return {};
@@ -277,7 +277,7 @@ namespace shamtest {
 
         logger::raw_ln("Test result gathered :", gathered.size(), "bytes");
 
-        std::basic_stringstream<u8> reader(gathered);
+        std::basic_stringstream<byte> reader(gathered);
 
         std::vector<details::TestResult> out;
 

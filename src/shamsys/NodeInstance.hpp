@@ -20,7 +20,7 @@
 
 
 #include "shambase/aliases_int.hpp"
-#include "shammpi/worldInfo.hpp"
+#include "shamcomm/worldInfo.hpp"
 #include <vector>
 #include <sycl/sycl.hpp>
 
