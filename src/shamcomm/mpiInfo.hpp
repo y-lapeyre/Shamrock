@@ -6,6 +6,8 @@
 //
 // -------------------------------------------------------//
 
+#pragma once
+
 /**
  * @file worldInfo.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
@@ -13,15 +15,15 @@
  *
  */
 
-#include "mpiErrorCheck.hpp"
-#include "mpi.h"
-#include <cstdio>
+namespace shamcomm {
 
-void shamcomm::check_mpi_return(int ret, const char *log) {
+    enum StateMPI_Aware { Unknown, Yes, No };
 
-    if (ret != MPI_SUCCESS) {
-        fprintf(stderr, "error in MPI call : %s\n", log);
-        MPI_Abort(MPI_COMM_WORLD, 10);
-    }
-    
-}
+    extern StateMPI_Aware mpi_cuda_aware;
+    extern StateMPI_Aware mpi_rocm_aware;
+
+    void fetch_mpi_capabilities();
+
+    void print_mpi_capabilities();
+
+} // namespace shamcomm
