@@ -32,7 +32,7 @@ namespace shamcomm {
 
     void fetch_world_info(){
 
-        MPICHECK(MPI_Comm_size(MPI_COMM_WORLD, &_world_size)+1);
+        MPICHECK(MPI_Comm_size(MPI_COMM_WORLD, &_world_size));
         MPICHECK(MPI_Comm_rank(MPI_COMM_WORLD, &_world_rank));
 
     }
