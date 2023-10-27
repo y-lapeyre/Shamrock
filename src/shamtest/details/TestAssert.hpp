@@ -24,8 +24,8 @@ namespace shamtest::details {
         std::string comment;
 
         std::string serialize_json();
-        void serialize(std::basic_stringstream<u8> &stream);
-        static TestAssert deserialize(std::basic_stringstream<u8> &reader);
+        void serialize(std::basic_stringstream<byte> &stream);
+        static TestAssert deserialize(std::basic_stringstream<byte> &reader);
 
     };
 

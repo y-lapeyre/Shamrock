@@ -39,7 +39,7 @@ void models::nbody::NBodySetup<flt>::add_particules_fcc(PatchScheduler & sched, 
 
     using namespace shamrock::patch;
 
-    if(shamsys::instance::world_rank == 0){
+    if(shamcomm::world_rank() == 0){
         std::vector<vec> vec_acc;
 
         generic::setup::generators::add_particles_fcc(

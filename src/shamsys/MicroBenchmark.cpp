@@ -34,16 +34,16 @@ namespace shamsys::microbench{
 void shamsys::run_micro_benchmark(){
     StackEntry stack_loc{};
 
-    if(instance::world_rank == 0){
+    if(shamcomm::world_rank() == 0){
         logger::raw_ln("Running micro benchamrks :");
     }
 
 
     u32 wr1 = 0;
-    u32 wr2 = instance::world_size-1;
+    u32 wr2 = shamcomm::world_size()-1;
 
     microbench::p2p_bandwith(wr1, wr2);
-    if(instance::world_size > 1){
+    if(shamcomm::world_size() > 1){
         microbench::p2p_latency(wr1, wr2);
     }
 }
@@ -51,7 +51,7 @@ void shamsys::run_micro_benchmark(){
 void shamsys::microbench::p2p_bandwith(u32 wr_sender, u32 wr_receiv){
     StackEntry stack_loc{};
 
-    u32 wr = instance::world_rank;
+    u32 wr = shamcomm::world_rank();
 
     u64 length = 1024UL*1014UL*8UL; //8MB messages
     CommunicationBuffer buf_recv{length, shamsys::get_protocol()};
@@ -94,7 +94,7 @@ void shamsys::microbench::p2p_bandwith(u32 wr_sender, u32 wr_receiv){
 
     }while(shamalgs::collective::allreduce_min(t) < 1);
 
-    if(instance::world_rank == 0){
+    if(shamcomm::world_rank() == 0){
         logger::raw_ln(shambase::format(" - p2p bandwith : {:0.2f} GB.s^-1 (ranks : {} -> {}) (loops : {})", 
             (f64(length*loops) / t)*1e-9 , 
             wr_sender, 
@@ -110,7 +110,7 @@ void shamsys::microbench::p2p_latency(u32 wr1, u32 wr2){
         throw shambase::throw_with_loc<std::invalid_argument>("can not launch this test with same ranks");
     }
 
-    u32 wr = instance::world_rank;
+    u32 wr = shamcomm::world_rank();
 
     u64 length = 8ULL; //8B messages
     CommunicationBuffer buf_recv{length, shamsys::get_protocol()};
@@ -147,7 +147,7 @@ void shamsys::microbench::p2p_latency(u32 wr1, u32 wr2){
 
     }while(shamalgs::collective::allreduce_min(t) < 1);
 
-    if(instance::world_rank == 0){
+    if(shamcomm::world_rank() == 0){
         logger::raw_ln(shambase::format(" - p2p latency  : {:.4e} s (ranks : {} <-> {}) (loops : {})", 
             t / f64(loops) , 
             wr1, 

@@ -34,8 +34,8 @@ namespace shamtest::details {
         std::string serialize_json();
 
 
-        void serialize(std::basic_stringstream<u8> &stream);
-        static TestData deserialize(std::basic_stringstream<u8> &stream);
+        void serialize(std::basic_stringstream<byte> &stream);
+        static TestData deserialize(std::basic_stringstream<byte> &stream);
     };
 
 } // namespace shamtest::details

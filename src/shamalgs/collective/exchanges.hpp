@@ -37,7 +37,7 @@ namespace shamalgs::collective {
 
         u32 local_count = send_vec.size();
 
-        int* table_data_count = new int[shamsys::instance::world_size];
+        int* table_data_count = new int[shamcomm::world_size()];
 
         //crash
         mpi::allgather(
@@ -53,11 +53,11 @@ namespace shamalgs::collective {
 
 
 
-        int* node_displacments_data_table = new int[shamsys::instance::world_size];
+        int* node_displacments_data_table = new int[shamcomm::world_size()];
 
         node_displacments_data_table[0] = 0;
 
-        for(u32 i = 1 ; i < shamsys::instance::world_size; i++){
+        for(u32 i = 1 ; i < shamcomm::world_size(); i++){
             node_displacments_data_table[i] = node_displacments_data_table[i-1] + table_data_count[i-1];
         }
         
@@ -105,7 +105,7 @@ namespace shamalgs::collective {
 
 
 
-        int* table_data_count = new int[shamsys::instance::world_size];
+        int* table_data_count = new int[shamcomm::world_size()];
 
         mpi::allgather(
             &local_count, 
@@ -120,11 +120,11 @@ namespace shamalgs::collective {
 
 
 
-        int* node_displacments_data_table = new int[shamsys::instance::world_size];
+        int* node_displacments_data_table = new int[shamcomm::world_size()];
 
         node_displacments_data_table[0] = 0;
 
-        for(u32 i = 1 ; i < shamsys::instance::world_size; i++){
+        for(u32 i = 1 ; i < shamcomm::world_size(); i++){
             node_displacments_data_table[i] = node_displacments_data_table[i-1] + table_data_count[i-1];
         }
         
@@ -172,7 +172,7 @@ namespace shamalgs::collective {
         mpi::allreduce(&local_count, &global_len, 1, MPI_INT , MPI_SUM, MPI_COMM_WORLD);
         recv_vec.resize(global_len);
 
-        int* table_data_count = new int[shamsys::instance::world_size];
+        int* table_data_count = new int[shamcomm::world_size()];
 
         mpi::allgather(
             &local_count, 
@@ -187,11 +187,11 @@ namespace shamalgs::collective {
 
 
 
-        int* node_displacments_data_table = new int[shamsys::instance::world_size];
+        int* node_displacments_data_table = new int[shamcomm::world_size()];
 
         node_displacments_data_table[0] = 0;
 
-        for(u32 i = 1 ; i < shamsys::instance::world_size; i++){
+        for(u32 i = 1 ; i < shamcomm::world_size(); i++){
             node_displacments_data_table[i] = node_displacments_data_table[i-1] + table_data_count[i-1];
         }
         

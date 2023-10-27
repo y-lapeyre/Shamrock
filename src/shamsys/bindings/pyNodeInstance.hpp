@@ -56,7 +56,7 @@ namespace shamsys::instance {
         m.def(
             "world_rank",
             []() {
-                return world_rank;
+                return shamcomm::world_rank();
             },
             R"pbdoc(
             Get the world rank
@@ -65,7 +65,7 @@ namespace shamsys::instance {
         m.def(
             "world_size",
             []() {
-                return world_size;
+                return shamcomm::world_size();
             },
             R"pbdoc(
             Get the world size

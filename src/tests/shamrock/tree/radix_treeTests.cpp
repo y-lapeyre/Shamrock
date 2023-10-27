@@ -379,13 +379,13 @@ void test_tree_comm(TestResults &__test_result_ref){
 
 
 
-    if(shamsys::instance::world_rank == 0){
+    if(shamcomm::world_rank() == 0){
         std::vector<tree_comm::RadixTreeMPIRequest<morton_mode, vec>> rqs;
         tree_comm::comm_isend(rtree, rqs, 1, 0, MPI_COMM_WORLD);
         tree_comm::wait_all(rqs);
     }
 
-    if(shamsys::instance::world_rank == 1){
+    if(shamcomm::world_rank() == 1){
         std::vector<tree_comm::RadixTreeMPIRequest<morton_mode, vec>> rqs;
 
         auto rtree_recv = Radix_Tree<morton_mode, vec>::make_empty();

@@ -34,11 +34,11 @@ namespace shamtest::details {
         return acc;
     }
 
-    void TestAssertList::serialize(std::basic_stringstream<u8> &stream) {
+    void TestAssertList::serialize(std::basic_stringstream<byte> &stream) {
         shambase::stream_write_vector(stream, asserts);
     }
 
-    TestAssertList TestAssertList::deserialize(std::basic_stringstream<u8> &stream) { 
+    TestAssertList TestAssertList::deserialize(std::basic_stringstream<byte> &stream) { 
         std::vector<TestAssert> tmp;
         shambase::stream_read_vector(stream, tmp);
         return {std::move(tmp)}; 

@@ -20,6 +20,7 @@
 
 
 #include "shambase/aliases_int.hpp"
+#include "shamcomm/worldInfo.hpp"
 #include <vector>
 #include <sycl/sycl.hpp>
 
@@ -150,16 +151,6 @@ namespace shamsys::instance {
     ////////////////////////////
 
     // idea to handle multiple GPU with MPI : i32 get_mpi_tag(u32 tag);
-
-    /**
-     * @brief the MPI world rank
-     */
-    inline u32 world_rank;
-
-    /**
-     * @brief the MPI world size
-     */
-    inline u32 world_size;
 
     /**
      * @brief Get the process name

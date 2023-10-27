@@ -45,11 +45,11 @@ namespace shamtest::details {
         return acc;
     }
 
-    void DataNode::serialize(std::basic_stringstream<u8> &stream) {
+    void DataNode::serialize(std::basic_stringstream<byte> &stream) {
         shambase::stream_write_string(stream, name);
         shambase::stream_write_vector_trivial(stream, data);
     }
-    DataNode DataNode::deserialize(std::basic_stringstream<u8> &stream) {
+    DataNode DataNode::deserialize(std::basic_stringstream<byte> &stream) {
 
         DataNode out{};
 

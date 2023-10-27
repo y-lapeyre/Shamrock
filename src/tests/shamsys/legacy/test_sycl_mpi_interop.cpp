@@ -129,11 +129,11 @@ void test_type1(TestResults &__test_result_ref,std::mt19937 &  eng, std::uniform
     a_check[0] = T(distval(eng));
     a_check[1] = T(distval(eng));
 
-    if(shamsys::instance::world_rank == 0){
+    if(shamcomm::world_rank() == 0){
         mpi::send(&a_check   , 2, mpi_t   , 1, 0, MPI_COMM_WORLD);
     }
 
-    if(shamsys::instance::world_rank == 1){
+    if(shamcomm::world_rank() == 1){
 
         T a_recv [2];
         MPI_Status st;
@@ -154,11 +154,11 @@ void test_type2(TestResults &__test_result_ref,std::mt19937 &  eng, std::uniform
     a_check[0] = T{distval(eng),distval(eng)};
     a_check[1] = T{distval(eng),distval(eng)};
 
-    if(shamsys::instance::world_rank == 0){
+    if(shamcomm::world_rank() == 0){
         mpi::send(&a_check   , 2, mpi_t   , 1, 0, MPI_COMM_WORLD);
     }
 
-    if(shamsys::instance::world_rank == 1){
+    if(shamcomm::world_rank() == 1){
 
         T a_recv [2];
         MPI_Status st;
@@ -179,11 +179,11 @@ void test_type3(TestResults &__test_result_ref,std::mt19937 &  eng, std::uniform
     a_check[0] = T{distval(eng),distval(eng),distval(eng)};
     a_check[1] = T{distval(eng),distval(eng),distval(eng)};
 
-    if(shamsys::instance::world_rank == 0){
+    if(shamcomm::world_rank() == 0){
         mpi::send(&a_check   , 2, mpi_t   , 1, 0, MPI_COMM_WORLD);
     }
 
-    if(shamsys::instance::world_rank == 1){
+    if(shamcomm::world_rank() == 1){
 
         T a_recv [2];
         MPI_Status st;
@@ -204,11 +204,11 @@ void test_type4(TestResults &__test_result_ref,std::mt19937 &  eng, std::uniform
     a_check[0] = T{distval(eng),distval(eng),distval(eng),distval(eng)};
     a_check[1] = T{distval(eng),distval(eng),distval(eng),distval(eng)};
 
-    if(shamsys::instance::world_rank == 0){
+    if(shamcomm::world_rank() == 0){
         mpi::send(&a_check   , 2, mpi_t   , 1, 0, MPI_COMM_WORLD);
     }
 
-    if(shamsys::instance::world_rank == 1){
+    if(shamcomm::world_rank() == 1){
 
         T a_recv [2];
         MPI_Status st;
@@ -229,11 +229,11 @@ void test_type8(TestResults &__test_result_ref,std::mt19937 &  eng, std::uniform
     a_check[0] = T{distval(eng),distval(eng),distval(eng),distval(eng),distval(eng),distval(eng),distval(eng),distval(eng)};
     a_check[1] = T{distval(eng),distval(eng),distval(eng),distval(eng),distval(eng),distval(eng),distval(eng),distval(eng)};
 
-    if(shamsys::instance::world_rank == 0){
+    if(shamcomm::world_rank() == 0){
         mpi::send(&a_check   , 2, mpi_t   , 1, 0, MPI_COMM_WORLD);
     }
 
-    if(shamsys::instance::world_rank == 1){
+    if(shamcomm::world_rank() == 1){
 
         T a_recv [2];
         MPI_Status st;
@@ -254,11 +254,11 @@ void test_type16(TestResults &__test_result_ref,std::mt19937 &  eng, std::unifor
     a_check[0] = T{distval(eng),distval(eng),distval(eng),distval(eng),distval(eng),distval(eng),distval(eng),distval(eng),distval(eng),distval(eng),distval(eng),distval(eng),distval(eng),distval(eng),distval(eng),distval(eng)};
     a_check[1] = T{distval(eng),distval(eng),distval(eng),distval(eng),distval(eng),distval(eng),distval(eng),distval(eng),distval(eng),distval(eng),distval(eng),distval(eng),distval(eng),distval(eng),distval(eng),distval(eng)};
 
-    if(shamsys::instance::world_rank == 0){
+    if(shamcomm::world_rank() == 0){
         mpi::send(&a_check   , 2, mpi_t   , 1, 0, MPI_COMM_WORLD);
     }
 
-    if(shamsys::instance::world_rank == 1){
+    if(shamcomm::world_rank() == 1){
 
         T a_recv [2];
         MPI_Status st;
@@ -380,7 +380,7 @@ template<class T> inline void test_type_comm(TestResults &__test_result_ref,std:
 
     std::vector<mpi_sycl_interop::BufferMpiRequest<T>> rqs;
 
-    if(shamsys::instance::world_rank == 0){
+    if(shamcomm::world_rank() == 0){
         isend(buf,npart, rqs, 1, 0, MPI_COMM_WORLD);
 
         waitall(rqs);

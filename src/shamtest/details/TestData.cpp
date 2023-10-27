@@ -38,11 +38,11 @@ namespace shamtest::details {
     }
 
 
-        void TestData::serialize(std::basic_stringstream<u8> &stream){
+        void TestData::serialize(std::basic_stringstream<byte> &stream){
             shambase::stream_write_string(stream, dataset_name);
             shambase::stream_write_vector(stream, dataset);
         }
-        TestData TestData::deserialize(std::basic_stringstream<u8> &stream){
+        TestData TestData::deserialize(std::basic_stringstream<byte> &stream){
 
             TestData out;
 
