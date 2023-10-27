@@ -22,8 +22,8 @@
 #include "shambackends/typeAliasVec.hpp"
 #include "shamcomm/worldInfo.hpp"
 #include "shamsys/EnvVariables.hpp"
-#include "shamsys/comm/CommunicationBuffer.hpp"
-#include "shamsys/comm/details/CommunicationBufferImpl.hpp"
+#include "shamcomm/CommunicationBuffer.hpp"
+#include "shamcomm/details/CommunicationBufferImpl.hpp"
 #include "shamsys/legacy/cmdopt.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamsys/MpiWrapper.hpp"
@@ -696,7 +696,7 @@ print_buf = shambase::format("| {:>4} | {:>8} | {:>12} | {:>16} |\n", rank,"???"
 
 
 
-    bool validate_comm(shamsys::CommunicationProtocol prot){
+    bool validate_comm(shamcomm::CommunicationProtocol prot){
 
         u32 nbytes = 1e5;
         sycl::buffer<u8> buf_comp (nbytes);
@@ -708,8 +708,8 @@ print_buf = shambase::format("| {:>4} | {:>8} | {:>12} | {:>16} |\n", rank,"???"
             }
         }
 
-        shamsys::CommunicationBuffer cbuf {buf_comp, prot};
-        shamsys::CommunicationBuffer cbuf_recv {nbytes, prot};
+        shamcomm::CommunicationBuffer cbuf {buf_comp, prot};
+        shamcomm::CommunicationBuffer cbuf_recv {nbytes, prot};
 
         MPI_Request rq1, rq2;
         if(shamcomm::world_rank() == shamcomm::world_size() -1){
@@ -728,7 +728,7 @@ print_buf = shambase::format("| {:>4} | {:>8} | {:>12} | {:>16} |\n", rank,"???"
             MPI_Wait(&rq2, MPI_STATUS_IGNORE);
         }
 
-        sycl::buffer<u8> recv = shamsys::CommunicationBuffer::convert(std::move(cbuf_recv));
+        sycl::buffer<u8> recv = shamcomm::CommunicationBuffer::convert(std::move(cbuf_recv));
 
 
         bool valid = true;
@@ -762,7 +762,7 @@ print_buf = shambase::format("| {:>4} | {:>8} | {:>12} | {:>16} |\n", rank,"???"
 
         using namespace terminal_effects::colors_foreground_8b;
         if(dgpu_mode){
-            if(validate_comm(shamsys::DirectGPU)){
+            if(validate_comm(shamcomm::DirectGPU)){
                 if(shamcomm::world_rank() == 0) logger::raw_ln(" - MPI use Direct Comm :",green + "Working"+ terminal_effects::reset);
             }else{
                 if(shamcomm::world_rank() == 0)logger::raw_ln(" - MPI use Direct Comm :",red + "Fail"+ terminal_effects::reset);
@@ -770,7 +770,7 @@ print_buf = shambase::format("| {:>4} | {:>8} | {:>12} | {:>16} |\n", rank,"???"
                 call_abort = true;
             }
         }else{
-            if(validate_comm(shamsys::CopyToHost)){
+            if(validate_comm(shamcomm::CopyToHost)){
                 if(shamcomm::world_rank() == 0)logger::raw_ln(" - MPI use Copy to Host :",green + "Working"+ terminal_effects::reset);
             }else{
                 if(shamcomm::world_rank() == 0)logger::raw_ln(" - MPI use Copy to Host :",red + "Fail"+ terminal_effects::reset);
