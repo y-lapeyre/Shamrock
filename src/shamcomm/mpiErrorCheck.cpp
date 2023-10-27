@@ -7,7 +7,7 @@
 // -------------------------------------------------------//
 
 /**
- * @file worldInfo.hpp
+ * @file mpiErrorCheck.cpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @brief Use this header to include MPI properly
  *
