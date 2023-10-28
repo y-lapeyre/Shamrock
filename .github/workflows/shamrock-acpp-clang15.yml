@@ -9,7 +9,7 @@ jobs:
 
 
   shamrock_acpp:
-    name: AdaptiveCpp omp clang-${{ matrix.clang }}
+    name: AdaptiveCpp ${{ matrix.profile }} clang-${{ matrix.clang }}
     runs-on: [self-hosted, ubuntu20]
 
     strategy:
@@ -32,7 +32,7 @@ jobs:
       - name: configure Shamrock
         run: |
           python3 buildbot/configure.py --gen ninja --tests --build release \
-            --builddir build --cxxpath /home/docker/compilers/AdaptiveCpp_clang${{matrix.clang}} --compiler acpp --profile ${{ matrix.profiles }}
+            --builddir build --cxxpath /home/docker/compilers/AdaptiveCpp_clang${{matrix.clang}} --compiler acpp --profile ${{ matrix.profile }}
   
       - name: compile Shamrock
         run: |
