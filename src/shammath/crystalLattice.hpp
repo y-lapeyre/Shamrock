@@ -8,6 +8,13 @@
 
 #pragma once
 
+/**
+ * @file crystalLattice.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+
 #include "shambase/aliases_int.hpp"
 #include "shambase/sycl_utils.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"
