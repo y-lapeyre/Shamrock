@@ -67,7 +67,7 @@ jobs:
   shamrock_linux_acpp:
     name: Shamrock Test
     needs: [pragma_check, copyright_check]
-    uses: ./.github/workflows/shamrock-acpp.yml
+    uses: ./.github/workflows/shamrock-acpp-clang15.yml
     
   shamrock_linux_dpcpp:
     name: Shamrock Test
