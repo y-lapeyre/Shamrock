@@ -68,6 +68,16 @@ jobs:
     name: Shamrock Test
     needs: [pragma_check, copyright_check]
     uses: ./.github/workflows/shamrock-acpp-clang15.yml
+
+  shamrock_linux_acpp_asan:
+    name: Shamrock Test
+    needs: [pragma_check, copyright_check]
+    uses: ./.github/workflows/shamrock-acpp-clang15-asan.yml
+
+  shamrock_linux_acpp_cov:
+    name: Shamrock Test
+    needs: [pragma_check, copyright_check]
+    uses: ./.github/workflows/shamrock-acpp-clang15-coverage.yml
     
   shamrock_linux_dpcpp:
     name: Shamrock Test
@@ -89,7 +99,7 @@ jobs:
   upload_doc:
 
     if: github.ref == 'refs/heads/main'
-    needs: [shamrock_linux_acpp, shamrock_linux_dpcpp, make_documentation]
+    needs: [shamrock_linux_acpp,shamrock_linux_acpp_asan,shamrock_linux_acpp_cov, shamrock_linux_dpcpp, make_documentation]
 
     # Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
     permissions:
