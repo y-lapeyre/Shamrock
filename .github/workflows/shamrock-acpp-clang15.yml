@@ -1,10 +1,13 @@
-name: Shamrock (AdaptiveCpp)
+name: Acpp/clang15
+
 
 on:
   workflow_call:
 
 
 jobs:
+
+
   shamrock_acpp_omp_debug_coverage:
     name: AdaptiveCpp coverage omp clang-${{ matrix.clang }}
     runs-on: [self-hosted, ubuntu20]
@@ -102,7 +105,7 @@ jobs:
 
     strategy:
       matrix:
-        clang: [15,16]
+        clang: [15]
         cuda: [11.0.2]
         rocm: [5.4.3]
     #if: false
@@ -156,7 +159,7 @@ jobs:
 
     strategy:
       matrix:
-        clang: [15,16]
+        clang: [15]
         cuda: [11.0.2]
         rocm: [5.4.3]
     #if: false
@@ -211,7 +214,7 @@ jobs:
 
     strategy:
       matrix:
-        clang: [15,16]
+        clang: [15]
         cuda: [11.0.2]
         rocm: [5.4.3]
     #if: false
@@ -279,7 +282,7 @@ jobs:
 
     strategy:
       matrix:
-        clang: [15,16]
+        clang: [15]
         cuda: [11.0.2]
         rocm: [5.4.3]
     #if: false
@@ -332,7 +335,7 @@ jobs:
 
     strategy:
       matrix:
-        clang: [15,16]
+        clang: [15]
         cuda: [11.0.2]
         rocm: [5.4.3]
     #if: false
