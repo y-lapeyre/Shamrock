@@ -19,7 +19,7 @@
 #include <string>
 
 namespace shamcomm {
-    
+
     /**
      * @brief open a mpi file and remove its content
      *
