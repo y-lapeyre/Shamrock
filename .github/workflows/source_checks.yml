@@ -1,4 +1,4 @@
-name: Source code check
+name: Src checks
 
 
 on:

@@ -23,17 +23,17 @@ jobs:
       
       - name: configure Shamrock
         run: |
-          python3 buildbot/configure.py --gen ninja --tests --build debug \
-            --builddir dpcpp_bare_debug --cxxpath /home/docker/compilers/DPCPP --compiler intel_llvm --profile native_cpu
+          python3 buildbot/configure.py --gen ninja --tests --build release \
+            --builddir build --cxxpath /home/docker/compilers/DPCPP --compiler intel_llvm --profile native_cpu
 
       - name: compile Shamrock
         run: |
-          cd dpcpp_bare_debug
+          cd build
           ninja
 
       - name: run Shamrock
         run: |
-          cd dpcpp_bare_debug
+          cd build
           export DPCPP_HOME=/home/docker/compilers/DPCPP
           export PATH=$DPCPP_HOME/bin:$PATH
           export LD_LIBRARY_PATH=$DPCPP_HOME/lib:$LD_LIBRARY_PATH
@@ -46,7 +46,7 @@ jobs:
 
     strategy:
       matrix:
-        cuda: [12.1.1]
+        cuda: [11.0.2]
     
     steps:
     
@@ -60,19 +60,19 @@ jobs:
 
       - name: configure Shamrock
         run: |
-          python3 buildbot/configure.py --gen ninja --tests --build debug \
-            --builddir dpcpp_bare_debug --cxxpath /home/docker/compilers/DPCPP --compiler intel_llvm --profile cuda \
+          python3 buildbot/configure.py --gen ninja --tests --build release \
+            --builddir build --cxxpath /home/docker/compilers/DPCPP --compiler intel_llvm --profile cuda \
             --cxxflags="--cuda-path=/home/docker/opt/cuda" --cmakeargs="-DSHAMROCK_USE_SHARED_LIB=off"
 
       - name: compile Shamrock
         run: |
-          cd dpcpp_bare_debug
+          cd build
           ninja
 
       # no device to run on
       #- name: run Shamrock
       #  run: |
-      #    cd dpcpp_bare_debug
+      #    cd build
       #    export DPCPP_HOME=/home/docker/compilers/DPCPP
       #    export PATH=$DPCPP_HOME/bin:$PATH
       #    export LD_LIBRARY_PATH=$DPCPP_HOME/lib:$LD_LIBRARY_PATH
@@ -100,19 +100,19 @@ jobs:
       
       - name: configure Shamrock
         run: |
-          python3 buildbot/configure.py --gen ninja --tests --build debug \
-            --builddir dpcpp_bare_debug --cxxpath /home/docker/compilers/DPCPP --compiler intel_llvm --profile hip-gfx906 \
+          python3 buildbot/configure.py --gen ninja --tests --build release \
+            --builddir build --cxxpath /home/docker/compilers/DPCPP --compiler intel_llvm --profile hip-gfx906 \
             --cxxflags="--rocm-path=/opt/rocm" --cmakeargs="-DSHAMROCK_USE_SHARED_LIB=off"
 
       - name: compile Shamrock
         run: |
-          cd dpcpp_bare_debug
+          cd build
           ninja
 
       # no device to run on
       #- name: run Shamrock
       #  run: |
-      #    cd dpcpp_bare_debug
+      #    cd build
       #    export DPCPP_HOME=/home/docker/compilers/DPCPP
       #    export PATH=$DPCPP_HOME/bin:$PATH
       #    export LD_LIBRARY_PATH=$DPCPP_HOME/lib:$LD_LIBRARY_PATH
