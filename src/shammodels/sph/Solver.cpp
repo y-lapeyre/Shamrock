@@ -20,6 +20,7 @@
 #include "shambase/memory.hpp"
 #include "shambase/string.hpp"
 #include "shambase/time.hpp"
+#include "shamcomm/collectives.hpp"
 #include "shammath/sphkernels.hpp"
 #include "shammodels/sph/BasicSPHGhosts.hpp"
 #include "shammodels/sph/SPHSolverImpl.hpp"
@@ -1946,7 +1947,7 @@ auto SPHSolve<Tvec, Kern>::evolve_once(
         100 * (storage.timings_details.io / tstep.elasped_sec()));
 
     std::string gathered = "";
-    shamalgs::collective::gather_str(log_rank_rate, gathered);
+    shamcomm::gather_str(log_rank_rate, gathered);
 
     if (shamcomm::world_rank() == 0) {
         std::string print = "processing rate infos : \n";

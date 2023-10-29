@@ -18,6 +18,7 @@
 #include "shamalgs/collective/exchanges.hpp"
 #include "shambase/string.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"
+#include "shamcomm/collectives.hpp"
 #include "shammodels/generic/setup/generators.hpp"
 #include "shammodels/sph/Solver.hpp"
 #include "shamrock/legacy/utils/geometry_utils.hpp"
@@ -270,7 +271,7 @@ namespace shammodels::sph {
             });
 
             std::string log_gathered = "";
-            shamalgs::collective::gather_str(log, log_gathered);
+            shamcomm::gather_str(log, log_gathered);
 
             if(shamcomm::world_rank() == 0) {
                 logger::info_ln("Model", "Push particles : ", log_gathered);
@@ -306,7 +307,7 @@ namespace shammodels::sph {
             });
 
             log_gathered = "";
-            shamalgs::collective::gather_str(log, log_gathered);
+            shamcomm::gather_str(log, log_gathered);
 
             if(shamcomm::world_rank() == 0) logger::info_ln("Model", "current particle counts : ", log_gathered);
             return part_mass;
@@ -419,7 +420,7 @@ namespace shammodels::sph {
             });
 
             std::string log_gathered = "";
-            shamalgs::collective::gather_str(log, log_gathered);
+            shamcomm::gather_str(log, log_gathered);
 
             if(shamcomm::world_rank() == 0) {
                 logger::info_ln("Model", "Push particles : ", log_gathered);
@@ -455,7 +456,7 @@ namespace shammodels::sph {
             });
 
             log_gathered = "";
-            shamalgs::collective::gather_str(log, log_gathered);
+            shamcomm::gather_str(log, log_gathered);
 
             if(shamcomm::world_rank() == 0) logger::info_ln("Model", "current particle counts : ", log_gathered);
         }
