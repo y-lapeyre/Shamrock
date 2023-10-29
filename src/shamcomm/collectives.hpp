@@ -14,10 +14,7 @@
  * @brief 
  */
 
-#include "shambase/stacktrace.hpp"
-#include "shamcomm/mpi.hpp"
-#include "shamcomm/mpiErrorCheck.hpp"
-#include "shamcomm/worldInfo.hpp"
+#include <string>
 
 namespace shamcomm {
 

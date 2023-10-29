@@ -12,7 +12,11 @@
  * @brief
  */
 
+#include "shambase/stacktrace.hpp"
 #include "shamcomm/collectives.hpp"
+#include "shamcomm/mpi.hpp"
+#include "shamcomm/mpiErrorCheck.hpp"
+#include "shamcomm/worldInfo.hpp"
 
 void shamcomm::gather_str(const std::string &send_vec, std::string &recv_vec) {
     StackEntry stack_loc{};
