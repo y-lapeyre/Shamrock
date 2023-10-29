@@ -29,8 +29,8 @@ jobs:
 
       - name: configure Shamrock
         run: |
-          python3 buildbot/configure.py --gen ninja --tests --build debug \
-            --builddir build --cxxpath /home/docker/compilers/AdaptiveCpp_clang${{matrix.clang}} --compiler acpp --profile omp_sanitizer
+          python3 buildbot/configure.py --gen ninja --tests --build asan \
+            --builddir build --cxxpath /home/docker/compilers/AdaptiveCpp_clang${{matrix.clang}} --compiler acpp --profile omp
   
       - name: compile Shamrock
         run: |
@@ -40,7 +40,7 @@ jobs:
       - name: run Shamrock Unittests world_size = 1
         run: |
           cd build
-          ASAN_OPTIONS=detect_leaks=0 ./shamrock_test --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
+          ASAN_OPTIONS=detect_leaks=0 ./shamrock_test --sycl-ls-map  --sycl-cfg 0:0 --loglevel 10 --benchmark-mpi
   
       - name: run Shamrock Unittests world_size = 2
         run: |

@@ -62,7 +62,7 @@ jobs:
         run: |
           python3 buildbot/configure.py --gen ninja --tests --build debug \
             --builddir dpcpp_bare_debug --cxxpath /home/docker/compilers/DPCPP --compiler intel_llvm --profile cuda \
-            --cxxflags="--cuda-path=/home/docker/opt/cuda"
+            --cxxflags="--cuda-path=/home/docker/opt/cuda" --cmakeargs="-DSHAMROCK_USE_SHARED_LIB=off"
 
       - name: compile Shamrock
         run: |
@@ -102,7 +102,7 @@ jobs:
         run: |
           python3 buildbot/configure.py --gen ninja --tests --build debug \
             --builddir dpcpp_bare_debug --cxxpath /home/docker/compilers/DPCPP --compiler intel_llvm --profile hip-gfx906 \
-            --cxxflags="--rocm-path=/opt/rocm"
+            --cxxflags="--rocm-path=/opt/rocm" --cmakeargs="-DSHAMROCK_USE_SHARED_LIB=off"
 
       - name: compile Shamrock
         run: |
