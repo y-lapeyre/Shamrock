@@ -9,13 +9,13 @@ jobs:
 
 
   src_check:
-    name: "Source code check"
+    name: "Src checks"
     uses: ./.github/workflows/source_checks.yml
 
   
   #make shamrock documentation
   make_documentation:
-    name: "Build : Documentation"
+    name: "Documentation"
     needs: [src_check]
     uses: ./.github/workflows/make_documentation.yml
 
