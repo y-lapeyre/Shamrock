@@ -106,7 +106,7 @@ bool check_periodicity(std::array<i32, 3> coord_min, std::array<i32, 3> coord_ma
     return true;
 }
 
-TestStart(Unittest, "shammath/crystalLattice/LatticeHCP", lattice_periodicity_test, 1) {
+TestStart(Unittest, "shammath/crystalLattice/LatticeHCP/get_periodic_box", lattice_get_periodic_box_test, 1) {
     std::mt19937 eng(0x1111);
 
     for (u32 i = 0; i < 100; i++) {
@@ -125,5 +125,29 @@ TestStart(Unittest, "shammath/crystalLattice/LatticeHCP", lattice_periodicity_te
                 
                 ),
             check_periodicity({xmin, ymin, zmin}, {xmax, ymax, zmax}));
+    }
+}
+
+TestStart(Unittest, "shammath/crystalLattice/LatticeHCP/nearest_periodic_box_indices", lattice_nearest_periodic_box_indices_test, 1) {
+    std::mt19937 eng(0x1111);
+
+    for (u32 i = 0; i < 100; i++) {
+        i32 xmin = shamalgs::random::mock_value(eng, -7, 0);
+        i32 ymin = shamalgs::random::mock_value(eng, -7, 0);
+        i32 zmin = shamalgs::random::mock_value(eng, -7, 0);
+        i32 xmax = shamalgs::random::mock_value(eng, 0, 7);
+        i32 ymax = shamalgs::random::mock_value(eng, 0, 7);
+        i32 zmax = shamalgs::random::mock_value(eng, 0, 7);
+
+        std::pair<std::array<i32, 3>, std::array<i32, 3>> out = shammath::LatticeHCP<f64_3>::nearest_periodic_box_indices({xmin, ymin, zmin}, {xmax, ymax, zmax});
+
+        shamtest ::asserts().assert_bool(
+            shambase::format(
+                "check periodicity : ({} {} {}) ({} {} {}) ({} {} {}) ", 
+                xmin, ymin, zmin, xmax, ymax, zmax,
+                xmax - xmin, ymax - ymin, zmax - zmin
+                
+                ),
+            shammath::LatticeHCP<f64_3>::can_make_periodic_box(out.first, out.second));
     }
 }

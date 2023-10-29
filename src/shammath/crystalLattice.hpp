@@ -11,8 +11,8 @@
 /**
  * @file crystalLattice.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @brief 
- * 
+ * @brief
+ *
  */
 
 #include "shambase/aliases_int.hpp"
@@ -40,10 +40,18 @@ namespace shammath {
         std::string msg_;
     };
 
+    /**
+     * @brief utility for generating HCP crystal lattices
+     *
+     * @tparam Tvec position vector type
+     */
     template<class Tvec>
     class LatticeHCP {
         public:
         static constexpr u32 dim = 3;
+
+        static_assert(
+            dim == shambase::VectorProperties<Tvec>::dimension, "this lattice exist only in dim 3");
 
         using Tscal = shambase::VecComponent<Tvec>;
 
@@ -68,6 +76,39 @@ namespace shammath {
             return dr * r_a;
         }
 
+        /**
+         * @brief check if the given lattice coordinates bounds can make a periodic box
+         * 
+         * @param coord_min integer triplet for the minimal coordinates on the lattice
+         * @param coord_max integer triplet for the maximal coordinates on the lattice
+         * @return true 
+         * @return false 
+         */
+        constexpr static bool can_make_periodic_box(std::array<i32, dim> coord_min, std::array<i32, dim> coord_max){
+            if (coord_max[0] - coord_min[0] < 2) {
+                return false;
+            }
+
+            if ((coord_max[1] + coord_min[1]) % 2 != 0) {
+                return false;
+            }
+
+            if ((coord_max[2] + coord_min[2]) % 2 != 0) {
+                return false;
+            }
+
+            return true;
+        }
+
+        /**
+         * @brief Get the periodic box corresponding to integer lattice coordinates
+         * this function will throw if the coordinates asked cannot make a periodic lattice
+         *
+         * @param dr the particle spacing in the lattice
+         * @param coord_min integer triplet for the minimal coordinates on the lattice
+         * @param coord_max integer triplet for the maximal coordinates on the lattice
+         * @return constexpr CoordRange<Tvec> the periodic box bounds
+         */
         static inline constexpr CoordRange<Tvec>
         get_periodic_box(Tscal dr, std::array<i32, dim> coord_min, std::array<i32, dim> coord_max) {
             Tscal xmin, xmax, ymin, ymax, zmin, zmax;
@@ -81,21 +122,55 @@ namespace shammath {
             zmin = 2 * sycl::sqrt(6.) * coord_min[2] / 3;
             zmax = 2 * sycl::sqrt(6.) * coord_max[2] / 3;
 
-            if (coord_max[0] - coord_min[0] < 2) {
-                throw LatticeError("x axis count should be greater than 1");
-            }
-
-            if ((coord_max[1] + coord_min[1]) % 2 != 0) {
-                throw LatticeError("y axis count should be even");
-            }
-
-            if ((coord_max[2] + coord_min[2]) % 2 != 0) {
-                throw LatticeError("z axis count should be even");
+            if(can_make_periodic_box(coord_min, coord_max)){
+                throw LatticeError( "x axis count should be greater than 1\n"
+                                    "y axis count should be even\n"
+                                    "z axis count should be even");
             }
 
             return {Tvec{xmin, ymin, zmin} * dr, Tvec{xmax, ymax, zmax} * dr};
         }
 
+        /**
+         * @brief get the nearest integer triplets bound that gives a periodic box
+         * 
+         * @param coord_min integer triplet for the minimal coordinates on the lattice
+         * @param coord_max integer triplet for the maximal coordinates on the lattice
+         * @return constexpr std::pair<std::array<i32, dim>, std::array<i32, dim>> the new bounds
+         */
+        static inline constexpr std::pair<std::array<i32, dim>, std::array<i32, dim>>
+        nearest_periodic_box_indices(
+            std::array<i32, dim> coord_min, std::array<i32, dim> coord_max) {
+            std::array<i32, dim> ret_coord_min;
+            std::array<i32, dim> ret_coord_max;
+
+            ret_coord_min[0] = coord_min[0];
+            ret_coord_min[1] = coord_min[1];
+            ret_coord_min[2] = coord_min[2];
+
+            ret_coord_max[0] = coord_max[0];
+            ret_coord_max[1] = coord_max[1];
+            ret_coord_max[2] = coord_max[2];
+
+            if (coord_max[0] - coord_min[0] < 2) {
+                ret_coord_max[0]++;
+            }
+
+            if ((coord_max[1] + coord_min[1]) % 2 != 0) {
+                ret_coord_max[1]++;
+            }
+
+            if ((coord_max[2] + coord_min[2]) % 2 != 0) {
+                ret_coord_max[2]++;
+            }
+
+            return {ret_coord_min, ret_coord_max};
+        }
+
+        /**
+         * @brief Iterator utility to generate the lattice
+         *
+         */
         class Iterator {
             Tscal dr;
             std::array<i32, dim> coord_min;
