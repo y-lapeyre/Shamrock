@@ -16,7 +16,6 @@
 
 #include "PatchDataField.hpp"
 #include "PatchDataLayout.hpp"
-#include "aliases.hpp"
 
 #include "Patch.hpp"
 #include "shambase/exception.hpp"
