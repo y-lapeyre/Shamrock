@@ -5,6 +5,7 @@ target_sources(shamrock_lib
         mpiErrorCheck.cpp
         mpiInfo.cpp
         collectives.cpp
+        io.cpp
 
         details/CommunicationBufferImpl.cpp
     PUBLIC
