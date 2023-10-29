@@ -9,7 +9,7 @@
 #pragma once
 
 /**
- * @file integer.hpp
+ * @file macroLocation.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @brief 
  * 
