@@ -162,7 +162,7 @@ inline void post_insert_data(PatchScheduler &sched) {
     });
 
     std::string log_gathered = "";
-    shamalgs::collective::gather_str(log, log_gathered);
+    shamcomm::gather_str(log, log_gathered);
 
     if (shamcomm::world_rank() == 0)
         logger::info_ln("Model", "current particle counts : ", log_gathered);
@@ -240,7 +240,7 @@ void Model<Tvec, SPHKernel>::push_particle(
         sched.check_patchdata_locality_corectness();
 
         std::string log_gathered = "";
-        shamalgs::collective::gather_str(log, log_gathered);
+        shamcomm::gather_str(log, log_gathered);
 
         if (shamcomm::world_rank() == 0) {
             logger::info_ln("Model", "Push particles : ", log_gathered);
@@ -347,7 +347,7 @@ void Model<Tvec, SPHKernel>::add_cube_fcc_3d(Tscal dr, std::pair<Tvec, Tvec> _bo
         sched.check_patchdata_locality_corectness();
 
         std::string log_gathered = "";
-        shamalgs::collective::gather_str(log, log_gathered);
+        shamcomm::gather_str(log, log_gathered);
 
         if (shamcomm::world_rank() == 0) {
             logger::info_ln("Model", "Push particles : ", log_gathered);
