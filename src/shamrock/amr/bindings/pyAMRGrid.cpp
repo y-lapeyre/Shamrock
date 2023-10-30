@@ -13,7 +13,6 @@
  * \todo move to shambindings folder
  */
 
-#include "aliases.hpp"
 #include "shambindings/pybindaliases.hpp"
 #include "shamrock/amr/AMRGrid.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
