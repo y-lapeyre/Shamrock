@@ -39,11 +39,17 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos(Tscal gp
         return storage.merged_patchdata_ghost.get().get(id).total_elements;
     }));
 
+    storage.soundspeed.set(utility.make_compute_field<Tscal>("soundspeed", 1, [&](u64 id) {
+        return storage.merged_patchdata_ghost.get().get(id).total_elements;
+    }));
+
 
     storage.merged_patchdata_ghost.get().for_each([&](u64 id, MergedPatchData &mpdat) {
         shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
             sycl::accessor P{
                 storage.pressure.get().get_buf_check(id), cgh, sycl::write_only, sycl::no_init};
+            sycl::accessor cs{
+                storage.soundspeed.get().get_buf_check(id), cgh, sycl::write_only, sycl::no_init};
             sycl::accessor U{
                 mpdat.pdat.get_field_buf_ref<Tscal>(iuint_interf), cgh, sycl::read_only};
             sycl::accessor h{
@@ -54,7 +60,12 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos(Tscal gp
 
             cgh.parallel_for(sycl::range<1>{mpdat.total_elements}, [=](sycl::item<1> item) {
                 using namespace shamrock::sph;
-                P[item] = (gamma - 1) * rho_h(pmass, h[item], Kernel::hfactd) * U[item];
+
+                Tscal rho_a = rho_h(pmass, h[item], Kernel::hfactd);
+                Tscal P_a = (gamma - 1) * rho_a * U[item];
+                P[item] = P_a;
+                cs[item] = sycl::sqrt(gamma * P_a / rho_a);
+
             });
         });
     });

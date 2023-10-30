@@ -27,6 +27,7 @@
 #include "shammodels/sph/SPHUtilities.hpp"
 #include "shammodels/sph/math/density.hpp"
 #include "shammodels/sph/math/forces.hpp"
+#include "shammodels/sph/modules/ComputeEos.hpp"
 #include "shammodels/sph/modules/ConservativeCheck.hpp"
 #include "shammodels/sph/modules/DiffOperator.hpp"
 #include "shammodels/sph/modules/DiffOperatorDtDivv.hpp"
@@ -789,43 +790,13 @@ void SPHSolve<Tvec, Kern>::update_artificial_viscosity(Tscal dt) {
 template<class Tvec, template<class> class Kern>
 void SPHSolve<Tvec, Kern>::compute_eos_fields() {
 
-    NamedStackEntry stack_loc{"compute eos"};
-
-    using namespace shamrock;
-
-    shamrock::patch::PatchDataLayout &ghost_layout = storage.ghost_layout.get();
-    u32 ihpart_interf                              = ghost_layout.get_field_idx<Tscal>("hpart");
-    u32 iuint_interf                               = ghost_layout.get_field_idx<Tscal>("uint");
-
-    shamrock::SchedulerUtility utility(scheduler());
-
-    storage.pressure.set(utility.make_compute_field<Tscal>("pressure", 1, [&](u64 id) {
-        return storage.merged_patchdata_ghost.get().get(id).total_elements;
-    }));
-
-    storage.merged_patchdata_ghost.get().for_each([&](u64 id, MergedPatchData &mpdat) {
-        shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-            sycl::accessor P{
-                storage.pressure.get().get_buf_check(id), cgh, sycl::write_only, sycl::no_init};
-            sycl::accessor U{
-                mpdat.pdat.get_field_buf_ref<Tscal>(iuint_interf), cgh, sycl::read_only};
-            sycl::accessor h{
-                mpdat.pdat.get_field_buf_ref<Tscal>(ihpart_interf), cgh, sycl::read_only};
-
-            Tscal pmass = gpart_mass;
-            Tscal gamma = this->eos_gamma;
-
-            cgh.parallel_for(sycl::range<1>{mpdat.total_elements}, [=](sycl::item<1> item) {
-                using namespace shamrock::sph;
-                P[item] = (gamma - 1) * rho_h(pmass, h[item], Kernel::hfactd) * U[item];
-            });
-        });
-    });
+    modules::ComputeEos<Tvec, Kern>(context, solver_config, storage).compute_eos(gpart_mass, eos_gamma);
 }
 
 template<class Tvec, template<class> class Kern>
 void SPHSolve<Tvec, Kern>::reset_eos_fields() {
     storage.pressure.reset();
+    storage.soundspeed.reset();
 }
 
 template<class Tvec, template<class> class Kern>
