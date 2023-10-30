@@ -6,5 +6,6 @@ target_sources(shamrock_lib
         DiffOperatorDtDivv.cpp
         SinkParticlesUpdate.cpp
         ConservativeCheck.cpp
+        ComputeEos.cpp
     PUBLIC
     )
