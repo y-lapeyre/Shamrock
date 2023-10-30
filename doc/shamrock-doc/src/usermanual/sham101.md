@@ -15,4 +15,6 @@ void shammodels::sph::modules::ConservativeCheck<Tvec, SPHKernel>::check_conserv
 the templated function check_conservation takes 2 arguments, one of some type defined in the class Tvec, and another of some type defined in the class SPHKernel. Note that the class SPHKernel is itself templated, hence the template<class> keyword, while Tvec is not a templated class.
 shammodels::sph::modules::ConservativeCheck are abstrations designed to "hide" some parts of the code the user does not need to know.
 
+after templating a function, it is necessary to instanciate it at the end of the file.
+
 
