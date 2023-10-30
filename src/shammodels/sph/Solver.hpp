@@ -59,7 +59,6 @@ namespace shammodels::sph {
         static constexpr Tscal htol_up_tol  = 1.1;
         static constexpr Tscal htol_up_iter = 1.1;
 
-        Tscal eos_gamma;
         Tscal gpart_mass;
         Tscal cfl_cour;
         Tscal cfl_force;

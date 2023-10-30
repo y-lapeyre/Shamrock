@@ -113,7 +113,7 @@ struct shammodels::sph::SolverConfig {
             // hence we copy the soundspeed at the end of the step to a field in the patchdata
             // cf eos module there is another soundspeed field available as a Compute field
             // unifying the patchdata and the ghosts is really needed ...
-            
+
             bool is_varying_alpha =
                 bool(std::get_if<VaryingMM97>(&config)) || bool(std::get_if<VaryingCD10>(&config));
             return is_varying_alpha;
@@ -185,6 +185,34 @@ struct shammodels::sph::SolverConfig {
             };
         }
     };  
+
+
+
+
+
+
+
+    struct EOSConfig{
+        struct Adiabatic{
+            Tscal gamma = 5./3.;
+        };
+
+        using Variant = std::variant<Adiabatic>;
+
+        Variant config = Adiabatic{};
+
+        inline void set_adiabatic(Tscal gamma){
+            config = Adiabatic{gamma};
+        }
+
+    };
+
+    EOSConfig eos_config;
+
+    inline void set_eos_adiabatic(Tscal gamma){
+       eos_config.set_adiabatic(gamma);
+    }
+
 
     BCConfig boundary_config;
 

@@ -34,6 +34,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
 
     py::class_<TConfig>(m, name_config.c_str())
         .def("print_status", &TConfig::print_status)
+        .def("set_eos_adiabatic", &TConfig::set_eos_adiabatic)
         .def("set_artif_viscosity_None", &TConfig::set_artif_viscosity_None)
         .def(
             "set_artif_viscosity_Constant",
@@ -90,7 +91,6 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
         .def("set_cfl_cour", &T::set_cfl_cour)
         .def("set_cfl_force", &T::set_cfl_force)
         .def("set_particle_mass", &T::set_particle_mass)
-        .def("set_eos_gamma", &T::set_eos_gamma)
         .def("rho_h", &T::rho_h)
         .def("get_hfact", &T::get_hfact)
         .def("get_box_dim_fcc_3d",

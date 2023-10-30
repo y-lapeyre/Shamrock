@@ -790,7 +790,7 @@ void SPHSolve<Tvec, Kern>::update_artificial_viscosity(Tscal dt) {
 template<class Tvec, template<class> class Kern>
 void SPHSolve<Tvec, Kern>::compute_eos_fields() {
 
-    modules::ComputeEos<Tvec, Kern>(context, solver_config, storage).compute_eos(gpart_mass, eos_gamma);
+    modules::ComputeEos<Tvec, Kern>(context, solver_config, storage).compute_eos(gpart_mass);
 }
 
 template<class Tvec, template<class> class Kern>
@@ -904,7 +904,6 @@ void SPHSolve<Tvec, Kern>::update_derivs_constantAV() {
 
         shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
             const Tscal pmass    = gpart_mass;
-            const Tscal gamma    = this->eos_gamma;
             const Tscal alpha_u  = constant_av_config->alpha_u;
             const Tscal alpha_AV = constant_av_config->alpha_AV;
             const Tscal beta_AV  = constant_av_config->beta_AV;
@@ -1087,7 +1086,6 @@ void SPHSolve<Tvec, Kern>::update_derivs_mm97() {
 
         shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
             const Tscal pmass   = gpart_mass;
-            const Tscal gamma   = this->eos_gamma;
             const Tscal alpha_u = constant_av_config->alpha_u;
             const Tscal beta_AV = constant_av_config->beta_AV;
 
@@ -1278,7 +1276,6 @@ void SPHSolve<Tvec, Kern>::update_derivs_cd10() {
 
         shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
             const Tscal pmass   = gpart_mass;
-            const Tscal gamma   = this->eos_gamma;
             const Tscal alpha_u = constant_av_config->alpha_u;
             const Tscal beta_AV = constant_av_config->beta_AV;
 
@@ -1590,7 +1587,6 @@ auto SPHSolve<Tvec, Kern>::evolve_once(
                     NamedStackEntry tmppp{"compute vsig"};
                     shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
                         const Tscal pmass    = gpart_mass;
-                        const Tscal gamma    = this->eos_gamma;
                         const Tscal alpha_u  = 1.0;
                         const Tscal alpha_AV = 1.0;
                         const Tscal beta_AV  = 2.0;
@@ -1757,7 +1753,6 @@ auto SPHSolve<Tvec, Kern>::evolve_once(
                             storage.soundspeed.get().get_buf_check(cur_p.id_patch), cgh, sycl::read_only};
                         sycl::accessor cs{buf_cs, cgh, sycl::write_only, sycl::no_init};
 
-                        Tscal gamma = this->eos_gamma;
                         cgh.parallel_for(
                             sycl::range<1>{pdat.get_obj_cnt()}, [=](sycl::item<1> item) {
                                 cs[item]   = cs_in[item];
