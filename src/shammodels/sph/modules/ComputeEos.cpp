@@ -7,7 +7,7 @@
 // -------------------------------------------------------//
 
 /**
- * @file ConservativeCheck.cpp
+ * @file ComputeEos.cpp
  * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief 
  * 

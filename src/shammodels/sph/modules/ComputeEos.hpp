@@ -9,7 +9,7 @@
 #pragma once
 
 /**
- * @file ConservativeCheck.hpp
+ * @file ComputeEos.hpp
  * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief 
  * 
