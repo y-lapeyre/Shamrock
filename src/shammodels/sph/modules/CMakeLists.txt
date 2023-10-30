@@ -7,5 +7,6 @@ target_sources(shamrock_lib
         SinkParticlesUpdate.cpp
         ConservativeCheck.cpp
         ExternalForces.cpp
+        ComputeEos.cpp
     PUBLIC
     )
