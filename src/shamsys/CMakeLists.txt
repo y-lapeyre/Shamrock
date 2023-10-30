@@ -35,8 +35,7 @@ target_sources(shamrock_test
     )
 endif()
 
-add_subdirectory(tests)
+
 add_subdirectory(legacy)
 
 add_subdirectory(bindings)
-add_subdirectory(comm)

@@ -6,6 +6,12 @@
 //
 // -------------------------------------------------------//
 
+/**
+ * @file Solver.cpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief
+ */
+
 #include "Solver.hpp"
 #include "shamalgs/collective/exchanges.hpp"
 #include "shamalgs/collective/reduction.hpp"
@@ -14,6 +20,7 @@
 #include "shambase/memory.hpp"
 #include "shambase/string.hpp"
 #include "shambase/time.hpp"
+#include "shamcomm/collectives.hpp"
 #include "shammath/sphkernels.hpp"
 #include "shammodels/sph/BasicSPHGhosts.hpp"
 #include "shammodels/sph/SPHSolverImpl.hpp"
@@ -34,7 +41,7 @@
 #include "shamrock/scheduler/SchedulerUtility.hpp"
 #include "shamrock/scheduler/SerialPatchTree.hpp"
 #include "shamrock/scheduler/scheduler_mpi.hpp"
-#include "shamrock/tree/TreeTaversalCache.hpp"
+#include "shamrock/tree/TreeTraversalCache.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
 #include <memory>
@@ -105,7 +112,7 @@ void vtk_dump_add_worldrank(PatchScheduler &sched, shamrock::LegacyVtkWritter &w
             using namespace shamalgs::memory;
             using namespace shambase;
 
-            write_with_offset_into(idp, shamsys::instance::world_rank, ptr, pdat.get_obj_cnt());
+            write_with_offset_into<u32>(idp, shamcomm::world_rank(), ptr, pdat.get_obj_cnt());
 
             ptr += pdat.get_obj_cnt();
         });
@@ -310,8 +317,8 @@ void SPHSolve<Tvec, Kern>::sph_prestep(Tscal time_val) {
 
         u32 iter_h = 0;
         for (; iter_h < 50; iter_h++) {
-            NamedStackEntry stack_loc2{"iterate smoothing lenght"};
-            // iterate smoothing lenght
+            NamedStackEntry stack_loc2{"iterate smoothing length"};
+            // iterate smoothing length
             scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchData &pdat) {
                 logger::debug_ln("SPHLeapfrog", "patch : n°", p.id_patch, "->", "h iteration");
 
@@ -331,7 +338,7 @@ void SPHSolve<Tvec, Kern>::sph_prestep(Tscal time_val) {
                 tree::ObjectCache &neigh_cache =
                     storage.neighbors_cache.get().get_cache(p.id_patch);
 
-                sph_utils.iterate_smoothing_lenght_cache(
+                sph_utils.iterate_smoothing_length_cache(
                     merged_r,
                     hnew,
                     hold,
@@ -341,24 +348,24 @@ void SPHSolve<Tvec, Kern>::sph_prestep(Tscal time_val) {
                     gpart_mass,
                     htol_up_tol,
                     htol_up_iter);
-                // sph_utils.iterate_smoothing_lenght_tree(merged_r, hnew, hold, eps_h, range_npart,
+                // sph_utils.iterate_smoothing_length_tree(merged_r, hnew, hold, eps_h, range_npart,
                 // tree, gpart_mass, htol_up_tol, htol_up_iter);
             });
             max_eps_h = _epsilon_h.compute_rank_max();
             if (max_eps_h < 1e-6) {
-                logger::debug_sycl("SmoothingLenght", "converged at i =", iter_h);
+                logger::debug_sycl("Smoothinglength", "converged at i =", iter_h);
                 break;
             }
         }
 
-        // logger::info_ln("Smoothinglenght", "eps max =", max_eps_h);
+        // logger::info_ln("Smoothinglength", "eps max =", max_eps_h);
 
         Tscal min_eps_h = shamalgs::collective::allreduce_min(_epsilon_h.compute_rank_min());
         if (min_eps_h == -1) {
-            if (shamsys::instance::world_rank == 0) {
+            if (shamcomm::world_rank() == 0) {
                 logger::warn_ln(
-                    "Smoothinglenght",
-                    "smoothing lenght is not converged, rerunning the iterator ...");
+                    "Smoothinglength",
+                    "smoothing length is not converged, rerunning the iterator ...");
             }
 
             reset_ghost_handler();
@@ -370,14 +377,14 @@ void SPHSolve<Tvec, Kern>::sph_prestep(Tscal time_val) {
 
             continue;
         } else {
-            if (shamsys::instance::world_rank == 0) {
+            if (shamcomm::world_rank() == 0) {
 
                 std::string log = "";
-                log += "smoothing lenght iteration converged\n";
+                log += "smoothing length iteration converged\n";
                 log += shambase::format(
                     "  eps min = {}, max = {}\n  iterations = {}", min_eps_h, max_eps_h, iter_h);
 
-                logger::info_ln("Smoothinglenght", log);
+                logger::info_ln("Smoothinglength", log);
             }
         }
 
@@ -1444,7 +1451,7 @@ auto SPHSolve<Tvec, Kern>::evolve_once(
 
     DumpOption dump_opt{do_dump, vtk_dump_name, vtk_dump_patch_id};
 
-    if (shamsys::instance::world_rank == 0) {
+    if (shamcomm::world_rank() == 0) {
         logger::normal_ln("sph::Model", shambase::format("t = {}, dt = {}", t_current, dt));
     }
 
@@ -1579,7 +1586,7 @@ auto SPHSolve<Tvec, Kern>::evolve_once(
         logger::debug_ln("BasicGas", "epsilon v :", eps_v);
 
         if (eps_v > 1e-2) {
-            if (shamsys::instance::world_rank == 0) {
+            if (shamcomm::world_rank() == 0) {
                 logger::warn_ln(
                     "BasicGasSPH",
                     shambase::format(
@@ -1748,11 +1755,11 @@ auto SPHSolve<Tvec, Kern>::evolve_once(
             Tscal rank_dt = cfl_dt.compute_rank_min();
 
             logger::debug_ln(
-                "BasigGas", "rank", shamsys::instance::world_rank, "found cfl dt =", rank_dt);
+                "BasigGas", "rank", shamcomm::world_rank(), "found cfl dt =", rank_dt);
 
             next_cfl = shamalgs::collective::allreduce_min(rank_dt);
 
-            if (shamsys::instance::world_rank == 0) {
+            if (shamcomm::world_rank() == 0) {
                 logger::info_ln("sph::Model", "cfl dt =", next_cfl);
             }
 
@@ -1931,7 +1938,7 @@ auto SPHSolve<Tvec, Kern>::evolve_once(
 
     std::string log_rank_rate = shambase::format(
         "\n| {:<4} |    {:.4e}    | {:11} |   {:.3e}   |  {:3.0f} % | {:3.0f} % | {:3.0f} % |",
-        shamsys::instance::world_rank,
+        shamcomm::world_rank(),
         rate,
         rank_count,
         tstep.elasped_sec(),
@@ -1940,9 +1947,9 @@ auto SPHSolve<Tvec, Kern>::evolve_once(
         100 * (storage.timings_details.io / tstep.elasped_sec()));
 
     std::string gathered = "";
-    shamalgs::collective::gather_str(log_rank_rate, gathered);
+    shamcomm::gather_str(log_rank_rate, gathered);
 
-    if (shamsys::instance::world_rank == 0) {
+    if (shamcomm::world_rank() == 0) {
         std::string print = "processing rate infos : \n";
         print +=
             ("---------------------------------------------------------------------------------\n");
