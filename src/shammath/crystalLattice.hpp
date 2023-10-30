@@ -122,7 +122,7 @@ namespace shammath {
             zmin = 2 * sycl::sqrt(6.) * coord_min[2] / 3;
             zmax = 2 * sycl::sqrt(6.) * coord_max[2] / 3;
 
-            if(can_make_periodic_box(coord_min, coord_max)){
+            if(!can_make_periodic_box(coord_min, coord_max)){
                 throw LatticeError( "x axis count should be greater than 1\n"
                                     "y axis count should be even\n"
                                     "z axis count should be even");
