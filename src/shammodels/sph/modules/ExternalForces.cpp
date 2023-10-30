@@ -7,7 +7,7 @@
 // -------------------------------------------------------//
 
 /**
- * @file ConservativeCheck.cpp
+ * @file ExternalForces.cpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @brief
  *
