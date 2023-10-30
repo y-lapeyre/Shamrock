@@ -107,6 +107,13 @@ struct shammodels::sph::SolverConfig {
         }
 
         inline bool has_field_soundspeed() {
+
+            // this should not be needed idealy, but we need the pressure on the ghosts and 
+            // we don't want to communicate it as it can be recomputed from the other fields
+            // hence we copy the soundspeed at the end of the step to a field in the patchdata
+            // cf eos module there is another soundspeed field available as a Compute field
+            // unifying the patchdata and the ghosts is really needed ...
+            
             bool is_varying_alpha =
                 bool(std::get_if<VaryingMM97>(&config)) || bool(std::get_if<VaryingCD10>(&config));
             return is_varying_alpha;

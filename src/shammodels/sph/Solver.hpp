@@ -93,6 +93,10 @@ namespace shammodels::sph {
             }
 
             if(solver_config.has_field_soundspeed()){
+
+                // this should not be needed idealy, but we need the pressure on the ghosts and 
+                // we don't want to communicate it as it can be recomputed from the other fields
+                // hence we copy the soundspeed at the end of the step to a field in the patchdata
                 context.pdata_layout_add_field<Tscal>("soundspeed", 1);
             }
         }
