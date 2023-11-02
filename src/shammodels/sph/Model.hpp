@@ -229,6 +229,8 @@ namespace shammodels::sph {
                 std::vector<Tscal> vec_u;
                 std::vector<Tscal> vec_h;
 
+                std::vector<Tscal> vec_cs;
+
                 Tscal G = solver.solver_config.get_constant_G();
 
                 for(Out o : part_list){
@@ -241,6 +243,7 @@ namespace shammodels::sph {
                     //whereas the real one is \sqrt{(\gamma -1)\gamma u}
                     vec_u.push_back(o.cs*o.cs/(/*solver.eos_gamma * */ (eos_gamma - 1)));
                     vec_h.push_back(shamrock::sph::h_rho(part_mass, o.rho, Kernel::hfactd));
+                    vec_cs.push_back(o.cs);
                 }
 
                 log += shambase::format("\n    patch id={}, add N={} particles", ptch.id_patch, vec_pos.size());
@@ -270,6 +273,14 @@ namespace shammodels::sph {
                     PatchDataField<Tscal> &f =
                         tmp.get_field<Tscal>(sched.pdl.get_field_idx<Tscal>("uint"));
                     sycl::buffer<Tscal> buf(vec_u.data(), len);
+                    f.override(buf, len);
+                }
+
+                if(solver.solver_config.is_eos_locally_isothermal()){
+                    u32 len = vec_pos.size();
+                    PatchDataField<Tscal> &f =
+                        tmp.get_field<Tscal>(sched.pdl.get_field_idx<Tscal>("soundspeed"));
+                    sycl::buffer<Tscal> buf(vec_cs.data(), len);
                     f.override(buf, len);
                 }
 

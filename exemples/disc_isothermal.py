@@ -50,17 +50,17 @@ print("Current part mass :", pmass)
 model.set_particle_mass(pmass)
 
 
-model.add_sink(1,(0,0,0),(0,0,0),0.05)
+model.add_sink(1,(0,0,0),(0,0,0),0.1)
 
 vk_p = (ucte.G() * 1 / 1)**0.5
-model.add_sink(3*ucte.jupiter_mass(),(1,0,0),(0,0,vk_p),0.01)
+#model.add_sink(3*ucte.jupiter_mass(),(1,0,0),(0,0,vk_p),0.01)
 #model.add_sink(100,(0,2,0),(0,0,1))
 
 def compute_rho(h):
     return np.array([ model.rho_h(h[i]) for i in range(len(h))])
 
 
-def plot_vertical_profile(r, rrange):
+def plot_vertical_profile(r, rrange, label = ""):
 
     data = ctx.collect_data()
 
@@ -79,7 +79,7 @@ def plot_vertical_profile(r, rrange):
 
     rhobar = np.mean(rhosel)
     
-    plt.scatter(ysel, rhosel/rhobar, s=1)
+    plt.scatter(ysel, rhosel/rhobar, s=1, label = label)
 
 
 print("Small timestep")
@@ -111,10 +111,10 @@ print("Current part mass :", pmass)
 
 #for i in range(9):
 #    model.evolve(5e-4, False, False, "", False)
-
+plot_vertical_profile(1,0.5, label = "init")
 
 t_sum = 0
-t_target = 100
+t_target = 1e-1
 current_dt = 1e-7
 i = 0
 i_dump = 0
@@ -122,10 +122,10 @@ while t_sum < t_target:
 
     print("step : t=",t_sum)
 
-    do_dump = (i % 50 == 0)  
+    do_dump = (i % 10 == 0)  
     next_dt = model.evolve(t_sum,current_dt, do_dump, "dump_"+str(i_dump)+".vtk", do_dump)
 
-    if i % 50 == 0:
+    if i % 10 == 0:
         i_dump += 1
 
     t_sum += current_dt
@@ -135,3 +135,9 @@ while t_sum < t_target:
         current_dt = t_target - t_sum
 
     i+= 1
+
+
+plot_vertical_profile(1,0.5, label = "end")
+
+plt.legend()
+plt.show()
