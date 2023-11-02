@@ -197,12 +197,20 @@ struct shammodels::sph::SolverConfig {
             Tscal gamma = 5./3.;
         };
 
-        using Variant = std::variant<Adiabatic>;
+        struct LocallyIsothermal{
+
+        };
+
+        using Variant = std::variant<Adiabatic, LocallyIsothermal>;
 
         Variant config = Adiabatic{};
 
         inline void set_adiabatic(Tscal gamma){
             config = Adiabatic{gamma};
+        }
+
+        inline void set_locally_isothermal(){
+            config = LocallyIsothermal{};
         }
 
     };
