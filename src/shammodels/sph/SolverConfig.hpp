@@ -197,7 +197,11 @@ struct shammodels::sph::SolverConfig {
             Tscal gamma = 5./3.;
         };
 
-        using Variant = std::variant<Adiabatic>;
+        struct LocallyIsothermal{
+
+        };
+
+        using Variant = std::variant<Adiabatic, LocallyIsothermal>;
 
         Variant config = Adiabatic{};
 
@@ -205,12 +209,32 @@ struct shammodels::sph::SolverConfig {
             config = Adiabatic{gamma};
         }
 
+        inline void set_locally_isothermal(){
+            config = LocallyIsothermal{};
+        }
+
     };
+
+    inline bool is_eos_locally_isothermal(){
+        using T = typename EOSConfig::LocallyIsothermal;
+        return bool(
+            std::get_if<T>(&eos_config.config)
+            );
+    }
+
+    inline bool ghost_has_soundspeed(){
+        return is_eos_locally_isothermal();
+    }
+
+
 
     EOSConfig eos_config;
 
     inline void set_eos_adiabatic(Tscal gamma){
        eos_config.set_adiabatic(gamma);
+    }
+    inline void set_eos_locally_isothermal(){
+       eos_config.set_locally_isothermal();
     }
 
 
@@ -261,7 +285,7 @@ struct shammodels::sph::SolverConfig {
     inline bool has_field_dtdivv() { return artif_viscosity.has_dtdivv_field(); }
     inline bool has_field_curlv() { return artif_viscosity.has_curlv_field() && (dim == 3); }
 
-    inline bool has_field_soundspeed() { return artif_viscosity.has_field_soundspeed(); }
+    inline bool has_field_soundspeed() { return artif_viscosity.has_field_soundspeed() || is_eos_locally_isothermal(); }
 
     inline void print_status() { 
         if(shamcomm::world_rank() != 0){return;}
