@@ -441,6 +441,10 @@ void SPHSolve<Tvec, Kern>::init_ghost_layout() {
     ghost_layout.add_field<Tvec>("vxyz", 1);
     ghost_layout.add_field<Tscal>("omega", 1);
 
+    if(solver_config.ghost_has_soundspeed()){
+        ghost_layout.add_field<Tscal>("soundspeed", 1);
+    }
+
     if (solver_config.has_field_alphaAV()) {
         ghost_layout.add_field<Tscal>("alpha_AV", 1);
     }
@@ -648,6 +652,7 @@ void SPHSolve<Tvec, Kern>::communicate_merge_ghosts_fields() {
     using namespace shamrock::patch;
 
     bool has_alphaAV_field = solver_config.has_field_alphaAV();
+    bool has_soundspeed_field = solver_config.ghost_has_soundspeed();
 
     PatchDataLayout &pdl = scheduler().pdl;
     const u32 ixyz       = pdl.get_field_idx<Tvec>("xyz");
@@ -658,6 +663,7 @@ void SPHSolve<Tvec, Kern>::communicate_merge_ghosts_fields() {
     const u32 ihpart     = pdl.get_field_idx<Tscal>("hpart");
 
     const u32 ialpha_AV = (has_alphaAV_field) ? pdl.get_field_idx<Tscal>("alpha_AV") : 0;
+    const u32 isoundspeed = (has_soundspeed_field) ? pdl.get_field_idx<Tscal>("soundspeed") : 0;
 
     shamrock::patch::PatchDataLayout &ghost_layout = storage.ghost_layout.get();
     u32 ihpart_interf                              = ghost_layout.get_field_idx<Tscal>("hpart");
@@ -667,6 +673,9 @@ void SPHSolve<Tvec, Kern>::communicate_merge_ghosts_fields() {
 
     const u32 ialpha_AV_interf =
         (has_alphaAV_field) ? ghost_layout.get_field_idx<Tscal>("alpha_AV") : 0;
+
+    const u32 isoundspeed_interf =
+        (has_soundspeed_field) ? ghost_layout.get_field_idx<Tscal>("soundspeed") : 0;
 
     using InterfaceBuildInfos = typename sph::BasicSPHGhostHandler<Tvec>::InterfaceBuildInfos;
 
@@ -707,6 +716,11 @@ void SPHSolve<Tvec, Kern>::communicate_merge_ghosts_fields() {
             if (has_alphaAV_field) {
                 sender_patch.get_field<Tscal>(ialpha_AV).append_subset_to(
                     buf_idx, cnt, pdat.get_field<Tscal>(ialpha_AV_interf));
+            }
+
+            if (has_soundspeed_field) {
+                sender_patch.get_field<Tscal>(isoundspeed).append_subset_to(
+                    buf_idx, cnt, pdat.get_field<Tscal>(isoundspeed_interf));
             }
         });
 
@@ -752,6 +766,11 @@ void SPHSolve<Tvec, Kern>::communicate_merge_ghosts_fields() {
                 if (has_alphaAV_field) {
                     pdat_new.get_field<Tscal>(ialpha_AV_interf)
                         .insert(pdat.get_field<Tscal>(ialpha_AV));
+                }
+
+                if (has_soundspeed_field) {
+                    pdat_new.get_field<Tscal>(isoundspeed_interf)
+                        .insert(pdat.get_field<Tscal>(isoundspeed));
                 }
 
                 pdat_new.check_field_obj_cnt_match();

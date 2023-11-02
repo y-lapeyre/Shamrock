@@ -173,7 +173,9 @@ namespace shammodels::sph {
                 eos_gamma = eos_config->gamma;
 
             } else {
-                shambase::throw_unimplemented();
+                //dirty hack for disc setup in locally isothermal
+                eos_gamma = 1;
+                //shambase::throw_unimplemented();
             }
 
             using Out = generic::setup::generators::DiscOutput<Tscal>;

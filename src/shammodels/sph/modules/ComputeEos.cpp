@@ -45,6 +45,7 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos(Tscal gp
 
     using SolverConfigEOS     = typename Config::EOSConfig;
     using SolverEOS_Adiabatic = typename SolverConfigEOS::Adiabatic;
+    using SolverEOS_LocallyIsothermal = typename SolverConfigEOS::LocallyIsothermal;
 
     if (SolverEOS_Adiabatic *eos_config = std::get_if<SolverEOS_Adiabatic>(&solver_config.eos_config.config)) {
 
@@ -69,6 +70,33 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos(Tscal gp
                     cs[item]    = sycl::sqrt(gamma * P_a / rho_a);
                 });
             });
+
+        });
+
+    }else if (SolverEOS_LocallyIsothermal *eos_config = std::get_if<SolverEOS_LocallyIsothermal>(&solver_config.eos_config.config)) {
+
+        storage.merged_patchdata_ghost.get().for_each([&](u64 id, MergedPatchData &mpdat) {
+            /*
+            shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
+
+                sycl::accessor P{storage.pressure.get().get_buf_check(id), cgh, sycl::write_only, sycl::no_init};
+                sycl::accessor cs{storage.soundspeed.get().get_buf_check(id), cgh, sycl::write_only, sycl::no_init};
+                sycl::accessor U{mpdat.pdat.get_field_buf_ref<Tscal>(iuint_interf) , cgh, sycl::read_only};
+                sycl::accessor h{mpdat.pdat.get_field_buf_ref<Tscal>(ihpart_interf), cgh, sycl::read_only};
+
+                Tscal pmass = gpart_mass;
+                Tscal gamma = eos_config->gamma;
+
+                cgh.parallel_for(sycl::range<1>{mpdat.total_elements}, [=](sycl::item<1> item) {
+                    using namespace shamrock::sph;
+
+                    Tscal rho_a = rho_h(pmass, h[item], Kernel::hfactd);
+                    Tscal P_a   = (gamma - 1) * rho_a * U[item];
+                    P[item]     = P_a;
+                    cs[item]    = sycl::sqrt(gamma * P_a / rho_a);
+                });
+            });
+            */
 
         });
 
