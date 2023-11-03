@@ -15,6 +15,7 @@
  * 
  */
 
+#include "shambackends/math.hpp"
 #include "shambase/exception.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"
 #include <shamunits/UnitSystem.hpp>
@@ -238,6 +239,69 @@ struct shammodels::sph::SolverConfig {
     }
 
 
+
+
+
+    struct ExtForceConfig{
+
+        struct PointMass{
+            Tscal central_mass;
+            Tscal Racc;
+        };
+
+        struct LenseThirring{
+            Tscal central_mass;
+            Tscal Racc;
+            Tscal a_spin;
+            Tvec dir_spin;
+        };
+
+        using VariantForce = std::variant<PointMass,LenseThirring>;
+
+        std::vector<VariantForce> ext_forces;
+
+        inline void add_point_mass(
+            Tscal central_mass,
+            Tscal Racc){
+                ext_forces.push_back(PointMass{central_mass, Racc});
+        }
+
+        inline void add_lense_thrirring(
+            Tscal central_mass,
+            Tscal Racc,
+            Tscal a_spin,
+            Tvec dir_spin
+        ){
+            if(sham::abs(sycl::length(dir_spin) - 1) > 1e-8){
+                shambase::throw_with_loc<std::invalid_argument>("the sping direction should be a unit vector");
+            }
+            ext_forces.push_back(LenseThirring{central_mass, Racc,a_spin,dir_spin});
+        }
+
+    };
+
+    ExtForceConfig ext_force_config {};
+
+    inline void add_ext_force_point_mass(
+        Tscal central_mass,
+        Tscal Racc){
+            ext_force_config.add_point_mass(central_mass, Racc);
+    }
+
+    inline void add_ext_force_lense_thrirring(
+        Tscal central_mass,
+        Tscal Racc,
+        Tscal a_spin,
+        Tvec dir_spin
+    ){
+        ext_force_config.add_lense_thrirring( central_mass,  Racc,  a_spin,  dir_spin);
+    }
+
+
+
+     
+
+
     BCConfig boundary_config;
 
     inline void set_boundary_free(){
@@ -309,6 +373,16 @@ struct shammodels::sph::SolverConfig {
             return ctes.G();
         }else{
             return shamunits::Constants<Tscal>{*unit_sys}.G();
+        }
+    }
+
+    inline Tscal get_constant_c(){
+        if(!unit_sys){
+            logger::warn_ln("sph::Config", "the unit system is not set");
+            shamunits::Constants<Tscal> ctes{shamunits::UnitSystem<Tscal>{}};
+            return ctes.c();
+        }else{
+            return shamunits::Constants<Tscal>{*unit_sys}.c();
         }
     }
 };
