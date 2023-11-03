@@ -55,6 +55,8 @@ namespace shammodels::sph::modules {
          */
         void add_ext_forces(Tscal gpart_mass);
 
+        void point_mass_accrete_particles(Tscal gpart_mass);
+
         private:
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }
     };

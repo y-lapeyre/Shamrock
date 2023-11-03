@@ -25,9 +25,9 @@ cfg.set_artif_viscosity_VaryingCD10(alpha_min = 0.0,alpha_max = 1,sigma_decay = 
 cfg.set_eos_locally_isothermal()
 cfg.add_ext_force_lense_thrirring(
     central_mass,
-    0.05,
     0.1,
-    (0.5**0.5,0.5**0.5,0)
+    0.1,
+    (1,0,0)
 )
 cfg.print_status()
 cfg.set_units(codeu)

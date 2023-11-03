@@ -1447,8 +1447,11 @@ auto SPHSolve<Tvec, Kern>::evolve_once(
     shamrock::SchedulerUtility utility(scheduler());
 
     modules::SinkParticlesUpdate<Tvec, Kern> sink_update(context, solver_config, storage);
-
+    modules::ExternalForces<Tvec, Kern> ext_forces(context, solver_config, storage);
+    
     sink_update.accrete_particles(gpart_mass);
+    ext_forces.point_mass_accrete_particles(gpart_mass);
+
 
     do_predictor_leapfrog(dt);
 
@@ -1459,7 +1462,7 @@ auto SPHSolve<Tvec, Kern>::evolve_once(
 
     sink_update.compute_ext_forces();
 
-    modules::ExternalForces<Tvec, Kern> ext_forces(context, solver_config, storage);
+    
     ext_forces.compute_ext_forces_indep_v(gpart_mass);
 
     gen_serial_patch_tree();

@@ -35,7 +35,7 @@ void SinkUpdate<Tvec, SPHKernel>::accrete_particles(Tscal gpart_mass){
 
     PatchDataLayout &pdl = scheduler().pdl;
     const u32 ixyz      = pdl.get_field_idx<Tvec>("xyz");
-    const u32 ivxyz      = pdl.get_field_idx<Tvec>("xyz");
+    const u32 ivxyz      = pdl.get_field_idx<Tvec>("vxyz");
 
     sycl::queue & q = shamsys::instance::get_compute_queue();
 

@@ -20,8 +20,6 @@
 #include "shammodels/sph/modules/SinkParticlesUpdate.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamunits/Constants.hpp"
-#include <hipSYCL/sycl/libkernel/accessor.hpp>
-#include <hipSYCL/sycl/libkernel/builtins.hpp>
 
 template<class Tvec, template<class> class SPHKernel>
 using Module = shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>;
@@ -174,6 +172,119 @@ void Module<Tvec, SPHKernel>::add_ext_forces(Tscal gpart_mass) {
         }
     }
 }
+
+
+
+
+
+
+
+template<class Tvec, template<class> class SPHKernel>
+void Module<Tvec, SPHKernel>::point_mass_accrete_particles(Tscal gpart_mass) {
+    StackEntry stack_loc{};
+
+    using namespace shamrock;
+    using namespace shamrock::patch;
+
+
+    using SolverConfigExtForce = typename Config::ExtForceConfig;
+    using EF_PointMass         = typename SolverConfigExtForce::PointMass;
+    using EF_LenseThrirring    = typename SolverConfigExtForce::LenseThirring;
+
+
+    PatchDataLayout &pdl = scheduler().pdl;
+    const u32 ixyz      = pdl.get_field_idx<Tvec>("xyz");
+    const u32 ivxyz      = pdl.get_field_idx<Tvec>("vxyz");
+
+    sycl::queue & q = shamsys::instance::get_compute_queue();
+
+    for (auto var_force : solver_config.ext_force_config.ext_forces) {
+
+        Tvec pos_accretion;
+        Tscal Racc;
+
+        
+        if (EF_PointMass *ext_force = std::get_if<EF_PointMass>(&var_force)) {
+            pos_accretion = {0,0,0};
+            Racc = ext_force->Racc;
+        } else if (EF_LenseThrirring *ext_force = std::get_if<EF_LenseThrirring>(&var_force)) {
+            pos_accretion = {0,0,0};
+            Racc = ext_force->Racc;
+        }else{
+            continue;
+        }
+
+
+        scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+            u32 Nobj = pdat.get_obj_cnt();
+
+            sycl::buffer<Tvec> &buf_xyz = pdat.get_field_buf_ref<Tvec>(ixyz);
+            sycl::buffer<Tvec> &buf_vxyz = pdat.get_field_buf_ref<Tvec>(ivxyz);
+
+            sycl::buffer<u32> not_accreted (Nobj);
+            sycl::buffer<u32> accreted (Nobj);
+
+            q.submit([&](sycl::handler &cgh) {
+                sycl::accessor xyz{buf_xyz, cgh, sycl::read_only};
+                sycl::accessor not_acc {not_accreted, cgh, sycl::write_only, sycl::no_init};
+                sycl::accessor acc {accreted, cgh, sycl::write_only, sycl::no_init};
+
+                Tvec r_sink = pos_accretion;
+                Tscal acc_rad2 = Racc*Racc;
+
+                shambase::parralel_for(cgh, Nobj,"check accretion", [=](i32 id_a){
+                    Tvec r = xyz[id_a] - r_sink;
+                    bool not_accreted = sycl::dot(r,r) > acc_rad2;
+                    not_acc[id_a] = (not_accreted) ? 1 : 0;
+                    acc[id_a] = (!not_accreted) ? 1 : 0;
+                });
+            });
+
+            std::tuple<std::optional<sycl::buffer<u32>>, u32> id_list_keep = shamalgs::numeric::stream_compact(
+                q, not_accreted, Nobj);
+
+            std::tuple<std::optional<sycl::buffer<u32>>, u32> id_list_accrete = shamalgs::numeric::stream_compact(
+                q, accreted, Nobj);
+
+            //sum accreted values onto sink
+
+            if(std::get<1>(id_list_accrete) > 0){
+
+                u32 Naccrete = std::get<1>(id_list_accrete);
+
+                Tscal acc_mass = gpart_mass*Naccrete;
+
+                sycl::buffer<Tvec> pxyz_acc (Naccrete);
+                q.submit([&,gpart_mass](sycl::handler &cgh) {
+                    sycl::accessor id_acc {*std::get<0>(id_list_accrete), cgh, sycl::read_only};
+                    sycl::accessor vxyz{buf_vxyz, cgh, sycl::read_only};
+
+                    sycl::accessor accretion_p {pxyz_acc, cgh, sycl::write_only};
+
+                    shambase::parralel_for(cgh, Naccrete,"compute sum momentum accretion", [=](i32 id_a){
+                        accretion_p[id_a] = gpart_mass * vxyz[id_acc[id_a]];
+                    });
+                });
+
+                Tvec acc_pxyz = shamalgs::reduction::sum(q, pxyz_acc, 0, Naccrete);
+
+                logger::raw_ln("central potential accretion : += ",acc_mass);
+
+                pdat.keep_ids(*std::get<0>(id_list_keep), std::get<1>(id_list_keep));
+            }
+
+
+  
+        });
+
+    }
+
+
+}
+
+
+
+
 
 using namespace shammath;
 template class shammodels::sph::modules::ExternalForces<f64_3, M4>;
