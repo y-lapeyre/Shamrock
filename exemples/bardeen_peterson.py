@@ -26,7 +26,7 @@ cfg.set_eos_locally_isothermal()
 cfg.add_ext_force_lense_thrirring(
     central_mass,
     0.1,
-    0.1,
+    0.2,
     (1,0,0)
 )
 cfg.print_status()
@@ -46,7 +46,7 @@ pmass = model.add_disc_3d(
     (0,0,0),
     central_mass,
     100000,
-    0.2,3,
+    0.3,2,
     disc_mass,
     1.,
     0.01,

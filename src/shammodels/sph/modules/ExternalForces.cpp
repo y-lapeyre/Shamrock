@@ -162,7 +162,7 @@ void Module<Tvec, SPHKernel>::add_ext_forces(Tscal gpart_mass) {
                             Tscal abs_ra_3 = abs_ra_2 * abs_ra;
                             Tscal abs_ra_5 = abs_ra_2 * abs_ra_2 * abs_ra;
 
-                            Tvec omega_a = (2*S/abs_ra_3) - (6 * shambase::sycl_utils::g_sycl_dot(S, r_a)*r_a)/abs_ra_5;
+                            Tvec omega_a = (S*(2/abs_ra_3)) - (6 * shambase::sycl_utils::g_sycl_dot(S, r_a)*r_a)/abs_ra_5;
                             Tvec acc_lt = sycl::cross(v_a, omega_a);
                             axyz[gid] +=  acc_lt;
 
