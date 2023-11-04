@@ -7,6 +7,23 @@ import sarracen
 plt.style.use('custom_style.mplstyle')
 
 
+'''
+compile phantom using :
+
+export SYSTEM=gfortran
+../scripts/writemake.sh sedov > Makefile
+vim Makefile
+make IND_TIMESTEPS=no
+make setup IND_TIMESTEPS=no
+
+and then move the phantom & phantomsetup executable in the same folder as sedov_comp.py
+'''
+
+import os
+os.chdir("../../exemples/comp-phantom")
+os.system("./phantomsetup blast")
+os.system("./phantom blast.in")
+
 
 gamma = 5./3.
 rho_g = 1
@@ -55,9 +72,9 @@ push_dump_state("../../exemples/comp-phantom/blast_00000")
 vol_b = (xM - xm)*(yM - ym)*(zM - zm)
 
 totmass = (rho_g*vol_b)
-#print("Total mass :", totmass)
+print("Total mass :", totmass)
 
-pmass = model.total_mass_to_part_mass(totmass)
+#pmass = model.total_mass_to_part_mass(totmass)
 
 model.set_particle_mass(pmass)
 
@@ -66,6 +83,9 @@ model.set_cfl_force(0.25)
 
 
 
+smarker = 1
+marker_ph = "o"
+marker_sham = "o"
 
 def load_phantom_dudt(fig,axs,phantom_dump, phantom_dumpm1):
 
@@ -112,13 +132,16 @@ def plot_phantom_dump(fig,axs,phantom_dump):
     vr = np.sqrt(vx**2 + vy**2 + vz**2)
 
     h = np.array(list(sdf['h']))
+
+    rho = pmass*(1.2/h)**3
+
     u = np.array(list(sdf['u']))
     alpha = np.array(list(sdf['alpha']))
 
-    axs[0,0].scatter(r,h,s=1,label = "phantom")
-    axs[0,1].scatter(r,u,s=1)
-    axs[1,0].scatter(r,vr,s=1)
-    axs[1,1].scatter(r,alpha,s=1)
+    axs[0,0].scatter(r,rho,s=smarker,c = 'red', marker=marker_ph,label = "phantom")
+    axs[0,1].scatter(r,u,s=smarker,c = 'red', marker=marker_ph)
+    axs[1,0].scatter(r,vr,s=smarker,c = 'red', marker=marker_ph)
+    axs[1,1].scatter(r,alpha,s=smarker,c = 'red', marker=marker_ph)
 
 
 last_u = ""
@@ -137,6 +160,8 @@ def comp_state(i, savename ):
     hpart = dic["hpart"]
     uint = dic["uint"]
     alpha_AV = dic["alpha_AV"]
+    rho = pmass*(model.get_hfact()/hpart)**3
+
 
 
     #if i == 0:
@@ -154,16 +179,16 @@ def comp_state(i, savename ):
     #load_phantom_dudt(fig,axs, phantom_dump, last_dump)
 
 
-    axs[0,0].scatter(r,hpart,s=1,label = "shamrock")
-    #axs[0,1].scatter(r,1e5*(uint-last_u),s=1)
-    axs[0,1].scatter(r,uint,s=1)
-    axs[1,0].scatter(r,vr,s=1)
-    axs[1,1].scatter(r,alpha_AV, s=1)
+    axs[0,0].scatter(r,rho,s=smarker,c = 'black', marker=marker_sham,label = "shamrock")
+    #axs[0,1].scatter(r,1e5*(uint-last_u),s=smarker)
+    axs[0,1].scatter(r,uint,s=smarker,c = 'black', marker=marker_sham)
+    axs[1,0].scatter(r,vr,s=smarker,c = 'black', marker=marker_sham)
+    axs[1,1].scatter(r,alpha_AV, s=smarker,c = 'black', marker=marker_sham)
 
 
     last_u = uint
 
-    axs[0,0].set_ylabel(r"$h$")
+    axs[0,0].set_ylabel(r"$\rho$")
     axs[1,0].set_ylabel(r"$vr$")
     axs[0,1].set_ylabel(r"$u$")
     axs[1,1].set_ylabel(r"$\alpha$")
@@ -173,10 +198,10 @@ def comp_state(i, savename ):
     axs[0,1].set_xlabel("$r$")
     axs[1,1].set_xlabel("$r$")
 
-    axs[0,0].set_xlim(0,0.2)
-    axs[1,0].set_xlim(0,0.2)
-    axs[0,1].set_xlim(0,0.2)
-    axs[1,1].set_xlim(0,0.2)
+    axs[0,0].set_xlim(0,0.4)
+    axs[1,0].set_xlim(0,0.4)
+    axs[0,1].set_xlim(0,0.4)
+    axs[1,1].set_xlim(0,0.4)
 
     axs[0,0].legend()
 
@@ -187,10 +212,8 @@ def comp_state(i, savename ):
 
 
 model.evolve(0,0, False, "", False)
-for i in range(100):
+for i in range(1000):
     if i%10 == 0:
         comp_state(i, "comp"+str(i)+".png")
     model.evolve(0,1e-5, False, "", False)
 
-
-plt.show()

@@ -1,13 +1,13 @@
-# Runtime options file for Phantom, written 03/11/2023 22:47:51.4
+# Runtime options file for Phantom, written 04/11/2023 13:47:37.2
 # Options not present assume their default values
 # This file is updated automatically after a full dump
 
 # job name
              logfile =  blast02.log   ! file to which output is directed
-            dumpfile =  blast_00100   ! dump file to start from
+            dumpfile =  blast_01000   ! dump file to start from
 
 # options controlling run time and input/output
-                tmax =       0.003    ! end time
+                tmax =       0.010    ! end time
                dtmax =   1.000E-05    ! time between dumps
                 nmax =          -1    ! maximum number of timesteps (0=just get derivs and stop)
                 nout =          -1    ! write dumpfile every n dtmax (-ve=ignore)
