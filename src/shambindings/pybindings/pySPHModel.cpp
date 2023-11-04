@@ -10,7 +10,6 @@
  * @file pySPHModel.cpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @brief 
- * \todo move to shambindings
  */
  
 #include <memory>
@@ -35,6 +34,8 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
 
     py::class_<TConfig>(m, name_config.c_str())
         .def("print_status", &TConfig::print_status)
+        .def("set_eos_adiabatic", &TConfig::set_eos_adiabatic)
+        .def("set_eos_locally_isothermal", &TConfig::set_eos_locally_isothermal)
         .def("set_artif_viscosity_None", &TConfig::set_artif_viscosity_None)
         .def(
             "set_artif_viscosity_Constant",
@@ -82,6 +83,10 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
         .def("set_boundary_free",&TConfig::set_boundary_free)
         .def("set_boundary_periodic",&TConfig::set_boundary_periodic)
         .def("set_boundary_shearing_periodic",&TConfig::set_boundary_shearing_periodic)
+
+        .def("add_ext_force_point_mass",&TConfig::add_ext_force_point_mass)
+        .def("add_ext_force_lense_thrirring",&TConfig::add_ext_force_lense_thrirring)
+
         .def("set_units", &TConfig::set_units);
 
     py::class_<T>(m, name_model.c_str())
@@ -91,7 +96,6 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
         .def("set_cfl_cour", &T::set_cfl_cour)
         .def("set_cfl_force", &T::set_cfl_force)
         .def("set_particle_mass", &T::set_particle_mass)
-        .def("set_eos_gamma", &T::set_eos_gamma)
         .def("rho_h", &T::rho_h)
         .def("get_hfact", &T::get_hfact)
         .def("get_box_dim_fcc_3d",

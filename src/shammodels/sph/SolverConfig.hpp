@@ -15,6 +15,7 @@
  * 
  */
 
+#include "shambackends/math.hpp"
 #include "shambase/exception.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"
 #include <shamunits/UnitSystem.hpp>
@@ -107,6 +108,13 @@ struct shammodels::sph::SolverConfig {
         }
 
         inline bool has_field_soundspeed() {
+
+            // this should not be needed idealy, but we need the pressure on the ghosts and 
+            // we don't want to communicate it as it can be recomputed from the other fields
+            // hence we copy the soundspeed at the end of the step to a field in the patchdata
+            // cf eos module there is another soundspeed field available as a Compute field
+            // unifying the patchdata and the ghosts is really needed ...
+
             bool is_varying_alpha =
                 bool(std::get_if<VaryingMM97>(&config)) || bool(std::get_if<VaryingCD10>(&config));
             return is_varying_alpha;
@@ -179,6 +187,121 @@ struct shammodels::sph::SolverConfig {
         }
     };  
 
+
+
+
+
+
+
+    struct EOSConfig{
+        struct Adiabatic{
+            Tscal gamma = 5./3.;
+        };
+
+        struct LocallyIsothermal{
+
+        };
+
+        using Variant = std::variant<Adiabatic, LocallyIsothermal>;
+
+        Variant config = Adiabatic{};
+
+        inline void set_adiabatic(Tscal gamma){
+            config = Adiabatic{gamma};
+        }
+
+        inline void set_locally_isothermal(){
+            config = LocallyIsothermal{};
+        }
+
+    };
+
+    inline bool is_eos_locally_isothermal(){
+        using T = typename EOSConfig::LocallyIsothermal;
+        return bool(
+            std::get_if<T>(&eos_config.config)
+            );
+    }
+
+    inline bool ghost_has_soundspeed(){
+        return is_eos_locally_isothermal();
+    }
+
+
+
+    EOSConfig eos_config;
+
+    inline void set_eos_adiabatic(Tscal gamma){
+       eos_config.set_adiabatic(gamma);
+    }
+    inline void set_eos_locally_isothermal(){
+       eos_config.set_locally_isothermal();
+    }
+
+
+
+
+
+    struct ExtForceConfig{
+
+        struct PointMass{
+            Tscal central_mass;
+            Tscal Racc;
+        };
+
+        struct LenseThirring{
+            Tscal central_mass;
+            Tscal Racc;
+            Tscal a_spin;
+            Tvec dir_spin;
+        };
+
+        using VariantForce = std::variant<PointMass,LenseThirring>;
+
+        std::vector<VariantForce> ext_forces;
+
+        inline void add_point_mass(
+            Tscal central_mass,
+            Tscal Racc){
+                ext_forces.push_back(PointMass{central_mass, Racc});
+        }
+
+        inline void add_lense_thrirring(
+            Tscal central_mass,
+            Tscal Racc,
+            Tscal a_spin,
+            Tvec dir_spin
+        ){
+            if(sham::abs(sycl::length(dir_spin) - 1) > 1e-8){
+                shambase::throw_with_loc<std::invalid_argument>("the sping direction should be a unit vector");
+            }
+            ext_forces.push_back(LenseThirring{central_mass, Racc,a_spin,dir_spin});
+        }
+
+    };
+
+    ExtForceConfig ext_force_config {};
+
+    inline void add_ext_force_point_mass(
+        Tscal central_mass,
+        Tscal Racc){
+            ext_force_config.add_point_mass(central_mass, Racc);
+    }
+
+    inline void add_ext_force_lense_thrirring(
+        Tscal central_mass,
+        Tscal Racc,
+        Tscal a_spin,
+        Tvec dir_spin
+    ){
+        ext_force_config.add_lense_thrirring( central_mass,  Racc,  a_spin,  dir_spin);
+    }
+
+
+
+     
+
+
     BCConfig boundary_config;
 
     inline void set_boundary_free(){
@@ -226,7 +349,7 @@ struct shammodels::sph::SolverConfig {
     inline bool has_field_dtdivv() { return artif_viscosity.has_dtdivv_field(); }
     inline bool has_field_curlv() { return artif_viscosity.has_curlv_field() && (dim == 3); }
 
-    inline bool has_field_soundspeed() { return artif_viscosity.has_field_soundspeed(); }
+    inline bool has_field_soundspeed() { return artif_viscosity.has_field_soundspeed() || is_eos_locally_isothermal(); }
 
     inline void print_status() { 
         if(shamcomm::world_rank() != 0){return;}
@@ -250,6 +373,16 @@ struct shammodels::sph::SolverConfig {
             return ctes.G();
         }else{
             return shamunits::Constants<Tscal>{*unit_sys}.G();
+        }
+    }
+
+    inline Tscal get_constant_c(){
+        if(!unit_sys){
+            logger::warn_ln("sph::Config", "the unit system is not set");
+            shamunits::Constants<Tscal> ctes{shamunits::UnitSystem<Tscal>{}};
+            return ctes.c();
+        }else{
+            return shamunits::Constants<Tscal>{*unit_sys}.c();
         }
     }
 };

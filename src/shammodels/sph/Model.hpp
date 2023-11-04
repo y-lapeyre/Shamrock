@@ -71,7 +71,6 @@ namespace shammodels::sph {
         inline void set_cfl_cour(Tscal cfl_cour) { solver.cfl_cour = cfl_cour; }
         inline void set_cfl_force(Tscal cfl_force) { solver.cfl_force = cfl_force; }
         inline void set_particle_mass(Tscal gpart_mass) { solver.gpart_mass = gpart_mass; }
-        inline void set_eos_gamma(Tscal eos_gamma) { solver.eos_gamma = eos_gamma; }
 
         inline void resize_simulation_box(std::pair<Tvec, Tvec> box) {
             ctx.set_coord_domain_bound({box.first, box.second});
@@ -164,6 +163,21 @@ namespace shammodels::sph {
 
             Tscal G = solver.solver_config.get_constant_G();
 
+            Tscal eos_gamma;
+            using Config = SolverConfig<Tvec, SPHKernel>;
+            using SolverConfigEOS     = typename Config::EOSConfig;
+            using SolverEOS_Adiabatic = typename SolverConfigEOS::Adiabatic;
+            if (SolverEOS_Adiabatic *eos_config =
+                std::get_if<SolverEOS_Adiabatic>(&solver.solver_config.eos_config.config)) {
+
+                eos_gamma = eos_config->gamma;
+
+            } else {
+                //dirty hack for disc setup in locally isothermal
+                eos_gamma = 1;
+                //shambase::throw_unimplemented();
+            }
+
             using Out = generic::setup::generators::DiscOutput<Tscal>;
 
             auto sigma_profile = [=](Tscal r){
@@ -215,6 +229,8 @@ namespace shammodels::sph {
                 std::vector<Tscal> vec_u;
                 std::vector<Tscal> vec_h;
 
+                std::vector<Tscal> vec_cs;
+
                 Tscal G = solver.solver_config.get_constant_G();
 
                 for(Out o : part_list){
@@ -225,8 +241,9 @@ namespace shammodels::sph {
                     //the scaleheight : H = \sqrt{u (\gamma -1)}/\Omega_K
                     //therefor the effective soundspeed is : \sqrt{(\gamma -1)u}
                     //whereas the real one is \sqrt{(\gamma -1)\gamma u}
-                    vec_u.push_back(o.cs*o.cs/(/*solver.eos_gamma * */ (solver.eos_gamma - 1)));
+                    vec_u.push_back(o.cs*o.cs/(/*solver.eos_gamma * */ (eos_gamma - 1)));
                     vec_h.push_back(shamrock::sph::h_rho(part_mass, o.rho, Kernel::hfactd));
+                    vec_cs.push_back(o.cs);
                 }
 
                 log += shambase::format("\n    patch id={}, add N={} particles", ptch.id_patch, vec_pos.size());
@@ -256,6 +273,14 @@ namespace shammodels::sph {
                     PatchDataField<Tscal> &f =
                         tmp.get_field<Tscal>(sched.pdl.get_field_idx<Tscal>("uint"));
                     sycl::buffer<Tscal> buf(vec_u.data(), len);
+                    f.override(buf, len);
+                }
+
+                if(solver.solver_config.is_eos_locally_isothermal()){
+                    u32 len = vec_pos.size();
+                    PatchDataField<Tscal> &f =
+                        tmp.get_field<Tscal>(sched.pdl.get_field_idx<Tscal>("soundspeed"));
+                    sycl::buffer<Tscal> buf(vec_cs.data(), len);
                     f.override(buf, len);
                 }
 
@@ -324,12 +349,25 @@ namespace shammodels::sph {
                                      Tscal q,
                                      Tscal cmass) {
 
+            Tscal eos_gamma;
+            using Config = SolverConfig<Tvec, SPHKernel>;
+            using SolverConfigEOS     = typename Config::EOSConfig;
+            using SolverEOS_Adiabatic = typename SolverConfigEOS::Adiabatic;
+            if (SolverEOS_Adiabatic *eos_config =
+                std::get_if<SolverEOS_Adiabatic>(&solver.solver_config.eos_config.config)) {
+
+                eos_gamma = eos_config->gamma;
+
+            } else {
+                shambase::throw_unimplemented();
+            }
+
             auto cs = [&](Tscal u){
-                return sycl::sqrt(solver.eos_gamma * (solver.eos_gamma - 1) * u);
+                return sycl::sqrt(eos_gamma * (eos_gamma - 1) * u);
             };
 
             auto U = [&](Tscal cs){
-                return cs*cs/(solver.eos_gamma * (solver.eos_gamma - 1));
+                return cs*cs/(eos_gamma * (eos_gamma - 1));
             };
 
 
