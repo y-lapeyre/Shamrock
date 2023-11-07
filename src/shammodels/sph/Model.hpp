@@ -174,7 +174,7 @@ namespace shammodels::sph {
 
             } else {
                 //dirty hack for disc setup in locally isothermal
-                eos_gamma = 1;
+                eos_gamma = 2;
                 //shambase::throw_unimplemented();
             }
 
