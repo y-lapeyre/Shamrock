@@ -18,3 +18,4 @@ shammodels::sph::modules::ConservativeCheck are abstrations designed to "hide" s
 after templating a function, it is necessary to instanciate it at the end of the file.
 
 
+ctrl + click on error to see the line in the file that fucked up
