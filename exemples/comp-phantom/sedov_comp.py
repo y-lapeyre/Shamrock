@@ -138,10 +138,10 @@ def plot_phantom_dump(fig,axs,phantom_dump):
     u = np.array(list(sdf['u']))
     alpha = np.array(list(sdf['alpha']))
 
-    axs[0,0].scatter(r,rho,s=smarker,c = 'red', marker=marker_ph,label = "phantom")
-    axs[0,1].scatter(r,u,s=smarker,c = 'red', marker=marker_ph)
-    axs[1,0].scatter(r,vr,s=smarker,c = 'red', marker=marker_ph)
-    axs[1,1].scatter(r,alpha,s=smarker,c = 'red', marker=marker_ph)
+    axs[0,0].scatter(r,rho,s=smarker,c = 'red', marker=marker_ph, rasterized=True,label = "phantom")
+    axs[0,1].scatter(r,u,s=smarker,c = 'red', marker=marker_ph, rasterized=True)
+    axs[1,0].scatter(r,vr,s=smarker,c = 'red', marker=marker_ph, rasterized=True)
+    axs[1,1].scatter(r,alpha,s=smarker,c = 'red', marker=marker_ph, rasterized=True)
 
 
 last_u = ""
@@ -179,11 +179,11 @@ def comp_state(i, savename ):
     #load_phantom_dudt(fig,axs, phantom_dump, last_dump)
 
 
-    axs[0,0].scatter(r,rho,s=smarker,c = 'black', marker=marker_sham,label = "shamrock")
+    axs[0,0].scatter(r,rho,s=smarker,c = 'black', marker=marker_sham, rasterized=True,label = "shamrock")
     #axs[0,1].scatter(r,1e5*(uint-last_u),s=smarker)
-    axs[0,1].scatter(r,uint,s=smarker,c = 'black', marker=marker_sham)
-    axs[1,0].scatter(r,vr,s=smarker,c = 'black', marker=marker_sham)
-    axs[1,1].scatter(r,alpha_AV, s=smarker,c = 'black', marker=marker_sham)
+    axs[0,1].scatter(r,uint,s=smarker,c = 'black', marker=marker_sham, rasterized=True)
+    axs[1,0].scatter(r,vr,s=smarker,c = 'black', marker=marker_sham, rasterized=True)
+    axs[1,1].scatter(r,alpha_AV, s=smarker,c = 'black', marker=marker_sham, rasterized=True)
 
 
     last_u = uint
@@ -208,12 +208,16 @@ def comp_state(i, savename ):
 
     plt.tight_layout()  
 
-    plt.savefig(savename)
+    plt.savefig(savename, dpi = 300)
 
 
 model.evolve(0,0, False, "", False)
-for i in range(1000):
+for i in range(1001):
     if i%10 == 0:
-        comp_state(i, "comp"+str(i)+".png")
+        comp_state(i, "comp"+str(i)+".pdf")
     model.evolve(0,1e-5, False, "", False)
 
+for i in range(1000, 1001):
+    if i%10 == 0:
+        comp_state(i, "comp"+str(i)+".pdf")
+    model.evolve(0,1e-5, False, "", False)
