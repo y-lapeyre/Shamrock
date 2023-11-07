@@ -36,7 +36,7 @@ disc_mass = 0.001
 pmass = model.add_disc_3d(
     (0,0,0),
     1,
-    1000000,
+    100000,
     0.2,3,
     disc_mass,
     1.,
@@ -124,7 +124,7 @@ while t_sum < t_target:
     print("step : t=",t_sum)
 
     do_dump = (i % 50 == 0)  
-    next_dt = model.evolve(t_sum,current_dt, do_dump, "dump_"+str(i_dump)+".vtk", do_dump)
+    next_dt = model.evolve(t_sum,current_dt, do_dump, "dump_{:04}.vtk".format(i_dump), do_dump)
 
     if i % 50 == 0:
         i_dump += 1
