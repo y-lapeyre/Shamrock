@@ -1432,6 +1432,8 @@ auto SPHSolve<Tvec, Kern>::evolve_once(
     shambase::Timer tstep;
     tstep.start();
 
+    scheduler().scheduler_step(true, true);
+
     using namespace shamrock;
     using namespace shamrock::patch;
 
