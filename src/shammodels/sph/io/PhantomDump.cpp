@@ -15,48 +15,112 @@
 
 #include "PhantomDump.hpp"
 
-shammodels::sph::PhantomBlock shammodels::sph::PhantomBlock::from_file(
+template<class T>
+shammodels::sph::PhantomDumpBlockArray<T> shammodels::sph::PhantomDumpBlockArray<T>::from_file(
+    shambase::FortranIOFile &phfile, i64 tot_count) {
+    PhantomDumpBlockArray tmp;
+    phfile.read_fixed_string(tmp.tag, 16);
+    phfile.read_val_array(tmp.vals, tot_count);
+    return tmp;
+}
+
+template<class T>
+void shammodels::sph::PhantomDumpBlockArray<T>::write(
+    shambase::FortranIOFile &phfile, i64 tot_count) {
+    phfile.write_fixed_string(tag, 16);
+    phfile.write_val_array(vals, tot_count);
+}
+
+template<class T>
+shammodels::sph::PhantomDumpTableHeader<T>
+shammodels::sph::PhantomDumpTableHeader<T>::from_file(shambase::FortranIOFile &phfile) {
+    shammodels::sph::PhantomDumpTableHeader<T> tmp;
+
+    int nvars;
+
+    phfile.read(nvars);
+
+    if (nvars == 0) {
+        return tmp;
+    }
+
+    std::vector<std::string> tags;
+    phfile.read_string_array(tags, 16, nvars);
+
+    std::vector<T> vals;
+    phfile.read_val_array(vals, nvars);
+
+    for (u32 i = 0; i < nvars; i++) {
+        tmp.entries.push_back({tags[i], vals[i]});
+    }
+
+    return tmp;
+}
+
+template<class T>
+void shammodels::sph::PhantomDumpTableHeader<T>::write(shambase::FortranIOFile &phfile) {
+    int nvars = entries.size();
+    phfile.write(nvars);
+
+    if (nvars == 0) {
+        return;
+    }
+
+    std::vector<std::string> tags;
+    std::vector<T> vals;
+    for (u32 i = 0; i < nvars; i++) {
+        auto [a, b] = entries[i];
+        tags.push_back(a);
+        vals.push_back(b);
+    }
+
+    phfile.write_string_array(tags, 16, nvars);
+    phfile.write_val_array(vals, nvars);
+}
+
+shammodels::sph::PhantomDumpBlock shammodels::sph::PhantomDumpBlock::from_file(
     shambase::FortranIOFile &phfile, i64 tot_count, std::array<i32, 8> numarray) {
-    PhantomBlock block;
+    PhantomDumpBlock block;
 
     block.tot_count = tot_count;
 
     for (u32 j = 0; j < numarray[0]; j++) {
         block.table_header_fort_int.push_back(
-            PhantomBlockArray<fort_int>::from_file(phfile, block.tot_count));
+            PhantomDumpBlockArray<fort_int>::from_file(phfile, block.tot_count));
     }
     for (u32 j = 0; j < numarray[1]; j++) {
-        block.table_header_i8.push_back(PhantomBlockArray<i8>::from_file(phfile, block.tot_count));
+        block.table_header_i8.push_back(
+            PhantomDumpBlockArray<i8>::from_file(phfile, block.tot_count));
     }
     for (u32 j = 0; j < numarray[2]; j++) {
         block.table_header_i16.push_back(
-            PhantomBlockArray<i16>::from_file(phfile, block.tot_count));
+            PhantomDumpBlockArray<i16>::from_file(phfile, block.tot_count));
     }
     for (u32 j = 0; j < numarray[3]; j++) {
         block.table_header_i32.push_back(
-            PhantomBlockArray<i32>::from_file(phfile, block.tot_count));
+            PhantomDumpBlockArray<i32>::from_file(phfile, block.tot_count));
     }
     for (u32 j = 0; j < numarray[4]; j++) {
         block.table_header_i64.push_back(
-            PhantomBlockArray<i64>::from_file(phfile, block.tot_count));
+            PhantomDumpBlockArray<i64>::from_file(phfile, block.tot_count));
     }
     for (u32 j = 0; j < numarray[5]; j++) {
         block.table_header_fort_real.push_back(
-            PhantomBlockArray<fort_real>::from_file(phfile, block.tot_count));
+            PhantomDumpBlockArray<fort_real>::from_file(phfile, block.tot_count));
     }
     for (u32 j = 0; j < numarray[6]; j++) {
         block.table_header_f32.push_back(
-            PhantomBlockArray<f32>::from_file(phfile, block.tot_count));
+            PhantomDumpBlockArray<f32>::from_file(phfile, block.tot_count));
     }
     for (u32 j = 0; j < numarray[7]; j++) {
         block.table_header_f64.push_back(
-            PhantomBlockArray<f64>::from_file(phfile, block.tot_count));
+            PhantomDumpBlockArray<f64>::from_file(phfile, block.tot_count));
     }
 
     return block;
 }
 
-void shammodels::sph::PhantomBlock::write(
+void shammodels::sph::PhantomDumpBlock::write(
     shambase::FortranIOFile &phfile, i64 tot_count, std::array<i32, 8> numarray) {
 
     for (u32 j = 0; j < numarray[0]; j++) {
@@ -175,7 +239,7 @@ shammodels::sph::PhantomDump::from_file(shambase::FortranIOFile &phfile) {
     }
     for (u32 i = 0; i < nblocks; i++) {
         phdump.blocks.push_back(
-            PhantomBlock::from_file(phfile, block_tot_counts[i], block_numarray[i]));
+            PhantomDumpBlock::from_file(phfile, block_tot_counts[i], block_numarray[i]));
     }
 
     if (!phfile.finished_read()) {

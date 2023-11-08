@@ -11,8 +11,8 @@
 /**
  * @file PhantomDump.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @brief 
- * 
+ * @brief
+ *
  */
 
 #include "shambase/bytestream.hpp"
@@ -35,90 +35,41 @@ namespace shammodels::sph {
     struct PhantomDumpTableHeader {
         std::vector<std::pair<std::string, T>> entries;
 
-        static PhantomDumpTableHeader<T> from_file(shambase::FortranIOFile &phfile) {
-            PhantomDumpTableHeader<T> tmp;
+        static PhantomDumpTableHeader<T> from_file(shambase::FortranIOFile &phfile);
 
-            int nvars;
-
-            phfile.read(nvars);
-
-            if (nvars == 0) {
-                return tmp;
-            }
-
-            std::vector<std::string> tags;
-            phfile.read_string_array(tags, 16, nvars);
-
-            std::vector<T> vals;
-            phfile.read_val_array(vals, nvars);
-
-            for (u32 i = 0; i < nvars; i++) {
-                tmp.entries.push_back({tags[i], vals[i]});
-            }
-
-            return tmp;
-        }
-
-        inline void write(shambase::FortranIOFile &phfile) {
-            int nvars = entries.size();
-            phfile.write(nvars);
-
-            if (nvars == 0) {
-                return;
-            }
-
-            std::vector<std::string> tags;
-            std::vector<T> vals;
-            for (u32 i = 0; i < nvars; i++) {
-                auto [a, b] = entries[i];
-                tags.push_back(a);
-                vals.push_back(b);
-            }
-
-            phfile.write_string_array(tags, 16, nvars);
-            phfile.write_val_array(vals, nvars);
-        }
+        void write(shambase::FortranIOFile &phfile);
     };
 
     template<class T>
-    struct PhantomBlockArray {
+    struct PhantomDumpBlockArray {
 
         std::string tag;
         std::vector<T> vals;
 
-        static PhantomBlockArray from_file(shambase::FortranIOFile &phfile, i64 tot_count) {
-            PhantomBlockArray tmp;
-            phfile.read_fixed_string(tmp.tag, 16);
-            phfile.read_val_array(tmp.vals, tot_count);
-            return tmp;
-        }
+        static PhantomDumpBlockArray from_file(shambase::FortranIOFile &phfile, i64 tot_count);
 
-        inline void write(shambase::FortranIOFile &phfile, i64 tot_count) {
-            phfile.write_fixed_string(tag, 16);
-            phfile.write_val_array(vals, tot_count);
-        }
+        void write(shambase::FortranIOFile &phfile, i64 tot_count);
     };
 
-    struct PhantomBlock {
+    struct PhantomDumpBlock {
         i64 tot_count;
 
         using fort_real = f64;
         using fort_int  = int;
 
-        std::vector<PhantomBlockArray<fort_int>> table_header_fort_int;
-        std::vector<PhantomBlockArray<i8>> table_header_i8;
-        std::vector<PhantomBlockArray<i16>> table_header_i16;
-        std::vector<PhantomBlockArray<i32>> table_header_i32;
-        std::vector<PhantomBlockArray<i64>> table_header_i64;
-        std::vector<PhantomBlockArray<fort_real>> table_header_fort_real;
-        std::vector<PhantomBlockArray<f32>> table_header_f32;
-        std::vector<PhantomBlockArray<f64>> table_header_f64;
+        std::vector<PhantomDumpBlockArray<fort_int>> table_header_fort_int;
+        std::vector<PhantomDumpBlockArray<i8>> table_header_i8;
+        std::vector<PhantomDumpBlockArray<i16>> table_header_i16;
+        std::vector<PhantomDumpBlockArray<i32>> table_header_i32;
+        std::vector<PhantomDumpBlockArray<i64>> table_header_i64;
+        std::vector<PhantomDumpBlockArray<fort_real>> table_header_fort_real;
+        std::vector<PhantomDumpBlockArray<f32>> table_header_f32;
+        std::vector<PhantomDumpBlockArray<f64>> table_header_f64;
 
-        static PhantomBlock
+        static PhantomDumpBlock
         from_file(shambase::FortranIOFile &phfile, i64 tot_count, std::array<i32, 8> numarray);
 
-        void
-        write(shambase::FortranIOFile &phfile, i64 tot_count, std::array<i32, 8> numarray) ;
+        void write(shambase::FortranIOFile &phfile, i64 tot_count, std::array<i32, 8> numarray);
     };
 
     struct PhantomDump {
@@ -154,7 +105,7 @@ namespace shammodels::sph {
         PhantomDumpTableHeader<f32> table_header_f32;
         PhantomDumpTableHeader<f64> table_header_f64;
 
-        std::vector<PhantomBlock> blocks;
+        std::vector<PhantomDumpBlock> blocks;
 
         shambase::FortranIOFile gen_file();
 
