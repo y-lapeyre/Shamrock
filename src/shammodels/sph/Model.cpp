@@ -9,13 +9,14 @@
 /**
  * @file Model.cpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @brief 
- * 
+ * @brief
+ *
  */
 
 #include "Model.hpp"
 #include "shambase/stacktrace.hpp"
 #include "shammath/sphkernels.hpp"
+#include "shammodels/sph/io/PhantomDump.hpp"
 #include "shamrock/scheduler/scheduler_mpi.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
@@ -170,7 +171,9 @@ inline void post_insert_data(PatchScheduler &sched) {
 
 template<class Tvec, template<class> class SPHKernel>
 void Model<Tvec, SPHKernel>::push_particle(
-    std::vector<Tvec> &part_pos_insert, std::vector<Tscal> &part_hpart_insert, std::vector<Tscal> &part_u_insert) {
+    std::vector<Tvec> &part_pos_insert,
+    std::vector<Tscal> &part_hpart_insert,
+    std::vector<Tscal> &part_u_insert) {
     StackEntry stack_loc{};
 
     using namespace shamrock::patch;
@@ -188,7 +191,7 @@ void Model<Tvec, SPHKernel>::push_particle(
         std::vector<Tscal> hpart_acc;
         std::vector<Tscal> u_acc;
         for (u32 i = 0; i < part_pos_insert.size(); i++) {
-            Tvec r = part_pos_insert[i];
+            Tvec r  = part_pos_insert[i];
             Tscal u = part_u_insert[i];
             if (patch_coord.contain_pos(r)) {
                 vec_acc.push_back(r);
@@ -229,7 +232,7 @@ void Model<Tvec, SPHKernel>::push_particle(
         }
 
         {
-            u32 len                 = u_acc.size();
+            u32 len                  = u_acc.size();
             PatchDataField<Tscal> &f = tmp.get_field<Tscal>(sched.pdl.get_field_idx<Tscal>("uint"));
             sycl::buffer<Tscal> buf(u_acc.data(), len);
             f.override(buf, len);
@@ -250,7 +253,6 @@ void Model<Tvec, SPHKernel>::push_particle(
         post_insert_data<Tvec>(sched);
     });
 }
-
 
 template<class Tvec, template<class> class SPHKernel>
 void Model<Tvec, SPHKernel>::add_cube_fcc_3d(Tscal dr, std::pair<Tvec, Tvec> _box) {
@@ -356,6 +358,23 @@ void Model<Tvec, SPHKernel>::add_cube_fcc_3d(Tscal dr, std::pair<Tvec, Tvec> _bo
 
         post_insert_data<Tvec>(sched);
     }
+}
+
+template<class Tvec, template<class> class SPHKernel>
+void Model<Tvec, SPHKernel>::init_from_phantom_dump(PhantomDump &phdump) {
+
+    
+
+}
+
+template<class Tvec, template<class> class SPHKernel>
+shammodels::sph::PhantomDump Model<Tvec, SPHKernel>::make_phantom_dump() {
+
+    PhantomDump dump;
+
+
+    return dump;
+
 }
 
 using namespace shammath;

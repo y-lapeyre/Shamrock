@@ -21,6 +21,7 @@
 #include "shamcomm/collectives.hpp"
 #include "shammodels/generic/setup/generators.hpp"
 #include "shammodels/sph/Solver.hpp"
+#include "shammodels/sph/io/PhantomDump.hpp"
 #include "shamrock/legacy/utils/geometry_utils.hpp"
 #include "shamrock/scheduler/ReattributeDataUtility.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
@@ -75,6 +76,9 @@ namespace shammodels::sph {
         inline void resize_simulation_box(std::pair<Tvec, Tvec> box) {
             ctx.set_coord_domain_bound({box.first, box.second});
         }
+
+        void init_from_phantom_dump(PhantomDump & phdump);
+        PhantomDump make_phantom_dump();
 
         u64 get_total_part_count();
 
