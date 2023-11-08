@@ -47,6 +47,26 @@ struct PhantomDumpTableHeader {
 
         return tmp;
     }
+
+    inline void write(shambase::FortranIOFile &phfile){
+        int nvars = entries.size();
+        phfile.write(nvars);
+
+        if (nvars == 0) {
+            return ;
+        }
+
+        std::vector<std::string> tags;
+        std::vector<T> vals;
+        for (u32 i = 0; i < nvars; i++) {
+            auto [a,b] = entries[i];
+            tags.push_back(a);
+            vals.push_back(b);
+        }
+
+        phfile.write_string_array(tags, 16, nvars);
+        phfile.write_val_array(vals, nvars);
+    }
 };
 
 template<class T>
@@ -60,6 +80,11 @@ struct PhantomBlockArray {
         phfile.read_fixed_string(tmp.tag, 16);
         phfile.read_val_array(tmp.vals, tot_count);
         return tmp;
+    }
+
+    inline void write(shambase::FortranIOFile &phfile, i64 tot_count){
+        phfile.write_fixed_string(tag, 16);
+        phfile.write_val_array(vals, tot_count);
     }
 };
 
@@ -119,6 +144,34 @@ struct PhantomBlock {
 
         return block;
     }
+
+    inline void write(shambase::FortranIOFile &phfile, i64 tot_count, std::array<i32, 8> numarray){
+
+        for (u32 j = 0; j < numarray[0]; j++) {
+            table_header_fort_int[j].write(phfile,tot_count);
+        }
+        for (u32 j = 0; j < numarray[1]; j++) {
+            table_header_i8[j].write(phfile,tot_count);
+        }
+        for (u32 j = 0; j < numarray[2]; j++) {
+            table_header_i16[j].write(phfile,tot_count);
+        }
+        for (u32 j = 0; j < numarray[3]; j++) {
+            table_header_i32[j].write(phfile,tot_count);
+        }
+        for (u32 j = 0; j < numarray[4]; j++) {
+            table_header_i64[j].write(phfile,tot_count);
+        }
+        for (u32 j = 0; j < numarray[5]; j++) {
+            table_header_fort_real[j].write(phfile,tot_count);
+        }
+        for (u32 j = 0; j < numarray[6]; j++) {
+            table_header_f32[j].write(phfile,tot_count);
+        }
+        for (u32 j = 0; j < numarray[7]; j++) {
+            table_header_f64[j].write(phfile,tot_count);
+        }
+    }
 };
 
 struct PhantomDumpData {
@@ -155,6 +208,55 @@ struct PhantomDumpData {
     PhantomDumpTableHeader<f64> table_header_f64;
 
     std::vector<PhantomBlock> blocks;
+
+    inline shambase::FortranIOFile gen_file(){
+        shambase::FortranIOFile phfile;
+        phfile.write(i1, r1, i2, iversion, i3);
+
+        phfile.write_fixed_string(fileid, 100);
+
+        table_header_fort_int .write(phfile);
+        table_header_i8       .write(phfile);
+        table_header_i16      .write(phfile);
+        table_header_i32      .write(phfile);
+        table_header_i64      .write(phfile);
+        table_header_fort_real.write(phfile);
+        table_header_f32      .write(phfile);
+        table_header_f64      .write(phfile);
+
+
+        int nblocks = blocks.size();
+        phfile.write(nblocks);
+
+
+        std::vector<i64> block_tot_counts;
+        std::vector<std::array<i32, 8>> block_numarray;
+        for (u32 i = 0; i < nblocks; i++) {
+
+            i64 tot_count = blocks[i].tot_count;
+            std::array<i32, 8> counts = {
+i32(blocks[i].table_header_fort_int.size()),
+i32(blocks[i].table_header_i8.size()),
+i32(blocks[i].table_header_i16.size()),
+i32(blocks[i].table_header_i32.size()),
+i32(blocks[i].table_header_i64.size()),
+i32(blocks[i].table_header_fort_real.size()),
+i32(blocks[i].table_header_f32.size()),
+i32(blocks[i].table_header_f64.size())
+            };
+
+            phfile.write(tot_count, counts);
+            block_tot_counts.push_back(tot_count);
+            block_numarray.push_back(counts);
+
+        }
+
+        for (u32 i = 0; i < nblocks; i++) {
+            blocks[i].write(phfile, block_tot_counts[i], block_numarray[i]);
+        }
+
+        return phfile;
+    }
 
     static PhantomDumpData from_file(shambase::FortranIOFile &phfile) {
         PhantomDumpData phdump;
@@ -211,7 +313,7 @@ struct PhantomDumpData {
     }
 };
 
-TestStart(Unittest, "phantom-read", pahntomread, 1) {
+TestStart(Unittest, "phantom-read-write", pahntomread, 1) {
 
     std::string fname = "../../exemples/comp-phantom/blast_00472";
 
@@ -222,4 +324,8 @@ TestStart(Unittest, "phantom-read", pahntomread, 1) {
     PhantomDumpData phdump = PhantomDumpData::from_file(phfile);
 
     logger::raw_ln(phdump.fileid);
+
+
+    phdump.gen_file().write_to_file("zout_phantom");
+
 }
