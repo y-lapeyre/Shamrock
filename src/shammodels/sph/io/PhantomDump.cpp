@@ -7,9 +7,11 @@
 // -------------------------------------------------------//
 
 /**
- * @file PhantomDump.hpp
+ * @file PhantomDump.cpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @brief
+ * @brief 
+ *
+ * \todo clean classes name to make it more readable
  *
  */
 
