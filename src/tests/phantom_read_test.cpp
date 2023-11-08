@@ -18,7 +18,7 @@ TestStart(Unittest, "phantom-read-write", pahntomread, 1) {
 
     i32 fortran_byte;
 
-    shammodels::sph::PhantomDumpData phdump = shammodels::sph::PhantomDumpData::from_file(phfile);
+    shammodels::sph::PhantomDump phdump = shammodels::sph::PhantomDump::from_file(phfile);
 
     logger::raw_ln(phdump.fileid);
 
