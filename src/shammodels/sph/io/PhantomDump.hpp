@@ -19,7 +19,8 @@
 #include "shambase/exception.hpp"
 #include "shambase/fortran_io.hpp"
 #include "shambase/string.hpp"
-#include "shammodels/sph/EOSConfig.hpp"
+#include "shammodels/EOSConfig.hpp"
+#include "shammodels/sph/AVConfig.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamtest/details/TestResult.hpp"
 #include <array>
@@ -64,6 +65,16 @@ namespace shammodels::sph {
         static PhantomDumpBlockArray from_file(shambase::FortranIOFile &phfile, i64 tot_count);
 
         void write(shambase::FortranIOFile &phfile, i64 tot_count);
+
+
+        template<class Tb>
+        void fill_vec(std::string field_name, std::vector<Tb> & vec){
+            if(tag == field_name){
+                for(T a : vals){
+                    vec.push_back(a);
+                }
+            }
+        }
     };
 
     struct PhantomDumpBlock {
@@ -85,6 +96,39 @@ namespace shammodels::sph {
         from_file(shambase::FortranIOFile &phfile, i64 tot_count, std::array<i32, 8> numarray);
 
         void write(shambase::FortranIOFile &phfile, i64 tot_count, std::array<i32, 8> numarray);
+    
+        template<class T>
+        void fill_vec(std::string field_name, std::vector<T> & vec){
+
+            field_name = shambase::format("{:16s}",field_name);
+
+            for(auto & tmp : table_header_fort_int){
+                tmp.fill_vec(field_name, vec);
+            }
+            for(auto & tmp : table_header_i8){
+                tmp.fill_vec(field_name, vec);
+            }
+            for(auto & tmp : table_header_i16){
+                tmp.fill_vec(field_name, vec);
+            }
+            for(auto & tmp : table_header_i32){
+                tmp.fill_vec(field_name, vec);
+            }
+            for(auto & tmp : table_header_i64){
+                tmp.fill_vec(field_name, vec);
+            }
+            for(auto & tmp : table_header_fort_real){
+                tmp.fill_vec(field_name, vec);
+            }
+            for(auto & tmp : table_header_f32){
+                tmp.fill_vec(field_name, vec);
+            }
+            for(auto & tmp : table_header_f64){
+                tmp.fill_vec(field_name, vec);
+            }
+        }
+
+
     };
 
     struct PhantomDump {
@@ -176,6 +220,9 @@ namespace shammodels::sph {
 
     template<class Tvec>
     EOSConfig<Tvec> get_shamrock_eosconfig(PhantomDump & phdump);
+
+    template<class Tvec>
+    AVConfig<Tvec> get_shamrock_avconfig(PhantomDump & phdump);
 
 
 } // namespace shammodels::sph

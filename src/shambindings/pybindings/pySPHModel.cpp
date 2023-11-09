@@ -221,6 +221,9 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
         .def("add_sink", &T::add_sink)
         .def("gen_config_from_phantom_dump",[](T&self, PhantomDump & dump){
             return self.gen_config_from_phantom_dump(dump);
+        })
+        .def("init_from_phantom_dump",[](T& self, PhantomDump & dump){
+            self.init_from_phantom_dump(dump);
         });
     ;
 }

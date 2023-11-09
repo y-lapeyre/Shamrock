@@ -70,9 +70,9 @@ namespace shammodels::sph {
             return generic::setup::generators::get_box_dim(dr, xcnt, ycnt, zcnt);
         }
 
-        inline void set_cfl_cour(Tscal cfl_cour) { solver.cfl_cour = cfl_cour; }
-        inline void set_cfl_force(Tscal cfl_force) { solver.cfl_force = cfl_force; }
-        inline void set_particle_mass(Tscal gpart_mass) { solver.gpart_mass = gpart_mass; }
+        inline void set_cfl_cour(Tscal cfl_cour) { solver.solver_config.cfl_cour = cfl_cour; }
+        inline void set_cfl_force(Tscal cfl_force) { solver.solver_config.cfl_force = cfl_force; }
+        inline void set_particle_mass(Tscal gpart_mass) { solver.solver_config.gpart_mass = gpart_mass; }
 
         inline void resize_simulation_box(std::pair<Tvec, Tvec> box) {
             ctx.set_coord_domain_bound({box.first, box.second});
@@ -80,7 +80,7 @@ namespace shammodels::sph {
 
 
         SolverConfig gen_config_from_phantom_dump(PhantomDump & phdump);
-        //void init_from_phantom_dump(PhantomDump & phdump);
+        void init_from_phantom_dump(PhantomDump & phdump);
         //PhantomDump make_phantom_dump();
 
         u64 get_total_part_count();
@@ -95,7 +95,7 @@ namespace shammodels::sph {
         }
         
         Tscal rho_h(Tscal h){
-            return shamrock::sph::rho_h(solver.gpart_mass, h, Kernel::hfactd);
+            return shamrock::sph::rho_h(solver.solver_config.gpart_mass, h, Kernel::hfactd);
         }
 
         void add_cube_fcc_3d(Tscal dr, std::pair<Tvec, Tvec> _box);
