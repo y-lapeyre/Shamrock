@@ -361,9 +361,22 @@ void Model<Tvec, SPHKernel>::add_cube_fcc_3d(Tscal dr, std::pair<Tvec, Tvec> _bo
 }
 
 template<class Tvec, template<class> class SPHKernel>
+auto Model<Tvec, SPHKernel>::gen_config_from_phantom_dump(PhantomDump & phdump) -> SolverConfig {
+    
+    SolverConfig conf{};
+
+    conf.eos_config = get_shamrock_eosconfig<Tvec>(phdump);
+
+    return conf;
+}
+
+
+
+/*
+template<class Tvec, template<class> class SPHKernel>
 void Model<Tvec, SPHKernel>::init_from_phantom_dump(PhantomDump &phdump) {
 
-    
+
 
 }
 
@@ -376,6 +389,7 @@ shammodels::sph::PhantomDump Model<Tvec, SPHKernel>::make_phantom_dump() {
     return dump;
 
 }
+*/
 
 using namespace shammath;
 

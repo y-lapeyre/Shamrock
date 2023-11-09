@@ -18,11 +18,14 @@
 #include "shambase/bytestream.hpp"
 #include "shambase/exception.hpp"
 #include "shambase/fortran_io.hpp"
+#include "shambase/string.hpp"
+#include "shammodels/sph/EOSConfig.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamtest/details/TestResult.hpp"
 #include <array>
 #include <cstdlib>
 #include <fstream>
+#include <optional>
 #include <stdexcept>
 #include <string>
 #include <type_traits>
@@ -38,6 +41,18 @@ namespace shammodels::sph {
         static PhantomDumpTableHeader<T> from_file(shambase::FortranIOFile &phfile);
 
         void write(shambase::FortranIOFile &phfile);
+
+        inline std::optional<T> fetch(std::string s){
+            std::optional<T> ret = {};
+
+            for(auto [key,val] : entries){
+                if(key == s){
+                    ret = val;
+                }
+            }
+
+            return ret;
+        }
     };
 
     template<class T>
@@ -110,5 +125,57 @@ namespace shammodels::sph {
         shambase::FortranIOFile gen_file();
 
         static PhantomDump from_file(shambase::FortranIOFile &phfile);
+
+        template<class T>
+        inline T read_header_float(std::string s){
+
+            s = shambase::format("{:16s}",s);
+
+            if(auto tmp = table_header_fort_real.fetch(s); tmp){
+                return *tmp;
+            }
+            if(auto tmp = table_header_f32.fetch(s); tmp){
+                return *tmp;
+            }
+            if(auto tmp = table_header_f64.fetch(s); tmp){
+                return *tmp;
+            }
+
+            throw shambase::throw_with_loc<std::runtime_error>("the entry cannot be found");
+
+            return {};
+        }
+
+        template<class T>
+        inline T read_header_int(std::string s){
+
+            s = shambase::format("{:16s}",s);
+
+            if(auto tmp = table_header_fort_int.fetch(s); tmp){
+                return *tmp;
+            }
+            if(auto tmp = table_header_i8.fetch(s); tmp){
+                return *tmp;
+            }
+            if(auto tmp = table_header_i16.fetch(s); tmp){
+                return *tmp;
+            }
+            if(auto tmp = table_header_i32.fetch(s); tmp){
+                return *tmp;
+            }
+            if(auto tmp = table_header_i64.fetch(s); tmp){
+                return *tmp;
+            }
+
+            throw shambase::throw_with_loc<std::runtime_error>("the entry cannot be found");
+
+            return {};
+        }
+
     };
+
+    template<class Tvec>
+    EOSConfig<Tvec> get_shamrock_eosconfig(PhantomDump & phdump);
+
+
 } // namespace shammodels::sph

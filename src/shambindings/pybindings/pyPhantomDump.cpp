@@ -27,11 +27,19 @@ Register_pymod(pyphantomdump) {
         .def("save_dump",[](T & self, std::string fname){
             auto file = self.gen_file();
             file.write_to_file(fname);
+        })
+        .def("read_header_float",[](T & self, std::string s){
+            return self.read_header_float<f64>(s);
+        })
+        .def("read_header_int",[](T & self, std::string s){
+            return self.read_header_int<i64>(s);
         });
 
     m.def("load_phantom_dump", [](std::string fname){
         shambase::FortranIOFile phfile = shambase::load_fortran_file(fname);
         return shammodels::sph::PhantomDump::from_file(phfile);
     });
-    
+
+
+
 }

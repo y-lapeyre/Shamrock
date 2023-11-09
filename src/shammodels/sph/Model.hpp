@@ -48,6 +48,7 @@ namespace shammodels::sph {
         using Kernel             = SPHKernel<Tscal>;
 
         using Solver = Solver<Tvec, SPHKernel>;
+        using SolverConfig = typename Solver::Config;
         // using SolverConfig = typename Solver::Config;
 
         ShamrockCtx &ctx;
@@ -77,8 +78,10 @@ namespace shammodels::sph {
             ctx.set_coord_domain_bound({box.first, box.second});
         }
 
-        void init_from_phantom_dump(PhantomDump & phdump);
-        PhantomDump make_phantom_dump();
+
+        SolverConfig gen_config_from_phantom_dump(PhantomDump & phdump);
+        //void init_from_phantom_dump(PhantomDump & phdump);
+        //PhantomDump make_phantom_dump();
 
         u64 get_total_part_count();
 
@@ -168,7 +171,7 @@ namespace shammodels::sph {
             Tscal G = solver.solver_config.get_constant_G();
 
             Tscal eos_gamma;
-            using Config = SolverConfig<Tvec, SPHKernel>;
+            using Config = SolverConfig;
             using SolverConfigEOS     = typename Config::EOSConfig;
             using SolverEOS_Adiabatic = typename SolverConfigEOS::Adiabatic;
             if (SolverEOS_Adiabatic *eos_config =
@@ -354,7 +357,7 @@ namespace shammodels::sph {
                                      Tscal cmass) {
 
             Tscal eos_gamma;
-            using Config = SolverConfig<Tvec, SPHKernel>;
+            using Config = SolverConfig;
             using SolverConfigEOS     = typename Config::EOSConfig;
             using SolverEOS_Adiabatic = typename SolverConfigEOS::Adiabatic;
             if (SolverEOS_Adiabatic *eos_config =
