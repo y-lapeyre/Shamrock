@@ -9,7 +9,7 @@
 #pragma once
 
 /**
- * @file SolverConfig.hpp
+ * @file EOSConfig.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @brief
  *
