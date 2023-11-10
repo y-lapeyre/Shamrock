@@ -16,7 +16,7 @@
 
 #include "shambackends/math.hpp"
 #include "shambase/sycl_utils/sycl_utilities.hpp"
-#include "shamsys/legacy/log.hpp"
+
 namespace shamrock::sph {
 
     /**
@@ -137,16 +137,6 @@ namespace shamrock::sph {
         }
 
         q_av_d =  prefact* vsig_disc * v_scal_rhat;
-
-        //q_av_d = Tscal(0);
-        if (sham::abs(q_av_d) >0.0001){
-        //logger::raw_ln("##############################alphaAV", alpha_av);
-        //logger::raw_ln("##############################qav_dh", h);
-        //logger::raw_ln("##############################rabinv", rabinv);
-        //logger::raw_ln("##############################cs", cs);
-        //logger::raw_ln("##############################qav_d", q_av_d);
-        }
-
 
         return q_av_d;
     }
