@@ -240,7 +240,12 @@ namespace shamrock::sph {
         //  scalar : f32  | vector : f32_3
         Tscal vsig_a = alpha_a * cs_a + beta_AV * abs_v_ab_r_ab;
         Tscal vsig_b = alpha_b * cs_b + beta_AV * abs_v_ab_r_ab;
-        Tscal vsig_u = abs_v_ab_r_ab;
+
+
+        //Tscal vsig_u = abs_v_ab_r_ab;
+        Tscal rho_avg = (rho_a + rho_b)*0.5;
+        Tscal abs_dp = sham::abs(P_a - P_b);
+        Tscal vsig_u = sycl::sqrt(abs_dp/rho_avg);
 
         Tscal dWab_a = Fab_a;
         Tscal dWab_b = Fab_b;
