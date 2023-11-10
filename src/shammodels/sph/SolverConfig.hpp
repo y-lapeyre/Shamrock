@@ -80,7 +80,13 @@ struct shammodels::sph::SolverConfig {
             Tscal beta_AV     = 2.0;
         };
 
-        using Variant  = std::variant<None, Constant, VaryingMM97, VaryingCD10>;
+        struct ConstantDisc {
+            Tscal alpha_AV   = 1.0;
+            Tscal alpha_u     = 1.0;
+            Tscal beta_AV     = 2.0;
+        };
+
+        using Variant  = std::variant<None, Constant, VaryingMM97, VaryingCD10, ConstantDisc>;
         Variant config = Constant{};
 
         void set(Variant v) { config = v; }
@@ -144,8 +150,14 @@ struct shammodels::sph::SolverConfig {
                 logger::raw_ln("  sigma_decay =", v->sigma_decay);
                 logger::raw_ln("  alpha_u     =", v->alpha_u);
                 logger::raw_ln("  beta_AV     =", v->beta_AV);
+            } else if (ConstantDisc *v = std::get_if<ConstantDisc>(&config)) {
+                logger::raw_ln("  Config Type : constant disc");
+                logger::raw_ln("  alpha_AV   =", v->alpha_AV);
+                logger::raw_ln("  alpha_u     =", v->alpha_u);
+                logger::raw_ln("  beta_AV     =", v->beta_AV);
+            }else {
+                shambase::throw_unimplemented();
             }
-
             logger::raw_ln("--- artificial viscosity config (deduced)");
 
             logger::raw_ln("-------------");
@@ -187,12 +199,6 @@ struct shammodels::sph::SolverConfig {
         }
     };  
 
-
-
-
-
-
-
     struct EOSConfig{
         struct Adiabatic{
             Tscal gamma = 5./3.;
@@ -227,8 +233,6 @@ struct shammodels::sph::SolverConfig {
         return is_eos_locally_isothermal();
     }
 
-
-
     EOSConfig eos_config;
 
     inline void set_eos_adiabatic(Tscal gamma){
@@ -237,10 +241,6 @@ struct shammodels::sph::SolverConfig {
     inline void set_eos_locally_isothermal(){
        eos_config.set_locally_isothermal();
     }
-
-
-
-
 
     struct ExtForceConfig{
 
@@ -297,11 +297,6 @@ struct shammodels::sph::SolverConfig {
         ext_force_config.add_lense_thrirring( central_mass,  Racc,  a_spin,  dir_spin);
     }
 
-
-
-     
-
-
     BCConfig boundary_config;
 
     inline void set_boundary_free(){
@@ -335,6 +330,9 @@ struct shammodels::sph::SolverConfig {
     }
 
     inline void set_artif_viscosity_VaryingCD10(typename AVConfig::VaryingCD10 v) {
+        artif_viscosity.set(v);
+    }
+    inline void set_artif_viscosity_ConstantDisc(typename AVConfig::ConstantDisc v) {
         artif_viscosity.set(v);
     }
 
