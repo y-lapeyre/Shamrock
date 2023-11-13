@@ -66,6 +66,7 @@ f64 Model<Tvec, SPHKernel>::total_mass_to_part_mass(f64 totmass) {
 
 template<class Tvec, template<class> class SPHKernel>
 auto Model<Tvec, SPHKernel>::get_closest_part_to(Tvec pos) -> Tvec {
+    StackEntry stack_loc{};
 
     using namespace shamrock::patch;
 
@@ -117,12 +118,14 @@ auto Model<Tvec, SPHKernel>::get_closest_part_to(Tvec pos) -> Tvec {
 template<class Tvec, template<class> class SPHKernel>
 auto Model<Tvec, SPHKernel>::get_ideal_fcc_box(Tscal dr, std::pair<Tvec, Tvec> box)
     -> std::pair<Tvec, Tvec> {
+    StackEntry stack_loc{};
     auto [a, b] = generic::setup::generators::get_ideal_fcc_box<Tscal>(dr, box);
     return {a, b};
 }
 
 template<class Tvec>
 inline void post_insert_data(PatchScheduler &sched) {
+    StackEntry stack_loc{};
     sched.scheduler_step(false, false);
 
     /*
@@ -363,16 +366,21 @@ void Model<Tvec, SPHKernel>::add_cube_fcc_3d(Tscal dr, std::pair<Tvec, Tvec> _bo
 }
 
 template<class Tvec, template<class> class SPHKernel>
-auto Model<Tvec, SPHKernel>::gen_config_from_phantom_dump(PhantomDump & phdump) -> SolverConfig {
-    
+auto Model<Tvec, SPHKernel>::gen_config_from_phantom_dump(PhantomDump & phdump, bool bypass_error) -> SolverConfig {
+    StackEntry stack_loc{};
     SolverConfig conf{};
 
     conf.gpart_mass = phdump.read_header_float<Tscal>("massoftype");
     conf.cfl_cour = phdump.read_header_float<Tscal>("C_force");
     conf.cfl_force = phdump.read_header_float<Tscal>("C_cour");
 
-    conf.eos_config = get_shamrock_eosconfig<Tvec>(phdump);
+    conf.eos_config = get_shamrock_eosconfig<Tvec>(phdump,bypass_error);
     conf.artif_viscosity = get_shamrock_avconfig<Tvec>(phdump);
+
+    //xmin, xmax, y... z... are in the header only in periodic mode in phantom
+    if(phdump.has_header_entry("xmin")){
+        conf.set_boundary_free();
+    }
 
     return conf;
 }
@@ -382,21 +390,21 @@ auto Model<Tvec, SPHKernel>::gen_config_from_phantom_dump(PhantomDump & phdump) 
 
 template<class Tvec, template<class> class SPHKernel>
 void Model<Tvec, SPHKernel>::init_from_phantom_dump(PhantomDump &phdump) {
+    StackEntry stack_loc{};
+
+    bool has_coord_in_header = true;
+
+    Tscal xmin, xmax, ymin, ymax, zmin, zmax;
+    has_coord_in_header = phdump.has_header_entry("xmin");
 
     std::string log = "";
-
-
-    Tscal xmin = phdump.read_header_float<f64>("xmin"); 
-    Tscal xmax = phdump.read_header_float<f64>("xmax");
-    Tscal ymin = phdump.read_header_float<f64>("ymin");  
-    Tscal ymax = phdump.read_header_float<f64>("ymax");  
-    Tscal zmin = phdump.read_header_float<f64>("zmin");    
-    Tscal zmax = phdump.read_header_float<f64>("zmax");
-
-    resize_simulation_box({{xmin,ymin,zmin}, {xmax,ymax,zmax}});
     
     std::vector<Tvec> xyz, vxyz;
     std::vector<Tscal> h, u, alpha;
+
+    
+
+    
 
     {
         std::vector<Tscal> x,y,z,vx,vy,vz; 
@@ -404,6 +412,42 @@ void Model<Tvec, SPHKernel>::init_from_phantom_dump(PhantomDump &phdump) {
         phdump.blocks[0].fill_vec("x", x);
         phdump.blocks[0].fill_vec("y", y);
         phdump.blocks[0].fill_vec("z", z);
+
+        
+        if(has_coord_in_header){
+            xmin = phdump.read_header_float<f64>("xmin"); 
+            xmax = phdump.read_header_float<f64>("xmax");
+            ymin = phdump.read_header_float<f64>("ymin");  
+            ymax = phdump.read_header_float<f64>("ymax");  
+            zmin = phdump.read_header_float<f64>("zmin");    
+            zmax = phdump.read_header_float<f64>("zmax");
+
+            resize_simulation_box({{xmin,ymin,zmin}, {xmax,ymax,zmax}});
+        }else {
+            Tscal box_tolerance = 1.2;
+
+            xmin = *std::min_element(x.begin(), x.end());
+            xmax = *std::max_element(x.begin(), x.end());
+            ymin = *std::min_element(y.begin(), y.end());
+            ymax = *std::max_element(y.begin(), y.end());
+            zmin = *std::min_element(z.begin(), z.end());
+            zmax = *std::max_element(z.begin(), z.end());
+
+            Tvec bm = {xmin,ymin,zmin};
+            Tvec bM = {xmax,ymax,zmax}; 
+
+            Tvec center = (bm + bM)*0.5;
+
+            Tvec d = (bM - bm)*0.5;
+
+            //expand the box
+            d *= box_tolerance;
+
+            resize_simulation_box({center - d, center + d});
+        }
+
+        
+
 
         phdump.blocks[0].fill_vec("h", h);
 
@@ -421,6 +465,8 @@ void Model<Tvec, SPHKernel>::init_from_phantom_dump(PhantomDump &phdump) {
             vxyz.push_back({vx[i],vy[i],vz[i]});
         }
     }
+
+
 
 
     using namespace shamrock::patch;

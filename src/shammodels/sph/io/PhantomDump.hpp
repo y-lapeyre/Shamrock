@@ -170,6 +170,38 @@ namespace shammodels::sph {
 
         static PhantomDump from_file(shambase::FortranIOFile &phfile);
 
+        inline bool has_header_entry(std::string s){
+
+            s = shambase::format("{:16s}",s);
+
+            if(auto tmp = table_header_fort_int.fetch(s); tmp){
+                return true;
+            }
+            if(auto tmp = table_header_i8.fetch(s); tmp){
+                return true;
+            }
+            if(auto tmp = table_header_i16.fetch(s); tmp){
+                return true;
+            }
+            if(auto tmp = table_header_i32.fetch(s); tmp){
+                return true;
+            }
+            if(auto tmp = table_header_i64.fetch(s); tmp){
+                return true;
+            }
+            if(auto tmp = table_header_fort_real.fetch(s); tmp){
+                return true;
+            }
+            if(auto tmp = table_header_f32.fetch(s); tmp){
+                return true;
+            }
+            if(auto tmp = table_header_f64.fetch(s); tmp){
+                return true;
+            }
+
+            return false;
+        }
+
         template<class T>
         inline T read_header_float(std::string s){
 
@@ -185,7 +217,7 @@ namespace shammodels::sph {
                 return *tmp;
             }
 
-            throw shambase::throw_with_loc<std::runtime_error>("the entry cannot be found");
+            throw shambase::throw_with_loc<std::runtime_error>("the entry cannot be found : "+s);
 
             return {};
         }
@@ -219,7 +251,7 @@ namespace shammodels::sph {
     };
 
     template<class Tvec>
-    EOSConfig<Tvec> get_shamrock_eosconfig(PhantomDump & phdump);
+    EOSConfig<Tvec> get_shamrock_eosconfig(PhantomDump & phdump, bool bypass_error);
 
     template<class Tvec>
     AVConfig<Tvec> get_shamrock_avconfig(PhantomDump & phdump);

@@ -79,7 +79,7 @@ namespace shammodels::sph {
         }
 
 
-        SolverConfig gen_config_from_phantom_dump(PhantomDump & phdump);
+        SolverConfig gen_config_from_phantom_dump(PhantomDump & phdump, bool bypass_error);
         void init_from_phantom_dump(PhantomDump & phdump);
         //PhantomDump make_phantom_dump();
 
