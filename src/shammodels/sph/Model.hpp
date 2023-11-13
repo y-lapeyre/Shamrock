@@ -105,6 +105,8 @@ namespace shammodels::sph {
                 solver.storage.sinks.set({});
             }
 
+            logger::debug_ln("SPH", "add sink :",mass,pos,velocity,accretion_radius);
+
             solver.storage.sinks.get().push_back({
                 pos,velocity,{},{},mass,{},accretion_radius
             });

@@ -581,6 +581,34 @@ void Model<Tvec, SPHKernel>::init_from_phantom_dump(PhantomDump &phdump) {
         post_insert_data<Tvec>(sched);
 
 
+        // add sinks
+
+        PhantomDumpBlock & sink_block = phdump.blocks[1];
+        {
+            std::vector<Tscal> xsink, ysink,zsink;
+            std::vector<Tscal> vxsink, vysink,vzsink;
+            std::vector<Tscal> mass;
+            std::vector<Tscal> Racc;
+
+            sink_block.fill_vec("x", xsink);
+            sink_block.fill_vec("y", ysink);
+            sink_block.fill_vec("z", zsink);
+            sink_block.fill_vec("vx", vxsink);
+            sink_block.fill_vec("vy", vysink);
+            sink_block.fill_vec("vz", vzsink);
+            sink_block.fill_vec("m", mass);
+            sink_block.fill_vec("h", Racc);
+
+            for(u32 i = 0; i < xsink.size(); i++){
+                add_sink(
+                    mass[i], 
+                    {xsink[i],ysink[i],zsink[i]}, 
+                    {vxsink[i],vysink[i],vzsink[i]}, 
+                    Racc[i]);
+            }
+        
+        }
+
     }
 
 
