@@ -546,11 +546,8 @@ void Model<Tvec, SPHKernel>::init_from_phantom_dump(PhantomDump &phdump) {
             }
 
 
-
-
-
             PatchData ptmp(sched.pdl);
-            ptmp.resize(Nloc);
+            ptmp.resize(sel_index.size());
             ptmp.fields_raz();
 
             ptmp.override_patch_field("xyz", ins_xyz);
