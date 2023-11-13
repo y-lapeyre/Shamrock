@@ -22,6 +22,8 @@
 #include "shammodels/EOSConfig.hpp"
 #include "shammodels/sph/AVConfig.hpp"
 #include "shamsys/legacy/log.hpp"
+#include "shamunits/UnitSystem.hpp"
+#include <string>
 
 template<class T>
 shammodels::sph::PhantomDumpBlockArray<T> shammodels::sph::PhantomDumpBlockArray<T>::from_file(
@@ -273,13 +275,17 @@ shammodels::sph::PhantomDump::from_file(shambase::FortranIOFile &phfile) {
 !    11 = isothermal eos with zero pressure
 !    12 = ideal gas with radiation pressure
 !    13 = locally isothermal prescription from Farris et al. (2014) generalised for generic
-hierarchical systems !    14 = locally isothermal prescription from Farris et al. (2014) for binary
-system !    15 = Helmholtz free energy eos !    16 = Shen eos !    20 = Ideal gas + radiation +
+hierarchical systems 
+!    14 = locally isothermal prescription from Farris et al. (2014) for binary
+system 
+!    15 = Helmholtz free energy eos 
+!    16 = Shen eos 
+!    20 = Ideal gas + radiation +
 various forms of recombination energy from HORMONE (Hirai et al., 2020)
 */
 
 template<class Tvec>
-shammodels::EOSConfig<Tvec> shammodels::sph::get_shamrock_eosconfig(PhantomDump &phdump) {
+shammodels::EOSConfig<Tvec> shammodels::sph::get_shamrock_eosconfig(PhantomDump &phdump, bool bypass_error) {
 
     shammodels::EOSConfig<Tvec> cfg{};
 
@@ -291,16 +297,21 @@ shammodels::EOSConfig<Tvec> shammodels::sph::get_shamrock_eosconfig(PhantomDump 
         f64 gamma = phdump.read_header_float<f64>("gamma");
         cfg.set_adiabatic(gamma);
     } else {
-        shambase::throw_unimplemented();
+        const std::string msg = "phantom ieos=" + std::to_string(ieos)+ " is not implemented in shamrock";
+        if(bypass_error){
+            logger::warn_ln("SPH", msg);
+        }else {
+            shambase::throw_unimplemented(msg);
+        }
     }
 
     return cfg;
 }
 
 template shammodels::EOSConfig<f32_3>
-shammodels::sph::get_shamrock_eosconfig<f32_3>(PhantomDump &phdump);
+shammodels::sph::get_shamrock_eosconfig<f32_3>(PhantomDump &phdump, bool bypass_error);
 template shammodels::EOSConfig<f64_3>
-shammodels::sph::get_shamrock_eosconfig<f64_3>(PhantomDump &phdump);
+shammodels::sph::get_shamrock_eosconfig<f64_3>(PhantomDump &phdump, bool bypass_error);
 
 template<class Tvec>
 shammodels::sph::AVConfig<Tvec> shammodels::sph::get_shamrock_avconfig(PhantomDump &phdump) {
@@ -315,3 +326,31 @@ template shammodels::sph::AVConfig<f32_3>
 shammodels::sph::get_shamrock_avconfig<f32_3>(PhantomDump &phdump);
 template shammodels::sph::AVConfig<f64_3>
 shammodels::sph::get_shamrock_avconfig<f64_3>(PhantomDump &phdump);
+
+
+template<class Tscal> 
+shamunits::UnitSystem<Tscal> shammodels::sph::get_shamrock_units(PhantomDump & phdump){
+    
+    f64 udist = phdump.read_header_float<f64>("udist");
+    f64 umass = phdump.read_header_float<f64>("umass");
+    f64 utime = phdump.read_header_float<f64>("utime");
+    f64 umagfd = phdump.read_header_float<f64>("umagfd");
+
+    return shamunits::UnitSystem<Tscal>(
+        utime ,
+        udist ,
+        umass
+        //unit_current = 1 ,
+        //unit_temperature = 1 ,
+        //unit_qte = 1 ,
+        //unit_lumint = 1 
+    );
+
+}
+
+template shamunits::UnitSystem<f32>
+shammodels::sph::get_shamrock_units<f32>(PhantomDump &phdump);
+template shamunits::UnitSystem<f64>
+shammodels::sph::get_shamrock_units<f64>(PhantomDump &phdump);
+
+

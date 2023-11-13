@@ -303,7 +303,8 @@ void SPHSolve<Tvec, Kern>::sph_prestep(Tscal time_val) {
     ComputeField<Tscal> _epsilon_h, _h_old;
 
     u32 hstep_cnt = 0;
-    for (; hstep_cnt < 100; hstep_cnt++) {
+    u32 hstep_max = 100;
+    for (; hstep_cnt < hstep_max; hstep_cnt++) {
 
         gen_ghost_handler(time_val);
         build_ghost_cache();
@@ -354,6 +355,9 @@ void SPHSolve<Tvec, Kern>::sph_prestep(Tscal time_val) {
                 // tree, gpart_mass, htol_up_tol, htol_up_iter);
             });
             max_eps_h = _epsilon_h.compute_rank_max();
+            
+            logger::debug_ln("Smoothinglength","iteration :",iter_h, "epsmax",max_eps_h);
+
             if (max_eps_h < 1e-6) {
                 logger::debug_sycl("Smoothinglength", "converged at i =", iter_h);
                 break;
@@ -424,7 +428,7 @@ void SPHSolve<Tvec, Kern>::sph_prestep(Tscal time_val) {
         break;
     }
 
-    if (hstep_cnt == 100) {
+    if (hstep_cnt == hstep_max) {
         logger::err_ln("SPH", "the h iterator is not converged after", hstep_cnt, "iterations");
     }
 }
