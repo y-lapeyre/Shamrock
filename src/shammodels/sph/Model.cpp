@@ -370,12 +370,16 @@ auto Model<Tvec, SPHKernel>::gen_config_from_phantom_dump(PhantomDump & phdump, 
     StackEntry stack_loc{};
     SolverConfig conf{};
 
-    conf.gpart_mass = phdump.read_header_float<Tscal>("massoftype");
+    auto massoftype = phdump.read_header_floats<Tscal>("massoftype");
+
+    conf.gpart_mass = massoftype[0];
     conf.cfl_cour = phdump.read_header_float<Tscal>("C_force");
     conf.cfl_force = phdump.read_header_float<Tscal>("C_cour");
 
     conf.eos_config = get_shamrock_eosconfig<Tvec>(phdump,bypass_error);
     conf.artif_viscosity = get_shamrock_avconfig<Tvec>(phdump);
+
+    conf.set_units(get_shamrock_units<Tscal>(phdump));
 
     //xmin, xmax, y... z... are in the header only in periodic mode in phantom
     if(phdump.has_header_entry("xmin")){
@@ -469,6 +473,7 @@ void Model<Tvec, SPHKernel>::init_from_phantom_dump(PhantomDump &phdump) {
 
 
 
+
     using namespace shamrock::patch;
 
     PatchScheduler & sched = shambase::get_check_ref(ctx.sched);
@@ -503,7 +508,8 @@ void Model<Tvec, SPHKernel>::init_from_phantom_dump(PhantomDump &phdump) {
             std::vector<u64> sel_index;
             for (u64 i = start_id; i < end_id; i++) {
                 Tvec r = xyz[i];
-                if (patch_coord.contain_pos(r)) {
+                Tscal h_ = h[i];
+                if (patch_coord.contain_pos(r) && (h_ >= 0)) {
                     sel_index.push_back(i);
                 }
             }

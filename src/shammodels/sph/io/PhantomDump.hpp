@@ -23,6 +23,7 @@
 #include "shammodels/sph/AVConfig.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamtest/details/TestResult.hpp"
+#include "shamunits/UnitSystem.hpp"
 #include <array>
 #include <cstdlib>
 #include <fstream>
@@ -53,6 +54,15 @@ namespace shammodels::sph {
             }
 
             return ret;
+        }
+
+        template<class Tb>
+        inline void fetch_multiple(std::vector<Tb> &vec, std::string s){
+            for(auto [key,val] : entries){
+                if(key == s){
+                    vec.push_back(val);
+                }
+            }
         }
     };
 
@@ -223,6 +233,19 @@ namespace shammodels::sph {
         }
 
         template<class T>
+        inline std::vector<T> read_header_floats(std::string s){
+            std::vector<T> vec {};
+
+            s = shambase::format("{:16s}",s);
+
+            table_header_fort_real.fetch_multiple(vec, s);
+            table_header_f32.fetch_multiple(vec, s);
+            table_header_f64.fetch_multiple(vec, s);
+
+            return vec;
+        }
+
+        template<class T>
         inline T read_header_int(std::string s){
 
             s = shambase::format("{:16s}",s);
@@ -248,6 +271,21 @@ namespace shammodels::sph {
             return {};
         }
 
+        template<class T>
+        inline std::vector<T> read_header_ints(std::string s){
+            std::vector<T> vec {};
+
+            s = shambase::format("{:16s}",s);
+
+            table_header_fort_int.fetch_multiple(vec, s);
+            table_header_i8.fetch_multiple(vec, s);
+            table_header_i16.fetch_multiple(vec, s);
+            table_header_i32.fetch_multiple(vec, s);
+            table_header_i64.fetch_multiple(vec, s);
+
+            return vec;
+        }
+
     };
 
     template<class Tvec>
@@ -255,6 +293,16 @@ namespace shammodels::sph {
 
     template<class Tvec>
     AVConfig<Tvec> get_shamrock_avconfig(PhantomDump & phdump);
+
+    /**
+     * @brief Get the shamrock units object
+     * \todo load also magfd
+     * @tparam Tscal 
+     * @param phdump 
+     * @return shamunits::UnitSystem<Tscal> 
+     */
+    template<class Tscal> 
+    shamunits::UnitSystem<Tscal> get_shamrock_units(PhantomDump & phdump);
 
 
 } // namespace shammodels::sph

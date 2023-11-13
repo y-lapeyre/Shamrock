@@ -22,6 +22,7 @@
 #include "shammodels/EOSConfig.hpp"
 #include "shammodels/sph/AVConfig.hpp"
 #include "shamsys/legacy/log.hpp"
+#include "shamunits/UnitSystem.hpp"
 #include <string>
 
 template<class T>
@@ -325,3 +326,31 @@ template shammodels::sph::AVConfig<f32_3>
 shammodels::sph::get_shamrock_avconfig<f32_3>(PhantomDump &phdump);
 template shammodels::sph::AVConfig<f64_3>
 shammodels::sph::get_shamrock_avconfig<f64_3>(PhantomDump &phdump);
+
+
+template<class Tscal> 
+shamunits::UnitSystem<Tscal> shammodels::sph::get_shamrock_units(PhantomDump & phdump){
+    
+    f64 udist = phdump.read_header_float<f64>("udist");
+    f64 umass = phdump.read_header_float<f64>("umass");
+    f64 utime = phdump.read_header_float<f64>("utime");
+    f64 umagfd = phdump.read_header_float<f64>("umagfd");
+
+    return shamunits::UnitSystem<Tscal>(
+        utime ,
+        udist ,
+        umass
+        //unit_current = 1 ,
+        //unit_temperature = 1 ,
+        //unit_qte = 1 ,
+        //unit_lumint = 1 
+    );
+
+}
+
+template shamunits::UnitSystem<f32>
+shammodels::sph::get_shamrock_units<f32>(PhantomDump &phdump);
+template shamunits::UnitSystem<f64>
+shammodels::sph::get_shamrock_units<f64>(PhantomDump &phdump);
+
+
