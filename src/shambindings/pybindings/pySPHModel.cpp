@@ -248,6 +248,9 @@ R"==(
 )==")
         .def("init_from_phantom_dump",[](T& self, PhantomDump & dump){
             self.init_from_phantom_dump(dump);
+        })
+        .def("make_phantom_dump",[](T & self){
+            return self.make_phantom_dump();
         });
     ;
 }
