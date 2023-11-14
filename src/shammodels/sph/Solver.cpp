@@ -1469,7 +1469,7 @@ void SPHSolve<Tvec, Kern>::update_derivs_disc_visco() {
         /////////////////////////////////////////////
 
         shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-            const Tscal pmass   = gpart_mass;
+            const Tscal pmass   = solver_config.gpart_mass;
             const Tscal alpha_AV = constant_av_config->alpha_AV;
             const Tscal alpha_u = constant_av_config->alpha_u;
             const Tscal beta_AV = constant_av_config->beta_AV;
