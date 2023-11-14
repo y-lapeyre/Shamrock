@@ -187,6 +187,18 @@ struct shammodels::sph::SolverConfig {
         }
         logger::raw_ln("----- SPH Solver configuration -----");
 
+        logger::raw_ln("units : ");
+        if(unit_sys){
+            logger::raw_ln("unit_length      :" , unit_sys->m_inv  ); 
+            logger::raw_ln("unit_mass        :" , unit_sys->kg_inv ); 
+            logger::raw_ln("unit_current     :" , unit_sys->A_inv  ); 
+            logger::raw_ln("unit_temperature :" , unit_sys->K_inv  );
+            logger::raw_ln("unit_qte         :" , unit_sys->mol_inv); 
+            logger::raw_ln("unit_lumint      :" , unit_sys->cd_inv );
+        }else {
+            logger::raw_ln("not set");
+        }
+
         logger::raw_ln("part mass",gpart_mass, "( can be changed using .set_part_mass() )");
         logger::raw_ln("cfl force",cfl_force);
         logger::raw_ln("cfl courant",cfl_cour);

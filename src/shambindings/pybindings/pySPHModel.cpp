@@ -232,9 +232,20 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
         .def("gen_default_config", [](T &self) { return typename T::Solver::Config{}; })
         .def("set_solver_config", &T::set_solver_config)
         .def("add_sink", &T::add_sink)
-        .def("gen_config_from_phantom_dump",[](T&self, PhantomDump & dump){
-            return self.gen_config_from_phantom_dump(dump);
-        })
+        .def("gen_config_from_phantom_dump",
+            [](T&self, PhantomDump & dump, bool bypass_error){
+                return self.gen_config_from_phantom_dump(dump,bypass_error);
+            },
+            py::arg("dump"),
+            py::arg("bypass_error") = false, 
+R"==(
+    This function generate a shamrock sph solver config from a phantom dump
+
+    Parameters
+    ----------
+    PhantomDump dump
+    bypass_error = false (default) bypass any error in the config
+)==")
         .def("init_from_phantom_dump",[](T& self, PhantomDump & dump){
             self.init_from_phantom_dump(dump);
         });

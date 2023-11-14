@@ -79,7 +79,7 @@ namespace shammodels::sph {
         }
 
 
-        SolverConfig gen_config_from_phantom_dump(PhantomDump & phdump);
+        SolverConfig gen_config_from_phantom_dump(PhantomDump & phdump, bool bypass_error);
         void init_from_phantom_dump(PhantomDump & phdump);
         //PhantomDump make_phantom_dump();
 
@@ -104,6 +104,8 @@ namespace shammodels::sph {
             if(solver.storage.sinks.is_empty()){
                 solver.storage.sinks.set({});
             }
+
+            logger::debug_ln("SPH", "add sink :",mass,pos,velocity,accretion_radius);
 
             solver.storage.sinks.get().push_back({
                 pos,velocity,{},{},mass,{},accretion_radius
@@ -181,7 +183,7 @@ namespace shammodels::sph {
 
             } else {
                 //dirty hack for disc setup in locally isothermal
-                eos_gamma = 1;
+                eos_gamma = 2;
                 //shambase::throw_unimplemented();
             }
 
