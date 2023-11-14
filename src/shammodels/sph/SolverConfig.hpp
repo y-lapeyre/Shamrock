@@ -74,6 +74,7 @@ struct shammodels::sph::SolverConfig {
         inline void set_shearing_periodic(i32_3 shear_base, i32_3 shear_dir, Tscal speed) {
             config = ShearingPeriodic{shear_base, shear_dir, speed};
         }
+
     };
 
     using EOSConfig = shammodels::EOSConfig<Tvec>;
@@ -159,6 +160,9 @@ struct shammodels::sph::SolverConfig {
     }
 
     inline void set_artif_viscosity_VaryingCD10(typename AVConfig::VaryingCD10 v) {
+        artif_viscosity.set(v);
+    }
+    inline void set_artif_viscosity_ConstantDisc(typename AVConfig::ConstantDisc v) {
         artif_viscosity.set(v);
     }
 
