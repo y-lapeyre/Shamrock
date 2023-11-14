@@ -63,6 +63,12 @@ struct shammodels::sph::AVConfig {
         Tscal beta_AV     = 2.0;
     };
 
+    struct ConstantDisc {
+        Tscal alpha_AV   = 1.0;
+        Tscal alpha_u     = 1.0;
+        Tscal beta_AV     = 2.0;
+    };
+
     using Variant  = std::variant<None, Constant, VaryingMM97, VaryingCD10, ConstantDisc>;
     
     Variant config = Constant{};
