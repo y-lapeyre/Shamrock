@@ -737,23 +737,28 @@ shammodels::sph::PhantomDump Model<Tvec, SPHKernel>::make_phantom_dump() {
 
     dump.table_header_i32.add("iexternalforce", 0);
     dump.table_header_i32.add("ieos", 2);
-
     dump.table_header_fort_real.add("gamma", 1.66667);
     dump.table_header_fort_real.add("RK2", 0);
     dump.table_header_fort_real.add("polyk2", 0);
     dump.table_header_fort_real.add("qfacdisc", 0.75);
     dump.table_header_fort_real.add("qfacdisc2", 0.75);
+
+
     dump.table_header_fort_real.add("time", 0);
     dump.table_header_fort_real.add("dtmax", 0.1);
+
+
     dump.table_header_fort_real.add("rhozero", 0);
-    dump.table_header_fort_real.add("hfact", 1.2);
+    dump.table_header_fort_real.add("hfact", Kernel::hfactd);
     dump.table_header_fort_real.add("tolh", 0.0001);
-    dump.table_header_fort_real.add("C_cour", 0.3);
-    dump.table_header_fort_real.add("C_force", 0.25);
+    dump.table_header_fort_real.add("C_cour", solver.solver_config.cfl_cour);
+    dump.table_header_fort_real.add("C_force",solver.solver_config.cfl_force);
     dump.table_header_fort_real.add("alpha", 0);
     dump.table_header_fort_real.add("alphau", 1);
     dump.table_header_fort_real.add("alphaB", 1);
-    dump.table_header_fort_real.add("massoftype", 4.04068e-06);
+    
+
+    dump.table_header_fort_real.add("massoftype", solver.solver_config.gpart_mass);
     dump.table_header_fort_real.add("massoftype", 0);
     dump.table_header_fort_real.add("massoftype", 0);
     dump.table_header_fort_real.add("massoftype", 0);
@@ -761,16 +766,26 @@ shammodels::sph::PhantomDump Model<Tvec, SPHKernel>::make_phantom_dump() {
     dump.table_header_fort_real.add("massoftype", 0);
     dump.table_header_fort_real.add("massoftype", 0);
     dump.table_header_fort_real.add("massoftype", 0);
+
+
     dump.table_header_fort_real.add("Bextx", 0);
     dump.table_header_fort_real.add("Bexty", 0);
     dump.table_header_fort_real.add("Bextz", 0);
     dump.table_header_fort_real.add("dum", 0);
-    dump.table_header_fort_real.add("xmin", 0);
-    dump.table_header_fort_real.add("xmax", 1);
-    dump.table_header_fort_real.add("ymin", 0);
-    dump.table_header_fort_real.add("ymax", 1);
-    dump.table_header_fort_real.add("zmin", -0.0765466);
-    dump.table_header_fort_real.add("zmax", 0.0765466);
+
+    PatchScheduler & sched = shambase::get_check_ref(solver.context.sched);
+        
+    auto [bmin,bmax] = sched.get_box_volume<Tvec>();
+
+    dump.table_header_fort_real.add("xmin", bmin.x());
+    dump.table_header_fort_real.add("xmax", bmax.x());
+    dump.table_header_fort_real.add("ymin", bmin.y());
+    dump.table_header_fort_real.add("ymax", bmax.x());
+    dump.table_header_fort_real.add("zmin", bmin.z());
+    dump.table_header_fort_real.add("zmax", bmax.x());
+
+
+
     dump.table_header_fort_real.add("get_conserv", -1);
     dump.table_header_fort_real.add("etot_in", 0.59762);
     dump.table_header_fort_real.add("angtot_in", 0.0189694);
