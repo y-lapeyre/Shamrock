@@ -36,6 +36,7 @@ namespace shammodels::sph {
     template<class Tvec>
     struct BCConfig;
 
+
 } // namespace shammodels::sph
 
 template<class Tvec>
@@ -83,9 +84,9 @@ struct shammodels::sph::SolverConfig {
     Tscal cfl_cour;
     Tscal cfl_force;
 
-    using AVConfig = AVConfig<Tvec>;
-    using BCConfig  = BCConfig<Tvec>;
-    using EOSConfig = shammodels::EOSConfig<Tvec>;
+    using AVConfig       = AVConfig<Tvec>;
+    using BCConfig       = BCConfig<Tvec>;
+    using EOSConfig      = shammodels::EOSConfig<Tvec>;
     using ExtForceConfig = shammodels::ExtForceConfig<Tvec>;
 
     EOSConfig eos_config;
@@ -100,11 +101,8 @@ struct shammodels::sph::SolverConfig {
 
     inline bool ghost_has_soundspeed() { return is_eos_locally_isothermal(); }
 
-    
-
     inline void set_eos_adiabatic(Tscal gamma) { eos_config.set_adiabatic(gamma); }
     inline void set_eos_locally_isothermal() { eos_config.set_locally_isothermal(); }
-
 
     inline void add_ext_force_point_mass(Tscal central_mass, Tscal Racc) {
         ext_force_config.add_point_mass(central_mass, Racc);
@@ -115,7 +113,6 @@ struct shammodels::sph::SolverConfig {
         ext_force_config.add_lense_thrirring(central_mass, Racc, a_spin, dir_spin);
     }
 
-
     inline void set_boundary_free() { boundary_config.set_free(); }
 
     inline void set_boundary_periodic() { boundary_config.set_periodic(); }
@@ -123,7 +120,6 @@ struct shammodels::sph::SolverConfig {
     inline void set_boundary_shearing_periodic(i32_3 shear_base, i32_3 shear_dir, Tscal speed) {
         boundary_config.set_shearing_periodic(shear_base, shear_dir, speed);
     }
-
 
     inline void set_artif_viscosity_None() {
         using Tmp = typename AVConfig::None;
@@ -167,20 +163,20 @@ struct shammodels::sph::SolverConfig {
         logger::raw_ln("----- SPH Solver configuration -----");
 
         logger::raw_ln("units : ");
-        if(unit_sys){
-            logger::raw_ln("unit_length      :" , unit_sys->m_inv  ); 
-            logger::raw_ln("unit_mass        :" , unit_sys->kg_inv ); 
-            logger::raw_ln("unit_current     :" , unit_sys->A_inv  ); 
-            logger::raw_ln("unit_temperature :" , unit_sys->K_inv  );
-            logger::raw_ln("unit_qte         :" , unit_sys->mol_inv); 
-            logger::raw_ln("unit_lumint      :" , unit_sys->cd_inv );
-        }else {
+        if (unit_sys) {
+            logger::raw_ln("unit_length      :", unit_sys->m_inv);
+            logger::raw_ln("unit_mass        :", unit_sys->kg_inv);
+            logger::raw_ln("unit_current     :", unit_sys->A_inv);
+            logger::raw_ln("unit_temperature :", unit_sys->K_inv);
+            logger::raw_ln("unit_qte         :", unit_sys->mol_inv);
+            logger::raw_ln("unit_lumint      :", unit_sys->cd_inv);
+        } else {
             logger::raw_ln("not set");
         }
 
-        logger::raw_ln("part mass",gpart_mass, "( can be changed using .set_part_mass() )");
-        logger::raw_ln("cfl force",cfl_force);
-        logger::raw_ln("cfl courant",cfl_cour);
+        logger::raw_ln("part mass", gpart_mass, "( can be changed using .set_part_mass() )");
+        logger::raw_ln("cfl force", cfl_force);
+        logger::raw_ln("cfl courant", cfl_cour);
 
         artif_viscosity.print_status();
         eos_config.print_status();
