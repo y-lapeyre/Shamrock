@@ -18,6 +18,7 @@
 #include "shambackends/math.hpp"
 #include "shambase/exception.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"
+#include "shammodels/ExtForceConfig.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
 #include <shamunits/Constants.hpp>
@@ -32,7 +33,39 @@ namespace shammodels::sph {
     template<class Tvec, template<class> class SPHKernel>
     struct SolverConfig;
 
+    template<class Tvec>
+    struct BCConfig;
+
 } // namespace shammodels::sph
+
+template<class Tvec>
+struct shammodels::sph::BCConfig {
+
+    using Tscal              = shambase::VecComponent<Tvec>;
+    static constexpr u32 dim = shambase::VectorProperties<Tvec>::dimension;
+
+    struct Free {
+        Tscal expand_tolerance = 1.2;
+    };
+    struct Periodic {};
+    struct ShearingPeriodic {
+        i32_3 shear_base;
+        i32_3 shear_dir;
+        Tscal shear_speed;
+    };
+
+    using Variant = std::variant<Free, Periodic, ShearingPeriodic>;
+
+    Variant config = Free{};
+
+    inline void set_free() { config = Free{}; }
+
+    inline void set_periodic() { config = Periodic{}; }
+
+    inline void set_shearing_periodic(i32_3 shear_base, i32_3 shear_dir, Tscal speed) {
+        config = ShearingPeriodic{shear_base, shear_dir, speed};
+    }
+};
 
 template<class Tvec, template<class> class SPHKernel>
 struct shammodels::sph::SolverConfig {
@@ -51,33 +84,14 @@ struct shammodels::sph::SolverConfig {
     Tscal cfl_force;
 
     using AVConfig = AVConfig<Tvec>;
-
-    struct BCConfig {
-        struct Free {
-            Tscal expand_tolerance = 1.2;
-        };
-        struct Periodic {};
-        struct ShearingPeriodic {
-            i32_3 shear_base;
-            i32_3 shear_dir;
-            Tscal shear_speed;
-        };
-
-        using Variant = std::variant<Free, Periodic, ShearingPeriodic>;
-
-        Variant config = Free{};
-
-        inline void set_free() { config = Free{}; }
-
-        inline void set_periodic() { config = Periodic{}; }
-
-        inline void set_shearing_periodic(i32_3 shear_base, i32_3 shear_dir, Tscal speed) {
-            config = ShearingPeriodic{shear_base, shear_dir, speed};
-        }
-
-    };
-
+    using BCConfig  = BCConfig<Tvec>;
     using EOSConfig = shammodels::EOSConfig<Tvec>;
+    using ExtForceConfig = shammodels::ExtForceConfig<Tvec>;
+
+    EOSConfig eos_config;
+    ExtForceConfig ext_force_config{};
+    BCConfig boundary_config;
+    AVConfig artif_viscosity;
 
     inline bool is_eos_locally_isothermal() {
         using T = typename EOSConfig::LocallyIsothermal;
@@ -86,44 +100,11 @@ struct shammodels::sph::SolverConfig {
 
     inline bool ghost_has_soundspeed() { return is_eos_locally_isothermal(); }
 
-    EOSConfig eos_config;
+    
 
     inline void set_eos_adiabatic(Tscal gamma) { eos_config.set_adiabatic(gamma); }
     inline void set_eos_locally_isothermal() { eos_config.set_locally_isothermal(); }
 
-    struct ExtForceConfig {
-
-        struct PointMass {
-            Tscal central_mass;
-            Tscal Racc;
-        };
-
-        struct LenseThirring {
-            Tscal central_mass;
-            Tscal Racc;
-            Tscal a_spin;
-            Tvec dir_spin;
-        };
-
-        using VariantForce = std::variant<PointMass, LenseThirring>;
-
-        std::vector<VariantForce> ext_forces;
-
-        inline void add_point_mass(Tscal central_mass, Tscal Racc) {
-            ext_forces.push_back(PointMass{central_mass, Racc});
-        }
-
-        inline void
-        add_lense_thrirring(Tscal central_mass, Tscal Racc, Tscal a_spin, Tvec dir_spin) {
-            if (sham::abs(sycl::length(dir_spin) - 1) > 1e-8) {
-                shambase::throw_with_loc<std::invalid_argument>(
-                    "the sping direction should be a unit vector");
-            }
-            ext_forces.push_back(LenseThirring{central_mass, Racc, a_spin, dir_spin});
-        }
-    };
-
-    ExtForceConfig ext_force_config{};
 
     inline void add_ext_force_point_mass(Tscal central_mass, Tscal Racc) {
         ext_force_config.add_point_mass(central_mass, Racc);
@@ -134,7 +115,6 @@ struct shammodels::sph::SolverConfig {
         ext_force_config.add_lense_thrirring(central_mass, Racc, a_spin, dir_spin);
     }
 
-    BCConfig boundary_config;
 
     inline void set_boundary_free() { boundary_config.set_free(); }
 
@@ -144,7 +124,6 @@ struct shammodels::sph::SolverConfig {
         boundary_config.set_shearing_periodic(shear_base, shear_dir, speed);
     }
 
-    AVConfig artif_viscosity;
 
     inline void set_artif_viscosity_None() {
         using Tmp = typename AVConfig::None;
