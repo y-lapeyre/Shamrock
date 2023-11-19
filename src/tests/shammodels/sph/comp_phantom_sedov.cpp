@@ -359,6 +359,10 @@ void do_test(bool long_version) {
             model.solver.solver_config.gpart_mass,t);
     }
 
+    if (!long_version) {
+        return;
+    }
+
     for (; t < dt * 100; t += dt) {
         model.evolve_once(t, dt, false, "", false);
     }
@@ -376,9 +380,7 @@ void do_test(bool long_version) {
 
     
 
-    if (!long_version) {
-        return;
-    }
+    
 
     for (; t < dt * 1000; t += dt) {
         model.evolve_once(t, dt, false, "", false);
