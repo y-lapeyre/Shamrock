@@ -8,6 +8,7 @@
 
 #include "shambackends/math.hpp"
 #include "shambackends/typeAliasVec.hpp"
+#include "shambase/exception.hpp"
 #include "shambase/fortran_io.hpp"
 #include "shambase/memory.hpp"
 #include "shambase/time.hpp"
@@ -18,7 +19,8 @@
 #include "shamsys/legacy/log.hpp"
 #include "shamtest/PyScriptHandle.hpp"
 #include "shamtest/shamtest.hpp"
-#include <builtins.hpp>
+#include <stdexcept>
+#include <string>
 #include <vector>
 
 shammodels::sph::PhantomDump load_dump(std::string file) {
@@ -54,11 +56,79 @@ std::vector<T> fetch_data(std::string key, shamrock::patch::PatchData &pdat) {
     return vec;
 }
 
+f64 compute_L2(std::vector<f64> &v1, std::vector<f64> &v2) {
+    f64 sum = 0;
+
+    if (v1.size() == v2.size()) {
+
+        for (u32 i = 0; i < v1.size(); i++) {
+            sum += (v1[i] - v2[i]) * (v1[i] - v2[i]);
+        }
+
+    } else {
+        throw shambase::throw_with_loc<std::runtime_error>("should have same size");
+    }
+
+    return sqrt(sum / v1.size());
+}
+
+f64 compute_L2(std::vector<f64> &v1, std::vector<f64> &v2, std::vector<f64> & ref_trunc, f64 truncval) {
+    f64 sum = 0;
+    u32 cnt = 0;
+
+    if (v1.size() == v2.size()) {
+
+        for (u32 i = 0; i < v1.size(); i++) {
+            if(ref_trunc[i] < truncval){
+                sum += (v1[i] - v2[i]) * (v1[i] - v2[i]);
+                cnt ++;
+            }
+        }
+
+    } else {
+        throw shambase::throw_with_loc<std::runtime_error>("should have same size");
+    }
+
+    return sqrt(sum / cnt);
+}
+
+std::vector<size_t> ordered_indexes(std::vector<double> &ref_vec) {
+
+    std::vector<size_t> order(ref_vec.size());
+    std::iota(order.begin(), order.end(), 0);
+    std::sort(order.begin(), order.end(), [&](size_t a, size_t b) {
+        return ref_vec[a] < ref_vec[b];
+    });
+
+    return order;
+}
+
+void reorder(std::vector<size_t> &indexes, std::vector<double> &ref_vec) {
+
+    std::vector<double> tmp(ref_vec.size());
+
+    for (size_t i = 0; i < ref_vec.size(); i++) {
+        tmp[i] = ref_vec[indexes[i]];
+    }
+
+    ref_vec = std::move(tmp);
+}
+
+template<class T, typename... Args>
+void multisort(std::vector<T> &ref_vec, Args &...others) {
+
+    std::vector<size_t> l = ordered_indexes(ref_vec);
+
+    reorder(l, ref_vec);
+
+    (reorder(l, others), ...);
+}
+
 void compare_results(
     std::string name,
     shamrock::patch::PatchData &pdat,
     shammodels::sph::PhantomDump &ref_file,
-    f64 pmass) {
+    f64 pmass, f64 time) {
 
     std::vector<f64> sham_uint  = fetch_data<f64>("uint", pdat);
     std::vector<f64> sham_hpart = fetch_data<f64>("hpart", pdat);
@@ -117,6 +187,12 @@ void compare_results(
     for (u32 i = 0; i < x.size(); i++) {
         ph_vr.push_back(sycl::length(f64_3{vx[i], vy[i], vz[i]}));
     }
+
+    // sort results
+    multisort(sham_r, sham_vr, sham_hpart, sham_uint, sham_alpha);
+    multisort(ph_r, ph_vr, h, u, alpha);
+
+    
 
     PyScriptHandle hdnl{};
 
@@ -185,20 +261,42 @@ void compare_results(
 
     )");
 
-    // TEX_REPORT(R"==(
-    //
-    //    \begin{figure}[ht!]
-    //    \center
-    //    \includegraphics[width=0.95\linewidth]{figures/sph_kernels.pdf}
-    //    \caption{SPH kernels implemented in shamrock}
-    //    \end{figure}
-    //
-    //)==")
+    TEX_REPORT(R"==(
+    
+        \begin{figure}[ht!]
+        \center
+        \includegraphics[width=0.8\linewidth]{ figures/)=="+name+R"==( }
+        \caption{Shamrock vs phantom on sedov blast}
+        \end{figure}
+
+    )==")
+
+    f64 l2_r = compute_L2(sham_r, ph_r, sham_r, 0.4);
+    f64 l2_vr = compute_L2(sham_vr, ph_vr, sham_r, 0.4);
+    f64 l2_h = compute_L2(sham_hpart, h, sham_r, 0.4);
+    f64 l2_u = compute_L2(sham_uint, u, sham_r, 0.4);
+
+    logger::raw_ln("L2 distance r : ", l2_r);
+    logger::raw_ln("L2 distance h : ", l2_h);
+    logger::raw_ln("L2 distance vr : ", l2_vr);
+    logger::raw_ln("L2 distance u : ", l2_u);
+
+    TEX_REPORT(R"==(\begin{itemize})==" "\n")
+    TEX_REPORT("\\item t = $" + std::to_string(time) +"$\n")
+    TEX_REPORT("\\item L2 distance r : $" + std::to_string (l2_r)+"$\n");
+    TEX_REPORT("\\item L2 distance h : $" + std::to_string (l2_h)+"$\n");
+    TEX_REPORT("\\item L2 distance vr : $" + std::to_string (l2_vr)+"$\n");
+    TEX_REPORT("\\item L2 distance u : $" + std::to_string (l2_u)+"$\n");
+    TEX_REPORT(R"==(\end{itemize})==" "\n")
+
+    _Assert(l2_r < 1e-3)
+    _Assert(l2_vr < 1e-4)
+    _Assert(l2_h < 1e-7)
+    _Assert(l2_u < 1)
+
 }
 
-// 16 cores phantom (i7-10700) = 5min 27sec (1000 iter)
-TestStart(
-    ValidationTest, "shammodels/sph/sedov_blast_phantom_fix_dt", comp_sedov_phantom_fix_dt, 1) {
+void do_test(bool long_version) {
 
     f64 start_t = 0;
     f64 dt      = 1e-5;
@@ -244,7 +342,7 @@ TestStart(
             "shamrock_phantom_sedov_fix_dt_1step.pdf",
             pdat_end,
             dump_0001,
-            model.solver.solver_config.gpart_mass);
+            model.solver.solver_config.gpart_mass,t);
     }
 
     for (; t < dt * 10; t += dt) {
@@ -258,7 +356,7 @@ TestStart(
             "shamrock_phantom_sedov_fix_dt_10step.pdf",
             pdat_end,
             dump_0010,
-            model.solver.solver_config.gpart_mass);
+            model.solver.solver_config.gpart_mass,t);
     }
 
     for (; t < dt * 100; t += dt) {
@@ -273,8 +371,15 @@ TestStart(
             "shamrock_phantom_sedov_fix_dt_100step.pdf",
             pdat_end,
             dump_0100,
-            model.solver.solver_config.gpart_mass);
+            model.solver.solver_config.gpart_mass,t);
     }
+
+    
+
+    if (!long_version) {
+        return;
+    }
+
     for (; t < dt * 1000; t += dt) {
         model.evolve_once(t, dt, false, "", false);
     }
@@ -286,6 +391,14 @@ TestStart(
             "shamrock_phantom_sedov_fix_dt_1000step.pdf",
             pdat_end,
             dump_1000,
-            model.solver.solver_config.gpart_mass);
+            model.solver.solver_config.gpart_mass,t);
     }
+
+
+}
+
+// 16 cores phantom (i7-10700) = 5min 27sec (1000 iter)
+TestStart(
+    ValidationTest, "shammodels/sph/sedov_blast_phantom_fix_dt", comp_sedov_phantom_fix_dt, 1) {
+    do_test(false);
 }
