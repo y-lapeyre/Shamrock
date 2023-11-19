@@ -591,6 +591,14 @@ void Model<Tvec, SPHKernel>::init_from_phantom_dump(PhantomDump &phdump) {
     }
 }
 
+/**
+ * @brief 
+ * \todo move to patchdata
+ * @tparam T 
+ * @param key 
+ * @param pdat 
+ * @return std::vector<T> 
+ */
 template<class T>
 std::vector<T> fetch_data(std::string key, shamrock::patch::PatchData & pdat){
 
