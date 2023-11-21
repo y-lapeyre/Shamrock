@@ -137,7 +137,7 @@ while t_sum < t_target:
     print("step : t=",t_sum)
 
     do_dump = (i % fdump == 0)  
-    next_dt = model.evolve(t_sum,current_dt, do_dump, "dump_"+str(i_dump)+".vtk", do_dump)
+    next_dt = model.evolve(t_sum,current_dt, do_dump, "dump_{:04}.vtk".format(i_dump), do_dump)
 
     if i % fdump == 0:
         i_dump += 1
