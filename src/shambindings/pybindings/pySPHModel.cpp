@@ -99,8 +99,14 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
         .def("set_boundary_shearing_periodic",&TConfig::set_boundary_shearing_periodic)
 
         .def("add_ext_force_point_mass",&TConfig::add_ext_force_point_mass)
-        .def("add_ext_force_lense_thrirring",&TConfig::add_ext_force_lense_thrirring)
-
+        .def("add_ext_force_lense_thirring",[](TConfig & self,Tscal central_mass, Tscal Racc, Tscal a_spin, Tvec dir_spin){
+            self.add_ext_force_lense_thirring(central_mass,Racc,a_spin,dir_spin);
+        },
+            py::kw_only(),
+            py::arg("central_mass"),
+            py::arg("Racc"),
+            py::arg("a_spin"),
+            py::arg("dir_spin"))
         .def("set_units", &TConfig::set_units);
 
     py::class_<T>(m, name_model.c_str())
