@@ -109,8 +109,8 @@ struct shammodels::sph::SolverConfig {
     }
 
     inline void
-    add_ext_force_lense_thrirring(Tscal central_mass, Tscal Racc, Tscal a_spin, Tvec dir_spin) {
-        ext_force_config.add_lense_thrirring(central_mass, Racc, a_spin, dir_spin);
+    add_ext_force_lense_thirring(Tscal central_mass, Tscal Racc, Tscal a_spin, Tvec dir_spin) {
+        ext_force_config.add_lense_thirring(central_mass, Racc, a_spin, dir_spin);
     }
 
     inline void set_boundary_free() { boundary_config.set_free(); }
