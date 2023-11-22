@@ -45,7 +45,7 @@ disc_mass = 0.001
 pmass = model.add_disc_3d(
     (0,0,0),
     central_mass,
-    1000000,
+    200000,
     0.2,2,
     disc_mass,
     1.,
@@ -124,31 +124,45 @@ print("Current part mass :", pmass)
 #plot_vertical_profile(1,0.5, label = "init")
 
 t_sum = 0
-t_target = 10000
+t_target = 100000
 current_dt = 1e-7
 
-
-fdump = 10
-
-i = 0
 i_dump = 0
+dt_dump = 100
+
+do_dump = False
+next_dt_target = t_sum + dt_dump
 while t_sum < t_target:
 
-    print("step : t=",t_sum)
 
-    do_dump = (i % fdump == 0)  
-    next_dt = model.evolve(t_sum,current_dt, do_dump, "dump_{:04}.vtk".format(i_dump), do_dump)
+    while t_sum < next_dt_target:
 
-    if i % fdump == 0:
-        i_dump += 1
+        do_dump = (t_sum + current_dt) == next_dt_target
 
-    t_sum += current_dt
-    current_dt = next_dt
+        
 
-    if (t_target - t_sum) < next_dt:
-        current_dt = t_target - t_sum
+        next_dt = model.evolve(t_sum,current_dt, do_dump, "dump_{:04}.vtk".format(i_dump), do_dump)
+        print("--> do dump",do_dump)
+        
+        if do_dump:
+            i_dump += 1
 
-    i+= 1
+        t_sum += current_dt
+        current_dt = next_dt
+
+        if do_dump:
+            break
+
+        if (next_dt_target - t_sum) < next_dt:
+            current_dt = next_dt_target - t_sum
+
+
+
+    next_dt_target += dt_dump
+
+    if (next_dt_target - t_sum) < next_dt:
+        current_dt = next_dt_target - t_sum
+
 
 
 #plot_vertical_profile(1,0.5, label = "end")
