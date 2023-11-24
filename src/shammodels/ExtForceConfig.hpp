@@ -55,8 +55,8 @@ namespace shammodels {
          */
         struct ShearingBoxForce {
             Tscal shear_speed;
-            i32_3 shear_base;
-            i32_3 shear_dir;
+            static constexpr i32_3 shear_base = {1,0,0};
+            static constexpr i32_3 shear_dir = {0,1,0};
 
             Tscal pressure_background = 0.01;
             Tscal s                   = 3 / 2;
@@ -90,13 +90,11 @@ namespace shammodels {
          */
         inline void add_shearing_box(
             Tscal shear_speed,
-            i32_3 shear_base,
-            i32_3 shear_dir,
             Tscal pressure_background,
             Tscal s) {
 
             ext_forces.push_back(
-                ShearingBoxForce{shear_speed, shear_base, shear_dir, pressure_background, s});
+                ShearingBoxForce{shear_speed, pressure_background, s});
         }
     };
 

@@ -36,8 +36,6 @@ cfg.set_boundary_shearing_periodic((1,0,0),(0,0,1),shear_speed)
 cfg.set_eos_adiabatic(gamma)
 cfg.add_ext_force_shearing_box(
     shear_speed         = shear_speed,
-    shear_base          = (1,0,0),
-    shear_dir           = (0,1,0),
     pressure_background = eta,
     s                   = 3./2.,
 )

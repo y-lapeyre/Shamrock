@@ -111,7 +111,7 @@ void Module<Tvec, SPHKernel>::compute_ext_forces_indep_v() {
                     shambase::parralel_for(
                         cgh, pdat.get_obj_cnt(), "add ext force acc to acc", [=](u64 gid) {
                             Tvec r_a = xyz[gid];
-                            axyz_ext[gid] += r_a.x() * two_eta;
+                            axyz_ext[gid] += Tvec{r_a.x() * two_eta,0,0};
                         });
                 });
             });

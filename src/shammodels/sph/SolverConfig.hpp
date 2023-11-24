@@ -116,12 +116,10 @@ struct shammodels::sph::SolverConfig {
 
     inline void add_ext_force_shearing_box(
         Tscal shear_speed,
-        i32_3 shear_base,
-        i32_3 shear_dir,
         Tscal pressure_background,
         Tscal s) {
 
-        ext_force_config.add_shearing_box(shear_speed, shear_base, shear_dir, pressure_background, s);
+        ext_force_config.add_shearing_box(shear_speed, pressure_background, s);
     }
 
     inline void set_boundary_free() { boundary_config.set_free(); }
