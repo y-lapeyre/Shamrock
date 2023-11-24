@@ -89,6 +89,10 @@ void shammodels::sph::modules::DiffOperatorDtDivv<Tvec, SPHKernel>::update_dtdiv
     u32 iomega_interf                              = ghost_layout.get_field_idx<Tscal>("omega");
 
     const u32 idtdivv = pdl.get_field_idx<Tscal>("dtdivv");
+
+    const u32 idivv = pdl.get_field_idx<Tscal>("divv");
+    const u32 icurlv = pdl.get_field_idx<Tvec>("curlv");
+
     scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
         MergedPatchData &merged_patch     = mpdat.get(cur_p.id_patch);
         PatchDataField<Tvec> &merged_axyz = merged_a.get(cur_p.id_patch);
@@ -102,6 +106,10 @@ void shammodels::sph::modules::DiffOperatorDtDivv<Tvec, SPHKernel>::update_dtdiv
         sycl::buffer<Tscal> &buf_hpart  = mpdat.get_field_buf_ref<Tscal>(ihpart_interf);
         sycl::buffer<Tscal> &buf_omega  = mpdat.get_field_buf_ref<Tscal>(iomega_interf);
         sycl::buffer<Tscal> &buf_uint   = mpdat.get_field_buf_ref<Tscal>(iuint_interf);
+
+
+        sycl::buffer<Tscal> &buf_divv  = pdat.get_field_buf_ref<Tscal>(idivv);
+        sycl::buffer<Tvec> &buf_curlv  = pdat.get_field_buf_ref<Tvec>(icurlv);
         sycl::buffer<Tscal> &buf_dtdivv = pdat.get_field_buf_ref<Tscal>(idtdivv);
 
         sycl::range range_npart{pdat.get_obj_cnt()};
@@ -122,6 +130,8 @@ void shammodels::sph::modules::DiffOperatorDtDivv<Tvec, SPHKernel>::update_dtdiv
                 sycl::accessor axyz{buf_axyz, cgh, sycl::read_only};
                 sycl::accessor hpart{buf_hpart, cgh, sycl::read_only};
                 sycl::accessor omega{buf_omega, cgh, sycl::read_only};
+                sycl::accessor divv{buf_divv, cgh, sycl::write_only, sycl::no_init};
+                sycl::accessor curlv{buf_curlv, cgh, sycl::write_only, sycl::no_init};
                 sycl::accessor dtdivv{buf_dtdivv, cgh, sycl::write_only, sycl::no_init};
 
                 constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
@@ -147,6 +157,7 @@ void shammodels::sph::modules::DiffOperatorDtDivv<Tvec, SPHKernel>::update_dtdiv
                     std::array<Tvec, dim> Rij_a{Tvec{0}, Tvec{0}, Tvec{0}};
 
                     std::array<Tvec, dim> Rij_a_dvk_dxj{Tvec{0}, Tvec{0}, Tvec{0}};
+                    std::array<Tvec, dim> Rij_a_dak_dxj{Tvec{0}, Tvec{0}, Tvec{0}};
 
                     particle_looper.for_each_object(id_a, [&](u32 id_b) {
                         // compute only omega_a
@@ -175,20 +186,33 @@ void shammodels::sph::modules::DiffOperatorDtDivv<Tvec, SPHKernel>::update_dtdiv
                         Tvec mdWab_b = dWab_a * pmass;
 
                         static_assert(dim == 3, "this is only implemented for dim 3");
-                        Rij_a[0] += r_ab.x() * mdWab_b;
-                        Rij_a[1] += r_ab.y() * mdWab_b;
-                        Rij_a[2] += r_ab.z() * mdWab_b;
+                        Rij_a[0] -= r_ab.x() * mdWab_b;
+                        Rij_a[1] -= r_ab.y() * mdWab_b;
+                        Rij_a[2] -= r_ab.z() * mdWab_b;
 
-                        Rij_a_dvk_dxj[0] += v_ab * mdWab_b.x();
-                        Rij_a_dvk_dxj[1] += v_ab * mdWab_b.y();
-                        Rij_a_dvk_dxj[2] += v_ab * mdWab_b.z();
+                        Rij_a_dvk_dxj[0] -= v_ab * mdWab_b.x();
+                        Rij_a_dvk_dxj[1] -= v_ab * mdWab_b.y();
+                        Rij_a_dvk_dxj[2] -= v_ab * mdWab_b.z();
 
-                        sum_nabla_a += sycl::dot(a_ab, mdWab_b);
+                        Rij_a_dak_dxj[0] -= a_ab * mdWab_b.x();
+                        Rij_a_dak_dxj[1] -= a_ab * mdWab_b.y();
+                        Rij_a_dak_dxj[2] -= a_ab * mdWab_b.z();
+
+                        //sum_nabla_a += sycl::dot(a_ab, mdWab_b);
                     });
 
                     std::array<Tvec, 3> invRij = shammath::compute_inv_33(Rij_a);
 
                     std::array<Tvec, 3> dvi_dxk = shammath::mat_prod_33(invRij, Rij_a_dvk_dxj);
+                    std::array<Tvec, 3> dai_dxk = shammath::mat_prod_33(invRij, Rij_a_dak_dxj);
+
+                    Tscal div_ai = dai_dxk[0].x() + dai_dxk[1].y() + dai_dxk[2].z();
+                    Tscal div_vi = dvi_dxk[0].x() + dvi_dxk[1].y() + dvi_dxk[2].z();
+                    Tvec curl_vi = {
+                        dvi_dxk[1].z() - dvi_dxk[2].y(),
+                        dvi_dxk[2].x() - dvi_dxk[0].z(),
+                        dvi_dxk[0].y() - dvi_dxk[1].x()
+                    }; 
 
                     Tscal tens_nablav =
                         dvi_dxk[0].x() * dvi_dxk[0].x() + dvi_dxk[1].x() * dvi_dxk[0].y() +
@@ -197,7 +221,9 @@ void shammodels::sph::modules::DiffOperatorDtDivv<Tvec, SPHKernel>::update_dtdiv
                         dvi_dxk[0].z() * dvi_dxk[2].x() + dvi_dxk[1].z() * dvi_dxk[2].y() +
                         dvi_dxk[2].z() * dvi_dxk[2].z();
 
-                    dtdivv[id_a] = (-inv_rho_omega_a * sum_nabla_a) - tens_nablav;
+                    //divv[id_a] = div_vi;
+                    //curlv[id_a] = curl_vi;
+                    dtdivv[id_a] = div_ai - tens_nablav;
                 });
             });
         }
