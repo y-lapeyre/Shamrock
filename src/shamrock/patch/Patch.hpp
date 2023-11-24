@@ -35,22 +35,47 @@ namespace shamrock::patch {
 
         static constexpr u32 splts_count = 1U << dim;
 
-        u64 id_patch; // unique key that identify the patch
+        ////////////////////////////////////////////////////////////////////////////////////////////
+        // Members
+        ////////////////////////////////////////////////////////////////////////////////////////////
 
-        // load balancing fields
+        /**
+        * \var id_patch
+        * \brief unique key that identify the patch
+        *
+        * \var pack_node_index
+        * \brief this value mean "to pack with index xxx in the global patch table"
+        * and not "to pack with id_pach == xxx"
+        *
+        * \var load_value
+        * \brief if synchronized contain the load value of the patch
+        *
+        * \var coord_min
+        * \brief 
+        *
+        * \var coord_max
+        * \brief 
+        *
+        * \var data_count
+        * \brief number of element in the corresponding patchdata
+        *
+        * \var node_owner_id
+        * \brief node rank owner of this patch
+        */
 
-        u64 pack_node_index; ///< this value mean "to pack with index xxx in the global patch table"
-                             ///< and not "to pack with id_pach == xxx"
-        u64 load_value;      ///< if synchronized contain the load value of the patch
-
-        // Data
+        u64 id_patch;
+        u64 pack_node_index;
+        u64 load_value;
         std::array<u64,dim> coord_min;
         std::array<u64,dim> coord_max;
 
         //[[deprecated("should be removed at some point to allow variable size pdat")]] 
-        u32 data_count; ///< number of element in the corresponding patchdata
+        u32 data_count;
+        u32 node_owner_id;
 
-        u32 node_owner_id; ///< node rank owner of this patch
+        ////////////////////////////////////////////////////////////////////////////////////////////
+        // functions
+        ////////////////////////////////////////////////////////////////////////////////////////////
 
         /**
          * @brief check if patch equals
