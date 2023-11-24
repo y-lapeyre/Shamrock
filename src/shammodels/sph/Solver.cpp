@@ -28,6 +28,7 @@
 #include "shammodels/sph/math/density.hpp"
 #include "shammodels/sph/math/forces.hpp"
 #include "shammodels/sph/modules/ComputeEos.hpp"
+#include "shammodels/sph/modules/ComputeLoadBalanceValue.hpp"
 #include "shammodels/sph/modules/ConservativeCheck.hpp"
 #include "shammodels/sph/modules/DiffOperator.hpp"
 #include "shammodels/sph/modules/DiffOperatorDtDivv.hpp"
@@ -1347,6 +1348,8 @@ auto SPHSolve<Tvec, Kern>::evolve_once(
         timer_io.end();
         storage.timings_details.io += timer_io.elasped_sec();
     }
+
+    modules::ComputeLoadBalanceValue<Tvec, Kern> (context, solver_config, storage).update_load_balancing();
 
     tstep.end();
 

@@ -475,7 +475,7 @@ void PatchScheduler::scheduler_step(bool do_split_merge, bool do_load_balancing)
     patch_list.build_local_idx_map();
     patch_list.build_global_idx_map();//TODO check if required : added because possible bug because of for each patch & serial patch tree
     update_local_dtcnt_value();
-    update_local_load_value();
+    //update_local_load_value(); disable the load value compute it should be done only in the models
 
 
     //std::cout << dump_status();

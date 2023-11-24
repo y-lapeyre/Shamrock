@@ -109,9 +109,10 @@ class PatchScheduler{
         }
     }
 
-    inline void update_local_load_value(){
+    inline void update_local_load_value(std::function<u64(shamrock::patch::Patch)> load_function){
         for(u64 id : owned_patch_id){
-            patch_list.local[patch_list.id_patch_to_local_idx[id]].load_value = patch_data.owned_data.get(id).get_obj_cnt();
+            shamrock::patch::Patch & p = patch_list.local[patch_list.id_patch_to_local_idx[id]];
+            p.load_value = load_function(p);
         }
     }
 
