@@ -1,7 +1,6 @@
 from lib.buildbot import * 
 import glob
 import sys
-import subprocess
 
 print_buildbot_info("licence check tool")
 
@@ -11,49 +10,50 @@ file_list.sort()
 
 missing_doxygenfilehead = []
 
-def get_doxstring(path, filename):
-    tmp = " * @file "+ filename+"\n"
-    try:
-        tmp+= (subprocess.check_output(R'git log --pretty=format:" * @author %aN (%aE)" '+path+' |sort |uniq',shell=True).decode())[:-1]
-    except subprocess.CalledProcessError as err:
-        print(err)
+def has_header(filedata, filename):
 
-    return tmp
+    has_file_tag = ("@file "+filename) in filedata
+    has_author_tag =  ("@author ") in filedata
+
+    return has_file_tag and has_author_tag
+
+for fname in file_list:
+
+    if (not fname.endswith(".cpp")) and (not fname.endswith(".hpp")):
+        continue
+
+    if fname.endswith("version.cpp"):
+        continue
+
+    if "/src/tests/" in fname:
+        continue
+    if "exemple.cpp" in fname:
+        continue
+    if "godbolt.cpp" in fname:
+        continue
+
+
+    f = open(fname,'r')
+    res = has_header(f.read(), os.path.basename(fname))
+    f.close()
+
+    if not res : 
+        missing_doxygenfilehead.append(fname)
+
 
 import re
-def autocorect(source, filename, path):
+def autocorect(source, filename):
 
-    l_start = 0
-    l_end = 0
-    i = 0
+    do_replace = not (("@file "+filename) in source) and (" * @file " in source)
 
-    splt = source.split("\n")
-    for l in splt:
-        if(l_start > 0):
-            if not("@author" in l):
-                break
-        if("@file" in l):
-            l_start = i
-        if("@author" in l):
-            l_end = i
-        i += 1
 
-    new_splt = splt[:l_start] 
-    new_splt.append(get_doxstring(path, filename))
-    new_splt += splt[l_end+1:]
 
-    new_src = ""
-    for l in new_splt:
-        new_src += l + "\n"
-    new_src = new_src[:-1]
+    source = re.sub(r" \* @file (.+)\n", r" * @file "+filename+"\n",source)
 
-    do_replace = not (new_src == source)
 
-    return do_replace,new_src
+    return do_replace,source
 
 def run_autocorect():
-
-    errors = []
 
     for fname in file_list:
 
@@ -70,27 +70,29 @@ def run_autocorect():
         if "godbolt.cpp" in fname:
             continue
 
+        
+
         f = open(fname,'r')
         source = f.read()
         f.close()
 
 
-        change, source = autocorect(source,os.path.basename(fname),fname)
+        res = has_header(source, os.path.basename(fname))
 
-        if change: 
-            print("autocorect : ",fname.split(abs_proj_dir)[-1])
-            f = open(fname,'w')
-            f.write(source)
-            f.close()
-            errors.append(fname.split(abs_proj_dir)[-1])
+        if not res : 
+            change, source = autocorect(source,os.path.basename(fname))
 
-    return errors
+            if change: 
+                print("autocorect : ",fname.split(abs_proj_dir)[-1])
+                f = open(fname,'w')
+                f.write(source)
+                f.close()
 
 
 
-missing_doxygenfilehead = run_autocorect()
 
-if missing_doxygenfilehead:
+
+if len(missing_doxygenfilehead) > 0:
     print(" => \033[1;34mDoxygen header missing in \033[0;0m: ")
 
     for i in missing_doxygenfilehead:
@@ -107,6 +109,8 @@ if missing_doxygenfilehead:
      */
     
     """)
+
+    run_autocorect()
 
     sys.exit("Missing doxygen header for some source files")
 else : 
