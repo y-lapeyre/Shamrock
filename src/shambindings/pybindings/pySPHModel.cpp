@@ -107,6 +107,19 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             py::arg("Racc"),
             py::arg("a_spin"),
             py::arg("dir_spin"))
+        .def("add_ext_force_shearing_box",[](TConfig & self,Tscal shear_speed,
+            i32_3 shear_base,
+            i32_3 shear_dir,
+            Tscal pressure_background,
+            Tscal s){
+            self.add_ext_force_shearing_box(shear_speed, shear_base, shear_dir, pressure_background, s);
+        },
+            py::kw_only(),
+            py::arg("shear_speed"),
+            py::arg("shear_base"),
+            py::arg("shear_dir"),
+            py::arg("pressure_background"),
+            py::arg("s"))
         .def("set_units", &TConfig::set_units);
 
     py::class_<T>(m, name_model.c_str())

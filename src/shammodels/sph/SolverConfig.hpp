@@ -66,6 +66,7 @@ struct shammodels::sph::BCConfig {
     inline void set_shearing_periodic(i32_3 shear_base, i32_3 shear_dir, Tscal speed) {
         config = ShearingPeriodic{shear_base, shear_dir, speed};
     }
+
 };
 
 template<class Tvec, template<class> class SPHKernel>
@@ -111,6 +112,16 @@ struct shammodels::sph::SolverConfig {
     inline void
     add_ext_force_lense_thirring(Tscal central_mass, Tscal Racc, Tscal a_spin, Tvec dir_spin) {
         ext_force_config.add_lense_thirring(central_mass, Racc, a_spin, dir_spin);
+    }
+
+    inline void add_ext_force_shearing_box(
+        Tscal shear_speed,
+        i32_3 shear_base,
+        i32_3 shear_dir,
+        Tscal pressure_background,
+        Tscal s) {
+
+        ext_force_config.add_shearing_box(shear_speed, shear_base, shear_dir, pressure_background, s);
     }
 
     inline void set_boundary_free() { boundary_config.set_free(); }
