@@ -9,12 +9,9 @@
 /**
  * @file ComputeLoadBalanceValue.cpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief
  *
  */
-
-#include "ComputeEos.hpp"
 
 #include "ComputeLoadBalanceValue.hpp"
 #include "shamsys/legacy/log.hpp"
