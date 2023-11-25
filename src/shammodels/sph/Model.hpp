@@ -313,6 +313,9 @@ namespace shammodels::sph {
             if(shamcomm::world_rank() == 0) {
                 logger::info_ln("Model", "Push particles : ", log_gathered);
             }
+            
+            modules::ComputeLoadBalanceValue<Tvec, SPHKernel> (ctx, solver.solver_config, solver.storage).update_load_balancing();
+
 
             sched.scheduler_step(false, false);
 
@@ -475,6 +478,8 @@ namespace shammodels::sph {
             if(shamcomm::world_rank() == 0) {
                 logger::info_ln("Model", "Push particles : ", log_gathered);
             }
+
+            modules::ComputeLoadBalanceValue<Tvec, SPHKernel> (ctx, solver.solver_config, solver.storage).update_load_balancing();
 
             sched.scheduler_step(false, false);
 

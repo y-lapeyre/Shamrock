@@ -108,6 +108,7 @@ class PatchScheduler{
             shamrock::patch::Patch & p = patch_list.local[patch_list.id_patch_to_local_idx[id]];
             p.load_value = load_function(p);
         }
+        patch_list.is_load_values_up_to_date = true;
     }
 
 
