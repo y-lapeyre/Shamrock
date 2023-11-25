@@ -53,7 +53,9 @@ void Model<Tvec, TgridVec>::make_base_grid(TgridVec bmin, TgridVec cell_size, u3
     sched.owned_patch_id = sched.patch_list.build_local();
     sched.patch_list.build_local_idx_map();
     sched.update_local_dtcnt_value();
-    sched.update_local_load_value();
+    sched.update_local_load_value([&](shamrock::patch::Patch p){
+        return sched.patch_data.owned_data.get(p.id_patch).get_obj_cnt();
+    });
     sched.scheduler_step(true, true);
 
 }

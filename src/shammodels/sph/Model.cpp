@@ -53,7 +53,9 @@ void Model<Tvec, SPHKernel>::init_scheduler(u32 crit_split, u32 crit_merge) {
     sched.owned_patch_id = sched.patch_list.build_local();
     sched.patch_list.build_local_idx_map();
     sched.update_local_dtcnt_value();
-    sched.update_local_load_value();
+    sched.update_local_load_value([&](shamrock::patch::Patch p){
+        return sched.patch_data.owned_data.get(p.id_patch).get_obj_cnt();
+    });
 }
 
 template<class Tvec, template<class> class SPHKernel>
