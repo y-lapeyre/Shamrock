@@ -22,7 +22,7 @@
 #include "shammath/sphkernels.hpp"
 #include "shammodels/sph/io/PhantomDump.hpp"
 #include "shamrock/patch/PatchData.hpp"
-#include "shamrock/scheduler/scheduler_mpi.hpp"
+#include "shamrock/scheduler/PatchScheduler.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
 #include <utility>
@@ -566,7 +566,7 @@ void Model<Tvec, SPHKernel>::init_from_phantom_dump(PhantomDump &phdump) {
             logger::info_ln("Model", "Push particles : ", log_gathered);
         }
         log = "";
-        
+
         modules::ComputeLoadBalanceValue<Tvec, SPHKernel> (ctx, solver.solver_config, solver.storage).update_load_balancing();
 
         post_insert_data<Tvec>(sched);

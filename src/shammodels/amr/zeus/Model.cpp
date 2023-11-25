@@ -17,7 +17,7 @@
 #include "shambase/memory.hpp"
 #include "shambase/sycl_utils.hpp"
 #include "shamrock/io/LegacyVtkWritter.hpp"
-#include "shamrock/scheduler/scheduler_mpi.hpp"
+#include "shamrock/scheduler/PatchScheduler.hpp"
 #include "shamsys/NodeInstance.hpp"
 
 template<class Tvec, class TgridVec>

@@ -7,12 +7,12 @@
 // -------------------------------------------------------//
 
 /**
- * @file scheduler_mpi.cpp
+ * @file PatchScheduler.cpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @brief
  */
 
-#include "scheduler_mpi.hpp"
+#include "PatchScheduler.hpp"
 
 #include <ctime>
 #include <memory>
@@ -161,6 +161,9 @@ std::vector<u64> PatchScheduler::add_root_patches(std::vector<shamrock::patch::P
     patch_list.build_global_idx_map();
 
 
+    patch_list.invalidate_load_values();
+
+
     return ret;
 
 }
@@ -213,6 +216,8 @@ void PatchScheduler::add_root_patch(){
     coord.coord_max[2] = max_axis_patch_coord;
 
     add_root_patches({coord});
+
+    patch_list.invalidate_load_values();
     
 }
 
@@ -409,7 +414,7 @@ void PatchScheduler::scheduler_step(bool do_split_merge, bool do_load_balancing)
         timers.gen_merge_split_rq->start();
         split_rq = patch_tree.get_split_request(crit_patch_split);
         merge_rq = patch_tree.get_merge_request(crit_patch_merge);
-        timers.gen_merge_split_rq->end();
+        timers.gen_merge_split_rq->end();        
 
         timers.split_merge_cnt = u32_2{split_rq.size(),merge_rq.size()};
         /*
@@ -480,6 +485,9 @@ void PatchScheduler::scheduler_step(bool do_split_merge, bool do_load_balancing)
     //update_local_dtcnt_value();
     //update_local_load_value(); disable the load value compute it should be done only in the models
 
+    if(split_rq.size() > 0 || merge_rq.size() > 0){
+        patch_list.invalidate_load_values();
+    }
 
     //std::cout << dump_status();
 

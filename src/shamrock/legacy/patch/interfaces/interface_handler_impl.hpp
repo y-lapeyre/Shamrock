@@ -16,7 +16,7 @@
  */
 
 #include "shamrock/legacy/patch/utility/compute_field.hpp"
-#include "shamrock/scheduler/scheduler_mpi.hpp"
+#include "shamrock/scheduler/PatchScheduler.hpp"
 #include "interface_generator.hpp"
 #include "shamrock/legacy/patch/comm/patchdata_exchanger.hpp"
 #include <vector>

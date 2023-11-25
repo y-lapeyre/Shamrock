@@ -11,7 +11,7 @@
 #include <vector>
 #include <random>
 
-#include "shamrock/scheduler/scheduler_mpi.hpp"
+#include "shamrock/scheduler/PatchScheduler.hpp"
 
 
 inline void make_global_local_check_vec(std::vector<shamrock::patch::Patch> & global, std::vector<shamrock::patch::Patch> & local){

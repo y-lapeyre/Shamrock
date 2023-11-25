@@ -9,7 +9,7 @@
 #pragma once
 
 /**
- * @file scheduler_mpi.hpp
+ * @file PatchScheduler.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @brief MPI scheduler
  * @version 0.1

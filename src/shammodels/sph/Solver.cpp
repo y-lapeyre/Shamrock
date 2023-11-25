@@ -45,7 +45,7 @@
 #include "shamrock/scheduler/ReattributeDataUtility.hpp"
 #include "shamrock/scheduler/SchedulerUtility.hpp"
 #include "shamrock/scheduler/SerialPatchTree.hpp"
-#include "shamrock/scheduler/scheduler_mpi.hpp"
+#include "shamrock/scheduler/PatchScheduler.hpp"
 #include "shamrock/tree/TreeTraversalCache.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
@@ -878,6 +878,8 @@ auto SPHSolve<Tvec, Kern>::evolve_once(
     shambase::Timer tstep;
     tstep.start();
 
+    modules::ComputeLoadBalanceValue<Tvec, Kern> (context, solver_config, storage).update_load_balancing();
+
     scheduler().scheduler_step(true, true);
 
     using namespace shamrock;
@@ -1350,7 +1352,6 @@ auto SPHSolve<Tvec, Kern>::evolve_once(
         storage.timings_details.io += timer_io.elasped_sec();
     }
 
-    modules::ComputeLoadBalanceValue<Tvec, Kern> (context, solver_config, storage).update_load_balancing();
 
     tstep.end();
 
