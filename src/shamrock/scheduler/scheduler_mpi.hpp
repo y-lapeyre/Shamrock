@@ -103,12 +103,6 @@ class PatchScheduler{
     std::string dump_status();
 
 
-    inline void update_local_dtcnt_value(){
-        for(u64 id : owned_patch_id){
-            patch_list.local[patch_list.id_patch_to_local_idx[id]].data_count = patch_data.owned_data.get(id).get_obj_cnt();
-        }
-    }
-
     inline void update_local_load_value(std::function<u64(shamrock::patch::Patch)> load_function){
         for(u64 id : owned_patch_id){
             shamrock::patch::Patch & p = patch_list.local[patch_list.id_patch_to_local_idx[id]];

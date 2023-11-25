@@ -23,6 +23,7 @@
 #include "shammodels/generic/setup/generators.hpp"
 #include "shammodels/sph/Solver.hpp"
 #include "shammodels/sph/io/PhantomDump.hpp"
+#include "shammodels/sph/modules/ComputeLoadBalanceValue.hpp"
 #include "shamrock/legacy/utils/geometry_utils.hpp"
 #include "shamrock/patch/PatchData.hpp"
 #include "shamrock/scheduler/ReattributeDataUtility.hpp"

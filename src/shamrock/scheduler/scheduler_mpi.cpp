@@ -126,7 +126,6 @@ std::vector<u64> PatchScheduler::add_root_patches(std::vector<shamrock::patch::P
         root.coord_max[0] = coord.coord_max[0];
         root.coord_max[1] = coord.coord_max[1];
         root.coord_max[2] = coord.coord_max[2];
-        root.data_count = 0;
         root.node_owner_id = node_owner_id;
 
         patch_list.global.push_back(root);
@@ -250,6 +249,8 @@ bool PatchScheduler::should_resize_box(bool node_in){
 //TODO move Loadbalancing function to template state
 void PatchScheduler::sync_build_LB(bool global_patch_sync, bool balance_load){
 
+    patch_list.check_load_values_valid();
+
     if(global_patch_sync) patch_list.build_global();
 
     if(balance_load){
@@ -367,6 +368,8 @@ void PatchScheduler::scheduler_step(bool do_split_merge, bool do_load_balancing)
 
     timers.global_timer.start();
 
+    patch_list.check_load_values_valid();
+
     timers.metadata_sync.start();
     patch_list.build_global();
     timers.metadata_sync.end();
@@ -474,7 +477,7 @@ void PatchScheduler::scheduler_step(bool do_split_merge, bool do_load_balancing)
     patch_list.reset_local_pack_index();
     patch_list.build_local_idx_map();
     patch_list.build_global_idx_map();//TODO check if required : added because possible bug because of for each patch & serial patch tree
-    update_local_dtcnt_value();
+    //update_local_dtcnt_value();
     //update_local_load_value(); disable the load value compute it should be done only in the models
 
 
@@ -574,7 +577,6 @@ std::string PatchScheduler::dump_status(){
 
         ss << "      -> " 
             << p.id_patch << " : " 
-            << p.data_count << " "
             << p.load_value << " "
             << p.node_owner_id << " "
             << p.pack_node_index << " "
@@ -588,7 +590,6 @@ std::string PatchScheduler::dump_status(){
 
         ss << "      -> id : " 
             << p.id_patch << " : " 
-            << p.data_count << " "
             << p.load_value << " "
             << p.node_owner_id << " "
             << p.pack_node_index << " "
@@ -855,7 +856,6 @@ void PatchScheduler::dump_local_patches(std::string filename){
 
             fout << 
             p.id_patch << "|" << 
-            p.data_count << "|" << 
             p.load_value << "|" << 
             p.node_owner_id << "|" << 
             p.pack_node_index << "|" << 
@@ -888,7 +888,6 @@ void PatchScheduler::dump_local_patches(std::string filename){
 
             fout << 
             p.id_patch << "|" << 
-            p.data_count << "|" << 
             p.load_value << "|" << 
             p.node_owner_id << "|" << 
             p.pack_node_index << "|" << 

@@ -40,7 +40,7 @@ namespace impl {
 
             for (u64 i = 0; i < interface_comm_list.size(); i++) {
 
-                if (sched.patch_list.global[interface_comm_list[i].global_patch_idx_send].data_count > 0) {
+                if (sched.patch_list.global[interface_comm_list[i].global_patch_idx_send].load_value > 0) {
 
                     auto patch_in = sched.patch_data.get_pdat(interface_comm_list[i].sender_patch_id);
 
@@ -86,7 +86,7 @@ namespace impl {
 
             for (u64 i = 0; i < interface_comm_list.size(); i++) {
 
-                if (sched.patch_list.global[interface_comm_list[i].global_patch_idx_send].data_count > 0) {
+                if (sched.patch_list.global[interface_comm_list[i].global_patch_idx_send].load_value > 0) {
 
 
                     std::vector<std::unique_ptr<PCField>> pret = InterfaceVolumeGenerator::append_interface_field<T,vectype>(
