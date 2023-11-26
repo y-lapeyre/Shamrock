@@ -296,8 +296,26 @@ void SPHSolve<Tvec, Kern>::build_merged_pos_trees() {
                 sycl::accessor comp_min {tmp_min_cell, cgh, sycl::write_only, sycl::no_init};
                 sycl::accessor comp_max {tmp_max_cell, cgh, sycl::write_only, sycl::no_init};
 
+
+                // how to lose a f****ing afternoon :
+                // 1 - code a nice algorithm that should optimize the code
+                // 2 - pass all the tests
+                // 3 - benchmark it and discover big loss in perf for no reasons
+                // 4 - change a parameter and discover a segfault (on GPU to have more fun ....) 
+                // 5 - find that actually the core algorithm of the code create a bug in the new thing
+                // 6 - discover that every value in everything is wrong
+                // 7 - spent the whole night on it
+                // 8 - start putting prints everywhere
+                // 9 - isolate a bugged id
+                // 10 - try to understand why a f***ing leaf is as big as the root of the tree
+                // 11 - **** a few hours latter
+                // 12 - the goddam c++ standard define std::numeric_limits<float>::min() to be epsilon instead of -max
+                // 13 - road rage 
+                // 14 - open a bier
+                // alt f4 the ide
+
                 Tvec imin = shambase::VectorProperties<Tvec>::get_max();
-                Tvec imax = shambase::VectorProperties<Tvec>::get_min();
+                Tvec imax = -shambase::VectorProperties<Tvec>::get_max();
 
                 shambase::parralel_for(cgh, leaf_count,"compute leaf boxes", [=](u64 leaf_id){
 
@@ -307,8 +325,8 @@ void SPHSolve<Tvec, Kern>::build_merged_pos_trees() {
                     cell_looper.iter_object_in_cell(leaf_id + leaf_offset, [&](u32 part_id){
                         Tvec r = acc_pos[part_id];
 
-                        min = shambase::sycl_utils::g_sycl_min(min, r);
-                        max = shambase::sycl_utils::g_sycl_max(max, r);
+                        min = sham::min(min, r);
+                        max = sham::max(max, r);
                     });
 
                     comp_min[leaf_offset + leaf_id] = min;
@@ -316,9 +334,18 @@ void SPHSolve<Tvec, Kern>::build_merged_pos_trees() {
 
                 });
 
-
-
             });
+
+            //{
+            //    u32 leaf_offset = tree.tree_struct.internal_cell_count;
+            //    sycl::host_accessor pos_min_cell  {tmp_min_cell};
+            //    sycl::host_accessor pos_max_cell  {tmp_max_cell};
+            //    
+            //    for (u32 i = 0; i < 1000; i++) {
+            //            logger::raw_ln(i,pos_max_cell[i+leaf_offset] - pos_min_cell[i+leaf_offset]);
+            //        
+            //    }
+            //}
 
             auto ker_reduc_hmax = [&](sycl::handler &cgh) {
                 u32 offset_leaf = internal_cell_count;

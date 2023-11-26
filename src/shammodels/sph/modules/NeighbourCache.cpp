@@ -197,8 +197,7 @@ void Module<Tvec,Tmorton, SPHKernel>::start_neighbors_cache() {
     time_neigh.end();
     storage.timings_details.neighbors += time_neigh.elasped_sec();
 
-}//218s
-//12776198
+}
 
 template<class Tvec, class Tmorton, template<class> class SPHKernel>
 void Module<Tvec,Tmorton, SPHKernel>::start_neighbors_cache_2stages() {
@@ -298,6 +297,19 @@ void Module<Tvec,Tmorton, SPHKernel>::start_neighbors_cache_2stages() {
             });
         });
 
+        //{
+        //    u32 offset_leaf = intnode_cnt;
+        //    sycl::host_accessor neigh_cnt{neigh_count_leaf};
+        //    sycl::host_accessor pos_min_cell  {shambase::get_check_ref(tree.tree_cell_ranges.buf_pos_min_cell_flt)};
+        //    sycl::host_accessor pos_max_cell  {shambase::get_check_ref(tree.tree_cell_ranges.buf_pos_max_cell_flt)};
+        //    
+        //    for (u32 i = 0; i < 1000; i++) {
+        //        if(neigh_cnt[i] > 30){
+        //            logger::raw_ln(i, neigh_cnt[i], pos_max_cell[i+offset_leaf] - pos_min_cell[i+offset_leaf]);
+        //        }
+        //    }
+        //}
+
         tree::ObjectCache pleaf_cache = tree::prepare_object_cache(std::move(neigh_count_leaf), leaf_cnt);
 
 
@@ -392,17 +404,17 @@ void Module<Tvec,Tmorton, SPHKernel>::start_neighbors_cache_2stages() {
 
 
 
-        {
-            sycl::host_accessor xyz{buf_xyz};
-            sycl::host_accessor acc {leaf_part_id};
-
-            for(u32 i = 0; i < obj_cnt; i++){
-                u32 leaf_id = acc[i];
-                if(leaf_id >= leaf_cnt){
-                    logger::raw_ln("error : i=",i,"r=",xyz[i],"leaf_id=",leaf_id);
-                }
-            }
-        }
+        //{
+        //    sycl::host_accessor xyz{buf_xyz};
+        //    sycl::host_accessor acc {leaf_part_id};
+        //
+        //    for(u32 i = 0; i < obj_cnt; i++){
+        //        u32 leaf_id = acc[i];
+        //        if(leaf_id >= leaf_cnt){
+        //            logger::raw_ln("error : i=",i,"r=",xyz[i],"leaf_id=",leaf_id);
+        //        }
+        //    }
+        //}
 
 
 
