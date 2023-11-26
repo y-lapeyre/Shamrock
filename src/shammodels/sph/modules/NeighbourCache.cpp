@@ -7,7 +7,7 @@
 // -------------------------------------------------------//
 
 /**
- * @file ExternalForces.cpp
+ * @file NeighbourCache.cpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @brief
  *
@@ -364,7 +364,7 @@ void Module<Tvec,Tmorton, SPHKernel>::start_neighbors_cache_2stages() {
 
             sycl::accessor found_id{leaf_part_id, cgh, sycl::write_only, sycl::no_init};
             u32 offset_leaf = intnode_cnt;
-
+            //sycl::stream out {4096,4096,cgh};
             shambase::parralel_for(cgh, obj_cnt, "search particles parent leaf", [=](u64 gid) {
                 u32 id_a = (u32)gid;
 
@@ -374,9 +374,12 @@ void Module<Tvec,Tmorton, SPHKernel>::start_neighbors_cache_2stages() {
 
                 leaf_looper.rtree_for(
                     [&](u32 node_id, Tvec bmin, Tvec bmax) -> bool {
-
-                        return BBAA::is_coord_in_range_incl_max(
+                        bool ret = BBAA::is_coord_in_range_incl_max(
                             r_a, bmin,bmax);
+                        
+                        //error : i= 44245 r= (0.3495433344162232,-0.005627362002766546,-0.21312104638358176) leaf_id= 2147483647 
+                        //if(id_a == 44245) {out << node_id << " " << bmin << " " << bmax << " " << ret << "\n";};
+                        return ret;
 
                     },
                     [&](u32 leaf_b) {
@@ -389,7 +392,17 @@ void Module<Tvec,Tmorton, SPHKernel>::start_neighbors_cache_2stages() {
 
 
 
+        {
+            sycl::host_accessor xyz{buf_xyz};
+            sycl::host_accessor acc {leaf_part_id};
 
+            for(u32 i = 0; i < obj_cnt; i++){
+                u32 leaf_id = acc[i];
+                if(leaf_id >= leaf_cnt){
+                    logger::raw_ln("error : i=",i,"r=",xyz[i],"leaf_id=",leaf_id);
+                }
+            }
+        }
 
 
 

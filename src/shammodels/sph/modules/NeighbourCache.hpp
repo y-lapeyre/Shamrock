@@ -9,7 +9,7 @@
 #pragma once
 
 /**
- * @file DiffOperatorDtDivv.hpp
+ * @file NeighbourCache.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @brief
  *

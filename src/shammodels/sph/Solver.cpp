@@ -240,6 +240,7 @@ void SPHSolve<Tvec, Kern>::merge_position_ghost() {
         storage.ghost_handler.get().build_comm_merge_positions(storage.ghost_patch_cache.get()));
 }
 
+
 template<class Tvec, template<class> class Kern>
 void SPHSolve<Tvec, Kern>::build_merged_pos_trees() {
 
@@ -248,7 +249,142 @@ void SPHSolve<Tvec, Kern>::build_merged_pos_trees() {
     SPHSolverImpl solver(context);
 
     auto &merged_xyzh         = storage.merged_xyzh.get();
-    storage.merged_pos_trees.set(solver.make_merge_patch_trees(merged_xyzh, solver_config.tree_reduction_level));
+
+
+    shambase::DistributedData<RTree> trees =
+        merged_xyzh.template map<RTree>([&](u64 id, PreStepMergedField &merged) {
+            Tvec bmin = merged.bounds.lower;
+            Tvec bmax = merged.bounds.upper;
+
+            RTree tree(shamsys::instance::get_compute_queue(),
+                        {bmin, bmax},
+                        merged.field_pos.get_buf(),
+                        merged.field_pos.get_obj_cnt(),
+                        solver_config.tree_reduction_level);
+
+            return tree;
+        });
+
+    trees.for_each([&](u64 id, RTree &tree) {
+        tree.compute_cell_ibounding_box(shamsys::instance::get_compute_queue());
+        tree.convert_bounding_box(shamsys::instance::get_compute_queue());
+    });
+
+
+
+    bool corect_boxes = solver_config.use_two_stage_search;
+    if(corect_boxes){
+
+        trees.for_each([&](u64 id, RTree & tree){
+            
+            u32 leaf_count = tree.tree_reduced_morton_codes.tree_leaf_count;
+            u32 internal_cell_count = tree.tree_struct.internal_cell_count;
+            u32 tot_count = leaf_count + internal_cell_count;
+
+            sycl::buffer<Tvec> tmp_min_cell(tot_count);
+            sycl::buffer<Tvec> tmp_max_cell(tot_count);
+
+            sycl::buffer<Tvec> &buf_part_pos = shambase::get_check_ref(merged_xyzh.get(id).field_pos.get_buf());
+
+            shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
+                shamrock::tree::ObjectIterator cell_looper(tree, cgh);
+
+                u32 leaf_offset = tree.tree_struct.internal_cell_count;
+
+                sycl::accessor acc_pos {buf_part_pos, cgh, sycl::read_only};
+
+                sycl::accessor comp_min {tmp_min_cell, cgh, sycl::write_only, sycl::no_init};
+                sycl::accessor comp_max {tmp_max_cell, cgh, sycl::write_only, sycl::no_init};
+
+                Tvec imin = shambase::VectorProperties<Tvec>::get_max();
+                Tvec imax = shambase::VectorProperties<Tvec>::get_min();
+
+                shambase::parralel_for(cgh, leaf_count,"compute leaf boxes", [=](u64 leaf_id){
+
+                    Tvec min = imin;
+                    Tvec max = imax;
+
+                    cell_looper.iter_object_in_cell(leaf_id + leaf_offset, [&](u32 part_id){
+                        Tvec r = acc_pos[part_id];
+
+                        min = shambase::sycl_utils::g_sycl_min(min, r);
+                        max = shambase::sycl_utils::g_sycl_max(max, r);
+                    });
+
+                    comp_min[leaf_offset + leaf_id] = min;
+                    comp_max[leaf_offset + leaf_id] = max;
+
+                });
+
+
+
+            });
+
+            auto ker_reduc_hmax = [&](sycl::handler &cgh) {
+                u32 offset_leaf = internal_cell_count;
+
+                sycl::accessor comp_min {tmp_min_cell, cgh, sycl::read_write};
+                sycl::accessor comp_max {tmp_max_cell, cgh, sycl::read_write};
+
+                sycl::accessor rchild_id   {shambase::get_check_ref(tree.tree_struct.buf_rchild_id  ),cgh, sycl::read_only};
+                sycl::accessor lchild_id   {shambase::get_check_ref(tree.tree_struct.buf_lchild_id  ),cgh, sycl::read_only};
+                sycl::accessor rchild_flag {shambase::get_check_ref(tree.tree_struct.buf_rchild_flag),cgh, sycl::read_only};
+                sycl::accessor lchild_flag {shambase::get_check_ref(tree.tree_struct.buf_lchild_flag),cgh, sycl::read_only};
+
+                shambase::parralel_for(cgh, internal_cell_count,"propagate up", [=](u64 gid){
+
+                    u32 lid = lchild_id[gid] + offset_leaf * lchild_flag[gid];
+                    u32 rid = rchild_id[gid] + offset_leaf * rchild_flag[gid];
+
+                    Tvec bminl = comp_min[lid];
+                    Tvec bminr = comp_min[rid];
+                    Tvec bmaxl = comp_max[lid];
+                    Tvec bmaxr = comp_max[rid];
+
+                    Tvec bmin = shambase::sycl_utils::g_sycl_min(bminl, bminr);
+                    Tvec bmax = shambase::sycl_utils::g_sycl_max(bmaxl, bmaxr);
+
+                    comp_min[gid] = bmin;
+                    comp_max[gid] = bmax;
+                });
+            };
+
+            for (u32 i = 0; i < tree.tree_depth; i++) {
+                shamsys::instance::get_compute_queue().submit(ker_reduc_hmax);
+            }
+
+            sycl::buffer<Tvec> & tree_bmin = shambase::get_check_ref(tree.tree_cell_ranges.buf_pos_min_cell_flt);
+            sycl::buffer<Tvec> & tree_bmax = shambase::get_check_ref(tree.tree_cell_ranges.buf_pos_max_cell_flt);
+
+            shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
+                shamrock::tree::ObjectIterator cell_looper(tree, cgh);
+
+                u32 leaf_offset = tree.tree_struct.internal_cell_count;
+
+                sycl::accessor comp_bmin {tmp_min_cell, cgh, sycl::read_only};
+                sycl::accessor comp_bmax {tmp_max_cell, cgh, sycl::read_only};
+
+                sycl::accessor tree_buf_min {tree_bmin, cgh, sycl::read_write};
+                sycl::accessor tree_buf_max {tree_bmax, cgh, sycl::read_write};
+
+                shambase::parralel_for(cgh, tot_count,"write in tree range", [=](u64 nid){
+
+                    Tvec load_min = comp_bmin[nid]; 
+                    Tvec load_max = comp_bmax[nid]; 
+
+                    tree_buf_min[nid] = load_min;
+                    tree_buf_max[nid] = load_max;   
+
+                });
+
+            });
+
+        });
+    }
+
+
+    
+    storage.merged_pos_trees.set(std::move(trees));
 }
 
 template<class Tvec, template<class> class Kern>
