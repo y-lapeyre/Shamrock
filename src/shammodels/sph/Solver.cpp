@@ -480,7 +480,13 @@ void SPHSolve<Tvec, Kern>::reset_presteps_rint() {
 
 template<class Tvec, template<class> class Kern>
 void SPHSolve<Tvec, Kern>::start_neighbors_cache() {
-    shammodels::sph::modules::NeighbourCache<Tvec,u_morton, Kern>(context, solver_config, storage).start_neighbors_cache();
+    if(solver_config.use_two_stage_search){
+        shammodels::sph::modules::NeighbourCache<Tvec,u_morton, Kern>(context, solver_config, storage)
+        .start_neighbors_cache_2stages();
+    }else{
+        shammodels::sph::modules::NeighbourCache<Tvec,u_morton, Kern>(context, solver_config, storage)
+        .start_neighbors_cache();
+    }
 }
 
 template<class Tvec, template<class> class Kern>

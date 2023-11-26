@@ -41,6 +41,7 @@ namespace shammodels::sph::modules {
             : context(context), solver_config(solver_config), storage(storage) {}
 
         void start_neighbors_cache();
+        void start_neighbors_cache_2stages();
 
         private:
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }

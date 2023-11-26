@@ -86,6 +86,7 @@ struct shammodels::sph::SolverConfig {
     Tscal cfl_force;
 
     u32 tree_reduction_level = 3;
+    bool use_two_stage_search = true;
 
     static constexpr Tscal htol_up_tol  = 1.1;
     static constexpr Tscal htol_up_iter = 1.1;
@@ -102,6 +103,9 @@ struct shammodels::sph::SolverConfig {
 
     inline void set_tree_reduction_level(u32 level){
         tree_reduction_level = level;
+    }
+    inline void set_two_stage_search(bool enable){
+        use_two_stage_search = enable;
     }
 
     inline bool is_eos_locally_isothermal() {
