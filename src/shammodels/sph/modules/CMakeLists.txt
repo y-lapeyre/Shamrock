@@ -10,5 +10,6 @@ target_sources(shamrock_lib
         ComputeEos.cpp
         UpdateDerivs.cpp
         ComputeLoadBalanceValue.cpp
+        NeighbourCache.cpp
     PUBLIC
     )

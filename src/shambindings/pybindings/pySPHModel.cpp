@@ -36,6 +36,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
 
     py::class_<TConfig>(m, name_config.c_str())
         .def("print_status", &TConfig::print_status)
+        .def("set_tree_reduction_level",&TConfig::set_tree_reduction_level)
         .def("set_eos_adiabatic", &TConfig::set_eos_adiabatic)
         .def("set_eos_locally_isothermal", &TConfig::set_eos_locally_isothermal)
         .def("set_artif_viscosity_None", &TConfig::set_artif_viscosity_None)
