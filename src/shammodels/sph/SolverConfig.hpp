@@ -87,6 +87,7 @@ struct shammodels::sph::SolverConfig {
 
     u32 tree_reduction_level = 3;
     bool use_two_stage_search = true;
+    bool combined_dtdiv_divcurlv_compute = false;
 
     static constexpr Tscal htol_up_tol  = 1.1;
     static constexpr Tscal htol_up_iter = 1.1;

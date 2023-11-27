@@ -1199,20 +1199,72 @@ auto SPHSolve<Tvec, Kern>::evolve_once(
                 logger::info_ln("sph::Model", "cfl dt =", next_cfl);
             }
 
-            if (solver_config.has_field_divv()) {
-                sph::modules::DiffOperators<Tvec, Kern>(context, solver_config, storage)
-                    .update_divv();
-            }
 
-            if (solver_config.has_field_curlv()) {
-                sph::modules::DiffOperators<Tvec, Kern>(context, solver_config, storage)
-                    .update_curlv();
-            }
+
+            //if (solver_config.has_field_divv()) {
+            //    sph::modules::DiffOperators<Tvec, Kern>(context, solver_config, storage)
+            //        .update_divv();
+            //}
+            //
+            //if (solver_config.has_field_curlv()) {
+            //    sph::modules::DiffOperators<Tvec, Kern>(context, solver_config, storage)
+            //        .update_curlv();
+            //}
+            //
+            //if (solver_config.has_field_dtdivv()) {
+            //    sph::modules::DiffOperatorDtDivv<Tvec, Kern>(context, solver_config, storage)
+            //        .update_dtdivv(false);
+            //}
 
             if (solver_config.has_field_dtdivv()) {
-                sph::modules::DiffOperatorDtDivv<Tvec, Kern>(context, solver_config, storage)
-                    .update_dtdivv();
+                
+                if(solver_config.combined_dtdiv_divcurlv_compute){
+                    //L2 distance r :  1.32348e-05 
+                    //L2 distance h :  7.68714e-06 
+                    //L2 distance vr :  0.0133985 
+                    //L2 distance u :  0.0380309 
+                    if (solver_config.has_field_dtdivv()) {     
+                        sph::modules::DiffOperatorDtDivv<Tvec, Kern>(context, solver_config, storage)
+                            .update_dtdivv(true);
+                    }
+                }else{
+                    //L2 distance r :  1.32348e-05 
+                    //L2 distance h :  7.68714e-06 
+                    //L2 distance vr :  0.0133985 
+                    //L2 distance u :  0.0380309 
+
+                    if (solver_config.has_field_divv()) {
+                        sph::modules::DiffOperators<Tvec, Kern>(context, solver_config, storage)
+                            .update_divv();
+                    }
+                    
+                    if (solver_config.has_field_curlv()) {
+                        sph::modules::DiffOperators<Tvec, Kern>(context, solver_config, storage)
+                            .update_curlv();
+                    }
+                    
+                    if (solver_config.has_field_dtdivv()) {
+                        sph::modules::DiffOperatorDtDivv<Tvec, Kern>(context, solver_config, storage)
+                            .update_dtdivv(false);
+                    }
+                }
+
+            }else{
+                if (solver_config.has_field_divv()) {
+                    sph::modules::DiffOperators<Tvec, Kern>(context, solver_config, storage)
+                        .update_divv();
+                }
+
+                if (solver_config.has_field_curlv()) {
+                    sph::modules::DiffOperators<Tvec, Kern>(context, solver_config, storage)
+                        .update_curlv();
+                }
             }
+
+
+
+
+
 
             // this should not be needed idealy, but we need the pressure on the ghosts and 
             // we don't want to communicate it as it can be recomputed from the other fields
