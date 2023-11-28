@@ -32,13 +32,14 @@ cfg = model.gen_default_config()
 #cfg.set_artif_viscosity_Constant(alpha_u = 1, alpha_AV = 1, beta_AV = 2)
 #cfg.set_artif_viscosity_VaryingMM97(alpha_min = 0.1,alpha_max = 1,sigma_decay = 0.1, alpha_u = 1, beta_AV = 2)
 cfg.set_artif_viscosity_VaryingCD10(alpha_min = 0.0,alpha_max = 1,sigma_decay = 0.1, alpha_u = 1, beta_AV = 2)
-cfg.set_boundary_shearing_periodic((1,0,0),(0,0,1),shear_speed)
+cfg.set_boundary_shearing_periodic((1,0,0),(0,1,0),shear_speed)
 cfg.set_eos_adiabatic(gamma)
-cfg.add_ext_force_shearing_box(
-    shear_speed         = shear_speed,
-    pressure_background = eta,
-    s                   = 3./2.,
-)
+#cfg.add_ext_force_shearing_box(
+#    shear_speed         = shear_speed,
+#    pressure_background = eta,
+#    s                   = 3./2.,
+#)
+cfg.set_units(shamrock.UnitSystem())
 cfg.print_status()
 model.set_solver_config(cfg)
 
@@ -61,14 +62,21 @@ model.set_value_in_a_box("uint","f64", 1 , bmin,bmax)
 
 pen_sz = 0.1
 
+mm = 1
+MM = 0
 
 def vel_func(r):
+    global mm, MM
     x,y,z = r
 
     s = (x - xm)/(xM - xm)
     vel = (shear_speed)*s
 
-    return (2*eta/kappa,float(vel),0.)
+    mm = min(mm,vel)
+    MM = max(MM,vel)
+
+    return (0,vel,0.)
+    #return (1,0,0)
 
 model.set_field_value_lambda_f64_3("vxyz", vel_func)
 #print("Current part mass :", pmass)
@@ -77,6 +85,8 @@ model.set_particle_mass(pmass)
 
 tot_u = pmass*model.get_sum("uint","f64")
 #print("total u :",tot_u)
+
+print(f"v_shear = {shear_speed} | dv = {MM-mm}")
 
 a = input("continue ?")
 
@@ -92,13 +102,21 @@ model.set_cfl_force(0.25)
 #for i in range(9):
 #    model.evolve(5e-4, False, False, "", False)
 
+current_dt = model.evolve(0,0, True, "dump_{:04}.vtk".format(0), True)
+
+
+
+
+
+dump = model.make_phantom_dump()
+fname = "dump_phinit"
+dump.save_dump(fname)
 
 
 t_sum = 0
 t_target = 10
-current_dt = 1e-7
 
-i_dump = 0
+i_dump = 1
 dt_dump = 1./100
 
 do_dump = False
@@ -108,8 +126,8 @@ while t_sum < t_target:
 
     while t_sum < next_dt_target:
 
-        do_dump = (t_sum + current_dt) == next_dt_target
-
+        #do_dump = (t_sum + current_dt) == next_dt_target
+        do_dump = True
         
 
         next_dt = model.evolve(t_sum,current_dt, do_dump, "dump_{:04}.vtk".format(i_dump), do_dump)

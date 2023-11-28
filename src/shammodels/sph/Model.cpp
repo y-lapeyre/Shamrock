@@ -591,54 +591,12 @@ void Model<Tvec, SPHKernel>::init_from_phantom_dump(PhantomDump &phdump) {
     }
 }
 
-/**
- * @brief 
- * \todo move to patchdata
- * @tparam T 
- * @param key 
- * @param pdat 
- * @return std::vector<T> 
- */
-template<class T>
-std::vector<T> fetch_data(std::string key, shamrock::patch::PatchData & pdat){
-
-    std::vector<T> vec;
-
-
-    auto appender = [&](auto & field){
-
-        if (field.get_name() == key) {
-
-            logger::debug_ln("PyShamrockCTX","appending field",key);
-            
-            {
-                sycl::host_accessor acc {shambase::get_check_ref(field.get_buf())};
-                u32 len = field.size();
-
-                for (u32 i = 0 ; i < len; i++) {
-                    vec.push_back(acc[i]);
-                }
-            }
-
-        }
-
-    };
-
-
-
-    pdat.for_each_field<T>([&](auto & field){
-        appender(field);
-    });
-
-    return vec;
-
-}
 
 
 template<class Tvec, template<class> class SPHKernel>
 void Model<Tvec, SPHKernel>::add_pdat_to_phantom_block(PhantomDumpBlock & block, shamrock::patch::PatchData & pdat){
     
-    std::vector<Tvec> xyz = fetch_data<Tvec>("xyz", pdat);
+    std::vector<Tvec> xyz = pdat.fetch_data<Tvec>("xyz");
 
     u64 xid = block.get_ref_fort_real("x");
     u64 yid = block.get_ref_fort_real("y");
@@ -651,7 +609,7 @@ void Model<Tvec, SPHKernel>::add_pdat_to_phantom_block(PhantomDumpBlock & block,
     }
 
 
-    std::vector<Tscal> h = fetch_data<Tscal>("hpart", pdat);
+    std::vector<Tscal> h = pdat.fetch_data<Tscal>("hpart");
     u64 hid = block.get_ref_f32("h");
     for (auto h_ : h) {
         block.blocks_f32[hid].vals.push_back(h_);
@@ -659,7 +617,7 @@ void Model<Tvec, SPHKernel>::add_pdat_to_phantom_block(PhantomDumpBlock & block,
 
 
     if(solver.solver_config.has_field_alphaAV()){
-        std::vector<Tscal> alpha = fetch_data<Tscal>("alpha_AV", pdat);
+        std::vector<Tscal> alpha = pdat.fetch_data<Tscal>("alpha_AV");
         u64 aid = block.get_ref_f32("alpha");
         for (auto alp_ : alpha) {
             block.blocks_f32[aid].vals.push_back(alp_);
@@ -667,7 +625,7 @@ void Model<Tvec, SPHKernel>::add_pdat_to_phantom_block(PhantomDumpBlock & block,
     }
 
     if(solver.solver_config.has_field_divv()){
-        std::vector<Tscal> vecdivv = fetch_data<Tscal>("divv", pdat);
+        std::vector<Tscal> vecdivv = pdat.fetch_data<Tscal>("divv");
         u64 divvid = block.get_ref_f32("divv");
         for (auto d_ : vecdivv) {
             block.blocks_f32[divvid].vals.push_back(d_);
@@ -676,7 +634,7 @@ void Model<Tvec, SPHKernel>::add_pdat_to_phantom_block(PhantomDumpBlock & block,
 
 
 
-    std::vector<Tvec> vxyz = fetch_data<Tvec>("vxyz", pdat);
+    std::vector<Tvec> vxyz = pdat.fetch_data<Tvec>("vxyz");
 
     u64 vxid = block.get_ref_fort_real("vx");
     u64 vyid = block.get_ref_fort_real("vy");
@@ -688,7 +646,7 @@ void Model<Tvec, SPHKernel>::add_pdat_to_phantom_block(PhantomDumpBlock & block,
         block.blocks_fort_real[vzid].vals.push_back(vec.z());
     }
 
-    std::vector<Tscal> u = fetch_data<Tscal>("uint", pdat);
+    std::vector<Tscal> u = pdat.fetch_data<Tscal>("uint");
     u64 uid = block.get_ref_fort_real("u");
     for (auto u_ : u) {
         block.blocks_fort_real[uid].vals.push_back(u_);

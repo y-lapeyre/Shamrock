@@ -206,6 +206,12 @@ void util::sycl_position_sheared_modulo(sycl::queue &queue,
 
             T roff = r / delt;
 
+
+            T dn = sycl::trunc(roff);
+
+            auto d = sycl::dot(dn,shear_base.convert<shambase::VecComponent<T>>());
+
+            /*
             auto cnt_per = [](shambase::VecComponent<T> v) -> int {
                 return (v > 0) ? int(v) : (int(v) - 1);
             };
@@ -219,6 +225,7 @@ void util::sycl_position_sheared_modulo(sycl::queue &queue,
             i32 dz = zoff*shear_base.z();
 
             i32 d = dx + dy + dz;
+            */
 
 
             T shift = {
