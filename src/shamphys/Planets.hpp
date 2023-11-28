@@ -11,10 +11,13 @@
 /**
  * @file sphkernels.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @brief 
+ * @brief
  */
 
-#include <builtins.hpp>
+#include "shambackends/sycl.hpp"
+#include "shamunits/Constants.hpp"
+#include "shamunits/UnitSystem.hpp"
+
 namespace shamphys {
 
     template<class T>
@@ -23,8 +26,13 @@ namespace shamphys {
     }
 
     template<class T>
-    T keplerian_speed(T G, T M, T R){
+    T keplerian_speed(T G, T M, T R) {
         return sycl::sqrt(G * M / R);
+    }
+
+    template<class T, class Tu>
+    T keplerian_speed(T M, T R, const shamunits::UnitSystem<Tu> usys = {}) {
+        return keplerian_speed(M, R, shamunits::Constants{usys}.G());
     }
 
 } // namespace shamphys
