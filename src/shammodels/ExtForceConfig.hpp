@@ -55,11 +55,14 @@ namespace shammodels {
          */
         struct ShearingBoxForce {
             Tscal shear_speed;
-            static constexpr i32_3 shear_base = {1,0,0};
-            static constexpr i32_3 shear_dir = {0,1,0};
+            i32_3 shear_base = {1,0,0};
+            i32_3 shear_dir = {0,1,0};
 
             Tscal pressure_background = 0.01;
             Tscal s                   = 3 / 2;
+
+            ShearingBoxForce()= default;
+            ShearingBoxForce(Tscal shear_speed,Tscal pressure_background,Tscal s) : shear_speed(shear_speed), pressure_background(pressure_background), s(s){};
 
             inline Tvec get_omega(Tscal box_size) {
                 return (2 * shear_speed / (box_size * s)) *
