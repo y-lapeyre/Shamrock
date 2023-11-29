@@ -92,8 +92,8 @@ a = input("continue ?")
 
 
 
-model.set_cfl_cour(0.3)
-model.set_cfl_force(0.25)
+model.set_cfl_cour(0.01)
+model.set_cfl_force(0.01)
 
 
 
@@ -117,7 +117,7 @@ t_sum = 0
 t_target = 10
 
 i_dump = 1
-dt_dump = 1./100
+dt_dump = 1./1000
 
 do_dump = False
 next_dt_target = t_sum + dt_dump
@@ -126,8 +126,8 @@ while t_sum < t_target:
 
     while t_sum < next_dt_target:
 
-        #do_dump = (t_sum + current_dt) == next_dt_target
-        do_dump = True
+        do_dump = (t_sum + current_dt) == next_dt_target
+        #do_dump = True
         
 
         next_dt = model.evolve(t_sum,current_dt, do_dump, "dump_{:04}.vtk".format(i_dump), do_dump)

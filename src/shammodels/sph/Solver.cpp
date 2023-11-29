@@ -383,7 +383,6 @@ void SPHSolve<Tvec, Kern>::apply_position_boundary(Tscal time_val) {
             std::get_if<SolverBCPeriodic>(&solver_config.boundary_config.config)) {
         integrators.fields_apply_periodicity(ixyz, std::pair{bmin, bmax});
     } else if (
-        logger::raw_ln("------ shearing periodic -------");
         SolverBCShearingPeriodic *c =
             std::get_if<SolverBCShearingPeriodic>(&solver_config.boundary_config.config)) {
         integrators.fields_apply_shearing_periodicity(
@@ -928,7 +927,6 @@ void SPHSolve<Tvec, Kern>::communicate_merge_ghosts_fields() {
             u32 cnt,
             PatchData &pdat) {
             if (sycl::length(binfo.offset_speed) > 0) {
-                logger::raw_ln("---- offset" , binfo.offset,binfo.offset_speed);
                 pdat.get_field<Tvec>(ivxyz_interf).apply_offset(binfo.offset_speed);
             }
         });
@@ -1151,9 +1149,8 @@ auto SPHSolve<Tvec, Kern>::evolve_once(
 
 
 
-        bool debug_interfaces = true;
-
-        if(debug_interfaces){
+        constexpr bool debug_interfaces = false;
+        if constexpr(debug_interfaces){
 
 
             shambase::DistributedData<MergedPatchData> &mpdat =
@@ -1182,7 +1179,10 @@ auto SPHSolve<Tvec, Kern>::evolve_once(
                 make_interface_debug_phantom_dump(info)
                     .gen_file()
                     .write_to_file(
-                        "debug_interf_patch_"+std::to_string(cur_p.id_patch)+"."+vtk_dump_name+".phantom"
+                        "debug_interf_patch_"
+                        +std::to_string(cur_p.id_patch)
+                        +"."+ shambase::shorten_string(vtk_dump_name,4)
+                        +".phantom"
                         );
                 
 
