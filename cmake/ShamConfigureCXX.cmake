@@ -31,6 +31,10 @@ check_cxx_source_compiles("
     "    
     CXX_VALARRAY_COMPILE)  
 
+# this is a check used on systems with GCC 10.2.1-6 20210110
+# because of a mismatch between valarray declaration and header
+# bug was created by this https://gcc.gnu.org/bugzilla/show_bug.cgi?id=103022
+# see : https://bugs.mageia.org/show_bug.cgi?id=30658
 if(NOT CXX_VALARRAY_COMPILE)
 
     check_cxx_source_compiles("
