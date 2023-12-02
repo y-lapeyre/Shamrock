@@ -14,9 +14,7 @@
 
 #include "shambindings/pybindaliases.hpp"
 
-#include "shambindings/valarray_fix.hpp"
-
-#include <pybind11/stl.h>
+#include "shambindings/pybind11_stl.hpp"
 #include <pybind11/numpy.h>
 
 #include "shamrock/scheduler/ShamrockCtx.hpp"

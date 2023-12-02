@@ -10,15 +10,19 @@
 #pragma once
 
 /**
- * @file valarray_fix.hpp
+ * @file pybind11_stl.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @brief 
  * 
  */
 
+#ifdef SHAMROCK_VALARRAY_FIX
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wkeyword-macro"
 #define noexcept
 #include <valarray>
 #undef noexcept
 #pragma GCC diagnostic pop
+#endif
+
+#include <pybind11/stl.h>
