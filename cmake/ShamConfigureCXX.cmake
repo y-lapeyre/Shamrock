@@ -33,5 +33,5 @@ check_cxx_source_compiles("
 
 if(NOT VALARRAY_WORK)
     message(STATUS "Enable noexcept fix for valarray (#define SHAMROCK_VALARRAY_FIX)")
-    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS} -DSHAMROCK_VALARRAY_FIX") 
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSHAMROCK_VALARRAY_FIX") 
 endif()
