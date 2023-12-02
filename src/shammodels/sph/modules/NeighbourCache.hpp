@@ -9,22 +9,22 @@
 #pragma once
 
 /**
- * @file DiffOperatorDtDivv.hpp
+ * @file NeighbourCache.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @brief 
- * 
+ * @brief
+ *
  */
- 
-#include "shambase/sycl_utils/vectorProperties.hpp"
+
 #include "shambackends/typeAliasVec.hpp"
+#include "shambase/sycl_utils/vectorProperties.hpp"
 #include "shammodels/sph/SolverConfig.hpp"
 #include "shammodels/sph/modules/SolverStorage.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
 
 namespace shammodels::sph::modules {
 
-    template<class Tvec, template<class> class SPHKernel>
-    class DiffOperatorDtDivv {
+    template<class Tvec, class Tmorton, template<class> class SPHKernel>
+    class NeighbourCache {
         public:
         using Tscal              = shambase::VecComponent<Tvec>;
         static constexpr u32 dim = shambase::VectorProperties<Tvec>::dimension;
@@ -37,13 +37,14 @@ namespace shammodels::sph::modules {
         Config &solver_config;
         Storage &storage;
 
-        DiffOperatorDtDivv(ShamrockCtx &context, Config &solver_config, Storage &storage)
+        NeighbourCache(ShamrockCtx &context, Config &solver_config, Storage &storage)
             : context(context), solver_config(solver_config), storage(storage) {}
 
-        void update_dtdivv(bool also_do_div_curl_v);
-        
+        void start_neighbors_cache();
+        void start_neighbors_cache_2stages();
+
         private:
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }
-
     };
-}
+
+} // namespace shammodels::sph::modules
