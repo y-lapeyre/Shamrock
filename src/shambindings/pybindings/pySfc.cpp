@@ -14,6 +14,8 @@
 
 #include "shambindings/pybindaliases.hpp"
 
+#include "shambindings/valarray_fix.hpp"
+
 #include <pybind11/stl.h>
 
 #include "shamrock/sfc/bmi.hpp"
