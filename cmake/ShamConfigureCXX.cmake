@@ -29,9 +29,28 @@ check_cxx_source_compiles("
     #include <valarray>
     int main(){}
     "    
-    VALARRAY_WORK)  
+    CXX_VALARRAY_COMPILE)  
 
-if(NOT VALARRAY_WORK)
-    message(STATUS "Enable noexcept fix for valarray (#define SHAMROCK_VALARRAY_FIX)")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSHAMROCK_VALARRAY_FIX") 
+if(NOT CXX_VALARRAY_COMPILE)
+
+    check_cxx_source_compiles("
+        #include <utility>
+        #include <type_traits>
+        #include <algorithm>
+        #pragma GCC diagnostic push
+        #pragma GCC diagnostic ignored \"-Wkeyword-macro\"
+        #define noexcept
+        #include <valarray>
+        #undef noexcept
+        #pragma GCC diagnostic pop
+        int main(){}
+        "    
+        CXX_VALARRAY_COMPILE_NOEXCEPT)  
+
+    
+    if(CXX_VALARRAY_COMPILE_NOEXCEPT)
+        message(STATUS "Enable noexcept fix for valarray (#define SHAMROCK_VALARRAY_FIX)")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSHAMROCK_VALARRAY_FIX") 
+    endif()
+
 endif()

@@ -17,6 +17,9 @@
  */
 
 #ifdef SHAMROCK_VALARRAY_FIX
+#include <utility>
+#include <type_traits>
+#include <algorithm>
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wkeyword-macro"
 #define noexcept
