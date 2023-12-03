@@ -1,0 +1,13 @@
+site_name: My Docs
+
+repo_url: https://github.com/tdavidcl/Shamrock
+repo_name: Shamrock
+
+theme:
+  name: material
+  icon:
+    repo: fontawesome/brands/github
+
+
+plugins:
+  - git-authors
