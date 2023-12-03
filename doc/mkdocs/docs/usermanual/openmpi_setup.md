@@ -2,7 +2,7 @@
 
 
 ## UCX setup
-```
+```bash
 https://github.com/openucx/ucx/releases/download/v1.15.0/ucx-1.15.0.tar.gz
 tar -xvf ucx-1.15.0.tar.gz
 
@@ -15,7 +15,7 @@ sudo make install
 
 ## Openmpi setup
 
-```
+```bash
 wget https://download.open-mpi.org/release/open-mpi/v4.1/openmpi-4.1.6.tar.gz
 
 tar -xvf openmpi-4.1.6.tar.gz
@@ -26,7 +26,7 @@ sudo make install
 ```
 
 Finally export the path tp the newly built OpenMPI
-```
+```bash
 export PATH=/opt/openmpi_cuda/bin${PATH:+:${PATH}}
 export LD_LIBRARY_PATH=/opt/openmpi_cuda/lib${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
 ```

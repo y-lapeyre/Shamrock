@@ -4,11 +4,11 @@
 
 `git clone https://github.com/intel/llvm.git`
 
-```
+```bash
 python3 buildbot/configure.py --hip --cmake-opt="-DCMAKE_INSTALL_PREFIX=../../dpcpp_compiler" --cmake-opt="-DSYCL_BUILD_PI_HIP_ROCM_DIR=/opt/rocm" --cmake-gen "Unix Makefiles"
 ```
 
-```
+```bash
 cd build
 make -j all libsycldevice install
 ```
@@ -17,11 +17,11 @@ make -j all libsycldevice install
 
 `git clone https://github.com/intel/llvm.git`
 
-```
+```bash
 python3 buildbot/configure.py --cuda --cmake-opt="-DCMAKE_INSTALL_PREFIX=../../dpcpp_compiler" --cmake-gen "Unix Makefiles"
 ```
 
-```
+```bash
 cd build
 make -j all libsycldevice install
 ```
@@ -34,12 +34,12 @@ make -j all libsycldevice install
 ### Compiling OpenSYCL
 
 Seem's to be broken due to gcc headers  
-```
+```bash
 module purge
 module load llvm-amdgpu/5.2.0_gcc-10.4.0 rocm-cmake/5.2.0_gcc-10.4.0 rocm-opencl/5.2.0_gcc-10.4.0 rocm-openmp-extras/5.2.0_gcc-10.4.0 rocm-smi-lib/5.2.3_gcc-10.4.0 rocminfo/5.2.0_gcc-10.4.0 llvm
 ```
 
-```
+```bash
 cd OpenSYCL
 
 cmake \
@@ -51,19 +51,19 @@ cmake \
 make -j install
 ```
 
-```
+```bash
 cd Shamrock
 python3 buildbot/configure.py --gen make --tests --build release --outdir build --cxxpath ../OpenSYCL_comp --compiler opensycl --profile hip-gfx906
 ```
 ### Compiling dpcpp
 
-```
+```bash
 module load hip
 module load openmpi
 
 ```
 
-```
+```bash
 python3 buildbot/configure.py --hip --cmake-opt="-DCMAKE_INSTALL_PREFIX=../../dpcpp_compiler" --cmake-opt="-DSYCL_BUILD_PI_HIP_ROCM_DIR=/opt/rocm" --cmake-gen "Unix Makefiles"
 ```
 
