@@ -32,7 +32,7 @@ namespace shamphys {
 
     template<class T, class Tu>
     T keplerian_speed(T M, T R, const shamunits::UnitSystem<Tu> usys = {}) {
-        return keplerian_speed(M, R, shamunits::Constants{usys}.G());
+        return keplerian_speed(shamunits::Constants{usys}.G(), M, R);
     }
 
 } // namespace shamphys
