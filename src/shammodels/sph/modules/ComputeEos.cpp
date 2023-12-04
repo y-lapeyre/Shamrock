@@ -20,6 +20,7 @@
 #include "shambase/sycl_utils/sycl_utilities.hpp"
 #include "shammath/sphkernels.hpp"
 #include "shammodels/sph/math/density.hpp"
+#include "shamphys/eos.hpp"
 #include "shamrock/scheduler/SchedulerUtility.hpp"
 #include "shamsys/legacy/log.hpp"
 
@@ -53,6 +54,8 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos() {
 
     if (SolverEOS_Adiabatic *eos_config = std::get_if<SolverEOS_Adiabatic>(&solver_config.eos_config.config)) {
 
+        using EOS = shamphys::EOS_Adiabatic<Tscal>;
+
         storage.merged_patchdata_ghost.get().for_each([&](u64 id, MergedPatchData &mpdat) {
 
             shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
@@ -69,9 +72,10 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos() {
                     using namespace shamrock::sph;
 
                     Tscal rho_a = rho_h(pmass, h[item], Kernel::hfactd);
-                    Tscal P_a   = (gamma - 1) * rho_a * U[item];
+                    Tscal P_a   = EOS::pressure(gamma ,  rho_a , U[item]);
+                    Tscal cs_a  = EOS::cs_from_p(gamma, rho_a, P_a);
                     P[item]     = P_a;
-                    cs[item]    = sycl::sqrt(gamma * P_a / rho_a);
+                    cs[item]    = cs_a;
                 });
             });
 
@@ -79,6 +83,7 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos() {
 
     }else if (SolverEOS_LocallyIsothermal *eos_config = std::get_if<SolverEOS_LocallyIsothermal>(&solver_config.eos_config.config)) {
 
+        using EOS = shamphys::EOS_LocallyIsothermal<Tscal>;
         
         u32 isoundspeed_interf                               = ghost_layout.get_field_idx<Tscal>("soundspeed");
 
@@ -99,7 +104,8 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos() {
 
                     Tscal cs_out = cs0[item];
                     Tscal rho_a = rho_h(pmass, h[item], Kernel::hfactd);
-                    Tscal P_a   = cs_out*cs_out * rho_a ;
+
+                    Tscal P_a   = EOS::pressure_from_cs(cs_out*cs_out , rho_a) ;
                     
                     P[item]     = P_a;
                     cs[item]    = cs_out;

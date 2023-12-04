@@ -9,7 +9,7 @@
 #pragma once
 
 /**
- * @file sphkernels.hpp
+ * @file eos.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @brief
  */
@@ -21,7 +21,7 @@
 namespace shamphys {
 
     template<class T>
-    class EOS_Adiabatic{
+    struct EOS_Adiabatic{
 
 
         static constexpr T pressure(T gamma, T rho, T u){
@@ -40,7 +40,7 @@ namespace shamphys {
 
 
     template<class T>
-    class EOS_Polytropic{
+    struct EOS_Polytropic{
 
 
         static constexpr T pressure(T gamma, T K, T rho){
@@ -59,7 +59,7 @@ namespace shamphys {
 
 
     template<class T>
-    class EOS_LocallyIsothermal{
+    struct EOS_LocallyIsothermal{
 
         static constexpr T soundspeed_sq(T cs0sq,T Rsq, T q){
             return cs0sq * sycl::pow(Rsq,q/2);
@@ -67,6 +67,10 @@ namespace shamphys {
 
         static constexpr T pressure(T cs0sq,T Rsq, T q, T rho){
             return soundspeed_sq(cs0sq, Rsq, q)*rho;
+        }
+
+        static constexpr T pressure_from_cs(T cs0sq, T rho){
+            return cs0sq*rho;
         }
     };
 

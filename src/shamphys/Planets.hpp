@@ -9,7 +9,7 @@
 #pragma once
 
 /**
- * @file sphkernels.hpp
+ * @file Planets.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @brief
  */
