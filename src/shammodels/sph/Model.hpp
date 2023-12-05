@@ -639,6 +639,13 @@ namespace shammodels::sph {
 
         inline void set_solver_config(typename Solver::Config cfg) { solver.solver_config = cfg; }
 
+        inline f64 solver_logs_last_rate(){
+            return solver.solve_logs.get_last_rate();
+        }
+        inline u64 solver_logs_last_obj_count(){
+            return solver.solve_logs.get_last_obj_count();
+        }
+
         ////////////////////////////////////////////////////////////////////////////////////////////
         /////// analysis utilities
         ////////////////////////////////////////////////////////////////////////////////////////////

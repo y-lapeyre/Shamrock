@@ -1432,6 +1432,15 @@ auto SPHSolve<Tvec, Kern>::evolve_once(
         100 * (storage.timings_details.neighbors / tstep.elasped_sec()),
         100 * (storage.timings_details.io / tstep.elasped_sec()));
 
+    solve_logs.register_log({
+        t_current,// f64 solver_t;
+        dt,// f64 solver_dt;
+        shamcomm::world_rank(),// i32 world_rank;
+        rank_count,// u64 rank_count;
+        rate,// f64 rate;
+        tstep.elasped_sec()// f64 elasped_sec;
+    });
+
     std::string gathered = "";
     shamcomm::gather_str(log_rank_rate, gathered);
 
