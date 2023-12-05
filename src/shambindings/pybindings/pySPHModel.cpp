@@ -260,7 +260,9 @@ R"==(
         })
         .def("make_phantom_dump",[](T & self){
             return self.make_phantom_dump();
-        });
+        })
+        .def("solver_logs_last_rate",&T::solver_logs_last_rate)
+        .def("solver_logs_last_obj_count",&T::solver_logs_last_obj_count);
     ;
 }
 
