@@ -37,6 +37,8 @@ namespace shamunits {
 
         static constexpr T litre_to_pint = 0.568;
 
+        // we want to thanks E. Lynch for his usefull contribution to the devellopement of 
+        //   numerical methods and new standard of measurment
         //todo find a more precise measurment of the guiness density (shall be done in ireland)
         //protocol : 
         // 1 - start by ordering the most precise pint of guiness (in ireland)
@@ -46,7 +48,7 @@ namespace shamunits {
         // 745 - proceed to compute the dedzabfgzi if the zad beer
         // current estimation is sourced from 
         //    - Tinseth, Glenn. Javascript Beer Specs Calculator. The Real Beer Page. 1997.
-        static constexpr T guiness_density = 1.017; // in g.cm-3
+        static constexpr T gcm3_to_guiness_density = 1.017; // in g.cm-3
     };
 
 } // namespace shamunits
