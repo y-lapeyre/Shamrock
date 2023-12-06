@@ -69,21 +69,23 @@ theme:
     # Palette toggle for light mode
     - media: "(prefers-color-scheme: light)"
       scheme: default
+      #primary: grey
       toggle:
         icon: material/brightness-7
         name: Switch to dark mode
-        primary: black
 
     # Palette toggle for dark mode
     - media: "(prefers-color-scheme: dark)"
       scheme: slate
+      #primary: grey
       toggle:
         icon: material/brightness-4
         name: Switch to light mode
-        primary: black
 
 
 
+extra_css:
+  - stylesheets/extra.css
 
 plugins:
   - git-authors
