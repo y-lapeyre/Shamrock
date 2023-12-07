@@ -188,6 +188,7 @@ module load GCC/11.2.0
 module load GCCcore/11.2.0
 module load CMake/3.22.1-GCCcore-11.2.0
 module load Boost/1.77.0-GCC-11.2.0
+module load OpenMPI/4.1.1-GCC-11.2.0
 #
 mpirun --bind-to socket -npernode 2 \
     -x LD_LIBRARY_PATH=$HOME/llvm-17.x-local/lib:$LD_LIBRARY_PATH \
