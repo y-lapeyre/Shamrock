@@ -172,7 +172,7 @@ Slurm script exemple :
 #SBATCH -p Cascade
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=2         # number of MPI processes per node
-#SBATCH --cpus-per-task=96          # number of OpenMP threads per MPI process
+#SBATCH --cpus-per-task=48          # number of OpenMP threads per MPI process
 #SBATCH --time=0-00:10:00           # day-hours:minutes:seconds
 #SBATCH --mail-user=timothee.david--cleris@ens-lyon.fr
 #SBATCH --mail-type=BEGIN,END,FAIL
