@@ -18,6 +18,7 @@
 #include "SolverConfig.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"
 #include "shammodels/sph/BasicSPHGhosts.hpp"
+#include "shammodels/sph/SolverLog.hpp"
 #include "shammodels/sph/modules/SolverStorage.hpp"
 #include "shamrock/scheduler/InterfacesUtility.hpp"
 #include "shamrock/patch/PatchDataLayout.hpp"
@@ -56,6 +57,7 @@ namespace shammodels::sph {
         SolverStorage<Tvec, u_morton> storage {};
 
         Config solver_config;
+        SolverLog solve_logs;
 
         static constexpr Tscal htol_up_tol  = 1.1;
         static constexpr Tscal htol_up_iter = 1.1;

@@ -8,7 +8,7 @@ target_tot_u = 1
 bmin = (-0.6,-0.6,-0.6)
 bmax = ( 0.6, 0.6, 0.6)
 
-N_target_base = 2e6
+N_target_base = 0.5e6
 compute_multiplier = 2
 scheduler_split_val = int(1e6)
 scheduler_merge_val = int(1)
@@ -143,3 +143,7 @@ while t_sum < t_target:
 
     if i > 5:
         break
+
+
+print("result rate :",model.solver_logs_last_rate())
+print("result cnt :",model.solver_logs_last_obj_count())
