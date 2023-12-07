@@ -161,3 +161,40 @@ run the tests :
 
 
 ## Slurm scripts : 
+
+Slurm script exemple : 
+
+```bash
+#!/bin/bash
+#SBATCH --job-name=ScallingTests_Shamrock
+#SBATCH -o ./%x.%j.%N.out           # output file
+#SBATCH -e ./%x.%j.%N.err           # errors file
+#SBATCH -p Cascade
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=2         # number of MPI processes per node
+#SBATCH --cpus-per-task=96          # number of OpenMP threads per MPI process
+#SBATCH --time=0-00:10:00           # day-hours:minutes:seconds
+#SBATCH --mail-user=timothee.david--cleris@ens-lyon.fr
+#SBATCH --mail-type=BEGIN,END,FAIL
+#
+echo "The job ${SLURM_JOB_ID} is running on these nodes:"
+echo ${SLURM_NODELIST}
+echo
+#
+cd $HOME/ShamrockWorkspace/Shamrock/build_config/acpp_omp_release
+#
+module use /applis/PSMN/debian11/Cascade/modules/all
+module load GCC/11.2.0
+module load GCCcore/11.2.0
+module load CMake/3.22.1-GCCcore-11.2.0
+module load Boost/1.77.0-GCC-11.2.0
+#
+mpirun --bind-to socket -npernode 2 \
+    -x LD_LIBRARY_PATH=$HOME/llvm-17.x-local/lib:$LD_LIBRARY_PATH \
+    -x OMP_NUM_THREADS=96 \
+    -x ACPP_DEBUG_LEVEL=0 \
+    ./shamrock --sycl-cfg 0:0 --loglevel 1 --sycl-ls-map \
+    --rscript ../../exemples/sedov_scale_test.py
+```
+
+write it in a file and then do `sbatch <slurm script>`
