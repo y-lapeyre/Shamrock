@@ -44,30 +44,29 @@ namespace shammodels {
         };
 
         /**
-         * \brief Shearing box forces
+         * \brief Shearing box forces as in athena
+         * \cite Stone2010_shear_box
          * \f[
-         *  \partial_t \mathbf{v} + \mathbf{v} \cdot \nabla \mathbf{v} ~ \mapsto \partial_t
-         * \mathbf{v} + \mathbf{v} \cdot \nabla \mathbf{v} - \mathbf{f}_{shear} \\
-         * \mathbf{f}_{shear} = 2 \eta \, \mathbf{e}_{press} - 2 \Omega (\mathbf{e}_{press} \times
-         * \mathbf{e}_{shear}) \times \mathbf{v} \\ \Omega = \frac{2 v_{shear}}{S_{box} s}, \, s =
-         * 3/2 \f]
-         *
+         *  \mathbf{f} = \Omega_0^2 (2 q x \hat{i} - z \hat{k} ) - 2 \Omega_0 \hat{k} \times \mathbf{v} \f]
+         * Shear speed :
+         * \f[
+         *  \omega = q \Omega_0 L_x \f]
          */
         struct ShearingBoxForce {
-            Tscal shear_speed;
             i32_3 shear_base = {1,0,0};
             i32_3 shear_dir = {0,1,0};
 
-            Tscal pressure_background = 0.01;
-            Tscal s                   = 3 / 2;
+            Tscal Omega_0;
+            Tscal eta;
+            Tscal q;
+
+            inline Tscal shear_speed(Tscal box_lenght){
+                return q*Omega_0*box_lenght;
+            }
 
             ShearingBoxForce()= default;
-            ShearingBoxForce(Tscal shear_speed,Tscal pressure_background,Tscal s) : shear_speed(shear_speed), pressure_background(pressure_background), s(s){};
+            ShearingBoxForce(Tscal Omega_0,Tscal eta,Tscal q) : Omega_0(Omega_0), eta(eta), q(q){};
 
-            inline Tvec get_omega(Tscal box_size) {
-                return (2 * shear_speed / (box_size * s)) *
-                       sycl::cross(shear_base.convert<Tscal>(), shear_dir.convert<Tscal>());
-            }
         };
 
         using VariantForce = std::variant<PointMass, LenseThirring, ShearingBoxForce>;
@@ -92,12 +91,10 @@ namespace shammodels {
          * \todo add check for norm of shear vectors
          */
         inline void add_shearing_box(
-            Tscal shear_speed,
-            Tscal pressure_background,
-            Tscal s) {
+            Tscal Omega_0,Tscal eta,Tscal q) {
 
             ext_forces.push_back(
-                ShearingBoxForce{shear_speed, pressure_background, s});
+                ShearingBoxForce{Omega_0, eta, q});
         }
     };
 

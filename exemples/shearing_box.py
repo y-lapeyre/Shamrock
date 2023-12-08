@@ -22,10 +22,11 @@ bmin,bmax = model.get_ideal_fcc_box(dr,bmin,bmax)
 xm,ym,zm = bmin
 xM,yM,zM = bmax
 
-eta = 0.01
-kappa = 0.01
+Omega_0 = 1
+eta = 0.00
+q = 3./2.
 
-shear_speed = -(3/2)*(xM - xm) - eta/(1)
+shear_speed = -q*Omega_0*(xM - xm)
 
 
 cfg = model.gen_default_config()
@@ -34,11 +35,11 @@ cfg = model.gen_default_config()
 cfg.set_artif_viscosity_VaryingCD10(alpha_min = 0.0,alpha_max = 1,sigma_decay = 0.1, alpha_u = 1, beta_AV = 2)
 cfg.set_boundary_shearing_periodic((1,0,0),(0,1,0),shear_speed)
 cfg.set_eos_adiabatic(gamma)
-#cfg.add_ext_force_shearing_box(
-#    shear_speed         = shear_speed,
-#    pressure_background = eta,
-#    s                   = 3./2.,
-#)
+cfg.add_ext_force_shearing_box(
+    Omega_0  = Omega_0,
+    eta      = eta,
+    q        = q
+)
 cfg.set_units(shamrock.UnitSystem())
 cfg.print_status()
 model.set_solver_config(cfg)
@@ -69,7 +70,7 @@ def vel_func(r):
     global mm, MM
     x,y,z = r
 
-    s = (x - xm)/(xM - xm)
+    s = (x - (xM + xm)/2)/(xM - xm)
     vel = (shear_speed)*s
 
     mm = min(mm,vel)

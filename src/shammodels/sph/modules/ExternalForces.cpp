@@ -106,7 +106,7 @@ void Module<Tvec, SPHKernel>::compute_ext_forces_indep_v() {
                     sycl::accessor xyz{buf_xyz, cgh, sycl::read_only};
                     sycl::accessor axyz_ext{buf_axyz_ext, cgh, sycl::read_write};
 
-                    Tscal two_eta = 2 * ext_force->pressure_background;
+                    Tscal two_eta = 2 * ext_force->eta;
 
                     shambase::parralel_for(
                         cgh, pdat.get_obj_cnt(), "add ext force acc to acc", [=](u64 gid) {
@@ -207,19 +207,27 @@ void Module<Tvec, SPHKernel>::add_ext_forces() {
                               bsize.z() * ext_force->shear_base.z();
 
             scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+                sycl::buffer<Tvec> &buf_xyz  = pdat.get_field_buf_ref<Tvec>(0);
                 sycl::buffer<Tvec> &buf_vxyz = pdat.get_field_buf_ref<Tvec>(ivxyz);
                 sycl::buffer<Tvec> &buf_axyz = pdat.get_field_buf_ref<Tvec>(iaxyz);
 
                 shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
+                    sycl::accessor xyz{buf_xyz, cgh, sycl::read_only};
                     sycl::accessor vxyz{buf_vxyz, cgh, sycl::read_only};
                     sycl::accessor axyz{buf_axyz, cgh, sycl::read_write};
-
-                    Tvec mtwo_omega = ext_force->get_omega(bsize_dir) * (-2);
+                    
+                    Tscal Omega_0 = ext_force->Omega_0;
+                    Tscal Omega_0_sq = Omega_0*Omega_0;
+                    Tscal q = ext_force->q;
 
                     shambase::parralel_for(
                         cgh, pdat.get_obj_cnt(), "add ext force acc to acc", [=](u64 gid) {
+                            Tvec r_a       = xyz[gid];
                             Tvec v_a = vxyz[gid];
-                            axyz[gid] += sycl::cross(mtwo_omega, v_a);
+                            axyz[gid] += 
+                            Omega_0_sq*(2*q*r_a.x()*Tvec{1,0,0} - r_a.z()*Tvec{0,0,1}) - 2 *Omega_0* sycl::cross(Tvec{0,0,1}, v_a)
+                            
+                            ;
                         });
                 });
             });
