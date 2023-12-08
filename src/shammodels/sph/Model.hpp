@@ -11,6 +11,7 @@
 /**
  * @file Model.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief 
  * 
  */
@@ -22,6 +23,7 @@
 #include "shammodels/generic/setup/generators.hpp"
 #include "shammodels/sph/Solver.hpp"
 #include "shammodels/sph/io/PhantomDump.hpp"
+#include "shammodels/sph/modules/ComputeLoadBalanceValue.hpp"
 #include "shamrock/legacy/utils/geometry_utils.hpp"
 #include "shamrock/patch/PatchData.hpp"
 #include "shamrock/scheduler/ReattributeDataUtility.hpp"
@@ -311,6 +313,9 @@ namespace shammodels::sph {
             if(shamcomm::world_rank() == 0) {
                 logger::info_ln("Model", "Push particles : ", log_gathered);
             }
+            
+            modules::ComputeLoadBalanceValue<Tvec, SPHKernel> (ctx, solver.solver_config, solver.storage).update_load_balancing();
+
 
             sched.scheduler_step(false, false);
 
@@ -474,6 +479,8 @@ namespace shammodels::sph {
                 logger::info_ln("Model", "Push particles : ", log_gathered);
             }
 
+            modules::ComputeLoadBalanceValue<Tvec, SPHKernel> (ctx, solver.solver_config, solver.storage).update_load_balancing();
+
             sched.scheduler_step(false, false);
 
 
@@ -631,6 +638,13 @@ namespace shammodels::sph {
         // }
 
         inline void set_solver_config(typename Solver::Config cfg) { solver.solver_config = cfg; }
+
+        inline f64 solver_logs_last_rate(){
+            return solver.solve_logs.get_last_rate();
+        }
+        inline u64 solver_logs_last_obj_count(){
+            return solver.solve_logs.get_last_obj_count();
+        }
 
         ////////////////////////////////////////////////////////////////////////////////////////////
         /////// analysis utilities
