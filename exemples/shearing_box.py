@@ -92,8 +92,8 @@ a = input("continue ?")
 
 
 
-model.set_cfl_cour(0.01)
-model.set_cfl_force(0.01)
+model.set_cfl_cour(0.3)
+model.set_cfl_force(0.25)
 
 
 
@@ -106,8 +106,6 @@ current_dt = model.evolve(0,0, True, "dump_{:04}.vtk".format(0), True)
 
 
 
-
-
 dump = model.make_phantom_dump()
 fname = "dump_phinit"
 dump.save_dump(fname)
@@ -117,10 +115,15 @@ t_sum = 0
 t_target = 10
 
 i_dump = 1
-dt_dump = 1./1000
+dt_dump = 1./100
 
 do_dump = False
 next_dt_target = t_sum + dt_dump
+
+
+if (next_dt_target - t_sum) < current_dt:
+    current_dt = next_dt_target - t_sum
+
 while t_sum < t_target:
 
 
@@ -132,6 +135,8 @@ while t_sum < t_target:
 
         next_dt = model.evolve(t_sum,current_dt, do_dump, "dump_{:04}.vtk".format(i_dump), do_dump)
         print("--> do dump",do_dump)
+
+
         
         if do_dump:
             i_dump += 1

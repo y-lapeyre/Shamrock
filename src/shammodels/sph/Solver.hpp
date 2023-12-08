@@ -157,7 +157,7 @@ namespace shammodels::sph {
         
 
 
-        void sph_prestep(Tscal time_val);
+        void sph_prestep(Tscal time_val, Tscal dt);
 
         void apply_position_boundary(Tscal time_val);
 

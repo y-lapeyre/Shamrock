@@ -638,7 +638,7 @@ void SPHSolve<Tvec, Kern>::do_predictor_leapfrog(Tscal dt) {
 }
 
 template<class Tvec, template<class> class Kern>
-void SPHSolve<Tvec, Kern>::sph_prestep(Tscal time_val) {
+void SPHSolve<Tvec, Kern>::sph_prestep(Tscal time_val, Tscal dt) {
     StackEntry stack_loc{};
 
     using namespace shamrock;
@@ -660,7 +660,7 @@ void SPHSolve<Tvec, Kern>::sph_prestep(Tscal time_val) {
     u32 hstep_max = 100;
     for (; hstep_cnt < hstep_max; hstep_cnt++) {
 
-        gen_ghost_handler(time_val);
+        gen_ghost_handler(time_val+dt);
         build_ghost_cache();
         merge_position_ghost();
         build_merged_pos_trees();
@@ -1115,11 +1115,11 @@ auto SPHSolve<Tvec, Kern>::evolve_once(
 
     gen_serial_patch_tree();
 
-    apply_position_boundary(t_current);
+    apply_position_boundary(t_current+dt);
 
     u64 Npart_all = scheduler().get_total_obj_count();
 
-    sph_prestep(t_current);
+    sph_prestep(t_current, dt);
 
     using RTree = RadixTree<u_morton, Tvec>;
 
@@ -1166,44 +1166,49 @@ auto SPHSolve<Tvec, Kern>::evolve_once(
         constexpr bool debug_interfaces = false;
         if constexpr(debug_interfaces){
 
-
-            shambase::DistributedData<MergedPatchData> &mpdat =
-                storage.merged_patchdata_ghost.get();
-
-            scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
-
-                MergedPatchData &merged_patch = mpdat.get(cur_p.id_patch);
-                PatchData &mpdat              = merged_patch.pdat;
-
-                sycl::buffer<Tvec> &buf_xyz =
-                    shambase::get_check_ref(merged_xyzh.get(cur_p.id_patch).field_pos.get_buf());
-                sycl::buffer<Tvec> &buf_vxyz   = mpdat.get_field_buf_ref<Tvec>(ivxyz_interf);
-                sycl::buffer<Tscal> &buf_hpart = mpdat.get_field_buf_ref<Tscal>(ihpart_interf);
+            if(do_dump){
 
 
-                Debug_ph_dump<Tvec> info {
-                    merged_patch.total_elements,
-                    solver_config.gpart_mass,
+                shambase::DistributedData<MergedPatchData> &mpdat =
+                    storage.merged_patchdata_ghost.get();
 
-                    buf_xyz,
-                    buf_hpart,
-                    buf_vxyz
-                };
+                scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
 
-                make_interface_debug_phantom_dump(info)
-                    .gen_file()
-                    .write_to_file(
-                        "debug_interf_patch_"
-                        +std::to_string(cur_p.id_patch)
-                        +"."+ shambase::shorten_string(vtk_dump_name,4)
-                        +".phantom"
-                        );
+                    MergedPatchData &merged_patch = mpdat.get(cur_p.id_patch);
+                    PatchData &mpdat              = merged_patch.pdat;
+
+                    sycl::buffer<Tvec> &buf_xyz =
+                        shambase::get_check_ref(merged_xyzh.get(cur_p.id_patch).field_pos.get_buf());
+                    sycl::buffer<Tvec> &buf_vxyz   = mpdat.get_field_buf_ref<Tvec>(ivxyz_interf);
+                    sycl::buffer<Tscal> &buf_hpart = mpdat.get_field_buf_ref<Tscal>(ihpart_interf);
+
+
+                    Debug_ph_dump<Tvec> info {
+                        merged_patch.total_elements,
+                        solver_config.gpart_mass,
+
+                        buf_xyz,
+                        buf_hpart,
+                        buf_vxyz
+                    };
+
+                    make_interface_debug_phantom_dump(info)
+                        .gen_file()
+                        .write_to_file(
+                            "debug_interf_patch_"
+                            +std::to_string(cur_p.id_patch)
+                            +"."+ shambase::shorten_string(vtk_dump_name,4)
+                            +".phantom"
+                            );
+                    logger::raw_ln("writing : ", "debug_interf_patch_"
+                            +std::to_string(cur_p.id_patch)
+                            +"."+ shambase::shorten_string(vtk_dump_name,4)
+                            +".phantom");
+
                 
+                });
 
-
-            });
-
-
+            }
 
         }
 
