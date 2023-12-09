@@ -45,3 +45,7 @@ We can run dome SPH, AMR, but not only that !
     [:octicons-arrow-right-24: License](https://github.com/tdavidcl/Shamrock/blob/main/LICENSE)
 
 </div>
+
+!!! note
+
+    The code is in active devellopement and not released yet dont expect the most polished thing
