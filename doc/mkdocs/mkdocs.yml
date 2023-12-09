@@ -26,6 +26,7 @@ nav:
       - 'Shearing box' : 'models/sph/shearing_box.md'
 
   - 'Develloper Doc' :
+    - 'Git guide' : 'devdoc/git_guide.md'
     - 'Codebase Organisation' : 'devdoc/codebase_org.md'
     - 'Testing' : 'devdoc/testing.md'
     - 'Conventions' : 'devdoc/coding_conventions.md'
@@ -131,6 +132,11 @@ markdown_extensions:
   - pymdownx.tasklist:
       custom_checkbox: true
   - pymdownx.tilde
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
 
 
 extra_javascript:
