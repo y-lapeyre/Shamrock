@@ -12,7 +12,7 @@ $$
 
 To add it : 
 
-```py 
+```py linenums="1"
 xm,ym,zm = bmin
 xM,yM,zM = bmax
 

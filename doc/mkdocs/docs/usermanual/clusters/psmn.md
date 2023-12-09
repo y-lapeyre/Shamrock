@@ -164,7 +164,7 @@ run the tests :
 
 Slurm script exemple : 
 
-```bash
+```bash linenums="1" title="slurm_script"
 #!/bin/bash
 #SBATCH --job-name=ScallingTests_Shamrock
 #SBATCH -o ./%x.%j.%N.out           # output file

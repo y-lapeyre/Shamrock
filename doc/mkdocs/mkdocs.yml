@@ -64,6 +64,9 @@ theme:
   features:
     - navigation.instant
     - navigation.instant.progress
+
+    - content.code.copy
+    - content.code.select
   
 
   logo: assets/logo.png
@@ -104,10 +107,10 @@ markdown_extensions:
   # Python Markdown
   - abbr
   - admonition
-  - attr_list
   - def_list
   - footnotes
   - md_in_html
+  - attr_list
   - toc:
       permalink: true
 
@@ -137,6 +140,7 @@ markdown_extensions:
         - name: mermaid
           class: mermaid
           format: !!python/name:pymdownx.superfences.fence_code_format
+
 
 
 extra_javascript:
