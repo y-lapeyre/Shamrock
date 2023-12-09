@@ -22,6 +22,7 @@ nav:
 
   - 'Physical models' :
     - 'SPH' :
+      - 'Scalling test' : 'models/sph/scalling.md'
       - 'Shearing box' : 'models/sph/shearing_box.md'
 
   - 'Develloper Doc' :
