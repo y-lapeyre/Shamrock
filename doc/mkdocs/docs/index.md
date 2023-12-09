@@ -4,6 +4,8 @@
 
 Welcome to the documentation of the Shamrock code !
 
+We can run dome SPH, AMR, but not only that !
+
 <div class="grid cards" markdown>
 
 -   :material-clock-fast:{ .lg .middle } __Quickstart__
@@ -28,10 +30,10 @@ Welcome to the documentation of the Shamrock code !
 
     Using SYCL run on any harware supported by a SYCL compiler.
 
-    CPU : (x86, AMR, Risc-V, ... )
+    CPU : (x86, ARM, Risc-V, ... )
 
     GPU : (AMD, Nvidia, Intel GPU)
-    
+
     [:octicons-arrow-right-24: Customization](#)
 
 -   :material-scale-balance:{ .lg .middle } __Open Source, CeCILL license__
