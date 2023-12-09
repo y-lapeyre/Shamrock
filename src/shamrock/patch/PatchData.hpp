@@ -392,6 +392,45 @@ namespace shamrock::patch {
             sycl::buffer<T> buf(vec.data(), len);
             f.override(buf, len);
         }
+
+        /**
+         * @brief Fetch data of a patchdata field into a std::vector
+         * @tparam T 
+         * @param key 
+         * @param pdat 
+         * @return std::vector<T> 
+         */
+        template<class T>
+        inline std::vector<T> fetch_data(std::string key){
+
+            std::vector<T> vec;
+
+            auto appender = [&](auto & field){
+
+                if (field.get_name() == key) {
+
+                    logger::debug_ln("PyShamrockCTX","appending field",key);
+                    
+                    {
+                        sycl::host_accessor acc {shambase::get_check_ref(field.get_buf())};
+                        u32 len = field.size();
+
+                        for (u32 i = 0 ; i < len; i++) {
+                            vec.push_back(acc[i]);
+                        }
+                    }
+
+                }
+
+            };
+
+            for_each_field<T>([&](auto & field){
+                appender(field);
+            });
+
+            return vec;
+
+        }
     };
 
     template<class T>

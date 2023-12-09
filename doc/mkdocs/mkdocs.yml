@@ -20,6 +20,10 @@ nav:
       - 'PSMN' : 'usermanual/clusters/psmn.md'
     - 'CUDA aware openMPI' : 'usermanual/openmpi_setup.md'
 
+  - 'Physical models' :
+    - 'SPH' :
+      - 'Shearing box' : 'models/sph/shearing_box.md'
+
   - 'Develloper Doc' :
     - 'Codebase Organisation' : 'devdoc/codebase_org.md'
     - 'Testing' : 'devdoc/testing.md'
@@ -126,3 +130,9 @@ markdown_extensions:
   - pymdownx.tasklist:
       custom_checkbox: true
   - pymdownx.tilde
+
+
+extra_javascript:
+  - javascripts/mathjax.js
+  - https://polyfill.io/v3/polyfill.min.js?features=es6
+  - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js

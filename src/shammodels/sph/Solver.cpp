@@ -26,6 +26,7 @@
 #include "shammodels/sph/BasicSPHGhosts.hpp"
 #include "shammodels/sph/SPHSolverImpl.hpp"
 #include "shammodels/sph/SPHUtilities.hpp"
+#include "shammodels/sph/io/PhantomDump.hpp"
 #include "shammodels/sph/math/density.hpp"
 #include "shammodels/sph/math/forces.hpp"
 #include "shammodels/sph/modules/ComputeEos.hpp"
@@ -161,6 +162,193 @@ void vtk_dump_add_field(
 
     writter.write_field(field_dump_name, field_vals, num_obj);
 }
+
+
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// Debug interface dump
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+namespace shammodels::sph{
+
+    template<class Tvec>
+    struct Debug_ph_dump{
+        using Tscal              = shambase::VecComponent<Tvec>;
+
+        u64 nobj;
+        f64 gpart_mass;
+
+        sycl::buffer<Tvec> &buf_xyz;
+        sycl::buffer<Tscal> &buf_hpart;
+        sycl::buffer<Tvec> &buf_vxyz;
+    };
+
+    template<class Tvec>
+    void fill_blocks(PhantomDumpBlock & block, Debug_ph_dump<Tvec> & info){
+        
+        using Tscal              = shambase::VecComponent<Tvec>;
+        std::vector<Tvec> xyz = shamalgs::memory::buf_to_vec(info.buf_xyz, info.nobj);
+
+        u64 xid = block.get_ref_fort_real("x");
+        u64 yid = block.get_ref_fort_real("y");
+        u64 zid = block.get_ref_fort_real("z");
+
+        for (auto vec : xyz) {
+            block.blocks_fort_real[xid].vals.push_back(vec.x());
+            block.blocks_fort_real[yid].vals.push_back(vec.y());
+            block.blocks_fort_real[zid].vals.push_back(vec.z());
+        }
+
+
+        std::vector<Tscal> h = shamalgs::memory::buf_to_vec(info.buf_hpart, info.nobj);
+        u64 hid = block.get_ref_f32("h");
+        for (auto h_ : h) {
+            block.blocks_f32[hid].vals.push_back(h_);
+        }
+
+
+
+
+        std::vector<Tvec> vxyz = shamalgs::memory::buf_to_vec(info.buf_vxyz, info.nobj);
+
+        u64 vxid = block.get_ref_fort_real("vx");
+        u64 vyid = block.get_ref_fort_real("vy");
+        u64 vzid = block.get_ref_fort_real("vz");
+
+        for (auto vec : vxyz) {
+            block.blocks_fort_real[vxid].vals.push_back(vec.x());
+            block.blocks_fort_real[vyid].vals.push_back(vec.y());
+            block.blocks_fort_real[vzid].vals.push_back(vec.z());
+        }
+
+        block.tot_count = block.blocks_fort_real[xid].vals.size();
+
+    }
+
+
+    template<class Tvec>
+    shammodels::sph::PhantomDump make_interface_debug_phantom_dump(Debug_ph_dump<Tvec> info) {
+
+
+
+        using Tscal              = shambase::VecComponent<Tvec>;
+        PhantomDump dump;
+
+        dump.override_magic_number();
+        dump.iversion = 1;
+        dump.fileid   = shambase::format("{:100s}", "FT:Phantom Shamrock writter");
+
+        u32 Ntot = info.nobj;
+        dump.table_header_fort_int.add("nparttot", Ntot);
+        dump.table_header_fort_int.add("ntypes", 8);
+        dump.table_header_fort_int.add("npartoftype", Ntot);
+        dump.table_header_fort_int.add("npartoftype", 0);
+        dump.table_header_fort_int.add("npartoftype", 0);
+        dump.table_header_fort_int.add("npartoftype", 0);
+        dump.table_header_fort_int.add("npartoftype", 0);
+        dump.table_header_fort_int.add("npartoftype", 0);
+        dump.table_header_fort_int.add("npartoftype", 0);
+        dump.table_header_fort_int.add("npartoftype", 0);
+
+        dump.table_header_i64.add("nparttot", Ntot);
+        dump.table_header_i64.add("ntypes", 8);
+        dump.table_header_i64.add("npartoftype", Ntot);
+        dump.table_header_i64.add("npartoftype", 0);
+        dump.table_header_i64.add("npartoftype", 0);
+        dump.table_header_i64.add("npartoftype", 0);
+        dump.table_header_i64.add("npartoftype", 0);
+        dump.table_header_i64.add("npartoftype", 0);
+        dump.table_header_i64.add("npartoftype", 0);
+        dump.table_header_i64.add("npartoftype", 0);
+
+        dump.table_header_fort_int.add("nblocks", 1);
+        dump.table_header_fort_int.add("nptmass", 0);
+        dump.table_header_fort_int.add("ndustlarge", 0);
+        dump.table_header_fort_int.add("ndustsmall", 0);
+        dump.table_header_fort_int.add("idust", 7);
+        dump.table_header_fort_int.add("idtmax_n", 1);
+        dump.table_header_fort_int.add("idtmax_frac", 0);
+        dump.table_header_fort_int.add("idumpfile", 0);
+        dump.table_header_fort_int.add("majorv", 2023);
+        dump.table_header_fort_int.add("minorv", 0);
+        dump.table_header_fort_int.add("microv", 0);
+        dump.table_header_fort_int.add("isink", 0);
+
+        dump.table_header_i32.add("iexternalforce", 0);
+        dump.table_header_i32.add("ieos", 2);
+        dump.table_header_fort_real.add("gamma", 1.66667);
+        dump.table_header_fort_real.add("RK2", 0);
+        dump.table_header_fort_real.add("polyk2", 0);
+        dump.table_header_fort_real.add("qfacdisc", 0.75);
+        dump.table_header_fort_real.add("qfacdisc2", 0.75);
+
+
+        dump.table_header_fort_real.add("time", 0);
+        dump.table_header_fort_real.add("dtmax", 0.1);
+
+
+        dump.table_header_fort_real.add("rhozero", 0);
+        dump.table_header_fort_real.add("hfact",1.2);
+        dump.table_header_fort_real.add("tolh", 0.0001);
+        dump.table_header_fort_real.add("C_cour", 0);
+        dump.table_header_fort_real.add("C_force",0);
+        dump.table_header_fort_real.add("alpha", 0);
+        dump.table_header_fort_real.add("alphau", 1);
+        dump.table_header_fort_real.add("alphaB", 1);
+        
+
+        dump.table_header_fort_real.add("massoftype", info.gpart_mass);
+        dump.table_header_fort_real.add("massoftype", 0);
+        dump.table_header_fort_real.add("massoftype", 0);
+        dump.table_header_fort_real.add("massoftype", 0);
+        dump.table_header_fort_real.add("massoftype", 0);
+        dump.table_header_fort_real.add("massoftype", 0);
+        dump.table_header_fort_real.add("massoftype", 0);
+        dump.table_header_fort_real.add("massoftype", 0);
+
+
+        dump.table_header_fort_real.add("Bextx", 0);
+        dump.table_header_fort_real.add("Bexty", 0);
+        dump.table_header_fort_real.add("Bextz", 0);
+        dump.table_header_fort_real.add("dum", 0);
+
+        dump.table_header_fort_real.add("get_conserv", -1);
+        dump.table_header_fort_real.add("etot_in", 0.59762);
+        dump.table_header_fort_real.add("angtot_in", 0.0189694);
+        dump.table_header_fort_real.add("totmom_in", 0.0306284);
+
+        dump.table_header_f64.add("udist", 1);
+        dump.table_header_f64.add("umass", 1);
+        dump.table_header_f64.add("utime", 1);
+        dump.table_header_f64.add("umagfd", 3.54491);
+
+
+        PhantomDumpBlock block_part;
+        
+        fill_blocks(block_part, info);
+
+        dump.blocks.push_back(std::move(block_part));
+
+
+        return dump;
+    }
+
+
+}
+
+
+
+
+
+
+
+
+
+
 
 template<class Tvec, template<class> class Kern>
 void SPHSolve<Tvec, Kern>::gen_serial_patch_tree() {
@@ -450,7 +638,7 @@ void SPHSolve<Tvec, Kern>::do_predictor_leapfrog(Tscal dt) {
 }
 
 template<class Tvec, template<class> class Kern>
-void SPHSolve<Tvec, Kern>::sph_prestep(Tscal time_val) {
+void SPHSolve<Tvec, Kern>::sph_prestep(Tscal time_val, Tscal dt) {
     StackEntry stack_loc{};
 
     using namespace shamrock;
@@ -472,7 +660,7 @@ void SPHSolve<Tvec, Kern>::sph_prestep(Tscal time_val) {
     u32 hstep_max = 100;
     for (; hstep_cnt < hstep_max; hstep_cnt++) {
 
-        gen_ghost_handler(time_val);
+        gen_ghost_handler(time_val+dt);
         build_ghost_cache();
         merge_position_ghost();
         build_merged_pos_trees();
@@ -927,11 +1115,11 @@ auto SPHSolve<Tvec, Kern>::evolve_once(
 
     gen_serial_patch_tree();
 
-    apply_position_boundary(t_current);
+    apply_position_boundary(t_current+dt);
 
     u64 Npart_all = scheduler().get_total_obj_count();
 
-    sph_prestep(t_current);
+    sph_prestep(t_current, dt);
 
     using RTree = RadixTree<u_morton, Tvec>;
 
@@ -971,6 +1159,61 @@ auto SPHSolve<Tvec, Kern>::evolve_once(
 
         // compute pressure
         compute_eos_fields();
+
+
+
+
+        constexpr bool debug_interfaces = false;
+        if constexpr(debug_interfaces){
+
+            if(do_dump){
+
+
+                shambase::DistributedData<MergedPatchData> &mpdat =
+                    storage.merged_patchdata_ghost.get();
+
+                scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+
+                    MergedPatchData &merged_patch = mpdat.get(cur_p.id_patch);
+                    PatchData &mpdat              = merged_patch.pdat;
+
+                    sycl::buffer<Tvec> &buf_xyz =
+                        shambase::get_check_ref(merged_xyzh.get(cur_p.id_patch).field_pos.get_buf());
+                    sycl::buffer<Tvec> &buf_vxyz   = mpdat.get_field_buf_ref<Tvec>(ivxyz_interf);
+                    sycl::buffer<Tscal> &buf_hpart = mpdat.get_field_buf_ref<Tscal>(ihpart_interf);
+
+
+                    Debug_ph_dump<Tvec> info {
+                        merged_patch.total_elements,
+                        solver_config.gpart_mass,
+
+                        buf_xyz,
+                        buf_hpart,
+                        buf_vxyz
+                    };
+
+                    make_interface_debug_phantom_dump(info)
+                        .gen_file()
+                        .write_to_file(
+                            "debug_interf_patch_"
+                            +std::to_string(cur_p.id_patch)
+                            +"."+ shambase::shorten_string(vtk_dump_name,4)
+                            +".phantom"
+                            );
+                    logger::raw_ln("writing : ", "debug_interf_patch_"
+                            +std::to_string(cur_p.id_patch)
+                            +"."+ shambase::shorten_string(vtk_dump_name,4)
+                            +".phantom");
+
+                
+                });
+
+            }
+
+        }
+
+
+
 
         // compute force
         logger::debug_ln("sph::BasicGas", "compute force");
