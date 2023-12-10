@@ -330,9 +330,9 @@ void do_test(bool long_version) {
     model.init_from_phantom_dump(dump_start);
 
     f64 t = start_t;
-    model.evolve_once(t, 0, false, "", false);
+    model.evolve_once_time_expl(t, 0, false, "", false);
     for (; t < dt * 1; t += dt) {
-        model.evolve_once(t, dt, false, "", false);
+        model.evolve_once_time_expl(t, dt, false, "", false);
     }
     {
         std::vector<std::unique_ptr<shamrock::patch::PatchData>> gathered_result =
@@ -346,7 +346,7 @@ void do_test(bool long_version) {
     }
 
     for (; t < dt * 10; t += dt) {
-        model.evolve_once(t, dt, false, "", false);
+        model.evolve_once_time_expl(t, dt, false, "", false);
     }
     {
         std::vector<std::unique_ptr<shamrock::patch::PatchData>> gathered_result =
@@ -364,7 +364,7 @@ void do_test(bool long_version) {
     }
 
     for (; t < dt * 100; t += dt) {
-        model.evolve_once(t, dt, false, "", false);
+        model.evolve_once_time_expl(t, dt, false, "", false);
     }
 
     {
@@ -383,7 +383,7 @@ void do_test(bool long_version) {
     
 
     for (; t < dt * 1000; t += dt) {
-        model.evolve_once(t, dt, false, "", false);
+        model.evolve_once_time_expl(t, dt, false, "", false);
     }
     {
         std::vector<std::unique_ptr<shamrock::patch::PatchData>> gathered_result =

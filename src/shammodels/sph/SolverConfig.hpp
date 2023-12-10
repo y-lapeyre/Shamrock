@@ -59,17 +59,43 @@ struct shammodels::sph::SolverConfig {
 
     static constexpr Tscal Rkern = Kernel::Rkern;
 
-    std::optional<shamunits::UnitSystem<Tscal>> unit_sys = {};
 
     Tscal gpart_mass;
     Tscal cfl_cour;
     Tscal cfl_force;
 
-    using BCConfig       = BCConfig<Tvec>;
-    using ExtForceConfig = shammodels::ExtForceConfig<Tvec>;
 
-    ExtForceConfig ext_force_config{};
-    BCConfig boundary_config;
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    // Units Config
+    //////////////////////////////////////////////////////////////////////////////////////////////
+
+    std::optional<shamunits::UnitSystem<Tscal>> unit_sys = {};
+
+    inline void set_units(shamunits::UnitSystem<Tscal> new_sys) { unit_sys = new_sys; }
+
+    inline Tscal get_constant_G() {
+        if (!unit_sys) {
+            logger::warn_ln("sph::Config", "the unit system is not set");
+            shamunits::Constants<Tscal> ctes{shamunits::UnitSystem<Tscal>{}};
+            return ctes.G();
+        } else {
+            return shamunits::Constants<Tscal>{*unit_sys}.G();
+        }
+    }
+
+    inline Tscal get_constant_c() {
+        if (!unit_sys) {
+            logger::warn_ln("sph::Config", "the unit system is not set");
+            shamunits::Constants<Tscal> ctes{shamunits::UnitSystem<Tscal>{}};
+            return ctes.c();
+        } else {
+            return shamunits::Constants<Tscal>{*unit_sys}.c();
+        }
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    // Units Config (END)
+    //////////////////////////////////////////////////////////////////////////////////////////////
 
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Solver status variables
@@ -167,7 +193,34 @@ struct shammodels::sph::SolverConfig {
     // Artificial viscosity Config (END)
     //////////////////////////////////////////////////////////////////////////////////////////////
 
-    inline bool ghost_has_soundspeed() { return is_eos_locally_isothermal(); }
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    // Boundary Config
+    //////////////////////////////////////////////////////////////////////////////////////////////
+
+    using BCConfig       = BCConfig<Tvec>;
+
+    BCConfig boundary_config;
+
+    inline void set_boundary_free() { boundary_config.set_free(); }
+
+    inline void set_boundary_periodic() { boundary_config.set_periodic(); }
+
+    inline void set_boundary_shearing_periodic(i32_3 shear_base, i32_3 shear_dir, Tscal speed) {
+        boundary_config.set_shearing_periodic(shear_base, shear_dir, speed);
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    // Boundary Config (END)
+    //////////////////////////////////////////////////////////////////////////////////////////////
+
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    // Ext force Config
+    //////////////////////////////////////////////////////////////////////////////////////////////
+
+    using ExtForceConfig = shammodels::ExtForceConfig<Tvec>;
+
+    ExtForceConfig ext_force_config{};
+
     inline void add_ext_force_point_mass(Tscal central_mass, Tscal Racc) {
         ext_force_config.add_point_mass(central_mass, Racc);
     }
@@ -178,17 +231,16 @@ struct shammodels::sph::SolverConfig {
     }
 
     inline void add_ext_force_shearing_box(Tscal Omega_0, Tscal eta, Tscal q) {
-
         ext_force_config.add_shearing_box(Omega_0, eta, q);
     }
 
-    inline void set_boundary_free() { boundary_config.set_free(); }
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    // Ext force Config (END)
+    //////////////////////////////////////////////////////////////////////////////////////////////
 
-    inline void set_boundary_periodic() { boundary_config.set_periodic(); }
 
-    inline void set_boundary_shearing_periodic(i32_3 shear_base, i32_3 shear_dir, Tscal speed) {
-        boundary_config.set_shearing_periodic(shear_base, shear_dir, speed);
-    }
+
+    inline bool ghost_has_soundspeed() { return is_eos_locally_isothermal(); }
 
     inline bool has_field_uint() {
         // no barotropic for now
@@ -234,25 +286,4 @@ struct shammodels::sph::SolverConfig {
         logger::raw_ln("------------------------------------");
     }
 
-    inline void set_units(shamunits::UnitSystem<Tscal> new_sys) { unit_sys = new_sys; }
-
-    inline Tscal get_constant_G() {
-        if (!unit_sys) {
-            logger::warn_ln("sph::Config", "the unit system is not set");
-            shamunits::Constants<Tscal> ctes{shamunits::UnitSystem<Tscal>{}};
-            return ctes.G();
-        } else {
-            return shamunits::Constants<Tscal>{*unit_sys}.G();
-        }
-    }
-
-    inline Tscal get_constant_c() {
-        if (!unit_sys) {
-            logger::warn_ln("sph::Config", "the unit system is not set");
-            shamunits::Constants<Tscal> ctes{shamunits::UnitSystem<Tscal>{}};
-            return ctes.c();
-        } else {
-            return shamunits::Constants<Tscal>{*unit_sys}.c();
-        }
-    }
 };

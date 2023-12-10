@@ -16,6 +16,7 @@
  */
 
 #include "SolverConfig.hpp"
+#include "shambase/exception.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"
 #include "shammodels/sph/BasicSPHGhosts.hpp"
 #include "shammodels/sph/SolverLog.hpp"
@@ -28,6 +29,7 @@
 #include "shammodels/sph/SPHUtilities.hpp"
 #include "shamrock/tree/TreeTraversalCache.hpp"
 #include <memory>
+#include <stdexcept>
 #include <variant>
 namespace shammodels::sph {
 
@@ -187,7 +189,6 @@ namespace shammodels::sph {
 
         Solver(ShamrockCtx &context) : context(context) {}
 
-
         void evolve_once(
                           bool do_dump,
                           std::string vtk_dump_name,
@@ -201,6 +202,29 @@ namespace shammodels::sph {
                             evolve_once(do_dump, vtk_dump_name, vtk_dump_patch_id);
                             return solver_config.get_dt_sph();
                           }
+
+        
+        inline void evolve_until(Tscal target_time){
+            auto step = [&](){
+                Tscal dt = solver_config.get_dt_sph();
+                Tscal t = solver_config.get_time();
+
+                if(t > target_time){
+                    throw shambase::throw_with_loc<std::invalid_argument>("the target time is higher than the current time");
+                }
+
+                if(t + dt > target_time){
+                    solver_config.set_next_dt(target_time - t);
+                }
+                evolve_once(false, "", false);
+            };
+            
+            while(solver_config.get_time() < target_time){
+                step();
+            }
+            
+        }
+
     };
 
-} // namespace shammodels
+} // namespace shammodels::sph

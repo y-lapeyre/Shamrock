@@ -659,10 +659,16 @@ namespace shammodels::sph {
         ////////////////////////////////////////////////////////////////////////////////////////////
 
         f64
-        evolve_once(f64 t_curr, f64 dt_input, bool do_dump, std::string vtk_dump_name, bool vtk_dump_patch_id);
+        evolve_once_time_expl(f64 t_curr, f64 dt_input, bool do_dump, std::string vtk_dump_name, bool vtk_dump_patch_id);
     
+        void timestep();
+
+        inline void evolve_until(Tscal target_time){
+            solver.evolve_until(target_time);
+        }
+
         private:
         void add_pdat_to_phantom_block(PhantomDumpBlock & block, shamrock::patch::PatchData & pdat);
     };
 
-} // namespace shammodels
+} // namespace shammodels::sph

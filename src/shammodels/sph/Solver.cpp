@@ -1716,6 +1716,7 @@ void SPHSolve<Tvec, Kern>::evolve_once( bool do_dump, std::string vtk_dump_name,
     reset_neighbors_cache();
 
     solver_config.set_next_dt(next_cfl);
+    solver_config.set_time(t_current + dt);
 }
 
 using namespace shammath;

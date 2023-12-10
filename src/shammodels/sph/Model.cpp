@@ -32,9 +32,14 @@ template<class Tvec, template<class> class SPHKernel>
 using Model = shammodels::sph::Model<Tvec, SPHKernel>;
 
 template<class Tvec, template<class> class SPHKernel>
-f64 Model<Tvec, SPHKernel>::evolve_once(
+f64 Model<Tvec, SPHKernel>::evolve_once_time_expl(
     f64 t_curr, f64 dt_input, bool do_dump, std::string vtk_dump_name, bool vtk_dump_patch_id) {
     return solver.evolve_once_time_expl(t_curr, dt_input, do_dump, vtk_dump_name, vtk_dump_patch_id);
+}
+
+template<class Tvec, template<class> class SPHKernel>
+void Model<Tvec, SPHKernel>::timestep() {
+    return solver.evolve_once(false, "", false);
 }
 
 template<class Tvec, template<class> class SPHKernel>
