@@ -266,23 +266,6 @@ plt.grid()
 plt.savefig("sedov_scalling_eff.svg")
 
 
-
-plt.figure()
-for k in dic.keys():
-    plt.scatter(
-        1e-2*np.array(dic[k]["lb_pred"])  , 
-        ((np.array(dic[k]["rate"])  /np.array(dic[k]["X"]  ))/(np.array(dic[k]["rate"])  /np.array(dic[k]["X"]  ))[0]) , 
-        label =  dic[k]["label"])
-#plt.ylim(0,1e6)
-#plt.xlim(1,150)
-#plt.xscale('log')
-plt.ylabel(r"$\chi$")
-plt.xlabel(r"$\chi_{\rm pred}$")
-plt.legend()
-plt.grid()
-plt.savefig("sedov_scalling_eff2.svg")
-
-
 plt.figure()
 for k in dic.keys():
     plt.plot(dic[k]["X"]  , np.array(dic[k]["rate"]), label = dic[k]["label"])
