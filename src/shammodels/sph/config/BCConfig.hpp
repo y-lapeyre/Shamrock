@@ -9,7 +9,7 @@
 #pragma once
 
 /**
- * @file SolverConfig.hpp
+ * @file BCConfig.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief
