@@ -20,7 +20,7 @@
 #include "shambase/fortran_io.hpp"
 #include "shambase/string.hpp"
 #include "shammodels/EOSConfig.hpp"
-#include "shammodels/sph/AVConfig.hpp"
+#include "shammodels/sph/config/AVConfig.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamtest/details/TestResult.hpp"
 #include "shamunits/UnitSystem.hpp"
