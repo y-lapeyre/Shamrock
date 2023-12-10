@@ -37,6 +37,9 @@ namespace shammodels::sph {
     template<class Tvec>
     struct BCConfig;
 
+    template<class Tvec>
+    struct StatusVar;
+
 
 } // namespace shammodels::sph
 
@@ -70,6 +73,16 @@ struct shammodels::sph::BCConfig {
 
 };
 
+
+template<class Tvec>
+struct shammodels::sph::StatusVar {
+
+    using Tscal              = shambase::VecComponent<Tvec>;
+
+    Tscal time = 0;
+    Tscal dt_sph = 0;
+};
+
 template<class Tvec, template<class> class SPHKernel>
 struct shammodels::sph::SolverConfig {
 
@@ -85,6 +98,7 @@ struct shammodels::sph::SolverConfig {
     Tscal gpart_mass;
     Tscal cfl_cour;
     Tscal cfl_force;
+
 
     u32 tree_reduction_level = 3;
     bool use_two_stage_search = true;
@@ -102,6 +116,26 @@ struct shammodels::sph::SolverConfig {
     ExtForceConfig ext_force_config{};
     BCConfig boundary_config;
     AVConfig artif_viscosity;
+
+
+
+    StatusVar<Tvec> time_state;
+    inline void set_time(Tscal t){
+        time_state.time = t;
+    }
+    inline void set_next_dt(Tscal dt){
+        time_state.dt_sph = dt;
+    }
+
+    inline Tscal get_time(){
+        return time_state.time;
+    }
+    inline Tscal get_dt_sph(){
+        return time_state.dt_sph;
+    }
+
+
+
 
     inline void set_tree_reduction_level(u32 level){
         tree_reduction_level = level;

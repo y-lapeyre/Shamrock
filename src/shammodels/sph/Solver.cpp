@@ -1056,9 +1056,12 @@ bool SPHSolve<Tvec, Kern>::apply_corrector(Tscal dt, u64 Npart_all) {
 }
 
 template<class Tvec, template<class> class Kern>
-auto SPHSolve<Tvec, Kern>::evolve_once(
-    Tscal t_current, Tscal dt, bool do_dump, std::string vtk_dump_name, bool vtk_dump_patch_id)
-    -> Tscal {
+void SPHSolve<Tvec, Kern>::evolve_once( bool do_dump, std::string vtk_dump_name, bool vtk_dump_patch_id)
+     {
+
+        Tscal t_current = solver_config.get_time();
+        Tscal dt = solver_config.get_dt_sph();
+
     StackEntry stack_loc{};
 
     struct DumpOption {
@@ -1712,7 +1715,7 @@ auto SPHSolve<Tvec, Kern>::evolve_once(
     reset_presteps_rint();
     reset_neighbors_cache();
 
-    return next_cfl;
+    solver_config.set_next_dt(next_cfl);
 }
 
 using namespace shammath;
