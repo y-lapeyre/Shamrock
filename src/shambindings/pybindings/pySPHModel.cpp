@@ -40,6 +40,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
         .def("set_two_stage_search",&TConfig::set_two_stage_search)
         .def("set_eos_adiabatic", &TConfig::set_eos_adiabatic)
         .def("set_eos_locally_isothermal", &TConfig::set_eos_locally_isothermal)
+        .def("set_eos_locally_isothermalLP07", &TConfig::set_eos_locally_isothermalLP07)
         .def("set_artif_viscosity_None", &TConfig::set_artif_viscosity_None)
         .def(
             "set_artif_viscosity_Constant",

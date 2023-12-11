@@ -115,10 +115,12 @@ struct shammodels::sph::SolverConfig {
         return bool(std::get_if<T>(&eos_config.config));
     }
 
+
     inline bool ghost_has_soundspeed() { return is_eos_locally_isothermal(); }
 
     inline void set_eos_adiabatic(Tscal gamma) { eos_config.set_adiabatic(gamma); }
     inline void set_eos_locally_isothermal() { eos_config.set_locally_isothermal(); }
+    inline void set_eos_locally_isothermalLP07(Tscal cs0, Tscal q, Tscal r0) { eos_config.set_locally_isothermalLP07(cs0, q, r0); }
 
     inline void add_ext_force_point_mass(Tscal central_mass, Tscal Racc) {
         ext_force_config.add_point_mass(central_mass, Racc);
