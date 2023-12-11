@@ -204,4 +204,13 @@ namespace shambase {
         return (str.find(what) != std::string::npos);
     }
 
+    inline std::string shorten_string(std::string str, u32 len){
+        if(len > str.size()){
+            throw throw_with_loc<std::invalid_argument>("the string is too short to be shorten"
+                "\n args : "
+                +format("{} : {} \n {} : {}", "str", str, "len", len));
+        }
+        return str.substr(0,str.size() - len);
+    }
+
 } // namespace shambase
