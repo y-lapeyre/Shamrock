@@ -47,7 +47,7 @@ namespace shammodels {
          * \brief Shearing box forces as in athena
          * \cite Stone2010_shear_box
          * \f[
-         *  \mathbf{f} = \Omega_0^2 (2 q x \hat{i} - z \hat{k} ) - 2 \Omega_0 \hat{k} \times \mathbf{v} \f]
+         *  \mathbf{f} = 2 \Omega_0 v_y \basevec{x} + (q-2)\Omega_0 v_x \basevec{y} - \Omega_0^2 z \basevec{z}  \f]
          * Shear speed :
          * \f[
          *  \omega = q \Omega_0 L_x \f]

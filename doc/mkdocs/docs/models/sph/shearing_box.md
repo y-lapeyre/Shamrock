@@ -1,8 +1,11 @@
 # Shearing box in SPH
 
-$$
-\mathbf{f} = \Omega_0^2 (2 q x \hat{i} - z \hat{k} ) - 2 \Omega_0 \hat{k} \times \mathbf{v} 
-$$
+Following [Stone & Gardiner 2010](https://ui.adsabs.harvard.edu/abs/2010ApJS..189..142S/abstract):
+
+\[
+    \mathbf{f} = 
+        2 \Omega_0 v_y \mathbf{e}_{x} + (q-2)\Omega_0 v_x \mathbf{e}_{y} - \Omega_0^2 z \mathbf{e}_{z} 
+\]
 
 Shear speed :
 
