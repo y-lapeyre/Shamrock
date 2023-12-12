@@ -225,8 +225,8 @@ void Module<Tvec, SPHKernel>::add_ext_forces() {
                             Tvec r_a       = xyz[gid];
                             Tvec v_a = vxyz[gid];
                             axyz[gid] += Tvec{
-                                2*Omega_0*v_a.y(),
-                                (q-2)*Omega_0*v_a.x(),
+                                2*Omega_0*(q*Omega_0*r_a.x() + v_a.y()),
+                                -2*Omega_0*v_a.x(),
                                 -Omega_0_sq*r_a.z()
                             };
                             
