@@ -23,7 +23,9 @@ jobs:
       - uses: actions/setup-python@v4
         with:
           python-version: '3.10' 
-
+      - name: apt install tex
+        run: sudo apt install texlive
+        
       - name: pip install packages (Jupyter book)
         run: pip install -U jupyter-book sphinx_proof matplotlib numpy
 
