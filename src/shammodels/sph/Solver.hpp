@@ -11,12 +11,14 @@
 /**
  * @file Solver.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief
  */
 
 #include "SolverConfig.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"
 #include "shammodels/sph/BasicSPHGhosts.hpp"
+#include "shammodels/sph/SolverLog.hpp"
 #include "shammodels/sph/modules/SolverStorage.hpp"
 #include "shamrock/scheduler/InterfacesUtility.hpp"
 #include "shamrock/patch/PatchDataLayout.hpp"
@@ -55,14 +57,11 @@ namespace shammodels::sph {
         SolverStorage<Tvec, u_morton> storage {};
 
         Config solver_config;
+        SolverLog solve_logs;
 
         static constexpr Tscal htol_up_tol  = 1.1;
         static constexpr Tscal htol_up_iter = 1.1;
 
-        Tscal eos_gamma;
-        Tscal gpart_mass;
-        Tscal cfl_cour;
-        Tscal cfl_force;
 
         inline void init_required_fields() {
             context.pdata_layout_add_field<Tvec>("xyz", 1);
@@ -93,6 +92,10 @@ namespace shammodels::sph {
             }
 
             if(solver_config.has_field_soundspeed()){
+
+                // this should not be needed idealy, but we need the pressure on the ghosts and 
+                // we don't want to communicate it as it can be recomputed from the other fields
+                // hence we copy the soundspeed at the end of the step to a field in the patchdata
                 context.pdata_layout_add_field<Tscal>("soundspeed", 1);
             }
         }
@@ -154,7 +157,7 @@ namespace shammodels::sph {
         
 
 
-        void sph_prestep(Tscal time_val);
+        void sph_prestep(Tscal time_val, Tscal dt);
 
         void apply_position_boundary(Tscal time_val);
 
@@ -172,9 +175,6 @@ namespace shammodels::sph {
 
         void prepare_corrector();
         void update_derivs();
-        void update_derivs_mm97();
-        void update_derivs_cd10();
-        void update_derivs_constantAV();
         /**
          * @brief 
          * 
