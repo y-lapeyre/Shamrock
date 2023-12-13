@@ -86,6 +86,10 @@ namespace shammodels::sph {
         void init_from_phantom_dump(PhantomDump & phdump);
         PhantomDump make_phantom_dump();
 
+        void do_vtk_dump(std::string filename, bool add_patch_world_id){
+            solver.vtk_do_dump(filename, add_patch_world_id);
+        }
+
         u64 get_total_part_count();
 
         f64 total_mass_to_part_mass(f64 totmass);

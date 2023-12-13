@@ -189,6 +189,8 @@ namespace shammodels::sph {
 
         Solver(ShamrockCtx &context) : context(context) {}
 
+        void vtk_do_dump(std::string filename, bool add_patch_world_id);
+
         void evolve_once(
                           bool do_dump,
                           std::string vtk_dump_name,
