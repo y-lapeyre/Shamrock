@@ -224,8 +224,11 @@ void Module<Tvec, SPHKernel>::add_ext_forces() {
                         cgh, pdat.get_obj_cnt(), "add ext force acc to acc", [=](u64 gid) {
                             Tvec r_a       = xyz[gid];
                             Tvec v_a = vxyz[gid];
-                            axyz[gid] += 
-                            Omega_0_sq*(2*q*r_a.x()*Tvec{1,0,0} - r_a.z()*Tvec{0,0,1}) - 2 *Omega_0* sycl::cross(Tvec{0,0,1}, v_a)
+                            axyz[gid] += Tvec{
+                                2*Omega_0*(q*Omega_0*r_a.x() + v_a.y()),
+                                -2*Omega_0*v_a.x(),
+                                -Omega_0_sq*r_a.z()
+                            };
                             
                             ;
                         });
