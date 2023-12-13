@@ -14,6 +14,7 @@
  */
  
 #include <memory>
+#include <pybind11/cast.h>
 
 #include "shambindings/pybindaliases.hpp"
 #include "shambindings/pytypealias.hpp"
@@ -126,8 +127,12 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
 
         .def("evolve_once_override_time", &T::evolve_once_time_expl)
         .def("evolve_once", &T::evolve_once)
-        .def("evolve_until",&T::evolve_until)
-
+        .def("evolve_until",[](T&self, f64 target_time,i32 niter_max){
+            return self.evolve_until(target_time, niter_max);
+        },
+        py::arg("target_time"),
+        py::kw_only(),
+        py::arg("niter_max") = -1)
         .def("timestep", &T::timestep)
         .def("set_cfl_cour", &T::set_cfl_cour)
         .def("set_cfl_force", &T::set_cfl_force)

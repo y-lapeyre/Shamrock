@@ -675,8 +675,8 @@ namespace shammodels::sph {
             solver.evolve_once();
         }
 
-        inline void evolve_until(Tscal target_time){
-            solver.evolve_until(target_time);
+        inline bool evolve_until(Tscal target_time,i32 niter_max){
+            return solver.evolve_until(target_time,niter_max);
         }
 
         private:

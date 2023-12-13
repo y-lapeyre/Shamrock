@@ -28,6 +28,7 @@
 #include "shamrock/scheduler/ShamrockCtx.hpp"
 #include "shammodels/sph/SPHUtilities.hpp"
 #include "shamrock/tree/TreeTraversalCache.hpp"
+#include "shamsys/legacy/log.hpp"
 #include <memory>
 #include <stdexcept>
 #include <variant>
@@ -205,7 +206,7 @@ namespace shammodels::sph {
                           }
 
         
-        inline void evolve_until(Tscal target_time){
+        inline bool evolve_until(Tscal target_time,i32 niter_max){
             auto step = [&](){
                 Tscal dt = solver_config.get_dt_sph();
                 Tscal t = solver_config.get_time();
@@ -219,10 +220,20 @@ namespace shammodels::sph {
                 }
                 evolve_once();
             };
+
+            i32 iter_count = 0;
             
             while(solver_config.get_time() < target_time){
                 step();
+                iter_count++;
+
+                if((iter_count >= niter_max) && (niter_max != -1)){
+                    logger::info_ln("SPH","stopping evolve until because of niter =",iter_count);
+                    return false;
+                }
             }
+
+            return true;
             
         }
 
