@@ -1164,21 +1164,13 @@ bool SPHSolve<Tvec, Kern>::apply_corrector(Tscal dt, u64 Npart_all) {
 }
 
 template<class Tvec, template<class> class Kern>
-void SPHSolve<Tvec, Kern>::evolve_once( bool do_dump, std::string vtk_dump_name, bool vtk_dump_patch_id)
+void SPHSolve<Tvec, Kern>::evolve_once()
      {
 
         Tscal t_current = solver_config.get_time();
         Tscal dt = solver_config.get_dt_sph();
 
     StackEntry stack_loc{};
-
-    struct DumpOption {
-        bool vtk_do_dump;
-        std::string vtk_dump_fname;
-        bool vtk_dump_patch_id;
-    };
-
-    DumpOption dump_opt{do_dump, vtk_dump_name, vtk_dump_patch_id};
 
     if (shamcomm::world_rank() == 0) {
         logger::normal_ln("sph::Model", shambase::format("t = {}, dt = {}", t_current, dt));
@@ -1277,7 +1269,7 @@ void SPHSolve<Tvec, Kern>::evolve_once( bool do_dump, std::string vtk_dump_name,
         constexpr bool debug_interfaces = false;
         if constexpr(debug_interfaces){
 
-            if(do_dump){
+            if(solver_config.do_debug_dump){
 
 
                 shambase::DistributedData<MergedPatchData> &mpdat =
@@ -1305,16 +1297,9 @@ void SPHSolve<Tvec, Kern>::evolve_once( bool do_dump, std::string vtk_dump_name,
 
                     make_interface_debug_phantom_dump(info)
                         .gen_file()
-                        .write_to_file(
-                            "debug_interf_patch_"
-                            +std::to_string(cur_p.id_patch)
-                            +"."+ shambase::shorten_string(vtk_dump_name,4)
-                            +".phantom"
+                        .write_to_file(solver_config.debug_dump_filename
                             );
-                    logger::raw_ln("writing : ", "debug_interf_patch_"
-                            +std::to_string(cur_p.id_patch)
-                            +"."+ shambase::shorten_string(vtk_dump_name,4)
-                            +".phantom");
+                    logger::raw_ln("writing : ", solver_config.debug_dump_filename);
 
                 
                 });

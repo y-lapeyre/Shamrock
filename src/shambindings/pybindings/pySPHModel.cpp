@@ -123,7 +123,11 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
     py::class_<T>(m, name_model.c_str())
         .def(py::init([](ShamrockCtx &ctx) { return std::make_unique<T>(ctx); }))
         .def("init_scheduler", &T::init_scheduler)
-        .def("evolve", &T::evolve_once_time_expl)
+
+        .def("evolve_once_override_time", &T::evolve_once_time_expl)
+        .def("evolve_once", &T::evolve_once)
+        .def("evolve_until",&T::evolve_until)
+
         .def("timestep", &T::timestep)
         .def("set_cfl_cour", &T::set_cfl_cour)
         .def("set_cfl_force", &T::set_cfl_force)
@@ -271,6 +275,7 @@ R"==(
             return self.make_phantom_dump();
         })
         .def("do_vtk_dump", &T::do_vtk_dump)
+        .def("set_debug_dump",&T::set_debug_dump)
         .def("solver_logs_last_rate",&T::solver_logs_last_rate)
         .def("solver_logs_last_obj_count",&T::solver_logs_last_obj_count)
         .def("get_time",[](T & self){
@@ -279,7 +284,12 @@ R"==(
         .def("get_dt",[](T & self){
             return self.solver.solver_config.get_dt_sph();
         })
-        .def("evolve_until",&T::evolve_until);
+        .def("set_time",[](T & self, Tscal t){
+            return self.solver.solver_config.set_time(t);
+        })
+        .def("set_next_dt",[](T & self, Tscal dt){
+            return self.solver.solver_config.set_next_dt(dt);
+        });
     ;
 }
 

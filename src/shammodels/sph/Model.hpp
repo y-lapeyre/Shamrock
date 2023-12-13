@@ -90,6 +90,10 @@ namespace shammodels::sph {
             solver.vtk_do_dump(filename, add_patch_world_id);
         }
 
+        void set_debug_dump(bool _do_debug_dump, std::string _debug_dump_filename){
+            solver.set_debug_dump(_do_debug_dump, _debug_dump_filename);
+        }
+
         u64 get_total_part_count();
 
         f64 total_mass_to_part_mass(f64 totmass);
@@ -663,9 +667,13 @@ namespace shammodels::sph {
         ////////////////////////////////////////////////////////////////////////////////////////////
 
         f64
-        evolve_once_time_expl(f64 t_curr, f64 dt_input, bool do_dump, std::string vtk_dump_name, bool vtk_dump_patch_id);
+        evolve_once_time_expl(f64 t_curr, f64 dt_input);
     
         void timestep();
+
+        inline void evolve_once(){
+            solver.evolve_once();
+        }
 
         inline void evolve_until(Tscal target_time){
             solver.evolve_until(target_time);

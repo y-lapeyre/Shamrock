@@ -191,17 +191,16 @@ namespace shammodels::sph {
 
         void vtk_do_dump(std::string filename, bool add_patch_world_id);
 
-        void evolve_once(
-                          bool do_dump,
-                          std::string vtk_dump_name,
-                          bool vtk_dump_patch_id);
+        void set_debug_dump(bool _do_debug_dump, std::string _debug_dump_filename){
+            solver_config.set_debug_dump(_do_debug_dump, _debug_dump_filename);
+        }
 
-        Tscal evolve_once_time_expl(Tscal t_current,Tscal dt_input, bool do_dump,
-                          std::string vtk_dump_name,
-                          bool vtk_dump_patch_id){
+        void evolve_once();
+
+        Tscal evolve_once_time_expl(Tscal t_current,Tscal dt_input){
                             solver_config.set_time(t_current);
                             solver_config.set_next_dt(dt_input);
-                            evolve_once(do_dump, vtk_dump_name, vtk_dump_patch_id);
+                            evolve_once();
                             return solver_config.get_dt_sph();
                           }
 
@@ -218,7 +217,7 @@ namespace shammodels::sph {
                 if(t + dt > target_time){
                     solver_config.set_next_dt(target_time - t);
                 }
-                evolve_once(false, "", false);
+                evolve_once();
             };
             
             while(solver_config.get_time() < target_time){

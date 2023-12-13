@@ -103,7 +103,7 @@ model.set_cfl_force(0.25)
 #for i in range(9):
 #    model.evolve(5e-4, False, False, "", False)
 
-current_dt = model.evolve(0,0, True, "dump_{:04}.vtk".format(0), True)
+current_dt = model.evolve_once_override_time(0,0)
 
 
 
@@ -122,57 +122,14 @@ do_dump = False
 next_dt_target = t_sum + dt_dump
 
 
-if (next_dt_target - t_sum) < current_dt:
-    current_dt = next_dt_target - t_sum
+while t_sum <= next_dt_target:
 
-while t_sum < t_target:
+    fname = "dump_{:04}.phfile".format(i_dump)
 
+    model.evolve_until(next_dt_target)
+    dump = model.make_phantom_dump()
+    dump.save_dump(fname)
 
-    while t_sum < next_dt_target:
-
-        do_dump = (t_sum + current_dt) == next_dt_target
-        #do_dump = True
-        
-
-        next_dt = model.evolve(t_sum,current_dt, False, "dump_{:04}.vtk".format(i_dump), False)
-        
-        
-        print("--> do dump",do_dump)
-        
-        if do_dump:
-
-            model.make_phantom_dump().save_dump("ph_dump_{:04}".format(i_dump))
-            #model.do_vtk_dump("vtk_dump_{:04}.vtk".format(i_dump), True)
-
-            i_dump += 1
-
-        t_sum += current_dt
-        current_dt = next_dt
-
-        if do_dump:
-            break
-
-        if (next_dt_target - t_sum) < next_dt:
-            current_dt = next_dt_target - t_sum
-
-
+    i_dump += 1
 
     next_dt_target += dt_dump
-
-    if (next_dt_target - t_sum) < next_dt:
-        current_dt = next_dt_target - t_sum
-
-### new loop 
-#
-#
-#while t_sum <= next_dt_target:
-#
-#    fname = "dump_{:04}.phfile".format(i_dump)
-#
-#    model.evolve_until(next_dt_target)
-#    dump = model.make_phantom_dump()
-#    dump.save_dump(fname)
-#
-#    i_dump += 1
-#
-#    next_dt_target += dt_dump
