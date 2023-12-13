@@ -156,6 +156,7 @@ struct shammodels::sph::SolverConfig {
 
     inline void set_eos_adiabatic(Tscal gamma) { eos_config.set_adiabatic(gamma); }
     inline void set_eos_locally_isothermal() { eos_config.set_locally_isothermal(); }
+    inline void set_eos_locally_isothermalLP07(Tscal cs0, Tscal q, Tscal r0) { eos_config.set_locally_isothermalLP07(cs0, q, r0); }
 
     //////////////////////////////////////////////////////////////////////////////////////////////
     // EOS Config (END)

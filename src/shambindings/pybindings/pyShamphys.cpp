@@ -17,7 +17,7 @@
 #include "shamphys/BlackHoles.hpp"
 #include "shamphys/Planets.hpp"
 
-#include <pybind11/stl.h>
+#include "shambindings/pybind11_stl.hpp"
 
 Register_pymod(shamphyslibinit){
 

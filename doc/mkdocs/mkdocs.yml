@@ -22,9 +22,11 @@ nav:
 
   - 'Physical models' :
     - 'SPH' :
+      - 'Scalling test' : 'models/sph/scalling.md'
       - 'Shearing box' : 'models/sph/shearing_box.md'
 
   - 'Develloper Doc' :
+    - 'Git guide' : 'devdoc/git_guide.md'
     - 'Codebase Organisation' : 'devdoc/codebase_org.md'
     - 'Testing' : 'devdoc/testing.md'
     - 'Conventions' : 'devdoc/coding_conventions.md'
@@ -62,6 +64,11 @@ theme:
   features:
     - navigation.instant
     - navigation.instant.progress
+
+    - content.code.copy
+    - content.code.select
+
+    - content.tooltips
   
 
   logo: assets/logo.png
@@ -102,10 +109,10 @@ markdown_extensions:
   # Python Markdown
   - abbr
   - admonition
-  - attr_list
   - def_list
   - footnotes
   - md_in_html
+  - attr_list
   - toc:
       permalink: true
 
@@ -130,6 +137,16 @@ markdown_extensions:
   - pymdownx.tasklist:
       custom_checkbox: true
   - pymdownx.tilde
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  
+  - pymdownx.snippets:
+      auto_append:
+        - includes/abbreviations.md
+
 
 
 extra_javascript:

@@ -62,7 +62,7 @@ namespace shamphys {
     struct EOS_LocallyIsothermal{
 
         static constexpr T soundspeed_sq(T cs0sq,T Rsq, T q){
-            return cs0sq * sycl::pow(Rsq,q/2);
+            return cs0sq * sycl::pow(Rsq,q);
         }
 
         static constexpr T pressure(T cs0sq,T Rsq, T q, T rho){
@@ -73,7 +73,6 @@ namespace shamphys {
             return cs0sq*rho;
         }
     };
-
 
 
 } // namespace shamphys
