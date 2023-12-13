@@ -158,3 +158,17 @@ while t_sum < t_target:
     if (next_dt_target - t_sum) < next_dt:
         current_dt = next_dt_target - t_sum
 
+### new loop 
+#
+#
+#while t_sum <= next_dt_target:
+#
+#    fname = "dump_{:04}.phfile".format(i_dump)
+#
+#    model.evolve_until(next_dt_target)
+#    dump = model.make_phantom_dump()
+#    dump.save_dump(fname)
+#
+#    i_dump += 1
+#
+#    next_dt_target += dt_dump

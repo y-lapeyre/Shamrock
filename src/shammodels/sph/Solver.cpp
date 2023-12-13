@@ -1594,7 +1594,6 @@ void SPHSolve<Tvec, Kern>::evolve_once( bool do_dump, std::string vtk_dump_name,
         fnum++;
         fnum++;
         fnum++;
-        fnum++;
 
         if (solver_config.has_field_alphaAV()) {
             fnum++;
@@ -1654,7 +1653,6 @@ void SPHSolve<Tvec, Kern>::evolve_once( bool do_dump, std::string vtk_dump_name,
         }
 
         vtk_dump_add_compute_field(scheduler(), writter, density, "rho");
-        vtk_dump_add_compute_field(scheduler(), writter, omega, "omega");
 
         timer_io.end();
         storage.timings_details.io += timer_io.elasped_sec();
