@@ -134,12 +134,16 @@ while t_sum < t_target:
         #do_dump = True
         
 
-        next_dt = model.evolve(t_sum,current_dt, do_dump, "dump_{:04}.vtk".format(i_dump), do_dump)
+        next_dt = model.evolve(t_sum,current_dt, False, "dump_{:04}.vtk".format(i_dump), False)
+        
+        
         print("--> do dump",do_dump)
-
-
         
         if do_dump:
+
+            model.make_phantom_dump().save_dump("ph_dump_{:04}".format(i_dump))
+            #model.do_vtk_dump("vtk_dump_{:04}.vtk".format(i_dump), True)
+
             i_dump += 1
 
         t_sum += current_dt

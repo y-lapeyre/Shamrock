@@ -270,6 +270,7 @@ R"==(
         .def("make_phantom_dump",[](T & self){
             return self.make_phantom_dump();
         })
+        .def("do_vtk_dump", &T::do_vtk_dump)
         .def("solver_logs_last_rate",&T::solver_logs_last_rate)
         .def("solver_logs_last_obj_count",&T::solver_logs_last_obj_count)
         .def("get_time",[](T & self){
