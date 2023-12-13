@@ -724,8 +724,8 @@ shammodels::sph::PhantomDump Model<Tvec, SPHKernel>::make_phantom_dump() {
     dump.table_header_fort_real.add("qfacdisc2", 0.75);
 
 
-    dump.table_header_fort_real.add("time", 0);
-    dump.table_header_fort_real.add("dtmax", 0.1);
+    dump.table_header_fort_real.add("time", solver.solver_config.get_time());
+    dump.table_header_fort_real.add("dtmax", solver.solver_config.get_dt_sph());
 
 
     dump.table_header_fort_real.add("rhozero", 0);
