@@ -6,11 +6,11 @@
 namespace shammodels::basegodunov {
         
     struct SameLevel{
-        u32 cell_idx;
+        u32 obj_idx;
     };
 
     struct Levelp1{
-        std::array<u32,8> cell_child_idxs;
+        std::array<u32,8> obj_child_idxs;
     };
 
     struct Levelm1{
@@ -40,7 +40,7 @@ namespace shammodels::basegodunov {
             MMM = 7, 
         };
         STATE neighbourgh_state;
-        u32 cell_idx;
+        u32 obj_idx;
     };
 
     /**
@@ -67,6 +67,23 @@ namespace shammodels::basegodunov {
                     f2(arg);
                 }else if constexpr (std::is_same_v<T, Levelp1>){
                     f3(arg);
+                }else { 
+                    static_assert(shambase::always_false_v<T>, "non-exhaustive visitor!");
+                }
+            }, _int);
+        }
+
+        template<class Tret,class Visitor1,class Visitor2,class Visitor3>
+        inline Tret visitor_ret(Visitor1 && f1, Visitor2 && f2, Visitor3 && f3){
+            std::visit([&](auto&& arg)
+            {
+                using T = std::decay_t<decltype(arg)>;
+                if constexpr (std::is_same_v<T, SameLevel>){
+                    return f1(arg);
+                }else if constexpr (std::is_same_v<T, Levelm1>){
+                    return f2(arg);
+                }else if constexpr (std::is_same_v<T, Levelp1>){
+                    return f3(arg);
                 }else { 
                     static_assert(shambase::always_false_v<T>, "non-exhaustive visitor!");
                 }

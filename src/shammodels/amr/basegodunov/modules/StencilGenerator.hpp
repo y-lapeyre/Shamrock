@@ -46,6 +46,68 @@ namespace shammodels::basegodunov::modules {
             cell_zm = 5,
         };
 
+
+
+
+
+
+
+
+        inline constexpr StencilElement lower_block_to_cell_xp_xp(
+            u32 block_id,
+            u32 local_block_index,
+            std::array<u32, dim> coord,
+            StencilElement block_stencil_el)
+        {
+            if(coord[0] < AMRBlock::block_size-1){
+            return StencilElement(SameLevel{
+                    block_id*AMRBlock::block_size + AMRBlock::get_index(
+                        {coord[0]+1, coord[1], coord[2]}
+                    )
+                });
+            } 
+            
+            // wanted dir is in another block
+            return block_stencil_el.visitor_ret<StencilElement>(
+                [&](SameLevel sl){
+                    return StencilElement{SameLevel{
+                        sl.obj_idx*AMRBlock::block_size + AMRBlock::get_index(
+                            {0, coord[1], coord[2]}
+                        )
+                    }};
+                }, 
+                [](Levelp1 sl){
+                    return StencilElement{};
+                }, 
+                [](Levelm1 sl){
+                    return StencilElement{};
+                }
+            );
+                
+        }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         template<CellStencilElementId cell_st_dir, BlockStencilElementId block_st_dir>
         inline constexpr StencilElement lower_block_to_cell(
             u32 block_id,
@@ -55,28 +117,8 @@ namespace shammodels::basegodunov::modules {
         {
 
             if constexpr(cell_st_dir == cell_xp && block_st_dir == block_xp){
-                if(coord[0] < AMRBlock::block_size-1){
-                    return StencilElement(SameLevel{
-                        block_id + AMRBlock::get_index(
-                            {coord[0]+1, coord[1], coord[2]}
-                        )
-                    });
-                }else{ // wanted dir is in another block
-                    block_stencil_el.visitor(
-                        [](SameLevel sl){
-
-                        }, 
-                        [](Levelp1 sl){
-
-                        }, 
-                        [](Levelm1 sl){
-
-                        }
-                    );
-                }
-            }
-
-            if constexpr(cell_st_dir == cell_xm && block_st_dir == block_xm){
+                return lower_block_to_cell_xp_xp(block_id, local_block_index, coord, block_stencil_el);
+            }else if constexpr(cell_st_dir == cell_xm && block_st_dir == block_xm){
                 if(coord[0] > 0){
                     return StencilElement(SameLevel{
                         block_id + AMRBlock::get_index(
@@ -86,10 +128,7 @@ namespace shammodels::basegodunov::modules {
                 }else{ // wanted dir is in another block
 
                 }
-            }
-
-
-            if constexpr(cell_st_dir == cell_yp && block_st_dir == block_yp){
+            }else if constexpr(cell_st_dir == cell_yp && block_st_dir == block_yp){
                 if(coord[1] < AMRBlock::block_size-1){
                     return StencilElement(SameLevel{
                         block_id + AMRBlock::get_index(
@@ -99,9 +138,7 @@ namespace shammodels::basegodunov::modules {
                 }else{ // wanted dir is in another block
 
                 }
-            }
-
-            if constexpr(cell_st_dir == cell_ym && block_st_dir == block_ym){
+            }else if constexpr(cell_st_dir == cell_ym && block_st_dir == block_ym){
                 if(coord[1] > 0){
                     return StencilElement(SameLevel{
                         block_id + AMRBlock::get_index(
@@ -111,10 +148,7 @@ namespace shammodels::basegodunov::modules {
                 }else{ // wanted dir is in another block
 
                 }
-            }
-
-
-            if constexpr(cell_st_dir == cell_zp && block_st_dir == block_zp){
+            }else if constexpr(cell_st_dir == cell_zp && block_st_dir == block_zp){
                 if(coord[2] < AMRBlock::block_size-1){
                     return StencilElement(SameLevel{
                         block_id + AMRBlock::get_index(
@@ -124,9 +158,7 @@ namespace shammodels::basegodunov::modules {
                 }else{ // wanted dir is in another block
 
                 }
-            }
-
-            if constexpr(cell_st_dir == cell_zm && block_st_dir == block_zm){
+            }else if constexpr(cell_st_dir == cell_zm && block_st_dir == block_zm){
                 if(coord[2] > 0){
                     return StencilElement(SameLevel{
                         block_id + AMRBlock::get_index(
@@ -136,6 +168,8 @@ namespace shammodels::basegodunov::modules {
                 }else{ // wanted dir is in another block
 
                 }
+            }else { 
+                static_assert(shambase::always_false_v<decltype(cell_st_dir)>, "non-exhaustive visitor!");
             }
 
 
