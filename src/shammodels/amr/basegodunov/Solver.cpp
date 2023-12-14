@@ -24,14 +24,36 @@ auto Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tscal dt_input) -> Tsc
 
     StackEntry stack_loc{};
 
+    if(shamcomm::world_rank() == 0){ 
+        logger::normal_ln("amr::Godunov", shambase::format("t = {}, dt = {}", t_current, dt_input));
+    }
+
+    shambase::Timer tstep;
+    tstep.start();
+
+    scheduler().update_local_load_value([&](shamrock::patch::Patch p){
+        return scheduler().patch_data.owned_data.get(p.id_patch).get_obj_cnt();
+    });
+
     SerialPatchTree<TgridVec> _sptree = SerialPatchTree<TgridVec>::build(scheduler());
     _sptree.attach_buf();
     storage.serial_patch_tree.set(std::move(_sptree));
 
     //ghost zone exchange
-    modules::GhostZones<Tvec,TgridVec> gz(context,solver_config,storage);
+    modules::GhostZones gz(context,solver_config,storage);
     gz.build_ghost_cache();
+#if false
+    gz.exchange_ghost();
 
+
+    //compute bound received
+    //round to next pow of 2
+    //build radix trees
+    modules::AMRTree amrtree(context,solver_config,storage);
+    amrtree.build_trees();
+
+    amrtree.correct_bounding_box();
+#endif
     
     //compute bound received
 

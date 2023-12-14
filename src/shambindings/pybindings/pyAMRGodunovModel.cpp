@@ -32,13 +32,25 @@ namespace shammodels::basegodunov {
         logger::debug_ln("[Py]", "registering class :",name_config,typeid(T).name());
         logger::debug_ln("[Py]", "registering class :",name_model,typeid(T).name());
 
-        py::class_<TConfig>(m, name_config.c_str());
+        py::class_<TConfig>(m, name_config.c_str())
+            .def("set_scale_factor",[](TConfig & self, Tscal scale_factor){
+                self.grid_coord_to_pos_fact = scale_factor;
+            })
+            .def("set_eos_gamma",[](TConfig & self, Tscal eos_gamma){
+                self.set_eos_gamma(eos_gamma);
+            });
 
         py::class_<T>(m, name_model.c_str())
             .def("init_scheduler", &T::init_scheduler)
             .def("make_base_grid", &T::make_base_grid)
             .def("dump_vtk", &T::dump_vtk)
-            .def("evolve_once", &T::evolve_once);
+            .def("evolve_once", &T::evolve_once)
+            .def("gen_default_config",[](T & self) -> TConfig {
+                return TConfig();
+            })
+            .def("set_config",[](T& self, TConfig cfg){
+                self.solver.solver_config = cfg;
+            });
     }
 }
 

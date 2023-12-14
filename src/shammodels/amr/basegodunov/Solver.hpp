@@ -33,6 +33,10 @@ namespace shammodels::basegodunov {
 
         static constexpr u32 NsideBlockPow = 1;
         using AMRBlock = amr::AMRBlock<Tvec, TgridVec, NsideBlockPow>;
+
+        inline void set_eos_gamma(Tscal gamma){
+            eos_gamma = gamma;
+        }
     };
 
     template<class Tvec, class TgridVec>
