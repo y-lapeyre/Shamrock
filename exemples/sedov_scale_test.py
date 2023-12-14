@@ -62,7 +62,7 @@ cfg.set_eos_adiabatic(gamma)
 cfg.print_status()
 model.set_solver_config(cfg)
 
-model.init_scheduler(int(1e6),1)
+model.init_scheduler(scheduler_split_val,scheduler_merge_val)
 
 
 bmin = (xm - xc,ym - yc, zm - zc)
@@ -119,30 +119,8 @@ model.set_cfl_force(0.01)
 #    model.evolve(5e-4, False, False, "", False)
 
 
-t_sum = 0
-t_target = 0.1
-current_dt = 1e-7
-i = 0
-i_dump = 0
-while t_sum < t_target:
-
-    #print("step : t=",t_sum)
-    
-    next_dt = model.evolve(t_sum,current_dt, True, "dump_"+str(i_dump)+".vtk", True)
-
-    if i % 1 == 0:
-        i_dump += 1
-
-    t_sum += current_dt
-    current_dt = next_dt
-
-    if (t_target - t_sum) < next_dt:
-        current_dt = t_target - t_sum
-
-    i+= 1
-
-    if i > 5:
-        break
+for i in range(5):
+    model.evolve_once()
 
 
 print("result rate :",model.solver_logs_last_rate())

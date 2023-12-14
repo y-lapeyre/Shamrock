@@ -32,9 +32,14 @@ template<class Tvec, template<class> class SPHKernel>
 using Model = shammodels::sph::Model<Tvec, SPHKernel>;
 
 template<class Tvec, template<class> class SPHKernel>
-f64 Model<Tvec, SPHKernel>::evolve_once(
-    f64 t_curr, f64 dt_input, bool do_dump, std::string vtk_dump_name, bool vtk_dump_patch_id) {
-    return solver.evolve_once(t_curr, dt_input, do_dump, vtk_dump_name, vtk_dump_patch_id);
+f64 Model<Tvec, SPHKernel>::evolve_once_time_expl(
+    f64 t_curr, f64 dt_input) {
+    return solver.evolve_once_time_expl(t_curr, dt_input);
+}
+
+template<class Tvec, template<class> class SPHKernel>
+void Model<Tvec, SPHKernel>::timestep() {
+    return solver.evolve_once();
 }
 
 template<class Tvec, template<class> class SPHKernel>
@@ -719,8 +724,8 @@ shammodels::sph::PhantomDump Model<Tvec, SPHKernel>::make_phantom_dump() {
     dump.table_header_fort_real.add("qfacdisc2", 0.75);
 
 
-    dump.table_header_fort_real.add("time", 0);
-    dump.table_header_fort_real.add("dtmax", 0.1);
+    dump.table_header_fort_real.add("time", solver.solver_config.get_time());
+    dump.table_header_fort_real.add("dtmax", solver.solver_config.get_dt_sph());
 
 
     dump.table_header_fort_real.add("rhozero", 0);
@@ -773,7 +778,12 @@ shammodels::sph::PhantomDump Model<Tvec, SPHKernel>::make_phantom_dump() {
         dump.table_header_f64.add("utime", units->s_inv);
         dump.table_header_f64.add("umagfd", 3.54491);
     }else {
-        shambase::throw_unimplemented();
+        logger::warn_ln("SPH", "no units are set, defaulting to SI");
+
+        dump.table_header_f64.add("udist", 1);
+        dump.table_header_f64.add("umass", 1);
+        dump.table_header_f64.add("utime", 1);
+        dump.table_header_f64.add("umagfd", 3.54491);
     }
 
 

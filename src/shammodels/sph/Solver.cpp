@@ -165,7 +165,115 @@ void vtk_dump_add_field(
 
 
 
+template<class Tvec, template<class> class Kern>
+void SPHSolve<Tvec, Kern>::vtk_do_dump(std::string filename, bool add_patch_world_id){
+    using namespace shamrock;
+    using namespace shamrock::patch;
+    shamrock::SchedulerUtility utility(scheduler());
+    PatchDataLayout &pdl = scheduler().pdl;
+    const u32 ixyz       = pdl.get_field_idx<Tvec>("xyz");
+    const u32 ivxyz      = pdl.get_field_idx<Tvec>("vxyz");
+    const u32 iaxyz      = pdl.get_field_idx<Tvec>("axyz");
+    const u32 iuint      = pdl.get_field_idx<Tscal>("uint");
+    const u32 iduint     = pdl.get_field_idx<Tscal>("duint");
+    const u32 ihpart     = pdl.get_field_idx<Tscal>("hpart");
+ComputeField<Tscal> density = utility.make_compute_field<Tscal>("rho", 1);
 
+        scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchData &pdat) {
+            shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
+                sycl::accessor acc_h{
+                    shambase::get_check_ref(pdat.get_field<Tscal>(ihpart).get_buf()),
+                    cgh,
+                    sycl::read_only};
+
+                sycl::accessor acc_rho{
+                    shambase::get_check_ref(density.get_buf(p.id_patch)),
+                    cgh,
+                    sycl::write_only,
+                    sycl::no_init};
+                const Tscal part_mass = solver_config.gpart_mass;
+
+                cgh.parallel_for(sycl::range<1>{pdat.get_obj_cnt()}, [=](sycl::item<1> item) {
+                    u32 gid = (u32)item.get_id();
+                    using namespace shamrock::sph;
+                    Tscal rho_ha = rho_h(part_mass, acc_h[gid], Kernel::hfactd);
+                    acc_rho[gid] = rho_ha;
+                });
+            });
+        });
+
+        shamrock::LegacyVtkWritter writter = start_dump<Tvec>(scheduler(), filename);
+        writter.add_point_data_section();
+
+        u32 fnum = 0;
+        if (add_patch_world_id) {
+            fnum += 2;
+        }
+        fnum++;
+        fnum++;
+        fnum++;
+        fnum++;
+        fnum++;
+
+        if (solver_config.has_field_alphaAV()) {
+            fnum++;
+        }
+
+        if (solver_config.has_field_divv()) {
+            fnum++;
+        }
+
+        if (solver_config.has_field_curlv()) {
+            fnum++;
+        }
+
+        if (solver_config.has_field_soundspeed()) {
+            fnum++;
+        }
+
+        if (solver_config.has_field_dtdivv()) {
+            fnum++;
+        }
+
+        writter.add_field_data_section(fnum);
+
+        if (add_patch_world_id) {
+            vtk_dump_add_patch_id(scheduler(), writter);
+            vtk_dump_add_worldrank(scheduler(), writter);
+        }
+
+        vtk_dump_add_field<Tscal>(scheduler(), writter, ihpart, "h");
+        vtk_dump_add_field<Tscal>(scheduler(), writter, iuint, "u");
+        vtk_dump_add_field<Tvec>(scheduler(), writter, ivxyz, "v");
+        vtk_dump_add_field<Tvec>(scheduler(), writter, iaxyz, "a");
+
+        if (solver_config.has_field_alphaAV()) {
+            const u32 ialpha_AV = pdl.get_field_idx<Tscal>("alpha_AV");
+            vtk_dump_add_field<Tscal>(scheduler(), writter, ialpha_AV, "alpha_AV");
+        }
+
+        if (solver_config.has_field_divv()) {
+            const u32 idivv = pdl.get_field_idx<Tscal>("divv");
+            vtk_dump_add_field<Tscal>(scheduler(), writter, idivv, "divv");
+        }
+
+        if (solver_config.has_field_dtdivv()) {
+            const u32 idtdivv = pdl.get_field_idx<Tscal>("dtdivv");
+            vtk_dump_add_field<Tscal>(scheduler(), writter, idtdivv, "dtdivv");
+        }
+
+        if (solver_config.has_field_curlv()) {
+            const u32 icurlv = pdl.get_field_idx<Tvec>("curlv");
+            vtk_dump_add_field<Tvec>(scheduler(), writter, icurlv, "curlv");
+        }
+
+        if (solver_config.has_field_soundspeed()) {
+            const u32 isoundspeed = pdl.get_field_idx<Tscal>("soundspeed");
+            vtk_dump_add_field<Tscal>(scheduler(), writter, isoundspeed, "soundspeed");
+        }
+
+        vtk_dump_add_compute_field(scheduler(), writter, density, "rho");
+}
 
 
 
@@ -1056,18 +1164,13 @@ bool SPHSolve<Tvec, Kern>::apply_corrector(Tscal dt, u64 Npart_all) {
 }
 
 template<class Tvec, template<class> class Kern>
-auto SPHSolve<Tvec, Kern>::evolve_once(
-    Tscal t_current, Tscal dt, bool do_dump, std::string vtk_dump_name, bool vtk_dump_patch_id)
-    -> Tscal {
+void SPHSolve<Tvec, Kern>::evolve_once()
+     {
+
+        Tscal t_current = solver_config.get_time();
+        Tscal dt = solver_config.get_dt_sph();
+
     StackEntry stack_loc{};
-
-    struct DumpOption {
-        bool vtk_do_dump;
-        std::string vtk_dump_fname;
-        bool vtk_dump_patch_id;
-    };
-
-    DumpOption dump_opt{do_dump, vtk_dump_name, vtk_dump_patch_id};
 
     if (shamcomm::world_rank() == 0) {
         logger::normal_ln("sph::Model", shambase::format("t = {}, dt = {}", t_current, dt));
@@ -1166,7 +1269,7 @@ auto SPHSolve<Tvec, Kern>::evolve_once(
         constexpr bool debug_interfaces = false;
         if constexpr(debug_interfaces){
 
-            if(do_dump){
+            if(solver_config.do_debug_dump){
 
 
                 shambase::DistributedData<MergedPatchData> &mpdat =
@@ -1194,16 +1297,9 @@ auto SPHSolve<Tvec, Kern>::evolve_once(
 
                     make_interface_debug_phantom_dump(info)
                         .gen_file()
-                        .write_to_file(
-                            "debug_interf_patch_"
-                            +std::to_string(cur_p.id_patch)
-                            +"."+ shambase::shorten_string(vtk_dump_name,4)
-                            +".phantom"
+                        .write_to_file(solver_config.debug_dump_filename
                             );
-                    logger::raw_ln("writing : ", "debug_interf_patch_"
-                            +std::to_string(cur_p.id_patch)
-                            +"."+ shambase::shorten_string(vtk_dump_name,4)
-                            +".phantom");
+                    logger::raw_ln("writing : ", solver_config.debug_dump_filename);
 
                 
                 });
@@ -1549,114 +1645,6 @@ auto SPHSolve<Tvec, Kern>::evolve_once(
 
     // if delta too big jump to compute force
 
-    if (dump_opt.vtk_do_dump) {
-
-        shambase::Timer timer_io;
-        timer_io.start();
-
-        ComputeField<Tscal> density = utility.make_compute_field<Tscal>("rho", 1);
-
-        scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchData &pdat) {
-            shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-                sycl::accessor acc_h{
-                    shambase::get_check_ref(pdat.get_field<Tscal>(ihpart).get_buf()),
-                    cgh,
-                    sycl::read_only};
-
-                sycl::accessor acc_rho{
-                    shambase::get_check_ref(density.get_buf(p.id_patch)),
-                    cgh,
-                    sycl::write_only,
-                    sycl::no_init};
-                const Tscal part_mass = solver_config.gpart_mass;
-
-                cgh.parallel_for(sycl::range<1>{pdat.get_obj_cnt()}, [=](sycl::item<1> item) {
-                    u32 gid = (u32)item.get_id();
-                    using namespace shamrock::sph;
-                    Tscal rho_ha = rho_h(part_mass, acc_h[gid], Kernel::hfactd);
-                    acc_rho[gid] = rho_ha;
-                });
-            });
-        });
-
-        shamrock::LegacyVtkWritter writter = start_dump<Tvec>(scheduler(), dump_opt.vtk_dump_fname);
-        writter.add_point_data_section();
-
-        u32 fnum = 0;
-        if (dump_opt.vtk_dump_patch_id) {
-            fnum += 2;
-        }
-        fnum++;
-        fnum++;
-        fnum++;
-        fnum++;
-        fnum++;
-        fnum++;
-
-        if (solver_config.has_field_alphaAV()) {
-            fnum++;
-        }
-
-        if (solver_config.has_field_divv()) {
-            fnum++;
-        }
-
-        if (solver_config.has_field_curlv()) {
-            fnum++;
-        }
-
-        if (solver_config.has_field_soundspeed()) {
-            fnum++;
-        }
-
-        if (solver_config.has_field_dtdivv()) {
-            fnum++;
-        }
-
-        writter.add_field_data_section(fnum);
-
-        if (dump_opt.vtk_dump_patch_id) {
-            vtk_dump_add_patch_id(scheduler(), writter);
-            vtk_dump_add_worldrank(scheduler(), writter);
-        }
-
-        vtk_dump_add_field<Tscal>(scheduler(), writter, ihpart, "h");
-        vtk_dump_add_field<Tscal>(scheduler(), writter, iuint, "u");
-        vtk_dump_add_field<Tvec>(scheduler(), writter, ivxyz, "v");
-        vtk_dump_add_field<Tvec>(scheduler(), writter, iaxyz, "a");
-
-        if (solver_config.has_field_alphaAV()) {
-            const u32 ialpha_AV = pdl.get_field_idx<Tscal>("alpha_AV");
-            vtk_dump_add_field<Tscal>(scheduler(), writter, ialpha_AV, "alpha_AV");
-        }
-
-        if (solver_config.has_field_divv()) {
-            const u32 idivv = pdl.get_field_idx<Tscal>("divv");
-            vtk_dump_add_field<Tscal>(scheduler(), writter, idivv, "divv");
-        }
-
-        if (solver_config.has_field_dtdivv()) {
-            const u32 idtdivv = pdl.get_field_idx<Tscal>("dtdivv");
-            vtk_dump_add_field<Tscal>(scheduler(), writter, idtdivv, "dtdivv");
-        }
-
-        if (solver_config.has_field_curlv()) {
-            const u32 icurlv = pdl.get_field_idx<Tvec>("curlv");
-            vtk_dump_add_field<Tvec>(scheduler(), writter, icurlv, "curlv");
-        }
-
-        if (solver_config.has_field_soundspeed()) {
-            const u32 isoundspeed = pdl.get_field_idx<Tscal>("soundspeed");
-            vtk_dump_add_field<Tscal>(scheduler(), writter, isoundspeed, "soundspeed");
-        }
-
-        vtk_dump_add_compute_field(scheduler(), writter, density, "rho");
-        vtk_dump_add_compute_field(scheduler(), writter, omega, "omega");
-
-        timer_io.end();
-        storage.timings_details.io += timer_io.elasped_sec();
-    }
-
 
     tstep.end();
 
@@ -1712,7 +1700,8 @@ auto SPHSolve<Tvec, Kern>::evolve_once(
     reset_presteps_rint();
     reset_neighbors_cache();
 
-    return next_cfl;
+    solver_config.set_next_dt(next_cfl);
+    solver_config.set_time(t_current + dt);
 }
 
 using namespace shammath;
