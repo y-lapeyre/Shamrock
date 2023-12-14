@@ -309,14 +309,14 @@ void Module<Tvec, TgridVec>::exchange_ghost() {
     ghost_layout.add_field<TgridVec>("cell_min", 1);
     ghost_layout.add_field<TgridVec>("cell_max", 1);
     ghost_layout.add_field<Tscal>("rho", AMRBlock::block_size);
-    ghost_layout.add_field<Tscal>("eint", AMRBlock::block_size);
-    ghost_layout.add_field<Tvec>("vel", AMRBlock::block_size);
+    ghost_layout.add_field<Tscal>("rhoetot", AMRBlock::block_size);
+    ghost_layout.add_field<Tvec>("rhovel", AMRBlock::block_size);
 
     u32 icell_min_interf = ghost_layout.get_field_idx<TgridVec>("cell_min");
     u32 icell_max_interf = ghost_layout.get_field_idx<TgridVec>("cell_max");
     u32 irho_interf      = ghost_layout.get_field_idx<Tscal>("rho");
-    u32 ieint_interf     = ghost_layout.get_field_idx<Tscal>("eint");
-    u32 ivel_interf      = ghost_layout.get_field_idx<Tvec>("vel");
+    u32 irhoetot_interf     = ghost_layout.get_field_idx<Tscal>("rhoetot");
+    u32 irhovel_interf      = ghost_layout.get_field_idx<Tvec>("rhovel");
 
     // load layout info
     PatchDataLayout &pdl = scheduler().pdl;
@@ -324,8 +324,8 @@ void Module<Tvec, TgridVec>::exchange_ghost() {
     const u32 icell_min = pdl.get_field_idx<TgridVec>("cell_min");
     const u32 icell_max = pdl.get_field_idx<TgridVec>("cell_max");
     const u32 irho      = pdl.get_field_idx<Tscal>("rho");
-    const u32 ieint     = pdl.get_field_idx<Tscal>("eint");
-    const u32 ivel      = pdl.get_field_idx<Tvec>("vel");
+    const u32 irhoetot     = pdl.get_field_idx<Tscal>("rhoetot");
+    const u32 irhovel      = pdl.get_field_idx<Tvec>("rhovel");
 
     // generate send buffers
     GZData &gen_ghost = storage.ghost_zone_infos.get();
@@ -346,11 +346,11 @@ void Module<Tvec, TgridVec>::exchange_ghost() {
             sender_patch.get_field<Tscal>(irho).append_subset_to(
                 buf_idx, cnt, pdat.get_field<Tscal>(irho_interf));
 
-            sender_patch.get_field<Tscal>(ieint).append_subset_to(
-                buf_idx, cnt, pdat.get_field<Tscal>(ieint_interf));
+            sender_patch.get_field<Tscal>(irhoetot).append_subset_to(
+                buf_idx, cnt, pdat.get_field<Tscal>(irhoetot_interf));
 
-            sender_patch.get_field<Tvec>(ivel).append_subset_to(
-                buf_idx, cnt, pdat.get_field<Tvec>(ivel_interf));
+            sender_patch.get_field<Tvec>(irhovel).append_subset_to(
+                buf_idx, cnt, pdat.get_field<Tvec>(irhovel_interf));
 
             pdat.check_field_obj_cnt_match();
 
@@ -385,8 +385,8 @@ void Module<Tvec, TgridVec>::exchange_ghost() {
             pdat_new.get_field<TgridVec>(icell_max_interf)
                 .insert(pdat.get_field<TgridVec>(icell_max));
             pdat_new.get_field<Tscal>(irho_interf).insert(pdat.get_field<Tscal>(irho));
-            pdat_new.get_field<Tscal>(ieint_interf).insert(pdat.get_field<Tscal>(ieint));
-            pdat_new.get_field<Tvec>(ivel_interf).insert(pdat.get_field<Tvec>(ivel));
+            pdat_new.get_field<Tscal>(irhoetot_interf).insert(pdat.get_field<Tscal>(irhoetot));
+            pdat_new.get_field<Tvec>(irhovel_interf).insert(pdat.get_field<Tvec>(irhovel));
 
             pdat_new.check_field_obj_cnt_match();
 

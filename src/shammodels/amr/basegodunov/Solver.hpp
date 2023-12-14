@@ -61,9 +61,9 @@ namespace shammodels::basegodunov {
         inline void init_required_fields() {
             context.pdata_layout_add_field<TgridVec>("cell_min", 1);
             context.pdata_layout_add_field<TgridVec>("cell_max", 1);
-            context.pdata_layout_add_field<Tscal>("rho", 1);
-            context.pdata_layout_add_field<Tscal>("rhovel", 1);
-            context.pdata_layout_add_field<Tscal>("rhoetot", 1);
+            context.pdata_layout_add_field<Tscal>("rho", AMRBlock::block_size);
+            context.pdata_layout_add_field<Tvec>("rhovel", AMRBlock::block_size);
+            context.pdata_layout_add_field<Tscal>("rhoetot", AMRBlock::block_size);
         }
 
         Solver(ShamrockCtx &context) : context(context) {}

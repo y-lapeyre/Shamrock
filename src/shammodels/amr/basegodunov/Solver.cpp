@@ -14,6 +14,7 @@
  */
  
 #include "shammodels/amr/basegodunov/Solver.hpp"
+#include "shamcomm/collectives.hpp"
 #include "shammodels/amr/basegodunov/modules/AMRTree.hpp"
 #include "shammodels/amr/basegodunov/modules/GhostZones.hpp"
 
@@ -65,6 +66,37 @@ auto Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tscal dt_input) -> Tsc
     //build neigh table
 
     storage.serial_patch_tree.reset();
+
+
+
+
+    tstep.end();
+
+    u64 rank_count = scheduler().get_rank_count()*AMRBlock::block_size;
+    f64 rate = f64(rank_count) / tstep.elasped_sec();
+
+    std::string log_rank_rate = shambase::format(
+        "\n| {:<4} |    {:.4e}    | {:11} |   {:.3e}   |  {:3.0f} % | {:3.0f} % | {:3.0f} % |", 
+        shamcomm::world_rank(),rate,  rank_count,  tstep.elasped_sec(),
+        100*(storage.timings_details.interface / tstep.elasped_sec()),
+        100*(storage.timings_details.neighbors / tstep.elasped_sec()),
+        100*(storage.timings_details.io / tstep.elasped_sec())
+        );
+
+    std::string gathered = "";
+    shamcomm::gather_str(log_rank_rate, gathered);
+
+    if(shamcomm::world_rank() == 0){
+        std::string print = "processing rate infos : \n";
+        print+=("---------------------------------------------------------------------------------\n");
+        print+=("| rank |  rate  (N.s^-1)  |      N      | t compute (s) | interf | neigh |   io  |\n");
+        print+=("---------------------------------------------------------------------------------");
+        print+=(gathered) + "\n";
+        print+=("---------------------------------------------------------------------------------");
+        logger::info_ln("amr::Zeus",print);
+    }
+
+    storage.timings_details.reset();
 
     return 0;
 }

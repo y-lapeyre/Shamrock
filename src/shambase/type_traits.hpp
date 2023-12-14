@@ -99,4 +99,8 @@ namespace shambase {
         static constexpr bool value = std::is_same<decltype(test<T>(0)), found>::value;
     };
 
+
+    template<class>
+    inline constexpr bool always_false_v = false;
+
 } // namespace shambase

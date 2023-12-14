@@ -17,7 +17,7 @@ multy = 1
 multz = 1
 
 sz = 1 << 1
-base = 32 
+base = 64 
 model.make_base_grid((0,0,0),(sz,sz,sz),(base*multx,base*multy,base*multz))
 
 cfg = model.gen_default_config()
