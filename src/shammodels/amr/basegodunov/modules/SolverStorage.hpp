@@ -47,6 +47,9 @@ namespace shammodels::basegodunov {
 
         Component<shambase::DistributedData<shamrock::MergedPatchData>> merged_patchdata_ghost;
 
+        Component<shambase::DistributedData<shammath::AABB<TgridVec>>> merge_patch_bounds;
+        Component<shambase::DistributedData<RTree>> trees;
+
         struct {
             f64 interface = 0;
             f64 neighbors = 0;

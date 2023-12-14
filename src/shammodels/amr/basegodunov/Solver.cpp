@@ -14,6 +14,7 @@
  */
  
 #include "shammodels/amr/basegodunov/Solver.hpp"
+#include "shammodels/amr/basegodunov/modules/AMRTree.hpp"
 #include "shammodels/amr/basegodunov/modules/GhostZones.hpp"
 
 template<class Tvec, class TgridVec>
@@ -42,7 +43,7 @@ auto Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tscal dt_input) -> Tsc
     //ghost zone exchange
     modules::GhostZones gz(context,solver_config,storage);
     gz.build_ghost_cache();
-#if false
+
     gz.exchange_ghost();
 
 
@@ -53,7 +54,7 @@ auto Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tscal dt_input) -> Tsc
     amrtree.build_trees();
 
     amrtree.correct_bounding_box();
-#endif
+
     
     //compute bound received
 

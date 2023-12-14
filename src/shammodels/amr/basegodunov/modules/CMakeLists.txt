@@ -1,6 +1,7 @@
 
 set(Sources
     GhostZones.cpp
+    AMRTree.cpp
 )
 set(Headers
 )
