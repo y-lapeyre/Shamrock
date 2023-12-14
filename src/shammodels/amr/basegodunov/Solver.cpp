@@ -29,7 +29,7 @@ auto Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tscal dt_input) -> Tsc
     storage.serial_patch_tree.set(std::move(_sptree));
 
     //ghost zone exchange
-    modules::GhostZones gz(context,solver_config,storage);
+    modules::GhostZones<Tvec,TgridVec> gz(context,solver_config,storage);
     gz.build_ghost_cache();
 
     

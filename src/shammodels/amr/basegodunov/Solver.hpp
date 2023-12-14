@@ -16,13 +16,24 @@
  */
  
 #include "shambase/sycl_utils/vectorProperties.hpp"
+#include "shammodels/amr/AMRBlock.hpp"
 #include "shammodels/amr/basegodunov/modules/SolverStorage.hpp"
 #include "shamrock/scheduler/SerialPatchTree.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
 namespace shammodels::basegodunov {
 
-    template<class Tvec>
-    struct SolverConfig {};
+    template<class Tvec,class TgridVec>
+    struct SolverConfig {
+
+        using Tscal              = shambase::VecComponent<Tvec>;
+
+        Tscal eos_gamma = 5./3.;
+
+        Tscal grid_coord_to_pos_fact = 1;
+
+        static constexpr u32 NsideBlockPow = 1;
+        using AMRBlock = amr::AMRBlock<Tvec, TgridVec, NsideBlockPow>;
+    };
 
     template<class Tvec, class TgridVec>
     class Solver {public:
@@ -31,9 +42,10 @@ namespace shammodels::basegodunov {
         using Tgridscal          = shambase::VecComponent<TgridVec>;
         static constexpr u32 dim = shambase::VectorProperties<Tvec>::dimension;
 
-        using u_morton = u32;
+        using u_morton = u64;
+        using Config = SolverConfig<Tvec,TgridVec>;
 
-        using Config = SolverConfig<Tvec>;
+        using AMRBlock = typename Config::AMRBlock;
 
         ShamrockCtx &context;
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }
