@@ -75,11 +75,11 @@ namespace shammodels::basegodunov::modules {
 
 
         template<CellStencilElementId cell_st_dir>
-        inline constexpr StencilElement lower_block_to_cell(
+        inline constexpr CellStencilElement lower_block_to_cell(
             u32 block_id,
             u32 local_block_index,
             std::array<u32, dim> coord,
-            StencilElement block_stencil_el)
+            BlockStencilElement block_stencil_el)
         {
             constexpr BlockStencilElementId block_st_dir = get_block_stencil_el<cell_st_dir>();
 
@@ -129,7 +129,7 @@ namespace shammodels::basegodunov::modules {
             };
 
             //check if still within block (and return if thats the case)
-            auto early_ret_cell_idx = StencilElement(SameLevel{get_cell_idx(block_id,make_array_unsigned(coord_off))});
+            auto early_ret_cell_idx = CellStencilElement(SameCellLevel{get_cell_idx(block_id,make_array_unsigned(coord_off))});
 
             if constexpr(cell_st_dir == cell_xp){
                 if(coord_off[0] < AMRBlock::side_size){
@@ -179,11 +179,11 @@ namespace shammodels::basegodunov::modules {
                 static_assert(shambase::always_false_v<decltype(cell_st_dir)>, "non-exhaustive visitor!");
             }
 
-            return block_stencil_el.visitor_ret<StencilElement>(
-                [&](SameLevel && st){
+            return block_stencil_el.visitor_ret<CellStencilElement>(
+                [&](SameCellLevel && st){
                     return get_cell_idx(st.obj_idx,make_array_unsigned(coord_off));
                 }, 
-                [&](Levelm1 && st){
+                [&](BlockCellLevelm1 && st){
 
                     std::array<u32, 3> mod_coord {
                         u32(coord_off[0]) %2,
@@ -209,12 +209,12 @@ namespace shammodels::basegodunov::modules {
 
                     u32 neigh_state = mod_coord[0]*4 + mod_coord[1]*2 + mod_coord[2];
 
-                    return StencilElement(Levelm1{
+                    return CellStencilElement(BlockCellLevelm1{
                             neigh_state,
                             get_cell_idx(st.obj_idx,make_array_unsigned(coord_off))
                         });
                 }, 
-                [&](Levelp1 && st){
+                [&](BlockCellLevelp1 && st){
                     
                     std::array<u32, 3> mod_coord {
                         u32(coord_off[0] / (AMRBlock::side_size/2)) ,
@@ -260,7 +260,7 @@ namespace shammodels::basegodunov::modules {
 
                     u32 idx_tmp = get_cell_idx(st.obj_child_idxs[child_select],make_array_unsigned(coord_off)); 
 
-                    return StencilElement(Levelp1{{
+                    return CellStencilElement(Levelp1{{
                             idx_tmp + AMRBlock::get_index({0,0,0}),
                             idx_tmp + AMRBlock::get_index({0,0,1}),
                             idx_tmp + AMRBlock::get_index({0,1,0}),
@@ -275,10 +275,10 @@ namespace shammodels::basegodunov::modules {
 
 
         template<CellStencilElementId cell_st_dir, BlockStencilElementId block_st_dir>
-        inline constexpr StencilElement lower_block_to_cell(
+        inline constexpr CellStencilElement lower_block_to_cell(
             u32 block_id,
             u32 local_block_index,
-            StencilElement block_stencil_el)
+            BlockStencilElement block_stencil_el)
         {
             return lower_block_to_cell<cell_st_dir,block_st_dir>(block_id,local_block_index, AMRBlock::get_coord(local_block_index),
             block_stencil_el);

@@ -70,6 +70,29 @@ namespace shammodels::amr {
             return {};
         }
 
+        inline static constexpr i32 get_index_relative(std::array<i32, dim> coord) noexcept {
+            static_assert(dim < 5, "not implemented above dim 4");
+
+            if constexpr (dim == 1) {
+                return coord[0];
+            }
+
+            if constexpr (dim == 2) {
+                return coord[0] + Nside * coord[1];
+            }
+
+            if constexpr (dim == 3) {
+                return coord[0] + Nside * coord[1] + Nside * Nside * coord[2];
+            }
+
+            if constexpr (dim == 4) {
+                return coord[0] + Nside * coord[1] + Nside * Nside * coord[2] +
+                       Nside * Nside * Nside * coord[3];
+            }
+
+            return {};
+        }
+
         inline static constexpr std::array<u32,dim> get_coord(u32 i) noexcept{
             static_assert(dim == 3, "only in dim 3 for now");
 
