@@ -67,6 +67,10 @@ namespace shammath {
             return shambase::vec_compare_geq(upper , lower);
         }
 
+        inline bool is_volume_not_null(){
+            return shambase::vec_compare_g(upper , lower);
+        }
+
         inline bool is_surface(){
             return shambase::component_have_only_one_zero(delt()) && (is_not_empty());
         }

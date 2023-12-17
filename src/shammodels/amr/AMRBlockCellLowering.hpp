@@ -9,7 +9,7 @@
 #pragma once
 
 /**
- * @file AMRBlock.hpp
+ * @file AMRBlockCellLowering.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @brief utility to manipulate AMR blocks
  */
