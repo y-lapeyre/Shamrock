@@ -67,16 +67,18 @@ namespace shammodels::amr::block {
     * 
     */
     struct alignas(8) StencilElement{
+
+        struct None{};
         
-        std::variant<SameLevel, Levelm1, Levelp1> _int;
+        std::variant<SameLevel, Levelm1, Levelp1, None> _int = None{};
 
         explicit StencilElement(SameLevel st) :_int(st){}
         explicit StencilElement(Levelm1 st) :_int(st){}
         explicit StencilElement(Levelp1 st) :_int(st){}
         StencilElement() = default;
 
-        template<class Visitor1,class Visitor2,class Visitor3>
-        inline void visitor(Visitor1 && f1, Visitor2 && f2, Visitor3 && f3){
+        template<class Visitor1,class Visitor2,class Visitor3,class Visitor4>
+        inline void visitor(Visitor1 && f1, Visitor2 && f2, Visitor3 && f3, Visitor4 && f4){
             std::visit([&](auto&& arg)
             {
                 using T = std::decay_t<decltype(arg)>;
@@ -86,14 +88,16 @@ namespace shammodels::amr::block {
                     f2(arg);
                 }else if constexpr (std::is_same_v<T, Levelp1>){
                     f3(arg);
+                }else if constexpr (std::is_same_v<T, None>){
+                    f4(arg);
                 }else { 
                     static_assert(shambase::always_false_v<T>, "non-exhaustive visitor!");
                 }
             }, _int);
         }
 
-        template<class Tret,class Visitor1,class Visitor2,class Visitor3>
-        inline Tret visitor_ret(Visitor1 && f1, Visitor2 && f2, Visitor3 && f3){
+        template<class Tret,class Visitor1,class Visitor2,class Visitor3,class Visitor4>
+        inline Tret visitor_ret(Visitor1 && f1, Visitor2 && f2, Visitor3 && f3, Visitor4 && f4){
             std::visit([&](auto&& arg)
             {
                 using T = std::decay_t<decltype(arg)>;
@@ -103,6 +107,8 @@ namespace shammodels::amr::block {
                     return f2(arg);
                 }else if constexpr (std::is_same_v<T, Levelp1>){
                     return f3(arg);
+                }else if constexpr (std::is_same_v<T, None>){
+                    return f4(arg);
                 }else { 
                     static_assert(shambase::always_false_v<T>, "non-exhaustive visitor!");
                 }
@@ -110,4 +116,4 @@ namespace shammodels::amr::block {
         }
     };  
 
-}
+} // namespace shammodels::amr::block

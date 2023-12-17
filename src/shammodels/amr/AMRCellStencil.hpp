@@ -81,8 +81,10 @@ namespace shammodels::amr::cell {
     * 
     */
     struct alignas(8) StencilElement{
+
+        struct None{};
         
-        std::variant<SameLevel, Levelm1, Levelp1> _int;
+        std::variant<SameLevel, Levelm1, Levelp1,None> _int = None{};
 
         explicit StencilElement(SameLevel st) :_int(st){}
         explicit StencilElement(Levelm1 st) :_int(st){}

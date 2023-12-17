@@ -28,11 +28,11 @@ namespace shammodels::amr {
 
     enum StencilPosition{
         xp1 = 0,
-        xm1 = 0,
-        yp1 = 0,
-        ym1 = 0,
-        zp1 = 0,
-        zm1 = 0,
+        xm1 = 1,
+        yp1 = 2,
+        ym1 = 3,
+        zp1 = 4,
+        zm1 = 5,
     };
 
     struct BlockCellLowering{
@@ -189,6 +189,9 @@ namespace shammodels::amr {
                     return cell::Levelp1{
                         idx_tmp
                     };
+                },
+                [&](block::StencilElement::None st){
+                    return cell::StencilElement::None{};
                 });
 
         }
