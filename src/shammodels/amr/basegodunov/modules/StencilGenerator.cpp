@@ -57,10 +57,11 @@ void _kernel(
     auto cell_found_0_aabb =
         shammath::AABB<TgridVec>{cell_min[found_cells[0]], cell_max[found_cells[0]]};
 
-    bool check_levelp1 = shambase::vec_equals(cell_found_0_aabb.delt() * 8, cell_aabb.delt()) &&
+    //delt is the linear delta, so it's a factor 2 instead of 8
+    bool check_levelp1 = shambase::vec_equals(cell_found_0_aabb.delt() * 2, cell_aabb.delt()) &&
                          (cell_found_count == 8);
 
-    bool check_levelm1 = shambase::vec_equals(cell_found_0_aabb.delt(), cell_aabb.delt() * 8) &&
+    bool check_levelm1 = shambase::vec_equals(cell_found_0_aabb.delt(), cell_aabb.delt() * 2) &&
                          (cell_found_count == 1);
 
     bool check_levelsame =
@@ -71,6 +72,10 @@ void _kernel(
     switch (state) {
     case 1: ret = block::StencilElement(block::SameLevel{found_cells[0]}); break;
     case 2: ret = block::StencilElement(block::Levelm1{block::Levelm1::mmm, found_cells[0]}); break;
+
+    // for case 4 (level p1) sort elements in corect order
+    // cf in block cell lowering
+    // u32 child_select = mod_coord[0]*4 + mod_coord[1]*2 + mod_coord[2];
     case 4: ret = block::StencilElement(block::Levelp1{found_cells}); break;
     }
 
@@ -115,7 +120,7 @@ void shammodels::basegodunov::modules::StencilGenerator<Tvec, TgridVec>::fill_sl
 
             TgridVec const *cell_min = acc_cell_min.get_pointer();
             TgridVec const *cell_max = acc_cell_max.get_pointer();
-            auto *stencil_info       = acc_stencil_info.get_pointer();
+            amr::block::StencilElement *stencil_info = acc_stencil_info.get_pointer();
 
             shambase::parralel_for(
                 cgh, mpdat.total_elements, "compute neigh cache 1", [=](u64 gid) {
