@@ -19,7 +19,6 @@ AlignTrailingComments: true
 BinPackArguments: false
 BinPackParameters: false
 
-AlwaysBreakTemplateDeclarations: MultiLine
 AllowShortCaseLabelsOnASingleLine : true
 BreakBeforeConceptDeclarations : true
 NamespaceIndentation: All
