@@ -1,0 +1,258 @@
+// -------------------------------------------------------//
+//
+// SHAMROCK code for hydrodynamics
+// Copyright(C) 2021-2023 Timothée David--Cléris
+// <timothee.david--cleris@ens-lyon.fr> Licensed under CeCILL 2.1 License, see
+// LICENSE for more information
+//
+// -------------------------------------------------------//
+
+#pragma once
+
+/**
+ * @file riemann.hpp
+ * @author Thomas Guillet (T.A.Guillet@exeter.ac.uk)
+ * @brief
+ *
+ */
+
+#include <algorithm>
+#include <array>
+#include <cmath>
+#include <iostream>
+
+namespace shammath {
+
+    template<typename T>
+    using VectorComponent = std::remove_reference_t<decltype(*std::begin(std::declval<T &>()))>;
+
+    template<class Tvec_>
+    struct ConsState {
+        using Tvec  = Tvec_;
+        using Tscal = VectorComponent<Tvec>;
+
+        Tscal rho{}, rhoe{};
+        Tvec rhovel{};
+
+        friend constexpr ConsState operator+(ConsState lhs, ConsState rhs) {
+            lhs.rho += rhs.rho;
+            lhs.rhoe += rhs.rhoe;
+            lhs.rhovel[0] += rhs.rhovel[0];
+            lhs.rhovel[1] += rhs.rhovel[1];
+            lhs.rhovel[2] += rhs.rhovel[2];
+            return lhs;
+        }
+
+        friend constexpr ConsState operator-(ConsState lhs, ConsState rhs) {
+            lhs.rho -= rhs.rho;
+            lhs.rhoe -= rhs.rhoe;
+            lhs.rhovel[0] -= rhs.rhovel[0];
+            lhs.rhovel[1] -= rhs.rhovel[1];
+            lhs.rhovel[2] -= rhs.rhovel[2];
+            return lhs;
+        }
+
+        friend constexpr ConsState operator*(ConsState lhs, Tscal factor) {
+            lhs.rho *= factor;
+            lhs.rhoe *= factor;
+            lhs.rhovel[0] *= factor;
+            lhs.rhovel[1] *= factor;
+            lhs.rhovel[2] *= factor;
+            return lhs;
+        }
+    };
+
+    template<class Tvec_>
+    struct PrimState {
+        using Tvec  = Tvec_;
+        using Tscal = VectorComponent<Tvec>;
+
+        Tscal rho{}, press{};
+        Tvec vel{};
+    };
+
+    template<class Tvec_>
+    struct Fluxes {
+        using Tvec  = Tvec_;
+        using Tscal = VectorComponent<Tvec>;
+
+        std::array<ConsState<Tvec>, 3> F;
+    };
+
+    template<class Tscal>
+    inline constexpr Tscal rhoekin(Tscal rho, std::array<Tscal, 3> v) {
+        const Tscal v2 = v[0] * v[0] + v[1] * v[1] + v[2] * v[2];
+        return 0.5 * rho * v2;
+    }
+
+    template<class Tvec>
+    inline constexpr ConsState<Tvec>
+    prim_to_cons(const PrimState<Tvec> prim, typename PrimState<Tvec>::Tscal gamma) {
+        ConsState<Tvec> cons;
+
+        cons.rho = prim.rho;
+
+        const auto rhoeint = prim.press / (gamma - 1.0);
+        cons.rhoe          = rhoeint + rhoekin(prim.rho, prim.vel);
+
+        cons.rhovel[0] = prim.rho * prim.vel[0];
+        cons.rhovel[1] = prim.rho * prim.vel[1];
+        cons.rhovel[2] = prim.rho * prim.vel[2];
+
+        return cons;
+    }
+
+    template<class Tvec>
+    inline constexpr PrimState<Tvec>
+    cons_to_prim(const ConsState<Tvec> cons, typename ConsState<Tvec>::Tscal gamma) {
+        PrimState<Tvec> prim;
+
+        prim.rho = cons.rho;
+
+        prim.vel[0] = cons.rhovel[0] / cons.rho;
+        prim.vel[1] = cons.rhovel[1] / cons.rho;
+        prim.vel[2] = cons.rhovel[2] / cons.rho;
+
+        const auto rhoeint = cons.rhoe - rhoekin(prim.rho, prim.vel);
+        prim.press         = (gamma - 1.0) * rhoeint;
+
+        return prim;
+    }
+
+    template<class Tvec>
+    inline constexpr ConsState<Tvec>
+    hydro_flux_x(const ConsState<Tvec> cons, typename ConsState<Tvec>::Tscal gamma) {
+        ConsState<Tvec> flux;
+
+        const PrimState<Tvec> prim = cons_to_prim(cons, gamma);
+
+        flux.rho = cons.rhovel[0];
+
+        flux.rhoe = (cons.rhoe + prim.press) * prim.vel[0];
+
+        flux.rhovel[0] = cons.rho * prim.vel[0] * prim.vel[0] + prim.press;
+        flux.rhovel[1] = cons.rho * prim.vel[0] * prim.vel[1];
+        flux.rhovel[2] = cons.rho * prim.vel[0] * prim.vel[2];
+
+        return flux;
+    }
+
+    template<class Tvec>
+    inline constexpr VectorComponent<Tvec>
+    sound_speed(PrimState<Tvec> prim, VectorComponent<Tvec> gamma) {
+        return std::sqrt(gamma * prim.press / prim.rho);
+    }
+
+    template<class Tcons>
+    inline constexpr Tcons rusanov_flux_x(Tcons cL, Tcons cR, typename Tcons::Tscal gamma) {
+        Tcons flux;
+
+        const auto primL = cons_to_prim(cL, gamma);
+        const auto primR = cons_to_prim(cR, gamma);
+
+        const auto csL = sound_speed(primL, gamma);
+        const auto csR = sound_speed(primR, gamma);
+
+        const auto S = std::max(
+            {std::abs(primL.vel[0] - csL),
+             std::abs(primR.vel[0] - csR),
+             std::abs(primL.vel[0] + csL),
+             std::abs(primR.vel[0] + csR)});
+
+        const auto fL = hydro_flux_x(cL, gamma);
+        const auto fR = hydro_flux_x(cR, gamma);
+
+        return (fL + fR) * 0.5 - (cR - cL) * S;
+    }
+
+    template<class Tcons>
+    inline constexpr Tcons y_to_x(const Tcons c) {
+        Tcons cprime;
+        cprime.rho       = c.rho;
+        cprime.rhoe      = c.rhoe;
+        cprime.rhovel[0] = c.rhovel[1];
+        cprime.rhovel[1] = -c.rhovel[0];
+        cprime.rhovel[2] = c.rhovel[2];
+        return cprime;
+    }
+
+    template<class Tcons>
+    inline constexpr Tcons x_to_y(const Tcons c) {
+        Tcons cprime;
+        cprime.rho       = c.rho;
+        cprime.rhoe      = c.rhoe;
+        cprime.rhovel[0] = -c.rhovel[1];
+        cprime.rhovel[1] = c.rhovel[0];
+        cprime.rhovel[2] = c.rhovel[2];
+        return cprime;
+    }
+
+    template<class Tcons>
+    inline constexpr Tcons z_to_x(const Tcons c) {
+        Tcons cprime;
+        cprime.rho       = c.rho;
+        cprime.rhoe      = c.rhoe;
+        cprime.rhovel[0] = c.rhovel[2];
+        cprime.rhovel[1] = c.rhovel[1];
+        cprime.rhovel[2] = -c.rhovel[0];
+        return cprime;
+    }
+
+    template<class Tcons>
+    inline constexpr Tcons x_to_z(const Tcons c) {
+        Tcons cprime;
+        cprime.rho       = c.rho;
+        cprime.rhoe      = c.rhoe;
+        cprime.rhovel[0] = -c.rhovel[2];
+        cprime.rhovel[1] = c.rhovel[1];
+        cprime.rhovel[2] = c.rhovel[0];
+        return cprime;
+    }
+
+    template<class Tcons>
+    inline constexpr Tcons rusanov_flux_y(Tcons cL, Tcons cR, typename Tcons::Tscal gamma) {
+        return x_to_y(rusanov_flux_x(y_to_x(cL), y_to_x(cR), gamma));
+    }
+
+    template<class Tcons>
+    inline constexpr Tcons rusanov_flux_z(Tcons cL, Tcons cR, typename Tcons::Tscal gamma) {
+        return x_to_z(rusanov_flux_x(z_to_x(cL), z_to_x(cR), gamma));
+    }
+
+    template<class Tcons>
+    inline constexpr auto
+    hll_flux_x(const Tcons consL, const Tcons consR, const typename Tcons::Tscal gamma) {
+        const auto primL = cons_to_prim(consL, gamma);
+        const auto primR = cons_to_prim(consR, gamma);
+
+        const auto csL = sound_speed(primL, gamma);
+        const auto csR = sound_speed(primR, gamma);
+        const auto S_L = std::min({primL.vel[0] - csL, primR.vel[0] - csR});
+        const auto S_R = std::max({primL.vel[0] + csL, primR.vel[0] + csR});
+
+        const auto fluxL = hydro_flux_x(consL, gamma);
+        const auto fluxR = hydro_flux_x(consR, gamma);
+
+        auto hll_state = [=]() {
+            if (S_L >= 0.0) {
+                return consL;
+            }
+            if (S_R <= 0.0) {
+                return consR;
+            }
+            return ((fluxL - fluxR) - (consL * S_L - consR * S_R)) * (1.0 / (S_R - S_L));
+        };
+
+        auto hll_flux = [=]() {
+            const auto S_L_upwind = std::min({S_L, 0.0});
+            const auto S_R_upwind = std::max({S_R, 0.0});
+            const auto S_norm     = 1.0 / (S_R_upwind - S_L_upwind);
+            return (fluxL * S_R_upwind - fluxR * S_L_upwind +
+                    (consR - consL) * S_R_upwind * S_L_upwind) *
+                   S_norm;
+        };
+
+        return hll_flux();
+    }
+
+} // namespace shammath
