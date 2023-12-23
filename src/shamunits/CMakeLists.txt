@@ -4,6 +4,8 @@ project(Shamunits CXX C)
 
 message("-- adding shamunits target")
 add_library(shamunits INTERFACE)
+add_library(shamunits::shamunits ALIAS shamunits)
+
 
 target_include_directories(shamunits INTERFACE
 "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>"
