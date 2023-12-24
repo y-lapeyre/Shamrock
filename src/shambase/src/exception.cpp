@@ -13,7 +13,7 @@
  * 
  */
  
-#include "exception.hpp"
+#include "shambase/exception.hpp"
 #include "shambase/stacktrace.hpp"
 
 namespace shambase {

@@ -1,6 +1,6 @@
 
 
-set(as_subproject shamunits shamcxxstd)
+set(as_subproject shamunits shambase)
 
 # This macro originates from Daniel Pfeifer's talk at C++Now 2017:
 # https://www.youtube.com/watch?v=bsXLMQ6WgIk
@@ -12,7 +12,7 @@ macro(find_package)
 endmacro()
 
 add_subdirectory(shamunits)
-add_subdirectory(shamcxxstd)
+add_subdirectory(shambase)
 
 ######################
 # Shamalgs
@@ -39,7 +39,7 @@ if(SHAMROCK_USE_NVTX)
 endif()
 
 target_link_libraries(shamalgs PUBLIC shamunits)
-
+target_link_libraries(shamalgs PUBLIC shambase)
 
 
 
@@ -59,11 +59,7 @@ target_precompile_headers(shamrock_lib PRIVATE "<sycl/sycl.hpp>")
 endif()
 
 target_link_libraries(shamrock_lib PUBLIC MPI::MPI_C)
-target_link_libraries(shamrock_lib PUBLIC fmt::fmt)
 
-if(SHAMROCK_USE_NVTX)
-    target_link_libraries(shamrock_lib PUBLIC nvtx3-cpp)
-endif()
 
 if("${BUILD_PYLIB}")
     target_link_libraries(shamrock_lib PUBLIC pybind11::module)
@@ -73,7 +69,7 @@ endif()
 
 
 target_link_libraries(shamrock_lib PUBLIC shamunits)
-
+target_link_libraries(shamrock_lib PUBLIC shambase)
 
 
 
@@ -96,14 +92,9 @@ target_link_libraries(shamrock PUBLIC shamalgs)
 
 
 target_link_libraries(shamrock PUBLIC MPI::MPI_C)
-target_link_libraries(shamrock PUBLIC fmt::fmt)
 target_link_libraries(shamrock PUBLIC shamunits)
+target_link_libraries(shamrock PUBLIC shambase)
 
-
-
-if(SHAMROCK_USE_NVTX)
-    target_link_libraries(shamrock PUBLIC nvtx3-cpp)
-endif()
 
 
 
@@ -135,17 +126,11 @@ if("${BUILD_TEST}")
     target_link_libraries(shamrock_test PUBLIC shamrock_lib)
     target_link_libraries(shamrock_test PUBLIC shamalgs)
     target_link_libraries(shamrock_test PUBLIC shamunits)
+    target_link_libraries(shamrock_test PUBLIC shambase)
 
     
     target_include_directories(shamrock_test PUBLIC "${CMAKE_SOURCE_DIR}/src")
     #target_include_directories(shamrock_test PUBLIC "${CMAKE_SOURCE_DIR}/external")
-
-    target_link_libraries(shamrock_test PUBLIC fmt::fmt)
-
-    if(SHAMROCK_USE_NVTX)
-        target_link_libraries(shamrock_test PUBLIC nvtx3-cpp)
-    endif()
-
 
 
     if(SHAMROCK_USE_PCH)
@@ -163,7 +148,6 @@ endif()
 
 
 
-add_subdirectory(shambase)
 add_subdirectory(shamsys)
 add_subdirectory(shamtest)
 add_subdirectory(shambindings)
