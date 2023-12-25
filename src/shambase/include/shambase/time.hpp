@@ -17,7 +17,7 @@
  
 #include "shambase/string.hpp"
 #include "shambase/aliases_float.hpp"
-
+#include <functional>
 #include <iostream>
 #include <plf_nanotimer.h>
 
