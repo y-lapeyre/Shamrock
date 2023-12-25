@@ -28,4 +28,4 @@ if(SHAMROCK_USE_NVTX)
     target_link_libraries(shambase PUBLIC nvtx3-cpp)
 endif()
 
-target_link_libraries(shambase PUBLIC fmt::fmt)
+target_link_libraries(shambase PUBLIC fmt::fmt-header-only)
