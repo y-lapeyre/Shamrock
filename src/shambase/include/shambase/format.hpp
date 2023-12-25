@@ -9,7 +9,7 @@
 #pragma once
 
 /**
- * @file collectives.hpp
+ * @file format.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @brief 
  */
