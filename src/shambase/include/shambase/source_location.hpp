@@ -16,8 +16,8 @@
 
 #include "cxxbackports/source_location.hpp"
 
-namespace shamrock::cxxstd{
+namespace shambase::cxxstd{
 
     using source_location = std::source_location;
 
-} // namespace shamrock::cxxstd
+} // namespace shambase::cxxstd
