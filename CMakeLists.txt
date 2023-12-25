@@ -122,18 +122,6 @@ endif()
 
 include_directories(external/plf_nanotimer)
 
-######################
-# generate version.cpp
-######################
-#hack to rerun the version generator if ninja/make all
-#cf https://stackoverflow.com/questions/13920072/how-to-always-run-command-when-building-regardless-of-any-dependency
-add_custom_command(
-    OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/src/version.cpp 
-           ${CMAKE_CURRENT_SOURCE_DIR}/src/version__.cpp 
-    COMMAND python3 ${CMAKE_CURRENT_SOURCE_DIR}/buildbot/make_version_file.py ${CMAKE_CURRENT_SOURCE_DIR}/src/version.cpp "${CMAKE_CXX_FLAGS}"
-  )
-
-
 message("-- Shamrock config : ")
 message("     SHAMROCK_USE_PROFILING : ${SHAMROCK_USE_PROFILING}")
 message("     SHAMROCK_USE_NVTX : ${SHAMROCK_USE_NVTX}")
