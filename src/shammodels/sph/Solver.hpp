@@ -212,7 +212,7 @@ namespace shammodels::sph {
                 Tscal t = solver_config.get_time();
 
                 if(t > target_time){
-                    throw shambase::throw_with_loc<std::invalid_argument>("the target time is higher than the current time");
+                    throw shambase::make_except_with_loc<std::invalid_argument>("the target time is higher than the current time");
                 }
 
                 if(t + dt > target_time){

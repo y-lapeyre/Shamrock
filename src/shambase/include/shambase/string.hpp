@@ -40,7 +40,7 @@ namespace shambase {
         try {
             return fmt::format(fmt, args...);
         } catch (const std::exception &e) {
-            throw throw_with_loc<std::invalid_argument>("format failed : " + std::string(e.what()));
+            throw make_except_with_loc<std::invalid_argument>("format failed : " + std::string(e.what()));
         }
     }
 
@@ -59,7 +59,7 @@ namespace shambase {
             return fmt::sprintf(format, args...);
         } catch (const std::exception &e) {
 
-            throw throw_with_loc<std::invalid_argument>(
+            throw make_except_with_loc<std::invalid_argument>(
                 "format failed : " + std::string(e.what()) +
                 "\n fmt string : " + std::string(format)
             );
@@ -206,7 +206,7 @@ namespace shambase {
 
     inline std::string shorten_string(std::string str, u32 len){
         if(len > str.size()){
-            throw throw_with_loc<std::invalid_argument>("the string is too short to be shorten"
+            throw make_except_with_loc<std::invalid_argument>("the string is too short to be shorten"
                 "\n args : "
                 +format("{} : {} \n {} : {}", "str", str, "len", len));
         }
