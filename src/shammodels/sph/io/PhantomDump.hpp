@@ -258,7 +258,7 @@ namespace shammodels::sph {
                 return *tmp;
             }
 
-            throw shambase::throw_with_loc<std::runtime_error>("the entry cannot be found : "+s);
+            throw shambase::make_except_with_loc<std::runtime_error>("the entry cannot be found : "+s);
 
             return {};
         }
@@ -297,7 +297,7 @@ namespace shammodels::sph {
                 return *tmp;
             }
 
-            throw shambase::throw_with_loc<std::runtime_error>("the entry cannot be found");
+            throw shambase::make_except_with_loc<std::runtime_error>("the entry cannot be found");
 
             return {};
         }

@@ -21,7 +21,7 @@
 f64 shammodels::sph::SolverLog::get_last_rate(){
 
     if(step_logs.size() == 0){
-        throw shambase::throw_with_loc<std::runtime_error>("");
+        throw shambase::make_except_with_loc<std::runtime_error>("");
     }
 
     u64 last_id = step_logs.size()-1;
@@ -37,7 +37,7 @@ f64 shammodels::sph::SolverLog::get_last_rate(){
 u64 shammodels::sph::SolverLog::get_last_obj_count(){
 
     if(step_logs.size() == 0){
-        throw shambase::throw_with_loc<std::runtime_error>("");
+        throw shambase::make_except_with_loc<std::runtime_error>("");
     }
 
     u64 last_id = step_logs.size()-1;
