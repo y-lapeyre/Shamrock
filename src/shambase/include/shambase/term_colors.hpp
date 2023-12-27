@@ -9,7 +9,7 @@
 #pragma once
 
 /**
- * @file sycl_utils.hpp
+ * @file term_colors.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @brief
  *
