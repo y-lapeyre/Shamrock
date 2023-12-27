@@ -23,93 +23,17 @@
 #include "shamsys/Log.hpp"
 
 
-
+#include "shambase/term_colors.hpp"
 
 namespace terminal_effects {
     
-    namespace impl {
-        const std::string empty = "";
-
-        const std::string esc_char = "\x1b[";
-
-        const std::string reset = esc_char + "0m";
-
-        const std::string bold = esc_char + "1m";
-        const std::string faint = esc_char + "2m";
-        const std::string underline = esc_char + "4m";
-        const std::string blink = esc_char + "5m";
-
-        namespace colors_foreground_8b {
-            const std::string black =   esc_char + "30m";
-            const std::string red =     esc_char + "31m";
-            const std::string green =   esc_char + "32m";
-            const std::string yellow =  esc_char + "33m";
-            const std::string blue =    esc_char + "34m";
-            const std::string magenta = esc_char + "35m";
-            const std::string cyan =    esc_char + "36m";
-            const std::string white =   esc_char + "37m";
-        }
-    }
-
-    inline std::string empty = "";
-
-    inline std::string esc_char = "\x1b[";
-
-    inline std::string reset = esc_char + "0m";
-
-    inline std::string bold = esc_char + "1m";
-    inline std::string faint = esc_char + "2m";
-    inline std::string underline = esc_char + "4m";
-    inline std::string blink = esc_char + "5m";
-
-    namespace colors_foreground_8b {
-        inline std::string black =   esc_char + "30m";
-        inline std::string red =     esc_char + "31m";
-        inline std::string green =   esc_char + "32m";
-        inline std::string yellow =  esc_char + "33m";
-        inline std::string blue =    esc_char + "34m";
-        inline std::string magenta = esc_char + "35m";
-        inline std::string cyan =    esc_char + "36m";
-        inline std::string white =   esc_char + "37m";
-    }
-    
-    inline bool colored_mode = true;
-
 
     inline void enable_colors(){
-        empty = impl::empty;
-        esc_char = impl::esc_char;
-        reset = impl::reset;
-        bold = impl::bold;
-        faint = impl::faint;
-        underline = impl::underline;
-        blink = impl::blink;
-        colors_foreground_8b::black = impl::colors_foreground_8b::black;
-        colors_foreground_8b::red = impl::colors_foreground_8b::red;
-        colors_foreground_8b::green = impl::colors_foreground_8b::green;
-        colors_foreground_8b::yellow = impl::colors_foreground_8b::yellow;
-        colors_foreground_8b::blue = impl::colors_foreground_8b::blue;
-        colors_foreground_8b::magenta = impl::colors_foreground_8b::magenta;
-        colors_foreground_8b::cyan = impl::colors_foreground_8b::cyan;
-        colors_foreground_8b::white = impl::colors_foreground_8b::white;
+        shambase::term_colors::enable_colors();
     }
 
     inline void disable_colors(){
-        empty = impl::empty;
-        esc_char = impl::empty;
-        reset = impl::empty;
-        bold = impl::empty;
-        faint = impl::empty;
-        underline = impl::empty;
-        blink = impl::empty;
-        colors_foreground_8b::black = impl::empty;
-        colors_foreground_8b::red = impl::empty;
-        colors_foreground_8b::green = impl::empty;
-        colors_foreground_8b::yellow = impl::empty;
-        colors_foreground_8b::blue = impl::empty;
-        colors_foreground_8b::magenta = impl::empty;
-        colors_foreground_8b::cyan = impl::empty;
-        colors_foreground_8b::white = impl::empty;
+        shambase::term_colors::disable_colors();
     }
 
 }
@@ -238,20 +162,20 @@ namespace logger {
 
 
     inline void print_faint_row(){
-        raw_ln(terminal_effects::faint + "-----------------------------------------------------" + terminal_effects::reset);
+        raw_ln(shambase::term_colors::faint() + "-----------------------------------------------------" + shambase::term_colors::reset());
     }
 
     inline i8 loglevel = 0;
 
     #define LIST_LEVEL                                                                                                      \
-    X(debug_alloc, terminal_effects::colors_foreground_8b::red, "Debug Alloc ", 127)                                     \
-    X(debug_mpi, terminal_effects::colors_foreground_8b::blue, "Debug MPI ", 100)                                      \
-    X(debug_sycl, terminal_effects::colors_foreground_8b::magenta, "Debug SYCL", 11)                                        \
-    X(debug, terminal_effects::colors_foreground_8b::green, "Debug ", 10)                                                   \
-    X(info, terminal_effects::colors_foreground_8b::cyan, "", 1)                                                            \
-    X(normal, terminal_effects::bold, "", 0)                                                                                \
-    X(warn, terminal_effects::colors_foreground_8b::yellow, "Warning ", -1)                                                 \
-    X(err, terminal_effects::colors_foreground_8b::red, "Error ", -10)
+    X(debug_alloc, shambase::term_colors::col8b_red(), "Debug Alloc ", 127)                                     \
+    X(debug_mpi, shambase::term_colors::col8b_blue(), "Debug MPI ", 100)                                      \
+    X(debug_sycl, shambase::term_colors::col8b_magenta(), "Debug SYCL", 11)                                        \
+    X(debug, shambase::term_colors::col8b_green(), "Debug ", 10)                                                   \
+    X(info, shambase::term_colors::col8b_cyan(), "", 1)                                                            \
+    X(normal, shambase::term_colors::empty() , "", 0)                                                                \
+    X(warn, shambase::term_colors::col8b_yellow(), "Warning ", -1)                                                 \
+    X(err, shambase::term_colors::col8b_red(), "Error ", -10)
 
 
 
@@ -264,8 +188,8 @@ namespace logger {
                                                                                                                             \
     template <typename... Types> inline void _name(std::string module_name, Types... var2) {                                \
         if (loglevel >= log_##_name) {                                                                                      \
-            std::cout << "[" + (color) + module_name + terminal_effects::reset + "] " + (color) + (loginf) +          \
-                             terminal_effects::reset + ": ";                                                                \
+            std::cout << "[" + (color) + module_name + shambase::term_colors::reset() + "] " + (color) + (loginf) +          \
+                             shambase::term_colors::reset() + ": ";                                                                \
             logger::print(var2...);                                                                                         \
         }                                                                                                                   \
     }                                                                                                                       \

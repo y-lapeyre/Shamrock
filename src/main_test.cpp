@@ -66,8 +66,8 @@ int main(int argc, char *argv[]) {
         logger::print_faint_row();
 
         std::cout << "\n"
-                  << terminal_effects::colors_foreground_8b::cyan + "Git infos " +
-                         terminal_effects::reset + ":\n";
+                  << shambase::term_colors::col8b_cyan() + "Git infos " +
+                        shambase::term_colors::reset() + ":\n";
         std::cout << git_info_str << std::endl;
 
         logger::print_faint_row();
@@ -76,7 +76,7 @@ int main(int argc, char *argv[]) {
 
         logger::raw_ln(
             " - MPI & SYCL init :",
-            terminal_effects::colors_foreground_8b::green + "Ok" + terminal_effects::reset);
+            shambase::term_colors::col8b_green() + "Ok" + shambase::term_colors::reset());
 
         shamsys::instance::print_mpi_capabilities();
 
@@ -121,10 +121,10 @@ int main(int argc, char *argv[]) {
         logger::print_faint_row();
         logger::raw_ln(
             " - Code init",
-            terminal_effects::colors_foreground_8b::green + "DONE" + terminal_effects::reset,
+            shambase::term_colors::col8b_green() + "DONE" + shambase::term_colors::reset(),
             "now it's time to",
-            terminal_effects::colors_foreground_8b::cyan + terminal_effects::blink + "ROCK" +
-                terminal_effects::reset);
+            shambase::term_colors::col8b_cyan() + shambase::term_colors::blink() + "ROCK" +
+                shambase::term_colors::reset());
         logger::print_faint_row();
     }
 
