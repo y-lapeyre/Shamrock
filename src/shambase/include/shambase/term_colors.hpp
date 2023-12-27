@@ -50,19 +50,15 @@ namespace shambase {
             static TermColors get_config_colors() { return {}; }
         };
 
-        inline TermColors _int_term_colors = TermColors::get_config_colors();
+        extern TermColors _int_term_colors;
 
     } // namespace details
 
     namespace term_colors {
 
-        inline void enable_colors() {
-            details::_int_term_colors = details::TermColors::get_config_colors();
-        }
+        void enable_colors();
 
-        inline void disable_colors() {
-            details::_int_term_colors = details::TermColors::get_config_colors();
-        }
+        void disable_colors();
 
         inline const std::string empty() { return ""; };
         inline const std::string reset() { return details::_int_term_colors.reset; };
@@ -70,14 +66,14 @@ namespace shambase {
         inline const std::string faint() { return details::_int_term_colors.faint; };
         inline const std::string underline() { return details::_int_term_colors.underline; };
         inline const std::string blink() { return details::_int_term_colors.blink; };
-        inline const std::string col8b_black() { return details::_int_term_colors.reset; };
-        inline const std::string col8b_red() { return details::_int_term_colors.reset; };
-        inline const std::string col8b_green() { return details::_int_term_colors.reset; };
-        inline const std::string col8b_yellow() { return details::_int_term_colors.reset; };
-        inline const std::string col8b_blue() { return details::_int_term_colors.reset; };
-        inline const std::string col8b_magenta() { return details::_int_term_colors.reset; };
-        inline const std::string col8b_cyan() { return details::_int_term_colors.reset; };
-        inline const std::string col8b_white() { return details::_int_term_colors.reset; };
+        inline const std::string col8b_black() { return details::_int_term_colors.col8b_black; };
+        inline const std::string col8b_red() { return details::_int_term_colors.col8b_red; };
+        inline const std::string col8b_green() { return details::_int_term_colors.col8b_green; };
+        inline const std::string col8b_yellow() { return details::_int_term_colors.col8b_yellow; };
+        inline const std::string col8b_blue() { return details::_int_term_colors.col8b_blue; };
+        inline const std::string col8b_magenta() { return details::_int_term_colors.col8b_magenta; };
+        inline const std::string col8b_cyan() { return details::_int_term_colors.col8b_cyan; };
+        inline const std::string col8b_white() { return details::_int_term_colors.col8b_white; };
 
     } // namespace term_colors
 
