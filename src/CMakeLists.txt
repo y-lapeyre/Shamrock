@@ -13,7 +13,7 @@ add_custom_command(
 
 
 
-set(as_subproject shamunits shambase)
+set(as_subproject shamunits shambase shamcomm)
 
 # This macro originates from Daniel Pfeifer's talk at C++Now 2017:
 # https://www.youtube.com/watch?v=bsXLMQ6WgIk
@@ -26,6 +26,7 @@ endmacro()
 
 add_subdirectory(shamunits)
 add_subdirectory(shambase)
+add_subdirectory(shamcomm)
 
 ######################
 # Shamalgs
@@ -53,6 +54,7 @@ endif()
 
 target_link_libraries(shamalgs PUBLIC shamunits)
 target_link_libraries(shamalgs PUBLIC shambase)
+target_link_libraries(shamalgs PUBLIC shamcomm)
 
 
 
@@ -83,6 +85,7 @@ endif()
 
 target_link_libraries(shamrock_lib PUBLIC shamunits)
 target_link_libraries(shamrock_lib PUBLIC shambase)
+target_link_libraries(shamrock_lib PUBLIC shamcomm)
 
 
 
@@ -107,6 +110,7 @@ target_link_libraries(shamrock PUBLIC shamalgs)
 target_link_libraries(shamrock PUBLIC MPI::MPI_C)
 target_link_libraries(shamrock PUBLIC shamunits)
 target_link_libraries(shamrock PUBLIC shambase)
+target_link_libraries(shamrock PUBLIC shamcomm)
 
 
 
@@ -140,6 +144,7 @@ if("${BUILD_TEST}")
     target_link_libraries(shamrock_test PUBLIC shamalgs)
     target_link_libraries(shamrock_test PUBLIC shamunits)
     target_link_libraries(shamrock_test PUBLIC shambase)
+    target_link_libraries(shamrock_test PUBLIC shamcomm)
 
     
     target_include_directories(shamrock_test PUBLIC "${CMAKE_SOURCE_DIR}/src")
@@ -167,10 +172,10 @@ add_subdirectory(shambindings)
 
 add_subdirectory(shamalgs)
 add_subdirectory(shammath)
-add_subdirectory(shamcomm)
 
 add_subdirectory(shamrock)
 add_subdirectory(shammodels)
+add_subdirectory(shambackends)
 
 #add_subdirectory(runscript)
 
