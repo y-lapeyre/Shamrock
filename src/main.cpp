@@ -98,7 +98,7 @@ int main(int argc, char *argv[]) {
     }
 
     if(opts::has_option("--nocolor")){
-        terminal_effects::disable_colors();
+        shambase::term_colors::disable_colors();
     }
 
 
