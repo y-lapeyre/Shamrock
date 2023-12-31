@@ -54,7 +54,7 @@ int main(int argc, char *argv[]) {
             logger::err_ln("Cmd OPT", "you must select a loglevel in a 8bit integer range");
         }
 
-        logger::loglevel = a;
+        logger::set_loglevel(a);
     }
 
     if (opts::has_option("--sycl-cfg")) {
@@ -92,11 +92,11 @@ int main(int argc, char *argv[]) {
     if (shamcomm::world_rank() == 0) {
         logger::print_faint_row();
         logger::raw_ln("log status : ");
-        if (logger::loglevel == i8_max) {
+        if (logger::get_loglevel() == i8_max) {
             logger::raw_ln("If you've seen spam in your life i can garantee you, this is worst");
         }
 
-        logger::raw_ln(" - Loglevel :", u32(logger::loglevel), ", enabled log types : ");
+        logger::raw_ln(" - Loglevel :", u32(logger::get_loglevel()), ", enabled log types : ");
         logger::print_active_level();
     }
 
