@@ -163,3 +163,11 @@ namespace shamcomm::logs {
     #undef IsActivePrint
 
 } // namespace shamcomm::logs
+
+
+namespace logger {
+
+    using namespace shamcomm::logs;
+    
+}
+

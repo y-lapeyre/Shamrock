@@ -28,25 +28,4 @@
 
 
 
-namespace logger {
-
-    
-
-    
-    
-    using namespace shamcomm::logs;
-    
-
-
-
-
-
-
-
-
-    
-}
-
-
-
 
