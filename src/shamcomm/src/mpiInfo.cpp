@@ -13,8 +13,10 @@
  *
  */
 
-#include "mpiInfo.hpp"
-#include "shamsys/legacy/log.hpp"
+#include "shamcomm/mpiInfo.hpp"
+#include "fmt/core.h"
+#include "shambase/term_colors.hpp"
+#include "shamcomm/logs.hpp"
 
 namespace shamcomm {
 
@@ -53,19 +55,19 @@ namespace shamcomm {
     void print_mpi_capabilities() {
         using namespace shambase::term_colors;
         if (mpi_cuda_aware == Yes) {
-            logger::raw_ln(" - MPI CUDA-AWARE :", col8b_green() + "Yes" + reset());
+            logs::print_ln(" - MPI CUDA-AWARE :", col8b_green() + "Yes" + reset());
         } else if (mpi_cuda_aware == No) {
-            logger::raw_ln(" - MPI CUDA-AWARE :", col8b_red() + "No" + reset());
+            logs::print_ln(" - MPI CUDA-AWARE :", col8b_red() + "No" + reset());
         } else if (mpi_cuda_aware == Unknown) {
-            logger::raw_ln(" - MPI CUDA-AWARE :", col8b_yellow() + "Unknown" + reset());
+            logs::print_ln(" - MPI CUDA-AWARE :", col8b_yellow() + "Unknown" + reset());
         }
 
         if (mpi_rocm_aware == Yes) {
-            logger::raw_ln(" - MPI ROCM-AWARE :", col8b_green() + "Yes" + reset());
+            logs::print_ln(" - MPI ROCM-AWARE :", col8b_green() + "Yes" + reset());
         } else if (mpi_rocm_aware == No) {
-            logger::raw_ln(" - MPI ROCM-AWARE :", col8b_red() + "No" + reset());
+            logs::print_ln(" - MPI ROCM-AWARE :", col8b_red() + "No" + reset());
         } else if (mpi_rocm_aware == Unknown) {
-            logger::raw_ln(" - MPI ROCM-AWARE :", col8b_yellow() + "Unknown" + reset());
+            logs::print_ln(" - MPI ROCM-AWARE :", col8b_yellow() + "Unknown" + reset());
         }
     }
 } // namespace shamcomm
