@@ -24,13 +24,13 @@ namespace shamcomm::details {
 
 
     void CommunicationBuffer<CopyToHost>::alloc_usm(u64 len){
-        usm_ptr = sycl::malloc_host<u8>(len,sham::get_queue());
+        usm_ptr = sycl::malloc_host<u8>(len,bind_queue);
     }
 
     void CommunicationBuffer<CopyToHost>::copy_to_usm(sycl::buffer<u8> & obj_ref, u64 len){   
         sycl::host_accessor acc {obj_ref, sycl::read_only};
         const u8* tmp = acc.get_pointer();
-        sham::get_queue().memcpy(usm_ptr, tmp, len).wait();
+        bind_queue.memcpy(usm_ptr, tmp, len).wait();
     }
 
     sycl::buffer<u8> CommunicationBuffer<CopyToHost>::build_from_usm(u64 len){
@@ -38,13 +38,13 @@ namespace shamcomm::details {
         {
             sycl::host_accessor acc {buf_ret, sycl::write_only, sycl::no_init};
             u8* tmp = acc.get_pointer();
-            sham::get_queue().memcpy(tmp, usm_ptr, len).wait();
+            bind_queue.memcpy(tmp, usm_ptr, len).wait();
         }
         return buf_ret;
     }
 
     void CommunicationBuffer<CopyToHost>::copy_usm(u64 len, u8* new_usm){
-        sham::get_queue().memcpy(new_usm, usm_ptr, len).wait();
+        bind_queue.memcpy(new_usm, usm_ptr, len).wait();
     }
 
 
@@ -55,13 +55,13 @@ namespace shamcomm::details {
 
     
     void CommunicationBuffer<DirectGPU>::alloc_usm(u64 len){
-        usm_ptr = sycl::malloc_device<u8>(len,sham::get_queue());
+        usm_ptr = sycl::malloc_device<u8>(len,bind_queue);
     }
 
     
     void CommunicationBuffer<DirectGPU>::copy_to_usm(sycl::buffer<u8> & obj_ref, u64 len){
         
-        auto ev = sham::get_queue().submit([&](sycl::handler & cgh){
+        auto ev = bind_queue.submit([&](sycl::handler & cgh){
             
             sycl::accessor acc_buf {obj_ref, cgh, sycl::read_only};
 
@@ -83,7 +83,7 @@ namespace shamcomm::details {
         sycl::buffer<u8> buf_ret (len);
 
 
-        auto ev = sham::get_queue().submit([&](sycl::handler & cgh){
+        auto ev = bind_queue.submit([&](sycl::handler & cgh){
             
             sycl::accessor acc_buf {buf_ret, cgh,sycl::write_only, sycl::no_init};
 
@@ -103,7 +103,7 @@ namespace shamcomm::details {
     
     void CommunicationBuffer<DirectGPU>::copy_usm(u64 len, u8* new_usm){
 
-        auto ev = sham::get_queue().submit([&](sycl::handler & cgh){
+        auto ev = bind_queue.submit([&](sycl::handler & cgh){
             
             u8* ptr = usm_ptr;
 

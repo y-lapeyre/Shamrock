@@ -16,6 +16,7 @@
  */
 
 #include "shambackends/sycl.hpp"
+#include "shambase/memory.hpp"
 
 namespace sham::queues {
     enum QueueKind { Compute, Alternative };
@@ -24,6 +25,10 @@ namespace sham::queues {
         std::unique_ptr<sycl::queue> queue;
         u32 queue_global_id;
         bool direct_mpi_comm_capable = false;
+
+        inline sycl::queue & get_queue(){
+            return shambase::get_check_ref(queue);
+        }
     };
 
 } // namespace sham::queues
@@ -52,6 +57,5 @@ namespace sham {
     queues::QueueDetails &get_queue_details(u32 id = 0, queues::QueueKind kind = queues::Compute);
 
     sycl::queue &get_queue(u32 id = 0, queues::QueueKind kind = queues::Compute);
-
 
 } // namespace sham
