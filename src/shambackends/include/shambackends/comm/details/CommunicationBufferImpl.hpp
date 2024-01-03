@@ -15,9 +15,9 @@
  */
 
 #include "shambase/exception.hpp"
+#include "shambackends/queues.hpp"
 #include "shambackends/typeAliasVec.hpp"
 #include "shambackends/sycl.hpp"
-#include "shamsys/NodeInstance.hpp"
 #include <stdexcept>
 #include <variant>
 
@@ -37,7 +37,7 @@ namespace shamcomm {
     };
 
     inline CommunicationProtocol get_protocol(){
-        if(shamsys::instance::is_direct_gpu_selected()){
+        if(sham::direct_mpi_comm_enabled()){
             return DirectGPU;
         }else{
             return CopyToHost;
@@ -83,7 +83,7 @@ namespace shamcomm {
             }
 
             inline ~CommunicationBuffer(){
-                sycl::free(usm_ptr,shamsys::instance::get_compute_queue());
+                sycl::free(usm_ptr,sham::get_queue());
             }
 
             inline CommunicationBuffer(CommunicationBuffer&& other) noexcept : 
@@ -161,7 +161,7 @@ namespace shamcomm {
             }
 
             inline ~CommunicationBuffer(){
-                sycl::free(usm_ptr,shamsys::instance::get_compute_queue());
+                sycl::free(usm_ptr,sham::get_queue());
             }
 
             inline CommunicationBuffer(CommunicationBuffer&& other) noexcept : 

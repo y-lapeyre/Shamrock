@@ -13,7 +13,7 @@ add_custom_command(
 
 
 
-set(as_subproject shamunits shambase shamcomm)
+set(as_subproject shamunits shambase shamcomm shambackends)
 
 # This macro originates from Daniel Pfeifer's talk at C++Now 2017:
 # https://www.youtube.com/watch?v=bsXLMQ6WgIk
@@ -27,6 +27,7 @@ endmacro()
 add_subdirectory(shamunits)
 add_subdirectory(shambase)
 add_subdirectory(shamcomm)
+add_subdirectory(shambackends)
 
 ######################
 # Shamalgs
@@ -48,6 +49,7 @@ endif()
 target_link_libraries(shamalgs PUBLIC shamunits)
 target_link_libraries(shamalgs PUBLIC shambase)
 target_link_libraries(shamalgs PUBLIC shamcomm)
+target_link_libraries(shamalgs PUBLIC shambackends)
 
 
 
@@ -78,6 +80,7 @@ endif()
 target_link_libraries(shamrock_lib PUBLIC shamunits)
 target_link_libraries(shamrock_lib PUBLIC shambase)
 target_link_libraries(shamrock_lib PUBLIC shamcomm)
+target_link_libraries(shamrock_lib PUBLIC shambackends)
 
 
 
@@ -165,7 +168,6 @@ add_subdirectory(shammath)
 
 add_subdirectory(shamrock)
 add_subdirectory(shammodels)
-add_subdirectory(shambackends)
 
 #add_subdirectory(runscript)
 
