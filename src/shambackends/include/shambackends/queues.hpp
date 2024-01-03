@@ -21,38 +21,39 @@
 namespace sham::queues {
     enum QueueKind { Compute, Alternative };
 
-    struct QueueDetails{
+    struct QueueDetails {
         std::unique_ptr<sycl::queue> queue;
         u32 queue_global_id;
         bool direct_mpi_comm_capable = false;
 
-        inline sycl::queue & get_queue(){
-            return shambase::get_check_ref(queue);
-        }
+        inline sycl::queue &get_queue() { return shambase::get_check_ref(queue); }
     };
 
 } // namespace sham::queues
 namespace sham {
 
-    struct InitConfig {
-        struct ById {
-            u32 alt_queue_id;
-            u32 compute_queue_id;
+    namespace backend {
+
+        struct InitConfig {
+            struct ById {
+                u32 alt_queue_id;
+                u32 compute_queue_id;
+            };
+            struct ByKey {
+                std::string platform_search_key;
+            };
         };
-        struct ByKey {
-            std::string platform_search_key;
-        };
-    };
 
-    void init_backend(InitConfig cfg);
+        void init(InitConfig cfg);
 
-    void init_backend_manual(
-        std::vector<queues::QueueDetails> &&compute,
-        std::vector<queues::QueueDetails> &&alternative);
+        void init_manual(
+            std::vector<queues::QueueDetails> &&compute,
+            std::vector<queues::QueueDetails> &&alternative);
 
-    bool is_initialized();
+        bool is_initialized();
 
-    void close_backends();
+        void close();
+    } // namespace backend
 
     queues::QueueDetails &get_queue_details(u32 id = 0, queues::QueueKind kind = queues::Compute);
 

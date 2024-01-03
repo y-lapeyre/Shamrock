@@ -81,7 +81,7 @@ namespace sham::queues {
 // Init close related routines
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-void sham::init_backend_manual(
+void sham::backend::init_manual(
     std::vector<queues::QueueDetails> &&compute,
     std::vector<queues::QueueDetails> &&alternative) {
 
@@ -108,13 +108,13 @@ void sham::init_backend_manual(
     }
 }
 
-void sham::close_backends() {
+void sham::backend::close() {
     queues::initialized = false;
     queues::compute.clear();
     queues::alternative.clear();
 }
 
-bool sham::is_initialized() { return queues::initialized; }
+bool sham::backend::is_initialized() { return queues::initialized; }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 // User side impl
@@ -123,7 +123,7 @@ bool sham::is_initialized() { return queues::initialized; }
 namespace sham::impl {
 
     sham::queues::QueueDetails &_int_get_compute_queue(u32 id) {
-        if (id < sham::queues::compute.size()) {
+        if (id >= sham::queues::compute.size()) {
             shambase::throw_with_loc<std::invalid_argument>("the id is larger than the queue list");
         }
 
@@ -131,7 +131,7 @@ namespace sham::impl {
     }
 
     sham::queues::QueueDetails &_int_get_alternative_queue(u32 id) {
-        if (id < sham::queues::alternative.size()) {
+        if (id >= sham::queues::alternative.size()) {
             shambase::throw_with_loc<std::invalid_argument>("the id is larger than the queue list");
         }
 

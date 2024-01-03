@@ -48,7 +48,7 @@ namespace shamcomm {
         using Protocol = CommunicationProtocol;
 
         public:
-        inline CommunicationBuffer(u64 bytelen, sham::queues::QueueDetails &queue_details) {
+        inline CommunicationBuffer(u64 bytelen, sham::queues::QueueDetails &queue_details = sham::get_queue_details()) {
             Protocol comm_mode = get_protocol(queue_details);
             if (comm_mode == CopyToHost) {
                 _int_type = std::make_unique<details::CommunicationBuffer<CopyToHost>>(bytelen, queue_details.get_queue());
@@ -59,7 +59,7 @@ namespace shamcomm {
             }
         }
 
-        inline CommunicationBuffer(sycl::buffer<u8> &bytebuf, sham::queues::QueueDetails &queue_details) {
+        inline CommunicationBuffer(sycl::buffer<u8> &bytebuf, sham::queues::QueueDetails &queue_details = sham::get_queue_details()) {
             Protocol comm_mode = get_protocol(queue_details);
             if (comm_mode == CopyToHost) {
                 _int_type = std::make_unique<details::CommunicationBuffer<CopyToHost>>(bytebuf, queue_details.get_queue());
@@ -70,7 +70,7 @@ namespace shamcomm {
             }
         }
 
-        inline CommunicationBuffer(sycl::buffer<u8> &&bytebuf, sham::queues::QueueDetails &queue_details) {
+        inline CommunicationBuffer(sycl::buffer<u8> &&bytebuf, sham::queues::QueueDetails &queue_details = sham::get_queue_details()) {
             Protocol comm_mode = get_protocol(queue_details);
             if (comm_mode == CopyToHost) {
                 _int_type = std::make_unique<details::CommunicationBuffer<CopyToHost>>(
