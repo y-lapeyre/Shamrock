@@ -46,13 +46,13 @@ TestStart(Unittest, "shamsys/comm/CommunicationBuffer/constructor", test_basic_s
     sycl::buffer<u8> buf_comp = shamalgs::random::mock_buffer<u8>(0x111, nbytes);
 
     {
-        shamcomm::CommunicationBuffer cbuf {buf_comp, shamcomm::CopyToHost};
+        shamcomm::CommunicationBuffer cbuf {buf_comp, sham::get_queue_details()};
         sycl::buffer<u8> ret = cbuf.copy_back();
         check_buf("copy to host mode", buf_comp, ret);
     }
 
     {
-        shamcomm::CommunicationBuffer cbuf {buf_comp, shamcomm::DirectGPU};
+        shamcomm::CommunicationBuffer cbuf {buf_comp, sham::get_queue_details()};
         sycl::buffer<u8> ret = cbuf.copy_back();
         check_buf("copy to host mode", buf_comp, ret);
     }
