@@ -105,6 +105,7 @@ target_link_libraries(shamrock PUBLIC shamalgs)
 target_link_libraries(shamrock PUBLIC shamunits)
 target_link_libraries(shamrock PUBLIC shambase)
 target_link_libraries(shamrock PUBLIC shamcomm)
+target_link_libraries(shamrock PUBLIC shambackends)
 
 
 
@@ -138,6 +139,7 @@ if("${BUILD_TEST}")
     target_link_libraries(shamrock_test PUBLIC shamunits)
     target_link_libraries(shamrock_test PUBLIC shambase)
     target_link_libraries(shamrock_test PUBLIC shamcomm)
+    target_link_libraries(shamrock_test PUBLIC shambackends)
 
     
     target_include_directories(shamrock_test PUBLIC "${CMAKE_SOURCE_DIR}/src")
