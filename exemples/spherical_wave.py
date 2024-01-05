@@ -40,6 +40,7 @@ cfg = model.gen_default_config()
 #cfg.set_artif_viscosity_VaryingMM97(alpha_min = 0.1,alpha_max = 1,sigma_decay = 0.1, alpha_u = 1, beta_AV = 2)
 cfg.set_artif_viscosity_VaryingCD10(alpha_min = 0.0,alpha_max = 1,sigma_decay = 0.1, alpha_u = 1, beta_AV = 2)
 cfg.set_boundary_periodic()
+cfg.set_eos_adiabatic(gamma)
 cfg.print_status()
 model.set_solver_config(cfg)
 
@@ -83,45 +84,12 @@ model.set_particle_mass(pmass)
 
 
 tot_u = pmass*model.get_sum("uint","f64")
-#print("total u :",tot_u)
-
-#a = input("continue ?")
-
-
 
 model.set_cfl_cour(0.3)
 model.set_cfl_force(0.25)
-model.set_eos_gamma(5/3)
 
-
-
-
-
-#for i in range(9):
-#    model.evolve(5e-4, False, False, "", False)
-
-
-t_sum = 0
 t_target = 0.1
-current_dt = 1e-7
-i = 0
-i_dump = 0
-while t_sum < t_target:
-
-    #print("step : t=",t_sum)
-    
-    next_dt = model.evolve(t_sum,current_dt, True, "dump_"+str(i_dump)+".vtk", True)
-
-    if i % 1 == 0:
-        i_dump += 1
-
-    t_sum += current_dt
-    current_dt = next_dt
-
-    if (t_target - t_sum) < next_dt:
-        current_dt = t_target - t_sum
-
-    i+= 1
+model.evolve_until(t_target)
 
 
 import numpy as np

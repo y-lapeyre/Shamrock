@@ -16,13 +16,12 @@
  */
 
 #include "AMRCell.hpp"
-#include "aliases.hpp"
 #include "shamalgs/algorithm.hpp"
 #include "shamalgs/memory.hpp"
 #include "shamalgs/numeric.hpp"
 #include "shambase/DistributedData.hpp"
 #include "shambase/sycl_utils.hpp"
-#include "shamrock/scheduler/scheduler_mpi.hpp"
+#include "shamrock/scheduler/PatchScheduler.hpp"
 #include "shamrock/tree/RadixTreeMortonBuilder.hpp"
 #include "shamsys/legacy/log.hpp"
 #include <vector>

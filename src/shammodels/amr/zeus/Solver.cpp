@@ -14,6 +14,7 @@
  */
  
 #include "shammodels/amr/zeus/Solver.hpp"
+#include "shamcomm/collectives.hpp"
 #include "shammodels/amr/zeus/modules/AMRTree.hpp"
 #include "shammodels/amr/zeus/modules/ComputePressure.hpp"
 #include "shammodels/amr/zeus/modules/DiffOperator.hpp"
@@ -40,6 +41,10 @@ auto Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tscal dt_input) -> Tsc
 
     shambase::Timer tstep;
     tstep.start();
+
+    scheduler().update_local_load_value([&](shamrock::patch::Patch p){
+        return scheduler().patch_data.owned_data.get(p.id_patch).get_obj_cnt();
+    });
 
     SerialPatchTree<TgridVec> _sptree = SerialPatchTree<TgridVec>::build(scheduler());
     _sptree.attach_buf();
@@ -354,7 +359,7 @@ auto Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tscal dt_input) -> Tsc
 
         if (mpdat.pdat.has_nan()) {
             logger::err_ln("[Zeus]", "nan detected in write back");
-            throw shambase::throw_with_loc<std::runtime_error>("detected nan");
+            throw shambase::make_except_with_loc<std::runtime_error>("detected nan");
         }
 
     });
@@ -531,7 +536,7 @@ auto Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tscal dt_input) -> Tsc
         );
 
     std::string gathered = "";
-    shamalgs::collective::gather_str(log_rank_rate, gathered);
+    shamcomm::gather_str(log_rank_rate, gathered);
 
     if(shamcomm::world_rank() == 0){
         std::string print = "processing rate infos : \n";

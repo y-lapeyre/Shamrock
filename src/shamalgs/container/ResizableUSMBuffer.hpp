@@ -15,7 +15,6 @@
  * 
  */
  
-#include "aliases.hpp"
 #include "shamalgs/container/BufferEventHandler.hpp"
 #include "shambase/exception.hpp"
 #include "shambase/stacktrace.hpp"
@@ -157,7 +156,7 @@ namespace shamalgs {
 
         inline T const *get_usm_ptr_read_only(std::vector<sycl::event> &depends_list) {
             if (is_empty()) {
-                throw shambase::throw_with_loc<std::runtime_error>(
+                throw shambase::make_except_with_loc<std::runtime_error>(
                     "the usm buffer is not allocated");
             }
 
@@ -168,7 +167,7 @@ namespace shamalgs {
 
         inline T *get_usm_ptr(std::vector<sycl::event> &depends_list) {
             if (is_empty()) {
-                throw shambase::throw_with_loc<std::runtime_error>(
+                throw shambase::make_except_with_loc<std::runtime_error>(
                     "the usm buffer is not allocated");
             }
 

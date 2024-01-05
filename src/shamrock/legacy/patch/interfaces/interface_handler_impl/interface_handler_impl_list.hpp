@@ -15,9 +15,7 @@
  * 
  */
 
-#include "aliases.hpp"
-
-#include "shamrock/scheduler/scheduler_mpi.hpp"
+#include "shamrock/scheduler/PatchScheduler.hpp"
 #include "shamrock/legacy/patch/simulation_domain.hpp"
 #include "shamrock/scheduler/SerialPatchTree.hpp"
 

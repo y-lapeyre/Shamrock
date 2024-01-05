@@ -3,7 +3,7 @@
    <img alt="text" src="doc/logosham_white.png" width="600">
  </picture>
  
-CI status: ![badge1](https://github.com/tdavidcl/Shamrock/actions/workflows/main.yml/badge.svg?branch=main)  
+CI status: ![badge1](https://github.com/tdavidcl/Shamrock/actions/workflows/source_checks.yml/badge.svg?branch=main)  ![badge1](https://github.com/tdavidcl/Shamrock/actions/workflows/shamrock-dpcpp.yml/badge.svg?branch=main)  ![badge1](https://github.com/tdavidcl/Shamrock/actions/workflows/shamrock-acpp-clang15.yml/badge.svg?branch=main)  ![badge1](https://github.com/tdavidcl/Shamrock/actions/workflows/shamrock-acpp-clang15-asan.yml/badge.svg?branch=main)  
 
 # The Shamrock code
 
@@ -52,7 +52,7 @@ AdaptiveCPP SSCP | ![badge2](https://badgen.net/static/ACPP%2FSSCP/yes/green)
 # Documentation
 
 We provide both a book like documentation and the more classic doxygen style for more details about the sources
- - The documentation is available here: [mdbook doc](https://tdavidcl.github.io/Shamrock/mdbook/index.html)
+ - The documentation is available here: [mkdocs doc](https://tdavidcl.github.io/Shamrock/mkdocs/index.html)
  - The doxygen doc is available here: [doxygen](https://tdavidcl.github.io/Shamrock/doxygen/index.html)
 
 # Getting started

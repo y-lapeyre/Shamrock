@@ -14,7 +14,6 @@
  * @brief
  */
 
-#include "aliases.hpp"
 #include "shamalgs/collective/reduction.hpp"
 #include "shambase/exception.hpp"
 #include "shammath/CoordRange.hpp"
@@ -161,10 +160,9 @@ namespace shamrock::patch {
 
         if (!pdl.check_main_field_type<T>()) {
 
-            throw std::invalid_argument(
-                __LOC_PREFIX__ +
-                "the chosen type for the main field does not match the required template type\n" +
-                "call : " + __PRETTY_FUNCTION__
+            throw shambase::make_except_with_loc<std::invalid_argument>(
+                "the chosen type for the main field does not match the required template type\n" 
+                "call : " + std::string(__PRETTY_FUNCTION__)
             );
         }
 
@@ -172,10 +170,9 @@ namespace shamrock::patch {
 
         if (!pval) {
 
-            throw std::invalid_argument(
-                __LOC_PREFIX__ +
-                "the type in SimulationBoxInfo does not match the one in the layout\n" +
-                "call : " + __PRETTY_FUNCTION__
+            throw shambase::make_except_with_loc<std::invalid_argument>(
+                "the type in SimulationBoxInfo does not match the one in the layout\n" 
+                "call : " + std::string(__PRETTY_FUNCTION__)
             );
         }
 
@@ -183,12 +180,13 @@ namespace shamrock::patch {
     }
 
     template <class T> inline void SimulationBoxInfo::set_bounding_box(shammath::CoordRange<T> new_box) {
+        new_box.check_throw_ranges();
         if (pdl.check_main_field_type<T>()) {
             bounding_box.value = new_box;
         } else {
-            throw std::runtime_error(
-                __LOC_PREFIX__ + "The main field is not of the required type\n" +
-                "call : " + __PRETTY_FUNCTION__
+            throw shambase::make_except_with_loc<std::invalid_argument>(
+                "The main field is not of the required type\n" 
+                "call : " + std::string(__PRETTY_FUNCTION__)
             );
         }
     }
@@ -200,7 +198,7 @@ namespace shamrock::patch {
         shammath::CoordRange<T>tmp {bmin,bmax};
 
         if(tmp.is_err_mode()){
-            throw shambase::throw_with_loc<std::runtime_error>("the box size is not set, please resize the box to the domain size");
+            throw shambase::make_except_with_loc<std::runtime_error>("the box size is not set, please resize the box to the domain size");
         }
 
         return PatchCoordTransform<T>{ patch_coord_bounding_box.get_patch_range(), tmp };
@@ -232,7 +230,7 @@ namespace shamrock::patch {
         } else if (pdl.check_main_field_type<i64_3>()) {
             bounding_box.value = shammath::CoordRange<i64_3>::max_range();
         } else {
-            throw shambase::throw_with_loc<std::runtime_error>("the chosen type for the main field is not handled");
+            throw shambase::make_except_with_loc<std::runtime_error>("the chosen type for the main field is not handled");
         }
     }
 } // namespace shamrock::patch

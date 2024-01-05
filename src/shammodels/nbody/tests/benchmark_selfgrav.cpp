@@ -13,11 +13,10 @@
  * 
  */
  
-#include "aliases.hpp"
 
 #include "shambase/time.hpp"
 #include "shamrock/patch/PatchDataLayout.hpp"
-#include "shamrock/scheduler/scheduler_mpi.hpp"
+#include "shamrock/scheduler/PatchScheduler.hpp"
 
 #include "shammodels/nbody/models/nbody_selfgrav.hpp"
 #include "shammodels/nbody/setup/nbody_setup.hpp"

@@ -15,12 +15,11 @@
  * 
  */
 
-#include "aliases.hpp"
 #include "shamalgs/collective/exchanges.hpp"
 #include "shamrock/patch/Patch.hpp"
 #include <vector>
 
-#include "shamrock/scheduler/scheduler_mpi.hpp"
+#include "shamrock/scheduler/PatchScheduler.hpp"
 
 
 

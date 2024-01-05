@@ -15,14 +15,13 @@
  * 
  */
 
-#include "aliases.hpp"
 #include "shamrock/legacy/patch/base/enabled_fields.hpp"
 #include "shamrock/legacy/patch/base/patchdata_field.hpp"
 #include "shamrock/legacy/patch/utility/merged_patch.hpp"
 #include "shamrock/patch/Patch.hpp"
 #include "shamrock/legacy/patch/base/patchdata.hpp"
 #include "shamrock/patch/PatchDataLayout.hpp"
-#include "shamrock/scheduler/scheduler_mpi.hpp"
+#include "shamrock/scheduler/PatchScheduler.hpp"
 #include "shamsys/legacy/sycl_mpi_interop.hpp"
 #include <stdexcept>
 #include <string>
@@ -78,7 +77,7 @@ inline void file_write_patchdata(MPI_File & mfilepatch , shamrock::patch::PatchD
         u32 obj_cnt = a.get_obj_cnt();
         u32 nvar = a.get_nvar();
 
-        if(sz.size() > 64) throw shambase::throw_with_loc<std::runtime_error>("field name must be shorter than 64 chars");
+        if(sz.size() > 64) throw shambase::make_except_with_loc<std::runtime_error>("field name must be shorter than 64 chars");
 
         sz.resize(64);
 
@@ -96,7 +95,7 @@ inline void file_write_patchdata(MPI_File & mfilepatch , shamrock::patch::PatchD
         u32 obj_cnt = a.get_obj_cnt();
         u32 nvar = a.get_nvar();
 
-        if(sz.size() > 64) throw shambase::throw_with_loc<std::runtime_error>("field name must be shorter than 64 chars");
+        if(sz.size() > 64) throw shambase::make_except_with_loc<std::runtime_error>("field name must be shorter than 64 chars");
 
         sz.resize(64);
 
@@ -114,7 +113,7 @@ inline void file_write_patchdata(MPI_File & mfilepatch , shamrock::patch::PatchD
         u32 obj_cnt = a.get_obj_cnt();
         u32 nvar = a.get_nvar();
 
-        if(sz.size() > 64) throw shambase::throw_with_loc<std::runtime_error>("field name must be shorter than 64 chars");
+        if(sz.size() > 64) throw shambase::make_except_with_loc<std::runtime_error>("field name must be shorter than 64 chars");
 
         sz.resize(64);
 
@@ -132,7 +131,7 @@ inline void file_write_patchdata(MPI_File & mfilepatch , shamrock::patch::PatchD
         u32 obj_cnt = a.get_obj_cnt();
         u32 nvar = a.get_nvar();
 
-        if(sz.size() > 64) throw shambase::throw_with_loc<std::runtime_error>("field name must be shorter than 64 chars");
+        if(sz.size() > 64) throw shambase::make_except_with_loc<std::runtime_error>("field name must be shorter than 64 chars");
 
         sz.resize(64);
 
@@ -150,7 +149,7 @@ inline void file_write_patchdata(MPI_File & mfilepatch , shamrock::patch::PatchD
         u32 obj_cnt = a.get_obj_cnt();
         u32 nvar = a.get_nvar();
 
-        if(sz.size() > 64) throw shambase::throw_with_loc<std::runtime_error>("field name must be shorter than 64 chars");
+        if(sz.size() > 64) throw shambase::make_except_with_loc<std::runtime_error>("field name must be shorter than 64 chars");
 
         sz.resize(64);
 
@@ -168,7 +167,7 @@ inline void file_write_patchdata(MPI_File & mfilepatch , shamrock::patch::PatchD
         u32 obj_cnt = a.get_obj_cnt();
         u32 nvar = a.get_nvar();
 
-        if(sz.size() > 64) throw shambase::throw_with_loc<std::runtime_error>("field name must be shorter than 64 chars");
+        if(sz.size() > 64) throw shambase::make_except_with_loc<std::runtime_error>("field name must be shorter than 64 chars");
 
         sz.resize(64);
 
@@ -192,7 +191,7 @@ inline void file_write_patchdata(MPI_File & mfilepatch , shamrock::patch::PatchD
         u32 obj_cnt = a.get_obj_cnt();
         u32 nvar = a.get_nvar();
 
-        if(sz.size() > 64) throw shambase::throw_with_loc<std::runtime_error>("field name must be shorter than 64 chars");
+        if(sz.size() > 64) throw shambase::make_except_with_loc<std::runtime_error>("field name must be shorter than 64 chars");
 
         sz.resize(64);
 
@@ -210,7 +209,7 @@ inline void file_write_patchdata(MPI_File & mfilepatch , shamrock::patch::PatchD
         u32 obj_cnt = a.get_obj_cnt();
         u32 nvar = a.get_nvar();
 
-        if(sz.size() > 64) throw shambase::throw_with_loc<std::runtime_error>("field name must be shorter than 64 chars");
+        if(sz.size() > 64) throw shambase::make_except_with_loc<std::runtime_error>("field name must be shorter than 64 chars");
 
         sz.resize(64);
 
@@ -228,7 +227,7 @@ inline void file_write_patchdata(MPI_File & mfilepatch , shamrock::patch::PatchD
         u32 obj_cnt = a.get_obj_cnt();
         u32 nvar = a.get_nvar();
 
-        if(sz.size() > 64) throw shambase::throw_with_loc<std::runtime_error>("field name must be shorter than 64 chars");
+        if(sz.size() > 64) throw shambase::make_except_with_loc<std::runtime_error>("field name must be shorter than 64 chars");
 
         sz.resize(64);
 
@@ -246,7 +245,7 @@ inline void file_write_patchdata(MPI_File & mfilepatch , shamrock::patch::PatchD
         u32 obj_cnt = a.get_obj_cnt();
         u32 nvar = a.get_nvar();
 
-        if(sz.size() > 64) throw shambase::throw_with_loc<std::runtime_error>("field name must be shorter than 64 chars");
+        if(sz.size() > 64) throw shambase::make_except_with_loc<std::runtime_error>("field name must be shorter than 64 chars");
 
         sz.resize(64);
 
@@ -264,7 +263,7 @@ inline void file_write_patchdata(MPI_File & mfilepatch , shamrock::patch::PatchD
         u32 obj_cnt = a.get_obj_cnt();
         u32 nvar = a.get_nvar();
 
-        if(sz.size() > 64) throw shambase::throw_with_loc<std::runtime_error>("field name must be shorter than 64 chars");
+        if(sz.size() > 64) throw shambase::make_except_with_loc<std::runtime_error>("field name must be shorter than 64 chars");
 
         sz.resize(64);
 
@@ -282,7 +281,7 @@ inline void file_write_patchdata(MPI_File & mfilepatch , shamrock::patch::PatchD
         u32 obj_cnt = a.get_obj_cnt();
         u32 nvar = a.get_nvar();
 
-        if(sz.size() > 64) throw shambase::throw_with_loc<std::runtime_error>("field name must be shorter than 64 chars");
+        if(sz.size() > 64) throw shambase::make_except_with_loc<std::runtime_error>("field name must be shorter than 64 chars");
 
         sz.resize(64);
 
@@ -303,7 +302,7 @@ inline void file_write_patchdata(MPI_File & mfilepatch , shamrock::patch::PatchD
         u32 obj_cnt = a.get_obj_cnt();
         u32 nvar = a.get_nvar();
 
-        if(sz.size() > 64) throw shambase::throw_with_loc<std::runtime_error>("field name must be shorter than 64 chars");
+        if(sz.size() > 64) throw shambase::make_except_with_loc<std::runtime_error>("field name must be shorter than 64 chars");
 
         sz.resize(64);
 
@@ -321,7 +320,7 @@ inline void file_write_patchdata(MPI_File & mfilepatch , shamrock::patch::PatchD
         u32 obj_cnt = a.get_obj_cnt();
         u32 nvar = a.get_nvar();
 
-        if(sz.size() > 64) throw shambase::throw_with_loc<std::runtime_error>("field name must be shorter than 64 chars");
+        if(sz.size() > 64) throw shambase::make_except_with_loc<std::runtime_error>("field name must be shorter than 64 chars");
 
         sz.resize(64);
 
@@ -414,7 +413,7 @@ inline void dump_patch_list(std::string prefix, PatchScheduler & sched){
     if(shamcomm::world_rank() == 0){
 
         if(sched.patch_list.global.size() > u64(u32_max)){
-            throw shambase::throw_with_loc<std::runtime_error>("patch list size > u32_max not handled by dump");
+            throw shambase::make_except_with_loc<std::runtime_error>("patch list size > u32_max not handled by dump");
         }
 
         MPI_Status st;

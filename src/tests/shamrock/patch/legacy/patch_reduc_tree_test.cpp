@@ -6,13 +6,12 @@
 //
 // -------------------------------------------------------//
 
-#include "aliases.hpp"
 #include "shamrock/legacy/io/dump.hpp"
 #include "shamrock/legacy/patch/base/patchdata.hpp"
 #include "shamrock/legacy/patch/interfaces/interface_generator.hpp"
 #include "shamrock/legacy/patch/interfaces/interface_handler.hpp"
 #include "shamrock/legacy/patch/interfaces/interface_selector.hpp"
-#include "shamrock/scheduler/scheduler_mpi.hpp"
+#include "shamrock/scheduler/PatchScheduler.hpp"
 #include "shamrock/legacy/patch/utility/patch_field.hpp"
 #include "shamrock/legacy/patch/utility/patch_reduc_tree.hpp"
 #include "shamrock/scheduler/SerialPatchTree.hpp"

@@ -16,6 +16,7 @@
 
 #include <stdexcept>
 #include <unordered_map>
+#include <string>
 #include "details/utils.hpp"
 
 #define XMAC_UNITS                                                                                 \
@@ -56,7 +57,8 @@
     X1(light_year, ly)                                                                             \
     X1(parsec, pc)                                                                                 \
     X1(electron_volt, eV)                                                                          \
-    X1(ergs, erg)
+    X1(ergs, erg)                                                                          \
+    X1(british_pint, pint)
 
 #define XMAC_UNIT_PREFIX  \
     X(tera  ,T, 12)\
