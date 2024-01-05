@@ -7,10 +7,16 @@
 // -------------------------------------------------------//
 
 
-//%Impl status : Good
-
+/**
+ * @file nbody_setup.cpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 #include "nbody_setup.hpp"
 #include "shamrock/legacy/patch/comm/patch_object_mover.hpp"
+#include "shamrock/patch/Patch.hpp"
 
 
 
@@ -24,8 +30,9 @@ void models::nbody::NBodySetup<flt>::init(PatchScheduler & sched){
     std::cout << "build local" << std::endl;
     sched.owned_patch_id = sched.patch_list.build_local();
     sched.patch_list.build_local_idx_map();
-    sched.update_local_dtcnt_value();
-    sched.update_local_load_value();
+    sched.update_local_load_value([&](shamrock::patch::Patch p){
+        return sched.patch_data.owned_data.get(p.id_patch).get_obj_cnt();
+    });
 }
 
 
@@ -34,7 +41,7 @@ void models::nbody::NBodySetup<flt>::add_particules_fcc(PatchScheduler & sched, 
 
     using namespace shamrock::patch;
 
-    if(shamsys::instance::world_rank == 0){
+    if(shamcomm::world_rank() == 0){
         std::vector<vec> vec_acc;
 
         generic::setup::generators::add_particles_fcc(
@@ -61,7 +68,7 @@ void models::nbody::NBodySetup<flt>::add_particules_fcc(PatchScheduler & sched, 
             f.override(buf,len);
         }
 
-        if(sched.owned_patch_id.empty()) throw shambase::throw_with_loc<std::runtime_error>("the scheduler does not have patch in that rank");
+        if(sched.owned_patch_id.empty()) throw shambase::make_except_with_loc<std::runtime_error>("the scheduler does not have patch in that rank");
 
         u64 insert_id = *sched.owned_patch_id.begin();
 

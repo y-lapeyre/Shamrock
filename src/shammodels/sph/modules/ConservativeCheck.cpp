@@ -6,15 +6,25 @@
 //
 // -------------------------------------------------------//
 
+/**
+ * @file ConservativeCheck.cpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 #include "ConservativeCheck.hpp"
 
 #include "shambase/sycl_utils/sycl_utilities.hpp"
-#include "shamrock/sph/kernels.hpp"
+#include "shammath/sphkernels.hpp"
 #include "shamsys/legacy/log.hpp"
 
 template<class Tvec, template<class> class SPHKernel>
-void shammodels::sph::modules::ConservativeCheck<Tvec, SPHKernel>::check_conservation(
-    Tscal gpart_mass) {
+void shammodels::sph::modules::ConservativeCheck<Tvec, SPHKernel>::check_conservation() {
+
+    StackEntry stack_loc{};
+
+    Tscal gpart_mass = solver_config.gpart_mass;
 
     using namespace shamrock;
     using namespace shamrock::patch;
@@ -42,7 +52,7 @@ void shammodels::sph::modules::ConservativeCheck<Tvec, SPHKernel>::check_conserv
     });
     Tvec sum_p = gpart_mass * shamalgs::collective::allreduce_sum(tmpp);
 
-    if (shamsys::instance::world_rank == 0) {
+    if (shamcomm::world_rank() == 0) {
         if (!storage.sinks.is_empty()) {
             std::vector<Sink> &sink_parts = storage.sinks.get();
             for (Sink &s : sink_parts) {
@@ -62,7 +72,7 @@ void shammodels::sph::modules::ConservativeCheck<Tvec, SPHKernel>::check_conserv
     });
     Tvec sum_a = gpart_mass * shamalgs::collective::allreduce_sum(tmpa);
 
-    if (shamsys::instance::world_rank == 0) {
+    if (shamcomm::world_rank() == 0) {
         if (!storage.sinks.is_empty()) {
             std::vector<Sink> &sink_parts = storage.sinks.get();
             for (Sink &s : sink_parts) {
@@ -83,7 +93,7 @@ void shammodels::sph::modules::ConservativeCheck<Tvec, SPHKernel>::check_conserv
     });
     Tscal sum_e = gpart_mass * shamalgs::collective::allreduce_sum(tmpe);
 
-    if (shamsys::instance::world_rank == 0) {
+    if (shamcomm::world_rank() == 0) {
         cv_checks += shambase::format("    sum e = {}\n", sum_e);
     }
 
@@ -116,15 +126,15 @@ void shammodels::sph::modules::ConservativeCheck<Tvec, SPHKernel>::check_conserv
 
     Tscal de = shamalgs::collective::allreduce_sum(tmp_de);
 
-    if (shamsys::instance::world_rank == 0) {
+    if (shamcomm::world_rank() == 0) {
         cv_checks += shambase::format("    sum de = {}", de);
     }
 
-    if (shamsys::instance::world_rank == 0) {
+    if (shamcomm::world_rank() == 0) {
         logger::info_ln("sph::Model", cv_checks);
     }
 }
 
-using namespace shamrock::sph::kernels;
+using namespace shammath;
 template class shammodels::sph::modules::ConservativeCheck<f64_3, M4>;
 template class shammodels::sph::modules::ConservativeCheck<f64_3, M6>;

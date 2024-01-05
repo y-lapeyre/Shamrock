@@ -22,6 +22,7 @@ cfg = model.gen_default_config()
 #cfg.set_artif_viscosity_VaryingMM97(alpha_min = 0.1,alpha_max = 1,sigma_decay = 0.1, alpha_u = 1, beta_AV = 2)
 cfg.set_artif_viscosity_VaryingCD10(alpha_min = 0.0,alpha_max = 1,sigma_decay = 0.1, alpha_u = 1, beta_AV = 2)
 cfg.set_boundary_shearing_periodic((1,0,0),(0,0,1),10.)
+cfg.set_eos_adiabatic(gamma)
 cfg.print_status()
 model.set_solver_config(cfg)
 
@@ -52,7 +53,7 @@ model.set_value_in_a_box("uint","f64", 3 , (0.2,-pen_sz,-pen_sz),(xM,pen_sz,pen_
 #print("Current part mass :", pmass)
 
 #for it in range(5):
-#    setup.update_smoothing_lenght(ctx)
+#    setup.update_smoothing_length(ctx)
 
 
 
@@ -69,7 +70,6 @@ a = input("continue ?")
 
 model.set_cfl_cour(0.3)
 model.set_cfl_force(0.25)
-model.set_eos_gamma(5/3)
 
 
 
@@ -80,26 +80,20 @@ model.set_eos_gamma(5/3)
 
 
 t_sum = 0
-t_target = 1
-current_dt = 1e-7
-i = 0
+t_target = 10
+
 i_dump = 0
-while t_sum < t_target:
+dt_dump = 1e-2
+next_dt_target = t_sum + dt_dump
 
-    print("step : t=",t_sum)
-    
-    next_dt = model.evolve(t_sum,current_dt, True, "dump_"+str(i_dump)+".vtk", True)
+while next_dt_target <= t_target:
 
-    if i % 1 == 0:
-        i_dump += 1
+    fname = "dump_{:04}.phfile".format(i_dump)
 
-    t_sum += current_dt
-    current_dt = next_dt
+    model.evolve_until(next_dt_target)
+    dump = model.make_phantom_dump()
+    dump.save_dump(fname)
 
-    if (t_target - t_sum) < next_dt:
-        current_dt = t_target - t_sum
+    i_dump += 1
 
-    i+= 1
-
-
-
+    next_dt_target += dt_dump

@@ -8,9 +8,18 @@
 
 #pragma once
 
-#include "aliases.hpp"
+
+/**
+ * @file CoordRange.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
+#include "shambackends/typeAliasVec.hpp"
 #include "shambase/SourceLocation.hpp"
 #include "shambase/sycl_utils/sycl_utilities.hpp"
+#include "shambase/sycl_utils/vec_equals.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"
 #include "shambase/vectors.hpp"
 #include "intervals.hpp"
@@ -86,7 +95,16 @@ namespace shammath {
         inline CoordRange add_offset(T off){
             return CoordRange{lower + off, upper + off};
         }
+        
+        inline bool is_err_mode(){
+
+            auto tmp = max_range();
+
+            return shambase::vec_equals(tmp.lower , lower) && shambase::vec_equals(tmp.upper , upper);
+        }
     };
+
+    
 
 
 
@@ -96,14 +114,14 @@ namespace shammath {
         CoordRange<f32_3> ret;
 
         ret.lower = {
-            std::numeric_limits<f32>::min(),
-            std::numeric_limits<f32>::min(),
-            std::numeric_limits<f32>::min()};
+            shambase::get_min<f32>(),
+            shambase::get_min<f32>(),
+            shambase::get_min<f32>()};
 
         ret.upper = {
-            std::numeric_limits<f32>::max(),
-            std::numeric_limits<f32>::max(),
-            std::numeric_limits<f32>::max()};
+            shambase::get_max<f32>(),
+            shambase::get_max<f32>(),
+            shambase::get_max<f32>()};
 
         return ret;
     }
@@ -114,14 +132,14 @@ namespace shammath {
         CoordRange<f64_3> ret;
 
         ret.lower = {
-            std::numeric_limits<f64>::min(),
-            std::numeric_limits<f64>::min(),
-            std::numeric_limits<f64>::min()};
+            shambase::get_min<f64>(),
+            shambase::get_min<f64>(),
+            shambase::get_min<f64>()};
 
         ret.upper = {
-            std::numeric_limits<f64>::max(),
-            std::numeric_limits<f64>::max(),
-            std::numeric_limits<f64>::max()};
+            shambase::get_max<f64>(),
+            shambase::get_max<f64>(),
+            shambase::get_max<f64>()};
 
         return ret;
     }
@@ -132,14 +150,14 @@ namespace shammath {
         CoordRange<u32_3> ret;
 
         ret.lower = {
-            std::numeric_limits<u32>::min(),
-            std::numeric_limits<u32>::min(),
-            std::numeric_limits<u32>::min()};
+            shambase::get_min<u32>(),
+            shambase::get_min<u32>(),
+            shambase::get_min<u32>()};
 
         ret.upper = {
-            std::numeric_limits<u32>::max(),
-            std::numeric_limits<u32>::max(),
-            std::numeric_limits<u32>::max()};
+            shambase::get_max<u32>(),
+            shambase::get_max<u32>(),
+            shambase::get_max<u32>()};
 
         return ret;
     }
@@ -150,14 +168,14 @@ namespace shammath {
         CoordRange<u64_3> ret;
 
         ret.lower = {
-            std::numeric_limits<u64>::min(),
-            std::numeric_limits<u64>::min(),
-            std::numeric_limits<u64>::min()};
+            shambase::get_min<u64>(),
+            shambase::get_min<u64>(),
+            shambase::get_min<u64>()};
 
         ret.upper = {
-            std::numeric_limits<u64>::max(),
-            std::numeric_limits<u64>::max(),
-            std::numeric_limits<u64>::max()};
+            shambase::get_max<u64>(),
+            shambase::get_max<u64>(),
+            shambase::get_max<u64>()};
 
         return ret;
     }
@@ -168,14 +186,14 @@ namespace shammath {
         CoordRange<i64_3> ret;
 
         ret.lower = {
-            std::numeric_limits<i64>::min(),
-            std::numeric_limits<i64>::min(),
-            std::numeric_limits<i64>::min()};
+            shambase::get_min<i64>(),
+            shambase::get_min<i64>(),
+            shambase::get_min<i64>()};
 
         ret.upper = {
-            std::numeric_limits<i64>::max(),
-            std::numeric_limits<i64>::max(),
-            std::numeric_limits<i64>::max()};
+            shambase::get_max<i64>(),
+            shambase::get_max<i64>(),
+            shambase::get_max<i64>()};
 
         return ret;
     }

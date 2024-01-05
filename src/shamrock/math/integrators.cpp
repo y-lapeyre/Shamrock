@@ -6,6 +6,13 @@
 //
 // -------------------------------------------------------//
 
+/**
+ * @file integrators.cpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief
+ * \todo move formula to shammath
+ */
+
 #include "shamrock/math/integrators.hpp"
 #include "shambase/exception.hpp"
 #include "shambase/sycl_utils.hpp"
@@ -199,8 +206,14 @@ void util::sycl_position_sheared_modulo(sycl::queue &queue,
 
             T roff = r / delt;
 
+
+            //T dn = sycl::trunc(roff);
+
+            //auto d = sycl::dot(dn,shear_base.convert<shambase::VecComponent<T>>());
+
+            //*
             auto cnt_per = [](shambase::VecComponent<T> v) -> int {
-                return (v > 0) ? int(v) : (int(v) - 1);
+                return (v >= 0) ? int(v) : (int(v) - 1);
             };
             
             i32 xoff = cnt_per(roff.x());
@@ -212,6 +225,7 @@ void util::sycl_position_sheared_modulo(sycl::queue &queue,
             i32 dz = zoff*shear_base.z();
 
             i32 d = dx + dy + dz;
+            //*/
 
 
             T shift = {

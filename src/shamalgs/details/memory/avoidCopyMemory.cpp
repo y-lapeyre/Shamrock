@@ -6,8 +6,17 @@
 //
 // -------------------------------------------------------//
 
+/**
+ * @file avoidCopyMemory.cpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 #include "avoidCopyMemory.hpp"
-#include "aliases.hpp"
+
+#include "shambackends/typeAliasVec.hpp"
+#include "shambackends/typeAliasVec.hpp"
 #include "shambase/exception.hpp"
 
 namespace shamalgs::memory::details {
@@ -16,7 +25,7 @@ namespace shamalgs::memory::details {
     T AvoidCopy<T>::extract_element(sycl::queue &q, sycl::buffer<T> &buf, u32 idx) {
 
         if(!(idx < buf.size())){
-            throw shambase::throw_with_loc<std::runtime_error>("you are trying to access out of bounds");
+            throw shambase::make_except_with_loc<std::runtime_error>("you are trying to access out of bounds");
         }
 
         sycl::buffer<T> len_value{1};

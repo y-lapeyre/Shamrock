@@ -6,8 +6,12 @@
 //
 // -------------------------------------------------------//
 
-#include "aliases.hpp"
-#include "flags.hpp"
+/**
+ * @file reduction_alg.cpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief
+ */
+
 
 #include "reduction_alg.hpp"
 #include <algorithm>
@@ -17,7 +21,7 @@
 #include "shamalgs/memory.hpp"
 #include "shamalgs/numeric.hpp"
 #include "shambase/exception.hpp"
-#include "shambase/sycl.hpp"
+#include "shambackends/sycl.hpp"
 #include "shambase/string.hpp"
 #include "shambase/integer_sycl.hpp"
 
@@ -165,7 +169,7 @@ void make_indexmap(
     if(buf){
         update_morton_buf(queue, len,morton_count, *buf, buf_reduc_index_map);
     }else{
-        throw shambase::throw_with_loc<std::runtime_error>("this result shouldn't be null");
+        throw shambase::make_except_with_loc<std::runtime_error>("this result shouldn't be null");
     }
 
     if constexpr (false){
@@ -190,14 +194,14 @@ void make_indexmap(
 
         {
              if(leafs != morton_leaf_count){
-                throw shambase::throw_with_loc<std::runtime_error>("difference");
+                throw shambase::make_except_with_loc<std::runtime_error>("difference");
             }
         
             sycl::host_accessor dest{*buf_reduc_index_map , sycl::read_only};
         
             for (unsigned int i = 0; i < morton_leaf_count+2; i++) {
                 if(dest[i] != reduc_index_map[i]){
-                    throw shambase::throw_with_loc<std::runtime_error>(shambase::format("difference i = {}, {} != {}",i, dest[i] , reduc_index_map[i]));
+                    throw shambase::make_except_with_loc<std::runtime_error>(shambase::format("difference i = {}, {} != {}",i, dest[i] , reduc_index_map[i]));
                 }
             }
         }

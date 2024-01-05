@@ -8,7 +8,13 @@
 
 #pragma once
 
-#include "aliases.hpp"
+/**
+ * @file interface_generator_impl.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+
 #include "shamrock/legacy/patch/base/patchdata.hpp"
 #include "shamrock/legacy/patch/base/patchdata_field.hpp"
 #include "shamrock/patch/Patch.hpp"
@@ -32,7 +38,7 @@ namespace impl {
                                                                             std::vector<f32_3> boxs_max){
 
         if (boxs_min.size() > u8_max - 1) {
-            throw shambase::throw_with_loc<std::invalid_argument>("this algo is not build to handle more than 2^8 - 2 boxes as input");
+            throw shambase::make_except_with_loc<std::invalid_argument>("this algo is not build to handle more than 2^8 - 2 boxes as input");
         }
 
         using namespace shamrock::patch;
@@ -96,7 +102,7 @@ namespace impl {
                                                                             std::vector<f64_3> boxs_max){
 
         if (boxs_min.size() > u8_max - 1) {
-            throw shambase::throw_with_loc<std::invalid_argument>("this algo is not build to handle more than 2^8 - 2 boxes as input");
+            throw shambase::make_except_with_loc<std::invalid_argument>("this algo is not build to handle more than 2^8 - 2 boxes as input");
         }
 
         using namespace shamrock::patch;

@@ -8,12 +8,20 @@
 
 #pragma once
 
+/**
+ * @file LegacyVtkWritter.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+
 #include "shamalgs/collective/io.hpp"
 #include "shamalgs/collective/reduction.hpp"
 #include "shamalgs/details/memory/bufferFlattening.hpp"
 #include "shambase/memory.hpp"
 #include "shambase/stacktrace.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"
+#include "shamcomm/io.hpp"
 #include "shamrock/io/details/bufToVtkBuf.hpp"
 #include "shamsys/MpiWrapper.hpp"
 #include "shambase/endian.hpp"
@@ -170,11 +178,11 @@ namespace shamrock {
             logger::debug_ln("VtkWritter", "opening :", fname);
 
             if(fname.find(".vtk") == std::string::npos){
-                throw shambase::throw_with_loc<std::invalid_argument>("the extension should be .vtk");
+                throw shambase::make_except_with_loc<std::invalid_argument>("the extension should be .vtk");
             }
 
             
-            shamalgs::collective::open_reset_file(mfile, fname);
+            shamcomm::open_reset_file(mfile, fname);
 
 
             std::stringstream ss;
@@ -188,7 +196,7 @@ namespace shamrock {
             if (type == UnstructuredGrid){
                 ss << ("DATASET UNSTRUCTURED_GRID");
             }else{
-                throw shambase::throw_with_loc<std::invalid_argument>("unknown dataset type");
+                throw shambase::make_except_with_loc<std::invalid_argument>("unknown dataset type");
             }
 
             std::string write_str = ss.str();
@@ -355,7 +363,7 @@ namespace shamrock {
         void add_point_data_section(){
 
             if(!has_written_points){
-                throw shambase::throw_with_loc<std::runtime_error>("no points had been written");
+                throw shambase::make_except_with_loc<std::runtime_error>("no points had been written");
             }
 
             std::stringstream ss;
@@ -369,7 +377,7 @@ namespace shamrock {
         void add_cell_data_section(){
 
             if(!has_written_cells){
-                throw shambase::throw_with_loc<std::runtime_error>("no cells had been written");
+                throw shambase::make_except_with_loc<std::runtime_error>("no cells had been written");
             }
 
             std::stringstream ss;
@@ -383,7 +391,7 @@ namespace shamrock {
         void add_field_data_section(u32 num_field){
 
             if(!has_written_points){
-                throw shambase::throw_with_loc<std::runtime_error>("no points had been written");
+                throw shambase::make_except_with_loc<std::runtime_error>("no points had been written");
             }
 
             std::stringstream ss;

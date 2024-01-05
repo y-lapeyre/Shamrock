@@ -8,14 +8,19 @@
 
 #pragma once
 
+/**
+ * @file ReattributeDataUtility.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief
+ */
 
 #include "shamalgs/memory.hpp"
 #include "shambase/string.hpp"
-#include "shamrock/scheduler/scheduler_mpi.hpp"
+#include "shamrock/scheduler/PatchScheduler.hpp"
 #include "shamrock/scheduler/SerialPatchTree.hpp"
 #include "shamrock/patch/PatchData.hpp"
 #include "shamsys/NodeInstance.hpp"
-#include "shamsys/comm/details/CommunicationBufferImpl.hpp"
+#include "shambackends/comm/details/CommunicationBufferImpl.hpp"
 #include "shamsys/legacy/log.hpp"
 #include <vector>
 
@@ -55,7 +60,7 @@ namespace shamrock {
                     }
 
                     if(err_id_in_newid){
-                        throw shambase::throw_with_loc<std::runtime_error>("a new id could not be computed");
+                        throw shambase::make_except_with_loc<std::runtime_error>("a new id could not be computed");
                     }
 
                 }
@@ -165,7 +170,6 @@ namespace shamrock {
             shamalgs::collective::serialize_sparse_comm<PatchData>(
                 std::move(part_exchange), 
                 recv_dat, 
-                shamsys::get_protocol(), 
                 [&](u64 id){
                     return sched.get_patch_rank_owner(id);
                 }, 

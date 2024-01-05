@@ -8,11 +8,16 @@
 
 #pragma once
 
-#include "aliases.hpp"
+/**
+ * @file ShamrockCtx.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief
+ */
+
 #include "shambase/exception.hpp"
 #include "shamrock/legacy/patch/base/patchdata.hpp"
 #include "shamrock/patch/PatchDataLayout.hpp"
-#include "shamrock/scheduler/scheduler_mpi.hpp"
+#include "shamrock/scheduler/PatchScheduler.hpp"
 #include <map>
 #include <memory>
 #include <tuple>
@@ -114,7 +119,7 @@ class ShamrockCtx{public:
         }else if (type == "u64_3"){
             pdata_layout_add_field<u64_3>(fname, nvar);
         }else{
-            throw shambase::throw_with_loc<std::invalid_argument>("the select type is not registered");
+            throw shambase::make_except_with_loc<std::invalid_argument>("the select type is not registered");
         }
     }
 
@@ -169,8 +174,8 @@ class ShamrockCtx{public:
 
         std::vector<std::unique_ptr<PatchData>> recv_data;
 
-        for(u32 i = 0; i < world_size; i++){
-            if (i == world_rank) {
+        for(u32 i = 0; i < shamcomm::world_size(); i++){
+            if (i == shamcomm::world_rank()) {
                 recv_data = sched->gather_data(i);
             }else{
                 sched->gather_data(i);
@@ -203,8 +208,8 @@ class ShamrockCtx{public:
             
             sched->set_coord_domain_bound<f64_3>(a,b);
         }else{
-            throw shambase::throw_with_loc<std::runtime_error>(
-                __LOC_PREFIX__ + "the chosen type for the main field is not handled"
+            throw shambase::make_except_with_loc<std::runtime_error>(
+                "the chosen type for the main field is not handled"
                 );
         }
 

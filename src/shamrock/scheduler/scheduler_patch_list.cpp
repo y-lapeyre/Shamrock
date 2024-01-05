@@ -6,6 +6,12 @@
 //
 // -------------------------------------------------------//
 
+/**
+ * @file scheduler_patch_list.cpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief
+ */
+
 #include "scheduler_patch_list.hpp"
 
 #include <vector>
@@ -34,7 +40,7 @@ std::unordered_set<u64> SchedulerPatchList::build_local(){StackEntry stack_loc{}
     local.clear();
     for(const shamrock::patch::Patch &p : global){
         //TODO add check node_owner_id valid 
-        if(i32(p.node_owner_id) == shamsys::instance::world_rank){
+        if(i32(p.node_owner_id) == shamcomm::world_rank()){
             local.push_back(p);
             out_ids.insert(p.id_patch);
         }
@@ -54,7 +60,7 @@ void SchedulerPatchList::build_local_differantial(std::unordered_set<u64> &patch
         bool was_owned = (patch_id_lst.find(p.id_patch) != patch_id_lst.end());
 
         //TODO add check node_owner_id valid 
-        if(i32(p.node_owner_id) == shamsys::instance::world_rank){
+        if(i32(p.node_owner_id) == shamcomm::world_rank()){
             local.push_back(p);
 
             if(!was_owned){
@@ -224,7 +230,6 @@ std::vector<shamrock::patch::Patch> make_fake_patch_list(u32 total_dtcnt,u64 div
         HilbertLoadBalance<u64>::max_box_sz,
         HilbertLoadBalance<u64>::max_box_sz,
         HilbertLoadBalance<u64>::max_box_sz,
-        total_dtcnt,
         0,
     });
 
@@ -238,14 +243,14 @@ std::vector<shamrock::patch::Patch> make_fake_patch_list(u32 total_dtcnt,u64 div
         std::vector<Patch> to_add;
 
         for(Patch & p : plist){
-            if(p.data_count > div_limit){
+            if(p.load_value > div_limit){
 
                 /*
                 std::cout << "splitting : ( " <<
                     "[" << p.x_min << "," << p.x_max << "] " << 
                     "[" << p.y_min << "," << p.y_max << "] " << 
                     "[" << p.z_min << "," << p.z_max << "] " << 
-                    " ) " << p.data_count <<  std::endl;
+                    " ) " << p.load_value <<  std::endl;
                     */
                 
                 u64 min_x = p.coord_min[0];
@@ -262,8 +267,8 @@ std::vector<shamrock::patch::Patch> make_fake_patch_list(u32 total_dtcnt,u64 div
 
 
 
-                u32 qte_m = split_val(eng)*p.data_count;
-                u32 qte_p = p.data_count - qte_m;
+                u32 qte_m = split_val(eng)*p.load_value;
+                u32 qte_p = p.load_value - qte_m;
 
                 u32 qte_mm = split_val(eng)*qte_m;
                 u32 qte_mp = qte_m - qte_mm;
@@ -296,7 +301,6 @@ std::vector<shamrock::patch::Patch> make_fake_patch_list(u32 total_dtcnt,u64 div
                     split_x,
                     split_y,
                     split_z,
-                    qte_mmm,
                     0,
                 };id_cnt++;
 
@@ -310,7 +314,6 @@ std::vector<shamrock::patch::Patch> make_fake_patch_list(u32 total_dtcnt,u64 div
                     split_x,
                     split_y,
                     max_z,
-                    qte_mmp,
                     0,
                 };id_cnt++;
 
@@ -324,7 +327,6 @@ std::vector<shamrock::patch::Patch> make_fake_patch_list(u32 total_dtcnt,u64 div
                     split_x,
                     max_y,
                     split_z,
-                    qte_mpm,
                     0,
                 };id_cnt++;
 
@@ -338,7 +340,6 @@ std::vector<shamrock::patch::Patch> make_fake_patch_list(u32 total_dtcnt,u64 div
                     split_x,
                     max_y,
                     max_z,
-                    qte_mpp,
                     0,
                 };id_cnt++;
 
@@ -352,7 +353,6 @@ std::vector<shamrock::patch::Patch> make_fake_patch_list(u32 total_dtcnt,u64 div
                     max_x,
                     split_y,
                     split_z,
-                    qte_pmm,
                     0,
                 };id_cnt++;
 
@@ -366,7 +366,6 @@ std::vector<shamrock::patch::Patch> make_fake_patch_list(u32 total_dtcnt,u64 div
                     max_x,
                     split_y,
                     max_z,
-                    qte_pmp,
                     0,
                 };id_cnt++;
 
@@ -380,7 +379,6 @@ std::vector<shamrock::patch::Patch> make_fake_patch_list(u32 total_dtcnt,u64 div
                     max_x,
                     max_y,
                     split_z,
-                    qte_ppm,
                     0,
                 };id_cnt++;
 
@@ -394,7 +392,6 @@ std::vector<shamrock::patch::Patch> make_fake_patch_list(u32 total_dtcnt,u64 div
                     max_x,
                     max_y,
                     max_z,
-                    qte_ppp,
                     0,
                 };id_cnt++;
 
@@ -427,7 +424,7 @@ std::vector<shamrock::patch::Patch> make_fake_patch_list(u32 total_dtcnt,u64 div
                 "[" << p.x_min << "," << p.x_max << "] " << 
                 "[" << p.y_min << "," << p.y_max << "] " << 
                 "[" << p.z_min << "," << p.z_max << "] " << 
-                " ) " << p.data_count << std::endl;
+                " ) " << p.load_value << std::endl;
         }
 
         std::cout << "----- end cycle -----" << std::endl;

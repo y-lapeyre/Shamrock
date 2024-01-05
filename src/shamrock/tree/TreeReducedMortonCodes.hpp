@@ -8,7 +8,12 @@
 
 #pragma once
 
-#include "aliases.hpp"
+/**
+ * @file TreeReducedMortonCodes.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief
+ */
+
 #include "kernels/reduction_alg.hpp"
 #include "shamalgs/memory.hpp"
 #include "shamalgs/reduction.hpp"
@@ -81,7 +86,7 @@ namespace shamrock::tree {
                 );
 
             } else {
-                throw shambase::throw_with_loc<std::runtime_error>("0 leaf tree cannot exists");
+                throw shambase::make_except_with_loc<std::runtime_error>("0 leaf tree cannot exists");
             }
         }
 
@@ -145,12 +150,12 @@ namespace shamrock::tree {
 
             serializer.write(tree_leaf_count);
             if (!buf_reduc_index_map) {
-                throw shambase::throw_with_loc<std::runtime_error>("missing buffer");
+                throw shambase::make_except_with_loc<std::runtime_error>("missing buffer");
             }
             serializer.write<u32>(buf_reduc_index_map->size());
             serializer.write_buf(*buf_reduc_index_map, buf_reduc_index_map->size());
             if (!buf_tree_morton) {
-                throw shambase::throw_with_loc<std::runtime_error>("missing buffer");
+                throw shambase::make_except_with_loc<std::runtime_error>("missing buffer");
             }
             serializer.write_buf(*buf_tree_morton, tree_leaf_count);
         }

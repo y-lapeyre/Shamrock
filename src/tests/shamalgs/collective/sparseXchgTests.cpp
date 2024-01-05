@@ -11,8 +11,8 @@
 #include "shambase/exception.hpp"
 #include "shambase/string.hpp"
 #include "shamsys/NodeInstance.hpp"
-#include "shamsys/comm/CommunicationBuffer.hpp"
-#include "shamsys/comm/details/CommunicationBufferImpl.hpp"
+#include "shambackends/comm/CommunicationBuffer.hpp"
+#include "shambackends/comm/details/CommunicationBufferImpl.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamtest/details/TestResult.hpp"
 #include "shamtest/shamtest.hpp"
@@ -23,14 +23,15 @@
 #include <stdexcept>
 #include <vector>
 
-void sparse_comm_test(std::string prefix, shamsys::CommunicationProtocol prot){
+void sparse_comm_test(std::string prefix, sham::queues::QueueDetails & qdet){
     
     using namespace shamalgs::collective;
     using namespace shamsys::instance;
     using namespace shamsys;
+    using namespace shamcomm;
 
-    const i32 wsize = world_size;
-    const i32 wrank = world_rank;
+    const i32 wsize = world_size();
+    const i32 wrank = world_rank();
     
     u32 num_buf = wsize*5;
     u32 nbytes_per_buf = 1e4;
@@ -77,17 +78,17 @@ void sparse_comm_test(std::string prefix, shamsys::CommunicationProtocol prot){
     std::vector<SendPayload> sendop;
 
     for(RefBuff & bufinfo : tests.elements){
-        if(bufinfo.sender_rank == world_rank){
+        if(bufinfo.sender_rank == world_rank()){
             sendop.push_back(SendPayload{
                 bufinfo.receiver_rank,
-                std::make_unique<CommunicationBuffer>(*bufinfo.payload, prot)
+                std::make_unique<CommunicationBuffer>(*bufinfo.payload, qdet)
             });
         }
     }
 
 
     std::vector<RecvPayload> recvop;
-    base_sparse_comm(sendop, recvop, prot);
+    base_sparse_comm(sendop, recvop);
 
     std::vector<RefBuff> recv_data;
     for(RecvPayload & load : recvop){
@@ -133,7 +134,7 @@ void sparse_comm_test(std::string prefix, shamsys::CommunicationProtocol prot){
                 shamtest::asserts().assert_bool(prefix+"same buffer", shamalgs::reduction::equals_ptr(ref.payload, recv_buf.payload));
 
             }else{
-                throw shambase::throw_with_loc<std::runtime_error>(prefix+"missing recv mesages");
+                throw shambase::make_except_with_loc<std::runtime_error>(prefix+"missing recv mesages");
             }
 
             ref_idx ++;
@@ -144,10 +145,6 @@ void sparse_comm_test(std::string prefix, shamsys::CommunicationProtocol prot){
 
 TestStart(Unittest, "shamalgs/collective/sparseXchg", testsparsexchg, -1){
 
-    if(shamsys::instance::is_direct_gpu_selected()){
-        sparse_comm_test("DirectGPU  mode : ",shamsys::DirectGPU);
-    }else{
-        sparse_comm_test("CopyToHost mode : ",shamsys::CopyToHost);
-    }
+    sparse_comm_test("",sham::get_queue_details());
 
 }

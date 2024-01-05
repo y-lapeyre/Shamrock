@@ -12,21 +12,21 @@
 #include "shamalgs/reduction.hpp"
 #include "shambase/DistributedData.hpp"
 #include "shamsys/NodeInstance.hpp"
-#include "shamsys/comm/details/CommunicationBufferImpl.hpp"
+#include "shambackends/comm/details/CommunicationBufferImpl.hpp"
 #include "shamtest/details/TestResult.hpp"
 #include "shamtest/shamtest.hpp"
 #include <map>
 #include <memory>
 
 
-void distribdata_sparse_comm_test(std::string prefix, shamsys::CommunicationProtocol prot){
+void distribdata_sparse_comm_test(std::string prefix){
 
     using namespace shamalgs::collective;
     using namespace shamsys::instance;
     using namespace shamsys;
 
-    const i32 wsize = world_size;
-    const i32 wrank = world_rank;
+    const i32 wsize = shamcomm::world_size();
+    const i32 wrank = shamcomm::world_rank();
 
     u32 npatch       = wsize * 5;
     u32 nbuf_p_patch = 2;
@@ -46,14 +46,14 @@ void distribdata_sparse_comm_test(std::string prefix, shamsys::CommunicationProt
     for (u64 i = 0; i < npatch * nbuf_p_patch; i++) {
         u64 sender   = shamalgs::random::mock_value(eng, 0_u64, npatch - 1_u64);
         u64 receiver = shamalgs::random::mock_value(eng, 0_u64, npatch - 1_u64);
-        u64 lenght   = shamalgs::random::mock_value(eng, 1_u64, max_msg_len);
+        u64 length   = shamalgs::random::mock_value(eng, 1_u64, max_msg_len);
         u64 rnd      = eng();
 
         if (!dat_ref.has_key(sender, receiver)) {
             dat_ref.add_obj(sender,
                             receiver,
                             std::make_unique<sycl::buffer<u8>>(shamalgs::random::mock_buffer<u8>(
-                                rnd, shamalgs::random::mock_value<i32>(eng, 1, lenght))));
+                                rnd, shamalgs::random::mock_value<i32>(eng, 1, length))));
         }
     }
 
@@ -67,7 +67,7 @@ void distribdata_sparse_comm_test(std::string prefix, shamsys::CommunicationProt
 
     shamalgs::collective::SerializedDDataComm recv_data;
     distributed_data_sparse_comm(
-        send_data, recv_data, prot, [&](u64 id) { return rank_owner[id]; });
+        send_data, recv_data, [&](u64 id) { return rank_owner[id]; });
 
     shamalgs::collective::SerializedDDataComm recv_data_ref;
     dat_ref.for_each([&](u64 sender, u64 receiver, std::unique_ptr<sycl::buffer<u8>> &buf) {
@@ -93,10 +93,6 @@ void distribdata_sparse_comm_test(std::string prefix, shamsys::CommunicationProt
 
 TestStart(Unittest, "shamalgs/collective/distributedDataComm", testdistributeddatacomm, -1) {
 
-    if(shamsys::instance::is_direct_gpu_selected()){
-        distribdata_sparse_comm_test("DirectGPU  mode : ",shamsys::DirectGPU);
-    }else{
-        distribdata_sparse_comm_test("CopyToHost mode : ",shamsys::CopyToHost);
-    }
+    distribdata_sparse_comm_test("");
     
 }

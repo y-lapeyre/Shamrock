@@ -8,11 +8,18 @@
 
 #pragma once
 
+/**
+ * @file SPHSolverImpl.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+
 #include "shammodels/sph/BasicSPHGhosts.hpp"
 #include "shamrock/scheduler/InterfacesUtility.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
-#include "shamrock/scheduler/scheduler_mpi.hpp"
-#include "shamrock/sph/kernels.hpp"
+#include "shamrock/scheduler/PatchScheduler.hpp"
+#include "shammath/sphkernels.hpp"
 #include "shamrock/tree/RadixTree.hpp"
 #include "shamrock/tree/TreeTraversal.hpp"
 
@@ -24,7 +31,7 @@ namespace shammodels {
         using vec                = f64_3;
         static constexpr u32 dim = 3;
         using u_morton           = u32;
-        using Kernel             = shamrock::sph::kernels::M4<flt>;
+        using Kernel             = shammath::M4<flt>;
 
         static constexpr flt Rkern = Kernel::Rkern;
 
@@ -32,6 +39,7 @@ namespace shammodels {
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }
         SPHSolverImpl(ShamrockCtx &ctx) : context(ctx){};
 
+        [[deprecated]]
         static shamrock::tree::ObjectCache build_neigh_cache(u32 start_offset,
                                                              u32 obj_cnt,
                                                              sycl::buffer<vec> &buf_xyz,
@@ -39,6 +47,7 @@ namespace shammodels {
                                                              RadixTree<u_morton, vec> &tree,
                                                              sycl::buffer<flt> &tree_field_hmax);
 
+        [[deprecated]]
         static shamrock::tree::ObjectCache
         build_hiter_neigh_cache(u32 start_offset,
                                 u32 obj_cnt,
@@ -76,6 +85,27 @@ namespace shammodels {
                 tree.compute_cell_ibounding_box(shamsys::instance::get_compute_queue());
                 tree.convert_bounding_box(shamsys::instance::get_compute_queue());
             });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
             return trees;
         }

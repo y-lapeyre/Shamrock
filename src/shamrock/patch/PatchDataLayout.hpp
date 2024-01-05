@@ -8,7 +8,12 @@
 
 #pragma once
 
-#include "aliases.hpp"
+/**
+ * @file PatchDataLayout.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief
+ */
+
 #include "shambase/SourceLocation.hpp"
 #include "shambase/exception.hpp"
 #include "shambase/string.hpp"
@@ -169,7 +174,7 @@ namespace shamrock::patch {
         }
 
         if (found) {
-            throw shambase::throw_with_loc<std::invalid_argument>("add_field -> the name already exists");
+            throw shambase::make_except_with_loc<std::invalid_argument>("add_field -> the name already exists");
         }
 
         logger::debug_ln("PatchDataLayout", "adding field :", field_name, nvar, "loc :",loc.format_one_line());
@@ -188,7 +193,7 @@ namespace shamrock::patch {
             }
         }
 
-        throw shambase::throw_with_loc<std::invalid_argument>(
+        throw shambase::make_except_with_loc<std::invalid_argument>(
             "the requested field does not exists\n    current table : " + get_description_str()
         );
     }
@@ -200,7 +205,7 @@ namespace shamrock::patch {
             return *pval;
         }
 
-        throw shambase::throw_with_loc<std::invalid_argument>(
+        throw shambase::make_except_with_loc<std::invalid_argument>(
             "the required type does no match at index "+std::to_string(idx)+"\n    current table : " + get_description_str()
         );
     }
@@ -215,7 +220,7 @@ namespace shamrock::patch {
             }
         }
 
-        throw shambase::throw_with_loc<std::invalid_argument>(
+        throw shambase::make_except_with_loc<std::invalid_argument>(
             shambase::format("the requested field does not exists\n    the function : {}\n    the field name : {}\n    current table : \n{}", __PRETTY_FUNCTION__, field_name, get_description_str())
         );
     }
@@ -230,7 +235,7 @@ namespace shamrock::patch {
             }
         }
 
-        throw shambase::throw_with_loc<std::invalid_argument>(
+        throw shambase::make_except_with_loc<std::invalid_argument>(
             "the requested field does not exists\n    current table : " + get_description_str()
         );
     }

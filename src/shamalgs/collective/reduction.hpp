@@ -8,8 +8,15 @@
 
 #pragma once
 
+/**
+ * @file reduction.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 #include "shambase/exception.hpp"
-#include "shambase/type_aliases.hpp"
+#include "shambackends/typeAliasVec.hpp"
 #include "shamsys/MpiWrapper.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/SyclMpiTypes.hpp"
@@ -37,7 +44,7 @@ namespace shamalgs::collective {
             mpi::allreduce(&a.y(), &ret.y(), 1, get_mpi_type<T>(), op, comm);
             mpi::allreduce(&a.z(), &ret.z(), 1, get_mpi_type<T>(), op, comm);
         }else{
-            throw shambase::throw_with_loc<std::invalid_argument>("unimplemented");
+            throw shambase::make_except_with_loc<std::invalid_argument>("unimplemented");
         }
         return ret;
     }

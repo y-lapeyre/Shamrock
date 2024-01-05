@@ -8,9 +8,14 @@
 
 #pragma once
 
+/**
+ * @file PatchData.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief
+ */
+
 #include "PatchDataField.hpp"
 #include "PatchDataLayout.hpp"
-#include "aliases.hpp"
 
 #include "Patch.hpp"
 #include "shambase/exception.hpp"
@@ -19,6 +24,7 @@
 #include "shambase/sycl_utils.hpp"
 #include "shammath/intervals.hpp"
 #include <variant>
+#include <vector>
 
 namespace shamrock::patch {
     /**
@@ -145,7 +151,7 @@ namespace shamrock::patch {
          * This function can be used to apply the result of a sort to the field
          *
          * @param index_map
-         * @param len the lenght of the map (must match with the current count)
+         * @param len the length of the map (must match with the current count)
          */
         void index_remap(sycl::buffer<u32> &index_map, u32 len);
 
@@ -155,7 +161,7 @@ namespace shamrock::patch {
          * This function can be used to apply the result of a sort to the field
          *
          * @param index_map
-         * @param len the lenght of the map
+         * @param len the length of the map
          */
         void index_remap_resize(sycl::buffer<u32> &index_map, u32 len);
 
@@ -172,8 +178,8 @@ namespace shamrock::patch {
                              std::array<Tvecbox, 8> min_box,
                              std::array<Tvecbox, 8> max_box);
 
-        void append_subset_to(std::vector<u32> &idxs, PatchData &pdat) const;
-        void append_subset_to(sycl::buffer<u32> &idxs, u32 sz, PatchData &pdat) const;
+        void append_subset_to(std::vector<u32> &idxs, PatchData &pdat);
+        void append_subset_to(sycl::buffer<u32> &idxs, u32 sz, PatchData &pdat);
 
         inline u32 get_obj_cnt() {
 
@@ -183,7 +189,7 @@ namespace shamrock::patch {
                 return fields[0].visit_return([](auto &field) { return field.get_obj_cnt(); });
             }
 
-            throw shambase::throw_with_loc<std::runtime_error>(
+            throw shambase::make_except_with_loc<std::runtime_error>(
                 "this patchdata does not contains any fields");
         }
 
@@ -226,7 +232,7 @@ namespace shamrock::patch {
                 return *pval;
             }
 
-            throw shambase::throw_with_loc<std::runtime_error>(
+            throw shambase::make_except_with_loc<std::runtime_error>(
                 "the request id is not of correct type\n"
                 "   current map is : \n" +
                 pdl.get_description_str() +
@@ -246,7 +252,7 @@ namespace shamrock::patch {
                 return shambase::get_check_ref(pval->get_buf());
             }
 
-            throw shambase::throw_with_loc<std::runtime_error>(
+            throw shambase::make_except_with_loc<std::runtime_error>(
                 "the request id is not of correct type\n"
                 "   current map is : \n" +
                 pdl.get_description_str() +
@@ -264,7 +270,7 @@ namespace shamrock::patch {
             for (auto &field_var : fields) {
                 field_var.visit([&](auto &field) {
                     if (field.get_obj_cnt() != cnt) {
-                        throw shambase::throw_with_loc<std::runtime_error>("mismatch in obj cnt");
+                        throw shambase::make_except_with_loc<std::runtime_error>("mismatch in obj cnt");
                     }
                 });
             }
@@ -287,7 +293,7 @@ namespace shamrock::patch {
             }
         }
 
-        inline friend bool operator==(const PatchData &p1, const PatchData &p2) {
+        inline friend bool operator==(PatchData &p1, PatchData &p2) {
             bool check = true;
 
             if (p1.fields.size() != p2.fields.size()) {
@@ -367,6 +373,64 @@ namespace shamrock::patch {
             }
             return ret;
         }
+
+
+
+
+        /**
+         * @brief 
+         * \todo should add a check in patch data to check that
+         * size in ovveride match with the one in the input vec
+         * @tparam T 
+         * @param field_name 
+         * @param vec 
+         */
+        template<class T>
+        void override_patch_field(std::string field_name, std::vector<T> & vec){
+            u32 len                 = vec.size();
+            PatchDataField<T> &f = get_field<T>(pdl.get_field_idx<T>(field_name));
+            sycl::buffer<T> buf(vec.data(), len);
+            f.override(buf, len);
+        }
+
+        /**
+         * @brief Fetch data of a patchdata field into a std::vector
+         * @tparam T 
+         * @param key 
+         * @param pdat 
+         * @return std::vector<T> 
+         */
+        template<class T>
+        inline std::vector<T> fetch_data(std::string key){
+
+            std::vector<T> vec;
+
+            auto appender = [&](auto & field){
+
+                if (field.get_name() == key) {
+
+                    logger::debug_ln("PyShamrockCTX","appending field",key);
+                    
+                    {
+                        sycl::host_accessor acc {shambase::get_check_ref(field.get_buf())};
+                        u32 len = field.size();
+
+                        for (u32 i = 0 ; i < len; i++) {
+                            vec.push_back(acc[i]);
+                        }
+                    }
+
+                }
+
+            };
+
+            for_each_field<T>([&](auto & field){
+                appender(field);
+            });
+
+            return vec;
+
+        }
     };
 
     template<class T>
@@ -376,7 +440,7 @@ namespace shamrock::patch {
 
         if (!pdl.check_main_field_type<T>()) {
 
-            throw shambase::throw_with_loc<std::invalid_argument>(
+            throw shambase::make_except_with_loc<std::invalid_argument>(
                 "the chosen type for the main field does not match the required template type");
         }
 
@@ -388,7 +452,7 @@ namespace shamrock::patch {
                     if (shambase::VectorProperties<T>::dimension == 3) {
                         return shammath::is_in_half_open(val, vmin, vmax);
                     } else {
-                        throw shambase::throw_with_loc<std::runtime_error>(
+                        throw shambase::make_except_with_loc<std::runtime_error>(
                             "dimension != 3 is not handled");
                     }
                 },

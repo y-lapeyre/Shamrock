@@ -8,10 +8,16 @@
 
 #pragma once
 
+/**
+ * @file TreeCellRanges.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief
+ */
+
 #include "kernels/compute_ranges.hpp"
 #include "kernels/convert_ranges.hpp"
 #include "shamalgs/memory.hpp"
-#include "shambase/sycl.hpp"
+#include "shambackends/sycl.hpp"
 #include "shamrock/sfc/MortonKernels.hpp"
 #include "shamrock/sfc/morton.hpp"
 #include "shamrock/tree/TreeReducedMortonCodes.hpp"
@@ -188,7 +194,7 @@ namespace shamrock::tree {
             } else if (buf_pos_min_cell_flt) {
                 return buf_pos_min_cell_flt->size();
             } else {
-                throw shambase::throw_with_loc<std::runtime_error>("no buffers are allocated");
+                throw shambase::make_except_with_loc<std::runtime_error>("no buffers are allocated");
             }
         }
 

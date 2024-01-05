@@ -8,18 +8,32 @@
 
 #pragma once
 
+/**
+ * @file Model.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+
 #include "shamalgs/collective/exchanges.hpp"
 #include "shambase/string.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"
+#include "shamcomm/collectives.hpp"
 #include "shammodels/generic/setup/generators.hpp"
 #include "shammodels/sph/Solver.hpp"
+#include "shammodels/sph/io/PhantomDump.hpp"
+#include "shammodels/sph/modules/ComputeLoadBalanceValue.hpp"
 #include "shamrock/legacy/utils/geometry_utils.hpp"
+#include "shamrock/patch/PatchData.hpp"
 #include "shamrock/scheduler/ReattributeDataUtility.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
-#include "shamrock/sph/sphpart.hpp"
+#include "shammodels/sph/math/density.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
 #include <vector>
+
+#include <pybind11/functional.h>
 
 namespace shammodels::sph {
 
@@ -37,6 +51,7 @@ namespace shammodels::sph {
         using Kernel             = SPHKernel<Tscal>;
 
         using Solver = Solver<Tvec, SPHKernel>;
+        using SolverConfig = typename Solver::Config;
         // using SolverConfig = typename Solver::Config;
 
         ShamrockCtx &ctx;
@@ -58,13 +73,25 @@ namespace shammodels::sph {
             return generic::setup::generators::get_box_dim(dr, xcnt, ycnt, zcnt);
         }
 
-        inline void set_cfl_cour(Tscal cfl_cour) { solver.cfl_cour = cfl_cour; }
-        inline void set_cfl_force(Tscal cfl_force) { solver.cfl_force = cfl_force; }
-        inline void set_particle_mass(Tscal gpart_mass) { solver.gpart_mass = gpart_mass; }
-        inline void set_eos_gamma(Tscal eos_gamma) { solver.eos_gamma = eos_gamma; }
+        inline void set_cfl_cour(Tscal cfl_cour) { solver.solver_config.cfl_cour = cfl_cour; }
+        inline void set_cfl_force(Tscal cfl_force) { solver.solver_config.cfl_force = cfl_force; }
+        inline void set_particle_mass(Tscal gpart_mass) { solver.solver_config.gpart_mass = gpart_mass; }
 
         inline void resize_simulation_box(std::pair<Tvec, Tvec> box) {
             ctx.set_coord_domain_bound({box.first, box.second});
+        }
+
+
+        SolverConfig gen_config_from_phantom_dump(PhantomDump & phdump, bool bypass_error);
+        void init_from_phantom_dump(PhantomDump & phdump);
+        PhantomDump make_phantom_dump();
+
+        void do_vtk_dump(std::string filename, bool add_patch_world_id){
+            solver.vtk_do_dump(filename, add_patch_world_id);
+        }
+
+        void set_debug_dump(bool _do_debug_dump, std::string _debug_dump_filename){
+            solver.set_debug_dump(_do_debug_dump, _debug_dump_filename);
         }
 
         u64 get_total_part_count();
@@ -74,8 +101,12 @@ namespace shammodels::sph {
 
         std::pair<Tvec, Tvec> get_ideal_fcc_box(Tscal dr, std::pair<Tvec, Tvec> box);
 
+        Tscal get_hfact(){
+            return Kernel::hfactd;
+        }
+        
         Tscal rho_h(Tscal h){
-            return shamrock::sph::rho_h(solver.gpart_mass, h, Kernel::hfactd);
+            return shamrock::sph::rho_h(solver.solver_config.gpart_mass, h, Kernel::hfactd);
         }
 
         void add_cube_fcc_3d(Tscal dr, std::pair<Tvec, Tvec> _box);
@@ -85,9 +116,43 @@ namespace shammodels::sph {
                 solver.storage.sinks.set({});
             }
 
+            logger::debug_ln("SPH", "add sink :",mass,pos,velocity,accretion_radius);
+
             solver.storage.sinks.get().push_back({
                 pos,velocity,{},{},mass,{},accretion_radius
             });
+        }
+
+        template<class T>
+        inline void set_field_value_lambda(std::string field_name, const std::function<T(Tvec)> pos_to_val){
+
+            StackEntry stack_loc{};
+            PatchScheduler &sched = shambase::get_check_ref(ctx.sched);
+            sched.patch_data.for_each_patchdata(
+                [&](u64 patch_id, shamrock::patch::PatchData &pdat) {
+
+                    PatchDataField<Tvec> &xyz =
+                        pdat.template get_field<Tvec>(sched.pdl.get_field_idx<Tvec>("xyz"));
+
+                    PatchDataField<T> &f =
+                        pdat.template get_field<T>(sched.pdl.get_field_idx<T>(field_name));
+
+                    {
+                        auto &buf = shambase::get_check_ref(f.get_buf());
+                        sycl::host_accessor acc{buf};
+
+                        auto &buf_xyz = shambase::get_check_ref(xyz.get_buf());
+                        sycl::host_accessor acc_xyz{buf_xyz};
+
+                        for (u32 i = 0; i < f.size(); i++) {
+                            Tvec r = acc_xyz[i];
+
+                            acc[i] = pos_to_val(r);
+                            
+                        }
+                    }
+                });
+
         }
 
         /**
@@ -117,6 +182,21 @@ namespace shammodels::sph {
                 Tscal q){
 
             Tscal G = solver.solver_config.get_constant_G();
+
+            Tscal eos_gamma;
+            using Config = SolverConfig;
+            using SolverConfigEOS     = typename Config::EOSConfig;
+            using SolverEOS_Adiabatic = typename SolverConfigEOS::Adiabatic;
+            if (SolverEOS_Adiabatic *eos_config =
+                std::get_if<SolverEOS_Adiabatic>(&solver.solver_config.eos_config.config)) {
+
+                eos_gamma = eos_config->gamma;
+
+            } else {
+                //dirty hack for disc setup in locally isothermal
+                eos_gamma = 2;
+                //shambase::throw_unimplemented();
+            }
 
             using Out = generic::setup::generators::DiscOutput<Tscal>;
 
@@ -169,6 +249,8 @@ namespace shammodels::sph {
                 std::vector<Tscal> vec_u;
                 std::vector<Tscal> vec_h;
 
+                std::vector<Tscal> vec_cs;
+
                 Tscal G = solver.solver_config.get_constant_G();
 
                 for(Out o : part_list){
@@ -179,8 +261,9 @@ namespace shammodels::sph {
                     //the scaleheight : H = \sqrt{u (\gamma -1)}/\Omega_K
                     //therefor the effective soundspeed is : \sqrt{(\gamma -1)u}
                     //whereas the real one is \sqrt{(\gamma -1)\gamma u}
-                    vec_u.push_back(o.cs*o.cs/(/*solver.eos_gamma * */ (solver.eos_gamma - 1)));
+                    vec_u.push_back(o.cs*o.cs/(/*solver.eos_gamma * */ (eos_gamma - 1)));
                     vec_h.push_back(shamrock::sph::h_rho(part_mass, o.rho, Kernel::hfactd));
+                    vec_cs.push_back(o.cs);
                 }
 
                 log += shambase::format("\n    patch id={}, add N={} particles", ptch.id_patch, vec_pos.size());
@@ -213,6 +296,14 @@ namespace shammodels::sph {
                     f.override(buf, len);
                 }
 
+                if(solver.solver_config.is_eos_locally_isothermal()){
+                    u32 len = vec_pos.size();
+                    PatchDataField<Tscal> &f =
+                        tmp.get_field<Tscal>(sched.pdl.get_field_idx<Tscal>("soundspeed"));
+                    sycl::buffer<Tscal> buf(vec_cs.data(), len);
+                    f.override(buf, len);
+                }
+
                 {
                     u32 len = vec_pos.size();
                     PatchDataField<Tvec> &f =
@@ -225,11 +316,14 @@ namespace shammodels::sph {
             });
 
             std::string log_gathered = "";
-            shamalgs::collective::gather_str(log, log_gathered);
+            shamcomm::gather_str(log, log_gathered);
 
-            if(shamsys::instance::world_rank == 0) {
+            if(shamcomm::world_rank() == 0) {
                 logger::info_ln("Model", "Push particles : ", log_gathered);
             }
+            
+            modules::ComputeLoadBalanceValue<Tvec, SPHKernel> (ctx, solver.solver_config, solver.storage).update_load_balancing();
+
 
             sched.scheduler_step(false, false);
 
@@ -261,9 +355,9 @@ namespace shammodels::sph {
             });
 
             log_gathered = "";
-            shamalgs::collective::gather_str(log, log_gathered);
+            shamcomm::gather_str(log, log_gathered);
 
-            if(shamsys::instance::world_rank == 0) logger::info_ln("Model", "current particle counts : ", log_gathered);
+            if(shamcomm::world_rank() == 0) logger::info_ln("Model", "current particle counts : ", log_gathered);
             return part_mass;
         }
 
@@ -278,12 +372,25 @@ namespace shammodels::sph {
                                      Tscal q,
                                      Tscal cmass) {
 
+            Tscal eos_gamma;
+            using Config = SolverConfig;
+            using SolverConfigEOS     = typename Config::EOSConfig;
+            using SolverEOS_Adiabatic = typename SolverConfigEOS::Adiabatic;
+            if (SolverEOS_Adiabatic *eos_config =
+                std::get_if<SolverEOS_Adiabatic>(&solver.solver_config.eos_config.config)) {
+
+                eos_gamma = eos_config->gamma;
+
+            } else {
+                shambase::throw_unimplemented();
+            }
+
             auto cs = [&](Tscal u){
-                return sycl::sqrt(solver.eos_gamma * (solver.eos_gamma - 1) * u);
+                return sycl::sqrt(eos_gamma * (eos_gamma - 1) * u);
             };
 
             auto U = [&](Tscal cs){
-                return cs*cs/(solver.eos_gamma * (solver.eos_gamma - 1));
+                return cs*cs/(eos_gamma * (eos_gamma - 1));
             };
 
 
@@ -374,11 +481,13 @@ namespace shammodels::sph {
             });
 
             std::string log_gathered = "";
-            shamalgs::collective::gather_str(log, log_gathered);
+            shamcomm::gather_str(log, log_gathered);
 
-            if(shamsys::instance::world_rank == 0) {
+            if(shamcomm::world_rank() == 0) {
                 logger::info_ln("Model", "Push particles : ", log_gathered);
             }
+
+            modules::ComputeLoadBalanceValue<Tvec, SPHKernel> (ctx, solver.solver_config, solver.storage).update_load_balancing();
 
             sched.scheduler_step(false, false);
 
@@ -410,10 +519,12 @@ namespace shammodels::sph {
             });
 
             log_gathered = "";
-            shamalgs::collective::gather_str(log, log_gathered);
+            shamcomm::gather_str(log, log_gathered);
 
-            if(shamsys::instance::world_rank == 0) logger::info_ln("Model", "current particle counts : ", log_gathered);
+            if(shamcomm::world_rank() == 0) logger::info_ln("Model", "current particle counts : ", log_gathered);
         }
+
+        void push_particle(std::vector<Tvec> & part_pos_insert, std::vector<Tscal> & part_hpart_insert, std::vector<Tscal> &part_u_insert);
 
         template<class T>
         inline void set_value_in_a_box(std::string field_name, T val, std::pair<Tvec, Tvec> box) {
@@ -501,7 +612,7 @@ namespace shammodels::sph {
 
                             Tscal r = sycl::length(dr);
 
-                            acc[i] += val*Kernel::W(r,h_ker);
+                            acc[i] += val*Kernel::W_3d(r,h_ker);
                         }
                     }
                 });
@@ -536,6 +647,13 @@ namespace shammodels::sph {
 
         inline void set_solver_config(typename Solver::Config cfg) { solver.solver_config = cfg; }
 
+        inline f64 solver_logs_last_rate(){
+            return solver.solve_logs.get_last_rate();
+        }
+        inline u64 solver_logs_last_obj_count(){
+            return solver.solve_logs.get_last_obj_count();
+        }
+
         ////////////////////////////////////////////////////////////////////////////////////////////
         /////// analysis utilities
         ////////////////////////////////////////////////////////////////////////////////////////////
@@ -549,7 +667,20 @@ namespace shammodels::sph {
         ////////////////////////////////////////////////////////////////////////////////////////////
 
         f64
-        evolve_once(f64 t_curr, f64 dt_input, bool do_dump, std::string vtk_dump_name, bool vtk_dump_patch_id);
+        evolve_once_time_expl(f64 t_curr, f64 dt_input);
+    
+        void timestep();
+
+        inline void evolve_once(){
+            solver.evolve_once();
+        }
+
+        inline bool evolve_until(Tscal target_time,i32 niter_max){
+            return solver.evolve_until(target_time,niter_max);
+        }
+
+        private:
+        void add_pdat_to_phantom_block(PhantomDumpBlock & block, shamrock::patch::PatchData & pdat);
     };
 
-} // namespace shammodels
+} // namespace shammodels::sph

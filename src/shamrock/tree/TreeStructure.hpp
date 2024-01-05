@@ -8,7 +8,12 @@
 
 #pragma once
 
-#include "aliases.hpp"
+/**
+ * @file TreeStructure.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief
+ */
+
 
 #include "kernels/karras_alg.hpp"
 #include "shamalgs/memory.hpp"
@@ -40,7 +45,7 @@ namespace shamrock::tree {
         build(sycl::queue &queue, u32 _internal_cell_count, sycl::buffer<u_morton> &morton_buf) {
 
             if (!(_internal_cell_count < morton_buf.size())) {
-                throw shambase::throw_with_loc<std::runtime_error>(
+                throw shambase::make_except_with_loc<std::runtime_error>(
                     "morton buf must be at least with size() greater than internal_cell_count");
             }
 

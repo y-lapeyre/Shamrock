@@ -8,7 +8,12 @@
 
 #pragma once
 
-#include "aliases.hpp"
+/**
+ * @file TreeMortonCodes.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief
+ */
+
 #include "shamalgs/memory.hpp"
 #include "shamalgs/serialize.hpp"
 #include "shamalgs/reduction.hpp"
@@ -122,12 +127,12 @@ namespace shamrock::tree {
 
             serializer.write(obj_cnt);
             if (!buf_morton) {
-                throw shambase::throw_with_loc<std::runtime_error>("missing buffer");
+                throw shambase::make_except_with_loc<std::runtime_error>("missing buffer");
             }
             // serializer.write(buf_morton->size());
             serializer.write_buf(*buf_morton, obj_cnt);
             if (!buf_particle_index_map) {
-                throw shambase::throw_with_loc<std::runtime_error>("missing buffer");
+                throw shambase::make_except_with_loc<std::runtime_error>("missing buffer");
             }
             serializer.write_buf(*buf_particle_index_map, obj_cnt);
         }

@@ -6,13 +6,15 @@
 //
 // -------------------------------------------------------//
 
-
-//%Impl status : Clean unfinished
+/**
+ * @file RadixTree.cpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief
+ */
 
 #include "RadixTree.hpp"
 
 
-#include "aliases.hpp"
 #include <tuple>
 #include <vector>
 
@@ -32,7 +34,7 @@ RadixTree<u_morton, vec3>::RadixTree(
     sycl::queue &queue, std::tuple<vec3, vec3> treebox, sycl::buffer<vec3> & pos_buf, u32 cnt_obj, u32 reduc_level
 ) {
     if (cnt_obj > i32_max - 1) {
-        throw shambase::throw_with_loc<std::runtime_error>("number of element in patch above i32_max-1");
+        throw shambase::make_except_with_loc<std::runtime_error>("number of element in patch above i32_max-1");
     }
 
     logger::debug_sycl_ln("RadixTree", "box dim :", std::get<0>(treebox), std::get<1>(treebox));
@@ -246,7 +248,7 @@ auto RadixTree<u_morton, vec>::compute_int_boxes(
     {
         if(shamalgs::reduction::has_nan(queue, *buf_cell_int_rad_buf, tree_struct.internal_cell_count + tree_reduced_morton_codes.tree_leaf_count)){
             shamalgs::memory::print_buf(*buf_cell_int_rad_buf, tree_struct.internal_cell_count + tree_reduced_morton_codes.tree_leaf_count, 8, "{} ");
-            throw  shambase::throw_with_loc<std::runtime_error>("the structure of the tree as issue in ids");
+            throw shambase::make_except_with_loc<std::runtime_error>("the structure of the tree as issue in ids");
         }
     }
 
@@ -335,6 +337,7 @@ template void RadixTree<u32, u32_3>::print_tree_field(sycl::buffer<u32> &buf_fie
 template void RadixTree<u32, u64_3>::print_tree_field(sycl::buffer<u32> &buf_field);
 template void RadixTree<u64, u32_3>::print_tree_field(sycl::buffer<u32> &buf_field);
 template void RadixTree<u64, u64_3>::print_tree_field(sycl::buffer<u32> &buf_field);
+template void RadixTree<u64, i64_3>::print_tree_field(sycl::buffer<u32> &buf_field);
 
 
 
@@ -1075,4 +1078,7 @@ template class RadixTree<u64, u32_3>;
 
 template class RadixTree<u32, u64_3>;
 template class RadixTree<u64, u64_3>;
+
+template class RadixTree<u32, i64_3>;
+template class RadixTree<u64, i64_3>;
 

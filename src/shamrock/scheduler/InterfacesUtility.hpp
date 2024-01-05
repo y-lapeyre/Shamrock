@@ -8,10 +8,16 @@
 
 #pragma once
 
+/**
+ * @file InterfacesUtility.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief
+ */
+
 #include "shamalgs/memory.hpp"
 #include "shamrock/patch/PatchData.hpp"
 #include "shamrock/scheduler/SerialPatchTree.hpp"
-#include "shamrock/scheduler/scheduler_mpi.hpp"
+#include "shamrock/scheduler/PatchScheduler.hpp"
 #include <vector>
 
 namespace shamrock {

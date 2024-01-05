@@ -8,8 +8,15 @@
 
 #pragma once
 
+/**
+ * @file ConservativeCheck.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 #include "shambase/sycl_utils/vectorProperties.hpp"
-#include "shambase/type_aliases.hpp"
+#include "shambackends/typeAliasVec.hpp"
 #include "shammodels/sph/SolverConfig.hpp"
 #include "shammodels/sph/modules/SolverStorage.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
@@ -33,7 +40,7 @@ namespace shammodels::sph::modules {
         ConservativeCheck(ShamrockCtx &context, Config &solver_config, Storage &storage)
             : context(context), solver_config(solver_config), storage(storage) {}
 
-        void check_conservation(Tscal gpart_mass);
+        void check_conservation();
 
         private:
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }

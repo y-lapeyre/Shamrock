@@ -6,11 +6,17 @@
 //
 // -------------------------------------------------------//
 
-#include "aliases.hpp"
+/**
+ * @file benchmark_selfgrav.cpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 
 #include "shambase/time.hpp"
 #include "shamrock/patch/PatchDataLayout.hpp"
-#include "shamrock/scheduler/scheduler_mpi.hpp"
+#include "shamrock/scheduler/PatchScheduler.hpp"
 
 #include "shammodels/nbody/models/nbody_selfgrav.hpp"
 #include "shammodels/nbody/setup/nbody_setup.hpp"
@@ -156,7 +162,7 @@ void benchmark_selfgrav_main(u32 npatch, std::string name){
 
         f64 Nesti = (1.F/dr)*(1.F/dr)*(1.F/dr);
 
-        f64 multiplier = shamsys::instance::world_size;
+        f64 multiplier = shamcomm::world_size();
 
         if(npatch < multiplier){
             multiplier = 1;
@@ -183,7 +189,7 @@ void benchmark_selfgrav_main(u32 npatch, std::string name){
         times.push_back(t);
     }
 
-    if(shamsys::instance::world_rank == 0){
+    if(shamcomm::world_rank() == 0){
         auto & dset = shamtest::test_data().new_dataset(name);
         dset.add_data("Npart", npart);
         dset.add_data("times", times);

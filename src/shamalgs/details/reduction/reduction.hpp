@@ -8,9 +8,15 @@
 
 #pragma once
 
-#include "aliases.hpp"
+/**
+ * @file reduction.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 #include "shambase/exception.hpp"
-#include "shambase/sycl.hpp"
+#include "shambackends/sycl.hpp"
 #include "shambase/sycl_utils/vec_equals.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"
 #include "shamsys/NodeInstance.hpp"
@@ -36,11 +42,11 @@ namespace shamalgs::reduction {
     bool equals(sycl::buffer<T> &buf1, sycl::buffer<T> &buf2, u32 cnt) {
 
         if (buf1.size() < cnt) {
-            throw shambase::throw_with_loc<std::invalid_argument>("buf 1 is larger than cnt");
+            throw shambase::make_except_with_loc<std::invalid_argument>("buf 1 is larger than cnt");
         }
 
         if (buf2.size() < cnt) {
-            throw shambase::throw_with_loc<std::invalid_argument>("buf 2 is larger than cnt");
+            throw shambase::make_except_with_loc<std::invalid_argument>("buf 2 is larger than cnt");
         }
 
         sycl::buffer<u8> res(cnt);

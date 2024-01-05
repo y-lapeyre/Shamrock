@@ -8,8 +8,15 @@
 
 #pragma once
 
+/**
+ * @file SinkParticlesUpdate.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+
 #include "shambase/sycl_utils/vectorProperties.hpp"
-#include "shambase/type_aliases.hpp"
+#include "shambackends/typeAliasVec.hpp"
 #include "shammodels/sph/SolverConfig.hpp"
 #include "shammodels/sph/modules/SolverStorage.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
@@ -36,9 +43,9 @@ namespace shammodels::sph::modules {
         SinkParticlesUpdate(ShamrockCtx &context, Config &solver_config, Storage &storage)
             : context(context), solver_config(solver_config), storage(storage) {}
 
-        void accrete_particles(Tscal gpart_mass);
+        void accrete_particles();
         void predictor_step(Tscal dt);
-        void compute_sph_forces(Tscal gpart_mass);
+        void compute_sph_forces();
         void compute_ext_forces();
         void corrector_step(Tscal dt);
 
