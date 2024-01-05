@@ -71,7 +71,6 @@ namespace shamalgs::collective {
 
     void distributed_data_sparse_comm(SerializedDDataComm &send_distrib_data,
                                       SerializedDDataComm &recv_distrib_data,
-                                      shamcomm::CommunicationProtocol prot,
                                       std::function<i32(u64)> rank_getter,
                                       std::optional<SparseCommTable> comm_table) {
 
@@ -107,7 +106,7 @@ namespace shamalgs::collective {
         {NamedStackEntry stack_loc2{"prepare payload"};
         for (auto &[key, buf] : send_bufs) {
             send_payoad.push_back(
-                {key.second, std::make_unique<shamcomm::CommunicationBuffer>(get_check_ref(buf), prot)});
+                {key.second, std::make_unique<shamcomm::CommunicationBuffer>(get_check_ref(buf))});
         }    
         }
         
@@ -116,9 +115,9 @@ namespace shamalgs::collective {
         std::vector<RecvPayload> recv_payload;
 
         if (comm_table) {
-            sparse_comm_c(send_payoad, recv_payload, prot, *comm_table);
+            sparse_comm_c(send_payoad, recv_payload, *comm_table);
         } else {
-            base_sparse_comm(send_payoad, recv_payload, prot);
+            base_sparse_comm(send_payoad, recv_payload);
         }
 
         // make serializers from recv buffs
@@ -160,7 +159,7 @@ namespace shamalgs::collective {
                         i32 supposed_sender_rank = rank_getter(sender);
                         i32 real_sender_rank     = recv.sender_ranks;
                         if (supposed_sender_rank != real_sender_rank) {
-                            throw throw_with_loc<std::runtime_error>("the rank do not matches");
+                            throw make_except_with_loc<std::runtime_error>("the rank do not matches");
                         }
                     }
 

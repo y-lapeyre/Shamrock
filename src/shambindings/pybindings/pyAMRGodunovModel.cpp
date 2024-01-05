@@ -18,6 +18,7 @@
 #include "shambindings/pybindaliases.hpp"
 #include "shambindings/pytypealias.hpp"
 #include "shammodels/amr/basegodunov/Model.hpp"
+
 namespace shammodels::basegodunov {
     template<class Tvec, class TgridVec>
     void add_instance(py::module &m, std::string name_config, std::string name_model) {
@@ -60,7 +61,7 @@ Register_pymod(pybasegodunovmodel) {
             if (vector_type == "f64_3" && grid_repr == "i64_3") {
                 ret = std::make_unique<Model<f64_3, i64_3>>(ctx);
             } else {
-                throw shambase::throw_with_loc<std::invalid_argument>(
+                throw shambase::make_except_with_loc<std::invalid_argument>(
                     "unknown combination of representation and grid_repr");
             }
 
