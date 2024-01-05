@@ -78,13 +78,14 @@ namespace shammath {
 
         /**
          * @brief check if the given lattice coordinates bounds can make a periodic box
-         * 
+         *
          * @param coord_min integer triplet for the minimal coordinates on the lattice
          * @param coord_max integer triplet for the maximal coordinates on the lattice
-         * @return true 
-         * @return false 
+         * @return true
+         * @return false
          */
-        constexpr static bool can_make_periodic_box(std::array<i32, dim> coord_min, std::array<i32, dim> coord_max){
+        constexpr static bool
+        can_make_periodic_box(std::array<i32, dim> coord_min, std::array<i32, dim> coord_max) {
             if (coord_max[0] - coord_min[0] < 2) {
                 return false;
             }
@@ -122,10 +123,10 @@ namespace shammath {
             zmin = 2 * sycl::sqrt(6.) * coord_min[2] / 3;
             zmax = 2 * sycl::sqrt(6.) * coord_max[2] / 3;
 
-            if(!can_make_periodic_box(coord_min, coord_max)){
-                throw LatticeError( "x axis count should be greater than 1\n"
-                                    "y axis count should be even\n"
-                                    "z axis count should be even");
+            if (!can_make_periodic_box(coord_min, coord_max)) {
+                throw LatticeError("x axis count should be greater than 1\n"
+                                   "y axis count should be even\n"
+                                   "z axis count should be even");
             }
 
             return {Tvec{xmin, ymin, zmin} * dr, Tvec{xmax, ymax, zmax} * dr};
@@ -133,7 +134,7 @@ namespace shammath {
 
         /**
          * @brief get the nearest integer triplets bound that gives a periodic box
-         * 
+         *
          * @param coord_min integer triplet for the minimal coordinates on the lattice
          * @param coord_max integer triplet for the maximal coordinates on the lattice
          * @return constexpr std::pair<std::array<i32, dim>, std::array<i32, dim>> the new bounds
@@ -189,7 +190,12 @@ namespace shammath {
                 std::array<i32, dim> coord_max,
                 Selector &&selector)
                 : dr(dr), coord_min(coord_min), coord_max(coord_max), current(coord_min),
-                  selector(std::forward<Selector>(selector)) {}
+                  selector(std::forward<Selector>(selector)) {
+
+                if (coord_min == coord_max) {
+                    done = true;
+                }
+            }
 
             bool is_done() { return done; }
 
