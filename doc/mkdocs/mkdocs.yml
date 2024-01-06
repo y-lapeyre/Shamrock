@@ -27,7 +27,8 @@ nav:
 
   - 'Develloper Doc' :
     - 'Git guide' : 'devdoc/git_guide.md'
-    - 'Using the logs' : 'devdoc/log_system.md'
+    - 'Using the logs' : 'devdoc/using_local_llvm.md'
+    - 'Local LLVM' : 'devdoc/log_system.md'
     - 'Codebase Organisation' : 'devdoc/codebase_org.md'
     - 'Testing' : 'devdoc/testing.md'
     - 'Conventions' : 'devdoc/coding_conventions.md'
