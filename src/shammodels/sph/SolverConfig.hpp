@@ -47,6 +47,8 @@ struct shammodels::sph::SolverStatusVar {
 
     Tscal time   = 0;
     Tscal dt_sph = 0;
+
+    Tscal cfl_multiplier = 1e-2;
 };
 
 template<class Tvec, template<class> class SPHKernel>
@@ -63,6 +65,7 @@ struct shammodels::sph::SolverConfig {
     Tscal gpart_mass;
     Tscal cfl_cour;
     Tscal cfl_force;
+    Tscal cfl_multiplier_stiffness = 2;
 
 
     //////////////////////////////////////////////////////////////////////////////////////////////

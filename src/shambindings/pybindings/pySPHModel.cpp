@@ -147,6 +147,10 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
              [](T &self, f64 dr, f64_3 box_min, f64_3 box_max) {
                  return self.get_ideal_fcc_box(dr, {box_min, box_max});
              })
+        .def("get_ideal_hcp_box",
+             [](T &self, f64 dr, f64_3 box_min, f64_3 box_max) {
+                 return self.get_ideal_hcp_box(dr, {box_min, box_max});
+             })
         .def("resize_simulation_box",
              [](T &self, f64_3 box_min, f64_3 box_max) {
                  return self.resize_simulation_box({box_min, box_max});
@@ -158,6 +162,10 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
         .def("add_cube_fcc_3d",
              [](T &self, f64 dr, f64_3 box_min, f64_3 box_max) {
                  return self.add_cube_fcc_3d(dr, {box_min, box_max});
+             })
+        .def("add_cube_hcp_3d",
+             [](T &self, f64 dr, f64_3 box_min, f64_3 box_max) {
+                 return self.add_cube_hcp_3d(dr, {box_min, box_max});
              })
         .def("add_disc_3d_keplerian",
              [](T &self,

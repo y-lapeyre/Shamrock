@@ -69,8 +69,8 @@ namespace shammath {
             i32 k = coord[2];
 
             Tvec r_a = {
-                2 * i + ((j + k) % 2),
-                sycl::sqrt(3.) * (j + (1. / 3.) * (k % 2)),
+                2 * i + (sycl::abs(j + k) % 2),
+                sycl::sqrt(3.) * (j + (1. / 3.) * (sycl::abs(k) % 2)),
                 2 * sycl::sqrt(6.) * k / 3};
 
             return dr * r_a;
@@ -130,6 +130,39 @@ namespace shammath {
             }
 
             return {Tvec{xmin, ymin, zmin} * dr, Tvec{xmax, ymax, zmax} * dr};
+        }
+
+
+        static inline constexpr std::pair<std::array<i32, dim>, std::array<i32, dim>>
+        get_box_index_bounds(Tscal dr, Tvec box_min, Tvec box_max) {
+            
+            Tvec coord_min;
+            Tvec coord_max;
+
+            coord_min[0]= box_min[0] / 2.;
+            coord_max[0]= box_max[0] / 2.;
+
+            coord_min[1] = box_min[1] / sycl::sqrt(3.);
+            coord_max[1] = box_max[1] / sycl::sqrt(3.);
+
+            coord_min[2] = box_min[2] / (2 * sycl::sqrt(6.)/ 3);
+            coord_max[2] = box_max[2] / (2 * sycl::sqrt(6.)/ 3);
+
+            coord_min /= dr;
+            coord_max /= dr;
+
+            std::array<i32, 3> ret_coord_min = {
+                i32 (coord_min.x())-1,
+                i32 (coord_min.y())-1,
+                i32 (coord_min.z())-1
+            };
+            std::array<i32, 3> ret_coord_max = {
+                i32 (coord_max.x()) +1 ,
+                i32 (coord_max.y()) +1 ,
+                i32 (coord_max.z()) +1 
+            };
+
+            return {ret_coord_min, ret_coord_max};
         }
 
         /**

@@ -100,6 +100,7 @@ namespace shammodels::sph {
 
 
         std::pair<Tvec, Tvec> get_ideal_fcc_box(Tscal dr, std::pair<Tvec, Tvec> box);
+        std::pair<Tvec, Tvec> get_ideal_hcp_box(Tscal dr, std::pair<Tvec, Tvec> box);
 
         Tscal get_hfact(){
             return Kernel::hfactd;
@@ -109,7 +110,9 @@ namespace shammodels::sph {
             return shamrock::sph::rho_h(solver.solver_config.gpart_mass, h, Kernel::hfactd);
         }
 
+
         void add_cube_fcc_3d(Tscal dr, std::pair<Tvec, Tvec> _box);
+        void add_cube_hcp_3d(Tscal dr, std::pair<Tvec, Tvec> _box);
 
         inline void add_sink(Tscal mass, Tvec pos, Tvec velocity, Tscal accretion_radius){
             if(solver.storage.sinks.is_empty()){
