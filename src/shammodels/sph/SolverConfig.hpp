@@ -114,6 +114,12 @@ struct shammodels::sph::SolverConfig {
     inline Tscal get_time() { return time_state.time; }
     inline Tscal get_dt_sph() { return time_state.dt_sph; }
 
+    inline void set_cfl_multipler(Tscal lambda){time_state.cfl_multiplier = lambda;}
+    inline Tscal get_cfl_multipler(){return time_state.cfl_multiplier;}
+
+    inline void set_cfl_mult_stiffness(Tscal cstiff){cfl_multiplier_stiffness = cstiff;}
+    inline Tscal get_cfl_mult_stiffness(){return cfl_multiplier_stiffness;}
+
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Solver status variables (END)
     //////////////////////////////////////////////////////////////////////////////////////////////

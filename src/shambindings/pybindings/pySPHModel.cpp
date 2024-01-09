@@ -119,7 +119,9 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             py::arg("Omega_0"),
             py::arg("eta"),
             py::arg("q"))
-        .def("set_units", &TConfig::set_units);
+        .def("set_units", &TConfig::set_units)
+        .def("set_cfl_multipler", &TConfig::set_cfl_multipler)
+        .def("set_cfl_mult_stiffness", &TConfig::set_cfl_mult_stiffness);
 
     py::class_<T>(m, name_model.c_str())
         .def(py::init([](ShamrockCtx &ctx) { return std::make_unique<T>(ctx); }))
