@@ -1252,7 +1252,7 @@ void SPHSolve<Tvec, Kern>::evolve_once()
         reset_eos_fields();
 
         if (corrector_iter_cnt == 50) {
-            throw shambase::throw_with_loc<std::runtime_error>(
+            throw shambase::make_except_with_loc<std::runtime_error>(
                 "the corrector has made over 50 loops, either their is a bug, either you are using "
                 "a dt that is too large");
         }

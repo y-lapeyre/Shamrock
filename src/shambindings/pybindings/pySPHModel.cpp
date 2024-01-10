@@ -200,7 +200,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                      f64_3 val = value.cast<f64_3>();
                      self.set_value_in_a_box(field_name, val, {box_min, box_max});
                  } else {
-                     throw shambase::throw_with_loc<std::invalid_argument>("unknown field type");
+                     throw shambase::make_except_with_loc<std::invalid_argument>("unknown field type");
                  }
              })
         .def("set_value_in_sphere",
@@ -217,10 +217,11 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                      f64_3 val = value.cast<f64_3>();
                      self.set_value_in_sphere(field_name, val, center, radius);
                  } else {
-                     throw shambase::throw_with_loc<std::invalid_argument>("unknown field type");
+                     throw shambase::make_except_with_loc<std::invalid_argument>("unknown field type");
                  }
              })
         .def("set_field_value_lambda_f64_3",&T::template set_field_value_lambda<f64_3>)
+        .def("set_field_value_lambda_f64",&T::template set_field_value_lambda<f64>)
         //.def("set_field_value_lambda_f64_3",[](T&self,std::string field_name, const std::function<f64_3 (Tscal, Tscal , Tscal)> pos_to_val){
         //    self.template set_field_value_lambda<f64_3>(field_name, [=](Tvec v){
         //        return pos_to_val(v.x(), v.y(),v.z());
@@ -240,7 +241,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                      f64_3 val = value.cast<f64_3>();
                      self.add_kernel_value(field_name, val, center, h_ker);
                  } else {
-                     throw shambase::throw_with_loc<std::invalid_argument>("unknown field type");
+                     throw shambase::make_except_with_loc<std::invalid_argument>("unknown field type");
                  }
              })
         .def("get_sum",
@@ -250,7 +251,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                  } else if (field_type == "f64_3") {
                      return py::cast(self.template get_sum<f64_3>(field_name));
                  } else {
-                     throw shambase::throw_with_loc<std::invalid_argument>("unknown field type");
+                     throw shambase::make_except_with_loc<std::invalid_argument>("unknown field type");
                  }
              })
         .def("get_closest_part_to", [](T & self,f64_3 pos) -> f64_3 {
@@ -321,7 +322,7 @@ Register_pymod(pysphmodel) {
             } else if (vector_type == "f64_3" && kernel == "M6") {
                 ret = std::make_unique<Model<f64_3, shammath::M6>>(ctx);
             } else {
-                throw shambase::throw_with_loc<std::invalid_argument>(
+                throw shambase::make_except_with_loc<std::invalid_argument>(
                     "unknown combination of representation and kernel");
             }
 

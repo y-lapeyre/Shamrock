@@ -66,7 +66,7 @@ f64 compute_L2(std::vector<f64> &v1, std::vector<f64> &v2) {
         }
 
     } else {
-        throw shambase::throw_with_loc<std::runtime_error>("should have same size");
+        throw shambase::make_except_with_loc<std::runtime_error>("should have same size");
     }
 
     return sqrt(sum / v1.size());
@@ -86,7 +86,7 @@ f64 compute_L2(std::vector<f64> &v1, std::vector<f64> &v2, std::vector<f64> & re
         }
 
     } else {
-        throw shambase::throw_with_loc<std::runtime_error>("should have same size");
+        throw shambase::make_except_with_loc<std::runtime_error>("should have same size");
     }
 
     return sqrt(sum / cnt);
