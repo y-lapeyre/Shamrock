@@ -15,10 +15,10 @@
  * 
  */
  
-#include "typeAliasBase.hpp"
-#include "typeAliasFp16.hpp"
-#include "typeAliasVec.hpp"
-#include <sycl/sycl.hpp>
+#include "typeAliasBase.hpp" // IWYU pragma: export
+#include "typeAliasFp16.hpp" // IWYU pragma: export
+#include "typeAliasVec.hpp" // IWYU pragma: export
+#include <sycl/sycl.hpp> /// IWYU pragma: export
 
 enum SYCLImplementation { OPENSYCL, DPCPP, UNKNOWN };
 
