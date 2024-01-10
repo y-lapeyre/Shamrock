@@ -16,10 +16,7 @@
 
 #include "shambase/exception.hpp"
 #include "shambackends/queues.hpp"
-#include "shambackends/typeAliasVec.hpp"
-#include "shambackends/sycl.hpp"
 #include <stdexcept>
-#include <variant>
 
 namespace shamcomm {
 
