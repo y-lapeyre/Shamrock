@@ -17,6 +17,7 @@
 #include "shambase/exception.hpp"
 #include "shambackends/queues.hpp"
 #include <stdexcept>
+#include <variant>
 
 namespace shamcomm {
 
