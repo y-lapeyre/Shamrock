@@ -18,6 +18,8 @@
 #include "shambase/sycl_utils/vectorProperties.hpp"
 #include "shammodels/amr/basegodunov/Solver.hpp"
 #include "shammodels/amr/basegodunov/modules/SolverStorage.hpp"
+#include "shammodels/amr/AMRBlockStencil.hpp"
+#include "shammodels/amr/AMRCellStencil.hpp"
 
 
 namespace shammodels::basegodunov::modules {
@@ -51,7 +53,17 @@ namespace shammodels::basegodunov::modules {
         static constexpr u32 stencil_offset_count = 6;
 
         private:
-        void fill_slot(i64_3 relative_pos, StencilOffsets result_offset);
+
+        using block_stencil_el_buf = sycl::buffer<amr::block::StencilElement>;
+        using cell_stencil_el_buf = sycl::buffer<amr::cell::StencilElement>;
+
+        using dd_block_stencil_el_buf = shambase::DistributedData<block_stencil_el_buf>;
+        using dd_cell_stencil_el_buf = shambase::DistributedData<cell_stencil_el_buf>;
+
+        dd_block_stencil_el_buf compute_block_stencil_slot(i64_3 relative_pos, StencilOffsets result_offset);
+        cell_stencil_el_buf lower_block_slot_to_cell(i64_3 relative_pos, StencilOffsets result_offset, block_stencil_el_buf & block_stencil_el);
+        dd_cell_stencil_el_buf lower_block_slot_to_cell(i64_3 relative_pos, StencilOffsets result_offset, dd_block_stencil_el_buf & block_stencil_el);
+        
         
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }
     };

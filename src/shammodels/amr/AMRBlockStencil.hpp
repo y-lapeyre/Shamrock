@@ -31,32 +31,6 @@ namespace shammodels::amr::block {
     };
 
     struct Levelm1{
-
-        /**
-        * @brief Represent the position relative to wanted cell
-        * format : (xyz)
-        * exemple in 2D 
-        * _______________________
-        * |          |          |
-        * |    mM    |    MM    |
-        * |          |          |
-        * -----------------------
-        * |          |          |
-        * |    mm    |    Mm    |
-        * |          |          |
-        * _______________________
-        */
-        enum STATE{
-            mmm = 0, 
-            mmM = 1, 
-            mMm = 2, 
-            mMM = 3,
-            Mmm = 4, 
-            MmM = 5, 
-            MMm = 6, 
-            MMM = 7, 
-        };
-        STATE neighbourgh_state;
         u32 block_idx;
     };
 
