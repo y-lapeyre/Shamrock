@@ -34,6 +34,7 @@ namespace shammodels::basegodunov::modules {
 
         using Config  = SolverConfig<Tvec,TgridVec>;
         using Storage = SolverStorage<Tvec, TgridVec, u64>;
+        using AMRBlock = typename Config::AMRBlock;
 
         ShamrockCtx &context;
         Config &solver_config;
