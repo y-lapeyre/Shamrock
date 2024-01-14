@@ -30,37 +30,6 @@
 
 namespace shamalgs {
 
-    namespace details {
-        template<u64 alignment>
-        inline u64 align_repr(u64 offset) {
-            u64 modval = offset % alignment;
-            if (modval == 0) {
-                return offset;
-            }
-            return offset + (alignment - modval);
-        }
-
-        template<u64 alignment, class T>
-        inline u64 serialize_byte_size() {
-            using Helper = details::SerializeHelperMember<T>;
-            return align_repr<alignment>(Helper::szrepr);
-        }
-
-        template<u64 alignment, class T>
-        inline u64 serialize_byte_size(u64 len) {
-            using Helper = details::SerializeHelperMember<T>;
-            return align_repr<alignment>(len * Helper::szrepr);
-        }
-
-        template<u64 alignment>
-        inline u64 serialize_byte_size(std::string s) {
-            return serialize_byte_size<alignment, u32>() +
-                   serialize_byte_size<alignment, u32>(s.size());
-        }
-
-    } // namespace details
-
-
     struct SerializeSize{
         u64 head_size = 0;
         u64 content_size = 0;
@@ -126,10 +95,45 @@ namespace shamalgs {
 
     };
 
+
+    namespace details {
+        template<u64 alignment>
+        inline u64 align_repr(u64 offset) {
+            u64 modval = offset % alignment;
+            if (modval == 0) {
+                return offset;
+            }
+            return offset + (alignment - modval);
+        }
+
+        template<u64 alignment, class T>
+        inline SerializeSize serialize_byte_size() {
+            using Helper = details::SerializeHelperMember<T>;
+            return SerializeSize::Header(align_repr<alignment>(Helper::szrepr));
+        }
+
+        template<u64 alignment, class T>
+        inline SerializeSize serialize_byte_size(u64 len) {
+            using Helper = details::SerializeHelperMember<T>;
+            return SerializeSize::Content(align_repr<alignment>(len * Helper::szrepr));
+        }
+
+        template<u64 alignment>
+        inline SerializeSize serialize_byte_size(std::string s) {
+            return serialize_byte_size<alignment, u32>() +
+                   serialize_byte_size<alignment, u32>(s.size());
+        }
+
+    } // namespace details
+
+
+
     class SerializeHelper {
-        std::unique_ptr<sycl::buffer<u8>> storage;
+
+        u64 header_size = 0;
+
+        std::unique_ptr<sycl::buffer<u8>> storage = {};
         u64 head      = 0;
-        bool first_op = true;
 
         static constexpr u64 alignment = 8;
 
@@ -149,39 +153,30 @@ namespace shamalgs {
 
         inline static u64 align_repr(u64 offset) { return details::align_repr<alignment>(offset); }
 
+        static u64 pre_head_lenght();
+
+
         public:
         SerializeHelper() = default;
 
-        SerializeHelper(std::unique_ptr<sycl::buffer<u8>> &&storage)
-            : storage(std::forward<std::unique_ptr<sycl::buffer<u8>>>(storage)) {}
+        SerializeHelper(std::unique_ptr<sycl::buffer<u8>> &&storage);
 
-        inline void allocate(SerializeSize szinfo) {
-            u64 bytelen = szinfo.head_size + szinfo.content_size;
-            StackEntry stack_loc{false};
-            storage  = std::make_unique<sycl::buffer<u8>>(bytelen);
-            head     = 0;
-            first_op = true;
-        }
+        void allocate(SerializeSize szinfo);
 
-        inline std::unique_ptr<sycl::buffer<u8>> finalize() {
-            StackEntry stack_loc{false};
-            std::unique_ptr<sycl::buffer<u8>> ret;
-            std::swap(ret, storage);
-            return ret;
-        }
+        std::unique_ptr<sycl::buffer<u8>> finalize();
 
         template<class T>
         inline static SerializeSize serialize_byte_size() {
-            return SerializeSize::Header(details::serialize_byte_size<alignment, T>());
+            return details::serialize_byte_size<alignment, T>();
         }
 
         template<class T>
         inline static SerializeSize serialize_byte_size(u64 len) {
-            return SerializeSize::Content(details::serialize_byte_size<alignment, T>(len));
+            return details::serialize_byte_size<alignment, T>(len);
         }
 
         inline static SerializeSize serialize_byte_size(std::string s) {
-            return SerializeSize::Header(details::serialize_byte_size<alignment>(s));
+            return details::serialize_byte_size<alignment>(s);
         }
 
         template<class T>
@@ -195,20 +190,12 @@ namespace shamalgs {
             u64 offset = align_repr(Helper::szrepr);
             check_head_move(offset);
 
-            if (first_op) {
-                shamsys::instance::get_compute_queue().submit(
-                    [&, val, current_head](sycl::handler &cgh) {
-                        sycl::accessor accbuf{*storage, cgh, sycl::write_only, sycl::no_init};
-                        cgh.single_task([=]() { Helper::store(&accbuf[current_head], val); });
-                    });
-                first_op = false;
-            } else {
-                shamsys::instance::get_compute_queue().submit(
-                    [&, val, current_head](sycl::handler &cgh) {
-                        sycl::accessor accbuf{*storage, cgh, sycl::write_only};
-                        cgh.single_task([=]() { Helper::store(&accbuf[current_head], val); });
-                    });
-            }
+            shamsys::instance::get_compute_queue().submit(
+                [&, val, current_head](sycl::handler &cgh) {
+                    sycl::accessor accbuf{*storage, cgh, sycl::write_only};
+                    cgh.single_task([=]() { Helper::store(&accbuf[current_head], val); });
+                });
+            
 
             head += offset;
         }
@@ -231,66 +218,6 @@ namespace shamalgs {
             head += offset;
         }
 
-        template<class T>
-        inline void write_buf(sycl::buffer<T> &buf, u64 len) {
-            StackEntry stack_loc{false};
-
-            using Helper     = details::SerializeHelperMember<T>;
-            u64 current_head = head;
-
-            u64 offset = align_repr(len * Helper::szrepr);
-            check_head_move(offset);
-
-            if (first_op) {
-                shamsys::instance::get_compute_queue().submit(
-                    [&, current_head](sycl::handler &cgh) {
-                        sycl::accessor accbufbyte{*storage, cgh, sycl::write_only, sycl::no_init};
-                        sycl::accessor accbuf{buf, cgh, sycl::read_only};
-
-                        cgh.parallel_for(sycl::range<1>{len}, [=](sycl::item<1> id) {
-                            u64 head = current_head + id.get_linear_id() * Helper::szrepr;
-                            Helper::store(&accbufbyte[head], accbuf[id]);
-                        });
-                    });
-                first_op = false;
-            } else {
-                shamsys::instance::get_compute_queue().submit(
-                    [&, current_head](sycl::handler &cgh) {
-                        sycl::accessor accbufbyte{*storage, cgh, sycl::write_only};
-                        sycl::accessor accbuf{buf, cgh, sycl::read_only};
-
-                        cgh.parallel_for(sycl::range<1>{len}, [=](sycl::item<1> id) {
-                            u64 head = current_head + id.get_linear_id() * Helper::szrepr;
-                            Helper::store(&accbufbyte[head], accbuf[id]);
-                        });
-                    });
-            }
-
-            head += offset;
-        }
-
-        template<class T>
-        inline void load_buf(sycl::buffer<T> &buf, u64 len) {
-            StackEntry stack_loc{false};
-
-            using Helper     = details::SerializeHelperMember<T>;
-            u64 current_head = head;
-
-            u64 offset = align_repr(len * Helper::szrepr);
-            check_head_move(offset);
-
-            shamsys::instance::get_compute_queue().submit([&, current_head](sycl::handler &cgh) {
-                sycl::accessor accbufbyte{*storage, cgh, sycl::read_only};
-                sycl::accessor accbuf{buf, cgh, sycl::write_only, sycl::no_init};
-
-                cgh.parallel_for(sycl::range<1>{len}, [=](sycl::item<1> id) {
-                    u64 head   = current_head + id.get_linear_id() * Helper::szrepr;
-                    accbuf[id] = Helper::load(&accbufbyte[head]);
-                });
-            });
-
-            head += offset;
-        }
 
         inline void write(std::string s) {
             StackEntry stack_loc{false};
@@ -321,6 +248,59 @@ namespace shamalgs {
                 }
             }
         }
+
+
+
+
+
+        template<class T>
+        inline void write_buf(sycl::buffer<T> &buf, u64 len) {
+            StackEntry stack_loc{false};
+
+            using Helper     = details::SerializeHelperMember<T>;
+            u64 current_head = head;
+
+            u64 offset = align_repr(len * Helper::szrepr);
+            check_head_move(offset);
+
+            shamsys::instance::get_compute_queue().submit(
+                [&, current_head](sycl::handler &cgh) {
+                    sycl::accessor accbufbyte{*storage, cgh, sycl::write_only};
+                    sycl::accessor accbuf{buf, cgh, sycl::read_only};
+
+                    cgh.parallel_for(sycl::range<1>{len}, [=](sycl::item<1> id) {
+                        u64 head = current_head + id.get_linear_id() * Helper::szrepr;
+                        Helper::store(&accbufbyte[head], accbuf[id]);
+                    });
+                });
+            
+
+            head += offset;
+        }
+
+        template<class T>
+        inline void load_buf(sycl::buffer<T> &buf, u64 len) {
+            StackEntry stack_loc{false};
+
+            using Helper     = details::SerializeHelperMember<T>;
+            u64 current_head = head;
+
+            u64 offset = align_repr(len * Helper::szrepr);
+            check_head_move(offset);
+
+            shamsys::instance::get_compute_queue().submit([&, current_head](sycl::handler &cgh) {
+                sycl::accessor accbufbyte{*storage, cgh, sycl::read_only};
+                sycl::accessor accbuf{buf, cgh, sycl::write_only, sycl::no_init};
+
+                cgh.parallel_for(sycl::range<1>{len}, [=](sycl::item<1> id) {
+                    u64 head   = current_head + id.get_linear_id() * Helper::szrepr;
+                    accbuf[id] = Helper::load(&accbufbyte[head]);
+                });
+            });
+
+            head += offset;
+        }
+
     };
 
 } // namespace shamalgs
