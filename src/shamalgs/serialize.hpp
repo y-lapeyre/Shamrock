@@ -133,21 +133,36 @@ namespace shamalgs {
         u64 header_size = 0;
 
         std::unique_ptr<sycl::buffer<u8>> storage = {};
-        u64 head      = 0;
+        std::unique_ptr<std::vector<u8>> storage_header = {};
+        u64 head_device      = 0;
+        u64 head_host      = 0;
 
         static constexpr u64 alignment = 8;
 
-        inline void check_head_move(u64 off) {
+        inline void check_head_move_device(u64 off) {
             if (!storage) {
                 throw shambase::make_except_with_loc<std::runtime_error>(
                     ("the buffer is not allocated, the head cannot be moved"));
             }
-            if (head + off > storage->size()) {
+            if (head_device + off > storage->size()) {
                 throw shambase::make_except_with_loc<std::runtime_error>(
-                    shambase::format("the buffer is not allocated, the head cannot be moved\n "
-                                     "storage size : {}, requested head : {}",
+                    shambase::format("the buffer is not allocated, the head_device cannot be moved\n "
+                                     "storage size : {}, requested head_device : {}",
                                      storage->size(),
-                                     head + off));
+                                     head_device + off));
+            }
+        }
+        inline void check_head_move_host(u64 off) {
+            if (!storage_header) {
+                throw shambase::make_except_with_loc<std::runtime_error>(
+                    ("the buffer is not allocated, the head cannot be moved"));
+            }
+            if (head_host + off > storage_header->size()) {
+                throw shambase::make_except_with_loc<std::runtime_error>(
+                    shambase::format("the buffer is not allocated, the head_host cannot be moved\n "
+                                     "storage_header size : {}, requested head_host : {}",
+                                     storage_header->size(),
+                                     head_host + off));
             }
         }
 
@@ -185,19 +200,14 @@ namespace shamalgs {
 
             using Helper = details::SerializeHelperMember<T>;
 
-            u64 current_head = head;
+            u64 current_head = head_host;
 
             u64 offset = align_repr(Helper::szrepr);
-            check_head_move(offset);
+            check_head_move_host(offset);
 
-            shamsys::instance::get_compute_queue().submit(
-                [&, val, current_head](sycl::handler &cgh) {
-                    sycl::accessor accbuf{*storage, cgh, sycl::write_only};
-                    cgh.single_task([=]() { Helper::store(&accbuf[current_head], val); });
-                });
-            
+            Helper::store(&(*storage_header)[current_head], val);
 
-            head += offset;
+            head_host += offset;
         }
 
         template<class T>
@@ -206,16 +216,16 @@ namespace shamalgs {
 
             using Helper = details::SerializeHelperMember<T>;
 
-            u64 current_head = head;
+            u64 current_head = head_host;
             u64 offset       = align_repr(Helper::szrepr);
-            check_head_move(offset);
+            check_head_move_host(offset);
 
             {//using host_acc rather than anything else since other options causes addition latency
-                sycl::host_accessor accbuf{*storage, sycl::read_only};
-                val = Helper::load(&accbuf[current_head]);
+                
+                val = Helper::load(&(*storage_header)[current_head]);
             }
 
-            head += offset;
+            head_host += offset;
         }
 
 
@@ -258,10 +268,10 @@ namespace shamalgs {
             StackEntry stack_loc{false};
 
             using Helper     = details::SerializeHelperMember<T>;
-            u64 current_head = head;
+            u64 current_head = head_device;
 
             u64 offset = align_repr(len * Helper::szrepr);
-            check_head_move(offset);
+            check_head_move_device(offset);
 
             shamsys::instance::get_compute_queue().submit(
                 [&, current_head](sycl::handler &cgh) {
@@ -275,7 +285,7 @@ namespace shamalgs {
                 });
             
 
-            head += offset;
+            head_device += offset;
         }
 
         template<class T>
@@ -283,10 +293,10 @@ namespace shamalgs {
             StackEntry stack_loc{false};
 
             using Helper     = details::SerializeHelperMember<T>;
-            u64 current_head = head;
+            u64 current_head = head_device;
 
             u64 offset = align_repr(len * Helper::szrepr);
-            check_head_move(offset);
+            check_head_move_device(offset);
 
             shamsys::instance::get_compute_queue().submit([&, current_head](sycl::handler &cgh) {
                 sycl::accessor accbufbyte{*storage, cgh, sycl::read_only};
@@ -298,7 +308,7 @@ namespace shamalgs {
                 });
             });
 
-            head += offset;
+            head_device += offset;
         }
 
     };
