@@ -58,7 +58,7 @@ extract_header(std::unique_ptr<sycl::buffer<u8>> &storage, u64 header_size, u64 
     std::unique_ptr<std::vector<u8>> storage_header =
         std::make_unique<std::vector<u8>>(header_size);
 
-    {
+    if(header_size > 0){
         sycl::buffer<u8> attach(storage_header->data(), header_size);
 
         shamsys::instance::get_compute_queue().submit([&, pre_head_lenght](sycl::handler &cgh) {
@@ -81,10 +81,12 @@ void write_header(
     std::unique_ptr<std::vector<u8>> &storage_header,
     u64 header_size,
     u64 pre_head_lenght) {
-    {
+
+
+    if(header_size > 0){
         sycl::buffer<u8> attach(storage_header->data(), header_size);
 
-        shamsys::instance::get_compute_queue().submit([&, pre_head_lenght](sycl::handler &cgh) {
+        auto event = shamsys::instance::get_compute_queue().submit([&, pre_head_lenght](sycl::handler &cgh) {
             sycl::accessor accbufstg{*storage, cgh, sycl::write_only};
             sycl::accessor buf_header{attach, cgh, sycl::read_only};
 
@@ -92,6 +94,7 @@ void write_header(
                 accbufstg[id + pre_head_lenght] = buf_header[id];
             });
         });
+
     }
     // std::cout << "write header" << std::endl;
 }
