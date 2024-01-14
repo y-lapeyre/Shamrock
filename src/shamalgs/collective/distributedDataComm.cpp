@@ -30,7 +30,7 @@ namespace shamalgs::collective {
             u64 length;
             std::unique_ptr<sycl::buffer<u8>> &data;
 
-            u64 get_ser_sz() {
+            SerializeSize get_ser_sz() {
                 return SerializeHelper::serialize_byte_size<u64>() * 3 +
                        SerializeHelper::serialize_byte_size<u8>(length);
             }
@@ -44,7 +44,7 @@ namespace shamalgs::collective {
             std::map<std::pair<i32, i32>, SerializeHelper> serializers;
 
             for (auto &[key, vect] : send_data) {
-                u64 byte_sz = SerializeHelper::serialize_byte_size<u64>(); // vec length
+                SerializeSize byte_sz = SerializeHelper::serialize_byte_size<u64>(); // vec length
                 for (DataTmp &d : vect) {
                     byte_sz += d.get_ser_sz();
                 }

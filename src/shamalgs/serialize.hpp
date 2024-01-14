@@ -60,6 +60,72 @@ namespace shamalgs {
 
     } // namespace details
 
+
+    struct SerializeSize{
+        u64 head_size = 0;
+        u64 content_size = 0;
+
+        SerializeSize& operator+=(const SerializeSize& rhs) // compound assignment (does not need to be a member,
+        {                           // but often is, to modify the private members)
+            /* addition of rhs to *this takes place here */
+            head_size += rhs.head_size;
+            content_size += rhs.content_size;
+            return *this; // return the result by reference
+        }
+    
+        // friends defined inside class body are inline and are hidden from non-ADL lookup
+        friend SerializeSize operator+(SerializeSize lhs,        // passing lhs by value helps optimize chained a+b+c
+                        const SerializeSize& rhs) // otherwise, both parameters may be const references
+        {
+            lhs += rhs; // reuse compound assignment
+            return lhs; // return the result by value (uses move constructor)
+        }
+        SerializeSize& operator*=(const SerializeSize& rhs) // compound assignment (does not need to be a member,
+        {                           // but often is, to modify the private members)
+            /* addition of rhs to *this takes place here */
+            head_size *= rhs.head_size;
+            content_size *= rhs.content_size;
+            return *this; // return the result by reference
+        }
+    
+        // friends defined inside class body are inline and are hidden from non-ADL lookup
+        friend SerializeSize operator*(SerializeSize lhs,        // passing lhs by value helps optimize chained a*b*c
+                        const SerializeSize& rhs) // otherwise, both parameters may be const references
+        {
+            lhs *= rhs; // reuse compound assignment
+            return lhs; // return the result by value (uses move constructor)
+        }
+
+
+        SerializeSize& operator*=(const int& rhs) // compound assignment (does not need to be a member,
+        {                           // but often is, to modify the private members)
+            /* addition of rhs to *this takes place here */
+            head_size *= rhs;
+            content_size *= rhs;
+            return *this; // return the result by reference
+        }
+    
+        // friends defined inside class body are inline and are hidden from non-ADL lookup
+        friend SerializeSize operator*(SerializeSize lhs,        // passing lhs by value helps optimize chained a*b*c
+                        const int& rhs) // otherwise, both parameters may be const references
+        {
+            lhs *= rhs; // reuse compound assignment
+            return lhs; // return the result by value (uses move constructor)
+        }
+
+        static SerializeSize Header(u64 sz){
+            return {sz,0};
+        }
+        static SerializeSize Content(u64 sz){
+            return {0,sz};
+        }
+
+        inline u64 get_total_size(){
+            return head_size + content_size;
+        }
+
+    };
+
     class SerializeHelper {
         std::unique_ptr<sycl::buffer<u8>> storage;
         u64 head      = 0;
@@ -89,7 +155,8 @@ namespace shamalgs {
         SerializeHelper(std::unique_ptr<sycl::buffer<u8>> &&storage)
             : storage(std::forward<std::unique_ptr<sycl::buffer<u8>>>(storage)) {}
 
-        inline void allocate(u64 bytelen) {
+        inline void allocate(SerializeSize szinfo) {
+            u64 bytelen = szinfo.head_size + szinfo.content_size;
             StackEntry stack_loc{false};
             storage  = std::make_unique<sycl::buffer<u8>>(bytelen);
             head     = 0;
@@ -104,17 +171,17 @@ namespace shamalgs {
         }
 
         template<class T>
-        inline static u64 serialize_byte_size() {
-            return details::serialize_byte_size<alignment, T>();
+        inline static SerializeSize serialize_byte_size() {
+            return SerializeSize::Header(details::serialize_byte_size<alignment, T>());
         }
 
         template<class T>
-        inline static u64 serialize_byte_size(u64 len) {
-            return details::serialize_byte_size<alignment, T>(len);
+        inline static SerializeSize serialize_byte_size(u64 len) {
+            return SerializeSize::Content(details::serialize_byte_size<alignment, T>(len));
         }
 
-        inline static u64 serialize_byte_size(std::string s) {
-            return details::serialize_byte_size<alignment>(s);
+        inline static SerializeSize serialize_byte_size(std::string s) {
+            return SerializeSize::Header(details::serialize_byte_size<alignment>(s));
         }
 
         template<class T>

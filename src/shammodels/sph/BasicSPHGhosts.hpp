@@ -352,9 +352,9 @@ namespace shammodels::sph {
                 [](PositionInterface &pos_interf) {
                     shamalgs::SerializeHelper ser;
 
-                    u64 size = pos_interf.position_field.serialize_buf_byte_size();
+                    shamalgs::SerializeSize size = pos_interf.position_field.serialize_buf_byte_size();
                     size += pos_interf.hpart_field.serialize_buf_byte_size();
-                    size += 2 * shamalgs::SerializeHelper::serialize_byte_size<vec>();
+                    size += shamalgs::SerializeHelper::serialize_byte_size<vec>()*2;
 
                     ser.allocate(size);
 
