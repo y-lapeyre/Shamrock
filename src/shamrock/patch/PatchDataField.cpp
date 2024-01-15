@@ -338,7 +338,7 @@ PatchDataField<T> PatchDataField<T>::deserialize_buf(shamalgs::SerializeHelper &
 }
 
 template<class T>
-u64 PatchDataField<T>::serialize_buf_byte_size(){
+shamalgs::SerializeSize PatchDataField<T>::serialize_buf_byte_size(){
 
     using H = shamalgs::SerializeHelper;
     return H::serialize_byte_size<u32>() + buf.serialize_buf_byte_size();
@@ -356,9 +356,9 @@ void PatchDataField<T>::serialize_full(shamalgs::SerializeHelper &serializer){
 }
 
 template<class T>
-u64 PatchDataField<T>::serialize_full_byte_size(){
+shamalgs::SerializeSize PatchDataField<T>::serialize_full_byte_size(){
     using H = shamalgs::SerializeHelper;
-    return 2*H::serialize_byte_size<u32>() + H::serialize_byte_size(field_name) + buf.serialize_buf_byte_size();
+    return (H::serialize_byte_size<u32>()*2) + H::serialize_byte_size(field_name) + buf.serialize_buf_byte_size();
     
 }
 
