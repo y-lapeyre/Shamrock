@@ -137,7 +137,7 @@ template<class Tvec>
 inline void post_insert_data(PatchScheduler &sched) {
     StackEntry stack_loc{};
 
-    logger::raw_ln(sched.dump_status());
+    //logger::raw_ln(sched.dump_status());
     sched.scheduler_step(false, false);
 
     /*

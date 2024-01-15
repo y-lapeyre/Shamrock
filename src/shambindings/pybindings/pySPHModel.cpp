@@ -305,6 +305,12 @@ R"==(
         })
         .def("set_next_dt",[](T & self, Tscal dt){
             return self.solver.solver_config.set_next_dt(dt);
+        })
+        .def("set_cfl_multipler", [](T & self, Tscal lambda){
+            return self.solver.solver_config.set_cfl_multipler(lambda);
+        })
+        .def("set_cfl_mult_stiffness", [](T & self, Tscal cstiff){
+            return self.solver.solver_config.set_cfl_mult_stiffness(cstiff);
         });
     ;
 }
