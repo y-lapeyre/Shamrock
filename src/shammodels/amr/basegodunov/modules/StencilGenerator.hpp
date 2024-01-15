@@ -31,6 +31,7 @@ namespace shammodels::basegodunov::modules {
         using Tscal              = shambase::VecComponent<Tvec>;
         using Tgridscal          = shambase::VecComponent<TgridVec>;
         static constexpr u32 dim = shambase::VectorProperties<Tvec>::dimension;
+        static constexpr u32 split_count = shambase::pow_constexpr<dim>(2);
 
         using Config  = SolverConfig<Tvec,TgridVec>;
         using Storage = SolverStorage<Tvec, TgridVec, u64>;
@@ -62,7 +63,7 @@ namespace shammodels::basegodunov::modules {
         using dd_cell_stencil_el_buf = shambase::DistributedData<cell_stencil_el_buf>;
 
         dd_block_stencil_el_buf compute_block_stencil_slot(i64_3 relative_pos, StencilOffsets result_offset);
-        cell_stencil_el_buf lower_block_slot_to_cell(i64_3 relative_pos, StencilOffsets result_offset, block_stencil_el_buf & block_stencil_el);
+        cell_stencil_el_buf lower_block_slot_to_cell(u64 patch_id,i64_3 relative_pos, StencilOffsets result_offset, block_stencil_el_buf & block_stencil_el);
         dd_cell_stencil_el_buf lower_block_slot_to_cell(i64_3 relative_pos, StencilOffsets result_offset, dd_block_stencil_el_buf & block_stencil_el);
         
         

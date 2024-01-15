@@ -14,80 +14,76 @@
  * @brief utility to manipulate AMR blocks
  */
 
-
 #include "shambase/aliases_int.hpp"
 #include "shambase/type_traits.hpp"
+
 #include <array>
 #include <variant>
 namespace shammodels::amr::block {
 
-
-    struct SameLevel{
+    struct SameLevel {
         u32 block_idx;
     };
 
-    struct Levelp1{
-        std::array<u32,8> block_child_idxs;
+    struct Levelp1 {
+        std::array<u32, 8> block_child_idxs;
     };
 
-    struct Levelm1{
+    struct Levelm1 {
         u32 block_idx;
     };
 
-
+    struct None {};
 
     /**
-    * @brief Stencil element, describe the state of a cell relative to another
-    * 
-    */
-    struct alignas(8) StencilElement{
+     * @brief Stencil element, describe the state of a cell relative to another
+     *
+     */
+    struct alignas(8) StencilElement {
 
-        struct None{};
-        
-        std::variant<SameLevel, Levelm1, Levelp1, None> _int = None{};
+        enum { SAME, LEVELP1, LEVELM1, NONE } tag = NONE;
 
-        explicit StencilElement(SameLevel st) :_int(st){}
-        explicit StencilElement(Levelm1 st) :_int(st){}
-        explicit StencilElement(Levelp1 st) :_int(st){}
-        StencilElement() = default;
+        union {
+            SameLevel level_d0;
+            Levelm1 level_dm1;
+            Levelp1 level_dp1;
+            None none;
+        };
 
-        template<class Visitor1,class Visitor2,class Visitor3,class Visitor4>
-        inline void visitor(Visitor1 && f1, Visitor2 && f2, Visitor3 && f3, Visitor4 && f4){
-            std::visit([&](auto&& arg)
-            {
-                using T = std::decay_t<decltype(arg)>;
-                if constexpr (std::is_same_v<T, SameLevel>){
-                    f1(arg);
-                }else if constexpr (std::is_same_v<T, Levelm1>){
-                    f2(arg);
-                }else if constexpr (std::is_same_v<T, Levelp1>){
-                    f3(arg);
-                }else if constexpr (std::is_same_v<T, None>){
-                    f4(arg);
-                }else { 
-                    static_assert(shambase::always_false_v<T>, "non-exhaustive visitor!");
-                }
-            }, _int);
+        static StencilElement make_none() {
+            StencilElement ret;
+            ret.tag  = NONE;
+            ret.none = {};
+            return ret;
+        }
+        static StencilElement make_same_level(SameLevel l) {
+            StencilElement ret;
+            ret.tag      = SAME;
+            ret.level_d0 = l;
+            return ret;
+        }
+        static StencilElement make_level_p1(Levelp1 l) {
+            StencilElement ret;
+            ret.tag       = LEVELP1;
+            ret.level_dp1 = l;
+            return ret;
+        }
+        static StencilElement make_level_m1(Levelm1 l) {
+            StencilElement ret;
+            ret.tag       = LEVELM1;
+            ret.level_dm1 = l;
+            return ret;
         }
 
-        template<class Tret,class Visitor1,class Visitor2,class Visitor3,class Visitor4>
-        inline Tret visitor_ret(Visitor1 && f1, Visitor2 && f2, Visitor3 && f3, Visitor4 && f4){
-            std::visit([&](auto&& arg)
-            {
-                using T = std::decay_t<decltype(arg)>;
-                if constexpr (std::is_same_v<T, SameLevel>){
-                    return f1(arg);
-                }else if constexpr (std::is_same_v<T, Levelm1>){
-                    return f2(arg);
-                }else if constexpr (std::is_same_v<T, Levelp1>){
-                    return f3(arg);
-                }else if constexpr (std::is_same_v<T, None>){
-                    return f4(arg);
-                }else { 
-                    static_assert(shambase::always_false_v<T>, "non-exhaustive visitor!");
-                }
-            }, _int);
+        template<class Visitor1, class Visitor2, class Visitor3, class Visitor4>
+        inline void visitor(Visitor1 &&f1, Visitor2 &&f2, Visitor3 &&f3, Visitor4 &&f4) {
+            switch (tag) {
+            case SAME: f1(level_d0); break;
+            case LEVELM1: f2(level_dm1); break;
+            case LEVELP1: f3(level_dp1); break;
+            case NONE: f4(none); break;
+            }
         }
-    };  
+    };
 
 } // namespace shammodels::amr::block

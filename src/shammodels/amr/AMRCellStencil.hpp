@@ -24,11 +24,11 @@ namespace shammodels::amr::cell {
 
 
     struct SameLevel{
-        u32 cell_idx;
+        u64 cell_idx;
     };
 
     struct Levelp1{
-        u32 cell_child_idxs_base;
+        u64 cell_child_idxs_base;
 
         template<class AMRBlock, class Fct>
         void for_all_indexes(Fct && f){
@@ -45,36 +45,11 @@ namespace shammodels::amr::cell {
     };
 
     struct Levelm1{
-
-        /**
-        * @brief Represent the position relative to wanted cell
-        * format : (xyz)
-        * exemple in 2D 
-        * _______________________
-        * |          |          |
-        * |    mM    |    MM    |
-        * |          |          |
-        * -----------------------
-        * |          |          |
-        * |    mm    |    Mm    |
-        * |          |          |
-        * _______________________
-        */
-        enum STATE{
-            mmm = 0, 
-            mmM = 1, 
-            mMm = 2, 
-            mMM = 3,
-            Mmm = 4, 
-            MmM = 5, 
-            MMm = 6, 
-            MMM = 7, 
-        };
-        STATE neighbourgh_state;
-        u32 cell_idx;
+        u64 cell_idx;
     };
 
 
+        struct None{};
 
     /**
     * @brief Stencil element, describe the state of a cell relative to another
@@ -82,47 +57,48 @@ namespace shammodels::amr::cell {
     */
     struct alignas(8) StencilElement{
 
-        struct None{};
-        
-        std::variant<SameLevel, Levelm1, Levelp1,None> _int = None{};
+        enum { SAME, LEVELP1, LEVELM1, NONE } tag = NONE;
 
-        explicit StencilElement(SameLevel st) :_int(st){}
-        explicit StencilElement(Levelm1 st) :_int(st){}
-        explicit StencilElement(Levelp1 st) :_int(st){}
-        StencilElement() = default;
+        union {
+            SameLevel level_d0;
+            Levelm1 level_dm1;
+            Levelp1 level_dp1;
+            None none;
+        };
 
-        template<class Visitor1,class Visitor2,class Visitor3>
-        inline void visitor(Visitor1 && f1, Visitor2 && f2, Visitor3 && f3){
-            std::visit([&](auto&& arg)
-            {
-                using T = std::decay_t<decltype(arg)>;
-                if constexpr (std::is_same_v<T, SameLevel>){
-                    f1(arg);
-                }else if constexpr (std::is_same_v<T, Levelm1>){
-                    f2(arg);
-                }else if constexpr (std::is_same_v<T, Levelp1>){
-                    f3(arg);
-                }else { 
-                    static_assert(shambase::always_false_v<T>, "non-exhaustive visitor!");
-                }
-            }, _int);
+        static StencilElement make_none() {
+            StencilElement ret;
+            ret.tag  = NONE;
+            ret.none = {};
+            return ret;
+        }
+        static StencilElement make_same_level(SameLevel l) {
+            StencilElement ret;
+            ret.tag      = SAME;
+            ret.level_d0 = l;
+            return ret;
+        }
+        static StencilElement make_level_p1(Levelp1 l) {
+            StencilElement ret;
+            ret.tag       = LEVELP1;
+            ret.level_dp1 = l;
+            return ret;
+        }
+        static StencilElement make_level_m1(Levelm1 l) {
+            StencilElement ret;
+            ret.tag       = LEVELM1;
+            ret.level_dm1 = l;
+            return ret;
         }
 
-        template<class Tret,class Visitor1,class Visitor2,class Visitor3>
-        inline Tret visitor_ret(Visitor1 && f1, Visitor2 && f2, Visitor3 && f3){
-            std::visit([&](auto&& arg)
-            {
-                using T = std::decay_t<decltype(arg)>;
-                if constexpr (std::is_same_v<T, SameLevel>){
-                    return f1(arg);
-                }else if constexpr (std::is_same_v<T, Levelm1>){
-                    return f2(arg);
-                }else if constexpr (std::is_same_v<T, Levelp1>){
-                    return f3(arg);
-                }else { 
-                    static_assert(shambase::always_false_v<T>, "non-exhaustive visitor!");
-                }
-            }, _int);
+        template<class Visitor1, class Visitor2, class Visitor3, class Visitor4>
+        inline void visitor(Visitor1 &&f1, Visitor2 &&f2, Visitor3 &&f3, Visitor4 &&f4) {
+            switch (tag) {
+            case SAME: f1(level_d0); break;
+            case LEVELM1: f2(level_dm1); break;
+            case LEVELP1: f3(level_dp1); break;
+            case NONE: f4(none); break;
+            }
         }
     };  
 
