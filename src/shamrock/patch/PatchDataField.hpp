@@ -293,7 +293,7 @@ template <class T> class PatchDataField {
      * 
      * @return u64 
      */
-    u64 serialize_buf_byte_size();
+    shamalgs::SerializeSize serialize_buf_byte_size();
 
     /**
      * @brief serialize everything in the class
@@ -315,7 +315,7 @@ template <class T> class PatchDataField {
      * 
      * @return u64 
      */
-    u64 serialize_full_byte_size();
+    shamalgs::SerializeSize serialize_full_byte_size();
 
     T compute_max();
     T compute_min();

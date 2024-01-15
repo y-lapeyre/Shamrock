@@ -56,7 +56,7 @@ TestStart(Unittest, "shamalgs/memory/SerializeHelper", test_serialize_helper, 1)
 
     shamalgs::SerializeHelper ser;
 
-    u64 bytelen = ser.serialize_byte_size<u8>(n1) 
+    shamalgs::SerializeSize bytelen = ser.serialize_byte_size<u8>(n1) 
         + ser.serialize_byte_size<f64_16>() 
         + ser.serialize_byte_size<u32_3>(n2)
         + ser.serialize_byte_size(test_str);
@@ -114,7 +114,7 @@ TestStart(Benchmark, "shamalgs/memory/SerializeHelper:benchmark", bench_serializ
         tser.start();
 
         shamalgs::SerializeHelper ser1;
-        u64 sz = ser1.serialize_byte_size<f64>(buf_cnt*buf_len);
+        shamalgs::SerializeSize sz = ser1.serialize_byte_size<f64>(buf_cnt*buf_len);
         ser1.allocate(sz);
         for(u32 i = 0; i < buf_cnt;i++){
             ser1.write_buf(bufs[i], buf_len);
@@ -143,7 +143,7 @@ TestStart(Benchmark, "shamalgs/memory/SerializeHelper:benchmark", bench_serializ
 
         tdeser.end();
 
-        return {sz/(tser.nanosec/1e9), sz/(tdeser.nanosec/1e9)};
+        return {sz.get_total_size()/(tser.nanosec/1e9), sz.get_total_size()/(tdeser.nanosec/1e9)};
 
     };
     auto get_perf_unknownsize = [](u32 buf_cnt, u32 buf_len) -> std::pair<f64,f64> {
@@ -161,7 +161,7 @@ TestStart(Benchmark, "shamalgs/memory/SerializeHelper:benchmark", bench_serializ
         tser.start();
 
         shamalgs::SerializeHelper ser1;
-        u64 sz = ser1.serialize_byte_size<f64>(buf_cnt*buf_len) + buf_cnt*ser1.serialize_byte_size<u32>();
+        shamalgs::SerializeSize sz = ser1.serialize_byte_size<f64>(buf_cnt*buf_len) + (ser1.serialize_byte_size<u32>() * buf_cnt);
         ser1.allocate(sz);
         for(u32 i = 0; i < buf_cnt;i++){
             ser1.write(buf_len);
@@ -195,7 +195,7 @@ TestStart(Benchmark, "shamalgs/memory/SerializeHelper:benchmark", bench_serializ
 
         
 
-        return {sz/(tser.nanosec/1e9), sz/(tdeser.nanosec/1e9)};
+        return {sz.get_total_size()/(tser.nanosec/1e9), sz.get_total_size()/(tdeser.nanosec/1e9)};
 
     };
     {
