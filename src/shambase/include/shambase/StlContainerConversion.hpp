@@ -9,7 +9,7 @@
 #pragma once
 
 /**
- * @file aliases_int.hpp
+ * @file StlContainerConversion.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @brief
  *
