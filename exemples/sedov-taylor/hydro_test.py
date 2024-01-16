@@ -7,7 +7,7 @@ rho_g = 1
 target_tot_u = 1
 
 
-dr = 0.005
+dr = 0.01
 
 bmin = (-0.6,-0.6,-0.6)
 bmax = ( 0.6, 0.6, 0.6)
@@ -30,7 +30,7 @@ cfg.set_eos_adiabatic(gamma)
 cfg.print_status()
 model.set_solver_config(cfg)
 
-model.init_scheduler(int(1e6),1)
+model.init_scheduler(int(1e5),1)
 
 
 bmin,bmax = model.get_ideal_hcp_box(dr,bmin,bmax)
@@ -54,7 +54,7 @@ pmass = model.total_mass_to_part_mass(totmass)
 
 model.set_value_in_a_box("uint","f64", 0 , bmin,bmax)
 
-rinj = 0.008909042924642563
+rinj = 0.008909042924642563*2
 #rinj = 0.008909042924642563*2*2
 #rinj = 0.01718181
 u_inj = 1
