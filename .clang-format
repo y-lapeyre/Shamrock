@@ -18,7 +18,7 @@ AlignTrailingComments: true
 AllowShortCaseLabelsOnASingleLine : true
 AllowShortLambdasOnASingleLine: Empty
 
-AlwaysBreakTemplateDeclarations: MultiLine
+AlwaysBreakTemplateDeclarations: Yes
 #AlwaysBreakTemplateDeclarations: true
 
 BinPackArguments: false
