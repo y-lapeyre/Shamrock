@@ -296,13 +296,20 @@ template<class T> void PatchDataField<T>::index_remap(sycl::buffer<u32> & index_
 
 
 template<class T>
-PatchDataField<T> PatchDataField<T>::mock_field(u64 seed, u32 obj_cnt, std::string name, u32 nvar){
+PatchDataField<T> PatchDataField<T>::mock_field(u64 seed, u32 obj_cnt, std::string name, u32 nvar, T vmin, T vmax){
     using Prop = shambase::VectorProperties<T>;
 
     return PatchDataField<T>(
-        shamalgs::ResizableBuffer<T>::mock_buffer(seed, obj_cnt*nvar, Prop::get_min(), Prop::get_max()),
+        shamalgs::ResizableBuffer<T>::mock_buffer(seed, obj_cnt*nvar, vmin, vmax),
         obj_cnt, name, nvar
     );
+}
+
+
+template<class T>
+PatchDataField<T> PatchDataField<T>::mock_field(u64 seed, u32 obj_cnt, std::string name, u32 nvar){
+    using Prop = shambase::VectorProperties<T>;
+    return PatchDataField<T>::mock_field(seed, obj_cnt, name, nvar,Prop::get_min(), Prop::get_max());
 }
 
 
