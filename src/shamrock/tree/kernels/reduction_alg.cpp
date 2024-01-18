@@ -59,6 +59,50 @@ void sycl_generate_split_table(
     });
 }
 
+
+
+/*
+Godbolt snippet for testing
+
+#include <cstdio>
+#include <array>
+
+template<int Na, int Nb>
+void print(std::array<bool, Na> & foo, std::array<int, Nb> cursors){
+    for (int i = 0; i < Na; ++i)
+        printf("%d", foo[i]);
+    printf("\n");
+
+    for(int i : cursors){
+        for(int j = 0 ; j < i ; j++) printf(" ");
+        printf("|\n");
+    }
+}
+
+
+int main(){
+    auto a  = std::array<bool,11>{1,0,1,1,1,0,0,1,0,1,0};
+
+    int i = 7;
+    int before1 = i - 1;
+    while (!a[before1])
+        before1--;
+
+    int before2 = before1 - 1;
+    while (!a[before2])
+        before2--;
+
+
+    int next1 = i +1;
+    while (!a[next1])
+        next1++;
+
+    print<11,4>(a, {next1,i,before1, before2});
+}
+
+
+*/
+
 class Kernel_iterate_reduction_morton32;
 class Kernel_iterate_reduction_morton64;
 
@@ -88,13 +132,13 @@ void sycl_reduction_iteration(
 
             // find index of preceding i-1 non duplicate morton code
             u32 before1 = i - 1;
-            while (before1 <= _morton_cnt - 1 && !split_in[before1 + 1])
+            while (before1 <= _morton_cnt - 1 && !split_in[before1])
                 before1--;
 
             // find index of preceding i-2 non duplicate morton code
             // safe bc delta(before1,before2) return -1 if any of the 2 are -1 because of order
             u32 before2 = before1 - 1;
-            while (before2 <= _morton_cnt - 1 && !split_in[before2 + 1])
+            while (before2 <= _morton_cnt - 1 && !split_in[before2])
                 before2--;
 
             // find index of next i+1 non duplicate morton code
