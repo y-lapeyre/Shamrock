@@ -119,33 +119,46 @@ if(shamrock.sys.world_rank() == 0):
     r_theo, rho_theo, p_theo, vr_theo = read_four_arrays(fdata)
 
 
-
     plt.style.use('custom_style.mplstyle')
-    fig,axs = plt.subplots(nrows=2,ncols=2,figsize=(9,6),dpi=125)
+    if False:
+        
+        fig,axs = plt.subplots(nrows=2,ncols=2,figsize=(9,6),dpi=125)
 
-    axs[0,0].scatter(r, vr,c = 'black',s=1,label = "v", rasterized=True)
-    axs[0,0].plot(r_theo, vr_theo,c = 'red',label = "v (theory)")
-    axs[1,0].scatter(r, uint,c = 'black',s=1,label = "u", rasterized=True)
-    axs[0,1].scatter(r, rho,c = 'black',s=1,label = "rho", rasterized=True)
-    axs[0,1].plot(r_theo, rho_theo,c = 'red',label = "rho (theory)")
-    axs[1,1].scatter(r, P,c = 'black',s=1,label = "P", rasterized=True)
-    axs[1,1].plot(r_theo, p_theo,c = 'red',label = "P (theory)")
+        axs[0,0].scatter(r, vr,c = 'black',s=1,label = "v", rasterized=True)
+        axs[0,0].plot(r_theo, vr_theo,c = 'red',label = "v (theory)")
+        axs[1,0].scatter(r, uint,c = 'black',s=1,label = "u", rasterized=True)
+        axs[0,1].scatter(r, rho,c = 'black',s=1,label = "rho", rasterized=True)
+        axs[0,1].plot(r_theo, rho_theo,c = 'red',label = "rho (theory)")
+        axs[1,1].scatter(r, P,c = 'black',s=1,label = "P", rasterized=True)
+        axs[1,1].plot(r_theo, p_theo,c = 'red',label = "P (theory)")
 
 
-    axs[0,0].set_ylabel(r"$v$")
-    axs[1,0].set_ylabel(r"$u$")
-    axs[0,1].set_ylabel(r"$\rho$")
-    axs[1,1].set_ylabel(r"$P$")
+        axs[0,0].set_ylabel(r"$v$")
+        axs[1,0].set_ylabel(r"$u$")
+        axs[0,1].set_ylabel(r"$\rho$")
+        axs[1,1].set_ylabel(r"$P$")
 
-    axs[0,0].set_xlabel("$r$")
-    axs[1,0].set_xlabel("$r$")
-    axs[0,1].set_xlabel("$r$")
-    axs[1,1].set_xlabel("$r$")
+        axs[0,0].set_xlabel("$r$")
+        axs[1,0].set_xlabel("$r$")
+        axs[0,1].set_xlabel("$r$")
+        axs[1,1].set_xlabel("$r$")
 
-    axs[0,0].set_xlim(0,0.55)
-    axs[1,0].set_xlim(0,0.55)
-    axs[0,1].set_xlim(0,0.55)
-    axs[1,1].set_xlim(0,0.55)
+        axs[0,0].set_xlim(0,0.55)
+        axs[1,0].set_xlim(0,0.55)
+        axs[0,1].set_xlim(0,0.55)
+        axs[1,1].set_xlim(0,0.55)
+    else:
+
+        fig,axs = plt.subplots(nrows=1,ncols=1,figsize=(5,3),dpi=125)
+
+        axs.scatter(r, rho,c = 'black',s=1,label = "rho", rasterized=True)
+        axs.plot(r_theo, rho_theo,c = 'red',label = "rho (theory)")
+
+        axs.set_ylabel(r"$\rho$")
+
+        axs.set_xlabel("$r$")
+
+        axs.set_xlim(0,0.55)
 
     plt.tight_layout()
     plt.show()
