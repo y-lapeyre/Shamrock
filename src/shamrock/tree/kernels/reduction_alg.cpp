@@ -114,7 +114,7 @@ class Kernel_iterate_reduction_morton64;
 #endif
 
 #ifdef OLD_BEHAVIOR
-#define OFFSET -1
+#define OFFSET + 1
 #endif
 
 
