@@ -332,14 +332,18 @@ PatchDataField<T> PatchDataField<T>::mock_field(u64 seed, u32 obj_cnt, std::stri
 
 template<class T>
 void PatchDataField<T>::serialize_buf(shamalgs::SerializeHelper & serializer){
+    StackEntry stack_loc{false};
     serializer.write(obj_cnt);
+    logger::debug_sycl_ln("PatchDataField", "serialize patchdatafield len=",obj_cnt);
     buf.serialize_buf(serializer);
 }
 
 template<class T>
 PatchDataField<T> PatchDataField<T>::deserialize_buf(shamalgs::SerializeHelper &serializer, std::string field_name, u32 nvar){
+    StackEntry stack_loc{false};
     u32 cnt;
     serializer.load(cnt);
+    logger::debug_sycl_ln("PatchDataField", "deserialize patchdatafield len=",cnt);
     shamalgs::ResizableBuffer<T> rbuf = shamalgs::ResizableBuffer<T>::deserialize_buf(serializer, cnt*nvar);
     return PatchDataField<T>(std::move(rbuf), cnt, field_name, nvar);
 }
@@ -356,6 +360,7 @@ shamalgs::SerializeSize PatchDataField<T>::serialize_buf_byte_size(){
 
 template<class T>
 void PatchDataField<T>::serialize_full(shamalgs::SerializeHelper &serializer){
+    StackEntry stack_loc{false};
     serializer.write(obj_cnt);
     serializer.write(nvar);
     serializer.write(field_name);
@@ -371,6 +376,7 @@ shamalgs::SerializeSize PatchDataField<T>::serialize_full_byte_size(){
 
 template<class T>
 PatchDataField<T> PatchDataField<T>::deserialize_full(shamalgs::SerializeHelper &serializer){
+    StackEntry stack_loc{false};
     u32 cnt,nvar;
     serializer.load(cnt);
     serializer.load(nvar);
