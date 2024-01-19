@@ -106,6 +106,19 @@ int main(){
 class Kernel_iterate_reduction_morton32;
 class Kernel_iterate_reduction_morton64;
 
+//#define OLD_BEHAVIOR
+#define NEW_BEHAVIOR
+
+#ifdef NEW_BEHAVIOR
+#define OFFSET 
+#endif
+
+#ifdef OLD_BEHAVIOR
+#define OFFSET -1
+#endif
+
+
+
 template<class u_morton, class kername, class split_int>
 void sycl_reduction_iteration(
     sycl::queue &queue,
@@ -115,7 +128,7 @@ void sycl_reduction_iteration(
     std::unique_ptr<sycl::buffer<split_int>> &buf_split_table_out
 ) {
 
-
+    
     sycl::range<1> range_morton_count{morton_count};
 
     queue.submit([&](sycl::handler &cgh) {
@@ -132,13 +145,13 @@ void sycl_reduction_iteration(
 
             // find index of preceding i-1 non duplicate morton code
             u32 before1 = i - 1;
-            while (before1 <= _morton_cnt - 1 && !split_in[before1])
+            while (before1 <= _morton_cnt - 1 && !split_in[before1 OFFSET])
                 before1--;
 
             // find index of preceding i-2 non duplicate morton code
             // safe bc delta(before1,before2) return -1 if any of the 2 are -1 because of order
             u32 before2 = before1 - 1;
-            while (before2 <= _morton_cnt - 1 && !split_in[before2])
+            while (before2 <= _morton_cnt - 1 && !split_in[before2 OFFSET])
                 before2--;
 
             // find index of next i+1 non duplicate morton code
