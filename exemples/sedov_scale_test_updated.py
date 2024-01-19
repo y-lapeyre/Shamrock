@@ -1,19 +1,32 @@
 import shamrock
-import matplotlib.pyplot as plt
 
 gamma = 5./3.
 rho_g = 1
 target_tot_u = 1
 
-
-dr = 0.01
-
 bmin = (-0.6,-0.6,-0.6)
 bmax = ( 0.6, 0.6, 0.6)
+
+N_target_base = 10e6
+compute_multiplier = shamrock.sys.world_size()
+scheduler_split_val = int(4e6)
+scheduler_merge_val = int(1)
+
+
+
+N_target = N_target_base*compute_multiplier
+xm,ym,zm = bmin
+xM,yM,zM = bmax
+vol_b = (xM - xm)*(yM - ym)*(zM - zm)
+
+part_vol = vol_b/N_target
+
+#lattice volume
+part_vol_lattice = 0.74*part_vol
+
+dr = (part_vol_lattice / ((4./3.)*3.1416))**(1./3.)
+
 pmass = -1
-
-
-
 
 ctx = shamrock.Context()
 ctx.pdata_layout_new()
@@ -28,8 +41,7 @@ cfg.set_boundary_periodic()
 cfg.set_eos_adiabatic(gamma)
 cfg.print_status()
 model.set_solver_config(cfg)
-
-model.init_scheduler(int(1e6),1)
+model.init_scheduler(scheduler_split_val,scheduler_merge_val)
 
 
 bmin,bmax = model.get_ideal_hcp_box(dr,bmin,bmax)
@@ -53,7 +65,7 @@ pmass = model.total_mass_to_part_mass(totmass)
 
 model.set_value_in_a_box("uint","f64", 0 , bmin,bmax)
 
-rinj = 0.008909042924642563*2
+rinj = 0.008909042924642563
 #rinj = 0.008909042924642563*2*2
 #rinj = 0.01718181
 u_inj = 1
@@ -80,56 +92,15 @@ tot_u = pmass*model.get_sum("uint","f64")
 model.set_cfl_cour(0.1)
 model.set_cfl_force(0.1)
 
-model.timestep()
-model.do_vtk_dump("init.vtk", True)
+model.set_cfl_multipler(1e-4)
+model.set_cfl_mult_stiffness(1e6)
 
-t_target = 0.1
-model.evolve_until(t_target)
-
-
-model.do_vtk_dump("end.vtk", True)
+for i in range(5):
+    model.timestep()
 
 
-import numpy as np
-dic = ctx.collect_data()
+res_rate,res_cnt = model.solver_logs_last_rate(), model.solver_logs_last_obj_count()
 
-r = np.sqrt(dic['xyz'][:,0]**2 + dic['xyz'][:,1]**2 +dic['xyz'][:,2]**2)
-vr = np.sqrt(dic['vxyz'][:,0]**2 + dic['vxyz'][:,1]**2 +dic['vxyz'][:,2]**2)
-
-
-hpart = dic["hpart"]
-uint = dic["uint"]
-
-gamma = 5./3.
-
-rho = pmass*(model.get_hfact()/hpart)**3
-P = (gamma-1) * rho *uint
-
-
-plt.style.use('custom_style.mplstyle')
-fig,axs = plt.subplots(nrows=2,ncols=2,figsize=(9,6),dpi=125)
-
-axs[0,0].scatter(r, vr,c = 'black',s=1,label = "v")
-axs[1,0].scatter(r, uint,c = 'black',s=1,label = "u")
-axs[0,1].scatter(r, rho,c = 'black',s=1,label = "rho")
-axs[1,1].scatter(r, P,c = 'black',s=1,label = "P")
-
-
-axs[0,0].set_ylabel(r"$v$")
-axs[1,0].set_ylabel(r"$u$")
-axs[0,1].set_ylabel(r"$\rho$")
-axs[1,1].set_ylabel(r"$P$")
-
-axs[0,0].set_xlabel("$r$")
-axs[1,0].set_xlabel("$r$")
-axs[0,1].set_xlabel("$r$")
-axs[1,1].set_xlabel("$r$")
-
-axs[0,0].set_xlim(0,0.55)
-axs[1,0].set_xlim(0,0.55)
-axs[0,1].set_xlim(0,0.55)
-axs[1,1].set_xlim(0,0.55)
-
-plt.tight_layout()
-plt.show()
-
+if shamrock.sys.world_rank() == 0:
+    print("result rate :",res_rate)
+    print("result cnt :",res_cnt)
