@@ -100,7 +100,7 @@ void write_header(
             cgh.parallel_for(sycl::range<1>{header_size}, [=](sycl::item<1> id) {
                 accbufstg[id + pre_head_lenght] = buf_header[id];
             });
-        }).wait();
+        });
 
     }
     // std::cout << "write header" << std::endl;
