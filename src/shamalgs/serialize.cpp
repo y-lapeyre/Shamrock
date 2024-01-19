@@ -14,6 +14,7 @@
  */
 
 #include "serialize.hpp"
+#include "shamcomm/logs.hpp"
 
 // Layout of the SerializeHelper is
 // aligned on base 64 bits
@@ -39,6 +40,7 @@ u64 extract_preahead(std::unique_ptr<sycl::buffer<u8>> &storage) {
         sycl::host_accessor accbuf{*storage, sycl::read_only};
         ret = Helper::load(&accbuf[0]);
     }
+
     return ret;
 }
 
@@ -52,12 +54,21 @@ void write_prehead(u64 prehead, sycl::buffer<u8> &buf) {
     });
 }
 
+// this is the real fix this time
+// race conditions in compilers
+// i will never miss those ...
+#ifdef SYCL_COMP_ACPP
+#define ACPP_WAIT .wait()
+#else
+#define ACPP_WAIT 
+#endif
+
 std::unique_ptr<std::vector<u8>>
 extract_header(std::unique_ptr<sycl::buffer<u8>> &storage, u64 header_size, u64 pre_head_lenght) {
 
     std::unique_ptr<std::vector<u8>> storage_header =
         std::make_unique<std::vector<u8>>(header_size);
-
+    
     if(header_size > 0){
         sycl::buffer<u8> attach(storage_header->data(), header_size);
 
@@ -68,7 +79,8 @@ extract_header(std::unique_ptr<sycl::buffer<u8>> &storage, u64 header_size, u64 
             cgh.parallel_for(sycl::range<1>{header_size}, [=](sycl::item<1> id) {
                 buf_header[id] = accbufstg[id + pre_head_lenght];
             });
-        });
+        })ACPP_WAIT;
+
     }
 
     // std::cout << "extract header" << std::endl;
@@ -86,14 +98,14 @@ void write_header(
     if(header_size > 0){
         sycl::buffer<u8> attach(storage_header->data(), header_size);
 
-        auto event = shamsys::instance::get_compute_queue().submit([&, pre_head_lenght](sycl::handler &cgh) {
+        shamsys::instance::get_compute_queue().submit([&, pre_head_lenght](sycl::handler &cgh) {
             sycl::accessor accbufstg{*storage, cgh, sycl::write_only};
             sycl::accessor buf_header{attach, cgh, sycl::read_only};
 
             cgh.parallel_for(sycl::range<1>{header_size}, [=](sycl::item<1> id) {
                 accbufstg[id + pre_head_lenght] = buf_header[id];
             });
-        });
+        })ACPP_WAIT;
 
     }
     // std::cout << "write header" << std::endl;
@@ -112,6 +124,8 @@ void shamalgs::SerializeHelper::allocate(SerializeSize szinfo) {
     header_size    = szinfo.head_size;
     storage_header = std::make_unique<std::vector<u8>>(header_size);
 
+    logger::debug_sycl_ln("SerializeHelper","allocate()", bytelen, header_size);
+
     write_prehead(szinfo.head_size, *storage);
     // std::cout << "prehead write :" << szinfo.head_size << std::endl;
 
@@ -120,6 +134,8 @@ void shamalgs::SerializeHelper::allocate(SerializeSize szinfo) {
 
 std::unique_ptr<sycl::buffer<u8>> shamalgs::SerializeHelper::finalize() {
     StackEntry stack_loc{false};
+
+    logger::debug_sycl_ln("SerializeHelper","finalize()", storage->size(), header_size);
 
     write_header(storage, storage_header, header_size, pre_head_lenght());
 
@@ -134,6 +150,8 @@ shamalgs::SerializeHelper::SerializeHelper(std::unique_ptr<sycl::buffer<u8>> &&i
     header_size = extract_preahead(storage);
     // std::cout << "prehead read :" << header_size << std::endl;
     storage_header = extract_header(storage, header_size, pre_head_lenght());
+
+    logger::debug_sycl_ln("SerializeHelper","SerializeHelper(std::unique_ptr<sycl::buffer<u8>> &&)", storage->size(), header_size);
 
     head_device = pre_head_lenght() + header_size;
 }
