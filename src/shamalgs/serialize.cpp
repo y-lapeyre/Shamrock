@@ -54,6 +54,15 @@ void write_prehead(u64 prehead, sycl::buffer<u8> &buf) {
     });
 }
 
+// this is the real fix this time
+// race conditions in compilers
+// i will never miss those ...
+#ifdef SYCL_COMP_ACPP
+#define ACPP_WAIT .wait()
+#else
+#define ACPP_WAIT 
+#endif
+
 std::unique_ptr<std::vector<u8>>
 extract_header(std::unique_ptr<sycl::buffer<u8>> &storage, u64 header_size, u64 pre_head_lenght) {
 
@@ -70,12 +79,8 @@ extract_header(std::unique_ptr<sycl::buffer<u8>> &storage, u64 header_size, u64 
             cgh.parallel_for(sycl::range<1>{header_size}, [=](sycl::item<1> id) {
                 buf_header[id] = accbufstg[id + pre_head_lenght];
             });
-        });
+        })ACPP_WAIT;
 
-        #ifdef SYCL_COMP_ACPP
-        //attach.set_final_data(storage_header->data());
-        attach.set_write_back(true);
-        #endif
     }
 
     // std::cout << "extract header" << std::endl;
@@ -100,7 +105,7 @@ void write_header(
             cgh.parallel_for(sycl::range<1>{header_size}, [=](sycl::item<1> id) {
                 accbufstg[id + pre_head_lenght] = buf_header[id];
             });
-        });
+        })ACPP_WAIT;
 
     }
     // std::cout << "write header" << std::endl;
