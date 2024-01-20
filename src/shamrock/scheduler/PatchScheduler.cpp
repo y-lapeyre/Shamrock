@@ -921,9 +921,6 @@ void PatchScheduler::dump_local_patches(std::string filename){
 
 std::vector<std::unique_ptr<shamrock::patch::PatchData>> PatchScheduler::gather_data(u32 rank){
 
-    if(rank != 0){
-        throw shambase::make_except_with_loc<std::invalid_argument>("this method is only implemented for rank=0");
-    }
 
     using namespace shamrock::patch;
 
