@@ -19,7 +19,7 @@
 #include <vector>
 
 #include "shambase/exception.hpp"
-#include "shamcomm/CommunicationBuffer.hpp"
+#include "shambackends/comm/CommunicationBuffer.hpp"
 
 #include "shambase/string.hpp"
 #include "shamrock/legacy/utils/geometry_utils.hpp"
@@ -56,8 +56,7 @@ namespace shamrock::scheduler {
 
     void recv_probe_messages(
         std::vector<Message> & msgs,
-        std::vector<MPI_Request> &rqs,
-        shamcomm::CommunicationProtocol prot) {
+        std::vector<MPI_Request> &rqs) {
 
         for (auto &msg : msgs) {
             rqs.push_back(MPI_Request{});
@@ -69,7 +68,7 @@ namespace shamrock::scheduler {
             mpi::probe(msg.rank, msg.tag, MPI_COMM_WORLD, &st);
             mpi::get_count(&st, MPI_BYTE, &cnt);
 
-            msg.buf = std::make_unique<shamcomm::CommunicationBuffer>(cnt, prot);
+            msg.buf = std::make_unique<shamcomm::CommunicationBuffer>(cnt);
 
             mpi::irecv(msg.buf->get_ptr(), cnt, MPI_BYTE, msg.rank, msg.tag, MPI_COMM_WORLD, &rq);
         }
@@ -96,7 +95,6 @@ namespace shamrock::scheduler {
             return shamrock::patch::PatchData::deserialize_buf(ser, pdl);
         };
 
-        auto prot = shamcomm::get_protocol();
 
         std::vector<Message> send_payloads;
         for (const ChangeOp op : change_list.change_ops) {
@@ -108,7 +106,7 @@ namespace shamrock::scheduler {
 
                 send_payloads.push_back(Message{
                     std::make_unique<shamcomm::CommunicationBuffer>(
-                        shambase::get_check_ref(tmp), prot),
+                        shambase::get_check_ref(tmp)),
                     op.rank_owner_new,
                     op.tag_comm});
             }
@@ -131,7 +129,7 @@ namespace shamrock::scheduler {
         }
 
         // receive
-        recv_probe_messages(recv_payloads, rqs, prot);
+        recv_probe_messages(recv_payloads, rqs);
 
         std::vector<MPI_Status> st_lst(rqs.size());
         mpi::waitall(rqs.size(), rqs.data(), st_lst.data());
