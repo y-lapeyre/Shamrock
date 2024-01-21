@@ -14,22 +14,20 @@
  */
 
 #include "SchedulerPatchData.hpp"
-
-#include <stdexcept>
-#include <vector>
-
 #include "shambase/exception.hpp"
-#include "shambackends/comm/CommunicationBuffer.hpp"
-
 #include "shambase/string.hpp"
+
+#include "shambackends/comm/CommunicationBuffer.hpp"
 #include "shamrock/legacy/utils/geometry_utils.hpp"
 #include "shamrock/patch/PatchDataField.hpp"
 #include "shamrock/patch/PatchDataLayout.hpp"
 #include "shamrock/scheduler/HilbertLoadBalance.hpp"
 #include "shamsys/legacy/log.hpp"
 
+#include <stdexcept>
+#include <vector>
+
 namespace shamrock::scheduler {
-    // TODO use range based loop and emplace_back instead
 
     struct Message {
         std::unique_ptr<shamcomm::CommunicationBuffer> buf;
@@ -37,7 +35,7 @@ namespace shamrock::scheduler {
         i32 tag;
     };
 
-    void send_messages(std::vector<Message> & msgs, std::vector<MPI_Request> &rqs) {
+    void send_messages(std::vector<Message> &msgs, std::vector<MPI_Request> &rqs) {
         for (auto &msg : msgs) {
             rqs.push_back(MPI_Request{});
             u32 rq_index = rqs.size() - 1;
@@ -54,9 +52,7 @@ namespace shamrock::scheduler {
         }
     }
 
-    void recv_probe_messages(
-        std::vector<Message> & msgs,
-        std::vector<MPI_Request> &rqs) {
+    void recv_probe_messages(std::vector<Message> &msgs, std::vector<MPI_Request> &rqs) {
 
         for (auto &msg : msgs) {
             rqs.push_back(MPI_Request{});
@@ -95,7 +91,6 @@ namespace shamrock::scheduler {
             return shamrock::patch::PatchData::deserialize_buf(ser, pdl);
         };
 
-
         std::vector<Message> send_payloads;
         for (const ChangeOp op : change_list.change_ops) {
             // if i'm sender
@@ -105,8 +100,7 @@ namespace shamrock::scheduler {
                 std::unique_ptr<sycl::buffer<u8>> tmp = serializer(patchdata);
 
                 send_payloads.push_back(Message{
-                    std::make_unique<shamcomm::CommunicationBuffer>(
-                        shambase::get_check_ref(tmp)),
+                    std::make_unique<shamcomm::CommunicationBuffer>(shambase::get_check_ref(tmp)),
                     op.rank_owner_new,
                     op.tag_comm});
             }
@@ -147,7 +141,8 @@ namespace shamrock::scheduler {
 
                 sycl::buffer<u8> buf = shamcomm::CommunicationBuffer::convert(std::move(comm_buf));
 
-                owned_data.add_obj(id_patch, deserializer(std::make_unique<sycl::buffer<u8>>(std::move(buf))));
+                owned_data.add_obj(
+                    id_patch, deserializer(std::make_unique<sycl::buffer<u8>>(std::move(buf))));
 
                 idx++;
             }
@@ -246,14 +241,12 @@ namespace shamrock::scheduler {
                     original_pd, sim_box, patches, {pd0, pd1, pd2, pd3, pd4, pd5, pd6, pd7});
             } else if (pdl.check_main_field_type<u64_3>()) {
 
-            shamrock::scheduler::split_patchdata<u64_3>(
-                    original_pd,
-                    sim_box,
-                    patches,
-                    {pd0,pd1,pd2,pd3,pd4,pd5,pd6,pd7});
-        }else{
-            throw shambase::make_except_with_loc<std::runtime_error>("the main field does not match any");
-        }
+                shamrock::scheduler::split_patchdata<u64_3>(
+                    original_pd, sim_box, patches, {pd0, pd1, pd2, pd3, pd4, pd5, pd6, pd7});
+            } else {
+                throw shambase::make_except_with_loc<std::runtime_error>(
+                    "the main field does not match any");
+            }
 
             owned_data.erase(key_orginal);
 
@@ -279,31 +272,38 @@ namespace shamrock::scheduler {
         auto search6 = owned_data.find(old_keys[6]);
         auto search7 = owned_data.find(old_keys[7]);
 
-    if(search0 == owned_data.not_found()){
-        throw shambase::make_except_with_loc<std::runtime_error>(shambase::format_printf("patchdata for key=%d was not owned by the node",old_keys[0]));
-    }
-    if(search1 == owned_data.not_found()){
-        throw shambase::make_except_with_loc<std::runtime_error>(shambase::format_printf("patchdata for key=%d was not owned by the node",old_keys[1]));
-    }
-    if(search2 == owned_data.not_found()){
-        throw shambase::make_except_with_loc<std::runtime_error>(shambase::format_printf("patchdata for key=%d was not owned by the node",old_keys[2]));
-    }
-    if(search3 == owned_data.not_found()){
-        throw shambase::make_except_with_loc<std::runtime_error>(shambase::format_printf("patchdata for key=%d was not owned by the node",old_keys[3]));
-    }
-    if(search4 == owned_data.not_found()){
-        throw shambase::make_except_with_loc<std::runtime_error>(shambase::format_printf("patchdata for key=%d was not owned by the node",old_keys[4]));
-    }
-    if(search5 == owned_data.not_found()){
-        throw shambase::make_except_with_loc<std::runtime_error>(shambase::format_printf("patchdata for key=%d was not owned by the node",old_keys[5]));
-    }
-    if(search6 == owned_data.not_found()){
-        throw shambase::make_except_with_loc<std::runtime_error>(shambase::format_printf("patchdata for key=%d was not owned by the node",old_keys[6]));
-    }
-    if(search7 == owned_data.not_found()){
-        throw shambase::make_except_with_loc<std::runtime_error>(shambase::format_printf("patchdata for key=%d was not owned by the node",old_keys[7]));
-    }
-
+        if (search0 == owned_data.not_found()) {
+            throw shambase::make_except_with_loc<std::runtime_error>(shambase::format_printf(
+                "patchdata for key=%d was not owned by the node", old_keys[0]));
+        }
+        if (search1 == owned_data.not_found()) {
+            throw shambase::make_except_with_loc<std::runtime_error>(shambase::format_printf(
+                "patchdata for key=%d was not owned by the node", old_keys[1]));
+        }
+        if (search2 == owned_data.not_found()) {
+            throw shambase::make_except_with_loc<std::runtime_error>(shambase::format_printf(
+                "patchdata for key=%d was not owned by the node", old_keys[2]));
+        }
+        if (search3 == owned_data.not_found()) {
+            throw shambase::make_except_with_loc<std::runtime_error>(shambase::format_printf(
+                "patchdata for key=%d was not owned by the node", old_keys[3]));
+        }
+        if (search4 == owned_data.not_found()) {
+            throw shambase::make_except_with_loc<std::runtime_error>(shambase::format_printf(
+                "patchdata for key=%d was not owned by the node", old_keys[4]));
+        }
+        if (search5 == owned_data.not_found()) {
+            throw shambase::make_except_with_loc<std::runtime_error>(shambase::format_printf(
+                "patchdata for key=%d was not owned by the node", old_keys[5]));
+        }
+        if (search6 == owned_data.not_found()) {
+            throw shambase::make_except_with_loc<std::runtime_error>(shambase::format_printf(
+                "patchdata for key=%d was not owned by the node", old_keys[6]));
+        }
+        if (search7 == owned_data.not_found()) {
+            throw shambase::make_except_with_loc<std::runtime_error>(shambase::format_printf(
+                "patchdata for key=%d was not owned by the node", old_keys[7]));
+        }
 
         shamrock::patch::PatchData new_pdat(pdl);
 
