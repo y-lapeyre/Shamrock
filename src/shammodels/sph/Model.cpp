@@ -153,6 +153,11 @@ void Model<Tvec, SPHKernel>::remap_positions(std::function<Tvec(Tvec)> map) {
         }
     });
 
+
+    modules::ComputeLoadBalanceValue<Tvec, SPHKernel>(ctx, solver.solver_config, solver.storage)
+        .update_load_balancing();
+    sched.scheduler_step(false, false);
+
     {
         StackEntry stack_loc{};
         SerialPatchTree<Tvec> sptree(
@@ -163,6 +168,8 @@ void Model<Tvec, SPHKernel>::remap_positions(std::function<Tvec(Tvec)> map) {
         sched.check_patchdata_locality_corectness();
     }
 
+    modules::ComputeLoadBalanceValue<Tvec, SPHKernel>(ctx, solver.solver_config, solver.storage)
+        .update_load_balancing();
     sched.scheduler_step(true, true);
 
     {
