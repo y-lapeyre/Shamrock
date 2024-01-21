@@ -27,8 +27,16 @@
 #include <stdexcept>
 #include <vector>
 
+#define NEW_LB_APPLY_IMPL
+
+#ifndef NEW_LB_APPLY_IMPL
+#include "shamrock/legacy/patch/base/patchdata.hpp"
+#endif
+
 namespace shamrock::scheduler {
 
+
+#ifdef NEW_LB_APPLY_IMPL
     struct Message {
         std::unique_ptr<shamcomm::CommunicationBuffer> buf;
         i32 rank;
@@ -169,6 +177,54 @@ namespace shamrock::scheduler {
             }
         }
     }
+    #else
+
+void SchedulerPatchData::apply_change_list(const shamrock::scheduler::LoadBalancingChangeList & change_list,SchedulerPatchList& patch_list){
+
+    StackEntry stack_loc{};
+
+    std::vector<PatchDataMpiRequest> rq_lst;
+
+    using ChangeOp = shamrock::scheduler::LoadBalancingChangeList::ChangeOp;
+
+    //send
+    for(const ChangeOp op : change_list.change_ops){ // switch to range based
+         //if i'm sender
+        if(op.rank_owner_old == shamcomm::world_rank()){
+            auto & patchdata = owned_data.get(op.patch_id);
+            patchdata_isend(patchdata, rq_lst, op.rank_owner_new, op.tag_comm, MPI_COMM_WORLD);
+        }
+    }
+
+    //receive
+    for(const ChangeOp op : change_list.change_ops){
+        auto & id_patch = op.patch_id;
+        
+        //if i'm receiver
+        if(op.rank_owner_new == shamcomm::world_rank()){
+            owned_data.add_obj(id_patch,pdl);
+            patchdata_irecv_probe(owned_data.get(id_patch), rq_lst, op.rank_owner_old , op.tag_comm, MPI_COMM_WORLD);
+        }
+    }
+
+    waitall_pdat_mpi_rq(rq_lst);
+
+    //erase old patchdata
+    for(const ChangeOp op : change_list.change_ops){
+        auto & id_patch = op.patch_id;
+        
+        patch_list.global[op.patch_idx].node_owner_id = op.rank_owner_new;
+
+        //if i'm sender delete old data
+        if(op.rank_owner_old == shamcomm::world_rank()){
+            owned_data.erase(id_patch);
+        }
+
+    }
+
+
+}
+    #endif
 
     template<class Vectype>
     void split_patchdata(
