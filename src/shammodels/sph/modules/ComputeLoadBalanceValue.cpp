@@ -24,6 +24,7 @@ void shammodels::sph::modules::ComputeLoadBalanceValue<Tvec, SPHKernel>::update_
     scheduler().update_local_load_value([&](shamrock::patch::Patch p){
         return scheduler().patch_data.owned_data.get(p.id_patch).get_obj_cnt();
     });
+
 }
 
 using namespace shammath;

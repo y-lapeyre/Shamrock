@@ -23,6 +23,7 @@
 #include "shammodels/generic/setup/generators.hpp"
 #include "shammodels/sph/Solver.hpp"
 #include "shammodels/sph/io/PhantomDump.hpp"
+#include "shammodels/sph/modules/ComputeLoadBalanceValue.hpp"
 #include "shamrock/legacy/utils/geometry_utils.hpp"
 #include "shamrock/patch/PatchData.hpp"
 #include "shamrock/scheduler/ReattributeDataUtility.hpp"
@@ -85,12 +86,21 @@ namespace shammodels::sph {
         void init_from_phantom_dump(PhantomDump & phdump);
         PhantomDump make_phantom_dump();
 
+        void do_vtk_dump(std::string filename, bool add_patch_world_id){
+            solver.vtk_do_dump(filename, add_patch_world_id);
+        }
+
+        void set_debug_dump(bool _do_debug_dump, std::string _debug_dump_filename){
+            solver.set_debug_dump(_do_debug_dump, _debug_dump_filename);
+        }
+
         u64 get_total_part_count();
 
         f64 total_mass_to_part_mass(f64 totmass);
 
 
         std::pair<Tvec, Tvec> get_ideal_fcc_box(Tscal dr, std::pair<Tvec, Tvec> box);
+        std::pair<Tvec, Tvec> get_ideal_hcp_box(Tscal dr, std::pair<Tvec, Tvec> box);
 
         Tscal get_hfact(){
             return Kernel::hfactd;
@@ -100,7 +110,9 @@ namespace shammodels::sph {
             return shamrock::sph::rho_h(solver.solver_config.gpart_mass, h, Kernel::hfactd);
         }
 
+
         void add_cube_fcc_3d(Tscal dr, std::pair<Tvec, Tvec> _box);
+        void add_cube_hcp_3d(Tscal dr, std::pair<Tvec, Tvec> _box);
 
         inline void add_sink(Tscal mass, Tvec pos, Tvec velocity, Tscal accretion_radius){
             if(solver.storage.sinks.is_empty()){
@@ -312,6 +324,9 @@ namespace shammodels::sph {
             if(shamcomm::world_rank() == 0) {
                 logger::info_ln("Model", "Push particles : ", log_gathered);
             }
+            
+            modules::ComputeLoadBalanceValue<Tvec, SPHKernel> (ctx, solver.solver_config, solver.storage).update_load_balancing();
+
 
             sched.scheduler_step(false, false);
 
@@ -475,6 +490,8 @@ namespace shammodels::sph {
                 logger::info_ln("Model", "Push particles : ", log_gathered);
             }
 
+            modules::ComputeLoadBalanceValue<Tvec, SPHKernel> (ctx, solver.solver_config, solver.storage).update_load_balancing();
+
             sched.scheduler_step(false, false);
 
 
@@ -633,6 +650,13 @@ namespace shammodels::sph {
 
         inline void set_solver_config(typename Solver::Config cfg) { solver.solver_config = cfg; }
 
+        inline f64 solver_logs_last_rate(){
+            return solver.solve_logs.get_last_rate();
+        }
+        inline u64 solver_logs_last_obj_count(){
+            return solver.solve_logs.get_last_obj_count();
+        }
+
         ////////////////////////////////////////////////////////////////////////////////////////////
         /////// analysis utilities
         ////////////////////////////////////////////////////////////////////////////////////////////
@@ -646,10 +670,20 @@ namespace shammodels::sph {
         ////////////////////////////////////////////////////////////////////////////////////////////
 
         f64
-        evolve_once(f64 t_curr, f64 dt_input, bool do_dump, std::string vtk_dump_name, bool vtk_dump_patch_id);
+        evolve_once_time_expl(f64 t_curr, f64 dt_input);
     
+        void timestep();
+
+        inline void evolve_once(){
+            solver.evolve_once();
+        }
+
+        inline bool evolve_until(Tscal target_time,i32 niter_max){
+            return solver.evolve_until(target_time,niter_max);
+        }
+
         private:
         void add_pdat_to_phantom_block(PhantomDumpBlock & block, shamrock::patch::PatchData & pdat);
     };
 
-} // namespace shammodels
+} // namespace shammodels::sph

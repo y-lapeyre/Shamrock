@@ -194,7 +194,7 @@ namespace shamrock::tree {
             } else if (buf_pos_min_cell_flt) {
                 return buf_pos_min_cell_flt->size();
             } else {
-                throw shambase::throw_with_loc<std::runtime_error>("no buffers are allocated");
+                throw shambase::make_except_with_loc<std::runtime_error>("no buffers are allocated");
             }
         }
 
@@ -224,11 +224,11 @@ namespace shamrock::tree {
             }
         }
 
-        inline u64 serialize_byte_size() {
+        inline shamalgs::SerializeSize serialize_byte_size() {
 
             using H = shamalgs::SerializeHelper;
 
-            u64 sum = H::serialize_byte_size<u32>();
+            shamalgs::SerializeSize sum = H::serialize_byte_size<u32>();
 
             u32 state = (bool(buf_pos_min_cell) ? 1 : 0) + (bool(buf_pos_min_cell_flt) ? 1 : 0) * 2;
 
