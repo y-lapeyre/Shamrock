@@ -41,10 +41,19 @@ namespace shamrock::scheduler {
             u32 rq_index = rqs.size() - 1;
             auto &rq     = rqs[rq_index];
 
+            u64 bsize = msg.buf->get_bytesize();
+            if(bsize % 8 != 0){
+                shambase::throw_with_loc<std::runtime_error>("the following mpi comm assume that we can send longs to pack 8byte");
+            }
+            u64 lcount = bsize/8;
+            if(lcount > i32_max){
+                shambase::throw_with_loc<std::runtime_error>("The message is too large for MPI");
+            }
+
             mpi::isend(
                 msg.buf->get_ptr(),
-                msg.buf->get_bytesize(),
-                MPI_BYTE,
+                lcount,
+                get_mpi_type<u64>(),
                 msg.rank,
                 msg.tag,
                 MPI_COMM_WORLD,
@@ -62,11 +71,11 @@ namespace shamrock::scheduler {
             MPI_Status st;
             i32 cnt;
             mpi::probe(msg.rank, msg.tag, MPI_COMM_WORLD, &st);
-            mpi::get_count(&st, MPI_BYTE, &cnt);
+            mpi::get_count(&st, get_mpi_type<u64>(), &cnt);
 
-            msg.buf = std::make_unique<shamcomm::CommunicationBuffer>(cnt);
+            msg.buf = std::make_unique<shamcomm::CommunicationBuffer>(cnt*8);
 
-            mpi::irecv(msg.buf->get_ptr(), cnt, MPI_BYTE, msg.rank, msg.tag, MPI_COMM_WORLD, &rq);
+            mpi::irecv(msg.buf->get_ptr(), cnt, get_mpi_type<u64>(), msg.rank, msg.tag, MPI_COMM_WORLD, &rq);
         }
     }
 
