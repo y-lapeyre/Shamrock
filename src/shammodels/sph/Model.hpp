@@ -527,6 +527,8 @@ namespace shammodels::sph {
             if(shamcomm::world_rank() == 0) logger::info_ln("Model", "current particle counts : ", log_gathered);
         }
 
+        void remap_positions(std::function<Tvec(Tvec)> map);
+
         void push_particle(std::vector<Tvec> & part_pos_insert, std::vector<Tscal> & part_hpart_insert, std::vector<Tscal> &part_u_insert);
 
         template<class T>
