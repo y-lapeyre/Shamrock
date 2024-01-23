@@ -45,15 +45,15 @@ def rnd():
 fig,axs = plt.subplots(nrows=1,ncols=1,figsize=(20,10),dpi=90)
 
 colors = ["tab:blue" ,
-"tab:orange" ,
-"tab:green",
-"tab:red",
-"tab:purple", 
-"tab:brown" ,
-"tab:pink" ,
-"tab:gray" ,
-"tab:olive",
-"tab:cyan"]
+    "tab:orange" ,
+    "tab:green",
+    "tab:red",
+    "tab:purple", 
+    "tab:brown" ,
+    "tab:pink" ,
+    "tab:gray" ,
+    "tab:olive",
+    "tab:cyan"]
 
 #colors = ['pink', 'lightblue', 'lightgreen']
 cnt = 0

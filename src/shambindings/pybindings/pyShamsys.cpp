@@ -90,6 +90,17 @@ Register_pymod(pysyslibinit) {
     )pbdoc");
 
     m.def(
+        "dump_profiling_chrome",
+        [](std::string prefix) {
+            shambase::details::dump_profilings_chrome(prefix, shamcomm::world_rank());
+        },
+        R"pbdoc(
+        dump profiling data
+    )pbdoc");
+
+    
+
+    m.def(
         "clear_profiling_data",
         []() {
             shambase::details::clear_profiling_data();
