@@ -25,17 +25,14 @@
 #endif
 
 namespace shambase::details {
+
     #ifdef SHAMROCK_USE_PROFILING
 
     f64 get_wtime();
     void register_profile_entry(std::source_location loc, f64 start_time, f64 end_time);
 
-    void dump_profilings(std::string process_prefix);
-
-
-
-
-    
+    void dump_profilings(std::string process_prefix, u32 world_rank);
+    void clear_profiling_data();
     //void add_prof_entry(std::string n, bool is_start);
     //void dump_profiling(u32 world_rank);
     #endif

@@ -14,6 +14,7 @@
 
 #include "pyNodeInstance.hpp"
 #include "shambase/exception.hpp"
+#include "shambase/stacktrace.hpp"
 #include "shambindings/pybindaliases.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "version.hpp"
@@ -77,6 +78,24 @@ Register_pymod(pysyslibinit) {
         },
         R"pbdoc(
         print compile_arg
+    )pbdoc");
+
+    m.def(
+        "dump_profiling",
+        [](std::string prefix) {
+            shambase::details::dump_profilings(prefix, shamcomm::world_rank());
+        },
+        R"pbdoc(
+        dump profiling data
+    )pbdoc");
+
+    m.def(
+        "clear_profiling_data",
+        []() {
+            shambase::details::clear_profiling_data();
+        },
+        R"pbdoc(
+        dump profiling data
     )pbdoc");
 
     py::module sys_module = m.def_submodule("sys", "system handling part of shamrock");

@@ -31,6 +31,10 @@ namespace shambase::details {
         f64 time_start;
         f64 time_end;
         std::string entry_name;
+
+        std::string format(){
+            return shambase::format_printf(R"({"tstart": %f, "tend": %f, "name": "%s"})", time_start,time_end,entry_name);
+        }
     };
 
     std::vector<ProfileEntry> profile_data;
@@ -44,8 +48,25 @@ namespace shambase::details {
         profile_data.push_back({start_time, end_time, loc.function_name()});
     };
 
-    void dump_profilings(std::string process_prefix){
+    void clear_profiling_data(){
+        profile_data.clear();
+    }
 
+    void dump_profilings(std::string process_prefix, u32 world_rank){
+        std::ofstream outfile(process_prefix + std::to_string(world_rank));
+        outfile << "[";
+
+        u32 len = profile_data.size();
+
+        for (u32 i = 0; i < len; i++) {
+            outfile << profile_data[i].format();
+            if (i != len - 1) {
+                outfile << ",";
+            }
+        }
+
+        outfile << "]";
+        outfile.close();
     }
 
 }
