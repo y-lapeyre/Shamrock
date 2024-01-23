@@ -22,6 +22,37 @@ namespace shambase::details {
 
     Timer global_timer = Timer{};
 
+    //two entry types, 
+    // one with start, end 
+    // one with start, end as separate envents
+
+
+    struct ProfileEntry{
+        f64 time_start;
+        f64 time_end;
+        std::string entry_name;
+    };
+
+    std::vector<ProfileEntry> profile_data;
+
+    f64 get_wtime(){
+        global_timer.end();
+        return global_timer.elasped_sec(); 
+    }
+
+    void register_profile_entry(std::source_location loc, f64 start_time, f64 end_time){
+        profile_data.push_back({start_time, end_time, loc.function_name()});
+    };
+
+    void dump_profilings(std::string process_prefix){
+
+    }
+
+}
+
+namespace shambase::details {
+
+
     struct ChromeProfileEntry {
         std::string name;
         u64 time_val;
