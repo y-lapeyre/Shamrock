@@ -230,7 +230,7 @@ inline void for_each_patch_shift(ShearPeriodicInfo<T> shearinfo, sycl::vec<T,3> 
                     shearinfo.shear_dir.z()*df
                 };
                 
-                list_possible.push_back({xoff+off_d.x(),yoff+off_d.y(),zoff+off_d.z()});
+                list_possible.push_back(i32_3{xoff+off_d.x(),yoff+off_d.y(),zoff+off_d.z()});
             }
         }
     }
