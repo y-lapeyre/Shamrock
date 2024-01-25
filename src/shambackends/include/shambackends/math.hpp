@@ -23,10 +23,15 @@ namespace sham::syclbackport {
 
 
 
-#ifdef SYCL2020_FEATURE_ISINF
+#ifndef SYCL2020_FEATURE_ISINF
 #ifdef SYCL_COMP_ACPP
 template<class T> 
 bool fallback_is_inf(T value){
+
+    __hipsycl_if_target_host(
+        return std::isinf(value);
+        )
+
 
 }
 #endif
@@ -92,6 +97,7 @@ namespace sham {
             return !(tmp);
         #else
             auto tmp = ! syclbackport::fallback_is_inf(v);
+            return !(tmp);
         #endif
     }
 
