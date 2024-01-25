@@ -167,7 +167,7 @@ namespace shamalgs::reduction::details {
             });
         });
 
-        T ret{0};
+        T ret = shambase::VectorProperties<T>::get_zero();
         {
             sycl::host_accessor acc{recov, sycl::read_only};
             for (u64 i = 0; i < remaining_val; i++) {

@@ -21,7 +21,6 @@
 #include "shamrock/patch/PatchDataField.hpp"
 #include "shamrock/scheduler/InterfacesUtility.hpp"
 
-
 #define ZVEC shambase::VectorProperties<Tvec>::get_zero()
 
 template<class Tvec, template<class> class SPHKernel>
