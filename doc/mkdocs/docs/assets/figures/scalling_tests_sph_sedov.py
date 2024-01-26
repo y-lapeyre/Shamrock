@@ -27,6 +27,7 @@ dic["CascadeLake1"] = {
 }
 
 
+
 '''
 grvingt
 '''
@@ -240,9 +241,6 @@ dic["grvingt 3"] = {
 }
 
 
-
-
-
 import matplotlib.pyplot as plt
 import numpy as np
 plt.style.use('custom_short_cycler.mplstyle')
@@ -252,37 +250,104 @@ plt.figure()
 for k in dic.keys():
     plt.plot(dic[k]["X"]  , np.array(dic[k]["rate"])  /np.array(dic[k]["X"]  ), label = dic[k]["label"])
 #plt.ylim(0,1e6)
-plt.xlim(1,200)
+#plt.xlim(1,200)
 plt.xscale('log')
 plt.ylabel(r"$N_{\rm part} / (N_{\rm cpu} t_{\rm step})$")
 plt.xlabel(r"$N_{\rm cpu}$")
 plt.legend()
 plt.grid()
-plt.savefig("sedov_scalling_div.svg")
+plt.savefig("sedov_scalling_div_cpu.svg")
 
 
 plt.figure()
 for k in dic.keys():
     plt.plot(dic[k]["X"]  , (np.array(dic[k]["rate"])  /np.array(dic[k]["X"]  ))/(np.array(dic[k]["rate"])  /np.array(dic[k]["X"]  ))[0], label =  dic[k]["label"])
 #plt.ylim(0,1e6)
-plt.xlim(1,200)
+#plt.xlim(1,200)
 plt.xscale('log')
 plt.ylabel(r"$\chi$")
 plt.xlabel(r"$N_{\rm cpu}$")
 plt.legend()
 plt.grid()
-plt.savefig("sedov_scalling_eff.svg")
+plt.savefig("sedov_scalling_eff_cpu.svg")
 
 
 plt.figure()
 for k in dic.keys():
     plt.plot(dic[k]["X"]  , np.array(dic[k]["rate"]), label = dic[k]["label"])
 #plt.ylim(0,1e6)
-plt.xlim(1,200)
+#plt.xlim(1,200)
 plt.xscale('log')
 plt.yscale('log')
 plt.ylabel(r"$N_{\rm part} / (t_{\rm step})$")
 plt.xlabel(r"$N_{\rm cpu}$")
 plt.legend()
 plt.grid()
-plt.savefig("sedov_scalling.svg")
+plt.savefig("sedov_scalling_cpu.svg")
+
+
+
+
+
+dic = {}
+dic["Adastra mi250X"] = {
+    "label" : "Adastra mi250X",
+    "X" : [1*4, 2*4, 4*4, 8*4, 16*4,32*4,64*4],
+    "rate" : [
+        28144452.5247059, 
+        65301034.81380231, 
+        126258518.4939734, 
+        220797309.04850662, 
+        451664700.5182303, 
+        850424568.3261222,
+        1548188962.967435],
+    "cnt" : [
+        403064480, 
+        802649952, 
+        1606415328, 
+        3211389720, 
+        6421199616,
+        12828966752, 
+        25658246736],
+    "lb_pred" : [100, 100, 100, 100,100,100,100]
+}
+
+
+plt.figure()
+for k in dic.keys():
+    plt.plot(dic[k]["X"]  , np.array(dic[k]["rate"])  /np.array(dic[k]["X"]  ), label = dic[k]["label"])
+#plt.ylim(0,1e6)
+#plt.xlim(1,200)
+plt.xscale('log')
+plt.ylabel(r"$N_{\rm part} / (N_{\rm GPU} t_{\rm step})$")
+plt.xlabel(r"$N_{\rm GPU}$")
+plt.legend()
+plt.grid()
+plt.savefig("sedov_scalling_div_GPU.svg")
+
+
+plt.figure()
+for k in dic.keys():
+    plt.plot(dic[k]["X"]  , (np.array(dic[k]["rate"])  /np.array(dic[k]["X"]  ))/(np.array(dic[k]["rate"])  /np.array(dic[k]["X"]  ))[0], label =  dic[k]["label"])
+#plt.ylim(0,1e6)
+#plt.xlim(1,200)
+plt.xscale('log')
+plt.ylabel(r"$\chi$")
+plt.xlabel(r"$N_{\rm GPU}$")
+plt.legend()
+plt.grid()
+plt.savefig("sedov_scalling_eff_GPU.svg")
+
+
+plt.figure()
+for k in dic.keys():
+    plt.plot(dic[k]["X"]  , np.array(dic[k]["rate"]), label = dic[k]["label"])
+#plt.ylim(0,1e6)
+#plt.xlim(1,200)
+plt.xscale('log')
+plt.yscale('log')
+plt.ylabel(r"$N_{\rm part} / (t_{\rm step})$")
+plt.xlabel(r"$N_{\rm GPU}$")
+plt.legend()
+plt.grid()
+plt.savefig("sedov_scalling_GPU.svg")
