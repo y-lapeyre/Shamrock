@@ -205,7 +205,43 @@ namespace shamsys::instance {
         }
     }
 
+
+    namespace tmp{
+
+
+
+        void print_device_list_debug() {
+            u32 rank = 0;
+
+            std::string print_buf = "device avail : ";
+
+            details::for_each_device([&](u32 key_global, const sycl::platform &plat, const sycl::device &dev) {
+                auto PlatformName = plat.get_info<sycl::info::platform::name>();
+                auto DeviceName   = dev.get_info<sycl::info::device::name>();
+
+                std::string devname  = DeviceName;
+                std::string platname = PlatformName;
+                std::string devtype  = "truc";
+
+                print_buf += 
+                                std::to_string(key_global) + " " +
+                                devname+
+                                platname +
+                            "\n";
+            });
+
+        
+            logger::debug_sycl_ln("InitSYCL", print_buf);
+        }
+
+
+    }
+
     void init(int argc, char *argv[]) {
+
+        tmp::print_device_list_debug();
+
+
 
         if (opts::has_option("--sycl-cfg")) {
 
@@ -605,6 +641,7 @@ namespace shamsys::instance {
             logger::raw_ln(" - MPI use Direct Comm :", col8b_red() + "No" + reset());
         }
         dgpu_mode = dgpu_capable;
+        sham::get_queue_details().direct_mpi_comm_capable = dgpu_mode;
     }
 
     void force_direct_gpu_mode(bool force) {
