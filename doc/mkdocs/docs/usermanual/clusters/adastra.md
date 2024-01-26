@@ -9,6 +9,7 @@ module load craype-accel-amd-gfx90a craype-x86-trento
 module load PrgEnv-intel
 module load cray-mpich/8.1.26
 module load cray-python
+module load amd-mixed/5.7.1
 
 pip3 install -U cmake ninja
 export PATH=/lus/home/CT10/cad14954/tdavidc/.local/bin:$PATH
@@ -190,3 +191,86 @@ srun --ntasks-per-node=8 --cpus-per-task=8 --threads-per-core=1 --gpu-bind=close
     ./shamrock --sycl-cfg auto:HIP --loglevel 125 --sycl-ls-map \
     --rscript sedov_scale_test_updated.py
 ```
+
+
+
+
+
+
+
+
+
+
+13816176.450450242
+13707781.216734508
+
+default no mpi
+result rate : 16351506.630551208
+result cnt : 16217760
+
+default mpi aware
+result rate : 16411686.111862464
+result cnt : 16217760
+
+bindings doc cines
+result rate : 15812417.152442794
+result cnt : 16217760
+
+bindings ordered
+result rate : 16758947.19113915
+result cnt : 16217760
+
+swap mystique
+function Adastra_MI250_8TasksWith8ThreadsAnd1GPU() {
+    # Node local rank 0 gets the GCD 0, is bound the cores [48-55] of NUMA domain 3 and uses the NIC 0
+    # Node local rank 1 gets the GCD 1, is bound the cores [56-63] of NUMA domain 3 and uses the NIC 0
+    # Node local rank 2 gets the GCD 2, is bound the cores [16-23] of NUMA domain 1 and uses the NIC 1
+    # Node local rank 3 gets the GCD 3, is bound the cores [24-31] of NUMA domain 1 and uses the NIC 1
+    # Node local rank 4 gets the GCD 4, is bound the cores [ 0- 7] of NUMA domain 0 and uses the NIC 2
+    # Node local rank 5 gets the GCD 5, is bound the cores [ 8-15] of NUMA domain 0 and uses the NIC 2
+    # Node local rank 6 gets the GCD 6, is bound the cores [32-39] of NUMA domain 2 and uses the NIC 3
+    # Node local rank 7 gets the GCD 7, is bound the cores [40-47] of NUMA domain 2 and uses the NIC 3
+    AFFINITY_NUMACTL=('48-55' '56-63' '16-23' '24-31' '0-7' '8-15' '32-39' '40-47')
+    #AFFINITY_NUMACTL=('0-7' '8-15' '16-23' '24-31' '32-39' '40-47' '48-55' '56-63')
+    AFFINITY_GPU=('0' '1' '2' '3' '4' '5' '6' '7')
+    export MPICH_OFI_NIC_POLICY=GPU
+}
+
+function Adastra_MI250_8TasksWith8ThreadsAnd1GPU() {
+    # Node local rank 0 gets the GCD 0, is bound the cores [48-55] of NUMA domain 3 and uses the NIC 0
+    # Node local rank 1 gets the GCD 1, is bound the cores [56-63] of NUMA domain 3 and uses the NIC 0
+    # Node local rank 2 gets the GCD 2, is bound the cores [16-23] of NUMA domain 1 and uses the NIC 1
+    # Node local rank 3 gets the GCD 3, is bound the cores [24-31] of NUMA domain 1 and uses the NIC 1
+    # Node local rank 4 gets the GCD 4, is bound the cores [ 0- 7] of NUMA domain 0 and uses the NIC 2
+    # Node local rank 5 gets the GCD 5, is bound the cores [ 8-15] of NUMA domain 0 and uses the NIC 2
+    # Node local rank 6 gets the GCD 6, is bound the cores [32-39] of NUMA domain 2 and uses the NIC 3
+    # Node local rank 7 gets the GCD 7, is bound the cores [40-47] of NUMA domain 2 and uses the NIC 3
+    AFFINITY_NUMACTL=('40-47' '56-63' '16-23' '24-31' '0-7' '8-15' '32-39' '48-55')
+    #AFFINITY_NUMACTL=('0-7' '8-15' '16-23' '24-31' '32-39' '40-47' '48-55' '56-63')
+    AFFINITY_GPU=('0' '1' '2' '3' '4' '5' '6' '7')
+    export MPICH_OFI_NIC_POLICY=NUMA
+}
+
+
+
+
+result rate : 28686637.137355898
+result cnt : 80474112
+
+
+result rate : 28525822.08035385
+result cnt : 80474112
+
+
+
+
+result rate : 10474355.499388587
+result cnt : 8157600
+
+result rate : 9845472.799492419
+result cnt : 8157600
+
+
+
+result rate : 10992355.321209397
+result cnt : 8157600
