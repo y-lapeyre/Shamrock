@@ -641,6 +641,7 @@ namespace shamsys::instance {
             logger::raw_ln(" - MPI use Direct Comm :", col8b_red() + "No" + reset());
         }
         dgpu_mode = dgpu_capable;
+        sham::get_queue_details().direct_mpi_comm_capable = dgpu_mode;
     }
 
     void force_direct_gpu_mode(bool force) {
