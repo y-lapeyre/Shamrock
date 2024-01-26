@@ -31,17 +31,9 @@ bool fallback_is_inf(T value){
     __hipsycl_if_target_host(
         return std::isinf(value);
         )
-        
-    __hipsycl_if_target_cuda(
-        static_assert(false, "this case is not implemented");
-        )
-
-    __hipsycl_if_target_hip(
-        static_assert(false, "this case is not implemented");
-        )
 
     __hipsycl_if_target_hiplike(
-        static_assert(false, "this case is not implemented");
+        return isinf(value);
         ) 
 
     __hipsycl_if_target_spirv(
