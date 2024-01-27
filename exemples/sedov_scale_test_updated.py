@@ -95,9 +95,14 @@ model.set_cfl_force(0.1)
 model.set_cfl_multipler(1e-4)
 model.set_cfl_mult_stiffness(1e6)
 
+#shamrock.dump_profiling("sedov_scale_test_init_" + str(compute_multiplier) + "_")
+#shamrock.clear_profiling_data()
+
 for i in range(5):
     model.timestep()
 
+#shamrock.dump_profiling("sedov_scale_test_" + str(compute_multiplier) + "_")
+#shamrock.dump_profiling_chrome("sedov_scale_test_chrome_" + str(compute_multiplier) + "_")
 
 res_rate,res_cnt = model.solver_logs_last_rate(), model.solver_logs_last_obj_count()
 

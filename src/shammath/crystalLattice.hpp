@@ -211,28 +211,23 @@ namespace shammath {
             std::array<i32, dim> coord_max;
             std::array<i32, dim> current;
 
-            using Selector = std::function<bool(Tvec)>;
-
-            Selector selector;
             bool done = false;
 
             public:
             Iterator(
                 Tscal dr,
                 std::array<i32, dim> coord_min,
-                std::array<i32, dim> coord_max,
-                Selector &&selector)
-                : dr(dr), coord_min(coord_min), coord_max(coord_max), current(coord_min),
-                  selector(std::forward<Selector>(selector)) {
+                std::array<i32, dim> coord_max)
+                : dr(dr), coord_min(coord_min), coord_max(coord_max), current(coord_min) {
 
                 if (coord_min == coord_max) {
                     done = true;
                 }
             }
 
-            bool is_done() { return done; }
+            inline bool is_done() { return done; }
 
-            Tvec next() {
+            inline Tvec next() {
                 Tvec ret = generator(dr, current);
 
                 current[0]++;
@@ -253,7 +248,7 @@ namespace shammath {
                 return ret;
             }
 
-            std::vector<Tvec> next_n(u32 nmax) {
+            inline std::vector<Tvec> next_n(u32 nmax) {
                 std::vector<Tvec> ret{};
                 for (u32 i = 0; i < nmax; i++) {
                     if (done) {
