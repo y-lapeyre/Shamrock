@@ -313,7 +313,8 @@ std::tuple<f64_3,f64_3> PatchScheduler::get_box_volume(){
 
 
 //TODO clean the output of this function
-void PatchScheduler::scheduler_step(bool do_split_merge, bool do_load_balancing){StackEntry stack_loc{};
+void PatchScheduler::scheduler_step(bool do_split_merge, bool do_load_balancing){
+    StackEntry stack_loc{};
 
     //std::cout << dump_status();
 

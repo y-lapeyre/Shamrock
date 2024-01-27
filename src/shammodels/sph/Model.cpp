@@ -225,16 +225,33 @@ inline void post_insert_data(PatchScheduler &sched) {
     std::string log = "";
 
     using namespace shamrock::patch;
+
+    u32 smallest_count = u32_max;
+    u32 largest_count = 0;
+
     sched.for_each_local_patchdata([&](const Patch p, PatchData &pdat) {
-        log += shambase::format(
-            "\n    patch id={}, N={} particles", p.id_patch, pdat.get_obj_cnt());
+        u32 tmp = pdat.get_obj_cnt();
+        smallest_count = sham::min(tmp, smallest_count);
+        largest_count = sham::max(tmp, largest_count);
     });
 
-    std::string log_gathered = "";
-    shamcomm::gather_str(log, log_gathered);
+    smallest_count = shamalgs::collective::allreduce_min(smallest_count);
+    largest_count = shamalgs::collective::allreduce_max(largest_count);
 
-    if (shamcomm::world_rank() == 0)
-        logger::info_ln("Model", "current particle counts : ", log_gathered);
+    if (shamcomm::world_rank() == 0){
+        logger::info_ln("Model", "current particle counts : min = ", smallest_count, "max = ",largest_count);
+    }
+
+    //sched.for_each_local_patchdata([&](const Patch p, PatchData &pdat) {
+    //    log += shambase::format(
+    //        "\n    patch id={}, N={} particles", p.id_patch, pdat.get_obj_cnt());
+    //});
+    //
+    //std::string log_gathered = "";
+    //shamcomm::gather_str(log, log_gathered);
+    //
+    //if (shamcomm::world_rank() == 0)
+    //    logger::info_ln("Model", "current particle counts : ", log_gathered);
 }
 
 template<class Tvec, template<class> class SPHKernel>
@@ -359,66 +376,86 @@ void Model<Tvec, SPHKernel>::add_cube_hcp_3d(Tscal dr, std::pair<Tvec, Tvec> _bo
 
     auto [idxs_min, idxs_max] = Lattice::get_box_index_bounds(dr, box.lower, box.upper);
 
-    LatticeIter gen = LatticeIter(dr, idxs_min, idxs_max, [&](Tvec r) {
-        return box.contain_pos(r);
-    });
+    LatticeIter gen = LatticeIter(dr, idxs_min, idxs_max);
 
     std::string log = "";
     while (!gen.is_done()) {
-        std::vector<Tvec> to_ins = gen.next_n(sched.crit_patch_split * 8);
 
-        sched.for_each_local_patchdata([&](const Patch p, PatchData &pdat) {
-            PatchCoordTransform<Tvec> ptransf = sched.get_sim_box().get_patch_transform<Tvec>();
+        // loc maximum count of insert part
+        u64 loc_sum_ins_cnt = 0;
+        u64 max_loc_sum_ins_cnt = 0;
 
-            shammath::CoordRange<Tvec> patch_coord = ptransf.to_obj_coord(p);
+        do {
+            std::vector<Tvec> to_ins = gen.next_n(sched.crit_patch_split*2);
 
-            std::vector<Tvec> vec_acc;
-            for (Tvec r : to_ins) {
-                if (patch_coord.contain_pos(r)) {
-                    vec_acc.push_back(r);
+
+
+            sched.for_each_local_patchdata([&](const Patch p, PatchData &pdat) {
+                PatchCoordTransform<Tvec> ptransf = sched.get_sim_box().get_patch_transform<Tvec>();
+
+                shammath::CoordRange<Tvec> patch_coord = ptransf.to_obj_coord(p);
+
+                std::vector<Tvec> vec_acc;
+                for (Tvec r : to_ins) {
+                    if (patch_coord.contain_pos(r)) {
+                        vec_acc.push_back(r);
+                    }
                 }
+
+                // update max insert_count
+                loc_sum_ins_cnt += vec_acc.size();
+
+                if (vec_acc.size() == 0) {
+                    return;
+                }
+
+                log += shambase::format(
+                    "\n  rank = {}  patch id={}, add N={} particles, coords = {} {}",
+                    shamcomm::world_rank(),
+                    p.id_patch,
+                    vec_acc.size(),
+                    patch_coord.lower,
+                    patch_coord.upper);
+
+                PatchData tmp(sched.pdl);
+                tmp.resize(vec_acc.size());
+                tmp.fields_raz();
+
+                {
+                    u32 len                 = vec_acc.size();
+                    PatchDataField<Tvec> &f = tmp.get_field<Tvec>(sched.pdl.get_field_idx<Tvec>("xyz"));
+                    sycl::buffer<Tvec> buf(vec_acc.data(), len);
+                    f.override(buf, len);
+                }
+
+                {
+                    PatchDataField<Tscal> &f
+                        = tmp.get_field<Tscal>(sched.pdl.get_field_idx<Tscal>("hpart"));
+                    f.override(dr);
+                }
+
+                pdat.insert_elements(tmp);
+
+            });
+
+            max_loc_sum_ins_cnt = shamalgs::collective::allreduce_max(loc_sum_ins_cnt);
+
+            if(shamcomm::world_rank() == 0){
+                logger::info_ln("Model", "--> insertion loop : max loc insert count = ",max_loc_sum_ins_cnt);
             }
-
-            if (vec_acc.size() == 0) {
-                return;
-            }
-
-            log += shambase::format(
-                "\n  rank = {}  patch id={}, add N={} particles, coords = {} {}",
-                shamcomm::world_rank(),
-                p.id_patch,
-                vec_acc.size(),
-                patch_coord.lower,
-                patch_coord.upper);
-
-            PatchData tmp(sched.pdl);
-            tmp.resize(vec_acc.size());
-            tmp.fields_raz();
-
-            {
-                u32 len                 = vec_acc.size();
-                PatchDataField<Tvec> &f = tmp.get_field<Tvec>(sched.pdl.get_field_idx<Tvec>("xyz"));
-                sycl::buffer<Tvec> buf(vec_acc.data(), len);
-                f.override(buf, len);
-            }
-
-            {
-                PatchDataField<Tscal> &f
-                    = tmp.get_field<Tscal>(sched.pdl.get_field_idx<Tscal>("hpart"));
-                f.override(dr);
-            }
-
-            pdat.insert_elements(tmp);
-        });
+        }while(!gen.is_done() && max_loc_sum_ins_cnt < sched.crit_patch_split*8);
+        
 
         sched.check_patchdata_locality_corectness();
 
-        std::string log_gathered = "";
-        shamcomm::gather_str(log, log_gathered);
-
-        if (shamcomm::world_rank() == 0) {
-            logger::info_ln("Model", "Push particles : ", log_gathered);
-        }
+        //if(logger::details::loglevel >= shamcomm::logs::log_info){
+        //    std::string log_gathered = "";
+        //    shamcomm::gather_str(log, log_gathered);
+        //
+        //    if (shamcomm::world_rank() == 0) {
+        //        logger::debug_ln("Model", "Push particles : ", log_gathered);
+        //    }
+        //}
         log = "";
 
         modules::ComputeLoadBalanceValue<Tvec, SPHKernel>(ctx, solver.solver_config, solver.storage)
