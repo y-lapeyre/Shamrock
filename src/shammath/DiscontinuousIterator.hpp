@@ -9,7 +9,7 @@
 #pragma once
 
 /**
- * @file patchdata.hpp
+ * @file DiscontinuousIterator.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @brief header for PatchData related function and declaration
  * @version 0.1

@@ -383,6 +383,7 @@ void Model<Tvec, SPHKernel>::add_cube_hcp_3d(Tscal dr, std::pair<Tvec, Tvec> _bo
 
         // loc maximum count of insert part
         u64 loc_sum_ins_cnt = 0;
+        // sum_node( loc_sum_ins_cnt )
         u64 max_loc_sum_ins_cnt = 0;
 
         do {
