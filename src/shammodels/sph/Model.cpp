@@ -362,6 +362,7 @@ auto Model<Tvec, SPHKernel>::get_ideal_hcp_box(Tscal dr, std::pair<Tvec, Tvec> _
 
 template<class Tvec, template<class> class SPHKernel>
 void Model<Tvec, SPHKernel>::add_cube_hcp_3d(Tscal dr, std::pair<Tvec, Tvec> _box) {
+    shambase::Timer time_setup;time_setup.start();
 
     StackEntry stack_loc{};
 
@@ -462,6 +463,11 @@ void Model<Tvec, SPHKernel>::add_cube_hcp_3d(Tscal dr, std::pair<Tvec, Tvec> _bo
         modules::ComputeLoadBalanceValue<Tvec, SPHKernel>(ctx, solver.solver_config, solver.storage)
             .update_load_balancing();
         post_insert_data<Tvec>(sched);
+    }
+
+    time_setup.end();
+    if(shamcomm::world_rank() == 0){
+        logger::info_ln("Model", "   add_cube_hcp took :",time_setup.elasped_sec(),"s");
     }
 }
 
