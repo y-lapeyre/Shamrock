@@ -22,6 +22,72 @@
 #include "shamsys/legacy/log.hpp"
 #include "shamsys/legacy/sycl_handler.hpp"
 
+
+
+template<class Torder, class Tweight>
+struct TileWithLoad{
+    Torder ordering_val;
+    Tweight load_value;
+    u64 index;
+};
+
+template<class Torder, class Tweight>
+struct LoadBalancedTile{
+    Torder ordering_val;
+    Tweight load_value;
+    Tweight accumulated_load_value;
+    u64 index;
+    i32 new_owner;
+
+    LoadBalancedTile (TileWithLoad< Torder,  Tweight> in): 
+    ordering_val(in.ordering_val),
+    load_value(in.load_value),
+    index(in.index){
+
+    }
+};
+
+/**
+ * @brief load balance the input vector
+ * 
+ * @tparam Torder ordering value (hilbert, morton, ...)
+ * @tparam Tweight weight type
+ * @param lb_vector 
+ * @return std::vector<i32> The new owner list
+ */
+template<class Torder, class Tweight>
+inline std::vector<i32> load_balance(std::vector<TileWithLoad<Torder,Tweight>> && lb_vector){
+    
+    using LBTile = TileWithLoad<Torder,Tweight>;
+    using LBTileResult = LoadBalancedTile<Torder,Tweight>;
+
+    std::vector<LBTileResult> res;
+    for (LBTile in : lb_vector) {
+        res.push_back(LBTileResult{in});
+    }
+
+    // apply the ordering
+    std::sort(res.begin(), res.end(), [](LBTileResult & left, LBTileResult & right){
+        return left.ordering_val < right.ordering_val;
+    });
+
+    // compute increments for load
+    u64 accum = 0;
+    for (LBTile & tile : res) {
+        u64 cur_val = tile.load_value;
+        tile.accumulated_load_value = accum;
+        accum += cur_val;
+    }
+
+    //copy thing that is below
+
+
+}
+
+
+
+
+
 namespace shamrock::scheduler {
 
     template<class T>
