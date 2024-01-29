@@ -467,7 +467,7 @@ void Model<Tvec, SPHKernel>::add_cube_hcp_3d(Tscal dr, std::pair<Tvec, Tvec> _bo
 
     time_setup.end();
     if(shamcomm::world_rank() == 0){
-        logger::info_ln("Model", "   add_cube_hcp took :",time_setup.elasped_sec(),"s");
+        logger::info_ln("Model", "add_cube_hcp took :",time_setup.elasped_sec(),"s");
     }
 }
 
