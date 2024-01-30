@@ -1,3 +1,87 @@
+# Adastra MI250X setup (LLVM)
+
+## LLVM
+```bash
+module purge
+
+module load PrgEnv-amd
+module load cray-python 
+module load CCE-GPU-2.1.0
+module load rocm/5.7.1 # 5.5.1 -> 5.7.1
+
+# to get cmake and ninja
+pip3 install -U cmake ninja
+export PATH=$HOMEDIR/.local/bin:$PATH
+
+# do everything in scratch
+cd $SCRATCHDIR
+
+# The directory to use for the build
+WORKDIR=$(pwd)
+
+# get a shallow clone
+git clone --depth 1 https://github.com/intel/llvm.git
+
+cd $WORKDIR/llvm
+
+# configure llvm
+python3 buildbot/configure.py --hip --cmake-opt="-DCMAKE_INSTALL_PREFIX=$WORKDIR/intel_llvm" --cmake-opt="-DSYCL_BUILD_PI_HIP_ROCM_DIR=$ROCM_PATH" --cmake-gen "Ninja"
+
+cd $WORKDIR/llvm/build
+ninja all
+ninja all lib/all tools/libdevice/libsycldevice
+ninja install
+```
+
+
+## Testing
+
+```c++
+#include <sycl/sycl.hpp>
+
+int main(){
+
+    size_t sz = 1000;
+
+    sycl::buffer<int> buf (sz);
+
+    std::cout << "device name : " 
+        << sycl::queue{}.get_device().get_info<sycl::info::device::name>() 
+        << std::endl;
+
+    sycl::queue{}.submit([&](sycl::handler & cgh){
+
+        sycl::accessor acc {buf, cgh, sycl::write_only, sycl::no_init};
+
+        cgh.parallel_for(sycl::range<1>{sz}, [=](sycl::item<1> id){
+            acc[id] = id.get_linear_id();
+        });
+
+    }).wait();
+
+    sycl::host_accessor acc {buf, sycl::read_only};
+
+    std::cout << "expected : 999 | found : " << acc[sz-1] << std::endl;
+
+}
+```
+
+```bash
+export LLVM_HOME=$WORKDIR/intel_llvm/
+echo "Intel LLVM dir  :" $LLVM_HOME
+export PATH=$LLVM_HOME/bin:$PATH
+export LD_LIBRARY_PATH=$LLVM_HOME/lib:$LD_LIBRARY_PATH
+
+clang++ -fsycl -fsycl-targets=amdgcn-amd-amdhsa -Xsycl-target-backend --offload-arch=gfx90a --rocm-path=/opt/rocm-5.7.1 test.cpp
+```
+
+
+## testing
+```bash
+salloc -A cad14954 -N 1 -C "MI250" --job-name=interactive --time=100 --exclusive 
+srun --ntasks-per-node=8 --cpus-per-task=8 --threads-per-core=1 --gpu-bind=closest -- ./a.out
+```
+
 # DPCPP setup : 
 
 ```
