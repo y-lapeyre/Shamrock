@@ -90,6 +90,7 @@ int main(int argc, char *argv[]) {
 
     opts::register_opt("--rscript","(filepath)", "run shamrock with python runscirpt");
     opts::register_opt("--ipython",{}, "run shamrock in Ipython mode");
+    opts::register_opt("--force-dgpu",{}, "for direct mpi comm on");
 
     opts::init(argc, argv);
 
