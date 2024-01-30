@@ -21,94 +21,7 @@
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamsys/legacy/sycl_handler.hpp"
-
-
-
-template<class Torder, class Tweight>
-struct TileWithLoad{
-    Torder ordering_val;
-    Tweight load_value;
-};
-
-template<class Torder, class Tweight>
-struct LoadBalancedTile{
-    Torder ordering_val;
-    Tweight load_value;
-    Tweight accumulated_load_value;
-    u64 index;
-    i32 new_owner;
-
-    LoadBalancedTile (TileWithLoad< Torder,  Tweight> in, u64 inindex): 
-    ordering_val(in.ordering_val),
-    load_value(in.load_value),
-    index(inindex){
-
-    }
-};
-
-/**
- * @brief load balance the input vector
- * 
- * @tparam Torder ordering value (hilbert, morton, ...)
- * @tparam Tweight weight type
- * @param lb_vector 
- * @return std::vector<i32> The new owner list
- */
-template<class Torder, class Tweight>
-inline std::vector<i32> load_balance(std::vector<TileWithLoad<Torder,Tweight>> && lb_vector){
-    
-    using LBTile = TileWithLoad<Torder,Tweight>;
-    using LBTileResult = LoadBalancedTile<Torder,Tweight>;
-
-    std::vector<LBTileResult> res;
-    for (u64 i = 0; i < lb_vector.size(); i++) {
-        res.push_back(LBTileResult{lb_vector[i],i});
-    }
-
-    // apply the ordering
-    std::sort(res.begin(), res.end(), [](LBTileResult & left, LBTileResult & right){
-        return left.ordering_val < right.ordering_val;
-    });
-
-    // compute increments for load
-    u64 accum = 0;
-    for (LBTileResult & tile : res) {
-        u64 cur_val = tile.load_value;
-        tile.accumulated_load_value = accum;
-        accum += cur_val;
-    }
-
-
-    double target_datacnt = double(res[res.size() - 1].accumulated_load_value) /
-                            shamcomm::world_size();
-
-    i32 wsize = shamcomm::world_size();
-    for (LBTileResult & tile : res) {
-        tile.new_owner = sycl::clamp(i32(tile.accumulated_load_value / target_datacnt), 0, wsize - 1);
-    }
-
-    if (shamcomm::world_rank() == 0) {
-        for (LBTileResult t : res) {
-            logger::debug_ln("HilbertLoadBalance",
-                                t.ordering_val,
-                                t.accumulated_load_value,
-                                t.index,
-                                sycl::clamp(i32(t.accumulated_load_value / target_datacnt),
-                                            0,
-                                            i32(shamcomm::world_size()) - 1),
-                                (t.accumulated_load_value / target_datacnt));
-        }
-    }
-
-    std::vector<i32> new_owners(res.size());
-    for (LBTileResult & tile : res) {
-        new_owners[tile.index] = tile.new_owner;
-    }
-    
-    return new_owners;
-
-}
-
+#include "shamrock/scheduler/loadbalance/LoadBalanceStrategy.hpp"
 
 inline void apply_node_patch_packing(std::vector<shamrock::patch::Patch> &global_patch_list,std::vector<i32> &new_owner_table  ){
     using namespace shamrock::patch;
@@ -158,7 +71,6 @@ namespace shamrock::scheduler {
         using Torder = hilbert_num;
         using Tweight = u64;
         using LBTile = TileWithLoad<Torder,Tweight>;
-        using LBTileResult = LoadBalancedTile<Torder,Tweight>;
 
         // generate hilbert code, load value, and index before sort
         std::vector<LBTile> patch_dt(global_patch_list.size());
@@ -226,7 +138,7 @@ namespace shamrock::scheduler {
                 max = sycl::fmax(max, val);
                 avg += val;
                 
-                logger::debug_ln("HilbertLoadBalance", nid, load_per_node[nid]);
+                if(shamcomm::world_rank() == 0) {logger::debug_ln("HilbertLoadBalance", "node :",nid, "load :",load_per_node[nid]);}
             }
             avg /= shamcomm::world_size();
             for (i32 nid = 0; nid < shamcomm::world_size(); nid++) {
