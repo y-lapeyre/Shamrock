@@ -75,20 +75,15 @@ namespace shamrock::scheduler {
         // generate hilbert code, load value, and index before sort
         std::vector<LBTile> patch_dt(global_patch_list.size());
 
-        {
+        for (u64 i = 0; i < global_patch_list.size(); i++) {
 
-            sycl::buffer<LBTile> dt_buf(patch_dt.data(), patch_dt.size());
-            sycl::buffer<Patch> patch_buf(global_patch_list.data(), global_patch_list.size());
+            Patch p = global_patch_list[i];
 
-            for (u64 i = 0; i < global_patch_list.size(); i++) {
-
-                Patch p = global_patch_list[i];
-
-                patch_dt[i]
-                    = {SFC::icoord_to_hilbert(p.coord_min[0], p.coord_min[1], p.coord_min[2]),
-                       p.load_value};
-            }
+            patch_dt[i]
+                = {SFC::icoord_to_hilbert(p.coord_min[0], p.coord_min[1], p.coord_min[2]),
+                    p.load_value};
         }
+        
 
         std::vector<i32> new_owner_table = load_balance(std::move(patch_dt));
 
