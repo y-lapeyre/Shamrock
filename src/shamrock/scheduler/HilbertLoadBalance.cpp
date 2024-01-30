@@ -28,7 +28,6 @@ template<class Torder, class Tweight>
 struct TileWithLoad{
     Torder ordering_val;
     Tweight load_value;
-    u64 index;
 };
 
 template<class Torder, class Tweight>
@@ -39,10 +38,10 @@ struct LoadBalancedTile{
     u64 index;
     i32 new_owner;
 
-    LoadBalancedTile (TileWithLoad< Torder,  Tweight> in): 
+    LoadBalancedTile (TileWithLoad< Torder,  Tweight> in, u64 inindex): 
     ordering_val(in.ordering_val),
     load_value(in.load_value),
-    index(in.index){
+    index(inindex){
 
     }
 };
@@ -62,8 +61,8 @@ inline std::vector<i32> load_balance(std::vector<TileWithLoad<Torder,Tweight>> &
     using LBTileResult = LoadBalancedTile<Torder,Tweight>;
 
     std::vector<LBTileResult> res;
-    for (LBTile in : lb_vector) {
-        res.push_back(LBTileResult{in});
+    for (u64 i = 0; i < lb_vector.size(); i++) {
+        res.push_back(LBTileResult{lb_vector[i],i});
     }
 
     // apply the ordering
@@ -73,19 +72,66 @@ inline std::vector<i32> load_balance(std::vector<TileWithLoad<Torder,Tweight>> &
 
     // compute increments for load
     u64 accum = 0;
-    for (LBTile & tile : res) {
+    for (LBTileResult & tile : res) {
         u64 cur_val = tile.load_value;
         tile.accumulated_load_value = accum;
         accum += cur_val;
     }
 
-    //copy thing that is below
 
+    double target_datacnt = double(res[res.size() - 1].accumulated_load_value) /
+                            shamcomm::world_size();
+
+    i32 wsize = shamcomm::world_size();
+    for (LBTileResult & tile : res) {
+        tile.new_owner = sycl::clamp(i32(tile.accumulated_load_value / target_datacnt), 0, wsize - 1);
+    }
+
+    if (shamcomm::world_rank() == 0) {
+        for (LBTileResult t : res) {
+            logger::debug_ln("HilbertLoadBalance",
+                                t.ordering_val,
+                                t.accumulated_load_value,
+                                t.index,
+                                sycl::clamp(i32(t.accumulated_load_value / target_datacnt),
+                                            0,
+                                            i32(shamcomm::world_size()) - 1),
+                                (t.accumulated_load_value / target_datacnt));
+        }
+    }
+
+    std::vector<i32> new_owners(res.size());
+    for (LBTileResult & tile : res) {
+        new_owners[tile.index] = tile.new_owner;
+    }
+    
+    return new_owners;
 
 }
 
 
+inline void apply_node_patch_packing(std::vector<shamrock::patch::Patch> &global_patch_list,std::vector<i32> &new_owner_table  ){
+    using namespace shamrock::patch;
+    sycl::buffer<i32> new_owner(new_owner_table.data(), new_owner_table.size());
+    sycl::buffer<Patch> patch_buf(global_patch_list.data(), global_patch_list.size());
 
+    sycl::range<1> range{global_patch_list.size()};
+
+    // pack nodes
+    shamsys::instance::get_alt_queue().submit([&](sycl::handler &cgh) {
+        auto ptch = patch_buf.get_access<sycl::access::mode::read>(cgh);
+        // auto pdt  = dt_buf.get_access<sycl::access::mode::read>(cgh);
+        auto chosen_node = new_owner.get_access<sycl::access::mode::write>(cgh);
+
+        cgh.parallel_for(range, [=](sycl::item<1> item) {
+            u64 i = (u64)item.get_id(0);
+
+            if (ptch[i].pack_node_index != u64_max) {
+                chosen_node[i] = chosen_node[ptch[i].pack_node_index];
+            }
+        });
+    }).wait();
+}
 
 
 namespace shamrock::scheduler {
@@ -100,19 +146,26 @@ namespace shamrock::scheduler {
     template<class hilbert_num>
     LoadBalancingChangeList HilbertLoadBalance<hilbert_num>::make_change_list(
         std::vector<shamrock::patch::Patch> &global_patch_list) {
+
         StackEntry stack_loc{};
         using namespace shamrock::patch;
 
+        //result
         LoadBalancingChangeList change_list;
 
-        // generate hilbert code, load value, and index before sort
 
-        // std::tuple<hilbert code ,load value ,index in global_patch_list>
-        std::vector<std::tuple<hilbert_num, u64, u64>> patch_dt(global_patch_list.size());
+
+        using Torder = hilbert_num;
+        using Tweight = u64;
+        using LBTile = TileWithLoad<Torder,Tweight>;
+        using LBTileResult = LoadBalancedTile<Torder,Tweight>;
+
+        // generate hilbert code, load value, and index before sort
+        std::vector<LBTile> patch_dt(global_patch_list.size());
 
         {
 
-            sycl::buffer<std::tuple<hilbert_num, u64, u64>> dt_buf(patch_dt.data(),
+            sycl::buffer<LBTile> dt_buf(patch_dt.data(),
                                                                    patch_dt.size());
             sycl::buffer<Patch> patch_buf(global_patch_list.data(), global_patch_list.size());
 
@@ -122,87 +175,14 @@ namespace shamrock::scheduler {
 
                 patch_dt[i] = {
                     SFC::icoord_to_hilbert(p.coord_min[0], p.coord_min[1], p.coord_min[2]),
-                    p.load_value,
-                    i};
+                    p.load_value};
             }
         }
 
-        // sort hilbert code
-        std::sort(patch_dt.begin(), patch_dt.end());
+        std::vector<i32> new_owner_table = load_balance(std::move(patch_dt));
 
-        u64 accum = 0;
-        // compute increments for load
-        for (u64 i = 0; i < global_patch_list.size(); i++) {
-            u64 cur_val              = std::get<1>(patch_dt[i]);
-            std::get<1>(patch_dt[i]) = accum;
-            accum += cur_val;
-        }
-
-        //*
-        {
-            double target_datacnt = double(std::get<1>(patch_dt[global_patch_list.size() - 1])) /
-                                    shamcomm::world_size();
-            for (auto t : patch_dt) {
-                logger::debug_ln("HilbertLoadBalance",
-                                 std::get<0>(t),
-                                 std::get<1>(t),
-                                 std::get<2>(t),
-                                 sycl::clamp(i32(std::get<1>(t) / target_datacnt),
-                                             0,
-                                             i32(shamcomm::world_size()) - 1),
-                                 (std::get<1>(t) / target_datacnt));
-            }
-        }
-        //*/
-
-        // compute new owners
-        std::vector<i32> new_owner_table(global_patch_list.size());
-        {
-
-            sycl::buffer<std::tuple<hilbert_num, u64, u64>> dt_buf(patch_dt.data(),
-                                                                   patch_dt.size());
-            sycl::buffer<i32> new_owner(new_owner_table.data(), new_owner_table.size());
-            sycl::buffer<Patch> patch_buf(global_patch_list.data(), global_patch_list.size());
-
-            sycl::range<1> range{global_patch_list.size()};
-
-            shamsys::instance::get_alt_queue().submit([&](sycl::handler &cgh) {
-                auto pdt         = dt_buf.template get_access<sycl::access::mode::read>(cgh);
-                auto chosen_node = new_owner.get_access<sycl::access::mode::discard_write>(cgh);
-
-                // TODO [potential issue] here must check that the conversion to double doesn't mess
-                // up the target dt_cnt or find another way
-                double target_datacnt =
-                    double(std::get<1>(patch_dt[global_patch_list.size() - 1])) /
-                    shamcomm::world_size();
-
-                i32 wsize = shamcomm::world_size();
-
-                cgh.parallel_for<Write_chosen_node<hilbert_num>>(range, [=](sycl::item<1> item) {
-                    u64 i = (u64)item.get_id(0);
-
-                    u64 id_ptable = std::get<2>(pdt[i]);
-
-                    chosen_node[id_ptable] =
-                        sycl::clamp(i32(std::get<1>(pdt[i]) / target_datacnt), 0, wsize - 1);
-                });
-            });
-
-            // pack nodes
-            shamsys::instance::get_alt_queue().submit([&](sycl::handler &cgh) {
-                auto ptch = patch_buf.get_access<sycl::access::mode::read>(cgh);
-                // auto pdt  = dt_buf.get_access<sycl::access::mode::read>(cgh);
-                auto chosen_node = new_owner.get_access<sycl::access::mode::write>(cgh);
-
-                cgh.parallel_for<Edit_chosen_node<hilbert_num>>(range, [=](sycl::item<1> item) {
-                    u64 i = (u64)item.get_id(0);
-
-                    if (ptch[i].pack_node_index != u64_max) {
-                        chosen_node[i] = chosen_node[ptch[i].pack_node_index];
-                    }
-                });
-            });
-        }
+        // apply patch packing in same node for merge
+        apply_node_patch_packing(global_patch_list, new_owner_table);
 
         // make change list
         {
