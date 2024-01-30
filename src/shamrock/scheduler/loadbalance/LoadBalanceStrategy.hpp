@@ -105,8 +105,8 @@ namespace shamrock::scheduler::details {
     }
 
     template<class Torder, class Tweight>
-    inline std::vector<i32> lb_startegy_roundrobin(
-        const std::vector<TileWithLoad<Torder, Tweight>> &lb_vector, i32 wsize) {
+    inline std::vector<i32>
+    lb_startegy_roundrobin(const std::vector<TileWithLoad<Torder, Tweight>> &lb_vector, i32 wsize) {
 
         using LBTile       = TileWithLoad<Torder, Tweight>;
         using LBTileResult = details::LoadBalancedTile<Torder, Tweight>;
@@ -125,7 +125,7 @@ namespace shamrock::scheduler::details {
             tile.accumulated_load_value = accum;
             // modify the lB above by assuming that each patch has the same load
             // which effectivelly does a round robin balancing
-            accum += 1; 
+            accum += 1;
         }
 
         double target_datacnt = double(res[res.size() - 1].accumulated_load_value) / wsize;
@@ -173,7 +173,7 @@ namespace shamrock::scheduler::details {
         for (u64 i = 0; i < lb_vector.size(); i++) {
             load_per_node[new_owners[i]] += lb_vector[i].load_value;
         }
-        
+
         f64 min = shambase::VectorProperties<f64>::get_inf();
         f64 max = -shambase::VectorProperties<f64>::get_inf();
         f64 avg = 0;
@@ -185,7 +185,7 @@ namespace shamrock::scheduler::details {
             max     = sycl::fmax(max, val);
             avg += val;
 
-            //logger::debug_ln("HilbertLoadBalance", "node :",nid, "load :",load_per_node[nid]);
+            // logger::debug_ln("HilbertLoadBalance", "node :",nid, "load :",load_per_node[nid]);
         }
         avg /= world_size;
         for (i32 nid = 0; nid < world_size; nid++) {
@@ -194,7 +194,7 @@ namespace shamrock::scheduler::details {
         }
         var /= world_size;
 
-        return {min,max,avg,sycl::sqrt(var)};
+        return {min, max, avg, sycl::sqrt(var)};
     }
 
 } // namespace shamrock::scheduler::details
@@ -212,20 +212,30 @@ namespace shamrock::scheduler {
     template<class Torder, class Tweight>
     inline std::vector<i32> load_balance(std::vector<TileWithLoad<Torder, Tweight>> &&lb_vector) {
 
-        auto tmpres = details::lb_startegy_parralel_sweep(lb_vector, shamcomm::world_size());
+        auto tmpres        = details::lb_startegy_parralel_sweep(lb_vector, shamcomm::world_size());
         auto metric_psweep = details::compute_LB_metric(lb_vector, tmpres, shamcomm::world_size());
 
-        auto tmpres_2 = details::lb_startegy_parralel_sweep(lb_vector, shamcomm::world_size());
+        auto tmpres_2      = details::lb_startegy_parralel_sweep(lb_vector, shamcomm::world_size());
         auto metric_rrobin = details::compute_LB_metric(lb_vector, tmpres, shamcomm::world_size());
 
-        if(metric_rrobin.max < metric_psweep.max){
+        if (metric_rrobin.max < metric_psweep.max) {
             tmpres = tmpres_2;
         }
 
-        if(shamcomm::world_rank() == 0){
+        if (shamcomm::world_rank() == 0) {
             logger::info_ln("LoadBalance", "summary :");
-            logger::info_ln("LoadBalance", " - strategy \"psweep\" : max =",metric_psweep.max, "min =",metric_psweep.min);
-            logger::info_ln("LoadBalance", " - strategy \"round robin\" : max =",metric_rrobin.max, "min =",metric_rrobin.min);
+            logger::info_ln(
+                "LoadBalance",
+                " - strategy \"psweep\" : max =",
+                metric_psweep.max,
+                "min =",
+                metric_psweep.min);
+            logger::info_ln(
+                "LoadBalance",
+                " - strategy \"round robin\" : max =",
+                metric_rrobin.max,
+                "min =",
+                metric_rrobin.min);
         }
         return tmpres;
     }

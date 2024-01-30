@@ -14,16 +14,17 @@
  */
 
 #include "HilbertLoadBalance.hpp"
-
 #include "shambase/stacktrace.hpp"
 #include "shambase/string.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"
+
+#include "shamrock/scheduler/loadbalance/LoadBalanceStrategy.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamsys/legacy/sycl_handler.hpp"
-#include "shamrock/scheduler/loadbalance/LoadBalanceStrategy.hpp"
 
-inline void apply_node_patch_packing(std::vector<shamrock::patch::Patch> &global_patch_list,std::vector<i32> &new_owner_table  ){
+inline void apply_node_patch_packing(
+    std::vector<shamrock::patch::Patch> &global_patch_list, std::vector<i32> &new_owner_table) {
     using namespace shamrock::patch;
     sycl::buffer<i32> new_owner(new_owner_table.data(), new_owner_table.size());
     sycl::buffer<Patch> patch_buf(global_patch_list.data(), global_patch_list.size());
@@ -31,21 +32,22 @@ inline void apply_node_patch_packing(std::vector<shamrock::patch::Patch> &global
     sycl::range<1> range{global_patch_list.size()};
 
     // pack nodes
-    shamsys::instance::get_alt_queue().submit([&](sycl::handler &cgh) {
-        auto ptch = patch_buf.get_access<sycl::access::mode::read>(cgh);
-        // auto pdt  = dt_buf.get_access<sycl::access::mode::read>(cgh);
-        auto chosen_node = new_owner.get_access<sycl::access::mode::write>(cgh);
+    shamsys::instance::get_alt_queue()
+        .submit([&](sycl::handler &cgh) {
+            auto ptch = patch_buf.get_access<sycl::access::mode::read>(cgh);
+            // auto pdt  = dt_buf.get_access<sycl::access::mode::read>(cgh);
+            auto chosen_node = new_owner.get_access<sycl::access::mode::write>(cgh);
 
-        cgh.parallel_for(range, [=](sycl::item<1> item) {
-            u64 i = (u64)item.get_id(0);
+            cgh.parallel_for(range, [=](sycl::item<1> item) {
+                u64 i = (u64) item.get_id(0);
 
-            if (ptch[i].pack_node_index != u64_max) {
-                chosen_node[i] = chosen_node[ptch[i].pack_node_index];
-            }
-        });
-    }).wait();
+                if (ptch[i].pack_node_index != u64_max) {
+                    chosen_node[i] = chosen_node[ptch[i].pack_node_index];
+                }
+            });
+        })
+        .wait();
 }
-
 
 namespace shamrock::scheduler {
 
@@ -63,31 +65,28 @@ namespace shamrock::scheduler {
         StackEntry stack_loc{};
         using namespace shamrock::patch;
 
-        //result
+        // result
         LoadBalancingChangeList change_list;
 
-
-
-        using Torder = hilbert_num;
+        using Torder  = hilbert_num;
         using Tweight = u64;
-        using LBTile = TileWithLoad<Torder,Tweight>;
+        using LBTile  = TileWithLoad<Torder, Tweight>;
 
         // generate hilbert code, load value, and index before sort
         std::vector<LBTile> patch_dt(global_patch_list.size());
 
         {
 
-            sycl::buffer<LBTile> dt_buf(patch_dt.data(),
-                                                                   patch_dt.size());
+            sycl::buffer<LBTile> dt_buf(patch_dt.data(), patch_dt.size());
             sycl::buffer<Patch> patch_buf(global_patch_list.data(), global_patch_list.size());
 
             for (u64 i = 0; i < global_patch_list.size(); i++) {
 
                 Patch p = global_patch_list[i];
 
-                patch_dt[i] = {
-                    SFC::icoord_to_hilbert(p.coord_min[0], p.coord_min[1], p.coord_min[2]),
-                    p.load_value};
+                patch_dt[i]
+                    = {SFC::icoord_to_hilbert(p.coord_min[0], p.coord_min[1], p.coord_min[2]),
+                       p.load_value};
             }
         }
 
@@ -126,7 +125,7 @@ namespace shamrock::scheduler {
                 load_per_node[new_owner_table[i]] += global_patch_list[i].load_value;
             }
 
-            //logger::debug_ln("HilbertLoadBalance", "loads after balancing");
+            // logger::debug_ln("HilbertLoadBalance", "loads after balancing");
             f64 min = shambase::VectorProperties<f64>::get_inf();
             f64 max = -shambase::VectorProperties<f64>::get_inf();
             f64 avg = 0;
@@ -134,26 +133,30 @@ namespace shamrock::scheduler {
 
             for (i32 nid = 0; nid < shamcomm::world_size(); nid++) {
                 f64 val = load_per_node[nid];
-                min = sycl::fmin(min, val);
-                max = sycl::fmax(max, val);
+                min     = sycl::fmin(min, val);
+                max     = sycl::fmax(max, val);
                 avg += val;
-                
-                if(shamcomm::world_rank() == 0) {logger::debug_ln("HilbertLoadBalance", "node :",nid, "load :",load_per_node[nid]);}
+
+                if (shamcomm::world_rank() == 0) {
+                    logger::debug_ln(
+                        "HilbertLoadBalance", "node :", nid, "load :", load_per_node[nid]);
+                }
             }
             avg /= shamcomm::world_size();
             for (i32 nid = 0; nid < shamcomm::world_size(); nid++) {
                 f64 val = load_per_node[nid];
-                var += (val - avg)*(val - avg);
+                var += (val - avg) * (val - avg);
             }
             var /= shamcomm::world_size();
 
-            if(shamcomm::world_rank() == 0){
+            if (shamcomm::world_rank() == 0) {
                 std::string str = "Loadbalance stats : \n";
-                str += shambase::format("    npatch = {}\n", global_patch_list.size() );
+                str += shambase::format("    npatch = {}\n", global_patch_list.size());
                 str += shambase::format("    min = {}\n", min);
                 str += shambase::format("    max = {}\n", max);
                 str += shambase::format("    avg = {}\n", avg);
-                str += shambase::format("    efficiency = {:.2f}%", 100 - (100*(max - min)/max));
+                str += shambase::format(
+                    "    efficiency = {:.2f}%", 100 - (100 * (max - min) / max));
                 logger::info_ln("LoadBalance", str);
             }
         }
