@@ -7,7 +7,7 @@
 // -------------------------------------------------------//
 
 /**
- * @file HilbertLoadBalance.cpp
+ * @file LoadBalanceStrategy.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @brief implementation of the hilbert curve load balancing
  *
