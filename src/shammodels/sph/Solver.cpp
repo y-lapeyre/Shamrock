@@ -36,6 +36,7 @@
 #include "shammodels/sph/modules/DiffOperatorDtDivv.hpp"
 #include "shammodels/sph/modules/ExternalForces.hpp"
 #include "shammodels/sph/modules/NeighbourCache.hpp"
+#include "shammodels/sph/modules/ParticleReordering.hpp"
 #include "shammodels/sph/modules/SinkParticlesUpdate.hpp"
 #include "shammodels/sph/modules/UpdateDerivs.hpp"
 #include "shammodels/sph/modules/UpdateViscosity.hpp"
@@ -1221,6 +1222,10 @@ void SPHSolve<Tvec, Kern>::evolve_once()
     apply_position_boundary(t_current+dt);
 
     u64 Npart_all = scheduler().get_total_obj_count();
+
+    if(false){
+        modules::ParticleReordering<Tvec,u_morton, Kern>(context, solver_config, storage).reorder_particles();
+    }
 
     sph_prestep(t_current, dt);
 
