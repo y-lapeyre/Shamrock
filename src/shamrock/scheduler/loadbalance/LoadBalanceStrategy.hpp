@@ -210,13 +210,13 @@ namespace shamrock::scheduler {
      * @return std::vector<i32> The new owner list
      */
     template<class Torder, class Tweight>
-    inline std::vector<i32> load_balance(std::vector<TileWithLoad<Torder, Tweight>> &&lb_vector) {
+    inline std::vector<i32> load_balance(std::vector<TileWithLoad<Torder, Tweight>> &&lb_vector, i32 world_size =  shamcomm::world_size()) {
 
-        auto tmpres        = details::lb_startegy_parralel_sweep(lb_vector, shamcomm::world_size());
-        auto metric_psweep = details::compute_LB_metric(lb_vector, tmpres, shamcomm::world_size());
+        auto tmpres        = details::lb_startegy_parralel_sweep(lb_vector, world_size);
+        auto metric_psweep = details::compute_LB_metric(lb_vector, tmpres, world_size);
 
-        auto tmpres_2      = details::lb_startegy_parralel_sweep(lb_vector, shamcomm::world_size());
-        auto metric_rrobin = details::compute_LB_metric(lb_vector, tmpres, shamcomm::world_size());
+        auto tmpres_2      = details::lb_startegy_roundrobin(lb_vector, world_size);
+        auto metric_rrobin = details::compute_LB_metric(lb_vector, tmpres_2, world_size);
 
         if (metric_rrobin.max < metric_psweep.max) {
             tmpres = tmpres_2;
