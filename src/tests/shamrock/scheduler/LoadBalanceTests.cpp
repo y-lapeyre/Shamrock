@@ -48,6 +48,8 @@ void add_strategy_plot(
         import matplotlib.pyplot as plt
         import numpy as np
 
+        plt.close('all')
+
         range_wsize = range(wsize)
 
         ptch_lst_node = [[] for i in range_wsize]
@@ -119,7 +121,9 @@ TestStart(TestType::ValidationTest, "shamrock/scheduler/loadbalance", testloadba
 
     std::vector<i32> result1 = details::lb_startegy_parralel_sweep(vec_test, fake_world_size);
     std::vector<i32> result2 = details::lb_startegy_roundrobin(vec_test, fake_world_size);
+    std::vector<i32> result_best = load_balance(std::vector(vec_test), fake_world_size);
 
     add_strategy_plot("parralel sweep", "psweep", vec_test, result1,fake_world_size);
     add_strategy_plot("round robin", "rrobin", vec_test, result2,fake_world_size);
+    add_strategy_plot("best", "rrobin", vec_test, result_best,fake_world_size);
 }
