@@ -82,6 +82,44 @@ salloc -A cad14954 -N 1 -C "MI250" --job-name=interactive --time=100 --exclusive
 srun --ntasks-per-node=8 --cpus-per-task=8 --threads-per-core=1 --gpu-bind=closest -- ./a.out
 ```
 
+
+
+
+# Compiling Shamrock
+
+```bash
+module purge
+
+module load cpe/23.12
+module load craype-accel-amd-gfx90a craype-x86-trento
+module load PrgEnv-intel
+module load cray-mpich/8.1.26
+module load cray-python
+module load amd-mixed/5.7.1
+module load rocm/5.7.1
+```
+
+```bash
+export PATH=$HOMEDIR/.local/bin:$PATH
+```
+
+```bash
+export LLVM_HOME=$WORKDIR/intel_llvm/
+echo "Intel LLVM dir  :" $LLVM_HOME
+export PATH=$LLVM_HOME/bin:$PATH
+export LD_LIBRARY_PATH=$LLVM_HOME/lib:$LD_LIBRARY_PATH
+```
+
+```bash
+cd Shamrock
+cmake -S . -B build -G "Ninja" -DSYCL_IMPLEMENTATION=IntelLLVM -DCMAKE_CXX_COMPILER=/lus/home/CT10/cad14954/tdavidc/intel_llvm/bin/clang++ -DSHAMROCK_ENABLE_BACKEND=SYCL -DINTEL_LLVM_PATH=/lus/home/CT10/cad14954/tdavidc/intel_llvm -DCMAKE_C_COMPILER=/lus/home/CT10/cad14954/tdavidc/intel_llvm/bin/clang-18 -DCMAKE_CXX_FLAGS="-fsycl -fsycl-targets=amdgcn-amd-amdhsa -Xsycl-target-backend --offload-arch=gfx90a --rocm-path=${ROCM_PATH} -I${MPICH_DIR}/include -L${MPICH_DIR}/lib -lmpi ${PE_MPICH_GTL_DIR_amd_gfx90a} ${PE_MPICH_GTL_LIBS_amd_gfx90a}" -DBUILD_TEST=true -DCXX_FLAG_ARCH_NATIVE=off
+```
+
+
+
+
+
+
 # DPCPP setup : 
 
 ```
