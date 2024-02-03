@@ -20,7 +20,13 @@
 
 namespace shambase::details {
 
-    Timer global_timer = Timer{};
+    auto make_timer = []() -> Timer{
+        Timer tmp;
+        tmp.start();
+        return tmp;
+    };
+
+    Timer global_timer = make_timer();
 
     //two entry types, 
     // one with start, end 

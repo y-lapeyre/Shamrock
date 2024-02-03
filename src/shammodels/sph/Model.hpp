@@ -678,6 +678,7 @@ namespace shammodels::sph {
 
         inline void evolve_once(){
             solver.evolve_once();
+            solver.print_timestep_logs();
         }
 
         inline bool evolve_until(Tscal target_time,i32 niter_max){
