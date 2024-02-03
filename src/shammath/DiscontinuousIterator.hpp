@@ -87,22 +87,24 @@ namespace shammath {
         T get() { return current.to_ullong() + offset; }
 
         void advance_it() {
-            do {
-                bool carry  = true; // backward
-                int pointer = firstbit;
-                while (carry && !done) {
-                    if (current[pointer]) {
-                        current.flip(pointer);
-                        pointer--;
-                        if (pointer < 0) {
-                            done = true;
+            if(!done){
+                do {
+                    bool carry  = true; // backward
+                    int pointer = firstbit;
+                    while (carry && !done) {
+                        if (current[pointer]) {
+                            current.flip(pointer);
+                            pointer--;
+                            if (pointer < 0) {
+                                done = true;
+                            }
+                        } else {
+                            carry = false;
+                            current.flip(pointer);
                         }
-                    } else {
-                        carry = false;
-                        current.flip(pointer);
                     }
-                }
-            } while (current.to_ullong() >= tmax);
+                } while (current.to_ullong() >= tmax);
+            }
         }
     };
     
