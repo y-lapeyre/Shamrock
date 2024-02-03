@@ -38,7 +38,7 @@ namespace sham {
 
         u64 offset                  = 0;
         u64 remains                 = count;
-        constexpr u64 max_step_size = u32_max;
+        constexpr u64 max_step_size = i32_max/2;
 
         std::vector<sycl::event> ev_list{};
 
@@ -75,7 +75,7 @@ namespace sham {
 
         u64 offset                  = 0;
         u64 remains                 = count;
-        constexpr u64 max_step_size = u32_max;
+        constexpr u64 max_step_size = i32_max/2;
 
         std::vector<sycl::event> ev_list{};
 
@@ -112,7 +112,7 @@ namespace sham {
     usmbuffer_memcpy_discard(sycl::queue &queue, const T *src, sycl::buffer<T> &dest, u64 count) {
         u64 offset                  = 0;
         u64 remains                 = count;
-        constexpr u64 max_step_size = u32_max;
+        constexpr u64 max_step_size = i32_max/2;
 
         std::vector<sycl::event> ev_list{};
 
