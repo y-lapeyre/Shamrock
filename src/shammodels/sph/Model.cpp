@@ -36,12 +36,14 @@ using Model = shammodels::sph::Model<Tvec, SPHKernel>;
 
 template<class Tvec, template<class> class SPHKernel>
 f64 Model<Tvec, SPHKernel>::evolve_once_time_expl(f64 t_curr, f64 dt_input) {
-    return solver.evolve_once_time_expl(t_curr, dt_input);
+    auto tmp = solver.evolve_once_time_expl(t_curr, dt_input);
+    solver.print_timestep_logs();
+    return tmp;
 }
 
 template<class Tvec, template<class> class SPHKernel>
 void Model<Tvec, SPHKernel>::timestep() {
-    return solver.evolve_once();
+    solver.evolve_once();
 }
 
 template<class Tvec, template<class> class SPHKernel>
