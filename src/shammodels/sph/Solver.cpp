@@ -1675,7 +1675,8 @@ void SPHSolve<Tvec, Kern>::evolve_once()
         shamcomm::world_rank(),// i32 world_rank;
         rank_count,// u64 rank_count;
         rate,// f64 rate;
-        tstep.elasped_sec()// f64 elasped_sec;
+        tstep.elasped_sec(),// f64 elasped_sec;
+        shambase::details::get_wtime()
     });
 
     std::string gathered = "";
