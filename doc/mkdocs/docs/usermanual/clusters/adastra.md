@@ -20,17 +20,19 @@ cd $SCRATCHDIR
 WORKDIR=$(pwd)
 
 # get a shallow clone
-git clone --depth 1 https://github.com/intel/llvm.git
+git clone --depth 1 https://github.com/intel/llvm.git intel-llvm-git
 
-cd $WORKDIR/llvm
+cd $WORKDIR/intel-llvm-git
 
 # configure llvm
 python3 buildbot/configure.py --hip --cmake-opt="-DCMAKE_INSTALL_PREFIX=$WORKDIR/intel_llvm" --cmake-opt="-DSYCL_BUILD_PI_HIP_ROCM_DIR=$ROCM_PATH" --cmake-gen "Ninja"
 
-cd $WORKDIR/llvm/build
+cd $WORKDIR/intel-llvm-git/build
 ninja all
 ninja all lib/all tools/libdevice/libsycldevice
 ninja install
+
+cd $WORKDIR
 ```
 
 
