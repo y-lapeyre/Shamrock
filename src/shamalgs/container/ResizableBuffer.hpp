@@ -8,21 +8,19 @@
 
 #pragma once
 
-
 /**
  * @file ResizableBuffer.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @brief 
- * 
+ * @brief
+ *
  */
- 
 
-#include "shambackends/typeAliasVec.hpp"
-#include "shambackends/typeAliasVec.hpp"
+#include "shambase/exception.hpp"
+
 #include "shamalgs/algorithm.hpp"
 #include "shamalgs/memory.hpp"
 #include "shamalgs/serialize.hpp"
-#include "shambase/exception.hpp"
+#include "shambackends/typeAliasVec.hpp"
 
 #define XMAC_LIST_ENABLED_ResizableUSMBuffer                                                       \
     X(f32)                                                                                         \
@@ -152,8 +150,8 @@ namespace shamalgs {
         }
 
         inline ResizableBuffer(sycl::buffer<T> &&moved_buf, u32 val_cnt)
-            : buf(std::make_unique<sycl::buffer<T>>(std::move(moved_buf))), val_cnt(val_cnt),
-              capacity(moved_buf.size()) {}
+            : buf(std::make_unique<sycl::buffer<T>>(std::forward<sycl::buffer<T>>(moved_buf))),
+              val_cnt(val_cnt), capacity(moved_buf.size()) {}
 
         ResizableBuffer(const ResizableBuffer &other)
             : val_cnt(other.val_cnt), capacity(other.capacity) {
