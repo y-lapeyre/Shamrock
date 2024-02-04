@@ -77,8 +77,6 @@ export LD_LIBRARY_PATH=$LLVM_HOME/lib:$LD_LIBRARY_PATH
 clang++ -fsycl -fsycl-targets=amdgcn-amd-amdhsa -Xsycl-target-backend --offload-arch=gfx90a --rocm-path=/opt/rocm-5.7.1 test.cpp
 ```
 
-
-## testing
 ```bash
 salloc -A cad14954 -N 1 -C "MI250" --job-name=interactive --time=100 --exclusive 
 srun --ntasks-per-node=8 --cpus-per-task=8 --threads-per-core=1 --gpu-bind=closest -- ./a.out
