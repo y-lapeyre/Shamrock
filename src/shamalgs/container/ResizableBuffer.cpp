@@ -135,6 +135,31 @@ void shamalgs::ResizableBuffer<T>::override(sycl::buffer<T> &data, u32 cnt) {
 }
 
 template<class T>
+void shamalgs::ResizableBuffer<T>::override(std::vector<T> &data, u32 cnt) {
+
+    if (cnt != val_cnt)
+        throw shambase::make_except_with_loc<std::invalid_argument>(
+            "buffer size doesn't match patchdata field size"); // TODO remove ref to size
+
+    if(data.size() < val_cnt){
+        throw shambase::make_except_with_loc<std::invalid_argument>(
+            "The input vector is too small");
+    }
+
+    if (val_cnt > 0) {
+
+        {
+            sycl::host_accessor acc_cur{*buf, sycl::write_only, sycl::no_init};
+            
+            for (u32 i = 0; i < val_cnt; i++) {
+                // field_data[i] = acc[i];
+                acc_cur[i] = data[i];
+            }
+        }
+    }
+}
+
+template<class T>
 void shamalgs::ResizableBuffer<T>::override(const T val) {
 
     if (val_cnt > 0) {

@@ -127,6 +127,7 @@ namespace shamalgs {
         void overwrite(ResizableBuffer<T> &f2, u32 cnt);
 
         void override(sycl::buffer<T> &data, u32 cnt);
+        void override(std::vector<T> &data, u32 cnt);
 
         /**
          * @brief override the field data with the value specified in `val`
