@@ -423,6 +423,9 @@ void Model<Tvec, SPHKernel>::add_cube_hcp_3d(Tscal dr, std::pair<Tvec, Tvec> _bo
                     vec_acc.size(),
                     patch_coord.lower,
                     patch_coord.upper);
+                
+                // reserve space to avoid allocating during copy
+                pdat.reserve(vec_acc.size());
 
                 PatchData tmp(sched.pdl);
                 tmp.resize(vec_acc.size());
@@ -431,8 +434,8 @@ void Model<Tvec, SPHKernel>::add_cube_hcp_3d(Tscal dr, std::pair<Tvec, Tvec> _bo
                 {
                     u32 len                 = vec_acc.size();
                     PatchDataField<Tvec> &f = tmp.get_field<Tvec>(sched.pdl.get_field_idx<Tvec>("xyz"));
-                    sycl::buffer<Tvec> buf(vec_acc.data(), len);
-                    f.override(buf, len);
+                    //sycl::buffer<Tvec> buf(vec_acc.data(), len);
+                    f.override(vec_acc, len);
                 }
 
                 {
@@ -468,9 +471,11 @@ void Model<Tvec, SPHKernel>::add_cube_hcp_3d(Tscal dr, std::pair<Tvec, Tvec> _bo
         modules::ComputeLoadBalanceValue<Tvec, SPHKernel>(ctx, solver.solver_config, solver.storage)
             .update_load_balancing();
         post_insert_data<Tvec>(sched);
-        if(true){
-            modules::ParticleReordering<Tvec,u32, SPHKernel>(ctx, solver.solver_config, solver.storage).reorder_particles();
-        }
+        
+    }
+
+    if(true){
+        modules::ParticleReordering<Tvec,u32, SPHKernel>(ctx, solver.solver_config, solver.storage).reorder_particles();
     }
 
     time_setup.end();
