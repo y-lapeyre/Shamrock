@@ -30,6 +30,7 @@ namespace shambase::details {
 
     #ifdef SHAMROCK_USE_PROFILING
 
+    void register_profile_entry_start(std::source_location loc, f64 start_time);
     void register_profile_entry(std::source_location loc, f64 start_time, f64 end_time);
 
     void dump_profilings(std::string process_prefix, u32 world_rank);
@@ -54,6 +55,7 @@ namespace shambase::details {
             #ifdef SHAMROCK_USE_PROFILING
             if (do_timer){
                 wtime_start = get_wtime();
+                register_profile_entry_start(loc.loc, wtime_start);
             }
             #endif
             call_stack.emplace(loc);
