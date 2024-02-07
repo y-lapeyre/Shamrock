@@ -41,7 +41,7 @@ pmass = model.add_big_disc_3d(
     1.,
     0.05,
     1./4.,
-    0x111)
+    273)
 
 model.set_cfl_cour(0.3)
 model.set_cfl_force(0.25)
@@ -83,6 +83,7 @@ def plot_vertical_profile(r, rrange, label = ""):
     plt.scatter(ysel, rhosel/rhobar, s=1, label = label)
 
 
+dump = model.do_vtk_dump(outputdir+"initdump.vtk", False)
 
 print("Run")
 
