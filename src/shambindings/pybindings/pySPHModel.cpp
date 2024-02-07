@@ -195,6 +195,19 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                 Tscal q){
                     return self.add_disc_3d(center, central_mass, Npart, r_in, r_out, disc_mass, p, H_r_in, q);
                 })
+        .def("add_big_disc_3d",[](T &self,
+                Tvec center, 
+                Tscal central_mass,
+                u32 Npart,
+                Tscal r_in,
+                Tscal r_out,
+                Tscal disc_mass,
+                Tscal p,
+                Tscal H_r_in,
+                Tscal q,
+                std::mt19937 eng){
+                    return self.add_big_disc_3d(center, central_mass, Npart, r_in, r_out, disc_mass, p, H_r_in, q, eng);
+                })
         .def("get_total_part_count", &T::get_total_part_count)
         .def("total_mass_to_part_mass", &T::total_mass_to_part_mass)
         .def("set_value_in_a_box",

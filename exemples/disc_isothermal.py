@@ -2,7 +2,7 @@ import shamrock
 import matplotlib.pyplot as plt
 import numpy as np
 
-outputdir = '/local/ylapeyre/Shamrock_tests/seewarp/'
+outputdir = '/local/ylapeyre/Shamrock_tests/BigDisc/'
 si = shamrock.UnitSystem()
 sicte = shamrock.Constants(si)
 codeu = shamrock.UnitSystem(unit_time = 3600*24*365,unit_length = sicte.au(), unit_mass = sicte.sol_mass(), )
@@ -32,15 +32,16 @@ model.resize_simulation_box(bmin,bmax)
 
 disc_mass = 0.001
 
-pmass = model.add_disc_3d(
+pmass = model.add_big_disc_3d(
     (0,0,0),
     1,
-    100000,
+    100000000,
     1,5,
     disc_mass,
     1.,
     0.05,
-    1./4.)
+    1./4.,
+    0x111)
 
 model.set_cfl_cour(0.3)
 model.set_cfl_force(0.25)
