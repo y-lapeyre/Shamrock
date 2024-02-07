@@ -147,7 +147,7 @@ namespace generic::setup::generators {
 
     template<class Tscal>
     struct DiscOutput{
-        sycl::vec<Tscal, 3> pos;
+        sycl::vec<Tscal, 3> pos; // disc.pos par copie disc->pos par adresse
         sycl::vec<Tscal, 3> velocity;
         Tscal cs;
         Tscal rho;
