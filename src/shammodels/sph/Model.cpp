@@ -699,9 +699,10 @@ void Model<Tvec, SPHKernel>::add_big_disc_3d(
 
                 std::vector<Out> part_list;
                 for (Out r : to_ins) {
-                    //if (patch_coord.contain_pos(r)) {
+                    if (patch_coord.contain_pos(r.pos)) {
                     // add all part to insert in a vector (useless??)
                     part_list.push_back(r);
+                    }
                 
                 }
 
