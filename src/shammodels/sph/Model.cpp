@@ -699,15 +699,15 @@ void Model<Tvec, SPHKernel>::add_big_disc_3d(
 
                 std::vector<Out> part_list;
                 for (Out r : to_ins) {
-                    if (patch_coord.contain_pos(r.pos)) {
-                    // add all part to insert in a vector (useless??)
+                    if (patch_coord.contain_pos(r.pos )) {
+                    // add all part to insert in a vector
                     part_list.push_back(r);
                     }
                 
                 }
 
                 // update max insert_count
-                loc_sum_ins_cnt += to_ins.size();
+                loc_sum_ins_cnt += part_list.size();
 
                 if (part_list.size() == 0) {
                     return;
@@ -721,23 +721,21 @@ void Model<Tvec, SPHKernel>::add_big_disc_3d(
                     patch_coord.lower,
                     patch_coord.upper);
                 
-
+                //extract the pos from part_list
                 std::vector<Tvec> vec_pos;
-
                 for(Out o : part_list){
-                    vec_pos.push_back(o.pos + center);
-
+                    vec_pos.push_back(o.pos);
                 }
 
                 // reserve space to avoid allocating during copy
-                pdat.reserve(part_list.size());
+                pdat.reserve(vec_pos.size());
 
                 PatchData tmp(sched.pdl);
-                tmp.resize(part_list.size());
+                tmp.resize(vec_pos.size());
                 tmp.fields_raz();
 
                 {
-                    u32 len                 = part_list.size();
+                    u32 len                 = vec_pos.size();
                     PatchDataField<Tvec> &f = tmp.get_field<Tvec>(sched.pdl.get_field_idx<Tvec>("xyz"));
                     sycl::buffer<Tvec> buf(vec_pos.data(), len);
                     f.override(buf, len);
@@ -779,7 +777,7 @@ void Model<Tvec, SPHKernel>::add_big_disc_3d(
 
     time_setup.end();
     if(shamcomm::world_rank() == 0){
-        logger::info_ln("Model", "add_cube_hcp took :",time_setup.elasped_sec(),"s");
+        logger::info_ln("Model", "add_big_disc took :",time_setup.elasped_sec(),"s");
     }
 }
         
