@@ -629,27 +629,50 @@ void Model<Tvec, SPHKernel>::add_big_disc_3d(
                 std::mt19937 eng
 ) {
 
+    Tscal eos_gamma;
+    using Config = SolverConfig;
+    using SolverConfigEOS     = typename Config::EOSConfig;
+    using SolverEOS_Adiabatic = typename SolverConfigEOS::Adiabatic;
+    if (SolverEOS_Adiabatic *eos_config =
+        std::get_if<SolverEOS_Adiabatic>(&solver.solver_config.eos_config.config)) {
 
-        auto sigma_profile = [=](Tscal r){
-            // we setup with an adimensional mass since it is monte carlo
-            constexpr Tscal sigma_0 = 1;
-            return sigma_0*sycl::pow(r/r_in, -p);
-        };
+        eos_gamma = eos_config->gamma;
 
-        auto cs_law = [=](Tscal r){
-            return sycl::pow(r/r_in, -q);
-        };
+    } else {
+        //dirty hack for disc setup in locally isothermal
+        eos_gamma = 2;
+        //shambase::throw_unimplemented();
+    }
 
-        auto rot_profile = [=](Tscal r){
-            Tscal G = solver.solver_config.get_constant_G();
-            return sycl::sqrt(G * central_mass/r);
-        };
+    auto sigma_profile = [=](Tscal r){
+        // we setup with an adimensional mass since it is monte carlo
+        constexpr Tscal sigma_0 = 1;
+        return sigma_0*sycl::pow(r/r_in, -p);
+    };
 
-        auto cs_profile = [&](Tscal r){
-            Tscal cs_in = H_r_in*rot_profile(r_in);
-            return cs_law(r)*cs_in; 
+    auto cs_law = [=](Tscal r){
+        return sycl::pow(r/r_in, -q);
+    };
 
-        };
+    auto rot_profile = [&](Tscal r){
+        Tscal G = solver.solver_config.get_constant_G();
+        return sycl::sqrt(G * central_mass/r);
+    };
+
+    auto cs_profile = [&](Tscal r){
+        Tscal cs_in = H_r_in*rot_profile(r_in);
+        return cs_law(r)*cs_in; 
+    };
+
+    auto get_hfact = []() -> Tscal {
+        return Kernel::hfactd;
+    };
+        
+    auto int_rho_h = [&] (Tscal h) -> Tscal{
+        return shamrock::sph::rho_h(solver.solver_config.gpart_mass, h, Kernel::hfactd);
+    };
+
+    Tscal part_mass = disc_mass/Npart;
 
     shambase::Timer time_setup;time_setup.start();
 
@@ -723,8 +746,17 @@ void Model<Tvec, SPHKernel>::add_big_disc_3d(
                 
                 //extract the pos from part_list
                 std::vector<Tvec> vec_pos;
+                std::vector<Tvec> vec_vel;
+                std::vector<Tscal> vec_u;
+                std::vector<Tscal> vec_h;
+                std::vector<Tscal> vec_cs;
+
                 for(Out o : part_list){
                     vec_pos.push_back(o.pos);
+                    vec_vel.push_back(o.velocity);
+                    vec_u.push_back(o.cs*o.cs/(/*solver.eos_gamma * */ (eos_gamma - 1)));
+                    vec_h.push_back(int_rho_h(Kernel::hfactd));
+                    vec_cs.push_back(o.cs);
                 }
 
                 // reserve space to avoid allocating during copy
@@ -738,6 +770,38 @@ void Model<Tvec, SPHKernel>::add_big_disc_3d(
                     u32 len                 = vec_pos.size();
                     PatchDataField<Tvec> &f = tmp.get_field<Tvec>(sched.pdl.get_field_idx<Tvec>("xyz"));
                     sycl::buffer<Tvec> buf(vec_pos.data(), len);
+                    f.override(buf, len);
+                }
+
+                {
+                    u32 len = vec_pos.size();
+                    PatchDataField<Tscal> &f =
+                        tmp.get_field<Tscal>(sched.pdl.get_field_idx<Tscal>("hpart"));
+                    sycl::buffer<Tscal> buf(vec_h.data(), len);
+                    f.override(buf, len);
+                }
+
+                {
+                    u32 len = vec_pos.size();
+                    PatchDataField<Tscal> &f =
+                        tmp.get_field<Tscal>(sched.pdl.get_field_idx<Tscal>("uint"));
+                    sycl::buffer<Tscal> buf(vec_u.data(), len);
+                    f.override(buf, len);
+                }
+
+                if(solver.solver_config.is_eos_locally_isothermal()){
+                    u32 len = vec_pos.size();
+                    PatchDataField<Tscal> &f =
+                        tmp.get_field<Tscal>(sched.pdl.get_field_idx<Tscal>("soundspeed"));
+                    sycl::buffer<Tscal> buf(vec_cs.data(), len);
+                    f.override(buf, len);
+                }
+
+                {
+                    u32 len = vec_pos.size();
+                    PatchDataField<Tvec> &f =
+                        tmp.get_field<Tvec>(sched.pdl.get_field_idx<Tvec>("vxyz"));
+                    sycl::buffer<Tvec> buf(vec_vel.data(), len);
                     f.override(buf, len);
                 }
 
