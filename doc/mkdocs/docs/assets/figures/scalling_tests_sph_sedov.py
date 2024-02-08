@@ -507,7 +507,7 @@ dic = {}
 
 
 dic["Adastra mi250X 1e6"] = {
-    "label" : "Adastra mi250X 1e6",
+    "label" : "1e6 parts / GPUs",
     "X" : [1*4, 2*4, 4*4, 8*4, 16*4,32*4,64*4,128*4,256*4],
     "rate" : [
         10705666.585170781, 
@@ -535,7 +535,7 @@ dic["Adastra mi250X 1e6"] = {
 }
 
 dic["Adastra mi250X 8e6"] = {
-    "label" : "Adastra mi250X 8e6",
+    "label" : "8e6 parts / GPUs",
     "X" : [1*4, 2*4, 4*4, 8*4, 16*4,32*4,64*4,128*4,256*4],
     "rate" : [
         27925165.0051521, 
@@ -563,7 +563,7 @@ dic["Adastra mi250X 8e6"] = {
 }
 
 dic["Adastra mi250X 16e6"] = {
-    "label" : "Adastra mi250X 16e6",
+    "label" : "16e6 parts / GPUs",
     "X" : [1*4, 2*4, 4*4, 8*4, 16*4,32*4,64*4,128*4,256*4],
     "rate" : [
         37025358.19356769, 
@@ -593,7 +593,7 @@ dic["Adastra mi250X 16e6"] = {
 
 
 dic["Adastra mi250X 32e6"] = {
-    "label" : "Adastra mi250X 32e6",
+    "label" : "32e6 parts / GPUs",
     "X" : [1*4, 2*4, 4*4, 8*4, 16*4,32*4,64*4,128*4,256*4],
     "rate" : [
         37263623.46191787, 
@@ -622,44 +622,102 @@ dic["Adastra mi250X 32e6"] = {
 
 
 
+from matplotlib.ticker import ScalarFormatter
 
 
-plt.figure()
+fig = plt.figure()
+ax = fig.add_subplot(111)
 for k in dic.keys():
-    plt.plot(dic[k]["X"]  , np.array(dic[k]["rate"])  /np.array(dic[k]["X"]  ), label = dic[k]["label"])
+    X = dic[k]["X"]
+    Y = np.array(dic[k]["rate"])  /np.array(dic[k]["X"]  )
+    p, = plt.plot(X,Y, label = dic[k]["label"])
+    plt.annotate(f'{Y[-1]:.2e}', xy=(1.01,Y[-1]), xycoords=('axes fraction', 'data'), 
+                     ha='left', va='center', color=p.get_color())
 #plt.ylim(0,1e6)
 #plt.xlim(1,200)
 plt.xscale('log')
-plt.ylabel(r"$N_{\rm part} / (N_{\rm GPU} t_{\rm step})$")
-plt.xlabel(r"$N_{\rm GPU}$")
+ax.xaxis.set_major_formatter(ScalarFormatter())
+
+#plt.yscale('log')
+#plt.ylabel(r"$N_{\rm part} / (N_{\rm GPU} t_{\rm step})$")
+plt.ylabel(r"Particles / seconds / GPU")
+plt.xlabel(r"GPUs")
+plt.title("Adastra mi250x")
 plt.legend()
 plt.grid()
 plt.savefig("sedov_scalling_div_GPU.svg")
 
 
-plt.figure()
+fig = plt.figure()
+ax = fig.add_subplot(111)
 for k in dic.keys():
-    plt.plot(dic[k]["X"]  , (np.array(dic[k]["rate"])  /np.array(dic[k]["X"]  ))/(np.array(dic[k]["rate"])  /np.array(dic[k]["X"]  ))[0], label =  dic[k]["label"])
+    X = dic[k]["X"]
+    Y = np.array(dic[k]["rate"])  / ( 1900 * np.array(dic[k]["X"]) / 4)
+    p, = plt.plot(X,Y, label = dic[k]["label"])
+    plt.annotate(f'{Y[-1]:.2e}', xy=(1.01,Y[-1]), xycoords=('axes fraction', 'data'), 
+                     ha='left', va='center', color=p.get_color())
 #plt.ylim(0,1e6)
 #plt.xlim(1,200)
 plt.xscale('log')
-plt.ylabel(r"$\chi$")
-plt.xlabel(r"$N_{\rm GPU}$")
+ax.xaxis.set_major_formatter(ScalarFormatter())
+
+#plt.yscale('log')
+#plt.ylabel(r"$N_{\rm part} / (N_{\rm GPU} t_{\rm step})$")
+plt.ylabel(r"Particles / seconds / Watt")
+plt.xlabel(r"GPUs")
+plt.title("Adastra mi250x")
+plt.legend()
+plt.grid()
+plt.savefig("sedov_scalling_energy_GPU.pdf")
+
+
+
+fig = plt.figure()
+ax = fig.add_subplot(111)
+idx = 0
+pos_anot = [0.5, 0.78, 0.70, 0.92]
+for k in dic.keys():
+    X = dic[k]["X"]
+    Y = (np.array(dic[k]["rate"])  /np.array(dic[k]["X"]  ))/(np.array(dic[k]["rate"])  /np.array(dic[k]["X"]  ))[0]
+    p, = plt.plot(X,Y, label = dic[k]["label"])
+    plt.annotate(f'{Y[-1]:.2f}', xy=(1.01,pos_anot[idx]), xycoords=('axes fraction', 'data'), 
+                     ha='left', va='center', color=p.get_color())
+    idx += 1
+plt.ylim(0,1.5)
+#plt.xlim(1,200)
+plt.xscale('log')
+ax.xaxis.set_major_formatter(ScalarFormatter())
+
+plt.ylabel(r"Parallel efficiency ")
+plt.xlabel(r"GPUs")
+plt.title("Adastra mi250x")
 plt.legend()
 plt.grid()
 plt.savefig("sedov_scalling_eff_GPU.svg")
 
 
-plt.figure()
+fig = plt.figure()
+ax = fig.add_subplot(111)
+idx = 0
+pos_anot = [1.38e9, 5.e9,7e9, 10e9]
 for k in dic.keys():
-    plt.plot(dic[k]["X"]  , np.array(dic[k]["rate"]), label = dic[k]["label"])
+    X = dic[k]["X"]
+    Y = np.array(dic[k]["rate"])
+    p, = plt.plot(X,Y, label = dic[k]["label"])
+    plt.annotate(f'{Y[-1]:.2e}', xy=(1.01,pos_anot[idx]), xycoords=('axes fraction', 'data'), 
+                     ha='left', va='center', color=p.get_color())
+    idx += 1
+    
 #plt.ylim(0,1e6)
 #plt.xlim(1,200)
 plt.xscale('log')
 plt.yscale('log')
-plt.ylabel(r"$N_{\rm part} / (t_{\rm step})$")
-plt.xlabel(r"$N_{\rm GPU}$")
+ax.xaxis.set_major_formatter(ScalarFormatter())
+
+plt.ylabel(r"Particles / seconds")
+plt.xlabel(r"GPUs")
 plt.legend()
+plt.title("Adastra mi250x")
 plt.grid()
 plt.savefig("sedov_scalling_GPU.svg")
 
