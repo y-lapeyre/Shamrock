@@ -1,6 +1,10 @@
 # Adastra MI250X setup (LLVM)
 
-## LLVM
+## Compiler setup
+
+### Compiling the compiler 
+
+To setup LLVM on adastra :
 ```bash
 module purge
 
@@ -36,9 +40,9 @@ cd $WORKDIR
 ```
 
 
-## Testing
-
-```c++
+### Testing the compiler
+Just write this in an exemple file :
+```c++ linenums="1" title="test.cpp"
 #include <sycl/sycl.hpp>
 
 int main(){
@@ -67,9 +71,10 @@ int main(){
 
 }
 ```
-
+compile it
 ```bash
-export LLVM_HOME=$WORKDIR/intel_llvm/
+export PATH=$HOMEDIR/.local/bin:$PATH
+export LLVM_HOME=$SCRATCHDIR/intel_llvm/
 echo "Intel LLVM dir  :" $LLVM_HOME
 export PATH=$LLVM_HOME/bin:$PATH
 export LD_LIBRARY_PATH=$LLVM_HOME/lib:$LD_LIBRARY_PATH
@@ -77,6 +82,7 @@ export LD_LIBRARY_PATH=$LLVM_HOME/lib:$LD_LIBRARY_PATH
 clang++ -fsycl -fsycl-targets=amdgcn-amd-amdhsa -Xsycl-target-backend --offload-arch=gfx90a --rocm-path=/opt/rocm-5.7.1 test.cpp
 ```
 
+Allocate some time on the cluster to check if everything works, it should print the device name and 999, 8 times.
 ```bash
 salloc -A cad14954 -N 1 -C "MI250" --job-name=interactive --time=100 --exclusive 
 srun --ntasks-per-node=8 --cpus-per-task=8 --threads-per-core=1 --gpu-bind=closest -- ./a.out
@@ -85,7 +91,9 @@ srun --ntasks-per-node=8 --cpus-per-task=8 --threads-per-core=1 --gpu-bind=close
 
 
 
-# Compiling Shamrock
+## Compiling Shamrock
+
+Load the modules to compile Shamrock on adastra :
 
 ```bash
 module purge
@@ -99,12 +107,12 @@ module load amd-mixed/5.7.1
 module load rocm/5.7.1
 ```
 
-```bash
-export PATH=$HOMEDIR/.local/bin:$PATH
-```
+Before running anything check if you have done the following commands. 
+If not the path to the compiler & python tools we have installed earlier will not be available
 
 ```bash
-export LLVM_HOME=$WORKDIR/intel_llvm/
+export PATH=$HOMEDIR/.local/bin:$PATH
+export LLVM_HOME=$SCRATCHDIR/intel_llvm/
 echo "Intel LLVM dir  :" $LLVM_HOME
 export PATH=$LLVM_HOME/bin:$PATH
 export LD_LIBRARY_PATH=$LLVM_HOME/lib:$LD_LIBRARY_PATH
@@ -112,27 +120,13 @@ export LD_LIBRARY_PATH=$LLVM_HOME/lib:$LD_LIBRARY_PATH
 
 ```bash
 cd Shamrock
-cmake -S . -B build -G "Ninja" -DSYCL_IMPLEMENTATION=IntelLLVM -DCMAKE_CXX_COMPILER=/lus/home/CT10/cad14954/tdavidc/intel_llvm/bin/clang++ -DSHAMROCK_ENABLE_BACKEND=SYCL -DINTEL_LLVM_PATH=/lus/home/CT10/cad14954/tdavidc/intel_llvm -DCMAKE_C_COMPILER=/lus/home/CT10/cad14954/tdavidc/intel_llvm/bin/clang-18 -DCMAKE_CXX_FLAGS="-fsycl -fsycl-targets=amdgcn-amd-amdhsa -Xsycl-target-backend --offload-arch=gfx90a --rocm-path=${ROCM_PATH} -I${MPICH_DIR}/include -L${MPICH_DIR}/lib -lmpi ${PE_MPICH_GTL_DIR_amd_gfx90a} ${PE_MPICH_GTL_LIBS_amd_gfx90a}" -DBUILD_TEST=true -DCXX_FLAG_ARCH_NATIVE=off
 
-cmake -S . -B build -G "Ninja" -DSYCL_IMPLEMENTATION=IntelLLVM -DCMAKE_CXX_COMPILER=$WORKDIR/intel_llvm/bin/clang++ -DSHAMROCK_ENABLE_BACKEND=SYCL -DINTEL_LLVM_PATH=$WORKDIR/intel_llvm -DCMAKE_C_COMPILER=$WORKDIR/intel_llvm/bin/clang-19 -DCMAKE_CXX_FLAGS="-fsycl -fsycl-targets=amdgcn-amd-amdhsa -Xsycl-target-backend --offload-arch=gfx90a --rocm-path=${ROCM_PATH} -I${MPICH_DIR}/include -L${MPICH_DIR}/lib -lmpi ${PE_MPICH_GTL_DIR_amd_gfx90a} ${PE_MPICH_GTL_LIBS_amd_gfx90a}" -DBUILD_TEST=true -DCXX_FLAG_ARCH_NATIVE=off
-```
-
-```bash
-sbatch -x g1052,g1197,g1200 srun_n1.sh
-sbatch -x g1052,g1197,g1200 srun_n2.sh
-sbatch -x g1052,g1197,g1200 srun_n4.sh
-sbatch -x g1052,g1197,g1200 srun_n8.sh
-sbatch -x g1052,g1197,g1200 srun_n16.sh
-sbatch -x g1052,g1197,g1200 srun_n32.sh
-sbatch -x g1052,g1197,g1200 srun_n64.sh
-sbatch -x g1052,g1197,g1200 srun_n128.sh
-sbatch -x g1052,g1197,g1200 srun_n256.sh
+cmake -S . -B build -G "Ninja" -DSYCL_IMPLEMENTATION=IntelLLVM -DCMAKE_CXX_COMPILER=$SCRATCHDIR/intel_llvm/bin/clang++ -DSHAMROCK_ENABLE_BACKEND=SYCL -DINTEL_LLVM_PATH=$SCRATCHDIR/intel_llvm -DCMAKE_C_COMPILER=$SCRATCHDIR/intel_llvm/bin/clang-19 -DCMAKE_CXX_FLAGS="-fsycl -fsycl-targets=amdgcn-amd-amdhsa -Xsycl-target-backend --offload-arch=gfx90a --rocm-path=${ROCM_PATH} -I${MPICH_DIR}/include -L${MPICH_DIR}/lib -lmpi ${PE_MPICH_GTL_DIR_amd_gfx90a} ${PE_MPICH_GTL_LIBS_amd_gfx90a}" -DBUILD_TEST=true -DCXX_FLAG_ARCH_NATIVE=off
 ```
 
 
 
-
-# DPCPP setup : 
+# Old commands that were usefull for the hackaton
 
 ```
 
