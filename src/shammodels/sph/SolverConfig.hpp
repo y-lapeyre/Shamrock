@@ -145,8 +145,8 @@ struct shammodels::sph::SolverConfig {
     //////////////////////////////////////////////////////////////////////////////////////////////
 
     bool combined_dtdiv_divcurlv_compute = false;
-    static constexpr Tscal htol_up_tol   = 1.1;
-    static constexpr Tscal htol_up_iter  = 1.1;
+    Tscal htol_up_tol   = 1.1;
+    Tscal htol_up_iter  = 1.1;
 
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Solver behavior config (END)

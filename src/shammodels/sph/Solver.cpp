@@ -519,7 +519,7 @@ void SPHSolve<Tvec, Kern>::build_ghost_cache() {
     SPHUtils sph_utils(scheduler());
 
     storage.ghost_patch_cache.set(sph_utils.build_interf_cache(
-        storage.ghost_handler.get(), storage.serial_patch_tree.get(), htol_up_tol));
+        storage.ghost_handler.get(), storage.serial_patch_tree.get(), solver_config.htol_up_tol));
 }
 
 template<class Tvec, template<class> class Kern>
@@ -812,8 +812,8 @@ void SPHSolve<Tvec, Kern>::sph_prestep(Tscal time_val, Tscal dt) {
                     range_npart,
                     neigh_cache,
                     solver_config.gpart_mass,
-                    htol_up_tol,
-                    htol_up_iter);
+                    solver_config.htol_up_tol,
+                    solver_config.htol_up_iter);
                 // sph_utils.iterate_smoothing_length_tree(merged_r, hnew, hold, eps_h, range_npart,
                 // tree, gpart_mass, htol_up_tol, htol_up_iter);
             });
@@ -951,7 +951,7 @@ void SPHSolve<Tvec, Kern>::compute_presteps_rint() {
             PreStepMergedField &tmp = xyzh_merged.get(id);
 
             return rtree.compute_int_boxes(
-                shamsys::instance::get_compute_queue(), tmp.field_hpart.get_buf(), htol_up_tol);
+                shamsys::instance::get_compute_queue(), tmp.field_hpart.get_buf(), solver_config.htol_up_tol);
         }));
 }
 
