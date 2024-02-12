@@ -827,14 +827,36 @@ void SPHSolve<Tvec, Kern>::sph_prestep(Tscal time_val, Tscal dt) {
             }
         }
 
-        // logger::info_ln("Smoothinglength", "eps max =", max_eps_h);
+        //logger::info_ln("Smoothinglength", "eps max =", max_eps_h);
 
         Tscal min_eps_h = shamalgs::collective::allreduce_min(_epsilon_h.compute_rank_min());
         if (min_eps_h == -1) {
+
+            Tscal largest_h = 0;
+
+            scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchData &pdat) {
+                largest_h = sham::max(largest_h, pdat.get_field<Tscal>(ihpart).compute_min());
+            });
+            Tscal global_largest_h = shamalgs::collective::allreduce_max(largest_h);
+
+
+            u64 cnt_unconverged = 0;
+            scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchData &pdat) {
+                auto res = _epsilon_h.get_field(p.id_patch).get_ids_buf_where([](auto access, u32 id) {
+                    return access[id] == -1;
+                });
+                cnt_unconverged += std::get<1>(res);
+            });
+
+            u64 global_cnt_unconverged = shamalgs::collective::allreduce_sum(cnt_unconverged);
+
+
+
+
             if (shamcomm::world_rank() == 0) {
                 logger::warn_ln(
                     "Smoothinglength",
-                    "smoothing length is not converged, rerunning the iterator ...");
+                    "smoothing length is not converged, rerunning the iterator ...\n     largest h =",global_largest_h, "unconverged cnt =",global_cnt_unconverged);
             }
 
             reset_ghost_handler();

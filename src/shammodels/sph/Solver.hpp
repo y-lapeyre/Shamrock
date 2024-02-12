@@ -62,8 +62,8 @@ namespace shammodels::sph {
         Config solver_config;
         SolverLog solve_logs;
 
-        static constexpr Tscal htol_up_tol  = 1.1;
-        static constexpr Tscal htol_up_iter = 1.1;
+        static constexpr Tscal htol_up_tol  = Config::htol_up_tol;
+        static constexpr Tscal htol_up_iter = Config::htol_up_iter;
 
 
         inline void init_required_fields() {
