@@ -766,7 +766,7 @@ void SPHSolve<Tvec, Kern>::sph_prestep(Tscal time_val, Tscal dt) {
     ComputeField<Tscal> _epsilon_h, _h_old;
 
     u32 hstep_cnt = 0;
-    u32 hstep_max = 100;
+    u32 hstep_max = solver_config.h_max_subcycles_count;
     for (; hstep_cnt < hstep_max; hstep_cnt++) {
 
         gen_ghost_handler(time_val+dt);
@@ -782,7 +782,7 @@ void SPHSolve<Tvec, Kern>::sph_prestep(Tscal time_val, Tscal dt) {
         Tscal max_eps_h;
 
         u32 iter_h = 0;
-        for (; iter_h < 50; iter_h++) {
+        for (; iter_h < solver_config.h_iter_per_subcycles; iter_h++) {
             NamedStackEntry stack_loc2{"iterate smoothing length"};
             // iterate smoothing length
             scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchData &pdat) {
@@ -821,7 +821,7 @@ void SPHSolve<Tvec, Kern>::sph_prestep(Tscal time_val, Tscal dt) {
             
             logger::debug_ln("Smoothinglength","iteration :",iter_h, "epsmax",max_eps_h);
 
-            if (max_eps_h < 1e-6) {
+            if (max_eps_h < solver_config.epsilon_h) {
                 logger::debug_sycl("Smoothinglength", "converged at i =", iter_h);
                 break;
             }
