@@ -206,7 +206,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                 Tscal p,
                 Tscal H_r_in,
                 Tscal q,
-                u64 seed){
+                u16 seed){
                     self.add_big_disc_3d(center, central_mass, Npart, r_in, r_out, disc_mass, p, H_r_in, q, std::mt19937{seed});
                     return disc_mass / Npart;
                 })
