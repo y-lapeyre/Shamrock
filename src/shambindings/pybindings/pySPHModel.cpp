@@ -313,7 +313,8 @@ R"==(
         })
         .def("set_cfl_mult_stiffness", [](T & self, Tscal cstiff){
             return self.solver.solver_config.set_cfl_mult_stiffness(cstiff);
-        });
+        })
+        .def("change_htolerance",&T::change_htolerance);
     ;
 }
 

@@ -62,10 +62,6 @@ namespace shammodels::sph {
         Config solver_config;
         SolverLog solve_logs;
 
-        static constexpr Tscal htol_up_tol  = 1.1;
-        static constexpr Tscal htol_up_iter = 1.1;
-
-
         inline void init_required_fields() {
             context.pdata_layout_add_field<Tvec>("xyz", 1);
             context.pdata_layout_add_field<Tvec>("vxyz", 1);
