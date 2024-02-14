@@ -94,7 +94,7 @@ if("${BUILD_PYLIB}")
 pybind11_add_module(shamrock  )
 target_link_libraries(shamrock PUBLIC pybind11::module)
 else()
-add_executable(shamrock main.cpp ${IPTYHON_SRC_RUN_SRC})
+add_executable(shamrock main.cpp)
 target_link_libraries(shamrock PUBLIC pybind11::embed)
 endif()
 
