@@ -47,7 +47,14 @@
 
 //%Impl status : Should rewrite
 
-const std::string run_ipython_src = R"(
+extern const char* ipython_run_src();
+
+const std::string run_ipython_src = 
+std::string("paths = ")+ ipython_run_src()+"\n"+
+R"(
+import sys
+sys.path = paths
+
 from IPython import start_ipython
 from traitlets.config.loader import Config
 import sys
@@ -67,6 +74,13 @@ start_ipython(config=c)
 
 )";
 
+
+const std::string start_interpreter = 
+std::string("paths = ")+ ipython_run_src()+"\n"+
+R"(
+import sys
+sys.path = paths
+)";
 
 int main(int argc, char *argv[]) {
     
@@ -231,6 +245,7 @@ int main(int argc, char *argv[]) {
             std::cout << "running pyscript : " << fname << std::endl;
             std::cout << "-----------------------------------" << std::endl;
             }
+            py::exec(start_interpreter);
             py::eval_file(fname);
             if(shamcomm::world_rank() == 0){
             std::cout << "-----------------------------------" << std::endl;
