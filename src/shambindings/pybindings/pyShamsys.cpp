@@ -18,6 +18,7 @@
 #include "shambindings/pybindaliases.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "version.hpp"
+#include "shamsys/SignalCatch.hpp"
 
 Register_pymod(pysyslibinit) {
 
@@ -110,6 +111,6 @@ Register_pymod(pysyslibinit) {
     )pbdoc");
 
     py::module sys_module = m.def_submodule("sys", "system handling part of shamrock");
-
+    sys_module.def("signal_handler",&shamsys::details::signal_callback_handler);
     shamsys::instance::register_pymodules(sys_module);
 }
