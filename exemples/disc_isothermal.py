@@ -86,8 +86,10 @@ def plot_vertical_profile(r, rrange, label = ""):
 dump = model.do_vtk_dump(outputdir+"initdump.vtk", False)
 
 print("Run")
-
+# run the smoothing lenght iteration with bumped tolerance to reduce convergence time
+model.change_htolerance(1.3)
 model.evolve_once_override_time(0,0)
+model.change_htolerance(1.1)
 
 print("Current part mass :", pmass)
 
