@@ -755,7 +755,7 @@ void Model<Tvec, SPHKernel>::add_big_disc_3d(
                     vec_pos.push_back(o.pos);
                     vec_vel.push_back(o.velocity);
                     vec_u.push_back(o.cs*o.cs/(/*solver.eos_gamma * */ (eos_gamma - 1)));
-                    vec_h.push_back(int_rho_h(Kernel::hfactd));
+                    vec_h.push_back(shamrock::sph::h_rho(part_mass, o.rho * 0.1, Kernel::hfactd));
                     vec_cs.push_back(o.cs);
                 }
 
