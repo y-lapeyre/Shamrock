@@ -117,3 +117,4 @@ plot_vertical_profile(1,0.5, label = "end")
 
 plt.legend()
 plt.show()
+

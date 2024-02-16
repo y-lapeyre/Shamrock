@@ -14,6 +14,7 @@
  */
  
 #include <memory>
+#include <random>
 #include <pybind11/cast.h>
 
 #include "shambindings/pybindaliases.hpp"
@@ -194,6 +195,20 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                 Tscal H_r_in,
                 Tscal q){
                     return self.add_disc_3d(center, central_mass, Npart, r_in, r_out, disc_mass, p, H_r_in, q);
+                })
+        .def("add_big_disc_3d",[](T &self,
+                Tvec center, 
+                Tscal central_mass,
+                u32 Npart,
+                Tscal r_in,
+                Tscal r_out,
+                Tscal disc_mass,
+                Tscal p,
+                Tscal H_r_in,
+                Tscal q,
+                u16 seed){
+                    self.add_big_disc_3d(center, central_mass, Npart, r_in, r_out, disc_mass, p, H_r_in, q, std::mt19937{seed});
+                    return disc_mass / Npart;
                 })
         .def("get_total_part_count", &T::get_total_part_count)
         .def("total_mass_to_part_mass", &T::total_mass_to_part_mass)

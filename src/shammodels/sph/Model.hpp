@@ -114,6 +114,39 @@ namespace shammodels::sph {
         void add_cube_fcc_3d(Tscal dr, std::pair<Tvec, Tvec> _box);
         void add_cube_hcp_3d(Tscal dr, std::pair<Tvec, Tvec> _box);
 
+
+//        std::function<Tscal(Tscal)> sigma_profile = [=](Tscal r, Tscal r_in, Tscal p){
+//            // we setup with an adimensional mass since it is monte carlo
+//            constexpr Tscal sigma_0 = 1;
+//            return sigma_0*sycl::pow(r/r_in, -p);
+//        };
+//
+//        std::function<Tscal(Tscal)> cs_law = [=](Tscal r, Tscal r_in, Tscal q){
+//            return sycl::pow(r/r_in, -q);
+//        };
+//
+//        std::function<Tscal(Tscal)> rot_profile = [=](Tscal r, Tscal central_mass){
+//            Tscal G = solver.solver_config.get_constant_G();
+//            return sycl::sqrt(G * central_mass/r);
+//        };
+//
+//        std::function<Tscal(Tscal)> cs_profile = [&](Tscal r, Tscal r_in, Tscal H_r_in){
+//            Tscal cs_in = H_r_in*rot_profile(r_in);
+//            return cs_law(r)*cs_in; 
+
+        void add_big_disc_3d(
+                Tvec center, 
+                Tscal central_mass,
+                u32 Npart,
+                Tscal r_in,
+                Tscal r_out,
+                Tscal disc_mass,
+                Tscal p,
+                Tscal H_r_in,
+                Tscal q,
+                std::mt19937 eng
+        );
+
         inline void add_sink(Tscal mass, Tvec pos, Tvec velocity, Tscal accretion_radius){
             if(solver.storage.sinks.is_empty()){
                 solver.storage.sinks.set({});
