@@ -203,8 +203,8 @@ class PatchDataField {
     inline std::set<u32> get_ids_set_where(Lambdacd &&cd_true, Args... args) {
         StackEntry stack_loc{};
         std::set<u32> idx_cd{};
-        {
-            sycl::host_accessor acc{*get_buf()};
+        if (get_obj_cnt() > 0) {
+            sycl::host_accessor acc{shambase::get_check_ref(get_buf())};
 
             for (u32 i = 0; i < get_obj_cnt(); i++) {
                 if (cd_true(acc, i * nvar, args...)) {
@@ -229,8 +229,8 @@ class PatchDataField {
     inline std::vector<u32> get_ids_vec_where(Lambdacd &&cd_true, Args... args) {
         StackEntry stack_loc{};
         std::vector<u32> idx_cd{};
-        {
-            sycl::host_accessor acc{*get_buf()};
+        if (get_obj_cnt() > 0) {
+            sycl::host_accessor acc{shambase::get_check_ref(get_buf())};
 
             for (u32 i = 0; i < get_obj_cnt(); i++) {
                 if (cd_true(acc, i * nvar, args...)) {
@@ -256,22 +256,27 @@ class PatchDataField {
     get_ids_buf_where(Lambdacd &&cd_true, Args... args) {
         StackEntry stack_loc{};
 
-        // buffer of booleans to store result of the condition
-        sycl::buffer<u32> mask(get_obj_cnt());
+        if (get_obj_cnt() > 0) {
+        
+            // buffer of booleans to store result of the condition
+            sycl::buffer<u32> mask(get_obj_cnt());
 
-        shamsys::instance::get_compute_queue().submit([&, args...](sycl::handler &cgh) {
-            sycl::accessor acc{*get_buf(), cgh, sycl::read_only};
-            sycl::accessor acc_mask{mask, cgh, sycl::write_only, sycl::no_init};
-            u32 nvar_field = nvar;
+            shamsys::instance::get_compute_queue().submit([&, args...](sycl::handler &cgh) {
+                sycl::accessor acc{shambase::get_check_ref(get_buf()), cgh, sycl::read_only};
+                sycl::accessor acc_mask{mask, cgh, sycl::write_only, sycl::no_init};
+                u32 nvar_field = nvar;
 
-            shambase::parralel_for(
-                cgh, get_obj_cnt(), "PatchdataField::get_ids_buf_where", [=](u32 id) {
-                    acc_mask[id] = cd_true(acc, id * nvar_field, args...);
-                });
-        });
+                shambase::parralel_for(
+                    cgh, get_obj_cnt(), "PatchdataField::get_ids_buf_where", [=](u32 id) {
+                        acc_mask[id] = cd_true(acc, id * nvar_field, args...);
+                    });
+            });
 
-        return shamalgs::numeric::stream_compact(
-            shamsys::instance::get_compute_queue(), mask, get_obj_cnt());
+            return shamalgs::numeric::stream_compact(
+                shamsys::instance::get_compute_queue(), mask, get_obj_cnt());
+        }else{
+            return {std::nullopt, 0};
+        }
     }
 
     template<class Lambdacd>
@@ -487,7 +492,7 @@ PatchDataField<T>::get_elements_with_range(Lambdacd &&cd_true, T vmin, T vmax) {
     sycl::buffer<u32> valid {size()};
 
     shamsys::instance::get_compute_queue().submit([&](sycl::handler & cgh){
-        sycl::accessor acc {*get_buf(), cgh, sycl::read_only};
+        sycl::accessor acc {shambase::get_check_ref(get_buf()), cgh, sycl::read_only};
         sycl::accessor bools {valid, cgh,sycl::write_only,sycl::no_init};
 
         shambase::parralel_for(cgh,size(),"get_element_with_range",[=](u32 i){
@@ -509,7 +514,7 @@ PatchDataField<T>::get_elements_with_range(Lambdacd &&cd_true, T vmin, T vmax) {
     */
 
     {
-        sycl::host_accessor acc{*get_buf()};
+        sycl::host_accessor acc{shambase::get_check_ref(get_buf())};
 
         for (u32 i = 0; i < size(); i++) {
             if (cd_true(acc[i], vmin, vmax)) {
@@ -559,7 +564,7 @@ PatchDataField<T>::check_err_range(Lambdacd &&cd_true, T vmin, T vmax, std::stri
 
     bool error = false;
     {
-        sycl::host_accessor acc{*get_buf()};
+        sycl::host_accessor acc{shambase::get_check_ref(get_buf())};
         u32 err_cnt = 0;
 
         for (u32 i = 0; i < size(); i++) {
