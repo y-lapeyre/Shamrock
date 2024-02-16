@@ -2,7 +2,7 @@ import shamrock
 import matplotlib.pyplot as plt
 import numpy as np
 
-outputdir = '/local/ylapeyre/Shamrock_tests/BigDisc/'
+
 si = shamrock.UnitSystem()
 sicte = shamrock.Constants(si)
 codeu = shamrock.UnitSystem(unit_time = 3600*24*365,unit_length = sicte.au(), unit_mass = sicte.sol_mass(), )
@@ -32,16 +32,15 @@ model.resize_simulation_box(bmin,bmax)
 
 disc_mass = 0.001
 
-pmass = model.add_big_disc_3d(
+pmass = model.add_disc_3d(
     (0,0,0),
     1,
-    100000000,
-    1,5,
+    100000,
+    0.2,3,
     disc_mass,
     1.,
     0.05,
-    1./4.,
-    273)
+    1./4.)
 
 model.set_cfl_cour(0.3)
 model.set_cfl_force(0.25)
@@ -83,7 +82,6 @@ def plot_vertical_profile(r, rrange, label = ""):
     plt.scatter(ysel, rhosel/rhobar, s=1, label = label)
 
 
-dump = model.do_vtk_dump(outputdir+"initdump.vtk", False)
 
 print("Run")
 # run the smoothing lenght iteration with bumped tolerance to reduce convergence time
@@ -104,11 +102,11 @@ next_dt_target = t_sum + dt_dump
 
 while next_dt_target <= t_target:
 
-    fname = outputdir + "dump_{:04}.vtk".format(i_dump)
+    fname = "dump_{:04}.phfile".format(i_dump)
 
     model.evolve_until(next_dt_target)
-    dump = model.do_vtk_dump(fname, False)
-    #dump.save_dump(fname)
+    dump = model.make_phantom_dump()
+    dump.save_dump(fname)
 
     i_dump += 1
 
