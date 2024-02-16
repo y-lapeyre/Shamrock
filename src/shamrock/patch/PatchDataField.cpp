@@ -147,8 +147,8 @@ template <class T> void PatchDataField<T>::append_subset_to(sycl::buffer<u32> &i
     
     shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
 
-        sycl::accessor acc_curr {*get_buf(), cgh, sycl::read_only};
-        sycl::accessor acc_other {*buf_other, cgh, sycl::write_only, sycl::no_init};
+        sycl::accessor acc_curr {shambase::get_check_ref(get_buf()), cgh, sycl::read_only};
+        sycl::accessor acc_other {shambase::get_check_ref(buf_other), cgh, sycl::write_only, sycl::no_init};
         sycl::accessor acc_idxs {idxs_buf, cgh, sycl::read_only};
 
         const u32 nvar_loc = nvar;
@@ -202,7 +202,7 @@ template<class T> void PatchDataField<T>::insert_element(T v){
 
         auto id_ins = ins_pos;
         auto val = v;
-        sycl::accessor acc {*get_buf(), cgh, sycl::write_only};
+        sycl::accessor acc {shambase::get_check_ref(get_buf()), cgh, sycl::write_only};
 
 
         cgh.single_task<PdatField_insert_element<T>>([=] () {
@@ -223,15 +223,17 @@ template<class T> class PdatField_apply_offset;
 
 template<class T> void PatchDataField<T>::apply_offset(T off){
 
-    shamsys::instance::get_compute_queue().submit([&] (sycl::handler& cgh) {
-        
-        auto val = off;
-        sycl::accessor acc {*get_buf(), cgh, sycl::read_write};
+    if(get_obj_cnt() > 0){
+        shamsys::instance::get_compute_queue().submit([&] (sycl::handler& cgh) {
+            
+            auto val = off;
+            sycl::accessor acc {shambase::get_check_ref(get_buf()), cgh, sycl::read_write};
 
-        cgh.parallel_for<PdatField_apply_offset<T>>(sycl::range<1>{size()}, [=](sycl::id<1> idx){
-            acc[idx] += val;
+            cgh.parallel_for<PdatField_apply_offset<T>>(sycl::range<1>{size()}, [=](sycl::id<1> idx){
+                acc[idx] += val;
+            });
         });
-    });
+    }
 
 }
 
@@ -252,9 +254,9 @@ template<class T> void PatchDataField<T>::insert(PatchDataField<T> &f2){
 
         //This is triggering a warning in OpenSycl when the buffer was just allocated
         // TODO fix the warning
-        sycl::accessor acc {*get_buf(), cgh, sycl::write_only}; 
+        sycl::accessor acc {shambase::get_check_ref(get_buf()), cgh, sycl::write_only}; 
 
-        sycl::accessor acc_f2 {*f2.get_buf(), cgh, sycl::read_only};
+        sycl::accessor acc_f2 {shambase::get_check_ref(f2.get_buf()), cgh, sycl::read_only};
 
         cgh.parallel_for<PdatField_insert<T>>(sycl::range<1>{f2.size()}, [=](sycl::id<1> idx){
             acc[idx_st + idx] = acc_f2[idx];
