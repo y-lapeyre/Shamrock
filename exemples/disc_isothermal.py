@@ -116,4 +116,5 @@ while next_dt_target <= t_target:
 plot_vertical_profile(1,0.5, label = "end")
 
 plt.legend()
+
 plt.show()
