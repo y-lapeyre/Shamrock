@@ -691,6 +691,9 @@ namespace shammodels::sph {
         inline u64 solver_logs_last_obj_count(){
             return solver.solve_logs.get_last_obj_count();
         }
+        inline void change_htolerance(Tscal in){
+            solver.solver_config.htol_up_tol = in;
+        }
 
         ////////////////////////////////////////////////////////////////////////////////////////////
         /////// analysis utilities
