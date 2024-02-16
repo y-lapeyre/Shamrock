@@ -254,7 +254,7 @@ namespace shammodels::sph {
             auto cs_profile = [&](Tscal r){
                 return cs_law(r)*cs_in;
             };
-//8enhxu2e3lnf 
+
             std::vector<Out> part_list ;
 
             generic::setup::generators::add_disc2<Tscal>(Npart, r_in, r_out, 
