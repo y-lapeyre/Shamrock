@@ -224,6 +224,9 @@ namespace shamrock {
             ComputeField<T> cfield;
             using namespace shamrock::patch;
             sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
+                if(pdat.get_obj_cnt() == 0){
+                    return;
+                }
                 auto it = cfield.field_data.add_obj(id_patch,
                                           PatchDataField<T>(new_name, nvar, pdat.get_obj_cnt()));
 
@@ -247,6 +250,9 @@ namespace shamrock {
             ComputeField<T> cfield;
             using namespace shamrock::patch;
             sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
+                if(pdat.get_obj_cnt() == 0){
+                    return;
+                }
                 auto it = cfield.field_data.add_obj(id_patch,
                                           PatchDataField<T>(new_name, nvar, size_getter(id_patch)));
 
