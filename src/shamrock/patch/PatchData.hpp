@@ -411,7 +411,7 @@ namespace shamrock::patch {
 
                     logger::debug_ln("PyShamrockCTX","appending field",key);
                     
-                    {
+                    if(!field.is_empty()){
                         sycl::host_accessor acc {shambase::get_check_ref(field.get_buf())};
                         u32 len = field.size();
 
