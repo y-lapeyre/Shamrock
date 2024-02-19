@@ -79,7 +79,7 @@ class SerialPatchTree{public:
     std::vector<PtNode> serial_tree;
     std::vector<u64> linked_patch_ids;
     std::vector<u64> roots_ids;
-    
+
 
     void build_from_patch_tree(PatchTree &ptree, const shamrock::patch::PatchCoordTransform<fp_prec_vec> box_transform);
 
@@ -88,9 +88,18 @@ class SerialPatchTree{public:
     public: 
 
     inline void print_status(){
+        if(shamcomm::world_rank() == 0){
         for(PtNode n : serial_tree){
-            logger::raw_ln(n.box_min, n.box_max);
-        }
+            logger::raw_ln(n.box_min, n.box_max, "[",
+            n.childs_id[0], 
+            n.childs_id[1], 
+            n.childs_id[2], 
+            n.childs_id[3], 
+            n.childs_id[4], 
+            n.childs_id[5], 
+            n.childs_id[6], 
+            n.childs_id[7], "]");
+        }}
     }
 
     inline SerialPatchTree(PatchTree &ptree, const shamrock::patch::PatchCoordTransform<fp_prec_vec> box_transform){

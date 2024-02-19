@@ -331,6 +331,8 @@ class PatchScheduler{
     inline shambase::DistributedData<T> distrib_data_local_to_all_simple(shambase::DistributedData<T> & src){
         using namespace shamrock::patch;
         
+        // TODO : after a split the scheduler patch list state does not match global = allgather(local)
+        // but here it is implicitely assumed, that's ... bad
         return shamalgs::collective::fetch_all_simple<T, Patch>(
             src, patch_list.local, patch_list.global, [](Patch p){return p.id_patch;}
             );

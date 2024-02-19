@@ -634,7 +634,8 @@ std::string PatchScheduler::dump_status(){
     ss << " -> SchedulerPatchTree\n";
 
     for(auto & [k,pnode] : patch_tree.tree){
-        ss << shambase::format_printf("      -> id : %d  -> (%d %d %d %d %d %d %d %d) <=> %d\n",
+        ss << shambase::format(
+            "      -> id : {} -> ({} {} {} {} {} {} {} {}) <=> {} [{}, {}]\n",
         k,
         pnode.tree_node.childs_nid[0],
         pnode.tree_node.childs_nid[1],
@@ -644,7 +645,9 @@ std::string PatchScheduler::dump_status(){
         pnode.tree_node.childs_nid[5],
         pnode.tree_node.childs_nid[6],
         pnode.tree_node.childs_nid[7],
-         pnode.linked_patchid);
+        pnode.linked_patchid,
+            pnode.patch_coord.coord_min, pnode.patch_coord.coord_max
+        );
     }
 
 

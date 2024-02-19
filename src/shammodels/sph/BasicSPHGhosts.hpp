@@ -105,7 +105,7 @@ namespace shammodels::sph {
         shambase::DistributedDataShared<InterfaceIdTable>
         gen_id_table_interfaces(GeneratorMap &&gen);
 
-
+        void gen_debug_patch_ghost(shambase::DistributedDataShared<InterfaceIdTable> & interf_info);
 
         using CacheMap = shambase::DistributedDataShared<InterfaceIdTable>;
 
