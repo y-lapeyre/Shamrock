@@ -100,14 +100,16 @@ namespace shamrock {
                 sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
                     using namespace shamalgs::memory;
                     using namespace shambase;
+                    
+                    if(pdat.get_obj_cnt() > 0){
+                        write_with_offset_into(
+                            get_check_ref(ret), 
+                            get_check_ref(get_buf(id_patch)), 
+                            ptr, 
+                            pdat.get_obj_cnt()*nvar);
 
-                    write_with_offset_into(
-                        get_check_ref(ret), 
-                        get_check_ref(get_buf(id_patch)), 
-                        ptr, 
-                        pdat.get_obj_cnt()*nvar);
-
-                    ptr += pdat.get_obj_cnt()*nvar;
+                        ptr += pdat.get_obj_cnt()*nvar;
+                    }
                 });
             }
 

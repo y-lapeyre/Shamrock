@@ -520,6 +520,9 @@ void SPHSolve<Tvec, Kern>::build_ghost_cache() {
 
     storage.ghost_patch_cache.set(sph_utils.build_interf_cache(
         storage.ghost_handler.get(), storage.serial_patch_tree.get(), solver_config.htol_up_tol));
+
+
+    //storage.ghost_handler.get().gen_debug_patch_ghost(storage.ghost_patch_cache.get());
 }
 
 template<class Tvec, template<class> class Kern>
@@ -1202,9 +1205,13 @@ void SPHSolve<Tvec, Kern>::evolve_once()
     shambase::Timer tstep;
     tstep.start();
 
+   // if(shamcomm::world_rank() == 0) std::cout << scheduler().dump_status() << std::endl;
     modules::ComputeLoadBalanceValue<Tvec, Kern> (context, solver_config, storage).update_load_balancing();
-
     scheduler().scheduler_step(true, true);
+    modules::ComputeLoadBalanceValue<Tvec, Kern> (context, solver_config, storage).update_load_balancing();
+    //if(shamcomm::world_rank() == 0) std::cout << scheduler().dump_status() << std::endl;
+    scheduler().scheduler_step(false, false);
+    //if(shamcomm::world_rank() == 0) std::cout << scheduler().dump_status() << std::endl;
 
     using namespace shamrock;
     using namespace shamrock::patch;

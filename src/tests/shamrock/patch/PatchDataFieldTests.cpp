@@ -63,13 +63,8 @@ TestStart(
     }
 }
 
-TestStart(Unittest, "shamrock/patch/PatchDataField::get_ids_..._where", testgetelemwithrange, 1) {
+inline void check_pdat_get_ids_where(u32 len, u32 nvar, std::string name, f64 vmin, f64 vmax) {
 
-    u32 len                   = 10000;
-    u32 nvar                  = 1;
-    std::string name          = "testfield";
-    f64 vmin                  = 0;
-    f64 vmax                  = 1000;
     PatchDataField<f64> field = PatchDataField<f64>::mock_field(0x111, len, name, nvar, 0, 2000);
 
     std::set<u32> idx_cd = field.get_ids_set_where(
@@ -103,16 +98,34 @@ TestStart(Unittest, "shamrock/patch/PatchDataField::get_ids_..._where", testgete
     logger::raw_ln("found : ", std::get<1>(idx_cd_sycl));
 
     // compare content
-    _Assert(bool(std::get<0>(idx_cd_sycl)))
+    _Assert(bool(std::get<0>(idx_cd_sycl)) == (idx_cd.size() != 0))
 
-    if (std::get<0>(idx_cd_sycl)) {
-        _Assert(idx_cd == shambase::set_from_vector(idx_cd_vec)) 
-        _Assert(
-            idx_cd == shambase::set_from_vector(
-                shamalgs::memory::buf_to_vec(
-                    *std::get<0>(idx_cd_sycl), std::get<1>(idx_cd_sycl)
-                    )
-                )
-        )
+        if (std::get<0>(idx_cd_sycl)) {
+        _Assert(idx_cd == shambase::set_from_vector(idx_cd_vec)) _Assert(
+            idx_cd
+            == shambase::set_from_vector(
+                shamalgs::memory::buf_to_vec(*std::get<0>(idx_cd_sycl), std::get<1>(idx_cd_sycl))))
+    }
+}
+
+TestStart(Unittest, "shamrock/patch/PatchDataField::get_ids_..._where", testgetelemwithrange, 1) {
+
+    {
+        u32 len          = 10000;
+        u32 nvar         = 1;
+        std::string name = "testfield";
+        f64 vmin         = 0;
+        f64 vmax         = 1000;
+
+        check_pdat_get_ids_where(len, nvar, name, vmin, vmax);
+    }
+    {
+        u32 len          = 0;
+        u32 nvar         = 1;
+        std::string name = "testfield";
+        f64 vmin         = 0;
+        f64 vmax         = 1000;
+
+        check_pdat_get_ids_where(len, nvar, name, vmin, vmax);
     }
 }

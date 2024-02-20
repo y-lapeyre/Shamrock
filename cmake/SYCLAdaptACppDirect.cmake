@@ -128,6 +128,10 @@ endif()
 
 
 message(" ---- Acpp compiler direct config ---- ")
+message("  ACPP_PATH : ${ACPP_PATH}")
+message("  HAS_ACPP_HEADER_FOLDER : ${HAS_ACPP_HEADER_FOLDER}")
+message("  HAS_OpenSYCL_HEADER_FOLDER : ${HAS_OpenSYCL_HEADER_FOLDER}")
+message("  HAS_hipSYCL_HEADER_FOLDER : ${HAS_hipSYCL_HEADER_FOLDER}")
 message("  ACPP_FAST_MATH : ${ACPP_FAST_MATH}")
 message(" ------------------------------------- ")
 

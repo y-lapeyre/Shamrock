@@ -156,6 +156,7 @@ int main(){
 
 #include "BasicSPHGhosts.hpp"
 #include "shambase/exception.hpp"
+#include "shamcomm/collectives.hpp"
 #include <functional>
 #include <vector>
 
@@ -495,7 +496,7 @@ auto BasicSPHGhostHandler<vec>::gen_id_table_interfaces(GeneratorMap &&gen)
 
         f64 ratio = f64(pcnt) / f64(src.get_obj_cnt());
 
-        logger::debug_sycl_ln("InterfaceGen",
+        logger::debug_ln("InterfaceGen",
                               "gen interface :",
                               sender,
                               "->",
@@ -519,13 +520,51 @@ auto BasicSPHGhostHandler<vec>::gen_id_table_interfaces(GeneratorMap &&gen)
         }
     }
 
-    if (has_warn) {
+    if (has_warn && shamcomm::world_rank() == 0) {
         logger::warn_ln("InterfaceGen",
                         "the ratio patch/interface is high, which can lead to high mpi "
                         "overhead, try incresing the patch split crit");
     }
 
     return res;
+}
+
+
+template<class vec>
+void BasicSPHGhostHandler<vec>::gen_debug_patch_ghost(
+    shambase::DistributedDataShared<InterfaceIdTable> & interf_info){
+    StackEntry stack_loc{};
+
+    static u32 cnt_dump_debug = 0;
+
+    std::string loc_graph = "";
+    interf_info.for_each([&loc_graph](u64 send, u64 recv, InterfaceIdTable & info){
+        loc_graph += shambase::format(
+            "    p{} -> p{}\n", 
+            send, recv);
+    });
+
+    sched.for_each_patch_data([&](u64 id, shamrock::patch::Patch p, shamrock::patch::PatchData & pdat){
+        if(pdat.get_obj_cnt() > 0){
+        loc_graph += shambase::format(
+            "    p{} [label= \"id={} N={}\"]\n", 
+            id,id, pdat.get_obj_cnt());}
+    });
+
+    std::string dot_graph = "";
+    shamcomm::gather_str(loc_graph, dot_graph);
+
+    dot_graph = "strict digraph {\n" 
+        + dot_graph
+        + "}";
+
+    if(shamcomm::world_rank() == 0){
+        std::string fname = shambase::format("ghost_graph_{}.dot",cnt_dump_debug);
+        logger::info_ln("SPH Ghost", "writing",fname);
+        shambase::write_string_to_file(fname, dot_graph);
+        cnt_dump_debug++;
+    } 
+
 }
 
 template class shammodels::sph::BasicSPHGhostHandler<f64_3>;

@@ -25,6 +25,7 @@
 #include "shamrock/io/details/bufToVtkBuf.hpp"
 #include "shamsys/MpiWrapper.hpp"
 #include "shambase/endian.hpp"
+#include "shambase/time.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/SyclMpiTypes.hpp"
 #include "shamsys/legacy/log.hpp"
@@ -119,6 +120,8 @@ namespace shamrock {
 
         u64 file_head_ptr;
 
+        shambase::Timer timer;
+
 
         private:
 
@@ -174,6 +177,8 @@ namespace shamrock {
             : fname(fname), binary(binary), file_head_ptr(0_u64) {
 
             StackEntry stack_loc{};
+
+            timer.start();
             
             logger::debug_ln("VtkWritter", "opening :", fname);
 
@@ -448,7 +453,19 @@ namespace shamrock {
 
         inline ~LegacyVtkWritter() { 
             logger::debug_mpi_ln("LegacyVtkWritter", "calling : mpi::file_close");
-            mpi::file_close(&mfile); }
+            mpi::file_close(&mfile); 
+            timer.end();
+            
+            if (shamcomm::world_rank() == 0) {
+                logger::info_ln(
+                    "VTK Dump",
+                    shambase::format(
+                        "dump to {}\n              - took {}, bandwidth = {}/s",
+                        fname,
+                        timer.get_time_str(),
+                        shambase::readable_sizeof(file_head_ptr / timer.elasped_sec())));
+            }
+        }
 
         LegacyVtkWritter(const LegacyVtkWritter&) = delete;
         LegacyVtkWritter& operator=(const LegacyVtkWritter&) = delete;

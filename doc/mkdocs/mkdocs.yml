@@ -12,6 +12,7 @@ nav:
 
   - 'User Documentation' :
     - 'QuickStart' : 'usermanual/quickstart.md'
+    - 'First simulation' : 'usermanual/firstcalculation.md'
     - 'Configuration' : 'usermanual/configuration.md'
     - 'Usage' : 'usermanual/usage.md'
     - 'Utilities' : 'usermanual/utilities.md'

@@ -114,5 +114,6 @@ Register_pymod(pysyslibinit) {
     py::module sys_module = m.def_submodule("sys", "system handling part of shamrock");
     sys_module.def("signal_handler",&shamsys::details::signal_callback_handler);
 
+
     shamsys::instance::register_pymodules(sys_module);
 }
