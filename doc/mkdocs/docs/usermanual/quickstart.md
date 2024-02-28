@@ -155,6 +155,46 @@ make -j 4
 
 Here we compile with only 4 process by default since the compiler can take up to 1 Gb per instance. If you have enough ram you can increase the number, or remove it to use the maximum number of threads.
 
+## Check that everything is running fine
+
+Does the executable start ?
+```
+./shamrock --help
+```
+or 
+```
+./shamrock_test --help
+```
+
+Both should just print the help.
+
+
+
+## Quick fixes
+### Error while loading shared libraries
+If you get something like :
+```
+> ./shamrock                                                                                      
+./shamrock: error while loading shared libraries: libsycl.so.7: cannot open shared object file: No such file or directory
+```
+
+You have missing libraries in the path, you can check that this is the case using the following command :
+```bash
+ldd shamrock | grep "not found"
+```
+
+if any libraries are not in the path it will print something like:
+```
+> ldd shamrock | grep "not found"
+    libsycl.so.7 => not found
+    libsycl.so.7 => not found
+    libsycl.so.7 => not found
+    libsycl.so.7 => not found
+    libsycl.so.7 => not found
+```
+
+just do `export LD_LIBRARY_PATH=<path to lib>:$LD_LIBRARY_PATH` with `<path to lib>` 
+replaced by the path to the missing libraries.
 
 ## Remarks
 
