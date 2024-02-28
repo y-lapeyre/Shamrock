@@ -331,6 +331,8 @@ class PatchScheduler{
     inline shambase::DistributedData<T> distrib_data_local_to_all_simple(shambase::DistributedData<T> & src){
         using namespace shamrock::patch;
         
+        // TODO : after a split the scheduler patch list state does not match global = allgather(local)
+        // but here it is implicitely assumed, that's ... bad
         return shamalgs::collective::fetch_all_simple<T, Patch>(
             src, patch_list.local, patch_list.global, [](Patch p){return p.id_patch;}
             );
@@ -414,14 +416,17 @@ class PatchScheduler{
             for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
                 using namespace shamalgs::memory;
                 using namespace shambase;
+                
+                if(pdat.get_obj_cnt() > 0){
+                    write_with_offset_into(
+                        get_check_ref(ret), 
+                        get_check_ref(pdat.get_field<T>(field_idx).get_buf()), 
+                        ptr, 
+                        pdat.get_obj_cnt()*nvar);
 
-                write_with_offset_into(
-                    get_check_ref(ret), 
-                    get_check_ref(pdat.get_field<T>(field_idx).get_buf()), 
-                    ptr, 
-                    pdat.get_obj_cnt()*nvar);
-
-                ptr += pdat.get_obj_cnt()*nvar;
+                    ptr += pdat.get_obj_cnt()*nvar;
+                }
+                
             });
         }
 

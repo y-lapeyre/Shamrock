@@ -47,6 +47,8 @@ struct shammodels::sph::SolverStatusVar {
 
     Tscal time   = 0;
     Tscal dt_sph = 0;
+
+    Tscal cfl_multiplier = 1e-2;
 };
 
 template<class Tvec, template<class> class SPHKernel>
@@ -63,6 +65,7 @@ struct shammodels::sph::SolverConfig {
     Tscal gpart_mass;
     Tscal cfl_cour;
     Tscal cfl_force;
+    Tscal cfl_multiplier_stiffness = 2;
 
 
     //////////////////////////////////////////////////////////////////////////////////////////////
@@ -111,6 +114,12 @@ struct shammodels::sph::SolverConfig {
     inline Tscal get_time() { return time_state.time; }
     inline Tscal get_dt_sph() { return time_state.dt_sph; }
 
+    inline void set_cfl_multipler(Tscal lambda){time_state.cfl_multiplier = lambda;}
+    inline Tscal get_cfl_multipler(){return time_state.cfl_multiplier;}
+
+    inline void set_cfl_mult_stiffness(Tscal cstiff){cfl_multiplier_stiffness = cstiff;}
+    inline Tscal get_cfl_mult_stiffness(){return cfl_multiplier_stiffness;}
+
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Solver status variables (END)
     //////////////////////////////////////////////////////////////////////////////////////////////
@@ -121,9 +130,11 @@ struct shammodels::sph::SolverConfig {
 
     u32 tree_reduction_level  = 3;
     bool use_two_stage_search = true;
+    u64 max_neigh_cache_size = 10e9;
 
     inline void set_tree_reduction_level(u32 level) { tree_reduction_level = level; }
     inline void set_two_stage_search(bool enable) { use_two_stage_search = enable; }
+    inline void set_max_neigh_cache_size(u64 val) { max_neigh_cache_size = val; }
 
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Tree config (END)
@@ -134,8 +145,11 @@ struct shammodels::sph::SolverConfig {
     //////////////////////////////////////////////////////////////////////////////////////////////
 
     bool combined_dtdiv_divcurlv_compute = false;
-    static constexpr Tscal htol_up_tol   = 1.1;
-    static constexpr Tscal htol_up_iter  = 1.1;
+    Tscal htol_up_tol   = 1.1;
+    Tscal htol_up_iter  = 1.1;
+    Tscal epsilon_h = 1e-6;
+    u32 h_iter_per_subcycles = 50;
+    u32 h_max_subcycles_count = 100; 
 
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Solver behavior config (END)

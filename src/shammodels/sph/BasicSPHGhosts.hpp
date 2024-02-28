@@ -105,7 +105,7 @@ namespace shammodels::sph {
         shambase::DistributedDataShared<InterfaceIdTable>
         gen_id_table_interfaces(GeneratorMap &&gen);
 
-
+        void gen_debug_patch_ghost(shambase::DistributedDataShared<InterfaceIdTable> & interf_info);
 
         using CacheMap = shambase::DistributedDataShared<InterfaceIdTable>;
 
@@ -158,7 +158,7 @@ namespace shammodels::sph {
             // clang-format off
             return builder.template map<T>([&](u64 sender, u64 receiver, InterfaceIdTable &build_table) {
                 if (!bool(build_table.ids_interf)) {
-                    throw shambase::throw_with_loc<std::runtime_error>(
+                    throw shambase::make_except_with_loc<std::runtime_error>(
                         "their is an empty id table in the interface, it should have been removed");
                 }
 
@@ -191,7 +191,7 @@ namespace shammodels::sph {
             // clang-format off
             builder.for_each([&](u64 sender, u64 receiver, InterfaceIdTable &build_table) {
                 if (!bool(build_table.ids_interf)) {
-                    throw shambase::throw_with_loc<std::runtime_error>(
+                    throw shambase::make_except_with_loc<std::runtime_error>(
                         "their is an empty id table in the interface, it should have been removed");
                 }
 
@@ -252,7 +252,7 @@ namespace shammodels::sph {
             shambase::DistributedDataShared<T> ret = 
                 builder.template map<T>([&](u64 sender, u64 receiver, InterfaceIdTable &build_table) {
                 if (!bool(build_table.ids_interf)) {
-                    throw shambase::throw_with_loc<std::runtime_error>(
+                    throw shambase::make_except_with_loc<std::runtime_error>(
                         "their is an empty id table in the interface, it should have been removed");
                 }
 
@@ -346,16 +346,15 @@ namespace shammodels::sph {
             shamalgs::collective::serialize_sparse_comm<PositionInterface>(
                 std::forward<shambase::DistributedDataShared<PositionInterface>>(interf),
                 recv_dat,
-                shamcomm::get_protocol(), 
                 [&](u64 id){
                     return sched.get_patch_rank_owner(id);
                 }, 
                 [](PositionInterface &pos_interf) {
                     shamalgs::SerializeHelper ser;
 
-                    u64 size = pos_interf.position_field.serialize_buf_byte_size();
+                    shamalgs::SerializeSize size = pos_interf.position_field.serialize_buf_byte_size();
                     size += pos_interf.hpart_field.serialize_buf_byte_size();
-                    size += 2 * shamalgs::SerializeHelper::serialize_byte_size<vec>();
+                    size += shamalgs::SerializeHelper::serialize_byte_size<vec>()*2;
 
                     ser.allocate(size);
 
@@ -395,7 +394,6 @@ namespace shammodels::sph {
             shamalgs::collective::serialize_sparse_comm<shamrock::patch::PatchData>(
                 std::forward<shambase::DistributedDataShared<shamrock::patch::PatchData>>(interf),
                 recv_dat,
-                shamcomm::get_protocol(), 
                 [&](u64 id){
                     return sched.get_patch_rank_owner(id);
                 }, 
@@ -426,8 +424,7 @@ namespace shammodels::sph {
 
             shamalgs::collective::serialize_sparse_comm<PatchDataField<T>>(
                 std::forward<shambase::DistributedDataShared<PatchDataField<T>>>(interf),
-                recv_dat,
-                shamcomm::get_protocol(), 
+                recv_dat, 
                 [&](u64 id){
                     return sched.get_patch_rank_owner(id);
                 }, 

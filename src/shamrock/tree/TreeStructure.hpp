@@ -45,7 +45,7 @@ namespace shamrock::tree {
         build(sycl::queue &queue, u32 _internal_cell_count, sycl::buffer<u_morton> &morton_buf) {
 
             if (!(_internal_cell_count < morton_buf.size())) {
-                throw shambase::throw_with_loc<std::runtime_error>(
+                throw shambase::make_except_with_loc<std::runtime_error>(
                     "morton buf must be at least with size() greater than internal_cell_count");
             }
 
@@ -182,7 +182,7 @@ namespace shamrock::tree {
             serializer.write_buf(*buf_endrange, internal_cell_count);
         }
 
-        inline u64 serialize_byte_size() {
+        inline shamalgs::SerializeSize serialize_byte_size() {
 
             using H = shamalgs::SerializeHelper;
 

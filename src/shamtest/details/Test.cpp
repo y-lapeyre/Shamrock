@@ -19,7 +19,7 @@
 
 namespace shamtest::details {
 
-    TestResult current_test{Unittest, "", -1};
+    TestResult current_test{Unittest, "", 0};
 
     TestResult Test::run() {
 
@@ -27,13 +27,13 @@ namespace shamtest::details {
 
         if (node_count != -1) {
             if (node_count != shamcomm::world_size()) {
-                throw shambase::throw_with_loc<std::runtime_error>(
+                throw shambase::make_except_with_loc<std::runtime_error>(
                     "trying to run a test with wrong number of nodes"
                 );
             }
         }
 
-        current_test = TestResult{type, name, shamcomm::world_rank()};
+        current_test = TestResult{type, name, u32(shamcomm::world_rank())};
         
         try{
             test_functor();

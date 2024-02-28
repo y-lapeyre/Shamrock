@@ -25,6 +25,7 @@
 #include "shamrock/io/details/bufToVtkBuf.hpp"
 #include "shamsys/MpiWrapper.hpp"
 #include "shambase/endian.hpp"
+#include "shambase/time.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/SyclMpiTypes.hpp"
 #include "shamsys/legacy/log.hpp"
@@ -119,6 +120,8 @@ namespace shamrock {
 
         u64 file_head_ptr;
 
+        shambase::Timer timer;
+
 
         private:
 
@@ -174,11 +177,13 @@ namespace shamrock {
             : fname(fname), binary(binary), file_head_ptr(0_u64) {
 
             StackEntry stack_loc{};
+
+            timer.start();
             
             logger::debug_ln("VtkWritter", "opening :", fname);
 
             if(fname.find(".vtk") == std::string::npos){
-                throw shambase::throw_with_loc<std::invalid_argument>("the extension should be .vtk");
+                throw shambase::make_except_with_loc<std::invalid_argument>("the extension should be .vtk");
             }
 
             
@@ -196,7 +201,7 @@ namespace shamrock {
             if (type == UnstructuredGrid){
                 ss << ("DATASET UNSTRUCTURED_GRID");
             }else{
-                throw shambase::throw_with_loc<std::invalid_argument>("unknown dataset type");
+                throw shambase::make_except_with_loc<std::invalid_argument>("unknown dataset type");
             }
 
             std::string write_str = ss.str();
@@ -363,7 +368,7 @@ namespace shamrock {
         void add_point_data_section(){
 
             if(!has_written_points){
-                throw shambase::throw_with_loc<std::runtime_error>("no points had been written");
+                throw shambase::make_except_with_loc<std::runtime_error>("no points had been written");
             }
 
             std::stringstream ss;
@@ -377,7 +382,7 @@ namespace shamrock {
         void add_cell_data_section(){
 
             if(!has_written_cells){
-                throw shambase::throw_with_loc<std::runtime_error>("no cells had been written");
+                throw shambase::make_except_with_loc<std::runtime_error>("no cells had been written");
             }
 
             std::stringstream ss;
@@ -391,7 +396,7 @@ namespace shamrock {
         void add_field_data_section(u32 num_field){
 
             if(!has_written_points){
-                throw shambase::throw_with_loc<std::runtime_error>("no points had been written");
+                throw shambase::make_except_with_loc<std::runtime_error>("no points had been written");
             }
 
             std::stringstream ss;
@@ -448,7 +453,19 @@ namespace shamrock {
 
         inline ~LegacyVtkWritter() { 
             logger::debug_mpi_ln("LegacyVtkWritter", "calling : mpi::file_close");
-            mpi::file_close(&mfile); }
+            mpi::file_close(&mfile); 
+            timer.end();
+            
+            if (shamcomm::world_rank() == 0) {
+                logger::info_ln(
+                    "VTK Dump",
+                    shambase::format(
+                        "dump to {}\n              - took {}, bandwidth = {}/s",
+                        fname,
+                        timer.get_time_str(),
+                        shambase::readable_sizeof(file_head_ptr / timer.elasped_sec())));
+            }
+        }
 
         LegacyVtkWritter(const LegacyVtkWritter&) = delete;
         LegacyVtkWritter& operator=(const LegacyVtkWritter&) = delete;

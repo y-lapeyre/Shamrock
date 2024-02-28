@@ -113,18 +113,12 @@ void shamalgs::ResizableBuffer<T>::resize(u32 new_size) {
 template<class T>
 void shamalgs::ResizableBuffer<T>::overwrite(ResizableBuffer<T> &f2, u32 cnt) {
     if (val_cnt < cnt) {
-        throw shambase::throw_with_loc<std::invalid_argument>(
+        throw shambase::make_except_with_loc<std::invalid_argument>(
             "to overwrite you need more element in the field");
     }
 
-    {
-        sycl::host_accessor acc{*buf, sycl::write_only, sycl::no_init};
-        sycl::host_accessor acc_f2{*f2.get_buf(), sycl::read_only};
-
-        for (u32 i = 0; i < cnt; i++) {
-            // field_data[idx_st + i] = f2.field_data[i];
-            acc[i] = acc_f2[i];
-        }
+    if (val_cnt > 0) {
+        shamalgs::memory::copybuf_discard(*f2.get_buf(), *buf, cnt);
     }
 }
 
@@ -132,18 +126,34 @@ template<class T>
 void shamalgs::ResizableBuffer<T>::override(sycl::buffer<T> &data, u32 cnt) {
 
     if (cnt != val_cnt)
-        throw shambase::throw_with_loc<std::invalid_argument>(
+        throw shambase::make_except_with_loc<std::invalid_argument>(
             "buffer size doesn't match patchdata field size"); // TODO remove ref to size
+
+    if (val_cnt > 0) {
+        shamalgs::memory::copybuf_discard(data, *buf, val_cnt);
+    }
+}
+
+template<class T>
+void shamalgs::ResizableBuffer<T>::override(std::vector<T> &data, u32 cnt) {
+
+    if (cnt != val_cnt)
+        throw shambase::make_except_with_loc<std::invalid_argument>(
+            "buffer size doesn't match patchdata field size"); // TODO remove ref to size
+
+    if(data.size() < val_cnt){
+        throw shambase::make_except_with_loc<std::invalid_argument>(
+            "The input vector is too small");
+    }
 
     if (val_cnt > 0) {
 
         {
             sycl::host_accessor acc_cur{*buf, sycl::write_only, sycl::no_init};
-            sycl::host_accessor acc{data, sycl::read_only};
-
+            
             for (u32 i = 0; i < val_cnt; i++) {
                 // field_data[i] = acc[i];
-                acc_cur[i] = acc[i];
+                acc_cur[i] = data[i];
             }
         }
     }
@@ -236,7 +246,7 @@ bool shamalgs::ResizableBuffer<T>::check_buf_match(const ResizableBuffer<T> &f2)
 }
 
 template<class T>
-u64 shamalgs::ResizableBuffer<T>::serialize_buf_byte_size() {
+shamalgs::SerializeSize shamalgs::ResizableBuffer<T>::serialize_buf_byte_size() {
     using H = shamalgs::SerializeHelper;
     return H::serialize_byte_size<T>(val_cnt);
 }

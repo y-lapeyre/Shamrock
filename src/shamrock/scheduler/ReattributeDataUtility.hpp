@@ -20,7 +20,7 @@
 #include "shamrock/scheduler/SerialPatchTree.hpp"
 #include "shamrock/patch/PatchData.hpp"
 #include "shamsys/NodeInstance.hpp"
-#include "shamcomm/details/CommunicationBufferImpl.hpp"
+#include "shambackends/comm/details/CommunicationBufferImpl.hpp"
 #include "shamsys/legacy/log.hpp"
 #include <vector>
 
@@ -34,6 +34,9 @@ namespace shamrock {
 
 
         template<class T> shambase::DistributedData<sycl::buffer<u64>> compute_new_pid(SerialPatchTree<T> & sptree, u32 ipos){
+            
+            StackEntry stack_loc{};
+            
             shambase::DistributedData<sycl::buffer<u64>> newid_buf_map;
 
 
@@ -60,7 +63,7 @@ namespace shamrock {
                     }
 
                     if(err_id_in_newid){
-                        throw shambase::throw_with_loc<std::runtime_error>("a new id could not be computed");
+                        throw shambase::make_except_with_loc<std::runtime_error>("a new id could not be computed");
                     }
 
                 }
@@ -73,7 +76,7 @@ namespace shamrock {
         inline shambase::DistributedDataShared<shamrock::patch::PatchData> extract_elements(shambase::DistributedData<sycl::buffer<u64>> new_pid){
             shambase::DistributedDataShared<patch::PatchData> part_exchange;
 
-            
+            StackEntry stack_loc{};
 
             using namespace shamrock::patch;
 
@@ -170,7 +173,6 @@ namespace shamrock {
             shamalgs::collective::serialize_sparse_comm<PatchData>(
                 std::move(part_exchange), 
                 recv_dat, 
-                shamcomm::get_protocol(), 
                 [&](u64 id){
                     return sched.get_patch_rank_owner(id);
                 }, 

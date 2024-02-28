@@ -132,9 +132,10 @@ profile_dpcpp = {
     "cuda_sm60" : {"cxxflags" : "-fsycl -fsycl-targets=nvidia_gpu_sm_60", "cmakeflags" : intel_llvm_cmake_flag},
     "cuda_sm53" : {"cxxflags" : "-fsycl -fsycl-targets=nvidia_gpu_sm_53", "cmakeflags" : intel_llvm_cmake_flag},
     "hip-gfx906" : {"cxxflags" : "-fsycl -fsycl-targets=amdgcn-amd-amdhsa -Xsycl-target-backend --offload-arch=gfx906", "cmakeflags" : intel_llvm_cmake_flag},
+    "dot-graph-call" : {"cxxflags" : "-fsycl -emit-llvm -S", "cmakeflags" : intel_llvm_cmake_flag},
 }
 
-hipsyclconfigfile = "--hipsycl-config-file="+abs_compiler_root_dir+"/etc/hipSYCL/syclcc.json"
+hipsyclconfigfile = ""#"--hipsycl-config-file="+abs_compiler_root_dir+"/etc/hipSYCL/syclcc.json"
 acpp_path_cmake_flag = "-DACPP_PATH="+abs_compiler_root_dir
 profile_acpp = {
     "omp" : {"cxxflags" : "--hipsycl-cpu-cxx=g++ --hipsycl-targets='omp' " + hipsyclconfigfile, "cmakeflags" : acpp_path_cmake_flag},
@@ -302,8 +303,6 @@ if (args.lib):
 
 if (args.tests):
     cmake_cmd += " -DBUILD_TEST=true"
-
-
 
 
 

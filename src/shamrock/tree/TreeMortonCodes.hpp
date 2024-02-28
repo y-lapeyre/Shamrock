@@ -127,12 +127,12 @@ namespace shamrock::tree {
 
             serializer.write(obj_cnt);
             if (!buf_morton) {
-                throw shambase::throw_with_loc<std::runtime_error>("missing buffer");
+                throw shambase::make_except_with_loc<std::runtime_error>("missing buffer");
             }
             // serializer.write(buf_morton->size());
             serializer.write_buf(*buf_morton, obj_cnt);
             if (!buf_particle_index_map) {
-                throw shambase::throw_with_loc<std::runtime_error>("missing buffer");
+                throw shambase::make_except_with_loc<std::runtime_error>("missing buffer");
             }
             serializer.write_buf(*buf_particle_index_map, obj_cnt);
         }
@@ -168,7 +168,7 @@ namespace shamrock::tree {
          *
          * @return u64
          */
-        inline u64 serialize_byte_size() {
+        inline shamalgs::SerializeSize serialize_byte_size() {
             using H = shamalgs::SerializeHelper;
             return H::serialize_byte_size<u32>() + H::serialize_byte_size<u32>(obj_cnt) +
                    H::serialize_byte_size<u_morton>(obj_cnt);

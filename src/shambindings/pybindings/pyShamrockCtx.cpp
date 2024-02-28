@@ -196,9 +196,11 @@ template<class T> void append_to_map(
 
     for (auto & pdat : lst) {
 
-        pdat->for_each_field<T>([&](auto & field){
-            appender(field);
-        });
+        if(pdat->get_obj_cnt() > 0){
+            pdat->for_each_field<T>([&](auto & field){
+                appender(field);
+            });
+        }
 
         //list_appender(pdat->get_field_list<T>());
     }
