@@ -15,6 +15,7 @@
  
 #include "shammodels/amr/basegodunov/Solver.hpp"
 #include "shamcomm/collectives.hpp"
+#include "shammodels/amr/basegodunov/modules/AMRGraphGen.hpp"
 #include "shammodels/amr/basegodunov/modules/AMRTree.hpp"
 #include "shammodels/amr/basegodunov/modules/GhostZones.hpp"
 #include "shammodels/amr/basegodunov/modules/StencilGenerator.hpp"
@@ -59,8 +60,11 @@ auto Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tscal dt_input) -> Tsc
 
     
 
-    modules::StencilGenerator stencil_gen(context,solver_config,storage);
-    stencil_gen.make_stencil();
+    //modules::StencilGenerator stencil_gen(context,solver_config,storage);
+    //stencil_gen.make_stencil();
+
+    modules::AMRGraphGen graph_gen(context,solver_config,storage);
+    auto block_oriented_graph = graph_gen.find_AMR_block_graph_links();
     
     //compute bound received
 

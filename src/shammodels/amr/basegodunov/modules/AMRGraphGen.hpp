@@ -73,9 +73,9 @@ namespace shammodels::basegodunov::modules {
         AMRGraphGen(ShamrockCtx &context, Config &solver_config, Storage &storage)
             : context(context), solver_config(solver_config), storage(storage) {}
 
-        void find_AMR_block_graph_links();
+        shambase::DistributedData<OrientedAMRBlockGraph> find_AMR_block_graph_links();
 
-        void lower_AMR_block_graph_to_cell();
+        void lower_AMR_block_graph_to_cell(shambase::DistributedData<OrientedAMRBlockGraph> & oriented_block_graph);
 
     };
 

@@ -3,6 +3,7 @@ set(Sources
     GhostZones.cpp
     AMRTree.cpp
     StencilGenerator.cpp
+    AMRGraphGen.cpp
 )
 set(Headers
 )

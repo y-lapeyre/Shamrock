@@ -16,7 +16,8 @@
 #include "AMRGraphGen.hpp"
 
 template<class Tvec, class TgridVec>
-void shammodels::basegodunov::modules::AMRGraphGen<Tvec, TgridVec>::find_AMR_block_graph_links() {
+shambase::DistributedData<shammodels::basegodunov::modules::OrientedAMRBlockGraph<Tvec, TgridVec>>
+shammodels::basegodunov::modules::AMRGraphGen<Tvec, TgridVec>::find_AMR_block_graph_links() {
 
     StackEntry stack_loc{};
 
@@ -61,7 +62,7 @@ void shammodels::basegodunov::modules::AMRGraphGen<Tvec, TgridVec>::find_AMR_blo
                 sycl::accessor link_cnt{link_counts, cgh, sycl::write_only, sycl::no_init};
 
                 shambase::parralel_for(
-                    cgh, mpdat.total_elements, "compute neigh cache 1", [=](u64 gid) {
+                    cgh, mpdat.total_elements, "count block graph link", [=](u64 gid) {
                         u32 id_a = (u32) gid;
 
                         shammath::AABB<TgridVec> block_aabb{
@@ -123,7 +124,7 @@ void shammodels::basegodunov::modules::AMRGraphGen<Tvec, TgridVec>::find_AMR_blo
                 sycl::accessor links{ids_links, cgh, sycl::write_only, sycl::no_init};
 
                 shambase::parralel_for(
-                    cgh, mpdat.total_elements, "compute neigh cache 1", [=](u64 gid) {
+                    cgh, mpdat.total_elements, "get ids block graph link", [=](u64 gid) {
                         u32 id_a = (u32) gid;
 
                         u32 next_link_idx = cnt_offsets[id_a];
@@ -165,10 +166,21 @@ void shammodels::basegodunov::modules::AMRGraphGen<Tvec, TgridVec>::find_AMR_blo
                 AMRBlockGraph{std::move(link_cnt_offsets), std::move(ids_links), link_cnt});
 
             result.block_graph_links[dir] = std::move(tmp_graph);
+
+            logger::debug_ln("AMR", "Patch",id, "direction",dir, "link cnt",link_cnt);
         }
 
         block_graph_links.add_obj(id, std::move(result));
     });
+
+    return block_graph_links;
+}
+
+template<class Tvec, class TgridVec>
+void shammodels::basegodunov::modules::AMRGraphGen<Tvec, TgridVec>::lower_AMR_block_graph_to_cell(
+    shambase::DistributedData<OrientedAMRBlockGraph> &oriented_block_graph) {
+
+
 
 }
 
