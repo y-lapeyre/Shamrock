@@ -166,9 +166,7 @@ or
 ./shamrock_test --help
 ```
 
-Both should just print the help.
-
-
+Both commands should just print the help.
 
 ## Quick fixes
 ### Error while loading shared libraries
