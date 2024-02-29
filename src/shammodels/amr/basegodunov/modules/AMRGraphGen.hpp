@@ -29,6 +29,30 @@ namespace shammodels::basegodunov::modules {
     };
 
     template<class Tvec, class TgridVec>
+    struct OrientedAMRBlockGraph{
+
+        enum Direction{
+            xp = 0,
+            xm = 1,
+            yp = 0,
+            ym = 1,
+            zp = 0,
+            zm = 1,
+        };
+
+        const std::array<TgridVec,6 > offset_check{
+            TgridVec{ 1,0,0},
+            TgridVec{-1,0,0},
+            TgridVec{0, 1,0},
+            TgridVec{0,-1,0},
+            TgridVec{0,0, 1},
+            TgridVec{0,0,-1},
+        };
+
+        std::array<std::unique_ptr<AMRBlockGraph>,6> block_graph_links;
+    };
+
+    template<class Tvec, class TgridVec>
     class AMRGraphGen {
 
         public:
@@ -40,6 +64,7 @@ namespace shammodels::basegodunov::modules {
         using Config   = SolverConfig<Tvec, TgridVec>;
         using Storage  = SolverStorage<Tvec, TgridVec, u64>;
         using AMRBlock = typename Config::AMRBlock;
+        using OrientedAMRBlockGraph = OrientedAMRBlockGraph<Tvec,TgridVec>;
 
         ShamrockCtx &context;
         Config &solver_config;
@@ -48,9 +73,7 @@ namespace shammodels::basegodunov::modules {
         AMRGraphGen(ShamrockCtx &context, Config &solver_config, Storage &storage)
             : context(context), solver_config(solver_config), storage(storage) {}
 
-        shambase::DistributedData<std::unique_ptr<AMRBlockGraph>> find_AMR_block_graph_links();
-
-
+        void find_AMR_block_graph_links();
 
         void lower_AMR_block_graph_to_cell();
 
