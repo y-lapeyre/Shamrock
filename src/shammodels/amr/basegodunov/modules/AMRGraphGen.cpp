@@ -7,7 +7,7 @@
 // -------------------------------------------------------//
 
 /**
- * @file AMRGraphGen.hpp
+ * @file AMRGraphGen.cpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @brief
  *
