@@ -111,7 +111,7 @@ if(SHAMROCK_WITH_MPI)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${SHAM_CXX_MPI_FLAGS}")
 endif()
 
-set(PYBIND11_FINDPYTHON ON)
+find_package(Python 3.6 REQUIRED COMPONENTS Interpreter Development)
 add_subdirectory(external)
 
 if("${BUILD_PYLIB}")
