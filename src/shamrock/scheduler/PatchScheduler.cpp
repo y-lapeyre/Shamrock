@@ -313,7 +313,8 @@ std::tuple<f64_3,f64_3> PatchScheduler::get_box_volume(){
 
 
 //TODO clean the output of this function
-void PatchScheduler::scheduler_step(bool do_split_merge, bool do_load_balancing){StackEntry stack_loc{};
+void PatchScheduler::scheduler_step(bool do_split_merge, bool do_load_balancing){
+    StackEntry stack_loc{};
 
     //std::cout << dump_status();
 
@@ -342,6 +343,10 @@ void PatchScheduler::scheduler_step(bool do_split_merge, bool do_load_balancing)
                 str += "Scheduler step timings : ";
                 str += shambase::format("\n   metadata sync     : {:<10} ({:2.f}%)", 
                     metadata_sync.get_time_str(), 100*(metadata_sync.nanosec/total));
+                if(patch_tree_count_reduce){
+                    str += shambase::format("\n   patch tree reduce : {:<10} ({:2.f}%)", 
+                        patch_tree_count_reduce->get_time_str(), 100*(patch_tree_count_reduce->nanosec/total));
+                }
                 if(gen_merge_split_rq){
                     str += shambase::format("\n   gen split merge   : {:<10} ({:2.f}%)", 
                         gen_merge_split_rq->get_time_str(), 100*(gen_merge_split_rq->nanosec/total));
@@ -629,7 +634,8 @@ std::string PatchScheduler::dump_status(){
     ss << " -> SchedulerPatchTree\n";
 
     for(auto & [k,pnode] : patch_tree.tree){
-        ss << shambase::format_printf("      -> id : %d  -> (%d %d %d %d %d %d %d %d) <=> %d\n",
+        ss << shambase::format(
+            "      -> id : {} -> ({} {} {} {} {} {} {} {}) <=> {} [{}, {}]\n",
         k,
         pnode.tree_node.childs_nid[0],
         pnode.tree_node.childs_nid[1],
@@ -639,7 +645,9 @@ std::string PatchScheduler::dump_status(){
         pnode.tree_node.childs_nid[5],
         pnode.tree_node.childs_nid[6],
         pnode.tree_node.childs_nid[7],
-         pnode.linked_patchid);
+        pnode.linked_patchid,
+            pnode.patch_coord.coord_min, pnode.patch_coord.coord_max
+        );
     }
 
 
@@ -921,9 +929,6 @@ void PatchScheduler::dump_local_patches(std::string filename){
 
 std::vector<std::unique_ptr<shamrock::patch::PatchData>> PatchScheduler::gather_data(u32 rank){
 
-    if(rank != 0){
-        throw shambase::make_except_with_loc<std::invalid_argument>("this method is only implemented for rank=0");
-    }
 
     using namespace shamrock::patch;
 

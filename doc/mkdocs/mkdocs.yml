@@ -12,12 +12,14 @@ nav:
 
   - 'User Documentation' :
     - 'QuickStart' : 'usermanual/quickstart.md'
+    - 'First simulation' : 'usermanual/firstcalculation.md'
     - 'Configuration' : 'usermanual/configuration.md'
     - 'Usage' : 'usermanual/usage.md'
     - 'Utilities' : 'usermanual/utilities.md'
     - 'Running on clusters' : 'usermanual/cluster.md'
     - 'Specific clusters' :
       - 'PSMN' : 'usermanual/clusters/psmn.md'
+      - 'Adastra' : 'usermanual/clusters/adastra.md'
     - 'CUDA aware openMPI' : 'usermanual/openmpi_setup.md'
 
   - 'Physical models' :
