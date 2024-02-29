@@ -23,6 +23,7 @@
 template<class Tvec, class TgridVec, class Objiter>
 void _kernel(
     u32 id_a,
+    TgridVec relative_pos,
     Objiter cell_looper,
     TgridVec const *cell_min,
     TgridVec const *cell_max,
@@ -33,6 +34,8 @@ void _kernel(
     block::StencilElement ret = block::StencilElement::make_none();
 
     shammath::AABB<TgridVec> cell_aabb{cell_min[id_a], cell_max[id_a]};
+    cell_aabb.lower += relative_pos;
+    cell_aabb.upper += relative_pos;
 
     std::array<u32, 8> found_cells = {u32_max};
     u32 cell_found_count           = 0;
@@ -93,7 +96,8 @@ auto shammodels::basegodunov::modules::StencilGenerator<Tvec, TgridVec>::compute
     using MergedPDat = shamrock::MergedPatchData;
     using RTree      = typename Storage::RTree;
 
-    shambase::DistributedData<sycl::buffer<amr::block::StencilElement>> block_stencil_element;
+    shambase::DistributedData<std::unique_ptr<sycl::buffer<amr::block::StencilElement>>>
+        block_stencil_element;
 
     storage.trees.get().for_each([&](u64 id, RTree &tree) {
         u32 leaf_count          = tree.tree_reduced_morton_codes.tree_leaf_count;
@@ -108,7 +112,7 @@ auto shammodels::basegodunov::modules::StencilGenerator<Tvec, TgridVec>::compute
             = shambase::get_check_ref(tree.tree_cell_ranges.buf_pos_max_cell_flt);
 
         sycl::buffer<amr::block::StencilElement> stencil_block_info(
-            stencil_offset_count * mpdat.total_elements);
+            mpdat.total_elements);
 
         sycl::buffer<TgridVec> &buf_cell_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);
         sycl::buffer<TgridVec> &buf_cell_max = mpdat.pdat.get_field_buf_ref<TgridVec>(1);
@@ -128,6 +132,7 @@ auto shammodels::basegodunov::modules::StencilGenerator<Tvec, TgridVec>::compute
 
                     _kernel<Tvec, TgridVec>(
                         id_a,
+                        relative_pos,
                         cell_looper,
                         acc_cell_min.get_pointer(),
                         acc_cell_max.get_pointer(),
@@ -135,7 +140,8 @@ auto shammodels::basegodunov::modules::StencilGenerator<Tvec, TgridVec>::compute
                 });
         });
 
-        block_stencil_element.add_obj(id, std::move(stencil_block_info));
+        block_stencil_element.add_obj(
+            id, std::make_unique<sycl::buffer<amr::block::StencilElement>>(stencil_block_info));
     });
 
     return block_stencil_element;
@@ -146,9 +152,10 @@ auto shammodels::basegodunov::modules::StencilGenerator<Tvec, TgridVec>::lower_b
     i64_3 relative_pos, StencilOffsets result_offset, dd_block_stencil_el_buf &block_stencil_el)
     -> dd_cell_stencil_el_buf {
 
-    return block_stencil_el.map<cell_stencil_el_buf>(
-        [&](u64 id, block_stencil_el_buf &block_stencil_el_b) {
-            return lower_block_slot_to_cell(id, relative_pos, result_offset, block_stencil_el_b);
+    return block_stencil_el.map<std::unique_ptr<cell_stencil_el_buf>>(
+        [&](u64 id, std::unique_ptr<block_stencil_el_buf> &block_stencil_el_b) {
+            return std::make_unique<cell_stencil_el_buf>(lower_block_slot_to_cell(
+                id, relative_pos, result_offset, shambase::get_check_ref(block_stencil_el_b)));
         });
 }
 
@@ -172,6 +179,9 @@ auto shammodels::basegodunov::modules::StencilGenerator<Tvec, TgridVec>::lower_b
     MergedPDat &mpdat                    = storage.merged_patchdata_ghost.get().get(patch_id);
     sycl::buffer<TgridVec> &buf_cell_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);
     sycl::buffer<TgridVec> &buf_cell_max = mpdat.pdat.get_field_buf_ref<TgridVec>(1);
+
+    shambase::check_buffer_size(buf_cell_min, block_count);
+    shambase::check_buffer_size(buf_cell_max, block_count);
 
     shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
         sycl::accessor acc_stencil_block{block_stencil_el, cgh, sycl::read_only};
@@ -206,8 +216,8 @@ auto shammodels::basegodunov::modules::StencilGenerator<Tvec, TgridVec>::lower_b
             // clang-format off
             // This block fetch the neigh block id and bounds
             u64 block_id_neigh = u64_max;
-            TgridVec cblock_neigh_min;
-            TgridVec cblock_neigh_max;
+            TgridVec cblock_neigh_min = {0,0,0};
+            TgridVec cblock_neigh_max = {AMRBlock::Nside,AMRBlock::Nside,AMRBlock::Nside};
             block_stencil.visitor(
                 [&](amr::block::SameLevel st) {
                     cblock_neigh_min = acc_block_min[st.block_idx];
@@ -244,19 +254,18 @@ auto shammodels::basegodunov::modules::StencilGenerator<Tvec, TgridVec>::lower_b
             // clang-format on
 
             // Now find the local index of the neighbouring block
-            TgridVec delta_cell_neigh = (cblock_neigh_max - cblock_neigh_min)/AMRBlock::Nside;
+            TgridVec delta_cell_neigh = (cblock_neigh_max - cblock_neigh_min) / AMRBlock::Nside;
             TgridVec cell_neigh_relat = ccell_neigh_min - cblock_neigh_min;
-            TgridVec lcoord_neigh = cell_neigh_relat / delta_cell_neigh;
+            TgridVec lcoord_neigh     = cell_neigh_relat / delta_cell_neigh;
 
-            u64 cell_idx_global = block_id_neigh*AMRBlock::block_size + AMRBlock::get_index({
-                static_cast<unsigned int>(lcoord_neigh.x()),
-                static_cast<unsigned int>(lcoord_neigh.y()),
-                static_cast<unsigned int>(lcoord_neigh.z())
-            });
-
+            u64 cell_idx_global = block_id_neigh * AMRBlock::block_size
+                                  + AMRBlock::get_index(
+                                      {static_cast<unsigned int>(lcoord_neigh.x()),
+                                       static_cast<unsigned int>(lcoord_neigh.y()),
+                                       static_cast<unsigned int>(lcoord_neigh.z())});
 
             amr::cell::StencilElement ret = amr::cell::StencilElement::make_none();
-            if(block_id_neigh != u64_max){
+            if (block_id_neigh != u64_max) {
                 block_stencil.visitor(
                     [&](amr::block::SameLevel st) {
                         ret = amr::cell::StencilElement::make_same_level({cell_idx_global});
@@ -280,6 +289,35 @@ auto shammodels::basegodunov::modules::StencilGenerator<Tvec, TgridVec>::lower_b
     });
 
     return ret;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// Call to generate all stencil elements
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+template<class Tvec, class TgridVec>
+void shammodels::basegodunov::modules::StencilGenerator<Tvec, TgridVec>::make_stencil() {
+    auto block_stencil_xp1 = compute_block_stencil_slot(i64_3{+1, 0, 0}, xp1);
+    auto block_stencil_xm1 = compute_block_stencil_slot(i64_3{-1, 0, 0}, xm1);
+    auto block_stencil_yp1 = compute_block_stencil_slot(i64_3{0, +1, 0}, yp1);
+    auto block_stencil_ym1 = compute_block_stencil_slot(i64_3{0, -1, 0}, ym1);
+    auto block_stencil_zp1 = compute_block_stencil_slot(i64_3{0, 0, +1}, zp1);
+    auto block_stencil_zm1 = compute_block_stencil_slot(i64_3{0, 0, -1}, zm1);
+
+    storage.stencil.set(AMRStencilCache{});
+
+    storage.stencil.get().insert_data(
+        xp1, lower_block_slot_to_cell(i64_3{+1, 0, 0}, xp1, block_stencil_xp1));
+    storage.stencil.get().insert_data(
+        xm1, lower_block_slot_to_cell(i64_3{-1, 0, 0}, xm1, block_stencil_xm1));
+    storage.stencil.get().insert_data(
+        yp1, lower_block_slot_to_cell(i64_3{0, +1, 0}, yp1, block_stencil_yp1));
+    storage.stencil.get().insert_data(
+        ym1, lower_block_slot_to_cell(i64_3{0, -1, 0}, ym1, block_stencil_ym1));
+    storage.stencil.get().insert_data(
+        zp1, lower_block_slot_to_cell(i64_3{0, 0, +1}, zp1, block_stencil_zp1));
+    storage.stencil.get().insert_data(
+        zm1, lower_block_slot_to_cell(i64_3{0, 0, -1}, zm1, block_stencil_zm1));
 }
 
 template class shammodels::basegodunov::modules::StencilGenerator<f64_3, i64_3>;

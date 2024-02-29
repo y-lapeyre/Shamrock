@@ -12,12 +12,12 @@ model = shamrock.get_AMRGodunov(
 
 model.init_scheduler(int(1e7),1)
 
-multx = 4
+multx = 1
 multy = 1
 multz = 1
 
-sz = 1 << 1
-base = 64 
+sz = 1 << 4
+base = 4
 model.make_base_grid((0,0,0),(sz,sz,sz),(base*multx,base*multy,base*multz))
 
 cfg = model.gen_default_config()

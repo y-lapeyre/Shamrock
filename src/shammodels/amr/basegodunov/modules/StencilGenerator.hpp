@@ -24,7 +24,8 @@
 
 namespace shammodels::basegodunov::modules {
 
-    template<class Tvec, class TgridVec> class StencilGenerator {
+    template<class Tvec, class TgridVec>
+    class StencilGenerator {
         public:
         using Tscal                      = shambase::VecComponent<Tvec>;
         using Tgridscal                  = shambase::VecComponent<TgridVec>;
@@ -52,12 +53,14 @@ namespace shammodels::basegodunov::modules {
         };
         static constexpr u32 stencil_offset_count = 6;
 
+        void make_stencil();
+
         private:
         using block_stencil_el_buf = sycl::buffer<amr::block::StencilElement>;
         using cell_stencil_el_buf  = sycl::buffer<amr::cell::StencilElement>;
 
-        using dd_block_stencil_el_buf = shambase::DistributedData<block_stencil_el_buf>;
-        using dd_cell_stencil_el_buf  = shambase::DistributedData<cell_stencil_el_buf>;
+        using dd_block_stencil_el_buf = shambase::DistributedData<std::unique_ptr<block_stencil_el_buf>>;
+        using dd_cell_stencil_el_buf  = shambase::DistributedData<std::unique_ptr<cell_stencil_el_buf>>;
 
         dd_block_stencil_el_buf
         compute_block_stencil_slot(i64_3 relative_pos, StencilOffsets result_offset);

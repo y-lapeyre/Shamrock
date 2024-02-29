@@ -17,6 +17,7 @@
 #include "shamcomm/collectives.hpp"
 #include "shammodels/amr/basegodunov/modules/AMRTree.hpp"
 #include "shammodels/amr/basegodunov/modules/GhostZones.hpp"
+#include "shammodels/amr/basegodunov/modules/StencilGenerator.hpp"
 
 template<class Tvec, class TgridVec>
 using Solver = shammodels::basegodunov::Solver<Tvec, TgridVec>;
@@ -58,6 +59,8 @@ auto Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tscal dt_input) -> Tsc
 
     
 
+    modules::StencilGenerator stencil_gen(context,solver_config,storage);
+    stencil_gen.make_stencil();
     
     //compute bound received
 
