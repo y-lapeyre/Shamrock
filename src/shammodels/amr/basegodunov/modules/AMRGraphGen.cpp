@@ -279,14 +279,13 @@ class shammodels::basegodunov::modules::AMRGraphGen<Tvec, TgridVec>::AMRLowering
             if (overlap) {
                 wanted_block_min = int_wanted_block_min;
                 wanted_block_max = int_wanted_block_max;
-                wanted_block = block_b;
+                wanted_block     = block_b;
             }
         });
 
-
         bool overlap = shammath::AABB<TgridVec>{wanted_block_min, wanted_block_max}
-                               .get_intersect(current_cell_aabb_shifted)
-                               .is_volume_not_null();
+                           .get_intersect(current_cell_aabb_shifted)
+                           .is_volume_not_null();
 
         if (!overlap) {
             return;
@@ -374,17 +373,22 @@ void shammodels::basegodunov::modules::AMRGraphGen<Tvec, TgridVec>::
             AMRGraph &block_graph = shambase::get_check_ref(oriented_block_graph.graph_links[dir]);
 
             u32 cell_count = (mpdat.total_elements) * AMRBlock::block_size;
-            
-            logger::raw_ln(cell_count);
-        
+
             AMRGraph rslt = compute_neigh_graph<AMRLowering>(
                 q, cell_count, block_graph, buf_block_min, buf_block_max, dir_offset);
 
-
             logger::debug_ln(
                 "AMR Cell Graph", "Patch", id, "direction", dir, "link cnt", rslt.link_count);
+
+            std::unique_ptr<AMRGraph> tmp_graph = std::make_unique<AMRGraph>(std::move(rslt));
+
+            result.graph_links[dir] = std::move(tmp_graph);
         }
+
+        cell_graph_links.add_obj(id, std::move(result));
     });
+
+    storage.cell_link_graph.set(std::move(cell_graph_links));
 }
 
 template class shammodels::basegodunov::modules::AMRGraphGen<f64_3, i64_3>;

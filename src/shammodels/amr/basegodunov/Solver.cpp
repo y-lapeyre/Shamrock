@@ -68,14 +68,17 @@ auto Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tscal dt_input) -> Tsc
 
     graph_gen.lower_AMR_block_graph_to_cell_common_face_graph(block_oriented_graph);
     
-    //compute bound received
+    // compute & limit gradients
 
-    //round to next pow of 2
+    // shift values
 
-    //build radix trees
+    // flux
 
-    //build neigh table
+    // RK2 + flux lim
 
+
+
+    storage.cell_link_graph.reset();
     storage.serial_patch_tree.reset();
 
 

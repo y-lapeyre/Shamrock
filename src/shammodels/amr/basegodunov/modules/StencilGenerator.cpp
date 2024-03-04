@@ -304,6 +304,7 @@ void shammodels::basegodunov::modules::StencilGenerator<Tvec, TgridVec>::make_st
     auto block_stencil_zp1 = compute_block_stencil_slot(i64_3{0, 0, +1}, zp1);
     auto block_stencil_zm1 = compute_block_stencil_slot(i64_3{0, 0, -1}, zm1);
 
+    /*
     storage.stencil.set(AMRStencilCache{});
 
     storage.stencil.get().insert_data(
@@ -318,6 +319,7 @@ void shammodels::basegodunov::modules::StencilGenerator<Tvec, TgridVec>::make_st
         zp1, lower_block_slot_to_cell(i64_3{0, 0, +1}, zp1, block_stencil_zp1));
     storage.stencil.get().insert_data(
         zm1, lower_block_slot_to_cell(i64_3{0, 0, -1}, zm1, block_stencil_zm1));
+    */
 }
 
 template class shammodels::basegodunov::modules::StencilGenerator<f64_3, i64_3>;

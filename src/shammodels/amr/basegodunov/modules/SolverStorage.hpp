@@ -18,6 +18,7 @@
 #include "shambase/sycl_utils/vectorProperties.hpp"
 #include "shammodels/amr/AMRStencilCache.hpp"
 #include "shammodels/amr/basegodunov/GhostZoneData.hpp"
+#include "shammodels/amr/NeighGraph.hpp"
 #include "shamrock/scheduler/SerialPatchTree.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
 #include "shamrock/tree/RadixTree.hpp"
@@ -51,7 +52,7 @@ namespace shammodels::basegodunov {
         Component<shambase::DistributedData<shammath::AABB<TgridVec>>> merge_patch_bounds;
         Component<shambase::DistributedData<RTree>> trees;
 
-        Component<AMRStencilCache> stencil;
+        Component<shambase::DistributedData<shammodels::basegodunov::modules::OrientedAMRGraph<Tvec, TgridVec>>> cell_link_graph;
 
         struct {
             f64 interface = 0;
