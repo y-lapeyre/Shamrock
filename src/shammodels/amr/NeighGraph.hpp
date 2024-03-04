@@ -15,14 +15,35 @@
  *
  */
 
+#include "shambase/sycl_utils.hpp"
+
 #include "shambackends/sycl.hpp"
 
 namespace shammodels::basegodunov::modules {
-    
+
     struct NeighGraph {
         sycl::buffer<u32> node_link_offset;
         sycl::buffer<u32> node_links;
         u32 link_count;
+
+        sycl::buffer<u32> get_antecedent(sycl::queue &q, u32 obj_cnt) {
+            sycl::buffer<u32> ret(link_count);
+
+            q.submit([&](sycl::handler &cgh) {
+                sycl::accessor offset{node_link_offset, cgh, sycl::read_only};
+                sycl::accessor ante{ret, cgh, sycl::write_only, sycl::no_init};
+
+                shambase::parralel_for(cgh, obj_cnt, "gen antecedent map", [=](u64 gid) {
+                    u32 min_ids = offset[gid];
+                    u32 max_ids = offset[gid + 1];
+                    for (u32 id_s = min_ids; id_s < max_ids; id_s++) {
+                        ante[id_s] = gid;
+                    }
+                });
+            });
+
+            return ret;
+        }
     };
 
     struct NeighGraphLinkiterator {
@@ -54,7 +75,7 @@ namespace shammodels::basegodunov::modules {
         }
     };
 
-    using AMRGraph = NeighGraph;
+    using AMRGraph             = NeighGraph;
     using AMRGraphLinkiterator = NeighGraphLinkiterator;
 
     template<class Tvec, class TgridVec>
