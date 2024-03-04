@@ -72,6 +72,8 @@ auto Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tscal dt_input) -> Tsc
     // compute & limit gradients
     modules::ComputeGradient grad_compute(context,solver_config,storage);
     grad_compute.compute_grad_rho_van_leer();
+    grad_compute.compute_grad_rhov_van_leer();
+    grad_compute.compute_grad_rhoe_van_leer();
 
     // shift values
 
