@@ -77,6 +77,9 @@ namespace shammodels::basegodunov::modules {
     template<class Tvec, class TgridVec>
     class AMRGraphGen {
 
+        class AMRBlockFinder;
+        class AMRLowering;
+
         public:
         using Tscal                      = shambase::VecComponent<Tvec>;
         using Tgridscal                  = shambase::VecComponent<TgridVec>;
