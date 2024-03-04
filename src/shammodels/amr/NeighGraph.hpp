@@ -26,7 +26,9 @@ namespace shammodels::basegodunov::modules {
         sycl::buffer<u32> node_links;
         u32 link_count;
 
-        sycl::buffer<u32> get_antecedent(sycl::queue &q, u32 obj_cnt) {
+        std::optional<sycl::buffer<u32>> antecedent = std::nullopt;
+
+        void compute_antecedent(sycl::queue &q, u32 obj_cnt) {
             sycl::buffer<u32> ret(link_count);
 
             q.submit([&](sycl::handler &cgh) {
@@ -42,7 +44,7 @@ namespace shammodels::basegodunov::modules {
                 });
             });
 
-            return ret;
+            antecedent = std::move(ret);
         }
     };
 

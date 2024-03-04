@@ -388,7 +388,19 @@ void shammodels::basegodunov::modules::AMRGraphGen<Tvec, TgridVec>::
         cell_graph_links.add_obj(id, std::move(result));
     });
 
+    logger::debug_ln("[AMR cell graph]", "compute antecedent map");
+    cell_graph_links.for_each([&](u64 id, OrientedAMRGraph &oriented_block_graph) {
+        sycl::queue &q = shamsys::instance::get_compute_queue();
+        MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(id);
+        u32 cell_count = (mpdat.total_elements) * AMRBlock::block_size;
+        for (u32 dir = 0; dir < 6; dir++) {
+            oriented_block_graph.graph_links[dir]->compute_antecedent(q, cell_count);
+        }
+    });
+
     storage.cell_link_graph.set(std::move(cell_graph_links));
 }
+
+
 
 template class shammodels::basegodunov::modules::AMRGraphGen<f64_3, i64_3>;
