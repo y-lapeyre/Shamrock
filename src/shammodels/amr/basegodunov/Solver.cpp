@@ -65,6 +65,8 @@ auto Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tscal dt_input) -> Tsc
 
     modules::AMRGraphGen graph_gen(context,solver_config,storage);
     auto block_oriented_graph = graph_gen.find_AMR_block_graph_links_common_face();
+
+    graph_gen.lower_AMR_block_graph_to_cell_common_face_graph(block_oriented_graph);
     
     //compute bound received
 

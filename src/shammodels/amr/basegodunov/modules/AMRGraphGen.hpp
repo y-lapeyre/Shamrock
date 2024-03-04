@@ -22,18 +22,18 @@
 
 namespace shammodels::basegodunov::modules {
 
-    struct AMRGraph {
+    struct NeighGraph {
         sycl::buffer<u32> node_link_offset;
         sycl::buffer<u32> node_links;
         u32 link_count;
     };
 
-    struct AMRGraphLinkiterator{
+    struct NeighGraphLinkiterator{
         
         sycl::accessor<u32, 1, sycl::access::mode::read, sycl::target::device> node_link_offset;
         sycl::accessor<u32, 1, sycl::access::mode::read, sycl::target::device> node_links;
 
-        AMRGraphLinkiterator(AMRGraph & graph,sycl::handler & cgh):
+        NeighGraphLinkiterator(NeighGraph & graph,sycl::handler & cgh):
         node_link_offset{graph.node_link_offset, cgh, sycl::read_only},
         node_links{graph.node_links, cgh, sycl::read_only} {}
 
@@ -46,6 +46,9 @@ namespace shammodels::basegodunov::modules {
             }   
         }
     };
+
+    using AMRGraph = NeighGraph;
+    using AMRGraphLinkiterator = NeighGraphLinkiterator;
 
     template<class Tvec, class TgridVec>
     struct OrientedAMRGraph {
@@ -82,6 +85,7 @@ namespace shammodels::basegodunov::modules {
 
         using Config           = SolverConfig<Tvec, TgridVec>;
         using Storage          = SolverStorage<Tvec, TgridVec, u64>;
+        using u_morton = u64;
         using AMRBlock         = typename Config::AMRBlock;
         using OrientedAMRGraph = OrientedAMRGraph<Tvec, TgridVec>;
 
