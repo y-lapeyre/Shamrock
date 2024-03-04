@@ -17,6 +17,7 @@
 #include "shamcomm/collectives.hpp"
 #include "shammodels/amr/basegodunov/modules/AMRGraphGen.hpp"
 #include "shammodels/amr/basegodunov/modules/AMRTree.hpp"
+#include "shammodels/amr/basegodunov/modules/ComputeGradient.hpp"
 #include "shammodels/amr/basegodunov/modules/GhostZones.hpp"
 #include "shammodels/amr/basegodunov/modules/StencilGenerator.hpp"
 
@@ -69,6 +70,8 @@ auto Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tscal dt_input) -> Tsc
     graph_gen.lower_AMR_block_graph_to_cell_common_face_graph(block_oriented_graph);
     
     // compute & limit gradients
+    modules::ComputeGradient grad_compute(context,solver_config,storage);
+    grad_compute.compute_grad_rho_van_leer();
 
     // shift values
 

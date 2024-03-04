@@ -42,6 +42,16 @@ namespace shammodels::basegodunov::modules {
                 func_it(node_links[id_s]);
             }
         }
+
+        template<class Functor_iter>
+        inline u32 for_each_object_link_cnt(const u32 &cell_id, Functor_iter &&func_it) const {
+            u32 min_ids = node_link_offset[cell_id];
+            u32 max_ids = node_link_offset[cell_id + 1];
+            for (u32 id_s = min_ids; id_s < max_ids; id_s++) {
+                func_it(node_links[id_s]);
+            }
+            return max_ids - min_ids;
+        }
     };
 
     using AMRGraph = NeighGraph;

@@ -19,6 +19,7 @@
 #include "shammodels/amr/AMRStencilCache.hpp"
 #include "shammodels/amr/basegodunov/GhostZoneData.hpp"
 #include "shammodels/amr/NeighGraph.hpp"
+#include "shamrock/scheduler/ComputeField.hpp"
 #include "shamrock/scheduler/SerialPatchTree.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
 #include "shamrock/tree/RadixTree.hpp"
@@ -53,6 +54,12 @@ namespace shammodels::basegodunov {
         Component<shambase::DistributedData<RTree>> trees;
 
         Component<shambase::DistributedData<shammodels::basegodunov::modules::OrientedAMRGraph<Tvec, TgridVec>>> cell_link_graph;
+
+        Component<shamrock::ComputeField<Tvec>> grad_rho;
+        Component<shamrock::ComputeField<Tvec>> dx_rhov;
+        Component<shamrock::ComputeField<Tvec>> dy_rhov;
+        Component<shamrock::ComputeField<Tvec>> dz_rhov;
+        Component<shamrock::ComputeField<Tvec>> grad_rhoe;
 
         struct {
             f64 interface = 0;

@@ -4,6 +4,7 @@ set(Sources
     AMRTree.cpp
     StencilGenerator.cpp
     AMRGraphGen.cpp
+    ComputeGradient.cpp
 )
 set(Headers
 )
