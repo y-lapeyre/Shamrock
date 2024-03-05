@@ -5,6 +5,7 @@ set(Sources
     StencilGenerator.cpp
     AMRGraphGen.cpp
     ComputeGradient.cpp
+    ComputeCellInfos.cpp
 )
 set(Headers
 )
