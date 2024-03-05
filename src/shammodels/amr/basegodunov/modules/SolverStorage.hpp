@@ -19,6 +19,7 @@
 #include "shammodels/amr/AMRStencilCache.hpp"
 #include "shammodels/amr/basegodunov/GhostZoneData.hpp"
 #include "shammodels/amr/NeighGraph.hpp"
+#include "shammodels/amr/AMRCellInfos.hpp"
 #include "shamrock/scheduler/ComputeField.hpp"
 #include "shamrock/scheduler/SerialPatchTree.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
@@ -49,6 +50,8 @@ namespace shammodels::basegodunov {
         Component<shamrock::patch::PatchDataLayout> ghost_layout;
 
         Component<shambase::DistributedData<shamrock::MergedPatchData>> merged_patchdata_ghost;
+
+        Component<shammodels::basegodunov::modules::CellInfos<Tvec, TgridVec>> cell_infos; 
 
         Component<shambase::DistributedData<shammath::AABB<TgridVec>>> merge_patch_bounds;
         Component<shambase::DistributedData<RTree>> trees;

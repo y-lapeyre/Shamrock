@@ -81,7 +81,7 @@ compute_neigh_graph(sycl::queue &q, u32 graph_nodes, Args &&...args) {
     });
 
     using Graph = shammodels::basegodunov::modules::NeighGraph;
-    return Graph(Graph{std::move(link_cnt_offsets), std::move(ids_links), link_cnt});
+    return Graph(Graph{std::move(link_cnt_offsets), std::move(ids_links), link_cnt, graph_nodes});
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -394,7 +394,7 @@ void shammodels::basegodunov::modules::AMRGraphGen<Tvec, TgridVec>::
         MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(id);
         u32 cell_count = (mpdat.total_elements) * AMRBlock::block_size;
         for (u32 dir = 0; dir < 6; dir++) {
-            oriented_block_graph.graph_links[dir]->compute_antecedent(q, cell_count);
+            oriented_block_graph.graph_links[dir]->compute_antecedent(q);
         }
     });
 

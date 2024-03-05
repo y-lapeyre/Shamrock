@@ -17,6 +17,7 @@
 #include "shamcomm/collectives.hpp"
 #include "shammodels/amr/basegodunov/modules/AMRGraphGen.hpp"
 #include "shammodels/amr/basegodunov/modules/AMRTree.hpp"
+#include "shammodels/amr/basegodunov/modules/ComputeCellInfos.hpp"
 #include "shammodels/amr/basegodunov/modules/ComputeGradient.hpp"
 #include "shammodels/amr/basegodunov/modules/GhostZones.hpp"
 #include "shammodels/amr/basegodunov/modules/StencilGenerator.hpp"
@@ -49,6 +50,9 @@ auto Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tscal dt_input) -> Tsc
     gz.build_ghost_cache();
 
     gz.exchange_ghost();
+
+    modules::ComputeCellInfos comp_cell_infos(context,solver_config,storage);
+    comp_cell_infos.compute_aabb();
 
 
     //compute bound received

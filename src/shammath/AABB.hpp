@@ -64,6 +64,19 @@ namespace shammath {
             return lower + upper;
         }
 
+        template<class Tb>
+        inline AABB<Tb> convert(){
+            using Tb_prop = shambase::VectorProperties<Tb>;
+            static_assert(Tb_prop::dim == T_prop::dim, "you cannot change the dimension in convert");
+
+            return {
+                lower.template convert<Tb_prop::component_type>(),
+                upper.template convert<Tb_prop::component_type>()
+            };
+        }
+        
+        
+
         inline AABB get_intersect(AABB other)  const noexcept {
             return {
                 sham::max(lower, other.lower),

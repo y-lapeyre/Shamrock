@@ -15,6 +15,7 @@
  *
  */
 
+#include "shambase/memory.hpp"
 #include "shambase/sycl_utils.hpp"
 
 #include "shambackends/sycl.hpp"
@@ -25,10 +26,11 @@ namespace shammodels::basegodunov::modules {
         sycl::buffer<u32> node_link_offset;
         sycl::buffer<u32> node_links;
         u32 link_count;
+        u32 obj_cnt;
 
         std::optional<sycl::buffer<u32>> antecedent = std::nullopt;
 
-        void compute_antecedent(sycl::queue &q, u32 obj_cnt) {
+        void compute_antecedent(sycl::queue &q) {
             sycl::buffer<u32> ret(link_count);
 
             q.submit([&](sycl::handler &cgh) {
@@ -63,6 +65,15 @@ namespace shammodels::basegodunov::modules {
             u32 max_ids = node_link_offset[cell_id + 1];
             for (u32 id_s = min_ids; id_s < max_ids; id_s++) {
                 func_it(node_links[id_s]);
+            }
+        }
+        
+        template<class Functor_iter>
+        inline void for_each_object_link_id(const u32 &cell_id, Functor_iter &&func_it) const {
+            u32 min_ids = node_link_offset[cell_id];
+            u32 max_ids = node_link_offset[cell_id + 1];
+            for (u32 id_s = min_ids; id_s < max_ids; id_s++) {
+                func_it(node_links[id_s], id_s);
             }
         }
 

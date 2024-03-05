@@ -107,6 +107,21 @@ namespace shambase {
     }
 
     /**
+     * @brief Get reference to object held by the unique ptr, and throw if nothing is held
+     *
+     * @tparam T
+     * @param ptr
+     * @return T&
+     */
+    template<class T>
+    inline T &get_check_ref(const std::optional<T> &ptr, SourceLocation loc = SourceLocation()) {
+        if (!bool(ptr)) {
+            throw make_except_with_loc<std::runtime_error>("the ptr does not hold anything", loc);
+        }
+        return *ptr;
+    }
+
+    /**
      * @brief extract content out of optional
      * see : https://stackoverflow.com/questions/71980007/take-value-out-of-stdoptional
      * @tparam T
