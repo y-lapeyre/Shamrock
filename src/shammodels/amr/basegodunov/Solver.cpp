@@ -19,6 +19,7 @@
 #include "shammodels/amr/basegodunov/modules/AMRTree.hpp"
 #include "shammodels/amr/basegodunov/modules/ComputeCellInfos.hpp"
 #include "shammodels/amr/basegodunov/modules/ComputeGradient.hpp"
+#include "shammodels/amr/basegodunov/modules/FaceInterpolate.hpp"
 #include "shammodels/amr/basegodunov/modules/GhostZones.hpp"
 #include "shammodels/amr/basegodunov/modules/StencilGenerator.hpp"
 
@@ -80,6 +81,8 @@ auto Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tscal dt_input) -> Tsc
     grad_compute.compute_grad_rhoe_van_leer();
 
     // shift values
+    modules::FaceInterpolate face_interpolator(context,solver_config,storage);
+    face_interpolator.interpolate_rho_to_face();
 
     // flux
 

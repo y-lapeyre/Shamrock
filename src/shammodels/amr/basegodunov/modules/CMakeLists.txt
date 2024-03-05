@@ -6,6 +6,7 @@ set(Sources
     AMRGraphGen.cpp
     ComputeGradient.cpp
     ComputeCellInfos.cpp
+    FaceInterpolate.cpp
 )
 set(Headers
 )
