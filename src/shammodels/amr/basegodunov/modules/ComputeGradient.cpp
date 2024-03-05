@@ -138,6 +138,8 @@ shammodels::basegodunov::modules::ComputeGradient<Tvec, TgridVec>::compute_grad_
                 // fetch current block info
                 const TgridVec cblock_min = acc_block_min[block_id];
                 const TgridVec cblock_max = acc_block_max[block_id];
+
+                // TODO Use the cell size from CellInfos instead
                 const TgridVec delta_cell = (cblock_max - cblock_min) / AMRBlock::Nside;
 
                 auto result = get_3d_grad<Tscal, Tvec>(
