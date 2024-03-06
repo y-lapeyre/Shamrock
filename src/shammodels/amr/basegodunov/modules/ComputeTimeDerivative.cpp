@@ -7,7 +7,7 @@
 // -------------------------------------------------------//
 
 /**
- * @file ComputeGradient.hpp
+ * @file ComputeTimeDerivative.cpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @brief
  *
