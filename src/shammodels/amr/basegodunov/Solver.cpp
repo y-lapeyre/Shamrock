@@ -24,6 +24,7 @@
 #include "shammodels/amr/basegodunov/modules/FaceInterpolate.hpp"
 #include "shammodels/amr/basegodunov/modules/GhostZones.hpp"
 #include "shammodels/amr/basegodunov/modules/StencilGenerator.hpp"
+#include "shammodels/amr/basegodunov/modules/TimeIntegrator.hpp"
 
 template<class Tvec, class TgridVec>
 using Solver = shammodels::basegodunov::Solver<Tvec, TgridVec>;
@@ -98,6 +99,8 @@ auto Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tscal dt_input) -> Tsc
 
     // RK2 + flux lim
 
+    modules::TimeIntegrator dt_integ(context,solver_config,storage);
+    dt_integ.forward_euler(dt_input);
 
 
     storage.cell_link_graph.reset();

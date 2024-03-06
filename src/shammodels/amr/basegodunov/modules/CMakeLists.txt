@@ -9,6 +9,7 @@ set(Sources
     FaceInterpolate.cpp
     ComputeFlux.cpp
     ComputeTimeDerivative.cpp
+    TimeIntegrator.cpp
 )
 set(Headers
 )
