@@ -20,6 +20,7 @@
 #include "shammodels/amr/basegodunov/modules/ComputeCellInfos.hpp"
 #include "shammodels/amr/basegodunov/modules/ComputeFlux.hpp"
 #include "shammodels/amr/basegodunov/modules/ComputeGradient.hpp"
+#include "shammodels/amr/basegodunov/modules/ComputeTimeDerivative.hpp"
 #include "shammodels/amr/basegodunov/modules/FaceInterpolate.hpp"
 #include "shammodels/amr/basegodunov/modules/GhostZones.hpp"
 #include "shammodels/amr/basegodunov/modules/StencilGenerator.hpp"
@@ -92,6 +93,8 @@ auto Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tscal dt_input) -> Tsc
     flux_compute.compute_flux_rusanov();
 
     //compute dt fields
+    modules::ComputeTimeDerivative dt_compute(context,solver_config,storage);
+    dt_compute.compute_dt_fields();
 
     // RK2 + flux lim
 
