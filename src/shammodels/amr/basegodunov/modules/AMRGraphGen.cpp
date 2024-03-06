@@ -110,7 +110,8 @@ class shammodels::basegodunov::modules::AMRGraphGen<Tvec, TgridVec>::AMRBlockFin
         : block_looper(tree, cgh), acc_block_min{buf_block_min, cgh, sycl::read_only},
           acc_block_max{buf_block_max, cgh, sycl::read_only}, dir_offset(std::move(dir_offset)) {}
 
-    void for_each_other_index(u32 id_a, std::function<void(u32)> &&fct) const {
+    template<class IndexFunctor>
+    void for_each_other_index(u32 id_a, IndexFunctor &&fct) const {
 
         // current block AABB
         shammath::AABB<TgridVec> block_aabb{acc_block_min[id_a], acc_block_max[id_a]};
@@ -234,7 +235,8 @@ class shammodels::basegodunov::modules::AMRGraphGen<Tvec, TgridVec>::AMRLowering
         : graph_iter{block_graph, cgh}, acc_block_min{buf_block_min, cgh, sycl::read_only},
           acc_block_max{buf_block_max, cgh, sycl::read_only}, dir_offset(std::move(dir_offset)) {}
 
-    void for_each_other_index(u32 id_a, std::function<void(u32)> &&fct) const {
+    template<class IndexFunctor>
+    void for_each_other_index(u32 id_a, IndexFunctor &&fct) const {
 
         const u32 cell_global_id = (u32) id_a;
 
