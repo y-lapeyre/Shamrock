@@ -18,6 +18,7 @@
 #include "shammodels/amr/basegodunov/modules/AMRGraphGen.hpp"
 #include "shammodels/amr/basegodunov/modules/AMRTree.hpp"
 #include "shammodels/amr/basegodunov/modules/ComputeCellInfos.hpp"
+#include "shammodels/amr/basegodunov/modules/ComputeFlux.hpp"
 #include "shammodels/amr/basegodunov/modules/ComputeGradient.hpp"
 #include "shammodels/amr/basegodunov/modules/FaceInterpolate.hpp"
 #include "shammodels/amr/basegodunov/modules/GhostZones.hpp"
@@ -87,6 +88,10 @@ auto Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tscal dt_input) -> Tsc
     face_interpolator.interpolate_rhoe_to_face();
 
     // flux
+    modules::ComputeFlux flux_compute(context,solver_config,storage);
+    flux_compute.compute_flux_rusanov();
+
+    //compute dt fields
 
     // RK2 + flux lim
 

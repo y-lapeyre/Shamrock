@@ -19,16 +19,15 @@
 #include <array>
 #include <cmath>
 #include <iostream>
-
+#include "shambackends/typeAliasVec.hpp"
+#include "shambase/sycl_utils/vectorProperties.hpp"
 namespace shammath {
 
-    template<typename T>
-    using VectorComponent = std::remove_reference_t<decltype(*std::begin(std::declval<T &>()))>;
 
     template<class Tvec_>
     struct ConsState {
         using Tvec  = Tvec_;
-        using Tscal = VectorComponent<Tvec>;
+        using Tscal = shambase::VecComponent<Tvec>;
 
         Tscal rho{}, rhoe{};
         Tvec rhovel{};
@@ -64,7 +63,7 @@ namespace shammath {
     template<class Tvec_>
     struct PrimState {
         using Tvec  = Tvec_;
-        using Tscal = VectorComponent<Tvec>;
+        using Tscal = shambase::VecComponent<Tvec>;
 
         Tscal rho{}, press{};
         Tvec vel{};
@@ -73,13 +72,14 @@ namespace shammath {
     template<class Tvec_>
     struct Fluxes {
         using Tvec  = Tvec_;
-        using Tscal = VectorComponent<Tvec>;
+        using Tscal = shambase::VecComponent<Tvec>;
 
         std::array<ConsState<Tvec>, 3> F;
     };
 
-    template<class Tscal>
-    inline constexpr Tscal rhoekin(Tscal rho, std::array<Tscal, 3> v) {
+    template<class Tvec>
+    inline constexpr shambase::VecComponent<Tvec> rhoekin(shambase::VecComponent<Tvec> rho, Tvec v) {
+        using Tscal = shambase::VecComponent<Tvec>;
         const Tscal v2 = v[0] * v[0] + v[1] * v[1] + v[2] * v[2];
         return 0.5 * rho * v2;
     }
@@ -137,8 +137,8 @@ namespace shammath {
     }
 
     template<class Tvec>
-    inline constexpr VectorComponent<Tvec>
-    sound_speed(PrimState<Tvec> prim, VectorComponent<Tvec> gamma) {
+    inline constexpr shambase::VecComponent<Tvec>
+    sound_speed(PrimState<Tvec> prim, shambase::VecComponent<Tvec> gamma) {
         return std::sqrt(gamma * prim.press / prim.rho);
     }
 

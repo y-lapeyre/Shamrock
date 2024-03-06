@@ -7,6 +7,7 @@ set(Sources
     ComputeGradient.cpp
     ComputeCellInfos.cpp
     FaceInterpolate.cpp
+    ComputeFlux.cpp
 )
 set(Headers
 )
