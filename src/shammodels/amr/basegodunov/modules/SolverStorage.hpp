@@ -28,6 +28,7 @@
 #include "shamsys/legacy/log.hpp"
 #include "shambase/StorageComponent.hpp"
 #include "shamrock/scheduler/InterfacesUtility.hpp"
+#include "shammodels/amr/NeighGraphLinkField.hpp"
 
 namespace shammodels::basegodunov {
 
@@ -63,6 +64,27 @@ namespace shammodels::basegodunov {
         Component<shamrock::ComputeField<Tvec>> dy_rhov;
         Component<shamrock::ComputeField<Tvec>> dz_rhov;
         Component<shamrock::ComputeField<Tvec>> grad_rhoe;
+
+        Component<shambase::DistributedData<shammodels::basegodunov::modules::NeighGraphLinkField<std::array<Tscal,2>>>> rho_face_xp;
+        Component<shambase::DistributedData<shammodels::basegodunov::modules::NeighGraphLinkField<std::array<Tscal,2>>>> rho_face_xm;
+        Component<shambase::DistributedData<shammodels::basegodunov::modules::NeighGraphLinkField<std::array<Tscal,2>>>> rho_face_yp;
+        Component<shambase::DistributedData<shammodels::basegodunov::modules::NeighGraphLinkField<std::array<Tscal,2>>>> rho_face_ym;
+        Component<shambase::DistributedData<shammodels::basegodunov::modules::NeighGraphLinkField<std::array<Tscal,2>>>> rho_face_zp;
+        Component<shambase::DistributedData<shammodels::basegodunov::modules::NeighGraphLinkField<std::array<Tscal,2>>>> rho_face_zm;
+
+        Component<shambase::DistributedData<shammodels::basegodunov::modules::NeighGraphLinkField<std::array<Tvec,2>>>> rhov_face_xp;
+        Component<shambase::DistributedData<shammodels::basegodunov::modules::NeighGraphLinkField<std::array<Tvec,2>>>> rhov_face_xm;
+        Component<shambase::DistributedData<shammodels::basegodunov::modules::NeighGraphLinkField<std::array<Tvec,2>>>> rhov_face_yp;
+        Component<shambase::DistributedData<shammodels::basegodunov::modules::NeighGraphLinkField<std::array<Tvec,2>>>> rhov_face_ym;
+        Component<shambase::DistributedData<shammodels::basegodunov::modules::NeighGraphLinkField<std::array<Tvec,2>>>> rhov_face_zp;
+        Component<shambase::DistributedData<shammodels::basegodunov::modules::NeighGraphLinkField<std::array<Tvec,2>>>> rhov_face_zm;
+
+        Component<shambase::DistributedData<shammodels::basegodunov::modules::NeighGraphLinkField<std::array<Tscal,2>>>> rhoe_face_xp;
+        Component<shambase::DistributedData<shammodels::basegodunov::modules::NeighGraphLinkField<std::array<Tscal,2>>>> rhoe_face_xm;
+        Component<shambase::DistributedData<shammodels::basegodunov::modules::NeighGraphLinkField<std::array<Tscal,2>>>> rhoe_face_yp;
+        Component<shambase::DistributedData<shammodels::basegodunov::modules::NeighGraphLinkField<std::array<Tscal,2>>>> rhoe_face_ym;
+        Component<shambase::DistributedData<shammodels::basegodunov::modules::NeighGraphLinkField<std::array<Tscal,2>>>> rhoe_face_zp;
+        Component<shambase::DistributedData<shammodels::basegodunov::modules::NeighGraphLinkField<std::array<Tscal,2>>>> rhoe_face_zm;
 
         struct {
             f64 interface = 0;

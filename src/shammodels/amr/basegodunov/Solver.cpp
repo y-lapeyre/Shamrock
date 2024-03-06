@@ -83,6 +83,8 @@ auto Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tscal dt_input) -> Tsc
     // shift values
     modules::FaceInterpolate face_interpolator(context,solver_config,storage);
     face_interpolator.interpolate_rho_to_face();
+    face_interpolator.interpolate_rhov_to_face();
+    face_interpolator.interpolate_rhoe_to_face();
 
     // flux
 
