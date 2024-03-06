@@ -11,13 +11,14 @@
 /**
  * @file memory.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @brief 
- * 
+ * @brief
+ *
  */
- 
+
+#include "shambase/aliases_int.hpp"
 #include "shambase/exception.hpp"
 #include "shambase/string.hpp"
-#include "shambase/aliases_int.hpp"
+
 #include <optional>
 #include <utility>
 
@@ -35,7 +36,7 @@ namespace shambase {
     template<class T, class AccU8>
     inline void store_u8(AccU8 &acc, u64 ptr_write, T a) {
         constexpr u64 szT = sizeof(T);
-        u8 *bytes         = (u8 *)&a;
+        u8 *bytes         = (u8 *) &a;
 #pragma unroll
         for (u64 i = 0; i < szT; i++) {
             acc[ptr_write + i] = bytes[i];
@@ -55,7 +56,7 @@ namespace shambase {
     inline T load_u8(AccU8 &acc, u64 ptr_load) {
         constexpr u64 szT = sizeof(T);
         T ret;
-        u8 *bytes = (u8 *)&ret;
+        u8 *bytes = (u8 *) &ret;
 #pragma unroll
         for (u64 i = 0; i < szT; i++) {
             bytes[i] = acc[ptr_load + i];
@@ -73,7 +74,7 @@ namespace shambase {
      */
     template<class T, class TAcc>
     inline void store_conv(TAcc *acc, T a) {
-        T *ptr = (T *)acc;
+        T *ptr = (T *) acc;
         *ptr   = a;
     }
 
@@ -87,7 +88,7 @@ namespace shambase {
      */
     template<class T, class TAcc>
     inline T load_conv(TAcc *acc) {
-        T *ptr = (T *)acc;
+        T *ptr = (T *) acc;
         return *ptr;
     }
 
@@ -129,13 +130,13 @@ namespace shambase {
 
     /**
      * @brief Extracts the content out of an optional
-     * 
-     * This function that takes an std::optional object and extracts the value from it. 
-     * If the optional is empty, it throws a runtime error. The extracted value is returned, 
+     *
+     * This function that takes an std::optional object and extracts the value from it.
+     * If the optional is empty, it throws a runtime error. The extracted value is returned,
      * and the optional is left in an empty state.
      *
      * @see https://stackoverflow.com/questions/71980007/take-value-out-of-stdoptional
-     * 
+     *
      * @tparam T the type of the optional
      * @param o  reference to the optional object
      * @param loc The source location where this function is called.
@@ -168,6 +169,15 @@ namespace shambase {
         return T(std::move(*tmp));
     }
 
+    /**
+     * @brief Convert a vector to an array of size n
+     *
+     * @tparam n The size of the array
+     * @tparam T The type of the elements in the array
+     * @param in The input vector
+     * @return std::array<T, n> The converted array
+     * @throw std::invalid_argument If the input vector size does not match n
+     */
     template<int n, class T>
     inline std::array<T, n> convert_to_array(std::vector<T> &in) {
         if (in.size() != n) {
