@@ -92,17 +92,23 @@ namespace shambase {
     }
 
     /**
-     * @brief Get reference to object held by the unique ptr, and throw if nothing is held
+     * @brief Takes a std::unique_ptr and returns a reference to the object it holds.
+     * It throws a std::runtime_error if the std::unique_ptr does not hold anything.
      *
-     * @tparam T
-     * @param ptr
-     * @return T&
+     * @tparam T The type of the object held by the std::unique_ptr.
+     * @param ptr A reference to the std::unique_ptr.
+     * @param loc The source location where this function is called.
+     * @return A reference to the object held by the std::unique_ptr.
+     * @throws std::runtime_error If the std::unique_ptr does not hold anything.
      */
     template<class T>
     inline T &get_check_ref(const std::unique_ptr<T> &ptr, SourceLocation loc = SourceLocation()) {
+        // Check if the std::unique_ptr holds anything
         if (!bool(ptr)) {
+            // Throw a std::runtime_error with a descriptive message
             throw make_except_with_loc<std::runtime_error>("the ptr does not hold anything", loc);
         }
+        // Return a reference to the object held by the std::unique_ptr
         return *ptr;
     }
 
@@ -122,11 +128,19 @@ namespace shambase {
     }
 
     /**
-     * @brief extract content out of optional
-     * see : https://stackoverflow.com/questions/71980007/take-value-out-of-stdoptional
-     * @tparam T
-     * @param o
-     * @return T
+     * @brief Extracts the content out of an optional
+     * 
+     * This function that takes an std::optional object and extracts the value from it. 
+     * If the optional is empty, it throws a runtime error. The extracted value is returned, 
+     * and the optional is left in an empty state.
+     *
+     * @see https://stackoverflow.com/questions/71980007/take-value-out-of-stdoptional
+     * 
+     * @tparam T the type of the optional
+     * @param o  reference to the optional object
+     * @param loc The source location where this function is called.
+     * @return T the value extracted from the optional
+     * @throws std::runtime_error If the std::unique_ptr does not hold anything.
      */
     template<typename T>
     auto extract_value(std::optional<T> &o, SourceLocation loc = SourceLocation()) -> T {
