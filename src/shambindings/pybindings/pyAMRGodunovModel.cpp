@@ -18,6 +18,7 @@
 #include "shambindings/pybindaliases.hpp"
 #include "shambindings/pytypealias.hpp"
 #include "shammodels/amr/basegodunov/Model.hpp"
+#include <pybind11/functional.h>
 
 namespace shammodels::basegodunov {
     template<class Tvec, class TgridVec>
@@ -45,11 +46,16 @@ namespace shammodels::basegodunov {
             .def("make_base_grid", &T::make_base_grid)
             .def("dump_vtk", &T::dump_vtk)
             .def("evolve_once", &T::evolve_once)
+            .def("set_field_value_lambda_f64",&T::template set_field_value_lambda<f64>)
+            .def("set_field_value_lambda_f64_3",&T::template set_field_value_lambda<f64_3>)
             .def("gen_default_config",[](T & self) -> TConfig {
                 return TConfig();
             })
             .def("set_config",[](T& self, TConfig cfg){
                 self.solver.solver_config = cfg;
+            })
+            .def("get_cell_coords",[](T & self, std::pair<TgridVec,TgridVec> block_coord, u32 cell_local_id){
+                return self.get_cell_coords(block_coord, cell_local_id);
             });
     }
 }

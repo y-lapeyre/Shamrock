@@ -115,13 +115,13 @@ void Model<Tvec, TgridVec>::dump_vtk(std::string filename){
     std::unique_ptr<sycl::buffer<Tscal>> fields_rho = sched.rankgather_field<Tscal>(2);
     writer.write_field("rho", fields_rho, num_obj*block_size);
 
+    std::unique_ptr<sycl::buffer<Tvec>> fields_vel = sched.rankgather_field<Tvec>(3);
+    writer.write_field("rhovel", fields_vel, num_obj*block_size);
 
-    std::unique_ptr<sycl::buffer<Tscal>> fields_eint = sched.rankgather_field<Tscal>(3);
-    writer.write_field("eint", fields_eint, num_obj*block_size);
+    std::unique_ptr<sycl::buffer<Tscal>> fields_eint = sched.rankgather_field<Tscal>(4);
+    writer.write_field("rhoetot", fields_eint, num_obj*block_size);
 
 
-    std::unique_ptr<sycl::buffer<Tvec>> fields_vel = sched.rankgather_field<Tvec>(4);
-    writer.write_field("vel", fields_vel, num_obj*block_size);
 
 }
 

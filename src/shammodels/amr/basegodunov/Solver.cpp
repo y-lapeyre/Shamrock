@@ -25,6 +25,7 @@
 #include "shammodels/amr/basegodunov/modules/GhostZones.hpp"
 #include "shammodels/amr/basegodunov/modules/StencilGenerator.hpp"
 #include "shammodels/amr/basegodunov/modules/TimeIntegrator.hpp"
+#include "shamrock/io/LegacyVtkWritter.hpp"
 
 template<class Tvec, class TgridVec>
 using Solver = shammodels::basegodunov::Solver<Tvec, TgridVec>;
@@ -103,11 +104,68 @@ auto Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tscal dt_input) -> Tsc
     dt_integ.forward_euler(dt_input);
 
 
+
+    storage.dtrho .reset();
+    storage.dtrhov.reset();
+    storage.dtrhoe.reset();
+
+    storage.flux_rho_face_xp .reset();
+    storage.flux_rho_face_xm .reset();
+    storage.flux_rho_face_yp .reset();
+    storage.flux_rho_face_ym .reset();
+    storage.flux_rho_face_zp .reset();
+    storage.flux_rho_face_zm .reset();
+    storage.flux_rhov_face_xp.reset();
+    storage.flux_rhov_face_xm.reset();
+    storage.flux_rhov_face_yp.reset();
+    storage.flux_rhov_face_ym.reset();
+    storage.flux_rhov_face_zp.reset();
+    storage.flux_rhov_face_zm.reset();
+    storage.flux_rhoe_face_xp.reset();
+    storage.flux_rhoe_face_xm.reset();
+    storage.flux_rhoe_face_yp.reset();
+    storage.flux_rhoe_face_ym.reset();
+    storage.flux_rhoe_face_zp.reset();
+    storage.flux_rhoe_face_zm.reset();
+
+    storage.rho_face_xp.reset();
+    storage.rho_face_xm.reset();
+    storage.rho_face_yp.reset();
+    storage.rho_face_ym.reset();
+    storage.rho_face_zp.reset();
+    storage.rho_face_zm.reset();
+
+    storage.rhov_face_xp.reset();
+    storage.rhov_face_xm.reset();
+    storage.rhov_face_yp.reset();
+    storage.rhov_face_ym.reset();
+    storage.rhov_face_zp.reset();
+    storage.rhov_face_zm.reset();
+
+    storage.rhoe_face_xp.reset();
+    storage.rhoe_face_xm.reset();
+    storage.rhoe_face_yp.reset();
+    storage.rhoe_face_ym.reset();
+    storage.rhoe_face_zp.reset();
+    storage.rhoe_face_zm.reset();
+
+    storage.grad_rho.reset();
+    storage.dx_rhov.reset();
+    storage.dy_rhov.reset();
+    storage.dz_rhov.reset();
+    storage.grad_rhoe.reset();
+
+    storage.cell_infos.reset();
     storage.cell_link_graph.reset();
+
+    storage.trees.reset();
+    storage.merge_patch_bounds.reset();
+
+    storage.merged_patchdata_ghost.reset();
+    storage.ghost_layout.reset();
+    storage.ghost_zone_infos.reset();
+
     storage.serial_patch_tree.reset();
-
-
-
 
     tstep.end();
 
