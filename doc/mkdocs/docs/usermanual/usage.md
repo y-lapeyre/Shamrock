@@ -69,7 +69,7 @@ Exiting ...
  Hopefully it was quick :')
 ```
 
-Which mean that the executable did run, and the self check worked, but you didn't asked anything to shamrock.
+Which mean that the executable did run, and the self check worked, but you didn't ask anything to shamrock.
 
 ## Running in Ipython mode
 
