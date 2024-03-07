@@ -67,11 +67,23 @@ namespace {
             return 4. * f * (1. - f);
         };
 
+        auto slopelim = [&](T f){
+            
+            if constexpr (std::is_same_v<T, f64_3>){
+                f.x() = (f.x() >= 0 && f.x() <= 1) ? f.x() : 0;
+                f.y() = (f.y() >= 0 && f.y() <= 1) ? f.y() : 0;
+                f.z() = (f.z() >= 0 && f.z() <= 1) ? f.z() : 0;
+            }else{
+                f = (f >= 0 && f <= 1) ? f : 0;
+            }
+            return vanleer(f);
+        };
+
         T fact = 1. / (2 * dxfact * T(delta_cell.x()));
 
-        T lim_slope_rho_x = vanleer(delta_rho_x_m / delta_rho_x_t) * delta_rho_x_t * fact;
-        T lim_slope_rho_y = vanleer(delta_rho_y_m / delta_rho_y_t) * delta_rho_y_t * fact;
-        T lim_slope_rho_z = vanleer(delta_rho_z_m / delta_rho_z_t) * delta_rho_z_t * fact;
+        T lim_slope_rho_x = slopelim(delta_rho_x_m / delta_rho_x_t) * delta_rho_x_t * fact;
+        T lim_slope_rho_y = slopelim(delta_rho_y_m / delta_rho_y_t) * delta_rho_y_t * fact;
+        T lim_slope_rho_z = slopelim(delta_rho_z_m / delta_rho_z_t) * delta_rho_z_t * fact;
 
         return {lim_slope_rho_x, lim_slope_rho_y, lim_slope_rho_z};
     }

@@ -289,7 +289,7 @@ void shammodels::basegodunov::modules::ComputeFlux<Tvec, TgridVec>::compute_flux
     shambase::DistributedData<NGLink<Tscal>> flux_rhoe_face_zp;
     shambase::DistributedData<NGLink<Tscal>> flux_rhoe_face_zm;
 
-    Tscal gamma = 1.666666666;
+    Tscal gamma = solver_config.eos_gamma;
 
     storage.cell_link_graph.get().for_each([&](u64 id, OrientedAMRGraph &oriented_cell_graph) {
         sycl::queue &q = shamsys::instance::get_compute_queue();
