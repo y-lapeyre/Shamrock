@@ -28,6 +28,14 @@ namespace shambase {
 
     class FortranIOFile {
 
+        /**
+         * @brief Check that the next 4 bytes in the buffer are equal to `fortran_byte`
+         *
+         * @param[in] buffer the input buffer
+         * @param[in] fortran_byte the expected value of the next 4 bytes
+         *
+         * @throw std::runtime_error if the next 4 bytes are not equal to `fortran_byte`
+         */
         inline void check_fortran_4byte(std::basic_stringstream<byte> &buffer, i32 fortran_byte) {
             i32 new_check = 0;
 
@@ -40,6 +48,17 @@ namespace shambase {
             fortran_byte = new_check;
         }
 
+        /**
+         * @brief Read the next 4 bytes from the buffer.
+         *
+         * In Fortran every write call produce 4 bte specifying the lenght of the write followed by
+         * the same 4 bytes. We can check them here to verify that we are reading the file
+         * correctly.
+         *
+         * @param[in] buffer the input buffer
+         *
+         * @return the value of the next 4 bytes
+         */
         inline i32 read_fortran_4byte(std::basic_stringstream<byte> &buffer) {
             i32 check;
             shambase::stream_read(buffer, check);
@@ -77,9 +96,16 @@ namespace shambase {
         using fort_real = f64;
         using fort_int  = int;
 
+        /**
+         * @brief Construct a new FortranIOFile object
+         *
+         * @param[in] data_in The input buffer to be used for reading and writing
+         * @param[in] lenght The lenght of the input buffer
+         */
         explicit FortranIOFile(std::basic_stringstream<byte> &&data_in, u64 lenght)
             : data(std::forward<std::basic_stringstream<byte>>(data_in)), lenght(lenght) {
 
+            // Set the internal buffer to the beginning of the buffer
             data.seekg(0);
         }
 
@@ -87,6 +113,18 @@ namespace shambase {
 
         inline std::basic_stringstream<byte> &get_internal_buf() { return data; }
 
+        /**
+         * @brief Write a list of arguments to the internal buffer
+         *
+         * This function writes a list of arguments to the internal buffer using the
+         * Fortran-like serialization format. The arguments are serialized in the following
+         * way: first the size of all arguments in bytes, then the arguments, and finally
+         * again the size of all arguments in bytes. This format is used by the Fortran
+         * standard for I/O.
+         *
+         * @tparam Args the types of the arguments to be written
+         * @param[in] args the arguments to be written
+         */
         template<class... Args>
         inline void write(Args &...args) {
             i32 linebytecount = ((sizeof(args)) + ...);
@@ -95,6 +133,17 @@ namespace shambase {
             stream_write(data, linebytecount);
         }
 
+        /**
+         * @brief Read a list of arguments from the internal buffer
+         *
+         * This function reads a list of arguments from the internal buffer using the
+         * Fortran-like serialization format. The arguments are serialized in the following
+         * way: first the size of all arguments in bytes, then the arguments, and finally
+         * again the size of all arguments in bytes.
+         *
+         * @tparam Args the types of the arguments to be read
+         * @param[out] args the arguments to be read
+         */
         template<class... Args>
         inline void read(Args &...args) {
             u64 linebytecount = ((sizeof(args)) + ...);
