@@ -24,7 +24,11 @@ namespace shambase {
     /**
      * @brief Helper class for Storage Module of any solver
      *
-     * @tparam T
+     * This class provides a simple way to store an object in the storage module of
+     * any solver. it will delete the stored object when
+     * it goes out of scope.
+     *
+     * @tparam T Type of the stored object
      */
     template<class T>
     class StorageComponent {
@@ -33,13 +37,20 @@ namespace shambase {
 
         public:
         /**
-         * @brief replace (by move) the held object
+         * @brief Replace the held object by moving the given argument
          *
-         * @param arg
+         * This function replaces the held object by moving the given argument into
+         * the StorageComponent. If the StorageComponent already holds an object,
+         * this function throws a std::runtime_error.
+         *
+         * @param arg The object to be moved into the StorageComponent.
+         *
+         * @throws std::runtime_error If the StorageComponent already holds an
+         * object.
          */
         void set(T &&arg, SourceLocation loc = SourceLocation()) {
             StackEntry stack_loc{};
-            if (hndl) {
+            if (bool(hndl)) {
                 throw shambase::make_except_with_loc<std::runtime_error>(
                     "please reset the storage component before", loc);
             }
@@ -49,7 +60,14 @@ namespace shambase {
         /**
          * @brief Get the reference to the held object if it was allocated
          *
+         * This function returns a reference to the object held by this
+         * StorageComponent. If the StorageComponent does not hold anything,
+         * it throws a std::runtime_error.
+         *
          * @return T& the reference held
+         *
+         * @throws std::runtime_error If the StorageComponent does not hold
+         * anything.
          */
         T &get(SourceLocation loc = SourceLocation()) {
             StackEntry stack_loc{};
@@ -57,20 +75,26 @@ namespace shambase {
         }
 
         /**
-         * @brief delete the content of the Storage
+         * @brief Reset the storage component
+         *
+         * Delete the content of the StorageComponent by resetting the unique_ptr
+         * holding the stored object.
          */
         void reset() {
             StackEntry stack_loc{};
             hndl.reset();
         }
-
         /**
-         * @brief return whether the storage hold an object or not
+         * @brief Check if the storage component is empty
          *
-         * @return true the storage is empty
-         * @return false the storage hold an object
+         * This function returns whether the storage component is empty or not.
+         *
+         * @return true if the storage component does not hold anything, false
+         * otherwise.
          */
-        bool is_empty() { return !bool(hndl); }
+        bool is_empty() {
+            return !bool(hndl);
+        }
     };
 
 } // namespace shambase

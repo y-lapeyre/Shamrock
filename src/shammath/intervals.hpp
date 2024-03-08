@@ -17,6 +17,7 @@
  
 #include "shambase/sycl_utils/sycl_utilities.hpp"
 #include "shambase/type_traits.hpp"
+#include "shambackends/type_traits.hpp"
 
 namespace shammath {
 
@@ -30,7 +31,7 @@ namespace shammath {
      * @return true
      * @return false
      */
-    template<class T, std::enable_if_t<shambase::is_valid_sycl_base_type<T>, int> = 0>
+    template<class T, std::enable_if_t<sham::is_valid_sycl_base_type<T>, int> = 0>
     inline bool is_in_half_open(T val, T min, T max) {
         return (val >= min) && (val < max);
     }
@@ -104,7 +105,7 @@ namespace shammath {
     // domain_are_connected
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
-    template<class T, std::enable_if_t<shambase::is_valid_sycl_base_type<T>, int> = 0>
+    template<class T, std::enable_if_t<sham::is_valid_sycl_base_type<T>, int> = 0>
     inline bool domain_are_connected(T bmin1, T bmax1, T bmin2, T bmax2){
         return shambase::sycl_utils::g_sycl_max(bmin1, bmin2) <= shambase::sycl_utils::g_sycl_min(bmax1, bmax2);
     }
@@ -139,7 +140,7 @@ namespace shammath {
     // domain_have_intersect
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
-    template<class T, std::enable_if_t<shambase::is_valid_sycl_base_type<T>, int> = 0>
+    template<class T, std::enable_if_t<sham::is_valid_sycl_base_type<T>, int> = 0>
     inline bool domain_have_intersect(T bmin1, T bmax1, T bmin2, T bmax2){
         return shambase::sycl_utils::g_sycl_max(bmin1, bmin2) < shambase::sycl_utils::g_sycl_min(bmax1, bmax2);
     }

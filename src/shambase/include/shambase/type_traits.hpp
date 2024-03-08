@@ -11,11 +11,14 @@
 /**
  * @file type_traits.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @brief 
+ * @brief Traits for C++ types
+ * 
+ * This file contains utility traits classes for C++ types.
  * 
  */
+
  
-#include "shambackends/typeAliasVec.hpp"
+#include "shambase/aliases_int.hpp"
 #include <climits>
 #include <type_traits>
 
@@ -54,16 +57,6 @@ namespace shambase {
     template<typename T, int num>
     inline constexpr bool has_bitlen_v = has_bitlen<T, num>::value;
 
-    inline constexpr bool is_valid_sycl_vec_size(int N) {
-        return N == 2 || N == 3 || N == 4 || N == 8 || N == 16;
-    }
-
-    template<class T>
-    inline constexpr bool is_valid_sycl_base_type =
-        std::is_same_v<T, i64> || std::is_same_v<T, i32> || std::is_same_v<T, i16> ||
-        std::is_same_v<T, i8> || std::is_same_v<T, u64> || std::is_same_v<T, u32> ||
-        std::is_same_v<T, u16> || std::is_same_v<T, u8> || std::is_same_v<T, f16> ||
-        std::is_same_v<T, f32> || std::is_same_v<T, f64>;
 
     template<typename T>
     class has_operator_self_geq {
