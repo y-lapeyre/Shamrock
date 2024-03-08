@@ -22,7 +22,7 @@ namespace shamcomm {
     /**
      * @brief Enum to describe the MPI capabilities
      */
-    enum class StateMPI_Aware {
+    enum StateMPI_Aware {
         /**
          * @brief The MPI implementation does not if the feature is supported
          */
