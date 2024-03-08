@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt 
 import os
 
-tmax = 1/128
+tmax = 1
 def run_sim(vanleer = True, label = "none"):
     ctx = shamrock.Context()
     ctx.pdata_layout_new()
@@ -60,10 +60,10 @@ def run_sim(vanleer = True, label = "none"):
     model.set_field_value_lambda_f64_3("rhovel", rhovel_map)
 
     #model.evolve_once(0,0.1)
-    freq = 20
+    freq = 1
     t = 0
 
-    dt = 1/128
+    dt = 1/256
     for i in range(1000):
         
         if i % freq == 0:
