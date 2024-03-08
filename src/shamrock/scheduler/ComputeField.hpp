@@ -31,12 +31,12 @@ namespace shamrock {
         public:
         shambase::DistributedData<PatchDataField<T>> field_data;
 
-        inline void generate(PatchScheduler &sched, std::string name) {StackEntry stack_loc{};
+        inline void generate(PatchScheduler &sched, std::string name, u32 nvar = 1) {StackEntry stack_loc{};
 
             using namespace shamrock::patch;
 
             sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
-                field_data.insert({id_patch, PatchDataField<T>(name, 1)});
+                field_data.add_obj(id_patch, PatchDataField<T>(name, nvar));
                 field_data.get(id_patch).resize(pdat.get_obj_cnt());
             });
         }

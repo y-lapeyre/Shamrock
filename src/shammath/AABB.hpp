@@ -16,9 +16,9 @@
  */
  
 #include "shambase/SourceLocation.hpp"
-#include "shambase/sycl_utils/sycl_utilities.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"
 #include "shambase/vectors.hpp"
+#include "shambackends/math.hpp"
 
 #include <limits>
 
@@ -56,22 +56,47 @@ namespace shammath {
             return shambase::product_accumulate(upper - lower);
         }
 
-        inline AABB get_intersect(AABB other) const {
+        inline T get_center() const noexcept{
+            return (lower + upper)/2;
+        }
+
+        inline T sum_bounds() const noexcept{
+            return lower + upper;
+        }
+
+        template<class Tb>
+        inline AABB<Tb> convert(){
+            using Tb_prop = shambase::VectorProperties<Tb>;
+            static_assert(Tb_prop::dim == T_prop::dim, "you cannot change the dimension in convert");
+
             return {
-                shambase::sycl_utils::g_sycl_max(lower, other.lower),
-                shambase::sycl_utils::g_sycl_min(upper, other.upper)
+                lower.template convert<Tb_prop::component_type>(),
+                upper.template convert<Tb_prop::component_type>()
+            };
+        }
+        
+        
+
+        inline AABB get_intersect(AABB other)  const noexcept {
+            return {
+                sham::max(lower, other.lower),
+                sham::min(upper, other.upper)
                 };
         }
 
-        inline bool is_not_empty(){
+        [[nodiscard]] inline bool is_not_empty() const noexcept{
             return shambase::vec_compare_geq(upper , lower);
         }
 
-        inline bool is_surface(){
+        [[nodiscard]] inline bool is_volume_not_null() const noexcept{
+            return shambase::vec_compare_g(upper , lower);
+        }
+
+        [[nodiscard]] inline bool is_surface() const noexcept{
             return shambase::component_have_only_one_zero(delt()) && (is_not_empty());
         }
 
-        inline bool is_surface_or_volume(){
+        [[nodiscard]] inline bool is_surface_or_volume() const noexcept{
             return shambase::component_have_at_most_one_zero(delt()) && (is_not_empty());
         }
     };

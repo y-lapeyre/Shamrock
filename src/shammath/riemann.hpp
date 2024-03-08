@@ -15,20 +15,21 @@
  *
  */
 
+#include "shambase/sycl_utils/vectorProperties.hpp"
+
+#include "shambackends/math.hpp"
+#include "shambackends/typeAliasVec.hpp"
+
 #include <algorithm>
 #include <array>
 #include <cmath>
 #include <iostream>
-
 namespace shammath {
-
-    template<typename T>
-    using VectorComponent = std::remove_reference_t<decltype(*std::begin(std::declval<T &>()))>;
 
     template<class Tvec_>
     struct ConsState {
         using Tvec  = Tvec_;
-        using Tscal = VectorComponent<Tvec>;
+        using Tscal = shambase::VecComponent<Tvec>;
 
         Tscal rho{}, rhoe{};
         Tvec rhovel{};
@@ -64,7 +65,7 @@ namespace shammath {
     template<class Tvec_>
     struct PrimState {
         using Tvec  = Tvec_;
-        using Tscal = VectorComponent<Tvec>;
+        using Tscal = shambase::VecComponent<Tvec>;
 
         Tscal rho{}, press{};
         Tvec vel{};
@@ -73,13 +74,15 @@ namespace shammath {
     template<class Tvec_>
     struct Fluxes {
         using Tvec  = Tvec_;
-        using Tscal = VectorComponent<Tvec>;
+        using Tscal = shambase::VecComponent<Tvec>;
 
         std::array<ConsState<Tvec>, 3> F;
     };
 
-    template<class Tscal>
-    inline constexpr Tscal rhoekin(Tscal rho, std::array<Tscal, 3> v) {
+    template<class Tvec>
+    inline constexpr shambase::VecComponent<Tvec>
+    rhoekin(shambase::VecComponent<Tvec> rho, Tvec v) {
+        using Tscal    = shambase::VecComponent<Tvec>;
         const Tscal v2 = v[0] * v[0] + v[1] * v[1] + v[2] * v[2];
         return 0.5 * rho * v2;
     }
@@ -137,9 +140,9 @@ namespace shammath {
     }
 
     template<class Tvec>
-    inline constexpr VectorComponent<Tvec>
-    sound_speed(PrimState<Tvec> prim, VectorComponent<Tvec> gamma) {
-        return std::sqrt(gamma * prim.press / prim.rho);
+    inline constexpr shambase::VecComponent<Tvec>
+    sound_speed(PrimState<Tvec> prim, shambase::VecComponent<Tvec> gamma) {
+        return sycl::sqrt(gamma * prim.press / prim.rho);
     }
 
     template<class Tcons>
@@ -152,11 +155,9 @@ namespace shammath {
         const auto csL = sound_speed(primL, gamma);
         const auto csR = sound_speed(primR, gamma);
 
-        const auto S = std::max(
-            {std::abs(primL.vel[0] - csL),
-             std::abs(primR.vel[0] - csR),
-             std::abs(primL.vel[0] + csL),
-             std::abs(primR.vel[0] + csR)});
+        const auto S = sham::max(
+            sham::max(sham::abs(primL.vel[0] - csL), sham::abs(primR.vel[0] - csR)),
+            sham::max(sham::abs(primL.vel[0] + csL), sham::abs(primR.vel[0] + csR)));
 
         const auto fL = hydro_flux_x(cL, gamma);
         const auto fR = hydro_flux_x(cR, gamma);
@@ -226,8 +227,8 @@ namespace shammath {
 
         const auto csL = sound_speed(primL, gamma);
         const auto csR = sound_speed(primR, gamma);
-        const auto S_L = std::min({primL.vel[0] - csL, primR.vel[0] - csR});
-        const auto S_R = std::max({primL.vel[0] + csL, primR.vel[0] + csR});
+        const auto S_L = sham::min(primL.vel[0] - csL, primR.vel[0] - csR);
+        const auto S_R = sham::max(primL.vel[0] + csL, primR.vel[0] + csR);
 
         const auto fluxL = hydro_flux_x(consL, gamma);
         const auto fluxR = hydro_flux_x(consR, gamma);
@@ -243,12 +244,12 @@ namespace shammath {
         };
 
         auto hll_flux = [=]() {
-            const auto S_L_upwind = std::min({S_L, 0.0});
-            const auto S_R_upwind = std::max({S_R, 0.0});
+            const auto S_L_upwind = sham::min(S_L, 0.0);
+            const auto S_R_upwind = sham::max(S_R, 0.0);
             const auto S_norm     = 1.0 / (S_R_upwind - S_L_upwind);
-            return (fluxL * S_R_upwind - fluxR * S_L_upwind +
-                    (consR - consL) * S_R_upwind * S_L_upwind) *
-                   S_norm;
+            return (fluxL * S_R_upwind - fluxR * S_L_upwind
+                    + (consR - consL) * S_R_upwind * S_L_upwind)
+                   * S_norm;
         };
 
         return hll_flux();
