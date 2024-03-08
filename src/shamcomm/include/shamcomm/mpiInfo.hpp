@@ -11,19 +11,54 @@
 /**
  * @file mpiInfo.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @brief Use this header to include MPI properly
+ * @brief Provide information about MPI capabilities
  *
+ * This header provides information about the MPI capabilities of the
+ * current process.
  */
 
 namespace shamcomm {
 
-    enum StateMPI_Aware { Unknown, Yes, No };
+    /**
+     * @brief Enum to describe the MPI capabilities
+     */
+    enum class StateMPI_Aware {
+        /**
+         * @brief The MPI implementation does not if the feature is supported
+         */
+        Unknown,
+        /**
+         * @brief The MPI implementation supports the feature
+         */
+        Yes,
+        /**
+         * @brief The MPI implementation does not support the feature
+         */
+        No
+    };
 
+    /**
+     * @brief State of the CUDA MPI awareness
+     */
     extern StateMPI_Aware mpi_cuda_aware;
+
+    /**
+     * @brief State of the ROCm MPI awareness
+     */
     extern StateMPI_Aware mpi_rocm_aware;
 
+    /**
+     * @brief Fetch the MPI capabilities
+     *
+     * This function fetches the MPI capabilities of the current process.
+     *
+     * @param force_aware Force the MPI CUDA & ROCM aware capability to be reported as @c Yes
+     */
     void fetch_mpi_capabilities(bool force_aware) ;
 
+    /**
+     * @brief Print the MPI capabilities
+     */
     void print_mpi_capabilities();
 
 } // namespace shamcomm
