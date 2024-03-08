@@ -18,7 +18,7 @@
 #include "shambase/aliases_float.hpp"
 #include "shambase/bytestream.hpp"
 #include "shambase/exception.hpp"
-#include "shamsys/legacy/log.hpp"
+
 #include <fstream>
 #include <stdexcept>
 #include <utility>
@@ -141,7 +141,7 @@ namespace shambase {
         }
 
         inline void write_string_array(std::vector<std::string> &svec, u32 strlen, u32 str_count) {
-            
+
             i32 totlen = strlen * str_count;
 
             stream_write(data, totlen);
@@ -173,8 +173,9 @@ namespace shambase {
 
         template<class T>
         inline void write_val_array(std::vector<T> &vec, u32 val_count) {
-            if(val_count > vec.size()){
-                throw make_except_with_loc<std::invalid_argument>("val count is higher than vec size");
+            if (val_count > vec.size()) {
+                throw make_except_with_loc<std::invalid_argument>(
+                    "val count is higher than vec size");
             }
             i32 totlen = sizeof(T) * val_count;
             stream_write(data, totlen);
@@ -188,19 +189,39 @@ namespace shambase {
 
         inline bool finished_read() { return lenght == data.tellg(); }
 
+        /**
+         * @brief Write the Fortran formatted file to disk.
+         *
+         * @param fname Filename to write to
+         *
+         * @throws runtime_error if the file could not be opened for writing
+         */
         inline void write_to_file(std::string fname) {
             std::ofstream out_f(fname, std::ios::binary);
 
             if (out_f) {
+                // Copy the contents of the internal streambuf to the file
                 out_f << data.rdbuf();
 
+                // Close the file
                 out_f.close();
             } else {
-                shambase::throw_unimplemented();
+                // Throw an exception if the file could not be opened for writing
+                throw_unimplemented(
+                    "unimplemented case : could not open file " + fname + " for writing");
             }
         }
     };
 
+    /**
+     * @brief Load a Fortran formatted file from disk.
+     *
+     * @param fname Filename of the file to load
+     *
+     * @return The loaded file
+     *
+     * @throws runtime_error if the file is not found
+     */
     inline FortranIOFile load_fortran_file(std::string fname) {
         std::ifstream in_f(fname, std::ios::binary);
 
@@ -209,7 +230,7 @@ namespace shambase {
             buffer << in_f.rdbuf();
             in_f.close();
         } else {
-            shambase::throw_unimplemented("file not found");
+            throw_unimplemented("unimplemented case : file not found");
         }
 
         return FortranIOFile(std::move(buffer), buffer.tellp());
