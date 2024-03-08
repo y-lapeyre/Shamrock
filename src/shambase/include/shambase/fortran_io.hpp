@@ -155,6 +155,17 @@ namespace shambase {
             check_fortran_4byte(data, check);
         }
 
+        /**
+         * @brief Read a fixed-length string from the buffer
+         *
+         * This function reads a fixed-length string from the buffer using the
+         * Fortran-like serialization format. The string is serialized in the
+         * following way: first the size of the string in bytes, then the
+         * string itself, and finally again the size of the string in bytes.
+         *
+         * @param[out] s the string to be read
+         * @param len the length of the string to be read
+         */
         inline void read_fixed_string(std::string &s, u32 len) {
             s.resize(len);
             i32 check = read_fortran_4byte(data);
