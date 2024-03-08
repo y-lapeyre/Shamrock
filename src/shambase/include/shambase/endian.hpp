@@ -22,11 +22,12 @@ namespace shambase {
 
 
     /**
-     * @brief check if the cpu is in little endian
-     * p. 45 of Pointers in C
+     * @brief Check if the CPU is in little endian
      * 
-     * @return true 
-     * @return false 
+     * Create a short with definite value, by reinterpretting it and 
+     * checking the first byte we can know if the CPU is big or little endian
+     * 
+     * @return true if the CPU is in little endian, false otherwise
      */
     inline bool is_little_endian() {
         short int word = 0x0001;
