@@ -11,34 +11,55 @@
 /**
  * @file DistributedData.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @brief 
- * 
+ * @brief
+ *
  */
- 
+
 #include "shambase/exception.hpp"
 #include "shambase/stacktrace.hpp"
 #include "shambase/string.hpp"
+
 #include "shamsys/legacy/log.hpp"
+
 #include <map>
 #include <utility>
 
 namespace shambase {
 
     /**
-     * @brief Describe an object distributed accros patches (id = u64)
+     * @brief Represents a collection of objects distributed across patches identified by a u64 id.
      *
-     * @tparam T
+     * This class provides methods for managing the distributed data collection,
+     * including adding, removing, finding, and iterating over elements.
+     * It also supports mapping the collection to a new type using a user-defined mapping function.
+     *
+     * @tparam T The type of the object in the collection.
      */
     template<class T>
     class DistributedData {
 
-        std::map<u64, T> data;
+        std::map<u64, T> data; ///< The underlying collection.
 
-        using iterator = typename std::map<u64, T>::iterator;
+        using iterator = typename std::map<u64, T>::iterator; ///< Iterator type.
 
         public:
+        /**
+         * @brief Returns the underlying collection.
+         *
+         * @return The underlying collection.
+         */
         inline std::map<u64, T> &get_native() { return data; }
 
+        /**
+         * @brief Adds a new object to the collection.
+         *
+         * @param id The id of the patch the object belongs to.
+         * @param obj The object to add.
+         *
+         * @return An iterator pointing to the inserted object.
+         *
+         * @throw If the key already exist.
+         */
         inline iterator add_obj(u64 id, T &&obj) {
 
             std::pair<iterator, bool> ret = data.emplace(id, std::forward<T>(obj));
@@ -50,6 +71,11 @@ namespace shambase {
             return ret.first;
         }
 
+        /**
+         * @brief Removes an object from the collection.
+         *
+         * @param id The id of the patch the object belongs to.
+         */
         inline void erase(u64 id) { data.erase(id); }
 
         inline void for_each(std::function<void(u64, T &)> &&f) {
@@ -57,39 +83,119 @@ namespace shambase {
                 f(id, obj);
             }
         }
+
+        /**
+         * @brief Finds an object in the collection.
+         *
+         * @param id The id of the patch the object belongs to.
+         *
+         * @return An iterator pointing to the object if found, or data.end() otherwise.
+         */
         inline auto find(u64 id) { return data.find(id); }
 
+        /**
+         * @brief Returns an iterator pointing to the end of the collection.
+         *
+         * @return An iterator pointing to the end of the collection.
+         */
         inline auto not_found() { return data.end(); }
 
+        /**
+         * @brief Returns a reference to an object in the collection.
+         *
+         * @param id The id of the patch the object belongs to.
+         *
+         * @return A reference to the object.
+         *
+         * @throw If the object is not found.
+         */
         inline T &get(u64 id) { return data.at(id); }
 
+        /**
+         * @brief Checks if an object exists in the collection.
+         *
+         * @param id The id of the patch the object belongs to.
+         *
+         * @return True if the object is found, false otherwise.
+         */
         inline bool has_key(u64 id) { return (data.find(id) != data.end()); }
 
+        /**
+         * @brief Returns the number of elements in the collection.
+         *
+         * @return The number of elements in the collection.
+         */
         inline u64 get_element_count() { return data.size(); }
 
-        inline bool is_empty(){
-            return data.empty();
-        }
+        /**
+         * @brief Returns true if the collection is empty.
+         *
+         * @return True if the collection is empty, false otherwise.
+         */
+        inline bool is_empty() { return data.empty(); }
 
+        /**
+         * @brief Prints all the objects in the collection to the logger.
+         *
+         * The format string is passed to fmt::format to format each object, so
+         * the syntax is the same as fmt::format. The object is passed as the
+         * second argument to fmt::format.
+         *
+         * Example:
+         * \code{.cpp}
+         * DistributedData<int> data;
+         * data.add_obj(0, 42);
+         * data.add_obj(1, 24);
+         * data.print_data("{:d}"); // will print "0 -> 42" and "1 -> 24"
+         * \endcode
+         *
+         * @tparam Tf Types of the format string placeholders.
+         * @param fmt The format string.
+         */
         template<typename... Tf>
-        inline void print_data(fmt::format_string<Tf...> fmt){
-            for_each([&](u64 id_patch, T & ref){
-                logger::raw_ln(id_patch ,"->" ,shambase::format(fmt, ref));
+        inline void print_data(fmt::format_string<Tf...> fmt) {
+            for_each([&](u64 id_patch, T &ref) {
+                logger::raw_ln(id_patch, "->", shambase::format(fmt, ref));
             });
         }
 
+        /**
+         * @brief Apply a function to all objects in the collection and return
+         *        a new collection containing the results.
+         *
+         * The function `map_func` is applied to each object in the collection and
+         * the result is stored in a new collection. The function is passed the
+         * id of the object and a reference to the object as arguments.
+         *
+         * Example:
+         * \code{.cpp}
+         * DistributedData<int> data;
+         * data.add_obj(0, 42);
+         * data.add_obj(1, 24);
+         *
+         * // a DistributedData<float> with doubled values from the input
+         * auto mapped = data.map<float>([](u64 id, int& val) { return val * 2.; });
+         * \endcode
+         *
+         * @tparam Tmap Type of the objects in the returned collection.
+         * @param map_func The function to apply to each object.
+         * @return A new collection containing the results of the map function.
+         */
         template<class Tmap>
-        inline DistributedData<Tmap> map(std::function<Tmap(u64, T&)> map_func){
+        inline DistributedData<Tmap> map(std::function<Tmap(u64, T &)> map_func) {
             DistributedData<Tmap> ret;
-            for_each([&](u64 id, T& ref){
-                ret.add_obj(id, map_func(id,ref));
+            for_each([&](u64 id, T &ref) {
+                ret.add_obj(id, map_func(id, ref));
             });
             return ret;
         }
 
-        inline void reset(){
-            data.clear();
-        }
+        /**
+         * @brief Reset the collection to its initial state
+         *
+         * All objects in the collection are removed.
+         */
+        inline void reset() { data.clear(); }
     };
 
     /**
@@ -118,24 +224,23 @@ namespace shambase {
             }
         }
 
-        inline void tranfer_all(std::function<bool(u64, u64)> cd, DistributedDataShared & other){
+        inline void tranfer_all(std::function<bool(u64, u64)> cd, DistributedDataShared &other) {
 
             std::vector<std::pair<u64, u64>> occurences;
 
             // whoa i forgot the & here and triggered the copy constructor of every patch
             // like do not forget it or it will be a disaster waiting to come
             // i did throw up a 64 GPUs run because of that
-            for(auto & [k,v] : data){
-                if(cd(k.first,k.second)){
+            for (auto &[k, v] : data) {
+                if (cd(k.first, k.second)) {
                     occurences.push_back(k);
                 }
             }
 
-            for(auto p : occurences){
+            for (auto p : occurences) {
                 auto ext = data.extract(p);
                 other.data.insert(std::move(ext));
             }
-
         }
 
         inline bool has_key(u64 left_id, u64 right_id) {
@@ -145,20 +250,16 @@ namespace shambase {
         inline u64 get_element_count() { return data.size(); }
 
         template<class Tmap>
-        inline DistributedDataShared<Tmap> map(std::function<Tmap(u64, u64, T&)> map_func){
+        inline DistributedDataShared<Tmap> map(std::function<Tmap(u64, u64, T &)> map_func) {
             DistributedDataShared<Tmap> ret;
-            for_each([&](u64 left,u64 right, T& ref){
-                ret.add_obj(left, right, map_func(left,right,ref));
+            for_each([&](u64 left, u64 right, T &ref) {
+                ret.add_obj(left, right, map_func(left, right, ref));
             });
             return ret;
         }
-        
-        inline void reset(){
-            data.clear();
-        }
 
-        inline bool is_empty(){
-            return data.empty();
-        }
+        inline void reset() { data.clear(); }
+
+        inline bool is_empty() { return data.empty(); }
     };
 } // namespace shambase
