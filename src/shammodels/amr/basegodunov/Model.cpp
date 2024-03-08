@@ -45,6 +45,26 @@ void Model<Tvec, TgridVec>::init_scheduler(u32 crit_split, u32 crit_merge){
 
 template<class Tvec, class TgridVec>
 void Model<Tvec, TgridVec>::make_base_grid(TgridVec bmin, TgridVec cell_size, u32_3 cell_count){
+
+    if(cell_size.x() < Solver::Config::AMRBlock::Nside){
+        shambase::throw_with_loc<std::invalid_argument>(
+            shambase::format("the x block size must be larger than {}, currently : cell_size = {}",
+            Solver::Config::AMRBlock::Nside, cell_size)
+            );
+    }
+    if(cell_size.y() < Solver::Config::AMRBlock::Nside){
+        shambase::throw_with_loc<std::invalid_argument>(
+            shambase::format("the y block size must be larger than {}, currently : cell_size = {}",
+            Solver::Config::AMRBlock::Nside, cell_size)
+            );
+    }
+    if(cell_size.z() < Solver::Config::AMRBlock::Nside){
+        shambase::throw_with_loc<std::invalid_argument>(
+            shambase::format("the z block size must be larger than {}, currently : cell_size = {}",
+            Solver::Config::AMRBlock::Nside, cell_size)
+            );
+    }
+
     shamrock::amr::AMRGrid<TgridVec, 3> grid (shambase::get_check_ref(ctx.sched));
     grid.make_base_grid(bmin, cell_size, {cell_count.x(), cell_count.y(), cell_count.z()});
 
