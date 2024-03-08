@@ -42,7 +42,7 @@ namespace shamtest {
 
             /**
              * @brief This constructor register the given arguments into `static_init_vec_tests`
-             * 
+             *
              * @param t the test info
              */
             inline explicit TestStaticInit(Test t) {
@@ -58,20 +58,19 @@ namespace shamtest {
 
     } // namespace details
 
-
-    struct TestConfig{
+    struct TestConfig {
 
         bool print_test_list_exit = false;
 
         bool full_output = false;
 
-        bool output_tex = true;
+        bool output_tex                        = true;
         std::optional<std::string> json_output = {};
 
         bool run_long_tests = false;
-        bool run_unittest = true;
+        bool run_unittest   = true;
         bool run_validation = true;
-        bool run_benchmark = false;
+        bool run_benchmark  = false;
 
         std::optional<std::string> run_only = {};
     };
@@ -86,7 +85,7 @@ namespace shamtest {
      * @param run_unittest run unittests ?
      * @return int
      */
-    int run_all_tests(int argc, char *argv[],TestConfig cfg);
+    int run_all_tests(int argc, char *argv[], TestConfig cfg);
 
     /**
      * @brief current test asserts
@@ -106,10 +105,8 @@ namespace shamtest {
         return shamtest::details::current_test.test_data;
     };
 
-    inline std::string & test_tex_out(){
-        return shamtest::details::current_test.tex_output;
-    }
-    
+    inline std::string &test_tex_out() { return shamtest::details::current_test.tex_output; }
+
 } // namespace shamtest
 
 /**
@@ -157,6 +154,26 @@ namespace shamtest {
  */
 #define _AssertEqual(a, b) shamtest::asserts().assert_equal(#a "==" #b, a, b);
 
+#define _Assert_throw(call, exception_type)                                                        \
+    try {                                                                                          \
+        call;                                                                                      \
+        shamtest::asserts().assert_bool(                                                           \
+            "Expected throw of type " #exception_type ", but nothing was thrown",                  \
+            false,                                                                                 \
+            SourceLocation{});                                                                     \
+    } catch (const exception_type &ex) {                                                           \
+    } catch (const std::exception &e) {                                                            \
+        shamtest::asserts().assert_bool(                                                           \
+            "Expected throw of type " #exception_type ", but got " + std::string(e.what()),        \
+            false,                                                                                 \
+            SourceLocation{});                                                                     \
+    } catch (...) {                                                                                \
+        shamtest::asserts().assert_bool(                                                           \
+            "Expected throw of type " #exception_type ", but got unknown exception",               \
+            false,                                                                                 \
+            SourceLocation{});                                                                     \
+    }
+
 /**
  * @brief Assert macro for test, testing equality between two variables, with a given precision
  *
@@ -179,3 +196,6 @@ namespace shamtest {
  * \endcode
  */
 #define TEX_REPORT(src) shamtest::details::current_test.tex_output += src;
+
+#define REQUIRE(a) _Assert(a)
+#define REQUIRE_THROW_AS(call, expt_type) _Assert_throw(call, expt_type)
