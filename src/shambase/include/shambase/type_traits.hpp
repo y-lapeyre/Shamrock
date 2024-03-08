@@ -21,14 +21,36 @@
 
 namespace shambase {
 
+    /**
+     * @brief Number of bits in a type T
+     *
+     * @tparam T type for which the number of bits is computed
+     */
     template<class T>
     inline constexpr u64 bitsizeof = sizeof(T) * CHAR_BIT;
 
+    /**
+     * @brief Check if a type has a certain number of bits
+     *
+     * This struct template provides a static constexpr bool member `value` which
+     * is true if the type `T` has `num` bits.
+     *
+     * @tparam T type to check
+     * @tparam num number of bits
+     */
     template<typename T, int num>
     struct has_bitlen {
         static constexpr bool value = bitsizeof<T> == num;
     };
 
+    /**
+     * @brief Helper variable template for has_bitlen
+     *
+     * This variable template is true if `T` has `num` bits.
+     *
+     * @tparam T type to check
+     * @tparam num number of bits
+     */
     template<typename T, int num>
     inline constexpr bool has_bitlen_v = has_bitlen<T, num>::value;
 

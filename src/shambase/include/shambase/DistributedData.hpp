@@ -21,6 +21,7 @@
 
 #include "shamsys/legacy/log.hpp"
 
+#include <functional>
 #include <map>
 #include <utility>
 
@@ -163,9 +164,10 @@ namespace shambase {
          * @brief Apply a function to all objects in the collection and return
          *        a new collection containing the results.
          *
-         * The function `map_func` is applied to each object in the collection and
-         * the result is stored in a new collection. The function is passed the
-         * id of the object and a reference to the object as arguments.
+         * The `map()` function applies the given function to each object in the
+         * collection and stores the result in a new collection. The function
+         * is passed the id of the object and a reference to the object as
+         * arguments.
          *
          * Example:
          * \code{.cpp}
@@ -184,12 +186,14 @@ namespace shambase {
         template<class Tmap>
         inline DistributedData<Tmap> map(std::function<Tmap(u64, T &)> map_func) {
             DistributedData<Tmap> ret;
+
             for_each([&](u64 id, T &ref) {
                 ret.add_obj(id, map_func(id, ref));
             });
+
             return ret;
         }
-
+        
         /**
          * @brief Reset the collection to its initial state
          *
