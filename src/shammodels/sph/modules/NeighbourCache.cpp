@@ -16,7 +16,6 @@
 #include "ExternalForces.hpp"
 
 #include "shambase/aliases_int.hpp"
-#include "shambase/sycl_utils/sycl_utilities.hpp"
 #include "shammath/sphkernels.hpp"
 #include "shammodels/sph/modules/NeighbourCache.hpp"
 #include "shamrock/legacy/utils/geometry_utils.hpp"

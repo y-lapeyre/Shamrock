@@ -15,7 +15,6 @@
  */
 
 #include "UpdateViscosity.hpp"
-#include "shambase/sycl_utils/sycl_utilities.hpp"
 #include "shammath/sphkernels.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shammodels/sph/math/forces.hpp"

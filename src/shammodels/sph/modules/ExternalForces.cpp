@@ -15,7 +15,6 @@
 
 #include "ExternalForces.hpp"
 
-#include "shambase/sycl_utils/sycl_utilities.hpp"
 #include "shammath/sphkernels.hpp"
 #include "shammodels/sph/modules/SinkParticlesUpdate.hpp"
 #include "shamsys/legacy/log.hpp"

@@ -15,7 +15,6 @@
  *
  */
 
-#include "shambase/sycl_utils/sycl_utilities.hpp"
 #include "shambase/sycl_utils/vec_equals.hpp"
 #include "shambase/vectors.hpp"
 

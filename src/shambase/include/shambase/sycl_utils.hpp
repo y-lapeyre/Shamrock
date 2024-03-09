@@ -18,7 +18,6 @@
 #include "shambase/exception.hpp"
 #include "shambase/integer.hpp"
 #include "shamcomm/logs.hpp"
-#include "sycl_utils/sycl_utilities.hpp"
 #include "sycl_utils/vec_equals.hpp"
 #include "sycl_utils/vectorProperties.hpp"
 #include <stdexcept>

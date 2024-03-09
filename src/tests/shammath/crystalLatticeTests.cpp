@@ -1,4 +1,4 @@
-// -------------------------------------------------------//
+ // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
 // Copyright(C) 2021-2023 Timothée David--Cléris <timothee.david--cleris@ens-lyon.fr>
@@ -9,7 +9,6 @@
 #include "shamalgs/details/random/random.hpp"
 #include "shambackends/typeAliasVec.hpp"
 #include "shambase/string.hpp"
-#include "shambase/sycl_utils/sycl_utilities.hpp"
 #include "shammath/CoordRange.hpp"
 #include "shammath/crystalLattice.hpp"
 #include "shammath/sphkernels.hpp"

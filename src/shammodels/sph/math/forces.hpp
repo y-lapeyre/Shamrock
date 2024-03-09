@@ -16,7 +16,6 @@
  */
 
 #include "shambackends/math.hpp"
-#include "shambase/sycl_utils/sycl_utilities.hpp"
 
 namespace shamrock::sph {
 

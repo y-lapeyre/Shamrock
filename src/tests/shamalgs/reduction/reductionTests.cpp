@@ -13,7 +13,6 @@
 #include "shamalgs/reduction.hpp"
 #include "shamalgs/details/reduction/sycl2020reduction.hpp"
 #include "shambase/string.hpp"
-#include "shambase/sycl_utils/sycl_utilities.hpp"
 #include "shambase/time.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
