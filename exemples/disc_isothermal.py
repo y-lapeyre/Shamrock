@@ -23,7 +23,7 @@ cfg.print_status()
 cfg.set_units(codeu)
 model.set_solver_config(cfg)
 
-model.init_scheduler(int(1e7),1)
+model.init_scheduler(int(1e4),1)
 
 
 bmin = (-10,-10,-10)
@@ -32,7 +32,7 @@ model.resize_simulation_box(bmin,bmax)
 
 disc_mass = 0.001
 
-pmass = model.add_disc_3d(
+pmass = model.add_big_disc_3d(
     (0,0,0),
     1,
     100000,
@@ -40,7 +40,7 @@ pmass = model.add_disc_3d(
     disc_mass,
     1.,
     0.05,
-    1./4.)
+    1./4., 11)
 
 model.set_cfl_cour(0.3)
 model.set_cfl_force(0.25)
@@ -84,37 +84,14 @@ def plot_vertical_profile(r, rrange, label = ""):
 
 
 print("Run")
-# run the smoothing lenght iteration with bumped tolerance to reduce convergence time
 model.change_htolerance(1.3)
 model.evolve_once_override_time(0,0)
 model.change_htolerance(1.1)
 
-print("Current part mass :", pmass)
+for i in range(4):
+    model.timestep()
 
-plot_vertical_profile(1,0.5, label = "init")
-
-t_sum = 0
-t_target = 4e-1
-
-i_dump = 0
-dt_dump = 1e-2
-next_dt_target = t_sum + dt_dump
-
-while next_dt_target <= t_target:
-
-    fname = "dump_{:04}.phfile".format(i_dump)
-
-    model.evolve_until(next_dt_target)
-    dump = model.make_phantom_dump()
-    dump.save_dump(fname)
-
-    i_dump += 1
-
-    next_dt_target += dt_dump
-
-
-plot_vertical_profile(1,0.5, label = "end")
-
-plt.legend()
-plt.show()
+model.do_vtk_dump("end.vtk", True)
+dump = model.make_phantom_dump()
+dump.save_dump("end.phdump")
 
