@@ -16,7 +16,7 @@
  */
  
 #include "shambackends/typeAliasVec.hpp"
-#include "shambase/Constants.hpp"
+#include "shambase/constants.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"
 #include <random>
 #include "shambackends/sycl.hpp"
