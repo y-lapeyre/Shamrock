@@ -55,7 +55,7 @@ namespace shamrock {
             T ret = shambase::VectorProperties<T>::get_min();
             field_data.for_each([&](u64 id, PatchDataField<T> & cfield){
                 if(!cfield.is_empty()){
-                    ret = shambase::sycl_utils::g_sycl_max(ret, cfield.compute_max());
+                    ret = sham::max(ret, cfield.compute_max());
                 }
             });
 
@@ -66,7 +66,7 @@ namespace shamrock {
             T ret = shambase::VectorProperties<T>::get_max();
             field_data.for_each([&](u64 id, PatchDataField<T> & cfield){
                 if(!cfield.is_empty()){
-                    ret = shambase::sycl_utils::g_sycl_min(ret, cfield.compute_min());
+                    ret = sham::min(ret, cfield.compute_min());
                 }
             });
 
@@ -77,7 +77,7 @@ namespace shamrock {
             T ret = shambase::VectorProperties<T>::get_zero();
             field_data.for_each([&](u64 id, PatchDataField<T> & cfield){
                 if(!cfield.is_empty()){
-                    ret = shambase::sycl_utils::g_sycl_min(ret, cfield.compute_min());
+                    ret = sham::min(ret, cfield.compute_min());
                 }
             });
 

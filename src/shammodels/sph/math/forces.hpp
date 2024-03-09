@@ -116,7 +116,7 @@ namespace shamrock::sph {
      */
     template<class Tscal>
     inline Tscal q_av(Tscal rho, Tscal vsig, Tscal v_scal_rhat) {
-        return shambase::sycl_utils::g_sycl_max(-Tscal(0.5) * rho * vsig * v_scal_rhat, Tscal(0));
+        return sham::max(-Tscal(0.5) * rho * vsig * v_scal_rhat, Tscal(0));
     }
     template<class Tscal>
     inline Tscal q_av_disc(Tscal rho, Tscal h, Tscal rab, Tscal alpha_av, Tscal cs, Tscal vsig, Tscal v_scal_rhat) {

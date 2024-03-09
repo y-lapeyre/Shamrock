@@ -17,6 +17,7 @@
 
 #include "shambase/sycl_utils/sycl_utilities.hpp"
 #include "shambase/sycl_utils/vec_equals.hpp"
+#include "shambase/vectors.hpp"
 
 
 namespace sham::syclbackport {
@@ -46,33 +47,117 @@ HIPSYCL_UNIVERSAL_TARGET bool fallback_is_inf(T value){
 
 }
 
+namespace sham::details {
+    template<class T>
+    inline T g_sycl_min(T a, T b) {
+
+        static_assert(shambase::VectorProperties<T>::has_info, "no info about this type");
+
+        if constexpr (shambase::VectorProperties<T>::is_float_based) {
+            return sycl::fmin(a, b);
+        } else if constexpr (shambase::VectorProperties<T>::is_int_based) {
+            return sycl::min(a, b);
+        } else if constexpr (shambase::VectorProperties<T>::is_uint_based) {
+            return sycl::min(a, b);
+        }
+    }
+
+    template<class T>
+    inline T g_sycl_max(T a, T b) {
+
+        static_assert(shambase::VectorProperties<T>::has_info, "no info about this type");
+
+        if constexpr (shambase::VectorProperties<T>::is_float_based) {
+            return sycl::fmax(a, b);
+        } else if constexpr (shambase::VectorProperties<T>::is_int_based) {
+            return sycl::max(a, b);
+        } else if constexpr (shambase::VectorProperties<T>::is_uint_based) {
+            return sycl::max(a, b);
+        }
+    }
+
+    template<class T>
+    inline T g_sycl_abs(T a) {
+
+        static_assert(shambase::VectorProperties<T>::has_info, "no info about this type");
+
+        if constexpr (shambase::VectorProperties<T>::is_float_based) {
+            return sycl::fabs(a);
+        } else if constexpr (shambase::VectorProperties<T>::is_int_based) {
+            return sycl::abs(a);
+        } else if constexpr (shambase::VectorProperties<T>::is_uint_based) {
+            return sycl::abs(a);
+        }
+
+    }
+
+    template<class T>
+    inline shambase::VecComponent<T> g_sycl_dot(T a, T b) {
+
+        static_assert(shambase::VectorProperties<T>::has_info, "no info about this type");
+
+        if constexpr (shambase::VectorProperties<T>::is_float_based && shambase::VectorProperties<T>::dimension <=4) {
+
+            return sycl::dot(a, b);
+
+        } else {
+
+            return shambase::sum_accumulate(a * b);
+        }
+    }
+}
+
 
 
 namespace sham {
 
     template<class T>
     inline T min(T a, T b) {
-        return shambase::sycl_utils::g_sycl_min(a, b);
+        return sham::details::g_sycl_min(a, b);
     }
 
     template<class T>
     inline T max(T a, T b) {
-        return shambase::sycl_utils::g_sycl_max(a, b);
+        return sham::details::g_sycl_max(a, b);
+    }
+
+    template<class T>
+    inline shambase::VecComponent<T> dot(T a, T b){
+        return sham::details::g_sycl_dot(a, b);
+    }
+
+    template<class T>
+    inline T max_8points(T v0,T v1,T v2,T v3,T v4,T v5,T v6,T v7){
+        return max(
+                max( max(v0, v1), max(v2, v3))
+            , 
+                max( max(v4, v5), max(v6, v7))
+            );
+    }
+
+
+    template<class T>
+    inline T min_8points(T v0,T v1,T v2,T v3,T v4,T v5,T v6,T v7){
+        return min(
+                min( min(v0, v1), min(v2, v3))
+            , 
+                min( min(v4, v5), min(v6, v7))
+            );
     }
 
     template<class T>
     inline T abs(T a) {
-        return shambase::sycl_utils::g_sycl_abs(a);
+        return sham::details::g_sycl_abs(a);
     }
 
     template<class T>
     inline T positive_part(T a){
-        return (g_sycl_abs(a) + a)/2;
+        return (sham::abs(a) + a)/2;
     }
 
     template<class T>
     inline T negative_part(T a){
-        return (g_sycl_abs(a) - a)/2;
+        return (sham::abs(a) - a)/2;
     }
 
     template<class T>

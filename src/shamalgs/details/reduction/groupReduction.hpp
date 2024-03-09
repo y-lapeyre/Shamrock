@@ -19,7 +19,7 @@
 #include "shambackends/math.hpp"
 #include "shambackends/sycl.hpp"
 #include "shambase/sycl_utils.hpp"
-#include "shambase/sycl_utils/sycl_utilities.hpp"
+#include "shambackends/math.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"
 
 template<class T, u32 work_group_size>
@@ -65,13 +65,13 @@ struct _tmp_min {
 template<typename T = void>
 struct _tmp_max {
     inline T operator()(const T &lhs, const T &rhs) const {
-        return shambase::sycl_utils::g_sycl_max(lhs, rhs);
+        return sham::max(lhs, rhs);
     }
 };
 template<typename T = void>
 struct _tmp_min {
     inline T operator()(const T &lhs, const T &rhs) const {
-        return shambase::sycl_utils::g_sycl_max(lhs, rhs);
+        return sham::max(lhs, rhs);
     }
 };
     #define SYCL_SUM_OP                                                                            \
@@ -256,7 +256,7 @@ namespace shamalgs::reduction::details {
         {
             sycl::host_accessor acc{recov, sycl::read_only};
             for (u64 i = 0; i < remaining_val; i++) {
-                ret = shambase::sycl_utils::g_sycl_min(acc[i], ret);
+                ret = sham::min(acc[i], ret);
             }
         }
 
@@ -341,7 +341,7 @@ namespace shamalgs::reduction::details {
         {
             sycl::host_accessor acc{recov, sycl::read_only};
             for (u64 i = 0; i < remaining_val; i++) {
-                ret = shambase::sycl_utils::g_sycl_max(acc[i], ret);
+                ret = sham::max(acc[i], ret);
             }
         }
 

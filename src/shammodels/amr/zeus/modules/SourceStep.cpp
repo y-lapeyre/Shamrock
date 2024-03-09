@@ -291,7 +291,7 @@ void Module<Tvec, TgridVec>::compute_AV() {
                         vel_i_j_kp1.z() - vel_i_j_k.z()
                     };
 
-                    dv = shambase::sycl_utils::negative_part(dv);
+                    dv = sham::negative_part(dv);
 
                     constexpr Tscal C2 = 3;
 

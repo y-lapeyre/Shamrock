@@ -57,7 +57,7 @@ template<class T,class Fct> void unit_test_reduc_sum(std::string name, Fct && re
     }
 
     T delt = (sycl_ret - check_val)/1e8;
-    auto dot = shambase::sycl_utils::g_sycl_dot(delt, delt);
+    auto dot = sham::dot(delt, delt);
 
     shamtest::asserts().assert_float_equal(name, dot,0,1e-9);
 
@@ -91,12 +91,12 @@ template<class T,class Fct> void unit_test_reduc_min(std::string name, Fct && re
     {
         check_val = shambase::VectorProperties<T>::get_max();
         for(auto & f : vals){
-            check_val = shambase::sycl_utils::g_sycl_min(f, check_val);
+            check_val = sham::min(f, check_val);
         }
     }
 
     T delt = (sycl_ret - check_val)/1e8;
-    auto dot = shambase::sycl_utils::g_sycl_dot(delt, delt);
+    auto dot = sham::dot(delt, delt);
 
     shamtest::asserts().assert_float_equal(name, dot,0,1e-9);
 
@@ -130,12 +130,12 @@ template<class T,class Fct> void unit_test_reduc_max(std::string name, Fct && re
     {
         check_val = shambase::VectorProperties<T>::get_min();
         for(auto & f : vals){
-            check_val = shambase::sycl_utils::g_sycl_max(f, check_val);
+            check_val = sham::max(f, check_val);
         }
     }
 
     T delt = (sycl_ret - check_val)/1e8;
-    auto dot = shambase::sycl_utils::g_sycl_dot(delt, delt);
+    auto dot = sham::dot(delt, delt);
 
     shamtest::asserts().assert_float_equal(name, dot,0,1e-9);
 
