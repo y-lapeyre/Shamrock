@@ -19,11 +19,18 @@
 #include <fmt/printf.h>
 #include <fmt/ranges.h>
 
-namespace shamrock::cxxstd{
+namespace shambase{
 
+    /**
+     * @brief Formatter alias for `fmt::formatter`
+     *
+     * This alias is used to prevent explicit use of the `fmt` library in the
+     * codebase. This way, we can change the formatting library without having
+     * to modify all the code that uses it.
+     *
+     * @tparam T Type to format
+     */
     template<class T>
     using formatter = fmt::formatter<T>;
 
-    
-
-} // namespace shamrock::cxxstd
+} // namespace shambase
