@@ -88,8 +88,26 @@ model.change_htolerance(1.3)
 model.evolve_once_override_time(0,0)
 model.change_htolerance(1.1)
 
-for i in range(4):
-    model.timestep()
+print("Current part mass :", pmass)
+
+t_sum = 0
+t_target = 4e-1
+
+i_dump = 0
+dt_dump = 1e-2
+next_dt_target = t_sum + dt_dump
+
+while next_dt_target <= t_target:
+
+    fname = "dump_{:04}.phfile".format(i_dump)
+
+    model.evolve_until(next_dt_target)
+    dump = model.make_phantom_dump()
+    dump.save_dump(fname)
+
+    i_dump += 1
+
+    next_dt_target += dt_dump
 
 model.do_vtk_dump("end.vtk", True)
 dump = model.make_phantom_dump()
