@@ -23,7 +23,7 @@ cfg.print_status()
 cfg.set_units(codeu)
 model.set_solver_config(cfg)
 
-model.init_scheduler(int(1e4),1)
+model.init_scheduler(int(1e7),1)
 
 
 bmin = (-10,-10,-10)

@@ -1,4 +1,4 @@
- // -------------------------------------------------------//
+// -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
 // Copyright(C) 2021-2023 Timothée David--Cléris <timothee.david--cleris@ens-lyon.fr>
