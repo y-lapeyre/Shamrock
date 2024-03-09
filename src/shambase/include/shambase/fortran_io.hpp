@@ -18,7 +18,7 @@
 #include "shambase/aliases_float.hpp"
 #include "shambase/bytestream.hpp"
 #include "shambase/exception.hpp"
-#include "shamsys/legacy/log.hpp"
+
 #include <fstream>
 #include <stdexcept>
 #include <utility>
@@ -28,6 +28,14 @@ namespace shambase {
 
     class FortranIOFile {
 
+        /**
+         * @brief Check that the next 4 bytes in the buffer are equal to `fortran_byte`
+         *
+         * @param[in] buffer the input buffer
+         * @param[in] fortran_byte the expected value of the next 4 bytes
+         *
+         * @throw std::runtime_error if the next 4 bytes are not equal to `fortran_byte`
+         */
         inline void check_fortran_4byte(std::basic_stringstream<byte> &buffer, i32 fortran_byte) {
             i32 new_check = 0;
 
@@ -40,6 +48,17 @@ namespace shambase {
             fortran_byte = new_check;
         }
 
+        /**
+         * @brief Read the next 4 bytes from the buffer.
+         *
+         * In Fortran every write call produce 4 bte specifying the lenght of the write followed by
+         * the same 4 bytes. We can check them here to verify that we are reading the file
+         * correctly.
+         *
+         * @param[in] buffer the input buffer
+         *
+         * @return the value of the next 4 bytes
+         */
         inline i32 read_fortran_4byte(std::basic_stringstream<byte> &buffer) {
             i32 check;
             shambase::stream_read(buffer, check);
@@ -77,9 +96,16 @@ namespace shambase {
         using fort_real = f64;
         using fort_int  = int;
 
+        /**
+         * @brief Construct a new FortranIOFile object
+         *
+         * @param[in] data_in The input buffer to be used for reading and writing
+         * @param[in] lenght The lenght of the input buffer
+         */
         explicit FortranIOFile(std::basic_stringstream<byte> &&data_in, u64 lenght)
             : data(std::forward<std::basic_stringstream<byte>>(data_in)), lenght(lenght) {
 
+            // Set the internal buffer to the beginning of the buffer
             data.seekg(0);
         }
 
@@ -87,6 +113,18 @@ namespace shambase {
 
         inline std::basic_stringstream<byte> &get_internal_buf() { return data; }
 
+        /**
+         * @brief Write a list of arguments to the internal buffer
+         *
+         * This function writes a list of arguments to the internal buffer using the
+         * Fortran-like serialization format. The arguments are serialized in the following
+         * way: first the size of all arguments in bytes, then the arguments, and finally
+         * again the size of all arguments in bytes. This format is used by the Fortran
+         * standard for I/O.
+         *
+         * @tparam Args the types of the arguments to be written
+         * @param[in] args the arguments to be written
+         */
         template<class... Args>
         inline void write(Args &...args) {
             i32 linebytecount = ((sizeof(args)) + ...);
@@ -95,6 +133,17 @@ namespace shambase {
             stream_write(data, linebytecount);
         }
 
+        /**
+         * @brief Read a list of arguments from the internal buffer
+         *
+         * This function reads a list of arguments from the internal buffer using the
+         * Fortran-like serialization format. The arguments are serialized in the following
+         * way: first the size of all arguments in bytes, then the arguments, and finally
+         * again the size of all arguments in bytes.
+         *
+         * @tparam Args the types of the arguments to be read
+         * @param[out] args the arguments to be read
+         */
         template<class... Args>
         inline void read(Args &...args) {
             u64 linebytecount = ((sizeof(args)) + ...);
@@ -106,6 +155,17 @@ namespace shambase {
             check_fortran_4byte(data, check);
         }
 
+        /**
+         * @brief Read a fixed-length string from the buffer
+         *
+         * This function reads a fixed-length string from the buffer using the
+         * Fortran-like serialization format. The string is serialized in the
+         * following way: first the size of the string in bytes, then the
+         * string itself, and finally again the size of the string in bytes.
+         *
+         * @param[out] s the string to be read
+         * @param len the length of the string to be read
+         */
         inline void read_fixed_string(std::string &s, u32 len) {
             s.resize(len);
             i32 check = read_fortran_4byte(data);
@@ -141,7 +201,7 @@ namespace shambase {
         }
 
         inline void write_string_array(std::vector<std::string> &svec, u32 strlen, u32 str_count) {
-            
+
             i32 totlen = strlen * str_count;
 
             stream_write(data, totlen);
@@ -173,8 +233,9 @@ namespace shambase {
 
         template<class T>
         inline void write_val_array(std::vector<T> &vec, u32 val_count) {
-            if(val_count > vec.size()){
-                throw make_except_with_loc<std::invalid_argument>("val count is higher than vec size");
+            if (val_count > vec.size()) {
+                throw make_except_with_loc<std::invalid_argument>(
+                    "val count is higher than vec size");
             }
             i32 totlen = sizeof(T) * val_count;
             stream_write(data, totlen);
@@ -188,19 +249,39 @@ namespace shambase {
 
         inline bool finished_read() { return lenght == data.tellg(); }
 
+        /**
+         * @brief Write the Fortran formatted file to disk.
+         *
+         * @param fname Filename to write to
+         *
+         * @throws runtime_error if the file could not be opened for writing
+         */
         inline void write_to_file(std::string fname) {
             std::ofstream out_f(fname, std::ios::binary);
 
             if (out_f) {
+                // Copy the contents of the internal streambuf to the file
                 out_f << data.rdbuf();
 
+                // Close the file
                 out_f.close();
             } else {
-                shambase::throw_unimplemented();
+                // Throw an exception if the file could not be opened for writing
+                throw_unimplemented(
+                    "unimplemented case : could not open file " + fname + " for writing");
             }
         }
     };
 
+    /**
+     * @brief Load a Fortran formatted file from disk.
+     *
+     * @param fname Filename of the file to load
+     *
+     * @return The loaded file
+     *
+     * @throws runtime_error if the file is not found
+     */
     inline FortranIOFile load_fortran_file(std::string fname) {
         std::ifstream in_f(fname, std::ios::binary);
 
@@ -209,7 +290,7 @@ namespace shambase {
             buffer << in_f.rdbuf();
             in_f.close();
         } else {
-            shambase::throw_unimplemented("file not found");
+            throw_unimplemented("unimplemented case : file not found");
         }
 
         return FortranIOFile(std::move(buffer), buffer.tellp());

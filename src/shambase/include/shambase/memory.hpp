@@ -25,21 +25,24 @@
 namespace shambase {
 
     /**
-     * @brief store a value of type T in a byte buffer
+     * @brief Store a value of type T in a byte buffer
      *
-     * @tparam T
-     * @tparam AccU8
-     * @param acc
-     * @param ptr_write
-     * @param a
+     * Store the given value of type T into the byte buffer at the given index.
+     * The address is the starting address of the value to store in the buffer.
+     *
+     * @tparam T type of the value to store
+     * @tparam AccU8 type of the byte buffer
+     * @param acc byte buffer
+     * @param idx_write index to store the value in the byte buffer
+     * @param a value to store
      */
     template<class T, class AccU8>
-    inline void store_u8(AccU8 &acc, u64 ptr_write, T a) {
-        constexpr u64 szT = sizeof(T);
-        u8 *bytes         = (u8 *) &a;
-#pragma unroll
-        for (u64 i = 0; i < szT; i++) {
-            acc[ptr_write + i] = bytes[i];
+    inline void store_u8(AccU8 &acc, u64 idx_write, T a) {
+        constexpr u64 szT = sizeof(T); 
+        u8 *bytes         = (u8 *) &a;  
+        #pragma unroll
+        for (u64 i = 0; i < szT; i++) { 
+            acc[idx_write + i] = bytes[i]; 
         }
     }
 

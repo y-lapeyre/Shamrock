@@ -21,8 +21,13 @@
 namespace shamcomm {
 
     /**
-     * @brief open a mpi file and remove its content
+     * @brief Open a MPI file and remove its content
      *
+     * This function opens the MPI file `fname` with write-exclusive permission
+     * and remove its content if the file already exists.
+     *
+     * @param[out] fh The MPI file handle to open
+     * @param fname The name of the file to open
      */
     void open_reset_file(MPI_File &fh, std::string fname);
 

@@ -26,11 +26,13 @@ namespace shammath {
 
     /**
      * @brief Axis-Aligned bounding box
-     * This class describe a bounding box aligned on the axis
-     * This class describe a domain of coordinates defined by a cartesian product of 1d ranges
+     * 
+     * This class describe a bounding box aligned on the axis.
+     * 
+     * This class describe a domain of coordinates defined by a cartesian product of 1d ranges.
      * For exemple : [ax,bx] x [ay,by] x [az,bz]
      * 
-     * @tparam T 
+     * @tparam T Type of the coordinates
      */
     template<class T>
     struct AABB {
