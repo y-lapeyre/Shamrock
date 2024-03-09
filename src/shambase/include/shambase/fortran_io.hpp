@@ -26,6 +26,9 @@
 
 namespace shambase {
 
+    /**
+     * @brief Class for reading and writing Fortran-style binary files
+     */
     class FortranIOFile {
 
         /**
