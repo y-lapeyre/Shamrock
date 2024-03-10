@@ -19,6 +19,5 @@
 
 namespace shambase {
 
-    using namespace sham;
 
 } // namespace shambase

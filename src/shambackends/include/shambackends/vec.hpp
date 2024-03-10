@@ -19,7 +19,7 @@
 #include "shambackends/typeAliasVec.hpp"
 #include "shambase/numeric_limits.hpp"
 
-namespace sham {
+namespace shambase {
 
 
 
