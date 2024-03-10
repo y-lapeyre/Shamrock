@@ -7,8 +7,8 @@
 // -------------------------------------------------------//
 
 #include "shamalgs/random.hpp"
-#include "shambase/sycl_utils/vec_equals.hpp"
 #include "shambackends/comm/CommunicationBuffer.hpp"
+#include "shambackends/math.hpp"
 #include "shamcomm/worldInfo.hpp"
 #include "shamcomm/mpi.hpp"
 #include "shamtest/details/TestResult.hpp"
@@ -27,7 +27,7 @@ inline void check_buf(std::string prefix, sycl::buffer<u8> & b1, sycl::buffer<u8
 
         bool eq = true;
         for(u32 i = 0; i < b1.size(); i++){
-            if(!shambase::vec_equals(acc1[i] , acc2[i])){
+            if(!sham::equals(acc1[i] , acc2[i])){
                 eq = false;
                 //id_err_list += std::to_string(i) + " ";
             }

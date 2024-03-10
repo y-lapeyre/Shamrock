@@ -19,7 +19,6 @@
 #include "shambackends/typeAliasVec.hpp"
 #include "shambase/SourceLocation.hpp"
 #include "shambackends/math.hpp"
-#include "shambase/sycl_utils/vec_equals.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"
 #include "shambase/vectors.hpp"
 #include "intervals.hpp"
@@ -100,7 +99,7 @@ namespace shammath {
 
             auto tmp = max_range();
 
-            return shambase::vec_equals(tmp.lower , lower) && shambase::vec_equals(tmp.upper , upper);
+            return sham::equals(tmp.lower , lower) && sham::equals(tmp.upper , upper);
         }
     };
 

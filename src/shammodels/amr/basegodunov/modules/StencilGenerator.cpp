@@ -14,8 +14,7 @@
  */
 
 #include "shambase/aliases_int.hpp"
-#include "shambase/sycl_utils/vec_equals.hpp"
-
+#include "shambackends/sycl.hpp"
 #include "shammodels/amr/AMRBlockStencil.hpp"
 #include "shammodels/amr/AMRCellStencil.hpp"
 #include "shammodels/amr/basegodunov/modules/StencilGenerator.hpp"
@@ -63,13 +62,13 @@ void _kernel(
         = shammath::AABB<TgridVec>{cell_min[found_cells[0]], cell_max[found_cells[0]]};
 
     // delt is the linear delta, so it's a factor 2 instead of 8
-    bool check_levelp1 = shambase::vec_equals(cell_found_0_aabb.delt() * 2, cell_aabb.delt())
+    bool check_levelp1 = sham::equals(cell_found_0_aabb.delt() * 2, cell_aabb.delt())
                          && (cell_found_count == 8);
 
-    bool check_levelm1 = shambase::vec_equals(cell_found_0_aabb.delt(), cell_aabb.delt() * 2)
+    bool check_levelm1 = sham::equals(cell_found_0_aabb.delt(), cell_aabb.delt() * 2)
                          && (cell_found_count == 1);
 
-    bool check_levelsame = shambase::vec_equals(cell_found_0_aabb.delt(), cell_aabb.delt())
+    bool check_levelsame = sham::equals(cell_found_0_aabb.delt(), cell_aabb.delt())
                            && (cell_found_count == 1);
 
     i32 state = i32(check_levelsame) + i32(check_levelm1) * 2 + i32(check_levelp1) * 4;
