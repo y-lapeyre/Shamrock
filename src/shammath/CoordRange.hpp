@@ -19,7 +19,7 @@
 #include "shambackends/typeAliasVec.hpp"
 #include "shambase/SourceLocation.hpp"
 #include "shambackends/math.hpp"
-#include "shambase/sycl_utils/vectorProperties.hpp"
+#include "shambackends/vec.hpp"
 #include "shambase/vectors.hpp"
 #include "intervals.hpp"
 

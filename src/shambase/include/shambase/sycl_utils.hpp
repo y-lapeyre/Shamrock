@@ -18,7 +18,7 @@
 #include "shambase/exception.hpp"
 #include "shambase/integer.hpp"
 #include "shamcomm/logs.hpp"
-#include "sycl_utils/vectorProperties.hpp"
+#include "shambackends/vec.hpp"
 #include <stdexcept>
 #include "shambase/stacktrace.hpp"
 #include "shambackends/sycl.hpp"

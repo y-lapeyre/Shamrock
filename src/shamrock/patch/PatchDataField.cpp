@@ -18,7 +18,7 @@
 #include "shamalgs/reduction.hpp"
 #include "shambase/exception.hpp"
 #include "shambase/memory.hpp"
-#include "shambase/sycl_utils/vectorProperties.hpp"
+#include "shambackends/vec.hpp"
 #include "shamrock/legacy/utils/sycl_vector_utils.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"

@@ -18,7 +18,7 @@
 #include "shambase/exception.hpp"
 #include "shambackends/math.hpp"
 #include "shambackends/sycl.hpp"
-#include "shambase/sycl_utils/vectorProperties.hpp"
+#include "shambackends/vec.hpp"
 #include "shamsys/NodeInstance.hpp"
 
 namespace shamalgs::reduction {

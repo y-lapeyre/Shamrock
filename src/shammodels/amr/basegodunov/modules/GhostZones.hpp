@@ -15,7 +15,7 @@
  * 
  */
  
-#include "shambase/sycl_utils/vectorProperties.hpp"
+#include "shambackends/vec.hpp"
 #include "shammodels/amr/basegodunov/Solver.hpp"
 #include "shammodels/amr/basegodunov/modules/SolverStorage.hpp"
 #include "shamrock/scheduler/ComputeField.hpp"

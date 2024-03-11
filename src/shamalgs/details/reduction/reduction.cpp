@@ -20,7 +20,7 @@
 #include "shamalgs/details/reduction/groupReduction.hpp"
 #include "shamalgs/details/reduction/fallbackReduction.hpp"
 #include "shambackends/math.hpp"
-#include "shambase/sycl_utils/vectorProperties.hpp"
+#include "shambackends/vec.hpp"
 #include "shambase/sycl_builtins.hpp"
 #include "shambase/floats.hpp"
 

@@ -18,7 +18,7 @@
 #include "bmi.hpp"
 #include "shammath/CoordRangeTransform.hpp"
 #include "shambase/integer_sycl.hpp"
-#include "shambase/sycl_utils/vectorProperties.hpp"
+#include "shambackends/vec.hpp"
 #include <type_traits>
 #include "shambackends/sycl.hpp"
 

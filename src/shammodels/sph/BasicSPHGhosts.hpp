@@ -17,7 +17,7 @@
 
 #include "shambase/DistributedData.hpp"
 #include "shambase/stacktrace.hpp"
-#include "shambase/sycl_utils/vectorProperties.hpp"
+#include "shambackends/vec.hpp"
 #include "shamrock/patch/PatchDataField.hpp"
 #include "shamrock/scheduler/ComputeField.hpp"
 #include "shamrock/scheduler/InterfacesUtility.hpp"

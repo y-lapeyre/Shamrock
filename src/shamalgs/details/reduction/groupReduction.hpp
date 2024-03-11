@@ -20,7 +20,7 @@
 #include "shambackends/sycl.hpp"
 #include "shambase/sycl_utils.hpp"
 #include "shambackends/math.hpp"
-#include "shambase/sycl_utils/vectorProperties.hpp"
+#include "shambackends/vec.hpp"
 
 template<class T, u32 work_group_size>
 class KernelSliceReduceSum;
