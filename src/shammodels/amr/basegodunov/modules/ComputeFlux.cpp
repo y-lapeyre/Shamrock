@@ -165,10 +165,9 @@ void compute_fluxes_rusanov_xm(
 
             using Tconst = shammath::ConsState<Tvec>;
 
-            auto flux_x = shammath::rusanov_flux_x<Tconst>(
-                // permute index since minus face we are inverted
-                Tconst{rho_ij[1], rhoe_ij[1], rhov_ij[1]},
+            auto flux_x = shammath::rusanov_flux_mx<Tconst>(
                 Tconst{rho_ij[0], rhoe_ij[0], rhov_ij[0]},
+                Tconst{rho_ij[1], rhoe_ij[1], rhov_ij[1]},
                 gamma);
 
             flux_rho[id_a]  = flux_x.rho;
@@ -206,10 +205,9 @@ void compute_fluxes_rusanov_ym(
 
             using Tconst = shammath::ConsState<Tvec>;
 
-            auto flux_y = shammath::rusanov_flux_y<Tconst>(
-                // permute index since minus face we are inverted
-                Tconst{rho_ij[1], rhoe_ij[1], rhov_ij[1]},
+            auto flux_y = shammath::rusanov_flux_my<Tconst>(
                 Tconst{rho_ij[0], rhoe_ij[0], rhov_ij[0]},
+                Tconst{rho_ij[1], rhoe_ij[1], rhov_ij[1]},
                 gamma);
 
             flux_rho[id_a]  = flux_y.rho;
@@ -247,10 +245,9 @@ void compute_fluxes_rusanov_zm(
 
             using Tconst = shammath::ConsState<Tvec>;
 
-            auto flux_z = shammath::rusanov_flux_z<Tconst>(
-                // permute index since minus face we are inverted
-                Tconst{rho_ij[1], rhoe_ij[1], rhov_ij[1]},
+            auto flux_z = shammath::rusanov_flux_mz<Tconst>(
                 Tconst{rho_ij[0], rhoe_ij[0], rhov_ij[0]},
+                Tconst{rho_ij[1], rhoe_ij[1], rhov_ij[1]},
                 gamma);
 
             flux_rho[id_a]  = flux_z.rho;
