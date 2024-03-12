@@ -444,7 +444,15 @@ namespace shamrock {
         template<class T> 
         void write_field(std::string name, std::unique_ptr<sycl::buffer<T>> & buf, u32 len){
             if(len > 0){
-                write_field(name,shambase::get_check_ref(buf),len);
+                sycl::buffer<T> & buf_ref = shambase::get_check_ref(buf);
+                if(buf_ref.size() < len){
+                    shambase::throw_with_loc<std::runtime_error>(
+                        shambase::format(
+                            "the buffer is smaller than expected write field size\n    buf size = {}, cnt = {}",
+                            buf_ref.size(), len)
+                        );
+                }
+                write_field(name,buf_ref,len);
             }else{
                 write_field_no_buf<T>(name);
             }
