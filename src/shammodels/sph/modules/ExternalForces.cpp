@@ -15,7 +15,6 @@
 
 #include "ExternalForces.hpp"
 
-#include "shambase/sycl_utils/sycl_utilities.hpp"
 #include "shammath/sphkernels.hpp"
 #include "shammodels/sph/modules/SinkParticlesUpdate.hpp"
 #include "shamsys/legacy/log.hpp"
@@ -192,7 +191,7 @@ void Module<Tvec, SPHKernel>::add_ext_forces() {
 
                             Tvec omega_a =
                                 (S * (2 / abs_ra_3)) -
-                                (6 * shambase::sycl_utils::g_sycl_dot(S, r_a) * r_a) / abs_ra_5;
+                                (6 * sham::dot(S, r_a) * r_a) / abs_ra_5;
                             Tvec acc_lt = sycl::cross(v_a, omega_a);
                             axyz[gid] += acc_lt;
                         });

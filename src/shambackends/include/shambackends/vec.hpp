@@ -9,16 +9,17 @@
 #pragma once
 
 /**
- * @file vectorProperties.hpp
+ * @file vec.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @brief 
  * 
  */
  
+
 #include "shambackends/typeAliasVec.hpp"
 #include "shambase/numeric_limits.hpp"
 
-namespace shambase {
+namespace sham {
 
     template<class T>
     struct VectorProperties {
@@ -121,4 +122,14 @@ namespace shambase {
     template<class T>
     using VecComponent = typename VectorProperties<T>::component_type;
 
-} // namespace shambase
+}
+
+namespace shambase {
+
+    template<class T>
+    using VectorProperties = sham::VectorProperties<T>;
+
+    template<class T>
+    using VecComponent = sham::VecComponent<T>;
+
+}

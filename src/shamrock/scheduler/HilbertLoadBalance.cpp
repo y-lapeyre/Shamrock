@@ -16,7 +16,7 @@
 #include "HilbertLoadBalance.hpp"
 #include "shambase/stacktrace.hpp"
 #include "shambase/string.hpp"
-#include "shambase/sycl_utils/vectorProperties.hpp"
+#include "shambackends/vec.hpp"
 
 #include "shamrock/scheduler/loadbalance/LoadBalanceStrategy.hpp"
 #include "shamsys/NodeInstance.hpp"

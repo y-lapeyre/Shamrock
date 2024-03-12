@@ -16,7 +16,6 @@
 #include "ResizableBuffer.hpp"
 #include "shamalgs/random.hpp"
 #include "shamalgs/reduction.hpp"
-#include "shambase/sycl_utils/vec_equals.hpp"
 #include "shamrock/legacy/patch/base/enabled_fields.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
@@ -235,7 +234,7 @@ bool shamalgs::ResizableBuffer<T>::check_buf_match(const ResizableBuffer<T> &f2)
             sycl::accessor acc_res{res_buf, cgh, sycl::write_only, sycl::no_init};
 
             cgh.parallel_for(sycl::range<1>{val_cnt}, [=](sycl::item<1> i) {
-                acc_res[i] = shambase::vec_equals(acc1[i], acc2[i]);
+                acc_res[i] = sham::equals(acc1[i], acc2[i]);
             });
         });
 

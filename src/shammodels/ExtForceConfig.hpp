@@ -17,7 +17,7 @@
 
 #include "shambackends/math.hpp"
 #include "shambase/exception.hpp"
-#include "shambase/sycl_utils/vectorProperties.hpp"
+#include "shambackends/vec.hpp"
 #include "shamsys/legacy/log.hpp"
 #include <string>
 #include <type_traits>

@@ -9,7 +9,7 @@
 #pragma once
 
 /**
- * @file Constants.hpp
+ * @file constants.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @brief Class holding the value of numerous constants
  * generated from the following source

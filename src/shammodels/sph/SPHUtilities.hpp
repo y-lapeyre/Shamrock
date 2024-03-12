@@ -96,7 +96,7 @@ namespace shammodels::sph {
                 shamsys::instance::get_compute_queue(),
                 interactR_patch,
                 [](flt h0, flt h1, flt h2, flt h3, flt h4, flt h5, flt h6, flt h7) {
-                    return shambase::sycl_utils::max_8points(h0, h1, h2, h3, h4, h5, h6, h7);
+                    return sham::max_8points(h0, h1, h2, h3, h4, h5, h6, h7);
                 });
 
             return interf_handle.make_interface_cache(sptree, interactR_mpi_tree, interactR_patch);

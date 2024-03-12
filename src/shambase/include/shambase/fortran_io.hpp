@@ -26,6 +26,9 @@
 
 namespace shambase {
 
+    /**
+     * @brief Class for reading and writing Fortran-style binary files
+     */
     class FortranIOFile {
 
         /**
@@ -176,12 +179,35 @@ namespace shambase {
             check_fortran_4byte(data, check);
         }
 
+        /**
+         * @brief Write a fixed-length string to the buffer
+         *
+         * This function writes a fixed-length string to the buffer using the
+         * Fortran-like serialization format. The string is serialized in the
+         * following way: first the size of the string in bytes, then the
+         * string itself, and finally again the size of the string in bytes.
+         *
+         * @param[out] s the string to be written
+         * @param[in] len the length of the string to be written
+         */
         inline void write_fixed_string(std::string &s, u32 len) {
             stream_write(data, len);
             data.write(reinterpret_cast<byte *>(s.data()), len * sizeof(char));
             stream_write(data, len);
         }
 
+        /**
+         * @brief Read a fixed-length string array from the buffer
+         *
+         * This function reads a fixed-length string array from the buffer using
+         * the Fortran-like serialization format. The array is serialized in the
+         * following way: first the size of the array in bytes, then the array
+         * itself, and finally again the size of the array in bytes.
+         *
+         * @param[out] svec the output array of strings
+         * @param[in] strlen the length of each string in the array
+         * @param[in] str_count the number of strings in the array
+         */
         inline void read_string_array(std::vector<std::string> &svec, u32 strlen, u32 str_count) {
 
             u64 totlen = strlen * str_count;
@@ -193,44 +219,85 @@ namespace shambase {
             svec.resize(str_count);
 
             for (u32 i = 0; i < str_count; i++) {
-                svec[i].resize(strlen);
+                svec[i].resize(strlen); // Resize the string to the correct size
                 data.read(reinterpret_cast<byte *>(svec[i].data()), strlen * sizeof(char));
             }
 
             check_fortran_4byte(data, check);
         }
 
+        /**
+         * @brief Write a fixed-length string array to the buffer
+         *
+         * This function writes a fixed-length string array to the buffer using
+         * the Fortran-like serialization format. The array is serialized in the
+         * following way: first the size of the array in bytes, then the array
+         * itself, and finally again the size of the array in bytes.
+         *
+         * @param[in] svec the array of strings to write
+         * @param[in] strlen the length of each string in the array
+         * @param[in] str_count the number of strings in the array
+         */
         inline void write_string_array(std::vector<std::string> &svec, u32 strlen, u32 str_count) {
 
-            i32 totlen = strlen * str_count;
+            i32 totlen = strlen * str_count; // Total length of the array
 
-            stream_write(data, totlen);
+            stream_write(data, totlen); // Write the total length as a 4-byte integer
 
             for (u32 i = 0; i < str_count; i++) {
-                data.write(reinterpret_cast<byte *>(svec[i].data()), strlen * sizeof(char));
+                // Write each string to the buffer
+                data.write(reinterpret_cast<byte *>(svec[i].data()), strlen * sizeof(char)); 
             }
 
-            stream_write(data, totlen);
+            stream_write(data, totlen); // Write the total length again as a 4-byte integer
         }
 
+        /**
+         * @brief Read an array of values from the buffer
+         *
+         * This function reads an array of values of type T from the buffer using
+         * the Fortran-like serialization format. The array is serialized in the
+         * following way: first the size of the array in bytes, then the array
+         * itself, and finally again the size of the array in bytes.
+         *
+         * @tparam T The type in use
+         * @param[out] vec the output array
+         * @param[in] val_count the number of values in the array
+         */
         template<class T>
         inline void read_val_array(std::vector<T> &vec, u32 val_count) {
 
-            u64 totlen = sizeof(T) * val_count;
-            i32 check  = read_fortran_4byte(data);
-            if (check != totlen) {
-                throw_with_loc<std::runtime_error>("the byte count is not correct");
+            u64 totlen = sizeof(T) * val_count; // Total length of the array
+            i32 check  = read_fortran_4byte(data); // Read the total length
+
+            if (check != totlen) { // Make sure the byte count matches
+                throw_with_loc<std::runtime_error>( // Throw an exception if not
+                    "the byte count is not correct");
             }
 
-            vec.resize(val_count);
+            vec.resize(val_count); // Resize the output array to the correct size
 
-            for (u32 i = 0; i < val_count; i++) {
+            for (u32 i = 0; i < val_count; i++) { // Read each value from the buffer
                 stream_read(data, vec[i]);
             }
 
-            check_fortran_4byte(data, check);
+            check_fortran_4byte(data, check); // Check the byte count again
         }
 
+        /**
+         * @brief Write an array of values to the buffer
+         *
+         * This function writes an array of values of type T to the buffer
+         * using the Fortran-like serialization format. The array is
+         * serialized in the following way: first the size of the array in
+         * bytes, then the array itself, and finally again the size of the
+         * array in bytes.
+         *
+         * @param vec The input array to be written
+         * @param val_count The number of values in the array
+         *
+         * @throw std::invalid_argument if val_count is larger than vec.size()
+         */
         template<class T>
         inline void write_val_array(std::vector<T> &vec, u32 val_count) {
             if (val_count > vec.size()) {
@@ -238,16 +305,27 @@ namespace shambase {
                     "val count is higher than vec size");
             }
             i32 totlen = sizeof(T) * val_count;
-            stream_write(data, totlen);
+            stream_write(data, totlen); // Write the total length of the array
 
-            for (u32 i = 0; i < val_count; i++) {
+            for (u32 i = 0; i < val_count; i++) { // Write each value in the array
                 stream_write(data, vec[i]);
             }
 
-            stream_write(data, totlen);
+            stream_write(data, totlen); // Write the total length again
         }
 
-        inline bool finished_read() { return lenght == data.tellg(); }
+
+        /**
+         * @brief Check if the end of the file has been reached
+         *
+         * This function returns true if the end of the file has been reached,
+         * i.e. if all the data in the file has been read.
+         *
+         * @return true if the end of the file has been reached
+         */
+        inline bool finished_read() {
+            return lenght == data.tellg();
+        }
 
         /**
          * @brief Write the Fortran formatted file to disk.

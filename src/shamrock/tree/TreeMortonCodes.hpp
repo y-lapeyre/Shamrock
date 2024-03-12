@@ -19,7 +19,7 @@
 #include "shamalgs/reduction.hpp"
 #include "shambase/exception.hpp"
 #include "shambase/stacktrace.hpp"
-#include "shambase/sycl_utils/vectorProperties.hpp"
+#include "shambackends/vec.hpp"
 #include "shammath/CoordRange.hpp"
 #include "shamrock/tree/RadixTreeMortonBuilder.hpp"
 #include <stdexcept>

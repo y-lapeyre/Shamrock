@@ -15,7 +15,6 @@
  */
 
 #include "UpdateViscosity.hpp"
-#include "shambase/sycl_utils/sycl_utilities.hpp"
 #include "shammath/sphkernels.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shammodels/sph/math/forces.hpp"
@@ -79,7 +78,6 @@ void shammodels::sph::modules::UpdateViscosity<Tvec, SPHKernel>::update_artifici
             Tscal alpha_max   = cfg.alpha_max;
 
             cgh.parallel_for(sycl::range<1>{obj_cnt}, [=](sycl::item<1> item) {
-                using namespace shambase::sycl_utils;
 
                 Tscal cs_a    = cs[item];
                 Tscal h_a     = h[item];
@@ -91,11 +89,11 @@ void shammodels::sph::modules::UpdateViscosity<Tvec, SPHKernel>::update_artifici
                 Tscal fact_t          = dt * inv_tau_a;
                 Tscal euler_impl_fact = 1 / (1 + fact_t);
 
-                Tscal source = g_sycl_max<Tscal>(0., -divv_a);
+                Tscal source = sham::max<Tscal>(0., -divv_a);
 
                 Tscal new_alpha = (alpha_a + source * dt + fact_t * alpha_min) * euler_impl_fact;
 
-                alpha_AV[item] = g_sycl_min(alpha_max, new_alpha);
+                alpha_AV[item] = sham::min(alpha_max, new_alpha);
             });
         });
     });
@@ -141,7 +139,7 @@ void shammodels::sph::modules::UpdateViscosity<Tvec, SPHKernel>::update_artifici
             Tscal alpha_max   = cfg.alpha_max;
 
             cgh.parallel_for(sycl::range<1>{obj_cnt}, [=](sycl::item<1> item) {
-                using namespace shambase::sycl_utils;
+                
 
                 Tscal cs_a    = cs[item];
                 Tscal h_a     = h[item];
@@ -159,9 +157,9 @@ void shammodels::sph::modules::UpdateViscosity<Tvec, SPHKernel>::update_artifici
 
 
 
-                //Tscal div_corec = g_sycl_max<Tscal>(-divv_a, 0);
+                //Tscal div_corec = sham::max<Tscal>(-divv_a, 0);
                 //Tscal divv_a_sq = div_corec*div_corec;
-                ////Tscal divv_a_sq_corec = g_sycl_max(-divv_a, 0);
+                ////Tscal divv_a_sq_corec = sham::max(-divv_a, 0);
                 //Tscal curlv_a_sq = sycl::dot(curlv_a,curlv_a);
                 //Tscal denom = (curlv_a_sq + divv_a_sq);
                 //Tscal balsara_corec = (denom <= 0) ? 1 : divv_a_sq / (curlv_a_sq + divv_a_sq);
@@ -178,12 +176,12 @@ void shammodels::sph::modules::UpdateViscosity<Tvec, SPHKernel>::update_artifici
                 Tscal balsara_corec = xi_lim(divv_a,curlv_a);
 
 
-                Tscal A_a = balsara_corec*g_sycl_max<Tscal>(-dtdivv_a, 0);
+                Tscal A_a = balsara_corec*sham::max<Tscal>(-dtdivv_a, 0);
 
 
 
 
-                Tscal alpha_loc_a = g_sycl_min(
+                Tscal alpha_loc_a = sham::min(
                         (cs_a > 0) ? 10*h_a*h_a*A_a/(cs_a*cs_a) : alpha_min
                     ,alpha_max);
 

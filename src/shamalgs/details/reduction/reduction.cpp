@@ -19,8 +19,8 @@
 #include "shamalgs/details/reduction/sycl2020reduction.hpp"
 #include "shamalgs/details/reduction/groupReduction.hpp"
 #include "shamalgs/details/reduction/fallbackReduction.hpp"
-#include "shambase/sycl_utils/sycl_utilities.hpp"
-#include "shambase/sycl_utils/vectorProperties.hpp"
+#include "shambackends/math.hpp"
+#include "shambackends/vec.hpp"
 #include "shambase/sycl_builtins.hpp"
 #include "shambase/floats.hpp"
 
@@ -52,7 +52,7 @@ namespace shamalgs::reduction {
 
             cgh.parallel_for(sycl::range<1>{end_id - start_id}, [=](sycl::item<1> it){
                 const T tmp = acc[it];
-                acc_dot[it] = shambase::sycl_utils::g_sycl_dot(tmp,tmp);
+                acc_dot[it] = sham::dot(tmp,tmp);
             });
         });
 

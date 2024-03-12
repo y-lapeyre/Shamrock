@@ -7,7 +7,7 @@
 // -------------------------------------------------------//
 
 #include "shambase/floats.hpp"
-#include "shambase/sycl_utils/vectorProperties.hpp"
+#include "shambackends/vec.hpp"
 #include "shambackends/math.hpp"
 #include "shamtest/shamtest.hpp"
 

@@ -32,7 +32,7 @@ model.resize_simulation_box(bmin,bmax)
 
 disc_mass = 0.001
 
-pmass = model.add_disc_3d(
+pmass = model.add_big_disc_3d(
     (0,0,0),
     1,
     100000,
@@ -40,7 +40,7 @@ pmass = model.add_disc_3d(
     disc_mass,
     1.,
     0.05,
-    1./4.)
+    1./4., 11)
 
 model.set_cfl_cour(0.3)
 model.set_cfl_force(0.25)
@@ -84,14 +84,11 @@ def plot_vertical_profile(r, rrange, label = ""):
 
 
 print("Run")
-# run the smoothing lenght iteration with bumped tolerance to reduce convergence time
 model.change_htolerance(1.3)
 model.evolve_once_override_time(0,0)
 model.change_htolerance(1.1)
 
 print("Current part mass :", pmass)
-
-plot_vertical_profile(1,0.5, label = "init")
 
 t_sum = 0
 t_target = 4e-1
@@ -112,9 +109,7 @@ while next_dt_target <= t_target:
 
     next_dt_target += dt_dump
 
-
-plot_vertical_profile(1,0.5, label = "end")
-
-plt.legend()
-plt.show()
+model.do_vtk_dump("end.vtk", True)
+dump = model.make_phantom_dump()
+dump.save_dump("end.phdump")
 

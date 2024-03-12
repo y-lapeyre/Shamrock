@@ -17,7 +17,6 @@
  
 #include "shambackends/math.hpp"
 #include "shambackends/sycl.hpp"
-#include "shambase/sycl_utils/sycl_utilities.hpp"
 
 namespace shamalgs::reduction::details {
 

@@ -15,7 +15,6 @@
  
 #include "ResizableUSMBuffer.hpp"
 #include "shamalgs/details/reduction/reduction.hpp"
-#include "shambase/sycl_utils/vec_equals.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamrock/legacy/utils/sycl_vector_utils.hpp"
 
@@ -154,7 +153,7 @@ bool shamalgs::ResizableUSMBuffer<T>::check_buf_match(ResizableUSMBuffer<T> &f2)
             sycl::accessor acc_res{res_buf, cgh, sycl::write_only, sycl::no_init};
 
             cgh.parallel_for(sycl::range<1>{val_count}, [=](sycl::item<1> i) {
-                acc_res[i] = shambase::vec_equals(acc1[i], acc2[i]);
+                acc_res[i] = sham::equals(acc1[i], acc2[i]);
             });
         });
 

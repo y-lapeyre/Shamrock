@@ -16,7 +16,7 @@
  */
  
 #include "CoordRange.hpp"
-#include "shambase/sycl_utils/vectorProperties.hpp"
+#include "shambackends/vec.hpp"
 
 namespace shammath {
 

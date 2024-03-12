@@ -18,7 +18,7 @@
 
 #include "shambackends/math.hpp"
 #include "shambase/exception.hpp"
-#include "shambase/sycl_utils/vectorProperties.hpp"
+#include "shambackends/vec.hpp"
 #include "shammodels/ExtForceConfig.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"

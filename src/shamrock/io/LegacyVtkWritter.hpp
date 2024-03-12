@@ -20,7 +20,7 @@
 #include "shamalgs/details/memory/bufferFlattening.hpp"
 #include "shambase/memory.hpp"
 #include "shambase/stacktrace.hpp"
-#include "shambase/sycl_utils/vectorProperties.hpp"
+#include "shambackends/vec.hpp"
 #include "shamcomm/io.hpp"
 #include "shamrock/io/details/bufToVtkBuf.hpp"
 #include "shamsys/MpiWrapper.hpp"

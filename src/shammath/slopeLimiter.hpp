@@ -15,8 +15,6 @@
  * 
  */
 
-#include "shambase/sycl_utils/sycl_utilities.hpp"
-
 namespace shammath {
 
     /**

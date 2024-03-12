@@ -16,7 +16,7 @@
  */
 
 #include "shambase/aliases_int.hpp"
-#include "shambase/sycl_utils/vectorProperties.hpp"
+#include "shambackends/vec.hpp"
 
 #include "shambackends/sycl.hpp"
 #include "shamcomm/logs.hpp"
