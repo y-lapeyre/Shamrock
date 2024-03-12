@@ -70,7 +70,7 @@ namespace shammodels::basegodunov {
 
         Tscal evolve_once(Tscal t_current,Tscal dt_input);
 
-        //void do_debug_vtk_dump(std::string filename);
+        void do_debug_vtk_dump(std::string filename);
     };
 
 } // namespace shammodels::basegodunov
