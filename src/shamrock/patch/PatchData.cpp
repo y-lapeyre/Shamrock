@@ -307,7 +307,6 @@ namespace shamrock::patch{
 
         if(get_obj_cnt() != el_cnt_new){
 
-            using namespace shambase::sycl_utils;
 
             logger::err_ln("PatchData", "error in patchdata split, the new element count doesn't match the old one");
             
@@ -320,21 +319,21 @@ namespace shamrock::patch{
             logger::err_ln("PatchData", min_box[6],max_box[6]);
             logger::err_ln("PatchData", min_box[7],max_box[7]);
 
-            T vmin = g_sycl_min(min_box[0],min_box[1]);
-            vmin = g_sycl_min(vmin,min_box[2]);
-            vmin = g_sycl_min(vmin,min_box[3]);
-            vmin = g_sycl_min(vmin,min_box[4]);
-            vmin = g_sycl_min(vmin,min_box[5]);
-            vmin = g_sycl_min(vmin,min_box[6]);
-            vmin = g_sycl_min(vmin,min_box[7]);
+            T vmin = sham::min(min_box[0],min_box[1]);
+            vmin = sham::min(vmin,min_box[2]);
+            vmin = sham::min(vmin,min_box[3]);
+            vmin = sham::min(vmin,min_box[4]);
+            vmin = sham::min(vmin,min_box[5]);
+            vmin = sham::min(vmin,min_box[6]);
+            vmin = sham::min(vmin,min_box[7]);
 
-            T vmax = g_sycl_max(max_box[0],max_box[1]);
-            vmax = g_sycl_max(vmax,max_box[2]);
-            vmax = g_sycl_max(vmax,max_box[3]);
-            vmax = g_sycl_max(vmax,max_box[4]);
-            vmax = g_sycl_max(vmax,max_box[5]);
-            vmax = g_sycl_max(vmax,max_box[6]);
-            vmax = g_sycl_max(vmax,max_box[7]);
+            T vmax = sham::max(max_box[0],max_box[1]);
+            vmax = sham::max(vmax,max_box[2]);
+            vmax = sham::max(vmax,max_box[3]);
+            vmax = sham::max(vmax,max_box[4]);
+            vmax = sham::max(vmax,max_box[5]);
+            vmax = sham::max(vmax,max_box[6]);
+            vmax = sham::max(vmax,max_box[7]);
 
             main_field.check_err_range(
                 [&](T val,T vmin, T vmax){

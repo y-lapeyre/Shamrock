@@ -15,7 +15,7 @@
  */
 
 #include "shambase/stacktrace.hpp"
-#include "shambase/sycl_utils/vectorProperties.hpp"
+#include "shambackends/vec.hpp"
 #include "shammodels/amr/AMRStencilCache.hpp"
 #include "shammodels/amr/basegodunov/GhostZoneData.hpp"
 #include "shammodels/amr/NeighGraph.hpp"

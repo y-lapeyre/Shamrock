@@ -15,7 +15,7 @@
  *
  */
 
-#include "shambase/sycl_utils/vectorProperties.hpp"
+#include "shambackends/vec.hpp"
 
 #include "shammodels/amr/AMRBlockStencil.hpp"
 #include "shammodels/amr/AMRCellStencil.hpp"

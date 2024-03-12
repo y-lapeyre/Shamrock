@@ -17,7 +17,6 @@
 #include "ComputeEos.hpp"
 
 #include "shambase/exception.hpp"
-#include "shambase/sycl_utils/sycl_utilities.hpp"
 #include "shammath/sphkernels.hpp"
 #include "shammodels/sph/math/density.hpp"
 #include "shamphys/eos.hpp"

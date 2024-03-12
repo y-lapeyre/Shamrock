@@ -668,8 +668,8 @@ void SPHSolve<Tvec, Kern>::build_merged_pos_trees() {
                     Tvec bmaxl = comp_max[lid];
                     Tvec bmaxr = comp_max[rid];
 
-                    Tvec bmin = shambase::sycl_utils::g_sycl_min(bminl, bminr);
-                    Tvec bmax = shambase::sycl_utils::g_sycl_max(bmaxl, bmaxr);
+                    Tvec bmin = sham::min(bminl, bminr);
+                    Tvec bmax = sham::max(bmaxl, bmaxr);
 
                     comp_min[gid] = bmin;
                     comp_max[gid] = bmax;

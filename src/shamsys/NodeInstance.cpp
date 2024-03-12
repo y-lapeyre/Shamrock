@@ -15,6 +15,7 @@
 #include "NodeInstance.hpp"
 
 #include "shambackends/comm/CommunicationBuffer.hpp"
+#include "shambackends/math.hpp"
 #include "shambackends/typeAliasVec.hpp"
 #include "shambase/SourceLocation.hpp"
 #include "shambase/exception.hpp"
@@ -709,7 +710,7 @@ namespace shamsys::instance {
 
             bool eq = true;
             for (u32 i = 0; i < recv.size(); i++) {
-                if (!shambase::vec_equals(acc1[i], acc2[i])) {
+                if (!sham::equals(acc1[i], acc2[i])) {
                     eq = false;
                     // id_err_list += std::to_string(i) + " ";
                 }

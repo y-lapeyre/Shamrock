@@ -9,8 +9,8 @@
 #include "shamalgs/memory.hpp"
 #include "shamalgs/serialize.hpp"
 #include "shamalgs/random.hpp"
-#include "shambase/sycl_utils/vec_equals.hpp"
 #include "shambase/time.hpp"
+#include "shambackends/math.hpp"
 #include "shamtest/PyScriptHandle.hpp"
 #include "shamtest/details/TestResult.hpp"
 #include "shamtest/shamtest.hpp"
@@ -28,7 +28,7 @@ inline void check_buf(std::string prefix, sycl::buffer<T> & b1, sycl::buffer<T> 
 
         bool eq = true;
         for(u32 i = 0; i < b1.size(); i++){
-            if(!shambase::vec_equals(acc1[i] , acc2[i])){
+            if(!sham::equals(acc1[i] , acc2[i])){
                 eq = false;
                 //id_err_list += std::to_string(i) + " ";
             }
@@ -88,7 +88,7 @@ TestStart(Unittest, "shamalgs/memory/SerializeHelper", test_serialize_helper, 1)
         //shamalgs::memory::print_buf(buf_comp1, n1, 16, "{} ");
         //shamalgs::memory::print_buf(buf1, n1, 16, "{} ");
 
-        shamtest::asserts().assert_bool("same", shambase::vec_equals(val , test_val));
+        shamtest::asserts().assert_bool("same", sham::equals(val , test_val));
         shamtest::asserts().assert_bool("same", test_str == recv_str);
         check_buf("buf 1", buf_comp1, buf1);
         check_buf("buf 2", buf_comp2, buf2);

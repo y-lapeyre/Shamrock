@@ -16,7 +16,7 @@
 
 //%Impl status : Good
 
-#include "shambase/Constants.hpp"
+#include "shambase/constants.hpp"
 
 namespace shammath::details {
 

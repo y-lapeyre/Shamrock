@@ -18,9 +18,9 @@
 
 #include "shamalgs/collective/exchanges.hpp"
 #include "shambase/string.hpp"
-#include "shambase/Constants.hpp"
+#include "shambase/constants.hpp"
 #include "shamcomm/logs.hpp"
-#include "shambase/sycl_utils/vectorProperties.hpp"
+#include "shambackends/vec.hpp"
 #include "shamcomm/collectives.hpp"
 #include "shammodels/generic/setup/generators.hpp"
 #include "shammodels/sph/Solver.hpp"

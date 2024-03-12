@@ -16,9 +16,9 @@
  */
  
 #include "shambase/exception.hpp"
+#include "shambackends/math.hpp"
 #include "shambackends/sycl.hpp"
-#include "shambase/sycl_utils/vec_equals.hpp"
-#include "shambase/sycl_utils/vectorProperties.hpp"
+#include "shambackends/vec.hpp"
 #include "shamsys/NodeInstance.hpp"
 
 namespace shamalgs::reduction {
@@ -57,7 +57,7 @@ namespace shamalgs::reduction {
             sycl::accessor out{res, cgh, sycl::write_only, sycl::no_init};
 
             cgh.parallel_for(sycl::range{cnt}, [=](sycl::item<1> item) {
-                out[item] = shambase::vec_equals(acc1[item], acc2[item]);
+                out[item] = sham::equals(acc1[item], acc2[item]);
             });
         });
 

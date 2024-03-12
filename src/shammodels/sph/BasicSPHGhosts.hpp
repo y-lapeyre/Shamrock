@@ -17,7 +17,7 @@
 
 #include "shambase/DistributedData.hpp"
 #include "shambase/stacktrace.hpp"
-#include "shambase/sycl_utils/vectorProperties.hpp"
+#include "shambackends/vec.hpp"
 #include "shamrock/patch/PatchDataField.hpp"
 #include "shamrock/scheduler/ComputeField.hpp"
 #include "shamrock/scheduler/InterfacesUtility.hpp"
@@ -526,8 +526,8 @@ namespace shammodels::sph {
                     merged.total_elements += pint.position_field.get_obj_cnt();
                     merged.field_pos.insert(pint.position_field);
                     merged.field_hpart.insert(pint.hpart_field);
-                    merged.bounds.upper = shambase::sycl_utils::g_sycl_max(merged.bounds.upper, pint.bmax);
-                    merged.bounds.lower = shambase::sycl_utils::g_sycl_min(merged.bounds.lower, pint.bmin);
+                    merged.bounds.upper = sham::max(merged.bounds.upper, pint.bmax);
+                    merged.bounds.lower = sham::min(merged.bounds.lower, pint.bmin);
                 });
 
         }

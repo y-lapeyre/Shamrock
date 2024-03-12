@@ -17,7 +17,7 @@
 
 #include "shambase/aliases_int.hpp"
 #include "shambase/sycl_utils.hpp"
-#include "shambase/sycl_utils/vectorProperties.hpp"
+#include "shambackends/vec.hpp"
 #include "shammath/DiscontinuousIterator.hpp"
 #include "shammath/CoordRange.hpp"
 #include <array>

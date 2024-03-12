@@ -16,7 +16,7 @@
  */
  
 #include "shambackends/sycl.hpp"
-#include "shambase/sycl_utils/vectorProperties.hpp"
+#include "shambackends/vec.hpp"
 #include "shambase/vectors.hpp"
 #include "shambase/integer.hpp"
 

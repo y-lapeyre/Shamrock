@@ -18,9 +18,8 @@
  
 #include "shambackends/typeAliasVec.hpp"
 #include "shambase/SourceLocation.hpp"
-#include "shambase/sycl_utils/sycl_utilities.hpp"
-#include "shambase/sycl_utils/vec_equals.hpp"
-#include "shambase/sycl_utils/vectorProperties.hpp"
+#include "shambackends/math.hpp"
+#include "shambackends/vec.hpp"
 #include "shambase/vectors.hpp"
 #include "intervals.hpp"
 
@@ -72,15 +71,15 @@ namespace shammath {
 
         inline CoordRange get_intersect(CoordRange other) const {
             return {
-                shambase::sycl_utils::g_sycl_max(lower, other.lower),
-                shambase::sycl_utils::g_sycl_min(upper, other.upper)
+                sham::max(lower, other.lower),
+                sham::min(upper, other.upper)
                 };
         }
 
         inline CoordRange get_union(CoordRange other) const {
             return {
-                shambase::sycl_utils::g_sycl_min(lower, other.lower),
-                shambase::sycl_utils::g_sycl_max(upper, other.upper)
+                sham::min(lower, other.lower),
+                sham::max(upper, other.upper)
                 };
         }
 
@@ -100,7 +99,7 @@ namespace shammath {
 
             auto tmp = max_range();
 
-            return shambase::vec_equals(tmp.lower , lower) && shambase::vec_equals(tmp.upper , upper);
+            return sham::equals(tmp.lower , lower) && sham::equals(tmp.upper , upper);
         }
     };
 

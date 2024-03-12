@@ -9,7 +9,6 @@
 #include "shamalgs/details/random/random.hpp"
 #include "shambackends/typeAliasVec.hpp"
 #include "shambase/string.hpp"
-#include "shambase/sycl_utils/sycl_utilities.hpp"
 #include "shammath/CoordRange.hpp"
 #include "shammath/crystalLattice.hpp"
 #include "shammath/sphkernels.hpp"
