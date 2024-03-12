@@ -24,25 +24,25 @@ TestStart(Unittest, "shammath/flux_symmetry", flux_rotate, 1){
     {
         Tcons f1 = shammath::rusanov_flux_x(state1, state2, 1.6666);
         Tcons f2 = shammath::rusanov_flux_mx(state2, state1, 1.6666);
-        _Assert(shambase::vec_equals(f1.rho,-f2.rho))
-        _Assert(shambase::vec_equals(f1.rhovel,-f2.rhovel))
-        _Assert(shambase::vec_equals(f1.rhoe,-f2.rhoe))
+        _Assert(sham::equals(f1.rho,-f2.rho))
+        _Assert(sham::equals(f1.rhovel,-f2.rhovel))
+        _Assert(sham::equals(f1.rhoe,-f2.rhoe))
     }
 
     {
         Tcons f1 = shammath::rusanov_flux_y(state1, state2, 1.6666);
         Tcons f2 = shammath::rusanov_flux_my(state2, state1, 1.6666);
-        _Assert(shambase::vec_equals(f1.rho,-f2.rho))
-        _Assert(shambase::vec_equals(f1.rhovel,-f2.rhovel))
-        _Assert(shambase::vec_equals(f1.rhoe,-f2.rhoe))
+        _Assert(sham::equals(f1.rho,-f2.rho))
+        _Assert(sham::equals(f1.rhovel,-f2.rhovel))
+        _Assert(sham::equals(f1.rhoe,-f2.rhoe))
     }
 
     {
         Tcons f1 = shammath::rusanov_flux_z(state1, state2, 1.6666);
         Tcons f2 = shammath::rusanov_flux_mz(state2, state1, 1.6666);
-        _Assert(shambase::vec_equals(f1.rho,-f2.rho))
-        _Assert(shambase::vec_equals(f1.rhovel,-f2.rhovel))
-        _Assert(shambase::vec_equals(f1.rhoe,-f2.rhoe))
+        _Assert(sham::equals(f1.rho,-f2.rho))
+        _Assert(sham::equals(f1.rhovel,-f2.rhovel))
+        _Assert(sham::equals(f1.rhoe,-f2.rhoe))
     }
 
 }
