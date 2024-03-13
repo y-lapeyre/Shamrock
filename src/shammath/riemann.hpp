@@ -219,6 +219,32 @@ namespace shammath {
         return x_to_z(rusanov_flux_x(z_to_x(cL), z_to_x(cR), gamma));
     }
 
+    template<class Tcons> 
+    inline constexpr Tcons invert_axis(const Tcons c){
+        Tcons cprime;
+        cprime.rho       = c.rho;
+        cprime.rhoe      = c.rhoe;
+        cprime.rhovel[0] = -c.rhovel[0];
+        cprime.rhovel[1] = -c.rhovel[1];
+        cprime.rhovel[2] = -c.rhovel[2];
+        return cprime;
+    }
+
+    template<class Tcons>
+    inline constexpr Tcons rusanov_flux_mx(Tcons cL, Tcons cR, typename Tcons::Tscal gamma) {
+        return invert_axis(rusanov_flux_x(invert_axis(cL),invert_axis(cR), gamma));
+    }
+
+    template<class Tcons>
+    inline constexpr Tcons rusanov_flux_my(Tcons cL, Tcons cR, typename Tcons::Tscal gamma) {
+        return invert_axis(rusanov_flux_y(invert_axis(cL),invert_axis(cR), gamma));
+    }
+
+    template<class Tcons>
+    inline constexpr Tcons rusanov_flux_mz(Tcons cL, Tcons cR, typename Tcons::Tscal gamma) {
+        return invert_axis(rusanov_flux_z(invert_axis(cL),invert_axis(cR), gamma));
+    }
+
     template<class Tcons>
     inline constexpr auto
     hll_flux_x(const Tcons consL, const Tcons consR, const typename Tcons::Tscal gamma) {

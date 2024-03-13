@@ -83,12 +83,40 @@ namespace shamrock {
             return ret;
         }
 
-        inline std::unique_ptr<sycl::buffer<T>> rankgather_computefield(PatchScheduler &sched){StackEntry stack_loc{};
+        inline u32 get_nvar() {
+
+            std::optional<u32> nvar = std::nullopt;
+
+            field_data.for_each([&](u64 id, PatchDataField<T> & cfield){
+
+                u32 loc_nvar = cfield.get_nvar();
+                if(!bool(nvar)){
+                    nvar = loc_nvar;
+                }
+
+                if(nvar != loc_nvar){
+                    shambase::throw_with_loc<std::runtime_error>(
+                        shambase::format("mismatch in nvar excepted={} found={}",*nvar,loc_nvar)
+                        );
+                }
+            });
+
+            if(!bool(nvar)){
+                shambase::throw_with_loc<std::runtime_error>(
+                        "you cannot querry this function when you have no fields"
+                        );
+            }
+
+            return *nvar;
+        }
+
+        inline std::unique_ptr<sycl::buffer<T>> rankgather_computefield(PatchScheduler &sched){
+            StackEntry stack_loc{};
+            
             std::unique_ptr<sycl::buffer<T>> ret;
 
-            u64 nvar = 1;
-
             u64 num_obj = sched.get_rank_count();
+            u64 nvar = get_nvar();
 
             if(num_obj > 0){
                 ret = std::make_unique<sycl::buffer<T>>(num_obj*nvar);

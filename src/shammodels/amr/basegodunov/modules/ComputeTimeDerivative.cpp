@@ -221,23 +221,23 @@ void shammodels::basegodunov::modules::ComputeTimeDerivative<Tvec, TgridVec>::co
                 
                 graph_iter_xm.for_each_object_link_id(id_a, [&](u32 id_b, u32 link_id){
                     Tscal S_ij = get_face_surface(id_a, id_b);
-                    dtrho += flux_rho_face_xm[link_id]*S_ij;
-                    dtrhov += flux_rhov_face_xm[link_id]*S_ij;
-                    dtrhoe += flux_rhoe_face_xm[link_id]*S_ij;
+                    dtrho -= flux_rho_face_xm[link_id]*S_ij;
+                    dtrhov -= flux_rhov_face_xm[link_id]*S_ij;
+                    dtrhoe -= flux_rhoe_face_xm[link_id]*S_ij;
                 });
                 
                 graph_iter_ym.for_each_object_link_id(id_a, [&](u32 id_b, u32 link_id){
                     Tscal S_ij = get_face_surface(id_a, id_b);
-                    dtrho += flux_rho_face_ym[link_id]*S_ij;
-                    dtrhov += flux_rhov_face_ym[link_id]*S_ij;
-                    dtrhoe += flux_rhoe_face_ym[link_id]*S_ij;
+                    dtrho -= flux_rho_face_ym[link_id]*S_ij;
+                    dtrhov -= flux_rhov_face_ym[link_id]*S_ij;
+                    dtrhoe -= flux_rhoe_face_ym[link_id]*S_ij;
                 });
                 
                 graph_iter_zm.for_each_object_link_id(id_a, [&](u32 id_b, u32 link_id){
                     Tscal S_ij = get_face_surface(id_a, id_b);
-                    dtrho += flux_rho_face_zm[link_id]*S_ij;
-                    dtrhov += flux_rhov_face_zm[link_id]*S_ij;
-                    dtrhoe += flux_rhoe_face_zm[link_id]*S_ij;
+                    dtrho -= flux_rho_face_zm[link_id]*S_ij;
+                    dtrhov -= flux_rhov_face_zm[link_id]*S_ij;
+                    dtrhoe -= flux_rhoe_face_zm[link_id]*S_ij;
                 });
 
                 dtrho /= V_i;

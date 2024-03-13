@@ -97,10 +97,10 @@ namespace shammodels::basegodunov::modules {
         enum Direction {
             xp = 0,
             xm = 1,
-            yp = 0,
-            ym = 1,
-            zp = 0,
-            zm = 1,
+            yp = 2,
+            ym = 3,
+            zp = 4,
+            zm = 5,
         };
 
         const std::array<TgridVec, 6> offset_check{
