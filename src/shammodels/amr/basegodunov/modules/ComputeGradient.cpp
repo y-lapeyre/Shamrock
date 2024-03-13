@@ -76,17 +76,33 @@ namespace {
 
     }
 
+    template<class T>
+    inline T slope_function_minmod(T sL, T sR){
+
+        if constexpr (std::is_same_v<T, f64_3>){
+            return {
+                shammath::minmod(sL[0], sR[0]),
+                shammath::minmod(sL[1], sR[1]),
+                shammath::minmod(sL[2], sR[2])
+            };
+        }else{
+            return shammath::minmod(sL, sR);
+        }
+
+    }
+
     enum SlopeMode{
         None = 0,
         VanLeer_f = 1,
         VanLeer_std = 2,
         VanLeer_sym = 3,
+        Minmod = 4,
     };
 
     template<class T,SlopeMode mode> 
     inline T slope_function(T sL, T sR){
         if constexpr (mode == None){
-            return (sL + sR)*0.5;
+            return sham::VectorProperties<T>::get_zero();
         }
 
         if constexpr (mode == VanLeer_f){
@@ -99,6 +115,10 @@ namespace {
 
         if constexpr (mode == VanLeer_sym){
             return slope_function_van_leer_symetric(sL,sR);
+        }
+
+        if constexpr (mode == Minmod){
+            return slope_function_minmod(sL,sR);
         }
     }
 

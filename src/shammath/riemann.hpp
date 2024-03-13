@@ -209,16 +209,6 @@ namespace shammath {
         return cprime;
     }
 
-    template<class Tcons>
-    inline constexpr Tcons rusanov_flux_y(Tcons cL, Tcons cR, typename Tcons::Tscal gamma) {
-        return x_to_y(rusanov_flux_x(y_to_x(cL), y_to_x(cR), gamma));
-    }
-
-    template<class Tcons>
-    inline constexpr Tcons rusanov_flux_z(Tcons cL, Tcons cR, typename Tcons::Tscal gamma) {
-        return x_to_z(rusanov_flux_x(z_to_x(cL), z_to_x(cR), gamma));
-    }
-
     template<class Tcons> 
     inline constexpr Tcons invert_axis(const Tcons c){
         Tcons cprime;
@@ -228,6 +218,16 @@ namespace shammath {
         cprime.rhovel[1] = -c.rhovel[1];
         cprime.rhovel[2] = -c.rhovel[2];
         return cprime;
+    }
+
+    template<class Tcons>
+    inline constexpr Tcons rusanov_flux_y(Tcons cL, Tcons cR, typename Tcons::Tscal gamma) {
+        return x_to_y(rusanov_flux_x(y_to_x(cL), y_to_x(cR), gamma));
+    }
+
+    template<class Tcons>
+    inline constexpr Tcons rusanov_flux_z(Tcons cL, Tcons cR, typename Tcons::Tscal gamma) {
+        return x_to_z(rusanov_flux_x(z_to_x(cL), z_to_x(cR), gamma));
     }
 
     template<class Tcons>
@@ -253,6 +253,12 @@ namespace shammath {
 
         const auto csL = sound_speed(primL, gamma);
         const auto csR = sound_speed(primR, gamma);
+
+        // Teyssier form
+        //const auto S_L = sham::min(primL.vel[0], primR.vel[0]) - sham::max(csL, csR);
+        //const auto S_R = sham::max(primL.vel[0], primR.vel[0]) + sham::max(csL, csR);
+
+        // Toro form
         const auto S_L = sham::min(primL.vel[0] - csL, primR.vel[0] - csR);
         const auto S_R = sham::max(primL.vel[0] + csL, primR.vel[0] + csR);
 
@@ -281,4 +287,29 @@ namespace shammath {
         return hll_flux();
     }
 
+
+    template<class Tcons>
+    inline constexpr Tcons hll_flux_y(Tcons cL, Tcons cR, typename Tcons::Tscal gamma) {
+        return x_to_y(hll_flux_x(y_to_x(cL), y_to_x(cR), gamma));
+    }
+
+    template<class Tcons>
+    inline constexpr Tcons hll_flux_z(Tcons cL, Tcons cR, typename Tcons::Tscal gamma) {
+        return x_to_z(hll_flux_x(z_to_x(cL), z_to_x(cR), gamma));
+    }
+
+    template<class Tcons>
+    inline constexpr Tcons hll_flux_mx(Tcons cL, Tcons cR, typename Tcons::Tscal gamma) {
+        return invert_axis(hll_flux_x(invert_axis(cL),invert_axis(cR), gamma));
+    }
+
+    template<class Tcons>
+    inline constexpr Tcons hll_flux_my(Tcons cL, Tcons cR, typename Tcons::Tscal gamma) {
+        return invert_axis(hll_flux_y(invert_axis(cL),invert_axis(cR), gamma));
+    }
+
+    template<class Tcons>
+    inline constexpr Tcons hll_flux_mz(Tcons cL, Tcons cR, typename Tcons::Tscal gamma) {
+        return invert_axis(hll_flux_z(invert_axis(cL),invert_axis(cR), gamma));
+    }
 } // namespace shammath

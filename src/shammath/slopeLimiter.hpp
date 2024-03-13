@@ -60,4 +60,12 @@ namespace shammath {
         } 
     }
 
+    template<class T>
+    inline T minmod(T sR, T sL){
+        T r = sL / sR;
+        return ((r > 0) ? (
+            (r < 1) ? r : 1
+        ) : 0) * sR;
+    }
+
 } // namespace shammath
