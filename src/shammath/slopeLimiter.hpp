@@ -15,6 +15,8 @@
  * 
  */
 
+#include "shambackends/math.hpp"
+
 namespace shammath {
 
     /**
@@ -40,6 +42,22 @@ namespace shammath {
         }else{
             return 0;
         }
+    }
+
+    template<class T>
+    inline T van_leer_slope_symetric(T sR, T sL){
+        T abs_sR = sham::abs(sR);
+        T abs_sL = sham::abs(sL);
+        T sgn_sR = sycl::sign(sR);
+        T sgn_sL = sycl::sign(sL);
+
+        T tmp = abs_sR * abs_sL;
+
+        if(tmp > 0){
+            return tmp * (sgn_sL + sgn_sR) / (abs_sL + abs_sR);
+        }else{
+            return 0;
+        } 
     }
 
 } // namespace shammath

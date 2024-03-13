@@ -14,6 +14,7 @@
  */
 
 #include "ComputeGradient.hpp"
+#include "shammath/slopeLimiter.hpp"
 #include "shamrock/scheduler/SchedulerUtility.hpp"
 
 #include <utility>
@@ -22,11 +23,89 @@ using AMRGraphLinkiterator = shammodels::basegodunov::modules::AMRGraphLinkitera
 
 namespace {
 
-    template<class T, class Tvec, class TgridVec, class ACCField>
+    template<class T>
+    inline T slope_function_van_leer_f_form(T sL, T sR){
+        T st = sL + sR;
+
+        auto vanleer = [](T f) {
+            return 4. * f * (1. - f);
+        };
+
+        auto slopelim = [&](T f){
+            
+            if constexpr (std::is_same_v<T, f64_3>){
+                f.x() = (f.x() >= 0 && f.x() <= 1) ? f.x() : 0;
+                f.y() = (f.y() >= 0 && f.y() <= 1) ? f.y() : 0;
+                f.z() = (f.z() >= 0 && f.z() <= 1) ? f.z() : 0;
+            }else{
+                f = (f >= 0 && f <= 1) ? f : 0;
+            }
+            return vanleer(f);
+        };
+
+        return slopelim(sL / st) * st * 0.5;
+    }
+
+    template<class T>
+    inline T slope_function_van_leer_symetric(T sL, T sR){
+
+        if constexpr (std::is_same_v<T, f64_3>){
+            return {
+                shammath::van_leer_slope_symetric(sL[0], sR[0]),
+                shammath::van_leer_slope_symetric(sL[1], sR[1]),
+                shammath::van_leer_slope_symetric(sL[2], sR[2])
+            };
+        }else{
+            return shammath::van_leer_slope_symetric(sL, sR);
+        }
+
+    }
+
+    template<class T>
+    inline T slope_function_van_leer_standard(T sL, T sR){
+
+        if constexpr (std::is_same_v<T, f64_3>){
+            return {
+                shammath::van_leer_slope(sL[0], sR[0]),
+                shammath::van_leer_slope(sL[1], sR[1]),
+                shammath::van_leer_slope(sL[2], sR[2])
+            };
+        }else{
+            return shammath::van_leer_slope(sL, sR);
+        }
+
+    }
+
+    enum SlopeMode{
+        None = 0,
+        VanLeer_f = 1,
+        VanLeer_std = 2,
+        VanLeer_sym = 3,
+    };
+
+    template<class T,SlopeMode mode> 
+    inline T slope_function(T sL, T sR){
+        if constexpr (mode == None){
+            return (sL + sR)*0.5;
+        }
+
+        if constexpr (mode == VanLeer_f){
+            return slope_function_van_leer_f_form(sL,sR);
+        }
+
+        if constexpr (mode == VanLeer_std){
+            return slope_function_van_leer_standard(sL,sR);
+        }
+
+        if constexpr (mode == VanLeer_sym){
+            return slope_function_van_leer_symetric(sL,sR);
+        }
+    }
+
+    template<class T, class Tvec, class ACCField>
     inline std::array<T, 3> get_3d_grad(
         const u32 cell_global_id,
-        const TgridVec delta_cell,
-        const shambase::VecComponent<Tvec> dxfact,
+        const shambase::VecComponent<Tvec> delta_cell,
         const AMRGraphLinkiterator &graph_iter_xp,
         const AMRGraphLinkiterator &graph_iter_xm,
         const AMRGraphLinkiterator &graph_iter_yp,
@@ -59,31 +138,11 @@ namespace {
         T delta_rho_y_m = rho_i - rho_ym;
         T delta_rho_z_m = rho_i - rho_zm;
 
-        T delta_rho_x_t = rho_xp - rho_xm;
-        T delta_rho_y_t = rho_yp - rho_ym;
-        T delta_rho_z_t = rho_zp - rho_zm;
+        T fact = 1. / T(delta_cell);
 
-        auto vanleer = [](T f) {
-            return 4. * f * (1. - f);
-        };
-
-        auto slopelim = [&](T f){
-            
-            if constexpr (std::is_same_v<T, f64_3>){
-                f.x() = (f.x() >= 0 && f.x() <= 1) ? f.x() : 0;
-                f.y() = (f.y() >= 0 && f.y() <= 1) ? f.y() : 0;
-                f.z() = (f.z() >= 0 && f.z() <= 1) ? f.z() : 0;
-            }else{
-                f = (f >= 0 && f <= 1) ? f : 0;
-            }
-            return vanleer(f);
-        };
-
-        T fact = 1. / (2 * dxfact * T(delta_cell.x()));
-
-        T lim_slope_rho_x = slopelim(delta_rho_x_m / delta_rho_x_t) * delta_rho_x_t * fact;
-        T lim_slope_rho_y = slopelim(delta_rho_y_m / delta_rho_y_t) * delta_rho_y_t * fact;
-        T lim_slope_rho_z = slopelim(delta_rho_z_m / delta_rho_z_t) * delta_rho_z_t * fact;
+        T lim_slope_rho_x = slope_function<T,VanLeer_sym>(delta_rho_x_m*fact, delta_rho_x_p*fact);
+        T lim_slope_rho_y = slope_function<T,VanLeer_sym>(delta_rho_y_m*fact, delta_rho_y_p*fact);
+        T lim_slope_rho_z = slope_function<T,VanLeer_sym>(delta_rho_z_m*fact, delta_rho_z_p*fact);
 
         return {lim_slope_rho_x, lim_slope_rho_y, lim_slope_rho_z};
     }
@@ -122,6 +181,9 @@ shammodels::basegodunov::modules::ComputeGradient<Tvec, TgridVec>::compute_grad_
         AMRGraph &graph_neigh_zp = shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.zp]);
         AMRGraph &graph_neigh_zm = shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.zm]);
 
+        sycl::buffer<Tscal> & block_cell_sizes = storage.cell_infos.get().block_cell_sizes.get_buf_check(id);
+        sycl::buffer<Tvec> & cell0block_aabb_lower = storage.cell_infos.get().cell0block_aabb_lower.get_buf_check(id);
+
         q.submit([&](sycl::handler &cgh) {
             AMRGraphLinkiterator graph_iter_xp{graph_neigh_xp, cgh};
             AMRGraphLinkiterator graph_iter_xm{graph_neigh_xm, cgh};
@@ -130,8 +192,8 @@ shammodels::basegodunov::modules::ComputeGradient<Tvec, TgridVec>::compute_grad_
             AMRGraphLinkiterator graph_iter_zp{graph_neigh_zp, cgh};
             AMRGraphLinkiterator graph_iter_zm{graph_neigh_zm, cgh};
 
-            sycl::accessor acc_block_min{buf_block_min, cgh, sycl::read_only};
-            sycl::accessor acc_block_max{buf_block_max, cgh, sycl::read_only};
+            sycl::accessor acc_aabb_block_lower{cell0block_aabb_lower, cgh, sycl::read_only};
+            sycl::accessor acc_aabb_cell_size{block_cell_sizes, cgh, sycl::read_only};
 
             sycl::accessor rho{buf_rho, cgh, sycl::read_only};
             sycl::accessor grad_rho{
@@ -139,25 +201,17 @@ shammodels::basegodunov::modules::ComputeGradient<Tvec, TgridVec>::compute_grad_
 
             u32 cell_count = (mpdat.total_elements) * AMRBlock::block_size;
 
-            Tscal dxfact = solver_config.grid_coord_to_pos_fact;
-
             shambase::parralel_for(cgh, cell_count, "compute_grad_rho", [=](u64 gid) {
                 const u32 cell_global_id = (u32) gid;
 
                 const u32 block_id    = cell_global_id / AMRBlock::block_size;
                 const u32 cell_loc_id = cell_global_id % AMRBlock::block_size;
 
-                // fetch current block info
-                const TgridVec cblock_min = acc_block_min[block_id];
-                const TgridVec cblock_max = acc_block_max[block_id];
-
-                // TODO Use the cell size from CellInfos instead
-                const TgridVec delta_cell = (cblock_max - cblock_min) / AMRBlock::Nside;
+                Tscal delta_cell = acc_aabb_cell_size[block_id];
 
                 auto result = get_3d_grad<Tscal, Tvec>(
                     cell_global_id,
                     delta_cell,
-                    dxfact,
                     graph_iter_xp,
                     graph_iter_xm,
                     graph_iter_yp,
@@ -211,6 +265,9 @@ shammodels::basegodunov::modules::ComputeGradient<Tvec, TgridVec>::compute_grad_
         AMRGraph &graph_neigh_zp = shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.zp]);
         AMRGraph &graph_neigh_zm = shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.zm]);
 
+        sycl::buffer<Tscal> & block_cell_sizes = storage.cell_infos.get().block_cell_sizes.get_buf_check(id);
+        sycl::buffer<Tvec> & cell0block_aabb_lower = storage.cell_infos.get().cell0block_aabb_lower.get_buf_check(id);
+
         q.submit([&](sycl::handler &cgh) {
             AMRGraphLinkiterator graph_iter_xp{graph_neigh_xp, cgh};
             AMRGraphLinkiterator graph_iter_xm{graph_neigh_xm, cgh};
@@ -218,9 +275,9 @@ shammodels::basegodunov::modules::ComputeGradient<Tvec, TgridVec>::compute_grad_
             AMRGraphLinkiterator graph_iter_ym{graph_neigh_ym, cgh};
             AMRGraphLinkiterator graph_iter_zp{graph_neigh_zp, cgh};
             AMRGraphLinkiterator graph_iter_zm{graph_neigh_zm, cgh};
-
-            sycl::accessor acc_block_min{buf_block_min, cgh, sycl::read_only};
-            sycl::accessor acc_block_max{buf_block_max, cgh, sycl::read_only};
+            
+            sycl::accessor acc_aabb_block_lower{cell0block_aabb_lower, cgh, sycl::read_only};
+            sycl::accessor acc_aabb_cell_size{block_cell_sizes, cgh, sycl::read_only};
 
             sycl::accessor rhovel{buf_rhov, cgh, sycl::read_only};
             sycl::accessor dx_rhovel{
@@ -240,15 +297,11 @@ shammodels::basegodunov::modules::ComputeGradient<Tvec, TgridVec>::compute_grad_
                 const u32 block_id    = cell_global_id / AMRBlock::block_size;
                 const u32 cell_loc_id = cell_global_id % AMRBlock::block_size;
 
-                // fetch current block info
-                const TgridVec cblock_min = acc_block_min[block_id];
-                const TgridVec cblock_max = acc_block_max[block_id];
-                const TgridVec delta_cell = (cblock_max - cblock_min) / AMRBlock::Nside;
+                Tscal delta_cell = acc_aabb_cell_size[block_id];
 
                 auto result = get_3d_grad<Tvec, Tvec>(
                     cell_global_id,
                     delta_cell,
-                    dxfact,
                     graph_iter_xp,
                     graph_iter_xm,
                     graph_iter_yp,
@@ -303,6 +356,9 @@ shammodels::basegodunov::modules::ComputeGradient<Tvec, TgridVec>::compute_grad_
         AMRGraph &graph_neigh_zp = shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.zp]);
         AMRGraph &graph_neigh_zm = shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.zm]);
 
+        sycl::buffer<Tscal> & block_cell_sizes = storage.cell_infos.get().block_cell_sizes.get_buf_check(id);
+        sycl::buffer<Tvec> & cell0block_aabb_lower = storage.cell_infos.get().cell0block_aabb_lower.get_buf_check(id);
+
         q.submit([&](sycl::handler &cgh) {
             AMRGraphLinkiterator graph_iter_xp{graph_neigh_xp, cgh};
             AMRGraphLinkiterator graph_iter_xm{graph_neigh_xm, cgh};
@@ -310,9 +366,9 @@ shammodels::basegodunov::modules::ComputeGradient<Tvec, TgridVec>::compute_grad_
             AMRGraphLinkiterator graph_iter_ym{graph_neigh_ym, cgh};
             AMRGraphLinkiterator graph_iter_zp{graph_neigh_zp, cgh};
             AMRGraphLinkiterator graph_iter_zm{graph_neigh_zm, cgh};
-
-            sycl::accessor acc_block_min{buf_block_min, cgh, sycl::read_only};
-            sycl::accessor acc_block_max{buf_block_max, cgh, sycl::read_only};
+            
+            sycl::accessor acc_aabb_block_lower{cell0block_aabb_lower, cgh, sycl::read_only};
+            sycl::accessor acc_aabb_cell_size{block_cell_sizes, cgh, sycl::read_only};
 
             sycl::accessor rhoe{buf_rhoe, cgh, sycl::read_only};
             sycl::accessor grad_rhoe{
@@ -328,15 +384,11 @@ shammodels::basegodunov::modules::ComputeGradient<Tvec, TgridVec>::compute_grad_
                 const u32 block_id    = cell_global_id / AMRBlock::block_size;
                 const u32 cell_loc_id = cell_global_id % AMRBlock::block_size;
 
-                // fetch current block info
-                const TgridVec cblock_min = acc_block_min[block_id];
-                const TgridVec cblock_max = acc_block_max[block_id];
-                const TgridVec delta_cell = (cblock_max - cblock_min) / AMRBlock::Nside;
+                Tscal delta_cell = acc_aabb_cell_size[block_id];
 
                 auto result = get_3d_grad<Tscal, Tvec>(
                     cell_global_id,
                     delta_cell,
-                    dxfact,
                     graph_iter_xp,
                     graph_iter_xm,
                     graph_iter_yp,
