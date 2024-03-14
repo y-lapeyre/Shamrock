@@ -92,7 +92,7 @@ auto Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tscal dt_input) -> Tsc
 
     // flux
     modules::ComputeFlux flux_compute(context,solver_config,storage);
-    flux_compute.compute_flux_rusanov();
+    flux_compute.compute_flux();
 
     //compute dt fields
     modules::ComputeTimeDerivative dt_compute(context,solver_config,storage);

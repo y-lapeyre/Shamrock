@@ -22,6 +22,11 @@
 #include "shamrock/scheduler/ShamrockCtx.hpp"
 namespace shammodels::basegodunov {
 
+    enum RiemmanSolverMode {
+        Rusanov = 0,
+        HLL = 1
+    };
+
     template<class Tvec,class TgridVec>
     struct SolverConfig {
 
@@ -37,6 +42,8 @@ namespace shammodels::basegodunov {
         inline void set_eos_gamma(Tscal gamma){
             eos_gamma = gamma;
         }
+
+        RiemmanSolverMode riemman_config = HLL;
     };
 
     template<class Tvec, class TgridVec>
