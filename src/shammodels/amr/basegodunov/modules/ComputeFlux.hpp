@@ -46,7 +46,7 @@ namespace shammodels::basegodunov::modules {
         ComputeFlux(ShamrockCtx &context, Config &solver_config, Storage &storage)
             : context(context), solver_config(solver_config), storage(storage) {}
 
-        void compute_flux_rusanov();
+        void compute_flux();
 
         private:
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }

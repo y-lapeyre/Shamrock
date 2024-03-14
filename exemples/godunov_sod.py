@@ -28,6 +28,14 @@ cfg.set_scale_factor(scale_fact)
 
 gamma = 1.4
 cfg.set_eos_gamma(gamma)
+#cfg.set_riemann_solver_rusanov()
+cfg.set_riemann_solver_hll()
+
+#cfg.set_slope_lim_none()
+#cfg.set_slope_lim_vanleer_f()
+#cfg.set_slope_lim_vanleer_std()
+#cfg.set_slope_lim_vanleer_sym()
+cfg.set_slope_lim_minmod()
 model.set_config(cfg)
 
 
@@ -52,9 +60,9 @@ def rhoetot_map(rmin,rmax):
 
     x,y,z = rmin
     if x < 1:
-        return etot_L*rho
+        return etot_L
     else:
-        return etot_R*rho
+        return etot_R
 
 def rhovel_map(rmin,rmax):
     rho = rho_map(rmin,rmax)
@@ -68,7 +76,7 @@ model.set_field_value_lambda_f64_3("rhovel", rhovel_map)
 
 #model.evolve_once(0,0.1)
 freq = 50
-dt = 0.0005
+dt = 0.0010
 t = 0
 for i in range(701):
     
@@ -145,11 +153,11 @@ rhovelx = np.array(rhovelx)
 rhoetot = np.array(rhoetot)
 
 vx = rhovelx / rho
-etot = rhoetot / rho
 
 plt.plot(X,rho,'.',label="rho")
 plt.plot(X,vx,'.',label="v")
-plt.plot(X,etot*(gamma-1) - 0.5*vx**2,'.',label="P")
+plt.plot(X,(rhoetot - 0.5*rho*(vx**2))*(gamma-1),'.',label="P")
+#plt.plot(X,rhoetot,'.',label="rhoetot")
 plt.legend()
 plt.grid()
 plt.ylim(0,1.1)

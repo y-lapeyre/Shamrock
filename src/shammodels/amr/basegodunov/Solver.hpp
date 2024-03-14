@@ -22,6 +22,19 @@
 #include "shamrock/scheduler/ShamrockCtx.hpp"
 namespace shammodels::basegodunov {
 
+    enum RiemmanSolverMode {
+        Rusanov = 0,
+        HLL = 1
+    };
+
+    enum SlopeMode{
+        None = 0,
+        VanLeer_f = 1,
+        VanLeer_std = 2,
+        VanLeer_sym = 3,
+        Minmod = 4,
+    };
+
     template<class Tvec,class TgridVec>
     struct SolverConfig {
 
@@ -37,6 +50,9 @@ namespace shammodels::basegodunov {
         inline void set_eos_gamma(Tscal gamma){
             eos_gamma = gamma;
         }
+
+        RiemmanSolverMode riemman_config = HLL;
+        SlopeMode slope_config = VanLeer_sym;
     };
 
     template<class Tvec, class TgridVec>

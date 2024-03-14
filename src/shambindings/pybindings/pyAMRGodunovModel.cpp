@@ -39,6 +39,27 @@ namespace shammodels::basegodunov {
             })
             .def("set_eos_gamma",[](TConfig & self, Tscal eos_gamma){
                 self.set_eos_gamma(eos_gamma);
+            })
+            .def("set_riemann_solver_hll",[](TConfig & self){
+                self.riemman_config = HLL;
+            })
+            .def("set_riemann_solver_rusanov",[](TConfig & self){
+                self.riemman_config = Rusanov;
+            })
+            .def("set_slope_lim_none",[](TConfig & self){
+                self.slope_config = None;
+            })
+            .def("set_slope_lim_vanleer_f",[](TConfig & self){
+                self.slope_config = VanLeer_f;
+            })
+            .def("set_slope_lim_vanleer_std",[](TConfig & self){
+                self.slope_config = VanLeer_std;
+            })
+            .def("set_slope_lim_vanleer_sym",[](TConfig & self){
+                self.slope_config = VanLeer_sym;
+            })
+            .def("set_slope_lim_minmod",[](TConfig & self){
+                self.slope_config = Minmod;
             });
 
         py::class_<T>(m, name_model.c_str())

@@ -36,7 +36,7 @@ u_cs1 = 1/( gamma*(gamma-1))
 
 kx,ky,kz = 4*np.pi,0,0
 delta_rho = 0
-delta_v = 1e-5
+delta_v = 1e-4
 
 def rho_map(rmin,rmax):
 
@@ -65,10 +65,92 @@ model.set_field_value_lambda_f64("rhoetot", rhoetot_map)
 model.set_field_value_lambda_f64_3("rhovel", rhovel_map)
 
 #model.evolve_once(0,0.1)
-freq = 20
-for i in range(2000):
+tmax = 0.127
+dt = 1/1024
+t = 0
+
+freq = 16
+
+
+
+for i in range(1000):
     
     if i % freq == 0:
         model.dump_vtk("test"+str(i//freq)+".vtk")
 
-    model.evolve_once(float(i),0.0005)
+    model.evolve_once(t,dt)
+    t += dt
+
+    if t >= tmax:
+        break
+
+
+
+def convert_to_cell_coords(dic):
+
+    cmin = dic['cell_min']
+    cmax = dic['cell_max']
+
+    xmin = []
+    ymin = []
+    zmin = []
+    xmax = []
+    ymax = []
+    zmax = []
+
+    for i in range(len(cmin)):
+
+        m,M = cmin[i],cmax[i]
+
+        mx,my,mz = m
+        Mx,My,Mz = M
+
+        for j in range(8):
+            a,b = model.get_cell_coords(((mx,my,mz), (Mx,My,Mz)),j)
+
+            x,y,z = a
+            xmin.append(x)
+            ymin.append(y)
+            zmin.append(z)
+
+            x,y,z = b
+            xmax.append(x)
+            ymax.append(y)
+            zmax.append(z)
+
+    dic["xmin"] = np.array(xmin)
+    dic["ymin"] = np.array(ymin)
+    dic["zmin"] = np.array(zmin)
+    dic["xmax"] = np.array(xmax)
+    dic["ymax"] = np.array(ymax)
+    dic["zmax"] = np.array(zmax)
+
+    return dic
+
+
+dic = convert_to_cell_coords(ctx.collect_data())
+
+
+
+
+
+X = []
+rho = []
+velx = []
+rhoe = []
+
+for i in range(len(dic["xmin"])):
+
+    X.append(dic["xmin"][i])
+    rho.append(dic["rho"][i])
+    velx.append(dic["rhovel"][i][0])
+    rhoe.append(dic["rhoetot"][i])
+
+
+fig , axs = plt.subplots(3,1,sharex= True)
+axs[0].plot(X,rho,'.', label = "rho")
+axs[1].plot(X,velx,'.', label = "vx")
+axs[2].plot(X,rhoe,'.', label = "rhoe")
+
+
+plt.show()

@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt 
 import os
 
-tmax = 1
+tmax = 1.0
 def run_sim(vanleer = True, label = "none"):
     ctx = shamrock.Context()
     ctx.pdata_layout_new()
@@ -32,7 +32,7 @@ def run_sim(vanleer = True, label = "none"):
 
     kx,ky,kz = 2*np.pi,0,0
     delta_rho = 0
-    delta_v = 1e-4
+    delta_v = 1e-5
 
     def rho_map(rmin,rmax):
 
@@ -60,7 +60,7 @@ def run_sim(vanleer = True, label = "none"):
     model.set_field_value_lambda_f64_3("rhovel", rhovel_map)
 
     #model.evolve_once(0,0.1)
-    freq = 1
+    freq = 16
     t = 0
 
     dt = 1/256
