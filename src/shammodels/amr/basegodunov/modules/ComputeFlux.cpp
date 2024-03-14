@@ -36,7 +36,7 @@ class FluxCompute{
     using Tscal =  typename Tcons::Tscal;
 
     inline static Tcons flux(Tcons cL, Tcons cR, typename Tcons::Tscal gamma){
-        if constexpr (mode == shammodels::basegodunov::Rusanov){
+        if constexpr (mode == RiemmanSolverMode::Rusanov){
             if constexpr (dir == xp){
                 return shammath::rusanov_flux_x(cL, cR, gamma);
             }
@@ -56,7 +56,7 @@ class FluxCompute{
                 return shammath::rusanov_flux_mz(cL, cR, gamma);
             }
         }
-        if constexpr (mode == shammodels::basegodunov::HLL){
+        if constexpr (mode == RiemmanSolverMode::HLL){
             if constexpr (dir == xp){
                 return shammath::hll_flux_x(cL, cR, gamma);
             }

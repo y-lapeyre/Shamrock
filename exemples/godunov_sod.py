@@ -28,6 +28,14 @@ cfg.set_scale_factor(scale_fact)
 
 gamma = 1.4
 cfg.set_eos_gamma(gamma)
+#cfg.set_riemann_solver_rusanov()
+cfg.set_riemann_solver_hll()
+
+#cfg.set_slope_lim_none()
+#cfg.set_slope_lim_vanleer_f()
+#cfg.set_slope_lim_vanleer_std()
+#cfg.set_slope_lim_vanleer_sym()
+cfg.set_slope_lim_minmod()
 model.set_config(cfg)
 
 
@@ -149,7 +157,7 @@ vx = rhovelx / rho
 plt.plot(X,rho,'.',label="rho")
 plt.plot(X,vx,'.',label="v")
 plt.plot(X,(rhoetot - 0.5*rho*(vx**2))*(gamma-1),'.',label="P")
-plt.plot(X,rhoetot,'.',label="rhoetot")
+#plt.plot(X,rhoetot,'.',label="rhoetot")
 plt.legend()
 plt.grid()
 plt.ylim(0,1.1)
