@@ -46,20 +46,35 @@ inline f64 get_bandwith(){
     return 2*f64(count)*sizeof(T) / (duration - duration_empty);
 }
 
+template<class T, int ptrsep>
+void bench(std::vector<f64> &sep, std::vector<f64> &measured_bw){
+    sep.push_back(ptrsep*sizeof(T));
+    measured_bw.push_back(get_bandwith<T, ptrsep>()); 
+
+    shamcomm::logs::raw_ln("sep =",ptrsep*sizeof(T),"   B = ", shambase::readable_sizeof(*(measured_bw.end()-1)),"/s");
+}
+
 TestStart(Benchmark, "memory-pointer-div-perf", memorypointerdivperf, 1) {
 
     using T = double;
 
-    shamcomm::logs::raw_ln("sep =",1*sizeof(T),"   B = ", shambase::readable_sizeof(get_bandwith<T,1>()),"/s");
-    shamcomm::logs::raw_ln("sep =",2*sizeof(T),"  B = ", shambase::readable_sizeof(get_bandwith<T,2>()),"/s");
-    shamcomm::logs::raw_ln("sep =",4*sizeof(T),"  B = ", shambase::readable_sizeof(get_bandwith<T,4>()),"/s");
-    shamcomm::logs::raw_ln("sep =",8*sizeof(T),"  B = ", shambase::readable_sizeof(get_bandwith<T,8>()),"/s");
-    shamcomm::logs::raw_ln("sep =",16*sizeof(T)," B = ", shambase::readable_sizeof(get_bandwith<T,16>()),"/s");
-    shamcomm::logs::raw_ln("sep =",32*sizeof(T)," B = ", shambase::readable_sizeof(get_bandwith<T,32>()),"/s");
-    shamcomm::logs::raw_ln("sep =",64*sizeof(T)," B = ", shambase::readable_sizeof(get_bandwith<T,64>()),"/s");
-    shamcomm::logs::raw_ln("sep =",128*sizeof(T),"B = ", shambase::readable_sizeof(get_bandwith<T,128>()),"/s");
-    shamcomm::logs::raw_ln("sep =",256*sizeof(T),"B = ", shambase::readable_sizeof(get_bandwith<T,256>()),"/s");
-    shamcomm::logs::raw_ln("sep =",512*sizeof(T),"B = ", shambase::readable_sizeof(get_bandwith<T,512>()),"/s");
-    shamcomm::logs::raw_ln("sep =",1024*sizeof(T),"B = ", shambase::readable_sizeof(get_bandwith<T,1024>()),"/s");
+    std::vector<f64> sep;
+    std::vector<f64> measured_bw;
+
+    bench<T,1>(sep, measured_bw);
+    bench<T,2>(sep, measured_bw);
+    bench<T,4>(sep, measured_bw);
+    bench<T,8>(sep, measured_bw);
+    bench<T,16>(sep, measured_bw);
+    bench<T,32>(sep, measured_bw);
+    bench<T,64>(sep, measured_bw);
+    bench<T,128>(sep, measured_bw);
+    bench<T,256>(sep, measured_bw);
+    bench<T,512>(sep, measured_bw);
+    bench<T,1024>(sep, measured_bw); 
+    bench<T,2048>(sep, measured_bw); 
+    bench<T,4096>(sep, measured_bw); 
+    bench<T,8192>(sep, measured_bw); 
+
 
 }
