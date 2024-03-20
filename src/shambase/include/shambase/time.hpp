@@ -153,6 +153,20 @@ namespace shambase {
         return t.func_time_sec();
     }
 
+    template<class Func>
+    inline f64 timeitfor(Func && f, f64 max_duration = 1){
+
+        FunctionTimer t;
+        Timer tdur;
+        tdur.start();
+        do{
+            t.time_func([&](){f();});
+            tdur.end();
+        }while(tdur.elasped_sec() < max_duration);
+
+        return t.func_time_sec();
+    }
+
     struct BenchmarkResult{
         std::vector<f64> counts;
         std::vector<f64> times;
