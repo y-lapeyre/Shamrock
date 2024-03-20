@@ -13,7 +13,7 @@
  * 
  */
  
-#include "CoordRange.hpp"
+#include "shammath/CoordRange.hpp"
 #include "shambase/exception.hpp"
 
 

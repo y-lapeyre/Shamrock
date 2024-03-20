@@ -13,9 +13,11 @@
  * 
  */
  
-#include "CoordRangeTransform.hpp"
+#include "shammath/CoordRangeTransform.hpp"
 
-#include "shamsys/legacy/log.hpp"
+#include "shamcomm/logs.hpp"
+#include "shambackends/fmt_bindings/fmt_defs.hpp"
+
 #include "shambase/exception.hpp"
 #include <stdexcept>
 
