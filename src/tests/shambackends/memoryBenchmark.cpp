@@ -26,7 +26,7 @@ inline f64 get_bandwith(){
     f64 duration_empty = shambase::timeitfor([&](){
         q.parallel_for(sycl::range<1>(count), [=](sycl::item<1> id){
             u64 gid = id.get_linear_id();
-            u64 gidmul = (ptrsep+1)*gid % buf_len;
+            u64 gidmul = (ptrsep)*gid % buf_len;
 
             u32 write_addr = gid;
             u32 read_addr = gidmul;
@@ -38,7 +38,7 @@ inline f64 get_bandwith(){
         q.parallel_for(sycl::range<1>(count), [=](sycl::item<1> id){
             u64 gid = id.get_linear_id();
 
-            u64 gidmul = (ptrsep+1)*gid % buf_len;
+            u64 gidmul = (ptrsep)*gid % buf_len;
 
             u32 write_addr = gid;
             u32 read_addr = gidmul;
