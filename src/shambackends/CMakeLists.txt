@@ -5,6 +5,7 @@ project(Shambackends CXX C)
 set(Sources
         src/comm/details/CommunicationBufferImpl.cpp
         src/queues.cpp
+        src/usmbuffer.cpp
     )
 
 if(SHAMROCK_USE_SHARED_LIB)
