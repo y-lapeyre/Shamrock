@@ -65,13 +65,16 @@ void shammodels::sph::modules::UpdateViscosity<Tvec, SPHKernel>::update_artifici
         sycl::buffer<Tscal> &buf_h        = pdat.get_field_buf_ref<Tscal>(ihpart);
         sycl::buffer<Tscal> &buf_alpha_AV = pdat.get_field_buf_ref<Tscal>(ialpha_AV);
 
+        sycl::buffer<Tscal> & buf_alpha_AV_updated = storage.alpha_av_updated.get().get_buf_check(cur_p.id_patch);
+
         u32 obj_cnt = pdat.get_obj_cnt();
 
         shamsys::instance::get_compute_queue().submit([&, dt](sycl::handler &cgh) {
             sycl::accessor divv{buf_divv, cgh, sycl::read_only};
             sycl::accessor cs{buf_cs, cgh, sycl::read_only};
             sycl::accessor h{buf_h, cgh, sycl::read_only};
-            sycl::accessor alpha_AV{buf_alpha_AV, cgh, sycl::read_write};
+            sycl::accessor alpha_AV{buf_alpha_AV, cgh, sycl::read_only};
+            sycl::accessor alpha_AV_updated{buf_alpha_AV_updated, cgh, sycl::write_only, sycl::no_init};
 
             Tscal sigma_decay = cfg.sigma_decay;
             Tscal alpha_min   = cfg.alpha_min;
@@ -93,7 +96,7 @@ void shammodels::sph::modules::UpdateViscosity<Tvec, SPHKernel>::update_artifici
 
                 Tscal new_alpha = (alpha_a + source * dt + fact_t * alpha_min) * euler_impl_fact;
 
-                alpha_AV[item] = sham::min(alpha_max, new_alpha);
+                alpha_AV_updated[item] = sham::min(alpha_max, new_alpha);
             });
         });
     });
@@ -123,6 +126,7 @@ void shammodels::sph::modules::UpdateViscosity<Tvec, SPHKernel>::update_artifici
         sycl::buffer<Tscal> &buf_cs       = pdat.get_field_buf_ref<Tscal>(isoundspeed);
         sycl::buffer<Tscal> &buf_h        = pdat.get_field_buf_ref<Tscal>(ihpart);
         sycl::buffer<Tscal> &buf_alpha_AV = pdat.get_field_buf_ref<Tscal>(ialpha_AV);
+        sycl::buffer<Tscal> & buf_alpha_AV_updated = storage.alpha_av_updated.get().get_buf_check(cur_p.id_patch);
 
         u32 obj_cnt = pdat.get_obj_cnt();
 
@@ -132,7 +136,8 @@ void shammodels::sph::modules::UpdateViscosity<Tvec, SPHKernel>::update_artifici
             sycl::accessor dtdivv{buf_dtdivv, cgh, sycl::read_only};
             sycl::accessor cs{buf_cs, cgh, sycl::read_only};
             sycl::accessor h{buf_h, cgh, sycl::read_only};
-            sycl::accessor alpha_AV{buf_alpha_AV, cgh, sycl::read_write};
+            sycl::accessor alpha_AV{buf_alpha_AV, cgh, sycl::read_only};
+            sycl::accessor alpha_AV_updated{buf_alpha_AV_updated, cgh, sycl::write_only, sycl::no_init};
 
             Tscal sigma_decay = cfg.sigma_decay;
             Tscal alpha_min   = cfg.alpha_min;
@@ -192,7 +197,7 @@ void shammodels::sph::modules::UpdateViscosity<Tvec, SPHKernel>::update_artifici
                     new_alpha = alpha_loc_a;
                 }
 
-                alpha_AV[item] = new_alpha;
+                alpha_AV_updated[item] = new_alpha;
             });
         });
     });
