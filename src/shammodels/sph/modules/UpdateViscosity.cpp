@@ -173,7 +173,7 @@ void shammodels::sph::modules::UpdateViscosity<Tvec, SPHKernel>::update_artifici
                     auto fac = sham::max(-divv, Tscal{0});
                     fac *= fac;
                     auto traceS = sycl::dot(curlv,curlv);
-                    if (fac + traceS > 1e-12) {
+                    if (fac + traceS > shambase::get_epsilon<Tscal>()) {
                         return fac/(fac + traceS);
                     }
                     return Tscal{1};
@@ -184,11 +184,13 @@ void shammodels::sph::modules::UpdateViscosity<Tvec, SPHKernel>::update_artifici
                 Tscal A_a = balsara_corec*sham::max<Tscal>(-dtdivv_a, 0);
 
 
-
+                Tscal temp = cs_a*cs_a;
 
                 Tscal alpha_loc_a = sham::min(
-                        (cs_a > 0) ? 10*h_a*h_a*A_a/(cs_a*cs_a) : alpha_min
+                        (cs_a > 0) ? 10*h_a*h_a*A_a/(temp) : alpha_min
                     ,alpha_max);
+
+                alpha_loc_a = (temp > shambase::get_epsilon<Tscal>()) ? alpha_loc_a : alpha_min;
 
                 //implicit euler
                 Tscal new_alpha = (alpha_a + alpha_loc_a * fact_t) * euler_impl_fact;
