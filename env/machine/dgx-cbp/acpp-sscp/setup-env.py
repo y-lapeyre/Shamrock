@@ -6,8 +6,8 @@ import utils.envscript
 import utils.cuda_arch
 import utils.amd_arch
 
-NAME = "Debian generic AdaptiveCpp"
-PATH = "machine/debian-generic/acpp"
+NAME = "CBP Nvidia DGX A100 AdaptiveCpp (SSCP)"
+PATH = "machine/dgx-cbp/acpp-cuda"
 
 print("loading :",NAME)
 
@@ -22,17 +22,9 @@ def setup(argv,builddir, shamrockdir,buildtype):
 
     parser = argparse.ArgumentParser(prog=PATH,description= NAME+' env for Shamrock')
 
-    parser.add_argument("--backend", action='store', help="sycl backend to use")
-    parser.add_argument("--arch", action='store', help="arch to build")
     parser.add_argument("--gen", action='store', help="generator to use (ninja or make)")
 
     args = parser.parse_args(argv)
-
-    acpp_target = utils.acpp.get_acpp_target_env(args)  
-    if (acpp_target == None):
-        print("-- target not specified using acpp default")
-    else:
-        print("-- setting acpp target to :",acpp_target)
 
     gen, gen_opt, cmake_gen, cmake_build_type = utils.sysinfo.select_generator(args, buildtype)
     
@@ -50,12 +42,6 @@ def setup(argv,builddir, shamrockdir,buildtype):
     ENV_SCRIPT_HEADER += "export ACPP_GIT_DIR="+ACPP_GIT_DIR+"\n"
     ENV_SCRIPT_HEADER += "export ACPP_BUILD_DIR="+ACPP_BUILD_DIR+"\n"
     ENV_SCRIPT_HEADER += "export ACPP_INSTALL_DIR="+ACPP_INSTALL_DIR+"\n"
-
-    if not (acpp_target == None):
-        ENV_SCRIPT_HEADER += "export ACPP_TARGETS=\""+acpp_target+"\"\n"
-    else:
-        ENV_SCRIPT_HEADER += "unset -f ACPP_TARGETS\n"
-
     ENV_SCRIPT_HEADER += "\n"
     ENV_SCRIPT_HEADER += "export CMAKE_GENERATOR=\""+cmake_gen+"\"\n"
     ENV_SCRIPT_HEADER += "\n"
