@@ -8,8 +8,6 @@ import utils.amd_arch
 NAME = "Adastra mi250x Intel LLVM ROCM"
 PATH = "machine/debian-generic/intel-llvm"
 
-print("loading :",NAME)
-
 def is_intel_llvm_already_installed(installfolder):
     return os.path.isfile(installfolder + "/bin/clang++")
 

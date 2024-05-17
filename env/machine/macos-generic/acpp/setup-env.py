@@ -7,8 +7,6 @@ import utils.envscript
 NAME = "MacOS generic AdaptiveCpp"
 PATH = "machine/macos-generic/acpp"
 
-print("loading :",NAME)
-
 def is_acpp_already_installed(installfolder):
     return os.path.isfile(installfolder + "/bin/acpp")
 
