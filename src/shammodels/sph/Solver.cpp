@@ -928,15 +928,16 @@ void shammodels::sph::Solver<Tvec, Kern>::init_ghost_layout() {
     ghost_layout.add_field<Tscal>("hpart", 1);
     ghost_layout.add_field<Tscal>("uint", 1);
     ghost_layout.add_field<Tvec>("vxyz", 1);
+
+    if(solver_config.has_axyz_in_ghost()){
+        ghost_layout.add_field<Tvec>("axyz", 1);
+    }
     ghost_layout.add_field<Tscal>("omega", 1);
 
     if(solver_config.ghost_has_soundspeed()){
         ghost_layout.add_field<Tscal>("soundspeed", 1);
     }
 
-    if (solver_config.has_field_alphaAV()) {
-        ghost_layout.add_field<Tscal>("alpha_AV", 1);
-    }
 }
 
 template<class Tvec, template<class> class Kern>
@@ -1007,8 +1008,8 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
     u32 ivxyz_interf                               = ghost_layout.get_field_idx<Tvec>("vxyz");
     u32 iomega_interf                              = ghost_layout.get_field_idx<Tscal>("omega");
 
-    const u32 ialpha_AV_interf =
-        (has_alphaAV_field) ? ghost_layout.get_field_idx<Tscal>("alpha_AV") : 0;
+    const u32 iaxyz_interf   = 
+    (solver_config.has_axyz_in_ghost()) ? ghost_layout.get_field_idx<Tvec>("axyz") : 0;
 
     const u32 isoundspeed_interf =
         (has_soundspeed_field) ? ghost_layout.get_field_idx<Tscal>("soundspeed") : 0;
@@ -1044,15 +1045,16 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
                 buf_idx, cnt, pdat.get_field<Tscal>(ihpart_interf));
             sender_patch.get_field<Tscal>(iuint).append_subset_to(
                 buf_idx, cnt, pdat.get_field<Tscal>(iuint_interf));
+
+            if(solver_config.has_axyz_in_ghost()){
+                sender_patch.get_field<Tvec>(iaxyz).append_subset_to(
+                buf_idx, cnt, pdat.get_field<Tvec>(iaxyz_interf));
+            }
+
             sender_patch.get_field<Tvec>(ivxyz).append_subset_to(
                 buf_idx, cnt, pdat.get_field<Tvec>(ivxyz_interf));
 
             sender_omega.append_subset_to(buf_idx, cnt, pdat.get_field<Tscal>(iomega_interf));
-
-            if (has_alphaAV_field) {
-                sender_patch.get_field<Tscal>(ialpha_AV).append_subset_to(
-                    buf_idx, cnt, pdat.get_field<Tscal>(ialpha_AV_interf));
-            }
 
             if (has_soundspeed_field) {
                 sender_patch.get_field<Tscal>(isoundspeed).append_subset_to(
@@ -1097,12 +1099,12 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
                 pdat_new.get_field<Tscal>(ihpart_interf).insert(pdat.get_field<Tscal>(ihpart));
                 pdat_new.get_field<Tscal>(iuint_interf).insert(pdat.get_field<Tscal>(iuint));
                 pdat_new.get_field<Tvec>(ivxyz_interf).insert(pdat.get_field<Tvec>(ivxyz));
-                pdat_new.get_field<Tscal>(iomega_interf).insert(cur_omega);
 
-                if (has_alphaAV_field) {
-                    pdat_new.get_field<Tscal>(ialpha_AV_interf)
-                        .insert(pdat.get_field<Tscal>(ialpha_AV));
+                if(solver_config.has_axyz_in_ghost()){
+                    pdat_new.get_field<Tvec>(iaxyz_interf).insert(pdat.get_field<Tvec>(iaxyz));
                 }
+
+                pdat_new.get_field<Tscal>(iomega_interf).insert(cur_omega);
 
                 if (has_soundspeed_field) {
                     pdat_new.get_field<Tscal>(isoundspeed_interf)
@@ -1233,13 +1235,9 @@ void shammodels::sph::Solver<Tvec, Kern>::evolve_once()
 
     do_predictor_leapfrog(dt);
 
-    update_artificial_viscosity(dt);
-
     sink_update.predictor_step(dt);
 
-
     sink_update.compute_ext_forces();
-
     
     ext_forces.compute_ext_forces_indep_v();
 
@@ -1288,8 +1286,102 @@ void shammodels::sph::Solver<Tvec, Kern>::evolve_once()
                 "a dt that is too large");
         }
 
+
         // communicate fields
         communicate_merge_ghosts_fields();
+
+
+        if(solver_config.has_field_alphaAV()){
+
+            shamrock::SchedulerUtility utility(scheduler());
+            const u32 ialpha_AV      = pdl.get_field_idx<Tscal>("alpha_AV");
+            storage.alpha_av_updated.set(utility.save_field<Tscal>(ialpha_AV, "alpha_AV_new"));
+
+        }
+
+        if (solver_config.has_field_dtdivv()) {
+            
+            if(solver_config.combined_dtdiv_divcurlv_compute){
+                if (solver_config.has_field_dtdivv()) {     
+                    sph::modules::DiffOperatorDtDivv<Tvec, Kern>(context, solver_config, storage)
+                        .update_dtdivv(true);
+                }
+            }else{
+
+                if (solver_config.has_field_divv()) {
+                    sph::modules::DiffOperators<Tvec, Kern>(context, solver_config, storage)
+                        .update_divv();
+                }
+                
+                if (solver_config.has_field_curlv()) {
+                    sph::modules::DiffOperators<Tvec, Kern>(context, solver_config, storage)
+                        .update_curlv();
+                }
+                
+                if (solver_config.has_field_dtdivv()) {
+                    sph::modules::DiffOperatorDtDivv<Tvec, Kern>(context, solver_config, storage)
+                        .update_dtdivv(false);
+                }
+            }
+
+        }else{
+            if (solver_config.has_field_divv()) {
+                sph::modules::DiffOperators<Tvec, Kern>(context, solver_config, storage)
+                    .update_divv();
+            }
+
+            if (solver_config.has_field_curlv()) {
+                sph::modules::DiffOperators<Tvec, Kern>(context, solver_config, storage)
+                    .update_curlv();
+            }
+        }
+
+
+        update_artificial_viscosity(dt);
+
+
+        if(solver_config.has_field_alphaAV()){
+
+            shamrock::ComputeField<Tscal> & comp_field_send = storage.alpha_av_updated.get();
+
+            using InterfaceBuildInfos = typename sph::BasicSPHGhostHandler<Tvec>::InterfaceBuildInfos;
+
+            shambase::Timer time_interf;
+            time_interf.start();
+
+            auto field_interf = ghost_handle.template build_interface_native<PatchDataField<Tscal>>(
+                storage.ghost_patch_cache.get(),
+                [&](u64 sender,
+                    u64 /*receiver*/,
+                    InterfaceBuildInfos binfo,
+                    sycl::buffer<u32> &buf_idx,
+                    u32 cnt) -> PatchDataField<Tscal> {
+
+                    PatchDataField<Tscal> &sender_field = comp_field_send.get_field(sender);
+
+                    return sender_field.make_new_from_subset(buf_idx, cnt);
+                });
+
+            shambase::DistributedDataShared<PatchDataField<Tscal>> interf_pdat =
+                ghost_handle.communicate_pdatfield(std::move(field_interf), 1);
+
+            shambase::DistributedData<PatchDataField<Tscal>> merged_field =
+                ghost_handle.template merge_native<PatchDataField<Tscal>, PatchDataField<Tscal>>(
+                    std::move(interf_pdat),
+                    [&](const shamrock::patch::Patch p, shamrock::patch::PatchData &pdat) {
+                        PatchDataField<Tscal> &receiver_field = comp_field_send.get_field(p.id_patch);
+                        return receiver_field.duplicate();
+                    },
+                    [](PatchDataField<Tscal> &mpdat, PatchDataField<Tscal> &pdat_interf) {
+                        mpdat.insert(pdat_interf);
+                    });
+
+            time_interf.end();
+            storage.timings_details.interface += time_interf.elasped_sec();
+
+            storage.alpha_av_ghost.set(std::move(merged_field));
+
+        }
 
         // compute pressure
         compute_eos_fields();
@@ -1409,6 +1501,29 @@ void shammodels::sph::Solver<Tvec, Kern>::evolve_once()
         if (!need_rerun_corrector) {
 
             sink_update.corrector_step(dt);
+
+            //write back alpha av field
+            if(solver_config.has_field_alphaAV()){
+
+                const u32 ialpha_AV = pdl.get_field_idx<Tscal>("alpha_AV");
+                shamrock::ComputeField<Tscal> & alpha_av_updated = storage.alpha_av_updated.get();
+
+                scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+
+                    sycl::buffer<Tscal> &buf_alpha_av =
+                        shambase::get_check_ref(pdat.get_field<Tscal>(ialpha_AV).get_buf());
+                    sycl::buffer<Tscal> & buf_alpha_av_updated = alpha_av_updated.get_buf_check(cur_p.id_patch);
+
+                    shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
+                        sycl::accessor alpha_av{buf_alpha_av, cgh, sycl::read_write};
+                        sycl::accessor alpha_av_updated{buf_alpha_av_updated, cgh, sycl::read_only};
+                        shambase::parralel_for( cgh, pdat.get_obj_cnt(), "write back alpha_av", [=](i32 id_a) {
+                            alpha_av[id_a] = alpha_av_updated[id_a];
+                        });
+                    });
+
+                });
+            }
 
             logger::debug_ln("BasicGas", "computing next CFL");
 
@@ -1574,67 +1689,6 @@ void shammodels::sph::Solver<Tvec, Kern>::evolve_once()
 
 
 
-            //if (solver_config.has_field_divv()) {
-            //    sph::modules::DiffOperators<Tvec, Kern>(context, solver_config, storage)
-            //        .update_divv();
-            //}
-            //
-            //if (solver_config.has_field_curlv()) {
-            //    sph::modules::DiffOperators<Tvec, Kern>(context, solver_config, storage)
-            //        .update_curlv();
-            //}
-            //
-            //if (solver_config.has_field_dtdivv()) {
-            //    sph::modules::DiffOperatorDtDivv<Tvec, Kern>(context, solver_config, storage)
-            //        .update_dtdivv(false);
-            //}
-
-            if (solver_config.has_field_dtdivv()) {
-                
-                if(solver_config.combined_dtdiv_divcurlv_compute){
-                    //L2 distance r :  1.32348e-05 
-                    //L2 distance h :  7.68714e-06 
-                    //L2 distance vr :  0.0133985 
-                    //L2 distance u :  0.0380309 
-                    if (solver_config.has_field_dtdivv()) {     
-                        sph::modules::DiffOperatorDtDivv<Tvec, Kern>(context, solver_config, storage)
-                            .update_dtdivv(true);
-                    }
-                }else{
-                    //L2 distance r :  1.32348e-05 
-                    //L2 distance h :  7.68714e-06 
-                    //L2 distance vr :  0.0133985 
-                    //L2 distance u :  0.0380309 
-
-                    if (solver_config.has_field_divv()) {
-                        sph::modules::DiffOperators<Tvec, Kern>(context, solver_config, storage)
-                            .update_divv();
-                    }
-                    
-                    if (solver_config.has_field_curlv()) {
-                        sph::modules::DiffOperators<Tvec, Kern>(context, solver_config, storage)
-                            .update_curlv();
-                    }
-                    
-                    if (solver_config.has_field_dtdivv()) {
-                        sph::modules::DiffOperatorDtDivv<Tvec, Kern>(context, solver_config, storage)
-                            .update_dtdivv(false);
-                    }
-                }
-
-            }else{
-                if (solver_config.has_field_divv()) {
-                    sph::modules::DiffOperators<Tvec, Kern>(context, solver_config, storage)
-                        .update_divv();
-                }
-
-                if (solver_config.has_field_curlv()) {
-                    sph::modules::DiffOperators<Tvec, Kern>(context, solver_config, storage)
-                        .update_curlv();
-                }
-            }
-
-
 
 
 
@@ -1669,6 +1723,11 @@ void shammodels::sph::Solver<Tvec, Kern>::evolve_once()
         } // if (!need_rerun_corrector) {
 
         corrector_iter_cnt++;
+
+        if(solver_config.has_field_alphaAV()){
+            storage.alpha_av_ghost.reset();
+            storage.alpha_av_updated.reset();
+        }
 
     } while (need_rerun_corrector);
 
