@@ -27,8 +27,7 @@ jobs:
 
       - name: configure Shamrock
         run: |
-          python3 buildbot/configure.py --gen ninja --tests --build coverage \
-            --builddir acpp_omp_debug --cxxpath /home/docker/compilers/AdaptiveCpp_clang${{matrix.clang}} --compiler acpp --profile omp
+          ./env/new-env --machine debian-generic.acpp --builddir acpp_omp_debug --type coverage -- --backend omp
 
       - name: Pull reference files
         run: |
