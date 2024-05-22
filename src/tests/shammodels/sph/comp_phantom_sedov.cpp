@@ -290,23 +290,23 @@ void compare_results(
     f64 l2_h = compute_L2(sham_hpart, h, sham_r, 0.4);
     f64 l2_u = compute_L2(sham_uint, u, sham_r, 0.4);
 
-    logger::raw_ln("L2 distance r : ", l2_r);
-    logger::raw_ln("L2 distance h : ", l2_h);
-    logger::raw_ln("L2 distance vr : ", l2_vr);
-    logger::raw_ln("L2 distance u : ", l2_u);
+    logger::raw_ln("normalized L2 distance r : ", l2_r);
+    logger::raw_ln("normalized L2 distance h : ", l2_h);
+    logger::raw_ln("normalized L2 distance vr : ", l2_vr);
+    logger::raw_ln("normalized L2 distance u : ", l2_u);
 
     TEX_REPORT(R"==(\begin{itemize})==" "\n")
     TEX_REPORT("\\item t = $" + std::to_string(time) +"$\n")
-    TEX_REPORT("\\item L2 distance r : $" + std::to_string (l2_r)+"$\n");
-    TEX_REPORT("\\item L2 distance h : $" + std::to_string (l2_h)+"$\n");
-    TEX_REPORT("\\item L2 distance vr : $" + std::to_string (l2_vr)+"$\n");
-    TEX_REPORT("\\item L2 distance u : $" + std::to_string (l2_u)+"$\n");
+    TEX_REPORT("\\item normalized L2 distance r : $" + std::to_string (l2_r)+"$\n");
+    TEX_REPORT("\\item normalized L2 distance h : $" + std::to_string (l2_h)+"$\n");
+    TEX_REPORT("\\item normalized L2 distance vr : $" + std::to_string (l2_vr)+"$\n");
+    TEX_REPORT("\\item normalized L2 distance u : $" + std::to_string (l2_u)+"$\n");
     TEX_REPORT(R"==(\end{itemize})==" "\n")
 
-    _Assert(l2_r < 1e-6)
-    _Assert(l2_vr < 1e-3)
-    _Assert(l2_h < 1e-8)
-    _Assert(l2_u < 1)
+    _Assert(l2_r < 1e-9)
+    _Assert(l2_vr < 28e-06 )
+    _Assert(l2_h < 4e-08 )
+    _Assert(l2_u < 2e-07 )
 
 }
 
