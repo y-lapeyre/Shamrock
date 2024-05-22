@@ -83,5 +83,9 @@ def select_generator(args, buildtype):
         cmake_buildt = "Debug"
     elif buildtype == "asan":
         cmake_buildt = "ASAN"
+    elif buildtype == "coverage":
+        cmake_buildt = "COVERAGE"
+    else:
+        raise "Unknown build type"
 
     return gen, gen_opt, cmake_gen,cmake_buildt
