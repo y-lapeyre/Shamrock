@@ -9,8 +9,6 @@ import utils.amd_arch
 NAME = "Debian generic AdaptiveCpp"
 PATH = "machine/debian-generic/acpp"
 
-print("loading :",NAME)
-
 def is_acpp_already_installed(installfolder):
     return os.path.isfile(installfolder + "/bin/acpp")
 
