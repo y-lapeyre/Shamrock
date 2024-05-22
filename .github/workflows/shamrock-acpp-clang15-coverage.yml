@@ -76,6 +76,7 @@ jobs:
       - name: merge coverage reports
         run: |
           cd acpp_omp_debug
+          ls -la
           llvm-profdata-15 merge -sparse utests_* -o utests.profdata
 
       - name: make coverage reports
