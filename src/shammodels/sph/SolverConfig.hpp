@@ -20,6 +20,7 @@
 #include "shambase/exception.hpp"
 #include "shambackends/vec.hpp"
 #include "shammodels/ExtForceConfig.hpp"
+#include "shammodels/sph/config/MHDConfig.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
 #include <shamunits/Constants.hpp>
@@ -96,6 +97,15 @@ struct shammodels::sph::SolverConfig {
         }
     }
 
+  inline Tscal get_constant_mu_0() {
+        if (!unit_sys) {
+            logger::warn_ln("sph::Config", "the unit system is not set :0 !!!!!!!!!!");
+            shamunits::Constants<Tscal> ctes{shamunits::UnitSystem<Tscal>{}};
+            return ctes.mu_0();
+        } else {
+            return shamunits::Constants<Tscal>{*unit_sys}.mu_0();
+        }
+    }
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Units Config (END)
     //////////////////////////////////////////////////////////////////////////////////////////////
@@ -122,6 +132,30 @@ struct shammodels::sph::SolverConfig {
 
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Solver status variables (END)
+    //////////////////////////////////////////////////////////////////////////////////////////////
+
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    // MHD Config
+    //////////////////////////////////////////////////////////////////////////////////////////////
+
+    using MHDConfig = MHDConfig<Tvec>;
+    MHDConfig mhd_type;
+
+    inline void set_noMHD() {
+        using Tmp = typename MHDConfig::None;
+        mhd_type.set(Tmp{});
+    }
+
+    inline void set_IdealMHD(typename MHDConfig::IdealMHD_constrained_hyper_para v) {
+        mhd_type.set(v);
+    }
+
+    inline void set_NonIdealMHD(typename MHDConfig::NonIdealMHD v) {
+        mhd_type.set(v);
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    // MHD Config (END)
     //////////////////////////////////////////////////////////////////////////////////////////////
 
     //////////////////////////////////////////////////////////////////////////////////////////////
@@ -285,6 +319,10 @@ struct shammodels::sph::SolverConfig {
     inline bool has_field_divv() { return artif_viscosity.has_alphaAV_field(); }
     inline bool has_field_dtdivv() { return artif_viscosity.has_dtdivv_field(); }
     inline bool has_field_curlv() { return artif_viscosity.has_curlv_field() && (dim == 3); }
+
+    inline bool has_field_B_on_rho() { return mhd_type.has_B_field() && (dim == 3); }
+    inline bool has_field_psi_on_ch() { return mhd_type.has_psi_field(); }
+    inline bool has_field_curlB() { return mhd_type.has_curlB_field() && (dim == 3); }
 
     inline bool has_axyz_in_ghost(){
         return has_field_dtdivv();
