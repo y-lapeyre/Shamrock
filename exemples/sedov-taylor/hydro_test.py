@@ -2,6 +2,7 @@ import shamrock
 import matplotlib.pyplot as plt
 import os
 
+outputdir = "/Users/ylapeyre/Documents/Shamwork/13_06/sedov_hydro/"
 gamma = 5./3.
 rho_g = 1
 target_tot_u = 1
@@ -82,13 +83,17 @@ model.set_cfl_cour(0.1)
 model.set_cfl_force(0.1)
 
 model.timestep()
-model.do_vtk_dump("init.vtk", True)
+model.do_vtk_dump(outputdir + "init.vtk", True)
+dump = model.make_phantom_dump()
+dump.save_dump(outputdir + "init.phdump")
 
 t_target = 0.1
 model.evolve_until(t_target)
 
 
-model.do_vtk_dump("end.vtk", True)
+model.do_vtk_dump(outputdir + "end.vtk", True)
+dump = model.make_phantom_dump()
+dump.save_dump(outputdir + "end.phdump")
 
 
 import numpy as np
@@ -119,8 +124,8 @@ if(shamrock.sys.world_rank() == 0):
     r_theo, rho_theo, p_theo, vr_theo = read_four_arrays(fdata)
 
 
-    plt.style.use('custom_style.mplstyle')
-    if False:
+    #plt.style.use('custom_style.mplstyle')
+    if True:
         
         fig,axs = plt.subplots(nrows=2,ncols=2,figsize=(9,6),dpi=125)
 
@@ -161,4 +166,5 @@ if(shamrock.sys.world_rank() == 0):
         axs.set_xlim(0,0.55)
 
     plt.tight_layout()
+    plt.legend()
     plt.show()
