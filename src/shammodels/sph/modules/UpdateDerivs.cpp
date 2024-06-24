@@ -30,6 +30,9 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs() {
         shambase::throw_unimplemented();   
     } else if (IdealMHD*v = std::get_if<IdealMHD>(&cfg_mhd.config)) {
         update_derivs_MHD(*v);
+        logger::raw_ln("##########################################");
+        logger::raw_ln("##########UPDATING MHD DERIVS ############");
+        logger::raw_ln("##########################################");
     } else if (NonIdealMHD*v = std::get_if<NonIdealMHD>(&cfg_mhd.config)) {
         shambase::throw_unimplemented();
     } else if (None *v = std::get_if<None>(&cfg_av.config)) {
@@ -764,10 +767,10 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD(
             shambase::get_check_ref(merged_xyzh.get(cur_p.id_patch).field_pos.get_buf());
         sycl::buffer<Tvec> &buf_axyz      = pdat.get_field_buf_ref<Tvec>(iaxyz);
 
-        logger::raw_ln("charged axyz.");
+        //logger::raw_ln("charged axyz.");
         sycl::buffer<Tvec> &buf_dB_on_rho        = pdat.get_field_buf_ref<Tvec>(idB_on_rho);
         sycl::buffer<Tscal> &buf_dpsi_on_ch      = pdat.get_field_buf_ref<Tscal>(idpsi_on_ch);
-        logger::raw_ln("charged dB dpsi");
+        //logger::raw_ln("charged dB dpsi");
         sycl::buffer<Tscal> &buf_duint    = pdat.get_field_buf_ref<Tscal>(iduint);
         sycl::buffer<Tvec> &buf_vxyz      = mpdat.get_field_buf_ref<Tvec>(ivxyz_interf);
         sycl::buffer<Tscal> &buf_hpart    = mpdat.get_field_buf_ref<Tscal>(ihpart_interf);
@@ -776,7 +779,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD(
         sycl::buffer<Tscal> &buf_pressure = storage.pressure.get().get_buf_check(cur_p.id_patch);
         sycl::buffer<Tvec> &buf_B_on_rho             = mpdat.get_field_buf_ref<Tvec>(iB_on_rho_interf);
         sycl::buffer<Tscal> &buf_psi_on_ch      = mpdat.get_field_buf_ref<Tscal>(ipsi_on_ch_interf);
-        logger::raw_ln("charged B psi");
+        //logger::raw_ln("charged B psi");
         // ADD curlBBBBBBBBB
 
         sycl::range range_npart{pdat.get_obj_cnt()};
@@ -790,8 +793,10 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD(
             const Tscal sigma_mhd= cfg.sigma_mhd;
             const Tscal alpha_u = cfg.alpha_u;
 
+            logger::debug_ln("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
             logger::debug_sycl_ln("deriv kernel", "sigma_mhd  :", sigma_mhd);
             logger::debug_sycl_ln("deriv kernel", "alpha_u  :", alpha_u);
+            logger::debug_ln("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
 
             // tree::ObjectIterator particle_looper(tree,cgh);
 

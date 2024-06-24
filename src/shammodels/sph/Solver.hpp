@@ -18,6 +18,7 @@
 #include "SolverConfig.hpp"
 #include "shambase/exception.hpp"
 #include "shambackends/vec.hpp"
+#include "shamcomm/logs.hpp"
 #include "shammodels/sph/BasicSPHGhosts.hpp"
 #include "shammodels/sph/SolverLog.hpp"
 #include "shammodels/sph/modules/SolverStorage.hpp"
@@ -99,6 +100,10 @@ namespace shammodels::sph {
             }
 
             if (solver_config.has_field_B_on_rho()) {
+                logger::raw_ln("######### ########################### ###########");
+                logger::raw_ln("######### HAS B/RHO iS TRUE ALLZZZ LA ###########");
+                logger::raw_ln("######### ########################### ###########");
+                
                 context.pdata_layout_add_field<Tvec>("B/rho", 1);
                 context.pdata_layout_add_field<Tvec>("dB/rho", 1);
             }

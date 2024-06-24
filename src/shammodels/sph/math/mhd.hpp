@@ -234,7 +234,9 @@ namespace shamrock::spmhd {
         Tscal sub_fact_a = rho_a * omega_a;
         Tvec B_ab = (B_a - B_b);
 
-        Tscal parabolic_propag = m_b * (ch_a / sub_fact_a) *  sycl::dot(B_ab, nabla_Wab_ha);
+        Tscal divB_a =  -  (1. / sub_fact_a) *  m_b * sycl::dot(B_ab, nabla_Wab_ha);
+
+        Tscal parabolic_propag = - ch_a * divB_a; //m_b * (ch_a / sub_fact_a) *  sycl::dot(B_ab, nabla_Wab_ha);
 
         if (sub_fact_a == 0)
             {parabolic_propag = 0;}
@@ -272,7 +274,7 @@ namespace shamrock::spmhd {
         Tscal ch_a,
         Tscal sigma_mhd
     ) {
-        return psi_a * sigma_mhd/ h_a;
+        return psi_a * 1.0/ h_a;
     }
 
     template<class Tvec, class Tscal, template<class> class SPHKernel, MHDType MHD_mode = Ideal>

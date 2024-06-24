@@ -33,16 +33,31 @@ void shammodels::sph::modules::UpdateViscosity<Tvec, SPHKernel>::update_artifici
     using ConstantDisc = typename Cfg_AV::ConstantDisc;
     if (None *v = std::get_if<None>(&solver_config.artif_viscosity.config)) {
         logger::debug_ln("UpdateViscosity", "skipping artif viscosity update (No viscosity mode)");
+        logger::raw_ln("#############################################");
+        logger::raw_ln("skipping artif viscosity update (No viscosity mode)");
+        logger::raw_ln("#############################################");
     } else if (Constant *v = std::get_if<Constant>(&solver_config.artif_viscosity.config)) {
         logger::debug_ln("UpdateViscosity", "skipping artif viscosity update (Constant mode)");
+        logger::raw_ln("#############################################");
+        logger::raw_ln("CONSTANT");
+        logger::raw_ln("#############################################");
     } else if (VaryingMM97 *v = std::get_if<VaryingMM97>(&solver_config.artif_viscosity.config)) {
         update_artificial_viscosity_mm97(dt, *v);
+        logger::raw_ln("#############################################");
+        logger::raw_ln("MM97");
+        logger::raw_ln("#############################################");
     } else if (VaryingCD10 *v = std::get_if<VaryingCD10>(&solver_config.artif_viscosity.config)) {
         update_artificial_viscosity_cd10(dt, *v);
+        logger::raw_ln("#############################################");
+        logger::raw_ln("CD10");
+        logger::raw_ln("#############################################");
     } else if (ConstantDisc *v = std::get_if<ConstantDisc>(&solver_config.artif_viscosity.config)) {
         logger::debug_ln("UpdateViscosity", "skipping artif viscosity update (constant AV)");
     } else {
         shambase::throw_unimplemented();
+        logger::raw_ln("#############################################");
+        logger::raw_ln("ECHEC");
+        logger::raw_ln("#############################################");
     }
 }
 

@@ -1238,6 +1238,9 @@ void shammodels::sph::Solver<Tvec, Kern>::update_artificial_viscosity(Tscal dt) 
 
     sph::modules::UpdateViscosity<Tvec, Kern>(context, solver_config, storage)
         .update_artificial_viscosity(dt);
+        logger::raw_ln("##########################################");
+        logger::raw_ln("###### #OH NO ART VISC REDUNDUNCY ########");
+        logger::raw_ln("##########################################");
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1331,7 +1334,7 @@ void shammodels::sph::Solver<Tvec, Kern>::evolve_once()
 
     if (solver_config.has_field_psi_on_ch()) {
         const u32 ipsi = pdl.get_field_idx<Tscal>("psi/ch");
-        const u32 idpsi = pdl.get_field_idx<Tscal>("psi/ch");
+        const u32 idpsi = pdl.get_field_idx<Tscal>("dpsi/ch");
     }
 
     shamrock::SchedulerUtility utility(scheduler());
