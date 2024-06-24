@@ -1071,7 +1071,11 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
 
     const u32 iaxyz_interf   = 
     (solver_config.has_axyz_in_ghost()) ? ghost_layout.get_field_idx<Tvec>("axyz") : 0;
-
+    if (has_B_field){
+        logger::raw_ln("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
+        logger::raw_ln("@@@@@@@@@@@@ GHOST HAS B @@@@@@@@@@@@@@@@");
+        logger::raw_ln("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
+    }
     const u32 iB_interf =
         (has_B_field) ? ghost_layout.get_field_idx<Tvec>("B/rho") : 0;
 

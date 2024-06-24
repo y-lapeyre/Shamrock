@@ -170,8 +170,14 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                  return self.resize_simulation_box({box_min, box_max});
              })
         .def("push_particle",
-             [](T &self, std::vector<f64_3> pos, std::vector<f64> hpart, std::vector<f64> upart) {
-                 return self.push_particle(pos,hpart, upart);
+             [](T &self, 
+             std::vector<f64_3> pos, 
+             std::vector<f64> hpart, 
+             std::vector<f64> upart,
+             std::vector<f64_3> vel, 
+             std::vector<f64_3> B, 
+             std::vector<f64> psi) {
+                 return self.push_particle(pos,hpart, upart, vel, B, psi);
              })
         .def("add_cube_fcc_3d",
              [](T &self, f64 dr, f64_3 box_min, f64_3 box_max) {

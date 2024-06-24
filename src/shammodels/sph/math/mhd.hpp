@@ -16,6 +16,7 @@
 
 
 #include "shambackends/math.hpp"
+#include "shamcomm/logs.hpp"
 #include "shammodels/sph/Solver.hpp"
 #include "shamunits/Constants.hpp"
 #include "shammodels/sph/SolverConfig.hpp"
@@ -68,7 +69,11 @@ namespace shamrock::spmhd {
         Tscal abs_v_ab_r_ab = sycl::fabs(v_ab_r_ab);
         Tscal v_A_a = sycl::sqrt(sycl::dot(B_a, B_a) / (mu_0 * rho_a));
         Tscal v_a = sycl::sqrt(cs_a * cs_a + v_A_a * v_A_a);
-        Tscal vsig = alpha_av * v_a + beta_av * abs_v_ab_r_ab;;   
+        Tscal vsig = alpha_av * v_a + beta_av * abs_v_ab_r_ab;; 
+        if (vsig <= 0){
+            logger::raw_ln("BIG BIG BIG BIG BIG BIG BIG");
+            logger::raw_ln("BIG BIG BIG PROBLEM BIG BIG");
+            logger::raw_ln("BIG BIG BIG BIG BIG BIG BIG");}  
         return vsig;}
 
     template<class Tvec, class Tscal, MHDType MHD_mode = Ideal> //, template<class> class SPHKernel
@@ -97,7 +102,7 @@ namespace shamrock::spmhd {
         Tscal sub_fact_b = rho_b_sq * omega_b;
 
         Tscal alpha_av = 1.;
-        Tscal beta_av = 1.;
+        Tscal beta_av = 2.;
         Tscal vsig_a = vsig<Tvec, Tscal>(v_ab, r_ab_unit, cs_a, B_a, sycl::sqrt(rho_a_sq), mu_0, alpha_av, beta_av);
         Tscal vsig_b = vsig<Tvec, Tscal>(v_ab, r_ab_unit, cs_b, B_b, sycl::sqrt(rho_b_sq), mu_0, alpha_av, beta_av);
         Tscal q_ab_a = q_av(sycl::sqrt(rho_a_sq), vsig_a, v_scal_rhat);
@@ -118,8 +123,8 @@ namespace shamrock::spmhd {
                 Tscal Mij_a = - (1./mu_0) * B_a[i] * B_a[j];
                 Tscal Mij_b = - (1./mu_0) * B_b[i] * B_b[j];
                 if (i==j) {
-                    Mij_a += P_a + (1. / (2 * mu_0)) * (sycl::pow(B_a[0], 2) + sycl::pow(B_a[1], 2) + sycl::pow(B_a[2], 2));
-                    Mij_b += P_b + (1. / (2 * mu_0)) * (sycl::pow(B_b[0], 2) + sycl::pow(B_b[1], 2) + sycl::pow(B_b[2], 2)); //sycl::pow(B_b, 2)
+                    Mij_a += P_a + (1. / (2 * mu_0)) * sycl::dot(B_a, B_a);//(B_a[0]*B_a[0] + B_a[1]*B_a[1] + B_a[2]*B_a[2]);
+                    Mij_b += P_b + (1. / (2 * mu_0)) * sycl::dot(B_b, B_b);//(B_b[0]*B_b[0] + B_b[1]*B_b[1] + B_b[2]*B_b[2]); //sycl::pow(B_b, 2)
                 }
 
                 Tscal acc_MHD_a = (Mij_a / sub_fact_a) * nabla_Wab_ha[j];
