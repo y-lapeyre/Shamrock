@@ -764,7 +764,7 @@ void shammodels::sph::Solver<Tvec, Kern>::do_predictor_leapfrog(Tscal dt) {
     const u32 iB_on_rho     = pdl.get_field_idx<Tvec>("B/rho");
     const u32 idB_on_rho    = pdl.get_field_idx<Tvec>("dB/rho");
     const u32 ipsi_on_ch    = pdl.get_field_idx<Tscal>("psi/ch");
-    const u32 idpsi_on_ch   = pdl.get_field_idx<Tscal>("psi/ch");
+    const u32 idpsi_on_ch   = pdl.get_field_idx<Tscal>("dpsi/ch");
 
     shamrock::SchedulerUtility utility(scheduler());
 
@@ -772,7 +772,7 @@ void shammodels::sph::Solver<Tvec, Kern>::do_predictor_leapfrog(Tscal dt) {
     logger::debug_ln("sph::BasicGas", "forward euler step f dt/2");
     utility.fields_forward_euler<Tvec>(ivxyz, iaxyz, dt / 2);
     utility.fields_forward_euler<Tscal>(iuint, iduint, dt / 2);
-    utility.fields_forward_euler<Tvec>(iB_on_rho, idB_on_rho, dt / 2);
+    utility.fields_forward_euler<Tvec>(iB_on_rho, idB_on_rho, dt / 2); // pb: faut que v  soit le mm  qu avanttttt !!
     utility.fields_forward_euler<Tscal>(ipsi_on_ch, idpsi_on_ch, dt / 2);
 
     // forward euler step positions dt
@@ -1574,7 +1574,7 @@ void shammodels::sph::Solver<Tvec, Kern>::evolve_once()
         utility.fields_leapfrog_corrector<Tvec>(
             ivxyz, iaxyz, storage.old_axyz.get(), vepsilon_v_sq, dt / 2);
         utility.fields_leapfrog_corrector<Tscal>(
-            iuint, iduint, storage.old_duint.get(), uepsilon_u_sq, dt / 2);
+            iuint, iduint, storage.old_duint.get(), uepsilon_u_sq, dt / 2); //// ADDD BBBBBBBB ADB @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
         storage.old_axyz.reset();
         storage.old_duint.reset();
@@ -1656,7 +1656,7 @@ void shammodels::sph::Solver<Tvec, Kern>::evolve_once()
                 PatchData &mpdat              = merged_patch.pdat;
 
                 sycl::buffer<Tvec> &buf_xyz =
-                    shambase::get_check_ref(merged_xyzh.get(cur_p.id_patch).field_pos.get_buf());
+                    shambase::get_check_ref(merged_xyzh.get(cur_p.id_patch).field_pos.get_buf()); // @@@@@@@@@ ADD B to CFL ?
                 sycl::buffer<Tvec> &buf_vxyz   = mpdat.get_field_buf_ref<Tvec>(ivxyz_interf);
                 sycl::buffer<Tscal> &buf_hpart = mpdat.get_field_buf_ref<Tscal>(ihpart_interf);
                 sycl::buffer<Tscal> &buf_uint  = mpdat.get_field_buf_ref<Tscal>(iuint_interf);
@@ -1681,7 +1681,7 @@ void shammodels::sph::Solver<Tvec, Kern>::evolve_once()
                         tree::ObjectCacheIterator particle_looper(pcache, cgh);
 
                         sycl::accessor xyz{buf_xyz, cgh, sycl::read_only};
-                        sycl::accessor vxyz{buf_vxyz, cgh, sycl::read_only};
+                        sycl::accessor vxyz{buf_vxyz, cgh, sycl::read_only}; 
                         sycl::accessor hpart{buf_hpart, cgh, sycl::read_only};
                         sycl::accessor u{buf_uint, cgh, sycl::read_only};
                         sycl::accessor pressure{buf_pressure, cgh, sycl::read_only};
@@ -1751,13 +1751,13 @@ void shammodels::sph::Solver<Tvec, Kern>::evolve_once()
                                     const Tscal alpha_b = alpha_AV;
 
                                     //Tscal vsig_a = alpha_a * cs_a + beta_AV * abs_v_ab_r_ab;
-
-                                    Tscal vsig_a = 0.;
-                                    if (solver_config.has_field_B_on_rho()) {
-                                        vsig_a = alpha_a * cs_a + beta_AV * abs_v_ab_r_ab;}
-                                    else {
-                                        Tvec v_cross_r = sycl::cross(v_ab, r_ab_unit);
-                                        vsig_a = sycl::sqrt(v_cross_r[0]*v_cross_r[0] + v_cross_r[1]*v_cross_r[1] + v_cross_r[2]*v_cross_r[2]);}
+                                    vsig_a = alpha_a * cs_a + beta_AV * abs_v_ab_r_ab;
+                                    //Tscal vsig_a = 0.;
+                                    //if (solver_config.has_field_B_on_rho()) {
+                                    //    vsig_a = alpha_a * cs_a + beta_AV * abs_v_ab_r_ab;} // @@@@@@@@@@@@@@@ add B ? check this
+                                    //else { // @ ca va pas ca je commente allez hop
+                                    //    Tvec v_cross_r = sycl::cross(v_ab, r_ab_unit);
+                                    //    vsig_a = sycl::sqrt(v_cross_r[0]*v_cross_r[0] + v_cross_r[1]*v_cross_r[1] + v_cross_r[2]*v_cross_r[2]);}
 
                                     vsig_max = sycl::fmax(vsig_max, vsig_a);
                                 });
@@ -1783,7 +1783,7 @@ void shammodels::sph::Solver<Tvec, Kern>::evolve_once()
                 shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
                     sycl::accessor hpart{buf_hpart, cgh, sycl::read_only};
                     sycl::accessor a{buf_axyz, cgh, sycl::read_only};
-                    sycl::accessor vsig{vsig_buf, cgh, sycl::read_only};
+                    sycl::accessor vsig{vsig_buf, cgh, sycl::read_only}; // @@@@@@@@@@@ VSIG USED HERE
                     sycl::accessor cfl_dt{cfl_dt_buf, cgh, sycl::write_only, sycl::no_init};
 
                     Tscal C_cour  = solver_config.cfl_cour*solver_config.time_state.cfl_multiplier;

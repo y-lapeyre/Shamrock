@@ -2,8 +2,10 @@ import shamrock
 import matplotlib.pyplot as plt
 import os
 import numpy as np
+import sarracen
 
-outputdir = "/Users/ylapeyre/Documents/Shamwork/20_06/alfven3/"
+outputdir = "/Users/ylapeyre/Documents/Shamwork/25_06/investigateB/"
+ph_file = "/Users/ylapeyre/Documents/Shamwork/25_06/phantom_alfven_fulldump/alfven_00001"
 gamma = 5./3.
 rho_g = 1
 target_tot_u = 1
@@ -40,7 +42,6 @@ def rotated_basis_to_regular(xvec):
     reg_xyz[2] = xvec[0]*sina +      xvec[2]*cosa
 
     return reg_xyz
-
 
 def B_func(r):
     #x,y,z = r
@@ -134,19 +135,38 @@ model.set_solver_config(cfg)
 
 model.init_scheduler(int(1e8),1)
 
+###### do a shamrock native setup
+#bmin,bmax = model.get_ideal_hcp_box(dr,bmin,bmax)
+#xm,ym,zm = bmin
+#xM,yM,zM = bmax
 
-bmin,bmax = model.get_ideal_hcp_box(dr,bmin,bmax)
-xm,ym,zm = bmin
-xM,yM,zM = bmax
+###### import a phantom setup
 
 model.resize_simulation_box(bmin,bmax)
-model.add_cube_hcp_3d(dr, bmin,bmax)
+#.add_cube_hcp_3d(dr, bmin,bmax)
+
+
+sdf = sarracen.read_phantom(ph_file)
+
+tuple_of_xyz = (list(sdf['x']), list(sdf['y']), list(sdf['z']))
+list_of_xyz = [tuple(item) for item in zip(*tuple_of_xyz)]
+
+tuple_of_v = (list(sdf['vx']), list(sdf['vy']), list(sdf['vz']))
+list_of_v = [tuple(item) for item in zip(*tuple_of_v)]
+
+tuple_of_B = (list(sdf['Bx']), list(sdf['By']), list(sdf['Bz']))
+list_of_B = [tuple(item) for item in zip(*tuple_of_B)]
+
+model.push_particle(list_of_xyz, list(sdf['h']), list(sdf['u']), list_of_v, list_of_B, list(sdf['psi']))
+
+
 
 
 xc,yc,zc = model.get_closest_part_to((0,0,0))
 print("closest part to (0,0,0) is in :",xc,yc,zc)
 
-
+xm,ym,zm = bmin
+xM,yM,zM = bmax
 vol_b = (xM - xm)*(yM - ym)*(zM - zm)
 
 totmass = (rho_g*vol_b)
@@ -154,9 +174,9 @@ totmass = (rho_g*vol_b)
 
 pmass = model.total_mass_to_part_mass(totmass)
 
-model.set_value_in_a_box("uint","f64", 0 , bmin,bmax)
-model.set_field_value_lambda_f64_3("vxyz", vel_func)
-model.set_field_value_lambda_f64_3("B/rho", B_func)
+#model.set_value_in_a_box("uint","f64", 0 , bmin,bmax)
+#model.set_field_value_lambda_f64_3("vxyz", vel_func)
+#model.set_field_value_lambda_f64_3("B/rho", B_func)
 
 
 rinj = 0.008909042924642563*2
@@ -187,12 +207,12 @@ model.set_cfl_cour(0.1)
 model.set_cfl_force(0.1)
 
 model.timestep()
-model.do_vtk_dump(outputdir + "init.vtk", True)
+model.do_vtk_dump(outputdir + "dump_0000.vtk", True)
 dump = model.make_phantom_dump()
 dump.save_dump(outputdir + "init.phdump")
 
 t_target = 0.6#0.1
-dt_dump = 0.06#0.00001
+dt_dump = 0.0000006#0.00001
 t = 0
 i = 0
 
