@@ -155,9 +155,17 @@ tuple_of_v = (list(sdf['vx']), list(sdf['vy']), list(sdf['vz']))
 list_of_v = [tuple(item) for item in zip(*tuple_of_v)]
 
 tuple_of_B = (list(sdf['Bx']), list(sdf['By']), list(sdf['Bz']))
-list_of_B = [tuple(item) for item in zip(*tuple_of_B)]
+list_of_B = np.array([tuple(item) for item in zip(*tuple_of_B)])
 
-model.push_particle(list_of_xyz, list(sdf['h']), list(sdf['u']), list_of_v, list_of_B, list(sdf['psi']))
+list_of_h = list(sdf['h'])
+phmass = 9.1362396049896055E-006 #read from phantom header
+hfact = 1.0 #read from phantom header
+
+list_of_rho = np.array([phmass * (hfact / list_of_h[i]) * (hfact / list_of_h[i]) * (hfact / list_of_h[i]) for i in range (len(list_of_h))])
+
+list_of_B_on_rho = [list_of_B[i] / list_of_rho[i] for i in range (len(list_of_B))]
+
+model.push_particle(list_of_xyz, list(sdf['h']), list(sdf['u']), list_of_v, list_of_B_on_rho, list(sdf['psi']))
 
 
 
