@@ -42,6 +42,7 @@ namespace shamtest::details {
         shambase::stream_write_string(stream, dataset_name);
         shambase::stream_write_vector(stream, dataset);
     }
+
     TestData TestData::deserialize(std::basic_stringstream<byte> &stream) {
 
         TestData out;
