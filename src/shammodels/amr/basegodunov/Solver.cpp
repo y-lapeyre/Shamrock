@@ -7,7 +7,7 @@
 // -------------------------------------------------------//
 
 /**
- * @file Solver.hpp
+ * @file Solver.cpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @brief 
  * 
