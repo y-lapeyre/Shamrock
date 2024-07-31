@@ -13,10 +13,11 @@
  */
 
 #include "shambackends/comm/CommunicationBuffer.hpp"
+#include "shamcmdopt/env.hpp"
 #include "shamcomm/worldInfo.hpp"
 #include "shamsys/MicroBenchmark.hpp"
 #include "shamsys/NodeInstance.hpp"
-#include "shamsys/legacy/cmdopt.hpp"
+#include "shamcmdopt/cmdopt.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamtest/shamtest.hpp"
 #include "version.hpp"
@@ -42,6 +43,8 @@ int main(int argc, char *argv[]) {
     opts::register_opt("--force-dgpu",{}, "for direct mpi comm on");
 
     opts::register_opt("-o", {"(filepath)"}, "output test report in that file");
+
+    opts::register_env_var_doc("REF_FILES_PATH", "reference test files path");
 
     opts::init(argc, argv);
     if (opts::is_help_mode()) {
