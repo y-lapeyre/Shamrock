@@ -17,7 +17,7 @@
 
 #include "shambase/aliases_int.hpp"
 #include "shambase/string.hpp"
-#include "shambase/term_colors.hpp"
+#include "shamcmdopt/term_colors.hpp"
 #include <iostream>
 #include <string>
 
