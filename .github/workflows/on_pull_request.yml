@@ -3,7 +3,13 @@ name: On PR
 # Controls when the workflow will run
 on:
   pull_request:
-    types: [opened,edited,synchronize,labeled]
+    types: [
+      opened, # pull request is created
+      #edited, # title, body, or the base branch of the PR is modified
+      synchronize, # if commit pushed
+      labeled, # a label is applied to the pull request
+      unlabeled # a label is removed from the pull request
+      ]
 
   #we do not use this one as the job is not launched on the corect branch (aka we cannot test the CI in PRs)
   #pull_request_target:
@@ -114,6 +120,12 @@ jobs:
     name: Tests
     if: ${{!contains(github.event.pull_request.labels.*.name, 'no-src-change ')}}
     uses: ./.github/workflows/shamrock-acpp-clang15.yml
+
+  shamrock_linux_acpp_pylib:
+    needs: [src_check]
+    name: Tests
+    if: ${{!contains(github.event.pull_request.labels.*.name, 'no-src-change ')}}
+    uses: ./.github/workflows/shamrock-acpp-clang15-py.yml
 
   shamrock_linux_acpp_macos:
     needs: [src_check]
