@@ -22,7 +22,8 @@ set(as_subproject
   shamalgs 
   shamsys 
   shamphys 
-  shamcmdopt)
+  shamcmdopt
+  shambindings)
 
 # This macro originates from Daniel Pfeifer's talk at C++Now 2017:
 # https://www.youtube.com/watch?v=bsXLMQ6WgIk
@@ -35,14 +36,14 @@ endmacro()
 
 add_subdirectory(shamunits)
 add_subdirectory(shambase)
+add_subdirectory(shambindings)
+add_subdirectory(shamcmdopt)
 add_subdirectory(shamcomm)
 add_subdirectory(shambackends)
 add_subdirectory(shammath)
 add_subdirectory(shamalgs)
-add_subdirectory(shamsys)
 add_subdirectory(shamphys)
-add_subdirectory(shamcmdopt)
-
+add_subdirectory(shamsys)
 
 
 
@@ -76,6 +77,7 @@ target_link_libraries(shamrock_lib PUBLIC shamalgs)
 target_link_libraries(shamrock_lib PUBLIC shamsys)
 target_link_libraries(shamrock_lib PUBLIC shamphys)
 target_link_libraries(shamrock_lib PUBLIC shamcmdopt)
+target_link_libraries(shamrock_lib PUBLIC shambindings)
 
 
 
@@ -105,6 +107,7 @@ target_link_libraries(shamrock PUBLIC shammath)
 target_link_libraries(shamrock PUBLIC shamsys)
 target_link_libraries(shamrock PUBLIC shamphys)
 target_link_libraries(shamrock PUBLIC shamcmdopt)
+target_link_libraries(shamrock PUBLIC shambindings)
 
 
 
@@ -143,6 +146,7 @@ if("${BUILD_TEST}")
     target_link_libraries(shamrock_test PUBLIC shamsys)
     target_link_libraries(shamrock_test PUBLIC shamphys)
     target_link_libraries(shamrock_test PUBLIC shamcmdopt)
+    target_link_libraries(shamrock_test PUBLIC shambindings)
 
     
     target_include_directories(shamrock_test PUBLIC "${CMAKE_SOURCE_DIR}/src")
@@ -213,7 +217,6 @@ endif()
 
 
 add_subdirectory(shamtest)
-add_subdirectory(shambindings)
 
 
 add_subdirectory(shamrock)
