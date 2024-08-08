@@ -36,8 +36,11 @@ jobs:
   doxygen_warn_main:
     name: Doxygen Main branch
     needs: [make_documentation]
-    runs-on: [self-hosted, ubuntu20]
-    
+    runs-on: [self-hosted,  docker-runner]
+
+    container:
+      image: ghcr.io/shamrock-code/ci-ubuntu20:main
+      
     steps:
       - uses: actions/checkout@v4
         with:
