@@ -87,6 +87,12 @@ auto shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once(Tscal t_curren
     grad_compute.compute_grad_rho_van_leer();
     grad_compute.compute_grad_v_van_leer();
     grad_compute.compute_grad_P_van_leer();
+    if (solver_config.is_dust_on()) { 
+        // TODO : Implement grad for dust
+        
+        // grad_compute.compute_grad_rho_dust_van_leer();
+        // grad_compute.compute_grad_v_dust_van_leer();
+    }
 
     // shift values
     modules::FaceInterpolate face_interpolator(context,solver_config,storage);
@@ -204,7 +210,7 @@ auto shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once(Tscal t_curren
         print+=("---------------------------------------------------------------------------------");
         print+=(gathered) + "\n";
         print+=("---------------------------------------------------------------------------------");
-        logger::info_ln("amr::Zeus",print);
+        logger::info_ln("amr::Godunov",print);
     }
 
     storage.timings_details.reset();
