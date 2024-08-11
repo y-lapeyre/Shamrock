@@ -1,4 +1,4 @@
-name: Acpp/clang15 (UBsan)
+name: Acpp/clang (Asan)
 
 
 on:
@@ -10,22 +10,21 @@ on:
 
 jobs:
 
-  shamrock_acpp_omp_ubsan:
-    name: AdaptiveCpp omp ubsan clang-${{ matrix.clang }}
+  shamrock_acpp_omp_asan:
+    name: AdaptiveCpp omp asan clang-${{ matrix.clang }}
     runs-on: [self-hosted,  docker-runner]
 
     container:
       image: ${{ matrix.container }}
-
-    if: false
-
+      
     strategy:
       matrix:
         include: 
-          - clang: 15
+          - clang: 17
             cuda: 11.0.2
             rocm: 5.4.3
             container: ghcr.io/shamrock-code/ci-ubuntu20:main
+  
     #if: false
   
     timeout-minutes: 60
@@ -49,7 +48,7 @@ jobs:
         if: github.event_name == 'pull_request_target'
         run: git diff ${{ github.event.pull_request.base.sha }} HEAD 
       #### End Checkout part ####
-      
+  
       - name: ls local
         run : ls -la
       
@@ -63,11 +62,10 @@ jobs:
             sudo rm -r /usr/lib/clang/16*
             sudo ln -s /usr/lib/llvm-16/lib/clang/16 /usr/lib/clang/16
           fi
-          
 
       - name: configure Shamrock
         run: |
-          ./env/new-env --machine debian-generic.acpp --builddir build --type ubsan -- --backend omp
+          ./env/new-env --machine debian-generic.acpp --builddir build --type asan -- --backend omp
   
       - name: Configure
         shell: bash # In docker container github action default to sh
@@ -89,20 +87,21 @@ jobs:
       - name: run Shamrock Unittests world_size = 1
         run: |
           cd build
-          ACPP_VISIBILITY_MASK=omp UBSAN_OPTIONS="halt_on_error=1:print_stacktrace=1" ./shamrock_test --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
+          ACPP_VISIBILITY_MASK=omp ASAN_OPTIONS=detect_leaks=0 ./shamrock_test --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
   
       - name: run Shamrock Unittests world_size = 2
         run: |
           cd build
-          ACPP_VISIBILITY_MASK=omp UBSAN_OPTIONS="halt_on_error=1:print_stacktrace=1" mpirun -n 2 ./shamrock_test --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
+          ACPP_VISIBILITY_MASK=omp ASAN_OPTIONS=detect_leaks=0 mpirun -n 2 ./shamrock_test --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
       
       - name: run Shamrock Unittests world_size = 3
         run: |
           cd build
-          ACPP_VISIBILITY_MASK=omp UBSAN_OPTIONS="halt_on_error=1:print_stacktrace=1" mpirun --oversubscribe -n 3 ./shamrock_test --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
+          ACPP_VISIBILITY_MASK=omp ASAN_OPTIONS=detect_leaks=0 mpirun --oversubscribe -n 3 ./shamrock_test --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
   
       - name: run Shamrock Unittests world_size = 4
         run: |
           cd build
-          ACPP_VISIBILITY_MASK=omp UBSAN_OPTIONS="halt_on_error=1:print_stacktrace=1" mpirun --oversubscribe -n 4 ./shamrock_test --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
+          ACPP_VISIBILITY_MASK=omp ASAN_OPTIONS=detect_leaks=0 mpirun --oversubscribe -n 4 ./shamrock_test --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
+
 
