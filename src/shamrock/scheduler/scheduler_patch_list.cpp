@@ -17,6 +17,7 @@
 #include <vector>
 #include <random>
 
+#include "nlohmann/json_fwd.hpp"
 #include "shamalgs/collective/exchanges.hpp"
 #include "shambase/stacktrace.hpp"
 #include "shamrock/scheduler/HilbertLoadBalance.hpp"
@@ -203,8 +204,72 @@ void SchedulerPatchList::merge_patch(
 
 
 
+namespace shamrock::patch {
+
+    /**
+     * @brief Serializes a Patch object to a JSON object.
+     * 
+     * Note that this function is implemented here as it is the only place where we need it, 
+     * thus helping a bit with compile time
+     *
+     * @param j The JSON object to serialize to.
+     * @param p The Patch object to serialize from.
+     */
+    inline void to_json(nlohmann::json &j, const Patch &p) {
+        
+        // u64 id_patch;
+        // u64 pack_node_index;
+        // u64 load_value;
+        // std::array<u64,dim> coord_min;
+        // std::array<u64,dim> coord_max;
+        // u32 node_owner_id;
+        
+        j = nlohmann::json{
+            {"id_patch",p.id_patch},
+            {"pack_node_index",p.pack_node_index},
+            {"load_value",p.load_value},
+            {"coord_min",p.coord_min},
+            {"coord_max",p.coord_max},
+            {"node_owner_id",p.node_owner_id},
+        };
+    }
+
+    /**
+     * @brief Deserializes a JSON object to a Patch object.
+     * 
+     * Note that this function is implemented here as it is the only place where we need it, 
+     * thus helping a bit with compile time
+     *
+     * @param j The JSON object to deserialize from.
+     * @param p The Patch object to deserialize to.
+     */
+    inline void from_json(const nlohmann::json &j, Patch &p) {
+        j.at("id_patch").get_to(p.id_patch);
+        j.at("pack_node_index").get_to(p.pack_node_index);
+        j.at("load_value").get_to(p.load_value);
+        j.at("coord_min").get_to(p.coord_min);
+        j.at("coord_max").get_to(p.coord_max);
+        j.at("node_owner_id").get_to(p.node_owner_id);
+    }
+
+}
 
 
+void to_json(nlohmann::json &j, const SchedulerPatchList &p){
+    j = nlohmann::json{
+            {"_next_patch_id",p._next_patch_id},
+            {"global",p.global},
+            {"local",p.local},
+            {"is_load_values_up_to_date",p.is_load_values_up_to_date},
+        };
+}
+
+void from_json(const nlohmann::json &j, SchedulerPatchList &p){
+    j.at("_next_patch_id").get_to(p._next_patch_id);
+    j.at("global").get_to(p.global);
+    j.at("local").get_to(p.local);
+    j.at("is_load_values_up_to_date").get_to(p.is_load_values_up_to_date);
+}
 
 
 // TODO move in a separate file
@@ -438,3 +503,4 @@ std::vector<shamrock::patch::Patch> make_fake_patch_list(u32 total_dtcnt,u64 div
 
     return plist;
 }
+
