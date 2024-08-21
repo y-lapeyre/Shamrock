@@ -142,6 +142,36 @@ namespace shamalgs::collective {
     }
 
     /**
+     * @brief Writes data at a given offset in a file using MPI.
+     *
+     * @param fh MPI file handle
+     * @param buf pointer to the data to be written
+     * @param len number of elements of type T to be written
+     * @param file_head_ptr offset in the file where the data should be written
+     */
+    template<class T>
+    inline void write_at(MPI_File fh, const void *buf, size_t len, u64 file_head_ptr) {
+
+        MPICHECK(
+            MPI_File_write_at(fh, file_head_ptr, buf, len, get_mpi_type<T>(), MPI_STATUS_IGNORE));
+    }
+
+    /**
+     * @brief Reads data at a given offset in a file using MPI.
+     *
+     * @param fh MPI file handle
+     * @param buf pointer to the data that should be read
+     * @param len number of elements of type T to be read
+     * @param file_head_ptr offset in the file where the data should be read
+     */
+    template<class T>
+    inline void read_at(MPI_File fh, void *buf, size_t len, u64 file_head_ptr) {
+
+        MPICHECK(
+            MPI_File_read_at(fh, file_head_ptr, buf, len, get_mpi_type<T>(), MPI_STATUS_IGNORE));
+    }
+
+    /**
      * @brief Reads a size_t from a file using MPI and updates the file head pointer.
      *
      * @param fh MPI file handle
