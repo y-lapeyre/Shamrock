@@ -33,6 +33,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
     using T = Model<Tvec, SPHKernel>;
 
     using TAnalysisSodTube = shammodels::sph::modules::AnalysisSodTube<Tvec, SPHKernel>;
+    using TSPHSetup        = shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>;
     using TConfig          = typename T::Solver::Config;
 
     logger::debug_ln("[Py]", "registering class :", name_config, typeid(T).name());
@@ -138,6 +139,31 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             auto ret = self.compute_L2_dist();
             return {ret.rho, ret.v, ret.P};
         });
+
+    std::string setup_name = name_model + "_SPHSetup";
+    py::class_<TSPHSetup>(m, setup_name.c_str())
+        .def(
+            "make_generator_lattice_hcp",
+            [](TSPHSetup &self, Tscal dr, Tvec box_min, Tvec box_max) {
+                return self.make_generator_lattice_hcp(dr, {box_min, box_max});
+            })
+        .def(
+            "make_combiner_add",
+            [](TSPHSetup &self,
+               shammodels::sph::modules::SetupNodePtr parent1,
+               shammodels::sph::modules::SetupNodePtr parent2) {
+                return self.make_combiner_add(parent1, parent2);
+            })
+        .def(
+            "apply_setup",
+            [](TSPHSetup &self,
+               shammodels::sph::modules::SetupNodePtr setup,
+               bool part_reordering) {
+                return self.apply_setup(setup, part_reordering);
+            },
+            py::arg("setup"),
+            py::kw_only(),
+            py::arg("part_reordering") = true);
 
     py::class_<T>(m, name_model.c_str())
         .def(py::init([](ShamrockCtx &ctx) {
@@ -434,7 +460,8 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                     x_max);
             })
         .def("load_from_dump", &T::load_from_dump)
-        .def("dump", &T::dump);
+        .def("dump", &T::dump)
+        .def("get_setup", &T::get_setup);
     ;
 }
 
@@ -473,4 +500,11 @@ Register_pymod(pysphmodel) {
         py::arg("context"),
         py::arg("vector_type"),
         py::arg("sph_kernel"));
+
+    py::class_<
+        shammodels::sph::modules::ISPHSetupNode,
+        std::shared_ptr<shammodels::sph::modules::ISPHSetupNode>>(m, "ISPHSetupNode")
+        .def("get_dot", [](std::shared_ptr<shammodels::sph::modules::ISPHSetupNode> &self) {
+            return self->get_dot();
+        });
 }
