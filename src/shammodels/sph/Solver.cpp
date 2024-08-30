@@ -1019,11 +1019,6 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
     bool has_B_field = solver_config.has_field_B_on_rho();
     bool has_psi_field = solver_config.has_field_psi_on_ch();
     bool has_curlB_field = solver_config.has_field_curlB();
-    const u32 iB_on_rho = (has_B_field) ? pdl.get_field_idx<Tvec>("B/rho") : 0; //iB_on_rho marche pas ????
-    const u32 idB_on_rho = (has_B_field) ? pdl.get_field_idx<Tvec>("dB/rho") : 0;
-    const u32 ipsi_on_ch = (has_psi_field) ? pdl.get_field_idx<Tscal>("psi/ch") : 0;
-    const u32 idpsi_on_ch = (has_psi_field) ? pdl.get_field_idx<Tscal>("dpsi/ch") : 0;
-    const u32 icurlB = (has_curlB_field) ? pdl.get_field_idx<Tvec>("curlB") : 0;
 
     PatchDataLayout &pdl = scheduler().pdl;
     const u32 ixyz       = pdl.get_field_idx<Tvec>("xyz");
@@ -1035,6 +1030,12 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
 
     const u32 ialpha_AV   = (has_alphaAV_field) ? pdl.get_field_idx<Tscal>("alpha_AV") : 0;
     const u32 isoundspeed = (has_soundspeed_field) ? pdl.get_field_idx<Tscal>("soundspeed") : 0;
+
+    const u32 iB_on_rho = (has_B_field) ? pdl.get_field_idx<Tvec>("B/rho") : 0; //iB_on_rho marche pas ????
+    const u32 idB_on_rho = (has_B_field) ? pdl.get_field_idx<Tvec>("dB/rho") : 0;
+    const u32 ipsi_on_ch = (has_psi_field) ? pdl.get_field_idx<Tscal>("psi/ch") : 0;
+    const u32 idpsi_on_ch = (has_psi_field) ? pdl.get_field_idx<Tscal>("dpsi/ch") : 0;
+    const u32 icurlB = (has_curlB_field) ? pdl.get_field_idx<Tvec>("curlB") : 0;
 
     shamrock::patch::PatchDataLayout &ghost_layout = storage.ghost_layout.get();
     u32 ihpart_interf                              = ghost_layout.get_field_idx<Tscal>("hpart");
@@ -1307,15 +1308,15 @@ void shammodels::sph::Solver<Tvec, Kern>::evolve_once() {
     const u32 iduint = pdl.get_field_idx<Tscal>("duint");
     const u32 ihpart = pdl.get_field_idx<Tscal>("hpart");
 
-    if (solver_config.has_field_B_on_rho()) {
+    //if (solver_config.has_field_B_on_rho()) {
     const u32 iB_on_rho = pdl.get_field_idx<Tvec>("B/rho");
     const u32 idB_on_rho = pdl.get_field_idx<Tvec>("dB/rho");
-    }
+    //}
 
-    if (solver_config.has_field_psi_on_ch()) {
+    //if (solver_config.has_field_psi_on_ch()) {
     const u32 ipsi_on_ch = pdl.get_field_idx<Tscal>("psi/ch");
     const u32 idpsi_on_ch = pdl.get_field_idx<Tscal>("dpsi/ch");
-    }
+    //}
 
     shamrock::SchedulerUtility utility(scheduler());
 

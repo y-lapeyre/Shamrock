@@ -717,7 +717,8 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_disc
     });
 }
 
-mplate<class Tvec, template<class> class SPHKernel>
+
+template<class Tvec, template<class> class SPHKernel>
 void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD(
     IdealMHD cfg) {
     StackEntry stack_loc{};
