@@ -151,9 +151,13 @@ void vtk_dump_add_compute_field(
     using namespace shamrock::patch;
     u64 num_obj = sched.get_rank_count();
 
-    std::unique_ptr<sycl::buffer<T>> field_vals = field.rankgather_computefield(sched);
+    if (num_obj > 0) {
+        std::unique_ptr<sycl::buffer<T>> field_vals = field.rankgather_computefield(sched);
 
-    writter.write_field(field_dump_name, field_vals, num_obj);
+        writter.write_field(field_dump_name, field_vals, num_obj);
+    } else {
+        writter.write_field_no_buf<T>(field_dump_name);
+    }
 }
 
 template<class T>
@@ -167,9 +171,13 @@ void vtk_dump_add_field(
     using namespace shamrock::patch;
     u64 num_obj = sched.get_rank_count();
 
-    std::unique_ptr<sycl::buffer<T>> field_vals = sched.rankgather_field<T>(field_idx);
+    if (num_obj > 0) {
+        std::unique_ptr<sycl::buffer<T>> field_vals = sched.rankgather_field<T>(field_idx);
 
-    writter.write_field(field_dump_name, field_vals, num_obj);
+        writter.write_field(field_dump_name, field_vals, num_obj);
+    } else {
+        writter.write_field_no_buf<T>(field_dump_name);
+    }
 }
 
 template<class Tvec, template<class> class Kern>
@@ -817,16 +825,39 @@ void shammodels::sph::Solver<Tvec, Kern>::sph_prestep(Tscal time_val, Tscal dt) 
             Tscal largest_h = 0;
 
             scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchData &pdat) {
-                largest_h = sham::max(largest_h, pdat.get_field<Tscal>(ihpart).compute_min());
+                largest_h = sham::max(largest_h, pdat.get_field<Tscal>(ihpart).compute_max());
             });
             Tscal global_largest_h = shamalgs::collective::allreduce_max(largest_h);
 
-            u64 cnt_unconverged = 0;
+            std::string add_info = "";
+            u64 cnt_unconverged  = 0;
             scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchData &pdat) {
                 auto res
                     = _epsilon_h.get_field(p.id_patch).get_ids_buf_where([](auto access, u32 id) {
                           return access[id] == -1;
                       });
+
+                if (hstep_cnt == hstep_max - 1) {
+                    if (std::get<0>(res)) {
+                        add_info += "\n    patch " + std::to_string(p.id_patch) + " ";
+                        add_info += "errored parts : \n";
+                        sycl::buffer<u32> &idx_err = *std::get<0>(res);
+
+                        sycl::buffer<Tvec> &xyz    = pdat.get_field_buf_ref<Tvec>(0);
+                        sycl::buffer<Tscal> &hpart = pdat.get_field_buf_ref<Tscal>(ihpart);
+
+                        {
+                            sycl::host_accessor acc{idx_err};
+                            sycl::host_accessor pos{xyz};
+                            sycl::host_accessor h{hpart};
+                            for (u32 i = 0; i < idx_err.size(); i++) {
+                                add_info += shambase::format(
+                                    "{} - pos : {}, hpart : {}\n", acc[i], pos[acc[i]], h[acc[i]]);
+                            }
+                        }
+                    }
+                }
+
                 cnt_unconverged += std::get<1>(res);
             });
 
@@ -839,7 +870,8 @@ void shammodels::sph::Solver<Tvec, Kern>::sph_prestep(Tscal time_val, Tscal dt) 
                     "=",
                     global_largest_h,
                     "unconverged cnt =",
-                    global_cnt_unconverged);
+                    global_cnt_unconverged,
+                    add_info);
             }
 
             reset_ghost_handler();
@@ -1746,6 +1778,8 @@ void shammodels::sph::Solver<Tvec, Kern>::evolve_once() {
         print += ("--------------------------------------------------------------------------------"
                   "-");
         logger::info_ln("sph::Model", print);
+        logger::info_ln(
+            "sph::Model", "estimated rate :", dt * (3600 / tstep.elasped_sec()), "(tsim/hr)");
     }
 
     storage.timings_details.reset();
