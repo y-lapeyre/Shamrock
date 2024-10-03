@@ -260,7 +260,10 @@ template<class Tvec, template<class> class SPHKernel>
 void shammodels::sph::Model<Tvec, SPHKernel>::push_particle(
     std::vector<Tvec> &part_pos_insert,
     std::vector<Tscal> &part_hpart_insert,
-    std::vector<Tscal> &part_u_insert) {
+    std::vector<Tscal> &part_u_insert,
+    std::vector<Tvec> &part_vel_insert,
+    std::vector<Tvec> &part_B_insert,
+    std::vector<Tscal> &part_psi_insert) {
     StackEntry stack_loc{};
 
     using namespace shamrock::patch;
@@ -277,13 +280,22 @@ void shammodels::sph::Model<Tvec, SPHKernel>::push_particle(
         std::vector<Tvec> vec_acc;
         std::vector<Tscal> hpart_acc;
         std::vector<Tscal> u_acc;
+        std::vector<Tvec> vel_acc;
+        std::vector<Tvec> B_acc;
+        std::vector<Tscal> psi_acc;
         for (u32 i = 0; i < part_pos_insert.size(); i++) {
-            Tvec r  = part_pos_insert[i];
-            Tscal u = part_u_insert[i];
+            Tvec r    = part_pos_insert[i];
+            Tscal u   = part_u_insert[i];
+            Tvec vel  = part_vel_insert[i];
+            Tvec B    = part_B_insert[i];
+            Tscal psi = part_psi_insert[i];
             if (patch_coord.contain_pos(r)) {
                 vec_acc.push_back(r);
                 hpart_acc.push_back(part_hpart_insert[i]);
                 u_acc.push_back(u);
+                vel_acc.push_back(vel);
+                B_acc.push_back(B);
+                psi_acc.push_back(psi);
             }
         }
 
@@ -322,6 +334,28 @@ void shammodels::sph::Model<Tvec, SPHKernel>::push_particle(
             u32 len                  = u_acc.size();
             PatchDataField<Tscal> &f = tmp.get_field<Tscal>(sched.pdl.get_field_idx<Tscal>("uint"));
             sycl::buffer<Tscal> buf(u_acc.data(), len);
+            f.override(buf, len);
+        }
+
+        {
+            u32 len                 = vec_acc.size();
+            PatchDataField<Tvec> &f = tmp.get_field<Tvec>(sched.pdl.get_field_idx<Tvec>("vxyz"));
+            sycl::buffer<Tvec> buf(B_acc.data(), len);
+            f.override(buf, len);
+        }
+
+        {
+            u32 len                 = vec_acc.size();
+            PatchDataField<Tvec> &f = tmp.get_field<Tvec>(sched.pdl.get_field_idx<Tvec>("B/rho"));
+            sycl::buffer<Tvec> buf(B_acc.data(), len);
+            f.override(buf, len);
+        }
+
+        {
+            u32 len = vec_acc.size();
+            PatchDataField<Tscal> &f
+                = tmp.get_field<Tscal>(sched.pdl.get_field_idx<Tscal>("psi/ch"));
+            sycl::buffer<Tscal> buf(psi_acc.data(), len);
             f.override(buf, len);
         }
 

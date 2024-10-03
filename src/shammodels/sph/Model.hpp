@@ -571,7 +571,10 @@ namespace shammodels::sph {
         void push_particle(
             std::vector<Tvec> &part_pos_insert,
             std::vector<Tscal> &part_hpart_insert,
-            std::vector<Tscal> &part_u_insert);
+            std::vector<Tscal> &part_u_insert,
+            std::vector<Tvec> &part_vel_insert,
+            std::vector<Tvec> &part_B_insert,
+            std::vector<Tscal> &part_psi_insert);
 
         template<class T>
         inline void set_value_in_a_box(std::string field_name, T val, std::pair<Tvec, Tvec> box) {
