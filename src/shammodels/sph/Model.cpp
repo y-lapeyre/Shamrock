@@ -284,10 +284,10 @@ void shammodels::sph::Model<Tvec, SPHKernel>::push_particle(
         std::vector<Tvec> B_acc;
         std::vector<Tscal> psi_acc;
         for (u32 i = 0; i < part_pos_insert.size(); i++) {
-            Tvec r  = part_pos_insert[i];
-            Tscal u = part_u_insert[i];
-            Tvec vel = part_vel_insert[i];
-            Tvec B = part_B_insert[i];
+            Tvec r    = part_pos_insert[i];
+            Tscal u   = part_u_insert[i];
+            Tvec vel  = part_vel_insert[i];
+            Tvec B    = part_B_insert[i];
             Tscal psi = part_psi_insert[i];
             if (patch_coord.contain_pos(r)) {
                 vec_acc.push_back(r);
@@ -358,7 +358,7 @@ void shammodels::sph::Model<Tvec, SPHKernel>::push_particle(
             sycl::buffer<Tscal> buf(psi_acc.data(), len);
             f.override(buf, len);
         }
-        
+
         pdat.insert_elements(tmp);
 
         sched.check_patchdata_locality_corectness();

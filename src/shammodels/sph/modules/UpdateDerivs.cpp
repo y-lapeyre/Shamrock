@@ -22,14 +22,14 @@
 template<class Tvec, template<class> class SPHKernel>
 void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs() {
 
-    Cfg_AV cfg_av = solver_config.artif_viscosity;
+    Cfg_AV cfg_av   = solver_config.artif_viscosity;
     Cfg_MHD cfg_mhd = solver_config.mhd_type;
 
-    if (NoneMHD*v = std::get_if<NoneMHD>(&cfg_mhd.config)) {
-        shambase::throw_unimplemented();   
-    } else if (IdealMHD*v = std::get_if<IdealMHD>(&cfg_mhd.config)) {
+    if (NoneMHD *v = std::get_if<NoneMHD>(&cfg_mhd.config)) {
+        shambase::throw_unimplemented();
+    } else if (IdealMHD *v = std::get_if<IdealMHD>(&cfg_mhd.config)) {
         update_derivs_MHD(*v);
-    } else if (NonIdealMHD*v = std::get_if<NonIdealMHD>(&cfg_mhd.config)) {
+    } else if (NonIdealMHD *v = std::get_if<NonIdealMHD>(&cfg_mhd.config)) {
         shambase::throw_unimplemented();
     } else if (None *v = std::get_if<None>(&cfg_av.config)) {
         shambase::throw_unimplemented();
@@ -717,10 +717,8 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_disc
     });
 }
 
-
 template<class Tvec, template<class> class SPHKernel>
-void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD(
-    IdealMHD cfg) {
+void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD(IdealMHD cfg) {
     StackEntry stack_loc{};
 
     using namespace shamrock;
@@ -728,18 +726,18 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD(
 
     PatchDataLayout &pdl = scheduler().pdl;
 
-    const u32 ixyz   = pdl.get_field_idx<Tvec>("xyz");
-    const u32 ivxyz  = pdl.get_field_idx<Tvec>("vxyz");
-    const u32 iaxyz  = pdl.get_field_idx<Tvec>("axyz");
-    const u32 iuint  = pdl.get_field_idx<Tscal>("uint");
-    const u32 iduint = pdl.get_field_idx<Tscal>("duint");
-    const u32 ihpart = pdl.get_field_idx<Tscal>("hpart");
-    const u32 iB_on_rho     = pdl.get_field_idx<Tvec>("B/rho");
-    const u32 idB_on_rho     = pdl.get_field_idx<Tvec>("dB/rho");
-    const u32 ipsi_on_ch     = pdl.get_field_idx<Tscal>("psi/ch");
-    const u32 idpsi_on_ch     = pdl.get_field_idx<Tscal>("dpsi/ch");
+    const u32 ixyz        = pdl.get_field_idx<Tvec>("xyz");
+    const u32 ivxyz       = pdl.get_field_idx<Tvec>("vxyz");
+    const u32 iaxyz       = pdl.get_field_idx<Tvec>("axyz");
+    const u32 iuint       = pdl.get_field_idx<Tscal>("uint");
+    const u32 iduint      = pdl.get_field_idx<Tscal>("duint");
+    const u32 ihpart      = pdl.get_field_idx<Tscal>("hpart");
+    const u32 iB_on_rho   = pdl.get_field_idx<Tvec>("B/rho");
+    const u32 idB_on_rho  = pdl.get_field_idx<Tvec>("dB/rho");
+    const u32 ipsi_on_ch  = pdl.get_field_idx<Tscal>("psi/ch");
+    const u32 idpsi_on_ch = pdl.get_field_idx<Tscal>("dpsi/ch");
 
-    //const u32 icurlB = pdl.get_field_idx<Tvec>("curlB");
+    // const u32 icurlB = pdl.get_field_idx<Tvec>("curlB");
 
     Tscal mu_0 = solver_config.get_constant_mu_0();
 
@@ -748,10 +746,12 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD(
     u32 iuint_interf                               = ghost_layout.get_field_idx<Tscal>("uint");
     u32 ivxyz_interf                               = ghost_layout.get_field_idx<Tvec>("vxyz");
     u32 iB_on_rho_interf                           = ghost_layout.get_field_idx<Tvec>("B/rho");
-    //u32 idB_on_rho_interf                           = ghost_layout.get_field_idx<Tvec>("dB_on_rho");
-    u32 ipsi_on_ch_interf                          = ghost_layout.get_field_idx<Tscal>("psi/ch");
-    //u32 idpsi_on_ch_interf                          = ghost_layout.get_field_idx<Tscal>("dpsi_on_ch");
-    u32 iomega_interf                              = ghost_layout.get_field_idx<Tscal>("omega");
+    // u32 idB_on_rho_interf                           =
+    // ghost_layout.get_field_idx<Tvec>("dB_on_rho");
+    u32 ipsi_on_ch_interf = ghost_layout.get_field_idx<Tscal>("psi/ch");
+    // u32 idpsi_on_ch_interf                          =
+    // ghost_layout.get_field_idx<Tscal>("dpsi_on_ch");
+    u32 iomega_interf = ghost_layout.get_field_idx<Tscal>("omega");
 
     logger::raw_ln("charged the ghost fields.");
     auto &merged_xyzh                                 = storage.merged_xyzh.get();
@@ -762,24 +762,24 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD(
     scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
         MergedPatchData &merged_patch = mpdat.get(cur_p.id_patch);
         PatchData &mpdat              = merged_patch.pdat;
-        sycl::buffer<Tvec> &buf_xyz =
-            shambase::get_check_ref(merged_xyzh.get(cur_p.id_patch).field_pos.get_buf());
-        sycl::buffer<Tvec> &buf_axyz      = pdat.get_field_buf_ref<Tvec>(iaxyz);
+        sycl::buffer<Tvec> &buf_xyz
+            = shambase::get_check_ref(merged_xyzh.get(cur_p.id_patch).field_pos.get_buf());
+        sycl::buffer<Tvec> &buf_axyz = pdat.get_field_buf_ref<Tvec>(iaxyz);
 
-        //logger::raw_ln("charged axyz.");
-        sycl::buffer<Tvec> &buf_dB_on_rho        = pdat.get_field_buf_ref<Tvec>(idB_on_rho);
-        sycl::buffer<Tscal> &buf_dpsi_on_ch      = pdat.get_field_buf_ref<Tscal>(idpsi_on_ch);
-        //logger::raw_ln("charged dB dpsi");
-        sycl::buffer<Tscal> &buf_duint    = pdat.get_field_buf_ref<Tscal>(iduint);
-        sycl::buffer<Tvec> &buf_vxyz      = mpdat.get_field_buf_ref<Tvec>(ivxyz_interf);
-        sycl::buffer<Tscal> &buf_hpart    = mpdat.get_field_buf_ref<Tscal>(ihpart_interf);
-        sycl::buffer<Tscal> &buf_omega    = mpdat.get_field_buf_ref<Tscal>(iomega_interf);
-        sycl::buffer<Tscal> &buf_uint     = mpdat.get_field_buf_ref<Tscal>(iuint_interf);
-        sycl::buffer<Tscal> &buf_pressure = storage.pressure.get().get_buf_check(cur_p.id_patch);
-        sycl::buffer<Tvec> &buf_B_on_rho             = mpdat.get_field_buf_ref<Tvec>(iB_on_rho_interf);
-        sycl::buffer<Tscal> &buf_psi_on_ch      = mpdat.get_field_buf_ref<Tscal>(ipsi_on_ch_interf);
-        //logger::raw_ln("charged B psi");
-        // ADD curlBBBBBBBBB
+        // logger::raw_ln("charged axyz.");
+        sycl::buffer<Tvec> &buf_dB_on_rho   = pdat.get_field_buf_ref<Tvec>(idB_on_rho);
+        sycl::buffer<Tscal> &buf_dpsi_on_ch = pdat.get_field_buf_ref<Tscal>(idpsi_on_ch);
+        // logger::raw_ln("charged dB dpsi");
+        sycl::buffer<Tscal> &buf_duint     = pdat.get_field_buf_ref<Tscal>(iduint);
+        sycl::buffer<Tvec> &buf_vxyz       = mpdat.get_field_buf_ref<Tvec>(ivxyz_interf);
+        sycl::buffer<Tscal> &buf_hpart     = mpdat.get_field_buf_ref<Tscal>(ihpart_interf);
+        sycl::buffer<Tscal> &buf_omega     = mpdat.get_field_buf_ref<Tscal>(iomega_interf);
+        sycl::buffer<Tscal> &buf_uint      = mpdat.get_field_buf_ref<Tscal>(iuint_interf);
+        sycl::buffer<Tscal> &buf_pressure  = storage.pressure.get().get_buf_check(cur_p.id_patch);
+        sycl::buffer<Tvec> &buf_B_on_rho   = mpdat.get_field_buf_ref<Tvec>(iB_on_rho_interf);
+        sycl::buffer<Tscal> &buf_psi_on_ch = mpdat.get_field_buf_ref<Tscal>(ipsi_on_ch_interf);
+        // logger::raw_ln("charged B psi");
+        //  ADD curlBBBBBBBBB
 
         sycl::range range_npart{pdat.get_obj_cnt()};
 
@@ -788,9 +788,9 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD(
         /////////////////////////////////////////////
 
         shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-            const Tscal pmass    = solver_config.gpart_mass;
-            const Tscal sigma_mhd= cfg.sigma_mhd;
-            const Tscal alpha_u = cfg.alpha_u;
+            const Tscal pmass     = solver_config.gpart_mass;
+            const Tscal sigma_mhd = cfg.sigma_mhd;
+            const Tscal alpha_u   = cfg.alpha_u;
 
             logger::debug_ln("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
             logger::debug_sycl_ln("deriv kernel", "sigma_mhd  :", sigma_mhd);
@@ -825,7 +825,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD(
             constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
 
             shambase::parralel_for(cgh, pdat.get_obj_cnt(), "compute force disc", [=](u64 gid) {
-                u32 id_a = (u32)gid;
+                u32 id_a = (u32) gid;
 
                 using namespace shamrock::sph;
                 using namespace shamrock::spmhd;
@@ -845,10 +845,10 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD(
                 Tscal rho_a_sq  = rho_a * rho_a;
                 Tscal rho_a_inv = 1. / rho_a;
 
-                Tvec B_a        = B_on_rho[id_a] * rho_a;
+                Tvec B_a         = B_on_rho[id_a] * rho_a;
                 Tscal v_alfven_a = sycl::sqrt(sycl::dot(B_a, B_a) / (mu_0 * rho_a));
-                Tscal v_shock_a = sycl::sqrt(sycl::pow(cs_a, 2) + sycl::pow(v_alfven_a, 2));
-                Tscal psi_a = psi_on_ch[id_a] * v_shock_a;
+                Tscal v_shock_a  = sycl::sqrt(sycl::pow(cs_a, 2) + sycl::pow(v_alfven_a, 2));
+                Tscal psi_a      = psi_on_ch[id_a] * v_shock_a;
 
                 Tscal omega_a_rho_a_inv = 1 / (omega_a * rho_a);
 
@@ -875,15 +875,15 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD(
 
                     Tscal rab = sycl::sqrt(rab2);
 
-                    Tscal rho_b         = rho_h(pmass, h_b, Kernel::hfactd);
-                    Tvec B_b        = B_on_rho[id_b] * rho_b;
+                    Tscal rho_b      = rho_h(pmass, h_b, Kernel::hfactd);
+                    Tvec B_b         = B_on_rho[id_b] * rho_b;
                     Tscal v_alfven_b = sycl::sqrt(sycl::dot(B_b, B_b) / (mu_0 * rho_b));
-                    Tscal v_shock_b = sycl::sqrt(sycl::pow(cs_b, 2) + sycl::pow(v_alfven_b, 2));
-                    Tscal psi_b = psi_on_ch[id_b] * v_shock_b;
-                    //const Tscal alpha_a = alpha_AV;
-                    //const Tscal alpha_b = alpha_AV;
-                    Tscal Fab_a         = Kernel::dW_3d(rab, h_a);
-                    Tscal Fab_b         = Kernel::dW_3d(rab, h_b);
+                    Tscal v_shock_b  = sycl::sqrt(sycl::pow(cs_b, 2) + sycl::pow(v_alfven_b, 2));
+                    Tscal psi_b      = psi_on_ch[id_b] * v_shock_b;
+                    // const Tscal alpha_a = alpha_AV;
+                    // const Tscal alpha_b = alpha_AV;
+                    Tscal Fab_a = Kernel::dW_3d(rab, h_a);
+                    Tscal Fab_b = Kernel::dW_3d(rab, h_b);
 
                     // clang-format off
                     //Tscal sigma_mhd = 0.3;
@@ -915,9 +915,9 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD(
                     // clang-format on
                 });
 
-                axyz[id_a] = force_pressure;
-                du[id_a]   = tmpdU_pressure;
-                dB_on_rho[id_a] = magnetic_eq;
+                axyz[id_a]       = force_pressure;
+                du[id_a]         = tmpdU_pressure;
+                dB_on_rho[id_a]  = magnetic_eq;
                 dpsi_on_ch[id_a] = psi_eq;
             });
         });
