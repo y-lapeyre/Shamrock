@@ -122,6 +122,14 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             py::arg("alpha_AV"),
             py::arg("alpha_u"),
             py::arg("beta_AV"))
+        .def(
+            "set_IdealMHD",
+            [](TConfig &self, Tscal sigma_mhd, Tscal sigma_u) {
+                self.set_IdealMHD({sigma_mhd, sigma_u});
+            },
+            py::kw_only(),
+            py::arg("sigma_mhd"),
+            py::arg("sigma_u"))
         .def("set_boundary_free", &TConfig::set_boundary_free)
         .def("set_boundary_periodic", &TConfig::set_boundary_periodic)
         .def("set_boundary_shearing_periodic", &TConfig::set_boundary_shearing_periodic)
@@ -261,8 +269,14 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             })
         .def(
             "push_particle",
-            [](T &self, std::vector<f64_3> pos, std::vector<f64> hpart, std::vector<f64> upart) {
-                return self.push_particle(pos, hpart, upart);
+            [](T &self,
+               std::vector<f64_3> pos,
+               std::vector<f64> hpart,
+               std::vector<f64> upart,
+               std::vector<f64_3> vel,
+               std::vector<f64_3> B,
+               std::vector<f64> psi) {
+                return self.push_particle(pos, hpart, upart, vel, B, psi);
             })
         .def(
             "add_cube_fcc_3d",
