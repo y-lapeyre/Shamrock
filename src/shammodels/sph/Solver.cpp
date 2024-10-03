@@ -196,6 +196,8 @@ void shammodels::sph::Solver<Tvec, Kern>::vtk_do_dump(
     const u32 iuint             = pdl.get_field_idx<Tscal>("uint");
     const u32 iduint            = pdl.get_field_idx<Tscal>("duint");
     const u32 ihpart            = pdl.get_field_idx<Tscal>("hpart");
+    const u32 iB_on_rho         = pdl.get_field_idx<Tvec>("B/rho");
+    const u32 ipsi_on_ch        = pdl.get_field_idx<Tscal>("psi/ch");
     ComputeField<Tscal> density = utility.make_compute_field<Tscal>("rho", 1);
 
     scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchData &pdat) {
@@ -255,6 +257,14 @@ void shammodels::sph::Solver<Tvec, Kern>::vtk_do_dump(
         fnum++;
     }
 
+    if (solver_config.has_field_B_on_rho()) {
+        fnum++;
+    }
+
+    if (solver_config.has_field_psi_on_ch()) {
+        fnum++;
+    }
+
     writter.add_field_data_section(fnum);
 
     if (add_patch_world_id) {
@@ -290,6 +300,16 @@ void shammodels::sph::Solver<Tvec, Kern>::vtk_do_dump(
     if (solver_config.has_field_soundspeed()) {
         const u32 isoundspeed = pdl.get_field_idx<Tscal>("soundspeed");
         vtk_dump_add_field<Tscal>(scheduler(), writter, isoundspeed, "soundspeed");
+    }
+
+    if (solver_config.has_field_B_on_rho()) {
+        const u32 iB_on_rho = pdl.get_field_idx<Tvec>("B/rho");
+        vtk_dump_add_field<Tvec>(scheduler(), writter, iB_on_rho, "B/rho");
+    }
+
+    if (solver_config.has_field_psi_on_ch()) {
+        const u32 ipsi_on_ch = pdl.get_field_idx<Tscal>("psi/ch");
+        vtk_dump_add_field<Tscal>(scheduler(), writter, ipsi_on_ch, "psi/ch");
     }
 
     vtk_dump_add_compute_field(scheduler(), writter, density, "rho");
@@ -716,12 +736,16 @@ void shammodels::sph::Solver<Tvec, Kern>::do_predictor_leapfrog(Tscal dt) {
 
     StackEntry stack_loc{};
     using namespace shamrock::patch;
-    PatchDataLayout &pdl = scheduler().pdl;
-    const u32 ixyz       = pdl.get_field_idx<Tvec>("xyz");
-    const u32 ivxyz      = pdl.get_field_idx<Tvec>("vxyz");
-    const u32 iaxyz      = pdl.get_field_idx<Tvec>("axyz");
-    const u32 iuint      = pdl.get_field_idx<Tscal>("uint");
-    const u32 iduint     = pdl.get_field_idx<Tscal>("duint");
+    PatchDataLayout &pdl  = scheduler().pdl;
+    const u32 ixyz        = pdl.get_field_idx<Tvec>("xyz");
+    const u32 ivxyz       = pdl.get_field_idx<Tvec>("vxyz");
+    const u32 iaxyz       = pdl.get_field_idx<Tvec>("axyz");
+    const u32 iuint       = pdl.get_field_idx<Tscal>("uint");
+    const u32 iduint      = pdl.get_field_idx<Tscal>("duint");
+    const u32 iB_on_rho   = pdl.get_field_idx<Tvec>("B/rho");
+    const u32 idB_on_rho  = pdl.get_field_idx<Tvec>("dB/rho");
+    const u32 ipsi_on_ch  = pdl.get_field_idx<Tscal>("psi/ch");
+    const u32 idpsi_on_ch = pdl.get_field_idx<Tscal>("dpsi/ch");
 
     shamrock::SchedulerUtility utility(scheduler());
 
@@ -729,6 +753,10 @@ void shammodels::sph::Solver<Tvec, Kern>::do_predictor_leapfrog(Tscal dt) {
     logger::debug_ln("sph::BasicGas", "forward euler step f dt/2");
     utility.fields_forward_euler<Tvec>(ivxyz, iaxyz, dt / 2);
     utility.fields_forward_euler<Tscal>(iuint, iduint, dt / 2);
+
+    utility.fields_forward_euler<Tvec>(
+        iB_on_rho, idB_on_rho, dt / 2); // pb: faut que v  soit le mm  qu avanttttt !!
+    utility.fields_forward_euler<Tscal>(ipsi_on_ch, idpsi_on_ch, dt / 2);
 
     // forward euler step positions dt
     logger::debug_ln("sph::BasicGas", "forward euler step positions dt");
@@ -738,6 +766,9 @@ void shammodels::sph::Solver<Tvec, Kern>::do_predictor_leapfrog(Tscal dt) {
     logger::debug_ln("sph::BasicGas", "forward euler step f dt/2");
     utility.fields_forward_euler<Tvec>(ivxyz, iaxyz, dt / 2);
     utility.fields_forward_euler<Tscal>(iuint, iduint, dt / 2);
+
+    utility.fields_forward_euler<Tvec>(iB_on_rho, idB_on_rho, dt / 2);
+    utility.fields_forward_euler<Tscal>(ipsi_on_ch, idpsi_on_ch, dt / 2);
 }
 
 template<class Tvec, template<class> class Kern>
@@ -956,6 +987,18 @@ void shammodels::sph::Solver<Tvec, Kern>::init_ghost_layout() {
     if (solver_config.ghost_has_soundspeed()) {
         ghost_layout.add_field<Tscal>("soundspeed", 1);
     }
+
+    if (solver_config.has_field_B_on_rho()) {
+        ghost_layout.add_field<Tvec>("B/rho", 1);
+    }
+
+    if (solver_config.has_field_psi_on_ch()) {
+        ghost_layout.add_field<Tscal>("psi/ch", 1);
+    }
+
+    if (solver_config.has_field_curlB()) {
+        ghost_layout.add_field<Tvec>("curlB", 1);
+    }
 }
 
 template<class Tvec, template<class> class Kern>
@@ -1012,6 +1055,9 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
 
     bool has_alphaAV_field    = solver_config.has_field_alphaAV();
     bool has_soundspeed_field = solver_config.ghost_has_soundspeed();
+    bool has_B_field          = solver_config.has_field_B_on_rho();
+    bool has_psi_field        = solver_config.has_field_psi_on_ch();
+    bool has_curlB_field      = solver_config.has_field_curlB();
 
     PatchDataLayout &pdl = scheduler().pdl;
     const u32 ixyz       = pdl.get_field_idx<Tvec>("xyz");
@@ -1020,6 +1066,13 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
     const u32 iuint      = pdl.get_field_idx<Tscal>("uint");
     const u32 iduint     = pdl.get_field_idx<Tscal>("duint");
     const u32 ihpart     = pdl.get_field_idx<Tscal>("hpart");
+
+    const u32 iB_on_rho
+        = (has_B_field) ? pdl.get_field_idx<Tvec>("B/rho") : 0; // iB_on_rho marche pas ????
+    const u32 idB_on_rho  = (has_B_field) ? pdl.get_field_idx<Tvec>("dB/rho") : 0;
+    const u32 ipsi_on_ch  = (has_psi_field) ? pdl.get_field_idx<Tscal>("psi/ch") : 0;
+    const u32 idpsi_on_ch = (has_psi_field) ? pdl.get_field_idx<Tscal>("dpsi/ch") : 0;
+    const u32 icurlB      = (has_curlB_field) ? pdl.get_field_idx<Tvec>("curlB") : 0;
 
     const u32 ialpha_AV   = (has_alphaAV_field) ? pdl.get_field_idx<Tscal>("alpha_AV") : 0;
     const u32 isoundspeed = (has_soundspeed_field) ? pdl.get_field_idx<Tscal>("soundspeed") : 0;
@@ -1035,6 +1088,12 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
 
     const u32 isoundspeed_interf
         = (has_soundspeed_field) ? ghost_layout.get_field_idx<Tscal>("soundspeed") : 0;
+
+    const u32 iB_interf = (has_B_field) ? ghost_layout.get_field_idx<Tvec>("B/rho") : 0;
+
+    const u32 ipsi_interf = (has_psi_field) ? ghost_layout.get_field_idx<Tscal>("psi/ch") : 0;
+
+    const u32 icurlB_interf = (has_curlB_field) ? ghost_layout.get_field_idx<Tvec>("curlB") : 0;
 
     using InterfaceBuildInfos = typename sph::BasicSPHGhostHandler<Tvec>::InterfaceBuildInfos;
 
@@ -1081,6 +1140,21 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
             if (has_soundspeed_field) {
                 sender_patch.get_field<Tscal>(isoundspeed)
                     .append_subset_to(buf_idx, cnt, pdat.get_field<Tscal>(isoundspeed_interf));
+            }
+
+            if (has_B_field) {
+                sender_patch.get_field<Tvec>(iB_on_rho).append_subset_to(
+                    buf_idx, cnt, pdat.get_field<Tvec>(iB_interf));
+            }
+
+            if (has_psi_field) {
+                sender_patch.get_field<Tscal>(ipsi_on_ch)
+                    .append_subset_to(buf_idx, cnt, pdat.get_field<Tscal>(ipsi_interf));
+            }
+
+            if (has_curlB_field) {
+                sender_patch.get_field<Tvec>(icurlB).append_subset_to(
+                    buf_idx, cnt, pdat.get_field<Tvec>(icurlB_interf));
             }
         });
 
@@ -1131,6 +1205,19 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
                 if (has_soundspeed_field) {
                     pdat_new.get_field<Tscal>(isoundspeed_interf)
                         .insert(pdat.get_field<Tscal>(isoundspeed));
+                }
+
+                if (has_B_field) {
+                    pdat_new.get_field<Tvec>(iB_interf).insert(pdat.get_field<Tvec>(iB_on_rho));
+                }
+
+                if (has_psi_field) {
+                    pdat_new.get_field<Tscal>(ipsi_interf)
+                        .insert(pdat.get_field<Tscal>(ipsi_on_ch));
+                }
+
+                if (has_curlB_field) {
+                    pdat_new.get_field<Tvec>(icurlB_interf).insert(pdat.get_field<Tvec>(icurlB));
                 }
 
                 pdat_new.check_field_obj_cnt_match();
@@ -1186,12 +1273,16 @@ void shammodels::sph::Solver<Tvec, Kern>::prepare_corrector() {
     using namespace shamrock;
     using namespace shamrock::patch;
     shamrock::SchedulerUtility utility(scheduler());
-    PatchDataLayout &pdl = scheduler().pdl;
-    const u32 iduint     = pdl.get_field_idx<Tscal>("duint");
-    const u32 iaxyz      = pdl.get_field_idx<Tvec>("axyz");
+    PatchDataLayout &pdl  = scheduler().pdl;
+    const u32 iduint      = pdl.get_field_idx<Tscal>("duint");
+    const u32 iaxyz       = pdl.get_field_idx<Tvec>("axyz");
+    const u32 idB_on_rho  = pdl.get_field_idx<Tvec>("dB/rho");
+    const u32 idpsi_on_ch = pdl.get_field_idx<Tscal>("dpsi/ch");
     logger::debug_ln("sph::BasicGas", "save old fields");
     storage.old_axyz.set(utility.save_field<Tvec>(iaxyz, "axyz_old"));
     storage.old_duint.set(utility.save_field<Tscal>(iduint, "duint_old"));
+    storage.old_dB_on_rho.set(utility.save_field<Tvec>(idB_on_rho, "dB/rho_old"));
+    storage.old_dpsi_on_ch.set(utility.save_field<Tscal>(idpsi_on_ch, "dpsi/ch_old"));
 }
 
 template<class Tvec, template<class> class Kern>
@@ -1247,6 +1338,16 @@ void shammodels::sph::Solver<Tvec, Kern>::evolve_once() {
     const u32 iduint = pdl.get_field_idx<Tscal>("duint");
     const u32 ihpart = pdl.get_field_idx<Tscal>("hpart");
 
+    // if (solver_config.has_field_B_on_rho()) {
+    const u32 iB_on_rho  = pdl.get_field_idx<Tvec>("B/rho");
+    const u32 idB_on_rho = pdl.get_field_idx<Tvec>("dB/rho");
+    //}
+
+    // if (solver_config.has_field_psi_on_ch()) {
+    const u32 ipsi_on_ch  = pdl.get_field_idx<Tscal>("psi/ch");
+    const u32 idpsi_on_ch = pdl.get_field_idx<Tscal>("dpsi/ch");
+    //}
+
     shamrock::SchedulerUtility utility(scheduler());
 
     modules::SinkParticlesUpdate<Tvec, Kern> sink_update(context, solver_config, storage);
@@ -1290,6 +1391,8 @@ void shammodels::sph::Solver<Tvec, Kern>::evolve_once() {
     u32 iuint_interf                               = ghost_layout.get_field_idx<Tscal>("uint");
     u32 ivxyz_interf                               = ghost_layout.get_field_idx<Tvec>("vxyz");
     u32 iomega_interf                              = ghost_layout.get_field_idx<Tscal>("omega");
+    u32 iB_interf   = ghost_layout.get_field_idx<Tvec>("B/rho"); // if defined
+    u32 ipsi_interf = ghost_layout.get_field_idx<Tscal>("psi/ch");
 
     using RTreeField = RadixTreeField<Tscal>;
     shambase::DistributedData<RTreeField> rtree_field_h;
@@ -1452,15 +1555,26 @@ void shammodels::sph::Solver<Tvec, Kern>::evolve_once() {
         ComputeField<Tscal> uepsilon_u_sq
             = utility.make_compute_field<Tscal>("umean epsilon_u^2", 1);
 
+        ComputeField<Tscal> BOR_epsilon_BOR_sq
+            = utility.make_compute_field<Tscal>("B/rho epsilon_B/rho^2", 1);
+        ComputeField<Tscal> POC_epsilon_POC_sq
+            = utility.make_compute_field<Tscal>("psi/ch epsilon_psi/ch^2", 1);
+
         // corrector
         logger::debug_ln("sph::BasicGas", "leapfrog corrector");
         utility.fields_leapfrog_corrector<Tvec>(
             ivxyz, iaxyz, storage.old_axyz.get(), vepsilon_v_sq, dt / 2);
         utility.fields_leapfrog_corrector<Tscal>(
             iuint, iduint, storage.old_duint.get(), uepsilon_u_sq, dt / 2);
+        utility.fields_leapfrog_corrector<Tvec>(
+            iB_on_rho, idB_on_rho, storage.old_dB_on_rho.get(), BOR_epsilon_BOR_sq, dt / 2);
+        utility.fields_leapfrog_corrector<Tscal>(
+            ipsi_on_ch, idpsi_on_ch, storage.old_dpsi_on_ch.get(), POC_epsilon_POC_sq, dt / 2);
 
         storage.old_axyz.reset();
         storage.old_duint.reset();
+        storage.old_dB_on_rho.reset();
+        storage.old_dpsi_on_ch.reset();
 
         Tscal rank_veps_v = sycl::sqrt(vepsilon_v_sq.compute_rank_max());
         ///////////////////////////////////////////
@@ -1538,8 +1652,8 @@ void shammodels::sph::Solver<Tvec, Kern>::evolve_once() {
                 MergedPatchData &merged_patch = mpdat.get(cur_p.id_patch);
                 PatchData &mpdat              = merged_patch.pdat;
 
-                sycl::buffer<Tvec> &buf_xyz
-                    = shambase::get_check_ref(merged_xyzh.get(cur_p.id_patch).field_pos.get_buf());
+                sycl::buffer<Tvec> &buf_xyz = shambase::get_check_ref(
+                    merged_xyzh.get(cur_p.id_patch).field_pos.get_buf()); // @ add B to cfl
                 sycl::buffer<Tvec> &buf_vxyz   = mpdat.get_field_buf_ref<Tvec>(ivxyz_interf);
                 sycl::buffer<Tscal> &buf_hpart = mpdat.get_field_buf_ref<Tscal>(ihpart_interf);
                 sycl::buffer<Tscal> &buf_uint  = mpdat.get_field_buf_ref<Tscal>(iuint_interf);
