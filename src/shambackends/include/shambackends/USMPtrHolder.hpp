@@ -18,6 +18,7 @@
  * and deallocate memory in USM.
  */
 
+#include "shambase/ptr.hpp"
 #include "shambackends/DeviceScheduler.hpp"
 #include <memory>
 #include <utility>
@@ -76,10 +77,14 @@ namespace sham {
          *
          * @param sz The size of the USM buffer to be allocated
          * @param dev_sched The Device Scheduler used to allocate/free the USM buffer
+         * @param alignment The alignment of the USM buffer (optional)
          *
          * @return A USMPtrHolder instance wrapping the allocated USM buffer
          */
-        static USMPtrHolder create(size_t sz, std::shared_ptr<DeviceScheduler> dev_sched);
+        static USMPtrHolder create(
+            size_t sz,
+            std::shared_ptr<DeviceScheduler> dev_sched,
+            std::optional<size_t> alignment = std::nullopt);
 
         /**
          * @brief USM pointer holder destructor
@@ -134,6 +139,10 @@ namespace sham {
          */
         template<class T>
         inline T *ptr_cast() const {
+            if (!shambase::is_aligned<T>(usm_ptr)) {
+                shambase::throw_with_loc<std::runtime_error>(
+                    "The USM pointer is not aligned with the given type");
+            }
             return reinterpret_cast<T *>(usm_ptr);
         }
 

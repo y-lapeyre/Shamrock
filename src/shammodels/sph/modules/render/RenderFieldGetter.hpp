@@ -9,7 +9,7 @@
 #pragma once
 
 /**
- * @file CartesianRender.hpp
+ * @file RenderFieldGetter.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @brief
  *
@@ -25,7 +25,7 @@
 namespace shammodels::sph::modules {
 
     template<class Tvec, class Tfield, template<class> class SPHKernel>
-    class CartesianRender {
+    class RenderFieldGetter {
         public:
         using Tscal              = shambase::VecComponent<Tvec>;
         static constexpr u32 dim = shambase::VectorProperties<Tvec>::dimension;
@@ -38,33 +38,16 @@ namespace shammodels::sph::modules {
         Config &solver_config;
         Storage &storage;
 
-        CartesianRender(ShamrockCtx &context, Config &solver_config, Storage &storage)
+        RenderFieldGetter(ShamrockCtx &context, Config &solver_config, Storage &storage)
             : context(context), solver_config(solver_config), storage(storage) {}
 
         using field_getter_t = const std::unique_ptr<sycl::buffer<Tfield>> &(
             const shamrock::patch::Patch cur_p, shamrock::patch::PatchData &pdat);
 
-        sham::DeviceBuffer<Tfield> compute_slice(
-            std::function<field_getter_t> field_getter,
-            Tvec center,
-            Tvec delta_x,
-            Tvec delta_y,
-            u32 nx,
-            u32 ny);
+        using lamda_runner
+            = std::function<sham::DeviceBuffer<Tfield>(std::function<field_getter_t>)>;
 
-        sham::DeviceBuffer<Tfield> compute_column_integ(
-            std::function<field_getter_t> field_getter,
-            Tvec center,
-            Tvec delta_x,
-            Tvec delta_y,
-            u32 nx,
-            u32 ny);
-
-        sham::DeviceBuffer<Tfield> compute_slice(
-            std::string field_name, Tvec center, Tvec delta_x, Tvec delta_y, u32 nx, u32 ny);
-
-        sham::DeviceBuffer<Tfield> compute_column_integ(
-            std::string field_name, Tvec center, Tvec delta_x, Tvec delta_y, u32 nx, u32 ny);
+        sham::DeviceBuffer<Tfield> runner_function(std::string field_name, lamda_runner lambda);
 
         private:
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }
