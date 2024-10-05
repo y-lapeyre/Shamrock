@@ -31,7 +31,7 @@ jobs:
         run: |
           wget https://raw.githubusercontent.com/fabacab/git-archive-all.sh/refs/heads/master/git-archive-all.sh
           chmod +x git-archive-all.sh
-      
+
       - name : Archive Shamrock with submodules
         run: |
           ./git-archive-all.sh
@@ -39,5 +39,5 @@ jobs:
       - name: Upload artifcat
         uses: actions/upload-artifact@v4
         with:
-          name: Shamrock_Release.tar.gz
-          path: Shamrock.tar.gz
+          name: Shamrock_Release.tar
+          path: Shamrock.tar
