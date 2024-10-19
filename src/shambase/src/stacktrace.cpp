@@ -187,7 +187,7 @@ namespace shambase::details {
     void register_profile_entry(std::source_location loc, f64 start_time, f64 end_time) {
         // Add the profile entry to the storage
         profile_data.push_back({start_time, end_time, loc.function_name()});
-        // Add a Chrome tracing entry to the storage
+        // Add a Chrome profiling entry to the storage
         add_entry_chrome(loc, end_time, false);
     };
 

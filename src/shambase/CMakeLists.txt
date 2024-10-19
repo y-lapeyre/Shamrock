@@ -7,6 +7,8 @@ set(Sources
     src/stacktrace.cpp
     src/SourceLocation.cpp
     src/print.cpp
+    src/profiling/chrome.cpp
+    src/profiling/profiling.cpp
 )
 
 if(SHAMROCK_USE_SHARED_LIB)
