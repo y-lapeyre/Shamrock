@@ -20,6 +20,7 @@
 #include "shammodels/sph/Solver.hpp"
 #include "shammodels/sph/SolverConfig.hpp"
 #include "shamunits/Constants.hpp"
+#include "shammodels/sph/math/forces.hpp"
 
 namespace shamrock::spmhd {
 
@@ -32,8 +33,12 @@ namespace shamrock::spmhd {
 
     template<class Tvec, class Tscal>
     inline Tscal duint_dt_pressure_mhd(
-        Tscal pmass, Tscal P_a, Tscal inv_omega_a_2_rho_a, Tvec v_ab, Tvec grad_W_ab) {
-        return P_a * inv_omega_a_2_rho_a * pmass * sycl::dot(v_ab, grad_W_ab);
+        Tscal pmass, Tscal P_a, Tscal qa_ab, Tscal inv_omega_a_2_rho_a, Tvec v_ab, Tvec grad_W_ab) {
+            Tscal AV_P_a = P_a + qa_ab;
+            Tscal pressure_hydro = sph::duint_dt_pressure(pmass, AV_P_a, inv_omega_a_2_rho_a, v_ab, grad_W_ab);
+            //Tscal pressure_mhd = P_a * inv_omega_a_2_rho_a * pmass * sycl::dot(v_ab, grad_W_ab);
+
+        return pressure_hydro;
     }
 
     template<class Tscal>
@@ -49,11 +54,15 @@ namespace shamrock::spmhd {
         Tscal Fab_inv_omega_a_rho_a,
         Tscal Fab_inv_omega_b_rho_b) {
 
-        Tscal term1 = -0.5 * pmass * omega_a_rho_a_inv * vsig_a * v_scal_rhat * v_scal_rhat * Fab_a;
-        Tscal term2 = pmass * alpha_u * vsig_u * u_ab * Tscal(0.5)
-                      * (Fab_inv_omega_a_rho_a + Fab_inv_omega_b_rho_b);
+        //Tscal term1 = -0.5 * pmass * omega_a_rho_a_inv * vsig_a * v_scal_rhat * v_scal_rhat * Fab_a;
+        //Tscal term2 = pmass * alpha_u * vsig_u * u_ab * Tscal(0.5)
+        //              * (Fab_inv_omega_a_rho_a + Fab_inv_omega_b_rho_b);
+                //return term1 + term2;
+       
+        Tscal term2_hydro = sph::lambda_shock_conductivity(pmass, alpha_u, vsig_u, u_ab, Fab_inv_omega_a_rho_a, Fab_inv_omega_b_rho_b);
+        return term2_hydro;
 
-        return term1 + term2;
+
     }
 
     template<class Tvec, class Tscal>
@@ -81,7 +90,7 @@ namespace shamrock::spmhd {
         Tscal v_a           = sycl::sqrt(cs_a * cs_a + v_A_a * v_A_a);
         Tscal vsig          = alpha_av * v_a + beta_av * abs_v_ab_r_ab;
         ;
-        if (vsig <= 0) {
+        if (vsig < 0) {
             logger::raw_ln("BIG BIG BIG BIG BIG BIG BIG");
             logger::raw_ln("BIG BIG BIG PROBLEM BIG BIG");
             logger::raw_ln("BIG BIG BIG BIG BIG BIG BIG");
@@ -133,7 +142,21 @@ namespace shamrock::spmhd {
             acc_b = {0, 0, 0};
         }
 
-        vMHD += -m_b * (acc_a + acc_b); // shock term
+        Tvec shock_term = -m_b * (acc_a + acc_b);
+        //vMHD += shock_term; // shock term
+        Tvec shock_term_hydro = sph::sph_pressure_symetric(m_b, rho_a_sq, rho_b_sq, q_ab_a, q_ab_b, omega_a, omega_b, nabla_Wab_ha, nabla_Wab_hb);
+
+        if (!sham::equals(shock_term, shock_term_hydro)) {
+            logger::raw_ln("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
+            logger::raw_ln("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
+            logger::raw_ln("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
+            logger::raw_ln("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
+            logger::raw_ln("SHOCK TERM NOT EQUAL TO HYDRO");
+            logger::raw_ln(shock_term-shock_term_hydro);
+            logger::raw_ln("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
+            logger::raw_ln("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
+            logger::raw_ln("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
+        }
 
         for (int i = 0; i < 3; ++i) {
             for (int j = 0; j < 3; ++j) {
@@ -159,7 +182,7 @@ namespace shamrock::spmhd {
         Tscal acc_fdivB_a = sycl::dot(B_a, nabla_Wab_ha) / sub_fact_a;
         Tscal acc_fdivB_b = sycl::dot(B_b, nabla_Wab_hb) / sub_fact_b;
 
-        Tvec fdivB_a = -B_a * m_b * (acc_fdivB_a + acc_fdivB_b);
+        Tvec fdivB_a = -B_a * m_b * (acc_fdivB_a + acc_fdivB_b); // oula problemo prefactorio @@@@
 
         vMHD += fdivB_a;
 
@@ -196,8 +219,11 @@ namespace shamrock::spmhd {
             acc_b = 0;
         }
 
-        return -0.25 * m_b * vsigb * (acc_a + acc_b);
+        Tscal artres = -0.25 * m_b * vsigb * (acc_a + acc_b) * B_ab_sq;
+
+        return artres;
     }
+        
 
     template<class Tvec, class Tscal, MHDType MHD_mode = Ideal>
     inline Tscal dB_on_rho_induction_term(
@@ -390,33 +416,34 @@ namespace shamrock::spmhd {
         // compared to Phantom_2018 eq.35 we move lambda shock artificial viscosity
         // pressure part as just a modified SPH pressure (which is the case already in
         // phantom paper but not written that way)
+        Tscal qa_ab = q_av(sycl::sqrt(rho_a_sq), vsig_a, v_ab_r_ab);
         du_dt += duint_dt_pressure_mhd(
-            pmass, P_a, omega_a_rho_a_inv * rho_a_inv, v_ab, r_ab_unit * dWab_a);
+            pmass, P_a, qa_ab, omega_a_rho_a_inv * rho_a_inv, v_ab, r_ab_unit * dWab_a);
 
-        du_dt += lambda_shock_conductivity_no_artres(
-            pmass,
-            alpha_u,
-            vsig_a,
-            vsig_u,
-            u_a - u_b,
-            abs_v_ab_r_ab,
-            omega_a_rho_a_inv,
-            Fab_a,
-            dWab_b / (rho_a * omega_a),
-            dWab_b / (rho_b * omega_b));
+        //du_dt += lambda_shock_conductivity_no_artres(
+        //    pmass,
+        //    alpha_u,
+        //    vsig_a,
+        //    vsig_u,
+        //    u_a - u_b,
+        //    abs_v_ab_r_ab,
+        //    omega_a_rho_a_inv,
+        //    Fab_a,
+        //    dWab_b / (rho_a * omega_a),
+        //    dWab_b / (rho_b * omega_b));
 
-        du_dt += lambda_artes(
-            pmass,
-            rho_a_sq,
-            rho_b * rho_b,
-            v_ab,
-            r_ab_unit,
-            B_a,
-            B_b,
-            omega_a,
-            omega_b,
-            Fab_a,
-            Fab_b);
+        //du_dt += lambda_artes(
+        //    pmass,
+        //    rho_a_sq,
+        //    rho_b * rho_b,
+        //    v_ab,
+        //    r_ab_unit,
+        //    B_a,
+        //    B_b,
+        //    omega_a,
+        //    omega_b,
+        //    Fab_a,
+        //    Fab_b);
 
         Tscal sub_fact_a = rho_a_sq * omega_a;
         Tscal sub_fact_b = rho_b * rho_b * omega_b;
@@ -432,21 +459,21 @@ namespace shamrock::spmhd {
         }
 
         Tvec dB_on_rho_dissipation_term
-            = -0.5 * pmass * (rho_diss_term_a + rho_diss_term_b) * (B_a - B_b) * vsig_B;
+            = -0.5 * rho_a * pmass * (rho_diss_term_a + rho_diss_term_b) * (B_a - B_b) * vsig_B;
 
         dB_on_rho_dt
             += v_ab * dB_on_rho_induction_term(pmass, rho_a_sq, B_a, omega_a, r_ab_unit * dWab_b);
 
-        dB_on_rho_dt += dB_on_rho_psi_term(
-            pmass,
-            rho_a_sq,
-            rho_b * rho_b,
-            psi_a,
-            psi_b,
-            omega_a,
-            omega_b,
-            r_ab_unit * dWab_a,
-            r_ab_unit * dWab_b);
+        //dB_on_rho_dt += dB_on_rho_psi_term(
+        //    pmass,
+        //    rho_a_sq,
+        //    rho_b * rho_b,
+        //    psi_a,
+        //    psi_b,
+        //    omega_a,
+        //    omega_b,
+        //    r_ab_unit * dWab_a,
+        //    r_ab_unit * dWab_b);
 
         dB_on_rho_dt += dB_on_rho_dissipation_term;
 
