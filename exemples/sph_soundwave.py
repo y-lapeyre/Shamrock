@@ -2,6 +2,10 @@ import shamrock
 import matplotlib.pyplot as plt
 import numpy as np
 
+
+
+outputdir = "/Users/ylapeyre/Documents/Shamwork/soundwave_noMHD/"
+
 gamma = 5./3.
 rho_g = 1
 target_tot_u = 1
@@ -25,6 +29,8 @@ cfg = model.gen_default_config()
 #cfg.set_artif_viscosity_Constant(alpha_u = 1, alpha_AV = 1, beta_AV = 2)
 #cfg.set_artif_viscosity_VaryingMM97(alpha_min = 0.1,alpha_max = 1,sigma_decay = 0.1, alpha_u = 1, beta_AV = 2)
 cfg.set_artif_viscosity_VaryingCD10(alpha_min = 0.0,alpha_max = 1,sigma_decay = 0.1, alpha_u = 1, beta_AV = 2)
+#cfg.set_artif_viscosity_None()
+#cfg.set_IdealMHD(sigma_mhd=1, sigma_u=1)
 cfg.set_boundary_periodic()
 cfg.set_eos_adiabatic(gamma)
 cfg.print_status()
@@ -49,8 +55,16 @@ pmass = model.total_mass_to_part_mass(totmass)
 
 
 
+def vel_func(r):
+    return (0,0,0)
+
+
+def B_func(r):
+    return (0,0,0)
 
 model.set_value_in_a_box("uint","f64", 0.9 , bmin,bmax)
+#model.set_field_value_lambda_f64_3("vxyz", vel_func)
+#model.set_field_value_lambda_f64_3("B/rho", B_func)
 
 kx,ky,kz = 2*np.pi/(xM - xm),0,0
 delta_v = 1e-5
@@ -97,11 +111,14 @@ next_dt_target = t_sum + dt_dump
 
 while next_dt_target <= t_target:
 
-    fname = "dump_{:04}.phfile".format(i_dump)
+    fname = outputdir + "phantomdump/" + "dump_{:04}.phfile".format(i_dump)
 
     model.evolve_until(next_dt_target)
     dump = model.make_phantom_dump()
     dump.save_dump(fname)
+
+    fnamesh= outputdir + "shamrockdump/" + "dump_" + f"{i_dump:04}" + ".sham"
+    model.dump(fnamesh)
 
     i_dump += 1
 

@@ -1,6 +1,8 @@
 import shamrock
 import matplotlib.pyplot as plt
 
+outputdir = "/Users/ylapeyre/Documents/Shamwork/sod/"
+
 gamma = 1.4
 
 rho_g = 1
@@ -24,7 +26,10 @@ model = shamrock.get_SPHModel(context = ctx, vector_type = "f64_3",sph_kernel = 
 cfg = model.gen_default_config()
 #cfg.set_artif_viscosity_Constant(alpha_u = 1, alpha_AV = 1, beta_AV = 2)
 #cfg.set_artif_viscosity_VaryingMM97(alpha_min = 0.1,alpha_max = 1,sigma_decay = 0.1, alpha_u = 1, beta_AV = 2)
-cfg.set_artif_viscosity_VaryingCD10(alpha_min = 0.0,alpha_max = 1,sigma_decay = 0.1, alpha_u = 1, beta_AV = 2)
+#cfg.set_artif_viscosity_VaryingCD10(alpha_min = 0.0,alpha_max = 1,sigma_decay = 0.1, alpha_u = 1, beta_AV = 2)
+cfg.set_artif_viscosity_None()
+cfg.set_IdealMHD(sigma_mhd=1, sigma_u=1)
+
 cfg.set_boundary_periodic()
 cfg.set_eos_adiabatic(gamma)
 cfg.print_status()
@@ -54,6 +59,11 @@ setup.apply_setup(comb)
 model.set_value_in_a_box("uint", "f64", u_g ,(-xs,-ys/2,-zs/2),(0,ys/2,zs/2))
 model.set_value_in_a_box("uint", "f64", u_d ,(0,-ys/2,-zs/2),(xs,ys/2,zs/2))
 
+def B_func(r):
+    return (0., 0., 0.)
+
+model.set_field_value_lambda_f64_3("B/rho", B_func)
+
 
 
 vol_b = xs*ys*zs
@@ -72,7 +82,7 @@ print("Current part mass :", pmass)
 model.set_cfl_cour(0.1)
 model.set_cfl_force(0.1)
 
-t_target = 0.245
+t_target = 1.
 
 model.evolve_until(t_target)
 
@@ -80,6 +90,68 @@ model.evolve_until(t_target)
 
 sod = shamrock.phys.SodTube(gamma = gamma, rho_1 = 1,P_1 = 1,rho_5 = 0.125,P_5 = 0.1)
 sodanalysis = model.make_analysis_sodtube(sod, (1,0,0), t_target, 0.0, -0.5,0.5)
+
+
+
+
+
+
+
+
+import numpy as np
+dic = ctx.collect_data()
+
+x =np.array(dic['xyz'][:,0]) + 0.5
+vx = dic['vxyz'][:,0]
+uint = dic['uint'][:]
+
+hpart = dic["hpart"]
+#alpha = dic["alpha_AV"]
+
+rho = pmass*(model.get_hfact()/hpart)**3
+P = (gamma-1) * rho *uint
+
+
+plt.plot(x,rho,'.',label="rho")
+plt.plot(x,vx,'.',label="v")
+plt.plot(x,P,'.',label="P")
+#plt.plot(x,alpha,'.',label="alpha")
+#plt.plot(x,hpart,'.',label="hpart")
+#plt.plot(x,uint,'.',label="uint")
+
+
+#### add analytical soluce
+x = np.linspace(-0.5,0.5,1000)
+
+rho = []
+P = []
+vx = []
+
+for i in range(len(x)):
+    x_ = x[i]
+
+    _rho,_vx,_P = sod.get_value(t_target, x_)
+    rho.append(_rho)
+    vx.append(_vx)
+    P.append(_P)
+
+x += 0.5
+plt.plot(x,rho,color = "black",label="analytic")
+plt.plot(x,vx,color = "black")
+plt.plot(x,P,color = "black")
+#######
+
+
+
+plt.legend()
+plt.grid()
+plt.title("t="+str(t_target))
+plt.show()
+
+
+
+
+
 
 #################
 ### Test CD
