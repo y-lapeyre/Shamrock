@@ -26,7 +26,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs() {
     Cfg_MHD cfg_mhd = solver_config.mhd_config;
 
     if (None *v = std::get_if<None>(&cfg_av.config)) {
-        shambase::throw_unimplemented();
+        //shambase::throw_unimplemented();
     } else if (Constant *v = std::get_if<Constant>(&cfg_av.config)) {
         update_derivs_constantAV(*v);
     } else if (VaryingMM97 *v = std::get_if<VaryingMM97>(&cfg_av.config)) {
@@ -40,7 +40,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs() {
     }
 
     if (NoneMHD *v = std::get_if<NoneMHD>(&cfg_mhd.config)) {
-        shambase::throw_unimplemented();
+        //shambase::throw_unimplemented();
     } else if (IdealMHD *v = std::get_if<IdealMHD>(&cfg_mhd.config)) {
         update_derivs_MHD(*v);
     } else if (NonIdealMHD *v = std::get_if<NonIdealMHD>(&cfg_mhd.config)) {
@@ -828,7 +828,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD(
 
             constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
 
-            shambase::parralel_for(cgh, pdat.get_obj_cnt(), "compute force disc", [=](u64 gid) {
+            shambase::parralel_for(cgh, pdat.get_obj_cnt(), "compute MHD", [=](u64 gid) {
                 u32 id_a = (u32) gid;
 
                 using namespace shamrock::sph;
