@@ -22,6 +22,7 @@
 #include "shamalgs/collective/reduction.hpp"
 #include "shamalgs/reduction.hpp"
 #include "shamcomm/collectives.hpp"
+#include "shamcomm/logs.hpp"
 #include "shamcomm/worldInfo.hpp"
 #include "shammath/sphkernels.hpp"
 #include "shammodels/sph/BasicSPHGhosts.hpp"
@@ -197,8 +198,8 @@ void shammodels::sph::Solver<Tvec, Kern>::vtk_do_dump(
     const u32 iuint             = pdl.get_field_idx<Tscal>("uint");
     const u32 iduint            = pdl.get_field_idx<Tscal>("duint");
     const u32 ihpart            = pdl.get_field_idx<Tscal>("hpart");
-    const u32 iB_on_rho         = pdl.get_field_idx<Tvec>("B/rho");
-    const u32 ipsi_on_ch        = pdl.get_field_idx<Tscal>("psi/ch");
+    //const u32 iB_on_rho         = pdl.get_field_idx<Tvec>("B/rho");
+    //const u32 ipsi_on_ch        = pdl.get_field_idx<Tscal>("psi/ch");
     ComputeField<Tscal> density = utility.make_compute_field<Tscal>("rho", 1);
 
     scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchData &pdat) {
@@ -765,8 +766,8 @@ void shammodels::sph::Solver<Tvec, Kern>::do_predictor_leapfrog(Tscal dt) {
     const u32 iaxyz       = pdl.get_field_idx<Tvec>("axyz");
     const u32 iuint       = pdl.get_field_idx<Tscal>("uint");
     const u32 iduint      = pdl.get_field_idx<Tscal>("duint");
-    const u32 iB_on_rho   = pdl.get_field_idx<Tvec>("B/rho");
-    const u32 idB_on_rho  = pdl.get_field_idx<Tvec>("dB/rho");
+    //const u32 iB_on_rho   = pdl.get_field_idx<Tvec>("B/rho");
+    //const u32 idB_on_rho  = pdl.get_field_idx<Tvec>("dB/rho");
     const u32 ipsi_on_ch  = pdl.get_field_idx<Tscal>("psi/ch");
     const u32 idpsi_on_ch = pdl.get_field_idx<Tscal>("dpsi/ch");
 
@@ -777,9 +778,9 @@ void shammodels::sph::Solver<Tvec, Kern>::do_predictor_leapfrog(Tscal dt) {
     utility.fields_forward_euler<Tvec>(ivxyz, iaxyz, dt / 2);
     //utility.fields_forward_euler<Tscal>(iuint, iduint, dt / 2);
 
-    utility.fields_forward_euler<Tvec>(
-        iB_on_rho, idB_on_rho, dt / 2); // pb: faut que v  soit le mm  qu avanttttt !!
-    utility.fields_forward_euler<Tscal>(ipsi_on_ch, idpsi_on_ch, dt / 2);
+    //utility.fields_forward_euler<Tvec>(
+    //    iB_on_rho, idB_on_rho, dt / 2); // pb: faut que v  soit le mm  qu avanttttt !!
+    //utility.fields_forward_euler<Tscal>(ipsi_on_ch, idpsi_on_ch, dt / 2);
 
     // forward euler step positions dt
     logger::debug_ln("sph::BasicGas", "forward euler step positions dt");
@@ -790,8 +791,8 @@ void shammodels::sph::Solver<Tvec, Kern>::do_predictor_leapfrog(Tscal dt) {
     utility.fields_forward_euler<Tvec>(ivxyz, iaxyz, dt / 2);
     //utility.fields_forward_euler<Tscal>(iuint, iduint, dt / 2);
 
-    utility.fields_forward_euler<Tvec>(iB_on_rho, idB_on_rho, dt / 2);
-    utility.fields_forward_euler<Tscal>(ipsi_on_ch, idpsi_on_ch, dt / 2);
+    //utility.fields_forward_euler<Tvec>(iB_on_rho, idB_on_rho, dt / 2);
+    //utility.fields_forward_euler<Tscal>(ipsi_on_ch, idpsi_on_ch, dt / 2);
 }
 
 template<class Tvec, template<class> class Kern>
@@ -1299,13 +1300,13 @@ void shammodels::sph::Solver<Tvec, Kern>::prepare_corrector() {
     PatchDataLayout &pdl  = scheduler().pdl;
     const u32 iduint      = pdl.get_field_idx<Tscal>("duint");
     const u32 iaxyz       = pdl.get_field_idx<Tvec>("axyz");
-    const u32 idB_on_rho  = pdl.get_field_idx<Tvec>("dB/rho");
-    const u32 idpsi_on_ch = pdl.get_field_idx<Tscal>("dpsi/ch");
+    //const u32 idB_on_rho  = pdl.get_field_idx<Tvec>("dB/rho");
+    //const u32 idpsi_on_ch = pdl.get_field_idx<Tscal>("dpsi/ch");
     logger::debug_ln("sph::BasicGas", "save old fields");
     storage.old_axyz.set(utility.save_field<Tvec>(iaxyz, "axyz_old"));
     storage.old_duint.set(utility.save_field<Tscal>(iduint, "duint_old"));
-    storage.old_dB_on_rho.set(utility.save_field<Tvec>(idB_on_rho, "dB/rho_old"));
-    storage.old_dpsi_on_ch.set(utility.save_field<Tscal>(idpsi_on_ch, "dpsi/ch_old"));
+    //storage.old_dB_on_rho.set(utility.save_field<Tvec>(idB_on_rho, "dB/rho_old"));
+    //storage.old_dpsi_on_ch.set(utility.save_field<Tscal>(idpsi_on_ch, "dpsi/ch_old"));
 }
 
 template<class Tvec, template<class> class Kern>
@@ -1338,7 +1339,9 @@ void shammodels::sph::Solver<Tvec, Kern>::evolve_once() {
 
     shambase::Timer tstep;
     tstep.start();
-
+    logger::raw_ln("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ 1 $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$");
+    logger::raw_ln("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ 1 $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$");
+    logger::raw_ln("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ 1 $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$");
     // if(shamcomm::world_rank() == 0) std::cout << scheduler().dump_status() << std::endl;
     modules::ComputeLoadBalanceValue<Tvec, Kern>(context, solver_config, storage)
         .update_load_balancing();
@@ -1361,14 +1364,17 @@ void shammodels::sph::Solver<Tvec, Kern>::evolve_once() {
     const u32 iduint = pdl.get_field_idx<Tscal>("duint");
     const u32 ihpart = pdl.get_field_idx<Tscal>("hpart");
 
+    logger::raw_ln("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ 2 $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$");
+    logger::raw_ln("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ 2 $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$");
+    logger::raw_ln("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ 2 $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$");
     // if (solver_config.has_field_B_on_rho()) {
-    const u32 iB_on_rho  = pdl.get_field_idx<Tvec>("B/rho");
-    const u32 idB_on_rho = pdl.get_field_idx<Tvec>("dB/rho");
+    //const u32 iB_on_rho  = pdl.get_field_idx<Tvec>("B/rho");
+    //const u32 idB_on_rho = pdl.get_field_idx<Tvec>("dB/rho");
     //}
 
     // if (solver_config.has_field_psi_on_ch()) {
-    const u32 ipsi_on_ch  = pdl.get_field_idx<Tscal>("psi/ch");
-    const u32 idpsi_on_ch = pdl.get_field_idx<Tscal>("dpsi/ch");
+    //const u32 ipsi_on_ch  = pdl.get_field_idx<Tscal>("psi/ch");
+    //const u32 idpsi_on_ch = pdl.get_field_idx<Tscal>("dpsi/ch");
     //}
 
     shamrock::SchedulerUtility utility(scheduler());
@@ -1379,9 +1385,16 @@ void shammodels::sph::Solver<Tvec, Kern>::evolve_once() {
     sink_update.accrete_particles();
     ext_forces.point_mass_accrete_particles();
 
+    logger::raw_ln("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ 3 $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$");
+    logger::raw_ln("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ 3 $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$");
+    logger::raw_ln("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ 3 $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$");
     do_predictor_leapfrog(dt);
 
     sink_update.predictor_step(dt);
+
+    logger::raw_ln("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ 4 $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$");
+    logger::raw_ln("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ 4 $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$");
+    logger::raw_ln("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ 4 $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$");
 
     sink_update.compute_ext_forces();
 
@@ -1390,6 +1403,9 @@ void shammodels::sph::Solver<Tvec, Kern>::evolve_once() {
     gen_serial_patch_tree();
 
     apply_position_boundary(t_current + dt);
+    logger::raw_ln("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ 5 $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$");
+    logger::raw_ln("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ 5 $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$");
+    logger::raw_ln("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ 5 $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$");
 
     u64 Npart_all = scheduler().get_total_obj_count();
 
@@ -1399,6 +1415,10 @@ void shammodels::sph::Solver<Tvec, Kern>::evolve_once() {
     }
 
     sph_prestep(t_current, dt);
+
+    logger::raw_ln("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ 6 $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$");
+    logger::raw_ln("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ 6 $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$");
+    logger::raw_ln("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ 6 $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$");
 
     using RTree = RadixTree<u_morton, Tvec>;
 
@@ -1414,8 +1434,12 @@ void shammodels::sph::Solver<Tvec, Kern>::evolve_once() {
     u32 iuint_interf                               = ghost_layout.get_field_idx<Tscal>("uint");
     u32 ivxyz_interf                               = ghost_layout.get_field_idx<Tvec>("vxyz");
     u32 iomega_interf                              = ghost_layout.get_field_idx<Tscal>("omega");
-    u32 iB_interf   = ghost_layout.get_field_idx<Tvec>("B/rho"); // if defined
-    u32 ipsi_interf = ghost_layout.get_field_idx<Tscal>("psi/ch");
+    //u32 iB_interf   = ghost_layout.get_field_idx<Tvec>("B/rho"); // if defined
+    //u32 ipsi_interf = ghost_layout.get_field_idx<Tscal>("psi/ch");
+
+    logger::raw_ln("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ 7 $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$");
+    logger::raw_ln("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ 7 $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$");
+    logger::raw_ln("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ 7 $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$");
 
     using RTreeField = RadixTreeField<Tscal>;
     shambase::DistributedData<RTreeField> rtree_field_h;
@@ -1535,40 +1559,40 @@ void shammodels::sph::Solver<Tvec, Kern>::evolve_once() {
             static int count = 0;
             count++;
 
-            if (solver_config.do_debug_dump || true) {
-
-                shambase::DistributedData<MergedPatchData> &mpdat
-                    = storage.merged_patchdata_ghost.get();
-
-                scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
-                    MergedPatchData &merged_patch = mpdat.get(cur_p.id_patch);
-                    PatchData &mpdat              = merged_patch.pdat;
-
-                    sycl::buffer<Tvec> &buf_xyz = shambase::get_check_ref(
-                        merged_xyzh.get(cur_p.id_patch).field_pos.get_buf());
-                    sycl::buffer<Tvec> &buf_vxyz   = mpdat.get_field_buf_ref<Tvec>(ivxyz_interf);
-                    sycl::buffer<Tscal> &buf_hpart = mpdat.get_field_buf_ref<Tscal>(ihpart_interf);
-                    // do the same with psi/ch
-                    sycl::buffer<Tscal> &buf_psi_on_ch = mpdat.get_field_buf_ref<Tscal>(ipsi_interf);
-                    //do the same with B/rho
-                    sycl::buffer<Tvec> &buf_B_on_rho= mpdat.get_field_buf_ref<Tvec>(iB_interf);
-                    // write debug dump
-                    Debug_ph_dump<Tvec> info{
-                        merged_patch.total_elements,
-                        solver_config.gpart_mass,
-
-                        buf_xyz,
-                        buf_hpart,
-                        buf_vxyz,
-                        buf_psi_on_ch,
-                        buf_B_on_rho};
-
-                    solver_config.debug_dump_filename = "debug_ph_dump" + std::to_string(count) + ".phdump";
-                    make_interface_debug_phantom_dump(info).gen_file().write_to_file(
-                        solver_config.debug_dump_filename);
-                    logger::raw_ln("writing debug dump : ", solver_config.debug_dump_filename);
-                });
-            }
+//            if (false) { //solver_config.do_debug_dump || 
+//
+//                shambase::DistributedData<MergedPatchData> &mpdat
+//                    = storage.merged_patchdata_ghost.get();
+//
+//                scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+//                    MergedPatchData &merged_patch = mpdat.get(cur_p.id_patch);
+//                    PatchData &mpdat              = merged_patch.pdat;
+//
+//                    sycl::buffer<Tvec> &buf_xyz = shambase::get_check_ref(
+//                        merged_xyzh.get(cur_p.id_patch).field_pos.get_buf());
+//                    sycl::buffer<Tvec> &buf_vxyz   = mpdat.get_field_buf_ref<Tvec>(ivxyz_interf);
+//                    sycl::buffer<Tscal> &buf_hpart = mpdat.get_field_buf_ref<Tscal>(ihpart_interf);
+//                    // do the same with psi/ch
+//                    sycl::buffer<Tscal> &buf_psi_on_ch = mpdat.get_field_buf_ref<Tscal>(ipsi_interf);
+//                    //do the same with B/rho
+//                    sycl::buffer<Tvec> &buf_B_on_rho= mpdat.get_field_buf_ref<Tvec>(iB_interf);
+//                    // write debug dump
+//                    Debug_ph_dump<Tvec> info{
+//                        merged_patch.total_elements,
+//                        solver_config.gpart_mass,
+//
+//                        buf_xyz,
+//                        buf_hpart,
+//                        buf_vxyz,
+//                        buf_psi_on_ch,
+//                        buf_B_on_rho};
+//
+//                    solver_config.debug_dump_filename = "debug_ph_dump" + std::to_string(count) + ".phdump";
+//                    make_interface_debug_phantom_dump(info).gen_file().write_to_file(
+//                        solver_config.debug_dump_filename);
+//                    logger::raw_ln("writing debug dump : ", solver_config.debug_dump_filename);
+//                });
+//            }
         }
 
         // compute force
@@ -1587,10 +1611,10 @@ void shammodels::sph::Solver<Tvec, Kern>::evolve_once() {
         ComputeField<Tscal> uepsilon_u_sq
             = utility.make_compute_field<Tscal>("umean epsilon_u^2", 1);
 
-        ComputeField<Tscal> BOR_epsilon_BOR_sq
-            = utility.make_compute_field<Tscal>("B/rho epsilon_B/rho^2", 1);
-        ComputeField<Tscal> POC_epsilon_POC_sq
-            = utility.make_compute_field<Tscal>("psi/ch epsilon_psi/ch^2", 1);
+        //ComputeField<Tscal> BOR_epsilon_BOR_sq
+        //    = utility.make_compute_field<Tscal>("B/rho epsilon_B/rho^2", 1);
+        //ComputeField<Tscal> POC_epsilon_POC_sq
+        //    = utility.make_compute_field<Tscal>("psi/ch epsilon_psi/ch^2", 1);
 
         // corrector
         logger::debug_ln("sph::BasicGas", "leapfrog corrector");
@@ -1598,10 +1622,10 @@ void shammodels::sph::Solver<Tvec, Kern>::evolve_once() {
             ivxyz, iaxyz, storage.old_axyz.get(), vepsilon_v_sq, dt / 2);
         //utility.fields_leapfrog_corrector<Tscal>(
         //    iuint, iduint, storage.old_duint.get(), uepsilon_u_sq, dt / 2);
-        utility.fields_leapfrog_corrector<Tvec>(
-            iB_on_rho, idB_on_rho, storage.old_dB_on_rho.get(), BOR_epsilon_BOR_sq, dt / 2);
-        utility.fields_leapfrog_corrector<Tscal>(
-            ipsi_on_ch, idpsi_on_ch, storage.old_dpsi_on_ch.get(), POC_epsilon_POC_sq, dt / 2);
+        //utility.fields_leapfrog_corrector<Tvec>(
+        //    iB_on_rho, idB_on_rho, storage.old_dB_on_rho.get(), BOR_epsilon_BOR_sq, dt / 2);
+        //utility.fields_leapfrog_corrector<Tscal>(
+        //    ipsi_on_ch, idpsi_on_ch, storage.old_dpsi_on_ch.get(), POC_epsilon_POC_sq, dt / 2);
 
         storage.old_axyz.reset();
         storage.old_duint.reset();
@@ -1888,40 +1912,40 @@ void shammodels::sph::Solver<Tvec, Kern>::evolve_once() {
             static int count = 0;
             count++;
 
-            if (solver_config.do_debug_dump || true) {
-
-                shambase::DistributedData<MergedPatchData> &mpdat
-                    = storage.merged_patchdata_ghost.get();
-
-                scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
-                    MergedPatchData &merged_patch = mpdat.get(cur_p.id_patch);
-                    PatchData &mpdat              = merged_patch.pdat;
-
-                    sycl::buffer<Tvec> &buf_xyz = shambase::get_check_ref(
-                        merged_xyzh.get(cur_p.id_patch).field_pos.get_buf());
-                    sycl::buffer<Tvec> &buf_vxyz   = mpdat.get_field_buf_ref<Tvec>(ivxyz_interf);
-                    sycl::buffer<Tscal> &buf_hpart = mpdat.get_field_buf_ref<Tscal>(ihpart_interf);
-                    // do the same with psi/ch
-                    sycl::buffer<Tscal> &buf_psi_on_ch = mpdat.get_field_buf_ref<Tscal>(ipsi_interf);
-                    //do the same with B/rho
-                    sycl::buffer<Tvec> &buf_B_on_rho= mpdat.get_field_buf_ref<Tvec>(iB_interf);
-                    // write debug dump
-                    Debug_ph_dump<Tvec> info{
-                        merged_patch.total_elements,
-                        solver_config.gpart_mass,
-
-                        buf_xyz,
-                        buf_hpart,
-                        buf_vxyz,
-                        buf_psi_on_ch,
-                        buf_B_on_rho};
-
-                    solver_config.debug_dump_filename = "debug_ph_dump" + std::to_string(count) + ".phdump";
-                    make_interface_debug_phantom_dump(info).gen_file().write_to_file(
-                        solver_config.debug_dump_filename);
-                    logger::raw_ln("writing debug dump : ", solver_config.debug_dump_filename);
-                });
-            }
+//            if (false) { //solver_config.do_debug_dump || true
+//
+//                shambase::DistributedData<MergedPatchData> &mpdat
+//                    = storage.merged_patchdata_ghost.get();
+//
+//                scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+//                    MergedPatchData &merged_patch = mpdat.get(cur_p.id_patch);
+//                    PatchData &mpdat              = merged_patch.pdat;
+//
+//                    sycl::buffer<Tvec> &buf_xyz = shambase::get_check_ref(
+//                        merged_xyzh.get(cur_p.id_patch).field_pos.get_buf());
+//                    sycl::buffer<Tvec> &buf_vxyz   = mpdat.get_field_buf_ref<Tvec>(ivxyz_interf);
+//                    sycl::buffer<Tscal> &buf_hpart = mpdat.get_field_buf_ref<Tscal>(ihpart_interf);
+//                    // do the same with psi/ch
+//                    sycl::buffer<Tscal> &buf_psi_on_ch = mpdat.get_field_buf_ref<Tscal>(ipsi_interf);
+//                    //do the same with B/rho
+//                    sycl::buffer<Tvec> &buf_B_on_rho= mpdat.get_field_buf_ref<Tvec>(iB_interf);
+//                    // write debug dump
+//                    Debug_ph_dump<Tvec> info{
+//                        merged_patch.total_elements,
+//                        solver_config.gpart_mass,
+//
+//                        buf_xyz,
+//                        buf_hpart,
+//                        buf_vxyz,
+//                        buf_psi_on_ch,
+//                        buf_B_on_rho};
+//
+//                    solver_config.debug_dump_filename = "debug_ph_dump" + std::to_string(count) + ".phdump";
+//                    make_interface_debug_phantom_dump(info).gen_file().write_to_file(
+//                        solver_config.debug_dump_filename);
+//                    logger::raw_ln("writing debug dump : ", solver_config.debug_dump_filename);
+//                });
+//            }
         }
     reset_merge_ghosts_fields();
     reset_eos_fields();
