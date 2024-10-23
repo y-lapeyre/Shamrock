@@ -198,8 +198,8 @@ void shammodels::sph::Solver<Tvec, Kern>::vtk_do_dump(
     const u32 iuint             = pdl.get_field_idx<Tscal>("uint");
     const u32 iduint            = pdl.get_field_idx<Tscal>("duint");
     const u32 ihpart            = pdl.get_field_idx<Tscal>("hpart");
-    //const u32 iB_on_rho         = pdl.get_field_idx<Tvec>("B/rho");
-    //const u32 ipsi_on_ch        = pdl.get_field_idx<Tscal>("psi/ch");
+    const u32 iB_on_rho         = pdl.get_field_idx<Tvec>("B/rho");
+    const u32 ipsi_on_ch        = pdl.get_field_idx<Tscal>("psi/ch");
     ComputeField<Tscal> density = utility.make_compute_field<Tscal>("rho", 1);
 
     scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchData &pdat) {
@@ -766,8 +766,8 @@ void shammodels::sph::Solver<Tvec, Kern>::do_predictor_leapfrog(Tscal dt) {
     const u32 iaxyz       = pdl.get_field_idx<Tvec>("axyz");
     const u32 iuint       = pdl.get_field_idx<Tscal>("uint");
     const u32 iduint      = pdl.get_field_idx<Tscal>("duint");
-    //const u32 iB_on_rho   = pdl.get_field_idx<Tvec>("B/rho");
-    //const u32 idB_on_rho  = pdl.get_field_idx<Tvec>("dB/rho");
+    const u32 iB_on_rho   = pdl.get_field_idx<Tvec>("B/rho");
+    const u32 idB_on_rho  = pdl.get_field_idx<Tvec>("dB/rho");
     const u32 ipsi_on_ch  = pdl.get_field_idx<Tscal>("psi/ch");
     const u32 idpsi_on_ch = pdl.get_field_idx<Tscal>("dpsi/ch");
 
@@ -779,8 +779,8 @@ void shammodels::sph::Solver<Tvec, Kern>::do_predictor_leapfrog(Tscal dt) {
     //utility.fields_forward_euler<Tscal>(iuint, iduint, dt / 2);
 
     //utility.fields_forward_euler<Tvec>(
-    //    iB_on_rho, idB_on_rho, dt / 2); // pb: faut que v  soit le mm  qu avanttttt !!
-    //utility.fields_forward_euler<Tscal>(ipsi_on_ch, idpsi_on_ch, dt / 2);
+    utility.fields_forward_euler<Tvec>(iB_on_rho, idB_on_rho, dt / 2); // pb: faut que v  soit le mm  qu avanttttt !!
+    utility.fields_forward_euler<Tscal>(ipsi_on_ch, idpsi_on_ch, dt / 2);
 
     // forward euler step positions dt
     logger::debug_ln("sph::BasicGas", "forward euler step positions dt");
@@ -791,8 +791,8 @@ void shammodels::sph::Solver<Tvec, Kern>::do_predictor_leapfrog(Tscal dt) {
     utility.fields_forward_euler<Tvec>(ivxyz, iaxyz, dt / 2);
     //utility.fields_forward_euler<Tscal>(iuint, iduint, dt / 2);
 
-    //utility.fields_forward_euler<Tvec>(iB_on_rho, idB_on_rho, dt / 2);
-    //utility.fields_forward_euler<Tscal>(ipsi_on_ch, idpsi_on_ch, dt / 2);
+    utility.fields_forward_euler<Tvec>(iB_on_rho, idB_on_rho, dt / 2);
+    utility.fields_forward_euler<Tscal>(ipsi_on_ch, idpsi_on_ch, dt / 2);
 }
 
 template<class Tvec, template<class> class Kern>
@@ -1300,13 +1300,13 @@ void shammodels::sph::Solver<Tvec, Kern>::prepare_corrector() {
     PatchDataLayout &pdl  = scheduler().pdl;
     const u32 iduint      = pdl.get_field_idx<Tscal>("duint");
     const u32 iaxyz       = pdl.get_field_idx<Tvec>("axyz");
-    //const u32 idB_on_rho  = pdl.get_field_idx<Tvec>("dB/rho");
-    //const u32 idpsi_on_ch = pdl.get_field_idx<Tscal>("dpsi/ch");
+    const u32 idB_on_rho  = pdl.get_field_idx<Tvec>("dB/rho");
+    const u32 idpsi_on_ch = pdl.get_field_idx<Tscal>("dpsi/ch");
     logger::debug_ln("sph::BasicGas", "save old fields");
     storage.old_axyz.set(utility.save_field<Tvec>(iaxyz, "axyz_old"));
     storage.old_duint.set(utility.save_field<Tscal>(iduint, "duint_old"));
-    //storage.old_dB_on_rho.set(utility.save_field<Tvec>(idB_on_rho, "dB/rho_old"));
-    //storage.old_dpsi_on_ch.set(utility.save_field<Tscal>(idpsi_on_ch, "dpsi/ch_old"));
+    storage.old_dB_on_rho.set(utility.save_field<Tvec>(idB_on_rho, "dB/rho_old"));
+    storage.old_dpsi_on_ch.set(utility.save_field<Tscal>(idpsi_on_ch, "dpsi/ch_old"));
 }
 
 template<class Tvec, template<class> class Kern>
@@ -1368,13 +1368,13 @@ void shammodels::sph::Solver<Tvec, Kern>::evolve_once() {
     logger::raw_ln("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ 2 $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$");
     logger::raw_ln("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ 2 $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$");
     // if (solver_config.has_field_B_on_rho()) {
-    //const u32 iB_on_rho  = pdl.get_field_idx<Tvec>("B/rho");
-    //const u32 idB_on_rho = pdl.get_field_idx<Tvec>("dB/rho");
+    const u32 iB_on_rho  = pdl.get_field_idx<Tvec>("B/rho");
+    const u32 idB_on_rho = pdl.get_field_idx<Tvec>("dB/rho");
     //}
 
     // if (solver_config.has_field_psi_on_ch()) {
-    //const u32 ipsi_on_ch  = pdl.get_field_idx<Tscal>("psi/ch");
-    //const u32 idpsi_on_ch = pdl.get_field_idx<Tscal>("dpsi/ch");
+    const u32 ipsi_on_ch  = pdl.get_field_idx<Tscal>("psi/ch");
+    const u32 idpsi_on_ch = pdl.get_field_idx<Tscal>("dpsi/ch");
     //}
 
     shamrock::SchedulerUtility utility(scheduler());
