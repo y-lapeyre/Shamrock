@@ -16,6 +16,7 @@
 #include "ConservativeCheck.hpp"
 #include "shammath/sphkernels.hpp"
 #include "shamsys/legacy/log.hpp"
+#include <hipSYCL/sycl/buffer.hpp>
 
 template<class Tvec, template<class> class SPHKernel>
 void shammodels::sph::modules::ConservativeCheck<Tvec, SPHKernel>::check_conservation() {
@@ -95,6 +96,7 @@ void shammodels::sph::modules::ConservativeCheck<Tvec, SPHKernel>::check_conserv
     Tscal tmp_ekin   = 0;
     Tscal tmp_etherm = 0;
     Tscal tmp_emag   = 0;
+    Tscal tmp_divB   = 0;
     scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
         PatchDataField<Tscal> &field_u = pdat.get_field<Tscal>(iuint);
         PatchDataField<Tvec> &field_v  = pdat.get_field<Tvec>(ivxyz);
@@ -116,6 +118,7 @@ void shammodels::sph::modules::ConservativeCheck<Tvec, SPHKernel>::check_conserv
         sycl::buffer<Tscal> temp_ekin(pdat.get_obj_cnt());
         sycl::buffer<Tscal> temp_etherm(pdat.get_obj_cnt());
         sycl::buffer<Tscal> temp_emag(pdat.get_obj_cnt());
+        sycl::buffer<Tscal> temp_divB(pdat.get_obj_cnt());
 
         shamsys::instance::get_compute_queue().submit([&, pmass](sycl::handler &cgh) {
             sycl::accessor u{*field_u.get_buf(), cgh, sycl::read_only};
@@ -126,6 +129,7 @@ void shammodels::sph::modules::ConservativeCheck<Tvec, SPHKernel>::check_conserv
             sycl::accessor ekin{temp_ekin, cgh, sycl::write_only, sycl::no_init};
             sycl::accessor etherm{temp_etherm, cgh, sycl::write_only, sycl::no_init};
             sycl::accessor emag{temp_emag, cgh, sycl::write_only, sycl::no_init};
+            sycl::accessor divB{temp_divB, cgh, sycl::write_only, sycl::no_init};
 
             cgh.parallel_for(sycl::range<1>{pdat.get_obj_cnt()}, [=](sycl::item<1> item) {
                 Tscal rho    = pmass * (hfact / h[item]) * (hfact / h[item]) * (hfact / h[item]);
@@ -134,6 +138,7 @@ void shammodels::sph::modules::ConservativeCheck<Tvec, SPHKernel>::check_conserv
                 emag[item]   = 0.5 * sycl::dot(B_on_rho[item], B_on_rho[item]) * rho / mu_0;
                 e[item]      = pmass * u[item] + 0.5 * pmass * sycl::dot(v[item], v[item])
                           + 0.5 * sycl::dot(B_on_rho[item], B_on_rho[item]) * rho / mu_0;
+                divB[item] = 0;
             });
         });
         Tscal e_pkin = shamalgs::reduction::sum(
