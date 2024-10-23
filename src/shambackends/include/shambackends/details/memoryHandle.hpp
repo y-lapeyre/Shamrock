@@ -46,7 +46,9 @@
 namespace sham::details {
 
     /**
-     * @brief Create a USM pointer with the given size in bytes.
+     * @brief Create a USM pointer with at least the given size in bytes.
+     *
+     * @note The USM pointer may have a larger allocation than the required size.
      *
      * @tparam target The target of the USM pointer.
      * @param size The size of the pointer in bytes.
@@ -55,7 +57,10 @@ namespace sham::details {
      * @return USMPtrHolder<target> The newly created USM pointer.
      */
     template<USMKindTarget target>
-    USMPtrHolder<target> create_usm_ptr(u32 size, std::shared_ptr<DeviceScheduler> dev_sched);
+    USMPtrHolder<target> create_usm_ptr(
+        u32 size,
+        std::shared_ptr<DeviceScheduler> dev_sched,
+        std::optional<size_t> alignment = std::nullopt);
 
     /**
      * @brief Release a USM pointer.

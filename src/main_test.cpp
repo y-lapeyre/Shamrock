@@ -47,6 +47,15 @@ int main(int argc, char *argv[]) {
     opts::register_env_var_doc("REF_FILES_PATH", "reference test files path");
     shamcmdopt::register_env_var_doc("SHAMLOGFORMATTER", "Change the log formatter (values :0-3)");
 
+    shamcmdopt::register_env_var_doc("SHAM_PROF_PREFIX", "Prefix of shamrock profile outputs");
+    shamcmdopt::register_env_var_doc("SHAM_PROF_USE_NVTX", "Enable NVTX profiling");
+    shamcmdopt::register_env_var_doc("SHAM_PROFILING", "Enable Shamrock profiling");
+    shamcmdopt::register_env_var_doc(
+        "SHAM_PROF_USE_COMPLETE_EVENT",
+        "Use complete event instead of begin end for chrome tracing");
+    shamcmdopt::register_env_var_doc(
+        "SHAM_PROF_EVENT_RECORD_THRES", "Change the event recording threshold");
+
     opts::init(argc, argv);
     if (opts::is_help_mode()) {
         return 0;
@@ -75,13 +84,7 @@ int main(int argc, char *argv[]) {
     }
 
     if (shamcomm::world_rank() == 0) {
-        std::cout << shamrock_title_bar_big << std::endl;
-        logger::print_faint_row();
-
-        std::cout << "\n"
-                  << shambase::term_colors::col8b_cyan() + "Git infos "
-                         + shambase::term_colors::reset() + ":\n";
-        std::cout << git_info_str << std::endl;
+        print_title_bar();
 
         logger::print_faint_row();
 
@@ -96,7 +99,8 @@ int main(int argc, char *argv[]) {
         shamsys::instance::check_dgpu_available();
     }
 
-    shamcomm::validate_comm(shamsys::instance::get_compute_scheduler());
+    auto sptr = shamsys::instance::get_compute_scheduler_ptr();
+    shamcomm::validate_comm(sptr);
 
     if (opts::has_option("--benchmark-mpi")) {
         shamsys::run_micro_benchmark();

@@ -477,7 +477,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                u32 nx,
                u32 ny) -> std::variant<py::array_t<Tscal>> {
                 if (field_type == "f64") {
-                    py::array_t<Tscal> ret({nx, ny});
+                    py::array_t<Tscal> ret({ny, nx});
 
                     modules::CartesianRender<Tvec, f64, SPHKernel> render(
                         self.ctx, self.solver.solver_config, self.solver.storage);
@@ -487,7 +487,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                               .copy_to_stdvec();
 
                     for (u32 iy = 0; iy < ny; iy++) {
-                        for (u32 ix = 0; ix < ny; ix++) {
+                        for (u32 ix = 0; ix < nx; ix++) {
                             ret.mutable_at(iy, ix) = slice[ix + nx * iy];
                         }
                     }
@@ -496,7 +496,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                 }
 
                 if (field_type == "f64_3") {
-                    py::array_t<Tscal> ret({nx, ny, 3_u32});
+                    py::array_t<Tscal> ret({ny, nx, 3_u32});
 
                     modules::CartesianRender<Tvec, f64_3, SPHKernel> render(
                         self.ctx, self.solver.solver_config, self.solver.storage);
@@ -506,7 +506,67 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                               .copy_to_stdvec();
 
                     for (u32 iy = 0; iy < ny; iy++) {
-                        for (u32 ix = 0; ix < ny; ix++) {
+                        for (u32 ix = 0; ix < nx; ix++) {
+                            ret.mutable_at(iy, ix, 0) = slice[ix + nx * iy][0];
+                            ret.mutable_at(iy, ix, 1) = slice[ix + nx * iy][1];
+                            ret.mutable_at(iy, ix, 2) = slice[ix + nx * iy][2];
+                        }
+                    }
+
+                    return ret;
+                }
+
+                shambase::throw_with_loc<std::runtime_error>("unknown slice type");
+                return py::array_t<Tscal>({nx, ny});
+            },
+            py::arg("name"),
+            py::arg("field_type"),
+            py::arg("center"),
+            py::arg("delta_x"),
+            py::arg("delta_y"),
+            py::arg("nx"),
+            py::arg("ny"))
+        .def(
+            "render_cartesian_column_integ",
+            [](T &self,
+               std::string name,
+               std::string field_type,
+               Tvec center,
+               Tvec delta_x,
+               Tvec delta_y,
+               u32 nx,
+               u32 ny) -> std::variant<py::array_t<Tscal>> {
+                if (field_type == "f64") {
+                    py::array_t<Tscal> ret({ny, nx});
+
+                    modules::CartesianRender<Tvec, f64, SPHKernel> render(
+                        self.ctx, self.solver.solver_config, self.solver.storage);
+
+                    std::vector<f64> slice
+                        = render.compute_column_integ(name, center, delta_x, delta_y, nx, ny)
+                              .copy_to_stdvec();
+
+                    for (u32 iy = 0; iy < ny; iy++) {
+                        for (u32 ix = 0; ix < nx; ix++) {
+                            ret.mutable_at(iy, ix) = slice[ix + nx * iy];
+                        }
+                    }
+
+                    return ret;
+                }
+
+                if (field_type == "f64_3") {
+                    py::array_t<Tscal> ret({ny, nx, 3_u32});
+
+                    modules::CartesianRender<Tvec, f64_3, SPHKernel> render(
+                        self.ctx, self.solver.solver_config, self.solver.storage);
+
+                    std::vector<f64_3> slice
+                        = render.compute_column_integ(name, center, delta_x, delta_y, nx, ny)
+                              .copy_to_stdvec();
+
+                    for (u32 iy = 0; iy < ny; iy++) {
+                        for (u32 ix = 0; ix < nx; ix++) {
                             ret.mutable_at(iy, ix, 0) = slice[ix + nx * iy][0];
                             ret.mutable_at(iy, ix, 1) = slice[ix + nx * iy][1];
                             ret.mutable_at(iy, ix, 2) = slice[ix + nx * iy][2];
