@@ -475,7 +475,7 @@ namespace shamrock::spmhd {
         //    r_ab_unit * dWab_a,
         //    r_ab_unit * dWab_b);
 
-        dB_on_rho_dt += dB_on_rho_dissipation_term;
+        //dB_on_rho_dt += dB_on_rho_dissipation_term;
 
         dpsi_on_ch_dt += dpsi_on_ch_parabolic_propag(
             pmass, rho_a, B_a, B_b, omega_a, r_ab_unit * dWab_a, v_shock_a);
