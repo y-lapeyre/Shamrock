@@ -1,10 +1,11 @@
 import shamrock
 import matplotlib.pyplot as plt
-import os
 import numpy as np
+import os
+
 
 directory = "/Users/ylapeyre/Documents/Shamwork/"
-outputdir = "Alfven2/"
+outputdir = "shearAlfven2/"
 
 os.chdir(directory)
 
@@ -21,24 +22,13 @@ gamma = 5./3.
 rho_g = 1
 target_tot_u = 1
 
-C_cour = 0.3
-C_force = 0.25
 
-lambda_vel = 1
-gamma_vel = 5/3
-sina = 2./3.
-sinb = 2. / np.sqrt(5)
-cosa = np.sqrt(5) / 3.
-cosb = 1 / np.sqrt(5)
+dr = 0.02
 
 L = 3.
 bmin = (0, 0, 0)
 bmax = (L, L/2, L/2)
-xc,yc,zc = 0.,0.,0.
 pmass = -1
-wavelength = 1.
-
-dr = 0.02
 
 ################################################
 ################# unit system ##################
@@ -70,6 +60,7 @@ model.set_solver_config(cfg)
 
 model.init_scheduler(int(1e6),1)
 
+
 ################################################
 ############### size of the box ################
 ################################################
@@ -90,55 +81,69 @@ pmass = model.total_mass_to_part_mass(totmass)
 ################################################
 ############## initial conditions ##############
 ################################################
-def rotated_basis_to_regular(xvec):
-    
-    reg_xyz = np.array([0., 0., 0.])
-    reg_xyz[0] = xvec[0]*cosa*cosb - xvec[1]*sinb - xvec[2]*sina*cosb
-    reg_xyz[1] = xvec[0]*cosa*sinb + xvec[1]*cosb - xvec[2]*sina*sinb
-    reg_xyz[2] = xvec[0]*sina +      xvec[2]*cosa
 
-    return reg_xyz
+A = 1e-5
+B0 = mu_0
+rho0 = 1.
+wavelength = 1.
+k = 2*2*np.pi/(xM - xm)
+va = np.sqrt(B0 * B0 / (mu_0 * rho0))
 
-def regular_basis_to_rotated(xvec):
-    
-    rot_xyz = np.array([0., 0., 0.])
-    rot_xyz[0] = (      xvec[0] + 2 * xvec[1] + 2 * xvec[2]) / 3.
-    rot_xyz[1] = (- 2 * xvec[0] +     xvec[1]) / np.sqrt(5)
-    rot_xyz[2] = (- 2 * xvec[0] - 4 * xvec[1] * 5 * xvec[2]) / (3 * np.sqrt(5))
+RB_x = 0.
+RB_y = - B0 / va
+RB_z = 0.
 
-    return rot_xyz
+Rv_x = 0.
+Rv_y = 1.
+Rv_z = 0.
+
+Rrho = 0.
+
+print("va :", va)
+print("mu_0 :", mu_0)
+
+model.set_value_in_a_box("uint","f64", 0.9 , bmin,bmax)
+
 def B_func(r):
-
-    rot_vec = regular_basis_to_rotated(r)
-    x1, x2, x3 = rot_vec
-
-    B1 = 1 *mu_0
-    B2 = 0.1 * np.sin(2 * np.pi * x1 / lambda_vel) *mu_0
-    B3 = 0.1 * np.cos(2 * np.pi * x1 / lambda_vel) *mu_0
-    bvec = [B1, B2, B3]
-
-    reg_bvec = rotated_basis_to_regular(bvec)
-    Bx, By, Bz = reg_bvec
+    x,y,z = r
+    Bx = (0.    + A * RB_x * np.sin(k*x)) 
+    By = (0.    + A * RB_y * np.sin(k*x)) 
+    Bz = (B0    + A * RB_z * np.sin(k*x)) 
     return (Bx, By, Bz)
 
 model.set_field_value_lambda_f64_3("B/rho", B_func)
 
 def vel_func(r):
-
-    rot_vec = regular_basis_to_rotated(r)
-    x1, x2, x3 = rot_vec
-
-    v1 = 0
-    v2 = 0.1 * np.sin(2 * np.pi * x1 / lambda_vel)
-    v3 = 0.1 * np.cos(2 * np.pi * x1 / lambda_vel)
-    vvec = [v1, v2, v3]
-
-    reg_vvec = rotated_basis_to_regular(vvec)
-    vx, vy, vz = reg_vvec
+    x,y,z = r
+    vx = 0.      + A * Rv_x * np.sin(k*x)
+    vy = 0.      + A * Rv_y * np.sin(k*x)
+    vz = 0.      + A * Rv_z * np.sin(k*x)
     return (vx, vy, vz)
+
 
 model.set_field_value_lambda_f64_3("vxyz", vel_func)
 
+def rho_func(r):
+    
+    x, y, z = r
+    rho = 1. + A * Rrho * np.cos(k*x)
+    return rho
+
+
+#model.set_field_value_lambda_f64("rho", rho_func)
+
+def cs_func(r):
+    # P = cs^2 * rho 
+    # cs = sqrt(P/rho)
+    x,y,z = r
+    return np.sqrt(1./gamma /rho_func(r))
+
+
+#model.set_field_value_lambda_f64("soundspeed", vel_func)
+
+
+
+#print("Current part mass :", pmass)
 model.set_particle_mass(pmass)
 
 
@@ -148,11 +153,12 @@ model.set_cfl_cour(0.3)
 model.set_cfl_force(0.25)
 
 t_sum = 0
-t_target = 50
+t_target = 200
 
 i_dump = 0
-dt_dump = 0.5
+dt_dump = 1
 next_dt_target = t_sum + dt_dump
+
 
 while next_dt_target <= t_target:
 
@@ -169,5 +175,7 @@ while next_dt_target <= t_target:
     i_dump += 1
 
     next_dt_target += dt_dump
+
+
 
 

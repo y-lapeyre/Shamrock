@@ -1,10 +1,22 @@
 import shamrock
 import matplotlib.pyplot as plt
 import numpy as np
+import os
 
 
+directory = "/Users/ylapeyre/Documents/Shamwork/"
+outputdir = "sph_soundwave_og/"
 
-outputdir = "/Users/ylapeyre/Documents/Shamwork/soundwave_noMHD/"
+os.chdir(directory)
+
+if not os.path.exists(outputdir):
+    os.mkdir(outputdir)
+    print(f"Directory '{directory}' created.")
+    os.chdir(directory + outputdir)
+    os.mkdir("shamrockdump")
+    os.mkdir("phantomdump") 
+
+
 
 gamma = 5./3.
 rho_g = 1
@@ -29,8 +41,6 @@ cfg = model.gen_default_config()
 #cfg.set_artif_viscosity_Constant(alpha_u = 1, alpha_AV = 1, beta_AV = 2)
 #cfg.set_artif_viscosity_VaryingMM97(alpha_min = 0.1,alpha_max = 1,sigma_decay = 0.1, alpha_u = 1, beta_AV = 2)
 cfg.set_artif_viscosity_VaryingCD10(alpha_min = 0.0,alpha_max = 1,sigma_decay = 0.1, alpha_u = 1, beta_AV = 2)
-#cfg.set_artif_viscosity_None()
-#cfg.set_IdealMHD(sigma_mhd=1, sigma_u=1)
 cfg.set_boundary_periodic()
 cfg.set_eos_adiabatic(gamma)
 cfg.print_status()
@@ -55,16 +65,8 @@ pmass = model.total_mass_to_part_mass(totmass)
 
 
 
-def vel_func(r):
-    return (0,0,0)
-
-
-def B_func(r):
-    return (0,0,0)
 
 model.set_value_in_a_box("uint","f64", 0.9 , bmin,bmax)
-#model.set_field_value_lambda_f64_3("vxyz", vel_func)
-#model.set_field_value_lambda_f64_3("B/rho", B_func)
 
 kx,ky,kz = 2*np.pi/(xM - xm),0,0
 delta_v = 1e-5
@@ -111,18 +113,20 @@ next_dt_target = t_sum + dt_dump
 
 while next_dt_target <= t_target:
 
-    fname = outputdir + "phantomdump/" + "dump_{:04}.phfile".format(i_dump)
-
-    model.evolve_until(next_dt_target)
+    fname = directory + outputdir + "phantomdump/" + "dump_{:04}.phfile".format(i_dump)
     dump = model.make_phantom_dump()
     dump.save_dump(fname)
 
-    fnamesh= outputdir + "shamrockdump/" + "dump_" + f"{i_dump:04}" + ".sham"
+    fnamesh= directory + outputdir + "shamrockdump/" + "dump_" + f"{i_dump:04}" + ".sham"
     model.dump(fnamesh)
+
+    model.evolve_until(next_dt_target)
+    
 
     i_dump += 1
 
     next_dt_target += dt_dump
+
 
 
 
@@ -141,8 +145,6 @@ gamma = 5./3.
 rho = pmass*(model.get_hfact()/hpart)**3
 P = (gamma-1) * rho *uint
 
-
-plt.style.use('custom_style.mplstyle')
 fig,axs = plt.subplots(nrows=2,ncols=2,figsize=(9,6),dpi=125)
 
 axs[0,0].scatter(r, vr,c = 'black',s=1,label = "v")

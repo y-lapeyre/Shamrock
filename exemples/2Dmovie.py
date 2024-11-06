@@ -15,7 +15,7 @@ my_parameters = {'legend.fontsize':'16','figure.figsize':(8,6),'axes.labelsize':
 pylab.rcParams.update(my_parameters) # have bigger text 
 
 
-directory = "/Users/ylapeyre/Documents/Shamwork/GardnerStone9/shamrockdump/"
+directory = "/Users/ylapeyre/Documents/Shamwork/GardnerStone12/shamrockdump/"
 folder = "images2D_B"
 root = "dump_"
 
