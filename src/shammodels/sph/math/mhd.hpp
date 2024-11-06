@@ -182,7 +182,7 @@ namespace shamrock::spmhd {
         Tscal acc_fdivB_a = sycl::dot(B_a, nabla_Wab_ha) / sub_fact_a;
         Tscal acc_fdivB_b = sycl::dot(B_b, nabla_Wab_hb) / sub_fact_b;
 
-        Tvec fdivB_a = -B_a * m_b * (acc_fdivB_a + acc_fdivB_b); // oula problemo prefactorio @@@@
+        Tvec fdivB_a = - 0.5 * B_a * m_b * (acc_fdivB_a + acc_fdivB_b); // oula problemo prefactorio @@@@
 
         vMHD += fdivB_a;
 
