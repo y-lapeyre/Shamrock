@@ -1,7 +1,4 @@
-<picture>
-   <source media="(prefers-color-scheme: dark)" srcset="doc/shamrock-doc/src/images/no_background_nocolor.png"  width="600">
-   <img alt="text" src="doc/logosham_white.png" width="600">
- </picture>
+<img src="doc/mkdocs/docs/assets/no_background_nocolor.png"  width="600">
 
 ![badge1](https://github.com/tdavidcl/Shamrock/actions/workflows/on_push_main.yml/badge.svg?branch=main) [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit)
 
@@ -60,3 +57,11 @@ Note that a convenient way to pull the Shamrock repo is the following command to
 ```bash
 git clone --recurse-submodules git@github.com:tdavidcl/Shamrock.git
 ```
+
+# Licensing
+
+Shamrock is licensed under the `CeCILL Free Software License Agreement v2.1`. See [License (french version)](./LICENSE) or [License (english version)](./LICENSE.en) for more details.
+
+Copyright 2021-2024 Timothée David--Cléris
+
+SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
