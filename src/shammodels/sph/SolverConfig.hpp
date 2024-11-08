@@ -1,8 +1,9 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright(C) 2021-2023 Timothée David--Cléris <timothee.david--cleris@ens-lyon.fr>
-// Licensed under CeCILL 2.1 License, see LICENSE for more information
+// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
+// Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
 // -------------------------------------------------------//
 
@@ -277,6 +278,19 @@ struct shammodels::sph::SolverConfig {
         using T = typename EOSConfig::Adiabatic;
         return bool(std::get_if<T>(&eos_config.config));
     }
+
+    /// Check if the EOS is an isothermal equation of state
+    inline bool is_eos_isothermal() {
+        using T = typename EOSConfig::Isothermal;
+        return bool(std::get_if<T>(&eos_config.config));
+    }
+
+    /**
+     * @brief Set the EOS configuration to an isothermal equation of state
+     *
+     * @param cs The isothermal index
+     */
+    inline void set_eos_isothermal(Tscal cs) { eos_config.set_isothermal(cs); }
 
     /**
      * @brief Set the EOS configuration to an adiabatic equation of state

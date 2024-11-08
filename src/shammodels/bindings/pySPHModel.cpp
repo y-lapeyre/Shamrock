@@ -1,8 +1,9 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright(C) 2021-2023 Timothée David--Cléris <timothee.david--cleris@ens-lyon.fr>
-// Licensed under CeCILL 2.1 License, see LICENSE for more information
+// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
+// Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
 // -------------------------------------------------------//
 
@@ -46,6 +47,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
         .def("set_tree_reduction_level", &TConfig::set_tree_reduction_level)
         .def("set_two_stage_search", &TConfig::set_two_stage_search)
         .def("set_max_neigh_cache_size", &TConfig::set_max_neigh_cache_size)
+        .def("set_eos_isothermal", &TConfig::set_eos_isothermal)
         .def("set_eos_adiabatic", &TConfig::set_eos_adiabatic)
         .def("set_eos_locally_isothermal", &TConfig::set_eos_locally_isothermal)
         .def(

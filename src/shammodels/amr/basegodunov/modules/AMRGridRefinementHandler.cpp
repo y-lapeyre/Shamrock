@@ -1,8 +1,9 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright(C) 2021-2023 Timothée David--Cléris <timothee.david--cleris@ens-lyon.fr>
-// Licensed under CeCILL 2.1 License, see LICENSE for more information
+// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
+// Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
 // -------------------------------------------------------//
 
@@ -73,14 +74,25 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
                 u32 id = gid.get_linear_id();
 
                 std::array<BlockCoord, split_count> blocks;
+                bool do_merge = true;
 
-                bool all_want_to_merge = true;
-                for (u32 lid = 0; lid < split_count; lid++) {
-                    blocks[lid]       = BlockCoord{acc_min[gid + lid], acc_max[gid + lid]};
-                    all_want_to_merge = all_want_to_merge && acc_merge_flag[gid + lid];
+                // This avoid the case where we are in the last block of the buffer to avoid the
+                // out-of-bound read
+                if (id + split_count <= obj_cnt) {
+                    bool all_want_to_merge = true;
+
+                    for (u32 lid = 0; lid < split_count; lid++) {
+                        blocks[lid]       = BlockCoord{acc_min[gid + lid], acc_max[gid + lid]};
+                        all_want_to_merge = all_want_to_merge && acc_merge_flag[gid + lid];
+                    }
+
+                    do_merge = all_want_to_merge && BlockCoord::are_mergeable(blocks);
+
+                } else {
+                    do_merge = false;
                 }
 
-                acc_merge_flag[gid] = all_want_to_merge && BlockCoord::are_mergeable(blocks);
+                acc_merge_flag[gid] = do_merge;
             });
         });
 

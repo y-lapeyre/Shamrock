@@ -1,8 +1,9 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright(C) 2021-2023 Timothée David--Cléris <timothee.david--cleris@ens-lyon.fr>
-// Licensed under CeCILL 2.1 License, see LICENSE for more information
+// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
+// Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
 // -------------------------------------------------------//
 
@@ -19,6 +20,23 @@
 #include "shamunits/UnitSystem.hpp"
 
 namespace shamphys {
+
+    /**
+     * @brief Configuration struct for isothermal equation of state
+     *
+     * @tparam Tscal Scalar type
+     *
+     * This struct holds the configuration for the isothermal equation of state.
+     * It contains the soundspeed cs = sqrt(RT).
+     *
+     * The equation of state is given by:
+     * \f$ p = c_s^2 \rho \f$
+     */
+    template<class Tscal>
+    struct EOS_Config_Isothermal {
+        /// Soundspeed
+        Tscal cs;
+    };
 
     /**
      * @brief Configuration struct for adiabatic equation of state
