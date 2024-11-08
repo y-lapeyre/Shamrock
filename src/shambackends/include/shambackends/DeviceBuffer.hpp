@@ -16,6 +16,7 @@
  *
  */
 
+#include "shambase/memory.hpp"
 #include "shambackends/DeviceScheduler.hpp"
 #include "shambackends/USMPtrHolder.hpp"
 #include "shambackends/details/BufferEventHandler.hpp"
@@ -51,28 +52,6 @@ namespace sham {
         static size_t to_bytesize(size_t sz) { return sz * sizeof(T); }
 
         /**
-         * @brief Construct a new Device Buffer object
-         *
-         * @param sz The size of the buffer in number of elements
-         * @param dev_sched A shared pointer to the Device Scheduler
-         *
-         * This constructor creates a new Device Buffer object with the given size.
-         * It allocates the buffer as USM memory and stores the USM pointer and the
-         * size in the respective member variables.
-         */
-        DeviceBuffer(size_t sz, std::shared_ptr<DeviceScheduler> dev_sched)
-            : hold(details::create_usm_ptr<target>(to_bytesize(sz), dev_sched, get_alignment())),
-              size(sz) {}
-
-        DeviceBuffer(sycl::buffer<T> &syclbuf, std::shared_ptr<DeviceScheduler> dev_sched)
-            : DeviceBuffer(syclbuf.size(), dev_sched) {
-            copy_from_sycl_buffer(syclbuf);
-        }
-
-        DeviceBuffer(sycl::buffer<T> &&syclbuf, std::shared_ptr<DeviceScheduler> dev_sched)
-            : DeviceBuffer(syclbuf, dev_sched) {}
-
-        /**
          * @brief Construct a new Device Buffer object with a given USM pointer
          *
          * @param sz The size of the buffer in number of elements
@@ -85,7 +64,89 @@ namespace sham {
          * constructor.
          */
         DeviceBuffer(size_t sz, USMPtrHolder<target> &&_hold)
-            : hold(std::forward<USMPtrHolder<target>>(_hold)), size(sz) {}
+            : hold(std::forward<USMPtrHolder<target>>(_hold)), size(sz),
+              events_hndl(std::make_unique<details::BufferEventHandler>()) {}
+
+        /**
+         * @brief Construct a new Device Buffer object
+         *
+         * @param sz The size of the buffer in number of elements
+         * @param dev_sched A shared pointer to the Device Scheduler
+         *
+         * This constructor creates a new Device Buffer object with the given size.
+         * It allocates the buffer as USM memory and stores the USM pointer and the
+         * size in the respective member variables. The constructor also creates a
+         * BufferEventHandler object and stores it in the `events_hndl` member
+         * variable.
+         */
+        DeviceBuffer(size_t sz, std::shared_ptr<DeviceScheduler> dev_sched)
+            : DeviceBuffer(
+                  sz,
+                  details::create_usm_ptr<target>(to_bytesize(sz), dev_sched, get_alignment())) {}
+
+        /**
+         * @brief Construct a new Device Buffer object from a SYCL buffer
+         *
+         * @param syclbuf The SYCL buffer to copy from
+         * @param dev_sched A shared pointer to the Device Scheduler
+         *
+         * This constructor creates a new Device Buffer object with the same size
+         * as the given SYCL buffer. It allocates the buffer as USM memory and stores
+         * the USM pointer and the size in the respective member variables. The
+         * constructor also copies the content of the SYCL buffer into the newly
+         * allocated USM buffer.
+         */
+        DeviceBuffer(sycl::buffer<T> &syclbuf, std::shared_ptr<DeviceScheduler> dev_sched)
+            : DeviceBuffer(syclbuf.size(), dev_sched) {
+            copy_from_sycl_buffer(syclbuf);
+        }
+
+        /**
+         * @brief Construct a new Device Buffer object from a SYCL buffer with a given size
+         *
+         * @param syclbuf The SYCL buffer to copy from
+         * @param sz The size of the buffer in number of elements
+         * @param dev_sched A shared pointer to the Device Scheduler
+         *
+         * This constructor creates a new Device Buffer object with the given size.
+         * It allocates the buffer as USM memory and stores the USM pointer and the
+         * size in the respective member variables. The constructor also copies the
+         * first `sz` elements of the SYCL buffer into the newly allocated USM
+         * buffer.
+         */
+        DeviceBuffer(
+            sycl::buffer<T> &syclbuf, size_t sz, std::shared_ptr<DeviceScheduler> dev_sched)
+            : DeviceBuffer(sz, dev_sched) {
+            copy_from_sycl_buffer(syclbuf, sz);
+        }
+
+        /**
+         * @brief Construct a new Device Buffer object by moving from a SYCL buffer
+         *
+         * @param syclbuf The SYCL buffer to move from
+         * @param dev_sched A shared pointer to the Device Scheduler
+         *
+         * This constructor moves a SYCL buffer into a new Device Buffer object.
+         * It forwards the SYCL buffer and the device scheduler to another constructor.
+         */
+        DeviceBuffer(sycl::buffer<T> &&syclbuf, std::shared_ptr<DeviceScheduler> dev_sched)
+            : DeviceBuffer(syclbuf, dev_sched) {}
+
+        /**
+         * @brief Construct a new Device Buffer object by moving from a SYCL buffer
+         * with a given size
+         *
+         * @param syclbuf The SYCL buffer to move from
+         * @param sz The size of the buffer in number of elements
+         * @param dev_sched A shared pointer to the Device Scheduler
+         *
+         * This constructor moves a SYCL buffer into a new Device Buffer object.
+         * It forwards the SYCL buffer and the device scheduler to another
+         * constructor. The size of the buffer is also given as a parameter.
+         */
+        DeviceBuffer(
+            sycl::buffer<T> &&syclbuf, size_t sz, std::shared_ptr<DeviceScheduler> dev_sched)
+            : DeviceBuffer(syclbuf, sz, dev_sched) {}
 
         /**
          * @brief Deleted copy constructor
@@ -127,12 +188,20 @@ namespace sham {
          * by transfering them back to the memory handler
          */
         ~DeviceBuffer() {
+            if (!bool(events_hndl)) {
+                // If this is not allocated it must be a moved object
+                if (hold.get_raw_ptr() != nullptr) {
+                    shambase::throw_with_loc<std::runtime_error>(
+                        "you have an event handler but not pointer, like how ???");
+                }
+                return;
+            }
             // This object is empty, it was probably moved
-            if (hold.get_raw_ptr() == nullptr && events_hndl.is_empty()) {
+            if (hold.get_raw_ptr() == nullptr && events_hndl->is_empty()) {
                 return;
             }
             // give the ptr holder and event handler to the memory handler
-            details::release_usm_ptr(std::move(hold), std::move(events_hndl));
+            details::release_usm_ptr(std::move(hold), shambase::extract_pointer(events_hndl));
         }
 
         ///////////////////////////////////////////////////////////////////////
@@ -150,8 +219,8 @@ namespace sham {
          *        accessing the buffer.
          * @return A const pointer to the buffer's data.
          */
-        [[nodiscard]] inline const T *get_read_access(sham::EventList &depends_list) {
-            events_hndl.read_access(depends_list);
+        [[nodiscard]] inline const T *get_read_access(sham::EventList &depends_list) const {
+            shambase::get_check_ref(events_hndl).read_access(depends_list);
             return hold.template ptr_cast<T>();
         }
 
@@ -161,12 +230,14 @@ namespace sham {
          * This function returns a pointer to the buffer's data. The event handler is updated to
          * reflect the write access.
          *
+         * @todo should be made const also ???
+         *
          * @param depends_list A vector of SYCL events to wait for before
          *        accessing the buffer.
          * @return A pointer to the buffer's data.
          */
         [[nodiscard]] inline T *get_write_access(sham::EventList &depends_list) {
-            events_hndl.write_access(depends_list);
+            shambase::get_check_ref(events_hndl).write_access(depends_list);
             return hold.template ptr_cast<T>();
         }
 
@@ -178,7 +249,9 @@ namespace sham {
          *
          * @param e The SYCL event resulting of the queried access.
          */
-        void complete_event_state(sycl::event e) { events_hndl.complete_state(e); }
+        void complete_event_state(sycl::event e) const {
+            shambase::get_check_ref(events_hndl).complete_state(e);
+        }
 
         ///////////////////////////////////////////////////////////////////////
         // Event handling (End)
@@ -202,9 +275,18 @@ namespace sham {
         /**
          * @brief Gets the Device scheduler pointer corresponding to the held allocation
          *
-         * @return The Device scheduler
+         * @return The Device scheduler pointer corresponding to the held allocation
          */
         [[nodiscard]] inline std::shared_ptr<DeviceScheduler> &get_dev_scheduler_ptr() {
+            return hold.get_dev_scheduler_ptr();
+        }
+
+        /**
+         * @brief Gets the Device scheduler pointer corresponding to the held allocation
+         *
+         * @return The Device scheduler pointer corresponding to the held allocation
+         */
+        [[nodiscard]] inline const std::shared_ptr<DeviceScheduler> &get_dev_scheduler_ptr() const {
             return hold.get_dev_scheduler_ptr();
         }
 
@@ -213,7 +295,7 @@ namespace sham {
          *
          * @return The DeviceQueue associated with the held allocation
          */
-        [[nodiscard]] inline DeviceQueue &get_queue() {
+        [[nodiscard]] inline DeviceQueue &get_queue() const {
             return hold.get_dev_scheduler().get_queue();
         }
 
@@ -248,6 +330,13 @@ namespace sham {
          */
         [[nodiscard]] inline size_t get_mem_usage() const { return hold.get_bytesize(); }
 
+        /**
+         * @brief Check if the buffer is empty
+         *
+         * @return `true` if the buffer is empty, `false` otherwise
+         */
+        [[nodiscard]] inline bool is_empty() const { return size == 0; }
+
         ///////////////////////////////////////////////////////////////////////
         // Size getters (END)
         ///////////////////////////////////////////////////////////////////////
@@ -266,7 +355,7 @@ namespace sham {
          *
          * @return The new std::vector
          */
-        [[nodiscard]] inline std::vector<T> copy_to_stdvec() {
+        [[nodiscard]] inline std::vector<T> copy_to_stdvec() const {
             std::vector<T> ret(size);
 
             sham::EventList depends_list;
@@ -311,6 +400,37 @@ namespace sham {
         }
 
         /**
+         * @brief Copy the content of a std::vector into the buffer
+         *
+         * This function copies the content of a given std::vector into the buffer.
+         * The size of the vector must be equal to the size of the buffer.
+         *
+         * @param vec The std::vector to copy from
+         * @param sz The number of elements to copy
+         */
+        inline void copy_from_stdvec(const std::vector<T> &vec, size_t sz) {
+
+            if (sz > vec.size() || sz > size) {
+                shambase::throw_with_loc<std::invalid_argument>(shambase::format(
+                    "copy_from_stdvec: size mismatch (sz > vec.size() || sz > size)\n  size = "
+                    "{},\n  vec.size() = {},\n  sz = {}",
+                    size,
+                    vec.size(),
+                    sz));
+            }
+
+            sham::EventList depends_list;
+            T *ptr = get_write_access(depends_list);
+
+            sycl::event e = get_queue().submit(depends_list, [&](sycl::handler &cgh) {
+                cgh.copy(vec.data(), ptr, sz);
+            });
+
+            e.wait_and_throw();
+            complete_event_state({});
+        }
+
+        /**
          * @brief Copy the content of the buffer to a new SYCL buffer
          *
          * This function creates a new SYCL buffer with the same size and content than the current
@@ -318,7 +438,7 @@ namespace sham {
          *
          * @return The new SYCL buffer
          */
-        [[nodiscard]] inline sycl::buffer<T> copy_to_sycl_buffer() {
+        [[nodiscard]] inline sycl::buffer<T> copy_to_sycl_buffer() const {
             sycl::buffer<T> ret(size);
 
             sham::EventList depends_list;
@@ -363,6 +483,45 @@ namespace sham {
         }
 
         /**
+         * @brief Copy the content of a SYCL buffer into the buffer
+         *
+         * This function copies the content of a given SYCL buffer into the buffer.
+         * The size of the SYCL buffer must be equal to the size of the buffer.
+         *
+         * @param buf The SYCL buffer to copy from
+         * @param sz The number of elements to copy
+         */
+        inline void copy_from_sycl_buffer(sycl::buffer<T> &buf, size_t sz) {
+
+            if (sz > buf.size() || sz > size) {
+                shambase::throw_with_loc<std::invalid_argument>(shambase::format(
+                    "copy_from_sycl_buffer: size mismatch (sz > buf.size() || sz > size)\n  size = "
+                    "{},\n  buf.size() = {},\n  sz = {}",
+                    size,
+                    buf.size(),
+                    sz));
+            }
+
+            if (sz > u32_max) {
+                shambase::throw_with_loc<std::invalid_argument>(shambase::format(
+                    "copy_from_sycl_buffer: size mismatch (sz > u32_max)\n  sz = {}", sz));
+            }
+
+            sham::EventList depends_list;
+            T *ptr = get_write_access(depends_list);
+
+            sycl::event e = get_queue().submit(depends_list, [&](sycl::handler &cgh) {
+                sycl::accessor acc(buf, cgh, sycl::read_only);
+
+                shambase::parralel_for(cgh, sz, "copy field", [=](u32 gid) {
+                    ptr[gid] = acc[gid];
+                });
+            });
+
+            complete_event_state(e);
+        }
+
+        /**
          * @brief Copy the content of the buffer to a new buffer with a different USM target
          *
          * This function creates a new buffer with the same size and content than the current one
@@ -371,7 +530,7 @@ namespace sham {
          * @return The new buffer
          */
         template<USMKindTarget new_target>
-        [[nodiscard]] inline DeviceBuffer<T, new_target> copy_to() {
+        [[nodiscard]] inline DeviceBuffer<T, new_target> copy_to() const {
             DeviceBuffer<T, new_target> ret(size, get_dev_scheduler_ptr());
 
             sham::EventList depends_list;
@@ -399,7 +558,7 @@ namespace sham {
          * @param copy_size The size of the copy
          */
         template<USMKindTarget new_target>
-        inline void copy_from(DeviceBuffer<T, new_target> &other, size_t copy_size) {
+        inline void copy_from(const DeviceBuffer<T, new_target> &other, size_t copy_size) {
 
             if (!(copy_size <= get_size() && copy_size <= other.get_size())) {
                 shambase::throw_with_loc<std::invalid_argument>(shambase::format(
@@ -431,7 +590,7 @@ namespace sham {
          * @param other The buffer from which to copy the data
          */
         template<USMKindTarget new_target>
-        inline void copy_from(DeviceBuffer<T, new_target> &other) {
+        inline void copy_from(const DeviceBuffer<T, new_target> &other) {
 
             if (get_size() != other.get_size()) {
                 shambase::throw_with_loc<std::invalid_argument>(shambase::format(
@@ -452,7 +611,7 @@ namespace sham {
          *
          * @return The new buffer.
          */
-        inline DeviceBuffer<T, target> copy() { return copy_to<target>(); }
+        inline DeviceBuffer<T, target> copy() const { return copy_to<target>(); }
 
         ///////////////////////////////////////////////////////////////////////
         // Copy fcts (END)
@@ -583,11 +742,38 @@ namespace sham {
             }
         }
 
+        /**
+         * @brief Expand the buffer by `add_sz` elements.
+         *
+         * This functions reserves space in the buffer for `add_sz` elements, but doesn't change the
+         * buffer's size.
+         *
+         * @param add_sz The number of elements to add to the buffer.
+         */
+        inline void expand(u32 add_sz) { resize(get_size() + add_sz); }
+
+        /**
+         * @brief Shrink the buffer by `sub_sz` elements.
+         *
+         * If `sub_sz` is greater than the current size of the buffer, this function will throw an
+         * std::invalid_argument.
+         *
+         * @param sub_sz The number of elements to remove from the buffer.
+         */
+        inline void shrink(u32 sub_sz) {
+            if (sub_sz > get_size()) {
+                shambase::throw_with_loc<std::invalid_argument>(shambase::format(
+                    "shrink called with sub_sz > get_size()\n  sub_sz: {}\n  get_size(): {}",
+                    sub_sz,
+                    get_size()));
+            }
+            resize(get_size() - sub_sz);
+        }
+
         ///////////////////////////////////////////////////////////////////////
         // Size manipulation (END)
         ///////////////////////////////////////////////////////////////////////
 
-#if false
         // I'm not sure if enabling this one is a good idea
         /**
          * @brief Reserves space in the buffer for `add_sz` elements, but doesn't change the
@@ -600,11 +786,12 @@ namespace sham {
          * @param add_sz The number of elements to reserve space for.
          */
         inline void reserve(size_t add_sz) {
+#if false
             size_t old_sz = get_size();
             resize(old_sz + add_sz);
             size = old_sz;
-        }
 #endif
+        }
 
         private:
         /**
@@ -623,8 +810,11 @@ namespace sham {
          * This event handler keeps track of the events associated with read and write
          * accesses to the buffer. It is used to ensure that the buffer is not accessed
          * before the data is in a complete state.
+         *
+         * This is wrapped in a unique_ptr to allow DeviceBuffer to be const while registering
+         * events
          */
-        details::BufferEventHandler events_hndl;
+        std::unique_ptr<details::BufferEventHandler> events_hndl;
     };
 
 } // namespace sham
