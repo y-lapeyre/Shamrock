@@ -24,7 +24,7 @@
 #define ZVEC shambase::VectorProperties<Tvec>::get_zero()
 
 template<class Tvec, template<class> class SPHKernel>
-void shammodels::sph::modules::DiffOperatorDtdivB<Tvec, SPHKernel>::update_dtdivB(
+void shammodels::sph::modules::DiffOperatorDtDivB<Tvec, SPHKernel>::update_dtdivB(
     bool also_do_div_curl_B) {
 
     StackEntry stack_loc{};
@@ -309,6 +309,6 @@ void shammodels::sph::modules::DiffOperatorDtdivB<Tvec, SPHKernel>::update_dtdiv
 }
 
 using namespace shammath;
-template class shammodels::sph::modules::DiffOperatorDtdivB<f64_3, M4>;
-template class shammodels::sph::modules::DiffOperatorDtdivB<f64_3, M6>;
-template class shammodels::sph::modules::DiffOperatorDtdivB<f64_3, M8>;
+template class shammodels::sph::modules::DiffOperatorDtDivB<f64_3, M4>;
+template class shammodels::sph::modules::DiffOperatorDtDivB<f64_3, M6>;
+template class shammodels::sph::modules::DiffOperatorDtDivB<f64_3, M8>;

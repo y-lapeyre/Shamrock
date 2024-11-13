@@ -1,11 +1,17 @@
+// -------------------------------------------------------//
+//
+// SHAMROCK code for hydrodynamics
+// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
+// Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
 // -------------------------------------------------------//
 
 #pragma once
 
 /**
- * @file DiffOperatorDtDivv.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @file DiffOperatorB.hpp
+ * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief
  *
  */
@@ -19,7 +25,7 @@
 namespace shammodels::sph::modules {
 
     template<class Tvec, template<class> class SPHKernel>
-    class DiffOperatorDtDivB {
+    class DiffOperatorsB {
         public:
         using Tscal              = shambase::VecComponent<Tvec>;
         static constexpr u32 dim = shambase::VectorProperties<Tvec>::dimension;
@@ -32,10 +38,11 @@ namespace shammodels::sph::modules {
         Config &solver_config;
         Storage &storage;
 
-        DiffOperatorDtDivB(ShamrockCtx &context, Config &solver_config, Storage &storage)
+        DiffOperatorsB(ShamrockCtx &context, Config &solver_config, Storage &storage)
             : context(context), solver_config(solver_config), storage(storage) {}
 
-        void update_dtdivB(bool also_do_div_curl_v);
+        void update_divB();
+        void update_curlB();
 
         private:
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }

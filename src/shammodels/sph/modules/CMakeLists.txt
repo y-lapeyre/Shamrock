@@ -3,6 +3,7 @@ target_sources(shamrock_lib
         SolverStorage.cpp
         UpdateViscosity.cpp
         DiffOperator.cpp
+        DiffOperatorB.cpp
         DiffOperatorDtDivv.cpp
         SinkParticlesUpdate.cpp
         ConservativeCheck.cpp

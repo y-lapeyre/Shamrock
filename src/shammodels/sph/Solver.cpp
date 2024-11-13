@@ -36,7 +36,9 @@
 #include "shammodels/sph/modules/ComputeLoadBalanceValue.hpp"
 #include "shammodels/sph/modules/ConservativeCheck.hpp"
 #include "shammodels/sph/modules/DiffOperator.hpp"
+#include "shammodels/sph/modules/DiffOperatorB.hpp"
 #include "shammodels/sph/modules/DiffOperatorDtDivv.hpp"
+#include "shammodels/sph/modules/DiffOperatorDtDivB.hpp"
 #include "shammodels/sph/modules/ExternalForces.hpp"
 #include "shammodels/sph/modules/NeighbourCache.hpp"
 #include "shammodels/sph/modules/ParticleReordering.hpp"
@@ -268,6 +270,14 @@ void shammodels::sph::Solver<Tvec, Kern>::vtk_do_dump(
         fnum++;
     }
 
+    if (solver_config.has_field_divB()) {
+        fnum++;
+    }
+
+    if (solver_config.has_field_curlB()) {
+        fnum++;
+    }
+
     writter.add_field_data_section(fnum);
 
     if (add_patch_world_id) {
@@ -313,6 +323,21 @@ void shammodels::sph::Solver<Tvec, Kern>::vtk_do_dump(
     if (solver_config.has_field_psi_on_ch()) {
         const u32 ipsi_on_ch = pdl.get_field_idx<Tscal>("psi/ch");
         vtk_dump_add_field<Tscal>(scheduler(), writter, ipsi_on_ch, "psi/ch");
+    }
+
+    if (solver_config.has_field_divB()) {
+        const u32 idivB = pdl.get_field_idx<Tscal>("divB");
+        vtk_dump_add_field<Tscal>(scheduler(), writter, idivB, "divB");
+    }
+
+    if (solver_config.has_field_curlB()) {
+        const u32 icurlB = pdl.get_field_idx<Tvec>("curlB");
+        vtk_dump_add_field<Tvec>(scheduler(), writter, icurlB, "curlB");
+    }
+
+    if (solver_config.has_field_dtdivB()) {
+        const u32 idtdivB = pdl.get_field_idx<Tscal>("dtdivB");
+        vtk_dump_add_field<Tscal>(scheduler(), writter, idtdivB, "dtdivB");
     }
 
     vtk_dump_add_compute_field(scheduler(), writter, density, "rho");
@@ -1340,9 +1365,6 @@ void shammodels::sph::Solver<Tvec, Kern>::evolve_once() {
 
     shambase::Timer tstep;
     tstep.start();
-    logger::raw_ln("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ 1 $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$");
-    logger::raw_ln("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ 1 $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$");
-    logger::raw_ln("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ 1 $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$");
     // if(shamcomm::world_rank() == 0) std::cout << scheduler().dump_status() << std::endl;
     modules::ComputeLoadBalanceValue<Tvec, Kern>(context, solver_config, storage)
         .update_load_balancing();
@@ -1365,9 +1387,6 @@ void shammodels::sph::Solver<Tvec, Kern>::evolve_once() {
     const u32 iduint = pdl.get_field_idx<Tscal>("duint");
     const u32 ihpart = pdl.get_field_idx<Tscal>("hpart");
 
-    logger::raw_ln("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ 2 $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$");
-    logger::raw_ln("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ 2 $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$");
-    logger::raw_ln("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ 2 $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$");
     // if (solver_config.has_field_B_on_rho()) {
     const u32 iB_on_rho  = pdl.get_field_idx<Tvec>("B/rho");
     const u32 idB_on_rho = pdl.get_field_idx<Tvec>("dB/rho");
@@ -1377,6 +1396,7 @@ void shammodels::sph::Solver<Tvec, Kern>::evolve_once() {
     const u32 ipsi_on_ch  = pdl.get_field_idx<Tscal>("psi/ch");
     const u32 idpsi_on_ch = pdl.get_field_idx<Tscal>("dpsi/ch");
     //}
+    //const u32 idivB = pdl.get_field_idx<Tscal>("divB");
 
     shamrock::SchedulerUtility utility(scheduler());
 
@@ -1386,17 +1406,9 @@ void shammodels::sph::Solver<Tvec, Kern>::evolve_once() {
     sink_update.accrete_particles();
     ext_forces.point_mass_accrete_particles();
 
-    logger::raw_ln("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ 3 $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$");
-    logger::raw_ln("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ 3 $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$");
-    logger::raw_ln("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ 3 $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$");
     do_predictor_leapfrog(dt);
 
     sink_update.predictor_step(dt);
-
-    logger::raw_ln("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ 4 $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$");
-    logger::raw_ln("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ 4 $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$");
-    logger::raw_ln("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ 4 $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$");
-
     sink_update.compute_ext_forces();
 
     ext_forces.compute_ext_forces_indep_v();
@@ -1404,9 +1416,6 @@ void shammodels::sph::Solver<Tvec, Kern>::evolve_once() {
     gen_serial_patch_tree();
 
     apply_position_boundary(t_current + dt);
-    logger::raw_ln("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ 5 $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$");
-    logger::raw_ln("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ 5 $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$");
-    logger::raw_ln("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ 5 $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$");
 
     u64 Npart_all = scheduler().get_total_obj_count();
 
@@ -1416,10 +1425,6 @@ void shammodels::sph::Solver<Tvec, Kern>::evolve_once() {
     }
 
     sph_prestep(t_current, dt);
-
-    logger::raw_ln("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ 6 $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$");
-    logger::raw_ln("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ 6 $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$");
-    logger::raw_ln("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ 6 $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$");
 
     using RTree = RadixTree<u_morton, Tvec>;
 
@@ -1438,9 +1443,6 @@ void shammodels::sph::Solver<Tvec, Kern>::evolve_once() {
     //u32 iB_interf   = ghost_layout.get_field_idx<Tvec>("B/rho"); // if defined
     //u32 ipsi_interf = ghost_layout.get_field_idx<Tscal>("psi/ch");
 
-    logger::raw_ln("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ 7 $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$");
-    logger::raw_ln("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ 7 $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$");
-    logger::raw_ln("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ 7 $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$");
 
     using RTreeField = RadixTreeField<Tscal>;
     shambase::DistributedData<RTreeField> rtree_field_h;
@@ -1505,6 +1507,16 @@ void shammodels::sph::Solver<Tvec, Kern>::evolve_once() {
                 sph::modules::DiffOperators<Tvec, Kern>(context, solver_config, storage)
                     .update_curlv();
             }
+        }
+
+        if (solver_config.has_field_divB()) {
+            sph::modules::DiffOperatorsB<Tvec, Kern>(context, solver_config, storage)
+                .update_divB();
+        }
+
+        if (solver_config.has_field_curlB()) {
+            sph::modules::DiffOperatorsB<Tvec, Kern>(context, solver_config, storage)
+                .update_curlB();
         }
 
         update_artificial_viscosity(dt);
