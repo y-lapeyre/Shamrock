@@ -359,8 +359,26 @@ namespace shammodels::sph {
         sycl::buffer<Tvec> &buf_xyz;
         sycl::buffer<Tscal> &buf_hpart;
         sycl::buffer<Tvec> &buf_vxyz;
-        sycl::buffer<Tscal> &buf_psi_on_ch;
+        //sycl::buffer<Tscal> &buf_psi_on_ch;
         sycl::buffer<Tvec> &buf_B_on_rho;
+    };
+
+    template<class Tvec>
+    struct Debug_eq_ph_dump {
+        using Tscal = shambase::VecComponent<Tvec>;
+
+        u64 nobj;
+        f64 gpart_mass;
+
+        sycl::buffer<Tvec> &buf_xyz;
+        sycl::buffer<Tscal> &buf_hpart;
+        sycl::buffer<Tvec> &buf_vxyz;
+        sycl::buffer<Tvec> &buf_B_on_rho;
+
+        sycl::buffer<Tvec> &buf_mag_pressure;
+        sycl::buffer<Tvec> &buf_mag_tension;
+        sycl::buffer<Tvec> &buf_gas_pressure;
+        sycl::buffer<Tvec> &buf_tensile_corr;
     };
 
     template<class Tvec>
@@ -1440,7 +1458,7 @@ void shammodels::sph::Solver<Tvec, Kern>::evolve_once() {
     u32 iuint_interf                               = ghost_layout.get_field_idx<Tscal>("uint");
     u32 ivxyz_interf                               = ghost_layout.get_field_idx<Tvec>("vxyz");
     u32 iomega_interf                              = ghost_layout.get_field_idx<Tscal>("omega");
-    //u32 iB_interf   = ghost_layout.get_field_idx<Tvec>("B/rho"); // if defined
+    u32 iB_interf   = ghost_layout.get_field_idx<Tvec>("B/rho"); // if defined
     //u32 ipsi_interf = ghost_layout.get_field_idx<Tscal>("psi/ch");
 
 
@@ -1572,41 +1590,41 @@ void shammodels::sph::Solver<Tvec, Kern>::evolve_once() {
             static int count = 0;
             count++;
 
-//            if (false) { //solver_config.do_debug_dump || 
-//
-//                shambase::DistributedData<MergedPatchData> &mpdat
-//                    = storage.merged_patchdata_ghost.get();
-//
-//                scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
-//                    MergedPatchData &merged_patch = mpdat.get(cur_p.id_patch);
-//                    PatchData &mpdat              = merged_patch.pdat;
-//
-//                    sycl::buffer<Tvec> &buf_xyz = shambase::get_check_ref(
-//                        merged_xyzh.get(cur_p.id_patch).field_pos.get_buf());
-//                    sycl::buffer<Tvec> &buf_vxyz   = mpdat.get_field_buf_ref<Tvec>(ivxyz_interf);
-//                    sycl::buffer<Tscal> &buf_hpart = mpdat.get_field_buf_ref<Tscal>(ihpart_interf);
-//                    // do the same with psi/ch
-//                    sycl::buffer<Tscal> &buf_psi_on_ch = mpdat.get_field_buf_ref<Tscal>(ipsi_interf);
-//                    //do the same with B/rho
-//                    sycl::buffer<Tvec> &buf_B_on_rho= mpdat.get_field_buf_ref<Tvec>(iB_interf);
-//                    // write debug dump
-//                    Debug_ph_dump<Tvec> info{
-//                        merged_patch.total_elements,
-//                        solver_config.gpart_mass,
-//
-//                        buf_xyz,
-//                        buf_hpart,
-//                        buf_vxyz,
-//                        buf_psi_on_ch,
-//                        buf_B_on_rho};
-//
-//                    solver_config.debug_dump_filename = "debug_ph_dump" + std::to_string(count) + ".phdump";
-//                    make_interface_debug_phantom_dump(info).gen_file().write_to_file(
-//                        solver_config.debug_dump_filename);
-//                    logger::raw_ln("writing debug dump : ", solver_config.debug_dump_filename);
-//                });
-//            }
+            if (false) { //solver_config.do_debug_dump || 
+
+                shambase::DistributedData<MergedPatchData> &mpdat
+                    = storage.merged_patchdata_ghost.get();
+
+                scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+                    MergedPatchData &merged_patch = mpdat.get(cur_p.id_patch);
+                    PatchData &mpdat              = merged_patch.pdat;
+
+                    sycl::buffer<Tvec> &buf_xyz = shambase::get_check_ref(
+                        merged_xyzh.get(cur_p.id_patch).field_pos.get_buf());
+                    sycl::buffer<Tvec> &buf_vxyz   = mpdat.get_field_buf_ref<Tvec>(ivxyz_interf);
+                    sycl::buffer<Tscal> &buf_hpart = mpdat.get_field_buf_ref<Tscal>(ihpart_interf);
+                    // do the same with psi/ch
+                    //sycl::buffer<Tscal> &buf_psi_on_ch = mpdat.get_field_buf_ref<Tscal>(ipsi_interf);
+                    //do the same with B/rho
+                    sycl::buffer<Tvec> &buf_B_on_rho= mpdat.get_field_buf_ref<Tvec>(iB_interf);
+                    // write debug dump
+                    Debug_ph_dump<Tvec> info{
+                        merged_patch.total_elements,
+                        solver_config.gpart_mass,
+
+                        buf_xyz,
+                        buf_hpart,
+                        buf_vxyz,
+                        buf_B_on_rho};
+
+                    solver_config.debug_dump_filename = "debug_ph_dump" + std::to_string(count) + ".phdump";
+                    make_interface_debug_phantom_dump(info).gen_file().write_to_file(
+                        solver_config.debug_dump_filename);
+                    logger::raw_ln("writing debug dump : ", solver_config.debug_dump_filename);
+                });
+            }
         }
+
 
         // compute force
         logger::debug_ln("sph::BasicGas", "compute force");
@@ -1616,6 +1634,43 @@ void shammodels::sph::Solver<Tvec, Kern>::evolve_once() {
 
         update_derivs();
 
+        constexpr bool debug_equations = false;
+        if constexpr (debug_equations) {
+            static int count = 0;
+            count++;
+
+            if (false) { //solver_config.do_debug_dump || 
+
+                shambase::DistributedData<MergedPatchData> &mpdat
+                    = storage.merged_patchdata_ghost.get();
+
+                scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+                    MergedPatchData &merged_patch = mpdat.get(cur_p.id_patch);
+                    PatchData &mpdat              = merged_patch.pdat;
+
+                    sycl::buffer<Tvec> &buf_xyz = shambase::get_check_ref(
+                        merged_xyzh.get(cur_p.id_patch).field_pos.get_buf());
+                    sycl::buffer<Tvec> &buf_vxyz   = mpdat.get_field_buf_ref<Tvec>(ivxyz_interf);
+                    sycl::buffer<Tscal> &buf_hpart = mpdat.get_field_buf_ref<Tscal>(ihpart_interf);
+
+                    sycl::buffer<Tvec> &buf_B_on_rho= mpdat.get_field_buf_ref<Tvec>(iB_interf);
+                    // write debug dump
+                    Debug_ph_dump<Tvec> info{
+                        merged_patch.total_elements,
+                        solver_config.gpart_mass,
+
+                        buf_xyz,
+                        buf_hpart,
+                        buf_vxyz,
+                        buf_B_on_rho};
+
+                    solver_config.debug_dump_filename = "debug_eq_dump" + std::to_string(count) + ".phdump";
+                    make_interface_debug_phantom_dump(info).gen_file().write_to_file(
+                        solver_config.debug_dump_filename);
+                    logger::raw_ln("writing debug dump : ", solver_config.debug_dump_filename);
+                });
+            }
+        }
         modules::ConservativeCheck<Tvec, Kern> cv_check(context, solver_config, storage);
         cv_check.check_conservation();
 
