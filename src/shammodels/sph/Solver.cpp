@@ -1416,6 +1416,11 @@ void shammodels::sph::Solver<Tvec, Kern>::evolve_once() {
     //}
     //const u32 idivB = pdl.get_field_idx<Tscal>("divB");
 
+    const u32 imag_pressure = pdl.get_field_idx<Tvec>("mag_pressure");
+    const u32 imag_tension  = pdl.get_field_idx<Tvec>("mag_tension");
+    const u32 igas_pressure = pdl.get_field_idx<Tvec>("gas_pressure");
+    const u32 itensile_corr = pdl.get_field_idx<Tvec>("tensile_corr");
+
     shamrock::SchedulerUtility utility(scheduler());
 
     modules::SinkParticlesUpdate<Tvec, Kern> sink_update(context, solver_config, storage);
@@ -1650,10 +1655,14 @@ void shammodels::sph::Solver<Tvec, Kern>::evolve_once() {
 
                     sycl::buffer<Tvec> &buf_xyz = shambase::get_check_ref(
                         merged_xyzh.get(cur_p.id_patch).field_pos.get_buf());
-                    sycl::buffer<Tvec> &buf_vxyz   = mpdat.get_field_buf_ref<Tvec>(ivxyz_interf);
-                    sycl::buffer<Tscal> &buf_hpart = mpdat.get_field_buf_ref<Tscal>(ihpart_interf);
+                    sycl::buffer<Tvec> &buf_vxyz   = mpdat.get_field_buf_ref<Tvec>(ivxyz);
+                    sycl::buffer<Tscal> &buf_hpart = mpdat.get_field_buf_ref<Tscal>(ihpart);
+                    sycl::buffer<Tvec> &buf_B_on_rho= mpdat.get_field_buf_ref<Tvec>(iB_on_rho);
+                    sycl::buffer<Tvec> &buf_mag_pressure = mpdat.get_field_buf_ref<Tvec>(imag_pressure);
+                    sycl::buffer<Tvec> &buf_mag_tension  = mpdat.get_field_buf_ref<Tvec>(imag_tension);
+                    sycl::buffer<Tvec> &buf_gas_pressure = mpdat.get_field_buf_ref<Tvec>(igas_pressure);
+                    sycl::buffer<Tvec> &buf_tensile_corr = mpdat.get_field_buf_ref<Tvec>(itensile_corr);
 
-                    sycl::buffer<Tvec> &buf_B_on_rho= mpdat.get_field_buf_ref<Tvec>(iB_interf);
                     // write debug dump
                     Debug_ph_dump<Tvec> info{
                         merged_patch.total_elements,

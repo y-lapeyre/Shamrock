@@ -22,6 +22,7 @@
 #include "shammodels/sph/SolverConfig.hpp"
 #include "shamunits/Constants.hpp"
 #include "shammodels/sph/math/forces.hpp"
+#include <tuple>
 
 namespace shamrock::spmhd {
 
@@ -248,7 +249,7 @@ namespace shamrock::spmhd {
     }
 
     template<class Tvec, class Tscal, MHDType MHD_mode = Ideal> //, template<class> class SPHKernel
-    inline Tvec dv_terms(
+    inline std::tuple<Tvec, Tvec, Tvec, Tvec> dv_terms(
         Tscal m_b,
         Tscal rho_a_sq,
         Tscal rho_b_sq,
@@ -346,7 +347,7 @@ namespace shamrock::spmhd {
         sum_mag_tension += magnetic_tension_term;
         sum_fdivB += fdivB_a;
 
-        return sum_gas_pressure, sum_mag_pressure, sum_mag_tension, sum_fdivB;
+        return std::make_tuple(sum_gas_pressure, sum_mag_pressure, sum_mag_tension, sum_fdivB);
     }
     template<class Tvec, class Tscal>
     inline Tscal lambda_artes(
@@ -558,8 +559,9 @@ namespace shamrock::spmhd {
             v_cross_r[0] * v_cross_r[0] + v_cross_r[1] * v_cross_r[1]
             + v_cross_r[2] * v_cross_r[2]);
 
-        bool Tricco = false;
-        dv_dt += dv_terms(
+        bool Tricco = false; 
+        Tvec sum_gas_pressure, sum_mag_pressure, sum_mag_tension, sum_fdivB;
+        std::tie(sum_gas_pressure, sum_mag_pressure, sum_mag_tension, sum_fdivB) = dv_terms(
             pmass,
             rho_a_sq,
             rho_b * rho_b,
@@ -578,7 +580,7 @@ namespace shamrock::spmhd {
             r_ab_unit * dWab_b,
             mu_0,
             Tricco);
-
+        dv_dt += sum_gas_pressure + sum_mag_pressure + sum_mag_tension + sum_fdivB;
         // compared to Phantom_2018 eq.35 we move lambda shock artificial viscosity
         // pressure part as just a modified SPH pressure (which is the case already in
         // phantom paper but not written that way)
