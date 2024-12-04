@@ -110,7 +110,8 @@ namespace shamrock::spmhd {
         Tscal omega_a,
         Tscal omega_b,
         Tvec nabla_Wab_ha,
-        Tvec nabla_Wab_hb) {
+        Tvec nabla_Wab_hb,
+        Tscal mu_0) {
 
         Tscal sub_fact_a = rho_a_sq * omega_a;
         Tscal sub_fact_b = rho_b_sq * omega_b;
@@ -118,8 +119,8 @@ namespace shamrock::spmhd {
         Tscal B_dot_grad_W_a = sycl::dot(B_a, nabla_Wab_ha);
         Tscal B_dot_grad_W_b = sycl::dot(B_b, nabla_Wab_hb);
 
-        Tvec acc_a = ((B_dot_grad_W_a) / (sub_fact_a)) * B_a;
-        Tvec acc_b = ((B_dot_grad_W_b) / (sub_fact_b)) * B_b;
+        Tvec acc_a = ((B_dot_grad_W_a) / (sub_fact_a)) * B_a / mu_0;
+        Tvec acc_b = ((B_dot_grad_W_b) / (sub_fact_b)) * B_b / mu_0;
 
         if (sub_fact_a == 0)
             acc_a = {0, 0, 0};
@@ -172,26 +173,6 @@ namespace shamrock::spmhd {
         //    acc_b = {0, 0, 0};
         //}
 
-        Tvec pressure_term = - sph::sph_pressure_symetric( m_b,
-                                                        rho_a_sq, rho_b_sq, 
-                                                        P_a, P_b, 
-                                                        omega_a, omega_b, 
-                                                        nabla_Wab_ha, nabla_Wab_hb);
-
-        Tscal B_a_sq = sycl::dot(B_a, B_a);
-        Tscal B_b_sq = sycl::dot(B_b, B_b); 
-
-        Tvec magnetic_pressure_term = - (1. / (2*mu_0)) * sph::sph_pressure_symetric( m_b,
-                                                        rho_a_sq, rho_b_sq, 
-                                                        B_a_sq, B_b_sq, 
-                                                        omega_a, omega_b, 
-                                                        nabla_Wab_ha, nabla_Wab_hb);
-
-        Tvec magnetic_tension_term =  (1. / mu_0) * B_dot_grad_W(m_b, 
-                                                                rho_a_sq, rho_b_sq, 
-                                                                B_a, B_b, 
-                                                                omega_a, omega_b, 
-                                                                nabla_Wab_ha, nabla_Wab_hb);
 //        Tvec shock_term = -m_b * (acc_a + acc_b);
 //        //vMHD += shock_term; // shock term
 //        Tvec shock_term_hydro = sph::sph_pressure_symetric(m_b, rho_a_sq, rho_b_sq, q_ab_a, q_ab_b, omega_a, omega_b, nabla_Wab_ha, nabla_Wab_hb);
@@ -208,27 +189,29 @@ namespace shamrock::spmhd {
 //            logger::raw_ln("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
 //        }
 
-//        for (int i = 0; i < 3; ++i) {
-//            for (int j = 0; j < 3; ++j) {
-//                Tscal Mij_a =   -(1. / mu_0) * B_a[i] * B_a[j];
-//                Tscal Mij_b =   -(1. / mu_0) * B_b[i] * B_b[j];
-//                if (i == j) {
-//                    Mij_a += P_a
-//                             + (1. / (2 * mu_0))
-//                                   * sycl::dot(
-//                                       B_a, B_a); //(B_a[0]*B_a[0] + B_a[1]*B_a[1] + B_a[2]*B_a[2]);
-//                    Mij_b += P_b
-//                             + (1. / (2 * mu_0))
-//                                   * sycl::dot(B_b, B_b); //(B_b[0]*B_b[0] + B_b[1]*B_b[1] +
-//                                                          // B_b[2]*B_b[2]); //sycl::pow(B_b, 2)
-//                }
-//
-//                Tscal acc_MHD_a = (Mij_a / sub_fact_a) * nabla_Wab_ha[j];
-//                Tscal acc_MHD_b = (Mij_b / sub_fact_b) * nabla_Wab_hb[j];
-//
-//                vMHD[i] += -m_b * (acc_MHD_a + acc_MHD_b);
-//            }
-//        }
+        for (int i = 0; i < 3; ++i) {
+            for (int j = 0; j < 3; ++j) {
+                Tscal mag_tension_a =   -(1. / mu_0) * B_a[i] * B_a[j];
+                Tscal mag_tension_b =   -(1. / mu_0) * B_b[i] * B_b[j];
+                //if (i == j) {
+                //    Mij_a += P_a
+                //             + (1. / (2 * mu_0))
+                //                   * sycl::dot(
+                //                       B_a, B_a); //(B_a[0]*B_a[0] + B_a[1]*B_a[1] + B_a[2]*B_a[2]);
+                //    Mij_b += P_b
+                //             + (1. / (2 * mu_0))
+                //                   * sycl::dot(B_b, B_b); //(B_b[0]*B_b[0] + B_b[1]*B_b[1] +
+                //                                          // B_b[2]*B_b[2]); //sycl::pow(B_b, 2)
+                //}
+
+                Tscal acc_MHD_magten_a = (mag_tension_a / sub_fact_a) * nabla_Wab_ha[j];
+                Tscal acc_MHD_magten_b = (mag_tension_b / sub_fact_b) * nabla_Wab_hb[j];
+
+                vMHD[i] += -m_b * (acc_MHD_magten_a + acc_MHD_magten_b);
+            }
+            Tscal Mii_a = P_a + (1. / (2 * mu_0)) * sycl::dot(B_a, B_a);
+            Tscal Mii_b = P_b + (1. / (2 * mu_0)) * sycl::dot(B_b, B_b);
+        }
 
         Tscal acc_fdivB_a = sycl::dot(B_a, nabla_Wab_ha) / sub_fact_a;
         Tscal acc_fdivB_b = sycl::dot(B_b, nabla_Wab_hb) / sub_fact_b;
@@ -240,9 +223,6 @@ namespace shamrock::spmhd {
 
         Tvec fdivB_a = - 0.5 * B_a * m_b * (acc_fdivB_a + acc_fdivB_b) / mu_0; // tested, this is what works best
 
-        vMHD += pressure_term;
-        vMHD += magnetic_pressure_term;
-        vMHD += magnetic_tension_term;
         vMHD += fdivB_a;
 
         return vMHD;
@@ -282,52 +262,101 @@ namespace shamrock::spmhd {
         Tvec magnetic_tension_term;
 
         if (Tricco) {
-            pressure_term = - sph::sph_pressure_symetric( m_b,
-                                                        rho_a_sq, rho_b_sq, 
-                                                        P_a, P_b, 
-                                                        omega_a, omega_b, 
-                                                        nabla_Wab_ha, nabla_Wab_hb);
+            //pressure_term += - sph::sph_pressure_symetric( m_b,
+            //                                            rho_a_sq, rho_b_sq, 
+            //                                            P_a, P_b, 
+            //                                            omega_a, omega_b, 
+            //                                            nabla_Wab_ha, nabla_Wab_hb); // looks ok
+
+            Tscal sub_fact_a = rho_a_sq * omega_a;
+            Tscal sub_fact_b = rho_b_sq * omega_b;
+
+            Tvec acc_a = ((P_a) / (sub_fact_a)) * nabla_Wab_ha;
+            Tvec acc_b = ((P_b) / (sub_fact_b)) * nabla_Wab_hb;
+
+            if (sub_fact_a == 0)
+                acc_a = {0, 0, 0};
+            if (sub_fact_b == 0)
+                acc_b = {0, 0, 0};
+
+            pressure_term += -m_b * (acc_a + acc_b);
 
             Tscal B_a_sq = sycl::dot(B_a, B_a);
             Tscal B_b_sq = sycl::dot(B_b, B_b); 
 
-            magnetic_pressure_term = - (1. / (2*mu_0)) * sph::sph_pressure_symetric( m_b,
-                                                        rho_a_sq, rho_b_sq, 
-                                                        B_a_sq, B_b_sq, 
-                                                        omega_a, omega_b, 
-                                                        nabla_Wab_ha, nabla_Wab_hb);
+            //magnetic_pressure_term +=  (1. / (2*mu_0)) * sph::sph_pressure_symetric( m_b,
+            //                                            rho_a_sq, rho_b_sq, 
+            //                                            B_a_sq, B_b_sq, 
+            //                                            omega_a, omega_b, 
+            //                                            nabla_Wab_ha, nabla_Wab_hb); //looks ok too
 
-            magnetic_tension_term =  (1. / mu_0) * B_dot_grad_W(m_b, 
-                                                                rho_a_sq, rho_b_sq, 
-                                                                B_a, B_b, 
-                                                                omega_a, omega_b, 
-                                                                nabla_Wab_ha, nabla_Wab_hb);
+            Tvec accB_a = (1. / (2 * mu_0)) * ((B_a_sq) / (sub_fact_a)) * nabla_Wab_ha;
+            Tvec accB_b = (1. / (2 * mu_0)) * ((B_b_sq) / (sub_fact_b)) * nabla_Wab_hb;
+
+            if (sub_fact_a == 0)
+                accB_a = {0, 0, 0};
+            if (sub_fact_b == 0)
+                accB_b = {0, 0, 0};
+
+            magnetic_pressure_term += -m_b * (accB_a + accB_b);
+
+            magnetic_tension_term += - B_dot_grad_W(m_b, 
+                                                  rho_a_sq, rho_b_sq, 
+                                                  B_a, B_b, 
+                                                  omega_a, omega_b, 
+                                                  nabla_Wab_ha, nabla_Wab_hb, mu_0);
+
+//            for (int i = 0; i < 3; ++i) {
+//                for (int j = 0; j < 3; ++j) {
+//
+//                    Tscal mag_tension_a =   -(1. / mu_0) * B_a[i] * B_a[j];
+//                    Tscal mag_tension_b =   -(1. / mu_0) * B_b[i] * B_b[j];
+//                    Tscal acc_mag_tension_a = mag_tension_a / sub_fact_a;
+//                    Tscal acc_mag_tension_b = mag_tension_b / sub_fact_b;
+//                    if (sub_fact_a == 0)
+//                        acc_mag_tension_a = 0.;
+//                    if (sub_fact_b == 0)
+//                        acc_mag_tension_b = 0.;
+//
+//                    magnetic_tension_term[i]  +=  - m_b * (acc_mag_tension_a * nabla_Wab_ha[j] + acc_mag_tension_b * nabla_Wab_hb[j]);
+//                
+//                }
+//            }
         }
         else { // Price
             for (int i = 0; i < 3; ++i) {
-                Tscal mag_pressure_a;
-                Tscal mag_pressure_b;
-
+                Tscal mag_pressure_a = (1. / (2 * mu_0)) * sycl::dot(B_a, B_a); 
+                Tscal mag_pressure_b = (1. / (2 * mu_0)) * sycl::dot(B_b, B_b); 
+                Tscal acc_mag_pressure_a = mag_pressure_a / sub_fact_a;
+                Tscal acc_mag_pressure_b = mag_pressure_b / sub_fact_b;
+                if (sub_fact_a == 0)
+                    acc_mag_pressure_a = 0.;
+                if (sub_fact_b == 0)
+                    acc_mag_pressure_b = 0.;
+                magnetic_pressure_term[i] += - m_b * (acc_mag_pressure_a * nabla_Wab_ha[i] + acc_mag_pressure_b * nabla_Wab_hb[i]);
+                
                 for (int j = 0; j < 3; ++j) {
 
                     Tscal mag_tension_a =   -(1. / mu_0) * B_a[i] * B_a[j];
                     Tscal mag_tension_b =   -(1. / mu_0) * B_b[i] * B_b[j];
+                    Tscal acc_mag_tension_a = mag_tension_a / sub_fact_a;
+                    Tscal acc_mag_tension_b = mag_tension_b / sub_fact_b;
+                    if (sub_fact_a == 0)
+                        acc_mag_tension_a = 0.;
+                    if (sub_fact_b == 0)
+                        acc_mag_tension_b = 0.;
 
-                    if (i == j) {
-                        mag_pressure_a = 
-                                  (1. / (2 * mu_0))
-                                       * sycl::dot(
-                                           B_a, B_a); 
-                        mag_pressure_b = 
-                                  (1. / (2 * mu_0))
-                                       * sycl::dot(B_b, B_b); 
-                    }
-
-                    magnetic_pressure_term[i] += (mag_pressure_a / sub_fact_a) * nabla_Wab_ha[j] + (mag_pressure_b / sub_fact_b) * nabla_Wab_hb[j];
-                    magnetic_tension_term[i] +=  (mag_tension_a / sub_fact_a) * nabla_Wab_ha[j] + (mag_tension_b / sub_fact_b) * nabla_Wab_hb[j];
+                    magnetic_tension_term[i]  +=  - m_b * (acc_mag_tension_a * nabla_Wab_ha[j] + acc_mag_tension_b * nabla_Wab_hb[j]);
 
                 }
-                pressure_term += (P_a / sub_fact_a) * nabla_Wab_ha + (P_b / sub_fact_b) * nabla_Wab_hb;
+
+                Tscal acc_gas_pressure_a = P_a / sub_fact_a;
+                Tscal acc_gas_pressure_b = P_b / sub_fact_b;
+                if (sub_fact_a == 0)
+                    acc_gas_pressure_a = 0.;
+                if (sub_fact_b == 0)
+                    acc_gas_pressure_b = 0.;
+                pressure_term[i] += - m_b * (acc_gas_pressure_a * nabla_Wab_ha[i] + acc_gas_pressure_b * nabla_Wab_hb[i]);
         }
         }
         
@@ -344,8 +373,8 @@ namespace shamrock::spmhd {
 
         sum_gas_pressure += pressure_term;
         sum_mag_pressure += magnetic_pressure_term;
-        sum_mag_tension += magnetic_tension_term;
-        sum_fdivB += fdivB_a;
+        sum_mag_tension  += magnetic_tension_term;
+        sum_fdivB        += fdivB_a;
 
         return std::make_tuple(sum_gas_pressure, sum_mag_pressure, sum_mag_tension, sum_fdivB);
     }
@@ -559,9 +588,12 @@ namespace shamrock::spmhd {
             v_cross_r[0] * v_cross_r[0] + v_cross_r[1] * v_cross_r[1]
             + v_cross_r[2] * v_cross_r[2]);
 
-        bool Tricco = false; 
-        Tvec sum_gas_pressure, sum_mag_pressure, sum_mag_tension, sum_fdivB;
-        std::tie(sum_gas_pressure, sum_mag_pressure, sum_mag_tension, sum_fdivB) = dv_terms(
+        
+        constexpr bool debug_eq_dump = true;
+        if (debug_eq_dump) {
+            bool Tricco = true; 
+            Tvec sum_gas_pressure, sum_mag_pressure, sum_mag_tension, sum_fdivB = {0., 0., 0.};
+            std::tie(sum_gas_pressure, sum_mag_pressure, sum_mag_tension, sum_fdivB) = dv_terms(
             pmass,
             rho_a_sq,
             rho_b * rho_b,
@@ -580,7 +612,33 @@ namespace shamrock::spmhd {
             r_ab_unit * dWab_b,
             mu_0,
             Tricco);
-        dv_dt += sum_gas_pressure + sum_mag_pressure + sum_mag_tension + sum_fdivB;
+            dv_dt += sum_gas_pressure + sum_mag_pressure + sum_mag_tension + sum_fdivB;
+            mag_pressure += sum_mag_pressure;
+            gas_pressure += sum_gas_pressure;
+            mag_tension += sum_mag_tension;
+            tensile_corr += sum_fdivB;
+        }
+        else {
+            dv_dt += v_mhd_symetric_tensor_shockterm_fdiv(
+            pmass,
+            rho_a_sq,
+            rho_b * rho_b,
+            v_ab,
+            r_ab_unit,
+            v_ab_r_ab,
+            P_a,
+            P_b,
+            cs_a,
+            cs_b,
+            B_a,
+            B_b,
+            omega_a,
+            omega_b,
+            r_ab_unit * dWab_a,
+            r_ab_unit * dWab_b,
+            mu_0);
+        }
+
         // compared to Phantom_2018 eq.35 we move lambda shock artificial viscosity
         // pressure part as just a modified SPH pressure (which is the case already in
         // phantom paper but not written that way)
