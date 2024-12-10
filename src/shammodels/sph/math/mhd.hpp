@@ -468,7 +468,7 @@ namespace shamrock::spmhd {
         Tscal divB_a = -(1. / sub_fact_a) * m_b * sycl::dot(B_ab, nabla_Wab_ha);
 
         Tscal parabolic_propag
-            = -ch_a * divB_a; // m_b * (ch_a / sub_fact_a) *  sycl::dot(B_ab, nabla_Wab_ha);
+            =  m_b * (ch_a / sub_fact_a) *  sycl::dot(B_ab, nabla_Wab_ha); //-ch_a * divB_a;
 
         if (sub_fact_a == 0) {
             parabolic_propag = 0;
@@ -646,17 +646,17 @@ namespace shamrock::spmhd {
         du_dt += duint_dt_pressure_mhd(
             pmass, P_a, omega_a_rho_a_inv * rho_a_inv, v_ab, r_ab_unit * dWab_a);
 
-        //du_dt += lambda_shock_conductivity_no_artres(
-        //    pmass,
-        //    alpha_u,
-        //    vsig_a,
-        //    vsig_u,
-        //    u_a - u_b,
-        //    abs_v_ab_r_ab,
-        //    omega_a_rho_a_inv,
-        //    Fab_a,
-        //    dWab_b / (rho_a * omega_a),
-        //    dWab_b / (rho_b * omega_b));
+        du_dt += lambda_shock_conductivity_no_artres(
+            pmass,
+            alpha_u,
+            vsig_a,
+            vsig_u,
+            u_a - u_b,
+            abs_v_ab_r_ab,
+            omega_a_rho_a_inv,
+            Fab_a,
+            dWab_b / (rho_a * omega_a),
+            dWab_b / (rho_b * omega_b));
 
         //du_dt += lambda_artes(
         //    pmass,
@@ -690,26 +690,26 @@ namespace shamrock::spmhd {
         dB_on_rho_dt
             += v_ab * dB_on_rho_induction_term(pmass, rho_a_sq, B_a, omega_a, r_ab_unit * dWab_b);
 
-        //dB_on_rho_dt += dB_on_rho_psi_term(
-        //    pmass,
-        //    rho_a_sq,
-        //    rho_b * rho_b,
-        //    psi_a,
-        //    psi_b,
-        //    omega_a,
-        //    omega_b,
-        //    r_ab_unit * dWab_a,
-        //    r_ab_unit * dWab_b);
+        dB_on_rho_dt += dB_on_rho_psi_term(
+            pmass,
+            rho_a_sq,
+            rho_b * rho_b,
+            psi_a,
+            psi_b,
+            omega_a,
+            omega_b,
+            r_ab_unit * dWab_a,
+            r_ab_unit * dWab_b);
 
         //dB_on_rho_dt += dB_on_rho_dissipation_term;
 
-        //dpsi_on_ch_dt += dpsi_on_ch_parabolic_propag(
-        //    pmass, rho_a, B_a, B_b, omega_a, r_ab_unit * dWab_a, v_shock_a);
+        dpsi_on_ch_dt += dpsi_on_ch_parabolic_propag(
+            pmass, rho_a, B_a, B_b, omega_a, r_ab_unit * dWab_a, v_shock_a);
 
-        //dpsi_on_ch_dt += dpsi_on_ch_parabolic_diff(
-        //    pmass, rho_a, vxyz_a, vxyz_b, psi_a, omega_a, r_ab_unit * dWab_a, v_shock_a);
+        dpsi_on_ch_dt += dpsi_on_ch_parabolic_diff(
+            pmass, rho_a, vxyz_a, vxyz_b, psi_a, omega_a, r_ab_unit * dWab_a, v_shock_a);
 
-        //dpsi_on_ch_dt += dpsi_on_ch_conservation(h_a, psi_a, v_shock_a, sigma_mhd);
+        dpsi_on_ch_dt += dpsi_on_ch_conservation(h_a, psi_a, v_shock_a, sigma_mhd);
     }
 
 } // namespace shamrock::spmhd

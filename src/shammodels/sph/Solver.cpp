@@ -343,11 +343,137 @@ void shammodels::sph::Solver<Tvec, Kern>::vtk_do_dump(
     vtk_dump_add_compute_field(scheduler(), writter, density, "rho");
 }
 
+template<class Tvec, template<class> class Kern>
+void shammodels::sph::Solver<Tvec, Kern>::vtk_do_debug_dump(
+    std::string filename) {
+
+    StackEntry stack_loc{};
+
+    using namespace shamrock;
+    using namespace shamrock::patch;
+    shamrock::SchedulerUtility utility(scheduler());
+    PatchDataLayout &pdl        = scheduler().pdl;
+    const u32 ixyz              = pdl.get_field_idx<Tvec>("xyz");
+    const u32 ivxyz             = pdl.get_field_idx<Tvec>("vxyz");
+    const u32 iaxyz             = pdl.get_field_idx<Tvec>("axyz");
+    const u32 iuint             = pdl.get_field_idx<Tscal>("uint");
+    const u32 iduint            = pdl.get_field_idx<Tscal>("duint");
+    const u32 ihpart            = pdl.get_field_idx<Tscal>("hpart");
+    const u32 iB_on_rho         = pdl.get_field_idx<Tvec>("B/rho");
+    const u32 imag_pressure         = pdl.get_field_idx<Tvec>("mag_pressure");
+    const u32 imag_tension          = pdl.get_field_idx<Tvec>("mag_tension");
+    const u32 igas_pressure         = pdl.get_field_idx<Tvec>("gas_pressure");
+    const u32 itensile_corr         = pdl.get_field_idx<Tvec>("tensile_corr");
+    ComputeField<Tscal> density = utility.make_compute_field<Tscal>("rho", 1);
+
+    scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchData &pdat) {
+        logger::debug_ln("sph::vtk", "compute rho field for patch ", p.id_patch);
+        shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
+            sycl::accessor acc_h{
+                shambase::get_check_ref(pdat.get_field<Tscal>(ihpart).get_buf()),
+                cgh,
+                sycl::read_only};
+
+            sycl::accessor acc_rho{
+                shambase::get_check_ref(density.get_buf(p.id_patch)),
+                cgh,
+                sycl::write_only,
+                sycl::no_init};
+            const Tscal part_mass = solver_config.gpart_mass;
+
+            cgh.parallel_for(sycl::range<1>{pdat.get_obj_cnt()}, [=](sycl::item<1> item) {
+                u32 gid = (u32) item.get_id();
+                using namespace shamrock::sph;
+                Tscal rho_ha = rho_h(part_mass, acc_h[gid], Kernel::hfactd);
+                acc_rho[gid] = rho_ha;
+            });
+        });
+    });
+
+    shamrock::LegacyVtkWritter writter = start_dump<Tvec>(scheduler(), filename);
+    writter.add_point_data_section();
+
+    u32 fnum = 0;
+
+    fnum++;
+    fnum++;
+    fnum++;
+    fnum++;
+    fnum++;
+
+
+    if (solver_config.has_field_soundspeed()) {
+        fnum++;
+    }
+
+    if (solver_config.has_field_B_on_rho()) {
+        fnum++;
+    }
+
+    if (solver_config.has_field_divB()) {
+        fnum++;
+    }
+
+    if (solver_config.has_field_divB()) {
+        fnum++; //mag press
+        fnum++; // mag tens
+        fnum++; //gas pressure
+        fnum++; // tensile
+    }
+
+    writter.add_field_data_section(fnum);
+
+    vtk_dump_add_field<Tscal>(scheduler(), writter, ihpart, "h");
+    vtk_dump_add_field<Tscal>(scheduler(), writter, iuint, "u");
+    vtk_dump_add_field<Tvec>(scheduler(), writter, ivxyz, "v");
+    vtk_dump_add_field<Tvec>(scheduler(), writter, iaxyz, "a");
+
+
+    if (solver_config.has_field_soundspeed()) {
+        const u32 isoundspeed = pdl.get_field_idx<Tscal>("soundspeed");
+        vtk_dump_add_field<Tscal>(scheduler(), writter, isoundspeed, "soundspeed");
+    }
+
+    if (solver_config.has_field_B_on_rho()) {
+        const u32 iB_on_rho = pdl.get_field_idx<Tvec>("B/rho");
+        vtk_dump_add_field<Tvec>(scheduler(), writter, iB_on_rho, "B/rho");
+    }
+
+
+    if (solver_config.has_field_divB()) {
+        const u32 idivB = pdl.get_field_idx<Tscal>("divB");
+        vtk_dump_add_field<Tscal>(scheduler(), writter, idivB, "divB");
+    }
+
+    if (solver_config.has_field_divB()) {
+        const u32 iB_on_rho = pdl.get_field_idx<Tvec>("mag_pressure");
+        vtk_dump_add_field<Tvec>(scheduler(), writter, imag_pressure, "mag_pressure");
+    }
+
+    if (solver_config.has_field_divB()) {
+        const u32 imag_tension = pdl.get_field_idx<Tvec>("mag_tension");
+        vtk_dump_add_field<Tvec>(scheduler(), writter, imag_tension, "mag_tension");
+    }
+
+    if (solver_config.has_field_divB()) {
+        const u32 igas_pressure = pdl.get_field_idx<Tvec>("gas_pressure");
+        vtk_dump_add_field<Tvec>(scheduler(), writter, igas_pressure, "gas_pressure");
+    }
+
+    if (solver_config.has_field_divB()) {
+        const u32 itensile_corr = pdl.get_field_idx<Tvec>("tensile_corr");
+        vtk_dump_add_field<Tvec>(scheduler(), writter, itensile_corr, "tensile_corr");
+    }
+
+
+    vtk_dump_add_compute_field(scheduler(), writter, density, "rho");
+}
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // Debug interface dump
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 namespace shammodels::sph {
+
 
     template<class Tvec>
     struct Debug_ph_dump {
@@ -361,6 +487,24 @@ namespace shammodels::sph {
         sycl::buffer<Tvec> &buf_vxyz;
         //sycl::buffer<Tscal> &buf_psi_on_ch;
         sycl::buffer<Tvec> &buf_B_on_rho;
+    };
+
+    template<class Tvec>
+    struct Debug_eq_dump {
+        using Tscal = shambase::VecComponent<Tvec>;
+
+        u64 nobj;
+        f64 gpart_mass;
+
+        sycl::buffer<Tvec> &buf_xyz;
+        sycl::buffer<Tscal> &buf_hpart;
+        sycl::buffer<Tvec> &buf_vxyz;
+        //sycl::buffer<Tscal> &buf_psi_on_ch;
+        sycl::buffer<Tvec> &buf_B_on_rho;
+        sycl::buffer<Tvec> &buf_mag_pressure;
+        sycl::buffer<Tvec> &buf_mag_tension;
+        sycl::buffer<Tvec> &buf_gas_pressure;
+        sycl::buffer<Tvec> &buf_tensile_corr;
     };
 
     template<class Tvec>
@@ -433,13 +577,59 @@ namespace shammodels::sph {
             block.blocks_fort_real[B_on_rhozid].vals.push_back(vec.z());
         }
 
-        
+        std::vector<Tvec> mag_pressure = shamalgs::memory::buf_to_vec(info.buf_mag_pressure, info.nobj);
+
+        u64 mag_pressure_xid = block.get_ref_fort_real("mag_pressure_x");
+        u64 mag_pressure_yid = block.get_ref_fort_real("mag_pressure_y");
+        u64 mag_pressure_zid = block.get_ref_fort_real("mag_pressure_z");
+
+        for (auto vec : mag_pressure) {
+            block.blocks_fort_real[mag_pressure_xid].vals.push_back(vec.x());
+            block.blocks_fort_real[mag_pressure_yid].vals.push_back(vec.y());
+            block.blocks_fort_real[mag_pressure_zid].vals.push_back(vec.z());
+        }
+
+        std::vector<Tvec> mag_tension = shamalgs::memory::buf_to_vec(info.buf_mag_tension, info.nobj);
+
+        u64 mag_tension_xid = block.get_ref_fort_real("mag_tension_x");
+        u64 mag_tension_yid = block.get_ref_fort_real("mag_tension_y");
+        u64 mag_tension_zid = block.get_ref_fort_real("mag_tension_z");
+
+        for (auto vec : mag_tension) {
+            block.blocks_fort_real[mag_tension_xid].vals.push_back(vec.x());
+            block.blocks_fort_real[mag_tension_yid].vals.push_back(vec.y());
+            block.blocks_fort_real[mag_tension_zid].vals.push_back(vec.z());
+        }
+
+        std::vector<Tvec> gas_pressure = shamalgs::memory::buf_to_vec(info.buf_gas_pressure, info.nobj);
+
+        u64 gas_pressure_xid = block.get_ref_fort_real("gas_pressure_x");
+        u64 gas_pressure_yid = block.get_ref_fort_real("gas_pressure_y");
+        u64 gas_pressure_zid = block.get_ref_fort_real("gas_pressure_z");
+
+        for (auto vec : gas_pressure) {
+            block.blocks_fort_real[gas_pressure_xid].vals.push_back(vec.x());
+            block.blocks_fort_real[gas_pressure_yid].vals.push_back(vec.y());
+            block.blocks_fort_real[gas_pressure_zid].vals.push_back(vec.z());
+        }
+
+        std::vector<Tvec> tensile_corr = shamalgs::memory::buf_to_vec(info.buf_tensile_corr, info.nobj);
+
+        u64 tensile_corr_xid = block.get_ref_fort_real("tensile_corr_x");
+        u64 tensile_corr_yid = block.get_ref_fort_real("tensile_corr_y");
+        u64 tensile_corr_zid = block.get_ref_fort_real("tensile_corr_z");
+
+        for (auto vec : tensile_corr) {
+            block.blocks_fort_real[tensile_corr_xid].vals.push_back(vec.x());
+            block.blocks_fort_real[tensile_corr_yid].vals.push_back(vec.y());
+            block.blocks_fort_real[tensile_corr_zid].vals.push_back(vec.z());
+        }
 
         block.tot_count = block.blocks_fort_real[xid].vals.size();
     }
 
     template<class Tvec>
-    shammodels::sph::PhantomDump make_interface_debug_phantom_dump(Debug_ph_dump<Tvec> info) {
+    shammodels::sph::PhantomDump make_equation_debug_phantom_dump(Debug_ph_dump<Tvec> info) {
 
         using Tscal = shambase::VecComponent<Tvec>;
         PhantomDump dump;
@@ -1639,45 +1829,49 @@ void shammodels::sph::Solver<Tvec, Kern>::evolve_once() {
 
         update_derivs();
 
-        constexpr bool debug_equations = false;
+        constexpr bool debug_equations = true;
         if constexpr (debug_equations) {
             static int count = 0;
             count++;
 
-            if (false) { //solver_config.do_debug_dump || 
+            if (true) { //solver_config.do_debug_dump || 
 
-                shambase::DistributedData<MergedPatchData> &mpdat
-                    = storage.merged_patchdata_ghost.get();
-
-                scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
-                    MergedPatchData &merged_patch = mpdat.get(cur_p.id_patch);
-                    PatchData &mpdat              = merged_patch.pdat;
-
-                    sycl::buffer<Tvec> &buf_xyz = shambase::get_check_ref(
-                        merged_xyzh.get(cur_p.id_patch).field_pos.get_buf());
-                    sycl::buffer<Tvec> &buf_vxyz   = mpdat.get_field_buf_ref<Tvec>(ivxyz);
-                    sycl::buffer<Tscal> &buf_hpart = mpdat.get_field_buf_ref<Tscal>(ihpart);
-                    sycl::buffer<Tvec> &buf_B_on_rho= mpdat.get_field_buf_ref<Tvec>(iB_on_rho);
-                    sycl::buffer<Tvec> &buf_mag_pressure = mpdat.get_field_buf_ref<Tvec>(imag_pressure);
-                    sycl::buffer<Tvec> &buf_mag_tension  = mpdat.get_field_buf_ref<Tvec>(imag_tension);
-                    sycl::buffer<Tvec> &buf_gas_pressure = mpdat.get_field_buf_ref<Tvec>(igas_pressure);
-                    sycl::buffer<Tvec> &buf_tensile_corr = mpdat.get_field_buf_ref<Tvec>(itensile_corr);
+//                shambase::DistributedData<MergedPatchData> &mpdat
+//                    = storage.merged_patchdata_ghost.get();
+//
+//                scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+//                    MergedPatchData &merged_patch = mpdat.get(cur_p.id_patch);
+//                    PatchData &mpdat              = merged_patch.pdat;
+//
+//                    sycl::buffer<Tvec> &buf_xyz = shambase::get_check_ref(
+//                        merged_xyzh.get(cur_p.id_patch).field_pos.get_buf());
+//                    sycl::buffer<Tvec> &buf_vxyz   = mpdat.get_field_buf_ref<Tvec>(ivxyz);
+//                    sycl::buffer<Tscal> &buf_hpart = mpdat.get_field_buf_ref<Tscal>(ihpart);
+//                    sycl::buffer<Tvec> &buf_B_on_rho= mpdat.get_field_buf_ref<Tvec>(iB_on_rho);
+//                    sycl::buffer<Tvec> &buf_mag_pressure = mpdat.get_field_buf_ref<Tvec>(imag_pressure);
+//                    sycl::buffer<Tvec> &buf_mag_tension  = mpdat.get_field_buf_ref<Tvec>(imag_tension);
+//                    sycl::buffer<Tvec> &buf_gas_pressure = mpdat.get_field_buf_ref<Tvec>(igas_pressure);
+//                    sycl::buffer<Tvec> &buf_tensile_corr = mpdat.get_field_buf_ref<Tvec>(itensile_corr);
 
                     // write debug dump
-                    Debug_ph_dump<Tvec> info{
-                        merged_patch.total_elements,
-                        solver_config.gpart_mass,
+//                    Debug_eq_dump<Tvec> info{
+//                        merged_patch.total_elements,
+//                        solver_config.gpart_mass,
+//
+//                        buf_xyz,
+//                        buf_hpart,
+//                        buf_vxyz,
+//                        buf_B_on_rho,
+//                        buf_mag_pressure,
+//                        buf_mag_tension,
+//                        buf_gas_pressure,
+//                        buf_tensile_corr};
 
-                        buf_xyz,
-                        buf_hpart,
-                        buf_vxyz,
-                        buf_B_on_rho};
-
-                    solver_config.debug_dump_filename = "debug_eq_dump" + std::to_string(count) + ".phdump";
-                    make_interface_debug_phantom_dump(info).gen_file().write_to_file(
-                        solver_config.debug_dump_filename);
+                    solver_config.debug_dump_filename = std::string("/Users/ylapeyre/Documents/Shamwork/tricco_pushpart3/") 
+                    + "tricco_" + std::to_string(count) + ".vtk";
+                    vtk_do_debug_dump(solver_config.debug_dump_filename);
                     logger::raw_ln("writing debug dump : ", solver_config.debug_dump_filename);
-                });
+//                });
             }
         }
         modules::ConservativeCheck<Tvec, Kern> cv_check(context, solver_config, storage);

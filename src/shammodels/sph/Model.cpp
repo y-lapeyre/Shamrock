@@ -296,6 +296,7 @@ void shammodels::sph::Model<Tvec, SPHKernel>::push_particle(
                 u_acc.push_back(u);
                 vel_acc.push_back(vel);
                 B_acc.push_back(B);
+                //logger::raw_ln("pushing ", B, " at ", r);
                 psi_acc.push_back(psi);
             }
         }
@@ -341,7 +342,7 @@ void shammodels::sph::Model<Tvec, SPHKernel>::push_particle(
         {
             u32 len                 = vec_acc.size();
             PatchDataField<Tvec> &f = tmp.get_field<Tvec>(sched.pdl.get_field_idx<Tvec>("vxyz"));
-            sycl::buffer<Tvec> buf(B_acc.data(), len);
+            sycl::buffer<Tvec> buf(vel_acc.data(), len);
             f.override(buf, len);
         }
 

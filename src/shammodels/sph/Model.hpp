@@ -99,6 +99,10 @@ namespace shammodels::sph {
             solver.vtk_do_dump(filename, add_patch_world_id);
         }
 
+        void do_vtk_debug_dump(std::string filename, bool add_patch_world_id) {
+            solver.vtk_do_debug_dump(filename);
+        }
+
         void set_debug_dump(bool _do_debug_dump, std::string _debug_dump_filename) {
             solver.set_debug_dump(_do_debug_dump, _debug_dump_filename);
         }

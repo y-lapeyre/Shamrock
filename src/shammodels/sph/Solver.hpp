@@ -114,6 +114,19 @@ namespace shammodels::sph {
             if (solver_config.has_field_curlB()) {
                 context.pdata_layout_add_field<Tvec>("curlB", 1);
             }
+
+            if (solver_config.has_field_divB()) {
+                context.pdata_layout_add_field<Tvec>("mag_pressure", 1);
+            }
+            if (solver_config.has_field_divB()) {
+                context.pdata_layout_add_field<Tvec>("mag_tension", 1);
+            }
+            if (solver_config.has_field_divB()) {
+                context.pdata_layout_add_field<Tvec>("gas_pressure", 1);
+            }
+            if (solver_config.has_field_divB()) {
+                context.pdata_layout_add_field<Tvec>("tensile_corr", 1);
+            }
         }
 
         // serial patch tree control
@@ -203,6 +216,8 @@ namespace shammodels::sph {
         Solver(ShamrockCtx &context) : context(context) {}
 
         void vtk_do_dump(std::string filename, bool add_patch_world_id);
+
+        void vtk_do_debug_dump(std::string filename);
 
         void set_debug_dump(bool _do_debug_dump, std::string _debug_dump_filename) {
             solver_config.set_debug_dump(_do_debug_dump, _debug_dump_filename);
