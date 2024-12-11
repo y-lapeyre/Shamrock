@@ -10,12 +10,11 @@
 #pragma once
 
 /**
- * @file DeviceBuffer.hpp
+ * @file BufferMirror.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @brief
  *
  */
-
 
 #include "shambase/SourceLocation.hpp"
 #include "shambackends/DeviceBuffer.hpp"
@@ -24,38 +23,33 @@
 namespace sham {
 
     template<class T, USMKindTarget target, USMKindTarget orgin_target>
-    class BufferMirror{
+    class BufferMirror {
 
-        DeviceBuffer<T, orgin_target> & mirrored_buffer;
+        DeviceBuffer<T, orgin_target> &mirrored_buffer;
 
         DeviceBuffer<T, target> mirror;
-        T* ptr_mirror;
+        T *ptr_mirror;
 
-    public:
-
-        BufferMirror(DeviceBuffer<T, orgin_target> & mirrored_buffer): mirrored_buffer(mirrored_buffer),
-        mirror (mirrored_buffer.template copy_to<target>())
-        {
+        public:
+        BufferMirror(DeviceBuffer<T, orgin_target> &mirrored_buffer)
+            : mirrored_buffer(mirrored_buffer), mirror(mirrored_buffer.template copy_to<target>()) {
             sham::EventList depends_list;
             ptr_mirror = mirror.get_write_access(depends_list);
             depends_list.wait();
             mirror.complete_event_state(sycl::event{});
         }
 
-        BufferMirror(const BufferMirror&) = delete;
-        BufferMirror(BufferMirror&&) = delete;
-        BufferMirror& operator=(const BufferMirror&) = delete;
-        BufferMirror& operator=(BufferMirror&&) = delete;
+        BufferMirror(const BufferMirror &)            = delete;
+        BufferMirror(BufferMirror &&)                 = delete;
+        BufferMirror &operator=(const BufferMirror &) = delete;
+        BufferMirror &operator=(BufferMirror &&)      = delete;
 
-        T* data() const { return ptr_mirror; }
+        T *data() const { return ptr_mirror; }
         u32 size() const { return mirrored_buffer.size(); }
 
-        T& operator[](u32 i) const { return ptr_mirror[i]; }
+        T &operator[](u32 i) const { return ptr_mirror[i]; }
 
-        ~BufferMirror(){
-            mirrored_buffer.template copy_from(mirror);
-        };
-
+        ~BufferMirror() { mirrored_buffer.template copy_from(mirror); };
     };
 
-}
+} // namespace sham

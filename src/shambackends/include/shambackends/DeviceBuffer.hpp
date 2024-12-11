@@ -667,7 +667,9 @@ namespace sham {
         inline DeviceBuffer<T, target> copy() const { return copy_to<target>(); }
 
         template<USMKindTarget mirror_target>
-        inline BufferMirror<T, mirror_target, target> mirror_to() { return BufferMirror<T, mirror_target, target>(*this); }
+        inline BufferMirror<T, mirror_target, target> mirror_to() {
+            return BufferMirror<T, mirror_target, target>(*this);
+        }
 
         ///////////////////////////////////////////////////////////////////////
         // Copy fcts (END)
