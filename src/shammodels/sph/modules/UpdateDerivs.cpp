@@ -750,6 +750,8 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD(
     const u32 ipsi_diff   = pdl.get_field_idx<Tscal>("psi_diff");
     const u32 ipsi_cons   = pdl.get_field_idx<Tscal>("psi_cons");
 
+    const u32 iu_mhd   = pdl.get_field_idx<Tscal>("u_mhd");
+
     // const u32 icurlB = pdl.get_field_idx<Tvec>("curlB");
 
 Tscal mu_0 = 1.;
@@ -801,6 +803,8 @@ Tscal mu_0 = 1.;
         sycl::buffer<Tscal> &buf_psi_propag   = pdat.get_field_buf_ref<Tscal>(ipsi_propag);
         sycl::buffer<Tscal> &buf_psi_diff   = pdat.get_field_buf_ref<Tscal>(ipsi_diff);
         sycl::buffer<Tscal> &buf_psi_cons   = pdat.get_field_buf_ref<Tscal>(ipsi_cons);
+
+        sycl::buffer<Tscal> &buf_u_mhd   = pdat.get_field_buf_ref<Tscal>(iu_mhd);
         // logger::raw_ln("charged B psi");
         //  ADD curlBBBBBBBBB
 
@@ -850,6 +854,8 @@ Tscal mu_0 = 1.;
             sycl::accessor psi_propag{buf_psi_propag, cgh, sycl::write_only};
             sycl::accessor psi_diff{buf_psi_diff, cgh, sycl::write_only};
             sycl::accessor psi_cons{buf_psi_cons, cgh, sycl::write_only};
+
+            sycl::accessor u_mhd{buf_u_mhd, cgh, sycl::write_only};
             // sycl::accessor hmax_tree{tree_field_hmax, cgh, sycl::read_only};
 
             // sycl::stream out {4096,1024,cgh};
@@ -897,6 +903,8 @@ Tscal mu_0 = 1.;
                 Tscal psi_propag_term = 0;
                 Tscal psi_diff_term   = 0;
                 Tscal psi_cons_term   = 0;
+
+                Tscal u_mhd_term = 0;
 
                 particle_looper.for_each_object(id_a, [&](u32 id_b) {
                     // compute only omega_a
@@ -960,7 +968,8 @@ Tscal mu_0 = 1.;
 
                         psi_propag_term,
                         psi_diff_term,
-                        psi_cons_term);
+                        psi_cons_term,
+                        u_mhd_term);
                     // clang-format on
                 });
 
@@ -977,6 +986,8 @@ Tscal mu_0 = 1.;
                 psi_propag[id_a] = psi_propag_term;
                 psi_diff[id_a]   = psi_diff_term;
                 psi_cons[id_a]   = psi_cons_term;
+
+                u_mhd[id_a]      = u_mhd_term;
 
             });
         });

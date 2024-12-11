@@ -553,7 +553,9 @@ namespace shamrock::spmhd {
         
         Tscal &psi_propag,
         Tscal &psi_diff,
-        Tscal &psi_cons) {
+        Tscal &psi_cons,
+        
+        Tscal &u_mhd) {
 
         using namespace shamrock::sph;
         Tvec v_ab      = vxyz_a - vxyz_b;
@@ -647,20 +649,21 @@ namespace shamrock::spmhd {
         // pressure part as just a modified SPH pressure (which is the case already in
         // phantom paper but not written that way)
         //Tscal qa_ab = q_av(sycl::sqrt(rho_a_sq), vsig_a, v_ab_r_ab);
-        du_dt += duint_dt_pressure_mhd(
+        u_mhd = duint_dt_pressure_mhd(
             pmass, P_a, omega_a_rho_a_inv * rho_a_inv, v_ab, r_ab_unit * dWab_a);
+        du_dt += u_mhd;
 
-        du_dt += lambda_shock_conductivity_no_artres(
-            pmass,
-            alpha_u,
-            vsig_a,
-            vsig_u,
-            u_a - u_b,
-            abs_v_ab_r_ab,
-            omega_a_rho_a_inv,
-            Fab_a,
-            dWab_b / (rho_a * omega_a),
-            dWab_b / (rho_b * omega_b));
+        //du_dt += lambda_shock_conductivity_no_artres(
+        //    pmass,
+        //    alpha_u,
+        //    vsig_a,
+        //    vsig_u,
+        //    u_a - u_b,
+        //    abs_v_ab_r_ab,
+        //    omega_a_rho_a_inv,
+        //    Fab_a,
+        //    dWab_b / (rho_a * omega_a),
+        //    dWab_b / (rho_b * omega_b));
 
         //du_dt += lambda_artes(
         //    pmass,
@@ -694,16 +697,16 @@ namespace shamrock::spmhd {
         dB_on_rho_dt
             += v_ab * dB_on_rho_induction_term(pmass, rho_a_sq, B_a, omega_a, r_ab_unit * dWab_b);
 
-        dB_on_rho_dt += dB_on_rho_psi_term(
-            pmass,
-            rho_a_sq,
-            rho_b * rho_b,
-            psi_a,
-            psi_b,
-            omega_a,
-            omega_b,
-            r_ab_unit * dWab_a,
-            r_ab_unit * dWab_b);
+        //dB_on_rho_dt += dB_on_rho_psi_term(
+        //    pmass,
+        //    rho_a_sq,
+        //    rho_b * rho_b,
+        //    psi_a,
+        //    psi_b,
+        //    omega_a,
+        //    omega_b,
+        //    r_ab_unit * dWab_a,
+        //    r_ab_unit * dWab_b);
 
         //dB_on_rho_dt += dB_on_rho_dissipation_term;
 
@@ -715,7 +718,7 @@ namespace shamrock::spmhd {
 
         dpsi_on_ch_dt += psi_propag;
         dpsi_on_ch_dt += psi_diff;
-        dpsi_on_ch_dt += psi_cons;
+        dpsi_on_ch_dt += - psi_cons;
     }
 
 } // namespace shamrock::spmhd

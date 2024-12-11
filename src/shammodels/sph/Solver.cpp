@@ -368,6 +368,8 @@ void shammodels::sph::Solver<Tvec, Kern>::vtk_do_debug_dump(
     const u32 ipsi_diff         = pdl.get_field_idx<Tscal>("psi_diff");
     const u32 ipsi_cons         = pdl.get_field_idx<Tscal>("psi_cons");
 
+    const u32 iu_mhd         = pdl.get_field_idx<Tscal>("u_mhd");
+
     ComputeField<Tscal> density = utility.make_compute_field<Tscal>("rho", 1);
 
     scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchData &pdat) {
@@ -487,6 +489,11 @@ void shammodels::sph::Solver<Tvec, Kern>::vtk_do_debug_dump(
         vtk_dump_add_field<Tscal>(scheduler(), writter, ipsi_cons, "psi_cons");
     }
 
+    if (solver_config.has_field_divB()) {
+        const u32 iu_mhd = pdl.get_field_idx<Tscal>("u_mhd");
+        vtk_dump_add_field<Tscal>(scheduler(), writter, iu_mhd, "u_mhd");
+    }
+
 
     vtk_dump_add_compute_field(scheduler(), writter, density, "rho");
 }
@@ -530,6 +537,8 @@ namespace shammodels::sph {
         sycl::buffer<Tscal> &buf_psi_propag;
         sycl::buffer<Tscal> &buf_psi_diff;
         sycl::buffer<Tscal> &buf_psi_cons;
+
+        sycl::buffer<Tscal> &buf_u_mhd;
     };
 
     template<class Tvec>
@@ -551,6 +560,8 @@ namespace shammodels::sph {
         sycl::buffer<Tscal> &buf_psi_propag;
         sycl::buffer<Tscal> &buf_psi_diff;
         sycl::buffer<Tscal> &buf_psi_cons;
+
+        sycl::buffer<Tscal> &buf_u_mhd;
 
     };
 
@@ -1644,6 +1655,8 @@ void shammodels::sph::Solver<Tvec, Kern>::evolve_once() {
     const u32 ipsi_diff = pdl.get_field_idx<Tscal>("psi_diff");
     const u32 ipsi_cons = pdl.get_field_idx<Tscal>("psi_cons");
 
+    const u32 iu_mhd = pdl.get_field_idx<Tscal>("u_mhd");
+
     shamrock::SchedulerUtility utility(scheduler());
 
     modules::SinkParticlesUpdate<Tvec, Kern> sink_update(context, solver_config, storage);
@@ -1900,7 +1913,7 @@ void shammodels::sph::Solver<Tvec, Kern>::evolve_once() {
 //                        buf_gas_pressure,
 //                        buf_tensile_corr};
 
-                    solver_config.debug_dump_filename = std::string("/Users/ylapeyre/Documents/Shamwork/tricco_pushpart7/") 
+                    solver_config.debug_dump_filename = std::string("/Users/ylapeyre/Documents/Shamwork/debug/") 
                     + "tricco_" + std::to_string(count) + ".vtk";
                     vtk_do_debug_dump(solver_config.debug_dump_filename);
                     logger::raw_ln("writing debug dump : ", solver_config.debug_dump_filename);

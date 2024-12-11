@@ -136,6 +136,9 @@ namespace shammodels::sph {
             if (solver_config.has_field_divB()) {
                 context.pdata_layout_add_field<Tscal>("psi_cons", 1);
             }
+            if (solver_config.has_field_divB()) {
+                context.pdata_layout_add_field<Tscal>("u_mhd", 1);
+            }
         }
 
         // serial patch tree control
