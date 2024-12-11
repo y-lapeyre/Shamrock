@@ -364,6 +364,10 @@ void shammodels::sph::Solver<Tvec, Kern>::vtk_do_debug_dump(
     const u32 imag_tension          = pdl.get_field_idx<Tvec>("mag_tension");
     const u32 igas_pressure         = pdl.get_field_idx<Tvec>("gas_pressure");
     const u32 itensile_corr         = pdl.get_field_idx<Tvec>("tensile_corr");
+    const u32 ipsi_propag         = pdl.get_field_idx<Tscal>("psi_propag");
+    const u32 ipsi_diff         = pdl.get_field_idx<Tscal>("psi_diff");
+    const u32 ipsi_cons         = pdl.get_field_idx<Tscal>("psi_cons");
+
     ComputeField<Tscal> density = utility.make_compute_field<Tscal>("rho", 1);
 
     scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchData &pdat) {
@@ -419,6 +423,9 @@ void shammodels::sph::Solver<Tvec, Kern>::vtk_do_debug_dump(
         fnum++; // mag tens
         fnum++; //gas pressure
         fnum++; // tensile
+        fnum++; // psi propag
+        fnum++; // psi diff
+        fnum++; // psi cons
     }
 
     writter.add_field_data_section(fnum);
@@ -465,6 +472,21 @@ void shammodels::sph::Solver<Tvec, Kern>::vtk_do_debug_dump(
         vtk_dump_add_field<Tvec>(scheduler(), writter, itensile_corr, "tensile_corr");
     }
 
+    if (solver_config.has_field_divB()) {
+        const u32 ipsi_propag = pdl.get_field_idx<Tscal>("psi_propag");
+        vtk_dump_add_field<Tscal>(scheduler(), writter, ipsi_propag, "psi_propag");
+    }
+
+    if (solver_config.has_field_divB()) {
+        const u32 ipsi_diff = pdl.get_field_idx<Tscal>("psi_diff");
+        vtk_dump_add_field<Tscal>(scheduler(), writter, ipsi_diff, "psi_diff");
+    }
+
+    if (solver_config.has_field_divB()) {
+        const u32 ipsi_cons = pdl.get_field_idx<Tscal>("psi_cons");
+        vtk_dump_add_field<Tscal>(scheduler(), writter, ipsi_cons, "psi_cons");
+    }
+
 
     vtk_dump_add_compute_field(scheduler(), writter, density, "rho");
 }
@@ -505,6 +527,9 @@ namespace shammodels::sph {
         sycl::buffer<Tvec> &buf_mag_tension;
         sycl::buffer<Tvec> &buf_gas_pressure;
         sycl::buffer<Tvec> &buf_tensile_corr;
+        sycl::buffer<Tscal> &buf_psi_propag;
+        sycl::buffer<Tscal> &buf_psi_diff;
+        sycl::buffer<Tscal> &buf_psi_cons;
     };
 
     template<class Tvec>
@@ -523,6 +548,10 @@ namespace shammodels::sph {
         sycl::buffer<Tvec> &buf_mag_tension;
         sycl::buffer<Tvec> &buf_gas_pressure;
         sycl::buffer<Tvec> &buf_tensile_corr;
+        sycl::buffer<Tscal> &buf_psi_propag;
+        sycl::buffer<Tscal> &buf_psi_diff;
+        sycl::buffer<Tscal> &buf_psi_cons;
+
     };
 
     template<class Tvec>
@@ -1611,6 +1640,10 @@ void shammodels::sph::Solver<Tvec, Kern>::evolve_once() {
     const u32 igas_pressure = pdl.get_field_idx<Tvec>("gas_pressure");
     const u32 itensile_corr = pdl.get_field_idx<Tvec>("tensile_corr");
 
+    const u32 ipsi_propag = pdl.get_field_idx<Tscal>("psi_propag");
+    const u32 ipsi_diff = pdl.get_field_idx<Tscal>("psi_diff");
+    const u32 ipsi_cons = pdl.get_field_idx<Tscal>("psi_cons");
+
     shamrock::SchedulerUtility utility(scheduler());
 
     modules::SinkParticlesUpdate<Tvec, Kern> sink_update(context, solver_config, storage);
@@ -1867,7 +1900,7 @@ void shammodels::sph::Solver<Tvec, Kern>::evolve_once() {
 //                        buf_gas_pressure,
 //                        buf_tensile_corr};
 
-                    solver_config.debug_dump_filename = std::string("/Users/ylapeyre/Documents/Shamwork/tricco_pushpart3/") 
+                    solver_config.debug_dump_filename = std::string("/Users/ylapeyre/Documents/Shamwork/tricco_pushpart7/") 
                     + "tricco_" + std::to_string(count) + ".vtk";
                     vtk_do_debug_dump(solver_config.debug_dump_filename);
                     logger::raw_ln("writing debug dump : ", solver_config.debug_dump_filename);

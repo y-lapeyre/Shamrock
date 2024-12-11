@@ -746,10 +746,14 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD(
     const u32 imag_tension   = pdl.get_field_idx<Tvec>("mag_tension");
     const u32 igas_pressure   = pdl.get_field_idx<Tvec>("gas_pressure");
     const u32 itensile_corr   = pdl.get_field_idx<Tvec>("tensile_corr");
+    const u32 ipsi_propag   = pdl.get_field_idx<Tscal>("psi_propag");
+    const u32 ipsi_diff   = pdl.get_field_idx<Tscal>("psi_diff");
+    const u32 ipsi_cons   = pdl.get_field_idx<Tscal>("psi_cons");
 
     // const u32 icurlB = pdl.get_field_idx<Tvec>("curlB");
 
-    Tscal mu_0 = solver_config.get_constant_mu_0();
+Tscal mu_0 = 1.;
+    //Tscal mu_0 = solver_config.get_constant_mu_0(); @@@@@@@@@@@@@@
 
     shamrock::patch::PatchDataLayout &ghost_layout = storage.ghost_layout.get();
     u32 ihpart_interf                              = ghost_layout.get_field_idx<Tscal>("hpart");
@@ -793,6 +797,10 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD(
         sycl::buffer<Tvec> &buf_mag_tension    = pdat.get_field_buf_ref<Tvec>(imag_tension);
         sycl::buffer<Tvec> &buf_gas_pressure   = pdat.get_field_buf_ref<Tvec>(igas_pressure);
         sycl::buffer<Tvec> &buf_tensile_corr   = pdat.get_field_buf_ref<Tvec>(itensile_corr);
+
+        sycl::buffer<Tscal> &buf_psi_propag   = pdat.get_field_buf_ref<Tscal>(ipsi_propag);
+        sycl::buffer<Tscal> &buf_psi_diff   = pdat.get_field_buf_ref<Tscal>(ipsi_diff);
+        sycl::buffer<Tscal> &buf_psi_cons   = pdat.get_field_buf_ref<Tscal>(ipsi_cons);
         // logger::raw_ln("charged B psi");
         //  ADD curlBBBBBBBBB
 
@@ -838,6 +846,10 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD(
             sycl::accessor mag_tension{buf_mag_tension, cgh, sycl::write_only};
             sycl::accessor gas_pressure{buf_gas_pressure, cgh, sycl::write_only};
             sycl::accessor tensile_corr{buf_tensile_corr, cgh, sycl::write_only};
+
+            sycl::accessor psi_propag{buf_psi_propag, cgh, sycl::write_only};
+            sycl::accessor psi_diff{buf_psi_diff, cgh, sycl::write_only};
+            sycl::accessor psi_cons{buf_psi_cons, cgh, sycl::write_only};
             // sycl::accessor hmax_tree{tree_field_hmax, cgh, sycl::read_only};
 
             // sycl::stream out {4096,1024,cgh};
@@ -881,6 +893,10 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD(
                 Tvec mag_tension_term{0, 0, 0};
                 Tvec gas_pressure_term{0, 0, 0};
                 Tvec tensile_corr_term{0, 0, 0};
+
+                Tscal psi_propag_term = 0;
+                Tscal psi_diff_term   = 0;
+                Tscal psi_cons_term   = 0;
 
                 particle_looper.for_each_object(id_a, [&](u32 id_b) {
                     // compute only omega_a
@@ -940,7 +956,11 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD(
                         mag_pressure_term,
                         mag_tension_term,
                         gas_pressure_term,
-                        tensile_corr_term);
+                        tensile_corr_term,
+
+                        psi_propag_term,
+                        psi_diff_term,
+                        psi_cons_term);
                     // clang-format on
                 });
 
@@ -953,6 +973,10 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD(
                 mag_tension[id_a]        = mag_tension_term;
                 gas_pressure[id_a]       = gas_pressure_term;
                 tensile_corr[id_a]       = tensile_corr_term;
+
+                psi_propag[id_a] = psi_propag_term;
+                psi_diff[id_a]   = psi_diff_term;
+                psi_cons[id_a]   = psi_cons_term;
 
             });
         });

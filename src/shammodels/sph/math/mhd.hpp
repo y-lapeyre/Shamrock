@@ -549,7 +549,11 @@ namespace shamrock::spmhd {
         Tvec &mag_pressure,
         Tvec &mag_tension,
         Tvec &gas_pressure,
-        Tvec &tensile_corr) {
+        Tvec &tensile_corr,
+        
+        Tscal &psi_propag,
+        Tscal &psi_diff,
+        Tscal &psi_cons) {
 
         using namespace shamrock::sph;
         Tvec v_ab      = vxyz_a - vxyz_b;
@@ -703,13 +707,15 @@ namespace shamrock::spmhd {
 
         //dB_on_rho_dt += dB_on_rho_dissipation_term;
 
-        dpsi_on_ch_dt += dpsi_on_ch_parabolic_propag(
+        psi_propag = dpsi_on_ch_parabolic_propag(
             pmass, rho_a, B_a, B_b, omega_a, r_ab_unit * dWab_a, v_shock_a);
-
-        dpsi_on_ch_dt += dpsi_on_ch_parabolic_diff(
+        psi_diff = dpsi_on_ch_parabolic_diff(
             pmass, rho_a, vxyz_a, vxyz_b, psi_a, omega_a, r_ab_unit * dWab_a, v_shock_a);
+        psi_cons = dpsi_on_ch_conservation(h_a, psi_a, v_shock_a, sigma_mhd);
 
-        dpsi_on_ch_dt += dpsi_on_ch_conservation(h_a, psi_a, v_shock_a, sigma_mhd);
+        dpsi_on_ch_dt += psi_propag;
+        dpsi_on_ch_dt += psi_diff;
+        dpsi_on_ch_dt += psi_cons;
     }
 
 } // namespace shamrock::spmhd
