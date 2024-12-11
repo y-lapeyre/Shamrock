@@ -34,6 +34,7 @@
 #include "shamrock/patch/PatchData.hpp"
 #include "shamrock/scheduler/ReattributeDataUtility.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
+#include "shambackends/BufferMirror.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
 #include <pybind11/functional.h>
@@ -590,11 +591,9 @@ namespace shammodels::sph {
                         = pdat.template get_field<T>(sched.pdl.get_field_idx<T>(field_name));
 
                     {
-                        auto &buf = f.get_buf();
-                        auto acc  = buf.copy_to_stdvec();
+                        auto acc = f.get_buf().template mirror_to<sham::host>();
+                        auto acc_xyz = xyz.get_buf().template mirror_to<sham::host>();
 
-                        auto &buf_xyz = xyz.get_buf();
-                        auto acc_xyz  = buf_xyz.copy_to_stdvec();
 
                         for (u32 i = 0; i < f.size(); i++) {
                             Tvec r = acc_xyz[i];
@@ -604,8 +603,6 @@ namespace shammodels::sph {
                             }
                         }
 
-                        buf.copy_from_stdvec(acc);
-                        buf_xyz.copy_from_stdvec(acc_xyz);
                     }
                 });
         }
@@ -624,11 +621,8 @@ namespace shammodels::sph {
 
                     Tscal r2 = radius * radius;
                     {
-                        auto &buf = f.get_buf();
-                        auto acc  = buf.copy_to_stdvec();
-
-                        auto &buf_xyz = xyz.get_buf();
-                        auto acc_xyz  = buf_xyz.copy_to_stdvec();
+                        auto acc = f.get_buf().template mirror_to<sham::host>();
+                        auto acc_xyz = xyz.get_buf().template mirror_to<sham::host>();
 
                         for (u32 i = 0; i < f.size(); i++) {
                             Tvec dr = acc_xyz[i] - center;
@@ -638,8 +632,6 @@ namespace shammodels::sph {
                             }
                         }
 
-                        buf.copy_from_stdvec(acc);
-                        buf_xyz.copy_from_stdvec(acc_xyz);
                     }
                 });
         }
@@ -657,11 +649,8 @@ namespace shammodels::sph {
                         = pdat.template get_field<T>(sched.pdl.get_field_idx<T>(field_name));
 
                     {
-                        auto &buf = f.get_buf();
-                        auto acc  = buf.copy_to_stdvec();
-
-                        auto &buf_xyz = xyz.get_buf();
-                        auto acc_xyz  = buf_xyz.copy_to_stdvec();
+                        auto acc = f.get_buf().template mirror_to<sham::host>();
+                        auto acc_xyz = xyz.get_buf().template mirror_to<sham::host>();
 
                         for (u32 i = 0; i < f.size(); i++) {
                             Tvec dr = acc_xyz[i] - center;
@@ -671,8 +660,6 @@ namespace shammodels::sph {
                             acc[i] += val * Kernel::W_3d(r, h_ker);
                         }
 
-                        buf.copy_from_stdvec(acc);
-                        buf_xyz.copy_from_stdvec(acc_xyz);
                     }
                 });
         }
