@@ -236,12 +236,8 @@ namespace shamrock {
             shamalgs::collective::read_at<u8>(
                 mfile, buf.get_ptr(), loc_file_info.bytecount, head_ptr + loc_file_info.offset);
 
-            logger::raw_ln("bytecount : ", loc_file_info.bytecount);
-
             std::unique_ptr<sycl::buffer<u8>> out = std::make_unique<sycl::buffer<u8>>(
                 shamcomm::CommunicationBuffer::convert(std::move(buf)));
-
-            logger::raw_ln("out size : ", out->size());
 
             shamalgs::SerializeHelper ser(
                 shamsys::instance::get_compute_scheduler_ptr(), std::move(out));

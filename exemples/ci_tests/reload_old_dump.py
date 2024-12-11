@@ -1,4 +1,7 @@
 import shamrock
+import os
+os.environ["SHAMDUMP_OFFSET_MODE_OLD"] = "1"
+
 
 ctx = shamrock.Context()
 ctx.pdata_layout_new()
