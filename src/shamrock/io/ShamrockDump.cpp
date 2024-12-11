@@ -15,6 +15,8 @@
  */
 
 #include "shamrock/io/ShamrockDump.hpp"
+#include "shamcmdopt/env.hpp"
+#include "shamcomm/logs.hpp"
 
 namespace shamrock {
 
@@ -111,6 +113,11 @@ namespace shamrock {
             check_same_mpi(sout);
         }
 
+        if (!shamcmdopt::getenv_str("SHAMDUMP_OFFSET_MODE_OLD").has_value()) {
+            // reset MPI view
+            MPICHECK(MPI_File_set_view(mfile, 0, MPI_BYTE, MPI_CHAR, "native", MPI_INFO_NULL));
+        }
+
         // map of patch id -> all_pids idx
         std::unordered_map<u64, size_t> map{};
         for (u32 i = 0; i < all_pids.size(); i++) {
@@ -166,6 +173,10 @@ namespace shamrock {
         metadata_patch  = shamalgs::collective::read_header(mfile, head_ptr);
         patchdata_infos = shamalgs::collective::read_header(mfile, head_ptr);
 
+        if (!shamcmdopt::getenv_str("SHAMDUMP_OFFSET_MODE_OLD").has_value()) {
+            // reset MPI view
+            MPICHECK(MPI_File_set_view(mfile, 0, MPI_BYTE, MPI_CHAR, "native", MPI_INFO_NULL));
+        }
         // logger::raw_ln(metadata_user, metadata_patch, patchdata_infos);
 
         using namespace nlohmann;
@@ -225,8 +236,12 @@ namespace shamrock {
             shamalgs::collective::read_at<u8>(
                 mfile, buf.get_ptr(), loc_file_info.bytecount, head_ptr + loc_file_info.offset);
 
+            logger::raw_ln("bytecount : ", loc_file_info.bytecount);
+
             std::unique_ptr<sycl::buffer<u8>> out = std::make_unique<sycl::buffer<u8>>(
                 shamcomm::CommunicationBuffer::convert(std::move(buf)));
+
+            logger::raw_ln("out size : ", out->size());
 
             shamalgs::SerializeHelper ser(
                 shamsys::instance::get_compute_scheduler_ptr(), std::move(out));
