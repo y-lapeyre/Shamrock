@@ -13,10 +13,10 @@
  * @brief
  */
 
-#include "MortonKernels.hpp"
 #include "shambase/integer.hpp"
+#include "shambackends/fmt_bindings/fmt_defs.hpp"
 #include "shambackends/math.hpp"
-#include "shamsys/legacy/log.hpp"
+#include "shamtree/MortonKernels.hpp"
 
 template<class T>
 class fill_trailling_buf;

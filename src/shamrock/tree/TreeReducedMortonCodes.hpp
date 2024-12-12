@@ -20,9 +20,9 @@
 #include "shamalgs/memory.hpp"
 #include "shamalgs/reduction.hpp"
 #include "shammath/CoordRange.hpp"
-#include "shamrock/tree/RadixTreeMortonBuilder.hpp"
 #include "shamrock/tree/TreeMortonCodes.hpp"
 #include "shamsys/legacy/log.hpp"
+#include "shamtree/RadixTreeMortonBuilder.hpp"
 
 namespace shamrock::tree {
 

@@ -18,7 +18,6 @@
 #include "kernels/compute_ranges.hpp"
 #include "kernels/convert_ranges.hpp"
 #include "kernels/karras_alg.hpp"
-#include "kernels/key_morton_sort.hpp"
 #include "kernels/reduction_alg.hpp"
 #include "shamalgs/memory.hpp"
 #include "shamalgs/reduction.hpp"
@@ -31,6 +30,7 @@
 #include "shamrock/tree/TreeReducedMortonCodes.hpp"
 #include "shamrock/tree/TreeStructure.hpp"
 #include "shamsys/legacy/log.hpp"
+#include "shamtree/key_morton_sort.hpp"
 #include <array>
 #include <memory>
 #include <set>

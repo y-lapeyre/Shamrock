@@ -13,9 +13,9 @@
  * @brief
  */
 
-#include "key_morton_sort.hpp"
+#include "shamtree/key_morton_sort.hpp"
 #include "shamalgs/algorithm.hpp"
-#include "shamsys/legacy/log.hpp"
+#include "shambackends/fmt_bindings/fmt_defs.hpp"
 
 template<>
 void sycl_sort_morton_key_pair<u32, MultiKernel>(

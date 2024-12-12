@@ -20,10 +20,10 @@
 #include "shamalgs/memory.hpp"
 #include "shambackends/sycl.hpp"
 #include "shammath/sfc/morton.hpp"
-#include "shamrock/sfc/MortonKernels.hpp"
 #include "shamrock/tree/TreeReducedMortonCodes.hpp"
 #include "shamrock/tree/TreeStructure.hpp"
 #include "shamsys/NodeInstance.hpp"
+#include "shamtree/MortonKernels.hpp"
 
 namespace shamrock::tree {
 
