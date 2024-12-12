@@ -18,8 +18,8 @@
 #include "PatchTree.hpp"
 #include "shambase/exception.hpp"
 #include "shambase/stacktrace.hpp"
-#include "shamrock/legacy/utils/geometry_utils.hpp"
 #include "shamrock/patch/Patch.hpp"
+#include "shamtree/kernels/geometry_utils.hpp"
 #include <nlohmann/json.hpp>
 #include <stdexcept>
 #include <vector>

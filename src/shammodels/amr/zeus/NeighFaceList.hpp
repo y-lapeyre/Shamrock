@@ -18,7 +18,7 @@
 
 #include "shambackends/sycl.hpp"
 #include "shambackends/typeAliasVec.hpp"
-#include "shamrock/tree/TreeTraversal.hpp"
+#include "shamtree/TreeTraversal.hpp"
 #include <array>
 
 namespace shammodels::zeus {

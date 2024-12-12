@@ -23,11 +23,11 @@
 #include "shambase/string.hpp"
 #include "interface_generator_impl.hpp"
 #include "shamrock/legacy/patch/base/patchdata_field.hpp"
-#include "shamrock/legacy/utils/geometry_utils.hpp"
 #include "shamrock/scheduler/PatchScheduler.hpp"
 #include "shamrock/scheduler/SchedulerPatchData.hpp"
 #include "shamrock/scheduler/SerialPatchTree.hpp"
 #include "shamsys/legacy/sycl_mpi_interop.hpp"
+#include "shamtree/kernels/geometry_utils.hpp"
 #include <unordered_map>
 #include <cstddef>
 #include <fstream>

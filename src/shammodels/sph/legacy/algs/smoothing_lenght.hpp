@@ -29,8 +29,8 @@
 #include "shamrock/scheduler/SerialPatchTree.hpp"
 #include "shamrock/sph/kernels.hpp"
 #include "shamrock/sph/sphpart.hpp"
-#include "shamrock/tree/RadixTree.hpp"
 #include "shamsys/legacy/log.hpp"
+#include "shamtree/RadixTree.hpp"
 
 namespace models::sph {
     namespace algs {

@@ -13,12 +13,13 @@
  * @brief
  */
 
-#include "RadixTree.hpp"
 #include "shambase/floats.hpp"
 #include "shambase/integer.hpp"
 #include "shamalgs/memory.hpp"
 #include "shamsys/NodeInstance.hpp"
+#include "shamsys/legacy/sycl_handler.hpp"
 #include "shamtree/MortonKernels.hpp"
+#include "shamtree/RadixTree.hpp"
 #include "shamtree/RadixTreeMortonBuilder.hpp"
 #include <tuple>
 #include <vector>

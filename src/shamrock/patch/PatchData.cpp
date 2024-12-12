@@ -17,9 +17,9 @@
 #include "shambase/exception.hpp"
 #include "shambase/stacktrace.hpp"
 #include "Patch.hpp"
-#include "shamrock/legacy/utils/geometry_utils.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamsys/legacy/sycl_handler.hpp"
+#include "shamtree/kernels/geometry_utils.hpp"
 
 namespace shamrock::patch {
 

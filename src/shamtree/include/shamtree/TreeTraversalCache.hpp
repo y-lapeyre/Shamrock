@@ -18,8 +18,8 @@
 #include "shambase/DistributedData.hpp"
 #include "shamalgs/numeric.hpp"
 #include "shambackends/sycl.hpp"
-#include "shamrock/tree/RadixTree.hpp"
-#include "shamrock/tree/TreeTraversal.hpp"
+#include "shamtree/RadixTree.hpp"
+#include "shamtree/TreeTraversal.hpp"
 
 namespace shamrock::tree {
 

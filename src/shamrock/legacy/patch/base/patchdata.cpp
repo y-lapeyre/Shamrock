@@ -20,8 +20,8 @@
 
 #include "patchdata.hpp"
 #include "patchdata_field.hpp"
-#include "shamrock/legacy/utils/geometry_utils.hpp"
 #include "shamsys/legacy/sycl_mpi_interop.hpp"
+#include "shamtree/kernels/geometry_utils.hpp"
 #include <algorithm>
 #include <array>
 #include <cstdio>

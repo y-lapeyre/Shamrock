@@ -14,7 +14,7 @@
  *
  */
 
-#include "shamrock/tree/RadixTree.hpp"
+#include "shamtree/RadixTree.hpp"
 #include "sparse_communicator.hpp"
 
 template<class u_morton, class vec3>

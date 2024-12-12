@@ -13,9 +13,9 @@
  * @brief
  */
 
-#include "compute_ranges.hpp"
 #include "shambase/integer.hpp"
 #include "shambackends/math.hpp"
+#include "shamtree/kernels/compute_ranges.hpp"
 
 template<class u_morton>
 void sycl_compute_cell_ranges(

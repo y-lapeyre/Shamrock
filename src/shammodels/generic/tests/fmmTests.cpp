@@ -18,11 +18,11 @@
 #include "shambase/time.hpp"
 #include "shammath/symtensor_collections.hpp"
 #include "shamrock/physics/fmm.hpp"
-#include "shamrock/tree/RadixTree.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamsys/legacy/sycl_handler.hpp"
 #include "shamtest/PyScriptHandle.hpp"
 #include "shamtest/shamtest.hpp"
+#include "shamtree/RadixTree.hpp"
 #include <cstdio>
 #include <fstream>
 #include <iostream>

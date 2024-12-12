@@ -35,8 +35,8 @@
 #include "shamrock/scheduler/SerialPatchTree.hpp"
 #include "shamrock/sph/kernels.hpp"
 #include "shamrock/sph/sphpart.hpp"
-#include "shamrock/tree/RadixTree.hpp"
 #include "shamsys/legacy/sycl_mpi_interop.hpp"
+#include "shamtree/RadixTree.hpp"
 #include <unordered_map>
 #include <filesystem>
 #include <memory>

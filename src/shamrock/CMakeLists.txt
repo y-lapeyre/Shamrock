@@ -1,5 +1,4 @@
 add_subdirectory(legacy)
-add_subdirectory(tree)
 add_subdirectory(patch)
 add_subdirectory(amr)
 add_subdirectory(physics)

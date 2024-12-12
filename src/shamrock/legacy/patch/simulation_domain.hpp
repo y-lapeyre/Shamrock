@@ -16,7 +16,7 @@
  */
 
 #include "shambase/exception.hpp"
-#include "shamrock/legacy/utils/geometry_utils.hpp"
+#include "shamtree/kernels/geometry_utils.hpp"
 #include <memory>
 #include <optional>
 #include <vector>

@@ -18,8 +18,8 @@
 
 #include "shamrock/legacy/patch/base/patchdata.hpp"
 #include "shamrock/legacy/patch/base/patchdata_field.hpp"
-#include "shamrock/legacy/utils/geometry_utils.hpp"
 #include "shamrock/patch/Patch.hpp"
+#include "shamtree/kernels/geometry_utils.hpp"
 #include <vector>
 
 namespace impl {
