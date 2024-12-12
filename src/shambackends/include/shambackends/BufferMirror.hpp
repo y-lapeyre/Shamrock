@@ -34,12 +34,12 @@ namespace sham {
      * {
      *     auto acc = f.get_buf().template mirror_to<sham::host>();
      *     auto acc_xyz = xyz.get_buf().template mirror_to<sham::host>();
-     * 
+     *
      *     for (u32 i = 0; i < f.size(); i++) {
      *         Tvec position = acc_xyz[i];
      *         acc[i] =function(position);
      *     }
-     * 
+     *
      * }
      * \endcode
      *
