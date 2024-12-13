@@ -51,9 +51,9 @@
 #include "shamrock/scheduler/ReattributeDataUtility.hpp"
 #include "shamrock/scheduler/SchedulerUtility.hpp"
 #include "shamrock/scheduler/SerialPatchTree.hpp"
-#include "shamrock/tree/TreeTraversalCache.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
+#include "shamtree/TreeTraversalCache.hpp"
 #include <memory>
 #include <stdexcept>
 #include <vector>

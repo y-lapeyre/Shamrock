@@ -16,13 +16,13 @@
 
 #include "nbody_selfgrav.hpp"
 #include "shammath/symtensor_collections.hpp"
+#include "shamphys/fmm.hpp"
 #include "shamrock/legacy/patch/comm/patch_object_mover.hpp"
 #include "shamrock/legacy/patch/interfaces/interface_handler.hpp"
 #include "shamrock/legacy/patch/utility/full_tree_field.hpp"
-#include "shamrock/physics/fmm.hpp"
 #include "shamrock/scheduler/SerialPatchTree.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
-#include "shamrock/tree/RadixTree.hpp"
+#include "shamtree/RadixTree.hpp"
 
 const std::string console_tag = "[NBodySelfGrav] ";
 

@@ -17,8 +17,8 @@
  */
 
 #include "shambase/exception.hpp"
-#include "shamrock/legacy/utils/geometry_utils.hpp"
 #include "shamrock/scheduler/PatchScheduler.hpp"
+#include "shamtree/kernels/geometry_utils.hpp"
 #include <stdexcept>
 #include <tuple>
 #include <vector>

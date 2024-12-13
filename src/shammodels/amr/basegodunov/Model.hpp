@@ -20,9 +20,9 @@
 #include "shambackends/vec.hpp"
 #include "shammodels/amr/basegodunov/Solver.hpp"
 #include "shamrock/amr/AMRGrid.hpp"
-#include "shamrock/legacy/utils/geometry_utils.hpp"
 #include "shamrock/scheduler/ReattributeDataUtility.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
+#include "shamtree/kernels/geometry_utils.hpp"
 
 namespace shammodels::basegodunov {
 

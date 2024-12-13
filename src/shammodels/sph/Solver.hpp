@@ -28,8 +28,8 @@
 #include "shamrock/scheduler/InterfacesUtility.hpp"
 #include "shamrock/scheduler/SerialPatchTree.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
-#include "shamrock/tree/TreeTraversalCache.hpp"
 #include "shamsys/legacy/log.hpp"
+#include "shamtree/TreeTraversalCache.hpp"
 #include <memory>
 #include <stdexcept>
 #include <variant>

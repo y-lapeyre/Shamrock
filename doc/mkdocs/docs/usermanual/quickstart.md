@@ -44,6 +44,7 @@ First start by checking that you have the right packages installed on your syste
         brew install cmake
         brew install libomp
         brew install boost
+        brew install open-mpi
         ```
 
 ## First use of the environments

@@ -18,9 +18,9 @@
 #include "ExternalForces.hpp"
 #include "shammath/sphkernels.hpp"
 #include "shammodels/sph/modules/NeighbourCache.hpp"
-#include "shamrock/legacy/utils/geometry_utils.hpp"
-#include "shamrock/tree/TreeTraversal.hpp"
 #include "shamsys/legacy/log.hpp"
+#include "shamtree/TreeTraversal.hpp"
+#include "shamtree/kernels/geometry_utils.hpp"
 #include "shamunits/Constants.hpp"
 
 template<class Tvec, class Tmorton, template<class> class SPHKernel>

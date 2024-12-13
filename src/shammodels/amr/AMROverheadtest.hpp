@@ -22,10 +22,10 @@
 #include "shammath/intervals.hpp"
 #include "shamrock/amr/AMRGrid.hpp"
 #include "shamrock/patch/PatchData.hpp"
-#include "shamrock/tree/RadixTree.hpp"
-#include "shamrock/tree/TreeStructureWalker.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
+#include "shamtree/RadixTree.hpp"
+#include "shamtree/TreeStructureWalker.hpp"
 #include <vector>
 
 class AMRTestModel {

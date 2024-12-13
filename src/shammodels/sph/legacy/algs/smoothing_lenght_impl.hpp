@@ -23,7 +23,7 @@
 #include "shamrock/patch/PatchDataLayout.hpp"
 #include "shamrock/sph/kernels.hpp"
 #include "shamrock/sph/sphpart.hpp"
-#include "shamrock/tree/RadixTree.hpp"
+#include "shamtree/RadixTree.hpp"
 
 namespace impl {
 
