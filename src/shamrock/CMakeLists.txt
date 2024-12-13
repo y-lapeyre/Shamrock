@@ -1,7 +1,6 @@
 add_subdirectory(legacy)
 add_subdirectory(patch)
 add_subdirectory(amr)
-add_subdirectory(physics)
 add_subdirectory(scheduler)
 add_subdirectory(math)
 add_subdirectory(io)

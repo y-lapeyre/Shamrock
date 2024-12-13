@@ -17,7 +17,7 @@
 #include "shambase/string.hpp"
 #include "shambase/time.hpp"
 #include "shammath/symtensor_collections.hpp"
-#include "shamrock/physics/fmm.hpp"
+#include "shamphys/fmm.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamsys/legacy/sycl_handler.hpp"
 #include "shamtest/PyScriptHandle.hpp"
