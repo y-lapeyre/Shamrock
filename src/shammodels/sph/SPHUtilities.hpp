@@ -19,8 +19,8 @@
 #include "shammodels/sph/BasicSPHGhosts.hpp"
 #include "shammodels/sph/math/density.hpp"
 #include "shamrock/scheduler/PatchScheduler.hpp"
-#include "shamrock/tree/RadixTree.hpp"
-#include "shamrock/tree/TreeTraversal.hpp"
+#include "shamtree/RadixTree.hpp"
+#include "shamtree/TreeTraversal.hpp"
 
 namespace shammodels::sph {
 

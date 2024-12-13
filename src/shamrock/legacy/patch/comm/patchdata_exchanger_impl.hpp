@@ -21,8 +21,8 @@
 #include "shamrock/legacy/patch/base/patchdata_field.hpp"
 #include "shamrock/patch/Patch.hpp"
 #include "shamrock/patch/PatchDataLayout.hpp"
-#include "shamrock/tree/RadixTree.hpp"
 #include "shamsys/legacy/sycl_mpi_interop.hpp"
+#include "shamtree/RadixTree.hpp"
 #include <vector>
 namespace patchdata_exchanger {
 

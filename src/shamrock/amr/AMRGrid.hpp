@@ -23,8 +23,8 @@
 #include "shamalgs/numeric.hpp"
 #include "shambackends/sycl_utils.hpp"
 #include "shamrock/scheduler/PatchScheduler.hpp"
-#include "shamrock/tree/RadixTreeMortonBuilder.hpp"
 #include "shamsys/legacy/log.hpp"
+#include "shamtree/RadixTreeMortonBuilder.hpp"
 #include <vector>
 
 namespace shamrock::amr {

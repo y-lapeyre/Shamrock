@@ -16,7 +16,7 @@
 
 #include "SPHUtilities.hpp"
 #include "shammath/sphkernels.hpp"
-#include "shamrock/tree/TreeTraversal.hpp"
+#include "shamtree/TreeTraversal.hpp"
 
 using namespace shamrock::sph;
 

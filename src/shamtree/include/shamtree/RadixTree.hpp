@@ -15,22 +15,22 @@
  * @brief
  */
 
-#include "kernels/compute_ranges.hpp"
-#include "kernels/convert_ranges.hpp"
-#include "kernels/karras_alg.hpp"
-#include "kernels/key_morton_sort.hpp"
-#include "kernels/reduction_alg.hpp"
 #include "shamalgs/memory.hpp"
 #include "shamalgs/reduction.hpp"
 #include "shammath/sfc/morton.hpp"
-#include "shamrock/legacy/patch/base/patchdata.hpp"
-#include "shamrock/legacy/utils/geometry_utils.hpp"
-#include "shamrock/tree/RadixTreeField.hpp"
-#include "shamrock/tree/TreeCellRanges.hpp"
-#include "shamrock/tree/TreeMortonCodes.hpp"
-#include "shamrock/tree/TreeReducedMortonCodes.hpp"
-#include "shamrock/tree/TreeStructure.hpp"
 #include "shamsys/legacy/log.hpp"
+#include "shamsys/legacy/sycl_mpi_interop.hpp"
+#include "shamtree/RadixTreeField.hpp"
+#include "shamtree/TreeCellRanges.hpp"
+#include "shamtree/TreeMortonCodes.hpp"
+#include "shamtree/TreeReducedMortonCodes.hpp"
+#include "shamtree/TreeStructure.hpp"
+#include "shamtree/kernels/compute_ranges.hpp"
+#include "shamtree/kernels/convert_ranges.hpp"
+#include "shamtree/kernels/geometry_utils.hpp"
+#include "shamtree/kernels/karras_alg.hpp"
+#include "shamtree/kernels/reduction_alg.hpp"
+#include "shamtree/key_morton_sort.hpp"
 #include <array>
 #include <memory>
 #include <set>

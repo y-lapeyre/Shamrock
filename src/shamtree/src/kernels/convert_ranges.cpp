@@ -13,8 +13,8 @@
  * @brief
  */
 
-#include "convert_ranges.hpp"
 #include "shambase/integer.hpp"
+#include "shamtree/kernels/convert_ranges.hpp"
 
 template<>
 void sycl_convert_cell_range<u32, f32_3>(

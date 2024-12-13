@@ -18,11 +18,11 @@
 #include "shambase/exception.hpp"
 #include "shambase/string.hpp"
 #include "shambackends/comm/CommunicationBuffer.hpp"
-#include "shamrock/legacy/utils/geometry_utils.hpp"
 #include "shamrock/patch/PatchDataField.hpp"
 #include "shamrock/patch/PatchDataLayout.hpp"
 #include "shamrock/scheduler/HilbertLoadBalance.hpp"
 #include "shamsys/legacy/log.hpp"
+#include "shamtree/kernels/geometry_utils.hpp"
 #include <stdexcept>
 #include <vector>
 

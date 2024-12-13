@@ -15,7 +15,7 @@
  */
 
 #include "shamrock/legacy/patch/base/patchdata_field.hpp"
-#include "shamrock/tree/RadixTree.hpp"
+#include "shamtree/RadixTree.hpp"
 #include "sparse_communicator.hpp"
 
 template<class T>

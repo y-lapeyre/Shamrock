@@ -21,7 +21,7 @@
 #include "shamrock/legacy/comm/sparse_communicator.hpp"
 #include "shamrock/legacy/patch/utility/compute_field.hpp"
 #include "shamrock/legacy/utils/interact_crit_utils.hpp"
-#include "shamrock/tree/RadixTree.hpp"
+#include "shamtree/RadixTree.hpp"
 //%Impl status : Clean unfinished
 
 template<class pos_prec, class u_morton>

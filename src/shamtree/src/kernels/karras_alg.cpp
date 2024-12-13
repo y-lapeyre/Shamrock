@@ -13,9 +13,9 @@
  * @brief
  */
 
-#include "karras_alg.hpp"
 #include "shambase/exception.hpp"
 #include "shambackends/math.hpp"
+#include "shamtree/kernels/karras_alg.hpp"
 #include <stdexcept>
 
 #define SGN(x) (x == 0) ? 0 : ((x > 0) ? 1 : -1)

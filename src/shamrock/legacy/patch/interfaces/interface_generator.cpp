@@ -22,8 +22,8 @@
 #include <vector>
 // #include "shamrock/legacy/patch/patchdata_buffer.hpp"
 #include "interface_generator_impl.hpp"
-#include "shamrock/legacy/utils/geometry_utils.hpp"
 #include "shamrock/scheduler/SchedulerPatchData.hpp"
+#include "shamtree/kernels/geometry_utils.hpp"
 
 // TODO can merge those 2 func
 

@@ -13,13 +13,13 @@
  * @brief
  */
 
-#include "reduction_alg.hpp"
 #include "shambase/exception.hpp"
 #include "shambase/string.hpp"
 #include "shamalgs/memory.hpp"
 #include "shamalgs/numeric.hpp"
 #include "shambackends/math.hpp"
 #include "shambackends/sycl.hpp"
+#include "shamtree/kernels/reduction_alg.hpp"
 #include <algorithm>
 #include <memory>
 #include <vector>

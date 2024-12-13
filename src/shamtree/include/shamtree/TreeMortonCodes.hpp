@@ -22,8 +22,8 @@
 #include "shamalgs/serialize.hpp"
 #include "shambackends/vec.hpp"
 #include "shammath/CoordRange.hpp"
-#include "shamrock/tree/RadixTreeMortonBuilder.hpp"
 #include "shamsys/NodeInstance.hpp"
+#include "shamtree/RadixTreeMortonBuilder.hpp"
 #include <stdexcept>
 
 namespace shamrock::tree {

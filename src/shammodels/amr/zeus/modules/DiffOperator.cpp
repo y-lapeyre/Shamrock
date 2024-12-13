@@ -18,7 +18,7 @@
 #include "shammodels/amr/zeus/NeighFaceList.hpp"
 #include "shammodels/amr/zeus/modules/FaceFlagger.hpp"
 #include "shamrock/scheduler/SchedulerUtility.hpp"
-#include "shamrock/tree/TreeTraversal.hpp"
+#include "shamtree/TreeTraversal.hpp"
 
 template<class Tvec, class TgridVec>
 void shammodels::zeus::modules::DiffOperator<Tvec, TgridVec>::compute_gradu() {

@@ -22,7 +22,7 @@
 #include "shamrock/physics/fmm.hpp"
 #include "shamrock/scheduler/SerialPatchTree.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
-#include "shamrock/tree/RadixTree.hpp"
+#include "shamtree/RadixTree.hpp"
 
 const std::string console_tag = "[NBodySelfGrav] ";
 

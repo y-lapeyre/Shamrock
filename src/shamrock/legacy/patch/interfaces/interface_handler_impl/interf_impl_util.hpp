@@ -18,7 +18,7 @@
 
 #include "interface_handler_impl_list.hpp"
 #include "shamrock/legacy/utils/interact_crit_utils.hpp"
-#include "shamrock/tree/RadixTree.hpp"
+#include "shamtree/RadixTree.hpp"
 
 namespace impl {
 
