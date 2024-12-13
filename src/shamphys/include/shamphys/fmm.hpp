@@ -17,7 +17,8 @@
  */
 
 #include "shambackends/sycl.hpp"
-#include "shamrock/math/tensors.hpp"
+#include "shammath/symtensor_collections.hpp"
+#include "shammath/symtensors.hpp"
 
 //%Impl status : Good
 
