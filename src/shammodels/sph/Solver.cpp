@@ -1050,7 +1050,7 @@ void shammodels::sph::Solver<Tvec, Kern>::do_predictor_leapfrog(Tscal dt) {
     // forward euler step f dt/2
     logger::debug_ln("sph::BasicGas", "forward euler step f dt/2");
     utility.fields_forward_euler<Tvec>(ivxyz, iaxyz, dt / 2);
-    //utility.fields_forward_euler<Tscal>(iuint, iduint, dt / 2);
+    utility.fields_forward_euler<Tscal>(iuint, iduint, dt / 2);
 
     //utility.fields_forward_euler<Tvec>(
     utility.fields_forward_euler<Tvec>(iB_on_rho, idB_on_rho, dt / 2); // pb: faut que v  soit le mm  qu avanttttt !!
@@ -1063,7 +1063,7 @@ void shammodels::sph::Solver<Tvec, Kern>::do_predictor_leapfrog(Tscal dt) {
     // forward euler step f dt/2
     logger::debug_ln("sph::BasicGas", "forward euler step f dt/2");
     utility.fields_forward_euler<Tvec>(ivxyz, iaxyz, dt / 2);
-    //utility.fields_forward_euler<Tscal>(iuint, iduint, dt / 2);
+    utility.fields_forward_euler<Tscal>(iuint, iduint, dt / 2);
 
     utility.fields_forward_euler<Tvec>(iB_on_rho, idB_on_rho, dt / 2);
     utility.fields_forward_euler<Tscal>(ipsi_on_ch, idpsi_on_ch, dt / 2);
@@ -1928,21 +1928,21 @@ void shammodels::sph::Solver<Tvec, Kern>::evolve_once() {
         ComputeField<Tscal> uepsilon_u_sq
             = utility.make_compute_field<Tscal>("umean epsilon_u^2", 1);
 
-        //ComputeField<Tscal> BOR_epsilon_BOR_sq
-        //    = utility.make_compute_field<Tscal>("B/rho epsilon_B/rho^2", 1);
-        //ComputeField<Tscal> POC_epsilon_POC_sq
-        //    = utility.make_compute_field<Tscal>("psi/ch epsilon_psi/ch^2", 1);
+        ComputeField<Tscal> BOR_epsilon_BOR_sq
+            = utility.make_compute_field<Tscal>("B/rho epsilon_B/rho^2", 1);
+        ComputeField<Tscal> POC_epsilon_POC_sq
+            = utility.make_compute_field<Tscal>("psi/ch epsilon_psi/ch^2", 1);
 
         // corrector
         logger::debug_ln("sph::BasicGas", "leapfrog corrector");
         utility.fields_leapfrog_corrector<Tvec>(
             ivxyz, iaxyz, storage.old_axyz.get(), vepsilon_v_sq, dt / 2);
-        //utility.fields_leapfrog_corrector<Tscal>(
-        //    iuint, iduint, storage.old_duint.get(), uepsilon_u_sq, dt / 2);
-        //utility.fields_leapfrog_corrector<Tvec>(
-        //    iB_on_rho, idB_on_rho, storage.old_dB_on_rho.get(), BOR_epsilon_BOR_sq, dt / 2);
-        //utility.fields_leapfrog_corrector<Tscal>(
-        //    ipsi_on_ch, idpsi_on_ch, storage.old_dpsi_on_ch.get(), POC_epsilon_POC_sq, dt / 2);
+        utility.fields_leapfrog_corrector<Tscal>(
+            iuint, iduint, storage.old_duint.get(), uepsilon_u_sq, dt / 2);
+        utility.fields_leapfrog_corrector<Tvec>(
+            iB_on_rho, idB_on_rho, storage.old_dB_on_rho.get(), BOR_epsilon_BOR_sq, dt / 2);
+        utility.fields_leapfrog_corrector<Tscal>(
+            ipsi_on_ch, idpsi_on_ch, storage.old_dpsi_on_ch.get(), POC_epsilon_POC_sq, dt / 2);
 
         storage.old_axyz.reset();
         storage.old_duint.reset();
