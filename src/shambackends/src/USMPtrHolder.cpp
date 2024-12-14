@@ -21,7 +21,7 @@
 namespace sham {
 
     template<USMKindTarget target>
-    USMPtrHolder<target> USMPtrHolder<target>::create(
+    void *internal_alloc(
         size_t sz, std::shared_ptr<DeviceScheduler> dev_sched, std::optional<size_t> alignment) {
 
         sycl::context &sycl_ctx = dev_sched->ctx->ctx;
@@ -82,6 +82,17 @@ namespace sham {
             shambase::throw_with_loc<std::runtime_error>(err_msg);
         }
 
+        return usm_ptr;
+    }
+
+    template<USMKindTarget target>
+    USMPtrHolder<target> USMPtrHolder<target>::create(
+        size_t sz, std::shared_ptr<DeviceScheduler> dev_sched, std::optional<size_t> alignment) {
+
+        sycl::context &sycl_ctx = dev_sched->ctx->ctx;
+        sycl::device &dev       = dev_sched->ctx->device->dev;
+        void *usm_ptr           = internal_alloc<target>(sz, dev_sched, alignment);
+
         return USMPtrHolder<target>(usm_ptr, sz, dev_sched);
     }
 
@@ -97,10 +108,15 @@ namespace sham {
     }
 
     template<USMKindTarget target>
+    void internal_free(void *usm_ptr, std::shared_ptr<DeviceScheduler> dev_sched) {
+        sycl::context &sycl_ctx = dev_sched->ctx->ctx;
+        sycl::free(usm_ptr, sycl_ctx);
+    }
+
+    template<USMKindTarget target>
     void USMPtrHolder<target>::free_ptr() {
         if (usm_ptr != nullptr) {
-            sycl::context &sycl_ctx = dev_sched->ctx->ctx;
-            sycl::free(usm_ptr, sycl_ctx);
+            internal_free<target>(usm_ptr, dev_sched);
             usm_ptr = nullptr;
         }
     }
