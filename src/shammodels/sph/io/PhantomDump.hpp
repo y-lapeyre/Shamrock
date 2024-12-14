@@ -418,6 +418,7 @@ namespace shammodels::sph {
          * @return a Phantom dump file
          */
         shambase::FortranIOFile gen_file();
+        shambase::FortranIOFile gen_eqdebug_file();
 
         /**
          * @brief Reads a Phantom dump file and returns a PhantomDump object.
