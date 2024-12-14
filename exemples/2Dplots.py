@@ -11,11 +11,11 @@ my_parameters = {'legend.fontsize':'16','figure.figsize':(8,6),'axes.labelsize':
 pylab.rcParams.update(my_parameters) # have bigger text 
 
 
-file = "/Users/ylapeyre/Documents/Shamwork/GardnerStone9/shamrockdump/dump_0000.sham"
+file = "/Users/ylapeyre/Documents/Shamwork/tricco_pushpart5/shamrockdump/dump_0000.sham"
 ctx = shamrock.Context()
 ctx.pdata_layout_new()
 
-model = shamrock.get_SPHModel(context = ctx, vector_type = "f64_3",sph_kernel = "M6")
+model = shamrock.get_SPHModel(context = ctx, vector_type = "f64_3",sph_kernel = "M4")
 model.load_from_dump(file)
 
 # Reset the figure using the same memory as the last one
@@ -24,16 +24,16 @@ my_cmap = copy.copy(matplotlib.colormaps.get_cmap('gist_heat')) # copy the defau
 my_cmap.set_bad(color="black")
 
 
-pixel_x = 500
-pixel_y = 500
-radius = 0.5/2
-center = (1.5,0.75,0.75)
+pixel_x = 1000
+pixel_y = 1000
+radius = 3/2 /4
+center = (0,0,0)
 cx,cy,cz = center
 
 aspect = pixel_x/pixel_y
 pic_range = [-radius*aspect + cx, radius*aspect + cx, -radius + cy, radius + cy]
-delta_x = (radius*2*aspect,0.,0.)
-delta_y = (0.,radius*2,0.)
+delta_x = (0.,radius*2*aspect,0.)
+delta_y = (0.,0,radius*2)
 
 vel_arr =  model.render_cartesian_column_integ("vxyz", "f64_3", center = center,delta_x = delta_x,delta_y = delta_y, nx = pixel_x, ny = pixel_y)
 pos_arr =  model.render_cartesian_column_integ("xyz",  "f64_3", center = center,delta_x = delta_x,delta_y = delta_y, nx = pixel_x, ny = pixel_y)

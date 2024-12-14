@@ -2,19 +2,20 @@ import matplotlib.pyplot as plt
 import matplotlib
 import shamrock 
 import numpy as np
-
-file = "/Users/ylapeyre/Documents/Shamwork/GardnerStone7/shamrockdump/dump_0010.sham"
-ctx = shamrock.Context()
-ctx.pdata_layout_new()
-
-model = shamrock.get_SPHModel(context = ctx, vector_type = "f64_3",sph_kernel = "M6")
-model.load_from_dump(file)
-
-# Reset the figure using the same memory as the last one
+import sarracen 
 import copy
 my_cmap = copy.copy(matplotlib.colormaps.get_cmap('gist_heat')) # copy the default cmap
 my_cmap.set_bad(color="black")
 
+timestep = 0
+file_ph = "/Users/ylapeyre/Documents/Phanwork/Alfven_noind/alfven_" + "{:05d}".format(timestep)
+phantom = sarracen.read_phantom(file_ph)
+
+file_sh = "/Users/ylapeyre/Documents/Shamwork/tricco_pushpart7/shamrockdump/dump_" + "{:04d}".format(timestep) + ".sham"
+ctx = shamrock.Context()
+ctx.pdata_layout_new()
+model = shamrock.get_SPHModel(context = ctx, vector_type = "f64_3",sph_kernel = "M4")
+model.load_from_dump(file_sh)
 
 """
 arr = model.render_cartesian_slice("vxyz","f64_3",center = (0.,0.,0.),delta_x = (2,0,0.),delta_y = (0.,2,0.), nx = 1000, ny = 1000)
@@ -31,8 +32,8 @@ cbar.set_label(r"$\rho$ [code unit]")
 """
 pixel_x = 1000
 pixel_y = 1000
-radius = 0.5/2
-center = (1.5,0.75,0.75)
+radius = 3/2 /4
+center = (0,0,0)
 cx,cy,cz = center
 
 aspect = pixel_x/pixel_y
@@ -40,16 +41,40 @@ pic_range = [-radius*aspect + cx, radius*aspect + cx, -radius + cy, radius + cy]
 delta_x = (radius*2*aspect,0.,0.)
 delta_y = (0.,radius*2,0.)
 
-vel_arr =  model.render_cartesian_column_integ("vxyz","f64_3",  center = center,delta_x = delta_x,delta_y = delta_y, nx = pixel_x, ny = pixel_y)
-pos_arr =  model.render_cartesian_column_integ("xyz","f64_3",   center = center,delta_x = delta_x,delta_y = delta_y, nx = pixel_x, ny = pixel_y)
-B_arr =    model.render_cartesian_column_integ("B/rho","f64_3", center = center,delta_x = delta_x,delta_y = delta_y, nx = pixel_x, ny = pixel_y)
+#vel_arr =  model.render_cartesian_column_integ("vxyz","f64_3",  center = center,delta_x = delta_x,delta_y = delta_y, nx = pixel_x, ny = pixel_y)
+#pos_arr =  model.render_cartesian_column_integ("xyz","f64_3",   center = center,delta_x = delta_x,delta_y = delta_y, nx = pixel_x, ny = pixel_y)
+#B_arr =    model.render_cartesian_column_integ("B/rho","f64_3", center = center,delta_x = delta_x,delta_y = delta_y, nx = pixel_x, ny = pixel_y)
 psi_arr =  model.render_cartesian_column_integ("psi/ch","f64",  center = center,delta_x = delta_x,delta_y = delta_y, nx = pixel_x, ny = pixel_y)
 uint_arr = model.render_cartesian_column_integ("uint","f64",    center = center,delta_x = delta_x,delta_y = delta_y, nx = pixel_x, ny = pixel_y)
-rho_arr =  model.render_cartesian_column_integ("rho","f64",     center = center,delta_x = delta_x,delta_y = delta_y, nx = pixel_x, ny = pixel_y)
+#rho_arr =  model.render_cartesian_column_integ("rho","f64",     center = center,delta_x = delta_x,delta_y = delta_y, nx = pixel_x, ny = pixel_y)
 #cs_arr =  model.render_cartesian_slice("soundspeed","f64",center = (0.,0.,0.),delta_x = (slice_val,0,0.),delta_y = (0., slice_val,0.), nx = 1000, ny = 1000)
 
-fig, axs = plt.subplots(4, 3, figsize=(10, 6))
+fig, axs = plt.subplots(1, 2, figsize=(10, 6))
 
+im0 = axs[0].imshow(psi_arr, cmap=my_cmap, extent=pic_range, origin='lower')
+fig.colorbar(im0, ax=axs[0], extend='both')
+axs[0].set_title("psi")
+
+im1 = axs[1].imshow(uint_arr, cmap=my_cmap, extent=pic_range, origin='lower')
+fig.colorbar(im1, ax=axs[1], extend='both')
+axs[1].set_title("uint")
+
+plt.show()
+
+fig2, axs2 = plt.subplots(1, 2, figsize=(7,5))
+
+axs2[0] = phantom.render('psi', ax=axs2[0])
+
+axs2[ 0].set_title("psi phnatom")
+
+axs2[1] = phantom.render('u', ax=axs2[1])
+#fig.colorbar(axs[1, 1], extend='both')
+axs2[1].set_title("uint")
+plt.tight_layout()
+plt.show()
+
+
+"""
 im1 = axs[0, 0].imshow(vel_arr[:,:,0], cmap=my_cmap, extent=pic_range, origin='lower')
 fig.colorbar(im1, ax=axs[0, 0], extend='both')
 axs[0, 0].set_title("vx")
@@ -99,7 +124,5 @@ fig.colorbar(im12, ax=axs[3, 2], extend='both')
 axs[3, 2].set_title("rho")
 
 plt.tight_layout()
-
-
-
 plt.show()
+"""
