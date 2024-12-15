@@ -48,6 +48,13 @@ namespace sham {
         size_t allocated_byte_device = 0;
         /// Bytes allocated in shared memory
         size_t allocated_byte_shared = 0;
+
+        /// max bytes allocated on the host
+        size_t max_allocated_byte_host = 0;
+        /// max bytes allocated on the device
+        size_t max_allocated_byte_device = 0;
+        /// max bytes allocated in shared memory
+        size_t max_allocated_byte_shared = 0;
     };
 
 } // namespace sham
