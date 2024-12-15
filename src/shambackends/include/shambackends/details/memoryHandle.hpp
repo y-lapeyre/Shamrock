@@ -64,6 +64,7 @@ namespace sham::details {
      * @brief Free a USM pointer.
      *
      * @param usm_ptr The pointer to free.
+     * @param sz The size of the USM pointer in bytes.
      * @param dev_sched The SYCL queue used to free the USM pointer.
      */
     template<USMKindTarget target>
@@ -79,6 +80,7 @@ namespace sham::details {
      * @tparam target The target of the USM pointer.
      * @param size The size of the pointer in bytes.
      * @param dev_sched Pointer to the device scheduler.
+     * @param alignment The alignment of the USM pointer (optional).
      *
      * @return USMPtrHolder<target> The newly created USM pointer.
      */

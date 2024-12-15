@@ -276,6 +276,7 @@ namespace sham::details {
         usm_ptr_hold.free_ptr();
     }
 
+#ifndef DOXYGEN
     template USMPtrHolder<device> create_usm_ptr<device>(
         u32 size, std::shared_ptr<DeviceScheduler> dev_sched, std::optional<size_t> alignment);
     template USMPtrHolder<shared> create_usm_ptr<shared>(
@@ -302,5 +303,6 @@ namespace sham::details {
     internal_free<shared>(void *usm_ptr, size_t sz, std::shared_ptr<DeviceScheduler> dev_sched);
     template void *internal_alloc<shared>(
         size_t sz, std::shared_ptr<DeviceScheduler> dev_sched, std::optional<size_t> alignment);
+#endif
 
 } // namespace sham::details
