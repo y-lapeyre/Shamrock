@@ -154,27 +154,27 @@ namespace shamrock::spmhd {
         Tscal sub_fact_a = rho_a_sq * omega_a;
         Tscal sub_fact_b = rho_b_sq * omega_b;
 
-        //Tscal alpha_av = 1.;
-        //Tscal beta_av  = 2.;
-        //Tscal vsig_a   = vsig<Tvec, Tscal>(
-        //    v_ab, r_ab_unit, cs_a, B_a, sycl::sqrt(rho_a_sq), mu_0, alpha_av, beta_av);
-        //Tscal vsig_b = vsig<Tvec, Tscal>(
-        //    v_ab, r_ab_unit, cs_b, B_b, sycl::sqrt(rho_b_sq), mu_0, alpha_av, beta_av);
-        //Tscal q_ab_a = q_av(sycl::sqrt(rho_a_sq), vsig_a, v_scal_rhat);
-        //Tscal q_ab_b = q_av(sycl::sqrt(rho_b_sq), vsig_a, v_scal_rhat);
+        Tscal alpha_av = 1.;
+        Tscal beta_av  = 2.;
+        Tscal vsig_a   = vsig<Tvec, Tscal>(
+            v_ab, r_ab_unit, cs_a, B_a, sycl::sqrt(rho_a_sq), mu_0, alpha_av, beta_av);
+        Tscal vsig_b = vsig<Tvec, Tscal>(
+            v_ab, r_ab_unit, cs_b, B_b, sycl::sqrt(rho_b_sq), mu_0, alpha_av, beta_av);
+        Tscal q_ab_a = q_av(sycl::sqrt(rho_a_sq), vsig_a, v_scal_rhat);
+        Tscal q_ab_b = q_av(sycl::sqrt(rho_b_sq), vsig_a, v_scal_rhat);
 
-        //Tvec acc_a = (q_ab_a / (sub_fact_a)) * nabla_Wab_ha;
-        //Tvec acc_b = (q_ab_b / (sub_fact_b)) * nabla_Wab_hb;
+        Tvec acc_a = (q_ab_a / (sub_fact_a)) * nabla_Wab_ha;
+        Tvec acc_b = (q_ab_b / (sub_fact_b)) * nabla_Wab_hb;
 
-        //if (sub_fact_a == 0) {
-        //    acc_a = {0, 0, 0};
-        //}
-        //if (sub_fact_b == 0) {
-        //    acc_b = {0, 0, 0};
-        //}
+        if (sub_fact_a == 0) {
+            acc_a = {0, 0, 0};
+        }
+        if (sub_fact_b == 0) {
+            acc_b = {0, 0, 0};
+        }
 
-//        Tvec shock_term = -m_b * (acc_a + acc_b);
-//        //vMHD += shock_term; // shock term
+        Tvec shock_term = -m_b * (acc_a + acc_b);
+        //vMHD += shock_term; // shock term
 //        Tvec shock_term_hydro = sph::sph_pressure_symetric(m_b, rho_a_sq, rho_b_sq, q_ab_a, q_ab_b, omega_a, omega_b, nabla_Wab_ha, nabla_Wab_hb);
 //
 //        if (!sham::equals(shock_term, shock_term_hydro)) {
@@ -229,7 +229,7 @@ namespace shamrock::spmhd {
     }
 
     template<class Tvec, class Tscal, MHDType MHD_mode = Ideal> //, template<class> class SPHKernel
-    inline std::tuple<Tvec, Tvec, Tvec, Tvec> dv_terms(
+    inline std::tuple<Tvec, Tvec, Tvec, Tvec, Tvec> dv_terms(
         Tscal m_b,
         Tscal rho_a_sq,
         Tscal rho_b_sq,
@@ -260,6 +260,27 @@ namespace shamrock::spmhd {
         Tvec pressure_term;
         Tvec magnetic_pressure_term;
         Tvec magnetic_tension_term;
+
+        Tscal alpha_av = 1.;
+        Tscal beta_av  = 2.;
+        Tscal vsig_a   = vsig<Tvec, Tscal>(
+            v_ab, r_ab_unit, cs_a, B_a, sycl::sqrt(rho_a_sq), mu_0, alpha_av, beta_av);
+        Tscal vsig_b = vsig<Tvec, Tscal>(
+            v_ab, r_ab_unit, cs_b, B_b, sycl::sqrt(rho_b_sq), mu_0, alpha_av, beta_av);
+        Tscal q_ab_a = q_av(sycl::sqrt(rho_a_sq), vsig_a, v_scal_rhat);
+        Tscal q_ab_b = q_av(sycl::sqrt(rho_b_sq), vsig_a, v_scal_rhat);
+
+        Tvec acc_a = (q_ab_a / (sub_fact_a)) * nabla_Wab_ha;
+        Tvec acc_b = (q_ab_b / (sub_fact_b)) * nabla_Wab_hb;
+
+        if (sub_fact_a == 0) {
+            acc_a = {0, 0, 0};
+        }
+        if (sub_fact_b == 0) {
+            acc_b = {0, 0, 0};
+        }
+
+        Tvec shock_term = -m_b * (acc_a + acc_b);
 
         if (Tricco) {
             //pressure_term += - sph::sph_pressure_symetric( m_b,
@@ -376,7 +397,7 @@ namespace shamrock::spmhd {
         sum_mag_tension  += magnetic_tension_term;
         sum_fdivB        += fdivB_a;
 
-        return std::make_tuple(sum_gas_pressure, sum_mag_pressure, sum_mag_tension, sum_fdivB);
+        return std::make_tuple(sum_gas_pressure, sum_mag_pressure, sum_mag_tension, sum_fdivB, shock_term);
     }
     template<class Tvec, class Tscal>
     inline Tscal lambda_artes(
@@ -598,8 +619,8 @@ namespace shamrock::spmhd {
         constexpr bool debug_eq_dump = true;
         if (debug_eq_dump) {
             bool Tricco = true; 
-            Tvec sum_gas_pressure, sum_mag_pressure, sum_mag_tension, sum_fdivB = {0., 0., 0.};
-            std::tie(sum_gas_pressure, sum_mag_pressure, sum_mag_tension, sum_fdivB) = dv_terms(
+            Tvec sum_gas_pressure, sum_mag_pressure, sum_mag_tension, sum_fdivB, shock_term = {0., 0., 0.};
+            std::tie(sum_gas_pressure, sum_mag_pressure, sum_mag_tension, sum_fdivB, shock_term) = dv_terms(
             pmass,
             rho_a_sq,
             rho_b * rho_b,
@@ -618,7 +639,7 @@ namespace shamrock::spmhd {
             r_ab_unit * dWab_b,
             mu_0,
             Tricco);
-            dv_dt += sum_gas_pressure + sum_mag_pressure + sum_mag_tension + sum_fdivB;
+            dv_dt += sum_gas_pressure + sum_mag_pressure + sum_mag_tension + sum_fdivB; //+ shock_term;
             mag_pressure += sum_mag_pressure;
             gas_pressure += sum_gas_pressure;
             mag_tension += sum_mag_tension;
@@ -693,6 +714,7 @@ namespace shamrock::spmhd {
 
         //Tvec dB_on_rho_dissipation_term
         //    = -0.5 * rho_a * pmass * (rho_diss_term_a + rho_diss_term_b) * (B_a - B_b) * vsig_B;
+        //dB_on_rho_dt += dB_on_rho_dissipation_term;
 
         dB_on_rho_dt
             += v_ab * dB_on_rho_induction_term(pmass, rho_a_sq, B_a, omega_a, r_ab_unit * dWab_b);
@@ -707,8 +729,6 @@ namespace shamrock::spmhd {
         //    omega_b,
         //    r_ab_unit * dWab_a,
         //    r_ab_unit * dWab_b);
-
-        //dB_on_rho_dt += dB_on_rho_dissipation_term;
 
         psi_propag = dpsi_on_ch_parabolic_propag(
             pmass, rho_a, B_a, B_b, omega_a, r_ab_unit * dWab_a, v_shock_a);

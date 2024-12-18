@@ -514,7 +514,7 @@ namespace shammodels::sph {
         sycl::buffer<Tvec> &buf_xyz;
         sycl::buffer<Tscal> &buf_hpart;
         sycl::buffer<Tvec> &buf_vxyz;
-        //sycl::buffer<Tscal> &buf_psi_on_ch;
+        sycl::buffer<Tscal> &buf_psi_on_ch;
         sycl::buffer<Tvec> &buf_B_on_rho;
     };
 
@@ -528,7 +528,7 @@ namespace shammodels::sph {
         sycl::buffer<Tvec> &buf_xyz;
         sycl::buffer<Tscal> &buf_hpart;
         sycl::buffer<Tvec> &buf_vxyz;
-        //sycl::buffer<Tscal> &buf_psi_on_ch;
+        sycl::buffer<Tscal> &buf_psi_on_ch;
         sycl::buffer<Tvec> &buf_B_on_rho;
         sycl::buffer<Tvec> &buf_mag_pressure;
         sycl::buffer<Tvec> &buf_mag_tension;
@@ -1700,7 +1700,7 @@ void shammodels::sph::Solver<Tvec, Kern>::evolve_once() {
     u32 ivxyz_interf                               = ghost_layout.get_field_idx<Tvec>("vxyz");
     u32 iomega_interf                              = ghost_layout.get_field_idx<Tscal>("omega");
     u32 iB_interf   = ghost_layout.get_field_idx<Tvec>("B/rho"); // if defined
-    //u32 ipsi_interf = ghost_layout.get_field_idx<Tscal>("psi/ch");
+    u32 ipsi_interf = ghost_layout.get_field_idx<Tscal>("psi/ch");
 
 
     using RTreeField = RadixTreeField<Tscal>;
@@ -1845,7 +1845,7 @@ void shammodels::sph::Solver<Tvec, Kern>::evolve_once() {
                     sycl::buffer<Tvec> &buf_vxyz   = mpdat.get_field_buf_ref<Tvec>(ivxyz_interf);
                     sycl::buffer<Tscal> &buf_hpart = mpdat.get_field_buf_ref<Tscal>(ihpart_interf);
                     // do the same with psi/ch
-                    //sycl::buffer<Tscal> &buf_psi_on_ch = mpdat.get_field_buf_ref<Tscal>(ipsi_interf);
+                    sycl::buffer<Tscal> &buf_psi_on_ch = mpdat.get_field_buf_ref<Tscal>(ipsi_interf);
                     //do the same with B/rho
                     sycl::buffer<Tvec> &buf_B_on_rho= mpdat.get_field_buf_ref<Tvec>(iB_interf);
                     // write debug dump
