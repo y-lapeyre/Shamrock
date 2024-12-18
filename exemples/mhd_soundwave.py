@@ -5,7 +5,7 @@ import os
 
 
 directory = "/Users/ylapeyre/Documents/Shamwork/"
-outputdir = "native_fast/"
+outputdir = "1test/"
 
 os.chdir(directory)
 
@@ -15,6 +15,7 @@ if not os.path.exists(outputdir):
     os.chdir(directory + outputdir)
     os.mkdir("shamrockdump")
     os.mkdir("phantomdump") 
+    os.mkdir("vtk")
 
 
 rho_g = 1.
@@ -156,6 +157,9 @@ while next_dt_target <= t_target *5:
 
     fnamesh= directory + outputdir + "shamrockdump/" + "dump_" + f"{i_dump:04}" + ".sham"
     model.dump(fnamesh)
+
+    fnamevtk= directory + outputdir + "vtk/" + "dump_" + f"{i_dump:04}" + ".vtk"
+    model.do_vtk_dump(fnamevtk, False)
 
     model.evolve_until(next_dt_target)
     
