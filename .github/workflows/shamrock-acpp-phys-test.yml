@@ -7,7 +7,7 @@ jobs:
 
 
   shamrock_acpp:
-    name: runscript=${{ matrix.testfile }} wz=${{ matrix.worldsize }} AdaptiveCpp clang-${{ matrix.clang }} ${{ matrix.backend }}:${{matrix.arch}}
+    name: run ${{ matrix.testfile }} wz=${{ matrix.worldsize }} AdaptiveCpp clang-${{ matrix.clang }} ${{ matrix.backend }}:${{matrix.arch}}
     runs-on: [self-hosted,  docker-runner]
 
     container:
