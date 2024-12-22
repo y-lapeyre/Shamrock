@@ -32,8 +32,8 @@ namespace {
 
         mem_perf_infos.allocated_byte_device += size;
         mem_perf_infos.time_alloc_device += timed;
-        mem_perf_infos.max_allocated_byte_device
-            = std::max(mem_perf_infos.max_allocated_byte_device, size);
+        mem_perf_infos.max_allocated_byte_device = std::max(
+            mem_perf_infos.max_allocated_byte_device, mem_perf_infos.allocated_byte_device);
 
         shambase::profiling::register_counter_val(
             "Device Memory", shambase::details::get_wtime(), mem_perf_infos.allocated_byte_device);
@@ -45,8 +45,8 @@ namespace {
 
         mem_perf_infos.allocated_byte_shared += size;
         mem_perf_infos.time_alloc_shared += timed;
-        mem_perf_infos.max_allocated_byte_shared
-            = std::max(mem_perf_infos.max_allocated_byte_shared, size);
+        mem_perf_infos.max_allocated_byte_shared = std::max(
+            mem_perf_infos.max_allocated_byte_shared, mem_perf_infos.allocated_byte_shared);
 
         shambase::profiling::register_counter_val(
 
@@ -60,7 +60,7 @@ namespace {
         mem_perf_infos.allocated_byte_host += size;
         mem_perf_infos.time_alloc_host += timed;
         mem_perf_infos.max_allocated_byte_host
-            = std::max(mem_perf_infos.max_allocated_byte_host, size);
+            = std::max(mem_perf_infos.max_allocated_byte_host, mem_perf_infos.allocated_byte_host);
 
         shambase::profiling::register_counter_val(
             "Host Memory", shambase::details::get_wtime(), mem_perf_infos.allocated_byte_host);
