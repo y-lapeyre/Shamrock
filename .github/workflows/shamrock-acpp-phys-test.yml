@@ -122,4 +122,4 @@ jobs:
       - name: run test
         run: |
           cd build
-          mpirun -n ${{matrix.worldsize}} ./shamrock --sycl-cfg 0:0 --loglevel 1 --rscript ../exemples/ci_tests/${{ matrix.testfile }}
+          mpirun --allow-run-as-root -n ${{matrix.worldsize}} ./shamrock --sycl-cfg 0:0 --loglevel 1 --rscript ../exemples/ci_tests/${{ matrix.testfile }}
