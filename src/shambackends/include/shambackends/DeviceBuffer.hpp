@@ -666,6 +666,12 @@ namespace sham {
          */
         inline DeviceBuffer<T, target> copy() const { return copy_to<target>(); }
 
+        /**
+         * @brief Creates a new buffer that is a mirror of the current one.
+         * Upon destruction of the mirror the changes will be propagated to the original buffer
+         *
+         * @return The mirror buffer
+         */
         template<USMKindTarget mirror_target>
         inline BufferMirror<T, mirror_target, target> mirror_to() {
             return BufferMirror<T, mirror_target, target>(*this);
