@@ -41,7 +41,7 @@ void test() {
     }
 
     // multithreaded case
-    {
+    if constexpr (thread_safe) {
         class A3 : public shambase::WithUUID<A3, u32, thread_safe> {};
 
         // test that there is no duplicate when creating in parallel
