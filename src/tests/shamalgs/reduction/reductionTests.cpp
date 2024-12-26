@@ -12,6 +12,7 @@
 #include "shamalgs/details/random/random.hpp"
 #include "shamalgs/details/reduction/fallbackReduction.hpp"
 #include "shamalgs/details/reduction/groupReduction.hpp"
+#include "shamalgs/details/reduction/groupReduction_usm.hpp"
 #include "shamalgs/details/reduction/sycl2020reduction.hpp"
 #include "shamalgs/random.hpp"
 #include "shamalgs/reduction.hpp"
@@ -137,6 +138,44 @@ void unit_test_reduc_max(std::string name, Fct &&red_fct) {
 
     shamtest::asserts().assert_float_equal(name, dot, 0, 1e-9);
 }
+template<class T, class Fct>
+void unit_test_reduc_sum_usm(std::string name, Fct &&red_fct) {
+
+    constexpr u32 size_test = 1e4;
+
+    using Prop = shambase::VectorProperties<T>;
+    T min_b = Prop::get_min(), max_b = Prop::get_max();
+
+    if constexpr (Prop::is_float_based) {
+        max_b /= Prop::get_max();
+        min_b /= Prop::get_min();
+        max_b *= 1e6;
+        min_b *= -1e6;
+    }
+
+    std::vector<T> vals = shamalgs::random::mock_vector<T>(0x1111, size_test, min_b, max_b);
+
+    T sycl_ret, check_val;
+
+    {
+        sham::DeviceBuffer<T> buf(vals.size(), shamsys::instance::get_compute_scheduler_ptr());
+        buf.copy_from_stdvec(vals);
+        auto sched = shamsys::instance::get_compute_scheduler_ptr();
+        sycl_ret   = red_fct(sched, buf, 0, size_test);
+    }
+
+    {
+        check_val = shambase::VectorProperties<T>::get_zero();
+        for (auto &f : vals) {
+            check_val += f;
+        }
+    }
+
+    T delt   = (sycl_ret - check_val) / 1e8;
+    auto dot = sham::dot(delt, delt);
+
+    shamtest::asserts().assert_float_equal(name, dot, 0, 1e-9);
+}
 
 void unit_test_reduc_sum() {
 
@@ -165,7 +204,50 @@ void unit_test_reduc_sum() {
         });
 }
 
+void unit_test_reduc_sum_usm() {
+
+    unit_test_reduc_sum_usm<f64>(
+        "reduction : main (f64)",
+        [](sham::DeviceScheduler_ptr &sched,
+           sham::DeviceBuffer<f64> &buf1,
+           u32 start_id,
+           u32 end_id) -> f64 {
+            return shamalgs::reduction::details::sum_usm_group(sched, buf1, start_id, end_id, 32);
+        });
+
+    unit_test_reduc_sum_usm<f32>(
+        "reduction : main (f32)",
+        [](sham::DeviceScheduler_ptr &sched,
+           sham::DeviceBuffer<f32> &buf1,
+           u32 start_id,
+           u32 end_id) -> f32 {
+            return shamalgs::reduction::details::sum_usm_group(sched, buf1, start_id, end_id, 32);
+        });
+
+    unit_test_reduc_sum_usm<u32>(
+        "reduction : main (u32)",
+        [](sham::DeviceScheduler_ptr &sched,
+           sham::DeviceBuffer<u32> &buf1,
+           u32 start_id,
+           u32 end_id) -> u32 {
+            return shamalgs::reduction::details::sum_usm_group(sched, buf1, start_id, end_id, 32);
+        });
+
+    unit_test_reduc_sum_usm<f64_3>(
+        "reduction : main (f64_3)",
+        [](sham::DeviceScheduler_ptr &sched,
+           sham::DeviceBuffer<f64_3> &buf1,
+           u32 start_id,
+           u32 end_id) -> f64_3 {
+            return shamalgs::reduction::details::sum_usm_group(sched, buf1, start_id, end_id, 32);
+        });
+}
+
 TestStart(Unittest, "shamalgs/reduction/sum", reduc_kernel_utestsum, 1) { unit_test_reduc_sum(); }
+
+TestStart(Unittest, "shamalgs/reduction/sum(usm)", reduc_kernel_utestsum_usm, 1) {
+    unit_test_reduc_sum_usm();
+}
 
 void unit_test_reduc_min() {
 
@@ -364,6 +446,28 @@ TestStart(Benchmark, "shamalgs/reduction/sum", benchmark_reductionkernels, 1) {
                     T sum = shamalgs::reduction::details::GroupReduction<T, 128>::sum(
                         shamsys::instance::get_compute_queue(), buf, 0, sz);
                     shamsys::instance::get_compute_queue().wait();
+                });
+            },
+            10,
+            1e8,
+            exp_test));
+
+    results.emplace(
+        "usmgroup128",
+        shambase::benchmark_pow_len(
+            [&](u32 sz) {
+                std::vector<T> buf = shamalgs::random::mock_vector<T>(0x111, sz);
+
+                auto sched = shamsys::instance::get_compute_scheduler_ptr();
+
+                sham::DeviceBuffer<T> buf1{buf.size(), sched};
+                buf1.copy_from_stdvec(buf);
+
+                buf1.synchronize();
+
+                return shambase::timeit([&]() {
+                    T sum = shamalgs::reduction::details::sum_usm_group(sched, buf1, 0, sz, 128);
+                    buf1.synchronize();
                 });
             },
             10,
