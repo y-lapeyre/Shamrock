@@ -639,7 +639,7 @@ namespace shamrock::spmhd {
             r_ab_unit * dWab_b,
             mu_0,
             Tricco);
-            dv_dt += sum_gas_pressure + sum_mag_pressure + sum_mag_tension + sum_fdivB; //+ shock_term;
+            dv_dt += sum_gas_pressure + sum_mag_pressure + sum_mag_tension + sum_fdivB; + shock_term;
             mag_pressure += sum_mag_pressure;
             gas_pressure += sum_gas_pressure;
             mag_tension += sum_mag_tension;
@@ -674,30 +674,30 @@ namespace shamrock::spmhd {
             pmass, P_a, omega_a_rho_a_inv * rho_a_inv, v_ab, r_ab_unit * dWab_a);
         du_dt += u_mhd;
 
-        //du_dt += lambda_shock_conductivity_no_artres(
-        //    pmass,
-        //    alpha_u,
-        //    vsig_a,
-        //    vsig_u,
-        //    u_a - u_b,
-        //    abs_v_ab_r_ab,
-        //    omega_a_rho_a_inv,
-        //    Fab_a,
-        //    dWab_b / (rho_a * omega_a),
-        //    dWab_b / (rho_b * omega_b));
+        du_dt += lambda_shock_conductivity_no_artres(
+            pmass,
+            alpha_u,
+            vsig_a,
+            vsig_u,
+            u_a - u_b,
+            abs_v_ab_r_ab,
+            omega_a_rho_a_inv,
+            Fab_a,
+            dWab_b / (rho_a * omega_a),
+            dWab_b / (rho_b * omega_b));
 
-        //du_dt += lambda_artes(
-        //    pmass,
-        //    rho_a_sq,
-        //    rho_b * rho_b,
-        //    v_ab,
-        //    r_ab_unit,
-        //    B_a,
-        //    B_b,
-        //    omega_a,
-        //    omega_b,
-        //    Fab_a,
-        //    Fab_b);
+        du_dt += lambda_artes(
+            pmass,
+            rho_a_sq,
+            rho_b * rho_b,
+            v_ab,
+            r_ab_unit,
+            B_a,
+            B_b,
+            omega_a,
+            omega_b,
+            Fab_a,
+            Fab_b);
 
         Tscal sub_fact_a = rho_a_sq * omega_a;
         Tscal sub_fact_b = rho_b * rho_b * omega_b;
@@ -712,9 +712,9 @@ namespace shamrock::spmhd {
             rho_diss_term_b = 0;
         }
 
-        //Tvec dB_on_rho_dissipation_term
-        //    = -0.5 * rho_a * pmass * (rho_diss_term_a + rho_diss_term_b) * (B_a - B_b) * vsig_B;
-        //dB_on_rho_dt += dB_on_rho_dissipation_term;
+        Tvec dB_on_rho_dissipation_term
+            = -0.5 * rho_a * pmass * (rho_diss_term_a + rho_diss_term_b) * (B_a - B_b) * vsig_B;
+        dB_on_rho_dt += dB_on_rho_dissipation_term;
 
         dB_on_rho_dt
             += v_ab * dB_on_rho_induction_term(pmass, rho_a_sq, B_a, omega_a, r_ab_unit * dWab_b);
