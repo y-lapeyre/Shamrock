@@ -18,12 +18,18 @@
 #include "shambase/floats.hpp"
 #include "shamalgs/details/reduction/fallbackReduction.hpp"
 #include "shamalgs/details/reduction/groupReduction.hpp"
+#include "shamalgs/details/reduction/groupReduction_usm.hpp"
 #include "shamalgs/details/reduction/sycl2020reduction.hpp"
 #include "shamalgs/memory.hpp"
 #include "shambackends/math.hpp"
 #include "shambackends/vec.hpp"
 
 namespace shamalgs::reduction {
+
+    template<class T>
+    T sum(sham::DeviceScheduler_ptr &sched, sham::DeviceBuffer<T> &buf1, u32 start_id, u32 end_id) {
+        return details::sum_usm_group(sched, buf1, start_id, end_id, 128);
+    }
 
     template<class T>
     T sum(sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id) {
@@ -172,6 +178,11 @@ namespace shamalgs::reduction {
     X(i32_3)
 
 #define X(_arg_)                                                                                   \
+    template _arg_ sum<_arg_>(                                                                     \
+        sham::DeviceScheduler_ptr & sched,                                                         \
+        sham::DeviceBuffer<_arg_> & buf1,                                                          \
+        u32 start_id,                                                                              \
+        u32 end_id);                                                                               \
     template _arg_ sum(sycl::queue &q, sycl::buffer<_arg_> &buf1, u32 start_id, u32 end_id);       \
     template shambase::VecComponent<_arg_> dot_sum(                                                \
         sycl::queue &q, sycl::buffer<_arg_> &buf1, u32 start_id, u32 end_id);                      \

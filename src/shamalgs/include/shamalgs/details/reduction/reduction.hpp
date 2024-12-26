@@ -27,6 +27,9 @@
 namespace shamalgs::reduction {
 
     template<class T>
+    T sum(sham::DeviceScheduler_ptr &sched, sham::DeviceBuffer<T> &buf1, u32 start_id, u32 end_id);
+
+    template<class T>
     T sum(sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id);
 
     template<class T>

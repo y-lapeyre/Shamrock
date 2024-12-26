@@ -204,7 +204,7 @@ void unit_test_reduc_sum() {
         });
 }
 
-void unit_test_reduc_sum_usm() {
+void unit_test_reduc_sum_usm_group_impl() {
 
     unit_test_reduc_sum_usm<f64>(
         "reduction : main (f64)",
@@ -242,9 +242,51 @@ void unit_test_reduc_sum_usm() {
             return shamalgs::reduction::details::sum_usm_group(sched, buf1, start_id, end_id, 32);
         });
 }
+void unit_test_reduc_sum_usm() {
+
+    unit_test_reduc_sum_usm<f64>(
+        "reduction : main (f64)",
+        [](sham::DeviceScheduler_ptr &sched,
+           sham::DeviceBuffer<f64> &buf1,
+           u32 start_id,
+           u32 end_id) -> f64 {
+            return shamalgs::reduction::sum(sched, buf1, start_id, end_id);
+        });
+
+    unit_test_reduc_sum_usm<f32>(
+        "reduction : main (f32)",
+        [](sham::DeviceScheduler_ptr &sched,
+           sham::DeviceBuffer<f32> &buf1,
+           u32 start_id,
+           u32 end_id) -> f32 {
+            return shamalgs::reduction::sum(sched, buf1, start_id, end_id);
+        });
+
+    unit_test_reduc_sum_usm<u32>(
+        "reduction : main (u32)",
+        [](sham::DeviceScheduler_ptr &sched,
+           sham::DeviceBuffer<u32> &buf1,
+           u32 start_id,
+           u32 end_id) -> u32 {
+            return shamalgs::reduction::sum(sched, buf1, start_id, end_id);
+        });
+
+    unit_test_reduc_sum_usm<f64_3>(
+        "reduction : main (f64_3)",
+        [](sham::DeviceScheduler_ptr &sched,
+           sham::DeviceBuffer<f64_3> &buf1,
+           u32 start_id,
+           u32 end_id) -> f64_3 {
+            return shamalgs::reduction::sum(sched, buf1, start_id, end_id);
+        });
+}
 
 TestStart(Unittest, "shamalgs/reduction/sum", reduc_kernel_utestsum, 1) { unit_test_reduc_sum(); }
 
+TestStart(
+    Unittest, "shamalgs/reduction/sum(usm:group_impl)", reduc_kernel_utestsum_usm_group_impl, 1) {
+    unit_test_reduc_sum_usm_group_impl();
+}
 TestStart(Unittest, "shamalgs/reduction/sum(usm)", reduc_kernel_utestsum_usm, 1) {
     unit_test_reduc_sum_usm();
 }
