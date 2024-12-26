@@ -360,11 +360,13 @@ TestStart(Benchmark, "shamalgs/reduction/sum", benchmark_reductionkernels, 1) {
     using T = f64;
 
     f64 exp_test = 1.2;
+    f64 max_N    = 1e8;
 
     results.emplace(
         "fallback",
         shambase::benchmark_pow_len(
             [&](u32 sz) {
+                logger::raw_ln("benchmark fallback sum N =", sz);
                 sycl::buffer<T> buf = shamalgs::random::mock_buffer<T>(0x111, sz);
 
                 // do op on GPU to force locality on GPU before test
@@ -384,7 +386,7 @@ TestStart(Benchmark, "shamalgs/reduction/sum", benchmark_reductionkernels, 1) {
                 });
             },
             10,
-            1e8,
+            max_N,
             exp_test));
 
 #ifdef SYCL2020_FEATURE_REDUCTION
@@ -393,6 +395,8 @@ TestStart(Benchmark, "shamalgs/reduction/sum", benchmark_reductionkernels, 1) {
         "sycl2020",
         shambase::benchmark_pow_len(
             [&](u32 sz) {
+                logger::raw_ln("benchmark sycl2020 sum N =", sz);
+
                 sycl::buffer<T> buf = shamalgs::random::mock_buffer<T>(0x111, sz);
 
                 // do op on GPU to force locality on GPU before test
@@ -412,7 +416,7 @@ TestStart(Benchmark, "shamalgs/reduction/sum", benchmark_reductionkernels, 1) {
                 });
             },
             10,
-            1e8,
+            max_N,
             exp_test));
 #endif
 
@@ -420,6 +424,7 @@ TestStart(Benchmark, "shamalgs/reduction/sum", benchmark_reductionkernels, 1) {
         "slicegroup8",
         shambase::benchmark_pow_len(
             [&](u32 sz) {
+                logger::raw_ln("benchmark slicegroup8 sum N =", sz);
                 sycl::buffer<T> buf = shamalgs::random::mock_buffer<T>(0x111, sz);
 
                 // do op on GPU to force locality on GPU before test
@@ -439,13 +444,14 @@ TestStart(Benchmark, "shamalgs/reduction/sum", benchmark_reductionkernels, 1) {
                 });
             },
             10,
-            1e8,
+            max_N,
             exp_test));
 
     results.emplace(
         "slicegroup32",
         shambase::benchmark_pow_len(
             [&](u32 sz) {
+                logger::raw_ln("benchmark slicegroup32 sum N =", sz);
                 sycl::buffer<T> buf = shamalgs::random::mock_buffer<T>(0x111, sz);
 
                 // do op on GPU to force locality on GPU before test
@@ -465,13 +471,14 @@ TestStart(Benchmark, "shamalgs/reduction/sum", benchmark_reductionkernels, 1) {
                 });
             },
             10,
-            1e8,
+            max_N,
             exp_test));
 
     results.emplace(
         "slicegroup128",
         shambase::benchmark_pow_len(
             [&](u32 sz) {
+                logger::raw_ln("benchmark slicegroup128 sum N =", sz);
                 sycl::buffer<T> buf = shamalgs::random::mock_buffer<T>(0x111, sz);
 
                 // do op on GPU to force locality on GPU before test
@@ -491,13 +498,14 @@ TestStart(Benchmark, "shamalgs/reduction/sum", benchmark_reductionkernels, 1) {
                 });
             },
             10,
-            1e8,
+            max_N,
             exp_test));
 
     results.emplace(
         "usmgroup128",
         shambase::benchmark_pow_len(
             [&](u32 sz) {
+                logger::raw_ln("benchmark usmgroup128 sum N =", sz);
                 std::vector<T> buf = shamalgs::random::mock_vector<T>(0x111, sz);
 
                 auto sched = shamsys::instance::get_compute_scheduler_ptr();
@@ -513,7 +521,53 @@ TestStart(Benchmark, "shamalgs/reduction/sum", benchmark_reductionkernels, 1) {
                 });
             },
             10,
-            1e8,
+            max_N,
+            exp_test));
+
+    results.emplace(
+        "usmgroup32",
+        shambase::benchmark_pow_len(
+            [&](u32 sz) {
+                logger::raw_ln("benchmark usmgroup32 sum N =", sz);
+                std::vector<T> buf = shamalgs::random::mock_vector<T>(0x111, sz);
+
+                auto sched = shamsys::instance::get_compute_scheduler_ptr();
+
+                sham::DeviceBuffer<T> buf1{buf.size(), sched};
+                buf1.copy_from_stdvec(buf);
+
+                buf1.synchronize();
+
+                return shambase::timeit([&]() {
+                    T sum = shamalgs::reduction::details::sum_usm_group(sched, buf1, 0, sz, 32);
+                    buf1.synchronize();
+                });
+            },
+            10,
+            max_N,
+            exp_test));
+
+    results.emplace(
+        "usm",
+        shambase::benchmark_pow_len(
+            [&](u32 sz) {
+                logger::raw_ln("benchmark usm sum N =", sz);
+                std::vector<T> buf = shamalgs::random::mock_vector<T>(0x111, sz);
+
+                auto sched = shamsys::instance::get_compute_scheduler_ptr();
+
+                sham::DeviceBuffer<T> buf1{buf.size(), sched};
+                buf1.copy_from_stdvec(buf);
+
+                buf1.synchronize();
+
+                return shambase::timeit([&]() {
+                    T sum = shamalgs::reduction::sum(sched, buf1, 0, sz);
+                    buf1.synchronize();
+                });
+            },
+            10,
+            max_N,
             exp_test));
 
     PyScriptHandle hdnl{};
@@ -530,22 +584,31 @@ TestStart(Benchmark, "shamalgs/reduction/sum", benchmark_reductionkernels, 1) {
         X = np.array(x)
 
         Y = np.array(fallback)
-        plt.plot(X,Y/X,label = "fallback")
+        plt.plot(X,X/Y,label = "fallback")
 
         Y = np.array(sycl2020)
-        plt.plot(X,Y/X,label = "sycl2020")
+        plt.plot(X,X/Y,label = "sycl2020")
 
         Y = np.array(slicegroup8)
-        plt.plot(X,Y/X,label = "slicegroup8")
+        plt.plot(X,X/Y,label = "slicegroup8")
 
         Y = np.array(slicegroup32)
-        plt.plot(X,Y/X,label = "slicegroup32")
+        plt.plot(X,X/Y,label = "slicegroup32")
 
         Y = np.array(slicegroup128)
-        plt.plot(X,Y/X,label = "slicegroup128")
+        plt.plot(X,X/Y,label = "slicegroup128")
+
+        Y = np.array(usmgroup128)
+        plt.plot(X,X/Y,label = "usmgroup128")
+
+        Y = np.array(usmgroup32)
+        plt.plot(X,X/Y,label = "usmgroup32")
+
+        Y = np.array(usm)
+        plt.plot(X,X/Y,label = "usm")
 
         plt.xlabel("s")
-        plt.ylabel("N/t")
+        plt.ylabel("t/N")
 
         plt.xscale('log')
         plt.yscale('log')
