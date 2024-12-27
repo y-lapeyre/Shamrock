@@ -145,50 +145,50 @@ namespace shamalgs::reduction::details {
 
     #ifdef COMPILE_GROUP_REDUC
 
-    #define XMAC_TYPES                                                                             \
-        X(f32)                                                                                     \
-        X(f32_2)                                                                                   \
-        X(f32_3)                                                                                   \
-        X(f32_4)                                                                                   \
-        X(f32_8)                                                                                   \
-        X(f32_16)                                                                                  \
-        X(f64)                                                                                     \
-        X(f64_2)                                                                                   \
-        X(f64_3)                                                                                   \
-        X(f64_4)                                                                                   \
-        X(f64_8)                                                                                   \
-        X(f64_16)                                                                                  \
-        X(u32)                                                                                     \
-        X(u64)                                                                                     \
-        X(i32)                                                                                     \
-        X(i64)                                                                                     \
-        X(u32_3)                                                                                   \
-        X(u64_3)                                                                                   \
-        X(i64_3)                                                                                   \
-        X(i32_3)
+        #define XMAC_TYPES                                                                         \
+            X(f32)                                                                                 \
+            X(f32_2)                                                                               \
+            X(f32_3)                                                                               \
+            X(f32_4)                                                                               \
+            X(f32_8)                                                                               \
+            X(f32_16)                                                                              \
+            X(f64)                                                                                 \
+            X(f64_2)                                                                               \
+            X(f64_3)                                                                               \
+            X(f64_4)                                                                               \
+            X(f64_8)                                                                               \
+            X(f64_16)                                                                              \
+            X(u32)                                                                                 \
+            X(u64)                                                                                 \
+            X(i32)                                                                                 \
+            X(i64)                                                                                 \
+            X(u32_3)                                                                               \
+            X(u64_3)                                                                               \
+            X(i64_3)                                                                               \
+            X(i32_3)
 
-    #define X(_arg_)                                                                               \
-        template _arg_ shamalgs::reduction::details::sum_usm_group<_arg_>(                         \
-            sham::DeviceScheduler_ptr & sched,                                                     \
-            sham::DeviceBuffer<_arg_> & buf1,                                                      \
-            u32 start_id,                                                                          \
-            u32 end_id,                                                                            \
-            u32 work_group_size);                                                                  \
-        template _arg_ shamalgs::reduction::details::max_usm_group<_arg_>(                         \
-            sham::DeviceScheduler_ptr & sched,                                                     \
-            sham::DeviceBuffer<_arg_> & buf1,                                                      \
-            u32 start_id,                                                                          \
-            u32 end_id,                                                                            \
-            u32 work_group_size);                                                                  \
-        template _arg_ shamalgs::reduction::details::min_usm_group<_arg_>(                         \
-            sham::DeviceScheduler_ptr & sched,                                                     \
-            sham::DeviceBuffer<_arg_> & buf1,                                                      \
-            u32 start_id,                                                                          \
-            u32 end_id,                                                                            \
-            u32 work_group_size);
+        #define X(_arg_)                                                                           \
+            template _arg_ shamalgs::reduction::details::sum_usm_group<_arg_>(                     \
+                sham::DeviceScheduler_ptr & sched,                                                 \
+                sham::DeviceBuffer<_arg_> & buf1,                                                  \
+                u32 start_id,                                                                      \
+                u32 end_id,                                                                        \
+                u32 work_group_size);                                                              \
+            template _arg_ shamalgs::reduction::details::max_usm_group<_arg_>(                     \
+                sham::DeviceScheduler_ptr & sched,                                                 \
+                sham::DeviceBuffer<_arg_> & buf1,                                                  \
+                u32 start_id,                                                                      \
+                u32 end_id,                                                                        \
+                u32 work_group_size);                                                              \
+            template _arg_ shamalgs::reduction::details::min_usm_group<_arg_>(                     \
+                sham::DeviceScheduler_ptr & sched,                                                 \
+                sham::DeviceBuffer<_arg_> & buf1,                                                  \
+                u32 start_id,                                                                      \
+                u32 end_id,                                                                        \
+                u32 work_group_size);
 
 XMAC_TYPES
-    #undef X
+        #undef X
 
     #endif
 #endif
