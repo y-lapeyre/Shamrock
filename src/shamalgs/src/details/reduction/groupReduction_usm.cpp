@@ -135,6 +135,16 @@ namespace shamalgs::reduction::details {
 } // namespace shamalgs::reduction::details
 
 #ifndef DOXYGEN
+
+    #define COMPILE_GROUP_REDUC
+
+    // so far Acpp does not support group reduction with generic backend
+    #ifdef __HIPSYCL_ENABLE_LLVM_SSCP_TARGET__
+        #undef COMPILE_GROUP_REDUC
+    #endif
+
+    #ifdef COMPILE_GROUP_REDUC
+
     #define XMAC_TYPES                                                                             \
         X(f32)                                                                                     \
         X(f32_2)                                                                                   \
@@ -179,4 +189,6 @@ namespace shamalgs::reduction::details {
 
 XMAC_TYPES
     #undef X
+
+    #endif
 #endif
