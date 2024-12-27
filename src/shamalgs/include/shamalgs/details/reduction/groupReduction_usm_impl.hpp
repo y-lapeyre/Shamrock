@@ -137,6 +137,7 @@ namespace shamalgs::reduction::details {
         T ret = shambase::VectorProperties<T>::get_zero();
         {
             auto acc = recov_buf.copy_to_stdvec();
+            ret      = acc[0]; // init value
             for (u64 i = 0; i < remaining_val; i++) {
                 ret = binary_op(ret, acc[i]);
             }

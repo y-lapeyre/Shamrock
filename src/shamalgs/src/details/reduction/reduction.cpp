@@ -32,6 +32,16 @@ namespace shamalgs::reduction {
     }
 
     template<class T>
+    T min(sham::DeviceScheduler_ptr &sched, sham::DeviceBuffer<T> &buf1, u32 start_id, u32 end_id) {
+        return details::min_usm_group(sched, buf1, start_id, end_id, 128);
+    }
+
+    template<class T>
+    T max(sham::DeviceScheduler_ptr &sched, sham::DeviceBuffer<T> &buf1, u32 start_id, u32 end_id) {
+        return details::max_usm_group(sched, buf1, start_id, end_id, 128);
+    }
+
+    template<class T>
     T sum(sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id) {
 #ifdef __HIPSYCL_ENABLE_LLVM_SSCP_TARGET__
         return details::FallbackReduction<T>::sum(q, buf1, start_id, end_id);
@@ -155,44 +165,56 @@ namespace shamalgs::reduction {
         }
     }
 
-#define XMAC_TYPES                                                                                 \
-    X(f32)                                                                                         \
-    X(f32_2)                                                                                       \
-    X(f32_3)                                                                                       \
-    X(f32_4)                                                                                       \
-    X(f32_8)                                                                                       \
-    X(f32_16)                                                                                      \
-    X(f64)                                                                                         \
-    X(f64_2)                                                                                       \
-    X(f64_3)                                                                                       \
-    X(f64_4)                                                                                       \
-    X(f64_8)                                                                                       \
-    X(f64_16)                                                                                      \
-    X(u32)                                                                                         \
-    X(u64)                                                                                         \
-    X(i32)                                                                                         \
-    X(i64)                                                                                         \
-    X(u32_3)                                                                                       \
-    X(u64_3)                                                                                       \
-    X(i64_3)                                                                                       \
-    X(i32_3)
+#ifndef DOXYGEN
+    #define XMAC_TYPES                                                                             \
+        X(f32)                                                                                     \
+        X(f32_2)                                                                                   \
+        X(f32_3)                                                                                   \
+        X(f32_4)                                                                                   \
+        X(f32_8)                                                                                   \
+        X(f32_16)                                                                                  \
+        X(f64)                                                                                     \
+        X(f64_2)                                                                                   \
+        X(f64_3)                                                                                   \
+        X(f64_4)                                                                                   \
+        X(f64_8)                                                                                   \
+        X(f64_16)                                                                                  \
+        X(u32)                                                                                     \
+        X(u64)                                                                                     \
+        X(i32)                                                                                     \
+        X(i64)                                                                                     \
+        X(u32_3)                                                                                   \
+        X(u64_3)                                                                                   \
+        X(i64_3)                                                                                   \
+        X(i32_3)
 
-#define X(_arg_)                                                                                   \
-    template _arg_ sum<_arg_>(                                                                     \
-        sham::DeviceScheduler_ptr & sched,                                                         \
-        sham::DeviceBuffer<_arg_> & buf1,                                                          \
-        u32 start_id,                                                                              \
-        u32 end_id);                                                                               \
-    template _arg_ sum(sycl::queue &q, sycl::buffer<_arg_> &buf1, u32 start_id, u32 end_id);       \
-    template shambase::VecComponent<_arg_> dot_sum(                                                \
-        sycl::queue &q, sycl::buffer<_arg_> &buf1, u32 start_id, u32 end_id);                      \
-    template _arg_ max(sycl::queue &q, sycl::buffer<_arg_> &buf1, u32 start_id, u32 end_id);       \
-    template _arg_ min(sycl::queue &q, sycl::buffer<_arg_> &buf1, u32 start_id, u32 end_id);       \
-    template bool has_nan(sycl::queue &q, sycl::buffer<_arg_> &buf1, u64 cnt);                     \
-    template bool has_inf(sycl::queue &q, sycl::buffer<_arg_> &buf1, u64 cnt);                     \
-    template bool has_nan_or_inf(sycl::queue &q, sycl::buffer<_arg_> &buf1, u64 cnt);
+    #define X(_arg_)                                                                               \
+        template _arg_ sum<_arg_>(                                                                 \
+            sham::DeviceScheduler_ptr & sched,                                                     \
+            sham::DeviceBuffer<_arg_> & buf1,                                                      \
+            u32 start_id,                                                                          \
+            u32 end_id);                                                                           \
+        template _arg_ min<_arg_>(                                                                 \
+            sham::DeviceScheduler_ptr & sched,                                                     \
+            sham::DeviceBuffer<_arg_> & buf1,                                                      \
+            u32 start_id,                                                                          \
+            u32 end_id);                                                                           \
+        template _arg_ max<_arg_>(                                                                 \
+            sham::DeviceScheduler_ptr & sched,                                                     \
+            sham::DeviceBuffer<_arg_> & buf1,                                                      \
+            u32 start_id,                                                                          \
+            u32 end_id);                                                                           \
+        template _arg_ sum(sycl::queue &q, sycl::buffer<_arg_> &buf1, u32 start_id, u32 end_id);   \
+        template shambase::VecComponent<_arg_> dot_sum(                                            \
+            sycl::queue &q, sycl::buffer<_arg_> &buf1, u32 start_id, u32 end_id);                  \
+        template _arg_ max(sycl::queue &q, sycl::buffer<_arg_> &buf1, u32 start_id, u32 end_id);   \
+        template _arg_ min(sycl::queue &q, sycl::buffer<_arg_> &buf1, u32 start_id, u32 end_id);   \
+        template bool has_nan(sycl::queue &q, sycl::buffer<_arg_> &buf1, u64 cnt);                 \
+        template bool has_inf(sycl::queue &q, sycl::buffer<_arg_> &buf1, u64 cnt);                 \
+        template bool has_nan_or_inf(sycl::queue &q, sycl::buffer<_arg_> &buf1, u64 cnt);
 
     XMAC_TYPES
-#undef X
+    #undef X
+#endif
 
 } // namespace shamalgs::reduction

@@ -10,7 +10,7 @@
 #pragma once
 
 /**
- * @file groupReduction_usm.hpp
+ * @file fallbackReduction_usm.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @brief
  *
@@ -26,25 +26,15 @@
 namespace shamalgs::reduction::details {
 
     template<class T>
-    T sum_usm_group(
-        sham::DeviceScheduler_ptr &sched,
-        sham::DeviceBuffer<T> &buf1,
-        u32 start_id,
-        u32 end_id,
-        u32 work_group_size);
+    T sum_usm_fallback(
+        sham::DeviceScheduler_ptr &sched, sham::DeviceBuffer<T> &buf1, u32 start_id, u32 end_id);
+
     template<class T>
-    T min_usm_group(
-        sham::DeviceScheduler_ptr &sched,
-        sham::DeviceBuffer<T> &buf1,
-        u32 start_id,
-        u32 end_id,
-        u32 work_group_size);
+    T min_usm_fallback(
+        sham::DeviceScheduler_ptr &sched, sham::DeviceBuffer<T> &buf1, u32 start_id, u32 end_id);
+
     template<class T>
-    T max_usm_group(
-        sham::DeviceScheduler_ptr &sched,
-        sham::DeviceBuffer<T> &buf1,
-        u32 start_id,
-        u32 end_id,
-        u32 work_group_size);
+    T max_usm_fallback(
+        sham::DeviceScheduler_ptr &sched, sham::DeviceBuffer<T> &buf1, u32 start_id, u32 end_id);
 
 } // namespace shamalgs::reduction::details

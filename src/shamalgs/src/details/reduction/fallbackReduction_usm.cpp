@@ -8,14 +8,12 @@
 // -------------------------------------------------------//
 
 /**
- * @file groupReduction_usm.cpp
+ * @file fallbackReduction_usm.cpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @brief
  *
  */
 
-#include "shamalgs/details/reduction/groupReduction_usm_impl.hpp"
-#include "shamalgs/details/reduction/group_reduc_utils.hpp"
 #include "shamalgs/memory.hpp"
 #include "shambackends/math.hpp"
 #include "shambackends/sycl.hpp"
@@ -24,103 +22,51 @@
 
 namespace shamalgs::reduction::details {
 
-    /**
-     * @brief Compute the sum of a given range in a buffer using group reduction
-     *
-     * @param sched The device scheduler to use
-     * @param buf1 The buffer to read from
-     * @param start_id The starting index of the range
-     * @param end_id The end id of the range
-     * @param work_group_size The size of the work group to use
-     *
-     * @return The sum of the values in the index range
-     */
-    template<class T>
-    T sum_usm_group(
+    template<class T, class BinaryOp>
+    T reduc_internal(
         sham::DeviceScheduler_ptr &sched,
         sham::DeviceBuffer<T> &buf1,
         u32 start_id,
         u32 end_id,
-        u32 work_group_size) {
+        BinaryOp &&bop) {
 
-        return reduc_internal<T>(
-            sched,
-            buf1,
-            start_id,
-            end_id,
-            work_group_size,
-            [](sycl::group<1> g, T v) {
-                return sycl::reduce_over_group(g, v, SYCL_SUM_OP);
-            },
-            [](T lhs, T rhs) {
-                return lhs + rhs;
-            });
+        if (!(end_id > start_id)) {
+            shambase::throw_unimplemented("whaaaat are you doing");
+        }
+
+        auto acc = buf1.copy_to_stdvec();
+        T ret    = acc[start_id];
+        for (u32 i = start_id + 1; i < end_id; i++) {
+            ret = bop(ret, acc[i]);
+        }
+        return ret;
     }
 
-    /**
-     * @brief Compute the maximum value of a given range in a buffer using group reduction
-     *
-     * @param sched The device scheduler to use
-     * @param buf1 The buffer to read from
-     * @param start_id The starting index of the range
-     * @param end_id The end id of the range
-     * @param work_group_size The size of the work group to use
-     *
-     * @return The maximum value of the range
-     */
     template<class T>
-    T max_usm_group(
-        sham::DeviceScheduler_ptr &sched,
-        sham::DeviceBuffer<T> &buf1,
-        u32 start_id,
-        u32 end_id,
-        u32 work_group_size) {
+    T sum_usm_fallback(
+        sham::DeviceScheduler_ptr &sched, sham::DeviceBuffer<T> &buf1, u32 start_id, u32 end_id) {
 
-        return reduc_internal<T>(
-            sched,
-            buf1,
-            start_id,
-            end_id,
-            work_group_size,
-            [](sycl::group<1> g, T v) {
-                return sycl::reduce_over_group(g, v, SYCL_MAX_OP);
-            },
-            [](T lhs, T rhs) {
-                return sham::max(lhs, rhs);
-            });
+        return reduc_internal<T>(sched, buf1, start_id, end_id, [](T lhs, T rhs) {
+            return lhs + rhs;
+        });
     }
 
-    /**
-     * @brief Compute the minimum value of a given range in a buffer using group reduction
-     *
-     * @param sched The device scheduler to use
-     * @param buf1 The buffer to read from
-     * @param start_id The starting index of the range
-     * @param end_id The end id of the range
-     * @param work_group_size The size of the work group to use
-     *
-     * @return The minimum value of the range
-     */
     template<class T>
-    T min_usm_group(
-        sham::DeviceScheduler_ptr &sched,
-        sham::DeviceBuffer<T> &buf1,
-        u32 start_id,
-        u32 end_id,
-        u32 work_group_size) {
+    T max_usm_fallback(
+        sham::DeviceScheduler_ptr &sched, sham::DeviceBuffer<T> &buf1, u32 start_id, u32 end_id) {
 
-        return reduc_internal<T>(
-            sched,
-            buf1,
-            start_id,
-            end_id,
-            work_group_size,
-            [](sycl::group<1> g, T v) {
-                return sycl::reduce_over_group(g, v, SYCL_MIN_OP);
-            },
-            [](T lhs, T rhs) {
-                return sham::min(lhs, rhs);
-            });
+        return reduc_internal<T>(sched, buf1, start_id, end_id, [](T lhs, T rhs) {
+            return sham::max(lhs, rhs);
+        });
+    }
+
+    template<class T>
+    T min_usm_fallback(
+        sham::DeviceScheduler_ptr &sched, sham::DeviceBuffer<T> &buf1, u32 start_id, u32 end_id) {
+
+        return reduc_internal<T>(sched, buf1, start_id, end_id, [](T lhs, T rhs) {
+            return sham::min(lhs, rhs);
+        });
     }
 
 } // namespace shamalgs::reduction::details
@@ -149,24 +95,21 @@ namespace shamalgs::reduction::details {
         X(i32_3)
 
     #define X(_arg_)                                                                               \
-        template _arg_ shamalgs::reduction::details::sum_usm_group<_arg_>(                         \
+        template _arg_ shamalgs::reduction::details::sum_usm_fallback<_arg_>(                      \
             sham::DeviceScheduler_ptr & sched,                                                     \
             sham::DeviceBuffer<_arg_> & buf1,                                                      \
             u32 start_id,                                                                          \
-            u32 end_id,                                                                            \
-            u32 work_group_size);                                                                  \
-        template _arg_ shamalgs::reduction::details::max_usm_group<_arg_>(                         \
+            u32 end_id);                                                                           \
+        template _arg_ shamalgs::reduction::details::max_usm_fallback<_arg_>(                      \
             sham::DeviceScheduler_ptr & sched,                                                     \
             sham::DeviceBuffer<_arg_> & buf1,                                                      \
             u32 start_id,                                                                          \
-            u32 end_id,                                                                            \
-            u32 work_group_size);                                                                  \
-        template _arg_ shamalgs::reduction::details::min_usm_group<_arg_>(                         \
+            u32 end_id);                                                                           \
+        template _arg_ shamalgs::reduction::details::min_usm_fallback<_arg_>(                      \
             sham::DeviceScheduler_ptr & sched,                                                     \
             sham::DeviceBuffer<_arg_> & buf1,                                                      \
             u32 start_id,                                                                          \
-            u32 end_id,                                                                            \
-            u32 work_group_size);
+            u32 end_id);
 
 XMAC_TYPES
     #undef X
