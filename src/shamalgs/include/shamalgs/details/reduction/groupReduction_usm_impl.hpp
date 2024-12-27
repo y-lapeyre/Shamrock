@@ -26,7 +26,7 @@
 
 namespace shamalgs::reduction::details {
 
-    template<class T, class GroupCombiner>
+    template<class T, class GroupCombiner, class IdentityGetter>
     inline sycl::event reduc_step(
         sham::DeviceQueue &q,
         T *global_mem,
@@ -35,7 +35,8 @@ namespace shamalgs::reduction::details {
         u32 &cur_slice_sz,
         u32 &remaining_val,
         u32 work_group_size,
-        GroupCombiner &&group_combine) {
+        GroupCombiner &&group_combine,
+        IdentityGetter &&identity_getter) {
 
         sycl::nd_range<1> exec_range = shambase::make_range(remaining_val, work_group_size);
 
@@ -52,8 +53,7 @@ namespace shamalgs::reduction::details {
                 u64 iread  = gid * slice_read_size;
                 u64 iwrite = group_tile_id * slice_write_size;
 
-                T val_read = (iread < max_id) ? global_mem[iread]
-                                              : shambase::VectorProperties<T>::get_zero();
+                T val_read = (iread < max_id) ? global_mem[iread] : identity_getter();
 
                 T local_red = group_combine(item.get_group(), val_read);
 
@@ -70,7 +70,7 @@ namespace shamalgs::reduction::details {
         return e;
     }
 
-    template<class T, class GroupCombiner, class BinaryOp>
+    template<class T, class GroupCombiner, class BinaryOp, class IdentityGetter>
     inline T reduc_internal(
         sham::DeviceScheduler_ptr &sched,
         sham::DeviceBuffer<T> &buf1,
@@ -78,7 +78,8 @@ namespace shamalgs::reduction::details {
         u32 end_id,
         u32 work_group_size,
         GroupCombiner &&group_combine,
-        BinaryOp &&binary_op) {
+        BinaryOp &&binary_op,
+        IdentityGetter &&identity_getter) {
 
         sham::DeviceQueue &q = sched->get_queue();
 
@@ -102,7 +103,8 @@ namespace shamalgs::reduction::details {
                 cur_slice_sz,
                 remaining_val,
                 work_group_size,
-                std::forward<GroupCombiner>(group_combine));
+                std::forward<GroupCombiner>(group_combine),
+                std::forward<IdentityGetter>(identity_getter));
 
             sham::EventList old_list;
             std::swap(depends_list, old_list);
@@ -134,13 +136,10 @@ namespace shamalgs::reduction::details {
         buf_int.complete_event_state(e);
         recov_buf.complete_event_state(e);
 
-        T ret = shambase::VectorProperties<T>::get_zero();
-        {
-            auto acc = recov_buf.copy_to_stdvec();
-            ret      = acc[0]; // init value
-            for (u64 i = 0; i < remaining_val; i++) {
-                ret = binary_op(ret, acc[i]);
-            }
+        auto acc = recov_buf.copy_to_stdvec();
+        T ret    = acc[0]; // init value
+        for (u64 i = 1; i < remaining_val; i++) {
+            ret = binary_op(ret, acc[i]);
         }
 
         return ret;

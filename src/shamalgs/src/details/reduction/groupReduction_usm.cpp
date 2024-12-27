@@ -54,6 +54,9 @@ namespace shamalgs::reduction::details {
             },
             [](T lhs, T rhs) {
                 return lhs + rhs;
+            },
+            []() {
+                return shambase::VectorProperties<T>::get_zero();
             });
     }
 
@@ -87,6 +90,9 @@ namespace shamalgs::reduction::details {
             },
             [](T lhs, T rhs) {
                 return sham::max(lhs, rhs);
+            },
+            []() {
+                return shambase::VectorProperties<T>::get_min();
             });
     }
 
@@ -120,6 +126,9 @@ namespace shamalgs::reduction::details {
             },
             [](T lhs, T rhs) {
                 return sham::min(lhs, rhs);
+            },
+            []() {
+                return shambase::VectorProperties<T>::get_max();
             });
     }
 
