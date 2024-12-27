@@ -248,7 +248,7 @@ namespace sham {
     namespace details {
 
         /// internal implementation of typed_index_kernel_call
-        template<class index_t = u32, class RefIn, class RefOut, class... Targs, class Functor>
+        template<class index_t, class RefIn, class RefOut, class... Targs, class Functor>
         void typed_index_kernel_call(
             sham::DeviceQueue &q,
             RefIn in,
