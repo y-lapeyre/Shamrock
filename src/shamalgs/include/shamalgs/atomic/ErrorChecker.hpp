@@ -65,13 +65,17 @@ namespace shamalgs::atomic {
      */
     struct ErrorCheckerFlags {
 
+        /// The buffer used to store the error flag
         sham::DeviceBuffer<u32> buf_err;
 
+        /// Constructor
         ErrorCheckerFlags(sham::DeviceScheduler_ptr sched) : buf_err(1, sched) { buf_err.fill(0); }
 
+        /// A struct to access the pointer associated to the buffer
         struct accessed {
-            u32 *ptr;
+            u32 *ptr; ///< The pointer to the buffer
 
+            /// Set a flag on the error flags buffer atomically.
             void set_flag_on(u32 flag_val) const {
                 sycl::atomic_ref<
                     u32,
@@ -83,12 +87,15 @@ namespace shamalgs::atomic {
             }
         };
 
+        /// Get a write access to the buffer
         accessed get_write_access(sham::EventList &depends_list) {
             return accessed{buf_err.get_write_access(depends_list)};
         }
 
+        /// Complete the event state
         void complete_event_state(sycl::event e) { buf_err.complete_event_state(e); }
 
+        /// Get the resulting error flag
         u32 get_output() { return buf_err.copy_to_stdvec().at(0); }
     };
 
@@ -126,13 +133,19 @@ namespace shamalgs::atomic {
      *
      */
     struct ErrorCheckCounter {
+
+        /// The buffer used to store the error counts
         sham::DeviceBuffer<u32> buf_err;
+
+        /// Constructor
         ErrorCheckCounter(sham::DeviceScheduler_ptr sched, u32 error_counter)
             : buf_err(error_counter, sched) {}
 
+        /// A struct to access the pointer associated to the buffer
         struct accessed {
-            u32 *ptr;
+            u32 *ptr; ///< The pointer to the buffer
 
+            /// Increments the error count associated to the given id in the buffer.
             void set_error(u32 id) const {
                 sycl::atomic_ref<
                     u32,
@@ -144,11 +157,15 @@ namespace shamalgs::atomic {
             }
         };
 
+        /// Get a write access to the buffer
         accessed get_write_access(sham::EventList &depends_list) {
             return accessed{buf_err.get_write_access(depends_list)};
         }
 
+        /// Complete the event state
         void complete_event_state(sycl::event e) { buf_err.complete_event_state(e); }
+
+        /// Get the resulting error counts
         std::vector<u32> get_outputs() { return buf_err.copy_to_stdvec(); }
     };
 
