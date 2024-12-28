@@ -139,7 +139,9 @@ namespace shamalgs::atomic {
 
         /// Constructor
         ErrorCheckCounter(sham::DeviceScheduler_ptr sched, u32 error_counter)
-            : buf_err(error_counter, sched) {}
+            : buf_err(error_counter, sched) {
+            buf_err.fill(0_u32);
+        }
 
         /// A struct to access the pointer associated to the buffer
         struct accessed {

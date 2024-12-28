@@ -73,9 +73,9 @@ TestStart(Unittest, "shamalgs/atomic/ErrorCheckCounter", test_ErrorCheckCounter,
 
     auto precondition_error = error_util.get_outputs();
 
-    REQUIRE(precondition_error.size() == 4);
-    REQUIRE(precondition_error[0] == 1);
-    REQUIRE(precondition_error[1] == 2);
-    REQUIRE(precondition_error[2] == 0);
-    REQUIRE(precondition_error[3] == 100);
+    REQUIRE_EQUAL(precondition_error.size(), 4);
+    REQUIRE_EQUAL(precondition_error[0], 1);
+    REQUIRE_EQUAL(precondition_error[1], 2);
+    REQUIRE_EQUAL(precondition_error[2], 0);
+    REQUIRE_EQUAL(precondition_error[3], 100);
 }
