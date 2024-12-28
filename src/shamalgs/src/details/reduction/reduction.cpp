@@ -29,7 +29,7 @@ namespace shamalgs::reduction {
 
     template<class T>
     T sum(sham::DeviceScheduler_ptr &sched, sham::DeviceBuffer<T> &buf1, u32 start_id, u32 end_id) {
-#ifdef __HIPSYCL_ENABLE_LLVM_SSCP_TARGET__
+#ifdef SHAMALGS_GROUP_REDUCTION_SUPPORT
         return details::sum_usm_group(sched, buf1, start_id, end_id, 128);
 #else
         return details::sum_usm_fallback(sched, buf1, start_id, end_id);
@@ -38,7 +38,7 @@ namespace shamalgs::reduction {
 
     template<class T>
     T min(sham::DeviceScheduler_ptr &sched, sham::DeviceBuffer<T> &buf1, u32 start_id, u32 end_id) {
-#ifdef __HIPSYCL_ENABLE_LLVM_SSCP_TARGET__
+#ifdef SHAMALGS_GROUP_REDUCTION_SUPPORT
         return details::min_usm_group(sched, buf1, start_id, end_id, 128);
 #else
         return details::min_usm_fallback(sched, buf1, start_id, end_id);
@@ -47,7 +47,7 @@ namespace shamalgs::reduction {
 
     template<class T>
     T max(sham::DeviceScheduler_ptr &sched, sham::DeviceBuffer<T> &buf1, u32 start_id, u32 end_id) {
-#ifdef __HIPSYCL_ENABLE_LLVM_SSCP_TARGET__
+#ifdef SHAMALGS_GROUP_REDUCTION_SUPPORT
         return details::max_usm_group(sched, buf1, start_id, end_id, 128);
 #else
         return details::max_usm_fallback(sched, buf1, start_id, end_id);

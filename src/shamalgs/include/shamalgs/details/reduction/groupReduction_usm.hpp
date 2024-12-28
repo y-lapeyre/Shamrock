@@ -23,6 +23,15 @@
 #include "shambackends/sycl_utils.hpp"
 #include "shambackends/vec.hpp"
 
+#define SHAMALGS_GROUP_REDUCTION_SUPPORT
+
+// so far Acpp does not support group reduction with generic backend
+#ifdef __HIPSYCL_ENABLE_LLVM_SSCP_TARGET__
+    #undef SHAMALGS_GROUP_REDUCTION_SUPPORT
+#endif
+
+#ifdef SHAMALGS_GROUP_REDUCTION_SUPPORT
+
 namespace shamalgs::reduction::details {
 
     template<class T>
@@ -48,3 +57,5 @@ namespace shamalgs::reduction::details {
         u32 work_group_size);
 
 } // namespace shamalgs::reduction::details
+
+#endif
