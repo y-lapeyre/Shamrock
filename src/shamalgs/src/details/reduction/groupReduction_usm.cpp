@@ -14,6 +14,7 @@
  *
  */
 
+#include "shamalgs/details/reduction/groupReduction_usm.hpp"
 #include "shamalgs/details/reduction/groupReduction_usm_impl.hpp"
 #include "shamalgs/details/reduction/group_reduc_utils.hpp"
 #include "shamalgs/memory.hpp"
