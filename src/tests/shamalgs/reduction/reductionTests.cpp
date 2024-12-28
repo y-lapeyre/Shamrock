@@ -282,6 +282,7 @@ void unit_test_reduc_sum() {
         });
 }
 
+#ifdef SHAMALGS_GROUP_REDUCTION_SUPPORT
 void unit_test_reduc_sum_usm_group_impl() {
 
     unit_test_reduc_sum_usm<f64>(
@@ -396,6 +397,8 @@ void unit_test_reduc_max_usm_group_impl() {
             return shamalgs::reduction::details::max_usm_group(sched, buf1, start_id, end_id, 32);
         });
 }
+#endif
+
 void unit_test_reduc_sum_usm_fallback_impl() {
 
     unit_test_reduc_sum_usm<f64>(
@@ -627,6 +630,7 @@ void unit_test_reduc_max_usm() {
 
 TestStart(Unittest, "shamalgs/reduction/sum", reduc_kernel_utestsum, 1) { unit_test_reduc_sum(); }
 
+#ifdef SHAMALGS_GROUP_REDUCTION_SUPPORT
 TestStart(
     Unittest, "shamalgs/reduction/sum(usm:group_impl)", reduc_kernel_utestsum_usm_group_impl, 1) {
     unit_test_reduc_sum_usm_group_impl();
@@ -639,6 +643,8 @@ TestStart(
     Unittest, "shamalgs/reduction/max(usm:group_impl)", reduc_kernel_utestmax_usm_group_impl, 1) {
     unit_test_reduc_max_usm_group_impl();
 }
+#endif
+
 TestStart(
     Unittest,
     "shamalgs/reduction/sum(usm:fallback_impl)",
@@ -880,6 +886,8 @@ TestStart(Benchmark, "shamalgs/reduction/sum", benchmark_reductionkernels, 1) {
             max_N,
             exp_test));
 
+#ifdef SHAMALGS_GROUP_REDUCTION_SUPPORT
+
     results.emplace(
         "usmgroup128",
         shambase::benchmark_pow_len(
@@ -925,6 +933,7 @@ TestStart(Benchmark, "shamalgs/reduction/sum", benchmark_reductionkernels, 1) {
             10,
             max_N,
             exp_test));
+#endif
 
     results.emplace(
         "usm",
