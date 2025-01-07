@@ -345,6 +345,128 @@ void shammodels::sph::Model<Tvec, SPHKernel>::push_particle(
 }
 
 template<class Tvec, template<class> class SPHKernel>
+void shammodels::sph::Model<Tvec, SPHKernel>::push_particle_mhd(
+    std::vector<Tvec> &part_pos_insert,
+    std::vector<Tscal> &part_hpart_insert,
+    std::vector<Tscal> &part_u_insert,
+    std::vector<Tvec> &part_vel_insert,
+    std::vector<Tvec> &B_on_rho_insert,
+    std::vector<Tscal> &psi_on_cs_insert) {
+    StackEntry stack_loc{};
+
+    using namespace shamrock::patch;
+
+    PatchScheduler &sched = shambase::get_check_ref(ctx.sched);
+
+    std::string log = "";
+
+    sched.for_each_local_patchdata([&](const Patch p, PatchData &pdat) {
+        PatchCoordTransform<Tvec> ptransf = sched.get_sim_box().get_patch_transform<Tvec>();
+
+        shammath::CoordRange<Tvec> patch_coord = ptransf.to_obj_coord(p);
+
+        std::vector<Tvec> vec_acc;
+        std::vector<Tscal> hpart_acc;
+        std::vector<Tscal> u_acc;
+        std::vector<Tvec> vel_acc;
+        std::vector<Tvec> BOR_acc;
+        std::vector<Tscal> POC_acc;
+        for (u32 i = 0; i < part_pos_insert.size(); i++) {
+            Tvec r    = part_pos_insert[i];
+            Tscal u   = part_u_insert[i];
+            Tvec v    = part_vel_insert[i];
+            Tvec BOR  = B_on_rho_insert[i];
+            Tscal POC = psi_on_cs_insert[i];
+            if (patch_coord.contain_pos(r)) {
+                vec_acc.push_back(r);
+                hpart_acc.push_back(part_hpart_insert[i]);
+                u_acc.push_back(u);
+                vel_acc.push_back(v);
+                BOR_acc.push_back(BOR);
+                POC_acc.push_back(POC);
+            }
+        }
+
+        if (vec_acc.size() == 0) {
+            return;
+        }
+
+        log += shambase::format(
+            "\n  rank = {}  patch id={}, add N={} particles, coords = {} {}",
+            shamcomm::world_rank(),
+            p.id_patch,
+            vec_acc.size(),
+            patch_coord.lower,
+            patch_coord.upper);
+
+        PatchData tmp(sched.pdl);
+        tmp.resize(vec_acc.size());
+        tmp.fields_raz();
+
+        {
+            u32 len                 = vec_acc.size();
+            PatchDataField<Tvec> &f = tmp.get_field<Tvec>(sched.pdl.get_field_idx<Tvec>("xyz"));
+            sycl::buffer<Tvec> buf(vec_acc.data(), len);
+            f.override(buf, len);
+        }
+
+        {
+            u32 len = vec_acc.size();
+            PatchDataField<Tscal> &f
+                = tmp.get_field<Tscal>(sched.pdl.get_field_idx<Tscal>("hpart"));
+            sycl::buffer<Tscal> buf(hpart_acc.data(), len);
+            f.override(buf, len);
+        }
+
+        {
+            u32 len                  = u_acc.size();
+            PatchDataField<Tscal> &f = tmp.get_field<Tscal>(sched.pdl.get_field_idx<Tscal>("uint"));
+            sycl::buffer<Tscal> buf(u_acc.data(), len);
+            f.override(buf, len);
+        }
+
+        {
+            u32 len                 = vel_acc.size();
+            PatchDataField<Tvec> &f = tmp.get_field<Tvec>(sched.pdl.get_field_idx<Tvec>("vxyz"));
+            sycl::buffer<Tvec> buf(vel_acc.data(), len);
+            f.override(buf, len);
+        }
+
+        {
+            u32 len                 = BOR_acc.size();
+            PatchDataField<Tvec> &f = tmp.get_field<Tvec>(sched.pdl.get_field_idx<Tvec>("B/rho"));
+            sycl::buffer<Tvec> buf(BOR_acc.data(), len);
+            f.override(buf, len);
+        }
+
+        {
+            u32 len = POC_acc.size();
+            PatchDataField<Tscal> &f
+                = tmp.get_field<Tscal>(sched.pdl.get_field_idx<Tscal>("psi/ch"));
+            sycl::buffer<Tscal> buf(POC_acc.data(), len);
+            f.override(buf, len);
+        }
+
+        pdat.insert_elements(tmp);
+
+        sched.check_patchdata_locality_corectness();
+
+        std::string log_gathered = "";
+        shamcomm::gather_str(log, log_gathered);
+
+        if (shamcomm::world_rank() == 0) {
+            logger::info_ln("Model", "Push particles : ", log_gathered);
+        }
+        log = "";
+
+        modules::ComputeLoadBalanceValue<Tvec, SPHKernel>(ctx, solver.solver_config, solver.storage)
+            .update_load_balancing();
+
+        post_insert_data<Tvec>(sched);
+    });
+}
+
+template<class Tvec, template<class> class SPHKernel>
 auto shammodels::sph::Model<Tvec, SPHKernel>::get_ideal_hcp_box(
     Tscal dr, std::pair<Tvec, Tvec> _box) -> std::pair<Tvec, Tvec> {
     StackEntry stack_loc{};
