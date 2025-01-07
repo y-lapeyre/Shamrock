@@ -893,36 +893,36 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD(
 
         Tvec *mag_pressure
             = (do_MHD_debug)
-                  ? mpdat.get_field_buf_ref<Tvec>(imag_pressure).get_write_access(depends_list)
+                  ? pdat.get_field_buf_ref<Tvec>(imag_pressure).get_write_access(depends_list)
                   : nullptr;
         Tvec *mag_tension
             = (do_MHD_debug)
-                  ? mpdat.get_field_buf_ref<Tvec>(imag_tension).get_write_access(depends_list)
+                  ? pdat.get_field_buf_ref<Tvec>(imag_tension).get_write_access(depends_list)
                   : nullptr;
         Tvec *gas_pressure
             = (do_MHD_debug)
-                  ? mpdat.get_field_buf_ref<Tvec>(igas_pressure).get_write_access(depends_list)
+                  ? pdat.get_field_buf_ref<Tvec>(igas_pressure).get_write_access(depends_list)
                   : nullptr;
         Tvec *tensile_corr
             = (do_MHD_debug)
-                  ? mpdat.get_field_buf_ref<Tvec>(itensile_corr).get_write_access(depends_list)
+                  ? pdat.get_field_buf_ref<Tvec>(itensile_corr).get_write_access(depends_list)
                   : nullptr;
 
         Tscal *psi_propag
             = (do_MHD_debug)
-                  ? mpdat.get_field_buf_ref<Tscal>(ipsi_propag).get_write_access(depends_list)
+                  ? pdat.get_field_buf_ref<Tscal>(ipsi_propag).get_write_access(depends_list)
                   : nullptr;
         Tscal *psi_diff
             = (do_MHD_debug)
-                  ? mpdat.get_field_buf_ref<Tscal>(ipsi_diff).get_write_access(depends_list)
+                  ? pdat.get_field_buf_ref<Tscal>(ipsi_diff).get_write_access(depends_list)
                   : nullptr;
         Tscal *psi_cons
             = (do_MHD_debug)
-                  ? mpdat.get_field_buf_ref<Tscal>(ipsi_cons).get_write_access(depends_list)
+                  ? pdat.get_field_buf_ref<Tscal>(ipsi_cons).get_write_access(depends_list)
                   : nullptr;
 
         Tscal *u_mhd = (do_MHD_debug)
-                           ? mpdat.get_field_buf_ref<Tscal>(iu_mhd).get_write_access(depends_list)
+                           ? pdat.get_field_buf_ref<Tscal>(iu_mhd).get_write_access(depends_list)
                            : nullptr;
 
         auto ploop_ptrs = pcache.get_read_access(depends_list);
@@ -1087,16 +1087,16 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD(
         buf_dpsi_on_ch.complete_event_state(e);
 
         if (do_MHD_debug) {
-            mpdat.get_field_buf_ref<Tvec>(imag_pressure).complete_event_state(e);
-            mpdat.get_field_buf_ref<Tvec>(imag_tension).complete_event_state(e);
-            mpdat.get_field_buf_ref<Tvec>(igas_pressure).complete_event_state(e);
-            mpdat.get_field_buf_ref<Tvec>(itensile_corr).complete_event_state(e);
+            pdat.get_field_buf_ref<Tvec>(imag_pressure).complete_event_state(e);
+            pdat.get_field_buf_ref<Tvec>(imag_tension).complete_event_state(e);
+            pdat.get_field_buf_ref<Tvec>(igas_pressure).complete_event_state(e);
+            pdat.get_field_buf_ref<Tvec>(itensile_corr).complete_event_state(e);
 
-            mpdat.get_field_buf_ref<Tscal>(ipsi_propag).complete_event_state(e);
-            mpdat.get_field_buf_ref<Tscal>(ipsi_diff).complete_event_state(e);
-            mpdat.get_field_buf_ref<Tscal>(ipsi_cons).complete_event_state(e);
+            pdat.get_field_buf_ref<Tscal>(ipsi_propag).complete_event_state(e);
+            pdat.get_field_buf_ref<Tscal>(ipsi_diff).complete_event_state(e);
+            pdat.get_field_buf_ref<Tscal>(ipsi_cons).complete_event_state(e);
 
-            mpdat.get_field_buf_ref<Tscal>(iu_mhd).complete_event_state(e);
+            pdat.get_field_buf_ref<Tscal>(iu_mhd).complete_event_state(e);
         }
 
         sham::EventList resulting_events;

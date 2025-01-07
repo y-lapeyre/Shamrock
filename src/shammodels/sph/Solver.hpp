@@ -127,6 +127,17 @@ namespace shammodels::sph {
             if (solver_config.has_field_curlB()) {
                 context.pdata_layout_add_field<Tvec>("curlB", 1);
             }
+
+            if (solver_config.do_MHD_debug()) {
+                context.pdata_layout_add_field<Tvec>("mag_pressure", 1);
+                context.pdata_layout_add_field<Tvec>("mag_tension", 1);
+                context.pdata_layout_add_field<Tvec>("gas_pressure", 1);
+                context.pdata_layout_add_field<Tvec>("tensile_corr", 1);
+                context.pdata_layout_add_field<Tscal>("psi_propag", 1);
+                context.pdata_layout_add_field<Tscal>("psi_diff", 1);
+                context.pdata_layout_add_field<Tscal>("psi_cons", 1);
+                context.pdata_layout_add_field<Tscal>("u_mhd", 1);
+            }
         }
 
         // serial patch tree control
