@@ -126,7 +126,7 @@ namespace shamrock::spmhd {
     }
 
     template<class Tvec, class Tscal, MHDType MHD_mode = Ideal> //, template<class> class SPHKernel
-    inline Tvec v_mhd_symetric_tensor_shockterm_fdiv(
+    inline Tvec v_mhd_shockterm(
         Tscal m_b,
         Tscal rho_a_sq,
         Tscal rho_b_sq,
@@ -144,8 +144,6 @@ namespace shamrock::spmhd {
         Tvec nabla_Wab_ha,
         Tvec nabla_Wab_hb,
         Tscal mu_0) {
-
-        Tvec vMHD = {0., 0., 0.};
 
         Tscal sub_fact_a = rho_a_sq * omega_a;
         Tscal sub_fact_b = rho_b_sq * omega_b;
@@ -169,37 +167,9 @@ namespace shamrock::spmhd {
             acc_b = {0, 0, 0};
         }
 
-        vMHD += -m_b * (acc_a + acc_b); // shock term
+        Tvec v_shockterm = -m_b * (acc_a + acc_b); // shock term
 
-        for (int i = 0; i < 3; ++i) {
-            for (int j = 0; j < 3; ++j) {
-                Tscal Mij_a = -(1. / mu_0) * B_a[i] * B_a[j];
-                Tscal Mij_b = -(1. / mu_0) * B_b[i] * B_b[j];
-                if (i == j) {
-                    Mij_a += P_a
-                             + (1. / (2 * mu_0))
-                                   * sycl::dot(
-                                       B_a, B_a); //(B_a[0]*B_a[0] + B_a[1]*B_a[1] + B_a[2]*B_a[2]);
-                    Mij_b += P_b
-                             + (1. / (2 * mu_0))
-                                   * sycl::dot(B_b, B_b); //(B_b[0]*B_b[0] + B_b[1]*B_b[1] +
-                                                          // B_b[2]*B_b[2]); //sycl::pow(B_b, 2)
-                }
-
-                Tscal acc_MHD_a = (Mij_a / sub_fact_a) * nabla_Wab_ha[j];
-                Tscal acc_MHD_b = (Mij_b / sub_fact_b) * nabla_Wab_hb[j];
-
-                vMHD[i] += -m_b * (acc_MHD_a + acc_MHD_b);
-            }
-        }
-        Tscal acc_fdivB_a = sycl::dot(B_a, nabla_Wab_ha) / sub_fact_a;
-        Tscal acc_fdivB_b = sycl::dot(B_b, nabla_Wab_hb) / sub_fact_b;
-
-        Tvec fdivB_a = -B_a * m_b * (acc_fdivB_a + acc_fdivB_b);
-
-        vMHD += fdivB_a;
-
-        return vMHD;
+        return v_shockterm;
     }
 
     template<class Tvec, class Tscal, MHDType MHD_mode = Ideal> //, template<class> class SPHKernel
@@ -578,56 +548,55 @@ namespace shamrock::spmhd {
             v_cross_r[0] * v_cross_r[0] + v_cross_r[1] * v_cross_r[1]
             + v_cross_r[2] * v_cross_r[2]);
 
-        constexpr bool debug_eq_dump = true;
-        if (debug_eq_dump) {
-            bool Tricco = true;
-            Tvec sum_gas_pressure, sum_mag_pressure, sum_mag_tension, sum_fdivB = {0., 0., 0.};
-            std::tie(sum_gas_pressure, sum_mag_pressure, sum_mag_tension, sum_fdivB) = dv_terms(
-                pmass,
-                rho_a_sq,
-                rho_b * rho_b,
-                v_ab,
-                r_ab_unit,
-                v_ab_r_ab,
-                P_a,
-                P_b,
-                cs_a,
-                cs_b,
-                B_a,
-                B_b,
-                omega_a,
-                omega_b,
-                r_ab_unit * dWab_a,
-                r_ab_unit * dWab_b,
-                mu_0,
-                Tricco);
 
-            dv_dt += sum_gas_pressure + sum_mag_pressure + sum_mag_tension + sum_fdivB;
-            mag_pressure += sum_mag_pressure;
-            gas_pressure += sum_gas_pressure;
-            mag_tension += sum_mag_tension;
-            tensile_corr += sum_fdivB;
+        bool Tricco = true;
+        Tvec sum_gas_pressure, sum_mag_pressure, sum_mag_tension, sum_fdivB, v_shockterm = {0., 0., 0.};
+        std::tie(sum_gas_pressure, sum_mag_pressure, sum_mag_tension, sum_fdivB) = dv_terms(
+            pmass,
+            rho_a_sq,
+            rho_b * rho_b,
+            v_ab,
+            r_ab_unit,
+            v_ab_r_ab,
+            P_a,
+            P_b,
+            cs_a,
+            cs_b,
+            B_a,
+            B_b,
+            omega_a,
+            omega_b,
+            r_ab_unit * dWab_a,
+            r_ab_unit * dWab_b,
+            mu_0,
+            Tricco);
+        dv_dt += sum_gas_pressure + sum_mag_pressure + sum_mag_tension + sum_fdivB;
+        mag_pressure += sum_mag_pressure;
+        gas_pressure += sum_gas_pressure;
+        mag_tension += sum_mag_tension;
+        tensile_corr += sum_fdivB;
+        
+        v_shockterm = v_mhd_shockterm(
+            pmass,
+            rho_a_sq,
+            rho_b * rho_b,
+            v_ab,
+            r_ab_unit,
+            v_ab_r_ab,
+            P_a,
+            P_b,
+            cs_a,
+            cs_b,
+            B_a,
+            B_b,
+            omega_a,
+            omega_b,
+            r_ab_unit * dWab_a,
+            r_ab_unit * dWab_b,
+            mu_0);
 
-        } else {
-            dv_dt += v_mhd_symetric_tensor_shockterm_fdiv(
-                pmass,
-                rho_a_sq,
-                rho_b * rho_b,
-                v_ab,
-                r_ab_unit,
-                v_ab_r_ab,
-                P_a,
-                P_b,
-                cs_a,
-                cs_b,
-                B_a,
-                B_b,
-                omega_a,
-                omega_b,
-                r_ab_unit * dWab_a,
-                r_ab_unit * dWab_b,
-                mu_0);
-        }
+        dv_dt += v_shockterm;
+
 
         // compared to Phantom_2018 eq.35 we move lambda shock artificial viscosity
         // pressure part as just a modified SPH pressure (which is the case already in
@@ -639,30 +608,30 @@ namespace shamrock::spmhd {
 
         du_dt += u_mhd;
 
-        // du_dt += lambda_shock_conductivity_no_artres(
-        //     pmass,
-        //     alpha_u,
-        //     vsig_a,
-        //     vsig_u,
-        //     u_a - u_b,
-        //     abs_v_ab_r_ab,
-        //     omega_a_rho_a_inv,
-        //     Fab_a,
-        //     dWab_b / (rho_a * omega_a),
-        //     dWab_b / (rho_b * omega_b));
+        du_dt += lambda_shock_conductivity_no_artres(
+            pmass,
+            alpha_u,
+            vsig_a,
+            vsig_u,
+            u_a - u_b,
+            abs_v_ab_r_ab,
+            omega_a_rho_a_inv,
+            Fab_a,
+            dWab_b / (rho_a * omega_a),
+            dWab_b / (rho_b * omega_b));
 
-        // du_dt += lambda_artes(
-        //     pmass,
-        //     rho_a_sq,
-        //     rho_b * rho_b,
-        //     v_ab,
-        //     r_ab_unit,
-        //     B_a,
-        //     B_b,
-        //     omega_a,
-        //     omega_b,
-        //     Fab_a,
-        //     Fab_b);
+        du_dt += lambda_artes(
+            pmass,
+            rho_a_sq,
+            rho_b * rho_b,
+            v_ab,
+            r_ab_unit,
+            B_a,
+            B_b,
+            omega_a,
+            omega_b,
+            Fab_a,
+            Fab_b);
 
         Tscal sub_fact_a = rho_a_sq * omega_a;
         Tscal sub_fact_b = rho_b * rho_b * omega_b;
@@ -677,24 +646,24 @@ namespace shamrock::spmhd {
             rho_diss_term_b = 0;
         }
 
-        // Tvec dB_on_rho_dissipation_term
-        //     = -0.5 * pmass * (rho_diss_term_a + rho_diss_term_b) * (B_a - B_b) * vsig_B;
+        Tvec dB_on_rho_dissipation_term
+            = -0.5 * pmass * (rho_diss_term_a + rho_diss_term_b) * (B_a - B_b) * vsig_B;
 
         dB_on_rho_dt
             += v_ab * dB_on_rho_induction_term(pmass, rho_a_sq, B_a, omega_a, r_ab_unit * dWab_b);
 
-        // dB_on_rho_dt += dB_on_rho_psi_term(
-        //     pmass,
-        //     rho_a_sq,
-        //     rho_b * rho_b,
-        //     psi_a,
-        //     psi_b,
-        //     omega_a,
-        //     omega_b,
-        //     r_ab_unit * dWab_a,
-        //     r_ab_unit * dWab_b);
+        dB_on_rho_dt += dB_on_rho_psi_term(
+            pmass,
+            rho_a_sq,
+            rho_b * rho_b,
+            psi_a,
+            psi_b,
+            omega_a,
+            omega_b,
+            r_ab_unit * dWab_a,
+            r_ab_unit * dWab_b);
 
-        // dB_on_rho_dt += dB_on_rho_dissipation_term;
+        dB_on_rho_dt += dB_on_rho_dissipation_term;
 
         psi_propag += dpsi_on_ch_parabolic_propag(
             pmass, rho_a, B_a, B_b, omega_a, r_ab_unit * dWab_a, v_shock_a);
