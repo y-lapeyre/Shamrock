@@ -824,6 +824,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD(
     const u32 ipsi_diff     = (do_MHD_debug) ? pdl.get_field_idx<Tscal>("psi_diff") : -1;
     const u32 ipsi_cons     = (do_MHD_debug) ? pdl.get_field_idx<Tscal>("psi_cons") : -1;
     const u32 iu_mhd        = (do_MHD_debug) ? pdl.get_field_idx<Tscal>("u_mhd") : -1;
+    const u32 ich        = (do_MHD_debug) ? pdl.get_field_idx<Tscal>("ch") : -1;
 
     // Tscal mu_0 = 1.;
     Tscal const mu_0 = solver_config.get_constant_mu_0();
@@ -925,6 +926,10 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD(
                            ? pdat.get_field_buf_ref<Tscal>(iu_mhd).get_write_access(depends_list)
                            : nullptr;
 
+        Tscal *ch = (do_MHD_debug)
+                           ? pdat.get_field_buf_ref<Tscal>(ich).get_write_access(depends_list)
+                           : nullptr;
+
         auto ploop_ptrs = pcache.get_read_access(depends_list);
 
         auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
@@ -1015,6 +1020,11 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD(
 
                     // clang-format off
                     //Tscal sigma_mhd = 0.3;
+                            // Tscal mu_0 = config.get_constant_mu_0();
+                    Tscal v_alfven_a = sycl::sqrt(sycl::dot(B_a, B_a) / (mu_0 * rho_a));
+                    Tscal v_shock_a  = sycl::sqrt(cs_a * cs_a + v_alfven_a * v_alfven_a);
+                    ch[id_a]         = v_shock_a;
+
                     add_to_derivs_spmhd<Tvec, Tscal, SPHKernel, shamrock::spmhd::Ideal>(
                         pmass,
                         dr, rab,
@@ -1097,6 +1107,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD(
             pdat.get_field_buf_ref<Tscal>(ipsi_cons).complete_event_state(e);
 
             pdat.get_field_buf_ref<Tscal>(iu_mhd).complete_event_state(e);
+            pdat.get_field_buf_ref<Tscal>(ich).complete_event_state(e);
         }
 
         sham::EventList resulting_events;

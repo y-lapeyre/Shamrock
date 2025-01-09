@@ -137,6 +137,7 @@ namespace shammodels::sph {
                 context.pdata_layout_add_field<Tscal>("psi_diff", 1);
                 context.pdata_layout_add_field<Tscal>("psi_cons", 1);
                 context.pdata_layout_add_field<Tscal>("u_mhd", 1);
+                context.pdata_layout_add_field<Tscal>("ch", 1);
             }
         }
 
