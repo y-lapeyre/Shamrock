@@ -25,6 +25,7 @@
 #include "shambackends/sycl_utils.hpp"
 #include "shambackends/typeAliasVec.hpp"
 #include "shamcmdopt/cmdopt.hpp"
+#include "shamcmdopt/env.hpp"
 #include "shamcmdopt/tty.hpp"
 #include "shamcomm/collectives.hpp"
 #include "shamcomm/logs.hpp"
@@ -208,6 +209,11 @@ namespace logformatter {
             args.content,
             shambase::term_colors::bold());
     }
+
+    void exception_gen_callback(std::string msg) {
+        shamcomm::logs::err_ln("Exception", "Exception created :\n" + msg);
+    }
+
 } // namespace logformatter
 
 namespace shamsys::instance::details {
@@ -615,6 +621,10 @@ namespace shamsys::instance {
         // now that MPI is started we can use the formatter with rank info
 
         logger::debug_ln("Sys", "changing formatter to MPI form");
+
+        if (shamcmdopt::getenv_str_default("SHAMLOG_ERR_ON_EXCEPT", "1") == "1") {
+            shambase::set_exception_gen_callback(&logformatter::exception_gen_callback);
+        }
 
         auto env_formatter = shamcmdopt::getenv_str("SHAMLOGFORMATTER");
         if (env_formatter) {
