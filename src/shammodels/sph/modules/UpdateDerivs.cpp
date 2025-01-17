@@ -1000,6 +1000,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD(
                         return;
                     }
 
+                    Tvec xyz_b      = xyz[id_b];
                     Tvec vxyz_b     = vxyz[id_b];
                     const Tscal u_b = u[id_b];
                     Tscal P_b       = pressure[id_b];
@@ -1045,6 +1046,9 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD(
 
                         mu_0,
                         sigma_mhd,
+
+                        xyz_a,
+                        xyz_b,
 
                         force_pressure,
                         tmpdU_pressure,

@@ -370,7 +370,7 @@ namespace shamrock::spmhd {
 
     template<class Tvec, class Tscal, MHDType MHD_mode = Ideal>
     inline Tscal dB_on_rho_induction_term(
-        Tscal m_b, Tscal rho_a_sq, Tvec B_a, Tscal omega_a, Tvec nabla_Wab_ha) {
+        Tscal m_b, Tscal rho_a_sq, Tvec B_a, Tscal omega_a, Tvec nabla_Wab_ha, Tvec xyz_a, Tvec xyz_b, Tscal Fab_a) {
 
         Tscal sub_fact_a            = rho_a_sq * omega_a;
         Tscal induction_term_no_vab = -(1. / sub_fact_a) * m_b * sycl::dot(B_a, nabla_Wab_ha);
@@ -379,7 +379,31 @@ namespace shamrock::spmhd {
             induction_term_no_vab = 0.;
         }
 
-        return induction_term_no_vab;
+        //return induction_term_no_vab;
+        Tscal Bxi = B_a[0];
+        Tscal Byi = B_a[1];
+        Tscal Bzi = B_a[2];
+
+        
+        Tscal dx = xyz_a[0] - xyz_b[0];
+        Tscal dy = xyz_a[1] - xyz_b[1];
+        Tscal dz = xyz_a[2] - xyz_b[2];
+
+        Tscal rij2 = dx*dx + dy*dy + dz*dz;
+        Tscal rij1 = 1. / sycl::sqrt(rij2);
+
+
+        Tscal runix = dx*rij1;
+        Tscal runiy = dy*rij1;
+        Tscal runiz = dz*rij1;
+        Tscal projBi = Bxi*runix + Byi*runiy + Bzi*runiz;
+
+        Tscal pmjrho21grkerni = (m_b / rho_a_sq) * Fab_a;
+        Tscal termi    = -pmjrho21grkerni*projBi;
+        Tscal phantom_induction_term = - termi;
+
+        return phantom_induction_term;
+
     }
 
     template<class Tvec, class Tscal, MHDType MHD_mode = Ideal>
@@ -495,6 +519,9 @@ namespace shamrock::spmhd {
         Tscal mu_0,
         Tscal sigma_mhd,
 
+        Tvec xyz_a,
+        Tvec xyz_b,
+
         Tvec &dv_dt,
         Tscal &du_dt,
         Tvec &dB_on_rho_dt,
@@ -576,26 +603,26 @@ namespace shamrock::spmhd {
         mag_tension += sum_mag_tension;
         tensile_corr += sum_fdivB;
         
-        v_shockterm = v_mhd_shockterm(
-            pmass,
-            rho_a_sq,
-            rho_b * rho_b,
-            v_ab,
-            r_ab_unit,
-            v_ab_r_ab,
-            P_a,
-            P_b,
-            cs_a,
-            cs_b,
-            B_a,
-            B_b,
-            omega_a,
-            omega_b,
-            r_ab_unit * dWab_a,
-            r_ab_unit * dWab_b,
-            mu_0);
+        //v_shockterm = v_mhd_shockterm(
+        //    pmass,
+        //    rho_a_sq,
+        //    rho_b * rho_b,
+        //    v_ab,
+        //    r_ab_unit,
+        //    v_ab_r_ab,
+        //    P_a,
+        //    P_b,
+        //    cs_a,
+        //    cs_b,
+        //    B_a,
+        //    B_b,
+        //    omega_a,
+        //    omega_b,
+        //    r_ab_unit * dWab_a,
+        //    r_ab_unit * dWab_b,
+        //    mu_0);
 
-        dv_dt += v_shockterm;
+        //dv_dt += v_shockterm;
 
 
         // compared to Phantom_2018 eq.35 we move lambda shock artificial viscosity
@@ -608,30 +635,30 @@ namespace shamrock::spmhd {
 
         du_dt += u_mhd;
 
-        du_dt += lambda_shock_conductivity_no_artres(
-            pmass,
-            alpha_u,
-            vsig_a,
-            vsig_u,
-            u_a - u_b,
-            abs_v_ab_r_ab,
-            omega_a_rho_a_inv,
-            Fab_a,
-            dWab_b / (rho_a * omega_a),
-            dWab_b / (rho_b * omega_b));
+        //du_dt += lambda_shock_conductivity_no_artres(
+        //    pmass,
+        //    alpha_u,
+        //    vsig_a,
+        //    vsig_u,
+        //    u_a - u_b,
+        //    abs_v_ab_r_ab,
+        //    omega_a_rho_a_inv,
+        //    Fab_a,
+        //    dWab_b / (rho_a * omega_a),
+        //    dWab_b / (rho_b * omega_b));
 
-        du_dt += lambda_artes(
-            pmass,
-            rho_a_sq,
-            rho_b * rho_b,
-            v_ab,
-            r_ab_unit,
-            B_a,
-            B_b,
-            omega_a,
-            omega_b,
-            Fab_a,
-            Fab_b);
+        //du_dt += lambda_artes(
+        //    pmass,
+        //    rho_a_sq,
+        //    rho_b * rho_b,
+        //    v_ab,
+        //    r_ab_unit,
+        //    B_a,
+        //    B_b,
+        //    omega_a,
+        //    omega_b,
+        //    Fab_a,
+        //    Fab_b);
 
         Tscal sub_fact_a = rho_a_sq * omega_a;
         Tscal sub_fact_b = rho_b * rho_b * omega_b;
@@ -646,24 +673,24 @@ namespace shamrock::spmhd {
             rho_diss_term_b = 0;
         }
 
-        Tvec dB_on_rho_dissipation_term
-            = -0.5 * pmass * (rho_diss_term_a + rho_diss_term_b) * (B_a - B_b) * vsig_B;
+        //Tvec dB_on_rho_dissipation_term
+        //    = -0.5 * pmass * (rho_diss_term_a + rho_diss_term_b) * (B_a - B_b) * vsig_B;
 
         dB_on_rho_dt
-            += v_ab * dB_on_rho_induction_term(pmass, rho_a_sq, B_a, omega_a, r_ab_unit * dWab_b);
+            += v_ab * dB_on_rho_induction_term(pmass, rho_a_sq, B_a, omega_a, r_ab_unit * dWab_b,  xyz_a, xyz_b, Fab_a);
 
-        dB_on_rho_dt += dB_on_rho_psi_term(
-            pmass,
-            rho_a_sq,
-            rho_b * rho_b,
-            psi_a,
-            psi_b,
-            omega_a,
-            omega_b,
-            r_ab_unit * dWab_a,
-            r_ab_unit * dWab_b);
+        //dB_on_rho_dt += dB_on_rho_psi_term(
+        //    pmass,
+        //    rho_a_sq,
+        //    rho_b * rho_b,
+        //    psi_a,
+        //    psi_b,
+        //    omega_a,
+        //    omega_b,
+        //    r_ab_unit * dWab_a,
+        //    r_ab_unit * dWab_b);
 
-        dB_on_rho_dt += dB_on_rho_dissipation_term;
+        //dB_on_rho_dt += dB_on_rho_dissipation_term;
 
         psi_propag += dpsi_on_ch_parabolic_propag(
             pmass, rho_a, B_a, B_b, omega_a, r_ab_unit * dWab_a, v_shock_a);
