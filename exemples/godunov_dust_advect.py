@@ -23,6 +23,7 @@ def run_sim(vanleer = True, label = "none"):
     cfg.set_scale_factor(scale_fact)
     cfg.set_riemann_solver_hllc()
     cfg.set_eos_gamma(1.66667)
+
     cfg.set_slope_lim_vanleer_sym()
     cfg.set_face_time_interpolation(True)
     cfg.set_dust_mode_dhll(1)
@@ -81,7 +82,9 @@ def run_sim(vanleer = True, label = "none"):
     t = 0
     tend = 0.245
 
+
     for i in range(100):
+
         # if i % freq == 0:
         model.dump_vtk("test"+str(i)+".vtk")
         next_dt = model.evolve_once_override_time(t,dt)
