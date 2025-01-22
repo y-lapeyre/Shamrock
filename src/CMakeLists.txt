@@ -1,16 +1,3 @@
-######################
-# generate version.cpp
-######################
-#hack to rerun the version generator if ninja/make all
-#cf https://stackoverflow.com/questions/13920072/how-to-always-run-command-when-building-regardless-of-any-dependency
-add_custom_command(
-    OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/version.cpp
-           ${CMAKE_CURRENT_SOURCE_DIR}/version__.cpp
-    COMMAND python3 ${CMAKE_CURRENT_SOURCE_DIR}/../buildbot/make_version_file.py ${CMAKE_CURRENT_SOURCE_DIR}/version.cpp "${CMAKE_CXX_FLAGS}" "${SHAMROCK_VERSION_STRING}"
-  )
-
-
-
 
 
 set(as_subproject
@@ -25,7 +12,10 @@ set(as_subproject
   shamcmdopt
   shambindings
   shamtree
-  shamlib)
+  shamlib
+
+  shammodels_common
+  )
 
 # This macro originates from Daniel Pfeifer's talk at C++Now 2017:
 # https://www.youtube.com/watch?v=bsXLMQ6WgIk
@@ -49,6 +39,8 @@ add_subdirectory(shamsys)
 add_subdirectory(shamtree)
 add_subdirectory(shamrock)
 
+add_subdirectory(shammodels/common)
+
 
 
 ######################
@@ -56,7 +48,7 @@ add_subdirectory(shamrock)
 ######################
 
 message("-- adding shamrock_lib target")
-add_library(shamrock_lib OBJECT version.cpp)
+add_library(shamrock_lib OBJECT "")
 target_include_directories(shamrock_lib PUBLIC "${CMAKE_SOURCE_DIR}/src")
 
 if(SHAMROCK_USE_PCH)
