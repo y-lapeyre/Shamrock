@@ -105,6 +105,29 @@ namespace shamrock::sph {
             nabla_Wab_hb);
     }
 
+    template<class Tscal>
+    auto lambda_qav = [auto alpha_a, auto beta_AV](auto rho, auto cs, auto v_scal_rhat) {
+        auto vsig = alpha_a * cs + beta_AV * abs_v_ab_r_ab;
+        return sham::max(-Tscal(0.5) * rho * vsig * v_scal_rhat, Tscal(0));
+        };
+
+
+    sham::kernel_call(q,
+        sham::MultiRef{buf_h, buf_uint},
+        sham::MultiRef{buf_P, buf_cs},
+        mpdat.total_elements,
+        [pmass = gpart_mass, gamma = eos_config->gamma](
+            u32 i,
+            const Tscal *h,
+            const Tscal *U,
+            Tscal *P,
+            Tscal *cs) {
+            Tscal rho_a = rho(i);
+            Tscal P_a   = EOS::pressure(gamma, rho_a, U[i]);
+            Tscal cs_a  = EOS::cs_from_p(gamma, rho_a, P_a);
+            P[i]        = P_a;
+            cs[i]       = cs_a;
+        });
     /**
      * @brief \cite Phantom_2018 eq.40
      *
@@ -209,8 +232,11 @@ namespace shamrock::sph {
         Tscal u_b,
         Tscal P_a,
         Tscal P_b,
-        Tscal cs_a,
-        Tscal cs_b,
+        //Tscal cs_a,
+        //Tscal cs_b,
+
+        auto q_av,
+
         Tscal alpha_a,
         Tscal alpha_b,
         Tscal h_a,
@@ -237,8 +263,8 @@ namespace shamrock::sph {
         /////////////////
         // internal energy update
         //  scalar : f32  | vector : f32_3
-        Tscal vsig_a = alpha_a * cs_a + beta_AV * abs_v_ab_r_ab;
-        Tscal vsig_b = alpha_b * cs_b + beta_AV * abs_v_ab_r_ab;
+        //Tscal vsig_a = alpha_a * cs_a + beta_AV * abs_v_ab_r_ab;
+        //Tscal vsig_b = alpha_b * cs_b + beta_AV * abs_v_ab_r_ab;
 
         // Tscal vsig_u = abs_v_ab_r_ab;
         Tscal rho_avg = (rho_a + rho_b) * 0.5;
@@ -251,15 +277,20 @@ namespace shamrock::sph {
         Tscal qa_ab;
         Tscal qb_ab;
 
-        if constexpr (visco_mode == Standard) {
-            qa_ab = q_av(rho_a, vsig_a, v_ab_r_ab);
-            qb_ab = q_av(rho_b, vsig_b, v_ab_r_ab);
-        }
+        //if constexpr (visco_mode == Standard) {
+        //    qa_ab = q_av(rho_a, vsig_a, v_ab_r_ab);
+        //    qb_ab = q_av(rho_b, vsig_b, v_ab_r_ab);
+        //}
+//
+        //if constexpr (visco_mode == Disc) { // from Phantom 2018, eq 120
+        //    qa_ab = q_av_disc(rho_a, h_a, rab, alpha_a, cs_a, vsig_a, v_ab_r_ab);
+        //    qb_ab = q_av_disc(rho_b, h_b, rab, alpha_b, cs_b, vsig_b, v_ab_r_ab);
+        //}
 
-        if constexpr (visco_mode == Disc) { // from Phantom 2018, eq 120
-            qa_ab = q_av_disc(rho_a, h_a, rab, alpha_a, cs_a, vsig_a, v_ab_r_ab);
-            qb_ab = q_av_disc(rho_b, h_b, rab, alpha_b, cs_b, vsig_b, v_ab_r_ab);
-        }
+        qa_ab = shamrock::sph::lambda_qav(rho_a, cs_a, v_ab_r_ab);
+        qb_ab = shamrock::sph::lambda_qav(rho_b, cs_b, v_ab_r_ab);
+
+        
 
         Tscal AV_P_a = P_a + qa_ab;
         Tscal AV_P_b = P_b + qb_ab;
