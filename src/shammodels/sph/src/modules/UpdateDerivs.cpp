@@ -200,6 +200,12 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cons
                     Tscal Fab_a = Kernel::dW_3d(rab, h_a);
                     Tscal Fab_b = Kernel::dW_3d(rab, h_b);
 
+                    auto lambda_qav =
+                        [](Tscal rho, Tscal cs, Tscal v_scal_rhat, Tscal alpha_AV, Tscal beta_AV) {
+                            Tscal abs_v_ab_r_ab = sycl::fabs(v_scal_rhat);
+                            Tscal vsig          = alpha_AV * cs + beta_AV * abs_v_ab_r_ab;
+                            return sham::max(-Tscal(0.5) * rho * vsig * v_scal_rhat, Tscal(0));
+                        };
                     // clang-format off
                     add_to_derivs_sph_artif_visco_cond<Kernel>(
                         pmass,
@@ -211,6 +217,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cons
                         u_a, u_b,
                         P_a, P_b,
                         cs_a, cs_b,
+                        lambda_qav,
                         alpha_a, alpha_b,
                         h_a, h_b,
                         beta_AV, alpha_u,
@@ -391,6 +398,13 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_mm97
                     Tscal Fab_a = Kernel::dW_3d(rab, h_a);
                     Tscal Fab_b = Kernel::dW_3d(rab, h_b);
 
+                    auto lambda_qav =
+                        [](Tscal rho, Tscal cs, Tscal v_scal_rhat, Tscal alpha_AV, Tscal beta_AV) {
+                            Tscal abs_v_ab_r_ab = sycl::fabs(v_scal_rhat);
+                            Tscal vsig          = alpha_AV * cs + beta_AV * abs_v_ab_r_ab;
+                            return sham::max(-Tscal(0.5) * rho * vsig * v_scal_rhat, Tscal(0));
+                        };
+
                     // clang-format off
                     add_to_derivs_sph_artif_visco_cond<Kernel>(
                         pmass,
@@ -402,6 +416,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_mm97
                         u_a, u_b,
                         P_a, P_b,
                         cs_a, cs_b,
+                        lambda_qav,
                         alpha_a, alpha_b,
                        h_a, h_b,
                         beta_AV, alpha_u,
@@ -575,6 +590,13 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cd10
                     Tscal Fab_a = Kernel::dW_3d(rab, h_a);
                     Tscal Fab_b = Kernel::dW_3d(rab, h_b);
 
+                    auto lambda_qav =
+                        [](Tscal rho, Tscal cs, Tscal v_scal_rhat, Tscal alpha_AV, Tscal beta_AV) {
+                            Tscal abs_v_ab_r_ab = sycl::fabs(v_scal_rhat);
+                            Tscal vsig          = alpha_AV * cs + beta_AV * abs_v_ab_r_ab;
+                            return sham::max(-Tscal(0.5) * rho * vsig * v_scal_rhat, Tscal(0));
+                        };
+
                     // clang-format off
                     add_to_derivs_sph_artif_visco_cond<Kernel>(
                         pmass,
@@ -586,6 +608,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cd10
                         u_a, u_b,
                         P_a, P_b,
                         cs_a, cs_b,
+                        lambda_qav,
                         alpha_a, alpha_b,
                         h_a, h_b,
 
@@ -753,6 +776,13 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_disc
                     Tscal Fab_a         = Kernel::dW_3d(rab, h_a);
                     Tscal Fab_b         = Kernel::dW_3d(rab, h_b);
 
+                    auto lambda_qav =
+                        [](Tscal rho, Tscal cs, Tscal v_scal_rhat, Tscal alpha_AV, Tscal beta_AV) {
+                            Tscal abs_v_ab_r_ab = sycl::fabs(v_scal_rhat);
+                            Tscal vsig          = alpha_AV * cs + beta_AV * abs_v_ab_r_ab;
+                            return sham::max(-Tscal(0.5) * rho * vsig * v_scal_rhat, Tscal(0));
+                        };
+
                     // clang-format off
                     add_to_derivs_sph_artif_visco_cond<Kernel,Tvec, Tscal, shamrock::sph::Disc>(
                         pmass,
@@ -764,6 +794,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_disc
                         u_a, u_b,
                         P_a, P_b,
                         cs_a, cs_b,
+                        lambda_qav,
                         alpha_a, alpha_b,
                         h_a, h_b,
 
