@@ -105,9 +105,10 @@ namespace shamrock::sph {
             nabla_Wab_hb);
     }
 
-    template<class Tscal>
-    auto lambda_qav = [auto alpha_a, auto beta_AV](auto rho, auto cs, auto v_scal_rhat) {
-        auto vsig = alpha_a * cs + beta_AV * abs_v_ab_r_ab;
+    template <class Tscal>
+    auto lambda_qav = [AVConfig](Tscal rho, Tscal cs, Tscal v_scal_rhat) {
+        Tscal abs_v_ab_r_ab = sycl::fabs(v_scal_rhat);
+        Tscal vsig = AVConfig->alpha_a * cs + AVConfig->beta_AV * abs_v_ab_r_ab;
         return sham::max(-Tscal(0.5) * rho * vsig * v_scal_rhat, Tscal(0));
         };
 
