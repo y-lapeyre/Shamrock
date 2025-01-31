@@ -38,13 +38,6 @@ namespace shammodels::sph::modules {
         Config &solver_config;
         Storage &storage;
 
-        static constexpr auto lambda_qav
-            = [](Tscal rho, Tscal cs, Tscal v_scal_rhat, Tscal alpha_AV, Tscal beta_AV) {
-                  Tscal abs_v_ab_r_ab = sycl::fabs(v_scal_rhat);
-                  Tscal vsig          = alpha_AV * cs + beta_AV * abs_v_ab_r_ab;
-                  return sham::max(-Tscal(0.5) * rho * vsig * v_scal_rhat, Tscal(0));
-              };
-
         UpdateDerivs(ShamrockCtx &context, Config &solver_config, Storage &storage)
             : context(context), solver_config(solver_config), storage(storage) {}
 
@@ -74,6 +67,20 @@ namespace shammodels::sph::modules {
         using NonIdealMHD = typename Cfg_MHD::NonIdealMHD;
 
         void update_derivs_MHD(IdealMHD cfg);
+
+        static constexpr auto lambda_qav
+            = [](Tscal rho, Tscal cs, Tscal v_scal_rhat, Tscal alpha_AV, Tscal beta_AV) {
+                  Tscal abs_v_ab_r_ab = sycl::fabs(v_scal_rhat);
+                  Tscal vsig          = alpha_AV * cs + beta_AV * abs_v_ab_r_ab;
+                  return sham::max(-Tscal(0.5) * rho * vsig * v_scal_rhat, Tscal(0));
+              };
+
+        static constexpr auto lambda_qav_mhd
+            = [](Tscal rho, Tscal cs, Tscal v_scal_rhat, Tscal alpha_AV, Tscal beta_AV) {
+                  Tscal abs_v_ab_r_ab = sycl::fabs(v_scal_rhat);
+                  Tscal vsig          = alpha_AV * cs + beta_AV * abs_v_ab_r_ab;
+                  return sham::max(-Tscal(0.5) * rho * vsig * v_scal_rhat, Tscal(0));
+              };
     };
 
 } // namespace shammodels::sph::modules
