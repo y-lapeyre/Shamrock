@@ -169,7 +169,7 @@ namespace shamrock::spmhd {
             acc_b = {0, 0, 0};
         }
 
-        vMHD += -m_b * (acc_a + acc_b); // shock term
+        //vMHD += -m_b * (acc_a + acc_b); // shock term
 
         for (int i = 0; i < 3; ++i) {
             for (int j = 0; j < 3; ++j) {
@@ -639,17 +639,17 @@ namespace shamrock::spmhd {
 
         du_dt += u_mhd;
 
-        du_dt += lambda_shock_conductivity_no_artres(
-            pmass,
-            alpha_u,
-            vsig_a,
-            vsig_u,
-            u_a - u_b,
-            abs_v_ab_r_ab,
-            omega_a_rho_a_inv,
-            Fab_a,
-            dWab_b / (rho_a * omega_a),
-            dWab_b / (rho_b * omega_b));
+        //du_dt += lambda_shock_conductivity_no_artres(
+        //    pmass,
+        //    alpha_u,
+        //    vsig_a,
+        //    vsig_u,
+        //    u_a - u_b,
+        //    abs_v_ab_r_ab,
+        //    omega_a_rho_a_inv,
+        //    Fab_a,
+        //    dWab_b / (rho_a * omega_a),
+        //    dWab_b / (rho_b * omega_b));
 
         du_dt += lambda_artes(
             pmass,
@@ -683,18 +683,18 @@ namespace shamrock::spmhd {
         dB_on_rho_dt
             += v_ab * dB_on_rho_induction_term(pmass, rho_a_sq, B_a, omega_a, r_ab_unit * dWab_b);
 
-        dB_on_rho_dt += dB_on_rho_psi_term(
-            pmass,
-            rho_a_sq,
-            rho_b * rho_b,
-            psi_a,
-            psi_b,
-            omega_a,
-            omega_b,
-            r_ab_unit * dWab_a,
-            r_ab_unit * dWab_b);
+        //dB_on_rho_dt += dB_on_rho_psi_term(
+        //    pmass,
+        //    rho_a_sq,
+        //    rho_b * rho_b,
+        //    psi_a,
+        //    psi_b,
+        //    omega_a,
+        //    omega_b,
+        //    r_ab_unit * dWab_a,
+        //    r_ab_unit * dWab_b);
 
-         dB_on_rho_dt += dB_on_rho_dissipation_term;
+        //dB_on_rho_dt += dB_on_rho_dissipation_term;
 
         psi_propag += dpsi_on_ch_parabolic_propag(
             pmass, rho_a, B_a, B_b, omega_a, r_ab_unit * dWab_a, v_shock_a);
