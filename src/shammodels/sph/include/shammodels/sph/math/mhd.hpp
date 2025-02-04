@@ -173,11 +173,6 @@ namespace shamrock::spmhd {
         Tvec magnetic_tension_term;
 
         if (Tricco) {
-            // pressure_term += - sph::sph_pressure_symetric( m_b,
-            //                                             rho_a_sq, rho_b_sq,
-            //                                             P_a, P_b,
-            //                                             omega_a, omega_b,
-            //                                             nabla_Wab_ha, nabla_Wab_hb); // looks ok
 
             Tscal sub_fact_a = rho_a_sq * omega_a;
             Tscal sub_fact_b = rho_b_sq * omega_b;
@@ -194,13 +189,6 @@ namespace shamrock::spmhd {
 
             Tscal B_a_sq = sycl::dot(B_a, B_a);
             Tscal B_b_sq = sycl::dot(B_b, B_b);
-
-            // magnetic_pressure_term +=  (1. / (2*mu_0)) * sph::sph_pressure_symetric( m_b,
-            //                                             rho_a_sq, rho_b_sq,
-            //                                             B_a_sq, B_b_sq,
-            //                                             omega_a, omega_b,
-            //                                             nabla_Wab_ha, nabla_Wab_hb); //looks ok
-            //                                             too
 
             Tvec accB_a = (1. / (2 * mu_0)) * ((B_a_sq) / (sub_fact_a)) * nabla_Wab_ha;
             Tvec accB_b = (1. / (2 * mu_0)) * ((B_b_sq) / (sub_fact_b)) * nabla_Wab_hb;
@@ -224,23 +212,6 @@ namespace shamrock::spmhd {
                 nabla_Wab_hb,
                 mu_0);
 
-            //            for (int i = 0; i < 3; ++i) {
-            //                for (int j = 0; j < 3; ++j) {
-            //
-            //                    Tscal mag_tension_a =   -(1. / mu_0) * B_a[i] * B_a[j];
-            //                    Tscal mag_tension_b =   -(1. / mu_0) * B_b[i] * B_b[j];
-            //                    Tscal acc_mag_tension_a = mag_tension_a / sub_fact_a;
-            //                    Tscal acc_mag_tension_b = mag_tension_b / sub_fact_b;
-            //                    if (sub_fact_a == 0)
-            //                        acc_mag_tension_a = 0.;
-            //                    if (sub_fact_b == 0)
-            //                        acc_mag_tension_b = 0.;
-            //
-            //                    magnetic_tension_term[i]  +=  - m_b * (acc_mag_tension_a *
-            //                    nabla_Wab_ha[j] + acc_mag_tension_b * nabla_Wab_hb[j]);
-            //
-            //                }
-            //            }
         } else { // Price
             for (int i = 0; i < 3; ++i) {
                 Tscal mag_pressure_a     = (1. / (2 * mu_0)) * sycl::dot(B_a, B_a);
@@ -537,7 +508,7 @@ namespace shamrock::spmhd {
             mu_0,
             Tricco);
 
-        Tscal gas_pressure_pishock = sph::sph_pressure_symetric(
+        Tvec gas_pressure_pishock = sph::sph_pressure_symetric(
             pmass,
             rho_a_sq,
             rho_b * rho_b,
@@ -548,7 +519,26 @@ namespace shamrock::spmhd {
             r_ab_unit * dWab_a,
             r_ab_unit * dWab_b);
 
-        dv_dt += gas_pressure_pishock + sum_mag_pressure + sum_mag_tension + sum_fdivB;
+        Tvec magnetic_pressure_term = (1. / (2 * mu_0))
+                                      * sph::sph_pressure_symetric(
+                                          pmass,
+                                          rho_a_sq,
+                                          rho_b * rho_b,
+                                          B_a * B_a,
+                                          B_b * B_b,
+                                          omega_a,
+                                          omega_b,
+                                          r_ab_unit * dWab_a,
+                                          r_ab_unit * dWab_b);
+
+        // the two first terms (gas_pressure_pishock + magnetic_pressure_term)
+        // are computed using functions already implemented in hydro.
+        // their native equivalent mag_pressure (without the shock term) and
+        // gas_pressure exist because i needed them here for debugging and to
+        // test things out. Using one or the other is strictly equivalent (except
+        // for the fact that if you use the native terms, you should not forget
+        // to add the shock term).
+        dv_dt += gas_pressure_pishock + magnetic_pressure_term + sum_mag_tension + sum_fdivB;
         mag_pressure += sum_mag_pressure;
         gas_pressure += sum_gas_pressure;
         mag_tension += sum_mag_tension;
