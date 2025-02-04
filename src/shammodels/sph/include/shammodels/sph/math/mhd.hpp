@@ -499,6 +499,8 @@ namespace shamrock::spmhd {
         Tscal vsig_u = MHD_physics<Tvec, Tscal>(P_a, P_b, rho_a, rho_b);
         Tscal vsig_a
             = MHD_physics<Tvec, Tscal>::vsig(v_ab, r_ab_unit, cs_a, B_a, rho_a, mu_0, 1., 1.);
+        Tscal vsig_b
+            = MHD_physics<Tvec, Tscal>::vsig(v_ab, r_ab_unit, cs_a, B_b, rho_b, mu_0, 1., 1.);
 
         Tscal dWab_a = Fab_a;
         Tscal dWab_b = Fab_b;
@@ -508,6 +510,10 @@ namespace shamrock::spmhd {
         Tscal vsig_B    = MHD_physics<Tvec, Tscal>::vsig_B(v_ab, r_ab_unit);
 
         Tscal qa_ab = q_av(rho_a, vsig_a, v_ab_r_ab);
+        Tscal qb_ab = q_av(rho_b, vsig_b, v_ab_r_ab);
+
+        Tscal AV_P_a = P_a + qa_ab;
+        Tscal AV_P_b = P_b + qb_ab;
 
         constexpr bool Tricco = true;
         Tvec sum_gas_pressure, sum_mag_pressure, sum_mag_tension, sum_fdivB = {0., 0., 0.};
@@ -531,13 +537,22 @@ namespace shamrock::spmhd {
             mu_0,
             Tricco);
 
-        dv_dt += sum_gas_pressure + sum_mag_pressure + sum_mag_tension + sum_fdivB;
+        Tscal gas_pressure_pishock = sph::sph_pressure_symetric(
+            pmass,
+            rho_a_sq,
+            rho_b * rho_b,
+            AV_P_a,
+            AV_P_b,
+            omega_a,
+            omega_b,
+            r_ab_unit * dWab_a,
+            r_ab_unit * dWab_b);
+
+        dv_dt += gas_pressure_pishock + sum_mag_pressure + sum_mag_tension + sum_fdivB;
         mag_pressure += sum_mag_pressure;
         gas_pressure += sum_gas_pressure;
         mag_tension += sum_mag_tension;
         tensile_corr += sum_fdivB;
-
-        Tscal AV_P_a = AV_P_a = P_a + qa_ab;
 
         u_pressure_viscous_heating = sph::duint_dt_pressure(
             pmass, AV_P_a, omega_a_rho_a_inv * rho_a_inv, v_ab, r_ab_unit * dWab_a);
