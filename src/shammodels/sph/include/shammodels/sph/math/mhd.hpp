@@ -34,24 +34,6 @@ namespace shamrock::spmhd {
         return sham::max(-Tscal(0.5) * rho * vsig * v_scal_rhat, Tscal(0));
     }
 
-    template<class Tscal>
-    inline Tscal lambda_shock_viscous_heating(
-        Tscal pmass,
-        Tscal alpha_u,
-        Tscal vsig_a,
-        Tscal vsig_u,
-        Tscal u_ab,
-        Tscal v_scal_rhat,
-        Tscal omega_a_rho_a_inv,
-        Tscal Fab_a,
-        Tscal Fab_inv_omega_a_rho_a,
-        Tscal Fab_inv_omega_b_rho_b) {
-
-        Tscal term1 = -0.5 * pmass * omega_a_rho_a_inv * vsig_a * v_scal_rhat * v_scal_rhat * Fab_a;
-
-        return term1;
-    }
-
     template<class Tvec, class Tscal>
     inline Tvec B_dot_grad_W(
         Tscal m_b,
@@ -87,13 +69,8 @@ namespace shamrock::spmhd {
         Tscal m_b,
         Tscal rho_a_sq,
         Tscal rho_b_sq,
-        Tvec v_ab,
-        Tvec r_ab_unit,
-        Tscal v_scal_rhat,
         Tscal P_a,
         Tscal P_b,
-        Tscal cs_a,
-        Tscal cs_b,
         Tvec B_a,
         Tvec B_b,
         Tscal omega_a,
@@ -317,15 +294,13 @@ namespace shamrock::spmhd {
     inline Tscal dpsi_on_ch_parabolic_diff(
         Tscal m_b,
         Tscal rho_a,
-        Tvec v_a,
-        Tvec v_b,
+        Tvec v_ab,
         Tscal psi_a,
         Tscal omega_a,
         Tvec nabla_Wab_ha,
         Tscal ch_a) {
 
         Tscal sub_fact_a = 2. * rho_a * omega_a * ch_a;
-        Tvec v_ab        = v_a - v_b;
 
         Tscal parabolic_diff = m_b * (psi_a / sub_fact_a) * sycl::dot(v_ab, nabla_Wab_ha);
 
@@ -436,13 +411,8 @@ namespace shamrock::spmhd {
             pmass,
             rho_a_sq,
             rho_b * rho_b,
-            v_ab,
-            r_ab_unit,
-            v_ab_r_ab,
             P_a,
             P_b,
-            cs_a,
-            cs_b,
             B_a,
             B_b,
             omega_a,
@@ -550,7 +520,7 @@ namespace shamrock::spmhd {
             pmass, rho_a, B_a, B_b, omega_a, r_ab_unit * dWab_a, v_shock_a);
 
         psi_diff += dpsi_on_ch_parabolic_diff(
-            pmass, rho_a, vxyz_a, vxyz_b, psi_a, omega_a, r_ab_unit * dWab_a, v_shock_a);
+            pmass, rho_a, v_ab, psi_a, omega_a, r_ab_unit * dWab_a, v_shock_a);
 
         psi_cons += dpsi_on_ch_conservation(h_a, psi_a, v_shock_a, sigma_mhd);
 
