@@ -197,8 +197,7 @@ namespace shamrock::spmhd {
         Tscal m_b,
         Tscal rho_a_sq,
         Tscal rho_b_sq,
-        Tvec v_ab,
-        Tvec r_ab_unit,
+        Tscal vsigb,
         Tvec B_a,
         Tvec B_b,
         Tscal omega_a,
@@ -206,8 +205,6 @@ namespace shamrock::spmhd {
         Tscal Fab_a,
         Tscal Fab_b) {
 
-        Tscal vsigb
-            = shamphys::MHD_physics<Tvec, Tscal>::vsigB(v_ab, r_ab_unit); // same for a and b
         Tscal B_ab_sq = sycl::dot(B_a - B_b, B_a - B_b);
 
         Tscal sub_fact_a = rho_a_sq * omega_a;
@@ -316,13 +313,7 @@ namespace shamrock::spmhd {
         return psi_a * 1.0 / h_a;
     }
 
-    template<
-        class Tvec,
-        class Tscal,
-        template<class>
-        class SPHKernel,
-        MHDType MHD_mode = Ideal,
-        class Lambda_qab>
+    template<class Kernel, class Tvec, class Tscal, MHDType MHD_mode = Ideal, class Lambda_qab>
     inline void add_to_derivs_spmhd(
         Tscal pmass,
         Tvec dr,
@@ -375,7 +366,9 @@ namespace shamrock::spmhd {
 
         Tscal &u_pressure_viscous_heating) {
 
+        shamphys::MHD_physics<Tvec, Tscal> mhd_physics;
         using namespace shamrock::sph;
+
         Tvec v_ab      = vxyz_a - vxyz_b;
         Tvec r_ab_unit = dr / rab;
 
@@ -386,18 +379,16 @@ namespace shamrock::spmhd {
         Tscal v_ab_r_ab     = sycl::dot(v_ab, r_ab_unit);
         Tscal abs_v_ab_r_ab = sycl::fabs(v_ab_r_ab);
 
-        Tscal vsig_u = shamphys::MHD_physics<Tvec, Tscal>(P_a, P_b, rho_a, rho_b);
-        Tscal vsig_a = shamphys::MHD_physics<Tvec, Tscal>::vsig(
-            v_ab, r_ab_unit, cs_a, B_a, rho_a, mu_0, 1., 1.);
-        Tscal vsig_b = shamphys::MHD_physics<Tvec, Tscal>::vsig(
-            v_ab, r_ab_unit, cs_a, B_b, rho_b, mu_0, 1., 1.);
+        Tscal vsig_u = mhd_physics.vsig_u(P_a, P_b, rho_a, rho_b);
+        Tscal vsig_a = mhd_physics.vsig(v_ab, r_ab_unit, cs_a, B_a, rho_a, mu_0, 1., 1.);
+        Tscal vsig_b = mhd_physics.vsig(v_ab, r_ab_unit, cs_a, B_b, rho_b, mu_0, 1., 1.);
 
         Tscal dWab_a = Fab_a;
         Tscal dWab_b = Fab_b;
 
-        Tscal v_shock_a = shamphys::MHD_physics<Tvec, Tscal>::v_shock(cs_a, B_a, rho_a, mu_0);
-        Tscal v_shock_b = shamphys::MHD_physics<Tvec, Tscal>::v_shock(cs_b, B_b, rho_b, mu_0);
-        Tscal vsig_B    = shamphys::MHD_physics<Tvec, Tscal>::vsig_B(v_ab, r_ab_unit);
+        Tscal v_shock_a = mhd_physics.v_shock(cs_a, B_a, rho_a, mu_0);
+        Tscal v_shock_b = mhd_physics.v_shock(cs_b, B_b, rho_b, mu_0);
+        Tscal vsig_B    = mhd_physics.vsig_B(v_ab, r_ab_unit);
 
         Tscal qa_ab = q_av(rho_a, vsig_a, v_ab_r_ab);
         Tscal qb_ab = q_av(rho_b, vsig_b, v_ab_r_ab);
@@ -438,8 +429,8 @@ namespace shamrock::spmhd {
                                           pmass,
                                           rho_a_sq,
                                           rho_b * rho_b,
-                                          B_a * B_a,
-                                          B_b * B_b,
+                                          sycl::dot(B_a, B_a),
+                                          sycl::dot(B_b, B_b),
                                           omega_a,
                                           omega_b,
                                           r_ab_unit * dWab_a,
@@ -472,17 +463,7 @@ namespace shamrock::spmhd {
             dWab_b / (rho_b * omega_b));
 
         du_dt += lambda_artes(
-            pmass,
-            rho_a_sq,
-            rho_b * rho_b,
-            v_ab,
-            r_ab_unit,
-            B_a,
-            B_b,
-            omega_a,
-            omega_b,
-            Fab_a,
-            Fab_b);
+            pmass, rho_a_sq, rho_b * rho_b, vsig_B, B_a, B_b, omega_a, omega_b, Fab_a, Fab_b);
 
         Tscal sub_fact_a = rho_a_sq * omega_a;
         Tscal sub_fact_b = rho_b * rho_b * omega_b;

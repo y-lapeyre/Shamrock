@@ -22,15 +22,15 @@ namespace shamphys {
     template<class Tvec, class Tscal>
     struct MHD_physics {
         public:
-        Tscal v_alfven = [](Tvec B, Tscal rho, Tscal mu_0) {
+        inline Tscal v_alfven(Tvec B, Tscal rho, Tscal mu_0) {
             return sycl::sqrt(sycl::dot(B, B) / (mu_0 * rho));
         };
 
-        Tscal v_shock_mhd = [this](Tscal cs, Tvec B, Tscal rho, Tscal mu_0) {
+        inline Tscal v_shock(Tscal cs, Tvec B, Tscal rho, Tscal mu_0) {
             return sycl::sqrt(cs * cs + v_alfven(B, rho, mu_0) * v_alfven(B, rho, mu_0));
         };
 
-        Tscal vsig_B_lambda = [](Tvec v_ab, Tvec r_ab_unit) {
+        inline Tscal vsig_B(Tvec v_ab, Tvec r_ab_unit) {
             Tvec v_cross_r = sycl::cross(v_ab, r_ab_unit);
             return sycl::sqrt(
                 v_cross_r[0] * v_cross_r[0] + v_cross_r[1] * v_cross_r[1]
@@ -70,7 +70,7 @@ namespace shamphys {
             Tscal beta_av) {
             Tscal v_ab_r_ab     = sycl::dot(v_ab, r_ab_unit);
             Tscal abs_v_ab_r_ab = sycl::fabs(v_ab_r_ab);
-            Tscal v_a           = v_shock_mhd(cs_a, B_a, rho_a, mu_0);
+            Tscal v_a           = v_shock(cs_a, B_a, rho_a, mu_0);
             Tscal vsig          = alpha_av * v_a + beta_av * abs_v_ab_r_ab;
 
             return vsig;

@@ -1027,7 +1027,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD(
 
                     // clang-format off
                     //Tscal sigma_mhd = 0.3;
-                    add_to_derivs_spmhd<Tvec, Tscal, SPHKernel, shamrock::spmhd::Ideal, Lambda_qab>(
+                    spmhd::add_to_derivs_spmhd<Kernel, Tvec, Tscal, Ideal>(
                         pmass,
                         dr, rab,
                         rho_a, rho_a_sq, omega_a_rho_a_inv, rho_a_inv, rho_b,
@@ -1037,6 +1037,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD(
                         u_a, u_b,
                         P_a, P_b,
                         cs_a, cs_b,
+                        lambda_qav_mhd,
                         h_a, h_b,
 
                         alpha_u,
