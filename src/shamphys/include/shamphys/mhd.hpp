@@ -21,30 +21,29 @@ namespace shamphys {
 
     template<class Tvec, class Tscal>
     struct MHD_physics {
-        public:
-        inline Tscal v_alfven(Tvec B, Tscal rho, Tscal mu_0) {
+        inline static constexpr Tscal v_alfven(Tvec B, Tscal rho, Tscal mu_0) {
             return sycl::sqrt(sycl::dot(B, B) / (mu_0 * rho));
         };
 
-        inline Tscal v_shock(Tscal cs, Tvec B, Tscal rho, Tscal mu_0) {
+        inline static constexpr Tscal v_shock(Tscal cs, Tvec B, Tscal rho, Tscal mu_0) {
             return sycl::sqrt(cs * cs + v_alfven(B, rho, mu_0) * v_alfven(B, rho, mu_0));
         };
 
-        inline Tscal vsig_B(Tvec v_ab, Tvec r_ab_unit) {
+        inline static constexpr Tscal vsig_B(Tvec v_ab, Tvec r_ab_unit) {
             Tvec v_cross_r = sycl::cross(v_ab, r_ab_unit);
             return sycl::sqrt(
                 v_cross_r[0] * v_cross_r[0] + v_cross_r[1] * v_cross_r[1]
                 + v_cross_r[2] * v_cross_r[2]);
         };
 
-        inline Tscal
+        inline static constexpr Tscal
         vsig_hydro(Tscal abs_v_ab_r_ab, Tscal v_A_a, Tscal cs_a, Tscal alpha_av, Tscal beta_av) {
             Tscal v_a  = sycl::sqrt(cs_a * cs_a + v_A_a * v_A_a);
             Tscal vsig = alpha_av * v_a + beta_av * abs_v_ab_r_ab;
             return vsig;
         };
 
-        inline Tscal vsigB(Tvec v_ab, Tvec r_ab_unit) {
+        inline static constexpr Tscal vsigB(Tvec v_ab, Tvec r_ab_unit) {
             Tvec v_cross_r = sycl::cross(v_ab, r_ab_unit);
             Tscal vsig_B_a = sycl::sqrt(
                 v_cross_r[0] * v_cross_r[0] + v_cross_r[1] * v_cross_r[1]
@@ -52,14 +51,14 @@ namespace shamphys {
             return vsig_B_a;
         };
 
-        inline Tscal vsig_u(Tscal P_a, Tscal P_b, Tscal rho_a, Tscal rho_b) {
+        inline static constexpr Tscal vsig_u(Tscal P_a, Tscal P_b, Tscal rho_a, Tscal rho_b) {
             Tscal rho_avg = (rho_a + rho_b) * 0.5;
             Tscal abs_dp  = sham::abs(P_a - P_b);
             return sycl::sqrt(abs_dp / rho_avg);
             // Tscal vsig_u = abs_v_ab_r_ab;
         }
 
-        inline Tscal vsig(
+        inline static constexpr Tscal vsig(
             Tvec v_ab,
             Tvec r_ab_unit,
             Tscal cs_a,
