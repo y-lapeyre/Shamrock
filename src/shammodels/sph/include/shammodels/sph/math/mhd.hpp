@@ -35,7 +35,6 @@ namespace shamrock::spmhd {
         return sham::max(-Tscal(0.5) * rho * vsig * v_scal_rhat, Tscal(0));
     }
 
-
     template<class Tvec, class Tscal>
     inline Tvec B_dot_grad_W(
         Tscal m_b,

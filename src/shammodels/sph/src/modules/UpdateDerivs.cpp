@@ -16,8 +16,8 @@
  */
 
 #include "shammodels/sph/modules/UpdateDerivs.hpp"
-#include "shamcomm/logs.hpp"
 #include "shambackends/math.hpp"
+#include "shamcomm/logs.hpp"
 #include "shammath/sphkernels.hpp"
 #include "shammodels/sph/math/density.hpp"
 #include "shammodels/sph/math/forces.hpp"

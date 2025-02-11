@@ -1064,7 +1064,6 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
     const u32 iepsilon = (has_epsilon_field) ? pdl.get_field_idx<Tscal>("epsilon") : 0;
     const u32 ideltav  = (has_deltav_field) ? pdl.get_field_idx<Tvec>("deltav") : 0;
 
-
     shamrock::patch::PatchDataLayout &ghost_layout = storage.ghost_layout.get();
     u32 ihpart_interf                              = ghost_layout.get_field_idx<Tscal>("hpart");
     u32 iuint_interf                               = ghost_layout.get_field_idx<Tscal>("uint");
@@ -1081,7 +1080,6 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
     const u32 ipsi_interf   = (has_psi_field) ? ghost_layout.get_field_idx<Tscal>("psi/ch") : 0;
     const u32 icurlB_interf = (has_curlB_field) ? ghost_layout.get_field_idx<Tvec>("curlB") : 0;
 
-
     // u32 imag_pressure_interf = (do_MHD_debug) ? ghost_layout.get_field_idx<Tvec>("mag_pressure")
     // : -1; u32 imag_tension_interf  = (do_MHD_debug) ?
     // ghost_layout.get_field_idx<Tvec>("mag_tension") : -1; u32 igas_pressure_interf =
@@ -1096,7 +1094,6 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
     const u32 iepsilon_interf
         = (has_epsilon_field) ? ghost_layout.get_field_idx<Tscal>("epsilon") : 0;
     const u32 ideltav_interf = (has_deltav_field) ? ghost_layout.get_field_idx<Tvec>("deltav") : 0;
-
 
     using InterfaceBuildInfos = typename sph::BasicSPHGhostHandler<Tvec>::InterfaceBuildInfos;
 
@@ -1160,7 +1157,6 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
                     buf_idx, cnt, pdat.get_field<Tvec>(icurlB_interf));
             }
 
-
             // if (do_MHD_debug) {
             //     sender_patch.get_field<Tvec>(igas_pressure).append_subset_to(
             //         buf_idx, cnt, pdat.get_field<Tvec>(igas_pressure_interf));
@@ -1190,7 +1186,6 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
                 sender_patch.get_field<Tvec>(ideltav).append_subset_to(
                     buf_idx, cnt, pdat.get_field<Tvec>(ideltav_interf));
             }
-
         });
 
     ghost_handle.template modify_interface_native<PatchData>(
@@ -1255,7 +1250,6 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
                     pdat_new.get_field<Tvec>(icurlB_interf).insert(pdat.get_field<Tvec>(icurlB));
                 }
 
-
                 // if (do_MHD_debug) {
                 //     pdat_new.get_field<Tvec>(igas_pressure_interf).insert(pdat.get_field<Tvec>(igas_pressure));
                 //     pdat_new.get_field<Tvec>(imag_pressure_interf).insert(pdat.get_field<Tvec>(imag_pressure));
@@ -1280,7 +1274,6 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
                 if (has_deltav_field) {
                     pdat_new.get_field<Tvec>(ideltav_interf).insert(pdat.get_field<Tvec>(ideltav));
                 }
-
 
                 pdat_new.check_field_obj_cnt_match();
 
