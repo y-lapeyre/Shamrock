@@ -45,6 +45,7 @@
 #include "shammodels/sph/modules/SinkParticlesUpdate.hpp"
 #include "shammodels/sph/modules/UpdateDerivs.hpp"
 #include "shammodels/sph/modules/UpdateViscosity.hpp"
+#include "shamphys/mhd.hpp"
 #include "shamrock/io/LegacyVtkWritter.hpp"
 #include "shamrock/patch/PatchData.hpp"
 #include "shamrock/patch/PatchDataLayout.hpp"
@@ -60,7 +61,6 @@
 #include <memory>
 #include <stdexcept>
 #include <vector>
-#include "shamphys/mhd.hpp"
 
 template<class vec>
 shamrock::LegacyVtkWritter start_dump(PatchScheduler &sched, std::string dump_name) {
@@ -1059,7 +1059,7 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
     const u32 idpsi_on_ch = (has_psi_field) ? pdl.get_field_idx<Tscal>("dpsi/ch") : 0;
     const u32 icurlB      = (has_curlB_field) ? pdl.get_field_idx<Tvec>("curlB") : 0;
 
-    bool do_MHD_debug = solver_config.do_MHD_debug();
+    bool do_MHD_debug       = solver_config.do_MHD_debug();
     const u32 imag_pressure = (do_MHD_debug) ? pdl.get_field_idx<Tvec>("mag_pressure") : -1;
     const u32 imag_tension  = (do_MHD_debug) ? pdl.get_field_idx<Tvec>("mag_tension") : -1;
     const u32 igas_pressure = (do_MHD_debug) ? pdl.get_field_idx<Tvec>("gas_pressure") : -1;
@@ -1087,14 +1087,16 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
 
     const u32 icurlB_interf = (has_curlB_field) ? ghost_layout.get_field_idx<Tvec>("curlB") : 0;
 
-    //u32 imag_pressure_interf = (do_MHD_debug) ? ghost_layout.get_field_idx<Tvec>("mag_pressure") : -1;
-    //u32 imag_tension_interf  = (do_MHD_debug) ? ghost_layout.get_field_idx<Tvec>("mag_tension") : -1;
-    //u32 igas_pressure_interf = (do_MHD_debug) ? ghost_layout.get_field_idx<Tvec>("gas_pressure") : -1;
-    //u32 itensile_corr_interf = (do_MHD_debug) ? ghost_layout.get_field_idx<Tvec>("tensile_corr") : -1;
-    //u32 ipsi_propag_interf   = (do_MHD_debug) ? ghost_layout.get_field_idx<Tscal>("psi_propag") : -1;
-    //u32 ipsi_diff_interf     = (do_MHD_debug) ? ghost_layout.get_field_idx<Tscal>("psi_diff") : -1;
-    //u32 ipsi_cons_interf     = (do_MHD_debug) ? ghost_layout.get_field_idx<Tscal>("psi_cons") : -1;
-    //u32 iu_mhd_interf        = (do_MHD_debug) ? ghost_layout.get_field_idx<Tscal>("u_mhd") : -1;
+    // u32 imag_pressure_interf = (do_MHD_debug) ? ghost_layout.get_field_idx<Tvec>("mag_pressure")
+    // : -1; u32 imag_tension_interf  = (do_MHD_debug) ?
+    // ghost_layout.get_field_idx<Tvec>("mag_tension") : -1; u32 igas_pressure_interf =
+    // (do_MHD_debug) ? ghost_layout.get_field_idx<Tvec>("gas_pressure") : -1; u32
+    // itensile_corr_interf = (do_MHD_debug) ? ghost_layout.get_field_idx<Tvec>("tensile_corr") :
+    // -1; u32 ipsi_propag_interf   = (do_MHD_debug) ?
+    // ghost_layout.get_field_idx<Tscal>("psi_propag") : -1; u32 ipsi_diff_interf     =
+    // (do_MHD_debug) ? ghost_layout.get_field_idx<Tscal>("psi_diff") : -1; u32 ipsi_cons_interf =
+    // (do_MHD_debug) ? ghost_layout.get_field_idx<Tscal>("psi_cons") : -1; u32 iu_mhd_interf =
+    // (do_MHD_debug) ? ghost_layout.get_field_idx<Tscal>("u_mhd") : -1;
 
     using InterfaceBuildInfos = typename sph::BasicSPHGhostHandler<Tvec>::InterfaceBuildInfos;
 
@@ -1158,16 +1160,16 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
                     buf_idx, cnt, pdat.get_field<Tvec>(icurlB_interf));
             }
 
-            //if (do_MHD_debug) {
-            //    sender_patch.get_field<Tvec>(igas_pressure).append_subset_to(
-            //        buf_idx, cnt, pdat.get_field<Tvec>(igas_pressure_interf));
-            //    sender_patch.get_field<Tvec>(imag_pressure).append_subset_to(
-            //        buf_idx, cnt, pdat.get_field<Tvec>(imag_pressure_interf));
-            //    sender_patch.get_field<Tvec>(imag_tension).append_subset_to(
-            //        buf_idx, cnt, pdat.get_field<Tvec>(imag_tension_interf));
-            //    sender_patch.get_field<Tvec>(itensile_corr).append_subset_to(
-            //        buf_idx, cnt, pdat.get_field<Tvec>(itensile_corr_interf));
-//
+            // if (do_MHD_debug) {
+            //     sender_patch.get_field<Tvec>(igas_pressure).append_subset_to(
+            //         buf_idx, cnt, pdat.get_field<Tvec>(igas_pressure_interf));
+            //     sender_patch.get_field<Tvec>(imag_pressure).append_subset_to(
+            //         buf_idx, cnt, pdat.get_field<Tvec>(imag_pressure_interf));
+            //     sender_patch.get_field<Tvec>(imag_tension).append_subset_to(
+            //         buf_idx, cnt, pdat.get_field<Tvec>(imag_tension_interf));
+            //     sender_patch.get_field<Tvec>(itensile_corr).append_subset_to(
+            //         buf_idx, cnt, pdat.get_field<Tvec>(itensile_corr_interf));
+            //
             //    sender_patch.get_field<Tscal>(ipsi_propag)
             //        .append_subset_to(buf_idx, cnt, pdat.get_field<Tscal>(ipsi_propag_interf));
             //    sender_patch.get_field<Tscal>(ipsi_diff)
@@ -1175,7 +1177,7 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
             //    sender_patch.get_field<Tscal>(ipsi_cons)
             //        .append_subset_to(buf_idx, cnt, pdat.get_field<Tscal>(ipsi_cons_interf));
             //    sender_patch.get_field<Tscal>(iu_mhd)
-            //        .append_subset_to(buf_idx, cnt, pdat.get_field<Tscal>(iu_mhd_interf));  
+            //        .append_subset_to(buf_idx, cnt, pdat.get_field<Tscal>(iu_mhd_interf));
             //}
         });
 
@@ -1241,12 +1243,12 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
                     pdat_new.get_field<Tvec>(icurlB_interf).insert(pdat.get_field<Tvec>(icurlB));
                 }
 
-                //if (do_MHD_debug) {
-                //    pdat_new.get_field<Tvec>(igas_pressure_interf).insert(pdat.get_field<Tvec>(igas_pressure));
-                //    pdat_new.get_field<Tvec>(imag_pressure_interf).insert(pdat.get_field<Tvec>(imag_pressure));
-                //    pdat_new.get_field<Tvec>(imag_tension_interf).insert(pdat.get_field<Tvec>(imag_tension));
-                //    pdat_new.get_field<Tvec>(itensile_corr_interf).insert(pdat.get_field<Tvec>(itensile_corr));
-//
+                // if (do_MHD_debug) {
+                //     pdat_new.get_field<Tvec>(igas_pressure_interf).insert(pdat.get_field<Tvec>(igas_pressure));
+                //     pdat_new.get_field<Tvec>(imag_pressure_interf).insert(pdat.get_field<Tvec>(imag_pressure));
+                //     pdat_new.get_field<Tvec>(imag_tension_interf).insert(pdat.get_field<Tvec>(imag_tension));
+                //     pdat_new.get_field<Tvec>(itensile_corr_interf).insert(pdat.get_field<Tvec>(itensile_corr));
+                //
                 //    pdat_new.get_field<Tscal>(ipsi_propag_interf)
                 //        .insert(pdat.get_field<Tscal>(ipsi_propag));
                 //    pdat_new.get_field<Tscal>(ipsi_diff_interf)
@@ -1857,7 +1859,6 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                                 cgh, pdat.get_obj_cnt(), "compute vclean", [=](i32 id_a) {
                                     using namespace shamrock::sph;
                                     shamphys::MHD_physics<Tvec, Tscal> mhd_physics;
-                                    
 
                                     Tscal h_a       = hpart[id_a];
                                     Tscal rho_a     = rho_h(pmass, h_a, Kernel::hfactd);
@@ -1865,8 +1866,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                                     Tscal cs_a      = cs[id_a];
                                     Tvec B_a        = B_on_rho[id_a] * rho_a;
 
-                                    Tscal vclean_a
-                                        = mhd_physics.v_shock(cs_a, B_a, rho_a, mu_0);
+                                    Tscal vclean_a = mhd_physics.v_shock(cs_a, B_a, rho_a, mu_0);
 
                                     vclean[id_a] = vclean_a;
                                 });

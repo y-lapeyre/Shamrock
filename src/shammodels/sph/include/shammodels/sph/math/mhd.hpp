@@ -308,9 +308,13 @@ namespace shamrock::spmhd {
         return parabolic_diff;
     }
 
+    // sigma_mhd = psidecayfactor
     template<class Tscal, MHDType MHD_mode = Ideal>
-    inline Tscal dpsi_on_ch_conservation(Tscal h_a, Tscal psi_a, Tscal ch_a, Tscal sigma_mhd) {
-        return psi_a * 1.0 / h_a;
+    inline Tscal
+    dpsi_on_ch_conservation(Tscal h_a, Tscal psi_a, Tscal ch_a, Tscal sigma_mhd, Tscal vclean) {
+        Tscal dtau = vclean / (h_a * ch_a);
+        return psi_a * dtau;
+        // return psi_a * 1.0 / h_a;
     }
 
     template<class Kernel, class Tvec, class Tscal, MHDType MHD_mode = Ideal, class Lambda_qab>
@@ -393,8 +397,8 @@ namespace shamrock::spmhd {
         Tscal qa_ab = q_av(rho_a, vsig_a, v_ab_r_ab);
         Tscal qb_ab = q_av(rho_b, vsig_b, v_ab_r_ab);
 
-        Tscal AV_P_a = P_a + qa_ab;
-        Tscal AV_P_b = P_b + qb_ab;
+        Tscal AV_P_a = P_a; //+ qa_ab;
+        Tscal AV_P_b = P_b; //+ qb_ab;
 
         constexpr bool Tricco = true;
         Tvec sum_gas_pressure, sum_mag_pressure, sum_mag_tension, sum_fdivB = {0., 0., 0.};
@@ -454,16 +458,16 @@ namespace shamrock::spmhd {
 
         du_dt += u_pressure_viscous_heating;
 
-        du_dt += sph::lambda_shock_conductivity(
-            pmass,
-            alpha_u,
-            vsig_u,
-            u_a - u_b,
-            dWab_a * omega_a_rho_a_inv,
-            dWab_b / (rho_b * omega_b));
+        // du_dt += sph::lambda_shock_conductivity(
+        //     pmass,
+        //     alpha_u,
+        //     vsig_u,
+        //     u_a - u_b,
+        //     dWab_a * omega_a_rho_a_inv,
+        //     dWab_b / (rho_b * omega_b));
 
-        du_dt += lambda_artes(
-            pmass, rho_a_sq, rho_b * rho_b, vsig_B, B_a, B_b, omega_a, omega_b, Fab_a, Fab_b);
+        // du_dt += lambda_artes(
+        //     pmass, rho_a_sq, rho_b * rho_b, vsig_B, B_a, B_b, omega_a, omega_b, Fab_a, Fab_b);
 
         Tscal sub_fact_a = rho_a_sq * omega_a;
         Tscal sub_fact_b = rho_b * rho_b * omega_b;
@@ -478,22 +482,22 @@ namespace shamrock::spmhd {
             rho_diss_term_b = 0;
         }
 
-        Tvec dB_on_rho_dissipation_term
-            = -0.5 * pmass * (rho_diss_term_a + rho_diss_term_b) * (B_a - B_b) * vsig_B;
+        // Tvec dB_on_rho_dissipation_term
+        //     = -0.5 * pmass * (rho_diss_term_a + rho_diss_term_b) * (B_a - B_b) * vsig_B;
 
         dB_on_rho_dt
             += v_ab * dB_on_rho_induction_term(pmass, rho_a_sq, B_a, omega_a, r_ab_unit * dWab_b);
 
-        dB_on_rho_dt += dB_on_rho_psi_term(
-            pmass,
-            rho_a_sq,
-            rho_b * rho_b,
-            psi_a,
-            psi_b,
-            omega_a,
-            omega_b,
-            r_ab_unit * dWab_a,
-            r_ab_unit * dWab_b);
+        // dB_on_rho_dt += dB_on_rho_psi_term(
+        //     pmass,
+        //     rho_a_sq,
+        //     rho_b * rho_b,
+        //     psi_a,
+        //     psi_b,
+        //     omega_a,
+        //     omega_b,
+        //     r_ab_unit * dWab_a,
+        //     r_ab_unit * dWab_b);
 
         // dB_on_rho_dt += dB_on_rho_dissipation_term;
 
@@ -503,7 +507,7 @@ namespace shamrock::spmhd {
         psi_diff += dpsi_on_ch_parabolic_diff(
             pmass, rho_a, v_ab, psi_a, omega_a, r_ab_unit * dWab_a, v_shock_a);
 
-        psi_cons += dpsi_on_ch_conservation(h_a, psi_a, v_shock_a, sigma_mhd);
+        psi_cons += dpsi_on_ch_conservation(h_a, psi_a, v_shock_a, sigma_mhd, v_shock_a);
 
         dpsi_on_ch_dt += psi_propag;
         dpsi_on_ch_dt += psi_diff;
