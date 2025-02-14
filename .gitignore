@@ -33,4 +33,3 @@ shamrock.egg-info
 *.so
 log_precommit_*
 .pyenv
-venv12/

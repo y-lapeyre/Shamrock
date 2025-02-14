@@ -116,7 +116,24 @@ namespace shamrock::sph {
         return sham::max(-Tscal(0.5) * rho * vsig * v_scal_rhat, Tscal(0));
     }
 
-    enum ViscosityType { Standard = 0, Disc = 1, MHD = 2 };
+    template<class Tscal>
+    inline Tscal q_av_disc(
+        Tscal rho, Tscal h, Tscal rab, Tscal alpha_av, Tscal cs, Tscal vsig, Tscal v_scal_rhat) {
+        Tscal q_av_d;
+        Tscal rho1   = 1. / rho;
+        Tscal rabinv = sham::inv_sat_positive(rab);
+
+        Tscal prefact = -Tscal(0.5) * rho * sham::abs(rabinv) * h;
+
+        Tscal vsig_disc = (v_scal_rhat < Tscal(0)) ? vsig : (alpha_av * cs);
+
+        q_av_d = prefact * vsig_disc * v_scal_rhat;
+
+        return q_av_d;
+    }
+
+    enum ViscosityType { Standard = 0, Disc = 1 };
+
     /**
      * @brief \cite Phantom_2018 eq.35
      *
@@ -183,7 +200,6 @@ namespace shamrock::sph {
         Tscal P_b,
         Tscal cs_a,
         Tscal cs_b,
-
         Tscal alpha_a,
         Tscal alpha_b,
         Tscal h_a,
@@ -221,14 +237,11 @@ namespace shamrock::sph {
         Tscal qb_ab;
 
         if constexpr (visco_mode == Standard) {
-            qa_ab = q_av(rho_a, cs_a, v_ab_r_ab, alpha_a, beta_AV);
-            qb_ab = q_av(rho_b, cs_b, v_ab_r_ab, alpha_b, beta_AV);
+            qa_ab = q_av(rho_a, vsig_a, v_ab_r_ab);
+            qb_ab = q_av(rho_b, vsig_b, v_ab_r_ab);
         }
+
         if constexpr (visco_mode == Disc) { // from Phantom 2018, eq 120
-            qa_ab = q_av_disc(rho_a, h_a, rab, alpha_a, cs_a, vsig_a, v_ab_r_ab);
-            qb_ab = q_av_disc(rho_b, h_b, rab, alpha_b, cs_b, vsig_b, v_ab_r_ab);
-        }
-        if constexpr (visco_mode == MHD) { // from Phantom 2018, eq 120
             qa_ab = q_av_disc(rho_a, h_a, rab, alpha_a, cs_a, vsig_a, v_ab_r_ab);
             qb_ab = q_av_disc(rho_b, h_b, rab, alpha_b, cs_b, vsig_b, v_ab_r_ab);
         }
