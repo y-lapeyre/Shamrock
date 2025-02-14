@@ -112,13 +112,20 @@ namespace shamrock::sph {
      * @return Tscal
      */
     template<class Tscal>
-    inline Tscal q_av(Tscal rho, Tscal vsig, Tscal v_scal_rhat) {
+    inline Tscal q_av(const Tscal &rho, const Tscal &vsig, const Tscal &v_scal_rhat) {
+
         return sham::max(-Tscal(0.5) * rho * vsig * v_scal_rhat, Tscal(0));
     }
 
     template<class Tscal>
     inline Tscal q_av_disc(
-        Tscal rho, Tscal h, Tscal rab, Tscal alpha_av, Tscal cs, Tscal vsig, Tscal v_scal_rhat) {
+        const Tscal &rho,
+        const Tscal &h,
+        const Tscal &rab,
+        const Tscal &alpha_av,
+        const Tscal &cs,
+        const Tscal &vsig,
+        const Tscal &v_scal_rhat) {
         Tscal q_av_d;
         Tscal rho1   = 1. / rho;
         Tscal rabinv = sham::inv_sat_positive(rab);
@@ -186,9 +193,6 @@ namespace shamrock::sph {
         class Lambda_qab>
     inline void add_to_derivs_sph_artif_visco_cond(
         Tscal pmass,
-        Tvec dr,
-        Tscal rab,
-        Tscal rho_a,
         Tscal rho_a_sq,
         Tscal omega_a_rho_a_inv,
         Tscal rho_a_inv,
@@ -197,8 +201,6 @@ namespace shamrock::sph {
         Tscal omega_b,
         Tscal Fab_a,
         Tscal Fab_b,
-        Tvec vxyz_a,
-        Tvec vxyz_b,
         Tscal u_a,
         Tscal u_b,
         Tscal P_a,
@@ -215,6 +217,12 @@ namespace shamrock::sph {
 
         Tscal beta_AV,
         Tscal alpha_u,
+
+        Tvec v_ab,
+        Tvec r_ab_unit,
+        Tscal vsig_u,
+        Tscal qa_ab,
+        Tscal qb_ab,
 
         Tvec &dv_dt,
         Tscal &du_dt) {
@@ -238,12 +246,6 @@ namespace shamrock::sph {
         Tscal abs_dp  = sham::abs(P_a - P_b);
         Tscal vsig_u  = sycl::sqrt(abs_dp / rho_avg);
 
-        Tscal dWab_a = Fab_a;
-        Tscal dWab_b = Fab_b;
-
-        Tscal qa_ab;
-        Tscal qb_ab;
-
         // if constexpr (visco_mode == Standard) {
         //     qa_ab = q_av(rho_a, vsig_a, v_ab_r_ab);
         //     qb_ab = q_av(rho_b, vsig_b, v_ab_r_ab);
@@ -256,6 +258,9 @@ namespace shamrock::sph {
 
         qa_ab = qab_func(rho_a, cs_a, v_ab_r_ab, alpha_a, beta_AV);
         qb_ab = qab_func(rho_b, cs_b, v_ab_r_ab, alpha_b, beta_AV);
+
+        Tscal dWab_a = Fab_a;
+        Tscal dWab_b = Fab_b;
 
         Tscal AV_P_a = P_a + qa_ab;
         Tscal AV_P_b = P_b + qb_ab;

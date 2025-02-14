@@ -53,14 +53,6 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs() {
 template<class Tvec, template<class> class SPHKernel>
 void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_noAV(None cfg) {}
 
-// auto lambda_qav =
-//                         [](Tscal rho, Tscal cs, Tscal v_scal_rhat, Tscal alpha_AV, Tscal beta_AV)
-//                         {
-//                             Tscal abs_v_ab_r_ab = sycl::fabs(v_scal_rhat);
-//                             Tscal vsig          = alpha_AV * cs + beta_AV * abs_v_ab_r_ab;
-//                             return sham::max(-Tscal(0.5) * rho * vsig * v_scal_rhat, Tscal(0));
-//                         };
-
 template<class Tvec, template<class> class SPHKernel>
 void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_constantAV(
     Constant cfg) {
@@ -186,10 +178,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cons
 
                     Tscal rab       = sycl::sqrt(rab2);
                     Tvec vxyz_b     = vxyz[id_b];
-                    Tvec v_ab       = vxyz_a - vxyz_b;
                     const Tscal u_b = u[id_b];
-
-                    Tvec r_ab_unit = dr * sham::inv_sat_positive(rab);
 
                     Tscal rho_b = rho_h(pmass, h_b, Kernel::hfactd);
                     Tscal P_b   = pressure[id_b];
@@ -220,11 +209,13 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cons
                         lambda_qav,
                         alpha_a, alpha_b,
                         h_a, h_b,
+                        
                         beta_AV, alpha_u,
 
                         force_pressure,
                         tmpdU_pressure);
                     // clang-format on
+
                 });
                 axyz[id_a] = force_pressure;
                 du[id_a]   = tmpdU_pressure;
@@ -375,10 +366,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_mm97
 
                     Tscal rab       = sycl::sqrt(rab2);
                     Tvec vxyz_b     = vxyz[id_b];
-                    Tvec v_ab       = vxyz_a - vxyz_b;
                     const Tscal u_b = u[id_b];
-
-                    Tvec r_ab_unit = dr * sham::inv_sat_positive(rab);
 
                     Tscal rho_b = rho_h(pmass, h_b, Kernel::hfactd);
                     Tscal P_b   = pressure[id_b];
@@ -407,7 +395,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_mm97
                         cs_a, cs_b,
                         lambda_qav,
                         alpha_a, alpha_b,
-                       h_a, h_b,
+                        h_a, h_b,
                         beta_AV, alpha_u,
 
                         force_pressure,
@@ -599,6 +587,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cd10
                         force_pressure,
                         tmpdU_pressure);
                     // clang-format on
+
                 });
 
                 axyz[id_a] = force_pressure;
@@ -771,14 +760,13 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_disc
                         cs_a, cs_b,
                         lambda_qav,
                         alpha_a, alpha_b,
-                        h_a, h_b,
-
+                        h_a, h_b
                         beta_AV, alpha_u,
 
                         force_pressure,
                         tmpdU_pressure);
                     // clang-format on
-                });
+                  });
 
                 axyz[id_a] = force_pressure;
                 du[id_a]   = tmpdU_pressure;
