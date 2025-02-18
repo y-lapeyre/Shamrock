@@ -58,7 +58,7 @@ namespace shamphys {
             // Tscal vsig_u = abs_v_ab_r_ab;
         }
 
-        inline static constexpr Tscal vsig(
+        inline static constexpr Tscal vsig_MHD(
             Tvec v_ab,
             Tvec r_ab_unit,
             Tscal cs_a,

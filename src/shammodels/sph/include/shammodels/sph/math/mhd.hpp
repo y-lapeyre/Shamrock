@@ -334,9 +334,9 @@ namespace shamrock::spmhd {
         Tscal abs_v_ab_r_ab = sycl::fabs(v_ab_r_ab);
 
         Tscal vsig_u = shamphys::MHD_physics<Tvec, Tscal>::vsig_u(P_a, P_b, rho_a, rho_b);
-        Tscal vsig_a = shamphys::MHD_physics<Tvec, Tscal>::vsig(
+        Tscal vsig_a = shamphys::MHD_physics<Tvec, Tscal>::vsig_MHD(
             v_ab, r_ab_unit, cs_a, B_a, rho_a, mu_0, 1., 1.);
-        Tscal vsig_b = shamphys::MHD_physics<Tvec, Tscal>::vsig(
+        Tscal vsig_b = shamphys::MHD_physics<Tvec, Tscal>::vsig_MHD(
             v_ab, r_ab_unit, cs_a, B_b, rho_b, mu_0, 1., 1.);
 
         Tscal dWab_a = Fab_a;
