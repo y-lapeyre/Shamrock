@@ -17,8 +17,8 @@
 
 # -- Project information -----------------------------------------------------
 
-project = 'Shamrock python bindings'
-copyright = '2025, Timothee David--Cléris'
+project = 'python bindings'
+copyright = '2020 -- Timothee David--Cléris'
 author = 'Timothee David--Cléris'
 
 # The full version, including alpha/beta/rc tags
@@ -33,6 +33,7 @@ release = '2024.10.0'
 extensions = [
     'sphinx.ext.autodoc',  # For documenting Python code
     'sphinx.ext.viewcode',  # For linking to the source code in the docs
+    'sphinx.ext.autosummary',  # Create neat summary tables for modules/classes/methods etc
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -49,7 +50,34 @@ exclude_patterns = []
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'alabaster'
+html_theme = 'pydata_sphinx_theme'
+html_logo = "_static/large-figures/figures/no_background_nocolor.png"
+#html_favicon = "_static/logo.png"
+html_sourcelink_suffix = ""
+html_last_updated_fmt = ""  # to reveal the build date in the pages meta
+
+html_theme_options = {
+    "logo": {
+        "text": project,
+        "image_dark": html_logo,
+    },
+    "use_edit_page_button": True,
+    "footer_start": ["copyright"],
+    "footer_center": ["sphinx-version"],
+    "search_as_you_type": True,
+}
+
+html_context = {
+    "github_url": "https://github.com", # or your GitHub Enterprise site
+    "github_user": "tdavidcl",
+    "github_repo": "Shamrock",
+    "github_version": "main",
+    "doc_path": "doc/sphinx/source",
+}
+
+html_css_files = [
+    'css/custom.css',
+]
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
