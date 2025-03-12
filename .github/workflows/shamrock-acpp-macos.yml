@@ -94,3 +94,16 @@ jobs:
         run: |
           cd build
           mpirun --oversubscribe -n 4 ./shamrock_test --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
+
+      - name: Configure sham install
+        run: |
+          cd build
+          source ./activate &&  \
+            cmake . -DCMAKE_INSTALL_PREFIX=$(pwd)/install_test &&  \
+            ninja install
+
+      - name: Try starting Shamrock (installed version)
+        if: matrix.runtest
+        run: |
+          cd build/install_test/bin
+          ./shamrock --smi --sycl-cfg 0:0

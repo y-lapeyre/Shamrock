@@ -90,8 +90,7 @@ target_include_directories(shamrock PUBLIC "${CMAKE_SOURCE_DIR}/src")
 
 #do lib build instead if building the pylib
 
-
-
+install(TARGETS shamrock DESTINATION bin)
 
 if("${BUILD_TEST}")
 
