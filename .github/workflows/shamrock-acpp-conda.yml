@@ -65,7 +65,6 @@ jobs:
           source ./activate && shamconfigure
 
       - name: Configure sham install
-        shell: bash # In docker container github action default to sh
         run: |
           cd build
           source ./activate &&  \
