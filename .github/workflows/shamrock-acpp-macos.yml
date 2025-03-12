@@ -100,7 +100,7 @@ jobs:
           cd build
           source ./activate &&  \
             cmake . -DCMAKE_INSTALL_PREFIX=$(pwd)/install_test &&  \
-            ninja install
+            shammake install
 
       - name: Try starting Shamrock (installed version)
         if: matrix.runtest
