@@ -69,7 +69,7 @@ jobs:
         run: |
           cd build
           source ./activate &&  \
-            cmake . -DCMAKE_INSTALL_PREFIX=$(pwd)/install_test &&  \
+            cmake . -DCMAKE_INSTALL_PREFIX=$(pwd)/install_test
 
       - name: Build
         run: |

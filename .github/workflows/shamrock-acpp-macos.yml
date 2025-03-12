@@ -66,11 +66,10 @@ jobs:
           source ./activate && shamconfigure
 
       - name: Configure sham install
-        shell: bash # In docker container github action default to sh
         run: |
           cd build
           source ./activate &&  \
-            cmake . -DCMAKE_INSTALL_PREFIX=$(pwd)/install_test &&  \
+            cmake . -DCMAKE_INSTALL_PREFIX=$(pwd)/install_test
 
       - name: Build
         run: |
