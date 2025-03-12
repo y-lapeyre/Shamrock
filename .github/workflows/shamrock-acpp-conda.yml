@@ -138,4 +138,5 @@ jobs:
         if: matrix.runtest
         run: |
           cd build/install_test/bin
-          ./shamrock --smi --sycl-cfg 0:0
+          ls ..
+          LD_LIBRARY_PATH=../lib64:$LD_LIBRARY_PATH ./shamrock --smi --sycl-cfg 0:0
