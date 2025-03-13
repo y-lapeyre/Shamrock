@@ -71,10 +71,10 @@ jobs:
           source ./activate &&  \
             cmake . -DCMAKE_INSTALL_PREFIX=$(pwd)/install_test
 
-      - name: Build
+      - name: Build & install
         run: |
           cd build
-          source ./activate && shammake
+          source ./activate && shammake install
 
       - name: Pull reference files
         run: |
@@ -101,11 +101,6 @@ jobs:
           cd build
           mpirun --oversubscribe -n 4 ./shamrock_test --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
 
-      - name: sham install
-        run: |
-          cd build
-          source ./activate &&  \
-            shammake install
 
       - name: Try starting Shamrock (installed version)
         run: |
