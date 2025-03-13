@@ -172,4 +172,4 @@ jobs:
         run: |
           cd build/install_test/bin
           ls ..
-          LD_LIBRARY_PATH=../lib64:$LD_LIBRARY_PATH ./shamrock --smi --sycl-cfg 0:0
+          LD_LIBRARY_PATH=../lib:$LD_LIBRARY_PATH ./shamrock --smi --sycl-cfg 0:0
