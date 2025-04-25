@@ -78,9 +78,11 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/${{ inputs.imagename }}
           tags: |
-            type=raw,enable=${{ github.ref_name == 'main' || github.event_name == 'pull_request' }},value=${{inputs.imagetag}},prefix=
-            type=sha
+            type=schedule
             type=ref,event=branch
+            type=ref,event=tag
+            type=ref,event=pr
+            type=sha,format=long
           flavor: |
             latest=auto
             prefix=
