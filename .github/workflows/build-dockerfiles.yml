@@ -23,6 +23,7 @@ jobs:
     uses: ./.github/workflows/build-and-push.yml
     with:
       imagename: shamrock
-      imagetag: _oneapi
+      imagetag: oneapi
       imagepath: .github/dockerfiles/intel_oneapi
       runson: ubuntu-latest
+      usetagonlatest: false
