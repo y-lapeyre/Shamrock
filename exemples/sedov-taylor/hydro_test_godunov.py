@@ -10,7 +10,7 @@ rho_g = 1
 target_tot_u = 1
 
 # grid parameters
-base = 8  # resol = base * 2
+base = 64  # resol = base * 2
 multx = 1
 multy = 1
 multz = 1
@@ -29,10 +29,10 @@ u_inj = 1
 def uint_map(rmin, rmax):
     x_min, y_min, z_min = rmin
     x_max, y_max, z_max = rmax
-    x = (x_min + x_max) / 2
-    y = (y_min + y_max) / 2
-    z = (z_min + z_max) / 2
-    x = x - xc
+    x = scale_fact * (x_min + x_max) / 2
+    y = scale_fact * (y_min + y_max) / 2
+    z = scale_fact * (z_min + z_max) / 2
+    x = x - xc  # recenter grid on 0
     y = y - yc
     z = z - zc
     r = np.sqrt(x * x + y * y + z * z)
@@ -80,15 +80,25 @@ print(dic)
 
 if shamrock.sys.world_rank() == 0:
 
-    r = np.sqrt(dic["xyz"][:, 0] ** 2 + dic["xyz"][:, 1] ** 2 + dic["xyz"][:, 2] ** 2)
-    vr = np.sqrt(dic["vxyz"][:, 0] ** 2 + dic["vxyz"][:, 1] ** 2 + dic["vxyz"][:, 2] ** 2)
+    x_min = dic["cell_min"][:, 0]
+    y_min = dic["cell_min"][:, 1]
+    z_min = dic["cell_min"][:, 2]
 
-    hpart = dic["hpart"]
-    uint = dic["uint"]
+    x_max = dic["cell_max"][:, 0]
+    y_max = dic["cell_max"][:, 1]
+    z_max = dic["cell_max"][:, 2]
 
-    gamma = 5.0 / 3.0
+    x = scale_fact * (x_min + x_max) / 2
+    y = scale_fact * (y_min + y_max) / 2
+    z = scale_fact * (z_min + z_max) / 2
+    x = x - xc  # recenter grid on 0
+    y = y - yc
+    z = z - zc
+    r = np.sqrt(x * x + y * y + z * z)
 
-    rho = pmass * (model.get_hfact() / hpart) ** 3
+    vr = np.sqrt(dic["rhovel"][:, 0] ** 2 + dic["rhovel"][:, 1] ** 2 + dic["rhovel"][:, 2] ** 2)
+    uint = dic["rhoetot"]
+    rho = dic["rho"]
     P = (gamma - 1) * rho * uint
 
     sedov_sol = shamrock.phys.SedovTaylor()
@@ -108,7 +118,6 @@ if shamrock.sys.world_rank() == 0:
     vr_theo = np.array(vr_theo)
     rho_theo = np.array(rho_theo)
 
-    plt.style.use("custom_style.mplstyle")
     if True:
 
         fig, axs = plt.subplots(nrows=2, ncols=2, figsize=(9, 6), dpi=125)
