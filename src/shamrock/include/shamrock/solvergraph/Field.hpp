@@ -19,12 +19,11 @@
 #include "shamrock/scheduler/ComputeField.hpp"
 #include "shamrock/solvergraph/FieldRefs.hpp"
 #include "shamrock/solvergraph/FieldSpan.hpp"
-#include "shamrock/solvergraph/IFreeableDataEdge.hpp"
 
 namespace shamrock::solvergraph {
 
     template<class T>
-    class Field : public IFieldRefs<T>, public IFreeable {
+    class Field : public IFieldRefs<T> {
 
         // TODO In the long run this class should become what was compute field
 
