@@ -43,9 +43,9 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs() {
     } else if (NonIdealMHD *v = std::get_if<NonIdealMHD>(&cfg_mhd.config)) {
         shambase::throw_unimplemented();
     } else if (NoneMHD *v = std::get_if<NoneMHD>(&cfg_mhd.config)) {
-        shambase::throw_unimplemented();
+        //shambase::throw_unimplemented(); @@@ allow for Nboby case
     } else if (None *v = std::get_if<None>(&cfg_av.config)) {
-        shambase::throw_unimplemented();
+        //shambase::throw_unimplemented(); @@@ allow for Nboby case
     } else {
         shambase::throw_unimplemented();
     }

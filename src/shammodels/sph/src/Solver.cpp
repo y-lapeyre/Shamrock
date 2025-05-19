@@ -1279,7 +1279,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
 
         logger::debug_ln("BasicGas", "epsilon v :", eps_v);
 
-        if (eps_v > 1e-2) {
+        if (false) { // @@@ turn off the corrector
             if (shamcomm::world_rank() == 0) {
                 logger::warn_ln(
                     "BasicGasSPH",
@@ -1537,8 +1537,8 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                         Tscal vsig_a  = vsig[item];
                         Tscal abs_a_a = sycl::length(a[item]);
 
-                        Tscal dt_c = C_cour * h_a / vsig_a;
-                        Tscal dt_f = C_force * sycl::sqrt(h_a / abs_a_a);
+                        Tscal dt_c = 0.1; // C_cour * h_a / vsig_a;
+                        Tscal dt_f =  0.005; //C_force * sycl::sqrt(h_a / abs_a_a);
 
                         cfl_dt[item] = sycl::min(dt_c, dt_f);
                     });
