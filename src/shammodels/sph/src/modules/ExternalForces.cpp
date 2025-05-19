@@ -187,7 +187,7 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::add_ext_forces()
                         Tscal abs_ra_5 = abs_ra_2 * abs_ra_2 * abs_ra;
 
                         Tvec omega_a
-                            = (S * (2 / abs_ra_3)); //- (6 * sham::dot(S, r_a) * r_a) / abs_ra_5; @@@  Nealon (2015) ea (15)
+                            = (S * (2 / abs_ra_3)) - (6 * sham::dot(S, r_a) * r_a) / abs_ra_5; //@@@  Nealon (2015) ea (15)
                         Tvec acc_lt = sycl::cross(v_a, omega_a);
                         axyz[gid] += acc_lt;
                     });
