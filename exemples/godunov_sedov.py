@@ -9,17 +9,17 @@ outputdir = ""
 # simulation parameters
 tmax = 0.1
 dt_dump = 0.01
-C_cour = 0.08
-C_force = 0.08
+C_cour = 0.9
+C_force = 0.9
 
 # physics parameters
-Rstart = 0.3
+Rstart = 0.03
 gamma = 5.0 / 3.0
 bmin = 0.0
 bmax = 1.0
 
 # grid parameters
-base = 8  # resol = base * 2
+base = 128  # resol = base * 2
 multx = 1
 multy = 1
 multz = 1
@@ -106,7 +106,7 @@ else:
     cfg.set_Csafe(C_cour)
     model.set_solver_config(cfg)
 
-    model.init_scheduler(int(1e7), 1)
+    model.init_scheduler(int(1e9), 1)
     model.make_base_grid((0, 0, 0), (sz, sz, sz), (base * multx, base * multy, base * multz))
 
     model.set_field_value_lambda_f64("rho", rho_map)
@@ -116,9 +116,20 @@ else:
 
 ################## SIMULATION ####################
 t = 0
+dt = 0.
+niter = 0
 while t <= tmax:
     # model.dump_vtk(outputdir + "sedov_" + f"{idump:04}" + ".vtk")
-    model.dump(outputdir + "sedov_" + f"{idump:04}" + ".sham")
-    model.evolve_until(t)
-    t += dt_dump
-    idump += 1
+    #model.dump(outputdir + "sedov_" + f"{idump:04}" + ".sham")
+    next_dt = model.evolve_once_override_time(t, dt)
+    niter += 1
+    dt = next_dt
+    if tmax < t + next_dt:
+            dt = tmax - t
+    if t == tmax:
+        break
+    #model.evolve_until(t)
+    #t += dt_dump
+    t += dt
+
+print(niter)

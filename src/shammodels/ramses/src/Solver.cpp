@@ -291,6 +291,9 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
         storage.timings_details.interface,
         t_dev_alloc,
         mem_perf_infos_end.max_allocated_byte_device);
+        
+    t_tot_cumul +=    shamalgs::collective::allreduce_max(tstep.elasped_sec());
+
 
     if (shamcomm::world_rank() == 0) {
         logger::info_ln("amr::RAMSES", log_step);
@@ -299,6 +302,7 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
             "estimated rate :",
             dt_input * (3600 / tstep.elasped_sec()),
             "(tsim/hr)");
+            std::cout << "\n    curent    cumul time (s)     " << t_tot_cumul << "\n\n";
     }
 
     storage.timings_details.reset();

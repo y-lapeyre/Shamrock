@@ -46,6 +46,8 @@ namespace shammodels::basegodunov {
 
         SolverStorage<Tvec, TgridVec, u_morton> storage{};
 
+        Tscal t_tot_cumul = 0.;
+
         inline void init_required_fields() {
             context.pdata_layout_add_field<TgridVec>("cell_min", 1);
             context.pdata_layout_add_field<TgridVec>("cell_max", 1);
