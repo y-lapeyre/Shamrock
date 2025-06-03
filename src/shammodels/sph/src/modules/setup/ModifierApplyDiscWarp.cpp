@@ -67,7 +67,7 @@ shammodels::sph::modules::ModifierApplyDiscWarp<Tvec, SPHKernel>::next_n(u32 nma
             Tscal effective_inc;
             if (r < Rwarp - Hwarp) {
                 effective_inc = 0.;
-            } else if (r < Rwarp + Hwarp && r > Rwarp - Hwarp) {
+            } else if (r < Rwarp + 3*Hwarp && r > Rwarp - 3*Hwarp) {
                 effective_inc = sycl::asin(
                     0.5
                     * (1. + sycl::sin(shambase::constants::pi<Tscal> / (2. * Hwarp) * (r - Rwarp)))
@@ -76,7 +76,7 @@ shammodels::sph::modules::ModifierApplyDiscWarp<Tvec, SPHKernel>::next_n(u32 nma
                       / sycl::sqrt(1. - (0.5 * sycl::pown(sycl::sin(incl_rad), 2)));
                 Tscal psimax = sycl::max(psimax, psi);
             } else {
-                effective_inc = incl_rad;
+                effective_inc = 0.;
             }
 
             Tvec w  = sycl::cross(k, xyz_a);
