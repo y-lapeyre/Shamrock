@@ -10,7 +10,7 @@ rho_g = 1
 target_tot_u = 1
 
 # grid parameters
-base = 32  # resol = base * 2
+base = 64  # resol = base * 2
 multx = 1
 multy = 1
 multz = 1
@@ -19,7 +19,7 @@ scale_fact = 1 / (sz * base * multx)
 
 center = (base * scale_fact, base * scale_fact, base * scale_fact)
 xc, yc, zc = center
-rinj = 0.1  # 0.008909042924642563 * 2
+rinj = 0.008909042924642563
 # rinj = 0.008909042924642563*2*2
 # rinj = 0.01718181
 u_inj = 1
@@ -33,11 +33,10 @@ def uint_map(rmin, rmax):
     y = y - yc
     z = z - zc
     r = np.sqrt(x * x + y * y + z * z)
-    if r > rinj:
-        return 0.0
-    else:
-        print("Yes injecting bby !!!!!")
+    if r < rinj:
         return u_inj
+    else:
+        return 0.0
 
 
 def rhovel_map(rmin, rmax):
@@ -59,10 +58,10 @@ cfg.set_eos_gamma(gamma)
 cfg.set_riemann_solver_hllc()
 cfg.set_slope_lim_vanleer_sym()
 cfg.set_face_time_interpolation(True)
-cfg.set_Csafe(0.1)
+cfg.set_Csafe(0.08)
 model.set_solver_config(cfg)
 
-model.init_scheduler(int(1e5), 1)
+model.init_scheduler(int(1e6), 1)
 
 model.make_base_grid((0, 0, 0), (sz, sz, sz), (base * multx, base * multy, base * multz))
 
@@ -71,14 +70,14 @@ model.set_field_value_lambda_f64("rhoetot", uint_map)
 model.set_field_value_lambda_f64_3("rhovel", rhovel_map)
 
 model.timestep()
-model.dump_vtk("init.vtk")
-model.dump("outfile")
+model.dump_vtk("godunov_init2.vtk")
+model.dump("godunov_outfile")
 
 t_target = 0.1
 model.evolve_until(t_target)
 # model.timestep()
 
-model.dump_vtk("end.vtk")
+model.dump_vtk("godunov_end2.vtk")
 
 
 dic = ctx.collect_data()
