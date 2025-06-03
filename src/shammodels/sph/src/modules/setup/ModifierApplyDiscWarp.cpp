@@ -21,6 +21,7 @@
 #include "shammodels/sph/modules/setup/ISPHSetupNode.hpp"
 #include "shammodels/sph/modules/setup/ModifierApplyDiscWarp.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
+#include <shambackends/sycl.hpp>
 
 template<class Tvec, template<class> class SPHKernel>
 shamrock::patch::PatchData
@@ -63,21 +64,25 @@ shammodels::sph::modules::ModifierApplyDiscWarp<Tvec, SPHKernel>::next_n(u32 nma
 
             // convert to radians (sycl functions take radians)
             Tscal incl_rad = inclination * shambase::constants::pi<Tscal> / 180.;
-
+            Tscal R1       = 3.5;
+            Tscal R2       = 6.5;
+            Tscal R0       = 5.;
+            Tscal A        = 0.5;
+            Tscal lx, ly, lz;
             Tscal effective_inc;
-            if (r < Rwarp - Hwarp) {
+
+            ly = 0.;
+            if (r < R1) {
                 effective_inc = 0.;
-            } else if (r < Rwarp + 3*Hwarp && r > Rwarp - 3*Hwarp) {
-                effective_inc = sycl::asin(
-                    0.5
-                    * (1. + sycl::sin(shambase::constants::pi<Tscal> / (2. * Hwarp) * (r - Rwarp)))
-                    * sycl::sin(incl_rad));
-                psi = shambase::constants::pi<Tscal> * Rwarp / (4. * Hwarp) * sycl::sin(incl_rad)
-                      / sycl::sqrt(1. - (0.5 * sycl::pown(sycl::sin(incl_rad), 2)));
-                Tscal psimax = sycl::max(psimax, psi);
+            } else if (r < R2 && r > R1) {
+                effective_inc
+                    = 0.5 * A
+                      * (1. + sycl::sin(shambase::constants::pi<Tscal> * (r - R0) / (R2 - R1)));
             } else {
-                effective_inc = 0.;
+                lx            = A;
+                effective_inc = incl_rad;
             }
+            lz = sycl::sqrt(1. - lx * lx);
 
             Tvec w  = sycl::cross(k, xyz_a);
             Tvec wv = sycl::cross(k, vxyz_a);
