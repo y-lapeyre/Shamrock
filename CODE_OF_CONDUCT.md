@@ -36,6 +36,37 @@ Examples of unacceptable behavior include:
 * Other conduct which could reasonably be considered inappropriate in a
   professional setting
 
+## Our stance on crediting the right people
+
+Shamrock is a living code. We encourage users to contribute to the code, 
+and interect with the process of development. We understand that developping code 
+takes time and effort, and we want this effort to be recognized and credited fairly.
+
+In the documentation, users 
+will find an exhaustive list of features, the developper(s) in charge of 
+these features, as well as their development status: 
+unimplemented, work in progress, in testing or development ready. When a solver/feature
+is production ready, the documentation points to the article where the method is 
+detailed.
+
+When using a part of the code marked as production ready, and that has an 
+article published about it, the user must cite the article related to this part of the code.
+
+When using a part of the code marked as production ready, and that has not yet 
+an article published about it, the user must absolutely get in touch with the designated developper. 
+A user is not allowed to publish results using a feature/solver of the code that has no 
+article written about it without involving the developer of that feature/solver as a co-author. 
+
+When using a part of the code not marked as production ready, the user must absolutely 
+get in touch with the developper of the feature/solver. Any article published using this 
+part of the code will have to be published with the developper as a co-author, as the 
+methods and tests will have to be detailed.
+
+Any breach of these rules will result in a ban from the Shamrock community, which means 
+no more access to the Discord nor the GitHub repository, and no more technical support 
+of any kind. Depending on the gravity of the breach, legal actions may be pursued 
+if deems necessary.
+
 ## Enforcement Responsibilities
 
 Community leaders are responsible for clarifying and enforcing our standards of
