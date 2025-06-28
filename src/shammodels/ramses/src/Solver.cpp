@@ -14,16 +14,17 @@
  *
  */
 
+#include "shambase/exception.hpp"
 #include "shambase/memory.hpp"
 #include "shamcomm/collectives.hpp"
 #include "shamcomm/logs.hpp"
 #include "shammodels/common/timestep_report.hpp"
 #include "shammodels/ramses/Solver.hpp"
+#include "shammodels/ramses/SolverConfig.hpp"
 #include "shammodels/ramses/modules/AMRGridRefinementHandler.hpp"
 #include "shammodels/ramses/modules/BlockNeighToCellNeigh.hpp"
 #include "shammodels/ramses/modules/ComputeCFL.hpp"
 #include "shammodels/ramses/modules/ComputeCellAABB.hpp"
-#include "shammodels/ramses/modules/ComputeFlux.hpp"
 #include "shammodels/ramses/modules/ComputeMass.hpp"
 #include "shammodels/ramses/modules/ComputeSumOverV.hpp"
 #include "shammodels/ramses/modules/ComputeTimeDerivative.hpp"
@@ -33,6 +34,7 @@
 #include "shammodels/ramses/modules/FindBlockNeigh.hpp"
 #include "shammodels/ramses/modules/GhostZones.hpp"
 #include "shammodels/ramses/modules/InterpolateToFace.hpp"
+#include "shammodels/ramses/modules/NodeComputeFlux.hpp"
 #include "shammodels/ramses/modules/SlopeLimitedGradient.hpp"
 #include "shammodels/ramses/modules/StencilGenerator.hpp"
 #include "shammodels/ramses/modules/TimeIntegrator.hpp"
@@ -254,6 +256,115 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
 
     storage.dt_over2
         = std::make_shared<shamrock::solvergraph::ScalarEdge<Tscal>>("dt_half", "dt_{half}");
+
+    {
+
+        storage.flux_rho_face_xm = std::make_shared<solvergraph::NeighGrapkLinkFieldEdge<Tscal>>(
+            "flux_rho_face_xm", "flux_rho_face_xm", 1);
+
+        storage.flux_rho_face_xp = std::make_shared<solvergraph::NeighGrapkLinkFieldEdge<Tscal>>(
+            "flux_rho_face_xp", "flux_rho_face_xp", 1);
+
+        storage.flux_rho_face_ym = std::make_shared<solvergraph::NeighGrapkLinkFieldEdge<Tscal>>(
+            "flux_rho_face_ym", "flux_rho_face_ym", 1);
+
+        storage.flux_rho_face_yp = std::make_shared<solvergraph::NeighGrapkLinkFieldEdge<Tscal>>(
+            "flux_rho_face_yp", "flux_rho_face_yp", 1);
+
+        storage.flux_rho_face_zm = std::make_shared<solvergraph::NeighGrapkLinkFieldEdge<Tscal>>(
+            "flux_rho_face_zm", "flux_rho_face_zm", 1);
+
+        storage.flux_rho_face_zp = std::make_shared<solvergraph::NeighGrapkLinkFieldEdge<Tscal>>(
+            "flux_rho_face_zp", "flux_rho_face_zp", 1);
+
+        storage.flux_rhov_face_xm = std::make_shared<solvergraph::NeighGrapkLinkFieldEdge<Tvec>>(
+            "flux_rhov_face_xm", "flux_rhov_face_xm", 1);
+
+        storage.flux_rhov_face_xp = std::make_shared<solvergraph::NeighGrapkLinkFieldEdge<Tvec>>(
+            "flux_rhov_face_xp", "flux_rhov_face_xp", 1);
+
+        storage.flux_rhov_face_ym = std::make_shared<solvergraph::NeighGrapkLinkFieldEdge<Tvec>>(
+            "flux_rhov_face_ym", "flux_rhov_face_ym", 1);
+
+        storage.flux_rhov_face_yp = std::make_shared<solvergraph::NeighGrapkLinkFieldEdge<Tvec>>(
+            "flux_rhov_face_yp", "flux_rhov_face_yp", 1);
+
+        storage.flux_rhov_face_zm = std::make_shared<solvergraph::NeighGrapkLinkFieldEdge<Tvec>>(
+            "flux_rhov_face_zm", "flux_rhov_face_zm", 1);
+
+        storage.flux_rhov_face_zp = std::make_shared<solvergraph::NeighGrapkLinkFieldEdge<Tvec>>(
+            "flux_rhov_face_zp", "flux_rhov_face_zp", 1);
+
+        storage.flux_rhoe_face_xm = std::make_shared<solvergraph::NeighGrapkLinkFieldEdge<Tscal>>(
+            "flux_rhoe_face_xm", "flux_rhoe_face_xm", 1);
+
+        storage.flux_rhoe_face_xp = std::make_shared<solvergraph::NeighGrapkLinkFieldEdge<Tscal>>(
+            "flux_rhoe_face_xp", "flux_rhoe_face_xp", 1);
+
+        storage.flux_rhoe_face_ym = std::make_shared<solvergraph::NeighGrapkLinkFieldEdge<Tscal>>(
+            "flux_rhoe_face_ym", "flux_rhoe_face_ym", 1);
+
+        storage.flux_rhoe_face_yp = std::make_shared<solvergraph::NeighGrapkLinkFieldEdge<Tscal>>(
+            "flux_rhoe_face_yp", "flux_rhoe_face_yp", 1);
+
+        storage.flux_rhoe_face_zm = std::make_shared<solvergraph::NeighGrapkLinkFieldEdge<Tscal>>(
+            "flux_rhoe_face_zm", "flux_rhoe_face_zm", 1);
+
+        storage.flux_rhoe_face_zp = std::make_shared<solvergraph::NeighGrapkLinkFieldEdge<Tscal>>(
+            "flux_rhoe_face_zp", "flux_rhoe_face_zp", 1);
+    }
+
+    if (solver_config.is_dust_on()) {
+        u32 ndust = solver_config.dust_config.ndust;
+
+        storage.flux_rho_dust_face_xm
+            = std::make_shared<solvergraph::NeighGrapkLinkFieldEdge<Tscal>>(
+                "flux_rho_dust_face_xm", "flux_rho_dust_face_xm", ndust);
+
+        storage.flux_rho_dust_face_xp
+            = std::make_shared<solvergraph::NeighGrapkLinkFieldEdge<Tscal>>(
+                "flux_rho_dust_face_xp", "flux_rho_dust_face_xp", ndust);
+
+        storage.flux_rho_dust_face_ym
+            = std::make_shared<solvergraph::NeighGrapkLinkFieldEdge<Tscal>>(
+                "flux_rho_dust_face_ym", "flux_rho_dust_face_ym", ndust);
+
+        storage.flux_rho_dust_face_yp
+            = std::make_shared<solvergraph::NeighGrapkLinkFieldEdge<Tscal>>(
+                "flux_rho_dust_face_yp", "flux_rho_dust_face_yp", ndust);
+
+        storage.flux_rho_dust_face_zm
+            = std::make_shared<solvergraph::NeighGrapkLinkFieldEdge<Tscal>>(
+                "flux_rho_dust_face_zm", "flux_rho_dust_face_zm", ndust);
+
+        storage.flux_rho_dust_face_zp
+            = std::make_shared<solvergraph::NeighGrapkLinkFieldEdge<Tscal>>(
+                "flux_rho_dust_face_zp", "flux_rho_dust_face_zp", ndust);
+
+        storage.flux_rhov_dust_face_xm
+            = std::make_shared<solvergraph::NeighGrapkLinkFieldEdge<Tvec>>(
+                "flux_rhov_dust_face_xm", "flux_rhov_dust_face_xm", ndust);
+
+        storage.flux_rhov_dust_face_xp
+            = std::make_shared<solvergraph::NeighGrapkLinkFieldEdge<Tvec>>(
+                "flux_rhov_dust_face_xp", "flux_rhov_dust_face_xp", ndust);
+
+        storage.flux_rhov_dust_face_ym
+            = std::make_shared<solvergraph::NeighGrapkLinkFieldEdge<Tvec>>(
+                "flux_rhov_dust_face_ym", "flux_rhov_dust_face_ym", ndust);
+
+        storage.flux_rhov_dust_face_yp
+            = std::make_shared<solvergraph::NeighGrapkLinkFieldEdge<Tvec>>(
+                "flux_rhov_dust_face_yp", "flux_rhov_dust_face_yp", ndust);
+
+        storage.flux_rhov_dust_face_zm
+            = std::make_shared<solvergraph::NeighGrapkLinkFieldEdge<Tvec>>(
+                "flux_rhov_dust_face_zm", "flux_rhov_dust_face_zm", ndust);
+
+        storage.flux_rhov_dust_face_zp
+            = std::make_shared<solvergraph::NeighGrapkLinkFieldEdge<Tvec>>(
+                "flux_rhov_dust_face_zp", "flux_rhov_dust_face_zp", ndust);
+    }
 
     ////////////////////////////////////////////////////////////////////////////////
     /// Nodes
@@ -552,6 +663,215 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
         solver_sequence.push_back(std::make_shared<decltype(seq)>(std::move(seq)));
     }
 
+    { // flux
+
+        std::vector<std::shared_ptr<shamrock::solvergraph::INode>> flux_sequence;
+
+        if (solver_config.riemman_config == Rusanov) {
+            modules::NodeComputeFluxGasMode<Tvec, TgridVec, modules::RiemannSolverMode::Rusanov>
+                node(
+                    "Gas flux compute",
+                    solver_config.eos_gamma,
+                    storage.cell_graph_edge,
+                    storage.rho_face_xp,
+                    storage.rho_face_xm,
+                    storage.rho_face_yp,
+                    storage.rho_face_ym,
+                    storage.rho_face_zp,
+                    storage.rho_face_zm,
+                    storage.vel_face_xp,
+                    storage.vel_face_xm,
+                    storage.vel_face_yp,
+                    storage.vel_face_ym,
+                    storage.vel_face_zp,
+                    storage.vel_face_zm,
+                    storage.press_face_xp,
+                    storage.press_face_xm,
+                    storage.press_face_yp,
+                    storage.press_face_ym,
+                    storage.press_face_zp,
+                    storage.press_face_zm,
+                    storage.flux_rho_face_xp,
+                    storage.flux_rho_face_xm,
+                    storage.flux_rho_face_yp,
+                    storage.flux_rho_face_ym,
+                    storage.flux_rho_face_zp,
+                    storage.flux_rho_face_zm,
+                    storage.flux_rhov_face_xp,
+                    storage.flux_rhov_face_xm,
+                    storage.flux_rhov_face_yp,
+                    storage.flux_rhov_face_ym,
+                    storage.flux_rhov_face_zp,
+                    storage.flux_rhov_face_zm,
+                    storage.flux_rhoe_face_xp,
+                    storage.flux_rhoe_face_xm,
+                    storage.flux_rhoe_face_yp,
+                    storage.flux_rhoe_face_ym,
+                    storage.flux_rhoe_face_zp,
+                    storage.flux_rhoe_face_zm);
+            flux_sequence.push_back(std::make_shared<decltype(node)>(std::move(node)));
+        } else if (solver_config.riemman_config == HLL) {
+            modules::NodeComputeFluxGasMode<Tvec, TgridVec, modules::RiemannSolverMode::HLL> node(
+                "Gas flux compute",
+                solver_config.eos_gamma,
+                storage.cell_graph_edge,
+                storage.rho_face_xp,
+                storage.rho_face_xm,
+                storage.rho_face_yp,
+                storage.rho_face_ym,
+                storage.rho_face_zp,
+                storage.rho_face_zm,
+                storage.vel_face_xp,
+                storage.vel_face_xm,
+                storage.vel_face_yp,
+                storage.vel_face_ym,
+                storage.vel_face_zp,
+                storage.vel_face_zm,
+                storage.press_face_xp,
+                storage.press_face_xm,
+                storage.press_face_yp,
+                storage.press_face_ym,
+                storage.press_face_zp,
+                storage.press_face_zm,
+                storage.flux_rho_face_xp,
+                storage.flux_rho_face_xm,
+                storage.flux_rho_face_yp,
+                storage.flux_rho_face_ym,
+                storage.flux_rho_face_zp,
+                storage.flux_rho_face_zm,
+                storage.flux_rhov_face_xp,
+                storage.flux_rhov_face_xm,
+                storage.flux_rhov_face_yp,
+                storage.flux_rhov_face_ym,
+                storage.flux_rhov_face_zp,
+                storage.flux_rhov_face_zm,
+                storage.flux_rhoe_face_xp,
+                storage.flux_rhoe_face_xm,
+                storage.flux_rhoe_face_yp,
+                storage.flux_rhoe_face_ym,
+                storage.flux_rhoe_face_zp,
+                storage.flux_rhoe_face_zm);
+            flux_sequence.push_back(std::make_shared<decltype(node)>(std::move(node)));
+        } else if (solver_config.riemman_config == HLLC) {
+            modules::NodeComputeFluxGasMode<Tvec, TgridVec, modules::RiemannSolverMode::HLLC> node(
+                "Gas flux compute",
+                solver_config.eos_gamma,
+                storage.cell_graph_edge,
+                storage.rho_face_xp,
+                storage.rho_face_xm,
+                storage.rho_face_yp,
+                storage.rho_face_ym,
+                storage.rho_face_zp,
+                storage.rho_face_zm,
+                storage.vel_face_xp,
+                storage.vel_face_xm,
+                storage.vel_face_yp,
+                storage.vel_face_ym,
+                storage.vel_face_zp,
+                storage.vel_face_zm,
+                storage.press_face_xp,
+                storage.press_face_xm,
+                storage.press_face_yp,
+                storage.press_face_ym,
+                storage.press_face_zp,
+                storage.press_face_zm,
+                storage.flux_rho_face_xp,
+                storage.flux_rho_face_xm,
+                storage.flux_rho_face_yp,
+                storage.flux_rho_face_ym,
+                storage.flux_rho_face_zp,
+                storage.flux_rho_face_zm,
+                storage.flux_rhov_face_xp,
+                storage.flux_rhov_face_xm,
+                storage.flux_rhov_face_yp,
+                storage.flux_rhov_face_ym,
+                storage.flux_rhov_face_zp,
+                storage.flux_rhov_face_zm,
+                storage.flux_rhoe_face_xp,
+                storage.flux_rhoe_face_xm,
+                storage.flux_rhoe_face_yp,
+                storage.flux_rhoe_face_ym,
+                storage.flux_rhoe_face_zp,
+                storage.flux_rhoe_face_zm);
+            flux_sequence.push_back(std::make_shared<decltype(node)>(std::move(node)));
+        } else {
+            shambase::throw_unimplemented("unknown flux mode");
+        }
+
+        if (solver_config.is_dust_on()) {
+            u32 ndust = solver_config.dust_config.ndust;
+            if (solver_config.dust_config.dust_riemann_config == DHLL) {
+                modules::
+                    NodeComputeFluxDustMode<Tvec, TgridVec, modules::DustRiemannSolverMode::DHLL>
+                        node(
+                            "Dust flux compute",
+                            ndust,
+                            storage.cell_graph_edge,
+                            storage.rho_dust_face_xp,
+                            storage.rho_dust_face_xm,
+                            storage.rho_dust_face_yp,
+                            storage.rho_dust_face_ym,
+                            storage.rho_dust_face_zp,
+                            storage.rho_dust_face_zm,
+                            storage.vel_dust_face_xp,
+                            storage.vel_dust_face_xm,
+                            storage.vel_dust_face_yp,
+                            storage.vel_dust_face_ym,
+                            storage.vel_dust_face_zp,
+                            storage.vel_dust_face_zm,
+                            storage.flux_rho_dust_face_xp,
+                            storage.flux_rho_dust_face_xm,
+                            storage.flux_rho_dust_face_yp,
+                            storage.flux_rho_dust_face_ym,
+                            storage.flux_rho_dust_face_zp,
+                            storage.flux_rho_dust_face_zm,
+                            storage.flux_rhov_dust_face_xp,
+                            storage.flux_rhov_dust_face_xm,
+                            storage.flux_rhov_dust_face_yp,
+                            storage.flux_rhov_dust_face_ym,
+                            storage.flux_rhov_dust_face_zp,
+                            storage.flux_rhov_dust_face_zm);
+                flux_sequence.push_back(std::make_shared<decltype(node)>(std::move(node)));
+            } else if (solver_config.dust_config.dust_riemann_config == HB) {
+                modules::NodeComputeFluxDustMode<Tvec, TgridVec, modules::DustRiemannSolverMode::HB>
+                    node(
+                        "Dust flux compute",
+                        ndust,
+                        storage.cell_graph_edge,
+                        storage.rho_dust_face_xp,
+                        storage.rho_dust_face_xm,
+                        storage.rho_dust_face_yp,
+                        storage.rho_dust_face_ym,
+                        storage.rho_dust_face_zp,
+                        storage.rho_dust_face_zm,
+                        storage.vel_dust_face_xp,
+                        storage.vel_dust_face_xm,
+                        storage.vel_dust_face_yp,
+                        storage.vel_dust_face_ym,
+                        storage.vel_dust_face_zp,
+                        storage.vel_dust_face_zm,
+                        storage.flux_rho_dust_face_xp,
+                        storage.flux_rho_dust_face_xm,
+                        storage.flux_rho_dust_face_yp,
+                        storage.flux_rho_dust_face_ym,
+                        storage.flux_rho_dust_face_zp,
+                        storage.flux_rho_dust_face_zm,
+                        storage.flux_rhov_dust_face_xp,
+                        storage.flux_rhov_dust_face_xm,
+                        storage.flux_rhov_dust_face_yp,
+                        storage.flux_rhov_dust_face_ym,
+                        storage.flux_rhov_dust_face_zp,
+                        storage.flux_rhov_dust_face_zm);
+                flux_sequence.push_back(std::make_shared<decltype(node)>(std::move(node)));
+            } else {
+                shambase::throw_unimplemented("unknown flux mode");
+            }
+        }
+
+        shamrock::solvergraph::OperationSequence seq("Compute fluxes", std::move(flux_sequence));
+        solver_sequence.push_back(std::make_shared<decltype(seq)>(std::move(seq)));
+    }
+
     shamrock::solvergraph::OperationSequence seq("Solver", std::move(solver_sequence));
     storage.solver_sequence = std::make_shared<decltype(seq)>(std::move(seq));
 
@@ -624,11 +944,11 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
     }
 
     // flux
-    modules::ComputeFlux flux_compute(context, solver_config, storage);
-    flux_compute.compute_flux();
-    if (solver_config.is_dust_on()) {
-        flux_compute.compute_flux_dust();
-    }
+    // modules::ComputeFlux flux_compute(context, solver_config, storage);
+    // flux_compute.compute_flux();
+    // if (solver_config.is_dust_on()) {
+    //    flux_compute.compute_flux_dust();
+    //}
 
     // compute dt fields
     modules::ComputeTimeDerivative dt_compute(context, solver_config, storage);
@@ -670,41 +990,9 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
     storage.dtrhov.reset();
     storage.dtrhoe.reset();
 
-    storage.flux_rho_face_xp.reset();
-    storage.flux_rho_face_xm.reset();
-    storage.flux_rho_face_yp.reset();
-    storage.flux_rho_face_ym.reset();
-    storage.flux_rho_face_zp.reset();
-    storage.flux_rho_face_zm.reset();
-    storage.flux_rhov_face_xp.reset();
-    storage.flux_rhov_face_xm.reset();
-    storage.flux_rhov_face_yp.reset();
-    storage.flux_rhov_face_ym.reset();
-    storage.flux_rhov_face_zp.reset();
-    storage.flux_rhov_face_zm.reset();
-    storage.flux_rhoe_face_xp.reset();
-    storage.flux_rhoe_face_xm.reset();
-    storage.flux_rhoe_face_yp.reset();
-    storage.flux_rhoe_face_ym.reset();
-    storage.flux_rhoe_face_zp.reset();
-    storage.flux_rhoe_face_zm.reset();
-
     if (solver_config.is_dust_on()) {
         storage.dtrho_dust.reset();
         storage.dtrhov_dust.reset();
-
-        storage.flux_rho_dust_face_xp.reset();
-        storage.flux_rho_dust_face_xm.reset();
-        storage.flux_rho_dust_face_yp.reset();
-        storage.flux_rho_dust_face_ym.reset();
-        storage.flux_rho_dust_face_zp.reset();
-        storage.flux_rho_dust_face_zm.reset();
-        storage.flux_rhov_dust_face_xp.reset();
-        storage.flux_rhov_dust_face_xm.reset();
-        storage.flux_rhov_dust_face_yp.reset();
-        storage.flux_rhov_dust_face_ym.reset();
-        storage.flux_rhov_dust_face_zp.reset();
-        storage.flux_rhov_dust_face_zm.reset();
     }
 
     if (solver_config.drag_config.drag_solver_config != DragSolverMode::NoDrag) {
