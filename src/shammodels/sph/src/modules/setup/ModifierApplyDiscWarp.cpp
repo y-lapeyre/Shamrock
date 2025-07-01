@@ -72,23 +72,24 @@ shammodels::sph::modules::ModifierApplyDiscWarp<Tvec, SPHKernel>::next_n(u32 nma
             Tscal lz;
             Tscal A = 0.01;
             if (r < R1) {
-                //effective_inc = 0.;
+                // effective_inc = 0.;
                 lx = 0;
                 lz = 1;
             } else if (r < R2 && r > R1) {
-                //effective_inc = sycl::asin(
-                //    0.5
-                //    * (1. + sycl::sin(shambase::constants::pi<Tscal> / (2. * Hwarp) * (r - Rwarp)))
-                //    * sycl::sin(incl_rad));
-                //psi = shambase::constants::pi<Tscal> * Rwarp / (4. * Hwarp) * sycl::sin(incl_rad)
-                //      / sycl::sqrt(1. - (0.5 * sycl::pown(sycl::sin(incl_rad), 2)));
-                //Tscal psimax = sycl::max(psimax, psi);
+                // effective_inc = sycl::asin(
+                //     0.5
+                //     * (1. + sycl::sin(shambase::constants::pi<Tscal> / (2. * Hwarp) * (r -
+                //     Rwarp)))
+                //     * sycl::sin(incl_rad));
+                // psi = shambase::constants::pi<Tscal> * Rwarp / (4. * Hwarp) * sycl::sin(incl_rad)
+                //       / sycl::sqrt(1. - (0.5 * sycl::pown(sycl::sin(incl_rad), 2)));
+                // Tscal psimax = sycl::max(psimax, psi);
                 Tscal pi = shambase::constants::pi<Tscal>;
-                lx = 0.5 * A * (1. + sycl::sin(pi * (r - R0)/(R2-R1)));
+                lx       = 0.5 * A * (1. + sycl::sin(pi * (r - R0) / (R2 - R1)));
             } else {
-                //effective_inc = 0.;
+                // effective_inc = 0.;
                 lx = A;
-                lz = sycl::sqrt(1 - A*A);
+                lz = sycl::sqrt(1 - A * A);
             }
 
             effective_inc = sycl::acos(lz);
