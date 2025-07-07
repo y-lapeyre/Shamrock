@@ -45,6 +45,7 @@ namespace shammodels::sph::modules {
         Tscal time_val;
         Tscal x_ref;        // shock centered on x_ref
         Tscal x_min, x_max; // check only between [x_min, x_max ]
+        u32 Nbin = 300;
 
         AnalysisDisc(
             ShamrockCtx &context,
@@ -82,18 +83,19 @@ namespace shammodels::sph::modules {
 
         struct analysis_basis {
 
-            sycl::buffer<Tscal> lx;
-            sycl::buffer<Tscal> ly;
-            sycl::buffer<Tscal> lz;
-            sycl::buffer<Tscal> Sigma;
+            sham::DeviceBuffer<Tscal> radius;
+            sham::DeviceBuffer<Tscal> lx;
+            sham::DeviceBuffer<Tscal> ly;
+            sham::DeviceBuffer<Tscal> lz;
+            sham::DeviceBuffer<Tscal> Sigma;
+            sham::DeviceBuffer<Tscal> zmean;
         };
 
         struct analysis_stage1 {
 
-            sycl::buffer<Tscal> tilt;
-            sycl::buffer<Tscal> twist;
-            sycl::buffer<Tscal> psi;
-            sycl::buffer<Tscal> zmean;
+            std::unique_ptr<sham::DeviceBuffer<Tscal>> tilt;
+            std::unique_ptr<sham::DeviceBuffer<Tscal>> twist;
+            std::unique_ptr<sham::DeviceBuffer<Tscal>> psi;
         };
 
         struct analysis_stage2 {
@@ -103,6 +105,7 @@ namespace shammodels::sph::modules {
         };
 
         analysis_val compute_analysis();
+        analysis_stage1 compute_analysis_stage1(analysis_basis &basis);
 
         private:
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }
