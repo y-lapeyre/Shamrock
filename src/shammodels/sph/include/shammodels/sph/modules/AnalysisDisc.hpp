@@ -40,33 +40,7 @@ namespace shammodels::sph::modules {
         Config &solver_config;
         Storage &storage;
 
-        shamphys::SodTube solution;
-        Tvec direction;
-        Tscal time_val;
-        Tscal x_ref;        // shock centered on x_ref
-        Tscal x_min, x_max; // check only between [x_min, x_max ]
         u32 Nbin = 300;
-
-        AnalysisDisc(
-            ShamrockCtx &context,
-            Config &solver_config,
-            Storage &storage,
-            shamphys::SodTube &solution,
-            Tvec direction,
-            Tscal time_val,
-            Tscal x_ref,
-            Tscal x_min,
-            Tscal x_max)
-            : context(context), solver_config(solver_config), storage(storage), solution(solution),
-              direction(direction), time_val(time_val), x_ref(x_ref), x_min(x_min), x_max(x_max) {}
-
-        struct field_val {
-            Tscal rho;
-            Tvec v;
-            Tscal P;
-        };
-
-        field_val compute_L2_dist();
 
         struct analysis_val {
             int ibin;
@@ -105,6 +79,7 @@ namespace shammodels::sph::modules {
 
         analysis_val compute_analysis();
         analysis_stage1 compute_analysis_stage1(analysis_basis &basis);
+        analysis_stage2 compute_analysis_stage2(analysis_stage1 &stage1);
 
         private:
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }
