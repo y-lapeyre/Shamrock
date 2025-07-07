@@ -92,10 +92,9 @@ namespace shammodels::sph::modules {
         };
 
         struct analysis_stage1 {
-
-            std::unique_ptr<sham::DeviceBuffer<Tscal>> tilt;
-            std::unique_ptr<sham::DeviceBuffer<Tscal>> twist;
-            std::unique_ptr<sham::DeviceBuffer<Tscal>> psi;
+            std::reference_wrapper<sham::DeviceBuffer<Tscal>> tilt;
+            std::reference_wrapper<sham::DeviceBuffer<Tscal>> twist;
+            std::reference_wrapper<sham::DeviceBuffer<Tscal>> psi;
         };
 
         struct analysis_stage2 {
