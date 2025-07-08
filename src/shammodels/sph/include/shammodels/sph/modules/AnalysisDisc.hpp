@@ -58,11 +58,18 @@ namespace shammodels::sph::modules {
         struct analysis_basis {
 
             sham::DeviceBuffer<Tscal> radius;
+            sham::DeviceBuffer<u32> counter;
+            sham::DeviceBuffer<Tscal> Jx;
+            sham::DeviceBuffer<Tscal> Jy;
+            sham::DeviceBuffer<Tscal> Jz;
+            sham::DeviceBuffer<Tscal> zmean;
+            sham::DeviceBuffer<Tscal> Sigma;
+        };
+
+        struct analysis_stage0 {
             sham::DeviceBuffer<Tscal> lx;
             sham::DeviceBuffer<Tscal> ly;
             sham::DeviceBuffer<Tscal> lz;
-            sham::DeviceBuffer<Tscal> Sigma;
-            sham::DeviceBuffer<Tscal> zmean;
         };
 
         struct analysis_stage1 {
@@ -73,12 +80,13 @@ namespace shammodels::sph::modules {
 
         struct analysis_stage2 {
 
-            sycl::buffer<Tscal> H;
-            sycl::buffer<Tscal> H_on_R;
+            sham::DeviceBuffer<Tscal> H;
+            sham::DeviceBuffer<Tscal> H_on_R;
         };
 
         analysis_val compute_analysis();
-        analysis_stage1 compute_analysis_stage1(analysis_basis &basis);
+        analysis_stage0 compute_analysis_stage0(analysis_basis &basis);
+        analysis_stage1 compute_analysis_stage1(analysis_basis &basis, analysis_stage0 &stage0);
         analysis_stage2 compute_analysis_stage2(analysis_stage1 &stage1);
 
         private:

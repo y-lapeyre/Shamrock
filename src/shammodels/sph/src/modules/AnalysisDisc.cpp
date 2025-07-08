@@ -24,8 +24,45 @@
 #include "shamsys/legacy/log.hpp"
 
 template<class Tvec, template<class> class SPHKernel>
+auto shammodels::sph::modules::AnalysisDisc<Tvec, SPHKernel>::compute_analysis_stage0(
+    analysis_basis &basis) -> analysis_stage0 {
+
+    sham::DeviceBuffer<Tscal> buff_lx(Nbin, shamsys::instance::get_compute_scheduler_ptr());
+    sham::DeviceBuffer<Tscal> buff_ly(Nbin, shamsys::instance::get_compute_scheduler_ptr());
+    sham::DeviceBuffer<Tscal> buff_lz(Nbin, shamsys::instance::get_compute_scheduler_ptr());
+
+    auto &q = shamsys::instance::get_compute_scheduler().get_queue();
+    sham::EventList depends_list;
+
+    auto acc_lx = buff_lx.get_write_access(depends_list);
+    auto acc_ly = buff_ly.get_write_access(depends_list);
+    auto acc_lz = buff_lz.get_write_access(depends_list);
+
+    auto acc_Jx = basis.Jx.copy_to_stdvec();
+    auto acc_Jy = basis.Jy.copy_to_stdvec();
+    auto acc_Jz = basis.Jz.copy_to_stdvec();
+
+    auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
+        for (u32 i = 0; i < Nbin; i++) {
+            Tscal &lx = acc_lx[i];
+            Tscal &ly = acc_ly[i];
+            Tscal &lz = acc_lz[i];
+
+            Tscal J_norm
+                = sycl::sqrt(acc_Jx[i] * acc_Jx[i] + acc_Jy[i] * acc_Jy[i] + acc_Jz[i] * acc_Jz[i]);
+
+            lx = acc_Jx[i] / J_norm;
+            ly = acc_Jy[i] / J_norm;
+            lz = acc_Jz[i] / J_norm;
+        }
+    });
+
+    return analysis_stage0{std::move(buff_lx), std::move(buff_ly), std::move(buff_lz)};
+}
+
+template<class Tvec, template<class> class SPHKernel>
 auto shammodels::sph::modules::AnalysisDisc<Tvec, SPHKernel>::compute_analysis_stage1(
-    analysis_basis &basis) -> analysis_stage1 {
+    analysis_basis &basis, analysis_stage0 &stage0) -> analysis_stage1 {
 
     sham::DeviceBuffer<Tscal> buff_tilt(Nbin, shamsys::instance::get_compute_scheduler_ptr());
     sham::DeviceBuffer<Tscal> buff_twist(Nbin, shamsys::instance::get_compute_scheduler_ptr());
@@ -39,9 +76,9 @@ auto shammodels::sph::modules::AnalysisDisc<Tvec, SPHKernel>::compute_analysis_s
     auto acc_psi   = buff_psi.get_write_access(depends_list);
 
     auto acc_radius = basis.radius.copy_to_stdvec();
-    auto acc_lx     = basis.lx.copy_to_stdvec();
-    auto acc_ly     = basis.ly.copy_to_stdvec();
-    auto acc_lz     = basis.lz.copy_to_stdvec();
+    auto acc_lx     = stage0.lx.copy_to_stdvec();
+    auto acc_ly     = stage0.ly.copy_to_stdvec();
+    auto acc_lz     = stage0.lz.copy_to_stdvec();
 
     auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
         for (u32 i = 0; i < Nbin; i++) {
@@ -78,7 +115,12 @@ auto shammodels::sph::modules::AnalysisDisc<Tvec, SPHKernel>::compute_analysis_s
 
 template<class Tvec, template<class> class SPHKernel>
 auto shammodels::sph::modules::AnalysisDisc<Tvec, SPHKernel>::compute_analysis_stage2(
-    analysis_stage1 &stage1) -> analysis_stage2 {}
+    analysis_stage1 &stage1) -> analysis_stage2 {
+    sham::DeviceBuffer<Tscal> buff_H(Nbin, shamsys::instance::get_compute_scheduler_ptr());
+    sham::DeviceBuffer<Tscal> buff_H_on_R(Nbin, shamsys::instance::get_compute_scheduler_ptr());
+
+    return analysis_stage2{std::move(buff_H), std::move(buff_H_on_R)};
+}
 
 using namespace shammath;
 template class shammodels::sph::modules::AnalysisDisc<f64_3, M4>;
