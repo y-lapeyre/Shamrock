@@ -73,7 +73,7 @@ auto shammodels::sph::modules::AnalysisDisc<Tvec, SPHKernel>::compute_analysis_s
     buff_twist.complete_event_state(e);
     buff_psi.complete_event_state(e);
 
-    return analysis_stage1{buff_tilt, buff_twist, buff_psi};
+    return analysis_stage1{std::move(buff_tilt), std::move(buff_twist), std::move(buff_psi)};
 }
 
 template<class Tvec, template<class> class SPHKernel>

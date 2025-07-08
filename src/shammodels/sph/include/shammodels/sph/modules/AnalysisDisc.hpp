@@ -66,9 +66,9 @@ namespace shammodels::sph::modules {
         };
 
         struct analysis_stage1 {
-            std::reference_wrapper<sham::DeviceBuffer<Tscal>> tilt;
-            std::reference_wrapper<sham::DeviceBuffer<Tscal>> twist;
-            std::reference_wrapper<sham::DeviceBuffer<Tscal>> psi;
+            sham::DeviceBuffer<Tscal> tilt;
+            sham::DeviceBuffer<Tscal> twist;
+            sham::DeviceBuffer<Tscal> psi;
         };
 
         struct analysis_stage2 {
