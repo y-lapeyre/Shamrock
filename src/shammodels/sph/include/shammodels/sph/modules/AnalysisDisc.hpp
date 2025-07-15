@@ -16,6 +16,7 @@
  *
  */
 
+#include "shamalgs/details/numeric/numeric.hpp"
 #include "shambackends/typeAliasVec.hpp"
 #include "shambackends/vec.hpp"
 #include "shammodels/sph/SolverConfig.hpp"
@@ -40,7 +41,9 @@ namespace shammodels::sph::modules {
         Config &solver_config;
         Storage &storage;
 
-        u32 Nbin = 300;
+        u32 Nbin   = 300;
+        Tscal Rmin = 0.1;
+        Tscal Rmax = 1.0;
 
         struct analysis_val {
             int ibin;
@@ -58,7 +61,7 @@ namespace shammodels::sph::modules {
         struct analysis_basis {
 
             sham::DeviceBuffer<Tscal> radius;
-            sham::DeviceBuffer<u32> counter;
+            sham::DeviceBuffer<u64> counter;
             sham::DeviceBuffer<Tscal> Jx;
             sham::DeviceBuffer<Tscal> Jy;
             sham::DeviceBuffer<Tscal> Jz;
@@ -81,10 +84,12 @@ namespace shammodels::sph::modules {
         struct analysis_stage2 {
 
             sham::DeviceBuffer<Tscal> H;
-            sham::DeviceBuffer<Tscal> H_on_R;
+            sham::DeviceBuffer<Tscal> H_on_R; // @@@ yes this is redundant, let's keep it for now
         };
 
         analysis_val compute_analysis();
+        analysis_basis compute_analysis_basis(
+            Tscal Rmin, Tscal Rmax, u32 Nbin, const sham::DeviceScheduler_ptr &sched);
         analysis_stage0 compute_analysis_stage0(analysis_basis &basis);
         analysis_stage1 compute_analysis_stage1(analysis_basis &basis, analysis_stage0 &stage0);
         analysis_stage2 compute_analysis_stage2(analysis_stage1 &stage1);
