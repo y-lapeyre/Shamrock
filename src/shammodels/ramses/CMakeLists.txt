@@ -39,6 +39,7 @@ set(Sources
     src/modules/InterpolateToFace.cpp
     src/modules/CGInit.cpp
     src/modules/ComputeAMRLevel.cpp
+    src/modules/ResidualDot.cpp
 )
 
 if(SHAMROCK_USE_SHARED_LIB)
