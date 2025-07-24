@@ -27,6 +27,7 @@
 #include "shamphys/eos.hpp"
 #include "shamrock/scheduler/SchedulerUtility.hpp"
 #include "shamsys/legacy/log.hpp"
+#include <shambackends/sycl.hpp>
 #include <vector>
 
 // typename shammodels::sph::modules::AnalysisDisc<Tvec, SPHKernel>::analysis_basis
@@ -34,7 +35,8 @@ template<class Tvec, template<class> class SPHKernel>
 auto shammodels::sph::modules::AnalysisDisc<Tvec, SPHKernel>::compute_analysis_basis(
     Tscal Rmin, Tscal Rmax, u32 Nbin, const ShamrockCtx &context) -> analysis_basis {
 
-    Tvec bin_edges
+    sham::DeviceBuffer<Tscal> bin_edges(Nbin, shamsys::instance::get_compute_scheduler_ptr());
+    bin_edges
         = shammodels::sph::modules::AnalysisDisc<Tvec, SPHKernel>::linspace(Rmin, Rmax, Nbin + 1);
 
     // get radius from xyz
@@ -59,7 +61,9 @@ auto shammodels::sph::modules::AnalysisDisc<Tvec, SPHKernel>::compute_analysis_b
     sham::DeviceBuffer<Tscal> buf_radius(Npart, shamsys::instance::get_compute_scheduler_ptr());
     ;
     sham::DeviceBuffer<Tvec> buf_J(Npart, shamsys::instance::get_compute_scheduler_ptr());
-    ;
+    sham::DeviceBuffer<Tscal> buf_Jx(Npart, shamsys::instance::get_compute_scheduler_ptr());
+    sham::DeviceBuffer<Tscal> buf_Jy(Npart, shamsys::instance::get_compute_scheduler_ptr());
+    sham::DeviceBuffer<Tscal> buf_Jz(Npart, shamsys::instance::get_compute_scheduler_ptr());
 
     scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
         u32 len                            = pdat.get_obj_cnt();
@@ -72,51 +76,59 @@ auto shammodels::sph::modules::AnalysisDisc<Tvec, SPHKernel>::compute_analysis_b
         sham::kernel_call(
             q,
             sham::MultiRef{buf_xyz, buf_vxyz},
-            sham::MultiRef{buf_radius, buf_J},
+            sham::MultiRef{buf_radius, buf_J, buf_Jx, buf_Jy, buf_Jz},
             len,
             [](u32 i,
                const Tvec *__restrict xyz,
                const Tvec *__restrict vxyz,
                Tscal *__restrict buf_radius,
-               Tvec *__restrict buf_J) {
+               Tvec *__restrict buf_J,
+               Tscal *__restrict buf_Jx,
+               Tscal *__restrict buf_Jy,
+               Tscal *__restrict buf_Jz) {
                 using namespace shamrock::sph;
                 Tvec pos = xyz[i];
                 Tvec vel = vxyz[i];
 
                 Tscal radius = sycl::sqrt(sycl::dot(pos, pos));
-                Tvec J       = sycl::sqrt(sycl::cross(pos, vel));
+                Tvec J       = sycl::cross(pos, vel); // @@@ pmass *
+                Tscal Jx     = sycl::cross(pos, vel)[0];
+                Tscal Jy     = sycl::cross(pos, vel)[1];
+                Tscal Jz     = sycl::cross(pos, vel)[2];
 
                 buf_radius[i] = radius;
                 buf_J[i]      = J;
+                buf_Jx[i]     = Jx;
+                buf_Jy[i]     = Jy;
+                buf_Jz[i]     = Jz;
             });
     });
     // end get radius from xyz
+    // sham::DeviceBuffer<Tscal> buf_Jx = buf_J.template get_field_ref<Tscal>(0);
+    u32 len                                          = buf_radius.get_size();
+    shamalgs::numeric::histogram_result<Tscal> histo = shamalgs::numeric::device_histogram_full(
+        shamsys::instance::get_compute_scheduler_ptr(), bin_edges, Nbin, buf_radius, len);
 
-    u64 len = buf_radius.get_size();
-    shamalgs::numeric::histogram_result<Tscal> histo
-        = shamalgs::numeric::device_histogram_full(sched, bin_edges, Nbin, buf_radius, len);
+    auto binned_Jx = shamalgs::numeric::binned_sum(
+        shamsys::instance::get_compute_scheduler_ptr(), bin_edges, Nbin, buf_Jx, buf_radius, Npart);
 
-    auto position = merged_xyzh.get().field_pos.get_buf();
+    auto binned_Jy = shamalgs::numeric::binned_sum(
+        shamsys::instance::get_compute_scheduler_ptr(), bin_edges, Nbin, buf_Jy, buf_radius, Npart);
 
-    auto binned_J = shamalgs::numeric::binned_compute(
-        sched,
-        bin_edges,
-        Nbin,
-        buf_J,
-        position,
-        position.get_size(),
-        [](auto for_each_values, u32 bin_count) {
-            Tvec sum = Tvec::Zero();
-            for_each_values([&](Tvec v) {
-                sum += v;
-            });
-            return sum;
-        });
+    auto binned_Jz = shamalgs::numeric::binned_sum(
+        shamsys::instance::get_compute_scheduler_ptr(), bin_edges, Nbin, buf_Jz, buf_radius, Npart);
 
     sham::DeviceBuffer<Tscal> zmean(Nbin, shamsys::instance::get_compute_scheduler_ptr());
     sham::DeviceBuffer<Tscal> Sigma(Nbin, shamsys::instance::get_compute_scheduler_ptr());
 
-    return analysis_basis{histo.bins_center, histo.counts, binned_J, zmean, Sigma};
+    return analysis_basis{
+        std::move(histo.bins_center),
+        std::move(histo.counts),
+        std::move(binned_Jx),
+        std::move(binned_Jy),
+        std::move(binned_Jz),
+        std::move(zmean),
+        std::move(Sigma)};
 }
 
 // only 300 to 500 bins, we do that on the host !
@@ -140,7 +152,9 @@ auto shammodels::sph::modules::AnalysisDisc<Tvec, SPHKernel>::compute_analysis_s
     analysis_basis &basis, u32 Nbin) -> analysis_stage0 {
     // still do it on device because data is there still
 
-    sham::DeviceBuffer<Tvec> &buf_binned_J = basis.binned_J;
+    sham::DeviceBuffer<Tscal> &buf_binned_Jx = basis.binned_Jx;
+    sham::DeviceBuffer<Tscal> &buf_binned_Jy = basis.binned_Jy;
+    sham::DeviceBuffer<Tscal> &buf_binned_Jz = basis.binned_Jz;
     sham::DeviceBuffer<Tvec> buf_binned_unit_J(
         Nbin, shamsys::instance::get_compute_scheduler_ptr());
 
@@ -148,12 +162,16 @@ auto shammodels::sph::modules::AnalysisDisc<Tvec, SPHKernel>::compute_analysis_s
 
     sham::kernel_call(
         q,
-        sham::MultiRef{buf_binned_J},
+        sham::MultiRef{buf_binned_Jx, buf_binned_Jy, buf_binned_Jz},
         sham::MultiRef{buf_binned_unit_J},
         Nbin,
-        [](u32 i, const Tvec *__restrict J, Tvec *__restrict unit_J) {
-            Tscal J_norm = sycl::sqrt(sycl::dot(J[i], J[i]));
-            unit_J[i]    = J[i] / J_norm;
+        [](u32 i,
+           const Tscal *__restrict Jx,
+           const Tscal *__restrict Jy,
+           const Tscal *__restrict Jz,
+           Tvec *__restrict unit_J) {
+            Tscal J_norm = sycl::sqrt(Jx[i] * Jx[i] + Jy[i] * Jy[i] + Jz[i] * Jz[i]);
+            unit_J[i]    = Tvec((Jx[i] / J_norm, Jy[i] / J_norm, Jz[i] / J_norm));
         });
 
     return analysis_stage0{std::move(buf_binned_unit_J)};

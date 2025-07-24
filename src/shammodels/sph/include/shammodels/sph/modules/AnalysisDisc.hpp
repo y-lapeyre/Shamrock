@@ -48,9 +48,9 @@ namespace shammodels::sph::modules {
         Tscal Rmin = 0.1;
         Tscal Rmax = 1.0;
 
-        Tvec linspace(Tscal Rmin, Tscal Rmax, int N) {
-            Tvec bins(N);
-            double step = (Rmax - Rmin) / (N - 1);
+        sham::DeviceBuffer<Tscal> linspace(Tscal Rmin, Tscal Rmax, int N) {
+            sham::DeviceBuffer<Tscal> bins(N);
+            Tscal step = (Rmax - Rmin) / (N - 1);
             for (int i = 0; i < N; ++i) {
                 bins[i] = Rmin + i * step;
             }
@@ -73,7 +73,9 @@ namespace shammodels::sph::modules {
         struct analysis_basis {
             sham::DeviceBuffer<Tscal> radius;
             sham::DeviceBuffer<u64> counter;
-            sham::DeviceBuffer<Tvec> binned_J;
+            sham::DeviceBuffer<Tscal> binned_Jx;
+            sham::DeviceBuffer<Tscal> binned_Jy;
+            sham::DeviceBuffer<Tscal> binned_Jz;
             sham::DeviceBuffer<Tscal> zmean;
             sham::DeviceBuffer<Tscal> Sigma;
         };
