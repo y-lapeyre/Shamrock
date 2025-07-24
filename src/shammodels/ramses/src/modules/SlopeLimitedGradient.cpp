@@ -9,7 +9,7 @@
 
 /**
  * @file SlopeLimitedGradient.cpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
@@ -223,7 +223,7 @@ namespace {
                     auto e               = q.submit(depends_list, [&](sycl::handler &cgh) {
                         u32 cell_count = (edges.sizes.indexes.get(id)) * block_size;
 
-                        shambase::parralel_for(
+                        shambase::parallel_for(
                             cgh, cell_count * var_per_cell, "compute_grad_rho", [=](u64 gid) {
                                 const u32 tmp_gid = (u32) gid;
 
@@ -319,7 +319,7 @@ namespace {
                     auto e               = q.submit(depends_list, [&](sycl::handler &cgh) {
                         u32 cell_count = (edges.sizes.indexes.get(id)) * block_size;
 
-                        shambase::parralel_for(
+                        shambase::parallel_for(
                             cgh, cell_count * var_per_cell, "compute_grad_rho", [=](u64 gid) {
                                 const u32 tmp_gid = (u32) gid;
 

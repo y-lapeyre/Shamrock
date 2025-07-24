@@ -9,7 +9,9 @@
 
 /**
  * @file GhostZones.cpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Benoit Commercon (benoit.commercon@ens-lyon.fr)
+ * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
@@ -168,7 +170,7 @@ void shammodels::basegodunov::modules::GhostZones<Tvec, TgridVec>::build_ghost_c
 
             shammath::AABB<TgridVec> check_volume = build.volume_target;
 
-            shambase::parralel_for(cgh, src.get_obj_cnt(), "check if in interf", [=](u32 id_a) {
+            shambase::parallel_for(cgh, src.get_obj_cnt(), "check if in interf", [=](u32 id_a) {
                 flag[id_a] = shammath::AABB<TgridVec>(cell_min[id_a], cell_max[id_a])
                                  .get_intersect(check_volume)
                                  .is_not_empty();

@@ -9,7 +9,7 @@
 
 /**
  * @file PatchDataField.cpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  */
 
@@ -360,7 +360,7 @@ void PatchDataField<T>::index_remap(sham::DeviceBuffer<u32> &index_map, u32 len)
 }
 
 template<class T>
-void PatchDataField<T>::remove_ids(sham::DeviceBuffer<u32> &ids_to_rem, u32 len) {
+void PatchDataField<T>::remove_ids(const sham::DeviceBuffer<u32> &ids_to_rem, u32 len) {
 
     auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
     auto &q        = dev_sched->get_queue();

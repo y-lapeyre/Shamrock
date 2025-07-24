@@ -9,9 +9,9 @@
 
 /**
  * @file pySPHModel.cpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @author David Fang (fang.david03@gmail.com)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
+ * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief
  */
 
@@ -768,7 +768,11 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             })
         .def("load_from_dump", &T::load_from_dump)
         .def("dump", &T::dump)
-        .def("get_setup", &T::get_setup);
+        .def("get_setup", &T::get_setup)
+        .def("get_patch_transform", [](T &self) {
+            PatchScheduler &sched = shambase::get_check_ref(self.ctx.sched);
+            return sched.get_patch_transform<Tvec>();
+        });
 }
 
 template<class Tvec, template<class> class SPHKernel>

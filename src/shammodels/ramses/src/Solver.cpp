@@ -9,7 +9,8 @@
 
 /**
  * @file Solver.cpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
@@ -1069,7 +1070,7 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::do_debug_vtk_dump(std::str
 
         using Block = typename Solver::AMRBlock;
 
-        shambase::parralel_for(cgh, num_obj, "rescale cells", [=](u64 id_a) {
+        shambase::parallel_for(cgh, num_obj, "rescale cells", [=](u64 id_a) {
             Tvec block_min = acc_p1[id_a].template convert<Tscal>();
             Tvec block_max = acc_p2[id_a].template convert<Tscal>();
 

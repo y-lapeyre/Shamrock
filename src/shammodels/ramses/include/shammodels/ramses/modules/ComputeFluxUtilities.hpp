@@ -11,7 +11,8 @@
 
 /**
  * @file ComputeFluxUtilities.hpp
- * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
+ * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr) --no git blame--
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
@@ -213,7 +214,7 @@ namespace shammodels::basegodunov::modules {
         auto flux_rhoe = flux_rhoe_face_dir.get_write_access(depends_list);
 
         auto e = q.submit(depends_list, [&, gamma](sycl::handler &cgh) {
-            shambase::parralel_for(cgh, link_count, _kernel_name, [=](u32 id_a) {
+            shambase::parallel_for(cgh, link_count, _kernel_name, [=](u32 id_a) {
                 auto rho_ij   = rho[id_a];
                 auto vel_ij   = vel[id_a];
                 auto press_ij = press[id_a];
@@ -284,7 +285,7 @@ namespace shammodels::basegodunov::modules {
 
         auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
             u32 ndust = nvar;
-            shambase::parralel_for(cgh, link_count * nvar, _kernel_name, [=](u32 id_var_a) {
+            shambase::parallel_for(cgh, link_count * nvar, _kernel_name, [=](u32 id_var_a) {
                 auto rho_ij = rho_dust[id_var_a];
                 auto vel_ij = vel_dust[id_var_a];
 
