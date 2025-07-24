@@ -37,16 +37,25 @@ namespace shammodels::sph::modules {
         using Config  = SolverConfig<Tvec, SPHKernel>;
         using Storage = SolverStorage<Tvec, u32>;
 
-        AnalysisDisc(ShamrockCtx &context, Config &solver_config, Storage &storage)
-            : context(context), solver_config(solver_config), storage(storage) {}
-
         ShamrockCtx &context;
         Config &solver_config;
         Storage &storage;
 
+        AnalysisDisc(ShamrockCtx &context, Config &solver_config, Storage &storage)
+            : context(context), solver_config(solver_config), storage(storage) {}
+
         u32 Nbin   = 300;
         Tscal Rmin = 0.1;
         Tscal Rmax = 1.0;
+
+        Tvec linspace(Tscal Rmin, Tscal Rmax, int N) {
+            Tvec bins(N);
+            double step = (Rmax - Rmin) / (N - 1);
+            for (int i = 0; i < N; ++i) {
+                bins[i] = Rmin + i * step;
+            }
+            return bins;
+        }
 
         struct analysis_val {
             int ibin;
@@ -70,9 +79,7 @@ namespace shammodels::sph::modules {
         };
 
         struct analysis_stage0 {
-            sham::DeviceBuffer<Tscal> lx;
-            sham::DeviceBuffer<Tscal> ly;
-            sham::DeviceBuffer<Tscal> lz;
+            std::vector<Tvec> unit_J;
         };
 
         struct analysis_stage1 {
@@ -88,9 +95,9 @@ namespace shammodels::sph::modules {
         };
 
         analysis_val compute_analysis();
-        analysis_basis compute_analysis_basis(
-            Tscal Rmin, Tscal Rmax, u32 Nbin, const sham::DeviceScheduler_ptr &sched);
-        analysis_stage0 compute_analysis_stage0(analysis_basis &basis);
+        analysis_basis
+        compute_analysis_basis(Tscal Rmin, Tscal Rmax, u32 Nbin, const ShamrockCtx &ctx);
+        analysis_stage0 compute_analysis_stage0(analysis_basis &basis, u32 Nbin);
         analysis_stage1 compute_analysis_stage1(analysis_basis &basis, analysis_stage0 &stage0);
         analysis_stage2 compute_analysis_stage2(analysis_stage1 &stage1);
 
