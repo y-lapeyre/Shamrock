@@ -59,12 +59,9 @@ namespace shammodels::sph::modules {
         };
 
         struct analysis_basis {
-
             sham::DeviceBuffer<Tscal> radius;
             sham::DeviceBuffer<u64> counter;
-            sham::DeviceBuffer<Tscal> Jx;
-            sham::DeviceBuffer<Tscal> Jy;
-            sham::DeviceBuffer<Tscal> Jz;
+            sham::DeviceBuffer<Tvec> binned_J;
             sham::DeviceBuffer<Tscal> zmean;
             sham::DeviceBuffer<Tscal> Sigma;
         };
