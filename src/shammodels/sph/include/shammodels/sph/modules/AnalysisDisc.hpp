@@ -79,7 +79,7 @@ namespace shammodels::sph::modules {
         };
 
         struct analysis_stage0 {
-            std::vector<Tvec> unit_J;
+            sham::DeviceBuffer<Tvec> unit_J;
         };
 
         struct analysis_stage1 {
