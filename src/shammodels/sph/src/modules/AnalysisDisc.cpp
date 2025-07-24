@@ -17,6 +17,8 @@
 #include "shambase/exception.hpp"
 #include "shamalgs/details/numeric/numeric.hpp"
 #include "shambackends/DeviceBuffer.hpp"
+#include "shambackends/EventList.hpp"
+#include "shambackends/kernel_call.hpp"
 #include "shammath/sphkernels.hpp"
 #include "shammodels/sph/math/density.hpp"
 #include "shammodels/sph/modules/AnalysisDisc.hpp"
@@ -33,7 +35,7 @@ Tvec linspace(double Rmin, double Rmax, int N) {
     }
     return bins;
 }
-
+// typename shammodels::sph::modules::AnalysisDisc<Tvec, SPHKernel>::analysis_basis
 template<class Tvec, template<class> class SPHKernel>
 auto shammodels::sph::modules::AnalysisDisc<Tvec, SPHKernel>::compute_analysis_basis(
     Tscal Rmin, Tscal Rmax, u32 Nbin, const sham::DeviceScheduler_ptr &sched) {
@@ -41,47 +43,67 @@ auto shammodels::sph::modules::AnalysisDisc<Tvec, SPHKernel>::compute_analysis_b
     Tvec bin_edges = linspace(Rmin, Rmax, Nbin + 1);
 
     // get radius from xyz
-    Tvec radius;
-    Tvec J;
+    sham::DeviceBuffer<Tscal> buf_radius;
+    sham::DeviceBuffer<Tvec> buf_J;
     using namespace shamrock;
     using namespace shamrock::patch;
 
-    PatchDataLayout &pdl                              = scheduler().pdl;
-    const u32 ixyz                                    = pdl.get_field_idx<Tvec>("xyz");
-    const u32 ivxyz                                   = pdl.get_field_idx<Tvec>("vxyz");
-    auto &merged_xyzh                                 = storage.merged_xyzh.get();
+    // sham::EventList depends_list;
+    // sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
+    // auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
+    // });
+
+    PatchDataLayout &pdl = scheduler().pdl;
+    const u32 ixyz       = pdl.get_field_idx<Tvec>("xyz");
+    const u32 ivxyz      = pdl.get_field_idx<Tvec>("vxyz");
+    auto &merged_xyzh    = storage.merged_xyzh.get();
+
     shambase::DistributedData<MergedPatchData> &mpdat = storage.merged_patchdata_ghost.get();
+
     scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+        u32 len                            = pdat.get_obj_cnt();
         MergedPatchData &merged_patch      = mpdat.get(cur_p.id_patch);
         PatchData &mpdat                   = merged_patch.pdat;
         sham::DeviceBuffer<Tvec> &buf_xyz  = merged_xyzh.get(cur_p.id_patch).field_pos.get_buf();
         sham::DeviceBuffer<Tvec> &buf_vxyz = mpdat.get_field_buf_ref<Tvec>(ivxyz);
-        sycl::range range_npart{pdat.get_obj_cnt()};
         tree::ObjectCache &pcache
             = shambase::get_check_ref(storage.neigh_cache).get_cache(cur_p.id_patch);
         sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
-        sham::EventList depends_list;
-        auto xyz        = buf_xyz.get_read_access(depends_list);
-        auto vxyz       = buf_vxyz.get_read_access(depends_list);
-        auto ploop_ptrs = pcache.get_read_access(depends_list);
 
-        radius = sycl::sqrt(sycl::dot(xyz, xyz));
-        J      = sycl::sqrt(sycl::cross(xyz, vxyz));
+        sham::kernel_call(
+            q,
+            sham::MultiRef{buf_xyz, buf_vxyz},
+            sham::MultiRef{buf_radius, buf_J},
+            len,
+            [](u32 i,
+               const Tvec *__restrict xyz,
+               const Tvec *__restrict vxyz,
+               Tscal *__restrict buf_radius,
+               Tvec *__restrict buf_J) {
+                using namespace shamrock::sph;
+                Tvec pos = xyz[i];
+                Tvec vel = vxyz[i];
 
-        sham::EventList resulting_events;
-        pcache.complete_event_state(resulting_events);
+                Tscal radius = sycl::sqrt(sycl::dot(pos, pos));
+                Tvec J       = sycl::sqrt(sycl::cross(pos, vel));
+
+                buf_radius[i] = radius;
+                buf_J[i]      = J;
+            });
     });
     // end get radius from xyz
 
-    u64 len = radius.size();
+    u64 len = buf_radius.size();
     shamalgs::numeric::histogram_result<Tvec> histo
-        = device_histogram_full(sched, bin_edges, Nbin, radius, len);
+        = device_histogram_full(sched, bin_edges, Nbin, buf_radius, len);
 
-    auto bJ = shamalgs::numeric::binned_compute(
+    auto position = merged_xyzh.get().field_pos.get_buf();
+
+    auto binned_J = shamalgs::numeric::binned_compute(
         sched,
         bin_edges,
         Nbin,
-        J,
+        buf_J,
         position,
         position.get_size(),
         [](auto for_each_values, u32 bin_count) {
@@ -173,9 +195,9 @@ auto shammodels::sph::modules::AnalysisDisc<Tvec, SPHKernel>::compute_analysis_s
 
             if (i > 0 && i < Nbin - 1) {
                 Tscal radius_diff = acc_radius[i + 1] - acc_radius[i - 1];
-                Tscal psi_x       = acc_lx[i + 1] - acc_lx[i - 1] / radius_diff;
-                Tscal psi_y       = acc_ly[i + 1] - acc_ly[i - 1] / radius_diff;
-                Tscal psi_z       = acc_lz[i + 1] - acc_lz[i - 1] / radius_diff;
+                Tscal psi_x       = (acc_lx[i + 1] - acc_lx[i - 1]) / radius_diff;
+                Tscal psi_y       = (acc_ly[i + 1] - acc_ly[i - 1]) / radius_diff;
+                Tscal psi_z       = (acc_lz[i + 1] - acc_lz[i - 1]) / radius_diff;
                 psi               = sycl::sqrt(psi_x * psi_x + psi_y * psi_y + psi_z * psi_z);
             }
         }

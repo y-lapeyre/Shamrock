@@ -37,6 +37,9 @@ namespace shammodels::sph::modules {
         using Config  = SolverConfig<Tvec, SPHKernel>;
         using Storage = SolverStorage<Tvec, u32>;
 
+        AnalysisDisc(ShamrockCtx &context, Config &solver_config, Storage &storage)
+            : context(context), solver_config(solver_config), storage(storage) {}
+
         ShamrockCtx &context;
         Config &solver_config;
         Storage &storage;
