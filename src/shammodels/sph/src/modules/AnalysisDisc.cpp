@@ -112,8 +112,6 @@ auto shammodels::sph::modules::AnalysisDisc<Tvec, SPHKernel>::compute_analysis_b
     auto binned_Jz = shamalgs::numeric::binned_average(
         shamsys::instance::get_compute_scheduler_ptr(), bin_edges, Nbin, buf_Jz, buf_radius, Npart);
 
-    sham::DeviceBuffer<Tscal> zmean(Nbin, shamsys::instance::get_compute_scheduler_ptr());
-
     auto Sigma = shamalgs::numeric::binned_computation<Tscal>(
         shamsys::instance::get_compute_scheduler_ptr(),
         bin_edges,
@@ -134,12 +132,13 @@ auto shammodels::sph::modules::AnalysisDisc<Tvec, SPHKernel>::compute_analysis_b
         });
 
     return analysis_basis{
+        std::move(buf_radius),
+        std::move(bin_edges),
         std::move(histo.bins_center),
         std::move(histo.counts),
         std::move(binned_Jx),
         std::move(binned_Jy),
         std::move(binned_Jz),
-        std::move(zmean),
         std::move(Sigma)};
 }
 
@@ -162,8 +161,8 @@ auto shammodels::sph::modules::AnalysisDisc<Tvec, SPHKernel>::compute_analysis_b
 template<class Tvec, template<class> class SPHKernel>
 auto shammodels::sph::modules::AnalysisDisc<Tvec, SPHKernel>::compute_analysis_stage0(
     analysis_basis &basis, u32 Nbin) -> analysis_stage0 {
+    // compute unit l
     // still do it on device because data is there still
-
     sham::DeviceBuffer<Tscal> &buf_binned_Jx = basis.binned_Jx;
     sham::DeviceBuffer<Tscal> &buf_binned_Jy = basis.binned_Jy;
     sham::DeviceBuffer<Tscal> &buf_binned_Jz = basis.binned_Jz;
@@ -186,7 +185,105 @@ auto shammodels::sph::modules::AnalysisDisc<Tvec, SPHKernel>::compute_analysis_s
             unit_J[i]    = Tvec((Jx[i] / J_norm, Jy[i] / J_norm, Jz[i] / J_norm));
         });
 
-    return analysis_stage0{std::move(buf_binned_unit_J)};
+    // compute zmean
+    using namespace shamrock;
+    using namespace shamrock::patch;
+    PatchScheduler &sched = shambase::get_check_ref(context.sched);
+    PatchDataLayout &pdl  = scheduler().pdl;
+    const u32 ixyz        = pdl.get_field_idx<Tvec>("xyz");
+    const u32 ivxyz       = pdl.get_field_idx<Tvec>("vxyz");
+    auto &merged_xyzh     = storage.merged_xyzh.get();
+
+    shambase::DistributedData<MergedPatchData> &mpdat = storage.merged_patchdata_ghost.get();
+    // dirty way to get Npart
+    u64 Npart = 0;
+    scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+        Npart += pdat.get_obj_cnt();
+    });
+
+    sham::DeviceBuffer<Tscal> buf_zmean(Npart, shamsys::instance::get_compute_scheduler_ptr());
+    scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+        u32 len                            = pdat.get_obj_cnt();
+        MergedPatchData &merged_patch      = mpdat.get(cur_p.id_patch);
+        PatchData &mpdat                   = merged_patch.pdat;
+        sham::DeviceBuffer<Tvec> &buf_xyz  = merged_xyzh.get(cur_p.id_patch).field_pos.get_buf();
+        sham::DeviceBuffer<Tvec> &buf_vxyz = mpdat.get_field_buf_ref<Tvec>(ivxyz);
+        sham::DeviceQueue &q               = shamsys::instance::get_compute_scheduler().get_queue();
+
+        sham::kernel_call(
+            q,
+            sham::MultiRef{buf_xyz, basis.bin_edges, buf_binned_unit_J},
+            sham::MultiRef{buf_zmean},
+            len,
+            [this, Nbin](
+                u32 i,
+                const Tvec *__restrict xyz,
+                const Tscal *__restrict bin_edges,
+                const Tvec *__restrict unit_J,
+                Tscal *__restrict buf_zmean) {
+                using namespace shamrock::sph;
+                Tvec pos     = xyz[i];
+                Tscal radius = sycl::sqrt(pos[0] * pos[0] + pos[1] * pos[1] + pos[2] * pos[2]);
+
+                u32 bini = mybin(radius, bin_edges);
+
+                // zdash
+                buf_zmean[i] = unit_J[bini][0] * pos[0] + unit_J[bini][1] * pos[1]
+                               + unit_J[bini][2] * pos[2];
+            });
+    });
+
+    // now that we have zmean, bin it
+    auto binned_zmean = shamalgs::numeric::binned_average(
+        shamsys::instance::get_compute_scheduler_ptr(),
+        basis.bin_edges,
+        Nbin,
+        buf_zmean,
+        basis.buf_radius,
+        Npart);
+
+    // now compute H
+    sham::DeviceBuffer<Tscal> buf_H(Npart, shamsys::instance::get_compute_scheduler_ptr());
+    scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+        u32 len                           = pdat.get_obj_cnt();
+        MergedPatchData &merged_patch     = mpdat.get(cur_p.id_patch);
+        PatchData &mpdat                  = merged_patch.pdat;
+        sham::DeviceBuffer<Tvec> &buf_xyz = merged_xyzh.get(cur_p.id_patch).field_pos.get_buf();
+        sham::DeviceQueue &q              = shamsys::instance::get_compute_scheduler().get_queue();
+
+        sham::kernel_call(
+            q,
+            sham::MultiRef{buf_xyz, basis.bin_edges, binned_zmean, buf_zmean},
+            sham::MultiRef{buf_H},
+            len,
+            [this, Nbin](
+                u32 i,
+                const Tvec *__restrict xyz,
+                const Tscal *__restrict bin_edges,
+                const Tscal *__restrict binned_zmean,
+                const Tscal *__restrict buf_zmean,
+                Tscal *__restrict buf_H) {
+                using namespace shamrock::sph;
+
+                Tvec pos     = xyz[i];
+                Tscal radius = sycl::sqrt(pos[0] * pos[0] + pos[1] * pos[1] + pos[2] * pos[2]);
+                u32 bini     = mybin(radius, bin_edges);
+
+                buf_H[i]
+                    = (buf_zmean[i] - binned_zmean[bini]) * (buf_zmean[i] - binned_zmean[bini]);
+            });
+    });
+
+    auto binned_Hsq = shamalgs::numeric::binned_average(
+        shamsys::instance::get_compute_scheduler_ptr(),
+        basis.bin_edges,
+        Nbin,
+        buf_H,
+        basis.buf_radius,
+        Npart);
+
+    return analysis_stage0{
+        std::move(buf_binned_unit_J), std::move(buf_zmean), std::move(binned_Hsq)};
 }
 
 template<class Tvec, template<class> class SPHKernel>

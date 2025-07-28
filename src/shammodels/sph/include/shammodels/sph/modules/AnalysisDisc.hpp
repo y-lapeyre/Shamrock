@@ -17,6 +17,7 @@
  */
 
 #include "shamalgs/details/numeric/numeric.hpp"
+#include "shambackends/Device.hpp"
 #include "shambackends/typeAliasVec.hpp"
 #include "shambackends/vec.hpp"
 #include "shammodels/sph/SolverConfig.hpp"
@@ -58,6 +59,16 @@ namespace shammodels::sph::modules {
             return bins;
         }
 
+        u32 mybin(Tscal radius, const Tscal *__restrict &bin_edges) {
+            u32 bini = 0;
+            for (u32 bini = 0; bini < Nbin; bini++) {
+                if (radius >= bin_edges[bini] && radius < bin_edges[bini + 1]) {
+                    break;
+                }
+            }
+            return bini;
+        }
+
         struct analysis_val {
             int ibin;
             Tscal radius;
@@ -72,17 +83,20 @@ namespace shammodels::sph::modules {
         };
 
         struct analysis_basis {
-            sham::DeviceBuffer<Tscal> radius;
+            sham::DeviceBuffer<Tscal> buf_radius; // all radius for all particles
+            sham::DeviceBuffer<Tscal> bin_edges;
+            sham::DeviceBuffer<Tscal> radius; // binned radius
             sham::DeviceBuffer<u64> counter;
             sham::DeviceBuffer<Tscal> binned_Jx;
             sham::DeviceBuffer<Tscal> binned_Jy;
             sham::DeviceBuffer<Tscal> binned_Jz;
-            sham::DeviceBuffer<Tscal> zmean;
             sham::DeviceBuffer<Tscal> Sigma;
         };
 
         struct analysis_stage0 {
             sham::DeviceBuffer<Tvec> unit_J;
+            sham::DeviceBuffer<Tscal> zmean;
+            sham::DeviceBuffer<Tscal> Hsq;
         };
 
         struct analysis_stage1 {
