@@ -379,4 +379,40 @@ namespace shamalgs::numeric {
             });
     }
 
+    template<class T>
+    sham::DeviceBuffer<T> binned_average(
+        const sham::DeviceScheduler_ptr &sched,
+        const sham::DeviceBuffer<T> &bin_edges, // r bins
+        u64 nbins,
+        const sham::DeviceBuffer<T> &values, // ie f(r)
+        const sham::DeviceBuffer<T> &keys,   // ie r
+        u32 len) {
+
+        return binned_compute<T, T>(
+            sched, bin_edges, nbins, values, keys, len, [](auto for_each_values, u32 bin_count) {
+                T sum = 0;
+                for_each_values([&](T val) {
+                    sum += val;
+                });
+                if (bin_count == 0) {
+                    return 0;
+                } else {
+                    return sum / bin_count;
+                }
+            });
+    }
+
+    template<class T, class F>
+    sham::DeviceBuffer<T> binned_computation(
+        const sham::DeviceScheduler_ptr &sched,
+        const sham::DeviceBuffer<T> &bin_edges, // r bins
+        u64 nbins,
+        const sham::DeviceBuffer<T> &values, // ie f(r)
+        const sham::DeviceBuffer<T> &keys,   // ie r
+        u32 len,
+        F computation_func) {
+
+        return binned_compute<T, T>(sched, bin_edges, nbins, values, keys, len, computation_func);
+    }
+
 } // namespace shamalgs::numeric
