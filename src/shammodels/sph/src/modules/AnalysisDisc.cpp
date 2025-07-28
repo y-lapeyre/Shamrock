@@ -123,9 +123,10 @@ auto shammodels::sph::modules::AnalysisDisc<Tvec, SPHKernel>::compute_analysis_b
         Npart,
         [this](auto for_each_values, u32 bin_count) {
             Tscal sigma_bin    = 0;
+            Tscal pmass        = 1.; //@@@ pmass
             Tscal delta_halfed = this->delta / 2;
             for_each_values([&](Tscal val) {
-                sigma_bin += shambase::constants::pi<Tscal>
+                sigma_bin += pmass / shambase::constants::pi<Tscal>
                              * ((val + delta_halfed) * (val + delta_halfed)
                                 - (val - delta_halfed) * (val - delta_halfed));
             });
