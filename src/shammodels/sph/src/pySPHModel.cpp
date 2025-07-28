@@ -223,44 +223,18 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
         });
 
     std::string disc_analysis_name = name_model + "_AnalysisDisc";
-    py::class_<TAnalysisDisc>(m, disc_analysis_name.c_str())
-        .def(
-            "compute_analysis",
-            [](TAnalysisDisc &self, Tscal Rmin, Tscal Rmax, u32 Nbin, const ShamrockCtx &ctx)
-                -> std::tuple<
-                    sham::DeviceBuffer<Tscal>,
-                    sham::DeviceBuffer<u64>,
-                    sham::DeviceBuffer<Tscal>,
-                    sham::DeviceBuffer<Tscal>,
-                    sham::DeviceBuffer<Tscal>,
-                    sham::DeviceBuffer<Tscal>,
-                    sham::DeviceBuffer<Tscal>,
-                    sham::DeviceBuffer<Tscal>,
-                    sham::DeviceBuffer<Tscal>,
-                    sham::DeviceBuffer<Tscal>> {
-                auto ret = self.compute_analysis(Rmin, Rmax, Nbin, ctx);
-                return std::tuple<
-                    sham::DeviceBuffer<Tscal>,
-                    sham::DeviceBuffer<u64>,
-                    sham::DeviceBuffer<Tscal>,
-                    sham::DeviceBuffer<Tscal>,
-                    sham::DeviceBuffer<Tscal>,
-                    sham::DeviceBuffer<Tscal>,
-                    sham::DeviceBuffer<Tscal>,
-                    sham::DeviceBuffer<Tscal>,
-                    sham::DeviceBuffer<Tscal>,
-                    sham::DeviceBuffer<Tscal>>{
-                    ret.radius,
-                    ret.counter,
-                    ret.Sigma,
-                    ret.lx,
-                    ret.ly,
-                    ret.lz,
-                    ret.tilt,
-                    ret.twist,
-                    ret.psi,
-                    ret.Hsq};
-            });
+    py::class_<TAnalysisDisc>(m, "AnalysisResult")
+        .def(py::init<ShamrockCtx &, TConfig &, Storage &>())
+        .def_readwrite("radius", &TAnalysisDisc::analysis::radius)
+        .def_readwrite("counter", &TAnalysisDisc::analysis::counter)
+        .def_readwrite("Sigma", &TAnalysisDisc::analysis::Sigma)
+        .def_readwrite("lx", &TAnalysisDisc::analysis::lx)
+        .def_readwrite("ly", &TAnalysisDisc::analysis::ly)
+        .def_readwrite("lz", &TAnalysisDisc::analysis::lz)
+        .def_readwrite("tilt", &TAnalysisDisc::analysis::tilt)
+        .def_readwrite("twist", &TAnalysisDisc::analysis::twist)
+        .def_readwrite("psi", &TAnalysisDisc::analysis::psi)
+        .def_readwrite("Hsq", &TAnalysisDisc::analysis::Hsq);
 
     std::string setup_name = name_model + "_SPHSetup";
     py::class_<TSPHSetup>(m, setup_name.c_str())

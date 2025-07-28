@@ -45,10 +45,10 @@ namespace shammodels::sph::modules {
         AnalysisDisc(ShamrockCtx &context, Config &solver_config, Storage &storage)
             : context(context), solver_config(solver_config), storage(storage) {}
 
-        u32 Nbin    = 300;
-        Tscal Rmin  = 0.1;
-        Tscal Rmax  = 1.0;
-        Tscal delta = (Rmax - Rmin) / Nbin;
+        // u32 Nbin    = 300;
+        // Tscal Rmin  = 0.1;
+        // Tscal Rmax  = 1.0;
+        // Tscal delta = (Rmax - Rmin) / Nbin;
 
         sham::DeviceBuffer<Tscal> linspace(Tscal Rmin, Tscal Rmax, u32 N) {
             sham::DeviceBuffer<Tscal> bins(N, shamsys::instance::get_compute_scheduler_ptr());
@@ -59,7 +59,7 @@ namespace shammodels::sph::modules {
             return bins;
         }
 
-        u32 mybin(Tscal radius, const Tscal *__restrict &bin_edges) {
+        u32 mybin(Tscal radius, const Tscal *__restrict bin_edges, u32 Nbin) {
             u32 bini = 0;
             for (u32 bini = 0; bini < Nbin; bini++) {
                 if (radius >= bin_edges[bini] && radius < bin_edges[bini + 1]) {
@@ -116,8 +116,9 @@ namespace shammodels::sph::modules {
         analysis_basis
         compute_analysis_basis(Tscal Rmin, Tscal Rmax, u32 Nbin, const ShamrockCtx &ctx);
         analysis_stage0 compute_analysis_stage0(analysis_basis &basis, u32 Nbin);
-        analysis_stage1 compute_analysis_stage1(analysis_basis &basis, analysis_stage0 &stage0);
-        analysis_stage2 compute_analysis_stage2(analysis_stage1 &stage1);
+        analysis_stage1
+        compute_analysis_stage1(analysis_basis &basis, analysis_stage0 &stage0, u32 Nbin);
+        analysis_stage2 compute_analysis_stage2(analysis_stage1 &stage1, u32 Nbin);
 
         analysis compute_analysis(Tscal Rmin, Tscal Rmax, u32 Nbin, const ShamrockCtx &ctx);
 
