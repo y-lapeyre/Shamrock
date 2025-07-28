@@ -69,17 +69,15 @@ namespace shammodels::sph::modules {
             return bini;
         }
 
-        struct analysis_val {
-            int ibin;
-            Tscal radius;
-            int counter;
-            Tvec J;
-            Tscal Sigma;
-            Tvec l;
-            Tscal tilt;
-            Tscal twist;
-            Tscal psi;
-            Tscal H_on_r;
+        struct analysis {
+            sham::DeviceBuffer<Tscal> radius;
+            sham::DeviceBuffer<u64> counter;
+            sham::DeviceBuffer<Tscal> Sigma;
+            sham::DeviceBuffer<Tvec> l;
+            sham::DeviceBuffer<Tscal> tilt;
+            sham::DeviceBuffer<Tscal> twist;
+            sham::DeviceBuffer<Tscal> psi;
+            sham::DeviceBuffer<Tscal> Hsq;
         };
 
         struct analysis_basis {
@@ -111,12 +109,14 @@ namespace shammodels::sph::modules {
             sham::DeviceBuffer<Tscal> H_on_R; // @@@ yes this is redundant, let's keep it for now
         };
 
-        analysis_val compute_analysis();
+        analysis compute_analysis();
         analysis_basis
         compute_analysis_basis(Tscal Rmin, Tscal Rmax, u32 Nbin, const ShamrockCtx &ctx);
         analysis_stage0 compute_analysis_stage0(analysis_basis &basis, u32 Nbin);
         analysis_stage1 compute_analysis_stage1(analysis_basis &basis, analysis_stage0 &stage0);
         analysis_stage2 compute_analysis_stage2(analysis_stage1 &stage1);
+
+        analysis compute_analysis(Tscal Rmin, Tscal Rmax, u32 Nbin, const ShamrockCtx &ctx);
 
         private:
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }

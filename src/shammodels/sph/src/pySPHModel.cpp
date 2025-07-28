@@ -24,6 +24,7 @@
 #include "shammodels/sph/Model.hpp"
 #include "shammodels/sph/io/PhantomDump.hpp"
 #include "shammodels/sph/modules/AnalysisBarycenter.hpp"
+#include "shammodels/sph/modules/AnalysisDisc.hpp"
 #include "shammodels/sph/modules/AnalysisSodTube.hpp"
 #include "shammodels/sph/modules/render/CartesianRender.hpp"
 #include "shamphys/SodTube.hpp"
@@ -42,11 +43,21 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
     using T = Model<Tvec, SPHKernel>;
 
     using TAnalysisSodTube = shammodels::sph::modules::AnalysisSodTube<Tvec, SPHKernel>;
+    using TAnalysisDisc    = shammodels::sph::modules::AnalysisDisc<Tvec, SPHKernel>;
     using TSPHSetup        = shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>;
     using TConfig          = typename T::Solver::Config;
 
     shamlog_debug_ln("[Py]", "registering class :", name_config, typeid(T).name());
     shamlog_debug_ln("[Py]", "registering class :", name_model, typeid(T).name());
+
+    py::class_<TAnalysisDisc>(m, "AnalysisDisc")
+        .def(
+            "make_analysis_disc",
+            [](T &self, Tscal Rmin, Tscal Rmax, u32 Nbin, const ShamrockCtx &ctx) {
+                TAnalysisDisc analysis_disc(
+                    self.ctx, self.solver.solver_config, self.solver.storage);
+                return analysis_disc.compute_analysis(Rmin, Rmax, Nbin, ctx);
+            });
 
     py::class_<TConfig>(m, name_config.c_str())
         .def("print_status", &TConfig::print_status)

@@ -345,6 +345,26 @@ auto shammodels::sph::modules::AnalysisDisc<Tvec, SPHKernel>::compute_analysis_s
     return analysis_stage2{std::move(buff_H), std::move(buff_H_on_R)};
 }
 
+template<class Tvec, template<class> class SPHKernel>
+auto shammodels::sph::modules::AnalysisDisc<Tvec, SPHKernel>::compute_analysis(
+    Tscal Rmin, Tscal Rmax, u32 Nbin, const ShamrockCtx &ctx) -> analysis {
+
+    analysis_basis basis   = compute_analysis_basis(Rmin, Rmax, Nbin, ctx);
+    analysis_stage0 stage0 = compute_analysis_stage0(basis, Nbin);
+    analysis_stage1 stage1 = compute_analysis_stage1(basis, stage0);
+    analysis_stage2 stage2 = compute_analysis_stage2(stage1);
+
+    return analysis{
+        std::move(basis.radius),
+        std::move(basis.counter),
+        std::move(basis.Sigma),
+        std::move(stage0.unit_J),
+        std::move(stage1.tilt),
+        std::move(stage1.twist),
+        std::move(stage1.psi),
+        std::move(stage0.Hsq)};
+}
+
 using namespace shammath;
 template class shammodels::sph::modules::AnalysisDisc<f64_3, M4>;
 template class shammodels::sph::modules::AnalysisDisc<f64_3, M6>;
