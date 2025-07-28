@@ -73,7 +73,9 @@ namespace shammodels::sph::modules {
             sham::DeviceBuffer<Tscal> radius;
             sham::DeviceBuffer<u64> counter;
             sham::DeviceBuffer<Tscal> Sigma;
-            sham::DeviceBuffer<Tvec> l;
+            sham::DeviceBuffer<Tscal> lx;
+            sham::DeviceBuffer<Tscal> ly;
+            sham::DeviceBuffer<Tscal> lz;
             sham::DeviceBuffer<Tscal> tilt;
             sham::DeviceBuffer<Tscal> twist;
             sham::DeviceBuffer<Tscal> psi;
@@ -92,7 +94,9 @@ namespace shammodels::sph::modules {
         };
 
         struct analysis_stage0 {
-            sham::DeviceBuffer<Tvec> unit_J;
+            sham::DeviceBuffer<Tscal> lx;
+            sham::DeviceBuffer<Tscal> ly;
+            sham::DeviceBuffer<Tscal> lz;
             sham::DeviceBuffer<Tscal> zmean;
             sham::DeviceBuffer<Tscal> Hsq;
         };
@@ -109,7 +113,6 @@ namespace shammodels::sph::modules {
             sham::DeviceBuffer<Tscal> H_on_R; // @@@ yes this is redundant, let's keep it for now
         };
 
-        analysis compute_analysis();
         analysis_basis
         compute_analysis_basis(Tscal Rmin, Tscal Rmax, u32 Nbin, const ShamrockCtx &ctx);
         analysis_stage0 compute_analysis_stage0(analysis_basis &basis, u32 Nbin);

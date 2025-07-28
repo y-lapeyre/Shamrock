@@ -50,14 +50,14 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
     shamlog_debug_ln("[Py]", "registering class :", name_config, typeid(T).name());
     shamlog_debug_ln("[Py]", "registering class :", name_model, typeid(T).name());
 
-    py::class_<TAnalysisDisc>(m, "AnalysisDisc")
-        .def(
-            "make_analysis_disc",
-            [](T &self, Tscal Rmin, Tscal Rmax, u32 Nbin, const ShamrockCtx &ctx) {
-                TAnalysisDisc analysis_disc(
-                    self.ctx, self.solver.solver_config, self.solver.storage);
-                return analysis_disc.compute_analysis(Rmin, Rmax, Nbin, ctx);
-            });
+    // py::class_<TAnalysisDisc>(m, "AnalysisDisc")
+    //     .def(
+    //         "make_analysis_disc",
+    //         [](T &self, Tscal Rmin, Tscal Rmax, u32 Nbin, const ShamrockCtx &ctx) {
+    //             TAnalysisDisc analysis_disc(
+    //                 self.ctx, self.solver.solver_config, self.solver.storage);
+    //             return analysis_disc.compute_analysis(Rmin, Rmax, Nbin, ctx);
+    //         });
 
     py::class_<TConfig>(m, name_config.c_str())
         .def("print_status", &TConfig::print_status)
@@ -221,6 +221,46 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             auto ret = self.compute_L2_dist();
             return {ret.rho, ret.v, ret.P};
         });
+
+    std::string disc_analysis_name = name_model + "_AnalysisDisc";
+    py::class_<TAnalysisDisc>(m, disc_analysis_name.c_str())
+        .def(
+            "compute_analysis",
+            [](TAnalysisDisc &self, Tscal Rmin, Tscal Rmax, u32 Nbin, const ShamrockCtx &ctx)
+                -> std::tuple<
+                    sham::DeviceBuffer<Tscal>,
+                    sham::DeviceBuffer<u64>,
+                    sham::DeviceBuffer<Tscal>,
+                    sham::DeviceBuffer<Tscal>,
+                    sham::DeviceBuffer<Tscal>,
+                    sham::DeviceBuffer<Tscal>,
+                    sham::DeviceBuffer<Tscal>,
+                    sham::DeviceBuffer<Tscal>,
+                    sham::DeviceBuffer<Tscal>,
+                    sham::DeviceBuffer<Tscal>> {
+                auto ret = self.compute_analysis(Rmin, Rmax, Nbin, ctx);
+                return std::tuple<
+                    sham::DeviceBuffer<Tscal>,
+                    sham::DeviceBuffer<u64>,
+                    sham::DeviceBuffer<Tscal>,
+                    sham::DeviceBuffer<Tscal>,
+                    sham::DeviceBuffer<Tscal>,
+                    sham::DeviceBuffer<Tscal>,
+                    sham::DeviceBuffer<Tscal>,
+                    sham::DeviceBuffer<Tscal>,
+                    sham::DeviceBuffer<Tscal>,
+                    sham::DeviceBuffer<Tscal>>{
+                    ret.radius,
+                    ret.counter,
+                    ret.Sigma,
+                    ret.lx,
+                    ret.ly,
+                    ret.lz,
+                    ret.tilt,
+                    ret.twist,
+                    ret.psi,
+                    ret.Hsq};
+            });
 
     std::string setup_name = name_model + "_SPHSetup";
     py::class_<TSPHSetup>(m, setup_name.c_str())
@@ -776,6 +816,12 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                     x_ref,
                     x_min,
                     x_max);
+            })
+        .def(
+            "make_analysis_disc",
+            [](T &self) {
+                return std::make_unique<TAnalysisDisc>(
+                    self.ctx, self.solver.solver_config, self.solver.storage);
             })
         .def("load_from_dump", &T::load_from_dump)
         .def("dump", &T::dump)
