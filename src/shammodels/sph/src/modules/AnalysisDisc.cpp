@@ -182,7 +182,7 @@ auto shammodels::sph::modules::AnalysisDisc<Tvec, SPHKernel>::compute_analysis_s
            const Tscal *__restrict Jz,
            Tvec *__restrict unit_J) {
             Tscal J_norm = sycl::sqrt(Jx[i] * Jx[i] + Jy[i] * Jy[i] + Jz[i] * Jz[i]);
-            unit_J[i]    = Tvec((Jx[i] / J_norm, Jy[i] / J_norm, Jz[i] / J_norm));
+            unit_J[i]    = Tvec(Jx[i] / J_norm, Jy[i] / J_norm, Jz[i] / J_norm);
         });
 
     // compute zmean

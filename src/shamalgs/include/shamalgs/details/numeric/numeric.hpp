@@ -182,7 +182,8 @@ namespace shamalgs::numeric {
 
         auto &q = shambase::get_check_ref(sched).get_queue();
 
-        sham::DeviceBuffer<u64> counts = device_histogram(sched, bin_edges, nbins, values, len);
+        sham::DeviceBuffer<u64> counts
+            = device_histogram<u64>(sched, bin_edges, nbins, values, len);
 
         sham::DeviceBuffer<T> bins_center(nbins, sched);
         sham::DeviceBuffer<T> bins_width(nbins, sched);
@@ -390,7 +391,13 @@ namespace shamalgs::numeric {
         u32 len) {
 
         return binned_compute<T, T>(
-            sched, bin_edges, nbins, values, keys, len, [](auto for_each_values, u32 bin_count) {
+            sched,
+            bin_edges,
+            nbins,
+            values,
+            keys,
+            len,
+            [](auto for_each_values, u32 bin_count) -> T {
                 T sum = 0;
                 for_each_values([&](T val) {
                     sum += val;

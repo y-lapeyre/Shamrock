@@ -51,10 +51,10 @@ namespace shammodels::sph::modules {
         Tscal delta = (Rmax - Rmin) / Nbin;
 
         sham::DeviceBuffer<Tscal> linspace(Tscal Rmin, Tscal Rmax, u32 N) {
-            sham::DeviceBuffer<Tscal> bins(N);
+            sham::DeviceBuffer<Tscal> bins(N, shamsys::instance::get_compute_scheduler_ptr());
             Tscal step = (Rmax - Rmin) / (N - 1);
             for (int i = 0; i < N; ++i) {
-                bins[i] = Rmin + i * step;
+                bins.set_val_at_idx(i, Rmin + i * step);
             }
             return bins;
         }
