@@ -45,11 +45,6 @@ namespace shammodels::sph::modules {
         AnalysisDisc(ShamrockCtx &context, Config &solver_config, Storage &storage)
             : context(context), solver_config(solver_config), storage(storage) {}
 
-        // u32 Nbin    = 300;
-        // Tscal Rmin  = 0.1;
-        // Tscal Rmax  = 1.0;
-        // Tscal delta = (Rmax - Rmin) / Nbin;
-
         sham::DeviceBuffer<Tscal> linspace(Tscal Rmin, Tscal Rmax, u32 N) {
             sham::DeviceBuffer<Tscal> bins(N, shamsys::instance::get_compute_scheduler_ptr());
             Tscal step = (Rmax - Rmin) / (N - 1);
