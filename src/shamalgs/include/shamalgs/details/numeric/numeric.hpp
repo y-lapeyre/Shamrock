@@ -424,12 +424,12 @@ namespace shamalgs::numeric {
             keys,
             len,
             [](auto for_each_values, u32 bin_count) -> T {
-                T sum = 0;
+                T sum = T(0);
                 for_each_values([&](T val) {
                     sum += val;
                 });
                 if (bin_count == 0) {
-                    return 0;
+                    return T(0);
                 } else {
                     return sum / bin_count;
                 }
