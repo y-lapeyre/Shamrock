@@ -263,9 +263,9 @@ namespace shamalgs::numeric {
 
         SHAM_ASSERT(offsets_bins.get_val_at_idx(offsets_bins.get_size() - 1) == valid_key_count);
 
-        u32 pow2_len_key = shambase::roundup_pow2(valid_key_count);
         if (valid_key_count > 0) {
             // sort need 2^n as length
+            u32 pow2_len_key = shambase::roundup_pow2(valid_key_count);
             {
                 if (pow2_len_key > valid_key_count) {
                     valid_keys.resize(pow2_len_key);
