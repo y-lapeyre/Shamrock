@@ -223,18 +223,18 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
         });
 
     std::string disc_analysis_name = name_model + "_AnalysisDisc";
-    py::class_<TAnalysisDisc>(m, "AnalysisResult")
-        .def(py::init<ShamrockCtx &, TConfig &, Storage &>())
-        .def_readwrite("radius", &TAnalysisDisc::analysis::radius)
-        .def_readwrite("counter", &TAnalysisDisc::analysis::counter)
-        .def_readwrite("Sigma", &TAnalysisDisc::analysis::Sigma)
-        .def_readwrite("lx", &TAnalysisDisc::analysis::lx)
-        .def_readwrite("ly", &TAnalysisDisc::analysis::ly)
-        .def_readwrite("lz", &TAnalysisDisc::analysis::lz)
-        .def_readwrite("tilt", &TAnalysisDisc::analysis::tilt)
-        .def_readwrite("twist", &TAnalysisDisc::analysis::twist)
-        .def_readwrite("psi", &TAnalysisDisc::analysis::psi)
-        .def_readwrite("Hsq", &TAnalysisDisc::analysis::Hsq);
+    py::class_<TAnalysisDisc>(m, disc_analysis_name.c_str())
+        .def(
+            "collect_data",
+            [](TAnalysisDisc &self, Tscal Rmin, Tscal Rmax, u32 Nbin, ShamrockCtx &ctx) {
+                auto anal = self.compute_analysis(Rmin, Rmax, Nbin, ctx);
+                py::dict dic_out;
+
+                auto radius       = anal.radius.copy_to_stdvec();
+                dic_out["radius"] = radius;
+
+                return dic_out;
+            });
 
     std::string setup_name = name_model + "_SPHSetup";
     py::class_<TSPHSetup>(m, setup_name.c_str())
