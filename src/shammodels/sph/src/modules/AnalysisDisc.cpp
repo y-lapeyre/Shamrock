@@ -49,9 +49,9 @@ auto shammodels::sph::modules::AnalysisDisc<Tvec, SPHKernel>::compute_analysis_b
     PatchDataLayout &pdl  = scheduler().pdl;
     const u32 ixyz        = pdl.get_field_idx<Tvec>("xyz");
     const u32 ivxyz       = pdl.get_field_idx<Tvec>("vxyz");
-    auto &merged_xyzh     = storage.merged_xyzh.get();
+    // auto &merged_xyzh     = storage.merged_xyzh.get();
 
-    shambase::DistributedData<MergedPatchData> &mpdat = storage.merged_patchdata_ghost.get();
+    // shambase::DistributedData<MergedPatchData> &mpdat = storage.merged_patchdata_ghost.get();
 
     // dirty way to get Npart
     u64 Npart = 0;
@@ -65,11 +65,12 @@ auto shammodels::sph::modules::AnalysisDisc<Tvec, SPHKernel>::compute_analysis_b
     sham::DeviceBuffer<Tscal> buf_Jz(Npart, shamsys::instance::get_compute_scheduler_ptr());
 
     scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
-        u32 len                            = pdat.get_obj_cnt();
-        MergedPatchData &merged_patch      = mpdat.get(cur_p.id_patch);
-        PatchData &mypdat                  = merged_patch.pdat;
-        sham::DeviceBuffer<Tvec> &buf_xyz  = merged_xyzh.get(cur_p.id_patch).field_pos.get_buf();
-        sham::DeviceBuffer<Tvec> &buf_vxyz = mypdat.get_field_buf_ref<Tvec>(ivxyz);
+        u32 len = pdat.get_obj_cnt();
+        // MergedPatchData &merged_patch      = mpdat.get(cur_p.id_patch);
+        // PatchData &mypdat                  = merged_patch.pdat;
+        // sham::DeviceBuffer<Tvec> &buf_xyz  = merged_xyzh.get(cur_p.id_patch).field_pos.get_buf();
+        sham::DeviceBuffer<Tvec> &buf_xyz  = pdat.get_field_buf_ref<Tvec>(ixyz);
+        sham::DeviceBuffer<Tvec> &buf_vxyz = pdat.get_field_buf_ref<Tvec>(ivxyz);
         sham::DeviceQueue &q               = shamsys::instance::get_compute_scheduler().get_queue();
 
         sham::kernel_call(
@@ -112,12 +113,13 @@ auto shammodels::sph::modules::AnalysisDisc<Tvec, SPHKernel>::compute_analysis_b
     auto binned_Jz = shamalgs::numeric::binned_average(
         shamsys::instance::get_compute_scheduler_ptr(), bin_edges, Nbin, buf_Jz, buf_radius, Npart);
 
-    auto Sigma = shamalgs::numeric::binned_computation<Tscal>(
+    auto buf_radius_key = buf_radius.copy();
+    auto Sigma          = shamalgs::numeric::binned_computation<Tscal>(
         shamsys::instance::get_compute_scheduler_ptr(),
         bin_edges,
         Nbin,
         buf_radius,
-        buf_radius,
+        buf_radius_key,
         Npart,
         [Rmin, Rmax, Nbin](auto for_each_values, u32 bin_count) {
             Tscal sigma_bin    = 0;

@@ -262,6 +262,7 @@ namespace shamalgs::numeric {
 
         SHAM_ASSERT(offsets_bins.get_val_at_idx(offsets_bins.get_size() - 1) == valid_key_count);
 
+        u32 resize_key_cout;
         if (valid_key_count > 0) {
             // sort need 2^n as length
             {
@@ -269,7 +270,7 @@ namespace shamalgs::numeric {
                 if (pow2_len_key > valid_key_count) {
                     valid_keys.resize(pow2_len_key);
                     valid_values.resize(pow2_len_key);
-
+                    resize_key_cout = pow2_len_key;
                     sham::kernel_call(
                         q,
                         sham::MultiRef{},
@@ -284,7 +285,7 @@ namespace shamalgs::numeric {
                 }
             }
 
-            shamalgs::algorithm::sort_by_key(sched, valid_keys, valid_values, valid_key_count);
+            shamalgs::algorithm::sort_by_key(sched, valid_keys, valid_values, resize_key_cout);
         }
 
         return {std::move(valid_values), std::move(offsets_bins)};
