@@ -10,6 +10,7 @@
 /**
  * @file numeric.cpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
+ * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief
  *
  */
@@ -262,6 +263,7 @@ namespace shamalgs::numeric {
 
         SHAM_ASSERT(offsets_bins.get_val_at_idx(offsets_bins.get_size() - 1) == valid_key_count);
 
+        u32 resize_key_cout;
         if (valid_key_count > 0) {
             // sort need 2^n as length
             {
@@ -284,7 +286,9 @@ namespace shamalgs::numeric {
                 }
             }
 
-            shamalgs::algorithm::sort_by_key(sched, valid_keys, valid_values, valid_key_count);
+            // how to be a patate? Resize buffers to diligently become powers of 2, and don't update
+            // the variable holding their length
+            shamalgs::algorithm::sort_by_key(sched, valid_keys, valid_values, resize_key_cout);
         }
 
         return {std::move(valid_values), std::move(offsets_bins)};
