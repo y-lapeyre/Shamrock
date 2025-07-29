@@ -206,10 +206,10 @@ auto shammodels::sph::modules::AnalysisDisc<Tvec, SPHKernel>::compute_analysis_s
     PatchDataLayout &pdl  = scheduler().pdl;
     const u32 ixyz        = pdl.get_field_idx<Tvec>("xyz");
     const u32 ivxyz       = pdl.get_field_idx<Tvec>("vxyz");
-    auto &merged_xyzh     = storage.merged_xyzh.get();
+    // auto &merged_xyzh     = storage.merged_xyzh.get();
 
-    shambase::DistributedData<MergedPatchData> &mpdat = storage.merged_patchdata_ghost.get();
-    // dirty way to get Npart
+    // shambase::DistributedData<MergedPatchData> &mpdat = storage.merged_patchdata_ghost.get();
+    //  dirty way to get Npart
     u64 Npart = 0;
     scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
         Npart += pdat.get_obj_cnt();
@@ -217,11 +217,12 @@ auto shammodels::sph::modules::AnalysisDisc<Tvec, SPHKernel>::compute_analysis_s
 
     sham::DeviceBuffer<Tscal> buf_zmean(Npart, shamsys::instance::get_compute_scheduler_ptr());
     scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
-        u32 len                            = pdat.get_obj_cnt();
-        MergedPatchData &merged_patch      = mpdat.get(cur_p.id_patch);
-        PatchData &mpdat                   = merged_patch.pdat;
-        sham::DeviceBuffer<Tvec> &buf_xyz  = merged_xyzh.get(cur_p.id_patch).field_pos.get_buf();
-        sham::DeviceBuffer<Tvec> &buf_vxyz = mpdat.get_field_buf_ref<Tvec>(ivxyz);
+        u32 len = pdat.get_obj_cnt();
+        // MergedPatchData &merged_patch      = mpdat.get(cur_p.id_patch);
+        // PatchData &mpdat                   = merged_patch.pdat;
+        // sham::DeviceBuffer<Tvec> &buf_xyz  = merged_xyzh.get(cur_p.id_patch).field_pos.get_buf();
+        sham::DeviceBuffer<Tvec> &buf_xyz  = pdat.get_field_buf_ref<Tvec>(ixyz);
+        sham::DeviceBuffer<Tvec> &buf_vxyz = pdat.get_field_buf_ref<Tvec>(ivxyz);
         sham::DeviceQueue &q               = shamsys::instance::get_compute_scheduler().get_queue();
 
         sham::kernel_call(
@@ -266,10 +267,11 @@ auto shammodels::sph::modules::AnalysisDisc<Tvec, SPHKernel>::compute_analysis_s
     // now compute H
     sham::DeviceBuffer<Tscal> buf_H(Npart, shamsys::instance::get_compute_scheduler_ptr());
     scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
-        u32 len                           = pdat.get_obj_cnt();
-        MergedPatchData &merged_patch     = mpdat.get(cur_p.id_patch);
-        PatchData &mpdat                  = merged_patch.pdat;
-        sham::DeviceBuffer<Tvec> &buf_xyz = merged_xyzh.get(cur_p.id_patch).field_pos.get_buf();
+        u32 len = pdat.get_obj_cnt();
+        // MergedPatchData &merged_patch     = mpdat.get(cur_p.id_patch);
+        // PatchData &mpdat                  = merged_patch.pdat;
+        // sham::DeviceBuffer<Tvec> &buf_xyz = merged_xyzh.get(cur_p.id_patch).field_pos.get_buf();
+        sham::DeviceBuffer<Tvec> &buf_xyz = pdat.get_field_buf_ref<Tvec>(ixyz);
         sham::DeviceQueue &q              = shamsys::instance::get_compute_scheduler().get_queue();
 
         sham::kernel_call(

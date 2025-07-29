@@ -230,8 +230,27 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                 auto anal = self.compute_analysis(Rmin, Rmax, Nbin, ctx);
                 py::dict dic_out;
 
-                auto radius       = anal.radius.copy_to_stdvec();
-                dic_out["radius"] = radius;
+                auto radius  = anal.radius.copy_to_stdvec();
+                auto counter = anal.counter.copy_to_stdvec();
+                auto Sigma   = anal.Sigma.copy_to_stdvec();
+                auto lx      = anal.lx.copy_to_stdvec();
+                auto ly      = anal.ly.copy_to_stdvec();
+                auto lz      = anal.lz.copy_to_stdvec();
+                auto tilt    = anal.tilt.copy_to_stdvec();
+                auto twist   = anal.twist.copy_to_stdvec();
+                auto psi     = anal.psi.copy_to_stdvec();
+                auto Hsq     = anal.Hsq.copy_to_stdvec();
+
+                dic_out["radius"]  = radius;
+                dic_out["counter"] = counter;
+                dic_out["Sigma"]   = Sigma;
+                dic_out["lx"]      = lx;
+                dic_out["ly"]      = ly;
+                dic_out["lz"]      = lz;
+                dic_out["tilt"]    = tilt;
+                dic_out["twist"]   = twist;
+                dic_out["psi"]     = psi;
+                dic_out["Hsq"]     = Hsq;
 
                 return dic_out;
             });
