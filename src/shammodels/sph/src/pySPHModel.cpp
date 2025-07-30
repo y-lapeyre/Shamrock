@@ -821,12 +821,16 @@ Register_pymod(pysphmodel) {
     add_instance<f64_3, shammath::M8>(msph, "SPHModel_f64_3_M8_SolverConfig", "SPHModel_f64_3_M8");
 
     add_instance<f64_3, shammath::C2>(msph, "SPHModel_f64_3_C2_SolverConfig", "SPHModel_f64_3_C2");
+    add_instance<f64_3, shammath::C4>(msph, "SPHModel_f64_3_C4_SolverConfig", "SPHModel_f64_3_C4");
+    add_instance<f64_3, shammath::C6>(msph, "SPHModel_f64_3_C6_SolverConfig", "SPHModel_f64_3_C6");
 
     using VariantSPHModelBind = std::variant<
         std::unique_ptr<Model<f64_3, shammath::M4>>,
         std::unique_ptr<Model<f64_3, shammath::M6>>,
         std::unique_ptr<Model<f64_3, shammath::M8>>,
-        std::unique_ptr<Model<f64_3, shammath::C2>>>;
+        std::unique_ptr<Model<f64_3, shammath::C2>>,
+        std::unique_ptr<Model<f64_3, shammath::C4>>,
+        std::unique_ptr<Model<f64_3, shammath::C6>>>;
 
     m.def(
         "get_Model_SPH",
@@ -841,6 +845,10 @@ Register_pymod(pysphmodel) {
                 ret = std::make_unique<Model<f64_3, shammath::M8>>(ctx);
             } else if (vector_type == "f64_3" && kernel == "C2") {
                 ret = std::make_unique<Model<f64_3, shammath::C2>>(ctx);
+            } else if (vector_type == "f64_3" && kernel == "C4") {
+                ret = std::make_unique<Model<f64_3, shammath::C4>>(ctx);
+            } else if (vector_type == "f64_3" && kernel == "C6") {
+                ret = std::make_unique<Model<f64_3, shammath::C6>>(ctx);
             } else {
                 throw shambase::make_except_with_loc<std::invalid_argument>(
                     "unknown combination of representation and kernel");
@@ -913,6 +921,22 @@ Register_pymod(pysphmodel) {
         "analysisBarycenter",
         [](SPHModel_f64_3_C2 &model) {
             return analysisBarycenter_impl<f64_3, shammath::C2>(model);
+        },
+        py::kw_only(),
+        py::arg("model"));
+
+    msph.def(
+        "analysisBarycenter",
+        [](SPHModel_f64_3_C4 &model) {
+            return analysisBarycenter_impl<f64_3, shammath::C4>(model);
+        },
+        py::kw_only(),
+        py::arg("model"));
+
+    msph.def(
+        "analysisBarycenter",
+        [](SPHModel_f64_3_C6 &model) {
+            return analysisBarycenter_impl<f64_3, shammath::C6>(model);
         },
         py::kw_only(),
         py::arg("model"));

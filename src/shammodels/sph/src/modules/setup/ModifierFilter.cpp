@@ -72,5 +72,5 @@ template class shammodels::sph::modules::ModifierFilter<f64_3, M6>;
 template class shammodels::sph::modules::ModifierFilter<f64_3, M8>;
 
 template class shammodels::sph::modules::ModifierFilter<f64_3, C2>;
-// template class shammodels::sph::modules::ModifierFilter<f64_3, C4>;
-// template class shammodels::sph::modules::ModifierFilter<f64_3, C6>;
+template class shammodels::sph::modules::ModifierFilter<f64_3, C4>;
+template class shammodels::sph::modules::ModifierFilter<f64_3, C6>;
