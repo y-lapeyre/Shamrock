@@ -270,6 +270,7 @@ namespace shamalgs::numeric {
                 if (pow2_len_key > valid_key_count) {
                     valid_keys.resize(pow2_len_key);
                     valid_values.resize(pow2_len_key);
+
                     sham::kernel_call(
                         q,
                         sham::MultiRef{},
