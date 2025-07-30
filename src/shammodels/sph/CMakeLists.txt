@@ -45,6 +45,7 @@ set(Sources
     src/modules/AnalysisDisc.cpp
     src/modules/SPHSetup.cpp
     src/modules/KillParticles.cpp
+    src/modules/GetParticlesOutsideSphere.cpp
 
     src/modules/setup/GeneratorMCDisc.cpp
     src/modules/setup/ModifierApplyDiscWarp.cpp
