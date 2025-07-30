@@ -347,6 +347,6 @@ template class shammodels::sph::modules::CartesianRender<f64_3, f64, M4>;
 template class shammodels::sph::modules::CartesianRender<f64_3, f64, M6>;
 template class shammodels::sph::modules::CartesianRender<f64_3, f64, M8>;
 
-//template class shammodels::sph::modules::CartesianRender<f64_3, f64, C2>;
+template class shammodels::sph::modules::CartesianRender<f64_3, f64, C2>;
 //template class shammodels::sph::modules::CartesianRender<f64_3, f64_3, C4>;
 //template class shammodels::sph::modules::CartesianRender<f64_3, f64_3, C6>;
