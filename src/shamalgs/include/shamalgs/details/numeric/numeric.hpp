@@ -406,7 +406,6 @@ namespace shamalgs::numeric {
      * keys, values.get_size());
      *   ```
      */
-
     template<class T>
     sham::DeviceBuffer<T> binned_average(
         const sham::DeviceScheduler_ptr &sched,
@@ -424,12 +423,12 @@ namespace shamalgs::numeric {
             keys,
             len,
             [](auto for_each_values, u32 bin_count) -> T {
-                T sum = T(0);
+                T sum = T{};
                 for_each_values([&](T val) {
                     sum += val;
                 });
                 if (bin_count == 0) {
-                    return T(0);
+                    return T{};
                 } else {
                     return sum / bin_count;
                 }
@@ -467,7 +466,6 @@ namespace shamalgs::numeric {
      *   });
      *   ```
      */
-
     template<class T, class F>
     sham::DeviceBuffer<T> binned_computation(
         const sham::DeviceScheduler_ptr &sched,
