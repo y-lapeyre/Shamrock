@@ -84,8 +84,8 @@ namespace shampylib {
         sphkernel_module.def("C4_dhW3d", &shammath::C4<f64>::dhW_3d);
         sphkernel_module.def("C4_f3d_integ_z", &shammath::C4<f64>::f3d_integ_z);
 
-        sphkernel_module.def("M8_Rkern", []() {
-            return shammath::M8<f64>::Rkern;
+        sphkernel_module.def("C6_Rkern", []() {
+            return shammath::C6<f64>::Rkern;
         });
         sphkernel_module.def("C6_f", &shammath::C6<f64>::f);
         sphkernel_module.def("C6_df", &shammath::C6<f64>::df);
