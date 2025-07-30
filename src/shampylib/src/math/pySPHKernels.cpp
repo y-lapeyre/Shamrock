@@ -10,6 +10,7 @@
 /**
  * @file pySPHKernels.cpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
+ * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief
  */
 
@@ -58,7 +59,7 @@ namespace shampylib {
         sphkernel_module.def("M8_dW3d", &shammath::M8<f64>::dW_3d);
         sphkernel_module.def("M8_dhW3d", &shammath::M8<f64>::dhW_3d);
         sphkernel_module.def("M8_f3d_integ_z", &shammath::M8<f64>::f3d_integ_z);
-        
+
         sphkernel_module.def("C2_Rkern", []() {
             return shammath::C2<f64>::Rkern;
         });

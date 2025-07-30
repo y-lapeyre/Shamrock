@@ -916,6 +916,4 @@ Register_pymod(pysphmodel) {
         },
         py::kw_only(),
         py::arg("model"));
-
-
 }
