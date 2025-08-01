@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -16,6 +16,7 @@
  *
  */
 
+#include "shamalgs/primitives/sort_by_keys.hpp"
 #include "shambackends/DeviceBuffer.hpp"
 #include "shambackends/DeviceQueue.hpp"
 #include "shambackends/sycl.hpp"
@@ -26,9 +27,6 @@
  *
  */
 namespace shamalgs::algorithm {
-
-    // template<class T>
-    // void sort(sycl::queue &q, sycl::buffer<T> &buf1, u32 len);
 
     /**
      * @brief Sort the buffer according to the key order
@@ -41,14 +39,18 @@ namespace shamalgs::algorithm {
      */
     template<class Tkey, class Tval>
     void sort_by_key(
-        sycl::queue &q, sycl::buffer<Tkey> &buf_key, sycl::buffer<Tval> &buf_values, u32 len);
+        sycl::queue &q, sycl::buffer<Tkey> &buf_key, sycl::buffer<Tval> &buf_values, u32 len) {
+        shamalgs::primitives::sort_by_key(q, buf_key, buf_values, len);
+    }
 
     template<class Tkey, class Tval>
     void sort_by_key(
         const sham::DeviceScheduler_ptr &sched,
         sham::DeviceBuffer<Tkey> &buf_key,
         sham::DeviceBuffer<Tval> &buf_values,
-        u32 len);
+        u32 len) {
+        shamalgs::primitives::sort_by_key(sched, buf_key, buf_values, len);
+    }
 
     /**
      * @brief generate a buffer from a lambda expression based on the indexes
