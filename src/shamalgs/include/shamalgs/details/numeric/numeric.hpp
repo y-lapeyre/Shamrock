@@ -291,7 +291,7 @@ namespace shamalgs::numeric {
      *       });
      *   ```
      */
-    template<class T, class Tret, class Fct>
+    template<class Tret, class T, class Fct>
     sham::DeviceBuffer<Tret> binned_compute(
         const sham::DeviceScheduler_ptr &sched,
         const sham::DeviceBuffer<T> &bin_edges,
@@ -433,50 +433,6 @@ namespace shamalgs::numeric {
                     return sum / bin_count;
                 }
             });
-    }
-
-    /**
-     * @brief Perform a custom computation on values in each bin.
-     *
-     * This function applies a user-defined computation on values in each bin, using the keys to
-     * assign values to bins. It allows for custom per-bin operations by passing a computation
-     * function.
-     *
-     * @tparam T The data type of the values and keys.
-     * @tparam F The type of the computation function.
-     * @param sched The device scheduler to run on.
-     * @param bin_edges The edges of the bins (length == nbins + 1).
-     * @param nbins The number of bins.
-     * @param values The values to be processed (e.g., f(r)).
-     * @param keys The keys used for binning (e.g., r).
-     * @param len The number of elements in values/keys.
-     * @param computation_func The user-defined function to compute a result for each bin.
-     * @return sham::DeviceBuffer<T> Buffer containing the result of computation for each bin.
-     *
-     * Example:
-     *   ```cpp
-     *   auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
-     *   sham::DeviceBuffer<double> bin_edges = ...;
-     *   sham::DeviceBuffer<double> values = ...;
-     *   sham::DeviceBuffer<double> keys = ...;
-     *   u64 nbins = bin_edges.get_size() - 1;
-     *   auto custom_results = shamalgs::numeric::binned_computation(dev_sched, bin_edges, nbins,
-     * values, keys, values.get_size(), [](auto for_each_values, u32 bin_count) {
-     *       // Custom computation logic
-     *   });
-     *   ```
-     */
-    template<class T, class F>
-    sham::DeviceBuffer<T> binned_computation(
-        const sham::DeviceScheduler_ptr &sched,
-        const sham::DeviceBuffer<T> &bin_edges, // r bins
-        u64 nbins,
-        const sham::DeviceBuffer<T> &values, // ie f(r)
-        const sham::DeviceBuffer<T> &keys,   // ie r
-        u32 len,
-        F computation_func) {
-
-        return binned_compute<T, T>(sched, bin_edges, nbins, values, keys, len, computation_func);
     }
 
 } // namespace shamalgs::numeric
