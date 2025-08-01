@@ -292,7 +292,7 @@ namespace shamalgs::numeric {
      *       });
      *   ```
      */
-    template<class T, class Tret, class Fct>
+    template<class Tret, class T, class Fct>
     sham::DeviceBuffer<Tret> binned_compute(
         const sham::DeviceScheduler_ptr &sched,
         const sham::DeviceBuffer<T> &bin_edges,
@@ -408,19 +408,6 @@ namespace shamalgs::numeric {
                     return sum / bin_count;
                 }
             });
-    }
-
-    template<class T, class F>
-    sham::DeviceBuffer<T> binned_computation(
-        const sham::DeviceScheduler_ptr &sched,
-        const sham::DeviceBuffer<T> &bin_edges, // r bins
-        u64 nbins,
-        const sham::DeviceBuffer<T> &values, // ie f(r)
-        const sham::DeviceBuffer<T> &keys,   // ie r
-        u32 len,
-        F computation_func) {
-
-        return binned_compute<T, T>(sched, bin_edges, nbins, values, keys, len, computation_func);
     }
 
 } // namespace shamalgs::numeric

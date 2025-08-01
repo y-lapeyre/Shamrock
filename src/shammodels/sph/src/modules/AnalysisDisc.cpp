@@ -104,7 +104,7 @@ auto shammodels::sph::modules::AnalysisDisc<Tvec, SPHKernel>::compute_analysis_b
         shamsys::instance::get_compute_scheduler_ptr(), bin_edges, Nbin, buf_Jz, buf_radius, Npart);
 
     auto buf_radius_key = buf_radius.copy();
-    auto Sigma          = shamalgs::numeric::binned_computation<Tscal>(
+    auto Sigma          = shamalgs::numeric::binned_compute<Tscal>(
         shamsys::instance::get_compute_scheduler_ptr(),
         bin_edges,
         Nbin,
