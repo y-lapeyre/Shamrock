@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -381,6 +381,33 @@ namespace shamalgs::numeric {
             });
     }
 
+
+    /**
+     * @brief Compute the average of values in each bin.
+     *
+     * This function calculates the average of all values in each bin, using the keys to assign
+     * values to bins. It returns a buffer containing the average for each bin.
+     *
+     * @tparam T The data type of the values and keys.
+     * @param sched The device scheduler to run on.
+     * @param bin_edges The edges of the bins (length == nbins + 1).
+     * @param nbins The number of bins.
+     * @param values The values to be averaged (e.g., f(r)).
+     * @param keys The keys used for binning (e.g., r).
+     * @param len The number of elements in values/keys.
+     * @return sham::DeviceBuffer<T> Buffer of averages, one per bin.
+     *
+     * Example:
+     *   ```cpp
+     *   auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
+     *   sham::DeviceBuffer<double> bin_edges = ...;
+     *   sham::DeviceBuffer<double> values = ...;
+     *   sham::DeviceBuffer<double> keys = ...;
+     *   u64 nbins = bin_edges.get_size() - 1;
+     *   auto averages = shamalgs::numeric::binned_average(dev_sched, bin_edges, nbins, values,
+     * keys, values.get_size());
+     *   ```
+     */
     template<class T>
     sham::DeviceBuffer<T> binned_average(
         const sham::DeviceScheduler_ptr &sched,
@@ -398,12 +425,12 @@ namespace shamalgs::numeric {
             keys,
             len,
             [](auto for_each_values, u32 bin_count) -> T {
-                T sum = 0;
+                T sum = T{};
                 for_each_values([&](T val) {
                     sum += val;
                 });
                 if (bin_count == 0) {
-                    return 0;
+                    return T{};
                 } else {
                     return sum / bin_count;
                 }
