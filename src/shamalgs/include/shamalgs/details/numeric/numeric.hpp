@@ -381,7 +381,6 @@ namespace shamalgs::numeric {
             });
     }
 
-
     /**
      * @brief Compute the average of values in each bin.
      *
