@@ -32,7 +32,7 @@
 
 template<class Tvec, template<class> class SPHKernel>
 auto shammodels::sph::modules::AnalysisDisc<Tvec, SPHKernel>::compute_analysis_basis(
-    Tscal Rmin, Tscal Rmax, u32 Nbin, const ShamrockCtx &context) -> analysis_basis {
+    Tscal pmass, Tscal Rmin, Tscal Rmax, u32 Nbin, const ShamrockCtx &context) -> analysis_basis {
 
     sham::DeviceBuffer<Tscal> bin_edges(Nbin, shamsys::instance::get_compute_scheduler_ptr());
     bin_edges
@@ -57,7 +57,7 @@ auto shammodels::sph::modules::AnalysisDisc<Tvec, SPHKernel>::compute_analysis_b
     sham::DeviceBuffer<Tscal> buf_Jy(Npart, shamsys::instance::get_compute_scheduler_ptr());
     sham::DeviceBuffer<Tscal> buf_Jz(Npart, shamsys::instance::get_compute_scheduler_ptr());
 
-    scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+    scheduler().for_each_patchdata_nonempty([&, this](Patch cur_p, PatchData &pdat) {
         u32 len                            = pdat.get_obj_cnt();
         sham::DeviceBuffer<Tvec> &buf_xyz  = pdat.get_field_buf_ref<Tvec>(ixyz);
         sham::DeviceBuffer<Tvec> &buf_vxyz = pdat.get_field_buf_ref<Tvec>(ivxyz);
@@ -68,21 +68,22 @@ auto shammodels::sph::modules::AnalysisDisc<Tvec, SPHKernel>::compute_analysis_b
             sham::MultiRef{buf_xyz, buf_vxyz},
             sham::MultiRef{buf_radius, buf_Jx, buf_Jy, buf_Jz},
             len,
-            [](u32 i,
-               const Tvec *__restrict xyz,
-               const Tvec *__restrict vxyz,
-               Tscal *__restrict buf_radius,
-               Tscal *__restrict buf_Jx,
-               Tscal *__restrict buf_Jy,
-               Tscal *__restrict buf_Jz) {
+            [pmass](
+                u32 i,
+                const Tvec *__restrict xyz,
+                const Tvec *__restrict vxyz,
+                Tscal *__restrict buf_radius,
+                Tscal *__restrict buf_Jx,
+                Tscal *__restrict buf_Jy,
+                Tscal *__restrict buf_Jz) {
                 using namespace shamrock::sph;
                 Tvec pos = xyz[i];
                 Tvec vel = vxyz[i];
 
                 Tscal radius = sycl::sqrt(sycl::dot(pos, pos));
-                Tscal Jx     = sycl::cross(pos, vel)[0]; // @@@ * pmass
-                Tscal Jy     = sycl::cross(pos, vel)[1];
-                Tscal Jz     = sycl::cross(pos, vel)[2];
+                Tscal Jx     = pmass * sycl::cross(pos, vel)[0];
+                Tscal Jy     = pmass * sycl::cross(pos, vel)[1];
+                Tscal Jz     = pmass * sycl::cross(pos, vel)[2];
 
                 buf_radius[i] = radius;
                 buf_Jx[i]     = Jx;
@@ -111,15 +112,15 @@ auto shammodels::sph::modules::AnalysisDisc<Tvec, SPHKernel>::compute_analysis_b
         buf_radius,
         buf_radius_key,
         Npart,
-        [Rmin, Rmax, Nbin](auto for_each_values, u32 bin_count) {
+        [pmass, Rmin, Rmax, Nbin](auto for_each_values, u32 bin_count) {
             Tscal sigma_bin    = 0;
-            Tscal pmass        = 1.; //@@@ pmass
             Tscal delta        = (Rmax - Rmin) / Nbin;
             Tscal delta_halfed = delta / 2;
             for_each_values([&](Tscal val) {
-                sigma_bin += pmass / shambase::constants::pi<Tscal>
+                Tscal area = shambase::constants::pi<Tscal>
                              * ((val + delta_halfed) * (val + delta_halfed)
                                 - (val - delta_halfed) * (val - delta_halfed));
+                sigma_bin += pmass / area;
             });
             return sigma_bin;
         });
@@ -329,8 +330,8 @@ auto shammodels::sph::modules::AnalysisDisc<Tvec, SPHKernel>::compute_analysis_s
             twist[i] = 0.;
             psi[i]   = 0.;
             if (sycl::fabs(lz[i]) > 0. && i < Nbin - 1) {
-                tilt[i]  = r / lz[i]; // @@@ missing a term
-                twist[i] = shambase::constants::pi<Tscal> * 0.5 * sycl::atan(lx[i] / lz[i]);
+                tilt[i]  = sycl::acos(lz[i]);         // @@@ same as phantom
+                twist[i] = sycl::atan(ly[i] / lz[i]); // shambase::constants::pi<Tscal> * 0.5 *
             }
 
             if (i > 0 && i < Nbin - 1) {
@@ -358,7 +359,8 @@ template<class Tvec, template<class> class SPHKernel>
 auto shammodels::sph::modules::AnalysisDisc<Tvec, SPHKernel>::compute_analysis(
     Tscal Rmin, Tscal Rmax, u32 Nbin, const ShamrockCtx &ctx) -> analysis {
 
-    analysis_basis basis   = compute_analysis_basis(Rmin, Rmax, Nbin, ctx);
+    const Tscal pmass      = solver_config.gpart_mass;
+    analysis_basis basis   = compute_analysis_basis(pmass, Rmin, Rmax, Nbin, ctx);
     analysis_stage0 stage0 = compute_analysis_stage0(basis, Nbin);
     analysis_stage1 stage1 = compute_analysis_stage1(basis, stage0, Nbin);
     analysis_stage2 stage2 = compute_analysis_stage2(stage1, Nbin);
