@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -22,7 +22,6 @@
 #include "shambackends/vec.hpp"
 #include "shammodels/sph/SolverConfig.hpp"
 #include "shammodels/sph/modules/SolverStorage.hpp"
-#include "shamphys/SodTube.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
 #include <shambackends/sycl.hpp>
 
@@ -108,8 +107,8 @@ namespace shammodels::sph::modules {
             sham::DeviceBuffer<Tscal> H_on_R; // @@@ yes this is redundant, let's keep it for now
         };
 
-        analysis_basis
-        compute_analysis_basis(Tscal Rmin, Tscal Rmax, u32 Nbin, const ShamrockCtx &ctx);
+        analysis_basis compute_analysis_basis(
+            Tscal pmass, Tscal Rmin, Tscal Rmax, u32 Nbin, const ShamrockCtx &ctx);
         analysis_stage0 compute_analysis_stage0(analysis_basis &basis, u32 Nbin);
         analysis_stage1
         compute_analysis_stage1(analysis_basis &basis, analysis_stage0 &stage0, u32 Nbin);
