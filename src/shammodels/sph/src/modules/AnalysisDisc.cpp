@@ -326,15 +326,16 @@ auto shammodels::sph::modules::AnalysisDisc<Tvec, SPHKernel>::compute_analysis_s
             Tscal *__restrict psi) {
             Tscal r = radius[i];
 
-            tilt[i]  = 0.;
-            twist[i] = 0.;
-            psi[i]   = 0.;
-            if (sycl::fabs(lz[i]) > 0. && i < Nbin - 1) {
+            tilt[i]        = 0.;
+            twist[i]       = 0.;
+            psi[i]         = 0.;
+            const u32 Nmax = Nbin - 1;
+            if (sycl::fabs(lz[i]) > 0. && i < Nmax) {
                 tilt[i]  = sycl::acos(lz[i]);         // @@@ same as phantom
                 twist[i] = sycl::atan(ly[i] / lz[i]); // shambase::constants::pi<Tscal> * 0.5 *
             }
 
-            if (i > 0 && i < Nbin - 1) {
+            if (i > 0 && i < Nmax) {
                 Tscal radius_diff = radius[i + 1] - radius[i - 1];
                 Tscal psi_x       = (lx[i + 1] - lx[i - 1]) / radius_diff;
                 Tscal psi_y       = (ly[i + 1] - ly[i - 1]) / radius_diff;
