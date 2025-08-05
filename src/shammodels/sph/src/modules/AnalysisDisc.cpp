@@ -48,7 +48,7 @@ auto shammodels::sph::modules::AnalysisDisc<Tvec, SPHKernel>::compute_analysis_b
 
     // dirty way to get Npart
     u64 Npart = 0;
-    scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+    scheduler().for_each_patchdata_nonempty([&](Patch cur_p, shamrock::scheduler::PatchData &pdat) {
         Npart += pdat.get_obj_cnt();
     });
 
@@ -57,40 +57,41 @@ auto shammodels::sph::modules::AnalysisDisc<Tvec, SPHKernel>::compute_analysis_b
     sham::DeviceBuffer<Tscal> buf_Jy(Npart, shamsys::instance::get_compute_scheduler_ptr());
     sham::DeviceBuffer<Tscal> buf_Jz(Npart, shamsys::instance::get_compute_scheduler_ptr());
 
-    scheduler().for_each_patchdata_nonempty([&, this](Patch cur_p, PatchData &pdat) {
-        u32 len                            = pdat.get_obj_cnt();
-        sham::DeviceBuffer<Tvec> &buf_xyz  = pdat.get_field_buf_ref<Tvec>(ixyz);
-        sham::DeviceBuffer<Tvec> &buf_vxyz = pdat.get_field_buf_ref<Tvec>(ivxyz);
-        sham::DeviceQueue &q               = shamsys::instance::get_compute_scheduler().get_queue();
+    scheduler().for_each_patchdata_nonempty(
+        [&, this](Patch cur_p, shamrock::scheduler::PatchData &pdat) {
+            u32 len                            = pdat.get_obj_cnt();
+            sham::DeviceBuffer<Tvec> &buf_xyz  = pdat.get_field_buf_ref<Tvec>(ixyz);
+            sham::DeviceBuffer<Tvec> &buf_vxyz = pdat.get_field_buf_ref<Tvec>(ivxyz);
+            sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
 
-        sham::kernel_call(
-            q,
-            sham::MultiRef{buf_xyz, buf_vxyz},
-            sham::MultiRef{buf_radius, buf_Jx, buf_Jy, buf_Jz},
-            len,
-            [pmass](
-                u32 i,
-                const Tvec *__restrict xyz,
-                const Tvec *__restrict vxyz,
-                Tscal *__restrict buf_radius,
-                Tscal *__restrict buf_Jx,
-                Tscal *__restrict buf_Jy,
-                Tscal *__restrict buf_Jz) {
-                using namespace shamrock::sph;
-                Tvec pos = xyz[i];
-                Tvec vel = vxyz[i];
+            sham::kernel_call(
+                q,
+                sham::MultiRef{buf_xyz, buf_vxyz},
+                sham::MultiRef{buf_radius, buf_Jx, buf_Jy, buf_Jz},
+                len,
+                [pmass](
+                    u32 i,
+                    const Tvec *__restrict xyz,
+                    const Tvec *__restrict vxyz,
+                    Tscal *__restrict buf_radius,
+                    Tscal *__restrict buf_Jx,
+                    Tscal *__restrict buf_Jy,
+                    Tscal *__restrict buf_Jz) {
+                    using namespace shamrock::sph;
+                    Tvec pos = xyz[i];
+                    Tvec vel = vxyz[i];
 
-                Tscal radius = sycl::sqrt(sycl::dot(pos, pos));
-                Tscal Jx     = pmass * sycl::cross(pos, vel)[0];
-                Tscal Jy     = pmass * sycl::cross(pos, vel)[1];
-                Tscal Jz     = pmass * sycl::cross(pos, vel)[2];
+                    Tscal radius = sycl::sqrt(sycl::dot(pos, pos));
+                    Tscal Jx     = pmass * sycl::cross(pos, vel)[0];
+                    Tscal Jy     = pmass * sycl::cross(pos, vel)[1];
+                    Tscal Jz     = pmass * sycl::cross(pos, vel)[2];
 
-                buf_radius[i] = radius;
-                buf_Jx[i]     = Jx;
-                buf_Jy[i]     = Jy;
-                buf_Jz[i]     = Jz;
-            });
-    });
+                    buf_radius[i] = radius;
+                    buf_Jx[i]     = Jx;
+                    buf_Jy[i]     = Jy;
+                    buf_Jz[i]     = Jz;
+                });
+        });
 
     shamalgs::numeric::histogram_result<Tscal> histo = shamalgs::numeric::device_histogram_full(
         shamsys::instance::get_compute_scheduler_ptr(), bin_edges, Nbin, buf_radius, Npart);
@@ -200,12 +201,12 @@ auto shammodels::sph::modules::AnalysisDisc<Tvec, SPHKernel>::compute_analysis_s
 
     //  dirty way to get Npart
     u64 Npart = 0;
-    scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+    scheduler().for_each_patchdata_nonempty([&](Patch cur_p, shamrock::scheduler::PatchData &pdat) {
         Npart += pdat.get_obj_cnt();
     });
 
     sham::DeviceBuffer<Tscal> buf_zmean(Npart, shamsys::instance::get_compute_scheduler_ptr());
-    scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+    scheduler().for_each_patchdata_nonempty([&](Patch cur_p, shamrock::scheduler::PatchData &pdat) {
         u32 len                            = pdat.get_obj_cnt();
         sham::DeviceBuffer<Tvec> &buf_xyz  = pdat.get_field_buf_ref<Tvec>(ixyz);
         sham::DeviceBuffer<Tvec> &buf_vxyz = pdat.get_field_buf_ref<Tvec>(ivxyz);
@@ -252,7 +253,7 @@ auto shammodels::sph::modules::AnalysisDisc<Tvec, SPHKernel>::compute_analysis_s
 
     // now compute H
     sham::DeviceBuffer<Tscal> buf_H(Npart, shamsys::instance::get_compute_scheduler_ptr());
-    scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+    scheduler().for_each_patchdata_nonempty([&](Patch cur_p, shamrock::scheduler::PatchData &pdat) {
         u32 len                           = pdat.get_obj_cnt();
         sham::DeviceBuffer<Tvec> &buf_xyz = pdat.get_field_buf_ref<Tvec>(ixyz);
         sham::DeviceQueue &q              = shamsys::instance::get_compute_scheduler().get_queue();
