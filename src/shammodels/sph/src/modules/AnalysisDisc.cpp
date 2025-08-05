@@ -316,7 +316,7 @@ auto shammodels::sph::modules::AnalysisDisc<Tvec, SPHKernel>::compute_analysis_s
         sham::MultiRef{buf_radius, buf_lx, buf_ly, buf_lz},
         sham::MultiRef{buf_tilt, buf_twist, buf_psi},
         Nbin,
-        [&](u32 i,
+        [=](u32 i,
             const Tscal *__restrict radius,
             const Tscal *__restrict lx,
             const Tscal *__restrict ly,
