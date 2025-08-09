@@ -23,7 +23,7 @@
 #include <random>
 #include <vector>
 
-namespace shamalgs {
+namespace shamalgs::primitives {
 
     /**
      * @brief Generates a vector of random mock values within specified bounds
@@ -40,8 +40,7 @@ namespace shamalgs {
      * @param max_bound The maximum bound for the generated values
      * @return A std::vector<T> containing len random values within the specified bounds
      *
-     * @example
-     * ```cpp
+     * @code{.cpp}
      * #include "shamalgs/primitives/mock_vector.hpp"
      *
      * // Generate a vector of random integers
@@ -57,7 +56,7 @@ namespace shamalgs {
      *     sycl::vec<f64, 3>{0.0, 0.0, 0.0},
      *     sycl::vec<f64, 3>{1.0, 1.0, 1.0}
      * );
-     * ```
+     * @endcode
      */
     template<class T>
     std::vector<T> mock_vector(u64 seed, u32 len, T min_bound, T max_bound) {
@@ -87,8 +86,7 @@ namespace shamalgs {
      * @param len The length of the vector to generate
      * @return A std::vector<T> containing len random values within the default bounds for the type
      *
-     * @example
-     * ```cpp
+     * @code{.cpp}
      * #include "shamalgs/primitives/mock_vector.hpp"
      *
      * // Generate vectors with default bounds
@@ -96,7 +94,7 @@ namespace shamalgs {
      * std::vector<f64> random_doubles = shamalgs::mock_vector<f64>(123, 5);
      * std::vector<sycl::vec<f32, 2>> random_vecs = shamalgs::mock_vector<sycl::vec<f32, 2>>(456,
      * 3);
-     * ```
+     * @endcode
      */
     template<class T>
     inline std::vector<T> mock_vector(u64 seed, u32 len) {
@@ -104,4 +102,4 @@ namespace shamalgs {
         return mock_vector(seed, len, Prop::get_min(), Prop::get_max());
     }
 
-} // namespace shamalgs
+} // namespace shamalgs::primitives
