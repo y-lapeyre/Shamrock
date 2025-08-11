@@ -9,7 +9,7 @@
 
 /**
  * @file ModifierApplyCustomWarp.cpp
- * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr) --no git blame--
+ * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief
  *
  */
@@ -26,7 +26,6 @@
 template<class Tvec, template<class> class SPHKernel>
 shamrock::patch::PatchDataLayer
 shammodels::sph::modules::ModifierApplyCustomWarp<Tvec, SPHKernel>::next_n(u32 nmax) {
-    logger::raw_ln("In the next_n function");
 
     using Config = SolverConfig<Tvec, SPHKernel>;
     Config solver_config;
@@ -40,43 +39,30 @@ shammodels::sph::modules::ModifierApplyCustomWarp<Tvec, SPHKernel>::next_n(u32 n
     sham::DeviceBuffer<Tvec> &buf_vxyz
         = tmp.get_field_buf_ref<Tvec>(sched.pdl.get_field_idx<Tvec>("vxyz"));
 
-    auto &q = shamsys::instance::get_compute_scheduler().get_queue();
-    sham::EventList depends_list;
+    auto acc_xyz  = buf_xyz.copy_to_stdvec();
+    auto acc_vxyz = buf_vxyz.copy_to_stdvec();
 
-    auto acc_xyz  = buf_xyz.get_write_access(depends_list);
-    auto acc_vxyz = buf_vxyz.get_write_access(depends_list);
+    for (i32 id_a = 0; id_a < tmp.get_obj_cnt(); ++id_a) {
+        Tvec &xyz_a  = acc_xyz[id_a];
+        Tvec &vxyz_a = acc_vxyz[id_a];
 
-    logger::raw_ln("Just before the queue");
-    auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-        logger::raw_ln("Just before the loop");
-        shambase::parallel_for(cgh, tmp.get_obj_cnt(), "Warp", [=](i32 id_a) {
-            logger::raw_ln("stucj at ", id_a);
-            Tvec &xyz_a  = acc_xyz[id_a];
-            Tvec &vxyz_a = acc_vxyz[id_a];
+        Tscal r = sycl::sqrt(sycl::dot(xyz_a, xyz_a));
 
-            Tscal r = sycl::sqrt(sycl::dot(xyz_a, xyz_a));
+        Tvec k              = k_profile(r);
+        Tscal psi           = psi_profile(r);
+        Tscal effective_inc = inc_profile(r);
 
-            Tvec k              = k_profile(r);
-            Tscal psi           = psi_profile(r);
-            Tscal effective_inc = inc_profile(r);
+        Tvec w  = sycl::cross(k, xyz_a);
+        Tvec wv = sycl::cross(k, vxyz_a);
+        // Rodrigues' rotation formula
+        xyz_a = xyz_a * sycl::cos(effective_inc) + w * sycl::sin(effective_inc)
+                + k * sycl::dot(k, xyz_a) * (1. - sycl::cos(effective_inc));
+        vxyz_a = vxyz_a * sycl::cos(effective_inc) + wv * sycl::sin(effective_inc)
+                 + k * sycl::dot(k, vxyz_a) * (1. - sycl::cos(effective_inc));
+    };
 
-            logger::raw_ln("In the queue");
-            logger::raw_ln("#####################", k);
-            logger::raw_ln("#####################", psi);
-            logger::raw_ln("#####################", effective_inc);
-
-            Tvec w  = sycl::cross(k, xyz_a);
-            Tvec wv = sycl::cross(k, vxyz_a);
-            // Rodrigues' rotation formula
-            xyz_a = xyz_a * sycl::cos(effective_inc) + w * sycl::sin(effective_inc)
-                    + k * sycl::dot(k, xyz_a) * (1. - sycl::cos(effective_inc));
-            vxyz_a = vxyz_a * sycl::cos(effective_inc) + wv * sycl::sin(effective_inc)
-                     + k * sycl::dot(k, vxyz_a) * (1. - sycl::cos(effective_inc));
-        });
-    });
-
-    buf_xyz.complete_event_state(e);
-    buf_vxyz.complete_event_state(e);
+    buf_xyz.copy_from_stdvec(acc_xyz);
+    buf_vxyz.copy_from_stdvec(acc_vxyz);
 
     return tmp;
 }
