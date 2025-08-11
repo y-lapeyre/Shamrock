@@ -35,9 +35,9 @@ shammodels::sph::modules::ModifierApplyCustomWarp<Tvec, SPHKernel>::next_n(u32 n
 
     ////////////////////////// load data //////////////////////////
     sham::DeviceBuffer<Tvec> &buf_xyz
-        = tmp.get_field_buf_ref<Tvec>(sched.pdl.get_field_idx<Tvec>("xyz"));
+        = tmp.template get_field_buf_ref<Tvec>(sched.pdl.get_field_idx<Tvec>("xyz"));
     sham::DeviceBuffer<Tvec> &buf_vxyz
-        = tmp.get_field_buf_ref<Tvec>(sched.pdl.get_field_idx<Tvec>("vxyz"));
+        = tmp.template get_field_buf_ref<Tvec>(sched.pdl.get_field_idx<Tvec>("vxyz"));
 
     auto acc_xyz  = buf_xyz.copy_to_stdvec();
     auto acc_vxyz = buf_vxyz.copy_to_stdvec();
