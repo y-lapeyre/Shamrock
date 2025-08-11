@@ -19,6 +19,9 @@
 #include "shambase/string.hpp"
 #include "shamalgs/algorithm.hpp"
 #include "shamalgs/details/numeric/numeric.hpp"
+#include "shamalgs/primitives/equals.hpp"
+#include "shamalgs/primitives/mock_value.hpp"
+#include "shamalgs/primitives/mock_vector.hpp"
 #include "shamalgs/random.hpp"
 #include "shamalgs/reduction.hpp"
 #include "shambackends/kernel_call.hpp"
@@ -95,7 +98,7 @@ bool PatchDataField<T>::check_field_match(PatchDataField<T> &f2) {
     match = match && (obj_cnt == f2.obj_cnt);
 
     auto sptr = shamsys::instance::get_compute_scheduler_ptr();
-    match     = match && shamalgs::equals(sptr, buf, f2.buf, obj_cnt * nvar);
+    match     = match && shamalgs::primitives::equals(sptr, buf, f2.buf, obj_cnt * nvar);
 
     return match;
 }
@@ -401,7 +404,7 @@ template<class T>
 PatchDataField<T>
 PatchDataField<T>::mock_field(u64 seed, u32 obj_cnt, std::string name, u32 nvar, T vmin, T vmax) {
 
-    std::vector<T> buf = shamalgs::random::mock_vector<T>(seed, obj_cnt * nvar, vmin, vmax);
+    std::vector<T> buf = shamalgs::primitives::mock_vector<T>(seed, obj_cnt * nvar, vmin, vmax);
     PatchDataField<T> ret(name, nvar, obj_cnt);
     ret.get_buf().copy_from_stdvec(buf);
 

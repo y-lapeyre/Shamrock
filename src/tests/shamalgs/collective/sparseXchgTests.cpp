@@ -11,6 +11,7 @@
 #include "shambase/string.hpp"
 #include "shamalgs/collective/sparseXchg.hpp"
 #include "shamalgs/memory.hpp"
+#include "shamalgs/primitives/equals.hpp"
 #include "shamalgs/random.hpp"
 #include "shamalgs/reduction.hpp"
 #include "shambackends/comm/CommunicationBuffer.hpp"
@@ -52,10 +53,10 @@ void sparse_comm_test(std::string prefix, std::shared_ptr<sham::DeviceScheduler>
         void add_element(std::mt19937 &eng, u32 wsize, u64 bytes) {
             u64 rnd = eng();
             elements.push_back(RefBuff{
-                shamalgs::random::mock_value<i32>(eng, 0, wsize - 1),
-                shamalgs::random::mock_value<i32>(eng, 0, wsize - 1),
+                shamalgs::primitives::mock_value<i32>(eng, 0, wsize - 1),
+                shamalgs::primitives::mock_value<i32>(eng, 0, wsize - 1),
                 std::make_unique<sycl::buffer<u8>>(shamalgs::random::mock_buffer<u8>(
-                    rnd, shamalgs::random::mock_value<i32>(eng, 1, bytes)))});
+                    rnd, shamalgs::primitives::mock_value<i32>(eng, 1, bytes)))});
         }
 
         void sort_input() {
@@ -137,7 +138,7 @@ void sparse_comm_test(std::string prefix, std::shared_ptr<sham::DeviceScheduler>
                     recv_buf.payload->get_size());
                 REQUIRE_NAMED(
                     prefix + "same buffer",
-                    shamalgs::reduction::equals_ptr(
+                    shamalgs::primitives::equals_ptr(
                         get_compute_queue(), ref.payload, recv_buf.payload));
 
             } else {
