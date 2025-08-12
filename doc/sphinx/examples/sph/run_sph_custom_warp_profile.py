@@ -1,11 +1,13 @@
 """
-Basic disc simulation
+Custom warp disc simulation
 ========================
 
 This simple example shows how to run a simulation of a disc with a custom initial warp
 """
 
 # sphinx_gallery_multi_image = "single"
+
+import numpy as np
 
 import shamrock
 
@@ -41,7 +43,7 @@ center_racc = 0.1
 
 # Disc parameter
 disc_mass = 0.01  # sol mass
-rout = 10.0  # au
+rout = 60.0  # au
 rin = 1.0  # au
 H_r_0 = 0.05
 q = 0.5
@@ -59,6 +61,7 @@ C_force = 0.25
 
 # Warp parameters
 inclination = 30.0
+
 
 # Disc profiles
 def sigma_profile(r):
@@ -78,18 +81,31 @@ def cs_profile(r):
     cs_in = (H_r_0 * r0) * omega_k(r0)
     return ((r / r0) ** (-q)) * cs_in
 
-def inc_profile(r): # profile of the inclination angle
-    if r > 5:
-        inc = inclination
+
+def inc_profile(r):  # profile of the inclination angle
+    if r < 10.0:
+        effective_inc = 0.0
+    elif r < 30.0 and r > 10:
+        lx = 0.1 * (1.0 + np.sin((r - 20) * np.pi / 20.0))
+        lz = np.sqrt(1 - lx * lx)
+        effective_inc = np.acos(lz)
+
     else:
-        inc = 0
-    return inc
+        lx = 0.2
+        lz = np.sqrt(1 - lx * lx)
+        effective_inc = np.acos(lz)
+
+    return effective_inc
+
 
 def psi_profile(r):
-    return 0.
+    return 0.0
 
-def k_profile(r): # profile of the warp direction
-    return (0., 0., 0.)
+
+def k_profile(r):  # profile of the warp direction
+    incl_rad = inc_profile(r) * np.pi / 180.0
+    return (0.0, np.cos(incl_rad), np.sin(incl_rad))
+
 
 # %%
 # Utility functions and quantities deduced from the base one
@@ -263,13 +279,13 @@ import matplotlib.pyplot as plt
 
 pixel_x = 1200
 pixel_y = 1080
-radius = 5
+radius = 30
 center = (0.0, 0.0, 0.0)
 
 aspect = pixel_x / pixel_y
 pic_range = [-radius * aspect, radius * aspect, -radius, radius]
 delta_x = (radius * 2 * aspect, 0.0, 0.0)
-delta_y = (0.0, radius * 2, 0.0)
+delta_y = (0.0, 0.0, radius * 2)
 
 arr_rho = model.render_cartesian_column_integ(
     "rho", "f64", center=(0.0, 0.0, 0.0), delta_x=delta_x, delta_y=delta_y, nx=pixel_x, ny=pixel_y
@@ -295,82 +311,3 @@ plt.title("t = {:0.3f} [code unit]".format(model.get_time()))
 plt.xlabel("x")
 plt.ylabel("z")
 plt.show()
-
-
-# %%
-# Plot vertical profiles at r=1
-import numpy as np
-
-dat = ctx.collect_data()
-
-for rcenter in [1.0, 2.0, 3.0]:
-
-    z = []
-    h = []
-    vz = []
-    az = []
-
-    delta_r = 0.01
-
-    for i in range(len(dat["xyz"])):
-        r = (dat["xyz"][i][0] ** 2 + dat["xyz"][i][1] ** 2) ** 0.5
-        if r < rcenter + delta_r and r > rcenter - delta_r:
-            z.append(dat["xyz"][i][2])
-            h.append(dat["hpart"][i])
-            vz.append(dat["vxyz"][i][2])
-            az.append(dat["axyz"][i][2])
-
-    rho = pmass * (model.get_hfact() / np.array(h)) ** 3
-
-    fig, axs = plt.subplots(nrows=3, ncols=1, sharex=True)
-
-    from scipy.optimize import curve_fit
-
-    def func(x, a, c):
-        return a * np.exp(-((x / c) ** 2) / 2)
-
-    rho_0 = 0.001
-    p0 = [rho_0, H_profile(rcenter)]  # a, b, c
-    popt, pcov = curve_fit(func, z, rho, p0=p0)
-
-    z_ana = np.linspace(-5.0 * H_profile(rcenter), 5.0 * H_profile(rcenter), 100)
-    rho_fit = func(z_ana, *popt)
-
-    axs[0].scatter(z, rho, label="rho")
-
-    axs[0].plot(z_ana, rho_fit, c="black", label="gaussian fit")
-    stddev = abs(popt[1])
-    axs[0].annotate(
-        f"Stddev: {stddev:.5f}",
-        xy=(0.05, 0.95),
-        xycoords="axes fraction",
-        fontsize=10,
-        verticalalignment="top",
-        bbox=dict(boxstyle="round", fc="w"),
-    )
-
-    axs[0].set_ylabel("rho")
-    axs[0].legend()
-
-    axs[1].scatter(z, vz, label="vz")
-
-    vz_fit = np.polyfit(z, vz, 1)
-    vz_fit_fn = np.poly1d(vz_fit)
-    axs[1].plot(z_ana, vz_fit_fn(z_ana), c="red", label="linear fit")
-
-    axs[1].set_ylabel("vz")
-    axs[1].legend()
-
-    axs[2].scatter(z, az, label="az")
-
-    az_fit = np.polyfit(z, az, 1)
-    az_fit_fn = np.poly1d(az_fit)
-    print(f"r={rcenter} az_fit={az_fit}")
-    axs[2].plot(z_ana, az_fit_fn(z_ana), c="red", label="linear fit")
-
-    axs[2].set_ylabel("az")
-    axs[2].set_xlabel("z")
-    axs[2].legend()
-
-    plt.tight_layout()
-    plt.show()
