@@ -16,6 +16,7 @@
 
 #include "shambase/exception.hpp"
 #include "shambase/stacktrace.hpp"
+#include "shambase/string.hpp"
 #include "shamrock/patch/Patch.hpp"
 #include "shamrock/patch/PatchDataLayer.hpp"
 #include "shamsys/legacy/log.hpp"
@@ -73,7 +74,7 @@ namespace shamrock::patch {
         }
     }
 
-    void PatchDataLayer::insert_elements(PatchDataLayer &pdat) {
+    void PatchDataLayer::insert_elements(const PatchDataLayer &pdat) {
 
         StackEntry stack_loc{};
 
@@ -192,7 +193,8 @@ namespace shamrock::patch {
         }
     }
 
-    void PatchDataLayer::append_subset_to(sycl::buffer<u32> &idxs, u32 sz, PatchDataLayer &pdat) {
+    void
+    PatchDataLayer::append_subset_to(sycl::buffer<u32> &idxs_buf, u32 sz, PatchDataLayer &pdat) {
         StackEntry stack_loc{};
 
         for (u32 idx = 0; idx < fields.size(); idx++) {
@@ -204,7 +206,7 @@ namespace shamrock::patch {
                         typename std::remove_reference<decltype(out_field)>::type::Field_type;
 
                     if constexpr (std::is_same<t1, t2>::value) {
-                        field.append_subset_to(idxs, sz, out_field);
+                        field.append_subset_to(idxs_buf, sz, out_field);
                     } else {
                         throw shambase::make_except_with_loc<std::invalid_argument>("missmatch");
                     }
@@ -214,7 +216,7 @@ namespace shamrock::patch {
         }
     }
 
-    void PatchDataLayer::append_subset_to(std::vector<u32> &idxs, PatchDataLayer &pdat) {
+    void PatchDataLayer::append_subset_to(const std::vector<u32> &idxs, PatchDataLayer &pdat) {
         StackEntry stack_loc{};
 
         for (u32 idx = 0; idx < fields.size(); idx++) {
@@ -229,6 +231,33 @@ namespace shamrock::patch {
                         field.append_subset_to(idxs, out_field);
                     } else {
                         throw shambase::make_except_with_loc<std::invalid_argument>("missmatch");
+                    }
+                },
+                fields[idx].value,
+                pdat.fields[idx].value);
+        }
+    }
+
+    void PatchDataLayer::append_subset_to(
+        const sham::DeviceBuffer<u32> &idxs_buf, u32 sz, PatchDataLayer &pdat) const {
+        StackEntry stack_loc{};
+
+        for (u32 idx = 0; idx < fields.size(); idx++) {
+
+            std::visit(
+                [&](auto &field, auto &out_field) {
+                    using t1 = typename std::remove_reference<decltype(field)>::type::Field_type;
+                    using t2 =
+                        typename std::remove_reference<decltype(out_field)>::type::Field_type;
+
+                    if constexpr (std::is_same<t1, t2>::value) {
+                        field.append_subset_to(idxs_buf, sz, out_field);
+                    } else {
+                        throw shambase::make_except_with_loc<std::invalid_argument>(
+                            shambase::format(
+                                "Mismatch in layout\n source layout = {}\n dest layout = {}",
+                                pdl().get_description_str(),
+                                pdat.pdl().get_description_str()));
                     }
                 },
                 fields[idx].value,

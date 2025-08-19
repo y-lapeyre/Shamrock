@@ -29,7 +29,6 @@ set(Sources
     src/modules/ConsToPrimGas.cpp
     src/modules/ConsToPrimDust.cpp
     src/modules/ComputeCellAABB.cpp
-    src/modules/StencilGenerator.cpp
     src/modules/NodeBuildTrees.cpp
     src/modules/FindBlockNeigh.cpp
     src/modules/BlockNeighToCellNeigh.cpp
@@ -40,6 +39,8 @@ set(Sources
     src/modules/CGInit.cpp
     src/modules/ComputeAMRLevel.cpp
     src/modules/ResidualDot.cpp
+    src/modules/ExchangeGhostLayer.cpp
+    src/modules/TransformGhostLayer.cpp
 )
 
 if(SHAMROCK_USE_SHARED_LIB)
