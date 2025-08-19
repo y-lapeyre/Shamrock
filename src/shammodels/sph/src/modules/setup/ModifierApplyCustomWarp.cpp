@@ -27,8 +27,6 @@ template<class Tvec, template<class> class SPHKernel>
 shamrock::patch::PatchDataLayer
 shammodels::sph::modules::ModifierApplyCustomWarp<Tvec, SPHKernel>::next_n(u32 nmax) {
 
-    using Config = SolverConfig<Tvec, SPHKernel>;
-    Config solver_config;
     ShamrockCtx &ctx                    = context;
     PatchScheduler &sched               = shambase::get_check_ref(ctx.sched);
     shamrock::patch::PatchDataLayer tmp = parent->next_n(nmax);

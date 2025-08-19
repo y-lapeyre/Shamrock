@@ -88,12 +88,12 @@ def inc_profile(r):  # profile of the inclination angle
     elif r < 30.0 and r > 10:
         lx = 0.1 * (1.0 + np.sin((r - 20) * np.pi / 20.0))
         lz = np.sqrt(1 - lx * lx)
-        effective_inc = np.acos(lz)
+        effective_inc = np.arccos(lz)
 
     else:
         lx = 0.2
         lz = np.sqrt(1 - lx * lx)
-        effective_inc = np.acos(lz)
+        effective_inc = np.arccos(lz)
 
     return effective_inc
 
@@ -192,7 +192,7 @@ gen_disc = setup.make_generator_disc_mc(
 
 # apply the custom warp
 warp = setup.make_modifier_custom_warp(
-    setup2warp=gen_disc,
+    parent=gen_disc,
     inc_profile=inc_profile,
     psi_profile=psi_profile,
     k_profile=k_profile,
