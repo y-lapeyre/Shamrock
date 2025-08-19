@@ -11,7 +11,7 @@
 
 /**
  * @file linspace.hpp
- * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr) --no git blame--
+ * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief Creating an array of N values between two values
  *
  */
