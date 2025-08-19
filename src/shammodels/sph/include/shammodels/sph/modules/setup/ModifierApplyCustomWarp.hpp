@@ -52,7 +52,7 @@ namespace shammodels::sph::modules {
         shamrock::patch::PatchDataLayer next_n(u32 nmax);
 
         std::string get_name() { return "ApplyCustomWarp"; }
-        
+
         ISPHSetupNode_Dot get_dot_subgraph() {
             return ISPHSetupNode_Dot{get_name(), 2, {parent->get_dot_subgraph()}};
         }
