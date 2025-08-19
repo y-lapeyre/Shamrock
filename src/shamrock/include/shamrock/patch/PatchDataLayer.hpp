@@ -21,7 +21,7 @@
 #include "shambase/stacktrace.hpp"
 #include "Patch.hpp"
 #include "PatchDataField.hpp"
-#include "PatchDataLayout.hpp"
+#include "PatchDataLayerLayout.hpp"
 #include "shambackends/sycl_utils.hpp"
 #include "shammath/intervals.hpp"
 #include <variant>
@@ -38,15 +38,20 @@ namespace shamrock::patch {
         using var_t = FieldVariant<PatchDataField>;
 
         std::vector<var_t> fields;
+        std::shared_ptr<PatchDataLayerLayout> pdl_ptr;
 
         public:
         using field_variant_t = var_t;
 
-        PatchDataLayout &pdl;
+        inline PatchDataLayerLayout &pdl() { return shambase::get_check_ref(pdl_ptr); }
 
-        inline PatchDataLayer(PatchDataLayout &pdl) : pdl(pdl) { init_fields(); }
+        inline std::shared_ptr<PatchDataLayerLayout> get_layout_ptr() const { return pdl_ptr; }
 
-        inline PatchDataLayer(const PatchDataLayer &other) : pdl(other.pdl) {
+        inline PatchDataLayer(const std::shared_ptr<PatchDataLayerLayout> &pdl) : pdl_ptr(pdl) {
+            init_fields();
+        }
+
+        inline PatchDataLayer(const PatchDataLayer &other) : pdl_ptr(other.get_layout_ptr()) {
 
             NamedStackEntry stack_loc{"PatchDataLayer::copy_constructor", true};
 
@@ -66,7 +71,7 @@ namespace shamrock::patch {
          * @param other
          */
         inline PatchDataLayer(PatchDataLayer &&other) noexcept
-            : fields(std::move(other.fields)), pdl(other.pdl) {}
+            : fields(std::move(other.fields)), pdl_ptr(std::move(other.pdl_ptr)) {}
 
         /**
          * @brief PatchDataLayer move assignment
@@ -74,15 +79,15 @@ namespace shamrock::patch {
          * @param other
          */
         inline PatchDataLayer &operator=(PatchDataLayer &&other) noexcept {
-            fields = std::move(other.fields);
-            pdl    = std::move(other.pdl);
-
+            fields  = std::move(other.fields);
+            pdl_ptr = std::move(other.pdl_ptr);
             return *this;
         }
 
         PatchDataLayer &operator=(const PatchDataLayer &other) = delete;
 
-        static PatchDataLayer mock_patchdata(u64 seed, u32 obj_cnt, PatchDataLayout &pdl);
+        static PatchDataLayer
+        mock_patchdata(u64 seed, u32 obj_cnt, const std::shared_ptr<PatchDataLayerLayout> &pdl);
 
         template<class Functor>
         inline void for_each_field_any(Functor &&func) {
@@ -94,7 +99,8 @@ namespace shamrock::patch {
         }
 
         template<class Func>
-        inline PatchDataLayer(PatchDataLayout &pdl, Func &&fct_init) : pdl(pdl) {
+        inline PatchDataLayer(const std::shared_ptr<PatchDataLayerLayout> &pdl, Func &&fct_init)
+            : pdl_ptr(pdl) {
 
             u32 cnt = 0;
 
@@ -121,7 +127,7 @@ namespace shamrock::patch {
 
         void keep_ids(sycl::buffer<u32> &index_map, u32 len);
 
-        void insert_elements(PatchDataLayer &pdat);
+        void insert_elements(const PatchDataLayer &pdat);
 
         /**
          * @brief insert elements of pdat only if they are within the range
@@ -184,8 +190,10 @@ namespace shamrock::patch {
             std::array<Tvecbox, 8> min_box,
             std::array<Tvecbox, 8> max_box);
 
-        void append_subset_to(std::vector<u32> &idxs, PatchDataLayer &pdat);
-        void append_subset_to(sycl::buffer<u32> &idxs, u32 sz, PatchDataLayer &pdat);
+        void append_subset_to(const std::vector<u32> &idxs, PatchDataLayer &pdat);
+        void append_subset_to(sycl::buffer<u32> &idxs_buf, u32 sz, PatchDataLayer &pdat);
+        void
+        append_subset_to(const sham::DeviceBuffer<u32> &idxs_buf, u32 sz, PatchDataLayer &pdat);
 
         inline u32 get_obj_cnt() {
 
@@ -253,10 +261,15 @@ namespace shamrock::patch {
             throw shambase::make_except_with_loc<std::runtime_error>(
                 "the request id is not of correct type\n"
                 "   current map is : \n"
-                + pdl.get_description_str()
+                + pdl().get_description_str()
                 + "\n"
                   "    arg : idx = "
                 + std::to_string(idx));
+        }
+
+        template<class T>
+        PatchDataField<T> &get_field(const std::string &field_name) {
+            return get_field<T>(pdl().get_field_idx<T>(field_name));
         }
 
         template<class T>
@@ -273,7 +286,7 @@ namespace shamrock::patch {
             throw shambase::make_except_with_loc<std::runtime_error>(
                 "the request id is not of correct type\n"
                 "   current map is : \n"
-                + pdl.get_description_str()
+                + pdl().get_description_str()
                 + "\n"
                   "    arg : idx = "
                 + std::to_string(idx));
@@ -374,8 +387,9 @@ namespace shamrock::patch {
 
         shamalgs::SerializeSize serialize_buf_byte_size();
 
-        static PatchDataLayer
-        deserialize_buf(shamalgs::SerializeHelper &serializer, PatchDataLayout &pdl);
+        static PatchDataLayer deserialize_buf(
+            shamalgs::SerializeHelper &serializer,
+            const std::shared_ptr<PatchDataLayerLayout> &pdl);
 
         void fields_raz();
 
@@ -433,7 +447,7 @@ namespace shamrock::patch {
         template<class T>
         void override_patch_field(std::string field_name, std::vector<T> &vec) {
             u32 len              = vec.size();
-            PatchDataField<T> &f = get_field<T>(pdl.get_field_idx<T>(field_name));
+            PatchDataField<T> &f = get_field<T>(pdl().get_field_idx<T>(field_name));
             sycl::buffer<T> buf(vec.data(), len);
             f.override(buf, len);
         }
@@ -482,7 +496,7 @@ namespace shamrock::patch {
 
         StackEntry stack_loc{};
 
-        if (!pdl.check_main_field_type<T>()) {
+        if (!pdl().check_main_field_type<T>()) {
 
             throw shambase::make_except_with_loc<std::invalid_argument>(
                 "the chosen type for the main field does not match the required template type");

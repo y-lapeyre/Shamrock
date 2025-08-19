@@ -8,7 +8,7 @@
 // -------------------------------------------------------//
 
 #include "shamrock/legacy/patch/base/patchdata.hpp"
-#include "shamrock/patch/PatchDataLayout.hpp"
+#include "shamrock/patch/PatchDataLayerLayout.hpp"
 #include "shamsys/legacy/sycl_mpi_interop.hpp"
 #include "shamtest/shamtest.hpp"
 #include <random>
@@ -18,7 +18,8 @@ TestStart(Unittest, "patchdata.cpp/patch_data_check_match", patch_data_check_mat
 
     using namespace shamrock::patch;
 
-    PatchDataLayout pdl;
+    std::shared_ptr<PatchDataLayerLayout> pdl_ptr = std::make_shared<PatchDataLayerLayout>();
+    auto &pdl                                     = *pdl_ptr;
 
     pdl.add_field<f32>("f32", 1);
     pdl.add_field<f32_2>("f32_2", 1);
@@ -40,7 +41,7 @@ TestStart(Unittest, "patchdata.cpp/patch_data_check_match", patch_data_check_mat
     pdl.add_field<u32>("u32", 1);
     pdl.add_field<u64>("u64", 1);
 
-    PatchDataLayer d_check = patchdata_gen_dummy_data(pdl, eng);
+    PatchDataLayer d_check = patchdata_gen_dummy_data(pdl_ptr, eng);
 
     REQUIRE_NAMED("reflexivity", patch_data_check_match(d_check, d_check));
 }
@@ -53,7 +54,7 @@ TestStart(Unittest, "patchdata.cpp/isend_irecv",patch_data_isend_irecv, 2){
     using namespace shamrock::patch;
 
 
-    PatchDataLayout pdl;
+    PatchDataLayerLayout pdl;
 
     pdl.add_field<f32>("f32", 1);
     pdl.add_field<f32_2>("f32_2", 1);

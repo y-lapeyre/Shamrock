@@ -43,11 +43,12 @@ TestStart(
     for (u32 i = 0; i < npatch; i++) {
         Patch p;
         p.id_patch      = i;
-        p.node_owner_id = shamalgs::random::mock_value(eng, 0, wsize - 1);
+        p.node_owner_id = shamalgs::primitives::mock_value(eng, 0, wsize - 1);
         plist.global.push_back(p);
     }
 
-    PatchDataLayout pdl;
+    std::shared_ptr<PatchDataLayerLayout> pdl_ptr = std::make_shared<PatchDataLayerLayout>();
+    auto &pdl                                     = *pdl_ptr;
 
     pdl.add_field<f32_3>("f32_3'", 1);
     pdl.add_field<f32>("f32", 1);
@@ -70,12 +71,12 @@ TestStart(
 
     for (u32 i = 0; i < npatch; i++) {
         ref_pdat.push_back(PatchData::mock_patchdata(
-            eng(), shamalgs::random::mock_value(eng, 1_u32, max_ob_ppatch), pdl));
+            eng(), shamalgs::primitives::mock_value(eng, 1_u32, max_ob_ppatch), pdl_ptr));
     }
 
     PatchCoord pcoord({0, 0, 0}, {0, 0, 0});
 
-    SchedulerPatchData spdat(pdl, pcoord);
+    SchedulerPatchData spdat(pdl_ptr, pcoord);
     for (u32 i = 0; i < npatch; i++) {
         if (plist.global[i].node_owner_id == wrank) {
             spdat.owned_data.add_obj(u64(i), ref_pdat[i].duplicate());
@@ -86,7 +87,7 @@ TestStart(
 
     LoadBalancingChangeList clist;
     for (u32 i = 0; i < npatch; i++) {
-        i32 new_owner = shamalgs::random::mock_value(eng, 0, wsize - 1);
+        i32 new_owner = shamalgs::primitives::mock_value(eng, 0, wsize - 1);
         if (new_owner != plist.global[i].node_owner_id) {
             LoadBalancingChangeList::ChangeOp op;
             op.patch_id       = i;

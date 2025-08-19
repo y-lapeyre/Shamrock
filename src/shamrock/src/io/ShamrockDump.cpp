@@ -14,13 +14,17 @@
  *
  */
 
-#include "shamrock/io/ShamrockDump.hpp"
+#include "shambase/stacktrace.hpp"
 #include "shamcmdopt/env.hpp"
 #include "shamcomm/logs.hpp"
+#include "shamrock/io/ShamrockDump.hpp"
 
 namespace shamrock {
 
     void write_shamrock_dump(std::string fname, std::string metadata_user, PatchScheduler &sched) {
+
+        StackEntry stack_loc{};
+
         std::string metadata_patch = sched.serialize_patch_metadata().dump(4);
 
         using namespace shamrock::patch;
@@ -157,6 +161,8 @@ namespace shamrock {
 
     void load_shamrock_dump(std::string fname, std::string &metadata_user, ShamrockCtx &ctx) {
 
+        StackEntry stack_loc{};
+
         u64 head_ptr = 0;
         MPI_File mfile{};
 
@@ -184,7 +190,7 @@ namespace shamrock {
         json jpdat_info  = json::parse(patchdata_infos);
 
         ctx.pdata_layout_new();
-        *ctx.pdl = jmeta_patch.at("patchdata_layout").get<patch::PatchDataLayout>();
+        *ctx.pdl = jmeta_patch.at("patchdata_layout").get<patch::PatchDataLayerLayout>();
         ctx.init_sched(
             jmeta_patch.at("crit_patch_split").get<u64>(),
             jmeta_patch.at("crit_patch_merge").get<u64>());
@@ -240,8 +246,7 @@ namespace shamrock {
             shamalgs::SerializeHelper ser(
                 shamsys::instance::get_compute_scheduler_ptr(), std::move(out));
 
-            patch::PatchDataLayer pdat
-                = patch::PatchDataLayer::deserialize_buf(ser, shambase::get_check_ref(ctx.pdl));
+            patch::PatchDataLayer pdat = patch::PatchDataLayer::deserialize_buf(ser, ctx.pdl);
 
             sched.patch_data.owned_data.add_obj(pid, std::move(pdat));
         }

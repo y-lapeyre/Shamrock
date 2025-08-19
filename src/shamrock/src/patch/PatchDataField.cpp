@@ -19,6 +19,9 @@
 #include "shambase/string.hpp"
 #include "shamalgs/algorithm.hpp"
 #include "shamalgs/details/numeric/numeric.hpp"
+#include "shamalgs/primitives/equals.hpp"
+#include "shamalgs/primitives/mock_value.hpp"
+#include "shamalgs/primitives/mock_vector.hpp"
 #include "shamalgs/random.hpp"
 #include "shamalgs/reduction.hpp"
 #include "shambackends/kernel_call.hpp"
@@ -95,7 +98,7 @@ bool PatchDataField<T>::check_field_match(PatchDataField<T> &f2) {
     match = match && (obj_cnt == f2.obj_cnt);
 
     auto sptr = shamsys::instance::get_compute_scheduler_ptr();
-    match     = match && shamalgs::equals(sptr, buf, f2.buf, obj_cnt * nvar);
+    match     = match && shamalgs::primitives::equals(sptr, buf, f2.buf, obj_cnt * nvar);
 
     return match;
 }
@@ -181,7 +184,7 @@ void PatchDataField<T>::append_subset_to(
 
 template<class T>
 void PatchDataField<T>::append_subset_to(
-    sham::DeviceBuffer<u32> &idxs_buf, u32 sz, PatchDataField &pfield) {
+    const sham::DeviceBuffer<u32> &idxs_buf, u32 sz, PatchDataField &pfield) {
 
     if (pfield.nvar != nvar)
         throw shambase::make_except_with_loc<std::invalid_argument>(
@@ -292,7 +295,7 @@ template<class T>
 class PdatField_insert;
 
 template<class T>
-void PatchDataField<T>::insert(PatchDataField<T> &f2) {
+void PatchDataField<T>::insert(const PatchDataField<T> &f2) {
 
     u32 f2_len = f2.get_obj_cnt();
 
@@ -401,7 +404,7 @@ template<class T>
 PatchDataField<T>
 PatchDataField<T>::mock_field(u64 seed, u32 obj_cnt, std::string name, u32 nvar, T vmin, T vmax) {
 
-    std::vector<T> buf = shamalgs::random::mock_vector<T>(seed, obj_cnt * nvar, vmin, vmax);
+    std::vector<T> buf = shamalgs::primitives::mock_vector<T>(seed, obj_cnt * nvar, vmin, vmax);
     PatchDataField<T> ret(name, nvar, obj_cnt);
     ret.get_buf().copy_from_stdvec(buf);
 

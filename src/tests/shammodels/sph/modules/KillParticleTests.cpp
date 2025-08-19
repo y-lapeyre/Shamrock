@@ -10,7 +10,7 @@
 #include "shambackends/DeviceBuffer.hpp"
 #include "shammodels/sph/modules/KillParticles.hpp"
 #include "shamrock/patch/PatchDataLayer.hpp"
-#include "shamrock/patch/PatchDataLayout.hpp"
+#include "shamrock/patch/PatchDataLayerLayout.hpp"
 #include "shamrock/solvergraph/DistributedBuffers.hpp"
 #include "shamrock/solvergraph/PatchDataLayerRefs.hpp"
 #include "shamtest/shamtest.hpp"
@@ -22,8 +22,10 @@ TestStart(Unittest, "shambackends/KillParticles:basic", KillParticles_basic, 1) 
     using namespace shamrock;
     using namespace shammodels::sph::modules;
 
-    // 1. Create PatchDataLayout
-    patch::PatchDataLayout layout;
+    // 1. Create PatchDataLayerLayout
+    std::shared_ptr<patch::PatchDataLayerLayout> layout_ptr
+        = std::make_shared<patch::PatchDataLayerLayout>();
+    auto &layout = *layout_ptr;
     layout.add_field<T>("single_var", 1);
     layout.add_field<T>("multi_var", 2);
 
@@ -31,7 +33,7 @@ TestStart(Unittest, "shambackends/KillParticles:basic", KillParticles_basic, 1) 
     std::vector<T> in_2 = {0, 0, 1, 1, 2, 2, 3, 3, 4, 4};
 
     // 2. Create PatchData with 5 particles: xyz = (i, i, i)
-    patch::PatchDataLayer pdat(layout);
+    patch::PatchDataLayer pdat(layout_ptr);
     pdat.resize(5);
     {
         auto &field = pdat.get_field<T>(layout.get_field_idx<T>("single_var"));

@@ -31,8 +31,8 @@ void shammodels::sph::modules::ComputeOmega<Tvec, SPHKernel>::compute_omega() {
     using namespace shamrock;
     using namespace shamrock::patch;
 
-    PatchDataLayout &pdl = scheduler().pdl;
-    const u32 ihpart     = pdl.get_field_idx<Tscal>("hpart");
+    PatchDataLayerLayout &pdl = scheduler().pdl();
+    const u32 ihpart          = pdl.get_field_idx<Tscal>("hpart");
 
     shamrock::solvergraph::Field<Tscal> &omega = shambase::get_check_ref(storage.omega);
 
