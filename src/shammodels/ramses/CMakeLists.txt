@@ -39,9 +39,9 @@ set(Sources
     src/modules/CGInit.cpp
     src/modules/ComputeAMRLevel.cpp
     src/modules/ResidualDot.cpp
-    src/modules/ExchangeGhostLayer.cpp
     src/modules/TransformGhostLayer.cpp
     src/modules/ExtractGhostLayer.cpp
+    src/modules/FuseGhostLayer.cpp
 )
 
 if(SHAMROCK_USE_SHARED_LIB)
