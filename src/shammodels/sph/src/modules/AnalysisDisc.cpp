@@ -15,11 +15,13 @@
  */
 
 #include "shambase/aliases_int.hpp"
+#include "shamalgs/collective/exchanges.hpp"
 #include "shamalgs/details/numeric/numeric.hpp"
 #include "shamalgs/primitives/linspace.hpp"
 #include "shambackends/DeviceBuffer.hpp"
 #include "shambackends/EventList.hpp"
 #include "shambackends/kernel_call.hpp"
+#include "shamcomm/wrapper.hpp"
 #include "shammath/sphkernels.hpp"
 #include "shammodels/sph/math/density.hpp"
 #include "shammodels/sph/modules/AnalysisDisc.hpp"
@@ -101,16 +103,16 @@ auto shammodels::sph::modules::AnalysisDisc<Tvec, SPHKernel>::compute_analysis_b
             i++;
         });
 
-    shamalgs::numeric::histogram_result<Tscal> histo = shamalgs::numeric::device_histogram_full(
+    auto histo = shamalgs::numeric::device_histogram_full(
         shamsys::instance::get_compute_scheduler_ptr(), bin_edges, Nbin, buf_radius, Npart);
 
-    auto binned_Jx = shamalgs::numeric::binned_average(
+    auto binned_Jx = shamalgs::numeric::binned_average_mpi(
         shamsys::instance::get_compute_scheduler_ptr(), bin_edges, Nbin, buf_Jx, buf_radius, Npart);
 
-    auto binned_Jy = shamalgs::numeric::binned_average(
+    auto binned_Jy = shamalgs::numeric::binned_average_mpi(
         shamsys::instance::get_compute_scheduler_ptr(), bin_edges, Nbin, buf_Jy, buf_radius, Npart);
 
-    auto binned_Jz = shamalgs::numeric::binned_average(
+    auto binned_Jz = shamalgs::numeric::binned_average_mpi(
         shamsys::instance::get_compute_scheduler_ptr(), bin_edges, Nbin, buf_Jz, buf_radius, Npart);
 
     auto buf_radius_key = buf_radius.copy();
@@ -133,6 +135,7 @@ auto shammodels::sph::modules::AnalysisDisc<Tvec, SPHKernel>::compute_analysis_b
             });
             return sigma_bin;
         });
+    shamalgs::collective::reduce_buffer_in_place_sum(Sigma, MPI_COMM_WORLD);
 
     return analysis_basis{
         std::move(buf_radius),
@@ -182,6 +185,9 @@ auto shammodels::sph::modules::AnalysisDisc<Tvec, SPHKernel>::compute_analysis_s
                 lz[i] = Jz[i] / J_norm;
             }
         });
+    shamalgs::collective::reduce_buffer_in_place_sum(buf_binned_lx, MPI_COMM_WORLD);
+    shamalgs::collective::reduce_buffer_in_place_sum(buf_binned_ly, MPI_COMM_WORLD);
+    shamalgs::collective::reduce_buffer_in_place_sum(buf_binned_lz, MPI_COMM_WORLD);
 
     // compute zmean
     using namespace shamrock;
@@ -195,6 +201,7 @@ auto shammodels::sph::modules::AnalysisDisc<Tvec, SPHKernel>::compute_analysis_s
     u64 Npart  = 0;
     u64 Npatch = 0;
     std::vector<u64> parts_per_patch{};
+    // on all patches on all ranks, allreduce is included
     scheduler().for_each_patchdata_nonempty([&](Patch cur_p, shamrock::scheduler::PatchData &pdat) {
         parts_per_patch.push_back(pdat.get_obj_cnt());
         Npart += pdat.get_obj_cnt();
@@ -207,6 +214,7 @@ auto shammodels::sph::modules::AnalysisDisc<Tvec, SPHKernel>::compute_analysis_s
 
     u32 i = 0;
     sham::DeviceBuffer<Tscal> buf_zmean(Npart, shamsys::instance::get_compute_scheduler_ptr());
+    // compute zmean: loop on all patches of all ranks
     scheduler().for_each_patchdata_nonempty([&](Patch cur_p, shamrock::scheduler::PatchData &pdat) {
         u32 len                            = pdat.get_obj_cnt();
         u32 start_write                    = patch_start_index[i];
@@ -248,7 +256,7 @@ auto shammodels::sph::modules::AnalysisDisc<Tvec, SPHKernel>::compute_analysis_s
     });
 
     // now that we have zmean, bin it
-    auto binned_zmean = shamalgs::numeric::binned_average(
+    auto binned_zmean = shamalgs::numeric::binned_average_mpi(
         shamsys::instance::get_compute_scheduler_ptr(),
         basis.bin_edges,
         Nbin,
@@ -259,6 +267,7 @@ auto shammodels::sph::modules::AnalysisDisc<Tvec, SPHKernel>::compute_analysis_s
     // now compute H
     u32 j = 0;
     sham::DeviceBuffer<Tscal> buf_H(Npart, shamsys::instance::get_compute_scheduler_ptr());
+    // compute buf_H: loop on all patches of all ranks
     scheduler().for_each_patchdata_nonempty([&](Patch cur_p, shamrock::scheduler::PatchData &pdat) {
         u32 len                           = pdat.get_obj_cnt();
         u32 start_write                   = patch_start_index[j];
@@ -290,7 +299,7 @@ auto shammodels::sph::modules::AnalysisDisc<Tvec, SPHKernel>::compute_analysis_s
         j++;
     });
 
-    auto binned_Hsq = shamalgs::numeric::binned_average(
+    auto binned_Hsq = shamalgs::numeric::binned_average_mpi(
         shamsys::instance::get_compute_scheduler_ptr(),
         basis.bin_edges,
         Nbin,
@@ -358,15 +367,6 @@ auto shammodels::sph::modules::AnalysisDisc<Tvec, SPHKernel>::compute_analysis_s
 }
 
 template<class Tvec, template<class> class SPHKernel>
-auto shammodels::sph::modules::AnalysisDisc<Tvec, SPHKernel>::compute_analysis_stage2(
-    analysis_stage1 &stage1, u32 Nbin) -> analysis_stage2 {
-    sham::DeviceBuffer<Tscal> buff_H(Nbin, shamsys::instance::get_compute_scheduler_ptr());
-    sham::DeviceBuffer<Tscal> buff_H_on_R(Nbin, shamsys::instance::get_compute_scheduler_ptr());
-
-    return analysis_stage2{std::move(buff_H), std::move(buff_H_on_R)};
-}
-
-template<class Tvec, template<class> class SPHKernel>
 auto shammodels::sph::modules::AnalysisDisc<Tvec, SPHKernel>::compute_analysis(
     Tscal Rmin, Tscal Rmax, u32 Nbin, const ShamrockCtx &ctx) -> analysis {
 
@@ -374,7 +374,6 @@ auto shammodels::sph::modules::AnalysisDisc<Tvec, SPHKernel>::compute_analysis(
     analysis_basis basis   = compute_analysis_basis(pmass, Rmin, Rmax, Nbin, ctx);
     analysis_stage0 stage0 = compute_analysis_stage0(basis, Nbin);
     analysis_stage1 stage1 = compute_analysis_stage1(basis, stage0, Nbin);
-    analysis_stage2 stage2 = compute_analysis_stage2(stage1, Nbin);
 
     return analysis{
         std::move(basis.radius),

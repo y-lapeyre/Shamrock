@@ -92,18 +92,11 @@ namespace shammodels::sph::modules {
             sham::DeviceBuffer<Tscal> psi;
         };
 
-        struct analysis_stage2 {
-
-            sham::DeviceBuffer<Tscal> H;
-            sham::DeviceBuffer<Tscal> H_on_R; // @@@ yes this is redundant, let's keep it for now
-        };
-
         analysis_basis compute_analysis_basis(
             Tscal pmass, Tscal Rmin, Tscal Rmax, u32 Nbin, const ShamrockCtx &ctx);
         analysis_stage0 compute_analysis_stage0(analysis_basis &basis, u32 Nbin);
         analysis_stage1
         compute_analysis_stage1(analysis_basis &basis, analysis_stage0 &stage0, u32 Nbin);
-        analysis_stage2 compute_analysis_stage2(analysis_stage1 &stage1, u32 Nbin);
 
         analysis compute_analysis(Tscal Rmin, Tscal Rmax, u32 Nbin, const ShamrockCtx &ctx);
 
