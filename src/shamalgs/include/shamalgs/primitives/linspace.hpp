@@ -11,6 +11,7 @@
 
 /**
  * @file linspace.hpp
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief Creating an array of N values between two values
  *
