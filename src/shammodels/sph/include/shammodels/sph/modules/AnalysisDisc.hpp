@@ -44,6 +44,7 @@ namespace shammodels::sph::modules {
         AnalysisDisc(ShamrockCtx &context, Config &solver_config, Storage &storage)
             : context(context), solver_config(solver_config), storage(storage) {}
 
+        /// TODO: make this a dichotomic search
         u32 mybin(Tscal radius, const Tscal *__restrict bin_edges, u32 Nbin) {
             u32 bini = 0;
             for (u32 bini = 0; bini < Nbin; bini++) {
