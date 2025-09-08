@@ -31,19 +31,28 @@ bounding_box = shamrock.math.AABB_f64_3((0.0, 0.0, 0.0), (1.0, 1.0, 1.0))
 def benchmark_dtt_core(N, theta_crit, compression_level, nb_repeat=10):
     times = []
     random.seed(111)
+    max_mem_delta = 0
     for i in range(nb_repeat):
         positions = shamrock.algs.mock_buffer_f64_3(
             random.randint(0, 1000000), N, bounding_box.lower, bounding_box.upper
         )
         tree = shamrock.tree.CLBVH_u64_f64_3()
         tree.rebuild_from_positions(positions, bounding_box, compression_level)
+        shamrock.backends.reset_mem_info_max()
+        mem_info_before = shamrock.backends.get_mem_perf_info()
         times.append(shamrock.tree.benchmark_clbvh_dual_tree_traversal(tree, theta_crit) * 1000)
-    return times
+        mem_info_after = shamrock.backends.get_mem_perf_info()
+
+        mem_delta = (
+            mem_info_after.max_allocated_byte_device - mem_info_before.max_allocated_byte_device
+        )
+        max_mem_delta = max(max_mem_delta, mem_delta)
+    return times, max_mem_delta
 
 
 def benchmark_dtt(N, theta_crit, compression_level, nb_repeat=10):
-    times = benchmark_dtt_core(N, theta_crit, compression_level, nb_repeat)
-    return min(times), max(times), sum(times) / nb_repeat
+    times, max_mem_delta = benchmark_dtt_core(N, theta_crit, compression_level, nb_repeat)
+    return min(times), max(times), sum(times) / nb_repeat, max_mem_delta
 
 
 # %%
@@ -59,6 +68,7 @@ def run_performance_sweep(compression_level, threshold_run):
     results_mean = np.zeros((len(theta_crits), len(particle_counts)))
     results_min = np.zeros((len(theta_crits), len(particle_counts)))
     results_max = np.zeros((len(theta_crits), len(particle_counts)))
+    results_max_mem_delta = np.zeros((len(theta_crits), len(particle_counts)))
 
     print(f"Particle counts: {particle_counts}")
     print(f"Theta_crit values: {theta_crits}")
@@ -68,14 +78,13 @@ def run_performance_sweep(compression_level, threshold_run):
     current_run = 0
 
     for i, theta_crit in enumerate(theta_crits):
+        exceed_mem = False
         for j, N in enumerate(particle_counts):
             current_run += 1
 
-            # Check if we should skip this benchmark based on the criterion
-            criterion_value = N / (theta_crit**3)
-            if criterion_value > threshold_run:
+            if exceed_mem:
                 print(
-                    f"[{current_run:2d}/{total_runs}] Skipping N={N:5d}, theta_crit={theta_crit:.1f} (N/theta³={criterion_value:.0f} > 100000)"
+                    f"[{current_run:2d}/{total_runs}] Skipping N={N:5d}, theta_crit={theta_crit:.1f}"
                 )
                 results_mean[i, j] = np.nan
                 results_min[i, j] = np.nan
@@ -83,21 +92,34 @@ def run_performance_sweep(compression_level, threshold_run):
                 continue
 
             print(
-                f"[{current_run:2d}/{total_runs}] Running N={N:5d}, theta_crit={theta_crit:.1f} (N/theta³={criterion_value:.0f})...",
+                f"[{current_run:2d}/{total_runs}] Running N={N:5d}, theta_crit={theta_crit:.1f}...",
                 end=" ",
             )
 
             start_time = time.time()
-            min_time, max_time, mean_time = benchmark_dtt(N, theta_crit, compression_level)
+            min_time, max_time, mean_time, max_mem_delta = benchmark_dtt(
+                N, theta_crit, compression_level
+            )
             elapsed = time.time() - start_time
 
             results_mean[i, j] = mean_time
             results_min[i, j] = min_time
             results_max[i, j] = max_time
+            results_max_mem_delta[i, j] = max_mem_delta
 
             print(f"mean={mean_time:.3f}ms (took {elapsed:.1f}s)")
 
-    return particle_counts, theta_crits, results_mean, results_min, results_max
+            if max_mem_delta > threshold_run:
+                exceed_mem = True
+
+    return (
+        particle_counts,
+        theta_crits,
+        results_mean,
+        results_min,
+        results_max,
+        results_max_mem_delta,
+    )
 
 
 # %%
@@ -110,6 +132,7 @@ def create_checkerboard_plot(
     algname,
     max_axis_value,
     reference_data,
+    results_max_mem_delta,
 ):
     """Create checkerboard plot with execution times"""
 
@@ -162,11 +185,12 @@ def create_checkerboard_plot(
                 pass
             else:
                 perf = relative_performance[i, j]
+                mem_delta = results_max_mem_delta[i, j] / 1e6
                 text_color = "black"
                 ax.text(
                     j,
                     i,
-                    f"{value:.2f}ms\n{perf:.2f}",
+                    f"{value:.2f}ms\n{perf:.2f}\n{mem_delta:.2f}MB",
                     ha="center",
                     va="center",
                     color=text_color,
@@ -195,34 +219,42 @@ def create_checkerboard_plot(
 
 
 # %%
-# List all implementations available
-all_algs = shamrock.tree.get_impl_list_clbvh_dual_tree_traversal()
+# List current implementation
+current_impl = shamrock.tree.get_current_impl_clbvh_dual_tree_traversal_impl()
 
-print(all_algs)
+print(current_impl)
+
+# %%
+# List all implementations available
+all_default_impls = shamrock.tree.get_default_impl_list_clbvh_dual_tree_traversal()
+
+print(all_default_impls)
 
 # %%
 # Run the performance benchmarks for all implementations
 results = {}
 
-for algname in all_algs:
-    shamrock.tree.set_impl_clbvh_dual_tree_traversal(algname, "")
+for default_impl in all_default_impls:
+    shamrock.tree.set_impl_clbvh_dual_tree_traversal(default_impl.impl_name, default_impl.params)
 
-    print(f"Running DTT performance benchmarks for {algname}...")
+    print(f"Running DTT performance benchmarks for {default_impl.impl_name}...")
 
     compression_level = 4
 
-    threshold_run = 100000
+    threshold_run = 5e6
     # Run the performance sweep
-    particle_counts, theta_crits, results_mean, results_min, results_max = run_performance_sweep(
-        compression_level, threshold_run
+    particle_counts, theta_crits, results_mean, results_min, results_max, results_max_mem_delta = (
+        run_performance_sweep(compression_level, threshold_run)
     )
 
-    results[algname] = {
+    results[default_impl.impl_name + " " + default_impl.params] = {
         "particle_counts": particle_counts,
         "theta_crits": theta_crits,
         "results_mean": results_mean,
         "results_min": results_min,
         "results_max": results_max,
+        "results_max_mem_delta": results_max_mem_delta,
+        "name": default_impl.impl_name + " " + default_impl.params,
     }
 
 # %%
@@ -235,16 +267,21 @@ import os
 if shamrock.sys.world_rank() == 0:
     os.makedirs(dump_folder, exist_ok=True)
 
-largest_refalg_value = np.nanmax(results["reference"]["results_min"])
+ref_key = "reference "
+largest_refalg_value = np.nanmax(results[ref_key]["results_min"])
 
-for algname in all_algs:
+i = 0
+# iterate over the results
+for k, v in results.items():
+
     # Get the results for this algorithm
-    particle_counts = results[algname]["particle_counts"]
-    theta_crits = results[algname]["theta_crits"]
-    results_min = results[algname]["results_min"]
+    particle_counts = v["particle_counts"]
+    theta_crits = v["theta_crits"]
+    results_min = v["results_min"]
+    results_max_mem_delta = v["results_max_mem_delta"]
 
     # Get reference algorithm results for comparison
-    reference_min = results["reference"]["results_min"]
+    reference_min = results[ref_key]["results_min"]
 
     # Create and display the plot
     fig, ax = create_checkerboard_plot(
@@ -252,11 +289,13 @@ for algname in all_algs:
         theta_crits,
         results_min,
         compression_level,
-        algname,
+        v["name"],
         largest_refalg_value,
         reference_min,
+        results_max_mem_delta,
     )
 
-    plt.savefig(f"{dump_folder}/benchmark-dtt-performance-{algname}.pdf")
+    plt.savefig(f"{dump_folder}/benchmark-dtt-performance-{i}.pdf")
+    i += 1
 
 plt.show()
