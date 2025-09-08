@@ -30,6 +30,7 @@ namespace shamalgs::primitives {
      * @param N number of samples to generate
      * @return a DeviceBuffer containing the sequence
      *
+     * TODO: move to GPU
      */
     template<typename Tval>
     sham::DeviceBuffer<Tval> linspace(Tval Rmin, Tval Rmax, u32 N) {
