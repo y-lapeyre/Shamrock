@@ -24,8 +24,7 @@ namespace shamalgs::primitives {
 
     /**
      * @brief Create an array of N values between two values
-     *
-     @tparam Tval value type in the sequence (same type as bounds)
+     * @tparam Tval value type in the sequence (same type as bounds)
      * @param Rmin lower bound of the sequence
      * @param Rmax upper bound of the sequence
      * @param N number of samples to generate
