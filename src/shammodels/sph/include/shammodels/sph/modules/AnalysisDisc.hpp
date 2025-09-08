@@ -95,8 +95,8 @@ namespace shammodels::sph::modules {
         analysis_basis compute_analysis_basis(
             Tscal pmass, Tscal Rmin, Tscal Rmax, u32 Nbin, const ShamrockCtx &ctx);
         analysis_stage0 compute_analysis_stage0(analysis_basis &basis, u32 Nbin);
-        analysis_stage1
-        compute_analysis_stage1(analysis_basis &basis, analysis_stage0 &stage0, u32 Nbin);
+        analysis_stage1 compute_analysis_stage1(
+            analysis_basis &basis, analysis_stage0 &stage0, u32 Nbin);
 
         analysis compute_analysis(Tscal Rmin, Tscal Rmax, u32 Nbin, const ShamrockCtx &ctx);
 

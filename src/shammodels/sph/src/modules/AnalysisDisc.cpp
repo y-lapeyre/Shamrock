@@ -103,7 +103,7 @@ auto shammodels::sph::modules::AnalysisDisc<Tvec, SPHKernel>::compute_analysis_b
             i++;
         });
 
-    auto histo = shamalgs::numeric::device_histogram_full(
+    auto histo = shamalgs::numeric::device_histogram_full_mpi(
         shamsys::instance::get_compute_scheduler_ptr(), bin_edges, Nbin, buf_radius, Npart);
 
     auto binned_Jx = shamalgs::numeric::binned_average_mpi(
