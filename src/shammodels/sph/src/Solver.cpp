@@ -50,6 +50,7 @@
 #include "shammodels/sph/modules/ExternalForces.hpp"
 #include "shammodels/sph/modules/GetParticlesOutsideSphere.hpp"
 #include "shammodels/sph/modules/IterateSmoothingLengthDensity.hpp"
+#include "shammodels/sph/modules/IterateSmoothingLengthDensityNeighLim.hpp"
 #include "shammodels/sph/modules/KillParticles.hpp"
 #include "shammodels/sph/modules/LoopSmoothingLengthIter.hpp"
 #include "shammodels/sph/modules/NeighbourCache.hpp"
@@ -488,6 +489,9 @@ void shammodels::sph::Solver<Tvec, Kern>::sph_prestep(Tscal time_val, Tscal dt) 
 
     ComputeField<Tscal> _epsilon_h, _h_old;
 
+    auto should_set_omega_mask = std::make_shared<shamrock::solvergraph::Field<u32>>(
+        1, "should_set_omega_mask", "should_set_omega_mask");
+
     u32 hstep_cnt = 0;
     u32 hstep_max = solver_config.h_max_subcycles_count;
     for (; hstep_cnt < hstep_max; hstep_cnt++) {
@@ -555,20 +559,46 @@ void shammodels::sph::Solver<Tvec, Kern>::sph_prestep(Tscal time_val, Tscal dt) 
         });
         eps_h->set_refs(eps_h_refs);
 
+        std::shared_ptr<shamrock::solvergraph::INode> smth_h_iter_ptr;
+
+        using SmoothingLengthConfig = typename SolverConfig<Tvec, Kern>::SmoothingLengthConfig;
+        using h_conf_density_based  = typename SmoothingLengthConfig::DensityBased;
+        using h_conf_neigh_lim      = typename SmoothingLengthConfig::DensityBasedNeighLim;
+
+        if (h_conf_density_based *conf
+            = std::get_if<h_conf_density_based>(&solver_config.smoothing_length_config.config)) {
+            std::shared_ptr<shammodels::sph::modules::IterateSmoothingLengthDensity<Tvec, Kernel>>
+                smth_h_iter = std::make_shared<
+                    shammodels::sph::modules::IterateSmoothingLengthDensity<Tvec, Kernel>>(
+                    solver_config.gpart_mass,
+                    solver_config.htol_up_coarse_cycle,
+                    solver_config.htol_up_fine_cycle);
+            smth_h_iter->set_edges(sizes, neigh_cache, pos_merged, hold, hnew, eps_h);
+            smth_h_iter_ptr = smth_h_iter;
+        } else if (
+            h_conf_neigh_lim *conf
+            = std::get_if<h_conf_neigh_lim>(&solver_config.smoothing_length_config.config)) {
+            std::shared_ptr<
+                shammodels::sph::modules::IterateSmoothingLengthDensityNeighLim<Tvec, Kernel>>
+                smth_h_iter_neigh_lim = std::make_shared<
+                    shammodels::sph::modules::IterateSmoothingLengthDensityNeighLim<Tvec, Kernel>>(
+                    solver_config.gpart_mass,
+                    solver_config.htol_up_coarse_cycle,
+                    solver_config.htol_up_fine_cycle,
+                    conf->max_neigh_count);
+            smth_h_iter_neigh_lim->set_edges(
+                sizes, neigh_cache, pos_merged, hold, hnew, eps_h, should_set_omega_mask);
+            smth_h_iter_ptr = smth_h_iter_neigh_lim;
+        } else {
+            shambase::throw_with_loc<std::runtime_error>("Invalid smoothing length configuration");
+        }
         // iterate smoothing length
-        std::shared_ptr<shammodels::sph::modules::IterateSmoothingLengthDensity<Tvec, Kernel>>
-            smth_h_iter = std::make_shared<
-                shammodels::sph::modules::IterateSmoothingLengthDensity<Tvec, Kernel>>(
-                solver_config.gpart_mass,
-                solver_config.htol_up_coarse_cycle,
-                solver_config.htol_up_fine_cycle);
-        smth_h_iter->set_edges(sizes, neigh_cache, pos_merged, hold, hnew, eps_h);
 
         std::shared_ptr<shamrock::solvergraph::ScalarEdge<bool>> is_converged
             = std::make_shared<shamrock::solvergraph::ScalarEdge<bool>>("", "");
 
         shammodels::sph::modules::LoopSmoothingLengthIter<Tvec> loop_smth_h_iter(
-            smth_h_iter, solver_config.epsilon_h, solver_config.h_iter_per_subcycles, false);
+            smth_h_iter_ptr, solver_config.epsilon_h, solver_config.h_iter_per_subcycles, false);
         loop_smth_h_iter.set_edges(eps_h, is_converged);
 
         loop_smth_h_iter.evaluate();
@@ -652,9 +682,6 @@ void shammodels::sph::Solver<Tvec, Kern>::sph_prestep(Tscal time_val, Tscal dt) 
         // The hpart is not valid anymore in ghost zones since we iterated it's value
         shambase::get_check_ref(storage.hpart_with_ghosts).free_alloc();
 
-        modules::ComputeOmega<Tvec, Kern> omega(context, solver_config, storage);
-        omega.compute_omega();
-
         _epsilon_h.reset();
         _h_old.reset();
         break;
@@ -662,6 +689,33 @@ void shammodels::sph::Solver<Tvec, Kern>::sph_prestep(Tscal time_val, Tscal dt) 
 
     if (hstep_cnt == hstep_max) {
         logger::err_ln("SPH", "the h iterator is not converged after", hstep_cnt, "iterations");
+    }
+
+    std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> hnew_edge
+        = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>("", "");
+    shamrock::solvergraph::DDPatchDataFieldRef<Tscal> hnew_refs = {};
+    scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
+        auto &field = pdat.get_field<Tscal>(ihpart);
+        hnew_refs.add_obj(p.id_patch, std::ref(field));
+    });
+    hnew_edge->set_refs(hnew_refs);
+
+    modules::NodeComputeOmega<Tvec, Kern> compute_omega{solver_config.gpart_mass};
+    compute_omega.set_edges(
+        storage.part_counts,
+        storage.neigh_cache,
+        storage.positions_with_ghosts,
+        hnew_edge,
+        storage.omega);
+    compute_omega.evaluate();
+
+    if (solver_config.smoothing_length_config.is_density_based_neigh_lim()) {
+        // if the h limiter is triggered, omega does not hold it's sense of dh/dr anymore
+        // so we set it to 1, this effectively is equivalent of disabling the energy correction
+        // term corresponding to dh/dr
+        modules::SetWhenMask<Tscal> set_omega_mask{1};
+        set_omega_mask.set_edges(storage.part_counts, should_set_omega_mask, storage.omega);
+        set_omega_mask.evaluate();
     }
 }
 
