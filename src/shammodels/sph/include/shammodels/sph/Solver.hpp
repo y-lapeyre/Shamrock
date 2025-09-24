@@ -143,6 +143,7 @@ namespace shammodels::sph {
         void apply_position_boundary(Tscal time_val);
 
         void do_predictor_leapfrog(Tscal dt);
+        void do_predictor_substep(Tscal dt_sph, Tscal dt_ext);
 
         void update_artificial_viscosity(Tscal dt);
 
@@ -185,6 +186,7 @@ namespace shammodels::sph {
         }
 
         TimestepLog evolve_once();
+        TimestepLog evolve_once_substep();
 
         Tscal evolve_once_time_expl(Tscal t_current, Tscal dt_input) {
             solver_config.set_time(t_current);
