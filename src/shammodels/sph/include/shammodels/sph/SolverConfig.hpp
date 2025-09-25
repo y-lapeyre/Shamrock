@@ -389,6 +389,17 @@ struct shammodels::sph::SolverConfig {
         smoothing_length_config.set_density_based_neigh_lim(max_neigh_count);
     }
 
+    bool enable_particle_reordering = false;
+    inline void set_enable_particle_reordering(bool enable) { enable_particle_reordering = enable; }
+    u64 particle_reordering_step_freq = 1000;
+    inline void set_particle_reordering_step_freq(u64 freq) {
+        if (freq == 0) {
+            shambase::throw_with_loc<std::invalid_argument>(
+                "particle_reordering_step_freq cannot be zero");
+        }
+        particle_reordering_step_freq = freq;
+    }
+
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Solver behavior config (END)
     //////////////////////////////////////////////////////////////////////////////////////////////
@@ -901,6 +912,9 @@ namespace shammodels::sph {
             {"h_iter_per_subcycles", p.h_iter_per_subcycles},
             {"h_max_subcycles_count", p.h_max_subcycles_count},
 
+            {"enable_particle_reordering", p.enable_particle_reordering},
+            {"particle_reordering_step_freq", p.particle_reordering_step_freq},
+
             {"eos_config", p.eos_config},
 
             {"artif_viscosity", p.artif_viscosity},
@@ -1000,6 +1014,24 @@ namespace shammodels::sph {
 
         j.at("h_iter_per_subcycles").get_to(p.h_iter_per_subcycles);
         j.at("h_max_subcycles_count").get_to(p.h_max_subcycles_count);
+
+        if (j.contains("enable_particle_reordering")) {
+            j.at("enable_particle_reordering").get_to(p.enable_particle_reordering);
+        } else {
+            logger::warn_ln(
+                "SPHConfig",
+                "enable_particle_reordering not found when deserializing, defaulting to ",
+                p.enable_particle_reordering);
+        }
+
+        if (j.contains("particle_reordering_step_freq")) {
+            j.at("particle_reordering_step_freq").get_to(p.particle_reordering_step_freq);
+        } else {
+            logger::warn_ln(
+                "SPHConfig",
+                "particle_reordering_step_freq not found when deserializing, defaulting to ",
+                p.particle_reordering_step_freq);
+        }
 
         j.at("eos_config").get_to(p.eos_config);
         j.at("artif_viscosity").get_to(p.artif_viscosity);
