@@ -186,8 +186,9 @@ struct shammodels::sph::SolverStatusVar {
     /// The type of the scalar used to represent the quantities
     using Tscal = shambase::VecComponent<Tvec>;
 
-    Tscal time   = 0; ///< Current time
-    Tscal dt_sph = 0; ///< Current time step
+    Tscal time     = 0; ///< Current time
+    Tscal dt_sph   = 0; ///< Current time step
+    Tscal dt_force = 0;
 
     Tscal cfl_multiplier = 1e-2; ///< Current cfl multiplier
 };
@@ -289,11 +290,17 @@ struct shammodels::sph::SolverConfig {
     /// Set the time step for the next iteration
     inline void set_next_dt(Tscal dt) { time_state.dt_sph = dt; }
 
+    /// Set the force time step for the next iteration
+    inline void set_next_force_dt(Tscal dt) { time_state.dt_force = dt; }
+
     /// Get the current time
     inline Tscal get_time() { return time_state.time; }
 
     /// Get the time step for the next iteration
     inline Tscal get_dt_sph() { return time_state.dt_sph; }
+
+    /// Get the time step relative to external forces: usuful for substepping
+    inline Tscal get_dt_force() { return time_state.dt_force; }
 
     /// Set the CFL multiplier for the time step
     inline void set_cfl_multipler(Tscal lambda) { time_state.cfl_multiplier = lambda; }

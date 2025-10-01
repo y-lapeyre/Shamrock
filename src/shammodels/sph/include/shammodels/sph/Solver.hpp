@@ -144,6 +144,7 @@ namespace shammodels::sph {
 
         void do_predictor_leapfrog(Tscal dt);
         void do_predictor_substep(Tscal dt_sph, Tscal dt_ext);
+        void do_substeps(Tscal dt_sph, Tscal dt_ext);
 
         void update_artificial_viscosity(Tscal dt);
 

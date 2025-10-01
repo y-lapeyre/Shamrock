@@ -480,32 +480,87 @@ void shammodels::sph::Solver<Tvec, Kern>::do_predictor_substep(Tscal dt_sph, Tsc
     const u32 ixyz            = pdl.get_field_idx<Tvec>("xyz");
     const u32 ivxyz           = pdl.get_field_idx<Tvec>("vxyz");
     const u32 iaxyz           = pdl.get_field_idx<Tvec>("axyz");
-    const u32 iaxyz_ext           = pdl.get_field_idx<Tvec>("axyz_ext");
+    const u32 iaxyz_ext       = pdl.get_field_idx<Tvec>("axyz_ext");
     const u32 iuint           = pdl.get_field_idx<Tscal>("uint");
     const u32 iduint          = pdl.get_field_idx<Tscal>("duint");
 
     shamrock::SchedulerUtility utility(scheduler());
 
-    // forward euler step f dt_sph /2 with long range interactions 
+    // forward euler step f dt_sph /2 with long range interactions
     shamlog_debug_ln("sph::BasicGas", "forward euler step f dt/2, long range interactions");
     utility.fields_forward_euler<Tvec>(ivxyz, iaxyz, dt_sph / 2);
     utility.fields_forward_euler<Tscal>(iuint, iduint, dt_sph / 2);
 
-    // loop ?
-    // forward euler step f dt_ext /2 with short range interactions 
-    shamlog_debug_ln("sph::BasicGas", "forward euler step f dt/2, long range interactions");
-    utility.fields_forward_euler<Tvec>(ivxyz, iaxyz_ext, dt_ext / 2);
-    utility.fields_forward_euler<Tscal>(iuint, iduint, dt_ext / 2);
+    //    // loop ?
+    //    // forward euler step f dt_ext /2 with short range interactions
+    //    shamlog_debug_ln("sph::BasicGas", "forward euler step f dt/2, long range interactions");
+    //    utility.fields_forward_euler<Tvec>(ivxyz, iaxyz_ext, dt_ext / 2);
+    //    utility.fields_forward_euler<Tscal>(iuint, iduint, dt_ext / 2);
+    //
+    //    // forward euler step positions dt_ext
+    //    shamlog_debug_ln("sph::BasicGas", "forward euler step positions dt");
+    //    utility.fields_forward_euler<Tvec>(ixyz, ivxyz, dt_ext);
+    //
+    //    // forward euler step f dt/2
+    //    shamlog_debug_ln("sph::BasicGas", "forward euler step f dt/2");
+    //    utility.fields_forward_euler<Tvec>(ivxyz, iaxyz, dt_sph / 2);
+    //    utility.fields_forward_euler<Tscal>(iuint, iduint, dt_sph / 2);
+    //
+}
 
-    // forward euler step positions dt_ext
-    shamlog_debug_ln("sph::BasicGas", "forward euler step positions dt");
-    utility.fields_forward_euler<Tvec>(ixyz, ivxyz, dt_ext);
+template<class Tvec, template<class> class Kern>
+void shammodels::sph::Solver<Tvec, Kern>::do_substeps(Tscal dt_sph, Tscal dt_ext) {
 
-    // forward euler step f dt/2
-    shamlog_debug_ln("sph::BasicGas", "forward euler step f dt/2");
-    utility.fields_forward_euler<Tvec>(ivxyz, iaxyz, dt_sph / 2);
-    utility.fields_forward_euler<Tscal>(iuint, iduint, dt_sph / 2);
+    // determine if do substep or not
+    bool do_substep = false;
+    modules::ExternalForces<Tvec, Kern> ext_forces(context, solver_config, storage);
 
+    StackEntry stack_loc{};
+    using namespace shamrock::patch;
+    PatchDataLayerLayout &pdl = scheduler().pdl();
+    const u32 ixyz            = pdl.get_field_idx<Tvec>("xyz");
+    const u32 ivxyz           = pdl.get_field_idx<Tvec>("vxyz");
+    const u32 iaxyz           = pdl.get_field_idx<Tvec>("axyz");
+    const u32 iaxyz_ext       = pdl.get_field_idx<Tvec>("axyz_ext");
+    const u32 iuint           = pdl.get_field_idx<Tscal>("uint");
+    const u32 iduint          = pdl.get_field_idx<Tscal>("duint");
+
+    shamrock::SchedulerUtility utility(scheduler());
+
+    int nsteps     = 0;
+    Tscal t_end    = solver_config.get_time() + dt_sph;
+    bool last_step = false;
+
+    while (solver_config.get_time() < t_end and do_substep) {
+        nsteps++;
+
+        // forward euler step f dt_ext/2, "kick"
+        shamlog_debug_ln("sph::BasicGas", "forward euler step f dt_ext/2");
+        utility.fields_forward_euler<Tvec>(ivxyz, iaxyz_ext, dt_ext / 2);
+        utility.fields_forward_euler<Tscal>(iuint, iduint, dt_ext / 2);
+
+        // forward euler step positions dt_ext, "drift"
+        shamlog_debug_ln("sph::BasicGas", "forward euler step positions dt_ext");
+        utility.fields_forward_euler<Tvec>(ixyz, ivxyz, dt_ext);
+
+        // compute external forces at the new position
+        shamlog_debug_ln("sph::BasicGas", "compute external forces");
+        ext_forces.compute_ext_forces_indep_v();
+
+        // forward euler step f dt_ext/2, "kick"
+        shamlog_debug_ln("sph::BasicGas", "forward euler step f dt_ext/2");
+        utility.fields_forward_euler<Tvec>(ivxyz, iaxyz_ext, dt_ext / 2);
+        utility.fields_forward_euler<Tscal>(iuint, iduint, dt_ext / 2);
+
+        if (solver_config.get_time() + dt_ext > t_end) {
+            dt_ext    = t_end - solver_config.get_time();
+            last_step = true;
+        }
+
+        if (last_step) {
+            do_substep = false;
+        }
+    }
 }
 
 template<class Tvec, template<class> class Kern>
@@ -1137,7 +1192,6 @@ void shammodels::sph::Solver<Tvec, Kern>::prepare_corrector() {
     }
 }
 
-
 template<class Tvec, template<class> class Kern>
 void shammodels::sph::Solver<Tvec, Kern>::update_derivs() {
 
@@ -1147,7 +1201,6 @@ void shammodels::sph::Solver<Tvec, Kern>::update_derivs() {
     modules::ExternalForces<Tvec, Kern> ext_forces(context, solver_config, storage);
     ext_forces.add_ext_forces();
 }
-
 
 template<class Tvec, template<class> class Kern>
 bool shammodels::sph::Solver<Tvec, Kern>::apply_corrector(Tscal dt, u64 Npart_all) {
@@ -2031,14 +2084,15 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once_su
     f64 mpi_timer_start                     = shamcomm::mpi::get_timer("total");
 
     Tscal t_current = solver_config.get_time();
-    Tscal dt_sph        = solver_config.get_dt_sph();
-    Tscal dt_ext    = solver_config.get_dt_sph(); // @@@
+    Tscal dt_sph    = solver_config.get_dt_sph();
+    Tscal dt_ext    = solver_config.get_dt_force();
 
     StackEntry stack_loc{};
 
     if (shamcomm::world_rank() == 0) {
         shamcomm::logs::raw_ln(
-            shambase::format("---------------- t = {}, dt = {} ----------------", t_current, dt_sph));
+            shambase::format(
+                "---------------- t = {}, dt = {} ----------------", t_current, dt_sph));
     }
 
     shambase::Timer tstep;
@@ -2074,7 +2128,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once_su
     const u32 ixyz        = pdl.get_field_idx<Tvec>("xyz");
     const u32 ivxyz       = pdl.get_field_idx<Tvec>("vxyz");
     const u32 iaxyz       = pdl.get_field_idx<Tvec>("axyz");
-    const u32 iaxyz_ext       = pdl.get_field_idx<Tvec>("axyz_ext");
+    const u32 iaxyz_ext   = pdl.get_field_idx<Tvec>("axyz_ext");
     const u32 iuint       = pdl.get_field_idx<Tscal>("uint");
     const u32 iduint      = pdl.get_field_idx<Tscal>("duint");
     const u32 ihpart      = pdl.get_field_idx<Tscal>("hpart");
@@ -2095,11 +2149,12 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once_su
     sink_update.accrete_particles();
     ext_forces.point_mass_accrete_particles();
 
-    do_predictor_substep(dt_sph, dt_ext);
+    do_predictor_substep(dt_sph, dt_ext); // @@ dt_sph useless here
 
     sink_update.predictor_step(dt_sph);
-
     part_killing_step();
+
+    do_substeps(dt_sph, dt_ext);
 
     sink_update.compute_ext_forces();
 
@@ -2325,7 +2380,11 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once_su
             ComputeField<Tscal> POC_epsilon_POC_sq
                 = utility.make_compute_field<Tscal>("psi/ch epsilon_psi/ch^2", 1);
             utility.fields_leapfrog_corrector<Tscal>(
-                ipsi_on_ch, idpsi_on_ch, storage.old_dpsi_on_ch.get(), POC_epsilon_POC_sq, dt_sph / 2);
+                ipsi_on_ch,
+                idpsi_on_ch,
+                storage.old_dpsi_on_ch.get(),
+                POC_epsilon_POC_sq,
+                dt_sph / 2);
         }
 
         if (solver_config.dust_config.has_epsilon_field()) {
@@ -2608,7 +2667,8 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once_su
                 }
             });
 
-            ComputeField<Tscal> cfl_dt = utility.make_compute_field<Tscal>("cfl_dt", 1);
+            ComputeField<Tscal> sph_dt   = utility.make_compute_field<Tscal>("sph_dt", 1);
+            ComputeField<Tscal> force_dt = utility.make_compute_field<Tscal>("force_dt", 1);
 
             scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
                 PatchDataLayer &mpdat = mpdats.get(cur_p.id_patch);
@@ -2616,17 +2676,17 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once_su
                 sham::DeviceBuffer<Tvec> &buf_axyz = pdat.get_field<Tvec>(iaxyz).get_buf();
                 sham::DeviceBuffer<Tscal> &buf_hpart
                     = mpdat.get_field<Tscal>(ihpart_interf).get_buf();
-                sham::DeviceBuffer<Tscal> &vsig_buf   = vsig_max_dt.get_buf_check(cur_p.id_patch);
-                sham::DeviceBuffer<Tscal> &sph_dt_buf = sph_dt.get_buf_check(cur_p.id_patch);
+                sham::DeviceBuffer<Tscal> &vsig_buf     = vsig_max_dt.get_buf_check(cur_p.id_patch);
+                sham::DeviceBuffer<Tscal> &sph_dt_buf   = sph_dt.get_buf_check(cur_p.id_patch);
                 sham::DeviceBuffer<Tscal> &force_dt_buf = force_dt.get_buf_check(cur_p.id_patch);
 
                 auto &q = shamsys::instance::get_compute_scheduler().get_queue();
                 sham::EventList depends_list;
 
-                auto hpart  = buf_hpart.get_read_access(depends_list);
-                auto a      = buf_axyz.get_read_access(depends_list);
-                auto vsig   = vsig_buf.get_read_access(depends_list);
-                auto sph_dt = sph_dt_buf.get_write_access(depends_list);
+                auto hpart    = buf_hpart.get_read_access(depends_list);
+                auto a        = buf_axyz.get_read_access(depends_list);
+                auto vsig     = vsig_buf.get_read_access(depends_list);
+                auto sph_dt   = sph_dt_buf.get_write_access(depends_list);
                 auto force_dt = force_dt_buf.get_write_access(depends_list);
 
                 auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
@@ -2643,7 +2703,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once_su
                         Tscal dt_c = C_cour * h_a / vsig_a;
                         Tscal dt_f = C_force * sycl::sqrt(h_a / abs_a_a);
 
-                        sph_dt[item] = dt_c;
+                        sph_dt[item]   = dt_c;
                         force_dt[item] = dt_f;
                     });
                 });
@@ -2657,7 +2717,8 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once_su
 
             Tscal rank_dt_sph = sph_dt.compute_rank_min();
 
-            shamlog_debug_ln("BasigGas", "rank", shamcomm::world_rank(), "found cfl dt =", rank_dt_sph);
+            shamlog_debug_ln(
+                "BasigGas", "rank", shamcomm::world_rank(), "found cfl dt =", rank_dt_sph);
 
             next_cfl = shamalgs::collective::allreduce_min(rank_dt_sph);
 
@@ -2752,7 +2813,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once_su
 
     solve_logs.register_log(
         {t_current,              // f64 solver_t;
-         dt_sph,                     // f64 solver_dt;
+         dt_sph,                 // f64 solver_dt;
          shamcomm::world_rank(), // i32 world_rank;
          rank_count,             // u64 rank_count;
          rate,                   // f64 rate;
