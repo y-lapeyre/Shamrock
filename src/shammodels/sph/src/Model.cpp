@@ -1560,7 +1560,7 @@ shammodels::sph::PhantomDump shammodels::sph::Model<Tvec, SPHKernel>::make_phant
     dump.table_header_fort_real.add("alphau", 1);
     dump.table_header_fort_real.add("alphaB", 1);
 
-    write_shamrock_disc_params(dump);
+    write_shamrock_disc_params(dump); // @@@ TODO: get actual params
 
     dump.table_header_fort_real.add("massoftype", solver.solver_config.gpart_mass);
     dump.table_header_fort_real.add("massoftype", 0);

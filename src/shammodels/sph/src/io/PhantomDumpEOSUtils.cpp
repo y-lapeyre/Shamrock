@@ -174,7 +174,7 @@ namespace shammodels::sph::phdump {
         EOSPhConfig eos;
 
         eos.polyk = cs * cs;
-        f64 RK2   = 3./2. * eos.polyk;
+        f64 RK2   = 3. / 2. * eos.polyk;
 
         dump.table_header_i32.add("ieos", 1);
         write_headeropts_eos(1, dump, eos);
@@ -253,6 +253,5 @@ namespace shammodels::sph::phdump {
         write_headeropts_eos(3, dump, eos);
         dump.table_header_f64.add("gamma", 1.);
         dump.table_header_f64.add("RK2", 1.);
-
     }
 } // namespace shammodels::sph::phdump

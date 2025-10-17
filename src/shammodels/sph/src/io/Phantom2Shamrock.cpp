@@ -87,9 +87,8 @@ namespace shammodels::sph {
     }
 
     void write_shamrock_disc_params(PhantomDump &dump) {
-        
-        dump.table_header_f64.add("qfactdisc", 0.75);
 
+        dump.table_header_f64.add("qfactdisc", 0.75);
     }
 
     /// explicit instanciation for f32_3
