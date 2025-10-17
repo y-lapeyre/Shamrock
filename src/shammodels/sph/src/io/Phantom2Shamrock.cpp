@@ -15,6 +15,7 @@
  */
 
 #include "shambase/constants.hpp"
+#include "shambackends/typeAliasVec.hpp"
 #include "shammodels/sph/config/BCConfig.hpp"
 #include "shammodels/sph/io/Phantom2Shamrock.hpp"
 #include "shammodels/sph/io/PhantomDump.hpp"
@@ -77,12 +78,19 @@ namespace shammodels::sph {
         } else {
             const std::string msg
                 = "The current shamrock EOS is not implemented in phantom dump conversion";
-            if (bypass_error) {
+            if (true) {
                 logger::warn_ln("SPH", msg);
             } else {
                 shambase::throw_unimplemented(msg);
             }
         }
+    }
+
+    template<class Tvec>
+    void write_shamrock_misc_disc_params(EOSConfig<Tvec> &cfg, PhantomDump &dump) {
+        
+        dump.table_header_f64.add("qfactdisc", 0.75);
+
     }
 
     /// explicit instanciation for f32_3
@@ -96,6 +104,13 @@ namespace shammodels::sph {
     /// explicit instanciation for f64_3
     template void write_shamrock_eos_in_phantom_dump<f64_3>(
         EOSConfig<f64_3> &cfg, PhantomDump &dump, bool bypass_error);
+
+    /// explicit instanciation for f32_3
+    template void write_shamrock_misc_disc_params<f32_3>(
+        EOSConfig<f32_3> &cfg, PhantomDump &dump);
+    /// explicit instanciation for f64_3
+    template void write_shamrock_misc_disc_params<f64_3>(
+        EOSConfig<f64_3> &cfg, PhantomDump &dump);
 
 } // namespace shammodels::sph
 

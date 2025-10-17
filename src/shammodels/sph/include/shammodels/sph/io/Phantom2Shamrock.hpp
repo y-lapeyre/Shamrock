@@ -39,6 +39,9 @@ namespace shammodels::sph {
     template<class Tvec>
     EOSConfig<Tvec> get_shamrock_eosconfig(PhantomDump &phdump, bool bypass_error);
 
+    template<class Tvec>
+    void write_shamrock_disc_params(EOSConfig<Tvec> &cfg, PhantomDump &dump);
+
     /// Write the eos config to th phantom dump header
     template<class Tvec>
     void write_shamrock_eos_in_phantom_dump(
