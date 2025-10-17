@@ -10,6 +10,7 @@
 /**
  * @file Phantom2Shamrock.cpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
+ * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief
  *
  */
@@ -78,7 +79,7 @@ namespace shammodels::sph {
         } else {
             const std::string msg
                 = "The current shamrock EOS is not implemented in phantom dump conversion";
-            if (true) {
+            if (bypass_error) {
                 logger::warn_ln("SPH", msg);
             } else {
                 shambase::throw_unimplemented(msg);
@@ -88,7 +89,7 @@ namespace shammodels::sph {
 
     void write_shamrock_disc_params(PhantomDump &dump) {
 
-        dump.table_header_f64.add("qfactdisc", 0.75);
+        dump.table_header_fort_real.add("qfacdisc", 0.75);
     }
 
     /// explicit instanciation for f32_3
