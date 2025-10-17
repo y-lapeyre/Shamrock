@@ -1,6 +1,6 @@
 """
-Production run: Circular disc & central potential
-=================================================
+Production run: Black hole disc & lense thirring effect
+=======================================================
 
 This example demonstrates how to run a smoothed particle hydrodynamics (SPH)
 simulation of a circular disc orbiting around a central point mass potential.
@@ -62,12 +62,13 @@ if not shamrock.sys.is_initialized():
 si = shamrock.UnitSystem()
 sicte = shamrock.Constants(si)
 codeu = shamrock.UnitSystem(
-    unit_time=sicte.year(),
+    unit_time=sicte.second(),
     unit_length=sicte.au(),
     unit_mass=sicte.sol_mass(),
 )
 ucte = shamrock.Constants(codeu)
 G = ucte.G()
+c = ucte.c()
 
 # %%
 # List parameters
@@ -79,29 +80,26 @@ Npart = 100000
 scheduler_split_val = int(1.0e7)  # split patches with more than 1e7 particles
 scheduler_merge_val = scheduler_split_val // 16
 
-# Dump and plot frequency and duration of the simulation
-dump_freq_stop = 2
-plot_freq_stop = 1
+# Disc parameter
+center_mass = 1e6  # [sol mass]
+disc_mass = 0.001  # [sol mass]
+Rg = G * center_mass / (c * c)  # [au]
+rin = 4.0 * Rg  # [au]
+rout = 10 * rin  # [au]
+r0 = rin  # [au]
 
-dt_stop = 0.01
-nstop = 30
+H_r_0 = 0.01
+q = 0.75
+p = 3.0 / 2.0
 
-# The list of times at which the simulation will pause for analysis / dumping
-t_stop = [i * dt_stop for i in range(nstop + 1)]
-
+Tin = 2 * np.pi * np.sqrt(rin * rin * rin / (G * center_mass))
+if shamrock.sys.world_rank() == 0:
+    print(" Orbital period : ", Tin, " [seconds]")
 
 # Sink parameters
-center_mass = 1.0
-center_racc = 0.1
+center_racc = rin / 2.0  # [au]
+inclination = 30.0 * np.pi / 180.0
 
-# Disc parameter
-disc_mass = 0.01  # sol mass
-rout = 10.0  # au
-rin = 1.0  # au
-H_r_0 = 0.05
-q = 0.5
-p = 3.0 / 2.0
-r0 = 1.0
 
 # Viscosity parameter
 alpha_AV = 1.0e-3 / 0.08
@@ -112,7 +110,19 @@ beta_AV = 2.0
 C_cour = 0.3
 C_force = 0.25
 
-sim_folder = f"_to_trash/circular_disc_central_pot_{Npart}/"
+
+# Dump and plot frequency and duration of the simulation
+dump_freq_stop = 1
+plot_freq_stop = 1
+
+dt_stop = Tin / 10.0
+nstop = 10
+
+# The list of times at which the simulation will pause for analysis / dumping
+t_stop = [i * dt_stop for i in range(nstop + 1)]
+
+
+sim_folder = f"_to_trash/black_hole_disc_lense_thirring_{Npart}/"
 
 dump_folder = sim_folder + "dump/"
 analysis_folder = sim_folder + "analysis/"
@@ -247,14 +257,25 @@ else:
     cfg.set_artif_viscosity_ConstantDisc(alpha_u=alpha_u, alpha_AV=alpha_AV, beta_AV=beta_AV)
     cfg.set_eos_locally_isothermalLP07(cs0=cs0, q=q, r0=r0)
 
-    cfg.add_ext_force_point_mass(center_mass, center_racc)
+    # cfg.add_ext_force_point_mass(center_mass, center_racc)
+
     cfg.add_kill_sphere(center=(0, 0, 0), radius=bsize)  # kill particles outside the simulation box
+    cfg.add_ext_force_lense_thirring(
+        central_mass=center_mass,
+        Racc=rin,
+        a_spin=0.9,
+        dir_spin=(np.sin(inclination), np.cos(inclination), 0.0),
+    )
 
     cfg.set_units(codeu)
     cfg.set_particle_mass(pmass)
     # Set the CFL
     cfg.set_cfl_cour(C_cour)
     cfg.set_cfl_force(C_force)
+
+    # On a chaotic disc, we disable to two stage search to avoid giant leaves
+    cfg.set_tree_reduction_level(6)
+    cfg.set_two_stage_search(False)
 
     # Enable this to debug the neighbor counts
     # cfg.set_show_neigh_stats(True)
@@ -292,6 +313,7 @@ else:
         rot_profile=rot_profile,
         cs_profile=cs_profile,
         random_seed=666,
+        init_h_factor=0.06,
     )
 
     # Print the dot graph of the setup
@@ -357,6 +379,15 @@ def save_rho_integ(ext, arr_rho, iplot):
             json.dump(metadata, fp)
 
 
+def save_vxyz_integ(ext, arr_vxyz, iplot):
+    if shamrock.sys.world_rank() == 0:
+        metadata = {"extent": [-ext, ext, -ext, ext], "time": model.get_time()}
+        np.save(plot_folder + f"vxyz_integ_{iplot:07}.npy", arr_vxyz)
+
+        with open(plot_folder + f"vxyz_integ_{iplot:07}.json", "w") as fp:
+            json.dump(metadata, fp)
+
+
 def save_analysis_data(filename, key, value, ianalysis):
     """Helper to save analysis data to a JSON file."""
     if shamrock.sys.world_rank() == 0:
@@ -388,7 +419,18 @@ def analysis(ianalysis):
         ny=ny,
     )
 
+    arr_vxyz = model.render_cartesian_column_integ(
+        "vxyz",
+        "f64_3",
+        center=(0.0, 0.0, 0.0),
+        delta_x=(ext * 2, 0, 0.0),
+        delta_y=(0.0, ext * 2, 0.0),
+        nx=nx,
+        ny=ny,
+    )
+
     save_rho_integ(ext, arr_rho2, ianalysis)
+    save_vxyz_integ(ext, arr_vxyz, ianalysis)
 
     barycenter, disc_mass = shamrock.model_sph.analysisBarycenter(model=model).get_barycenter()
 
@@ -482,17 +524,39 @@ def plot_rho_integ(metadata, arr_rho, iplot):
     my_cmap.set_bad(color="black")
 
     res = plt.imshow(
-        arr_rho, cmap=my_cmap, origin="lower", extent=ext, norm="log", vmin=1e-8, vmax=1e-4
+        arr_rho, cmap=my_cmap, origin="lower", extent=ext, norm="log", vmin=1e-6, vmax=1e-2
     )
 
     plt.xlabel("x")
     plt.ylabel("y")
-    plt.title(f"t = {metadata['time']:0.3f} [years]")
+    plt.title(f"t = {metadata['time']:0.3f} [seconds]")
 
     cbar = plt.colorbar(res, extend="both")
     cbar.set_label(r"$\int \rho \, \mathrm{d}z$ [code unit]")
 
     plt.savefig(plot_folder + "rho_integ_{:04}.png".format(iplot))
+    plt.close()
+
+
+def plot_vz_integ(metadata, arr_vz, iplot):
+    ext = metadata["extent"]
+    dpi = 200
+    plt.figure(num=1, clear=True, dpi=dpi)
+
+    # if you want an adaptive colorbar
+    # v_ext = np.max(arr_vz)
+    # v_ext = max(v_ext, np.abs(np.min(arr_vz)))
+    v_ext = 1e-6
+
+    res = plt.imshow(arr_vz, cmap="seismic", origin="lower", extent=ext, vmin=-v_ext, vmax=v_ext)
+    plt.xlabel("x")
+    plt.ylabel("y")
+    plt.title(f"t = {metadata['time']:0.3f} [seconds]")
+
+    cbar = plt.colorbar(res, extend="both")
+    cbar.set_label(r"$\int v_z \, \mathrm{d}z$ [code unit]")
+
+    plt.savefig(plot_folder + "vz_integ_{:04}.png".format(iplot))
     plt.close()
 
 
@@ -513,11 +577,21 @@ def load_rho_integ(iplot):
     return np.load(plot_folder + f"rho_integ_{iplot:07}.npy"), metadata
 
 
+def load_vxyz_integ(iplot):
+    with open(plot_folder + f"vxyz_integ_{iplot:07}.json") as fp:
+        metadata = json.load(fp)
+    return np.load(plot_folder + f"vxyz_integ_{iplot:07}.npy"), metadata
+
+
 if shamrock.sys.world_rank() == 0:
     for iplot in get_list_dumps_id():
         print("Rendering rho integ plot for dump", iplot)
         arr_rho, metadata = load_rho_integ(iplot)
         plot_rho_integ(metadata, arr_rho, iplot)
+
+        print("Rendering vxyz integ plot for dump", iplot)
+        arr_vxyz, metadata = load_vxyz_integ(iplot)
+        plot_vz_integ(metadata, arr_vxyz[:, :, 2], iplot)
 
 
 # %%
@@ -594,6 +668,22 @@ if render_gif and shamrock.sys.world_rank() == 0:
     # Show the animation
     plt.show()
 
+# %%
+# Do it for rho integ
+render_gif = True
+glob_str = os.path.join(plot_folder, "vz_integ_*.png")
+
+# If the animation is not returned only a static image will be shown in the doc
+ani = show_image_sequence(glob_str, render_gif)
+
+if render_gif and shamrock.sys.world_rank() == 0:
+    # To save the animation using Pillow as a gif
+    writer = animation.PillowWriter(fps=15, metadata=dict(artist="Me"), bitrate=1800)
+    ani.save(analysis_folder + "vz_integ.gif", writer=writer)
+
+    # Show the animation
+    plt.show()
+
 
 # %%
 # helper function to load data from JSON files
@@ -618,7 +708,7 @@ plt.figure(figsize=(8, 5), dpi=200)
 plt.plot(t, barycenter_x)
 plt.plot(t, barycenter_y)
 plt.plot(t, barycenter_z)
-plt.xlabel("t")
+plt.xlabel("t [seconds]")
 plt.ylabel("barycenter")
 plt.legend(["x", "y", "z"])
 plt.savefig(analysis_folder + "barycenter.png")
@@ -631,7 +721,7 @@ t, disc_mass = load_data_from_json("disc_mass.json", "disc_mass")
 plt.figure(figsize=(8, 5), dpi=200)
 
 plt.plot(t, disc_mass)
-plt.xlabel("t")
+plt.xlabel("t [seconds]")
 plt.ylabel("disc_mass")
 plt.savefig(analysis_folder + "disc_mass.png")
 plt.show()
@@ -648,7 +738,7 @@ plt.figure(figsize=(8, 5), dpi=200)
 plt.plot(t, total_momentum_x)
 plt.plot(t, total_momentum_y)
 plt.plot(t, total_momentum_z)
-plt.xlabel("t")
+plt.xlabel("t [seconds]")
 plt.ylabel("total_momentum")
 plt.legend(["x", "y", "z"])
 plt.savefig(analysis_folder + "total_momentum.png")
@@ -665,7 +755,7 @@ plt.figure(figsize=(8, 5), dpi=200)
 plt.plot(t, potential_energy)
 plt.plot(t, kinetic_energy)
 plt.plot(t, total_energy)
-plt.xlabel("t")
+plt.xlabel("t [seconds]")
 plt.ylabel("energy")
 plt.legend(["potential_energy", "kinetic_energy", "total_energy"])
 plt.savefig(analysis_folder + "energies.png")
@@ -677,7 +767,7 @@ t, sim_time_delta = load_data_from_json("sim_time_delta.json", "sim_time_delta")
 
 plt.figure(figsize=(8, 5), dpi=200)
 plt.plot(t, sim_time_delta)
-plt.xlabel("t")
+plt.xlabel("t [seconds]")
 plt.ylabel("sim_time_delta")
 plt.savefig(analysis_folder + "sim_time_delta.png")
 plt.show()
@@ -688,7 +778,7 @@ t, sim_step_count_delta = load_data_from_json("sim_step_count_delta.json", "sim_
 
 plt.figure(figsize=(8, 5), dpi=200)
 plt.plot(t, sim_step_count_delta)
-plt.xlabel("t")
+plt.xlabel("t [seconds]")
 plt.ylabel("sim_step_count_delta")
 plt.savefig(analysis_folder + "sim_step_count_delta.png")
 plt.show()
@@ -710,7 +800,7 @@ for td, sc, pc in zip(sim_time_delta, sim_step_count_delta, part_count):
 
 plt.figure(figsize=(8, 5), dpi=200)
 plt.plot(t, time_per_step, "+-")
-plt.xlabel("t")
+plt.xlabel("t [seconds]")
 plt.ylabel("time_per_step")
 plt.savefig(analysis_folder + "time_per_step.png")
 plt.show()
@@ -726,7 +816,7 @@ for td, sc, pc in zip(sim_time_delta, sim_step_count_delta, part_count):
 
 plt.figure(figsize=(8, 5), dpi=200)
 plt.plot(t, rate, "+-")
-plt.xlabel("t")
+plt.xlabel("t [seconds]")
 plt.ylabel("Particles / second")
 plt.yscale("log")
 plt.savefig(analysis_folder + "rate.png")
