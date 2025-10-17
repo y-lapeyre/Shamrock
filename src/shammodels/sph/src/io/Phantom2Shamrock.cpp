@@ -87,7 +87,7 @@ namespace shammodels::sph {
     }
 
     template<class Tvec>
-    void write_shamrock_misc_disc_params(EOSConfig<Tvec> &cfg, PhantomDump &dump) {
+    void write_shamrock_disc_params(EOSConfig<Tvec> &cfg, PhantomDump &dump) {
         
         dump.table_header_f64.add("qfactdisc", 0.75);
 
@@ -106,10 +106,10 @@ namespace shammodels::sph {
         EOSConfig<f64_3> &cfg, PhantomDump &dump, bool bypass_error);
 
     /// explicit instanciation for f32_3
-    template void write_shamrock_misc_disc_params<f32_3>(
+    template void write_shamrock_disc_params<f32_3>(
         EOSConfig<f32_3> &cfg, PhantomDump &dump);
     /// explicit instanciation for f64_3
-    template void write_shamrock_misc_disc_params<f64_3>(
+    template void write_shamrock_disc_params<f64_3>(
         EOSConfig<f64_3> &cfg, PhantomDump &dump);
 
 } // namespace shammodels::sph
