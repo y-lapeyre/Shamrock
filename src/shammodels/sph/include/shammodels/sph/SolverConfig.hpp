@@ -294,6 +294,9 @@ struct shammodels::sph::SolverConfig {
     /// Set the time step for the next iteration
     inline void set_next_dt(Tscal dt) { time_state.dt_sph = dt; }
 
+    /// Set the time step for the next substep iteration
+    inline void set_next_dt_froce(Tscal dt) { time_state.dt_force = dt; }
+
     /// Get the current time
     inline Tscal get_time() { return time_state.time; }
 

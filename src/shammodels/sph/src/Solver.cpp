@@ -500,22 +500,21 @@ void shammodels::sph::Solver<Tvec, Kern>::do_substep(Tscal dt, Tscal dt_force) {
     using namespace shamrock::patch;
     modules::SinkParticlesUpdate<Tvec, Kern> sink_update(context, solver_config, storage);
     PatchDataLayerLayout &pdl = scheduler().pdl();
-    const u32 ixyz            = pdl.get_field_idx<Tvec>("xyz");
-    const u32 ivxyz           = pdl.get_field_idx<Tvec>("vxyz");
-    const u32 iaxyz           = pdl.get_field_idx<Tvec>("axyz");
-    const u32 iaxyz_ext       = pdl.get_field_idx<Tvec>("axyz_ext");
-    const u32 iuint           = pdl.get_field_idx<Tscal>("uint");
-    const u32 iduint          = pdl.get_field_idx<Tscal>("duint");
 
-    bool has_B_field       = solver_config.has_field_B_on_rho();
-    bool has_psi_field     = solver_config.has_field_psi_on_ch();
+    bool has_B_field = solver_config.has_field_B_on_rho();
+    if (has_B_field) {
+        shambase::throw_unimplemented("Substepping unvailable for MHD solver!");
+    }
+
+    const u32 ixyz      = pdl.get_field_idx<Tvec>("xyz");
+    const u32 ivxyz     = pdl.get_field_idx<Tvec>("vxyz");
+    const u32 iaxyz     = pdl.get_field_idx<Tvec>("axyz");
+    const u32 iaxyz_ext = pdl.get_field_idx<Tvec>("axyz_ext");
+    const u32 iuint     = pdl.get_field_idx<Tscal>("uint");
+    const u32 iduint    = pdl.get_field_idx<Tscal>("duint");
+
     bool has_epsilon_field = solver_config.dust_config.has_epsilon_field();
     bool has_deltav_field  = solver_config.dust_config.has_deltav_field();
-
-    const u32 iB_on_rho   = (has_B_field) ? pdl.get_field_idx<Tvec>("B/rho") : 0;
-    const u32 idB_on_rho  = (has_B_field) ? pdl.get_field_idx<Tvec>("dB/rho") : 0;
-    const u32 ipsi_on_ch  = (has_psi_field) ? pdl.get_field_idx<Tscal>("psi/ch") : 0;
-    const u32 idpsi_on_ch = (has_psi_field) ? pdl.get_field_idx<Tscal>("dpsi/ch") : 0;
 
     const u32 iepsilon   = (has_epsilon_field) ? pdl.get_field_idx<Tscal>("epsilon") : 0;
     const u32 idtepsilon = (has_epsilon_field) ? pdl.get_field_idx<Tscal>("dtepsilon") : 0;
@@ -531,21 +530,11 @@ void shammodels::sph::Solver<Tvec, Kern>::do_substep(Tscal dt, Tscal dt_force) {
     Tscal t_end     = t_current + dt;
 
     while (t_current < t_end && !done) {
-        // increment time
-        t_current += dt_force;
-        n_substeps++;
 
         // kick
         shamlog_debug_ln("Substep", "kick");
         utility.fields_forward_euler<Tvec>(ivxyz, iaxyz_ext, dt_force / 2);
         utility.fields_forward_euler<Tscal>(iuint, iduint, dt_force / 2);
-
-        if (has_B_field) {
-            utility.fields_forward_euler<Tvec>(iB_on_rho, idB_on_rho, dt_force / 2);
-        }
-        if (has_psi_field) {
-            utility.fields_forward_euler<Tscal>(ipsi_on_ch, idpsi_on_ch, dt_force / 2);
-        }
 
         // accrete particles+ update sinks
 
@@ -560,14 +549,59 @@ void shammodels::sph::Solver<Tvec, Kern>::do_substep(Tscal dt, Tscal dt_force) {
         utility.fields_forward_euler<Tvec>(ivxyz, iaxyz_ext, dt_force / 2);
         utility.fields_forward_euler<Tscal>(iuint, iduint, dt_force / 2);
 
-        if (has_B_field) {
-            utility.fields_forward_euler<Tvec>(iB_on_rho, idB_on_rho, dt_force / 2);
-        }
-        if (has_psi_field) {
-            utility.fields_forward_euler<Tscal>(ipsi_on_ch, idpsi_on_ch, dt_force / 2);
-        }
-
         // update dtforce
+        shamrock::patch::PatchDataLayerLayout &ghost_layout
+            = shambase::get_check_ref(storage.ghost_layout.get());
+
+        u32 ihpart_interf = ghost_layout.get_field_idx<Tscal>("hpart");
+
+        shambase::DistributedData<PatchDataLayer> &mpdats = storage.merged_patchdata_ghost.get();
+
+        shamrock::ComputeField<Tscal> dt_force_arr
+            = utility.make_compute_field<Tscal>("dt_force_arr", 1);
+
+        scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
+            PatchDataLayer &mpdat = mpdats.get(cur_p.id_patch);
+
+            sham::DeviceBuffer<Tvec> &buf_axyz   = pdat.get_field<Tvec>(iaxyz).get_buf();
+            sham::DeviceBuffer<Tscal> &buf_hpart = mpdat.get_field<Tscal>(ihpart_interf).get_buf();
+            sham::DeviceBuffer<Tscal> &dt_force_arr_buf
+                = dt_force_arr.get_buf_check(cur_p.id_patch);
+
+            auto &q = shamsys::instance::get_compute_scheduler().get_queue();
+            sham::EventList depends_list;
+
+            auto hpart        = buf_hpart.get_read_access(depends_list);
+            auto a            = buf_axyz.get_read_access(depends_list);
+            auto dt_force_arr = dt_force_arr_buf.get_write_access(depends_list);
+
+            auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
+                Tscal C_force
+                    = solver_config.cfl_config.cfl_force * solver_config.time_state.cfl_multiplier;
+
+                cgh.parallel_for(sycl::range<1>{pdat.get_obj_cnt()}, [=](sycl::item<1> item) {
+                    Tscal h_a     = hpart[item];
+                    Tscal abs_a_a = sycl::length(a[item]);
+
+                    Tscal dt_f = C_force * sycl::sqrt(h_a / abs_a_a);
+
+                    dt_force_arr[item] = dt_f;
+                });
+            });
+
+            buf_hpart.complete_event_state(e);
+            buf_axyz.complete_event_state(e);
+        });
+
+        Tscal rank_dt = dt_force_arr.compute_rank_min();
+        shamlog_debug_ln("Substep", "rank", shamcomm::world_rank(), "found force dt =", rank_dt);
+
+        Tscal next_force_cfl = shamalgs::collective::allreduce_min(rank_dt);
+        // next_cfl = sham::min(force_cfl, sink_sink_cfl);
+        solver_config.set_next_dt(next_force_cfl);
+
+        // update time
+        solver_config.set_time(t_current + dt);
 
         if (last_step) {
             done = true;
@@ -578,6 +612,7 @@ void shammodels::sph::Solver<Tvec, Kern>::do_substep(Tscal dt, Tscal dt_force) {
         }
     }
 }
+
 template<class Tvec, template<class> class Kern>
 void shammodels::sph::Solver<Tvec, Kern>::sph_prestep(Tscal time_val, Tscal dt) {
     StackEntry stack_loc{};
