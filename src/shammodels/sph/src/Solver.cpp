@@ -513,14 +513,6 @@ void shammodels::sph::Solver<Tvec, Kern>::do_substep(Tscal dt, Tscal dt_force) {
     const u32 iuint     = pdl.get_field_idx<Tscal>("uint");
     const u32 iduint    = pdl.get_field_idx<Tscal>("duint");
 
-    bool has_epsilon_field = solver_config.dust_config.has_epsilon_field();
-    bool has_deltav_field  = solver_config.dust_config.has_deltav_field();
-
-    const u32 iepsilon   = (has_epsilon_field) ? pdl.get_field_idx<Tscal>("epsilon") : 0;
-    const u32 idtepsilon = (has_epsilon_field) ? pdl.get_field_idx<Tscal>("dtepsilon") : 0;
-    const u32 ideltav    = (has_deltav_field) ? pdl.get_field_idx<Tvec>("deltav") : 0;
-    const u32 idtdeltav  = (has_deltav_field) ? pdl.get_field_idx<Tvec>("dtdeltav") : 0;
-
     shamrock::SchedulerUtility utility(scheduler());
     bool last_step = (dt_force >= dt);
     int n_substeps = 0;
@@ -543,6 +535,8 @@ void shammodels::sph::Solver<Tvec, Kern>::do_substep(Tscal dt, Tscal dt_force) {
         utility.fields_forward_euler<Tvec>(ixyz, ivxyz, dt);
 
         // compute short range accelerations
+        // reset axyz_ext to zero
+        // add_ext_forces();
 
         // kick
         shamlog_debug_ln("Substep", "kick");
@@ -554,9 +548,7 @@ void shammodels::sph::Solver<Tvec, Kern>::do_substep(Tscal dt, Tscal dt_force) {
             = shambase::get_check_ref(storage.ghost_layout.get());
 
         u32 ihpart_interf = ghost_layout.get_field_idx<Tscal>("hpart");
-
         shambase::DistributedData<PatchDataLayer> &mpdats = storage.merged_patchdata_ghost.get();
-
         shamrock::ComputeField<Tscal> dt_force_arr
             = utility.make_compute_field<Tscal>("dt_force_arr", 1);
 
@@ -602,6 +594,7 @@ void shammodels::sph::Solver<Tvec, Kern>::do_substep(Tscal dt, Tscal dt_force) {
 
         // update time
         solver_config.set_time(t_current + dt);
+        n_substeps++;
 
         if (last_step) {
             done = true;
