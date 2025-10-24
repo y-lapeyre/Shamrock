@@ -535,8 +535,9 @@ void shammodels::sph::Solver<Tvec, Kern>::do_substep(Tscal dt, Tscal dt_force) {
         utility.fields_forward_euler<Tvec>(ixyz, ivxyz, dt);
 
         // compute short range accelerations
-        // reset axyz_ext to zero
-        // add_ext_forces();
+        // reset axyz_ext to zero ?
+        modules::ExternalForces<Tvec, Kern> ext_forces(context, solver_config, storage);
+        ext_forces.add_ext_forces();
 
         // kick
         shamlog_debug_ln("Substep", "kick");
