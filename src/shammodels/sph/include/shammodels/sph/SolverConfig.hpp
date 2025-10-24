@@ -297,7 +297,7 @@ struct shammodels::sph::SolverConfig {
     inline void set_next_dt(Tscal dt) { time_state.dt_sph = dt; }
 
     /// Set the external force time step for the next substep iteration
-    inline void set_next_dt_froce(Tscal dt) { time_state.dt_force = dt; }
+    inline void set_next_dt_force(Tscal dt) { time_state.dt_force = dt; }
 
     /// Set the sph time step (Courant + SPH acceleration)for the next substep iteration
     // cf eq 72 and 73 of the Phantom paper
@@ -311,6 +311,9 @@ struct shammodels::sph::SolverConfig {
 
     /// Get the force dt
     inline Tscal get_dt_force() { return time_state.dt_force; }
+
+    /// Get the true sph dt
+    inline Tscal get_dt_true_sph() { return time_state.dt_true_sph; }
 
     /// Set the CFL multiplier for the time step
     inline void set_cfl_multipler(Tscal lambda) { time_state.cfl_multiplier = lambda; }

@@ -592,7 +592,7 @@ void shammodels::sph::Solver<Tvec, Kern>::do_substep(Tscal dt, Tscal dt_force) {
 
         Tscal next_force_cfl = shamalgs::collective::allreduce_min(rank_dt);
         // next_cfl = sham::min(force_cfl, sink_sink_cfl);
-        solver_config.set_next_dt_froce(next_force_cfl);
+        solver_config.set_next_dt_force(next_force_cfl);
 
         // update time
         solver_config.set_time(t_current + dt);
@@ -1341,7 +1341,6 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
 
     Tscal t_current = solver_config.get_time();
     Tscal dt        = solver_config.get_dt_sph();
-    Tscal dt_force  = solver_config.get_dt_force();
 
     StackEntry stack_loc{};
 
@@ -1404,18 +1403,6 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
     ext_forces.point_mass_accrete_particles();
 
     do_predictor_leapfrog(dt);
-
-    if (dt_force < dt) {
-        logger::raw_ln("############ ENTERING SUBSTEPPING CONDITION ##########");
-        logger::raw_ln("############ ENTERING SUBSTEPPING CONDITION ##########");
-        logger::raw_ln("############ ENTERING SUBSTEPPING CONDITION ##########");
-        logger::raw_ln("############ ENTERING SUBSTEPPING CONDITION ##########");
-        logger::raw_ln("########### dt force= ", dt_force);
-        logger::raw_ln("########### dt sph= ", dt);
-        do_predictor_substep(dt);
-        logger::raw_ln("############ did the prediction");
-        do_substep(dt, dt_force);
-    }
 
     sink_update.predictor_step(dt);
 
@@ -2199,6 +2186,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once_su
     Tscal t_current = solver_config.get_time();
     Tscal dt        = solver_config.get_dt_sph();
     Tscal dt_force  = solver_config.get_dt_force();
+    Tscal dt_sph    = solver_config.get_dt_true_sph();
 
     StackEntry stack_loc{};
 
@@ -2262,6 +2250,18 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once_su
     ext_forces.point_mass_accrete_particles();
 
     do_predictor_leapfrog(dt);
+
+    if (dt_force < dt) {
+        logger::raw_ln("############ ENTERING SUBSTEPPING CONDITION ##########");
+        logger::raw_ln("############ ENTERING SUBSTEPPING CONDITION ##########");
+        logger::raw_ln("############ ENTERING SUBSTEPPING CONDITION ##########");
+        logger::raw_ln("############ ENTERING SUBSTEPPING CONDITION ##########");
+        logger::raw_ln("########### dt force= ", dt_force);
+        logger::raw_ln("########### dt sph= ", dt);
+        do_predictor_substep(dt);
+        logger::raw_ln("############ did the prediction");
+        do_substep(dt, dt_force);
+    }
 
     // do_substep(dt, dt_force);
     sink_update.predictor_step(dt);
@@ -3045,7 +3045,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once_su
     shambase::get_check_ref(storage.neigh_cache).free_alloc();
 
     solver_config.set_next_dt(next_cfl);
-    solver_config.set_next_dt_froce(next_dt_force);
+    solver_config.set_next_dt_force(next_dt_force);
     solver_config.set_next_dt_sph(next_dt_sph);
     solver_config.set_time(t_current + dt);
 
