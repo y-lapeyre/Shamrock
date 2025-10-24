@@ -490,13 +490,14 @@ void shammodels::sph::Solver<Tvec, Kern>::do_predictor_substep(Tscal dt_sph) {
     // forward euler step f dt_sph /2 with long range interactions
     shamlog_debug_ln("sph::BasicGas", "forward euler step f dt/2, long range interactions");
     utility.fields_forward_euler<Tvec>(ivxyz, iaxyz_ext, dt_sph / 2);
-    utility.fields_forward_euler<Tscal>(iuint, iduint, dt_sph / 2);
+    // utility.fields_forward_euler<Tscal>(iuint, iduint, dt_sph / 2);
 }
 
 template<class Tvec, template<class> class Kern>
 void shammodels::sph::Solver<Tvec, Kern>::do_substep(Tscal dt, Tscal dt_force) {
 
     StackEntry stack_loc{};
+    logger::raw_ln("################# SUBSTEPPING #################");
     using namespace shamrock::patch;
     modules::SinkParticlesUpdate<Tvec, Kern> sink_update(context, solver_config, storage);
     PatchDataLayerLayout &pdl = scheduler().pdl();
@@ -591,7 +592,7 @@ void shammodels::sph::Solver<Tvec, Kern>::do_substep(Tscal dt, Tscal dt_force) {
 
         Tscal next_force_cfl = shamalgs::collective::allreduce_min(rank_dt);
         // next_cfl = sham::min(force_cfl, sink_sink_cfl);
-        solver_config.set_next_dt(next_force_cfl);
+        solver_config.set_next_dt_froce(next_force_cfl);
 
         // update time
         solver_config.set_time(t_current + dt);
@@ -1340,6 +1341,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
 
     Tscal t_current = solver_config.get_time();
     Tscal dt        = solver_config.get_dt_sph();
+    Tscal dt_force  = solver_config.get_dt_force();
 
     StackEntry stack_loc{};
 
@@ -1402,6 +1404,18 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
     ext_forces.point_mass_accrete_particles();
 
     do_predictor_leapfrog(dt);
+
+    if (dt_force < dt) {
+        logger::raw_ln("############ ENTERING SUBSTEPPING CONDITION ##########");
+        logger::raw_ln("############ ENTERING SUBSTEPPING CONDITION ##########");
+        logger::raw_ln("############ ENTERING SUBSTEPPING CONDITION ##########");
+        logger::raw_ln("############ ENTERING SUBSTEPPING CONDITION ##########");
+        logger::raw_ln("########### dt force= ", dt_force);
+        logger::raw_ln("########### dt sph= ", dt);
+        do_predictor_substep(dt);
+        logger::raw_ln("############ did the prediction");
+        do_substep(dt, dt_force);
+    }
 
     sink_update.predictor_step(dt);
 
@@ -2226,6 +2240,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once_su
     const u32 ixyz        = pdl.get_field_idx<Tvec>("xyz");
     const u32 ivxyz       = pdl.get_field_idx<Tvec>("vxyz");
     const u32 iaxyz       = pdl.get_field_idx<Tvec>("axyz");
+    const u32 iaxyz_ext   = pdl.get_field_idx<Tvec>("axyz_ext");
     const u32 iuint       = pdl.get_field_idx<Tscal>("uint");
     const u32 iduint      = pdl.get_field_idx<Tscal>("duint");
     const u32 ihpart      = pdl.get_field_idx<Tscal>("hpart");
@@ -2248,7 +2263,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once_su
 
     do_predictor_leapfrog(dt);
 
-    do_substep(dt, dt_force);
+    // do_substep(dt, dt_force);
     sink_update.predictor_step(dt);
 
     part_killing_step();
@@ -2291,7 +2306,9 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once_su
     using RTreeField = RadixTreeField<Tscal>;
     shambase::DistributedData<RTreeField> rtree_field_h;
 
-    Tscal next_cfl = 0;
+    Tscal next_cfl      = 0;
+    Tscal next_dt_force = 0;
+    Tscal next_dt_sph   = 0;
 
     u32 corrector_iter_cnt    = 0;
     bool need_rerun_corrector = false;
@@ -2762,24 +2779,32 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once_su
                 }
             });
 
-            ComputeField<Tscal> cfl_dt = utility.make_compute_field<Tscal>("cfl_dt", 1);
+            ComputeField<Tscal> cfl_dt   = utility.make_compute_field<Tscal>("cfl_dt", 1);
+            ComputeField<Tscal> dt_sph   = utility.make_compute_field<Tscal>("dt_sph", 1);
+            ComputeField<Tscal> dt_force = utility.make_compute_field<Tscal>("dt_force", 1);
 
             scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
                 PatchDataLayer &mpdat = mpdats.get(cur_p.id_patch);
 
-                sham::DeviceBuffer<Tvec> &buf_axyz = pdat.get_field<Tvec>(iaxyz).get_buf();
+                sham::DeviceBuffer<Tvec> &buf_axyz     = pdat.get_field<Tvec>(iaxyz).get_buf();
+                sham::DeviceBuffer<Tvec> &buf_axyz_ext = pdat.get_field<Tvec>(iaxyz_ext).get_buf();
                 sham::DeviceBuffer<Tscal> &buf_hpart
                     = mpdat.get_field<Tscal>(ihpart_interf).get_buf();
-                sham::DeviceBuffer<Tscal> &vsig_buf   = vsig_max_dt.get_buf_check(cur_p.id_patch);
-                sham::DeviceBuffer<Tscal> &cfl_dt_buf = cfl_dt.get_buf_check(cur_p.id_patch);
+                sham::DeviceBuffer<Tscal> &vsig_buf     = vsig_max_dt.get_buf_check(cur_p.id_patch);
+                sham::DeviceBuffer<Tscal> &cfl_dt_buf   = cfl_dt.get_buf_check(cur_p.id_patch);
+                sham::DeviceBuffer<Tscal> &dt_sph_buf   = dt_sph.get_buf_check(cur_p.id_patch);
+                sham::DeviceBuffer<Tscal> &dt_force_buf = dt_force.get_buf_check(cur_p.id_patch);
 
                 auto &q = shamsys::instance::get_compute_scheduler().get_queue();
                 sham::EventList depends_list;
 
-                auto hpart  = buf_hpart.get_read_access(depends_list);
-                auto a      = buf_axyz.get_read_access(depends_list);
-                auto vsig   = vsig_buf.get_read_access(depends_list);
-                auto cfl_dt = cfl_dt_buf.get_write_access(depends_list);
+                auto hpart    = buf_hpart.get_read_access(depends_list);
+                auto a        = buf_axyz.get_read_access(depends_list);
+                auto aext     = buf_axyz_ext.get_read_access(depends_list);
+                auto vsig     = vsig_buf.get_read_access(depends_list);
+                auto cfl_dt   = cfl_dt_buf.get_write_access(depends_list);
+                auto dt_force = dt_force_buf.get_write_access(depends_list);
+                auto dt_sph   = dt_sph_buf.get_write_access(depends_list);
 
                 auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
                     Tscal C_cour = solver_config.cfl_config.cfl_cour
@@ -2788,14 +2813,25 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once_su
                                     * solver_config.time_state.cfl_multiplier;
 
                     cgh.parallel_for(sycl::range<1>{pdat.get_obj_cnt()}, [=](sycl::item<1> item) {
-                        Tscal h_a     = hpart[item];
-                        Tscal vsig_a  = vsig[item];
-                        Tscal abs_a_a = sycl::length(a[item]);
+                        Tscal h_a        = hpart[item];
+                        Tscal vsig_a     = vsig[item];
+                        Tscal abs_a_a    = sycl::length(a[item]);
+                        Tscal abs_aext_a = sycl::length(aext[item]);
 
+                        // at this point a contains both ext and sph accelerations, hence cfl_dt can
+                        // be computed like this. For substepping, we need the two separated dt
+                        // values.
                         Tscal dt_c = C_cour * h_a / vsig_a;
-                        Tscal dt_f = C_force * sycl::sqrt(h_a / abs_a_a);
+                        Tscal dt_f = C_force * sycl::sqrt(h_a / abs_a_a); // all accelerations
+                        Tscal dt_fext
+                            = C_force * sycl::sqrt(h_a / abs_aext_a); // only external accelerations
+                        Tscal dt_fsph
+                            = C_force
+                              * sycl::sqrt(h_a / (abs_a_a - abs_aext_a)); // only sph accelerations
 
-                        cfl_dt[item] = sycl::min(dt_c, dt_f);
+                        cfl_dt[item]   = sycl::min(dt_c, dt_f);
+                        dt_force[item] = dt_fext;
+                        dt_sph[item]   = sycl::min(dt_c, dt_fsph);
                     });
                 });
 
@@ -2822,11 +2858,16 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once_su
 
                 buf_hpart.complete_event_state(e);
                 buf_axyz.complete_event_state(e);
+                buf_axyz_ext.complete_event_state(e);
                 vsig_buf.complete_event_state(e);
                 cfl_dt_buf.complete_event_state(e);
+                dt_force_buf.complete_event_state(e);
+                dt_sph_buf.complete_event_state(e);
             });
 
-            Tscal rank_dt = cfl_dt.compute_rank_min();
+            Tscal rank_dt       = cfl_dt.compute_rank_min();
+            Tscal rank_force_dt = dt_force.compute_rank_min();
+            Tscal rank_sph_dt   = dt_sph.compute_rank_min();
 
             Tscal sink_sink_cfl = shambase::get_infty<Tscal>();
             if (!storage.sinks.is_empty()) {
@@ -2878,6 +2919,8 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once_su
             shamlog_debug_ln("BasigGas", "rank", shamcomm::world_rank(), "found cfl dt =", rank_dt);
 
             Tscal hydro_cfl = shamalgs::collective::allreduce_min(rank_dt);
+            next_dt_force   = shamalgs::collective::allreduce_min(rank_force_dt);
+            next_dt_sph     = shamalgs::collective::allreduce_min(rank_sph_dt);
 
             if (shamcomm::world_rank() == 0) {
                 shamlog_info_ln("SPH", "CFL hydro =", hydro_cfl, "sink sink =", sink_sink_cfl);
@@ -3002,6 +3045,8 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once_su
     shambase::get_check_ref(storage.neigh_cache).free_alloc();
 
     solver_config.set_next_dt(next_cfl);
+    solver_config.set_next_dt_froce(next_dt_force);
+    solver_config.set_next_dt_sph(next_dt_sph);
     solver_config.set_time(t_current + dt);
 
     auto get_next_cfl_mult = [&]() {
