@@ -2188,6 +2188,12 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once_su
     Tscal dt_force  = solver_config.get_dt_force();
     Tscal dt_sph    = solver_config.get_dt_true_sph();
 
+    logger::raw_ln("################# TIME STEP #################");
+    logger::raw_ln("t_current = ", t_current);
+    logger::raw_ln("dt        = ", dt);
+    logger::raw_ln("dt_force  = ", dt_force);
+    logger::raw_ln("dt_sph    = ", dt_sph);
+
     StackEntry stack_loc{};
 
     if (shamcomm::world_rank() == 0) {
