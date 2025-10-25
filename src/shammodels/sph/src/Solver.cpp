@@ -2257,16 +2257,16 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once_su
 
     do_predictor_leapfrog(dt);
 
-    if (dt_force < dt) {
+    if (dt_force < dt_sph) {
         logger::raw_ln("############ ENTERING SUBSTEPPING CONDITION ##########");
         logger::raw_ln("############ ENTERING SUBSTEPPING CONDITION ##########");
         logger::raw_ln("############ ENTERING SUBSTEPPING CONDITION ##########");
         logger::raw_ln("############ ENTERING SUBSTEPPING CONDITION ##########");
         logger::raw_ln("########### dt force= ", dt_force);
         logger::raw_ln("########### dt sph= ", dt);
-        do_predictor_substep(dt);
+        do_predictor_substep(dt_sph);
         logger::raw_ln("############ did the prediction");
-        do_substep(dt, dt_force);
+        do_substep(dt_sph, dt_force);
     }
 
     // do_substep(dt, dt_force);
