@@ -494,10 +494,9 @@ void shammodels::sph::Solver<Tvec, Kern>::do_predictor_substep(Tscal dt_sph) {
 }
 
 template<class Tvec, template<class> class Kern>
-void shammodels::sph::Solver<Tvec, Kern>::do_substep(Tscal dt, Tscal dt_force) {
+void shammodels::sph::Solver<Tvec, Kern>::do_substep() {
 
     StackEntry stack_loc{};
-    logger::raw_ln("################# SUBSTEPPING #################");
     using namespace shamrock::patch;
     modules::SinkParticlesUpdate<Tvec, Kern> sink_update(context, solver_config, storage);
     PatchDataLayerLayout &pdl = scheduler().pdl();
@@ -510,30 +509,30 @@ void shammodels::sph::Solver<Tvec, Kern>::do_substep(Tscal dt, Tscal dt_force) {
     const u32 ixyz      = pdl.get_field_idx<Tvec>("xyz");
     const u32 ivxyz     = pdl.get_field_idx<Tvec>("vxyz");
     const u32 iaxyz     = pdl.get_field_idx<Tvec>("axyz");
+    const u32 ihpart    = pdl.get_field_idx<Tscal>("hpart");
     const u32 iaxyz_ext = pdl.get_field_idx<Tvec>("axyz_ext");
     const u32 iuint     = pdl.get_field_idx<Tscal>("uint");
     const u32 iduint    = pdl.get_field_idx<Tscal>("duint");
 
     shamrock::SchedulerUtility utility(scheduler());
-    bool last_step = (dt_force >= dt);
     int n_substeps = 0;
     bool done      = false;
 
+    Tscal dt_sph    = solver_config.get_dt_true_sph();
     Tscal t_current = solver_config.get_time();
-    Tscal t_end     = t_current + dt;
+    Tscal t_end     = t_current + dt_sph;
 
     while (t_current < t_end && !done) {
-
+        Tscal dt_force = solver_config.get_dt_force();
         // kick
         shamlog_debug_ln("Substep", "kick");
         utility.fields_forward_euler<Tvec>(ivxyz, iaxyz_ext, dt_force / 2);
         utility.fields_forward_euler<Tscal>(iuint, iduint, dt_force / 2);
-
         // accrete particles+ update sinks
 
         // drift + drift sinks
         shamlog_debug_ln("Substep", "drift");
-        utility.fields_forward_euler<Tvec>(ixyz, ivxyz, dt);
+        utility.fields_forward_euler<Tvec>(ixyz, ivxyz, dt_force);
 
         // compute short range accelerations
         // reset axyz_ext to zero ?
@@ -546,20 +545,14 @@ void shammodels::sph::Solver<Tvec, Kern>::do_substep(Tscal dt, Tscal dt_force) {
         utility.fields_forward_euler<Tscal>(iuint, iduint, dt_force / 2);
 
         // update dtforce
-        shamrock::patch::PatchDataLayerLayout &ghost_layout
-            = shambase::get_check_ref(storage.ghost_layout.get());
 
-        u32 ihpart_interf = ghost_layout.get_field_idx<Tscal>("hpart");
-        shambase::DistributedData<PatchDataLayer> &mpdats = storage.merged_patchdata_ghost.get();
         shamrock::ComputeField<Tscal> dt_force_arr
             = utility.make_compute_field<Tscal>("dt_force_arr", 1);
 
         scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
-            PatchDataLayer &mpdat = mpdats.get(cur_p.id_patch);
-
             sham::DeviceBuffer<Tvec> &buf_axyz   = pdat.get_field<Tvec>(iaxyz).get_buf();
-            sham::DeviceBuffer<Tscal> &buf_hpart = mpdat.get_field<Tscal>(ihpart_interf).get_buf();
-            sham::DeviceBuffer<Tscal> &dt_force_arr_buf
+            sham::DeviceBuffer<Tscal> &buf_hpart = pdat.get_field<Tscal>(ihpart).get_buf();
+            sham::DeviceBuffer<Tscal> &buf_dt_force_arr
                 = dt_force_arr.get_buf_check(cur_p.id_patch);
 
             auto &q = shamsys::instance::get_compute_scheduler().get_queue();
@@ -567,7 +560,7 @@ void shammodels::sph::Solver<Tvec, Kern>::do_substep(Tscal dt, Tscal dt_force) {
 
             auto hpart        = buf_hpart.get_read_access(depends_list);
             auto a            = buf_axyz.get_read_access(depends_list);
-            auto dt_force_arr = dt_force_arr_buf.get_write_access(depends_list);
+            auto dt_force_arr = buf_dt_force_arr.get_write_access(depends_list);
 
             auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
                 Tscal C_force
@@ -585,20 +578,21 @@ void shammodels::sph::Solver<Tvec, Kern>::do_substep(Tscal dt, Tscal dt_force) {
 
             buf_hpart.complete_event_state(e);
             buf_axyz.complete_event_state(e);
+            buf_dt_force_arr.complete_event_state(e);
         });
 
-        Tscal rank_dt = dt_force_arr.compute_rank_min();
-        shamlog_debug_ln("Substep", "rank", shamcomm::world_rank(), "found force dt =", rank_dt);
-
+        Tscal rank_dt        = dt_force_arr.compute_rank_min();
         Tscal next_force_cfl = shamalgs::collective::allreduce_min(rank_dt);
-        // next_cfl = sham::min(force_cfl, sink_sink_cfl);
         solver_config.set_next_dt_force(next_force_cfl);
 
         // update time
-        solver_config.set_time(t_current + dt);
+        solver_config.set_time(t_current + dt_force);
+        t_current = solver_config.get_time();
         n_substeps++;
 
+        bool last_step = dt_force >= dt_sph;
         if (last_step) {
+            // last step
             done = true;
         }
         if (t_current + dt_force > t_end) {
@@ -2188,12 +2182,6 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once_su
     Tscal dt_force  = solver_config.get_dt_force();
     Tscal dt_sph    = solver_config.get_dt_true_sph();
 
-    logger::raw_ln("################# TIME STEP #################");
-    logger::raw_ln("t_current = ", t_current);
-    logger::raw_ln("dt        = ", dt);
-    logger::raw_ln("dt_force  = ", dt_force);
-    logger::raw_ln("dt_sph    = ", dt_sph);
-
     StackEntry stack_loc{};
 
     if (shamcomm::world_rank() == 0) {
@@ -2258,18 +2246,10 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once_su
     do_predictor_leapfrog(dt);
 
     if (dt_force < dt_sph) {
-        logger::raw_ln("############ ENTERING SUBSTEPPING CONDITION ##########");
-        logger::raw_ln("############ ENTERING SUBSTEPPING CONDITION ##########");
-        logger::raw_ln("############ ENTERING SUBSTEPPING CONDITION ##########");
-        logger::raw_ln("############ ENTERING SUBSTEPPING CONDITION ##########");
-        logger::raw_ln("########### dt force= ", dt_force);
-        logger::raw_ln("########### dt sph= ", dt);
         do_predictor_substep(dt_sph);
-        logger::raw_ln("############ did the prediction");
-        do_substep(dt_sph, dt_force);
+        do_substep();
     }
 
-    // do_substep(dt, dt_force);
     sink_update.predictor_step(dt);
 
     part_killing_step();
