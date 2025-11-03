@@ -16,7 +16,9 @@
  */
 
 #include "shammodels/sph/modules/ConservativeCheck.hpp"
+#include "shamcomm/logs.hpp"
 #include "shammath/sphkernels.hpp"
+#include "shammodels/sph/math/density.hpp"
 #include "shamsys/legacy/log.hpp"
 
 template<class Tvec, template<class> class SPHKernel>
@@ -42,6 +44,11 @@ void shammodels::sph::modules::ConservativeCheck<Tvec, SPHKernel>::check_conserv
     const u32 iuint     = pdl.get_field_idx<Tscal>("uint");
     const u32 iduint    = pdl.get_field_idx<Tscal>("duint");
     const u32 ihpart    = pdl.get_field_idx<Tscal>("hpart");
+
+    bool has_B_field     = solver_config.has_field_B_on_rho();
+    const u32 iB_on_rho  = (has_B_field) ? pdl.get_field_idx<Tvec>("B/rho") : -1;
+    const u32 idB_on_rho = (has_B_field) ? pdl.get_field_idx<Tvec>("dB/rho") : -1;
+    const u32 idrho_dt   = (has_B_field) ? pdl.get_field_idx<Tscal>("drho/dt") : -1;
 
     std::string cv_checks = "conservation infos :\n";
 
@@ -103,23 +110,57 @@ void shammodels::sph::modules::ConservativeCheck<Tvec, SPHKernel>::check_conserv
     Tscal pmass  = gpart_mass;
     Tscal tmp_de = 0;
     scheduler().for_each_patchdata_nonempty([&, pmass](Patch cur_p, PatchDataLayer &pdat) {
-        PatchDataField<Tscal> &field_u  = pdat.get_field<Tscal>(iuint);
-        PatchDataField<Tvec> &field_v   = pdat.get_field<Tvec>(ivxyz);
-        PatchDataField<Tscal> &field_du = pdat.get_field<Tscal>(iduint);
-        PatchDataField<Tvec> &field_a   = pdat.get_field<Tvec>(iaxyz);
+        PatchDataField<Tscal> &field_u     = pdat.get_field<Tscal>(iuint);
+        PatchDataField<Tvec> &field_v      = pdat.get_field<Tvec>(ivxyz);
+        PatchDataField<Tscal> &field_du    = pdat.get_field<Tscal>(iduint);
+        PatchDataField<Tvec> &field_a      = pdat.get_field<Tvec>(iaxyz);
+        PatchDataField<Tscal> &field_hpart = pdat.get_field<Tscal>(ihpart);
+
+        PatchDataField<Tvec> field_B_on_rho_temp
+            = (has_B_field) ? pdat.get_field<Tvec>(iB_on_rho) : PatchDataField<Tvec>("mockB", 1);
+        PatchDataField<Tvec> field_dB_on_rho_temp
+            = (has_B_field) ? pdat.get_field<Tvec>(idB_on_rho) : PatchDataField<Tvec>("mockdB", 1);
+        PatchDataField<Tscal> field_drho_dt_temp = (has_B_field)
+                                                       ? pdat.get_field<Tscal>(idrho_dt)
+                                                       : PatchDataField<Tscal>("mockdrho", 1);
+
+        PatchDataField<Tvec> &field_B_on_rho  = field_B_on_rho_temp;
+        PatchDataField<Tvec> &field_dB_on_rho = field_dB_on_rho_temp;
+        PatchDataField<Tscal> &field_drho_dt  = field_drho_dt_temp;
 
         sham::DeviceBuffer<Tscal> temp_de(pdat.get_obj_cnt(), dev_sched);
 
         sham::EventList depends_list;
-        auto u  = field_u.get_buf().get_read_access(depends_list);
-        auto du = field_du.get_buf().get_read_access(depends_list);
-        auto v  = field_v.get_buf().get_read_access(depends_list);
-        auto a  = field_a.get_buf().get_read_access(depends_list);
-        auto de = temp_de.get_write_access(depends_list);
+        auto u     = field_u.get_buf().get_read_access(depends_list);
+        auto du    = field_du.get_buf().get_read_access(depends_list);
+        auto v     = field_v.get_buf().get_read_access(depends_list);
+        auto a     = field_a.get_buf().get_read_access(depends_list);
+        auto hpart = field_hpart.get_buf().get_read_access(depends_list);
+        auto de    = temp_de.get_write_access(depends_list);
+
+        auto B_on_rho  = field_B_on_rho.get_buf().get_read_access(depends_list);
+        auto dB_on_rho = field_dB_on_rho.get_buf().get_read_access(depends_list);
+
+        auto drho_dt = field_drho_dt.get_buf().get_read_access(depends_list);
 
         auto e = q.submit(depends_list, [&, pmass](sycl::handler &cgh) {
             cgh.parallel_for(sycl::range<1>{pdat.get_obj_cnt()}, [=](sycl::item<1> item) {
-                de[item] = pmass * (sycl::dot(v[item], a[item]) + du[item]);
+                using namespace shamrock::sph;
+                Tscal const mu_0 = solver_config.get_constant_mu_0();
+                Tscal h          = hpart[item];
+                Tscal term_B     = 0.;
+
+                if (has_B_field) {
+                    Tvec B_on_rho_a = B_on_rho[item];
+                    Tvec B          = B_on_rho_a
+                             * shamrock::sph::rho_h(solver_config.gpart_mass, h, Kernel::hfactd);
+                    Tvec dB_on_rho_a = dB_on_rho[item];
+                    Tscal drho       = drho_dt[item];
+                    term_B           = 0.5 * (1. / mu_0) * sycl::dot(B_on_rho_a, B_on_rho_a) * drho
+                             + (1. / mu_0) * sycl::dot(B, dB_on_rho_a);
+                }
+
+                de[item] = pmass * (sycl::dot(v[item], a[item]) + du[item] + term_B);
             });
         });
 
@@ -127,6 +168,10 @@ void shammodels::sph::modules::ConservativeCheck<Tvec, SPHKernel>::check_conserv
         field_du.get_buf().complete_event_state(e);
         field_v.get_buf().complete_event_state(e);
         field_a.get_buf().complete_event_state(e);
+        field_B_on_rho.get_buf().complete_event_state(e);
+        field_dB_on_rho.get_buf().complete_event_state(e);
+        field_hpart.get_buf().complete_event_state(e);
+        field_drho_dt.get_buf().complete_event_state(e);
         temp_de.complete_event_state(e);
 
         Tscal de_p = shamalgs::primitives::sum(dev_sched, temp_de, 0, pdat.get_obj_cnt());

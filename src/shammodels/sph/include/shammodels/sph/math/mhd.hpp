@@ -309,6 +309,7 @@ namespace shamrock::sph::mhd {
         Tscal &du_dt,
         Tvec &dB_on_rho_dt,
         Tscal &dpsi_on_ch_dt,
+        Tscal &drho_dt,
 
         Tvec &mag_pressure,
         Tvec &mag_tension,
@@ -406,16 +407,16 @@ namespace shamrock::sph::mhd {
 
         du_dt += u_pressure_viscous_heating;
 
-        // du_dt += sph::lambda_shock_conductivity(
-        //     pmass,
-        //     alpha_u,
-        //     vsig_u,
-        //     u_a - u_b,
-        //     dWab_a * omega_a_rho_a_inv,
-        //     dWab_b / (rho_b * omega_b));
+        du_dt += sph::lambda_shock_conductivity(
+            pmass,
+            alpha_u,
+            vsig_u,
+            u_a - u_b,
+            dWab_a * omega_a_rho_a_inv,
+            dWab_b / (rho_b * omega_b));
 
-        // du_dt += lambda_artes(
-        //     pmass, rho_a_sq, rho_b * rho_b, vsig_B, B_a, B_b, omega_a, omega_b, Fab_a, Fab_b);
+        du_dt += lambda_artes(
+            pmass, rho_a_sq, rho_b * rho_b, vsig_B, B_a, B_b, omega_a, omega_b, Fab_a, Fab_b);
 
         Tscal sub_fact_a = rho_a_sq * omega_a;
         Tscal sub_fact_b = rho_b * rho_b * omega_b;
@@ -423,24 +424,24 @@ namespace shamrock::sph::mhd {
         Tscal rho_diss_term_a = Fab_a * sham::inv_sat_zero(sub_fact_a);
         Tscal rho_diss_term_b = Fab_b * sham::inv_sat_zero(sub_fact_b);
 
-        // Tvec dB_on_rho_dissipation_term
-        //     = -0.5 * pmass * (rho_diss_term_a + rho_diss_term_b) * (B_a - B_b) * vsig_B;
+        Tvec dB_on_rho_dissipation_term
+            = -0.5 * pmass * (rho_diss_term_a + rho_diss_term_b) * (B_a - B_b) * vsig_B;
 
         dB_on_rho_dt
             += v_ab * dB_on_rho_induction_term(pmass, rho_a_sq, B_a, omega_a, r_ab_unit * dWab_b);
 
-        // dB_on_rho_dt += dB_on_rho_psi_term(
-        //     pmass,
-        //     rho_a_sq,
-        //     rho_b * rho_b,
-        //     psi_a,
-        //     psi_b,
-        //     omega_a,
-        //     omega_b,
-        //     r_ab_unit * dWab_a,
-        //     r_ab_unit * dWab_b);
+        dB_on_rho_dt += dB_on_rho_psi_term(
+            pmass,
+            rho_a_sq,
+            rho_b * rho_b,
+            psi_a,
+            psi_b,
+            omega_a,
+            omega_b,
+            r_ab_unit * dWab_a,
+            r_ab_unit * dWab_b);
 
-        // dB_on_rho_dt += dB_on_rho_dissipation_term;
+        dB_on_rho_dt += dB_on_rho_dissipation_term;
 
         psi_propag += dpsi_on_ch_parabolic_propag(
             pmass, rho_a, B_a, B_b, omega_a, r_ab_unit * dWab_a, v_shock_a);
@@ -453,6 +454,8 @@ namespace shamrock::sph::mhd {
         dpsi_on_ch_dt += psi_propag;
         dpsi_on_ch_dt += psi_diff;
         dpsi_on_ch_dt += -psi_cons;
+
+        drho_dt += (1. / omega_a) * pmass * sycl::dot(v_ab, r_ab_unit * dWab_a);
     }
 
 } // namespace shamrock::sph::mhd
