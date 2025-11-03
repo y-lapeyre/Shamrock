@@ -158,8 +158,8 @@ namespace shamrock::sph::mhd {
         Tscal acc_fdivB_a = sycl::dot(B_a, nabla_Wab_ha) * sham::inv_sat_zero(sub_fact_a);
         Tscal acc_fdivB_b = sycl::dot(B_b, nabla_Wab_hb) * sham::inv_sat_zero(sub_fact_b);
 
-        Tvec fdivB_a = -0.5 * B_a * m_b * (acc_fdivB_a + acc_fdivB_b);
-        /// mu_0; // tested, this is what works best
+        Tvec fdivB_a = -0.5 * B_a * m_b * (acc_fdivB_a + acc_fdivB_b)
+                       / mu_0; // tested, this is what works best
 
         sum_gas_pressure += pressure_term;
         sum_mag_pressure += magnetic_pressure_term;
@@ -346,11 +346,12 @@ namespace shamrock::sph::mhd {
         Tscal qa_ab = shamrock::sph::q_av(rho_a, vsig_a, v_ab_r_ab);
         Tscal qb_ab = shamrock::sph::q_av(rho_b, vsig_b, v_ab_r_ab);
 
-        Tscal AV_P_a = P_a; //+ qa_ab;
-        Tscal AV_P_b = P_b; //+ qb_ab;
+        Tscal AV_P_a = P_a + qa_ab;
+        Tscal AV_P_b = P_b + qb_ab;
 
         constexpr bool Tricco = true;
         Tvec sum_gas_pressure, sum_mag_pressure, sum_mag_tension, sum_fdivB = {0., 0., 0.};
+        Tscal sum_psi_propag, sum_psi_diff = 0.;
         std::tie(sum_gas_pressure, sum_mag_pressure, sum_mag_tension, sum_fdivB) = dv_terms(
             pmass,
             rho_a_sq,
@@ -443,18 +444,20 @@ namespace shamrock::sph::mhd {
 
         dB_on_rho_dt += dB_on_rho_dissipation_term;
 
-        psi_propag = dpsi_on_ch_parabolic_propag(
+        sum_psi_propag = dpsi_on_ch_parabolic_propag(
             pmass, rho_a, B_a, B_b, omega_a, r_ab_unit * dWab_a, v_shock_a);
 
-        psi_diff = dpsi_on_ch_parabolic_diff(
+        sum_psi_diff = dpsi_on_ch_parabolic_diff(
             pmass, rho_a, v_ab, psi_a, omega_a, r_ab_unit * dWab_a, v_shock_a);
 
-        // commented out because it is now done in updateDerivs directly
-        // psi_cons += dpsi_on_ch_conservation(h_a, psi_a, v_shock_a, sigma_mhd, v_shock_a);
-
-        dpsi_on_ch_dt += psi_propag;
-        dpsi_on_ch_dt += psi_diff;
+        dpsi_on_ch_dt += sum_psi_propag;
+        dpsi_on_ch_dt += sum_psi_diff;
         // dpsi_on_ch_dt += -psi_cons;
+
+        // for debugging
+        psi_propag += sum_psi_propag;
+        psi_diff += sum_psi_diff;
+        psi_cons += -dpsi_on_ch_conservation(h_a, psi_a, v_shock_a, sigma_mhd, v_shock_a);
 
         drho_dt += (1. / omega_a) * pmass * sycl::dot(v_ab, r_ab_unit * dWab_a);
     }
