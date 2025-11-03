@@ -116,17 +116,16 @@ void shammodels::sph::modules::ConservativeCheck<Tvec, SPHKernel>::check_conserv
         PatchDataField<Tvec> &field_a      = pdat.get_field<Tvec>(iaxyz);
         PatchDataField<Tscal> &field_hpart = pdat.get_field<Tscal>(ihpart);
 
-        PatchDataField<Tvec> field_B_on_rho_temp
-            = (has_B_field) ? pdat.get_field<Tvec>(iB_on_rho) : PatchDataField<Tvec>("mockB", 1);
-        PatchDataField<Tvec> field_dB_on_rho_temp
-            = (has_B_field) ? pdat.get_field<Tvec>(idB_on_rho) : PatchDataField<Tvec>("mockdB", 1);
-        PatchDataField<Tscal> field_drho_dt_temp = (has_B_field)
-                                                       ? pdat.get_field<Tscal>(idrho_dt)
-                                                       : PatchDataField<Tscal>("mockdrho", 1);
+        PatchDataField<Tvec> mock_B_field("mockB", 1);
+        PatchDataField<Tvec> mock_dB_field("mockdB", 1);
+        PatchDataField<Tscal> mock_drho_field("mockdrho", 1);
 
-        PatchDataField<Tvec> &field_B_on_rho  = field_B_on_rho_temp;
-        PatchDataField<Tvec> &field_dB_on_rho = field_dB_on_rho_temp;
-        PatchDataField<Tscal> &field_drho_dt  = field_drho_dt_temp;
+        PatchDataField<Tvec> &field_B_on_rho
+            = (has_B_field) ? pdat.get_field<Tvec>(iB_on_rho) : mock_B_field;
+        PatchDataField<Tvec> &field_dB_on_rho
+            = (has_B_field) ? pdat.get_field<Tvec>(idB_on_rho) : mock_dB_field;
+        PatchDataField<Tscal> &field_drho_dt
+            = (has_B_field) ? pdat.get_field<Tscal>(idrho_dt) : mock_drho_field;
 
         sham::DeviceBuffer<Tscal> temp_de(pdat.get_obj_cnt(), dev_sched);
 
