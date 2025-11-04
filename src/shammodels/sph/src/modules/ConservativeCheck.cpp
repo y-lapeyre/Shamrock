@@ -143,6 +143,7 @@ void shammodels::sph::modules::ConservativeCheck<Tvec, SPHKernel>::check_conserv
         auto drho_dt = field_drho_dt.get_buf().get_read_access(depends_list);
 
         Tscal const mu_0 = solver_config.get_constant_mu_0();
+        Tscal pmass      = solver_config.gpart_mass;
 
         auto e = q.submit(depends_list, [&, pmass](sycl::handler &cgh) {
             cgh.parallel_for(sycl::range<1>{pdat.get_obj_cnt()}, [=](sycl::item<1> item) {
@@ -151,9 +152,8 @@ void shammodels::sph::modules::ConservativeCheck<Tvec, SPHKernel>::check_conserv
                 Tscal term_B = 0.;
 
                 if (has_B_field) {
-                    Tvec B_on_rho_a = B_on_rho[item];
-                    Tvec B          = B_on_rho_a
-                             * shamrock::sph::rho_h(solver_config.gpart_mass, h, Kernel::hfactd);
+                    Tvec B_on_rho_a  = B_on_rho[item];
+                    Tvec B           = B_on_rho_a * shamrock::sph::rho_h(pmass, h, Kernel::hfactd);
                     Tvec dB_on_rho_a = dB_on_rho[item];
                     Tscal drho       = drho_dt[item];
                     term_B           = 0.5 * (1. / mu_0) * sycl::dot(B_on_rho_a, B_on_rho_a) * drho
