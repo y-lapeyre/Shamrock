@@ -278,8 +278,8 @@ namespace sham {
          *        accessing the buffer.
          * @return A pointer to the buffer's data.
          */
-        [[nodiscard]] inline T *
-        get_write_access(sham::EventList &depends_list, SourceLocation src_loc = SourceLocation{}) {
+        [[nodiscard]] inline T *get_write_access(
+            sham::EventList &depends_list, SourceLocation src_loc = SourceLocation{}) {
             shambase::get_check_ref(events_hndl).write_access(depends_list, src_loc);
             return hold.template ptr_cast<T>();
         }
@@ -470,8 +470,8 @@ namespace sham {
          * @throws std::invalid_argument if the end index is greater than the buffer size
          *         or if the begin index is greater than or equal to the end index.
          */
-        [[nodiscard]] inline std::vector<T>
-        copy_to_stdvec_idx_range(size_t begin, size_t end) const {
+        [[nodiscard]] inline std::vector<T> copy_to_stdvec_idx_range(
+            size_t begin, size_t end) const {
 
             if (end > size) {
                 shambase::throw_with_loc<std::invalid_argument>(shambase::format(
@@ -501,6 +501,51 @@ namespace sham {
             }
 
             return ret;
+        }
+
+        /**
+         * @brief Copy a range of elements from the buffer to another buffer
+         *
+         * This function copies a range of elements from the buffer to another buffer.
+         * The range is specified by the begin and end indices.
+         *
+         * @param begin The starting index of the range to copy, inclusive.
+         * @param end The ending index of the range to copy, exclusive.
+         * @param dest The destination buffer to copy to.
+         */
+        template<USMKindTarget dest_target>
+        inline void copy_range(
+            size_t begin, size_t end, sham::DeviceBuffer<T, dest_target> &dest) const {
+
+            if (begin > end) {
+                shambase::throw_with_loc<std::invalid_argument>(shambase::format(
+                    "copy_range: begin > end\n  begin = {},\n  end = {}", begin, end));
+            }
+
+            if (end - begin > dest.get_size()) {
+                shambase::throw_with_loc<std::invalid_argument>(shambase::format(
+                    "copy_range: end - begin > dest.get_size()\n  end - begin = {},\n  "
+                    "dest.get_size() = {}",
+                    end - begin,
+                    dest.get_size()));
+            }
+
+            if (begin == end) {
+                return;
+            }
+
+            size_t len = end - begin;
+
+            sham::EventList depends_list;
+            const T *ptr_src = get_read_access(depends_list) + begin;
+            T *ptr_dest      = dest.get_write_access(depends_list);
+
+            sycl::event e = get_queue().submit(depends_list, [&](sycl::handler &cgh) {
+                cgh.copy(ptr_src, ptr_dest, len);
+            });
+
+            complete_event_state(e);
+            dest.complete_event_state(e);
         }
 
         /**
@@ -868,7 +913,7 @@ namespace sham {
 
             if (idx >= size) {
                 shambase::throw_with_loc<std::invalid_argument>(shambase::format(
-                    "set_val_at_idx: idx > size\n  idx = {},\n  size = {}", idx, size));
+                    "get_val_at_idx: idx >= size\n  idx = {},\n  size = {}", idx, size));
             }
 
             sham::EventList depends_list;
@@ -888,7 +933,7 @@ namespace sham {
 
             if (idx >= size) {
                 shambase::throw_with_loc<std::invalid_argument>(shambase::format(
-                    "set_val_at_idx: idx > size\n  idx = {},\n  size = {}", idx, size));
+                    "set_val_at_idx: idx >= size\n  idx = {},\n  size = {}", idx, size));
             }
 
             sham::EventList depends_list;
