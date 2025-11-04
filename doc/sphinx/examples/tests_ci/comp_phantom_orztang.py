@@ -197,13 +197,8 @@ def compare_datasets(istep, dataset1, dataset2):
 #
 
 step0000 = load_dataset("/Users/ylapeyre/Documents/githubrepos/Clover/orztang_00000")
-#step0001 = load_dataset("reference-files/sedov_blast_phantom/blast_00001")
-#step0010 = load_dataset("reference-files/sedov_blast_phantom/blast_00010")
-#step0100 = load_dataset("reference-files/sedov_blast_phantom/blast_00100")
-#step1000 = load_dataset("reference-files/sedov_blast_phantom/blast_01000")
-
-print(step0000)
-
+step0005 = load_dataset("/Users/ylapeyre/Documents/githubrepos/Clover/orztang_00005")
+step0010 = load_dataset("/Users/ylapeyre/Documents/githubrepos/Clover/orztang_00010")
 
 filename_start = "/Users/ylapeyre/Documents/githubrepos/Clover/orztang_00000"
 sdf = sarracen.read_phantom(filename_start)
@@ -289,14 +284,10 @@ for i in range(1):
 
     if i == 0:
         compare_datasets(i, get_testing_sets(step0000), get_testing_sets(ctx.collect_data()))
-    if i == 1:
-        compare_datasets(i, get_testing_sets(step0001), get_testing_sets(ctx.collect_data()))
+    if i == 5:
+        compare_datasets(i, get_testing_sets(step0005), get_testing_sets(ctx.collect_data()))
     if i == 10:
         compare_datasets(i, get_testing_sets(step0010), get_testing_sets(ctx.collect_data()))
-    if i == 100:
-        compare_datasets(i, get_testing_sets(step0100), get_testing_sets(ctx.collect_data()))
-    if i == 1000:
-        compare_datasets(i, get_testing_sets(step1000), get_testing_sets(ctx.collect_data()))
 
     model.evolve_once_override_time(0, dt)
     t += dt
