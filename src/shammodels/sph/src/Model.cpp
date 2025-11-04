@@ -1238,6 +1238,7 @@ void shammodels::sph::Model<Tvec, SPHKernel>::init_from_phantom_dump(PhantomDump
     StackEntry stack_loc{};
 
     bool has_coord_in_header = true;
+    bool has_B_field         = solver.solver_config.has_field_B_on_rho();
 
     Tscal xmin, xmax, ymin, ymax, zmin, zmax;
     has_coord_in_header = phdump.has_header_entry("xmin");
@@ -1370,7 +1371,7 @@ void shammodels::sph::Model<Tvec, SPHKernel>::init_from_phantom_dump(PhantomDump
                     ins_u.push_back(u[i]);
                 }
             }
-            if (alpha.size() > 0) {
+            if (alpha.size() > 0 and !has_B_field) {
                 for (u64 i : sel_index) {
                     ins_alpha.push_back(alpha[i]);
                 }
