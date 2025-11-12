@@ -32,6 +32,7 @@ namespace shamrock::sph::mhd {
 
     enum MHDType { Ideal = 0, NonIdeal = 1 };
 
+    // mag tension form the Tricco 2023 formula
     template<class Tvec, class Tscal>
     inline Tvec B_dot_grad_W(
         Tscal m_b,
@@ -56,6 +57,147 @@ namespace shamrock::sph::mhd {
 
         return -m_b * (acc_a + acc_b);
     }
+
+    // from the Phantom paper formula
+    template<class Tvec, class Tscal, MHDType MHD_mode = Ideal>
+    inline Tvec mag_tension(
+        Tscal m_b,
+        Tvec B_a,
+        Tvec B_b,
+        Tvec nabla_Wab_ha,
+        Tvec nabla_Wab_hb,
+        Tscal sub_fact_a,
+        Tscal sub_fact_b,
+        Tscal mu_0) {
+        Tvec magnetic_tension_term;
+
+        for (int i = 0; i < 3; ++i) {
+            for (int j = 0; j < 3; ++j) {
+
+                Tscal mag_tension_a     = -(1. / mu_0) * B_a[i] * B_a[j];
+                Tscal mag_tension_b     = -(1. / mu_0) * B_b[i] * B_b[j];
+                Tscal acc_mag_tension_a = mag_tension_a * sham::inv_sat_zero(sub_fact_a);
+                Tscal acc_mag_tension_b = mag_tension_b * sham::inv_sat_zero(sub_fact_b);
+
+                magnetic_tension_term[i] += -m_b
+                                            * (acc_mag_tension_a * nabla_Wab_ha[j]
+                                               + acc_mag_tension_b * nabla_Wab_hb[j]);
+            }
+        }
+
+        return magnetic_tension_term;
+    }
+
+    template<class Tvec, class Tscal, MHDType MHD_mode = Ideal>
+    inline Tvec fdivB(
+        Tscal m_b,
+        Tvec B_a,
+        Tvec B_b,
+        Tvec nabla_Wab_ha,
+        Tvec nabla_Wab_hb,
+        Tscal sub_fact_a,
+        Tscal sub_fact_b,
+        Tscal mu_0) {
+
+        Tscal acc_fdivB_a = sycl::dot(B_a, nabla_Wab_ha) * sham::inv_sat_zero(sub_fact_a);
+        Tscal acc_fdivB_b = sycl::dot(B_b, nabla_Wab_hb) * sham::inv_sat_zero(sub_fact_b);
+        return -0.5 * B_a * m_b * (acc_fdivB_a + acc_fdivB_b)
+               / mu_0; // tested, this is what works best
+    }
+
+    template<class Tvec, class Tscal>
+    inline Tscal lambda_artes(
+        Tscal m_b,
+        Tscal rho_a_sq,
+        Tscal rho_b_sq,
+        Tscal vsigb,
+        Tvec B_a,
+        Tvec B_b,
+        Tscal omega_a,
+        Tscal omega_b,
+        Tscal Fab_a,
+        Tscal Fab_b) {
+
+        Tscal B_ab_sq = sycl::dot(B_a - B_b, B_a - B_b);
+
+        Tscal sub_fact_a = rho_a_sq * omega_a;
+        Tscal sub_fact_b = rho_b_sq * omega_b;
+
+        Tscal acc_a = Fab_a * sham::inv_sat_zero(sub_fact_a);
+        Tscal acc_b = Fab_b * sham::inv_sat_zero(sub_fact_b);
+
+        Tscal artres = -0.25 * m_b * vsigb * (acc_a + acc_b) * B_ab_sq;
+        return artres;
+    }
+
+    template<class Tvec, class Tscal, MHDType MHD_mode = Ideal>
+    inline Tscal dB_on_rho_induction_term(
+        Tscal m_b, Tscal rho_a_sq, Tvec B_a, Tscal omega_a, Tvec nabla_Wab_ha) {
+
+        Tscal sub_fact_a = rho_a_sq * omega_a;
+        Tscal induction_term_no_vab
+            = -sham::inv_sat_zero(sub_fact_a) * m_b * sycl::dot(B_a, nabla_Wab_ha);
+
+        return induction_term_no_vab;
+    }
+
+    template<class Tvec, class Tscal, MHDType MHD_mode = Ideal>
+    inline Tvec dB_on_rho_psi_term(
+        Tscal m_b,
+        Tscal rho_a_sq,
+        Tscal rho_b_sq,
+        Tscal psi_a,
+        Tscal psi_b,
+        Tscal omega_a,
+        Tscal omega_b,
+        Tvec nabla_Wab_ha,
+        Tvec nabla_Wab_hb) {
+
+        Tscal sub_fact_a = rho_a_sq * omega_a;
+        Tscal sub_fact_b = rho_b_sq * omega_b;
+
+        Tvec psisubterm_a = ((psi_a) *sham::inv_sat_zero(sub_fact_a)) * nabla_Wab_ha;
+        Tvec psisubterm_b = ((psi_b) *sham::inv_sat_zero(sub_fact_b)) * nabla_Wab_hb;
+
+        Tvec psiterm = -m_b * (psisubterm_a + psisubterm_a);
+
+        return psiterm;
+    }
+
+    template<class Tvec, class Tscal, MHDType MHD_mode = Ideal>
+    inline Tscal dpsi_on_ch_parabolic_propag(
+        Tscal m_b, Tscal rho_a, Tvec B_a, Tvec B_b, Tscal omega_a, Tvec nabla_Wab_ha, Tscal ch_a) {
+
+        Tscal sub_fact_a = rho_a * omega_a;
+        Tvec B_ab        = (B_a - B_b);
+
+        Tscal divB_a = -(1. * sham::inv_sat_zero(sub_fact_a)) * m_b * sycl::dot(B_ab, nabla_Wab_ha);
+
+        Tscal parabolic_propag = m_b * (ch_a * sham::inv_sat_zero(sub_fact_a))
+                                 * sycl::dot(B_ab, nabla_Wab_ha); //-ch_a * divB_a;
+
+        return parabolic_propag;
+    }
+
+    template<class Tvec, class Tscal, MHDType MHD_mode = Ideal>
+    inline Tscal dpsi_on_ch_parabolic_diff(
+        Tscal m_b,
+        Tscal rho_a,
+        Tvec v_ab,
+        Tscal psi_a,
+        Tscal omega_a,
+        Tvec nabla_Wab_ha,
+        Tscal ch_a) {
+
+        Tscal sub_fact_a = 2. * rho_a * omega_a * ch_a;
+
+        Tscal parabolic_diff
+            = m_b * (psi_a * sham::inv_sat_zero(sub_fact_a)) * sycl::dot(v_ab, nabla_Wab_ha);
+
+        return parabolic_diff;
+    }
+
+    // sigma_mhd = psidecayfactor
 
     template<class Tvec, class Tscal, MHDType MHD_mode = Ideal> //, template<class> class SPHKernel
     inline std::tuple<Tvec, Tvec, Tvec, Tvec> dv_terms(
@@ -168,107 +310,6 @@ namespace shamrock::sph::mhd {
 
         return std::make_tuple(sum_gas_pressure, sum_mag_pressure, sum_mag_tension, sum_fdivB);
     }
-    template<class Tvec, class Tscal>
-    inline Tscal lambda_artes(
-        Tscal m_b,
-        Tscal rho_a_sq,
-        Tscal rho_b_sq,
-        Tscal vsigb,
-        Tvec B_a,
-        Tvec B_b,
-        Tscal omega_a,
-        Tscal omega_b,
-        Tscal Fab_a,
-        Tscal Fab_b) {
-
-        Tscal B_ab_sq = sycl::dot(B_a - B_b, B_a - B_b);
-
-        Tscal sub_fact_a = rho_a_sq * omega_a;
-        Tscal sub_fact_b = rho_b_sq * omega_b;
-
-        Tscal acc_a = Fab_a * sham::inv_sat_zero(sub_fact_a);
-        Tscal acc_b = Fab_b * sham::inv_sat_zero(sub_fact_b);
-
-        Tscal artres = -0.25 * m_b * vsigb * (acc_a + acc_b) * B_ab_sq;
-        return artres;
-    }
-
-    template<class Tvec, class Tscal, MHDType MHD_mode = Ideal>
-    inline Tscal dB_on_rho_induction_term(
-        Tscal m_b, Tscal rho_a_sq, Tvec B_a, Tscal omega_a, Tvec nabla_Wab_ha) {
-
-        Tscal sub_fact_a = rho_a_sq * omega_a;
-        Tscal induction_term_no_vab
-            = -sham::inv_sat_zero(sub_fact_a) * m_b * sycl::dot(B_a, nabla_Wab_ha);
-
-        return induction_term_no_vab;
-    }
-
-    template<class Tvec, class Tscal, MHDType MHD_mode = Ideal>
-    inline Tvec dB_on_rho_psi_term(
-        Tscal m_b,
-        Tscal rho_a_sq,
-        Tscal rho_b_sq,
-        Tscal psi_a,
-        Tscal psi_b,
-        Tscal omega_a,
-        Tscal omega_b,
-        Tvec nabla_Wab_ha,
-        Tvec nabla_Wab_hb) {
-
-        Tscal sub_fact_a = rho_a_sq * omega_a;
-        Tscal sub_fact_b = rho_b_sq * omega_b;
-
-        Tvec psisubterm_a = ((psi_a) *sham::inv_sat_zero(sub_fact_a)) * nabla_Wab_ha;
-        Tvec psisubterm_b = ((psi_b) *sham::inv_sat_zero(sub_fact_b)) * nabla_Wab_hb;
-
-        Tvec psiterm = -m_b * (psisubterm_a + psisubterm_a);
-
-        return psiterm;
-    }
-
-    template<class Tvec, class Tscal, MHDType MHD_mode = Ideal>
-    inline Tscal dpsi_on_ch_parabolic_propag(
-        Tscal m_b, Tscal rho_a, Tvec B_a, Tvec B_b, Tscal omega_a, Tvec nabla_Wab_ha, Tscal ch_a) {
-
-        Tscal sub_fact_a = rho_a * omega_a;
-        Tvec B_ab        = (B_a - B_b);
-
-        Tscal divB_a = -(1. * sham::inv_sat_zero(sub_fact_a)) * m_b * sycl::dot(B_ab, nabla_Wab_ha);
-
-        Tscal parabolic_propag = m_b * (ch_a * sham::inv_sat_zero(sub_fact_a))
-                                 * sycl::dot(B_ab, nabla_Wab_ha); //-ch_a * divB_a;
-
-        return parabolic_propag;
-    }
-
-    template<class Tvec, class Tscal, MHDType MHD_mode = Ideal>
-    inline Tscal dpsi_on_ch_parabolic_diff(
-        Tscal m_b,
-        Tscal rho_a,
-        Tvec v_ab,
-        Tscal psi_a,
-        Tscal omega_a,
-        Tvec nabla_Wab_ha,
-        Tscal ch_a) {
-
-        Tscal sub_fact_a = 2. * rho_a * omega_a * ch_a;
-
-        Tscal parabolic_diff
-            = m_b * (psi_a * sham::inv_sat_zero(sub_fact_a)) * sycl::dot(v_ab, nabla_Wab_ha);
-
-        return parabolic_diff;
-    }
-
-    // sigma_mhd = psidecayfactor
-    template<class Tscal, MHDType MHD_mode = Ideal>
-    inline Tscal dpsi_on_ch_conservation(
-        Tscal h_a, Tscal psi_a, Tscal ch_a, Tscal sigma_mhd, Tscal vclean) {
-        Tscal dtau = vclean / (h_a * ch_a);
-        return psi_a * dtau;
-        // return psi_a * 1.0 / h_a;
-    }
-
     template<class Kernel, class Tvec, class Tscal, MHDType MHD_mode = Ideal>
     inline void add_to_derivs_spmhd(
         Tscal pmass,
@@ -339,6 +380,9 @@ namespace shamrock::sph::mhd {
         Tscal dWab_a = Fab_a;
         Tscal dWab_b = Fab_b;
 
+        Tscal sub_fact_a = rho_a_sq * omega_a;
+        Tscal sub_fact_b = rho_b * rho_b * omega_b;
+
         Tscal v_shock_a = shamphys::MHD_physics<Tvec, Tscal>::v_shock(cs_a, B_a, rho_a, mu_0);
         Tscal v_shock_b = shamphys::MHD_physics<Tvec, Tscal>::v_shock(cs_b, B_b, rho_b, mu_0);
         Tscal vsig_B    = shamphys::MHD_physics<Tvec, Tscal>::vsigB(v_ab, r_ab_unit);
@@ -349,23 +393,18 @@ namespace shamrock::sph::mhd {
         Tscal AV_P_a = P_a + qa_ab;
         Tscal AV_P_b = P_b + qb_ab;
 
-        constexpr bool Tricco = true;
-        Tvec sum_gas_pressure, sum_mag_pressure, sum_mag_tension, sum_fdivB = {0., 0., 0.};
-        Tscal sum_psi_propag, sum_psi_diff = 0.;
-        std::tie(sum_gas_pressure, sum_mag_pressure, sum_mag_tension, sum_fdivB) = dv_terms(
-            pmass,
-            rho_a_sq,
-            rho_b * rho_b,
-            P_a,
-            P_b,
-            B_a,
-            B_b,
-            omega_a,
-            omega_b,
-            r_ab_unit * dWab_a,
-            r_ab_unit * dWab_b,
-            mu_0,
-            Tricco);
+        Tvec sum_mag_tension, sum_fdivB = {0., 0., 0.};
+        Tscal sum_psi_propag, sum_psi_diff, sum_psi_cons = 0.;
+
+        // dv/dt = gas_pressure_pishock + magnetic_pressure_term + sum_mag_tension + sum_fdivB;
+        // du/dt = pressure_term + viscous_heating + shock_conductivity + artificial_resistivity;
+        // d(B/rho)/dt = induction_term + psi_term + dissipation_term
+        // d(psi/ch)/dt = psi_propag + psi_diff + psi_cons (not in the SPH sum, hence added in
+        // update_derivs)
+
+        // dv/dt terms
+        sum_fdivB += fdivB(
+            pmass, B_a, B_b, r_ab_unit * dWab_a, r_ab_unit * dWab_b, sub_fact_a, sub_fact_b, mu_0);
 
         Tvec gas_pressure_pishock = sph::sph_pressure_symetric(
             pmass,
@@ -377,6 +416,18 @@ namespace shamrock::sph::mhd {
             omega_b,
             r_ab_unit * dWab_a,
             r_ab_unit * dWab_b);
+
+        sum_mag_tension += -B_dot_grad_W(
+            pmass,
+            rho_a_sq,
+            rho_b * rho_b,
+            B_a,
+            B_b,
+            omega_a,
+            omega_b,
+            r_ab_unit * dWab_a,
+            r_ab_unit * dWab_b,
+            mu_0);
 
         Tvec magnetic_pressure_term = (1. / (2 * mu_0))
                                       * sph::sph_pressure_symetric(
@@ -390,19 +441,19 @@ namespace shamrock::sph::mhd {
                                           r_ab_unit * dWab_a,
                                           r_ab_unit * dWab_b);
 
-        // the two first terms (gas_pressure_pishock + magnetic_pressure_term)
-        // are computed using functions already implemented in hydro.
-        // their native equivalent mag_pressure (without the shock term) and
-        // gas_pressure exist because i needed them here for debugging and to
-        // test things out. Using one or the other is strictly equivalent (except
-        // for the fact that if you use the native terms, you should not forget
-        // to add the shock term).
+        Tvec sum_gas_pressure, sum_mag_pressure;
+
         dv_dt += gas_pressure_pishock + magnetic_pressure_term + sum_mag_tension + sum_fdivB;
-        mag_pressure += sum_mag_pressure;
-        gas_pressure += sum_gas_pressure;
+        // end dv/dt terms
+
+        // get terms for debugging
+        mag_pressure += magnetic_pressure_term;
+        gas_pressure += 0;
         mag_tension += sum_mag_tension;
         tensile_corr += sum_fdivB;
+        // end get terms for debugging
 
+        // du/dt terms
         u_pressure_viscous_heating = sph::duint_dt_pressure(
             pmass, AV_P_a, omega_a_rho_a_inv * rho_a_inv, v_ab, r_ab_unit * dWab_a);
 
@@ -419,9 +470,9 @@ namespace shamrock::sph::mhd {
         du_dt += lambda_artes(
             pmass, rho_a_sq, rho_b * rho_b, vsig_B, B_a, B_b, omega_a, omega_b, Fab_a, Fab_b);
 
-        Tscal sub_fact_a = rho_a_sq * omega_a;
-        Tscal sub_fact_b = rho_b * rho_b * omega_b;
+        // end du/dt terms
 
+        // d(B/rho)/dt terms
         Tscal rho_diss_term_a = Fab_a * sham::inv_sat_zero(sub_fact_a);
         Tscal rho_diss_term_b = Fab_b * sham::inv_sat_zero(sub_fact_b);
 
@@ -444,6 +495,9 @@ namespace shamrock::sph::mhd {
 
         dB_on_rho_dt += dB_on_rho_dissipation_term;
 
+        // end d(B/rho)/dt terms
+
+        // d(psi/ch)/dt terms
         sum_psi_propag = dpsi_on_ch_parabolic_propag(
             pmass, rho_a, B_a, B_b, omega_a, r_ab_unit * dWab_a, v_shock_a);
 
@@ -452,13 +506,16 @@ namespace shamrock::sph::mhd {
 
         dpsi_on_ch_dt += sum_psi_propag;
         dpsi_on_ch_dt += sum_psi_diff;
-        // dpsi_on_ch_dt += -psi_cons;
+        dpsi_on_ch_dt += sum_psi_cons;
 
-        // for debugging
+        // end d(psi/ch)/dt terms
+
+        // get debugging terms
         psi_propag += sum_psi_propag;
         psi_diff += sum_psi_diff;
-        psi_cons += -dpsi_on_ch_conservation(h_a, psi_a, v_shock_a, sigma_mhd, v_shock_a);
+        // end get debugging terms
 
+        // for conservative checks
         drho_dt += (1. / omega_a) * pmass * sycl::dot(v_ab, r_ab_unit * dWab_a);
     }
 
