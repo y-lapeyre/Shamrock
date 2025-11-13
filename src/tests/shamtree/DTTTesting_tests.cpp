@@ -7,7 +7,6 @@
 //
 // -------------------------------------------------------//
 
-#include "shambase/StlContainerConversion.hpp"
 #include "shambase/time.hpp"
 #include "shamalgs/primitives/mock_vector.hpp"
 #include "shambackends/DeviceBuffer.hpp"
@@ -21,15 +20,34 @@
 #include "shamtree/CLBVHDualTreeTraversal.hpp"
 #include "shamtree/CellIterator.hpp"
 #include "shamtree/CompressedLeafBVH.hpp"
-#include "shamtree/details/dtt_parallel_select.hpp"
 #include "shamtree/details/dtt_reference.hpp"
-#include "shamtree/details/dtt_scan_multipass.hpp"
 #include <set>
 #include <vector>
 
 using Tmorton = u64;
 using Tvec    = f64_3;
 using Tscal   = shambase::VecComponent<Tvec>;
+
+inline void test_is_symmetric(const std::vector<u32_2> &interactions) {
+    std::set<std::pair<u32, u32>> unique_pairs;
+
+    for (const auto &interaction : interactions) {
+        unique_pairs.insert({interaction.x(), interaction.y()});
+    }
+
+    REQUIRE_EQUAL(unique_pairs.size(), interactions.size());
+
+    u32 offenses = 0;
+    for (const auto &interaction : interactions) {
+        const auto reversed = std::pair<u32, u32>{interaction.y(), interaction.x()};
+        if (!unique_pairs.count(reversed)) {
+            offenses++;
+        }
+    }
+
+    // here we check only on the number of offences to avoid having giant logs
+    REQUIRE_EQUAL(offenses, 0);
+}
 
 inline void validate_dtt_results(
     const sham::DeviceBuffer<Tvec> &positions,
@@ -40,7 +58,7 @@ inline void validate_dtt_results(
 
     __shamrock_stack_entry();
 
-    std::vector<u32_2> internal_node_interactions = result.node_interactions_m2m.copy_to_stdvec();
+    std::vector<u32_2> internal_node_interactions = result.node_interactions_m2l.copy_to_stdvec();
     std::vector<u32_2> unrolled_interact          = result.node_interactions_p2p.copy_to_stdvec();
 
     u32 Npart    = positions.get_size();
@@ -91,20 +109,20 @@ inline void validate_dtt_results(
             REQUIRE_EQUAL(test_ordered(unrolled_interact), 0);
             REQUIRE_EQUAL(test_ordered(internal_node_interactions), 0);
 
-            auto m2m = result.node_interactions_m2m.copy_to_stdvec();
+            auto m2l = result.node_interactions_m2l.copy_to_stdvec();
             auto p2p = result.node_interactions_p2p.copy_to_stdvec();
 
-            auto m2m_offset = result.ordered_result->offset_m2m.copy_to_stdvec();
+            auto m2l_offset = result.ordered_result->offset_m2l.copy_to_stdvec();
             auto p2p_offset = result.ordered_result->offset_p2p.copy_to_stdvec();
 
             // test that if I look in slot i I find only stuff with i in x part
 
-            u32 m2m_sorting_offenses = 0;
+            u32 m2l_sorting_offenses = 0;
             for (u32 i = 0; i < Npart; i++) {
-                for (u32 j = m2m_offset[i]; j < m2m_offset[i + 1]; j++) {
-                    u32_2 interact = m2m[j];
+                for (u32 j = m2l_offset[i]; j < m2l_offset[i + 1]; j++) {
+                    u32_2 interact = m2l[j];
                     if (interact.x() != i) {
-                        m2m_sorting_offenses++;
+                        m2l_sorting_offenses++;
                     }
                 }
             }
@@ -119,7 +137,7 @@ inline void validate_dtt_results(
                 }
             }
 
-            REQUIRE_EQUAL(m2m_sorting_offenses, 0);
+            REQUIRE_EQUAL(m2l_sorting_offenses, 0);
             REQUIRE_EQUAL(p2p_sorting_offenses, 0);
         }
 
@@ -187,6 +205,9 @@ inline void validate_dtt_results(
 
     REQUIRE_EQUAL(missing_pairs, 0);
     REQUIRE_EQUAL(part_interact.size(), Npart_sq);
+
+    test_is_symmetric(internal_node_interactions);
+    test_is_symmetric(unrolled_interact);
 }
 
 void dtt_test(u32 Npart, u32 reduction_level, Tscal theta_crit, bool ordered_result) {
@@ -208,7 +229,7 @@ void dtt_test(u32 Npart, u32 reduction_level, Tscal theta_crit, bool ordered_res
 
     bvh.rebuild_from_positions(partpos_buf, bb, reduction_level);
 
-    std::vector<u32_2> m2m_ref{};
+    std::vector<u32_2> m2l_ref{};
     std::vector<u32_2> p2p_ref{};
 
     auto equals_unordered = [](std::vector<u32_2> a, std::vector<u32_2> b) -> bool {
@@ -238,7 +259,7 @@ void dtt_test(u32 Npart, u32 reduction_level, Tscal theta_crit, bool ordered_res
 
         validate_dtt_results(partpos_buf, bvh, theta_crit, result, ordered_result);
 
-        m2m_ref = result.node_interactions_m2m.copy_to_stdvec();
+        m2l_ref = result.node_interactions_m2l.copy_to_stdvec();
         p2p_ref = result.node_interactions_p2p.copy_to_stdvec();
     }
 
@@ -257,10 +278,10 @@ void dtt_test(u32 Npart, u32 reduction_level, Tscal theta_crit, bool ordered_res
         validate_dtt_results(partpos_buf, bvh, theta_crit, result, ordered_result);
 
         std::vector<u32_2> internal_node_interactions
-            = result.node_interactions_m2m.copy_to_stdvec();
+            = result.node_interactions_m2l.copy_to_stdvec();
         std::vector<u32_2> unrolled_interact = result.node_interactions_p2p.copy_to_stdvec();
 
-        REQUIRE_EQUAL_CUSTOM_COMP(internal_node_interactions, m2m_ref, equals_unordered);
+        REQUIRE_EQUAL_CUSTOM_COMP(internal_node_interactions, m2l_ref, equals_unordered);
         REQUIRE_EQUAL_CUSTOM_COMP(unrolled_interact, p2p_ref, equals_unordered);
     }
 
