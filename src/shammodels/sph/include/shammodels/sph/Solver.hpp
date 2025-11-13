@@ -229,6 +229,39 @@ namespace shammodels::sph {
 
             return true;
         }
+
+        inline bool evolve_until_substep(Tscal target_time, i32 niter_max) {
+            auto step = [&]() {
+                Tscal dt = solver_config.get_dt_sph();
+                Tscal t  = solver_config.get_time();
+
+                if (t > target_time) {
+                    throw shambase::make_except_with_loc<std::invalid_argument>(
+                        "the target time is higher than the current time");
+                }
+
+                if (t + dt > target_time) {
+                    solver_config.set_next_dt(target_time - t);
+                }
+                evolve_once_substep();
+            };
+
+            i32 iter_count = 0;
+
+            while (solver_config.get_time() < target_time) {
+                step();
+                iter_count++;
+
+                if ((iter_count >= niter_max) && (niter_max != -1)) {
+                    logger::info_ln("SPH", "stopping evolve until because of niter =", iter_count);
+                    return false;
+                }
+            }
+
+            print_timestep_logs();
+
+            return true;
+        }
     };
 
 } // namespace shammodels::sph

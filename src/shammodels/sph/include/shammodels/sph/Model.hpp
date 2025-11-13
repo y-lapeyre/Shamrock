@@ -913,6 +913,10 @@ namespace shammodels::sph {
             return solver.evolve_until(target_time, niter_max);
         }
 
+        inline bool evolve_until_substep(Tscal target_time, i32 niter_max) {
+            return solver.evolve_until_substep(target_time, niter_max);
+        }
+
         private:
         void add_pdat_to_phantom_block(
             PhantomDumpBlock &block, shamrock::patch::PatchDataLayer &pdat);

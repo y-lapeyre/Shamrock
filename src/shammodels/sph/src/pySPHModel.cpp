@@ -404,6 +404,14 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             py::arg("target_time"),
             py::kw_only(),
             py::arg("niter_max") = -1)
+        .def(
+            "evolve_until_substep",
+            [](T &self, f64 target_time, i32 niter_max) {
+                return self.evolve_until_substep(target_time, niter_max);
+            },
+            py::arg("target_time"),
+            py::kw_only(),
+            py::arg("niter_max") = -1)
         .def("timestep", &T::timestep)
         .def("set_cfl_cour", &T::set_cfl_cour)
         .def("set_cfl_force", &T::set_cfl_force)

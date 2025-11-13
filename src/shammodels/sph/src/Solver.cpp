@@ -537,7 +537,8 @@ void shammodels::sph::Solver<Tvec, Kern>::do_substep() {
         // compute short range accelerations
         // reset axyz_ext to zero ?
         modules::ExternalForces<Tvec, Kern> ext_forces(context, solver_config, storage);
-        ext_forces.add_ext_forces();
+        // axyz_ext.reset();
+        ext_forces.compute_ext_forces_indep_v(); // @@@ pb here
 
         // kick
         shamlog_debug_ln("Substep", "kick");
@@ -2178,9 +2179,9 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once_su
     f64 mpi_timer_start                     = shamcomm::mpi::get_timer("total");
 
     Tscal t_current = solver_config.get_time();
-    Tscal dt        = solver_config.get_dt_sph();
-    Tscal dt_force  = solver_config.get_dt_force();
-    Tscal dt_sph    = solver_config.get_dt_true_sph();
+    Tscal dt        = solver_config.get_dt_sph();      // current dt
+    Tscal dt_force  = solver_config.get_dt_force();    // dt due to external forces
+    Tscal dt_sph    = solver_config.get_dt_true_sph(); // dt due to pure hydro
 
     StackEntry stack_loc{};
 
@@ -2243,11 +2244,13 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once_su
     sink_update.accrete_particles();
     ext_forces.point_mass_accrete_particles();
 
-    do_predictor_leapfrog(dt);
-
     if (dt_force < dt_sph) {
+        logger::raw_ln("Just before substep");
         do_predictor_substep(dt_sph);
         do_substep();
+        logger::raw_ln("Just after substep");
+    } else {
+        do_predictor_leapfrog(dt);
     }
 
     sink_update.predictor_step(dt);
@@ -2271,7 +2274,9 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once_su
             .reorder_particles();
     }
 
+    logger::raw_ln("Just before sph_prestep");
     sph_prestep(t_current, dt);
+    logger::raw_ln("Just after sph_prestep");
 
     using RTree = shamtree::CompressedLeafBVH<u_morton, Tvec, 3>;
 
