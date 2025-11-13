@@ -110,7 +110,6 @@ void shammodels::sph::modules::ConservativeCheck<Tvec, SPHKernel>::check_conserv
     Tscal pmass  = gpart_mass;
     Tscal tmp_de = 0;
     scheduler().for_each_patchdata_nonempty([&, pmass](Patch cur_p, PatchDataLayer &pdat) {
-        PatchDataField<Tscal> &field_u     = pdat.get_field<Tscal>(iuint);
         PatchDataField<Tvec> &field_v      = pdat.get_field<Tvec>(ivxyz);
         PatchDataField<Tscal> &field_du    = pdat.get_field<Tscal>(iduint);
         PatchDataField<Tvec> &field_a      = pdat.get_field<Tvec>(iaxyz);
@@ -118,35 +117,38 @@ void shammodels::sph::modules::ConservativeCheck<Tvec, SPHKernel>::check_conserv
 
         sham::DeviceBuffer<Tscal> temp_de(pdat.get_obj_cnt(), dev_sched);
 
-        sham::EventList depends_list;
-        auto u     = field_u.get_buf().get_read_access(depends_list);
-        auto du    = field_du.get_buf().get_read_access(depends_list);
-        auto v     = field_v.get_buf().get_read_access(depends_list);
-        auto a     = field_a.get_buf().get_read_access(depends_list);
-        auto hpart = field_hpart.get_buf().get_read_access(depends_list);
-        auto de    = temp_de.get_write_access(depends_list);
-
         Tscal const mu_0 = solver_config.get_constant_mu_0();
         Tscal pmass      = solver_config.gpart_mass;
 
-        auto e = q.submit(depends_list, [&, pmass](sycl::handler &cgh) {
-            cgh.parallel_for(sycl::range<1>{pdat.get_obj_cnt()}, [=](sycl::item<1> item) {
-                using namespace shamrock::sph;
-
+        sham::kernel_call(
+            q,
+            sham::MultiRef{field_du.get_buf(), field_v.get_buf(), field_a.get_buf()},
+            sham::MultiRef{temp_de},
+            pdat.get_obj_cnt(),
+            [=](u32 item, const Tscal *du, const Tvec *v, const Tvec *a, Tscal *de) {
                 de[item] = pmass * (sycl::dot(v[item], a[item]) + du[item]);
             });
-        });
 
         if (has_B_field) {
             PatchDataField<Tvec> &field_B_on_rho  = pdat.get_field<Tvec>(iB_on_rho);
             PatchDataField<Tvec> &field_dB_on_rho = pdat.get_field<Tvec>(idB_on_rho);
             PatchDataField<Tscal> &field_drho_dt  = pdat.get_field<Tscal>(idrho_dt);
-            auto B_on_rho  = field_B_on_rho.get_buf().get_read_access(depends_list);
-            auto dB_on_rho = field_dB_on_rho.get_buf().get_read_access(depends_list);
-            auto drho_dt   = field_drho_dt.get_buf().get_read_access(depends_list);
 
-            auto e = q.submit(depends_list, [&, pmass](sycl::handler &cgh) {
-                cgh.parallel_for(sycl::range<1>{pdat.get_obj_cnt()}, [=](sycl::item<1> item) {
+            sham::kernel_call(
+                q,
+                sham::MultiRef{
+                    field_hpart.get_buf(),
+                    field_B_on_rho.get_buf(),
+                    field_dB_on_rho.get_buf(),
+                    field_drho_dt.get_buf()},
+                sham::MultiRef{temp_de},
+                pdat.get_obj_cnt(),
+                [=](u32 item,
+                    const Tscal *hpart,
+                    const Tvec *B_on_rho,
+                    const Tvec *dB_on_rho,
+                    const Tscal *drho_dt,
+                    Tscal *de) {
                     using namespace shamrock::sph;
                     Tscal h      = hpart[item];
                     Tscal term_B = 0.;
@@ -160,19 +162,7 @@ void shammodels::sph::modules::ConservativeCheck<Tvec, SPHKernel>::check_conserv
 
                     de[item] += pmass * term_B;
                 });
-            });
-            field_B_on_rho.get_buf().complete_event_state(e);
-            field_dB_on_rho.get_buf().complete_event_state(e);
-            field_drho_dt.get_buf().complete_event_state(e);
         }
-
-        field_u.get_buf().complete_event_state(e);
-        field_du.get_buf().complete_event_state(e);
-        field_v.get_buf().complete_event_state(e);
-        field_a.get_buf().complete_event_state(e);
-
-        field_hpart.get_buf().complete_event_state(e);
-        temp_de.complete_event_state(e);
 
         Tscal de_p = shamalgs::primitives::sum(dev_sched, temp_de, 0, pdat.get_obj_cnt());
         tmp_de += de_p;
