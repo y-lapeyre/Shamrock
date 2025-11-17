@@ -159,6 +159,7 @@ namespace shammodels::sph {
 
         void prepare_corrector();
         void update_derivs();
+        void update_derivs_substep();
         /**
          * @brief
          *
