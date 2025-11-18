@@ -118,7 +118,6 @@ void shammodels::sph::modules::ConservativeCheck<Tvec, SPHKernel>::check_conserv
         sham::DeviceBuffer<Tscal> temp_de(pdat.get_obj_cnt(), dev_sched);
 
         Tscal const mu_0 = solver_config.get_constant_mu_0();
-        Tscal pmass      = solver_config.gpart_mass;
 
         sham::kernel_call(
             q,

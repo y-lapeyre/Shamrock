@@ -280,8 +280,8 @@ namespace shamrock::sph::mhd {
         Tscal AV_P_a = P_a + qa_ab;
         Tscal AV_P_b = P_b + qb_ab;
 
-        Tvec sum_mag_tension, sum_fdivB = {0., 0., 0.};
-        Tscal sum_psi_propag, sum_psi_diff, sum_psi_cons = 0.;
+        Tvec sum_mag_tension, sum_fdivB    = {0., 0., 0.};
+        Tscal sum_psi_propag, sum_psi_diff = 0.;
 
         // dv/dt = gas_pressure_pishock + magnetic_pressure_term + sum_mag_tension + sum_fdivB;
         // du/dt = pressure_term + viscous_heating + shock_conductivity + artificial_resistivity;
@@ -328,14 +328,12 @@ namespace shamrock::sph::mhd {
                                           r_ab_unit * dWab_a,
                                           r_ab_unit * dWab_b);
 
-        Tvec sum_gas_pressure, sum_mag_pressure;
-
         dv_dt += gas_pressure_pishock + magnetic_pressure_term + sum_mag_tension + sum_fdivB;
         // end dv/dt terms
 
         // get terms for debugging
         mag_pressure += magnetic_pressure_term;
-        gas_pressure += 0;
+        gas_pressure += gas_pressure_pishock;
         mag_tension += sum_mag_tension;
         tensile_corr += sum_fdivB;
         // end get terms for debugging
@@ -393,7 +391,6 @@ namespace shamrock::sph::mhd {
 
         dpsi_on_ch_dt += sum_psi_propag;
         dpsi_on_ch_dt += sum_psi_diff;
-        dpsi_on_ch_dt += sum_psi_cons;
 
         // end d(psi/ch)/dt terms
 
