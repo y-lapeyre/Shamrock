@@ -178,15 +178,16 @@ void shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::kick(Tscal 
         return;
     }
 
-    //compute_ext_forces();
+    // compute_ext_forces();
 
     std::vector<Sink> &sink_parts = storage.sinks.get();
 
     for (Sink &s : sink_parts) {
         if (!force) {
             s.velocity += (dt / 2) * s.sph_acceleration;
+        } else {
+            s.velocity += (dt / 2) * s.ext_acceleration;
         }
-        else{s.velocity += (dt / 2) * s.ext_acceleration;}
     }
 }
 
@@ -199,15 +200,13 @@ void shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::drift(Tscal
         return;
     }
 
-    //compute_ext_forces();
+    // compute_ext_forces();
 
     std::vector<Sink> &sink_parts = storage.sinks.get();
-
 
     for (Sink &s : sink_parts) {
         s.pos += (dt) *s.velocity;
     }
-
 }
 
 template<class Tvec, template<class> class SPHKernel>

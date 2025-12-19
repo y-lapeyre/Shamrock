@@ -558,14 +558,14 @@ void shammodels::sph::Solver<Tvec, Kern>::do_substep() {
             Tscal G = solver_config.get_constant_G();
             Tscal C_force
                 = solver_config.cfl_config.cfl_force * solver_config.time_state.cfl_multiplier;
-            Tscal eta_phi = solver_config.cfl_config.eta_sink;
+            Tscal eta_phi                               = solver_config.cfl_config.eta_sink;
             std::vector<SinkParticle<Tvec>> &sink_parts = storage.sinks.get();
 
             for (u32 i = 0; i < sink_parts.size(); i++) {
                 SinkParticle<Tvec> &s_i = sink_parts[i];
                 Tscal sink_sink_cfl_i   = shambase::get_infty<Tscal>();
-                Tvec f_i = s_i.ext_acceleration;
-                Tscal grad_phi_i_sq = sham::dot(f_i, f_i); // m^2.s^-4
+                Tvec f_i                = s_i.ext_acceleration;
+                Tscal grad_phi_i_sq     = sham::dot(f_i, f_i); // m^2.s^-4
                 if (grad_phi_i_sq == 0) {
                     continue;
                 }
@@ -580,8 +580,8 @@ void shammodels::sph::Solver<Tvec, Kern>::do_substep() {
                     Tvec rij       = s_i.pos - s_j.pos;
                     Tscal rij_scal = sycl::length(rij);
 
-                    Tscal phi_ij  = G * s_j.mass / rij_scal;           // J / kg = m^2.s^-2
-                    Tscal term_ij = sham::abs(phi_ij) / grad_phi_i_sq; // s^2
+                    Tscal phi_ij  = G * s_j.mass / rij_scal;                 // J / kg = m^2.s^-2
+                    Tscal term_ij = sham::abs(phi_ij) / grad_phi_i_sq;       // s^2
                     Tscal dt_ij   = C_force * eta_phi * sycl::sqrt(term_ij); // s
 
                     sink_sink_cfl_i = sham::min(sink_sink_cfl_i, dt_ij);
@@ -2307,9 +2307,8 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once_su
         did_substep = true;
     } else {
         do_predictor_leapfrog(dt);
+        sink_update.predictor_step(dt);
     }
-
-    //sink_update.predictor_step(dt);
 
     part_killing_step();
 
@@ -2902,7 +2901,8 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once_su
 
                                 Tscal dt_divB_cleaning = C_cour * h_a / vclean_a;
 
-                                cfl_dt[item] = sycl::min(cfl_dt[item], dt_divB_cleaning);
+                                cfl_dt[item]   = sycl::min(cfl_dt[item], dt_divB_cleaning);
+                                dt_force[item] = sycl::min(dt_force[item], dt_divB_cleaning);
                             });
                     });
                     vclean_buf.complete_event_state(e);
@@ -2972,6 +2972,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once_su
 
             Tscal hydro_cfl = shamalgs::collective::allreduce_min(rank_dt);
             next_dt_force   = shamalgs::collective::allreduce_min(rank_force_dt);
+            next_dt_force   = sycl::min(next_dt_force, sink_sink_cfl);
             next_dt_sph     = shamalgs::collective::allreduce_min(rank_sph_dt);
 
             if (shamcomm::world_rank() == 0) {
