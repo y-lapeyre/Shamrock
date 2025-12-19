@@ -158,7 +158,8 @@ namespace shammodels::sph {
         void reset_eos_fields();
 
         void prepare_corrector();
-        void update_derivs();
+        void update_derivs_sph();
+        void update_derivs_ext_forces();
         void update_derivs_substep();
         /**
          * @brief

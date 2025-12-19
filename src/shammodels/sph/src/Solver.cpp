@@ -488,6 +488,7 @@ void shammodels::sph::Solver<Tvec, Kern>::do_predictor_substep(Tscal dt_sph) {
     shamrock::SchedulerUtility utility(scheduler());
 
     // forward euler step f dt_sph /2 with long range interactions
+    // @@@ is there really just hydro acc in a ?
     shamlog_debug_ln("sph::BasicGas", "forward euler step f dt/2, long range interactions");
     utility.fields_forward_euler<Tvec>(ivxyz, iaxyz, dt_sph / 2);
     utility.fields_forward_euler<Tscal>(iuint, iduint, dt_sph / 2);
@@ -499,12 +500,8 @@ void shammodels::sph::Solver<Tvec, Kern>::do_substep() {
     StackEntry stack_loc{};
     using namespace shamrock::patch;
     modules::SinkParticlesUpdate<Tvec, Kern> sink_update(context, solver_config, storage);
+    modules::ExternalForces<Tvec, Kern> ext_forces(context, solver_config, storage);
     PatchDataLayerLayout &pdl = scheduler().pdl();
-
-    bool has_B_field = solver_config.has_field_B_on_rho();
-    if (has_B_field) {
-        shambase::throw_unimplemented("Substepping unvailable for MHD solver!");
-    }
 
     const u32 ixyz      = pdl.get_field_idx<Tvec>("xyz");
     const u32 ivxyz     = pdl.get_field_idx<Tvec>("vxyz");
@@ -525,14 +522,20 @@ void shammodels::sph::Solver<Tvec, Kern>::do_substep() {
     while (t_current < t_end && !done) {
         Tscal dt_force = solver_config.get_dt_force();
         // kick
+        // accrete particles+ update sinks
+        sink_update.kick(dt_force / 2, true); // only external acc)
         shamlog_debug_ln("Substep", "kick");
         utility.fields_forward_euler<Tvec>(ivxyz, iaxyz_ext, dt_force / 2);
         utility.fields_forward_euler<Tscal>(iuint, iduint, dt_force / 2);
-        // accrete particles+ update sinks
+        sink_update.accrete_particles();
+        ext_forces.point_mass_accrete_particles();
 
         // drift + drift sinks
         shamlog_debug_ln("Substep", "drift");
         utility.fields_forward_euler<Tvec>(ixyz, ivxyz, dt_force);
+        sink_update.drift(dt_force / 2);
+        sink_update.accrete_particles();
+        ext_forces.point_mass_accrete_particles();
 
         // compute short range accelerations
         // reset axyz_ext to zero ?
@@ -542,10 +545,53 @@ void shammodels::sph::Solver<Tvec, Kern>::do_substep() {
 
         // kick
         shamlog_debug_ln("Substep", "kick");
+        sink_update.kick(dt_force / 2, true);
         utility.fields_forward_euler<Tvec>(ivxyz, iaxyz_ext, dt_force / 2);
         utility.fields_forward_euler<Tscal>(iuint, iduint, dt_force / 2);
+        sink_update.accrete_particles();
+        ext_forces.point_mass_accrete_particles();
 
         // update dtforce
+        Tscal sink_sink_cfl = shambase::get_infty<Tscal>();
+        if (!storage.sinks.is_empty()) {
+            // sink sink CFL
+            Tscal G = solver_config.get_constant_G();
+            Tscal C_force
+                = solver_config.cfl_config.cfl_force * solver_config.time_state.cfl_multiplier;
+            Tscal eta_phi = solver_config.cfl_config.eta_sink;
+            std::vector<SinkParticle<Tvec>> &sink_parts = storage.sinks.get();
+
+            for (u32 i = 0; i < sink_parts.size(); i++) {
+                SinkParticle<Tvec> &s_i = sink_parts[i];
+                Tscal sink_sink_cfl_i   = shambase::get_infty<Tscal>();
+                Tvec f_i = s_i.ext_acceleration;
+                Tscal grad_phi_i_sq = sham::dot(f_i, f_i); // m^2.s^-4
+                if (grad_phi_i_sq == 0) {
+                    continue;
+                }
+
+                for (u32 j = 0; j < sink_parts.size(); j++) {
+                    SinkParticle<Tvec> &s_j = sink_parts[j];
+
+                    if (i == j) {
+                        continue;
+                    }
+
+                    Tvec rij       = s_i.pos - s_j.pos;
+                    Tscal rij_scal = sycl::length(rij);
+
+                    Tscal phi_ij  = G * s_j.mass / rij_scal;           // J / kg = m^2.s^-2
+                    Tscal term_ij = sham::abs(phi_ij) / grad_phi_i_sq; // s^2
+                    Tscal dt_ij   = C_force * eta_phi * sycl::sqrt(term_ij); // s
+
+                    sink_sink_cfl_i = sham::min(sink_sink_cfl_i, dt_ij);
+                }
+
+                sink_sink_cfl = sham::min(sink_sink_cfl, sink_sink_cfl_i);
+            }
+
+            sink_sink_cfl = shamalgs::collective::allreduce_min(sink_sink_cfl);
+        }
 
         shamrock::ComputeField<Tscal> dt_force_arr
             = utility.make_compute_field<Tscal>("dt_force_arr", 1);
@@ -584,6 +630,7 @@ void shammodels::sph::Solver<Tvec, Kern>::do_substep() {
 
         Tscal rank_dt        = dt_force_arr.compute_rank_min();
         Tscal next_force_cfl = shamalgs::collective::allreduce_min(rank_dt);
+        next_force_cfl       = sycl::min(next_force_cfl, sink_sink_cfl);
         solver_config.set_next_dt_force(next_force_cfl);
 
         // update time
@@ -1235,17 +1282,14 @@ void shammodels::sph::Solver<Tvec, Kern>::prepare_corrector() {
 }
 
 template<class Tvec, template<class> class Kern>
-void shammodels::sph::Solver<Tvec, Kern>::update_derivs() {
-
-    modules::UpdateDerivs<Tvec, Kern> derivs(context, solver_config, storage);
-    derivs.update_derivs();
+void shammodels::sph::Solver<Tvec, Kern>::update_derivs_ext_forces() {
 
     modules::ExternalForces<Tvec, Kern> ext_forces(context, solver_config, storage);
     ext_forces.add_ext_forces();
 }
 
 template<class Tvec, template<class> class Kern>
-void shammodels::sph::Solver<Tvec, Kern>::update_derivs_substep() {
+void shammodels::sph::Solver<Tvec, Kern>::update_derivs_sph() {
 
     modules::UpdateDerivs<Tvec, Kern> derivs(context, solver_config, storage);
     derivs.update_derivs();
@@ -1613,7 +1657,8 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
         // save old acceleration
         prepare_corrector();
 
-        update_derivs();
+        update_derivs_sph();
+        update_derivs_ext_forces();
 
         modules::ConservativeCheck<Tvec, Kern> cv_check(context, solver_config, storage);
         cv_check.check_conservation();
@@ -2256,6 +2301,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once_su
     ext_forces.point_mass_accrete_particles();
     bool did_substep = false;
     if (dt_force < dt_sph) {
+        sink_update.kick(dt_sph, false);
         do_predictor_substep(dt_sph);
         do_substep();
         did_substep = true;
@@ -2263,7 +2309,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once_su
         do_predictor_leapfrog(dt);
     }
 
-    sink_update.predictor_step(dt);
+    //sink_update.predictor_step(dt);
 
     part_killing_step();
 
@@ -2471,9 +2517,9 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once_su
         prepare_corrector();
 
         if (did_substep) {
-            update_derivs_substep(); // should be update_derivs_sph
+            update_derivs_sph(); // should be update_derivs_sph
         } else {
-            update_derivs(); // add external forces
+            update_derivs_ext_forces(); // add external forces
         }
 
         modules::ConservativeCheck<Tvec, Kern> cv_check(context, solver_config, storage);
