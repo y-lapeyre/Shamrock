@@ -477,13 +477,13 @@ void shammodels::sph::Solver<Tvec, Kern>::do_predictor_leapfrog(Tscal dt) {
 }
 
 template<class Tvec, template<class> class Kern>
-void shammodels::sph::Solver<Tvec, Kern>::do_firstkick_substep(Tscal dt_sph) {
+void shammodels::sph::Solver<Tvec, Kern>::do_kick_substep(Tscal dt_sph) {
 
     StackEntry stack_loc{};
     using namespace shamrock::patch;
     PatchDataLayerLayout &pdl = scheduler().pdl();
     const u32 ivxyz           = pdl.get_field_idx<Tvec>("vxyz");
-    const u32 iaxyz           = pdl.get_field_idx<Tvec>("axyz");
+    const u32 iaxyz_sph           = pdl.get_field_idx<Tvec>("axyz_sph");
     const u32 iuint           = pdl.get_field_idx<Tscal>("uint");
     const u32 iduint          = pdl.get_field_idx<Tscal>("duint");
 
@@ -492,7 +492,7 @@ void shammodels::sph::Solver<Tvec, Kern>::do_firstkick_substep(Tscal dt_sph) {
     // forward euler step f dt_sph /2 with long range interactions
     // @@@ is there really just hydro acc in a ?
     shamlog_debug_ln("sph::BasicGas", "forward euler step f dt/2, long range interactions");
-    utility.fields_forward_euler<Tvec>(ivxyz, iaxyz, dt_sph / 2);
+    utility.fields_forward_euler<Tvec>(ivxyz, iaxyz_sph, dt_sph / 2);
     utility.fields_forward_euler<Tscal>(iuint, iduint, dt_sph / 2);
 }
 
@@ -507,7 +507,6 @@ void shammodels::sph::Solver<Tvec, Kern>::do_substep() {
 
     const u32 ixyz      = pdl.get_field_idx<Tvec>("xyz");
     const u32 ivxyz     = pdl.get_field_idx<Tvec>("vxyz");
-    const u32 iaxyz     = pdl.get_field_idx<Tvec>("axyz");
     const u32 ihpart    = pdl.get_field_idx<Tscal>("hpart");
     const u32 iaxyz_ext = pdl.get_field_idx<Tvec>("axyz_ext");
     const u32 iuint     = pdl.get_field_idx<Tscal>("uint");
@@ -2289,6 +2288,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once_su
     const u32 ixyz        = pdl.get_field_idx<Tvec>("xyz");
     const u32 ivxyz       = pdl.get_field_idx<Tvec>("vxyz");
     const u32 iaxyz       = pdl.get_field_idx<Tvec>("axyz");
+    const u32 iaxyz_sph       = pdl.get_field_idx<Tvec>("axyz_sph");
     const u32 iaxyz_ext   = pdl.get_field_idx<Tvec>("axyz_ext");
     const u32 iuint       = pdl.get_field_idx<Tscal>("uint");
     const u32 iduint      = pdl.get_field_idx<Tscal>("duint");
@@ -2304,24 +2304,6 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once_su
 
     shamrock::SchedulerUtility utility(scheduler());
 
-//    shambase::DistributedData<PatchDataLayer> &mpdats = storage.merged_patchdata_ghost.get();
-//    scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
-//                PatchDataLayer &mpdat = mpdats.get(cur_p.id_patch);
-//
-//    shamrock::ComputeField<Tvec> axyz_sph = utility.make_compute_field<Tvec>("axyz_sph", 1);
-//    auto &q = shamsys::instance::get_compute_scheduler().get_queue();
-//    sham::EventList depends_list;
-//
-//    sham::DeviceBuffer<Tvec> &buf_vxyz = mpdat.get_field_buf_ref<Tvec>(ivxyz_interf);
-//    auto vxyz                 = buf_vxyz.get_read_access(depends_list);
-//    auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-//        shambase::parallel_for(
-//            cgh, pdat.get_obj_cnt(), "restore a_sph", [=](i32 id_a){
-//                axyz_sph[id_a] = axyz[id_a] - axyz_ext[id_a];
-//            });
-//    });
-//    });
-
     modules::SinkParticlesUpdate<Tvec, Kern> sink_update(context, solver_config, storage);
     modules::ExternalForces<Tvec, Kern> ext_forces(context, solver_config, storage);
 
@@ -2330,9 +2312,9 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once_su
     bool did_substep = false;
     if (dt_force < dt_sph) {
         sink_update.kick(dt_sph, false);
-        do_firstkick_substep(dt_sph); // is is really only a_SPH ? noooo it is not ...
+        do_kick_substep(dt_sph); // with axyz_sph
         do_substep();
-        logger::raw_ln("finished substepping, moving to uptate_derivs_sph");
+        logger::raw_ln("finished substepping, moving to update_derivs_sph");
 
         part_killing_step();
         gen_serial_patch_tree();
@@ -2414,9 +2396,14 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once_su
         // compute pressure
         compute_eos_fields();
 
-        update_derivs_sph();
+        update_derivs_sph(); // @ need to save this SPH acceleration for next substepping loop
+        scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
+            pdat.get_field<Tvec>(iaxyz_sph).get_buf().copy_from(pdat.get_field<Tvec>(iaxyz).get_buf());
+        });
+        
+
         did_substep = true;
-        do_firstkick_substep(dt_sph);
+        do_kick_substep(dt_sph); // @@@ just recompute axyz only putting SPH accelerations, so OK
         logger::info_ln("SPH", "moving to corrector");
 
         if (solver_config.has_field_alphaAV()) {
@@ -2650,9 +2637,15 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once_su
 
         if (did_substep) {
             update_derivs_sph(); 
+            scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
+            pdat.get_field<Tvec>(iaxyz_sph).get_buf().copy_from(pdat.get_field<Tvec>(iaxyz).get_buf());
+        });
             update_derivs_ext_forces();
         } else {
             update_derivs_sph();
+            scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
+            pdat.get_field<Tvec>(iaxyz_sph).get_buf().copy_from(pdat.get_field<Tvec>(iaxyz).get_buf());
+        });
             update_derivs_ext_forces(); // add external forces // @@@ unsure here
         }
 
