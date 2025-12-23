@@ -744,6 +744,12 @@ struct shammodels::sph::SolverConfig {
     /// @brief Whether the solver has a field for dt divB
     inline bool has_field_dtdivB() { return mhd_config.has_dtdivB_field(); }
 
+    /// @brief Whether the solver enables substepping
+    inline bool do_substep() {
+        // no barotropic for now
+        return true;
+    }
+
     /// Print the current status of the solver config
     inline void print_status() {
         if (shamcomm::world_rank() != 0) {

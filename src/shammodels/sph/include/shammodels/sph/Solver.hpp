@@ -143,7 +143,7 @@ namespace shammodels::sph {
         void apply_position_boundary(Tscal time_val);
 
         void do_predictor_leapfrog(Tscal dt);
-        void do_firstkick_substep(Tscal dt_sph);
+        void do_kick_substep(Tscal dt_sph);
 
         void do_substep();
 

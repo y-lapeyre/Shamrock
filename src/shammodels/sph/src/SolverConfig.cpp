@@ -101,7 +101,7 @@ namespace shammodels::sph {
             pdl.add_field<Tscal>("psi_cons", 1);
             pdl.add_field<Tscal>("u_mhd", 1);
         }
-        if(do_substep()){
+        if (do_substep()) {
             pdl.add_field<Tvec>("axyz_sph", 1);
         }
     }
