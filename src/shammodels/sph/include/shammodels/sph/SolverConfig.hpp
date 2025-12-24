@@ -812,9 +812,6 @@ struct shammodels::sph::SolverConfig {
     bool compute_luminosity = false;
     inline void use_luminosity(bool enable) { compute_luminosity = enable; }
 
-    ///// @brief Whether to store luminosity
-    // inline bool compute_luminosity(bool do_it=false) { return do_it; } // @@@
-
     /// Print the current status of the solver config
     inline void print_status() {
         if (shamcomm::world_rank() != 0) {
