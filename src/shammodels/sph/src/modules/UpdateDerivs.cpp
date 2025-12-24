@@ -64,13 +64,15 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cons
 
     PatchDataLayerLayout &pdl = scheduler().pdl();
 
-    const u32 ixyz        = pdl.get_field_idx<Tvec>("xyz");
-    const u32 ivxyz       = pdl.get_field_idx<Tvec>("vxyz");
-    const u32 iaxyz       = pdl.get_field_idx<Tvec>("axyz");
-    const u32 iuint       = pdl.get_field_idx<Tscal>("uint");
-    const u32 iduint      = pdl.get_field_idx<Tscal>("duint");
-    const u32 ihpart      = pdl.get_field_idx<Tscal>("hpart");
-    const u32 iluminosity = pdl.get_field_idx<Tscal>("luminosity");
+    const u32 ixyz   = pdl.get_field_idx<Tvec>("xyz");
+    const u32 ivxyz  = pdl.get_field_idx<Tvec>("vxyz");
+    const u32 iaxyz  = pdl.get_field_idx<Tvec>("axyz");
+    const u32 iuint  = pdl.get_field_idx<Tscal>("uint");
+    const u32 iduint = pdl.get_field_idx<Tscal>("duint");
+    const u32 ihpart = pdl.get_field_idx<Tscal>("hpart");
+
+    bool has_luminosity   = solver_config.compute_luminosity(); // @@@ argument mismatch
+    const u32 iluminosity = (has_luminosity) ? pdl.get_field_idx<Tscal>("luminosity") : 0;
 
     shamrock::patch::PatchDataLayerLayout &ghost_layout
         = shambase::get_check_ref(storage.ghost_layout.get());

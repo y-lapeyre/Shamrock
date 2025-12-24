@@ -809,7 +809,7 @@ struct shammodels::sph::SolverConfig {
     inline bool has_field_dtdivB() { return mhd_config.has_dtdivB_field(); }
 
     /// @brief Whether to store luminosity
-    inline bool compute_luminosity() { return true; } // @@@
+    inline bool compute_luminosity(bool do_it = false) { return do_it; } // @@@
 
     /// Print the current status of the solver config
     inline void print_status() {
