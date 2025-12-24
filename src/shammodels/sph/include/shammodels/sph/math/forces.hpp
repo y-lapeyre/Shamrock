@@ -186,7 +186,8 @@ namespace shamrock::sph {
         Tscal qb_ab,
 
         Tvec &dv_dt,
-        Tscal &du_dt) {
+        Tscal &du_dt,
+        Tscal &luminosity) {
 
         Tscal AV_P_a = P_a + qa_ab;
         Tscal AV_P_b = P_b + qb_ab;
@@ -208,13 +209,17 @@ namespace shamrock::sph {
         du_dt += duint_dt_pressure(
             pmass, AV_P_a, omega_a_rho_a_inv * rho_a_inv, v_ab, r_ab_unit * Fab_a);
 
-        du_dt += lambda_shock_conductivity(
+        Tscal dendtdiss = lambda_shock_conductivity(
             pmass,
             alpha_u,
             vsig_u,
             u_a - u_b,
             Fab_a * omega_a_rho_a_inv,
             Fab_b / (rho_b * omega_b));
+
+        du_dt += dendtdiss;
+
+        luminosity += dendtdiss;
     }
 
 } // namespace shamrock::sph
