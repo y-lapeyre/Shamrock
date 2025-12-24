@@ -64,12 +64,12 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cons
 
     PatchDataLayerLayout &pdl = scheduler().pdl();
 
-    const u32 ixyz   = pdl.get_field_idx<Tvec>("xyz");
-    const u32 ivxyz  = pdl.get_field_idx<Tvec>("vxyz");
-    const u32 iaxyz  = pdl.get_field_idx<Tvec>("axyz");
-    const u32 iuint  = pdl.get_field_idx<Tscal>("uint");
-    const u32 iduint = pdl.get_field_idx<Tscal>("duint");
-    const u32 ihpart = pdl.get_field_idx<Tscal>("hpart");
+    const u32 ixyz        = pdl.get_field_idx<Tvec>("xyz");
+    const u32 ivxyz       = pdl.get_field_idx<Tvec>("vxyz");
+    const u32 iaxyz       = pdl.get_field_idx<Tvec>("axyz");
+    const u32 iuint       = pdl.get_field_idx<Tscal>("uint");
+    const u32 iduint      = pdl.get_field_idx<Tscal>("duint");
+    const u32 ihpart      = pdl.get_field_idx<Tscal>("hpart");
     const u32 iluminosity = pdl.get_field_idx<Tscal>("luminosity");
 
     shamrock::patch::PatchDataLayerLayout &ghost_layout
@@ -120,7 +120,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cons
         auto u          = buf_uint.get_read_access(depends_list); // TODO rename to uint
         auto pressure   = buf_pressure.get_read_access(depends_list);
         auto cs         = buf_cs.get_read_access(depends_list);
-        auto luminosity         = buf_luminosity.get_write_access(depends_list);
+        auto luminosity = buf_luminosity.get_write_access(depends_list);
         auto ploop_ptrs = pcache.get_read_access(depends_list);
 
         auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
@@ -241,8 +241,8 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cons
                         tmpdU_pressure,
                         tmp_luminosity);
                 });
-                axyz[id_a] = force_pressure;
-                du[id_a]   = tmpdU_pressure;
+                axyz[id_a]       = force_pressure;
+                du[id_a]         = tmpdU_pressure;
                 luminosity[id_a] = tmp_luminosity;
             });
         });
@@ -272,14 +272,14 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_mm97
 
     PatchDataLayerLayout &pdl = scheduler().pdl();
 
-    const u32 ixyz      = pdl.get_field_idx<Tvec>("xyz");
-    const u32 ivxyz     = pdl.get_field_idx<Tvec>("vxyz");
-    const u32 iaxyz     = pdl.get_field_idx<Tvec>("axyz");
-    const u32 iuint     = pdl.get_field_idx<Tscal>("uint");
-    const u32 iduint    = pdl.get_field_idx<Tscal>("duint");
-    const u32 ihpart    = pdl.get_field_idx<Tscal>("hpart");
-    const u32 ialpha_AV = pdl.get_field_idx<Tscal>("alpha_AV");
-     const u32 iluminosity = pdl.get_field_idx<Tscal>("luminosity");
+    const u32 ixyz        = pdl.get_field_idx<Tvec>("xyz");
+    const u32 ivxyz       = pdl.get_field_idx<Tvec>("vxyz");
+    const u32 iaxyz       = pdl.get_field_idx<Tvec>("axyz");
+    const u32 iuint       = pdl.get_field_idx<Tscal>("uint");
+    const u32 iduint      = pdl.get_field_idx<Tscal>("duint");
+    const u32 ihpart      = pdl.get_field_idx<Tscal>("hpart");
+    const u32 ialpha_AV   = pdl.get_field_idx<Tscal>("alpha_AV");
+    const u32 iluminosity = pdl.get_field_idx<Tscal>("luminosity");
 
     shamrock::patch::PatchDataLayerLayout &ghost_layout
         = shambase::get_check_ref(storage.ghost_layout.get());
@@ -333,7 +333,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_mm97
         auto pressure   = buf_pressure.get_read_access(depends_list);
         auto alpha_AV   = buf_alpha_AV.get_read_access(depends_list);
         auto cs         = buf_cs.get_read_access(depends_list);
-        auto luminosity         = buf_luminosity.get_write_access(depends_list);
+        auto luminosity = buf_luminosity.get_write_access(depends_list);
         auto ploop_ptrs = pcache.get_read_access(depends_list);
 
         auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
@@ -465,10 +465,9 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_mm97
 
                 // out << "sum : " << sum_axyz << "\n";
 
-                axyz[id_a] = force_pressure;
-                du[id_a]   = tmpdU_pressure;
+                axyz[id_a]       = force_pressure;
+                du[id_a]         = tmpdU_pressure;
                 luminosity[id_a] = tmp_luminosity;
-
             });
         });
 
@@ -498,14 +497,13 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cd10
 
     PatchDataLayerLayout &pdl = scheduler().pdl();
 
-    const u32 ixyz   = pdl.get_field_idx<Tvec>("xyz");
-    const u32 ivxyz  = pdl.get_field_idx<Tvec>("vxyz");
-    const u32 iaxyz  = pdl.get_field_idx<Tvec>("axyz");
-    const u32 iuint  = pdl.get_field_idx<Tscal>("uint");
-    const u32 iduint = pdl.get_field_idx<Tscal>("duint");
-    const u32 ihpart = pdl.get_field_idx<Tscal>("hpart");
-        const u32 iluminosity = pdl.get_field_idx<Tscal>("luminosity");
-
+    const u32 ixyz        = pdl.get_field_idx<Tvec>("xyz");
+    const u32 ivxyz       = pdl.get_field_idx<Tvec>("vxyz");
+    const u32 iaxyz       = pdl.get_field_idx<Tvec>("axyz");
+    const u32 iuint       = pdl.get_field_idx<Tscal>("uint");
+    const u32 iduint      = pdl.get_field_idx<Tscal>("duint");
+    const u32 ihpart      = pdl.get_field_idx<Tscal>("hpart");
+    const u32 iluminosity = pdl.get_field_idx<Tscal>("luminosity");
 
     shamrock::patch::PatchDataLayerLayout &ghost_layout
         = shambase::get_check_ref(storage.ghost_layout.get());
@@ -535,8 +533,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cd10
         sham::DeviceBuffer<Tscal> &buf_cs
             = shambase::get_check_ref(storage.soundspeed).get_field(cur_p.id_patch).get_buf();
 
-                sham::DeviceBuffer<Tscal> &buf_luminosity = pdat.get_field_buf_ref<Tscal>(iluminosity);
-
+        sham::DeviceBuffer<Tscal> &buf_luminosity = pdat.get_field_buf_ref<Tscal>(iluminosity);
 
         sycl::range range_npart{pdat.get_obj_cnt()};
 
@@ -558,7 +555,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cd10
         auto pressure   = buf_pressure.get_read_access(depends_list);
         auto alpha_AV   = buf_alpha_AV.get_read_access(depends_list);
         auto cs         = buf_cs.get_read_access(depends_list);
-                auto luminosity         = buf_luminosity.get_write_access(depends_list);
+        auto luminosity = buf_luminosity.get_write_access(depends_list);
 
         auto ploop_ptrs = pcache.get_read_access(depends_list);
 
@@ -678,10 +675,9 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cd10
                         tmp_luminosity);
                 });
 
-                axyz[id_a] = force_pressure;
-                du[id_a]   = tmpdU_pressure;
-                                luminosity[id_a] = tmp_luminosity;
-
+                axyz[id_a]       = force_pressure;
+                du[id_a]         = tmpdU_pressure;
+                luminosity[id_a] = tmp_luminosity;
             });
         });
 
@@ -712,14 +708,13 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_disc
 
     PatchDataLayerLayout &pdl = scheduler().pdl();
 
-    const u32 ixyz   = pdl.get_field_idx<Tvec>("xyz");
-    const u32 ivxyz  = pdl.get_field_idx<Tvec>("vxyz");
-    const u32 iaxyz  = pdl.get_field_idx<Tvec>("axyz");
-    const u32 iuint  = pdl.get_field_idx<Tscal>("uint");
-    const u32 iduint = pdl.get_field_idx<Tscal>("duint");
-    const u32 ihpart = pdl.get_field_idx<Tscal>("hpart");
-        const u32 iluminosity = pdl.get_field_idx<Tscal>("luminosity");
-
+    const u32 ixyz        = pdl.get_field_idx<Tvec>("xyz");
+    const u32 ivxyz       = pdl.get_field_idx<Tvec>("vxyz");
+    const u32 iaxyz       = pdl.get_field_idx<Tvec>("axyz");
+    const u32 iuint       = pdl.get_field_idx<Tscal>("uint");
+    const u32 iduint      = pdl.get_field_idx<Tscal>("duint");
+    const u32 ihpart      = pdl.get_field_idx<Tscal>("hpart");
+    const u32 iluminosity = pdl.get_field_idx<Tscal>("luminosity");
 
     shamrock::patch::PatchDataLayerLayout &ghost_layout
         = shambase::get_check_ref(storage.ghost_layout.get());
@@ -769,7 +764,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_disc
         auto u          = buf_uint.get_read_access(depends_list);
         auto pressure   = buf_pressure.get_read_access(depends_list);
         auto cs         = buf_cs.get_read_access(depends_list);
-                auto luminosity         = buf_luminosity.get_write_access(depends_list);
+        auto luminosity = buf_luminosity.get_write_access(depends_list);
 
         auto ploop_ptrs = pcache.get_read_access(depends_list);
 
@@ -822,8 +817,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_disc
 
                 Tvec force_pressure{0, 0, 0};
                 Tscal tmpdU_pressure = 0;
-                                Tscal tmp_luminosity = 0;
-
+                Tscal tmp_luminosity = 0;
 
                 particle_looper.for_each_object(id_a, [&](u32 id_b) {
                     // compute only omega_a
@@ -893,10 +887,9 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_disc
                         tmp_luminosity);
                 });
 
-                axyz[id_a] = force_pressure;
-                du[id_a]   = tmpdU_pressure;
-                                luminosity[id_a] = tmp_luminosity;
-
+                axyz[id_a]       = force_pressure;
+                du[id_a]         = tmpdU_pressure;
+                luminosity[id_a] = tmp_luminosity;
             });
         });
 
@@ -909,8 +902,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_disc
         buf_uint.complete_event_state(e);
         buf_pressure.complete_event_state(e);
         buf_cs.complete_event_state(e);
-                buf_luminosity.complete_event_state(e);
-
+        buf_luminosity.complete_event_state(e);
 
         sham::EventList resulting_events;
         resulting_events.add_event(e);
