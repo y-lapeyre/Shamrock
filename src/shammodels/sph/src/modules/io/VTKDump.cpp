@@ -225,7 +225,7 @@ namespace shammodels::sph::modules {
             fnum++;
         }
 
-        if (solver_config.compute_luminosity()) {
+        if (solver_config.compute_luminosity) {
             fnum++;
         }
 
@@ -276,7 +276,7 @@ namespace shammodels::sph::modules {
             vtk_dump_add_field<Tscal>(scheduler(), writter, isoundspeed, "soundspeed");
         }
 
-        if (solver_config.compute_luminosity()) {
+        if (solver_config.compute_luminosity) {
             const u32 iluminosity = pdl.get_field_idx<Tscal>("luminosity");
             vtk_dump_add_field<Tscal>(scheduler(), writter, iluminosity, "luminosity");
         }

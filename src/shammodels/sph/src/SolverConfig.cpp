@@ -92,7 +92,7 @@ namespace shammodels::sph {
             pdl.add_field<Tvec>("dtdeltav", ndust);
         }
 
-        if (compute_luminosity()) {
+        if (compute_luminosity) {
             pdl.add_field<Tscal>("luminosity", 1);
         }
 
