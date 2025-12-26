@@ -81,7 +81,6 @@ void shammodels::sph::modules::NodeComputeLuminosity<Tvec, SPHKernel>::_impl_eva
                 Tscal Fab_a = SPHKernel<Tscal>::dW_3d(rab, h_a);
                 Tscal Fab_b = SPHKernel<Tscal>::dW_3d(rab, h_b);
 
-                using namespace shamrock::sph;
                 tmp_luminosity += lambda_shock_conductivity(
                     part_mass,
                     alpha_u,

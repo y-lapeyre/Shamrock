@@ -67,9 +67,9 @@ namespace shammodels::sph::modules {
                 get_ro_edge<shammodels::sph::solvergraph::NeighCache>(1),
                 get_ro_edge<shamrock::solvergraph::IFieldSpan<Tvec>>(2),
                 get_ro_edge<shamrock::solvergraph::IFieldSpan<Tscal>>(3),
+                get_ro_edge<shamrock::solvergraph::IFieldSpan<Tscal>>(4),
                 get_ro_edge<shamrock::solvergraph::IFieldSpan<Tscal>>(5),
                 get_ro_edge<shamrock::solvergraph::IFieldSpan<Tscal>>(6),
-                get_ro_edge<shamrock::solvergraph::IFieldSpan<Tscal>>(7),
                 get_rw_edge<shamrock::solvergraph::IFieldSpan<Tscal>>(0)};
         }
 

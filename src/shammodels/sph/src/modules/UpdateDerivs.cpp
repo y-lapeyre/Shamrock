@@ -63,6 +63,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cons
     using namespace shamrock;
     using namespace shamrock::patch;
 
+    bool has_luminosity       = solver_config.compute_luminosity;
     PatchDataLayerLayout &pdl = scheduler().pdl();
 
     const u32 ixyz   = pdl.get_field_idx<Tvec>("xyz");
@@ -213,7 +214,6 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cons
                     Tscal qa_ab = shamrock::sph::q_av(rho_a, vsig_a, v_ab_r_ab);
                     Tscal qb_ab = shamrock::sph::q_av(rho_b, vsig_b, v_ab_r_ab);
 
-                    bool has_luminosity = solver_config.compute_luminosity;
                     if (has_luminosity) {
                         shammodels::sph::modules::NodeComputeLuminosity<Tvec, SPHKernel>
                             compute_luminosity(pmass, alpha_u);
@@ -270,6 +270,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_mm97
     using namespace shamrock;
     using namespace shamrock::patch;
 
+    bool has_luminosity       = solver_config.compute_luminosity;
     PatchDataLayerLayout &pdl = scheduler().pdl();
 
     const u32 ixyz      = pdl.get_field_idx<Tvec>("xyz");
@@ -427,7 +428,6 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_mm97
                     Tscal qa_ab = shamrock::sph::q_av(rho_a, vsig_a, v_ab_r_ab);
                     Tscal qb_ab = shamrock::sph::q_av(rho_b, vsig_b, v_ab_r_ab);
 
-                    bool has_luminosity = solver_config.compute_luminosity;
                     if (has_luminosity) {
                         shammodels::sph::modules::NodeComputeLuminosity<Tvec, SPHKernel>
                             compute_luminosity(pmass, alpha_u);
@@ -494,6 +494,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cd10
     using namespace shamrock;
     using namespace shamrock::patch;
 
+    bool has_luminosity       = solver_config.compute_luminosity;
     PatchDataLayerLayout &pdl = scheduler().pdl();
 
     const u32 ixyz   = pdl.get_field_idx<Tvec>("xyz");
@@ -642,7 +643,6 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cd10
                     Tscal qa_ab = shamrock::sph::q_av(rho_a, vsig_a, v_ab_r_ab);
                     Tscal qb_ab = shamrock::sph::q_av(rho_b, vsig_b, v_ab_r_ab);
 
-                    bool has_luminosity = solver_config.compute_luminosity;
                     if (has_luminosity) {
                         shammodels::sph::modules::NodeComputeLuminosity<Tvec, SPHKernel>
                             compute_luminosity(pmass, alpha_u);
@@ -702,6 +702,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_disc
     using namespace shamrock;
     using namespace shamrock::patch;
 
+    bool has_luminosity       = solver_config.compute_luminosity;
     PatchDataLayerLayout &pdl = scheduler().pdl();
 
     const u32 ixyz   = pdl.get_field_idx<Tvec>("xyz");
@@ -851,7 +852,6 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_disc
                     Tscal qb_ab = shamrock::sph::q_av_disc(
                         rho_b, h_b, rab, alpha_b, cs_b, vsig_b, v_ab_r_ab);
 
-                    bool has_luminosity = solver_config.compute_luminosity;
                     if (has_luminosity) {
                         shammodels::sph::modules::NodeComputeLuminosity<Tvec, SPHKernel>
                             compute_luminosity(pmass, alpha_u);
