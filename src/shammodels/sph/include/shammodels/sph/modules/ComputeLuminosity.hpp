@@ -67,52 +67,15 @@ namespace shammodels::sph::modules {
                 get_ro_edge<shammodels::sph::solvergraph::NeighCache>(1),
                 get_ro_edge<shamrock::solvergraph::IFieldSpan<Tvec>>(2),
                 get_ro_edge<shamrock::solvergraph::IFieldSpan<Tscal>>(3),
-                get_rw_edge<shamrock::solvergraph::IFieldSpan<Tscal>>(0),
-                get_ro_edge<shamrock::solvergraph::IFieldSpan<Tscal>>(4),
                 get_ro_edge<shamrock::solvergraph::IFieldSpan<Tscal>>(5),
-                get_ro_edge<shamrock::solvergraph::IFieldSpan<Tscal>>(6)};
+                get_ro_edge<shamrock::solvergraph::IFieldSpan<Tscal>>(6),
+                get_ro_edge<shamrock::solvergraph::IFieldSpan<Tscal>>(7),
+                get_rw_edge<shamrock::solvergraph::IFieldSpan<Tscal>>(0)};
         }
 
         void _impl_evaluate_internal();
 
         inline virtual std::string _impl_get_label() const { return "ComputeLuminosity"; };
-
-        virtual std::string _impl_get_tex() const;
-    };
-
-    template<class T>
-    class SetWhenMask : public shamrock::solvergraph::INode {
-
-        T val_to_set;
-
-        public:
-        SetWhenMask(T val_to_set) : val_to_set(val_to_set) {}
-
-        struct Edges {
-            const shamrock::solvergraph::Indexes<u32> &part_counts;
-            const shamrock::solvergraph::IFieldSpan<u32> &mask;
-            shamrock::solvergraph::IFieldSpan<T> &field_to_set;
-        };
-
-        inline void set_edges(
-            std::shared_ptr<shamrock::solvergraph::Indexes<u32>> part_counts,
-            std::shared_ptr<shamrock::solvergraph::IFieldSpan<u32>> mask,
-            std::shared_ptr<shamrock::solvergraph::IFieldSpan<T>> field_to_set) {
-            __internal_set_ro_edges({part_counts, mask});
-            __internal_set_rw_edges({field_to_set});
-        }
-
-        inline Edges get_edges() {
-            return Edges{
-                get_ro_edge<shamrock::solvergraph::Indexes<u32>>(0),
-                get_ro_edge<shamrock::solvergraph::IFieldSpan<u32>>(1),
-                get_rw_edge<shamrock::solvergraph::IFieldSpan<T>>(0),
-            };
-        }
-
-        void _impl_evaluate_internal();
-
-        inline virtual std::string _impl_get_label() const { return "SetWhenMask"; };
 
         virtual std::string _impl_get_tex() const;
     };
