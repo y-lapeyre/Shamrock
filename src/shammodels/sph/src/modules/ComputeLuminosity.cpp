@@ -95,6 +95,12 @@ void shammodels::sph::modules::NodeComputeLuminosity<Tvec, SPHKernel>::_impl_eva
         });
 }
 
+template<class Tvec, template<class> class SPHKernel>
+std::string shammodels::sph::modules::NodeComputeLuminosity<Tvec, SPHKernel>::_impl_get_tex()
+    const {
+    return "TODO";
+}
+
 using namespace shammath;
 template class shammodels::sph::modules::NodeComputeLuminosity<f64_3, M4>;
 template class shammodels::sph::modules::NodeComputeLuminosity<f64_3, M6>;
