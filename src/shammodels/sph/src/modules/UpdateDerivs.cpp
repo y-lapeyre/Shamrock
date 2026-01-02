@@ -214,23 +214,6 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cons
                     Tscal qa_ab = shamrock::sph::q_av(rho_a, vsig_a, v_ab_r_ab);
                     Tscal qb_ab = shamrock::sph::q_av(rho_b, vsig_b, v_ab_r_ab);
 
-                    if (has_luminosity) {
-                        //shammodels::sph::modules::NodeComputeLuminosity<Tvec, SPHKernel>
-                        //    compute_luminosity(pmass, alpha_u);
-                        //compute_luminosity._impl_evaluate_internal();
-                        modules::NodeComputeLuminosity<Tvec, SPHKernel> compute_luminosity{pmass, alpha_u};
-                        compute_luminosity.set_edges(
-                            storage.part_counts,
-                            storage.neigh_cache,
-                            storage.positions_with_ghosts,
-                            storage.hpart_with_ghosts,
-                            storage.omega,
-                            storage.uint,
-                            storage.pressure,
-                            storage.luminosity);
-                        compute_luminosity.evaluate();
-                    }
-
                     add_to_derivs_sph_artif_visco_cond(
                         pmass,
                         rho_a_sq,
