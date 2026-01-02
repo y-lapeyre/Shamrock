@@ -62,7 +62,7 @@ namespace shammodels::sph {
         static constexpr u32 dim = shambase::VectorProperties<Tvec>::dimension;
         using Kernel             = SPHKernel<Tscal>;
 
-        using Config = SolverConfig<Tvec, SPHKernel>;
+        using Config   = SolverConfig<Tvec, SPHKernel>;
         using AVConfig = AVConfig<Tvec>;
 
         using u_morton = typename Config::u_morton;
