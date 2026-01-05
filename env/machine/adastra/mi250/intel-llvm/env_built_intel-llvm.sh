@@ -14,6 +14,7 @@ function loadmodules {
     module load cray-python
     module load amd-mixed/5.7.1
     module load rocm/5.7.1
+    module load cmake/3.27.9
 }
 
 loadmodules
