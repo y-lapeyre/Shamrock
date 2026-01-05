@@ -2005,27 +2005,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
 
         if (has_luminosity) {
             const u32 iluminosity = pdl.get_field_idx<Tscal>("luminosity");
-            // Debug: Check all field sizes
-            scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
-                u32 main_count
-                    = shambase::get_check_ref(storage.part_counts).indexes.get(p.id_patch);
-                u32 ghost_count = shambase::get_check_ref(storage.part_counts_with_ghost)
-                                      .indexes.get(p.id_patch);
 
-                logger::raw_ln("Patch ", p.id_patch, " sizes:");
-                logger::raw_ln("  main_count: ", main_count);
-                logger::raw_ln("  ghost_count: ", ghost_count);
-                logger::raw_ln("  omega size: ", storage.omega->get(p.id_patch).get_val_cnt());
-                logger::raw_ln(
-                    "  pressure size: ", storage.pressure->get(p.id_patch).get_val_cnt());
-                logger::raw_ln(
-                    "  luminosity size: ", pdat.get_field<Tscal>(iluminosity).get_val_cnt());
-            });
-
-            // shammodels::sph::modules::NodeComputeLuminosity<Tvec, SPHKernel>
-            //     compute_luminosity(pmass, alpha_u);
-            // compute_luminosity._impl_evaluate_internal();
-            //  First, re-initialize hpart_with_ghosts from the ghost-merged data
             shambase::get_check_ref(storage.hpart_with_ghosts)
                 .set_refs(storage.merged_xyzh.get()
                               .template map<std::reference_wrapper<PatchDataField<Tscal>>>(
@@ -2042,40 +2022,28 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                                   [&](u64 id, shamrock::patch::PatchDataLayer &mpdat) {
                                       return std::ref(mpdat.get_field<Tscal>(1));
                                   }));
-            logger::raw_ln("mapped hpart");
 
             shamrock::solvergraph::NodeSetEdge<shamrock::solvergraph::FieldRefs<Tscal>>
                 set_uint_with_ghost_refs(
                     [&](shamrock::solvergraph::FieldRefs<Tscal> &field_uint_with_ghost_edge) {
                         shambase::DistributedData<PatchDataLayer> &mpdats
                             = storage.merged_patchdata_ghost.get();
-                        // Check if uint_with_ghost has the right size
 
                         shamrock::solvergraph::DDPatchDataFieldRef<Tscal> field_uint_with_ghost_refs
                             = {};
 
-                        logger::raw_ln("preparing to load uint");
                         scheduler().for_each_patchdata_nonempty(
                             [&](const Patch p, PatchDataLayer &pdat) {
                                 PatchDataLayer &mpdat = mpdats.get(p.id_patch);
 
-                                logger::raw_ln(
-                                    "  uint_with_ghost size: ",
-                                    mpdat.get_field<Tscal>(iuint_interf).get_val_cnt());
-                                logger::raw_ln("before crash ?");
-                                ghost_layout.for_each_field_any([&](auto &arg) {
-                                    logger::raw_ln("  Field: ", arg.name);
-                                });
                                 auto &field = mpdat.get_field<Tscal>(iuint_interf);
-                                logger::raw_ln("after crash ?");
                                 field_uint_with_ghost_refs.add_obj(p.id_patch, std::ref(field));
                             });
-                        logger::raw_ln("loaded uint");
+
                         field_uint_with_ghost_edge.set_refs(field_uint_with_ghost_refs);
                     });
 
             set_uint_with_ghost_refs.set_edges(uint_with_ghost);
-            logger::raw_ln("set_uint_with_ghost_refs");
             // @@@@@@@@@@@@@@@@
 
             auto luminosity = shamrock::solvergraph::FieldRefs<Tscal>::make_shared("", "");
