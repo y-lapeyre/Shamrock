@@ -28,9 +28,7 @@ void bench_memcpy_sycl(
 
     u64 max_obj_cnt = max_byte_sz_cnt / sizeof(T);
 
-    for (f64 cnt_ = 1e2; cnt_ < max_obj_cnt; cnt_ *= 1.1) {
-
-        u64 cnt = cnt_;
+    for (u64 cnt = 1e2; cnt < max_obj_cnt; cnt = static_cast<u32>(1.1 * cnt)) {
 
         auto ptr1 = sycl::malloc_device<T>(cnt, q1);
         auto ptr2 = sycl::malloc_device<T>(cnt, q2);
@@ -68,9 +66,7 @@ void bench_memcpy_sycl_host_dev(std::string dset_name, sycl::queue &q1, u64 max_
 
     u64 max_obj_cnt = max_byte_sz_cnt / sizeof(T);
 
-    for (f64 cnt_ = 1e2; cnt_ < max_obj_cnt; cnt_ *= 1.1) {
-
-        u64 cnt = cnt_;
+    for (u64 cnt = 1e2; cnt < max_obj_cnt; cnt = static_cast<u32>(1.1 * cnt)) {
 
         auto ptr1 = sycl::malloc_device<T>(cnt, q1);
         auto ptr2 = sycl::malloc_host<T>(cnt, q1);
