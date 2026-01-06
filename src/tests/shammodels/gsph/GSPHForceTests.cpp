@@ -74,8 +74,8 @@ namespace {
             Tvec nabla_W_ba = -nabla_W_ab;
             Tvec F_on_b     = shamrock::sph::sph_pressure_symetric<Tvec, Tscal>(
                 m,
-                rho_b * rho_b,
                 rho_a * rho_a,
+                rho_b * rho_b,
                 P_a,
                 P_b,
                 omega_a,
