@@ -105,12 +105,10 @@ namespace {
                     eos.gamma));
         }
 
-        int ierr = 0;
         if (ieos == 3 || ieos == 6 || ieos == 7) {
             if (eos.qfacdisc <= std::numeric_limits<f64>::epsilon()) {
                 if (shamcomm::world_rank() == 0)
                     logger::raw_ln(shambase::format("ERROR: qfacdisc <= 0"));
-                ierr = 2;
             } else {
                 if (shamcomm::world_rank() == 0)
                     logger::raw_ln(shambase::format("qfacdisc = {}", eos.qfacdisc));
@@ -125,7 +123,6 @@ namespace {
             if (std::abs(eos.qfacdisc2) <= std::numeric_limits<f64>::epsilon()) {
                 if (shamcomm::world_rank() == 0)
                     logger::raw_ln(shambase::format("ERROR: qfacdisc2 == 0"));
-                ierr = 2;
             } else {
                 if (shamcomm::world_rank() == 0)
                     logger::raw_ln(shambase::format("qfacdisc2 = {}", eos.qfacdisc2));
