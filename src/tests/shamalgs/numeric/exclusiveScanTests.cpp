@@ -113,8 +113,8 @@ struct TestExclScan {
 
         logger::info_ln("TestExclScan", "testing :", __PRETTY_FUNCTION__);
 
-        for (f64 i = 1e3; i < lim_bench; i *= 1.1) {
-            sizes.push_back(u32(i));
+        for (u32 i = 1e3; i < lim_bench; i = static_cast<u32>(1.1 * i)) {
+            sizes.push_back(i);
         }
 
         for (const u32 &sz : sizes) {
@@ -238,8 +238,8 @@ struct TestExclScanUSM {
 
         logger::info_ln("TestExclScan", "testing :", __PRETTY_FUNCTION__);
 
-        for (f64 i = 1e3; i < lim_bench; i *= 1.1) {
-            sizes.push_back(u32(i));
+        for (u32 i = 1e3; i < lim_bench; i = static_cast<u32>(1.1 * i)) {
+            sizes.push_back(i);
         }
 
         for (const u32 &sz : sizes) {
