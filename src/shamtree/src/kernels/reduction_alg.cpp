@@ -185,7 +185,7 @@ void sycl_reduction_iteration(
             int delt_m  = DELTA(i, before1);
             int delt_mm = DELTA(before1, before2);
 
-            if ((!(delt_0 < delt_m) || (delt_mm < delt_m)) && split_in[i]) {
+            if (!(delt_0 < delt_m && delt_mm < delt_m) && split_in[i]) {
                 split_out[i] = 1;
             } else {
                 split_out[i] = 0;
