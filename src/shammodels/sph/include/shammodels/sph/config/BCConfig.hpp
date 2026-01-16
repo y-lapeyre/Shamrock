@@ -88,8 +88,37 @@ struct shammodels::sph::BCConfig {
         Tscal shear_speed;
     };
 
+    struct HardWall {
+        /**
+         * @brief Number of layers of ghost particles to create
+         * For hard walls, typically you want THICK walls
+         */
+        u32 ghost_layers = 2;
+
+        /**
+         * @brief Damping factor for wall interactions
+         * Higher values mean more damping (0.0 = no damping, 1.0 = full damping)
+         */
+        Tscal damping_factor = 0.5;
+
+        /**
+         * @brief Whether to apply repulsive force at walls
+         */
+        bool use_repulsive_force = true;
+
+        /**
+         * @brief Repulsive force coefficient
+         */
+        Tscal repulsive_coefficient = 100.0;
+
+        /**
+         * @brief Distance from wall where repulsive force starts
+         */
+        Tscal repulsive_range = 0.1;
+    };
+
     /// Variant of all types of artificial viscosity possible
-    using Variant = std::variant<Free, Periodic, ShearingPeriodic>;
+    using Variant = std::variant<Free, Periodic, ShearingPeriodic, HardWall>;
 
     /// The actual configuration (default to free boundaries)
     Variant config = Free{};
@@ -113,6 +142,29 @@ struct shammodels::sph::BCConfig {
     }
 
     /**
+     * @brief Set the boundary condition to hardwall boundaries
+     *
+     * @param ghost_layers Number of layers of ghost particles to create
+     * @param damping_factor Damping factor for wall interactions
+     * @param use_repulsive_force Whether to apply repulsive force at walls
+     * @param repulsive_coefficient Repulsive force coefficient
+     * @param repulsive_range Distance from wall where repulsive force starts
+     */
+    inline void set_hard_wall(
+        u32 ghost_layers,
+        Tscal damping_factor,
+        bool use_repulsive_force,
+        Tscal repulsive_coefficient,
+        Tscal repulsive_range) {
+        config = HardWall{
+            ghost_layers,
+            damping_factor,
+            use_repulsive_force,
+            repulsive_coefficient,
+            repulsive_range};
+    }
+
+    /**
      * @brief Prints the current boundary condition configuration to the logger.
      *
      * The function logs the type of boundary condition (free, periodic, or shearing periodic)
@@ -130,6 +182,13 @@ struct shammodels::sph::BCConfig {
             logger::raw_ln("  shear_base   =", v->shear_base);
             logger::raw_ln("  shear_dir   =", v->shear_dir);
             logger::raw_ln("  shear_speed =", v->shear_speed);
+        } else if (HardWall *v = std::get_if<HardWall>(&config)) {
+            logger::raw_ln("  Config Type : HardWall");
+            logger::raw_ln("  ghost_layers   =", v->ghost_layers);
+            logger::raw_ln("  damping_factor   =", v->damping_factor);
+            logger::raw_ln("  use_repulsive_force   =", v->use_repulsive_force);
+            logger::raw_ln("  repulsive_coefficient   =", v->repulsive_coefficient);
+            logger::raw_ln("  repulsive_range   =", v->repulsive_range);
         } else {
             shambase::throw_unimplemented();
         }
@@ -155,6 +214,7 @@ namespace shammodels::sph {
         using Free             = typename T::Free;
         using Periodic         = typename T::Periodic;
         using ShearingPeriodic = typename T::ShearingPeriodic;
+        using HardWall         = typename T::HardWall;
 
         // Write the config type into the JSON object
         if (const Free *v = std::get_if<Free>(&p.config)) {
@@ -172,6 +232,15 @@ namespace shammodels::sph {
                 {"shear_base", v->shear_base},
                 {"shear_dir", v->shear_dir},
                 {"shear_speed", v->shear_speed},
+            };
+        } else if (const HardWall *v = std::get_if<HardWall>(&p.config)) {
+            j = {
+                {"bc_type", "hardwall"},
+                {"ghost_layers", v->ghost_layers},
+                {"damping_factor", v->damping_factor},
+                {"use_repulsive_force", v->use_repulsive_force},
+                {"repulsive_coefficient", v->repulsive_coefficient},
+                {"repulsive_range", v->repulsive_range},
             };
         } else {
             shambase::throw_unimplemented();
@@ -202,6 +271,7 @@ namespace shammodels::sph {
         using Free             = typename T::Free;
         using Periodic         = typename T::Periodic;
         using ShearingPeriodic = typename T::ShearingPeriodic;
+        using HardWall         = typename T::HardWall;
 
         // Set the BCConfig based on the config type
         if (bc_type == "free") {
@@ -213,6 +283,13 @@ namespace shammodels::sph {
                 j.at("shear_base").get<i32_3>(),
                 j.at("shear_dir").get<i32_3>(),
                 j.at("speed").get<Tscal>());
+        } else if (bc_type == "hardwall") {
+            p.set_hardwall(
+                j.at("ghost_layers").get<u32>(),
+                j.at("damping_factor").get<Tscal>(),
+                j.at("use_repulsive_force").get<bool>(),
+                j.at("repulsive_coefficient").get<Tscal>(),
+                j.at("repulsive_range").get<Tscal>());
         } else {
             shambase::throw_unimplemented("wtf !");
         }
