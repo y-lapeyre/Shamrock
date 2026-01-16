@@ -683,6 +683,29 @@ struct shammodels::sph::SolverConfig {
         boundary_config.set_shearing_periodic(shear_base, shear_dir, speed);
     }
 
+    /**
+     * @brief Set the boundary condition to hard wall boundary
+
+     * @param[in] ghost_layers Number of layers of ghost particles to create
+     * @param[in] damping_factor Damping factor for wall interactions
+     * @param[in] use_repulsive_force Whether to apply repulsive force at walls
+     * @param[in] repulsive_coefficient Repulsive force coefficient
+     * @param[in] repulsive_range Distance from wall where repulsive force starts
+     */
+    inline void set_boundary_hard_wall(
+        u32 ghost_layers,
+        Tscal damping_factor,
+        bool use_repulsive_force,
+        Tscal repulsive_coefficient,
+        Tscal repulsive_range) {
+        boundary_config.set_hard_wall(
+            ghost_layers,
+            damping_factor,
+            use_repulsive_force,
+            repulsive_coefficient,
+            repulsive_range);
+    }
+
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Boundary Config (END)
     //////////////////////////////////////////////////////////////////////////////////////////////
