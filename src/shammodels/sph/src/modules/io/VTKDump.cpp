@@ -18,6 +18,7 @@
 
 #include "shammodels/sph/modules/io/VTKDump.hpp"
 #include "shambackends/kernel_call.hpp"
+#include "shamcomm/logs.hpp"
 #include "shammodels/common/io/VTKDumpUtils.hpp"
 #include "shammodels/sph/math/density.hpp"
 #include "shamrock/io/LegacyVtkWritter.hpp"
@@ -121,6 +122,11 @@ namespace shammodels::sph::modules {
             fnum += ndust;
         }
 
+        bool has_ghost = true;
+        if (has_ghost) {
+            fnum ++;
+        }
+
         writter.add_field_data_section(fnum);
 
         if (add_patch_world_id) {
@@ -132,6 +138,13 @@ namespace shammodels::sph::modules {
         vtk_dump_add_field<Tscal>(scheduler(), writter, iuint, "u");
         vtk_dump_add_field<Tvec>(scheduler(), writter, ivxyz, "v");
         vtk_dump_add_field<Tvec>(scheduler(), writter, iaxyz, "a");
+
+        
+        if (has_ghost) {
+            logger::raw_ln("PUTAIN DE MERDE");
+            const u32 ighost_mask = pdl.get_field_idx<u32>("ghost_mask");
+            vtk_dump_add_field<u32>(scheduler(), writter, ighost_mask, "ghost_mask");
+        }
 
         if (solver_config.has_field_alphaAV()) {
             const u32 ialpha_AV = pdl.get_field_idx<Tscal>("alpha_AV");
@@ -157,6 +170,8 @@ namespace shammodels::sph::modules {
             const u32 isoundspeed = pdl.get_field_idx<Tscal>("soundspeed");
             vtk_dump_add_field<Tscal>(scheduler(), writter, isoundspeed, "soundspeed");
         }
+
+
 
         vtk_dump_add_compute_field(scheduler(), writter, density, "rho");
 

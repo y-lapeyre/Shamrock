@@ -2086,25 +2086,34 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
             auto du_edge = solver_graph.get_edge_ptr<FieldRefs<Tscal>>("duint");
 
             auto mask_edge = solver_graph.get_edge_ptr<FieldRefs<u32>>("ghost_mask");
+            const u32 ighost_mask       = pdl.get_field_idx<u32>("ghost_mask");
+
+            shamrock::solvergraph::NodeSetEdge<shamrock::solvergraph::FieldRefs<u32>>
+                set_field_ghost_mask([&](shamrock::solvergraph::FieldRefs<u32> &field_ghost_mask_edge) {
+                    shamrock::solvergraph::DDPatchDataFieldRef<u32> field_ghost_mask_refs = {};
+                    scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
+                        auto &field = pdat.get_field<u32>(ighost_mask);
+                        field_ghost_mask_refs.add_obj(p.id_patch, std::ref(field));
+                    });
+                    field_ghost_mask_edge.set_refs(field_ghost_mask_refs);
+                });
+            set_field_ghost_mask.set_edges(mask_edge);
+            set_field_ghost_mask.evaluate();
 
             auto sizes = std::make_shared<shamrock::solvergraph::Indexes<u32>>("sizes", "Np");
             scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
                 sizes->indexes.add_obj(p.id_patch, pdat.get_obj_cnt());
             });
             auto &thread_counts = sizes->indexes;
-            logger::raw_ln("got sizes");
             axyz_edge->check_sizes(thread_counts);
-            logger::raw_ln("checked sizes axyz");
             du_edge->check_sizes(thread_counts);
-            logger::raw_ln("checked sizes du");
             mask_edge->check_sizes(thread_counts);
 
-            logger::raw_ln("checked sizes");
-            modules::SetWhenMask<Tscal> set_omega_mask{0};
+            modules::SetWhenMask<Tscal> set_omega_mask{0.};
             set_omega_mask.set_edges(storage.part_counts, mask_edge, du_edge);
-            logger::raw_ln("@@@@@@@@@@@@ set omega mask @@@@@@@@@@@@@@@");
+
             set_omega_mask.evaluate();
-            logger::raw_ln("@@@@@@@@@@@@ evaluated omega mask @@@@@@@@@@@@@@@");
+
             modules::SetWhenMask<Tvec> set_omega_mask_vec({0.0, 0.0, 0.0});
             set_omega_mask_vec.set_edges(storage.part_counts, mask_edge, axyz_edge);
             set_omega_mask_vec.evaluate();

@@ -26,6 +26,7 @@ namespace shammodels::sph::modules {
     void GetParticlesInWall<Tvec>::_impl_evaluate_internal() {
         StackEntry stack_loc{};
         logger::raw_ln("just entered _get_particles_in_wall"); 
+        logger::raw_ln("node infos :", this->print_node_info());
         auto edges = get_edges();
 
         auto &thread_counts = edges.sizes.indexes;

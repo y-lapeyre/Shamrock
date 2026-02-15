@@ -864,6 +864,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
 
                     return ret;
                 }
+                
 
                 shambase::throw_with_loc<std::runtime_error>("unknown field type");
                 return py::array_t<Tscal>({nx, ny});
