@@ -106,6 +106,7 @@
 template<class Tvec, template<class> class Kern>
 void shammodels::sph::Solver<Tvec, Kern>::init_solver_graph() {
 
+    bool hasmask = true;
     shamrock::patch::PatchDataLayerLayout &pdl = scheduler().pdl();
     bool has_B_field                           = solver_config.has_field_B_on_rho();
     bool has_psi_field                         = solver_config.has_field_psi_on_ch();
@@ -146,7 +147,7 @@ void shammodels::sph::Solver<Tvec, Kern>::init_solver_graph() {
         solver_graph.register_edge("deltav", FieldRefs<Tvec>("deltav", "\\Delta v"));
         solver_graph.register_edge("dtdeltav", FieldRefs<Tvec>("dtdeltav", "d\\Delta v"));
     }
-    if (true) { // @@@ has walls
+    if (hasmask) { // @@@ has walls
         solver_graph.register_edge("ghost_mask", FieldRefs<u32>("ghost_mask", "mask"));
     }
 
@@ -242,6 +243,16 @@ void shammodels::sph::Solver<Tvec, Kern>::init_solver_graph() {
             attach_field_sequence.push_back(attach_hpart);
         }
 
+        if (hasmask){
+            auto attach_ghost_mask = solver_graph.register_node(
+                "attach_ghost_mask", GetFieldRefFromLayer<u32>(pdl, "ghost_mask"));
+            shambase::get_check_ref(attach_ghost_mask)
+                .set_edges(
+                    solver_graph.get_edge_ptr<PatchDataLayerRefs>("scheduler_patchdata"),
+                    solver_graph.get_edge_ptr<FieldRefs<u32>>("ghost_mask"));
+            attach_field_sequence.push_back(attach_ghost_mask);
+        }
+
         if (has_B_field) {
             auto attach_B_on_rho = solver_graph.register_node(
                 "attach_B_on_rho", GetFieldRefFromLayer<Tvec>(pdl, "B/rho"));
@@ -335,7 +346,35 @@ void shammodels::sph::Solver<Tvec, Kern>::init_solver_graph() {
 
         auto make_half_step_sequence = [&](std::string prefix) {
             std::vector<std::shared_ptr<shamrock::solvergraph::INode>> half_step_sequence;
+            
+            if (hasmask) {
+                {
+                auto half_step_vxyz = solver_graph.register_node(
+                    prefix + "_vxyz", shammodels::common::modules::ForwardEulerMasked<Tvec>{});
+                shambase::get_check_ref(half_step_vxyz)
+                    .set_edges(
+                        solver_graph.get_edge_ptr<IDataEdge<Tscal>>("dt_half"),
+                        solver_graph.get_edge_ptr<FieldRefs<Tvec>>("axyz"),
+                        solver_graph.get_edge_ptr<Indexes<u32>>("part_counts"),
+                        solver_graph.get_edge_ptr<FieldRefs<u32>>("ghost_mask"),
+                        solver_graph.get_edge_ptr<FieldRefs<Tvec>>("vxyz"));
+                half_step_sequence.push_back(half_step_vxyz);
+            }
 
+            {
+                auto half_step_uint = solver_graph.register_node(
+                    prefix + "_uint", shammodels::common::modules::ForwardEulerMasked<Tscal>{});
+                shambase::get_check_ref(half_step_uint)
+                    .set_edges(
+                        solver_graph.get_edge_ptr<IDataEdge<Tscal>>("dt_half"),
+                        solver_graph.get_edge_ptr<FieldRefs<Tscal>>("duint"),
+                        solver_graph.get_edge_ptr<Indexes<u32>>("part_counts"),
+                        solver_graph.get_edge_ptr<FieldRefs<u32>>("ghost_mask"),
+                        solver_graph.get_edge_ptr<FieldRefs<Tscal>>("uint"));
+                half_step_sequence.push_back(half_step_uint);
+            }
+            }
+            else{
             {
                 auto half_step_vxyz = solver_graph.register_node(
                     prefix + "_vxyz", shammodels::common::modules::ForwardEuler<Tvec>{});
@@ -358,7 +397,7 @@ void shammodels::sph::Solver<Tvec, Kern>::init_solver_graph() {
                         solver_graph.get_edge_ptr<Indexes<u32>>("part_counts"),
                         solver_graph.get_edge_ptr<FieldRefs<Tscal>>("uint"));
                 half_step_sequence.push_back(half_step_uint);
-            }
+            }}
 
             if (has_B_field) {
                 auto half_step_B_on_rho = solver_graph.register_node(
@@ -414,7 +453,19 @@ void shammodels::sph::Solver<Tvec, Kern>::init_solver_graph() {
         solver_graph.register_node("half_step1", make_half_step_sequence("half_step1"));
         solver_graph.register_node("half_step2", make_half_step_sequence("half_step2"));
 
-        {
+        if (hasmask){
+            auto full_step_xyz = solver_graph.register_node(
+                "full_step_xyz", shammodels::common::modules::ForwardEulerMasked<Tvec>{});
+            shambase::get_check_ref(full_step_xyz)
+                .set_edges(
+                    solver_graph.get_edge_ptr<IDataEdge<Tscal>>("dt"),
+                    solver_graph.get_edge_ptr<FieldRefs<Tvec>>("vxyz"),
+                    solver_graph.get_edge_ptr<Indexes<u32>>("part_counts"),
+                    solver_graph.get_edge_ptr<FieldRefs<u32>>("ghost_mask"),
+                    solver_graph.get_edge_ptr<FieldRefs<Tvec>>("xyz"));
+        }
+        
+        else{
             auto full_step_xyz = solver_graph.register_node(
                 "full_step_xyz", shammodels::common::modules::ForwardEuler<Tvec>{});
             shambase::get_check_ref(full_step_xyz)
@@ -2073,7 +2124,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
 
         update_derivs();
 
-        bool has_walls = solver_config.particle_disable.disable_list.empty();
+        bool has_walls = true;//solver_config.particle_disable.disable_list.empty();
         logger::raw_ln("value of has_wallas: ", has_walls);
         if (has_walls) {
             logger::raw_ln("@@@@@@@@@@@@ in wall disabling routine @@@@@@@@@@@@@@@");
@@ -2083,9 +2134,11 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
 
             auto axyz_edge
                 = solver_graph.get_edge_ptr<shamrock::solvergraph::IFieldSpan<Tvec>>("axyz");
-            auto du_edge = solver_graph.get_edge_ptr<FieldRefs<Tscal>>("duint");
+            auto du_edge = solver_graph.get_edge_ptr<shamrock::solvergraph::IFieldSpan<Tscal>>("duint");
 
-            auto mask_edge = solver_graph.get_edge_ptr<FieldRefs<u32>>("ghost_mask");
+            //auto mask_edge = solver_graph.get_edge_ptr<FieldRefs<u32>>("ghost_mask");
+            auto mask_edge = solver_graph.get_edge_ptr<shamrock::solvergraph::IFieldSpan<u32>>("ghost_mask"); //empty edge
+
             const u32 ighost_mask       = pdl.get_field_idx<u32>("ghost_mask");
 
             shamrock::solvergraph::NodeSetEdge<shamrock::solvergraph::FieldRefs<u32>>
@@ -2097,8 +2150,9 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                     });
                     field_ghost_mask_edge.set_refs(field_ghost_mask_refs);
                 });
+            
             set_field_ghost_mask.set_edges(mask_edge);
-            set_field_ghost_mask.evaluate();
+            set_field_ghost_mask.evaluate(); // edge is populated
 
             auto sizes = std::make_shared<shamrock::solvergraph::Indexes<u32>>("sizes", "Np");
             scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
@@ -2109,7 +2163,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
             du_edge->check_sizes(thread_counts);
             mask_edge->check_sizes(thread_counts);
 
-            modules::SetWhenMask<Tscal> set_omega_mask{0.};
+            modules::SetWhenMask<Tscal> set_omega_mask{0};
             set_omega_mask.set_edges(storage.part_counts, mask_edge, du_edge);
 
             set_omega_mask.evaluate();
