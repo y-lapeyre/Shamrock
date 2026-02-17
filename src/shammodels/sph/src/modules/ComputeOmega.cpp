@@ -17,6 +17,7 @@
 
 #include "shambase/stacktrace.hpp"
 #include "shambackends/kernel_call_distrib.hpp"
+#include "shamcomm/logs.hpp"
 #include "shammodels/sph/SPHUtilities.hpp"
 #include "shammodels/sph/modules/ComputeOmega.hpp"
 #include "shamrock/scheduler/SchedulerUtility.hpp"
@@ -83,7 +84,7 @@ void shammodels::sph::modules::SetWhenMask<T>::_impl_evaluate_internal() {
     __shamrock_stack_entry();
 
     auto edges = get_edges();
-
+    logger::raw_ln("@@@@@@@@@ in set when mask @@@@@@@@@");
     auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
 
     logger::raw_ln("node infos :", this->print_node_info());

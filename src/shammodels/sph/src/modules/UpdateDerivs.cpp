@@ -494,6 +494,8 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cd10
     u32 iuint_interf  = ghost_layout.get_field_idx<Tscal>("uint");
     u32 ivxyz_interf  = ghost_layout.get_field_idx<Tvec>("vxyz");
     u32 iomega_interf = ghost_layout.get_field_idx<Tscal>("omega");
+    u32 ighost_mask_interf     = ghost_layout.get_field_idx<u32>("ghost_mask");
+
 
     auto &merged_xyzh                                 = storage.merged_xyzh.get();
     shamrock::solvergraph::Field<Tscal> &omega        = shambase::get_check_ref(storage.omega);
@@ -509,6 +511,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cd10
         sham::DeviceBuffer<Tscal> &buf_hpart = mpdat.get_field_buf_ref<Tscal>(ihpart_interf);
         sham::DeviceBuffer<Tscal> &buf_omega = mpdat.get_field_buf_ref<Tscal>(iomega_interf);
         sham::DeviceBuffer<Tscal> &buf_uint  = mpdat.get_field_buf_ref<Tscal>(iuint_interf);
+        sham::DeviceBuffer<u32> &buf_ghost_mask   = mpdat.get_field_buf_ref<u32>(ighost_mask_interf);
         sham::DeviceBuffer<Tscal> &buf_pressure
             = shambase::get_check_ref(storage.pressure).get_field(cur_p.id_patch).get_buf();
         sham::DeviceBuffer<Tscal> &buf_alpha_AV
@@ -536,6 +539,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cd10
         auto pressure   = buf_pressure.get_read_access(depends_list);
         auto alpha_AV   = buf_alpha_AV.get_read_access(depends_list);
         auto cs         = buf_cs.get_read_access(depends_list);
+        auto ghost_mask         = buf_ghost_mask.get_read_access(depends_list);
         auto ploop_ptrs = pcache.get_read_access(depends_list);
 
         auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
@@ -626,6 +630,23 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cd10
 
                     Tscal qa_ab = shamrock::sph::q_av(rho_a, vsig_a, v_ab_r_ab);
                     Tscal qb_ab = shamrock::sph::q_av(rho_b, vsig_b, v_ab_r_ab);
+
+                    bool haswall=true;
+                    if (haswall) {
+                        u32 is_ghost = ghost_mask[id_b];
+                        if (is_ghost != 0) {
+                            //if (v_ab_r_ab < 0) {
+                            //    qb_ab += 100 * qb_ab_wall;
+                            //}
+                            Tscal  qa_ab_wall = shamrock::sph::q_av(rho_a, vsig_a, v_ab_r_ab);
+                            qa_ab +=  sham::inv_sat_positive(sycl::dot(dr, dr));//100 * qa_ab_wall;
+                            logger::raw_ln("qa_ab_wall", qa_ab_wall);
+                            Tscal qb_ab_wall = shamrock::sph::q_av(rho_b, vsig_b, v_ab_r_ab);
+                            qb_ab +=  sham::inv_sat_positive(sycl::dot(dr, dr));//100 * qb_ab_wall;
+                            logger::raw_ln("qb_ab_wall", qb_ab_wall);
+                        }
+                    }
+                
 
                     add_to_derivs_sph_artif_visco_cond(
                         pmass,

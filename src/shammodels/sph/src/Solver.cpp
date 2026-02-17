@@ -244,6 +244,7 @@ void shammodels::sph::Solver<Tvec, Kern>::init_solver_graph() {
         }
 
         if (hasmask){
+            logger::raw_ln("@@@@@ attached mask @@@@");
             auto attach_ghost_mask = solver_graph.register_node(
                 "attach_ghost_mask", GetFieldRefFromLayer<u32>(pdl, "ghost_mask"));
             shambase::get_check_ref(attach_ghost_mask)
@@ -341,7 +342,7 @@ void shammodels::sph::Solver<Tvec, Kern>::init_solver_graph() {
     ////////////////////////////////////////////////////////////////////////////////////////
     // leapfrog predictor
     ////////////////////////////////////////////////////////////////////////////////////////
-
+    logger::raw_ln("@@@@@@@@ Leapfrog predictor @@@@@@@@");
     {
 
         auto make_half_step_sequence = [&](std::string prefix) {
@@ -349,6 +350,7 @@ void shammodels::sph::Solver<Tvec, Kern>::init_solver_graph() {
             
             if (hasmask) {
                 {
+                logger::raw_ln("@@@@@@@@ MaskedForwardEuler for speeds @@@@@@@@");
                 auto half_step_vxyz = solver_graph.register_node(
                     prefix + "_vxyz", shammodels::common::modules::ForwardEulerMasked<Tvec>{});
                 shambase::get_check_ref(half_step_vxyz)
@@ -376,6 +378,7 @@ void shammodels::sph::Solver<Tvec, Kern>::init_solver_graph() {
             }
             else{
             {
+                logger::raw_ln("@@@@@ WTF @@@@");
                 auto half_step_vxyz = solver_graph.register_node(
                     prefix + "_vxyz", shammodels::common::modules::ForwardEuler<Tvec>{});
                 shambase::get_check_ref(half_step_vxyz)
@@ -454,6 +457,7 @@ void shammodels::sph::Solver<Tvec, Kern>::init_solver_graph() {
         solver_graph.register_node("half_step2", make_half_step_sequence("half_step2"));
 
         if (hasmask){
+            logger::raw_ln("@@@@@@@@ MaskedForwardEuler for pos @@@@@@@@");
             auto full_step_xyz = solver_graph.register_node(
                 "full_step_xyz", shammodels::common::modules::ForwardEulerMasked<Tvec>{});
             shambase::get_check_ref(full_step_xyz)
@@ -1310,6 +1314,9 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
     const u32 ialpha_AV   = (has_alphaAV_field) ? pdl.get_field_idx<Tscal>("alpha_AV") : 0;
     const u32 isoundspeed = (has_soundspeed_field) ? pdl.get_field_idx<Tscal>("soundspeed") : 0;
 
+    bool haswall = true;
+    const u32 ighost_mask = (haswall) ? pdl.get_field_idx<u32>("ghost_mask") : 0;
+
     const u32 iB_on_rho   = (has_B_field) ? pdl.get_field_idx<Tvec>("B/rho") : 0;
     const u32 idB_on_rho  = (has_B_field) ? pdl.get_field_idx<Tvec>("dB/rho") : 0;
     const u32 ipsi_on_ch  = (has_psi_field) ? pdl.get_field_idx<Tscal>("psi/ch") : 0;
@@ -1342,6 +1349,7 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
     const u32 isoundspeed_interf
         = (has_soundspeed_field) ? ghost_layout.get_field_idx<Tscal>("soundspeed") : 0;
 
+    const u32 ighost_mask_interf   = (haswall) ? ghost_layout.get_field_idx<u32>("ghost_mask") : 0;
     const u32 iB_interf     = (has_B_field) ? ghost_layout.get_field_idx<Tvec>("B/rho") : 0;
     const u32 ipsi_interf   = (has_psi_field) ? ghost_layout.get_field_idx<Tscal>("psi/ch") : 0;
     const u32 icurlB_interf = (has_curlB_field) ? ghost_layout.get_field_idx<Tvec>("curlB") : 0;
@@ -1395,6 +1403,11 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
             if (has_soundspeed_field) {
                 sender_patch.get_field<Tscal>(isoundspeed)
                     .append_subset_to(buf_idx, cnt, pdat.get_field<Tscal>(isoundspeed_interf));
+            }
+
+            if(haswall) {
+                sender_patch.get_field<u32>(ighost_mask)
+                    .append_subset_to(buf_idx, cnt, pdat.get_field<u32>(ighost_mask_interf));
             }
 
             if (has_B_field) {
@@ -1471,6 +1484,12 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
                     pdat_new.get_field<Tscal>(isoundspeed_interf)
                         .insert(pdat.get_field<Tscal>(isoundspeed));
                 }
+
+                if (haswall) {
+                    pdat_new.get_field<u32>(ighost_mask_interf)
+                        .insert(pdat.get_field<u32>(ighost_mask));
+                }
+
 
                 if (has_B_field) {
                     pdat_new.get_field<Tvec>(iB_interf).insert(pdat.get_field<Tvec>(iB_on_rho));
@@ -1745,8 +1764,9 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
         ////////////////////////////////////////////////////////////////////////////////////////
         // Solver evaluation
         ////////////////////////////////////////////////////////////////////////////////////////
-
+        logger::raw_ln("######## avant l'init");
         shambase::get_check_ref(storage.solver_sequence).evaluate();
+        logger::raw_ln("######## apres l'init");
     }
 
     sink_update.compute_ext_forces();
@@ -2124,54 +2144,54 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
 
         update_derivs();
 
-        bool has_walls = true;//solver_config.particle_disable.disable_list.empty();
-        logger::raw_ln("value of has_wallas: ", has_walls);
-        if (has_walls) {
-            logger::raw_ln("@@@@@@@@@@@@ in wall disabling routine @@@@@@@@@@@@@@@");
-
-            using namespace shamrock::solvergraph;
-            SolverGraph &solver_graph = storage.solver_graph;
-
-            auto axyz_edge
-                = solver_graph.get_edge_ptr<shamrock::solvergraph::IFieldSpan<Tvec>>("axyz");
-            auto du_edge = solver_graph.get_edge_ptr<shamrock::solvergraph::IFieldSpan<Tscal>>("duint");
-
-            //auto mask_edge = solver_graph.get_edge_ptr<FieldRefs<u32>>("ghost_mask");
-            auto mask_edge = solver_graph.get_edge_ptr<shamrock::solvergraph::IFieldSpan<u32>>("ghost_mask"); //empty edge
-
-            const u32 ighost_mask       = pdl.get_field_idx<u32>("ghost_mask");
-
-            shamrock::solvergraph::NodeSetEdge<shamrock::solvergraph::FieldRefs<u32>>
-                set_field_ghost_mask([&](shamrock::solvergraph::FieldRefs<u32> &field_ghost_mask_edge) {
-                    shamrock::solvergraph::DDPatchDataFieldRef<u32> field_ghost_mask_refs = {};
-                    scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
-                        auto &field = pdat.get_field<u32>(ighost_mask);
-                        field_ghost_mask_refs.add_obj(p.id_patch, std::ref(field));
-                    });
-                    field_ghost_mask_edge.set_refs(field_ghost_mask_refs);
-                });
-            
-            set_field_ghost_mask.set_edges(mask_edge);
-            set_field_ghost_mask.evaluate(); // edge is populated
-
-            auto sizes = std::make_shared<shamrock::solvergraph::Indexes<u32>>("sizes", "Np");
-            scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
-                sizes->indexes.add_obj(p.id_patch, pdat.get_obj_cnt());
-            });
-            auto &thread_counts = sizes->indexes;
-            axyz_edge->check_sizes(thread_counts);
-            du_edge->check_sizes(thread_counts);
-            mask_edge->check_sizes(thread_counts);
-
-            modules::SetWhenMask<Tscal> set_omega_mask{0};
-            set_omega_mask.set_edges(storage.part_counts, mask_edge, du_edge);
-
-            set_omega_mask.evaluate();
-
-            modules::SetWhenMask<Tvec> set_omega_mask_vec({0.0, 0.0, 0.0});
-            set_omega_mask_vec.set_edges(storage.part_counts, mask_edge, axyz_edge);
-            set_omega_mask_vec.evaluate();
-        }
+        bool has_walls = false;//solver_config.particle_disable.disable_list.empty();
+        //logger::raw_ln("value of has_wallas: ", has_walls);
+        //if (has_walls) {
+        //    logger::raw_ln("@@@@@@@@@@@@ in wall disabling routine @@@@@@@@@@@@@@@");
+//
+        //    using namespace shamrock::solvergraph;
+        //    SolverGraph &solver_graph = storage.solver_graph;
+//
+        //    auto axyz_edge
+        //        = solver_graph.get_edge_ptr<shamrock::solvergraph::IFieldSpan<Tvec>>("axyz");
+        //    auto du_edge = solver_graph.get_edge_ptr<shamrock::solvergraph::IFieldSpan<Tscal>>("duint");
+//
+        //    //auto mask_edge = solver_graph.get_edge_ptr<FieldRefs<u32>>("ghost_mask");
+        //    auto mask_edge = solver_graph.get_edge_ptr<shamrock::solvergraph::IFieldSpan<u32>>("ghost_mask"); //empty edge
+//
+        //    const u32 ighost_mask       = pdl.get_field_idx<u32>("ghost_mask");
+//
+        //    shamrock::solvergraph::NodeSetEdge<shamrock::solvergraph::FieldRefs<u32>>
+        //        set_field_ghost_mask([&](shamrock::solvergraph::FieldRefs<u32> &field_ghost_mask_edge) {
+        //            shamrock::solvergraph::DDPatchDataFieldRef<u32> field_ghost_mask_refs = {};
+        //            scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
+        //                auto &field = pdat.get_field<u32>(ighost_mask);
+        //                field_ghost_mask_refs.add_obj(p.id_patch, std::ref(field));
+        //            });
+        //            field_ghost_mask_edge.set_refs(field_ghost_mask_refs);
+        //        });
+        //    
+        //    set_field_ghost_mask.set_edges(mask_edge);
+        //    set_field_ghost_mask.evaluate(); // edge is populated
+//
+        //    auto sizes = std::make_shared<shamrock::solvergraph::Indexes<u32>>("sizes", "Np");
+        //    scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
+        //        sizes->indexes.add_obj(p.id_patch, pdat.get_obj_cnt());
+        //    });
+        //    auto &thread_counts = sizes->indexes;
+        //    axyz_edge->check_sizes(thread_counts);
+        //    du_edge->check_sizes(thread_counts);
+        //    mask_edge->check_sizes(thread_counts);
+//
+        //    modules::SetWhenMask<Tscal> set_omega_mask{0};
+        //    set_omega_mask.set_edges(storage.part_counts, mask_edge, du_edge);
+//
+        //    set_omega_mask.evaluate();
+//
+        //    modules::SetWhenMask<Tvec> set_omega_mask_vec({0.0, 0.0, 0.0});
+        //    set_omega_mask_vec.set_edges(storage.part_counts, mask_edge, axyz_edge);
+        //    set_omega_mask_vec.evaluate();
+        //}
         // done disabling, now do the integration
 
         modules::ConservativeCheck<Tvec, Kern> cv_check(context, solver_config, storage);

@@ -145,6 +145,11 @@ namespace shammodels::sph {
             u32 ndust = dust_config.get_dust_nvar();
             ghost_layout.add_field<Tvec>("deltav", ndust);
         }
+        bool haswall=true;
+
+        if (haswall) {
+            ghost_layout.add_field<u32>("ghost_mask", 1);
+        }
     }
 
 }; // namespace shammodels::sph
