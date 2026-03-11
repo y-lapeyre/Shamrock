@@ -61,15 +61,26 @@ namespace shamphys {
             // TODO
         }
 
+        inline static constexpr Tscal get_gamma(
+            std::mdspan<Tscal, std::extents<SizeType, 4, 4>, Layout2, Accessor2> gcov) {
+
+            std::mdspan<Tscal, std::extents<SizeType, 3, 3>, Layout2, Accessor2> gamma_ij;
+            for (int i = 1; i < 4; i++) {
+                for (int j = 1; j < 4; j++) {
+                    gamma_ij(i, j) = gcov(i, j);
+                }
+            }
+
+            return mat_det_33(gamma_ij);
+        }
+
         inline static constexpr Tscal get_U0(
             Tvec vxyz, std::mdspan<Tscal, std::extents<SizeType, 4, 4>, Layout2, Accessor2> gcov) {
 
             // U0 = gamma / alpha
             Tscal alpha = get_alpha(gcov);
-
-            // Tscal gamma = mat_inv_33 ... submdspan would be nice ... it's in the 26 standard
-            // though ...;
-            return 0;
+            Tscal gamma = get_gamma(gcov);
+            return gamma / alpha;
         }
 
         inline static constexpr Tvec get_V(
@@ -81,6 +92,7 @@ namespace shamphys {
             return V;
         }
 
+        /// placeholder function for more complex metrics
         inline static constexpr Tscal get_sqrt_g(
             Tvec vxyz, std::mdspan<Tscal, std::extents<SizeType, 4, 4>, Layout2, Accessor2> gcov) {
             // for unusual metric, need to compute the determinant
@@ -88,6 +100,7 @@ namespace shamphys {
             return 1;
         }
 
+        /// placeholder function for more complex metrics
         inline static constexpr Tscal get_sqrt_gamma(
             Tvec vxyz, std::mdspan<Tscal, std::extents<SizeType, 4, 4>, Layout2, Accessor2> gcov) {
             // for unusual metric, need to compute the determinant of the spatial metric

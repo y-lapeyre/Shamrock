@@ -30,7 +30,7 @@ namespace shamphys {
         Tscal bh_mass;
         Tscal rs;
 
-        Kerr(Tscal spin = 1, Tscal mass = 1) : a(spin), bh_mass(mass), rs(2. * mass) {}
+        Kerr(Tscal spin, Tscal mass) : a(spin), bh_mass(mass), rs(2. * mass) {}
     };
 
     struct Schwarzschild {};
@@ -459,14 +459,6 @@ namespace shamphys {
         dgcovdz(3, 1) = dgcovdz(1, 3);
         dgcovdz(3, 2) = dgcovdz(2, 3);
     }
-
-    // ################in spherical form ##################
-    // TODO
-
-    /********************  The Kerr metric  ***********************/
-    // ################in CARTESIAN-like form ##################
-    // ################in spherical form ##################
-    // TODO
 
     /********************  frontend  ***********************/
     template<
