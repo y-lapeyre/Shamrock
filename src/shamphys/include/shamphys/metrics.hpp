@@ -61,7 +61,7 @@ namespace shamphys {
         Tscal a2       = a * a;
         Tscal r2_spher = x2 + y2 + z2;
         Tscal r2       = 0.5 * (r2_spher - a2)
-                   + 0.5 * sycl::sqrt((r2_spher - a2) * (r2_spher - a2) + 4. * a2 * z2);
+                         + 0.5 * sycl::sqrt((r2_spher - a2) * (r2_spher - a2) + 4. * a2 * z2);
         Tscal r        = sycl::sqrt(r2);
         Tscal inv_r2   = 1. / r2;
         Tscal rho2     = r2 + a2 * (z2 * inv_r2);
@@ -127,7 +127,7 @@ namespace shamphys {
         Tscal a2       = a * a;
         Tscal r2_spher = x2 + y2 + z2;
         Tscal r2       = 0.5 * (r2_spher - a2)
-                   + 0.5 * sycl::sqrt((r2_spher - a2) * (r2_spher - a2) + 4. * a2 * z2);
+                         + 0.5 * sycl::sqrt((r2_spher - a2) * (r2_spher - a2) + 4. * a2 * z2);
         Tscal r        = sycl::sqrt(r2);
         Tscal inv_r2   = 1. / r2;
         Tscal rho2     = r2 + a2 * (z2 * inv_r2);
@@ -200,8 +200,8 @@ namespace shamphys {
 
         Tscal r2_spher = x2 + y2 + z2;
         Tscal r2       = 0.5 * (r2_spher - a2)
-                   + 0.5 * sycl::sqrt((r2_spher - a2) * (r2_spher - a2) + 4. * a2 * z2);
-        Tscal r = sycl::sqrt(r2);
+                         + 0.5 * sycl::sqrt((r2_spher - a2) * (r2_spher - a2) + 4. * a2 * z2);
+        Tscal r        = sycl::sqrt(r2);
 
         Tscal rho2  = r2 + a2 * (z2 / r2);
         Tscal a2pr2 = a2 + r2;
