@@ -17,7 +17,6 @@
 #include "shammodels/sph/modules/ConsToPrim.hpp"
 #include "shambackends/kernel_call_distrib.hpp"
 #include "shamcomm/logs.hpp"
-#include "shammath/riemann.hpp"
 #include "shamphys/GRUtils.hpp"
 #include "shamphys/metrics.hpp"
 #include "shamrock/patch/PatchDataField.hpp"

@@ -17,9 +17,11 @@
  */
 
 #include "shambackends/vec.hpp"
+#include "shamrock/solvergraph/Field.hpp"
 #include "shamrock/solvergraph/IFieldSpan.hpp"
 #include "shamrock/solvergraph/INode.hpp"
 #include "shamrock/solvergraph/Indexes.hpp"
+#include "shamrock/solvergraph/ScalarsEdge.hpp"
 #include <experimental/mdspan>
 
 namespace shammodels::sph::modules {
@@ -31,44 +33,22 @@ namespace shammodels::sph::modules {
         public:
         NodeConsToPrim(Tscal gamma) : gamma(gamma) {}
 
-        struct Edges {
-            std::mdspan<Tscal, std::extents<SizeType, 4, 4>, Layout, Accessor> &gcov;
-            const shamrock::solvergraph::Indexes<u32> &sizes;
-            const shamrock::solvergraph::IFieldSpan<Tscal> &spans_rhostar;
-            const shamrock::solvergraph::IFieldSpan<Tvec> &spans_momentum;
-            const shamrock::solvergraph::IFieldSpan<Tscal> &spans_K;
-            shamrock::solvergraph::IFieldSpan<Tscal> &spans_rho;
-            shamrock::solvergraph::IFieldSpan<Tvec> &spans_vel;
-            shamrock::solvergraph::IFieldSpan<Tscal> &spans_u;
-            shamrock::solvergraph::IFieldSpan<Tscal> &spans_P;
-        };
+// X_RO(std::mdspan<Tscal, std::extents<SizeType, 4, 4>, Layout, Accessor>, gcov)
+#define NODE_CONS_TO_PRIM(X_RO, X_RW)                                                              \
+    /* inputs */                                                                                   \
+    X_RO(shamrock::solvergraph::Indexes<u32>, sizes)                                               \
+    X_RO(shamrock::solvergraph::IFieldSpan<Tscal>, spans_rhostar)                                  \
+    X_RO(shamrock::solvergraph::IFieldSpan<Tvec>, spans_momentum)                                  \
+    X_RO(shamrock::solvergraph::IFieldSpan<Tscal>, spans_K)                                        \
+                                                                                                   \
+    /* outputs */                                                                                  \
+    X_RW(shamrock::solvergraph::IFieldSpan<Tscal>, spans_rho)                                      \
+    X_RW(shamrock::solvergraph::IFieldSpan<Tvec>, spans_vel)                                       \
+    X_RW(shamrock::solvergraph::IFieldSpan<Tscal>, spans_u)                                        \
+    X_RW(shamrock::solvergraph::IFieldSpan<Tscal>, spans_P)
 
-        inline void set_edges(
-            std::mdspan<Tscal, std::extents<SizeType, 4, 4>, Layout, Accessor> &gcov,
-            std::shared_ptr<shamrock::solvergraph::Indexes<u32>> sizes,
-            std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>> spans_rhostar,
-            std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tvec>> spans_momentum,
-            std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>> spans_K,
-            std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>> spans_rho,
-            std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tvec>> spans_vel,
-            std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>> spans_u,
-            std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>> spans_P) {
-            __internal_set_ro_edges({sizes, spans_rhostar, spans_momentum, spans_K});
-            __internal_set_rw_edges({spans_rho, spans_vel, spans_u, spans_P});
-        }
-
-        inline Edges get_edges() {
-            return Edges{
-                get_ro_edge<shamrock::solvergraph::Indexes<u32>>(0), // fix types
-                get_ro_edge<shamrock::solvergraph::Indexes<u32>>(1),
-                get_ro_edge<shamrock::solvergraph::IFieldSpan<Tscal>>(2),
-                get_ro_edge<shamrock::solvergraph::IFieldSpan<Tvec>>(3),
-                get_ro_edge<shamrock::solvergraph::IFieldSpan<Tscal>>(4),
-                get_rw_edge<shamrock::solvergraph::IFieldSpan<Tscal>>(0),
-                get_rw_edge<shamrock::solvergraph::IFieldSpan<Tvec>>(1),
-                get_rw_edge<shamrock::solvergraph::IFieldSpan<Tscal>>(2),
-                get_rw_edge<shamrock::solvergraph::IFieldSpan<Tscal>>(3)};
-        }
+        EXPAND_NODE_EDGES(NODE_CONS_TO_PRIM)
+#undef NODE_CONS_TO_PRIM
 
         void _impl_evaluate_internal();
 
