@@ -73,39 +73,39 @@ namespace shamphys {
             Tscal result = 0;
             for (int i = 0; i < 3; i++) {
                 for (int j = 0; j < 3; j++) {
-                    result += gcov(i+1, j+1) * a[i] * b[j];
+                    result += gcov(i + 1, j + 1) * a[i] * b[j];
                 }
             }
             return result;
         }
 
-        inline static constexpr  std::mdspan<Tscal, std::extents<SizeType, 3, 3>, Layout2, Accessor2>  get_gammaijDOWN(
-            std::mdspan<Tscal, std::extents<SizeType, 4, 4>, Layout2, Accessor2> gcov) {
+        inline static constexpr std::mdspan<Tscal, std::extents<SizeType, 3, 3>, Layout2, Accessor2>
+        get_gammaijDOWN(std::mdspan<Tscal, std::extents<SizeType, 4, 4>, Layout2, Accessor2> gcov) {
 
             std::mdspan<Tscal, std::extents<SizeType, 3, 3>, Layout2, Accessor2> gamma_ij;
             for (int i = 1; i < 4; i++) {
                 for (int j = 1; j < 4; j++) {
-                    gamma_ij(i-1, j-1) = gcov(i, j);
+                    gamma_ij(i - 1, j - 1) = gcov(i, j);
                 }
             }
 
             return gamma_ij;
         }
 
-        inline static constexpr  std::mdspan<Tscal, std::extents<SizeType, 3, 3>, Layout2, Accessor2>  get_gammaijUP(
-            std::mdspan<Tscal, std::extents<SizeType, 4, 4>, Layout2, Accessor2> gcon) {
+        inline static constexpr std::mdspan<Tscal, std::extents<SizeType, 3, 3>, Layout2, Accessor2>
+        get_gammaijUP(std::mdspan<Tscal, std::extents<SizeType, 4, 4>, Layout2, Accessor2> gcon) {
 
             Tscal alpha = get_alpha(gcon);
             Tvec betaUP = get_betaUP(gcon);
             std::mdspan<Tscal, std::extents<SizeType, 3, 3>, Layout2, Accessor2> gamma_ij;
             for (int i = 1; i < 4; i++) {
                 for (int j = 1; j < 4; j++) {
-                    gamma_ij(i-1, j-1) = gcon(i, j) + betaUP[i-1] * betaUP[j-1] / (-gcon(0, 0));
+                    gamma_ij(i - 1, j - 1)
+                        = gcon(i, j) + betaUP[i - 1] * betaUP[j - 1] / (-gcon(0, 0));
                 }
             }
 
             return gamma_ij;
-
         }
 
         inline static constexpr Tscal get_gamma(
@@ -121,17 +121,18 @@ namespace shamphys {
             return mat_det_33(gamma_ij);
         }
 
-        inline static constexpr Tscal get_lorentz_factor(
-            Tvec momentum, Tscal enthalpy) {
+        inline static constexpr Tscal get_lorentz_factor(Tvec momentum, Tscal enthalpy) {
 
             return sycl::sqrt(1. + GR_dot(momentum, momentum) / (enthalpy * enthalpy));
         }
 
         inline static constexpr Tscal get_U0(
-            Tvec momentum, Tscal enthalpy, std::mdspan<Tscal, std::extents<SizeType, 4, 4>, Layout2, Accessor2> gcon) {
+            Tvec momentum,
+            Tscal enthalpy,
+            std::mdspan<Tscal, std::extents<SizeType, 4, 4>, Layout2, Accessor2> gcon) {
 
             // U0 = gamma / alpha wrong
-            Tscal alpha = get_alpha(gcon);
+            Tscal alpha          = get_alpha(gcon);
             Tscal lorentz_factor = get_lorentz_factor(momentum, enthalpy);
             return lorentz_factor / alpha;
         }
