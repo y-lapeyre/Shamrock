@@ -53,12 +53,49 @@ namespace shamphys {
             return betaUP;
         }
 
+        inline static constexpr Tvec get_betaDOWN(
+            std::mdspan<Tscal, std::extents<SizeType, 4, 4>, Layout2, Accessor2> gcov) {
+            Tscal alpha   = get_alpha(gcov);
+            Tscal alpha2  = alpha * alpha;
+            Tvec betaDOWN = {0., 0., 0.};
+
+            betaDOWN[0] = gcov(0, 1);
+            betaDOWN[1] = gcov(0, 2);
+            betaDOWN[2] = gcov(0, 3);
+
+            return betaDOWN;
+        }
+
         inline static constexpr Tscal GR_dot(
             Tvec a,
             Tvec b,
             std::mdspan<Tscal, std::extents<SizeType, 4, 4>, Layout2, Accessor2> gcov) {
             return 0;
             // TODO
+        }
+
+        inline static constexpr Tscal get_gammaijUP(
+            std::mdspan<Tscal, std::extents<SizeType, 4, 4>, Layout2, Accessor2> gcov) {
+
+            std::mdspan<Tscal, std::extents<SizeType, 3, 3>, Layout2, Accessor2> gamma_ij;
+            for (int i = 1; i < 4; i++) {
+                for (int j = 1; j < 4; j++) {
+                    gamma_ij(i, j) = gcov(i, j);
+                }
+            }
+        }
+
+        inline static constexpr Tscal get_gammaijDOWN(
+            std::mdspan<Tscal, std::extents<SizeType, 4, 4>, Layout2, Accessor2> gcov) {
+
+            Tscal alpha = get_alpha(gcov);
+            Tvec betaUP = get_betaUP(gcov);
+            std::mdspan<Tscal, std::extents<SizeType, 3, 3>, Layout2, Accessor2> gamma_ij;
+            for (int i = 1; i < 4; i++) {
+                for (int j = 1; j < 4; j++) {
+                    gamma_ij(i, j) = gcov(i, j) + betaUP[i] * betaUP[j] / (-gcov(0, 0));
+                }
+            }
         }
 
         inline static constexpr Tscal get_gamma(
