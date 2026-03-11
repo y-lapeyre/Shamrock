@@ -20,18 +20,19 @@
 #include "shamrock/solvergraph/IFieldSpan.hpp"
 #include "shamrock/solvergraph/INode.hpp"
 #include "shamrock/solvergraph/Indexes.hpp"
+#include <experimental/mdspan>
 
-namespace shammodels::basegodunov::modules {
-    template<class Tvec>
+namespace shammodels::sph::modules {
+    template<class Tvec, class SizeType, class Layout, class Accessor>
     class NodeConsToPrim : public shamrock::solvergraph::INode {
         using Tscal = shambase::VecComponent<Tvec>;
-        u32 block_size;
         Tscal gamma;
 
         public:
-        NodeConsToPrim(u32 block_size, Tscal gamma) : block_size(block_size), gamma(gamma) {}
+        NodeConsToPrim(Tscal gamma) : gamma(gamma) {}
 
         struct Edges {
+            std::mdspan<Tscal, std::extents<SizeType, 4, 4>, Layout, Accessor> &gcov;
             const shamrock::solvergraph::Indexes<u32> &sizes;
             const shamrock::solvergraph::IFieldSpan<Tscal> &spans_rhostar;
             const shamrock::solvergraph::IFieldSpan<Tvec> &spans_momentum;
@@ -43,6 +44,7 @@ namespace shammodels::basegodunov::modules {
         };
 
         inline void set_edges(
+            std::mdspan<Tscal, std::extents<SizeType, 4, 4>, Layout, Accessor> &gcov,
             std::shared_ptr<shamrock::solvergraph::Indexes<u32>> sizes,
             std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>> spans_rhostar,
             std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tvec>> spans_momentum,
@@ -57,10 +59,11 @@ namespace shammodels::basegodunov::modules {
 
         inline Edges get_edges() {
             return Edges{
-                get_ro_edge<shamrock::solvergraph::Indexes<u32>>(0),
-                get_ro_edge<shamrock::solvergraph::IFieldSpan<Tscal>>(1),
-                get_ro_edge<shamrock::solvergraph::IFieldSpan<Tvec>>(2),
-                get_ro_edge<shamrock::solvergraph::IFieldSpan<Tscal>>(3),
+                get_ro_edge<shamrock::solvergraph::Indexes<u32>>(0), // fix types
+                get_ro_edge<shamrock::solvergraph::Indexes<u32>>(1),
+                get_ro_edge<shamrock::solvergraph::IFieldSpan<Tscal>>(2),
+                get_ro_edge<shamrock::solvergraph::IFieldSpan<Tvec>>(3),
+                get_ro_edge<shamrock::solvergraph::IFieldSpan<Tscal>>(4),
                 get_rw_edge<shamrock::solvergraph::IFieldSpan<Tscal>>(0),
                 get_rw_edge<shamrock::solvergraph::IFieldSpan<Tvec>>(1),
                 get_rw_edge<shamrock::solvergraph::IFieldSpan<Tscal>>(2),
@@ -73,4 +76,4 @@ namespace shammodels::basegodunov::modules {
 
         virtual std::string _impl_get_tex() const;
     };
-} // namespace shammodels::basegodunov::modules
+} // namespace shammodels::sph::modules

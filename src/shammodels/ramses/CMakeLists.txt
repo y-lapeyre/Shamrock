@@ -44,7 +44,6 @@ set(Sources
     src/modules/TransformGhostLayer.cpp
     src/modules/FuseGhostLayer.cpp
     src/modules/render/GridRender.cpp
-    src/modules/ConsToPrim.cpp
 )
 
 if(SHAMROCK_USE_SHARED_LIB)

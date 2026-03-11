@@ -18,6 +18,8 @@
 #include "shambackends/kernel_call_distrib.hpp"
 #include "shamcomm/logs.hpp"
 #include "shammath/riemann.hpp"
+#include "shamphys/GRUtils.hpp"
+#include "shamphys/metrics.hpp"
 #include "shamrock/patch/PatchDataField.hpp"
 #include "shamsys/NodeInstance.hpp"
 
@@ -30,10 +32,10 @@ namespace {
 
 } // namespace
 
-namespace shammodels::basegodunov::modules {
+namespace shammodels::sph::modules {
 
-    template<class Tvec>
-    void NodeConsToPrim<Tvec>::_impl_evaluate_internal() {
+    template<class Tvec, class SizeType, class Layout, class Accessor>
+    void NodeConsToPrim<Tvec, SizeType, Layout, Accessor>::_impl_evaluate_internal() {
         auto edges          = get_edges();
         auto &thread_counts = edges.sizes.indexes;
 
@@ -54,6 +56,8 @@ namespace shammodels::basegodunov::modules {
         auto &vel = edges.spans_vel.get_spans();
         auto &u   = edges.spans_u.get_spans();
         auto &P   = edges.spans_P.get_spans();
+
+        auto &gcov = edges.gcov;
 
         auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
 
@@ -78,6 +82,7 @@ namespace shammodels::basegodunov::modules {
                 Tscal sqrt_g         = get_sqrtg(gcov);
                 Tscal inv_sqrt_g     = 1. / sqrt_g;
                 Tscal sqrt_gamma     = get_sqrt_gamma(gcov);
+                Tscal alpha          = get_alpha(gcov);
                 Tscal sqrt_gamma_inv = alpha * inv_sqrt_g;
 
                 // guess enthalpy w, with adiabatic EOS and previous values
@@ -86,9 +91,10 @@ namespace shammodels::basegodunov::modules {
                 // compute u
                 // iterate
                 u32 Niter = 0;
+                Tscal lorentz_factor;
                 do {
                     // get values of density and pressure from alod w
-                    Tscal lorentz_factor
+                    lorentz_factor
                         = sycl::sqrt(1. + sycl::dot(momentum[id_a], momentum[id_a] / (w * w)));
 
                     rho[id_a]   = sqrt_gamma_inv * rhostar[id_a] / lorentz_factor;
@@ -118,12 +124,13 @@ namespace shammodels::basegodunov::modules {
             });
     }
 
-    template<class Tvec>
-    std::string NodeConsToPrim<Tvec>::_impl_get_tex() const {
+    template<class Tvec, class SizeType, class Layout, class Accessor>
+    std::string NodeConsToPrim<Tvec, SizeType, Layout, Accessor>::_impl_get_tex() const {
 
         return "TODO";
     }
 
-} // namespace shammodels::basegodunov::modules
+} // namespace shammodels::sph::modules
 
-template class shammodels::basegodunov::modules::NodeConsToPrim<f64_3>;
+template class shammodels::sph::modules::
+    NodeConsToPrim<f64_3, u32, shamsys::NodeInstance::Layout, shamsys::NodeInstance::Accessor>;
