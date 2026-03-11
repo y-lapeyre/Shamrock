@@ -109,10 +109,12 @@ namespace shammodels::sph::modules {
                 } while (Niter < 100 or converged);
 
                 if (converged) {
-                    Tvec v3d = alpha * momentum[id_a] / (w * lorentz_factor) - betadown;
+                    Tvec betaDOWN  = get_betaDOWN(gcov);
+                    Tvec gammaijUP = get_gammaijUP(gcov);
+                    Tvec v3d       = alpha * momentum[id_a] / (w * lorentz_factor) - betaDOWN;
                     // Raise index from down to up
-                    for (u32 i = 0; i < 4; i++) {
-                        vel[id_a][i] = sycl::dot(gammaijUP[:, i], v3d);
+                    for (u32 i = 0; i < 3; i++) {
+                        vel[id_a][i] = sycl::dot(gammaijUP[i + 1], v3d);
                     }
                 } else {
                     logger::err_ln(
@@ -131,6 +133,3 @@ namespace shammodels::sph::modules {
     }
 
 } // namespace shammodels::sph::modules
-
-template class shammodels::sph::modules::
-    NodeConsToPrim<f64_3, u32, shamsys::NodeInstance::Layout, shamsys::NodeInstance::Accessor>;
