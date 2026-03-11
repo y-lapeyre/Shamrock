@@ -32,13 +32,22 @@
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
 #include <functional>
+#include <stdexcept>
 #include <utility>
 #include <vector>
 
 template<class Tvec, template<class> class SPHKernel>
-void shammodels::gsph::Model<Tvec, SPHKernel>::init_scheduler(u32 crit_split, u32 crit_merge) {
+void shammodels::gsph::Model<Tvec, SPHKernel>::init() {
+
+    if (solver.solver_config.scheduler_conf.split_load_value == 0) {
+        throw shambase::make_except_with_loc<std::invalid_argument>(
+            "Scheduler load value should be greater than 0");
+    }
+
     solver.init_required_fields();
-    ctx.init_sched(crit_split, crit_merge);
+    ctx.init_sched(
+        solver.solver_config.scheduler_conf.split_load_value,
+        solver.solver_config.scheduler_conf.merge_load_value);
 
     using namespace shamrock::patch;
 
@@ -160,21 +169,21 @@ void shammodels::gsph::Model<Tvec, SPHKernel>::add_cube_fcc_3d(
                 patch_coord.lower,
                 patch_coord.upper);
 
-            PatchDataLayer tmp(sched.get_layout_ptr());
+            PatchDataLayer tmp(sched.get_layout_ptr_old());
             tmp.resize(vec_acc.size());
             tmp.fields_raz();
 
             {
-                u32 len = vec_acc.size();
-                PatchDataField<Tvec> &f
-                    = tmp.template get_field<Tvec>(sched.pdl().template get_field_idx<Tvec>("xyz"));
+                u32 len                 = vec_acc.size();
+                PatchDataField<Tvec> &f = tmp.template get_field<Tvec>(
+                    sched.pdl_old().template get_field_idx<Tvec>("xyz"));
                 sycl::buffer<Tvec> buf(vec_acc.data(), len);
                 f.override(buf, len);
             }
 
             {
                 PatchDataField<Tscal> &f = tmp.template get_field<Tscal>(
-                    sched.pdl().template get_field_idx<Tscal>("hpart"));
+                    sched.pdl_old().template get_field_idx<Tscal>("hpart"));
                 using Kernel = SPHKernel<Tscal>;
                 f.override(Kernel::hfactd * dr);
             }
@@ -269,21 +278,21 @@ void shammodels::gsph::Model<Tvec, SPHKernel>::add_cube_hcp_3d(
                 patch_coord.lower,
                 patch_coord.upper);
 
-            PatchDataLayer tmp(sched.get_layout_ptr());
+            PatchDataLayer tmp(sched.get_layout_ptr_old());
             tmp.resize(vec_acc.size());
             tmp.fields_raz();
 
             {
-                u32 len = vec_acc.size();
-                PatchDataField<Tvec> &f
-                    = tmp.template get_field<Tvec>(sched.pdl().template get_field_idx<Tvec>("xyz"));
+                u32 len                 = vec_acc.size();
+                PatchDataField<Tvec> &f = tmp.template get_field<Tvec>(
+                    sched.pdl_old().template get_field_idx<Tvec>("xyz"));
                 sycl::buffer<Tvec> buf(vec_acc.data(), len);
                 f.override(buf, len);
             }
 
             {
                 PatchDataField<Tscal> &f = tmp.template get_field<Tscal>(
-                    sched.pdl().template get_field_idx<Tscal>("hpart"));
+                    sched.pdl_old().template get_field_idx<Tscal>("hpart"));
                 using Kernel = SPHKernel<Tscal>;
                 f.override(Kernel::hfactd * dr);
             }
