@@ -65,7 +65,7 @@ namespace shammodels::sph::modules {
             sham::DDMultiRef{rhostar, momentum, K},
             sham::DDMultiRef{rho, vel, u, P},
             thread_counts,
-            [gamma = this->gamma](
+            [gamma = this->gamma, gcov = edges.gcov](
                 u32 id_a,
                 Tscal *__restrict rhostar,
                 Tvec *__restrict momentum,
@@ -80,7 +80,6 @@ namespace shammodels::sph::modules {
                 // get metric quantities
                 const Tscal sqrt_g         = get_sqrtg(gcov);
                 const Tscal inv_sqrt_g     = 1. / sqrt_g;
-                const Tscal sqrt_gamma     = get_sqrt_gamma(gcov);
                 const Tscal alpha          = get_alpha(gcov);
                 const Tscal sqrt_gamma_inv = alpha * inv_sqrt_g;
                 const Tvec betaUP          = get_betaUP(gcov);
@@ -88,18 +87,19 @@ namespace shammodels::sph::modules {
                 const std::mdspan<Tscal, std::extents<SizeType, 3, 3>, Layout, Accessor> gammaijUP
                     = get_gammaijUP(gcov);
 
-                Tscal pp = 0;
-                for (u32 i = 0; i < 3; i++) {
-                    pp += momentum[id_a][i] * sycl::dot(gammaijUP[i + 1], momentum[id_a]);
-                }
-
-                Tscal lorentz_factor = get_lorentz_factor(momentum[id_a], gcov);
-
-                Tscal rho_a        = rhostar[id_a] * sqrt_gamma_inv / lorentz_factor;
+                Tscal rho_a        = rho[id_a];
                 const Tscal gamfac = gamma / (gamma - 1.);
                 Tscal w            = 1 + gamfac * P[id_a] / rho[id_a]; // initial guess
+                Tscal pp           = 0;
+                for (u32 i = 0; i < 3; i++) {
+                    for (u32 j = 0; j < 3; j++) {
+                        pp += momentum[id_a][i] * gammaijUP(i, j) * momentum[id_a][j];
+                    }
+                }
 
-                Tscal Kstar = K[id_a] + 0.5 * pp / rhostar[id_a];
+                Tscal lorentz_factor = get_lorentz_factor(momentum[id_a], w, gcov);
+
+                // Tscal Kstar = K[id_a] + 0.5 * pp / rhostar[id_a];
 
                 bool converged         = false;
                 constexpr Tscal tol    = Tscal(1e-12);
@@ -111,10 +111,10 @@ namespace shammodels::sph::modules {
                 do {
                     const Tscal w_old = w;
 
-                    lorentz_factor = get_lorentz_factor(momentum[id_a], gcov);
+                    lorentz_factor = get_lorentz_factor(momentum[id_a], w, gcov);
 
                     // eq 97
-                    Tscal rho_a = rhostar[id_a] * sqrt_gamma_inv / lorentz_factor;
+                    rho_a = rhostar[id_a] * sqrt_gamma_inv / lorentz_factor;
 
                     // eq 62
                     P[id_a] = K[id_a] * sycl::pow(rho_a, gamma);
@@ -122,7 +122,7 @@ namespace shammodels::sph::modules {
                     // eq B4
                     const Tscal f = (1. + gamfac * P[id_a] / rho_a) - w_old;
 
-                    // eq B5
+                    // eq B5 ... maybe should use B6
                     const Tscal df = -1
                                      + gamfac
                                            * (1.
@@ -137,19 +137,31 @@ namespace shammodels::sph::modules {
                 } while (Niter < Nitermax and !converged);
 
                 if (converged) {
-                    lorentz_factor = get_lorentz_factor(momentum[id_a], gcov);
-
-                    Tscal rho_a = rhostar[id_a] * sqrt_gamma_inv / lorentz_factor;
-                    P[id_a]     = K[id_a] * sycl::pow(rho_a, gamma);
+                    // compute P, v, u with the last expression of enthalpy
+                    lorentz_factor = get_lorentz_factor(momentum[id_a], w, gcov);
+                    rho_a          = rhostar[id_a] * sqrt_gamma_inv / lorentz_factor;
+                    rho[id_a]      = rho_a;
+                    P[id_a]        = K[id_a] * sycl::pow(rho_a, gamma);
 
                     Tvec v3d = alpha * momentum[id_a] / (w * lorentz_factor) - betaDOWN;
+
                     // Raise index from down to up
                     for (u32 i = 0; i < 3; i++) {
-                        vel[id_a][i] = sycl::dot(gammaijUP[i + 1], v3d);
+                        Tscal vi = 0.;
+                        for (u32 j = 0; j < 3; j++) {
+                            vi += gammaijUP(i, j) * v3d[j];
+                        }
+                        vel[id_a][i] = vi;
                     }
+
+                    u[id_a] = (P[id_a] < Tscal(1e-30)) ? Tscal(0)
+                                                       : P[id_a] / (rho_a * (gamma - Tscal(1)));
                 } else {
                     logger::err_ln(
-                        "GRSPH", "the walpy iterator is not converged after", Niter, "iterations");
+                        "GRSPH",
+                        "the enthalpy iterator is not converged after",
+                        Niter,
+                        "iterations");
                 }
             });
     }
