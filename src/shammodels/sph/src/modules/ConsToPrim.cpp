@@ -77,50 +77,79 @@ namespace shammodels::sph::modules {
                 Tscal *__restrict P) {
                 // on patch, no need of neighbours
 
-                // get metric
-                Tscal sqrt_g         = get_sqrtg(gcov);
-                Tscal inv_sqrt_g     = 1. / sqrt_g;
-                Tscal sqrt_gamma     = get_sqrt_gamma(gcov);
-                Tscal alpha          = get_alpha(gcov);
-                Tscal sqrt_gamma_inv = alpha * inv_sqrt_g;
+                // get metric quantities
+                const Tscal sqrt_g         = get_sqrtg(gcov);
+                const Tscal inv_sqrt_g     = 1. / sqrt_g;
+                const Tscal sqrt_gamma     = get_sqrt_gamma(gcov);
+                const Tscal alpha          = get_alpha(gcov);
+                const Tscal sqrt_gamma_inv = alpha * inv_sqrt_g;
+                const Tvec betaUP          = get_betaUP(gcov);
+                const Tvec betaDOWN        = get_betaDOWN(gcov); // careul cov con
+                const std::mdspan<Tscal, std::extents<SizeType, 3, 3>, Layout, Accessor> gammaijUP
+                    = get_gammaijUP(gcov);
 
-                // guess enthalpy w, with adiabatic EOS and previous values
-                Tscal w        = gamma / (gamma - 1) * P[id_a] / rhostar[id_a];
-                bool converged = false;
+                Tscal pp = 0;
+                for (u32 i = 0; i < 3; i++) {
+                    pp += momentum[id_a][i] * sycl::dot(gammaijUP[i + 1], momentum[id_a]);
+                }
+
+                Tscal lorentz_factor = get_lorentz_factor(momentum[id_a], gcov);
+
+                Tscal rho_a        = rhostar[id_a] * sqrt_gamma_inv / lorentz_factor;
+                const Tscal gamfac = gamma / (gamma - 1.);
+                Tscal w            = 1 + gamfac * P[id_a] / rho[id_a]; // initial guess
+
+                Tscal Kstar = K[id_a] + 0.5 * pp / rhostar[id_a];
+
+                bool converged         = false;
+                constexpr Tscal tol    = Tscal(1e-12);
+                constexpr u32 Nitermax = 100;
                 // compute u
                 // iterate
                 u32 Niter = 0;
-                Tscal lorentz_factor;
+
                 do {
-                    // get values of density and pressure from alod w
-                    lorentz_factor
-                        = sycl::sqrt(1. + sycl::dot(momentum[id_a], momentum[id_a] / (w * w)));
+                    const Tscal w_old = w;
 
-                    rho[id_a]   = sqrt_gamma_inv * rhostar[id_a] / lorentz_factor;
-                    Tscal polyk = 1.;
-                    P[id_a]     = (gamma - 1.) * rho[id_a] * polyk;
+                    lorentz_factor = get_lorentz_factor(momentum[id_a], gcov);
 
-                    Tscal new_w = 1;
+                    // eq 97
+                    Tscal rho_a = rhostar[id_a] * sqrt_gamma_inv / lorentz_factor;
 
-                    converged = sycl::fabs(new_w - w) < 1e-6;
-                    w         = new_w;
+                    // eq 62
+                    P[id_a] = K[id_a] * sycl::pow(rho_a, gamma);
+
+                    // eq B4
+                    const Tscal f = (1. + gamfac * P[id_a] / rho_a) - w_old;
+
+                    // eq B5
+                    const Tscal df = -1
+                                     + gamfac
+                                           * (1.
+                                              - pp * P[id_a]
+                                                    / (lorentz_factor * lorentz_factor * w_old
+                                                       * w_old * w_old * rho_a));
+
+                    w = w_old - f / df;
+
+                    converged = (sycl::fabs(w - w_old) / w < tol);
                     Niter++;
-                } while (Niter < 100 or converged);
+                } while (Niter < Nitermax and !converged);
 
                 if (converged) {
-                    Tvec betaDOWN  = get_betaDOWN(gcov);
-                    Tvec gammaijUP = get_gammaijUP(gcov);
-                    Tvec v3d       = alpha * momentum[id_a] / (w * lorentz_factor) - betaDOWN;
+                    lorentz_factor = get_lorentz_factor(momentum[id_a], gcov);
+
+                    Tscal rho_a = rhostar[id_a] * sqrt_gamma_inv / lorentz_factor;
+                    P[id_a]     = K[id_a] * sycl::pow(rho_a, gamma);
+
+                    Tvec v3d = alpha * momentum[id_a] / (w * lorentz_factor) - betaDOWN;
                     // Raise index from down to up
                     for (u32 i = 0; i < 3; i++) {
                         vel[id_a][i] = sycl::dot(gammaijUP[i + 1], v3d);
                     }
                 } else {
                     logger::err_ln(
-                        "GRSPH",
-                        "the enthalpy iterator is not converged after",
-                        Niter,
-                        "iterations");
+                        "GRSPH", "the walpy iterator is not converged after", Niter, "iterations");
                 }
             });
     }
