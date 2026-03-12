@@ -25,15 +25,14 @@ def SliceByPlot(
 ):
     """Render a slice of the By magnetic field component.
 
-    The MHD solver stores ``B/rho`` (a 3-vector) rather than ``B`` directly,
-    so By is recovered as ``(B/rho)_y * rho``.
+    The MHD solver stores ``B/rho`` (a 3-vector) so By is recovered as ``(B/rho)_y * rho``.
     """
 
     def compute_By_slice(helper):
         def custom_getter(size: int, dic_out: dict) -> np.array:
-            B_over_rho_y = dic_out["B/rho"][:, 1]  # y-component of the stored B/rho vector
-            rho = dic_out["rho"]  # scalar density field
-            return B_over_rho_y * rho  # recover By = (B/rho)_y * rho
+            B_over_rho_y = dic_out["B/rho"][:, 1]  
+            rho = dic_out["rho"]                    
+            return B_over_rho_y * rho               
 
         arr_By = helper.slice_render(
             "custom",
@@ -74,9 +73,7 @@ def SliceBthetaPlot(
 ):
     """Render a slice of the azimuthal magnetic field component B_theta.
 
-    The MHD solver stores ``B/rho`` (a 3-vector) rather than ``B`` directly,
-    so B_theta is recovered as ``(B/rho)_theta * rho``, where the azimuthal
-    projection is ``(-y * Bx + x * By) / r``.
+    the azimuthal projection is ``(-y * Bx + x * By) / r``.
     """
 
     def compute_Btheta_slice(helper):
@@ -138,8 +135,7 @@ def SliceBVerticalShearGradient(
     min_normalization=1e-9,
 ):
     """Render a slice of the vertical shear gradient of the azimuthal magnetic field,
-    ``d(B_theta)/dz``, following the same approach as ``VerticalShearGradient``
-    for velocity.
+    ``d(B_theta)/dz``
 
     ``B_theta`` is recovered from the stored ``B/rho`` field as
     ``(B/rho)_theta * rho``.
