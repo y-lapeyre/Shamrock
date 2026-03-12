@@ -86,7 +86,7 @@ sicte = shamrock.Constants(si)
 codeu = shamrock.UnitSystem(
     unit_time=1.0,
     unit_length=1.0,
-    unit_mass=1.2566370621219e-06,
+    unit_mass=1.2566370621219e-06,  # cgs mess
 )
 ucte = shamrock.Constants(codeu)
 model = shamrock.get_Model_SPH(context=ctx, vector_type="f64_3", sph_kernel=kernel)
@@ -224,8 +224,8 @@ def analysis(ianalysis):
 # Run the simulation
 
 t_sum = 0.0
-t_target = 1
-dt_dump = 0.01
+t_target = 1.0
+dt_dump = 0.1
 
 analysis(0)
 model.do_vtk_dump(f"{sim_name}_{0:05}.vtk", True)
@@ -254,6 +254,8 @@ density_slice_plot.render_all(
     **slice_render_kwargs,
     field_unit="kg.m^-2",
     field_label="$\\int \\rho \\, \\mathrm{{d}} z$",
+    vmin=1e-7,
+    vmax=5e-7,
     cmap="gist_heat",
     cmap_bad_color="black",
 )
@@ -262,16 +264,18 @@ v_y_slice_plot.render_all(
     **slice_render_kwargs,
     field_unit="m.s^-1",
     field_label="$\\mathrm{v}_y$",
-    vmin=0,
-    vmax=0.0008,
+    vmin=-1e-2,
+    vmax=1e-2,
     cmap="seismic",
     cmap_bad_color="black",
 )
 
 by_slice_plot.render_all(
     **slice_render_kwargs,
-    field_unit="code unit",
+    field_unit="T",
     field_label=r"$B_y$",
+    vmin=-1e-6,
+    vmax=1e-6,
     cmap="seismic",
     cmap_bad_color="black",
 )

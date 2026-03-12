@@ -30,9 +30,13 @@ def SliceByPlot(
 
     def compute_By_slice(helper):
         def custom_getter(size: int, dic_out: dict) -> np.array:
-            B_over_rho_y = dic_out["B/rho"][:, 1]  
-            rho = dic_out["rho"]                    
-            return B_over_rho_y * rho               
+            B_over_rho_y = dic_out["B/rho"][:, 1]
+            print("before problem?")
+            pmass = model.get_particle_mass()
+            hfact = model.get_hfact()
+            rho = pmass * (hfact / dic_out["hpart"]) ** 3
+            print("after problem?")
+            return B_over_rho_y * rho
 
         arr_By = helper.slice_render(
             "custom",
