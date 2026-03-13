@@ -294,7 +294,7 @@ if render_gif:
 # %%
 # vy velocity gif
 if render_gif:
-    ani = v_y_slice_plot.render_gif(gif_filename="vy_slice.gif", save_animation=True)
+    ani = v_y_slice_plot.render_gif(gif_filename="vy_slice.gif", save_animation=True, fps=8)
     if ani is not None:
         plt.show()
 
