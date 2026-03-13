@@ -12,8 +12,8 @@
 /**
  * @file ConsToPrim.hpp
  * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
- * @brief get conserved variables (rho*, momentum, entropy) from primitive variables (rho, vel,
- * internal energy)
+ @brief get primitive variables (rho, vel, internal energy) from conserved variables (rho*,
+ momentum, entropy)
  */
 
 #include "shambackends/vec.hpp"
@@ -42,6 +42,7 @@ namespace shammodels::sph::modules {
     X_RO(shamrock::solvergraph::IFieldSpan<Tscal>, spans_rhostar)                                  \
     X_RO(shamrock::solvergraph::IFieldSpan<Tvec>, spans_momentum)                                  \
     X_RO(shamrock::solvergraph::IFieldSpan<Tscal>, spans_K)                                        \
+    X_RO(GcovEdge, gcon)                                                                           \
     X_RO(GcovEdge, gcov)                                                                           \
                                                                                                    \
     /* outputs */                                                                                  \

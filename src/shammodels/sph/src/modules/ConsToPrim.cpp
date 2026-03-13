@@ -57,6 +57,7 @@ namespace shammodels::sph::modules {
         auto &P   = edges.spans_P.get_spans();
 
         auto &gcov = edges.gcov;
+        auto &gcon = edges.gcon;
 
         auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
 
@@ -78,12 +79,12 @@ namespace shammodels::sph::modules {
                 // on patch, no need of neighbours
 
                 // get metric quantities
-                const Tscal sqrt_g         = get_sqrtg(gcov);
+                const Tscal sqrt_g         = get_sqrt_g(vel[id_a], gcov);
                 const Tscal inv_sqrt_g     = 1. / sqrt_g;
-                const Tscal alpha          = get_alpha(gcov);
+                const Tscal alpha          = get_alpha(gcon);
                 const Tscal sqrt_gamma_inv = alpha * inv_sqrt_g;
-                const Tvec betaUP          = get_betaUP(gcov);
-                const Tvec betaDOWN        = get_betaDOWN(gcov); // careul cov con
+                const Tvec betaUP          = get_betaUP(gcon);
+                const Tvec betaDOWN        = get_betaDOWN(gcon);
                 const std::mdspan<Tscal, std::extents<SizeType, 3, 3>, Layout, Accessor> gammaijUP
                     = get_gammaijUP(gcov);
 

@@ -65,8 +65,8 @@ namespace shamphys {
         }
 
         inline static constexpr Tscal GR_dot(
-            Tvec a,
-            Tvec b,
+            std::mdspan<Tscal, std::extents<SizeType, 1, 4>, Layout2, Accessor2> a,
+            std::mdspan<Tscal, std::extents<SizeType, 1, 4>, Layout2, Accessor2> b,
             std::mdspan<Tscal, std::extents<SizeType, 4, 4>, Layout2, Accessor2> gcov) {
 
             Tscal result = 0;
@@ -86,7 +86,7 @@ namespace shamphys {
             Tscal result = 0;
             for (int i = 0; i < 3; i++) {
                 for (int j = 0; j < 3; j++) {
-                    result += gamma_ij(i + 1, j + 1) * a[i] * b[j];
+                    result += gamma_ij(i, j) * a[i] * b[j];
                 }
             }
             return result;
@@ -145,11 +145,12 @@ namespace shamphys {
         inline static constexpr Tscal get_U0(
             Tvec momentum,
             Tscal enthalpy,
-            std::mdspan<Tscal, std::extents<SizeType, 4, 4>, Layout2, Accessor2> gcon) {
+            std::mdspan<Tscal, std::extents<SizeType, 4, 4>, Layout2, Accessor2> gcon,
+            std::mdspan<Tscal, std::extents<SizeType, 4, 4>, Layout2, Accessor2> gcov) {
 
             // U0 = gamma / alpha wrong
             Tscal alpha          = get_alpha(gcon);
-            Tscal lorentz_factor = get_lorentz_factor(momentum, enthalpy);
+            Tscal lorentz_factor = get_lorentz_factor(momentum, enthalpy, gcov);
             return lorentz_factor / alpha;
         }
 
