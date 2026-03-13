@@ -301,6 +301,6 @@ if render_gif:
 # %%
 # By magnetic field gif
 if render_gif:
-    ani = by_slice_plot.render_gif(gif_filename="By_slice.gif", save_animation=True)
+    ani = by_slice_plot.render_gif(gif_filename="By_slice.gif", save_animation=True, fps=8)
     if ani is not None:
         plt.show()
