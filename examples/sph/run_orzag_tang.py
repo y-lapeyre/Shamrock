@@ -287,7 +287,7 @@ by_slice_plot.render_all(
 # %%
 # Density gif
 if render_gif:
-    ani = density_slice_plot.render_gif(gif_filename="rho_slice.gif", save_animation=True)
+    ani = density_slice_plot.render_gif(gif_filename="rho_slice.gif", save_animation=True, fps=8)
     if ani is not None:
         plt.show()
 
