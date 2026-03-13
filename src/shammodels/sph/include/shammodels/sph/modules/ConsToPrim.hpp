@@ -33,6 +33,8 @@ namespace shammodels::sph::modules {
         public:
         NodeConsToPrim(Tscal gamma) : gamma(gamma) {}
 
+        using GcovEdge = std::mdspan<Tscal, std::extents<SizeType, 4, 4>, Layout, Accessor>;
+
 // X_RO(std::mdspan<Tscal, std::extents<SizeType, 4, 4>, Layout, Accessor>, gcov)
 #define NODE_CONS_TO_PRIM(X_RO, X_RW)                                                              \
     /* inputs */                                                                                   \
@@ -40,6 +42,7 @@ namespace shammodels::sph::modules {
     X_RO(shamrock::solvergraph::IFieldSpan<Tscal>, spans_rhostar)                                  \
     X_RO(shamrock::solvergraph::IFieldSpan<Tvec>, spans_momentum)                                  \
     X_RO(shamrock::solvergraph::IFieldSpan<Tscal>, spans_K)                                        \
+    X_RO(GcovEdge, gcov)                                                                           \
                                                                                                    \
     /* outputs */                                                                                  \
     X_RW(shamrock::solvergraph::IFieldSpan<Tscal>, spans_rho)                                      \
