@@ -225,7 +225,7 @@ def analysis(ianalysis):
 
 t_sum = 0.0
 t_target = 1.0
-dt_dump = 0.1
+dt_dump = 0.025
 
 analysis(0)
 model.do_vtk_dump(f"{sim_name}_{0:05}.vtk", True)
