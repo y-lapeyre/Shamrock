@@ -32,6 +32,50 @@ namespace shamrock::sph::mhd {
 
     enum MHDType { Ideal = 0, NonIdeal = 1 };
 
+    template<class Tvec, class Tscal, MHDType MHD_mode = NonIdeal>
+    inline Tvec MagCurrentJ(Tscal m_b, Tvec B_a, Tvec B_b, Tvec nabla_Wab_ha, Tscal sub_fact_a) {
+
+        Tvec J = m_b * sham::inv_sat_zero(sub_fact_a) * sycl::cross(B_a - B_b, nabla_Wab_ha);
+
+        return J;
+    }
+
+    template<class Tvec, class Tscal, MHDType MHD_mode = NonIdeal>
+    inline Tvec WursterD(Tvec B, Tvec J, Tscal etaO, Tscal etaH, Tscal etaAD) {
+
+        Tvec D = etaO * J + etaH * sycl::cross(J, B) + etaAD * sycl::cross(sycl::cross(J, B), B);
+
+        return D;
+    }
+
+    template<class Tvec, class Tscal, MHDType MHD_mode = NonIdeal>
+    inline Tscal u_NI_heating(Tvec D, Tvec J, Tscal rho) {
+
+        return -sycl::dot(D, J) * sham::inv_sat_zero(rho);
+    }
+
+    template<class Tvec, class Tscal, MHDType MHD_mode = NonIdeal>
+    inline Tvec B_NI_terms(
+        Tvec D_a,
+        Tvec D_b,
+        Tscal m_b,
+        Tscal rho_a_sq,
+        Tscal rho_b_sq,
+        Tvec B_a,
+        Tvec B_b,
+        Tscal omega_a,
+        Tscal omega_b,
+        Tvec nabla_Wab_ha,
+        Tvec nabla_Wab_hb) {
+
+        Tscal sub_fact_a = rho_a_sq * omega_a;
+        Tscal sub_fact_b = rho_b_sq * omega_b;
+
+        Tvec acc_a = sham::inv_sat_zero(sub_fact_a) * (sycl::cross(D_a, nabla_Wab_ha));
+        Tvec acc_b = sham::inv_sat_zero(sub_fact_b) * (sycl::cross(D_b, nabla_Wab_hb));
+        return -m_b * (acc_a + acc_b); // mb?
+    }
+
     // mag tension form the Tricco 2023 formula
     template<class Tvec, class Tscal>
     inline Tvec B_dot_grad_W(
