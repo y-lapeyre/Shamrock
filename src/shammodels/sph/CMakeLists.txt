@@ -62,6 +62,7 @@ set(Sources
     src/modules/self_gravity/SGFMMPlummer.cpp
     src/modules/self_gravity/SGSFMMPlummer.cpp
     src/modules/io/VTKDump.cpp
+    src/modules/render/RenderInstanciations.cpp
 )
 
 if(SHAMROCK_USE_SHARED_LIB)

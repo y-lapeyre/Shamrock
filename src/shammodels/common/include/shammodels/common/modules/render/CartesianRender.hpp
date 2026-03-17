@@ -19,7 +19,6 @@
 #include "shambackends/DeviceBuffer.hpp"
 #include "shambackends/typeAliasVec.hpp"
 #include "shambackends/vec.hpp"
-#include "shammodels/sph/SolverConfig.hpp"
 #include "shammodels/common/modules/render/RenderConfig.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
 #include <pybind11/numpy.h>

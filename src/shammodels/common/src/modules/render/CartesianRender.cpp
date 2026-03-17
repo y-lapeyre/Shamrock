@@ -20,6 +20,9 @@
 #include "shammath/AABB.hpp"
 #include "shammodels/common/density.hpp"
 #include "shammodels/common/modules/render/CartesianRender.hpp"
+#include "shamtree/KarrasRadixTreeField.hpp"
+#include "shamtree/RadixTree.hpp"
+#include "shamtree/TreeTraversal.hpp"
 #include "shammodels/common/modules/render/RenderFieldGetter.hpp"
 #include "shamrock/scheduler/SchedulerUtility.hpp"
 
@@ -617,37 +620,3 @@ namespace shammodels::common::modules {
     }
 
 } // namespace shammodels::sph::modules
-
-using namespace shammath;
-template class shammodels::common::modules::CartesianRender<f64_3, f64, M4, shammodels::sph::SolverStorage<f64_3, u32>>;
-template class shammodels::common::modules::CartesianRender<f64_3, f64, M6, shammodels::sph::SolverStorage<f64_3, u32>>;
-template class shammodels::common::modules::CartesianRender<f64_3, f64, M8, shammodels::sph::SolverStorage<f64_3, u32>>;
-
-template class shammodels::common::modules::CartesianRender<f64_3, f64, C2, shammodels::sph::SolverStorage<f64_3, u32>>;
-template class shammodels::common::modules::CartesianRender<f64_3, f64, C4, shammodels::sph::SolverStorage<f64_3, u32>>;
-template class shammodels::common::modules::CartesianRender<f64_3, f64, C6, shammodels::sph::SolverStorage<f64_3, u32>>;
-
-template class shammodels::common::modules::CartesianRender<f64_3, f64_3, M4, shammodels::sph::SolverStorage<f64_3, u32>>;
-template class shammodels::common::modules::CartesianRender<f64_3, f64_3, M6, shammodels::sph::SolverStorage<f64_3, u32>>;
-template class shammodels::common::modules::CartesianRender<f64_3, f64_3, M8, shammodels::sph::SolverStorage<f64_3, u32>>;
-
-template class shammodels::common::modules::CartesianRender<f64_3, f64_3, C2, shammodels::sph::SolverStorage<f64_3, u32>>;
-template class shammodels::common::modules::CartesianRender<f64_3, f64_3, C4, shammodels::sph::SolverStorage<f64_3, u32>>;
-template class shammodels::common::modules::CartesianRender<f64_3, f64_3, C6, shammodels::sph::SolverStorage<f64_3, u32>>;
-
-//gsph
-template class shammodels::common::modules::CartesianRender<f64_3, f64, M4, shammodels::gsph::SolverStorage<f64_3, u32>>;
-template class shammodels::common::modules::CartesianRender<f64_3, f64, M6, shammodels::gsph::SolverStorage<f64_3, u32>>;
-template class shammodels::common::modules::CartesianRender<f64_3, f64, M8, shammodels::gsph::SolverStorage<f64_3, u32>>;
-
-template class shammodels::common::modules::CartesianRender<f64_3, f64, C2, shammodels::gsph::SolverStorage<f64_3, u32>>;
-template class shammodels::common::modules::CartesianRender<f64_3, f64, C4, shammodels::gsph::SolverStorage<f64_3, u32>>;
-template class shammodels::common::modules::CartesianRender<f64_3, f64, C6, shammodels::gsph::SolverStorage<f64_3, u32>>;
-
-template class shammodels::common::modules::CartesianRender<f64_3, f64_3, M4, shammodels::gsph::SolverStorage<f64_3, u32>>;
-template class shammodels::common::modules::CartesianRender<f64_3, f64_3, M6, shammodels::gsph::SolverStorage<f64_3, u32>>;
-template class shammodels::common::modules::CartesianRender<f64_3, f64_3, M8, shammodels::gsph::SolverStorage<f64_3, u32>>;
-
-template class shammodels::common::modules::CartesianRender<f64_3, f64_3, C2, shammodels::gsph::SolverStorage<f64_3, u32>>;
-template class shammodels::common::modules::CartesianRender<f64_3, f64_3, C4, shammodels::gsph::SolverStorage<f64_3, u32>>;
-template class shammodels::common::modules::CartesianRender<f64_3, f64_3, C6, shammodels::gsph::SolverStorage<f64_3, u32>>;

@@ -101,7 +101,6 @@ namespace shammodels::common::modules {
                         cgh.parallel_for(
                             sycl::range<1>{pdat.get_obj_cnt()}, [=](sycl::item<1> item) {
                                 u32 gid = (u32) item.get_id();
-                                using namespace sph;
                                 acc_inv_hpart[gid] = 1.0 / acc_h[gid];
                             });
                     });
@@ -195,38 +194,3 @@ namespace shammodels::common::modules {
         return lambda(field_source_getter);
     }
 } // namespace shammodels::sph::modules
-
-using namespace shammath;
-template class shammodels::common::modules::RenderFieldGetter<f64_3, f64, M4, shammodels::sph::SolverStorage<f64_3, u32>>;
-template class shammodels::common::modules::RenderFieldGetter<f64_3, f64, M6, shammodels::sph::SolverStorage<f64_3, u32>>;
-template class shammodels::common::modules::RenderFieldGetter<f64_3, f64, M8, shammodels::sph::SolverStorage<f64_3, u32>>;
-
-template class shammodels::common::modules::RenderFieldGetter<f64_3, f64, C2, shammodels::sph::SolverStorage<f64_3, u32>>;
-template class shammodels::common::modules::RenderFieldGetter<f64_3, f64, C4, shammodels::sph::SolverStorage<f64_3, u32>>;
-template class shammodels::common::modules::RenderFieldGetter<f64_3, f64, C6, shammodels::sph::SolverStorage<f64_3, u32>>;
-
-template class shammodels::common::modules::RenderFieldGetter<f64_3, f64_3, M4, shammodels::sph::SolverStorage<f64_3, u32>>;
-template class shammodels::common::modules::RenderFieldGetter<f64_3, f64_3, M6, shammodels::sph::SolverStorage<f64_3, u32>>;
-template class shammodels::common::modules::RenderFieldGetter<f64_3, f64_3, M8, shammodels::sph::SolverStorage<f64_3, u32>>;
-
-template class shammodels::common::modules::RenderFieldGetter<f64_3, f64_3, C2, shammodels::sph::SolverStorage<f64_3, u32>>;
-template class shammodels::common::modules::RenderFieldGetter<f64_3, f64_3, C4, shammodels::sph::SolverStorage<f64_3, u32>>;
-template class shammodels::common::modules::RenderFieldGetter<f64_3, f64_3, C6, shammodels::sph::SolverStorage<f64_3, u32>>;
-
-
-//gsph 
-template class shammodels::common::modules::RenderFieldGetter<f64_3, f64, M4, shammodels::gsph::SolverStorage<f64_3, u32>>;
-template class shammodels::common::modules::RenderFieldGetter<f64_3, f64, M6, shammodels::gsph::SolverStorage<f64_3, u32>>;
-template class shammodels::common::modules::RenderFieldGetter<f64_3, f64, M8, shammodels::gsph::SolverStorage<f64_3, u32>>;
-
-template class shammodels::common::modules::RenderFieldGetter<f64_3, f64, C2, shammodels::gsph::SolverStorage<f64_3, u32>>;
-template class shammodels::common::modules::RenderFieldGetter<f64_3, f64, C4, shammodels::gsph::SolverStorage<f64_3, u32>>;
-template class shammodels::common::modules::RenderFieldGetter<f64_3, f64, C6, shammodels::gsph::SolverStorage<f64_3, u32>>;
-
-template class shammodels::common::modules::RenderFieldGetter<f64_3, f64_3, M4, shammodels::gsph::SolverStorage<f64_3, u32>>;
-template class shammodels::common::modules::RenderFieldGetter<f64_3, f64_3, M6, shammodels::gsph::SolverStorage<f64_3, u32>>;
-template class shammodels::common::modules::RenderFieldGetter<f64_3, f64_3, M8, shammodels::gsph::SolverStorage<f64_3, u32>>;
-
-template class shammodels::common::modules::RenderFieldGetter<f64_3, f64_3, C2, shammodels::gsph::SolverStorage<f64_3, u32>>;
-template class shammodels::common::modules::RenderFieldGetter<f64_3, f64_3, C4, shammodels::gsph::SolverStorage<f64_3, u32>>;
-template class shammodels::common::modules::RenderFieldGetter<f64_3, f64_3, C6, shammodels::gsph::SolverStorage<f64_3, u32>>;
