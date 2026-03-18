@@ -277,6 +277,10 @@ namespace shamrock::sph::mhd {
         Tscal mu_0,
         Tscal sigma_mhd,
 
+        Tscal etaO,
+        Tscal etaH,
+        Tscal etaAD,
+
         Tvec &dv_dt,
         Tscal &du_dt,
         Tvec &dB_on_rho_dt,
@@ -445,6 +449,41 @@ namespace shamrock::sph::mhd {
 
         // for conservative checks
         drho_dt += (1. / omega_a) * pmass * sycl::dot(v_ab, r_ab_unit * dWab_a);
+
+        // Non-ideal MHD terms
+        if constexpr (MHD_mode == NonIdeal) {
+
+            Tvec J_a = MagCurrentJ<Tvec, Tscal, MHD_mode>(
+                pmass, B_a, B_b, r_ab_unit * dWab_a, sub_fact_a);
+            Tvec J_b = MagCurrentJ<Tvec, Tscal, MHD_mode>(
+                pmass, B_b, B_a, r_ab_unit * dWab_b, sub_fact_b);
+
+            Tscal etaO_a = 0.0, etaH_a = 0.0, etaAD_a = 0.0;
+            Tscal etaO_b = 0.0, etaH_b = 0.0, etaAD_b = 0.0;
+
+            Tvec D_a = WursterD<Tvec, Tscal, MHD_mode>(B_a, J_a, etaO_a, etaH_a, etaAD_a);
+            Tvec D_b = WursterD<Tvec, Tscal, MHD_mode>(B_b, J_b, etaO_b, etaH_b, etaAD_b);
+
+            Tvec B_NI = B_NI_terms<Tvec, Tscal, MHD_mode>(
+                D_a,
+                D_b,
+                pmass,
+                rho_a_sq,
+                rho_b * rho_b,
+                B_a,
+                B_b,
+                omega_a,
+                omega_b,
+                r_ab_unit * dWab_a,
+                r_ab_unit * dWab_b);
+
+            dB_on_rho_dt += B_NI;
+
+            Tscal u_NI = u_NI_heating<Tvec, Tscal, MHD_mode>(D_a, J_a, rho_a) * 0.5
+                         + u_NI_heating<Tvec, Tscal, MHD_mode>(D_b, J_b, rho_b) * 0.5;
+
+            du_dt += u_NI;
+        }
     }
 
 } // namespace shamrock::sph::mhd
