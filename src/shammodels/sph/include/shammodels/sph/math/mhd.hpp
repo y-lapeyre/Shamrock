@@ -44,7 +44,9 @@ namespace shamrock::sph::mhd {
     template<class Tvec, class Tscal, MHDType MHD_mode = NonIdeal>
     inline Tvec WursterD(Tvec B, Tvec J, Tscal etaO, Tscal etaH, Tscal etaAD) {
 
-        Tvec D = etaO * J + etaH * sycl::cross(J, B) + etaAD * sycl::cross(sycl::cross(J, B), B);
+        Tvec Bhat = B / sycl::length(B);
+        Tvec D    = etaO * J + etaH * sycl::cross(J, Bhat)
+                    + etaAD * sycl::cross(sycl::cross(J, Bhat), Bhat);
 
         return D;
     }
@@ -413,8 +415,9 @@ namespace shamrock::sph::mhd {
         Tvec dB_on_rho_dissipation_term
             = 0.5 * pmass * (rho_diss_term_a + rho_diss_term_b) * (B_a - B_b) * vsig_B;
 
-        dB_on_rho_dt
-            += v_ab * dB_on_rho_induction_term(pmass, rho_a_sq, B_a, omega_a, r_ab_unit * dWab_b);
+        dB_on_rho_dt += v_ab
+                        * dB_on_rho_induction_term(
+                            pmass, rho_a_sq, B_a, omega_a, r_ab_unit * dWab_b); // @@ dWab_a ?
 
         dB_on_rho_dt += dB_on_rho_psi_term(
             pmass,
@@ -458,7 +461,7 @@ namespace shamrock::sph::mhd {
             Tvec J_a = MagCurrentJ<Tvec, Tscal, MHD_mode>(
                 pmass, B_a, B_b, r_ab_unit * dWab_a, sub_fact_a, mu_0);
             Tvec J_b = MagCurrentJ<Tvec, Tscal, MHD_mode>(
-                pmass, B_b, B_a, r_ab_unit * dWab_b, sub_fact_b, mu_0);
+                pmass, B_a, B_b, r_ab_unit * dWab_b, sub_fact_b, mu_0);
 
             Tvec D_a = WursterD<Tvec, Tscal, MHD_mode>(B_a, J_a, etaO, etaH, etaAD);
             Tvec D_b = WursterD<Tvec, Tscal, MHD_mode>(B_b, J_b, etaO, etaH, etaAD);
