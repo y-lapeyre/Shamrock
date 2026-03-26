@@ -33,9 +33,10 @@ namespace shamrock::sph::mhd {
     enum MHDType { Ideal = 0, NonIdeal = 1 };
 
     template<class Tvec, class Tscal, MHDType MHD_mode = NonIdeal>
-    inline Tvec MagCurrentJ(Tscal m_b, Tvec B_a, Tvec B_b, Tvec nabla_Wab_ha, Tscal sub_fact_a) {
+    inline Tvec MagCurrentJ(
+        Tscal m_b, Tvec B_a, Tvec B_b, Tvec nabla_Wab_ha, Tscal sub_fact_a, Tscal mu_0) {
 
-        Tvec J = m_b * sham::inv_sat_zero(sub_fact_a) * sycl::cross(B_a - B_b, nabla_Wab_ha);
+        Tvec J = m_b * sham::inv_sat_zero(sub_fact_a) * sycl::cross(B_a - B_b, nabla_Wab_ha) / mu_0;
 
         return J;
     }
@@ -73,7 +74,7 @@ namespace shamrock::sph::mhd {
 
         Tvec acc_a = sham::inv_sat_zero(sub_fact_a) * (sycl::cross(D_a, nabla_Wab_ha));
         Tvec acc_b = sham::inv_sat_zero(sub_fact_b) * (sycl::cross(D_b, nabla_Wab_hb));
-        return -m_b * (acc_a + acc_b); // mb?
+        return -m_b * (acc_a + acc_b);
     }
 
     // mag tension form the Tricco 2023 formula
@@ -203,7 +204,7 @@ namespace shamrock::sph::mhd {
         Tvec psisubterm_a = ((psi_a) *sham::inv_sat_zero(sub_fact_a)) * nabla_Wab_ha;
         Tvec psisubterm_b = ((psi_b) *sham::inv_sat_zero(sub_fact_b)) * nabla_Wab_hb;
 
-        Tvec psiterm = -m_b * (psisubterm_a + psisubterm_a);
+        Tvec psiterm = -m_b * (psisubterm_a + psisubterm_b);
 
         return psiterm;
     }
@@ -452,17 +453,15 @@ namespace shamrock::sph::mhd {
 
         // Non-ideal MHD terms
         if constexpr (MHD_mode == NonIdeal) {
+            // logger::raw_ln("############# NON IDEAL MHD #############");
 
             Tvec J_a = MagCurrentJ<Tvec, Tscal, MHD_mode>(
-                pmass, B_a, B_b, r_ab_unit * dWab_a, sub_fact_a);
+                pmass, B_a, B_b, r_ab_unit * dWab_a, sub_fact_a, mu_0);
             Tvec J_b = MagCurrentJ<Tvec, Tscal, MHD_mode>(
-                pmass, B_b, B_a, r_ab_unit * dWab_b, sub_fact_b);
+                pmass, B_b, B_a, r_ab_unit * dWab_b, sub_fact_b, mu_0);
 
-            Tscal etaO_a = 0.0, etaH_a = 0.0, etaAD_a = 0.0;
-            Tscal etaO_b = 0.0, etaH_b = 0.0, etaAD_b = 0.0;
-
-            Tvec D_a = WursterD<Tvec, Tscal, MHD_mode>(B_a, J_a, etaO_a, etaH_a, etaAD_a);
-            Tvec D_b = WursterD<Tvec, Tscal, MHD_mode>(B_b, J_b, etaO_b, etaH_b, etaAD_b);
+            Tvec D_a = WursterD<Tvec, Tscal, MHD_mode>(B_a, J_a, etaO, etaH, etaAD);
+            Tvec D_b = WursterD<Tvec, Tscal, MHD_mode>(B_b, J_b, etaO, etaH, etaAD);
 
             Tvec B_NI = B_NI_terms<Tvec, Tscal, MHD_mode>(
                 D_a,

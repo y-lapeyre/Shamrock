@@ -877,6 +877,9 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD_
             shamlog_debug_ln("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@", "");
             shamlog_debug_sycl_ln("deriv kernel", "sigma_mhd  :", _sigma);
             shamlog_debug_sycl_ln("deriv kernel", "alpha_u    :", _alpha_u);
+            shamlog_debug_sycl_ln("deriv kernel", "etaO       :", _etaO);
+            shamlog_debug_sycl_ln("deriv kernel", "etaH       :", _etaH);
+            shamlog_debug_sycl_ln("deriv kernel", "etaAD      :", _etaAD);
             shamlog_debug_ln("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@", "");
 
             tree::ObjectCacheIterator particle_looper(ploop_ptrs);

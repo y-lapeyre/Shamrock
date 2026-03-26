@@ -59,6 +59,11 @@ struct shammodels::sph::MHDConfig {
 
     void set(Variant v) { configMHD = v; }
 
+    inline bool do_NIMHD() {
+        bool is_NIMHD = bool(std::get_if<NonIdealMHD>(&configMHD));
+        return is_NIMHD;
+    }
+
     inline bool has_B_field() {
         bool is_B = bool(std::get_if<IdealMHD_constrained_hyper_para>(&configMHD))
                     || bool(std::get_if<NonIdealMHD>(&configMHD));
