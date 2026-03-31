@@ -1656,10 +1656,7 @@ void shammodels::sph::Solver<Tvec, Kern>::apply_ghost_particles() {
         if (disable_wall *disable_info = std::get_if<disable_wall>(&disable_obj)) {
             logger::raw_ln("Before registering node");
             modules::GetParticlesInWall<Tvec> node_selector(
-                disable_info->pos,
-                disable_info->length,
-                disable_info->width,
-                disable_info->thickness);
+                disable_info->wall_func);
             node_selector.set_edges(xyz_edge, sizes, mask_edge);
 
             logger::raw_ln("Before pushing to seq");

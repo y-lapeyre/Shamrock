@@ -46,21 +46,11 @@ namespace shammodels::sph::modules {
             sham::DDMultiRef{positions},
             sham::DDMultiRef{ghost_mask},
             thread_counts,
-            [wall_pos       = this->wall_pos,
-             wall_length    = this->wall_length,
-             wall_width     = this->wall_width,
-             wall_thickness = this->wall_thickness](
+            [wall_func       = this->wall_func](
                 u32 i, const Tvec *__restrict pos, u32 *__restrict ghost_mask) {
-                Tscal x = pos[i][0];
-                Tscal y = pos[i][1];
-                Tscal z = pos[i][2];
 
-                Tscal x0 = wall_pos[0];
-                Tscal y0 = wall_pos[1];
-                Tscal z0 = wall_pos[2];
 
-                bool in_wall = (x - x0 < wall_length) && (x - x0 > 0) && (y - y0 < wall_width)
-                               && (y - y0 > 0) && (z - z0 < wall_thickness) && (z - z0 > 0);
+                bool in_wall =wall_func(pos[i]);
 
                 if (in_wall) {
                     ghost_mask[i] = 1;
@@ -92,12 +82,12 @@ namespace shammodels::sph::modules {
     \end{align}
     )tex";
 
-        shambase::replace_all(tex, "{x0}", std::to_string(wall_pos[0]));
-        shambase::replace_all(tex, "{y0}", std::to_string(wall_pos[1]));
-        shambase::replace_all(tex, "{z0}", std::to_string(wall_pos[2]));
-        shambase::replace_all(tex, "{wall_length}", std::to_string(wall_length));
-        shambase::replace_all(tex, "{wall_width}", std::to_string(wall_width));
-        shambase::replace_all(tex, "{wall_thickness}", std::to_string(wall_thickness));
+        //shambase::replace_all(tex, "{x0}", std::to_string(wall_pos[0]));
+        //shambase::replace_all(tex, "{y0}", std::to_string(wall_pos[1]));
+        //shambase::replace_all(tex, "{z0}", std::to_string(wall_pos[2]));
+        //shambase::replace_all(tex, "{wall_length}", std::to_string(wall_length));
+        //shambase::replace_all(tex, "{wall_width}", std::to_string(wall_width));
+        //shambase::replace_all(tex, "{wall_thickness}", std::to_string(wall_thickness));
 
         return tex;
     }
