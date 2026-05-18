@@ -7,9 +7,24 @@
 //
 // -------------------------------------------------------//
 
+#pragma once
+
 /**
- * @file term_colors.cpp
+ * @file error_callback.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief
+ * @brief Shared callback type definition for parsing error handling
  *
  */
+
+#include <source_location>
+#include <functional>
+#include <stdexcept>
+
+namespace sham::term {
+
+    /// @brief Callback signature for parsing error reporting (returns what, receives source
+    /// location)
+    using term_parse_callback_t
+        = std::function<std::invalid_argument(const char *what, std::source_location where)>;
+
+} // namespace sham::term
