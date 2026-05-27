@@ -20,6 +20,16 @@ jobs:
 
     timeout-minutes: 120
     steps:
+
+      - name: Debug Codecov token
+        run: |
+          if [ -z "${{ secrets.CODECOV_TOKEN }}" ]; then
+            echo "TOKEN IS EMPTY"
+            exit 1
+          else
+            echo "TOKEN EXISTS"
+          fi
+
       #### Checkout part ####
       # Checkout merge commit if PR otherwise default
       - name: Reconfigure git
