@@ -9,9 +9,11 @@ coverage:
         # Don't fail the status check if coverage decreases.
         informational: true
 
+# PR comment layout
 comment:
-  require_changes: false # always post details even when patch coverage is fully covered
-  layout: "header, diff, flags, components"  # show component info in the PR comment # show component info in the PR comment
+  layout: "diff, components, files"
+  behavior: default
+  require_changes: false
 
 component_management:
 
