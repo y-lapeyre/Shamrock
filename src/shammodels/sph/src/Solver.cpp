@@ -22,13 +22,13 @@
 #include "shambase/string.hpp"
 #include "shambase/time.hpp"
 #include "shamalgs/collective/exchanges.hpp"
+#include "shamalgs/collective/gather_str.hpp"
 #include "shamalgs/collective/reduction.hpp"
 #include "shamalgs/reduction.hpp"
 #include "shambackends/MemPerfInfos.hpp"
 #include "shambackends/details/memoryHandle.hpp"
 #include "shambackends/kernel_call.hpp"
 #include "shambackends/math.hpp"
-#include "shamcomm/collectives.hpp"
 #include "shamcomm/logs.hpp"
 #include "shamcomm/worldInfo.hpp"
 #include "shamcomm/wrapper.hpp"
@@ -112,6 +112,7 @@ void shammodels::sph::Solver<Tvec, Kern>::init_solver_graph() {
     bool has_psi_field                         = solver_config.has_field_psi_on_ch();
     bool has_epsilon_field                     = solver_config.dust_config.has_epsilon_field();
     bool has_deltav_field                      = solver_config.dust_config.has_deltav_field();
+    bool has_s_j_field                         = solver_config.dust_config.has_s_j_field();
 
     using namespace shamrock::solvergraph;
 
@@ -147,6 +148,10 @@ void shammodels::sph::Solver<Tvec, Kern>::init_solver_graph() {
     if (has_deltav_field) {
         solver_graph.register_edge("deltav", FieldRefs<Tvec>("deltav", "\\Delta v"));
         solver_graph.register_edge("dtdeltav", FieldRefs<Tvec>("dtdeltav", "d\\Delta v"));
+    }
+    if (has_s_j_field) {
+        solver_graph.register_edge("s_j", FieldRefs<Tscal>("s_j", "S_j"));
+        solver_graph.register_edge("ds_j_dt", FieldRefs<Tscal>("ds_j_dt", "dS_j/dt"));
     }
 
     {
@@ -330,6 +335,25 @@ void shammodels::sph::Solver<Tvec, Kern>::init_solver_graph() {
             attach_field_sequence.push_back(attach_dtdeltav);
         }
 
+        if (has_s_j_field) {
+            auto attach_s_j
+                = solver_graph.register_node("attach_s_j", GetFieldRefFromLayer<Tscal>(pdl, "s_j"));
+            shambase::get_check_ref(attach_s_j)
+                .set_edges(
+                    solver_graph.get_edge_ptr<PatchDataLayerRefs>("scheduler_patchdata"),
+                    solver_graph.get_edge_ptr<FieldRefs<Tscal>>("s_j"));
+            attach_field_sequence.push_back(attach_s_j);
+        }
+
+        if (has_s_j_field) {
+            auto attach_ds_j_dt = solver_graph.register_node(
+                "attach_ds_j_dt", GetFieldRefFromLayer<Tscal>(pdl, "ds_j_dt"));
+            shambase::get_check_ref(attach_ds_j_dt)
+                .set_edges(
+                    solver_graph.get_edge_ptr<PatchDataLayerRefs>("scheduler_patchdata"),
+                    solver_graph.get_edge_ptr<FieldRefs<Tscal>>("ds_j_dt"));
+            attach_field_sequence.push_back(attach_ds_j_dt);
+        }
         solver_graph.register_node(
             "attach fields to scheduler",
             OperationSequence("attach fields", std::move(attach_field_sequence)));
@@ -414,6 +438,19 @@ void shammodels::sph::Solver<Tvec, Kern>::init_solver_graph() {
                         solver_graph.get_edge_ptr<Indexes<u32>>("part_counts"),
                         solver_graph.get_edge_ptr<FieldRefs<Tvec>>("deltav"));
                 half_step_sequence.push_back(half_step_deltav);
+            }
+
+            if (has_s_j_field) {
+                u32 ndust          = solver_config.dust_config.get_dust_nvar();
+                auto half_step_s_j = solver_graph.register_node(
+                    prefix + "_s_j", shammodels::common::modules::ForwardEuler<Tscal>(ndust));
+                shambase::get_check_ref(half_step_s_j)
+                    .set_edges(
+                        solver_graph.get_edge_ptr<IDataEdge<Tscal>>("dt_half"),
+                        solver_graph.get_edge_ptr<FieldRefs<Tscal>>("ds_j_dt"),
+                        solver_graph.get_edge_ptr<Indexes<u32>>("part_counts"),
+                        solver_graph.get_edge_ptr<FieldRefs<Tscal>>("s_j"));
+                half_step_sequence.push_back(half_step_s_j);
             }
 
             return OperationSequence("half step", std::move(half_step_sequence));
@@ -1269,6 +1306,7 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
     bool has_curlB_field   = solver_config.has_field_curlB();
     bool has_epsilon_field = solver_config.dust_config.has_epsilon_field();
     bool has_deltav_field  = solver_config.dust_config.has_deltav_field();
+    bool has_s_j_field     = solver_config.dust_config.has_s_j_field();
 
     PatchDataLayerLayout &pdl = scheduler().pdl_old();
     const u32 ixyz            = pdl.get_field_idx<Tvec>("xyz");
@@ -1300,6 +1338,7 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
 
     const u32 iepsilon = (has_epsilon_field) ? pdl.get_field_idx<Tscal>("epsilon") : 0;
     const u32 ideltav  = (has_deltav_field) ? pdl.get_field_idx<Tvec>("deltav") : 0;
+    const u32 is_j     = (has_s_j_field) ? pdl.get_field_idx<Tscal>("s_j") : 0;
 
     auto &ghost_layout_ptr                              = storage.ghost_layout;
     shamrock::patch::PatchDataLayerLayout &ghost_layout = shambase::get_check_ref(ghost_layout_ptr);
@@ -1322,6 +1361,7 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
     const u32 iepsilon_interf
         = (has_epsilon_field) ? ghost_layout.get_field_idx<Tscal>("epsilon") : 0;
     const u32 ideltav_interf = (has_deltav_field) ? ghost_layout.get_field_idx<Tvec>("deltav") : 0;
+    const u32 is_j_interf    = (has_s_j_field) ? ghost_layout.get_field_idx<Tscal>("s_j") : 0;
 
     using InterfaceBuildInfos = typename sph::BasicSPHGhostHandler<Tvec>::InterfaceBuildInfos;
 
@@ -1395,6 +1435,11 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
             if (has_deltav_field) {
                 sender_patch.get_field<Tvec>(ideltav).append_subset_to(
                     buf_idx, cnt, pdat.get_field<Tvec>(ideltav_interf));
+            }
+
+            if (has_s_j_field) {
+                sender_patch.get_field<Tscal>(is_j).append_subset_to(
+                    buf_idx, cnt, pdat.get_field<Tscal>(is_j_interf));
             }
         });
 
@@ -1473,6 +1518,10 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
                     pdat_new.get_field<Tvec>(ideltav_interf).insert(pdat.get_field<Tvec>(ideltav));
                 }
 
+                if (has_s_j_field) {
+                    pdat_new.get_field<Tscal>(is_j_interf).insert(pdat.get_field<Tscal>(is_j));
+                }
+
                 pdat_new.check_field_obj_cnt_match();
 
                 return pdat_new;
@@ -1481,8 +1530,8 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
                 pdat.insert_elements(pdat_interf);
             }));
 
-    timer_interf.end();
-    storage.timings_details.interface += timer_interf.elasped_sec();
+    timer_interf.stop();
+    storage.timings_details.interface += timer_interf.elapsed_sec();
 }
 
 template<class Tvec, template<class> class Kern>
@@ -1531,6 +1580,7 @@ void shammodels::sph::Solver<Tvec, Kern>::prepare_corrector() {
     bool has_psi_field     = solver_config.has_field_psi_on_ch();
     bool has_epsilon_field = solver_config.dust_config.has_epsilon_field();
     bool has_deltav_field  = solver_config.dust_config.has_deltav_field();
+    bool has_s_j_field     = solver_config.dust_config.has_s_j_field();
 
     const u32 iduint      = pdl.get_field_idx<Tscal>("duint");
     const u32 iaxyz       = pdl.get_field_idx<Tvec>("axyz");
@@ -1554,6 +1604,10 @@ void shammodels::sph::Solver<Tvec, Kern>::prepare_corrector() {
     if (has_deltav_field) {
         storage.old_dtdeltav.set(
             utility.save_field<Tvec>(pdl.get_field_idx<Tvec>("dtdeltav"), "dtdeltav_old"));
+    }
+    if (has_s_j_field) {
+        storage.old_ds_j_dt.set(
+            utility.save_field<Tscal>(pdl.get_field_idx<Tscal>("ds_j_dt"), "ds_j_dt_old"));
     }
 }
 
@@ -1626,6 +1680,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
     bool has_psi_field     = solver_config.has_field_psi_on_ch();
     bool has_epsilon_field = solver_config.dust_config.has_epsilon_field();
     bool has_deltav_field  = solver_config.dust_config.has_deltav_field();
+    bool has_s_j_field     = solver_config.dust_config.has_s_j_field();
 
     bool do_NIMHD = solver_config.do_NIMHD();
 
@@ -1643,6 +1698,8 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
     const u32 idpsi_on_ch = (has_psi_field) ? pdl.get_field_idx<Tscal>("dpsi/ch") : 0;
     const u32 iepsilon    = (has_epsilon_field) ? pdl.get_field_idx<Tscal>("epsilon") : 0;
     const u32 idtepsilon  = (has_epsilon_field) ? pdl.get_field_idx<Tscal>("dtepsilon") : 0;
+    const u32 is_j        = (has_s_j_field) ? pdl.get_field_idx<Tscal>("s_j") : 0;
+    const u32 ids_j_dt    = (has_s_j_field) ? pdl.get_field_idx<Tscal>("ds_j_dt") : 0;
     const u32 ideltav     = (has_deltav_field) ? pdl.get_field_idx<Tvec>("deltav") : 0;
     const u32 idtdeltav   = (has_deltav_field) ? pdl.get_field_idx<Tvec>("dtdeltav") : 0;
 
@@ -2007,8 +2064,8 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                         mpdat.insert(pdat_interf);
                     });
 
-            time_interf.end();
-            storage.timings_details.interface += time_interf.elasped_sec();
+            time_interf.stop();
+            storage.timings_details.interface += time_interf.elapsed_sec();
 
             storage.alpha_av_ghost.set(std::move(merged_field));
         }
@@ -2188,6 +2245,12 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                 ideltav, idtdeltav, storage.old_dtdeltav.get(), epsilon_deltav_sq, dt / 2);
         }
 
+        if (solver_config.dust_config.has_s_j_field()) {
+            ComputeField<Tscal> s_j_s_j_sq = utility.make_compute_field<Tscal>("s_j s_j^2", 1);
+            utility.fields_leapfrog_corrector<Tscal>(
+                is_j, ids_j_dt, storage.old_ds_j_dt.get(), s_j_s_j_sq, dt / 2);
+        }
+
         storage.old_axyz.reset();
         storage.old_duint.reset();
         if (solver_config.has_field_B_on_rho()) {
@@ -2203,6 +2266,10 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
 
         if (solver_config.dust_config.has_deltav_field()) {
             storage.old_dtdeltav.reset();
+        }
+
+        if (solver_config.dust_config.has_s_j_field()) {
+            storage.old_ds_j_dt.reset();
         }
 
         Tscal rank_veps_v = sycl::sqrt(vepsilon_v_sq.compute_rank_max());
@@ -2672,7 +2739,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
 
     // if delta too big jump to compute force
 
-    tstep.end();
+    tstep.stop();
 
     for (auto it = timestep_callbacks.rbegin(); it != timestep_callbacks.rend(); ++it) {
         if (it->step_end_callback) {
@@ -2694,7 +2761,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                        + (mem_perf_infos_end.time_free_host - mem_perf_infos_start.time_free_host);
 
     u64 rank_count = scheduler().get_rank_count();
-    f64 rate       = f64(rank_count) / tstep.elasped_sec();
+    f64 rate       = f64(rank_count) / tstep.elapsed_sec();
 
     u64 npatch = scheduler().patch_list.local.size();
 
@@ -2704,7 +2771,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
         rate,
         rank_count,
         npatch,
-        tstep.elasped_sec(),
+        tstep.elapsed_sec(),
         delta_mpi_timer,
         t_dev_alloc,
         t_host_alloc,
@@ -2716,7 +2783,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
     if (shamcomm::world_rank() == 0) {
         logger::info_ln("sph::Model", log_step);
         logger::info_ln(
-            "sph::Model", "estimated rate :", dt * (3600 / tstep.elasped_sec()), "(tsim/hr)");
+            "sph::Model", "estimated rate :", dt * (3600 / tstep.elapsed_sec()), "(tsim/hr)");
     }
 
     solve_logs.register_log(
@@ -2725,7 +2792,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
          shamcomm::world_rank(), // i32 world_rank;
          rank_count,             // u64 rank_count;
          rate,                   // f64 rate;
-         tstep.elasped_sec(),    // f64 elasped_sec;
+         tstep.elapsed_sec(),    // f64 elapsed_sec;
          shambase::details::get_wtime(),
          system_metrics_delta});
 
@@ -2763,7 +2830,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
     log.rank     = shamcomm::world_rank();
     log.rate     = rate;
     log.npart    = rank_count;
-    log.tcompute = tstep.elasped_sec();
+    log.tcompute = tstep.elapsed_sec();
 
     return log;
 }
