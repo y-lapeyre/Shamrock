@@ -1303,6 +1303,7 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
 
     bool has_B_field       = solver_config.has_field_B_on_rho();
     bool has_psi_field     = solver_config.has_field_psi_on_ch();
+    bool do_NIMHD          = solver_config.do_NIMHD();
     bool has_curlB_field   = solver_config.has_field_curlB();
     bool has_epsilon_field = solver_config.dust_config.has_epsilon_field();
     bool has_deltav_field  = solver_config.dust_config.has_deltav_field();
@@ -1413,13 +1414,16 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
             if (has_B_field) {
                 sender_patch.get_field<Tvec>(iB_on_rho).append_subset_to(
                     buf_idx, cnt, pdat.get_field<Tvec>(iB_interf));
-                sender_patch.get_field<Tvec>(iJ).append_subset_to(
-                    buf_idx, cnt, pdat.get_field<Tvec>(iJ_interf));
             }
 
             if (has_psi_field) {
                 sender_patch.get_field<Tscal>(ipsi_on_ch)
                     .append_subset_to(buf_idx, cnt, pdat.get_field<Tscal>(ipsi_interf));
+            }
+
+            if (do_NIMHD) {
+                sender_patch.get_field<Tvec>(iJ).append_subset_to(
+                    buf_idx, cnt, pdat.get_field<Tvec>(iJ_interf));
             }
 
             if (has_curlB_field) {
@@ -1497,12 +1501,15 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
 
                 if (has_B_field) {
                     pdat_new.get_field<Tvec>(iB_interf).insert(pdat.get_field<Tvec>(iB_on_rho));
-                    pdat_new.get_field<Tvec>(iJ_interf).insert(pdat.get_field<Tvec>(iJ));
                 }
 
                 if (has_psi_field) {
                     pdat_new.get_field<Tscal>(ipsi_interf)
                         .insert(pdat.get_field<Tscal>(ipsi_on_ch));
+                }
+
+                if (do_NIMHD) {
+                    pdat_new.get_field<Tvec>(iJ_interf).insert(pdat.get_field<Tvec>(iJ));
                 }
 
                 if (has_curlB_field) {
@@ -2564,7 +2571,11 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                     sham::DeviceBuffer<Tscal> &vclean_buf
                         = shambase::get_check_ref(vclean_dt).get_buf_check(cur_p.id_patch);
                     auto vclean = vclean_buf.get_read_access(depends_list);
-                    auto e      = q.submit(depends_list, [&](sycl::handler &cgh) {
+
+                    // first, finish the outer kernel and write in cfl_dt
+                    // then, compute psi_dt and write in cfl_dt
+                    depends_list.add_event(e);
+                    auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
                         Tscal C_cour = solver_config.cfl_config.cfl_cour
                                        * solver_config.time_state.cfl_multiplier;
 
@@ -2582,7 +2593,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                 };
 
                 if (do_NIMHD) {
-
+                    depends_list.add_event(e);
                     auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
                         auto *nimhd = std::get_if<typename MHDConfig<Tvec>::NonIdealMHD>(
                             &solver_config.mhd_config.configMHD);

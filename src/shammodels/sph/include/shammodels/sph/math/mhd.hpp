@@ -35,7 +35,7 @@ namespace shamrock::sph::mhd {
 
     template<class Tvec, class Tscal, MHDType MHD_mode = NonIdeal>
     inline void MagCurrentJ_sum(
-        Tscal m_b, Tvec B_a, Tvec B_b, Tvec nabla_Wab_ha, Tscal sub_fact_a, Tscal mu_0, Tvec J_a) {
+        Tscal m_b, Tvec B_a, Tvec B_b, Tvec nabla_Wab_ha, Tscal sub_fact_a, Tscal mu_0, Tvec &J_a) {
 
         J_a += m_b * sham::inv_sat_zero(sub_fact_a) * sycl::cross(B_a - B_b, nabla_Wab_ha) / mu_0;
     }
@@ -63,8 +63,6 @@ namespace shamrock::sph::mhd {
         Tscal m_b,
         Tscal rho_a_sq,
         Tscal rho_b_sq,
-        Tvec B_a,
-        Tvec B_b,
         Tscal omega_a,
         Tscal omega_b,
         Tvec nabla_Wab_ha,
@@ -474,8 +472,6 @@ namespace shamrock::sph::mhd {
                 pmass,
                 rho_a_sq,
                 rho_b * rho_b,
-                B_a,
-                B_b,
                 omega_a,
                 omega_b,
                 r_ab_unit * dWab_a,

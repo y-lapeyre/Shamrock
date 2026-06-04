@@ -753,18 +753,18 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::compute_J(Tscal mu
     using namespace shamrock::patch;
 
     shamrock::SchedulerUtility utility(scheduler());
-    logger::raw_ln("############ intializing J ############");
-    // storage.MagCurrentJ.set(utility.make_compute_field<Tvec>("MagCurrentJ", 1));
 
     shamrock::patch::PatchDataLayerLayout &ghost_layout
         = shambase::get_check_ref(storage.ghost_layout.get());
     u32 ihpart_interf    = ghost_layout.get_field_idx<Tscal>("hpart");
     u32 iomega_interf    = ghost_layout.get_field_idx<Tscal>("omega");
     u32 iB_on_rho_interf = ghost_layout.get_field_idx<Tvec>("B/rho");
-    u32 iJ_interf        = ghost_layout.get_field_idx<Tvec>("J");
 
     auto &merged_xyzh                                 = storage.merged_xyzh.get();
     shambase::DistributedData<PatchDataLayer> &mpdats = storage.merged_patchdata_ghost.get();
+
+    shamrock::patch::PatchDataLayerLayout &pdl = scheduler().pdl_old();
+    u32 iJ                                     = pdl.get_field_idx<Tvec>("J");
 
     scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
         PatchDataLayer &mpdat = mpdats.get(cur_p.id_patch);
@@ -775,11 +775,10 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::compute_J(Tscal mu
         sham::DeviceBuffer<Tscal> &buf_omega   = mpdat.get_field_buf_ref<Tscal>(iomega_interf);
         sham::DeviceBuffer<Tvec> &buf_B_on_rho = mpdat.get_field_buf_ref<Tvec>(iB_on_rho_interf);
 
-        logger::raw_ln("############ get the buffer J ############");
-        // sham::DeviceBuffer<Tvec>  &buf_J =
-        // storage.MagCurrentJ.get().get_buf_check(cur_p.id_patch);
-        sham::DeviceBuffer<Tvec> &buf_J = mpdat.get_field_buf_ref<Tvec>(iJ_interf);
+        logger::raw_ln("############ get the local buffer J ############");
+        sham::DeviceBuffer<Tvec> &buf_J = pdat.get_field_buf_ref<Tvec>(iJ);
 
+        // get local cache
         tree::ObjectCache &pcache
             = shambase::get_check_ref(storage.neigh_cache).get_cache(cur_p.id_patch);
 
@@ -794,6 +793,8 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::compute_J(Tscal mu
         auto ploop_ptrs = pcache.get_read_access(depends_list);
 
         auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
+            // iterate on local particles
+
             const Tscal pmass = solver_config.gpart_mass;
             const Tscal _mu_0 = mu_0;
 
