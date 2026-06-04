@@ -1322,7 +1322,7 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
 
     const u32 iB_on_rho   = (has_B_field) ? pdl.get_field_idx<Tvec>("B/rho") : 0;
     const u32 idB_on_rho  = (has_B_field) ? pdl.get_field_idx<Tvec>("dB/rho") : 0;
-    const u32 iJ          = (has_B_field) ? pdl.get_field_idx<Tvec>("J") : 0;
+    const u32 iJ          = (do_NIMHD) ? pdl.get_field_idx<Tvec>("J") : 0;
     const u32 ipsi_on_ch  = (has_psi_field) ? pdl.get_field_idx<Tscal>("psi/ch") : 0;
     const u32 idpsi_on_ch = (has_psi_field) ? pdl.get_field_idx<Tscal>("dpsi/ch") : 0;
     const u32 icurlB      = (has_curlB_field) ? pdl.get_field_idx<Tvec>("curlB") : 0;
@@ -1347,7 +1347,6 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
     u32 iuint_interf  = ghost_layout.get_field_idx<Tscal>("uint");
     u32 ivxyz_interf  = ghost_layout.get_field_idx<Tvec>("vxyz");
     u32 iomega_interf = ghost_layout.get_field_idx<Tscal>("omega");
-    u32 iJ_interf     = ghost_layout.get_field_idx<Tvec>("J");
 
     const u32 iaxyz_interf
         = (solver_config.has_axyz_in_ghost()) ? ghost_layout.get_field_idx<Tvec>("axyz") : 0;
@@ -1358,6 +1357,7 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
     const u32 iB_interf     = (has_B_field) ? ghost_layout.get_field_idx<Tvec>("B/rho") : 0;
     const u32 ipsi_interf   = (has_psi_field) ? ghost_layout.get_field_idx<Tscal>("psi/ch") : 0;
     const u32 icurlB_interf = (has_curlB_field) ? ghost_layout.get_field_idx<Tvec>("curlB") : 0;
+    const u32 iJ_interf     = (do_NIMHD) ? ghost_layout.get_field_idx<Tvec>("J") : 0;
 
     const u32 iepsilon_interf
         = (has_epsilon_field) ? ghost_layout.get_field_idx<Tscal>("epsilon") : 0;
