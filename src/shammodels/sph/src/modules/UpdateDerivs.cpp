@@ -738,8 +738,6 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_disc
     });
 }
 
-// ── thin variant-unpacking wrappers ──────────────────────────────────────────
-
 template<class Tvec, template<class> class SPHKernel>
 template<shamrock::sph::mhd::MHDType MHD_mode>
 void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::compute_J(Tscal mu_0) {
