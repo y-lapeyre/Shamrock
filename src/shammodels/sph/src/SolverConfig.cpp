@@ -66,7 +66,6 @@ namespace shammodels::sph {
             pdl.add_field<Tvec>("B/rho", 1);
             pdl.add_field<Tvec>("dB/rho", 1);
             pdl.add_field<Tscal>("drho/dt", 1);
-            pdl.add_field<Tvec>("J", 1);
         }
 
         if (has_field_psi_on_ch()) {
@@ -79,6 +78,10 @@ namespace shammodels::sph {
 
         if (has_field_curlB()) {
             pdl.add_field<Tvec>("curlB", 1);
+        }
+
+        if (do_NIMHD()) {
+            pdl.add_field<Tvec>("J", 1);
         }
 
         if (dust_config.has_epsilon_field()) {
@@ -139,11 +142,14 @@ namespace shammodels::sph {
 
         if (has_field_B_on_rho()) {
             ghost_layout.add_field<Tvec>("B/rho", 1);
-            ghost_layout.add_field<Tvec>("J", 1); // @@@ only for ni mhd
         }
 
         if (has_field_psi_on_ch()) {
             ghost_layout.add_field<Tscal>("psi/ch", 1);
+        }
+
+        if (do_NIMHD()) {
+            ghost_layout.add_field<Tvec>("J", 1); // @@@ only for ni mhd
         }
 
         if (has_field_curlB()) {
