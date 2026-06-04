@@ -2592,7 +2592,8 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                             sycl::range<1>{pdat.get_obj_cnt()}, [=](sycl::item<1> item) {
                                 Tscal h_a = hpart[item];
 
-                                Tscal dt_AD = h_a * h_a / etaAD;
+                                Tscal dt_AD = (etaAD > 0) ? (h_a * h_a / etaAD)
+                                                          : shambase::get_infty<Tscal>();
 
                                 cfl_dt[item] = sycl::min(cfl_dt[item], dt_AD);
                             });

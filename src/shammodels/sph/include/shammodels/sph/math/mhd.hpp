@@ -43,7 +43,7 @@ namespace shamrock::sph::mhd {
     template<class Tvec, class Tscal, MHDType MHD_mode = NonIdeal>
     inline Tvec WursterD(Tvec B, Tvec J, Tscal etaO, Tscal etaH, Tscal etaAD) {
 
-        Tvec Bhat = B / sycl::length(B);
+        Tvec Bhat = B / sham::inv_sat_zero(sycl::length(B));
         Tvec D    = etaO * J + etaH * sycl::cross(J, Bhat)
                     + etaAD * sycl::cross(sycl::cross(J, Bhat), Bhat);
 
@@ -419,7 +419,7 @@ namespace shamrock::sph::mhd {
 
         dB_on_rho_dt += v_ab
                         * dB_on_rho_induction_term(
-                            pmass, rho_a_sq, B_a, omega_a, r_ab_unit * dWab_b); // @@ dWab_a ?
+                            pmass, rho_a_sq, B_a, omega_a, r_ab_unit * dWab_a); // @@@ dWab_b ?
 
         dB_on_rho_dt += dB_on_rho_psi_term(
             pmass,
