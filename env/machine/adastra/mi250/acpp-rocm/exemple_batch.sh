@@ -1,41 +1,36 @@
-#!/bin/bash -l
-#SBATCH --job-name=examplejob   # Job name
-#SBATCH --output=examplejob.o%j # Name of stdout output file
-#SBATCH --error=examplejob.e%j  # Name of stderr error file
-#SBATCH --partition=standard-g  # partition name
-#SBATCH --nodes=1               # Total number of nodes
-#SBATCH --ntasks-per-node=8     # 8 MPI ranks per node, 16 total (2x8)
-#SBATCH --gpus-per-node=8       # Allocate one gpu per MPI rank
-#SBATCH --time=00:10:00       # Run time (d-hh:mm:ss)
-#SBATCH --account=<project account>  # Project for billing
-#
-echo "The job ${SLURM_JOB_ID} is running on these nodes:"
-echo ${SLURM_NODELIST}
-echo
-#
-SHAMROCK_BIN_PATH=<path to folder with binary>
-#
-RSCRIPT=<runscript>
-#
-source activate
-#
-ldd ./shamrock
-
-cat << EOF > select_gpu
 #!/bin/bash
+#SBATCH --account=<project account>
+#SBATCH --job-name=<jobname>
+#SBATCH --constraint=MI250
+#SBATCH --nodes=1
+#SBATCH --exclusive
+#SBATCH --time=01:00:00
+#SBATCH --output=job.%j.out
+#SBATCH --error=job.%j.out   # Same file for both!
 
-export ROCR_VISIBLE_DEVICES=\$SLURM_LOCALID
-exec \$*
-EOF
 
-chmod +x ./select_gpu
+module purge
+source /opt/cray/pe/cpe/24.07/restore_lmod_system_defaults.sh
+# A CrayPE environment version
+module load cpe/24.11
+# An architecture
+module load craype-accel-amd-gfx90a craype-x86-trento
+# A compiler to target the architecture
+module load PrgEnv-cray
+# Some architecture related libraries and tools
+module load amd-mixed/6.4.3
 
-CPU_BIND="map_cpu:49,57,17,25,1,9,33,41"
+module list
 
 export MPICH_GPU_SUPPORT_ENABLED=1
-export ACPP_DEBUG_LEVEL=0
+export SYCL_DEVICE_ALLOCATOR=aligned
+# export OMP_<ICV=XXX>
+WORKDIR=<path-to-Shamrock-build-directory>
 
-#
-srun --cpu-bind=${CPU_BIND} -- \
-    ./select_gpu $SHAMROCK_BIN_PATH/shamrock --force-dgpu-on --sycl-cfg auto:HIP --loglevel 1 --smi \
-    --rscript $RSCRIPT
+. /opt/cray/pe/cpe/24.11/restore_lmod_system_defaults.sh
+
+export SHAM_MAX_ALLOC_SIZE=4294967296
+
+. ./activate
+
+srun --ntasks-per-node=8 --cpus-per-task=8 --threads-per-core=1 --gpus-per-task=1 --gpu-bind=closest -- ./shamrock --smi-full --sycl-cfg auto:HIP --force-dgpu-off --loglevel 1 --rscript runscript.py
