@@ -34,6 +34,8 @@ function setupcompiler {
 
     clone_acpp || return
 
+    local BOOST_ROOT_PATH="${BOOST_ROOT:-/opt/software/gaia/prod/5.0.0/boost-1.88.0-cce-18.0.0-ml3z}"
+
     cmake -S ${ACPP_GIT_DIR} -B ${ACPP_BUILD_DIR} \
         -DCMAKE_INSTALL_PREFIX=${ACPP_INSTALL_DIR} \
         -DROCM_PATH=$ROCM_PATH \
@@ -46,6 +48,7 @@ function setupcompiler {
         -DWITH_OPENCL_BACKEND=OFF \
         -DWITH_LEVEL_ZERO_BACKEND=OFF \
         -DACPP_TARGETS="gfx90a" \
+        -DBOOST_ROOT="${BOOST_ROOT_PATH}" \
         -DBoost_NO_BOOST_CMAKE=TRUE \
         -DBoost_NO_SYSTEM_PATHS=TRUE \
         -DWITH_SSCP_COMPILER=OFF \
