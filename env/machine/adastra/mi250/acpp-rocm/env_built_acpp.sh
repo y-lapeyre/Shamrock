@@ -96,6 +96,7 @@ function shamconfigure {
         -DACPP_PATH="${ACPP_INSTALL_DIR}" \
         -DCMAKE_BUILD_TYPE="${SHAMROCK_BUILD_TYPE}" \
         -DCMAKE_CXX_FLAGS="-march=znver3 -isystem ${CRAY_MPICH_PREFIX}/include" \
+        -DCMAKE_SHARED_LINKER_FLAGS="-L\"${BOOST_SYMLINK_DIR}\" -Wl,-rpath,${BOOST_SYMLINK_DIR}" \
         -DCMAKE_EXE_LINKER_FLAGS="-lpthread -L\"${CRAY_MPICH_PREFIX}/lib\" -lmpi ${PE_MPICH_GTL_DIR_amd_gfx90a} ${PE_MPICH_GTL_LIBS_amd_gfx90a} -L\"${BOOST_SYMLINK_DIR}\" -Wl,-rpath,${BOOST_SYMLINK_DIR}" \
         -DBUILD_TEST=Yes \
         -DCXX_FLAG_ARCH_NATIVE=off \
