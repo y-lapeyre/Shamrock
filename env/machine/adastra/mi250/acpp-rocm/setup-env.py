@@ -9,7 +9,7 @@ from utils.oscmd import *
 from utils.setuparg import *
 
 NAME = "Adastra Intel AdaptiveCpp ROCM/LLVM"
-PATH = "machine/adastra/standard-g/acpp-rocm-llvm"
+PATH = "machine/adastra/acpp-rocm-llvm"
 
 
 def setup(arg: SetupArg, envgen: EnvGen):

@@ -1,5 +1,5 @@
 # Everything before this line will be provided by the new-env script
- 
+
 # ---- Modules ----
 module purge
 module load cpe/25.09
@@ -12,28 +12,24 @@ module load cmake
 module load ninja
 module load CCE-GPU-5.0.0
 module load boost/1.88.0-mpi
- 
+
 # ---- AdaptiveCpp config ----
 export ACPP_VERSION=v24.10.0
 export ACPP_TARGETS="hip:gfx90a"
 export ACPP_GIT_DIR=$BUILD_DIR/.env/acpp-git
 export ACPP_BUILD_DIR=$BUILD_DIR/.env/acpp-builddir
 export ACPP_INSTALL_DIR=$BUILD_DIR/.env/acpp-installdir
- 
+
 export C_INCLUDE_PATH=$ROCM_PATH/llvm/include
 export CPLUS_INCLUDE_PATH=$ROCM_PATH/llvm/include
- 
+
 export MPICH_GPU_SUPPORT_ENABLED=1
 
 export BOOST_ROOT_PATH="${BOOST_ROOT:-/opt/software/gaia/prod/5.0.0/boost-1.88.0-cce-18.0.0-ml3z}"
- 
-# The Boost installation on Adastra only ships tagged library names
-# (libboost_context-mt-x64.so etc.) but ld.lld expects untagged names
-# (libboost_context.so). We create symlinks in a writable directory and
-# prepend it to the linker search path.
 export BOOST_SYMLINK_DIR=$BUILD_DIR/.env/boost-symlinks
- 
+
 function setupboost {
+    # here I lost 2hrs of my life
     mkdir -p "${BOOST_SYMLINK_DIR}"
     for tagged in "${BOOST_ROOT_PATH}/lib"/libboost_*-mt-x64.so; do
         # e.g. libboost_context-mt-x64.so -> libboost_context.so
@@ -44,19 +40,19 @@ function setupboost {
         fi
     done
 }
- 
+
 setupboost
- 
+
 export LD_LIBRARY_PATH="${BOOST_SYMLINK_DIR}:${BOOST_ROOT_PATH}/lib:${LD_LIBRARY_PATH}"
- 
+
 # ---- Compiler setup ----
 function setupcompiler {
     echo " ---- Running AdaptiveCpp compiler setup ----"
     echo " -- Module list"
     module list
- 
+
     clone_acpp || return
- 
+
     cmake -S ${ACPP_GIT_DIR} -B ${ACPP_BUILD_DIR} \
         -DCMAKE_INSTALL_PREFIX=${ACPP_INSTALL_DIR} \
         -DROCM_PATH=$ROCM_PATH \
@@ -75,16 +71,16 @@ function setupcompiler {
         -DBoost_NO_SYSTEM_PATHS=TRUE \
         -DWITH_SSCP_COMPILER=OFF \
         -DLLVM_DIR=${ROCM_PATH}/llvm/lib/cmake/llvm/ || return
- 
+
     (cd ${ACPP_BUILD_DIR} && $MAKE_EXEC "${MAKE_OPT[@]}" && $MAKE_EXEC install) || return
 }
- 
+
 if [ ! -f "$ACPP_INSTALL_DIR/bin/acpp" ]; then
     echo " ----- acpp is not configured, compiling it ... -----"
     setupcompiler || return
     echo " ----- acpp configured ! -----"
 fi
- 
+
 # ---- Shamrock configure ----
 function shamconfigure {
     cmake \
@@ -104,9 +100,8 @@ function shamconfigure {
         -DPYTHON_EXECUTABLE=$(python3 -c "import sys; print(sys.executable)") \
         "${CMAKE_OPT[@]}" || return
 }
- 
+
 # ---- Shamrock build ----
 function shammake {
     (cd $BUILD_DIR && $MAKE_EXEC "${MAKE_OPT[@]}" "${@}") || return
 }
- 
