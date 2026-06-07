@@ -10,6 +10,7 @@ module load rocm
 module load cray-python
 module load cmake
 module load ninja
+module load CCE-GPU-5.0.0
 module load boost/1.88.0-mpi  # CCE-GPU-5.0.0 toolchain
 
 # ---- AdaptiveCpp config ----
