@@ -49,7 +49,8 @@ function setupcompiler {
         -DWITH_LEVEL_ZERO_BACKEND=OFF \
         -DACPP_TARGETS="gfx90a" \
         -DBOOST_ROOT="${BOOST_ROOT_PATH}" \
-        -DBoost_NO_BOOST_CMAKE=TRUE \
+        -DBoost_DIR="${BOOST_ROOT_PATH}/lib/cmake" \
+        -DBoost_NO_BOOST_CMAKE=FALSE \
         -DBoost_NO_SYSTEM_PATHS=TRUE \
         -DWITH_SSCP_COMPILER=OFF \
         -DLLVM_DIR=${ROCM_PATH}/llvm/lib/cmake/llvm/ || return
