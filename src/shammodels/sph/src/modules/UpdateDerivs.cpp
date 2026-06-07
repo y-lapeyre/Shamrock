@@ -743,6 +743,7 @@ template<shamrock::sph::mhd::MHDType MHD_mode>
 void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::compute_J(Tscal mu_0) {
 
     // skip for ideal MHD
+    logger::raw_ln("@@@@@@@@@@@@@@@@@@ stat computing j @@@@@@@@@@@@@@@@@@");
     if constexpr (MHD_mode == shamrock::sph::mhd::MHDType::Ideal) {
         return;
     }
@@ -854,6 +855,8 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::compute_J(Tscal mu
         resulting_events.add_event(e);
         pcache.complete_event_state(resulting_events);
     });
+
+    logger::raw_ln("@@@@@@@@@@@@@@@@@@finished @@@@@@@@@@@@@@@@@@");
 }
 
 template<class Tvec, template<class> class SPHKernel>
@@ -1025,19 +1028,25 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD_
             const Tscal _etaAD   = etaAD;
 
             shamlog_debug_ln("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@", "");
+            logger::raw_ln("44444444 problem loading args ?");
             shamlog_debug_sycl_ln("deriv kernel", "sigma_mhd  :", _sigma);
+            logger::raw_ln("NOPE");
             shamlog_debug_sycl_ln("deriv kernel", "alpha_u    :", _alpha_u);
             shamlog_debug_sycl_ln("deriv kernel", "etaO       :", _etaO);
             shamlog_debug_sycl_ln("deriv kernel", "etaH       :", _etaH);
             shamlog_debug_sycl_ln("deriv kernel", "etaAD      :", _etaAD);
+            logger::raw_ln("NOPE");
             shamlog_debug_ln("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@", "");
 
+            logger::raw_ln("bah alors ?");
             tree::ObjectCacheIterator particle_looper(ploop_ptrs);
+            logger::raw_ln("bah alors ?");
             constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
-
+            logger::raw_ln("bah alors ?");
             shambase::parallel_for(cgh, pdat.get_obj_cnt(), "compute MHD", [=](u64 gid) {
                 u32 id_a = (u32) gid;
 
+                logger::raw_ln("bah alors ????????????????");
                 using namespace shamrock::sph;
 
                 Tscal h_a     = hpart[id_a];
@@ -1048,6 +1057,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD_
                 Tscal omega_a = omega[id_a];
                 Tscal u_a     = u[id_a];
 
+                logger::raw_ln("AAAAAAAAAA");
                 Tvec J_a = (do_NIMHD) ? J_field[id_a] : Tvec({0, 0, 0});
 
                 Tscal rho_a     = rho_h(pmass, h_a, Kernel::hfactd);
@@ -1092,6 +1102,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD_
                     Tscal cs_b    = cs[id_b];
                     Tscal rab     = sycl::sqrt(rab2);
 
+                    logger::raw_ln("BBBBBBBBBBBBB");
                     Tvec J_b = (do_NIMHD) ? J_field[id_b] : Tvec({0, 0, 0});
 
                     Tscal rho_b      = rho_h(pmass, h_b, Kernel::hfactd);
@@ -1103,6 +1114,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD_
                     Tscal Fab_a = Kernel::dW_3d(rab, h_a);
                     Tscal Fab_b = Kernel::dW_3d(rab, h_b);
 
+                    logger::raw_ln("before add_to_derivs_spmhd");
                     shamrock::sph::mhd::add_to_derivs_spmhd<Kernel, Tvec, Tscal, MHD_mode>(
                         pmass,
                         dr,
