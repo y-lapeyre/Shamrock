@@ -24,9 +24,30 @@ export C_INCLUDE_PATH=$ROCM_PATH/llvm/include
 export CPLUS_INCLUDE_PATH=$ROCM_PATH/llvm/include
  
 export MPICH_GPU_SUPPORT_ENABLED=1
- 
+
 export BOOST_ROOT_PATH="${BOOST_ROOT:-/opt/software/gaia/prod/5.0.0/boost-1.88.0-cce-18.0.0-ml3z}"
-export LD_LIBRARY_PATH="${BOOST_ROOT_PATH}/lib:${LD_LIBRARY_PATH}"
+ 
+# The Boost installation on Adastra only ships tagged library names
+# (libboost_context-mt-x64.so etc.) but ld.lld expects untagged names
+# (libboost_context.so). We create symlinks in a writable directory and
+# prepend it to the linker search path.
+export BOOST_SYMLINK_DIR=$BUILD_DIR/.env/boost-symlinks
+ 
+function setupboost {
+    mkdir -p "${BOOST_SYMLINK_DIR}"
+    for tagged in "${BOOST_ROOT_PATH}/lib"/libboost_*-mt-x64.so; do
+        # e.g. libboost_context-mt-x64.so -> libboost_context.so
+        base=$(basename "$tagged")
+        untagged="${base/-mt-x64/}"
+        if [ ! -e "${BOOST_SYMLINK_DIR}/${untagged}" ]; then
+            ln -s "$tagged" "${BOOST_SYMLINK_DIR}/${untagged}"
+        fi
+    done
+}
+ 
+setupboost
+ 
+export LD_LIBRARY_PATH="${BOOST_SYMLINK_DIR}:${BOOST_ROOT_PATH}/lib:${LD_LIBRARY_PATH}"
  
 # ---- Compiler setup ----
 function setupcompiler {
@@ -75,7 +96,7 @@ function shamconfigure {
         -DACPP_PATH="${ACPP_INSTALL_DIR}" \
         -DCMAKE_BUILD_TYPE="${SHAMROCK_BUILD_TYPE}" \
         -DCMAKE_CXX_FLAGS="-march=znver3 -isystem ${CRAY_MPICH_PREFIX}/include" \
-        -DCMAKE_EXE_LINKER_FLAGS="-lpthread -L\"${CRAY_MPICH_PREFIX}/lib\" -lmpi ${PE_MPICH_GTL_DIR_amd_gfx90a} ${PE_MPICH_GTL_LIBS_amd_gfx90a} -L\"${BOOST_ROOT_PATH}/lib\" -Wl,-rpath,${BOOST_ROOT_PATH}/lib" \
+        -DCMAKE_EXE_LINKER_FLAGS="-lpthread -L\"${CRAY_MPICH_PREFIX}/lib\" -lmpi ${PE_MPICH_GTL_DIR_amd_gfx90a} ${PE_MPICH_GTL_LIBS_amd_gfx90a} -L\"${BOOST_SYMLINK_DIR}\" -Wl,-rpath,${BOOST_SYMLINK_DIR}" \
         -DBUILD_TEST=Yes \
         -DCXX_FLAG_ARCH_NATIVE=off \
         -DPYTHON_EXECUTABLE=$(python3 -c "import sys; print(sys.executable)") \
