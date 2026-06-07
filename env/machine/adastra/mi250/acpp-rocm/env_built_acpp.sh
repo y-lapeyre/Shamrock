@@ -1,5 +1,5 @@
 # Everything before this line will be provided by the new-env script
-
+ 
 # ---- Modules ----
 module purge
 module load cpe/25.09
@@ -11,34 +11,31 @@ module load cray-python
 module load cmake
 module load ninja
 module load CCE-GPU-5.0.0
-module load boost/1.88.0-mpi  # CCE-GPU-5.0.0 toolchain
-
+module load boost/1.88.0-mpi
+ 
 # ---- AdaptiveCpp config ----
 export ACPP_VERSION=v24.10.0
 export ACPP_TARGETS="hip:gfx90a"
 export ACPP_GIT_DIR=$BUILD_DIR/.env/acpp-git
 export ACPP_BUILD_DIR=$BUILD_DIR/.env/acpp-builddir
 export ACPP_INSTALL_DIR=$BUILD_DIR/.env/acpp-installdir
-
-# Make ROCm LLVM headers visible to the build
+ 
 export C_INCLUDE_PATH=$ROCM_PATH/llvm/include
 export CPLUS_INCLUDE_PATH=$ROCM_PATH/llvm/include
-
+ 
 export MPICH_GPU_SUPPORT_ENABLED=1
-
+ 
 export BOOST_ROOT_PATH="${BOOST_ROOT:-/opt/software/gaia/prod/5.0.0/boost-1.88.0-cce-18.0.0-ml3z}"
 export LD_LIBRARY_PATH="${BOOST_ROOT_PATH}/lib:${LD_LIBRARY_PATH}"
-
+ 
 # ---- Compiler setup ----
 function setupcompiler {
     echo " ---- Running AdaptiveCpp compiler setup ----"
     echo " -- Module list"
     module list
-
+ 
     clone_acpp || return
-
-    local BOOST_ROOT_PATH="${BOOST_ROOT:-/opt/software/gaia/prod/5.0.0/boost-1.88.0-cce-18.0.0-ml3z}"
-
+ 
     cmake -S ${ACPP_GIT_DIR} -B ${ACPP_BUILD_DIR} \
         -DCMAKE_INSTALL_PREFIX=${ACPP_INSTALL_DIR} \
         -DROCM_PATH=$ROCM_PATH \
@@ -57,16 +54,16 @@ function setupcompiler {
         -DBoost_NO_SYSTEM_PATHS=TRUE \
         -DWITH_SSCP_COMPILER=OFF \
         -DLLVM_DIR=${ROCM_PATH}/llvm/lib/cmake/llvm/ || return
-
+ 
     (cd ${ACPP_BUILD_DIR} && $MAKE_EXEC "${MAKE_OPT[@]}" && $MAKE_EXEC install) || return
 }
-
+ 
 if [ ! -f "$ACPP_INSTALL_DIR/bin/acpp" ]; then
     echo " ----- acpp is not configured, compiling it ... -----"
     setupcompiler || return
     echo " ----- acpp configured ! -----"
 fi
-
+ 
 # ---- Shamrock configure ----
 function shamconfigure {
     cmake \
@@ -78,14 +75,15 @@ function shamconfigure {
         -DACPP_PATH="${ACPP_INSTALL_DIR}" \
         -DCMAKE_BUILD_TYPE="${SHAMROCK_BUILD_TYPE}" \
         -DCMAKE_CXX_FLAGS="-march=znver3 -isystem ${CRAY_MPICH_PREFIX}/include" \
-        -DCMAKE_EXE_LINKER_FLAGS="-lpthread -L\"${CRAY_MPICH_PREFIX}/lib\" -lmpi ${PE_MPICH_GTL_DIR_amd_gfx90a} ${PE_MPICH_GTL_LIBS_amd_gfx90a}" -L\"${BOOST_ROOT_PATH}/lib\" -Wl,-rpath,${BOOST_ROOT_PATH}/lib"\
+        -DCMAKE_EXE_LINKER_FLAGS="-lpthread -L\"${CRAY_MPICH_PREFIX}/lib\" -lmpi ${PE_MPICH_GTL_DIR_amd_gfx90a} ${PE_MPICH_GTL_LIBS_amd_gfx90a} -L\"${BOOST_ROOT_PATH}/lib\" -Wl,-rpath,${BOOST_ROOT_PATH}/lib" \
         -DBUILD_TEST=Yes \
         -DCXX_FLAG_ARCH_NATIVE=off \
         -DPYTHON_EXECUTABLE=$(python3 -c "import sys; print(sys.executable)") \
         "${CMAKE_OPT[@]}" || return
 }
-
+ 
 # ---- Shamrock build ----
 function shammake {
     (cd $BUILD_DIR && $MAKE_EXEC "${MAKE_OPT[@]}" "${@}") || return
 }
+ 
