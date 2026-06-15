@@ -34,16 +34,16 @@ namespace shamrock::sph::mhd {
     enum MHDType { Ideal = 0, NonIdeal = 1 };
 
     template<class Tvec, class Tscal, MHDType MHD_mode = NonIdeal>
-    inline void MagCurrentJ_sum(
-        Tscal m_b, Tvec B_a, Tvec B_b, Tvec nabla_Wab_ha, Tscal sub_fact_a, Tscal mu_0, Tvec J_a) {
+    inline Tvec MagCurrentJ_sum(
+        Tscal m_b, Tvec B_a, Tvec B_b, Tvec nabla_Wab_ha, Tscal sub_fact_a, Tscal mu_0) {
 
-        J_a += m_b * sham::inv_sat_zero(sub_fact_a) * sycl::cross(B_a - B_b, nabla_Wab_ha) / mu_0;
+        return m_b * sham::inv_sat_zero(sub_fact_a) * sycl::cross(B_a - B_b, nabla_Wab_ha) / mu_0;
     }
 
     template<class Tvec, class Tscal, MHDType MHD_mode = NonIdeal>
     inline Tvec WursterD(Tvec B, Tvec J, Tscal etaO, Tscal etaH, Tscal etaAD) {
 
-        Tvec Bhat = B / sham::inv_sat_zero(sycl::length(B));
+        Tvec Bhat = B * sham::inv_sat_zero(sycl::length(B));
         Tvec D    = etaO * J + etaH * sycl::cross(J, Bhat)
                     + etaAD * sycl::cross(sycl::cross(J, Bhat), Bhat);
 

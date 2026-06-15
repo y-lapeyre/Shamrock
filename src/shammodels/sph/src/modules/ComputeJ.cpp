@@ -90,11 +90,16 @@ void shammodels::sph::modules::NodeComputeJ<Tvec, SPHKernel>::_impl_evaluate_int
                 Tvec r_ab_unit    = dr * sham::inv_sat_positive(rab);
                 Tvec nabla_Wab_ha = r_ab_unit * Fab_a;
 
-                shamrock::sph::mhd::MagCurrentJ_sum(
-                    part_mass, B_a, B_b, nabla_Wab_ha, sub_fact_a, mu_0, J_sum);
+                logger::raw_ln("@@@@@@ mu_0", mu_0);
+                logger::raw_ln("@@@@@@ Ba", B_a);
+                logger::raw_ln("@@@@@@ Bb", B_b);
+                logger::raw_ln("@@@@@@ nabla_Wab_ha", nabla_Wab_ha);
+                J_sum += shamrock::sph::mhd::MagCurrentJ_sum(
+                    part_mass, B_a, B_b, nabla_Wab_ha, sub_fact_a, mu_0);
             });
 
             J[id_a] = J_sum;
+            logger::raw_ln("@@@@@@@@@@@@@@@@@@@ J a", J_sum);
         });
 }
 
