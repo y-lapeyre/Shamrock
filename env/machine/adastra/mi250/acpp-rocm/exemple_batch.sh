@@ -9,25 +9,12 @@
 #SBATCH --error=job.%j.out   # Same file for both!
 
 
-module purge
-source /opt/cray/pe/cpe/24.07/restore_lmod_system_defaults.sh
-# A CrayPE environment version
-module load cpe/24.11
-# An architecture
-module load craype-accel-amd-gfx90a craype-x86-trento
-# A compiler to target the architecture
-module load PrgEnv-cray
-# Some architecture related libraries and tools
-module load amd-mixed/6.4.3
-
+. /opt/cray/pe/cpe/25.09/restore_lmod_system_defaults.sh
 module list
 
-export MPICH_GPU_SUPPORT_ENABLED=1
 export SYCL_DEVICE_ALLOCATOR=aligned
-# export OMP_<ICV=XXX>
-WORKDIR=<path-to-Shamrock-build-directory>
 
-. /opt/cray/pe/cpe/24.11/restore_lmod_system_defaults.sh
+WORKDIR=<path-to-Shamrock-build-directory>
 
 export SHAM_MAX_ALLOC_SIZE=4294967296
 
