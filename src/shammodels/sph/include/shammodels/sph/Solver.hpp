@@ -196,7 +196,6 @@ namespace shammodels::sph {
         /// @brief Updates time derivatives and applies external forces
         void update_derivs();
 
-        void compute_J();
         /**
          * @brief
          *
