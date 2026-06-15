@@ -1439,8 +1439,11 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
             if (has_B_field) {
                 sender_patch.get_field<Tvec>(iB_on_rho).append_subset_to(
                     buf_idx, cnt, pdat.get_field<Tvec>(iB_interf));
-                sender_patch.get_field<Tvec>(iJ).append_subset_to(
-                    buf_idx, cnt, pdat.get_field<Tvec>(iJ_interf));
+                // sender_patch.get_field<Tvec>(iJ).append_subset_to(
+                //     buf_idx, cnt, pdat.get_field<Tvec>(iJ_interf));
+                shambase::get_check_ref(storage.MagCurrentJ)
+                    .get(sender)
+                    .append_subset_to(buf_idx, cnt, pdat.get_field<Tvec>(iJ_interf));
             }
 
             if (has_psi_field) {
@@ -1523,7 +1526,9 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
 
                 if (has_B_field) {
                     pdat_new.get_field<Tvec>(iB_interf).insert(pdat.get_field<Tvec>(iB_on_rho));
-                    pdat_new.get_field<Tvec>(iJ_interf).insert(pdat.get_field<Tvec>(iJ));
+                    // pdat_new.get_field<Tvec>(iJ_interf).insert(pdat.get_field<Tvec>(iJ));
+                    pdat_new.get_field<Tvec>(iJ_interf).insert(
+                        shambase::get_check_ref(storage.MagCurrentJ).get(p.id_patch));
                 }
 
                 if (has_psi_field) {
