@@ -739,13 +739,12 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_disc
 }
 
 template<class Tvec, template<class> class SPHKernel>
-template<shamrock::sph::mhd::MHDType MHD_mode>
 void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::compute_J(Tscal mu_0) {
 
     // skip for ideal MHD
-    if constexpr (MHD_mode == shamrock::sph::mhd::MHDType::Ideal) {
-        return;
-    }
+    //if constexpr (MHD_mode == shamrock::sph::mhd::MHDType::Ideal) {
+    //    return;
+    //}
 
     StackEntry stack_loc{};
 
@@ -761,7 +760,9 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::compute_J(Tscal mu
     u32 ihpart_interf    = ghost_layout.get_field_idx<Tscal>("hpart");
     u32 iomega_interf    = ghost_layout.get_field_idx<Tscal>("omega");
     u32 iB_on_rho_interf = ghost_layout.get_field_idx<Tvec>("B/rho");
-    u32 iJ_interf        = ghost_layout.get_field_idx<Tvec>("J");
+
+    PatchDataLayerLayout &pdl = scheduler().pdl_old();
+    u32 iJ        = pdl.get_field_idx<Tvec>("J");
 
     auto &merged_xyzh                                 = storage.merged_xyzh.get();
     shambase::DistributedData<PatchDataLayer> &mpdats = storage.merged_patchdata_ghost.get();
@@ -778,7 +779,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::compute_J(Tscal mu
         logger::raw_ln("############ get the buffer J ############");
         // sham::DeviceBuffer<Tvec>  &buf_J =
         // storage.MagCurrentJ.get().get_buf_check(cur_p.id_patch);
-        sham::DeviceBuffer<Tvec> &buf_J = mpdat.get_field_buf_ref<Tvec>(iJ_interf);
+        sham::DeviceBuffer<Tvec> &buf_J = pdat.get_field_buf_ref<Tvec>(iJ);
 
         tree::ObjectCache &pcache
             = shambase::get_check_ref(storage.neigh_cache).get_cache(cur_p.id_patch);
@@ -790,7 +791,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::compute_J(Tscal mu
         auto hpart      = buf_hpart.get_read_access(depends_list);
         auto omega      = buf_omega.get_read_access(depends_list);
         auto B_on_rho   = buf_B_on_rho.get_read_access(depends_list);
-        auto J_out      = buf_J.get_write_access(depends_list);
+        auto J_out            = buf_J.get_write_access(depends_list);
         auto ploop_ptrs = pcache.get_read_access(depends_list);
 
         auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
@@ -800,7 +801,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::compute_J(Tscal mu
             tree::ObjectCacheIterator particle_looper(ploop_ptrs);
             constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
 
-            shambase::parallel_for(cgh, mpdat.get_obj_cnt(), "compute J", [=](u64 gid) {
+            shambase::parallel_for(cgh, pdat.get_obj_cnt(), "compute J", [=](u64 gid) {
                 u32 id_a = (u32) gid;
 
                 using namespace shamrock::sph;
@@ -854,7 +855,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::compute_J(Tscal mu
         resulting_events.add_event(e);
         pcache.complete_event_state(resulting_events);
     });
-}
+} 
 
 template<class Tvec, template<class> class SPHKernel>
 void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD(IdealMHD cfg) {
@@ -926,7 +927,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD_
 
     // Pre-compute J for all particles
     logger::raw_ln("@@@@@@@@@@@ before compute J @@@@@@@@@@@");
-    compute_J<MHD_mode>(mu_0);
+    //compute_J<MHD_mode>(mu_0);
 
     scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
         PatchDataLayer &mpdat = mpdats.get(cur_p.id_patch);

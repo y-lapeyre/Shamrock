@@ -43,6 +43,8 @@ namespace shammodels::sph::modules {
             : context(context), solver_config(solver_config), storage(storage) {}
 
         void update_derivs();
+        //template<shamrock::sph::mhd::MHDType MHD_mode>
+        void compute_J(Tscal mu_0);
 
         private:
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }
@@ -81,8 +83,6 @@ namespace shammodels::sph::modules {
         void update_derivs_MHD(IdealMHD cfg);
         void update_derivs_MHD(NonIdealMHD cfg);
 
-        template<shamrock::sph::mhd::MHDType MHD_mode>
-        void compute_J(Tscal mu_0);
     };
 
 } // namespace shammodels::sph::modules

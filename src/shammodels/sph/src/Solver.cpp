@@ -1622,6 +1622,15 @@ void shammodels::sph::Solver<Tvec, Kern>::update_derivs() {
 }
 
 template<class Tvec, template<class> class Kern>
+void shammodels::sph::Solver<Tvec, Kern>::compute_J() {
+
+    modules::UpdateDerivs<Tvec, Kern> derivs(context, solver_config, storage);
+    Tscal const mu_0 = solver_config.get_constant_mu_0();
+    derivs.compute_J(mu_0);
+
+}
+
+template<class Tvec, template<class> class Kern>
 bool shammodels::sph::Solver<Tvec, Kern>::apply_corrector(Tscal dt, u64 Npart_all) {
     return false;
 }
@@ -1683,6 +1692,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
     bool has_s_j_field     = solver_config.dust_config.has_s_j_field();
 
     bool do_NIMHD = solver_config.do_NIMHD();
+
 
     PatchDataLayerLayout &pdl = scheduler().pdl_old();
 
@@ -1957,6 +1967,14 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                 "the corrector has made over 50 loops, either their is a bug, either you are using "
                 "a dt that is too large");
         }
+
+        communicate_merge_ghosts_fields();
+
+        modules::UpdateDerivs<Tvec, Kern> derivs(context, solver_config, storage);
+        Tscal const mu_0 = solver_config.get_constant_mu_0();
+        derivs.compute_J(mu_0);
+
+        reset_merge_ghosts_fields();
 
         // communicate fields
         communicate_merge_ghosts_fields();
