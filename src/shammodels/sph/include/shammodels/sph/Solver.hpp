@@ -177,6 +177,9 @@ namespace shammodels::sph {
         /// @brief Updates artificial viscosity coefficients for shock capturing
         void update_artificial_viscosity(Tscal dt);
 
+        /// @brief Updates artificial viscosity coefficients for shock capturing
+        void update_J();
+
         /// @brief Initializes data layout for ghost particle fields
         void init_ghost_layout();
 

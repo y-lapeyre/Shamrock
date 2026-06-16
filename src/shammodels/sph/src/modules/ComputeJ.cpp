@@ -84,22 +84,27 @@ void shammodels::sph::modules::NodeComputeJ<Tvec, SPHKernel>::_impl_evaluate_int
 
                 Tscal rab   = sycl::sqrt(rab2);
                 Tscal rho_b = rho_h(part_mass, h_b, SPHKernel<Tscal>::hfactd);
+                if (h_b == 0) {
+                    logger::raw_ln("@@@@@@ h_b", h_b);
+                    logger::raw_ln("idb", id_b);
+                    logger::raw_ln("@@@@@@ xyz_b", r[id_b]);
+                }
                 Tvec B_b    = B_on_rho[id_b] * rho_b;
 
                 Tscal Fab_a       = SPHKernel<Tscal>::dW_3d(rab, h_a);
                 Tvec r_ab_unit    = dr * sham::inv_sat_positive(rab);
                 Tvec nabla_Wab_ha = r_ab_unit * Fab_a;
 
-                logger::raw_ln("@@@@@@ mu_0", mu_0);
-                logger::raw_ln("@@@@@@ Ba", B_a);
-                logger::raw_ln("@@@@@@ Bb", B_b);
-                logger::raw_ln("@@@@@@ nabla_Wab_ha", nabla_Wab_ha);
+                //logger::raw_ln("@@@@@@ mu_0", mu_0);
+                //logger::raw_ln("@@@@@@ Ba", B_a);
+                //logger::raw_ln("@@@@@@ Bb", B_b);
+                //logger::raw_ln("@@@@@@ nabla_Wab_ha", nabla_Wab_ha);
                 J_sum += shamrock::sph::mhd::MagCurrentJ_sum(
                     part_mass, B_a, B_b, nabla_Wab_ha, sub_fact_a, mu_0);
             });
 
             J[id_a] = J_sum;
-            logger::raw_ln("@@@@@@@@@@@@@@@@@@@ J a", J_sum);
+            //logger::raw_ln("@@@@@@@@@@@@@@@@@@@ J a", J_sum);
         });
 }
 
