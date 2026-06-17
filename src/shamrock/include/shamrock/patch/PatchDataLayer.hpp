@@ -365,8 +365,12 @@ namespace shamrock::patch {
          */
         inline void check_field_obj_cnt_match() {
             u32 cnt = get_obj_cnt();
+            logger::raw_ln("obj count 333333", cnt);
             for (auto &field_var : fields) {
                 field_var.visit([&](auto &field) {
+
+                    logger::raw_ln("obj count field", field.get_obj_cnt());
+                    logger::raw_ln("222222 field name", field.get_name());
                     if (field.get_obj_cnt() != cnt) {
                         throw shambase::make_except_with_loc<std::runtime_error>(
                             "mismatch in obj cnt");

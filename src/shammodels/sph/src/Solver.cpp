@@ -574,7 +574,7 @@ void shammodels::sph::Solver<Tvec, Kern>::init_solver_graph() {
 
     storage.omega = std::make_shared<shamrock::solvergraph::Field<Tscal>>(1, "omega", "\\Omega");
 
-    //torage.MagCurrentJ = std::make_shared<shamrock::solvergraph::Field<Tvec>>(1, "MagCurrentJ", "\\mathbf{J}");
+    storage.MagCurrentJ = std::make_shared<shamrock::solvergraph::Field<Tvec>>(1, "MagCurrentJ", "\\mathbf{J}");
 
     if (solver_config.has_field_alphaAV()) {
         storage.alpha_av_updated = std::make_shared<shamrock::solvergraph::Field<Tscal>>(
@@ -1559,6 +1559,7 @@ void shammodels::sph::Solver<Tvec, Kern>::update_J() {
     using namespace shamrock::patch;
     PatchDataLayerLayout &pdl = scheduler().pdl_old();
 
+    logger::raw_ln("loading B");
     const u32 iB_on_rho   = pdl.get_field_idx<Tvec>("B/rho");
      std::shared_ptr<shamrock::solvergraph::FieldRefs<Tvec>> B_on_rho_edge
             = std::make_shared<shamrock::solvergraph::FieldRefs<Tvec>>("", "");
@@ -1570,9 +1571,16 @@ void shammodels::sph::Solver<Tvec, Kern>::update_J() {
         });
 
     B_on_rho_edge->set_refs(B_on_rho_refs);
+    logger::raw_ln("loaded B");
 
     Tscal const mu_0 = solver_config.get_constant_mu_0();
 
+
+    shambase::get_check_ref(storage.hpart_with_ghosts);
+    logger::raw_ln(" hpart_with_ghosts is OK");
+    shambase::get_check_ref(storage.MagCurrentJ);
+    logger::raw_ln(" MagCurrentJ is OK");
+    // use MagCurrenJ: on active particles (no gz)
     modules::NodeComputeJ<Tvec, Kern> computeJ{solver_config.gpart_mass, mu_0};
     computeJ.set_edges(
         storage.part_counts,
@@ -2015,21 +2023,21 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
             node_copy.evaluate();
         }
 
-//        if (do_NIMHD){
-//
-//            std::shared_ptr<shamrock::solvergraph::PatchDataLayerRefs> patchdatas
-//                = std::make_shared<shamrock::solvergraph::PatchDataLayerRefs>(
-//                    "patchdata_layer_ref", "patchdata_layer_ref");
-//
-//            auto node_set_edge = scheduler().get_node_set_edge_patchdata_layer_refs();
-//            node_set_edge->set_edges(patchdatas);
-//            node_set_edge->evaluate();
-//
-//            shamrock::solvergraph::CopyPatchDataFieldFromLayer<Tvec> node_copy(
-//                scheduler().get_layout_ptr_old(), "J");
-//            node_copy.set_edges(patchdatas, storage.MagCurrentJ);
-//            node_copy.evaluate();
-//        }
+        if (do_NIMHD){
+            // copy J from sched patch data to storage.MagCurrentJ
+            std::shared_ptr<shamrock::solvergraph::PatchDataLayerRefs> patchdatas
+                = std::make_shared<shamrock::solvergraph::PatchDataLayerRefs>(
+                    "patchdata_layer_ref", "patchdata_layer_ref");
+
+            auto node_set_edge = scheduler().get_node_set_edge_patchdata_layer_refs();
+            node_set_edge->set_edges(patchdatas);
+            node_set_edge->evaluate();
+
+            shamrock::solvergraph::CopyPatchDataFieldFromLayer<Tvec> node_copy(
+                scheduler().get_layout_ptr_old(), "J");
+            node_copy.set_edges(patchdatas, storage.MagCurrentJ);
+            node_copy.evaluate();
+        }
 
         if (solver_config.has_field_dtdivv()) {
 
@@ -2130,6 +2138,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
 
             // compute J field
            logger::raw_ln("@@@@@ before update J");
+           //logger::raw_ln("MagCurrentJ size after copy-in = ", storage.MagCurrentJ.size());
            update_J();
            logger::raw_ln("@@@@@ after update J");
 

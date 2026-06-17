@@ -27,12 +27,13 @@ template<class Tvec, template<class> class SPHKernel>
 void shammodels::sph::modules::NodeComputeJ<Tvec, SPHKernel>::_impl_evaluate_internal() {
 
     __shamrock_stack_entry();
-
+    logger::raw_ln("xinside compute J");
     auto edges = get_edges();
 
     auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
-
+    logger::raw_ln("before ensure size");
     edges.J.ensure_sizes(edges.part_counts.indexes);
+    logger::raw_ln("after ensure size");
 
     sham::distributed_data_kernel_call(
         dev_sched,
@@ -56,6 +57,8 @@ void shammodels::sph::modules::NodeComputeJ<Tvec, SPHKernel>::_impl_evaluate_int
 
             using namespace shamrock::sph;
             using namespace shamrock::sph::mhd;
+
+            
             Tvec xyz_a = r[id_a]; // could be recovered from lambda
 
             Tscal h_a  = hpart[id_a];
