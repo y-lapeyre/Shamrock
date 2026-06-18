@@ -800,7 +800,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD_
     u32 ipsi_on_ch_interf = ghost_layout.get_field_idx<Tscal>("psi/ch");
 
     logger::raw_ln("@@@@@@@@@@@ before getting J @@@@@@@@@@@");
-    u32 iJ_interf = ghost_layout.get_field_idx<Tvec>("J");
+    //u32 iJ_interf = ghost_layout.get_field_idx<Tvec>("J");
 
     auto &merged_xyzh                                 = storage.merged_xyzh.get();
     shamrock::solvergraph::Field<Tscal> &omega        = shambase::get_check_ref(storage.omega);
@@ -839,7 +839,11 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD_
         // storage.MagCurrentJ.get().get_buf_check(cur_p.id_patch); // @@@ needs to be communicated
         // in ghosts !!)
 
-        sham::DeviceBuffer<Tvec> &buf_J = mpdat.get_field_buf_ref<Tvec>(iJ_interf);
+        //sham::DeviceBuffer<Tvec> &buf_J = mpdat.get_field_buf_ref<Tvec>(iJ_interf);
+
+        // @@@ how to create an empty buffer 
+        bool do_NIMHD = solver_config.do_NIMHD();
+        sham::DeviceBuffer<Tvec> &buf_J = (do_NIMHD) ? storage.MagCurrentJ_ghost.get().get(cur_p.id_patch).get_buf(): pdat.get_field_buf_ref<Tvec>(idB_on_rho);
 
         tree::ObjectCache &pcache
             = shambase::get_check_ref(storage.neigh_cache).get_cache(cur_p.id_patch);
@@ -861,7 +865,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD_
         auto dB_on_rho  = buf_dB_on_rho.get_write_access(depends_list);
         auto dpsi_on_ch = buf_dpsi_on_ch.get_write_access(depends_list);
         auto drho_dt    = buf_drho_dt.get_write_access(depends_list);
-        auto J_field    = buf_J.get_read_access(depends_list);
+        auto J_field    = (do_NIMHD) ? buf_J.get_read_access(depends_list): nullptr;
 
         Tvec *mag_pressure
             = (do_MHD_debug)
@@ -916,6 +920,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD_
             tree::ObjectCacheIterator particle_looper(ploop_ptrs);
             constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
 
+            logger::raw_ln("before parralel for");
             shambase::parallel_for(cgh, pdat.get_obj_cnt(), "compute MHD", [=](u64 gid) {
                 u32 id_a = (u32) gid;
 
@@ -929,7 +934,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD_
                 Tscal omega_a = omega[id_a];
                 Tscal u_a     = u[id_a];
 
-                Tvec J_a = J_field[id_a];
+                Tvec J_a = (do_NIMHD) ? J_field[id_a]:Tvec{0, 0, 0};
 
                 Tscal rho_a     = rho_h(pmass, h_a, Kernel::hfactd);
                 Tscal rho_a_sq  = rho_a * rho_a;
@@ -973,7 +978,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD_
                     Tscal cs_b    = cs[id_b];
                     Tscal rab     = sycl::sqrt(rab2);
 
-                    Tvec J_b = J_field[id_b];
+                    Tvec J_b = (do_NIMHD) ? J_field[id_b]:Tvec{0, 0, 0};
 
                     Tscal rho_b      = rho_h(pmass, h_b, Kernel::hfactd);
                     Tvec B_b         = B_on_rho[id_b] * rho_b;
@@ -1067,7 +1072,9 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD_
         buf_dB_on_rho.complete_event_state(e);
         buf_dpsi_on_ch.complete_event_state(e);
         buf_drho_dt.complete_event_state(e);
-        buf_J.complete_event_state(e);
+
+        if (do_NIMHD){
+        buf_J.complete_event_state(e);}
 
         if (do_MHD_debug) {
             pdat.get_field_buf_ref<Tvec>(imag_pressure).complete_event_state(e);
