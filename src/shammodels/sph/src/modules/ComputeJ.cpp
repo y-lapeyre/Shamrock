@@ -69,7 +69,7 @@ void shammodels::sph::modules::NodeComputeJ<Tvec, SPHKernel>::_impl_evaluate_int
 
             Tvec B_a         = B_on_rho[id_a] * rho_a;
             Tscal omega_a    = omega[id_a];
-            Tscal sub_fact_a = rho_a_sq * omega_a;
+            Tscal sub_fact_a = rho_a * omega_a;
 
             Tscal part_omega_sum = 0;
             Tvec J_sum{0, 0, 0};
