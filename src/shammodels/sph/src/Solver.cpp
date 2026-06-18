@@ -2005,7 +2005,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
         }
 
         // communicate fields
-        communicate_merge_ghosts_fields(); //problem: communicate before computing J
+        communicate_merge_ghosts_fields(); // is hpart_with_ghosts populated ?
 
         if (solver_config.has_field_alphaAV()) {
 
@@ -2135,6 +2135,14 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
         if(do_NIMHD){
 
             // communicate needed fields (B,b, hb): done just before
+
+            shambase::get_check_ref(storage.hpart_with_ghosts)
+                .set_refs(storage.merged_xyzh.get()
+                              .template map<std::reference_wrapper<PatchDataField<Tscal>>>(
+                                  [&](u64 id, shamrock::patch::PatchDataLayer &mpdat) {
+                                      return std::ref(mpdat.get_field<Tscal>(
+                                          1)); // hpart is at index 1 in merged_xyzh
+                                  }));
 
             // compute J field
            logger::raw_ln("@@@@@ before update J");
@@ -2741,8 +2749,9 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                         cgh.parallel_for(
                             sycl::range<1>{pdat.get_obj_cnt()}, [=](sycl::item<1> item) {
                                 Tscal h_a = hpart[item];
-
-                                Tscal dt_AD = (etaAD > 0) ? (h_a * h_a / etaAD)
+                                Tscal pi = shambase::constants::pi<Tscal>;
+                                Tscal Ch_diff = 1. / (2 * pi);
+                                Tscal dt_AD = (etaAD > 0) ? (Ch_diff * h_a * h_a / etaAD)
                                                           : shambase::get_infty<Tscal>();
 
                                 cfl_dt[item] = sycl::min(cfl_dt[item], dt_AD);
