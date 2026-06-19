@@ -1564,9 +1564,14 @@ void shammodels::sph::Solver<Tvec, Kern>::update_J() {
      std::shared_ptr<shamrock::solvergraph::FieldRefs<Tvec>> B_on_rho_edge
             = std::make_shared<shamrock::solvergraph::FieldRefs<Tvec>>("", "");
 
+    shamrock::patch::PatchDataLayerLayout &ghost_layout
+        = shambase::get_check_ref(storage.ghost_layout.get());
+    u32 iB_on_rho_interf   = ghost_layout.get_field_idx<Tvec>("B/rho") ;
+
+
     shamrock::solvergraph::DDPatchDataFieldRef<Tvec> B_on_rho_refs = {};
     scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
-                auto &field = pdat.get_field<Tvec>(iB_on_rho);
+                auto &field = storage.merged_patchdata_ghost.get().get(p.id_patch).template get_field<Tvec>(iB_on_rho_interf);
                 B_on_rho_refs.add_obj(p.id_patch, std::ref(field));
         });
 
@@ -1574,6 +1579,7 @@ void shammodels::sph::Solver<Tvec, Kern>::update_J() {
     logger::raw_ln("loaded B");
 
     Tscal const mu_0 = solver_config.get_constant_mu_0();
+    Tscal const c    = solver_config.get_constant_c();
 
 
     shambase::get_check_ref(storage.hpart_with_ghosts);
@@ -1581,7 +1587,7 @@ void shammodels::sph::Solver<Tvec, Kern>::update_J() {
     shambase::get_check_ref(storage.MagCurrentJ);
     logger::raw_ln(" MagCurrentJ is OK");
     // use MagCurrenJ: on active particles (no gz)
-    modules::NodeComputeJ<Tvec, Kern> computeJ{solver_config.gpart_mass, mu_0};
+    modules::NodeComputeJ<Tvec, Kern> computeJ{solver_config.gpart_mass, mu_0, c};
     computeJ.set_edges(
         storage.part_counts,
         storage.neigh_cache,

@@ -32,9 +32,10 @@ namespace shammodels::sph::modules {
         static constexpr Tscal kernel_radius = SPHKernel<Tscal>::Rkern;
         Tscal part_mass;
         Tscal mu_0;
+        Tscal c;
 
         public:
-        NodeComputeJ(Tscal part_mass, Tscal mu_0) : part_mass(part_mass), mu_0(mu_0) {}
+        NodeComputeJ(Tscal part_mass, Tscal mu_0, Tscal c) : part_mass(part_mass), mu_0(mu_0), c(c) {}
 
         struct Edges {
             const shamrock::solvergraph::Indexes<u32> &part_counts;
