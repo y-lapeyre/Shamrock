@@ -36,20 +36,19 @@ namespace shamrock::sph::mhd {
     template<class Tvec, class Tscal, MHDType MHD_mode = NonIdeal>
     inline Tvec MagCurrentJ_sum(
         Tscal m_b, Tvec B_a, Tvec B_b, Tvec nabla_Wab_ha, Tscal sub_fact_a, Tscal mu_0) {
-            // ajout 4pi /c
+        // ajout 4pi /c
         return m_b * sham::inv_sat_zero(sub_fact_a) * sycl::cross(B_a - B_b, nabla_Wab_ha) / mu_0;
-        //return {0., 0., 0.};
+        // return {0., 0., 0.};
     }
 
     template<class Tvec, class Tscal, MHDType MHD_mode = NonIdeal>
     inline Tvec WursterD(Tvec B, Tvec J, Tscal etaO, Tscal etaH, Tscal etaAD) {
 
-        
         Tvec Bhat = B * sham::inv_sat_zero(sycl::length(B));
-        //logger::raw_ln("#### Bhat", Bhat);
-        //logger::raw_ln("#### J", J);
-        Tvec D    = etaO * J + etaH * sycl::cross(J, Bhat)
-                    - etaAD * sycl::cross(sycl::cross(J, Bhat), Bhat);
+        // logger::raw_ln("#### Bhat", Bhat);
+        // logger::raw_ln("#### J", J);
+        Tvec D = etaO * J + etaH * sycl::cross(J, Bhat)
+                 - etaAD * sycl::cross(sycl::cross(J, Bhat), Bhat);
 
         return D;
     }
@@ -57,15 +56,14 @@ namespace shamrock::sph::mhd {
     template<class Tvec, class Tscal, MHDType MHD_mode = NonIdeal>
     inline Tscal u_NI_heating(Tvec B, Tvec J, Tscal rho, Tscal etaO, Tscal etaAD) {
 
-        //return sycl::dot(D, J) * sham::inv_sat_zero(rho);
-        Tscal BdB = sycl::dot(B, B);
-        Tscal JdJ = sycl::dot(J, J);
-        Tscal BdJ = sycl::dot(B, J);
+        // return sycl::dot(D, J) * sham::inv_sat_zero(rho);
+        Tscal BdB       = sycl::dot(B, B);
+        Tscal JdJ       = sycl::dot(J, J);
+        Tscal BdJ       = sycl::dot(B, J);
         Tscal BdJBdJhat = sham::inv_sat_zero(BdB) * BdJ * BdJ;
 
         return (etaO * JdJ + etaAD * (JdJ - BdJBdJhat)) * sham::inv_sat_zero(rho);
     }
-
 
     template<class Tvec, class Tscal, MHDType MHD_mode = NonIdeal>
     inline Tvec B_NI_terms(
@@ -84,12 +82,11 @@ namespace shamrock::sph::mhd {
         Tscal sub_fact_a = rho_a_sq * omega_a;
         Tscal sub_fact_b = rho_b_sq * omega_b;
 
-        //logger::raw_ln("####### Da", D_a);
-        //logger::raw_ln("####### Db", D_b);
+        // logger::raw_ln("####### Da", D_a);
+        // logger::raw_ln("####### Db", D_b);
 
         logger::raw_ln("#### Da", D_a);
         logger::raw_ln("#### Db", D_b);
-
 
         Tvec acc_a = sham::inv_sat_zero(sub_fact_a) * (sycl::cross(D_a, nabla_Wab_ha));
         Tvec acc_b = sham::inv_sat_zero(sub_fact_b) * (sycl::cross(D_b, nabla_Wab_hb));
@@ -114,20 +111,20 @@ namespace shamrock::sph::mhd {
         Tscal sub_fact_a = rho_a_sq * omega_a;
         Tscal sub_fact_b = rho_b_sq * omega_b;
 
-        //logger::raw_ln("####### Da", D_a);
-        //logger::raw_ln("####### Db", D_b);
+        // logger::raw_ln("####### Da", D_a);
+        // logger::raw_ln("####### Db", D_b);
 
         Tvec Bhat_a = B_a * sham::inv_sat_zero(sycl::length(B_a));
         Tvec Bhat_b = B_b * sham::inv_sat_zero(sycl::length(B_b));
-        Tvec JcB_a = sycl::cross(J_a, Bhat_a);
-        Tvec JcB_b = sycl::cross(J_b, Bhat_b);
+        Tvec JcB_a  = sycl::cross(J_a, Bhat_a);
+        Tvec JcB_b  = sycl::cross(J_b, Bhat_b);
 
         Tvec JcBcB_a = sycl::cross(JcB_a, Bhat_a);
         Tvec JcBcB_b = sycl::cross(JcB_b, Bhat_b);
 
         Tvec acc_a = sham::inv_sat_zero(sub_fact_a) * eta_AD * sycl::cross(JcBcB_a, nabla_Wab_ha);
         Tvec acc_b = sham::inv_sat_zero(sub_fact_b) * eta_AD * sycl::cross(JcBcB_b, nabla_Wab_hb);
-        return  -m_b * (acc_a + acc_b);
+        return -m_b * (acc_a + acc_b);
     }
 
     // mag tension form the Tricco 2023 formula
@@ -379,8 +376,8 @@ namespace shamrock::sph::mhd {
         Tscal v_shock_b = shamphys::MHD_physics<Tvec, Tscal>::v_shock(cs_b, B_b, rho_b, mu_0);
         Tscal vsig_B    = shamphys::MHD_physics<Tvec, Tscal>::vsigB(v_ab, r_ab_unit);
 
-        Tscal qa_ab = Tscal(0.);//shamrock::sph::q_av(rho_a, vsig_a, v_ab_r_ab);
-        Tscal qb_ab = Tscal(0.);//shamrock::sph::q_av(rho_b, vsig_b, v_ab_r_ab);
+        Tscal qa_ab = Tscal(0.); // shamrock::sph::q_av(rho_a, vsig_a, v_ab_r_ab);
+        Tscal qb_ab = Tscal(0.); // shamrock::sph::q_av(rho_b, vsig_b, v_ab_r_ab);
 
         Tscal AV_P_a = P_a + qa_ab;
         Tscal AV_P_b = P_b + qb_ab;
@@ -399,16 +396,16 @@ namespace shamrock::sph::mhd {
             pmass, B_a, B_b, r_ab_unit * dWab_a, r_ab_unit * dWab_b, sub_fact_a, sub_fact_b, mu_0);
 
         Tvec gas_pressure_pishock = Tvec(0., 0., 0.);
-        //sph::sph_pressure_symetric(
-        //    pmass,
-        //    rho_a_sq,
-        //    rho_b * rho_b,
-        //    AV_P_a,
-        //    AV_P_b,
-        //    omega_a,
-        //    omega_b,
-        //    r_ab_unit * dWab_a,
-        //    r_ab_unit * dWab_b);
+        // sph::sph_pressure_symetric(
+        //     pmass,
+        //     rho_a_sq,
+        //     rho_b * rho_b,
+        //     AV_P_a,
+        //     AV_P_b,
+        //     omega_a,
+        //     omega_b,
+        //     r_ab_unit * dWab_a,
+        //     r_ab_unit * dWab_b);
 
         sum_mag_tension += -B_dot_grad_W(
             pmass,
@@ -523,20 +520,20 @@ namespace shamrock::sph::mhd {
             Tvec D_a = WursterD<Tvec, Tscal, MHD_mode>(B_a, J_a, etaO, etaH, etaAD);
             Tvec D_b = WursterD<Tvec, Tscal, MHD_mode>(B_b, J_b, etaO, etaH, etaAD);
 
-            //Tvec B_NI = B_NI_terms<Tvec, Tscal, MHD_mode>(
-            //    D_a,
-            //    D_b,
-            //    pmass,
-            //    rho_a_sq,
-            //    rho_b * rho_b,
-            //    B_a,
-            //    B_b,
-            //    omega_a,
-            //    omega_b,
-            //    r_ab_unit * dWab_a,
-            //    r_ab_unit * dWab_b);
-//
-            //dB_on_rho_dt += B_NI;
+            // Tvec B_NI = B_NI_terms<Tvec, Tscal, MHD_mode>(
+            //     D_a,
+            //     D_b,
+            //     pmass,
+            //     rho_a_sq,
+            //     rho_b * rho_b,
+            //     B_a,
+            //     B_b,
+            //     omega_a,
+            //     omega_b,
+            //     r_ab_unit * dWab_a,
+            //     r_ab_unit * dWab_b);
+            //
+            // dB_on_rho_dt += B_NI;
 
             Tvec B_NI_ADterm = B_NI_AD<Tvec, Tscal, MHD_mode>(
                 etaAD,
@@ -554,17 +551,17 @@ namespace shamrock::sph::mhd {
 
             logger::raw_ln(B_NI_ADterm);
 
-            //logger::raw_ln("etaAD", etaAD);
-            //logger::raw_ln("J_a", J_a);
-            //logger::raw_ln("J_b", J_b);
-            //logger::raw_ln("pmass", pmass);
-            //logger::raw_ln("rho_a_sq", rho_a_sq);
-            //logger::raw_ln("rho_b", rho_b);
-            //logger::raw_ln("B_a", B_a);
-            //logger::raw_ln("B_b", B_b);
-            //logger::raw_ln("omega_a", omega_a);
-            //logger::raw_ln("omega_b", omega_b);
-            //logger::raw_ln("B_NI_ADterm", B_NI_ADterm);
+            // logger::raw_ln("etaAD", etaAD);
+            // logger::raw_ln("J_a", J_a);
+            // logger::raw_ln("J_b", J_b);
+            // logger::raw_ln("pmass", pmass);
+            // logger::raw_ln("rho_a_sq", rho_a_sq);
+            // logger::raw_ln("rho_b", rho_b);
+            // logger::raw_ln("B_a", B_a);
+            // logger::raw_ln("B_b", B_b);
+            // logger::raw_ln("omega_a", omega_a);
+            // logger::raw_ln("omega_b", omega_b);
+            // logger::raw_ln("B_NI_ADterm", B_NI_ADterm);
 
             dB_on_rho_dt += B_NI_ADterm;
 

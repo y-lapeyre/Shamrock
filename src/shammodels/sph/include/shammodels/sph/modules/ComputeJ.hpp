@@ -35,7 +35,8 @@ namespace shammodels::sph::modules {
         Tscal c;
 
         public:
-        NodeComputeJ(Tscal part_mass, Tscal mu_0, Tscal c) : part_mass(part_mass), mu_0(mu_0), c(c) {}
+        NodeComputeJ(Tscal part_mass, Tscal mu_0, Tscal c)
+            : part_mass(part_mass), mu_0(mu_0), c(c) {}
 
         struct Edges {
             const shamrock::solvergraph::Indexes<u32> &part_counts;

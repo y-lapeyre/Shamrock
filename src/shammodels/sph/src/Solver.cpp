@@ -45,11 +45,11 @@
 #include "shammodels/sph/math/q_ab.hpp"
 #include "shammodels/sph/modules/BuildTrees.hpp"
 #include "shammodels/sph/modules/ComputeEos.hpp"
+#include "shammodels/sph/modules/ComputeJ.hpp"
 #include "shammodels/sph/modules/ComputeLoadBalanceValue.hpp"
 #include "shammodels/sph/modules/ComputeLuminosity.hpp"
 #include "shammodels/sph/modules/ComputeNeighStats.hpp"
 #include "shammodels/sph/modules/ComputeOmega.hpp"
-#include "shammodels/sph/modules/ComputeJ.hpp"
 #include "shammodels/sph/modules/ConservativeCheck.hpp"
 #include "shammodels/sph/modules/DiffOperator.hpp"
 #include "shammodels/sph/modules/DiffOperatorDtDivv.hpp"
@@ -574,7 +574,8 @@ void shammodels::sph::Solver<Tvec, Kern>::init_solver_graph() {
 
     storage.omega = std::make_shared<shamrock::solvergraph::Field<Tscal>>(1, "omega", "\\Omega");
 
-    storage.MagCurrentJ = std::make_shared<shamrock::solvergraph::Field<Tvec>>(1, "MagCurrentJ", "\\mathbf{J}");
+    storage.MagCurrentJ
+        = std::make_shared<shamrock::solvergraph::Field<Tvec>>(1, "MagCurrentJ", "\\mathbf{J}");
 
     if (solver_config.has_field_alphaAV()) {
         storage.alpha_av_updated = std::make_shared<shamrock::solvergraph::Field<Tscal>>(
@@ -591,8 +592,7 @@ void shammodels::sph::Solver<Tvec, Kern>::init_solver_graph() {
         = std::make_shared<shamrock::solvergraph::ExchangeGhostLayer>(storage.ghost_layout);
     storage.exchange_gz_positions
         = std::make_shared<shamrock::solvergraph::ExchangeGhostLayer>(storage.xyzh_ghost_layout);
-    storage.exchange_gz_J
-        = std::make_shared<shamrock::solvergraph::ExchangeGhostField<Tvec>>();
+    storage.exchange_gz_J = std::make_shared<shamrock::solvergraph::ExchangeGhostField<Tvec>>();
 }
 
 template<class Tvec, template<class> class Kern>
@@ -1187,7 +1187,6 @@ void shammodels::sph::Solver<Tvec, Kern>::sph_prestep(Tscal time_val, Tscal dt) 
     });
     hnew_edge->set_refs(hnew_refs);
 
-
     modules::NodeComputeOmega<Tvec, Kern> compute_omega{solver_config.gpart_mass};
     compute_omega.set_edges(
         storage.part_counts,
@@ -1196,7 +1195,6 @@ void shammodels::sph::Solver<Tvec, Kern>::sph_prestep(Tscal time_val, Tscal dt) 
         hnew_edge,
         storage.omega);
     compute_omega.evaluate();
-
 
     if (solver_config.smoothing_length_config.is_density_based_neigh_lim()) {
         // if the h limiter is triggered, omega does not hold it's sense of dh/dr anymore
@@ -1560,27 +1558,27 @@ void shammodels::sph::Solver<Tvec, Kern>::update_J() {
     PatchDataLayerLayout &pdl = scheduler().pdl_old();
 
     logger::raw_ln("loading B");
-    const u32 iB_on_rho   = pdl.get_field_idx<Tvec>("B/rho");
-     std::shared_ptr<shamrock::solvergraph::FieldRefs<Tvec>> B_on_rho_edge
-            = std::make_shared<shamrock::solvergraph::FieldRefs<Tvec>>("", "");
+    const u32 iB_on_rho = pdl.get_field_idx<Tvec>("B/rho");
+    std::shared_ptr<shamrock::solvergraph::FieldRefs<Tvec>> B_on_rho_edge
+        = std::make_shared<shamrock::solvergraph::FieldRefs<Tvec>>("", "");
 
     shamrock::patch::PatchDataLayerLayout &ghost_layout
         = shambase::get_check_ref(storage.ghost_layout.get());
-    u32 iB_on_rho_interf   = ghost_layout.get_field_idx<Tvec>("B/rho") ;
-
+    u32 iB_on_rho_interf = ghost_layout.get_field_idx<Tvec>("B/rho");
 
     shamrock::solvergraph::DDPatchDataFieldRef<Tvec> B_on_rho_refs = {};
     scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
-                auto &field = storage.merged_patchdata_ghost.get().get(p.id_patch).template get_field<Tvec>(iB_on_rho_interf);
-                B_on_rho_refs.add_obj(p.id_patch, std::ref(field));
-        });
+        auto &field = storage.merged_patchdata_ghost.get()
+                          .get(p.id_patch)
+                          .template get_field<Tvec>(iB_on_rho_interf);
+        B_on_rho_refs.add_obj(p.id_patch, std::ref(field));
+    });
 
     B_on_rho_edge->set_refs(B_on_rho_refs);
     logger::raw_ln("loaded B");
 
     Tscal const mu_0 = solver_config.get_constant_mu_0();
     Tscal const c    = solver_config.get_constant_c();
-
 
     shambase::get_check_ref(storage.hpart_with_ghosts);
     logger::raw_ln(" hpart_with_ghosts is OK");
@@ -1598,7 +1596,6 @@ void shammodels::sph::Solver<Tvec, Kern>::update_J() {
         storage.MagCurrentJ);
 
     computeJ.evaluate();
-
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1671,7 +1668,6 @@ void shammodels::sph::Solver<Tvec, Kern>::update_derivs(Tscal dt_hydro) {
     modules::ExternalForces<Tvec, Kern> ext_forces(context, solver_config, storage);
     ext_forces.add_ext_forces();
 }
-
 
 template<class Tvec, template<class> class Kern>
 bool shammodels::sph::Solver<Tvec, Kern>::apply_corrector(Tscal dt, u64 Npart_all) {
@@ -2029,7 +2025,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
             node_copy.evaluate();
         }
 
-        if (do_NIMHD){
+        if (do_NIMHD) {
             // copy J from sched patch data to storage.MagCurrentJ
             std::shared_ptr<shamrock::solvergraph::PatchDataLayerRefs> patchdatas
                 = std::make_shared<shamrock::solvergraph::PatchDataLayerRefs>(
@@ -2092,7 +2088,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
         //         .update_curlB();
         // }
         update_artificial_viscosity(dt);
-        
+
         if (solver_config.has_field_alphaAV()) {
 
             shamrock::solvergraph::Field<Tscal> &comp_field_send
@@ -2138,7 +2134,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
             storage.alpha_av_ghost.set(std::move(merged_field));
         }
 
-        if(do_NIMHD){
+        if (do_NIMHD) {
 
             // communicate needed fields (B,b, hb): done just before
 
@@ -2151,11 +2147,10 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                                   }));
 
             // compute J field
-           logger::raw_ln("@@@@@ before update J");
-           //logger::raw_ln("MagCurrentJ size after copy-in = ", storage.MagCurrentJ.size());
-           update_J();
-           logger::raw_ln("@@@@@ after update J");
-
+            logger::raw_ln("@@@@@ before update J");
+            // logger::raw_ln("MagCurrentJ size after copy-in = ", storage.MagCurrentJ.size());
+            update_J();
+            logger::raw_ln("@@@@@ after update J");
 
             // communicate J field
             shamrock::solvergraph::Field<Tvec> &comp_field_send
@@ -2200,7 +2195,6 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
 
             // we get J with ghosts !
             storage.MagCurrentJ_ghost.set(std::move(merged_field));
-
         }
 
         // compute pressure
@@ -2486,8 +2480,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                     = shambase::get_check_ref(storage.MagCurrentJ);
 
                 scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
-                    sham::DeviceBuffer<Tvec> &buf_J
-                        = pdat.get_field<Tvec>(iJ).get_buf();
+                    sham::DeviceBuffer<Tvec> &buf_J = pdat.get_field<Tvec>(iJ).get_buf();
 
                     sham::DeviceBuffer<Tvec> &buf_MagCurrentJ
                         = MagCurrentJ.get_field(cur_p.id_patch).get_buf();
@@ -2495,7 +2488,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                     auto &q = shamsys::instance::get_compute_scheduler().get_queue();
                     sham::EventList depends_list;
 
-                    auto J         = buf_J.get_write_access(depends_list);
+                    auto J           = buf_J.get_write_access(depends_list);
                     auto MagCurrentJ = buf_MagCurrentJ.get_read_access(depends_list);
 
                     auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
@@ -2755,11 +2748,11 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
 
                         cgh.parallel_for(
                             sycl::range<1>{pdat.get_obj_cnt()}, [=](sycl::item<1> item) {
-                                Tscal h_a = hpart[item];
-                                Tscal pi = shambase::constants::pi<Tscal>;
+                                Tscal h_a     = hpart[item];
+                                Tscal pi      = shambase::constants::pi<Tscal>;
                                 Tscal Ch_diff = 1. / (2 * pi);
-                                Tscal dt_AD = (etaAD > 0) ? (Ch_diff * h_a * h_a / etaAD)
-                                                          : shambase::get_infty<Tscal>();
+                                Tscal dt_AD   = (etaAD > 0) ? (Ch_diff * h_a * h_a / etaAD)
+                                                            : shambase::get_infty<Tscal>();
 
                                 cfl_dt[item] = sycl::min(cfl_dt[item], dt_AD);
                             });

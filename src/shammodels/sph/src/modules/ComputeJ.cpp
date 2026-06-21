@@ -51,7 +51,11 @@ void shammodels::sph::modules::NodeComputeJ<Tvec, SPHKernel>::_impl_evaluate_int
             edges.B_on_rho.get_spans()},
         sham::DDMultiRef{edges.J.get_spans()},
         edges.part_counts.indexes,
-        [part_mass = this->part_mass, mu_0 = this->mu_0, c = this->c, _pi = _pi, Rkern = kernel_radius](
+        [part_mass = this->part_mass,
+         mu_0      = this->mu_0,
+         c         = this->c,
+         _pi       = _pi,
+         Rkern     = kernel_radius](
             u32 id_a,
             const Tvec *r,
             const Tscal *hpart,
@@ -64,10 +68,9 @@ void shammodels::sph::modules::NodeComputeJ<Tvec, SPHKernel>::_impl_evaluate_int
             using namespace shamrock::sph;
             using namespace shamrock::sph::mhd;
 
-            
             Tvec xyz_a = r[id_a]; // could be recovered from lambda
 
-            Tscal h_a  = hpart[id_a];
+            Tscal h_a = hpart[id_a];
 
             Tscal rho_a    = rho_h(part_mass, h_a, SPHKernel<Tscal>::hfactd);
             Tscal rho_a_sq = rho_a * rho_a;
@@ -92,12 +95,12 @@ void shammodels::sph::modules::NodeComputeJ<Tvec, SPHKernel>::_impl_evaluate_int
 
                 Tscal rab   = sycl::sqrt(rab2);
                 Tscal rho_b = rho_h(part_mass, h_b, SPHKernel<Tscal>::hfactd);
-                //if (id_a == 0) {
-                //    logger::raw_ln("@@@@@@ h_b", h_b);
-                //    logger::raw_ln("idb", id_b);
-                //    logger::raw_ln("@@@@@@ xyz_b", r[id_b]);
-                //}
-                Tvec B_b    = B_on_rho[id_b] * rho_b;
+                // if (id_a == 0) {
+                //     logger::raw_ln("@@@@@@ h_b", h_b);
+                //     logger::raw_ln("idb", id_b);
+                //     logger::raw_ln("@@@@@@ xyz_b", r[id_b]);
+                // }
+                Tvec B_b = B_on_rho[id_b] * rho_b;
 
                 Tscal Fab_a       = SPHKernel<Tscal>::dW_3d(rab, h_a);
                 Tvec r_ab_unit    = dr * sham::inv_sat_positive(rab);
@@ -107,26 +110,24 @@ void shammodels::sph::modules::NodeComputeJ<Tvec, SPHKernel>::_impl_evaluate_int
                     part_mass, B_a, B_b, nabla_Wab_ha, sub_fact_a, mu_0);
                 J_sum += fucker;
 
-                //if (id_a == 0) {
-                //    logger::raw_ln("@@@@@@ mu_0", mu_0);
-                //    logger::raw_ln("@@@@@@ Ba", B_a);
-                //    logger::raw_ln("@@@@@@ Bb", B_b);
-                //    logger::raw_ln("@@@@@@ nabla_Wab_ha", nabla_Wab_ha);
-                //    logger::raw_ln("@@@@@@ sub_fact_a", sub_fact_a);
-                //    logger::raw_ln("@@@@@@ fucker", fucker);
-                //    logger::raw_ln("@@@@@ J_sum", J_sum);
-                //}
-        
+                // if (id_a == 0) {
+                //     logger::raw_ln("@@@@@@ mu_0", mu_0);
+                //     logger::raw_ln("@@@@@@ Ba", B_a);
+                //     logger::raw_ln("@@@@@@ Bb", B_b);
+                //     logger::raw_ln("@@@@@@ nabla_Wab_ha", nabla_Wab_ha);
+                //     logger::raw_ln("@@@@@@ sub_fact_a", sub_fact_a);
+                //     logger::raw_ln("@@@@@@ fucker", fucker);
+                //     logger::raw_ln("@@@@@ J_sum", J_sum);
+                // }
             });
 
             J[id_a] = J_sum; //* 4 * _pi / c;
-            //if (id_a == 0) {
-            //    logger::raw_ln("@@@@@@@@@@@@@@@@@@@ J a", J_sum, id_a);
-            //    
-            //}
-
+            // if (id_a == 0) {
+            //     logger::raw_ln("@@@@@@@@@@@@@@@@@@@ J a", J_sum, id_a);
+            //
+            // }
         });
-    //std::abort();
+    // std::abort();
 }
 
 template<class Tvec, template<class> class SPHKernel>
