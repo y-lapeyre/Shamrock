@@ -2,15 +2,14 @@ import argparse
 import os
 
 import utils.amd_arch
-import utils.cuda_arch
 import utils.envscript
 import utils.intel_llvm
 import utils.sysinfo
 from utils.oscmd import *
 from utils.setuparg import *
 
-NAME = "UGA Kraken GPU H100 cluster"
-PATH = "uga/kraken-gpu"
+NAME = "Adastra Intel AdaptiveCpp ROCM/LLVM"
+PATH = "machine/adastra/mi250/acpp-rocm-llvm"
 
 
 def setup(arg: SetupArg, envgen: EnvGen):
@@ -20,13 +19,18 @@ def setup(arg: SetupArg, envgen: EnvGen):
     buildtype = arg.buildtype
     lib_mode = arg.lib_mode
 
+    # Get current file path
+    cur_file = os.path.realpath(os.path.expanduser(__file__))
+
     parser = argparse.ArgumentParser(prog=PATH, description=NAME + " env for Shamrock")
-
     args = parser.parse_args(argv)
-
     args.gen = "ninja"
 
     gen, gen_opt, cmake_gen, cmake_build_type = utils.sysinfo.select_generator(args, buildtype)
+
+    ##############################
+    # Generate env script header
+    ##############################
 
     cmake_extra_args = ""
 
@@ -41,8 +45,9 @@ def setup(arg: SetupArg, envgen: EnvGen):
     }
 
     envgen.ext_script_list = [
+        shamrockdir + "/env/helpers/clone-acpp.sh",
         shamrockdir + "/env/helpers/pull_reffiles.sh",
-        shamrockdir + "/env/helpers/use_py_venv.sh",
     ]
 
-    envgen.gen_env_file("env_oneapi.sh")
+    envgen.copy_env_file("exemple_batch.sh", "exemple_batch.sh")
+    envgen.gen_env_file("env_built_acpp.sh")
