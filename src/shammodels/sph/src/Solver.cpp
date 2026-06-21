@@ -2516,7 +2516,9 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                 }
             });
 
-            ComputeField<Tscal> cfl_dt = utility.make_compute_field<Tscal>("cfl_dt", 1);
+            ComputeField<Tscal> cfl_dt = utility.make_compute_field<Tscal>("cfl_dt", 1, Tscal(100));
+            ComputeField<Tscal> cfl_dt_imhd
+                = utility.make_compute_field<Tscal>("cfl_dt_imhd", 1, Tscal(100));
 
             scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
                 PatchDataLayer &mpdat = mpdats.get(cur_p.id_patch);
@@ -2534,6 +2536,10 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                 auto a      = buf_axyz.get_read_access(depends_list);
                 auto vsig   = vsig_buf.get_read_access(depends_list);
                 auto cfl_dt = cfl_dt_buf.get_write_access(depends_list);
+
+                sham::DeviceBuffer<Tscal> &cfl_dt_imhd_buf
+                    = cfl_dt_imhd.get_buf_check(cur_p.id_patch);
+                auto cfl_dt_imhd = cfl_dt_imhd_buf.get_write_access(depends_list);
 
                 auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
                     Tscal C_cour  = solver_config.cfl_config.cfl_cour
@@ -2568,7 +2574,8 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
 
                                 Tscal dt_divB_cleaning = C_cour * h_a / vclean_a;
 
-                                cfl_dt[item] = sycl::min(cfl_dt[item], dt_divB_cleaning);
+                                cfl_dt_imhd[item] = sycl::min(cfl_dt_imhd[item], dt_divB_cleaning);
+                                // cfl_dt[item] = sycl::min(cfl_dt[item], dt_divB_cleaning);
                             });
                     });
                     vclean_buf.complete_event_state(e);
@@ -2578,9 +2585,11 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                 buf_axyz.complete_event_state(e);
                 vsig_buf.complete_event_state(e);
                 cfl_dt_buf.complete_event_state(e);
+                cfl_dt_imhd_buf.complete_event_state(e);
             });
 
-            Tscal rank_dt = cfl_dt.compute_rank_min();
+            Tscal rank_dt      = cfl_dt.compute_rank_min();
+            Tscal imhd_rank_dt = cfl_dt_imhd.compute_rank_min();
 
             if (solver_config.should_save_dt_to_fields()) {
 
@@ -2645,12 +2654,20 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
             shamlog_debug_ln("BasigGas", "rank", shamcomm::world_rank(), "found cfl dt =", rank_dt);
 
             Tscal hydro_cfl = shamalgs::collective::allreduce_min(rank_dt);
+            Tscal imhd_cfl  = shamalgs::collective::allreduce_min(imhd_rank_dt);
 
             if (shamcomm::world_rank() == 0) {
-                shamlog_info_ln("SPH", "CFL hydro =", hydro_cfl, "sink sink =", sink_sink_cfl);
+                shamlog_info_ln(
+                    "SPH",
+                    "CFL hydro =",
+                    hydro_cfl,
+                    "sink sink =",
+                    sink_sink_cfl,
+                    "CFL MHD =",
+                    imhd_cfl);
             }
 
-            next_cfl = sham::min(hydro_cfl, sink_sink_cfl);
+            next_cfl = sham::min(sham::min(hydro_cfl, sink_sink_cfl), imhd_cfl);
 
             if (shamcomm::world_rank() == 0) {
                 logger::info_ln(
