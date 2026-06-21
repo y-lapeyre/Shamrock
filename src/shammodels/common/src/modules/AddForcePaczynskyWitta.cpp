@@ -35,19 +35,19 @@ namespace shammodels::common::modules {
         Tscal G     = edges.constant_G.data;
         Tscal c     = edges.constant_c.data;
         Tvec cpos   = edges.central_pos.data;
+        Tscal rs    = 2 * G * cmass / (c * c);
 
         sham::distributed_data_kernel_call(
             shamsys::instance::get_compute_scheduler_ptr(),
             sham::DDMultiRef{edges.spans_positions.get_spans()},
             sham::DDMultiRef{edges.spans_accel_ext.get_spans()},
             edges.sizes.indexes,
-            [GM = -cmass * G, c, cpos](u32 gid, const Tvec *xyz, Tvec *axyz_ext) {
-                Tscal rs            = 2 * GM / (c * c);
-                Tvec r_a            = xyz[gid] - cpos;
-                Tscal abs_ra        = sycl::length(r_a);
-                Tscal abs_ra_m_rs_3 = (abs_ra - rs) * (abs_ra - rs) * (abs_ra - rs);
+            [GM = cmass * G, rs, cpos](u32 gid, const Tvec *xyz, Tvec *axyz_ext) {
+                Tvec r_a     = xyz[gid] - cpos;
+                Tscal abs_ra = sycl::length(r_a);
+                Tscal denom  = (abs_ra - rs) * (abs_ra - rs) * abs_ra;
 
-                axyz_ext[gid] += GM * r_a / abs_ra_m_rs_3;
+                axyz_ext[gid] += -GM * r_a / denom;
             });
     }
 
@@ -66,7 +66,9 @@ namespace shammodels::common::modules {
 
                  \begin{align}
                  r_{\text{s}} &= 2 * {constant_G}* {central_mass} / {constant_c}^2\\
-                 {axyz_ext}_i &= -{constant_G} * {central_mass} * {central_pos}_i / ({positions}_i - r_{\text{s}})^3
+                 r_i &= {positions}_i - {central_pos}_i\\
+                 r &= \sqrt{\sum r_i^2}\\
+                 {axyz_ext}_i &= -{constant_G} * {central_mass} * r_i / (r * (r - r_{\text{s}})^2)
                  \end{align}
              )tex";
 

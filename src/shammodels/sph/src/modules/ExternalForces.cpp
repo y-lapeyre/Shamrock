@@ -359,6 +359,7 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::add_ext_forces()
 
     using SolverConfigExtForce = typename Config::ExtForceConfig;
     using EF_PointMass         = typename SolverConfigExtForce::PointMass;
+    using EF_PN_PW             = typename SolverConfigExtForce::PN_PW;
     using EF_LenseThirring     = typename SolverConfigExtForce::LenseThirring;
 
     using namespace shamrock::solvergraph;
@@ -377,6 +378,9 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::add_ext_forces()
     for (auto var_force : solver_config.ext_force_config.ext_forces) {
         if (EF_PointMass *ext_force = std::get_if<EF_PointMass>(&var_force.val)) {
 
+        } else if (EF_PN_PW *ext_force = std::get_if<EF_PN_PW>(&var_force.val)) {
+            is_G_needed = true;
+            is_c_needed = true;
         } else if (EF_LenseThirring *ext_force = std::get_if<EF_LenseThirring>(&var_force.val)) {
             is_G_needed = true;
             is_c_needed = true;
@@ -461,6 +465,8 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::add_ext_forces()
         std::string prefix = shambase::format("ext_force_{}_", i);
 
         if (EF_PointMass *ext_force = std::get_if<EF_PointMass>(&var_force.val)) {
+
+        } else if (EF_PN_PW *ext_force = std::get_if<EF_PN_PW>(&var_force.val)) {
 
         } else if (EF_LenseThirring *ext_force = std::get_if<EF_LenseThirring>(&var_force.val)) {
 
@@ -606,6 +612,9 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::point_mass_accre
         Tscal Racc;
 
         if (EF_PointMass *ext_force = std::get_if<EF_PointMass>(&var_force.val)) {
+            pos_accretion = {0, 0, 0};
+            Racc          = ext_force->Racc;
+        } else if (EF_PN_PW *ext_force = std::get_if<EF_PN_PW>(&var_force.val)) {
             pos_accretion = {0, 0, 0};
             Racc          = ext_force->Racc;
         } else if (EF_LenseThirring *ext_force = std::get_if<EF_LenseThirring>(&var_force.val)) {
