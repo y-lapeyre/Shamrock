@@ -894,8 +894,8 @@ struct shammodels::sph::SolverConfig {
      * @param[in] central_mass The mass of the central object
      * @param[in] Racc The accretion radius of the central object
      */
-    inline void add_ext_force_paczynsky_witta(Tscal central_mass, Tscal Racc) {
-        ext_force_config.add_paczynsky_witta(central_mass, Racc);
+    inline void add_ext_force_paczynsky_witta(Tscal central_mass, Tvec central_pos, Tscal Racc) {
+        ext_force_config.add_paczynsky_witta(central_mass, central_pos, Racc);
     }
 
     /**

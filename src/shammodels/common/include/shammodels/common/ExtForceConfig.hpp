@@ -39,6 +39,7 @@ namespace shammodels {
 
         struct PN_PW {
             Tscal central_mass;
+            Tvec central_pos;
             Tscal Racc;
         };
 
@@ -113,8 +114,8 @@ namespace shammodels {
             ext_forces.push_back(ExtForceVariant<Tvec>{PointMass{central_mass, Racc}});
         }
 
-        inline void add_paczynsky_witta(Tscal central_mass, Tscal Racc) {
-            ext_forces.push_back(ExtForceVariant<Tvec>{PN_PW{central_mass, Racc}});
+        inline void add_paczynsky_witta(Tscal central_mass, Tvec central_pos, Tscal Racc) {
+            ext_forces.push_back(ExtForceVariant<Tvec>{PN_PW{central_mass, central_pos, Racc}});
         }
 
         inline void add_lense_thirring(
@@ -167,6 +168,7 @@ namespace shammodels {
             j
                 = {{"force_type", "paczynsky_witta"},
                    {"central_mass", v->central_mass},
+                   {"central_pos", v->central_pos},
                    {"Racc", v->Racc}};
         } else if (const LenseThirring *v = std::get_if<LenseThirring>(&p.val)) {
             j = {
@@ -224,6 +226,7 @@ namespace shammodels {
         } else if (force_type == "paczynsky_witta") {
             p.val = PN_PW{
                 j.at("central_mass").get<Tscal>(),
+                j.at("central_pos").get<Tvec>(),
                 j.at("Racc").get<Tscal>(),
             };
         } else if (force_type == "lense_thirring") {

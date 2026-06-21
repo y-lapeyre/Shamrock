@@ -174,7 +174,7 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::compute_ext_forc
 
             shamrock::solvergraph::NodeSetEdge<shamrock::solvergraph::IDataEdge<Tvec>>
                 set_central_pos([&](shamrock::solvergraph::IDataEdge<Tvec> &central_pos) {
-                    central_pos.data = {}; // no support for offset yet
+                    central_pos.data = ext_force->central_pos;
                 });
             set_central_pos.set_edges(central_pos);
 
