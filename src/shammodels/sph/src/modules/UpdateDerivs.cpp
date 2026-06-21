@@ -920,10 +920,8 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD_
     u32 iB_on_rho_interf  = ghost_layout.get_field_idx<Tvec>("B/rho");
     u32 ipsi_on_ch_interf = ghost_layout.get_field_idx<Tscal>("psi/ch");
 
-    bool do_NIMHD = solver_config.do_NIMHD();
 
-    u32 iJ        = (do_NIMHD) ? pdl.get_field_idx<Tvec>("J") : -1;
-    u32 iJ_interf = (do_NIMHD) ? ghost_layout.get_field_idx<Tvec>("J") : -1;
+    bool do_NIMHD = solver_config.do_NIMHD();
 
     auto &merged_xyzh                                 = storage.merged_xyzh.get();
     shamrock::solvergraph::Field<Tscal> &omega        = shambase::get_check_ref(storage.omega);
@@ -958,8 +956,6 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD_
         sham::DeviceBuffer<Tscal> &buf_psi_on_ch
             = mpdat.get_field_buf_ref<Tscal>(ipsi_on_ch_interf);
 
-        // sham::DeviceBuffer<Tvec> &buf_J = (do_NIMHD) ? mpdat.get_field_buf_ref<Tvec>(iJ_interf):
-        // nullptr;
 
         tree::ObjectCache &pcache
             = shambase::get_check_ref(storage.neigh_cache).get_cache(cur_p.id_patch);
@@ -981,9 +977,6 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD_
         auto dB_on_rho  = buf_dB_on_rho.get_write_access(depends_list);
         auto dpsi_on_ch = buf_dpsi_on_ch.get_write_access(depends_list);
         auto drho_dt    = buf_drho_dt.get_write_access(depends_list);
-
-        Tvec *J_field = (do_NIMHD) ? pdat.get_field_buf_ref<Tvec>(iJ).get_write_access(depends_list)
-                                   : nullptr;
 
         Tvec *mag_pressure
             = (do_MHD_debug)
@@ -1057,7 +1050,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD_
                 Tscal omega_a = omega[id_a];
                 Tscal u_a     = u[id_a];
 
-                Tvec J_a = (do_NIMHD) ? J_field[id_a]:Tvec{0, 0, 0};
+                Tvec J_a = (do_NIMHD) ? J_field[id_a] : Tvec{0, 0, 0};
 
                 Tscal rho_a     = rho_h(pmass, h_a, Kernel::hfactd);
                 Tscal rho_a_sq  = rho_a * rho_a;
@@ -1101,7 +1094,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD_
                     Tscal cs_b    = cs[id_b];
                     Tscal rab     = sycl::sqrt(rab2);
 
-                    Tvec J_b = (do_NIMHD) ? J_field[id_b]:Tvec{0, 0, 0};
+                    Tvec J_b = (do_NIMHD) ? J_field[id_b] : Tvec{0, 0, 0};
 
                     Tscal rho_b      = rho_h(pmass, h_b, Kernel::hfactd);
                     Tvec B_b         = B_on_rho[id_b] * rho_b;
@@ -1197,8 +1190,9 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD_
         buf_dpsi_on_ch.complete_event_state(e);
         buf_drho_dt.complete_event_state(e);
 
-        if (do_NIMHD){
-        buf_J.complete_event_state(e);}
+        if (do_NIMHD) {
+            buf_J.complete_event_state(e);
+        }
 
         if (do_MHD_debug) {
             pdat.get_field_buf_ref<Tvec>(imag_pressure).complete_event_state(e);
