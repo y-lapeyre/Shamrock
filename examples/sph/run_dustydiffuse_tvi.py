@@ -89,32 +89,9 @@ def func_s(r):
 
 
 # %%
-# mpl style
-mpl.rcParams.update(
-    {
-        "font.family": "serif",
-        "mathtext.fontset": "cm",
-        "font.size": 14,
-        "axes.labelsize": 16,
-        "axes.titlesize": 16,
-        "xtick.labelsize": 13,
-        "ytick.labelsize": 13,
-        "legend.fontsize": 13,
-        "axes.facecolor": "#f2f2f2",
-        "axes.linewidth": 1.0,
-        "xtick.direction": "in",
-        "ytick.direction": "in",
-        "xtick.top": True,
-        "ytick.right": True,
-        "xtick.major.size": 8,
-        "ytick.major.size": 8,
-        "xtick.minor.visible": True,
-        "ytick.minor.visible": True,
-        "legend.frameon": True,
-        "legend.fancybox": False,
-        "legend.edgecolor": "black",
-    }
-)
+# Use shamrock documentation style for matplotlib
+shamrock.matplotlib.set_shamrock_mpl_style()
+
 
 # %%
 # Setup
@@ -129,6 +106,15 @@ HCP_PACKING_DENSITY = 0.74
 part_vol_lattice = HCP_PACKING_DENSITY * part_vol
 
 dr = (part_vol_lattice / ((4.0 / 3.0) * np.pi)) ** (1.0 / 3.0)
+
+bmin, bmax = shamrock.math.get_ideal_hcp_box(dr, bmin, bmax)
+xm, ym, zm = bmin
+xM, yM, zM = bmax
+
+
+vol_b = (xM - xm) * (yM - ym) * (zM - zm)
+totmass = rho * vol_b
+
 
 pmass = -1
 
@@ -156,10 +142,6 @@ scheduler_merge_val = int(1)
 model.init_scheduler(scheduler_split_val, scheduler_merge_val)
 
 
-bmin, bmax = model.get_ideal_hcp_box(dr, bmin, bmax)
-xm, ym, zm = bmin
-xM, yM, zM = bmax
-
 model.resize_simulation_box(bmin, bmax)
 
 setup = model.get_setup()
@@ -168,9 +150,6 @@ setup.apply_setup(gen, insert_step=scheduler_split_val)
 
 
 model.set_field_value_lambda_f64("s_j", func_s, 0)
-
-vol_b = (xM - xm) * (yM - ym) * (zM - zm)
-totmass = rho * vol_b
 
 pmass = model.total_mass_to_part_mass(totmass)
 model.set_particle_mass(pmass)

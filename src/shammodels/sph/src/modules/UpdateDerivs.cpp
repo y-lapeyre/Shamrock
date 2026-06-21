@@ -48,7 +48,7 @@
 #include <vector>
 
 template<class Tvec, template<class> class SPHKernel>
-void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs() {
+void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs(Tscal dt_hydro) {
 
     Cfg_AV cfg_av       = solver_config.artif_viscosity;
     Cfg_MHD cfg_mhd     = solver_config.mhd_config;
@@ -76,7 +76,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs() {
 
     if (cfg_dust.has_s_j_field()) {
         // we can do it separately because the backreaction is done only through the pressure
-        update_derivs_dust_monofluid_tvi_Sj(cfg_dust);
+        update_derivs_dust_monofluid_tvi_Sj(cfg_dust, dt_hydro);
     }
 }
 
@@ -1038,11 +1038,11 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD_
             logger::raw_ln("NOPE");
             shamlog_debug_ln("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@", "");
 
-            logger::raw_ln("bah alors ?");
+
             tree::ObjectCacheIterator particle_looper(ploop_ptrs);
-            logger::raw_ln("bah alors ?");
+
             constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
-            logger::raw_ln("bah alors ?");
+
             shambase::parallel_for(cgh, pdat.get_obj_cnt(), "compute MHD", [=](u64 gid) {
                 u32 id_a = (u32) gid;
 
@@ -1057,8 +1057,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD_
                 Tscal omega_a = omega[id_a];
                 Tscal u_a     = u[id_a];
 
-                logger::raw_ln("AAAAAAAAAA");
-                Tvec J_a = (do_NIMHD) ? J_field[id_a] : Tvec({0, 0, 0});
+                Tvec J_a = (do_NIMHD) ? J_field[id_a]:Tvec{0, 0, 0};
 
                 Tscal rho_a     = rho_h(pmass, h_a, Kernel::hfactd);
                 Tscal rho_a_sq  = rho_a * rho_a;
@@ -1102,8 +1101,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD_
                     Tscal cs_b    = cs[id_b];
                     Tscal rab     = sycl::sqrt(rab2);
 
-                    logger::raw_ln("BBBBBBBBBBBBB");
-                    Tvec J_b = (do_NIMHD) ? J_field[id_b] : Tvec({0, 0, 0});
+                    Tvec J_b = (do_NIMHD) ? J_field[id_b]:Tvec{0, 0, 0};
 
                     Tscal rho_b      = rho_h(pmass, h_b, Kernel::hfactd);
                     Tvec B_b         = B_on_rho[id_b] * rho_b;
@@ -1199,7 +1197,8 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD_
         buf_dpsi_on_ch.complete_event_state(e);
         buf_drho_dt.complete_event_state(e);
 
-        // if(do_NIMHD){buf_J.complete_event_state(e);}
+        if (do_NIMHD){
+        buf_J.complete_event_state(e);}
 
         if (do_MHD_debug) {
             pdat.get_field_buf_ref<Tvec>(imag_pressure).complete_event_state(e);
@@ -1582,7 +1581,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD(
 
 template<class Tvec, template<class> class SPHKernel>
 void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_dust_monofluid_tvi_Sj(
-    DustConfig cfg) {
+    DustConfig cfg, Tscal dt_hydro) {
 
     using MonofluidTVI = typename DustConfig::MonofluidTVI;
 
@@ -1692,7 +1691,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_dust
 
         std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> input_gamma
             = std::make_shared<shamrock::solvergraph::ScalarEdge<Tscal>>("", "");
-        input_gamma->value = 7. / 5.;
+        input_gamma->value = cfg_drag->gamma;
 
         std::shared_ptr<shamrock::solvergraph::ScalarEdge<std::vector<Tscal>>> input_sgrain_j
             = std::make_shared<shamrock::solvergraph::ScalarEdge<std::vector<Tscal>>>("", "");
