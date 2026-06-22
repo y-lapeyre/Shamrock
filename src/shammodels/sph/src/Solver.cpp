@@ -973,7 +973,6 @@ void shammodels::sph::Solver<Tvec, Kern>::sph_prestep(Tscal time_val, Tscal dt) 
 
     PatchDataLayerLayout &pdl = scheduler().pdl_old();
     const u32 ihpart          = pdl.get_field_idx<Tscal>("hpart");
-    const u32 iB_on_rho       = pdl.get_field_idx<Tvec>("B/rho");
 
     ComputeField<Tscal> _epsilon_h, _h_old;
 
