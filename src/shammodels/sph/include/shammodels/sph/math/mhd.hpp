@@ -34,10 +34,10 @@ namespace shamrock::sph::mhd {
     enum MHDType { Ideal = 0, NonIdeal = 1 };
 
     template<class Tvec, class Tscal, MHDType MHD_mode = NonIdeal>
-    inline void MagCurrentJ_sum(
-        Tscal m_b, Tvec B_a, Tvec B_b, Tvec nabla_Wab_ha, Tscal sub_fact_a, Tscal mu_0, Tvec &J_a) {
+    inline Tvec MagCurrentJ_sum(
+        Tscal m_b, Tvec B_a, Tvec B_b, Tvec nabla_Wab_ha, Tscal sub_fact_a, Tscal mu_0) {
 
-            // ajout 4pi /c
+        // ajout 4pi /c
 
         return m_b * sham::inv_sat_zero(sub_fact_a) * sycl::cross(B_a - B_b, nabla_Wab_ha) / mu_0;
         // return {0., 0., 0.};
@@ -123,7 +123,6 @@ namespace shamrock::sph::mhd {
         Tvec acc_b = sham::inv_sat_zero(sub_fact_b) * eta_AD * sycl::cross(JcBcB_b, nabla_Wab_hb);
         return -m_b * (acc_a + acc_b);
     }
-    
 
     // mag tension form the Tricco 2023 formula
     template<class Tvec, class Tscal>
@@ -508,12 +507,6 @@ namespace shamrock::sph::mhd {
 
         // Non-ideal MHD terms
         if constexpr (MHD_mode == NonIdeal) {
-            logger::raw_ln("############# NON IDEAL MHD #############");
-
-            // Tvec J_a = MagCurrentJ<Tvec, Tscal, MHD_mode>(
-            //     pmass, B_a, B_b, r_ab_unit * dWab_a, sub_fact_a, mu_0);
-            // Tvec J_b = MagCurrentJ<Tvec, Tscal, MHD_mode>(
-            //     pmass, B_a, B_b, r_ab_unit * dWab_b, sub_fact_b, mu_0);
 
             Tvec D_a = WursterD<Tvec, Tscal, MHD_mode>(B_a, J_a, etaO, etaH, etaAD);
             Tvec D_b = WursterD<Tvec, Tscal, MHD_mode>(B_b, J_b, etaO, etaH, etaAD);
@@ -540,24 +533,12 @@ namespace shamrock::sph::mhd {
                 pmass,
                 rho_a_sq,
                 rho_b * rho_b,
+                B_a,
+                B_b,
                 omega_a,
                 omega_b,
                 r_ab_unit * dWab_a,
                 r_ab_unit * dWab_b);
-
-            logger::raw_ln(B_NI_ADterm);
-
-            // logger::raw_ln("etaAD", etaAD);
-            // logger::raw_ln("J_a", J_a);
-            // logger::raw_ln("J_b", J_b);
-            // logger::raw_ln("pmass", pmass);
-            // logger::raw_ln("rho_a_sq", rho_a_sq);
-            // logger::raw_ln("rho_b", rho_b);
-            // logger::raw_ln("B_a", B_a);
-            // logger::raw_ln("B_b", B_b);
-            // logger::raw_ln("omega_a", omega_a);
-            // logger::raw_ln("omega_b", omega_b);
-            // logger::raw_ln("B_NI_ADterm", B_NI_ADterm);
 
             dB_on_rho_dt += B_NI_ADterm;
 

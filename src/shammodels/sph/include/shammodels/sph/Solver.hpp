@@ -12,7 +12,7 @@
 /**
  * @file Solver.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr) --no git blame--
+ * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief
  */
 
@@ -206,7 +206,7 @@ namespace shammodels::sph {
         /// @brief Saves old derivative fields for predictor-corrector integration
         void prepare_corrector();
         /// @brief Updates time derivatives and applies external forces
-        void update_derivs();
+        void update_derivs(Tscal dt_hydro);
 
         /**
          * @brief

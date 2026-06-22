@@ -11,6 +11,7 @@
 
 /**
  * @file UpdateDerivs.hpp
+ * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
@@ -70,6 +71,9 @@ namespace shammodels::sph::modules {
         using NoneMHD     = typename Cfg_MHD::None;
         using IdealMHD    = typename Cfg_MHD::IdealMHD_constrained_hyper_para;
         using NonIdealMHD = typename Cfg_MHD::NonIdealMHD;
+
+        template<shamrock::sph::mhd::MHDType MHD_mode>
+        void compute_J(Tscal mu_0);
 
         // void update_derivs_MHD(Cfg_MHD cfg);
         //  One templated implementation, specialised per MHDType at the call sites below.

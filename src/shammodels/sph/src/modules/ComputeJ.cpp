@@ -109,25 +109,10 @@ void shammodels::sph::modules::NodeComputeJ<Tvec, SPHKernel>::_impl_evaluate_int
                 Tvec fucker = shamrock::sph::mhd::MagCurrentJ_sum(
                     part_mass, B_a, B_b, nabla_Wab_ha, sub_fact_a, mu_0);
                 J_sum += fucker;
-
-                // if (id_a == 0) {
-                //     logger::raw_ln("@@@@@@ mu_0", mu_0);
-                //     logger::raw_ln("@@@@@@ Ba", B_a);
-                //     logger::raw_ln("@@@@@@ Bb", B_b);
-                //     logger::raw_ln("@@@@@@ nabla_Wab_ha", nabla_Wab_ha);
-                //     logger::raw_ln("@@@@@@ sub_fact_a", sub_fact_a);
-                //     logger::raw_ln("@@@@@@ fucker", fucker);
-                //     logger::raw_ln("@@@@@ J_sum", J_sum);
-                // }
             });
 
             J[id_a] = J_sum; //* 4 * _pi / c;
-            // if (id_a == 0) {
-            //     logger::raw_ln("@@@@@@@@@@@@@@@@@@@ J a", J_sum, id_a);
-            //
-            // }
         });
-    // std::abort();
 }
 
 template<class Tvec, template<class> class SPHKernel>
