@@ -373,8 +373,8 @@ namespace shamrock::sph::mhd {
         Tscal v_shock_b = shamphys::MHD_physics<Tvec, Tscal>::v_shock(cs_b, B_b, rho_b, mu_0);
         Tscal vsig_B    = shamphys::MHD_physics<Tvec, Tscal>::vsigB(v_ab, r_ab_unit);
 
-        Tscal qa_ab = Tscal(0.); // shamrock::sph::q_av(rho_a, vsig_a, v_ab_r_ab);
-        Tscal qb_ab = Tscal(0.); // shamrock::sph::q_av(rho_b, vsig_b, v_ab_r_ab);
+        Tscal qa_ab = shamrock::sph::q_av(rho_a, vsig_a, v_ab_r_ab);
+        Tscal qb_ab = shamrock::sph::q_av(rho_b, vsig_b, v_ab_r_ab);
 
         Tscal AV_P_a = P_a + qa_ab;
         Tscal AV_P_b = P_b + qb_ab;
@@ -393,16 +393,16 @@ namespace shamrock::sph::mhd {
             pmass, B_a, B_b, r_ab_unit * dWab_a, r_ab_unit * dWab_b, sub_fact_a, sub_fact_b, mu_0);
 
         Tvec gas_pressure_pishock = Tvec(0., 0., 0.);
-        // sph::sph_pressure_symetric(
-        //     pmass,
-        //     rho_a_sq,
-        //     rho_b * rho_b,
-        //     AV_P_a,
-        //     AV_P_b,
-        //     omega_a,
-        //     omega_b,
-        //     r_ab_unit * dWab_a,
-        //     r_ab_unit * dWab_b);
+        sph::sph_pressure_symetric(
+            pmass,
+            rho_a_sq,
+            rho_b * rho_b,
+            AV_P_a,
+            AV_P_b,
+            omega_a,
+            omega_b,
+            r_ab_unit * dWab_a,
+            r_ab_unit * dWab_b);
 
         sum_mag_tension += -B_dot_grad_W(
             pmass,

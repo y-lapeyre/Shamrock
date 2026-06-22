@@ -538,7 +538,21 @@ struct shammodels::sph::SolverConfig {
         mhd_config.set(v);
     }
 
-    inline void set_NonIdealMHD(typename MHDConfig::NonIdealMHD v) { mhd_config.set(v); }
+    inline void set_NonIdealMHD(typename MHDConfig::NonIdealMHD v) {
+        logger::raw_ln("$DANGER$DANGER$DANGER$DANGER$DANGER$DANGER$DANGER$DANGER$");
+        logger::raw_ln(" ______   _______  __    _  _______  _______  ______  ");
+        logger::raw_ln("|      | |   _   ||  |  | ||       ||       ||    _ | ");
+        logger::raw_ln("|  _    ||  |_|  ||   |_| ||    ___||    ___||   | ||");
+        logger::raw_ln("| | |   ||       ||       ||   | __ |   |___ |   |_||_");
+        logger::raw_ln("| |_|   ||       ||  _    ||   ||  ||    ___||    __  |");
+        logger::raw_ln("|       ||   _   || | |   ||   |_| ||   |___ |   |  | |");
+        logger::raw_ln("|______| |__| |__||_|  |__||_______||_______||___|  |_|");
+        logger::raw_ln("$DANGER$DANGER$DANGER$DANGER$DANGER$DANGER$DANGER$DANGER$");
+        logger::raw_ln("The Non-ideal MHD solver is UNDER DEVELOPMENT.");
+        logger::raw_ln("It is. NOT. FULLY. TESTED. YET.");
+        logger::raw_ln("Use at your own risk.");
+        mhd_config.set(v);
+    }
 
     //////////////////////////////////////////////////////////////////////////////////////////////
     // MHD Config (END)
