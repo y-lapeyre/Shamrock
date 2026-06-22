@@ -2887,6 +2887,10 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
             storage.alpha_av_ghost.reset();
         }
 
+        if (do_NIMHD) {
+            storage.MagCurrentJ_ghost.reset();
+        }
+
     } while (need_rerun_corrector);
 
     reset_merge_ghosts_fields();
