@@ -503,8 +503,6 @@ namespace shamrock::sph::mhd {
         // for conservative checks
         drho_dt += (1. / omega_a) * pmass * sycl::dot(v_ab, r_ab_unit * dWab_a);
 
-        logger::raw_ln("dB_on rho dt", dB_on_rho_dt);
-
         // Non-ideal MHD terms
         if constexpr (MHD_mode == NonIdeal) {
 
