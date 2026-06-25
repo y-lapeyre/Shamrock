@@ -114,7 +114,7 @@ namespace shammodels {
             ext_forces.push_back(ExtForceVariant<Tvec>{PointMass{central_mass, Racc}});
         }
 
-        inline void add_paczynsky_witta(Tscal central_mass, Tvec central_pos, Tscal Racc) {
+        inline void add_paczynski_wiita(Tscal central_mass, Tvec central_pos, Tscal Racc) {
             ext_forces.push_back(ExtForceVariant<Tvec>{PN_PW{central_mass, central_pos, Racc}});
         }
 
@@ -166,7 +166,7 @@ namespace shammodels {
 
         } else if (const PN_PW *v = std::get_if<PN_PW>(&p.val)) {
             j
-                = {{"force_type", "paczynsky_witta"},
+                = {{"force_type", "paczynski_wiita"},
                    {"central_mass", v->central_mass},
                    {"central_pos", v->central_pos},
                    {"Racc", v->Racc}};
@@ -223,7 +223,7 @@ namespace shammodels {
                 j.at("central_mass").get<Tscal>(),
                 j.at("Racc").get<Tscal>(),
             };
-        } else if (force_type == "paczynsky_witta") {
+        } else if (force_type == "paczynski_wiita") {
             p.val = PN_PW{
                 j.at("central_mass").get<Tscal>(),
                 j.at("central_pos").get<Tvec>(),

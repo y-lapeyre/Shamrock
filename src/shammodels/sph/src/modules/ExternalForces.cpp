@@ -22,7 +22,7 @@
 #include "shammath/sphkernels.hpp"
 #include "shammodels/common/modules/AddForceCentralGravPotential.hpp"
 #include "shammodels/common/modules/AddForceLenseThirring.hpp"
-#include "shammodels/common/modules/AddForcePaczynskyWitta.hpp"
+#include "shammodels/common/modules/AddForcePaczynskiWiita.hpp"
 #include "shammodels/common/modules/AddForceShearingBoxInertialPart.hpp"
 #include "shammodels/common/modules/AddForceShearingBoxNonInertial.hpp"
 #include "shammodels/common/modules/AddForceVelocityDissipation.hpp"
@@ -181,8 +181,8 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::compute_ext_forc
                 });
             set_central_pos.set_edges(central_pos);
 
-            common::modules::AddForcePaczynskyWitta<Tvec> add_force_paczynsky_witta;
-            add_force_paczynsky_witta.set_edges(
+            common::modules::AddForcePaczynskiWiita<Tvec> add_force_paczynski_wiita;
+            add_force_paczynski_wiita.set_edges(
                 constant_G,
                 constant_c,
                 central_mass,
@@ -197,7 +197,7 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::compute_ext_forc
                     std::vector<std::shared_ptr<shamrock::solvergraph::INode>>{
                         shambase::to_shared(std::move(set_central_pos)),
                         shambase::to_shared(std::move(set_central_mass)),
-                        shambase::to_shared(std::move(add_force_paczynsky_witta))}));
+                        shambase::to_shared(std::move(add_force_paczynski_wiita))}));
 
         } else if (EF_LenseThirring *ext_force = std::get_if<EF_LenseThirring>(&var_force.val)) {
 

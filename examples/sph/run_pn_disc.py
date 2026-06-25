@@ -1,5 +1,5 @@
 """
-Production run: Circular disc & pseudo-newtonian Paczynsky Witta potential
+Production run: Circular disc & pseudo-newtonian Paczynski Wiita potential
 =================================================
 
 This example demonstrates how to run a smoothed particle hydrodynamics (SPH)
@@ -217,7 +217,7 @@ def setup_model():
     cfg.set_artif_viscosity_ConstantDisc(alpha_u=alpha_u, alpha_AV=alpha_AV, beta_AV=beta_AV)
     cfg.set_eos_locally_isothermalLP07(cs0=cs0, q=q, r0=r0)
 
-    cfg.add_ext_force_paczynsky_witta(center_mass, center_pos, center_racc)
+    cfg.add_ext_force_paczynski_wiita(center_mass, center_pos, center_racc)
     cfg.add_kill_sphere(center=(0, 0, 0), radius=bsize)  # kill particles outside the simulation box
 
     cfg.set_units(codeu)

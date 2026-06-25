@@ -10,9 +10,9 @@
 #pragma once
 
 /**
- * @file AddForcePaczynskyWitta.hpp
+ * @file AddForcePaczynskiWiita.hpp
  * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
- * @brief Adds the acceleration from a Paczynsky Witta (1980) pseudo-newtonian potential.
+ * @brief Adds the acceleration from a Paczynski Wiita (1980) pseudo-newtonian potential.
  *
  */
 
@@ -37,18 +37,18 @@
 namespace shammodels::common::modules {
 
     template<class Tvec>
-    class AddForcePaczynskyWitta : public shamrock::solvergraph::INode {
+    class AddForcePaczynskiWiita : public shamrock::solvergraph::INode {
 
         using Tscal = shambase::VecComponent<Tvec>;
 
         public:
-        AddForcePaczynskyWitta() = default;
+        AddForcePaczynskiWiita() = default;
 
         EXPAND_NODE_EDGES(NODE_EDGES)
 
         void _impl_evaluate_internal();
 
-        inline virtual std::string _impl_get_label() const { return "AddForcePaczynskyWitta"; }
+        inline virtual std::string _impl_get_label() const { return "AddForcePaczynskiWiita"; }
 
         virtual std::string _impl_get_tex() const;
     };

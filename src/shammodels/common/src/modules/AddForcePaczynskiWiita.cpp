@@ -8,13 +8,13 @@
 // -------------------------------------------------------//
 
 /**
- * @file AddForcePaczynskyWitta.cpp
+ * @file AddForcePaczynskiWiita.cpp
  * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief
  *
  */
 
-#include "shammodels/common/modules/AddForcePaczynskyWitta.hpp"
+#include "shammodels/common/modules/AddForcePaczynskiWiita.hpp"
 #include "shambackends/kernel_call_distrib.hpp"
 #include "shamrock/patch/PatchDataField.hpp"
 #include "shamsys/NodeInstance.hpp"
@@ -22,7 +22,7 @@
 namespace shammodels::common::modules {
 
     template<class Tvec>
-    void AddForcePaczynskyWitta<Tvec>::_impl_evaluate_internal() {
+    void AddForcePaczynskiWiita<Tvec>::_impl_evaluate_internal() {
 
         __shamrock_stack_entry();
 
@@ -52,7 +52,7 @@ namespace shammodels::common::modules {
     }
 
     template<class Tvec>
-    inline std::string AddForcePaczynskyWitta<Tvec>::_impl_get_tex() const {
+    inline std::string AddForcePaczynskiWiita<Tvec>::_impl_get_tex() const {
 
         auto constant_G   = get_ro_edge_base(0).get_tex_symbol();
         auto constant_c   = get_ro_edge_base(1).get_tex_symbol();
@@ -62,7 +62,7 @@ namespace shammodels::common::modules {
         auto axyz_ext     = get_rw_edge_base(0).get_tex_symbol();
 
         std::string tex = R"tex(
-                 Add force (Paczynski-Witta potential)
+                 Add force (Paczynski-Wiita potential)
 
                  \begin{align}
                  r_{\text{s}} &= 2 * {constant_G}* {central_mass} / {constant_c}^2\\
@@ -81,6 +81,6 @@ namespace shammodels::common::modules {
         return tex;
     }
 
-    template class shammodels::common::modules::AddForcePaczynskyWitta<f64_3>;
+    template class shammodels::common::modules::AddForcePaczynskiWiita<f64_3>;
 
 } // namespace shammodels::common::modules

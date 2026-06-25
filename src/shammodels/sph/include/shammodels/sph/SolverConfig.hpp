@@ -889,13 +889,13 @@ struct shammodels::sph::SolverConfig {
     }
 
     /**
-     * @brief Add a post-newtonian Paczynsky-Witta potential
+     * @brief Add a post-newtonian Paczynski-Wiita potential
      *
      * @param[in] central_mass The mass of the central object
      * @param[in] Racc The accretion radius of the central object
      */
-    inline void add_ext_force_paczynsky_witta(Tscal central_mass, Tvec central_pos, Tscal Racc) {
-        ext_force_config.add_paczynsky_witta(central_mass, central_pos, Racc);
+    inline void add_ext_force_paczynski_wiita(Tscal central_mass, Tvec central_pos, Tscal Racc) {
+        ext_force_config.add_paczynski_wiita(central_mass, central_pos, Racc);
     }
 
     /**

@@ -14,7 +14,7 @@ set(Sources
     src/pyAMRTestModel.cpp
     src/pyAMRGrid.cpp
     src/pyCommonUtils.cpp
-    src/modules/AddForcePaczynskyWitta.cpp
+    src/modules/AddForcePaczynskiWiita.cpp
     src/modules/AddForceCentralGravPotential.cpp
     src/timestep_report.cpp
 )
