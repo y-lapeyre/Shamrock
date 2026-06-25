@@ -131,6 +131,8 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::compute_ext_forc
 
     std::vector<std::shared_ptr<shamrock::solvergraph::INode>> add_ext_forces_seq{};
 
+    // solver_config.print_status();
+
     for (auto var_force : solver_config.ext_force_config.ext_forces) {
         if (EF_PointMass *ext_force = std::get_if<EF_PointMass>(&var_force.val)) {
 
@@ -138,8 +140,9 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::compute_ext_forc
             auto central_pos  = shamrock::solvergraph::IDataEdge<Tvec>::make_shared("", "");
 
             shamrock::solvergraph::NodeSetEdge<shamrock::solvergraph::IDataEdge<Tscal>>
-                set_central_mass([&](shamrock::solvergraph::IDataEdge<Tscal> &central_mass) {
-                    central_mass.data = ext_force->central_mass;
+                set_central_mass([cmass = ext_force->central_mass](
+                                     shamrock::solvergraph::IDataEdge<Tscal> &central_mass) {
+                    central_mass.data = cmass;
                 });
             set_central_mass.set_edges(central_mass);
 
@@ -167,14 +170,16 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::compute_ext_forc
             auto central_pos  = shamrock::solvergraph::IDataEdge<Tvec>::make_shared("", "");
 
             shamrock::solvergraph::NodeSetEdge<shamrock::solvergraph::IDataEdge<Tscal>>
-                set_central_mass([&](shamrock::solvergraph::IDataEdge<Tscal> &central_mass) {
-                    central_mass.data = ext_force->central_mass;
+                set_central_mass([cmass = ext_force->central_mass](
+                                     shamrock::solvergraph::IDataEdge<Tscal> &central_mass) {
+                    central_mass.data = cmass;
                 });
             set_central_mass.set_edges(central_mass);
 
             shamrock::solvergraph::NodeSetEdge<shamrock::solvergraph::IDataEdge<Tvec>>
-                set_central_pos([&](shamrock::solvergraph::IDataEdge<Tvec> &central_pos) {
-                    central_pos.data = ext_force->central_pos;
+                set_central_pos([cpos = ext_force->central_pos](
+                                    shamrock::solvergraph::IDataEdge<Tvec> &central_pos) {
+                    central_pos.data = cpos;
                 });
             set_central_pos.set_edges(central_pos);
 
@@ -202,8 +207,9 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::compute_ext_forc
             auto central_pos  = shamrock::solvergraph::IDataEdge<Tvec>::make_shared("", "");
 
             shamrock::solvergraph::NodeSetEdge<shamrock::solvergraph::IDataEdge<Tscal>>
-                set_central_mass([&](shamrock::solvergraph::IDataEdge<Tscal> &central_mass) {
-                    central_mass.data = ext_force->central_mass;
+                set_central_mass([cmass = ext_force->central_mass](
+                                     shamrock::solvergraph::IDataEdge<Tscal> &central_mass) {
+                    central_mass.data = cmass;
                 });
             set_central_mass.set_edges(central_mass);
 
