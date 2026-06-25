@@ -131,8 +131,6 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::compute_ext_forc
 
     std::vector<std::shared_ptr<shamrock::solvergraph::INode>> add_ext_forces_seq{};
 
-    // solver_config.print_status();
-
     for (auto var_force : solver_config.ext_force_config.ext_forces) {
         if (EF_PointMass *ext_force = std::get_if<EF_PointMass>(&var_force.val)) {
 
@@ -294,6 +292,7 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::compute_ext_forc
     }
 
     set_constant_G.evaluate();
+    set_constant_c.evaluate();
 
     if (add_ext_forces_seq.size() > 0) {
         shamrock::solvergraph::OperationSequence seq(
