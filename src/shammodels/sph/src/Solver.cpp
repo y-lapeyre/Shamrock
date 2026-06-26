@@ -519,11 +519,7 @@ void shammodels::sph::Solver<Tvec, Kern>::init_solver_graph() {
                     solver_graph.get_edge_ptr<Indexes<u32>>("part_counts"),
                     solver_graph.get_edge_ptr<FieldRefs<u32>>("ghost_mask"),
                     solver_graph.get_edge_ptr<FieldRefs<Tvec>>("xyz"));
-        }
-
-        else
-
-        {
+        } else {
             auto full_step_xyz = solver_graph.register_node(
                 "full_step_xyz", shammodels::common::modules::ForwardEuler<Tvec>{});
             shambase::get_check_ref(full_step_xyz)
@@ -1713,9 +1709,7 @@ void shammodels::sph::Solver<Tvec, Kern>::apply_ghost_particles() {
         sizes->indexes.add_obj(p.id_patch, pdat.get_obj_cnt());
     });
 
-    logger::raw_ln("before setting mask edge");
     auto mask_edge = solver_graph.get_edge_ptr<FieldRefs<u32>>("ghost_mask");
-    logger::raw_ln("after setting mask edge");
 
     std::vector<std::shared_ptr<shamrock::solvergraph::INode>> part_disable_sequence{};
 
@@ -1724,11 +1718,9 @@ void shammodels::sph::Solver<Tvec, Kern>::apply_ghost_particles() {
 
     for (disable_t &disable_obj : solver_config.particle_disable.disable_list) {
         if (disable_wall *disable_info = std::get_if<disable_wall>(&disable_obj)) {
-            logger::raw_ln("Before registering node");
             modules::GetParticlesInWall<Tvec> node_selector(disable_info->wall_func);
             node_selector.set_edges(xyz_edge, sizes, mask_edge);
 
-            logger::raw_ln("Before pushing to seq");
             part_disable_sequence.push_back(
                 std::make_shared<decltype(node_selector)>(std::move(node_selector)));
         }
@@ -1738,9 +1730,7 @@ void shammodels::sph::Solver<Tvec, Kern>::apply_ghost_particles() {
         auto disable_sequence_node = solver_graph.register_node(
             "part_disable_selectors",
             OperationSequence("part disable selectors", std::move(part_disable_sequence)));
-        logger::raw_ln("Before evaluate");
         disable_sequence_node->evaluate();
-        logger::raw_ln("after evaluate");
     }
 }
 
