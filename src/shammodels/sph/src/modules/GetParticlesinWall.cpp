@@ -70,7 +70,7 @@ namespace shammodels::sph::modules {
         std::string tex = R"tex(
     Identify particles inside the wall.
 
-    For each particle \(i\), evaluate the user‑provided predicate \(\texttt{wall\_func}\) on its position.
+    For each particle \(i\), evaluate the user provided predicate \(\texttt{wall\_func}\) on its position.
     \begin{align}
     {ghost_mask}_i &=
     \begin{cases}
