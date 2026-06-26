@@ -110,6 +110,24 @@ namespace shammodels::sph {
         }
     };
 
+    template<class Tvec>
+    struct ParticleDisableConfig {
+        using Tscal = shambase::VecComponent<Tvec>;
+
+        struct Wall {
+            Tvec pos;
+            std::function<bool(Tvec)> wall_func;
+        };
+
+        using disable_t = std::variant<Wall>;
+
+        std::vector<disable_t> disable_list;
+
+        inline void add_disable_wall(const Tvec &pos, std::function<bool(Tvec)> wall_func) {
+            disable_list.push_back(Wall{pos, wall_func});
+        }
+    };
+
     template<class Tscal>
     struct DustConfig {
 

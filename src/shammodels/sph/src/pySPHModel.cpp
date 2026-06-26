@@ -756,6 +756,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             [](T &self, f64 dt) {
                 self.solver.solver_config.set_next_dt(dt);
             })
+        .def("apply_ghost_particles", &T::apply_ghost_particles)
         .def("timestep", &T::timestep)
         .def("set_cfl_cour", &T::set_cfl_cour, py::arg("cfl_cour"))
         .def("set_cfl_force", &T::set_cfl_force, py::arg("cfl_force"))
@@ -1017,6 +1018,13 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             "get_current_config",
             [](T &self) {
                 return self.solver.solver_config;
+            })
+        .def(
+            "add_wall",
+            [](T &self, Tvec pos, std::function<bool(Tvec)> wall_func) {
+                ParticleDisableConfig<Tvec> config;
+                self.solver.solver_config.particle_disable.add_disable_wall(
+                    pos, wall_func);
             })
         .def("set_solver_config", &T::set_solver_config)
         .def("add_sink", &T::add_sink)
