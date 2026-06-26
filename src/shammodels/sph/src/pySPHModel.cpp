@@ -964,6 +964,18 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             py::arg("field_name"),
             py::arg("pos_to_val"),
             py::arg("offset") = 0)
+        .def(
+            "set_field_value_lambda_u32",
+            [](T &self,
+               std::string field_name,
+               const std::function<u32(Tvec)> pos_to_val,
+               const u32 offset) {
+                return self.template set_field_value_lambda<u32>(
+                    std::move(field_name), pos_to_val, offset);
+            },
+            py::arg("field_name"),
+            py::arg("pos_to_val"),
+            py::arg("offset") = 0)
         .def("overwrite_field_value_f64", &T::template overwrite_field_value<f64>)
         .def("overwrite_field_value_f64_3", &T::template overwrite_field_value<f64_3>)
         .def("remap_positions", &T::remap_positions)
@@ -1022,9 +1034,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
         .def(
             "add_wall",
             [](T &self, Tvec pos, std::function<bool(Tvec)> wall_func) {
-                ParticleDisableConfig<Tvec> config;
-                self.solver.solver_config.particle_disable.add_disable_wall(
-                    pos, wall_func);
+                self.solver.solver_config.particle_disable.add_disable_wall(pos, wall_func);
             })
         .def("set_solver_config", &T::set_solver_config)
         .def("add_sink", &T::add_sink)

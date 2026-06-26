@@ -127,7 +127,7 @@ namespace shammodels::sph::modules {
 
         bool has_ghost = true;
         if (has_ghost) {
-            fnum ++;
+            fnum++;
         }
 
         writer.add_field_data_section(fnum);
@@ -173,7 +173,6 @@ namespace shammodels::sph::modules {
         }
 
         if (has_ghost) {
-            logger::raw_ln("PUTAIN DE MERDE");
             const u32 ighost_mask = pdl.get_field_idx<u32>("ghost_mask");
             vtk_dump_add_field<u32>(scheduler(), writer, ighost_mask, "ghost_mask");
         }

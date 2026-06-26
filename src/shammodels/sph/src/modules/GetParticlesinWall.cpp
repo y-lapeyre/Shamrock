@@ -25,32 +25,24 @@ namespace shammodels::sph::modules {
     template<typename Tvec>
     void GetParticlesInWall<Tvec>::_impl_evaluate_internal() {
         StackEntry stack_loc{};
-        logger::raw_ln("just entered _get_particles_in_wall"); 
-        logger::raw_ln("node infos :", this->print_node_info());
         auto edges = get_edges();
 
         auto &thread_counts = edges.sizes.indexes;
-        logger::raw_ln("got sizes"); 
         edges.pos.check_sizes(thread_counts);
-        logger::raw_ln("checked sizes pos");
         edges.ghost_mask.ensure_sizes(thread_counts);
-        logger::raw_ln("checked sizes ghost_mask");
 
-        auto &positions        = edges.pos.get_spans();
+        auto &positions  = edges.pos.get_spans();
         auto &ghost_mask = edges.ghost_mask.get_spans();
 
         auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
-        logger::raw_ln("before kernel call");   
         sham::distributed_data_kernel_call(
             dev_sched,
             sham::DDMultiRef{positions},
             sham::DDMultiRef{ghost_mask},
             thread_counts,
-            [wall_func       = this->wall_func](
-                u32 i, const Tvec *__restrict pos, u32 *__restrict ghost_mask) {
-
-
-                bool in_wall =wall_func(pos[i]);
+            [wall_func
+             = this->wall_func](u32 i, const Tvec *__restrict pos, u32 *__restrict ghost_mask) {
+                bool in_wall = wall_func(pos[i]);
 
                 if (in_wall) {
                     ghost_mask[i] = 1;
@@ -71,7 +63,7 @@ namespace shammodels::sph::modules {
      */
     template<typename Tvec>
     std::string GetParticlesInWall<Tvec>::_impl_get_tex() const {
-        auto pos              = get_ro_edge_base(0).get_tex_symbol();
+        auto pos        = get_ro_edge_base(0).get_tex_symbol();
         auto ghost_mask = get_rw_edge_base(0).get_tex_symbol();
 
         std::string tex = R"tex(
@@ -81,12 +73,12 @@ namespace shammodels::sph::modules {
     \end{align}
     )tex";
 
-        //shambase::replace_all(tex, "{x0}", std::to_string(wall_pos[0]));
-        //shambase::replace_all(tex, "{y0}", std::to_string(wall_pos[1]));
-        //shambase::replace_all(tex, "{z0}", std::to_string(wall_pos[2]));
-        //shambase::replace_all(tex, "{wall_length}", std::to_string(wall_length));
-        //shambase::replace_all(tex, "{wall_width}", std::to_string(wall_width));
-        //shambase::replace_all(tex, "{wall_thickness}", std::to_string(wall_thickness));
+        // shambase::replace_all(tex, "{x0}", std::to_string(wall_pos[0]));
+        // shambase::replace_all(tex, "{y0}", std::to_string(wall_pos[1]));
+        // shambase::replace_all(tex, "{z0}", std::to_string(wall_pos[2]));
+        // shambase::replace_all(tex, "{wall_length}", std::to_string(wall_length));
+        // shambase::replace_all(tex, "{wall_width}", std::to_string(wall_width));
+        // shambase::replace_all(tex, "{wall_thickness}", std::to_string(wall_thickness));
 
         return tex;
     }

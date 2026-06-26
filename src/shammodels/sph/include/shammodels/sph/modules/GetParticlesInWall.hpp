@@ -32,9 +32,7 @@ namespace shammodels::sph::modules {
         std::function<bool(Tvec)> wall_func;
 
         public:
-        GetParticlesInWall(
-            std::function<bool(Tvec)> wall_func)
-            : wall_func(wall_func) {}
+        GetParticlesInWall(std::function<bool(Tvec)> wall_func) : wall_func(wall_func) {}
 
         struct Edges {
             const shamrock::solvergraph::IFieldSpan<Tvec> &pos;

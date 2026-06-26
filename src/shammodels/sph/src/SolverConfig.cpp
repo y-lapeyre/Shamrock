@@ -167,12 +167,11 @@ namespace shammodels::sph {
             ghost_layout.add_field<Tscal>("s_j", ndust);
         }
 
-        bool haswall=true;
+        bool haswall = true;
 
         if (haswall) {
             ghost_layout.add_field<u32>("ghost_mask", 1);
         }
-        
     }
 
 }; // namespace shammodels::sph
