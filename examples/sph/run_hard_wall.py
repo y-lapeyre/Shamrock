@@ -8,10 +8,6 @@ x0 = 0
 y0 = 0
 z0 = 0
 
-wall_length = 0.4
-wall_width = 0.4
-wall_thickness = 0.4
-
 
 def ghost_map(r):
     x, y, z = r
@@ -27,7 +23,7 @@ def ghost_map(r):
 
 # %% # Configure the solver
 outputdir = ""
-sim_name = outputdir + "wall/" + "wall"
+sim_name = "wall_"
 ctx = shamrock.Context()
 ctx.pdata_layout_new()
 
@@ -49,6 +45,8 @@ cfg.set_artif_viscosity_VaryingCD10(
 
 cfg.set_boundary_periodic()
 cfg.set_eos_adiabatic(5.0 / 3.0)
+
+cfg.use_wall(True)
 model.set_solver_config(cfg)
 
 # Print the solver config
@@ -67,7 +65,7 @@ xymin = -0.5
 xmin = xymin
 ymin = xymin
 
-uuzero = 1.0
+uuzero = 10.0
 rhozero = 1.0
 # Compute box size
 (xs, ys, zs) = model.get_box_dim_fcc_3d(1, nx, ny, nz)
@@ -88,12 +86,8 @@ model.set_value_in_a_box(
 # the velocity function to trigger Orstang Vortex
 def vel_func(r):
     x, y, z = r
-    # in_wall = (x-x0  < wall_length) & (x - x0 > 0) & (y - y0 < wall_width)& (y - y0 > 0) & (z - z0 < wall_thickness) & (z - z0 > 0)
-    # if (in_wall):
-    #    return (0., 0., 0.)
-    # else:
-    #    return (1., 1., 0.)
-    return (1.0, 1.0, 0.0)
+
+    return (0.5, 0.5, 0.0)
 
 
 # the magnetic field (B/rho)function to trigger Orstang Vortex
@@ -112,7 +106,6 @@ print("Current part mass :", pmass)
 model.set_cfl_cour(0.3)
 model.set_cfl_force(0.25)
 
-# model.add_wall((0,0,0), 0.1, 0.1, 0.1)
 # model.apply_ghost_particles()
 
 model.timestep()
@@ -122,7 +115,7 @@ cfg.print_status()
 # Running the simulation
 
 t_sum = 0
-t_target = 0.1
+t_target = 0.3
 
 model.do_vtk_dump(f"{sim_name}_{0:05}.vtk", True)
 # model.dump(f"{sim_name}_{0:05}.sham")

@@ -92,6 +92,8 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cons
 
     PatchDataLayerLayout &pdl = scheduler().pdl_old();
 
+    bool haswall = solver_config.haswall;
+
     const u32 ixyz   = pdl.get_field_idx<Tvec>("xyz");
     const u32 ivxyz  = pdl.get_field_idx<Tvec>("vxyz");
     const u32 iaxyz  = pdl.get_field_idx<Tvec>("axyz");
@@ -245,7 +247,6 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cons
                     Tscal qa_ab = shamrock::sph::q_av(rho_a, vsig_a, v_ab_r_ab);
                     Tscal qb_ab = shamrock::sph::q_av(rho_b, vsig_b, v_ab_r_ab);
 
-                    bool haswall = true;
                     if (haswall) {
                         u32 is_ghost = ghost_mask[id_b];
                         if (is_ghost != 0) {

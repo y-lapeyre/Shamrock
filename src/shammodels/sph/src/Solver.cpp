@@ -119,7 +119,7 @@ void shammodels::sph::Solver<Tvec, Kern>::init_solver_graph() {
     bool has_epsilon_field                     = solver_config.dust_config.has_epsilon_field();
     bool has_deltav_field                      = solver_config.dust_config.has_deltav_field();
     bool has_s_j_field                         = solver_config.dust_config.has_s_j_field();
-    bool hasmask                               = true;
+    bool haswall                               = solver_config.haswall;
 
     using namespace shamrock::solvergraph;
 
@@ -161,7 +161,7 @@ void shammodels::sph::Solver<Tvec, Kern>::init_solver_graph() {
         solver_graph.register_edge("ds_j_dt", FieldRefs<Tscal>("ds_j_dt", "dS_j/dt"));
     }
 
-    if (hasmask) { // @@@ has walls
+    if (haswall) { // @@@ has walls
         solver_graph.register_edge("ghost_mask", FieldRefs<u32>("ghost_mask", "mask"));
     }
 
@@ -366,7 +366,7 @@ void shammodels::sph::Solver<Tvec, Kern>::init_solver_graph() {
             attach_field_sequence.push_back(attach_ds_j_dt);
         }
 
-        if (hasmask) {
+        if (haswall) {
             auto attach_ghost_mask = solver_graph.register_node(
                 "attach_ghost_mask", GetFieldRefFromLayer<u32>(pdl, "ghost_mask"));
             shambase::get_check_ref(attach_ghost_mask)
@@ -390,7 +390,7 @@ void shammodels::sph::Solver<Tvec, Kern>::init_solver_graph() {
         auto make_half_step_sequence = [&](std::string prefix) {
             std::vector<std::shared_ptr<shamrock::solvergraph::INode>> half_step_sequence;
 
-            if (hasmask) {
+            if (haswall) {
                 {
                     auto half_step_vxyz = solver_graph.register_node(
                         prefix + "_vxyz", shammodels::common::modules::ForwardEulerMasked<Tvec>{});
@@ -406,13 +406,12 @@ void shammodels::sph::Solver<Tvec, Kern>::init_solver_graph() {
 
                 {
                     auto half_step_uint = solver_graph.register_node(
-                        prefix + "_uint", shammodels::common::modules::ForwardEulerMasked<Tscal>{});
+                        prefix + "_uint", shammodels::common::modules::ForwardEuler<Tscal>{});
                     shambase::get_check_ref(half_step_uint)
                         .set_edges(
                             solver_graph.get_edge_ptr<IDataEdge<Tscal>>("dt_half"),
                             solver_graph.get_edge_ptr<FieldRefs<Tscal>>("duint"),
                             solver_graph.get_edge_ptr<Indexes<u32>>("part_counts"),
-                            solver_graph.get_edge_ptr<FieldRefs<u32>>("ghost_mask"),
                             solver_graph.get_edge_ptr<FieldRefs<Tscal>>("uint"));
                     half_step_sequence.push_back(half_step_uint);
                 }
@@ -510,7 +509,7 @@ void shammodels::sph::Solver<Tvec, Kern>::init_solver_graph() {
         solver_graph.register_node("half_step1", make_half_step_sequence("half_step1"));
         solver_graph.register_node("half_step2", make_half_step_sequence("half_step2"));
 
-        if (hasmask) {
+        if (haswall) {
             auto full_step_xyz = solver_graph.register_node(
                 "full_step_xyz", shammodels::common::modules::ForwardEulerMasked<Tvec>{});
             shambase::get_check_ref(full_step_xyz)
@@ -1309,6 +1308,8 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
     bool has_deltav_field  = solver_config.dust_config.has_deltav_field();
     bool has_s_j_field     = solver_config.dust_config.has_s_j_field();
 
+    bool has_wall = solver_config.haswall;
+
     PatchDataLayerLayout &pdl = scheduler().pdl_old();
     const u32 ixyz            = pdl.get_field_idx<Tvec>("xyz");
     const u32 ivxyz           = pdl.get_field_idx<Tvec>("vxyz");
@@ -1340,7 +1341,7 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
     const u32 ideltav  = (has_deltav_field) ? pdl.get_field_idx<Tvec>("deltav") : 0;
     const u32 is_j     = (has_s_j_field) ? pdl.get_field_idx<Tscal>("s_j") : 0;
 
-    bool haswall          = true;
+    bool haswall          = has_wall;
     const u32 ighost_mask = (haswall) ? pdl.get_field_idx<u32>("ghost_mask") : 0;
 
     auto &ghost_layout_ptr                              = storage.ghost_layout;
