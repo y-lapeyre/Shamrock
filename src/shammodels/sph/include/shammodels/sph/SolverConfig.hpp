@@ -1021,6 +1021,7 @@ struct shammodels::sph::SolverConfig {
 
     inline void check_config() {
         dust_config.check_config();
+        mhd_config.check_config();
 
         if (track_particles_id && false /*particle injection when added*/) {
             shamrock::experimental_feature_check(
@@ -1034,6 +1035,11 @@ struct shammodels::sph::SolverConfig {
         if (!self_grav_config.is_none()) {
             shamrock::experimental_feature_check(
                 "Self gravity is experimental, please enable experimental features to use it");
+        }
+
+        if (mhd_config.do_NIMHD()) {
+            shamrock::experimental_feature_check(
+                "Non-ideal MHD is experimental, please enable experimental features to use it");
         }
     }
 

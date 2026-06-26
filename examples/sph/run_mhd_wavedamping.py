@@ -16,6 +16,8 @@ import numpy as np
 
 import shamrock
 
+shamrock.enable_experimental_features()
+
 # Initialize shamrock (if not already done by the executable)
 if not shamrock.sys.is_initialized():
     shamrock.change_loglevel(1)

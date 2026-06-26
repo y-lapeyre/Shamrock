@@ -18,6 +18,7 @@
  */
 
 #include "shambackends/vec.hpp"
+#include "shamrock/experimental_features.hpp"
 #include "shamsys/legacy/log.hpp"
 #include <nlohmann/json.hpp>
 #include <variant>
@@ -111,6 +112,16 @@ struct shammodels::sph::MHDConfig {
         logger::raw_ln("--- MHD configMHD (deduced)");
 
         logger::raw_ln("-------------");
+    }
+
+    inline void check_config() {
+
+        if (do_NIMHD()) {
+
+            if (!shamrock::are_experimental_features_allowed()) {
+                shambase::throw_with_loc<std::runtime_error>("Non Ideal MHD is experimental");
+            }
+        }
     }
 };
 
