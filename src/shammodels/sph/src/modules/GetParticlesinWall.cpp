@@ -8,7 +8,7 @@
 // -------------------------------------------------------//
 
 /**
- * @file GetParticlesInWall.cpp
+ * @file GetParticlesinWall.cpp
  * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief Implements the GetParticlesInWall module, which identifies particles in a wall.
  *
