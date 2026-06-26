@@ -516,6 +516,8 @@ struct shammodels::sph::SolverConfig {
     /// Get the CFL multiplier for the stiffness
     inline Tscal get_cfl_mult_stiffness() { return cfl_config.cfl_multiplier_stiffness; }
 
+    bool show_cfl_detail = false;
+
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Solver status variables (END)
     //////////////////////////////////////////////////////////////////////////////////////////////
@@ -900,6 +902,16 @@ struct shammodels::sph::SolverConfig {
      */
     inline void add_ext_force_point_mass(Tscal central_mass, Tscal Racc) {
         ext_force_config.add_point_mass(central_mass, Racc);
+    }
+
+    /**
+     * @brief Add a post-newtonian Paczynski-Wiita potential
+     *
+     * @param[in] central_mass The mass of the central object
+     * @param[in] Racc The accretion radius of the central object
+     */
+    inline void add_ext_force_paczynski_wiita(Tscal central_mass, Tvec central_pos, Tscal Racc) {
+        ext_force_config.add_paczynski_wiita(central_mass, central_pos, Racc);
     }
 
     /**
@@ -1297,6 +1309,7 @@ namespace shammodels::sph {
             {"cfl_config", p.cfl_config},
             {"unit_sys", p.unit_sys},
             {"time_state", p.time_state},
+            {"show_cfl_detail", p.show_cfl_detail},
             // mhd config
             {"mhd_config", p.mhd_config},
             // dust config
@@ -1390,6 +1403,7 @@ namespace shammodels::sph {
         _get_to_if_contains("cfl_config", p.cfl_config);
         _get_to_if_contains("unit_sys", p.unit_sys);
         _get_to_if_contains("time_state", p.time_state);
+        _get_to_if_contains("show_cfl_detail", p.show_cfl_detail);
         _get_to_if_contains("mhd_config", p.mhd_config);
         _get_to_if_contains("dust_config", p.dust_config);
         _get_to_if_contains("self_grav_config", p.self_grav_config);
