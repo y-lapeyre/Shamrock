@@ -47,10 +47,8 @@ namespace shamrock::sph::mhd {
     inline Tvec WursterD(Tvec B, Tvec J, Tscal etaO, Tscal etaH, Tscal etaAD) {
 
         Tvec Bhat = B * sham::inv_sat_zero(sycl::length(B));
-        // logger::raw_ln("#### Bhat", Bhat);
-        // logger::raw_ln("#### J", J);
-        Tvec D = etaO * J + etaH * sycl::cross(J, Bhat)
-                 - etaAD * sycl::cross(sycl::cross(J, Bhat), Bhat);
+        Tvec D    = etaO * J + etaH * sycl::cross(J, Bhat)
+                    - etaAD * sycl::cross(sycl::cross(J, Bhat), Bhat);
 
         return D;
     }
@@ -81,12 +79,6 @@ namespace shamrock::sph::mhd {
 
         Tscal sub_fact_a = rho_a_sq * omega_a;
         Tscal sub_fact_b = rho_b_sq * omega_b;
-
-        // logger::raw_ln("####### Da", D_a);
-        // logger::raw_ln("####### Db", D_b);
-
-        logger::raw_ln("#### Da", D_a);
-        logger::raw_ln("#### Db", D_b);
 
         Tvec acc_a = sham::inv_sat_zero(sub_fact_a) * (sycl::cross(D_a, nabla_Wab_ha));
         Tvec acc_b = sham::inv_sat_zero(sub_fact_b) * (sycl::cross(D_b, nabla_Wab_hb));

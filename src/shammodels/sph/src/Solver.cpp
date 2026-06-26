@@ -1568,7 +1568,6 @@ void shammodels::sph::Solver<Tvec, Kern>::update_J() {
     using namespace shamrock::patch;
     PatchDataLayerLayout &pdl = scheduler().pdl_old();
 
-    logger::raw_ln("loading B");
     const u32 iB_on_rho = pdl.get_field_idx<Tvec>("B/rho");
     std::shared_ptr<shamrock::solvergraph::FieldRefs<Tvec>> B_on_rho_edge
         = std::make_shared<shamrock::solvergraph::FieldRefs<Tvec>>("", "");
@@ -1586,15 +1585,12 @@ void shammodels::sph::Solver<Tvec, Kern>::update_J() {
     });
 
     B_on_rho_edge->set_refs(B_on_rho_refs);
-    logger::raw_ln("loaded B");
 
     Tscal const mu_0 = solver_config.get_constant_mu_0();
     Tscal const c    = solver_config.get_constant_c();
 
     shambase::get_check_ref(storage.hpart_with_ghosts);
-    logger::raw_ln(" hpart_with_ghosts is OK");
     shambase::get_check_ref(storage.MagCurrentJ);
-    logger::raw_ln(" MagCurrentJ is OK");
     // use MagCurrenJ: on active particles (no gz)
     modules::NodeComputeJ<Tvec, Kern> computeJ{solver_config.gpart_mass, mu_0, c};
     computeJ.set_edges(
@@ -2158,10 +2154,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                                   }));
 
             // compute J field
-            logger::raw_ln("@@@@@ before update J");
-            // logger::raw_ln("MagCurrentJ size after copy-in = ", storage.MagCurrentJ.size());
             update_J();
-            logger::raw_ln("@@@@@ after update J");
 
             // communicate J field
             shamrock::solvergraph::Field<Tvec> &comp_field_send
