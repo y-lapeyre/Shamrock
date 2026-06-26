@@ -125,8 +125,7 @@ namespace shammodels::sph::modules {
             fnum += ndust;
         }
 
-        bool has_ghost = true;
-        if (has_ghost) {
+        if (solver_config.haswall) {
             fnum++;
         }
 

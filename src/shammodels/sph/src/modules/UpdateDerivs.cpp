@@ -250,13 +250,8 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cons
                     if (haswall) {
                         u32 is_ghost = ghost_mask[id_b];
                         if (is_ghost != 0) {
-                            // if (v_ab_r_ab < 0) {
-                            //     qb_ab += 100 * qb_ab_wall;
-                            // }
-                            Tscal qa_ab_wall = shamrock::sph::q_av(rho_a, vsig_a, v_ab_r_ab);
-                            qa_ab += sham::inv_sat_positive(sycl::dot(dr, dr)); // 100 * qa_ab_wall;
-                            Tscal qb_ab_wall = shamrock::sph::q_av(rho_b, vsig_b, v_ab_r_ab);
-                            qb_ab += sham::inv_sat_positive(sycl::dot(dr, dr)); // 100 * qb_ab_wall;
+                            qa_ab += sham::inv_sat_positive(sycl::dot(dr, dr));
+                            qb_ab += sham::inv_sat_positive(sycl::dot(dr, dr));
                         }
                     }
 

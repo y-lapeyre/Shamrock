@@ -190,7 +190,8 @@ def draw_aabb(ax, aabb, color, alpha):
 
 def plot_state(iplot):
     """Plot the current state of the simulation."""
-    pos = ctx.collect_data()["xyz"]
+    data = ctx.collect_data()
+    pos = data["xyz"]
 
     if shamrock.sys.world_rank() == 0:
         X = pos[:, 0]
@@ -198,7 +199,7 @@ def plot_state(iplot):
         Z = pos[:, 2]
 
         # Filter particles by ghost mask to show wall region
-        ghost_mask = ctx.collect_data()["ghost_mask"]
+        ghost_mask = data["ghost_mask"]
         wall_mask = ghost_mask == 1
 
         plt.cla()

@@ -63,22 +63,25 @@ namespace shammodels::sph::modules {
      */
     template<typename Tvec>
     std::string GetParticlesInWall<Tvec>::_impl_get_tex() const {
-        auto pos        = get_ro_edge_base(0).get_tex_symbol();
+
+        auto positions  = get_ro_edge_base(0).get_tex_symbol();
         auto ghost_mask = get_rw_edge_base(0).get_tex_symbol();
 
         std::string tex = R"tex(
-    Get particles inside the rectangular wall
+    Identify particles inside the wall.
+
+    For each particle \(i\), evaluate the user‑provided predicate \(\texttt{wall\_func}\) on its position.
     \begin{align}
-    {part_ids_in_wall} &= \{i \text{ where } \vert\vert{x}_i - {x0}\vert\vert < {wall_length} \text{ and } \vert\vert{y}_i - {y0}\vert\vert < {wall_width} \text{ and } \vert\vert{z}_i - {z0}\vert\vert < {wall_thickness}\}\\
+    {ghost_mask}_i &=
+    \begin{cases}
+    1 & \text{if } \texttt{wall\_func}({positions}_i) = \text{true} \\
+    0 & \text{otherwise}
+    \end{cases}
     \end{align}
     )tex";
 
-        // shambase::replace_all(tex, "{x0}", std::to_string(wall_pos[0]));
-        // shambase::replace_all(tex, "{y0}", std::to_string(wall_pos[1]));
-        // shambase::replace_all(tex, "{z0}", std::to_string(wall_pos[2]));
-        // shambase::replace_all(tex, "{wall_length}", std::to_string(wall_length));
-        // shambase::replace_all(tex, "{wall_width}", std::to_string(wall_width));
-        // shambase::replace_all(tex, "{wall_thickness}", std::to_string(wall_thickness));
+        shambase::replace_all(tex, "{positions}", positions);
+        shambase::replace_all(tex, "{ghost_mask}", ghost_mask);
 
         return tex;
     }
