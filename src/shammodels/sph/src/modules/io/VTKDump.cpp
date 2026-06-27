@@ -171,7 +171,7 @@ namespace shammodels::sph::modules {
             vtk_dump_add_field<Tscal>(scheduler(), writer, iluminosity, "luminosity");
         }
 
-        if (has_ghost) {
+        if (solver_config.haswall) {
             const u32 ighost_mask = pdl.get_field_idx<u32>("ghost_mask");
             vtk_dump_add_field<u32>(scheduler(), writer, ighost_mask, "ghost_mask");
         }
