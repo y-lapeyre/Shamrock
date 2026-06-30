@@ -108,7 +108,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cons
     u32 ivxyz_interf  = ghost_layout.get_field_idx<Tvec>("vxyz");
     u32 iomega_interf = ghost_layout.get_field_idx<Tscal>("omega");
 
-    u32 ighost_mask_interf = ghost_layout.get_field_idx<u32>("ghost_mask");
+    u32 ighost_mask_interf = (haswall) ? ghost_layout.get_field_idx<u32>("ghost_mask") : 0;
 
     auto &merged_xyzh                                 = storage.merged_xyzh.get();
     shamrock::solvergraph::Field<Tscal> &omega        = shambase::get_check_ref(storage.omega);
