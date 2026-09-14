@@ -2582,7 +2582,6 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                                           1)); // hpart is at index 1 in merged_xyzh
                                   }));
 
-            auto uint_with_ghost = shamrock::solvergraph::FieldRefs<Tscal>::make_shared("", "");
 
             shambase::get_check_ref(storage.hpart_with_ghosts)
                 .set_refs(storage.merged_xyzh.get()
@@ -2591,6 +2590,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                                       return std::ref(mpdat.get_field<Tscal>(1));
                                   }));
 
+            auto uint_with_ghost = shamrock::solvergraph::FieldRefs<Tscal>::make_shared("", "");
             shamrock::solvergraph::NodeSetEdge<shamrock::solvergraph::FieldRefs<Tscal>>
                 set_uint_with_ghost_refs(
                     [&](shamrock::solvergraph::FieldRefs<Tscal> &field_uint_with_ghost_edge) {
@@ -2612,6 +2612,30 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                     });
 
             set_uint_with_ghost_refs.set_edges(uint_with_ghost);
+
+            auto omega_with_ghost = shamrock::solvergraph::FieldRefs<Tscal>::make_shared("", "");
+            shamrock::solvergraph::NodeSetEdge<shamrock::solvergraph::FieldRefs<Tscal>>
+                set_omega_with_ghost_refs(
+                    [&](shamrock::solvergraph::FieldRefs<Tscal> &field_omega_with_ghost_edge) {
+                        shambase::DistributedData<PatchDataLayer> &mpdats
+                            = storage.merged_patchdata_ghost.get();
+
+                        shamrock::solvergraph::DDPatchDataFieldRef<Tscal> field_omega_with_ghost_refs
+                            = {};
+
+                        scheduler().for_each_patchdata_nonempty(
+                            [&](const Patch p, PatchDataLayer &pdat) {
+                                PatchDataLayer &mpdat = mpdats.get(p.id_patch);
+
+                                auto &field = mpdat.get_field<Tscal>(iomega_interf);
+                                field_omega_with_ghost_refs.add_obj(p.id_patch, std::ref(field));
+                            });
+
+                        field_omega_with_ghost_edge.set_refs(field_omega_with_ghost_refs);
+                    });
+
+            set_omega_with_ghost_refs.set_edges(omega_with_ghost);
+
 
             auto luminosity = shamrock::solvergraph::FieldRefs<Tscal>::make_shared("", "");
 
@@ -2635,7 +2659,9 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
             set_luminosity_refs.set_edges(luminosity);
 
             set_uint_with_ghost_refs.evaluate();
+            set_omega_with_ghost_refs.evaluate();
             set_luminosity_refs.evaluate();
+        
 
             Tscal alpha_u = solver_config.artif_viscosity.get_alpha_u().value();
 
