@@ -59,7 +59,15 @@ namespace shammodels::sph::modules {
             std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>> u,
             std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>> pressure,
             std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>> luminosity) {
-            __internal_set_ro_edges({part_counts, part_counts_with_ghosts, neigh_cache, xyz, hpart, omega, u, pressure});
+            __internal_set_ro_edges(
+                {part_counts,
+                 part_counts_with_ghosts,
+                 neigh_cache,
+                 xyz,
+                 hpart,
+                 omega,
+                 u,
+                 pressure});
             __internal_set_rw_edges({luminosity});
         }
 

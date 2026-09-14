@@ -34,7 +34,7 @@ void shammodels::sph::modules::NodeComputeLuminosity<Tvec, SPHKernel>::_impl_eva
     auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
 
     auto &part_counts_with_ghosts = edges.part_counts_with_ghosts.indexes;
-    auto &part_counts            = edges.part_counts.indexes;
+    auto &part_counts             = edges.part_counts.indexes;
 
     edges.luminosity.ensure_sizes(edges.part_counts.indexes);
     edges.omega.check_sizes(part_counts_with_ghosts);
