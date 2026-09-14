@@ -2674,7 +2674,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                 storage.neigh_cache,
                 storage.positions_with_ghosts,
                 storage.hpart_with_ghosts,
-                storage.omega,
+                omega_with_ghost,
                 uint_with_ghost,
                 storage.pressure,
                 luminosity);
