@@ -50,11 +50,11 @@ namespace shammodels::common::modules {
         const Tscal theta_d = edges.theta_gw.data;
         const Tscal phi_d   = edges.phi_gw.data;
 
-        constexpr Tscal pi = static_cast<Tscal>(3.14159265358979323846264338327950288L);
+        constexpr Tscal pi = M_PI;
 
         // accumulate the six independent components of d^2Q/dt^2
 
-        std::array<Tscal, 6> ddq = sham::distributed_data_kernel_call(
+        sham::distributed_data_kernel_call(
             shamsys::instance::get_compute_scheduler_ptr(),
             sham::DDMultiRef{
                 edges.spans_positions.get_spans(),
@@ -62,6 +62,7 @@ namespace shammodels::common::modules {
                 edges.spans_accelerations.get_spans(),
                 edges.spans_masses.get_spans(),
                 edges.spans_accel_ext.get_spans()},
+            sham::DDMultiRef{edges.ddq.get_spans()},
             edges.sizes.indexes,
             [x0, v0, a0](
                 u32 gid,
