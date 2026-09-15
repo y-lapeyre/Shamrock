@@ -39,10 +39,10 @@
     X_RO(shamrock::solvergraph::Indexes<u32>, sizes)                                               \
                                                                                                    \
     /* ------------------- outputs ------------------- */                                          \
-    X_RW(shamrock::solvergraph::IDataEdge<std::array<Tscal, 6>>, ddq)                              \
-    X_RW(shamrock::solvergraph::IDataEdge<std::array<Tscal, 9>>, ddq_xy)                           \
-    X_RW(shamrock::solvergraph::IDataEdge<std::array<Tscal, 4>>, hx)                               \
-    X_RW(shamrock::solvergraph::IDataEdge<std::array<Tscal, 4>>, hp)
+    X_RW(shamrock::solvergraph::IDataEdge<Tddq>, ddq)                                              \
+    X_RW(shamrock::solvergraph::IDataEdge<Tddqxy>, ddq_xy)                                         \
+    X_RW(shamrock::solvergraph::IDataEdge<Th>, hx)                                                 \
+    X_RW(shamrock::solvergraph::IDataEdge<Th>, hp)
 
 namespace shammodels::common::modules {
 
@@ -57,6 +57,9 @@ namespace shammodels::common::modules {
         using Tscal = shambase::VecComponent<Tvec>;
 
         public:
+        using Tddq            = std::array<Tscal, 6>;
+        using Tddqxy          = std::array<Tscal, 9>;
+        using Th              = std::array<Tscal, 4>;
         bool calc_gravitwaves = false; //
         double theta_gw       = 0.0;   // rotation of xy plane (deg)
         double phi_gw         = 0.0;   // angle betw. projection of los in xy plane and y axis (deg)

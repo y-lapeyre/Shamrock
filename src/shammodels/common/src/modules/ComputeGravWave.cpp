@@ -37,18 +37,12 @@ namespace shammodels::common::modules {
 
         auto edges = get_edges();
 
-        // ------------------------------------------------------------------
-        // Size checks
-        // ------------------------------------------------------------------
         edges.spans_positions.check_sizes(edges.sizes.indexes);
         edges.spans_velocities.check_sizes(edges.sizes.indexes);
         edges.spans_accelerations.check_sizes(edges.sizes.indexes);
         edges.spans_masses.check_sizes(edges.sizes.indexes);
         edges.spans_accel_ext.check_sizes(edges.sizes.indexes);
 
-        // ------------------------------------------------------------------
-        // Unpack scalar inputs
-        // ------------------------------------------------------------------
         const Tvec x0       = edges.central_pos.data;
         const Tvec v0       = edges.central_vel.data;
         const Tvec a0       = edges.central_acc.data;
@@ -58,17 +52,9 @@ namespace shammodels::common::modules {
 
         constexpr Tscal pi = static_cast<Tscal>(3.14159265358979323846264338327950288L);
 
-        // ------------------------------------------------------------------
-        // Step 1 : accumulate the six independent components of d²Q/dt²
-        //          over all particles of this rank, then MPI-reduce.
-        //
-        //          Note: the reference Fortran code excludes accreted
-        //          particles with xyzh(4,i) <= tiny. We rely on the
-        //          caller's mass span already reflecting that (m <= 0 =>
-        //          skip). If you also need to keep the accreted mask
-        //          explicitly, add an extra span here.
-        // ------------------------------------------------------------------
-        std::array<Tscal, 6> ddq = sham::distributed_data_kernel_call_reduce<6>(
+        // accumulate the six independent components of d^2Q/dt^2
+
+        std::array<Tscal, 6> ddq = sham::distributed_data_kernel_call(
             shamsys::instance::get_compute_scheduler_ptr(),
             sham::DDMultiRef{
                 edges.spans_positions.get_spans(),
@@ -114,11 +100,6 @@ namespace shammodels::common::modules {
                 return local;
             });
 
-        // ------------------------------------------------------------------
-        // Step 2 : build the symmetric 3x3 quadrupole second-derivative
-        //          matrix Q. (Kept full; the reference code does not
-        //          subtract the trace either.)
-        // ------------------------------------------------------------------
         std::array<Tscal, 9> Q_arr{};
         Mat3<Tscal> Q(Q_arr.data());
         Q(0, 0) = ddq[0];
@@ -131,15 +112,14 @@ namespace shammodels::common::modules {
         Q(2, 1) = ddq[4];
         Q(2, 2) = ddq[5];
 
-        // ------------------------------------------------------------------
-        // Step 3 : rotate into the sky plane if theta_gw != 0.
+        // rotate into the sky plane if theta_gw != 0.
         //
         //   R  = [[ c, 0, s],
         //         [ 0, 1, 0],
         //         [-s, 0, c]]     with c = cos(lambda), s = sin(lambda)
         //
         //   ddq_xy = R^T * Q * R
-        // ------------------------------------------------------------------
+
         std::array<Tscal, 9> ddq_xy_arr{};
         Mat3<Tscal> ddq_xy(ddq_xy_arr.data());
 
@@ -182,10 +162,8 @@ namespace shammodels::common::modules {
             }
         }
 
-        // ------------------------------------------------------------------
-        // Step 4 : angular pattern of h+ and hx at the four standard
-        //          viewing angles eta = 0, pi/6, pi/3, pi/2.
-        // ------------------------------------------------------------------
+        // h+ and hx
+
         const Tscal phi     = phi_d * pi / static_cast<Tscal>(180);
         const Tscal sinphi  = std::sin(phi);
         const Tscal cosphi  = std::cos(phi);
@@ -219,9 +197,7 @@ namespace shammodels::common::modules {
                            + ddq_xy(1, 2) * sinphi * sineta);
         }
 
-        // ------------------------------------------------------------------
-        // Step 5 : publish outputs
-        // ------------------------------------------------------------------
+        // write output
         edges.ddq.data    = ddq;
         edges.ddq_xy.data = ddq_xy_arr;
         edges.hx.data     = hx_out;
