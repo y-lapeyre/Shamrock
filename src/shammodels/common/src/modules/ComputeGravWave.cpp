@@ -17,7 +17,10 @@
 #include "shammodels/common/modules/ComputeGravWave.hpp"
 #include "shambackends/kernel_call_distrib.hpp"
 #include "shammath/matrix_exponential.hpp"
+#include "shamrock/patch/Patch.hpp"
 #include "shamrock/patch/PatchDataField.hpp"
+#include "shamrock/patch/PatchDataLayer.hpp"
+#include "shamrock/patch/PatchDataLayerLayout.hpp"
 #include "shamsys/NodeInstance.hpp"
 
 namespace shammodels::common::modules {
@@ -43,98 +46,115 @@ namespace shammodels::common::modules {
         edges.spans_masses.check_sizes(edges.sizes.indexes);
         edges.spans_accel_ext.check_sizes(edges.sizes.indexes);
 
-        const Tvec x0       = edges.central_pos.data;
-        const Tvec v0       = edges.central_vel.data;
-        const Tvec a0       = edges.central_acc.data;
-        const Tscal fac     = edges.gw_prefactor.data;
-        const Tscal theta_d = edges.theta_gw.data;
-        const Tscal phi_d   = edges.phi_gw.data;
+        const Tvec x0         = edges.central_pos.data;
+        const Tvec v0         = edges.central_vel.data;
+        const Tvec a0         = edges.central_acc.data;
+        const Tscal fac       = edges.gw_prefactor.data;
+        const Tscal theta_deg = edges.theta_gw.data;
+        const Tscal phi_deg   = edges.phi_gw.data;
 
         constexpr Tscal pi = M_PI;
 
-        // accumulate the six independent components of d^2Q/dt^2
+        u64 npatch     = scheduler().patch_list.local.size();
+        auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
+        sham::DeviceBuffer<Tscal> ddq0{npatch, dev_sched};
+        sham::DeviceBuffer<Tscal> ddq1{npatch, dev_sched};
+        sham::DeviceBuffer<Tscal> ddq2{npatch, dev_sched};
+        sham::DeviceBuffer<Tscal> ddq3{npatch, dev_sched};
+        sham::DeviceBuffer<Tscal> ddq4{npatch, dev_sched};
+        sham::DeviceBuffer<Tscal> ddq5{npatch, dev_sched};
 
-        sham::distributed_data_kernel_call(
-            shamsys::instance::get_compute_scheduler_ptr(),
-            sham::DDMultiRef{
-                edges.spans_positions.get_spans(),
-                edges.spans_velocities.get_spans(),
-                edges.spans_accelerations.get_spans(),
-                edges.spans_masses.get_spans(),
-                edges.spans_accel_ext.get_spans()},
-            sham::DDMultiRef{edges.ddq.get_spans()},
-            edges.sizes.indexes,
-            [x0, v0, a0](
-                u32 gid,
-                const Tvec *xyz,
-                const Tvec *vxyz,
-                const Tvec *axyz,
-                const Tscal *mass,
-                const Tvec *axyz_ext) -> std::array<Tscal, 6> {
-                std::array<Tscal, 6> local
-                    = {Tscal(0), Tscal(0), Tscal(0), Tscal(0), Tscal(0), Tscal(0)};
+        // build ddq (dot dot Q)
+        //  compute per-particle contributions to d^2 Q_ij / dt^2.
+        // ddq IFieldSpan: 6 components per particle
+        // then sum contributions
 
-                const Tscal m = mass[gid];
-                if (m <= Tscal(0)) {
-                    return local; // accreted / removed particle
-                }
+        scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
+            // sham::kernel_call(
+            //     shamsys::instance::get_compute_scheduler_ptr(),
+            //     sham::DDMultiRef{
+            //         edges.spans_positions.get_spans(),
+            //         edges.spans_velocities.get_spans(),
+            //         edges.spans_accelerations.get_spans(),
+            //         edges.spans_masses.get_spans(),
+            //         edges.spans_accel_ext.get_spans()},
+            //         sham::DDMultiRef{ddq0, ddq1, ddq2, ddq3, ddq4, ddq5},
+            //     edges.sizes.indexes,
+            u32 cnt = pdat.get_obj_cnt();
+            if (cnt == 0)
+                return;
 
-                const Tscal x  = xyz[gid][0] - x0[0];
-                const Tscal y  = xyz[gid][1] - x0[1];
-                const Tscal z  = xyz[gid][2] - x0[2];
-                const Tscal vx = vxyz[gid][0] - v0[0];
-                const Tscal vy = vxyz[gid][1] - v0[1];
-                const Tscal vz = vxyz[gid][2] - v0[2];
+            sham::kernel_call(
+                dev_sched->get_queue(),
+                sham::DDMultiRef{
+                    edges.spans_positions.get_spans(),
+                    edges.spans_velocities.get_spans(),
+                    edges.spans_accelerations.get_spans(),
+                    edges.spans_masses.get_spans(),
+                    edges.spans_accel_ext.get_spans()},
+                sham::DDMultiRef{ddq0, ddq1, ddq2, ddq3, ddq4, ddq5},
+                cnt,
+                [x0, v0, a0](
+                    u32 gid,
+                    const Tvec *xyz,
+                    const Tvec *vxyz,
+                    const Tvec *axyz,
+                    const Tscal *mass,
+                    const Tvec *axyz_ext,
+                    Tddq *ddq) {
+                    const Tscal m = mass[gid];
 
-                // acceleration = (total acceleration) - a0  +  external
-                const Tscal ax = axyz[gid][0] - a0[0] + axyz_ext[gid][0];
-                const Tscal ay = axyz[gid][1] - a0[1] + axyz_ext[gid][1];
-                const Tscal az = axyz[gid][2] - a0[2] + axyz_ext[gid][2];
+                    const Tscal x  = xyz[gid][0] - x0[0];
+                    const Tscal y  = xyz[gid][1] - x0[1];
+                    const Tscal z  = xyz[gid][2] - x0[2];
+                    const Tscal vx = vxyz[gid][0] - v0[0];
+                    const Tscal vy = vxyz[gid][1] - v0[1];
+                    const Tscal vz = vxyz[gid][2] - v0[2];
 
-                local[0] = m * (Tscal(2) * vx * vx + x * ax + x * ax); // ddqxx
-                local[1] = m * (Tscal(2) * vx * vy + x * ay + y * ax); // ddqxy
-                local[2] = m * (Tscal(2) * vx * vz + x * az + z * ax); // ddqxz
-                local[3] = m * (Tscal(2) * vy * vy + y * ay + y * ay); // ddqyy
-                local[4] = m * (Tscal(2) * vy * vz + y * az + z * ay); // ddqyz
-                local[5] = m * (Tscal(2) * vz * vz + z * az + z * az); // ddqzz
+                    // @@@ to check
+                    const Tscal ax = axyz[gid][0] - a0[0] + axyz_ext[gid][0];
+                    const Tscal ay = axyz[gid][1] - a0[1] + axyz_ext[gid][1];
+                    const Tscal az = axyz[gid][2] - a0[2] + axyz_ext[gid][2];
 
-                return local;
-            });
+                    ddq0 += m * (Tscal(2.) * vx * vx + x * ax + x * ax);
+                    ddq1 += m * (Tscal(2.) * vx * vy + x * ay + y * ax);
+                    ddq2 += m * (Tscal(2.) * vx * vz + x * az + z * ax);
+                    ddq3 += m * (Tscal(2.) * vy * vy + y * ay + y * ay);
+                    ddq4 += m * (Tscal(2.) * vy * vz + y * az + z * ay);
+                    ddq5 += m * (Tscal(2.) * vz * vz + z * az + z * az);
+                });
+        };
+
+        edges.ddq[0]  = shamalgs::collective::allreduce_sum(ddq0);
+        edges.ddq[1]  = shamalgs::collective::allreduce_sum(ddq1);
+        edges.ddq[2]  = shamalgs::collective::allreduce_sum(ddq2);
+        edges.ddq[3]  = shamalgs::collective::allreduce_sum(ddq3);
+        edges.ddq[4]  = shamalgs::collective::allreduce_sum(ddq4);
+        edges.ddq[5]  = shamalgs::collective::allreduce_sum(ddq5);
 
         std::array<Tscal, 9> Q_arr{};
         Mat3<Tscal> Q(Q_arr.data());
-        Q(0, 0) = ddq[0];
-        Q(0, 1) = ddq[1];
-        Q(0, 2) = ddq[2];
-        Q(1, 0) = ddq[1];
-        Q(1, 1) = ddq[3];
-        Q(1, 2) = ddq[4];
-        Q(2, 0) = ddq[2];
-        Q(2, 1) = ddq[4];
-        Q(2, 2) = ddq[5];
+        Q(0, 0) = edges.ddq[0];
+        Q(0, 1) = Q(1, 0) = edges.ddq[1];
+        Q(0, 2) = Q(2, 0) = edges.ddq[2];
+        Q(1, 1) = edges.ddq[3];
+        Q(1, 2) = Q(2, 1) = edges.ddq[4];
+        Q(2, 2) = edges.ddq[5];
 
-        // rotate into the sky plane if theta_gw != 0.
-        //
-        //   R  = [[ c, 0, s],
-        //         [ 0, 1, 0],
-        //         [-s, 0, c]]     with c = cos(lambda), s = sin(lambda)
-        //
-        //   ddq_xy = R^T * Q * R
 
         std::array<Tscal, 9> ddq_xy_arr{};
         Mat3<Tscal> ddq_xy(ddq_xy_arr.data());
 
-        const bool rotate = std::abs(theta_d) > static_cast<Tscal>(1e-30);
+        const bool rotate = std::abs(theta_deg) > static_cast<Tscal>(1e-30);
         if (rotate) {
-            const Tscal lambda = theta_d * pi / static_cast<Tscal>(180);
-            const Tscal c      = std::cos(lambda);
-            const Tscal s      = std::sin(lambda);
+            const Tscal lam = theta_deg * pi / static_cast<Tscal>(180);
+            const Tscal c   = std::cos(lam);
+            const Tscal s   = std::sin(lam);
 
-            std::array<Tscal, 9> R_arr
+            const std::array<Tscal, 9> R_arr
                 = {c, Tscal(0), s, Tscal(0), Tscal(1), Tscal(0), -s, Tscal(0), c};
             Mat3<Tscal> R(R_arr.data());
 
-            // inter = Q * R
             std::array<Tscal, 9> inter_arr{};
             Mat3<Tscal> inter(inter_arr.data());
             for (std::size_t i = 0; i < 3; ++i) {
@@ -147,7 +167,6 @@ namespace shammodels::common::modules {
                 }
             }
 
-            // ddq_xy = R^T * inter
             for (std::size_t i = 0; i < 3; ++i) {
                 for (std::size_t j = 0; j < 3; ++j) {
                     Tscal sum = Tscal(0);
@@ -163,9 +182,10 @@ namespace shammodels::common::modules {
             }
         }
 
-        // h+ and hx
 
-        const Tscal phi     = phi_d * pi / static_cast<Tscal>(180);
+        // Step 5 : quadrupole angular pattern for h+ / hx.
+        // ------------------------------------------------------------------
+        const Tscal phi     = phi_deg * pi / static_cast<Tscal>(180);
         const Tscal sinphi  = std::sin(phi);
         const Tscal cosphi  = std::cos(phi);
         const Tscal sinphi2 = sinphi * sinphi;
@@ -184,22 +204,19 @@ namespace shammodels::common::modules {
             const Tscal coseta2 = coseta * coseta;
             const Tscal sin2eta = std::sin(Tscal(2) * eta);
 
-            // h+
             hp_out[i] = fac
                         * (ddq_xy(0, 0) * (cosphi2 - sinphi2 * coseta2)
                            + ddq_xy(1, 1) * (sinphi2 - cosphi2 * coseta2) - ddq_xy(2, 2) * sineta2
                            - ddq_xy(0, 1) * sin2phi * (Tscal(1) + coseta2)
                            + ddq_xy(0, 2) * sinphi * sin2eta + ddq_xy(1, 2) * cosphi * sin2eta);
 
-            // hx
             hx_out[i] = Tscal(2) * fac
                         * (Tscal(0.5) * (ddq_xy(0, 0) - ddq_xy(1, 1)) * sin2phi * coseta
                            + ddq_xy(0, 1) * cos2phi * coseta - ddq_xy(0, 2) * cosphi * sineta
                            + ddq_xy(1, 2) * sinphi * sineta);
         }
 
-        // write output
-        edges.ddq.data    = ddq;
+
         edges.ddq_xy.data = ddq_xy_arr;
         edges.hx.data     = hx_out;
         edges.hp.data     = hp_out;

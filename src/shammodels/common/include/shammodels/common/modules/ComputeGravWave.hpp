@@ -18,6 +18,7 @@
 
 #include "shambackends/vec.hpp"
 #include "shammath/matrix_exponential.hpp"
+#include "shamrock/scheduler/ShamrockCtx.hpp"
 #include "shamrock/solvergraph/IFieldSpan.hpp"
 #include "shamrock/solvergraph/Indexes.hpp"
 #include "shamsolvergraph/edge/IDataEdge.hpp"
@@ -54,12 +55,16 @@ namespace shammodels::common::modules {
         double c   = 1; // speed of light, cgs
         double Mpc = 1; // 1 Mpc in cm
 
+        ShamrockCtx &context;
+
         using Tscal = shambase::VecComponent<Tvec>;
 
         public:
-        using Tddq            = std::array<Tscal, 6>;
-        using Tddqxy          = std::array<Tscal, 9>;
-        using Th              = std::array<Tscal, 4>;
+        using Tddq   = std::array<Tscal, 6>; // ddq: Matrix dot dot M
+        using Tddqxy = std::array<Tscal, 9>;
+        using Th     = std::array<Tscal, 4>;
+
+        shamrock::solvergraph::IFieldSpan<Tddq> ddq_perpart;
         bool calc_gravitwaves = false; //
         double theta_gw       = 0.0;   // rotation of xy plane (deg)
         double phi_gw         = 0.0;   // angle betw. projection of los in xy plane and y axis (deg)
@@ -73,6 +78,9 @@ namespace shammodels::common::modules {
         inline virtual std::string _impl_get_label() const { return "ComputeGravWave"; }
 
         virtual std::string _impl_get_tex() const;
+
+        private:
+        inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }
     };
 
 } // namespace shammodels::common::modules
