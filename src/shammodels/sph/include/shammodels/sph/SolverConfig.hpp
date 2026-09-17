@@ -30,6 +30,7 @@
 #include "shammath/sphkernels.hpp"
 #include "shammodels/common/EOSConfig.hpp"
 #include "shammodels/common/ExtForceConfig.hpp"
+#include "shammodels/common/modules/ComputeGravWave.hpp"
 #include "shammodels/sph/config/MHDConfig.hpp"
 #include "shamrock/experimental_features.hpp"
 #include "shamrock/io/json_print_diff.hpp"
@@ -1041,6 +1042,12 @@ struct shammodels::sph::SolverConfig {
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Ext force Config (END)
     //////////////////////////////////////////////////////////////////////////////////////////////
+
+    /**
+     * @brief
+     *
+     * @param[in] rr
+     */
 
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Debug dump config

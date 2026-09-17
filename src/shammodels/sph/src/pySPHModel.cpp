@@ -24,6 +24,7 @@
 #include "shamcomm/worldInfo.hpp"
 #include "shammath/crystalLattice.hpp"
 #include "shammath/sphkernels.hpp"
+#include "shammodels/common/modules/ComputeGravWave.hpp"
 #include "shammodels/common/shamrock_json_to_py_json.hpp"
 #include "shammodels/sph/Model.hpp"
 #include "shammodels/sph/io/PhantomDump.hpp"
@@ -404,6 +405,11 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             py::arg("Racc"),
             py::arg("a_spin"),
             py::arg("dir_spin"))
+        .def(
+            "compute_GW",
+            [](TConfig &self, Tvec x0, Tvec v0, Tvec a0, Tscal theta_deg, Tscal phi_deg) {
+                self.compute_GW(x0, v0, a0, theta_deg, phi_deg);
+            })
         .def(
             "add_ext_force_shearing_box",
             [](TConfig &self, Tscal Omega_0, Tscal eta, Tscal q) {
@@ -1778,6 +1784,22 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             py::kw_only(),
             py::arg("step_begin") = std::nullopt,
             py::arg("step_end")   = std::nullopt);
+}
+
+template<class Tvec>
+void add_analysisGW(py::module &m, const std::string &name_model) {
+    using namespace shammodels::sph;
+
+    using Tscal = shambase::VecComponent<Tvec>;
+
+    py::class_<shammodels::common::modules::ComputeGravWave<Tvec>>(m, name_model.c_str())
+        .def(py::init([]() {
+            return std::make_unique<shammodels::common::modules::ComputeGravWave<Tvec>>();
+        }))
+        .def("get_barycenter", [](shammodels::common::modules::ComputeGravWave<Tvec> &self) {
+            auto result = self.get_barycenter();
+            return py::make_tuple(result.hx, result.hp);
+        });
 }
 
 template<class Tvec, template<class> class SPHKernel>

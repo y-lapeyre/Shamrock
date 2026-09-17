@@ -165,6 +165,59 @@ namespace shammodels::sph {
         }
     }
 
+    template<class Tvec>
+    inline void compute_GW(Tvec x0, Tvec v0, Tvec a0, Tscal theta_deg, Tscal phi_deg) {
+        shammodels::common::modules::ComputeGravWave<Tvec> node_computeGW(
+            x0, v0, a0, theta_deg, phi_deg);
+
+        std::vector<std::shared_ptr<shamrock::solvergraph::INode>> add_GW_comp{};
+
+        auto central_pos = shamrock::solvergraph::IDataEdge<Tvec>::make_shared("", "");
+        shamrock::solvergraph::NodeSetEdge<shamrock::solvergraph::IDataEdge<Tvec>> set_central_pos(
+            [cpos = x0](shamrock::solvergraph::IDataEdge<Tvec> &central_pos) {
+                central_pos.data = cpos;
+            });
+        set_central_pos.set_edges(central_pos);
+
+        auto central_vel = shamrock::solvergraph::IDataEdge<Tvec>::make_shared("", "");
+        shamrock::solvergraph::NodeSetEdge<shamrock::solvergraph::IDataEdge<Tvec>> set_central_vel(
+            [cvel = v0](shamrock::solvergraph::IDataEdge<Tvec> &central_vel) {
+                central_vel.data = cvel;
+            });
+        set_central_vel.set_edges(central_vel);
+
+        auto central_acc = shamrock::solvergraph::IDataEdge<Tvec>::make_shared("", "");
+        shamrock::solvergraph::NodeSetEdge<shamrock::solvergraph::IDataEdge<Tvec>> set_central_acc(
+            [cacc = a0](shamrock::solvergraph::IDataEdge<Tvec> &central_acc) {
+                central_acc.data = cacc;
+            });
+        set_central_acc.set_edges(central_acc);
+
+        auto sizes = shamrock::solvergraph::Indexes<u32>::make_shared("", "");
+
+        shamrock::solvergraph::NodeSetEdge<shamrock::solvergraph::Indexes<u32>> set_sizes(
+            [&](shamrock::solvergraph::Indexes<u32> &sizes) {
+                sizes.indexes = {};
+                scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
+                    sizes.indexes.add_obj(p.id_patch, pdat.get_obj_cnt());
+                });
+            });
+        set_sizes.set_edges(sizes);
+
+        node_computeGW.set_edges(
+            storage.xyz,
+            storage.vel,
+            storage.acc,
+            storage.mass,
+            storage.accel_ext,
+            x0,
+            v0,
+            a0,
+            theta_deg,
+            phi_deg,
+            sizes)
+    }
+
 }; // namespace shammodels::sph
 
 using namespace shammath;
