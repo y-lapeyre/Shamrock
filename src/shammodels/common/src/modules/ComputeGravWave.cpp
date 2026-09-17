@@ -58,12 +58,24 @@ namespace shammodels::common::modules {
 
         u64 npart      = scheduler().get_rank_count();
         auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
-        sham::DeviceBuffer<Tscal> ddq0{npart, dev_sched};
-        sham::DeviceBuffer<Tscal> ddq1{npart, dev_sched};
-        sham::DeviceBuffer<Tscal> ddq2{npart, dev_sched};
-        sham::DeviceBuffer<Tscal> ddq3{npart, dev_sched};
-        sham::DeviceBuffer<Tscal> ddq4{npart, dev_sched};
-        sham::DeviceBuffer<Tscal> ddq5{npart, dev_sched};
+
+        // thought you could pass a DeviceBuffer to distributed_data_kernel_call through Multiref ?
+        // guess NOT motherfcker
+        // sham::DeviceBuffer<Tscal> ddq0{npart, dev_sched};
+
+        auto make_ddq = [&]() {
+            return edges.sizes.indexes.template map<sham::DeviceBuffer<Tscal>>(
+                [&](u64 id, const u32 &n) {
+                    return sham::DeviceBuffer<Tscal>{n, dev_sched};
+                });
+        };
+
+        shambase::DistributedData<sham::DeviceBuffer<Tscal>> ddq0 = make_ddq();
+        shambase::DistributedData<sham::DeviceBuffer<Tscal>> ddq1 = make_ddq();
+        shambase::DistributedData<sham::DeviceBuffer<Tscal>> ddq2 = make_ddq();
+        shambase::DistributedData<sham::DeviceBuffer<Tscal>> ddq3 = make_ddq();
+        shambase::DistributedData<sham::DeviceBuffer<Tscal>> ddq4 = make_ddq();
+        shambase::DistributedData<sham::DeviceBuffer<Tscal>> ddq5 = make_ddq();
 
         sham::distributed_data_kernel_call(
             dev_sched,
@@ -110,12 +122,19 @@ namespace shammodels::common::modules {
                 ddq5[gid] = m * (Tscal(2.) * vz * vz + z * az + z * az);
             });
 
-        Tscal ddq0_per_rank = shamalgs::primitives::sum(dev_sched, ddq0, 0, npart);
-        Tscal ddq1_per_rank = shamalgs::primitives::sum(dev_sched, ddq1, 0, npart);
-        Tscal ddq2_per_rank = shamalgs::primitives::sum(dev_sched, ddq2, 0, npart);
-        Tscal ddq3_per_rank = shamalgs::primitives::sum(dev_sched, ddq3, 0, npart);
-        Tscal ddq4_per_rank = shamalgs::primitives::sum(dev_sched, ddq4, 0, npart);
-        Tscal ddq5_per_rank = shamalgs::primitives::sum(dev_sched, ddq5, 0, npart);
+        // Tscal ddq0_per_rank = shamalgs::primitives::sum(dev_sched, ddq0, 0, npart);
+
+        Tscal ddq0_per_rank = 0, ddq1_per_rank = 0, ddq2_per_rank = 0, ddq3_per_rank = 0,
+              ddq4_per_rank = 0, ddq5_per_rank = 0;
+
+        edges.sizes.indexes.for_each([&](u64 id, const u32 &n) {
+            ddq0_per_rank += shamalgs::primitives::sum(dev_sched, ddq0.get(id), 0, n);
+            ddq1_per_rank += shamalgs::primitives::sum(dev_sched, ddq1.get(id), 0, n);
+            ddq2_per_rank += shamalgs::primitives::sum(dev_sched, ddq2.get(id), 0, n);
+            ddq3_per_rank += shamalgs::primitives::sum(dev_sched, ddq3.get(id), 0, n);
+            ddq4_per_rank += shamalgs::primitives::sum(dev_sched, ddq4.get(id), 0, n);
+            ddq5_per_rank += shamalgs::primitives::sum(dev_sched, ddq5.get(id), 0, n);
+        });
 
         edges.ddq.data[0] = shamalgs::collective::allreduce_sum(ddq0_per_rank);
         edges.ddq.data[1] = shamalgs::collective::allreduce_sum(ddq1_per_rank);
@@ -142,7 +161,7 @@ namespace shammodels::common::modules {
             const Tscal c   = std::cos(lam);
             const Tscal s   = std::sin(lam);
 
-            const std::array<Tscal, 9> R_arr
+            std::array<Tscal, 9> R_arr
                 = {c, Tscal(0), s, Tscal(0), Tscal(1), Tscal(0), -s, Tscal(0), c};
             Mat3<Tscal> R(R_arr.data());
 
