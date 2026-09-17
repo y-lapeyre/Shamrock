@@ -2569,6 +2569,76 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
 
         update_derivs(dt);
 
+        ////////////////////////////////////////////////////////////////////////////////////////
+        // Gravitational Wave emision
+        ////////////////////////////////////////////////////////////////////////////////////////
+        bool compute_GW = true;
+
+        if (compute_GW) {
+            using namespace shamrock::solvergraph;
+            using GW = shammodels::common::modules::ComputeGravWave<Tvec>;
+            Tvec x0;
+            Tvec v0;
+            Tvec a0;
+            Tscal theta_deg;
+            Tscal phi_deg;
+
+            auto central_pos  = IDataEdge<Tvec>::make_shared("x_0", "\\mathbf{x}_0");
+            central_pos->data = Tvec{0, 0, 0};
+
+            auto central_vel  = IDataEdge<Tvec>::make_shared("v_0", "\\mathbf{v}_0");
+            central_vel->data = Tvec{0, 0, 0};
+
+            auto central_acc  = IDataEdge<Tvec>::make_shared("a_0", "\\mathbf{a}_0");
+            central_acc->data = Tvec{0, 0, 0};
+
+            auto gw_prefactor  = IDataEdge<Tscal>::make_shared("gw_prefactor", "gw_prefactor");
+            gw_prefactor->data = Tscal(1); // set to your actual physical prefactor
+
+            auto theta_gw  = IDataEdge<Tscal>::make_shared("theta_gw", "\\theta_{\\rm gw}");
+            theta_gw->data = Tscal(0);
+
+            auto phi_gw  = IDataEdge<Tscal>::make_shared("phi_gw", "\\phi_{\\rm gw}");
+            phi_gw->data = Tscal(0);
+
+            ComputeField<Tscal> gw_mass_field
+                = utility.make_compute_field<Tscal>("gw_mass", 1, solver_config.gpart_mass);
+
+            auto spans_masses = std::make_shared<FieldRefs<Tscal>>("m", "m");
+            map_field_refs_ext(scheduler(), gw_mass_field, *spans_masses);
+
+            const u32 iaxyz_ext = pdl.get_field_idx<Tvec>("axyz_ext");
+            auto spans_accel_ext
+                = std::make_shared<FieldRefs<Tvec>>("axyz_ext", "\\mathbf{a}_{\\rm ext}");
+            map_field_refs(scheduler(), iaxyz_ext, *spans_accel_ext);
+
+            auto ddq    = IDataEdge<typename GW::Tddq>::make_shared("ddq", "\\ddot{Q}");
+            auto ddq_xy = IDataEdge<typename GW::Tddqxy>::make_shared("ddq_xy", "\\ddot{Q}_{xy}");
+            auto hx     = IDataEdge<typename GW::Th>::make_shared("hx", "h_x");
+            auto hp     = IDataEdge<typename GW::Th>::make_shared("hp", "h_+");
+
+            GW node_computeGW();
+            node_computeGW().set_edges(
+                storage.solver_graph.get_edge_ptr<FieldRefs<Tvec>>("xyz"),
+                storage.solver_graph.get_edge_ptr<FieldRefs<Tvec>>("vxyz"),
+                storage.solver_graph.get_edge_ptr<FieldRefs<Tvec>>("axyz"),
+                spans_masses,
+                spans_accel_ext,
+                central_pos,
+                central_vel,
+                central_acc,
+                gw_prefactor,
+                theta_gw,
+                phi_gw,
+                storage.part_counts,
+                ddq,
+                ddq_xy,
+                hx,
+                hp);
+
+            node_computeGW().evaluate();
+        }
+
         bool has_luminosity = solver_config.compute_luminosity;
 
         if (has_luminosity) {
