@@ -1125,6 +1125,10 @@ struct shammodels::sph::SolverConfig {
     bool compute_luminosity = false;
     inline void use_luminosity(bool enable) { compute_luminosity = enable; }
 
+    /// @brief Whether to compute GW
+    bool computeGW = false;
+    inline void compute_GW(bool enable) { computeGW = enable; }
+
     /// Print the current status of the solver config
     inline void print_status() {
         if (shamcomm::world_rank() != 0) {

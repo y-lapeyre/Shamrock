@@ -2572,7 +2572,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
         ////////////////////////////////////////////////////////////////////////////////////////
         // Gravitational Wave emision
         ////////////////////////////////////////////////////////////////////////////////////////
-        bool compute_GW = true;
+        bool compute_GW = solver_config.computeGW;
 
         if (compute_GW) {
             using namespace shamrock::solvergraph;

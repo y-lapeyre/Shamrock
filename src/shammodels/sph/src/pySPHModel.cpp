@@ -105,6 +105,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
         .def("set_particle_reordering_step_freq", &TConfig::set_particle_reordering_step_freq)
         .def("set_show_ghost_zone_graph", &TConfig::set_show_ghost_zone_graph)
         .def("use_luminosity", &TConfig::use_luminosity)
+        .def("compute_GW", &TConfig::compute_GW)
         .def("set_save_dt_to_fields", &TConfig::set_save_dt_to_fields)
         .def("should_save_dt_to_fields", &TConfig::should_save_dt_to_fields)
         .def("set_eos_isothermal", &TConfig::set_eos_isothermal)
@@ -405,11 +406,6 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             py::arg("Racc"),
             py::arg("a_spin"),
             py::arg("dir_spin"))
-        .def(
-            "compute_GW",
-            [](TConfig &self, Tvec x0, Tvec v0, Tvec a0, Tscal theta_deg, Tscal phi_deg) {
-                self.compute_GW(x0, v0, a0, theta_deg, phi_deg);
-            })
         .def(
             "add_ext_force_shearing_box",
             [](TConfig &self, Tscal Omega_0, Tscal eta, Tscal q) {
