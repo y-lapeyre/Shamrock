@@ -2637,6 +2637,11 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                 hp);
 
             node_computeGW.evaluate();
+
+            logger::raw_ln("################## hx = ", hx->data);
+            logger::raw_ln("################## hp = ", hp->data);
+            logger::raw_ln("################## ddq = ", ddq->data);
+            logger::raw_ln("################## ddq_xy = ", ddq_xy->data);
         }
 
         bool has_luminosity = solver_config.compute_luminosity;

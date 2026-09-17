@@ -73,6 +73,7 @@ cfg.set_artif_viscosity_VaryingCD10(
 cfg.set_self_gravity_fmm(order=1, opening_angle=0.5, reduction_level=3)
 cfg.set_softening_plummer(epsilon=1e-9)
 cfg.set_boundary_free()
+cfg.compute_GW(True)
 
 # %%
 # The important part to enable killing
