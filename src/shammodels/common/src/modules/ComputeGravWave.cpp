@@ -15,6 +15,7 @@
  */
 
 #include "shammodels/common/modules/ComputeGravWave.hpp"
+#include "shamalgs/primitives/reduction.hpp"
 #include "shambackends/kernel_call_distrib.hpp"
 #include "shammath/matrix_exponential.hpp"
 #include "shamrock/patch/Patch.hpp"
@@ -55,92 +56,82 @@ namespace shammodels::common::modules {
 
         constexpr Tscal pi = M_PI;
 
-        u64 npatch     = scheduler().patch_list.local.size();
+        u64 npart      = scheduler().get_rank_count();
         auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
-        sham::DeviceBuffer<Tscal> ddq0{npatch, dev_sched};
-        sham::DeviceBuffer<Tscal> ddq1{npatch, dev_sched};
-        sham::DeviceBuffer<Tscal> ddq2{npatch, dev_sched};
-        sham::DeviceBuffer<Tscal> ddq3{npatch, dev_sched};
-        sham::DeviceBuffer<Tscal> ddq4{npatch, dev_sched};
-        sham::DeviceBuffer<Tscal> ddq5{npatch, dev_sched};
+        sham::DeviceBuffer<Tscal> ddq0{npart, dev_sched};
+        sham::DeviceBuffer<Tscal> ddq1{npart, dev_sched};
+        sham::DeviceBuffer<Tscal> ddq2{npart, dev_sched};
+        sham::DeviceBuffer<Tscal> ddq3{npart, dev_sched};
+        sham::DeviceBuffer<Tscal> ddq4{npart, dev_sched};
+        sham::DeviceBuffer<Tscal> ddq5{npart, dev_sched};
 
-        // build ddq (dot dot Q)
-        //  compute per-particle contributions to d^2 Q_ij / dt^2.
-        // ddq IFieldSpan: 6 components per particle
-        // then sum contributions
+        sham::distributed_data_kernel_call(
+            dev_sched,
+            sham::DDMultiRef{
+                edges.spans_positions.get_spans(),
+                edges.spans_velocities.get_spans(),
+                edges.spans_accelerations.get_spans(),
+                edges.spans_masses.get_spans(),
+                edges.spans_accel_ext.get_spans()},
+            sham::DDMultiRef{ddq0, ddq1, ddq2, ddq3, ddq4, ddq5},
+            edges.sizes.indexes,
+            [x0, v0, a0](
+                u32 gid,
+                const Tvec *xyz,
+                const Tvec *vxyz,
+                const Tvec *axyz,
+                const Tscal *mass,
+                const Tvec *axyz_ext,
+                Tscal *ddq0,
+                Tscal *ddq1,
+                Tscal *ddq2,
+                Tscal *ddq3,
+                Tscal *ddq4,
+                Tscal *ddq5) {
+                const Tscal m = mass[gid];
 
-        scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
-            // sham::kernel_call(
-            //     shamsys::instance::get_compute_scheduler_ptr(),
-            //     sham::DDMultiRef{
-            //         edges.spans_positions.get_spans(),
-            //         edges.spans_velocities.get_spans(),
-            //         edges.spans_accelerations.get_spans(),
-            //         edges.spans_masses.get_spans(),
-            //         edges.spans_accel_ext.get_spans()},
-            //         sham::DDMultiRef{ddq0, ddq1, ddq2, ddq3, ddq4, ddq5},
-            //     edges.sizes.indexes,
-            u32 cnt = pdat.get_obj_cnt();
-            if (cnt == 0)
-                return;
+                const Tscal x  = xyz[gid][0] - x0[0];
+                const Tscal y  = xyz[gid][1] - x0[1];
+                const Tscal z  = xyz[gid][2] - x0[2];
+                const Tscal vx = vxyz[gid][0] - v0[0];
+                const Tscal vy = vxyz[gid][1] - v0[1];
+                const Tscal vz = vxyz[gid][2] - v0[2];
 
-            sham::kernel_call(
-                dev_sched->get_queue(),
-                sham::DDMultiRef{
-                    edges.spans_positions.get_spans(),
-                    edges.spans_velocities.get_spans(),
-                    edges.spans_accelerations.get_spans(),
-                    edges.spans_masses.get_spans(),
-                    edges.spans_accel_ext.get_spans()},
-                sham::DDMultiRef{ddq0, ddq1, ddq2, ddq3, ddq4, ddq5},
-                cnt,
-                [x0, v0, a0](
-                    u32 gid,
-                    const Tvec *xyz,
-                    const Tvec *vxyz,
-                    const Tvec *axyz,
-                    const Tscal *mass,
-                    const Tvec *axyz_ext,
-                    Tddq *ddq) {
-                    const Tscal m = mass[gid];
+                // @@@ to check
+                const Tscal ax = axyz[gid][0] - a0[0] + axyz_ext[gid][0];
+                const Tscal ay = axyz[gid][1] - a0[1] + axyz_ext[gid][1];
+                const Tscal az = axyz[gid][2] - a0[2] + axyz_ext[gid][2];
 
-                    const Tscal x  = xyz[gid][0] - x0[0];
-                    const Tscal y  = xyz[gid][1] - x0[1];
-                    const Tscal z  = xyz[gid][2] - x0[2];
-                    const Tscal vx = vxyz[gid][0] - v0[0];
-                    const Tscal vy = vxyz[gid][1] - v0[1];
-                    const Tscal vz = vxyz[gid][2] - v0[2];
+                ddq0[gid] = m * (Tscal(2.) * vx * vx + x * ax + x * ax);
+                ddq1[gid] = m * (Tscal(2.) * vx * vy + x * ay + y * ax);
+                ddq2[gid] = m * (Tscal(2.) * vx * vz + x * az + z * ax);
+                ddq3[gid] = m * (Tscal(2.) * vy * vy + y * ay + y * ay);
+                ddq4[gid] = m * (Tscal(2.) * vy * vz + y * az + z * ay);
+                ddq5[gid] = m * (Tscal(2.) * vz * vz + z * az + z * az);
+            });
 
-                    // @@@ to check
-                    const Tscal ax = axyz[gid][0] - a0[0] + axyz_ext[gid][0];
-                    const Tscal ay = axyz[gid][1] - a0[1] + axyz_ext[gid][1];
-                    const Tscal az = axyz[gid][2] - a0[2] + axyz_ext[gid][2];
+        Tscal ddq0_per_rank = shamalgs::primitives::sum(dev_sched, ddq0, 0, npart);
+        Tscal ddq1_per_rank = shamalgs::primitives::sum(dev_sched, ddq1, 0, npart);
+        Tscal ddq2_per_rank = shamalgs::primitives::sum(dev_sched, ddq2, 0, npart);
+        Tscal ddq3_per_rank = shamalgs::primitives::sum(dev_sched, ddq3, 0, npart);
+        Tscal ddq4_per_rank = shamalgs::primitives::sum(dev_sched, ddq4, 0, npart);
+        Tscal ddq5_per_rank = shamalgs::primitives::sum(dev_sched, ddq5, 0, npart);
 
-                    ddq0 += m * (Tscal(2.) * vx * vx + x * ax + x * ax);
-                    ddq1 += m * (Tscal(2.) * vx * vy + x * ay + y * ax);
-                    ddq2 += m * (Tscal(2.) * vx * vz + x * az + z * ax);
-                    ddq3 += m * (Tscal(2.) * vy * vy + y * ay + y * ay);
-                    ddq4 += m * (Tscal(2.) * vy * vz + y * az + z * ay);
-                    ddq5 += m * (Tscal(2.) * vz * vz + z * az + z * az);
-                });
-        };
-
-        edges.ddq[0]  = shamalgs::collective::allreduce_sum(ddq0);
-        edges.ddq[1]  = shamalgs::collective::allreduce_sum(ddq1);
-        edges.ddq[2]  = shamalgs::collective::allreduce_sum(ddq2);
-        edges.ddq[3]  = shamalgs::collective::allreduce_sum(ddq3);
-        edges.ddq[4]  = shamalgs::collective::allreduce_sum(ddq4);
-        edges.ddq[5]  = shamalgs::collective::allreduce_sum(ddq5);
+        edges.ddq.data[0] = shamalgs::collective::allreduce_sum(ddq0_per_rank);
+        edges.ddq.data[1] = shamalgs::collective::allreduce_sum(ddq1_per_rank);
+        edges.ddq.data[2] = shamalgs::collective::allreduce_sum(ddq2_per_rank);
+        edges.ddq.data[3] = shamalgs::collective::allreduce_sum(ddq3_per_rank);
+        edges.ddq.data[4] = shamalgs::collective::allreduce_sum(ddq4_per_rank);
+        edges.ddq.data[5] = shamalgs::collective::allreduce_sum(ddq5_per_rank);
 
         std::array<Tscal, 9> Q_arr{};
         Mat3<Tscal> Q(Q_arr.data());
-        Q(0, 0) = edges.ddq[0];
-        Q(0, 1) = Q(1, 0) = edges.ddq[1];
-        Q(0, 2) = Q(2, 0) = edges.ddq[2];
-        Q(1, 1) = edges.ddq[3];
-        Q(1, 2) = Q(2, 1) = edges.ddq[4];
-        Q(2, 2) = edges.ddq[5];
-
+        Q(0, 0) = edges.ddq.data[0];
+        Q(0, 1) = Q(1, 0) = edges.ddq.data[1];
+        Q(0, 2) = Q(2, 0) = edges.ddq.data[2];
+        Q(1, 1)           = edges.ddq.data[3];
+        Q(1, 2) = Q(2, 1) = edges.ddq.data[4];
+        Q(2, 2)           = edges.ddq.data[5];
 
         std::array<Tscal, 9> ddq_xy_arr{};
         Mat3<Tscal> ddq_xy(ddq_xy_arr.data());
@@ -182,9 +173,7 @@ namespace shammodels::common::modules {
             }
         }
 
-
-        // Step 5 : quadrupole angular pattern for h+ / hx.
-        // ------------------------------------------------------------------
+        // h+ / hx
         const Tscal phi     = phi_deg * pi / static_cast<Tscal>(180);
         const Tscal sinphi  = std::sin(phi);
         const Tscal cosphi  = std::cos(phi);
@@ -215,7 +204,6 @@ namespace shammodels::common::modules {
                            + ddq_xy(0, 1) * cos2phi * coseta - ddq_xy(0, 2) * cosphi * sineta
                            + ddq_xy(1, 2) * sinphi * sineta);
         }
-
 
         edges.ddq_xy.data = ddq_xy_arr;
         edges.hx.data     = hx_out;

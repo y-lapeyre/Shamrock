@@ -64,7 +64,6 @@ namespace shammodels::common::modules {
         using Tddqxy = std::array<Tscal, 9>;
         using Th     = std::array<Tscal, 4>;
 
-        shamrock::solvergraph::IFieldSpan<Tddq> ddq_perpart;
         bool calc_gravitwaves = false; //
         double theta_gw       = 0.0;   // rotation of xy plane (deg)
         double phi_gw         = 0.0;   // angle betw. projection of los in xy plane and y axis (deg)
