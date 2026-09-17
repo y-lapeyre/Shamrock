@@ -2617,11 +2617,11 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
             auto hx     = IDataEdge<typename GW::Th>::make_shared("hx", "h_x");
             auto hp     = IDataEdge<typename GW::Th>::make_shared("hp", "h_+");
 
-            GW node_computeGW();
-            node_computeGW().set_edges(
-                storage.solver_graph.get_edge_ptr<FieldRefs<Tvec>>("xyz"),
-                storage.solver_graph.get_edge_ptr<FieldRefs<Tvec>>("vxyz"),
-                storage.solver_graph.get_edge_ptr<FieldRefs<Tvec>>("axyz"),
+            GW node_computeGW{context};
+            node_computeGW.set_edges(
+                storage.solver_graph.template get_edge_ptr<FieldRefs<Tvec>>("xyz"),
+                storage.solver_graph.template get_edge_ptr<FieldRefs<Tvec>>("vxyz"),
+                storage.solver_graph.template get_edge_ptr<FieldRefs<Tvec>>("axyz"),
                 spans_masses,
                 spans_accel_ext,
                 central_pos,
@@ -2636,7 +2636,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                 hx,
                 hp);
 
-            node_computeGW().evaluate();
+            node_computeGW.evaluate();
         }
 
         bool has_luminosity = solver_config.compute_luminosity;

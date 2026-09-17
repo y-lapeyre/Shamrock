@@ -50,13 +50,7 @@ namespace shammodels::common::modules {
     template<class Tvec>
     class ComputeGravWave : public shamrock::solvergraph::INode {
 
-        double pi  = 1;
-        double gg  = 1; // gravitational constant, cgs
-        double c   = 1; // speed of light, cgs
-        double Mpc = 1; // 1 Mpc in cm
-
         ShamrockCtx &context;
-
         using Tscal = shambase::VecComponent<Tvec>;
 
         public:
@@ -68,7 +62,8 @@ namespace shammodels::common::modules {
         double theta_gw       = 0.0;   // rotation of xy plane (deg)
         double phi_gw         = 0.0;   // angle betw. projection of los in xy plane and y axis (deg)
 
-        ComputeGravWave() = default;
+        // ComputeGravWave() = default;
+        explicit ComputeGravWave(ShamrockCtx &ctx) : context(ctx) {}
 
         EXPAND_NODE_EDGES(NODE_EDGES)
 
