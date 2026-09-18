@@ -2613,7 +2613,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
             auto hx     = IDataEdge<typename GW::Th>::make_shared("hx", "h_x");
             auto hp     = IDataEdge<typename GW::Th>::make_shared("hp", "h_+");
 
-            GW node_computeGW{context};
+            GW node_computeGW{};
             node_computeGW.set_edges(
                 storage.solver_graph.template get_edge_ptr<FieldRefs<Tvec>>("xyz"),
                 storage.solver_graph.template get_edge_ptr<FieldRefs<Tvec>>("vxyz"),

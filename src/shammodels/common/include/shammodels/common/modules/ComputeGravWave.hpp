@@ -49,7 +49,6 @@ namespace shammodels::common::modules {
     template<class Tvec>
     class ComputeGravWave : public shamrock::solvergraph::INode {
 
-        ShamrockCtx &context;
         using Tscal = shambase::VecComponent<Tvec>;
 
         public:
@@ -57,12 +56,8 @@ namespace shammodels::common::modules {
         using Tddqxy = std::array<Tscal, 9>;
         using Th     = std::array<Tscal, 4>;
 
-        bool calc_gravitwaves = false; //
-        double theta_gw       = 0.0;   // rotation of xy plane (deg)
-        double phi_gw         = 0.0;   // angle betw. projection of los in xy plane and y axis (deg)
-
-        // ComputeGravWave() = default;
-        explicit ComputeGravWave(ShamrockCtx &ctx) : context(ctx) {}
+        ComputeGravWave() = default;
+        // explicit ComputeGravWave() : {}
 
         EXPAND_NODE_EDGES(NODE_EDGES)
 
@@ -71,9 +66,6 @@ namespace shammodels::common::modules {
         inline virtual std::string _impl_get_label() const { return "ComputeGravWave"; }
 
         virtual std::string _impl_get_tex() const;
-
-        private:
-        inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }
     };
 
 } // namespace shammodels::common::modules
