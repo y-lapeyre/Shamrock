@@ -2634,6 +2634,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
 
             node_computeGW.evaluate();
 
+            // TODO: send that somewhere rather than doing a print
             logger::raw_ln("################## hx = ", hx->data);
             logger::raw_ln("################## hp = ", hp->data);
             logger::raw_ln("################## ddq = ", ddq->data);

@@ -7,11 +7,15 @@ Tests that the GW emission from an isolated star is indeed 0.
 
 # sphinx_gallery_multi_image = "single"
 
+import os
+
 import shamrock
 
 if not shamrock.sys.is_initialized():
     shamrock.change_loglevel(1)
     shamrock.sys.init("0:0")
+
+shamrock.enable_experimental_features()
 
 
 def is_in_sphere(pt):
@@ -43,20 +47,16 @@ C_force = 0.25
 
 bsize = 4
 
-
 render_gif = True
 
 dump_folder = "_to_trash"
 sim_name = "isolated_star"
-
-import os
 
 if shamrock.sys.world_rank() == 0:
     os.makedirs(dump_folder, exist_ok=True)
 
 # %%
 # Setup
-shamrock.enable_experimental_features()
 ctx = shamrock.Context()
 ctx.pdata_layout_new()
 
