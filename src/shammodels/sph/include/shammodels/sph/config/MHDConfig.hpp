@@ -158,6 +158,9 @@ namespace shammodels::sph {
                 {"mhd_type", "non_ideal_mhd"},
                 {"sigma_mhd", v->sigma_mhd},
                 {"alpha_u", v->alpha_u},
+                {"etaO", v->etaO},
+                {"etaH", v->etaH},
+                {"etaAD", v->etaAD},
             };
         } else {
             shambase::throw_unimplemented();

@@ -500,20 +500,18 @@ namespace shamrock::sph::mhd {
             Tvec D_a = WursterD<Tvec, Tscal, MHD_mode>(B_a, J_a, etaO, etaH, etaAD);
             Tvec D_b = WursterD<Tvec, Tscal, MHD_mode>(B_b, J_b, etaO, etaH, etaAD);
 
-            // Tvec B_NI = B_NI_terms<Tvec, Tscal, MHD_mode>(
-            //     D_a,
-            //     D_b,
-            //     pmass,
-            //     rho_a_sq,
-            //     rho_b * rho_b,
-            //     B_a,
-            //     B_b,
-            //     omega_a,
-            //     omega_b,
-            //     r_ab_unit * dWab_a,
-            //     r_ab_unit * dWab_b);
-            //
-            // dB_on_rho_dt += B_NI;
+            Tvec B_NI = B_NI_terms<Tvec, Tscal, MHD_mode>(
+                D_a,
+                D_b,
+                pmass,
+                rho_a_sq,
+                rho_b * rho_b,
+                omega_a,
+                omega_b,
+                r_ab_unit * dWab_a,
+                r_ab_unit * dWab_b);
+
+            dB_on_rho_dt += B_NI;
 
             Tvec B_NI_ADterm = B_NI_AD<Tvec, Tscal, MHD_mode>(
                 etaAD,

@@ -43,11 +43,7 @@ void shammodels::sph::modules::NodeComputeJ<Tvec, SPHKernel>::_impl_evaluate_int
             edges.B_on_rho.get_spans()},
         sham::DDMultiRef{edges.J.get_spans()},
         edges.part_counts.indexes,
-        [part_mass = this->part_mass,
-         mu_0      = this->mu_0,
-         c         = this->c,
-         _pi       = _pi,
-         Rkern     = kernel_radius](
+        [part_mass = this->part_mass, mu_0 = this->mu_0, Rkern = kernel_radius](
             u32 id_a,
             const Tvec *r,
             const Tscal *hpart,

@@ -11,6 +11,7 @@
 
 /**
  * @file ComputeCFLNIMHD.hpp
+ * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief
  *
  */
