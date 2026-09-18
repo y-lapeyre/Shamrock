@@ -384,8 +384,7 @@ namespace shamrock::sph::mhd {
         sum_fdivB += fdivB(
             pmass, B_a, B_b, r_ab_unit * dWab_a, r_ab_unit * dWab_b, sub_fact_a, sub_fact_b, mu_0);
 
-        Tvec gas_pressure_pishock = Tvec(0., 0., 0.);
-        sph::sph_pressure_symetric(
+        Tvec gas_pressure_pishock = sph::sph_pressure_symetric(
             pmass,
             rho_a_sq,
             rho_b * rho_b,
