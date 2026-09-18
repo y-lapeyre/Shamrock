@@ -154,7 +154,12 @@ namespace shammodels::sph {
         static constexpr u32 dim = shambase::VectorProperties<Tvec>::dimension;
         using Kernel             = SPHKernel<Tscal>;
 
-        using Config = SolverConfig<Tvec, SPHKernel>;
+        using Config  = SolverConfig<Tvec, SPHKernel>;
+        using Cfg_MHD = typename Config::MHDConfig;
+
+        using NoneMHD     = typename Cfg_MHD::None;
+        using IdealMHD    = typename Cfg_MHD::IdealMHD_constrained_hyper_para;
+        using NonIdealMHD = typename Cfg_MHD::NonIdealMHD;
 
         using u_morton = typename Config::u_morton;
 
