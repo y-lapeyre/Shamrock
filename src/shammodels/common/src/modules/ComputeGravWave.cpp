@@ -15,10 +15,10 @@
  */
 
 #include "shambase/constants.hpp"
-#include "shammodels/common/modules/ComputeGravWave.hpp"
 #include "shamalgs/primitives/reduction.hpp"
 #include "shambackends/kernel_call_distrib.hpp"
 #include "shammath/matrix_exponential.hpp"
+#include "shammodels/common/modules/ComputeGravWave.hpp"
 #include "shamrock/patch/Patch.hpp"
 #include "shamrock/patch/PatchDataField.hpp"
 #include "shamrock/patch/PatchDataLayer.hpp"
