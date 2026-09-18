@@ -680,7 +680,6 @@ void shammodels::sph::Solver<Tvec, Kern>::init_solver_graph() {
 
     storage.exchange_gz_J = std::make_shared<shamrock::solvergraph::ExchangeGhostField<Tvec>>();
 
-
     ////////////////////////////////////////////////////////////////////////////////////////
     // sink accretion
     ////////////////////////////////////////////////////////////////////////////////////////
@@ -1038,7 +1037,6 @@ void shammodels::sph::Solver<Tvec, Kern>::init_solver_graph() {
                     if_has_accretion,
                 }));
     }
-
 }
 
 template<class Tvec, template<class> class Kern>
