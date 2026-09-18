@@ -27,19 +27,11 @@ template<class Tvec, template<class> class SPHKernel>
 void shammodels::sph::modules::NodeComputeJ<Tvec, SPHKernel>::_impl_evaluate_internal() {
 
     __shamrock_stack_entry();
-    logger::raw_ln("xinside compute J");
-    logger::raw_ln("1111 c = ", c);
     auto edges = get_edges();
 
     auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
-    logger::raw_ln("before ensure size");
     edges.J.ensure_sizes(edges.part_counts.indexes);
-    logger::raw_ln("after ensure size");
     Tscal _pi = shambase::constants::pi<Tscal>;
-
-    edges.part_counts.indexes.for_each([&](u64 id_patch, u32 count) {
-        fmt::print("patch {} has {} particles\n", id_patch, count);
-    });
 
     sham::distributed_data_kernel_call(
         dev_sched,

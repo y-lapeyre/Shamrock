@@ -667,6 +667,8 @@ struct shammodels::sph::SolverConfig {
         logger::raw_ln("The Non-ideal MHD solver is UNDER DEVELOPMENT.");
         logger::raw_ln("It is. NOT. FULLY. TESTED. YET.");
         logger::raw_ln("Use at your own risk.");
+        shamrock::experimental_feature_check(
+            "Non-ideal MHD is experimental, please enable experimental features to use it");
         mhd_config.set(v);
     }
 
