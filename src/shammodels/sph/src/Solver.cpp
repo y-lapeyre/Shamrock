@@ -34,6 +34,7 @@
 #include "shamcomm/worldInfo.hpp"
 #include "shamcomm/wrapper.hpp"
 #include "shammath/sphkernels.hpp"
+#include "shammodels/common/modules/ComputeGravWave.hpp"
 #include "shammodels/common/modules/ForwardEuler.hpp"
 #include "shammodels/common/modules/ForwardEulerPositive.hpp"
 #include "shammodels/common/timestep_report.hpp"
@@ -2570,18 +2571,13 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
         update_derivs(dt);
 
         ////////////////////////////////////////////////////////////////////////////////////////
-        // Gravitational Wave emision
+        // Gravitational Wave emission
         ////////////////////////////////////////////////////////////////////////////////////////
-        bool compute_GW = solver_config.computeGW;
+        bool compute_GW = solver_config.compute_gw;
 
         if (compute_GW) {
             using namespace shamrock::solvergraph;
             using GW = shammodels::common::modules::ComputeGravWave<Tvec>;
-            Tvec x0;
-            Tvec v0;
-            Tvec a0;
-            Tscal theta_deg;
-            Tscal phi_deg;
 
             auto central_pos  = IDataEdge<Tvec>::make_shared("x_0", "\\mathbf{x}_0");
             central_pos->data = Tvec{0, 0, 0};
@@ -2593,7 +2589,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
             central_acc->data = Tvec{0, 0, 0};
 
             auto gw_prefactor  = IDataEdge<Tscal>::make_shared("gw_prefactor", "gw_prefactor");
-            gw_prefactor->data = Tscal(1); // set to your actual physical prefactor
+            gw_prefactor->data = Tscal(1); // should be G/c^2D
 
             auto theta_gw  = IDataEdge<Tscal>::make_shared("theta_gw", "\\theta_{\\rm gw}");
             theta_gw->data = Tscal(0);

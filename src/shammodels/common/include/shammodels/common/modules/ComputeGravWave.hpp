@@ -17,7 +17,6 @@
  */
 
 #include "shambackends/vec.hpp"
-#include "shammath/matrix_exponential.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
 #include "shamrock/solvergraph/IFieldSpan.hpp"
 #include "shamrock/solvergraph/Indexes.hpp"

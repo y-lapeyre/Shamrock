@@ -14,6 +14,7 @@
  *
  */
 
+#include "shambase/constants.hpp"
 #include "shammodels/common/modules/ComputeGravWave.hpp"
 #include "shamalgs/primitives/reduction.hpp"
 #include "shambackends/kernel_call_distrib.hpp"
@@ -54,9 +55,8 @@ namespace shammodels::common::modules {
         const Tscal theta_deg = edges.theta_gw.data;
         const Tscal phi_deg   = edges.phi_gw.data;
 
-        constexpr Tscal pi = M_PI;
+        constexpr Tscal pi = shambase::constants::pi<Tscal>;
 
-        u64 npart      = scheduler().get_rank_count();
         auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
 
         // thought you could pass a DeviceBuffer to distributed_data_kernel_call through Multiref ?
@@ -109,10 +109,10 @@ namespace shammodels::common::modules {
                 const Tscal vy = vxyz[gid][1] - v0[1];
                 const Tscal vz = vxyz[gid][2] - v0[2];
 
-                // @@@ to check
-                const Tscal ax = axyz[gid][0] - a0[0] + axyz_ext[gid][0];
-                const Tscal ay = axyz[gid][1] - a0[1] + axyz_ext[gid][1];
-                const Tscal az = axyz[gid][2] - a0[2] + axyz_ext[gid][2];
+                // normally axyz should have axyzext added to it already
+                const Tscal ax = axyz[gid][0] - a0[0];
+                const Tscal ay = axyz[gid][1] - a0[1];
+                const Tscal az = axyz[gid][2] - a0[2];
 
                 ddq0[gid] = m * (Tscal(2.) * vx * vx + x * ax + x * ax);
                 ddq1[gid] = m * (Tscal(2.) * vx * vy + x * ay + y * ax);
@@ -204,7 +204,7 @@ namespace shammodels::common::modules {
         std::array<Tscal, 4> hx_out{};
         std::array<Tscal, 4> hp_out{};
 
-        for (int i = 0; i < 4; ++i) {
+        for (u32 i = 0; i < 4; ++i) {
             const Tscal eta     = static_cast<Tscal>(i) * pi / static_cast<Tscal>(6);
             const Tscal sineta  = std::sin(eta);
             const Tscal coseta  = std::cos(eta);

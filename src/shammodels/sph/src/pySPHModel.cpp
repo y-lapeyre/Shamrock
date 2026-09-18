@@ -105,7 +105,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
         .def("set_particle_reordering_step_freq", &TConfig::set_particle_reordering_step_freq)
         .def("set_show_ghost_zone_graph", &TConfig::set_show_ghost_zone_graph)
         .def("use_luminosity", &TConfig::use_luminosity)
-        .def("compute_GW", &TConfig::compute_GW)
+        .def("compute_GW", &TConfig::use_GW)
         .def("set_save_dt_to_fields", &TConfig::set_save_dt_to_fields)
         .def("should_save_dt_to_fields", &TConfig::should_save_dt_to_fields)
         .def("set_eos_isothermal", &TConfig::set_eos_isothermal)
@@ -1780,22 +1780,6 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             py::kw_only(),
             py::arg("step_begin") = std::nullopt,
             py::arg("step_end")   = std::nullopt);
-}
-
-template<class Tvec>
-void add_analysisGW(py::module &m, const std::string &name_model) {
-    using namespace shammodels::sph;
-
-    using Tscal = shambase::VecComponent<Tvec>;
-
-    py::class_<shammodels::common::modules::ComputeGravWave<Tvec>>(m, name_model.c_str())
-        .def(py::init([]() {
-            return std::make_unique<shammodels::common::modules::ComputeGravWave<Tvec>>();
-        }))
-        .def("get_barycenter", [](shammodels::common::modules::ComputeGravWave<Tvec> &self) {
-            auto result = self.get_barycenter();
-            return py::make_tuple(result.hx, result.hp);
-        });
 }
 
 template<class Tvec, template<class> class SPHKernel>
