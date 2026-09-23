@@ -1075,6 +1075,13 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD_
                 dpsi_on_ch[id_a] = psi_eq - psi_a / h_a;
                 drho_dt[id_a]    = drho_eq;
 
+                if (do_NIMHD) {
+                    // only add once per particle
+                    Tscal u_NI = shamrock::sph::mhd::u_NI_heating<Tvec, Tscal, MHD_mode>(
+                        B_a, J_a, rho_a, etaO, etaH, etaAD);
+                    du[id_a] += u_NI;
+                }
+
                 if (do_MHD_debug) {
                     mag_pressure[id_a] = mag_pressure_term;
                     mag_tension[id_a]  = mag_tension_term;
@@ -1094,7 +1101,6 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD_
         buf_vxyz.complete_event_state(e);
         buf_hpart.complete_event_state(e);
         buf_omega.complete_event_state(e);
-        buf_uint.complete_event_state(e);
         buf_pressure.complete_event_state(e);
         buf_cs.complete_event_state(e);
         buf_B_on_rho.complete_event_state(e);
@@ -1106,6 +1112,8 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD_
         if (do_NIMHD) {
             buf_J.complete_event_state(e);
         }
+
+        buf_uint.complete_event_state(e);
 
         if (do_MHD_debug) {
             pdat.get_field_buf_ref<Tvec>(imag_pressure).complete_event_state(e);

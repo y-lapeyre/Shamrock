@@ -54,15 +54,17 @@ namespace shamrock::sph::mhd {
     }
 
     template<class Tvec, class Tscal, MHDType MHD_mode = NonIdeal>
-    inline Tscal u_NI_heating(Tvec B, Tvec J, Tscal rho, Tscal etaO, Tscal etaAD) {
+    inline Tscal u_NI_heating(Tvec B, Tvec J, Tscal rho, Tscal etaO, Tscal etaH, Tscal etaAD) {
 
         // return sycl::dot(D, J) * sham::inv_sat_zero(rho);
-        Tscal BdB       = sycl::dot(B, B);
-        Tscal JdJ       = sycl::dot(J, J);
-        Tscal BdJ       = sycl::dot(B, J);
-        Tscal BdJBdJhat = sham::inv_sat_zero(BdB) * BdJ * BdJ;
+        // Tscal BdB       = sycl::dot(B, B);
+        // Tscal JdJ       = sycl::dot(J, J);
+        // Tscal BdJ       = sycl::dot(B, J);
+        // Tscal BdJBdJhat = sham::inv_sat_zero(BdB) * BdJ * BdJ;
 
-        return (etaO * JdJ + etaAD * (JdJ - BdJBdJhat)) * sham::inv_sat_zero(rho);
+        // return (etaO * JdJ + etaAD * (JdJ - BdJBdJhat)) * sham::inv_sat_zero(rho); @ to check
+        Tvec D = WursterD(B, J, etaO, etaH, etaAD);
+        return -sycl::dot(D, J) * sham::inv_sat_zero(rho);
     }
 
     template<class Tvec, class Tscal, MHDType MHD_mode = NonIdeal>
@@ -85,6 +87,7 @@ namespace shamrock::sph::mhd {
         return m_b * (acc_a + acc_b);
     }
 
+    // not using Whurster D, developping with J. Equivalent to B_NI_terms
     template<class Tvec, class Tscal, MHDType MHD_mode = NonIdeal>
     inline Tvec B_NI_AD(
         Tscal eta_AD,
@@ -513,26 +516,25 @@ namespace shamrock::sph::mhd {
 
             dB_on_rho_dt += B_NI;
 
-            Tvec B_NI_ADterm = B_NI_AD<Tvec, Tscal, MHD_mode>(
-                etaAD,
-                J_a,
-                J_b,
-                pmass,
-                rho_a_sq,
-                rho_b * rho_b,
-                B_a,
-                B_b,
-                omega_a,
-                omega_b,
-                r_ab_unit * dWab_a,
-                r_ab_unit * dWab_b);
+            // Tvec B_NI_ADterm = B_NI_AD<Tvec, Tscal, MHD_mode>(
+            //     etaAD,
+            //     J_a,
+            //     J_b,
+            //     pmass,
+            //     rho_a_sq,
+            //     rho_b * rho_b,
+            //     B_a,
+            //     B_b,
+            //     omega_a,
+            //     omega_b,
+            //     r_ab_unit * dWab_a,
+            //     r_ab_unit * dWab_b);
 
-            dB_on_rho_dt += B_NI_ADterm;
+            // dB_on_rho_dt += B_NI_ADterm;
 
-            Tscal u_NI = u_NI_heating<Tvec, Tscal, MHD_mode>(B_a, J_a, rho_a, etaO, etaAD) * 0.5
-                         + u_NI_heating<Tvec, Tscal, MHD_mode>(B_b, J_b, rho_b, etaO, etaAD) * 0.5;
-
-            du_dt += u_NI;
+            // Tscal u_NI = u_NI_heating<Tvec, Tscal, MHD_mode>(B_a, J_a, rho_a, etaO, etaAD) * 0.5
+            //              + u_NI_heating<Tvec, Tscal, MHD_mode>(B_b, J_b, rho_b, etaO, etaAD) *
+            //              0.5;
         }
     }
 
