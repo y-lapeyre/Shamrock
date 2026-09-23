@@ -31,7 +31,6 @@ void shammodels::sph::modules::NodeComputeJ<Tvec, SPHKernel>::_impl_evaluate_int
 
     auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
     edges.J.ensure_sizes(edges.part_counts.indexes);
-    Tscal _pi = shambase::constants::pi<Tscal>;
 
     sham::distributed_data_kernel_call(
         dev_sched,
@@ -43,7 +42,7 @@ void shammodels::sph::modules::NodeComputeJ<Tvec, SPHKernel>::_impl_evaluate_int
             edges.B_on_rho.get_spans()},
         sham::DDMultiRef{edges.J.get_spans()},
         edges.part_counts.indexes,
-        [part_mass = this->part_mass, mu_0 = this->mu_0, Rkern = kernel_radius](
+        [part_mass = this->part_mass, mu_0 = this->mu_0](
             u32 id_a,
             const Tvec *r,
             const Tscal *hpart,

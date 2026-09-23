@@ -26,9 +26,9 @@
 #define NODE_EDGES(X_RO, X_RW)                                                                     \
     X_RO(shamrock::solvergraph::Indexes<u32>, part_counts)                                         \
     X_RO(shamrock::solvergraph::IDataEdge<Tscal>, C_nimhd)                                         \
-    X_RO(shamrock::solvergraph::IDataEdge<Tscal>, eta_O)                                           \
-    X_RO(shamrock::solvergraph::IDataEdge<Tscal>, eta_AD)                                          \
-    X_RO(shamrock::solvergraph::IDataEdge<Tscal>, eta_H)                                           \
+    X_RO(shamrock::solvergraph::IDataEdge<Tscal>, eta_o)                                           \
+    X_RO(shamrock::solvergraph::IDataEdge<Tscal>, eta_ad)                                          \
+    X_RO(shamrock::solvergraph::IDataEdge<Tscal>, eta_h)                                           \
     X_RO(shamrock::solvergraph::IFieldSpan<Tscal>, hpart)                                          \
     X_RW(shamrock::solvergraph::IFieldSpan<Tscal>, cfl_dt)
 
@@ -48,18 +48,19 @@ class ComputeCFLNIMHD : public shamrock::solvergraph::INode {
         auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
 
         Tscal C_nimhd = edges.C_nimhd.data;
-        Tscal eta_O   = edges.eta_O.data;
-        Tscal eta_AD  = edges.eta_AD.data;
-        Tscal eta_H   = edges.eta_H.data;
+        Tscal eta_o   = edges.eta_o.data;
+        Tscal eta_ad  = edges.eta_ad.data;
+        Tscal eta_h   = edges.eta_h.data;
 
         sham::distributed_data_kernel_call(
             dev_sched,
             sham::DDMultiRef{edges.hpart.get_spans()},
             sham::DDMultiRef{edges.cfl_dt.get_spans()},
             edges.part_counts.indexes,
-            [C_nimhd, eta_O, eta_AD, eta_H](u32 id_a, const Tscal *hpart, Tscal *cfl_dt) {
+            [C_nimhd, eta_o, eta_ad, eta_h](u32 id_a, const Tscal *hpart, Tscal *cfl_dt) {
                 Tscal h_a     = hpart[id_a];
-                Tscal max_eta = sycl::max(sycl::max(eta_O, eta_AD), eta_H);
+                Tscal max_eta = sycl::max(
+                    sycl::max(sycl::fabs(eta_o), sycl::fabs(eta_ad)), sycl::fabs(eta_h));
 
                 Tscal dt_nimhd = C_nimhd * h_a * h_a / max_eta;
 
