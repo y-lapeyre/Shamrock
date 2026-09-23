@@ -160,7 +160,7 @@ while next_dt_target <= t_target + 1e-12:
     # Collect particle data from the context
     data = ctx.collect_data()
     h_arr = data["hpart"]
-    hfac = 1.0
+    hfac = model.get_hfact()
     rho = pmass * (hfac / h_arr) * (hfac / h_arr) * (hfac / h_arr)
     Bx = data["B/rho"][:, 0] * rho
     By = data["B/rho"][:, 1] * rho
@@ -202,14 +202,14 @@ Brmsz = np.array(Brmsz)
 #   Bz(t) = Bz(0) * |sin(omega_R t)| * exp(omega_I t)
 # where Bz(0) = (rho0 * v0 * Bx0) / (vA * sqrt(2))
 
-Lx = 1.0
+Lx = Lx_actual
 # Phantom's exact dispersion relation
 Bx0 = 1.0
 rho0 = 1.0
 C_ADc = 0.01  # ion-neutral coupling, same as Phantom
 vA = Bx0 / np.sqrt(rho0)  # no mu_0 since mu_0=1 in your code units
 v0 = 0.01 * vA
-k = 2 * np.pi / Lx  # = 2*pi since Lx=1
+k = 2 * np.pi / Lx_actual  # = 2*pi since Lx=1
 
 etaAD_cgs = C_ADc * vA * vA
 etaAD_si = etaAD_cgs * 4 * np.pi / c
@@ -220,7 +220,7 @@ quadc = -((k * vA) ** 2)
 omegaI = -0.5 * quadb  # negative = damping
 omegaR = 0.5 * np.sqrt(-(quadb**2) - 4 * quadc)
 
-h0 = (4 * np.pi) * v0 * Bx0 / (vA * np.sqrt(2.0))
+h0 = v0 * Bx0 / (vA * np.sqrt(2.0))  #  (4 * np.pi) *
 
 print(f"omegaR = {omegaR:.4f}, omegaI = {omegaI:.4f}, h0 = {h0:.4f}")
 
