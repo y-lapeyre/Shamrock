@@ -227,6 +227,9 @@ namespace shammodels::sph {
                 NonIdealMHD{
                     j.at("sigma_mhd").get<Tscal>(),
                     j.at("alpha_u").get<Tscal>(),
+                    j.at("etaO").get<Tscal>(),
+                    j.at("etaH").get<Tscal>(),
+                    j.at("etaAD").get<Tscal>(),
                     j.at("alpha_B").get<Tscal>(),
                     j.at("alpha_AV").get<Tscal>(),
                     j.at("beta_AV").get<Tscal>(),
