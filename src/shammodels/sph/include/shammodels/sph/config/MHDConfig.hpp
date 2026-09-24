@@ -40,11 +40,13 @@ struct shammodels::sph::MHDConfig {
     struct IdealMHD_constrained_hyper_para {
         Tscal sigma_mhd = 0.1;
         Tscal alpha_u   = 1.;
+        Tscal alpha_B   = 1.;
     };
 
     struct NonIdealMHD {
         Tscal sigma_mhd = 0.1;
         Tscal alpha_u   = 1.;
+        Tscal alpha_B   = 1.;
         Tscal etaO      = 1.;
         Tscal etaH      = 1.;
         Tscal etaAD     = 1.;
@@ -102,9 +104,11 @@ struct shammodels::sph::MHDConfig {
             = std::get_if<IdealMHD_constrained_hyper_para>(&configMHD)) {
             logger::raw_ln("  Config MHD  : Ideal MHD, constrained hyperbolic/parabolic treatment");
             logger::raw_ln("  sigma_mhd  =", v->sigma_mhd);
+            logger::raw_ln("  alpha_B    =", v->alpha_B);
         } else if (NonIdealMHD *v = std::get_if<NonIdealMHD>(&configMHD)) {
             logger::raw_ln("  Config MHD Type : Non Ideal MHD");
             logger::raw_ln("  sigma_mhd   =", v->sigma_mhd);
+            logger::raw_ln("  alpha_B     =", v->alpha_B);
         } else {
             shambase::throw_unimplemented();
         }
@@ -151,6 +155,7 @@ namespace shammodels::sph {
                 {"mhd_type", "ideal_mhd_constrained_hyper_para"},
                 {"sigma_mhd", v->sigma_mhd},
                 {"alpha_u", v->alpha_u},
+                {"alpha_B", v->alpha_B},
             };
         } else if (const NonIdealMHD *v = std::get_if<NonIdealMHD>(&p.configMHD)) {
             // Write the shear base, direction, and speed into the JSON object
@@ -158,6 +163,7 @@ namespace shammodels::sph {
                 {"mhd_type", "non_ideal_mhd"},
                 {"sigma_mhd", v->sigma_mhd},
                 {"alpha_u", v->alpha_u},
+                {"alpha_B", v->alpha_B},
                 {"etaO", v->etaO},
                 {"etaH", v->etaH},
                 {"etaAD", v->etaAD},
@@ -200,12 +206,14 @@ namespace shammodels::sph {
                 IMHD{
                     j.at("sigma_mhd").get<Tscal>(),
                     j.at("alpha_u").get<Tscal>(),
+                    j.at("alpha_B").get<Tscal>(),
                 });
         } else if (mhd_type == "non_ideal_mhd") {
             p.set(
                 NonIdealMHD{
                     j.at("sigma_mhd").get<Tscal>(),
                     j.at("alpha_u").get<Tscal>(),
+                    j.at("alpha_B").get<Tscal>(),
                 });
         } else {
             shambase::throw_unimplemented("wtf !");

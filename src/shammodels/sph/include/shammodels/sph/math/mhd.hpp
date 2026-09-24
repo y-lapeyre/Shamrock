@@ -310,6 +310,7 @@ namespace shamrock::sph::mhd {
         Tscal h_b,
 
         Tscal alpha_u,
+        Tscal alpha_B,
 
         Tvec B_a,
         Tvec B_b,
@@ -446,8 +447,18 @@ namespace shamrock::sph::mhd {
             dWab_a * omega_a_rho_a_inv,
             dWab_b / (rho_b * omega_b));
 
-        du_dt += lambda_artes(
-            pmass, rho_a_sq, rho_b * rho_b, vsig_B, B_a, B_b, omega_a, omega_b, Fab_a, Fab_b);
+        du_dt += alpha_B
+                 * lambda_artes(
+                     pmass,
+                     rho_a_sq,
+                     rho_b * rho_b,
+                     vsig_B,
+                     B_a,
+                     B_b,
+                     omega_a,
+                     omega_b,
+                     Fab_a,
+                     Fab_b);
 
         // end du/dt terms
 
@@ -473,7 +484,7 @@ namespace shamrock::sph::mhd {
             r_ab_unit * dWab_a,
             r_ab_unit * dWab_b);
 
-        dB_on_rho_dt += dB_on_rho_dissipation_term;
+        dB_on_rho_dt += alpha_B * dB_on_rho_dissipation_term;
 
         // end d(B/rho)/dt terms
 

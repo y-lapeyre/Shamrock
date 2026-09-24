@@ -79,7 +79,7 @@ namespace shammodels::sph::modules {
         //  One templated implementation, specialised per MHDType at the call sites below.
         template<shamrock::sph::mhd::MHDType MHD_mode>
         void update_derivs_MHD_impl(
-            Tscal sigma_mhd, Tscal alpha_u, Tscal etaO, Tscal etaH, Tscal etaAD);
+            Tscal sigma_mhd, Tscal alpha_u, Tscal alpha_B, Tscal etaO, Tscal etaH, Tscal etaAD);
 
         // Thin wrappers that unpack the variant and forward to the template above.
         void update_derivs_MHD(IdealMHD cfg);

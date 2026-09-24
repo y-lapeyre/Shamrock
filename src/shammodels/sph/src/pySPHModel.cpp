@@ -198,23 +198,31 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             py::arg("beta_AV"))
         .def(
             "set_IdealMHD",
-            [](TConfig &self, Tscal sigma_mhd, Tscal sigma_u) {
-                self.set_IdealMHD({sigma_mhd, sigma_u});
+            [](TConfig &self, Tscal sigma_mhd, Tscal sigma_u, Tscal alpha_B) {
+                self.set_IdealMHD({sigma_mhd, sigma_u, alpha_B});
             },
             py::kw_only(),
             py::arg("sigma_mhd"),
-            py::arg("sigma_u"))
+            py::arg("sigma_u"),
+            py::arg("alpha_B") = 1.0)
         .def(
             "set_NonIdealMHD",
-            [](TConfig &self, Tscal sigma_mhd, Tscal sigma_u, Tscal etaO, Tscal etaH, Tscal etaAD) {
-                self.set_NonIdealMHD({sigma_mhd, sigma_u, etaO, etaH, etaAD});
+            [](TConfig &self,
+               Tscal sigma_mhd,
+               Tscal sigma_u,
+               Tscal etaO,
+               Tscal etaH,
+               Tscal etaAD,
+               Tscal alpha_B) {
+                self.set_NonIdealMHD({sigma_mhd, sigma_u, alpha_B, etaO, etaH, etaAD});
             },
             py::kw_only(),
             py::arg("sigma_mhd"),
             py::arg("sigma_u"),
             py::arg("etaO"),
             py::arg("etaH"),
-            py::arg("etaAD"))
+            py::arg("etaAD"),
+            py::arg("alpha_B") = 1.0)
         .def(
             "set_self_gravity_none",
             [](TConfig &self) {

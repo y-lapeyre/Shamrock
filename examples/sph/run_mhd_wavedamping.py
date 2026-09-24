@@ -34,7 +34,7 @@ shamrock.matplotlib.set_shamrock_mpl_style()
 # so that mu_0 = 1 exactly.
 
 Lx = 1.0  # box length
-dr = 0.09  # particle spacing
+dr = 1 / 128  # particle spacing
 rho0 = 1.0  # initial density
 Bx0 = 1.0  # background field in x
 C_ADc = 0.01  # ambipolar diffusion coefficient (Phantom convention)
@@ -72,7 +72,7 @@ model = shamrock.get_Model_SPH(context=ctx, vector_type="f64_3", sph_kernel="C4"
 cfg = model.gen_default_config()
 cfg.set_units(codeu)
 cfg.set_artif_viscosity_None()  # no artificial viscosity
-cfg.set_NonIdealMHD(sigma_mhd=1, sigma_u=0, etaO=0, etaH=0, etaAD=etaAD_cgs)
+cfg.set_NonIdealMHD(sigma_mhd=0, sigma_u=0, etaO=0, etaH=0, etaAD=etaAD_cgs, alpha_B=0)
 cfg.set_boundary_periodic()  # periodic boundaries in all directions
 cfg.set_eos_isothermal(cs)  # isothermal equation of state
 cfg.print_status()
@@ -233,6 +233,7 @@ theory = h0 * np.abs(np.sin(omegaR * time_th)) * np.exp(omegaI * time_th)
 fig, axs = plt.subplots(1, 4, figsize=(12, 8))
 
 axs[0].plot(times, Brmsz, "b-", linewidth=2)
+axs[0].plot(time_th, theory, "r--", linewidth=2)
 axs[0].set_xlabel("Time (s)")
 axs[0].set_ylabel("rms Bz")
 axs[0].grid(alpha=0.3)
