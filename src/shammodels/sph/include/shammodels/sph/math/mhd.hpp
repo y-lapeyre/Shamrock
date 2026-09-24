@@ -359,7 +359,7 @@ namespace shamrock::sph::mhd {
         Tscal vsig_a = shamphys::MHD_physics<Tvec, Tscal>::vsig_MHD(
             v_ab, r_ab_unit, cs_a, B_a, rho_a, mu_0, alpha_AV, beta_AV);
         Tscal vsig_b = shamphys::MHD_physics<Tvec, Tscal>::vsig_MHD(
-            v_ab, r_ab_unit, cs_a, B_b, rho_b, mu_0, alpha_AV, beta_AV);
+            v_ab, r_ab_unit, cs_b, B_b, rho_b, mu_0, alpha_AV, beta_AV);
 
         Tscal dWab_a = Fab_a;
         Tscal dWab_b = Fab_b;
