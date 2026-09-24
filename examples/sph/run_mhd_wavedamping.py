@@ -40,7 +40,7 @@ Bx0 = 1.0  # background field in x
 C_ADc = 0.01  # ambipolar diffusion coefficient (Phantom convention)
 cs = 1.0  # isothermal sound speed
 t_target = 5.0  # total simulation time
-dt_dump = 0.01 * t_target  # dump interval
+dt_dump = 0.01  # dump interval
 
 # Unit system and constants
 codeu = shamrock.UnitSystem(
@@ -228,8 +228,29 @@ time_th = np.linspace(0, t_target, 1000)
 theory = h0 * np.abs(np.sin(omegaR * time_th)) * np.exp(omegaI * time_th)
 
 # %%
+# L2 error against the analytical solution
+# Evaluated at the simulation dump times (dt=0.01, same interval as Phantom's, see Phantom paper section 5.7.1).
+theory_at_times = h0 * np.abs(np.sin(omegaR * times)) * np.exp(omegaI * times)
+l2_error = np.sqrt(np.mean((Brmsz - theory_at_times) ** 2))
+print(f"L2 error (rms Bz vs theory, dt={dt_dump}) = {l2_error:.3e}")
+
+np.savez(
+    os.path.join(dump_folder, "wave_damping_data.npz"),
+    times=times,
+    Brmsx=Brmsx,
+    Brmsy=Brmsy,
+    Brmsz=Brmsz,
+    theory_at_times=theory_at_times,
+    l2_error=l2_error,
+    dr=dr,
+    omegaR=omegaR,
+    omegaI=omegaI,
+    h0=h0,
+)
+
+# %%
 # Plot results
-# ------------
+
 fig, axs = plt.subplots(1, 4, figsize=(12, 8))
 
 axs[0].plot(times, Brmsz, "b-", linewidth=2)
