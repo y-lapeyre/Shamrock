@@ -1691,7 +1691,6 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
 
     bool has_B_field       = solver_config.has_field_B_on_rho();
     bool has_psi_field     = solver_config.has_field_psi_on_ch();
-    bool do_NIMHD          = solver_config.do_NIMHD();
     bool has_curlB_field   = solver_config.has_field_curlB();
     bool has_epsilon_field = solver_config.dust_config.has_epsilon_field();
     bool has_deltav_field  = solver_config.dust_config.has_deltav_field();
@@ -1710,7 +1709,6 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
 
     const u32 iB_on_rho   = (has_B_field) ? pdl.get_field_idx<Tvec>("B/rho") : 0;
     const u32 idB_on_rho  = (has_B_field) ? pdl.get_field_idx<Tvec>("dB/rho") : 0;
-    const u32 iJ          = (do_NIMHD) ? pdl.get_field_idx<Tvec>("J") : 0;
     const u32 ipsi_on_ch  = (has_psi_field) ? pdl.get_field_idx<Tscal>("psi/ch") : 0;
     const u32 idpsi_on_ch = (has_psi_field) ? pdl.get_field_idx<Tscal>("dpsi/ch") : 0;
     const u32 icurlB      = (has_curlB_field) ? pdl.get_field_idx<Tvec>("curlB") : 0;
@@ -1745,7 +1743,6 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
     const u32 iB_interf     = (has_B_field) ? ghost_layout.get_field_idx<Tvec>("B/rho") : 0;
     const u32 ipsi_interf   = (has_psi_field) ? ghost_layout.get_field_idx<Tscal>("psi/ch") : 0;
     const u32 icurlB_interf = (has_curlB_field) ? ghost_layout.get_field_idx<Tvec>("curlB") : 0;
-    const u32 iJ_interf     = (do_NIMHD) ? ghost_layout.get_field_idx<Tvec>("J") : 0;
 
     const u32 iepsilon_interf
         = (has_epsilon_field) ? ghost_layout.get_field_idx<Tscal>("epsilon") : 0;
@@ -1807,11 +1804,6 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
             if (has_psi_field) {
                 sender_patch.get_field<Tscal>(ipsi_on_ch)
                     .append_subset_to(buf_idx, cnt, pdat.get_field<Tscal>(ipsi_interf));
-            }
-
-            if (do_NIMHD) {
-                sender_patch.get_field<Tvec>(iJ).append_subset_to(
-                    buf_idx, cnt, pdat.get_field<Tvec>(iJ_interf));
             }
 
             if (has_curlB_field) {
@@ -1894,10 +1886,6 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
                 if (has_psi_field) {
                     pdat_new.get_field<Tscal>(ipsi_interf)
                         .insert(pdat.get_field<Tscal>(ipsi_on_ch));
-                }
-
-                if (do_NIMHD) {
-                    pdat_new.get_field<Tvec>(iJ_interf).insert(pdat.get_field<Tvec>(iJ));
                 }
 
                 if (has_curlB_field) {
@@ -2627,22 +2615,6 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
             shamrock::solvergraph::CopyPatchDataFieldFromLayer<Tscal> node_copy(
                 scheduler().get_layout_ptr_old(), "alpha_AV");
             node_copy.set_edges(patchdatas, storage.alpha_av_updated);
-            node_copy.evaluate();
-        }
-
-        if (do_NIMHD) {
-            // copy J from sched patch data to storage.MagCurrentJ
-            std::shared_ptr<shamrock::solvergraph::PatchDataLayerRefs> patchdatas
-                = std::make_shared<shamrock::solvergraph::PatchDataLayerRefs>(
-                    "patchdata_layer_ref", "patchdata_layer_ref");
-
-            auto node_set_edge = scheduler().get_node_set_edge_patchdata_layer_refs();
-            node_set_edge->set_edges(patchdatas);
-            node_set_edge->evaluate();
-
-            shamrock::solvergraph::CopyPatchDataFieldFromLayer<Tvec> node_copy(
-                scheduler().get_layout_ptr_old(), "J");
-            node_copy.set_edges(patchdatas, storage.MagCurrentJ);
             node_copy.evaluate();
         }
 

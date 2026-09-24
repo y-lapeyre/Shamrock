@@ -151,10 +151,6 @@ namespace shammodels::sph {
             ghost_layout.add_field<Tscal>("psi/ch", 1);
         }
 
-        if (do_NIMHD()) {
-            ghost_layout.add_field<Tvec>("J", 1); // @@@ only for ni mhd
-        }
-
         if (has_field_curlB()) {
             ghost_layout.add_field<Tvec>("curlB", 1);
         }
