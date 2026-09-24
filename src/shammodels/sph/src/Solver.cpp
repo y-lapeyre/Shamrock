@@ -1958,6 +1958,7 @@ void shammodels::sph::Solver<Tvec, Kern>::update_J() {
     shamrock::patch::PatchDataLayerLayout &ghost_layout
         = shambase::get_check_ref(storage.ghost_layout.get());
     u32 iB_on_rho_interf = ghost_layout.get_field_idx<Tvec>("B/rho");
+    u32 ihpart_interf    = ghost_layout.get_field_idx<Tscal>("hpart");
 
     shamrock::solvergraph::DDPatchDataFieldRef<Tvec> B_on_rho_refs = {};
     scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
@@ -1969,9 +1970,23 @@ void shammodels::sph::Solver<Tvec, Kern>::update_J() {
 
     B_on_rho_edge->set_refs(B_on_rho_refs);
 
+    // Use the "hpart" field of merged_patchdata_ghost (refreshed every corrector iteration by
+    // communicate_merge_ghosts_fields(), same as update_derivs)
+    std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> hpart_edge
+        = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>("", "");
+
+    shamrock::solvergraph::DDPatchDataFieldRef<Tscal> hpart_refs = {};
+    scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
+        auto &field = storage.merged_patchdata_ghost.get()
+                          .get(p.id_patch)
+                          .template get_field<Tscal>(ihpart_interf);
+        hpart_refs.add_obj(p.id_patch, std::ref(field));
+    });
+
+    hpart_edge->set_refs(hpart_refs);
+
     Tscal const mu_0 = solver_config.get_constant_mu_0();
 
-    shambase::get_check_ref(storage.hpart_with_ghosts);
     shambase::get_check_ref(storage.MagCurrentJ);
     // use MagCurrenJ: on active particles (no gz)
     modules::NodeComputeJ<Tvec, Kern> computeJ{solver_config.gpart_mass, mu_0};
@@ -1979,7 +1994,7 @@ void shammodels::sph::Solver<Tvec, Kern>::update_J() {
         storage.part_counts,
         storage.neigh_cache,
         storage.positions_with_ghosts,
-        storage.hpart_with_ghosts,
+        hpart_edge,
         storage.omega,
         B_on_rho_edge,
         storage.MagCurrentJ);
