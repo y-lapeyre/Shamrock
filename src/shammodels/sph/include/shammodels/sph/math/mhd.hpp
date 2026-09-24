@@ -24,7 +24,6 @@
 #include "shammodels/sph/SolverConfig.hpp"
 #include "shammodels/sph/math/forces.hpp"
 #include "shammodels/sph/math/q_ab.hpp"
-#include "shammodels/sph/modules/SolverStorage.hpp"
 #include "shamphys/mhd.hpp"
 #include "shamunits/Constants.hpp"
 #include <tuple>
