@@ -37,24 +37,27 @@ namespace shamrock::sph::mhd {
     inline Tvec MagCurrentJ_sum(
         Tscal m_b, Tvec B_a, Tvec B_b, Tvec nabla_Wab_ha, Tscal sub_fact_a, Tscal mu_0) {
 
-        // ajout 4pi /c
+        // J = curl(B)/mu_0 (mu_0 explicit, SI/Heaviside-Lorentz-like convention, not
+        // Gaussian-cgs 4*pi/c)
 
         return m_b * sham::inv_sat_zero(sub_fact_a) * sycl::cross(B_a - B_b, nabla_Wab_ha) / mu_0;
         // return {0., 0., 0.};
     }
 
     template<class Tvec, class Tscal, MHDType MHD_mode = NonIdeal>
-    inline Tvec WursterD(Tvec B, Tvec J, Tscal etaO, Tscal etaH, Tscal etaAD) {
+    inline Tvec WursterD(Tvec B, Tvec J, Tscal etaO, Tscal etaH, Tscal etaAD, Tscal mu_0) {
 
-        Tvec Bhat = B * sham::inv_sat_zero(sycl::length(B));
-        Tvec D    = etaO * J + etaH * sycl::cross(J, Bhat)
-                    - etaAD * sycl::cross(sycl::cross(J, Bhat), Bhat);
+        Tvec Bhat  = B * sham::inv_sat_zero(sycl::length(B));
+        Tvec curlB = mu_0 * J; // diffusivities in L^2/T in any unit system
+        Tvec D     = etaO * curlB + etaH * sycl::cross(curlB, Bhat)
+                     - etaAD * sycl::cross(sycl::cross(curlB, Bhat), Bhat);
 
         return D;
     }
 
     template<class Tvec, class Tscal, MHDType MHD_mode = NonIdeal>
-    inline Tscal u_NI_heating(Tvec B, Tvec J, Tscal rho, Tscal etaO, Tscal etaH, Tscal etaAD) {
+    inline Tscal u_NI_heating(
+        Tvec B, Tvec J, Tscal rho, Tscal etaO, Tscal etaH, Tscal etaAD, Tscal mu_0) {
 
         // return sycl::dot(D, J) * sham::inv_sat_zero(rho);
         // Tscal BdB       = sycl::dot(B, B);
@@ -63,7 +66,7 @@ namespace shamrock::sph::mhd {
         // Tscal BdJBdJhat = sham::inv_sat_zero(BdB) * BdJ * BdJ;
 
         // return (etaO * JdJ + etaAD * (JdJ - BdJBdJhat)) * sham::inv_sat_zero(rho); @ to check
-        Tvec D = WursterD(B, J, etaO, etaH, etaAD);
+        Tvec D = WursterD(B, J, etaO, etaH, etaAD, mu_0);
         return sycl::dot(D, J) * sham::inv_sat_zero(rho);
     }
 
@@ -513,8 +516,8 @@ namespace shamrock::sph::mhd {
         // Non-ideal MHD terms
         if constexpr (MHD_mode == NonIdeal) {
 
-            Tvec D_a = WursterD<Tvec, Tscal, MHD_mode>(B_a, J_a, etaO, etaH, etaAD);
-            Tvec D_b = WursterD<Tvec, Tscal, MHD_mode>(B_b, J_b, etaO, etaH, etaAD);
+            Tvec D_a = WursterD<Tvec, Tscal, MHD_mode>(B_a, J_a, etaO, etaH, etaAD, mu_0);
+            Tvec D_b = WursterD<Tvec, Tscal, MHD_mode>(B_b, J_b, etaO, etaH, etaAD, mu_0);
 
             Tvec B_NI = B_NI_terms<Tvec, Tscal, MHD_mode>(
                 D_a,

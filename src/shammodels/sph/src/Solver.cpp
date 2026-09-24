@@ -1970,12 +1970,11 @@ void shammodels::sph::Solver<Tvec, Kern>::update_J() {
     B_on_rho_edge->set_refs(B_on_rho_refs);
 
     Tscal const mu_0 = solver_config.get_constant_mu_0();
-    Tscal const c    = solver_config.get_constant_c();
 
     shambase::get_check_ref(storage.hpart_with_ghosts);
     shambase::get_check_ref(storage.MagCurrentJ);
     // use MagCurrenJ: on active particles (no gz)
-    modules::NodeComputeJ<Tvec, Kern> computeJ{solver_config.gpart_mass, mu_0, c};
+    modules::NodeComputeJ<Tvec, Kern> computeJ{solver_config.gpart_mass, mu_0};
     computeJ.set_edges(
         storage.part_counts,
         storage.neigh_cache,
@@ -2729,7 +2728,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
 
             // communicate needed fields (B,b, hb): done just before
 
-            // @@@ is this the correct hpsrt ? the one updated bu sph_prestep ?
+            // @@@ is this the correct hpart ? the one updated bu sph_prestep ?
             shambase::get_check_ref(storage.hpart_with_ghosts)
                 .set_refs(storage.merged_xyzh.get()
                               .template map<std::reference_wrapper<PatchDataField<Tscal>>>(

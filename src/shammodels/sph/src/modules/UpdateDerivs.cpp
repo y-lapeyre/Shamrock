@@ -1104,7 +1104,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD_
                 if (do_NIMHD) {
                     // only add once per particle
                     Tscal u_NI = shamrock::sph::mhd::u_NI_heating<Tvec, Tscal, MHD_mode>(
-                        B_a, J_a, rho_a, etaO, etaH, etaAD);
+                        B_a, J_a, rho_a, etaO, etaH, etaAD, mu_0);
                     du[id_a] += u_NI;
                 }
 
