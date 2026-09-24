@@ -30,6 +30,7 @@
 #include "shammath/sphkernels.hpp"
 #include "shammodels/common/EOSConfig.hpp"
 #include "shammodels/common/ExtForceConfig.hpp"
+#include "shammodels/common/config/enum_NeighCacheStrategy.hpp"
 #include "shammodels/sph/config/MHDConfig.hpp"
 #include "shamrock/experimental_features.hpp"
 #include "shamrock/io/json_print_diff.hpp"
@@ -707,13 +708,31 @@ struct shammodels::sph::SolverConfig {
     // Tree config
     //////////////////////////////////////////////////////////////////////////////////////////////
 
-    u32 tree_reduction_level  = 3;    ///< Reduction level to be used in the tree build
-    bool use_two_stage_search = true; ///< Use two stage neighbors search (see shamrock paper)
+    u32 tree_reduction_level = 3; ///< Reduction level to be used in the tree build
+
+    /// Strategy used to build the neighbours cache out of the tree traversal
+    NeighCacheStrategy neigh_cache_strategy = NeighCacheStrategy::TwoStage;
 
     /// Setter for the tree reduction level
     inline void set_tree_reduction_level(u32 level) { tree_reduction_level = level; }
-    /// Setter for the two stage search
-    inline void set_two_stage_search(bool enable) { use_two_stage_search = enable; }
+
+    /// Setter for the neighbours cache strategy
+    inline void set_neigh_cache_strategy(NeighCacheStrategy strategy) {
+        neigh_cache_strategy = strategy;
+    }
+
+    /**
+     * @brief Setter for the two stage search
+     * @deprecated Use set_neigh_cache_strategy instead
+     */
+    inline void set_two_stage_search(bool enable) {
+        ON_RANK_0(shamlog_warn_ln(
+                      "SPH::SolverConfig",
+                      "set_two_stage_search() is deprecated,\n"
+                      "    -> use set_neigh_cache_strategy(NeighCacheStrategy.TwoStage) or\n"
+                      "       set_neigh_cache_strategy(NeighCacheStrategy.SingleStage) instead"););
+        neigh_cache_strategy = neigh_cache_strategy_from_two_stage_search(enable);
+    }
 
     bool show_neigh_stats = false;
     inline void set_show_neigh_stats(bool enable) { show_neigh_stats = enable; }
@@ -1021,9 +1040,11 @@ struct shammodels::sph::SolverConfig {
      *
      * @param[in] central_mass The mass of the central object
      * @param[in] Racc The accretion radius of the central object
+     * @param[in] central_pos The position of the central object
      */
-    inline void add_ext_force_point_mass(Tscal central_mass, Tscal Racc) {
-        ext_force_config.add_point_mass(central_mass, Racc);
+    inline void add_ext_force_point_mass(
+        Tscal central_mass, Tscal Racc, Tvec central_pos = Tvec{}) {
+        ext_force_config.add_point_mass(central_mass, Racc, central_pos);
     }
 
     /**
@@ -1043,10 +1064,11 @@ struct shammodels::sph::SolverConfig {
      * @param[in] Racc The accretion radius of the central object
      * @param[in] a_spin The spin of the central object
      * @param[in] dir_spin The direction of the spin of the central object
+     * @param[in] central_pos The position of the central object
      */
     inline void add_ext_force_lense_thirring(
-        Tscal central_mass, Tscal Racc, Tscal a_spin, Tvec dir_spin) {
-        ext_force_config.add_lense_thirring(central_mass, Racc, a_spin, dir_spin);
+        Tscal central_mass, Tscal Racc, Tscal a_spin, Tvec dir_spin, Tvec central_pos = Tvec{}) {
+        ext_force_config.add_lense_thirring(central_mass, Racc, a_spin, dir_spin, central_pos);
     }
 
     /**
@@ -1142,6 +1164,13 @@ struct shammodels::sph::SolverConfig {
     /// @brief Whether to store luminosity
     bool compute_luminosity = false;
     inline void use_luminosity(bool enable) { compute_luminosity = enable; }
+
+    /// @brief Whether to compute GW
+    bool compute_gw = false;
+    inline void use_GW(bool enable) {
+        shamrock::experimental_feature_check("GW computation is experimental.");
+        compute_gw = enable;
+    }
 
     /// Print the current status of the solver config
     inline void print_status() {
@@ -1419,7 +1448,7 @@ namespace shammodels::sph {
             {"self_grav_config", p.self_grav_config},
             // tree config
             {"tree_reduction_level", p.tree_reduction_level},
-            {"use_two_stage_search", p.use_two_stage_search},
+            {shammodels::neigh_cache_strategy_json_key, p.neigh_cache_strategy},
             {"show_neigh_stats", p.show_neigh_stats},
             // solver behavior config
             {"combined_dtdiv_divcurlv_compute", p.combined_dtdiv_divcurlv_compute},
@@ -1508,7 +1537,9 @@ namespace shammodels::sph {
         _get_to_if_contains("dust_config", p.dust_config);
         _get_to_if_contains("self_grav_config", p.self_grav_config);
         _get_to_if_contains("tree_reduction_level", p.tree_reduction_level);
-        _get_to_if_contains("use_two_stage_search", p.use_two_stage_search);
+        // Reads the new enum key, falling back on the legacy `use_two_stage_search` boolean
+        shammodels::get_to_neigh_cache_strategy(
+            j, p.neigh_cache_strategy, "SPH::SolverConfig", has_used_defaults, has_updated_config);
         _get_to_if_contains("show_neigh_stats", p.show_neigh_stats);
         _get_to_if_contains("combined_dtdiv_divcurlv_compute", p.combined_dtdiv_divcurlv_compute);
 

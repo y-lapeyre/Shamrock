@@ -24,6 +24,7 @@
 #include "shamcomm/worldInfo.hpp"
 #include "shammath/crystalLattice.hpp"
 #include "shammath/sphkernels.hpp"
+#include "shammodels/common/modules/ComputeGravWave.hpp"
 #include "shammodels/common/shamrock_json_to_py_json.hpp"
 #include "shammodels/sph/Model.hpp"
 #include "shammodels/sph/io/PhantomDump.hpp"
@@ -85,7 +86,27 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             py::arg("split_load_value"),
             py::arg("merge_load_value"))
         .def("set_tree_reduction_level", &TConfig::set_tree_reduction_level)
-        .def("set_two_stage_search", &TConfig::set_two_stage_search)
+        .def(
+            "set_neigh_cache_strategy",
+            &TConfig::set_neigh_cache_strategy,
+            R"==(
+    Set the strategy used to build the neighbours cache.
+
+    Parameters
+    ----------
+    strategy : NeighCacheStrategy
+        Either ``NeighCacheStrategy.SingleStage`` or ``NeighCacheStrategy.TwoStage``
+        (the default), as obtained from ``from shamrock import NeighCacheStrategy``.
+)==")
+        .def(
+            "set_two_stage_search",
+            &TConfig::set_two_stage_search,
+            R"==(
+    Set the neighbours cache strategy from a boolean.
+
+    .. deprecated::
+        Use :py:meth:`set_neigh_cache_strategy` instead.
+)==")
         .def("set_show_neigh_stats", &TConfig::set_show_neigh_stats)
         .def(
             "set_max_neigh_cache_size",
@@ -104,6 +125,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
         .def("set_particle_reordering_step_freq", &TConfig::set_particle_reordering_step_freq)
         .def("set_show_ghost_zone_graph", &TConfig::set_show_ghost_zone_graph)
         .def("use_luminosity", &TConfig::use_luminosity)
+        .def("compute_GW", &TConfig::use_GW)
         .def("set_save_dt_to_fields", &TConfig::set_save_dt_to_fields)
         .def("should_save_dt_to_fields", &TConfig::should_save_dt_to_fields)
         .def("set_eos_isothermal", &TConfig::set_eos_isothermal)
@@ -423,18 +445,33 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                 self.dust_config.ballabio_ts_limiter = enabled;
             },
             py::arg("enabled"))
-        .def("add_ext_force_point_mass", &TConfig::add_ext_force_point_mass)
+        .def(
+            "add_ext_force_point_mass",
+            [](TConfig &self, Tscal central_mass, Tscal Racc, Tvec central_pos) {
+                self.add_ext_force_point_mass(central_mass, Racc, central_pos);
+            },
+            py::arg("central_mass"),
+            py::arg("Racc"),
+            py::kw_only(),
+            py::arg("central_pos") = Tvec{0, 0, 0})
         .def("add_ext_force_paczynski_wiita", &TConfig::add_ext_force_paczynski_wiita)
         .def(
             "add_ext_force_lense_thirring",
-            [](TConfig &self, Tscal central_mass, Tscal Racc, Tscal a_spin, Tvec dir_spin) {
-                self.add_ext_force_lense_thirring(central_mass, Racc, a_spin, dir_spin);
+            [](TConfig &self,
+               Tscal central_mass,
+               Tscal Racc,
+               Tscal a_spin,
+               Tvec dir_spin,
+               Tvec central_pos) {
+                self.add_ext_force_lense_thirring(
+                    central_mass, Racc, a_spin, dir_spin, central_pos);
             },
             py::kw_only(),
             py::arg("central_mass"),
             py::arg("Racc"),
             py::arg("a_spin"),
-            py::arg("dir_spin"))
+            py::arg("dir_spin"),
+            py::arg("central_pos") = Tvec{0, 0, 0})
         .def(
             "add_ext_force_shearing_box",
             [](TConfig &self, Tscal Omega_0, Tscal eta, Tscal q) {
