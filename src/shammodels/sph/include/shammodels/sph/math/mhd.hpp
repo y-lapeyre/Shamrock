@@ -64,7 +64,7 @@ namespace shamrock::sph::mhd {
 
         // return (etaO * JdJ + etaAD * (JdJ - BdJBdJhat)) * sham::inv_sat_zero(rho); @ to check
         Tvec D = WursterD(B, J, etaO, etaH, etaAD);
-        return -sycl::dot(D, J) * sham::inv_sat_zero(rho);
+        return sycl::dot(D, J) * sham::inv_sat_zero(rho);
     }
 
     template<class Tvec, class Tscal, MHDType MHD_mode = NonIdeal>
