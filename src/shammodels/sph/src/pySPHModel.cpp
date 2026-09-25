@@ -235,7 +235,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             py::arg("alpha_AV") = 1.0,
             py::arg("beta_AV")  = 1.0)
         .def(
-            "set_NonIdealMHD",
+            "set_non_ideal_mhd",
             [](TConfig &self,
                Tscal sigma_mhd,
                Tscal sigma_u,
@@ -245,7 +245,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                Tscal alpha_B,
                Tscal alpha_AV,
                Tscal beta_AV) {
-                self.set_NonIdealMHD(
+                self.set_non_ideal_mhd(
                     {sigma_mhd, sigma_u, alpha_B, alpha_AV, beta_AV, etaO, etaH, etaAD});
             },
             py::kw_only(),

@@ -657,11 +657,11 @@ struct shammodels::sph::SolverConfig {
     }
 
     /// Enable the ideal MHD hydro solver
-    inline void set_IdealMHD(typename MHDConfig::IdealMHD_constrained_hyper_para v) {
+    inline void set_IdealMHD(typename MHDConfig::IdealMhdConstrainedHyperPara v) {
         mhd_config.set(v);
     }
 
-    inline void set_NonIdealMHD(typename MHDConfig::NonIdealMHD v) {
+    inline void set_non_ideal_mhd(typename MHDConfig::NonIdealMHD v) {
         logger::raw_ln("$DANGER$DANGER$DANGER$DANGER$DANGER$DANGER$DANGER$DANGER$");
         logger::raw_ln(" ______   _______  __    _  _______  _______  ______  ");
         logger::raw_ln("|      | |   _   ||  |  | ||       ||       ||    _ | ");
@@ -1144,22 +1144,22 @@ struct shammodels::sph::SolverConfig {
     }
 
     /// @brief Whether the solver is set for non ideal MHD
-    inline bool do_NIMHD() { return mhd_config.do_NIMHD(); }
+    inline bool do_nimhd() { return mhd_config.do_nimhd(); }
 
     /// @brief Whether the solver has a field for B_on_rho
-    inline bool has_field_B_on_rho() { return mhd_config.has_B_field() && (dim == 3); }
+    inline bool has_field_b_on_rho() { return mhd_config.has_b_field() && (dim == 3); }
 
     /// @brief Whether the solver has a field for psi_on_ch
     inline bool has_field_psi_on_ch() { return mhd_config.has_psi_field(); }
 
     /// @brief Whether the solver has a field for divB
-    inline bool has_field_divB() { return mhd_config.has_divB_field(); }
+    inline bool has_field_divB() { return mhd_config.has_div_b_field(); }
 
     /// @brief Whether the solver has a field for curlB
-    inline bool has_field_curlB() { return mhd_config.has_curlB_field() && (dim == 3); }
+    inline bool has_field_curlB() { return mhd_config.has_curl_b_field() && (dim == 3); }
 
     /// @brief Whether the solver has a field for dt divB
-    inline bool has_field_dtdivB() { return mhd_config.has_dtdivB_field(); }
+    inline bool has_field_dtdivB() { return mhd_config.has_dtdiv_b_field(); }
 
     /// @brief Whether to store luminosity
     bool compute_luminosity = false;
@@ -1200,7 +1200,7 @@ struct shammodels::sph::SolverConfig {
                 "Self gravity is experimental, please enable experimental features to use it");
         }
 
-        if (mhd_config.do_NIMHD()) {
+        if (mhd_config.do_nimhd()) {
             shamrock::experimental_feature_check(
                 "Non-ideal MHD is experimental, please enable experimental features to use it");
         }

@@ -65,9 +65,9 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs(Tsca
     } else if (ConstantDisc *v = std::get_if<ConstantDisc>(&cfg_av.config)) {
         update_derivs_disc_visco(*v);
     } else if (IdealMHD *v = std::get_if<IdealMHD>(&cfg_mhd.configMHD)) {
-        update_derivs_MHD(*v);
+        update_derivs_mhd(*v);
     } else if (NonIdealMHD *v = std::get_if<NonIdealMHD>(&cfg_mhd.configMHD)) {
-        update_derivs_MHD(*v);
+        update_derivs_mhd(*v);
     } else if (NoneMHD *v = std::get_if<NoneMHD>(&cfg_mhd.configMHD)) {
         shambase::throw_unimplemented();
     } else if (None *v = std::get_if<None>(&cfg_av.config)) {
@@ -780,8 +780,8 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_disc
 }
 
 template<class Tvec, template<class> class SPHKernel>
-void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD(IdealMHD cfg) {
-    update_derivs_MHD_impl<shamrock::sph::mhd::MHDType::Ideal>(
+void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_mhd(IdealMHD cfg) {
+    update_derivs_mhd_impl<shamrock::sph::mhd::MHDType::Ideal>(
         cfg.sigma_mhd,
         cfg.alpha_u,
         cfg.alpha_B,
@@ -793,8 +793,8 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD(
 }
 
 template<class Tvec, template<class> class SPHKernel>
-void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD(NonIdealMHD cfg) {
-    update_derivs_MHD_impl<shamrock::sph::mhd::MHDType::NonIdeal>(
+void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_mhd(NonIdealMHD cfg) {
+    update_derivs_mhd_impl<shamrock::sph::mhd::MHDType::NonIdeal>(
         cfg.sigma_mhd,
         cfg.alpha_u,
         cfg.alpha_B,
@@ -806,8 +806,8 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD(
 }
 
 template<class Tvec, template<class> class SPHKernel>
-template<shamrock::sph::mhd::MHDType MHD_mode>
-void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD_impl(
+template<shamrock::sph::mhd::MHDType mhd_mode>
+void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_mhd_impl(
     Tscal sigma_mhd,
     Tscal alpha_u,
     Tscal alpha_B,
@@ -857,7 +857,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD_
     u32 iB_on_rho_interf  = ghost_layout.get_field_idx<Tvec>("B/rho");
     u32 ipsi_on_ch_interf = ghost_layout.get_field_idx<Tscal>("psi/ch");
 
-    bool do_NIMHD = solver_config.do_NIMHD();
+    bool do_nimhd = solver_config.do_nimhd();
 
     auto &merged_xyzh                                 = storage.merged_xyzh.get();
     shamrock::solvergraph::Field<Tscal> &omega        = shambase::get_check_ref(storage.omega);
@@ -887,9 +887,9 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD_
         sham::DeviceBuffer<Tscal> &buf_psi_on_ch
             = mpdat.get_field_buf_ref<Tscal>(ipsi_on_ch_interf);
 
-        bool do_NIMHD = solver_config.do_NIMHD();
+        bool do_nimhd = solver_config.do_nimhd();
         sham::DeviceBuffer<Tvec> *buf_J
-            = (do_NIMHD) ? &storage.MagCurrentJ_ghost.get().get(cur_p.id_patch).get_buf() : nullptr;
+            = (do_nimhd) ? &storage.MagCurrentJ_ghost.get().get(cur_p.id_patch).get_buf() : nullptr;
 
         tree::ObjectCache &pcache
             = shambase::get_check_ref(storage.neigh_cache).get_cache(cur_p.id_patch);
@@ -911,7 +911,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD_
         auto dB_on_rho  = buf_dB_on_rho.get_write_access(depends_list);
         auto dpsi_on_ch = buf_dpsi_on_ch.get_write_access(depends_list);
         auto drho_dt    = buf_drho_dt.get_write_access(depends_list);
-        auto J_field    = (do_NIMHD) ? buf_J->get_read_access(depends_list) : nullptr;
+        auto J_field    = (do_nimhd) ? buf_J->get_read_access(depends_list) : nullptr;
 
         Tvec *mag_pressure
             = (do_MHD_debug)
@@ -986,7 +986,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD_
                 Tscal omega_a = omega[id_a];
                 Tscal u_a     = u[id_a];
 
-                Tvec J_a = (do_NIMHD) ? J_field[id_a] : Tvec{0, 0, 0};
+                Tvec J_a = (do_nimhd) ? J_field[id_a] : Tvec{0, 0, 0};
 
                 Tscal rho_a     = rho_h(pmass, h_a, Kernel::hfactd);
                 Tscal rho_a_sq  = rho_a * rho_a;
@@ -1030,7 +1030,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD_
                     Tscal cs_b    = cs[id_b];
                     Tscal rab     = sycl::sqrt(rab2);
 
-                    Tvec J_b = (do_NIMHD) ? J_field[id_b] : Tvec{0, 0, 0};
+                    Tvec J_b = (do_nimhd) ? J_field[id_b] : Tvec{0, 0, 0};
 
                     Tscal rho_b      = rho_h(pmass, h_b, Kernel::hfactd);
                     Tvec B_b         = B_on_rho[id_b] * rho_b;
@@ -1041,7 +1041,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD_
                     Tscal Fab_a = Kernel::dW_3d(rab, h_a);
                     Tscal Fab_b = Kernel::dW_3d(rab, h_b);
 
-                    shamrock::sph::mhd::add_to_derivs_spmhd<Kernel, Tvec, Tscal, MHD_mode>(
+                    shamrock::sph::mhd::add_to_derivs_spmhd<Kernel, Tvec, Tscal, mhd_mode>(
                         pmass,
                         dr,
                         rab,
@@ -1100,9 +1100,9 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD_
                 dpsi_on_ch[id_a] = psi_eq - psi_a / h_a;
                 drho_dt[id_a]    = drho_eq;
 
-                if (do_NIMHD) {
+                if (do_nimhd) {
                     // only add once per particle
-                    Tscal u_NI = shamrock::sph::mhd::u_NI_heating<Tvec, Tscal, MHD_mode>(
+                    Tscal u_NI = shamrock::sph::mhd::u_ni_heating<Tvec, Tscal, mhd_mode>(
                         B_a, J_a, rho_a, etaO, etaH, etaAD, mu_0);
                     du[id_a] += u_NI;
                 }
@@ -1134,7 +1134,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD_
         buf_dpsi_on_ch.complete_event_state(e);
         buf_drho_dt.complete_event_state(e);
 
-        if (do_NIMHD) {
+        if (do_nimhd) {
             buf_J->complete_event_state(e);
         }
 

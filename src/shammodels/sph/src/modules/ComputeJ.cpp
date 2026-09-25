@@ -69,14 +69,14 @@ void shammodels::sph::modules::NodeComputeJ<Tvec, SPHKernel>::_impl_evaluate_int
             Tscal part_omega_sum = 0;
             Tvec J_sum{0, 0, 0};
 
-            constexpr Tscal Rker2 = SPHKernel<Tscal>::Rkern * SPHKernel<Tscal>::Rkern;
+            constexpr Tscal rker2 = SPHKernel<Tscal>::Rkern * SPHKernel<Tscal>::Rkern;
 
             particle_looper.for_each_object(id_a, [&](u32 id_b) {
                 Tvec dr    = xyz_a - r[id_b];
                 Tscal rab2 = sycl::dot(dr, dr);
                 Tscal h_b  = hpart[id_b];
 
-                if (rab2 > h_a * h_a * Rker2 && rab2 > h_b * h_b * Rker2) {
+                if (rab2 > h_a * h_a * rker2 && rab2 > h_b * h_b * rker2) {
                     return;
                 }
 
@@ -93,7 +93,7 @@ void shammodels::sph::modules::NodeComputeJ<Tvec, SPHKernel>::_impl_evaluate_int
                 Tvec r_ab_unit    = dr * sham::inv_sat_positive(rab);
                 Tvec nabla_Wab_ha = r_ab_unit * Fab_a;
 
-                J_sum += shamrock::sph::mhd::MagCurrentJ_sum(
+                J_sum += shamrock::sph::mhd::mag_current_j_sum(
                     part_mass, B_a, B_b, nabla_Wab_ha, sub_fact_a, mu_0);
             });
 

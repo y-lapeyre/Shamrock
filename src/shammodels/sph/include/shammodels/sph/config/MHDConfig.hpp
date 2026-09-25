@@ -37,7 +37,7 @@ struct shammodels::sph::MHDConfig {
 
     struct None {};
 
-    struct IdealMHD_constrained_hyper_para {
+    struct IdealMhdConstrainedHyperPara {
         Tscal sigma_mhd = 0.1;
         Tscal alpha_u   = 1.;
         Tscal alpha_B   = 1.;
@@ -60,40 +60,40 @@ struct shammodels::sph::MHDConfig {
     // a) do everything right
     // b) forget to add the state to the variant
     //-> question your life choices
-    using Variant = std::variant<None, IdealMHD_constrained_hyper_para, NonIdealMHD>;
+    using Variant = std::variant<None, IdealMhdConstrainedHyperPara, NonIdealMHD>;
 
     Variant configMHD = None{};
 
     void set(Variant v) { configMHD = v; }
 
-    inline bool do_NIMHD() {
+    inline bool do_nimhd() {
         bool is_NIMHD = bool(std::get_if<NonIdealMHD>(&configMHD));
         return is_NIMHD;
     }
 
-    inline bool has_B_field() {
-        bool is_B = bool(std::get_if<IdealMHD_constrained_hyper_para>(&configMHD))
+    inline bool has_b_field() {
+        bool is_B = bool(std::get_if<IdealMhdConstrainedHyperPara>(&configMHD))
                     || bool(std::get_if<NonIdealMHD>(&configMHD));
         return is_B;
     }
 
     inline bool has_psi_field() {
-        bool is_psi = bool(std::get_if<IdealMHD_constrained_hyper_para>(&configMHD))
+        bool is_psi = bool(std::get_if<IdealMhdConstrainedHyperPara>(&configMHD))
                       || bool(std::get_if<NonIdealMHD>(&configMHD));
         return is_psi;
     }
 
-    inline bool has_divB_field() {
-        bool is_divB = bool(std::get_if<IdealMHD_constrained_hyper_para>(&configMHD));
+    inline bool has_div_b_field() {
+        bool is_divB = bool(std::get_if<IdealMhdConstrainedHyperPara>(&configMHD));
         return is_divB;
     }
 
-    inline bool has_curlB_field() {
+    inline bool has_curl_b_field() {
         bool is_curlB = bool(std::get_if<NonIdealMHD>(&configMHD));
         return is_curlB;
     }
 
-    inline bool has_dtdivB_field() {
+    inline bool has_dtdiv_b_field() {
         bool is_dtdivB = bool(std::get_if<NonIdealMHD>(&configMHD));
         return is_dtdivB;
     }
@@ -104,8 +104,8 @@ struct shammodels::sph::MHDConfig {
         if (None *v = std::get_if<None>(&configMHD)) {
             logger::raw_ln("  Config MHD Type : None (No MHD)");
         } else if (
-            IdealMHD_constrained_hyper_para *v
-            = std::get_if<IdealMHD_constrained_hyper_para>(&configMHD)) {
+            IdealMhdConstrainedHyperPara *v
+            = std::get_if<IdealMhdConstrainedHyperPara>(&configMHD)) {
             logger::raw_ln("  Config MHD  : Ideal MHD, constrained hyperbolic/parabolic treatment");
             logger::raw_ln("  sigma_mhd  =", v->sigma_mhd);
             logger::raw_ln("  alpha_B    =", v->alpha_B);
@@ -128,7 +128,7 @@ struct shammodels::sph::MHDConfig {
 
     inline void check_config() {
 
-        if (do_NIMHD()) {
+        if (do_nimhd()) {
 
             if (!shamrock::are_experimental_features_allowed()) {
                 shambase::throw_with_loc<std::runtime_error>("Non Ideal MHD is experimental");
@@ -150,7 +150,7 @@ namespace shammodels::sph {
         using T = MHDConfig<Tvec>;
 
         using None        = typename T::None;
-        using IMHD        = typename T::IdealMHD_constrained_hyper_para;
+        using IMHD        = typename T::IdealMhdConstrainedHyperPara;
         using NonIdealMHD = typename T::NonIdealMHD;
 
         // Write the configMHD type into the JSON object
@@ -207,7 +207,7 @@ namespace shammodels::sph {
         j.at("mhd_type").get_to(mhd_type);
 
         using None        = typename T::None;
-        using IMHD        = typename T::IdealMHD_constrained_hyper_para;
+        using IMHD        = typename T::IdealMhdConstrainedHyperPara;
         using NonIdealMHD = typename T::NonIdealMHD;
 
         // Set the BCConfig based on the configMHD type

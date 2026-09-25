@@ -158,7 +158,7 @@ namespace shammodels::sph {
         using Cfg_MHD = typename Config::MHDConfig;
 
         using NoneMHD     = typename Cfg_MHD::None;
-        using IdealMHD    = typename Cfg_MHD::IdealMHD_constrained_hyper_para;
+        using IdealMHD    = typename Cfg_MHD::IdealMhdConstrainedHyperPara;
         using NonIdealMHD = typename Cfg_MHD::NonIdealMHD;
 
         using u_morton = typename Config::u_morton;
@@ -329,7 +329,7 @@ namespace shammodels::sph {
         void update_artificial_viscosity(Tscal dt);
 
         /// @brief Updates the magnetic current field (for NIMHD)
-        void update_J();
+        void update_j();
 
         /// @brief Initializes data layout for ghost particle fields
         void init_ghost_layout();
