@@ -219,14 +219,14 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             py::arg("alpha_u"),
             py::arg("beta_AV"))
         .def(
-            "set_IdealMHD",
+            "set_ideal_mhd",
             [](TConfig &self,
                Tscal sigma_mhd,
                Tscal sigma_u,
                Tscal alpha_B,
                Tscal alpha_AV,
                Tscal beta_AV) {
-                self.set_IdealMHD({sigma_mhd, sigma_u, alpha_B, alpha_AV, beta_AV});
+                self.set_ideal_mhd({sigma_mhd, sigma_u, alpha_B, alpha_AV, beta_AV});
             },
             py::kw_only(),
             py::arg("sigma_mhd"),

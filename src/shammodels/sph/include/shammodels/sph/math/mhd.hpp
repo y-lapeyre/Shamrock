@@ -178,7 +178,7 @@ namespace shamrock::sph::mhd {
     }
 
     template<class Tvec, class Tscal, MHDType mhd_mode = Ideal>
-    inline Tvec fdivB(
+    inline Tvec fdiv_b(
         Tscal m_b,
         Tvec B_a,
         Tvec B_b,
@@ -220,7 +220,7 @@ namespace shamrock::sph::mhd {
     }
 
     template<class Tvec, class Tscal, MHDType mhd_mode = Ideal>
-    inline Tscal dB_on_rho_induction_term(
+    inline Tscal d_b_on_rho_induction_term(
         Tscal m_b, Tscal rho_a_sq, Tvec B_a, Tscal omega_a, Tvec nabla_Wab_ha) {
 
         Tscal sub_fact_a = rho_a_sq * omega_a;
@@ -231,7 +231,7 @@ namespace shamrock::sph::mhd {
     }
 
     template<class Tvec, class Tscal, MHDType mhd_mode = Ideal>
-    inline Tvec dB_on_rho_psi_term(
+    inline Tvec d_b_on_rho_psi_term(
         Tscal m_b,
         Tscal rho_a_sq,
         Tscal rho_b_sq,
@@ -389,7 +389,7 @@ namespace shamrock::sph::mhd {
         // update_derivs)
 
         // dv/dt terms
-        sum_fdivB += fdivB(
+        sum_fdivB += fdiv_b(
             pmass, B_a, B_b, r_ab_unit * dWab_a, r_ab_unit * dWab_b, sub_fact_a, sub_fact_b, mu_0);
 
         Tvec gas_pressure_pishock = sph::sph_pressure_symetric(
@@ -474,10 +474,10 @@ namespace shamrock::sph::mhd {
             = 0.5 * pmass * (rho_diss_term_a + rho_diss_term_b) * (B_a - B_b) * vsig_B;
 
         dB_on_rho_dt += v_ab
-                        * dB_on_rho_induction_term(
+                        * d_b_on_rho_induction_term(
                             pmass, rho_a_sq, B_a, omega_a, r_ab_unit * dWab_a); // @@@ dWab_b ?
 
-        dB_on_rho_dt += dB_on_rho_psi_term(
+        dB_on_rho_dt += d_b_on_rho_psi_term(
             pmass,
             rho_a_sq,
             rho_b * rho_b,

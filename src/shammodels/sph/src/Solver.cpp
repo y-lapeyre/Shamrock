@@ -1937,7 +1937,7 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
 
     bool has_b_field       = solver_config.has_field_b_on_rho();
     bool has_psi_field     = solver_config.has_field_psi_on_ch();
-    bool has_curl_b_field  = solver_config.has_field_curlB();
+    bool has_curl_b_field  = solver_config.has_field_curl_b();
     bool has_epsilon_field = solver_config.dust_config.has_epsilon_field();
     bool has_deltav_field  = solver_config.dust_config.has_deltav_field();
     bool has_s_j_field     = solver_config.dust_config.has_s_j_field();
@@ -2736,12 +2736,12 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
             }
         }
 
-        // if (solver_config.has_field_divB()) {
+        // if (solver_config.has_field_div_b()) {
         //     sph::modules::DiffOperatorsB<Tvec, Kern>(context, solver_config, storage)
         //         .update_divB();
         // }
 
-        // if (solver_config.has_field_curlB()) {
+        // if (solver_config.has_field_curl_b()) {
         //     sph::modules::DiffOperatorsB<Tvec, Kern>(context, solver_config, storage)
         //         .update_curlB();
         // }
