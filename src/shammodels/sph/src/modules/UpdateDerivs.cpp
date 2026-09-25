@@ -888,9 +888,8 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD_
             = mpdat.get_field_buf_ref<Tscal>(ipsi_on_ch_interf);
 
         bool do_NIMHD = solver_config.do_NIMHD();
-        sham::DeviceBuffer<Tvec> &buf_J
-            = (do_NIMHD) ? storage.MagCurrentJ_ghost.get().get(cur_p.id_patch).get_buf()
-                         : pdat.get_field_buf_ref<Tvec>(idB_on_rho);
+        sham::DeviceBuffer<Tvec> *buf_J
+            = (do_NIMHD) ? &storage.MagCurrentJ_ghost.get().get(cur_p.id_patch).get_buf() : nullptr;
 
         tree::ObjectCache &pcache
             = shambase::get_check_ref(storage.neigh_cache).get_cache(cur_p.id_patch);
@@ -912,7 +911,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD_
         auto dB_on_rho  = buf_dB_on_rho.get_write_access(depends_list);
         auto dpsi_on_ch = buf_dpsi_on_ch.get_write_access(depends_list);
         auto drho_dt    = buf_drho_dt.get_write_access(depends_list);
-        auto J_field    = (do_NIMHD) ? buf_J.get_read_access(depends_list) : nullptr;
+        auto J_field    = (do_NIMHD) ? buf_J->get_read_access(depends_list) : nullptr;
 
         Tvec *mag_pressure
             = (do_MHD_debug)
@@ -1136,7 +1135,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD_
         buf_drho_dt.complete_event_state(e);
 
         if (do_NIMHD) {
-            buf_J.complete_event_state(e);
+            buf_J->complete_event_state(e);
         }
 
         buf_uint.complete_event_state(e);

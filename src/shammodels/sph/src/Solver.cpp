@@ -2681,7 +2681,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
         }
 
         // communicate fields
-        communicate_merge_ghosts_fields(); // is hpart_with_ghosts populated ?
+        communicate_merge_ghosts_fields();
 
         if (solver_config.has_field_alphaAV()) {
 
