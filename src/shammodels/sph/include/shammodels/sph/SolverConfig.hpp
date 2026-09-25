@@ -71,12 +71,12 @@ namespace shammodels::sph {
         /**
          * @brief The CFL condition for the courant factor
          */
-        Tscal cfl_cour;
+        Tscal cfl_cour = 0.3;
 
         /**
          * @brief The CFL condition for the force
          */
-        Tscal cfl_force;
+        Tscal cfl_force = 0.25;
 
         Tscal _pi = shambase::constants::pi<Tscal>;
         /**
@@ -558,7 +558,7 @@ struct shammodels::sph::SolverConfig {
     /// The radius of the sph kernel
     static constexpr Tscal Rkern = Kernel::Rkern;
 
-    Tscal gpart_mass; ///< The mass of each gas particle
+    Tscal gpart_mass{0}; ///< The mass of each gas particle (must be set before use)
 
     bool track_particles_id = false;
 
