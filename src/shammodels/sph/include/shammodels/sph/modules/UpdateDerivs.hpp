@@ -86,7 +86,8 @@ namespace shammodels::sph::modules {
             Tscal beta_AV,
             Tscal etaO,
             Tscal etaH,
-            Tscal etaAD);
+            Tscal etaAD,
+            bool eta_fields);
 
         // Thin wrappers that unpack the variant and forward to the template above.
         void update_derivs_MHD(IdealMHD cfg);

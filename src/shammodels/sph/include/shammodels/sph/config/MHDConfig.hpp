@@ -54,6 +54,8 @@ struct shammodels::sph::MHDConfig {
         Tscal etaO      = 1.;
         Tscal etaH      = 1.;
         Tscal etaAD     = 1.;
+
+        bool eta_fields = false;
     };
 
     // how to set a new state of a variant as a dummy:
@@ -93,6 +95,11 @@ struct shammodels::sph::MHDConfig {
         return is_curlB;
     }
 
+    inline bool has_field_eta() {
+        NonIdealMHD *v = std::get_if<NonIdealMHD>(&configMHD);
+        return v && v->eta_fields;
+    }
+
     inline bool has_dtdivB_field() {
         bool is_dtdivB = bool(std::get_if<NonIdealMHD>(&configMHD));
         return is_dtdivB;
@@ -117,6 +124,13 @@ struct shammodels::sph::MHDConfig {
             logger::raw_ln("  alpha_B     =", v->alpha_B);
             logger::raw_ln("  alpha_AV    =", v->alpha_AV);
             logger::raw_ln("  beta_AV     =", v->beta_AV);
+            if (v->eta_fields) {
+                logger::raw_ln("  etaO/etaH/etaAD : set per-particle (eta_o/eta_h/eta_ad fields)");
+            } else {
+                logger::raw_ln("  etaO        =", v->etaO);
+                logger::raw_ln("  etaH        =", v->etaH);
+                logger::raw_ln("  etaAD       =", v->etaAD);
+            }
         } else {
             shambase::throw_unimplemented();
         }
@@ -179,6 +193,7 @@ namespace shammodels::sph {
                 {"etaO", v->etaO},
                 {"etaH", v->etaH},
                 {"etaAD", v->etaAD},
+                {"eta_fields", v->eta_fields},
             };
         } else {
             shambase::throw_unimplemented();
@@ -227,12 +242,13 @@ namespace shammodels::sph {
                 NonIdealMHD{
                     j.at("sigma_mhd").get<Tscal>(),
                     j.at("alpha_u").get<Tscal>(),
-                    j.at("etaO").get<Tscal>(),
-                    j.at("etaH").get<Tscal>(),
-                    j.at("etaAD").get<Tscal>(),
                     j.at("alpha_B").get<Tscal>(),
                     j.at("alpha_AV").get<Tscal>(),
                     j.at("beta_AV").get<Tscal>(),
+                    j.at("etaO").get<Tscal>(),
+                    j.at("etaH").get<Tscal>(),
+                    j.at("etaAD").get<Tscal>(),
+                    j.value("eta_fields", false),
                 });
         } else {
             shambase::throw_unimplemented("wtf !");

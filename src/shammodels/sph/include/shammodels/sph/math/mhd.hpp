@@ -328,9 +328,12 @@ namespace shamrock::sph::mhd {
         Tscal mu_0,
         Tscal sigma_mhd,
 
-        Tscal etaO,
-        Tscal etaH,
-        Tscal etaAD,
+        Tscal etaO_a,
+        Tscal etaH_a,
+        Tscal etaAD_a,
+        Tscal etaO_b,
+        Tscal etaH_b,
+        Tscal etaAD_b,
 
         Tvec &dv_dt,
         Tscal &du_dt,
@@ -515,8 +518,8 @@ namespace shamrock::sph::mhd {
         // Non-ideal MHD terms
         if constexpr (MHD_mode == NonIdeal) {
 
-            Tvec D_a = WursterD<Tvec, Tscal, MHD_mode>(B_a, J_a, etaO, etaH, etaAD, mu_0);
-            Tvec D_b = WursterD<Tvec, Tscal, MHD_mode>(B_b, J_b, etaO, etaH, etaAD, mu_0);
+            Tvec D_a = WursterD<Tvec, Tscal, MHD_mode>(B_a, J_a, etaO_a, etaH_a, etaAD_a, mu_0);
+            Tvec D_b = WursterD<Tvec, Tscal, MHD_mode>(B_b, J_b, etaO_b, etaH_b, etaAD_b, mu_0);
 
             Tvec B_NI = B_NI_terms<Tvec, Tscal, MHD_mode>(
                 D_a,

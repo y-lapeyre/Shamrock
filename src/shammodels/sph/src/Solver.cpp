@@ -53,6 +53,7 @@
 #include "shammodels/sph/modules/ComputeCFLDustDrift.hpp"
 #include "shammodels/sph/modules/ComputeCFLForce.hpp"
 #include "shammodels/sph/modules/ComputeCFLNIMHD.hpp"
+#include "shammodels/sph/modules/ComputeCFLNIMHDVaryingEta.hpp"
 #include "shammodels/sph/modules/ComputeEos.hpp"
 #include "shammodels/sph/modules/ComputeJ.hpp"
 #include "shammodels/sph/modules/ComputeLoadBalanceValue.hpp"
@@ -1695,6 +1696,7 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
     bool has_epsilon_field = solver_config.dust_config.has_epsilon_field();
     bool has_deltav_field  = solver_config.dust_config.has_deltav_field();
     bool has_s_j_field     = solver_config.dust_config.has_s_j_field();
+    bool has_eta_field     = solver_config.has_field_eta();
 
     PatchDataLayerLayout &pdl = scheduler().pdl_old();
     const u32 ixyz            = pdl.get_field_idx<Tvec>("xyz");
@@ -1727,6 +1729,10 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
     const u32 ideltav  = (has_deltav_field) ? pdl.get_field_idx<Tvec>("deltav") : 0;
     const u32 is_j     = (has_s_j_field) ? pdl.get_field_idx<Tscal>("s_j") : 0;
 
+    const u32 ieta_o  = (has_eta_field) ? pdl.get_field_idx<Tscal>("eta_o") : 0;
+    const u32 ieta_h  = (has_eta_field) ? pdl.get_field_idx<Tscal>("eta_h") : 0;
+    const u32 ieta_ad = (has_eta_field) ? pdl.get_field_idx<Tscal>("eta_ad") : 0;
+
     auto &ghost_layout_ptr                              = storage.ghost_layout;
     shamrock::patch::PatchDataLayerLayout &ghost_layout = shambase::get_check_ref(ghost_layout_ptr);
     u32 ihpart_interf = ghost_layout.get_field_idx<Tscal>("hpart");
@@ -1748,6 +1754,10 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
         = (has_epsilon_field) ? ghost_layout.get_field_idx<Tscal>("epsilon") : 0;
     const u32 ideltav_interf = (has_deltav_field) ? ghost_layout.get_field_idx<Tvec>("deltav") : 0;
     const u32 is_j_interf    = (has_s_j_field) ? ghost_layout.get_field_idx<Tscal>("s_j") : 0;
+
+    const u32 ieta_o_interf  = (has_eta_field) ? ghost_layout.get_field_idx<Tscal>("eta_o") : 0;
+    const u32 ieta_h_interf  = (has_eta_field) ? ghost_layout.get_field_idx<Tscal>("eta_h") : 0;
+    const u32 ieta_ad_interf = (has_eta_field) ? ghost_layout.get_field_idx<Tscal>("eta_ad") : 0;
 
     using InterfaceBuildInfos = typename sph::BasicSPHGhostHandler<Tvec>::InterfaceBuildInfos;
 
@@ -1824,6 +1834,15 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
             if (has_s_j_field) {
                 sender_patch.get_field<Tscal>(is_j).append_subset_to(
                     buf_idx, cnt, pdat.get_field<Tscal>(is_j_interf));
+            }
+
+            if (has_eta_field) {
+                sender_patch.get_field<Tscal>(ieta_o).append_subset_to(
+                    buf_idx, cnt, pdat.get_field<Tscal>(ieta_o_interf));
+                sender_patch.get_field<Tscal>(ieta_h).append_subset_to(
+                    buf_idx, cnt, pdat.get_field<Tscal>(ieta_h_interf));
+                sender_patch.get_field<Tscal>(ieta_ad).append_subset_to(
+                    buf_idx, cnt, pdat.get_field<Tscal>(ieta_ad_interf));
             }
         });
 
@@ -1903,6 +1922,13 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
 
                 if (has_s_j_field) {
                     pdat_new.get_field<Tscal>(is_j_interf).insert(pdat.get_field<Tscal>(is_j));
+                }
+
+                if (has_eta_field) {
+                    pdat_new.get_field<Tscal>(ieta_o_interf).insert(pdat.get_field<Tscal>(ieta_o));
+                    pdat_new.get_field<Tscal>(ieta_h_interf).insert(pdat.get_field<Tscal>(ieta_h));
+                    pdat_new.get_field<Tscal>(ieta_ad_interf)
+                        .insert(pdat.get_field<Tscal>(ieta_ad));
                 }
 
                 pdat_new.check_field_obj_cnt_match();
@@ -3402,38 +3428,72 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
             compute_cfl_force->set_edges(
                 storage.part_counts, C_force_edge, hpart_refs, axyz_refs, cfl_dt);
 
-            std::shared_ptr<ComputeCFLNIMHD<Tvec>> compute_cfl_NIMHD;
+            std::shared_ptr<shamrock::solvergraph::INode> compute_cfl_NIMHD;
             if (do_NIMHD) {
-                compute_cfl_NIMHD = std::make_shared<ComputeCFLNIMHD<Tvec>>();
-
                 Tscal C_NIMHD   = solver_config.cfl_config.cfl_NIMHD * get_cfl_multipler();
                 Cfg_MHD cfg_mhd = solver_config.mhd_config;
                 auto *nimhd     = std::get_if<typename Cfg_MHD::NonIdealMHD>(&cfg_mhd.configMHD);
 
-                Tscal eta_AD = nimhd->etaAD;
-                Tscal eta_O  = nimhd->etaO;
-                Tscal eta_H  = nimhd->etaH;
                 std::shared_ptr<shamrock::solvergraph::IDataEdge<Tscal>> C_NIMHD_edge
                     = shamrock::solvergraph::IDataEdge<Tscal>::make_shared("C_NIMHD", "C_{NIMHD}");
                 C_NIMHD_edge->data = C_NIMHD;
-                std::shared_ptr<shamrock::solvergraph::IDataEdge<Tscal>> eta_O_edge
-                    = shamrock::solvergraph::IDataEdge<Tscal>::make_shared("eta_O", "eta_{O}");
-                eta_O_edge->data = eta_O;
-                std::shared_ptr<shamrock::solvergraph::IDataEdge<Tscal>> eta_AD_edge
-                    = shamrock::solvergraph::IDataEdge<Tscal>::make_shared("eta_AD", "eta_{AD}");
-                eta_AD_edge->data = eta_AD;
-                std::shared_ptr<shamrock::solvergraph::IDataEdge<Tscal>> eta_H_edge
-                    = shamrock::solvergraph::IDataEdge<Tscal>::make_shared("eta_H", "eta_{H}");
-                eta_H_edge->data = eta_H;
 
-                compute_cfl_NIMHD->set_edges(
-                    storage.part_counts,
-                    C_NIMHD_edge,
-                    eta_O_edge,
-                    eta_AD_edge,
-                    eta_H_edge,
-                    hpart_refs,
-                    cfl_dt);
+                if (nimhd->eta_fields) {
+                    auto node = std::make_shared<ComputeCFLNIMHDVaryingEta<Tvec>>();
+
+                    const u32 ieta_o_interf  = ghost_layout.get_field_idx<Tscal>("eta_o");
+                    const u32 ieta_h_interf  = ghost_layout.get_field_idx<Tscal>("eta_h");
+                    const u32 ieta_ad_interf = ghost_layout.get_field_idx<Tscal>("eta_ad");
+
+                    auto eta_o_refs = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>(
+                        "eta_o", "\\eta_{O}");
+                    auto eta_h_refs = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>(
+                        "eta_h", "\\eta_{H}");
+                    auto eta_ad_refs = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>(
+                        "eta_ad", "\\eta_{AD}");
+
+                    map_field_refs_ext(scheduler(), mpdats, ieta_o_interf, *eta_o_refs);
+                    map_field_refs_ext(scheduler(), mpdats, ieta_h_interf, *eta_h_refs);
+                    map_field_refs_ext(scheduler(), mpdats, ieta_ad_interf, *eta_ad_refs);
+
+                    node->set_edges(
+                        storage.part_counts,
+                        C_NIMHD_edge,
+                        eta_o_refs,
+                        eta_ad_refs,
+                        eta_h_refs,
+                        hpart_refs,
+                        cfl_dt);
+
+                    compute_cfl_NIMHD = node;
+                } else {
+                    auto node = std::make_shared<ComputeCFLNIMHD<Tvec>>();
+
+                    Tscal eta_AD = nimhd->etaAD;
+                    Tscal eta_O  = nimhd->etaO;
+                    Tscal eta_H  = nimhd->etaH;
+                    std::shared_ptr<shamrock::solvergraph::IDataEdge<Tscal>> eta_O_edge
+                        = shamrock::solvergraph::IDataEdge<Tscal>::make_shared("eta_O", "eta_{O}");
+                    eta_O_edge->data = eta_O;
+                    std::shared_ptr<shamrock::solvergraph::IDataEdge<Tscal>> eta_AD_edge
+                        = shamrock::solvergraph::IDataEdge<Tscal>::make_shared(
+                            "eta_AD", "eta_{AD}");
+                    eta_AD_edge->data = eta_AD;
+                    std::shared_ptr<shamrock::solvergraph::IDataEdge<Tscal>> eta_H_edge
+                        = shamrock::solvergraph::IDataEdge<Tscal>::make_shared("eta_H", "eta_{H}");
+                    eta_H_edge->data = eta_H;
+
+                    node->set_edges(
+                        storage.part_counts,
+                        C_NIMHD_edge,
+                        eta_O_edge,
+                        eta_AD_edge,
+                        eta_H_edge,
+                        hpart_refs,
+                        cfl_dt);
+
+                    compute_cfl_NIMHD = node;
+                }
             }
 
             std::shared_ptr<ComputeCFLDivBCleaning<Tscal>> compute_cfl_divB_cleaning;
