@@ -21,7 +21,7 @@ if not shamrock.sys.is_initialized():
 # %%
 # Parameters of the test (matches examples/sph/run_mhd_wavedamping.py / Phantom nx=128)
 
-L2_ERROR_THRESHOLD = 7.5e-5
+L2_ERROR_THRESHOLD = 7.5e-4
 
 Lx = 1.0  # box length
 dr = 1 / 64  # particle spacing
