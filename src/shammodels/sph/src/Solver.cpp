@@ -2796,15 +2796,6 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
 
             // communicate needed fields (B,b, hb): done just before
 
-            // @@@ is this the correct hpart ? the one updated bu sph_prestep ?
-            shambase::get_check_ref(storage.hpart_with_ghosts)
-                .set_refs(storage.merged_xyzh.get()
-                              .template map<std::reference_wrapper<PatchDataField<Tscal>>>(
-                                  [&](u64 id, shamrock::patch::PatchDataLayer &mpdat) {
-                                      return std::ref(mpdat.get_field<Tscal>(
-                                          1)); // hpart is at index 1 in merged_xyzh
-                                  }));
-
             // compute J field
             update_j();
 
