@@ -228,6 +228,8 @@ jobs:
             artifact_name: gallery_sph_run_sphsetup_logs
           - testfile: "examples/sph/run_orzag_tang.py"
             artifact_name: gallery_sph_run_orzag_tang
+          - testfile: "examples/sph/run_mhd_wavedamping.py"
+            artifact_name: gallery_sph_run_mhd_wavedamping
           - testfile: "examples/sph/run_pairing_instab.py"
             artifact_name: gallery_sph_pairing_instab
           - testfile: "examples/sph/run_cubic_reorganisation.py"
