@@ -23,8 +23,9 @@ if not shamrock.sys.is_initialized():
 
 L2_ERROR_THRESHOLD = 7.5e-4
 
-Lx = 1.0  # box length
-dr = 1 / 64  # particle spacing
+Nx = 32  # number of particles along x (box length is 1)
+Ny = 12  # transverse lattice counts, kept small since the wave is 1D along x
+Nz = 12
 rho0 = 1.0  # initial density
 Bx0 = 1.0  # background field in x
 C_ADc = 0.01  # ambipolar diffusion coefficient (Phantom convention)
@@ -70,21 +71,29 @@ cfg.set_eos_isothermal(cs)
 cfg.print_status()
 model.set_solver_config(cfg)
 
-model.init_scheduler(int(1e6), 1)
+scheduler_split_val = int(1e6)
+scheduler_merge_val = 1
+model.init_scheduler(scheduler_split_val, scheduler_merge_val)
 
 # %%
-# Generate particle distribution in an FCC lattice
+# Generate particle distribution in a periodic HCP lattice
 
-bmin = (-Lx / 2.0, -np.sqrt(3) / 4.0 * Lx, -np.sqrt(6) / 4.0 * Lx)
-bmax = (Lx / 2.0, np.sqrt(3) / 4.0 * Lx, np.sqrt(6) / 4.0 * Lx)
+lmin = (-(Nx // 2), -(Ny // 2), -(Nz // 2))
+lmax = (Nx // 2, Ny // 2, Nz // 2)
 
-bmin, bmax = model.get_ideal_fcc_box(dr, bmin, bmax)
+# Call with dr = 1 to get the lattice extent, then rescale dr so that the box length along x is 1
+(xm, ym, zm), (xM, yM, zM) = shamrock.math.get_periodic_hcp_box(1.0, lmin, lmax)
+dr = 1.0 / (xM - xm)
+bmin, bmax = shamrock.math.get_periodic_hcp_box(dr, lmin, lmax)
 xm, ym, zm = bmin
 xM, yM, zM = bmax
 Lx_actual = xM - xm
 
 model.resize_simulation_box(bmin, bmax)
-model.add_cube_fcc_3d(dr, bmin, bmax)
+
+setup = model.get_setup()
+gen = setup.make_generator_lattice_hcp(dr, bmin, bmax)
+setup.apply_setup(gen, insert_step=scheduler_split_val)
 
 vol_b = (xM - xm) * (yM - ym) * (zM - zm)
 totmass = rho0 * vol_b
