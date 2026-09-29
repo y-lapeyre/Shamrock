@@ -214,25 +214,29 @@ namespace shammodels::sph {
         if (mhd_type == "none") {
             p.set(None{});
         } else if (mhd_type == "ideal_mhd_constrained_hyper_para") {
+            // alpha_B, alpha_AV & beta_AV were added later, older configs fall back to defaults
+            IMHD def{};
             p.set(
                 IMHD{
                     j.at("sigma_mhd").get<Tscal>(),
                     j.at("alpha_u").get<Tscal>(),
-                    j.at("alpha_B").get<Tscal>(),
-                    j.at("alpha_AV").get<Tscal>(),
-                    j.at("beta_AV").get<Tscal>(),
+                    j.value("alpha_B", def.alpha_B),
+                    j.value("alpha_AV", def.alpha_AV),
+                    j.value("beta_AV", def.beta_AV),
                 });
         } else if (mhd_type == "non_ideal_mhd") {
+            // all fields beyond alpha_u were added later, older configs fall back to defaults
+            NonIdealMHD def{};
             p.set(
                 NonIdealMHD{
                     j.at("sigma_mhd").get<Tscal>(),
                     j.at("alpha_u").get<Tscal>(),
-                    j.at("etaO").get<Tscal>(),
-                    j.at("etaH").get<Tscal>(),
-                    j.at("etaAD").get<Tscal>(),
-                    j.at("alpha_B").get<Tscal>(),
-                    j.at("alpha_AV").get<Tscal>(),
-                    j.at("beta_AV").get<Tscal>(),
+                    j.value("alpha_B", def.alpha_B),
+                    j.value("alpha_AV", def.alpha_AV),
+                    j.value("beta_AV", def.beta_AV),
+                    j.value("etaO", def.etaO),
+                    j.value("etaH", def.etaH),
+                    j.value("etaAD", def.etaAD),
                 });
         } else {
             shambase::throw_unimplemented("wtf !");
