@@ -24,7 +24,7 @@ if not shamrock.sys.is_initialized():
 L2_ERROR_THRESHOLD = 7.5e-5
 
 Lx = 1.0  # box length
-dr = 1 / 128  # particle spacing (nx=128, matching Phantom's benchmark resolution)
+dr = 1 / 64  # particle spacing
 rho0 = 1.0  # initial density
 Bx0 = 1.0  # background field in x
 C_ADc = 0.01  # ambipolar diffusion coefficient (Phantom convention)
