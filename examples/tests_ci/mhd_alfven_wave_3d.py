@@ -8,6 +8,9 @@ code paper (Price et al. 2018, Section 5.6.2 / 5.7.1).
 
 """
 
+import os
+
+import matplotlib.pyplot as plt
 import numpy as np
 
 import shamrock
@@ -44,30 +47,12 @@ t_target = n_periods * wavelength / v_A
 
 resol = 32
 
-# %%
+plot_extra_resols = []  # 64, 128, too much for the ci
 
-ctx = shamrock.Context()
-ctx.pdata_layout_new()
-
-si = shamrock.UnitSystem()
-codeu = shamrock.UnitSystem(unit_time=1.0, unit_length=1.0, unit_mass=1.2566370621219e-06)
-ucte = shamrock.Constants(codeu)
-
-model = shamrock.get_Model_SPH(context=ctx, vector_type="f64_3", sph_kernel="M4")
-
-cfg = model.gen_default_config()
-cfg.set_units(codeu)
-mu_0 = ucte.mu_0()
-cfg.set_artif_viscosity_None()
-cfg.set_IdealMHD(sigma_mhd=1, sigma_u=1)
-cfg.set_boundary_periodic()
-cfg.set_eos_adiabatic(gamma)
-cfg.print_status()
-model.set_solver_config(cfg)
-
-crit_split = int(1e7)
-crit_merge = 1
-model.init_scheduler(crit_split, crit_merge)
+do_plot = True
+dump_folder = "_to_trash"
+if do_plot and shamrock.sys.world_rank() == 0:
+    os.makedirs(dump_folder, exist_ok=True)
 
 
 # %%
@@ -83,24 +68,6 @@ def best_transverse_counts(model, xcnt, target_ratio=0.5, search_frac=0.18):
             if best is None or score < best[0]:
                 best = (score, ycnt, zcnt)
     return best[1], best[2]
-
-
-ycnt, zcnt = best_transverse_counts(model, resol)
-
-(xs, ys, zs) = model.get_box_dim_fcc_3d(1, resol, ycnt, zcnt)
-dr = 3.0 * wavelength / xs
-(xs, ys, zs) = model.get_box_dim_fcc_3d(dr, resol, ycnt, zcnt)
-print(f"Box dims: xs={xs} ys={ys} zs={zs} (target ys=zs={xs / 2})")
-
-box_min = (-xs / 2, -ys / 2, -zs / 2)
-box_max = (xs / 2, ys / 2, zs / 2)
-
-model.resize_simulation_box(box_min, box_max)
-model.add_cube_fcc_3d(dr, box_min, box_max)
-
-gam1 = gamma - 1.0
-uuzero = P0 / (gam1 * rho0)
-model.set_value_in_a_box("uint", "f64", uuzero, box_min, box_max)
 
 
 def wave_frame_coords(r):
@@ -128,49 +95,110 @@ def mag_func(r):
     return (Bx / rho0, By / rho0, Bz / rho0)
 
 
-model.set_field_value_lambda_f64_3("vxyz", vel_func)
-model.set_field_value_lambda_f64_3("B/rho", mag_func)
+def run_alfven_wave(resol):
+    ctx = shamrock.Context()
+    ctx.pdata_layout_new()
 
-vol_b = xs * ys * zs
-totmass = rho0 * vol_b
-pmass = model.total_mass_to_part_mass(totmass)
-model.set_particle_mass(pmass)
+    codeu = shamrock.UnitSystem(unit_time=1.0, unit_length=1.0, unit_mass=1.2566370621219e-06)
 
-print("Total mass :", totmass)
-print("Current part mass :", pmass)
+    model = shamrock.get_Model_SPH(context=ctx, vector_type="f64_3", sph_kernel="M4")
 
-model.set_cfl_cour(0.3)
-model.set_cfl_force(0.25)
+    cfg = model.gen_default_config()
+    cfg.set_units(codeu)
+    cfg.set_artif_viscosity_None()
+    cfg.set_IdealMHD(sigma_mhd=1, sigma_u=1)
+    cfg.set_boundary_periodic()
+    cfg.set_eos_adiabatic(gamma)
+    model.set_solver_config(cfg)
 
-model.timestep()
+    crit_split = int(1e7)
+    crit_merge = 1
+    model.init_scheduler(crit_split, crit_merge)
 
-# %%
-# Run the simulation for n_periods periods
+    ycnt, zcnt = best_transverse_counts(model, resol)
 
-model.evolve_until(t_target)
+    (xs, ys, zs) = model.get_box_dim_fcc_3d(1, resol, ycnt, zcnt)
+    dr = 3.0 * wavelength / xs
+    (xs, ys, zs) = model.get_box_dim_fcc_3d(dr, resol, ycnt, zcnt)
+    print(f"[resol={resol}] Box dims: xs={xs} ys={ys} zs={zs} (target ys=zs={xs / 2})")
 
-# %%
-# Compare the transverse field component B2 against the exact solution.
-#
-# Because t_target is an integer number of wave periods, the exact
-# (undamped) solution coincides with the initial condition:
-#   B2_exact(x1) = amplitude * sin(2*pi*x1/wavelength)
+    box_min = (-xs / 2, -ys / 2, -zs / 2)
+    box_max = (xs / 2, ys / 2, zs / 2)
 
-data = ctx.collect_data()
+    model.resize_simulation_box(box_min, box_max)
+    model.add_cube_fcc_3d(dr, box_min, box_max)
 
-xyz = data["xyz"]
-B_on_rho = data["B/rho"]
+    gam1 = gamma - 1.0
+    uuzero = P0 / (gam1 * rho0)
+    model.set_value_in_a_box("uint", "f64", uuzero, box_min, box_max)
 
-x1 = xyz @ r_hat
-B2 = (
-    B_on_rho @ e2_hat
-)  # B/rho projected on the transverse axis (rho = 1 at t=0, close to 1 during the test)
+    model.set_field_value_lambda_f64_3("vxyz", vel_func)
+    model.set_field_value_lambda_f64_3("B/rho", mag_func)
+
+    vol_b = xs * ys * zs
+    totmass = rho0 * vol_b
+    pmass = model.total_mass_to_part_mass(totmass)
+    model.set_particle_mass(pmass)
+
+    print(f"[resol={resol}] Total mass :", totmass)
+    print(f"[resol={resol}] Current part mass :", pmass)
+
+    model.set_cfl_cour(0.3)
+    model.set_cfl_force(0.25)
+
+    model.timestep()
+
+    model.evolve_until(t_target)
+
+    # %%
+    # Compare the transverse field component B2 against the exact solution.
+    #
+    # Because t_target is an integer number of wave periods, the exact
+    # (undamped) solution coincides with the initial condition:
+    #   B2_exact(x1) = amplitude * sin(2*pi*x1/wavelength)
+
+    data = ctx.collect_data()
+
+    xyz = data["xyz"]
+    B_on_rho = data["B/rho"]
+
+    x1 = xyz @ r_hat
+    # B/rho projected on the transverse axis (rho = 1 at t=0, close to 1 during the test)
+    B2 = B_on_rho @ e2_hat
+
+    return x1, B2
+
+
+x1, B2 = run_alfven_wave(resol)
 
 B2_exact = amplitude * np.sin(2.0 * np.pi * x1 / wavelength)
 
 l2_err_B2 = np.sqrt(np.mean((B2 - B2_exact) ** 2))
 
 print(f"L2 error on B2 : {l2_err_B2}")
+
+# %%
+
+if do_plot:
+    fig, ax = plt.subplots(figsize=(8, 5))
+
+    ax.plot(x1, B2, ".", color="black", markersize=1.5, label=f"resol={resol}")
+
+    for extra_resol in plot_extra_resols:
+        x1_extra, B2_extra = run_alfven_wave(extra_resol)
+        ax.plot(x1_extra, B2_extra, ".", color="black", markersize=1.5)
+
+    x1_exact = np.linspace(x1.min(), x1.max(), 500)
+    B2_exact_line = amplitude * np.sin(2.0 * np.pi * x1_exact / wavelength)
+    ax.plot(x1_exact, B2_exact_line, "-", color="red", linewidth=1.5, label="exact solution")
+
+    ax.set_xlabel("$x_1$")
+    ax.set_ylabel("$B_2$")
+    ax.set_title(f"3D circularly polarised Alfven wave, $t={t_target:.0f}$ periods")
+    ax.legend()
+    fig.tight_layout()
+    fig.savefig(os.path.join(dump_folder, "mhd_alfven_wave_3d_b2_vs_x1.png"), dpi=150)
+    plt.close(fig)
 
 test_pass = True
 err_log = ""

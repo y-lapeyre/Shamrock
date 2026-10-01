@@ -10,6 +10,9 @@ magnetic field, testing the propagation of rotational discontinuities.
 
 """
 
+import os
+
+import matplotlib.pyplot as plt
 import numpy as np
 
 import shamrock
@@ -145,8 +148,6 @@ model.set_cfl_force(C_force)
 
 model.timestep()
 
-# %%
-
 model.evolve_until(t_target)
 
 # %%
@@ -167,6 +168,88 @@ rho_max = np.max(rho)
 rho_min = np.min(rho)
 
 momentum_norm = np.sqrt(total_momentum[0] ** 2 + total_momentum[1] ** 2 + total_momentum[2] ** 2)
+
+# nx=256
+do_plot = True
+dump_folder = "_to_trash"
+if do_plot and shamrock.sys.world_rank() == 0:
+    os.makedirs(dump_folder, exist_ok=True)
+
+if do_plot:
+    render_res = 300
+    center = (0.0, 0.0, 0.0)
+    delta_x = (xs, 0.0, 0.0)
+    delta_y = (0.0, ys, 0.0)
+
+    def render_slice_normalized(field, field_type=None, min_normalization=1e-9):
+        kwargs = dict(center=center, delta_x=delta_x, delta_y=delta_y, nx=render_res, ny=render_res)
+        if field_type is None:
+            raw = np.asarray(model.render_cartesian_slice(field, **kwargs))
+        else:
+            raw = np.asarray(model.render_cartesian_slice(field, field_type, **kwargs))
+
+        unity = np.asarray(model.render_cartesian_slice("unity", "f64", **kwargs))
+        unity_b = unity if raw.ndim == 2 else unity[..., None]
+        out = raw / unity_b
+        mask = np.broadcast_to(unity_b, raw.shape) < min_normalization
+        return np.where(mask, np.nan, out)
+
+    rho_field = model.compute_field("rho", "f64")
+    uint_field = model.compute_field("uint", "f64")
+
+    def compute_pressure(size, rho, uint):
+        return (gamma - 1.0) * rho * uint
+
+    P_field = shamrock.map_fields_f64(compute_pressure, rho=rho_field, uint=uint_field)
+
+    def compute_soundspeed(size, rho, P):
+        return np.sqrt(gamma * P / rho)
+
+    cs_field = shamrock.map_fields_f64(compute_soundspeed, rho=rho_field, P=P_field)
+
+    rho_slice = render_slice_normalized(rho_field)
+    P_slice = render_slice_normalized(P_field)
+    cs_slice = render_slice_normalized(cs_field)
+    vxyz_slice = render_slice_normalized("vxyz", "f64_3")
+    B_on_rho_slice = render_slice_normalized("B/rho", "f64_3")
+
+    vmag_slice = np.linalg.norm(vxyz_slice, axis=-1)
+    mach_slice = vmag_slice / cs_slice
+
+    # physical B = (B/rho) * rho
+    B_slice = B_on_rho_slice * rho_slice[..., None]
+    magnetic_pressure_slice = 0.5 * np.sum(B_slice**2, axis=-1) / mu_0
+
+    if shamrock.sys.world_rank() == 0:
+        # Contour limits identical to Toth (2000), as quoted in the
+        # Phantom paper's Figure 34 caption.
+        panels = [
+            ("Density", rho_slice, 0.483, 12.95),
+            ("Pressure", P_slice, 0.0202, 2.008),
+            ("Mach number $|v|/c_s$", mach_slice, 0.0, 1.09),
+            ("Magnetic pressure $\\frac{1}{2}B^2$", magnetic_pressure_slice, 0.0, 2.642),
+        ]
+
+        ny_render, nx_render = rho_slice.shape
+        xg = np.linspace(box_min[0], box_max[0], nx_render)
+        yg = np.linspace(box_min[1], box_max[1], ny_render)
+        X, Y = np.meshgrid(xg, yg)
+
+        fig, axs = plt.subplots(2, 2, figsize=(10, 9))
+
+        for ax, (title, field_slice, vmin, vmax) in zip(axs.flat, panels):
+            levels = np.linspace(vmin, vmax, 30)
+            contour_set = ax.contour(X, Y, field_slice, levels=levels)
+            ax.set_title(title)
+            ax.set_xlabel("x")
+            ax.set_ylabel("y")
+            ax.set_aspect("equal")
+            fig.colorbar(contour_set, ax=ax)
+
+        fig.suptitle(f"MHD rotor problem, $t={t_target}$, nx={nx}")
+        fig.tight_layout()
+        fig.savefig(os.path.join(dump_folder, "mhd_rotor_3d_contours.png"), dpi=150)
+        plt.close(fig)
 
 print(f"kinetic_energy   = {kinetic_energy}")
 print(f"magnetic_energy  = {magnetic_energy}")
