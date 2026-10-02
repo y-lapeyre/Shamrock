@@ -29,17 +29,6 @@ P0 = 0.1
 wavelength = 1.0
 amplitude = 0.1
 
-sin_a = 2.0 / 3.0
-cos_a = np.sqrt(1.0 - sin_a**2)
-sin_b = 2.0 / np.sqrt(5.0)
-cos_b = np.sqrt(1.0 - sin_b**2)
-
-# Rotation matrix columns: r (propagation direction), e2, e3 (transverse)
-r_hat = np.array([cos_a * cos_b, cos_a * sin_b, sin_a])
-e2_hat = np.array([-sin_b, cos_b, 0.0])
-e3_hat = np.array([-sin_a * cos_b, -sin_a * sin_b, cos_a])
-rotmat = np.column_stack([r_hat, e2_hat, e3_hat])
-
 # Alfven speed set by B1 = 1, rho = 1 -> v_A = 1, period = wavelength / v_A = 1
 v_A = 1.0
 n_periods = 5
@@ -70,29 +59,25 @@ def best_transverse_counts(model, xcnt, target_ratio=0.5, search_frac=0.18):
     return best[1], best[2]
 
 
-def wave_frame_coords(r):
-    x, y, z = r
-    x1 = x * r_hat[0] + y * r_hat[1] + z * r_hat[2]
-    return x1
+def wave_basis(xs, ys, zs):
+    # Athena-style: r_hat proportional to (1/Lx, 1/Ly, 1/Lz) and lambda = 1/|(1/Lx, 1/Ly, 1/Lz)|,
+    # so a periodic translation along any axis shifts x1 by exactly one
+    # wavelength. A lattice-derived box is only approximately 2:1:1, and
+    # keeping the paper's fixed angles would leave a phase seam at the y/z
+    # boundaries. For an exact 3 x 1.5 x 1.5 box this reduces to
+    # sin(a) = 2/3, sin(b) = 2/sqrt(5), lambda = 1.
+    k = np.array([1.0 / xs, 1.0 / ys, 1.0 / zs])
+    lam = 1.0 / np.linalg.norm(k)
+    r_hat = k * lam
 
+    sin_a = r_hat[2]
+    cos_a = np.hypot(r_hat[0], r_hat[1])
+    sin_b = r_hat[1] / cos_a
+    cos_b = r_hat[0] / cos_a
 
-def vel_func(r):
-    x1 = wave_frame_coords(r)
-    v1 = 0.0
-    v2 = amplitude * np.sin(2.0 * np.pi * x1 / wavelength)
-    v3 = amplitude * np.cos(2.0 * np.pi * x1 / wavelength)
-    vx, vy, vz = rotmat @ np.array([v1, v2, v3])
-    return (vx, vy, vz)
-
-
-def mag_func(r):
-    x1 = wave_frame_coords(r)
-    B1 = 1.0
-    B2 = amplitude * np.sin(2.0 * np.pi * x1 / wavelength)
-    B3 = amplitude * np.cos(2.0 * np.pi * x1 / wavelength)
-    Bx, By, Bz = rotmat @ np.array([B1, B2, B3])
-    # field is stored as B/rho in SPMHD
-    return (Bx / rho0, By / rho0, Bz / rho0)
+    e2_hat = np.array([-sin_b, cos_b, 0.0])
+    e3_hat = np.array([-sin_a * cos_b, -sin_a * sin_b, cos_a])
+    return lam, r_hat, e2_hat, e3_hat
 
 
 def run_alfven_wave(resol):
@@ -117,10 +102,37 @@ def run_alfven_wave(resol):
 
     ycnt, zcnt = best_transverse_counts(model, resol)
 
-    (xs, ys, zs) = model.get_box_dim_fcc_3d(1, resol, ycnt, zcnt)
-    dr = 3.0 * wavelength / xs
+    # lambda scales linearly with dr: pick dr so that lambda == wavelength exactly
+    lam_unit = wave_basis(*model.get_box_dim_fcc_3d(1, resol, ycnt, zcnt))[0]
+    dr = wavelength / lam_unit
     (xs, ys, zs) = model.get_box_dim_fcc_3d(dr, resol, ycnt, zcnt)
-    print(f"[resol={resol}] Box dims: xs={xs} ys={ys} zs={zs} (target ys=zs={xs / 2})")
+    lam, r_hat, e2_hat, e3_hat = wave_basis(xs, ys, zs)
+    rotmat = np.column_stack([r_hat, e2_hat, e3_hat])
+    print(f"[resol={resol}] Box dims: xs={xs} ys={ys} zs={zs}")
+    print(f"[resol={resol}] r_hat={r_hat} (paper: [1/3, 2/3, 2/3]) lambda={lam}")
+
+    def vel_func(r):
+        x1 = np.dot(r, r_hat)
+        v_wave = np.array(
+            [
+                0.0,
+                amplitude * np.sin(2.0 * np.pi * x1 / lam),
+                amplitude * np.cos(2.0 * np.pi * x1 / lam),
+            ]
+        )
+        return tuple(rotmat @ v_wave)
+
+    def mag_func(r):
+        x1 = np.dot(r, r_hat)
+        B_wave = np.array(
+            [
+                1.0,
+                amplitude * np.sin(2.0 * np.pi * x1 / lam),
+                amplitude * np.cos(2.0 * np.pi * x1 / lam),
+            ]
+        )
+        # field is stored as B/rho in SPMHD
+        return tuple(rotmat @ B_wave / rho0)
 
     box_min = (-xs / 2, -ys / 2, -zs / 2)
     box_max = (xs / 2, ys / 2, zs / 2)
@@ -163,8 +175,9 @@ def run_alfven_wave(resol):
     B_on_rho = data["B/rho"]
 
     x1 = xyz @ r_hat
-    # B/rho projected on the transverse axis (rho = 1 at t=0, close to 1 during the test)
-    B2 = B_on_rho @ e2_hat
+    # SPMHD stores B/rho: recover the physical field before projecting it on e2
+    rho = pmass * (model.get_hfact() / data["hpart"]) ** 3
+    B2 = (B_on_rho * rho[:, None]) @ e2_hat
 
     return x1, B2
 
@@ -179,16 +192,27 @@ print(f"L2 error on B2 : {l2_err_B2}")
 
 # %%
 
+
+# The box spans 3 wavelengths along x1, and the solution only depends on
+# x1 modulo the wavelength, so fold x1 into a single period to overlay them.
+def fold_x1(x1):
+    return np.mod(x1 + 0.5 * wavelength, wavelength) - 0.5 * wavelength
+
+
 if do_plot:
+    all_resols = sorted(set([resol] + list(plot_extra_resols)))
+    results = {res: (x1, B2) if res == resol else run_alfven_wave(res) for res in all_resols}
+
+    # Fig. 26: B2 vs x1 (folded into one wavelength) for each resolution
     fig, ax = plt.subplots(figsize=(8, 5))
 
-    ax.plot(x1, B2, ".", color="black", markersize=1.5, label=f"resol={resol}")
+    colors = plt.cm.viridis(np.linspace(0.0, 0.8, len(all_resols)))
 
-    for extra_resol in plot_extra_resols:
-        x1_extra, B2_extra = run_alfven_wave(extra_resol)
-        ax.plot(x1_extra, B2_extra, ".", color="black", markersize=1.5)
+    for color, res in zip(colors, all_resols):
+        x1_r, B2_r = results[res]
+        ax.plot(fold_x1(x1_r), B2_r, ".", color=color, markersize=1.5, label=f"resol={res}")
 
-    x1_exact = np.linspace(x1.min(), x1.max(), 500)
+    x1_exact = np.linspace(-0.5 * wavelength, 0.5 * wavelength, 500)
     B2_exact_line = amplitude * np.sin(2.0 * np.pi * x1_exact / wavelength)
     ax.plot(x1_exact, B2_exact_line, "-", color="red", linewidth=1.5, label="exact solution")
 
@@ -200,10 +224,43 @@ if do_plot:
     fig.savefig(os.path.join(dump_folder, "mhd_alfven_wave_3d_b2_vs_x1.png"), dpi=150)
     plt.close(fig)
 
+    nxs = np.array(all_resols, dtype=float)
+    l1_errs = np.array(
+        [
+            np.mean(np.abs(B2_r - amplitude * np.sin(2.0 * np.pi * x1_r / wavelength)))
+            for x1_r, B2_r in (results[res] for res in all_resols)
+        ]
+    )
+    for res, err in zip(all_resols, l1_errs):
+        print(f"L1 error on B2 (resol={res}) : {err}")
+
+    fig, ax = plt.subplots(figsize=(6, 5))
+    ax.loglog(nxs, l1_errs, "o-", color="black", label="Shamrock")
+    if len(nxs) > 1:
+        # Local order between consecutive resolutions: a single fit over all points
+        # would be biased by coarse runs that are not yet in the asymptotic regime.
+        orders = -np.diff(np.log(l1_errs)) / np.diff(np.log(nxs))
+        for lo, hi, order in zip(all_resols[:-1], all_resols[1:], orders):
+            print(f"L1 convergence order between resol={lo} and {hi} : {order}")
+        ax.loglog(
+            nxs,
+            l1_errs[-1] * (nxs / nxs[-1]) ** -2,
+            "--",
+            color="gray",
+            label="second order",
+        )
+        ax.set_title(f"Convergence, order between the two finest = {orders[-1]:.2f}")
+    ax.set_xlabel("number of particles in x")
+    ax.set_ylabel("L1 error on $B_2$")
+    ax.legend()
+    fig.tight_layout()
+    fig.savefig(os.path.join(dump_folder, "mhd_alfven_wave_3d_convergence.png"), dpi=150)
+    plt.close(fig)
+
 test_pass = True
 err_log = ""
 
-expect_l2_err_B2 = 0.07122916744802753
+expect_l2_err_B2 = 0.07299812569247696
 tol = 0.35  # too generous for now
 
 
