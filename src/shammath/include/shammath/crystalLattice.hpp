@@ -468,6 +468,11 @@ namespace shammath {
                 return false;
             }
 
+            // check for empty/inverted span
+            if (coord_max[1] <= coord_min[1] || coord_max[2] <= coord_min[2]) {
+                return false;
+            }
+
             if (pmod(coord_max[1] - coord_min[1], 2) != 0) {
                 return false;
             }
@@ -504,8 +509,8 @@ namespace shammath {
             if (!can_make_periodic_box(coord_min, coord_max)) {
                 throw LatticeError(
                     "x axis count should be greater than 1\n"
-                    "y axis count should be even\n"
-                    "z axis count should be a multiple of 3");
+                    "y axis count should be positive and even\n"
+                    "z axis count should be a positive multiple of 3");
             }
 
             return {Tvec{xmin, ymin, zmin} * dr, Tvec{xmax, ymax, zmax} * dr};
