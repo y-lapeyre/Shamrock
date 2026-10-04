@@ -1090,6 +1090,16 @@ void shammodels::sph::Model<Tvec, SPHKernel>::add_big_disc_3d(
 }
 
 template<class Tvec, template<class> class SPHKernel>
+void shammodels::sph::Model<Tvec, SPHKernel>::add_cube_true_fcc_3d(
+    Tscal dr, std::pair<Tvec, Tvec> _box, Tscal init_h_factor) {
+    StackEntry stack_loc{};
+
+    auto setup = get_setup();
+    auto gen   = setup->make_generator_lattice_fcc(dr, _box, true, init_h_factor);
+    setup->apply_setup_new(gen, true);
+}
+
+template<class Tvec, template<class> class SPHKernel>
 void shammodels::sph::Model<Tvec, SPHKernel>::add_cube_fcc_3d(
     Tscal dr, std::pair<Tvec, Tvec> _box) {
     StackEntry stack_loc{};
