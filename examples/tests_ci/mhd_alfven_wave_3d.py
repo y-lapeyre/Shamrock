@@ -46,13 +46,15 @@ if do_plot and shamrock.sys.world_rank() == 0:
 
 # %%
 def best_transverse_counts(model, xcnt, target_ratio=0.5, search_frac=0.18):
+
     lo = max(2, int(xcnt * (target_ratio - search_frac)))
     hi = int(xcnt * (target_ratio + search_frac)) + 1
-    lo += lo % 2
+    lo_y = lo + lo % 2
+    lo_z = max(3, lo + (-lo) % 3)
     best = None
-    for ycnt in range(lo, hi, 2):
-        for zcnt in range(lo, hi, 2):
-            xs, ys, zs = model.get_box_dim_fcc_3d(1, xcnt, ycnt, zcnt)
+    for ycnt in range(lo_y, hi, 2):
+        for zcnt in range(lo_z, hi, 3):
+            xs, ys, zs = model.get_box_dim_true_fcc_3d(1, xcnt, ycnt, zcnt)
             score = abs(ys / xs - target_ratio) + abs(zs / xs - target_ratio)
             if best is None or score < best[0]:
                 best = (score, ycnt, zcnt)
@@ -103,9 +105,9 @@ def run_alfven_wave(resol):
     ycnt, zcnt = best_transverse_counts(model, resol)
 
     # lambda scales linearly with dr: pick dr so that lambda == wavelength exactly
-    lam_unit = wave_basis(*model.get_box_dim_fcc_3d(1, resol, ycnt, zcnt))[0]
+    lam_unit = wave_basis(*model.get_box_dim_true_fcc_3d(1, resol, ycnt, zcnt))[0]
     dr = wavelength / lam_unit
-    (xs, ys, zs) = model.get_box_dim_fcc_3d(dr, resol, ycnt, zcnt)
+    (xs, ys, zs) = model.get_box_dim_true_fcc_3d(dr, resol, ycnt, zcnt)
     lam, r_hat, e2_hat, e3_hat = wave_basis(xs, ys, zs)
     rotmat = np.column_stack([r_hat, e2_hat, e3_hat])
     print(f"[resol={resol}] Box dims: xs={xs} ys={ys} zs={zs}")
@@ -134,11 +136,15 @@ def run_alfven_wave(resol):
         # field is stored as B/rho in SPMHD
         return tuple(rotmat @ B_wave / rho0)
 
-    box_min = (-xs / 2, -ys / 2, -zs / 2)
-    box_max = (xs / 2, ys / 2, zs / 2)
+
+    box_min = (0.0, 0.0, 0.0)
+    box_max = (xs, ys, zs)
 
     model.resize_simulation_box(box_min, box_max)
-    model.add_cube_fcc_3d(dr, box_min, box_max)
+
+    setup = model.get_setup()
+    gen = setup.make_generator_lattice_fcc(dr, box_min, box_max)
+    setup.apply_setup(gen)
 
     gam1 = gamma - 1.0
     uuzero = P0 / (gam1 * rho0)
@@ -165,7 +171,7 @@ def run_alfven_wave(resol):
     # %%
     # Compare the transverse field component B2 against the exact solution.
     #
-    # Because t_target is an integer number of wave periods, the exact
+    # t_target is an integer number of wave periods, the exact
     # (undamped) solution coincides with the initial condition:
     #   B2_exact(x1) = amplitude * sin(2*pi*x1/wavelength)
 
