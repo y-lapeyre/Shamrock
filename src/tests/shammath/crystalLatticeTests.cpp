@@ -205,6 +205,10 @@ NEW_TEST(Unittest, "shammath/crystalLattice/LatticeFCC/can_make_periodic_box", 1
     REQUIRE(!Lattice::can_make_periodic_box({-2, -2, 0}, {2, 2, 2}));  // 2 layers (HCP-like)
     REQUIRE(!Lattice::can_make_periodic_box({-2, -2, 0}, {2, 3, 3}));  // odd y count
     REQUIRE(!Lattice::can_make_periodic_box({0, -2, 0}, {1, 2, 3}));   // x count < 2
+    REQUIRE(!Lattice::can_make_periodic_box({-2, 2, 0}, {2, 2, 3}));   // empty y span
+    REQUIRE(!Lattice::can_make_periodic_box({-2, 4, 0}, {2, 2, 3}));   // inverted y span
+    REQUIRE(!Lattice::can_make_periodic_box({-2, -2, 3}, {2, 2, 3}));  // empty z span
+    REQUIRE(!Lattice::can_make_periodic_box({-2, -2, 3}, {2, 2, 0}));  // inverted z span
 
     // a 4 layer box would be considered as periodic by the HCP check but is not periodic in
     // FCC, check that the lattice sums do indeed detect it
