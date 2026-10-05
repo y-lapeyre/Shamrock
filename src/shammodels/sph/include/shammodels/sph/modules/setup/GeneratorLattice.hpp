@@ -61,15 +61,15 @@ namespace shammodels::sph::modules {
      *
      * @tparam Tvec position vector type
      * @tparam Lattice lattice class (shammath::LatticeHCP, LatticeFCC or LatticeCubic)
-     * @tparam Discontinuous if true, use the discontinuous lattice iterator
+     * @tparam discontinuous if true, use the discontinuous lattice iterator
      */
-    template<class Tvec, class Lattice, bool Discontinuous = true>
+    template<class Tvec, class Lattice, bool discontinuous = true>
     class GeneratorLattice : public ISPHSetupNode {
         using Tscal              = shambase::VecComponent<Tvec>;
         static constexpr u32 dim = shambase::VectorProperties<Tvec>::dimension;
         using LatticeIter        = std::conditional_t<
-            Discontinuous,
-            typename Lattice::IteratorDiscontinuous,
+            discontinuous,
+            typename Lattice::Iteratordiscontinuous,
             typename Lattice::Iterator>;
 
         ShamrockCtx &context;

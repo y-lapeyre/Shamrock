@@ -21,8 +21,8 @@
 
 namespace shammodels::sph::modules {
 
-    template<class Tvec, bool Discontinuous = true>
+    template<class Tvec, bool discontinuous = true>
     using GeneratorLatticeCubic
-        = GeneratorLattice<Tvec, shammath::LatticeCubic<Tvec>, Discontinuous>;
+        = GeneratorLattice<Tvec, shammath::LatticeCubic<Tvec>, discontinuous>;
 
 } // namespace shammodels::sph::modules

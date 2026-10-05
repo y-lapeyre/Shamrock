@@ -21,7 +21,7 @@
 
 namespace shammodels::sph::modules {
 
-    template<class Tvec, bool Discontinuous = true>
-    using GeneratorLatticeFCC = GeneratorLattice<Tvec, shammath::LatticeFCC<Tvec>, Discontinuous>;
+    template<class Tvec, bool discontinuous = true>
+    using GeneratorLatticeFCC = GeneratorLattice<Tvec, shammath::LatticeFCC<Tvec>, discontinuous>;
 
 } // namespace shammodels::sph::modules
