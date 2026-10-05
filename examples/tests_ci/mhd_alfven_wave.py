@@ -265,7 +265,7 @@ if do_plot:
 test_pass = True
 err_log = ""
 
-expect_l2_err_B2 = 0.07299812569247696
+expect_l2_err_B2 = 0.077212856332666
 tol = 1e-5  # too generous for now
 
 

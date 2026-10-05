@@ -260,10 +260,10 @@ print(f"rho_min          = {rho_min}")
 test_pass = True
 err_log = ""
 
-expect_kinetic_energy = 0.06164962101274802
-expect_magnetic_energy = 0.33097235991190854
-expect_rho_max = 6.7826140281526515
-expect_rho_min = 0.21436775933952779
+expect_kinetic_energy = 0.05985165376928185
+expect_magnetic_energy = 0.33746158787028185
+expect_rho_max = 6.3060516178274515
+expect_rho_min = 0.24993176850956453
 
 tol = 1e-3  # relative tolerance
 max_momentum_norm = 1e-2

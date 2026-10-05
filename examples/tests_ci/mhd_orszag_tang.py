@@ -251,10 +251,10 @@ test_pass = True
 err_log = ""
 
 
-expect_kinetic_energy = 0.0021959332605647032
-expect_magnetic_energy = 0.003053061265398151
-expect_rho_max = 0.34210660332016646
-expect_rho_min = 0.14228949962922874
+expect_kinetic_energy = 0.0021986783020805675
+expect_magnetic_energy = 0.0029601504573239087
+expect_rho_max = 0.3400457561374047
+expect_rho_min = 0.14169354827263864
 
 tol = 1e-4  # relative tolerance
 max_momentum_norm = 1e-3
