@@ -38,7 +38,7 @@ resol = 32
 
 plot_extra_resols = []  # 64, 128, too much for the ci
 
-do_plot = True
+do_plot = False
 dump_folder = "_to_trash"
 if do_plot and shamrock.sys.world_rank() == 0:
     os.makedirs(dump_folder, exist_ok=True)
@@ -136,7 +136,6 @@ def run_alfven_wave(resol):
         # field is stored as B/rho in SPMHD
         return tuple(rotmat @ B_wave / rho0)
 
-
     box_min = (0.0, 0.0, 0.0)
     box_max = (xs, ys, zs)
 
@@ -227,7 +226,7 @@ if do_plot:
     ax.set_title(f"3D circularly polarised Alfven wave, $t={t_target:.0f}$ periods")
     ax.legend()
     fig.tight_layout()
-    fig.savefig(os.path.join(dump_folder, "mhd_alfven_wave_3d_b2_vs_x1.png"), dpi=150)
+    fig.savefig(os.path.join(dump_folder, "mhd_alfven_wave_b2_vs_x1.png"), dpi=150)
     plt.close(fig)
 
     nxs = np.array(all_resols, dtype=float)
@@ -260,14 +259,14 @@ if do_plot:
     ax.set_ylabel("L1 error on $B_2$")
     ax.legend()
     fig.tight_layout()
-    fig.savefig(os.path.join(dump_folder, "mhd_alfven_wave_3d_convergence.png"), dpi=150)
+    fig.savefig(os.path.join(dump_folder, "mhd_alfven_wave_convergence.png"), dpi=150)
     plt.close(fig)
 
 test_pass = True
 err_log = ""
 
 expect_l2_err_B2 = 0.07299812569247696
-tol = 0.35  # too generous for now
+tol = 1e-5  # too generous for now
 
 
 def float_equal(val1, val2, prec):

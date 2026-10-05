@@ -170,7 +170,7 @@ rho_min = np.min(rho)
 momentum_norm = np.sqrt(total_momentum[0] ** 2 + total_momentum[1] ** 2 + total_momentum[2] ** 2)
 
 # nx=256
-do_plot = True
+do_plot = False
 dump_folder = "_to_trash"
 if do_plot and shamrock.sys.world_rank() == 0:
     os.makedirs(dump_folder, exist_ok=True)
@@ -248,7 +248,7 @@ if do_plot:
 
         fig.suptitle(f"MHD rotor problem, $t={t_target}$, nx={nx}")
         fig.tight_layout()
-        fig.savefig(os.path.join(dump_folder, "mhd_rotor_3d_contours.png"), dpi=150)
+        fig.savefig(os.path.join(dump_folder, "mhd_rotor_contours.png"), dpi=150)
         plt.close(fig)
 
 print(f"kinetic_energy   = {kinetic_energy}")
@@ -265,7 +265,7 @@ expect_magnetic_energy = 0.33097235991190854
 expect_rho_max = 6.7826140281526515
 expect_rho_min = 0.21436775933952779
 
-tol = 0.2  # relative tolerance
+tol = 1e-3  # relative tolerance
 max_momentum_norm = 1e-2
 
 

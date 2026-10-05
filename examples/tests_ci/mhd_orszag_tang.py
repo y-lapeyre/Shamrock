@@ -148,7 +148,7 @@ print(f"rho_min          = {rho_min}")
 
 plot_extra_resols = []  # 128, 148
 
-do_plot = True
+do_plot = False
 dump_folder = "_to_trash"
 if do_plot and shamrock.sys.world_rank() == 0:
     os.makedirs(dump_folder, exist_ok=True)
@@ -227,7 +227,7 @@ if do_plot:
                 ax.set_ylabel("y")
         fig32.suptitle("Orszag-Tang vortex: density in a z=0 cross section")
         fig32.tight_layout()
-        fig32.savefig(os.path.join(dump_folder, "mhd_orszag_tang_3d_density_z0.png"), dpi=150)
+        fig32.savefig(os.path.join(dump_folder, "mhd_orszag_tang_density_z0.png"), dpi=150)
         plt.close(fig32)
 
         # Figure 33: horizontal pressure cuts at t=0.5, one panel per y0,
@@ -244,7 +244,7 @@ if do_plot:
             axs33[irow].legend()
         fig33.suptitle("Orszag-Tang vortex: horizontal pressure cuts (z=0, t=0.5)")
         fig33.tight_layout()
-        fig33.savefig(os.path.join(dump_folder, "mhd_orszag_tang_3d_pressure_cuts.png"), dpi=150)
+        fig33.savefig(os.path.join(dump_folder, "mhd_orszag_tang_pressure_cuts.png"), dpi=150)
         plt.close(fig33)
 
 test_pass = True
@@ -256,7 +256,7 @@ expect_magnetic_energy = 0.003053061265398151
 expect_rho_max = 0.34210660332016646
 expect_rho_min = 0.14228949962922874
 
-tol = 0.2  # relative tolerance
+tol = 1e-4  # relative tolerance
 max_momentum_norm = 1e-3
 
 
