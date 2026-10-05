@@ -150,18 +150,6 @@ namespace shammodels::sph {
 
         void add_cube_fcc_3d(Tscal dr, std::pair<Tvec, Tvec> _box);
 
-        /**
-         * @brief Fill a box with particles on a true FCC lattice (ABC stacking)
-         *
-         * Same as add_cube_fcc_3d (which actually generates a HCP lattice and is kept for
-         * backward compatibility), but using the lattice of make_generator_lattice_fcc.
-         * cf get_ideal_fcc_box or get_periodic_fcc_box to get correctly sized box
-         *
-         * @param dr lattice parameter (neighbours are 2 dr apart)
-         * @param _box the box to fill
-         * @param init_h_factor initial smoothing length in units of dr
-         */
-        void add_cube_true_fcc_3d(Tscal dr, std::pair<Tvec, Tvec> _box, Tscal init_h_factor = 1);
         void add_cube_hcp_3d(Tscal dr, std::pair<Tvec, Tvec> _box);
         void add_cube_hcp_3d_v2(Tscal dr, std::pair<Tvec, Tvec> _box);
 

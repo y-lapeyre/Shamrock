@@ -69,7 +69,7 @@ namespace shammodels::sph::modules {
         static constexpr u32 dim = shambase::VectorProperties<Tvec>::dimension;
         using LatticeIter        = std::conditional_t<
             discontinuous,
-            typename Lattice::Iteratordiscontinuous,
+            typename Lattice::IteratorDiscontinuous,
             typename Lattice::Iterator>;
 
         ShamrockCtx &context;
