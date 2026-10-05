@@ -149,7 +149,6 @@ namespace shammodels::sph {
         }
 
         void add_cube_fcc_3d(Tscal dr, std::pair<Tvec, Tvec> _box);
-
         void add_cube_hcp_3d(Tscal dr, std::pair<Tvec, Tvec> _box);
         void add_cube_hcp_3d_v2(Tscal dr, std::pair<Tvec, Tvec> _box);
 
