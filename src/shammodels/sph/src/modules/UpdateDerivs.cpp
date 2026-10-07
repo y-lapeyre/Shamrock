@@ -789,7 +789,8 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_mhd(
         cfg.beta_AV,
         /*etaO=*/Tscal(0),
         /*etaH=*/Tscal(0),
-        /*etaAD=*/Tscal(0));
+        /*etaAD=*/Tscal(0),
+        /*eta_fields=*/false);
 }
 
 template<class Tvec, template<class> class SPHKernel>
@@ -802,7 +803,8 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_mhd(
         cfg.beta_AV,
         cfg.etaO,
         cfg.etaH,
-        cfg.etaAD);
+        cfg.etaAD,
+        cfg.eta_fields);
 }
 
 template<class Tvec, template<class> class SPHKernel>
@@ -815,7 +817,8 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_mhd_
     Tscal beta_AV,
     Tscal etaO,
     Tscal etaH,
-    Tscal etaAD) {
+    Tscal etaAD,
+    bool eta_fields) {
 
     StackEntry stack_loc{};
 
@@ -861,7 +864,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_mhd_
     u32 ieta_h_interf  = (eta_fields) ? ghost_layout.get_field_idx<Tscal>("eta_h") : 0;
     u32 ieta_ad_interf = (eta_fields) ? ghost_layout.get_field_idx<Tscal>("eta_ad") : 0;
 
-    bool do_NIMHD = solver_config.do_NIMHD();
+    bool do_nimhd = solver_config.do_nimhd();
 
     auto &merged_xyzh                                 = storage.merged_xyzh.get();
     shamrock::solvergraph::Field<Tscal> &omega        = shambase::get_check_ref(storage.omega);
@@ -898,9 +901,9 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_mhd_
         sham::DeviceBuffer<Tscal> *buf_eta_ad
             = (eta_fields) ? &mpdat.get_field_buf_ref<Tscal>(ieta_ad_interf) : nullptr;
 
-        bool do_NIMHD = solver_config.do_NIMHD();
+        bool do_nimhd = solver_config.do_nimhd();
         sham::DeviceBuffer<Tvec> &buf_J
-            = (do_NIMHD) ? storage.MagCurrentJ_ghost.get().get(cur_p.id_patch).get_buf()
+            = (do_nimhd) ? storage.MagCurrentJ_ghost.get().get(cur_p.id_patch).get_buf()
                          : pdat.get_field_buf_ref<Tvec>(idB_on_rho);
 
         tree::ObjectCache &pcache
@@ -923,7 +926,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_mhd_
         auto dB_on_rho  = buf_dB_on_rho.get_write_access(depends_list);
         auto dpsi_on_ch = buf_dpsi_on_ch.get_write_access(depends_list);
         auto drho_dt    = buf_drho_dt.get_write_access(depends_list);
-        auto J_field    = (do_NIMHD) ? buf_J.get_read_access(depends_list) : nullptr;
+        auto J_field    = (do_nimhd) ? buf_J.get_read_access(depends_list) : nullptr;
 
         const Tscal *eta_o_field
             = (eta_fields) ? buf_eta_o->get_read_access(depends_list) : nullptr;
@@ -1006,7 +1009,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_mhd_
                 Tscal omega_a = omega[id_a];
                 Tscal u_a     = u[id_a];
 
-                Tvec J_a = (do_NIMHD) ? J_field[id_a] : Tvec{0, 0, 0};
+                Tvec J_a = (do_nimhd) ? J_field[id_a] : Tvec{0, 0, 0};
 
                 Tscal etaO_a  = (_eta_fields) ? eta_o_field[id_a] : _etaO;
                 Tscal etaH_a  = (_eta_fields) ? eta_h_field[id_a] : _etaH;
@@ -1054,7 +1057,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_mhd_
                     Tscal cs_b    = cs[id_b];
                     Tscal rab     = sycl::sqrt(rab2);
 
-                    Tvec J_b = (do_NIMHD) ? J_field[id_b] : Tvec{0, 0, 0};
+                    Tvec J_b = (do_nimhd) ? J_field[id_b] : Tvec{0, 0, 0};
 
                     Tscal etaO_b  = (_eta_fields) ? eta_o_field[id_b] : _etaO;
                     Tscal etaH_b  = (_eta_fields) ? eta_h_field[id_b] : _etaH;
@@ -1131,9 +1134,9 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_mhd_
                 dpsi_on_ch[id_a] = psi_eq - psi_a / h_a;
                 drho_dt[id_a]    = drho_eq;
 
-                if (do_NIMHD) {
+                if (do_nimhd) {
                     // only add once per particle
-                    Tscal u_NI = shamrock::sph::mhd::u_NI_heating<Tvec, Tscal, MHD_mode>(
+                    Tscal u_NI = shamrock::sph::mhd::u_ni_heating<Tvec, Tscal, mhd_mode>(
                         B_a, J_a, rho_a, etaO_a, etaH_a, etaAD_a, mu_0);
                     du[id_a] += u_NI;
                 }
@@ -1165,7 +1168,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_mhd_
         buf_dpsi_on_ch.complete_event_state(e);
         buf_drho_dt.complete_event_state(e);
 
-        if (do_NIMHD) {
+        if (do_nimhd) {
             buf_J.complete_event_state(e);
         }
 

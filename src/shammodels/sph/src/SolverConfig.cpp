@@ -80,7 +80,7 @@ namespace shammodels::sph {
             pdl.add_field<Tvec>("curlB", 1);
         }
 
-        if (do_NIMHD()) {
+        if (do_nimhd()) {
             pdl.add_field<Tvec>("J", 1);
         }
 

@@ -74,11 +74,6 @@ namespace shammodels::sph::modules {
         using NonIdealMHD = typename Cfg_MHD::NonIdealMHD;
 
         template<shamrock::sph::mhd::MHDType mhd_mode>
-        void compute_j(Tscal mu_0);
-
-        // void update_derivs_mhd(Cfg_MHD cfg);
-        //  One templated implementation, specialised per MHDType at the call sites below.
-        template<shamrock::sph::mhd::MHDType mhd_mode>
         void update_derivs_mhd_impl(
             Tscal sigma_mhd,
             Tscal alpha_u,
@@ -87,7 +82,8 @@ namespace shammodels::sph::modules {
             Tscal beta_AV,
             Tscal etaO,
             Tscal etaH,
-            Tscal etaAD);
+            Tscal etaAD,
+            bool eta_fields);
 
         // Thin wrappers that unpack the variant and forward to the template above.
         void update_derivs_mhd(IdealMHD cfg);
