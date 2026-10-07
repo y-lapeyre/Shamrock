@@ -226,7 +226,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                Tscal alpha_B,
                Tscal alpha_AV,
                Tscal beta_AV) {
-                self.set_IdealMHD({sigma_mhd, sigma_u, alpha_B, alpha_AV, beta_AV});
+                self.set_ideal_mhd({sigma_mhd, sigma_u, alpha_B, alpha_AV, beta_AV});
             },
             py::kw_only(),
             py::arg("sigma_mhd"),
@@ -244,18 +244,9 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                Tscal etaAD,
                Tscal alpha_B,
                Tscal alpha_AV,
-               Tscal beta_AV,
-               bool eta_fields) {
-                self.set_NonIdealMHD(
-                    {sigma_mhd,
-                     sigma_u,
-                     alpha_B,
-                     alpha_AV,
-                     beta_AV,
-                     etaO,
-                     etaH,
-                     etaAD,
-                     eta_fields});
+               Tscal beta_AV) {
+                self.set_non_ideal_mhd(
+                    {sigma_mhd, sigma_u, alpha_B, alpha_AV, beta_AV, etaO, etaH, etaAD});
             },
             py::kw_only(),
             py::arg("sigma_mhd"),
@@ -592,13 +583,53 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
     py::class_<TSPHSetup>(m, setup_name.c_str())
         .def(
             "make_generator_lattice_hcp",
-            [](TSPHSetup &self, Tscal dr, Tvec box_min, Tvec box_max, bool discontinuous) {
-                return self.make_generator_lattice_hcp(dr, {box_min, box_max}, discontinuous);
+            [](TSPHSetup &self,
+               Tscal dr,
+               Tvec box_min,
+               Tvec box_max,
+               bool discontinuous,
+               Tscal init_h_factor) {
+                return self.make_generator_lattice_hcp(
+                    dr, {box_min, box_max}, discontinuous, init_h_factor);
             },
             py::arg("dr"),
             py::arg("box_min"),
             py::arg("box_max"),
-            py::arg("discontinuous") = true)
+            py::arg("discontinuous") = true,
+            py::arg("init_h_factor") = modules::GeneratorLatticeHCP<Tvec>::default_init_h_factor,
+            R"==(
+    Generate particles on a HCP lattice of parameter dr (neighbours are 2 dr apart)
+
+    The initial smoothing length is set to init_h_factor * dr. The default 2^(5/6)
+    is the equilibrium smoothing length for hfact = 1 (the smallest hfact of all
+    the SPH kernels), so the initial guess never exceeds the equilibrium value.
+)==")
+        .def(
+            "make_generator_lattice_fcc",
+            [](TSPHSetup &self,
+               Tscal dr,
+               Tvec box_min,
+               Tvec box_max,
+               bool discontinuous,
+               Tscal init_h_factor) {
+                return self.make_generator_lattice_fcc(
+                    dr, {box_min, box_max}, discontinuous, init_h_factor);
+            },
+            py::arg("dr"),
+            py::arg("box_min"),
+            py::arg("box_max"),
+            py::arg("discontinuous") = true,
+            py::arg("init_h_factor") = modules::GeneratorLatticeFCC<Tvec>::default_init_h_factor,
+            R"==(
+    Generate particles on a true FCC lattice (ABC stacking of close-packed layers along z)
+    of parameter dr (neighbours are 2 dr apart)
+
+    The number of layers along z must be a multiple of 3, the number of rows along y even
+
+    The initial smoothing length is set to init_h_factor * dr. The default 2^(5/6)
+    is the equilibrium smoothing length for hfact = 1 (the smallest hfact of all
+    the SPH kernels), so the initial guess never exceeds the equilibrium value.
+)==")
         .def(
             "make_generator_lattice_cubic",
             [](TSPHSetup &self, Tscal dr, Tvec box_min, Tvec box_max) {
@@ -945,6 +976,21 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             [](T &self, f64 dr, u32 xcnt, u32 ycnt, u32 zcnt) {
                 return self.get_box_dim_fcc_3d(dr, xcnt, ycnt, zcnt);
             })
+        .def(
+            "get_box_dim_true_fcc_3d",
+            [](T &self, f64 dr, u32 xcnt, u32 ycnt, u32 zcnt) {
+                return self.get_box_dim_true_fcc_3d(dr, xcnt, ycnt, zcnt);
+            },
+            py::arg("dr"),
+            py::arg("xcnt"),
+            py::arg("ycnt"),
+            py::arg("zcnt"),
+            R"==(
+    Get the dimensions of a periodic box holding a true FCC lattice of xcnt * ycnt * zcnt
+    (see setup.make_generator_lattice_fcc). Unlike get_box_dim_fcc_3d (which actually
+    describes a HCP lattice and is kept for backward compatibility), this throws if the box
+    cannot be periodic: xcnt must be >= 2, ycnt even and zcnt a multiple of 3.
+)==")
         .def(
             "get_ideal_fcc_box",
             [](T &self, f64 dr, f64_3 box_min, f64_3 box_max) {

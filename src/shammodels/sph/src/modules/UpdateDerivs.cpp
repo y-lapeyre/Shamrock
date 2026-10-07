@@ -65,9 +65,9 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs(Tsca
     } else if (ConstantDisc *v = std::get_if<ConstantDisc>(&cfg_av.config)) {
         update_derivs_disc_visco(*v);
     } else if (IdealMHD *v = std::get_if<IdealMHD>(&cfg_mhd.configMHD)) {
-        update_derivs_MHD(*v);
+        update_derivs_mhd(*v);
     } else if (NonIdealMHD *v = std::get_if<NonIdealMHD>(&cfg_mhd.configMHD)) {
-        update_derivs_MHD(*v);
+        update_derivs_mhd(*v);
     } else if (NoneMHD *v = std::get_if<NoneMHD>(&cfg_mhd.configMHD)) {
         shambase::throw_unimplemented();
     } else if (None *v = std::get_if<None>(&cfg_av.config)) {
@@ -780,8 +780,8 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_disc
 }
 
 template<class Tvec, template<class> class SPHKernel>
-void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD(IdealMHD cfg) {
-    update_derivs_MHD_impl<shamrock::sph::mhd::MHDType::Ideal>(
+void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_mhd(IdealMHD cfg) {
+    update_derivs_mhd_impl<shamrock::sph::mhd::MHDType::Ideal>(
         cfg.sigma_mhd,
         cfg.alpha_u,
         cfg.alpha_B,
@@ -789,13 +789,12 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD(
         cfg.beta_AV,
         /*etaO=*/Tscal(0),
         /*etaH=*/Tscal(0),
-        /*etaAD=*/Tscal(0),
-        /*eta_fields=*/false);
+        /*etaAD=*/Tscal(0));
 }
 
 template<class Tvec, template<class> class SPHKernel>
-void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD(NonIdealMHD cfg) {
-    update_derivs_MHD_impl<shamrock::sph::mhd::MHDType::NonIdeal>(
+void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_mhd(NonIdealMHD cfg) {
+    update_derivs_mhd_impl<shamrock::sph::mhd::MHDType::NonIdeal>(
         cfg.sigma_mhd,
         cfg.alpha_u,
         cfg.alpha_B,
@@ -803,13 +802,12 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD(
         cfg.beta_AV,
         cfg.etaO,
         cfg.etaH,
-        cfg.etaAD,
-        cfg.eta_fields);
+        cfg.etaAD);
 }
 
 template<class Tvec, template<class> class SPHKernel>
-template<shamrock::sph::mhd::MHDType MHD_mode>
-void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD_impl(
+template<shamrock::sph::mhd::MHDType mhd_mode>
+void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_mhd_impl(
     Tscal sigma_mhd,
     Tscal alpha_u,
     Tscal alpha_B,
@@ -817,8 +815,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD_
     Tscal beta_AV,
     Tscal etaO,
     Tscal etaH,
-    Tscal etaAD,
-    bool eta_fields) {
+    Tscal etaAD) {
 
     StackEntry stack_loc{};
 
@@ -1072,7 +1069,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD_
                     Tscal Fab_a = Kernel::dW_3d(rab, h_a);
                     Tscal Fab_b = Kernel::dW_3d(rab, h_b);
 
-                    shamrock::sph::mhd::add_to_derivs_spmhd<Kernel, Tvec, Tscal, MHD_mode>(
+                    shamrock::sph::mhd::add_to_derivs_spmhd<Kernel, Tvec, Tscal, mhd_mode>(
                         pmass,
                         dr,
                         rab,

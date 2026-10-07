@@ -32,8 +32,8 @@ namespace shamrock::sph::mhd {
 
     enum MHDType { Ideal = 0, NonIdeal = 1 };
 
-    template<class Tvec, class Tscal, MHDType MHD_mode = NonIdeal>
-    inline Tvec MagCurrentJ_sum(
+    template<class Tvec, class Tscal, MHDType mhd_mode = NonIdeal>
+    inline Tvec mag_current_j_sum(
         Tscal m_b, Tvec B_a, Tvec B_b, Tvec nabla_Wab_ha, Tscal sub_fact_a, Tscal mu_0) {
 
         // J = curl(B)/mu_0 (mu_0 explicit, SI/Heaviside-Lorentz-like convention, not
@@ -43,8 +43,8 @@ namespace shamrock::sph::mhd {
         // return {0., 0., 0.};
     }
 
-    template<class Tvec, class Tscal, MHDType MHD_mode = NonIdeal>
-    inline Tvec WursterD(Tvec B, Tvec J, Tscal etaO, Tscal etaH, Tscal etaAD, Tscal mu_0) {
+    template<class Tvec, class Tscal, MHDType mhd_mode = NonIdeal>
+    inline Tvec wurster_d(Tvec B, Tvec J, Tscal etaO, Tscal etaH, Tscal etaAD, Tscal mu_0) {
 
         Tvec Bhat  = B * sham::inv_sat_zero(sycl::length(B));
         Tvec curlB = mu_0 * J; // diffusivities in L^2/T in any unit system
@@ -54,8 +54,8 @@ namespace shamrock::sph::mhd {
         return D;
     }
 
-    template<class Tvec, class Tscal, MHDType MHD_mode = NonIdeal>
-    inline Tscal u_NI_heating(
+    template<class Tvec, class Tscal, MHDType mhd_mode = NonIdeal>
+    inline Tscal u_ni_heating(
         Tvec B, Tvec J, Tscal rho, Tscal etaO, Tscal etaH, Tscal etaAD, Tscal mu_0) {
 
         // return sycl::dot(D, J) * sham::inv_sat_zero(rho);
@@ -65,12 +65,12 @@ namespace shamrock::sph::mhd {
         // Tscal BdJBdJhat = sham::inv_sat_zero(BdB) * BdJ * BdJ;
 
         // return (etaO * JdJ + etaAD * (JdJ - BdJBdJhat)) * sham::inv_sat_zero(rho); @ to check
-        Tvec D = WursterD(B, J, etaO, etaH, etaAD, mu_0);
+        Tvec D = wurster_d(B, J, etaO, etaH, etaAD, mu_0);
         return sycl::dot(D, J) * sham::inv_sat_zero(rho);
     }
 
-    template<class Tvec, class Tscal, MHDType MHD_mode = NonIdeal>
-    inline Tvec B_NI_terms(
+    template<class Tvec, class Tscal, MHDType mhd_mode = NonIdeal>
+    inline Tvec b_ni_terms(
         Tvec D_a,
         Tvec D_b,
         Tscal m_b,
@@ -89,9 +89,9 @@ namespace shamrock::sph::mhd {
         return m_b * (acc_a + acc_b);
     }
 
-    // not using Whurster D, developping with J. Equivalent to B_NI_terms
-    template<class Tvec, class Tscal, MHDType MHD_mode = NonIdeal>
-    inline Tvec B_NI_AD(
+    // not using Whurster D, developping with J. Equivalent to b_ni_terms
+    template<class Tvec, class Tscal, MHDType mhd_mode = NonIdeal>
+    inline Tvec b_ni_ad(
         Tscal eta_AD,
         Tvec J_a,
         Tvec J_b,
@@ -123,7 +123,7 @@ namespace shamrock::sph::mhd {
 
     // mag tension form the Tricco 2023 formula
     template<class Tvec, class Tscal>
-    inline Tvec B_dot_grad_W(
+    inline Tvec b_dot_grad_w(
         Tscal m_b,
         Tscal rho_a_sq,
         Tscal rho_b_sq,
@@ -148,7 +148,7 @@ namespace shamrock::sph::mhd {
     }
 
     // from the Phantom paper formula
-    template<class Tvec, class Tscal, MHDType MHD_mode = Ideal>
+    template<class Tvec, class Tscal, MHDType mhd_mode = Ideal>
     inline Tvec mag_tension(
         Tscal m_b,
         Tvec B_a,
@@ -177,8 +177,8 @@ namespace shamrock::sph::mhd {
         return magnetic_tension_term;
     }
 
-    template<class Tvec, class Tscal, MHDType MHD_mode = Ideal>
-    inline Tvec fdivB(
+    template<class Tvec, class Tscal, MHDType mhd_mode = Ideal>
+    inline Tvec fdiv_b(
         Tscal m_b,
         Tvec B_a,
         Tvec B_b,
@@ -219,8 +219,8 @@ namespace shamrock::sph::mhd {
         return artres;
     }
 
-    template<class Tvec, class Tscal, MHDType MHD_mode = Ideal>
-    inline Tscal dB_on_rho_induction_term(
+    template<class Tvec, class Tscal, MHDType mhd_mode = Ideal>
+    inline Tscal d_b_on_rho_induction_term(
         Tscal m_b, Tscal rho_a_sq, Tvec B_a, Tscal omega_a, Tvec nabla_Wab_ha) {
 
         Tscal sub_fact_a = rho_a_sq * omega_a;
@@ -230,8 +230,8 @@ namespace shamrock::sph::mhd {
         return induction_term_no_vab;
     }
 
-    template<class Tvec, class Tscal, MHDType MHD_mode = Ideal>
-    inline Tvec dB_on_rho_psi_term(
+    template<class Tvec, class Tscal, MHDType mhd_mode = Ideal>
+    inline Tvec d_b_on_rho_psi_term(
         Tscal m_b,
         Tscal rho_a_sq,
         Tscal rho_b_sq,
@@ -253,7 +253,7 @@ namespace shamrock::sph::mhd {
         return psiterm;
     }
 
-    template<class Tvec, class Tscal, MHDType MHD_mode = Ideal>
+    template<class Tvec, class Tscal, MHDType mhd_mode = Ideal>
     inline Tscal dpsi_on_ch_parabolic_propag(
         Tscal m_b, Tscal rho_a, Tvec B_a, Tvec B_b, Tscal omega_a, Tvec nabla_Wab_ha, Tscal ch_a) {
 
@@ -268,7 +268,7 @@ namespace shamrock::sph::mhd {
         return parabolic_propag;
     }
 
-    template<class Tvec, class Tscal, MHDType MHD_mode = Ideal>
+    template<class Tvec, class Tscal, MHDType mhd_mode = Ideal>
     inline Tscal dpsi_on_ch_parabolic_diff(
         Tscal m_b,
         Tscal rho_a,
@@ -286,7 +286,7 @@ namespace shamrock::sph::mhd {
         return parabolic_diff;
     }
 
-    template<class Kernel, class Tvec, class Tscal, MHDType MHD_mode = Ideal>
+    template<class Kernel, class Tvec, class Tscal, MHDType mhd_mode = Ideal>
     inline void add_to_derivs_spmhd(
         Tscal pmass,
         Tvec dr,
@@ -328,12 +328,9 @@ namespace shamrock::sph::mhd {
         Tscal mu_0,
         Tscal sigma_mhd,
 
-        Tscal etaO_a,
-        Tscal etaH_a,
-        Tscal etaAD_a,
-        Tscal etaO_b,
-        Tscal etaH_b,
-        Tscal etaAD_b,
+        Tscal etaO,
+        Tscal etaH,
+        Tscal etaAD,
 
         Tvec &dv_dt,
         Tscal &du_dt,
@@ -382,8 +379,8 @@ namespace shamrock::sph::mhd {
         Tscal AV_P_a = P_a + qa_ab;
         Tscal AV_P_b = P_b + qb_ab;
 
-        Tvec sum_mag_tension, sum_fdivB    = {0., 0., 0.};
-        Tscal sum_psi_propag, sum_psi_diff = 0.;
+        Tvec sum_mag_tension{}, sum_fdivB{};
+        Tscal sum_psi_propag{}, sum_psi_diff{};
 
         // dv/dt = gas_pressure_pishock + magnetic_pressure_term + sum_mag_tension + sum_fdivB;
         // du/dt = pressure_term + viscous_heating + shock_conductivity + artificial_resistivity;
@@ -392,7 +389,7 @@ namespace shamrock::sph::mhd {
         // update_derivs)
 
         // dv/dt terms
-        sum_fdivB += fdivB(
+        sum_fdivB += fdiv_b(
             pmass, B_a, B_b, r_ab_unit * dWab_a, r_ab_unit * dWab_b, sub_fact_a, sub_fact_b, mu_0);
 
         Tvec gas_pressure_pishock = sph::sph_pressure_symetric(
@@ -406,7 +403,7 @@ namespace shamrock::sph::mhd {
             r_ab_unit * dWab_a,
             r_ab_unit * dWab_b);
 
-        sum_mag_tension += -B_dot_grad_W(
+        sum_mag_tension += -b_dot_grad_w(
             pmass,
             rho_a_sq,
             rho_b * rho_b,
@@ -477,10 +474,10 @@ namespace shamrock::sph::mhd {
             = 0.5 * pmass * (rho_diss_term_a + rho_diss_term_b) * (B_a - B_b) * vsig_B;
 
         dB_on_rho_dt += v_ab
-                        * dB_on_rho_induction_term(
+                        * d_b_on_rho_induction_term(
                             pmass, rho_a_sq, B_a, omega_a, r_ab_unit * dWab_a); // @@@ dWab_b ?
 
-        dB_on_rho_dt += dB_on_rho_psi_term(
+        dB_on_rho_dt += d_b_on_rho_psi_term(
             pmass,
             rho_a_sq,
             rho_b * rho_b,
@@ -516,12 +513,12 @@ namespace shamrock::sph::mhd {
         drho_dt += (1. / omega_a) * pmass * sycl::dot(v_ab, r_ab_unit * dWab_a);
 
         // Non-ideal MHD terms
-        if constexpr (MHD_mode == NonIdeal) {
+        if constexpr (mhd_mode == NonIdeal) {
 
-            Tvec D_a = WursterD<Tvec, Tscal, MHD_mode>(B_a, J_a, etaO_a, etaH_a, etaAD_a, mu_0);
-            Tvec D_b = WursterD<Tvec, Tscal, MHD_mode>(B_b, J_b, etaO_b, etaH_b, etaAD_b, mu_0);
+            Tvec D_a = wurster_d<Tvec, Tscal, mhd_mode>(B_a, J_a, etaO, etaH, etaAD, mu_0);
+            Tvec D_b = wurster_d<Tvec, Tscal, mhd_mode>(B_b, J_b, etaO, etaH, etaAD, mu_0);
 
-            Tvec B_NI = B_NI_terms<Tvec, Tscal, MHD_mode>(
+            Tvec B_NI = b_ni_terms<Tvec, Tscal, mhd_mode>(
                 D_a,
                 D_b,
                 pmass,
@@ -534,7 +531,7 @@ namespace shamrock::sph::mhd {
 
             dB_on_rho_dt += B_NI;
 
-            // Tvec B_NI_ADterm = B_NI_AD<Tvec, Tscal, MHD_mode>(
+            // Tvec B_NI_ADterm = b_ni_ad<Tvec, Tscal, mhd_mode>(
             //     etaAD,
             //     J_a,
             //     J_b,
@@ -550,8 +547,8 @@ namespace shamrock::sph::mhd {
 
             // dB_on_rho_dt += B_NI_ADterm;
 
-            // Tscal u_NI = u_NI_heating<Tvec, Tscal, MHD_mode>(B_a, J_a, rho_a, etaO, etaAD) * 0.5
-            //              + u_NI_heating<Tvec, Tscal, MHD_mode>(B_b, J_b, rho_b, etaO, etaAD) *
+            // Tscal u_NI = u_ni_heating<Tvec, Tscal, mhd_mode>(B_a, J_a, rho_a, etaO, etaAD) * 0.5
+            //              + u_ni_heating<Tvec, Tscal, mhd_mode>(B_b, J_b, rho_b, etaO, etaAD) *
             //              0.5;
         }
     }

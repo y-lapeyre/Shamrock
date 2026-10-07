@@ -138,6 +138,12 @@ jobs:
             testfile: run_test_ext_forces_accretion.py
           - worldsize: 2
             testfile: run_test_ext_forces_accretion.py
+          - worldsize: 1
+            testfile: run_mhd_alfven_wave.py
+          - worldsize: 1
+            testfile: run_mhd_orszag_tang.py
+          - worldsize: 1
+            testfile: run_mhd_rotor.py
       fail-fast: ${{ inputs.fail_fast }}
 
     timeout-minutes: 60
@@ -228,6 +234,8 @@ jobs:
             artifact_name: gallery_sph_run_sphsetup_logs
           - testfile: "examples/sph/run_orzag_tang.py"
             artifact_name: gallery_sph_run_orzag_tang
+          - testfile: "examples/sph/run_mhd_wavedamping.py"
+            artifact_name: gallery_sph_run_mhd_wavedamping
           - testfile: "examples/sph/run_pairing_instab.py"
             artifact_name: gallery_sph_pairing_instab
           - testfile: "examples/sph/run_cubic_reorganisation.py"
