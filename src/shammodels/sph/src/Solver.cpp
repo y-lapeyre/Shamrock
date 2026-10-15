@@ -3573,9 +3573,39 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
             compute_cfl_force->set_edges(
                 storage.part_counts, C_force_edge, hpart_refs, axyz_refs, cfl_dt);
 
-            std::shared_ptr<ComputeCFLNIMHD<Tvec>> compute_cfl_NIMHD;
-            if (do_nimhd) {
-                compute_cfl_NIMHD = std::make_shared<ComputeCFLNIMHD<Tvec>>();
+            std::shared_ptr<shamrock::solvergraph::INode> compute_cfl_NIMHD;
+            if (do_nimhd && solver_config.has_field_eta()) {
+                // per-particle etas: the constant etaO/etaH/etaAD of the config are unused
+                Tscal C_NIMHD = solver_config.cfl_config.cfl_NIMHD * get_cfl_multipler();
+                std::shared_ptr<shamrock::solvergraph::IDataEdge<Tscal>> C_NIMHD_edge
+                    = shamrock::solvergraph::IDataEdge<Tscal>::make_shared("C_NIMHD", "C_{NIMHD}");
+                C_NIMHD_edge->data = C_NIMHD;
+
+                std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> eta_o_refs
+                    = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>(
+                        "eta_o", "\\eta_{O}");
+                std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> eta_h_refs
+                    = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>(
+                        "eta_h", "\\eta_{H}");
+                std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> eta_ad_refs
+                    = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>(
+                        "eta_ad", "\\eta_{AD}");
+                map_field_refs(scheduler(), pdl.get_field_idx<Tscal>("eta_o"), *eta_o_refs);
+                map_field_refs(scheduler(), pdl.get_field_idx<Tscal>("eta_h"), *eta_h_refs);
+                map_field_refs(scheduler(), pdl.get_field_idx<Tscal>("eta_ad"), *eta_ad_refs);
+
+                auto node = std::make_shared<ComputeCFLNIMHDVaryingEta<Tvec>>();
+                node->set_edges(
+                    storage.part_counts,
+                    C_NIMHD_edge,
+                    eta_o_refs,
+                    eta_ad_refs,
+                    eta_h_refs,
+                    hpart_refs,
+                    cfl_dt);
+                compute_cfl_NIMHD = node;
+            } else if (do_nimhd) {
+                auto node = std::make_shared<ComputeCFLNIMHD<Tvec>>();
 
                 Tscal C_NIMHD   = solver_config.cfl_config.cfl_NIMHD * get_cfl_multipler();
                 Cfg_MHD cfg_mhd = solver_config.mhd_config;
@@ -3597,7 +3627,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                     = shamrock::solvergraph::IDataEdge<Tscal>::make_shared("eta_H", "eta_{H}");
                 eta_H_edge->data = eta_H;
 
-                compute_cfl_NIMHD->set_edges(
+                node->set_edges(
                     storage.part_counts,
                     C_NIMHD_edge,
                     eta_O_edge,
@@ -3605,6 +3635,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                     eta_H_edge,
                     hpart_refs,
                     cfl_dt);
+                compute_cfl_NIMHD = node;
             }
 
             std::shared_ptr<ComputeCFLDivBCleaning<Tscal>> compute_cfl_divB_cleaning;
