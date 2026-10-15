@@ -57,6 +57,7 @@
 #include "shammodels/sph/modules/ComputeCFLNIMHDVaryingEta.hpp"
 #include "shammodels/sph/modules/ComputeCFLSinkSink.hpp"
 #include "shammodels/sph/modules/ComputeEos.hpp"
+#include "shammodels/sph/modules/ComputeEtaSemiConstant.hpp"
 #include "shammodels/sph/modules/ComputeJ.hpp"
 #include "shammodels/sph/modules/ComputeLoadBalanceValue.hpp"
 #include "shammodels/sph/modules/ComputeLuminosity.hpp"
@@ -2377,6 +2378,43 @@ void map_field_refs_ext(
 }
 
 template<class Tvec, template<class> class Kern>
+void shammodels::sph::Solver<Tvec, Kern>::update_eta_semi_constant() {
+
+    using namespace shamrock::patch;
+    PatchDataLayerLayout &pdl = scheduler().pdl_old();
+
+    Cfg_MHD cfg_mhd = solver_config.mhd_config;
+    auto &nimhd
+        = shambase::get_check_ref(std::get_if<typename Cfg_MHD::NonIdealMHD>(&cfg_mhd.configMHD));
+
+    auto B_on_rho_refs
+        = std::make_shared<shamrock::solvergraph::FieldRefs<Tvec>>("B_on_rho", "B/\\rho");
+    auto hpart_refs = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>("hpart", "h");
+    auto eta_o_refs
+        = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>("eta_o", "\\eta_{O}");
+    auto eta_h_refs
+        = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>("eta_h", "\\eta_{H}");
+    auto eta_ad_refs
+        = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>("eta_ad", "\\eta_{AD}");
+
+    map_field_refs(scheduler(), pdl.get_field_idx<Tvec>("B/rho"), *B_on_rho_refs);
+    map_field_refs(scheduler(), pdl.get_field_idx<Tscal>("hpart"), *hpart_refs);
+    map_field_refs(scheduler(), pdl.get_field_idx<Tscal>("eta_o"), *eta_o_refs);
+    map_field_refs(scheduler(), pdl.get_field_idx<Tscal>("eta_h"), *eta_h_refs);
+    map_field_refs(scheduler(), pdl.get_field_idx<Tscal>("eta_ad"), *eta_ad_refs);
+
+    ComputeEtaSemiConstant<Tvec, Kern> compute_eta{
+        solver_config.gpart_mass,
+        solver_config.get_constant_mu_0(),
+        nimhd.etaO,
+        nimhd.etaH,
+        nimhd.etaAD};
+    compute_eta.set_edges(
+        storage.part_counts, B_on_rho_refs, hpart_refs, eta_o_refs, eta_h_refs, eta_ad_refs);
+    compute_eta.evaluate();
+}
+
+template<class Tvec, template<class> class Kern>
 void shammodels::sph::Solver<Tvec, Kern>::update_derivs(Tscal dt_hydro) {
 
     // if one fluid is enabled time to compute the stopping times
@@ -2706,6 +2744,11 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
             throw shambase::make_except_with_loc<std::runtime_error>(
                 "the corrector has made over 50 loops, either their is a bug, either you are using "
                 "a dt that is too large");
+        }
+
+        // the semi-constant etas depend on B and rho, needs refresh them before they are sent to ghosts
+        if (solver_config.has_eta_semi_constant()) {
+            update_eta_semi_constant();
         }
 
         // communicate fields

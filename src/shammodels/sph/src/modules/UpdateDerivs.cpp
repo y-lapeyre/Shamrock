@@ -804,7 +804,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_mhd(
         cfg.etaO,
         cfg.etaH,
         cfg.etaAD,
-        cfg.eta_fields);
+        /*eta_fields=*/cfg.eta_fields || cfg.eta_semi_constant);
 }
 
 template<class Tvec, template<class> class SPHKernel>

@@ -55,6 +55,10 @@ struct shammodels::sph::MHDConfig {
         Tscal etaH      = 1.;
         Tscal etaAD     = 1.;
         bool eta_fields = false;
+        /// If true, etaO/etaH/etaAD are the coefficients C_O/C_H/C_AD of the semi-constant
+        /// prescription (Wurster, Price & Bate 2016, NICIL `icnstsemi`), and the per-particle
+        /// fields are recomputed every step.
+        bool eta_semi_constant = false;
     };
 
     // how to set a new state of a variant as a dummy:
@@ -101,7 +105,12 @@ struct shammodels::sph::MHDConfig {
 
     inline bool has_field_eta() {
         NonIdealMHD *v = std::get_if<NonIdealMHD>(&configMHD);
-        return v && v->eta_fields;
+        return v && (v->eta_fields || v->eta_semi_constant);
+    }
+
+    inline bool has_eta_semi_constant() {
+        NonIdealMHD *v = std::get_if<NonIdealMHD>(&configMHD);
+        return v && v->eta_semi_constant;
     }
 
     inline void print_status() {
@@ -123,7 +132,12 @@ struct shammodels::sph::MHDConfig {
             logger::raw_ln("  alpha_B     =", v->alpha_B);
             logger::raw_ln("  alpha_AV    =", v->alpha_AV);
             logger::raw_ln("  beta_AV     =", v->beta_AV);
-            if (v->eta_fields) {
+            if (v->eta_semi_constant) {
+                logger::raw_ln("  etaO/etaH/etaAD : semi-constant, recomputed every step");
+                logger::raw_ln("  C_O         =", v->etaO);
+                logger::raw_ln("  C_H         =", v->etaH);
+                logger::raw_ln("  C_AD        =", v->etaAD);
+            } else if (v->eta_fields) {
                 logger::raw_ln("  etaO/etaH/etaAD : set per-particle (eta_o/eta_h/eta_ad fields)");
             } else {
                 logger::raw_ln("  etaO        =", v->etaO);
@@ -193,6 +207,7 @@ namespace shammodels::sph {
                 {"etaH", v->etaH},
                 {"etaAD", v->etaAD},
                 {"eta_fields", v->eta_fields},
+                {"eta_semi_constant", v->eta_semi_constant},
             };
         } else {
             shambase::throw_unimplemented();
@@ -252,6 +267,7 @@ namespace shammodels::sph {
                     j.value("etaH", def.etaH),
                     j.value("etaAD", def.etaAD),
                     j.value("eta_fields", def.eta_fields),
+                    j.value("eta_semi_constant", def.eta_semi_constant),
                 });
         } else {
             shambase::throw_unimplemented("wtf !");
