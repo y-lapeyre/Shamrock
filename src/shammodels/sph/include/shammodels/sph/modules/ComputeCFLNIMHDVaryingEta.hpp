@@ -79,7 +79,22 @@ class ComputeCFLNIMHDVaryingEta : public shamrock::solvergraph::INode {
 
     inline virtual std::string _impl_get_label() const { return "ComputeCFLNIMHDVaryingEta"; };
 
-    inline virtual std::string _impl_get_tex() const { return "C_{NIMHD}"; };
+    inline virtual std::string _impl_get_tex() const {
+        std::string tex = R"tex(
+            Non-ideal MHD CFL (per-particle resistivities)
+
+            \begin{align}
+            \eta_{\max,i} &= \max\left(\vert {eta_o}_i \vert, \vert {eta_ad}_i \vert,
+                \vert {eta_h}_i \vert\right) \\
+            {cfl_dt}_i &= \min\left({cfl_dt}_i, {C_nimhd} \frac{{hpart}_i^2}{\eta_{\max,i}}\right) \\
+            i &\in [0,{part_counts})
+            \end{align}
+        )tex";
+
+        replace_edges_tex_symbols(tex);
+
+        return tex;
+    };
 };
 
 #undef NODE_EDGES
