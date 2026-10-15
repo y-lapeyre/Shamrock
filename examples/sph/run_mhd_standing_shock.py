@@ -3,14 +3,11 @@ Standing shock test for the Hall term in non-ideal MHD
 =====================================================
 
 Reproduces the "standing shock" test of Falle (2003) and O'Sullivan & Downes
-(2006)as in section 5.7.2 of Price et al. (2018). It consists in
- relaxing a 1D discontinuity toward the
-analytic steady-state (Falle/O'Sullivan-Downes) shock profile.
+(2006)as in section 5.7.2 of Price et al. (2018). It consists in relaxing a 1D discontinuity toward the analytic steady-state (Falle/O'Sullivan-Downes) shock profile.
 
-currents issues:
--uses periodic boundaries in all three directions, instead ixed/inflow boundary particles
-and an inflow-adjusted asymmetric domain
--reduced resolution (512x14x15 / 781x12x12 in Phantom paper)
+!!!!!! currents issue:
+-uses periodic boundaries in all three directions, instead of fixed/inflow boundary particles and an inflow-adjusted asymmetric domain
+
 """
 
 # sphinx_gallery_multi_image = "single"
@@ -171,17 +168,19 @@ model = shamrock.get_Model_SPH(context=ctx, vector_type="f64_3", sph_kernel="C4"
 
 cfg = model.gen_default_config()
 cfg.set_units(codeu)
-cfg.set_artif_viscosity_Constant(alpha_u=1.0, alpha_AV=1.0, beta_AV=2.0)
+cfg.set_artif_viscosity_None()  # artificial viscosity terms are computed in the MHD solver
 cfg.set_NonIdealMHD(
     sigma_mhd=0,
     sigma_u=0,
-    etaO=0,
-    etaH=0,
-    etaAD=0,
+    etaO=COR,
+    etaH=CHE,
+    etaAD=CAD,
     alpha_B=1.0,
     alpha_AV=1.0,
     beta_AV=2.0,
-    eta_fields=True,
+    # semi-constant resistivities (as in Phantom's NICIL `icnstsemi` mode), recomputed every step
+    # from the local state: etaO = COR, etaH = CHE |B|, etaAD = CAD |B|^2 / rho (mu_0 = 1)
+    eta_semi_constant=True,
 )
 cfg.set_boundary_periodic()
 cfg.set_eos_isothermal(cs)
@@ -222,10 +221,10 @@ def vel_func(r):
     return (vx_L, vy_L, vz_L) if x < 0 else (vx_R, vy_R, vz_R)
 
 
-def B_func(r):
+def B_on_rho_func(r):
     x, y, z = r
-    By = By_L if x < 0 else By_R
-    return (Bx0, By, 0.0)
+    By, rho = (By_L, rho_L) if x < 0 else (By_R, rho_R)
+    return (Bx0 / rho, By / rho, 0.0)
 
 
 def u_func(r):
@@ -233,33 +232,9 @@ def u_func(r):
 
 
 model.set_field_value_lambda_f64_3("vxyz", vel_func)
-model.set_field_value_lambda_f64_3("B/rho", B_func)
+model.set_field_value_lambda_f64_3("B/rho", B_on_rho_func)
 model.set_field_value_lambda_f64("uint", u_func)
 
-
-def eta_o_func(r):
-    return COR
-
-
-def eta_h_func(r):
-    x, y, z = r
-    By = By_L if x < 0 else By_R
-    Bmag = np.sqrt(Bx0**2 + By**2)
-    return CHE * Bmag
-
-
-def eta_ad_func(r):
-    x, y, z = r
-    By = By_L if x < 0 else By_R
-    rho = rho_L if x < 0 else rho_R
-    Bmag2 = Bx0**2 + By**2
-    vA2 = Bmag2 / rho  # mu_0 = 1
-    return CAD * vA2
-
-
-model.set_field_value_lambda_f64("eta_o", eta_o_func)
-model.set_field_value_lambda_f64("eta_h", eta_h_func)
-model.set_field_value_lambda_f64("eta_ad", eta_ad_func)
 
 model.set_cfl_cour(0.3)
 model.set_cfl_force(0.25)
