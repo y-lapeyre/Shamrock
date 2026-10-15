@@ -2746,7 +2746,8 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                 "a dt that is too large");
         }
 
-        // the semi-constant etas depend on B and rho, needs refresh them before they are sent to ghosts
+        // the semi-constant etas depend on B and rho, needs refresh them before they are sent to
+        // ghosts
         if (solver_config.has_eta_semi_constant()) {
             update_eta_semi_constant();
         }
