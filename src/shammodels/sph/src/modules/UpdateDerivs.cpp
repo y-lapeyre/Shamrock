@@ -901,10 +901,8 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_mhd_
         sham::DeviceBuffer<Tscal> *buf_eta_ad
             = (eta_fields) ? &mpdat.get_field_buf_ref<Tscal>(ieta_ad_interf) : nullptr;
 
-        bool do_nimhd = solver_config.do_nimhd();
-        sham::DeviceBuffer<Tvec> &buf_J
-            = (do_nimhd) ? storage.MagCurrentJ_ghost.get().get(cur_p.id_patch).get_buf()
-                         : pdat.get_field_buf_ref<Tvec>(idB_on_rho);
+        sham::DeviceBuffer<Tvec> *buf_J
+            = (do_nimhd) ? &storage.MagCurrentJ_ghost.get().get(cur_p.id_patch).get_buf() : nullptr;
 
         tree::ObjectCache &pcache
             = shambase::get_check_ref(storage.neigh_cache).get_cache(cur_p.id_patch);
@@ -926,8 +924,8 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_mhd_
         auto dB_on_rho  = buf_dB_on_rho.get_write_access(depends_list);
         auto dpsi_on_ch = buf_dpsi_on_ch.get_write_access(depends_list);
         auto drho_dt    = buf_drho_dt.get_write_access(depends_list);
-        auto J_field    = (do_nimhd) ? buf_J.get_read_access(depends_list) : nullptr;
 
+        const Tvec *J_field = (do_nimhd) ? buf_J->get_read_access(depends_list) : nullptr;
         const Tscal *eta_o_field
             = (eta_fields) ? buf_eta_o->get_read_access(depends_list) : nullptr;
         const Tscal *eta_h_field
@@ -1169,7 +1167,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_mhd_
         buf_drho_dt.complete_event_state(e);
 
         if (do_nimhd) {
-            buf_J.complete_event_state(e);
+            buf_J->complete_event_state(e);
         }
 
         if (eta_fields) {
