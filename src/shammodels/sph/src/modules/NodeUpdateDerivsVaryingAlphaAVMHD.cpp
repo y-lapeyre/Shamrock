@@ -28,8 +28,7 @@ struct KernelUpdateDerivsVaryingAlphaAVMHD {
     using Tscal                   = shambase::VecComponent<Tvec>;
     using Kernel                  = SPHKernel<Tscal>;
     static constexpr Tscal hfactd = Kernel::hfactd;
-    static constexpr Tscal Rkern  = Kernel::Rkern;
-    static constexpr Tscal Rker2  = Rkern * Rkern;
+    static constexpr Tscal rker2  = Kernel::Rkern * Kernel::Rkern;
 
     Tscal pmass;
     Tscal alpha_u;
@@ -80,7 +79,7 @@ struct KernelUpdateDerivsVaryingAlphaAVMHD {
             Tscal rab2 = sycl::dot(dr, dr);
             Tscal h_b  = hpart[id_b];
 
-            if (rab2 > h_a * h_a * Rker2 && rab2 > h_b * h_b * Rker2) {
+            if (rab2 > h_a * h_a * rker2 && rab2 > h_b * h_b * rker2) {
                 return;
             }
 
