@@ -37,8 +37,6 @@ struct shammodels::sph::MHDConfig {
 
     struct None {};
 
-    // The hydro artificial viscosity & conductivity parameters (alpha_u, alpha_AV, beta_AV) are
-    // taken from the artificial viscosity config, the MHD config only holds the MHD specific ones
     struct IdealMhdConstrainedHyperPara {
         Tscal sigma_mhd = 0.1;
         Tscal alpha_B   = 1.;
