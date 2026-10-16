@@ -118,9 +118,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cons
     u32 iomega_interf = ghost_layout.get_field_idx<Tscal>("omega");
 
     // with MHD the signal velocity uses the fast magnetosonic speed instead of cs
-    bool use_mhd         = solver_config.has_field_b_on_rho();
-    u32 iB_on_rho_interf = (use_mhd) ? ghost_layout.get_field_idx<Tvec>("B/rho") : 0;
-    Tscal const mu_0     = (use_mhd) ? solver_config.get_constant_mu_0() : Tscal{};
+    bool use_mhd = solver_config.has_field_b_on_rho();
 
     auto &merged_xyzh                                 = storage.merged_xyzh.get();
     shamrock::solvergraph::Field<Tscal> &omega        = shambase::get_check_ref(storage.omega);
@@ -141,8 +139,6 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cons
             = shambase::get_check_ref(storage.pressure).get_field(cur_p.id_patch).get_buf();
         sham::DeviceBuffer<Tscal> &buf_cs
             = shambase::get_check_ref(storage.soundspeed).get_field(cur_p.id_patch).get_buf();
-        sham::DeviceBuffer<Tvec> *buf_B_on_rho
-            = (use_mhd) ? &mpdat.get_field_buf_ref<Tvec>(iB_on_rho_interf) : nullptr;
 
         sycl::range range_npart{pdat.get_obj_cnt()};
 
@@ -163,33 +159,33 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cons
         auto u          = buf_uint.get_read_access(depends_list); // TODO rename to uint
         auto pressure   = buf_pressure.get_read_access(depends_list);
         auto cs         = buf_cs.get_read_access(depends_list);
-        auto B_on_rho   = (use_mhd) ? buf_B_on_rho->get_read_access(depends_list) : nullptr;
         auto ploop_ptrs = pcache.get_read_access(depends_list);
 
-        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-            const Tscal pmass    = solver_config.gpart_mass;
-            const Tscal alpha_u  = cfg.alpha_u;
-            const Tscal alpha_AV = cfg.alpha_AV;
-            const Tscal beta_AV  = cfg.beta_AV;
+        sycl::event e;
+        if (!use_mhd) {
+            e = q.submit(depends_list, [&](sycl::handler &cgh) {
+                const Tscal pmass    = solver_config.gpart_mass;
+                const Tscal alpha_u  = cfg.alpha_u;
+                const Tscal alpha_AV = cfg.alpha_AV;
+                const Tscal beta_AV  = cfg.beta_AV;
 
-            shamlog_debug_sycl_ln("deriv kernel", "alpha_u  :", alpha_u);
-            shamlog_debug_sycl_ln("deriv kernel", "alpha_AV :", alpha_AV);
-            shamlog_debug_sycl_ln("deriv kernel", "beta_AV  :", beta_AV);
+                shamlog_debug_sycl_ln("deriv kernel", "alpha_u  :", alpha_u);
+                shamlog_debug_sycl_ln("deriv kernel", "alpha_AV :", alpha_AV);
+                shamlog_debug_sycl_ln("deriv kernel", "beta_AV  :", beta_AV);
 
-            // tree::ObjectIterator particle_looper(tree,cgh);
+                // tree::ObjectIterator particle_looper(tree,cgh);
 
-            // tree::LeafCacheObjectIterator
-            // particle_looper(tree,*xyz_cell_id,leaf_cache,cgh);
+                // tree::LeafCacheObjectIterator
+                // particle_looper(tree,*xyz_cell_id,leaf_cache,cgh);
 
-            tree::ObjectCacheIterator particle_looper(ploop_ptrs);
+                tree::ObjectCacheIterator particle_looper(ploop_ptrs);
 
-            // sycl::accessor hmax_tree{tree_field_hmax, cgh, sycl::read_only};
+                // sycl::accessor hmax_tree{tree_field_hmax, cgh, sycl::read_only};
 
-            // sycl::stream out {4096,1024,cgh};
+                // sycl::stream out {4096,1024,cgh};
 
-            constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
+                constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
 
-            if (!use_mhd) {
                 shambase::parallel_for(
                     cgh, pdat.get_obj_cnt(), "compute force cte AV", [=](u64 gid) {
                         u32 id_a = (u32) gid;
@@ -287,7 +283,38 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cons
                         axyz[id_a] = force_pressure;
                         du[id_a]   = tmpdU_pressure;
                     });
-            } else {
+            });
+        } else {
+            u32 iB_on_rho_interf = ghost_layout.get_field_idx<Tvec>("B/rho");
+            Tscal const mu_0     = solver_config.get_constant_mu_0();
+
+            sham::DeviceBuffer<Tvec> &buf_B_on_rho
+                = mpdat.get_field_buf_ref<Tvec>(iB_on_rho_interf);
+            auto B_on_rho = buf_B_on_rho.get_read_access(depends_list);
+
+            e = q.submit(depends_list, [&](sycl::handler &cgh) {
+                const Tscal pmass    = solver_config.gpart_mass;
+                const Tscal alpha_u  = cfg.alpha_u;
+                const Tscal alpha_AV = cfg.alpha_AV;
+                const Tscal beta_AV  = cfg.beta_AV;
+
+                shamlog_debug_sycl_ln("deriv kernel", "alpha_u  :", alpha_u);
+                shamlog_debug_sycl_ln("deriv kernel", "alpha_AV :", alpha_AV);
+                shamlog_debug_sycl_ln("deriv kernel", "beta_AV  :", beta_AV);
+
+                // tree::ObjectIterator particle_looper(tree,cgh);
+
+                // tree::LeafCacheObjectIterator
+                // particle_looper(tree,*xyz_cell_id,leaf_cache,cgh);
+
+                tree::ObjectCacheIterator particle_looper(ploop_ptrs);
+
+                // sycl::accessor hmax_tree{tree_field_hmax, cgh, sycl::read_only};
+
+                // sycl::stream out {4096,1024,cgh};
+
+                constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
+
                 shambase::parallel_for(
                     cgh, pdat.get_obj_cnt(), "compute force cte AV", [=](u64 gid) {
                         u32 id_a = (u32) gid;
@@ -392,8 +419,10 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cons
                         axyz[id_a] = force_pressure;
                         du[id_a]   = tmpdU_pressure;
                     });
-            }
-        });
+            });
+
+            buf_B_on_rho.complete_event_state(e);
+        }
 
         buf_xyz.complete_event_state(e);
         buf_axyz.complete_event_state(e);
@@ -404,9 +433,6 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cons
         buf_uint.complete_event_state(e);
         buf_pressure.complete_event_state(e);
         buf_cs.complete_event_state(e);
-        if (use_mhd) {
-            buf_B_on_rho->complete_event_state(e);
-        }
 
         sham::EventList resulting_events;
         resulting_events.add_event(e);
