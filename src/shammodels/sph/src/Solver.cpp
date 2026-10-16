@@ -3290,6 +3290,12 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
 
             storage.solver_graph.get_node_ref_base("sink corrector").evaluate();
 
+            // the corrector changed B/rho, refresh the semi-constant etas so that the NIMHD CFL
+            // (and the dumped fields) see the corrected state
+            if (solver_config.has_eta_semi_constant()) {
+                update_eta_semi_constant();
+            }
+
             // write back alpha av field
             if (solver_config.has_field_alphaAV()) {
 
