@@ -38,7 +38,7 @@ export LD_LIBRARY_PATH=$LLVM_INSTALL_DIR/lib/x86_64-unknown-linux-gnu:$LD_LIBRAR
 function llvm_setup {
 
     echo " -> cleaning llvm build dirs ..."
-    rm -rf ${LLVM_GIT_DIR} ${LLVM_BUILD_DIR}
+    rm -rf "${LLVM_GIT_DIR:?}" "${LLVM_BUILD_DIR:?}"
     echo " -> done"
 
     clone_llvm || return
@@ -69,10 +69,17 @@ function llvm_setup {
         echo "--gcc-toolchain=${GCC_ROOT_DIR}" > ${LLVM_INSTALL_DIR}/bin/${drv}.cfg
     done
 
-    echo "int main() { return 0; }" > test.cpp
-    ${LLVM_INSTALL_DIR}/bin/clang++ -O3 -fopenmp test.cpp  || return
-    ./a.out  || return
-    rm a.out test.cpp
+    local testdir
+    testdir=$(mktemp -d "${LLVM_BUILD_DIR}/sanity-check.XXXXXX") || return
+    (
+        cd "$testdir" &&
+        echo "int main() { return 0; }" > test.cpp &&
+        "${LLVM_INSTALL_DIR}/bin/clang++" -O3 -fopenmp test.cpp &&
+        ./a.out
+    )
+    local status=$?
+    rm -rf "${testdir:?}"
+    return $status
 
 }
 
