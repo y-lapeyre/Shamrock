@@ -8,8 +8,8 @@ import utils.sysinfo
 from utils.oscmd import *
 from utils.setuparg import *
 
-NAME = "Lumi-G Intel AdaptiveCpp ROCM/LLVM"
-PATH = "machine/lumi/standard-g/acpp-rocm-llvm"
+NAME = "Lumi-G AdaptiveCpp ROCm LLVM"
+PATH = "machine/lumi/g/acpp-rocm-llvm"
 
 
 def setup(arg: SetupArg, envgen: EnvGen):

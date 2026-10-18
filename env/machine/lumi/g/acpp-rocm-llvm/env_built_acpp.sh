@@ -5,18 +5,18 @@ export NINJA_STATUS="[%f/%t j=%r] "
 
 module --force purge
 
-module load LUMI/24.03
+module load LUMI/25.09
 module load partition/G
-module load cray-python
-module load rocm/6.0.3
-module load Boost/1.83.0-cpeAMD-24.03
+module load cray-python/3.11.7
+module load rocm/6.4.4
+module load Boost/1.90.0-cpeAMD-25.09
+module load buildtools/25.09 # CMake & Ninja
+
+module load lumi-CrayPath
 
 export MPICH_GPU_SUPPORT_ENABLED=1
 
-export PATH=$HOME/.local/bin:$PATH
-pip3 install -U ninja cmake
-
-export ACPP_VERSION=v24.10.0
+export ACPP_VERSION=v25.10.0
 export ACPP_TARGETS="hip:gfx90a"
 export ACPP_GIT_DIR=$BUILD_DIR/.env/acpp-git
 export ACPP_BUILD_DIR=$BUILD_DIR/.env/acpp-builddir
@@ -38,7 +38,7 @@ function setupcompiler {
         -DROCM_PATH=$ROCM_PATH \
         -DCMAKE_C_COMPILER=${ROCM_PATH}/llvm/bin/clang \
         -DCMAKE_CXX_COMPILER=${ROCM_PATH}/llvm/bin/clang++ \
-        -DWITH_ACCELERATED_CPU=ON \
+        -DACPP_COMPILER_FEATURE_PROFILE=minimal \
         -DWITH_CPU_BACKEND=ON \
         -DWITH_CUDA_BACKEND=OFF \
         -DWITH_ROCM_BACKEND=ON \
@@ -47,7 +47,6 @@ function setupcompiler {
         -DACPP_TARGETS="gfx90a" \
         -DBoost_NO_BOOST_CMAKE=TRUE \
         -DBoost_NO_SYSTEM_PATHS=TRUE \
-        -DWITH_SSCP_COMPILER=OFF \
         -DLLVM_DIR=${ROCM_PATH}/llvm/lib/cmake/llvm/  || return
 
     (cd ${ACPP_BUILD_DIR} && $MAKE_EXEC "${MAKE_OPT[@]}" && $MAKE_EXEC install) || return
