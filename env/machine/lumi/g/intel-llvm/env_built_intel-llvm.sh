@@ -6,18 +6,18 @@ export NINJA_STATUS="[%f/%t j=%r] "
 
 module purge
 
-module load LUMI/24.03
+module load LUMI/25.09
 module load partition/G
-module load cray-python
-module load rocm/6.0.3
-module load cpeAMD/24.03 # For MPIch
+module load cray-python/3.11.7
+module load rocm/6.4.4
+module load cpeAMD/25.09 # For MPIch
+module load buildtools/25.09 # CMake & Ninja
+
+module load lumi-CrayPath
 
 export MPICH_GPU_SUPPORT_ENABLED=1
 
-export PATH=$HOME/.local/bin:$PATH
-pip3 install -U ninja cmake
-
-export INTEL_LLVM_VERSION=v6.0.0
+export INTEL_LLVM_VERSION=v6.3.0
 export INTEL_LLVM_GIT_DIR=/tmp/intelllvm-git
 export INTEL_LLVM_INSTALL_DIR=$BUILD_DIR/.env/intelllvm-install
 
