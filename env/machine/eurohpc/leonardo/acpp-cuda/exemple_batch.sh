@@ -21,5 +21,4 @@ echo "The job ${SLURM_JOB_ID} is running on these nodes:"
 echo ${SLURM_NODELIST}
 echo
 
-srun --cpu-bind=cores bash -c \
-  'export CUDA_VISIBLE_DEVICES=$SLURM_LOCALID; exec '"$BUILD"'/shamrock --smi-full'
+srun --ntasks-per-node=4 --cpus-per-task=8 --threads-per-core=1 '"$BUILD"'/shamrock --sycl-cfg auto:CUDA --loglevel 1 --smi --rscript runscript.py
