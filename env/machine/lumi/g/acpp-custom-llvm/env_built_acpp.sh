@@ -6,27 +6,24 @@ export NINJA_STATUS="[%f/%t j=%r] "
 
 module purge
 
-module load LUMI/25.09
+module load LUMI/24.03
 module load partition/G
-module load cray-python/3.11.7
-module load rocm/6.4.4
-module load Boost/1.90.0-cpeAMD-25.09
-module load buildtools/25.09 # CMake & Ninja
-
-module load lumi-CrayPath
+module load cray-python
+module load rocm/6.0.3
+module load Boost/1.83.0-cpeAMD-24.03
 
 export MPICH_GPU_SUPPORT_ENABLED=1
 
-# In acpp llvm version must be lower or equal to rocm llvm version (Rocm 6.4.4 -> llvm 19)
-export LLVM_VERSION=llvmorg-19.1.7
+export PATH=$HOME/.local/bin:$PATH
+pip3 install -U ninja cmake
+
+# In acpp llvm version must be lower or equal to rocm llvm version (Rocm 6.0.3 -> llvm 17.0.0)
+export LLVM_VERSION=llvmorg-17.0.6
 export LLVM_GIT_DIR=/tmp/llvm-git
 export LLVM_BUILD_DIR=/tmp/llvm-build
 export LLVM_INSTALL_DIR=$BUILD_DIR/.env/llvm-install
 
-export LD_LIBRARY_PATH=$LLVM_INSTALL_DIR/lib:$LD_LIBRARY_PATH
-export LD_LIBRARY_PATH=$LLVM_INSTALL_DIR/lib/x86_64-unknown-linux-gnu:$LD_LIBRARY_PATH
-
-export ACPP_VERSION=v25.10.0
+export ACPP_VERSION=v24.10.0
 export ACPP_APPDB_DIR=/tmp/acpp-appdb # otherwise it would we in the $HOME/.acpp
 export ACPP_GIT_DIR=$BUILD_DIR/.env/acpp-git
 export ACPP_BUILD_DIR=$BUILD_DIR/.env/acpp-builddir
