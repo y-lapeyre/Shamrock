@@ -69,6 +69,8 @@ cfg.set_artif_viscosity_VaryingCD10(
     alpha_min=0.0, alpha_max=1.0, sigma_decay=0.1, alpha_u=1.0, beta_AV=2.0
 )
 cfg.set_eos_adiabatic(gamma)
+# h starts far above its root at the torus surface, where Newton alone diverges
+cfg.set_smoothing_length_newton_fallback(True)
 cfg.add_ext_force_point_mass(1.0, 0.5 * r_in)
 cfg.set_particle_mass(pmass)
 model.set_solver_config(cfg)
@@ -231,9 +233,11 @@ model = shamrock.get_Model_SPH(context=ctx, vector_type="f64_3", sph_kernel="M6"
 
 cfg = model.gen_default_config()
 cfg.set_units(codeu)
-cfg.set_artif_viscosity_Constant(alpha_u = 1, alpha_AV = 1, beta_AV = 2)
+cfg.set_artif_viscosity_Constant(alpha_u=1, alpha_AV=1, beta_AV=2)
 cfg.set_IdealMHD(sigma_mhd=1.0)
 cfg.set_eos_adiabatic(gamma)
+# h starts far above its root at the torus surface, where Newton alone diverges
+cfg.set_smoothing_length_newton_fallback(True)
 cfg.add_ext_force_paczynski_wiita(1.0, (0.0, 0.0, 0.0), 2.0)
 cfg.set_particle_mass(pmass)
 model.set_solver_config(cfg)
