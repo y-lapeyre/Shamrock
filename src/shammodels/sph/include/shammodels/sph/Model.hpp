@@ -247,7 +247,7 @@ namespace shammodels::sph {
         template<class T>
         inline void overwrite_field_value(
             std::string field_name,
-            const std::function<std::vector<T>(py::dict)> field_compute,
+            const std::function<std::vector<T>(shamrock::PatchDataLazyGetter &)> field_compute,
             const u32 offset) {
 
             StackEntry stack_loc{};
@@ -269,7 +269,8 @@ namespace shammodels::sph {
                             f_nvar));
                     }
 
-                    auto result = field_compute(shamrock::pdat_to_dic(pdat));
+                    shamrock::PatchDataLazyGetter getter(pdat);
+                    auto result = field_compute(getter);
 
                     if (result.size() != f.get_obj_cnt()) {
                         throw shambase::make_except_with_loc<std::runtime_error>(sham::format(
@@ -418,40 +419,35 @@ namespace shammodels::sph {
                     u32 len = vec_pos.size();
                     PatchDataField<Tvec> &f
                         = tmp.get_field<Tvec>(sched.pdl_old().get_field_idx<Tvec>("xyz"));
-                    sycl::buffer<Tvec> buf(vec_pos.data(), len);
-                    f.override(buf, len);
+                    f.override(vec_pos, len);
                 }
 
                 {
                     u32 len = vec_pos.size();
                     PatchDataField<Tscal> &f
                         = tmp.get_field<Tscal>(sched.pdl_old().get_field_idx<Tscal>("hpart"));
-                    sycl::buffer<Tscal> buf(vec_h.data(), len);
-                    f.override(buf, len);
+                    f.override(vec_h, len);
                 }
 
                 {
                     u32 len = vec_pos.size();
                     PatchDataField<Tscal> &f
                         = tmp.get_field<Tscal>(sched.pdl_old().get_field_idx<Tscal>("uint"));
-                    sycl::buffer<Tscal> buf(vec_u.data(), len);
-                    f.override(buf, len);
+                    f.override(vec_u, len);
                 }
 
                 if (solver.solver_config.is_eos_locally_isothermal()) {
                     u32 len = vec_pos.size();
                     PatchDataField<Tscal> &f
                         = tmp.get_field<Tscal>(sched.pdl_old().get_field_idx<Tscal>("soundspeed"));
-                    sycl::buffer<Tscal> buf(vec_cs.data(), len);
-                    f.override(buf, len);
+                    f.override(vec_cs, len);
                 }
 
                 {
                     u32 len = vec_pos.size();
                     PatchDataField<Tvec> &f
                         = tmp.get_field<Tvec>(sched.pdl_old().get_field_idx<Tvec>("vxyz"));
-                    sycl::buffer<Tvec> buf(vec_vel.data(), len);
-                    f.override(buf, len);
+                    f.override(vec_vel, len);
                 }
 
                 pdat.insert_elements(tmp);
@@ -584,8 +580,7 @@ namespace shammodels::sph {
                     u32 len = vec_acc.size();
                     PatchDataField<Tvec> &f
                         = tmp.get_field<Tvec>(sched.pdl_old().get_field_idx<Tvec>("xyz"));
-                    sycl::buffer<Tvec> buf(vec_acc.data(), len);
-                    f.override(buf, len);
+                    f.override(vec_acc, len);
                 }
 
                 {
@@ -598,16 +593,14 @@ namespace shammodels::sph {
                     u32 len = vec_acc.size();
                     PatchDataField<Tscal> &f
                         = tmp.get_field<Tscal>(sched.pdl_old().get_field_idx<Tscal>("uint"));
-                    sycl::buffer<Tscal> buf(vec_u.data(), len);
-                    f.override(buf, len);
+                    f.override(vec_u, len);
                 }
 
                 {
                     u32 len = vec_acc.size();
                     PatchDataField<Tvec> &f
                         = tmp.get_field<Tvec>(sched.pdl_old().get_field_idx<Tvec>("vxyz"));
-                    sycl::buffer<Tvec> buf(vec_vel.data(), len);
-                    f.override(buf, len);
+                    f.override(vec_vel, len);
                 }
 
                 pdat.insert_elements(tmp);

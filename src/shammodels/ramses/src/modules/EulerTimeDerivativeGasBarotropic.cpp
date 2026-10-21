@@ -8,7 +8,7 @@
 // -------------------------------------------------------//
 
 /**
- * @file EulerTimeDerivativeGas.cpp
+ * @file EulerTimeDerivativeGasBarotropic.cpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
@@ -17,21 +17,19 @@
 #include "shambase/string.hpp"
 #include "shambackends/kernel_call_distrib.hpp"
 #include "shambackends/math.hpp"
-#include "shammodels/ramses/modules/EulerTimeDerivativeGas.hpp"
+#include "shammodels/ramses/modules/EulerTimeDerivativeGasBarotropic.hpp"
 #include "shamrock/patch/PatchDataField.hpp"
 #include "shamsys/NodeInstance.hpp"
 
 namespace {
 
     template<class Tvec>
-    struct KernelEulerTimeDerivativeGas {
+    struct KernelEulerTimeDerivativeGasBarotropic {
         using Tscal = shambase::VecComponent<Tvec>;
 
         inline static void kernel(
             const shambase::DistributedData<shamrock::PatchDataFieldSpanPointer<Tscal>> &spans_rho,
             const shambase::DistributedData<shamrock::PatchDataFieldSpanPointer<Tvec>> &spans_vel,
-            const shambase::DistributedData<shamrock::PatchDataFieldSpanPointer<Tscal>>
-                &spans_press,
             const shambase::DistributedData<shamrock::PatchDataFieldSpanPointer<Tvec>>
                 &spans_grad_rho,
             const shambase::DistributedData<shamrock::PatchDataFieldSpanPointer<Tvec>> &spans_dx_v,
@@ -42,10 +40,8 @@ namespace {
 
             shambase::DistributedData<shamrock::PatchDataFieldSpanPointer<Tscal>> &spans_dt_rho,
             shambase::DistributedData<shamrock::PatchDataFieldSpanPointer<Tvec>> &spans_dt_vel,
-            shambase::DistributedData<shamrock::PatchDataFieldSpanPointer<Tscal>> &spans_dt_press,
             const shambase::DistributedData<u32> &sizes,
-            u32 block_size,
-            Tscal gamma) {
+            u32 block_size) {
 
             shambase::DistributedData<u32> cell_counts
                 = sizes.map<u32>([&](u64 id, u32 block_count) {
@@ -58,30 +54,25 @@ namespace {
                 sham::DDMultiRef{
                     spans_rho,
                     spans_vel,
-                    spans_press,
                     spans_grad_rho,
                     spans_dx_v,
                     spans_dy_v,
                     spans_dz_v,
                     spans_grad_P},
-                sham::DDMultiRef{spans_dt_rho, spans_dt_vel, spans_dt_press},
+                sham::DDMultiRef{spans_dt_rho, spans_dt_vel},
                 cell_counts,
-                [gamma](
-                    u32 i,
-                    const Tscal *__restrict rho,
-                    const Tvec *__restrict vel,
-                    const Tscal *__restrict press,
-                    const Tvec *__restrict grad_rho,
-                    const Tvec *__restrict dx_v,
-                    const Tvec *__restrict dy_v,
-                    const Tvec *__restrict dz_v,
-                    const Tvec *__restrict grad_P,
-                    Tscal *__restrict dt_rho,
-                    Tvec *__restrict dt_vel,
-                    Tscal *__restrict dt_press) {
+                [](u32 i,
+                   const Tscal *__restrict rho,
+                   const Tvec *__restrict vel,
+                   const Tvec *__restrict grad_rho,
+                   const Tvec *__restrict dx_v,
+                   const Tvec *__restrict dy_v,
+                   const Tvec *__restrict dz_v,
+                   const Tvec *__restrict grad_P,
+                   Tscal *__restrict dt_rho,
+                   Tvec *__restrict dt_vel) {
                     Tscal rho_i     = rho[i];
                     Tvec v_i        = vel[i];
-                    Tscal P_i       = press[i];
                     Tvec grad_rho_i = grad_rho[i];
                     Tvec dx_v_i     = dx_v[i];
                     Tvec dy_v_i     = dy_v[i];
@@ -93,10 +84,6 @@ namespace {
 
                     dt_vel[i]
                         = -(v_i[0] * dx_v_i + v_i[1] * dy_v_i + v_i[2] * dz_v_i + grad_P_i / rho_i);
-
-                    dt_press[i]
-                        = -(gamma * P_i * (dx_v_i[0] + dy_v_i[1] + dz_v_i[2])
-                            + sham::dot(v_i, grad_P_i));
                 });
         }
     };
@@ -106,12 +93,11 @@ namespace {
 namespace shammodels::basegodunov::modules {
 
     template<class Tvec>
-    void NodeEulerTimeDerivativeGas<Tvec>::_impl_evaluate_internal() {
+    void NodeEulerTimeDerivativeGasBarotropic<Tvec>::_impl_evaluate_internal() {
         auto edges = get_edges();
 
         edges.spans_rho.check_sizes(edges.sizes.indexes);
         edges.spans_vel.check_sizes(edges.sizes.indexes);
-        edges.spans_press.check_sizes(edges.sizes.indexes);
         edges.spans_grad_rho.check_sizes(edges.sizes.indexes);
         edges.spans_dx_v.check_sizes(edges.sizes.indexes);
         edges.spans_dy_v.check_sizes(edges.sizes.indexes);
@@ -120,12 +106,10 @@ namespace shammodels::basegodunov::modules {
 
         edges.spans_dt_rho.ensure_sizes(edges.sizes.indexes);
         edges.spans_dt_vel.ensure_sizes(edges.sizes.indexes);
-        edges.spans_dt_press.ensure_sizes(edges.sizes.indexes);
 
-        KernelEulerTimeDerivativeGas<Tvec>::kernel(
+        KernelEulerTimeDerivativeGasBarotropic<Tvec>::kernel(
             edges.spans_rho.get_spans(),
             edges.spans_vel.get_spans(),
-            edges.spans_press.get_spans(),
             edges.spans_grad_rho.get_spans(),
             edges.spans_dx_v.get_spans(),
             edges.spans_dy_v.get_spans(),
@@ -133,34 +117,27 @@ namespace shammodels::basegodunov::modules {
             edges.spans_grad_P.get_spans(),
             edges.spans_dt_rho.get_spans(),
             edges.spans_dt_vel.get_spans(),
-            edges.spans_dt_press.get_spans(),
             edges.sizes.indexes,
-            block_size,
-            gamma);
+            block_size);
     }
 
     template<class Tvec>
-    std::string NodeEulerTimeDerivativeGas<Tvec>::_impl_get_tex() const {
+    std::string NodeEulerTimeDerivativeGasBarotropic<Tvec>::_impl_get_tex() const {
         std::string tex = R"tex(
-            Euler time derivatives of the gas primitive state
+            Euler time derivatives of the gas primitive state (barotropic)
 
             \begin{align}
             {spans_dt_rho}_i &= - \left( {spans_vel}_i \cdot {spans_grad_rho}_i
                 + {spans_rho}_i \left( {spans_dx_v}_{i,x} + {spans_dy_v}_{i,y} + {spans_dz_v}_{i,z} \right) \right) \\
             {spans_dt_vel}_i &= - \left( {spans_vel}_{i,x} {spans_dx_v}_i + {spans_vel}_{i,y} {spans_dy_v}_i
                 + {spans_vel}_{i,z} {spans_dz_v}_i + \frac{ {spans_grad_P}_i }{ {spans_rho}_i } \right) \\
-            {spans_dt_press}_i &= - \left( \gamma {spans_press}_i
-                \left( {spans_dx_v}_{i,x} + {spans_dy_v}_{i,y} + {spans_dz_v}_{i,z} \right)
-                + {spans_vel}_i \cdot {spans_grad_P}_i \right) \\
             i &\in [0,{sizes} * N_{\rm cell/block}) \\
-            \gamma &= {gamma} \\
             N_{\rm cell/block} & = {block_size}
             \end{align}
         )tex";
 
         replace_edges_tex_symbols(tex);
 
-        shambase::replace_all(tex, "{gamma}", sham::format("{}", gamma));
         shambase::replace_all(tex, "{block_size}", sham::format("{}", block_size));
 
         return tex;
@@ -168,4 +145,4 @@ namespace shammodels::basegodunov::modules {
 
 } // namespace shammodels::basegodunov::modules
 
-template class shammodels::basegodunov::modules::NodeEulerTimeDerivativeGas<f64_3>;
+template class shammodels::basegodunov::modules::NodeEulerTimeDerivativeGasBarotropic<f64_3>;

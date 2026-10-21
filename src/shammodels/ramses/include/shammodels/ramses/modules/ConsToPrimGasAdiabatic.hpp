@@ -10,10 +10,10 @@
 #pragma once
 
 /**
- * @file EulerTimeDerivativeGas.hpp
+ * @file ConsToPrimGasAdiabatic.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief Per cell Euler time derivatives of the gas primitive state
- *
+ * @brief Field variant object to instanciate a variant on the patch types
+ * @date 2023-07-31
  */
 
 #include "shambackends/vec.hpp"
@@ -25,49 +25,32 @@
     /* ------------------- inputs ------------------- */                                           \
     X_RO(shamrock::solvergraph::Indexes<u32>, sizes)                                               \
     X_RO(shamrock::solvergraph::IFieldSpan<Tscal>, spans_rho)                                      \
-    X_RO(shamrock::solvergraph::IFieldSpan<Tvec>, spans_vel)                                       \
-    X_RO(shamrock::solvergraph::IFieldSpan<Tscal>, spans_press)                                    \
-    X_RO(shamrock::solvergraph::IFieldSpan<Tvec>, spans_grad_rho)                                  \
-    X_RO(shamrock::solvergraph::IFieldSpan<Tvec>, spans_dx_v)                                      \
-    X_RO(shamrock::solvergraph::IFieldSpan<Tvec>, spans_dy_v)                                      \
-    X_RO(shamrock::solvergraph::IFieldSpan<Tvec>, spans_dz_v)                                      \
-    X_RO(shamrock::solvergraph::IFieldSpan<Tvec>, spans_grad_P)                                    \
+    X_RO(shamrock::solvergraph::IFieldSpan<Tvec>, spans_rhov)                                      \
+    X_RO(shamrock::solvergraph::IFieldSpan<Tscal>, spans_rhoe)                                     \
                                                                                                    \
     /* ------------------- outputs ------------------- */                                          \
-    X_RW(shamrock::solvergraph::IFieldSpan<Tscal>, spans_dt_rho)                                   \
-    X_RW(shamrock::solvergraph::IFieldSpan<Tvec>, spans_dt_vel)                                    \
-    X_RW(shamrock::solvergraph::IFieldSpan<Tscal>, spans_dt_press)
+    X_RW(shamrock::solvergraph::IFieldSpan<Tvec>, spans_vel)                                       \
+    X_RW(shamrock::solvergraph::IFieldSpan<Tscal>, spans_P)
 
 namespace shammodels::basegodunov::modules {
-
-    /**
-     * @brief Compute the Euler time derivatives of the gas primitive state per cell
-     *
-     * Those derivatives are the predictor term of the MUSCL-Hancock face
-     * reconstruction. Evaluating them once per cell here rather than once per
-     * face side in the interpolation nodes avoids re-fetching the velocity
-     * gradients for every link.
-     */
     template<class Tvec>
-    class NodeEulerTimeDerivativeGas : public shamrock::solvergraph::INode {
+    class NodeConsToPrimGasAdiabatic : public shamrock::solvergraph::INode {
         using Tscal = shambase::VecComponent<Tvec>;
-
         u32 block_size;
         Tscal gamma;
 
         public:
-        NodeEulerTimeDerivativeGas(u32 block_size, Tscal gamma)
+        NodeConsToPrimGasAdiabatic(u32 block_size, Tscal gamma)
             : block_size(block_size), gamma(gamma) {}
 
         EXPAND_NODE_EDGES(NODE_EDGES)
 
         void _impl_evaluate_internal();
 
-        inline virtual std::string _impl_get_label() const { return "EulerTimeDerivativeGas"; };
+        inline virtual std::string _impl_get_label() const { return "ConsToPrimGasAdiabatic"; };
 
         virtual std::string _impl_get_tex() const;
     };
-
 } // namespace shammodels::basegodunov::modules
 
 #undef NODE_EDGES

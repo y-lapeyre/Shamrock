@@ -10,10 +10,9 @@
 #pragma once
 
 /**
- * @file ConsToPrimGas.hpp
+ * @file ConsToPrimGasBarotropic.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief Field variant object to instanciate a variant on the patch types
- * @date 2023-07-31
+ * @brief Conservative to primitive conversion of the gas for a barotropic equation of state
  */
 
 #include "shambackends/vec.hpp"
@@ -21,32 +20,40 @@
 #include "shamrock/solvergraph/Indexes.hpp"
 #include "shamsolvergraph/node/INode.hpp"
 
+// The barotropic pressure only depends on rho, hence no rhoe input
 #define NODE_EDGES(X_RO, X_RW)                                                                     \
     /* ------------------- inputs ------------------- */                                           \
     X_RO(shamrock::solvergraph::Indexes<u32>, sizes)                                               \
     X_RO(shamrock::solvergraph::IFieldSpan<Tscal>, spans_rho)                                      \
     X_RO(shamrock::solvergraph::IFieldSpan<Tvec>, spans_rhov)                                      \
-    X_RO(shamrock::solvergraph::IFieldSpan<Tscal>, spans_rhoe)                                     \
                                                                                                    \
     /* ------------------- outputs ------------------- */                                          \
     X_RW(shamrock::solvergraph::IFieldSpan<Tvec>, spans_vel)                                       \
     X_RW(shamrock::solvergraph::IFieldSpan<Tscal>, spans_P)
 
 namespace shammodels::basegodunov::modules {
+
+    /**
+     * @brief Conservative to primitive conversion of the gas using
+     *        shammath::FluidStateBarotropic
+     */
     template<class Tvec>
-    class NodeConsToPrimGas : public shamrock::solvergraph::INode {
+    class NodeConsToPrimGasBarotropic : public shamrock::solvergraph::INode {
         using Tscal = shambase::VecComponent<Tvec>;
         u32 block_size;
+        Tscal rho_crit;
+        Tscal cs0;
         Tscal gamma;
 
         public:
-        NodeConsToPrimGas(u32 block_size, Tscal gamma) : block_size(block_size), gamma(gamma) {}
+        NodeConsToPrimGasBarotropic(u32 block_size, Tscal rho_crit, Tscal cs0, Tscal gamma)
+            : block_size(block_size), rho_crit(rho_crit), cs0(cs0), gamma(gamma) {}
 
         EXPAND_NODE_EDGES(NODE_EDGES)
 
         void _impl_evaluate_internal();
 
-        inline virtual std::string _impl_get_label() const { return "ConsToPrimGas"; };
+        inline virtual std::string _impl_get_label() const { return "ConsToPrimGasBarotropic"; };
 
         virtual std::string _impl_get_tex() const;
     };
