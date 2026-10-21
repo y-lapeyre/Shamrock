@@ -122,6 +122,13 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
         .def(
             "set_smoothing_length_density_based_neigh_lim",
             &TConfig::set_smoothing_length_density_based_neigh_lim)
+        .def(
+            "set_smoothing_length_newton_fallback",
+            &TConfig::set_smoothing_length_newton_fallback,
+            py::arg("enable"),
+            R"==(
+    Fall back to a fixed point update of h when the Newton step of the smoothing length iteration goes away from the root.
+)==")
         .def("set_enable_particle_reordering", &TConfig::set_enable_particle_reordering)
         .def("set_particle_reordering_step_freq", &TConfig::set_particle_reordering_step_freq)
         .def("set_show_ghost_zone_graph", &TConfig::set_show_ghost_zone_graph)
