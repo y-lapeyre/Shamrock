@@ -84,12 +84,8 @@ namespace shamphys {
         /// integral of |b_poloidal_unit|^2 over the torus volume
         f64 b_poloidal_unit_sq_integral(f64 A_cut) const;
 
-        f64 get_GM() const { return GM; }
-        f64 get_r_s() const { return r_s; }
         f64 get_r0() const { return r0; }
         f64 get_r_in() const { return r_in; }
-        f64 get_a_ang() const { return a_ang; }
-        f64 get_n_poly() const { return n_poly; }
 
         /// outer edge of the torus on the midplane
         f64 get_r_out() const { return r_out; }
