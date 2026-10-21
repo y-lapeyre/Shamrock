@@ -221,43 +221,23 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             py::arg("beta_AV"))
         .def(
             "set_IdealMHD",
-            [](TConfig &self,
-               Tscal sigma_mhd,
-               Tscal sigma_u,
-               Tscal alpha_B,
-               Tscal alpha_AV,
-               Tscal beta_AV) {
-                self.set_ideal_mhd({sigma_mhd, sigma_u, alpha_B, alpha_AV, beta_AV});
+            [](TConfig &self, Tscal sigma_mhd, Tscal alpha_B) {
+                self.set_ideal_mhd({sigma_mhd, alpha_B});
             },
             py::kw_only(),
             py::arg("sigma_mhd"),
-            py::arg("sigma_u"),
-            py::arg("alpha_B")  = 1.0,
-            py::arg("alpha_AV") = 1.0,
-            py::arg("beta_AV")  = 1.0)
+            py::arg("alpha_B") = 1.0)
         .def(
             "set_NonIdealMHD",
-            [](TConfig &self,
-               Tscal sigma_mhd,
-               Tscal sigma_u,
-               Tscal etaO,
-               Tscal etaH,
-               Tscal etaAD,
-               Tscal alpha_B,
-               Tscal alpha_AV,
-               Tscal beta_AV) {
-                self.set_non_ideal_mhd(
-                    {sigma_mhd, sigma_u, alpha_B, alpha_AV, beta_AV, etaO, etaH, etaAD});
+            [](TConfig &self, Tscal sigma_mhd, Tscal etaO, Tscal etaH, Tscal etaAD, Tscal alpha_B) {
+                self.set_non_ideal_mhd({sigma_mhd, alpha_B, etaO, etaH, etaAD});
             },
             py::kw_only(),
             py::arg("sigma_mhd"),
-            py::arg("sigma_u"),
             py::arg("etaO"),
             py::arg("etaH"),
             py::arg("etaAD"),
-            py::arg("alpha_B")  = 1.0,
-            py::arg("alpha_AV") = 1.0,
-            py::arg("beta_AV")  = 1.0)
+            py::arg("alpha_B") = 1.0)
         .def(
             "set_self_gravity_none",
             [](TConfig &self) {
@@ -386,7 +366,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             "set_dust_evol_coala_coag",
             [](TConfig &self,
                Tscal rhodust_eps,
-               Tscal dv_max,
+               Tscal vfrag_threshold,
                std::vector<Tscal> massgrid,
                py::array_t<Tscal> tabflux_coag) {
                 if (massgrid.size() == 0) {
@@ -431,15 +411,30 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                 }
 
                 self.dust_config.set_dust_evol_coala(
-                    {.rhodust_eps  = rhodust_eps,
-                     .dv_max       = dv_max,
-                     .massgrid     = massgrid,
-                     .tabflux_coag = tabflux_coag_vec});
+                    {.rhodust_eps     = rhodust_eps,
+                     .vfrag_threshold = vfrag_threshold,
+                     .massgrid        = massgrid,
+                     .tabflux_coag    = tabflux_coag_vec});
             },
             py::arg("rhodust_eps"),
-            py::arg("dv_max"),
+            py::arg("vfrag_threshold"),
             py::arg("massgrid"),
-            py::arg("tabflux_coag"))
+            py::arg("tabflux_coag"),
+            R"pbdoc(
+        Enable the COALA dust coagulation source term.
+
+        Args:
+            rhodust_eps: Dust density floor.
+            vfrag_threshold: Fragmentation velocity threshold, must be positive.
+                In this coagulation-only mode, a pair of dust bins whose
+                differential velocity ``|dv_ij|`` exceeds this value gets
+                ``dv_ij = 0``. This is a crude stand-in for fragmentation
+                ("poor man" fragmentation), not a fragmentation model. Pass
+                ``math.inf`` to disable it.
+            massgrid: Dust mass grid bin edges, of size ``nbins + 1``.
+            tabflux_coag: Tabulated coagulation flux, of shape
+                ``(nbins, nbins, nbins)``.
+        )pbdoc")
         .def(
             "set_dust_ballabio_ts_limiter",
             [](TConfig &self, bool enabled) {
