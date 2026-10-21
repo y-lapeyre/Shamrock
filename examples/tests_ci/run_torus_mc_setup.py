@@ -25,6 +25,7 @@ if not shamrock.sys.is_initialized():
     shamrock.sys.init("0:0")
 
 errors = []
+is_rank0 = shamrock.sys.world_rank() == 0
 
 
 def check(name, value, tol):
@@ -90,7 +91,10 @@ setup.apply_setup(gen)
 
 
 def get_data():
+
     data = ctx.collect_data()
+    if not is_rank0:
+        return data, None, None, None, None
     xyz = np.asarray(data["xyz"])
     vxyz = np.asarray(data["vxyz"])
     w = np.hypot(xyz[:, 0], xyz[:, 1])
@@ -102,72 +106,76 @@ def get_data():
 
 data, w, z, v_phi, v_R = get_data()
 
-check("particle count error", abs(len(w) - Npart), 1)
-inside = np.array([torus.rho_shape(a, b) > 0 for a, b in zip(w, z)])
-check("fraction of particles outside of the torus", 1 - np.mean(inside), 1e-12)
+if is_rank0:
+    check("particle count error", abs(len(w) - Npart), 1)
+    inside = np.array([torus.rho_shape(a, b) > 0 for a, b in zip(w, z)])
+    check("fraction of particles outside of the torus", 1 - np.mean(inside), 1e-12)
 
-v_an = np.array([torus.v_phi(a) for a in w])
-check("max |v_phi - v_phi_an| / v_phi_an", np.max(np.abs(v_phi - v_an) / v_an), 1e-12)
-check("max |v_R| / v_phi", np.max(np.abs(v_R) / v_an), 1e-12)
+    v_an = np.array([torus.v_phi(a) for a in w])
+    check("max |v_phi - v_phi_an| / v_phi_an", np.max(np.abs(v_phi - v_an) / v_an), 1e-12)
+    check("max |v_R| / v_phi", np.max(np.abs(v_R) / v_an), 1e-12)
 
-u_an = np.array([torus.p_over_rho(a, b) for a, b in zip(w, z)]) / (gamma - 1)
-check(
-    "max |u - u_an| / max(u_an)",
-    np.max(np.abs(np.asarray(data["uint"]) - u_an)) / u_an.max(),
-    1e-12,
-)
+    u_an = np.array([torus.p_over_rho(a, b) for a, b in zip(w, z)]) / (gamma - 1)
+    check(
+        "max |u - u_an| / max(u_an)",
+        np.max(np.abs(np.asarray(data["uint"]) - u_an)) / u_an.max(),
+        1e-12,
+    )
 
 # %%
 # Sampled mass distributions against the analytic ones (independent of the SPH density)
 
-nbins = 25
-w_edges = np.linspace(r_in, r_out, nbins + 1)
-z_edges = np.linspace(-z_max, z_max, nbins + 1)
-w_c = 0.5 * (w_edges[1:] + w_edges[:-1])
-z_c = 0.5 * (z_edges[1:] + z_edges[:-1])
+if is_rank0:
+    nbins = 25
+    w_edges = np.linspace(r_in, r_out, nbins + 1)
+    z_edges = np.linspace(-z_max, z_max, nbins + 1)
+    w_c = 0.5 * (w_edges[1:] + w_edges[:-1])
+    z_c = 0.5 * (z_edges[1:] + z_edges[:-1])
 
-zq = np.linspace(-z_max, z_max, 801)
-wq = np.linspace(r_in, r_out, 801)
-dM_dw = np.array(
-    [np.trapezoid([torus.rho_shape(a, b) for b in zq], zq) * 2 * np.pi * a for a in w_c]
-)
-dM_dz = np.array(
-    [np.trapezoid([torus.rho_shape(a, b) * 2 * np.pi * a for a in wq], wq) for b in z_c]
-)
-dM_dw *= rho0
-dM_dz *= rho0
+    zq = np.linspace(-z_max, z_max, 801)
+    wq = np.linspace(r_in, r_out, 801)
+    dM_dw = np.array(
+        [np.trapezoid([torus.rho_shape(a, b) for b in zq], zq) * 2 * np.pi * a for a in w_c]
+    )
+    dM_dz = np.array(
+        [np.trapezoid([torus.rho_shape(a, b) * 2 * np.pi * a for a in wq], wq) for b in z_c]
+    )
+    dM_dw *= rho0
+    dM_dz *= rho0
 
-hist_w = np.histogram(w, w_edges)[0] * pmass / np.diff(w_edges)
-hist_z = np.histogram(z, z_edges)[0] * pmass / np.diff(z_edges)
+    hist_w = np.histogram(w, w_edges)[0] * pmass / np.diff(w_edges)
+    hist_z = np.histogram(z, z_edges)[0] * pmass / np.diff(z_edges)
 
-# only bins holding enough particles for the Poisson noise to be small (~ 1/sqrt(N_bin))
-mask_w = dM_dw * np.diff(w_edges) / pmass > 1000
-mask_z = dM_dz * np.diff(z_edges) / pmass > 1000
-check(
-    "max radial dM/dvarpi relative error",
-    np.max(np.abs(hist_w[mask_w] / dM_dw[mask_w] - 1)),
-    0.1,
-)
-check("max vertical dM/dz relative error", np.max(np.abs(hist_z[mask_z] / dM_dz[mask_z] - 1)), 0.1)
+    # only bins holding enough particles for the Poisson noise to be small (~ 1/sqrt(N_bin))
+    mask_w = dM_dw * np.diff(w_edges) / pmass > 1000
+    mask_z = dM_dz * np.diff(z_edges) / pmass > 1000
+    check(
+        "max radial dM/dvarpi relative error",
+        np.max(np.abs(hist_w[mask_w] / dM_dw[mask_w] - 1)),
+        0.1,
+    )
+    check(
+        "max vertical dM/dz relative error", np.max(np.abs(hist_z[mask_z] / dM_dz[mask_z] - 1)), 0.1
+    )
 
-fig, axs = plt.subplots(1, 3, figsize=(14, 4), dpi=120)
-axs[0].scatter(w[::5], z[::5], s=0.2)
-axs[0].set_xlabel("$\\varpi$")
-axs[0].set_ylabel("z")
-axs[0].set_aspect("equal")
-axs[0].set_title("particles (1/5)")
-axs[1].plot(w_c, hist_w, "o", label="sampled")
-axs[1].plot(w_c, dM_dw, "-", label="analytic")
-axs[1].set_xlabel("$\\varpi$")
-axs[1].set_ylabel("dM / d$\\varpi$")
-axs[1].legend()
-axs[2].plot(z_c, hist_z, "o", label="sampled")
-axs[2].plot(z_c, dM_dz, "-", label="analytic")
-axs[2].set_xlabel("z")
-axs[2].set_ylabel("dM / dz")
-axs[2].legend()
-plt.tight_layout()
-plt.show()
+    fig, axs = plt.subplots(1, 3, figsize=(14, 4), dpi=120)
+    axs[0].scatter(w[::5], z[::5], s=0.2)
+    axs[0].set_xlabel("$\\varpi$")
+    axs[0].set_ylabel("z")
+    axs[0].set_aspect("equal")
+    axs[0].set_title("particles (1/5)")
+    axs[1].plot(w_c, hist_w, "o", label="sampled")
+    axs[1].plot(w_c, dM_dw, "-", label="analytic")
+    axs[1].set_xlabel("$\\varpi$")
+    axs[1].set_ylabel("dM / d$\\varpi$")
+    axs[1].legend()
+    axs[2].plot(z_c, hist_z, "o", label="sampled")
+    axs[2].plot(z_c, dM_dz, "-", label="analytic")
+    axs[2].set_xlabel("z")
+    axs[2].set_ylabel("dM / dz")
+    axs[2].legend()
+    plt.tight_layout()
+    plt.show()
 
 # %%
 # Short evolution: the torus must stay close to equilibrium (MC noise only)
@@ -175,14 +183,15 @@ plt.show()
 T_orb = 2 * np.pi * r0**1.5
 model.evolve_until(0.25 * T_orb)
 data, w, z, v_phi, v_R = get_data()
-v_an = np.array([torus.v_phi(a) for a in w])
-check("rms v_R / v_phi after 1/4 orbit", np.sqrt(np.mean((v_R / v_an) ** 2)), 0.05)
-hist_w = np.histogram(w, w_edges)[0] * pmass / np.diff(w_edges)
-check(
-    "max radial dM/dvarpi relative error after 1/4 orbit",
-    np.max(np.abs(hist_w[mask_w] / dM_dw[mask_w] - 1)),
-    0.15,
-)
+if is_rank0:
+    v_an = np.array([torus.v_phi(a) for a in w])
+    check("rms v_R / v_phi after 1/4 orbit", np.sqrt(np.mean((v_R / v_an) ** 2)), 0.05)
+    hist_w = np.histogram(w, w_edges)[0] * pmass / np.diff(w_edges)
+    check(
+        "max radial dM/dvarpi relative error after 1/4 orbit",
+        np.max(np.abs(hist_w[mask_w] / dM_dw[mask_w] - 1)),
+        0.15,
+    )
 
 del model
 del ctx
@@ -248,28 +257,29 @@ gen = setup.make_generator_torus_mc(
 setup.apply_setup(gen)
 
 data = ctx.collect_data()
-xyz = np.asarray(data["xyz"])
-B_on_rho = np.asarray(data["B/rho"])
-w = np.hypot(xyz[:, 0], xyz[:, 1])
-z = xyz[:, 2]
-rho_an = rho0 * np.array([torus.rho_shape(a, b) for a, b in zip(w, z)])
-b_an = np.array([torus.b_poloidal_unit(a, b, A_cut) for a, b in zip(w, z)]) * A0
+if is_rank0:
+    xyz = np.asarray(data["xyz"])
+    B_on_rho = np.asarray(data["B/rho"])
+    w = np.hypot(xyz[:, 0], xyz[:, 1])
+    z = xyz[:, 2]
+    rho_an = rho0 * np.array([torus.rho_shape(a, b) for a, b in zip(w, z)])
+    b_an = np.array([torus.b_poloidal_unit(a, b, A_cut) for a, b in zip(w, z)]) * A0
 
-B_on_rho_an = np.zeros_like(B_on_rho)
-B_on_rho_an[:, 0] = b_an[:, 0] * xyz[:, 0] / w / rho_an
-B_on_rho_an[:, 1] = b_an[:, 0] * xyz[:, 1] / w / rho_an
-B_on_rho_an[:, 2] = b_an[:, 1] / rho_an
-check(
-    "max |B/rho - (B/rho)_an| / max|(B/rho)_an|",
-    np.max(np.abs(B_on_rho - B_on_rho_an)) / np.max(np.abs(B_on_rho_an)),
-    1e-12,
-)
+    B_on_rho_an = np.zeros_like(B_on_rho)
+    B_on_rho_an[:, 0] = b_an[:, 0] * xyz[:, 0] / w / rho_an
+    B_on_rho_an[:, 1] = b_an[:, 0] * xyz[:, 1] / w / rho_an
+    B_on_rho_an[:, 2] = b_an[:, 1] / rho_an
+    check(
+        "max |B/rho - (B/rho)_an| / max|(B/rho)_an|",
+        np.max(np.abs(B_on_rho - B_on_rho_an)) / np.max(np.abs(B_on_rho_an)),
+        1e-12,
+    )
 
-# Monte Carlo estimate of int P dV / int P_mag dV with dV = m / rho_an
-P_on_rho = np.array([torus.p_over_rho(a, b) for a, b in zip(w, z)])
-Pmag_on_rho = np.sum((B_on_rho_an * rho_an[:, None]) ** 2, axis=1) / (2 * mu_0) / rho_an
-beta_mc = np.sum(P_on_rho) / np.sum(Pmag_on_rho)
-check("|beta_MC / beta - 1|", abs(beta_mc / plasma_beta - 1), 0.05)
+    # Monte Carlo estimate of int P dV / int P_mag dV with dV = m / rho_an
+    P_on_rho = np.array([torus.p_over_rho(a, b) for a, b in zip(w, z)])
+    Pmag_on_rho = np.sum((B_on_rho_an * rho_an[:, None]) ** 2, axis=1) / (2 * mu_0) / rho_an
+    beta_mc = np.sum(P_on_rho) / np.sum(Pmag_on_rho)
+    check("|beta_MC / beta - 1|", abs(beta_mc / plasma_beta - 1), 0.05)
 
 # The SPH density of a Monte Carlo distribution is biased high (self contribution), so the
 # beta measured with it is lower than the requested one
